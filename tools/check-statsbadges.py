@@ -295,32 +295,36 @@ def main():
           const realClick = btn.click.bind(btn);
           btn.click = () => { tapped = true; };
           announceDailyReset(btn);
-          /* REVISED IN 309: the announcement is the bubble beside the "?"
-             ("it shouldn't go to the top ... needs to go near the daily
-             question button"), live and tappable. */
-          for(let i = 0; i < 80 && !document.querySelector('#daily-lock-tip.is-live'); i++)
+          /* MOVED IN 327z5: the announcement is the top banner on the
+             account banner's glass again ("I think all the daily question
+             stuff needs to be in the pop up like that"), live and tappable;
+             nothing beside the "?". */
+          for(let i = 0; i < 80 && !document.querySelector('#dailyalert.is-live.show'); i++)
             await new Promise(r => setTimeout(r, 100));
           await new Promise(r => setTimeout(r, 600));
-          const el = document.querySelector('#daily-lock-tip.is-live');
-          if(!el) return { noBubble: true, banner: !!document.getElementById('dailyalert') };
+          /* it unrolls out of the "?" - measure it where it settles */
+          const el0 = document.querySelector('#dailyalert.is-live');
+          if(el0) await Promise.all(el0.getAnimations().map(a => a.finished.catch(() => 0)));
+          const el = document.querySelector('#dailyalert.is-live');
+          if(!el) return { noBanner: true, bubble: !!document.getElementById('daily-lock-tip') };
           const cs = getComputedStyle(el), r = el.getBoundingClientRect(), f = btn.getBoundingClientRect();
           const out = {
             pointer: cs.pointerEvents, role: el.getAttribute('role'), text: el.textContent,
-            low: r.top > innerHeight / 2,
-            gap: Math.round(Math.max(f.left - r.right, r.left - f.right, f.top - r.bottom, r.top - f.bottom)),
-            banner: !!document.getElementById('dailyalert')
+            top: r.top < innerHeight / 3,
+            centred: Math.abs(r.left - (innerWidth - r.right)) <= 1.5,
+            bubble: !!document.getElementById('daily-lock-tip')
           };
           el.click();
           out.tapped = tapped;
           await new Promise(r => setTimeout(r, 320));   /* it fades out over 220ms */
-          out.goneAfterTap = !document.getElementById('daily-lock-tip');
+          out.goneAfterTap = !document.querySelector('#dailyalert.is-live');
           btn.click = realClick;
           return out;}""")
         print("     ", json.dumps(d))
-        check("the announcement is a bubble by the button, not a banner at the top",
-              d.get("low") is True and (d.get("gap") or 99) <= 24 and not d.get("banner"), d)
+        check("the announcement is a centred top banner, no bubble by the button",
+              d.get("top") is True and d.get("centred") is True and not d.get("bubble"), d)
         check("it can actually be tapped", d.get("pointer") == "auto", d.get("pointer"))
-        check("it says what it is", "Daily question" in (d.get("text") or ""), d.get("text"))
+        check("it says what it is", "daily question" in (d.get("text") or "").lower(), d.get("text"))
         check("it is announced to assistive tech as a button", d.get("role") == "button", d.get("role"))
         check("tapping it opens the daily question", d.get("tapped") is True)
         check("and dismisses itself", d.get("goneAfterTap") is True)

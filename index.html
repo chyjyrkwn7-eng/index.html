@@ -10755,6 +10755,17 @@
     pointer-events:none;
   }
   .toast.show{ opacity:1; transform:translateY(0); }
+  /* THE BANNERS' LOOK FOR A TOAST (build 327z5): "Is there anywhere else
+     that same Liquid Glass look could be applied?" The same glass, a 3px
+     bar in its colour down the left and a bare icon - blue for a plain
+     note, green for a good one, amber for a star. Where it sits is
+     unchanged. */
+  .toast{ display:flex; align-items:center; gap:.6rem; text-align:left;
+    border-left:3px solid var(--toast-color, #8FC1FF); --toast-color:#8FC1FF; }
+  .toast.toast-good{ --toast-color:#5FD99A; }
+  .toast.toast-flag{ --toast-color:#F5B54D; }
+  .toast-icon{ flex-shrink:0; width:1.2rem; height:1.2rem; display:block; color:var(--toast-color); }
+  .toast-text{ flex:1 1 0; min-width:0; }
   [data-theme="light"] .toast{
     background:rgba(255,255,255,.55); color:#1A2027; border-color:rgba(255,255,255,.5);
     box-shadow:0 2px 8px rgba(18,26,32,.06), inset 0 1px 0 rgba(255,255,255,.5);
@@ -11252,7 +11263,6 @@
      they were landing right on top of the floating Next-question
      button, covering the one thing someone would tap next. */
   .toast-flag{
-    background:#F5C518; color:#3D2E00; border:1px solid #C9A227;
     top:max(1rem, env(safe-area-inset-top)); bottom:auto;
     transform:translateY(-8px);
   }
@@ -16658,7 +16668,7 @@
      as far as it used to (x1.22 of the ring is x1.35 of the old start),
      so it still clears the tab bar (check-fixes 9c). */
   .daily-question-fab.is-ready::after{
-    content:""; position:absolute; inset:-6px; border-radius:999px;
+    content:""; position:absolute; inset:-1px; border-radius:999px;
     border:1.5px solid var(--dq-c); opacity:0; pointer-events:none;
     animation:daily-ready 3.6s ease-out infinite;
   }
@@ -16738,10 +16748,19 @@
      running in between); ready, it is whole and the pulse runs from it;
      at a reset it fills to whole (playDailyRecharge) and goes off.
      Stroke 5 of 100: 3.3px on a phone, 4.3px on a tablet. */
-  .dq-ring{ position:absolute; inset:-6px; pointer-events:none; --dq-p:0; }
+  /* ON THE BUTTON'S RIM, NOT A SECOND RING OUTSIDE IT (build 327z5): "the
+     loading bar around it looks off/ bad". It sat 6px out from the button
+     with a dark gap and the button's own grey rim between them - two rings,
+     one of them a dull thick band. It is the rim now: one ring centred on
+     the button's edge, a faint track, the progress with round ends, and
+     the button's own border stood down so nothing doubles it. */
+  .dq-ring{ position:absolute; inset:-1px; pointer-events:none; --dq-p:0; }
   .dq-ring svg{ display:block; width:100%; height:100%; overflow:visible; }
-  .dq-ring circle{ fill:none; stroke-width:5; }
-  .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 24%, transparent); }
+  .dq-ring circle{ fill:none; stroke-width:5.6; }
+  .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 20%, rgba(255,255,255,.07)); }
+  .dq-ring:not(.is-full) .dq-ring-prog{ stroke-linecap:round; }
+  .daily-question-fab:not(.is-charging) .dq-ring.is-empty .dq-ring-prog{ opacity:0; }
+  html[data-theme][data-layout] .daily-question-fab:has(.dq-ring){ border-color:transparent !important; }
   .dq-ring-prog{
     stroke:var(--dq-c);
     stroke-dasharray:298.4513 298.4513;
@@ -25358,8 +25377,18 @@
      what it has to avoid is the 44px button in the right-hand corner,
      and the honest way to do that is to stop short of it rather than to
      duck underneath. 3.4rem is the button plus its own gutter. */
-  .daily-alert, .app-banner, .vroom-chat-alert{
+  .vroom-chat-alert{
     max-width:min(26rem, calc(100vw - 2rem - 3.4rem));
+  }
+  /* CENTRED, THE SAME GAP EITHER SIDE (build 327z5): "That banner popup
+     thing also does not look centered." The right-only inset below and the
+     narrower daily rule made every banner sit to the left. They span the
+     screen less the same 1rem each side now, and clear the chat button by
+     going under it (settleTopBanner), not by stopping short of it. */
+  .daily-alert, .app-banner{
+    left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    right:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    max-width:min(26rem, calc(100vw - 2rem));
   }
   /* TWO BANNERS, TWO CENTRING MECHANISMS, AND THEY NEED DIFFERENT
      ANSWERS. `.daily-alert` (which `.app-banner` is) centres with
@@ -25373,9 +25402,6 @@
      gets a shifted centre. Phones only - a tablet's banner and its
      button are already 140px apart. */
   @media (max-width:639px){
-    .daily-alert, .app-banner{
-      right:calc(max(1rem, env(safe-area-inset-right, 0px)) + 3.4rem);
-    }
     .vroom-chat-alert{ left:calc(50% - 1.7rem); }
   }
   .app-banner > *{ pointer-events:auto; }
@@ -25393,18 +25419,9 @@
      banners keep their own rule; they carry buttons and need the width.
      A 320px phone cannot give up that much on both sides and keep a
      readable line, so there alone it drops under the button's row. */
-  @media (max-width:639px){
-    .daily-alert:not(.app-banner){
-      --dq-clear:calc(max(1.5rem, env(safe-area-inset-right, 0px) + 1.2rem) + 44px + .5rem);
-      left:var(--dq-clear); right:var(--dq-clear); max-width:none;
-    }
-  }
-  @media (max-width:359px){
-    .daily-alert:not(.app-banner){
-      left:max(1rem, env(safe-area-inset-left, 0px)); right:max(1rem, env(safe-area-inset-right, 0px));
-      top:calc(env(safe-area-inset-top, 0px) + .75rem + 44px + .5rem);
-    }
-  }
+  /* (build 245's narrower daily banner, centred by clearing the button on
+     both sides, is gone with the rest: build 327z5 centres every banner
+     the same way.) */
   .daily-alert.is-live{ padding-left:.85rem; padding-right:.8rem; gap:.6rem; }
   /* A 360-400px phone leaves the centred banner ~210-240px, and at the
      standard padding the line wrapped to three. Tighter insides keep it
@@ -25456,7 +25473,25 @@
     flex-shrink:0; width:28px; height:28px; padding:0; line-height:1;
     background:none; border:none; color:var(--soft);
     font-size:1.2rem; cursor:pointer;
+    display:grid; place-items:center; align-self:center;
   }
+  .app-banner-x svg{ width:15px; height:15px; display:block; }
+  /* ONE LINE THROUGH THE MIDDLE (build 327z5): the icon, the words and the
+     x share a centre line - measured by their ink, not their boxes. */
+  .app-banner > .app-banner-icon{ align-self:center; display:block; }
+  .app-banner-body{ justify-content:center; }
+  .app-banner-tag{ display:block; line-height:1.25; }
+  .app-banner-text{ display:block; }
+  /* The live daily banner is the account banner's glass too (build
+     327z5): its bar in the daily colour, no sweep of colour across it and
+     no coloured ring round it. */
+  .daily-alert.app-banner.is-live{ border-left:3px solid var(--banner-color, var(--accent)); overflow:hidden;
+    padding:.9rem 1rem .9rem 1.1rem; gap:.6rem; }
+  .daily-alert.app-banner.is-live::after{ content:none; animation:none; }
+  .daily-alert.app-banner.is-live.is-fresh{ animation:none; }
+  .daily-alert.app-banner.is-live .daily-alert-icon{ width:1.35rem; height:1.35rem; }
+  .daily-alert.app-banner.is-live .daily-alert-go{ color:var(--soft); width:.55rem; height:.85rem; }
+  .daily-alert.app-banner.is-live .daily-alert-text{ font-size:.88rem; }
   /* THE PASSIVE LINES ON THE ACCOUNT BANNER'S GLASS (build 327z3): the
      daily "done for today", Find me's answers, "Your profile needs you"
      and the Detective's run. A size up from the actionable banners -
@@ -46063,6 +46098,7 @@ function saveAndExitTest(){
   timerlineEl.hidden = true;
   testInProgress = false; runSaveSlot = false;
   showHome();
+  showSavedTestBanner();
 }
 document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") saveRunSession(); });
 window.addEventListener("pagehide", saveRunSession);
@@ -56874,7 +56910,7 @@ function followAccountMove(from, to, noteRef, note){
        has it. */
     if(leaving){ try{ saveStore(); }catch(e){} }
     try{ noteRef.set({ done: Date.now() }, { merge: true }).catch(() => {}); }catch(e){}
-    try{ showToast("Signed in to your account" + (store.firstName ? ", " + store.firstName : "")); }catch(e){}
+    try{ showWelcomeBackBanner("Signed in to your account" + (store.firstName ? ", " + store.firstName : "")); }catch(e){}
     try{ updateHeaderTitle(); }catch(e){}
     if(store.onboardingComplete && !testInProgress){ try{ showHome(); }catch(e){} }
   }).catch(() => {});
@@ -79942,7 +79978,7 @@ function continueWithTrace(t, btn, note){
     updateHeaderTitle();
     if(store.onboardingComplete){
       showHome();
-      showToast("Welcome back — your progress is here.");
+      showWelcomeBackBanner("Welcome back — your progress is here.");
       return;
     }
     /* A sign-up that stopped before Home (closed on the code or the
@@ -80920,7 +80956,7 @@ function showWelcomeCodeEntry(){
              re-add banner could land on the very first frame of Home, on
              top of the "welcome back" toast. */
           holdNoticesAfterTour();
-          showToast("Welcome back \u2014 your progress is here.");
+          showWelcomeBackBanner("Welcome back \u2014 your progress is here.");
         });
       } else {
         syncBtn.disabled = false; syncBtn.textContent = "Sync This Device";
@@ -85218,12 +85254,12 @@ let dailyResetTimer = null;
    phone. showNoticeBar() is the hook for the late-notice case, the
    resize listener for rotation, and showDailyAlert() for the case where
    the notice was already there. */
-function positionDailyAlert(){
-  const el = document.getElementById("dailyalert");
+function positionDailyAlert(elArg){
+  const el = (elArg && elArg.nodeType === 1) ? elArg : document.getElementById("dailyalert");
   if(!el) return;
   const notice = document.getElementById("updatebanner");
   const r = notice ? notice.getBoundingClientRect() : null;
-  if(r && r.height > 0){ el.style.top = Math.round(r.bottom + 10) + "px"; return; }
+  if(r && r.height > 0){ el.style.top = Math.round(r.bottom + 10) + "px"; settleTopBanner(el); return; }
   /* With no notice up, the only thing left that can be in the way is
      whatever the current screen puts along its own top. This used to
      assume there was nothing - true while the alert only ever appeared on
@@ -85233,6 +85269,53 @@ function positionDailyAlert(){
      the update banner already measures. */
   const top = topNoticeOffset(el);
   el.style.top = top === null ? "" : Math.round(top) + "px";
+  settleTopBanner(el);
+}
+
+/* EVERY TOP BANNER IS CENTRED, AND IT CLEARS THE CHAT BUTTON BY GOING
+   UNDER IT (build 327z5): "That banner popup thing also does not look
+   centered." It was not - on a phone the banners cleared the chat button
+   by pulling only their RIGHT edge in, so on a 440px screen one ran
+   16..370, 54px further from the right edge than the left. They are
+   centred now, the same gap either side, and whatever is in the way along
+   the top (the chat button, another banner already up) is cleared by
+   moving the banner down past it. On Home and Welcome, where they
+   mostly appear, the version label already parks them below the
+   button's row, so they do not move at all. */
+function settleTopBanner(el){
+  if(!el || !el.isConnected) return;
+  const cs = getComputedStyle(el);
+  let top = parseFloat(cs.top);
+  if(!isFinite(top)) return;
+  const box = el.getBoundingClientRect();
+  const h = el.offsetHeight || box.height;
+  const L = box.left, R = box.right;
+  const gap = 8;
+  const obstacles = [];
+  document.querySelectorAll(".chatdock-btn, #roomchat-fab").forEach(b => {
+    const r = b.getBoundingClientRect();
+    if(r.width <= 0 || r.height <= 0) return;
+    const bs = getComputedStyle(b);
+    if(bs.visibility === "hidden" || bs.display === "none" || parseFloat(bs.opacity) < .1) return;
+    obstacles.push(r);
+  });
+  document.querySelectorAll(".daily-alert.show, .app-banner.show").forEach(b => {
+    if(b === el || b.contains(el) || el.contains(b)) return;
+    if(b.classList.contains("nova-friend-note")) return;
+    const r = b.getBoundingClientRect();
+    if(r.width <= 0 || r.top > window.innerHeight * .4) return;
+    obstacles.push(r);
+  });
+  for(let pass = 0; pass < 4; pass++){
+    let moved = false;
+    obstacles.forEach(r => {
+      if(r.right <= L || r.left >= R) return;
+      if(top + h <= r.top || top >= r.bottom) return;
+      top = Math.round(r.bottom + gap); moved = true;
+    });
+    if(!moved) break;
+  }
+  if(Math.abs(top - parseFloat(cs.top)) > .5) el.style.top = top + "px";
 }
 
 /* A short, self-dismissing line at the top of the screen (see
@@ -85249,28 +85332,35 @@ function showDailyAlert(msg, opts){
   /* a notice banner: held while a cutscene has the screen (build 320) */
   if(typeof holdForCutscene === "function" && holdForCutscene("dailyalert:" + msg, () => showDailyAlert(msg, opts))) return null;
   const o = opts || {};
-  const old = document.getElementById("dailyalert");
+  const old = document.getElementById(o.id || "dailyalert");
   if(old) old.remove();
   const el = document.createElement("div");
-  el.id = "dailyalert"; el.className = "daily-alert";
+  el.id = o.id || "dailyalert"; el.className = "daily-alert";
   if(!o.live) playSound("ui.notice");
   if(o.live){
-    el.classList.add("is-live", "is-fresh");
+    /* ON THE ACCOUNT BANNER'S GLASS (build 327z5): "I think all the daily
+       question stuff needs to be in the pop up like that." The same neutral
+       glass, the 3px bar and bare icon in the daily colour, the tag, one
+       sentence - and still the one banner you can tap, with a chevron
+       saying so. No sweep of colour across it and no coloured ring ("Why
+       is there yellow in it like that?"). */
+    el.classList.add("app-banner", "app-banner-daily", "is-live", "is-fresh");
+    el.style.setProperty("--banner-color", BANNER_KINDS.daily.color);
     el.setAttribute("role", "button");
     el.tabIndex = 0;
     const icon = document.createElement("span");
-    icon.className = "daily-alert-icon";
+    icon.className = "app-banner-icon daily-alert-icon";
     icon.innerHTML = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" " +
       "stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" " +
       "style=\"width:100%;height:100%;display:block\">" +
-      "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.6 9.2a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.6\"/>" +
-      "<path d=\"M12 16.9v.1\"/></svg>";
+      "<circle cx=\"12\" cy=\"12\" r=\"8.8\"/><path d=\"M9.6 9.6a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.4\"/>" +
+      "<path d=\"M12 16.4v.1\"/></svg>";
     const body = document.createElement("span");
-    body.className = "daily-alert-body";
+    body.className = "app-banner-body daily-alert-body";
     const tag = document.createElement("span");
-    tag.className = "daily-alert-tag"; tag.textContent = "DAILY QUESTION";
+    tag.className = "app-banner-tag daily-alert-tag"; tag.textContent = "DAILY QUESTION";
     const text = document.createElement("span");
-    text.className = "daily-alert-text"; text.textContent = msg;
+    text.className = "app-banner-text daily-alert-text"; text.textContent = msg;
     body.append(tag, text);
     /* A chevron rather than the word TAP (build 245): the banner is
        narrower now it clears the chat button on both sides, and the
@@ -85342,14 +85432,14 @@ function showDailyAlert(msg, opts){
     const shut = document.createElement("button");
     shut.type = "button"; shut.className = "app-banner-x";
     shut.setAttribute("aria-label", "Dismiss");
-    shut.textContent = "\u00d7";
+    shut.innerHTML = BANNER_X_SVG;
     shut.addEventListener("click", () => { el.classList.remove("show"); setTimeout(() => el.remove(), 220); });
     el.append(icon, body, shut);
   } else {
     el.textContent = msg;
   }
   document.body.appendChild(el);
-  positionDailyAlert();
+  positionDailyAlert(el);
   /* Cleared by a screen change as well as by its own timer. This is
      appended to <body>, not to #stage (it is position:fixed, and #stage
      animates - a transform on an ancestor re-parents a fixed element's
@@ -85373,9 +85463,27 @@ function showDailyAlert(msg, opts){
     el.classList.remove("show");
     setTimeout(() => { if(onNavigate) onNavigate.disconnect(); el.remove(); }, 300);
   };
-  if(o.from && emergeDailyAlert(el, o.from, () => setTimeout(leave, stay))) return;
-  requestAnimationFrame(() => el.classList.add("show"));
+  if(o.from && emergeDailyAlert(el, o.from, () => setTimeout(leave, stay))) return el;
+  requestAnimationFrame(() => { el.classList.add("show"); positionDailyAlert(el); });
   setTimeout(leave, stay);
+  return el;
+}
+
+/* "WELCOME BACK" IS A BANNER, NOT A TOAST (build 327z5): "The 'welcome
+   back your progress is here' thing when signing in as at the bottom,
+   should be bigger like and better like the sync one". Its own id, so the
+   daily announcement that can follow it on Home does not take it away. */
+function showWelcomeBackBanner(msg){
+  setTimeout(() => showDailyAlert(msg || "Welcome back \u2014 your progress is here.",
+    { kind: "welcome", id: "welcome-banner", stay: 5600 }), 450);
+}
+/* A test saved with Save and exit says so on Home (build 327z5). */
+function showSavedTestBanner(){
+  setTimeout(() => {
+    if(document.documentElement.dataset.screen !== "home" && !document.querySelector("#stage [data-screen=\"home\"]")) return;
+    showDailyAlert("Your test is saved \u2014 tap Start Studying to pick it up.",
+      { kind: "savedtest", id: "savedtest-banner", stay: 6000 });
+  }, 600);
 }
 
 /* ---- THE RECHARGE, THEN THE BANNER OUT OF THE BUTTON (build 245) ----
@@ -85427,6 +85535,8 @@ function setDailyRing(btn, p){
   const v = Math.max(0, Math.min(1, Number(p) || 0));
   ring.style.setProperty("--dq-p", v.toFixed(5));
   ring.classList.toggle("is-full", v >= 1);
+  /* nothing gone yet: no round-capped dot sitting at the top */
+  ring.classList.toggle("is-empty", v < .004);
   ring.dataset.p = v.toFixed(4);
 }
 /* What the ring should show now: whole while the question is waiting to be
@@ -85534,7 +85644,7 @@ function emergeDailyAlert(el, from, settled){
   el.style.transition = "none";
   el.style.opacity = "0";
   el.classList.add("show");
-  positionDailyAlert();
+  positionDailyAlert(el);
   const box = el.getBoundingClientRect();
   const iconEl = el.querySelector(".daily-alert-icon");
   const ic = iconEl ? iconEl.getBoundingClientRect() : box;
@@ -85615,10 +85725,11 @@ function announceDailyReset(btn){
     if(!document.body.contains(btn)) return;
     playSound("home.daily.ready");
     const tap = () => { try { btn.click(); } catch(e){} };
-    const tip = showDailyTip('<b>Daily question</b><span>It\u2019s out \u00b7 tap to answer</span>',
-      '<b>Daily question</b><span>\u00b7 tap to answer</span>', { onTap: tap, stay: DAILY_CHARGE.stay });
-    if(tip){ if(motion) tip.classList.add("is-fresh"); return; }
-    showDailyAlert("It's out. One question, no retakes.", { live: true, from: motion ? btn : null, onTap: tap });
+    /* AT THE TOP, ON THE BANNER (build 327z5), superseding the bubble
+       beside the "?" (build 309): "I think all the daily question stuff
+       needs to be in the pop up like that." Still out of the button. */
+    document.getElementById("daily-lock-tip")?.remove();
+    showDailyAlert("It\u2019s out \u2014 one question, no retakes. Tap to answer.", { live: true, from: motion ? btn : null, onTap: tap });
   };
   if(dailyMotionOff()){ setDailyRing(btn, 1); announce(false); return; }
   playDailyRecharge(btn, () => announce(true), ringFrom);
@@ -97132,7 +97243,14 @@ function showToast(msg, tone){
   const toast = document.createElement("div");
   toast.id = "toast";
   toast.className = "toast" + (tone ? " toast-" + tone : "");
-  toast.textContent = msg;
+  toast.setAttribute("role", "status");
+  const ic = tone === "good"
+    ? '<path d="M5.5 12.4l4.1 4.1 8.9-9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path fill="currentColor" d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18m-1.1 7.4v6.4h2.2v-6.4zM12 6.6a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6"/>';
+  toast.innerHTML = '<svg class="toast-icon" viewBox="0 0 24 24" aria-hidden="true">' + ic + '</svg>';
+  const tt = document.createElement("span");
+  tt.className = "toast-text"; tt.textContent = msg;
+  toast.appendChild(tt);
   document.body.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add("show"));
   setTimeout(() => {
@@ -108481,7 +108599,7 @@ function showAppearance(opts){
           updateHeaderTitle();
           renderSyncBody();
           showHome();
-          showToast("Linked \u2014 this device is now synced.");
+          showWelcomeBackBanner("Linked \u2014 this device is now synced.");
         } else {
           linkBtn.disabled = false; linkBtn.textContent = "Link this device";
           showToast(reason === "not-found" ? "No progress found under that code yet." : "Couldn't reach sync right now \u2014 try again in a moment.");
@@ -110853,7 +110971,23 @@ const BANNER_KINDS = {
      look alike are the same banner three times. Violet and a speech
      bubble - not the friend green, not the room blue. */
   chat: { tag: "CHAT", color: "#8E7CF5", glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z" },
-  account: { tag: "YOUR ACCOUNT", color: "#F5B54D", glyph: "M14 6a4.5 4.5 0 1 1-4.3 5.8L8.4 13H6.6v1.9H4.5v1.9H1.6v-2.6l6.1-6.1A4.5 4.5 0 0 1 14 6m1.4 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8" },
+  /* A KEY THAT READS AT BANNER SIZE (build 327z5): "The key icon looks
+     broken still". The old glyph was one filled outline with a bow, a
+     stepped bit and a hole cut through it, and at 21px the steps and the
+     hole ran together into a blob. Now drawn as a key is drawn: a round
+     bow, a straight shaft and two teeth, in strokes of one weight. */
+  account: { tag: "YOUR ACCOUNT", color: "#F5B54D",
+    svg: '<circle cx="7.6" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11.8 12h9.4M17.4 12v3.3M20.4 12v2.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' },
+  /* Back on your account (build 327z5): "The 'welcome back your progress
+     is here' thing ... should be bigger like and better like the sync
+     one". Green, a cloud with a tick: your progress came down. */
+  welcome: { tag: "WELCOME BACK", color: "#5FD99A",
+    svg: '<path d="M7.3 18.4h10.2a4 4 0 0 0 .5-7.96A5.6 5.6 0 0 0 7.3 9.1a4.65 4.65 0 0 0 0 9.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.4 13.7l1.9 1.9 3.5-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+  /* A test saved with Save and exit (build 327z5): "Maybe when you save a
+     test and go back to main menu you'd get one for that?" A bookmark,
+     in the XP card's blue: something the app is keeping for you. */
+  savedtest: { tag: "SAVED TEST", color: "#7CB8FF",
+    svg: '<path d="M7.2 3.6h9.6a1.2 1.2 0 0 1 1.2 1.2v15.5l-6-4.3-6 4.3V4.8a1.2 1.2 0 0 1 1.2-1.2z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>' },
   /* The passive lines on the same glass (build 327z3, showDailyAlert's
      `kind`): the daily question in the "?"'s own colour with a clock,
      the rankings in the trophy's gold, a rank-up in the next rank's
@@ -110862,12 +110996,20 @@ const BANNER_KINDS = {
     svg: '<circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M12 7.4V12l3.1 2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>' },
   rankings: { tag: "RANKINGS", color: "#FFD34D",
     svg: '<path fill="currentColor" d="M6.8 3h10.4v5.6a5.2 5.2 0 0 1-10.4 0z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.8 4.9H4.4a2.5 2.5 0 0 0 2.7 4.9M17.2 4.9h2.4a2.5 2.5 0 0 1-2.7 4.9"/><path fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2zM8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>' },
+  /* Three chevrons climbing, the top one brightest (build 327z5): "I
+     don't like the rank up icon, maybe it's the star?" It was - a
+     five-point star crammed over two chevrons, a different shape from
+     everything else on the banner. No star now. */
   rankup: { tag: "RANK UP", color: "#FFD37A",
-    svg: '<path fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" d="M6.5 13.5 12 8l5.5 5.5M6.5 18.5 12 13l5.5 5.5"/><path fill="currentColor" d="M12 2.6l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 8.1l-2.15 1.15.4-2.4L8.5 5.15l2.4-.35z"/>' },
+    svg: '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M6 20.2 12 14.6l6 5.6" opacity=".4"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M6 15.2 12 9.6l6 5.6" opacity=".7"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M6 10.2 12 4.6l6 5.6"/>' },
   notice: { tag: "NOVA", color: "#8FC1FF",
     glyph: "M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18m-1.1 7.4v6.4h2.2v-6.4zM12 6.6a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6" }
 };
 
+/* The x is drawn (build 327z5). A typed "\u00d7" sits on the font's
+   baseline, not in the middle of its box, so it rode a pixel or two off
+   the line the icon and the words are centred on. */
+var BANNER_X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>';
 function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
   playSound(kind === "chat" || kind === "vroom" ? "chat.invite" : "ui.notice");
   const def = BANNER_KINDS[kind] || BANNER_KINDS.vroom;
@@ -110880,10 +111022,13 @@ function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
   icon.setAttribute("viewBox", "0 0 24 24");
   icon.setAttribute("class", "app-banner-icon");
   icon.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("d", def.glyph);
-  path.setAttribute("fill", "currentColor");
-  icon.appendChild(path);
+  if(def.svg) icon.innerHTML = def.svg;
+  else {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", def.glyph);
+    path.setAttribute("fill", "currentColor");
+    icon.appendChild(path);
+  }
 
   const wrap = document.createElement("span");
   wrap.className = "app-banner-body";
@@ -110907,7 +111052,7 @@ function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
   const shut = document.createElement("button");
   shut.type = "button"; shut.className = "app-banner-x";
   shut.setAttribute("aria-label", "Dismiss");
-  shut.textContent = "\u00d7";
+  shut.innerHTML = BANNER_X_SVG;
   shut.addEventListener("click", () => { el.remove(); if(onDismiss) onDismiss(); });
 
   el.append(icon, wrap, act, shut);
@@ -111149,9 +111294,13 @@ function clearBannerOnScreenChange(el){
 
 function placeTopBanner(el){
   const measured = (typeof topNoticeOffset === "function") ? topNoticeOffset(el) : null;
-  if(measured === null || measured === undefined) return;
-  const baseline = el.getBoundingClientRect().top;
-  if(measured > baseline) el.style.top = measured + "px";
+  if(measured !== null && measured !== undefined){
+    const baseline = el.getBoundingClientRect().top;
+    if(measured > baseline) el.style.top = measured + "px";
+  }
+  settleTopBanner(el);
+  /* again once it is in (fonts, the chat button arriving) */
+  requestAnimationFrame(() => settleTopBanner(el));
 }
 
 /* ---- THE CLASS-WIDE LISTENER IS GONE, AND THIS IS WHAT REPLACES IT ----
@@ -131027,7 +131176,7 @@ if(launchCode && !syncCode && !syncOff && !isStandaloneApp() && !store.onboardin
         attachLiveListener(syncCode);
         if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
           showHome();
-          showToast("Signed back in \u2014 your progress was restored.");
+          showWelcomeBackBanner("Signed back in \u2014 your progress was restored.");
         }
         return;
       }
@@ -131152,7 +131301,7 @@ if(syncCode && !adoptedLaunchCode){
       if(ok && store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
         applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
         showHome();
-        showToast("Signed back in — your progress was restored.");
+        showWelcomeBackBanner("Signed back in — your progress was restored.");
       }
       /* republishRowOnLaunch: AFTER the pull, so the row published is
          built from the merged, up-to-date store and not from whatever
@@ -131201,7 +131350,7 @@ if(!storageHadData){
           attachLiveListener(syncCode);
           if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
             showHome();
-            showToast("Signed back in \u2014 your progress was restored.");
+            showWelcomeBackBanner("Signed back in \u2014 your progress was restored.");
           }
         });
       });
@@ -131230,7 +131379,7 @@ if(!storageHadData){
         else if(ok && store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
           applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
           showHome();
-          showToast("Signed back in — your progress was restored.");
+          showWelcomeBackBanner("Signed back in — your progress was restored.");
         }
       });
       attachLiveListener(syncCode);
@@ -131240,7 +131389,7 @@ if(!storageHadData){
     if(document.querySelector(".picks")) showSetup();
     else if(store.onboardingComplete && onWelcome){
       showHome();
-      showToast("Welcome back \u2014 your progress was restored on this device.");
+      showWelcomeBackBanner("Welcome back \u2014 your progress was restored on this device.");
     }
   });
 }
