@@ -124,14 +124,15 @@ def sec_c(br):
 FOCUS = """(b) => { const c = document.querySelector('.profile-cover > .bnr'); return c ? getComputedStyle(c).transform : null; }"""
 
 
-# MOVED IN 327z7: the halo-like four (adept_rank, flare_horizon, zenith,
-# astral) sit centred - "some of them look better not centered some look worse"
-FOCUS_IDS = ("level80", "titan_rank", "flare_void", "flare_umbra",
-             "flare_genesis", "exam100", "elite_rank")
-CENTRED_IDS = ("tests250", "adept_rank", "flare_horizon", "zenith", "astral")
-# the three that fill the middle of their art (round 2): the share of the
-# banner's detail left under the circle is measured off the pixels
-HIDDEN_MAX = {"exam100": .075, "elite_rank": .075}  # b327z5: .08-.21; with the focus: .02-.065
+# MOVED IN 327z8: "the fix is gonna be the layout tbh. Because moving some
+# of the nicely centered stuff to the left." Nothing is moved any more: the
+# cover is the banner's whole 8:3 and the circle sits on its foot, below the
+# middle of the art, so every banner stays centred and its subject shows.
+FOCUS_IDS = ()
+CENTRED_IDS = ("level80", "titan_rank", "flare_void", "flare_umbra", "flare_genesis",
+               "exam100", "elite_rank", "tests250", "adept_rank", "flare_horizon",
+               "zenith", "astral", "celestial", "study60", "hundos250")
+HIDDEN_MAX = {}
 
 HIDDEN = """(sel) => { const cover = document.querySelector(sel.cover), art = document.querySelector(sel.art);
   const c = cover.getBoundingClientRect(), a = art.getBoundingClientRect();
@@ -173,6 +174,9 @@ def sec_d(br):
                 t2 = pg.evaluate("() => { const c = document.querySelector('.person-card-cover > .bnr'); return c ? getComputedStyle(c).transform : null; }")
                 hc = hidden_share(pg, ".person-card-cover", ".person-card-art") if bid in HIDDEN_MAX else None
                 pg.evaluate("() => document.querySelector('.invite-overlay')?.remove()")
+                geo = pg.evaluate("""() => { const c = document.querySelector('.profile-cover').getBoundingClientRect(), a = document.querySelector('.profile-hero-avatar').getBoundingClientRect(); return { ar: c.width / c.height, mid: c.top + c.height / 2, top: a.top }; }""")
+                check("D (%s): %s - the whole 8:3 banner, the circle below its middle" % (dev, bid),
+                      abs(geo["ar"] - 8 / 3) < .05 and geo["top"] > geo["mid"], geo)
                 ok = (t not in (None, "none") and t2 not in (None, "none")) if moved else (t in ("none",) and t2 in ("none",))
                 check("D (%s): %s %s on the Profile cover and the person card" % (dev, bid, "is moved clear of the circle" if moved else "is left as drawn"), ok, (t, t2))
                 if hp is not None:

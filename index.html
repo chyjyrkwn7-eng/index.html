@@ -21703,6 +21703,52 @@
   .pick-nexttest-what::before{ content:""; width:.42rem; height:.42rem; border-radius:50%; background:#F5B54D; box-shadow:0 0 6px rgba(245,181,77,.7); flex:none; }
   .pick-nexttest-when{ white-space:nowrap; font-weight:700; color:rgba(255,226,170,.82); letter-spacing:.01em; }
   @media (min-width:40rem){ .picks > label.pick > .pick-nexttest{ font-size:.72rem; margin-top:.55rem; } }
+  /* THE NEXT TEST SITS BESIDE THE CIRCLE (build 327z8). "Where it says next
+     test on a box, that should probably be relocated to the right of the
+     checkmark bubble ... The next test thing could look better too." The
+     card's top row is now circle, the mark, badge; the "next" row under the
+     name is gone, so the card is no taller for carrying it. The mark is two
+     quiet lines - NEXT TEST in the calendar's test amber over the date - with
+     a small amber dot, no box round it. */
+  [data-layout="modern"] .picks > label.pick{
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-rows:auto auto minmax(0,1fr) auto auto;
+    grid-template-areas:"box next badge" "name name name" "ver ver ver" "count count count" "bar bar bar";
+  }
+  @media (min-width:40rem){
+    [data-layout="modern"] .picks > label.pick{ grid-template-rows:auto auto minmax(0,1fr) auto 1.15rem; }
+  }
+  .picks > label.pick > .pick-nexttest{
+    grid-area:next; align-self:center; justify-self:start; margin:0 0 0 .55rem; padding:0; border:0; background:none; border-radius:0;
+    display:grid; grid-template-columns:auto auto; grid-template-rows:auto auto; column-gap:.3rem; row-gap:.06rem; align-items:center;
+    font-size:.6rem; line-height:1.1; letter-spacing:.06em; min-width:0;
+  }
+  .picks > label.pick > .pick-nexttest .pick-nexttest-what{ grid-column:1 / -1; color:#F5B54D; font-weight:800; gap:.28rem; }
+  .picks > label.pick > .pick-nexttest .pick-nexttest-what::before{ width:.36rem; height:.36rem; box-shadow:0 0 5px rgba(245,181,77,.75); }
+  .picks > label.pick > .pick-nexttest .pick-nexttest-when{ grid-column:1 / -1; padding-left:.64rem; color:rgba(255,255,255,.88); font-weight:700; font-size:1.12em; letter-spacing:.01em; }
+  @media (min-width:40rem){ .picks > label.pick > .pick-nexttest{ font-size:.68rem; margin-left:.7rem; margin-top:0; } }
+  @media (max-width:26.5rem){
+    .picks > label.pick > .pick-nexttest{ font-size:.54rem; letter-spacing:.035em; margin-left:.4rem; }
+    .picks > label.pick:has(> .pick-nexttest) .pick-badge{ margin-left:.15rem; width:2.1rem; height:2.1rem; margin-right:-.3rem; }
+    .picks > label.pick > .pick-nexttest .pick-nexttest-what::before{ display:none; }
+    .picks > label.pick > .pick-nexttest .pick-nexttest-when{ padding-left:0; }
+  }
+  /* THE SLIDES VERSION (build 327z8): "how it mentions the slides version in
+     a white box.. that could look better." A frosted chip with a slide icon,
+     white words on light glass, instead of a solid white slab. */
+  [data-layout="modern"] .picks > label.pick > .pick-version{
+    display:inline-block; text-wrap:balance;
+    padding:.24rem .6rem .24rem .5rem; margin-left:calc(-.5rem - 1px); border-radius:.62rem;
+    color:#F3F6FA; background:linear-gradient(180deg, rgba(255,255,255,.17), rgba(255,255,255,.08));
+    border:1px solid rgba(255,255,255,.26); box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+    font-size:.64rem; font-weight:700; letter-spacing:.02em;
+  }
+  [data-layout="modern"] .picks > label.pick > .pick-version::before{
+    content:""; display:inline-block; vertical-align:-.06rem; margin-right:.34rem; width:.78rem; height:.6rem; border-radius:2px;
+    border:1.5px solid rgba(255,255,255,.85); box-sizing:border-box;
+    background:linear-gradient(rgba(255,255,255,.85), rgba(255,255,255,.85)) center 62% / 55% 1.5px no-repeat;
+  }
+  @media (min-width:40rem){ [data-layout="modern"] .picks > label.pick > .pick-version{ font-size:.72rem; } }
   /* the "more units coming" tile keeps its own quiet layout, on the same corner */
   [data-layout="modern"] .picks > .pick.pick-tba{ border-radius:18px; }
   @media (min-width:40rem){
@@ -23244,6 +23290,15 @@
     .profile-cover{ height:9.6rem; margin:0 -2rem; }
     .profile-cover-mark{ width:11rem; height:11rem; right:-1rem; top:-2rem; }
     .profile-hero.has-cover .profile-hero-top{ margin-top:-5.6rem; }
+  }
+  /* THE WHOLE BANNER, THE CIRCLE ON ITS FOOT (build 327z8). With a banner
+     on, the strip is the banner's own 8:3 and the portrait overlaps only
+     the faded bottom of it, so the subject drawn in the middle (the stair,
+     the city, the rank's body, an ultimate's ring) sits above the head. */
+  .profile-cover.has-banner{ height:auto; aspect-ratio:8/3; }
+  .profile-hero.has-cover:has(> .profile-cover.has-banner) .profile-hero-top{ margin-top:-3rem; }
+  @media (min-width:40rem){
+    .profile-hero.has-cover:has(> .profile-cover.has-banner) .profile-hero-top{ margin-top:-3.6rem; }
   }
   /* The class box, below the identity card. Its own surface, because it
      is about the course rather than about you - the same reasoning that
@@ -26073,6 +26128,9 @@
     -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
     -webkit-mask-size:100% 100%; mask-size:100% 100%;
   }
+  /* build 327z8: the whole banner, as on the Profile cover */
+  .person-card-cover:has(> .bnr:not(.bnr-theme)){ height:auto; aspect-ratio:8/3; }
+  .person-card.has-cover:has(> .person-card-cover > .bnr:not(.bnr-theme)) .person-card-art{ margin-top:-2.6rem; }
   .person-card.has-cover .person-card-art{
     margin-top:-4.3rem; z-index:1; border-radius:50%;
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #fff) 20%, #1C212B), #11141B 72%);
@@ -59256,6 +59314,21 @@ function badgeWallLevel(badges, rankFloor){
   const r = i >= 0 ? TIER_UNLOCKS[TIER_ORDER_FULL[i]] : null;
   return r ? Math.min(LEVEL_CAP, Number(r.level) || LEVEL_CAP) : LEVEL_CAP;
 }
+/* A ROW'S LEVEL IS HELD TO ITS BADGES ON READ (build 327z8). "Napoleon
+   still has a higher level than the amount of badges." A phone still on an
+   older build publishes the level that build worked out, past the wall;
+   every reader takes the lower of that and the wall its own badges and
+   rank floor allow, so the board, the person card and Friends agree with
+   what that person's Profile shows on this build. A gifted floor
+   (levelFloor, if a row ever carries one) still counts. */
+function fixBoardLevel(e){
+  try{
+    if(!e || typeof e.level !== "number") return e;
+    const cap = Math.max(badgeWallLevel(e.badges, e.rankFloor), Number(e.levelFloor) || 0);
+    if(e.level > cap){ e.rawLevel = e.level; e.level = cap; }
+  }catch(x){}
+  return e;
+}
 /* Build 324's rule (one block further), for the grandfather floor only. */
 function badgeWallLevel324(badges){
   const b = Math.max(0, Number(badges) || 0);
@@ -64520,24 +64593,13 @@ function bannerTintOf(id){
    (the share of the banner's detail left under the circle). Banners not
    listed sit as drawn; the tiles, the unlock card and lobby rows are
    untouched. A new banner whose subject is in the middle wants a row. */
-const BANNER_FOCUS = {
-  level80:       [1.3, -0.15, 0.15],
-  titan_rank:    [1.3, 0.15, -0.15],
-  flare_void:    [1.3, -0.15, -0.15],
-  flare_umbra:   [1.3, -0.15, 0],
-  flare_genesis: [1.3, -0.15, -0.15],
-  /* Madison: "Redraw the art for the 3 or just fix the layout". These three
-     fill the middle, so the cover takes them further in and to the left:
-     the phoenix and the black hole whole beside the circle.
-     ROUND 2 (build 327z7): "some of them look better not centered some look
-     worse". A subject that frames the head like a halo or a crown (the
-     Sapphire galaxy, Horizon's ring, Zenith's ring, Astral's beam and wings)
-     reads best centred behind the circle, so those four are drawn as they
-     are; an OBJECT (the stair, the star, the moon, the planet, a black hole,
-     the phoenix) reads best whole beside it, so those keep their row. */
-  exam100:       [1.6, -0.3, 0.1],
-  elite_rank:    [1.6, -0.3, -0.15]
-};
+/* BUILD 327z8: THE LAYOUT, NOT THE ART. "I think the fix is gonna be the
+   layout tbh. Because moving some of the nicely centered stuff to the
+   left." The cover now shows the whole 8:3 banner and the circle overlaps
+   only its faded foot, so every banner sits centred above the character
+   as drawn. Nothing is moved; the table stays for a banner that ever
+   needs it. */
+const BANNER_FOCUS = {};
 function applyBannerFocus(art, id){
   const f = art && BANNER_FOCUS[id];
   if(!f) return art;
@@ -76035,14 +76097,10 @@ function showReleaseHistory(){
     }
   });
 
-  /* "While looking at version history, button is needed at the button, a
-     black button that says back to home" (build 321) - the app's black
-     button (Quit test's .next.ghost) */
-  const home = document.createElement("button");
-  home.type = "button"; home.className = "next ghost releasehistory-home"; home.id = "releasehistory-home";
-  home.textContent = "Back to Home";
-  home.addEventListener("click", () => showHome());
-  panel.appendChild(home);
+  /* ONE WAY BACK (build 327z8): "there's a home button or back to home at the
+     button and the top ... There shouldn't be two." The Back link at the
+     top stays, like every other screen; build 321's black Back to Home at
+     the foot is gone. */
 
   stage.replaceChildren(panel);
   toTop();
@@ -76347,8 +76405,13 @@ let recUserAt = -1e9;
 try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, () => { recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
 function recordingShouldWait(){
   const now = performance.now();
-  if(now - recUserAt < 1000) return 1000 - (now - recUserAt);
-  try{ if(now - stageMountedAt < 700) return 700 - (now - stageMountedAt); }catch(e){}
+  /* 2s after a touch and 1.6s after a screen goes in (build 327z8, was
+     1s / 700ms): a tab switch's own work - the new screen's first paint,
+     its pictures decoding - runs past a second on a phone, and recordings
+     starting at 1s landed on the tail of it, which read as the tab bar
+     lagging after the tap. */
+  if(now - recUserAt < 2000) return 2000 - (now - recUserAt);
+  try{ if(now - stageMountedAt < 1600) return 1600 - (now - stageMountedAt); }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
 }
@@ -76669,6 +76732,40 @@ function heroSettleSkip(root){
     });
   }catch(e){}
 }
+/* THE LOOPS STOP WHILE THE APP IS AWAY (build 327z8). Madison: "if I'm on
+   the main menu, leave, and come back, it lags to the new positions."
+   While the app was in the background the loops' clock ran on, so coming
+   back every ring, bubble and float jumped to where the wall clock had got
+   to - in the very frames the phone was busy waking the page, which is the
+   lag. Now every running loop is paused as the page is hidden and played
+   again as it comes back, from the same pose; the time away is taken off
+   the loop clock (loopHiddenMs), so a Home built afterwards lands on the
+   same poses the paused loops resume from. */
+let loopHiddenMs = 0, loopHiddenAt = 0;
+const loopPausedByUs = new Set();
+function loopWallMs(lag){ return Date.now() - LOOP_EPOCH - (lag || 0) - loopHiddenMs - (loopHiddenAt ? Date.now() - loopHiddenAt : 0); }
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden){
+    if(loopHiddenAt) return;
+    loopHiddenAt = Date.now();
+    try{
+      document.getAnimations().forEach(a => {
+        try{
+          const t = a.effect && a.effect.getTiming();
+          if(!t || t.iterations !== Infinity || a.playState !== "running") return;
+          a.pause(); loopPausedByUs.add(a);
+        }catch(e){}
+      });
+    }catch(e){}
+  } else {
+    if(!loopHiddenAt) return;
+    loopHiddenMs += Date.now() - loopHiddenAt; loopHiddenAt = 0;
+    loopPausedByUs.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    loopPausedByUs.clear();
+    /* waking is work enough: nothing optional for a couple of seconds */
+    try{ recUserAt = performance.now(); }catch(e){}
+  }
+});
 function syncLoopClock(root){
   if(!root || !root.getAnimations) return;
   let anims;
@@ -76681,7 +76778,7 @@ function syncLoopClock(root){
      off puts it where the wall clock says on the frame it is first seen. */
   let lag = 0;
   try{ const tl = document.timeline && document.timeline.currentTime; if(typeof tl === "number") lag = Math.max(0, performance.now() - tl); }catch(e){}
-  const wall = Date.now() - LOOP_EPOCH - lag;
+  const wall = loopWallMs(lag);
   anims.forEach(a => {
     try{
       const t = a.effect && a.effect.getTiming();
@@ -89189,8 +89286,13 @@ function startChatDock(){
     if(dragRaf){ cancelAnimationFrame(dragRaf); dragRaf = 0; const f = dragPending; dragPending = null; if(f) f(); }
     persistChatHeight();
     /* stale velocity (the finger stopped before lifting) counts for nothing */
-    const flick = performance.now() - dragLastT < 90 && dragVel > 0.55 && dragDy > 24;
-    const closing = dragDy > 70 || flick;
+    /* the question swipe's rule (build 327z8, as the start sheet): a slow
+       pull past 40% of the sheet, or a real flick (.6px/ms and 12% of the
+       way); a flick back up cancels */
+    const ph = panel.getBoundingClientRect().height || innerHeight;
+    const recent = performance.now() - dragLastT < 90;
+    const flick = recent && dragVel > 0.6 && dragDy > Math.max(36, ph * 0.12);
+    const closing = !(recent && dragVel < -0.3) && (dragDy > ph * 0.4 || flick);
     panel.classList.remove("is-dragging", "is-flat");
     /* The glass stays flat through the slide that follows as well:
        see .is-settling. Only after a drag that went flat - a nudge that
@@ -97391,7 +97493,7 @@ function orbitBoostStep(ts){
       try{
         let lag = 0; const tl = document.timeline && document.timeline.currentTime;
         if(typeof tl === "number") lag = Math.max(0, performance.now() - tl);
-        const ct = Number(ref.currentTime), ahead = ct - (Date.now() - LOOP_EPOCH - lag);
+        const ct = Number(ref.currentTime), ahead = ct - loopWallMs(lag);
         if(isFinite(ahead)) orbitAdvanceMs = ahead;
       }catch(e){}
     }
@@ -97453,7 +97555,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z7";
+const APP_BUILD = "2026-10-23-327z8";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -111518,7 +111620,7 @@ function fetchBoardForInvites(force){
       snap.forEach(doc => {
         if(isLegacyBoardId(doc.id)) return;
         const e = Object.assign({ pub: doc.id }, doc.data());
-        e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
+        e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); fixBoardLevel(e);
         next.push(e);
       });
       /* An empty answer never takes the class away - the same rule the
@@ -114188,7 +114290,7 @@ function openInviteFriendsSheet(roomCode){
           snap.forEach(doc => {
             if(isLegacyBoardId(doc.id)) return;
             const e = Object.assign({ pub: doc.id }, doc.data());
-            e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
+            e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); fixBoardLevel(e);
             next.push(e);
           });
           const served = !(snap.metadata && snap.metadata.fromCache);
@@ -118006,7 +118108,7 @@ function renderLeaderboardList(list){
   try{
     leaderboardLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
       const entries = [];
-      snap.forEach(doc => { if(!isLegacyBoardId(doc.id)) entries.push(doc.data()); });
+      snap.forEach(doc => { if(!isLegacyBoardId(doc.id)) entries.push(fixBoardLevel(doc.data())); });
       renderLeaderboardRows(rows, entries);
     }, { onError: showError });
   } catch(e){
@@ -120137,8 +120239,16 @@ function attachSheetSwipe(sheet, onDismiss){
     if(!sheet.classList.contains("is-dragging")){ sheet.style.transition = ""; sheet.style.transform = ""; return; }
     const g = ++gen;
     const h = sheet.getBoundingClientRect().height || innerHeight;
-    const flick = performance.now() - lastT < 90 && vel > 0.55 && dy > 24;
-    if(dy > Math.min(110, h * 0.22) || flick){
+    /* THE QUESTION SWIPE'S RULE (build 327z8): "it goes away even if you
+       barely swipe down, it should be like if you swipe really fast or
+       slowly slide down it does." A slow pull closes it past 40% of its
+       height (Q_SWIPE_COMMIT is 45% of a push); a flick needs real speed
+       (.6px/ms over the last moves, as a question's flick) AND 12% of the
+       way; a flick back up cancels whatever the distance. */
+    const recent = performance.now() - lastT < 90;
+    const flick = recent && vel > 0.6 && dy > Math.max(36, h * 0.12);
+    const back = recent && vel < -0.3;
+    if(!back && (dy > h * 0.4 || flick)){
       /* out at about the finger's own speed: never under .18s or over .3s */
       const ms = Math.round(Math.max(180, Math.min(300, (h - dy) / Math.max(1.6, vel || 0))));
       sheet.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
@@ -120962,7 +121072,7 @@ function attachFriendsBoardListener(){
       snap.forEach(doc => {
         if(isLegacyBoardId(doc.id)) return;
         const e = Object.assign({ pub: doc.id }, doc.data());
-        e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
+        e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); fixBoardLevel(e);
         next.push(e);
       });
       /* AN EMPTY SNAPSHOT OVER A FULL ONE IS A CACHE ARTIFACT, NOT AN
@@ -124978,7 +125088,7 @@ function showRankings(defaultBoard){
           /* Expire a stale week here rather than at every read site -
              the board sorts on e[board.field], so the field itself has
              to already be the right number. */
-          e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e);
+          e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); fixBoardLevel(e);
           next.push(e);
         });
         /* ---- AN EMPTY ANSWER NEVER TAKES THE BOARD AWAY ----
@@ -130561,7 +130671,16 @@ function applyGlassRefraction(el, mapImgId){
          lens setting off from Home. Now it pops out of a platter-sized pill
          at the tab that was touched, and the lit tab's platter fades away
          under it; pressing the lit tab is exactly as before. */
-      s0 = { cx: ti.c, W: ti.pw, H: g.pillH, st: 0 }; v0 = { cx: 0, W: 0, H: 0, st: 0 };
+      /* FROM THE LIT TAB, LIKE THE REFERENCE (build 327z8). Her iOS 26
+         recording, frame by frame: tap another tab and the grey platter
+         LIFTS where it is and slides over to the tapped tab as glass,
+         stretched along the way, then shrinks into the platter there. The
+         327z5 version popped it out under the finger instead. It still
+         gets there in ~4 frames (LENS.glide), and a drag still follows the
+         finger one to one. */
+      const lit0 = navrow.querySelector(".bottomtab.active"), li0 = lit0 && lensInfo(lit0);
+      const from = li0 || ti;
+      s0 = { cx: from.c, W: from.pw, H: g.pillH, st: 0 }; v0 = { cx: 0, W: 0, H: 0, st: 0 };
       lensS = s0; lensWrite(s0);
       LENS_GLASS.concat(LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
       LENS_GLASS.forEach(el => { el.style.opacity = "0"; });
@@ -130569,9 +130688,7 @@ function applyGlassRefraction(el, mapImgId){
       lens.classList.add("is-up");
     }
     lensFade(lens, [[0, 1], [1, 1]]);
-    const litTab = navrow.querySelector(".bottomtab.active");
-    if(!now && litTab && litTab !== target){ const so = lensOp(slider); lensFade(slider, [[0, so], [140, 0]]); }
-    else lensFade(slider, [[0, 0], [1, 0]]);
+    lensFade(slider, [[0, 0], [1, 0]]);
     /* the grey clears to glass in about two frames (b0324-b0325) */
     const g0 = lensOp(LENS_GLASS[0]);
     LENS_GLASS.forEach(el => lensFade(el, [[0, g0], [70, 1]]));

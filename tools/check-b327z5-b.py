@@ -154,7 +154,10 @@ def section_a(br):
         patch_rest = mean(rest, (px0, py0, px0 + 10 * dpr, py0 + 4 * dpr))
         # 1. a drag down from the middle of the sheet
         pg.evaluate(TRACE)
-        FD = 160
+        # MOVED IN 327z8: "it goes away even if you barely swipe down" - a slow
+        # pull now has to pass 40% of the sheet (the question swipe's rule), so
+        # this pull goes 46% of its height; a short slow one is checked below.
+        FD = int(o["h"] * 0.46)
         drag_to(cdp, o["x"], o["y"], 0, FD)
         time.sleep(0.12)
         held = pg.evaluate(READ_SHEET)
@@ -258,13 +261,15 @@ def section_b(br):
         # 1. list at its top: a drag down in it pulls the sheet and closes it
         pg.evaluate("() => { document.querySelector('.chatdock-panel .vroom-chat-list').scrollTop = 0; }")
         time.sleep(0.3)
-        drag_to(cdp, o["lx"], o["ly"], 0, 180)
+        PH = pg.evaluate("() => document.querySelector('.chatdock-panel').getBoundingClientRect().height")
+        CD = max(180, int(PH * 0.46))  # MOVED IN 327z8: past 40% of the sheet, as the start sheet
+        drag_to(cdp, o["lx"], max(40, o["ly"] - CD // 3), 0, CD)
         time.sleep(0.12)
         held = pg.evaluate(READ_CHAT)
         tend(cdp); time.sleep(0.8)
         aft = pg.evaluate(READ_CHAT)
-        check("%s: with the message list at its top, a drag down in the middle of it pulls the sheet (%.0fpx for 180)" % (label, held["ty"]),
-              held["ty"] > 120, held)
+        check("%s: with the message list at its top, a drag down in the middle of it pulls the sheet (%.0fpx for %d)" % (label, held["ty"], CD),
+              held["ty"] > CD * 0.66, held)
         check("%s: and let go, it closes" % label, aft["open"] is False, aft)
         # 2. list scrolled down: the same drag scrolls the list
         o = pg.evaluate(OPEN_CHAT)

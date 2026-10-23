@@ -576,11 +576,10 @@ def main():
 
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');
-                          /* build 321: a black Back to Home at the bottom, asked for by name */
                           const h=document.getElementById('releasehistory-home');
-                          return {back, home: !!h && /Back to Home/.test(h.textContent)};}""")
-                        # MOVED IN 327g: round 9 put a Back link at the top too ("Release History has a back link at the top as well as the button at the foot").
-                        if not misc["home"]: fails.append(f"{tag}: Release History has no Back to Home button")
+                          return {back, home: !!h};}""")
+                        # MOVED IN 327z8: "There shouldn't be two" - the Back link at the top, no Back to Home at the foot.
+                        if not misc["back"] or misc["home"]: fails.append(f"{tag}: Release History should have one way back (the top link only): {misc}")
 
                         real = [e for e in errs if not any(k in e.lower() for k in
                                 ("firebase", "firestore", "gstatic", "failed to fetch", "net::"))]

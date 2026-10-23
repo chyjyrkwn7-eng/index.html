@@ -26758,3 +26758,38 @@ lobby rows are unchanged.
   exam100, elite_rank) keep theirs. check-b327z5-d D holds both lists.
 - 327z6-d had been merged onto main without a build bump, so it is in this
   build's number.
+
+### Build 327z8 - Madison's list: tab bar, resume, the board's levels, one way back, banners by layout, the unit card's tags, a swipe that means it
+
+- **Leaving and coming back no longer jumps Home's loops.** Every loop is on
+  the wall clock (`syncLoopClock`), and while the app was hidden that clock
+  ran on, so coming back the rings, flares and bubbles snapped to where they
+  "would have been". The time hidden is now taken off (`loopHiddenMs`,
+  `loopWallMs(lag)`), and every running infinite animation is paused while
+  hidden and played on return, so Home carries on exactly where it stopped.
+  The return also counts as a touch for `recordingShouldWait()`, which now
+  holds background recording 2s after a touch and 1.6s after a screen mounts.
+- **The tab bar's lens glides from the lit tab again** (`lensDown`: `from =
+  li0 || ti`), as in the reference video; check-b325-f F5 moved back.
+- **A row on the board never shows a level its badges cannot hold**
+  (`fixBoardLevel`, every leaderboard read): a row published by an older
+  build (Napoleon's) is clamped to `max(badgeWallLevel(badges, rankFloor),
+  levelFloor)`; the published value is kept as `rawLevel`. The row itself is
+  corrected the next time that person's device pushes.
+- **Release history has one way back**: the top back link. The bottom "Back
+  to Home" button is gone (check-fixes moved).
+- **BANNERS BY LAYOUT, NOT BY MOVING THE ART** (supersedes 327z5-327z7's
+  `BANNER_FOCUS` rows; the table is empty, `applyBannerFocus` stays). With a
+  banner on, the Profile cover and the person card are the banner's own 8:3
+  (`aspect-ratio:8/3`, height auto) and the portrait overlaps only the faded
+  foot (-3rem phone, -3.6rem tablet; person card -2.6rem), so every banner is
+  centred as drawn and its subject sits above the head. The default theme
+  cover (no banner) is unchanged. check-b327z5-d D asserts no transform, 8:3,
+  and the circle's top below the art's middle.
+- **The unit card's NEXT TEST tag sits beside the circle**, two lines (amber
+  NEXT TEST, white date), and the Penal Code version line is a frosted chip
+  with a slide icon.
+- **Pulling a sheet down closes it like a question swipe**: past 40% of its
+  height, or a real flick (0.6px/ms, at least 12% of it, in the last 90ms);
+  a flick back up never closes. Start sheet (`attachSheetSwipe`) and chat
+  (`endDrag`). check-b327z5-b pulls 46%.
