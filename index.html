@@ -67282,7 +67282,14 @@ function sndGraph(ctx, o){
     merge.connect(revOut); revOut.connect(master);
   } else {
     rev = ctx.createConvolver();
-    rev.buffer = sndImpulse(ctx, 2.6, 2.4);
+    /* o.lazyRev (the live context): the impulse is made and handed to the
+       convolver a beat after the first tap, never inside it - setting a
+       ConvolverNode's buffer prepares its FFT on the main thread, and in the
+       first gesture's handler that was most of a 100-250ms tap at 4x CPU */
+    if(o.lazyRev){
+      const cv = rev;
+      setTimeout(() => { try { cv.buffer = sndImpulse(ctx, 2.6, 2.4); } catch(e){} }, 350);
+    } else rev.buffer = sndImpulse(ctx, 2.6, 2.4);
     const revOut = ctx.createGain(); revOut.gain.value = .55;
     rev.connect(revOut); revOut.connect(master);
   }
@@ -70483,7 +70490,7 @@ const NovaSound = (function(){
     /* the ring/silent switch mutes us, and somebody's music keeps playing */
     try{ if(navigator.audioSession) navigator.audioSession.type = "ambient"; }catch(e){}
     try{ st.ctx = new C({ latencyHint: "interactive" }); }catch(e){ try{ st.ctx = new C(); }catch(e2){ return null; } }
-    st.G = sndGraph(st.ctx, { level: level(volume()) });
+    st.G = sndGraph(st.ctx, { level: level(volume()), lazyRev: true });
     return st.ctx;
   }
   function resume(){
@@ -70660,6 +70667,17 @@ const NovaSound = (function(){
     if(st.amb && st.amb.id === id) return;
     if(st.amb) stopAmbience(true);
     const want = st.ambWant;
+    /* the loop not rendered yet: build its graph in an idle slot, never in
+       the tap that woke the context (it was ~270ms of the first tap at 4x
+       CPU - a frozen tab bar on the first touch of a session) */
+    if(!ambRaw[id]){
+      later(() => {
+        if(st.ambWant !== want || !on()) return;
+        try{ ambRendered(id); }catch(e){ return; }
+        if(ambRaw[id]) startAmbience(id, { owner: want.owner });
+      });
+      return;
+    }
     ambBuffer(id).then(buf => {
       if(st.ambWant !== want || !on() || st.amb || !st.ctx) return;
       const src = ctx.createBufferSource(), g = ctx.createGain();
@@ -130191,7 +130209,9 @@ function applyGlassRefraction(el, mapImgId){
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
-    if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP) return;
+    /* the lens is under the finger from the first pixel (build 327z5); only
+       turning the touch into a drag waits for the slop */
+    if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP){ if(lensG && Math.abs(e.clientX - tabDragX0) > 1.5) lensMove(e.clientX); return; }
     /* Pointer capture only once a drag is actually confirmed (a plain
        tap's click must still reach its own button), so a finger that
        wanders off the bar mid-drag keeps delivering moves and the up. */
@@ -130529,10 +130549,13 @@ function applyGlassRefraction(el, mapImgId){
     let s0, v0;
     if(now && now.s){ s0 = now.s; v0 = now.v; }
     else {
-      /* lift out of the platter: exactly its place, size and grey; the
-         platter steps out in the same frame, so there is one piece of glass */
-      const ai = lensInfo(navrow.querySelector(".bottomtab.active")) || ti;
-      s0 = { cx: ai.c, W: ai.pw, H: g.pillH, st: 0 }; v0 = { cx: 0, W: 0, H: 0, st: 0 };
+      /* UNDER THE FINGER (build 327z5). "The bubble doesn't follow where
+         your click." It used to lift out of the lit tab's platter and glide
+         across to the pressed one, so a tap on Calendar from Home showed a
+         lens setting off from Home. Now it pops out of a platter-sized pill
+         at the tab that was touched, and the lit tab's platter fades away
+         under it; pressing the lit tab is exactly as before. */
+      s0 = { cx: ti.c, W: ti.pw, H: g.pillH, st: 0 }; v0 = { cx: 0, W: 0, H: 0, st: 0 };
       lensS = s0; lensWrite(s0);
       LENS_GLASS.concat(LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
       LENS_GLASS.forEach(el => { el.style.opacity = "0"; });
@@ -130540,7 +130563,9 @@ function applyGlassRefraction(el, mapImgId){
       lens.classList.add("is-up");
     }
     lensFade(lens, [[0, 1], [1, 1]]);
-    lensFade(slider, [[0, 0], [1, 0]]);
+    const litTab = navrow.querySelector(".bottomtab.active");
+    if(!now && litTab && litTab !== target){ const so = lensOp(slider); lensFade(slider, [[0, so], [140, 0]]); }
+    else lensFade(slider, [[0, 0], [1, 0]]);
     /* the grey clears to glass in about two frames (b0324-b0325) */
     const g0 = lensOp(LENS_GLASS[0]);
     LENS_GLASS.forEach(el => lensFade(el, [[0, g0], [70, 1]]));
@@ -130567,7 +130592,14 @@ function applyGlassRefraction(el, mapImgId){
       lensStopTrack();
       if(!lensS) return;
       lensS = Object.assign({ st: 0 }, lensS); lensV = Object.assign({ cx: 0, W: 0, H: 0, st: 0 }, lensV);
-      lensFollow = { x, last: performance.now(), raf: 0 };
+      /* ONE TO ONE WITH THE FINGER (build 327z5). The centre used to chase
+         the finger on a spring and trailed it by a few frames ("not
+         smooth ... the bubble doesn't follow"). Now it is the finger's own
+         x, every frame; the only give is the offset between where the lens
+         was and where the finger first moved, which closes in ~70ms so
+         nothing jumps. Its size still springs, and it still stretches with
+         the finger's speed. */
+      lensFollow = { x, last: performance.now(), raf: 0, off: lensS.cx - x, px: x, vf: 0 };
       const P = { cx: LENS.follow, W: LENS.pop, H: LENS.pop, st: LENS.st };
       const tick = () => {
         const f = lensFollow;
@@ -130575,13 +130607,20 @@ function applyGlassRefraction(el, mapImgId){
         const t = performance.now(), dt = Math.min(.034, Math.max(.001, (t - f.last) / 1000));
         f.last = t;
         const g = lensG;
+        f.off *= Math.exp(-dt / .07);
+        /* the finger's speed, smoothed a little, is what stretches it */
+        const vi = (f.x - f.px) / dt; f.px = f.x;
+        f.vf += (vi - f.vf) * Math.min(1, dt / .05);
         /* the finger can go past the end tabs; the lens follows a little way
            out of the bar (the reference's runs 16pt past it) */
-        let tx = f.x;
+        let tx = f.x + f.off;
         if(tx < g.lo){ const o = g.lo - tx; tx = g.lo - LENS.give * o / (o + 50); }
         else if(tx > g.hi){ const o = tx - g.hi; tx = g.hi + LENS.give * o / (o + 50); }
         const sub = 4, h = dt / sub;
-        for(let j = 0; j < sub; j++) lensStep(lensS, lensV, { cx: tx, W: lensWAt(lensS.cx), H: g.lensH }, P, h);
+        for(let j = 0; j < sub; j++) lensStep(lensS, lensV, { cx: lensS.cx, W: lensWAt(lensS.cx), H: g.lensH }, P, h);
+        lensV.cx = (tx - lensS.cx) / dt;
+        lensS.cx = tx;
+        lensS.st += (lensStretchFor(f.vf) - lensS.st) * Math.min(1, dt / .06);
         lensWrite(lensS);
         lensMagnify(lensS.cx, lensLift(g, lensS.H), 0, 0);
         f.raf = requestAnimationFrame(tick);
