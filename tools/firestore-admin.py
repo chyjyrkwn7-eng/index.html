@@ -21,6 +21,7 @@ Usage
   python3 tools/firestore-admin.py find <username>
   python3 tools/firestore-admin.py bugs [N]
   python3 tools/firestore-admin.py audit [--backup FILE]
+  python3 tools/firestore-admin.py fixlevels [--yes]
   python3 tools/firestore-admin.py prune [--days N] [--yes]
   python3 tools/firestore-admin.py purge --yes
   python3 tools/firestore-admin.py move <from-public-id> <to-public-id> [--yes]
@@ -1106,6 +1107,61 @@ def cmd_audit(argv):
     return 1 if problems else 0
 
 
+def cmd_fixlevels(argv):
+    """Bring every rankings row's `level` to the level the app itself works
+    out for that account (effective_level: the curve, held at the next
+    rank's level by the badges, no grandfather floor since build 327).
+
+    A row is published by the phone that owns the account, from that
+    phone's own build, so after a rule change every row keeps its old
+    level until that phone opens the new build. This corrects the ones
+    that have not yet. It writes ONLY the `level` field (updateMask), and
+    only on a row that is level with its account (same XP) - a row ahead
+    of or behind its account belongs to a phone that has not saved, and is
+    left for that phone. Dry run unless --yes; the rows are saved to a
+    backup file first. A phone on the new build writes the same number, so
+    nothing is ever fought over; a phone on an older build writes its old
+    level back the next time it publishes, until it updates."""
+    if not admin_ready():
+        print("fixlevels needs the admin key (NOVA_ADMIN_EMAIL / NOVA_ADMIN_PRIVATE_KEY)")
+        return 2
+    prog = docs("progress"); lb = dict(docs("leaderboard"))
+    todo, backup = [], {}
+    for code, f in prog:
+        if "__" in code or not f.get("onboardingComplete") or not f.get("publicId"):
+            continue
+        pid = f["publicId"]; r = lb.get(pid)
+        if not r or r.get("level") is None:
+            continue
+        a = _acct_summary(f)
+        if (r.get("xp") or 0) != a["xp"]:
+            continue
+        want = effective_level(f)
+        if r.get("level") != want:
+            todo.append((pid, r.get("firstName") or "?", r.get("level"), want))
+            backup[pid] = {"firstName": r.get("firstName"), "level": r.get("level"), "xp": r.get("xp")}
+    for pid, name, have, want in todo:
+        print("  %-24s level %s -> %s" % (name, have, want))
+    print("%d row(s) to correct" % len(todo))
+    if not todo:
+        return 0
+    if "--yes" not in argv:
+        print("dry run - nothing written. Re-run with --yes to write.")
+        return 0
+    path = "levels-backup-%s.json" % time.strftime("%Y%m%d-%H%M%S")
+    with open(path, "w") as fh:
+        json.dump(backup, fh, indent=1)
+    print("backed up the old levels to %s" % path)
+    bad = 0
+    for pid, name, have, want in todo:
+        st = _write_fields("leaderboard", pid, {"level": int(want)}, mask=["level"])
+        if st != 200:
+            bad += 1
+            print("  %s: write failed (%s)" % (name, st))
+    print("done, %d failed" % bad)
+    return 1 if bad else 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -1120,6 +1176,8 @@ def main(argv):
         return cmd_find(" ".join(argv[2:]))
     if cmd == "audit":
         return cmd_audit(argv[2:])
+    if cmd == "fixlevels":
+        return cmd_fixlevels(argv[2:])
     if cmd == "bugs":
         n = 20
         for a in argv[2:]:

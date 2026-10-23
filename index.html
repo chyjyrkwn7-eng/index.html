@@ -31955,17 +31955,27 @@
      dots), The course blue (its ring). Today stays neutral, it is the day.
      The Class 26E line is white, so the only amber near it is the test. */
   .cal-classhead b{ color:var(--ink); }
-  [data-theme="dark"][data-layout="modern"] .screen-calendar-tab :is(.cal-nexttest-card, .cal-big-card, .cal-course-card){
-    border-color:color-mix(in srgb, var(--cal-c) 34%, transparent) !important;
+  /* BUILD 327 (the glow): "the boxes having the glow is cool, but today box
+     doesn't have it and I think the borders have too strong of it". Today is
+     one of the cards now, in the colour of what the day is (a pearl for an
+     ordinary day, amber for a test, orange for a final exam, gold for the last
+     day), and every card's edge is a hairline: the colour lives in the glow,
+     not in a line round the box. */
+  [data-theme="dark"][data-layout="modern"] .screen-calendar-tab :is(.cal-today-card, .cal-nexttest-card, .cal-big-card, .cal-course-card){
+    border-color:color-mix(in srgb, var(--cal-c) 15%, transparent) !important;
     background:radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--cal-c) 11%, transparent), transparent 70%),
                linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.45) !important;
-    box-shadow:0 0 22px -10px color-mix(in srgb, var(--cal-c) 55%, transparent), 0 6px 18px rgba(0,0,0,.28),
-               inset 0 0 0 1px color-mix(in srgb, var(--cal-c) 8%, transparent) !important;
+    box-shadow:0 0 26px -8px color-mix(in srgb, var(--cal-c) 60%, transparent), 0 6px 18px rgba(0,0,0,.28),
+               inset 0 0 0 1px color-mix(in srgb, var(--cal-c) 5%, transparent) !important;
   }
+  .screen-calendar-tab .cal-today-card{ --cal-c:#D5E0F2; }
+  .screen-calendar-tab .cal-today-card.is-test{ --cal-c:#F5B54D; }
+  .screen-calendar-tab .cal-today-card.is-bigexam{ --cal-c:#FF9D5C; }
+  .screen-calendar-tab .cal-today-card.is-last{ --cal-c:#E5C06A; }
   .screen-calendar-tab .cal-nexttest-card{ --cal-c:#F5B54D; }
   .screen-calendar-tab .cal-big-card{ --cal-c:#FF9D5C; }
   .screen-calendar-tab .cal-course-card{ --cal-c:#6FC2FF; }
-  .screen-calendar-tab :is(.cal-nexttest-card, .cal-big-card, .cal-course-card) .cal-card-head .slab{
+  .screen-calendar-tab :is(.cal-today-card, .cal-nexttest-card, .cal-big-card, .cal-course-card) .cal-card-head .slab{
     color:color-mix(in srgb, var(--cal-c) 70%, #ECEFF5);
   }
   /* the grid: class days a step lighter with a firmer edge, numbers white,
@@ -96435,7 +96445,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327i";
+const APP_BUILD = "2026-10-23-327j";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
