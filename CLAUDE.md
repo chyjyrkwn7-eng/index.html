@@ -26364,7 +26364,9 @@ Madison, after 327y fixed the freeze: swiping down reloaded the page, the
 top and bottom bands in Safari were black, Safari signed him out, Nova's
 weekly recap kept playing at login, and "fix the sound problem".
 
-- **The freeze was never sound** (327y's badge bbox preset fixed it), so
+- **(Reversed in 327z2: Madison says sound DID cause it; `iosTab` is back
+  on and Safari tabs have no sound or haptics. The line below is history.)**
+  The freeze was never sound (327y's badge bbox preset fixed it), so
   327w's gate is reverted: `iosTab` is `false` and Safari tabs have sound
   and haptics again. The 327x touch diagnostic and the boot-trace display
   are removed; boot clears their old localStorage keys once.
@@ -26387,3 +26389,34 @@ weekly recap kept playing at login, and "fix the sound problem".
   launch where the account arrived (sign-in, link, restore, new sign-up:
   `accountArrivedThisLaunch`, `markWeekRecapQuiet`), and its seen mark is
   saved to the account (`saveStore`, `novaHeard["@recap"]`).
+
+### Build 327z2 - sound off in Safari tabs again, a smoother tab bar and lighter screen loads
+
+Madison: *"I just said the sound thing fixed it?"* and *"There is still a lot
+of lag with the bottom tab, like when clicking or sliding it's not a smooth
+thing ... Loading pages/screens lags bad."*
+
+- **327w's `iosTab` gate is back** (no AudioContext, ambience or haptics in
+  an iPhone/iPad tab that is not installed). He is the one who saw it; the
+  installed app is unchanged.
+- **The top switchers' pill (`attachSegSlider`) no longer forces a layout
+  per change.** Its MutationObserver/ResizeObserver calls are coalesced to
+  one per frame, it returns early when nothing moved, and the glide is a
+  Web Animation of transform (380ms) instead of a transition read through
+  `void offsetWidth`. On a Profile tap that was ~97ms at 4x CPU.
+  check-behaviour b310 accepts a transform animation as the glide.
+- **Idle warm-up waits for the person to stop** (`quietIdle(fn, timeout)`):
+  `warmBadgeStrikes` and `badgeStrikeFinish` run only when
+  `recordingShouldWait()` is 0, one badge per slice unless the slice has
+  14ms+ left. A first Home spent ~2s of CPU warming badges under the
+  first taps. `warmBadgeCoinFaces` (the results warm-up) is unchanged.
+- **The flip-book recorders pause during drags, scrolls and wheels too**
+  (`recUserAt` hears pointermove/touchmove/wheel/scroll), not only presses.
+- **A hidden back-to-top button carries no backdrop blur**
+  (`html[data-theme][data-layout] body .backtotop:not(.show)`).
+- Measured, 4x CPU, iPhone size, steady state: a tab tap's new screen is
+  mounted 212-270ms after touchstart (155-341 before) with the longest
+  frame gap after it 133ms (216 before). First visits to Customize's
+  characters and the Ranks screen are still heavy and were not changed.
+- check_b246's "glow on the button" fails on 327z as well; not from this.
+

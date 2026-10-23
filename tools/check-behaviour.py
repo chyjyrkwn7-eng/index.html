@@ -10247,9 +10247,14 @@ def check_b310(br):
         const btns = [...seg.children].filter(b => b !== sl && b.tagName === 'BUTTON');
         const target = btns.find(b => !b.classList.contains('active') && !b.classList.contains('is-on'));
         target.click(); await wait(60);
-        const mid = sl.getBoundingClientRect().left; await wait(700);
+        const mid = sl.getBoundingClientRect().left;
+        /* MOVED IN 327z2: the glide is a Web Animation of transform now (a
+           transition read the old box and forced a layout per tap), so
+           either one counts as gliding. */
+        const anim = sl.getAnimations().some(an => (an.effect && an.effect.getKeyframes && an.effect.getKeyframes().some(k => k.transform)));
+        await wait(700);
         const end = sl.getBoundingClientRect().left;
-        out.slide = { x0: Math.round(x0), mid: Math.round(mid), end: Math.round(end), tr: getComputedStyle(sl).transitionProperty };
+        out.slide = { x0: Math.round(x0), mid: Math.round(mid), end: Math.round(end), tr: getComputedStyle(sl).transitionProperty + (anim ? ' transform(animation)' : '') };
       }
       /* a snapshot keeps each character: same node, before and after */
       leaderboardRows = [0, 1, 2, 3].map(i => ({ pub: 'p' + i, firstName: 'N' + i, avatarChar: AVATAR_CHARACTERS[i].id, level: 40 - i, badges: 3, hundos: 9, xp: 9000 - i, correct: 900 - i, week: 100, lastModified: Date.now() }));

@@ -32262,6 +32262,11 @@ html.is-browser #edge-tint-top{ top:0;
 html.is-browser #edge-tint-bottom{ bottom:0; background:var(--edge-bottom); }
 html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-top,
 html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-bottom{ background:var(--splash-bg, #0A0A0A); }
+  /* NO GLASS ON WHAT CANNOT BE SEEN (build 327z3). Back to top sits at
+     opacity 0 on every screen until it is needed, and its 30px backdrop
+     blur was still a layer the phone had to fill behind it on every frame
+     anything scrolled. Off while hidden; it fades in with the button. */
+  html[data-theme][data-layout] body .backtotop:not(.show){ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -60771,7 +60776,7 @@ let badgeStrikeFinishing = 0;
 function badgeStrikeFinish(im){
   BADGE_STRIKE_DRAFTS.add(im);
   if(badgeStrikeFinishing) return;
-  const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 700 }) : setTimeout(f, 60);
+  const ric = f => quietIdle(f, 700);
   const step = () => {
     badgeStrikeFinishing = 0;
     const im = BADGE_STRIKE_DRAFTS.values().next().value;
@@ -60856,7 +60861,7 @@ function warmBadgeStrikes(){
     /* where the words go on each found badge's back (build 325), so the
        back's first render in your hand does not pay for it */
     units.forEach(u => { if(unitBadgeEarned(u)) jobs.push(() => badgeBackPlan(u)); });
-    const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 3000 }) : setTimeout(() => f(null), 60);
+    const ric = f => quietIdle(f, 3000);
     const step = dl => {
       /* NOT WHILE NOVA IS TALKING (build 326). His sky never goes idle, so
          every one of these ran on its 3s timeout - 20-40ms of geometry
@@ -60865,7 +60870,7 @@ function warmBadgeStrikes(){
          waits until he has gone. */
       if(typeof novaIntroOn !== "undefined" && novaIntroOn){ setTimeout(() => ric(step), 2000); return; }
       let n = 0;
-      while(jobs.length && (n++ === 0 || (dl && dl.timeRemaining && dl.timeRemaining() > 14))){ try{ jobs.shift()(); }catch(e){} }
+      while(jobs.length && (n++ === 0 || (dl && !dl.didTimeout && dl.timeRemaining && dl.timeRemaining() > 14))){ try{ jobs.shift()(); }catch(e){} }
       if(jobs.length) ric(step);
     };
     ric(step);
@@ -69924,12 +69929,16 @@ const SOUND_AMBIENCE = {
 const NovaSound = (function(){
   const AC = () => window.AudioContext || window.webkitAudioContext;
   const st = { lastAt: -1e9, genAt: -1e9, wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
-  /* BACK ON IN AN iPHONE BROWSER TAB (build 327z). 327w turned the engine
-     off in a Safari tab on a guess that it froze the page; the freeze went
-     on without it and was the badge outlines' forced layouts (327y). Kept
-     as a constant false, so the switch is one line if a phone ever says
-     otherwise. */
-  const iosTab = false;
+  /* OFF IN AN iPHONE BROWSER TAB (327w, put back in 327z2). Madison: the
+     sound engine was what froze Safari, and he saw it stop when sound went.
+     The installed app keeps sound and haptics; a Safari tab never builds an
+     AudioContext, never renders the ambience and never ticks. */
+  const iosTab = (() => { try{
+    const ua = navigator.userAgent || "";
+    const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const sa = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    return ios && !sa;
+  }catch(e){ return false; } })();
   const on = () => !iosTab && !!(typeof theme === "object" && theme && theme.soundOn);
   const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
   const level = v => .95 * v * v;
@@ -76087,13 +76096,36 @@ let orbitAnimSliceEnd = 0;
    just gone in, or a switch is still settling, and pick up again after.
    A recording is never urgent: the live drawing shows meanwhile. */
 let recUserAt = -1e9;
-try{ ["pointerdown", "touchstart", "keydown"].forEach(t => window.addEventListener(t, () => { recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
+/* a drag, a scroll and a flick count as a finger too (build 327z3): only
+   the touch that started one did, so a slide along the tab bar or down a
+   list that lasted past a second ran recordings under the finger */
+try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, () => { recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
 function recordingShouldWait(){
   const now = performance.now();
   if(now - recUserAt < 1000) return 1000 - (now - recUserAt);
   try{ if(now - stageMountedAt < 700) return 700 - (now - stageMountedAt); }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
+}
+/* EVERY WARM-UP WAITS ITS TURN (build 327z3). The badge renders, their
+   finishes and the coin faces were plain idle callbacks with a timeout:
+   when the page was never idle (a screen going in, a list scrolling) the
+   timeout ran them anyway, one 20-40ms render at a time - 2s of it in the
+   first seconds after launch, at 4x CPU, landing on taps. They go through
+   this now: an idle callback, but never within a second of a touch,
+   700ms of a screen going in, or a tab switch's settle. */
+function quietIdle(fn, timeout){
+  const go = () => {
+    let w = 0; try{ w = recordingShouldWait(); }catch(e){}
+    if(w > 0){ setTimeout(go, w + 40); return; }
+    if(typeof window.requestIdleCallback === "function") window.requestIdleCallback(dl => {
+      let w2 = 0; try{ w2 = recordingShouldWait(); }catch(e){}
+      if(w2 > 0){ setTimeout(go, w2 + 40); return; }
+      fn(dl);
+    }, { timeout: timeout || 1500 });
+    else setTimeout(() => fn(null), 60);
+  };
+  go();
 }
 function orbitAnimYield(){
   if(performance.now() < orbitAnimSliceEnd && !recordingShouldWait()) return Promise.resolve();
@@ -96974,7 +97006,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z";
+const APP_BUILD = "2026-10-23-327z2";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -123883,6 +123915,22 @@ function attachSegSlider(seg, activeSel){
   sl.className = "seg-slider"; sl.setAttribute("aria-hidden", "true");
   seg.appendChild(sl);
   let x = null, w = null, styled = false;
+  /* ONE MEASURE A FRAME, NO FORCED FLUSH (build 327z3). "There is still
+     a lot of lag with the bottom tab ... loading pages/screens lags bad."
+     Every class change, every observed size and the first frame each ran
+     place() on its own, and each read two rects right after the last one
+     had written styles and flushed them with offsetWidth: on a Profile
+     switch, at 4x CPU, ~95ms of forced layout - more than building the
+     screen. Now the calls in a frame are folded into one, and the move is
+     a Web Animation on the compositor instead of a transition that had
+     to be committed by a flush. */
+  sl.style.transition = "opacity .2s ease";
+  let queued = 0, qAnim = false, moveAnim = null;
+  const schedule = animate => {
+    qAnim = qAnim || !!animate;
+    if(queued) return;
+    queued = requestAnimationFrame(() => { queued = 0; const an = qAnim; qAnim = false; place(an); });
+  };
   const place = animate => {
     if(!seg.isConnected) return;
     const a = seg.querySelector(":scope > " + activeSel);
@@ -123909,27 +123957,35 @@ function attachSegSlider(seg, activeSel){
     let sx = sr.width / (seg.offsetWidth || sr.width), sy = sr.height / (seg.offsetHeight || sr.height);
     const scaled = Math.abs(sx - 1) > .004 || Math.abs(sy - 1) > .004;
     if(!scaled){ sx = 1; sy = 1; place.again = 0; }
-    else if((place.again = (place.again || 0) + 1) <= 12) setTimeout(() => place(false), 180);
+    else if((place.again = (place.again || 0) + 1) <= 12) setTimeout(() => schedule(false), 180);
     const nx = (ar.left - sr.left) / sx - seg.clientLeft, ny = (ar.top - sr.top) / sy - seg.clientTop;
+    const nh = ar.height / sy, nw = ar.width / sx;
     const fromX = x, fromW = w;
-    x = nx; w = ar.width / sx;
-    sl.style.transition = "none";
-    sl.style.top = ny + "px"; sl.style.height = (ar.height / sy) + "px"; sl.style.width = w + "px";
-    const moving = animate && fromX != null && fromW && sl.classList.contains("ready") && (fromX !== nx || fromW !== w);
-    sl.style.transform = moving ? "translateX(" + fromX + "px) scaleX(" + (fromW / w).toFixed(4) + ")" : "translateX(" + nx + "px)";
-    void sl.offsetWidth;
-    sl.style.transition = "";
-    if(moving) sl.style.transform = "translateX(" + nx + "px)";
+    if(fromX === nx && fromW === nw && sl.classList.contains("ready") && sl.style.top === ny + "px" && sl.style.height === nh + "px") return;
+    x = nx; w = nw;
+    sl.style.top = ny + "px"; sl.style.height = nh + "px"; sl.style.width = w + "px";
+    const moving = animate && fromX != null && fromW && sl.classList.contains("ready") && (fromX !== nx || fromW !== w)
+      && document.documentElement.dataset.reduceMotion !== "true" && typeof sl.animate === "function";
+    sl.style.transform = "translateX(" + nx + "px)";
+    if(moveAnim){ try{ moveAnim.cancel(); }catch(e){} moveAnim = null; }
+    if(moving){
+      try{
+        moveAnim = sl.animate([
+          { transform: "translateX(" + fromX + "px) scaleX(" + (fromW / w).toFixed(4) + ")" },
+          { transform: "translateX(" + nx + "px)" }
+        ], { duration: 380, easing: "cubic-bezier(.3, 1.3, .5, 1)" });
+      }catch(e){ moveAnim = null; }
+    }
     sl.classList.add("ready");
   };
-  const mo = new MutationObserver(() => place(true));
+  const mo = new MutationObserver(() => schedule(true));
   mo.observe(seg, { subtree: false, childList: false, attributes: true, attributeFilter: ["class"] });
   [...seg.children].forEach(c => { if(c !== sl) mo.observe(c, { attributes: true, attributeFilter: ["class", "hidden"] }); });
   /* the buttons too: a tab that changes width by itself (an unread count
      appearing or clearing on the chat dock's Friends tab) leaves the
      switcher's own size alone (build 327 audit) */
-  try{ const ro = new ResizeObserver(() => place(false)); ro.observe(seg); [...seg.children].forEach(c => { if(c !== sl) ro.observe(c); }); }catch(e){}
-  requestAnimationFrame(() => place(false));
+  try{ const ro = new ResizeObserver(() => schedule(false)); ro.observe(seg); [...seg.children].forEach(c => { if(c !== sl) ro.observe(c); }); }catch(e){}
+  schedule(false);
 }
 /* opts.zone: only a touch that STARTS inside this element counts (a
    switcher of its own inside a tab, build 319). opts.skip: a touch that
