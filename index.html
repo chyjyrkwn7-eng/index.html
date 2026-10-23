@@ -32315,6 +32315,16 @@
     border-color:rgba(255,255,255,.16) !important;
     backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
   }
+  /* ...AND WHILE IT MOVES, NO BLUR (build 327z10). The !important glass
+     above out-ranked .is-flat / .is-settling, so on a phone the 30px blur
+     was resampled on every frame of a swipe down and of the slide out -
+     "it's laggy". The same tone, near-opaque, as the phone's flat fill. */
+  @media (max-width:40rem){
+    [data-theme="dark"][data-layout="modern"] .chatdock-panel:is(.is-flat, .is-settling){
+      background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.95) !important;
+      backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    }
+  }
 
   /* ---- THE BANNERS' CLEAR GLASS, ON EVERY POP-UP (build 327 round 12) ----
      "This circled stuff is great. We need more of this. Like the tool tips,
@@ -89374,10 +89384,28 @@ function startChatDock(){
     }
     dragFlat = false;
     if(closing){
-      /* Leave the offset in place for one frame so the close
-         transition starts from where the finger let go. */
+      /* OUT AT THE FINGER'S SPEED (build 327z10). "When swiping down, it
+         just disappears, it doesn't do the animation that it goes
+         downwards, and it's laggy." The release handed the sheet to the
+         class's .26s ease-out, which covers half the way in its first
+         frame - on a phone that read as the sheet vanishing. Now it slides
+         from where the finger let go, as the start sheet does
+         (attachSheetSwipe): never under .18s or over .3s, to the same
+         translateY(102%) the closed class rests at, so handing back to the
+         class moves nothing. Closed at once (the sound, the state); the
+         flat fill stays on until the slide ends. */
+      const ms = Math.round(Math.max(180, Math.min(300, (ph - dragDy) / Math.max(1.6, dragVel || 0))));
+      panel.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
+      panel.style.transform = "translate3d(0,102%,0)";
       closeChatDock();
-      requestAnimationFrame(() => { panel.style.transform = ""; });
+      clearTimeout(endDrag._t);
+      endDrag._t = setTimeout(() => {
+        panel.classList.remove("is-settling");
+        /* reopened mid-slide: let the class bring it back up */
+        if(!chatDockOpen) panel.style.transition = "none";
+        panel.style.transform = "";
+        requestAnimationFrame(() => { panel.style.transition = ""; });
+      }, ms + 30);
     } else {
       panel.style.transform = "";
     }
@@ -97625,7 +97653,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z9";
+const APP_BUILD = "2026-10-23-327z10";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

@@ -26828,3 +26828,36 @@ broken" means exactly was asked of Madison. check-b327z3 A moved.
   tabs on every phone at the next update check, no build needed - the
   escape hatch if a Safari freeze comes back. Not testable without an
   iPhone.
+
+### Build 327z10 - the chat sheet slides down when swiped away, and smoothly
+
+Madison: *"The chat when swiping down, it just disappears, it doesn't do the
+animation that it goes downwards, and it's laggy."*
+
+Traced frame by frame on an iPhone 17 Pro Max (modern dark, the default):
+- **Laggy**: the modern layout's chat glass (`[data-theme="dark"][data-layout="modern"]
+  .chatdock-panel`, round 10) sets `backdrop-filter:blur(30px) ... !important`,
+  which out-ranked `.is-flat` / `.is-settling`, so the 30px blur was resampled
+  on every frame of the pull and the slide out. A phone-only rule after it
+  drops the blur for those two classes (same tone, 95% fill).
+- **Disappears**: `endDrag()` closed into the class's `.26s
+  cubic-bezier(.2,.8,.25,1)`, which covers about half the remaining way in
+  its first frame (665 -> 809 of 969). It now slides out as the start sheet
+  does (`attachSheetSwipe`): an inline transition at the finger's speed
+  (180-300ms, `cubic-bezier(.3,.6,.4,1)`) to `translate3d(0,102%,0)`, the
+  closed class's own resting place, so clearing the inline style moves
+  nothing; `closeChatDock()` runs at release (state and sound), `.is-settling`
+  stays on until the slide ends; reopened mid-slide, the class brings it back.
+
+Gate: `tools/check-b327z10.py` (`--against`): no blur on any frame of the pull
+or slide; at a quarter of the slide's time no more than 58% of the way (new
+~51%, old 64-71%); closes, reopens at the same rest, a short pull springs
+back. 2 failures on 327z9, ALL PASS here. check-b327z5-b, check-behaviour
+b314h_sheet / b314h_chat / b314h_chat2: ALL PASS.
+
+Not verifiable here: how it feels on a real iPhone (Chromium has no backdrop
+blur cost to speak of, so the lag fix is shown by the computed style, not by
+frame times).
+
+Sandbox note: the gates hard-code `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`;
+this container had only chromium-1243 (`chrome-linux64`), linked into that path.
