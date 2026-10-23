@@ -124,11 +124,14 @@ def sec_c(br):
 FOCUS = """(b) => { const c = document.querySelector('.profile-cover > .bnr'); return c ? getComputedStyle(c).transform : null; }"""
 
 
-FOCUS_IDS = ("level80", "adept_rank", "titan_rank", "flare_void", "flare_umbra", "flare_horizon",
-             "flare_genesis", "zenith", "exam100", "astral", "elite_rank")
+# MOVED IN 327z7: the halo-like four (adept_rank, flare_horizon, zenith,
+# astral) sit centred - "some of them look better not centered some look worse"
+FOCUS_IDS = ("level80", "titan_rank", "flare_void", "flare_umbra",
+             "flare_genesis", "exam100", "elite_rank")
+CENTRED_IDS = ("tests250", "adept_rank", "flare_horizon", "zenith", "astral")
 # the three that fill the middle of their art (round 2): the share of the
 # banner's detail left under the circle is measured off the pixels
-HIDDEN_MAX = {"exam100": .075, "astral": .075, "elite_rank": .075}  # b327z5: .08-.21; with the focus: .02-.065
+HIDDEN_MAX = {"exam100": .075, "elite_rank": .075}  # b327z5: .08-.21; with the focus: .02-.065
 
 HIDDEN = """(sel) => { const cover = document.querySelector(sel.cover), art = document.querySelector(sel.art);
   const c = cover.getBoundingClientRect(), a = art.getBoundingClientRect();
@@ -161,7 +164,7 @@ def sec_d(br):
         try:
             pg.evaluate(CLEAN)
             pg.evaluate("() => { window.bannerEarned = () => true; document.documentElement.setAttribute('data-reduce-motion','true'); }")
-            for bid, moved in tuple((b, True) for b in FOCUS_IDS) + (("tests250", False),):
+            for bid, moved in tuple((b, True) for b in FOCUS_IDS) + tuple((b, False) for b in CENTRED_IDS):
                 pg.evaluate("(b) => { document.querySelector('.invite-overlay')?.remove(); store.banner = b; showProfile(); }", bid)
                 pg.wait_for_timeout(600)
                 t = pg.evaluate(FOCUS, bid)

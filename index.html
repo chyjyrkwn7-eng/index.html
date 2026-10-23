@@ -64522,18 +64522,20 @@ function bannerTintOf(id){
    untouched. A new banner whose subject is in the middle wants a row. */
 const BANNER_FOCUS = {
   level80:       [1.3, -0.15, 0.15],
-  adept_rank:    [1.15, -0.075, -0.075],
   titan_rank:    [1.3, 0.15, -0.15],
   flare_void:    [1.3, -0.15, -0.15],
   flare_umbra:   [1.3, -0.15, 0],
-  flare_horizon: [1.3, -0.15, -0.15],
   flare_genesis: [1.3, -0.15, -0.15],
-  zenith:        [1.15, -0.075, -0.037],
   /* Madison: "Redraw the art for the 3 or just fix the layout". These three
      fill the middle, so the cover takes them further in and to the left:
-     the phoenix, the beam and the black hole whole beside the circle. */
+     the phoenix and the black hole whole beside the circle.
+     ROUND 2 (build 327z7): "some of them look better not centered some look
+     worse". A subject that frames the head like a halo or a crown (the
+     Sapphire galaxy, Horizon's ring, Zenith's ring, Astral's beam and wings)
+     reads best centred behind the circle, so those four are drawn as they
+     are; an OBJECT (the stair, the star, the moon, the planet, a black hole,
+     the phoenix) reads best whole beside it, so those keep their row. */
   exam100:       [1.6, -0.3, 0.1],
-  astral:        [1.6, -0.3, 0],
   elite_rank:    [1.6, -0.3, -0.15]
 };
 function applyBannerFocus(art, id){
@@ -70427,8 +70429,6 @@ const NovaSound = (function(){
      the page is exactly as it was without them, children and all */
   let hswLate = 0;
   function hswSync(){
-    /* KILL SWITCH (327r): the switch layer is off until it is proven on a real phone */
-    hswStop(); return;
     /* the switches only live in the installed app (build 327p): a Safari tab
        keeps the scripted tick and none of the extra elements */
     try{ if(canTaptic() && hapticsWanted() && (window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches))){ if(!hswObs && !hswLate){ if(!document.getElementById("splashscreen")) hswStart(); else hswLate = setTimeout(() => { hswLate = 0; try{ if(!document.getElementById("splashscreen")) hswStart(); else hswSync(); }catch(e){} }, 1500); } } else { if(hswLate){ clearTimeout(hswLate); hswLate = 0; } hswStop(); } }catch(e){}
@@ -97453,7 +97453,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z5";
+const APP_BUILD = "2026-10-23-327z7";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

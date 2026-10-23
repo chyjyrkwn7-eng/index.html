@@ -26740,3 +26740,21 @@ lobby rows are unchanged.
   left as drawn) on the iPhone 17 Pro Max and iPad Pro 11, and holds the three
   to at most 7.5% of their detail behind the circle. ALL PASS here; against
   b327z5 (97a5320) 12 failures. `ONLY=D` runs one section.
+
+### Build 327z7 - Haptic Touch back on, the halo-like banners centred again
+
+- **The haptic switch layer is on again.** 327r switched it off ("off until
+  proven on a real phone") during the Safari freeze hunt; the freeze was the
+  badge outlines' layout (327y), not the switches. Madison: *"Haptic Touch is
+  not working at all anymore btw. It was working great last night."* The kill
+  line in `hswSync` is gone; 327p/q's rules stand (installed app only, after
+  the splash). Safari tabs still have no sound or haptics (327z2).
+- **`BANNER_FOCUS` is objects only.** *"some of them look better not
+  centered some look worse not centered."* Rendered every banner on the
+  Profile cover both ways: a subject that frames the head (adept_rank's
+  galaxy, flare_horizon's ring, zenith's ring, astral's beam) reads as a
+  halo centred and lopsided shifted, so those four rows are gone; the
+  objects (level80, titan_rank, flare_void, flare_umbra, flare_genesis,
+  exam100, elite_rank) keep theirs. check-b327z5-d D holds both lists.
+- 327z6-d had been merged onto main without a build bump, so it is in this
+  build's number.
