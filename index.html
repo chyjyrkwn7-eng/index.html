@@ -32081,8 +32081,10 @@
   /* (build 327z10: not the friend buttons - "In manage friends, copy and
      send button is all white". Copy, Send and Accept are .next too, so this
      made them white and left them their own white words. They are the
-     matte black pill they were drawn as - see .friend-send.) */
-  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):not(.friend-send):not(.friend-act),
+     matte black pill they were drawn as - see .friend-send. Excluded inside
+     :where(), so the rule keeps the specificity every override of it was
+     written against: two more :not()s out-ranked the start sheet's glass X.) */
+  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):where(:not(.friend-send):not(.friend-act)),
   [data-theme="dark"][data-layout="modern"] .chip.on{
     /* THE OTHER BUTTONS' RECIPE, IN WHITE (build 327 round 10): "the white
        button does not look like the other 3d buttons". Quit and Save and

@@ -506,7 +506,9 @@ def z11(br):
     # second reads the same elements (new ones - a flip-book landing, a row
     # arriving - are not what is being tested)
     SNAP1 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
-      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw'));
+      /* MOVED IN 327z10: a switch row's own input IS its switch on an iPhone
+         (.hsw-opt) and grows over the track by design - it is set aside */
+      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw') && !e.classList.contains('hsw-opt'));
       window.__zEls = els; return els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
     SNAP2 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
       return window.__zEls.map(e => { if(!e.isConnected) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
@@ -527,7 +529,9 @@ def z11(br):
     try:
         for name, js in screens:
             try:
-                pg.evaluate("() => { theme.haptics = true; saveTheme(); NovaSound.sync(); }")
+                # (327z10: the Profile tab's character plays specials now; none
+                # may land between the two snapshots - they are not switches)
+                pg.evaluate("() => { theme.haptics = true; saveTheme(); NovaSound.sync(); charSpecialTiming = { first: [1e9, 1e9], gap: [1e9, 1e9] }; document.querySelectorAll('[data-sp-next]').forEach(e => e.dataset.spNext = String(Date.now() + 1e9)); }")
                 pg.evaluate(js)
                 pg.wait_for_timeout(1800)
                 settle(pg)
