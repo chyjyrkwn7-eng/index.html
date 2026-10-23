@@ -484,6 +484,11 @@ CENTRE = r"""() => { document.getElementById('b325c')?.remove();
   ids.forEach(id => { const c = document.createElement('span'); c.className = 'results-level-avatar'; const sv = buildAvatarCharSVGSafe(id);
     sv.querySelectorAll(':scope > g.cx-bg, :scope g.cx-bg').forEach(n => n.style.display = 'none');
     sv.querySelectorAll('circle').forEach(n => { if(/url\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.style.display = 'none'; });
+    /* MOVED IN 327z10 ("the ghost character is not centered in the circle"):
+       the Ghost's light is an ellipse (-gaura), set aside like a halo, and so
+       is the wisp floating off its shoulder - its sheet is the figure */
+    sv.querySelectorAll('ellipse').forEach(n => { if(/-gaura\)/.test(n.getAttribute('fill') || '')) n.style.display = 'none'; });
+    sv.querySelectorAll('.cx-k-ghost > .cx-fx-tip').forEach(n => n.style.display = 'none');
     c.appendChild(sv); host.appendChild(c); });
   return ids; }"""
 TH = 64

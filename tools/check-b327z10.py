@@ -44,9 +44,10 @@ READ = """() => { const p = document.querySelector('.chatdock-panel'); const r =
   return { top: r.top, h: r.height, open: chatDockOpen, inline: p.style.transform, vh: innerHeight }; }"""
 
 
-def main():
-    with sync_playwright() as pw:
-        br = pw.chromium.launch(executable_path=cb.CHROME)
+ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFG")
+
+
+def chat_sheet(br):
         label, w, h, dpr = z5b.PHONE
         ctx, pg = z5b.boot(br, w, h, dpr)
         lay = pg.evaluate("() => document.documentElement.dataset.layout + '/' + document.documentElement.dataset.theme")
@@ -117,6 +118,101 @@ def main():
         check("%s: C. a short slow pull springs back and stays open (%.0f)" % (label, sp["top"]),
               sp["open"] and abs(sp["top"] - rest["top"]) < 2 and sp["inline"] == "", sp)
         ctx.close()
+
+
+def tab_roll(br):
+    print("\nD. a tapped tab's screen waits for the glass to roll over")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    cdp = ctx.new_cdp_session(pg)
+    t = pg.evaluate("()=>{const r=document.getElementById('bottomtab-profile').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}}")
+    pg.evaluate("""() => { window.__z10 = { mount: null, lens: null, down: null };
+      addEventListener('pointerdown', () => { __z10.down = performance.now(); }, true);
+      new MutationObserver(() => { if(__z10.mount !== null || __z10.down === null) return;
+        __z10.mount = performance.now() - __z10.down;
+        const a = document.querySelector('#bottomtabs-lens .tab-lens-body');
+        const an = a && a.getAnimations()[0];
+        __z10.lensUp = !!document.querySelector('#bottomtabs-lens.is-up'); }).observe(document.getElementById('stage'), { childList: true }); }""")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [t]})
+    time.sleep(0.06)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(1200)
+    r = pg.evaluate("() => Object.assign({}, __z10, { profile: !!document.querySelector('#stage .bottomtab-profile, #stage [class*=profile]'), lit: document.getElementById('bottomtab-profile').classList.contains('active') })")
+    check("%s: D. the screen goes in %.0fms after the press - after the glass has crossed (90ms or more), not on the frame after a quick tap's click"
+          % (label, r.get("mount") or -1), (r.get("mount") or 0) >= 90 and r.get("lit"), r)
+    ctx.close()
+
+
+def planet(br):
+    print("\nE. the planet answers once")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const tap = () => { const s = document.querySelector('#stage .screen-home-actual .cosmic-sphere-hsw') || [...document.querySelectorAll('#stage .screen-home-actual circle')].find(c => c.getAttribute('fill') === 'url(#cosmicSphereGrad)');
+        const b = s.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+        const o = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, isPrimary: true, pointerType: 'touch', button: 0 };
+        s.dispatchEvent(new PointerEvent('pointerdown', o)); s.dispatchEvent(new PointerEvent('pointerup', o)); s.dispatchEvent(new MouseEvent('click', o)); };
+      const live = () => [...document.querySelectorAll('#stage .home-caption > .hc-item:not(.is-out)')].map(e => e.dataset.text);
+      tap(); await wait(500); const a = live();
+      tap(); await wait(500); const b = live();
+      return { a, b, items: document.querySelectorAll('#stage .home-caption > .hc-item').length }; }""")
+    a, b = r["a"], r["b"]
+    one = a[0] if len(a) == 1 else ""
+    check("%s: E. two taps on the planet: one caption, the same words both times, %d sentences" % (label, one.count(".")),
+          len(a) == 1 and len(b) == 1 and a == b and one.count(".") >= 2, r)
+    ctx.close()
+
+
+def tab_special(br):
+    print("\nF. the Profile tab's character plays its special")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    r = pg.evaluate("""async () => { const el = document.querySelector('#bottomtab-profile .bottomtab-icon-avatar');
+      if(!el) return { el: false };
+      const listed = el.matches(CHAR_SPECIAL_PROMINENT);
+      /* the scheduler's own pick: everything due now */
+      el.dataset.spNext = '1'; charSpecialBusyUntil = 0; charSpecialTick();
+      await new Promise(r => setTimeout(r, 400));
+      const on = el.classList.contains('char-special');
+      const moving = [...el.querySelectorAll('.cx-sp *')].some(n => n.getAnimations().some(a => a.playState === 'running'));
+      return { el: true, listed, on, moving }; }""")
+    check("%s: F. the tab's character is one the specials scheduler plays, and its special runs" % label,
+          r.get("listed") and r.get("on") and r.get("moving"), r)
+    ctx.close()
+
+
+def daily_ring(br):
+    print("\nG. the daily question's ring is a line of light on the glass rim")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2000)
+    r = pg.evaluate("""() => { store.dailyQuestionDate = dailyPeriodKey(); showHome(); return 1; }""")
+    pg.wait_for_timeout(1200)
+    r = pg.evaluate("""() => { const b = document.querySelector('.daily-question-fab'), ring = b && b.querySelector('.dq-ring');
+      if(!ring) return null; const svg = ring.querySelector('svg'), k = svg.getBoundingClientRect().width / 100;
+      const tr = getComputedStyle(ring.querySelector('.dq-ring-track')), pr = getComputedStyle(ring.querySelector('.dq-ring-prog'));
+      const rgb = (tr.stroke.match(/[\d.]+/g) || []).map(Number);
+      const br = b.getBoundingClientRect(), rr = ring.getBoundingClientRect();
+      return { track: tr.stroke, hue: rgb.length >= 3 ? Math.max(rgb[0], rgb[1], rgb[2]) - Math.min(rgb[0], rgb[1], rgb[2]) : 99,
+               progPx: parseFloat(pr.strokeWidth) * k, d: Math.max(Math.abs(br.left - rr.left), Math.abs(br.top - rr.top)) }; }""")
+    check("%s: G. the unlit track is the glass rim - no colour of its own (%s)" % (label, r and r["track"]), bool(r) and r["hue"] <= 2, r)
+    check("%s: G. the progress is a slim line, %.1fpx (2px at most), on the button's rim" % (label, r and r["progPx"] or -1),
+          bool(r) and r["progPx"] <= 2.0 and r["d"] <= 2, r)
+    ctx.close()
+
+
+def main():
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(executable_path=cb.CHROME)
+        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring)):
+            if k in ONLY or (k == "A" and any(c in ONLY for c in "ABC")):
+                try:
+                    fn(br)
+                except Exception as e:
+                    check("section %s ran" % k, False, repr(e)[:300])
         br.close()
     print("\n%s" % ("ALL PASS" if not cb.FAILURES else "%d FAILED" % len(cb.FAILURES)))
     sys.exit(1 if cb.FAILURES else 0)

@@ -26861,3 +26861,71 @@ frame times).
 
 Sandbox note: the gates hard-code `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`;
 this container had only chromium-1243 (`chrome-linux64`), linked into that path.
+
+### Build 327z10 (continued) - the tab bar's glass rolls over, the planet answers once, the tab's character moves, the Ghost centred, the daily ring on the glass
+
+Madison: *"The bottom tab is laggy ... when clicking to other tabs it shoots
+over instantly, the glass bubble does not roll over to it like the video"*
+(an iOS 26 three-tab recording, 1320x2868 at 60fps), *"When tapping the large
+planet back to back, it brings up two different messages, shouldn't that just
+be combined to one message?"*, *"The ghost character is not centered in the
+circle"*, *"The characters aren't animated on the bottom tab"*, and *"The daily
+question button, it still stands out, maybe it needs a Liquid Glass look? The
+loading bar around it could also look better"*.
+
+#### The tab bar: what was measured
+- His recording, frame by frame at 60fps: the press lifts the lens at frame 7,
+  it is over the new tab by 12, and **the page only starts to change at 13**
+  (a ~100ms cross-fade). The lens's own timing (`LENS.glide`, ~75ms to 90%)
+  already matches it.
+- Ours, real CDP taps at 4x CPU, read in-page (the screencast lags ~80ms, do
+  not time off it): steady state, the lens track runs from +23ms; the screen
+  was built on the frame after the click, i.e. ~70ms after a quick tap's
+  press, on top of the glide. During the first ~45s after a launch with no
+  cached flip-books (every launch after an update) the main thread is ~80%
+  busy: the character/rank flip-book recorder (`recordRankSheet`,
+  `recordCharSheet`: one frame's clone + serialise + SVG parse is 45-65ms at
+  4x, past its idle slice) and the badge warm-up (`warmBadgeStrikes`, 60ms
+  unsplittable jobs). A press there waited up to 170ms before its handler
+  ran, and the lens was first drawn already across. At 1x the same window is
+  ~12s with stalls under 50ms. Home is fully idle once they finish.
+
+#### Changes
+- **The screen waits for the glass** (`navigateTab`, `TAB_SCREEN_AFTER` =
+  110ms from the lens's lift, `bar._lensPressAt` set in `lensDown`): the
+  highlight moves at once, the page is built after the lens has crossed. A
+  drag released over a tab (lifted long ago) builds as before.
+- **The dark bar's sheen is still** (`[data-theme="dark"][data-layout="modern"]
+  .bottomtabs-sheen::before{animation:none}`): 5% white, next to invisible,
+  but moving inside the bar's 30px backdrop blur, which iOS then redoes
+  every frame. Cannot be measured here (no WebKit, no GPU cost in Chromium).
+- **Not changed:** the background recorders/warm-ups. They are cached per
+  build and finish in seconds on a fast phone; moving them off the main
+  thread is a bigger job (badge renders are canvas pixel loops, flip-books
+  need SVG rasterisation). Worth it if the lag is still felt in the first
+  seconds after an update.
+- **The planet answers once** (`homeTapCopyPlanet()`, no argument): where you
+  stand and what is next in one caption; a second tap while it is up keeps it
+  (`homeCaptionShow`: same key and words). `homeCaptionState.planetN` is gone.
+  check_b317_hometaps moved.
+- **The tab's character plays its special** (`CHAR_SPECIAL_PROMINENT` gains
+  `#bottomtab-profile .bottomtab-icon-avatar`): its resting loop is a blink
+  and a few specks, which at tab size reads as a still. The flip-book was
+  playing all along.
+- **The Ghost is centred** (`AVATAR_CENTRE_DY.ghost` 2.3 -> -2.5): build 325's
+  solve counted its cold light (an ELLIPSE, `-gaura`, not set aside like the
+  halo circles) and its floating wisp, and sank the sheet to 59% of the
+  circle. Without them it is 50.6% at -2.5, the hem in view. check-b325-a's
+  centre section now sets both aside for the Ghost (fails on 327z9 at 59.4).
+  Its flip-book re-records on its own (sheets are keyed by drawing).
+- **The daily question's ring is a line on the glass rim** (block at the end
+  of the stylesheet): the unlit track is the chat button's 1px .16 white rim,
+  the progress a slim (3.2/100, ~1.8px) line of the rank colour with a soft
+  glow of itself; still on the rim (327z5), border still stood down, round
+  ends. Answered, the line is at .85.
+
+#### Gates
+`tools/check-b327z10.py` sections D-G (`B327Z10_ONLY`), each run `--against`
+327z9. check-b325-a centre moved (above). check-b327-h's "a pull down on the
+grip still closes the sheet" fails on 327z9 too (a 240px pull on a 669px sheet
+is under the 40% line and not quite a flick) - not from this build.

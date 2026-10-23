@@ -17346,11 +17346,13 @@ def check_b317_hometaps(br):
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
               # MOVED IN 326 (b326e): no total for the secret flares - more
               # come into view as you find them ("it says there's only 3")
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 secret flares found."
+              # MOVED IN 327z10: one answer - where you stand and what is next
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and (PL.get("text") or "").startswith("3 of 7 rank flares lit, 2 secret flares found. Next: the Platinum flare.")
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
-        check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
-              (PL2.get("text") or "").startswith("Next: the Platinum flare.") and PL2.get("ripples", 0) >= 2, PL2)
+        # MOVED IN 327z10: a second tap keeps the same one answer up ("shouldn't that just be combined to one message?")
+        check(dev + ": tapped again it keeps the same one answer, and the first ripple is still running beside the second",
+              PL2.get("text") == PL.get("text") and PL2.get("ripples", 0) >= 2, [PL, PL2])
         check(dev + ": the light lands on the pointerdown with the words, and a second tap carries it on from where it is",
               chain.get("captionOnDown") and chain.get("lightOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
         check(dev + ": a new answer fades through the last (one leaving, one arriving a beat behind it)",
@@ -24525,8 +24527,11 @@ def check_b320h_fixes(br):
         img = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": bx[0] - m, "y": bx[1] - m, "width": bx[2] + 2 * m, "height": bx[3] + 2 * m})))
         S = img.size[0] / (bx[2] + 2 * m)
         cx, cy = img.size[0] / 2, img.size[1] / 2
-        R = (bx[2] / 2 + 6) * S
-        prof = _b320h_ring_profile(img, cx, cy, R - 5 * S, R + 0.5 * S)
+        # MOVED IN 327z10: the ring is a slim line ON the button's rim (327z5
+        # put it there; 327z10 thinned it), so the band is read round the rim,
+        # not 6px out where 320's ring sat
+        R = (bx[2] / 2) * S
+        prof = _b320h_ring_profile(img, cx, cy, R - 3 * S, R + 2 * S)
         srt = sorted(prof); med = srt[len(srt) // 2]
         n = len(prof); win = lambda deg: [prof[(int(round(deg / 360.0 * n)) + k) % n] for k in range(-4, 5)]
         top, bot = win(0), win(180)

@@ -10651,6 +10651,11 @@
   }
   [data-theme="dark"][data-layout="modern"] .bottomtabs-sheen::before{
     background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.05) 50%, transparent 62%);
+    /* STILL ON THE DARK GLASS (build 327z10): "the bottom tab is laggy".
+       At 5% white the sweep is next to invisible, but a layer that moves
+       inside the bar's 30px backdrop blur has iOS redo that blur every
+       frame, forever (the 308 tear note). It rests where it was drawn. */
+    animation:none;
   }
   @keyframes glass-sheen{
     0%, 100%{ transform:translate3d(-18%,0,0); }
@@ -32474,6 +32479,24 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* the chips say what a day is in a word, in the app's pill */
   .screen-calendar .cal-nt-big{ background:rgba(255,255,255,.06) !important; border-color:var(--surface-border) !important; }
   .screen-calendar .cal-today-badge{ background:rgba(255,255,255,.1); color:var(--ink); }
+
+  /* ---- THE DAILY QUESTION BUTTON IS GLASS, ITS RING A LINE OF LIGHT (build 327z10) ----
+     "The daily question button, it still stands out, maybe it needs a
+     Liquid Glass look? The loading bar around it could also look better."
+     Beside the chat button it read as a gold disc: the ring was a 3.2px
+     band of the rank colour on a track tinted the same. It stays ON the
+     rim (327z5: a ring apart from the rim read as two rings), but the
+     unlit track IS the glass rim now - the chat button's own 1px .16
+     white - and the progress is a slim line of the rank colour along it
+     with a soft glow of itself. One edge: glass where the time is still
+     to run, light where it has run. The pulse, the recharge and the flash
+     are the same circle and come with it. */
+  .daily-question-fab .dq-ring circle{ stroke-width:3.2; }
+  .daily-question-fab .dq-ring-track{ stroke:rgba(255,255,255,.16); stroke-width:1.9; }
+  .daily-question-fab .dq-ring-prog{ filter:drop-shadow(0 0 2.5px color-mix(in srgb, var(--dq-c) 75%, transparent)); }
+  /* answered: the line steps back a little with the "?" - it is a clock, not a call */
+  .daily-question-fab.is-done .dq-ring-prog{ opacity:.85; }
+  .daily-question-fab.is-ready::after{ border-width:1px; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -47884,10 +47907,15 @@ function buildAvatarCharSVG(charId){
    effects' face parts) lands in the same place it always did relative to
    the face. Re-measure after redrawing anybody: run the gate. */
 const AVATAR_CENTRE_DY = {
-  ninja: 1.9, ghost: 2.3, wizard: 0.4, grizzly: -1.0, alien: 0.2, detective: -2.1, masked: 1.2,
+  ninja: 1.9, ghost: -2.5, wizard: 0.4, grizzly: -1.0, alien: 0.2, detective: -2.1, masked: 1.2,
   zeus: 3.3, poseidon: 0.4, clown: 3.3, valkyrie: 3.3, marksman: 1.4, astronaut: 3.3, hacker: -0.8,
   timekeeper: 3.3, ronin: 3.3, voidwalker: 2.1, umbra: 1.7, genesis: -1.9, lunar: 1.9, solar: 2.3,
   tempest: 2.9, frost: 2.7, oracle: 3.1, inferno: 4.8, astral: 1.9, celestial: 1.2, zenith: 1.0
+  /* the Ghost (build 327z10, "the ghost character is not centered in the
+     circle"): its cold light is an ellipse, which the measurement did not
+     set aside as it does a halo circle, so the solve centred the light and
+     sank the sheet - its middle at 59% of the circle. Measured without the
+     light it is 50.6% at -2.5, its scalloped hem in view. */
   /* the Ronin's figure is a pale hat and face on a dark body, so its
      measured middle chases the hat - held where it reads centred, its
      red moon still behind the hat */
@@ -66457,7 +66485,11 @@ function setCharState(el, state, opts){
    character - never on a list row, the race line or the tab bar. One at a
    time, never while the page is hidden, never with Reduce motion. It also
    plays when a rank-up scene hands back to Profile and on a hundo. */
-var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar";
+/* ...and the Profile tab's own character (build 327z10): "The characters
+   aren't animated on the bottom tab." Their resting loop is a blink and a
+   few specks, which at the tab's size reads as a still picture; the tab
+   plays its special now and then like the Profile card does. */
+var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar, #bottomtab-profile .bottomtab-icon-avatar";
 /* first special no sooner than ~8s after a character is on screen, then
    every 12-30s; a gate may shorten these */
 var charSpecialTiming = { first: [8000, 16000], gap: [12000, 30000] };
@@ -78941,19 +78973,14 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        an account even exists yet wouldn't make much sense. */
     sphere.style.cursor = "pointer";
     /* and the planet answers the touch (build 317, planetTapFx), on the
-       touch itself; the caption says where you stand, and tapped again
-       while it is up, what is next (round three - the "....." box went
-       with the other boxes) */
+       touch itself; the caption says where you stand and what is next, in
+       one answer (build 327z10 - it took turns, one per tap) */
     const planetRun = (e) => {
       playSound("home.planet");
       try{ planetTapFx(wrap, e); }catch(err){}
       /* and at Supernova, the cutscene's streak round the rings (b321h) */
       try{ homeRingStreak(wrap, "tap"); }catch(err){}
-      try{
-        const again = homeCaptionState.key === "planet" && !!document.querySelector("#stage .home-caption > .hc-item.is-in");
-        homeCaptionState.planetN = again ? homeCaptionState.planetN + 1 : 0;
-        homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(homeCaptionState.planetN), "planet");
-      }catch(err){}
+      try{ homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(), "planet"); }catch(err){}
     };
     homeTapBind(sphere, planetRun);
     /* On an iPhone the planet is tapped through a real switch like every
@@ -96835,25 +96862,24 @@ function homeTapCopyFlare(key){
    light. Round four: "Your flares", in the theme's own colour (--theme-c2,
    lifted a little for a dark screen - see .hc-item.is-planet), and the
    rank/level/badges line is gone. */
-function homeTapCopyPlanet(n){
-  if(n % 2 === 1){
-    const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
-    let parts;
-    if(next){
-      const left = tierShortfall(TIER_UNLOCKS[next]);
-      parts = ["Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light."];
-    } else {
-      parts = homeRingTier() && secretFlaresAllFound() ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
-    }
-    return { kind: "planet", name: "Your flares", state: "", color: "", parts };
-  }
+function homeTapCopyPlanet(){
+  /* ONE ANSWER (build 327z10): "When tapping the large planet back to
+     back, it brings up two different messages, shouldn't that just be
+     combined to one message?" Where you stand and what is next used to
+     take turns, one per tap; they are one caption now, and a second tap
+     while it is up keeps it up (homeCaptionShow: same key, same words). */
   const keys = homeFlareKeys(), f = store.mysteryColorsFound || {};
   const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
   const found = keys.filter(k => f[k]).length;
-  return { kind: "planet", name: "Your flares", state: "", color: "",
-    /* no total for the secret flares (build 326): more of them come into
-       view as you find them, so "of 3" was never the whole of it */
-    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."] };
+  /* no total for the secret flares (build 326): more of them come into
+     view as you find them, so "of 3" was never the whole of it */
+  const parts = [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."];
+  const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
+  if(next){
+    const left = tierShortfall(TIER_UNLOCKS[next]);
+    parts.push("Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light.");
+  } else if(homeRingTier() && secretFlaresAllFound()) parts.push("Every flare is lit, the secret ones too.");
+  return { kind: "planet", name: "Your flares", state: "", color: "", parts };
 }
 
 /* ---- THE CAPTION ----
@@ -97030,7 +97056,7 @@ function homeCaptionHide(panel){
   homeCaptionState.key = null;
 }
 __bm("L96077");
-const homeCaptionState = { key: null, planetN: 0, timer: 0 };
+const homeCaptionState = { key: null, timer: 0 };
 function homeCaptionShow(panel, item, key){
   if(!panel || !panel.isConnected || !item) return null;
   item.text = (item.parts || [item.text || ""]).filter(Boolean).join(" ");
@@ -130040,6 +130066,10 @@ function applyGlassRefraction(el, mapImgId){
       '<path class="tg-stem" fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2z"/>' +
       '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
   };
+  /* how long after the lens lifts a tapped tab's screen is built: the
+     glide (LENS.glide) is over the tab by ~75ms, the reference's page
+     changes ~100ms after the press (see navigateTab) */
+  const TAB_SCREEN_AFTER = 110;
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
     if(dest === "profile"){
@@ -130122,8 +130152,21 @@ function applyGlassRefraction(el, mapImgId){
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); }
       };
-      requestAnimationFrame(() => setTimeout(navRun, 0));
-      setTimeout(navRun, 120);
+      /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
+         clicking to other tabs it shoots over instantly, the glass bubble
+         does not roll over to it like the video." His recording (iOS 26,
+         60fps): the press lifts the lens at frame 7, it is over the new tab
+         by 12, and the page only starts to change at 13. Here the screen
+         was built on the frame after the click - with a quick tap that is
+         ~70ms after the press, while the lens was still in flight - and
+         its build (100ms+ at 4x CPU) landed on the glide, so the lens was
+         next seen already there. The build now waits until the lens has
+         had TAB_SCREEN_AFTER ms from its lift; the highlight still moves
+         at once, and a drag released over a tab (lifted long ago) builds
+         as before. */
+      const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9)));
+      setTimeout(() => requestAnimationFrame(() => setTimeout(navRun, 0)), wait);
+      setTimeout(navRun, wait + 120);
     };
     tab.addEventListener("click", navigateTab);
     /* the drag-release path below uses the same steps (build 314) */
@@ -130806,6 +130849,8 @@ function applyGlassRefraction(el, mapImgId){
     lensBarSwell([[0, sw && sw !== "none" ? sw : "1 1"], [160, LENS_SWELL]]);
     bar.classList.add("lens-up", "is-pressing");
     lensPressT = performance.now(); lensAt = target;
+    /* when it lifted, for the screen to wait on (navigateTab, build 327z10) */
+    bar._lensPressAt = lensPressT;
     lensPlay(lensSpring(s0, v0, () => ({ cx: ti.c, W: ti.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
     if(lensRun) lensRun.lift = true;
     lensMagnify(ti.c, 1, 220, 0);
