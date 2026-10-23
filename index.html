@@ -69927,7 +69927,7 @@ const NovaSound = (function(){
       todo.forEach(hswAttach);
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
-    if(hswQueue.size) hswSchedule(); else hswPrune();
+    if(hswQueue.size) hswSchedule();
   }
   /* a control that was hidden (another tab's pane) had no size when it was
      judged: once it is shown and turns out big, its switch comes off */
@@ -69987,7 +69987,9 @@ const NovaSound = (function(){
   /* Haptics on (and an iPhone): the switches are there; off or anywhere else:
      the page is exactly as it was without them, children and all */
   function hswSync(){
-    try{ if(canTaptic() && hapticsWanted()) hswStart(); else hswStop(); }catch(e){}
+    /* the switches only live in the installed app (build 327p): a Safari tab
+       keeps the scripted tick and none of the extra elements */
+    try{ if(canTaptic() && hapticsWanted() && (window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches))) hswStart(); else hswStop(); }catch(e){}
   }
   ["pointerdown", "touchstart"].forEach(ev => window.addEventListener(ev, e => {
     if(!isTouchDown(e)) return;
@@ -96684,7 +96686,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327o";
+const APP_BUILD = "2026-10-23-327p";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -97376,17 +97378,44 @@ const FORCED_UPDATE_TRIES = 3;
 let forcedUpdateInfo = null;
 let forcedUpdateStarted = false;
 
+/* A forced reload is counted per build AND across builds: three reloads in
+   twenty minutes, whatever builds they were for, stop the pushing and leave
+   only the tappable banner (build 327p: several builds shipped in a row, each
+   reset the per-build count, and a Safari tab kept reloading). Kept in both
+   localStorage and sessionStorage so a store that will not save cannot make
+   the loop endless. */
+const FORCED_LOG_KEY = "class26e.forced.log";
+const FORCED_WINDOW_MS = 20 * 60 * 1000;
+function forcedRecent(){
+  const now = Date.now(); let n = 0;
+  for(const st of [() => localStorage, () => sessionStorage]){
+    try{
+      const arr = JSON.parse(st().getItem(FORCED_LOG_KEY) || "[]");
+      n = Math.max(n, arr.filter(t => now - t < FORCED_WINDOW_MS).length);
+    }catch(e){}
+  }
+  return n;
+}
 function forcedTriesFor(build){
+  let per = 0;
   try{
     const raw = JSON.parse(localStorage.getItem(FORCED_TRIES_KEY) || "null");
-    return (raw && raw.build === build) ? (raw.tries || 0) : 0;
-  }catch(e){ return 0; }
+    per = (raw && raw.build === build) ? (raw.tries || 0) : 0;
+  }catch(e){}
+  return Math.max(per, forcedRecent());
 }
 function noteForcedTry(build){
   try{
     localStorage.setItem(FORCED_TRIES_KEY,
       JSON.stringify({ build: build, tries: forcedTriesFor(build) + 1 }));
   }catch(e){}
+  const now = Date.now();
+  for(const st of [() => localStorage, () => sessionStorage]){
+    try{
+      const arr = JSON.parse(st().getItem(FORCED_LOG_KEY) || "[]").filter(t => now - t < FORCED_WINDOW_MS);
+      arr.push(now); st().setItem(FORCED_LOG_KEY, JSON.stringify(arr));
+    }catch(e){}
+  }
 }
 
 /* The one thing a forced reload must never interrupt is a test in

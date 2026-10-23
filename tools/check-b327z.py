@@ -46,6 +46,8 @@ def init_for(kind):
     s = ""
     if kind in UA:
         s += "Object.defineProperty(navigator,'userAgent',{get:()=>%r});" % UA[kind]
+    if kind == "iphone":
+        s += "try{Object.defineProperty(navigator,'standalone',{get:()=>true});}catch(e){}"
     if kind == "ipad":
         s += "Object.defineProperty(navigator,'maxTouchPoints',{get:()=>5});"
     if kind == "android":
