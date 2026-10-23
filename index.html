@@ -69893,6 +69893,8 @@ const NovaSound = (function(){
     return true;
   }
   function hswAttach(h){
+    /* never more than a few hundred native switches alive (build 327n) */
+    if(document.getElementsByClassName("nova-hsw").length >= 160) return;
     const sw = document.createElement("input");
     sw.type = "checkbox";
     sw.setAttribute("switch", "");
@@ -96682,7 +96684,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327m";
+const APP_BUILD = "2026-10-23-327n";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -97558,6 +97560,16 @@ async function applyUpdate(){
   releasePageForReload();
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 150))));
   location.reload();
+  /* SAFETY NET (build 327n): if the reload did not take (Safari can refuse it
+     or serve the same copy), the page must not stay greyed out and frozen
+     under "Pushing update". Put it back after a few seconds. */
+  setTimeout(() => {
+    try{
+      document.documentElement.classList.remove("is-reloading");
+      const pu = document.getElementById("pushing-update"); if(pu) pu.remove();
+      checkForUpdate && (forcedUpdateStarted = false);
+    }catch(e){}
+  }, 5000);
 }
 function releasePageForReload(){
   try{ showPushingUpdate(); }catch(e){}
