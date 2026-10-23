@@ -3,5 +3,6 @@
   "note": "",
   "frameId": "",
   "frameNote": "",
-  "force": true
+  "force": true,
+  "safariSound": true
 }

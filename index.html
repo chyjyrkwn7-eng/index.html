@@ -56810,6 +56810,7 @@ function pullFromCloud(code, onDone, adopt){
       if(adopt){
         if(syncCode && code !== syncCode) adoptedOverPublic = { code: syncCode, pub: store.publicId };
         applyLoadedData(cloud);
+        themeFollowStore();
         persistLocally();
       } else {
         syncSameAccount(cloud);
@@ -57033,6 +57034,7 @@ function followAccountMove(from, to, noteRef, note){
     setSyncCode(to);
     applyLoadedData(cloud);
     if(leaving){ try{ mergeLeavingAccount(leaving, note); }catch(e){} }
+    themeFollowStore();
     persistLocally();
     attachLiveListener(to);
     /* the target was just read from the server and merged into: that is
@@ -57369,6 +57371,36 @@ function mergeSameAccount(dst, src){
     const a = num(o[k]), b = num(v);
     if(b > a){ o[k] = b; res.gained = true; } else if(a > b) res.otherHadLess = true;
   };
+  /* THE THEME IS THE LAST ONE PICKED, NOT THE NEWER COPY'S (build 327z9).
+     "These updates are changes peoples color theme ... It's restoring it
+     to the default color." Preferences came from whichever copy saved
+     last, and every update makes each device save once on its first boot
+     (sound on for everyone, 327) - so a device still on the default (a
+     second phone, a Safari tab) became "newer" and pushed Default over a
+     theme somebody had picked. The accent now carries the time it was
+     PICKED (accentAt, stamped in Customize and by a rank-up); the later
+     pick wins on either side. With no stamps (older copies), a set theme
+     beats the default, which nobody had chosen. */
+  try{
+    const tb = src.theme && typeof src.theme === "object" ? src.theme : null;
+    if(tb && ACCENTS.indexOf(tb.accent) >= 0){
+      const ta = dst.theme && typeof dst.theme === "object" ? dst.theme : null;
+      const aOk = ta && ACCENTS.indexOf(ta.accent) >= 0;
+      const atA = aOk ? num(ta.accentAt) : -1, atB = num(tb.accentAt);
+      let takeB = false, keepA = false;
+      if(!aOk) takeB = true;
+      else if(atB > atA) takeB = true;
+      else if(atA > atB) keepA = ta.accent !== tb.accent;
+      else if(ta.accent !== tb.accent){
+        if(ta.accent === "ink") takeB = true; else keepA = true;
+      }
+      if(takeB && (!aOk || ta.accent !== tb.accent || atA !== atB)){
+        if(!ta) dst.theme = JSON.parse(JSON.stringify(tb));
+        else { ta.accent = tb.accent; if(atB) ta.accentAt = atB; else delete ta.accentAt; }
+        res.gained = true;
+      } else if(keepA) res.otherHadLess = true;
+    }
+  }catch(e){}
   /* THE UNLOCK HOLD TRAVELS WITH THE ACCOUNT (build 286). A merge or a
      credit - on a device or on the server - sets `mergeHold` so what it
      unlocks plays at the end of the next test. Without this, a device
@@ -57615,6 +57647,19 @@ function mergeSameAccount(dst, src){
    way. Pushes only when this device holds something the cloud does not,
    which is also what keeps two listening devices from echoing a merge back
    and forth: once both hold the merge, neither has anything to add. */
+/* The theme in memory is what saveTheme() writes back, so after a copy
+   from the cloud has been applied it must follow the store, or the next
+   save of any setting puts this device's old theme back over it. */
+function themeFollowStore(){
+  try{
+    const t = store.theme;
+    if(!t || ACCENTS.indexOf(t.accent) < 0) return;
+    const at = Number(t.accentAt) || 0;
+    if(theme.accent === t.accent && (Number(theme.accentAt) || 0) === at) return;
+    theme.accent = t.accent; theme.accentAt = at;
+    applyTheme();
+  }catch(e){}
+}
 function syncSameAccount(cloud){
   tallyCapture(store);
   const cloudTime = (cloud && cloud.lastModified) || 0;
@@ -57625,11 +57670,13 @@ function syncSameAccount(cloud){
     const r = mergeSameAccount(store, mine);
     try{ if(applyWeekWinVoids()) r.gained = true; }catch(e){}
     /* `gained` here means this device brought something the cloud lacks */
+    themeFollowStore();
     if(r.gained) saveStore(); else persistLocally();
     return true;
   }
   const r = mergeSameAccount(store, cloud);
   try{ if(applyWeekWinVoids()){ r.gained = true; r.otherHadLess = true; } }catch(e){}
+  themeFollowStore();
   if(r.gained) persistLocally();
   /* This device is the newer side, or holds something the cloud lacks:
      either way the cloud is behind it, so it goes up. */
@@ -66896,7 +66943,10 @@ function loadTheme(){
        is ignored just below. "party" is unrelated to light/dark (a
        separate, Supernova-gated unlock) and still honored normally. */
     if(store.theme.mode === "dark" || store.theme.mode === "party") theme.mode = store.theme.mode;
-    if(ACCENTS.indexOf(store.theme.accent) !== -1) theme.accent = store.theme.accent;
+    if(ACCENTS.indexOf(store.theme.accent) !== -1){
+      theme.accent = store.theme.accent;
+      theme.accentAt = Number(store.theme.accentAt) || 0;
+    }
     /* Classic layout has been fully retired \u2014 Modern is the only
        option now, so any previously-stored "classic" preference is
        simply ignored here rather than honored. */
@@ -67155,7 +67205,7 @@ function syncStatusBarColor(){
 }
 
 function saveTheme(){
-  store.theme = { mode: theme.mode, accent: theme.accent, layout: theme.layout,
+  store.theme = { mode: theme.mode, accent: theme.accent, accentAt: Number(theme.accentAt) || 0, layout: theme.layout,
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
                   reduceMotion: theme.reduceMotion,
                   muteBanners: theme.muteBanners,
@@ -70242,17 +70292,22 @@ const SOUND_AMBIENCE = {
 const NovaSound = (function(){
   const AC = () => window.AudioContext || window.webkitAudioContext;
   const st = { lastAt: -1e9, genAt: -1e9, wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
-  /* OFF IN AN iPHONE BROWSER TAB (327w, put back in 327z2). Madison: the
-     sound engine was what froze Safari, and he saw it stop when sound went.
-     The installed app keeps sound and haptics; a Safari tab never builds an
-     AudioContext, never renders the ambience and never ticks. */
-  const iosTab = (() => { try{
+  /* ON IN AN iPHONE BROWSER TAB TOO (build 327z9). 327w/327z2 turned
+     sound and haptics off there while the Safari freeze was hunted; the
+     freeze was the badge outlines' layout (327y), and Madison: "I still
+     want the safari version to have sound and Haptic Touch and everything
+     else the app has." `iosTab` still says what the device is; tabOff()
+     is the switch, and "safariSound": false in version.json flips it off
+     on every phone at the next update check (no build needed). */
+  const iosTabIs = (() => { try{
     const ua = navigator.userAgent || "";
     const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const sa = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
     return ios && !sa;
   }catch(e){ return false; } })();
-  const on = () => !iosTab && !!(typeof theme === "object" && theme && theme.soundOn);
+  const tabOff = () => { if(!iosTabIs) return false; try{ return localStorage.getItem("class26e.safarisound") === "0"; }catch(e){ return false; } };
+  const iosTab = iosTabIs;
+  const on = () => !tabOff() && !!(typeof theme === "object" && theme && theme.soundOn);
   const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
   const level = v => .95 * v * v;
   const canVibrate = () => typeof navigator !== "undefined" && typeof navigator.vibrate === "function" && /Android/i.test(navigator.userAgent || "");
@@ -70508,7 +70563,7 @@ const NovaSound = (function(){
   function hswSync(){
     /* the switches only live in the installed app (build 327p): a Safari tab
        keeps the scripted tick and none of the extra elements */
-    try{ if(canTaptic() && hapticsWanted() && (window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches))){ if(!hswObs && !hswLate){ if(!document.getElementById("splashscreen")) hswStart(); else hswLate = setTimeout(() => { hswLate = 0; try{ if(!document.getElementById("splashscreen")) hswStart(); else hswSync(); }catch(e){} }, 1500); } } else { if(hswLate){ clearTimeout(hswLate); hswLate = 0; } hswStop(); } }catch(e){}
+    try{ if(canTaptic() && hapticsWanted()){ if(!hswObs && !hswLate){ if(!document.getElementById("splashscreen")) hswStart(); else hswLate = setTimeout(() => { hswLate = 0; try{ if(!document.getElementById("splashscreen")) hswStart(); else hswSync(); }catch(e){} }, 1500); } } else { if(hswLate){ clearTimeout(hswLate); hswLate = 0; } hswStop(); } }catch(e){}
   }
   ["pointerdown", "touchstart"].forEach(ev => window.addEventListener(ev, e => {
     if(!isTouchDown(e)) return;
@@ -70540,7 +70595,7 @@ const NovaSound = (function(){
   }, true);
   const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
-  const hapticsWanted = () => !iosTab && !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
+  const hapticsWanted = () => !tabOff() && !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
     if(!kind || !hapticsWanted()) return;
     if(canTaptic()){
@@ -70859,7 +70914,7 @@ const NovaSound = (function(){
   })();
 
   return {
-    iosTab, play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
+    iosTab, tabOff, play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
     catalogue: SOUND_CATALOGUE, ambience: SOUND_AMBIENCE,
     /* for tools and the test page */
     state: () => ({ on: on(), hasContext: !!st.ctx, ctxState: st.ctx ? st.ctx.state : null, voices: st.voices.length,
@@ -71016,7 +71071,7 @@ function buildSoundSettings(){
   host.appendChild(lab);
   const card = document.createElement("div");
   card.className = "settings-card";
-  if(NovaSound.iosTab){
+  if(NovaSound.tabOff && NovaSound.tabOff()){
     const note = document.createElement("p");
     note.className = "settings-sound-tabnote";
     note.textContent = "Sound and haptics play in the installed app. Add Nova to your Home Screen to hear them.";
@@ -84315,7 +84370,7 @@ function playRankUpScene(tierKey, opts, spec){
   function setNewTheme(){
     try{
       if(ACCENTS.indexOf(tierKey) >= 0 && !isLockedAccent(tierKey)){
-        theme.accent = tierKey; applyTheme(); saveTheme();
+        theme.accent = tierKey; theme.accentAt = Date.now(); applyTheme(); saveTheme();
       }
     }catch(e){}
   }
@@ -97913,6 +97968,16 @@ async function checkForUpdate(force){
   }catch(e){ return; }
   finally{ updateCheckInFlight = 0; }
   if(!info) return;
+  /* THE SAFARI SOUND SWITCH (build 327z9): "safariSound": false in
+     version.json turns sound and haptics off in iPhone browser tabs again
+     at the next check, with no build - the escape hatch if Safari ever
+     freezes with them on. Missing or true is on. */
+  try{
+    const offNow = info.safariSound === false;
+    const was = localStorage.getItem("class26e.safarisound") === "0";
+    if(offNow) localStorage.setItem("class26e.safarisound", "0"); else localStorage.removeItem("class26e.safarisound");
+    if(offNow !== was){ try{ NovaSound.sync(); }catch(e){} }
+  }catch(e){}
 
   /* Page updates win when both apply. Getting someone onto the current
      code matters more than the colour of a strip, and the reload would
@@ -120814,7 +120879,7 @@ function buildCustomizeThemeSect(){
       }
       clearNew();
       if(theme.accent === name && openHeld){ openHeld(); return; }
-      theme.accent = name; applyTheme(); saveTheme(); paintAccents();
+      theme.accent = name; theme.accentAt = Date.now(); applyTheme(); saveTheme(); paintAccents();
     });
     /* ITS NAME UNDER IT (build 241): "the theme colors need the names
        underneath them" - a rank's theme is named after the rank. */

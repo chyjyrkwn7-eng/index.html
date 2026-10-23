@@ -26807,3 +26807,24 @@ the installed app runs under the status bar. Pull to refresh stays off on
 the root only (`html.is-browser{overscroll-behavior-y:none}`); the body no
 longer carries it. Not verifiable here (no WebKit); what "scrolling is
 broken" means exactly was asked of Madison. check-b327z3 A moved.
+
+### Build 327z9 (continued) - the theme is the last one picked, sound and haptics back in Safari tabs
+
+- **A theme survives updates.** Every update makes each device save once on
+  its first boot (327's sound-on), so a device still on Default (a second
+  phone, a Safari tab) became the newer copy and pushed Default over a
+  picked theme; preferences came whole from the newer copy, and the
+  in-memory `theme` never followed a copy applied from the cloud, so the
+  next settings save wrote the old one back. Now `store.theme.accentAt` is
+  the time the accent was PICKED (Customize, a rank-up's `setNewTheme`),
+  `mergeSameAccount` keeps the later pick (no stamps: a set theme beats
+  Default), and `themeFollowStore()` puts the merged accent into `theme`
+  after `syncSameAccount`, an adopt and an account move. Live on Oct 23: 18
+  accounts on Default, 8 on a rank theme; anyone already reset everywhere
+  has to pick theirs once more (no backup holds the old ones).
+- **Sound and haptics are on in Safari tabs** (reverses 327w/327z2), the
+  haptic switch layer included. `NovaSound.tabOff()` is the switch:
+  `"safariSound": false` in version.json turns them off in iPhone browser
+  tabs on every phone at the next update check, no build needed - the
+  escape hatch if a Safari freeze comes back. Not testable without an
+  iPhone.
