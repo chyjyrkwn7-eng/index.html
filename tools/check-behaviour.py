@@ -7241,15 +7241,17 @@ def check_b297(br):
         /* 1. the Flagged box: first in the grid, both columns wide */
         cfg.mode = 'review'; cfg.units = []; cfg.source = 'all'; showSetup(); await wait(600);
         const grid = document.querySelector('.screen-setup .picks');
-        const box = grid && grid.querySelector('.pick-flagged-all');
+        const box = document.querySelector('.screen-setup .pick-flagged-all');
         const cards = [...grid.querySelectorAll('.pick:not(.pick-flagged-all):not(.pick-tba)')];
         /* MOVED (build 323): "I'm still not a fan of how the review section
            shows the starred question at the top." The box is a row after
            the units now (check_b323u_units); what still holds is that it
            is there, full width, and counts what is starred. */
-        const unitRows = [...grid.querySelectorAll('label.pick')];
-        out.box = box ? { first: !!(unitRows.length && (unitRows[unitRows.length - 1].compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING)), text: box.textContent,
-          wide: Math.abs(box.getBoundingClientRect().width - grid.getBoundingClientRect().width) < 2 } : null;
+        /* MOVED AGAIN (327z10): "Starred questions being at the very bottom
+           of review isn't the move". It is a pill beside Select all, above
+           the units; what holds is that it is there and counts what is starred. */
+        out.box = box ? { tools: !!box.closest('.picks-tools'), above: box.getBoundingClientRect().bottom <= grid.getBoundingClientRect().top + 1,
+          text: box.getAttribute('aria-label') || box.textContent } : null;
         out.cardCounts = cards.map(c => (c.querySelector('.pcount') || {}).textContent).filter(t => /flag/i.test(t || ''));
         out.oldUi = !!document.querySelector('.review-flagged-card, .review-bank');
 
@@ -7320,8 +7322,8 @@ def check_b297(br):
     if r.get("threw"):
         print("   threw:", r["threw"][:400])
     bx = r.get("box") or {}
-    check("Review's list has a Starred questions row after the units, full width",
-          bx.get("first") is True and bx.get("wide") is True and "3 questions" in bx.get("text", "") and r.get("oldUi") is False, {**bx, "oldUi": r.get("oldUi")})
+    check("Review has a Starred questions pill beside Select all, above the units, counting what is starred",
+          bx.get("tools") is True and bx.get("above") is True and "3 questions" in bx.get("text", "") and r.get("oldUi") is False, {**bx, "oldUi": r.get("oldUi")})
     check("no unit card says how many are flagged", r.get("cardCounts") == [], r.get("cardCounts"))
     sw = r.get("afterSwipe") or {}
     check("swiping the Review start sheet down closes it and opens nothing",
@@ -26794,13 +26796,11 @@ def check_b323u_units(br):
           cfg.mode = 'review'; cfg.units = []; showSetup(); await wait(800);
           document.querySelectorAll('.picks .pick').forEach(p => p.classList.add('pick-revealed')); await wait(500);
           const L = document.querySelector('.screen-setup .picks');
-          const star = L.querySelector('.pick-flagged-all');
+          const star = document.querySelector('.screen-setup .pick-flagged-all');
           const units = [...L.querySelectorAll('label.pick')];
-          const sb = star ? star.getBoundingClientRect() : null, ub = units[0].getBoundingClientRect(), last = units[units.length - 1];
-          out.star = star ? { first: L.firstElementChild === star, afterUnits: !!(last.compareDocumentPosition(star) & Node.DOCUMENT_POSITION_FOLLOWING),
-            below: sb.top > last.getBoundingClientRect().top, w: Math.round(sb.width), uw: Math.round(ub.width),
-            h: Math.round(sb.height), uh: Math.round(Math.min(...units.map(u => u.getBoundingClientRect().height))),
-            text: star.textContent } : null;
+          const sb = star ? star.getBoundingClientRect() : null;
+          out.star = star ? { tools: !!star.closest('.picks-tools'), inList: L.contains(star), above: sb.bottom <= L.getBoundingClientRect().top + 1,
+            h: Math.round(sb.height), text: star.getAttribute('aria-label') || star.textContent } : null;
           /* 6. the mode cards */
           showModeSelect(); await wait(500);
           out.cards = [...document.querySelectorAll('.modeselect .modecard')].map(c => ({ mode: c.dataset.mode,
@@ -26839,11 +26839,12 @@ def check_b323u_units(br):
               cl.get("to") == 0 and 0 < cl.get("endsAt", 0) <= 420 and cl.get("opAtRemove") is not None
               and cl.get("gone") is True, cl)
         st = r.get("star") or {}
-        # Kept in 325 with the squares back: after the units, not on top -
-        # full width under the squares, as it was full width over them.
-        check("%s Review's Starred questions is after the units, full width, not a box on top" % label,
-              st.get("first") is False and st.get("afterUnits") is True and st.get("below") is True
-              and abs(st.get("w", 0) - r.get("lw", -9)) <= 2 and "3 questions" in st.get("text", ""), st)
+        # MOVED IN 327z10 ("at the very bottom of review isn't the move"): a
+        # pill in the list's tools row beside Select all - not a card on top
+        # of the units (323: "not a fan"), not a row under all of them.
+        check("%s Review's Starred questions is a pill beside Select all, above the units and not one of them" % label,
+              st.get("tools") is True and st.get("inList") is False and st.get("above") is True
+              and st.get("h", 0) >= 36 and "3 questions" in st.get("text", ""), st)
         cards = {c["mode"]: c for c in r.get("cards") or []}
         d = cards.get("drill") or {}
         ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)

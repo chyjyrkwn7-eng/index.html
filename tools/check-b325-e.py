@@ -288,7 +288,8 @@ UNITS = """async (mode) => { const wait = ms => new Promise(r => setTimeout(r, m
   return { side: Math.abs(a.top - b.top) < 2 && b.left > a.right, w: Math.round(a.width), h: Math.round(a.height),
            drawers: document.querySelectorAll('.pick-more, .pick-main, .pick-more-open').length,
            grow: h1 - h0, hint: (document.querySelector('.picks-holdhint') || {}).textContent || '',
-           starredLast: mode === 'review' ? (kids.filter(k => !k.classList.contains('pick-tba')).pop() || {}).className : null }; }"""
+           /* MOVED IN 327z10: Starred is a pill in the tools row, not a card in the list */
+           starredLast: mode === 'review' ? ((document.querySelector('.screen-setup .picks-tools > .pick-flagged-all') && !kids.some(k => k.classList.contains('pick-flagged-all'))) ? 'pick-flagged-all in tools' : '') : null }; }"""
 
 
 def check_units(br):
