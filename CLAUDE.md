@@ -26485,3 +26485,235 @@ failures on 327z3).
   "\n" split still work, but nothing uses them.
 - Kept from 327z3: the passive kinds (daily, rankings, rankup, notice), the
   daily "not yet" at the top, Safari's strips.
+
+### Build 327z5 - the requests the crashed session never reached
+
+Four builders in parallel on 619542a (327z4), merged as wip/327z5. Gates: tools/check-b327z5-b.py, -c.py, -d.py; check-b325-f F5 moved (the lens starts at the touched tab, no glide). Their notes, verbatim:
+
+#### notes-a
+#### Stream A (b327z5-a) - tab bar lens, first-tap lag, Safari
+
+Base 619542a. Code commit 611e5b0.
+
+##### What changed (index.html)
+- **The lens pops under the finger.** On touch-down it starts as a
+  platter-sized pill at the TOUCHED tab (`lensDown`: `s0.cx = ti.c`), not at
+  the lit tab's platter, and the lit tab's platter fades out under it over
+  140ms. Pressing the lit tab is unchanged.
+- **The lens tracks the finger 1:1.** In `lensMove`'s rAF tick the centre is
+  the finger's x every frame, plus a starting offset that closes in ~70ms
+  (`f.off *= exp(-dt/.07)`), so nothing jumps. Size still springs; the
+  stretch follows the finger's smoothed speed. It still runs past the end
+  tabs a little (`LENS.give`). Within the drag slop the lens already follows
+  (>1.5px); turning the touch into a drag still needs `TAB_DRAG_SLOP`.
+- **First tap no longer builds the reverb on the spot.** `sndGraph(..,
+  {lazyRev:true})` from `ensure()` fills the convolver's impulse 350ms later
+  (its FFT was most of the first tap's pointerup cost).
+- **The Home ambience is rendered in idle time**, not in the tap that wakes
+  the sound: `startAmbience` defers `ambRendered` through `later()` and
+  starts it when done, if still wanted.
+
+##### Gate moved
+- `check-b325-f` F5: the tap's lens now starts at Calendar (the tapped tab)
+  from its first frame and never shows over Leaderboard (marked "MOVED IN
+  327z5"). It failed on the old wording because the lens no longer glides
+  from the lit tab - the change Madison asked for.
+
+##### Numbers (Chromium, 4x CPU, iPhone size, real touch taps)
+- First-tap pointerup handler max: 166-238ms before -> 22-55ms after.
+- pointerdown max 17-24 -> 15; pointermove mean 0.3-0.5 -> 0.2-0.3ms.
+- Screen build after a tap (400-1100ms mount) not changed by this stream.
+
+##### Gates
+check-js OK; check-b325-f ALL PASS (after the move); check-b325-j ALL PASS;
+check-sound ALL PASS; check-sync ALL PASS; sweep-layout --quick 14/14.
+check-b327x: 11 failures, identical on base 619542a (the round-7 bar is not
+on this branch).
+
+##### Safari - not reproduced, nothing changed
+No WebKit here (`playwright install webkit` failed; it also appears to have
+reshuffled /opt/pw-browsers - the coordinator re-symlinked chromium-1194).
+Code reading only:
+- edge-tint strips are made after the splash at z-index 2 and may be
+  covered by other fixed layers; their colour is the app's dark edge colour,
+  so "black bars" may be the strips themselves;
+- a used fixture's localStorage is ~4KB, so a storage quota is an unlikely
+  cause of the logouts.
+Freeze on tab clicks, not loading after returning, logging out and the bar
+colour all need a real iPhone Safari to check.
+
+##### Not verifiable here
+Safari issues above; how the lens feels on a real phone; the Taptic tick.
+
+#### notes-b
+#### b327z5-b - sheets you can pull down from anywhere, a close X you can see
+
+Madison: *"The chat box when it's up, you can't swipe down from it unless you
+are swiping down from the very top."* and *"The test start menu with all the
+options. The swiping down function is broken. It doesn't swipe down similar to
+how the chat one doesn't. The x button in the top right you can't see it cause
+color. When you do swipe down it glitches and changes colors."*
+
+Base 619542a. Gate: `tools/check-b327z5-b.py` (`B327Z5B_ONLY=A|B`,
+`--against FILE`): 24 failures on 619542a, ALL PASS here. Real CDP touch on an
+iPhone 17 Pro Max (440x956 at 3x) and an iPad Pro 11" (834x1194).
+
+##### The start sheet (`attachSheetSwipe`: Drill/Quiz/Review and the VR Match settings)
+
+- **From anywhere, when the scroller under the finger is at its top.** It used
+  to take the sheet on the first pixel of any move (a tap that slid moved it,
+  a sideways slide pulled it) and asked only the sheet's own scrollTop. Now it
+  finds the nearest vertical scroller under the finger: scrolled down, or a
+  sideways first move, is a scroll; at the top, every move is claimed from the
+  first (iOS will not give back a move it committed to a bounce); past
+  `SHEET_SWIPE_SLOP` (12px) a down drag follows the finger 1:1 (translate3d
+  written once a frame), an up drag scrolls the list by hand. Sliders, fields,
+  selects are skipped.
+- **No colour change.** `.is-dragging` carried its own lighter blue-grey fill,
+  which out-ranked the start sheet's `#0F1115`; it now only drops the blur
+  (both dragged sheets are opaque, so the blur shows nowhere).
+- **Closes or springs back smoothly**: past min(110px, 22% of its height) or
+  a flick, it slides all the way out at about the finger's speed (180-300ms)
+  and only then closes; short of it, a .32s spring back; a generation counter
+  stops a stale timeout touching a newer drag.
+- **The close X is visible**: the white button recipe out-ranked the round
+  icon's rules (a near-white X on a near-white disc, 1.0:1). It is a glass
+  circle again (13% white lift, lit rim, white X drawn by ::before/::after):
+  13.4:1 phone / 10.7:1 iPad, the 44px target unchanged.
+
+##### The chat sheet
+
+- **Down from anywhere.** The head is unchanged (every move ours, down closes,
+  up resizes). Anywhere else that is not a text field, the tablet's size
+  handle or the emoji tray: a drag that goes DOWN with the list under the
+  finger at its top pulls the sheet; up, sideways (the roster), or starting
+  with the list scrolled is the list's, and the page guard keeps it off the
+  page. Outside the head the slop is `DRAG_SLOP_BODY` (22px, a thumb's tap
+  jitter), only a downward move arms, and coming back up only returns the
+  sheet to rest - it never resizes. The delayed flat fill (`DRAG_FLAT_AT`)
+  is unchanged, so a tap still never moves or recolours the glass.
+
+##### Gates
+
+- check-b327z5-b: ALL PASS (24 failures on 619542a).
+- check-b327-h: ALL PASS. check-chatroom: ALL PASS.
+- check-chat: one failure, "the what's new card is missing one of the things
+  it was asked to say, or is not Version 9" - identical on 619542a, unrelated.
+- check-behaviour b314h_sheet (99), b314h_chat (98), b314h_chat2 (105), b297
+  (65), b267 (49): ALL PASS.
+- check-js: OK.
+
+#### notes-c
+#### Build 327z5 (C) - every notice on the account banner's glass, centred
+
+Branch `b327z5-c` off 619542a. Gate: `tools/check-b327z5-c.py` (`--against`);
+ALL PASS here, 35 failures on 619542a.
+
+Madison loved the save-your-code banner (neutral glass, a 3px coloured bar on
+the left, a bare icon, a small tag, one sentence, an x). Everything below is
+on that recipe; no banner carries a wash of its colour ("Why is there yellow
+in it like that?").
+
+- **Welcome back is a top banner, not a toast** (`showWelcomeBackBanner(msg)`,
+  `#welcome-banner`, kind `welcome`: tag WELCOME BACK, green, a cloud with a
+  tick). Every `showToast("Welcome back...")`, "Signed back in", "Signed in to
+  your account" and "Linked - this device is now synced." call goes through it.
+- **Save and exit lands on Home with a SAVED TEST banner**
+  (`showSavedTestBanner()`, `#savedtest-banner`, blue bookmark): "Your test is
+  saved - tap Start Studying to pick it up." Only if Home is up 600ms later.
+- **The key is drawn in strokes** (round bow, shaft, two teeth; it was one
+  filled outline that blobbed at 21px). **Rank up is three climbing chevrons**
+  at .4 / .7 / 1, no star. `BANNER_KINDS` takes `svg:` for any kind.
+- **Every top banner is centred**: left = right = max(1rem, insets),
+  max-width min(26rem, 100vw - 2rem); the phone's right-only inset (which
+  cleared the chat button by stopping short of it) and the daily banner's own
+  narrower rule are gone. `settleTopBanner(el)` moves a banner below the chat
+  button (`.chatdock-btn`, `#roomchat-fab`) or another top banner it would
+  overlap, so two banners stack instead of sitting on each other. Called from
+  `positionDailyAlert(el)` and `placeTopBanner(el)`.
+- **Icon, words and x on one centre line**: the x is a drawn path
+  (`BANNER_X_SVG`, a `var` - read at boot) in a grid-centred box; a typed "x"
+  sat on its baseline. Measured within 0.1px on both reference devices.
+- **Every daily-question message is the top banner.** "It's out" was the
+  bubble beside the "?" (`showDailyTip`, now unused); it is the live banner
+  (`#dailyalert.app-banner.is-live`, tag DAILY QUESTION, a chevron, tappable,
+  role button), still unrolling out of the "?" with motion on. No sweep, no
+  coloured ring. "Done for today" was already a top banner (327z3).
+- **The ring is the button's rim** (`.dq-ring` inset -1px, was -6px with the
+  button's own grey rim and a dark gap between - two rings). Stroke 5.6, a
+  faint track, round caps while it fills, the button's border stood down
+  (`:has(.dq-ring)`), and nothing drawn at 0 (`.is-empty`, except while it
+  charges - the charge animates from empty).
+- **Toasts take the banners' look** without moving: a 3px bar on the left in
+  their colour (blue plain, green good, amber star), a bare icon, role status.
+  `.toast-flag` lost its solid yellow fill.
+- Not touched: the tab bar, the chat button, cards.
+
+Gates moved: check-statsbadges 3 ("It's out" is the centred top banner, no
+bubble; measured after its unroll finishes).
+
+Runs (one at a time): check-js OK, check-b327z5-c ALL PASS (35 fail on
+619542a), check-b327z3 ALL PASS, check-statsbadges ALL PASS, check-save-code
+ALL PASS, check-fixes --only "17 Pro Max" and --only "iPad Pro 11" all
+verified.
+
+Note: midway through, /opt/pw-browsers/chromium-1194 disappeared (the
+browsers were reinstalled as chromium-1243 by something else on the box);
+every gate above ran before that. The last ring tweak (excluding
+`.is-charging` from `.is-empty`) was gated by check-b327z5-c before it went.
+
+#### notes-d
+#### Build 327z5 (builder D) - the calendar in the app's materials, first place without its sheen, a person card that fades, banners clear of the circle, one unit card size, no line under the tick
+
+Branch `b327z5-d` off 619542a. Gate: `tools/check-b327z5-d.py` (A-F,
+`--against`); all pass here, 23 fail on 619542a.
+
+- **The calendar's cards are the app's card.** "The interface doesn't go with
+  the rest of the app." Today, Next test, the day card, Final Exams and The
+  course take the surface tokens (`--surface-sheen`, `--surface-1`,
+  `--surface-border`, `--surface-shadow`, `--surface-blur`, 14px corners) -
+  the Stats / Profile card - instead of build 327's per-card colour washes and
+  tinted rims. Kickers are `--soft` like every card's; the month title is the
+  app's sans (heavy), not the serif; the month arrows and Go to today are the
+  black 3D pill (Quit's recipe); the class-day cells a faint lifted tile with
+  no outline (326g's rule kept); the Next test count a stat tile. Layout,
+  content, dot colours and their meanings are unchanged. One CSS block,
+  "THE CALENDAR IN THE APP'S MATERIALS (build 327z5)", at the end of the main
+  stylesheet. **This reverses round 10's "each card edged and washed in its
+  own colour"** - the colour now lives only in the dots and numbers.
+- **No sheen over first place.** `.lb-podium-sheen` and the element are gone;
+  the metal ring, crown and medal stay. check-behaviour's top-three check now
+  asserts no sheen.
+- **Overall's blurb**: "Ordered by rank. Within a rank, whoever is closest to
+  the next one is ahead." (was "Ranked by rank. ..."). This Week and Hundos
+  read fine.
+- **The person card's banner fades** over a 7.6rem strip (was 6.2) on the
+  Profile cover's eased curve, `mask-repeat:no-repeat` (the default repeat
+  could tile the opaque top under the strip); the portrait moves up the same
+  1.4rem so nothing under it moves.
+- **`BANNER_FOCUS` / `applyBannerFocus(art, id)`** (beside
+  `buildWornBannerArt`): [zoom, x, y] per banner, applied only on the Profile
+  cover and the person card (`.bnr.has-focus`, a transform on the art inside
+  its clipped box), so a subject drawn in the middle is not under the
+  character's circle. Listed: level80, adept_rank, titan_rank, flare_void,
+  flare_umbra, flare_horizon, flare_genesis, zenith. Chosen by rendering every
+  banner at 1440x540 and searching zoom/offset for the least banner detail
+  left under the circle on both covers and both reference devices. Still
+  partly behind the circle and left alone (the subject fills the middle, any
+  shift loses more than it gains): exam100, astral, elite_rank. A new banner
+  whose subject is in the middle wants a row.
+- **Every unit card is one height** (`equalizePickHeights(list)`, both unit
+  pickers): every `label.pick` takes the tallest card's height, re-measured on
+  a width change and when fonts load; the card's 1fr row takes the extra so
+  the count and bar stay on the floor. The Starred box and "More units coming"
+  keep their own. The cost is air on short names (a row is as tall as the
+  Penal Code card: 201px on a Pro Max, 241px on an SE 1st gen).
+- **No line under the tick.** The picked circle's shade was `inset 0 -1px 1px`
+  - a hard grey arc right under the tick (b327y's hairline in the one circle it
+  missed); now a soft fall-off, and its top light is `no-repeat` over the
+  border box.
+- Gates: check-b327z5-d ALL PASS; check-js OK; check-b326-g fails two Home
+  rows (button-to-tab-bar on a 14/15/16 and an iPad) - the same on 619542a
+  (the round-7 tab bar), not this package; its class-day-outline rows fail on
+  619542a and pass here.
+
