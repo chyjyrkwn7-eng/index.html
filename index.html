@@ -64528,7 +64528,13 @@ const BANNER_FOCUS = {
   flare_umbra:   [1.3, -0.15, 0],
   flare_horizon: [1.3, -0.15, -0.15],
   flare_genesis: [1.3, -0.15, -0.15],
-  zenith:        [1.15, -0.075, -0.037]
+  zenith:        [1.15, -0.075, -0.037],
+  /* Madison: "Redraw the art for the 3 or just fix the layout". These three
+     fill the middle, so the cover takes them further in and to the left:
+     the phoenix, the beam and the black hole whole beside the circle. */
+  exam100:       [1.6, -0.3, 0.1],
+  astral:        [1.6, -0.3, 0],
+  elite_rank:    [1.6, -0.3, -0.15]
 };
 function applyBannerFocus(art, id){
   const f = art && BANNER_FOCUS[id];

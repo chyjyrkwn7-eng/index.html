@@ -124,22 +124,59 @@ def sec_c(br):
 FOCUS = """(b) => { const c = document.querySelector('.profile-cover > .bnr'); return c ? getComputedStyle(c).transform : null; }"""
 
 
+FOCUS_IDS = ("level80", "adept_rank", "titan_rank", "flare_void", "flare_umbra", "flare_horizon",
+             "flare_genesis", "zenith", "exam100", "astral", "elite_rank")
+# the three that fill the middle of their art (round 2): the share of the
+# banner's detail left under the circle is measured off the pixels
+HIDDEN_MAX = {"exam100": .075, "astral": .075, "elite_rank": .075}  # b327z5: .08-.21; with the focus: .02-.065
+
+HIDDEN = """(sel) => { const cover = document.querySelector(sel.cover), art = document.querySelector(sel.art);
+  const c = cover.getBoundingClientRect(), a = art.getBoundingClientRect();
+  return { x: c.left, y: c.top, w: c.width, h: c.height, cx: a.left + a.width / 2 - c.left, cy: a.top + a.height / 2 - c.top, r: a.width / 2 }; }"""
+
+
+def hidden_share(pg, cover, art):
+    g = pg.evaluate(HIDDEN, {"cover": cover, "art": art})
+    pg.evaluate("(s) => { const a = document.querySelector(s); if(a) a.style.visibility = 'hidden'; }", art)
+    im = Image.open(io.BytesIO(pg.screenshot(clip={"x": g["x"], "y": g["y"], "width": g["w"], "height": g["h"]}))).convert("L")
+    pg.evaluate("(s) => { const a = document.querySelector(s); if(a) a.style.visibility = ''; }", art)
+    W, H = im.size
+    px = im.load()
+    vals = sorted(px[x, y] for y in range(0, H, 2) for x in range(0, W, 2))
+    med = vals[len(vals) // 2]
+    tot = inside = 0.0
+    for y in range(1, int(H * .7), 2):  # the part of the cover not faded out
+        for x in range(1, W - 1, 2):
+            v = px[x, y]
+            sal = abs(v - med) + abs(px[x + 1, y] - px[x - 1, y]) + abs(px[x, y + 1] - px[x, y - 1])
+            tot += sal
+            if (x - g["cx"]) ** 2 + (y - g["cy"]) ** 2 <= g["r"] ** 2:
+                inside += sal
+    return inside / tot if tot else 1
+
+
 def sec_d(br):
-    ctx, pg = booted(br, 440, 956, seed=USED, touch=True, dpr=1)
-    try:
-        pg.evaluate(CLEAN)
-        pg.evaluate("() => { window.bannerEarned = () => true; }")
-        for bid, moved in (("flare_umbra", True), ("flare_void", True), ("titan_rank", True), ("level80", True), ("tests250", False)):
-            pg.evaluate("(b) => { store.banner = b; showProfile(); }", bid)
-            pg.wait_for_timeout(600)
-            t = pg.evaluate(FOCUS, bid)
-            person(pg, bid)
-            t2 = pg.evaluate("() => { const c = document.querySelector('.person-card-cover > .bnr'); return c ? getComputedStyle(c).transform : null; }")
-            pg.evaluate("() => document.querySelector('.invite-overlay')?.remove()")
-            ok = (t not in (None, "none") and t2 not in (None, "none")) if moved else (t in ("none",) and t2 in ("none",))
-            check("D: %s %s on the Profile cover and the person card" % (bid, "is moved clear of the circle" if moved else "is left as drawn"), ok, (t, t2))
-    finally:
-        ctx.close()
+    for W, H, dev in ((440, 956, "iPhone"), (834, 1194, "iPad")):
+        ctx, pg = booted(br, W, H, seed=USED, touch=True, dpr=1)
+        try:
+            pg.evaluate(CLEAN)
+            pg.evaluate("() => { window.bannerEarned = () => true; document.documentElement.setAttribute('data-reduce-motion','true'); }")
+            for bid, moved in tuple((b, True) for b in FOCUS_IDS) + (("tests250", False),):
+                pg.evaluate("(b) => { document.querySelector('.invite-overlay')?.remove(); store.banner = b; showProfile(); }", bid)
+                pg.wait_for_timeout(600)
+                t = pg.evaluate(FOCUS, bid)
+                hp = hidden_share(pg, ".profile-cover", ".profile-hero-avatar") if bid in HIDDEN_MAX else None
+                person(pg, bid)
+                t2 = pg.evaluate("() => { const c = document.querySelector('.person-card-cover > .bnr'); return c ? getComputedStyle(c).transform : null; }")
+                hc = hidden_share(pg, ".person-card-cover", ".person-card-art") if bid in HIDDEN_MAX else None
+                pg.evaluate("() => document.querySelector('.invite-overlay')?.remove()")
+                ok = (t not in (None, "none") and t2 not in (None, "none")) if moved else (t in ("none",) and t2 in ("none",))
+                check("D (%s): %s %s on the Profile cover and the person card" % (dev, bid, "is moved clear of the circle" if moved else "is left as drawn"), ok, (t, t2))
+                if hp is not None:
+                    check("D (%s): %s - at most %.1f%% of its detail behind the circle (Profile %.2f, person %.2f)" % (dev, bid, HIDDEN_MAX[bid] * 100, hp, hc),
+                          hp <= HIDDEN_MAX[bid] and hc <= HIDDEN_MAX[bid], (round(hp, 3), round(hc, 3)))
+        finally:
+            ctx.close()
 
 
 def sec_e(br):
@@ -180,8 +217,10 @@ def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=CHROME)
         try:
+            only = os.environ.get("ONLY", "").upper()
             for f in (sec_a, sec_b, sec_c, sec_d, sec_e, sec_f):
-                f(br)
+                if not only or f.__name__[-1].upper() in only:
+                    f(br)
         finally:
             br.close()
     cb.SERVER.shutdown()

@@ -33,10 +33,9 @@ Branch `b327z5-d` off 619542a. Gate: `tools/check-b327z5-d.py` (A-F,
   character's circle. Listed: level80, adept_rank, titan_rank, flare_void,
   flare_umbra, flare_horizon, flare_genesis, zenith. Chosen by rendering every
   banner at 1440x540 and searching zoom/offset for the least banner detail
-  left under the circle on both covers and both reference devices. Still
-  partly behind the circle and left alone (the subject fills the middle, any
-  shift loses more than it gains): exam100, astral, elite_rank. A new banner
-  whose subject is in the middle wants a row.
+  left under the circle on both covers and both reference devices. exam100,
+  astral and elite_rank were left alone here and are listed since b327z6
+  (below). A new banner whose subject is in the middle wants a row.
 - **Every unit card is one height** (`equalizePickHeights(list)`, both unit
   pickers): every `label.pick` takes the tallest card's height, re-measured on
   a width change and when fonts load; the card's 1fr row takes the extra so
@@ -51,3 +50,25 @@ Branch `b327z5-d` off 619542a. Gate: `tools/check-b327z5-d.py` (A-F,
   rows (button-to-tab-bar on a 14/15/16 and an iPad) - the same on 619542a
   (the round-7 tab bar), not this package; its class-day-outline rows fail on
   619542a and pass here.
+
+## b327z6-d - the last three banners off the circle
+
+Madison: "Redraw the art for the 3 or just fix the layout of banners are
+displayed either or." The layout, not the art: Customize, the unlock card and
+lobby rows are unchanged.
+
+- `BANNER_FOCUS` gains exam100 [1.6, -0.3, 0.1], astral [1.6, -0.3, 0] and
+  elite_rank [1.6, -0.3, -0.15]: their subject (the phoenix, the beam and its
+  rings, the black hole) fills the middle, so the cover takes them further in
+  and to the left, whole beside the circle. The shift is the most the zoom
+  allows ((z - 1) / 2), so no edge of the art ever comes into the cover.
+  Zooms of 1.9-2.1 hid less but cropped the subject; 1.6 picked by eye from a
+  candidate sheet.
+- Banner detail under the circle (pixels, portrait hidden, Profile / person):
+  iPhone exam100 .21/.15 -> .04/.03, astral .14/.10 -> .06/.03, elite_rank
+  .13/.08 -> .05/.03; iPad exam100 .12/.15 -> .02/.03, astral .06/.11 ->
+  .04/.03, elite_rank .05/.08 -> .03/.02.
+- Gate: check-b327z5-d section D checks all 11 focus banners (and tests250
+  left as drawn) on the iPhone 17 Pro Max and iPad Pro 11, and holds the three
+  to at most 7.5% of their detail behind the circle. ALL PASS here; against
+  b327z5 (97a5320) 12 failures. `ONLY=D` runs one section.
