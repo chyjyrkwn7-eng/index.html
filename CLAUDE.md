@@ -26280,3 +26280,17 @@ no-op: 327s stuck forever, 327t through. The splash now also finishes on
 `performance.now()`, never its own timestamp. With frames off, Welcome,
 Sign in, the four tabs, Start Studying and Nova's introduction all still
 work. **Nothing that must happen may wait on animation frames alone.**
+
+### Build 327w - no sound engine in an iPhone browser tab
+
+Madison's Safari recording: past the splash, he tapped I'm new here, reached
+NEW TO NOVA?, Safari's audio indicator came on, and the page froze with no
+taps registering. WebKitGTK and Chromium (iPhone UA, CPU throttled) do not
+freeze, so the cause could not be pinned on a phone. What starts at that
+moment only on iOS is the sound engine: the AudioContext on the first tap,
+the app.start sting, the scripted haptic tick, and 4s later the offline
+render of the Home ambience. `NovaSound`'s `iosTab` (an iPhone/iPad, not
+standalone) now makes `on()` and `hapticsWanted()` false, so in a Safari tab
+none of it ever runs; Settings' Sound & vibration card says sound and haptics
+play in the installed app. The installed app is unchanged. If Safari still
+freezes on 327w, audio is ruled out.

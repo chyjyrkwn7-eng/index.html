@@ -26503,7 +26503,8 @@
   [data-layout="modern"] .sect.settings-help-first{ margin-bottom:.75rem; }
   /* Sound & vibration (build 322): the volume sits under its switch, in
      the same card, with the same hairline between rows. */
-  [data-layout="modern"] .settings-card > .settings-volume{
+  [data-layout="modern"] .settings-card > .settings-sound-tabnote{ margin:0; padding:.85rem 1rem; color:var(--soft); font-size:.86rem; line-height:1.45; }
+.settings-volume{
     display:flex; align-items:center; gap:.9rem; padding:.2rem 0 .9rem;
   }
   [data-layout="modern"] .settings-card > .settings-volume[hidden]{ display:none; }
@@ -32548,7 +32549,7 @@
       /* Under the bar, not at the screen's foot: Safari's toolbar sits
          over the foot of the page and hid it (327u). */
       diag.style.cssText = "margin:1.1rem auto 0;max-width:22rem;padding:0 1rem;text-align:center;font:11px/1.45 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-line";
-      var txt = "build 327v";
+      var txt = "build 327w";
       var recent = function(t){ return Date.now() - Number(t) < 3*86400000; };
       if(bm[0] && bm[0] !== "done" && recent(bm[1])) txt += "\nlast launch stopped at " + bm[0];
       var cb = (localStorage.getItem("class26e.bootcb") || "").split("|");
@@ -69886,7 +69887,19 @@ const SOUND_AMBIENCE = {
 const NovaSound = (function(){
   const AC = () => window.AudioContext || window.webkitAudioContext;
   const st = { lastAt: -1e9, genAt: -1e9, wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
-  const on = () => !!(typeof theme === "object" && theme && theme.soundOn);
+  /* NOT IN AN iPHONE BROWSER TAB (build 327w). Safari froze the whole page a
+     few seconds after the first tap of a fresh launch ("nothing on the
+     screen was registering"), at the moment the sound engine woke. It could
+     not be reproduced off a phone, so in a Safari tab on an iPhone or iPad
+     the engine never starts at all: no AudioContext, no offline render, no
+     scripted haptic tick. The installed app is untouched. */
+  const iosTab = (() => { try{
+    const ua = navigator.userAgent || "";
+    const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const sa = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    return ios && !sa;
+  }catch(e){ return false; } })();
+  const on = () => !iosTab && !!(typeof theme === "object" && theme && theme.soundOn);
   const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
   const level = v => .95 * v * v;
   const canVibrate = () => typeof navigator !== "undefined" && typeof navigator.vibrate === "function" && /Android/i.test(navigator.userAgent || "");
@@ -70176,7 +70189,7 @@ const NovaSound = (function(){
   }, true);
   const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
-  const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
+  const hapticsWanted = () => !iosTab && !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
     if(!kind || !hapticsWanted()) return;
     if(canTaptic()){
@@ -70484,7 +70497,7 @@ const NovaSound = (function(){
   })();
 
   return {
-    play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
+    iosTab, play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
     catalogue: SOUND_CATALOGUE, ambience: SOUND_AMBIENCE,
     /* for tools and the test page */
     state: () => ({ on: on(), hasContext: !!st.ctx, ctxState: st.ctx ? st.ctx.state : null, voices: st.voices.length,
@@ -70641,6 +70654,14 @@ function buildSoundSettings(){
   host.appendChild(lab);
   const card = document.createElement("div");
   card.className = "settings-card";
+  if(NovaSound.iosTab){
+    const note = document.createElement("p");
+    note.className = "settings-sound-tabnote";
+    note.textContent = "Sound and haptics play in the installed app. Add Nova to your Home Screen to hear them.";
+    card.appendChild(note);
+    host.appendChild(card);
+    return host;
+  }
   const mkRow = (title, hint, checked, onChange) => {
     const row = document.createElement("label");
     row.className = "opt";
@@ -96895,7 +96916,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327v";
+const APP_BUILD = "2026-10-23-327w";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
