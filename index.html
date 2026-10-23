@@ -20057,11 +20057,12 @@
   }
   /* While a finger pulls it down (build 314 - attachSheetSwipe): no blur
      re-sampled every frame it moves, the chat sheet's rule. Same tone. */
+  /* (build 327z5) the blur only - never a different fill: the fill this
+     carried out-ranked the start sheet's own and changed its colour under
+     the finger. Both sheets that are dragged are opaque, so the blur
+     shows nowhere. */
   [data-layout="modern"] .unitoptions-modal-sheet.is-dragging{
     backdrop-filter:none; -webkit-backdrop-filter:none; will-change:transform;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.045) 42%, rgba(255,255,255,.02)),
-      linear-gradient(rgba(24,28,36,.94), rgba(24,28,36,.94));
   }
   .unitoptions-modal-sheet .unitoptions-modal-handle{
     width:2.4rem; height:4px; margin:.4rem auto .8rem;
@@ -32273,6 +32274,28 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      blur was still a layer the phone had to fill behind it on every frame
      anything scrolled. Off while hidden; it fades in with the button. */
   html[data-theme][data-layout] body .backtotop:not(.show){ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+  /* THE START SHEET'S CLOSE X, SEEN (build 327z5). "The x button in the top
+     right you can't see it cause color." The white button recipe (round
+     10) out-ranked the round icon's own rules, so the circle came out
+     near-white and the X on it was near-white too - an X of #E7EDF1 on
+     #ECEFF3. It is a glass circle on the dark sheet again: a faint lift of
+     white, a lit rim, and a white X (about 14:1 against the circle). The
+     44px tap area and the -5px margin are unchanged. */
+  html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next{
+    background:rgba(255,255,255,.13) !important; background-image:none !important; background-clip:padding-box !important;
+    border:5px solid transparent !important; color:transparent !important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.3), inset 0 1px 0 rgba(255,255,255,.22), 0 2px 8px rgba(0,0,0,.35) !important;
+  }
+  html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next:active{ background:rgba(255,255,255,.2) !important; }
+  html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next::before,
+  html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next::after{
+    content:"" !important; position:absolute !important; left:50% !important; top:50% !important;
+    width:.82rem !important; height:2px !important; border-radius:2px !important; inset:auto !important;
+    left:50% !important; top:50% !important; margin:0 !important;
+    background:#fff !important; opacity:1 !important; box-shadow:none !important; filter:none !important;
+  }
+  html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next::before{ transform:translate(-50%,-50%) rotate(45deg) !important; }
+  html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next::after{ transform:translate(-50%,-50%) rotate(-45deg) !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -88757,6 +88780,7 @@ function startChatDock(){
      height is remembered, and that is the "resizable chat box". */
   const DRAG_SLOP = 6;
   const DRAG_FLAT_AT = 18;
+  const DRAG_SLOP_BODY = 22;
   const CHAT_H_KEY = "class26e.chatheight";
   function storedChatHeight(){
     try{ return parseInt(localStorage.getItem(CHAT_H_KEY) || "", 10) || 0; }catch(e){ return 0; }
@@ -88783,6 +88807,7 @@ function startChatDock(){
     if(dragRaf) return;
     dragRaf = requestAnimationFrame(() => { dragRaf = 0; const f = dragPending; dragPending = null; if(f) f(); });
   }
+  function queue_rest(){ queueDrag(() => { if(panel.style.transform) panel.style.transform = ""; }); }
   const savedH = storedChatHeight();
   if(savedH) panel.style.setProperty("--chat-h", savedH + "px");
 
@@ -88834,24 +88859,66 @@ function startChatDock(){
        sheet starts from where the finger is when it arms rather than
        jumping the slop; and a quick flick closes it, not only a long
        pull. */
-  let dragLastY = 0, dragLastT = 0, dragVel = 0;
+  /* DOWN FROM ANYWHERE ON THE SHEET (build 327z5). "The chat box when
+     it's up, you can't swipe down from it unless you are swiping down from
+     the very top." 327 kept the drag to the head so a tap at the bottom
+     could not nudge the sheet; the slop and the delayed flat fill already
+     do that. So now:
+       - the HEAD is as it was: every move is ours, down closes, up grows;
+       - ANYWHERE ELSE (not a text field, the tablet's size handle) a drag
+         that goes DOWN pulls the sheet when the list under the finger is
+         at its top (or there is no list); a drag that goes up, or starts
+         with the list scrolled, scrolls the list; a sideways one is the
+         roster's. The first move decides, and a pull claims that first
+         move, or iOS commits it to the list's bounce.
+     A tap still moves nothing (DRAG_SLOP), the glass still waits for
+     DRAG_FLAT_AT, and the page behind still never moves (the guard). */
+  let dragLastY = 0, dragLastT = 0, dragVel = 0, dragX0 = 0, dragHead = false, dragDecided = false;
+  function vScrollerAt(t){
+    for(let el = t && t.nodeType === 1 ? t : t && t.parentElement; el && el !== panel; el = el.parentElement){
+      if(el.closest && el.closest(".chatdock-roomwho")) continue;
+      const cs = getComputedStyle(el);
+      if(/auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) return el;
+    }
+    return null;
+  }
+  let dragScroller = null, dragS0 = 0;
   panel.addEventListener("touchstart", (e) => {
-    if(!chatDockOpen) return;
-    if(!dragChrome(e.target, e.touches[0].clientY)) return;
-    dragFrom = e.touches[0].clientY; dragDy = 0; dragArmed = false; dragFlat = false;
+    if(!chatDockOpen || e.touches.length !== 1){ dragFrom = null; return; }
+    const t = e.target, y = e.touches[0].clientY;
+    dragHead = dragChrome(t, y);
+    if(!dragHead && (!t || !t.closest || t.closest("input:not(.nova-hsw), textarea, select, .chatdock-sizer, .vroom-chat-tray"))){ dragFrom = null; return; }
+    dragScroller = dragHead ? null : vScrollerAt(t);
+    dragS0 = dragScroller ? dragScroller.scrollTop : 0;
+    dragDecided = dragHead;
+    dragFrom = y; dragX0 = e.touches[0].clientX; dragDy = 0; dragArmed = false; dragFlat = false;
     dragLastY = dragFrom; dragLastT = performance.now(); dragVel = 0;
   }, { passive: true });
   panel.addEventListener("touchmove", (e) => {
     if(dragFrom === null) return;
+    const y = e.touches[0].clientY;
+    if(!dragDecided){
+      const d0 = y - dragFrom, ax = Math.abs(e.touches[0].clientX - dragX0);
+      if(Math.abs(d0) < 1 && ax < 1) return;
+      /* up, sideways, or the list scrolled: not a pull - the list's (and
+         the guard below keeps it off the page) */
+      if(d0 <= 0 || ax > Math.abs(d0) || dragS0 > 0){ dragFrom = null; return; }
+      dragDecided = true;
+    }
     if(e.cancelable) e.preventDefault();
-    const y = e.touches[0].clientY, now = performance.now();
+    const now = performance.now();
     if(now > dragLastT){ dragVel = dragVel * 0.4 + 0.6 * (y - dragLastY) / (now - dragLastT); }
     dragLastY = y; dragLastT = now;
     let dy = y - dragFrom;
     if(!dragArmed){
-      if(Math.abs(dy) < DRAG_SLOP) return;
+      /* Below the head a thumb's tap slides further before it lifts (the
+         bottom of a phone), so the body waits longer before it moves. */
+      const slop = dragHead ? DRAG_SLOP : DRAG_SLOP_BODY;
+      if(Math.abs(dy) < slop) return;
+      /* outside the head only a pull down arms */
+      if(!dragHead && dy < 0) return;
       dragArmed = true;
-      dragFrom += dy > 0 ? DRAG_SLOP : -DRAG_SLOP;
+      dragFrom += dy > 0 ? slop : -slop;
       dy = y - dragFrom;
       dragH0 = panel.offsetHeight;
       panel.classList.add("is-dragging");
@@ -88859,7 +88926,12 @@ function startChatDock(){
     /* The flat fill only once the sheet is really travelling: a nudge of
        a few pixels keeps its glass, so nothing behind it changes colour. */
     if(!dragFlat && Math.abs(dy) >= DRAG_FLAT_AT){ dragFlat = true; panel.classList.add("is-flat"); }
-    if(dy < 0){
+    if(dy < 0 && !dragHead){
+      /* a pull from the body that comes back up: the sheet goes back to
+         where it rests and no further (only the head resizes) */
+      dragDy = 0;
+      queue_rest();
+    } else if(dy < 0){
       /* Up: taller, live. Nothing is translated, so the sheet stays
          anchored to the bottom edge while it grows. */
       dragDy = 0;
@@ -88871,7 +88943,7 @@ function startChatDock(){
   }, { passive: false });
   function endDrag(){
     if(dragFrom === null) return;
-    if(!dragArmed){ dragFrom = null; dragDy = 0; return; }
+    if(!dragArmed){ dragFrom = null; dragDy = 0; dragDecided = false; return; }
     if(dragRaf){ cancelAnimationFrame(dragRaf); dragRaf = 0; const f = dragPending; dragPending = null; if(f) f(); }
     persistChatHeight();
     /* stale velocity (the finger stopped before lifting) counts for nothing */
@@ -88895,7 +88967,7 @@ function startChatDock(){
     } else {
       panel.style.transform = "";
     }
-    dragFrom = null; dragDy = 0; dragArmed = false;
+    dragFrom = null; dragDy = 0; dragArmed = false; dragDecided = false;
   }
   panel.addEventListener("touchend", endDrag);
   /* ---- FLUSH ON THE KEYBOARD (build 314) ----
@@ -119666,58 +119738,112 @@ function attachHoldDetail(el, detail){
    near-opaque fill of the same tone with no blur (the chat sheet's rule),
    and the glass comes back once it is still. scrollTop is written only
    when it would change. A quick flick down closes it too. */
+/* FROM ANYWHERE, 1:1, AND NOTHING CHANGES COLOUR (build 327z5). "The
+   test start menu ... the swiping down function is broken ... when you do
+   swipe down it glitches and changes colors." Three faults:
+   - the drag took the sheet on the first pixel of ANY move - a tap that
+     slid a pixel moved it, and a sideways slide pulled it down;
+   - .is-dragging swapped the sheet's fill for a lighter blue-grey one
+     (its rule out-ranked the start sheet's own #0F1115), so the sheet
+     changed colour under the finger and back again as it settled;
+   - only the sheet's own scrollTop was asked: a touch in a list inside it
+     that was scrolled down still pulled the sheet.
+   Now a drag that starts ANYWHERE on the sheet (not a slider, field or
+   select) pulls it when the scroller under the finger is at its top and
+   the finger goes DOWN; up scrolls (by hand: the first move is claimed so
+   iOS cannot commit it to a bounce). Nothing moves inside SLOP; past it
+   the sheet follows the finger 1:1, a translate3d written once a frame.
+   .is-dragging only drops the blur (both sheets that use this are opaque,
+   so the blur behind them shows nowhere) - the look does not change. It
+   springs back, or slides all the way out and only then closes. */
+const SHEET_SWIPE_SLOP = 12;
 function attachSheetSwipe(sheet, onDismiss){
-  let y0 = null, s0 = 0, mode = null, dy = 0, raf = 0, want = null, lastY = 0, lastT = 0, vel = 0;
-  const skip = t => !!(t && t.closest && t.closest('input:not(.nova-hsw), textarea, select, [role="slider"]'));
+  let y0 = null, x0 = 0, s0 = 0, scroller = null, mode = null, dy = 0, raf = 0, want = null, lastY = 0, lastT = 0, vel = 0, gen = 0;
+  const skip = t => !!(t && t.closest && t.closest('input:not(.nova-hsw), textarea, select, [role="slider"], .sliderwrap'));
+  /* the nearest thing between the finger and the sheet that scrolls up and down */
+  const scrollerOf = t => {
+    for(let el = t && t.nodeType === 1 ? t : t && t.parentElement; el && el !== sheet; el = el.parentElement){
+      const cs = getComputedStyle(el);
+      if(/auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1) return el;
+    }
+    return sheet;
+  };
   const flush = () => {
     raf = 0;
     if(!want) return;
     const w = want; want = null;
     if(w.t != null) sheet.style.transform = w.t;
-    if(w.s != null && sheet.scrollTop !== w.s) sheet.scrollTop = w.s;
+    if(w.s != null && scroller && scroller.scrollTop !== w.s) scroller.scrollTop = w.s;
   };
   const queue = w => { want = w; if(!raf) raf = requestAnimationFrame(flush); };
   sheet.addEventListener("touchstart", e => {
     if(e.touches.length !== 1 || skip(e.target)){ y0 = null; return; }
-    y0 = e.touches[0].clientY; s0 = sheet.scrollTop; mode = null; dy = 0;
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX;
+    scroller = scrollerOf(e.target); s0 = scroller.scrollTop; mode = null; dy = 0;
     lastY = y0; lastT = performance.now(); vel = 0;
   }, { passive: true });
   sheet.addEventListener("touchmove", e => {
     if(y0 === null) return;
-    const y = e.touches[0].clientY, now = performance.now();
+    if(e.touches.length !== 1){ if(mode === "drag" && e.cancelable) e.preventDefault(); return; }
+    const y = e.touches[0].clientY, x = e.touches[0].clientX, now = performance.now();
     if(now > lastT) vel = vel * 0.4 + 0.6 * (y - lastY) / (now - lastT);
     lastY = y; lastT = now;
-    const d = y - y0;
     if(mode === null){
-      /* Scrolled into the list: an ordinary scroll, left to the browser. */
-      if(s0 > 0){ mode = "scroll"; return; }
+      const d0 = y - y0, ax = Math.abs(x - x0);
+      /* Scrolled into its list, or sideways: not ours. */
+      if(s0 > 0 || (ax > Math.abs(d0) && ax > 2)){ mode = "scroll"; return; }
+      mode = "pend";
+    }
+    if(mode === "scroll") return;
+    /* every move of a touch at the top is ours from the first one - iOS
+       will not give a move it has committed to a scroll back */
+    if(e.cancelable) e.preventDefault();
+    const d = y - y0;
+    if(mode === "pend"){
+      if(Math.abs(d) < SHEET_SWIPE_SLOP) return;
       mode = "drag";
+      y0 += d > 0 ? SHEET_SWIPE_SLOP : -SHEET_SWIPE_SLOP;
+      gen++;
       sheet.style.transition = "none";
     }
-    if(mode !== "drag") return;
-    e.preventDefault();
-    if(d > 0){
-      dy = d;
+    const dd = y - y0;
+    if(dd > 0){
+      dy = dd;
       if(!sheet.classList.contains("is-dragging")) sheet.classList.add("is-dragging");
-      queue({ t: "translate3d(0," + d + "px,0)", s: 0 });
+      queue({ t: "translate3d(0," + dd + "px,0)", s: 0 });
+    } else {
+      dy = 0;
+      queue({ t: sheet.classList.contains("is-dragging") ? "translate3d(0,0,0)" : null, s: Math.max(0, -dd) });
     }
-    else { dy = 0; queue({ t: "", s: Math.max(0, -d) }); }
   }, { passive: false });
   const end = () => {
     if(y0 === null) return;
     y0 = null;
-    if(mode !== "drag"){ mode = null; return; }
-    mode = null;
+    const was = mode; mode = null;
+    if(was !== "drag") return;
     if(raf){ cancelAnimationFrame(raf); flush(); }
-    if(!sheet.classList.contains("is-dragging")){ sheet.style.transition = ""; return; }
-    sheet.style.transition = "transform .25s cubic-bezier(.2,.8,.25,1)";
+    if(!sheet.classList.contains("is-dragging")){ sheet.style.transition = ""; sheet.style.transform = ""; return; }
+    const g = ++gen;
+    const h = sheet.getBoundingClientRect().height || innerHeight;
     const flick = performance.now() - lastT < 90 && vel > 0.55 && dy > 24;
-    if(dy > 90 || flick){
-      sheet.style.transform = "translate3d(0,100%,0)";
-      setTimeout(() => { sheet.style.transition = ""; sheet.style.transform = ""; sheet.classList.remove("is-dragging"); onDismiss(); }, 200);
+    if(dy > Math.min(110, h * 0.22) || flick){
+      /* out at about the finger's own speed: never under .18s or over .3s */
+      const ms = Math.round(Math.max(180, Math.min(300, (h - dy) / Math.max(1.6, vel || 0))));
+      sheet.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
+      sheet.style.transform = "translate3d(0," + Math.ceil(h + 24) + "px,0)";
+      setTimeout(() => {
+        if(g !== gen) return;
+        onDismiss();
+        sheet.style.transition = "none"; sheet.style.transform = ""; sheet.classList.remove("is-dragging");
+        requestAnimationFrame(() => { if(g === gen) sheet.style.transition = ""; });
+      }, ms + 30);
     } else {
+      sheet.style.transition = "transform .32s cubic-bezier(.2,.9,.25,1)";
       sheet.style.transform = "translate3d(0,0,0)";
-      setTimeout(() => { if(y0 === null) sheet.classList.remove("is-dragging"); }, 260);
+      setTimeout(() => {
+        if(g !== gen || y0 !== null) return;
+        sheet.classList.remove("is-dragging"); sheet.style.transition = ""; sheet.style.transform = "";
+      }, 360);
     }
   };
   sheet.addEventListener("touchend", end);
