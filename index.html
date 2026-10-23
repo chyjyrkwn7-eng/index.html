@@ -69986,10 +69986,11 @@ const NovaSound = (function(){
   }
   /* Haptics on (and an iPhone): the switches are there; off or anywhere else:
      the page is exactly as it was without them, children and all */
+  let hswLate = 0;
   function hswSync(){
     /* the switches only live in the installed app (build 327p): a Safari tab
        keeps the scripted tick and none of the extra elements */
-    try{ if(canTaptic() && hapticsWanted() && (window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches))) hswStart(); else hswStop(); }catch(e){}
+    try{ if(canTaptic() && hapticsWanted() && (window.navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches))){ if(!hswObs && !hswLate){ if(!document.getElementById("splashscreen")) hswStart(); else hswLate = setTimeout(() => { hswLate = 0; try{ if(!document.getElementById("splashscreen")) hswStart(); else hswSync(); }catch(e){} }, 1500); } } else { if(hswLate){ clearTimeout(hswLate); hswLate = 0; } hswStop(); } }catch(e){}
   }
   ["pointerdown", "touchstart"].forEach(ev => window.addEventListener(ev, e => {
     if(!isTouchDown(e)) return;
@@ -96686,7 +96687,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327p";
+const APP_BUILD = "2026-10-23-327q";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
