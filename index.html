@@ -32540,6 +32540,17 @@
     var msgInterval = duration / messages.length;
     var msgIndex = 0;
     statusEl.textContent = messages[0];
+    /* BOOT TRACE (327s): where the last launch got to, if it never finished. */
+    try{
+      var bm = (localStorage.getItem("class26e.bootmark") || "").split("|");
+      var diag = document.createElement("p");
+      diag.id = "splash-diag";
+      diag.style.cssText = "position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 1.2rem);margin:0;text-align:center;font:11px/1.4 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.45)";
+      var txt = "build 327s";
+      if(bm[0] && bm[0] !== "done" && Date.now() - Number(bm[1]) < 3*86400000) txt += " \u00b7 last launch stopped at " + bm[0];
+      diag.textContent = txt;
+      splash.appendChild(diag);
+    }catch(e){}
     var msgTimer = setInterval(function(){
       msgIndex++;
       if(msgIndex < messages.length) statusEl.textContent = messages[msgIndex];
@@ -32557,6 +32568,7 @@
         requestAnimationFrame(tick);
       } else {
         clearInterval(msgTimer);
+        try{ if(window.__bm) window.__bm("done"); }catch(e){}
         try{ if(window.__installUpdateFinish) window.__installUpdateFinish(); }catch(e){}
         splash.classList.add("splash-hide");
         /* Handed back as the fade STARTS, not when the element is
@@ -32769,6 +32781,7 @@
   <p class="hint" id="hint">Press 1 through 4 to pick an answer. Press Enter to continue.</p>
 </div>
 
+<script>window.__bm=function(s){try{localStorage.setItem("class26e.bootmark",s+"|"+Date.now())}catch(e){}};__bm("main:start");</script>
 <script>
 /* ==========================================================================
    QUESTION BANK
@@ -32809,6 +32822,7 @@ const PHOENIX_EXAM_SIZE = 100;
    moved - the best run on record was five - so nothing is taken back,
    and the run anybody is on keeps counting towards the new number. */
 const PHOENIX_UNIT_RUN = 10;
+__bm("L32812");
 const POINTS_PER_QUESTION = 10;
 const PERFECT_BONUS = 100;
 /* Paid once per EXTRA unit in a run: two units is +15, three is +30, and
@@ -44884,6 +44898,7 @@ const QUESTIONS = [
 
 const LETTERS = "ABCDEFGHI".split("");
 
+__bm("L44887");
 const stage     = document.getElementById("stage");
 /* Info-icon tooltips render at the document body level now (see
    buildInfoIcon) so a panel's own overflow:hidden can never clip them.
@@ -45257,6 +45272,7 @@ function syncTestPin(force){
   }
   wrap.classList.add("test-pinned");
 }
+__bm("L45260");
 addEventListener("resize", () => { const w = document.querySelector(".wrap.test-pinned"); if(w) syncTestPin(true); });
 /* THE STARFIELD'S TILES (build 323) - see the body::after rule for the
    why. Two tiles at sizes that share no factor (239 and 433 CSS px), so
@@ -45763,6 +45779,7 @@ function resumeRunWithLoading(s){
     else showHome();
   });
 }
+__bm("L45766");
 let resumeOfferShown = false;
 function scheduleResumeOffer(){
   if(resumeOfferShown || testInProgress) return;
@@ -46056,6 +46073,7 @@ function closeStatsPopover(){
   statsPopover.hidden = true;
   statsPopoverOpen = false;
 }
+__bm("L46059");
 titleBtnEl.addEventListener("click", (e) => {
   e.stopPropagation();
   if(statsPopoverOpen) closeStatsPopover();
@@ -46313,6 +46331,7 @@ const AVATAR_CHARACTERS = [
 /* The name under a character in a grid, where the full one would not fit
    on one line (build 243). Everywhere else says the full name. */
 const AVATAR_GRID_NAME = { masked: "Masked One" };
+__bm("L46316");
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
   swat: "SWAT", valkyrie: "Koi", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
@@ -46704,6 +46723,7 @@ function hundoFxInUse(){
   return id && hundoFxEarned(id) ? id : "confetti";
 }
 function hundoFxNeedText(d){ return d.need > 0 ? "Earn " + d.need + " hundos" : "Yours from day one"; }
+__bm("L46707");
 const ULTIMATE_TOP = "zenith";
 function collectionProgress(which){
   const items = which === "banners"
@@ -47149,6 +47169,7 @@ function charCategory(id){
   if(def.unlock) return "rank";
   return "starter";
 }
+__bm("L47152");
 const CHAR_SIL_LOOKS = ["secret", "challenge", "ultimate"];
 /* the look a not-yet-yours character is drawn in, or null when it is yours
    (or locked behind a rank, which keeps the greyed preview) */
@@ -47668,6 +47689,7 @@ function buildAvatarCharSVGFresh0(charId){
    is not doubled. check_b317_neck holds the neck; check_b317_volume the
    layers. */
 const FIGURE_SHADE_STOPS = [["0%", "#000", "0"], ["58%", "#000", "0"], ["100%", "#000", ".42"]];
+__bm("L47671");
 const FIGURE_GLOSS_STOPS = [["0%", "#fff", ".30"], ["45%", "#fff", ".08"], ["100%", "#fff", "0"]];
 /* [x0, y0, x1, y1] round a shape in its own units, or null */
 function figureShapeBox(n){
@@ -48417,6 +48439,7 @@ Object.assign(CHAR_SPECIAL_DRAW, {
     spRing(T, T.front, U[0], U[1] + .6, 1.4, "#D8FFE9", ".35", 1.95, .6, 2.4);
   }
 });
+__bm("L48420");
 Object.assign(CHAR_SPECIAL_MS, { ninja: 2800, ghost: 3200, wizard: 3000, grizzly: 2800, alien: 3000 });
 
 /* ROOM AT THE EDGES, IN THE TAB (build 317, reworked). Every character is
@@ -53556,6 +53579,7 @@ ROW_LAZY_FIELDS.push("wk", "pwk");
 /* Long enough to collapse a whole drill into one or two writes, short
    enough that a board somebody is watching is never stale for long. */
 const ROW_SCORE_PUSH_MS = 90 * 1000;
+__bm("L53559");
 let lastRowSig = null, lastRowUrgentSig = null, lastRowPushAt = 0, rowPushTimer = null;
 /* WHICH DOCUMENT THE CACHED SIGNATURE DESCRIBES. Without this, "the row
    already says that" is answered about the wrong document the moment the
@@ -54309,6 +54333,7 @@ function initFirebase(){
   } catch(e){ fbDb = null; }
   return false;
 }
+__bm("L54312");
 initFirebase();
 /* Defensive retry: on a slow connection the CDN scripts can occasionally
    still be mid-download when this runs, even though script tags normally
@@ -54634,6 +54659,7 @@ function generateFriendCode(){
   }
   return out;
 }
+__bm("L54637");
 const FRIEND_CODE_RE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{3}-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{3}$/;
 
 function friendCodeOf(){
@@ -54899,6 +54925,7 @@ function attachPresence(){
   });
   try{ presenceObs.observe(stage, { childList: true }); }catch(e){ presenceObs = null; }
 }
+__bm("L54902");
 let presenceObs = null;
 const PRESENCE_SCREENS = ".screen-friends, .screen-profile";
 function detachPresence(){
@@ -55184,6 +55211,7 @@ function removeFriend(pub){
    read from functions that run early. Hoisted as undefined, which the
    guards below cope with. */
 var liveVroomParticipants = null;
+__bm("L55187");
 var liveChatParticipants = null;
 function withMeInVroom(pub){
   if(!pub || !vroomCode) return false;
@@ -55736,6 +55764,7 @@ function handleRemoteReset(){
    pushes both at once, so nothing waits on a closed app; progress was
    never at risk in between, it is saved on the phone the whole time. */
 const CLOUD_PUSH_MIN_GAP_MS = 60 * 1000;
+__bm("L55739");
 const FLOOR_MIN_GAP_MS = 10 * 60 * 1000;
 let lastCloudPushAt = 0, lastFloorPushAt = 0, lastPushCode = "";
 /* the gaps are per account: a device that has just switched to another
@@ -56008,6 +56037,7 @@ function writeLeaderboardRow(row){
    Once only: a row ahead of the account it describes (an old build
    wrote it) is put right by the account, not obeyed. */
 var ROW_GROWS = ["xp", "correct", "hundos"];
+__bm("L56011");
 var rowRecheckFor = "";
 function rowBehind(cur, row){
   if(!cur || typeof cur !== "object") return false;
@@ -56854,6 +56884,7 @@ function mergeLeavingAccount(src, note){
    and never counted twice. A count raised by hand on the server goes
    into the base the same way, the first time a device loads it. */
 const TALLY_LIFETIME = ["points", "answered", "correct", "drillPlays", "examPlays", "gamePlays", "perfectTests", "fullTests"];
+__bm("L56857");
 let tallyDeviceIdMemo = "";
 function tallyDeviceId(){
   if(tallyDeviceIdMemo) return tallyDeviceIdMemo;
@@ -57302,6 +57333,7 @@ function onLiveUpdateApplied(){
 /* ---------- IndexedDB mirror (best-effort, never blocks the app) --------- */
 
 const IDB_NAME = "class26e-drill-backup";
+__bm("L57305");
 const IDB_STORE = "kv";
 const IDB_KEY = "store";
 const IDB_CODE_KEY = "synccode";
@@ -57667,6 +57699,7 @@ const PENAL_256_SRCS = [132, 37, 79, 140, 175, 186, 215, 291, 320, 341, 99, 252,
   155, 282, 295, 72, 38, 138, 266, 284, 5, 103, 226, 329, 206, 11, 195, 106, 228, 292, 342, 46, 241, 163, 244, 35,
   173, 281, 283, 91, 205, 74, 201, 23, 31, 232, 142, 160, 315, 310, 360, 364];
 function penal256Live(){ return Date.now() >= PENAL_256_AT; }
+__bm("L57670");
 const PENAL_124_VERSION = {
   srcs: new Set(PENAL_TEST_SRCS),
   label: "Penal Code — Slides 124–256",
@@ -58623,6 +58656,7 @@ const LEVEL_FREEZE_THROUGH = 25;
    instead is the rank ladder (TIER_UNLOCKS: 21/30/40/50/60/70/80) and
    the gate that ties levels to badges (badgeWallLevel). */
 const LEVEL_STEP_UP = 2.0;
+__bm("L58626");
 const LEVEL_LATE_GROWTH = 1.0199;
 /* A guard rather than a working value - the curve tops out at 77,649 a
    level, so this never binds. It exists so a future change to the
@@ -58989,6 +59023,7 @@ function levelWallOf(badges, floor, rankFloor){
    up. A reset clears the floor and sets the flag (a fresh account starts
    under the new rule). Returns the floor written, or 0. */
 const LEVEL_WALL_RULE = 325;
+__bm("L58992");
 const LEVEL_WALL_NO_GRANDFATHER = true;
 function levelWallMigrate325(got, into){
   /* RETIRED IN 327: NO GRANDFATHER. Build 324 never reached the class
@@ -59360,6 +59395,7 @@ function badgeThresholdFor(name){
    `var`, per the note on UNIT_SIZE_CACHE: read by functions that can run
    before this line. */
 var retroHideBadges = null;
+__bm("L59363");
 const LEGACY_BADGE_BANDS_209 = [
   { max: 19, hundos: 35 }, { max: 40, hundos: 25 }, { max: 60, hundos: 15 },
   { max: 100, hundos: 10 }, { max: 200, hundos: 7 }, { max: Infinity, hundos: 5 }
@@ -59649,6 +59685,7 @@ const UNIT_BADGE_SHAPE = {
   "Verbal Communication":                          "disc",
   "Civil Process and Liability":                   "wedge"
 };
+__bm("L59652");
 const BADGE_SHAPE_KEYS = Object.keys(BADGE_SHAPE);
 function badgeShapeFor(unitName){
   const name = String(unitName || "");
@@ -59963,6 +60000,7 @@ function setBadgeDirtStage(unit, stage){
   saveStore();
 }
 
+__bm("L59966");
 const BADGE_STRIKE = {
   relief: 2.6,          /* the rim's height, in token units */
   enamel: .38,          /* the enamel's level, as a share of it */
@@ -60255,6 +60293,7 @@ function badgeStrikeGeometry(shape){
 }
 /* The profile and its slope, as tables. */
 let BADGE_PROF = null, BADGE_DPROF = null, BADGE_PROF_IN = null, BADGE_DPROF_IN = null;
+__bm("L60258");
 const BADGE_PROF_N = 2048;
 function badgeProfileTables(){
   if(BADGE_PROF) return;
@@ -60560,6 +60599,7 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
    than asked for is reused; anything else is rendered. null if there is
    no canvas. */
 const BADGE_STRIKE_CACHE = {};
+__bm("L60563");
 let badgeStrikeBroken = false;
 /* A DRAFT FIRST, THE FINISH IN IDLE TIME (build 318). A supersampled
    render costs ~4x a plain one, and the first one a session makes runs
@@ -61466,6 +61506,7 @@ const BANNER_ANIMATED = ["tests250", "tests500", "hundos250", "adept_rank", "eli
                          /* build 304: the three new ones move too - see BANNERS */
                          "study60", "correct10000", "early10", "astral", "celestial", "zenith",
                          "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"];
+__bm("L61469");
 const BANNERS = [
   /* ORDERED BY WHAT YOU DO, THEN HOW FAR (build 235). "Ensure the order
      they are on matches up so the progression type ones are next to each
@@ -61873,6 +61914,7 @@ function skylineFuture(u, HZ, roofs){
     { svg: car(0, "car3", 22), box: [490, 68, 36, 8], vb: [0, 0, 36, 8], cls: "bl-cross", style: "animation-duration:10s;animation-delay:-6.5s" }
   ];
 }
+__bm("L61876");
 const BANNER_ART = {
   /* NORTHERN LIGHTS (redrawn, build 243) - the first of the test ladder,
      so it is still, but it has to hold up: "the 100 test one is kinda
@@ -64154,6 +64196,7 @@ const BANNER_TINT = {
   flare_void: ["#9AA6C8", "#F97316"], flare_umbra: ["#8B6CF0", "#CDBDFB"],
   flare_horizon: ["#6FB4F2", "#CFEAFF"], flare_genesis: ["#E0507F", "#F7934F"]
 };
+__bm("L64157");
 const bannerTintCache = {};
 function bannerTintOf(id){
   if(!id || !BANNER_ART[id]) return null;
@@ -64647,6 +64690,7 @@ const ACCENT_SWATCH = {
    red are seven flares nobody can mix up, so every flare falls through to
    its swatch. The tables stay as the place a flare's colour would go. */
 const FLARE_SWATCH = {};
+__bm("L64650");
 const FLARE_NOIR = {};
 function flareColorOf(tier){ return FLARE_SWATCH[tier] || ACCENT_SWATCH[tier]; }
 /* The full progression, escalating in real astronomical scale from a
@@ -65840,6 +65884,7 @@ function buildRankEmblemSVG(rankKey){
    is lost to the eye - you cannot see an emblem move that you cannot
    see. Detached ones are swept out of the observer so it never grows. */
 var _rkSeen = new Set();
+__bm("L65843");
 var _rkIO = typeof IntersectionObserver === "function" ? new IntersectionObserver(entries => {
   entries.forEach(e => {
     const t = e.target;
@@ -66202,6 +66247,7 @@ const RX_PROPS = {
     great: [["glee", 2, "<path d=\"M16 19.42 Q17.5 17.77 19 19.42\" fill=\"none\" stroke=\"#8FCBFF\" stroke-width=\"1.09\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"0.45\"/><path data-face=\"eye\" d=\"M16 19.42 Q17.5 17.77 19 19.42\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"0.42\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M21 19.42 Q22.5 17.77 24 19.42\" fill=\"none\" stroke=\"#8FCBFF\" stroke-width=\"1.09\" stroke-linecap=\"round\" stroke-linejoin=\"round\" opacity=\"0.45\"/><path data-face=\"eye\" d=\"M21 19.42 Q22.5 17.77 24 19.42\" fill=\"none\" stroke=\"#FFFFFF\" stroke-width=\"0.42\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"]]
   },
 };
+__bm("L66205");
 const RX_FLASH = { "masked/perfect": ["rgba(255,50,80,.9)", 0.05], "zeus/perfect": ["rgba(255,244,190,.95)", 0.72], "astronaut/perfect": ["rgba(150,220,255,.8)", 0.85], "hacker/perfect": ["rgba(70,255,140,.55)", 0.55], "ronin/perfect": ["rgba(255,70,150,.75)", 0.85], "voidwalker/perfect": ["rgba(255,150,90,.7)", 0.6], "umbra/perfect": ["rgba(170,120,255,.75)", 1], "singularity/perfect": ["rgba(150,200,255,.75)", 0.4], "genesis/perfect": ["rgba(255,140,200,.75)", 0.55], "lunar/perfect": ["rgba(220,230,255,.7)", 0.65], "solar/perfect": ["rgba(255,214,90,.9)", 0.45], "tempest/perfect": ["rgba(130,240,255,.85)", 0.72], "frost/perfect": ["rgba(190,235,255,.75)", 0.45], "oracle/perfect": ["rgba(200,150,255,.75)", 0.4], "inferno/perfect": ["rgba(255,110,40,.95)", 0.25], "astral/perfect": ["rgba(110,255,240,.8)", 0.6], "celestial/perfect": ["rgba(160,180,255,.7)", 0.5], "zenith/perfect": ["rgba(220,210,255,.85)", 0.55] };
 const RX_CHARS = ["ninja", "ghost", "wizard", "grizzly", "alien", "detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "marksman", "astronaut", "hacker", "timekeeper", "ronin", "hive", "voidwalker", "umbra", "singularity", "genesis", "lunar", "solar", "tempest", "frost", "oracle", "inferno", "astral", "celestial", "zenith"];
 /* RX:JS:END */
@@ -66721,6 +66767,7 @@ function saveTheme(){
      showSoundTest, came out in build 325: "I see a picture of a 'sound
      test' but I don't want that screen in the app.") */
 const SOUND_DEFAULT_VOLUME = .7;
+__bm("L66724");
 const SOUND_MAX_VOICES = 24;
 /* Haptic patterns (ms) per kind of event, Android only. */
 const SOUND_HAPTIC = {
@@ -67135,6 +67182,7 @@ function sndKit(G, out, t0, seed){
    is and why it fits), fn (the design), demo (opts the test page plays
    it with) }. */
 const SND_CASE_OPEN = () => (typeof CASE_OPEN === "object" && CASE_OPEN) ? CASE_OPEN : { hold: 110, crack: 190, swing: 800, glint: 460 };
+__bm("L67138");
 const SND_FLARE_KEYS = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"];
 /* ---- THE ANSWER STREAK, A SOUND YOU WANT (build 327, b327j) ----
    "Ensure when you get on an answer streak that has a sound effect that's
@@ -68587,6 +68635,7 @@ const sndRep = (str, n) => Array(n).fill(str).join("");
 /* notes of D harmonic minor by degree from a root, as names the kit takes */
 const sndDm = (K, i, root) => K.dm(i, root);
 
+__bm("L68590");
 const SND_CHIP = {
   /* ---- the frequent taps: dull, short, soft (a few dB under) ---- */
   "ui.tap.primary": { desc: "A primary button: a soft two-note bop up a fifth on a 50% pulse, low passed so it never pokes out.",
@@ -68908,6 +68957,7 @@ function sndAmbKit(K){
   };
 }
 
+__bm("L68911");
 const SND_AMB = {
   /* ---- round 5: the last lead-voice designs, rebuilt in bells ---- */
   "rank.upnext": { desc: "Up next: the next rank's box lifts and lights - a lift of air, bells stepping A to D, and a twinkle crossing it.",
@@ -69241,6 +69291,7 @@ SND_AMB["rank.whirl"] = { desc: "The whirl: a spinning roar of air whose pitch a
 /* each vol sets the id's loudest 50ms against build 327's (measured by
    rendering both; the frequent ones a few dB under) */
 const SND_AMB_VOL = {"ui.tap.primary": 1.416, "ui.tap.secondary": 0.839, "ui.toggle.on": 0.852, "ui.toggle.off": 0.911, "ui.tab.bottom": 2.426, "ui.tab.top": 1.13, "ui.sheet.open": 3.655, "ui.sheet.close": 7.224, "ui.back": 0.892, "ui.locked": 1.137, "ui.slider.tick": 0.998, "ui.field.focus": 1.106, "ui.notice": 1.805, "test.load": 1.831, "test.select": 1.217, "test.correct": 1.052, "test.wrong": 1.331, "test.streak.1": 1.082, "test.streak.2": 1.212, "test.next": 5.113, "fc.flip": 0.973, "test.star": 1.745, "test.pause": 2.3, "test.resume": 2.278, "test.tick": 0.475, "test.timeup": 1.734, "test.save": 5.212, "res.bar.tick": 1.169, "res.grade.fail": 2.559, "res.grade.pass": 1.809, "res.grade.great": 1.53, "res.grade.perfect": 3.579, "res.xp.line": 1.648, "res.xp.count": 1.519, "res.xp.total": 0.882, "res.xp.fill": 0.901, "res.xp.pop": 1.062, "res.xp.knock": 0.664, "res.levelup": 3.602, "res.xp.overflow": 2.286, "res.unlock.banner": 1.16, "res.found.badge": 1.044, "res.found.flare": 1.797, "res.found.character": 0.629, "home.flare.ranger": 1.765, "badge.case.open": 0.691, "badge.case.close": 3.878, "badge.lift": 1.76, "badge.spin": 3.079, "badge.drop": 1.526, "cs.badge": 1.123, "bc.rise": 1.749, "badge.slide": 3.344, "rank.challenge.tick": 1.263, "rank.road.fill": 0.625, "rank.unlock.pop": 0.89, "rank.whirl": 1.487, "rank.windup": 2.318, "rank.swell": 1.411, "rank.word": 1.235, "lb.switch": 1.799, "lb.winner": 2.271, "vr.join": 1.434, "vr.leave": 1.265, "vr.ready": 0.916, "vr.count": 1.918, "vr.go": 1.593, "chat.send": 0.995, "ob.tooltip": 1.389, "cust.banner": 0.907, "cust.fx": 1.581, "vr.end": 2.584, "vr.podium": 2.972, "ob.step": 1.56};
+__bm("L69244");
 Object.keys(SND_AMB).forEach(id => {
   const c = SOUND_CATALOGUE[id], d = SND_AMB[id];
   if(!c){ console.warn("sound: ambient design for unknown id " + id); return; }
@@ -69495,6 +69546,7 @@ Object.keys(SND_DARK).forEach(id => {
    the same id - measured by rendering both builds - except the frequent
    ones, left quieter; the hand-off quieter on purpose; the bed under it all */
 const SND_DARK_VOL = {"vr.ready": 1.602, "lb.switch": 2.3, "ui.sheet.close": 3.114, "res.xp.pop": 0.798, "rank.upnext": 0.637, "test.correct": 0.98, "vr.join": 0.583, "vr.leave": 0.612, "chat.receive": 1.739, "home.flare.veteran": 1.186, "ui.field.focus": 2.1, "ui.sheet.open": 4.989, "ui.popup.open": 3.099, "ui.notice": 2.342, "test.load": 0.3, "test.next": 4.519, "test.resume": 2.65, "test.save": 6.047, "res.grade.fail": 1.904, "res.grade.pass": 1.357, "res.grade.great": 0.845, "res.grade.perfect": 1.036, "res.xp.line": 0.818, "res.xp.total": 0.344, "res.xp.fill": 0.309, "res.xp.knock": 0.513, "res.levelup": 1.205, "res.xp.overflow": 0.924, "res.unlock.banner": 1.045, "res.unlock.reveal": 3.357, "res.found.flare": 2.656, "hundo.bubbles": 0.882, "home.flare.rookie": 2.92, "home.flare.ranger": 2.291, "home.secret.tap": 4.165, "home.secret.found": 1.141, "home.daily.ready": 1.972, "home.daily.fill": 2.034, "badge.sparkle": 1.911, "badge.slide": 5.912, "rank.road.scroll": 0.551, "rank.challenge.tick": 1.434, "rank.road.fill": 0.426, "rank.unlock.pop": 0.305, "rank.flare.zoom": 0.522, "rank.attn": 1.278, "rank.windup": 1.266, "rank.swell": 0.847, "rank.title": 0.904, "rank.card": 1.138, "rank.word": 0.824, "rank.xp.climb": 0.694, "vr.count": 1.61, "vr.go": 1.833, "chat.invite": 1.49, "nova.arrive": 1.354, "ob.whatsnew": 1.351, "ob.tooltip": 1.847, "cust.banner": 1.226, "cust.fx": 2.116, "app.start": 0.361, "rank.journey.bed": 0.668};
+__bm("L69498");
 Object.keys(SND_DARK_VOL).forEach(id => { if(SOUND_CATALOGUE[id]) SOUND_CATALOGUE[id].vol = SND_DARK_VOL[id]; });
 
 /* ---- THE HUNDO SCORES, CINEMATIC (build 327, round 7, b327w) ----
@@ -70348,6 +70400,7 @@ function playSound(id, opts){ try{ return NovaSound.play(id, opts); }catch(e){ r
    single percent. A run of 100 questions ticks no more than one of 12:
    the gap, not the answers, sets the rate. */
 const SND_GRADE_STEP = 1;
+__bm("L70351");
 const SND_GRADE_GAP_MS = 45;
 let sndGradeLastAt = -1e9;
 function gradeSoundFor(pct){
@@ -70610,6 +70663,7 @@ function currentStreak(){
    release land in one frame, and a retargeted transition freezes), the
    glide a CSS transition. Reduce motion: no lens, the plain quick switch. */
 const NSW_SEL = ".opt > .box, .nsw";
+__bm("L70613");
 const NSW_T = { pop: 260, shrink: 360, LX: 1.44, LY: 1.4, MAG: .82,
   POP: "cubic-bezier(.3,1.25,.5,1)", GLIDE: "cubic-bezier(.32,1.06,.42,1)", SETTLE: "cubic-bezier(.3,1.04,.4,1)" };
 const nswRuns = new WeakMap();
@@ -70866,6 +70920,7 @@ document.addEventListener("change", e => {
   nswFlipSeen = null;
   nswFlipped(track, was, t.checked);
 });
+__bm("L70869");
 document.addEventListener("click", e => {
   const b = e.target && e.target.closest ? e.target.closest('[role="switch"]') : null;
   if(b && b.querySelector(":scope > .nsw")) nswFlipSeen = { t: b, was: b.getAttribute("aria-checked") === "true" };
@@ -72371,6 +72426,7 @@ function buildPillTabBarIcon(){
    best times - is unchanged: this only decides what the study log is
    credited. */
 const STUDY_IDLE_MS = 5 * 60 * 1000;
+__bm("L72374");
 let studyActiveAt = null;   // last input during the current run
 let studyIdleMs = 0;        // idle time beyond the allowance, this run
 function startStudyClock(){ studyActiveAt = Date.now(); studyIdleMs = 0; }
@@ -72646,6 +72702,7 @@ function unitFullyStarred(name){
 function totalStarsEarned(units){
   return (units || topicsIn(QUESTIONS)).reduce((sum, u) => sum + unitStarCount(u), 0);
 }
+__bm("L72649");
 const LEVEL_STARS = { beginner: 1, intermediate: 2, mastery: 3 };
 const LEVEL_NAME = { beginner: "Beginner", intermediate: "Intermediate", mastery: "Advanced" };
 
@@ -72916,6 +72973,7 @@ function formatClock(ms){
   return m + ":" + pad2(s);
 }
 
+__bm("L72919");
 let sndTimerSec = null;
 function updateTimerDisplay(){
   if(cfg.timer === "down" || practiceTestMinutes != null){
@@ -73541,6 +73599,7 @@ function onTimeUp(){
    question, and timedOutSet is the race's "ran out of time" record. */
 
 let questionTimerHandle = null;
+__bm("L73544");
 let timedOutSet = {}; // question index -> true, reset each run
 
 function stopQuestionTimer(){
@@ -73995,6 +74054,7 @@ const RING_FLARE_ORDER = ["red", "orange", "yellow", "white", "violet", "core"];
    ones that washed out to lavender, so they get the most; the warm ones are
    already near the edge of what a screen shows and would clip into red */
 const RING_FLARE_CHROMA = { red: 1.3, orange: 1.3, yellow: 1.3, white: 1.6, violet: 1.6, core: 1.3 }, RING_FLARE_LIGHT = .7;
+__bm("L73998");
 let ringFlaresUrlCache = null;
 function ringFlaresURL(){
   if(ringFlaresUrlCache !== null) return ringFlaresUrlCache;
@@ -74560,6 +74620,7 @@ function showFlareFoundBanner(color, all){
    lesson: never overwrite a shared setting just to force one mode's
    behavior. */
 let practiceTestMinutes = null;
+__bm("L74563");
 const PRACTICE_TEST_SIZE = 250;
 const PRACTICE_TEST_MINUTES = 90;
 let timedOut = false;      // true when a countdown timer ended the run early
@@ -74956,6 +75017,7 @@ const UNIT_CALENDAR_PATTERN = {
   "Verbal Communication": /Verbal Comm/i,
   "Civil Process and Liability": /Civil Process|Civil Liab/i
 };
+__bm("L74959");
 let unitTeachOrderCache = null;
 function unitsInTeachingOrder(){
   if(unitTeachOrderCache) return unitTeachOrderCache.slice();
@@ -75630,6 +75692,7 @@ function accentToGradientStops(forceAccent){
   return [mix([255, 255, 255], 0.75), "rgb(" + r + "," + g + "," + b + ")", mix([0, 0, 0], 0.45)];
 }
 
+__bm("L75633");
 const COSMIC_SMIL = false;
 /* HOME'S EMBLEMS CAN NEVER TAKE THE PLANET DOWN WITH THEM (build 252).
    Build 250 reused the previous Home's emblem nodes to save time on the
@@ -75956,6 +76019,7 @@ function orbitAnimDrawing(tier){
      starts over the next time it is wanted (the character recorder
      stops for the same reason - recordingWantedNow covers both). */
 const orbitRecPending = new Map();
+__bm("L75959");
 const orbitRecWaiters = new Map();
 let orbitRecBusy = false;
 function orbitRecWanted(key){
@@ -76301,6 +76365,7 @@ function startOrbitEmblemAnims(root, readyOnly){
    - Same cache as the orbit sheets, under its own path, keyed by a
      hash of the drawing so a redraw re-records and nothing else does. */
 const CHAR_ANIM_LOOP_MS = 6000;
+__bm("L76304");
 const CHAR_ANIM_FRAMES = 144;   /* 24 a second */
 const CHAR_ANIM_COLS = 12;
 /* c3 (build 313): a sheet is keyed by its DRAWING, so a change to the
@@ -76689,6 +76754,7 @@ function charFlipFallback(el){
    sheets at once. flipNear also tells the recorder what to do first.
    The tab bar's own character never parks. */
 let charFlipIO = null;
+__bm("L76692");
 const charFlipWatched = new Set();
 function charFlipWatch(el){
   if(!el || typeof IntersectionObserver !== "function") return;
@@ -77353,6 +77419,7 @@ function scarShineWound(g, N, gM, MQ, amt, Ar, arr0, clean){
      CRACK_STAGES (renumbering those above it); the last row is always the
      full scar. Nothing else counts stages. */
 const CRACK_RANK_STAGE = { veteran: 1, vanguard: 2, adept: 3, elite: 4, titan: 5 };
+__bm("L77356");
 const CRACK_STAGES = [
   null,
   { reach: .30, width: .16, depth: .40, burn: 0, shine: 0 },     /* Gold: a hairline through the impact point */
@@ -77787,6 +77854,7 @@ function snDustURL(){
   }catch(e){ snDustCache = ""; }
   return snDustCache;
 }
+__bm("L77790");
 let cosmicDepthSeq = 0;
 /* Home's outer orbit (build 313): the outer rank bubbles sit on it by
    their centres and the outer secret flares ride it. 140, not the drawn
@@ -78954,6 +79022,7 @@ const CRACK_FORM_K = 8;
 /* the forming's beat in a rank's scene (after the flash), and its length;
    Supernova's burn takes longer to creep, from sn-scarred */
 const CRACK_FORM_AT_MS = 1500, CRACK_FORM_MS = 2000, CRACK_FORM_SN_MS = 3000;
+__bm("L78957");
 const crackFormCache = {};
 function crackFormLayers(from, to){
   const key = from + ">" + to;
@@ -80810,6 +80879,7 @@ function buildNovaSVG(opts){
    - Reduce motion (the app's switch or the system's): no typing, no
      entrance, no gestures - each line is simply there, and a tap moves on. */
 const NOVA_TYPE_CPS = 34;
+__bm("L80813");
 const NOVA_TOUR_CPS = 72;
 function novaMotionOff(){
   try{ return resultsMotionOff(); }catch(e){ return false; }
@@ -81089,6 +81159,7 @@ function novaFrag(){ return document.createDocumentFragment(); }
    filter is animated); the resting state of every part is the aftermath,
    which is all Reduce motion shows. Times are ms from the scene's start. */
 const NW = { px: 58, py: 40, pd: 36, crack: 900, crackMs: 2300, boom: 3500, hit: 3880, end: 6900 };
+__bm("L81092");
 let nwClipSeq = 0;
 function nwRand(seed){ let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; }
 /* the jagged line from p to q, n segments, ends fixed */
@@ -81563,6 +81634,7 @@ function novaStrainPlanet(){
   if(hero) w.appendChild(hero);
   return w;
 }
+__bm("L81566");
 const NOVA_MODE_LINES = {
   drill: "Learn a unit, answer by answer",
   exam: "Prove you’re ready, graded at the end",
@@ -82219,6 +82291,7 @@ function novaFriendProp(){
   row.append(face, t);
   return row;
 }
+__bm("L82222");
 let novaIntroOn = false;
 function playNovaIntro(then, o){
   if(document.getElementById("nova-intro")){ return; }
@@ -83049,6 +83122,7 @@ const RANK_ORBIT_MS = 30000;
    2-3 seconds longer ... Make the slowdown phase a smidge longer" - 22
    turns, 7.2s up and 5.4s down (2.6s longer), the same top speed. */
 const RANK_CUTSPIN_TURNS = 22;
+__bm("L83052");
 const RANK_CUTSPIN_ACCEL_MS = 7200, RANK_CUTSPIN_DECEL_MS = 5400, RANK_CUTSPIN_PAUSE_MS = 500, RANK_WINDUP_MS = 3000;
 /* the attention on the new flare as the scene opens: from RANK_ATTN_AT,
    for RANK_ATTN_MS, before the whirl */
@@ -83333,6 +83407,7 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
    RU_HAND_LEAD_MS more when the hand-off took, so the attention starts as
    the pull-back settles instead of in the middle of it. */
 var RU_HAND_ZOOM_MS = 4200, RU_HAND_DARK_MS = 400, RU_HAND_ZOOM_EASE = "cubic-bezier(.4,0,.2,1)";
+__bm("L83336");
 var RU_HAND_COPY_AT = 750, RU_HAND_COPY_MS = 1500, RU_HAND_RISE_AT = 600, RU_HAND_RISE_MS = 3200;
 var RU_HAND_LEAD_MS = RU_HAND_DARK_MS + RU_HAND_ZOOM_MS - 1300 - 400;
 function rankCutHandoff(overlay, stageWrap, heroBefore, tierKey, ghost){
@@ -85420,6 +85495,7 @@ function setChatMuted(code, on){
     localStorage.setItem(CHAT_MUTED_KEY, JSON.stringify(m));
   }catch(e){}
 }
+__bm("L85423");
 const BELL_PATH = "M6 16V11a6 6 0 0 1 12 0v5l1.6 2H4.4L6 16zM10 20.5a2 2 0 0 0 4 0";
 function buildChatMuteBtn(getCode){
   const b = document.createElement("button");
@@ -85991,6 +86067,7 @@ function isChatTab(){ return chatDockTab === "friends" || chatDockTab === "group
    more"), and every one of those is about classmates. The chat's Friends
    tab draws him beside them; nothing else counts him. */
 const NOVA_CODE = "DM-NOVA";
+__bm("L85994");
 const NOVA_KEY = "class26e.nova";
 /* The Virtual Room opponent (a separate builder). Off, and his challenge
    message waits; on, he sends it once, on a later day than his hello. */
@@ -86284,6 +86361,7 @@ function novaUnread(){
    decided by the spell's own number - so it is the same on every screen
    for the whole spell and needs nothing stored. */
 const NOVA_SPELL_MS = 50 * 60 * 1000;
+__bm("L86287");
 var novaAwayForce = null;
 function novaAway(now){
   if(novaAwayForce === true || novaAwayForce === false) return novaAwayForce;
@@ -86820,6 +86898,7 @@ function novaMsgAction(m){
   return row;
 }
 try{ setInterval(() => { if(document.visibilityState === "visible") novaTick(); }, 60000); }catch(e){}
+__bm("L86823");
 document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "visible"){
     /* back after a real absence: a new session */
@@ -87179,6 +87258,7 @@ function chatColorFor(key, participants){
 function chatColorBasis(parts){
   return (chatAllMembers && Object.keys(chatAllMembers).length) ? chatAllMembers : parts;
 }
+__bm("L87182");
 const CHAT_CTX = {
   label: "Chat",
   alertTag: null,
@@ -87528,6 +87608,7 @@ function chatUnreadByTab(){
    stands. 45s still takes somebody off the roster inside about two and
    a half minutes, which is the thing that was actually asked for. */
 const PRESENCE_BEAT_MS = 45 * 1000;
+__bm("L87531");
 const PRESENCE_STALE_MS = 150 * 1000;
 function presentParticipants(participants){
   if(!participants) return participants;
@@ -87826,6 +87907,7 @@ function chatPresencePatch(seen){
   patch[k + "seen"] = seen;
   return patch;
 }
+__bm("L87829");
 let chatBeatTimer = null;
 /* The group chat whose latest snapshot had this device's entry in it
    (build 307). Presence is only ever stamped onto a room that does: a
@@ -88184,6 +88266,7 @@ function chatReactionGlyph(id){
   return r ? r.glyph : "";
 }
 
+__bm("L88187");
 const CHAT_INVITE_TTL_MS = 30 * 60 * 1000;
 function incomingChatInvites(){
   const friends = new Set(friendPublicIds());
@@ -88672,6 +88755,7 @@ document.addEventListener("visibilitychange", () => {
   }catch(e){}
 });
 
+__bm("L88675");
 var chatDockPageAt = null;
 function toggleChatDock(){ chatDockOpen ? closeChatDock() : openChatDock(); }
 function openChatDock(){
@@ -89128,6 +89212,7 @@ function placeDockBesidePause(inTest, paused){
   dockBesidePause = { top: btn.style.top, right: btn.style.right,
                       pausedRight: Math.max(0, Math.round(window.innerWidth - p.right)) + "px", vw: window.innerWidth };
 }
+__bm("L89131");
 window.addEventListener("resize", () => {
   try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
 });
@@ -89455,6 +89540,7 @@ function syncChatDock(){
    Kept in localStorage now, with WHEN it was handled, so a newer invite
    from the same person is still news and an old one never is. */
 const NOTIF_HANDLED_KEY = "class26e.notifhandled";
+__bm("L89458");
 const notifHandled = new Map();
 try{
   const raw = JSON.parse(localStorage.getItem(NOTIF_HANDLED_KEY) || "{}") || {};
@@ -89851,6 +89937,7 @@ function mountSheetOverlay(overlay){
   overlay.classList.add("invite-overlay-show");
 }
 
+__bm("L89854");
 const CHAT_INVITE_COOLDOWN_MS = 30 * 1000;
 /* How long is left before this person can be invited again, 0 if now.
    Keyed on the invite's own timestamp and on THIS room, so joining a
@@ -90280,6 +90367,7 @@ let introPending = false;
    while What's New is pending or open, and for POPUP_GAP_MS after it
    closes. */
 const POPUP_GAP_MS = 2000;
+__bm("L90283");
 let popupGapUntil = 0;
 function whatsNewHolds(){
   /* Nova's introduction to a new account (#nova-intro) holds everything
@@ -91858,6 +91946,7 @@ function unitAccuracyOf(u){
   return n ? { n: n, pct: Math.max(0, Math.round((n - m) / n * 100)) } : null;
 }
 
+__bm("L91861");
 let unitDetailOpen = null;
 function openUnitDetail(row, name, mode){
   if(unitDetailOpen) return;
@@ -92762,6 +92851,7 @@ function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, t
    the note can never announce one range while the picker offers another. */
 function penalVersionNoteKey(){ return penal256Live() ? "class26e.penal256578.seen" : "class26e.penal124256.seen"; }
 function penalVersionRange(){ return penal256Live() ? "256\u2013578" : "124\u2013256"; }
+__bm("L92765");
 let penalNoteBusyAt = 0;
 function maybeShowPenalVersionNote(tries){
   try{ if(localStorage.getItem(penalVersionNoteKey())) return; }catch(e){ return; }
@@ -94102,6 +94192,7 @@ function showSetup(){
   }
 }
 
+__bm("L94105");
 let lastRunPool = [];
 let lastRunLabel = null;
 /* Separate from lastRunPool/lastRunLabel above, and deliberately NOT
@@ -94496,6 +94587,7 @@ function openQuestion(instant){
    Invalidated only in beginRun() — see its own comment for why that's
    the one correct place to do it. */
 let meterTicks = null;
+__bm("L94499");
 let meterNowIndex = -1;
 
 function drawMeter(){
@@ -95040,6 +95132,7 @@ function scheduleAutoAdvance(qi){
        default. */
   }, AUTO_ADVANCE_MS);
 }
+__bm("L95043");
 const AUTO_ADVANCE_MS = 550;
 
 function choose(slot){
@@ -95316,6 +95409,7 @@ function blurPair(panel, rect){
   const mix = (s, a) => { s = Math.max(0, Math.min(1, s)); sharp.style.opacity = s.toFixed(4); soft.style.opacity = ((1 - s) * (a == null ? 1 : a)).toFixed(4); return s; };
   return { wrap, soft, sharp, mix };
 }
+__bm("L95319");
 const SLIDE_MS = 280;
 const SLIDE_GAP = 28;
 const SLIDE_EASE = "cubic-bezier(.3,.7,.2,1)";
@@ -96074,6 +96168,7 @@ function homeCaptionHide(panel){
   homeCaptionCover(panel, "");
   homeCaptionState.key = null;
 }
+__bm("L96077");
 const homeCaptionState = { key: null, planetN: 0, timer: 0 };
 function homeCaptionShow(panel, item, key){
   if(!panel || !panel.isConnected || !item) return null;
@@ -96440,6 +96535,7 @@ function planetTapFx(hero, ev){
    a reward card or the ring draw holds the screen, never in the
    background. */
 const RING_STREAK_MS = 2000, RING_STREAK_STAGGER_MS = 220, RING_STREAK_EVERY = 4;
+__bm("L96443");
 const PULSE_CYCLE_MS = 9000, PULSE_DELAY_MS = 3500, PULSE_OUT_AT = .78;
 function ringStreak(host, before, radii){
   const out = [];
@@ -96689,7 +96785,8 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327r";
+const APP_BUILD = "2026-10-23-327s";
+__bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -96963,6 +97060,7 @@ function topNoticeOffset(bar){
    the notice persists across screen changes, so it has to re-measure
    rather than keep the position it was first shown at. */
 function repositionTopNotices(){ positionNotice(); positionDailyAlert(); }
+__bm("L96966");
 window.addEventListener("resize", repositionTopNotices);
 window.addEventListener("orientationchange", repositionTopNotices);
 
@@ -97377,6 +97475,7 @@ function hideBanner(){
    the point, so it has to survive one, and it is device state rather
    than progress. */
 const FORCED_TRIES_KEY = "class26e.forced.v1";
+__bm("L97380");
 const FORCED_UPDATE_TRIES = 3;
 let forcedUpdateInfo = null;
 let forcedUpdateStarted = false;
@@ -97666,6 +97765,7 @@ document.addEventListener("visibilitychange", () => {
    The moment the test ends, the screen change fires its own check, so
    nothing waits for the next tick. */
 const UPDATE_POLL_MS = 15 * 1000;
+__bm("L97669");
 setInterval(() => {
   if(document.hidden) return;
   /* Not while it could not be applied. */
@@ -98002,6 +98102,7 @@ function hfxFilmURL(h){
     '<path d="M28 34 C 44 50, 62 26, 76 38" fill="none" stroke="' + hs(250, 78, .16) + '" stroke-width="5" stroke-linecap="round"/></svg>';
   return hfxSpriteSVG("film2-" + h, svg, 480);
 }
+__bm("L98005");
 let hfxHeroShellC = null, hfxRingC = null;
 function hfxHeroShellURL(){
   if(hfxSprites.shell) return hfxSprite("shell");
@@ -99338,6 +99439,7 @@ function hfxUwHold(av, face){
    exactly what it was. Transform and opacity only; no filter. With
    motion off no effect plays (playHundoFx), so nothing here does either. */
 const HFX_RX_NS = "http://www.w3.org/2000/svg";
+__bm("L99341");
 let hfxRxSeq = 0;
 /* Where a drawing's face is not what its closed eyes say. e: eyes [cx, cy,
    halfWidth]; helmet: breath bubbles leave from the top, not the mouth;
@@ -100047,6 +100149,7 @@ function hfxBlackHole(scr, bx, c){
    it outlives the layer: the loop
    ends at the effect's total, or when it is stopped. */
 const HFX_FW_COL = { m: [255, 92, 214], c: [92, 227, 255], g: [255, 211, 140], w: [255, 246, 236], v: [178, 146, 255] };
+__bm("L100050");
 const HFX_FW_TOT = 7, HFX_FW_BOX_TOT = 3.6;
 /* the head of a spark: white core, its colour round it, fading out */
 function hfxFwHeads(){
@@ -100486,6 +100589,7 @@ const HFX_UFO_BEAMS = {
   green: { hi: "#C8FFD4", c: "#6BFF8F", ring: "#B8FFC8", glow: "150,255,175", deep: "107,255,143" },
   blue:  { hi: "#D4F1FF", c: "#5CC2FF", ring: "#BFE8FF", glow: "150,215,255", deep: "92,194,255" }
 };
+__bm("L100489");
 const HFX_UFO_BEAM = "blue";
 function hfxUfoBeam(){ return HFX_UFO_BEAMS[HFX_UFO_BEAM] || HFX_UFO_BEAMS.green; }
 function hfxBeamURL(){
@@ -101546,6 +101650,7 @@ let lastRunXpEarned = 0;
 /* The test-history entry summarize() just wrote, so the XP - known only
    further down - can be added to it. */
 let lastHistoryEntry = null;
+__bm("L101549");
 let lastRunPointsAfter = 0;
 /* The badge count either side of that run (build 314), so the level bar
    can show a badge opening a wall as the hop it is. */
@@ -101926,6 +102031,7 @@ function buildCaseSidePlate(extra){
    sits on the leather, and every screw a recessed head with its slot).
    Tags matter: a front's only spans are its two latches (check_b242). */
 const CASE_SCREW_TURN = [28, -52, 71, -14, 46, -67, 9, 63];
+__bm("L101929");
 let caseScrewSeq = 0;
 function caseKit(){
   const mk = (cls, tag) => { const e = document.createElement(tag || "i"); e.className = cls; return e; };
@@ -102593,6 +102699,7 @@ function playBadgeCaseScene(units, done, retro, opts){
    plays it for a reduce-motion run too (showRunRewards' quiet path), so
    the moment is never simply missing. */
 const SF_TITLE_TAP_MS = 700, SF_END_MS = 950, SF_OUT_MS = 420;
+__bm("L102596");
 const SF_STILL_TITLE_MS = 300, SF_STILL_END_AT = 3900, SF_STILL_END_MS = 500;
 /* the light rising over the figure, hem to crown */
 const SF_WIPE_MS = 1700;
@@ -103428,6 +103535,7 @@ function speedTierXp(avgSec){
 }
 function roundTo5(n){ return Math.round(n / 5) * 5; }
 
+__bm("L103431");
 const PB_TIME_BONUS = 100;
 const DAILY_XP = 200;
 const PB_SCORE_BONUS = 100;
@@ -103774,6 +103882,7 @@ function placeStreakPop(el){
    animation to fade it in would sit invisible forever - so that path
    builds every card already landed and plays no banners. */
 let resultsSeq = null;
+__bm("L103777");
 let resultsPausedNode = null;
 let resultsPausedScroll = 0;
 
@@ -104258,6 +104367,7 @@ function rsCharCelebrate(el, landMs){
     }, RS_CHAR_CELEBRATE_MS);
   }, landMs || 0);
 }
+__bm("L104261");
 const RS_CHAR_CELEBRATE_MS = 3800;
 /* Home's queue, grouped the same way: each rank's rewards as one card,
    ahead of anything a challenge handed over. */
@@ -104665,6 +104775,7 @@ function rankRewardsFirstOnHome(){
 /* A beat after Home settles - long enough that the screen is read as
    Home first and the unlock arrives as news, not as part of the load. */
 const HOME_UNLOCK_DELAY_MS = 2200;
+__bm("L104668");
 let homeUnlockTimer = null;
 /* True from the first card of a Home queue to the last. */
 let homeUnlockPlaying = false, homeUnlockActiveAt = 0;
@@ -107217,6 +107328,7 @@ function showResetWarning(){
    anonymous publicId, never the sync code); check-bugreport and
    check-behaviour section 36 read the document back. */
 const BUG_REPORT_MAX = 1200;
+__bm("L107220");
 const BUG_REPORT_TIMEOUT_MS = 15000;
 function showBugReport(){
   setActiveNav("settings");
@@ -108562,6 +108674,7 @@ function formatDuration(ms){
      animated inside a hidden tab is a chart nobody saw move). */
 const STUDY_DOT_STEPS = [10, 15, 20, 30, 60, 120];   /* minutes a dot */
 const STUDY_DOT_MAX_ROWS = 16;
+__bm("L108565");
 const STUDY_DOT_MIN_HOURS = 2;
 function studyWeekDays(weeksBack){
   const now = new Date();
@@ -109018,6 +109131,7 @@ function testHistorySummary(list){
     hundos: list.reduce((n, e) => n + testHundosOf(e), 0)
   };
 }
+__bm("L109021");
 let testHistoryFilter = "all";
 function showTestReviewList(){
   stopTimer(); stopQuestionTimer();
@@ -109374,6 +109488,7 @@ function announceVroomLeave(data){
   showToast((l.name || "Someone") + (inMatch ? " left the match." : " left the lobby."));
   playSound("vr.leave");
 }
+__bm("L109377");
 let vroomUnits = [];
 /* This person's own key within participants — needed so the lobby
    screen can toggle "my own" ready state specifically, distinct from
@@ -110181,6 +110296,7 @@ function showVirtualRoomSetup(editRoom){
   }
 }
 
+__bm("L110184");
 let vroomArriveSoft = false;
 /* The last room document this device knows, by code (build 314 - see
    drawLobbyRoster): written by create, join and every lobby snapshot. */
@@ -110547,6 +110663,7 @@ async function saveSyncCodeVia(anchorEl){
    and tapping "Save it" counts as dealt with, because it lands on the
    code itself in Settings. */
 const SAVE_CODE_MAX_PROMPTS = 1;
+__bm("L110550");
 const SAVE_CODE_ASKED_KEY = "class26e.savecode.asked";
 
 function checkSaveCodeReminder(){
@@ -110847,6 +110964,7 @@ function tugWinGap(count){
    `pull`, so its right answers count one each, which is what they used
    to be worth. */
 const TUG_PULL_BASE = .5;
+__bm("L110850");
 const TUG_PULL_SPEED = 1;
 const TUG_PULL_MISS = -.25;
 const TUG_ARM_MS = 1200;
@@ -111204,6 +111322,7 @@ function buildTugRope(d){
   tugPaintRope(wrap, d);
   return wrap;
 }
+__bm("L111207");
 let sndTugPct = null;
 function tugPaintRope(root, d){
   const v = tugView(d);
@@ -111783,6 +111902,7 @@ function showTugResult(d){
    second cannot overwrite each other, and a device that joins late or
    reconnects draws exactly what everybody else is drawing. */
 const BATTLE_MIN_Q = 50;
+__bm("L111786");
 const BATTLE_Q_MS = 20000;
 const BATTLE_PAUSE_MS = 2000;
 const BATTLE_HP = 100;
@@ -112681,6 +112801,7 @@ function showBattleResult(d){
    uses one about a second after it lands), and a freeze or flip aimed at
    him slows him as it would a player. */
 const NOVA_VR_KEY = "nova";
+__bm("L112684");
 const NOVA_VR_MS_MIN = 2000, NOVA_VR_MS_MAX = 4000;
 const NOVA_VR_OFF_DAY = 0.15;
 /* A hook for the gate: every one of his delays is multiplied by this.
@@ -114445,6 +114566,7 @@ function showVirtualRoomLobby(){
   attachLobbyListener();
 }
 
+__bm("L114448");
 let vroomTestStarted = false;
 let inVirtualRoom = false;
 /* Whether the room this device is hosting is listed in the browser.
@@ -115805,6 +115927,7 @@ function buildVroomChatPanel(container, ctx){
   };
 }
 
+__bm("L115808");
 let sndRaceProg = {};
 function startVroomRaceListener(){
   if(!vroomCode) return;
@@ -117006,6 +117129,7 @@ function showVirtualRoomResults(){
    would be a second listener and a second set of preview banners for
    the same messages. */
 let roomChatUnread = 0;
+__bm("L117009");
 let vroomChatSeen = { code: null, ts: 0 };
 function paintRoomChatFab(){
   const c = document.querySelector("#roomchat-fab .roomchat-fab-count");
@@ -117285,6 +117409,7 @@ function lbSnapshotOf(list){
    somebody. A new install compares against its oldest snapshot once
    that is an hour old, rather than showing nothing until tomorrow. */
 const LB_TREND3_KEY = "class26e.lbtrend.v3";
+__bm("L117288");
 const LB_TREND_SNAP_MS = 60 * 60 * 1000;
 const LB_TREND_KEEP_MS = 36 * 60 * 60 * 1000;
 const LB_TREND_AGE_MS = 20 * 60 * 60 * 1000;
@@ -117838,6 +117963,7 @@ function weekRecapStory(top, list, lw){
   if(pw && ps && pw >= ps * 1.75 && pw - ps >= 1000) return { kind: "runaway", margin: pw - ps };
   return { kind: "plain" };
 }
+__bm("L117841");
 const RECAP_STORY_CHIP = { comeback: "Comeback", photo: "Photo finish", overtake: "Late surge", repeat: "Back to back", runaway: "Runaway", plain: "Champion" };
 /* Last week's top three, as the This Week podium works them out
    (lastWeekTop3) - but only from people with a row NOW: the device's
@@ -118192,6 +118318,7 @@ function weekRecapLines(r){
     enter: () => { if(bits.length) page("class"); on(ui && ui.next, "is-in"); } });
   return lines;
 }
+__bm("L118195");
 let weekRecapTimer = null, weekRecapOn = false;
 function scheduleWeekRecap(ms){
   clearTimeout(weekRecapTimer);
@@ -119269,6 +119396,7 @@ const CUSTOMIZE_PAGES = {
   theme: { title: "Theme color", note: "The color the app runs in. Each rank hands one over." },
   fx: { title: "Hundo effect", note: "Plays on your results when you score 100%. Tap the one you have on to watch it." }
 };
+__bm("L119272");
 const CUSTOMIZE_ORDER = ["character", "banner", "theme", "fx"];
 /* What a page holds, counted the way its grid shows it. */
 function customizeTally(key){
@@ -120014,6 +120142,7 @@ let calendarView = "month";
    screen is live rather than a snapshot taken once, and re-renders when
    the rows land. onSnapshotResilient, never a bare .onSnapshot(). */
 let friendsLiveUnsub = null;
+__bm("L120017");
 let friendsShownSignature = null;
 /* WHAT THIS SCREEN ACTUALLY SHOWS, as one string. A snapshot arrives
    every time anybody in the class pushes - which on a board of forty
@@ -121696,6 +121825,7 @@ function fcFitCard(card){
   });
   card.style.height = need > base + 1 ? Math.ceil(need) + "px" : "";
 }
+__bm("L121699");
 window.addEventListener("resize", () => { const c = document.querySelector(".fc-card"); if(c) fcFitCard(c); });
 /* Dragging a card: it follows the finger, tilting, and commits only past
    FC_SWIPE_COMMIT of its width (build 306) - short of that it springs
@@ -122283,6 +122413,7 @@ function fitProfileIdLine(root){
     if(tot.getBoundingClientRect().top > first.getBoundingClientRect().top + 4) line.classList.add("is-two-rows");
   });
 }
+__bm("L122286");
 let profileIdFitBound = false;
 function bindProfileIdFit(){
   if(profileIdFitBound) return;
@@ -123667,6 +123798,7 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
    few characters before the label wraps or shrinks, and the screen
    still calls its contents leaderboards. */
 let rankingsLiveUnsub = null;
+__bm("L123670");
 let rankingsBoardKey = "overall";
 
 /* OVERALL EVERY TIME (build 314): "make this one [Overall] the default
@@ -124632,6 +124764,7 @@ const BINSPECT = {
   rubMax: .75, rubMin: 8, rubTurn: 8, rubStrokeMs: 450, rubReach: .62, rubPerStage: 4,
   edges: 16
 };
+__bm("L124635");
 const BADGE_BACK_CACHE = {};
 /* THE BACK, STRUCK LIKE THE FRONT (build 321, b321d). Madison: "the
    backside stamp of the badge is a great idea, needs to look more engraved
@@ -125829,6 +125962,7 @@ setTimeout(() => {
      the first Profile switch. */
   afterFirstPaint(() => { try{ formatCalendarDate("2026-01-01"); }catch(e){} });
 }, 4000);
+__bm("L125832");
 var settleUntil = 0;
 function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
 
@@ -126930,6 +127064,7 @@ function buildRanksTab(){
    input layer can never be left up. Reduce motion: the same steps, still
    and shorter. */
 var rankUpScene = null;
+__bm("L126933");
 var rankUpLockTimer = null, rankUpLockWired = false, rankUpRefusedAt = 0;
 var rankUpBlockEl = null, rankUpCurtainEl = null;
 var RANKUP_PROG_KEY = "class26e.rankup.prog";
@@ -127712,6 +127847,7 @@ async function rankUpClimbNext(scene, map){
    (rank.flare.zoom) reads RU_HAND_MS; RU_HAND_HOLD_MS, RU_HAND_DARK_MS,
    RU_HAND_ZOOM_MS and RU_HAND_LEAD_MS are the rest of the hand-off's clock. */
 var RU_HAND_MS = 3200, RU_HAND_SCALE = .84, RU_VEIL_MS = 2600, RU_HAND_HOLD_MS = 700;
+__bm("L127715");
 var RU_VEIL_EASE = "cubic-bezier(.42,0,.38,1)", RU_HAND_DRAW_EASE = "cubic-bezier(.4,0,.25,1)";
 /* ONE CLOCK FOR THE FLARE THROUGH THE HAND-OFF (build 321): "The flare does
    kind of skip and lag in its animation, so ensure it doesn't move or jump
@@ -128317,6 +128453,7 @@ async function rankUpStandingClimb(standing, from, to, row, scene){
   /* ...and only now the level challenge */
   if(row) await rankUpLevelRowAfter(row, to.level);
 }
+__bm("L128320");
 var RU_SPEND_LEAD_MS = 900, RU_SPEND_CHIP_MS = 1100;
 /* one rAF-driven tween: fn(k) for k 0..1, resolved at the end */
 function ruTween(el, ms, fn){
@@ -128573,6 +128710,7 @@ function rankUpSceneEnd(scene, played){
 }
 
 
+__bm("L128576");
 homeBtn.addEventListener("click", showHome);
 appearanceBtn.addEventListener("click", showAppearance);
 profileBtn.addEventListener("click", () => showProfile());
@@ -130067,6 +130205,7 @@ function swipeGestureAllowed(target){
   if(target && target.closest && target.closest(SWIPE_BLOCKING_TARGET)) return false;
   return true;
 }
+__bm("L130070");
 SWIPE_SURFACE.addEventListener("touchstart", (e) => {
   if(!theme.swipeAdvance) return;
   if(!swipeGestureAllowed(e.target)){
@@ -130235,7 +130374,7 @@ restartEl.addEventListener("click", confirmMainMenu);
 
 /* ---------- boot -------------------------------------------------------- */
 
-loadStore();
+__bm("loadStore");loadStore();
 
 /* ---------- THE ONE-TIME FRESH START ----------
    Every device clears itself once and lands back on Welcome. Asked for
@@ -130294,10 +130433,10 @@ const FRESH_START_KEY = "class26e.freshstart";
 
 migrateTestStatsToPerUnit();
 migrateBlackStarToGameBeat();
-applySaved();
+__bm("applySaved");applySaved();
 updateHeaderTitle();
-loadTheme();
-applyTheme();
+__bm("loadTheme");loadTheme();
+__bm("applyTheme");applyTheme();
 
 /* Ask the browser not to evict this origin's storage under space pressure.
    Best-effort: silently ignored where unsupported. */
@@ -130346,6 +130485,7 @@ else if(!store.onboardingComplete){
    for the same reason it holds off the self-heal: "stop syncing this
    device" was a decision, not a fault. */
 let adoptedLaunchCode = false;
+__bm("L130349");
 const launchCode = readRecoveryCode();
 if(launchCode && !syncCode && !syncOff){
   adoptedLaunchCode = true;
@@ -130506,7 +130646,7 @@ if(syncCode && !adoptedLaunchCode){
 
 /* A saved test the slot lost and the mirror kept comes back (build 320) -
    see mirrorRunSession. */
-restoreRunSessionFromMirror();
+__bm("restoreRunSessionFromMirror");restoreRunSessionFromMirror();
 
 /* localStorage came back empty — check the IndexedDB mirror in the
    background and quietly recover if it still has a copy. Only refreshes
@@ -130579,6 +130719,7 @@ if(!storageHadData){
     }
   });
 }
+__bm("main:end");
 </script>
 
 </body>
