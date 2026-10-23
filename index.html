@@ -32374,7 +32374,7 @@
      app they cannot be seen and Safari has something of the app's to
      extend. Made by refreshEdgeTints() once the splash has gone (see
      there: Safari reads a strip only when it appears). */
-html.is-browser, html.is-browser body{ overscroll-behavior-y:none; }
+html.is-browser{ overscroll-behavior-y:none; }
 .edge-tint{ display:none; }
 html.is-browser .edge-tint{
   display:block; position:fixed; left:0; right:0; height:12px; z-index:2;
@@ -67080,11 +67080,26 @@ function splashOwnsFrame(){
    colour changes (a theme change calls syncStatusBarColor). Browser tab
    only; the installed app has no Safari bars. 12px, full width, the
    app's own edge colours, so inside the app they cannot be seen. */
+var EDGE_TINTS_OFF = true;
 let edgeTintSig = "";
 function refreshEdgeTints(topColor){
   try{
     const root = document.documentElement;
     if(!root.classList.contains("is-browser") || !document.body) return;
+    /* OFF (build 327z9). "The things at the top and bottom are still" -
+       the strips worked: Safari read them and painted its status-bar band
+       and the band round its toolbar solid in their colour, so the screen
+       read as the app boxed between two flat bars, with the page stopping
+       short of them. With nothing solid at an edge Safari 26 lets the page
+       run under its glass instead, which is what the installed app looks
+       like. The strips and the root colour are removed; the rest of this
+       function is kept so they can be brought back by deleting this. */
+    if(EDGE_TINTS_OFF){
+      document.querySelectorAll(".edge-tint").forEach((n) => n.remove());
+      root.style.backgroundColor = "";
+      edgeTintSig = "";
+      return;
+    }
     if(splashOwnsFrame()){
       document.querySelectorAll(".edge-tint").forEach((n) => n.remove());
       edgeTintSig = "";
@@ -97555,7 +97570,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z8";
+const APP_BUILD = "2026-10-23-327z9";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

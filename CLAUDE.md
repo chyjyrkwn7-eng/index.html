@@ -26793,3 +26793,17 @@ lobby rows are unchanged.
   height, or a real flick (0.6px/ms, at least 12% of it, in the last 90ms);
   a flick back up never closes. Start sheet (`attachSheetSwipe`) and chat
   (`endDrag`). check-b327z5-b pulls 46%.
+
+### Build 327z9 - no strips at Safari's edges
+
+Madison, with a Safari screenshot circled top and bottom: *"Layout and
+scrolling function is still broken on safari. The things at the top and
+bottom are still."* The 327z3 strips did what they were built for: Safari
+read them and painted its status-bar band and the band round its toolbar
+solid in their colour, so the page read as boxed between two flat bars.
+`EDGE_TINTS_OFF` (beside `refreshEdgeTints`) removes the strips and the
+inline root colour, so Safari 26 can run the page under its glass the way
+the installed app runs under the status bar. Pull to refresh stays off on
+the root only (`html.is-browser{overscroll-behavior-y:none}`); the body no
+longer carries it. Not verifiable here (no WebKit); what "scrolling is
+broken" means exactly was asked of Madison. check-b327z3 A moved.
