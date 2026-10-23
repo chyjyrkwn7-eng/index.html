@@ -26328,3 +26328,33 @@ Chromium). A shape redrawn in `BADGE_SHAPE` needs its row re-measured with
 `badgeMeasure()`; a missing row is simply measured. The boot trace now
 names the queued job itself ("paint <source>"), not the queue, and the
 327x touch HUD stays until a launch is confirmed clean.
+
+### Build 327z - Safari tabs: no pull-to-refresh, the app's colour at the edges, the account kept in the URL, the recap once, sound back
+
+Madison, after 327y fixed the freeze: swiping down reloaded the page, the
+top and bottom bands in Safari were black, Safari signed him out, Nova's
+weekly recap kept playing at login, and "fix the sound problem".
+
+- **The freeze was never sound** (327y's badge bbox preset fixed it), so
+  327w's gate is reverted: `iosTab` is `false` and Safari tabs have sound
+  and haptics again. The 327x touch diagnostic and the boot-trace display
+  are removed; boot clears their old localStorage keys once.
+- **`html.is-browser`** (set by the head script when not standalone):
+  `overscroll-behavior-y:none` on html and body (no pull-to-refresh), and
+  two 4px fixed strips, `#edge-tint-top` / `#edge-tint-bottom`, in the
+  app's own colours, so Safari 26 tints its bars from the app rather than
+  black. Not verifiable off an iPhone.
+- **A browser tab keeps its account in its own URL**
+  (`syncBrowserCodeUrl`, `#k=CODE`, browser only, never the query string),
+  so a reload after Safari dropped storage comes back. It is stripped by
+  `clearSyncCode`, a wipe, and "Use a different account". **It never
+  signs in silently**: a code in a browser URL with no account on the
+  device sets `browserLinkCode`, and Welcome asks "Continue as <name>" /
+  "Use a different account" (`findAccountTrace` returns `{link:true}`).
+  The installed app's launch-URL adoption is unchanged. A fresh tab from a
+  bookmark still needs Sign in with the code.
+- **The weekly recap waits for the account's server copy**
+  (`cloudConfirmedFor`) before deciding it is unseen, never plays on a
+  launch where the account arrived (sign-in, link, restore, new sign-up:
+  `accountArrivedThisLaunch`, `markWeekRecapQuiet`), and its seen mark is
+  saved to the account (`saveStore`, `novaHeard["@recap"]`).

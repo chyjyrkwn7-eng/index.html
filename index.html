@@ -106,6 +106,9 @@
     document.documentElement.style.background = splashBg;
     var inApp = navigator.standalone === true ||
                 (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    /* build 327z: a browser tab, for the rules that are only right there
+       (no pull-to-refresh, edge strips for Safari's bars) */
+    if(!inApp) document.documentElement.classList.add("is-browser");
     if(!inApp){
       var tc = document.getElementById("themecolor");
       if(tc) tc.content = splashBg;
@@ -32232,6 +32235,33 @@
 .cosmic-icon-badge > .nova-hsw,.cosmic-sphere-hsw > .nova-hsw{clip-path:circle(50%)}
 .cosmic-sphere-hsw{position:absolute;left:50%;top:47.368%;width:28.889%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
   -webkit-tap-highlight-color:transparent}
+
+/* ===================== A SAFARI TAB (build 327z) =====================
+   "If I swipe down on the app the entire page refreshes" and "the top
+   and bottom parts of the screen aren't the app, they are black".
+   html.is-browser is set by the first inline script in <head> when the
+   page is not the installed app; nothing here reaches the installed app.
+   - overscroll-behavior-y:none on the root turns off Safari's pull to
+     refresh (Safari 16+) and the rubber band that leads into it. Inner
+     scrolling lists keep their own scroll.
+   - Safari 26 tints the band behind its status bar and its toolbar from
+     the page: a full-width fixed element touching that edge, else the
+     page's background colour (theme-color is no longer read). The two
+     strips are exactly the app's own top and bottom edge colours (the
+     same mixes syncStatusBarColor and --edge-bottom compute), so in the
+     app they cannot be seen and Safari has something of the app's to
+     extend. Under the splash they are the splash's colour. */
+#edge-tint-top, #edge-tint-bottom{ display:none; }
+html.is-browser, html.is-browser body{ overscroll-behavior-y:none; }
+html.is-browser #edge-tint-top, html.is-browser #edge-tint-bottom{
+  display:block; position:fixed; left:0; right:0; height:4px; z-index:2;
+  pointer-events:none;
+}
+html.is-browser #edge-tint-top{ top:0;
+  background:color-mix(in srgb, var(--bg-c3) var(--statusbar-mix3), color-mix(in srgb, var(--bg-c2) var(--statusbar-mix2), var(--paper))); }
+html.is-browser #edge-tint-bottom{ bottom:0; background:var(--edge-bottom); }
+html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-top,
+html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-bottom{ background:var(--splash-bg, #0A0A0A); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -32248,6 +32278,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 </head>
 <body>
+<div id="edge-tint-top" aria-hidden="true"></div><div id="edge-tint-bottom" aria-hidden="true"></div>
 
 <div id="splashscreen">
   <div id="splash-group">
@@ -32541,25 +32572,6 @@
     var msgInterval = duration / messages.length;
     var msgIndex = 0;
     statusEl.textContent = messages[0];
-    /* BOOT TRACE (327s): where the last launch got to, if it never finished. */
-    try{
-      var bm = (localStorage.getItem("class26e.bootmark") || "").split("|");
-      var diag = document.createElement("p");
-      diag.id = "splash-diag";
-      /* Under the bar, not at the screen's foot: Safari's toolbar sits
-         over the foot of the page and hid it (327u). */
-      diag.style.cssText = "margin:1.1rem auto 0;max-width:22rem;padding:0 1rem;text-align:center;font:11px/1.45 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-line";
-      var txt = "build 327y";
-      var recent = function(t){ return Date.now() - Number(t) < 3*86400000; };
-      if(bm[0] && bm[0] !== "done" && recent(bm[1])) txt += "\nlast launch stopped at " + bm[0];
-      var cb = (localStorage.getItem("class26e.bootcb") || "").split("|");
-      if(bm[0] && bm[0] !== "done" && cb[0]) txt += "\nin " + cb[0] + " (" + Math.round(Number(cb[1])/100)/10 + "s)";
-      var be = (localStorage.getItem("class26e.booterr") || "").split("|");
-      if(be[0] && recent(be[1])) txt += "\nerror: " + be[0];
-      diag.textContent = txt;
-      (document.getElementById("splash-group") || splash).appendChild(diag);
-      localStorage.removeItem("class26e.booterr");
-    }catch(e){}
     var msgTimer = setInterval(function(){
       msgIndex++;
       if(msgIndex < messages.length) statusEl.textContent = messages[msgIndex];
@@ -32800,7 +32812,10 @@
   <p class="hint" id="hint">Press 1 through 4 to pick an answer. Press Enter to continue.</p>
 </div>
 
-<script>window.__bm=function(s){try{localStorage.setItem("class26e.bootmark",s+"|"+Date.now())}catch(e){}};__bm("main:start");
+<script>/* the boot trace (327s-327y) is retired: __bm stays as a no-op for its
+   call sites, and what it left in storage is cleared once (build 327z) */
+window.__bm=function(){};
+try{ ["class26e.bootmark","class26e.bootcb","class26e.booterr","class26e.diag"].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
 /* AN IDLE CALLBACK FOR SAFARI (327v). Safari has no requestIdleCallback,
    and every "do this when the page is idle" in the app fell back to a
    plain 60ms timer - so on an iPhone the badge, character and sound
@@ -32838,123 +32853,6 @@
   };
   window.cancelIdleCallback = function(id){ for(var i = 0; i < q.length; i++) if(q[i].id === id){ q.splice(i, 1); return; } };
   window.__ricPolyfill = true;
-})();
-/* TOUCH-FREEZE DIAGNOSTIC (build 327x), iPhone/iPad Safari tabs only.
-   Madison: it works for 5-10 seconds, then nothing responds to a touch while
-   the planet keeps moving, and leaving Safari and coming back fixes it. That
-   is either the page stuck on one long piece of work (the planet is animated
-   by the phone itself, so it keeps moving) or something invisible catching
-   every tap. Nothing off a phone reproduces it, so the phone says which: a
-   line in the bottom-left corner ticks four times a second (it stops if the
-   page is stuck), counts the touches that arrive and names what the last one
-   landed on; every callback that runs over 300ms is timed and named, and the
-   longest are kept in localStorage (class26e.diag) so they show after
-   coming back. Remove once the cause is known. */
-(function(){
-  try{
-    var ua = navigator.userAgent || "";
-    var ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    var sa = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-    if(!ios || sa) return;
-  }catch(e){ return; }
-  var T0 = Date.now(), KEY = "class26e.diag", log = [], stall = 0, stallAt = 0, taps = 0, lastTap = "-", lastBeat = Date.now(), seen = 0;
-  try{ var old = JSON.parse(localStorage.getItem(KEY) || "null"); if(old && old.log) log = []; }catch(e){}
-  function nm(fn){ try{ return (fn.name || String(fn).replace(/\s+/g, " ").slice(0, 70)); }catch(e){ return "?"; } }
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ build: "327y", at: Date.now(), log: log, stall: stall, stallAt: stallAt, taps: taps, lastTap: lastTap })); }catch(e){} }
-  function note(kind, fn, ms){
-    log.push({ t: ((Date.now() - T0 - ms) / 1000).toFixed(1), k: kind, n: nm(fn), ms: Math.round(ms) });
-    log.sort(function(a, b){ return b.ms - a.ms; }); if(log.length > 8) log.length = 8; save();
-  }
-  function wrap(kind, fn){
-    if(typeof fn !== "function" || fn.__dw) return fn;
-    if(fn.__dwrap) return fn.__dwrap;
-    var w = function(){ var a = Date.now(); try{ return fn.apply(this, arguments); } finally { var d = Date.now() - a; if(d > 300) note(kind, fn, d); } };
-    w.__dw = 1; try{ fn.__dwrap = w; }catch(e){}
-    return w;
-  }
-  try{
-    var sT = window.setTimeout, sI = window.setInterval, rAF = window.requestAnimationFrame, rIC = window.requestIdleCallback;
-    window.setTimeout = function(f, ms){ var a = Array.prototype.slice.call(arguments); a[0] = wrap("timer", f); return sT.apply(window, a); };
-    window.setInterval = function(f, ms){ var a = Array.prototype.slice.call(arguments); a[0] = wrap("interval", f); return sI.apply(window, a); };
-    if(rAF) window.requestAnimationFrame = function(f){ return rAF.call(window, wrap("frame", f)); };
-    if(rIC) window.requestIdleCallback = function(f, o){ return rIC.call(window, wrap("idle", f), o); };
-    var MO = window.MutationObserver;
-    if(MO){ var NM = function(cb){ return new MO(wrap("mutation", cb)); }; NM.prototype = MO.prototype; window.MutationObserver = NM; }
-    var aEL = EventTarget.prototype.addEventListener, rEL = EventTarget.prototype.removeEventListener;
-    EventTarget.prototype.addEventListener = function(t, f, o){ return aEL.call(this, t, typeof f === "function" ? wrap("ev:" + t, f) : f, o); };
-    EventTarget.prototype.removeEventListener = function(t, f, o){ return rEL.call(this, t, (f && f.__dwrap) || f, o); };
-  }catch(e){}
-  function where(e){
-    try{
-      var p = e.touches && e.touches[0] ? e.touches[0] : e, el = document.elementFromPoint(p.clientX, p.clientY);
-      if(!el) return "none";
-      var s = el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (typeof el.className === "string" && el.className ? "." + el.className.trim().split(/\s+/).slice(0, 2).join(".") : "");
-      return s.slice(0, 48);
-    }catch(err){ return "?"; }
-  }
-  window.addEventListener("touchstart", function(e){ taps++; lastTap = where(e); }, { capture: true, passive: true });
-  var hud = null;
-  function beat(){
-    var now = Date.now(), gap = now - lastBeat; lastBeat = now;
-    if(gap > stall && !document.hidden && seen > 3){ stall = gap; stallAt = (now - gap - T0) / 1000; save(); }
-    seen++;
-    if(!hud && document.body){
-      hud = document.createElement("div");
-      hud.setAttribute("aria-hidden", "true");
-      hud.style.cssText = "position:fixed;left:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 4px);z-index:2147483647;pointer-events:none;font:600 10px/1.25 ui-monospace,Menlo,monospace;color:#9fe;background:rgba(0,0,0,.72);padding:3px 5px;border-radius:5px;max-width:92vw;white-space:pre-wrap";
-      document.body.appendChild(hud);
-    }
-    if(hud){
-      var top = log.slice(0, 3).map(function(x){ return x.ms + "ms " + x.k + " @" + x.t + "s " + x.n; }).join("\n");
-      hud.textContent = "327y " + ((now - T0) / 1000).toFixed(1) + "s · taps " + taps + " · " + lastTap + "\nstall max " + (stall / 1000).toFixed(1) + "s @" + stallAt.toFixed(1) + "s" + (top ? "\n" + top : "");
-      if(!hud.isConnected) try{ document.body.appendChild(hud); }catch(e){}
-    }
-    sT.call(window, beat, 250);
-  }
-  var sT2 = window.setTimeout; sT2.call(window, beat, 250);
-  document.addEventListener("visibilitychange", function(){ lastBeat = Date.now(); });
-})();
-/* BOOT TRACE, PART 2 (327u). Safari on an iPhone stops on the splash and
-   nothing here can reproduce it, so the phone records it itself: for the
-   first 25s, the source of every timer, idle and frame callback is written
-   down just before it runs (class26e.bootcb), and every script error
-   (class26e.booterr). A launch that hangs leaves the last one it began;
-   the next launch's splash prints both under the bar. */
-(function(){
-  try{
-    var T0 = Date.now(), seen = typeof WeakMap === "function" ? new WeakMap() : null;
-    window.__bootT0 = T0;
-    function tag(fn){
-      try{
-        var t = seen && seen.get(fn); if(t) return t;
-        t = (fn.name ? fn.name + ":" : "") + String(fn).replace(/\s+/g, " ").slice(0, 70);
-        if(seen) seen.set(fn, t); return t;
-      }catch(e){ return "?"; }
-    }
-    function mark(kind, fn){
-      if(Date.now() - T0 > 25000) return;
-      try{ localStorage.setItem("class26e.bootcb", kind + " " + tag(fn) + "|" + (Date.now() - T0)); }catch(e){}
-    }
-    function wrap(name, kind){
-      var orig = window[name]; if(typeof orig !== "function") return;
-      window[name] = function(fn){
-        if(typeof fn === "function" && Date.now() - T0 < 25000){
-          var a = Array.prototype.slice.call(arguments);
-          a[0] = function(){ mark(kind, fn); return fn.apply(this, arguments); };
-          return orig.apply(window, a);
-        }
-        return orig.apply(window, arguments);
-      };
-    }
-    wrap("setTimeout", "timeout"); wrap("setInterval", "interval");
-    wrap("requestAnimationFrame", "frame"); wrap("requestIdleCallback", "idle");
-    window.addEventListener("error", function(e){
-      try{ localStorage.setItem("class26e.booterr", String(e.message || e).slice(0, 120) + " @" + (e.lineno || "?") + "|" + Date.now()); }catch(x){}
-    });
-    window.addEventListener("unhandledrejection", function(e){
-      try{ localStorage.setItem("class26e.booterr", "promise: " + String(e.reason && (e.reason.message || e.reason)).slice(0, 110) + "|" + Date.now()); }catch(x){}
-    });
-  }catch(e){}
 })();
 </script>
 <script>
@@ -55662,6 +55560,7 @@ function setSyncCode(code){
   try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
   try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
   idbSaveCode(code);
+  try{ browserLinkCode = null; syncBrowserCodeUrl(); }catch(e){}
 }
 
 /* ================= RECOVERY THROUGH THE LAUNCH URL =================
@@ -55727,6 +55626,49 @@ function stripRecoveryCodeFromUrl(){
   }catch(e){}
 }
 
+/* BUILD 327z: "Fix the sign out problem on safari". A Safari tab's
+   storage can go on its own - Safari's tracking prevention clears a
+   site's storage after a week unused, a private tab's goes when the tab
+   does, an in-app browser has its own - and then the tab came back on
+   Welcome. The one thing a reload keeps is the tab's own address, so in
+   a browser (never the installed app) the code rides in its fragment
+   while signed in, exactly as the Home Screen icon's launch URL carries
+   it. A fragment is never sent to a server.
+   Reading it back in a browser is NOT a silent sign-in (see boot,
+   browserLinkCode): the address can be copied and sent to somebody, so a
+   tab with nothing of its own on it asks "Continue as <name>?" first. */
+const CODE_URL_OURS_KEY = "class26e.codeurl";
+var launchedWithCode = false;
+try{ launchedWithCode = !!readRecoveryCode(); }catch(e){}
+/* a code a browser tab arrived with and has not been told to use yet */
+var browserLinkCode = null, browserLinkName = "";
+var codeUrlWasOurs = false;
+try{ codeUrlWasOurs = sessionStorage.getItem(CODE_URL_OURS_KEY) === "1"; }catch(e){}
+function hashRecoveryCode(){
+  try{
+    const v = (new URLSearchParams((location.hash || "").replace(/^#/, "")).get(RECOVERY_PARAM) || "").trim().toUpperCase();
+    return SYNC_CODE_RE.test(v) ? v : null;
+  }catch(e){ return null; }
+}
+function syncBrowserCodeUrl(){
+  if(isStandaloneApp()) return;
+  try{
+    if(!syncCode || syncOff || !store || !store.onboardingComplete) return;
+    if(hashRecoveryCode() === syncCode) return;
+    const search = location.search.replace(/([?&])k=[^&]*&?/, "$1").replace(/[?&]$/, "");
+    history.replaceState(history.state, "", location.pathname + search + "#" + RECOVERY_PARAM + "=" + syncCode);
+    sessionStorage.setItem(CODE_URL_OURS_KEY, "1");
+  }catch(e){}
+}
+/* Off the address entirely: a reset, "Use a different account", a new
+   account started over a link. Browser or not. */
+function stripBrowserCodeUrl(){
+  try{
+    if(!location.hash && !/[?&]k=/.test(location.search)) return;
+    const search = location.search.replace(/([?&])k=[^&]*&?/, "$1").replace(/[?&]$/, "");
+    history.replaceState(history.state, "", location.pathname + search);
+  }catch(e){}
+}
 function recoveryUrlFor(code){
   return location.origin + location.pathname + location.search +
          "#" + RECOVERY_PARAM + "=" + encodeURIComponent(code);
@@ -55738,6 +55680,7 @@ function recoveryUrlFor(code){
    cannot fire, and the sign-up that follows issues a code of its own. */
 function clearSyncCode(disable){
   syncCode = null;
+  try{ stripBrowserCodeUrl(); }catch(e){}
   try { window.localStorage.removeItem(SYNC_CODE_KEY); } catch(e){}
   idbDeleteCode();
   syncOff = !!disable;
@@ -55759,6 +55702,7 @@ function wipeLocalProgressAndSettings(){
   /* the mirror is being emptied behind this: Welcome must not offer back
      the account that was just reset (build 322, findAccountTrace) */
   accountWipedAt = Date.now();
+  try{ browserLinkCode = null; stripBrowserCodeUrl(); }catch(e){}
   /* a reset is a new account: a test saved by the old one goes with it
      (build 320) */
   clearRunSession();
@@ -56632,7 +56576,12 @@ const FRESH_START_CUTOFF = 1790035200000;   /* 2026-09-22T00:00:00Z */
    in the cloud and never pushes this device's own copy over it - that
    copy may be a different account. Every other pull is the same account
    coming back, and merges (syncSameAccount). */
-function adoptFromCloud(code, onDone){ return pullFromCloud(code, onDone, true); }
+function adoptFromCloud(code, onDone){
+  return pullFromCloud(code, (ok, why) => {
+    if(ok){ try{ noteAccountArrived(); }catch(e){} }
+    onDone && onDone(ok, why);
+  }, true);
+}
 /* The public id this device was publishing under when it adopted another
    account - setSyncCode retires that row, not the adopted one (build 322). */
 var adoptedOverPublic = null;
@@ -69975,18 +69924,12 @@ const SOUND_AMBIENCE = {
 const NovaSound = (function(){
   const AC = () => window.AudioContext || window.webkitAudioContext;
   const st = { lastAt: -1e9, genAt: -1e9, wokeAt: 0, ctx: null, G: null, voices: [], last: {}, amb: null, ambWant: null, ambBuf: {}, ambWatch: 0, seq: 1, duck: 0, gesture: false };
-  /* NOT IN AN iPHONE BROWSER TAB (build 327w). Safari froze the whole page a
-     few seconds after the first tap of a fresh launch ("nothing on the
-     screen was registering"), at the moment the sound engine woke. It could
-     not be reproduced off a phone, so in a Safari tab on an iPhone or iPad
-     the engine never starts at all: no AudioContext, no offline render, no
-     scripted haptic tick. The installed app is untouched. */
-  const iosTab = (() => { try{
-    const ua = navigator.userAgent || "";
-    const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const sa = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
-    return ios && !sa;
-  }catch(e){ return false; } })();
+  /* BACK ON IN AN iPHONE BROWSER TAB (build 327z). 327w turned the engine
+     off in a Safari tab on a guess that it froze the page; the freeze went
+     on without it and was the badge outlines' forced layouts (327y). Kept
+     as a constant false, so the switch is one line if a phone ever says
+     otherwise. */
+  const iosTab = false;
   const on = () => !iosTab && !!(typeof theme === "object" && theme && theme.soundOn);
   const volume = () => { const v = Number(theme && theme.soundVolume); return isFinite(v) ? Math.max(0, Math.min(1, v)) : SOUND_DEFAULT_VOLUME; };
   const level = v => .95 * v * v;
@@ -79809,6 +79752,7 @@ function findAccountTrace(){
     if(syncOff || accountWipedAt) return null;
     if(typeof code === "string" && code) return { code: code, name: dn, data: (data && data.onboardingComplete) ? data : null };
     if(data && data.onboardingComplete) return { code: null, name: dn, data: data };
+    if(browserLinkCode) return { code: browserLinkCode, name: browserLinkName, link: true };
     return null;
   }).catch(() => now);
 }
@@ -79841,8 +79785,14 @@ function fillWelcomeActions(actions, title, trace){
     primary.addEventListener("click", () => continueWithTrace(trace, primary, hint));
     second.classList.add("welcome-other");
     second.textContent = "Use a different account";
-    second.addEventListener("click", () => { welcomeTraceSkip = true; showWelcome(); });
-    hint.textContent = "Your account is still on this device. Continue to pick up where you left off.";
+    second.addEventListener("click", () => {
+      welcomeTraceSkip = true;
+      if(trace.link){ browserLinkCode = null; stripBrowserCodeUrl(); }
+      showWelcome();
+    });
+    hint.textContent = trace.link
+      ? "This page remembers an account. Continue only if it's yours."
+      : "Your account is still on this device. Continue to pick up where you left off.";
   } else {
     delete actions.dataset.trace;
     title.textContent = "Welcome to Nova";
@@ -79877,6 +79827,7 @@ function continueWithTrace(t, btn, note){
   const label = btn.textContent;
   const land = () => {
     welcomeTraceSkip = false;
+    try{ noteAccountArrived(); }catch(e){}
     try{ applySaved(); loadTheme(); applyTheme(); }catch(e){}
     updateHeaderTitle();
     if(store.onboardingComplete){
@@ -79910,6 +79861,20 @@ function continueWithTrace(t, btn, note){
     pullFromCloud(t.code, (ok, why) => {
       if(t.code !== syncCode) return fail("error");
       if(!ok) return fail(why);
+      attachLiveListener(syncCode);
+      land();
+    });
+    return;
+  }
+  if(t.link && t.code && !syncCode){
+    /* a code from this tab's address on a tab with nothing of its own:
+       the account is taken whole, as Sign in takes it (build 327z) */
+    btn.disabled = true; btn.textContent = "Checking…";
+    adoptFromCloud(t.code, (ok, why) => {
+      if(!ok){ if(why === "not-found"){ browserLinkCode = null; stripBrowserCodeUrl(); } return fail(why); }
+      if(syncCode && syncCode !== t.code) return fail("error");
+      if(!syncCode) setSyncCode(t.code);
+      persistLocally();
       attachLiveListener(syncCode);
       land();
     });
@@ -80504,6 +80469,8 @@ function showWelcomeCharacterPrompt(){
 }
 
 function finishWelcomeStartFresh(){
+  /* a new account has no last week to be told about (build 327z) */
+  accountArrivedThisLaunch = true;
   /* NO NEW ACCOUNT OVER ONE THIS DEVICE STILL HOLDS (build 322) unless
      the person was told whose it is and chose to start again
      (showSignUpCheck). Asked here as well as there, because the mirror
@@ -80515,7 +80482,8 @@ function finishWelcomeStartFresh(){
       return;
     }
     signupTraceAck = "";
-    if(t){
+    if(t && t.link){ browserLinkCode = null; stripBrowserCodeUrl(); }
+    if(t && !t.link){
       /* Starting again on top of an account: nothing of it may come
          along, or the new account is the old one under another name. */
       const name = store.firstName, avatar = store.avatarChar;
@@ -90890,6 +90858,8 @@ function openPersonSheet(entry){
 }
 
 function showHome(){
+  /* a browser tab keeps its sign-in in its own address (build 327z) */
+  try{ syncBrowserCodeUrl(); }catch(e){}
   /* Settle what counts as already seen before anything can be earned
      (build 299) - a no-op once the record exists. */
   try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
@@ -97004,7 +96974,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327y";
+const APP_BUILD = "2026-10-23-327z";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -97113,6 +97083,8 @@ function maybeShowAddToHomeNotice(){
   if(addToHomeDismissed) return;
   const code = readRecoveryCode();
   if(!code || code !== syncCode) return;
+  /* our own address carrying the code (build 327z) is not a hand-off */
+  if(codeUrlWasOurs || !launchedWithCode) return;
   pendingNotice = { kind: "addtohome" };
   syncNoticeVisibility();
 }
@@ -117821,8 +117793,24 @@ function weekRecapSeen(lw){
   if(r && typeof r.wk === "string" && r.wk >= lw) return true;
   try{ return (Number(novaHeardMap()["@recap"]) || 0) >= weekKeyNum(lw); }catch(e){ return false; }
 }
+/* a sign-in marks last week seen without playing it (build 327z) */
+var accountArrivedThisLaunch = false;
+function noteAccountArrived(){
+  accountArrivedThisLaunch = true;
+  try{ markWeekRecapQuiet(lastWeekKey()); }catch(e){}
+}
+function markWeekRecapQuiet(wk){
+  try{
+    const h = novaHeardMap(), v = weekKeyNum(wk);
+    if((Number(h["@recap"]) || 0) >= v) return;
+    h["@recap"] = v; saveStore();
+  }catch(e){}
+}
 function markWeekRecapSeen(r){
-  try{ const h = novaHeardMap(); h["@recap"] = Math.max(Number(h["@recap"]) || 0, weekKeyNum(r.week)); persistLocally(); }catch(e){}
+  /* saveStore, not persistLocally (build 327z): the mark has to REACH the
+     account, or the next device - or this one after its storage is
+     cleared - plays the same week again. One write a week. */
+  try{ const h = novaHeardMap(); h["@recap"] = Math.max(Number(h["@recap"]) || 0, weekKeyNum(r.week)); saveStore(); }catch(e){}
   try{
     const prev = weekRecapRecord() || {};
     const hist = prev.hist && typeof prev.hist === "object" ? prev.hist : {};
@@ -118563,6 +118551,21 @@ function maybeShowWeekRecap(tries){
   if(!stage.querySelector('[data-screen="home"]')) return;
   if(!weekRecapDayOk()) return;
   const lw = lastWeekKey();
+  if(weekRecapSeen(lw)) return;
+  /* BUILD 327z: "I keep randomly getting the this week's leaderboard
+     thing when logging in". Two holes, both closed here:
+     - a device that has just signed in (or signed up, or come back from
+       a wiped jar) never plays it: the recap is for somebody already
+       here; last week is marked seen on the account and nothing plays;
+     - with a sync code it waits for this launch's server copy to be
+       merged (cloudConfirmedFor), because the "seen" mark (@recap) is on
+       the account and a device that has not read the account yet does
+       not know it was already watched on another device. */
+  if(accountArrivedThisLaunch){ markWeekRecapQuiet(lw); return; }
+  if(syncCode && !syncOff && cloudConfirmedFor !== syncCode){
+    if(n < 60) weekRecapTimer = setTimeout(() => maybeShowWeekRecap(n + 1), 1000);
+    return;
+  }
   if(weekRecapSeen(lw)) return;
   /* one moment of his a day (build 326): not on a day he has already
      messaged you on any device - the recap has until Sunday */
@@ -126155,10 +126158,6 @@ function afterFirstPaint(fn){
        mid-slide is a dropped frame in the one moment smoothness is seen. */
     if(Date.now() < settleUntil){ setTimeout(step, 60); return; }
     const f = afterPaintQueue.shift();
-    /* the boot trace names the job itself, not this queue (327y) */
-    if(f && window.__bootT0 && Date.now() - window.__bootT0 < 25000){
-      try{ localStorage.setItem("class26e.bootcb", "paint " + String(f).replace(/\s+/g, " ").slice(0, 70) + "|" + (Date.now() - window.__bootT0)); }catch(e){}
-    }
     if(f){ try{ f(); }catch(e){} }
     if(afterPaintQueue.length) requestAnimationFrame(() => setTimeout(step, 0));
   };
@@ -130710,7 +130709,25 @@ else if(!store.onboardingComplete){
 let adoptedLaunchCode = false;
 __bm("L130349");
 const launchCode = readRecoveryCode();
-if(launchCode && !syncCode && !syncOff){
+/* IN A BROWSER TAB THE CODE IN THE ADDRESS IS ASKED ABOUT, NOT ADOPTED
+   (build 327z): the address can be copied and sent on. Welcome offers it
+   as "Continue as <name>" (findAccountTrace), with "Use a different
+   account" beside it. The installed app's launch URL is set by its own
+   icon and is still adopted silently, as before. */
+if(launchCode && !syncCode && !syncOff && !isStandaloneApp() && !store.onboardingComplete){
+  browserLinkCode = launchCode;
+  onFirebaseReady(() => {
+    try{
+      fbDb.collection("progress").doc(launchCode).get().then(d => {
+        if(browserLinkCode !== launchCode) return;
+        const data = d && d.exists ? d.data() : null;
+        if(!data){ browserLinkCode = null; stripBrowserCodeUrl(); }
+        else browserLinkName = String(data.firstName || "").trim();
+        if(stage.querySelector('[data-screen="welcome"]') && !welcomeTraceSkip) showWelcome();
+      }).catch(() => {});
+    }catch(e){}
+  });
+} else if(launchCode && !syncCode && !syncOff){
   adoptedLaunchCode = true;
   setSyncCode(launchCode);
   onFirebaseReady(() => {
