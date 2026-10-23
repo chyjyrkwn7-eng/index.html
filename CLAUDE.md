@@ -26266,3 +26266,17 @@ bottom tab, still some lag loading screens."* Gate: `tools/check-b327z.py`
   is a regression, and none of it was cut. If a real phone still lags, the
   next lever is to defer the first Home build until after the splash's
   first paint, which changes boot order and wants a device to judge.
+
+### Build 327t - the loading screen finishes on a timer too
+
+Madison's iPhone sat on the splash at "> ready." with the bar full and
+nothing else, in Safari and an in-app browser. The splash hid ONLY from a
+`requestAnimationFrame` tick, and iOS can hold frames back (Low Power Mode,
+an in-app browser sheet, a busy compositor), so the hide never ran and
+`.wrap` stayed `visibility:hidden` under it. Classmates on the same build
+were fine. Reproduced in WebKitGTK by making `requestAnimationFrame` a
+no-op: 327s stuck forever, 327t through. The splash now also finishes on
+`setTimeout(duration + 120)`, once (`splashDone`); the rAF tick reads
+`performance.now()`, never its own timestamp. With frames off, Welcome,
+Sign in, the four tabs, Start Studying and Nova's introduction all still
+work. **Nothing that must happen may wait on animation frames alone.**
