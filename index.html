@@ -32548,7 +32548,7 @@
       /* Under the bar, not at the screen's foot: Safari's toolbar sits
          over the foot of the page and hid it (327u). */
       diag.style.cssText = "margin:1.1rem auto 0;max-width:22rem;padding:0 1rem;text-align:center;font:11px/1.45 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-line";
-      var txt = "build 327u";
+      var txt = "build 327v";
       var recent = function(t){ return Date.now() - Number(t) < 3*86400000; };
       if(bm[0] && bm[0] !== "done" && recent(bm[1])) txt += "\nlast launch stopped at " + bm[0];
       var cb = (localStorage.getItem("class26e.bootcb") || "").split("|");
@@ -32800,6 +32800,44 @@
 </div>
 
 <script>window.__bm=function(s){try{localStorage.setItem("class26e.bootmark",s+"|"+Date.now())}catch(e){}};__bm("main:start");
+/* AN IDLE CALLBACK FOR SAFARI (327v). Safari has no requestIdleCallback,
+   and every "do this when the page is idle" in the app fell back to a
+   plain 60ms timer - so on an iPhone the badge, character and sound
+   warm-ups ran back to back for six seconds straight as the splash ended
+   and Welcome or Home appeared: the page could not answer a tap, and on a
+   fresh launch Safari gave up on it. This stands in for the real thing:
+   one callback at a time, never while a finger is down or within 700ms of
+   the last touch, and after a callback that took T ms, at least 2T before
+   the next - so the warm-ups take at most a third of the main thread.
+   A callback's own timeout is honoured late rather than early. */
+(function(){
+  if(typeof window.requestIdleCallback === "function") return;
+  var q = [], seq = 0, timer = 0, lastInput = 0, nextAt = 0, MIN_GAP = 120;
+  function touch(){ lastInput = Date.now(); }
+  ["pointerdown","touchstart","keydown","wheel","scroll"].forEach(function(t){ try{ window.addEventListener(t, touch, { capture: true, passive: true }); }catch(e){} });
+  function arm(ms){ if(timer) return; timer = setTimeout(tick, Math.max(16, ms)); }
+  function tick(){
+    timer = 0;
+    if(!q.length) return;
+    var now = Date.now(), wait = Math.max(nextAt - now, lastInput + 700 - now);
+    if(document.hidden) wait = Math.max(wait, 500);
+    if(wait > 0){ arm(wait); return; }
+    var job = q.shift(), t0 = Date.now();
+    var dl = { didTimeout: !!(job.until && t0 >= job.until), timeRemaining: function(){ return Math.max(0, 10 - (Date.now() - t0)); } };
+    try{ job.fn(dl); }catch(e){ setTimeout(function(){ throw e; }, 0); }
+    var took = Date.now() - t0;
+    nextAt = Date.now() + Math.max(MIN_GAP, took * 2);
+    if(q.length) arm(nextAt - Date.now());
+  }
+  window.requestIdleCallback = function(fn, o){
+    var id = ++seq, to = o && o.timeout;
+    q.push({ id: id, fn: fn, until: to ? Date.now() + to : 0 });
+    arm(Math.max(50, nextAt - Date.now()));
+    return id;
+  };
+  window.cancelIdleCallback = function(id){ for(var i = 0; i < q.length; i++) if(q[i].id === id){ q.splice(i, 1); return; } };
+  window.__ricPolyfill = true;
+})();
 /* BOOT TRACE, PART 2 (327u). Safari on an iPhone stops on the splash and
    nothing here can reproduce it, so the phone records it itself: for the
    first 25s, the source of every timer, idle and frame callback is written
@@ -60770,6 +60808,8 @@ function badgeStrikeImage(unitName, grey, opts){
 function warmBadgeStrikes(){
   try{
     if(badgeStrikeBroken) return;
+    /* nobody signed in has no badges to show yet (327v) */
+    if(!store || !store.onboardingComplete){ setTimeout(warmBadgeStrikes, 15000); return; }
     const units = unitsInTeachingOrder();
     const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
     const jobs = [];
@@ -70429,9 +70469,19 @@ const NovaSound = (function(){
     if(typeof requestIdleCallback === "function") requestIdleCallback(fn, { timeout: 4000 });
     else setTimeout(fn, 600);
   };
-  /* well after first paint, so launch itself is untouched */
+  /* Not at launch (327v): only once someone has touched the app, and a
+     few seconds after - a fresh launch in iPhone Safari had this offline
+     render landing on top of the end of the splash. */
   let prewarmArmed = false;
-  setTimeout(() => { prewarmArmed = true; later(prewarm); }, 2500);
+  (function armPrewarm(){
+    let done = false;
+    const go = () => {
+      if(done) return; done = true;
+      ["pointerdown","keydown"].forEach(t => { try{ window.removeEventListener(t, go, true); }catch(e){} });
+      setTimeout(() => { prewarmArmed = true; later(prewarm); }, 4000);
+    };
+    ["pointerdown","keydown"].forEach(t => { try{ window.addEventListener(t, go, true); }catch(e){} });
+  })();
 
   return {
     play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
@@ -96845,7 +96895,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327u";
+const APP_BUILD = "2026-10-23-327v";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
