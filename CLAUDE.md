@@ -26314,3 +26314,17 @@ a stall. In an iPhone/iPad Safari tab only, a line in the bottom-left corner
   and keeps the three longest over 300ms, with the longest stall, in
   localStorage `class26e.diag`.
 Remove the whole block once the cause is known.
+
+### Build 327y - the badge outlines are a table, not a layout
+
+Madison's splash showed the boot trace from the launch that froze: it
+stopped 4.5s in, inside the after-first-paint queue's `step`. On Home the
+only jobs in that queue then are the sixteen badge-outline measurements
+queued 4s after launch, each a `getBBox` that forces a layout of the whole
+page. The boxes never change, so they are written down
+(`BADGE_BBOX_PRESET`, seeded into `BADGE_BBOX_CACHE` beside
+`BADGE_CENTRE_OF`); every viewBox is identical to 327x's (compared in
+Chromium). A shape redrawn in `BADGE_SHAPE` needs its row re-measured with
+`badgeMeasure()`; a missing row is simply measured. The boot trace now
+names the queued job itself ("paint <source>"), not the queue, and the
+327x touch HUD stays until a launch is confirmed clean.

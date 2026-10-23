@@ -32549,7 +32549,7 @@
       /* Under the bar, not at the screen's foot: Safari's toolbar sits
          over the foot of the page and hid it (327u). */
       diag.style.cssText = "margin:1.1rem auto 0;max-width:22rem;padding:0 1rem;text-align:center;font:11px/1.45 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-line";
-      var txt = "build 327x";
+      var txt = "build 327y";
       var recent = function(t){ return Date.now() - Number(t) < 3*86400000; };
       if(bm[0] && bm[0] !== "done" && recent(bm[1])) txt += "\nlast launch stopped at " + bm[0];
       var cb = (localStorage.getItem("class26e.bootcb") || "").split("|");
@@ -32860,7 +32860,7 @@
   var T0 = Date.now(), KEY = "class26e.diag", log = [], stall = 0, stallAt = 0, taps = 0, lastTap = "-", lastBeat = Date.now(), seen = 0;
   try{ var old = JSON.parse(localStorage.getItem(KEY) || "null"); if(old && old.log) log = []; }catch(e){}
   function nm(fn){ try{ return (fn.name || String(fn).replace(/\s+/g, " ").slice(0, 70)); }catch(e){ return "?"; } }
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ build: "327x", at: Date.now(), log: log, stall: stall, stallAt: stallAt, taps: taps, lastTap: lastTap })); }catch(e){} }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ build: "327y", at: Date.now(), log: log, stall: stall, stallAt: stallAt, taps: taps, lastTap: lastTap })); }catch(e){} }
   function note(kind, fn, ms){
     log.push({ t: ((Date.now() - T0 - ms) / 1000).toFixed(1), k: kind, n: nm(fn), ms: Math.round(ms) });
     log.sort(function(a, b){ return b.ms - a.ms; }); if(log.length > 8) log.length = 8; save();
@@ -32906,7 +32906,7 @@
     }
     if(hud){
       var top = log.slice(0, 3).map(function(x){ return x.ms + "ms " + x.k + " @" + x.t + "s " + x.n; }).join("\n");
-      hud.textContent = "327x " + ((now - T0) / 1000).toFixed(1) + "s · taps " + taps + " · " + lastTap + "\nstall max " + (stall / 1000).toFixed(1) + "s @" + stallAt.toFixed(1) + "s" + (top ? "\n" + top : "");
+      hud.textContent = "327y " + ((now - T0) / 1000).toFixed(1) + "s · taps " + taps + " · " + lastTap + "\nstall max " + (stall / 1000).toFixed(1) + "s @" + stallAt.toFixed(1) + "s" + (top ? "\n" + top : "");
       if(!hud.isConnected) try{ document.body.appendChild(hud); }catch(e){}
     }
     sT.call(window, beat, 250);
@@ -32923,6 +32923,7 @@
 (function(){
   try{
     var T0 = Date.now(), seen = typeof WeakMap === "function" ? new WeakMap() : null;
+    window.__bootT0 = T0;
     function tag(fn){
       try{
         var t = seen && seen.get(fn); if(t) return t;
@@ -59952,6 +59953,18 @@ const BADGE_VIEWBOX_CACHE = {};
 const BADGE_BBOX_CACHE = {};
 const BADGE_CENTRE_OF = {};
 Object.keys(BADGE_SHAPE).forEach(k => { BADGE_CENTRE_OF[BADGE_SHAPE[k].d] = BADGE_SHAPE[k].c; });
+/* THE OUTLINES' BOXES, MEASURED ONCE AND WRITTEN DOWN (327y). Measuring
+   one is a getBBox, which forces a layout of the whole page, and on an
+   iPhone in Safari the warm-up that measured all sixteen four seconds
+   after launch is where the page stopped answering taps (the boot trace
+   named it). The shapes never change at runtime, so their boxes are a
+   table: no layout, ever. Re-measure with badgeMeasure() if a shape in
+   BADGE_SHAPE is redrawn - a key missing here is simply measured. */
+const BADGE_BBOX_PRESET = {"gate":[12,9.1,76,80.9],"diamond":[8.45,8.45,83.1,83.1],"disc":[6,6,88,78],"trefoil":[3.188,-0.0367,93.6239,88.0527],"peaks":[8,16.1747,84,71.8253],"wedge":[9.9091,16,80.1818,75.35],"hex":[9,6.7,82,86.6],"cross":[8,8,84,84],"spire":[13.1691,7.3,73.6618,86.7],"fan":[11.2886,12.35,77.4228,69.65],"burstplate":[6.8,6.8,86.4,86.4],"cring":[26,5.9816,69.272,88],"bolt":[16.1905,10,66.1284,80.3879],"star5":[8.719,6.65,82.562,78.7453],"keystone":[10,8,80,84],"quatre":[1.9576,1.9576,96.0848,96.0848]};
+Object.keys(BADGE_BBOX_PRESET).forEach(k => {
+  const b = BADGE_BBOX_PRESET[k], sh = BADGE_SHAPE[k];
+  if(sh && b) BADGE_BBOX_CACHE[sh.d] = { x: b[0], y: b[1], w: b[2], h: b[3] };
+});
 /* One host, every outline asked for in it, one layout. */
 function badgeMeasure(ds){
   try{
@@ -96991,7 +97004,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327x";
+const APP_BUILD = "2026-10-23-327y";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -126142,6 +126155,10 @@ function afterFirstPaint(fn){
        mid-slide is a dropped frame in the one moment smoothness is seen. */
     if(Date.now() < settleUntil){ setTimeout(step, 60); return; }
     const f = afterPaintQueue.shift();
+    /* the boot trace names the job itself, not this queue (327y) */
+    if(f && window.__bootT0 && Date.now() - window.__bootT0 < 25000){
+      try{ localStorage.setItem("class26e.bootcb", "paint " + String(f).replace(/\s+/g, " ").slice(0, 70) + "|" + (Date.now() - window.__bootT0)); }catch(e){}
+    }
     if(f){ try{ f(); }catch(e){} }
     if(afterPaintQueue.length) requestAnimationFrame(() => setTimeout(step, 0));
   };
