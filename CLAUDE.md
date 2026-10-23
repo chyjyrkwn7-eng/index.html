@@ -26294,3 +26294,23 @@ standalone) now makes `on()` and `hapticsWanted()` false, so in a Safari tab
 none of it ever runs; Settings' Sound & vibration card says sound and haptics
 play in the installed app. The installed app is unchanged. If Safari still
 freezes on 327w, audio is ruled out.
+
+### Build 327x - a touch-freeze diagnostic in iPhone Safari tabs (temporary)
+
+327w did not fix it. Madison: it works for 5-10 seconds, then no touch does
+anything while the planet keeps moving, and leaving Safari and coming back
+makes touches work again. Neither WebKitGTK (at 2x and 3x) nor Chromium shows
+a stall. In an iPhone/iPad Safari tab only, a line in the bottom-left corner
+(after the requestIdleCallback polyfill, "TOUCH-FREEZE DIAGNOSTIC"):
+- ticks four times a second; if it STOPS during the freeze, the page is stuck
+  on one long piece of work (CSS animations like the planet keep running on
+  the phone's compositor);
+- counts arriving touches and names what the last one landed on; if it keeps
+  ticking and the taps land on something unexpected, an invisible layer is
+  catching them;
+- times every timer, interval, frame, idle, MutationObserver and event
+  callback (setTimeout, requestAnimationFrame, requestIdleCallback,
+  MutationObserver and EventTarget.prototype.addEventListener are wrapped)
+  and keeps the three longest over 300ms, with the longest stall, in
+  localStorage `class26e.diag`.
+Remove the whole block once the cause is known.

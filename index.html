@@ -32549,7 +32549,7 @@
       /* Under the bar, not at the screen's foot: Safari's toolbar sits
          over the foot of the page and hid it (327u). */
       diag.style.cssText = "margin:1.1rem auto 0;max-width:22rem;padding:0 1rem;text-align:center;font:11px/1.45 ui-monospace,Menlo,monospace;color:rgba(255,255,255,.55);word-break:break-word;white-space:pre-line";
-      var txt = "build 327w";
+      var txt = "build 327x";
       var recent = function(t){ return Date.now() - Number(t) < 3*86400000; };
       if(bm[0] && bm[0] !== "done" && recent(bm[1])) txt += "\nlast launch stopped at " + bm[0];
       var cb = (localStorage.getItem("class26e.bootcb") || "").split("|");
@@ -32838,6 +32838,81 @@
   };
   window.cancelIdleCallback = function(id){ for(var i = 0; i < q.length; i++) if(q[i].id === id){ q.splice(i, 1); return; } };
   window.__ricPolyfill = true;
+})();
+/* TOUCH-FREEZE DIAGNOSTIC (build 327x), iPhone/iPad Safari tabs only.
+   Madison: it works for 5-10 seconds, then nothing responds to a touch while
+   the planet keeps moving, and leaving Safari and coming back fixes it. That
+   is either the page stuck on one long piece of work (the planet is animated
+   by the phone itself, so it keeps moving) or something invisible catching
+   every tap. Nothing off a phone reproduces it, so the phone says which: a
+   line in the bottom-left corner ticks four times a second (it stops if the
+   page is stuck), counts the touches that arrive and names what the last one
+   landed on; every callback that runs over 300ms is timed and named, and the
+   longest are kept in localStorage (class26e.diag) so they show after
+   coming back. Remove once the cause is known. */
+(function(){
+  try{
+    var ua = navigator.userAgent || "";
+    var ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var sa = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    if(!ios || sa) return;
+  }catch(e){ return; }
+  var T0 = Date.now(), KEY = "class26e.diag", log = [], stall = 0, stallAt = 0, taps = 0, lastTap = "-", lastBeat = Date.now(), seen = 0;
+  try{ var old = JSON.parse(localStorage.getItem(KEY) || "null"); if(old && old.log) log = []; }catch(e){}
+  function nm(fn){ try{ return (fn.name || String(fn).replace(/\s+/g, " ").slice(0, 70)); }catch(e){ return "?"; } }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ build: "327x", at: Date.now(), log: log, stall: stall, stallAt: stallAt, taps: taps, lastTap: lastTap })); }catch(e){} }
+  function note(kind, fn, ms){
+    log.push({ t: ((Date.now() - T0 - ms) / 1000).toFixed(1), k: kind, n: nm(fn), ms: Math.round(ms) });
+    log.sort(function(a, b){ return b.ms - a.ms; }); if(log.length > 8) log.length = 8; save();
+  }
+  function wrap(kind, fn){
+    if(typeof fn !== "function" || fn.__dw) return fn;
+    if(fn.__dwrap) return fn.__dwrap;
+    var w = function(){ var a = Date.now(); try{ return fn.apply(this, arguments); } finally { var d = Date.now() - a; if(d > 300) note(kind, fn, d); } };
+    w.__dw = 1; try{ fn.__dwrap = w; }catch(e){}
+    return w;
+  }
+  try{
+    var sT = window.setTimeout, sI = window.setInterval, rAF = window.requestAnimationFrame, rIC = window.requestIdleCallback;
+    window.setTimeout = function(f, ms){ var a = Array.prototype.slice.call(arguments); a[0] = wrap("timer", f); return sT.apply(window, a); };
+    window.setInterval = function(f, ms){ var a = Array.prototype.slice.call(arguments); a[0] = wrap("interval", f); return sI.apply(window, a); };
+    if(rAF) window.requestAnimationFrame = function(f){ return rAF.call(window, wrap("frame", f)); };
+    if(rIC) window.requestIdleCallback = function(f, o){ return rIC.call(window, wrap("idle", f), o); };
+    var MO = window.MutationObserver;
+    if(MO){ var NM = function(cb){ return new MO(wrap("mutation", cb)); }; NM.prototype = MO.prototype; window.MutationObserver = NM; }
+    var aEL = EventTarget.prototype.addEventListener, rEL = EventTarget.prototype.removeEventListener;
+    EventTarget.prototype.addEventListener = function(t, f, o){ return aEL.call(this, t, typeof f === "function" ? wrap("ev:" + t, f) : f, o); };
+    EventTarget.prototype.removeEventListener = function(t, f, o){ return rEL.call(this, t, (f && f.__dwrap) || f, o); };
+  }catch(e){}
+  function where(e){
+    try{
+      var p = e.touches && e.touches[0] ? e.touches[0] : e, el = document.elementFromPoint(p.clientX, p.clientY);
+      if(!el) return "none";
+      var s = el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (typeof el.className === "string" && el.className ? "." + el.className.trim().split(/\s+/).slice(0, 2).join(".") : "");
+      return s.slice(0, 48);
+    }catch(err){ return "?"; }
+  }
+  window.addEventListener("touchstart", function(e){ taps++; lastTap = where(e); }, { capture: true, passive: true });
+  var hud = null;
+  function beat(){
+    var now = Date.now(), gap = now - lastBeat; lastBeat = now;
+    if(gap > stall && !document.hidden && seen > 3){ stall = gap; stallAt = (now - gap - T0) / 1000; save(); }
+    seen++;
+    if(!hud && document.body){
+      hud = document.createElement("div");
+      hud.setAttribute("aria-hidden", "true");
+      hud.style.cssText = "position:fixed;left:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 4px);z-index:2147483647;pointer-events:none;font:600 10px/1.25 ui-monospace,Menlo,monospace;color:#9fe;background:rgba(0,0,0,.72);padding:3px 5px;border-radius:5px;max-width:92vw;white-space:pre-wrap";
+      document.body.appendChild(hud);
+    }
+    if(hud){
+      var top = log.slice(0, 3).map(function(x){ return x.ms + "ms " + x.k + " @" + x.t + "s " + x.n; }).join("\n");
+      hud.textContent = "327x " + ((now - T0) / 1000).toFixed(1) + "s · taps " + taps + " · " + lastTap + "\nstall max " + (stall / 1000).toFixed(1) + "s @" + stallAt.toFixed(1) + "s" + (top ? "\n" + top : "");
+      if(!hud.isConnected) try{ document.body.appendChild(hud); }catch(e){}
+    }
+    sT.call(window, beat, 250);
+  }
+  var sT2 = window.setTimeout; sT2.call(window, beat, 250);
+  document.addEventListener("visibilitychange", function(){ lastBeat = Date.now(); });
 })();
 /* BOOT TRACE, PART 2 (327u). Safari on an iPhone stops on the splash and
    nothing here can reproduce it, so the phone records it itself: for the
@@ -96916,7 +96991,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327w";
+const APP_BUILD = "2026-10-23-327x";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
