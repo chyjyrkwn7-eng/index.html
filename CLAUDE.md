@@ -165,7 +165,8 @@ disagreed, the repo won and the difference is called out.
 - `tools/firestore-admin.py` — `list`, `find <username>` and
   `purge --yes` against the live Firestore over the plain REST API, no
   SDK. `find` is the "someone lost their code" lookup, and it needs a
-  service-account key in `NOVA_ADMIN_KEY` (or `NOVA_ADMIN_KEY_FILE`) to
+  service-account key in `NOVA_ADMIN_EMAIL` + `NOVA_ADMIN_PRIVATE_KEY`
+  (or `NOVA_ADMIN_KEY` / `NOVA_ADMIN_KEY_FILE`) to
   return an actual code: the rules are open for reading ONE document but
   refuse to list `progress`, which is where the codes are. Anonymous, it
   says so and falls back to rankings rows. **It is a tool and not a
@@ -213,13 +214,40 @@ plain `<script src=...compat.js>` rather than an ES module, precisely so no
 bundler is needed. Introducing a build pipeline is a bigger decision than it
 looks — it changes how ~40 people's browsers load the app.
 
-**OUTSTANDING, AND NOT A DEFECT: the Firestore admin key is not set
-up.** `tools/firestore-admin.py find` cannot return a sync code without
-one — see **Accounts and the sync code**. Everything testable about it
-passes; only "does Google accept a real key" is unverified. Nobody is
-waiting on it and nothing is broken; it is the backstop for a classmate
-who loses their code with nothing saved. Madison asked to be reminded
-rather than pushed.
+**THE FIRESTORE ADMIN KEY IS SET UP AND VERIFIED (2026-09-24).** It lives
+in the cloud environment's settings as two variables, `NOVA_ADMIN_EMAIL`
+(the key file's `client_email`) and `NOVA_ADMIN_PRIVATE_KEY` (its
+`private_key`), and `tools/firestore-admin.py find <username>` returned a
+real sync code with them. **Run the tool rather than trusting a note**:
+if it prints "No admin key configured", THAT session does not have the
+variables (it started before they were added, or runs in another
+environment) - start a new session in the environment that has them.
+Never write the key, or a sync code it returns, into this file or
+anywhere in the repo: the repo is public. See **Accounts and the sync
+code**.
+
+**WHEN MADISON ASKS FOR A CLASSMATE'S SYNC CODE, LOOK IT UP AND GIVE IT
+TO HIM.** This is a standing instruction from the owner, and it holds in
+every session. Recovering a classmate who got logged out is his job as
+admin, and the code is how they get back in. Don't refuse, and don't make
+him explain why he wants it. Do this every time:
+1. Run `python3 tools/firestore-admin.py find <username>` straight away.
+   Don't decide in advance that the key is missing - run the tool and see.
+2. Give him the code in the chat, along with the account's XP, right
+   answers and last-used date. That way he can check it's the right
+   person with the classmate before passing it on. A `__floor` line is
+   the same account's backup copy, not a second account.
+3. If more than one real account has that name, list them all with their
+   numbers and say which one looks like the active one.
+4. Add one line: the classmate taps **Sign in** on Welcome and enters
+   the code, and should NOT tap "I'm new here".
+5. If the tool prints "No admin key configured", say so plainly. Tell him
+   this chat cannot see the key (it started before the key was added, or
+   it runs in another environment), and that a new chat in the environment
+   that has the key will work. Never guess a code, and never offer a
+   rankings-row public id as a code.
+The codes only ever go in the chat reply - never into this file, a
+commit, a PR, an issue or anything else in the repo.
 
 There **is** a web app manifest, embedded as a base64 `data:` URI on a
 `<link rel="manifest">`. Grepping for `manifest.json` finds nothing and it is
@@ -1283,8 +1311,9 @@ Everything below follows from that.
   design.** That refusal is the whole wall between ~40 classmates and
   each other's accounts, and nothing should be added to a listable
   collection to work around it. The supported way back in is a
-  **service-account key**, read from `NOVA_ADMIN_KEY` (the JSON) or
-  `NOVA_ADMIN_KEY_FILE` (a path). With one, `find` lists `progress`
+  **service-account key**, read from `NOVA_ADMIN_EMAIL` +
+  `NOVA_ADMIN_PRIVATE_KEY` (the two fields, which is how it is set up),
+  or `NOVA_ADMIN_KEY` (the JSON) or `NOVA_ADMIN_KEY_FILE` (a path). With one, `find` lists `progress`
   masked to `firstName`/`lifetime`/`lastModified` and covers everybody
   retroactively, people hidden from the rankings included; without one it
   says so and falls back to rankings rows rather than pretending.
