@@ -31510,6 +31510,8 @@
   .binspect-dirt[hidden]{ display:none; }
   .binspect-tip{ margin:.4rem auto 0; font-size:.76rem; font-weight:600; line-height:1.4; letter-spacing:.02em; color:rgba(243,245,247,.42); }
   .binspect-close{ margin-top:1.2rem; }
+  /* build 327: no keyboard ring on Close (the viewer had focus on it) */
+  .binspect-close, .binspect-close:focus, .binspect-close:focus-visible{ outline:none; }
   /* a short phone (an SE): a smaller badge, so the words and Close fit */
   @media (max-height:46rem) and (orientation:portrait){ .binspect{ --bi:min(62vw, 32vh, 21rem); } .binspect-stage{ gap:1.1rem; } }
   /* a phone on its side: the words beside the badge */
@@ -69866,6 +69868,7 @@ const NovaSound = (function(){
      clickable, and the click reaches the control), not the buzz. */
   const HSW_HOSTS = "button, [role='button'], .avatarchar-option, .swatch, .banner-opt, .hfx-opt, .cosmic-flare-dot, .cosmic-icon-badge, .cosmic-sphere-hsw";
   const HSW_INNER = "a, button, input:not(.nova-hsw), select, textarea, label, [role='button'], [role='switch'], [role='slider']";
+  const HSW_MAX_H = 70, HSW_MAX_W = 260;  /* bigger than this is something you scroll by */
   const HSW_TAP_MS = 600;            /* how long after a finger lands on a switch a tick counts as that tap's */
   const HSW_BUDGET_MS = 5;           /* per slice: attaching is never a long task */
   let hswDownAt = -1e9, hswMoved = false, hswY0 = 0, hswX0 = 0;
@@ -69879,6 +69882,14 @@ const NovaSound = (function(){
     if(h.disabled || h.matches(".choice.locked, [data-no-hsw]")) return false;
     if(h.closest(".nsw, .opt, label, .ru-blocker, [data-no-hsw]")) return false;
     if(h.querySelector(HSW_INNER)) return false;
+    /* BIG CONTROLS GET NONE (build 327, "you can't scroll in the profile tab,
+       it starts clicking stuff"): iOS lets a finger that lands on a native
+       switch drag the switch instead of the page, so a scroll that began on
+       a card or a row never scrolled and toggled it on release. A page is
+       scrolled by its large surfaces, so only compact controls (tabs, chips,
+       small buttons) carry one; an answer choice keeps its switch because
+       its tick is the point of answering. */
+    if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && (h.offsetHeight > HSW_MAX_H || h.offsetWidth > HSW_MAX_W)) return false;
     return true;
   }
   function hswAttach(h){
@@ -69914,8 +69925,24 @@ const NovaSound = (function(){
       todo.forEach(hswAttach);
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
-    if(hswQueue.size) hswSchedule();
+    if(hswQueue.size) hswSchedule(); else hswPrune();
   }
+  /* a control that was hidden (another tab's pane) had no size when it was
+     judged: once it is shown and turns out big, its switch comes off */
+  function hswPrune(){
+    document.querySelectorAll(".nova-hsw").forEach(sw => {
+      const h = sw.parentNode;
+      if(!h || !h.offsetWidth) return;
+      if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && (h.offsetHeight > HSW_MAX_H || h.offsetWidth > HSW_MAX_W)){
+        h.removeAttribute("data-hsw"); h.__hsw = null; sw.remove();
+      }
+    });
+  }
+  let hswPruneT = 0;
+  window.addEventListener("click", () => {
+    if(!hswObs || hswPruneT) return;
+    hswPruneT = setTimeout(() => { hswPruneT = 0; hswPrune(); }, 450);
+  }, { capture: true, passive: true });
   function hswSchedule(){
     if(hswTimer || !hswObs) return;
     /* a beat after a screen is mounted, never inside its first frames: a
@@ -69980,6 +70007,14 @@ const NovaSound = (function(){
   ["change", "input", "focus", "focusin", "blur", "focusout"].forEach(ev => window.addEventListener(ev, e => {
     if(hswIs(e.target)) e.stopImmediatePropagation();
   }, true));
+  /* a drag that began on a switch must never become a tap on its control:
+     the click that follows it is swallowed */
+  let hswDragXY = null, hswDragged = false;
+  window.addEventListener("touchstart", e => { const t = e.touches && e.touches[0]; hswDragged = false; hswDragXY = t && hswIs(e.target) ? { x: t.clientX, y: t.clientY } : null; }, { capture: true, passive: true });
+  window.addEventListener("touchmove", e => { const t = e.touches && e.touches[0]; if(hswDragXY && t && (Math.abs(t.clientX - hswDragXY.x) > 10 || Math.abs(t.clientY - hswDragXY.y) > 10)) hswDragged = true; }, { capture: true, passive: true });
+  window.addEventListener("click", e => {
+    if(hswDragged && hswIs(e.target)){ hswDragged = false; e.preventDefault(); e.stopImmediatePropagation(); try{ e.target.checked = false; }catch(err){} }
+  }, true);
   const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
   const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
@@ -96647,7 +96682,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327l";
+const APP_BUILD = "2026-10-23-327m";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -125169,7 +125204,7 @@ function openBadgeInspect(unit, tile){
   const ready = {}, isFinal = {};
   const dpr = badgeDpr();
   let spin = null, frontA = null, frontB = null, frontSpec = null, backSpec = null, hit = null, sparks = null;
-  let backImg = null, backAt = -1, backFinal = false;
+  let backImg = null, backAt = -1, backFinal = false, addEdges = () => {};
   /* sized by CSS (--bi); measured once it is in the document */
   document.body.appendChild(ov);
   ov.append(dim, stageEl);
@@ -125189,7 +125224,7 @@ function openBadgeInspect(unit, tile){
     const coin = mk("binspect-coin");
     spin = mk("binspect-spin");
     const back = mk("binspect-face is-back");
-    backImg = mk("binspect-art", "img"); backImg.alt = ""; backImg.draggable = false; backImg.decoding = "sync";
+    backImg = mk("binspect-art", "img"); backImg.alt = ""; backImg.draggable = false;
     /* the back is rendered like the front now (build 321) - never in the
        tap: one already made, or its draft a moment after the lift starts */
     const b0 = BADGE_BACK_CACHE[unit + "|" + W + "|" + dirt];
@@ -125199,18 +125234,25 @@ function openBadgeInspect(unit, tile){
     back.append(backImg, backSpec);
     spin.appendChild(back);
     /* the side, rounded over (build 321): each slice's light from how far
-       it is from a face */
-    for(let i = 0; i < B.edges; i++){
-      const kk = i / (B.edges - 1);
-      let edgeSrc = null; try{ edgeSrc = badgeEdgeURL(unit, Math.sin(Math.PI * kk), dirt); }catch(e){}
-      if(!edgeSrc) break;
-      const e = mk("binspect-edge", "img"); e.alt = ""; e.draggable = false; e.src = edgeSrc;
-      e.style.setProperty("--k", kk.toFixed(3));
-      spin.appendChild(e);
-    }
+       it is from a face. BUILT A BEAT AFTER THE LIFT (build 327, "when
+       opening it, it lags"): sixteen images were made inside the tap, and
+       the lift only shows the front face. They are in before the first
+       turn (a press on the badge builds them at once). */
+    let edgesDone = false;
+    addEdges = () => {
+      if(edgesDone) return; edgesDone = true;
+      for(let i = 0; i < B.edges; i++){
+        const kk = i / (B.edges - 1);
+        let edgeSrc = null; try{ edgeSrc = badgeEdgeURL(unit, Math.sin(Math.PI * kk), dirt); }catch(e){}
+        if(!edgeSrc) break;
+        const e = mk("binspect-edge", "img"); e.alt = ""; e.draggable = false; e.src = edgeSrc;
+        e.style.setProperty("--k", kk.toFixed(3));
+        spin.appendChild(e);
+      }
+    };
     const front = mk("binspect-face is-front");
     frontA = mk("binspect-art is-current", "img"); frontA.alt = ""; frontA.draggable = false; frontA.decoding = "sync";
-    frontB = mk("binspect-art", "img"); frontB.alt = ""; frontB.draggable = false; frontB.decoding = "sync";
+    frontB = mk("binspect-art", "img"); frontB.alt = ""; frontB.draggable = false;
     /* NOTHING RENDERED IN THE TAP. A face this size is a few hundred ms
        on a phone, so the badge lifts out showing the very image it had in
        its slot (it starts at that size) and the big face takes its place a
@@ -125418,8 +125460,11 @@ function openBadgeInspect(unit, tile){
     }catch(e){}
   };
   if(hit){
+    /* the side's slices: a beat after the lift, or at once on a press */
+    const edgeTimer = setTimeout(() => { if(!closed) addEdges(); }, still ? 0 : 450);
     hit.addEventListener("pointerdown", e => {
       if(closed || closing || gest || (e.button && e.button !== 0)) return;
+      clearTimeout(edgeTimer); addEdges();
       e.preventDefault();
       try{ hit.setPointerCapture(e.pointerId); }catch(err){}
       const r = float.getBoundingClientRect(), now = performance.now(), p = pt(e);
