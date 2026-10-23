@@ -59,21 +59,19 @@ def check_safari(br):
         if not pg.evaluate("() => !!document.getElementById('splashscreen')"): break
         pg.wait_for_timeout(250)
     pg.wait_for_timeout(700)
-    S = """() => { const t = document.getElementById('edge-tint-top'), b = document.getElementById('edge-tint-bottom');
-      const R = e => e && e.getBoundingClientRect();
-      return { top: !!t, bot: !!b, tc: t && t.style.backgroundColor, bc: b && b.style.backgroundColor,
-        th: t && R(t).height, ttop: t && R(t).top, bbot: b && innerHeight - R(b).bottom, root: document.documentElement.style.backgroundColor,
-        fixed: t && getComputedStyle(t).position, pe: t && getComputedStyle(t).pointerEvents }; }"""
+    # MOVED IN 327z9: "The things at the top and bottom are still." The
+    # strips painted Safari's bars solid; with nothing solid at an edge the
+    # page runs under Safari's glass. No strip, no root colour, after the
+    # splash and after a theme change; still no pull to refresh.
+    S = """() => ({ n: document.querySelectorAll('.edge-tint').length, root: document.documentElement.style.backgroundColor,
+      osb: getComputedStyle(document.documentElement).overscrollBehaviorY, bodyosb: getComputedStyle(document.body).overscrollBehaviorY })"""
     s1 = pg.evaluate(S)
-    check("after the splash both strips exist", s1["top"] and s1["bot"], s1)
-    check("the strips carry a solid inline colour", bool(s1["tc"]) and "rgba" not in (s1["tc"] or "") and bool(s1["bc"]), s1)
-    check("they are fixed, 12px, at the very top and bottom, and take no taps",
-          s1["fixed"] == "fixed" and abs((s1["th"] or 0) - 12) < .5 and s1["ttop"] is not None and abs(s1["ttop"]) < .5 and s1["bbot"] is not None and abs(s1["bbot"]) < .5 and s1["pe"] == "none", s1)
-    check("the root background is the top strip's colour", s1["root"] == s1["tc"], s1)
-    pg.evaluate("() => { window.__oldTop = document.getElementById('edge-tint-top'); theme.accent = 'elite'; applyTheme(); syncStatusBarColor(); }")
+    check("after the splash no edge strip and no root colour", s1["n"] == 0 and not s1["root"], s1)
+    check("the root keeps pull to refresh off, the body does not carry it", s1["osb"] == "none" and s1["bodyosb"] != "none", s1)
+    pg.evaluate("() => { theme.accent = 'elite'; applyTheme(); syncStatusBarColor(); }")
     pg.wait_for_timeout(300)
-    s2 = pg.evaluate("() => ({ same: document.getElementById('edge-tint-top') === window.__oldTop, c: (document.getElementById('edge-tint-top') || {style:{}}).style.backgroundColor, n: document.querySelectorAll('.edge-tint').length })")
-    check("a theme change makes NEW strips in the new colour, two of them", (not s2["same"]) and s2["c"] != s1["tc"] and s2["n"] == 2, {"before": s1["tc"], "after": s2})
+    s2 = pg.evaluate(S)
+    check("a theme change makes no strip either", s2["n"] == 0 and not s2["root"], s2)
     ctx.close()
     ctx = br.new_context(viewport={"width": 440, "height": 956})
     ctx.add_init_script("Object.defineProperty(navigator,'standalone',{get:()=>true});")
