@@ -5894,17 +5894,7 @@
       linear-gradient(180deg, rgba(214,168,58,.18), rgba(214,168,58,.05));
     box-shadow:0 3px 18px rgba(214,168,58,.22), 0 0 0 1px rgba(255,214,110,.06), inset 0 1px 0 rgba(255,244,214,.18);
   }
-  /* the light across first place: a soft band, crossing once every 7s */
-  .lb-podium-sheen{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:0; }
-  .lb-podium-sheen::after{
-    content:""; position:absolute; top:-20%; bottom:-20%; left:0; width:38%;
-    background:linear-gradient(100deg, rgba(255,236,180,0) 0%, rgba(255,236,180,.13) 45%, rgba(255,250,232,.2) 50%, rgba(255,236,180,.13) 55%, rgba(255,236,180,0) 100%);
-    transform:translate3d(-130%, 0, 0) skewX(-14deg); will-change:transform;
-    animation:lb-podium-sheen 7s cubic-bezier(.45,.05,.35,1) infinite; animation-delay:1.2s;
-  }
-  @keyframes lb-podium-sheen{ 0%{ transform:translate3d(-130%, 0, 0) skewX(-14deg); } 26%, 100%{ transform:translate3d(300%, 0, 0) skewX(-14deg); } }
-  [data-reduce-motion="true"] .lb-podium-sheen::after{ animation:none; opacity:0; }
-  @media (prefers-reduced-motion:reduce){ .lb-podium-sheen::after{ animation:none; opacity:0; } }
+  /* (build 327z5: no light crosses first place's glass any more - "remove the reflection effect on the first place person".) */
   /* the medals, struck: a fine bright edge inside a darker one */
   .screen-rankings .rank-row .rank-place.lb-rank-medal{ position:relative; }
   .screen-rankings .rank-row .lb-rank-1{ box-shadow:0 2px 10px rgba(214,160,40,.45), inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.55), inset 0 1px 0 rgba(255,255,255,.6); }
@@ -21647,6 +21637,10 @@
     .picks > label.pick > .pname{ font-size:.8rem; letter-spacing:0; }
   }
   /* selected */
+  /* build 327z5: the card's own grid hands any extra height (another card
+     made it taller) to the name's row, so the count and bar stay on the
+     card's floor. */
+  .picks > label.pick{ box-sizing:border-box; }
   [data-layout="modern"] .picks > label.pick:has(input:checked),
   [data-layout="modern"] .picks > label.pick.pick-checked{
     border-color:var(--accent) !important; border-width:1px !important;
@@ -21675,7 +21669,14 @@
   [data-theme="dark"][data-layout="modern"] .picks > label.pick input:checked ~ .box{
     background:radial-gradient(120% 90% at 50% 18%, rgba(255,255,255,.55), rgba(255,255,255,0) 60%), var(--accent);
     border-color:var(--accent);
-    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent), 0 2px 6px rgba(0,0,0,.35), inset 0 -1px 1px rgba(0,0,0,.18);
+    /* build 327z5: "there's a line under the checkmark". The disc's shade
+       was a 1px inset lip along its bottom (inset 0 -1px 1px), which on a
+       circle is a hard grey arc right under the tick - b327y's hairline,
+       in the one circle it missed. The shade is a soft fall-off now, and
+       the top light is painted over the border box once, never repeated
+       under the border. */
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent), 0 2px 6px rgba(0,0,0,.35), inset 0 -4px 6px -3px rgba(0,0,0,.14);
+    background-repeat:no-repeat !important; background-origin:border-box !important;
     transform:scale(1.06);
   }
   .picks > label.pick input:checked ~ .box > .pick-tick path{ stroke-dashoffset:0; transition:stroke-dashoffset .3s cubic-bezier(.55,.1,.3,1) .12s; }
@@ -22851,6 +22852,14 @@
   .profile-cover.has-banner{ background:#10131A; }
   .profile-cover.has-banner::before{ display:none; }
   .profile-cover > .bnr{ z-index:0; }
+  /* build 327z5: a banner's subject moved clear of the character's circle
+     (BANNER_FOCUS). The cover already clips its art. */
+  .profile-cover > .bnr.has-focus,
+  .person-card-cover > .bnr.has-focus{
+    transform-origin:50% 50%;
+    transform:translate(calc(var(--bn-tx, 0) * 100%), calc(var(--bn-ty, 0) * 100%)) scale(var(--bn-z, 1));
+  }
+  .person-card-cover{ overflow:hidden; }
   .profile-cover > .profile-cover-mark{ z-index:1; }
 
   /* Behind a lobby row: dimmed, with a scrim from the left so the name
@@ -26048,13 +26057,24 @@
      shape as the Profile cover: edge to edge through the card's padding,
      fading into the card, with the character sitting on it. */
   .invite-sheet.person-card.has-cover{ padding-top:0; overflow:hidden; }
+  /* AN EASED FADE, AND NEVER A REPEAT (build 327z5): "the banner needs to
+     fade better because it's hard cut off". A straight 45%-to-100% ramp
+     over a 6.2rem strip has a knee where it starts and a hard foot where
+     it ends, and the default mask-repeat could tile the opaque top again
+     under the strip. It takes the Profile cover's eased curve over a
+     taller strip (the portrait moves up by the same 1.4rem, so nothing
+     under it moves), with no-repeat. */
   .person-card-cover{
-    position:relative; height:6.2rem; margin:0 -1.25rem;
-    -webkit-mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
-            mask-image:linear-gradient(180deg, #000 45%, transparent 100%);
+    position:relative; height:7.6rem; margin:0 -1.25rem;
+    --pc-fade:linear-gradient(180deg, #000 0%, #000 30%, rgba(0,0,0,.95) 38%, rgba(0,0,0,.86) 46%,
+      rgba(0,0,0,.72) 54%, rgba(0,0,0,.55) 62%, rgba(0,0,0,.38) 70%, rgba(0,0,0,.23) 78%, rgba(0,0,0,.12) 85%,
+      rgba(0,0,0,.05) 92%, rgba(0,0,0,.015) 97%, transparent 100%);
+    -webkit-mask-image:var(--pc-fade); mask-image:var(--pc-fade);
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+    -webkit-mask-size:100% 100%; mask-size:100% 100%;
   }
   .person-card.has-cover .person-card-art{
-    margin-top:-2.9rem; z-index:1; border-radius:50%;
+    margin-top:-4.3rem; z-index:1; border-radius:50%;
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #fff) 20%, #1C212B), #11141B 72%);
     box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45);
   }
@@ -32331,6 +32351,61 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   }
   html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next::before{ transform:translate(-50%,-50%) rotate(45deg) !important; }
   html[data-theme][data-layout] .unitoptions-modal-sheet .unitoptions-modal-head .next::after{ transform:translate(-50%,-50%) rotate(-45deg) !important; }
+  /* ===================== THE CALENDAR IN THE APP'S MATERIALS (build 327z5) =====================
+     "The calendar tab ... the layout isn't bad but the interface doesn't go
+     with the rest of the app.. fix it." The calendar had grown a look of its
+     own: each card edged and glowing in its own colour, coloured kickers, a
+     serif month title, glossy day cells, a darker blue-black day card and
+     its own glass buttons. It now wears what Stats and Profile wear - the
+     same card (--surface-sheen over --surface-1, the .16 rim, the soft
+     shadow, the 24px frost), the same grey small-caps kicker, the same
+     heavy sans for a title, a stat tile for a day and a count, and the
+     app's black 3D pill for its buttons. The layout, every card, every dot
+     and what each colour MEANS are unchanged: amber is a test, orange a
+     final exam, blue class days, pink no class - in the numbers and dots,
+     never as a glow round a box. */
+  [data-theme="dark"][data-layout="modern"] .screen-calendar :is(.cal-today-card, .cal-nexttest-card, .cal-big-card, .cal-course-card, .cal-daycard),
+  [data-theme="dark"][data-layout="modern"] .screen-calendar :is(.cal-today-card, .cal-nexttest-card, .cal-big-card, .cal-course-card, .cal-daycard).points-progress-sect{
+    background:var(--surface-sheen), var(--surface-1) !important;
+    border:1px solid var(--surface-border) !important;
+    border-radius:14px !important;
+    box-shadow:var(--surface-shadow) !important;
+    backdrop-filter:var(--surface-blur) !important; -webkit-backdrop-filter:var(--surface-blur) !important;
+  }
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-daycard{ padding:1rem 1.1rem; }
+  /* every kicker is the app's: grey small caps, never the card's colour */
+  .screen-calendar :is(.cal-today-card, .cal-nexttest-card, .cal-big-card, .cal-course-card) .cal-card-head .slab{ color:var(--soft) !important; }
+  .screen-calendar .cal-card-aside{ color:var(--soft); }
+  /* the top line: a kicker like "At a glance" */
+  .screen-calendar .cal-classhead{ color:var(--soft); font-size:.78rem; letter-spacing:.06em; font-weight:700; }
+  .screen-calendar .cal-classhead b{ color:var(--soft); font-weight:700; }
+  /* the month: the app's heavy sans, not a serif */
+  .screen-calendar .cal-grid-month{ font-family:inherit !important; font-weight:800; font-size:1.3rem; letter-spacing:-.01em; color:var(--ink); }
+  .screen-calendar .cal-grid-dow{ color:var(--soft); font-weight:700; letter-spacing:.06em; }
+  /* the buttons: the black 3D pill every secondary button in the app is */
+  [data-theme="dark"][data-layout="modern"] .screen-calendar :is(.cal-grid-arrow, .cal-action-btn){
+    background:#0A0A0C !important; border:0 !important; color:#fff !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    box-shadow:inset 0 1px 1px rgba(70,74,80,.7), inset 0 -2px 2px rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55) !important;
+  }
+  [data-theme="dark"][data-layout="modern"] .screen-calendar :is(.cal-grid-arrow, .cal-action-btn):active{ background:#16171A !important; transform:scale(.97); }
+  /* a day is a small stat tile: the card's own lift and rim, no gloss */
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-cell-class:not(.cal-cell-sel):not(.cal-cell-today):not(.cal-cell-last){
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.05)) !important;
+    border-color:transparent !important;
+    box-shadow:inset 0 2px 4px -1px rgba(255,255,255,.06) !important;
+  }
+  .screen-calendar .cal-cell{ border-radius:12px !important; }
+  /* the next test's count and the course: stat tiles too, the colour only in the number */
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-nt-count,
+  [data-theme="dark"][data-layout="modern"] .screen-calendar .cal-nexttest-card.is-bigexam .cal-nt-count{
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.043)) !important;
+    border:1px solid var(--surface-border) !important; border-radius:14px !important;
+    box-shadow:inset 0 2px 4px -1px rgba(255,255,255,.06) !important;
+  }
+  /* the chips say what a day is in a word, in the app's pill */
+  .screen-calendar .cal-nt-big{ background:rgba(255,255,255,.06) !important; border-color:var(--surface-border) !important; }
+  .screen-calendar .cal-today-badge{ background:rgba(255,255,255,.1); color:var(--ink); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -64432,6 +64507,38 @@ function bannerTintOf(id){
 
 /* Somebody's banner as the rest of the app should draw it: the one they
    wear if this build knows it, and otherwise the default - their theme. */
+/* WHERE A BANNER'S SUBJECT SITS ON A COVER (build 327z5). "Some of the
+   banners don't display properly because their main component is placed
+   like right behind the characters circle so you can't even see it." The
+   Profile cover and the person card put a character's circle over the
+   middle of the strip, and a banner drawn round its centre (the black
+   holes, the eclipse, the planet, the stair of light) had its subject
+   under it. Each entry moves the art inside its own box on those two
+   covers only: [zoom, x, y], x and y as shares of the box, never more than
+   (zoom - 1) / 2 so the art still covers it. Measured on renders of every
+   banner against the circle on both covers and both reference devices
+   (the share of the banner's detail left under the circle). Banners not
+   listed sit as drawn; the tiles, the unlock card and lobby rows are
+   untouched. A new banner whose subject is in the middle wants a row. */
+const BANNER_FOCUS = {
+  level80:       [1.3, -0.15, 0.15],
+  adept_rank:    [1.15, -0.075, -0.075],
+  titan_rank:    [1.3, 0.15, -0.15],
+  flare_void:    [1.3, -0.15, -0.15],
+  flare_umbra:   [1.3, -0.15, 0],
+  flare_horizon: [1.3, -0.15, -0.15],
+  flare_genesis: [1.3, -0.15, -0.15],
+  zenith:        [1.15, -0.075, -0.037]
+};
+function applyBannerFocus(art, id){
+  const f = art && BANNER_FOCUS[id];
+  if(!f) return art;
+  art.classList.add("has-focus");
+  art.style.setProperty("--bn-z", f[0]);
+  art.style.setProperty("--bn-tx", f[1]);
+  art.style.setProperty("--bn-ty", f[2]);
+  return art;
+}
 function buildWornBannerArt(bannerId, accent){
   if(bannerId && bannerDef(bannerId)) return buildBannerArt(bannerId);
   return buildThemeBannerArt(accent);
@@ -64702,7 +64809,7 @@ const RANKING_BOARDS = [
     sort: overallCompare,
     unit: (n, e) => overallRowLine(e),
     /* "In overall, it says 'on the same rank' remove that" (build 314). */
-    blurb: "Ranked by rank. Whoever is closest to their next rank is ahead." },
+    blurb: "Ordered by rank. Within a rank, whoever is closest to the next one is ahead." },
   /* "hundos", not "perfect tests". A run can cover several units at
      once, and "perfect test" reads as though every unit in it has to be
      clean - reported directly as confusing. The board's own name is the
@@ -90984,7 +91091,8 @@ function openPersonSheet(entry){
     /* Everybody has one: the default is their theme (build 243). */
     const cover = document.createElement("div");
     cover.className = "person-card-cover";
-    cover.appendChild(buildWornBannerArt(entry.banner, entry.accent));
+    cover.appendChild(applyBannerFocus(buildWornBannerArt(entry.banner, entry.accent),
+      entry.banner && bannerDef(entry.banner) ? entry.banner : ""));
     sheet.classList.add("has-cover");
     sheet.appendChild(cover);
   }
@@ -92190,6 +92298,40 @@ function attachUnitHold(row, name, mode){
    that ends a mouse drag is swallowed, or it would tick the last card a
    second time. */
 const DRAG_SELECT_LOCK = 10;
+/* EVERY UNIT CARD ONE SIZE (build 327z5): "Some of the unit selection
+   boxes aren't the same sizes." A grid row is as tall as its tallest card,
+   so a row of short names was shorter than a row holding "Fitness,
+   Wellness, and Stress Management" - three heights on one screen. Every
+   unit card takes the tallest card's height (the full-width Starred box
+   and "More units coming" keep their own). Measured whenever the list
+   changes width (a rotation, the first layout) and when it is filled. */
+function equalizePickHeights(list){
+  let last = "";
+  const run = () => {
+    if(!list.isConnected) return;
+    const cards = [...list.querySelectorAll(":scope > label.pick")];
+    if(!cards.length) return;
+    cards.forEach(c => { c.style.minHeight = ""; });
+    let h = 0;
+    cards.forEach(c => { if(c.offsetParent !== null) h = Math.max(h, c.getBoundingClientRect().height); });
+    if(!h) return;
+    const v = Math.ceil(h * 2) / 2 + "px";
+    cards.forEach(c => { c.style.minHeight = v; });
+    last = v;
+  };
+  list.__equalize = run;
+  try{
+    let w = -1;
+    const ro = new ResizeObserver(entries => {
+      const nw = Math.round(entries[0].contentRect.width);
+      if(nw === w) return;
+      w = nw; run();
+    });
+    ro.observe(list);
+  }catch(e){}
+  requestAnimationFrame(run);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(run).catch(() => {});
+}
 function attachDragSelect(list, onChange){
   let st = null, rafPending = false, scrollRaf = 0;
   const rowsNow = () => [...list.querySelectorAll("label.pick")].filter(r => !r.hidden && r.querySelector("input[type=checkbox]"));
@@ -93491,6 +93633,7 @@ function showSetup(){
 
   const list = document.createElement("div");
   list.className = "picks";
+  equalizePickHeights(list);
 
   /* EVERY FLAGGED QUESTION, AS A BOX IN THE GRID (build 297). Two tries
      at this did not land: a card above the list (296) and a switch over
@@ -110402,6 +110545,7 @@ function showVirtualRoomSetup(editRoom){
 
   const list = document.createElement("div");
   list.className = "picks";
+  equalizePickHeights(list);
 
   allUnits.forEach(name => {
     const row = document.createElement("label");
@@ -119112,9 +119256,9 @@ function renderRankingRows(rows, entries, board, opts){
        and their height; what is added is a metal ring in each place's own
        gold, silver or bronze (CSS, .rank-podium-N::before), a struck edge
        on the medal, a small crown over first place's medal, and on first
-       place alone a slow light that crosses the glass now and then
-       (.lb-podium-sheen - a transform, so the compositor's, paused off
-       screen with the row and off under Reduce motion). */
+       place alone a slow light that crossed the glass now and then -
+       removed in build 327z5 ("remove the reflection effect on the first
+       place person"). */
     if(place === 1){
       const crown = document.createElement("span");
       crown.className = "lb-crown"; crown.setAttribute("aria-hidden", "true");
@@ -119205,11 +119349,6 @@ function renderRankingRows(rows, entries, board, opts){
     }
     row.append(rank, avatarWrap, nameWrap);
     if(cols){ row.classList.add("has-cols"); row.appendChild(cols); }
-    if(place === 1){
-      const sheen = document.createElement("span");
-      sheen.className = "lb-podium-sheen"; sheen.setAttribute("aria-hidden", "true");
-      row.insertBefore(sheen, row.firstChild);
-    }
     /* The banner they wear, when the board is set to show one - see
        LB_ROW_BANNER. Only a real banner: the theme default would put a
        wash on every row and say nothing. Carried over like the
@@ -123579,7 +123718,7 @@ function showProfile(defaultTab, opts){
   if(worn){
     cover.classList.add("has-banner");
     cover.dataset.banner = worn;
-    cover.appendChild(buildBannerArt(worn));
+    cover.appendChild(applyBannerFocus(buildBannerArt(worn), worn));
   }
   /* The card under the cover carries the banner's colours (build 304);
      with the default banner that is the theme's own, through CSS. */
