@@ -1708,6 +1708,10 @@
   .nova-svg .nv-glint{ transform-box:fill-box; transform-origin:center; animation:nv-glint 6.8s ease-in-out infinite; }
   .nova-svg .nv-hair-back{ transform-origin:24px 18px; animation:nv-hair 5.2s ease-in-out infinite alternate; }
   .nova-svg .nv-mouth-open{ transform-origin:24px 25.4px; }
+  /* a list-size Nova holds still inside and breathes as one piece */
+  .nova-avatar.is-still .nova-svg, .nova-avatar.is-still .nova-svg *{ animation:none !important; }
+  .nova-avatar.is-still .nova-svg{ animation:nv-still-breathe 5.2s ease-in-out infinite alternate !important; will-change:transform; transform-origin:50% 78%; }
+  @keyframes nv-still-breathe{ from{ transform:none; } to{ transform:scale(1.035) translateY(-.4%); } }
   .nova-svg .nv-brows{ transition:transform .25s ease; }
   .nova-svg .nv-hand{ transform-origin:37.4px 56px; }
   .nova-svg .nv-handstar{ transform-box:fill-box; transform-origin:center; }
@@ -66727,16 +66731,35 @@ function sndNoise(ctx, color){
 }
 /* The room: a stereo impulse of decaying noise that darkens as it goes,
    generated, so the reverb is ours too. */
-function sndImpulse(ctx, dur, decay){
-  const sr = ctx.sampleRate, n = Math.round(sr * dur), buf = ctx.createBuffer(2, n, sr);
+/* The two channels of the impulse are plain arrays, worked out once per
+   rate and kept: it is 250,000 samples a side of pow() and a filter, which
+   is what the first tap of a session used to pay for. The page works it out
+   in idle time before anyone has touched anything (no AudioContext is
+   needed for arrays), and a context that wants another rate just works that
+   one out as before. */
+const sndImpulseCache = new Map();
+function sndImpulseData(sr, dur, decay){
+  const key = sr + "|" + dur + "|" + decay;
+  const hit = sndImpulseCache.get(key);
+  if(hit) return hit;
+  const n = Math.round(sr * dur), out = [new Float32Array(n), new Float32Array(n)];
   for(let ch = 0; ch < 2; ch++){
-    const d = buf.getChannelData(ch), R = sndRng(101 + ch * 7);
+    const d = out[ch], R = sndRng(101 + ch * 7);
     let lp = 0;
     for(let i = 0; i < n; i++){
       const x = i / n, k = .9 - .82 * x;
       lp += k * ((R() * 2 - 1) - lp);
       d[i] = lp * Math.pow(1 - x, decay) * (i < sr * .006 ? i / (sr * .006) : 1);
     }
+  }
+  if(sndImpulseCache.size >= 3) sndImpulseCache.delete(sndImpulseCache.keys().next().value);
+  sndImpulseCache.set(key, out);
+  return out;
+}
+function sndImpulse(ctx, dur, decay){
+  const sr = ctx.sampleRate, data = sndImpulseData(sr, dur, decay), buf = ctx.createBuffer(2, data[0].length, sr);
+  for(let ch = 0; ch < 2; ch++){
+    if(buf.copyToChannel) buf.copyToChannel(data[ch], ch); else buf.getChannelData(ch).set(data[ch]);
   }
   return buf;
 }
@@ -69944,10 +69967,22 @@ const NovaSound = (function(){
       return out;
     });
   }
+  /* The rendered loop is plain arrays and needs no live context (an
+     OfflineAudioContext is not one, and plays nothing), so it is asked for
+     once and kept: the first tap of a session finds it done, and any later
+     context at any rate only copies it into a buffer. */
+  const ambRaw = {};
+  function ambRendered(id){
+    if(!ambRaw[id]){
+      ambRaw[id] = renderAmbience(id, AMB_SR);
+      ambRaw[id].catch(() => { delete ambRaw[id]; });
+    }
+    return ambRaw[id];
+  }
   function ambBuffer(id){
     const ctx = st.ctx;
     if(st.ambBuf[id] && st.ambBuf[id].sr === ctx.sampleRate) return st.ambBuf[id].p;
-    const p = renderAmbience(id, AMB_SR).then(r => {
+    const p = ambRendered(id).then(r => {
       const b = ctx.createBuffer(2, r.length, r.sampleRate);
       r.channels.forEach((d, ch) => { if(b.copyToChannel) b.copyToChannel(d, ch); else b.getChannelData(ch).set(d); });
       return b;
@@ -69998,6 +70033,7 @@ const NovaSound = (function(){
       return;
     }
     if(st.G){ const now = st.ctx.currentTime; st.G.master.gain.setTargetAtTime(level(volume()), now, .05); }
+    else if(prewarmArmed && !prewarm.done) later(prewarm);   /* turned on after launch: get ready now */
   }
 
   /* An offline render of one sound for tools (and the test page): no
@@ -70021,6 +70057,37 @@ const NovaSound = (function(){
     const done = oc.startRendering();
     return done && done.then ? done : new Promise(res => { oc.oncomplete = ev => res(ev.renderedBuffer); });
   }
+
+  /* Everything the first tap of a session would otherwise work out on the
+     spot, worked out beforehand while the page is idle: the reverb's
+     impulse (at the rate a phone's output nearly always runs at) and the
+     Home ambience's loop. Arrays only - no AudioContext exists until a
+     gesture makes one (iOS, and check-b327-a 1). One step per idle slot, so
+     neither lands on a tab press, and only while sound is on. */
+  function prewarm(){
+    if(prewarm.done || !on()) return;
+    const steps = [
+      () => { sndImpulseData(48000, 2.6, 2.4); },
+      () => { ambRendered("amb.home"); },
+      /* the other rate an output commonly runs at */
+      () => { sndImpulseData(44100, 2.6, 2.4); }
+    ];
+    let i = 0;
+    const next = () => {
+      if(i >= steps.length){ prewarm.done = true; return; }
+      if(!on()) return;
+      try{ steps[i++](); }catch(e){}
+      later(next);
+    };
+    next();
+  }
+  const later = (fn) => {
+    if(typeof requestIdleCallback === "function") requestIdleCallback(fn, { timeout: 4000 });
+    else setTimeout(fn, 600);
+  };
+  /* well after first paint, so launch itself is untouched */
+  let prewarmArmed = false;
+  setTimeout(() => { prewarmArmed = true; later(prewarm); }, 2500);
 
   return {
     play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic,
@@ -86646,9 +86713,16 @@ function openNovaChat(){
   enterChatRoom(NOVA_CODE);
 }
 /* His face, as a character span would be: the round crop of his bust. */
-function novaAvatarSpan(full){
+function novaAvatarSpan(full, live){
   const span = document.createElement("span");
-  span.className = "rank-avatar nova-avatar";
+  /* A list-size Nova is STILL (build 327, lag): his drawing carries 28
+     infinite animations inside 247 nodes, and an animation inside an svg
+     repaints the whole svg on the main thread every frame. In the Friends
+     box on Profile that cost about 40% of the main thread for as long as
+     the screen was open, at a size where nobody can see a star twinkle.
+     He still breathes - one transform on the whole avatar, which the
+     compositor carries - and only his person card (live) runs the lot. */
+  span.className = "rank-avatar nova-avatar" + (live ? "" : " is-still");
   span.dataset.char = "nova";
   try{ span.appendChild(buildNovaSVG(full ? {} : { crop: "head" })); }catch(e){}
   return span;
@@ -90093,7 +90167,7 @@ function openPersonSheet(entry){
   if(isNova) sheet.classList.add("is-nova");
   const art = document.createElement("div");
   art.className = "person-sheet-art person-card-art";
-  art.appendChild(isNova ? novaAvatarSpan() : platePortrait(avatarSpanFor(entry)));
+  art.appendChild(isNova ? novaAvatarSpan(false, true) : platePortrait(avatarSpanFor(entry)));
   /* Big and alone here, so this is exactly where the character's own
      light belongs - the opposite call from the list rows, which lost
      it for being a smear. */
@@ -96361,7 +96435,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327h";
+const APP_BUILD = "2026-10-23-327i";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
