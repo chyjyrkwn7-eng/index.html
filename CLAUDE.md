@@ -26460,3 +26460,28 @@ bottom and top parts of safari are still black"*. Gate:
   **Not verifiable without an iPhone on iOS 26**; the gate holds the strips,
   not Safari's bars.
 - Gates moved: check-fixes 9b (a top glass banner, no bubble).
+
+### Build 327z4 - every banner is the account banner Madison pointed at
+
+Madison, with the save-your-code banner circled: *"That does not look like
+this screenshot? What the heck come on"*. The screenshot was the banner as
+it was BEFORE build 327k (dc49488): 327k gave every banner a coloured wash, a
+tinted rim, an icon in a lit disc and no hard left bar, and 327z3 copied that
+look onto the passive banners. Gate: `tools/check-b327z3.py` (moved; 7
+failures on 327z3).
+
+> **Supersedes** 327k's "clearer glass and no hard left bar" for `.app-banner`
+> and 327z3's titled, bigger passive banner.
+
+- **`.app-banner` is 327j's look again, every kind, active and passive**:
+  neutral frosted glass (`rgba(26,31,38,.4)` under a white-to-dark lift,
+  `blur(9px) saturate(1.9) brightness(1.06)`), a .11 white rim, a **3px left
+  bar in the kind's colour** (`--banner-color`), the bare icon in that colour
+  (no disc), the tag over ONE sentence, the button and the x on the right.
+  The Detective's face stays round (`.app-banner-face`).
+- **One sentence each, no title**: "Done for today — the next one is in 3h
+  12m, at 5pm"; Find me's three; "Your profile needs you — open Profile to
+  see your rank up". `showDailyAlert`'s `o.title` and `buildAppBanner`'s
+  "\n" split still work, but nothing uses them.
+- Kept from 327z3: the passive kinds (daily, rankings, rankup, notice), the
+  daily "not yet" at the top, Safari's strips.

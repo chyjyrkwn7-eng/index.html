@@ -14,9 +14,10 @@ and top parts of safari are still black."
      a theme change makes NEW strip elements (Safari reads a colour when an
      element appears) in the new colour. Installed: no strips.
   B. Tapping the "?" when the daily question is done: a banner at the top on
-     the app banner's glass (.app-banner.is-passive), tag DAILY QUESTION, a
-     title "Done for today", the time left under it, an icon in a lit disc,
-     an x that closes it; no bubble by the button.
+     the app banner's glass (.app-banner.is-passive), tag DAILY QUESTION, one
+     sentence ("Done for today - the next one is in ..."), the bare glyph and
+     the 3px bar on the left (327z4: the account banner as Madison
+     screenshotted it), an x that closes it; no bubble by the button.
   C. Find me's answer, "Your profile needs you" and the Detective's run are
      the same glass, each with its own tag.
 
@@ -36,7 +37,7 @@ BANNER = """() => { const a = document.getElementById('dailyalert'); if(!a) retu
   const r = a.getBoundingClientRect(), q = s => a.querySelector(s), cs = getComputedStyle(a);
   return { glass: a.classList.contains('app-banner') && a.classList.contains('is-passive'),
     tag: (q('.app-banner-tag') || {}).textContent || '', title: (q('.app-banner-title') || {}).textContent || '',
-    sub: (q('.app-banner-sub') || {}).textContent || '', icon: !!q('.app-banner-icon'), face: !!q('.app-banner-face svg'), x: !!q('.app-banner-x'),
+    sub: (q('.app-banner-sub') || {}).textContent || '', text: (q('.app-banner-text') || {}).textContent || '', bl: cs.borderLeftWidth + ' ' + cs.borderLeftStyle, iconBg: q('.app-banner-icon') ? getComputedStyle(q('.app-banner-icon')).backgroundImage : '', icon: !!q('.app-banner-icon'), face: !!q('.app-banner-face svg'), x: !!q('.app-banner-x'),
     blur: cs.backdropFilter || cs.webkitBackdropFilter || '', color: cs.getPropertyValue('--banner-color').trim(),
     top: r.top, h: r.height, w: r.width, vw: innerWidth, tip: !!document.getElementById('daily-lock-tip') }; }"""
 
@@ -96,10 +97,12 @@ def check_banners(br):
         check("%s: the done daily question answers on the glass banner" % dev, bool(b) and b["glass"], b)
         if b:
             check("%s: ... at the top, no bubble by the button" % dev, b["top"] < 140 and not b["tip"], b)
-            check("%s: ... tagged DAILY QUESTION, titled Done for today, the time under it" % dev,
-                  b["tag"] == "DAILY QUESTION" and b["title"] == "Done for today" and "Next one in" in b["sub"], b)
-            check("%s: ... an icon in a lit disc, frosted glass and an x" % dev, b["icon"] and b["x"] and "blur" in b["blur"], b)
-            check("%s: ... a size up (at least 64px tall)" % dev, b["h"] >= 64, b)
+            # MOVED IN 327z4: one sentence, the bare glyph and a 3px bar down
+            # the left - the account banner exactly as Madison screenshotted it.
+            check("%s: ... tagged DAILY QUESTION, one sentence: done for today and when the next one is" % dev,
+                  b["tag"] == "DAILY QUESTION" and not b["title"] and "Done for today" in b["text"] and "next one is in" in b["text"], b)
+            check("%s: ... the account banner's look: a bare glyph, a 3px bar on the left, frosted glass, an x" % dev,
+                  b["icon"] and b["x"] and "blur" in b["blur"] and b["bl"].startswith("3px") and b["iconBg"] == "none", b)
             check("%s: ... inside the screen" % dev, b["w"] <= b["vw"] - 16, b)
             shot(pg, dev + "-daily-done")
             pg.evaluate("() => document.querySelector('#dailyalert .app-banner-x').click()")

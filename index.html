@@ -25333,23 +25333,22 @@
      is right for a passive announcement nobody taps and fatal for one
      whose whole point is a button. */
   .app-banner{
-    display:flex; align-items:center; gap:.7rem; text-align:left;
+    display:flex; align-items:center; gap:.6rem; text-align:left;
     pointer-events:auto;
-    /* build 327k: CLEARER GLASS AND NO HARD LEFT BAR ("could be so much
-       better"). The 3px bar down the left edge was a hard stripe on a
-       rounded glass pill; the kind's colour is now a faint wash that
-       fades in from the left, a colour-tinted rim, and the icon in a lit
-       disc. Same thin tint over a strong blur as the daily bubble and the
-       tab bar, so the glow behind shows through. The colour AND the tag
-       still say which banner this is. */
-    padding:.7rem .85rem .7rem .75rem; border-radius:20px;
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--banner-color, var(--accent)) 20%, transparent), transparent 62%),
-      linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.03)),
-      rgba(12,13,19,.38);
-    border:1px solid color-mix(in srgb, var(--banner-color, var(--accent)) 38%, rgba(255,255,255,.16));
-    backdrop-filter:blur(26px) saturate(1.5); -webkit-backdrop-filter:blur(26px) saturate(1.5);
-    box-shadow:0 10px 26px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.05);
+    /* BUILD 327z4: BACK TO THE ACCOUNT BANNER MADISON POINTED AT. 327k
+       swapped the 3px bar on the left for a wash, a coloured rim and an
+       icon in a disc; his screenshot of the banner he liked ("This is
+       great Liquid Glass ... the left side has a color and the little
+       icon") was the one before that. These are its computed values,
+       written out so a later .daily-alert rule cannot drift them: the
+       neutral frosted glass, a hairline rim, the kind's colour as a 3px
+       bar down the left, the bare glyph in that colour, one sentence. */
+    padding:.9rem 1.1rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    border:1px solid rgba(255,255,255,.11);
+    border-left:3px solid var(--banner-color, var(--accent));
+    backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
   }
   /* THEY SIT AT THE TOP, AND THEY CLEAR THE CORNER BY BEING NARROWER.
      The chat dock was briefly listed as something for topNoticeOffset()
@@ -25416,12 +25415,7 @@
   }
   .daily-alert-go.daily-alert-chev{ width:.6rem; height:.9rem; display:block; letter-spacing:0; }
   .daily-alert-go.daily-alert-chev svg{ width:100%; height:100%; display:block; }
-  .app-banner-icon{
-    flex-shrink:0; width:2.15rem; height:2.15rem; box-sizing:border-box; padding:.46rem; border-radius:50%;
-    color:var(--banner-color, var(--accent));
-    background:radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--banner-color, var(--accent)) 34%, transparent), color-mix(in srgb, var(--banner-color, var(--accent)) 12%, transparent) 72%);
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--banner-color, var(--accent)) 46%, transparent), inset 0 1px 0 rgba(255,255,255,.22);
-  }
+  .app-banner-icon{ flex-shrink:0; width:1.35rem; height:1.35rem; color:var(--banner-color, var(--accent)); }
   .app-banner-body{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
   /* Build 327 (b327s): on a narrow phone the button goes UNDER the
      words. Beside them it left the message a ~120px column on a 375px
@@ -25429,9 +25423,9 @@
      row; the button lines up with the text. */
   @media (max-width:26.5rem){
     .app-banner{ flex-wrap:wrap; row-gap:.45rem; }
-    .app-banner > .app-banner-body{ flex:1 1 calc(100% - 2.15rem - 28px - 1.4rem); }
+    .app-banner > .app-banner-body{ flex:1 1 calc(100% - 1.35rem - 28px - 1.2rem); }
     .app-banner > .app-banner-x{ order:2; }
-    .app-banner > .app-banner-act{ order:3; margin-left:2.85rem; }
+    .app-banner > .app-banner-act{ order:3; margin-left:1.95rem; }
   }
   /* The tag is the half that survives being read in a hurry, and the
      half that works for somebody who cannot tell the two colours
@@ -25467,15 +25461,10 @@
      and the Detective's run. A size up from the actionable banners -
      "the pop could be bigger" - and nothing to tap but the x, so a
      finger reaching for something under it is not swallowed. */
-  .app-banner.is-passive{ pointer-events:none; padding:.85rem .7rem .85rem .85rem; gap:.8rem; }
+  .app-banner.is-passive{ pointer-events:none; }
   .app-banner.is-passive > *{ pointer-events:none; }
   .app-banner.is-passive > .app-banner-x{ pointer-events:auto; }
-  .app-banner.is-passive .app-banner-icon{ width:2.5rem; height:2.5rem; padding:.55rem; }
-  .app-banner.is-passive .app-banner-tag{ font-size:.62rem; }
-  .app-banner.is-passive .app-banner-title{ font-size:1rem; }
-  .app-banner.is-passive .app-banner-sub{ font-size:.84rem; margin-top:.15rem; }
-  .app-banner.is-passive .app-banner-text:not(:has(.app-banner-title)){ font-size:.92rem; line-height:1.32; }
-  .app-banner-icon.app-banner-face{ padding:0; display:grid; place-items:center; overflow:hidden; }
+  .app-banner-icon.app-banner-face{ width:1.9rem; height:1.9rem; border-radius:50%; display:grid; place-items:center; overflow:hidden; }
   .app-banner-icon.app-banner-face svg{ width:100%; height:100%; display:block; }
   @media (max-width:26.5rem){
     .app-banner.is-passive{ flex-wrap:nowrap; }
@@ -85768,8 +85757,8 @@ function showDailyQuestionLockedPopup(){
      button and it's not ready, the pop could be bigger, at the top, and
      have that same kinda look." */
   document.getElementById("daily-lock-tip")?.remove();
-  showDailyAlert("Next one in " + timeLeft + ", at 5pm",
-    { kind: "daily", title: "Done for today", stay: 5200 });
+  showDailyAlert("Done for today \u2014 the next one is in " + timeLeft + ", at 5pm",
+    { kind: "daily", stay: 5200 });
 }
 
 /* ============ THE CHAT LOBBY AND THE DOCK ============
@@ -97107,7 +97096,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z3";
+const APP_BUILD = "2026-10-23-327z4";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -111025,7 +111014,7 @@ function checkSaveCodeReminder(){
      people". A banner still pushing the idea Settings had just dropped
      would be the app disagreeing with itself, so both say code now. */
   const el = buildAppBanner("save-code", "account",
-    "Save your sync code\nIt is the only way back if this device loses its data.",
+    "Save your sync code \u2014 it is the only way back if this device loses its data",
     /* "Save it", not "Copy code" - the share sheet puts it in Notes or
        a message to yourself, which is what "save" has to mean for
        something whose whole job is outliving this phone. */
@@ -124450,11 +124439,11 @@ function showRankings(defaultBoard){
          should ever say "not in the rankings yet" to someone who simply
          has not answered a question. */
       const fm = !loaded || (store.leaderboardOptIn && syncCode)
-        ? ["Still loading the rankings", "Try Find me again in a moment."]
+        ? "Still loading the rankings \u2014 try Find me again in a moment"
         : !store.leaderboardOptIn
-          ? ["You\u2019re hidden from the rankings", "Turn on \u201cShow me in the rankings\u201d in Settings."]
-          : ["This device isn\u2019t syncing", "So it has no rankings entry. Turn sync on in Settings."];
-      showDailyAlert(fm[1], { kind: "rankings", title: fm[0] });
+          ? "You\u2019re hidden from the rankings \u2014 turn on \u201cShow me in the rankings\u201d in Settings"
+          : "This device isn\u2019t syncing, so it has no rankings entry \u2014 turn sync on in Settings";
+      showDailyAlert(fm, { kind: "rankings" });
       return;
     }
     if(search.value === "" && clearBtn) clearBtn.hidden = true;
@@ -127710,7 +127699,7 @@ function rankUpLockRefused(){
   rankUpRefusedAt = now;
   let ruColor = null;
   try{ const ow = rankUpOwed(); const k = ow && TIER_ORDER_FULL[ow.fromIdx + 1]; if(k && RANK_COLOR[k]) ruColor = flareColorOf(k); }catch(e){}
-  showDailyAlert("Open Profile to see your rank up.", { kind: "rankup", title: "Your profile needs you", color: ruColor || undefined });
+  showDailyAlert("Your profile needs you \u2014 open Profile to see your rank up", { kind: "rankup", color: ruColor || undefined });
   if(rankUpNudge()) rankUpNudgeArm(RU_NUDGE_EVERY_MS);
 }
 
