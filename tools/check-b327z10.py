@@ -44,7 +44,10 @@ READ = """() => { const p = document.querySelector('.chatdock-panel'); const r =
   return { top: r.top, h: r.height, open: chatDockOpen, inline: p.style.transform, vh: innerHeight }; }"""
 
 
-ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFG")
+ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGH")
+
+UA_IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+IPHONE_INIT = "Object.defineProperty(navigator,'userAgent',{get:()=>%r});" % UA_IPHONE
 
 
 def chat_sheet(br):
@@ -204,10 +207,99 @@ def daily_ring(br):
     ctx.close()
 
 
+def round2(br):
+    """H. Madison's second list (327z10): each line one report."""
+    print("\nH. the second list: Profile, people, friends, sheets, switches, haptics")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2000)
+    # H1 the Profile card's rim is the cards' rim, not the banner's colour
+    r = pg.evaluate("""async () => { store.banner = 'tests250'; window.bannerEarned = () => true; muteBanners = true; showProfile();
+      await new Promise(r => setTimeout(r, 900)); const c = document.querySelector('#stage .profile-hero');
+      const probe = document.createElement('div'); probe.style.borderColor = 'var(--surface-border)'; document.body.appendChild(probe);
+      const want = getComputedStyle(probe).borderTopColor; probe.remove();
+      const b = document.querySelector('#stage .profile-cover .bnr');
+      return { rim: getComputedStyle(c).borderTopColor, want, layered: !!(b && b.classList.contains('bnr-layered')), idle: !!(b && b.classList.contains('rk-idle')) }; }""")
+    check("%s: H1. the Profile card's rim is the surface border every card wears (%s), not its banner's colour" % (label, r["rim"]), r["rim"] == r["want"], r)
+    # H2 a layered banner is moving from the moment it is built
+    r2 = pg.evaluate("""() => { const b = buildBannerArt('tests250'); const out = { layered: b.classList.contains('bnr-layered'), idle: b.classList.contains('rk-idle') }; return out; }""")
+    check("%s: H2. a layered (compositor) banner is never built still - it moves from its first frame" % label, r2["layered"] and not r2["idle"], r2)
+    # H3 the person card is glass from its first frame: nothing above it is part-transparent
+    r3 = pg.evaluate("""() => { document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      openPersonSheet({ pub: 'pubZ10', firstName: 'Jordan', avatarChar: 'ghost', banner: 'tests250', accent: 'ink', level: 30 });
+      const sheet = document.querySelector('.invite-overlay .person-card'); const ov = sheet.closest('.invite-overlay');
+      const anc = []; for(let e = sheet.parentElement; e && e !== document.documentElement; e = e.parentElement) anc.push(+getComputedStyle(e).opacity);
+      return { minAncestorOpacity: Math.min.apply(null, anc), blur: getComputedStyle(sheet).backdropFilter, tint: sheet.classList.contains('has-tint') }; }""")
+    check("%s: H3. the person card's glass sees the page from its first frame (no ancestor below opacity 1: %s), and its banner's colours run into it"
+          % (label, r3["minAncestorOpacity"]), r3["minAncestorOpacity"] == 1 and r3["blur"] not in ("", "none") and r3["tint"], r3)
+    pg.evaluate("() => document.querySelectorAll('.invite-overlay').forEach(o => o.remove())")
+    # H4 a board row's flip-book is cut round on its own
+    r4 = pg.evaluate("""() => { const css = [...document.styleSheets].flatMap(sh => { try{ return [...sh.cssRules]; }catch(e){ return []; } });
+      const rule = css.find(r => r.selectorText && /rank-row[^,]*\.rank-avatar[^,]*> \.char-flip-play|\.rank-row,\s*\.friend-row-art\) \.rank-avatar/.test(r.selectorText));
+      return { mask: rule ? (rule.style.maskImage || rule.style.webkitMaskImage) : '' }; }""")
+    check("%s: H4. a board row's flip-book clips itself round (a mask WebKit applies to the layer)" % label, "radial-gradient" in (r4["mask"] or ""), r4)
+    # H5 Copy and Send: readable words on their own fill
+    r5 = pg.evaluate("""async () => { showFriends(); await new Promise(r => setTimeout(r, 900));
+      return [...document.querySelectorAll('#stage .friend-send')].map(b => { const cs = getComputedStyle(b); return [b.textContent.trim(), cs.backgroundColor, cs.color]; }); }""")
+    def lum(c):
+        v = [float(x) for x in c[c.index("(") + 1:c.index(")")].split(",")[:3]]
+        f = lambda u: (u / 255 / 12.92) if u / 255 <= .03928 else ((u / 255 + .055) / 1.055) ** 2.4
+        return .2126 * f(v[0]) + .7152 * f(v[1]) + .0722 * f(v[2])
+    worst = min([(max(lum(b), lum(c)) + .05) / (min(lum(b), lum(c)) + .05) for _, b, c in r5] or [0])
+    check("%s: H5. Copy and Send read on their own fill (worst %.1f:1, needs 4.5)" % (label, worst), len(r5) >= 2 and worst >= 4.5, r5)
+    # H6 the start sheet's scroll stops at its ends
+    r6 = pg.evaluate("""async () => { cfg.mode = 'drill'; cfg.units = []; showSetup(); await new Promise(r => setTimeout(r, 800));
+      document.querySelector('.picks .pick .pname').click(); await new Promise(r => setTimeout(r, 300)); document.getElementById('nextbtn').click();
+      await new Promise(r => setTimeout(r, 900)); const sh = document.querySelector('#unitoptions-modal .unitoptions-modal-sheet');
+      return { ob: sh ? getComputedStyle(sh).overscrollBehaviorY : null, body: getComputedStyle(document.body).touchAction }; }""")
+    check("%s: H6. the start sheet keeps its scroll to itself and nothing under it pans (%s, body %s)" % (label, r6["ob"], r6["body"]),
+          r6["ob"] == "contain" and r6["body"] == "none", r6)
+    # H7 Max/All leave their "on" look while the slider is still held
+    r7 = pg.evaluate("""() => { const b = document.querySelector('#unitoptions-modal .howmany-sect .slider-allbtn'); if(!b) return null;
+      syncTopButton(b, true); b._held = true; syncTopButton(b, false); const held = { on: b.classList.contains('on'), fill: b.classList.contains('just-ready'), pop: b.classList.contains('ready-pop') };
+      b._held = false; syncTopButton(b, false); const rel = { pop: b.classList.contains('ready-pop') }; return { held, rel }; }""")
+    check("%s: H7. sliding off the top: the button changes under the finger (fill, no punch) and punches on the release" % label,
+          bool(r7) and not r7["held"]["on"] and r7["held"]["fill"] and not r7["held"]["pop"] and r7["rel"]["pop"], r7)
+    # H8 Settings' cards carry no blur under their switches
+    r8 = pg.evaluate("""async () => { document.querySelectorAll('.unitoptions-modal').forEach(m => m.remove()); showAppearance(); await new Promise(r => setTimeout(r, 900));
+      return [...document.querySelectorAll('#stage .settings-card')].map(c => getComputedStyle(c).backdropFilter); }""")
+    check("%s: H8. no Settings card blurs what is behind it (a switch's lens slides inside them)" % label, r8 and all(v in ("none", "") for v in r8), r8)
+    # H9 the "open me" pill on the rank box and the case
+    r9 = pg.evaluate("""async () => { showProfile(); await new Promise(r => setTimeout(r, 900));
+      return [...document.querySelectorAll('#stage .pf-goal-foot, #stage .pf-case-closed .pf-case-count')].map(e => { const cs = getComputedStyle(e), rr = e.getBoundingClientRect();
+        return { h: rr.height, radius: parseFloat(cs.borderTopLeftRadius), border: parseFloat(cs.borderTopWidth), chevron: getComputedStyle(e, '::after').content !== 'none' }; }); }""")
+    check("%s: H9. the rank box and the case each end in a pill with a chevron, 40px high or more" % label,
+          len(r9) == 2 and all(x["h"] >= 39.5 and x["radius"] >= 15 and x["border"] >= 1 and x["chevron"] for x in r9), r9)
+    ctx.close()
+    # H10 an iPhone: wide short buttons and the switch rows carry a real switch
+    ctx2 = br.new_context(viewport={"width": w, "height": h}, has_touch=True, is_mobile=True, device_scale_factor=2)
+    ctx2.add_init_script(IPHONE_INIT + "try{Object.defineProperty(navigator,'standalone',{get:()=>true});}catch(e){}")
+    ctx2.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}" % cb.USED_ACCOUNT)
+    pg2 = cb.open_page(ctx2); pg2.goto(cb.URL); pg2.wait_for_timeout(3000)
+    pg2.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); showAppearance();}")
+    pg2.wait_for_timeout(2500)
+    r10 = pg2.evaluate("""() => { const rows = [...document.querySelectorAll('#stage label.opt')].filter(r => r.querySelector(':scope > .box'));
+      const ok = rows.filter(r => { const i = r.querySelector(':scope > input[type=checkbox]'); if(!i || !i.hasAttribute('switch')) return false;
+        r.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const b = r.querySelector(':scope > .box').getBoundingClientRect(); return document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) === i; });
+      return { rows: rows.length, ok: ok.length }; }""")
+    check("%s: H10. on an iPhone every switch row's own input is a native switch over its track (%d of %d)" % (label, r10["ok"], r10["rows"]),
+          r10["rows"] >= 4 and r10["ok"] == r10["rows"], r10)
+    pg2.evaluate("()=>showFriends()"); pg2.wait_for_timeout(2500)
+    r11 = pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
+      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
+    pg2.evaluate("()=>showProfile()"); pg2.wait_for_timeout(2500)
+    r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
+      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
+    check("%s: H11. on an iPhone a wide button of a button's height carries its switch (%d of %d)" % (label, sum(1 for x in r11 if x["hsw"]), len(r11)),
+          len(r11) >= 1 and all(x["hsw"] for x in r11), r11)
+    ctx2.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring)):
+        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2)):
             if k in ONLY or (k == "A" and any(c in ONLY for c in "ABC")):
                 try:
                     fn(br)

@@ -13098,7 +13098,7 @@ def check_b314_slider_release(br):
             g = pg.evaluate("""([sel,bsel])=>{ const s=document.querySelector('#unitoptions-modal '+sel); s.scrollIntoView({block:'center'});
               const r=s.getBoundingClientRect(); const b=document.querySelector('#unitoptions-modal '+bsel);
               /* the first thing the release dispatches is pointerup; read the button just before the app hears it */
-              window.__rel={}; document.addEventListener('pointerup', ()=>{ __rel.t=performance.now(); __rel.before={ lit:b.classList.contains('just-ready'), on:b.classList.contains('on') };
+              window.__rel={}; document.addEventListener('pointerup', ()=>{ __rel.t=performance.now(); __rel.before={ lit:b.classList.contains('just-ready'), on:b.classList.contains('on'), pop:b.classList.contains('ready-pop') };
                 setTimeout(()=>{ const a=b.getAnimations({subtree:true}); const p=a.find(x=>x.animationName==='start-ready-punch');
                   __rel.after={ lit:b.classList.contains('just-ready')||b.classList.contains('ready-pop'), on:b.classList.contains('on'), delay:p?p.effect.getComputedTiming().delay:null }; }, 30); }, { capture:true, once:true });
               return [r.right-12, r.top+r.height/2, r.left, r.width]; }""", [sel, bsel])
@@ -13113,8 +13113,12 @@ def check_b314_slider_release(br):
         for name in ("All", "Max"):
             o = out.get(name) or {}
             b, a = o.get("before") or {}, o.get("after") or {}
-            check("%s %s stays quiet while the finger is still down below the top" % (label, name),
-                  b.get("lit") is False and b.get("on") is True, o)
+            # MOVED IN 327z10: "if you slide this to the left so it's off, the
+            # buttons aren't changing properly" - the button leaves its "on"
+            # look under the finger, as the thumb leaves the top; the punch
+            # still waits for the release (below)
+            check("%s %s has already left its \"on\" look under the finger, below the top, and has not punched yet" % (label, name),
+                  b.get("on") is False and not b.get("pop"), o)
             check("%s %s lights the moment the finger lets go, its punch with no delay" % (label, name),
                   a.get("lit") is True and a.get("on") is False and a.get("delay") == 0, o)
 

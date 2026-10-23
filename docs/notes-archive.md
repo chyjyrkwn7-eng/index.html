@@ -26929,3 +26929,69 @@ loading bar around it could also look better"*.
 327z9. check-b325-a centre moved (above). check-b327-h's "a pull down on the
 grip still closes the sheet" fails on 327z9 too (a 240px pull on a 669px sheet
 is under the 40% line and not quite a flick) - not from this build.
+
+### Build 327z10 (continued, round 2) - haptics on wide buttons and switches, Profile and people cards, friends' buttons, Select all, the rank box and case, the start sheet
+
+Madison's list: haptics missing on "a lot of the buttons"; the Profile banner
+"loads in laggy"; the Profile box's border "has a strange color"; leaderboard
+characters' "bottom half slightly comes out of the circle"; a person's card
+"Liquid Glass has a delay" and banners "should fade better into the liquid
+glass"; See every rank and the case "not obvious ... if you click anywhere on
+either it opens? How could we fix that"; Manage friends' Copy and Send "all
+white"; Select all "shouldn't that look better?"; switches "slightly laggy";
+Max / All "aren't changing properly, it's not a fast smooth thing"; swiping the
+start sheet down moved "the stuff behind it".
+
+- **Haptics** (NovaSound "A REAL SWITCH UNDER THE FINGER"). Audited on an
+  emulated iPhone: every label (`.opt` switch rows, `label.pick` unit cards)
+  and every control wider than 260px or taller than 70px had no switch.
+  Now: (1) **wide is not big** - a `button`/`[role=button]` up to 60px tall
+  carries its switch at any width (`HSW_WIDE_H`, `hswTooBig`): Add friends,
+  Begin, the calendar's rows; (2) **the switch rows' own input is the switch**
+  (`HSW_OPT`, `hswOptAttach`, `.opt > input.hsw-opt`): on an iPhone the row's
+  checkbox gets `switch` and lies invisibly over its track (80x46 over the
+  64x30 `.box`), so a finger on the track flips a native switch and the row's
+  own change runs; a press on it is a press on the box for the lens
+  (`NSW_SEL` mapping) and a drag is left to the native switch (`a.native`).
+  `hswStop` reverts both. **Still none, on purpose:** the unit cards and the
+  tall Profile cards (rank standing, the case) - scroll surfaces (build 327:
+  a native switch under a finger takes the scroll). Felt only on a phone.
+- **Profile banner delay**: animated banners are layered (compositor, build
+  304) but were built `.rk-idle` and woken by the on-screen observer only
+  after the screen's settle - frozen with their event layers hidden ~400ms
+  (4x CPU) after the screen, then all moving at once. A `.bnr-layered` is
+  never built idle and skips the settle wait (`watchRankEmblemOnScreen`,
+  `_rkIO`); emblems keep both.
+- **Profile card rim**: `var(--surface-border)`, not the banner's colour at 34%.
+- **Board avatars**: the flip-book `<img>` is a composited layer in a square
+  box, which WebKit does not cut to the avatar's round clip; the box clips
+  itself round with a mask (`:is(.rank-row, .friend-row-art) .rank-avatar:not(.has-plate) > .char-flip-play`).
+  Chromium always clipped it - phone only.
+- **Person card glass**: the overlay faded on its own opacity, and a backdrop
+  blur under a part-transparent ancestor cannot see the page, so the card was
+  flat until the fade ended. For `.invite-overlay` holding a `.person-card`
+  (and the unlock / rank / note cards built on it) the dim fades by its
+  colour and the card by its own opacity and a .97 scale. A classmate's
+  banner now lays two pools of its colours into the glass (`has-tint`,
+  `--pc-t1/2` from `bannerTintOf`) and fades a little longer.
+- **Copy / Send / Accept**: round 10's white `.next` recipe (`!important`)
+  painted them white under their own white words; `.friend-send`/`.friend-act`
+  are excluded, back to their matte black pill.
+- **Select all**: the floating controls' glass, a check-all mark, ~40px.
+- **See every rank / the case**: the closing line of each is a glass pill in
+  the box's colour with a chevron disc (`--pill-c`); the rank box gives under
+  the finger like the case. "See every rank" lost its typed "›".
+- **Switch lag**: a normal tap is cheap on the main thread (no long task, 52ms
+  worst frame at 4x). Two things went: the sound's reverb impulse
+  (`sndImpulse`, ~120ms at 4x) now waits for `quietIdle` instead of 350ms
+  after the first touch (it landed mid-slide); Settings' cards carry no
+  backdrop blur (fill .62 -> .8), as 327's notes proposed - the lens slides
+  inside them.
+- **Max / All**: `syncTopButton` changes the look under the finger as the
+  thumb leaves the top (the fill), and only the punch waits for the release
+  (`_punchOnRelease`); back at the top before the release, nothing pops.
+  check_b314_slider_release moved.
+- **Start sheet**: `overscroll-behavior:contain` on the sheet, and while it is
+  up `body{touch-action:none}` and no root overscroll (as the chat sheet).
+
+Gate: `tools/check-b327z10.py` section H (H1-H11), 11 failures on 327z9.

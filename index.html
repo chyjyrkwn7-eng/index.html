@@ -5825,6 +5825,19 @@
                inset 0 1px 0 rgba(255,255,255,.14);
   }
   .rank-row .rank-avatar svg{ transform:scale(.94); transform-origin:50% 56%; }
+  /* ...AND THE FLIP-BOOK TOO (build 327z10): "The characters on the
+     leaderboard, the bottom half slightly comes out of the circle." The
+     recorded loop is an <img> slid by a stepped transform - its own
+     compositing layer - in a SQUARE box, and WebKit does not reliably cut
+     a composited child to an ancestor's round clip: the bust, which fills
+     the frame's bottom edge, showed its square bottom corners past the
+     rim. The box clips itself round, by a mask, which WebKit applies to
+     the layer. */
+  :is(.rank-row, .friend-row-art) .rank-avatar:not(.has-plate) > .char-flip-play{
+    border-radius:50%;
+    -webkit-mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%);
+            mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%);
+  }
   .rank-name-wrap{ display:flex; flex-direction:column; min-width:0; flex:1; }
   .rank-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rank-stat{ font-size:.78rem; color:var(--soft); }
@@ -23185,7 +23198,12 @@
       radial-gradient(120% 70% at 88% 6%, color-mix(in srgb, var(--hero-t2) 26%, transparent), transparent 72%),
       radial-gradient(110% 55% at 85% 100%, color-mix(in srgb, var(--hero-t2) 16%, transparent), transparent 75%),
       linear-gradient(180deg, color-mix(in srgb, var(--hero-t1) 14%, #10131A) 0%, color-mix(in srgb, var(--hero-t1) 6%, #10131A) 60%, color-mix(in srgb, var(--hero-t2) 9%, #10131A) 100%);
-    border-color: color-mix(in srgb, var(--hero-t1) 34%, rgba(255,255,255,.1));
+    /* THE EDGE IS THE CARDS' EDGE (build 327z10): "The border around the
+       profile box within the tab has a strange color to it." It was the
+       banner's first colour at 34% - a pink, green or amber hairline that
+       no other card in the app has. The colours stay inside the card; the
+       rim is the surface border every card wears. */
+    border-color: var(--surface-border);
   }
   .profile-cover{
     position:relative; height:7.6rem; margin:0 -1.45rem;
@@ -32060,7 +32078,11 @@
      whole box (no repeat); its inset light and dark edges and its three
      shadows are untouched, so it keeps the 3D feel of the other buttons. Quit, Save and exit and Reset keep their own
      recipes. */
-  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
+  /* (build 327z10: not the friend buttons - "In manage friends, copy and
+     send button is all white". Copy, Send and Accept are .next too, so this
+     made them white and left them their own white words. They are the
+     matte black pill they were drawn as - see .friend-send.) */
+  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):not(.friend-send):not(.friend-act),
   [data-theme="dark"][data-layout="modern"] .chip.on{
     /* THE OTHER BUTTONS' RECIPE, IN WHITE (build 327 round 10): "the white
        button does not look like the other 3d buttons". Quit and Save and
@@ -32158,11 +32180,17 @@
     font-size:.72rem; letter-spacing:.12em; color:rgba(236,239,245,.58);
   }
   [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child{ margin-top:.4rem; }
+  /* NO BLUR UNDER THE SWITCHES (build 327z10): "The switch toggles are
+     cool, it's slightly laggy though." Their lens slides inside these
+     cards, and a moving layer inside a backdrop-filter surface has iOS
+     redo the blur every frame of the slide (327's notes named this card's
+     frost as the lever). The fill is thicker (.62 -> .8) so the cards read
+     the same over the page with no blur behind them. */
   [data-theme="dark"][data-layout="modern"] .screen-settings .settings-card{
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.8) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border:1px solid rgba(255,255,255,.16) !important;
-    backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
     box-shadow:0 6px 22px rgba(0,0,0,.4), inset 0 2px 4px -1px rgba(255,255,255,.06) !important;
   }
   .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ white-space:nowrap; font-size:.94rem; }
@@ -32497,6 +32525,118 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* answered: the line steps back a little with the "?" - it is a clock, not a call */
   .daily-question-fab.is-done .dq-ring-prog{ opacity:.85; }
   .daily-question-fab.is-ready::after{ border-width:1px; }
+
+  /* ---- A CARD OF GLASS IS GLASS FROM ITS FIRST FRAME (build 327z10) ----
+     "When clicking a profile to see someone's stats, the Liquid Glass has
+     a delay." The overlay faded in on its own opacity, and a backdrop
+     blur under an ancestor that is not fully opaque can only see that
+     ancestor's own group - not the page - so the card came up flat and
+     turned to glass when the fade ended. For the cards (the person card
+     and the unlock, rank and note cards built on it) the dim fades in by
+     its colour and the card by its own opacity, which does not hide the
+     page from its blur. */
+  .invite-overlay:has(> .invite-sheet.person-card){
+    opacity:1; background:rgba(0,0,0,0); transition:background-color .2s ease;
+  }
+  .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card){ background:rgba(0,0,0,.5); }
+  .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{
+    opacity:0; transform:scale(.97); transition:opacity .2s ease, transform .26s cubic-bezier(.2,.8,.25,1);
+  }
+  .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){
+    .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ transform:none; transition:opacity .2s ease; }
+  }
+  /* a classmate's banner melts into the card (see openPersonSheet): pools
+     of its two colours under the strip, fading out by the card's middle,
+     over the same glass - and the strip's fade runs longer */
+  html[data-theme="dark"][data-layout="modern"] .invite-sheet.person-card.has-tint{
+    background:
+      radial-gradient(120% 34% at 18% 0%, color-mix(in srgb, var(--pc-t1) 26%, transparent), transparent 100%),
+      radial-gradient(120% 34% at 82% 4%, color-mix(in srgb, var(--pc-t2) 22%, transparent), transparent 100%),
+      var(--pop-bg-card);
+  }
+  .person-card.has-tint .person-card-cover{
+    --pc-fade:linear-gradient(180deg, #000 0%, #000 24%, rgba(0,0,0,.94) 34%, rgba(0,0,0,.82) 44%,
+      rgba(0,0,0,.66) 54%, rgba(0,0,0,.48) 63%, rgba(0,0,0,.31) 72%, rgba(0,0,0,.17) 81%, rgba(0,0,0,.07) 89%,
+      rgba(0,0,0,.02) 95%, transparent 100%);
+  }
+
+  /* ---- SELECT ALL IS A PIECE OF THE SCREEN'S GLASS (build 327z10) ----
+     "The select all button on the unit selection screen, shouldn't that
+     look better?" It was a thin outline in the accent, the one control on
+     the screen not drawn as glass: the search pill above it and the unit
+     cards below are. It takes the floating controls' glass (the bar's
+     body, blur and one .16 rim), a little more height, and a mark that
+     says what it does - every box ticked. The invisible 44px target
+     (::after) is unchanged. */
+  [data-theme="dark"][data-layout="modern"] .selall-btn{
+    display:inline-flex; align-items:center; gap:.45rem;
+    padding:.55rem 1.05rem .55rem .85rem; font-size:.84rem; font-weight:700; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62);
+    background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.16);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    box-shadow:0 6px 22px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.05);
+  }
+  [data-theme="dark"][data-layout="modern"] .selall-btn::before{
+    content:""; width:1rem; height:1rem; flex:0 0 auto; background:currentColor; opacity:.9;
+    -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='5'/><path d='M7.5 12.5l3 3 6-6.5'/></svg>") center/contain no-repeat;
+            mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='5'/><path d='M7.5 12.5l3 3 6-6.5'/></svg>") center/contain no-repeat;
+  }
+  @media (hover:hover){
+    [data-theme="dark"][data-layout="modern"] .selall-btn:hover{ background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.07) 55%), rgba(12,13,19,.62); color:var(--ink); }
+  }
+
+  /* ---- THE RANK BOX AND THE CASE SAY "OPEN ME" (build 327z10) ----
+     "See every rank, and the case, it's not obvious enough that if you
+     click anywhere on either it opens." Each ended in a line of coloured
+     words with a chevron - a caption, not a control. The line is a
+     button now: a glass pill in the box's own colour (the rank's, the
+     case's silver), and the whole box gives under the finger. The box is
+     still the target; the pill is what says so. */
+  .pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count{
+    display:flex; align-items:center; justify-content:center; gap:.35rem;
+    width:fit-content; margin-left:auto; margin-right:auto; min-height:2.5rem; box-sizing:border-box;
+    padding:.5rem .7rem .5rem 1.15rem; border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.04) 55%), rgba(12,13,19,.5);
+    border:1px solid color-mix(in srgb, var(--pill-c) 34%, rgba(255,255,255,.12));
+    box-shadow:0 4px 14px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.05);
+    color:color-mix(in srgb, var(--pill-c) 62%, #fff);
+  }
+  .pf-goal .pf-goal-foot{ --pill-c:var(--nx, #fff); margin-top:1rem; }
+  .pf-case-closed .pf-case-count{ --pill-c:var(--case-tint, #AEBBCB); }
+  /* the chevron in a little disc of its own, as a row that opens has */
+  .pf-goal .pf-goal-foot::after, .pf-case-closed .pf-case-count::after{
+    content:""; width:1.25rem; height:1.25rem; flex:0 0 auto; border-radius:50%;
+    background:color-mix(in srgb, var(--pill-c) 22%, rgba(255,255,255,.06)) center/.62rem no-repeat
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M3.6 1.8 6.8 5 3.6 8.2' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  }
+  .pf-case-closed .pf-case-arrow{ display:none; }
+  .pf-goal{ transition:box-shadow .6s ease, border-color .6s ease, transform .14s ease; }
+  .pf-goal:active{ transform:scale(.985); }
+  [data-reduce-motion="true"] .pf-goal:active{ transform:none; }
+
+  /* ---- THE PAGE BEHIND THE START SHEET STAYS PUT (build 327z10) ----
+     "When swiping down on the start menu, the stuff behind it started
+     moving down as well." The sheet scrolls, with no overscroll rule, so
+     at its top - or from a slider or a field, which the sheet's own swipe
+     leaves alone - iOS handed the rest of a pull to the page under it,
+     and the page rubber-banded down with the sheet. As the chat sheet
+     (build 327): the sheet's scroll stops at its ends, and while it is up
+     nothing under it pans (touch-action is worked out up to the nearest
+     scroller, so the sheet still scrolls; its swipe is script, not a pan). */
+  .unitoptions-modal-sheet{ overscroll-behavior:contain; }
+  body:has(.unitoptions-modal:not([hidden])){ touch-action:none; overscroll-behavior:none; }
+  html:has(.unitoptions-modal:not([hidden])){ overscroll-behavior:none; }
+
+  /* an iPhone's switch rows (build 327z10, see HSW_OPT): the row's own input,
+     a native switch, laid invisibly over its track. Never appearance:none,
+     display:none or visibility:hidden - a stripped switch plays nothing. */
+  .opt > input.hsw-opt{
+    position:absolute; z-index:2; margin:0; opacity:0;
+    width:80px; height:46px; top:50%; right:var(--hsw-r, 0px); transform:translateY(-50%);
+    touch-action:pan-y; -webkit-tap-highlight-color:transparent; cursor:pointer;
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -66362,7 +66502,14 @@ var _rkIO = typeof IntersectionObserver === "function" ? new IntersectionObserve
        are the costliest motion in the app - every frame of every one
        restyles and repaints its whole svg - and starting them all in the
        same frames as the slide-in is what made the slide stutter. */
-    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    /* ...but not a LAYERED banner (build 327z10): "When opening the profile
+       tab, the banner loads in laggy, there's a delay." Its motion is
+       transforms and opacity on boxes (build 304) - the compositor's, not a
+       repaint - and held still it shows its base frame with its event
+       layers hidden, then everything starts at once ~400ms (4x CPU) after
+       the screen: that was the delay. It wakes the frame it is seen. */
+    const wait = t.classList.contains("bnr-layered") ? 0
+      : (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
     if(e.isIntersecting && wait > 0){
       setTimeout(() => { if(t.isConnected) t.classList.remove("rk-idle"); }, wait);
       return;
@@ -66381,7 +66528,9 @@ function watchRankEmblemOnScreen(svg){
   /* var, not const, above: this can be reached before those lines have
      run, and a const there would be a ReferenceError that kills the app */
   if(!_rkIO || !_rkSeen) return;
-  svg.classList.add("rk-idle");
+  /* a layered banner starts moving (build 327z10, see the observer): the
+     observer's first answer, a frame or two on, stills it if off screen */
+  if(!svg.classList.contains("bnr-layered")) svg.classList.add("rk-idle");
   _rkIO.observe(svg); _rkSeen.add(svg);
 }
 setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _rkIO.unobserve(t); } catch(e){} _rkSeen.delete(t); } }); }, 15000);
@@ -67465,7 +67614,14 @@ function sndGraph(ctx, o){
        first gesture's handler that was most of a 100-250ms tap at 4x CPU */
     if(o.lazyRev){
       const cv = rev;
-      setTimeout(() => { try { cv.buffer = sndImpulse(ctx, 2.6, 2.4); } catch(e){} }, 350);
+      /* ...and not 350ms after it either (build 327z10): "the switch toggles
+         are cool, it's slightly laggy though". Building it is ~120ms at 4x
+         CPU, and 350ms after a tap is the middle of whatever that tap set
+         moving - a switch's slide, a sheet, the tab bar's glass. It waits
+         for a quiet moment (quietIdle: no touch for 2s, an idle frame);
+         until then the sounds play without their room. */
+      const fill = () => { try { cv.buffer = sndImpulse(ctx, 2.6, 2.4); } catch(e){} };
+      if(typeof quietIdle === "function") quietIdle(fill, 8000); else setTimeout(fill, 350);
     } else rev.buffer = sndImpulse(ctx, 2.6, 2.4);
     const revOut = ctx.createGain(); revOut.gain.value = .55;
     rev.connect(revOut); revOut.connect(master);
@@ -70490,6 +70646,35 @@ const NovaSound = (function(){
   let hswQueue = new Set(), hswTimer = 0, hswObs = null;
   const hswNow = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const hswIs = t => !!(t && t.classList && t.classList.contains("nova-hsw"));
+  /* WIDE IS NOT BIG (build 327z10): "Some of the haptic feedback isn't
+     there. A lot of the buttons aren't registering it." The width cap
+     took every full-width button with it - Add friends, Begin, the
+     calendar's rows - though a finger never starts a scroll on a strip a
+     button high. A button (or role=button) up to HSW_WIDE_H tall carries
+     its switch at any width; a taller card or row still carries none. */
+  const HSW_WIDE_H = 60;
+  const hswTooBig = h => h.offsetHeight > HSW_MAX_H
+    || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']")));
+  /* THE SWITCH ROWS' OWN INPUT IS THE SWITCH (build 327z10). A .opt row (every
+     Settings switch, the start sheet's) is a label round a hidden checkbox
+     and its drawn track (.box), so it never took a switch of ours, and a
+     label cannot. On an iPhone the row's checkbox becomes a native switch
+     laid exactly over its track: a finger on the track flips the real
+     switch (the tick) and the row's own change runs as it always has. */
+  const HSW_OPT = ".opt > input[type=checkbox]";
+  function hswOptAttach(inp){
+    if(!inp || inp.classList.contains("hsw-opt") || inp.disabled) return;
+    const row = inp.parentElement, box = row && row.querySelector(":scope > .box");
+    if(!box || row.closest("[data-no-hsw]")) return;
+    inp.setAttribute("switch", "");
+    inp.classList.add("hsw-opt");
+    try{ inp.style.setProperty("--hsw-r", Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8) + "px"); }catch(e){}
+    row.setAttribute("data-hsw", "");
+  }
+  function hswOptDetach(inp){
+    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); inp.style.removeProperty("--hsw-r");
+    const row = inp.parentElement; if(row && !row.querySelector(":scope > .nova-hsw")) row.removeAttribute("data-hsw");
+  }
   function hswOk(h){
     if(!h || h.nodeType !== 1 || h.namespaceURI !== "http://www.w3.org/1999/xhtml") return false;
     if(h.tagName === "INPUT" || h.tagName === "SELECT" || h.tagName === "TEXTAREA" || h.tagName === "LABEL") return false;
@@ -70504,7 +70689,7 @@ const NovaSound = (function(){
        scrolled by its large surfaces, so only compact controls (tabs, chips,
        small buttons) carry one; an answer choice keeps its switch because
        its tick is the point of answering. */
-    if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && (h.offsetHeight > HSW_MAX_H || h.offsetWidth > HSW_MAX_W)) return false;
+    if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)) return false;
     return true;
   }
   function hswAttach(h){
@@ -70540,6 +70725,8 @@ const NovaSound = (function(){
       n.querySelectorAll(HSW_HOSTS).forEach(x => hosts.push(x));
       const todo = hosts.filter(h => !(h.__hsw && h.__hsw.parentNode === h) && hswOk(h));
       todo.forEach(hswAttach);
+      if(n.matches(HSW_OPT)) hswOptAttach(n);
+      n.querySelectorAll(HSW_OPT).forEach(hswOptAttach);
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
     if(hswQueue.size) hswSchedule();
@@ -70550,7 +70737,7 @@ const NovaSound = (function(){
     document.querySelectorAll(".nova-hsw").forEach(sw => {
       const h = sw.parentNode;
       if(!h || !h.offsetWidth) return;
-      if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && (h.offsetHeight > HSW_MAX_H || h.offsetWidth > HSW_MAX_W)){
+      if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)){
         h.removeAttribute("data-hsw"); h.__hsw = null; sw.remove();
       }
     });
@@ -70591,6 +70778,7 @@ const NovaSound = (function(){
   }
   function hswStop(){
     if(hswObs){ hswObs.disconnect(); hswObs = null; }
+    document.querySelectorAll(".opt > input.hsw-opt").forEach(hswOptDetach);
     hswQueue.clear();
     if(hswTimer){ clearTimeout(hswTimer); hswTimer = 0; }
     document.querySelectorAll(".nova-hsw").forEach(sw => {
@@ -70609,7 +70797,7 @@ const NovaSound = (function(){
   }
   ["pointerdown", "touchstart"].forEach(ev => window.addEventListener(ev, e => {
     if(!isTouchDown(e)) return;
-    if(hswIs(e.target)){
+    if(hswIs(e.target) || (e.target && e.target.classList && e.target.classList.contains("hsw-opt"))){
       const pt = e.touches ? e.touches[0] : e;
       hswDownAt = hswNow(); hswMoved = false;
       hswY0 = pt ? pt.clientY : 0; hswX0 = pt ? pt.clientX : 0;
@@ -71406,7 +71594,10 @@ function nswLensFor(track, on){
 }
 document.addEventListener("pointerdown", e => {
   if(e.button > 0 || e.isPrimary === false) return;
-  const track = e.target && e.target.closest ? e.target.closest(NSW_SEL) : null;
+  /* on an iPhone the row's own input lies over its box as a native switch
+     (hsw-opt, build 327z10): a press on it is a press on the box */
+  const tg = e.target && e.target.classList && e.target.classList.contains("hsw-opt") ? e.target.parentElement.querySelector(":scope > .box") : e.target;
+  const track = tg && tg.closest ? tg.closest(NSW_SEL) : null;
   if(!track || nswCalm()) return;
   const host = nswHost(track);
   if(!host || host.off()) return;
@@ -71414,12 +71605,14 @@ document.addEventListener("pointerdown", e => {
   const run = nswLensFor(track, host.on());
   if(!run) return;
   nswMorph(run, true, 0);
-  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false };
+  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false, native: tg !== e.target };
   if(e.pointerType === "mouse"){ try{ track.setPointerCapture(e.pointerId); }catch(err){} }
 }, { passive: true });
 document.addEventListener("pointermove", e => {
   const a = nswActive;
   if(!a || e.pointerId !== a.id) return;
+  /* a native switch drags itself (and ticks); ours would flip it a second time */
+  if(a.native) return;
   const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
   if(!a.drag){
     if(Math.abs(dx) < 5 || Math.abs(dx) < Math.abs(dy)) return;
@@ -91346,6 +91539,14 @@ function openPersonSheet(entry){
       entry.banner && bannerDef(entry.banner) ? entry.banner : ""));
     sheet.classList.add("has-cover");
     sheet.appendChild(cover);
+    /* the banner's own colours run on down into the glass (build 327z10):
+       "People's banners also look weird, they should fade better into the
+       Liquid Glass" - the strip faded out onto plain grey, as the Profile
+       card did before it took its banner's two colours (bannerTintOf) */
+    try{
+      const tint = entry.banner && bannerDef(entry.banner) ? bannerTintOf(entry.banner) : null;
+      if(tint){ sheet.classList.add("has-tint"); sheet.style.setProperty("--pc-t1", tint[0]); sheet.style.setProperty("--pc-t2", tint[1]); }
+    }catch(e){}
   }
 
   /* ---- NOVA'S CARD (build 324) ----
@@ -93621,22 +93822,39 @@ function showSliderTopNote(sect, btn, title, sub){
    finger, half-way through the slide - and then waited out its own
    delays. While the slider is held (btn._held, set by both sliders) the
    button keeps its quiet "on" look; the release calls back in here, and
-   the fill and the punch start that frame (no delay in the CSS any more). */
+   the fill and the punch start that frame (no delay in the CSS any more).
+   (Superseded in 327z10: the fill is live, the punch stays on the release.) */
 function syncTopButton(btn, atTop){
-  if(btn._held && !atTop && btn.classList.contains("on")){ btn._pendingOff = true; return; }
-  btn._pendingOff = false;
+  /* LIVE UNDER THE FINGER, THE PUNCH ON THE RELEASE (build 327z10): "if you
+     slide this to the left so it's off, the buttons aren't changing
+     properly, it's not a fast smooth thing." Since 314 a held slider kept
+     the button's "on" look until the finger lifted (_pendingOff), so it
+     sat wrong under the slide and then changed all at once. Now the
+     button starts its fill the moment the thumb leaves the top, and only
+     the punch waits for the release - which is what 314 asked for ("it
+     activates right when I stop touching it"). Back at the top before
+     the release, it goes quiet again and nothing pops. */
   const wasOn = btn.classList.contains("on");
   btn.classList.toggle("on", atTop);
   btn.setAttribute("aria-pressed", atTop ? "true" : "false");
+  const punch = () => {
+    btn._punchOnRelease = false;
+    btn.classList.remove("ready-pop"); void btn.offsetWidth;
+    btn.classList.add("ready-pop");
+    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760);
+  };
   if(wasOn && !atTop && btn.isConnected && !btn.disabled){
-    btn.classList.remove("just-ready", "ready-pop"); void btn.offsetWidth;
-    btn.classList.add("just-ready", "ready-pop");
+    btn.classList.remove("just-ready", "ready-pop", "ready-settle"); void btn.offsetWidth;
+    btn.classList.add("just-ready");
     clearTimeout(btn._readyT); btn._readyT = setTimeout(() => {
       btn.classList.add("ready-settle"); btn.classList.remove("just-ready"); void btn.offsetWidth;
       requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove("ready-settle")));
     }, 340);
-    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760);
-  } else if(atTop){ clearTimeout(btn._readyT); clearTimeout(btn._popT); btn.classList.remove("just-ready", "ready-pop", "ready-settle"); }
+    if(btn._held) btn._punchOnRelease = true; else punch();
+  } else if(atTop){
+    btn._punchOnRelease = false;
+    clearTimeout(btn._readyT); clearTimeout(btn._popT); btn.classList.remove("just-ready", "ready-pop", "ready-settle");
+  } else if(!btn._held && btn._punchOnRelease){ punch(); }
 }
 function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, topLabel){
   const sect = document.createElement("div");
@@ -123554,7 +123772,7 @@ function buildProfileGoal(prog){
     none.append(n1, " ", n2);
     box.append(ck, none);
     const foot = document.createElement("span");
-    foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
+    foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
     box.appendChild(foot);
     box.setAttribute("aria-label", "Max rank, " + RANK_DISPLAY_NAME.titan + ". No rank challenges left. Open the Rank screen.");
     box.addEventListener("click", () => showRanksScreen("ranks"));
@@ -123615,7 +123833,7 @@ function buildProfileGoal(prog){
   box.appendChild(rk);
   box.appendChild(buildRankRewardTiles(rc.key));
   const foot = document.createElement("span");
-  foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
+  foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
   box.appendChild(foot);
   box.setAttribute("aria-label", "To reach " + rc.name + ": " +
     rc.list.map(c => (c.kind === "level" ? "Reach Level " + c.need : c.label) + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
