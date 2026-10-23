@@ -375,10 +375,14 @@ def check_tap(br):
         # the tab centres in the swollen bar's frame
         sc = lambda f, x: f["barCx"] + (x - bc0) * f["barW"] / g0["bar"]["w"]
         swell = max([f["barW"] for f in rec] or [0]) / g0["bar"]["w"]
-        check("%s: the tap lifts the lens over the bar's edges and glides it from Leaderboard to Calendar, the bar swelling under it (>=3%%)" % label,
+        # MOVED IN 327z5: "The bubble doesn't follow where your click." The lens
+        # used to lift out of the lit tab (Leaderboard) and glide to the one
+        # tapped; it now pops out under the finger, at Calendar, from its first
+        # frame, and never shows over the tab it left.
+        check("%s: the tap lifts the lens over the bar's edges under the finger, at Calendar from its first frame (never over Leaderboard), the bar swelling under it (>=3%%)" % label,
               # (a tap's lens stands only a little proud: b0326, ~1.1x the bar)
-              bool(up) and max(f["h"] for f in up) > g0["bar"]["h"] + 4 and abs(up[0]["cx"] - sc(up[0], lb)) < 8
-              and any(sc(f, lb) + 10 < f["cx"] < sc(f, cal) - 10 for f in up) and swell >= 1.03,
+              bool(up) and max(f["h"] for f in up) > g0["bar"]["h"] + 4 and abs(up[0]["cx"] - sc(up[0], cal)) < 8
+              and not any(f["cx"] < sc(f, cal) - 20 for f in up) and swell >= 1.03,
               {"n": len(up), "maxH": round(max([f["h"] for f in up] or [0])), "xs": [round(f["cx"]) for f in up][:12], "swell": round(swell, 3)})
         gone = next((f["ms"] for f in rec if f["ms"] > 40 and not shown(f) and f["slOp"] > .95), None)
         check("%s: Calendar selected and showing, the grey platter centred under it, and settled within 520ms of the tap (the reference: ~400ms, b0324-b0336)" % label,
