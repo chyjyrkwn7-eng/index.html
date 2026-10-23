@@ -26976,8 +26976,9 @@ def check_b324l_board(br):
                 four: { ring: ring(four), crown: !!(four && four.querySelector('.lb-crown')), sheen: !!(four && four.querySelector('.lb-podium-sheen')) },
                 crowns: document.querySelectorAll('.screen-rankings .lb-crown').length, hs }; }""")
         ctx.close()
-        ok = all(v["rings"] == [True, True, True] and v["crown"] and v["sheen"] >= 1 and v["crowns"] == 1 for v in out.values())
-        check("%s: on all three boards places 1-3 wear a metal ring, first place a crown and a moving sheen" % dn, ok, out)
+        ok = all(v["rings"] == [True, True, True] and v["crown"] and v["sheen"] == 0 and v["crowns"] == 1 for v in out.values())
+        # MOVED IN 327z5: "remove the reflection effect on the first place person" - no sheen
+        check("%s: on all three boards places 1-3 wear a metal ring, first place a crown (and no sheen, 327z5)" % dn, ok, out)
         check("%s: #4 wears none of it" % dn, all(not v["four"]["ring"] and not v["four"]["crown"] and not v["four"]["sheen"] for v in out.values()), {k: v["four"] for k, v in out.items()})
         check("%s: the top three are no taller than #4 (the list does not move)" % dn,
               all(max(v["hs"][:3]) <= v["hs"][3] + 1 for v in out.values()), {k: v["hs"] for k, v in out.items()})
