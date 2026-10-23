@@ -26717,3 +26717,26 @@ Branch `b327z5-d` off 619542a. Gate: `tools/check-b327z5-d.py` (A-F,
   (the round-7 tab bar), not this package; its class-day-outline rows fail on
   619542a and pass here.
 
+
+#### b327z6-d (the last three banners)
+##### b327z6-d - the last three banners off the circle
+
+Madison: "Redraw the art for the 3 or just fix the layout of banners are
+displayed either or." The layout, not the art: Customize, the unlock card and
+lobby rows are unchanged.
+
+- `BANNER_FOCUS` gains exam100 [1.6, -0.3, 0.1], astral [1.6, -0.3, 0] and
+  elite_rank [1.6, -0.3, -0.15]: their subject (the phoenix, the beam and its
+  rings, the black hole) fills the middle, so the cover takes them further in
+  and to the left, whole beside the circle. The shift is the most the zoom
+  allows ((z - 1) / 2), so no edge of the art ever comes into the cover.
+  Zooms of 1.9-2.1 hid less but cropped the subject; 1.6 picked by eye from a
+  candidate sheet.
+- Banner detail under the circle (pixels, portrait hidden, Profile / person):
+  iPhone exam100 .21/.15 -> .04/.03, astral .14/.10 -> .06/.03, elite_rank
+  .13/.08 -> .05/.03; iPad exam100 .12/.15 -> .02/.03, astral .06/.11 ->
+  .04/.03, elite_rank .05/.08 -> .03/.02.
+- Gate: check-b327z5-d section D checks all 11 focus banners (and tests250
+  left as drawn) on the iPhone 17 Pro Max and iPad Pro 11, and holds the three
+  to at most 7.5% of their detail behind the circle. ALL PASS here; against
+  b327z5 (97a5320) 12 failures. `ONLY=D` runs one section.
