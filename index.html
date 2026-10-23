@@ -25462,6 +25462,25 @@
     background:none; border:none; color:var(--soft);
     font-size:1.2rem; cursor:pointer;
   }
+  /* THE PASSIVE LINES ON THE ACCOUNT BANNER'S GLASS (build 327z3): the
+     daily "done for today", Find me's answers, "Your profile needs you"
+     and the Detective's run. A size up from the actionable banners -
+     "the pop could be bigger" - and nothing to tap but the x, so a
+     finger reaching for something under it is not swallowed. */
+  .app-banner.is-passive{ pointer-events:none; padding:.85rem .7rem .85rem .85rem; gap:.8rem; }
+  .app-banner.is-passive > *{ pointer-events:none; }
+  .app-banner.is-passive > .app-banner-x{ pointer-events:auto; }
+  .app-banner.is-passive .app-banner-icon{ width:2.5rem; height:2.5rem; padding:.55rem; }
+  .app-banner.is-passive .app-banner-tag{ font-size:.62rem; }
+  .app-banner.is-passive .app-banner-title{ font-size:1rem; }
+  .app-banner.is-passive .app-banner-sub{ font-size:.84rem; margin-top:.15rem; }
+  .app-banner.is-passive .app-banner-text:not(:has(.app-banner-title)){ font-size:.92rem; line-height:1.32; }
+  .app-banner-icon.app-banner-face{ padding:0; display:grid; place-items:center; overflow:hidden; }
+  .app-banner-icon.app-banner-face svg{ width:100%; height:100%; display:block; }
+  @media (max-width:26.5rem){
+    .app-banner.is-passive{ flex-wrap:nowrap; }
+    .app-banner.is-passive > .app-banner-body{ flex:1 1 0; }
+  }
   /* A tint of each kind's own colour behind the glass, so the two are
      distinguishable before a single word is read. */
   /* (the per-kind tints behind the glass were replaced in 327k by the wash
@@ -32250,18 +32269,16 @@
      strips are exactly the app's own top and bottom edge colours (the
      same mixes syncStatusBarColor and --edge-bottom compute), so in the
      app they cannot be seen and Safari has something of the app's to
-     extend. Under the splash they are the splash's colour. */
-#edge-tint-top, #edge-tint-bottom{ display:none; }
+     extend. Made by refreshEdgeTints() once the splash has gone (see
+     there: Safari reads a strip only when it appears). */
 html.is-browser, html.is-browser body{ overscroll-behavior-y:none; }
-html.is-browser #edge-tint-top, html.is-browser #edge-tint-bottom{
-  display:block; position:fixed; left:0; right:0; height:4px; z-index:2;
+.edge-tint{ display:none; }
+html.is-browser .edge-tint{
+  display:block; position:fixed; left:0; right:0; height:12px; z-index:2;
   pointer-events:none;
 }
-html.is-browser #edge-tint-top{ top:0;
-  background:color-mix(in srgb, var(--bg-c3) var(--statusbar-mix3), color-mix(in srgb, var(--bg-c2) var(--statusbar-mix2), var(--paper))); }
-html.is-browser #edge-tint-bottom{ bottom:0; background:var(--edge-bottom); }
-html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-top,
-html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-bottom{ background:var(--splash-bg, #0A0A0A); }
+html.is-browser #edge-tint-top{ top:0; }
+html.is-browser #edge-tint-bottom{ bottom:0; }
   /* NO GLASS ON WHAT CANNOT BE SEEN (build 327z3). Back to top sits at
      opacity 0 on every screen until it is needed, and its 30px backdrop
      blur was still a layer the phone had to fill behind it on every frame
@@ -32283,7 +32300,6 @@ html.is-browser:has(#splashscreen:not(.splash-hide)) #edge-tint-bottom{ backgrou
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 </head>
 <body>
-<div id="edge-tint-top" aria-hidden="true"></div><div id="edge-tint-bottom" aria-hidden="true"></div>
 
 <div id="splashscreen">
   <div id="splash-group">
@@ -66756,14 +66772,19 @@ function applyTheme(){
    is already painting identical to what the app paints directly beneath
    it, so no seam can exist regardless of which layer wins. */
 function appTopEdgeColor(){
+  return cssColorHex("color-mix(in srgb, var(--bg-c3) var(--statusbar-mix3), color-mix(in srgb, var(--bg-c2) var(--statusbar-mix2), var(--paper)))");
+}
+/* Any CSS colour expression (var(), color-mix()) as a solid #rrggbb, or
+   null. Was the body of appTopEdgeColor; the Safari edge strips need the
+   bottom edge's colour the same way (build 327z3). */
+function cssColorHex(expr){
   const probe = document.createElement("div");
   probe.style.cssText = "position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none;";
   /* Composed from the live custom properties, not a hardcoded hex, so
      every accent (10 of them) and both modes stay matched for free -
      and so this can never drift out of sync with the glow itself the
      way a second copy of the same colors inevitably would. */
-  probe.style.backgroundColor =
-    "color-mix(in srgb, var(--bg-c3) var(--statusbar-mix3), color-mix(in srgb, var(--bg-c2) var(--statusbar-mix2), var(--paper)))";
+  probe.style.backgroundColor = expr;
   if(!probe.style.backgroundColor) return null;
   document.body.appendChild(probe);
   const resolved = getComputedStyle(probe).backgroundColor;
@@ -66822,6 +66843,50 @@ function splashOwnsFrame(){
            (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches));
 }
 
+/* SAFARI'S BARS (build 327z3). Safari 26 colours the band behind its
+   status bar and its toolbar from a solid fixed element at that edge of
+   the page, and - by every report, and by what Madison saw - reads that
+   colour only when the element APPEARS. 327z's strips were in the page
+   from the first byte, wearing the splash's #0A0A0A, and turned the app's
+   colour later by a stylesheet change Safari never looked at again: his
+   bars stayed (11,11,11), the splash's black. So the strips are made
+   here, never while the splash owns the frame, with their colour written
+   inline as a solid hex, and replaced by NEW elements whenever that
+   colour changes (a theme change calls syncStatusBarColor). Browser tab
+   only; the installed app has no Safari bars. 12px, full width, the
+   app's own edge colours, so inside the app they cannot be seen. */
+let edgeTintSig = "";
+function refreshEdgeTints(topColor){
+  try{
+    const root = document.documentElement;
+    if(!root.classList.contains("is-browser") || !document.body) return;
+    if(splashOwnsFrame()){
+      document.querySelectorAll(".edge-tint").forEach((n) => n.remove());
+      edgeTintSig = "";
+      return;
+    }
+    const top = topColor || appTopEdgeColor();
+    const bottom = cssColorHex("var(--edge-bottom)") || top;
+    if(!top) return;
+    const sig = top + "|" + bottom;
+    if(sig === edgeTintSig && document.getElementById("edge-tint-top")) return;
+    edgeTintSig = sig;
+    document.querySelectorAll(".edge-tint").forEach((n) => n.remove());
+    const make = (id, color) => {
+      const d = document.createElement("div");
+      d.id = id; d.className = "edge-tint";
+      d.setAttribute("aria-hidden", "true");
+      d.style.backgroundColor = color;
+      return d;
+    };
+    document.body.insertBefore(make("edge-tint-bottom", bottom), document.body.firstChild);
+    document.body.insertBefore(make("edge-tint-top", top), document.body.firstChild);
+    /* The fallback Safari uses when it finds no strip is the root's
+       background colour; give it the app's top colour too. */
+    root.style.backgroundColor = top;
+  }catch(e){}
+}
+
 function syncStatusBarColor(){
   const tcMeta = document.getElementById("themecolor");
   if(!tcMeta) return;
@@ -66836,6 +66901,7 @@ function syncStatusBarColor(){
   const splashBg = getComputedStyle(document.documentElement)
                      .getPropertyValue("--splash-bg").trim() || "#0A0A0A";
   tcMeta.content = splashOwnsFrame() ? splashBg : color;
+  refreshEdgeTints(color);
   /* The cache always holds the APP's colour, never the splash's - it is
      replayed before first paint on the next launch to get a standalone
      status bar right, and that is about the app, not the splash. */
@@ -85220,22 +85286,53 @@ function showDailyAlert(msg, opts){
        element is left holding a finished animation and the next
        announcement of the day cannot re-trigger it. */
     setTimeout(() => el.classList.remove("is-fresh"), 4000);
-  } else if(o.tag){
-    /* A PROGRESS BANNER: the same shape as the announcement (a face, a
-       tag over the line) but passive - nothing to tap. */
-    el.classList.add("is-progress");
-    const icon = document.createElement("span");
-    icon.className = "daily-alert-icon daily-alert-face";
-    /* not yours yet (the Detective's run): its cut-out (build 325) */
-    if(o.character) icon.appendChild(buildCharArtFor(o.character));
+  } else if(o.kind || o.tag){
+    /* THE ACCOUNT BANNER'S GLASS, FOR EVERY PASSIVE LINE (build 327z3).
+       "This is great Liquid Glass and needs to be implemented more ... I
+       love how the left side has a color and the little icon for what
+       it's talking about." The plain sentence and the Detective's
+       progress line used to be a flat grey pill (and a 3px stripe); they
+       are now the app banner: the kind's colour washing in from the
+       left, a tinted rim, the icon in a lit disc, the tag, a title over a
+       soft line, and an x. Passive - only the x takes a tap. */
+    const def = BANNER_KINDS[o.kind] || (o.tag ? { tag: o.tag, color: o.color || "var(--rank-accent, var(--theme-c1))" } : BANNER_KINDS.notice);
+    el.classList.add("app-banner", "is-passive", "app-banner-" + (o.kind || "progress"));
+    el.style.setProperty("--banner-color", o.color || def.color);
+    el.setAttribute("role", "status");
+    let icon;
+    if(o.character){
+      icon = document.createElement("span");
+      icon.className = "app-banner-icon app-banner-face";
+      /* not yours yet (the Detective's run): its cut-out (build 325) */
+      icon.appendChild(buildCharArtFor(o.character));
+    } else {
+      icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("viewBox", "0 0 24 24");
+      icon.setAttribute("class", "app-banner-icon");
+      icon.setAttribute("aria-hidden", "true");
+      icon.innerHTML = def.svg || ('<path fill="currentColor" d="' + (def.glyph || BANNER_KINDS.notice.glyph) + '"/>');
+    }
     const body = document.createElement("span");
-    body.className = "daily-alert-body";
+    body.className = "app-banner-body";
     const tag = document.createElement("span");
-    tag.className = "daily-alert-tag"; tag.textContent = o.tag;
+    tag.className = "app-banner-tag"; tag.textContent = o.tag || def.tag;
     const text = document.createElement("span");
-    text.className = "daily-alert-text"; text.textContent = msg;
+    text.className = "app-banner-text";
+    if(o.title){
+      const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = o.title;
+      text.appendChild(ttl);
+      if(msg){
+        const sub = document.createElement("span"); sub.className = "app-banner-sub"; sub.textContent = msg;
+        text.append(document.createTextNode(" "), sub);
+      }
+    } else text.textContent = msg;
     body.append(tag, text);
-    el.append(icon, body);
+    const shut = document.createElement("button");
+    shut.type = "button"; shut.className = "app-banner-x";
+    shut.setAttribute("aria-label", "Dismiss");
+    shut.textContent = "\u00d7";
+    shut.addEventListener("click", () => { el.classList.remove("show"); setTimeout(() => el.remove(), 220); });
+    el.append(icon, body, shut);
   } else {
     el.textContent = msg;
   }
@@ -85259,7 +85356,7 @@ function showDailyAlert(msg, opts){
      disappears too soon" - and only the announcement: the plain lines
      keep their 4.2s. Tapping it or leaving the screen still clears it
      at once. */
-  const stay = o.live ? DAILY_CHARGE.stay : 4200;
+  const stay = o.live ? DAILY_CHARGE.stay : (o.stay || 4200);
   const leave = () => {
     el.classList.remove("show");
     setTimeout(() => { if(onNavigate) onNavigate.disconnect(); el.remove(); }, 300);
@@ -85666,9 +85763,13 @@ function showDailyQuestionLockedPopup(){
      bar, where there is exactly room for it) and ABOVE it wherever that
      would touch the tab bar or the button - an iPad, where the "?" sits
      in the corner beside the bar. Measured, never assumed. */
-  if(showDailyTip('<b>Done for today</b><span>Next in ' + timeLeft + '</span>',
-                  '<b>Done</b><span>\u00b7 next in ' + timeLeft + '</span>')) return;
-  showDailyAlert("Already done for today \u2014 resets in " + timeLeft + " (5pm daily).");
+  /* AT THE TOP AGAIN, ON THE ACCOUNT BANNER'S GLASS (build 327z3),
+     superseding the bubble above: "when clicking the daily question
+     button and it's not ready, the pop could be bigger, at the top, and
+     have that same kinda look." */
+  document.getElementById("daily-lock-tip")?.remove();
+  showDailyAlert("Next one in " + timeLeft + ", at 5pm",
+    { kind: "daily", title: "Done for today", stay: 5200 });
 }
 
 /* ============ THE CHAT LOBBY AND THE DOCK ============
@@ -91197,7 +91298,7 @@ function showHome(){
     setTimeout(() => {
       if(document.documentElement.dataset.screen !== "home" && !document.querySelector("[data-screen='home']")) return;
       if(theme.muteBanners) return;
-      showDailyAlert(p.text, { tag: "DETECTIVE", character: "detective" });
+      showDailyAlert(p.text, { tag: "DETECTIVE", character: "detective", color: "#C9A46A" });
     }, 1500);
   }
   /* Appended to stage as a sibling of the panel now, not a child of
@@ -97006,7 +97107,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z2";
+const APP_BUILD = "2026-10-23-327z3";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -110691,7 +110792,19 @@ const BANNER_KINDS = {
      look alike are the same banner three times. Violet and a speech
      bubble - not the friend green, not the room blue. */
   chat: { tag: "CHAT", color: "#8E7CF5", glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z" },
-  account: { tag: "YOUR ACCOUNT", color: "#F5B54D", glyph: "M14 6a4.5 4.5 0 1 1-4.3 5.8L8.4 13H6.6v1.9H4.5v1.9H1.6v-2.6l6.1-6.1A4.5 4.5 0 0 1 14 6m1.4 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8" }
+  account: { tag: "YOUR ACCOUNT", color: "#F5B54D", glyph: "M14 6a4.5 4.5 0 1 1-4.3 5.8L8.4 13H6.6v1.9H4.5v1.9H1.6v-2.6l6.1-6.1A4.5 4.5 0 0 1 14 6m1.4 2.2a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8" },
+  /* The passive lines on the same glass (build 327z3, showDailyAlert's
+     `kind`): the daily question in the "?"'s own colour with a clock,
+     the rankings in the trophy's gold, a rank-up in the next rank's
+     colour (set by the caller), and a plain notice. */
+  daily: { tag: "DAILY QUESTION", color: "var(--rank-accent, var(--theme-c1))",
+    svg: '<circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.1"/><path d="M12 7.4V12l3.1 2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>' },
+  rankings: { tag: "RANKINGS", color: "#FFD34D",
+    svg: '<path fill="currentColor" d="M6.8 3h10.4v5.6a5.2 5.2 0 0 1-10.4 0z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.8 4.9H4.4a2.5 2.5 0 0 0 2.7 4.9M17.2 4.9h2.4a2.5 2.5 0 0 1-2.7 4.9"/><path fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2zM8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>' },
+  rankup: { tag: "RANK UP", color: "#FFD37A",
+    svg: '<path fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" d="M6.5 13.5 12 8l5.5 5.5M6.5 18.5 12 13l5.5 5.5"/><path fill="currentColor" d="M12 2.6l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 8.1l-2.15 1.15.4-2.4L8.5 5.15l2.4-.35z"/>' },
+  notice: { tag: "NOVA", color: "#8FC1FF",
+    glyph: "M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18m-1.1 7.4v6.4h2.2v-6.4zM12 6.6a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6" }
 };
 
 function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
@@ -124336,13 +124449,12 @@ function showRankings(defaultBoard){
          row, at zero, synthesised by liveEntries() - so nothing here
          should ever say "not in the rankings yet" to someone who simply
          has not answered a question. */
-      showDailyAlert(!loaded
-        ? "Still loading the rankings \u2014 try that again in a moment."
+      const fm = !loaded || (store.leaderboardOptIn && syncCode)
+        ? ["Still loading the rankings", "Try Find me again in a moment."]
         : !store.leaderboardOptIn
-          ? "You\u2019re hidden from the rankings \u2014 turn on \u201cShow me in the rankings\u201d in Settings."
-          : !syncCode
-            ? "This device isn\u2019t syncing, so it has no rankings entry \u2014 turn sync on in Settings."
-            : "Still loading the rankings \u2014 try that again in a moment.");
+          ? ["You\u2019re hidden from the rankings", "Turn on \u201cShow me in the rankings\u201d in Settings."]
+          : ["This device isn\u2019t syncing", "So it has no rankings entry. Turn sync on in Settings."];
+      showDailyAlert(fm[1], { kind: "rankings", title: fm[0] });
       return;
     }
     if(search.value === "" && clearBtn) clearBtn.hidden = true;
@@ -127596,7 +127708,9 @@ function rankUpLockRefused(){
   const now = Date.now();
   if(now - rankUpRefusedAt < 700 && document.getElementById("dailyalert")) return;
   rankUpRefusedAt = now;
-  showDailyAlert("Your profile needs you");
+  let ruColor = null;
+  try{ const ow = rankUpOwed(); const k = ow && TIER_ORDER_FULL[ow.fromIdx + 1]; if(k && RANK_COLOR[k]) ruColor = flareColorOf(k); }catch(e){}
+  showDailyAlert("Open Profile to see your rank up.", { kind: "rankup", title: "Your profile needs you", color: ruColor || undefined });
   if(rankUpNudge()) rankUpNudgeArm(RU_NUDGE_EVERY_MS);
 }
 

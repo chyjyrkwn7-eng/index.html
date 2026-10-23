@@ -26420,3 +26420,43 @@ thing ... Loading pages/screens lags bad."*
   characters and the Ranks screen are still heavy and were not changed.
 - check_b246's "glow on the button" fails on 327z as well; not from this.
 
+
+### Build 327z3 - the account banner's glass on every top banner, the daily "not yet" at the top, Safari's strips made after the splash
+
+Madison, with a screenshot of the save-your-code banner: *"This is great
+Liquid Glass and needs to be implemented more through the app where it can
+be. Like when clicking the daily question button and it's not ready, the pop
+could be bigger, at the top, and have that same kinda look ... the left side
+has a color and the little icon for what it's talking about"* and *"the
+bottom and top parts of safari are still black"*. Gate:
+`tools/check-b327z3.py` (`ONLY=safari|banner`, `--shots DIR`, `--against`);
+19 failures on 327z2.
+
+> **Supersedes** build 309's "the not-ready answer opens BESIDE the ?" for the
+> locked case. The "It's out" announcement still pops out of the "?"
+> (`showDailyTip`).
+
+- **`showDailyAlert(msg, { kind | tag, title, color, character, stay })` is
+  the passive app banner** (`.daily-alert.app-banner.is-passive`): the same
+  glass, left wash (`--banner-color`), tinted rim, icon in a lit disc and tag
+  as `buildAppBanner`, a title over the message, a close x, no button, taps
+  pass through everything but the x. `kind` picks a `BANNER_KINDS` entry; a
+  bare `tag` (and `color`) works without one; `character` puts that
+  character's face in the disc. With neither, the plain one-line alert is
+  unchanged.
+- **New `BANNER_KINDS`**: `daily` (DAILY QUESTION, the rank accent, a clock),
+  `rankings` (RANKINGS, gold, a trophy), `rankup` (RANK UP, chevrons), `notice`
+  (NOVA, blue). Each has an `svg` for the disc.
+- **Using it now**: the daily "Done for today / Next one in 3h 12m, at 5pm"
+  (5.2s), Find me's three answers (titled), "Your profile needs you" (in the
+  next rank's colour, `TIER_ORDER_FULL[rankUpOwed().fromIdx + 1]`), and the
+  Detective's run (his face).
+- **Safari's strips are made in JS after the splash, never in the markup**
+  (`refreshEdgeTints`, from `syncStatusBarColor`): browser tabs only
+  (`html.is-browser`), none while the splash is up, then two solid 12px fixed
+  strips in the app's top and bottom colours, RE-CREATED whenever the colour
+  changes (Safari 26 reportedly reads a bar's colour from an element when it
+  appears), with the root background set to the top colour as well.
+  **Not verifiable without an iPhone on iOS 26**; the gate holds the strips,
+  not Safari's bars.
+- Gates moved: check-fixes 9b (a top glass banner, no bubble).

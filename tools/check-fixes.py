@@ -296,49 +296,35 @@ def main():
                         elif rg and rg["gap"] < 4:
                             fails.append(f"{tag}: the daily-question ring comes within {rg['gap']}px of the tab bar (touching it at <=0)")
 
-                        # 9b. The daily question's "not yet" answer opens BESIDE
-                        # the "?" (build 309): "we've been over this before and
-                        # it's still not fixed ... needs to be near the button".
-                        # It had come back as a top banner, then as a tethered
-                        # popup over Start Studying. So: next to the button,
-                        # on screen, clear of Start Studying and the tab bar,
-                        # and no banner at the top.
+                        # 9b. MOVED IN 327z3. The daily question's "not yet"
+                        # answer is a top glass banner now, Madison's words:
+                        # "when clicking the daily question button and it's not
+                        # ready, the pop could be bigger, at the top, and have
+                        # that same kinda look" (the account banner's glass).
+                        # It replaced build 309's bubble beside the "?". So: a
+                        # .daily-alert carrying .app-banner.is-passive, wholly on
+                        # screen, in the top part of the screen, clear of the tab
+                        # bar, and no bubble by the button.
                         dl = pg.evaluate("""async ()=>{ store.dailyQuestionDate = dailyPeriodKey(); showHome();
                           await new Promise(r=>setTimeout(r,300));
                           const f=document.querySelector('.daily-question-fab'); if(!f||!f.getBoundingClientRect().width) return null;
-                          f.click(); await new Promise(r=>setTimeout(r,350));
-                          const t=document.getElementById('daily-lock-tip'); const R=e=>e&&e.getBoundingClientRect();
-                          const tr=R(t), fr=R(f), btn=R(document.querySelector('.panel.home .playbtn')), bar=R(document.querySelector('.bottomtabs:not([hidden])'));
-                          const hit=(a,b)=>!!(a&&b&&b.width&&!(a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom));
-                          const out = {tip:!!t, banner:!!document.querySelector('.daily-alert')};
-                          if(tr){ out.gap=Math.round(Math.max(fr.left-tr.right, tr.left-fr.right, fr.top-tr.bottom, tr.top-fr.bottom));
-                            out.onScreen=tr.left>=0&&tr.top>=0&&tr.right<=innerWidth&&tr.bottom<=innerHeight;
-                            out.btn=hit(tr,btn); out.bar=hit(tr,bar);
-                            /* the air between the bubble and Start Studying, by
-                               the layout box (offsetTop), not the pop's scale */
-                            const sep=(a,b)=>b&&b.width?Math.max(b.left-a.right, a.left-b.right, b.top-a.bottom, a.top-b.bottom):1e9;
-                            const lay={left:t.offsetLeft, top:t.offsetTop, right:t.offsetLeft+t.offsetWidth, bottom:t.offsetTop+t.offsetHeight};
-                            out.btnSep=Math.round(sep(lay,btn)*10)/10;
-                            const q=r=>r?[Math.round(r.left),Math.round(r.top),Math.round(r.right),Math.round(r.bottom)]:null;
-                            out.geo={tip:q(tr),fab:q(fr),btn:q(btn),bar:q(bar),cls:t.className}; }
-                          t&&t.remove(); store.dailyQuestionDate=null; return out; }""")
+                          f.click(); await new Promise(r=>setTimeout(r,500));
+                          const b=document.querySelector('.daily-alert'); const R=e=>e&&e.getBoundingClientRect();
+                          const br=R(b), bar=R(document.querySelector('.bottomtabs:not([hidden])'));
+                          const hit=(a,c)=>!!(a&&c&&c.width&&!(a.right<=c.left||a.left>=c.right||a.bottom<=c.top||a.top>=c.bottom));
+                          const out={tip:!!document.getElementById('daily-lock-tip'), banner:!!b,
+                            glass:!!(b&&b.classList.contains('app-banner')&&b.classList.contains('is-passive'))};
+                          if(br){ out.onScreen=br.left>=0&&br.top>=0&&br.right<=innerWidth&&br.bottom<=innerHeight;
+                            out.top=Math.round(br.top); out.vh=innerHeight; out.bar=hit(br,bar); }
+                          b&&b.remove(); store.dailyQuestionDate=null; return out; }""")
                         if dl:
-                            if not dl["tip"]: fails.append(f"{tag}: tapping a done daily question opened no bubble by the button")
-                            if dl["banner"]: fails.append(f"{tag}: tapping a done daily question put a banner at the top")
-                            if dl["tip"]:
-                                if not dl["onScreen"]: fails.append(f"{tag}: the daily 'done' bubble runs off the screen")
-                                if dl["btn"]: fails.append(f"{tag}: the daily 'done' bubble covers Start Studying")
-                                # Build 326: Start Studying rose 10px on a 14/15/16 and
-                                # the one-line bubble, squeezed into the 41px left over
-                                # the bar, clamped up FLUSH against the button's foot -
-                                # 0px of air, passing the overlap test above by rounding
-                                # alone. Touching is not clear: 2px at least.
-                                elif dl.get("btnSep", 99) < 2: fails.append(f"{tag}: the daily 'done' bubble touches Start Studying ({dl['btnSep']}px) {dl.get('geo')}")
-                                if dl["bar"]: fails.append(f"{tag}: the daily 'done' bubble covers the tab bar")
-                                # Within 24px: where two lines will not fit beside the
-                                # "?" (a phone browser window, Start Studying just above
-                                # the bar) it drops to one line rather than lifting away.
-                                if dl["gap"] > 24: fails.append(f"{tag}: the daily 'done' bubble is {dl['gap']}px from the button {dl.get('geo')}")
+                            if dl["tip"]: fails.append(f"{tag}: tapping a done daily question opened a bubble by the button (it is a top banner since 327z3)")
+                            if not dl["banner"]: fails.append(f"{tag}: tapping a done daily question showed no banner")
+                            elif not dl["glass"]: fails.append(f"{tag}: the daily 'done' banner is not the glass app banner")
+                            else:
+                                if not dl["onScreen"]: fails.append(f"{tag}: the daily 'done' banner runs off the screen")
+                                if dl["top"] > dl.get("vh", 9999) * 0.4: fails.append(f"{tag}: the daily 'done' banner is not at the top (y={dl['top']})")
+                                if dl["bar"]: fails.append(f"{tag}: the daily 'done' banner covers the tab bar")
 
                         # --- The version label on a phone (build 300): "can be put
                         # on the phone ... the very bottom left corner, with just
