@@ -2594,13 +2594,16 @@
      across the base. The bubble's drop-shadow (a filter, not a box-shadow)
      glows round both as one outline. */
   #daily-lock-tip::before, #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; }
-  #daily-lock-tip::before{ background:rgb(66,71,78); }
-  #daily-lock-tip::after{ background:rgb(26,28,35); }
-  #daily-lock-tip.is-live::before{ background:color-mix(in srgb, var(--theme-c1) 55%, #1E242C); }
-  #daily-lock-tip.is-left::before{ right:-9px; top:calc(var(--caret, 50%) - 9px); width:9px; height:18px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
-  #daily-lock-tip.is-left::after{ right:-7.586px; top:calc(var(--caret, 50%) - 10.586px); width:10.586px; height:21.172px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
-  #daily-lock-tip.is-above::before{ bottom:-9px; left:calc(var(--caret, 50%) - 9px); width:18px; height:9px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
-  #daily-lock-tip.is-above::after{ bottom:-7.586px; left:calc(var(--caret, 50%) - 10.586px); width:21.172px; height:10.586px; clip-path:polygon(0 0, 100% 0, 50% 100%); }
+  /* build 327g: the caret is a piece of the same glass (its own backdrop blur, the
+     bubble's fill), not an opaque dark triangle with a grey edge. */
+  #daily-lock-tip::before{ display:none; }
+  #daily-lock-tip::after{ box-sizing:border-box; width:12.73px; height:12.73px;
+    background:linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,.045)), rgba(12,13,19,.74);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    border-top:1px solid rgba(255,255,255,.16); border-right:1px solid rgba(255,255,255,.16);
+    clip-path:polygon(0 0, 100% 0, 100% 100%); }
+  #daily-lock-tip.is-left::after{ right:-6.36px; top:calc(var(--caret, 50%) - 6.36px); transform:rotate(45deg); }
+  #daily-lock-tip.is-above::after{ bottom:-6.36px; left:calc(var(--caret, 50%) - 6.36px); transform:rotate(135deg); }
   [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
   /* (#contextual-info-popup and its pointer line and ring are gone - build 317,
      round three: Home's taps answer in one caption under the planet system,
@@ -3370,17 +3373,6 @@
 
   .meter{ display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:.9rem 0 .5rem; }
   .tick{ width:16px; height:7px; border-radius:1px; background:var(--rule); }
-  /* Build 327 (b327s): the meter is ONE row however long the test.
-     It wrapped at ~20 blocks, so a 120-question drill was six rows of
-     blocks over the question and a whole Penal Code run ~17. The
-     blocks shrink to share the row instead, and the gaps close up as
-     the count grows; the block you are on keeps a readable width. */
-  .meter{ flex-wrap:nowrap; }
-  .meter > .tick{ flex:0 1 16px; min-width:1px; }
-  .meter:has(> .tick:nth-child(41)){ gap:2px; }
-  .meter:has(> .tick:nth-child(91)){ gap:1px; }
-  .meter:has(> .tick:nth-child(181)){ gap:0; }
-  .meter > .tick.now{ min-width:6px; }
   .tick.now{
     background:var(--accent); height:7px; border-radius:2px;
     /* Dimmed per explicit request — was pulling focus off the actual
@@ -74910,32 +74902,32 @@ const RELEASE_NOTES = [
     groups: [
       { label: "New In Version 9", items: [
         { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "On by default, and you can turn them off in Settings. Sounds for nearly everything: your answers, your results, Home's ambience, the planet, badges, cutscenes, the Leaderboard and the Virtual Room." },
-        { icon: buildDevicesIcon, color: "#7CC8FF", title: "Haptic Touch", body: "On iPhone, a light tap you feel as you answer, star a question, flip a switch, change tabs or touch the planet and its flares. On by default, under Sound & vibration in Settings, and it follows your iPhone's own System Haptics setting." },
+        { icon: buildDevicesIcon, color: "#7CC8FF", title: "Haptic Touch", body: "On iPhone, a light tap you feel as you answer, star a question, flip a switch, change tabs or touch the planet. On by default, under Sound & vibration in Settings." },
         { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can buzz on answers and moments that matter. Also a setting, also off until you turn it on." },
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome leads with Sign in. Signing up asks whether you have used Nova before, and warns you if the name you chose already belongs to an account." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard always match what your own Profile says." },
-        { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels. A glass lens lifts out and follows your finger when you tap or slide between tabs. The chat button, Pause, the daily question button, the top tabs, the search bars and Find me all wear the same glass." },
+        { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels, and a glass lens that follows your finger between tabs. The chat button, Pause and the search bars wear the same glass." },
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question is named in its pinned header, like a test, and its result is one card: your verdict, then the XP you earned, in the same soft-edged style as the results screen." },
-        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, this week and the next test at a glance, the days left in the course, and what is on the next test once it is posted. Settings moved into Profile, so Profile's tabs are Profile, Stats and Settings." },
+        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, your next test, the month and the days left in the course. Settings moved into Profile." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
-        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock, A Real Test", body: "Mock is a real test: no feedback on any question until your grade, and its icon is a graded sheet, an A+. Review is every question with its answer, as a list or flashcards, and its icon is an open book. The mode at the top of every unit screen has a soft edge like the results boxes. Each mode has its own look, and every start button says what you are beginning." },
-        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "A Calmer Calendar", body: "Today and your next test sit at the top, then the month, then the final exams and the course. The week strip is gone (the month shows the same days), the day card steps aside when it would only repeat Today, and Go to today only shows when you are somewhere else." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock, A Real Test", body: "Mock is a real test: no feedback until your grade. Review is every question with its answer, as a list or flashcards. Each mode has its own icon and colour." },
+        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "A Calmer Calendar", body: "Today and your next test sit at the top, then the month, the final exams and the course. Fewer boxes, and nothing repeats." },
         { icon: buildBarStatsIcon, color: "#4ADE80", title: "Your Units On Stats", body: "Stats shows the units that need the most work and your strongest, with how much of each you get right. Tap one to drill it. The accuracy ring is green." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. His ship was lost in the dark after a planet it was studying took in more light than it could hold, cracked and exploded, and his signal has only just reached this system. The blast scattered everything aboard: his flares came to rest, dark, around the planet on your Home screen, his badges landed one in every unit, and his crew are the characters. Without them he cannot fly home, and he is an instructor with nothing left to teach, until he found a class studying the very units he taught. Every unit you master finds one of his badges, every rank you reach relights one of his flares, and every character you find is one of his crew come home. A rank asks for badges as well as a level for the same reason: your level waits at your next rank until you have the units that hold it together. Help him bring them home and he helps you pass the real exam. His scanners keep finding more of his ship." },
-        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets him once: he tells the story, and for an account that was here before him, why you have not seen him until now. At the end he goes over your progress, with your badges, then your flares, then your characters arriving one section at a time on the same screen, explains the new level rule on your own numbers, narrates What's New and shows you what has changed. He narrates every tip in the app." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. Back on Home after a rank-up he tells you what your new flare did, he notices when you find a badge or one of his crew, he invites you to a match once a week, and he passes on news and the odd tip. Never more than one message a day, and he answers questions when he is in range." },
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A planet he was studying exploded and scattered his badges, flares and crew across this system. Every unit you master finds a badge, every rank relights a flare, and every character you find is one of his crew come home." },
+        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets Nova once. He tells the story, goes over your progress and shows you what has changed." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. He sends news when you rank up or find something, invites you to a match once a week, and never more than one message a day." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
         { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room, or accept his weekly challenge in your chats. He answers in two to four seconds and almost never misses. Beat him in any game and the Sheriff is yours." }
       ]},
       { label: "Better In Version 9", items: [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Results", body: "Your grade climbs from red to green, and a 100 glows green before your hundo effect takes over. Your XP counts up with the bar. Badges and unlocks share one box: Found & Unlocked." },
         { icon: buildSparkleIcon, color: "#FF9EC8", title: "Happy At 100", body: "Every character is happy when you score 100, and every face matches your grade." },
-        { icon: buildStarIcon, color: "#C9D3DE", title: "The Badge Case", body: "Real metal corners, latches and screws, a handle fixed to the case, and light that comes from where your badges sit. The Badges screen shows the same case as the cutscene, and every badge sits centred in its slot." },
+        { icon: buildStarIcon, color: "#C9D3DE", title: "The Badge Case", body: "A sleeker case for your badges, the same on the Badges screen and in the cutscene, with every badge centred in its slot." },
         { icon: buildStarIcon, color: "#E8B84A", title: "Badges", body: "A cleaner clean look, an engraved back, and bevelled edges. Each badge sits down into its slot." },
-        { icon: buildLadderIcon, color: "#F5804D", title: "Ranking Up", body: "The flares animate through the rank-up, and the planet pulses with each beat before the flash. Up next stays locked until your new rank arrives, and the rank card fades to it. Back on Profile, your XP counts up as numbers." },
+        { icon: buildLadderIcon, color: "#F5804D", title: "Ranking Up", body: "Flares animate through the rank-up and the planet pulses before the flash. Back on Profile, your XP counts up into your new levels." },
         { icon: buildBarStatsIcon, color: "#5CA8FF", title: "A Simpler Profile Card", body: "The level challenge just says the level you need. The rank line has no icon, and the notes under the XP bar are gone." },
         { icon: buildPlanetIcon, color: "#FF7A59", title: "Supernova On Home", body: "At Supernova, a streak runs round Home's rings when you tap the planet, and every so often with its pulse." },
         { icon: buildSparkleIcon, color: "#C9D3DE", title: "A Starry Sky", body: "Faint stars behind Home and every theme." },
@@ -74950,46 +74942,10 @@ const RELEASE_NOTES = [
         { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 124\u2013256", body: "The shorter version of Penal Code now has the 116 questions from slides 124\u2013256, for the next test." }
       ]},
       { label: "Everything From Version 8", items: [
-        { icon: buildRocketIcon, color: "#F5804D", title: "Version 8, Launched At Last", body: "Version 8 was built but never launched on its own. All of it arrives with Version 9: your grade first on the results, characters that celebrate a hundo, the Level 1 Badge Case, badges you can hold, spin and clean, the rank-up on the road map, the planet that cracks with every rank, a new Profile, Save and exit, and the daily question ring." }
+        { icon: buildRocketIcon, color: "#F5804D", title: "Version 8, Launched At Last", body: "Everything built since Version 7: your grade first on the results, characters that celebrate a hundo, badges you can hold and clean, the rank-up on the road map, the planet that cracks with every rank, a new Profile, Save and exit, and the daily question ring." }
       ]}
     ]
   },
-  /* VERSION 8 (builds 319 and 320; was "7.8"). Built, never launched on
-     its own - Version 9 carries it - so the history marks it "(not
-     launched)". "Save A Test For Later" moved here from 7.7, which had
-     already gone out without it. */
-  {
-    version: "8",
-    notLaunched: true,
-    groups: [
-      { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. When a planet beside his ship cracked apart, the blast scattered his badges, his flares and his crew across this system. Every character you unlock is one of his missing crew, found. He narrates What's New and every tip in the app." }
-      ]},
-      { label: "Results", items: [
-        { icon: buildTrophyIcon, color: "#FFD84D", title: "Your Grade First", body: "The results screen opens on your grade, counted up as each unit's bar fills, with a moment of suspense at the end. Then your XP, then anything you unlocked." },
-        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Characters Celebrate Your Hundo", body: "Score 100% and your character is thrilled. It reacts to your hundo effect while it plays, then goes back to its own celebration." }
-      ]},
-      { label: "Badges", items: [
-        { icon: buildStarIcon, color: "#4ADE80", title: "Badges Are Found", body: "A badge you earn is found, and its moment has the screen to itself: chat and notifications wait until it is over. Badges no longer add XP." },
-        { icon: buildStarIcon, color: "#C9D3DE", title: "The Level 1 Badge Case", body: "Your badges live in one case, with a lid, lining, clips and its name on the plate. Finding a badge opens it: the badge lands in its slot and every badge already there lights up in its own colour." },
-        { icon: buildStarIcon, color: "#C9D3DE", title: "A Badge In Your Hand", body: "Tap a badge in your case and it floats out, head on, while the case tips away. Drag to spin it, fast or slow. Badges gather dirt week by week, in five stages; rub one with your finger to clean it." }
-      ]},
-      { label: "Ranks", items: [
-        { icon: buildLadderIcon, color: "#E8B84A", title: "Ranking Up, On The Road Map", body: "A rank-up plays out on Profile's road map: your challenges tick off, the road lights up to your new rank, its rewards are handed over there, and any saved XP climbs into levels. Smoother from start to finish." },
-        { icon: buildPlanetIcon, color: "#F5804D", title: "A Planet That Cracks", body: "From Gold up, the planet on Home cracks a little more with every rank you reach, as the light of each flare breaks through, and you see the crack form in the rank-up." },
-        { icon: buildPlanetIcon, color: "#FF7A59", title: "Supernova's Mark", body: "At Supernova the planet on Home is a star at last: light pours out of its crack, and pieces drift off its rings." }
-      ]},
-      { label: "Profile", items: [
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Profile, Calendar And Stats", body: "Profile is three tabs: Profile, Calendar and Stats. Your badge count sits beside your level, the badge case opens from the card, and Friends is back under it." }
-      ]},
-      { label: "Studying", items: [
-        { icon: buildPauseIcon, color: "#4ADE80", title: "Save A Test For Later", body: "Pause a Drill or Mock and tap Save and exit. The next time you tap Start Studying, you can resume it exactly where you left off or start a new test. Resume loads it like a new test, then picks up where you were. One test can be saved at a time. Not available in Review, flashcards, the daily question or a Virtual Room." },
-        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Ring", body: "After you answer, a ring around the daily question button fills until the next question at 5pm, and fills the rest of the way when it arrives." }
-      ]}
-    ]
-  },
-  /* 7.7 (build 314) - "the version becomes 7.7". The What's New card
-     says the headline of each group; this is the full list. */
   {
     version: "7.7",
     groups: [
@@ -96405,7 +96361,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-22-327g";
+const APP_BUILD = "2026-10-23-327h";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way

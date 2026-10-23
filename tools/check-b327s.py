@@ -62,6 +62,7 @@ def s1(br):
 
 
 def s2(br):
+    return  # RETIRED IN 327g: Madison did not want the one-row meter (long tests became slivers); the meter wraps as it did.
     for (n, w, h, dev) in ((120, 440, 956, "phone"), (340, 440, 956, "phone"), (120, 834, 1194, "iPad")):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, touch=True, dpr=2)
         try:
