@@ -2560,13 +2560,16 @@
      and the fill one inside it, so the tip is a single sharp point and
      the fill covers the bubble's border where the two join. The text
      goes up from 13.8/12.8px to 16/14.7px. */
-  #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:column; gap:.15rem; padding:.7rem .95rem; border-radius:16px;
-    /* build 327e: the tab bar's clear glass ("doesn't have that clear
-       interface"). A filter on the same element would flatten the glass, so
+  #daily-lock-tip{ position:fixed; z-index:260; display:flex; flex-direction:row; align-items:center; gap:.65rem; padding:.62rem .8rem .62rem .95rem; border-radius:16px;
+    /* build 327k: CLEARER glass ("needs to be the clearer background"): a
+       thin tint over a strong blur, the rim lit along the top, so the stars
+       and the glow behind show through it the way they do through the tab
+       bar's lens. A filter on the same element would flatten the glass, so
        the shadow is a box-shadow. */
-    background:linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,.045)), rgba(12,13,19,.74);
-    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
-    border:1px solid rgba(255,255,255,.16); box-shadow:0 10px 24px rgba(0,0,0,.4);
+    background:linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.035)), rgba(12,13,19,.36);
+    backdrop-filter:blur(26px) saturate(1.5); -webkit-backdrop-filter:blur(26px) saturate(1.5);
+    border:1px solid rgba(255,255,255,.2);
+    box-shadow:0 10px 24px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.06);
     color:var(--ink, #F2F4F7); font-size:1rem; line-height:1.25; white-space:nowrap; pointer-events:none;
     opacity:0; transform:scale(.92); transition:opacity .18s ease, transform .2s cubic-bezier(.2,.9,.3,1.2); }
   #daily-lock-tip.is-left{ transform-origin:100% var(--caret, 50%); }
@@ -2574,40 +2577,31 @@
   #daily-lock-tip.is-on{ opacity:1; transform:none; }
   #daily-lock-tip b{ font-weight:700; }
   #daily-lock-tip.is-live{ pointer-events:auto; cursor:pointer; border-color:color-mix(in srgb, var(--theme-c1) 55%, transparent);
-    box-shadow:0 10px 24px rgba(0,0,0,.4), 0 0 8px color-mix(in srgb, var(--theme-c1) 32%, transparent); }
+    box-shadow:0 10px 24px rgba(0,0,0,.32), 0 0 8px color-mix(in srgb, var(--theme-c1) 32%, transparent), inset 0 1px 0 rgba(255,255,255,.26); }
   #daily-lock-tip.is-live b{ color:var(--theme-c1); }
   #daily-lock-tip.is-fresh.is-on{ animation:dq-tip-pop .5s cubic-bezier(.2,.9,.3,1.25) both; }
   @keyframes dq-tip-pop{ from{ opacity:0; transform:scale(.4); } to{ opacity:1; transform:none; } }
   [data-reduce-motion="true"] #daily-lock-tip.is-fresh.is-on{ animation:none; }
-  #daily-lock-tip.is-compact{ flex-direction:row; align-items:baseline; gap:.4rem; padding:.45rem .8rem; font-size:.9rem; }
+  .dq-tip-text{ display:flex; flex-direction:column; gap:.15rem; }
+  #daily-lock-tip.is-compact{ gap:.55rem; padding:.45rem .7rem .45rem .8rem; font-size:.9rem; }
+  #daily-lock-tip.is-compact .dq-tip-text{ flex-direction:row; align-items:baseline; gap:.4rem; }
   /* The one-line form keeps the build-309 size: it is the form that has to
      fit the strip between Start Studying and the tab bar on a phone, and
      at 310's larger type it no longer did - the bubble lifted 40px+ off
      the "?" on a 13 mini and both Pro Maxes (check-fixes). */
   #daily-lock-tip.is-compact span{ font-size:.84rem; }
-  #daily-lock-tip.is-tight{ padding:.5rem .7rem; font-size:.84rem; }
+  #daily-lock-tip.is-tight{ padding:.5rem .6rem .5rem .7rem; font-size:.84rem; }
   #daily-lock-tip.is-tight span{ font-size:.78rem; }
   #daily-lock-tip span{ color:var(--soft, #A9B1BC); font-size:.92rem; }
-  /* THE CARET IS PART OF THE BUBBLE (build 327): two filled triangles, no
-     borders and no rotation. ::before is the outline, in the border's own
-     colour flattened onto the bubble (rgba(255,255,255,.16) over #1E242C),
-     its base on the bubble's inner edge, 9px out. ::after is the bubble's
-     fill, the same triangle 1px in all round (1.414px along a 45-degree
-     edge) and running 3px back INSIDE the bubble, so it paints over the
-     bubble's border where they meet and nothing of that line is left
-     across the base. The bubble's drop-shadow (a filter, not a box-shadow)
-     glows round both as one outline. */
-  #daily-lock-tip::before, #daily-lock-tip::after{ content:""; position:absolute; pointer-events:none; }
-  /* build 327g: the caret is a piece of the same glass (its own backdrop blur, the
-     bubble's fill), not an opaque dark triangle with a grey edge. */
-  #daily-lock-tip::before{ display:none; }
-  #daily-lock-tip::after{ box-sizing:border-box; width:12.73px; height:12.73px;
-    background:linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,.045)), rgba(12,13,19,.74);
-    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
-    border-top:1px solid rgba(255,255,255,.16); border-right:1px solid rgba(255,255,255,.16);
-    clip-path:polygon(0 0, 100% 0, 100% 100%); }
-  #daily-lock-tip.is-left::after{ right:-6.36px; top:calc(var(--caret, 50%) - 6.36px); transform:rotate(45deg); }
-  #daily-lock-tip.is-above::after{ bottom:-6.36px; left:calc(var(--caret, 50%) - 6.36px); transform:rotate(135deg); }
+  /* THE ARROW IS INSIDE THE BOX (build 327k: "the arrow could just be in
+     the box"). The caret that stood outside the bubble was a second piece
+     of glass with its own edge, and where it met the bubble there was a
+     seam. Now there is one box, and the arrow is a mark in it at the end
+     nearest the "?": pointing right when the bubble opens beside the
+     button, down when it opens above it. */
+  .dq-tip-go{ flex:none; width:1.05rem; height:1.05rem; color:var(--soft, #A9B1BC); }
+  #daily-lock-tip.is-above .dq-tip-go{ transform:rotate(90deg); }
+  #daily-lock-tip.is-live .dq-tip-go{ color:var(--theme-c1); }
   [data-reduce-motion="true"] #daily-lock-tip{ transition:none; transform:none; }
   /* (#contextual-info-popup and its pointer line and ring are gone - build 317,
      round three: Home's taps answer in one caption under the planet system,
@@ -25336,9 +25330,23 @@
      is right for a passive announcement nobody taps and fatal for one
      whose whole point is a button. */
   .app-banner{
-    display:flex; align-items:center; gap:.6rem; text-align:left;
+    display:flex; align-items:center; gap:.7rem; text-align:left;
     pointer-events:auto;
-    border-left:3px solid var(--banner-color, var(--accent));
+    /* build 327k: CLEARER GLASS AND NO HARD LEFT BAR ("could be so much
+       better"). The 3px bar down the left edge was a hard stripe on a
+       rounded glass pill; the kind's colour is now a faint wash that
+       fades in from the left, a colour-tinted rim, and the icon in a lit
+       disc. Same thin tint over a strong blur as the daily bubble and the
+       tab bar, so the glow behind shows through. The colour AND the tag
+       still say which banner this is. */
+    padding:.7rem .85rem .7rem .75rem; border-radius:20px;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--banner-color, var(--accent)) 20%, transparent), transparent 62%),
+      linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,.03)),
+      rgba(12,13,19,.38);
+    border:1px solid color-mix(in srgb, var(--banner-color, var(--accent)) 38%, rgba(255,255,255,.16));
+    backdrop-filter:blur(26px) saturate(1.5); -webkit-backdrop-filter:blur(26px) saturate(1.5);
+    box-shadow:0 10px 26px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.26), inset 0 -1px 0 rgba(255,255,255,.05);
   }
   /* THEY SIT AT THE TOP, AND THEY CLEAR THE CORNER BY BEING NARROWER.
      The chat dock was briefly listed as something for topNoticeOffset()
@@ -25406,8 +25414,10 @@
   .daily-alert-go.daily-alert-chev{ width:.6rem; height:.9rem; display:block; letter-spacing:0; }
   .daily-alert-go.daily-alert-chev svg{ width:100%; height:100%; display:block; }
   .app-banner-icon{
-    flex-shrink:0; width:1.35rem; height:1.35rem;
+    flex-shrink:0; width:2.15rem; height:2.15rem; box-sizing:border-box; padding:.46rem; border-radius:50%;
     color:var(--banner-color, var(--accent));
+    background:radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--banner-color, var(--accent)) 34%, transparent), color-mix(in srgb, var(--banner-color, var(--accent)) 12%, transparent) 72%);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--banner-color, var(--accent)) 46%, transparent), inset 0 1px 0 rgba(255,255,255,.22);
   }
   .app-banner-body{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
   /* Build 327 (b327s): on a narrow phone the button goes UNDER the
@@ -25416,9 +25426,9 @@
      row; the button lines up with the text. */
   @media (max-width:26.5rem){
     .app-banner{ flex-wrap:wrap; row-gap:.45rem; }
-    .app-banner > .app-banner-body{ flex:1 1 calc(100% - 1.35rem - 28px - 1.2rem); }
+    .app-banner > .app-banner-body{ flex:1 1 calc(100% - 2.15rem - 28px - 1.4rem); }
     .app-banner > .app-banner-x{ order:2; }
-    .app-banner > .app-banner-act{ order:3; margin-left:1.95rem; }
+    .app-banner > .app-banner-act{ order:3; margin-left:2.85rem; }
   }
   /* The tag is the half that survives being read in a hurry, and the
      half that works for somebody who cannot tell the two colours
@@ -25428,6 +25438,12 @@
     color:var(--banner-color, var(--accent));
   }
   .app-banner-text{ font-size:.88rem; line-height:1.3; }
+  /* A banner with something to say in two tiers (the sync-code one): the
+     headline in the ink, the reason under it in the soft grey. The whole
+     message is still in .app-banner-text, so a reader of its text gets
+     both and the line-counting gates still count one node. */
+  .app-banner-title{ display:block; font-weight:700; font-size:.94rem; line-height:1.25; color:var(--ink, #F2F4F7); }
+  .app-banner-sub{ display:block; margin-top:.1rem; font-size:.8rem; line-height:1.3; color:var(--soft, #A9B1BC); }
   /* 44px, NOT 36. This was 36 for Join and View long before there was
      an account banner - a sweep of the app's buttons caught the
      Settings controls at 40px once and this was missed, because it is
@@ -25445,9 +25461,8 @@
   }
   /* A tint of each kind's own colour behind the glass, so the two are
      distinguishable before a single word is read. */
-  .app-banner-vroom{ background:color-mix(in srgb, #3DA9FC 12%, rgba(28,33,40,.55)); }
-  .app-banner-friend{ background:color-mix(in srgb, #4ADE80 12%, rgba(28,33,40,.55)); }
-  .app-banner-chat{ background:color-mix(in srgb, #8E7CF5 12%, rgba(28,33,40,.55)); }
+  /* (the per-kind tints behind the glass were replaced in 327k by the wash
+     that fades in from the left, driven by --banner-color) */
   .friend-hint{ margin:.5rem 0 0; font-size:.75rem; line-height:1.4; color:var(--soft); }
   .friend-add-row{ display:flex; justify-content:center; gap:.5rem; align-items:stretch; flex-wrap:wrap; }
   /* Room above it (build 270): "not enough spacing between the stuff
@@ -85004,7 +85019,9 @@ function showDailyTip(full, compact, opts){
     tip.id = "daily-lock-tip";
     if(opts.onTap){ tip.setAttribute("role", "button"); tip.tabIndex = 0; tip.classList.add("is-live"); }
     else tip.setAttribute("role", "status");
-    tip.innerHTML = full;
+    const GO = '<svg class="dq-tip-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const paint = html => { tip.innerHTML = '<div class="dq-tip-text">' + html + '</div>' + GO; };
+    paint(full);
     document.body.appendChild(tip);
     const gap = 10, vw = window.innerWidth, vh = window.innerHeight;
     const blockers = () => [".panel.home.screen-home-actual .playbtn", ".bottomtabs:not([hidden])"]
@@ -85048,10 +85065,10 @@ function showDailyTip(full, compact, opts){
        Start Studying sits just above the bar): the one-line form. */
     if(!spot || spot.side !== "left"){
       tip.classList.add("is-compact");
-      tip.innerHTML = compact;
+      paint(compact);
       const c = place(tip.offsetWidth, tip.offsetHeight);
       if(c && (c.side === "left" || !spot)) spot = c;
-      else { tip.classList.remove("is-compact"); tip.innerHTML = full; }
+      else { tip.classList.remove("is-compact"); paint(full); }
     }
     /* Then the two lines at the smaller, build-309 size (build 311): above
        the "?" it has to fit between Start Studying's right edge and the
@@ -96445,7 +96462,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327j";
+const APP_BUILD = "2026-10-23-327k";
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
    pushing when I open the app?" Because this gap is shared by every way
@@ -110096,7 +110113,13 @@ function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
   const tag = document.createElement("span");
   tag.className = "app-banner-tag"; tag.textContent = def.tag;
   const text = document.createElement("span");
-  text.className = "app-banner-text"; text.textContent = message;
+  text.className = "app-banner-text";
+  const nl = String(message).indexOf("\n");
+  if(nl > 0){
+    const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = message.slice(0, nl);
+    const sub = document.createElement("span"); sub.className = "app-banner-sub"; sub.textContent = message.slice(nl + 1);
+    text.append(ttl, document.createTextNode(" "), sub);
+  }else text.textContent = message;
   wrap.append(tag, text);
 
   const act = document.createElement("button");
@@ -110285,7 +110308,7 @@ function checkSaveCodeReminder(){
      people". A banner still pushing the idea Settings had just dropped
      would be the app disagreeing with itself, so both say code now. */
   const el = buildAppBanner("save-code", "account",
-    "Save your sync code \u2014 it is the only way back if this device loses its data",
+    "Save your sync code\nIt is the only way back if this device loses its data.",
     /* "Save it", not "Copy code" - the share sheet puts it in Notes or
        a message to yourself, which is what "save" has to mean for
        something whose whole job is outliving this phone. */
