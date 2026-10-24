@@ -26995,3 +26995,33 @@ start sheet down moved "the stuff behind it".
   up `body{touch-action:none}` and no root overscroll (as the chat sheet).
 
 Gate: `tools/check-b327z10.py` section H (H1-H11), 11 failures on 327z9.
+
+### Build 327z10 (continued, round 3) - Starred beside Select all, the glass carried over as the bar changes shape
+
+- **Review's Starred questions is a pill beside Select all** (`.picks-tools`,
+  `.starred-pill`): *"Starred questions being at the very bottom of review
+  isn't the move? There's gotta be a better way."* At the top as a wide box
+  (297) it was "not a fan"; as the last row (323) it sat under sixteen
+  units. The same element (`.pick-flagged-all`, `_paint`, the same tap that
+  opens every starred question) is a glass pill in the list's tools row: a
+  gold star, "Starred", the count in a gold chip; the whole count in its
+  aria-label. Gates moved: check_b297, check_b323u_units, check-b325-e.
+- **From the unit screen, the glass stays on its tab** (`bar._lensRelayout`,
+  called by `syncStartAction` when `has-start-tab` comes or goes): *"tapping
+  the tab to go somewhere else, the bottom tab lags and kinda has a weird
+  placement of the bubble."* There the bar has the Start pill and icon-only
+  tabs; the tapped screen takes them away while the lens is up. Filmed: the
+  lens sat over Profile when Leaderboard was tapped, shrank into the platter
+  there and the platter jumped across. Now the lens is re-measured, carried
+  to the same tab in the new shape and lands there (held: it keeps lifting;
+  released: `lensRelease` again). Gate: check-b327z10 I (14 of 14 frames off
+  the tab on 327z9, 0 here). The tap's remaining cost at 4x CPU is the first
+  touch's sound start and the new screen's build.
+- **Not from this build, both fail identically on 327z9**: check_b313_sheet2
+  "the No hundo note is the same red as its chip" and check_b267 "the start
+  sheet closes on a swipe down from its middle" (like check-b327-h's grip
+  pull, a pull now needs 40% of the sheet or a real flick, 327z8).
+- check-b327z z11 sets aside `.hsw-opt` inputs (they ARE the switch) and
+  holds the tab's specials off between its snapshots. The white `.next`
+  recipe excludes the friend buttons inside `:where()` so it keeps its old
+  specificity (two `:not()`s had out-ranked the start sheet's glass X).

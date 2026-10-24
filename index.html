@@ -131257,6 +131257,40 @@ function applyGlassRefraction(el, mapImgId){
     if(now) slideBubbleToActiveTab(true);
   }
   bar._lensHide = lensHide;
+  /* THE BAR CHANGES SHAPE UNDER THE GLASS (build 327z10): "When in the unit
+     selection screen, and tapping the tab to go somewhere else, the bottom
+     tab lags and kinda has a weird placement of the bubble." There the bar
+     has the Start pill and icon-only tabs; the tapped screen takes them
+     away, and every tab widens and gains its word - while the lens is
+     still up, measured for the old shape. It shrank into the platter
+     where its tab USED to be (over Profile when Leaderboard was tapped)
+     and the platter then jumped across. Called by syncStartAction when
+     the bar's shape changes: the lens is re-measured, carried to the same
+     tab in the new shape, and lands there as it would have. */
+  bar._lensRelayout = () => {
+    if(!lensG || !lens.classList.contains("is-up")) return;
+    const at = lensAt, old = lensInfo(at);
+    lensStopFollow();
+    lensStopTrack();
+    const g = lensMeasure();
+    if(!g || !lensS){ lensHide(true); return; }
+    const was = lensG;
+    lensG = g; lensSize(g);
+    const nu = lensInfo(at);
+    if(!old || !nu){ lensHide(true); return; }
+    /* the same place relative to its tab, in the new tab's units */
+    const k = nu.w / Math.max(1, old.w);
+    lensS = { cx: nu.c + (lensS.cx - old.c) * k, W: lensS.W * (nu.pw / Math.max(1, old.pw)),
+              H: lensS.H * (g.pillH / Math.max(1, was.pillH)), st: 0 };
+    lensV = { cx: 0, W: 0, H: 0, st: 0 };
+    lensWrite(lensS);
+    if(tabDragActive){
+      /* still held: it goes on lifting towards the tab it is on */
+      lensPlay(lensSpring(lensS, lensV, () => ({ cx: nu.c, W: nu.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
+      if(lensRun) lensRun.lift = true;
+      lensMagnify(nu.c, 1, 0, 0);
+    } else lensRelease(at);
+  };
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }
   window.addEventListener("resize", refreshGlass);
   /* The header is sticky and always present (unlike the bottom bar,
@@ -131413,6 +131447,7 @@ function applyGlassRefraction(el, mapImgId){
          active tab instead of sized for a tab that no longer exists
          at that size. */
       if(typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab(!hadStart);
+      if(!hadStart && bar._lensRelayout) bar._lensRelayout();
       /* Each split pill gets its own real refraction map now too, per
          explicit request \u2014 not just the plain blur both already had.
          requestAnimationFrame first so this measures the pills at
@@ -131438,6 +131473,7 @@ function applyGlassRefraction(el, mapImgId){
          left sized/positioned for the small compact tab that no
          longer exists at that size. */
       if(hadStart && typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab(true);
+      if(hadStart && bar._lensRelayout) bar._lensRelayout();
     }
   }
   new MutationObserver(syncStartAction).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "disabled"] });

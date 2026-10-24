@@ -44,7 +44,7 @@ READ = """() => { const p = document.querySelector('.chatdock-panel'); const r =
   return { top: r.top, h: r.height, open: chatDockOpen, inline: p.style.transform, vh: innerHeight }; }"""
 
 
-ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGH")
+ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGHI")
 
 UA_IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
 IPHONE_INIT = "Object.defineProperty(navigator,'userAgent',{get:()=>%r});" % UA_IPHONE
@@ -153,7 +153,7 @@ def planet(br):
     ctx, pg = z5b.boot(br, w, h, dpr)
     pg.wait_for_timeout(2500)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-      const tap = () => { const s = document.querySelector('#stage .screen-home-actual .cosmic-sphere-hsw') || [...document.querySelectorAll('#stage .screen-home-actual circle')].find(c => c.getAttribute('fill') === 'url(#cosmicSphereGrad)');
+      const tap = () => { const s = document.querySelector('#stage .screen-home-actual .cosmic-sphere-hsw') || [...document.querySelectorAll('#stage .screen-home-actual circle')].find(c => /^url\\(#cosmicSphereGrad/.test(c.getAttribute('fill') || ''));
         const b = s.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
         const o = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 7, isPrimary: true, pointerType: 'touch', button: 0 };
         s.dispatchEvent(new PointerEvent('pointerdown', o)); s.dispatchEvent(new PointerEvent('pointerup', o)); s.dispatchEvent(new MouseEvent('click', o)); };
@@ -296,10 +296,47 @@ def round2(br):
     ctx2.close()
 
 
+def unit_tab(br):
+    """I. "When in the unit selection screen, and tapping the tab to go
+    somewhere else, the bottom tab lags and kinda has a weird placement of
+    the bubble." The bar there has the Start pill and icon-only tabs; the
+    tapped screen takes them away while the glass is still up. Every frame
+    after the bar changes shape, the glass is over the tab that was tapped
+    (it used to sit over its neighbour and land there), and the platter ends
+    under it."""
+    print("\nI. from the unit screen, the glass stays on the tab that was tapped as the bar changes shape")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    pg.evaluate("() => { cfg.mode = 'drill'; cfg.units = []; store.seenUnitSelectTour = true; showSetup(); }")
+    pg.wait_for_timeout(1800)
+    cdp = ctx.new_cdp_session(pg)
+    t = pg.evaluate("() => { const b = document.querySelector('.bottomtabs'); const r = document.getElementById('bottomtab-rewards').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, start: b.classList.contains('has-start-tab') }; }")
+    pg.evaluate("""() => { window.__ut = []; const bar = document.querySelector('.bottomtabs');
+      const L = () => { const lens = document.getElementById('bottomtabs-lens'), body = lens && lens.querySelector('.tab-lens-body');
+        if(!bar.classList.contains('has-start-tab') && lens && lens.classList.contains('is-up') && +getComputedStyle(lens).opacity > .5){
+          const r = body.getBoundingClientRect(), tr = document.getElementById('bottomtab-rewards').getBoundingClientRect();
+          __ut.push({ cx: Math.round(r.left + r.width / 2), l: Math.round(tr.left), r: Math.round(tr.right) }); }
+        if(__ut.length < 200 && !window.__utStop) requestAnimationFrame(L); };
+      requestAnimationFrame(L); }""")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": t["x"], "y": t["y"]}]})
+    time.sleep(0.07)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(1300)
+    pg.evaluate("() => { window.__utStop = true; }")
+    fr = pg.evaluate("() => __ut")
+    end = pg.evaluate("() => { const s = document.querySelector('.bottomtabs-slider').getBoundingClientRect(), tr = document.getElementById('bottomtab-rewards').getBoundingClientRect(); return { scx: Math.round(s.left + s.width / 2), tcx: Math.round(tr.left + tr.width / 2), lit: document.getElementById('bottomtab-rewards').classList.contains('active') }; }")
+    off = [f for f in fr if not (f["l"] - 2 <= f["cx"] <= f["r"] + 2)]
+    check("%s: I. the bar left its Start shape with the glass up (%d frames) and on every one the glass was over Leaderboard (%d off)" % (label, len(fr), len(off)),
+          t["start"] and len(fr) >= 3 and not off, off[:4] or fr[:3])
+    check("%s: I. and the platter ends under Leaderboard (%d vs %d)" % (label, end["scx"], end["tcx"]), end["lit"] and abs(end["scx"] - end["tcx"]) <= 2, end)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2)):
+        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2), ("I", unit_tab)):
             if k in ONLY or (k == "A" and any(c in ONLY for c in "ABC")):
                 try:
                     fn(br)
