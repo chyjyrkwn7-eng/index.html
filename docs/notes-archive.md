@@ -27437,3 +27437,52 @@ Secret flares:
   light across the glass every --fo + 1.5s) when not found - still no
   colour on one not found. Per-flare clocks (`--fo`). Reduce motion: none.
 - Gate: check-b327z15 N and O.
+
+#### 327z15, round 5 - Profile, challenge cards, badges, rank cards, leaderboard, Match settings, calendar
+
+Madison's list, item by item (gate: check-b327z15 P-V, each failing on 327z14):
+- **Profile box in the person card's look**: the glass recipe was already the
+  person card's (327z12); what differed was its numbers. The person card's
+  Progress grid (`buildProfileProgressTiles`: XP, Badges n/16, Hundos,
+  Correct answers - the same four a classmate sees) sits under the XP bar;
+  the badge count left the level line (it is a tile).
+- **"Why ... when I click my xp the rank road map pops up? ... badge count"**:
+  `.pf-standing` is a `div role=group` with no click handler now.
+- **Challenge box goes with the rest**: its rows and unlock tiles take the
+  Progress tiles' surface (14px, .05 fill, .07 rim), its kicks the Progress
+  label's type; its rank emblem is on the moving list (17779) and floats
+  with a breathing ring of the rank's colour (`pf-emb-breathe`).
+- **"See every rank" -> "See rank ladder"**.
+- **Challenge card count**: the number alone, dead centre (the "of N" under
+  it pushed it 7px off; the bar under the ring says "2 of 5").
+- **How**: badge "Score 100% on a whole unit enough times and its badge is
+  yours. Every unit has one."; level "Earn XP by finishing tests. Right
+  answers, hundos and answer streaks add the most."; a met challenge keeps
+  the How tray.
+- **Flare card**: `.unlock-card-rankflare .unlock-card-art` is 6.6rem square
+  (it took the card's width and drew the bubble as an oval).
+- **Badges blurb**: "Tap a badge to pick it up and examine it, or an empty
+  slot to see how to find it." The clean instruction is a tip
+  (`.badge-clean-tip`) on the dullest badge, only while one is dull.
+- **Rank card (showRankLore)**: opens on the tap (the 140ms wait for the
+  node's pop is gone); `.ranklore-art` and `.pf-goal-emb` on the moving
+  list; a locked emblem is faded with a dark overlay (no filter on a moving
+  drawing); `.ranklore-reqfill` has a 1.1s transition (it had none, so the
+  bars jumped); `buildRankGifts(key, true)` draws a locked rank's flare
+  unlit, the chips move (flare float, swatch sweep, character live), dark
+  when locked. A first-open frame of ~200ms at 4x remains in Chromium -
+  Layerize of the Rank screen's animated layers; warming did not help (the
+  warm hook is kept, harmless).
+- **Leaderboard**: `.rank-col-hundo` is --ink (This Week's); Find me is the
+  black button at the field's height and type.
+- **Match settings lag**: the `.next` dark-modern `!important` white beat
+  both the unlit grey and the lighting beat's grey hold, so the button was
+  white from the first frame and only the words changed (check-b326-f had
+  been failing on exactly this). Excluded for the pill's button while
+  inert/lighting; `vroomBarLight` lights it in one style change;
+  `.is-lighting` runs no transitions; the hold holds the words too.
+- **Calendar**: Today, Next test and the month stay; the Final Exams and The
+  course cards are one card of pages (`buildCountdownCard`): Graduation
+  first (ring, class days left, date), then each final exam (big day count,
+  name, date; a tap picks its day), scroll-snap pages, a dot per page and
+  "n of N" in the head. The old builders stay unused for a revert.

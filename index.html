@@ -5354,6 +5354,30 @@
   .screen-calendar-tab > .cal-big-card{ margin:1.2rem 0 0; }
   .screen-calendar-tab > .cal-big-card[hidden]{ display:none; }
   .cal-big-list{ display:flex; flex-direction:column; margin-top:.1rem; }
+  /* the countdowns, one card of pages (327z15) */
+  .cal-count-track{ display:flex; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scroll-behavior:smooth;
+    overscroll-behavior-x:contain; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin:0 -1.1rem; touch-action:pan-x pan-y; }
+  .cal-count-track::-webkit-scrollbar{ display:none; }
+  .cal-count-page{ flex:0 0 100%; box-sizing:border-box; scroll-snap-align:center; scroll-snap-stop:always; padding:.2rem 1.1rem .1rem;
+    min-height:7.4rem; display:flex; flex-direction:column; justify-content:center; text-align:left; }
+  button.cal-count-page{ all:unset; box-sizing:border-box; flex:0 0 100%; scroll-snap-align:center; scroll-snap-stop:always; padding:.2rem 1.1rem .1rem;
+    min-height:7.4rem; display:flex; flex-direction:column; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .cal-count-kick{ margin:0 0 .55rem; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#8A93A0; }
+  .cal-count-page.is-course .cal-course-hero{ margin:0; }
+  .cal-count-exam{ display:flex; align-items:center; gap:1rem; }
+  .cal-count-num{ flex:none; min-width:5.2rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.15rem;
+    padding:.55rem .7rem; border-radius:14px; background:rgba(255,138,61,.1); border:1px solid rgba(255,138,61,.42); }
+  .cal-count-num b{ font-family:var(--mono); font-size:2rem; font-weight:700; line-height:1; color:#FF9D5C; font-variant-numeric:tabular-nums; }
+  .cal-count-num b.is-word{ font-family:inherit; font-size:1.2rem; font-weight:800; }
+  .cal-count-num span{ font-size:.7rem; font-weight:700; color:rgba(243,245,247,.65); }
+  .cal-count-page.is-done .cal-count-num{ background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.1); }
+  .cal-count-page.is-done .cal-count-num b{ color:#7BE0A6; }
+  .cal-count-exam .cal-big-text{ display:flex; flex-direction:column; gap:.2rem; min-width:0; }
+  .cal-count-exam .cal-big-name{ font-size:1.15rem; font-weight:800; color:var(--ink); line-height:1.2; }
+  .cal-count-exam .cal-big-when{ font-size:.9rem; color:var(--soft); }
+  .cal-count-dots{ display:flex; justify-content:center; gap:.45rem; margin:.75rem 0 .1rem; }
+  .cal-count-dots > i{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.22); transition:background-color .25s ease, transform .25s ease; }
+  .cal-count-dots > i.is-on{ background:rgba(255,255,255,.9); transform:scale(1.25); }
   .cal-big-row{
     font:inherit; color:inherit; text-align:left; -webkit-appearance:none; appearance:none; cursor:pointer;
     display:flex; align-items:center; gap:.85rem; width:100%; min-height:3.2rem; padding:.55rem .1rem;
@@ -7859,11 +7883,18 @@
   #stage > .vroom-setup-bar > .vroom-setup-go.is-lighting,
   #stage > .vroom-setup-bar > .vroom-readyup-btn.is-lighting{
     animation:start-ready-punch .45s cubic-bezier(.3,.7,.3,1) .18s both, vroom-bar-hold .3s step-end both;
+    transition:none;
   }
+  /* lit, the dark layout's buttons are its white (see .next's !important rule) */
+  [data-theme="dark"][data-layout="modern"] #stage > .vroom-setup-bar > :is(.vroom-setup-go, .vroom-readyup-btn){ --vroom-lit:#ECEFF3; }
+  /* the words wait with the fill (327z15): "the match settings button lags
+     and only highlights the words match settings before the effect
+     happens" - the base colour's own .2s transition turned the words dark
+     at once while the fill was still held grey; the colour is held here too */
   @keyframes vroom-bar-hold{
-    0%{ background-color:rgba(128,128,128,.16); background-image:none;
+    0%{ color:var(--soft); background-color:rgba(128,128,128,.16); background-image:none;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05); }
-    100%{ background-color:var(--accent); background-image:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%);
+    100%{ color:var(--accent-ink); background-color:var(--vroom-lit, var(--accent)); background-image:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%);
       box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.3) inset,
         0 1px 3px rgba(0,0,0,.24), 0 4px 10px rgba(0,0,0,.22), 0 8px 18px -6px rgba(0,0,0,.35); }
   }
@@ -32197,7 +32228,11 @@
      matte black pill they were drawn as - see .friend-send. Excluded inside
      :where(), so the rule keeps the specificity every override of it was
      written against: two more :not()s out-ranked the start sheet's glass X.) */
-  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):where(:not(.friend-send):not(.friend-act)),
+  /* (327z15: nor the Virtual Room pill's button while it is unlit or
+     lighting - this !important fill beat both its grey "not yet" and the
+     grey its lighting beat holds, so it was white from the first frame and
+     the fill growing from the centre was never seen; lit, it is this white) */
+  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):where(:not(.friend-send):not(.friend-act):not(.vroom-setup-go.is-inert):not(.vroom-setup-go.is-lighting):not(.vroom-readyup-btn:disabled):not(.vroom-readyup-btn.is-waiting):not(.vroom-readyup-btn.is-lighting)),
   [data-theme="dark"][data-layout="modern"] .chip.on{
     /* THE OTHER BUTTONS' RECIPE, IN WHITE (build 327 round 10): "the white
        button does not look like the other 3d buttons". Quit and Save and
@@ -111743,11 +111778,21 @@ function vroomBarInfo(){
 function vroomBarLight(btn, lit){
   if(!btn) return;
   const was = !btn.classList.contains("is-inert") && btn._barPainted;
-  btn.classList.toggle("is-inert", !lit);
   if(lit && btn._barPainted && !was && !(theme && theme.reduceMotion)){
-    btn.classList.remove("is-lighting"); void btn.offsetWidth; btn.classList.add("is-lighting");
+    /* ONE STYLE CHANGE, NOT TWO (327z15): the grey came off and a forced
+       layout followed before the beat was added, so the colour, shadow and
+       fill each started their own transition from grey - and a transition
+       outranks the animation that holds the grey, so the words went dark
+       at once and the fill lagged in after. Restart the beat, then light
+       it and start it in the same change; .is-lighting runs no transitions. */
+    btn.classList.remove("is-lighting"); void btn.offsetWidth;
+    btn.classList.add("is-lighting");
+    btn.classList.remove("is-inert");
     clearTimeout(btn._lightT); btn._lightT = setTimeout(() => btn.classList.remove("is-lighting"), 760);
-  } else if(!lit){ clearTimeout(btn._lightT); btn.classList.remove("is-lighting"); }
+  } else {
+    btn.classList.toggle("is-inert", !lit);
+    if(!lit){ clearTimeout(btn._lightT); btn.classList.remove("is-lighting"); }
+  }
   btn._barPainted = true;
 }
 /* A room participant as the person card reads a leaderboard row: the
@@ -123616,10 +123661,105 @@ function buildCalendarPane(panel){
   /* The course goes UNDER the month: the month is the heart of the tab
      ("I like the current calendar"), so the countdowns follow it rather
      than pushing it further down. */
-  panel.appendChild(buildBigExamsCard());
-  panel.appendChild(buildCourseCard());
+  /* ONE CARD YOU SWIPE THROUGH (327z15): "there's information about test,
+     finals, and counting down graduation and a calendar all on one page
+     ... I like how the top box is today, the next test under it and then
+     the calendar. The boxes under the calendar with the final days and
+     days till graduation .. is there a way to make that better? What if
+     one of the boxes was swipeable and if you swipe through the box it
+     gave information? And at the bottom of the box there were dots
+     representing multiple pages?" Today, Next test and the month stay as
+     they are; under the month, the two boxes are one card of pages -
+     graduation first, then each final exam - swiped sideways, with a dot
+     per page. buildBigExamsCard / buildCourseCard stay, unused, for a
+     revert. */
+  panel.appendChild(buildCountdownCard());
   renderGrid();
   renderDayCard();
+
+  function buildCountdownCard(){
+    const card = document.createElement("section");
+    card.className = "points-progress-sect cal-card cal-count-card";
+    const head = cardHead("Countdowns", "1");
+    card.appendChild(head);
+    const aside = head.querySelector(".cal-card-aside");
+    const track = document.createElement("div");
+    track.className = "cal-count-track";
+    track.setAttribute("aria-roledescription", "carousel");
+    const pages = [];
+    /* graduation: the course ring and the class days left */
+    {
+      const left = classDaysRemaining(), total = classDaysTotal();
+      const done = Math.max(0, Math.min(total, total - left));
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const pg = document.createElement("div");
+      pg.className = "cal-count-page is-course";
+      const k = document.createElement("p"); k.className = "cal-count-kick"; k.textContent = "Graduation";
+      const hero = document.createElement("div");
+      hero.className = "stx-hero cal-course-hero";
+      const ring = buildScoreRing(pct, "stx-ring cal-course-ring");
+      ring.style.setProperty("--tone", "#6FC2FF");
+      const ht = document.createElement("div"); ht.className = "stx-hero-text";
+      const big = document.createElement("p"); big.className = "stx-hero-big";
+      big.textContent = left > 0 ? left + (left === 1 ? " class day left" : " class days left") : "Every class day done";
+      const sub = document.createElement("p"); sub.className = "stx-hero-sub"; sub.textContent = formatCalendarDate(GRADUATION_DATE);
+      ht.append(big, sub); hero.append(ring, ht);
+      pg.append(k, hero);
+      pages.push(pg);
+    }
+    /* each final exam, PT finals as one (the rows buildBigExamsCard made) */
+    const rows = CALENDAR_DATA.filter(isBigExamDay).map(e => ({ date: e.date, end: e.date, name: testNameOf(e) }));
+    CALENDAR_DATA.filter(isPtFinalDay).forEach(e => {
+      const last = rows.find(r => r.pt && calendarDaysBetween(r.end, e.date) <= 3);
+      if(last) last.end = e.date; else rows.push({ date: e.date, end: e.date, name: "PT finals", pt: true });
+    });
+    rows.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    rows.forEach((e, i) => {
+      const days = calendarDaysBetween(todayStr, e.date);
+      const on = todayStr >= e.date && todayStr <= e.end, done = todayStr > e.end;
+      const pg = document.createElement("button");
+      pg.type = "button";
+      pg.className = "cal-count-page cal-big-row is-exam" + (done ? " is-done" : on ? " is-today" : "");
+      pg.dataset.date = e.date;
+      const k = document.createElement("p"); k.className = "cal-count-kick"; k.textContent = "Final exam " + (i + 1) + " of " + rows.length;
+      const body = document.createElement("span"); body.className = "cal-count-exam";
+      const ct = document.createElement("span"); ct.className = "cal-count-num";
+      if(!on && !done){
+        const n = document.createElement("b"); n.textContent = String(days);
+        const u = document.createElement("span"); u.textContent = days === 1 ? "day" : "days";
+        ct.append(n, u);
+      } else { const n = document.createElement("b"); n.className = "is-word"; n.textContent = done ? "Done" : "Today"; ct.appendChild(n); }
+      const tx = document.createElement("span"); tx.className = "cal-big-text";
+      const nm = document.createElement("span"); nm.className = "cal-big-name"; nm.textContent = e.name;
+      const wh = document.createElement("span"); wh.className = "cal-big-when";
+      wh.textContent = formatCalendarDate(e.date) + (e.end !== e.date ? " \u2013 " + formatCalendarDate(e.end) : "");
+      tx.append(nm, wh);
+      body.append(ct, tx);
+      pg.append(k, body);
+      pg.setAttribute("aria-label", e.name + ", " + formatDayHead(e.date) + ", " + (on ? "today" : done ? "done" : days + " days to go"));
+      pg.addEventListener("click", () => pickDay(e.date, true));
+      pages.push(pg);
+    });
+    pages.forEach(p => track.appendChild(p));
+    card.appendChild(track);
+    const dots = document.createElement("div");
+    dots.className = "cal-count-dots"; dots.setAttribute("aria-hidden", "true");
+    pages.forEach(() => dots.appendChild(document.createElement("i")));
+    card.appendChild(dots);
+    let at = -1;
+    const paint = () => {
+      const w = track.clientWidth || 1;
+      const i = Math.max(0, Math.min(pages.length - 1, Math.round(track.scrollLeft / w)));
+      if(i === at) return;
+      at = i;
+      [...dots.children].forEach((d, k) => d.classList.toggle("is-on", k === i));
+      aside.textContent = (i + 1) + " of " + pages.length;
+    };
+    let raf = 0;
+    track.addEventListener("scroll", () => { if(!raf) raf = requestAnimationFrame(() => { raf = 0; paint(); }); }, { passive: true });
+    paint();
+    return card;
+  }
 }
 
 /* The dedicated answer-review screen, per explicit request \u2014 reuses

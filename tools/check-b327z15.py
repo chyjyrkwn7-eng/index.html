@@ -58,6 +58,26 @@ Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
      as has parts that turn; on Home a found flare has a turning part as
      well as its breath and flicker, and one not yet found has motion of
      its own.
+
+  Round 5 (one section per report):
+  P. Profile: the level/XP block opens nothing (a tap on it or on the badge
+     count stays on Profile); the person card's Progress tiles are under it;
+     the challenge rows wear the tiles' surface; the ladder button is not
+     "See every rank".
+  Q. Challenge cards: the count is centred in its ring (within 2px); a met
+     level challenge still shows its How; a rank flare's card draws the
+     flare round (its art is as wide as it is tall).
+  R. Badges: the blurb does not tell you to clean; a tip sits on a dull
+     badge only when one is dull.
+  S. A rank's card: it opens on the tap (no wait), its big emblem moves, a
+     locked one is darkened without a filter, the bars fill (a transition),
+     and a locked rank's flare chip is unlit.
+  T. Leaderboard: the hundo count is the same colour as This Week's; Find me
+     is a dark button.
+  U. Match settings: picking a unit, the button's words stay unlit while its
+     fill is still grey (no word lights before the fill).
+  V. Calendar: the finals and graduation are one card of pages with a dot per
+     page, and a swipe moves it on a page.
 """
 import importlib.util
 import itertools
@@ -73,7 +93,7 @@ cb = z5b.cb
 check = cb.check
 from playwright.sync_api import sync_playwright
 
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNO")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUV")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -370,10 +390,187 @@ def section_o(br):
     ctx.close()
 
 
+def section_p(br):
+    print("\nP. Profile: read, not pressed; the Progress tiles")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { showProfile('profile'); await new Promise(r => setTimeout(r, 900));
+      document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove());
+      const st = document.querySelector('#stage .pf-standing');
+      const was = !!document.querySelector('#stage .screen-profile');
+      st && st.click(); await new Promise(r => setTimeout(r, 500));
+      const after1 = !!document.querySelector('#stage .screen-profile');
+      const bc = document.querySelector('#stage .pf-badgecount, #stage .pf-standing .pf-xpnums');
+      bc && bc.click(); await new Promise(r => setTimeout(r, 500));
+      const after2 = !!document.querySelector('#stage .screen-profile');
+      const cells = document.querySelectorAll('#stage .profile-hero .person-card-cell').length;
+      const cell = document.querySelector('#stage .profile-hero .person-card-cell'), row = document.querySelector('#stage .pf-goal .pf-task');
+      const bg = e => e ? getComputedStyle(e).backgroundColor + '|' + getComputedStyle(e).borderTopLeftRadius : null;
+      const foot = (document.querySelector('#stage .pf-goal-foot') || {}).textContent || '';
+      return { was, after1, after2, isButton: st ? st.tagName === 'BUTTON' : null, cells, cellBg: bg(cell), rowBg: bg(row), foot }; }""")
+    check("%s: P. the level block is not a button and a tap on it stays on Profile" % label, r["was"] and r["after1"] and r["isButton"] is False, r)
+    check("%s: P. a tap on its numbers stays on Profile" % label, r["after2"], r)
+    check("%s: P. four Progress tiles under it" % label, r["cells"] == 4, r)
+    check("%s: P. the challenge rows wear the tiles' surface" % label, r["rowBg"] is not None and r["rowBg"] == r["cellBg"], r)
+    check("%s: P. the ladder button is renamed (%s)" % (label, r["foot"].strip()), r["foot"].strip() and r["foot"].strip() != "See every rank", r)
+    ctx.close()
+
+
+def section_q(br):
+    print("\nQ. challenge cards and the flare card")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { const out = {};
+      const open = async o => { document.querySelectorAll('.invite-overlay').forEach(n => n.remove()); showUnlockDetail(o); await new Promise(r => setTimeout(r, 700)); };
+      await open(rankChallengeDetail({ kind: 'badges', label: 'Earn 5 badges', now: 5, need: 5, met: true }, '#E3C77A', 'Gold'));
+      const ring = document.querySelector('.unlock-card-art .unlock-card-ring'), b = document.querySelector('.unlock-card-chnum b');
+      if(ring && b){ const R = ring.getBoundingClientRect(), B = b.getBoundingClientRect(); out.dy = Math.abs((R.top + R.height / 2) - (B.top + B.height / 2)); out.dx = Math.abs((R.left + R.width / 2) - (B.left + B.width / 2)); }
+      await open(rankChallengeDetail({ kind: 'level', label: 'Reach Level 21', now: 21, need: 21, met: true }, '#6FC2FF', 'Gold'));
+      const d = document.querySelector('.unlock-card .unlock-card-desc');
+      out.levelHow = d ? { shown: getComputedStyle(d).display !== 'none' && d.getBoundingClientRect().height > 20, tray: getComputedStyle(d).backgroundColor, text: d.textContent } : null;
+      await open(rankFlareDetail('veteran'));
+      const a = document.querySelector('.unlock-card-rankflare .unlock-card-art > *');
+      if(a){ const A = a.getBoundingClientRect(); out.flare = [Math.round(A.width), Math.round(A.height)]; }
+      return out; }""")
+    check("%s: Q. the count is centred in its ring (%.1f, %.1f px off)" % (label, r.get("dy", 99), r.get("dx", 99)), r.get("dy", 99) <= 2 and r.get("dx", 99) <= 2, r)
+    lh = r.get("levelHow") or {}
+    check("%s: Q. a met level challenge still shows its How, in a tray" % label, lh.get("shown") and lh.get("tray") not in (None, "rgba(0, 0, 0, 0)"), lh)
+    f = r.get("flare") or [0, 1]
+    check("%s: Q. the flare card's flare is round (%s)" % (label, f), f[0] > 40 and abs(f[0] - f[1]) <= 2, r)
+    ctx.close()
+
+
+def section_r(br):
+    print("\nR. Badges: a tip on a dull badge, only then")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { const units = topicsIn(QUESTIONS); window.unitBadgeEarned = u => units.indexOf(u) < 4;
+      const clean = () => { store.badgeCleanedAt = {}; units.forEach(u => store.badgeCleanedAt[u] = Date.now() - 1000); };
+      clean(); showRanksScreen('badges'); await new Promise(r => setTimeout(r, 900));
+      const blurb = (document.querySelector('#stage .badges-blurb') || {}).textContent || '';
+      const tipClean = document.querySelectorAll('#stage .badge-clean-tip').length;
+      clean(); store.badgeCleanedAt[units[1]] = Date.now() - 3 * BADGE_DIRT_WEEK_MS - 1000;
+      showRanksScreen('badges'); await new Promise(r => setTimeout(r, 900));
+      const tips = [...document.querySelectorAll('#stage .badge-clean-tip')];
+      return { blurb, tipClean, tipDirty: tips.length, onDirty: tips.length ? !!tips[0].closest('.badge-tile[data-dirt]') : null }; }""")
+    check("R. the blurb does not tell you to clean (%r)" % r["blurb"][:60], not any(w in r["blurb"].lower() for w in ("rub", "clean")), r)
+    check("R. no tip while every badge shines", r["tipClean"] == 0, r)
+    check("R. one tip, on the dull badge, once one is dull", r["tipDirty"] == 1 and r["onDirty"], r)
+    ctx.close()
+
+
+def section_s(br):
+    print("\nS. a rank's card")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { showRanksScreen('ranks'); await new Promise(r => setTimeout(r, 1500));
+      document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove());
+      const held = rankOf(store), hi = held ? TIER_ORDER_FULL.indexOf(held) : -1;
+      const lockedKey = TIER_ORDER_FULL[Math.min(TIER_ORDER_FULL.length - 1, hi + 2)];
+      const node = [...document.querySelectorAll('#stage .rankmap-node')][TIER_ORDER_FULL.indexOf(lockedKey)];
+      const t0 = performance.now(); node.click();
+      await new Promise(r => setTimeout(r, 40));
+      const fast = !!document.querySelector('.ranklore-card');
+      await new Promise(r => setTimeout(r, 900));
+      const svg = document.querySelector('.ranklore-art svg');
+      const running = svg ? svg.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : 0;
+      const card = document.querySelector('.ranklore-card');
+      const fill = document.querySelector('.ranklore-reqfill');
+      const chip = document.querySelector('.ranklore-card .rankmap-giftbubble .flare-solo');
+      return { fast, running, locked: card && card.classList.contains('is-locked'), filter: svg ? getComputedStyle(svg).filter : null,
+               fillDur: fill ? parseFloat(getComputedStyle(fill).transitionDuration) : 0, chipLit: chip ? chip.classList.contains('cosmic-badge-lit') : null }; }""")
+    check("%s: S. the card is up 40ms after the tap" % label, r["fast"], r)
+    check("%s: S. its big emblem moves (%d)" % (label, r["running"]), r["running"] >= 1, r)
+    check("%s: S. a locked rank's emblem is darkened without a filter" % label, r["locked"] and r["filter"] == "none", r)
+    check("%s: S. its bars fill (a transition)" % label, r["fillDur"] >= .3, r)
+    check("%s: S. a locked rank's flare chip is unlit" % label, r["chipLit"] is False, r)
+    ctx.close()
+
+
+def section_t(br):
+    print("\nT. Leaderboard: hundos white, Find me dark")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { showRankings(); await new Promise(r => setTimeout(r, 1200));
+      const go = async t => { const b = [...document.querySelectorAll('#stage button, #stage [role=tab]')].find(x => new RegExp(t, 'i').test(x.textContent)); b && b.click(); await new Promise(r => setTimeout(r, 900)); };
+      await go('week'); const wk = document.querySelector('#stage .rank-row:not(.rank-row-head) .rank-col-xp');
+      const wc = wk ? getComputedStyle(wk).color : null;
+      await go('hundo'); const hd = document.querySelector('#stage .rank-row:not(.rank-row-head) .rank-col-hundo');
+      const hc = hd ? getComputedStyle(hd).color : null;
+      const me = document.querySelector('#stage .rank-me-btn');
+      const bg = me ? getComputedStyle(me).backgroundColor : null;
+      return { wc, hc, bg }; }""")
+    check("%s: T. the hundo count is This Week's colour (%s / %s)" % (label, r["hc"], r["wc"]), r["hc"] and r["hc"] == r["wc"], r)
+    import re as _re
+    m = _re.findall(r"[\d.]+", r["bg"] or "")
+    lum = sum(float(x) for x in m[:3]) / 3 if len(m) >= 3 else 255
+    alpha = float(m[3]) if len(m) >= 4 else 1
+    check("%s: T. Find me is a dark, solid button (%s)" % (label, r["bg"]), lum < 30 and alpha > .9, r)
+    ctx.close()
+
+
+def section_u(br):
+    print("\nU. Match settings: the words wait for the fill")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { showVirtualRoomSetup(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(1500)
+    c = pg.evaluate("() => { const p = document.querySelector('#stage .pick'); p.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = p.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }")
+    pg.evaluate("""() => { window.__s = []; const b = document.querySelector('#stage .vroom-setup-go'); let t0 = 0;
+      const f = () => { const cs = getComputedStyle(b); window.__s.push([performance.now() - t0, cs.color, cs.backgroundColor]); if(performance.now() - t0 < 700) requestAnimationFrame(f); };
+      window.__go = () => { t0 = performance.now(); requestAnimationFrame(f); }; }""")
+    pg.evaluate("() => window.__go()")
+    pg.mouse.click(c["x"], c["y"])
+    pg.wait_for_timeout(900)
+    s = pg.evaluate("() => window.__s")
+    import re as _re
+    def lum(v):
+        m = _re.findall(r"[\d.]+", v)
+        a = float(m[3]) if len(m) >= 4 else 1
+        return sum(float(x) for x in m[:3]) / 3 * a
+    first = s[1] if len(s) > 1 else None
+    bad = [x for x in s if lum(x[2]) < 120 and lum(x[1]) < 90]   # dark words on a fill that is not lit yet
+    lit_end = s[-1] if s else None
+    check("%s: U. no frame has dark words on the unlit fill (%d of %d)" % (label, len(bad), len(s)), not bad and len(s) > 10, (first, bad[:3]))
+    check("%s: U. it ends lit: the light fill under dark words" % label, lit_end and lum(lit_end[2]) > 180 and lum(lit_end[1]) < 90, lit_end)
+    check("%s: U. the unlit fill is seen at all (it was white from the first frame)" % label, any(lum(x[2]) < 120 for x in s), s[:3])
+    ctx.close()
+
+
+def section_v(br):
+    print("\nV. Calendar: one card of pages")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { showCalendarTab(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(1300)
+    r = pg.evaluate("""() => { const tab = document.querySelector('#stage .screen-calendar-tab');
+      const cards = [...tab.querySelectorAll(':scope > .cal-card, :scope > section')].filter(c => c.offsetHeight > 0);
+      const track = tab.querySelector('.cal-count-track'), dots = tab.querySelectorAll('.cal-count-dots > i');
+      const pages = track ? [...track.children] : [];
+      if(track) track.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const R = track ? track.getBoundingClientRect() : null;
+      return { pages: pages.length, dots: dots.length, separateBig: !!tab.querySelector(':scope > .cal-big-card:not([hidden])'), separateCourse: !!tab.querySelector(':scope > .cal-course-card:not([hidden])'),
+               box: R ? { y: R.top + R.height / 2 } : null, onDot: [...dots].findIndex(d => d.classList.contains('is-on')) }; }""")
+    check("%s: V. the finals and graduation are pages of one card (%d pages, %d dots)" % (label, r["pages"], r["dots"]),
+          r["pages"] >= 2 and r["dots"] == r["pages"] and not r["separateBig"] and not r["separateCourse"], r)
+    if r["box"]:
+        cdp = ctx.new_cdp_session(pg)
+        y = r["box"]["y"]
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": 360, "y": y}]})
+        for i in range(1, 11):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": 360 - i * 26, "y": y}]})
+            pg.wait_for_timeout(16)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(900)
+        on = pg.evaluate("() => [...document.querySelectorAll('#stage .cal-count-dots > i')].findIndex(d => d.classList.contains('is-on'))")
+        check("%s: V. a swipe moves it one page (dot %d -> %d)" % (label, r["onDot"], on), r["onDot"] == 0 and on == 1, (r["onDot"], on))
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v)):
             if k in ONLY:
                 try:
                     fn(br)
