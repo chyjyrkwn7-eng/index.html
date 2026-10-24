@@ -27166,3 +27166,11 @@ Madison's list after 327z11, each fixed and gated in `tools/check-b327z12.py`
   (`friendsBackFresh`). Copy that said "Profile › Friends" now says "the chat
   › Friends". Gate Q. Old gates moved (MOVED IN 327z12 round 2): b319h_layout
   Friends block, b321f/b323 friends box, b324n2 Nova count.
+
+## Build 327z13 (2026-10-24) - no tick on the answered daily button
+
+"The daily question, when it's complete don't make it a checkmark." The tick
+(`.dq-mark-done`) is gone; answered, the button keeps its drawn "?" in
+`--dq-c` on the quieter glass with the countdown arc (round 2's answered
+look otherwise unchanged). Gate check-b327z12 R now asserts the "?" and no
+tick in both states (fails on 327z12). APP_BUILD / version.json 327z13.

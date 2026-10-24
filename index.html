@@ -32575,15 +32575,12 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-theme][data-layout] .daily-question-fab{ display:grid; place-items:center; padding:0; }
   .daily-question-fab .dq-glyph{ display:grid; place-items:center; width:58%; height:auto; aspect-ratio:1; line-height:0; }
   .daily-question-fab .dq-mark{ grid-area:1/1; width:100%; height:100%; display:block; overflow:visible; }
-  .daily-question-fab .dq-mark-done{ display:none; }
-  .daily-question-fab.is-done .dq-mark-q{ display:none; }
-  .daily-question-fab.is-done .dq-mark-done{ display:block; }
   /* ---- ANSWERED: DONE, IN THE RANK'S OWN COLOUR, NOT GREYED OUT (round 2) ----
      "How could the non ready version look better? I like the ready
      version." Answered, it was a dark disc with a dimmed "?" - it read as
      switched off. Now it is the ready orb's quieter sibling: the same
-     glass with only a breath of the rank colour in it, a tick in that
-     colour, and the time to the next question as an arc of it round the
+     glass with only a breath of the rank colour in it, the "?" in that
+     colour (a tick until 327z13), and the time to the next question as an arc of it round the
      rim on a faint track of the same hue. */
   html[data-theme][data-layout] .daily-question-fab.is-done{
     background:
@@ -92268,11 +92265,10 @@ function showHome(){
      the system font sits where that font's line box puts it - high, and
      by a different amount on an iPhone than anywhere it can be measured
      here. It is a drawn mark now, its ink centred in a 24 box, so it is
-     centred in the button on every device. Answered, the button wears a
-     tick instead (.is-done shows .dq-mark-done): done, not disabled. The
-     5pm reset takes .is-done off, and the "?" is back with no JS. */
-  dailyGlyph.innerHTML = '<svg class="dq-mark dq-mark-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.9 8.6a3.1 3.1 0 1 1 4.4 2.8c-.8.36-1.3 1.1-1.3 1.95v.85" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17.5" r="1.55" fill="currentColor"/></svg>'
-    + '<svg class="dq-mark dq-mark-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 11.9l3.6 3.6 7.2-7.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+     centred in the button on every device. NO TICK (build 327z13): "when
+     it's complete don't make it a checkmark" - answered, it keeps its "?",
+     in the rank's colour on the quieter glass (see .is-done). */
+  dailyGlyph.innerHTML = '<svg class="dq-mark dq-mark-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.9 8.6a3.1 3.1 0 1 1 4.4 2.8c-.8.36-1.3 1.1-1.3 1.95v.85" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17.5" r="1.55" fill="currentColor"/></svg>';
   dailyBtn.setAttribute("aria-label", "Daily question");
   dailyBtn.appendChild(dailyGlyph);
   /* the ring: whole while the question waits, the time to the next one
@@ -98303,7 +98299,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-24-327z12";
+const APP_BUILD = "2026-10-24-327z13";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
