@@ -32,6 +32,17 @@ Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
      held down keeps the colour it had.
   K. The version history: no item title is announced in two versions (the
      per-version fixes line aside), and no exclamation marks.
+
+  Round 3:
+  L. Friends from the chat: the chat's button reads differently from "Add"
+     (it manages a list that is right there); the Friends screen it opens
+     goes back to the chat - its back link is not the screen underneath's
+     name, and pressing it leaves the chat open on its Friends tab over
+     that screen.
+  M. Home's captions: a lit rank flare is one line (no "when you reached");
+     a locked one has no numbers in it (no levels, badges or counts to go);
+     the planet's says no more than two sentences and no "to go"; the words
+     are at least 16px on a phone.
 """
 import importlib.util
 import itertools
@@ -47,7 +58,7 @@ cb = z5b.cb
 check = cb.check
 from playwright.sync_api import sync_playwright
 
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJK")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLM")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -213,10 +224,58 @@ def section_k(br):
     ctx.close()
 
 
+def section_l(br):
+    print("\nL. Friends from the chat goes back to the chat")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { chatDockTab = 'friends'; openChatDock(); }")
+    pg.wait_for_timeout(900)
+    btn = pg.evaluate("() => document.querySelector('.chatdock-friendsbar-btn')?.textContent || null")
+    check("%s: L. the chat's Friends button is not 'Add friends' (%s)" % (label, btn), btn and not btn.lower().startswith("add"), btn)
+    pg.evaluate("() => document.querySelector('.chatdock-friendsbar-btn').click()")
+    pg.wait_for_timeout(1000)
+    back = pg.evaluate("() => document.querySelector('#stage .screen-friends .back-link')?.textContent || null")
+    check("%s: L. the Friends screen's back link is not the Home screen's name (%s)" % (label, back), back and back.strip().lower() != "home", back)
+    pg.evaluate("() => document.querySelector('#stage .screen-friends .back-link').click()")
+    pg.wait_for_timeout(1200)
+    st = pg.evaluate("() => ({ open: chatDockOpen, tab: chatDockTab, home: !!document.querySelector('#stage .screen-home-actual') })")
+    check("%s: L. back: Home underneath, the chat open on Friends" % label, st["open"] and st["tab"] == "friends" and st["home"], st)
+    ctx.close()
+
+
+def section_m(br):
+    print("\nM. Home's captions: short, plain, bigger")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""() => { const out = {};
+      // a held rank, whatever the account: every rank lit, for this read only
+      const orig = window.tierColorUnlocked; let held;
+      try{ window.tierColorUnlocked = () => true; held = homeTapCopyRank(TIER_ORDER_FULL[0]); }catch(e){}
+      window.tierColorUnlocked = orig;
+      out.heldParts = held && held.kind === 'held' ? held.parts.filter(Boolean).length : null;
+      out.heldText = held ? held.parts.join(' ') : '';
+      const lockedTier = TIER_ORDER_FULL.slice().reverse().find(t => !tierColorUnlocked(t));
+      const locked = lockedTier ? homeTapCopyRank(lockedTier) : null;
+      out.locked = locked ? locked.parts.join(' ') : null;
+      const planet = homeTapCopyPlanet();
+      out.planet = planet.parts.join(' ');
+      const p = document.querySelector('.panel.home.screen-home-actual');
+      homeCaptionShow(p, planet, 'm');
+      return new Promise(res => setTimeout(() => { const tx = document.querySelector('.hc-item .hc-text');
+        out.px = tx ? parseFloat(getComputedStyle(tx).fontSize) : 0; res(out); }, 500)); }""")
+    if True:
+        check("%s: M. a lit flare says only what it is (%r)" % (label, r["heldText"]), r["heldParts"] == 1 and "reached" not in r["heldText"], r)
+    check("%s: M. a locked flare has no numbers (%r)" % (label, r["locked"]), r["locked"] is not None and not any(ch.isdigit() for ch in r["locked"]), r)
+    sentences = [x for x in r["planet"].replace("!", ".").split(".") if x.strip()]
+    check("%s: M. the planet's is two sentences at most, no 'to go' (%r)" % (label, r["planet"]), len(sentences) <= 2 and "to go" not in r["planet"], r)
+    check("%s: M. caption words are 16px or more (%.1f)" % (label, r["px"]), r["px"] >= 16, r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m)):
             if k in ONLY:
                 try:
                     fn(br)

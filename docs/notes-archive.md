@@ -27371,3 +27371,30 @@ Gate: `tools/check-b327z15.py` F (every ordered pair and triple from Home at
 - Gate: check-b327z15 H (splash with no script), I (daily = chat glass),
   J (`:active` forced: same colour), K (no title in two versions, no "!").
   All fail on 327z14 except where noted; all pass here.
+
+#### 327z15, round 3 - Friends from the chat, Home's captions
+
+Madison: *"the add friends button ... has the list of your friends. So instead
+of add friends should it say manage friends? And then when you are in there
+it says back to home but shouldn't it say back to chat ... when you go back
+it all goes away"*; *"When clicking the flares on Home Screen, it says 'lit
+when reached rank' remove that part ... make the wording of stuff a little
+bigger"*; *"The locked flares (the ranked ones) should have a similar vague
+wording like the secret ones ... The description that the large planet
+gives you is also confusing."*
+
+- The chat's Friends bar button is **Manage friends** (or the requests count).
+- `openFriendsFromChat()` wraps the screen underneath's back target: the
+  Friends screen's back link reads **Chat** and puts that screen back with
+  the chat open on its Friends tab (`chatDockTab = "friends"`, any open
+  friend chat closed). The tab bar still lights the tab underneath.
+- The chat's Friends tab: the sentence above the list (which repeated the
+  button) is a short footer under the list (`.chatdock-note.is-foot`).
+- Captions: a lit rank flare is only its line (`HOME_FLARE_MEANING`); a
+  locked one is "Not lit yet. It lights at <Rank> rank." (no level, badge or
+  shortfall numbers - the Rank screen has those); a secret one not found is
+  "Not found yet." (the hunted one keeps its rumour); the planet is "N of 7
+  rank flares lit." and the secret count (or "Every flare is lit, the secret
+  ones too."). `.hc-text` 1rem (was .86), `.hc-name` .8rem (was .7); the
+  tablet and smallest-screen steps moved up to match.
+- Gate: check-b327z15 L and M.

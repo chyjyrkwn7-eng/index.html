@@ -15346,12 +15346,14 @@
   .hc-item.is-after{ transition-delay:.09s; }
   .hc-item.is-out{ opacity:0; transform:translateY(-3px); transition:opacity .12s ease, transform .16s ease; transition-delay:0s; }
   .hc-name{
-    display:block; font-family:var(--sans); font-size:.7rem; font-weight:700; letter-spacing:.13em;
+    display:block; font-family:var(--sans); font-size:.8rem; font-weight:700; letter-spacing:.13em;
     text-transform:uppercase; line-height:1.3; color:var(--hc, #FFFFFF); margin:0 0 .22rem;
   }
   .hc-state{ color:rgba(236,240,245,.5); font-weight:600; }
   .hc-state::before{ content:"\00B7"; margin:0 .5em; color:rgba(236,240,245,.35); }
-  .hc-text{ display:block; font-size:.86rem; line-height:1.34; color:rgba(236,240,245,.86); text-wrap:balance; }
+  /* a step bigger (327z15): "make the wording of stuff a little bigger, it's
+     slightly too small and hard to see" */
+  .hc-text{ display:block; font-size:1rem; line-height:1.34; color:rgba(236,240,245,.92); text-wrap:balance; }
   .hc-s{ display:inline-block; }
   .hc-item.is-inline .hc-name{ display:inline; margin:0 .6em 0 0; }
   .hc-item.is-inline .hc-text{ display:inline; }
@@ -15372,14 +15374,14 @@
   .panel.home.screen-home-actual.hc-over-title > .hometitle-wrap{ opacity:0; }
   @media (min-width:40rem) and (min-height:60rem),
          (min-width:64rem) and (min-height:46rem){
-    .hc-name{ font-size:.8rem; }
-    .hc-text{ font-size:1.02rem; }
+    .hc-name{ font-size:.9rem; }
+    .hc-text{ font-size:1.14rem; }
   }
   /* the smallest screens (a 4-inch phone, an SE in a Safari tab, any phone
      on its side) take a step down, so the longest answer still fits whole */
   @media (max-width:21rem), (max-height:36rem){
-    .hc-name{ font-size:.64rem; margin-bottom:.18rem; }
-    .hc-text{ font-size:.79rem; line-height:1.32; }
+    .hc-name{ font-size:.72rem; margin-bottom:.18rem; }
+    .hc-text{ font-size:.9rem; line-height:1.32; }
   }
   /* TAPPING THE PLANET (planetTapFx): overlays over the sphere (centre
      180,150 and radius 52 in the 0 -12 360 342 viewBox), a halo off its
@@ -33099,6 +33101,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     flex:none; width:auto; margin:0; min-height:44px; padding:0 1.05rem; border-radius:999px;
     font-size:.9rem; font-weight:800;
   }
+  .chatdock-note.is-foot{ margin:.7rem 0 0; text-align:center; font-size:.8rem; opacity:.75; }
   html[data-theme][data-layout] .chatdock-friendsbar-btn.has-req{ background:var(--new-dot, #FFD43B) !important; color:#1A1400 !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -90601,19 +90604,22 @@ function renderFriendChatList(){
     const reqN = incomingFriendRequests().length;
     const open = document.createElement("button");
     open.type = "button"; open.className = "next chatdock-friendsbar-btn" + (reqN ? " has-req" : "");
-    open.textContent = reqN ? (reqN === 1 ? "1 request" : reqN + " requests") : "Add friends";
-    open.setAttribute("aria-label", reqN ? "Friends - " + open.textContent + " waiting" : "Add or manage friends");
+    /* "Manage friends", not "Add friends" (327z15): the list is right
+       here and the screen it opens is your code, adding AND your friends */
+    open.textContent = reqN ? (reqN === 1 ? "1 request" : reqN + " requests") : "Manage friends";
+    open.setAttribute("aria-label", reqN ? "Friends - " + open.textContent + " waiting" : "Manage friends");
     open.addEventListener("click", openFriendsFromChat);
     bar.append(info, open);
     chatTabBody.appendChild(bar);
   }
+  /* THE LIST FIRST, ONE SHORT LINE UNDER IT (327z15): the line above the
+     list said again what the Manage friends button says. It is under the
+     list now, shorter, and only what the bar does not already say. */
   const intro = document.createElement("p");
-  intro.className = "chatdock-note";
+  intro.className = "chatdock-note is-foot";
   intro.textContent = pubs.length
-    ? "A chat with each of your friends. Messages clear after a day."
-    : nova ? "Add classmates with Add friends and they\u2019ll appear here beside Nova, each with their own chat."
-    : "Your friends appear here, each with their own chat. Tap Add friends to swap codes with a classmate.";
-  chatTabBody.appendChild(intro);
+    ? "Messages clear after a day."
+    : "Swap codes with a classmate under Manage friends to chat with them here.";
   if(!pubs.length){
     if(nova){
       const only = document.createElement("div");
@@ -90622,6 +90628,7 @@ function renderFriendChatList(){
       chatTabBody.appendChild(only);
       paintChatRow(NOVA_CODE);
     }
+    chatTabBody.appendChild(intro);
     return;
   }
   const seen = chatSeenMap();
@@ -90677,6 +90684,7 @@ function renderFriendChatList(){
   });
   if(nova && novaAt >= people.length) wrap.appendChild(buildNovaChatRow());
   chatTabBody.appendChild(wrap);
+  chatTabBody.appendChild(intro);
   if(nova) paintChatRow(NOVA_CODE);
   people.forEach(e => paintChatRow(friendChatCode(e.pub)));
   refreshChatList();
@@ -97662,14 +97670,17 @@ function homeJoin(parts){
 function homeTapCopyRank(tier){
   const rank = RANK_DISPLAY_NAME[tier] || tier, flare = ACCENT_DISPLAY_NAME[tier] || rank;
   if(tierColorUnlocked(tier)){
+    /* SHORTER (327z15): "it says 'lit when reached rank' remove that part" */
     return { kind: "held", name: flare + " flare", state: "Lit", color: flareColorOf(tier),
-      parts: [HOME_FLARE_MEANING[tier] || "", "Lit when you reached " + rank + " rank."] };
+      parts: [HOME_FLARE_MEANING[tier] || ""] };
   }
-  const rule = TIER_UNLOCKS[tier] || {};
-  const parts = tierShortfall(rule);
-  const need = "Reach level " + rule.level + " and earn " + rule.badges + " " + (rule.badges === 1 ? "badge" : "badges") + " to light it.";
+  /* VAGUE, LIKE A SECRET ONE (327z15): "The locked flares, (the ranked
+     ones) it should have a similar vague wording like the secret ones.
+     It's kinda confusing with that description on what you need." No
+     levels, badges or counts here - the rank it waits on, nothing more
+     (the Rank screen has the numbers). */
   return { kind: "locked", name: flare + " flare", state: "Locked", color: flareColorOf(tier),
-    parts: parts.length ? [need, homeJoin(parts) + " to go."] : [rank + " rank is ready to reach."] };
+    parts: ["Not lit yet. It lights at " + rank + " rank."] };
 }
 /* A secret flare: found, its name and a line about it; not found, only
    that - no name, no colour - except the one you are hunting. */
@@ -97698,7 +97709,7 @@ function homeTapCopyFlare(key){
         parts: [st === "hunting" ? "They say this one has been seen in tests at your level." : "They say this one is seen in tests from level " + lvl + "."] };
     }
   }
-  return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts: ["Secret flare has not been found."] };
+  return { kind: "unfound", name: "Secret flare", state: "Not found", color: "", parts: ["Not found yet."] };
 }
 /* The planet: your flares, counted, then (tapped again) the next one to
    light. Round four: "Your flares", in the theme's own colour (--theme-c2,
@@ -97715,12 +97726,13 @@ function homeTapCopyPlanet(){
   const found = keys.filter(k => f[k]).length;
   /* no total for the secret flares (build 326): more of them come into
      view as you find them, so "of 3" was never the whole of it */
-  const parts = [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."];
-  const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
-  if(next){
-    const left = tierShortfall(TIER_UNLOCKS[next]);
-    parts.push("Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light.");
-  } else if(homeRingTier() && secretFlaresAllFound()) parts.push("Every flare is lit, the secret ones too.");
+  /* PLAINER (327z15): "The description that the large planet gives you is
+     also confusing." It ran four clauses together - a count, a count, the
+     next flare and what it still takes. Now two short sentences: how many
+     of your rank flares are lit, and how many secret ones you have found. */
+  const parts = [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit."];
+  if(homeRingTier() && secretFlaresAllFound() && lit === TIER_ORDER_FULL.length) parts.push("Every flare is lit, the secret ones too.");
+  else parts.push(found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "No secret flares found yet.");
   return { kind: "planet", name: "Your flares", state: "", color: "", parts };
 }
 
@@ -122173,6 +122185,17 @@ function openFriendsFromChat(){
     else if(s.classList.contains("screen-profile")) back = { label: "Profile", nav: "profile", go: () => showProfile("profile") };
     else if(s.dataset && s.dataset.screen === "home") back = { label: "Home", nav: "home", go: () => showHome() };
   }
+  /* BACK GOES TO THE CHAT IT CAME FROM (327z15). "when you are in there it
+     says back to home but shouldn't it say back to chat ... when you go
+     back it all goes away". Opened from the chat, Friends goes back to
+     the chat: the screen that was under it, with the chat open again on
+     its Friends tab. The tab bar still lights the tab underneath. */
+  if(back){
+    const under = back.go;
+    back = { label: "Chat", nav: back.nav, go: () => { under(); chatDockTab = "friends"; if(chatRoomCode) closeChatRoom(); openChatDock(); } };
+  } else {
+    back = { label: "Chat", nav: "home", go: () => { showHome(); chatDockTab = "friends"; if(chatRoomCode) closeChatRoom(); openChatDock(); } };
+  }
   closeChatDock();
   friendsBack = back;
   friendsBackFresh = true;
@@ -125405,7 +125428,7 @@ function showProfile(defaultTab, opts){
       /* Friends moved to the chat (build 327z12 round 2): the step points
          at the chat button, where its Friends tab now starts */
       { target: "#chatdock-btn", align: "right", vplacement: "below",
-        text: "Friends are in the chat. Its Friends tab shows who is on, with Add friends at the top for swapping codes with a classmate." },
+        text: "Friends are in the chat. Its Friends tab shows who is on, with Manage friends at the top for swapping codes with a classmate." },
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
         text: "Stats has your study time, your testing stats and your test history, all in one place." },
       /* Settings is Profile's third tab (build 323). */
