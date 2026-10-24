@@ -27204,3 +27204,51 @@ perfect, leave no stone unturned." Measured at 4x CPU with real touches:
   300ms on top of the 290ms wait; median now ~357ms tap-to-paint at 4x).
 - Not verifiable here: how the glass renders on an iPhone's GPU while the
   build runs after it lands (its landing fades are compositor animations).
+
+### Build 327z13, round 2 - Profile taps, haptics on lists, unlock cards, boards
+
+Madison's list after the glide (each in check-b327z13 V-Z, failing on 327z12):
+
+- **Calendar "registering clicking stuff when I try to scroll"** (V). 327z10's
+  wide exception (`HSW_WIDE_H`) put a native switch on every wide short
+  button - including each row of the Final exams list, five 323x58 switches
+  stacked into a wall a finger lands on, drags and lifts as a tap.
+  `hswListRow`: a wide button keeps its switch only when it stands alone; one
+  with 2+ siblings sharing its first class is a list row and gets none.
+- **Haptics on unit and mode selection** (W). Unit cards are 175px labels
+  round a hidden checkbox (labels never take a switch; that size would block
+  scrolling): `HSW_OPT` now includes `.picks > label.pick > input`, made a
+  native switch 44px over the card's tick (`--hsw-x/--hsw-y`); the
+  drag-select treats a press on it as a press on the circle. Mode cards
+  (360x166, the screen scrolls even on a Pro Max) carry a switch over their
+  head only (`.modecard > .nova-hsw` 62% x 64px). A tap elsewhere on either
+  card works but has no tick - device-only to confirm.
+- **Profile: only the pills open** (X). `.pf-goal` and `.pf-case` were whole
+  `<button>`s. Now divs: "See every rank" (`pfGoalFoot`) and the case's count
+  pill are the buttons. Each challenge row opens `rankChallengeDetail` (a new
+  `challenge` kind on the unlock card: the count in a ring of the challenge's
+  colour, "Done" when met); each unlock tile opens its own card
+  (`themeDetail`, new `rankFlareDetail`/`rankflare` kind, `characterDetail`,
+  `bannerDetail`) as Customize's hold does. Tapping your character
+  (`.profile-hero-avatar`) squashes it (`pf-boop`) and plays its special.
+- **Stats "Your units" box (Needs work / Strongest) removed** (Y), CSS too.
+- **Find me's blue arrow removed** (Y; check-b327z12 O moved).
+- **Sheriff** (Y): `CHARACTER_FEATS.novabeat.note` is one sentence now
+  ("Invite Nova from a Virtual Room lobby and finish ahead of him."); his
+  speed and each mode's win condition came off.
+- **Unlock pop-ups "all blend in"** (Y): on a card for something not yet
+  yours the requirement (`.unlock-card-desc`) is its own block - "To unlock"
+  over it, white, 1.02rem bold, in a tray - and the note stays small/grey.
+- **Astral, Celestial, Zenith veiled** like the flare banners (Y):
+  `isVeiledBanner` includes `ultimate`; tile `.is-secret` follows it.
+- **UFO 350 -> 200, Bubbles 200 -> 150** (Y). Read off the count; nothing
+  stored. check-behaviour's ladder check moved.
+- **Board characters "aren't really moving"** (Z). Measured: a fresh board
+  of 22 at 4x had 0-1 of its 10 visible characters moving after 30s - each
+  must be recorded once (seconds each on a phone; again after every
+  `CHAR_ANIM_VER` bump), and a failed recording stayed still past the 4th
+  fallback. A board row with no sheet after 450ms plays its live drawing
+  meanwhile (`.char-flip-wait`, `CHAR_FLIP_WAIT_MAX` 6 - ten live cost frames,
+  57 vs 84 a second measured) and takes its sheet when made; a failed one on
+  the board stays live. Now 6 of 10 move at 3s and the rest join as sheets
+  land; saved sheets load at once on later visits.

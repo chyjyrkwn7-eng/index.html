@@ -20,7 +20,7 @@
   O. "can [hundos] and xp be like [overall] ... the title header thing",
      then "just stuff relevant to that leaderboard tab": This Week and
      Hundos carry a header and ONE column, their own number (XP, Hundos);
-     Overall keeps its three; Find me carries an icon.
+     Overall keeps its three. (327z13: Find me carries NO icon - "remove that".)
   P. "The daily question button did not get better": waiting, the button is
      lit in the rank's colour with no ring drawn on it; answered, it is the
      plain glass with a slim arc.
@@ -152,7 +152,8 @@ def boards(br):
             icon: !!document.querySelector('#stage .rank-me-btn svg') }; }""")
         check("%s: O. %s has the header %s and every row exactly those columns (%s)" % (label, tab, r["head"], r["ncols"]),
               r["head"] == heads and r["rows"] >= 1 and all(n == len(heads) for n in r["ncols"]), r)
-    check("%s: O. Find me carries an icon" % label, r["icon"], r)
+    # MOVED IN 327z13: "not sure why the find me button has a blue arrow thing? Remove that"
+    check("%s: O. Find me is the word alone, no icon" % label, not r["icon"], r)
     ctx.close()
 
 
