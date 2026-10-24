@@ -6036,6 +6036,19 @@
     will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:var(--surface-shadow);
   }
+  /* A BLACK BUTTON BESIDE THE GLASS FIELD (327z15): "The find me button on
+     leaderboard, I don't like it. Maybe it's because it doesn't go with the
+     search bar? ... maybe the button should be a black button?" As glass it
+     read as a second field. It is the app's black button now (the
+     Customize, Close and back buttons), at the field's height, in the
+     field's own type size so the two words sit level. */
+  html[data-theme][data-layout="modern"] .iconbtn.rank-me-btn{
+    background:#0A0A0C !important; border:1px solid rgba(255,255,255,.1) !important; color:#FFFFFF !important;
+    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset, 0 4px 12px rgba(0,0,0,.4) !important;
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
+    font-size:1rem; font-weight:700; letter-spacing:0;
+  }
+  html[data-theme][data-layout="modern"] .iconbtn.rank-me-btn:active{ background:#0A0A0C !important; opacity:1; transform:scale(.96); }
   /* The top three carry their medal colour through the row's own text,
      not just the rank circle, per explicit request - name and stat line
      both. Everyone from fourth down keeps the ordinary --ink/--soft
@@ -17776,7 +17789,7 @@
        ones' grayscale filter. The bubbles still float, the orbit still
        turns, a newly reached bubble still lights up; the Rank tab, where
        the emblems are big enough to read the motion, keeps all of it. */
-    .rank-emblem-svg:not(:is(.rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rs-morph-to, .tierup-banner-icon, .rk-live) .rank-emblem-svg) .rk-a{ animation:none; }
+    .rank-emblem-svg:not(:is(.rankmap-node, .profile-rankcoin, .rankhero-art, .rankhero-nextemb, .rs-morph-to, .tierup-banner-icon, .rk-live, .ranklore-art, .pf-goal-emb) .rank-emblem-svg) .rk-a{ animation:none; }
   }
   @keyframes rk-breathe{ from{ opacity:.72; transform:scale(.93); } to{ opacity:1; transform:scale(1.05); } }
   @keyframes rk-twinkle{ from{ transform:scale(.7); opacity:.6; } to{ transform:scale(1.15); opacity:1; } }
@@ -18063,7 +18076,14 @@
   [data-reduce-motion="true"] .ranklore-art{ animation:none; }
   .ranklore-card.is-locked .ranklore-art{ border-color:rgba(255,255,255,.22); box-shadow:inset 0 0 14px rgba(0,0,0,.6);
     background:radial-gradient(circle at 50% 40%, #1A1E24, #0A0C10 75%); }
-  .ranklore-card.is-locked .ranklore-art svg{ filter:grayscale(1) brightness(.75); opacity:.6; }
+  /* DARK, NOT GREYED BY A FILTER (327z15): "When clicking on ranks you
+     haven't reached yet, the flares color isn't darkened or hidden" - and
+     the emblem moves now (it is on the list above), and a filter on a
+     moving drawing is the thing this file does not do. It is faded and a
+     shade of night lies over it: a shape you can make out, not its colour. */
+  .ranklore-card.is-locked .ranklore-art svg{ opacity:.38; }
+  .ranklore-card.is-locked .ranklore-art::after{ content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle at 50% 45%, rgba(10,12,16,.35), rgba(10,12,16,.75) 75%); }
   .ranklore-name{ margin-bottom:.35rem; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
   .ranklore-card.is-locked .ranklore-name{ color:rgba(255,255,255,.7); }
   .ranklore-state{ display:inline-block; padding:.2rem .6rem; border-radius:999px; font-size:.62rem; font-weight:800;
@@ -18087,13 +18107,29 @@
      never showed its colour at all. The "Met" beside it says met; the bar
      is the rank's, lifted the way the map's names are so Silver reads
      silver and not grey, with a little of its own light. */
-  .ranklore-reqfill{ position:absolute; inset:0; border-radius:3px;
+  /* it fills in front of you (327z15: "the bars with progress just show up") */
+  .ranklore-reqfill{ position:absolute; inset:0; border-radius:3px; transition-duration:1.1s; transition-timing-function:cubic-bezier(.25,.8,.25,1);
     background:linear-gradient(90deg, color-mix(in srgb, var(--rank-color) 88%, #000), color-mix(in srgb, var(--rank-color) 62%, #fff));
     box-shadow:0 0 8px color-mix(in srgb, var(--rank-color) 60%, transparent); }
   .ranklore-card .rankmap-giftshead{ text-align:left; margin-top:.9rem; }
   .ranklore-card .rankmap-gifts{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
-  .ranklore-card.is-locked .rankmap-dot{ filter:grayscale(1); opacity:.28; box-shadow:none; }
-  .ranklore-card.is-locked .rankmap-giftav svg{ filter:grayscale(1) brightness(.9); opacity:.55; }
+  /* THE UNLOCKS ARE ALIVE (327z15): "ensure all the little unlocks when
+     clicking a ranks info they animate". On the rank's own card each chip
+     moves - the flare floats with its light breathing, the theme's swatch
+     catches a sweep of light, the character plays its loop - and on a rank
+     not reached they are dark (the flare unlit, the swatch dimmed), still
+     moving. No filters: they move. */
+  .ranklore-card .rankmap-giftico{ position:relative; }
+  .ranklore-card .rankmap-giftbubble .flare-solo{ animation:pf-float 4.6s ease-in-out infinite; }
+  .ranklore-card .rankmap-dot, .ranklore-card .rankmap-swatch .dot{ position:relative; overflow:hidden; }
+  .ranklore-card .rankmap-dot::after, .ranklore-card .rankmap-swatch .dot::after{ content:""; position:absolute; top:-30%; bottom:-30%; left:-70%; width:50%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); transform:skewX(-18deg); animation:ranklore-sweep 3.2s ease-in-out infinite; }
+  @keyframes ranklore-sweep{ 0%,55%{ translate:0 0; } 85%,100%{ translate:420% 0; } }
+  .ranklore-card.is-locked .rankmap-dot{ opacity:.4; box-shadow:none; }
+  [data-reduce-motion="true"] .ranklore-card .rankmap-giftbubble .flare-solo,
+  [data-reduce-motion="true"] .ranklore-card .rankmap-dot::after,
+  [data-reduce-motion="true"] .ranklore-card .rankmap-swatch .dot::after{ animation:none !important; }
+  .ranklore-card.is-locked .rankmap-giftav:not(.rankmap-giftbubble) svg{ opacity:.45; }
   .ranklore-card.is-locked .rankmap-giftbanner .bnr{ filter:grayscale(1) brightness(.75); }
   .ranklore-card .person-sheet-close{ margin-top:1rem; }
   @media (max-height:46rem){
@@ -24485,7 +24521,7 @@
      and the level's bar under it - no box, so it reads as part of the
      profile rather than as a card inside it */
   .pf-standing{ position:relative; margin:.75rem 0 0; padding:.2rem 0; border-radius:.6rem; }
-  .pf-standing:active{ opacity:.82; }
+  .pf-standing{ cursor:default; }   /* read, not pressed (327z15) */
   .pf-standing{ --pf-line:rgba(255,255,255,.72); }
   .pf-idline{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:.4rem;
     font-size:.95rem; font-weight:700; line-height:1.3; color:var(--pf-line, rgba(255,255,255,.72)); text-align:center; }
@@ -24732,7 +24768,7 @@
      silver instead of a rank's colour, the box's width and padding
      rhythm, the box's .8rem gap above it with the handle standing in it,
      muted metal, no white hairlines, no shadow. The count is set exactly
-     like "See every rank" in the box above. The open case's materials
+     like "See rank ladder" in the box above. The open case's materials
      (.nova-case-*) are left alone: the cutscene and the Badges page keep
      them. Measured in check_b319h_layout: nothing on it is the brightest
      thing on the card any more. */
@@ -24775,7 +24811,7 @@
   .pf-ccase .nova-case-sideplate{ font-size:.58rem; padding:.22rem .6rem; letter-spacing:.2em; color:rgba(255,255,255,.55);
     text-shadow:none; background:rgba(255,255,255,.035); border-radius:.3rem;
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--case-tint) 20%, rgba(255,255,255,.03)); }
-  /* the count: "See every rank" in the box above, in the case's silver */
+  /* the count: "See rank ladder" in the box above, in the case's silver */
   .pf-case-closed .pf-case-count{ margin-left:0; font-size:.85rem; font-weight:800; color:color-mix(in srgb, var(--case-tint) 60%, #fff);
     text-shadow:none; white-space:nowrap; }
   .pf-case-closed .pf-case-arrow{ color:inherit; font-size:1em; margin-left:.3rem; }
@@ -26761,9 +26797,11 @@
   /* one column (This Week, Hundos): wide enough for 12.3k at every size */
   .rank-cols.rank-cols-one{ grid-template-columns:4.2rem !important; }
   .rank-col-xp{ color:var(--ink); }
-  .rank-col-hundo{ color:#FFD36A; }
+  /* white like This Week's count (327z15): "The amount of hundos in the Hundo
+     leaderboard, shouldn't the text be white similar to the this week one?" */
+  .rank-col-hundo{ color:var(--ink); }
   .rank-col-head.rank-col-xp{ color:var(--soft); }
-  .rank-col-head.rank-col-hundo{ opacity:.9; }
+  .rank-col-head.rank-col-hundo{ color:var(--soft); }
   /* CLEAR OF FIRST PLACE (build 314). "At the very top of the
      leaderboard, that blue strip where it says rank level badges, it's
      kind of sitting on top of the person in first place." The header
@@ -32842,6 +32880,18 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     letter-spacing:.14em; text-transform:uppercase; color:rgba(243,245,247,.55);
   }
   html[data-theme][data-layout] .unlock-card-challenge:not(.is-unlocked) .unlock-card-desc::before{ content:"How"; }
+  /* a challenge's How is shown done or not (327z15): "Idk what the how looks
+     like for level cause I can't see it, ensure it's on the same par as
+     badge" - the same tray either way */
+  html[data-theme][data-layout] .unlock-card-challenge.is-unlocked .unlock-card-desc{
+    max-width:none; margin:.15rem 0 .9rem; padding:.7rem .9rem .75rem; border-radius:14px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+    font-size:1.02rem; font-weight:700; line-height:1.35; color:#FFFFFF; text-align:center;
+  }
+  html[data-theme][data-layout] .unlock-card-challenge.is-unlocked .unlock-card-desc::before{
+    content:"How"; display:block; margin:0 0 .3rem; font-size:.66rem; font-weight:800;
+    letter-spacing:.14em; text-transform:uppercase; color:rgba(243,245,247,.55);
+  }
   html[data-theme][data-layout] .unlock-card .unlock-card-note{ font-size:.78rem; font-weight:500; line-height:1.4; color:rgba(243,245,247,.55); }
   /* your character on Profile, tapped (327z13): a squash and a spring back */
   .profile-hero-avatar[role="button"]{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -32850,11 +32900,21 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* a rank challenge on the unlock card (327z13): its count inside a ring of how far */
   .unlock-card-challenge .unlock-card-art{ position:relative; display:grid; place-items:center; color:var(--tc, #fff); width:8.5rem; height:8.5rem; }
   .unlock-card-challenge .unlock-card-ring{ width:100%; height:100%; display:block; }
-  .unlock-card-chnum{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-size:.82rem; font-weight:700; color:var(--soft); line-height:1.1; }
-  .unlock-card-chnum b{ font-size:2rem; font-weight:800; color:var(--tc, #fff); font-variant-numeric:tabular-nums; }
-  .unlock-card-rankflare .unlock-card-art{ display:grid; place-items:center; }
-  .unlock-card-rankflare .unlock-card-art > *{ width:70%; height:70%; }
+  /* THE COUNT DEAD CENTRE (327z15): "the number 5 is not centered right,
+     it's lowered". The number and an "of N" under it were centred as a
+     pair, so the number sat above or below the ring's middle by half the
+     small line. The number alone is the centre now (the bar under the
+     ring already says "2 of 5"), its box trimmed to the figures. */
+  .unlock-card-chnum{ position:absolute; inset:0; display:grid; place-items:center; line-height:1; }
+  .unlock-card-chnum b{ font-size:2.4rem; font-weight:800; color:var(--tc, #fff); font-variant-numeric:tabular-nums; line-height:1;
+    text-box:trim-both cap alphabetic; }
+  /* THE FLARE, BIGGER - NOT A NEW SHAPE (327z15): "When clicking the flare
+     to see what it takes to unlock it, the flare becomes a different shape,
+     just make it the flare but bigger". The art box had no size of its own
+     and took the card's width, so the round bubble was drawn at 70% of a
+     wide box - an oval. A square box, and the bubble kept round in it. */
+  .unlock-card-rankflare .unlock-card-art{ display:grid; place-items:center; width:6.6rem; height:6.6rem; }
+  .unlock-card-rankflare .unlock-card-art > *{ width:100%; height:auto; aspect-ratio:1; }
 
   /* ---- THE PAGE BEHIND THE START SHEET STAYS PUT (build 327z10) ----
      "When swiping down on the start menu, the stuff behind it started
@@ -33121,6 +33181,49 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     box-shadow:var(--surface-shadow) !important;
     backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
   }
+  /* THE PORTRAIT ON ITS PLATE, AS ON THE PERSON CARD (327z15): a dark
+     plate lit faintly by the character's colour, a 4px ring of the card
+     and a hairline of the character's colour - where it was a large disc
+     of its glow - and the person card's Progress tiles under the bar. */
+  html[data-theme="dark"][data-layout="modern"] .screen-profile .profile-hero.has-cover .profile-hero-avatar{
+    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #fff) 20%, #1C212B), #11141B 72%) !important;
+    box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45) !important;
+  }
+  .screen-profile .profile-hero > .pf-progress{ margin-top:1rem; }
+  /* the clean tip over a dull badge (327z15) */
+  .badge-tile.has-clean-tip{ position:relative; overflow:visible; z-index:2; }
+  .badge-clean-tip{ position:absolute; left:50%; bottom:calc(100% + 6px); translate:-50% 0; white-space:nowrap; pointer-events:none;
+    padding:.32rem .6rem; border-radius:999px; font-size:.7rem; font-weight:800; color:#0B0D10; background:#F3E3B5;
+    box-shadow:0 6px 16px rgba(0,0,0,.45); }
+  .badge-clean-tip::after{ content:""; position:absolute; left:50%; top:100%; translate:-50% 0; border:6px solid transparent; border-top-color:#F3E3B5; border-bottom:0; }
+  @media (prefers-reduced-motion:no-preference){ .badge-clean-tip{ animation:pf-float 2.6s ease-in-out infinite; } }
+  /* ONE FAMILY OF TILES (327z15): "The challenge box could look better ...
+     all the boxes don't go together good enough." The challenge rows and
+     the unlock tiles take the Progress tiles' surface exactly (the person
+     card's cells: 14px corner, .05 fill, .07 rim), and the kicks over them
+     the Progress label's type, so the two cards read as one set. */
+  html[data-theme][data-layout] .screen-profile .pf-goal .pf-task,
+  html[data-theme][data-layout] .screen-profile .pf-goal .pf-rw{
+    border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.07);
+  }
+  html[data-theme][data-layout] .screen-profile .pf-goal .pf-kick.pf-tasks-kick,
+  html[data-theme][data-layout] .screen-profile .pf-goal .pf-kick.pf-rewards-kick{
+    font-size:.68rem; font-weight:800; letter-spacing:.12em; color:#8A93A0;
+  }
+  /* the rank it is heading for is alive (327z15): "Maybe the rank icon
+     needs to be animated on the challenge box" - the emblem floats and a
+     ring of the rank's colour breathes behind it (transform and opacity) */
+  .screen-profile .pf-goal .pf-goal-emb{ position:relative; }
+  .screen-profile .pf-goal .pf-goal-emb::before{ content:""; position:absolute; inset:-6%; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, color-mix(in srgb, var(--nx, #fff) 34%, transparent) 0%, transparent 68%); opacity:.6; }
+  .screen-profile .pf-goal .pf-goal-emb > svg{ position:relative; }
+  @media (prefers-reduced-motion:no-preference){
+    .screen-profile .pf-goal .pf-goal-emb > svg{ animation:pf-float 5s ease-in-out infinite; }
+    .screen-profile .pf-goal .pf-goal-emb::before{ animation:pf-emb-breathe 3.4s ease-in-out infinite; }
+  }
+  @keyframes pf-emb-breathe{ 0%,100%{ opacity:.45; transform:scale(.88); } 50%{ opacity:.9; transform:scale(1.08); } }
+  [data-reduce-motion="true"] .screen-profile .pf-goal .pf-goal-emb > svg,
+  [data-reduce-motion="true"] .screen-profile .pf-goal .pf-goal-emb::before{ animation:none !important; }
   .screen-profile .profile-hero.has-cover.has-tint .profile-cover{
     --cover-fade:linear-gradient(180deg, #000 0%, #000 24%, rgba(0,0,0,.94) 34%, rgba(0,0,0,.82) 44%,
       rgba(0,0,0,.66) 54%, rgba(0,0,0,.48) 63%, rgba(0,0,0,.31) 72%, rgba(0,0,0,.17) 81%, rgba(0,0,0,.07) 89%,
@@ -121128,7 +121231,7 @@ function showUnlockDetail(o){
     const num = document.createElement("span");
     num.className = "unlock-card-chnum";
     const b = document.createElement("b"); b.textContent = String(o.now);
-    num.append(b, document.createTextNode("of " + o.total));
+    num.appendChild(b);
     art.appendChild(num);
   }
   /* THE LOCK SITS OUTSIDE WHAT IT MARKS (build 244): "ensure the lock
@@ -124387,8 +124490,13 @@ function syncPfXpTo(standing, prog){
   if(to) to.textContent = pfXpToText(prog);
 }
 function buildProfileStanding(prog, rankNow){
-  const box = document.createElement("button");
-  box.type = "button";
+  /* NOT A BUTTON (build 327z15): "Why is it when I click my xp the rank road
+     map pops up? If I click the badge count and stuff it takes me to badges
+     too, don't do that there." Where you stand is read here and nothing
+     more; the Next rank card's own button opens the ladder, the case's
+     its badges. */
+  const box = document.createElement("div");
+  box.setAttribute("role", "group");
   box.className = "pf-standing" + (rankNow ? "" : " is-unranked");
   if(rankNow) box.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
   const sep = which => {
@@ -124431,7 +124539,9 @@ function buildProfileStanding(prog, rankNow){
   const bc = document.createElement("span");
   bc.className = "pf-badgecount";
   bc.textContent = nBadges + (nBadges === 1 ? " badge" : " badges");
-  line.append(lv, sep("c"), bc);
+  /* the badge count is a tile under the bar now (327z15) */
+  void bc;
+  line.appendChild(lv);
   box.appendChild(line);
   const xp = document.createElement("span");
   xp.className = "pf-xp";
@@ -124485,13 +124595,37 @@ function buildProfileStanding(prog, rankNow){
   xp.append(trackWrap, nums);
   box.appendChild(xp);
   box.setAttribute("aria-label", (rankNow ? RANK_DISPLAY_NAME[rankNow] + " rank, " : "No rank yet, ") +
-    "level " + prog.level + ", " + bc.textContent + ", " + prog.total.toLocaleString() + " total XP. Open the Rank screen.");
-  box.addEventListener("click", e => {
-    const t = e && e.target;
-    if(t && t.closest && t.closest(".pf-badgecount")) return showRanksScreen("badges");
-    showRanksScreen("ranks");
-  });
+    "level " + prog.level + ", " + prog.total.toLocaleString() + " total XP.");
   return box;
+}
+/* YOUR NUMBERS IN THE PERSON CARD'S TILES (build 327z15): "the profile box
+   at the top, I feel like it needs that same Liquid Glass look that you
+   see when you click on someone's profile". The person card's Progress
+   grid, the same four numbers a classmate sees on yours, read the same
+   way the published row is (republishRowOnLaunch). Not buttons. */
+function buildProfileProgressTiles(){
+  const prog = document.createElement("div");
+  prog.className = "person-card-progress pf-progress";
+  const lab = document.createElement("p");
+  lab.className = "person-card-proglabel"; lab.textContent = "Progress";
+  const grid = document.createElement("div");
+  grid.className = "person-card-grid";
+  let total = 16;
+  try{ total = topicsIn(QUESTIONS).length; }catch(e){}
+  const L = store.lifetime || {};
+  [["XP", Number(L.points || 0).toLocaleString()],
+   ["Badges", badgeCountOf(store) + " / " + total],
+   ["Hundos", String(hundosOf(store))],
+   ["Correct answers", Number(L.correct || 0).toLocaleString()]].forEach(([label, value]) => {
+    const cell = document.createElement("div");
+    cell.className = "person-card-cell";
+    const v = document.createElement("span"); v.className = "person-card-cell-value"; v.textContent = value;
+    const l = document.createElement("span"); l.className = "person-card-cell-label"; l.textContent = label;
+    cell.append(v, l);
+    grid.appendChild(cell);
+  });
+  prog.append(lab, grid);
+  return prog;
 }
 /* THE PROFILE BAR AFTER XP WAS EARNED INTO A FULL BAR (build 317). The
    bar fills from empty every time the tab is shown, which is not earning
@@ -124648,13 +124782,13 @@ function buildProfileTask(c, color){
    them in customize when holding one down. The rank challenges if you
    click one, it would just open it and make it bigger." The card was one
    big <button>, so every part of it was the way to the Rank screen. It is
-   a plain card now: "See every rank" is the button; each challenge row
+   a plain card now: "See rank ladder" is the button; each challenge row
    opens that challenge, big, on the unlock card; each unlock tile opens
    its own card, as Customize does when one is held. */
 function pfGoalFoot(){
   const foot = document.createElement("button");
   foot.type = "button";
-  foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
+  foot.className = "pf-goal-foot"; foot.textContent = "See rank ladder";
   foot.addEventListener("click", () => showRanksScreen("ranks"));
   return foot;
 }
@@ -124665,8 +124799,10 @@ function rankChallengeDetail(c, color, rankName){
   return { kind: "challenge", id: c.kind || "challenge", color, now, total: Number(c.need) || 0,
     kicker: "Rank challenge \u00b7 to reach " + rankName,
     name: isLevel ? "Reach Level " + c.need : c.label,
-    desc: isLevel ? "Your level is " + (Number(c.now) || 0) + "."
-      : "Master a unit to find its badge: enough hundos (100% on the whole unit) and it is yours.",
+    /* ONE PAIR, SAID ALIKE (327z15): "The how description for the badge
+       challenge is bad ... ensure [level's] is on the same par as badge" */
+    desc: isLevel ? "Earn XP by finishing tests. Right answers, hundos and answer streaks add the most."
+      : "Score 100% on a whole unit enough times and its badge is yours. Every unit has one.",
     have: now, need: Number(c.need) || 0, unlocked: !!c.met };
 }
 /* a tap that opens its own card, on a part of the Next rank card */
@@ -125186,6 +125322,7 @@ function showProfile(defaultTab, opts){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
+  heroSect.appendChild(buildProfileProgressTiles());
   /* THE BADGE CASE IS AT THE BOTTOM AGAIN (317 touch-up, reverting build
      317's move above the Next rank card): "The badge case being at the
      top is not the move, revert that location at the bottom." Where you
@@ -126483,7 +126620,12 @@ function buildBadgesTab(opts){
      rather than anything you can act on, and it is the first thing on
      a screen whose job is to say what a badge costs. */
   /* build 320 (b320g): badges lose their shine, and are cleaned by hand */
-  blurb.textContent = "Master a unit to find its badge. Tap a slot to see it up close. Badges lose their shine over time. Rub one to clean it.";
+  /* WHAT YOU CAN DO, NOT A CHORE (327z15): "you should only be told to
+     clean it if one is dirty, it would give a tool tip pointing to a dirty
+     one ... The description though should just mention pick one up to
+     examine it or click on one to see more information about finding it".
+     Cleaning is said by the tip on a badge that needs it (below). */
+  blurb.textContent = "Master a unit to find its badge. Tap a badge to pick it up and examine it, or an empty slot to see how to find it.";
   head.appendChild(blurb);
   tab.appendChild(head);
 
@@ -126514,6 +126656,7 @@ function buildBadgesTab(opts){
     /* how dirty it is (build 320, b320g): its glow fades with its shine */
     const dirt = has ? badgeDirtStage(unit) : 0;
     if(has) art.dataset.dirt = String(dirt);
+    if(has && dirt > 0) tile.dataset.dirt = String(dirt);
     art.appendChild(buildUnitBadgeSVG(unit, has, has ? { dirt } : undefined));
     tile.appendChild(art);
     const name = document.createElement("span");
@@ -126523,10 +126666,25 @@ function buildBadgesTab(opts){
     /* a badge you have not looked at since it was found (build 299) */
     const clearNew = has ? attachNewDot(art, "badges", unit) : () => {};
     /* build 320 (b320g): the badge in your hand, not the unlock card */
-    tile.addEventListener("click", () => { clearNew(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
+    tile.addEventListener("click", () => { clearNew(); tile.querySelector(".badge-clean-tip")?.remove(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
     return tile;
   });
   tab.appendChild(kase);
+  /* ONE TIP, ON THE BADGE THAT NEEDS IT (327z15): the dullest badge you
+     hold gets a small pill pointing at it - only while one has lost its
+     shine. Tapping the badge picks it up, where it is rubbed clean. */
+  {
+    let worst = null;
+    kase.querySelectorAll(".badge-tile[data-dirt]").forEach(t => { if(!worst || +t.dataset.dirt > +worst.dataset.dirt) worst = t; });
+    if(worst){
+      const tip = document.createElement("span");
+      tip.className = "badge-clean-tip";
+      tip.setAttribute("aria-hidden", "true");
+      tip.textContent = "Lost its shine \u2014 tap to clean";
+      worst.appendChild(tip);
+      worst.classList.add("has-clean-tip");
+    }
+  }
   /* Shut at first paint, opened by runFill once the screen is up - unless
      motion is off, or this is the same screen built again (opts.still):
      only a new opening of the screen opens the case. */
@@ -128014,7 +128172,7 @@ const RANK_LORE = {
    the card's title, so a chip says WHAT it is ("Theme", "Flare") rather
    than repeating the rank's name - which is also what lets "Platinum
    theme" stop wrapping onto two lines on a phone. */
-function buildRankGifts(key){
+function buildRankGifts(key, lore){
   const gifts = document.createElement("div");
   gifts.className = "rankmap-gifts";
   const gift = (cls, art, label) => {
@@ -128043,14 +128201,17 @@ function buildRankGifts(key){
   gift("is-theme", dot, "Theme");
   const fl = document.createElement("span");
   fl.className = "rankmap-giftav rankmap-giftbubble";
-  fl.appendChild(buildFlareBubble(key, { lit: true }));
+  /* on the rank's own card a flare not yet yours is unlit glass (327z15);
+     the road map keeps it lit and frosts it, for its celebration */
+  fl.appendChild(buildFlareBubble(key, { lit: !lore || reachedNow }));
   gift("is-flare", fl, "Flare");
   const charForRank = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(charForRank){
     const av = document.createElement("span");
     av.className = "rankmap-giftav";
-    /* drawn after the screen is up, one a frame (build 279) */
-    afterFirstPaint(() => { try{ av.appendChild(buildAvatarCharSVGSafe(charForRank.id)); }catch(e){} });
+    /* drawn after the screen is up, one a frame (build 279) - and on the
+       rank's own card, alive (327z15) */
+    afterFirstPaint(() => { try{ av.appendChild(buildAvatarCharSVGSafe(charForRank.id)); if(lore) av.classList.add("char-live"); }catch(e){} });
     gift("is-char", av, AVATAR_DISPLAY_NAME[charForRank.id] || charForRank.id);
   }
   BANNERS.filter(b => b.rank === key).forEach(b => {
@@ -128067,7 +128228,7 @@ function buildRankGiftsLabel(){
   l.textContent = "Unlocks";
   return l;
 }
-function showRankLore(key){
+function showRankLore(key, warm){
   const rule = TIER_UNLOCKS[key];
   if(!rule) return;
   const held = rankOf(store);
@@ -128133,7 +128294,7 @@ function showRankLore(key){
           nb + (nb === 1 ? " badge." : " badges.");
       })();
   sheet.appendChild(wall);
-  sheet.append(buildRankGiftsLabel(), buildRankGifts(key));
+  sheet.append(buildRankGiftsLabel(), buildRankGifts(key, true));
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost person-sheet-close";
   close.textContent = "Close";
@@ -128141,6 +128302,18 @@ function showRankLore(key){
   sheet.appendChild(close);
   overlay.appendChild(sheet);
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  /* WARMED ONCE, OUT OF SIGHT (327z15): the first card of a session cost a
+     200ms frame at a phone's speed (4x CPU) - the card's styles, its glass
+     and the emblem's gradients worked out for the first time - and later
+     ones none. The Rank screen builds one unseen while it is idle, so the
+     first tap is like every other. */
+  if(warm){
+    overlay.style.cssText = "visibility:hidden;pointer-events:none;";
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.remove()));
+    return;
+  }
   mountSheetOverlay(overlay);
 }
 /* THE LIGHT ON THE ROAD, PLACED IN PIXELS (build 311). "The rank road
@@ -128396,6 +128569,11 @@ function buildRankHero(held, levelNow, badgesNow, opts){
 function buildRanksTab(){
   const tab = document.createElement("div");
   tab.className = "ranks-tab";
+  /* one rank card built unseen once the screen is in (327z15, showRankLore) */
+  if(!buildRanksTab.warmed){
+    buildRanksTab.warmed = true;
+    afterFirstPaint(() => setTimeout(() => { try{ if(tab.isConnected) showRankLore(TIER_ORDER_FULL[0], true); else buildRanksTab.warmed = false; }catch(e){} }, 700));
+  }
 
   const levelNow = levelOf(store);
   const badgesNow = badgeCountOf(store);
@@ -128710,7 +128888,12 @@ function buildRanksTab(){
     node.setAttribute("role", "button");
     node.tabIndex = 0;
     node.setAttribute("aria-label", "About " + RANK_DISPLAY_NAME[key]);
-    const openLore = () => { node.classList.remove("is-popping"); void node.offsetWidth; node.classList.add("is-popping"); setTimeout(() => showRankLore(key), 140); };
+    /* AT ONCE (327z15): "When clicking a rank on the rank ladder it lags
+       when opening ... make it smoother. A lot smoother". It waited 140ms
+       for the circle's pop and then built the card - the wait read as lag.
+       The pop and the card's own rise run together now, and the card's
+       heavy parts (the character, the banner) come a frame after it. */
+    const openLore = () => { node.classList.remove("is-popping"); requestAnimationFrame(() => node.classList.add("is-popping")); showRankLore(key); };
     node.addEventListener("click", openLore);
     node.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openLore(); } });
     /* No avatar on the rank you hold (build 255): "your avatar being on
