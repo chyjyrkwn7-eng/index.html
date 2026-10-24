@@ -44,7 +44,7 @@ READ = """() => { const p = document.querySelector('.chatdock-panel'); const r =
   return { top: r.top, h: r.height, open: chatDockOpen, inline: p.style.transform, vh: innerHeight }; }"""
 
 
-ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGHIJ")
+ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGHIJK")
 
 UA_IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
 IPHONE_INIT = "Object.defineProperty(navigator,'userAgent',{get:()=>%r});" % UA_IPHONE
@@ -288,6 +288,11 @@ def round2(br):
     pg2.evaluate("()=>showFriends()"); pg2.wait_for_timeout(2500)
     r11 = pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
       .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
+    # MOVED IN 327z12 round 2: Profile's wide button was the Friends box's,
+    # which moved to the chat - Settings' wide buttons are read as well
+    pg2.evaluate("()=>showAppearance()"); pg2.wait_for_timeout(2500)
+    r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
+      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
     pg2.evaluate("()=>showProfile()"); pg2.wait_for_timeout(2500)
     r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
       .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
@@ -379,10 +384,39 @@ def tab_search(br):
         ctx.close()
 
 
+def glide_pace(br):
+    """K. "When tapping another tab, it shoots over super super quick ... the
+    video I sent ... it's slower and it's smoother." His reference at 60fps,
+    from the press, one tab across: 48% at 4 frames, 83% at 8, ~98% at 12.
+    The lens's own track (60 keyframes a second, written when it lifts) is
+    read straight off its animation, so how busy this machine is cannot
+    move it: at frame 4 it is 35-60% of the way, at frame 8 no more than
+    90%, and past 95% by frame 14."""
+    print("\nK. the glass crosses to a tapped tab at the reference's pace")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    cdp = ctx.new_cdp_session(pg)
+    t = pg.evaluate("() => { const r = document.getElementById('bottomtab-profile').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [t]})
+    pg.wait_for_timeout(30)
+    r = pg.evaluate("""() => { const body = document.querySelector('#bottomtabs-lens .tab-lens-body'); const a = body && body.getAnimations()[0];
+      if(!a) return null;
+      const cx = k => { const m = /translate3d\(([-\d.]+)px[^)]*\) scale\(([-\d.]+)/.exec(k.transform || ''); return m ? +m[1] + +m[2] * 50 : null; };
+      const xs = a.effect.getKeyframes().map(cx).filter(v => v !== null);
+      const a0 = xs[0], a1 = xs[xs.length - 1];
+      return xs.map(v => +((v - a0) / ((a1 - a0) || 1)).toFixed(3)); }""")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    ok = bool(r) and len(r) > 14 and .35 <= r[4] <= .6 and r[8] <= .9 and r[14] >= .95
+    check("%s: K. the glass is %s of the way at frames 4 / 8 / 14 (reference about .48 / .83 / .99)" % (label, r and "%.2f / %.2f / %.2f" % (r[4], r[8], r[min(14, len(r) - 1)])),
+          ok, r and r[:20])
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2), ("I", unit_tab), ("J", tab_search)):
+        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2), ("I", unit_tab), ("J", tab_search), ("K", glide_pace)):
             if k in ONLY or (k == "A" and any(c in ONLY for c in "ABC")):
                 try:
                     fn(br)

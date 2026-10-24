@@ -27059,3 +27059,110 @@ too but idk"*.
   its search field. Asked Madison.
 - Gate: check-b327z10 J (iPhone 17 Pro Max and a 320px SE): the circle, the
   morph, focus, filtering, the way back. The keyboard lift needs a phone.
+
+### Build 327z11 - the tab bar's glass crosses at the reference's pace
+
+Madison: *"The bottom tab.. when tapping another tab, it shoots over super super
+quick. But the video I sent when you tap another tab it's slower and it's
+smoother.. like ours shoots over to the tab extremely fast you can barely see
+it"*.
+
+- **His reference measured again, at 60fps**, frame by frame from the press,
+  one tab across (Subscriptions to Calendar, 210px in the crop): 10% at 1
+  frame, 28% at 2, 48% at 4, 70% at 6, 83% at 8, 91% at 10, ~98% at 12 -
+  about 200ms, no overshoot, then it shrinks into the grey (frames 13-15). The
+  glide spring was `[1250, .8]` (89% at 83ms; the old track read 80% at frame
+  4 and arrived at frame 7) - tuned in 325 to a 30fps crop read as "4
+  frames". **`LENS.glide` is `[625, .95]`** (w 25, near critical): 50% at
+  67ms, 86% at 140ms, 96% at 200ms. **`LENS.minUp` 200** so a quick tap is up
+  until it has arrived. **`TAB_SCREEN_AFTER` 150** (was 110): the page is
+  built when the glass is ~90% across, not under it.
+- Gate: check-b327z10 K reads the lens's own 60fps track off its animation
+  (immune to how busy the machine is): frames 4 / 8 / 14 at .54 / .87 / .98
+  here (reference .48 / .83 / .99); .80 / 1.00 / 1.00 on 327z10.
+- APP_BUILD / version.json `2026-10-24-327z11`.
+
+## Build 327z12 (2026-10-24) - characters, chat open, calendar, boards, daily button
+
+Madison's list after 327z11, each fixed and gated in `tools/check-b327z12.py`
+(L-P, every check fails on 327z11):
+
+- **"fake void ... doesn't move"** (L). The flip-book recorder held any loop
+  slower than 2 sheets (12s) still. Umbra's moon phases (7s alternate = 14s)
+  and Void's flare turn (20s) are those characters' main motion, so in the
+  tab bar and on the boards they were pictures. `recordCharSheet` now plays
+  a loop up to 2.5 sheets (a `cx-spin*` turn up to 3.5) one whole cycle per
+  sheet - quicker than the big live drawing, but moving. Slower loops (40s
+  starfields, 60s gears) are still held. `CHAR_ANIM_VER` c4 -> c5 so saved
+  sheets are recorded again.
+- **"When the chat is pulled up, the Liquid Glass is glitched and lags
+  behind"** (M). The slide up was the one move still resampling the 30px
+  blur every frame. `openChatDock` puts the panel in `.is-settling` (flat
+  fill) for 300ms; glass once still. Same rule as drag and slide out.
+- **Calendar: "you can't scroll down ... from touching the actual
+  calendar"** (N). Every day is a small button, so each carried an iPhone
+  haptic switch (`.nova-hsw`), and iOS lets a finger on a native switch
+  drag the switch instead of the page. The grid is `data-no-hsw`; a tap
+  still picks the day (no tick on day cells - the trade for scrolling).
+- **Calendar: "could the calendar look better? I just want the best"** (N).
+  The month is ONE card (`.cal-monthview` in the surface card, radius 22):
+  title on the left; a "Today" pill (was "Go to today" under everything;
+  aria-label still "Go to today") and two quiet 44px chevrons on the right;
+  a hairline under the weekdays; on a phone days are numbers, not tiles
+  (class day white, no-class grey, picked = filled accent circle, today =
+  ring, today+picked = frosted fill + ring, last day = gold ring); key in
+  one line under a hairline; the picked day is the card's last section
+  (no card in a card); the hint line is hidden. Tablet keeps its tiles
+  (they carry text) inside the same card. Block: "THE MONTH IS ONE CARD"
+  at the end of the style; uses `:not(#cal-z)` to out-weigh the old tile
+  rules. Older gates that asserted the black arrow pill / daycard as its
+  own card / the "Go to today" text are superseded by this.
+- **Leaderboard: "can [hundos] and xp be like [overall] ... the title
+  header"** (O). `LB_THIRD_COL` - This Week and Hundos use Overall's
+  header and columns, Rank / Level / XP (white, `lbCompact` 12.3k from
+  10,000) or Rank / Level / Hundos (gold #FFD36A). The grey sub-line is
+  gone on those boards (the trend mark still sits there).
+- **"The leaderboard find me button should that be black?"** No: it is the
+  tab bar's Liquid Glass, as the search pill beside it is, which reads
+  near-black on this page. It stays glass and now carries a blue
+  location arrow so it reads as a button.
+- **"The daily question button did not get better"** (P). Waiting
+  (`is-ready`): the glass itself is lit in `--dq-c` (a tinted orb, light
+  pooled at the top, bright hairline rim, white "?"), no ring drawn. The
+  pulse still leaves its edge; the 5pm recharge (`is-charging`) still
+  shows the ring. Answered: plain glass, dim "?", slim 2.6/100 arc. The
+  drop-shadow filter on the ring is gone (it moves).
+- APP_BUILD / version.json `2026-10-24-327z12`.
+
+### Build 327z12, round 2 (same build, not pushed - "Don't push anything until I say so")
+
+- **This Week / Hundos: "just stuff relevant to that leaderboard tab".** Round 1
+  gave them Overall's Rank / Level plus their number; now they carry a header
+  and ONE column (`.rank-cols-one`, 4.2rem): XP (white, `lbCompact`) or Hundos
+  (gold). Overall keeps Rank / Level / Badges. Gate O.
+- **Daily button: "The question mark is not centered".** The "?" was typed
+  text, ~1.2px high in Chromium and placed by the system font's line box on
+  an iPhone. It is a drawn mark now (`.dq-mark-q`, ink centred in a 24 box),
+  in a grid-centred `.dq-glyph` at 58% of the button. Answered shows a tick
+  (`.dq-mark-done`, CSS on `.is-done`, so the 5pm reset needs no JS).
+  Answered look ("How could the non ready version look better?"): the ready
+  orb's quieter sibling - glass with a breath of `--dq-c`, tick in `--dq-c`,
+  arc on a faint same-hue track. Gate R (ink within .5px both states).
+- **Profile: "that Liquid Glass look ... with the fade, could it be like
+  that? ... split up less crowded".** `.profile-identity-tab` is three sibling
+  cards: the hero (person card recipe: `--pop-bg-card` with the banner's two
+  colours as 30%-high pools, surface blur, 22px, the person card's longer
+  cover fade), the next-rank card (`.pf-goal`, its colour a corner pool) and
+  the shut badge case. Tour targets now `.profile-identity-tab .pf-goal/.pf-case`.
+  No presence on Profile any more (`attachPresence` removed from showProfile).
+- **Friends moved to the chat ("Chat tab may make more sense").** The Profile
+  Friends box (friendSect, its preview, FRIEND_PREVIEW_MAX) is gone. The
+  chat's Friends tab opens with `.chatdock-friendsbar`: "N friends · M online"
+  and one pill - Add friends, or "N requests" (yellow) - which calls
+  `openFriendsFromChat()`: shuts the dock, remembers the tab it was over
+  (`friendsBack` {label, nav, go}) and opens Friends; its back link returns
+  there and the bar keeps that tab lit (`.screen-friends[data-from]`, read in
+  the bar's lit logic). Any other way in resets to Profile
+  (`friendsBackFresh`). Copy that said "Profile › Friends" now says "the chat
+  › Friends". Gate Q. Old gates moved (MOVED IN 327z12 round 2): b319h_layout
+  Friends block, b321f/b323 friends box, b324n2 Nova count.

@@ -671,7 +671,7 @@ def main():
                  touch-up put it back at the bottom ("The badge case being
                  at the top is not the move, revert that location at the
                  bottom") */
-              const order = ['.pf-standing', '.pf-goal', '.pf-case'].map(sel => document.querySelector('.profile-hero ' + sel));
+              const order = ['.pf-standing', '.pf-goal', '.pf-case'].map(sel => document.querySelector('.profile-identity-tab ' + sel));
               return {
                 blocks: order.map(n => !!n),
                 inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
@@ -706,7 +706,7 @@ def main():
                (or a control inside it) would catch the tap instead. */
             const tapAt = async (sel, inner) => {
               showProfile('identity'); await new Promise(r => setTimeout(r, 300));
-              const box = document.querySelector('.profile-hero ' + sel);
+              const box = document.querySelector('.profile-identity-tab ' + sel);
               const t = box && (box.querySelector(inner) || box);
               if(!t) return { hit: false, screen: null };
               t.scrollIntoView({ block: 'center', behavior: 'instant' });
