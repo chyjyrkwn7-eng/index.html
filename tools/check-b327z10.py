@@ -44,7 +44,7 @@ READ = """() => { const p = document.querySelector('.chatdock-panel'); const r =
   return { top: r.top, h: r.height, open: chatDockOpen, inline: p.style.transform, vh: innerHeight }; }"""
 
 
-ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGHI")
+ONLY = os.environ.get("B327Z10_ONLY", "ABCDEFGHIJ")
 
 UA_IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
 IPHONE_INIT = "Object.defineProperty(navigator,'userAgent',{get:()=>%r});" % UA_IPHONE
@@ -333,10 +333,56 @@ def unit_tab(br):
     ctx.close()
 
 
+def tab_search(br):
+    """J. "The search button, while in a review can we make the search
+    function similar to how the Apple Music search function is?" A circle
+    beside the tab bar; tapped, the bar draws in to one circle and the
+    circle stretches into the field, focused; typing filters the list;
+    the small circle puts it all back, the search cleared."""
+    print("\nJ. Review's search beside the tab bar, as Apple Music's")
+    for label, w, h, dpr in (z5b.PHONE, ("iPhone SE", 320, 568, 2)):
+        ctx, pg = z5b.boot(br, w, h, dpr)
+        pg.wait_for_timeout(2000)
+        pg.evaluate("() => { const u = topicsIn(QUESTIONS).slice(0, 3); showAnswerReview(u, 'all', {}, {}); }")
+        pg.wait_for_timeout(1500)
+        R = """() => { const rr = e => { if(!e) return null; const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height }; };
+          return { bar: rr(document.querySelector('.bottomtabs')), ts: document.getElementById('tabsearch') && !document.getElementById('tabsearch').hidden ? rr(document.getElementById('tabsearch')) : null,
+                   top: !!document.querySelector('#stage .screen-answerreview .searchwrap:not([hidden])'), sects: document.querySelectorAll('#stage .cal-list .cal-month-sect').length,
+                   tabs: [...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t => t.getBoundingClientRect().width > 4 && +getComputedStyle(t).opacity > .5).length,
+                   focus: document.activeElement && document.activeElement.className, vw: innerWidth }; }"""
+        c = pg.evaluate(R)
+        ok = c["ts"] and abs(c["ts"]["t"] - c["bar"]["t"]) < 1.5 and abs(c["ts"]["h"] - c["bar"]["h"]) < 1.5 and 4 <= c["ts"]["l"] - c["bar"]["r"] <= 14 \
+            and abs((c["bar"]["l"] + c["ts"]["r"]) / 2 - c["vw"] / 2) < 2 and not c["top"]
+        check("%s: J. closed, a circle the bar's height stands beside it, the pair centred, Review's own field gone" % label, ok, c)
+        cdp = ctx.new_cdp_session(pg)
+        b = pg.evaluate("() => { const r = document.querySelector('#tabsearch .tabsearch-btn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": b[0], "y": b[1]}]}); time.sleep(0.06)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(600)
+        o = pg.evaluate(R)
+        ok2 = o["tabs"] == 1 and o["ts"] and o["ts"]["l"] - o["bar"]["r"] < 14 and o["ts"]["w"] > c["bar"]["w"] * .6 and o["focus"] == "tabsearch-input" \
+            and abs(o["ts"]["r"] - c["ts"]["r"]) < 2
+        check("%s: J. tapped, the bar is one tab's circle and the field runs to where the circle was, focused" % label, ok2, o)
+        n0 = o["sects"]
+        pg.keyboard.type("ethics"); pg.wait_for_timeout(400)
+        f = pg.evaluate(R)
+        check("%s: J. typing filters the list (%d -> %d sections)" % (label, n0, f["sects"]), 0 < f["sects"] < n0 or (n0 == 1 and f["sects"] == 1), f)
+        bb = pg.evaluate("() => { const r = document.querySelector('.bottomtabs').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": bb[0], "y": bb[1]}]}); time.sleep(0.06)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(700)
+        e = pg.evaluate(R)
+        scr = pg.evaluate("() => (document.querySelector('#stage > *') || {}).className")
+        ok3 = e["tabs"] == 4 and abs(e["bar"]["l"] - c["bar"]["l"]) < 1.5 and abs(e["bar"]["w"] - c["bar"]["w"]) < 1.5 and abs(e["ts"]["l"] - c["ts"]["l"]) < 1.5 \
+            and e["sects"] == n0 and "answerreview" in (scr or "")
+        check("%s: J. the small circle puts it all back where it was, the search cleared, still on Review" % label, ok3, [e, scr])
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2), ("I", unit_tab)):
+        for k, fn in (("A", chat_sheet), ("D", tab_roll), ("E", planet), ("F", tab_special), ("G", daily_ring), ("H", round2), ("I", unit_tab), ("J", tab_search)):
             if k in ONLY or (k == "A" and any(c in ONLY for c in "ABC")):
                 try:
                     fn(br)

@@ -27025,3 +27025,37 @@ Gate: `tools/check-b327z10.py` section H (H1-H11), 11 failures on 327z9.
   holds the tab's specials off between its snapshots. The white `.next`
   recipe excludes the friend buttons inside `:where()` so it keeps its old
   specificity (two `:not()`s had out-ranked the start sheet's glass X).
+
+### Build 327z10 (continued, round 4) - Review's search beside the tab bar, as Apple Music's
+
+Madison, with iOS 26 Apple Music screenshots and a recording: *"The search
+button, while in a review can we make the search function similar to how the
+Apple Music search function is? I kinda want to add it to unit selection screen
+too but idk"*.
+
+- **`registerTabSearch(screen, { placeholder, onQuery })`** (in
+  `setupBottomTabs`, after `bar._lensRelayout`). A glass circle with a
+  magnifier (`#tabsearch`, its own fixed element - never inside the bar, whose
+  backdrop blur would leave a nested one seeing only the bar) stands TS_GAP
+  (8px) past the plain bar, the bar's height; `body.has-tabsearch` narrows the
+  bar's row by the circle and shifts it left by half, so the pair takes the
+  bar's old footprint (a phone under 380px keeps its tabs to their marks).
+  Tap it: the bar pins its left edge (inline `left`, `transform/translate:none`)
+  and draws in to one circle (`.ts-open`: the lit tab, `.ts-keep`, its mark only;
+  the rest fold to nothing), the circle stretches to where it ended
+  (`tsHome`), the field fades in and takes focus inside the tap (iOS raises
+  the keyboard only then). While the keyboard is up both ride above it
+  (`tsKb`, `visualViewport`, as the chat sheet). Typing calls `onQuery`;
+  Enter drops the keyboard and keeps the results; the clear x empties it. A
+  touch on the small circle is caught on the bar in capture (no lens, no tab)
+  and puts everything back, search cleared, recentred after the 380ms
+  morph. Width transitions only while `.ts-anim` is on (any other change of
+  the bar's shape stays instant - the lens measures it). Leaving the screen,
+  hiding the bar, or the bar taking its Start shape unregisters it.
+- **Review's list uses it** (`showAnswerReview`): its own "Search questions"
+  field is hidden when the bar's is there and is what the bar's drives.
+- **Not on the unit screen**: its bar already carries the Start pill (363px
+  of a 375px phone), so a third piece does not fit a small phone; it keeps
+  its search field. Asked Madison.
+- Gate: check-b327z10 J (iPhone 17 Pro Max and a 320px SE): the circle, the
+  morph, focus, filtering, the way back. The keyboard lift needs a phone.

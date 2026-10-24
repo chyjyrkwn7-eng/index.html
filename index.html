@@ -32666,6 +32666,72 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   .starred-pill.is-empty .pname{ color:var(--soft); }
   .starred-pill.is-empty .pick-flagged-icon{ opacity:.6; }
   .starred-pill .pick-flagged-go{ display:none; }
+
+  /* ---- SEARCH BESIDE THE TAB BAR (build 327z10, registerTabSearch) ---- */
+  body{ --ts-d:62px; --ts-gap:8px; }
+  /* the bar gives up the circle's width and the two are centred together,
+     in the footprint the bar alone had */
+  body.has-tabsearch .bottomtabs:not(.has-start-tab){ translate:calc(-.5 * (var(--ts-d) + var(--ts-gap))) 0; }
+  body.has-tabsearch .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{
+    width:min(calc(23.7rem - 20px - var(--ts-d) - var(--ts-gap)), calc(100vw - 1.5rem - 20px - var(--ts-d) - var(--ts-gap)));
+  }
+  @media (min-width:40rem){
+    body.has-tabsearch .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{
+      width:min(calc(30.14rem - 18px - var(--ts-d) - var(--ts-gap)), calc(100vw - 1.5rem - 20px - var(--ts-d) - var(--ts-gap)));
+    }
+  }
+  /* a narrow phone keeps its tabs to their marks while the circle is there */
+  @media (max-width:379px){
+    body.has-tabsearch .bottomtabs:not(.has-start-tab) .bottomtab-label{ display:none; }
+  }
+  .tabsearch{
+    position:fixed; z-index:201; box-sizing:border-box; border-radius:999px; overflow:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
+    background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.16);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
+    transition:left .36s cubic-bezier(.3,1.1,.4,1), width .36s cubic-bezier(.3,1.1,.4,1), translate .25s ease;
+  }
+  .tabsearch[hidden]{ display:none; }
+  .tabsearch-btn{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:none; border:0; padding:0; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:opacity .18s ease;
+  }
+  .tabsearch-btn .whatsnew-glyph{ width:46%; height:46%; }
+  .tabsearch-btn:active{ background:rgba(255,255,255,.08); }
+  .tabsearch-field{
+    position:absolute; inset:0; display:flex; align-items:center; gap:.55rem; padding:0 .45rem 0 1.05rem;
+    opacity:0; pointer-events:none; transition:opacity .2s ease .08s;
+  }
+  .tabsearch.is-open .tabsearch-btn{ opacity:0; pointer-events:none; }
+  .tabsearch.is-open .tabsearch-field{ opacity:1; pointer-events:auto; }
+  .tabsearch-glass{ width:1.25rem; height:1.25rem; flex:none; color:var(--soft); }
+  .tabsearch-input{
+    flex:1 1 auto; min-width:0; height:100%; border:0; outline:none; background:none; padding:0;
+    font:inherit; font-size:17px; color:var(--ink); -webkit-appearance:none; appearance:none;
+  }
+  .tabsearch-input::placeholder{ color:var(--soft); }
+  .tabsearch-input::-webkit-search-cancel-button{ -webkit-appearance:none; display:none; }
+  .tabsearch-clear{
+    flex:none; width:44px; height:44px; border:0; border-radius:50%; background:none; cursor:pointer; position:relative;
+  }
+  .tabsearch-clear::before{ content:""; position:absolute; left:50%; top:50%; width:1.35rem; height:1.35rem; transform:translate(-50%,-50%);
+    border-radius:50%; background:rgba(255,255,255,.22) center/.6rem no-repeat
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2 2 8 8M8 2 2 8' stroke='%230C0D13' stroke-width='1.7' stroke-linecap='round'/></svg>"); }
+  .tabsearch-clear[hidden]{ display:none; }
+  /* the bar draws in to one circle: the tab you are on, its mark only */
+  .bottomtabs.ts-open .bottomtabs-navrow{ width:calc(var(--ts-d) - 20px) !important; }
+  /* only while it opens or closes (ts-anim): any other change of the bar's
+     shape stays instant, as the lens's measuring needs */
+  .bottomtabs.ts-anim .bottomtabs-navrow{ transition:width .36s cubic-bezier(.3,1.1,.4,1); }
+  .bottomtabs.ts-open .bottomtabs-navrow .bottomtab:not(.ts-keep){ flex:0 0 0 !important; min-width:0 !important; padding:0 !important; opacity:0; overflow:hidden; pointer-events:none; }
+  .bottomtabs.ts-open .bottomtabs-navrow .bottomtab.ts-keep{ flex:1 1 auto; padding-left:0; padding-right:0; }
+  .bottomtabs.ts-open .bottomtab-label{ display:none; }
+  .bottomtabs.ts-open .bottomtabs-slider{ opacity:0 !important; transition:opacity .15s ease; }
+  .bottomtabs.ts-anim .bottomtabs-navrow .bottomtab{ transition:opacity .2s ease; }
+  [data-reduce-motion="true"] .tabsearch, [data-reduce-motion="true"] .bottomtabs.ts-anim .bottomtabs-navrow{ transition:none; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -122744,6 +122810,13 @@ function showAnswerReview(units, source, versions, opts){
   searchInput.setAttribute("aria-label", "Search questions");
   searchWrap.append(searchIcon, searchInput);
   panel.appendChild(searchWrap);
+  /* Apple Music's search, beside the tab bar (build 327z10): the field up
+     here goes while that one is there, and that one drives the same filter */
+  requestAnimationFrame(() => {
+    if(!panel.isConnected || typeof registerTabSearch !== "function") return;
+    if(registerTabSearch(panel, { placeholder: "Search questions", onQuery: v => { searchInput.value = v; searchInput.dispatchEvent(new Event("input", { bubbles: true })); } }))
+      searchWrap.hidden = true;
+  });
 
   const list = document.createElement("div");
   list.className = "cal-list";
@@ -131291,6 +131364,170 @@ function applyGlassRefraction(el, mapImgId){
       lensMagnify(nu.c, 1, 0, 0);
     } else lensRelease(at);
   };
+  /* ---- SEARCH BESIDE THE TAB BAR, AS APPLE MUSIC DOES (build 327z10) ----
+     "The search button, while in a review can we make the search function
+     similar to how the Apple Music search function is?" With his iOS 26
+     screenshots and recording: a glass circle with a magnifier stands
+     beside the tab bar; tap it and the bar draws in to one circle - the
+     tab you are on - while the magnifier's circle stretches across into a
+     search field and the keyboard comes up under it. Tap the small
+     circle and it all goes back.
+     A screen with a list asks for it with registerTabSearch(screen,
+     { placeholder, onQuery }) and gets true if it is shown (the bar is up
+     and plain); it then hides its own search field. Typing calls
+     onQuery(text) - the screen's own filter. Leaving the screen takes it
+     away. The circle is its own fixed glass beside the bar, never a child
+     of it: a backdrop blur inside the bar's blur would only see the bar.
+     While it is open the bar's own touch handling never sees a touch: the
+     capture listener below closes the search instead. */
+  const tsEl = document.createElement("div");
+  tsEl.id = "tabsearch"; tsEl.className = "tabsearch"; tsEl.hidden = true;
+  const tsBtn = document.createElement("button");
+  tsBtn.type = "button"; tsBtn.className = "tabsearch-btn"; tsBtn.setAttribute("aria-label", "Search");
+  tsBtn.appendChild(buildMagnifyIcon());
+  const tsField = document.createElement("div"); tsField.className = "tabsearch-field";
+  const tsGlass = buildMagnifyIcon(); tsGlass.setAttribute("class", "tabsearch-glass");
+  const tsInput = document.createElement("input");
+  tsInput.type = "search"; tsInput.className = "tabsearch-input"; tsInput.setAttribute("enterkeyhint", "search");
+  tsInput.autocomplete = "off"; tsInput.spellcheck = false;
+  const tsClear = document.createElement("button");
+  tsClear.type = "button"; tsClear.className = "tabsearch-clear"; tsClear.setAttribute("aria-label", "Clear search"); tsClear.hidden = true;
+  tsField.append(tsGlass, tsInput, tsClear);
+  tsEl.append(tsBtn, tsField);
+  document.body.appendChild(tsEl);
+  let ts = null;              /* { screen, onQuery } while a screen has it */
+  let tsOpen = false, tsLift = 0, tsHome = null;
+  const TS_GAP = 8;
+  const tsCalm = () => document.documentElement.dataset.reduceMotion === "true";
+  /* where the circle sits: level with the bar, TS_GAP past its end */
+  function tsPlace(){
+    if(!ts || bar.hidden){ tsEl.hidden = true; return; }
+    const r = bar.getBoundingClientRect();
+    const d = Math.round(r.height);
+    document.body.style.setProperty("--ts-d", d + "px");
+    tsEl.hidden = false;
+    /* the bar's rect carries the keyboard lift; the circle carries its own */
+    tsEl.style.top = (r.top + (tsOpen ? tsLift : 0)) + "px";
+    tsEl.style.height = d + "px";
+    if(tsOpen){
+      const L = r.left + d + TS_GAP;
+      tsEl.style.left = L + "px";
+      tsEl.style.width = Math.max(d, (tsHome ? tsHome.right : r.right + TS_GAP + d) - L) + "px";
+    } else {
+      /* closing: where it will be once the bar has its width back */
+      tsEl.style.left = (tsHome ? tsHome.right - d : r.right + TS_GAP) + "px";
+      tsEl.style.width = d + "px";
+    }
+  }
+  /* the keyboard: both ride just above it (the chat sheet's reading of it) */
+  function tsKb(){
+    const v = window.visualViewport;
+    let kb = 0;
+    if(v && tsOpen && document.activeElement === tsInput && !(v.scale > 1.01)) kb = Math.round(window.innerHeight - (v.offsetTop + v.height));
+    const gap = tsHome ? Math.max(0, window.innerHeight - tsHome.bottom) : 0;
+    const lift = kb > 120 ? Math.max(0, kb - gap + 10) : 0;
+    if(lift === tsLift) return;
+    tsLift = lift;
+    const t = lift ? "0 " + (-lift) + "px" : "";
+    bar.style.translate = tsOpen ? (lift ? t : "none") : "";
+    tsEl.style.translate = t;
+  }
+  try{
+    const v0 = window.visualViewport;
+    if(v0){ v0.addEventListener("resize", tsKb); v0.addEventListener("scroll", tsKb); }
+  }catch(e){}
+  tsInput.addEventListener("focus", () => { tsKb(); setTimeout(tsKb, 350); });
+  tsInput.addEventListener("blur", () => setTimeout(tsKb, 120));
+  function tsQuery(v){
+    tsClear.hidden = !v;
+    if(ts && ts.onQuery){ try{ ts.onQuery(v); }catch(e){} }
+  }
+  tsInput.addEventListener("input", () => tsQuery(tsInput.value));
+  tsInput.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); tsInput.blur(); } });
+  tsClear.addEventListener("click", () => { tsInput.value = ""; tsQuery(""); try{ tsInput.focus(); }catch(e){} });
+  let tsAnimT = 0;
+  function tsAnim(){
+    bar.classList.add("ts-anim");
+    clearTimeout(tsAnimT); tsAnimT = setTimeout(() => bar.classList.remove("ts-anim"), 420);
+  }
+  function tsOpenNow(){
+    if(!ts || tsOpen || bar.hidden) return;
+    const r = bar.getBoundingClientRect();
+    tsHome = { left: r.left, right: r.right + TS_GAP + r.height, bottom: r.bottom };
+    if(bar._lensHide && bar.classList.contains("lens-up")) bar._lensHide(true);
+    /* the bar keeps its left edge while it draws in (it is centred by a
+       -50% translate otherwise, and would slide to the middle) */
+    bar.style.left = r.left + "px"; bar.style.transform = "none"; bar.style.translate = "none";
+    const lit = navrow.querySelector(".bottomtab.active") || navrow.querySelector(".bottomtab");
+    navrow.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("ts-keep", t === lit));
+    tsOpen = true;
+    tsAnim();
+    document.body.classList.add("tabsearch-open");
+    bar.classList.add("ts-open");
+    tsEl.classList.add("is-open");
+    tsInput.placeholder = ts.placeholder || "Search";
+    tsInput.setAttribute("aria-label", ts.placeholder || "Search");
+    try{ playSound("ui.tab.bottom"); }catch(e){}
+    tsPlace();
+    /* in the tap itself, or iOS will not raise the keyboard */
+    try{ tsInput.focus({ preventScroll: true }); }catch(e){ try{ tsInput.focus(); }catch(e2){} }
+  }
+  function tsCloseNow(quiet){
+    if(!tsOpen) return;
+    tsOpen = false;
+    try{ tsInput.blur(); }catch(e){}
+    if(tsInput.value){ tsInput.value = ""; tsQuery(""); }
+    tsLift = 0; tsEl.style.translate = "";
+    tsAnim();
+    document.body.classList.remove("tabsearch-open");
+    bar.classList.remove("ts-open");
+    tsEl.classList.remove("is-open");
+    if(!quiet){ try{ playSound("ui.tab.bottom"); }catch(e){} }
+    tsPlace();
+    /* back to centred once the bar has its tabs again */
+    const done = () => {
+      if(tsOpen) return;
+      bar.style.left = ""; bar.style.transform = ""; bar.style.translate = "";
+      navrow.querySelectorAll(".bottomtab.ts-keep").forEach(t => t.classList.remove("ts-keep"));
+      tsHome = null;
+      try{ slideBubbleToActiveTab(true); }catch(e){}
+      tsPlace();
+    };
+    setTimeout(done, tsCalm() ? 0 : 380);
+  }
+  tsBtn.addEventListener("click", tsOpenNow);
+  /* the small circle the bar became: a touch on it closes the search and
+     reaches nothing else (no lens, no tab) */
+  ["pointerdown", "pointerup", "click", "touchstart"].forEach(t => bar.addEventListener(t, e => {
+    if(!tsOpen) return;
+    e.stopPropagation();
+    if(t === "click"){ e.preventDefault(); tsCloseNow(false); }
+  }, true));
+  function tsUnregister(){
+    if(!ts) return;
+    tsCloseNow(true);
+    ts = null;
+    document.body.classList.remove("has-tabsearch");
+    tsEl.hidden = true;
+    setTimeout(() => { try{ slideBubbleToActiveTab(true); }catch(e){} }, 0);
+  }
+  window.registerTabSearch = (screen, opts) => {
+    tsUnregister();
+    if(!screen || bar.hidden || bar.classList.contains("has-start-tab") || document.documentElement.dataset.layout !== "modern") return false;
+    ts = { screen, placeholder: (opts && opts.placeholder) || "Search", onQuery: opts && opts.onQuery };
+    document.body.classList.add("has-tabsearch");
+    requestAnimationFrame(() => { try{ slideBubbleToActiveTab(true); }catch(e){} tsPlace(); });
+    tsPlace();
+    return true;
+  };
+  /* the screen it was asked for is gone, or the bar went: it goes too */
+  new MutationObserver(() => {
+    if(!ts) return;
+    if(!ts.screen.isConnected || bar.hidden || bar.classList.contains("has-start-tab")) tsUnregister();
+  }).observe(stage, { childList: true });
+  new MutationObserver(() => { if(ts && (bar.hidden || bar.classList.contains("has-start-tab"))) tsUnregister(); else if(ts) tsPlace(); })
+    .observe(bar, { attributes: true, attributeFilter: ["hidden", "class"] });
+  window.addEventListener("resize", () => { if(ts){ if(tsOpen){ const r = bar.getBoundingClientRect(); tsHome = tsHome && { left: tsHome.left, right: Math.min(window.innerWidth - 8, tsHome.right), bottom: r.bottom }; } tsPlace(); } });
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }
   window.addEventListener("resize", refreshGlass);
   /* The header is sticky and always present (unlike the bottom bar,
