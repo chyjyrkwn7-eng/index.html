@@ -27081,3 +27081,55 @@ it"*.
   (immune to how busy the machine is): frames 4 / 8 / 14 at .54 / .87 / .98
   here (reference .48 / .83 / .99); .80 / 1.00 / 1.00 on 327z10.
 - APP_BUILD / version.json `2026-10-24-327z11`.
+
+## Build 327z12 (2026-10-24) - characters, chat open, calendar, boards, daily button
+
+Madison's list after 327z11, each fixed and gated in `tools/check-b327z12.py`
+(L-P, every check fails on 327z11):
+
+- **"fake void ... doesn't move"** (L). The flip-book recorder held any loop
+  slower than 2 sheets (12s) still. Umbra's moon phases (7s alternate = 14s)
+  and Void's flare turn (20s) are those characters' main motion, so in the
+  tab bar and on the boards they were pictures. `recordCharSheet` now plays
+  a loop up to 2.5 sheets (a `cx-spin*` turn up to 3.5) one whole cycle per
+  sheet - quicker than the big live drawing, but moving. Slower loops (40s
+  starfields, 60s gears) are still held. `CHAR_ANIM_VER` c4 -> c5 so saved
+  sheets are recorded again.
+- **"When the chat is pulled up, the Liquid Glass is glitched and lags
+  behind"** (M). The slide up was the one move still resampling the 30px
+  blur every frame. `openChatDock` puts the panel in `.is-settling` (flat
+  fill) for 300ms; glass once still. Same rule as drag and slide out.
+- **Calendar: "you can't scroll down ... from touching the actual
+  calendar"** (N). Every day is a small button, so each carried an iPhone
+  haptic switch (`.nova-hsw`), and iOS lets a finger on a native switch
+  drag the switch instead of the page. The grid is `data-no-hsw`; a tap
+  still picks the day (no tick on day cells - the trade for scrolling).
+- **Calendar: "could the calendar look better? I just want the best"** (N).
+  The month is ONE card (`.cal-monthview` in the surface card, radius 22):
+  title on the left; a "Today" pill (was "Go to today" under everything;
+  aria-label still "Go to today") and two quiet 44px chevrons on the right;
+  a hairline under the weekdays; on a phone days are numbers, not tiles
+  (class day white, no-class grey, picked = filled accent circle, today =
+  ring, today+picked = frosted fill + ring, last day = gold ring); key in
+  one line under a hairline; the picked day is the card's last section
+  (no card in a card); the hint line is hidden. Tablet keeps its tiles
+  (they carry text) inside the same card. Block: "THE MONTH IS ONE CARD"
+  at the end of the style; uses `:not(#cal-z)` to out-weigh the old tile
+  rules. Older gates that asserted the black arrow pill / daycard as its
+  own card / the "Go to today" text are superseded by this.
+- **Leaderboard: "can [hundos] and xp be like [overall] ... the title
+  header"** (O). `LB_THIRD_COL` - This Week and Hundos use Overall's
+  header and columns, Rank / Level / XP (white, `lbCompact` 12.3k from
+  10,000) or Rank / Level / Hundos (gold #FFD36A). The grey sub-line is
+  gone on those boards (the trend mark still sits there).
+- **"The leaderboard find me button should that be black?"** No: it is the
+  tab bar's Liquid Glass, as the search pill beside it is, which reads
+  near-black on this page. It stays glass and now carries a blue
+  location arrow so it reads as a button.
+- **"The daily question button did not get better"** (P). Waiting
+  (`is-ready`): the glass itself is lit in `--dq-c` (a tinted orb, light
+  pooled at the top, bright hairline rim, white "?"), no ring drawn. The
+  pulse still leaves its edge; the 5pm recharge (`is-charging`) still
+  shows the ring. Answered: plain glass, dim "?", slim 2.6/100 arc. The
+  drop-shadow filter on the ring is gone (it moves).
+- APP_BUILD / version.json `2026-10-24-327z12`.

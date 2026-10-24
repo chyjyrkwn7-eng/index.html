@@ -61,7 +61,7 @@ CAL = """() => {
   document.body.appendChild(probe);
   const P = getComputedStyle(probe), want = { bg: P.backgroundImage, bc: P.borderTopColor, bf: P.backdropFilter || P.webkitBackdropFilter };
   probe.remove();
-  const cards = [...document.querySelectorAll('#stage .cal-today-card, #stage .cal-nexttest-card, #stage .cal-big-card, #stage .cal-course-card, #stage .cal-daycard')]
+  const cards = [...document.querySelectorAll('#stage .cal-today-card, #stage .cal-nexttest-card, #stage .cal-big-card, #stage .cal-course-card, #stage .cal-monthview')]  /* MOVED IN 327z12: the day card is a section of the month's card */
     .filter(c => c.offsetParent !== null);
   const off = cards.map(c => { const s = getComputedStyle(c); return { c: c.className.split(' ')[0], ok: s.backgroundImage === want.bg && s.borderTopColor === want.bc && (s.backdropFilter || s.webkitBackdropFilter) === want.bf, bg: s.backgroundImage.slice(0, 70), bc: s.borderTopColor }; }).filter(x => !x.ok);
   const m = document.querySelector('#stage .cal-grid-month');
@@ -86,7 +86,8 @@ def sec_b(br):
             check("B (%s): every calendar card is the app's card" % dev, r["n"] >= 4 and not r["off"], r)
             check("B (%s): the month title is not a serif" % dev, r["serif"] is False, r["serif"])
             check("B (%s): the cards' kickers are the app's soft grey" % dev, r["kick"] >= 3 and not r["kickOff"], r["kickOff"])
-            check("B (%s): the month arrows are the black pill" % dev, r["arrow"] == "rgb(10, 10, 12)", r["arrow"])
+            # MOVED IN 327z12: the arrows are quiet chevrons in the month card's header (check-b327z12 N)
+            check("B (%s): the month arrows are not a glass or coloured disc of their own" % dev, r["arrow"] in ("rgba(0, 0, 0, 0)", "rgb(10, 10, 12)"), r["arrow"])
         finally:
             ctx.close()
 
