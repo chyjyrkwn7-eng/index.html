@@ -27398,3 +27398,42 @@ gives you is also confusing."*
   ones too."). `.hc-text` 1rem (was .86), `.hc-name` .8rem (was .7); the
   tablet and smallest-screen steps moved up to match.
 - Gate: check-b327z15 L and M.
+
+#### 327z15, round 4 - specials hand back on the frame; secret flares that move
+
+Madison: *"The animation of void, when it does the cool effect and finishes
+it, it lags or kinda moves back to the other animation but it's not smooth.
+There's like a pause ... Ensure each character's way of doing this is fixed
+in every way"* and *"Could the secret flares look a little better ... they
+don't look animated except the flashing part. Ensure whatever change you
+make reflects app wide"*.
+
+Specials (`playCharSpecial`), measured for all 30 characters:
+- **Cut or held.** CHAR_SPECIAL_MS was set by hand; eleven specials ran past
+  it (Void 220ms, Genesis 530, Ghost 450, Celestial 360, Oracle 330...) and
+  were cut mid-move, Inferno ended 200ms early and stood still. A special
+  now ends 20ms after the last of its own animations (read off
+  getComputedTiming().endTime, 400-8000ms, else the table).
+- **Snap back.** Parts left away from rest on the last frame (a glow lit, a
+  layer showing) snapped when the class came off. Every special target and
+  `.cx-sp` group whose opacity/transform/translate/rotate/scale differs
+  between the last frame and rest eases back over 260ms (WAAPI, no filter).
+- **The loop's pose jumped (small tiles).** `.char-special .char-flip-play`
+  (and the react/sleep ones) was `display:none`, which cancels the sheet's
+  CSS animation; it restarted from its old delay. It is `visibility:hidden`
+  now, so its clock runs on. And `charSyncLiveToSheet(el, svg)` puts the
+  live drawing's loops on the sheet's clock for the special (currentTime =
+  tau * c * P / L, playbackRate = c * P / L, exactly as recordCharSheet
+  plays them; a loop the sheet holds still is held still), restored to 1
+  after. Sheet vs live at the same instant: Void 1168 differing pixels
+  unsynced, 168 synced (the rest is raster difference).
+Secret flares:
+- `buildFlareOrb` (a test's glint, the found banner, every flare cutscene,
+  the unlock card, a character's hint card) gains `.fo-rays` (two unequal
+  streaks in its colour, turning 16s), `.fo-orbit` (a white mote circling,
+  5.8s) and a breathing `.fo-core`.
+- Home's dots gain `.cof-rays` (turning, 3x --fo) and `.cof-orbit > b` (a
+  mote circling at --fo, twinkling) when found, and `.cof-sheen` (a band of
+  light across the glass every --fo + 1.5s) when not found - still no
+  colour on one not found. Per-flare clocks (`--fo`). Reduce motion: none.
+- Gate: check-b327z15 N and O.

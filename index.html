@@ -15062,6 +15062,50 @@
     .cosmic-flare-dot.is-hunting .cof-tint{ animation-name:cof-tint-hunt; }
     .cosmic-flare-dot.is-hunting .cof-ring{ animation:cof-call 3.2s ease-out 1s infinite; }
   }
+  /* ---- SECRET FLARES THAT MOVE (build 327z15) ----
+     "they don't look animated except the flashing part". A found flare
+     now has a cross of light turning slowly behind it (.cof-rays, two
+     unequal streaks in its colour), a mote of white light circling it
+     (.cof-orbit), as well as its breathing halo, flickering core and
+     glint; one not found yet keeps no colour but a band of light sweeps
+     across its glass now and then (.cof-sheen), so it reads as a marble
+     catching the light rather than a still dot. Each on its own clock
+     (--fd, --fo). Transform and opacity only, on small boxes. */
+  .cosmic-flare-dot .cof-rays{ inset:-170%; border-radius:0; opacity:0;
+    background:
+      radial-gradient(closest-side, color-mix(in srgb, var(--fc) 40%, #fff), color-mix(in srgb, var(--fc) 45%, transparent) 45%, transparent) 50% 50% / 100% 6% no-repeat,
+      radial-gradient(closest-side, color-mix(in srgb, var(--fc) 40%, #fff), color-mix(in srgb, var(--fc) 45%, transparent) 45%, transparent) 50% 50% / 5% 72% no-repeat; }
+  .cosmic-flare-dot.is-found .cof-rays{ opacity:.5; }
+  .cosmic-flare-dot .cof-orbit{ inset:-95%; border-radius:50%; opacity:0; }
+  .cosmic-flare-dot .cof-orbit > b{ position:absolute; left:50%; top:0; width:16%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(circle, #FFFFFF 0 35%, color-mix(in srgb, var(--fc) 60%, transparent) 60%, transparent 72%); }
+  .cosmic-flare-dot.is-found .cof-orbit{ opacity:1; }
+  .cosmic-flare-dot .cof-sheen{ overflow:hidden; opacity:0; }
+  .cosmic-flare-dot .cof-sheen::before{ content:""; position:absolute; top:-20%; bottom:-20%; left:-60%; width:45%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); transform:translateX(0) skewX(-18deg); }
+  .cosmic-flare-dot:not(.is-found) .cof-sheen{ opacity:1; }
+  @media (prefers-reduced-motion:no-preference){
+    .cosmic-flare-dot.is-found .cof-rays{ animation:cof-turn calc(var(--fo, 6s) * 3) linear var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-found .cof-orbit{ animation:cof-turn var(--fo, 6s) linear var(--fd, 0s) infinite; }
+    .cosmic-flare-dot.is-found .cof-orbit > b{ animation:cof-mote 2.2s ease-in-out var(--fd, 0s) infinite; }
+    .cosmic-flare-dot:not(.is-found) .cof-sheen::before{ animation:cof-sweep calc(var(--fo, 6s) + 1.5s) ease-in-out var(--fd, 0s) infinite; }
+  }
+  @keyframes cof-turn{ to{ transform:rotate(360deg); } }
+  @keyframes cof-mote{ 0%,100%{ opacity:.55; transform:scale(.8); } 50%{ opacity:1; transform:scale(1.15); } }
+  @keyframes cof-sweep{ 0%,62%{ transform:translateX(0) skewX(-18deg); } 92%,100%{ transform:translateX(420%) skewX(-18deg); } }
+  /* the same life in the orb every other secret flare is drawn as
+     (buildFlareOrb: a test's glint, the banner, the cutscenes, the cards) */
+  .flare-orb .fo-rays, .flare-orb .fo-orbit, .flare-orb .fo-core{ transform-box:view-box; transform-origin:12px 12px; }
+  .flare-orb .fo-rays{ opacity:.6; }
+  @media (prefers-reduced-motion:no-preference){
+    .flare-orb .fo-rays{ animation:cof-turn 16s linear infinite; }
+    .flare-orb .fo-orbit{ animation:cof-turn 5.8s linear infinite; }
+    .flare-orb .fo-core{ animation:fo-breathe 2.4s ease-in-out infinite; }
+  }
+  [data-reduce-motion="true"] .flare-orb :is(.fo-rays, .fo-orbit, .fo-core),
+  [data-reduce-motion="true"] .cosmic-flare-dot :is(.cof-rays, .cof-orbit, .cof-orbit > b){ animation:none !important; }
+  [data-reduce-motion="true"] .cosmic-flare-dot .cof-sheen::before{ animation:none !important; }
+  @keyframes fo-breathe{ 0%,100%{ transform:scale(1); opacity:.92; } 50%{ transform:scale(1.22); opacity:1; } }
   @keyframes cof-breathe{ 0%,100%{ transform:scale(.86); opacity:.72; } 50%{ transform:scale(1.08); opacity:1; } }
   @keyframes cof-flicker{ 0%,100%{ opacity:.95; transform:scale(1); } 40%{ opacity:.7; transform:scale(.85); } 70%{ opacity:1; transform:scale(1.08); } }
   /* A TOUCH LESS (build 314): "that random shine is super nice, just a
@@ -20223,7 +20267,7 @@
   .char-flip-play{ position:absolute; overflow:hidden; pointer-events:none; contain:strict; }
   .char-flip-play img{ position:absolute; left:0; top:0; max-width:none; max-height:none; display:block; will-change:transform; }
   .char-under-flip{ visibility:hidden; }
-  [class*="char-react-"] .char-flip-play, .char-sleep .char-flip-play{ display:none; }
+  [class*="char-react-"] .char-flip-play, .char-sleep .char-flip-play{ visibility:hidden; }
   [class*="char-react-"] .char-under-flip, .char-sleep .char-under-flip{ visibility:visible; }
   [data-reduce-motion="true"] .char-flip-play img{ animation-play-state:paused !important; }
   /* a locked character is a still, greyed preview (build 314): never its
@@ -20240,7 +20284,14 @@
      live drawing is shown (and kept alive) for the special's length. */
   .char-special .avatarchar-svg .cx-sp{ opacity:1; }
   .char-special .avatarchar-svg .cx-spa{ animation:var(--a); }
-  .char-special .char-flip-play{ display:none; }
+  /* HIDDEN, NOT REMOVED (build 327z15): "The animation of void, when it
+     does the cool effect and finishes it ... kinda moves back to the other
+     animation but it's not smooth". display:none cancels the flip-book's
+     CSS animation, and it restarted from its old delay when shown again -
+     a different pose from the one the special ended on. Hidden, its clock
+     runs on, and the live drawing is put on that same clock for the
+     special (charSyncLiveToSheet), so it hands back on the very frame. */
+  .char-special .char-flip-play{ visibility:hidden; }
   .char-special .char-under-flip{ visibility:visible; }
   [data-reduce-motion="true"] .avatarchar-svg .cx-sp{ opacity:0 !important; }
   @keyframes sp-gather{ 0%{ opacity:0; transform:none; } 20%{ opacity:1; } 80%{ opacity:1; transform:translate(var(--dx), var(--dy)) scale(.6); } 100%{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(.2); } }
@@ -67127,6 +67178,34 @@ function charHasSpecial(el){
   const def = id && AVATAR_CHARACTERS.find(c => c.id === id);
   return !!(svg.querySelector(".cx-sp") || (id && CHAR_SPECIAL_MS[id]) || (def && CHAR_SPECIAL_MS[def.kind]));
 }
+/* THE LIVE DRAWING ON THE FLIP-BOOK'S CLOCK (build 327z15). A sheet is
+   recorded from the drawing's idle loops (recordCharSheet): frame f is
+   every loop at tau = f * L / N, each loop played c whole cycles a sheet
+   (c * P / L of its own speed), a loop too slow for that held still. So
+   at the sheet's place tau now, each loop of the live drawing is set to
+   where the recording had it, at the speed the sheet plays it - and when
+   the live drawing hands back to the sheet, the two are the same picture
+   on the same frame. Returns the loops it changed, to put back after. */
+function charSyncLiveToSheet(el, svg){
+  if(!el || !svg || el.dataset.flipPhase == null || !el.querySelector(".char-flip-play")) return [];
+  const L = CHAR_ANIM_LOOP_MS;
+  const tau = ((Date.now() + (Number(el.dataset.flipPhase) || 0)) % L + L) % L;
+  const done = [];
+  (svg.getAnimations ? svg.getAnimations({ subtree: true }) : []).forEach(a => {
+    try{
+      const t = a.effect.getTiming();
+      if(isFinite(Number(t.iterations))) return;   /* finite: not an idle loop */
+      const P = (Number(t.duration) || 1000) * (String(t.direction || "").indexOf("alternate") >= 0 ? 2 : 1);
+      const turn = /^cx-spin/.test(a.animationName || "");
+      const c = P > (turn ? 3.5 : 2.5) * L ? 0 : Math.max(1, Math.round(L / P));
+      const rate = c ? c * P / L : 0;
+      a.currentTime = c ? tau * rate : 0;
+      a.playbackRate = rate;
+      done.push(a);
+    }catch(e){}
+  });
+  return done;
+}
 function playCharSpecial(el){
   if(!el || !el.isConnected) return false;
   if(document.documentElement.dataset.reduceMotion === "true") return false;
@@ -67134,18 +67213,55 @@ function playCharSpecial(el){
   if(el.closest(".locked, .is-silhouette")) return false;
   const svg = el.querySelector("svg.avatarchar-svg");
   if(!svg || !charHasSpecial(el)) return false;
-  const ms = charSpecialMsFor(svg);
   /* a flip-book is stepped aside for it, and the drawing under it has to
-     be alive while it plays */
+     be alive while it plays - on the sheet's own clock (327z15) */
   if(!el.classList.contains("char-live")){ el.classList.add("char-live"); el.dataset.spLive = "1"; }
+  const synced = charSyncLiveToSheet(el, svg);
+  const idle = new Set(svg.getAnimations ? svg.getAnimations({ subtree: true }) : []);
   el.classList.add("char-special");
+  /* AS LONG AS THE MOVE ITSELF, NOT A NUMBER (327z15). CHAR_SPECIAL_MS was
+     set by hand per character, and measured against what each special
+     actually draws, eleven ran past it - Void by 220ms, Genesis by 530 -
+     and were cut off mid-move, and Inferno ended 200ms early and stood
+     still: the snap and the pause reported. The special ends when its
+     last part has finished. */
+  let ms = charSpecialMsFor(svg);
+  const targets = new Set(svg.querySelectorAll(".cx-sp"));
+  try{
+    let end = 0;
+    svg.getAnimations({ subtree: true }).forEach(a => {
+      if(idle.has(a)) return;
+      if(a.effect && a.effect.target) targets.add(a.effect.target);
+      const e = a.effect.getComputedTiming().endTime;
+      if(isFinite(e)) end = Math.max(end, e);
+    });
+    if(end > 400 && end < 8000) ms = Math.ceil(end) + 20;
+  }catch(e){}
   const tok = {};
   el.__charSpecial = tok;
   charSpecialBusyUntil = Date.now() + ms + 400;
   setTimeout(() => {
     if(el.__charSpecial !== tok) return;
     el.__charSpecial = null;
+    /* NOTHING SNAPS BACK (327z15). A special's parts hold their last frame
+       until the class comes off, and several end away from rest (a glow
+       still lit, a part still turned, a layer still showing): taking the
+       class off put them back in one frame. What differs between the
+       move's last frame and rest eases back over a quarter second. */
+    const PROPS = ["opacity", "transform", "translate", "rotate", "scale"];
+    const from = new Map();
+    targets.forEach(t => { try{ const cs = getComputedStyle(t); from.set(t, PROPS.map(p => cs[p])); }catch(e){} });
     el.classList.remove("char-special");
+    synced.forEach(a => { try{ a.playbackRate = 1; }catch(e){} });
+    if(document.documentElement.dataset.reduceMotion !== "true") from.forEach((v0, t) => {
+      try{
+        const cs = getComputedStyle(t), v1 = PROPS.map(p => cs[p]);
+        if(v0.every((v, i) => v === v1[i])) return;
+        const k0 = {}, k1 = {};
+        PROPS.forEach((p, i) => { if(v0[i] !== v1[i] && v0[i]){ k0[p] = v0[i]; k1[p] = v1[i]; } });
+        if(Object.keys(k0).length) t.animate([k0, k1], { duration: 260, easing: "cubic-bezier(.3,.6,.3,1)" });
+      }catch(e){}
+    });
     if(el.dataset.spLive){ delete el.dataset.spLive; if(el.classList.contains("char-flip")) el.classList.remove("char-live"); }
   }, ms);
   return true;
@@ -75732,11 +75848,31 @@ function buildFlareOrb(color, tag, scale){
   defs.appendChild(g);
   const k = scale || 1;
   svg.appendChild(mk("circle", { cx: 12, cy: 12, r: 11 * k, fill: "url(#orb-" + uid + ")" }));
+  /* IT MOVES (build 327z15). "Could the secret flares look a little
+     better? I think the white dots on the unlocked ones are cool but idk
+     they don't look animated except the flashing part. Ensure whatever
+     change you make reflects app wide." Every secret flare outside Home
+     is this orb - the glint in a test, the found banner, every flare
+     cutscene, the unlock card, a character's hint card - so it gains, in
+     all of them at once: a slow turning cross of light (two unequal
+     streaks, a flare and not a plus sign), a mote of light circling it,
+     and a core that breathes. Transforms and opacity only, no filters. */
+  const sg = mk("radialGradient", { id: "orbs-" + uid, cx: "50%", cy: "50%", r: "50%" });
+  [["0%", "#FFFFFF", "1"], ["35%", color, ".75"], ["100%", color, "0"]].forEach(([o, c, op]) =>
+    sg.appendChild(mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+  defs.appendChild(sg);
+  const rays = mk("g", { class: "fo-rays" });
+  rays.appendChild(mk("ellipse", { cx: 12, cy: 12, rx: 11.4 * k, ry: .55 * k, fill: "url(#orbs-" + uid + ")" }));
+  rays.appendChild(mk("ellipse", { cx: 12, cy: 12, rx: .5 * k, ry: 8.2 * k, fill: "url(#orbs-" + uid + ")" }));
+  svg.appendChild(rays);
   svg.appendChild(mk("circle", { cx: 12, cy: 12, r: 4.2 * k, fill: color }));
   /* A white core, because a coloured disc on a dark screen reads as a
      dot and a lit one reads as a light. */
-  svg.appendChild(mk("circle", { cx: 12, cy: 12, r: 2.1 * k, fill: "#FFFFFF", opacity: ".92" }));
+  svg.appendChild(mk("circle", { class: "fo-core", cx: 12, cy: 12, r: 2.1 * k, fill: "#FFFFFF", opacity: ".92" }));
   svg.appendChild(mk("circle", { cx: 10.8, cy: 10.6, r: .9 * k, fill: "#FFFFFF" }));
+  const orbit = mk("g", { class: "fo-orbit" });
+  orbit.appendChild(mk("circle", { class: "fo-mote", cx: 12, cy: 12 - 7.4 * k, r: .62 * k, fill: "#FFFFFF" }));
+  svg.appendChild(orbit);
   return svg;
 }
 
@@ -79947,7 +80083,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     const k = MYSTERY_ORDER.indexOf(key);
     el.style.setProperty("--fd", (-[0, 2.3, 4.1, 1.2, 3.4, .6][k] || 0) + "s");
     el.style.setProperty("--fg", ([7.3, 9.1, 11.7, 8.3, 10.3, 6.7][k] || 8) + "s");
-    el.innerHTML = '<i class="cof-halo"></i><i class="cof-ring"></i><i class="cof-body"></i><i class="cof-tint"></i><i class="cof-core"></i><i class="cof-spark"></i>';
+    el.innerHTML = '<i class="cof-halo"></i><i class="cof-rays"></i><i class="cof-ring"></i><i class="cof-body"></i><i class="cof-tint"></i><i class="cof-sheen"></i><i class="cof-core"></i><i class="cof-spark"></i><i class="cof-orbit"><b></b></i>';
+    /* the mote and the rays turn on their own clocks too (327z15) */
+    el.style.setProperty("--fo", ([5.6, 6.8, 6.1, 7.4, 5.2, 6.5][k] || 6) + "s");
     if(useTierIcons){
       el.classList.add("cosmic-badge-tappable");
       el.setAttribute("role", "button");

@@ -26011,10 +26011,11 @@ def check_b323n_nav(br):
         check("no Friends box on Profile; the chat's Friends tab lists every friend, each with a character and a name",
               not fb.get("profileBox") and len(rows) >= 6 and all(x["avatar"] and x["name"] for x in rows), [fb.get("err"), rows])
         check("the ones on carry the online mark, and the bar counts them", sum(1 for x in rows if x["on"]) == 2 and "2 online" in (fb.get("info") or ""), [fb.get("info"), rows])
-        check("the bar's button is Add friends and opens the Friends screen", fb.get("btn") == "Add friends" and fb.get("opens"), [fb.get("btn"), fb.get("opens")])
+        # MOVED IN 327z15: "instead of add friends should it say manage friends?"
+        check("the bar's button is Manage friends and opens the Friends screen", fb.get("btn") == "Manage friends" and fb.get("opens"), [fb.get("btn"), fb.get("opens")])
         check("none of it reads the class board of its own (already loaded)", fb.get("boardReads") == 0, fb.get("boardReads"))
         e = fb.get("empty") or {}
-        check("with no friends: no rows, the bar says so, and Add friends", e.get("rows") == 0 and "No friends" in (e.get("line") or "") and e.get("btn") == "Add friends", e)
+        check("with no friends: no rows, the bar says so, and Manage friends", e.get("rows") == 0 and "No friends" in (e.get("line") or "") and e.get("btn") == "Manage friends", e)
     except Exception as ex:
         check("build 323 navigation could be driven at all", False, str(ex)[:300])
     ctx.close()

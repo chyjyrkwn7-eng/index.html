@@ -43,6 +43,21 @@ Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
      a locked one has no numbers in it (no levels, badges or counts to go);
      the planet's says no more than two sentences and no "to go"; the words
      are at least 16px on a phone.
+
+  Round 4:
+  N. "The animation of void, when it does the cool effect and finishes it,
+     it lags or kinda moves back ... Ensure each character's way of doing
+     this is fixed": for every character with a special, the special ends
+     within 60ms after the last of its own parts finishes - never before
+     (a hold) and never cut short; and on a small tile (a recorded loop)
+     the loop keeps running while the special plays (it is hidden, not
+     removed), with the live drawing's loops set to the loop's own place.
+  O. "Could the secret flares look a little better ... they don't look
+     animated except the flashing part. Ensure whatever change you make
+     reflects app wide": the orb every secret flare outside Home is drawn
+     as has parts that turn; on Home a found flare has a turning part as
+     well as its breath and flicker, and one not yet found has motion of
+     its own.
 """
 import importlib.util
 import itertools
@@ -58,7 +73,7 @@ cb = z5b.cb
 check = cb.check
 from playwright.sync_api import sync_playwright
 
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLM")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNO")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -272,10 +287,93 @@ def section_m(br):
     ctx.close()
 
 
+def section_n(br):
+    print("\nN. a special ends when its move ends; a small tile's loop keeps its clock")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => {
+      const bad = [], ok = [];
+      for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+        const el = document.createElement('div'); el.className = 'profile-hero-avatar __n';
+        el.style.cssText = 'position:fixed;left:0;top:0;width:160px;height:160px';
+        let svg; try{ svg = buildAvatarCharSVGSafe(c.id); }catch(e){ continue; }
+        el.appendChild(svg); document.body.appendChild(el); el.classList.add('char-live');
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        if(!charHasSpecial(el)){ el.remove(); continue; }
+        const before = new Set(svg.getAnimations({ subtree: true }));
+        charSpecialBusyUntil = 0;
+        const t0 = Date.now();
+        playCharSpecial(el);
+        const planned = charSpecialBusyUntil - 400 - t0;
+        let end = 0;
+        svg.getAnimations({ subtree: true }).forEach(a => { if(before.has(a)) return; const e = a.effect.getComputedTiming().endTime; if(isFinite(e)) end = Math.max(end, e); });
+        (planned >= end - 5 && planned <= end + 60 ? ok : bad).push(c.id + ' ' + Math.round(planned) + '/' + Math.round(end));
+        el.__charSpecial = null; el.classList.remove('char-special'); el.remove();
+      }
+      return { bad, n: ok.length + bad.length }; }""")
+    check("%s: N. all %d specials end with their own last part (no hold, no cut)" % (label, r["n"]), not r["bad"] and r["n"] >= 10, r["bad"][:10])
+    r = pg.evaluate("""async () => {
+      const el = document.createElement('div'); el.className = 'profile-hero-avatar __n';
+      el.style.cssText = 'position:fixed;left:20px;top:20px;width:56px;height:56px';
+      el.appendChild(buildAvatarCharSVGSafe('voidwalker')); document.body.appendChild(el);
+      setCharState(el, 'live', { solo: true });
+      for(let i = 0; i < 160 && !el.querySelector('.char-flip-play img'); i++) await new Promise(r => setTimeout(r, 250));
+      const img = el.querySelector('.char-flip-play img');
+      if(!img) return { sheet: false };
+      await new Promise(r => setTimeout(r, 600));
+      charSpecialBusyUntil = 0; playCharSpecial(el);
+      await new Promise(r => setTimeout(r, 400));
+      const running = img.getAnimations().filter(a => a.playState === 'running').length;
+      // each looping part of the live drawing at the loop's own place
+      const L = CHAR_ANIM_LOOP_MS, tau = ((Date.now() + Number(el.dataset.flipPhase || 0)) % L + L) % L;
+      let off = 0, n = 0;
+      el.querySelector('svg.avatarchar-svg').getAnimations({ subtree: true }).forEach(a => {
+        const t = a.effect.getTiming(); if(isFinite(Number(t.iterations))) return;
+        const P = (Number(t.duration) || 1000) * (String(t.direction || '').indexOf('alternate') >= 0 ? 2 : 1);
+        const turn = /^cx-spin/.test(a.animationName || ''); const c = P > (turn ? 3.5 : 2.5) * L ? 0 : Math.max(1, Math.round(L / P));
+        if(!c) return;
+        const want = (tau * c * P / L) % P, got = (Number(a.currentTime) || 0) % P;
+        off = Math.max(off, Math.min(Math.abs(want - got), P - Math.abs(want - got))); n++;
+      });
+      return { sheet: true, running, off: Math.round(off), n }; }""")
+    if r.get("sheet"):
+        check("%s: N. the tile's loop keeps running under the special (%d)" % (label, r["running"]), r["running"] >= 1, r)
+        check("%s: N. the live drawing's %d loops are within 80ms of the loop's place (worst %dms)" % (label, r["n"], r["off"]), r["n"] >= 1 and r["off"] <= 80, r)
+    else:
+        check("%s: N. a small tile got its recorded loop" % label, False, r)
+    ctx.close()
+
+
+def section_o(br):
+    print("\nO. secret flares move, everywhere")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => {
+      const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:90px;height:90px';
+      const orb = buildFlareOrb(MYSTERY_COLOR.red, 'gate'); orb.style.width = orb.style.height = '90px';
+      box.appendChild(orb); document.body.appendChild(box);
+      await new Promise(r => setTimeout(r, 300));
+      const turns = a => /rotate|turn|spin/.test(a.animationName || '') || /rotate/.test(JSON.stringify(a.effect.getKeyframes()));
+      const oa = orb.getAnimations({ subtree: true });
+      store.mysteryColorsFound = { red: true }; showHome();
+      await new Promise(r => setTimeout(r, 1500));
+      const found = document.querySelector('.cosmic-flare-dot.is-found');
+      const missing = document.querySelector('.cosmic-flare-dot:not(.is-found):not(.is-next)');
+      const fa = found ? found.getAnimations({ subtree: true }) : [];
+      const ma = missing ? missing.getAnimations({ subtree: true }) : [];
+      return { orb: oa.length, orbTurn: oa.filter(turns).length, found: !!found, foundN: fa.length, foundTurn: fa.filter(turns).length,
+               missing: !!missing, missingN: ma.length }; }""")
+    check("%s: O. the orb (tests, banner, cutscenes, cards) has turning parts (%d of %d)" % (label, r["orbTurn"], r["orb"]), r["orbTurn"] >= 1, r)
+    check("%s: O. a found flare on Home has a turning part" % label, r["found"] and r["foundTurn"] >= 1, r)
+    if r["missing"]:
+        check("%s: O. one not found yet moves too (%d)" % (label, r["missingN"]), r["missingN"] >= 1, r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o)):
             if k in ONLY:
                 try:
                     fn(br)
