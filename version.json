@@ -1,8 +1,8 @@
 {
-  "build": "2026-10-24-327z12",
+  "build": "2026-10-24-327z14",
   "note": "",
   "frameId": "",
   "frameNote": "",
   "force": true,
-  "safariSound": true
+  "safariSound": false
 }

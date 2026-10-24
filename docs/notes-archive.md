@@ -27166,3 +27166,139 @@ Madison's list after 327z11, each fixed and gated in `tools/check-b327z12.py`
   (`friendsBackFresh`). Copy that said "Profile › Friends" now says "the chat
   › Friends". Gate Q. Old gates moved (MOVED IN 327z12 round 2): b319h_layout
   Friends block, b321f/b323 friends box, b324n2 Nova count.
+
+## Build 327z13 (2026-10-24) - no tick on the answered daily button
+
+"The daily question, when it's complete don't make it a checkmark." The tick
+(`.dq-mark-done`) is gone; answered, the button keeps its drawn "?" in
+`--dq-c` on the quieter glass with the countdown arc (round 2's answered
+look otherwise unchanged). Gate check-b327z12 R now asserts the "?" and no
+tick in both states (fails on 327z12). APP_BUILD / version.json 327z13.
+
+### Build 327z13 - the tab bar's glass: slower, and nothing built under it
+
+"The bottom tab is getting better but the pill bubble thing still moves too
+fast when clicking through the bottom tab. It also lags. Please ensure it's
+perfect, leave no stone unturned." Measured at 4x CPU with real touches:
+
+- Pace: `LENS.glide` [625, .95] was 54% / 87% / 99% at frames 4 / 8 / 16 -
+  a flick. Now [260, .95] (w 16): 32% / 67% / 94%, no overshoot. `minUp`
+  200 -> 300, so a quick tap's lens stays up until it has arrived (it starts
+  to shrink ~360ms after the press, at 98% of the way).
+- Lag: the tapped tab's screen was built 150ms after the press, mid-glide.
+  A build is a long main-thread task (Home ~100-160ms of layout for its
+  orbit, a first Profile ~600ms over several tasks at 4x); on an iPhone that
+  holds the glass's frames. `TAB_SCREEN_AFTER` 150 -> 290 (glide ~94% there),
+  so every build lands after the crossing. With real touches at 4x the only
+  main-thread work before 290ms is the press and release themselves (a few
+  ms of script, a small style pass); the build's layout comes at ~320-440ms.
+- First tap of a session: the white/pink/brown noise buffers (~96k samples
+  each of filtering) were generated on the press. Now plain arrays per rate
+  (`sndNoiseSamples`), worked out in `prewarm` idle time like the reverb's
+  impulse; a context copies them in (`getChannelData(0).set`). Same samples,
+  same sound (check-sound passes).
+- Gate: `tools/check-b327z13.py` S (pace off the lens's own track), T (a
+  60ms tap stays up 320ms+ and shrinks only at 95%+), U (#stage changes
+  270ms+ after the press with the glide 90%+ there) - all fail on 327z12.
+  Moved: check-b327z10 K (new curve), check-behaviour b314h_tabs (budget is
+  300ms on top of the 290ms wait; median now ~357ms tap-to-paint at 4x).
+- Not verifiable here: how the glass renders on an iPhone's GPU while the
+  build runs after it lands (its landing fades are compositor animations).
+
+### Build 327z13, round 2 - Profile taps, haptics on lists, unlock cards, boards
+
+Madison's list after the glide (each in check-b327z13 V-Z, failing on 327z12):
+
+- **Calendar "registering clicking stuff when I try to scroll"** (V). 327z10's
+  wide exception (`HSW_WIDE_H`) put a native switch on every wide short
+  button - including each row of the Final exams list, five 323x58 switches
+  stacked into a wall a finger lands on, drags and lifts as a tap.
+  `hswListRow`: a wide button keeps its switch only when it stands alone; one
+  with 2+ siblings sharing its first class is a list row and gets none.
+- **Haptics on unit and mode selection** (W). Unit cards are 175px labels
+  round a hidden checkbox (labels never take a switch; that size would block
+  scrolling): `HSW_OPT` now includes `.picks > label.pick > input`, made a
+  native switch 44px over the card's tick (`--hsw-x/--hsw-y`); the
+  drag-select treats a press on it as a press on the circle. Mode cards
+  (360x166, the screen scrolls even on a Pro Max) carry a switch over their
+  head only (`.modecard > .nova-hsw` 62% x 64px). A tap elsewhere on either
+  card works but has no tick - device-only to confirm.
+- **Profile: only the pills open** (X). `.pf-goal` and `.pf-case` were whole
+  `<button>`s. Now divs: "See every rank" (`pfGoalFoot`) and the case's count
+  pill are the buttons. Each challenge row opens `rankChallengeDetail` (a new
+  `challenge` kind on the unlock card: the count in a ring of the challenge's
+  colour, "Done" when met); each unlock tile opens its own card
+  (`themeDetail`, new `rankFlareDetail`/`rankflare` kind, `characterDetail`,
+  `bannerDetail`) as Customize's hold does. Tapping your character
+  (`.profile-hero-avatar`) squashes it (`pf-boop`) and plays its special.
+- **Stats "Your units" box (Needs work / Strongest) removed** (Y), CSS too.
+- **Find me's blue arrow removed** (Y; check-b327z12 O moved).
+- **Sheriff** (Y): `CHARACTER_FEATS.novabeat.note` is one sentence now
+  ("Invite Nova from a Virtual Room lobby and finish ahead of him."); his
+  speed and each mode's win condition came off.
+- **Unlock pop-ups "all blend in"** (Y): on a card for something not yet
+  yours the requirement (`.unlock-card-desc`) is its own block - "To unlock"
+  over it, white, 1.02rem bold, in a tray - and the note stays small/grey.
+- **Astral, Celestial, Zenith veiled** like the flare banners (Y):
+  `isVeiledBanner` includes `ultimate`; tile `.is-secret` follows it.
+- **UFO 350 -> 200, Bubbles 200 -> 150** (Y). Read off the count; nothing
+  stored. check-behaviour's ladder check moved.
+- **Board characters "aren't really moving"** (Z). Measured: a fresh board
+  of 22 at 4x had 0-1 of its 10 visible characters moving after 30s - each
+  must be recorded once (seconds each on a phone; again after every
+  `CHAR_ANIM_VER` bump), and a failed recording stayed still past the 4th
+  fallback. A board row with no sheet after 450ms plays its live drawing
+  meanwhile (`.char-flip-wait`, `CHAR_FLIP_WAIT_MAX` 6 - ten live cost frames,
+  57 vs 84 a second measured) and takes its sheet when made; a failed one on
+  the board stays live. Now 6 of 10 move at 3s and the rest join as sheets
+  land; saved sheets load at once on later visits.
+
+### Build 327z14 - Safari tabs: the sky under the bars, the tab kept over a reload, sound off; a silent exit; the hundo preview matches results
+
+Madison (Safari tab screenshot, top and bottom bands circled): *"The boxes at
+the top and bottom are still there. It also randomly refreshes."* Then: *"The
+app randomly freezes again in safari, I think the sound may be breaking it"*,
+*"When leaving the app with sound on, it makes a weird/glitchy noise"*, and
+*"for the undo [hundo] effect unlocks, when you click one to see a preview,
+that doesn't match up with our results screen anymore"*.
+
+- **The sky runs under Safari's bars** (`html.is-browser`, "THE SKY RUNS
+  UNDER SAFARI'S BARS"). Safari 26's bars are see-through and show what is
+  under them; `body::before` (glows + paper) and `body::after` (stars) are
+  fixed and one viewport tall, so under the bars only the root's own colour
+  (`--edge-bottom`) showed - the bands. In a browser tab both layers run
+  `--bleed` (200px) past the top and bottom, with every gradient restated
+  from the bottom so the visible pixels do not move (compared against
+  non-browser mode in Chromium: within 3 levels except Home's animations),
+  and the root's colour is `var(--paper)`. Only confirmable on an iPhone.
+  check-fixes' SE 1st gen 568x260 browser "GREY BAR, 10 levels" is
+  pre-existing (identical with the bleed block removed) - the scrolled
+  html fallback's known limit, see the 11% ceiling note on body::before.
+- **Random refreshes** are Safari discarding a background tab (heap held
+  ~61MB, blob URLs plateau at 9, no leak measured). A browser tab now keeps
+  its tab: `LAST_TAB_KEY` (`class26e.lastTab`, sessionStorage, which
+  survives the reload) is written on every tab press and, after `showHome()`
+  at boot, a non-Home tab is pressed again. `applyUpdate` clears it, so an
+  update still lands on Home.
+- **Sound is off in iPhone Safari tabs again; haptics are not.**
+  `version.json` `"safariSound": false` (the 327z9 switch). `hapticsWanted()`
+  no longer reads `tabOff()`, and Settings' Sound & vibration card in such a
+  tab shows the note ("Sound plays in the installed app...") above the
+  Haptics row instead of replacing the card. Long tasks measured in Chromium
+  (iPhone UA, 4x CPU, 16 tab presses) were the same with sound on and off
+  (worst ~200ms), so the cause cannot be seen here; this follows the
+  freezes, which have twice gone with sound. `"safariSound": true` puts
+  sound back with no build.
+- **Leaving is silent.** `suspend()` cut the output mid-wave (a click, then
+  iOS tore down the session under the rest). `away()` fades the master to
+  nothing (time constant 12ms) and suspends 90ms later; window `blur` (the
+  home swipe beginning) fades too; `back()` / `resume()` bring the master
+  up from silence (`unhush`).
+- **The hundo preview is the results screen** (`buildHundoFxMock`): header
+  with the mode pill, "1 unit" and the unit; the grade card FIRST (build
+  320's order) with "right on the first try" under 12 / 12 and the unit's
+  bar with no fraction; then XP earned with a Bonuses heading, Hundo,
+  Answer streak, Speed and a large total; then the buttons. 4 / 5.8 so it
+  all fits.
+- Gate: `tools/check-b327z14.py` A-E (`B327Z14_ONLY=`), ALL PASS here; 11
+  failures against 327z12 (live).

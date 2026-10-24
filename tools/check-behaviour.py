@@ -6555,7 +6555,8 @@ def check_b284(br):
       if(back) back.click(); await wait(900);
       out.backToProfile = !!document.querySelector('.screen-profile');
       /* build 315: the badge row is the badge case */
-      const badgeRow = document.querySelector('.screen-profile .pf-case');
+      /* MOVED IN 327z13: only the case's count pill opens it ("should only be the button") */
+      const badgeRow = document.querySelector('.screen-profile .pf-case .pf-case-count');
       if(badgeRow) badgeRow.click(); await wait(1200);
       out.badgesOpen = !!document.querySelector('.screen-ranks .badges-tab:not([hidden])');
       out.closest = !!document.querySelector('.badge-next');
@@ -9593,8 +9594,12 @@ def check_b314h_tabs(br):
         times.append(m["paint"]); blank += 1 if m["blank"] else 0
     times.sort()
     med = times[len(times) // 2]
-    check("every switch between the four tabs paints its screen, median tap-to-paint under 300ms at 4x CPU (313: ~390 warm)",
-          blank == 0 and med < 300 and times[-1] < 2000, {"median": round(med), "worst": round(times[-1]), "blank": blank})
+    # MOVED IN 327z13: the screen waits for the glass to cross (TAB_SCREEN_AFTER,
+    # 290ms - "the pill bubble thing still moves too fast ... it also lags"),
+    # so the budget is what comes on top of that wait: under 300ms, as before
+    WAIT = 290
+    check("every switch between the four tabs paints its screen, median tap-to-paint under 290ms (the glass's crossing) + 300ms at 4x CPU",
+          blank == 0 and med - WAIT < 300 and times[-1] < 2000 + WAIT, {"median": round(med), "worst": round(times[-1]), "blank": blank, "wait": WAIT})
     cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
     ctx.close()
 
@@ -12152,7 +12157,8 @@ def check_b313_fx(br):
     check("five tiles in HUNDO_FX's order (%s), Confetti first, each a small 100%% box" % ", ".join(NAMES),
           len(IDS) == 5 and IDS[0] == "confetti" and [t["id"] for t in mid] == IDS and all(t["stage"] for t in mid), [t["id"] for t in mid])
     check("every rung on the ladder is a built effect - the 50 is %s" % NAMES[1], all(d["built"] for d in LADDER), LADDER)
-    check("four to earn, one ladder of hundos: 50, 100, 200, 350", nums[1:] == [50, 100, 200, 350], [t["need"] for t in mid])
+    # MOVED IN 327z13: "UFO needing 350 hundos is kinda crazy ... like 200. Bubbles can be 150."
+    check("four to earn, one ladder of hundos: 50, 100, 150, 200", nums[1:] == [50, 100, 150, 200], [t["need"] for t in mid])
     check("Confetti comes first and is held by everyone", mid and mid[0]["id"] == "confetti" and not mid[0]["locked"] and r.get("firstLive"), {k: r.get(k) for k in ("firstLive",)})
     check("build 314: every tile is a STILL of its effect - nothing animating in any tile, no effect playing in one (\"all those effects and animations seems like a lot, don't do the effects there\")",
           r.get("tileAnims") == 0 and r.get("tileFx") == 0 and r.get("posters") == len(IDS), {k: r.get(k) for k in ("tileAnims", "tileFx", "posters")})
@@ -12166,7 +12172,8 @@ def check_b313_fx(br):
     check("tapping the picked one opens its card, held, with the effect playing on a results screen in miniature",
           r.get("tapCard") and r.get("tapLive", 0) >= 1 and r.get("tapHeld"), {k: r.get(k) for k in ("tapCard", "tapLive", "tapHeld")})
     check("tapping a held one picks it; a locked one opens its card (its count) and picks nothing",
-          r.get("picked") == IDS[2] and "350" in r.get("cardText", "") and r.get("stillPicked") == IDS[2],
+          # MOVED IN 327z13: the UFO is 200 hundos (was 350)
+          r.get("picked") == IDS[2] and "200" in r.get("cardText", "") and r.get("stillPicked") == IDS[2],
           {k: r.get(k) for k in ("picked", "cardText", "stillPicked")})
     check("build 314: the card has no Preview button (\"The preview button also can be removed\") - the miniature results screen is the preview",
           not r.get("preview") and "Preview" not in r.get("cardText", ""), {k: r.get(k) for k in ("preview",)})
@@ -12671,17 +12678,18 @@ def check_b313_fx(br):
       window.isLockedCharacter = id => id === 'zenith' ? realLocked(id) : false;
       window.bannerEarned = id => id === 'zenith' ? realEarned(id) : true;
       window.isLockedAccent = () => false;
-      store.lifetime.perfectTests = 300;
+      /* MOVED IN 327z13: the UFO is 200 hundos (350 until then) - one short at 190 */
+      store.lifetime.perfectTests = 190;
       out.mid = ultimateProgress(); out.midZenith = !isLockedCharacter('zenith');
-      store.lifetime.perfectTests = 350;
+      store.lifetime.perfectTests = 200;
       out.all = ultimateProgress(); out.allZenith = !isLockedCharacter('zenith');
       window.isLockedCharacter = realLocked; window.bannerEarned = realEarned; window.isLockedAccent = realAccent;
       out.label = CHARACTER_FEATS.everything.label;
       return out; }""")
     md, al = r.get("mid") or {}, r.get("all") or {}
-    check("Zenith counts the hundo effects: one short at 300 hundos (no UFO yet)",
+    check("Zenith counts the hundo effects: one short at 190 hundos (no UFO yet)",
           md.get("need", 0) - md.get("have", 0) == 1 and "hundo effect" in (md.get("note") or "") and r.get("midZenith") is False, r)
-    check("and is held at 350, with everything else", al.get("have") == al.get("need") and r.get("allZenith") is True, r)
+    check("and is held at 200, with everything else", al.get("have") == al.get("need") and r.get("allZenith") is True, r)
     check("Zenith's requirement says so", "hundo effect" in (r.get("label") or ""), r.get("label"))
     ctx.close()
 
@@ -16516,7 +16524,7 @@ def check_b317_hundobox(br):
     # and the results flow waits for all of it: the first scene comes after
     # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
-    # the flow's fixture is a 141-hundo account and the UFO is 350's: it is
+    # the flow's fixture is a 141-hundo account and the UFO is 200's (350 until 327z13): it is
     # simply held to be earned, so the run plays it
     pg.evaluate("() => { const r = hundoFxEarned; window.hundoFxEarned = id => id === 'ufo' || r(id); }")
     fl = pg.evaluate(B317_FLOW_RUN, {"fx": "ufo", "badge": True, "caseMs": 1500})

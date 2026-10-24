@@ -20,7 +20,7 @@
   O. "can [hundos] and xp be like [overall] ... the title header thing",
      then "just stuff relevant to that leaderboard tab": This Week and
      Hundos carry a header and ONE column, their own number (XP, Hundos);
-     Overall keeps its three; Find me carries an icon.
+     Overall keeps its three. (327z13: Find me carries NO icon - "remove that".)
   P. "The daily question button did not get better": waiting, the button is
      lit in the rank's colour with no ring drawn on it; answered, it is the
      plain glass with a slim arc.
@@ -35,8 +35,9 @@
      button opens the Friends screen, and that screen's back link returns
      to the tab it was opened over, which stays lit.
   R. "The question mark is not centered": the mark's ink is centred in the
-     button within half a pixel both ways, waiting and answered; answered,
-     it shows a tick instead.
+     button within half a pixel both ways, waiting and answered. 327z13:
+     "when it's complete don't make it a checkmark" - answered, it is still
+     the "?" (no tick drawn).
 """
 import importlib.util
 import os
@@ -151,7 +152,8 @@ def boards(br):
             icon: !!document.querySelector('#stage .rank-me-btn svg') }; }""")
         check("%s: O. %s has the header %s and every row exactly those columns (%s)" % (label, tab, r["head"], r["ncols"]),
               r["head"] == heads and r["rows"] >= 1 and all(n == len(heads) for n in r["ncols"]), r)
-    check("%s: O. Find me carries an icon" % label, r["icon"], r)
+    # MOVED IN 327z13: "not sure why the find me button has a blue arrow thing? Remove that"
+    check("%s: O. Find me is the word alone, no icon" % label, not r["icon"], r)
     ctx.close()
 
 
@@ -242,7 +244,8 @@ def daily_mark(br):
           f.classList.remove('is-ready', 'is-fresh'); f.querySelectorAll('.dq-ring').forEach(r => r.style.opacity = 0);
           const g = f.querySelector('.dq-glyph'); g.style.opacity = 1; g.style.color = '#fff';
           const r = f.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height,
-            tick: !!f.querySelector('.dq-mark-done') && getComputedStyle(f.querySelector('.dq-mark-done')).display !== 'none' }; }""")
+            tick: [...f.querySelectorAll('.dq-mark')].some(m => !m.classList.contains('dq-mark-q') && getComputedStyle(m).display !== 'none'),
+            q: !!f.querySelector('.dq-mark-q') && getComputedStyle(f.querySelector('.dq-mark-q')).display !== 'none' }; }""")
         pg.wait_for_timeout(250)
         im = Image.open(io.BytesIO(pg.screenshot(clip={"x": box["x"], "y": box["y"], "width": box["w"], "height": box["h"]}))).convert("L")
         W, H = im.size
@@ -253,8 +256,8 @@ def daily_mark(br):
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
         k = W / box["w"]
         dx = ((min(xs) + max(xs)) / 2 - W / 2) / k; dy = ((min(ys) + max(ys)) / 2 - H / 2) / k
-        check("%s: R. %s, the mark's ink is centred (%.2f, %.2f px off)%s" % (label, "answered" if done else "waiting", dx, dy, ", a tick" if done else ""),
-              abs(dx) <= .5 and abs(dy) <= .5 and box["tick"] == done, (dx, dy, box))
+        check("%s: R. %s, the \"?\" is shown, no tick, its ink centred (%.2f, %.2f px off)" % (label, "answered" if done else "waiting", dx, dy),
+              abs(dx) <= .5 and abs(dy) <= .5 and box["q"] and not box["tick"], (dx, dy, box))
     ctx.close()
 
 

@@ -11720,18 +11720,25 @@
     35.26%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 35.47%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
 
   /* ===== round 3: the results screen in miniature ===== */
-  .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.38rem; width:100%; aspect-ratio:4 / 5; padding:.6rem .55rem .55rem; box-sizing:border-box;
+  .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.3rem; width:100%; aspect-ratio:4 / 5.8; padding:.6rem .55rem .55rem; box-sizing:border-box;
     border-radius:14px; overflow:hidden; clip-path:inset(0 round 14px); isolation:isolate; text-align:left; pointer-events:none;
     background:radial-gradient(120% 60% at 50% 0%, rgba(140,70,100,.32), rgba(0,0,0,0) 62%), radial-gradient(90% 50% at 50% 110%, rgba(180,120,60,.18), rgba(0,0,0,0) 70%), #121019;
     border:1px solid rgba(255,255,255,.08); --rs-card:rgba(24,29,37,.7); }
-  .hfx-mock > .rs-head{ display:flex; flex-direction:column; gap:.08rem; padding:.05rem .15rem; }
+  .hfx-mock > .rs-head{ display:flex; flex-direction:column; gap:.08rem; margin:0; padding:.05rem .15rem; }
   .hfx-mk-title{ font-size:.7rem; font-weight:800; color:var(--ink); }
   .hfx-mk-sub{ font-size:.5rem; color:var(--soft); }
+  .hfx-mk-pill{ align-self:flex-start; margin:.12rem 0 .08rem; padding:.08rem .32rem; border-radius:999px; border:1px solid rgba(255,107,107,.45); background:rgba(255,107,107,.12); color:#FF8A8A; font-size:.38rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+  .hfx-mk-scope{ font-size:.78rem; font-weight:800; line-height:1.1; color:var(--ink); }
+  .hfx-mk-frac{ display:flex; flex-direction:column; gap:.06rem; }
+  .hfx-mk-fracsub{ font-size:.42rem; color:var(--soft); }
+  .hfx-mk-unit{ margin:.25rem 0 0; padding-top:.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.5rem; font-weight:700; color:var(--ink); }
+  .hfx-mk-kicker.is-sub{ margin-top:.18rem; margin-bottom:.12rem; }
   .hfx-mock > .rs-card{ position:relative; border:1px solid rgba(255,255,255,.1); border-radius:10px; background:linear-gradient(180deg, rgba(46,135,240,.1), rgba(24,29,37,.7) 60%); padding:.4rem .5rem .45rem; }
   .hfx-mk-kicker{ margin:0 0 .2rem; font-size:.42rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
-  .hfx-mk-line{ display:flex; justify-content:space-between; margin:0 0 .12rem; font-size:.5rem; color:var(--soft); }
+  .hfx-mk-line{ display:flex; justify-content:space-between; margin:0 0 .07rem; font-size:.5rem; color:var(--soft); }
   .hfx-mk-line b{ color:#8FB9FF; font-weight:800; }
-  .hfx-mk-line.is-total{ margin-top:.25rem; color:var(--ink); font-weight:800; }
+  .hfx-mk-line.is-total{ margin-top:.25rem; padding-top:.22rem; border-top:1px solid rgba(255,255,255,.08); align-items:baseline; color:var(--ink); font-weight:800; }
+  .hfx-mk-line.is-total b{ font-size:.78rem; letter-spacing:-.02em; }
   .hfx-mk-bar{ display:block; height:3px; margin-top:.3rem; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
   .hfx-mk-bar > i{ display:block; height:100%; width:34%; border-radius:2px; background:#6FA8FF; }
   .hfx-mk-bar.is-unit > i{ width:100%; }
@@ -12865,17 +12872,6 @@
     background:rgba(255,211,106,.08); border:1px solid rgba(255,211,106,.25); }
   /* The Stats tab's own pieces */
   .stx-hero{ display:flex; align-items:center; gap:1rem; margin:.2rem 0 .9rem; }
-  .stx-units-label{ margin:.7rem 0 .35rem; font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(236,239,245,.6); }
-  .stx-unit-row{ display:grid; grid-template-columns:minmax(0,1fr) 5.2rem 2.6rem; align-items:center; gap:.7rem; width:100%; min-height:44px; padding:.45rem .2rem;
-    background:none; border:none; border-top:1px solid rgba(255,255,255,.07); color:var(--ink); font:inherit; text-align:left; }
-  .stx-unit-row:first-of-type{ border-top:none; }
-  .stx-unit-name{ font-size:.92rem; font-weight:600; line-height:1.25; min-width:0; }
-  .stx-unit-n{ display:block; margin-top:.12rem; font-size:.72rem; font-weight:500; color:rgba(236,239,245,.5); font-variant-numeric:tabular-nums; }
-  .stx-units .info-note{ border:none; background:none; padding:.5rem 0 0; margin:0; font-size:.8rem; box-shadow:none; }
-  .stx-units .info-note::before{ display:none; }
-  .stx-unit-bar{ height:.5rem; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; display:block; }
-  .stx-unit-bar i{ display:block; height:100%; border-radius:999px; }
-  .stx-unit-pct{ font-size:.9rem; font-weight:700; text-align:right; font-variant-numeric:tabular-nums; }
   .stx-ring{ width:5.2rem; height:5.2rem; }
   .stx-ring .thx-ring-num{ font-size:1.15rem; }
   .stx-hero-text{ min-width:0; }
@@ -26691,8 +26687,6 @@
   .rank-col-head.rank-col-lvl, .rank-col-head.rank-col-bdg{ opacity:.9; }
   /* This Week's XP is the board's own number, so it is the white one;
      a hundo is gold, as everywhere a hundo is counted (build 327z12) */
-  .rank-me-btn{ display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
-  .rank-me-btn .rank-me-ico{ width:1rem; height:1rem; flex:none; color:#5CA8FF; }
   /* one column (This Week, Hundos): wide enough for 12.3k at every size */
   .rank-cols.rank-cols-one{ grid-template-columns:4.2rem !important; }
   .rank-col-xp{ color:var(--ink); }
@@ -32430,6 +32424,48 @@
      extend. Made by refreshEdgeTints() once the splash has gone (see
      there: Safari reads a strip only when it appears). */
 html.is-browser{ overscroll-behavior-y:none; }
+/* THE SKY RUNS UNDER SAFARI'S BARS (build 327z13). "Safari version of the
+   app has a bad problem and something that isn't fixed that I've mentioned
+   so many times. The boxes at the top and bottom are still there." With
+   the 327z3 strips gone (327z9), Safari 26 shows the page under its status
+   bar and its toolbar - and what the page has there is not the app: the
+   sky (body::before, the glows and the paper; body::after, the stars) is a
+   fixed layer one viewport tall, and Safari's bars sit OUTSIDE that
+   viewport, so the only thing under them was the root's own colour,
+   --edge-bottom, a flat grey meant for the overscroll bounce: two flat
+   grey boxes, hard-edged against the starry gradient. In a browser tab the
+   sky now runs --bleed past both edges, so the glass has the app's own
+   colours and stars under it. The glows are restated in absolute terms
+   (each circle's farthest-corner radius as hypot() of the ORIGINAL
+   viewport box, every position measured from the bottom edge, which is
+   where the original box was anchored), so inside the viewport every
+   pixel is what it was. The root's colour is the paper as well, for
+   anything Safari shows past even that. Browser tabs only; the installed
+   app has no Safari bars. Confirmable only on an iPhone. */
+html.is-browser{ --bleed:200px; }
+html.is-browser[data-layout][data-theme]{ background-color:var(--paper); }
+html.is-browser[data-layout="modern"] body::before{
+  top:calc(-1 * var(--bleed)); bottom:calc(-1 * var(--bleed)); height:auto;
+  background:
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
+    var(--paper);
+}
+html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
+  background:
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    var(--paper);
+}
+html.is-browser[data-layout="modern"] body::after{
+  top:calc(-1 * var(--bleed)); bottom:calc(-1 * var(--bleed)); height:auto;
+  /* the stars' tiles on the grid they had: the original box's top was the
+     viewport's bottom less 100lvh */
+  background-position:left 0 top calc(var(--bleed) + 100dvh - 100lvh);
+  -webkit-mask-image:linear-gradient(to bottom, transparent calc(var(--bleed) + var(--sky-clear)), #000 calc(var(--bleed) + var(--sky-clear) + 3.5rem));
+  mask-image:linear-gradient(to bottom, transparent calc(var(--bleed) + var(--sky-clear)), #000 calc(var(--bleed) + var(--sky-clear) + 3.5rem));
+}
 .edge-tint{ display:none; }
 html.is-browser .edge-tint{
   display:block; position:fixed; left:0; right:0; height:12px; z-index:2;
@@ -32575,15 +32611,12 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-theme][data-layout] .daily-question-fab{ display:grid; place-items:center; padding:0; }
   .daily-question-fab .dq-glyph{ display:grid; place-items:center; width:58%; height:auto; aspect-ratio:1; line-height:0; }
   .daily-question-fab .dq-mark{ grid-area:1/1; width:100%; height:100%; display:block; overflow:visible; }
-  .daily-question-fab .dq-mark-done{ display:none; }
-  .daily-question-fab.is-done .dq-mark-q{ display:none; }
-  .daily-question-fab.is-done .dq-mark-done{ display:block; }
   /* ---- ANSWERED: DONE, IN THE RANK'S OWN COLOUR, NOT GREYED OUT (round 2) ----
      "How could the non ready version look better? I like the ready
      version." Answered, it was a dark disc with a dimmed "?" - it read as
      switched off. Now it is the ready orb's quieter sibling: the same
-     glass with only a breath of the rank colour in it, a tick in that
-     colour, and the time to the next question as an arc of it round the
+     glass with only a breath of the rank colour in it, the "?" in that
+     colour (a tick until 327z13), and the time to the next question as an arc of it round the
      rim on a faint track of the same hue. */
   html[data-theme][data-layout] .daily-question-fab.is-done{
     background:
@@ -32685,8 +32718,51 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   }
   .pf-case-closed .pf-case-arrow{ display:none; }
   .pf-goal{ transition:box-shadow .6s ease, border-color .6s ease, transform .14s ease; }
-  .pf-goal:active{ transform:scale(.985); }
-  [data-reduce-motion="true"] .pf-goal:active{ transform:none; }
+  /* ONLY THE PILLS OPEN, AND THEY ARE BUTTONS (build 327z13): the cards no
+     longer give under a finger as a whole - the pill does, and each
+     challenge and unlock tile (.pf-taps) gives on its own */
+  .pf-goal, .pf-case.pf-case-closed{ cursor:auto; }
+  .pf-goal:active{ transform:none; filter:none; }
+  .pf-case-closed:active .pf-ccase{ transform:none; filter:none; }
+  .pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count{
+    -webkit-appearance:none; appearance:none; font-family:inherit; font-size:.85rem; font-weight:800; line-height:1.2;
+    cursor:pointer; transition:transform .14s ease; -webkit-tap-highlight-color:transparent;
+  }
+  .pf-goal .pf-goal-foot:active, .pf-case-closed .pf-case-count:active{ transform:scale(.95); }
+  .pf-taps{ cursor:pointer; transition:transform .14s ease; -webkit-tap-highlight-color:transparent; }
+  .pf-taps:active{ transform:scale(.97); }
+  [data-reduce-motion="true"] :is(.pf-taps, .pf-goal-foot, .pf-case-count):active{ transform:none; }
+  /* ---- WHAT IT TAKES, SET APART (build 327z13) ----
+     "Unlockable stuff ... the challenge itself and the descriptions and
+     stuff all blend in. The challenge on those pop ups needs to be a
+     little bit easier to read." The requirement, the line under the bar
+     and the note were all the same quiet grey at much the same size. On a
+     card for something not yet yours the requirement is its own block now:
+     a "To unlock" label over it, in white and bold, in a tray of the
+     card's glass; the note under the bar stays small and grey. */
+  html[data-theme][data-layout] .unlock-card:not(.is-unlocked) .unlock-card-desc{
+    max-width:none; margin:.15rem 0 .9rem; padding:.7rem .9rem .75rem; border-radius:14px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+    font-size:1.02rem; font-weight:700; line-height:1.35; color:#FFFFFF; text-align:center;
+  }
+  html[data-theme][data-layout] .unlock-card:not(.is-unlocked) .unlock-card-desc::before{
+    content:"To unlock"; display:block; margin:0 0 .3rem; font-size:.66rem; font-weight:800;
+    letter-spacing:.14em; text-transform:uppercase; color:rgba(243,245,247,.55);
+  }
+  html[data-theme][data-layout] .unlock-card-challenge:not(.is-unlocked) .unlock-card-desc::before{ content:"How"; }
+  html[data-theme][data-layout] .unlock-card .unlock-card-note{ font-size:.78rem; font-weight:500; line-height:1.4; color:rgba(243,245,247,.55); }
+  /* your character on Profile, tapped (327z13): a squash and a spring back */
+  .profile-hero-avatar[role="button"]{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .profile-hero-avatar.pf-boop{ animation:pf-boop .55s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes pf-boop{ 0%{ transform:scale(1); } 22%{ transform:scale(.88, .84); } 55%{ transform:scale(1.07, 1.1); } 100%{ transform:scale(1); } }
+  /* a rank challenge on the unlock card (327z13): its count inside a ring of how far */
+  .unlock-card-challenge .unlock-card-art{ position:relative; display:grid; place-items:center; color:var(--tc, #fff); width:8.5rem; height:8.5rem; }
+  .unlock-card-challenge .unlock-card-ring{ width:100%; height:100%; display:block; }
+  .unlock-card-chnum{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:.82rem; font-weight:700; color:var(--soft); line-height:1.1; }
+  .unlock-card-chnum b{ font-size:2rem; font-weight:800; color:var(--tc, #fff); font-variant-numeric:tabular-nums; }
+  .unlock-card-rankflare .unlock-card-art{ display:grid; place-items:center; }
+  .unlock-card-rankflare .unlock-card-art > *{ width:70%; height:70%; }
 
   /* ---- THE PAGE BEHIND THE START SHEET STAYS PUT (build 327z10) ----
      "When swiping down on the start menu, the stuff behind it started
@@ -32707,6 +32783,14 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   .opt > input.hsw-opt{
     position:absolute; z-index:2; margin:0; opacity:0;
     width:80px; height:46px; top:50%; right:var(--hsw-r, 0px); transform:translateY(-50%);
+    touch-action:pan-y; -webkit-tap-highlight-color:transparent; cursor:pointer;
+  }
+  /* a mode card's: its head, the icon and the name (327z13) */
+  .modecard > .nova-hsw{ width:62%; height:64px; }
+  /* a unit card's: 44px over its tick circle (327z13) */
+  .picks > label.pick > input.hsw-opt{
+    position:absolute; z-index:2; margin:0; opacity:0;
+    width:44px; height:44px; left:calc(var(--hsw-x, 22px) - 22px); top:calc(var(--hsw-y, 22px) - 22px);
     touch-action:pan-y; -webkit-tap-highlight-color:transparent; cursor:pointer;
   }
 
@@ -47288,7 +47372,10 @@ const CHARACTER_FEATS = {
   novabeat: { label: "Beat Nova in a Virtual Room match (any mode)",
               done: () => store.novaBeaten === true,
               have: () => (store.novaBeaten === true ? 1 : 0), need: 1,
-              note: "Invite Nova from a Virtual Room lobby and finish ahead of him: more XP in a Race, the rope on your side in Tug of War, or his side out of health first in Battle. He answers in two to four seconds and almost never misses." },
+              /* just how (327z13): "The sherriff challenge description? what is
+                 that.. Why does it say what he can do and what modes?" - his
+                 speed and every mode's win condition came off */
+              note: "Invite Nova from a Virtual Room lobby and finish ahead of him." },
   /* Reads the flares themselves rather than a flag set when the third
      is found. One source of truth, so a person who somehow arrives at
      three found without passing through foundMysteryFlare - a cloud
@@ -47480,9 +47567,12 @@ const HUNDO_FX = [
      effect that is no longer there. The tree itself stays built in
      HUNDO_FX_BUILD like the Black Hole. */
   { id: "underwater", name: "Underwater", need: 100, color: "#46E0E8" },
-  { id: "bubbles",   name: "Bubbles",     need: 200, color: "#9FE8FF" },
+  /* LOWER, 327z13: "UFO needing 350 hundos is kinda crazy to be honest. It
+     should be like 200. Bubbles can be 150." Held off the count, so anybody
+     already past the new line simply has it (its unlock pop-up shows once) */
+  { id: "bubbles",   name: "Bubbles",     need: 150, color: "#9FE8FF" },
   /* "the one after bubbles is ... a ufo landing on the grade box" */
-  { id: "ufo",       name: "UFO",         need: 350, color: "#6BFF8F" }
+  { id: "ufo",       name: "UFO",         need: 200, color: "#6BFF8F" }
 ];
 /* An id from an older build, read as the rung that replaced it. */
 const HUNDO_FX_ALIAS = { worldtree: "underwater" };
@@ -67826,11 +67916,16 @@ function sndRng(seed){
 const sndNoiseCache = new WeakMap();
 /* Two seconds of white, pink and brown noise per context, looped from a
    random point by whoever plays it. */
-function sndNoise(ctx, color){
-  let c = sndNoiseCache.get(ctx);
-  if(!c){ c = {}; sndNoiseCache.set(ctx, c); }
-  if(c[color]) return c[color];
-  const n = Math.round(ctx.sampleRate * 2), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0), R = sndRng(color === "w" ? 11 : color === "p" ? 23 : 37);
+/* THE SAMPLES ARE WORKED OUT AHEAD (build 327z13): each colour is ~96,000
+   samples of filtering, and the first tap of a session paid for all three
+   on its press - during the tab bar's glide. Plain arrays per rate, like the
+   reverb's impulse, made in idle time (prewarm); a context copies them in. */
+const sndNoiseData = new Map();
+function sndNoiseSamples(sr, color){
+  const key = sr + "|" + color;
+  const hit = sndNoiseData.get(key);
+  if(hit) return hit;
+  const n = Math.round(sr * 2), d = new Float32Array(n), R = sndRng(color === "w" ? 11 : color === "p" ? 23 : 37);
   let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, br = 0;
   for(let i = 0; i < n; i++){
     const w = R() * 2 - 1;
@@ -67841,6 +67936,15 @@ function sndNoise(ctx, color){
     } else if(color === "b"){ br = (br + .02 * w) / 1.02; d[i] = br * 3.5; }
     else d[i] = w;
   }
+  sndNoiseData.set(key, d);
+  return d;
+}
+function sndNoise(ctx, color){
+  let c = sndNoiseCache.get(ctx);
+  if(!c){ c = {}; sndNoiseCache.set(ctx, c); }
+  if(c[color]) return c[color];
+  const d = sndNoiseSamples(ctx.sampleRate, color), buf = ctx.createBuffer(1, d.length, ctx.sampleRate);
+  buf.getChannelData(0).set(d);
   c[color] = buf;
   return buf;
 }
@@ -70993,26 +71097,54 @@ const NovaSound = (function(){
      button high. A button (or role=button) up to HSW_WIDE_H tall carries
      its switch at any width; a taller card or row still carries none. */
   const HSW_WIDE_H = 60;
+  /* ...BUT A LIST OF THEM IS A WALL (build 327z13): "The calendar tab has a
+     bad problem, it's hard to scroll down all over this page it's
+     registering clicking stuff when I try to scroll down." The wide
+     exception put a switch on every row of the calendar's Final exams
+     list - five 323x58 switches stacked into a 300px block a finger lands
+     on, drags (the switch, not the page) and lifts as a tap. A wide
+     button keeps its switch only when it stands alone; one repeated
+     beside others of its own kind (two or more siblings sharing its first
+     class) is a row of a list, and a list is something you scroll by. */
+  const hswListRow = h => {
+    const c = h.classList[0], par = h.parentElement;
+    if(!c || !par) return false;
+    let n = 0;
+    for(const sib of par.children){ if(sib.classList && sib.classList.contains(c) && ++n >= 2) return true; }
+    return false;
+  };
   const hswTooBig = h => h.offsetHeight > HSW_MAX_H
-    || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']")));
+    || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']") && !hswListRow(h)));
   /* THE SWITCH ROWS' OWN INPUT IS THE SWITCH (build 327z10). A .opt row (every
      Settings switch, the start sheet's) is a label round a hidden checkbox
      and its drawn track (.box), so it never took a switch of ours, and a
      label cannot. On an iPhone the row's checkbox becomes a native switch
      laid exactly over its track: a finger on the track flips the real
      switch (the tick) and the row's own change runs as it always has. */
-  const HSW_OPT = ".opt > input[type=checkbox]";
+  /* ...AND A UNIT CARD'S TICK (build 327z13): "Haptic Touch isn't working
+     some places still.. such as the mode selection and unit selection
+     screens." A unit card is the same shape - a label round a hidden
+     checkbox and its drawn tick (.box) - but 175px square, and a switch
+     that size is a card you cannot scroll the page by. Its checkbox
+     becomes a native switch over the tick circle alone (44px), where a
+     finger picks a unit; the rest of the card scrolls as before. */
+  const HSW_OPT = ".opt > input[type=checkbox], .picks > label.pick > input[type=checkbox]";
   function hswOptAttach(inp){
     if(!inp || inp.classList.contains("hsw-opt") || inp.disabled) return;
     const row = inp.parentElement, box = row && row.querySelector(":scope > .box");
     if(!box || row.closest("[data-no-hsw]")) return;
     inp.setAttribute("switch", "");
     inp.classList.add("hsw-opt");
-    try{ inp.style.setProperty("--hsw-r", Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8) + "px"); }catch(e){}
+    try{
+      if(row.classList.contains("pick")){
+        inp.style.setProperty("--hsw-x", (box.offsetLeft + box.offsetWidth / 2) + "px");
+        inp.style.setProperty("--hsw-y", (box.offsetTop + box.offsetHeight / 2) + "px");
+      } else inp.style.setProperty("--hsw-r", Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8) + "px");
+    }catch(e){}
     row.setAttribute("data-hsw", "");
   }
   function hswOptDetach(inp){
-    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); inp.style.removeProperty("--hsw-r");
+    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y"].forEach(v => inp.style.removeProperty(v));
     const row = inp.parentElement; if(row && !row.querySelector(":scope > .nova-hsw")) row.removeAttribute("data-hsw");
   }
   function hswOk(h){
@@ -71029,6 +71161,11 @@ const NovaSound = (function(){
        scrolled by its large surfaces, so only compact controls (tabs, chips,
        small buttons) carry one; an answer choice keeps its switch because
        its tick is the point of answering. */
+    /* a mode card (build 327z13) is too big for a whole-card switch (the
+       mode screen scrolls even on a Pro Max), so its switch covers its
+       head - the icon and the name, where a finger picks a mode - and the
+       description under it scrolls the page (.modecard > .nova-hsw) */
+    if(h.matches(".modecard")) return true;
     if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)) return false;
     return true;
   }
@@ -71118,7 +71255,7 @@ const NovaSound = (function(){
   }
   function hswStop(){
     if(hswObs){ hswObs.disconnect(); hswObs = null; }
-    document.querySelectorAll(".opt > input.hsw-opt").forEach(hswOptDetach);
+    document.querySelectorAll("input.hsw-opt").forEach(hswOptDetach);
     hswQueue.clear();
     if(hswTimer){ clearTimeout(hswTimer); hswTimer = 0; }
     document.querySelectorAll(".nova-hsw").forEach(sw => {
@@ -71165,7 +71302,9 @@ const NovaSound = (function(){
   }, true);
   const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
-  const hapticsWanted = () => !tabOff() && !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
+  /* haptics are not part of the Safari switch (build 327z14): the switch
+     is for sound, which is what the freezes have followed */
+  const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
     if(!kind || !hapticsWanted()) return;
     if(canTaptic()){
@@ -71204,6 +71343,7 @@ const NovaSound = (function(){
   function resume(){
     const ctx = st.ctx;
     if(!ctx || !on() || document.hidden) return;
+    if(st.hushed) unhush();
     if(ctx.state !== "running"){ try{ const p = ctx.resume(); if(p && p.then) p.then(afterResume, () => {}); }catch(e){} }
     else afterResume();
   }
@@ -71232,15 +71372,44 @@ const NovaSound = (function(){
     }
   }
   ["touchend", "pointerup", "click", "keydown"].forEach(ev => document.addEventListener(ev, onGesture, { capture: true, passive: true }));
-  document.addEventListener("visibilitychange", () => {
+  /* LEAVING IS SILENT (build 327z14). Madison: "When leaving the app with
+     sound on, it makes a weird/glitchy noise." suspend() stopped the output
+     mid-buffer - the ambience loop and any reverb tail cut off in the
+     middle of a wave, which is a click, and iOS then tears the session down
+     under whatever was left. The master fades to nothing first (about 40ms)
+     and the context is suspended once it is silent. It starts on window
+     blur as well, which iOS sends as the home swipe begins, a beat before
+     the page is hidden. Coming back, the master comes up from silence. */
+  let hushT = 0;
+  function hush(){
+    if(!st.ctx || !st.G) return;
+    st.hushed = true;
+    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.setTargetAtTime(0, now, .012); }catch(e){}
+  }
+  function unhush(){
+    if(!st.ctx || !st.G || !st.hushed) return;
+    st.hushed = false;
+    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(0, now); g.setTargetAtTime(level(volume()), now, .08); }catch(e){}
+  }
+  function away(){
     if(!st.ctx) return;
-    if(document.hidden){ try{ st.ctx.suspend(); }catch(e){} }
-    else if(on()){
-      /* back: the ambience only if its screen is still the one up */
-      if(st.ambWant && st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
-      resume();
-    }
-  });
+    hush();
+    clearTimeout(hushT);
+    hushT = setTimeout(() => { if(document.hidden && st.ctx){ try{ st.ctx.suspend(); }catch(e){} } }, 90);
+  }
+  function back(){
+    clearTimeout(hushT);
+    if(!st.ctx || document.hidden) return;
+    if(!on()){ st.hushed = false; return; }
+    /* back: the ambience only if its screen is still the one up */
+    if(st.ambWant && st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
+    unhush();
+    resume();
+  }
+  document.addEventListener("visibilitychange", () => { if(document.hidden) away(); else back(); });
+  window.addEventListener("pagehide", away);
+  window.addEventListener("blur", () => { if(st.ctx && on()) hush(); });
+  window.addEventListener("focus", back);
 
   function reap(){
     const now = st.ctx ? st.ctx.currentTime : 0;
@@ -71452,6 +71621,8 @@ const NovaSound = (function(){
     if(prewarm.done || !on()) return;
     const steps = [
       () => { sndImpulseData(48000, 2.6, 2.4); },
+      /* the three noises a tap's sound is made of (build 327z13) */
+      () => { ["w", "p", "b"].forEach(c => sndNoiseSamples(48000, c)); },
       () => { ambRendered("amb.home"); },
       /* the other rate an output commonly runs at */
       () => { sndImpulseData(44100, 2.6, 2.4); }
@@ -71641,13 +71812,14 @@ function buildSoundSettings(){
   host.appendChild(lab);
   const card = document.createElement("div");
   card.className = "settings-card";
-  if(NovaSound.tabOff && NovaSound.tabOff()){
+  /* SOUND OFF IN SAFARI TABS, HAPTICS KEPT (build 327z14): the tab says
+     where the sound is and still offers the haptics switch */
+  const tabNoSound = !!(NovaSound.tabOff && NovaSound.tabOff());
+  if(tabNoSound){
     const note = document.createElement("p");
     note.className = "settings-sound-tabnote";
-    note.textContent = "Sound and haptics play in the installed app. Add Nova to your Home Screen to hear them.";
+    note.textContent = "Sound plays in the installed app. Add Nova to your Home Screen to hear it.";
     card.appendChild(note);
-    host.appendChild(card);
-    return host;
   }
   const mkRow = (title, hint, checked, onChange) => {
     const row = document.createElement("label");
@@ -71707,7 +71879,7 @@ function buildSoundSettings(){
     showToast(on ? "Sound effects on." : "Sound effects off.");
   });
   sndRow.classList.add("settings-sound-row");
-  card.append(sndRow, vol);
+  if(!tabNoSound) card.append(sndRow, vol);
   if(NovaSound.canVibrate()){
     const vibRow = mkRow("Vibration", "Short vibrations for taps, answers and results.", theme.vibrate, on => {
       theme.vibrate = on;
@@ -77557,6 +77729,8 @@ const CHAR_ANIM_COLS = 12;
    of every drawing changed (the .avatarchar-svg mask). */
 const CHAR_ANIM_VER = "c5";
 const CHAR_FLIP_MAX_CSS = 80;
+/* how many board rows may play their live drawing while their sheets are made (327z13) */
+const CHAR_FLIP_WAIT_MAX = 6;
 const charAnimSheets = new Map();
 const charAnimDrawings = new Map();
 function charAnimDrawing(charId){
@@ -78012,11 +78186,35 @@ function charFlipAttach(el){
   let px = Math.round(layoutW * (ownScale || 1) * scale);
   px += px % 2;
   if(px < 12) return false;
+  /* A BOARD'S CHARACTERS MOVE WHILE THEY WAIT (build 327z13): "the
+     characters on the leaderboard aren't really moving or anything?"
+     Measured at a phone's speed: a fresh board of twenty-two classmates
+     had one of its ten visible characters moving after thirty seconds -
+     each character has to be recorded once before its loop can play, a
+     few seconds each on a phone, after every update and for anybody new,
+     and until then it is a still drawing (one whose recording fails was
+     still for good past the fourth). A board row that has not got its
+     sheet within 450ms (a saved one is read faster, so those never
+     flicker) plays its live drawing meanwhile - up to 6 at once, the
+     rows on screen; rows off it are paused anyway (.is-offscreen) - and
+     takes its sheet the moment it is made. (6, not every row on screen: a
+     live drawing costs frames - 57 against 84 a second with ten of them,
+     measured - which is why the boards use sheets at all.) */
+  let waitT = 0;
+  if(!el.dataset.flipSolo && el.closest(".rank-row")){
+    waitT = setTimeout(() => {
+      if(!el.isConnected || el.querySelector(".char-flip-play") || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+      if(el.classList.contains("char-live") || document.querySelectorAll(".char-flip-wait").length >= CHAR_FLIP_WAIT_MAX) return;
+      el.classList.add("char-live", "char-flip-wait");
+    }, 450);
+  }
   recordCharFrames(charId, px, el).then(sp => {
+    clearTimeout(waitT);
     /* false: dropped because nobody wanted it at the time - a tile that
        is here after all asks again; null: it could not be made */
     if(sp === false){ setTimeout(() => { if(el.isConnected && !el.querySelector(".char-flip-play")) charFlipAttach(el); }, 0); return; }
-    if(!sp){ charFlipFallback(el); return; }
+    /* a board row already live while it waited stays live (327z13) */
+    if(!sp){ if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-flip"); el.classList.add("char-flip-fallback"); return; } charFlipFallback(el); return; }
     if(!el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
     if(!svg.isConnected || el.querySelector(".char-flip-play")) return;
     /* parked while it was being recorded: it plays when it comes back */
@@ -78097,8 +78295,10 @@ function charFlipAttach(el){
     if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
     svg.after(play);
     svg.classList.add("char-under-flip");
-    /* a solo tile was live while it waited (setCharState) */
+    /* a solo tile was live while it waited (setCharState), and so was a
+       board row (327z13) */
     if(el.dataset.flipSolo) el.classList.remove("char-live");
+    if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-live"); }
   });
   return true;
 }
@@ -92268,11 +92468,10 @@ function showHome(){
      the system font sits where that font's line box puts it - high, and
      by a different amount on an iPhone than anywhere it can be measured
      here. It is a drawn mark now, its ink centred in a 24 box, so it is
-     centred in the button on every device. Answered, the button wears a
-     tick instead (.is-done shows .dq-mark-done): done, not disabled. The
-     5pm reset takes .is-done off, and the "?" is back with no JS. */
-  dailyGlyph.innerHTML = '<svg class="dq-mark dq-mark-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.9 8.6a3.1 3.1 0 1 1 4.4 2.8c-.8.36-1.3 1.1-1.3 1.95v.85" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17.5" r="1.55" fill="currentColor"/></svg>'
-    + '<svg class="dq-mark dq-mark-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 11.9l3.6 3.6 7.2-7.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+     centred in the button on every device. NO TICK (build 327z13): "when
+     it's complete don't make it a checkmark" - answered, it keeps its "?",
+     in the rank's colour on the quieter glass (see .is-done). */
+  dailyGlyph.innerHTML = '<svg class="dq-mark dq-mark-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.9 8.6a3.1 3.1 0 1 1 4.4 2.8c-.8.36-1.3 1.1-1.3 1.95v.85" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17.5" r="1.55" fill="currentColor"/></svg>';
   dailyBtn.setAttribute("aria-label", "Daily question");
   dailyBtn.appendChild(dailyGlyph);
   /* the ring: whole while the question waits, the time to the next one
@@ -93261,7 +93460,7 @@ function attachDragSelect(list, onChange){
     const row = e.target.closest && e.target.closest("label.pick");
     if(!row || !list.contains(row) || !row.querySelector("input[type=checkbox]")) return;
     st = { id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, row,
-           fromCircle: !!e.target.closest(".box"), mode: "pending" };
+           fromCircle: !!(e.target.closest(".box") || (e.target.classList && e.target.classList.contains("hsw-opt"))), mode: "pending" };
   });
   list.addEventListener("pointermove", e => {
     if(!st || e.pointerId !== st.id) return;
@@ -98303,7 +98502,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-24-327z12";
+const APP_BUILD = "2026-10-24-327z14";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -99204,6 +99403,8 @@ async function applyUpdate(){
   /* Read by the splash script on the very next load, so the reload this
      triggers narrates an update instead of an ordinary cold boot. */
   try{ sessionStorage.setItem("class26e.updating", "1"); }catch(e){}
+  /* an update lands on Home, never back on the tab (327z13, LAST_TAB_KEY) */
+  try{ sessionStorage.removeItem(LAST_TAB_KEY); }catch(e){}
   try{ await fetch(location.href, { cache: "reload" }); }catch(e){}
   /* LET GO OF THIS PAGE BEFORE LOADING THE NEXT ONE (build 262).
      "After an update is pushed, the main menu and a lot of the screens
@@ -102010,22 +102211,35 @@ function buildHundoFxMock(id, o){
   m.dataset.fx = id;
   m.setAttribute("aria-hidden", "true");
   const el = (tag, cls, txt, parent) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; (parent || m).appendChild(e); return e; };
+  /* THE RESULTS SCREEN AS IT IS NOW (build 327z14). Madison: "when you
+     click one to see a preview, that doesn't match up with our results
+     screen anymore". The real screen puts the grade first (build 320),
+     the mode pill and "1 unit" in its header, "right on the first try"
+     under the count, the unit's bar without a fraction, and a Bonuses
+     heading and a Speed line in the XP box. The miniature follows it,
+     top to bottom, in the same order. */
   const head = el("div", "rs-head");
   el("span", "hfx-mk-title", "Test results", head);
-  el("span", "hfx-mk-sub", "1 unit · Identity Crimes", head);
-  const xp = el("div", "rs-card rs-xp");
-  el("p", "hfx-mk-kicker", "XP earned", xp);
-  [["Correct answers", "+120"], ["Hundo", "+100"], ["Answer streak", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
-  const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+245 XP", tl);
-  const xb = el("span", "hfx-mk-bar", null, xp); el("i", "", null, xb);
+  el("span", "hfx-mk-pill", "Drill", head);
+  el("span", "hfx-mk-scope", "1 unit", head);
+  el("span", "hfx-mk-sub", "Identity Crimes", head);
   const gr = el("div", "rs-card rs-grade is-perfect");
   el("p", "hfx-mk-kicker", "Grade", gr);
   const row = el("div", "hfx-mk-row", null, gr);
   const pct = el("span", "rs-pct pct perfect", null, row); gradePctMarkup(pct, 100);
-  rsPair(el("span", "rs-grade-frac", null, row), 12, 12);
+  const fr = el("span", "hfx-mk-frac", null, row);
+  rsPair(el("span", "rs-grade-frac", null, fr), 12, 12);
+  el("span", "hfx-mk-fracsub", "right on the first try", fr);
   const bu = el("div", "rs-byunit", null, gr);
-  const ul = el("p", "hfx-mk-line", null, bu); el("span", "", "Identity Crimes", ul); rsPair(el("b", "", null, ul), 12, 12);
+  el("p", "hfx-mk-unit", "Identity Crimes", bu);
   const tr = el("span", "hfx-mk-bar is-unit", null, bu); el("i", "unit-breakdown-fill is-gold", null, tr);
+  const xp = el("div", "rs-card rs-xp");
+  el("p", "hfx-mk-kicker", "XP earned", xp);
+  const line = (a, b) => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", a, l); el("b", "", b, l); };
+  line("Correct answers", "+120");
+  el("p", "hfx-mk-kicker is-sub", "Bonuses", xp);
+  [["Hundo", "+100"], ["Answer streak", "+25"], ["Speed", "+150"]].forEach(r => line(r[0], r[1]));
+  const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+395 XP", tl);
   const acts = el("div", "rs-actions");
   el("button", "hfx-mk-btn is-light", "Re-run", acts).tabIndex = -1;
   el("button", "hfx-mk-btn", "Main menu", acts).tabIndex = -1;
@@ -120635,6 +120849,11 @@ function themeDetail(name){
   return Object.assign({ kind: "theme", id: name, kicker: "Theme",
     name: (ACCENT_DISPLAY_NAME[name] || name) + " theme" }, rankDetail(name));
 }
+/* a rank's flare, on the same card (327z13, from the Profile's Next rank card) */
+function rankFlareDetail(key){
+  return Object.assign({ kind: "rankflare", id: key, kicker: "Rank flare",
+    name: (RANK_DISPLAY_NAME[key] || key) + " flare" }, rankDetail(key));
+}
 /* SMOOTH BARS (build 289). "The loading progress bar for the banners, it
    lags when it goes ... Ensure all the progress bar stuff is super
    smooth." Every bar in the app filled by transitioning WIDTH, which is
@@ -120727,6 +120946,21 @@ function showUnlockDetail(o){
     dot.className = "dot unlock-card-swatch" + (TIER_UNLOCKS[o.id] ? " tier-" + o.id : "") +
       (o.id === "titan" ? " legend-dot" : "") + (o.id === "ink" ? " theme-default" : "");
     art.appendChild(dot);
+  } else if(o.kind === "rankflare"){
+    /* the rank's flare, lit, as its tile shows it (327z13) */
+    try{ art.appendChild(buildFlareBubble(o.id, { lit: true })); }catch(e){}
+  } else if(o.kind === "challenge"){
+    /* a rank challenge, big (327z13): the count in the challenge's own
+       colour inside a ring of how far it is */
+    const f = o.total ? Math.max(0, Math.min(1, o.now / o.total)) : 0, C = 2 * Math.PI * 42;
+    art.style.setProperty("--tc", o.color || "#fff");
+    art.innerHTML = '<svg class="unlock-card-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="7"/>'
+      + (f > 0 ? '<circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="' + (C * f).toFixed(2) + ' ' + C.toFixed(2) + '"/>' : '') + '</svg>';
+    const num = document.createElement("span");
+    num.className = "unlock-card-chnum";
+    const b = document.createElement("b"); b.textContent = String(o.now);
+    num.append(b, document.createTextNode("of " + o.total));
+    art.appendChild(num);
   }
   /* THE LOCK SITS OUTSIDE WHAT IT MARKS (build 244): "ensure the lock
      icon is somewhere that isn't cut off, goes for any of those pop
@@ -120795,7 +121029,7 @@ function showUnlockDetail(o){
       /* a badge says it is mastered, here and only here (build 319): "that
          should say that when you click the badge for details and you did
          master it" */
-      c.textContent = o.kind === "badge" ? "Mastered" : "Unlocked";
+      c.textContent = o.kind === "badge" ? "Mastered" : o.kind === "challenge" ? "Done" : "Unlocked";
       sheet.appendChild(c);
     } else if(typeof o.have === "number" && o.need > 1){
       const c = document.createElement("p");
@@ -121485,7 +121719,7 @@ function buildCustomizeBannerSect(){
     const b = document.createElement("button");
     b.type = "button";
     b.className = "banner-opt" + (id ? "" : " is-none") + (locked ? " locked" : "") +
-      (locked && id && (bannerDef(id) || {}).flareChar ? " is-secret" : "") +
+      (locked && isVeiledBanner(id) ? " is-secret" : "") +
       (current === id ? " selected" : "");
     b.dataset.banner = id;
     const art = document.createElement("span");
@@ -121783,7 +122017,10 @@ function veilBanner(art, id){
 }
 function isVeiledBanner(id){
   const d = id && bannerDef(id);
-  return !!(d && d.flareChar && !bannerEarned(id));
+  /* the three ultimate banners too (build 327z13): "Astral, celestial, and
+     zenith banners, these should be hidden like the secret flare banners"
+     - in the dark, "Unlock to see", until they are yours */
+  return !!(d && (d.flareChar || d.ultimate) && !bannerEarned(id));
 }
 function fillDeferredBannerArt(queue){
   if(!queue || !queue.length) return;
@@ -123895,10 +124132,10 @@ function buildThemeDot(key){
    WAITING, leaning in to tap on the glass every few seconds, which is
    the one thing in the app a character only does while it is locked
    ("this animation while locked there needs to be unique"). */
-function buildRankRewardTiles(key){
+function buildRankRewardTiles(key, taps){
   const row = document.createElement("div");
   row.className = "pf-rewards";
-  const tile = (art, label, cls) => {
+  const tile = (art, label, cls, detail) => {
     const t = document.createElement("span");
     t.className = "pf-rw " + cls;
     const a = document.createElement("span");
@@ -123910,6 +124147,8 @@ function buildRankRewardTiles(key){
     try{ lk.appendChild(buildLockIcon()); }catch(e){}
     t.append(a, l, lk);
     row.appendChild(t);
+    /* on the Profile's Next rank card each one opens its own card (327z13) */
+    if(taps && detail) pfTapOpens(t, detail);
     return t;
   };
   /* THEME, FLARE, THEN WHAT ELSE IT HANDS OVER (317 fix). Round two put
@@ -123919,22 +124158,22 @@ function buildRankRewardTiles(key){
      the flare one in the middle." So the flare sits between the theme's
      flat disc and the character or banner - the same order the road
      map's chips have always used (buildRankGifts). */
-  tile(buildThemeDot(key), "Theme", "is-theme");
-  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare");
+  tile(buildThemeDot(key), "Theme", "is-theme", () => themeDetail(key));
+  tile(buildFlareBubble(key, { lit: true, bounce: true }), "Flare", "is-flare", () => rankFlareDetail(key));
   const ch = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(ch){
     const holder = document.createElement("span");
     holder.className = "pf-rw-char is-waiting";
     holder.style.setProperty("--char-glow", avatarGlowColor(ch.id));
     holder.appendChild(avatarSpanFor({ avatarChar: ch.id }));
-    tile(holder, AVATAR_DISPLAY_NAME[ch.id] || ch.id, "is-char");
+    tile(holder, AVATAR_DISPLAY_NAME[ch.id] || ch.id, "is-char", () => characterDetail(ch.id));
     afterFirstPaint(() => { try{ setCharState(holder, "live"); }catch(e){} });
   }
   BANNERS.filter(b => b.rank === key && !b.retired).slice(0, 1).forEach(b => {
     const th = document.createElement("span");
     th.className = "pf-rw-banner";
     afterFirstPaint(() => { try{ th.appendChild(buildBannerArt(b.id)); }catch(e){} });
-    tile(th, "Banner", "is-banner");
+    tile(th, "Banner", "is-banner", () => bannerDetail(b.id));
   });
   return row;
 }
@@ -124222,10 +124461,46 @@ function buildProfileTask(c, color){
   t.setAttribute("aria-label", (isLevel ? "Reach Level " + c.need : c.label) + ", " + shownNow + " of " + c.need + (c.met ? ", done" : ""));
   return t;
 }
+/* ONLY THE PILL OPENS THE RANK SCREEN (build 327z13): "if you click
+   anywhere it opens it but there's a button and should only be the
+   button. On the challenge box, if you click any of the other stuff it
+   should open it like normal, like the locked stuff ... like how you'd see
+   them in customize when holding one down. The rank challenges if you
+   click one, it would just open it and make it bigger." The card was one
+   big <button>, so every part of it was the way to the Rank screen. It is
+   a plain card now: "See every rank" is the button; each challenge row
+   opens that challenge, big, on the unlock card; each unlock tile opens
+   its own card, as Customize does when one is held. */
+function pfGoalFoot(){
+  const foot = document.createElement("button");
+  foot.type = "button";
+  foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
+  foot.addEventListener("click", () => showRanksScreen("ranks"));
+  return foot;
+}
+/* A rank challenge, on the unlock card: what it asks, big, and how far. */
+function rankChallengeDetail(c, color, rankName){
+  const isLevel = c.kind === "level";
+  const now = Math.min(Number(c.now) || 0, Number(c.need) || 0);
+  return { kind: "challenge", id: c.kind || "challenge", color, now, total: Number(c.need) || 0,
+    kicker: "Rank challenge \u00b7 to reach " + rankName,
+    name: isLevel ? "Reach Level " + c.need : c.label,
+    desc: isLevel ? "Your level is " + (Number(c.now) || 0) + "."
+      : "Master a unit to find its badge: enough hundos (100% on the whole unit) and it is yours.",
+    have: now, need: Number(c.need) || 0, unlocked: !!c.met };
+}
+/* a tap that opens its own card, on a part of the Next rank card */
+function pfTapOpens(el, detail){
+  el.setAttribute("role", "button");
+  el.tabIndex = 0;
+  el.classList.add("pf-taps");
+  const open = () => { try{ const o = detail(); if(o) showUnlockDetail(o); }catch(e){} };
+  el.addEventListener("click", open);
+  el.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(); } });
+}
 function buildProfileGoal(prog){
   const rc = rankChallengesOf();
-  const box = document.createElement("button");
-  box.type = "button";
+  const box = document.createElement("div");
   if(!rc){
     /* The top rank: nothing left to climb. */
     box.className = "pf-goal is-top";
@@ -124249,11 +124524,9 @@ function buildProfileGoal(prog){
     const n2 = document.createElement("span"); n2.textContent = "You have reached the max rank. Check back for more.";
     none.append(n1, " ", n2);
     box.append(ck, none);
-    const foot = document.createElement("span");
-    foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
-    box.appendChild(foot);
-    box.setAttribute("aria-label", "Max rank, " + RANK_DISPLAY_NAME.titan + ". No rank challenges left. Open the Rank screen.");
-    box.addEventListener("click", () => showRanksScreen("ranks"));
+    box.appendChild(pfGoalFoot());
+    box.setAttribute("role", "group");
+    box.setAttribute("aria-label", "Max rank, " + RANK_DISPLAY_NAME.titan + ". No rank challenges left.");
     return box;
   }
   box.className = "pf-goal";
@@ -124298,10 +124571,11 @@ function buildProfileGoal(prog){
      Finish the badge challenge to reach <rank>." (316-317, at a wall) and
      the badge row's "Closest: <unit> (n/m hundos)" are gone; the rows are
      the requirement and where you stand, nothing under them. */
-  const rows = [
-    lv ? buildProfileTask(lv, "#6FC2FF") : null,
-    bd ? buildProfileTask(bd, "#E3C77A") : null
-  ].filter(Boolean);
+  const rows = [[lv, "#6FC2FF"], [bd, "#E3C77A"]].filter(x => x[0]).map(([c, col]) => {
+    const r = buildProfileTask(c, col);
+    pfTapOpens(r, () => rankChallengeDetail(c, col, rc.name));
+    return r;
+  });
   /* what is still to do first; what is done sinks */
   rows.sort((a, b) => (a.classList.contains("is-met") ? 1 : 0) - (b.classList.contains("is-met") ? 1 : 0));
   rows.forEach(r => tasks.appendChild(r));
@@ -124309,13 +124583,10 @@ function buildProfileGoal(prog){
   const rk = document.createElement("span");
   rk.className = "pf-kick pf-rewards-kick"; rk.textContent = rc.name + " unlocks";
   box.appendChild(rk);
-  box.appendChild(buildRankRewardTiles(rc.key));
-  const foot = document.createElement("span");
-  foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
-  box.appendChild(foot);
-  box.setAttribute("aria-label", "To reach " + rc.name + ": " +
-    rc.list.map(c => (c.kind === "level" ? "Reach Level " + c.need : c.label) + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
-  box.addEventListener("click", () => showRanksScreen("ranks"));
+  box.appendChild(buildRankRewardTiles(rc.key, true));
+  box.appendChild(pfGoalFoot());
+  box.setAttribute("role", "group");
+  box.setAttribute("aria-label", "To reach " + rc.name);
   return box;
 }
 /* ---- THE CASE, SHUT (build 319) ----
@@ -124330,13 +124601,16 @@ function buildProfileGoal(prog){
    style - with the count and an arrow on its face. The count is how many
    you have of how many there are. The new-badge dot keeps its place against
    the arrow (build 317). A tap opens the Badges page, where the case opens. */
+/* ONLY ITS COUNT OPENS IT (build 327z13): "the badge where you click to
+   open the badge case - there's a button to open the tab but if you click
+   anywhere it opens it, fix that." The whole case was the button; now the
+   count pill on its front ("7 of 16 badges ›") is, and the rest of the case
+   is the picture of it. */
 function buildProfileCase(have, total){
-  const box = document.createElement("button");
-  box.type = "button";
+  const box = document.createElement("div");
   box.className = "pf-case pf-case-closed";
   const mk = (cls, tag) => { const e = document.createElement(tag || "span"); e.className = cls; return e; };
   const kase = mk("pf-ccase nova-case");
-  kase.setAttribute("aria-hidden", "true");
   const handle = mk("pf-ccase-handle pf-case-handle nova-case-handle");
   const lid = mk("pf-ccase-lid nova-case-shell nova-case-wall");
   const front = mk("pf-ccase-front pf-case-front nova-case-shell nova-case-wall");
@@ -124348,15 +124622,21 @@ function buildProfileCase(have, total){
     return l;
   };
   const mid = mk("pf-ccase-mid");
-  const n = mk("pf-case-count");
+  const n = mk("pf-case-count", "button");
+  n.type = "button";
   const num = mk("pf-case-num");
   num.textContent = have + " of " + total + " badges";
   const arrow = mk("pf-case-arrow");
   arrow.textContent = "\u203a";
   n.append(num, arrow);
-  mid.append(buildCaseSidePlate("pf-case-sideplate"), n);
+  const plate = buildCaseSidePlate("pf-case-sideplate");
+  plate.setAttribute("aria-hidden", "true");
+  mid.append(plate, n);
   front.append(mid);
-  kase.append(handle, lid, front, latch("l"), latch("r"));
+  [handle, lid].forEach(e => e.setAttribute("aria-hidden", "true"));
+  const latches = [latch("l"), latch("r")];
+  latches.forEach(e => e.setAttribute("aria-hidden", "true"));
+  kase.append(handle, lid, front, ...latches);
   box.appendChild(kase);
   let fresh = 0;
   try{ fresh = badgeNewCount(); }catch(e){}
@@ -124368,8 +124648,8 @@ function buildProfileCase(have, total){
     tag.append(word, buildNewDot());
     n.insertBefore(tag, arrow);
   }
-  box.setAttribute("aria-label", badgeCaseName(BADGE_CASES[0]) + ", " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
-  box.addEventListener("click", () => showRanksScreen("badges"));
+  n.setAttribute("aria-label", badgeCaseName(BADGE_CASES[0]) + ", " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
+  n.addEventListener("click", () => showRanksScreen("badges"));
   return box;
 }
 
@@ -124532,6 +124812,23 @@ function showProfile(defaultTab, opts){
   heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
   heroAvatar.appendChild(platePortrait(avatarSpanFor({ avatarChar: store.avatarChar })));
   setCharState(heroAvatar, "live");
+  /* TAP YOUR CHARACTER (build 327z13): "In profile, if I tap my character,
+     it should do a thing." It gives under the finger and springs back,
+     and plays its special move - the one it otherwise does now and then on
+     its own; mid-move, a tap is just the spring. */
+  heroAvatar.setAttribute("role", "button");
+  heroAvatar.tabIndex = 0;
+  heroAvatar.setAttribute("aria-label", (AVATAR_DISPLAY_NAME[store.avatarChar] || "Your character") + " - tap to play its move");
+  const boop = () => {
+    heroAvatar.classList.remove("pf-boop");
+    void heroAvatar.offsetWidth;
+    heroAvatar.classList.add("pf-boop");
+    try{ playSound("ui.tap.primary"); }catch(e){}
+    try{ playCharSpecial(heroAvatar); }catch(e){}
+  };
+  heroAvatar.addEventListener("click", boop);
+  heroAvatar.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); boop(); } });
+  heroAvatar.addEventListener("animationend", e => { if(e.animationName === "pf-boop") heroAvatar.classList.remove("pf-boop"); });
 
   const heroId = document.createElement("div");
   heroId.className = "profile-hero-id";
@@ -124934,51 +125231,10 @@ function showProfile(defaultTab, opts){
   recentSect.appendChild(reviewBtn);
   statsTab.appendChild(recentSect);
 
-  /* ---- YOUR UNITS (build 327 round 9): "extremely useful" ----
-     Where the misses are, per unit, from the per-question record every mode
-     already writes (store.stats: n answered, m missed). The three weakest and
-     the three strongest, judged on units with enough answers to mean
-     something; tapping a unit opens it in Drill. */
-  try{
-    const rows = [];
-    topicsIn(QUESTIONS).forEach(u => {
-      let n = 0, m = 0;
-      QUESTIONS.forEach((q, i) => { if((q.topic || "").trim() === u){ const st = store.stats[KEYS[i]]; if(st){ n += st.n || 0; m += st.m || 0; } } });
-      if(n >= 15) rows.push({ u, n, pct: Math.max(0, Math.min(100, Math.round((1 - m / n) * 100))) });
-    });
-    if(rows.length >= 2){
-      rows.sort((a, b) => a.pct - b.pct || b.n - a.n);
-      const sect = document.createElement("div");
-      sect.className = "points-progress-sect stx-units";
-      const hd = document.createElement("p"); hd.className = "slab"; hd.textContent = "Your units";
-      sect.appendChild(hd);
-      const group = (label, list) => {
-        if(!list.length) return;
-        const l = document.createElement("p"); l.className = "stx-units-label"; l.textContent = label; sect.appendChild(l);
-        list.forEach(r => {
-          /* not a button (round 10): "it says tap any unit to drill it. Let's not do that." */
-          const b = document.createElement("div"); b.className = "stx-unit-row";
-          const nm = document.createElement("span"); nm.className = "stx-unit-name"; nm.textContent = r.u;
-          const nn = document.createElement("span"); nn.className = "stx-unit-n"; nn.textContent = r.n.toLocaleString() + " answered";
-          nm.appendChild(nn);
-          const bar = document.createElement("span"); bar.className = "stx-unit-bar";
-          const fill = document.createElement("i"); fill.style.width = r.pct + "%";
-          const tone = statBand(r.pct);
-          fill.style.background = tone; fill.style.boxShadow = "0 0 8px -1px " + tone;
-          bar.appendChild(fill);
-          const pc = document.createElement("span"); pc.className = "stx-unit-pct"; pc.textContent = r.pct + "%"; pc.style.color = tone;
-          b.append(nm, bar, pc);
-          b.setAttribute("aria-label", r.u + ", " + r.pct + " percent right, " + r.n + " answered.");
-          sect.appendChild(b);
-        });
-      };
-      if(rows.length >= 6){ group("Needs work", rows.slice(0, 3)); group("Strongest", rows.slice(-3).reverse()); }
-      else group("By unit, weakest first", rows);
-      const hint = document.createElement("p"); hint.className = "info-note"; hint.textContent = "Share of your answers right in each unit. Under " + PASS_MARK + "% is red.";
-      sect.appendChild(hint);
-      statsTab.appendChild(sect);
-    }
-  }catch(e){}
+  /* (YOUR UNITS - the weakest and strongest units, "Needs work" and
+     "Strongest" - came off in build 327z13: "In stats we need to remove the
+     'your stats' box. The one with the needs work and stuff. It's
+     confusing.") */
 
   const studyTimeSect = document.createElement("div");
   studyTimeSect.className = "points-progress-sect";
@@ -125529,14 +125785,10 @@ function showRankings(defaultBoard){
   searchWrap.append(search, clearBtn);
   const meBtn = document.createElement("button");
   meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn";
-  /* NOT BLACK, AND PLAINLY A BUTTON (build 327z12): "The leaderboard
-     find me button should that be black?" It is the tab bar's Liquid
-     Glass, as the search pill beside it is - over this dark page that
-     reads as near-black. It stays glass, so the two read as one row of
-     controls; what it lacked was a sign it does something, so it carries
-     the iPhone's own "where am I" arrow, in the accent. */
-  meBtn.innerHTML = '<svg class="rank-me-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5 3.8 10.6c-.8.4-.7 1.5.1 1.7l6.6 1.3 1.3 6.6c.2.8 1.3.9 1.7.1Z" fill="currentColor"/></svg>';
-  meBtn.appendChild(document.createTextNode("Find me"));
+  /* (327z12 gave it a blue "where am I" arrow; it came off in 327z13 -
+     "not sure why the find me button has a blue arrow thing? Remove that".
+     It stays the bar's glass, as the search pill beside it is.) */
+  meBtn.textContent = "Find me";
   tools.append(searchWrap, meBtn);
   panel.appendChild(tools);
 
@@ -130528,6 +130780,8 @@ function applyGlassRefraction(el, mapImgId){
   _glassRefractionDimsCache[id] = { w, h };
 }
 
+/* the bottom tab a browser tab was last on, in its sessionStorage (327z13) */
+const LAST_TAB_KEY = "class26e.lastTab";
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
@@ -130590,10 +130844,10 @@ function applyGlassRefraction(el, mapImgId){
       '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
-     glide (LENS.glide, ~200ms across since it was measured again) is ~90%
-     of the way at 150ms, so the page changes as the glass arrives, not
-     under it (the reference's starts ~117ms after its press) */
-  const TAB_SCREEN_AFTER = 150;
+     glide (LENS.glide, build 327z13) is ~94% of the way at 290ms, so the
+     page is built once the glass has crossed, never under it - a build is
+     a long main-thread task that would hold the glide's frames */
+  const TAB_SCREEN_AFTER = 290;
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
     if(dest === "profile"){
@@ -130696,6 +130950,8 @@ function applyGlassRefraction(el, mapImgId){
     /* the drag-release path below uses the same steps (build 314) */
     tab._navigate = navigateTab;
     const go = () => {
+      /* which tab a browser tab was on, for the reload Safari does on its own (327z13) */
+      try{ sessionStorage.setItem(LAST_TAB_KEY, dest); }catch(e){}
       if(dest === "home"){
         /* Tapping Home while already there used to re-run showHome()
            from scratch every time, re-triggering the orbit/sphere
@@ -131129,8 +131385,20 @@ function applyGlassRefraction(el, mapImgId){
      as "4 frames" - two to three times too quick. [625, .95] (w 25, near
      critical) lands on his curve: 50% at 67ms, 86% at 140ms, 96% at 200ms.
      minUp 200 so a quick tap is up until it has arrived. */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 200, linger: 110,
-    pop: [2000, .72], glide: [625, .95], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
+  /* SLOWER AGAIN, AND NOTHING BUILT UNDER IT (build 327z13): "the pill
+     bubble thing still moves too fast when clicking through the bottom
+     tab. It also lags." Two things, measured. The pace: [625, .95] is 87%
+     of the way in 8 frames and done in 12 - a flick. And the lag: the
+     tapped tab's screen was built 150ms after the press, mid-glide, and a
+     build is 100-600ms of main-thread layout at a phone's speed (Home's
+     orbit, a first Profile) - on an iPhone that holds frames of the glass
+     itself, so it was seen to stall and then be there. The glide is
+     [260, .95] now (w 16): 32% at 4 frames, 67% at 8, 86% at 12, 94% at
+     16, no overshoot - a glide you watch cross; a tap stays up until it
+     has arrived (minUp 300); and the screen waits for it (TAB_SCREEN_AFTER
+     290, the glass ~94% there). */
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 300, linger: 110,
+    pop: [2000, .72], glide: [260, .95], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
   const LENS_DT = 1000 / 60;
   let lensG = null;           /* this touch's geometry (null: no lens) */
   let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */
@@ -132306,6 +132574,24 @@ else if(!store.onboardingComplete){
   showWelcome();
 } else {
   showHome();
+  /* BACK WHERE YOU WERE AFTER SAFARI RELOADS THE TAB (build 327z13). "It
+     also randomly refreshes." Measured, the page does not grow - its
+     memory levels off after a few rounds of every tab - so the refresh is
+     Safari's own: iOS throws a tab's page away when the phone needs the
+     memory (another app, the lock screen, other tabs) and loads it again
+     when you come back, from the top. It cannot be stopped from inside
+     the page; what it costs can. A browser tab remembers which bottom tab
+     it was on in the tab's own sessionStorage (it survives that reload, a
+     new tab starts without it) and goes back to it - not after an update,
+     which always lands on Home. A test in progress is kept as it always
+     was (the saved test). */
+  try{
+    const back = document.documentElement.classList.contains("is-browser") ? sessionStorage.getItem(LAST_TAB_KEY) : null;
+    if(back && back !== "home"){
+      const btn = document.querySelector('.bottomtab[data-dest="' + back + '"]');
+      if(btn && btn._navigate) setTimeout(() => { try{ if(stage.querySelector('[data-screen="home"]')) btn._navigate(); }catch(e){} }, 0);
+    }
+  }catch(e){}
 }
 
 /* If this device has a sync code, check the cloud for a newer copy right
