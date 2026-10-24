@@ -27302,3 +27302,38 @@ that doesn't match up with our results screen anymore"*.
   all fits.
 - Gate: `tools/check-b327z14.py` A-E (`B327Z14_ONLY=`), ALL PASS here; 11
   failures against 327z12 (live).
+
+### Build 327z15 - fast tab taps: the last tap wins, nothing extra is built
+
+Madison: *"When clicking the button tabs fast sometimes it lags, the bubble
+pill lags and the screen lags ... Check all possible sequences and
+combinations and make it run so smooth."*
+
+Traced with real touches (iPhone 17 Pro Max, 1x and 4x CPU), event by event:
+- **A 130ms lock dropped taps**, and a long build held that lock's own timer
+  shut (one Profile build: 830ms). Gone.
+- **The wrong tab won.** A screen waits TAB_SCREEN_AFTER (290ms) for the
+  glass, so the old screen is still up meanwhile: Profile then Home found
+  Home "already showing", refused the Home tap and then built Profile.
+  Against 327z14, 53 of 153 pair/triple sequences ended on the wrong tab.
+- **Every intermediate tab was built**, one long task per tap.
+
+Now `bar._navPend` holds the one navigation waiting to build:
+- a tap on another tab cancels it before anything is built; a tap on the
+  same tab is already on its way; Home "already showing" counts only when
+  nothing is pending (then the highlight is put back on Home);
+- a press anywhere on the bar re-times the pending build from that press
+  (`me.schedule()` from navrow's pointerdown), so no build lands under a
+  glide or a held finger;
+- a tab whose root screen is already up (`ROOT_OF`: `.screen-profile`,
+  `.screen-rankings`, `.screen-calendar-tab`) scrolls to the top instead of
+  being built again, as on iOS. From a sub-screen (Customize, Friends) the
+  tab still goes back to its root;
+- `bar._navBuilds` counts builds (for the gate).
+- `orbitGeomKey` reads a kept viewport size (`orbitVP`, cleared on resize):
+  `innerWidth`/`innerHeight` mid-build laid the half-built Home out on the
+  spot, 56-83ms of a Home switch at 4x CPU.
+
+Gate: `tools/check-b327z15.py` F (every ordered pair and triple from Home at
+60/150/300ms: 153 sequences) and G (the reported runs at 4x CPU, 120/250/
+400ms). ALL PASS here; 53 + 8 sequences fail on 327z14.

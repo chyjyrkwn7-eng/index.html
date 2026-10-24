@@ -77615,7 +77615,15 @@ function syncLoopClock(root){
    Keyed by the viewport and the bubble's lit state, so a rotation or a
    newly lit rank measures again. */
 const orbitSheetGeom = new Map();
-function orbitGeomKey(badge, tier){ return tier + "|" + (badge.classList.contains("cosmic-badge-lit") ? 1 : 0) + "|" + innerWidth + "x" + innerHeight + "|" + (window.devicePixelRatio || 1); }
+/* THE VIEWPORT, KEPT (build 327z15): reading innerWidth/innerHeight in the
+   middle of building Home made the browser lay the half-built page out on
+   the spot - 56-83ms of a Home tab switch at 4x CPU, the largest single
+   piece of it. The size only changes on a resize, so it is read then. A
+   stale value can only miss the cache, which measures as before. */
+let orbitVP = "";
+function orbitVPNow(){ if(!orbitVP){ orbitVP = innerWidth + "x" + innerHeight; } return orbitVP; }
+try{ window.addEventListener("resize", () => { orbitVP = ""; }, { passive: true }); }catch(e){}
+function orbitGeomKey(badge, tier){ return tier + "|" + (badge.classList.contains("cosmic-badge-lit") ? 1 : 0) + "|" + orbitVPNow() + "|" + (window.devicePixelRatio || 1); }
 /* `fade` (build 317, round three): a sheet that arrives while the still
    emblem is already on screen crossfades in over half a second. Cut in,
    the sheet's frame and the still drawing differ by up to 12 levels of
@@ -98502,7 +98510,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-24-327z14";
+const APP_BUILD = "2026-10-24-327z15";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -130889,12 +130897,41 @@ const LAST_TAB_KEY = "class26e.lastTab";
          than the panel's own .09s entrance animation, so a new tap is
          never blocked longer than that animation would already have
          taken to settle anyway. */
-      if(bar.dataset.navigating === "1") return;
-      if(dest === "home" && !testInProgress && stage.querySelector(".screen-home-actual")) return;
+      /* THE LAST TAP WINS, AND NO TAP IS DROPPED (build 327z15). Madison:
+         "When clicking the button tabs fast sometimes it lags, the bubble
+         pill lags and the screen lags." Traced at 4x CPU, two faults:
+         - a 130ms lock threw away any tap inside it, and a long build
+           held that lock's own timer (one Profile build kept it shut
+           for 830ms);
+         - a screen waits for the glass (TAB_SCREEN_AFTER), so for that
+           long the OLD screen is still up: Profile then Home 290ms apart
+           found Home "already showing", refused the Home tap, and then
+           built Profile - the bar ended on the tab he left.
+         Now one navigation is pending at a time (bar._navPend): a tap on
+         another tab cancels it before anything is built, a tap on the
+         same tab is already on its way, and Home "already showing" only
+         counts when nothing is pending. Only the last tab of a quick run
+         is ever built. */
       /* Home locked to the Profile tab after a rank-up (build 317) */
       if(rankUpLockRefuses(dest)) return;
-      bar.dataset.navigating = "1";
-      setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
+      const pend = bar._navPend;
+      if(pend && pend.dest === dest) return;
+      if(pend){ pend.cancel(); bar._navPend = null; }
+      if(dest === "home" && !testInProgress && stage.querySelector(".screen-home-actual")){
+        /* back to the screen that never left: light it again */
+        if(pend){ syncActive(); slideBubbleToActiveTab(true); }
+        return;
+      }
+      /* THE TAB YOU ARE ON GOES TO THE TOP, IT IS NOT BUILT AGAIN (327z15):
+         a second tap on Profile, the Leaderboard or the Calendar while its
+         own screen is up rebuilt the whole screen - a long task for a
+         screen that was already there. As on iOS, it scrolls to the top. */
+      const ROOT_OF = { profile: ".screen-profile", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+      if(!testInProgress && ROOT_OF[dest] && stage.querySelector(ROOT_OF[dest])){
+        if(pend){ syncActive(); slideBubbleToActiveTab(true); }
+        try{ window.scrollTo({ top: 0, behavior: lensCalm() ? "auto" : "smooth" }); }catch(e){ window.scrollTo(0, 0); }
+        return;
+      }
       /* THE TAP ANSWERS FIRST, THE SCREEN FOLLOWS (build 279): "the bottom
          tab functionality when switching tabs could be a little smoother
          as well, some slight lag." Every tab built its whole screen inside
@@ -130923,9 +130960,13 @@ const LAST_TAB_KEY = "class26e.lastTab";
          part-way no longer leaves the bar lit on a tab whose screen never
          arrived: the highlight is put back from what is really showing. */
       let navRan = false;
+      const me = { dest, timers: [] };
       const navRun = () => {
         if(navRan) return;
         navRan = true;
+        me.timers.forEach(clearTimeout);
+        if(bar._navPend === me) bar._navPend = null;
+        bar._navBuilds = (bar._navBuilds || 0) + 1;
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); }
@@ -130942,9 +130983,19 @@ const LAST_TAB_KEY = "class26e.lastTab";
          had TAB_SCREEN_AFTER ms from its lift; the highlight still moves
          at once, and a drag released over a tab (lifted long ago) builds
          as before. */
-      const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9)));
-      setTimeout(() => requestAnimationFrame(() => setTimeout(navRun, 0)), wait);
-      setTimeout(navRun, wait + 120);
+      /* (re)scheduled from the latest press: a finger that comes down
+         again before the build pushes it on, so a build never lands
+         under a glide or a held finger (build 327z15) */
+      me.schedule = () => {
+        if(navRan) return;
+        me.timers.forEach(clearTimeout); me.timers = [];
+        const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9)));
+        me.timers.push(setTimeout(() => requestAnimationFrame(() => { if(!navRan) me.timers.push(setTimeout(navRun, 0)); }), wait));
+        me.timers.push(setTimeout(navRun, wait + 120));
+      };
+      me.cancel = () => { navRan = true; me.timers.forEach(clearTimeout); };
+      bar._navPend = me;
+      me.schedule();
     };
     tab.addEventListener("click", navigateTab);
     /* the drag-release path below uses the same steps (build 314) */
@@ -131256,6 +131307,8 @@ const LAST_TAB_KEY = "class26e.lastTab";
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
     /* the lens lifts out of the platter under the finger at once (build 323, 325) */
     if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
+    /* a screen still waiting to be built waits for this press too (327z15) */
+    if(bar._navPend && bar._navPend.schedule) bar._navPend.schedule();
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
