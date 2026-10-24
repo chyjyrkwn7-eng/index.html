@@ -32417,6 +32417,48 @@
      extend. Made by refreshEdgeTints() once the splash has gone (see
      there: Safari reads a strip only when it appears). */
 html.is-browser{ overscroll-behavior-y:none; }
+/* THE SKY RUNS UNDER SAFARI'S BARS (build 327z13). "Safari version of the
+   app has a bad problem and something that isn't fixed that I've mentioned
+   so many times. The boxes at the top and bottom are still there." With
+   the 327z3 strips gone (327z9), Safari 26 shows the page under its status
+   bar and its toolbar - and what the page has there is not the app: the
+   sky (body::before, the glows and the paper; body::after, the stars) is a
+   fixed layer one viewport tall, and Safari's bars sit OUTSIDE that
+   viewport, so the only thing under them was the root's own colour,
+   --edge-bottom, a flat grey meant for the overscroll bounce: two flat
+   grey boxes, hard-edged against the starry gradient. In a browser tab the
+   sky now runs --bleed past both edges, so the glass has the app's own
+   colours and stars under it. The glows are restated in absolute terms
+   (each circle's farthest-corner radius as hypot() of the ORIGINAL
+   viewport box, every position measured from the bottom edge, which is
+   where the original box was anchored), so inside the viewport every
+   pixel is what it was. The root's colour is the paper as well, for
+   anything Safari shows past even that. Browser tabs only; the installed
+   app has no Safari bars. Confirmable only on an iPhone. */
+html.is-browser{ --bleed:200px; }
+html.is-browser[data-layout][data-theme]{ background-color:var(--paper); }
+html.is-browser[data-layout="modern"] body::before{
+  top:calc(-1 * var(--bleed)); bottom:calc(-1 * var(--bleed)); height:auto;
+  background:
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
+    var(--paper);
+}
+html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
+  background:
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    var(--paper);
+}
+html.is-browser[data-layout="modern"] body::after{
+  top:calc(-1 * var(--bleed)); bottom:calc(-1 * var(--bleed)); height:auto;
+  /* the stars' tiles on the grid they had: the original box's top was the
+     viewport's bottom less 100lvh */
+  background-position:left 0 top calc(var(--bleed) + 100dvh - 100lvh);
+  -webkit-mask-image:linear-gradient(to bottom, transparent calc(var(--bleed) + var(--sky-clear)), #000 calc(var(--bleed) + var(--sky-clear) + 3.5rem));
+  mask-image:linear-gradient(to bottom, transparent calc(var(--bleed) + var(--sky-clear)), #000 calc(var(--bleed) + var(--sky-clear) + 3.5rem));
+}
 .edge-tint{ display:none; }
 html.is-browser .edge-tint{
   display:block; position:fixed; left:0; right:0; height:12px; z-index:2;
@@ -99321,6 +99363,8 @@ async function applyUpdate(){
   /* Read by the splash script on the very next load, so the reload this
      triggers narrates an update instead of an ordinary cold boot. */
   try{ sessionStorage.setItem("class26e.updating", "1"); }catch(e){}
+  /* an update lands on Home, never back on the tab (327z13, LAST_TAB_KEY) */
+  try{ sessionStorage.removeItem(LAST_TAB_KEY); }catch(e){}
   try{ await fetch(location.href, { cache: "reload" }); }catch(e){}
   /* LET GO OF THIS PAGE BEFORE LOADING THE NEXT ONE (build 262).
      "After an update is pushed, the main menu and a lot of the screens
@@ -130683,6 +130727,8 @@ function applyGlassRefraction(el, mapImgId){
   _glassRefractionDimsCache[id] = { w, h };
 }
 
+/* the bottom tab a browser tab was last on, in its sessionStorage (327z13) */
+const LAST_TAB_KEY = "class26e.lastTab";
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
@@ -130851,6 +130897,8 @@ function applyGlassRefraction(el, mapImgId){
     /* the drag-release path below uses the same steps (build 314) */
     tab._navigate = navigateTab;
     const go = () => {
+      /* which tab a browser tab was on, for the reload Safari does on its own (327z13) */
+      try{ sessionStorage.setItem(LAST_TAB_KEY, dest); }catch(e){}
       if(dest === "home"){
         /* Tapping Home while already there used to re-run showHome()
            from scratch every time, re-triggering the orbit/sphere
@@ -132473,6 +132521,24 @@ else if(!store.onboardingComplete){
   showWelcome();
 } else {
   showHome();
+  /* BACK WHERE YOU WERE AFTER SAFARI RELOADS THE TAB (build 327z13). "It
+     also randomly refreshes." Measured, the page does not grow - its
+     memory levels off after a few rounds of every tab - so the refresh is
+     Safari's own: iOS throws a tab's page away when the phone needs the
+     memory (another app, the lock screen, other tabs) and loads it again
+     when you come back, from the top. It cannot be stopped from inside
+     the page; what it costs can. A browser tab remembers which bottom tab
+     it was on in the tab's own sessionStorage (it survives that reload, a
+     new tab starts without it) and goes back to it - not after an update,
+     which always lands on Home. A test in progress is kept as it always
+     was (the saved test). */
+  try{
+    const back = document.documentElement.classList.contains("is-browser") ? sessionStorage.getItem(LAST_TAB_KEY) : null;
+    if(back && back !== "home"){
+      const btn = document.querySelector('.bottomtab[data-dest="' + back + '"]');
+      if(btn && btn._navigate) setTimeout(() => { try{ if(stage.querySelector('[data-screen="home"]')) btn._navigate(); }catch(e){} }, 0);
+    }
+  }catch(e){}
 }
 
 /* If this device has a sync code, check the cloud for a newer copy right
