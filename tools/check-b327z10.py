@@ -407,8 +407,10 @@ def glide_pace(br):
       const a0 = xs[0], a1 = xs[xs.length - 1];
       return xs.map(v => +((v - a0) / ((a1 - a0) || 1)).toFixed(3)); }""")
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-    ok = bool(r) and len(r) > 14 and .35 <= r[4] <= .6 and r[8] <= .9 and r[14] >= .95
-    check("%s: K. the glass is %s of the way at frames 4 / 8 / 14 (reference about .48 / .83 / .99)" % (label, r and "%.2f / %.2f / %.2f" % (r[4], r[8], r[min(14, len(r) - 1)])),
+    # MOVED IN 327z13: "still moves too fast" - slower again, [260, .95]:
+    # about .32 / .67 / .94 at frames 4 / 8 / 16 (check-b327z13 S has it)
+    ok = bool(r) and len(r) > 17 and .25 <= r[4] <= .42 and r[8] <= .8 and r[16] >= .9
+    check("%s: K. the glass is %s of the way at frames 4 / 8 / 16 (327z13: about .32 / .67 / .94)" % (label, r and "%.2f / %.2f / %.2f" % (r[4], r[8], r[min(16, len(r) - 1)])),
           ok, r and r[:20])
     ctx.close()
 

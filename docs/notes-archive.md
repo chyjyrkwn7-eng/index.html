@@ -27174,3 +27174,33 @@ Madison's list after 327z11, each fixed and gated in `tools/check-b327z12.py`
 `--dq-c` on the quieter glass with the countdown arc (round 2's answered
 look otherwise unchanged). Gate check-b327z12 R now asserts the "?" and no
 tick in both states (fails on 327z12). APP_BUILD / version.json 327z13.
+
+### Build 327z13 - the tab bar's glass: slower, and nothing built under it
+
+"The bottom tab is getting better but the pill bubble thing still moves too
+fast when clicking through the bottom tab. It also lags. Please ensure it's
+perfect, leave no stone unturned." Measured at 4x CPU with real touches:
+
+- Pace: `LENS.glide` [625, .95] was 54% / 87% / 99% at frames 4 / 8 / 16 -
+  a flick. Now [260, .95] (w 16): 32% / 67% / 94%, no overshoot. `minUp`
+  200 -> 300, so a quick tap's lens stays up until it has arrived (it starts
+  to shrink ~360ms after the press, at 98% of the way).
+- Lag: the tapped tab's screen was built 150ms after the press, mid-glide.
+  A build is a long main-thread task (Home ~100-160ms of layout for its
+  orbit, a first Profile ~600ms over several tasks at 4x); on an iPhone that
+  holds the glass's frames. `TAB_SCREEN_AFTER` 150 -> 290 (glide ~94% there),
+  so every build lands after the crossing. With real touches at 4x the only
+  main-thread work before 290ms is the press and release themselves (a few
+  ms of script, a small style pass); the build's layout comes at ~320-440ms.
+- First tap of a session: the white/pink/brown noise buffers (~96k samples
+  each of filtering) were generated on the press. Now plain arrays per rate
+  (`sndNoiseSamples`), worked out in `prewarm` idle time like the reverb's
+  impulse; a context copies them in (`getChannelData(0).set`). Same samples,
+  same sound (check-sound passes).
+- Gate: `tools/check-b327z13.py` S (pace off the lens's own track), T (a
+  60ms tap stays up 320ms+ and shrinks only at 95%+), U (#stage changes
+  270ms+ after the press with the glide 90%+ there) - all fail on 327z12.
+  Moved: check-b327z10 K (new curve), check-behaviour b314h_tabs (budget is
+  300ms on top of the 290ms wait; median now ~357ms tap-to-paint at 4x).
+- Not verifiable here: how the glass renders on an iPhone's GPU while the
+  build runs after it lands (its landing fades are compositor animations).

@@ -9593,8 +9593,12 @@ def check_b314h_tabs(br):
         times.append(m["paint"]); blank += 1 if m["blank"] else 0
     times.sort()
     med = times[len(times) // 2]
-    check("every switch between the four tabs paints its screen, median tap-to-paint under 300ms at 4x CPU (313: ~390 warm)",
-          blank == 0 and med < 300 and times[-1] < 2000, {"median": round(med), "worst": round(times[-1]), "blank": blank})
+    # MOVED IN 327z13: the screen waits for the glass to cross (TAB_SCREEN_AFTER,
+    # 290ms - "the pill bubble thing still moves too fast ... it also lags"),
+    # so the budget is what comes on top of that wait: under 300ms, as before
+    WAIT = 290
+    check("every switch between the four tabs paints its screen, median tap-to-paint under 290ms (the glass's crossing) + 300ms at 4x CPU",
+          blank == 0 and med - WAIT < 300 and times[-1] < 2000 + WAIT, {"median": round(med), "worst": round(times[-1]), "blank": blank, "wait": WAIT})
     cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
     ctx.close()
 
