@@ -27252,3 +27252,53 @@ Madison's list after the glide (each in check-b327z13 V-Z, failing on 327z12):
   57 vs 84 a second measured) and takes its sheet when made; a failed one on
   the board stays live. Now 6 of 10 move at 3s and the rest join as sheets
   land; saved sheets load at once on later visits.
+
+### Build 327z14 - Safari tabs: the sky under the bars, the tab kept over a reload, sound off; a silent exit; the hundo preview matches results
+
+Madison (Safari tab screenshot, top and bottom bands circled): *"The boxes at
+the top and bottom are still there. It also randomly refreshes."* Then: *"The
+app randomly freezes again in safari, I think the sound may be breaking it"*,
+*"When leaving the app with sound on, it makes a weird/glitchy noise"*, and
+*"for the undo [hundo] effect unlocks, when you click one to see a preview,
+that doesn't match up with our results screen anymore"*.
+
+- **The sky runs under Safari's bars** (`html.is-browser`, "THE SKY RUNS
+  UNDER SAFARI'S BARS"). Safari 26's bars are see-through and show what is
+  under them; `body::before` (glows + paper) and `body::after` (stars) are
+  fixed and one viewport tall, so under the bars only the root's own colour
+  (`--edge-bottom`) showed - the bands. In a browser tab both layers run
+  `--bleed` (200px) past the top and bottom, with every gradient restated
+  from the bottom so the visible pixels do not move (compared against
+  non-browser mode in Chromium: within 3 levels except Home's animations),
+  and the root's colour is `var(--paper)`. Only confirmable on an iPhone.
+  check-fixes' SE 1st gen 568x260 browser "GREY BAR, 10 levels" is
+  pre-existing (identical with the bleed block removed) - the scrolled
+  html fallback's known limit, see the 11% ceiling note on body::before.
+- **Random refreshes** are Safari discarding a background tab (heap held
+  ~61MB, blob URLs plateau at 9, no leak measured). A browser tab now keeps
+  its tab: `LAST_TAB_KEY` (`class26e.lastTab`, sessionStorage, which
+  survives the reload) is written on every tab press and, after `showHome()`
+  at boot, a non-Home tab is pressed again. `applyUpdate` clears it, so an
+  update still lands on Home.
+- **Sound is off in iPhone Safari tabs again; haptics are not.**
+  `version.json` `"safariSound": false` (the 327z9 switch). `hapticsWanted()`
+  no longer reads `tabOff()`, and Settings' Sound & vibration card in such a
+  tab shows the note ("Sound plays in the installed app...") above the
+  Haptics row instead of replacing the card. Long tasks measured in Chromium
+  (iPhone UA, 4x CPU, 16 tab presses) were the same with sound on and off
+  (worst ~200ms), so the cause cannot be seen here; this follows the
+  freezes, which have twice gone with sound. `"safariSound": true` puts
+  sound back with no build.
+- **Leaving is silent.** `suspend()` cut the output mid-wave (a click, then
+  iOS tore down the session under the rest). `away()` fades the master to
+  nothing (time constant 12ms) and suspends 90ms later; window `blur` (the
+  home swipe beginning) fades too; `back()` / `resume()` bring the master
+  up from silence (`unhush`).
+- **The hundo preview is the results screen** (`buildHundoFxMock`): header
+  with the mode pill, "1 unit" and the unit; the grade card FIRST (build
+  320's order) with "right on the first try" under 12 / 12 and the unit's
+  bar with no fraction; then XP earned with a Bonuses heading, Hundo,
+  Answer streak, Speed and a large total; then the buttons. 4 / 5.8 so it
+  all fits.
+- Gate: `tools/check-b327z14.py` A-E (`B327Z14_ONLY=`), ALL PASS here; 11
+  failures against 327z12 (live).

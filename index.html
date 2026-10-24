@@ -11720,18 +11720,25 @@
     35.26%{ transform:rotate(calc(var(--s1) * .3)) scaleY(0); opacity:.6; } 35.47%, 100%{ opacity:0; transform:rotate(calc(var(--s1) * .3)) scaleY(0); } }
 
   /* ===== round 3: the results screen in miniature ===== */
-  .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.38rem; width:100%; aspect-ratio:4 / 5; padding:.6rem .55rem .55rem; box-sizing:border-box;
+  .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.3rem; width:100%; aspect-ratio:4 / 5.8; padding:.6rem .55rem .55rem; box-sizing:border-box;
     border-radius:14px; overflow:hidden; clip-path:inset(0 round 14px); isolation:isolate; text-align:left; pointer-events:none;
     background:radial-gradient(120% 60% at 50% 0%, rgba(140,70,100,.32), rgba(0,0,0,0) 62%), radial-gradient(90% 50% at 50% 110%, rgba(180,120,60,.18), rgba(0,0,0,0) 70%), #121019;
     border:1px solid rgba(255,255,255,.08); --rs-card:rgba(24,29,37,.7); }
-  .hfx-mock > .rs-head{ display:flex; flex-direction:column; gap:.08rem; padding:.05rem .15rem; }
+  .hfx-mock > .rs-head{ display:flex; flex-direction:column; gap:.08rem; margin:0; padding:.05rem .15rem; }
   .hfx-mk-title{ font-size:.7rem; font-weight:800; color:var(--ink); }
   .hfx-mk-sub{ font-size:.5rem; color:var(--soft); }
+  .hfx-mk-pill{ align-self:flex-start; margin:.12rem 0 .08rem; padding:.08rem .32rem; border-radius:999px; border:1px solid rgba(255,107,107,.45); background:rgba(255,107,107,.12); color:#FF8A8A; font-size:.38rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+  .hfx-mk-scope{ font-size:.78rem; font-weight:800; line-height:1.1; color:var(--ink); }
+  .hfx-mk-frac{ display:flex; flex-direction:column; gap:.06rem; }
+  .hfx-mk-fracsub{ font-size:.42rem; color:var(--soft); }
+  .hfx-mk-unit{ margin:.25rem 0 0; padding-top:.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.5rem; font-weight:700; color:var(--ink); }
+  .hfx-mk-kicker.is-sub{ margin-top:.18rem; margin-bottom:.12rem; }
   .hfx-mock > .rs-card{ position:relative; border:1px solid rgba(255,255,255,.1); border-radius:10px; background:linear-gradient(180deg, rgba(46,135,240,.1), rgba(24,29,37,.7) 60%); padding:.4rem .5rem .45rem; }
   .hfx-mk-kicker{ margin:0 0 .2rem; font-size:.42rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
-  .hfx-mk-line{ display:flex; justify-content:space-between; margin:0 0 .12rem; font-size:.5rem; color:var(--soft); }
+  .hfx-mk-line{ display:flex; justify-content:space-between; margin:0 0 .07rem; font-size:.5rem; color:var(--soft); }
   .hfx-mk-line b{ color:#8FB9FF; font-weight:800; }
-  .hfx-mk-line.is-total{ margin-top:.25rem; color:var(--ink); font-weight:800; }
+  .hfx-mk-line.is-total{ margin-top:.25rem; padding-top:.22rem; border-top:1px solid rgba(255,255,255,.08); align-items:baseline; color:var(--ink); font-weight:800; }
+  .hfx-mk-line.is-total b{ font-size:.78rem; letter-spacing:-.02em; }
   .hfx-mk-bar{ display:block; height:3px; margin-top:.3rem; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
   .hfx-mk-bar > i{ display:block; height:100%; width:34%; border-radius:2px; background:#6FA8FF; }
   .hfx-mk-bar.is-unit > i{ width:100%; }
@@ -71295,7 +71302,9 @@ const NovaSound = (function(){
   }, true);
   const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
-  const hapticsWanted = () => !tabOff() && !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
+  /* haptics are not part of the Safari switch (build 327z14): the switch
+     is for sound, which is what the freezes have followed */
+  const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
   function haptic(kind){
     if(!kind || !hapticsWanted()) return;
     if(canTaptic()){
@@ -71334,6 +71343,7 @@ const NovaSound = (function(){
   function resume(){
     const ctx = st.ctx;
     if(!ctx || !on() || document.hidden) return;
+    if(st.hushed) unhush();
     if(ctx.state !== "running"){ try{ const p = ctx.resume(); if(p && p.then) p.then(afterResume, () => {}); }catch(e){} }
     else afterResume();
   }
@@ -71362,15 +71372,44 @@ const NovaSound = (function(){
     }
   }
   ["touchend", "pointerup", "click", "keydown"].forEach(ev => document.addEventListener(ev, onGesture, { capture: true, passive: true }));
-  document.addEventListener("visibilitychange", () => {
+  /* LEAVING IS SILENT (build 327z14). Madison: "When leaving the app with
+     sound on, it makes a weird/glitchy noise." suspend() stopped the output
+     mid-buffer - the ambience loop and any reverb tail cut off in the
+     middle of a wave, which is a click, and iOS then tears the session down
+     under whatever was left. The master fades to nothing first (about 40ms)
+     and the context is suspended once it is silent. It starts on window
+     blur as well, which iOS sends as the home swipe begins, a beat before
+     the page is hidden. Coming back, the master comes up from silence. */
+  let hushT = 0;
+  function hush(){
+    if(!st.ctx || !st.G) return;
+    st.hushed = true;
+    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.setTargetAtTime(0, now, .012); }catch(e){}
+  }
+  function unhush(){
+    if(!st.ctx || !st.G || !st.hushed) return;
+    st.hushed = false;
+    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(0, now); g.setTargetAtTime(level(volume()), now, .08); }catch(e){}
+  }
+  function away(){
     if(!st.ctx) return;
-    if(document.hidden){ try{ st.ctx.suspend(); }catch(e){} }
-    else if(on()){
-      /* back: the ambience only if its screen is still the one up */
-      if(st.ambWant && st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
-      resume();
-    }
-  });
+    hush();
+    clearTimeout(hushT);
+    hushT = setTimeout(() => { if(document.hidden && st.ctx){ try{ st.ctx.suspend(); }catch(e){} } }, 90);
+  }
+  function back(){
+    clearTimeout(hushT);
+    if(!st.ctx || document.hidden) return;
+    if(!on()){ st.hushed = false; return; }
+    /* back: the ambience only if its screen is still the one up */
+    if(st.ambWant && st.ambWant.owner && !st.ambWant.owner.isConnected) stopAmbience();
+    unhush();
+    resume();
+  }
+  document.addEventListener("visibilitychange", () => { if(document.hidden) away(); else back(); });
+  window.addEventListener("pagehide", away);
+  window.addEventListener("blur", () => { if(st.ctx && on()) hush(); });
+  window.addEventListener("focus", back);
 
   function reap(){
     const now = st.ctx ? st.ctx.currentTime : 0;
@@ -71773,13 +71812,14 @@ function buildSoundSettings(){
   host.appendChild(lab);
   const card = document.createElement("div");
   card.className = "settings-card";
-  if(NovaSound.tabOff && NovaSound.tabOff()){
+  /* SOUND OFF IN SAFARI TABS, HAPTICS KEPT (build 327z14): the tab says
+     where the sound is and still offers the haptics switch */
+  const tabNoSound = !!(NovaSound.tabOff && NovaSound.tabOff());
+  if(tabNoSound){
     const note = document.createElement("p");
     note.className = "settings-sound-tabnote";
-    note.textContent = "Sound and haptics play in the installed app. Add Nova to your Home Screen to hear them.";
+    note.textContent = "Sound plays in the installed app. Add Nova to your Home Screen to hear it.";
     card.appendChild(note);
-    host.appendChild(card);
-    return host;
   }
   const mkRow = (title, hint, checked, onChange) => {
     const row = document.createElement("label");
@@ -71839,7 +71879,7 @@ function buildSoundSettings(){
     showToast(on ? "Sound effects on." : "Sound effects off.");
   });
   sndRow.classList.add("settings-sound-row");
-  card.append(sndRow, vol);
+  if(!tabNoSound) card.append(sndRow, vol);
   if(NovaSound.canVibrate()){
     const vibRow = mkRow("Vibration", "Short vibrations for taps, answers and results.", theme.vibrate, on => {
       theme.vibrate = on;
@@ -98462,7 +98502,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-24-327z13";
+const APP_BUILD = "2026-10-24-327z14";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -102171,22 +102211,35 @@ function buildHundoFxMock(id, o){
   m.dataset.fx = id;
   m.setAttribute("aria-hidden", "true");
   const el = (tag, cls, txt, parent) => { const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; (parent || m).appendChild(e); return e; };
+  /* THE RESULTS SCREEN AS IT IS NOW (build 327z14). Madison: "when you
+     click one to see a preview, that doesn't match up with our results
+     screen anymore". The real screen puts the grade first (build 320),
+     the mode pill and "1 unit" in its header, "right on the first try"
+     under the count, the unit's bar without a fraction, and a Bonuses
+     heading and a Speed line in the XP box. The miniature follows it,
+     top to bottom, in the same order. */
   const head = el("div", "rs-head");
   el("span", "hfx-mk-title", "Test results", head);
-  el("span", "hfx-mk-sub", "1 unit · Identity Crimes", head);
-  const xp = el("div", "rs-card rs-xp");
-  el("p", "hfx-mk-kicker", "XP earned", xp);
-  [["Correct answers", "+120"], ["Hundo", "+100"], ["Answer streak", "+25"]].forEach(r => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", r[0], l); el("b", "", r[1], l); });
-  const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+245 XP", tl);
-  const xb = el("span", "hfx-mk-bar", null, xp); el("i", "", null, xb);
+  el("span", "hfx-mk-pill", "Drill", head);
+  el("span", "hfx-mk-scope", "1 unit", head);
+  el("span", "hfx-mk-sub", "Identity Crimes", head);
   const gr = el("div", "rs-card rs-grade is-perfect");
   el("p", "hfx-mk-kicker", "Grade", gr);
   const row = el("div", "hfx-mk-row", null, gr);
   const pct = el("span", "rs-pct pct perfect", null, row); gradePctMarkup(pct, 100);
-  rsPair(el("span", "rs-grade-frac", null, row), 12, 12);
+  const fr = el("span", "hfx-mk-frac", null, row);
+  rsPair(el("span", "rs-grade-frac", null, fr), 12, 12);
+  el("span", "hfx-mk-fracsub", "right on the first try", fr);
   const bu = el("div", "rs-byunit", null, gr);
-  const ul = el("p", "hfx-mk-line", null, bu); el("span", "", "Identity Crimes", ul); rsPair(el("b", "", null, ul), 12, 12);
+  el("p", "hfx-mk-unit", "Identity Crimes", bu);
   const tr = el("span", "hfx-mk-bar is-unit", null, bu); el("i", "unit-breakdown-fill is-gold", null, tr);
+  const xp = el("div", "rs-card rs-xp");
+  el("p", "hfx-mk-kicker", "XP earned", xp);
+  const line = (a, b) => { const l = el("p", "hfx-mk-line", null, xp); el("span", "", a, l); el("b", "", b, l); };
+  line("Correct answers", "+120");
+  el("p", "hfx-mk-kicker is-sub", "Bonuses", xp);
+  [["Hundo", "+100"], ["Answer streak", "+25"], ["Speed", "+150"]].forEach(r => line(r[0], r[1]));
+  const tl = el("p", "hfx-mk-line is-total", null, xp); el("span", "", "Total", tl); el("b", "", "+395 XP", tl);
   const acts = el("div", "rs-actions");
   el("button", "hfx-mk-btn is-light", "Re-run", acts).tabIndex = -1;
   el("button", "hfx-mk-btn", "Main menu", acts).tabIndex = -1;
