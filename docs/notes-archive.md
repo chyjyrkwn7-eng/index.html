@@ -27507,3 +27507,34 @@ Madison's list, item by item (gate: check-b327z15 P-V, each failing on 327z14):
   admin now." (was "whoever maintains Nova").
 - Gate: check-b327z15 W (as an iPhone: swipe flips both ways, knob under the
   finger, tap still flips) and X.
+
+## Build 327z15 round 7 - sign-up order, tips for a new account
+
+Asked: "new accounts, they should go with the sign up stuff first, not meeting
+the nova introduction ... then if it's a new account they would go through
+the nova introduction ... and then the main page. Ensure the tool tips are
+good to go and ready for new accounts ... not a crazy amount but a good amount
+... Ensure if you sign up then it doesn't treat you like you are new account"
+(read as: signing IN with an existing code is not treated as new).
+
+- Order confirmed by walking it (record-sound.py nova-new): Welcome -> I'm new
+  here -> the check -> What This Actually Is -> class -> username -> character
+  -> all set -> GENERATING PROFILE -> Nova's introduction -> Home with the
+  main-menu tips. Nova never comes before sign-up.
+- Sign in with a code (adoptFromCloud, markIntroSeen) walked with a cloud copy
+  of a used account: lands on Home, no Nova introduction, no main-menu tips;
+  the account's own seen-tour flags come with it (applyLoadedData).
+- Tip copy brought up to date with the current screens:
+  - PROFILE_TIPS_289: no "tap the badge count" on the standing card (it is not
+    a button since round 5); the goal card's step names the challenge rows and
+    See rank ladder; the case step says the badge count opens the case.
+  - Profile tour 7 -> 6 steps: Stats and Settings share one step (Settings has
+    its own tour the first time it opens).
+  - NOVA_NEW_TIPS_321: Friends is in the chat, not under Profile; Stats no
+    longer claims a units list that opens Drill; the calendar tip describes
+    the countdown card.
+  - Flares tip: "Tap one for a closer look" (locked flares are vague now).
+  - Settings tour step 1 no longer mentions the class days countdown switch
+    (gone since 327 round 10).
+- Gate: check-b327z15.py Y (Profile tour 3-6 steps, every one showing); fails
+  on 327z14 (7 steps).

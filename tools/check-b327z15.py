@@ -102,7 +102,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWX")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXY")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -629,10 +629,33 @@ def section_x(br):
     ctx.close()
 
 
+def section_y(br):
+    print("\nY. The Profile tour for a new account: a handful of steps, each on something showing")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { store.seenProfileTour = false; store.profileTips289 = false; showProfile(); }")
+    pg.wait_for_timeout(2500)
+    seen, off = [], []
+    for _ in range(14):
+        st = pg.evaluate("""() => { const t = document.getElementById('tour-tooltip'); if(!t) return null;
+          const r = t.getBoundingClientRect(); return { text: t.textContent.slice(0, 80), w: r.width, h: r.height }; }""")
+        if not st:
+            break
+        if not seen or seen[-1] != st["text"]:
+            seen.append(st["text"])
+            if not (st["w"] > 0 and st["h"] > 0):
+                off.append(st["text"])
+        pg.evaluate("() => document.getElementById('tour-next') && document.getElementById('tour-next').click()")
+        pg.wait_for_timeout(700)
+    check("Y. the Profile tour is a few steps, not a lecture (%d)" % len(seen), 3 <= len(seen) <= 6, seen)
+    check("Y. every step shows", not off, off)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y)):
             if k in ONLY:
                 try:
                     fn(br)

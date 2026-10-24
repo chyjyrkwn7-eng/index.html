@@ -84125,11 +84125,11 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-edit-btn", align: "right", vplacement: "below",
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
-    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further. Tap the badge count to see them." },
+    text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further." },
   { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
-    text: "The challenges for your next rank, ticked off as you go, and what it unlocks. When you rank up, it plays out on the road map. Tap to see every rank." },
+    text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or See rank ladder for every rank and what each one unlocks." },
   { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
-    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap to open the case, then tap a badge to hold it and spin it. Badges get dirty over the weeks, so rub them clean." }
+    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over. Badges get dirty over the weeks, so rub them clean." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -84427,8 +84427,8 @@ function mainMenuTourSteps(returning){
     { target: ".daily-question-fab", align: "right", vplacement: "above",
       text: "Your daily question: one a day, one try, worth " + DAILY_XP + " XP. After you answer, its ring fills until the next one. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
-      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one to see what it takes."
-        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one to see what it takes." },
+      text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one for a closer look."
+        : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one for a closer look." },
     { target: "#nextbtn", align: "left", vplacement: "above",
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
         : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
@@ -84455,15 +84455,15 @@ const NOVA_NEW_TIPS_321 = [
   /* build 327: What's New no longer has the badge case's row, so the tip
      no longer leans on it (HANDOFF-326, known issue 2) */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, with Friends underneath, and Settings now sits beside Stats." },
+    text: "Profile has been rebuilt. Your rank, your level and your badges are on one card, and Settings now sits beside Stats. Friends moved into the chat." },
   /* build 327 round 9: "split it up into two so I can talk about the stats,
      and profile changes" */
   { target: "#bottomtab-profile", align: "left", vplacement: "above",
-    text: "Stats got a rebuild too: your accuracy, your last three tests, a week of study time, and which units need the most work. Tap a unit and it opens in Drill." },
+    text: "Stats got a rebuild too: your accuracy, your last three tests and a week of study time, all in one place." },
   /* build 323: the calendar has its own tab in the bar, Settings is in Profile.
      Round 9: "simple but catching so people want to click it" */
   { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-    text: "Class 26E now has its own calendar: what\u2019s on today, your next test and what\u2019s on it, the final exams, and how many class days are left. Tap it and take a look." }
+    text: "Class 26E now has its own calendar: what\u2019s on today, your next test and what\u2019s on it, and a countdown to graduation and each final exam. Tap it and take a look." }
 ];
 /* An existing account's tooltips, once, in its meeting with Nova. No
    welcome bonus - that is for a new account.
@@ -110676,7 +110676,7 @@ function showAppearance(opts){
        Rankings or about what the sync code actually is. */
     startSimpleTour([
       { target: "#settings-motion", align: "left", vplacement: "below",
-        text: "What the app shows and how it moves: reduced motion and the class days countdown." },
+        text: "How the app moves: Reduce motion turns off the shimmer, pulse and other animated effects." },
       { target: "#settings-study", align: "left", vplacement: "below",
         text: "How tests behave: swiping or moving on by itself to the next question, starring questions you keep missing, and skipping celebrations." },
       { target: "#settings-rankings", align: "left", vplacement: "below",
@@ -125874,11 +125874,10 @@ function showProfile(defaultTab, opts){
          at the chat button, where its Friends tab now starts */
       { target: "#chatdock-btn", align: "right", vplacement: "below",
         text: "Friends are in the chat. Its Friends tab shows who is on, with Manage friends at the top for swapping codes with a classmate." },
+      /* Stats and Settings in one step (327z15: "not a crazy amount");
+         Settings has a tour of its own the first time it opens. */
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
-        text: "Stats has your study time, your testing stats and your test history, all in one place." },
-      /* Settings is Profile's third tab (build 323). */
-      { target: ".profile-settings-tab-btn", align: "right", vplacement: "below",
-        text: "Settings has the rest of the options: sound, motion, how tests behave, and your sync code." }
+        text: "Stats has your study time, your testing stats and your test history. Settings, beside it, has the rest of the options and your sync code." }
       /* Badges and the rank climb moved to their own Ranks tab in the
          bottom bar in build 219, and the main menu tour points at it. */
 
