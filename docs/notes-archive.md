@@ -27337,3 +27337,37 @@ Now `bar._navPend` holds the one navigation waiting to build:
 Gate: `tools/check-b327z15.py` F (every ordered pair and triple from Home at
 60/150/300ms: 153 sequences) and G (the reported runs at 4x CPU, 120/250/
 400ms). ALL PASS here; 53 + 8 sequences fail on 327z14.
+
+#### 327z15, round 2 - a silent exit for real, no black restart, the answered daily button, the version history, the back button
+
+- **Leaving with sound on still glitched.** 327z14 faded the master over
+  ~40ms and suspended 90ms later on a timer; iOS throttles a hidden page's
+  timers, so the suspend could come late or never and the audio thread ran
+  on starved. `away()` now needs no timer: master set to 0 at once
+  (`g.value = 0` and on the next quantum), the ambience loop and every voice
+  stopped outright (the ambience is still wanted, so it comes back with the
+  page), the context suspended in the same call. Blur mutes the same way.
+  check-b327z14 A also holds that no voice and no loop is left running.
+- **Black for a few seconds on coming back** is a fresh start: iOS closed the
+  app or an update was waiting, and the 8MB page downloads and parses. The
+  splash group's reveal waited on animation frames that cannot run until the
+  main script is parsed, so it was a dark splash with nothing on it.
+  `#splash-group` now also reveals itself from CSS (`splash-in .4s .45s`),
+  which the compositor runs; the pixel placement script still runs first.
+  With scripts off, NOVA is on screen by 1.5s (0 lit pixels on 327z14).
+- **The answered daily button is the chat button's glass**: the same fill,
+  sheen, rim and shadow, the "?" in the same white at .78, and the time to
+  the next question as a 1.6px line of white light along the rim (no gold
+  arc, no track). The ready orb and the 5pm recharge are unchanged.
+- **Back buttons no longer change colour when pressed** (`.back-link:active`
+  keeps #0A0A0C; only the scale gives) and blur on click, as the tabs do.
+  Not reproduced in Chromium; this removes the only colour change there was.
+- **The version history was rewritten** for a professional release-note
+  voice: each feature announced once, later versions written as
+  improvements, version 9 corrected (no "Your units" box, Friends in the
+  chat, sound in the installed app only, Bubbles 150 / UFO 200, re-tap
+  scrolls to top). 9: 36 to 31 items, 6.0: 36 to 27, every icon and colour
+  kept. Version numbers unchanged.
+- Gate: check-b327z15 H (splash with no script), I (daily = chat glass),
+  J (`:active` forced: same colour), K (no title in two versions, no "!").
+  All fail on 327z14 except where noted; all pass here.

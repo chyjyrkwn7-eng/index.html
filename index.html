@@ -1354,6 +1354,19 @@
     display:flex; flex-direction:column; align-items:center; gap:.7rem;
     position:fixed; left:50%; top:50%; transform:translate(-50%, -50%);
     opacity:0;
+    /* NEVER A BLACK SCREEN WHILE THE APP LOADS (build 327z15). Madison:
+       "When leaving the app, and coming back; the entire screen is black
+       for a few seconds". iOS had closed the app (or an update was
+       waiting), so coming back is a fresh start: the 8MB page downloads
+       and its main script parses, seconds on a phone, and the group's
+       reveal waits on animation frames that cannot run until it is done -
+       a dark splash with nothing on it. This reveal needs no script: it
+       starts with the first paint and the compositor runs it, so NOVA and
+       the bar are up within half a second whatever the main thread is
+       doing. The script's own reveal (.splash-ready) still comes first
+       wherever it can; by .45s the iOS launch box it waits out has
+       settled, and the pixel placement below has already been written. */
+    animation:splash-in .4s ease .45s forwards;
   }
   #splash-group.splash-ready{ animation:splash-in .4s ease forwards; }
   /* The Nova wordmark, in the same warm gradient as the app icon and
@@ -19922,7 +19935,12 @@
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
     position:relative; overflow:hidden;
   }
-  [data-layout="modern"] .back-link:active{ background-color:#141416; }
+  /* NO COLOUR CHANGE ON A PRESS (build 327z15): "When in the version
+     history, tapping the back button, it makes it change color". The press
+     lightened the pill (#141416) and on iOS that state can hold while the
+     next screen is built under the finger. A back button only gives way
+     now (the scale above), the same colour throughout. */
+  [data-layout="modern"] .back-link:active{ background-color:#0A0A0C; }
   /* Same specificity as the rule above and ~4,500 lines later, so this is
      what actually has to carry [hidden] - the plain .back-link[hidden]
      further up loses on source order. Exactly the trap this file already
@@ -32630,6 +32648,27 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-theme][data-layout] .daily-question-fab.is-done .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 18%, rgba(255,255,255,.08)); }
   .daily-question-fab.is-done .dq-ring circle{ stroke-width:2.6; }
   .daily-question-fab.is-done .dq-ring-prog{ opacity:1; }
+  /* ---- ANSWERED, IT IS THE CHAT BUTTON'S GLASS (build 327z15) ----
+     "The daily question button, I'm not a fan of the button right now when
+     it's loading the next days question. The button doesn't feel like it
+     goes with the screen." Answered, it was a third look of its own - a
+     dark disc with a gold "?" and a gold arc, the one coloured thing on
+     Home besides the planet, reading as a loading spinner. It is now the
+     same glass as the chat button above it (fill, sheen, rim, shadow), the
+     "?" in the same white, set back; and the time to the next question is
+     a hairline of white light along that rim, the way iOS draws progress
+     on glass - one family with the chat button and the tab bar. The lit
+     orb (ready) and the 5pm recharge are unchanged. */
+  html[data-theme][data-layout] .daily-question-fab.is-done{
+    background:linear-gradient(rgba(255,255,255,.075), rgba(255,255,255,.043) 55%), rgba(12,13,19,.62) !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.05) !important;
+    color:rgb(231,237,241);
+  }
+  html[data-theme][data-layout] .daily-question-fab.is-done .dq-glyph{ opacity:.78; }
+  html[data-theme][data-layout] .daily-question-fab.is-done .dq-ring-track{ stroke:transparent; }
+  html[data-theme][data-layout] .daily-question-fab.is-done:not(.is-charging) .dq-ring-prog{ stroke:rgba(255,255,255,.62); }
+  .daily-question-fab.is-done:not(.is-charging) .dq-ring circle{ stroke-width:1.6; }
 
   /* ---- A CARD OF GLASS IS GLASS FROM ITS FIRST FRAME (build 327z10) ----
      "When clicking a profile to see someone's stats, the Liquid Glass has
@@ -71372,19 +71411,22 @@ const NovaSound = (function(){
     }
   }
   ["touchend", "pointerup", "click", "keydown"].forEach(ev => document.addEventListener(ev, onGesture, { capture: true, passive: true }));
-  /* LEAVING IS SILENT (build 327z14). Madison: "When leaving the app with
-     sound on, it makes a weird/glitchy noise." suspend() stopped the output
-     mid-buffer - the ambience loop and any reverb tail cut off in the
-     middle of a wave, which is a click, and iOS then tears the session down
-     under whatever was left. The master fades to nothing first (about 40ms)
-     and the context is suspended once it is silent. It starts on window
-     blur as well, which iOS sends as the home swipe begins, a beat before
-     the page is hidden. Coming back, the master comes up from silence. */
-  let hushT = 0;
+  /* LEAVING IS SILENT (build 327z14, 327z15). Madison: "When leaving the
+     app with sound on, it makes a weird/glitchy noise" - and again after
+     327z14, which faded the master over ~40ms and suspended 90ms later on
+     a timer. iOS throttles a hidden page's timers, so that suspend could
+     come late or never, and the audio thread kept running starved in the
+     background - the glitch. Now leaving is immediate and needs no timer:
+     the master is set to silence on the very next render quantum, the
+     ambience loop and every voice are stopped outright (the ambience is
+     still wanted, so it comes back with the page), and the context is
+     suspended in the same call. Window blur (the home swipe beginning, a
+     beat before the page is hidden) mutes the same way, and coming back
+     brings the master up from silence. */
   function hush(){
     if(!st.ctx || !st.G) return;
     st.hushed = true;
-    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.setTargetAtTime(0, now, .012); }catch(e){}
+    try{ const g = st.G.master.gain, now = st.ctx.currentTime; g.cancelScheduledValues(now); g.value = 0; g.setValueAtTime(0, now); }catch(e){}
   }
   function unhush(){
     if(!st.ctx || !st.G || !st.hushed) return;
@@ -71394,11 +71436,14 @@ const NovaSound = (function(){
   function away(){
     if(!st.ctx) return;
     hush();
-    clearTimeout(hushT);
-    hushT = setTimeout(() => { if(document.hidden && st.ctx){ try{ st.ctx.suspend(); }catch(e){} } }, 90);
+    const a = st.amb;
+    st.amb = null;
+    if(a){ try{ a.src.stop(); }catch(e){} try{ a.g.disconnect(); }catch(e){} }
+    st.voices.slice().forEach(v => { v.dead = true; v.srcs.forEach(x => { try{ x.stop(); }catch(e){} }); try{ v.g.disconnect(); }catch(e){} });
+    st.voices = [];
+    try{ st.ctx.suspend(); }catch(e){}
   }
   function back(){
-    clearTimeout(hushT);
     if(!st.ctx || document.hidden) return;
     if(!on()){ st.hushed = false; return; }
     /* back: the ambience only if its screen is still the one up */
@@ -72280,6 +72325,9 @@ function buildBackLink(label, onClick){
   link.type = "button";
   link.className = "back-link";
   fillBackLabel(link, label);
+  /* blurred first, as the tabs are: iOS can keep a pressed look on a
+     button whose screen is replaced under the finger (327z15) */
+  link.addEventListener("click", () => { try{ link.blur(); }catch(e){} });
   link.addEventListener("click", onClick);
   return link;
 }
@@ -76546,60 +76594,50 @@ function poolNow(){
    now reads directly from RELEASE_NOTES[0].groups below, so there is
    only one place this content can ever be edited. */
 const RELEASE_NOTES = [
-  /* VERSION 9 (build 321 and the round that ships with it): "This is gonna
-     be version 9. When doing it on the version history show a version 8
-     with some of this stuff but put in parenthesis not launched." Version
-     9 is what launches: everything built as Version 8 (below, marked not
-     launched), plus what is listed here. Nova narrates the headlines on
-     What's New (WHATS_NEW_320); this is the full list. The newest entry
-     is also what Welcome's What's New screen draws, so every item keeps
-     an icon. */
+  /* Release history, edited for tone and repeats in build 327z15: each feature
+     is announced once, later versions read as improvements of earlier ones.
+     The newest entry also feeds Welcome's What's New, so its items keep an icon. */
   {
     version: "9",
     groups: [
       { label: "New In Version 9", items: [
-        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "On by default, and you can turn them off in Settings. Sounds for nearly everything: your answers, your results, Home's ambience, the planet, badges, cutscenes, the Leaderboard and the Virtual Room." },
-        { icon: buildDevicesIcon, color: "#7CC8FF", title: "Haptic Touch", body: "On iPhone, a light tap you feel as you answer, star a question, flip a switch, change tabs or touch the planet. On by default, under Sound & vibration in Settings." },
-        { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can buzz on answers and moments that matter. Also a setting, also off until you turn it on." },
-        { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome leads with Sign in. Signing up asks whether you have used Nova before, and warns you if the name you chose already belongs to an account." },
-        { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard always match what your own Profile says." },
-        { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is clear glass with white icons and labels, and a glass lens that follows your finger between tabs. The chat button, Pause and the search bars wear the same glass." },
-        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question is named in its pinned header, like a test, and its result is one card: your verdict, then the XP you earned, in the same soft-edged style as the results screen." },
-        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar has its own tab at the bottom: today, your next test, the month and the days left in the course. Settings moved into Profile." },
-        { icon: buildPersonIcon, color: "#4ADE80", title: "Friends On Your Profile", body: "Your Profile card shows your friends and what each one is doing, or that they are offline. Manage friends works as before." },
-        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Mock, A Real Test", body: "Mock is a real test: no feedback until your grade. Review is every question with its answer, as a list or flashcards. Each mode has its own icon and colour." },
-        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "A Calmer Calendar", body: "Today and your next test sit at the top, then the month, the final exams and the course. Fewer boxes, and nothing repeats." },
-        { icon: buildBarStatsIcon, color: "#4ADE80", title: "Your Units On Stats", body: "Stats shows the units that need the most work and your strongest, with how much of each you get right. Tap one to drill it. The accuracy ring is green." },
-        { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats has a new chart of your study time this week, in dots. Tap a day for its exact time, or look back at last week." }
+        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "Sound now accompanies answers, results, Home, badges, cutscenes, the Leaderboard and the Virtual Room. It plays in the app installed on your Home Screen, is off in a Safari tab, and can be turned off in Settings." },
+        { icon: buildDevicesIcon, color: "#7CC8FF", title: "Haptic Touch", body: "On iPhone, a light tap confirms answers, starred questions, switches, tab changes and taps on the planet. On by default, including in a Safari tab, under Sound & vibration in Settings." },
+        { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can vibrate on answers and key moments. Off by default, under Sound & vibration in Settings." },
+        { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome now leads with Sign in. Signing up asks whether you have used Nova before and warns you if a username already belongs to an account." },
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard now always match your Profile." },
+        { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is redesigned in clear glass, with a lens that follows your finger between tabs, and tapping the current tab scrolls back to the top. The chat button, Pause and the search bars share the same glass." },
+        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar now has its own tab, opening on today and your next test, followed by the month, the final exams and the days left in the course. Settings has moved into Profile." },
+        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question button now shows a \"?\", and the question opens with its own header, like a test. Its result is a single card with your verdict and the XP earned." },
+        { icon: buildPersonIcon, color: "#4ADE80", title: "Friends In The Chat", body: "Friends now open from the chat, which shows how many are online and any requests waiting. Managing friends works as before." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Exam Is Now Mock", body: "Exam mode is now called Mock: a full test with no feedback until your grade. Every mode also has its own icon and colour." },
+        { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats adds a chart of this week's study time. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and an instructor. A planet he was studying exploded and scattered his badges, flares and crew across this system. Every unit you master finds a badge, every rank relights a flare, and every character you find is one of his crew come home." },
-        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "He Meets Everyone", body: "Everybody meets Nova once. He tells the story, goes over your progress and shows you what has changed." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova is your friend now. He checks in when you rank up or find something of his, and challenges you to a match every week. You can message him too." },
-        { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents last week's top three, with comebacks and photo finishes, and hands out honorable mentions." },
-        { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room, or accept his weekly challenge in your chats. He answers in two to four seconds and almost never misses. Beat him in any game and the Sheriff is yours." }
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and instructor whose planet exploded, scattering his badges, flares and crew across this system. Each unit you master recovers a badge, each rank relights a flare, and each character you find returns a member of his crew." },
+        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you rank up or find something of his, sends a weekly challenge, and can be messaged directly." },
+        { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents the previous week's top three, with comebacks, close finishes and honourable mentions." },
+        { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Invite Nova to a Virtual Room or accept his weekly challenge. Finish ahead of him to unlock the Sheriff." }
       ]},
       { label: "Better In Version 9", items: [
-        { icon: buildTrophyIcon, color: "#4ADE80", title: "Results", body: "Your grade climbs from red to green, and a 100 glows green before your hundo effect takes over. Your XP counts up with the bar. Badges and unlocks share one box: Found & Unlocked." },
-        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Happy At 100", body: "Every character is happy when you score 100, and every face matches your grade." },
-        { icon: buildStarIcon, color: "#C9D3DE", title: "The Badge Case", body: "A sleeker case for your badges, the same on the Badges screen and in the cutscene, with every badge centred in its slot." },
-        { icon: buildStarIcon, color: "#E8B84A", title: "Badges", body: "A cleaner clean look, an engraved back, and bevelled edges. Each badge sits down into its slot." },
+        { icon: buildTrophyIcon, color: "#4ADE80", title: "Results", body: "Your grade now climbs from red to green, and a 100 glows before your hundo effect plays. XP counts up with the bar, and badges and unlocks share one Found & Unlocked box." },
+        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Hundo Effects Unlock Sooner", body: "Bubbles now unlocks at 150 hundos and the UFO at 200. Every character celebrates a 100, and each face matches your grade." },
+        { icon: buildStarIcon, color: "#C9D3DE", title: "The Badge Case", body: "A sleeker badge case, identical on the Badges screen and in the cutscene. Badges have a cleaner finish, an engraved back and bevelled edges, and each settles into its slot." },
         { icon: buildLadderIcon, color: "#F5804D", title: "Ranking Up", body: "Flares animate through the rank-up and the planet pulses before the flash. Back on Profile, your XP counts up into your new levels." },
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "A Simpler Profile Card", body: "The level challenge just says the level you need. The rank line has no icon, and the notes under the XP bar are gone." },
-        { icon: buildPlanetIcon, color: "#FF7A59", title: "Supernova On Home", body: "At Supernova, a streak runs round Home's rings when you tap the planet, and every so often with its pulse." },
-        { icon: buildSparkleIcon, color: "#C9D3DE", title: "A Starry Sky", body: "Faint stars behind Home and every theme." },
-        { icon: buildChecklistIcon, color: "#5CA8FF", title: "Choosing Your Units", body: "Units are long rows again. Tick one and it opens to show its details, and holding a unit lets go smoothly. Starred questions are a row after your units." },
-        { icon: buildClipboardIcon, color: "#FFD27A", title: "Every Start Menu", body: "Every mode's start menu ends like the Virtual Room's: a box above Begin with the mode, your units, how many questions and what you switched on." },
-        { icon: buildDevicesIcon, color: "#B79BFF", title: "The Virtual Room", body: "Invite again after 15 seconds. Room setup sits above the lobby, Invite friends and Open room sit beside it, and Ready up is on the bottom bar. Tap anyone's character to see their profile card." },
-        { icon: buildCalendarGridIcon, color: "#F5C518", title: "Today's Test Dot", body: "On the calendar, a test today keeps its yellow dot, the same as the key." },
-        { icon: buildToggleIcon, color: "#4ADE80", title: "Bigger Switches", body: "Every switch in the app is bigger and works like iPhone: press it and the knob turns to glass you can slide across." },
-        { icon: buildToggleIcon, color: "#5CA8FF", title: "Clearer Settings", body: "Plainer names for the switches, a bigger sync code, and more room from Sync down." },
-        { icon: buildDualBoardIcon, color: "#F5C518", title: "The Leaderboard", body: "Everyone's rank shows as their moving flare, and the top three get gold, silver and bronze with a crown for first. Turning off Show me in the rankings now hides the rankings too." },
-        { icon: buildChecklistIcon, color: "#B79BFF", title: "Unlock Progress", body: "Unlock bars show today's count or your current run, say when they start over, and update on their own." },
-        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 124\u2013256", body: "The shorter version of Penal Code now has the 116 questions from slides 124\u2013256, for the next test." }
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "A Simpler Profile", body: "The rank card and the badge case open from their own buttons, and locked unlocks open a preview card. Tap your character to see its move." },
+        { icon: buildPlanetIcon, color: "#FF7A59", title: "Home And The Sky", body: "Faint stars now sit behind Home and every theme. At Supernova, a streak runs around Home's rings when you tap the planet." },
+        { icon: buildChecklistIcon, color: "#5CA8FF", title: "Choosing Your Units", body: "Units are full-width rows again; tick one to see its details. Starred questions follow as their own row." },
+        { icon: buildClipboardIcon, color: "#FFD27A", title: "Start Menus", body: "Every mode's start menu now ends with a summary above Begin: the mode, your units, the number of questions and the options you turned on." },
+        { icon: buildDevicesIcon, color: "#B79BFF", title: "The Virtual Room", body: "Room setup sits above the lobby, Ready up is on the bottom bar, and invites can be resent after 15 seconds. Tap anyone's character to see their profile card." },
+        { icon: buildToggleIcon, color: "#4ADE80", title: "Bigger Switches", body: "Every switch is larger and behaves like the system switches on iPhone, with a glass knob you can slide." },
+        { icon: buildToggleIcon, color: "#5CA8FF", title: "Clearer Settings", body: "Plainer names for each switch, a larger sync code, and more space in the Sync section." },
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "The Leaderboard", body: "Each player's rank now shows as their animated flare, and the top three receive gold, silver and bronze, with a crown for first." },
+        { icon: buildChecklistIcon, color: "#B79BFF", title: "Unlock Progress", body: "Unlock progress bars show today's count or your current run, state when they reset, and update automatically." },
+        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 124–256", body: "The shorter Penal Code version now covers the 116 questions from slides 124–256." }
       ]},
-      { label: "Everything From Version 8", items: [
-        { icon: buildRocketIcon, color: "#F5804D", title: "Version 8, Launched At Last", body: "Everything built since Version 7: your grade first on the results, characters that celebrate a hundo, badges you can hold and clean, the rank-up on the road map, the planet that cracks with every rank, a new Profile, Save and exit, and the daily question ring." }
+      { label: "Included From Version 8", items: [
+        { icon: buildRocketIcon, color: "#F5804D", title: "Version 8 (Not Launched)", body: "Version 8 was not released on its own; its features arrive with Version 9. They include results that lead with your grade, badges you can pick up and clean, the rank-up shown on the road map, a planet that cracks with each rank, a redesigned Profile, and Save and exit for tests." }
       ]}
     ]
   },
@@ -76607,100 +76645,84 @@ const RELEASE_NOTES = [
     version: "7.7",
     groups: [
       { label: "Hundo Effects", items: [
-        { icon: buildSparkleIcon, color: "#FFD84D", title: "Effects For Your Hundos", body: "A screen effect plays when you score 100%, and you earn new ones as your hundos climb: Fireworks at 50, Underwater at 100, Bubbles at 200 and a UFO at 350, plus Confetti from the start. Choose yours in Customize, and tap one there to see it play." }
+        { icon: buildSparkleIcon, color: "#FFD84D", title: "Hundo Effects", body: "A screen effect now plays when you score 100%. Confetti is available from the start, with Fireworks, Underwater, Bubbles and a UFO unlocked as your hundos grow; choose and preview them in Customize." }
       ]},
       { label: "Home", items: [
-        { icon: buildPlanetIcon, color: "#7FC8FF", title: "A Home You Can Tap", body: "Tap a flare or the planet and it reacts, with a line saying what it is. Flares you have not unlocked yet give a small shake." }
+        { icon: buildPlanetIcon, color: "#7FC8FF", title: "An Interactive Home", body: "Tap a flare or the planet to see what it is. Flares not yet unlocked respond with a small shake." }
       ]},
       { label: "Studying", items: [
-        { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Review has a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions come with you." },
-        { icon: buildSwipeIcon, color: "#F5804D", title: "A Better Test", body: "Answer feedback is quicker, a small swipe bounces back until you mean it, the Next button arrives at a steadier pace, and Review and Flashcards get their own short loading screen." },
-        { icon: buildClipboardIcon, color: "#5CA8FF", title: "A Simpler Start Sheet", body: "The question bank is all questions by default, with one switch for starred questions only, and the slider tells you when it is already at the most it can be." },
-        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 55\u2013124", body: "Penal Code has a second version with only the questions from slides 55\u2013124. Pick it when you choose the unit." },
-        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "Daily Question", body: "Pick an answer, then tap Submit answer." }
+        { icon: buildChecklistIcon, color: "#4DD0E1", title: "Flashcards", body: "Review adds a Flashcards option for any unit: tap a card to flip it, swipe to move on, and starred questions are included." },
+        { icon: buildSwipeIcon, color: "#F5804D", title: "A Smoother Test", body: "Answer feedback is quicker, a short swipe springs back unless you complete it, and the Next button appears at a steadier pace." },
+        { icon: buildClipboardIcon, color: "#5CA8FF", title: "Question Bank Options", body: "The start sheet now uses all questions by default, with a single switch for starred questions only." },
+        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 55–124", body: "Penal Code adds a second version covering only slides 55–124, selectable when you choose the unit." }
       ]},
       { label: "Characters & Banners", items: [
-        { icon: buildPersonIcon, color: "#FF2E88", title: "Characters, Refined", body: "Every character is the same size and reacts to your score in its own way. They animate in Customize and on the tab bar, nothing is cut off, and locked ones stay a silhouette until you earn them." },
-        { icon: buildSwatchClusterIcon, color: "#4DD0E1", title: "Customize, Organized", body: "Customize opens on what you have on: your character, banner, theme color and hundo effect. Tap one to open its own page." },
-        { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now matches the colours of what you unlocked. Silver looks like silver." },
-        { icon: buildSparkleIcon, color: "#7FC8FF", title: "New Secret Flare Cutscenes", body: "Finding a secret flare plays a longer cutscene, and the character it hands over rises out of the dark." },
-        { icon: buildStarIcon, color: "#FF9EC8", title: "Rare Moves", body: "Every earned character now has a rare move of its own. Keep an eye on yours." }
+        { icon: buildPersonIcon, color: "#FF2E88", title: "Characters, Refined", body: "Every character is now the same size, reacts to your score in its own way, and animates in Customize and on the tab bar. Locked characters remain silhouettes until earned." },
+        { icon: buildSwatchClusterIcon, color: "#4DD0E1", title: "Customize, Organized", body: "Customize now opens on what you are using: your character, banner, theme colour and hundo effect, each with its own page." },
+        { icon: buildPaletteIcon, color: "#C583FF", title: "New Banners And Pop-Ups", body: "New banners for the secret flare characters, and every unlock pop-up now takes the colours of what you unlocked." },
+        { icon: buildSparkleIcon, color: "#7FC8FF", title: "Longer Secret Flare Cutscenes", body: "Finding a secret flare now plays a longer cutscene, with its character rising out of the dark." },
+        { icon: buildStarIcon, color: "#FF9EC8", title: "Rare Moves", body: "Every earned character now has a rare move of its own." }
       ]},
       { label: "Ranks, Levels & Badges", items: [
-        { icon: buildLadderIcon, color: "#E8B84A", title: "Rank Challenges", body: "Every rank has two challenges, a level and a number of badges, and completing both ranks you up. If your XP gets ahead, your level waits until you complete the next rank's challenges. None of that XP is lost: it turns into levels the moment you rank up. Nobody loses a rank." },
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile shows your rank, level and XP together, the next rank as a checklist, and your badge case, each one tap away. Every rank you have reached glows on the road map, and the Stats page is clearer." }
+        { icon: buildLadderIcon, color: "#E8B84A", title: "Rank Challenges", body: "Each rank's requirements now appear as two challenges: a level and a number of badges. XP earned beyond the next rank's level is kept and converts to levels when you rank up, and no rank is ever taken away." },
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "Stats, Profile And The Road Map", body: "Profile now shows your rank, level and XP together, with the next rank as a checklist and your badge case one tap away. Every rank you have reached glows on the road map, and Stats is easier to read." }
       ]},
-      { label: "Results", items: [
-        { icon: buildTrophyIcon, color: "#4ADE80", title: "Results, Overhauled", body: "Your rewards first, revealed one at a time, with your character reacting to the score, then the full review." }
-      ]},
-      { label: "Fixes & polish", items: [
-        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Smoother Everywhere", body: "Faster tabs, screens that load every time, smoother chat, a calmer Virtual Room start, and a more accurate leaderboard." },
-        { icon: buildCloudIcon, color: "#3DA9FC", title: "Safer Saving", body: "Before your progress is saved, the app checks what is already there, so a phone with an older copy can no longer write over newer progress." },
-        { icon: buildRetryIcon, color: "#4DD0E1", title: "Bug Fixes", body: "A long list of smaller fixes from your reports." }
+      { label: "Fixes & Refinements", items: [
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Performance", body: "Faster tab changes, more reliable screen loading, smoother chat, a steadier Virtual Room start and a more accurate Leaderboard." },
+        { icon: buildCloudIcon, color: "#3DA9FC", title: "Safer Saving", body: "Before saving, the app checks the copy already in the cloud, so a device with older progress can no longer overwrite newer progress." },
+        { icon: buildRetryIcon, color: "#4DD0E1", title: "Fixes And Refinements", body: "The daily question now confirms your choice with a Submit answer button, along with many smaller fixes from user reports." }
       ]}
     ]
   },
-  /* 7.3 (build 279) - "Update the version history, call this version 7.3
-     and include the new stuff". Everything since 6.9 (build 170) that a
-     classmate would notice. The one-time "New in this update" card says
-     the headline version of the same list. The character in the
-     astronaut slot is named once it is picked - see PICK below. */
   {
     version: "7.3",
     groups: [
       { label: "Characters", items: [
-        { icon: buildPersonIcon, color: "#FF2E88", title: "New And Redrawn Characters", body: "Every character has been redrawn with its own scene behind it, and the set has grown: a character for each rank from Silver up, challenge characters like the Ronin, Orion, the Sheriff, the Marksman, the Hacker and the Koi, and three secret ones — Void, Umbra and Horizon — that you find rather than earn." },
-        { icon: buildSparkleIcon, color: "#7FC8FF", title: "Five Secret Flares", body: "Red, orange and yellow unlock Void; the violet flare unlocks Umbra and the ice-blue flare unlocks Horizon. Each one is worn by the character it hands over, and the orbit on Home lights up as you find them." },
-        { icon: buildPaletteIcon, color: "#C583FF", title: "Banners And Themes", body: "Banners to earn for your profile and your name in a Virtual Room, and a theme colour for every rank. Press and hold anything in Customize to see exactly what it takes." }
+        { icon: buildPersonIcon, color: "#FF2E88", title: "Redrawn And New Characters", body: "Every character has been redrawn with its own background scene. New additions include a character for every rank from Silver up, challenge characters such as the Ronin, Orion, the Sheriff, the Marksman, the Hacker and the Koi, and the secret characters Umbra and Horizon." },
+        { icon: buildSparkleIcon, color: "#7FC8FF", title: "Two More Secret Flares", body: "Violet and ice-blue flares join the original three, unlocking Umbra and Horizon. Each flare is worn by its character, and the orbit on Home lights up as you find them." },
+        { icon: buildPaletteIcon, color: "#C583FF", title: "Banners", body: "Banners to earn for your profile and your name in a Virtual Room. Press and hold any item in Customize to see what it takes to unlock." }
       ]},
       { label: "Virtual Room", items: [
-        { icon: () => modeIcon("vroom"), title: "Battle", body: "A new mode: two teams, one health bar each. Every right answer hits the other side, powers unlock after question 10, and the first side to zero loses." },
-        { icon: buildDualBoardIcon, color: "#F5804D", title: "Tug of War, Rebuilt", body: "The rope moves by how each side is actually doing, with a real cutscene at the end — and rooms can be public or private, with a browser to find the public ones." },
-        { icon: buildTrophyIcon, color: "#FFD84D", title: "Podiums And Room Stats", body: "Wins and top-three finishes are counted, and a finished room shows its podium." }
+        { icon: () => modeIcon("vroom"), title: "Battle", body: "A new mode with two teams and one health bar each. Every correct answer damages the other side, powers unlock after question 10, and the first side to reach zero loses." },
+        { icon: buildDualBoardIcon, color: "#F5804D", title: "Tug Of War, Rebuilt", body: "The rope now moves according to how each side is performing, with a closing cutscene. Rooms can be public or private, with a browser for finding public rooms." },
+        { icon: buildTrophyIcon, color: "#FFD84D", title: "Podiums And Room Stats", body: "Wins and top-three finishes are counted, and every finished room shows its podium." }
       ]},
       { label: "Chat", items: [
-        { icon: buildDevicesIcon, color: "#8E7CF5", title: "Friends And Group Chats", body: "A permanent chat with each friend, group chats you can come back to, and an Inbox for everything waiting on you." },
-        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Photos, Polls And Reactions", body: "Send a photo or a poll, react to a message the way you would on iMessage, and see who is typing. Unread counts sit on every tab." },
-        { icon: buildOfflineIcon, color: "#4ADE80", title: "Who Is Online", body: "A green dot shows who has the app open right now." }
+        { icon: buildDevicesIcon, color: "#8E7CF5", title: "Friend And Group Chats", body: "Each friend now has a permanent chat, and group chats stay available to return to." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Photos, Polls And Reactions", body: "Send photos and polls, react to messages and see who is typing. Unread counts appear on every tab." }
       ]},
       { label: "Studying", items: [
-        { icon: buildChecklistIcon, color: "#5CA8FF", title: "Hold A Unit For Its Details", body: "Press and hold any unit to see your best score, hundos and last score for each mode, plus the questions you have missed most and the ones you have flagged." },
-        { icon: buildClipboardIcon, color: "#4ADE80", title: "A Simpler Start Sheet", body: "Pick a mode and go: the options are a short list, with Begin always at the bottom." },
-        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "Daily Question", body: "A new question every day on a set schedule, with a proper charge-up and banner when it is ready." }
+        { icon: buildChecklistIcon, color: "#5CA8FF", title: "Hold A Unit For Its Details", body: "Press and hold any unit to see your best score, last score and hundos for each mode, plus the questions you miss most and those you have flagged." },
+        { icon: buildClipboardIcon, color: "#4ADE80", title: "A Simpler Start Sheet", body: "The start sheet is now a short list of options, with Begin always at the bottom." },
+        { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "Daily Question", body: "The daily question now arrives on a set schedule each day, with a charge-up and a banner when it is ready." }
       ]},
       { label: "Ranks & Results", items: [
-        { icon: buildLadderIcon, color: "#FFD84D", title: "The Rank Tab", body: "A road map of every rank, with your exact progress lit along it, what each rank hands over, and a moment when you open it after climbing." },
-        { icon: buildBarStatsIcon, color: "#F5804D", title: "Results, Refreshed", body: "The end of a test is now two screens: your rewards first, revealed one by one — XP, level, badge progress and anything you unlocked — then the full review." },
-        { icon: buildStarIcon, color: "#4DD0E1", title: "Badges That Fit The Unit", body: "Each badge costs a number of hundos that matches the size of its unit, and the badge case opens with its own cutscene." },
-        { icon: buildStarIcon, color: "#FFD84D", title: "Badges Are Easier To Earn", body: "Every badge needs fewer hundos than before — 15, 12 or 8 by the size of the unit, 4 for Arrest, Search and Seizure and 2 for the Penal Code. Any badge this hands you is celebrated on your next test." }
+        { icon: buildLadderIcon, color: "#FFD84D", title: "The Rank Tab, Redesigned", body: "The Rank tab is now a road map of every rank, showing your exact progress and what each rank awards, with a short moment when you open it after climbing." },
+        { icon: buildBarStatsIcon, color: "#F5804D", title: "Results, Refreshed", body: "Results are now two screens: your rewards first, revealed one at a time (XP, level, badge progress and unlocks), then the full review." },
+        { icon: buildStarIcon, color: "#4DD0E1", title: "Badges Are Easier To Earn", body: "Each badge now needs fewer hundos, scaled to the size of its unit: 15, 12 or 8, with 4 for Arrest, Search and Seizure and 2 for the Penal Code. The badge case also opens with its own cutscene." }
       ]},
-      { label: "Fixes & polish", items: [
-        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Smoother Everywhere", body: "Less lag going to Home, only what is on screen animates, and dozens of layout fixes across phones, tablets and laptops." },
-        { icon: buildRetryIcon, color: "#4DD0E1", title: "Bug Fixes", body: "Updates now arrive reliably, chats and invites tell the truth, and a long list of smaller fixes from your reports." }
+      { label: "Fixes & Refinements", items: [
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Performance", body: "Less delay returning to Home, fewer background animations, and many layout fixes across phones, tablets and laptops." },
+        { icon: buildRetryIcon, color: "#4DD0E1", title: "Fixes And Refinements", body: "Updates now arrive reliably, chat and invite statuses are accurate, and many smaller issues from user reports are fixed." }
       ]}
     ]
   },
-  /* 6.9. No "what's new" screen for this one - asked for explicitly,
-     "we don't need a what's new screen though just the stuff that shows
-     up when you hit version". The one-time introduction card covers the
-     chat and friends; everything else lives here, where somebody goes
-     looking for it. */
   {
     version: "6.9",
     groups: [
       { label: "Chat & Friends", items: [
-        { icon: buildDevicesIcon, color: "#8E7CF5", title: "Chat Lobbies", body: "A button in the top right of every screen opens a chat you can keep going while you study. Start one, invite your friends, and only the people in it can see what is said \u2014 leave and you are out until somebody invites you back." },
-        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code from the chat \u203a Friends, or tap anybody on the Leaderboard and send them a request. Friends are who you can invite to a chat or a Virtual Room." },
-        { icon: buildCloudIcon, color: "#3DA9FC", title: "Inbox", body: "The same button holds everything waiting on you \u2014 friend requests, chat invites and Virtual Room invites \u2014 with a count on it when there is something new, and a preview when somebody sends a message." },
-        { icon: buildOfflineIcon, color: "#F5B54D", title: "Who Is Online", body: "The friends list now shows who actually has the app open, rather than who answered a question recently." }
+        { icon: buildDevicesIcon, color: "#8E7CF5", title: "Chat Lobbies", body: "A chat button on every screen opens a chat that stays available while you study. Only invited members can read it, and leaving removes you until someone invites you back." },
+        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code, or send a request from the Leaderboard. Friends can be invited to chats and Virtual Rooms." },
+        { icon: buildCloudIcon, color: "#3DA9FC", title: "Inbox", body: "The chat button also holds friend requests, chat invites and Virtual Room invites, with a count for anything new and a preview of incoming messages." },
+        { icon: buildOfflineIcon, color: "#F5B54D", title: "Who Is Online", body: "The friends list shows who has the app open right now." }
       ]},
-      { label: "Invites replace codes", items: [
-        { icon: buildSkipForwardIcon, color: "#F5804D", title: "No More Codes To Type", body: "Joining a Virtual Room or a chat is an invite you accept, not a code you copy out of a message. The join-by-code screen and the shared room code are gone." }
+      { label: "Invites", items: [
+        { icon: buildSkipForwardIcon, color: "#F5804D", title: "Invites Replace Codes", body: "Virtual Rooms and chats are now joined by accepting an invite instead of entering a code." }
       ]},
-      { label: "Fixes & polish", items: [
-        { icon: buildScreenAwakeIcon, color: "#4DD0E1", title: "Tidier Settings", body: "The Sync section lost its box and the \u201cStop syncing this device\u201d button \u2014 a reset does the same job without stranding your rankings row. Saving your code from the reminder now takes you straight to the control and highlights it." },
-        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Home & Leaderboard", body: "Start Studying sits closer to the tab bar with the text above it tightened up, and the Leaderboard search has a clear button." },
-        { icon: buildStarIcon, color: "#FFD84D", title: "Under The Hood", body: "Four variables declared below the code that used them could have taken the whole app down at startup if Firebase ever loaded early. Found, fixed, and now checked on every build." }
+      { label: "Fixes & Refinements", items: [
+        { icon: buildScreenAwakeIcon, color: "#4DD0E1", title: "Tidier Settings", body: "The Sync section is simplified, and saving your code from the reminder now takes you straight to it." },
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Home & Leaderboard", body: "Start Studying sits closer to the tab bar, and Leaderboard search has a clear button." },
+        { icon: buildStarIcon, color: "#FFD84D", title: "Reliability", body: "Fixed an issue that could stop the app from opening at startup." }
       ]}
     ]
   },
@@ -76708,60 +76730,51 @@ const RELEASE_NOTES = [
     version: "6.0",
     groups: [
       { label: "Cloud Sync", items: [
-        { icon: buildCloudIcon, color: "#5CA8FF", title: "Your Progress, Saved Automatically", body: "No save button, no export \u2014 everything writes itself to the cloud the moment it happens, safe even if you lose your phone or clear your browser." },
-        { icon: buildDevicesIcon, color: "#4ADE80", title: "Link a Second Device", body: "One code links a new device with everything already on it, then keeps both in sync live from then on \u2014 answer a question on one, see it update on the other." },
-        { icon: buildOfflineIcon, color: "#FF9457", title: "Works Fully Offline Too", body: "No connection, no problem \u2014 the app keeps working normally and quietly catches the cloud back up the moment you're online again." }
+        { icon: buildCloudIcon, color: "#5CA8FF", title: "Instant, Live Sync", body: "Progress now saves the moment it happens, and linked devices update each other live." },
+        { icon: buildOfflineIcon, color: "#FF9457", title: "Works Offline", body: "The app works normally without a connection and catches up with the cloud once you are back online." }
       ]},
-      { label: "Design, Layout & Liquid Glass", items: [
-        { icon: buildGlassPanesIcon, color: "#C583FF", title: "Genuine Liquid Glass Throughout", body: "Tooltips, popups, cards, sheets, and the bottom tab bar all share one real frosted-glass treatment \u2014 translucent and blurred, not a flat solid fill, and consistent everywhere it appears." },
-        { icon: buildSwipeIcon, color: "#5CA8FF", title: "A Tab Bar You Can Drag", body: "Press and drag across the bottom bar and the glass highlight follows your finger instantly, snapping between tabs the way a native app's own bar does." },
-        { icon: buildSmoothCurveIcon, color: "#4DD0E1", title: "Smoother Everywhere", body: "Screens fade and settle in as they appear instead of just snapping into place, and sheets slide up from the bottom the way a real bottom sheet should." },
-        { icon: buildSwipeIcon, color: "#FFD84D", title: "Swipe to Advance", body: "Skip the button \u2014 swipe left to move straight to the next question, on top of the usual tap." }
+      { label: "Design", items: [
+        { icon: buildGlassPanesIcon, color: "#C583FF", title: "Liquid Glass, Extended", body: "Cards, sheets, pop-ups, tooltips and the tab bar now share one consistent frosted-glass finish." },
+        { icon: buildSmoothCurveIcon, color: "#4DD0E1", title: "Screen Transitions", body: "Screens now fade in as they appear, and sheets slide up from the bottom." }
       ]},
       { label: "Settings", items: [
-        { icon: buildSkipForwardIcon, color: "#5CA8FF", title: "Auto-Advance", body: "Moves you on automatically a moment after you answer \u2014 once you get it right in Drill, or as soon as you pick one in Exam \u2014 with no extra tap needed." },
-        { icon: buildScreenAwakeIcon, color: "#FFD84D", title: "Keep Screen Awake", body: "Stops your screen from locking mid-question. Tells you plainly if your specific device can't support it, rather than silently doing nothing." },
-        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Add Nova to Your Home Screen", body: "A short, real walkthrough for getting the app onto your home screen like any other app, with steps specific to your device." }
+        { icon: buildSkipForwardIcon, color: "#5CA8FF", title: "Auto-Advance", body: "Moves to the next question automatically after you answer: once you are correct in Drill, or as soon as you choose in Exam." },
+        { icon: buildScreenAwakeIcon, color: "#FFD84D", title: "Keep Screen Awake", body: "Stops the screen from locking mid-question, and says so if your device cannot support it." },
+        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Add Nova To Your Home Screen", body: "A step-by-step guide to installing the app on your Home Screen, specific to your device." }
       ]},
       { label: "Ranks, Badges & Unlocks", items: [
-        { icon: buildLadderIcon, color: "#FFD84D", title: "Seven Ranks to Climb", body: "Bronze, Silver, Gold, Platinum, Sapphire, Amethyst and Supernova. Each one asks for a level and a number of badges together, not either on its own, and each has its own emblem that sits beside your name everywhere people can see you." },
-        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge for Every Unit", body: "Sixteen units, sixteen badges, each one cut to its own shape. Finish a unit at 100% thirty-five times and its badge drops into place \u2014 and until then the empty slot shows you exactly what you are working towards." },
-        { icon: buildPersonIcon, color: "#4ADE80", title: "Characters Behind the Top Ranks", body: "The last four ranks each hand over a character nobody starts with \u2014 a robot, a clown, an officer and an astronaut. You can see all four from day one, locked, so you know what is up there." },
-        { icon: buildPersonIcon, color: "#D9A441", title: "Four More You Have to Go and Earn", body: "These four are not on the ladder \u2014 no amount of studying hands them over on its own. A detective for ten daily questions right in a row, a masked one for a hundo in ten different units in a row, a marble Zeus for passing the Practice Test, and Void for the three Secret Flares." },
-        { icon: buildStarIcon, color: "#F97316", title: "The Secret Flares", body: "Three of them \u2014 red, orange and yellow \u2014 hidden one at a time inside a test. No hint and no map: you either spot it or you finish the test and never know it was there. The three lights orbiting your Home screen are the tally, and finding all three unlocks the rarest character in the app." },
-        { icon: buildSwatchClusterIcon, color: "#C583FF", title: "A Theme Colour Per Rank", body: "Every rank hands over its own colour, and picking one recolours the whole app \u2014 the sphere, the glow behind every screen, the loading screen and the accent on every control." },
-        { icon: buildRocketIcon, color: "#FF6B6B", title: "The Supernova Event", body: "Reach the very top and a full-screen event plays out, leaving your Home screen's orbit permanently brighter afterward." }
+        { icon: buildLadderIcon, color: "#FFD84D", title: "Rank Emblems", body: "Each of the seven ranks now has its own emblem, shown beside your name wherever others can see you." },
+        { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge For Every Unit", body: "Sixteen units, each with its own badge shape. Finish a unit at 100% thirty-five times to earn its badge; until then, its empty slot shows what you are working towards." },
+        { icon: buildPersonIcon, color: "#4ADE80", title: "Characters For The Top Ranks", body: "The last four ranks each award a character: a robot, a clown, an officer and an astronaut. All four are visible, locked, from the start." },
+        { icon: buildPersonIcon, color: "#D9A441", title: "Characters To Earn", body: "A detective, a masked character, a marble Zeus and Void are earned through challenges rather than ranks: ten daily questions right in a row, a hundo in ten different units in a row, passing the Practice Test, and finding the Secret Flares." },
+        { icon: buildStarIcon, color: "#F97316", title: "The Secret Flares", body: "Three flares, red, orange and yellow, are hidden one at a time inside tests, with no hints. The lights orbiting Home show how many you have found." },
+        { icon: buildSwatchClusterIcon, color: "#C583FF", title: "Theme Colours, App-Wide", body: "A rank's theme colour now recolours the whole app: the planet, the background glow, the loading screen and every control." }
       ]},
       { label: "Leaderboard", items: [
-        { icon: buildDualBoardIcon, color: "#F5C518", title: "Three Boards, Genuinely Live", body: "Level, Badges and Hundos ranked separately, updating in real time as anyone in 26E studies. Level is everything you have done; Badges is units you have mastered; Hundos is units finished at 100%." },
-        { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Find Anyone, Including You", body: "Search the class by username, or tap Find me to jump straight to your own row and have it flash. Nothing to refresh \u2014 the numbers move on their own." },
-        { icon: buildTrophyIcon, color: "#4ADE80", title: "Sharing Is Yours to Choose", body: "Off by default. Nothing about you appears on the boards, and you cannot see them either, until you turn it on \u2014 and it shares your username, character, rank and those three numbers, nothing else." }
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "Three Live Boards", body: "Level, Badges and Hundos are ranked separately and update in real time as the class studies." },
+        { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Find Anyone, Including You", body: "Search the class by username, or tap Find me to jump to your own row." },
+        { icon: buildTrophyIcon, color: "#4ADE80", title: "Sharing Is Your Choice", body: "Leaderboard sharing is off by default, and the boards stay hidden until you turn it on. Only your username, character, rank and the three totals are shared." }
       ]},
       { label: "Profile", items: [
-        { icon: buildPersonIcon, color: "#5CA8FF", title: "A Full Cast of Characters", body: "Sixteen \u2014 ninja, ghost, queen, wizard, bear, alien, samurai and dragon to start with, four the top ranks hand over, and four more you have to go and earn. Each one is drawn to read at every size, right down to the tab bar." },
-        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Tabs, One Screen", body: "Profile for your name, character and colour; Stats for study time and testing history; Badges for the case; Rank for the whole climb. Swipe between them or tap." },
-        { icon: buildArchiveIcon, color: "#4ADE80", title: "Every Past Test, Saved", body: "A full answer-by-answer breakdown the moment you finish, plus a running history you can revisit any time, right from Profile." },
-        { icon: buildBarStatsIcon, color: "#C583FF", title: "Study Time & Testing Stats", body: "Questions answered, tests completed, time spent \u2014 tracked automatically and laid out clearly, not buried in a menu." }
+        { icon: buildPillTabBarIcon, color: "#FFD84D", title: "Four Profile Tabs", body: "Profile, Stats, Badges and Rank, reached by swiping or tapping. Past tests and their answer-by-answer breakdowns are kept on Profile." },
+        { icon: buildBarStatsIcon, color: "#C583FF", title: "Study Time & Testing Stats", body: "Questions answered, tests completed and time spent are tracked automatically." }
       ]},
       { label: "Home", items: [
-        { icon: buildPlanetIcon, color: "#C583FF", title: "The Cosmic Sphere", body: "A living centerpiece that recolors itself to match whatever theme you've unlocked and selected \u2014 the same planet, in your own colors." },
-        { icon: buildQuestionMarkIcon, color: "#5CA8FF", title: "The Daily Question", body: "One quick question a day, no retakes, worth a genuine 200 XP when you get it right \u2014 a small extra that lives right on Home." }
+        { icon: buildQuestionMarkIcon, color: "#5CA8FF", title: "The Daily Question", body: "One question a day on Home, with no retakes, worth 200 XP when answered correctly." }
       ]},
       { label: "Modes", items: [
-        { icon: () => modeIcon("drill"), title: "Drill", body: "The classic mode. Instant feedback on every question, with unlimited retries until you get it right \u2014 built for actually learning the material, not just getting through it." },
-        { icon: () => modeIcon("exam"), title: "Exam", body: "Feedback held until the very end, just like the real thing \u2014 one answer, no retries, no second-guessing." },
-        { icon: () => modeIcon("game"), title: "Game", body: "A timer on every question and a limited number of lives \u2014 Easy, Average, or Hardcore \u2014 built for testing yourself under real pressure." },
-        { icon: () => modeIcon("vroom"), title: "Virtual Room", body: "Take the exact same test live against classmates in a shared lobby, ranked by a combined score and time, with a genuine race to the finish and live chat both before and after." }
+        { icon: () => modeIcon("drill"), title: "Drill", body: "Drill now allows unlimited retries on each question until you answer correctly." },
+        { icon: () => modeIcon("vroom"), title: "Virtual Room", body: "Take the same test live against classmates in a shared lobby, ranked by score and time, with chat before and after." }
       ]},
       { label: "Tests & Unit Selection", items: [
-        { icon: buildClipboardIcon, color: "#4ADE80", title: "Review & Start, One Sheet", body: "Tapping Start now opens a real summary first \u2014 mode, units, and exactly how many questions \u2014 with the timer and other options right there too, before you actually begin." },
-        { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Search, Flag, and Draw From Your Own Mistakes", body: "Search units by name, flag tricky questions to revisit later, or set a run to draw specifically from what you've most missed or flagged." },
-        { icon: buildRetryIcon, color: "#FF9457", title: "Retakes, Done Right", body: "Miss something on a retake and you can retake just that, however many passes it takes \u2014 and clearing it all the way opens up a full re-run from scratch, not just the leftovers." },
-        { icon: buildChecklistIcon, color: "#C583FF", title: "Answer Review", body: "Browse the full answer key for whichever units you're studying, organized like the class calendar \u2014 searchable, collapsible by unit, with the correct answer shown exactly like it looks mid-test." }
+        { icon: buildClipboardIcon, color: "#4ADE80", title: "Review & Start, One Sheet", body: "Tapping Start now opens a summary first: the mode, units, question count and options such as the timer." },
+        { icon: buildMagnifyIcon, color: "#5CA8FF", title: "Search, Flagged And Missed Questions", body: "Search units by name, and build a run from the questions you have missed most or flagged." },
+        { icon: buildRetryIcon, color: "#FF9457", title: "Better Retakes", body: "Retake only what you missed as many times as needed, and once it is cleared, re-run the full test." },
+        { icon: buildChecklistIcon, color: "#C583FF", title: "Answer Review", body: "Browse the full answer key for any unit, searchable and grouped by unit, with answers shown as they appear in a test." }
       ]},
       { label: "Calendar & Class Days", items: [
-        { icon: buildCalendarGridIcon, color: "#5CA8FF", title: "The Full Class Calendar", body: "Every class day and holiday, searchable, collapsible by month, with one tap to jump straight to today." },
-        { icon: buildHourglassIcon, color: "#FFD84D", title: "Days Remaining, At a Glance", body: "See exactly how much of the class is left without doing the math yourself." }
+        { icon: buildCalendarGridIcon, color: "#5CA8FF", title: "The Full Class Calendar", body: "Every class day and holiday, searchable and grouped by month, with one tap to jump to today." },
+        { icon: buildHourglassIcon, color: "#FFD84D", title: "Days Remaining", body: "Shows how much of the course is left at a glance." }
       ]}
     ]
   },
@@ -76769,29 +76782,27 @@ const RELEASE_NOTES = [
     version: "4.0",
     groups: [
       { label: "Nova", items: [
-        { icon: buildPaletteIcon, title: "A New Identity", body: "A full space-themed redesign, with a new icon, a new welcome screen, and a Liquid Glass interface throughout \u2014 tooltips, banners, toasts, and settings all carry the same frosted-glass depth." }
+        { icon: buildPaletteIcon, title: "A New Identity", body: "A full space-themed redesign with a new icon, a new welcome screen and a Liquid Glass interface throughout." }
       ]},
       { label: "Cloud Sync", items: [
-        { icon: buildCloudIcon, title: "Your Progress, Safe in the Cloud", body: "Everything saves automatically \u2014 no save button, no export \u2014 and stays safe even if you lose your phone or clear your browser." },
-        { icon: buildDevicesIcon, title: "Link a Device", body: "One code links a second device with everything already on it, staying in sync from then on, live, everywhere you're signed in." }
+        { icon: buildCloudIcon, title: "Cloud Saving", body: "Progress saves to the cloud automatically, so it is safe even if you lose your phone or clear your browser." },
+        { icon: buildDevicesIcon, title: "Link A Device", body: "One code links a second device with all your progress and keeps both in sync." }
       ]},
       { label: "Achievements & Rewards", items: [
-        { icon: buildTrophyIcon, title: "One Path to Supernova", body: "One unified path from Bronze all the way to Supernova, across seven ranks, each taking both a level and a number of badges together \u2014 built with real room to grow as more units are added over time." },
-        { icon: buildCoinIcon, title: "Level and Badges, Together", body: "Your level and badge totals sit side by side, both feeding the same climb \u2014 and a 100% on any unit still gets its own banner the moment it happens." },
-        { icon: buildStarIcon, title: "Tap Any Rank to See What's Next", body: "Every orbiting flare on Home, and every rank on the Rank tab, is interactive \u2014 tap any one to see exactly how many badges and levels are left before it lights up." },
-        { icon: buildRocketIcon, title: "The Supernova Event", body: "Reach the very top of the ranks and Home changes for good: a full-screen event plays out, culminating in an actual supernova, leaving your orbit permanently brighter afterward." },
-        { icon: buildGiftIcon, title: "Unlocks", body: "A new colour for every rank you reach, plus the Home screen's own orbit lighting up to match your progress." }
+        { icon: buildTrophyIcon, title: "One Path To Supernova", body: "Seven ranks from Bronze to Supernova, each requiring both a level and a number of badges." },
+        { icon: buildCoinIcon, title: "Level And Badges", body: "Your level and badge totals sit side by side, and a 100% on any unit is marked with its own banner." },
+        { icon: buildStarIcon, title: "Tap Any Rank", body: "Tap a flare on Home or a rank on the Rank tab to see how many levels and badges remain." },
+        { icon: buildRocketIcon, title: "The Supernova Event", body: "Reaching the top rank plays a full-screen event and leaves your Home orbit permanently brighter." },
+        { icon: buildGiftIcon, title: "Theme Colour Unlocks", body: "Each rank you reach unlocks a new theme colour for the app." }
       ]},
       { label: "Interface & Navigation", items: [
-        { icon: buildPersonIcon, title: "Profile and Leaderboard, Separated", body: "Two distinct screens \u2014 Profile for your name, character and stats; Leaderboard for the class boards." },
-        { icon: buildSwipeIcon, title: "A Tab Bar You Can Drag", body: "Press and drag across the bottom bar and the glass bubble follows your finger instantly, snapping between tabs the way iOS's own bars do." },
-        { icon: buildPaletteIcon, title: "Genuine Liquid Glass Throughout", body: "The active tab, tooltips, and popups all now share one real frosted-glass treatment \u2014 translucent and blurred, not a flat solid fill." },
-        { icon: buildStarIcon, title: "Home, Reimagined", body: "The same cosmic sphere from Welcome now lives on Home too, its orbit lighting up one flare at a time as you climb the ranks." },
-        { icon: buildClipboardIcon, title: "Helpful Tooltips", body: "A quick guided pointer through Home, every tab, and what's new to unlock \u2014 so nothing is left unexplained the first time you look for it." }
+        { icon: buildPersonIcon, title: "Profile And Leaderboard, Separated", body: "Profile and the Leaderboard are now separate screens." },
+        { icon: buildSwipeIcon, title: "A Tab Bar You Can Drag", body: "Drag across the tab bar and the glass highlight follows your finger, snapping between tabs." },
+        { icon: buildStarIcon, title: "Home, Reimagined", body: "The planet from Welcome now sits on Home, its orbit lighting one flare at a time as you rank up." },
+        { icon: buildClipboardIcon, title: "Helpful Tooltips", body: "A short guided tour of Home, each tab and what can be unlocked." }
       ]},
       { label: "Personalization", items: [
-        { icon: buildPersonIcon, title: "A Full Cast of Characters", body: "Your avatar got a complete redraw \u2014 choose from a full roster: ninja, ghost, queen, wizard, bear, alien, samurai, and dragon \u2014 each redrawn and polished for real detail at every size, including the tab bar." },
-        { icon: buildPaletteIcon, title: "More Theme Colors", body: "A growing palette of colors to personalize the app with, including ones unlocked by climbing the ranks." }
+        { icon: buildPersonIcon, title: "A Full Cast Of Characters", body: "Avatars are redrawn as a full cast: ninja, ghost, queen, wizard, bear, alien, samurai and dragon, each detailed at every size." }
       ]}
     ]
   },
@@ -76799,15 +76810,15 @@ const RELEASE_NOTES = [
     version: "3.0",
     groups: [
       { label: "Modes", items: [
-        { icon: buildClipboardIcon, title: "Exam Mode", body: "A full timed Practice Test alongside the original Standard Exam \u2014 no feedback until the end, just like the real thing." },
-        { icon: buildHeartIcon, title: "Game Mode", body: "Race the clock with limited lives \u2014 Easy, Average, or Hardcore." }
+        { icon: buildClipboardIcon, title: "Exam Mode", body: "A timed Practice Test joins the Standard Exam, with no feedback until the end." },
+        { icon: buildHeartIcon, title: "Game Mode", body: "Answer against the clock with limited lives, on Easy, Average or Hardcore." }
       ]},
       { label: "Personalization", items: [
-        { icon: buildPersonIcon, title: "Avatars", body: "Choose a character to represent you around the app, instead of just your initials." }
+        { icon: buildPersonIcon, title: "Avatars", body: "Choose a character to represent you instead of your initials." }
       ]},
-      { label: "Settings", items: [
-        { icon: buildToggleIcon, title: "Real Flip Switches", body: "On/off settings are now genuine sliding switches, with side-by-side selectors for choices like Mode." },
-        { icon: buildSwipeIcon, title: "Swipe to Next Question", body: "Skip the button \u2014 swipe left instead." }
+      { label: "Settings & Controls", items: [
+        { icon: buildToggleIcon, title: "Sliding Switches", body: "On and off settings are now sliding switches, with side-by-side selectors for choices such as Mode." },
+        { icon: buildSwipeIcon, title: "Swipe To Next Question", body: "Swipe left to move to the next question." }
       ]}
     ]
   },
@@ -76815,12 +76826,12 @@ const RELEASE_NOTES = [
     version: "2.0",
     groups: [
       { label: "Achievements", items: [
-        { icon: buildCoinIcon, title: "Points", body: "Earn points for every correct answer, with a running total that actually goes somewhere." },
-        { icon: buildChecklistIcon, title: "Test History & Review", body: "Every past test saved automatically, with a full answer-by-answer breakdown the moment you finish." }
+        { icon: buildCoinIcon, title: "Points", body: "Earn points for every correct answer, with a running total." },
+        { icon: buildChecklistIcon, title: "Test History & Review", body: "Every test is saved automatically, with an answer-by-answer breakdown when you finish." }
       ]},
       { label: "Refinements", items: [
-        { icon: buildFlagIcon, title: "Flagging", body: "Mark tricky questions to revisit later." },
-        { icon: buildClockIcon, title: "Timers & Pausing", body: "Track your time, and pause any time you need to step away." }
+        { icon: buildFlagIcon, title: "Flagging", body: "Mark difficult questions to revisit later." },
+        { icon: buildClockIcon, title: "Timers & Pausing", body: "Track your time, and pause a test when you need to step away." }
       ]}
     ]
   },
@@ -76828,13 +76839,13 @@ const RELEASE_NOTES = [
     version: "Beta",
     groups: [
       { label: "The First Version", items: [
-        { icon: buildRocketIcon, title: "Class 26E Study Drill", body: "Where it all started \u2014 pick your units and take a test. No points, no sync, no accounts, nothing else yet." }
+        { icon: buildRocketIcon, title: "Class 26E Study Drill", body: "The first release: choose your units and take a test." }
       ]},
       { label: "Studying", items: [
-        { icon: buildClipboardIcon, title: "Unit Selection", body: "Choose exactly which units to study, one or all of them at once." },
-        { icon: buildTargetIcon, title: "Drill Mode", body: "Practice at your own pace with clear, immediate feedback on every answer." },
-        { icon: buildMagnifyIcon, title: "Hide Answer Choices", body: "Read the question and answer it in your head first, then reveal \u2014 a harder version of Drill for anyone who wants it." },
-        { icon: buildTrendUpIcon, title: "Retake Missed Questions", body: "Questions you miss collect automatically, so you can drill just those instead of starting over from scratch." }
+        { icon: buildClipboardIcon, title: "Unit Selection", body: "Study one unit, several, or all of them at once." },
+        { icon: buildTargetIcon, title: "Drill Mode", body: "Study at your own pace with immediate feedback on every answer." },
+        { icon: buildMagnifyIcon, title: "Hide Answer Choices", body: "Answer each question in your head before revealing the choices, for a harder version of Drill." },
+        { icon: buildTrendUpIcon, title: "Retake Missed Questions", body: "Missed questions are collected automatically, so you can drill only those." }
       ]}
     ]
   }

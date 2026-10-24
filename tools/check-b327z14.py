@@ -15,7 +15,8 @@ doesn't match up with our results screen anymore".
   A. Leaving is silent: with sound playing, the page going hidden fades the
      master to silence before the context is suspended (150ms later the
      master is under 2% of its level, not frozen at full), and coming back
-     brings it up again.
+     brings it up again. (327z15) Nothing is left playing into the
+     suspended context: no voice and no ambience loop.
   B. An iPhone Safari tab with the Safari sound switch off still has haptics:
      Settings offers the haptics row and no sound row, and the haptic switch
      layer is mounted.
@@ -81,6 +82,9 @@ def silent_exit(br):
     check("%s: A. 150ms after hiding the master is faded to silence (<2%% of %.2f)" % (label, s0["master"] or 0),
           s1["master"] is not None and s1["master"] < .02 * (s0["master"] or 1), s1)
     check("%s: A. and the context is then suspended" % label, s2["ctxState"] == "suspended", s2)
+    # 327z15: nothing is left playing into a suspended context (iOS throttles
+    # a hidden page, and what is still scheduled is what glitched)
+    check("%s: A. no voice and no ambience loop is left running" % label, s2["voices"] == 0 and s2["amb"] is None, s2)
     pg.evaluate(HIDE, False)
     pg.touchscreen.tap(c["x"], c["y"])
     pg.wait_for_timeout(900)
