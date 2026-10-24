@@ -26689,6 +26689,14 @@
   .rank-col-lvl{ color:#5CA8FF; }
   .rank-col-bdg{ color:#F2C14E; }
   .rank-col-head.rank-col-lvl, .rank-col-head.rank-col-bdg{ opacity:.9; }
+  /* This Week's XP is the board's own number, so it is the white one;
+     a hundo is gold, as everywhere a hundo is counted (build 327z12) */
+  .rank-me-btn{ display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
+  .rank-me-btn .rank-me-ico{ width:1rem; height:1rem; flex:none; color:#5CA8FF; }
+  .rank-col-xp{ color:var(--ink); }
+  .rank-col-hundo{ color:#FFD36A; }
+  .rank-col-head.rank-col-xp{ color:var(--soft); }
+  .rank-col-head.rank-col-hundo{ opacity:.9; }
   /* CLEAR OF FIRST PLACE (build 314). "At the very top of the
      leaderboard, that blue strip where it says rank level badges, it's
      kind of sitting on top of the person in first place." The header
@@ -32527,6 +32535,42 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* answered: the line steps back a little with the "?" - it is a clock, not a call */
   .daily-question-fab.is-done .dq-ring-prog{ opacity:.85; }
   .daily-question-fab.is-ready::after{ border-width:1px; }
+  /* ---- WAITING, IT IS A LIT ORB; ANSWERED, A CLOCK (build 327z12) ----
+     "The daily question button did not get better, we need it to be
+     better." Both looks before this were a dark glass hole with a line of
+     the rank colour drawn round it - a gold outline in the corner, the
+     one element on Home that looked like a loading spinner rather than a
+     button. It is two different things now, because it means two things:
+       - WAITING (is-ready): the glass itself is lit in the rank's colour -
+         a tinted orb with light pooled at its top, a bright hairline rim
+         and the "?" in white, like the planet's own glass spheres above
+         it. No ring drawn on it: a whole ring said nothing a lit button
+         does not say better. The pulse still leaves its edge.
+       - ANSWERED (is-done): the tab bar's plain glass, the "?" dimmed, and
+         the time to the next question as a slim arc of the rank colour on
+         the rim - a clock, not a call.
+     The recharge at 5pm plays as it always has (is-charging keeps the
+     ring), and lands on the lit orb. No filter on the ring (it moves). */
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done){
+    background:
+      radial-gradient(90% 70% at 50% 8%, rgba(255,255,255,.34), rgba(255,255,255,0) 62%),
+      radial-gradient(120% 120% at 50% 100%, color-mix(in srgb, var(--dq-c) 62%, transparent), color-mix(in srgb, var(--dq-c) 30%, transparent) 70%),
+      rgba(14,15,22,.5) !important;
+    border:1px solid color-mix(in srgb, var(--dq-c) 45%, rgba(255,255,255,.4)) !important;
+    box-shadow:0 8px 22px -6px color-mix(in srgb, var(--dq-c) 60%, transparent),
+               0 2px 8px rgba(0,0,0,.35),
+               inset 0 1px 1px rgba(255,255,255,.4),
+               inset 0 -6px 12px -6px color-mix(in srgb, var(--dq-c) 70%, transparent) !important;
+    color:#FFFFFF;
+  }
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done) .dq-glyph{
+    text-shadow:0 1px 2px rgba(0,0,0,.35), 0 0 10px color-mix(in srgb, var(--dq-c) 70%, transparent);
+  }
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring{ opacity:0; }
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):active{ transform:scale(.94); }
+  .daily-question-fab .dq-ring-prog{ filter:none; }
+  .daily-question-fab.is-done .dq-ring circle{ stroke-width:2.6; }
+  .daily-question-fab.is-done .dq-ring-prog{ opacity:1; }
 
   /* ---- A CARD OF GLASS IS GLASS FROM ITS FIRST FRAME (build 327z10) ----
      "When clicking a profile to see someone's stats, the Liquid Glass has
@@ -32732,6 +32776,125 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   .bottomtabs.ts-open .bottomtabs-slider{ opacity:0 !important; transition:opacity .15s ease; }
   .bottomtabs.ts-anim .bottomtabs-navrow .bottomtab{ transition:opacity .2s ease; }
   [data-reduce-motion="true"] .tabsearch, [data-reduce-motion="true"] .bottomtabs.ts-anim .bottomtabs-navrow{ transition:none; }
+
+  /* ===================== THE MONTH IS ONE CARD (build 327z12) =====================
+     "I'm still not in love with the calendars tabs layout and look. Could
+     it be better at all, could the calendar look better? I just want the
+     best." The month floated on the background as five loose pieces - a
+     title between two black discs, 30 grey tiles, a key, a hint, a day
+     card - and every class day was its own lit box, so the grid read as
+     a wall of buttons rather than a month. It is laid out now the way the
+     iPhone's own Calendar lays a month out, in the app's card:
+       - one card holds it all, title to picked day;
+       - the title on the left, a Today pill and two quiet chevrons on
+         the right (44px targets, no black discs);
+       - on a phone the days are numbers, not tiles: a class day in full
+         white, a day off in grey, the picked day a filled circle, today a
+         ringed one, the last day a gold ring - the dots under each number
+         unchanged, and still the only colour;
+       - the key in one quiet line, and the picked day as the card's own
+         last section under a hairline, not a second card.
+     A tablet keeps its tiles (they carry each day's text) inside the
+     same card. What each colour means is unchanged. */
+  html[data-theme][data-layout] .screen-calendar-tab .cal-monthview{
+    margin:1.2rem 0 0; padding:1rem .85rem 1.05rem;
+    background:var(--surface-sheen), var(--surface-1);
+    border:1px solid var(--surface-border); border-radius:22px;
+    box-shadow:var(--surface-shadow);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-nav{
+    display:grid; grid-template-columns:minmax(0,1fr) auto auto auto; align-items:center;
+    gap:.1rem; margin:0 0 .55rem; padding:0 0 0 .3rem;
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-month{
+    order:-1; margin:0; text-align:left; font-size:1.38rem; line-height:1.15;
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-arrow{
+    width:44px; height:44px; min-width:44px; padding:0; border-radius:50% !important;
+    display:grid; place-items:center;
+    background:transparent !important; box-shadow:none !important; border:0 !important;
+    color:var(--ink) !important;
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-arrow svg{ width:1.2rem; height:1.2rem; }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-arrow:active:not(:disabled){ background:rgba(255,255,255,.1) !important; transform:none; }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-arrow:disabled{ opacity:.25; }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-today-pill{
+    position:relative; min-height:0; height:2rem; padding:0 .8rem; margin:0 .25rem 0 0;
+    display:inline-grid; place-items:center;
+    background:rgba(255,255,255,.12) !important; border-radius:999px !important; box-shadow:none !important; border:0 !important;
+    color:var(--ink) !important; font-size:.92rem; font-weight:700;
+  }
+  /* the target is 44px tall; the pill drawn is 2rem */
+  html[data-theme][data-layout] .screen-calendar-tab .cal-today-pill::after{ content:""; position:absolute; left:0; right:0; top:50%; height:44px; margin-top:-22px; }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-today-pill:active{ transform:scale(.95); }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-today-pill[hidden]{ display:none !important; }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-head{
+    margin:0 0 .3rem; padding:0 0 .45rem; border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-dow{ font-size:.68rem; letter-spacing:.08em; }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-legend{
+    margin:.75rem 0 0; padding:.7rem 0 0; border-top:1px solid rgba(255,255,255,.08);
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-grid-hint{ display:none; }
+  /* the picked day: the card's last section, not a card in a card */
+  html[data-theme][data-layout] .screen-calendar-tab .cal-monthview .cal-daycard{
+    margin:.85rem -.85rem -1.05rem; padding:.95rem 1.15rem 1.1rem;
+    background:rgba(255,255,255,.035) !important;
+    border:0 !important; border-top:1px solid rgba(255,255,255,.08) !important;
+    border-radius:0 0 21px 21px !important; box-shadow:none !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  html[data-theme][data-layout] .screen-calendar-tab .cal-monthview .cal-daycard.cal-daycard-last{
+    background:linear-gradient(160deg, rgba(229,192,106,.16), rgba(229,192,106,.03) 60%) !important;
+    border-top-color:rgba(229,192,106,.45) !important;
+  }
+  @media (max-width:39.99rem){
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid{ gap:.12rem .2rem; }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell:not(#cal-z){
+      min-height:3.35rem; padding:.15rem 0 .2rem; gap:.12rem; justify-content:flex-start;
+      background:transparent !important; border:0 !important; box-shadow:none !important;
+      border-radius:14px !important; color:color-mix(in srgb, var(--soft) 85%, transparent) !important;
+      animation:none;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell:not(.cal-cell-last)::after{ content:none; }
+    /* the last day keeps its gold star, at the number's shoulder */
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-last::after{ top:0; right:calc(50% - 1.45rem); }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell:not(#cal-z):active{ background:rgba(255,255,255,.06) !important; }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-num{
+      display:grid; place-items:center; width:2.3rem; height:2.3rem; border-radius:50%;
+      font-size:1.08rem; font-weight:600; color:inherit; line-height:1;
+      transition:background-color .18s ease, color .18s ease;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-class:not(#cal-z){ color:var(--ink) !important; }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-class .cal-cell-num{ font-weight:700; }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-holiday:not(#cal-z){ opacity:1; color:color-mix(in srgb, var(--soft) 85%, transparent) !important; }
+    /* today: a ring; picked: a filled circle; both: the ring round a frosted fill */
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-today .cal-cell-num{
+      box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.6); color:#FFFFFF; font-weight:800;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-sel .cal-cell-num{
+      background:var(--accent); color:var(--accent-ink); font-weight:800; box-shadow:none;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-today.cal-cell-sel .cal-cell-num{
+      background:rgba(255,255,255,.2); color:#FFFFFF; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.85);
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-last .cal-cell-num{
+      box-shadow:inset 0 0 0 1.5px rgba(229,192,106,.85); color:#FFE7B0; font-weight:800;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-last.cal-cell-sel .cal-cell-num{
+      background:#E5C06A; color:#2B2007;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell-landed .cal-cell-num{ animation:calLanded .7s ease-out 2; }
+    /* the picked day's own dot is the key's, never repainted to the fill's ink */
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell:not(.cal-cell-holiday) .cal-cell-dots > .cal-cell-dot:not(.cal-cell-dot-test):not(.cal-cell-dot-big):not(.cal-cell-dot-off){
+      background:var(--accent); box-shadow:none;
+    }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid .cal-cell .cal-cell-dots > .cal-cell-dot{ box-shadow:none; }
+    html[data-theme][data-layout] .screen-calendar-tab .cal-grid-legend{
+      display:flex; flex-wrap:wrap; justify-content:center; gap:.3rem .95rem; font-size:.74rem;
+    }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -77310,7 +77473,7 @@ const CHAR_ANIM_COLS = 12;
    whenever character CSS motion changes without the drawing changing. */
 /* c4 (build 314): the ultimates' motion was toned down and the edges
    of every drawing changed (the .avatarchar-svg mask). */
-const CHAR_ANIM_VER = "c4";
+const CHAR_ANIM_VER = "c5";
 const CHAR_FLIP_MAX_CSS = 80;
 const charAnimSheets = new Map();
 const charAnimDrawings = new Map();
@@ -77507,11 +77670,19 @@ async function recordCharSheet(drawing, px){
       const L = CHAR_ANIM_LOOP_MS, N = CHAR_ANIM_FRAMES;
       /* Each loop plays a whole number of its own cycles in the 6s
          sheet, so the sheet joins up with itself. A loop slower than
-         twice that (a 40s starfield) is held still rather than jumping. */
+         two and a half sheets (a 40s starfield) is held still rather
+         than jumping. NOT THE ONE THAT IS THE WHOLE CHARACTER (build
+         327z12): "fake void, it doesn't move" - Umbra's moon phases are
+         a 14s loop and Void's flares turn once in 20s, and both were
+         held still, so in the tab bar and on the boards those two
+         characters were pictures. A loop up to 2.5 sheets (a turn up to
+         3.5) now plays one whole cycle per sheet: a little quicker than
+         the big drawing, but moving. */
       const plan = anims.map(a => {
         const t = a.effect.getTiming();
         const P = (Number(t.duration) || 1000) * (String(t.direction || "").indexOf("alternate") >= 0 ? 2 : 1);
-        const c = P > 2 * L ? 0 : Math.max(1, Math.round(L / P));
+        const turn = /^cx-spin/.test(a.animationName || "");
+        const c = P > (turn ? 3.5 : 2.5) * L ? 0 : Math.max(1, Math.round(L / P));
         a.pause();
         return { a, base: Number(a.currentTime) || 0, P, c };
       });
@@ -89903,6 +90074,17 @@ function openChatDock(){
   chatDockPageAt = { y: window.scrollY, screen: stage.firstElementChild };
   try{ if(chatDockKbSync) chatDockKbSync(); }catch(e){}
   playSound("ui.sheet.open");
+  /* UP WITHOUT THE BLUR TOO (build 327z12): "When the chat is pulled up,
+     the Liquid Glass is glitched and lags behind." The slide in was the
+     one move still resampling the 30px blur every frame - the glass
+     trailed the sheet. It rises on the flat fill, as every drag and the
+     slide out already do, and turns to glass once it has stopped. */
+  const panel = chatDock.querySelector(".chatdock-panel");
+  if(panel && !chatDock.classList.contains("is-open")){
+    panel.classList.add("is-settling");
+    clearTimeout(openChatDock._t);
+    openChatDock._t = setTimeout(() => { if(!panel.classList.contains("is-dragging")) panel.classList.remove("is-settling"); }, 300);
+  }
   chatDock.classList.add("is-open");
   document.body.classList.add("chatdock-open");
   /* The lists are built from who your friends are and what you are in,
@@ -98004,7 +98186,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z10";
+const APP_BUILD = "2026-10-24-327z12";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -119811,7 +119993,8 @@ function renderRankingRows(rows, entries, board, opts){
     return;
   }
 
-  if(board.key === "overall") rows.appendChild(buildOverallHead());
+  const third = LB_THIRD_COL[board.key] || null;
+  if(board.key === "overall" || third) rows.appendChild(buildOverallHead(third));
   const trend = lbTrendFor(board, sorted, board.sort || ((a, b) => (val(b) - val(a)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || ""))));
 
@@ -119904,8 +120087,9 @@ function renderRankingRows(rows, entries, board, opts){
        the name is left for the trend mark alone. The other boards rank
        on one number and keep their line. */
     let cols = null;
-    if(board.key === "overall"){
-      cols = buildOverallCols(entry, keptMarks);
+    if(board.key === "overall" || third){
+      cols = buildOverallCols(entry, keptMarks, third);
+      if(third) cols.classList.add("rank-cols-" + board.key);
     } else {
       stats.textContent = board.unit(val(entry), entry);
     }
@@ -119992,7 +120176,23 @@ function lbWatchOffscreen(rows){
    name, in the rank's own colour), the level and the badge count.
    rankOfStats is the single definition of who holds what, so this can
    never disagree with the Rank tab or the person card. */
-function buildOverallCols(entry, keptMarks){
+/* THE OTHER TWO BOARDS IN THE SAME TABLE (build 327z12): "overall has the
+   stuff on the right, can [hundos] and xp be like that and then at the
+   top have the title header thing similar to overall?" This Week and
+   Hundos keep Overall's Rank and Level columns, and their own number -
+   this week's XP, the hundo count - takes the third, where Overall has
+   its badges. `third` is that column: its class and its value. */
+const LB_THIRD_COL = {
+  week: { label: "XP", cls: " rank-col-xp", val: e => lbCompact(Number(e.weekPoints) || 0) },
+  hundos: { label: "Hundos", cls: " rank-col-hundo", val: e => String(Number(e.hundos) || 0) }
+};
+/* 12,345 is too wide for a phone's column: from 10,000 it is 12.3k */
+function lbCompact(n){
+  if(n < 10000) return n.toLocaleString();
+  const k = n / 1000;
+  return (k < 100 ? (Math.floor(k * 10) / 10).toFixed(1).replace(/\.0$/, "") : String(Math.floor(k))) + "k";
+}
+function buildOverallCols(entry, keptMarks, third){
   const cols = document.createElement("span");
   cols.className = "rank-cols";
   const rk = rankOfEntry(entry);
@@ -120024,12 +120224,12 @@ function buildOverallCols(entry, keptMarks){
   lv.className = "rank-col rank-col-num rank-col-lvl";
   lv.textContent = String(Number(entry.level) || 0);
   const bd = document.createElement("span");
-  bd.className = "rank-col rank-col-num rank-col-bdg";
-  bd.textContent = String(Number(entry.badges) || 0);
+  bd.className = "rank-col rank-col-num" + (third ? third.cls : " rank-col-bdg");
+  bd.textContent = third ? third.val(entry) : String(Number(entry.badges) || 0);
   cols.append(rc, lv, bd);
   return cols;
 }
-function buildOverallHead(){
+function buildOverallHead(third){
   const head = document.createElement("div");
   head.className = "rank-row rank-row-head has-cols";
   head.setAttribute("aria-hidden", "true");
@@ -120037,7 +120237,7 @@ function buildOverallHead(){
   spacer.className = "rank-head-spacer";
   const cols = document.createElement("span");
   cols.className = "rank-cols";
-  [["Rank", ""], ["Level", " rank-col-lvl"], ["Badges", " rank-col-bdg"]].forEach(([t, extra]) => {
+  [["Rank", ""], ["Level", " rank-col-lvl"], third ? [third.label, third.cls] : ["Badges", " rank-col-bdg"]].forEach(([t, extra]) => {
     const c = document.createElement("span");
     c.className = "rank-col rank-col-head" + extra; c.textContent = t;
     cols.appendChild(c);
@@ -122056,6 +122256,13 @@ function buildCalendarPane(panel){
 
   const grid = document.createElement("div");
   grid.className = "cal-grid";
+  /* THE MONTH SCROLLS THE PAGE (build 327z12): "you can't scroll down
+     when trying to scroll down from touching the actual calendar." Each
+     day is a small button, so each carried an iPhone haptic switch, and
+     iOS lets a finger that lands on a native switch drag the switch
+     instead of the page - a grid of 35 of them was a wall. The grid's
+     days carry none (see hswOk); a tap still picks the day. */
+  grid.setAttribute("data-no-hsw", "");
   monthWrap.appendChild(grid);
 
   /* ---- THE KEY, UNDER THE GRID IT EXPLAINS, ON EVERY DEVICE (build 325) ----
@@ -122094,19 +122301,18 @@ function buildCalendarPane(panel){
   monthWrap.appendChild(dayCard);
 
 
-  /* LAST, and that ordering is the whole point. Above the grid it
-     pushed the day card - the thing you actually came to read - down
-     behind the bottom tab bar on a phone; below the card, the card
-     clears the bar and this is the only thing that needs scrolling to,
-     which is the right way round for a secondary control. */
-  const gridTodayRow = document.createElement("div");
-  gridTodayRow.className = "cal-action-row";
-  gridTodayRow.style.marginTop = ".9rem";
   const gridTodayBtn = document.createElement("button");
   gridTodayBtn.type = "button"; gridTodayBtn.className = "cal-action-btn";
-  gridTodayBtn.textContent = "Go to today";
-  gridTodayRow.appendChild(gridTodayBtn);
-  monthWrap.appendChild(gridTodayRow);
+  /* IN THE MONTH'S OWN HEADER (build 327z12): "could the calendar look
+     better? I just want the best." The month is one card now, the way the
+     iPhone's Calendar lays a month out - the title on the left, Today and
+     the arrows on the right, the days, the key and the picked day all
+     inside it - so Go to today is a "Today" pill beside the arrows rather
+     than a button a scroll below everything. */
+  gridTodayBtn.textContent = "Today";
+  gridTodayBtn.setAttribute("aria-label", "Go to today");
+  gridTodayBtn.classList.add("cal-today-pill");
+  gridNav.insertBefore(gridTodayBtn, prevBtn);
 
 
   const now = new Date();
@@ -122166,7 +122372,7 @@ function buildCalendarPane(panel){
     /* build 327e: the day card is always there, today included ("the
        current day below the calendar isn't there") */
     dayCard.hidden = !selectedDate;
-    gridTodayRow.hidden = selectedDate === todayStr && monthKeys[gridMonthIdx] === todayMonthKey;
+    gridTodayBtn.hidden = selectedDate === todayStr && monthKeys[gridMonthIdx] === todayMonthKey;
     if(dayCard.hidden){ dayCard.className = "cal-daycard cal-daycard-empty"; return; }
     const entry = selectedDate ? byDate[selectedDate] : null;
     if(!entry && selectedDate){
@@ -125345,7 +125551,14 @@ function showRankings(defaultBoard){
   searchWrap.append(search, clearBtn);
   const meBtn = document.createElement("button");
   meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn";
-  meBtn.textContent = "Find me";
+  /* NOT BLACK, AND PLAINLY A BUTTON (build 327z12): "The leaderboard
+     find me button should that be black?" It is the tab bar's Liquid
+     Glass, as the search pill beside it is - over this dark page that
+     reads as near-black. It stays glass, so the two read as one row of
+     controls; what it lacked was a sign it does something, so it carries
+     the iPhone's own "where am I" arrow, in the accent. */
+  meBtn.innerHTML = '<svg class="rank-me-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5 3.8 10.6c-.8.4-.7 1.5.1 1.7l6.6 1.3 1.3 6.6c.2.8 1.3.9 1.7.1Z" fill="currentColor"/></svg>';
+  meBtn.appendChild(document.createTextNode("Find me"));
   tools.append(searchWrap, meBtn);
   panel.appendChild(tools);
 
@@ -130399,9 +130612,10 @@ function applyGlassRefraction(el, mapImgId){
       '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
-     glide (LENS.glide) is over the tab by ~75ms, the reference's page
-     changes ~100ms after the press (see navigateTab) */
-  const TAB_SCREEN_AFTER = 110;
+     glide (LENS.glide, ~200ms across since it was measured again) is ~90%
+     of the way at 150ms, so the page changes as the glass arrives, not
+     under it (the reference's starts ~117ms after its press) */
+  const TAB_SCREEN_AFTER = 150;
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
     if(dest === "profile"){
@@ -130924,8 +131138,18 @@ function applyGlassRefraction(el, mapImgId){
      (b0324-b0327); glide crosses a tab in ~4 (b0324-b0328); settle shrinks
      into the grey in ~5 with an overshoot (b0328-b0333, and b0161-b0172
      for a drag let go). */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 140, linger: 110,
-    pop: [2000, .72], glide: [1250, .8], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
+  /* THE GLIDE, MEASURED AGAIN AT 60FPS (build 327z10): "when tapping
+     another tab, it shoots over super super quick ... in the video I sent
+     ... it's slower and it's smoother ... you can barely see it." His
+     reference, frame by frame from the press (one tab, 210px in the crop):
+     10% at 1 frame, 48% at 4, 70% at 6, 83% at 8, 91% at 10, ~98% at 12 -
+     about 200ms across, no overshoot, then it shrinks into the grey. The
+     glide spring was [1250, .8] (89% at 83ms), tuned to a 30fps crop read
+     as "4 frames" - two to three times too quick. [625, .95] (w 25, near
+     critical) lands on his curve: 50% at 67ms, 86% at 140ms, 96% at 200ms.
+     minUp 200 so a quick tap is up until it has arrived. */
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 200, linger: 110,
+    pop: [2000, .72], glide: [625, .95], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
   const LENS_DT = 1000 / 60;
   let lensG = null;           /* this touch's geometry (null: no lens) */
   let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */

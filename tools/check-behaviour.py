@@ -9794,8 +9794,14 @@ def check_b314h_settings_calendar(br):
       out.closedAfter = !body.classList.contains('open');
       /* the calendar, on a coloured theme */
       theme.accent = 'adept'; applyTheme(); showCalendar(); await wait(400);
-      const t = document.querySelector('.cal-grid .cal-cell-today'); const c = getComputedStyle(t);
-      out.today = { sel: t.classList.contains('cal-cell-sel'), bgImg: c.backgroundImage, shadow: c.boxShadow, border: c.borderTopColor, bg: c.backgroundColor };
+      const t = document.querySelector('.cal-grid .cal-cell-today'); let c = getComputedStyle(t);
+      /* MOVED IN 327z12: on a phone the day is a number in a circle, and
+         today's rim is that circle's (an inset ring), not the cell's border */
+      let rimFrom = 'border';
+      if(parseFloat(c.borderTopWidth) === 0){ c = getComputedStyle(t.querySelector('.cal-cell-num')); rimFrom = 'ring'; }
+      out.today = { sel: t.classList.contains('cal-cell-sel'), bgImg: c.backgroundImage,
+        shadow: rimFrom === 'ring' ? (/inset/.test(c.boxShadow) && / 0px 0px 0px /.test(c.boxShadow) ? 'none' : c.boxShadow) : c.boxShadow,
+        border: rimFrom === 'ring' ? (c.boxShadow.match(/rgba?\([^)]*\)/) || [''])[0] : c.borderTopColor, bg: c.backgroundColor, rimFrom };
       return out; }""")
     op = r["open"]; cl = r["close"]
     mid_open = [s for s in op if s["clip"] not in (op[-1]["clip"], op[0]["clip"])]
@@ -9979,7 +9985,9 @@ def check_b314h_lead2(br):
       showCalendar(); await wait(400);
       for(let i = 0; i < 20 && !document.querySelector('.cal-cell[data-date="2027-07-08"]'); i++){ const n = document.querySelectorAll('.cal-grid-arrow')[1]; if(!n || n.disabled) break; n.click(); await wait(60); }
       const cell = document.querySelector('.cal-cell[data-date="2027-07-08"]');
-      out.cell = cell ? { last: cell.classList.contains('cal-cell-last'), star: getComputedStyle(cell, '::after').content !== 'none', border: getComputedStyle(cell).borderTopColor } : null;
+      /* MOVED IN 327z12: on a phone the gold is the number's ring */
+      out.cell = cell ? { last: cell.classList.contains('cal-cell-last'), star: getComputedStyle(cell, '::after').content !== 'none',
+        border: parseFloat(getComputedStyle(cell).borderTopWidth) === 0 ? getComputedStyle(cell.querySelector('.cal-cell-num')).boxShadow : getComputedStyle(cell).borderTopColor } : null;
       if(cell){ cell.click(); await wait(200); }
       const card = document.querySelector('.cal-daycard');
       out.card = card ? { cls: card.className, crest: !!card.querySelector('.cal-last-crest svg'), text: card.textContent } : null;
@@ -25818,7 +25826,8 @@ B323N_NAV = """async () => {
       back: !!(root && root.querySelector('.back-link')), title: (document.getElementById('count') || {}).textContent,
       grid: !!(root && root.querySelector('.cal-grid .cal-cell')), seg: root ? [...root.querySelectorAll('.cal-viewseg .iconbtn')].map(b => b.textContent.trim()) : [],
       day: !!(root && root.querySelector('.cal-daycard')),
-      today: !!(root && [...root.querySelectorAll('.cal-action-btn')].some(b => /go to today/i.test(b.textContent))),
+      /* MOVED IN 327z12: the button is the month header's "Today" pill, labelled Go to today */
+      today: !!(root && [...root.querySelectorAll('.cal-action-btn')].some(b => /go to today/i.test(b.textContent + ' ' + (b.getAttribute('aria-label') || '')))),
       inProfile: !!document.querySelector('#stage .screen-profile'), lit: lit() };
     /* every older way in lands on it */
     out.ways = {};
