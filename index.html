@@ -98004,7 +98004,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z10";
+const APP_BUILD = "2026-10-24-327z11";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -130399,9 +130399,10 @@ function applyGlassRefraction(el, mapImgId){
       '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
-     glide (LENS.glide) is over the tab by ~75ms, the reference's page
-     changes ~100ms after the press (see navigateTab) */
-  const TAB_SCREEN_AFTER = 110;
+     glide (LENS.glide, ~200ms across since it was measured again) is ~90%
+     of the way at 150ms, so the page changes as the glass arrives, not
+     under it (the reference's starts ~117ms after its press) */
+  const TAB_SCREEN_AFTER = 150;
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
     if(dest === "profile"){
@@ -130924,8 +130925,18 @@ function applyGlassRefraction(el, mapImgId){
      (b0324-b0327); glide crosses a tab in ~4 (b0324-b0328); settle shrinks
      into the grey in ~5 with an overshoot (b0328-b0333, and b0161-b0172
      for a drag let go). */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 140, linger: 110,
-    pop: [2000, .72], glide: [1250, .8], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
+  /* THE GLIDE, MEASURED AGAIN AT 60FPS (build 327z10): "when tapping
+     another tab, it shoots over super super quick ... in the video I sent
+     ... it's slower and it's smoother ... you can barely see it." His
+     reference, frame by frame from the press (one tab, 210px in the crop):
+     10% at 1 frame, 48% at 4, 70% at 6, 83% at 8, 91% at 10, ~98% at 12 -
+     about 200ms across, no overshoot, then it shrinks into the grey. The
+     glide spring was [1250, .8] (89% at 83ms), tuned to a 30fps crop read
+     as "4 frames" - two to three times too quick. [625, .95] (w 25, near
+     critical) lands on his curve: 50% at 67ms, 86% at 140ms, 96% at 200ms.
+     minUp 200 so a quick tap is up until it has arrived. */
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 200, linger: 110,
+    pop: [2000, .72], glide: [625, .95], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
   const LENS_DT = 1000 / 60;
   let lensG = null;           /* this touch's geometry (null: no lens) */
   let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */

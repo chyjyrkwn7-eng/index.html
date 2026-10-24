@@ -27059,3 +27059,25 @@ too but idk"*.
   its search field. Asked Madison.
 - Gate: check-b327z10 J (iPhone 17 Pro Max and a 320px SE): the circle, the
   morph, focus, filtering, the way back. The keyboard lift needs a phone.
+
+### Build 327z11 - the tab bar's glass crosses at the reference's pace
+
+Madison: *"The bottom tab.. when tapping another tab, it shoots over super super
+quick. But the video I sent when you tap another tab it's slower and it's
+smoother.. like ours shoots over to the tab extremely fast you can barely see
+it"*.
+
+- **His reference measured again, at 60fps**, frame by frame from the press,
+  one tab across (Subscriptions to Calendar, 210px in the crop): 10% at 1
+  frame, 28% at 2, 48% at 4, 70% at 6, 83% at 8, 91% at 10, ~98% at 12 -
+  about 200ms, no overshoot, then it shrinks into the grey (frames 13-15). The
+  glide spring was `[1250, .8]` (89% at 83ms; the old track read 80% at frame
+  4 and arrived at frame 7) - tuned in 325 to a 30fps crop read as "4
+  frames". **`LENS.glide` is `[625, .95]`** (w 25, near critical): 50% at
+  67ms, 86% at 140ms, 96% at 200ms. **`LENS.minUp` 200** so a quick tap is up
+  until it has arrived. **`TAB_SCREEN_AFTER` 150** (was 110): the page is
+  built when the glass is ~90% across, not under it.
+- Gate: check-b327z10 K reads the lens's own 60fps track off its animation
+  (immune to how busy the machine is): frames 4 / 8 / 14 at .54 / .87 / .98
+  here (reference .48 / .83 / .99); .80 / 1.00 / 1.00 on 327z10.
+- APP_BUILD / version.json `2026-10-24-327z11`.
