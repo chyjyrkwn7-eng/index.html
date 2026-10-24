@@ -26828,3 +26828,234 @@ broken" means exactly was asked of Madison. check-b327z3 A moved.
   tabs on every phone at the next update check, no build needed - the
   escape hatch if a Safari freeze comes back. Not testable without an
   iPhone.
+
+### Build 327z10 - the chat sheet slides down when swiped away, and smoothly
+
+Madison: *"The chat when swiping down, it just disappears, it doesn't do the
+animation that it goes downwards, and it's laggy."*
+
+Traced frame by frame on an iPhone 17 Pro Max (modern dark, the default):
+- **Laggy**: the modern layout's chat glass (`[data-theme="dark"][data-layout="modern"]
+  .chatdock-panel`, round 10) sets `backdrop-filter:blur(30px) ... !important`,
+  which out-ranked `.is-flat` / `.is-settling`, so the 30px blur was resampled
+  on every frame of the pull and the slide out. A phone-only rule after it
+  drops the blur for those two classes (same tone, 95% fill).
+- **Disappears**: `endDrag()` closed into the class's `.26s
+  cubic-bezier(.2,.8,.25,1)`, which covers about half the remaining way in
+  its first frame (665 -> 809 of 969). It now slides out as the start sheet
+  does (`attachSheetSwipe`): an inline transition at the finger's speed
+  (180-300ms, `cubic-bezier(.3,.6,.4,1)`) to `translate3d(0,102%,0)`, the
+  closed class's own resting place, so clearing the inline style moves
+  nothing; `closeChatDock()` runs at release (state and sound), `.is-settling`
+  stays on until the slide ends; reopened mid-slide, the class brings it back.
+
+Gate: `tools/check-b327z10.py` (`--against`): no blur on any frame of the pull
+or slide; at a quarter of the slide's time no more than 58% of the way (new
+~51%, old 64-71%); closes, reopens at the same rest, a short pull springs
+back. 2 failures on 327z9, ALL PASS here. check-b327z5-b, check-behaviour
+b314h_sheet / b314h_chat / b314h_chat2: ALL PASS.
+
+Not verifiable here: how it feels on a real iPhone (Chromium has no backdrop
+blur cost to speak of, so the lag fix is shown by the computed style, not by
+frame times).
+
+Sandbox note: the gates hard-code `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`;
+this container had only chromium-1243 (`chrome-linux64`), linked into that path.
+
+### Build 327z10 (continued) - the tab bar's glass rolls over, the planet answers once, the tab's character moves, the Ghost centred, the daily ring on the glass
+
+Madison: *"The bottom tab is laggy ... when clicking to other tabs it shoots
+over instantly, the glass bubble does not roll over to it like the video"*
+(an iOS 26 three-tab recording, 1320x2868 at 60fps), *"When tapping the large
+planet back to back, it brings up two different messages, shouldn't that just
+be combined to one message?"*, *"The ghost character is not centered in the
+circle"*, *"The characters aren't animated on the bottom tab"*, and *"The daily
+question button, it still stands out, maybe it needs a Liquid Glass look? The
+loading bar around it could also look better"*.
+
+#### The tab bar: what was measured
+- His recording, frame by frame at 60fps: the press lifts the lens at frame 7,
+  it is over the new tab by 12, and **the page only starts to change at 13**
+  (a ~100ms cross-fade). The lens's own timing (`LENS.glide`, ~75ms to 90%)
+  already matches it.
+- Ours, real CDP taps at 4x CPU, read in-page (the screencast lags ~80ms, do
+  not time off it): steady state, the lens track runs from +23ms; the screen
+  was built on the frame after the click, i.e. ~70ms after a quick tap's
+  press, on top of the glide. During the first ~45s after a launch with no
+  cached flip-books (every launch after an update) the main thread is ~80%
+  busy: the character/rank flip-book recorder (`recordRankSheet`,
+  `recordCharSheet`: one frame's clone + serialise + SVG parse is 45-65ms at
+  4x, past its idle slice) and the badge warm-up (`warmBadgeStrikes`, 60ms
+  unsplittable jobs). A press there waited up to 170ms before its handler
+  ran, and the lens was first drawn already across. At 1x the same window is
+  ~12s with stalls under 50ms. Home is fully idle once they finish.
+
+#### Changes
+- **The screen waits for the glass** (`navigateTab`, `TAB_SCREEN_AFTER` =
+  110ms from the lens's lift, `bar._lensPressAt` set in `lensDown`): the
+  highlight moves at once, the page is built after the lens has crossed. A
+  drag released over a tab (lifted long ago) builds as before.
+- **The dark bar's sheen is still** (`[data-theme="dark"][data-layout="modern"]
+  .bottomtabs-sheen::before{animation:none}`): 5% white, next to invisible,
+  but moving inside the bar's 30px backdrop blur, which iOS then redoes
+  every frame. Cannot be measured here (no WebKit, no GPU cost in Chromium).
+- **Not changed:** the background recorders/warm-ups. They are cached per
+  build and finish in seconds on a fast phone; moving them off the main
+  thread is a bigger job (badge renders are canvas pixel loops, flip-books
+  need SVG rasterisation). Worth it if the lag is still felt in the first
+  seconds after an update.
+- **The planet answers once** (`homeTapCopyPlanet()`, no argument): where you
+  stand and what is next in one caption; a second tap while it is up keeps it
+  (`homeCaptionShow`: same key and words). `homeCaptionState.planetN` is gone.
+  check_b317_hometaps moved.
+- **The tab's character plays its special** (`CHAR_SPECIAL_PROMINENT` gains
+  `#bottomtab-profile .bottomtab-icon-avatar`): its resting loop is a blink
+  and a few specks, which at tab size reads as a still. The flip-book was
+  playing all along.
+- **The Ghost is centred** (`AVATAR_CENTRE_DY.ghost` 2.3 -> -2.5): build 325's
+  solve counted its cold light (an ELLIPSE, `-gaura`, not set aside like the
+  halo circles) and its floating wisp, and sank the sheet to 59% of the
+  circle. Without them it is 50.6% at -2.5, the hem in view. check-b325-a's
+  centre section now sets both aside for the Ghost (fails on 327z9 at 59.4).
+  Its flip-book re-records on its own (sheets are keyed by drawing).
+- **The daily question's ring is a line on the glass rim** (block at the end
+  of the stylesheet): the unlit track is the chat button's 1px .16 white rim,
+  the progress a slim (3.2/100, ~1.8px) line of the rank colour with a soft
+  glow of itself; still on the rim (327z5), border still stood down, round
+  ends. Answered, the line is at .85.
+
+#### Gates
+`tools/check-b327z10.py` sections D-G (`B327Z10_ONLY`), each run `--against`
+327z9. check-b325-a centre moved (above). check-b327-h's "a pull down on the
+grip still closes the sheet" fails on 327z9 too (a 240px pull on a 669px sheet
+is under the 40% line and not quite a flick) - not from this build.
+
+### Build 327z10 (continued, round 2) - haptics on wide buttons and switches, Profile and people cards, friends' buttons, Select all, the rank box and case, the start sheet
+
+Madison's list: haptics missing on "a lot of the buttons"; the Profile banner
+"loads in laggy"; the Profile box's border "has a strange color"; leaderboard
+characters' "bottom half slightly comes out of the circle"; a person's card
+"Liquid Glass has a delay" and banners "should fade better into the liquid
+glass"; See every rank and the case "not obvious ... if you click anywhere on
+either it opens? How could we fix that"; Manage friends' Copy and Send "all
+white"; Select all "shouldn't that look better?"; switches "slightly laggy";
+Max / All "aren't changing properly, it's not a fast smooth thing"; swiping the
+start sheet down moved "the stuff behind it".
+
+- **Haptics** (NovaSound "A REAL SWITCH UNDER THE FINGER"). Audited on an
+  emulated iPhone: every label (`.opt` switch rows, `label.pick` unit cards)
+  and every control wider than 260px or taller than 70px had no switch.
+  Now: (1) **wide is not big** - a `button`/`[role=button]` up to 60px tall
+  carries its switch at any width (`HSW_WIDE_H`, `hswTooBig`): Add friends,
+  Begin, the calendar's rows; (2) **the switch rows' own input is the switch**
+  (`HSW_OPT`, `hswOptAttach`, `.opt > input.hsw-opt`): on an iPhone the row's
+  checkbox gets `switch` and lies invisibly over its track (80x46 over the
+  64x30 `.box`), so a finger on the track flips a native switch and the row's
+  own change runs; a press on it is a press on the box for the lens
+  (`NSW_SEL` mapping) and a drag is left to the native switch (`a.native`).
+  `hswStop` reverts both. **Still none, on purpose:** the unit cards and the
+  tall Profile cards (rank standing, the case) - scroll surfaces (build 327:
+  a native switch under a finger takes the scroll). Felt only on a phone.
+- **Profile banner delay**: animated banners are layered (compositor, build
+  304) but were built `.rk-idle` and woken by the on-screen observer only
+  after the screen's settle - frozen with their event layers hidden ~400ms
+  (4x CPU) after the screen, then all moving at once. A `.bnr-layered` is
+  never built idle and skips the settle wait (`watchRankEmblemOnScreen`,
+  `_rkIO`); emblems keep both.
+- **Profile card rim**: `var(--surface-border)`, not the banner's colour at 34%.
+- **Board avatars**: the flip-book `<img>` is a composited layer in a square
+  box, which WebKit does not cut to the avatar's round clip; the box clips
+  itself round with a mask (`:is(.rank-row, .friend-row-art) .rank-avatar:not(.has-plate) > .char-flip-play`).
+  Chromium always clipped it - phone only.
+- **Person card glass**: the overlay faded on its own opacity, and a backdrop
+  blur under a part-transparent ancestor cannot see the page, so the card was
+  flat until the fade ended. For `.invite-overlay` holding a `.person-card`
+  (and the unlock / rank / note cards built on it) the dim fades by its
+  colour and the card by its own opacity and a .97 scale. A classmate's
+  banner now lays two pools of its colours into the glass (`has-tint`,
+  `--pc-t1/2` from `bannerTintOf`) and fades a little longer.
+- **Copy / Send / Accept**: round 10's white `.next` recipe (`!important`)
+  painted them white under their own white words; `.friend-send`/`.friend-act`
+  are excluded, back to their matte black pill.
+- **Select all**: the floating controls' glass, a check-all mark, ~40px.
+- **See every rank / the case**: the closing line of each is a glass pill in
+  the box's colour with a chevron disc (`--pill-c`); the rank box gives under
+  the finger like the case. "See every rank" lost its typed "›".
+- **Switch lag**: a normal tap is cheap on the main thread (no long task, 52ms
+  worst frame at 4x). Two things went: the sound's reverb impulse
+  (`sndImpulse`, ~120ms at 4x) now waits for `quietIdle` instead of 350ms
+  after the first touch (it landed mid-slide); Settings' cards carry no
+  backdrop blur (fill .62 -> .8), as 327's notes proposed - the lens slides
+  inside them.
+- **Max / All**: `syncTopButton` changes the look under the finger as the
+  thumb leaves the top (the fill), and only the punch waits for the release
+  (`_punchOnRelease`); back at the top before the release, nothing pops.
+  check_b314_slider_release moved.
+- **Start sheet**: `overscroll-behavior:contain` on the sheet, and while it is
+  up `body{touch-action:none}` and no root overscroll (as the chat sheet).
+
+Gate: `tools/check-b327z10.py` section H (H1-H11), 11 failures on 327z9.
+
+### Build 327z10 (continued, round 3) - Starred beside Select all, the glass carried over as the bar changes shape
+
+- **Review's Starred questions is a pill beside Select all** (`.picks-tools`,
+  `.starred-pill`): *"Starred questions being at the very bottom of review
+  isn't the move? There's gotta be a better way."* At the top as a wide box
+  (297) it was "not a fan"; as the last row (323) it sat under sixteen
+  units. The same element (`.pick-flagged-all`, `_paint`, the same tap that
+  opens every starred question) is a glass pill in the list's tools row: a
+  gold star, "Starred", the count in a gold chip; the whole count in its
+  aria-label. Gates moved: check_b297, check_b323u_units, check-b325-e.
+- **From the unit screen, the glass stays on its tab** (`bar._lensRelayout`,
+  called by `syncStartAction` when `has-start-tab` comes or goes): *"tapping
+  the tab to go somewhere else, the bottom tab lags and kinda has a weird
+  placement of the bubble."* There the bar has the Start pill and icon-only
+  tabs; the tapped screen takes them away while the lens is up. Filmed: the
+  lens sat over Profile when Leaderboard was tapped, shrank into the platter
+  there and the platter jumped across. Now the lens is re-measured, carried
+  to the same tab in the new shape and lands there (held: it keeps lifting;
+  released: `lensRelease` again). Gate: check-b327z10 I (14 of 14 frames off
+  the tab on 327z9, 0 here). The tap's remaining cost at 4x CPU is the first
+  touch's sound start and the new screen's build.
+- **Not from this build, both fail identically on 327z9**: check_b313_sheet2
+  "the No hundo note is the same red as its chip" and check_b267 "the start
+  sheet closes on a swipe down from its middle" (like check-b327-h's grip
+  pull, a pull now needs 40% of the sheet or a real flick, 327z8).
+- check-b327z z11 sets aside `.hsw-opt` inputs (they ARE the switch) and
+  holds the tab's specials off between its snapshots. The white `.next`
+  recipe excludes the friend buttons inside `:where()` so it keeps its old
+  specificity (two `:not()`s had out-ranked the start sheet's glass X).
+
+### Build 327z10 (continued, round 4) - Review's search beside the tab bar, as Apple Music's
+
+Madison, with iOS 26 Apple Music screenshots and a recording: *"The search
+button, while in a review can we make the search function similar to how the
+Apple Music search function is? I kinda want to add it to unit selection screen
+too but idk"*.
+
+- **`registerTabSearch(screen, { placeholder, onQuery })`** (in
+  `setupBottomTabs`, after `bar._lensRelayout`). A glass circle with a
+  magnifier (`#tabsearch`, its own fixed element - never inside the bar, whose
+  backdrop blur would leave a nested one seeing only the bar) stands TS_GAP
+  (8px) past the plain bar, the bar's height; `body.has-tabsearch` narrows the
+  bar's row by the circle and shifts it left by half, so the pair takes the
+  bar's old footprint (a phone under 380px keeps its tabs to their marks).
+  Tap it: the bar pins its left edge (inline `left`, `transform/translate:none`)
+  and draws in to one circle (`.ts-open`: the lit tab, `.ts-keep`, its mark only;
+  the rest fold to nothing), the circle stretches to where it ended
+  (`tsHome`), the field fades in and takes focus inside the tap (iOS raises
+  the keyboard only then). While the keyboard is up both ride above it
+  (`tsKb`, `visualViewport`, as the chat sheet). Typing calls `onQuery`;
+  Enter drops the keyboard and keeps the results; the clear x empties it. A
+  touch on the small circle is caught on the bar in capture (no lens, no tab)
+  and puts everything back, search cleared, recentred after the 380ms
+  morph. Width transitions only while `.ts-anim` is on (any other change of
+  the bar's shape stays instant - the lens measures it). Leaving the screen,
+  hiding the bar, or the bar taking its Start shape unregisters it.
+- **Review's list uses it** (`showAnswerReview`): its own "Search questions"
+  field is hidden when the bar's is there and is what the bar's drives.
+- **Not on the unit screen**: its bar already carries the Start pill (363px
+  of a 375px phone), so a third piece does not fit a small phone; it keeps
+  its search field. Asked Madison.
+- Gate: check-b327z10 J (iPhone 17 Pro Max and a 320px SE): the circle, the
+  morph, focus, filtering, the way back. The keyboard lift needs a phone.

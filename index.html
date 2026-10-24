@@ -5825,6 +5825,19 @@
                inset 0 1px 0 rgba(255,255,255,.14);
   }
   .rank-row .rank-avatar svg{ transform:scale(.94); transform-origin:50% 56%; }
+  /* ...AND THE FLIP-BOOK TOO (build 327z10): "The characters on the
+     leaderboard, the bottom half slightly comes out of the circle." The
+     recorded loop is an <img> slid by a stepped transform - its own
+     compositing layer - in a SQUARE box, and WebKit does not reliably cut
+     a composited child to an ancestor's round clip: the bust, which fills
+     the frame's bottom edge, showed its square bottom corners past the
+     rim. The box clips itself round, by a mask, which WebKit applies to
+     the layer. */
+  :is(.rank-row, .friend-row-art) .rank-avatar:not(.has-plate) > .char-flip-play{
+    border-radius:50%;
+    -webkit-mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%);
+            mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%);
+  }
   .rank-name-wrap{ display:flex; flex-direction:column; min-width:0; flex:1; }
   .rank-name{ font-weight:700; font-size:.95rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rank-stat{ font-size:.78rem; color:var(--soft); }
@@ -10651,6 +10664,11 @@
   }
   [data-theme="dark"][data-layout="modern"] .bottomtabs-sheen::before{
     background:linear-gradient(120deg, transparent 38%, rgba(255,255,255,.05) 50%, transparent 62%);
+    /* STILL ON THE DARK GLASS (build 327z10): "the bottom tab is laggy".
+       At 5% white the sweep is next to invisible, but a layer that moves
+       inside the bar's 30px backdrop blur has iOS redo that blur every
+       frame, forever (the 308 tear note). It rests where it was drawn. */
+    animation:none;
   }
   @keyframes glass-sheen{
     0%, 100%{ transform:translate3d(-18%,0,0); }
@@ -23180,7 +23198,12 @@
       radial-gradient(120% 70% at 88% 6%, color-mix(in srgb, var(--hero-t2) 26%, transparent), transparent 72%),
       radial-gradient(110% 55% at 85% 100%, color-mix(in srgb, var(--hero-t2) 16%, transparent), transparent 75%),
       linear-gradient(180deg, color-mix(in srgb, var(--hero-t1) 14%, #10131A) 0%, color-mix(in srgb, var(--hero-t1) 6%, #10131A) 60%, color-mix(in srgb, var(--hero-t2) 9%, #10131A) 100%);
-    border-color: color-mix(in srgb, var(--hero-t1) 34%, rgba(255,255,255,.1));
+    /* THE EDGE IS THE CARDS' EDGE (build 327z10): "The border around the
+       profile box within the tab has a strange color to it." It was the
+       banner's first colour at 34% - a pink, green or amber hairline that
+       no other card in the app has. The colours stay inside the card; the
+       rim is the surface border every card wears. */
+    border-color: var(--surface-border);
   }
   .profile-cover{
     position:relative; height:7.6rem; margin:0 -1.45rem;
@@ -32055,7 +32078,13 @@
      whole box (no repeat); its inset light and dark edges and its three
      shadows are untouched, so it keeps the 3D feel of the other buttons. Quit, Save and exit and Reset keep their own
      recipes. */
-  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger),
+  /* (build 327z10: not the friend buttons - "In manage friends, copy and
+     send button is all white". Copy, Send and Accept are .next too, so this
+     made them white and left them their own white words. They are the
+     matte black pill they were drawn as - see .friend-send. Excluded inside
+     :where(), so the rule keeps the specificity every override of it was
+     written against: two more :not()s out-ranked the start sheet's glass X.) */
+  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):where(:not(.friend-send):not(.friend-act)),
   [data-theme="dark"][data-layout="modern"] .chip.on{
     /* THE OTHER BUTTONS' RECIPE, IN WHITE (build 327 round 10): "the white
        button does not look like the other 3d buttons". Quit and Save and
@@ -32153,11 +32182,17 @@
     font-size:.72rem; letter-spacing:.12em; color:rgba(236,239,245,.58);
   }
   [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child{ margin-top:.4rem; }
+  /* NO BLUR UNDER THE SWITCHES (build 327z10): "The switch toggles are
+     cool, it's slightly laggy though." Their lens slides inside these
+     cards, and a moving layer inside a backdrop-filter surface has iOS
+     redo the blur every frame of the slide (327's notes named this card's
+     frost as the lever). The fill is thicker (.62 -> .8) so the cards read
+     the same over the page with no blur behind them. */
   [data-theme="dark"][data-layout="modern"] .screen-settings .settings-card{
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.8) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border:1px solid rgba(255,255,255,.16) !important;
-    backdrop-filter:blur(24px) saturate(1.25); -webkit-backdrop-filter:blur(24px) saturate(1.25);
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
     box-shadow:0 6px 22px rgba(0,0,0,.4), inset 0 2px 4px -1px rgba(255,255,255,.06) !important;
   }
   .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ white-space:nowrap; font-size:.94rem; }
@@ -32315,6 +32350,16 @@
     border-color:rgba(255,255,255,.16) !important;
     backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
   }
+  /* ...AND WHILE IT MOVES, NO BLUR (build 327z10). The !important glass
+     above out-ranked .is-flat / .is-settling, so on a phone the 30px blur
+     was resampled on every frame of a swipe down and of the slide out -
+     "it's laggy". The same tone, near-opaque, as the phone's flat fill. */
+  @media (max-width:40rem){
+    [data-theme="dark"][data-layout="modern"] .chatdock-panel:is(.is-flat, .is-settling){
+      background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.95) !important;
+      backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    }
+  }
 
   /* ---- THE BANNERS' CLEAR GLASS, ON EVERY POP-UP (build 327 round 12) ----
      "This circled stuff is great. We need more of this. Like the tool tips,
@@ -32464,6 +32509,229 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* the chips say what a day is in a word, in the app's pill */
   .screen-calendar .cal-nt-big{ background:rgba(255,255,255,.06) !important; border-color:var(--surface-border) !important; }
   .screen-calendar .cal-today-badge{ background:rgba(255,255,255,.1); color:var(--ink); }
+
+  /* ---- THE DAILY QUESTION BUTTON IS GLASS, ITS RING A LINE OF LIGHT (build 327z10) ----
+     "The daily question button, it still stands out, maybe it needs a
+     Liquid Glass look? The loading bar around it could also look better."
+     Beside the chat button it read as a gold disc: the ring was a 3.2px
+     band of the rank colour on a track tinted the same. It stays ON the
+     rim (327z5: a ring apart from the rim read as two rings), but the
+     unlit track IS the glass rim now - the chat button's own 1px .16
+     white - and the progress is a slim line of the rank colour along it
+     with a soft glow of itself. One edge: glass where the time is still
+     to run, light where it has run. The pulse, the recharge and the flash
+     are the same circle and come with it. */
+  .daily-question-fab .dq-ring circle{ stroke-width:3.2; }
+  .daily-question-fab .dq-ring-track{ stroke:rgba(255,255,255,.16); stroke-width:1.9; }
+  .daily-question-fab .dq-ring-prog{ filter:drop-shadow(0 0 2.5px color-mix(in srgb, var(--dq-c) 75%, transparent)); }
+  /* answered: the line steps back a little with the "?" - it is a clock, not a call */
+  .daily-question-fab.is-done .dq-ring-prog{ opacity:.85; }
+  .daily-question-fab.is-ready::after{ border-width:1px; }
+
+  /* ---- A CARD OF GLASS IS GLASS FROM ITS FIRST FRAME (build 327z10) ----
+     "When clicking a profile to see someone's stats, the Liquid Glass has
+     a delay." The overlay faded in on its own opacity, and a backdrop
+     blur under an ancestor that is not fully opaque can only see that
+     ancestor's own group - not the page - so the card came up flat and
+     turned to glass when the fade ended. For the cards (the person card
+     and the unlock, rank and note cards built on it) the dim fades in by
+     its colour and the card by its own opacity, which does not hide the
+     page from its blur. */
+  .invite-overlay:has(> .invite-sheet.person-card){
+    opacity:1; background:rgba(0,0,0,0); transition:background-color .2s ease;
+  }
+  .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card){ background:rgba(0,0,0,.5); }
+  .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{
+    opacity:0; transform:scale(.97); transition:opacity .2s ease, transform .26s cubic-bezier(.2,.8,.25,1);
+  }
+  .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){
+    .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ transform:none; transition:opacity .2s ease; }
+  }
+  /* a classmate's banner melts into the card (see openPersonSheet): pools
+     of its two colours under the strip, fading out by the card's middle,
+     over the same glass - and the strip's fade runs longer */
+  html[data-theme="dark"][data-layout="modern"] .invite-sheet.person-card.has-tint{
+    background:
+      radial-gradient(120% 34% at 18% 0%, color-mix(in srgb, var(--pc-t1) 26%, transparent), transparent 100%),
+      radial-gradient(120% 34% at 82% 4%, color-mix(in srgb, var(--pc-t2) 22%, transparent), transparent 100%),
+      var(--pop-bg-card);
+  }
+  .person-card.has-tint .person-card-cover{
+    --pc-fade:linear-gradient(180deg, #000 0%, #000 24%, rgba(0,0,0,.94) 34%, rgba(0,0,0,.82) 44%,
+      rgba(0,0,0,.66) 54%, rgba(0,0,0,.48) 63%, rgba(0,0,0,.31) 72%, rgba(0,0,0,.17) 81%, rgba(0,0,0,.07) 89%,
+      rgba(0,0,0,.02) 95%, transparent 100%);
+  }
+
+  /* ---- SELECT ALL IS A PIECE OF THE SCREEN'S GLASS (build 327z10) ----
+     "The select all button on the unit selection screen, shouldn't that
+     look better?" It was a thin outline in the accent, the one control on
+     the screen not drawn as glass: the search pill above it and the unit
+     cards below are. It takes the floating controls' glass (the bar's
+     body, blur and one .16 rim), a little more height, and a mark that
+     says what it does - every box ticked. The invisible 44px target
+     (::after) is unchanged. */
+  [data-theme="dark"][data-layout="modern"] .selall-btn{
+    display:inline-flex; align-items:center; gap:.45rem;
+    padding:.55rem 1.05rem .55rem .85rem; font-size:.84rem; font-weight:700; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62);
+    background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.16);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    box-shadow:0 6px 22px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.05);
+  }
+  [data-theme="dark"][data-layout="modern"] .selall-btn::before{
+    content:""; width:1rem; height:1rem; flex:0 0 auto; background:currentColor; opacity:.9;
+    -webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='5'/><path d='M7.5 12.5l3 3 6-6.5'/></svg>") center/contain no-repeat;
+            mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='5'/><path d='M7.5 12.5l3 3 6-6.5'/></svg>") center/contain no-repeat;
+  }
+  @media (hover:hover){
+    [data-theme="dark"][data-layout="modern"] .selall-btn:hover{ background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.07) 55%), rgba(12,13,19,.62); color:var(--ink); }
+  }
+
+  /* ---- THE RANK BOX AND THE CASE SAY "OPEN ME" (build 327z10) ----
+     "See every rank, and the case, it's not obvious enough that if you
+     click anywhere on either it opens." Each ended in a line of coloured
+     words with a chevron - a caption, not a control. The line is a
+     button now: a glass pill in the box's own colour (the rank's, the
+     case's silver), and the whole box gives under the finger. The box is
+     still the target; the pill is what says so. */
+  .pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count{
+    display:flex; align-items:center; justify-content:center; gap:.35rem;
+    width:fit-content; margin-left:auto; margin-right:auto; min-height:2.5rem; box-sizing:border-box;
+    padding:.5rem .7rem .5rem 1.15rem; border-radius:999px;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.04) 55%), rgba(12,13,19,.5);
+    border:1px solid color-mix(in srgb, var(--pill-c) 34%, rgba(255,255,255,.12));
+    box-shadow:0 4px 14px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.05);
+    color:color-mix(in srgb, var(--pill-c) 62%, #fff);
+  }
+  .pf-goal .pf-goal-foot{ --pill-c:var(--nx, #fff); margin-top:1rem; }
+  .pf-case-closed .pf-case-count{ --pill-c:var(--case-tint, #AEBBCB); }
+  /* the chevron in a little disc of its own, as a row that opens has */
+  .pf-goal .pf-goal-foot::after, .pf-case-closed .pf-case-count::after{
+    content:""; width:1.25rem; height:1.25rem; flex:0 0 auto; border-radius:50%;
+    background:color-mix(in srgb, var(--pill-c) 22%, rgba(255,255,255,.06)) center/.62rem no-repeat
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M3.6 1.8 6.8 5 3.6 8.2' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  }
+  .pf-case-closed .pf-case-arrow{ display:none; }
+  .pf-goal{ transition:box-shadow .6s ease, border-color .6s ease, transform .14s ease; }
+  .pf-goal:active{ transform:scale(.985); }
+  [data-reduce-motion="true"] .pf-goal:active{ transform:none; }
+
+  /* ---- THE PAGE BEHIND THE START SHEET STAYS PUT (build 327z10) ----
+     "When swiping down on the start menu, the stuff behind it started
+     moving down as well." The sheet scrolls, with no overscroll rule, so
+     at its top - or from a slider or a field, which the sheet's own swipe
+     leaves alone - iOS handed the rest of a pull to the page under it,
+     and the page rubber-banded down with the sheet. As the chat sheet
+     (build 327): the sheet's scroll stops at its ends, and while it is up
+     nothing under it pans (touch-action is worked out up to the nearest
+     scroller, so the sheet still scrolls; its swipe is script, not a pan). */
+  .unitoptions-modal-sheet{ overscroll-behavior:contain; }
+  body:has(.unitoptions-modal:not([hidden])){ touch-action:none; overscroll-behavior:none; }
+  html:has(.unitoptions-modal:not([hidden])){ overscroll-behavior:none; }
+
+  /* an iPhone's switch rows (build 327z10, see HSW_OPT): the row's own input,
+     a native switch, laid invisibly over its track. Never appearance:none,
+     display:none or visibility:hidden - a stripped switch plays nothing. */
+  .opt > input.hsw-opt{
+    position:absolute; z-index:2; margin:0; opacity:0;
+    width:80px; height:46px; top:50%; right:var(--hsw-r, 0px); transform:translateY(-50%);
+    touch-action:pan-y; -webkit-tap-highlight-color:transparent; cursor:pointer;
+  }
+
+  /* Review's Starred, a pill beside Select all (build 327z10, see showSetup) */
+  .picks-tools{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin:0 0 .9rem; }
+  .picks-tools > .selall-btn{ margin:0; }
+  .starred-pill{
+    position:relative; display:inline-flex; align-items:center; gap:.45rem; min-height:40px; box-sizing:border-box;
+    padding:.4rem .55rem .4rem .7rem; border-radius:999px; font:inherit; cursor:pointer; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62);
+    background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid color-mix(in srgb, #F5C21B 42%, rgba(255,255,255,.14));
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    box-shadow:0 6px 22px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.05);
+    transition:transform .14s ease;
+  }
+  .starred-pill:active{ transform:scale(.96); }
+  .starred-pill::after{ content:""; position:absolute; left:50%; top:50%; width:max(100%, 44px); height:max(100%, 44px); transform:translate(-50%,-50%); }
+  .starred-pill .pick-flagged-icon{ width:1.25rem; height:1.25rem; }
+  .starred-pill .pick-flagged-icon .starred-card-star{ width:1.2rem; height:1.2rem; filter:none; }
+  .starred-pill .pick-flagged-text{ flex-direction:row; align-items:center; gap:.45rem; flex:none; }
+  .starred-pill .pname{ font-size:.84rem; font-weight:700; margin:0; padding:0; min-height:0; color:inherit; }
+  .starred-pill .pcount{ font-size:.74rem; font-weight:800; margin:0; padding:.12rem .5rem; min-height:0; border-radius:999px;
+    background:rgba(245,194,27,.18); color:#F5D46A; font-variant-numeric:tabular-nums; }
+  .starred-pill .pcount:empty{ display:none; }
+  .starred-pill.is-empty{ border-color:rgba(255,255,255,.12); }
+  .starred-pill.is-empty .pname{ color:var(--soft); }
+  .starred-pill.is-empty .pick-flagged-icon{ opacity:.6; }
+  .starred-pill .pick-flagged-go{ display:none; }
+
+  /* ---- SEARCH BESIDE THE TAB BAR (build 327z10, registerTabSearch) ---- */
+  body{ --ts-d:62px; --ts-gap:8px; }
+  /* the bar gives up the circle's width and the two are centred together,
+     in the footprint the bar alone had */
+  body.has-tabsearch .bottomtabs:not(.has-start-tab){ translate:calc(-.5 * (var(--ts-d) + var(--ts-gap))) 0; }
+  body.has-tabsearch .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{
+    width:min(calc(23.7rem - 20px - var(--ts-d) - var(--ts-gap)), calc(100vw - 1.5rem - 20px - var(--ts-d) - var(--ts-gap)));
+  }
+  @media (min-width:40rem){
+    body.has-tabsearch .bottomtabs:not(.has-start-tab) .bottomtabs-navrow{
+      width:min(calc(30.14rem - 18px - var(--ts-d) - var(--ts-gap)), calc(100vw - 1.5rem - 20px - var(--ts-d) - var(--ts-gap)));
+    }
+  }
+  /* a narrow phone keeps its tabs to their marks while the circle is there */
+  @media (max-width:379px){
+    body.has-tabsearch .bottomtabs:not(.has-start-tab) .bottomtab-label{ display:none; }
+  }
+  .tabsearch{
+    position:fixed; z-index:201; box-sizing:border-box; border-radius:999px; overflow:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
+    background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.16);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
+    transition:left .36s cubic-bezier(.3,1.1,.4,1), width .36s cubic-bezier(.3,1.1,.4,1), translate .25s ease;
+  }
+  .tabsearch[hidden]{ display:none; }
+  .tabsearch-btn{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:none; border:0; padding:0; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:opacity .18s ease;
+  }
+  .tabsearch-btn .whatsnew-glyph{ width:46%; height:46%; }
+  .tabsearch-btn:active{ background:rgba(255,255,255,.08); }
+  .tabsearch-field{
+    position:absolute; inset:0; display:flex; align-items:center; gap:.55rem; padding:0 .45rem 0 1.05rem;
+    opacity:0; pointer-events:none; transition:opacity .2s ease .08s;
+  }
+  .tabsearch.is-open .tabsearch-btn{ opacity:0; pointer-events:none; }
+  .tabsearch.is-open .tabsearch-field{ opacity:1; pointer-events:auto; }
+  .tabsearch-glass{ width:1.25rem; height:1.25rem; flex:none; color:var(--soft); }
+  .tabsearch-input{
+    flex:1 1 auto; min-width:0; height:100%; border:0; outline:none; background:none; padding:0;
+    font:inherit; font-size:17px; color:var(--ink); -webkit-appearance:none; appearance:none;
+  }
+  .tabsearch-input::placeholder{ color:var(--soft); }
+  .tabsearch-input::-webkit-search-cancel-button{ -webkit-appearance:none; display:none; }
+  .tabsearch-clear{
+    flex:none; width:44px; height:44px; border:0; border-radius:50%; background:none; cursor:pointer; position:relative;
+  }
+  .tabsearch-clear::before{ content:""; position:absolute; left:50%; top:50%; width:1.35rem; height:1.35rem; transform:translate(-50%,-50%);
+    border-radius:50%; background:rgba(255,255,255,.22) center/.6rem no-repeat
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2 2 8 8M8 2 2 8' stroke='%230C0D13' stroke-width='1.7' stroke-linecap='round'/></svg>"); }
+  .tabsearch-clear[hidden]{ display:none; }
+  /* the bar draws in to one circle: the tab you are on, its mark only */
+  .bottomtabs.ts-open .bottomtabs-navrow{ width:calc(var(--ts-d) - 20px) !important; }
+  /* only while it opens or closes (ts-anim): any other change of the bar's
+     shape stays instant, as the lens's measuring needs */
+  .bottomtabs.ts-anim .bottomtabs-navrow{ transition:width .36s cubic-bezier(.3,1.1,.4,1); }
+  .bottomtabs.ts-open .bottomtabs-navrow .bottomtab:not(.ts-keep){ flex:0 0 0 !important; min-width:0 !important; padding:0 !important; opacity:0; overflow:hidden; pointer-events:none; }
+  .bottomtabs.ts-open .bottomtabs-navrow .bottomtab.ts-keep{ flex:1 1 auto; padding-left:0; padding-right:0; }
+  .bottomtabs.ts-open .bottomtab-label{ display:none; }
+  .bottomtabs.ts-open .bottomtabs-slider{ opacity:0 !important; transition:opacity .15s ease; }
+  .bottomtabs.ts-anim .bottomtabs-navrow .bottomtab{ transition:opacity .2s ease; }
+  [data-reduce-motion="true"] .tabsearch, [data-reduce-motion="true"] .bottomtabs.ts-anim .bottomtabs-navrow{ transition:none; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -47874,10 +48142,15 @@ function buildAvatarCharSVG(charId){
    effects' face parts) lands in the same place it always did relative to
    the face. Re-measure after redrawing anybody: run the gate. */
 const AVATAR_CENTRE_DY = {
-  ninja: 1.9, ghost: 2.3, wizard: 0.4, grizzly: -1.0, alien: 0.2, detective: -2.1, masked: 1.2,
+  ninja: 1.9, ghost: -2.5, wizard: 0.4, grizzly: -1.0, alien: 0.2, detective: -2.1, masked: 1.2,
   zeus: 3.3, poseidon: 0.4, clown: 3.3, valkyrie: 3.3, marksman: 1.4, astronaut: 3.3, hacker: -0.8,
   timekeeper: 3.3, ronin: 3.3, voidwalker: 2.1, umbra: 1.7, genesis: -1.9, lunar: 1.9, solar: 2.3,
   tempest: 2.9, frost: 2.7, oracle: 3.1, inferno: 4.8, astral: 1.9, celestial: 1.2, zenith: 1.0
+  /* the Ghost (build 327z10, "the ghost character is not centered in the
+     circle"): its cold light is an ellipse, which the measurement did not
+     set aside as it does a halo circle, so the solve centred the light and
+     sank the sheet - its middle at 59% of the circle. Measured without the
+     light it is 50.6% at -2.5, its scalloped hem in view. */
   /* the Ronin's figure is a pale hat and face on a dark body, so its
      measured middle chases the hat - held where it reads centred, its
      red moon still behind the hat */
@@ -66324,7 +66597,14 @@ var _rkIO = typeof IntersectionObserver === "function" ? new IntersectionObserve
        are the costliest motion in the app - every frame of every one
        restyles and repaints its whole svg - and starting them all in the
        same frames as the slide-in is what made the slide stutter. */
-    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    /* ...but not a LAYERED banner (build 327z10): "When opening the profile
+       tab, the banner loads in laggy, there's a delay." Its motion is
+       transforms and opacity on boxes (build 304) - the compositor's, not a
+       repaint - and held still it shows its base frame with its event
+       layers hidden, then everything starts at once ~400ms (4x CPU) after
+       the screen: that was the delay. It wakes the frame it is seen. */
+    const wait = t.classList.contains("bnr-layered") ? 0
+      : (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
     if(e.isIntersecting && wait > 0){
       setTimeout(() => { if(t.isConnected) t.classList.remove("rk-idle"); }, wait);
       return;
@@ -66343,7 +66623,9 @@ function watchRankEmblemOnScreen(svg){
   /* var, not const, above: this can be reached before those lines have
      run, and a const there would be a ReferenceError that kills the app */
   if(!_rkIO || !_rkSeen) return;
-  svg.classList.add("rk-idle");
+  /* a layered banner starts moving (build 327z10, see the observer): the
+     observer's first answer, a frame or two on, stills it if off screen */
+  if(!svg.classList.contains("bnr-layered")) svg.classList.add("rk-idle");
   _rkIO.observe(svg); _rkSeen.add(svg);
 }
 setInterval(() => { _rkSeen.forEach(t => { if(!t.isConnected){ try { _rkIO && _rkIO.unobserve(t); } catch(e){} _rkSeen.delete(t); } }); }, 15000);
@@ -66447,7 +66729,11 @@ function setCharState(el, state, opts){
    character - never on a list row, the race line or the tab bar. One at a
    time, never while the page is hidden, never with Reduce motion. It also
    plays when a rank-up scene hands back to Profile and on a hundo. */
-var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar";
+/* ...and the Profile tab's own character (build 327z10): "The characters
+   aren't animated on the bottom tab." Their resting loop is a blink and a
+   few specks, which at the tab's size reads as a still picture; the tab
+   plays its special now and then like the Profile card does. */
+var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar, #bottomtab-profile .bottomtab-icon-avatar";
 /* first special no sooner than ~8s after a character is on screen, then
    every 12-30s; a gate may shorten these */
 var charSpecialTiming = { first: [8000, 16000], gap: [12000, 30000] };
@@ -67423,7 +67709,14 @@ function sndGraph(ctx, o){
        first gesture's handler that was most of a 100-250ms tap at 4x CPU */
     if(o.lazyRev){
       const cv = rev;
-      setTimeout(() => { try { cv.buffer = sndImpulse(ctx, 2.6, 2.4); } catch(e){} }, 350);
+      /* ...and not 350ms after it either (build 327z10): "the switch toggles
+         are cool, it's slightly laggy though". Building it is ~120ms at 4x
+         CPU, and 350ms after a tap is the middle of whatever that tap set
+         moving - a switch's slide, a sheet, the tab bar's glass. It waits
+         for a quiet moment (quietIdle: no touch for 2s, an idle frame);
+         until then the sounds play without their room. */
+      const fill = () => { try { cv.buffer = sndImpulse(ctx, 2.6, 2.4); } catch(e){} };
+      if(typeof quietIdle === "function") quietIdle(fill, 8000); else setTimeout(fill, 350);
     } else rev.buffer = sndImpulse(ctx, 2.6, 2.4);
     const revOut = ctx.createGain(); revOut.gain.value = .55;
     rev.connect(revOut); revOut.connect(master);
@@ -70448,6 +70741,35 @@ const NovaSound = (function(){
   let hswQueue = new Set(), hswTimer = 0, hswObs = null;
   const hswNow = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const hswIs = t => !!(t && t.classList && t.classList.contains("nova-hsw"));
+  /* WIDE IS NOT BIG (build 327z10): "Some of the haptic feedback isn't
+     there. A lot of the buttons aren't registering it." The width cap
+     took every full-width button with it - Add friends, Begin, the
+     calendar's rows - though a finger never starts a scroll on a strip a
+     button high. A button (or role=button) up to HSW_WIDE_H tall carries
+     its switch at any width; a taller card or row still carries none. */
+  const HSW_WIDE_H = 60;
+  const hswTooBig = h => h.offsetHeight > HSW_MAX_H
+    || (h.offsetWidth > HSW_MAX_W && !(h.offsetHeight <= HSW_WIDE_H && h.matches("button, [role='button']")));
+  /* THE SWITCH ROWS' OWN INPUT IS THE SWITCH (build 327z10). A .opt row (every
+     Settings switch, the start sheet's) is a label round a hidden checkbox
+     and its drawn track (.box), so it never took a switch of ours, and a
+     label cannot. On an iPhone the row's checkbox becomes a native switch
+     laid exactly over its track: a finger on the track flips the real
+     switch (the tick) and the row's own change runs as it always has. */
+  const HSW_OPT = ".opt > input[type=checkbox]";
+  function hswOptAttach(inp){
+    if(!inp || inp.classList.contains("hsw-opt") || inp.disabled) return;
+    const row = inp.parentElement, box = row && row.querySelector(":scope > .box");
+    if(!box || row.closest("[data-no-hsw]")) return;
+    inp.setAttribute("switch", "");
+    inp.classList.add("hsw-opt");
+    try{ inp.style.setProperty("--hsw-r", Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8) + "px"); }catch(e){}
+    row.setAttribute("data-hsw", "");
+  }
+  function hswOptDetach(inp){
+    inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); inp.style.removeProperty("--hsw-r");
+    const row = inp.parentElement; if(row && !row.querySelector(":scope > .nova-hsw")) row.removeAttribute("data-hsw");
+  }
   function hswOk(h){
     if(!h || h.nodeType !== 1 || h.namespaceURI !== "http://www.w3.org/1999/xhtml") return false;
     if(h.tagName === "INPUT" || h.tagName === "SELECT" || h.tagName === "TEXTAREA" || h.tagName === "LABEL") return false;
@@ -70462,7 +70784,7 @@ const NovaSound = (function(){
        scrolled by its large surfaces, so only compact controls (tabs, chips,
        small buttons) carry one; an answer choice keeps its switch because
        its tick is the point of answering. */
-    if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && (h.offsetHeight > HSW_MAX_H || h.offsetWidth > HSW_MAX_W)) return false;
+    if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)) return false;
     return true;
   }
   function hswAttach(h){
@@ -70498,6 +70820,8 @@ const NovaSound = (function(){
       n.querySelectorAll(HSW_HOSTS).forEach(x => hosts.push(x));
       const todo = hosts.filter(h => !(h.__hsw && h.__hsw.parentNode === h) && hswOk(h));
       todo.forEach(hswAttach);
+      if(n.matches(HSW_OPT)) hswOptAttach(n);
+      n.querySelectorAll(HSW_OPT).forEach(hswOptAttach);
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
     if(hswQueue.size) hswSchedule();
@@ -70508,7 +70832,7 @@ const NovaSound = (function(){
     document.querySelectorAll(".nova-hsw").forEach(sw => {
       const h = sw.parentNode;
       if(!h || !h.offsetWidth) return;
-      if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && (h.offsetHeight > HSW_MAX_H || h.offsetWidth > HSW_MAX_W)){
+      if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)){
         h.removeAttribute("data-hsw"); h.__hsw = null; sw.remove();
       }
     });
@@ -70549,6 +70873,7 @@ const NovaSound = (function(){
   }
   function hswStop(){
     if(hswObs){ hswObs.disconnect(); hswObs = null; }
+    document.querySelectorAll(".opt > input.hsw-opt").forEach(hswOptDetach);
     hswQueue.clear();
     if(hswTimer){ clearTimeout(hswTimer); hswTimer = 0; }
     document.querySelectorAll(".nova-hsw").forEach(sw => {
@@ -70567,7 +70892,7 @@ const NovaSound = (function(){
   }
   ["pointerdown", "touchstart"].forEach(ev => window.addEventListener(ev, e => {
     if(!isTouchDown(e)) return;
-    if(hswIs(e.target)){
+    if(hswIs(e.target) || (e.target && e.target.classList && e.target.classList.contains("hsw-opt"))){
       const pt = e.touches ? e.touches[0] : e;
       hswDownAt = hswNow(); hswMoved = false;
       hswY0 = pt ? pt.clientY : 0; hswX0 = pt ? pt.clientX : 0;
@@ -71364,7 +71689,10 @@ function nswLensFor(track, on){
 }
 document.addEventListener("pointerdown", e => {
   if(e.button > 0 || e.isPrimary === false) return;
-  const track = e.target && e.target.closest ? e.target.closest(NSW_SEL) : null;
+  /* on an iPhone the row's own input lies over its box as a native switch
+     (hsw-opt, build 327z10): a press on it is a press on the box */
+  const tg = e.target && e.target.classList && e.target.classList.contains("hsw-opt") ? e.target.parentElement.querySelector(":scope > .box") : e.target;
+  const track = tg && tg.closest ? tg.closest(NSW_SEL) : null;
   if(!track || nswCalm()) return;
   const host = nswHost(track);
   if(!host || host.off()) return;
@@ -71372,12 +71700,14 @@ document.addEventListener("pointerdown", e => {
   const run = nswLensFor(track, host.on());
   if(!run) return;
   nswMorph(run, true, 0);
-  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false };
+  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false, native: tg !== e.target };
   if(e.pointerType === "mouse"){ try{ track.setPointerCapture(e.pointerId); }catch(err){} }
 }, { passive: true });
 document.addEventListener("pointermove", e => {
   const a = nswActive;
   if(!a || e.pointerId !== a.id) return;
+  /* a native switch drags itself (and ticks); ours would flip it a second time */
+  if(a.native) return;
   const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
   if(!a.drag){
     if(Math.abs(dx) < 5 || Math.abs(dx) < Math.abs(dy)) return;
@@ -78931,19 +79261,14 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        an account even exists yet wouldn't make much sense. */
     sphere.style.cursor = "pointer";
     /* and the planet answers the touch (build 317, planetTapFx), on the
-       touch itself; the caption says where you stand, and tapped again
-       while it is up, what is next (round three - the "....." box went
-       with the other boxes) */
+       touch itself; the caption says where you stand and what is next, in
+       one answer (build 327z10 - it took turns, one per tap) */
     const planetRun = (e) => {
       playSound("home.planet");
       try{ planetTapFx(wrap, e); }catch(err){}
       /* and at Supernova, the cutscene's streak round the rings (b321h) */
       try{ homeRingStreak(wrap, "tap"); }catch(err){}
-      try{
-        const again = homeCaptionState.key === "planet" && !!document.querySelector("#stage .home-caption > .hc-item.is-in");
-        homeCaptionState.planetN = again ? homeCaptionState.planetN + 1 : 0;
-        homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(homeCaptionState.planetN), "planet");
-      }catch(err){}
+      try{ homeCaptionShow(homePanelOf(wrap), homeTapCopyPlanet(), "planet"); }catch(err){}
     };
     homeTapBind(sphere, planetRun);
     /* On an iPhone the planet is tapped through a real switch like every
@@ -89374,10 +89699,28 @@ function startChatDock(){
     }
     dragFlat = false;
     if(closing){
-      /* Leave the offset in place for one frame so the close
-         transition starts from where the finger let go. */
+      /* OUT AT THE FINGER'S SPEED (build 327z10). "When swiping down, it
+         just disappears, it doesn't do the animation that it goes
+         downwards, and it's laggy." The release handed the sheet to the
+         class's .26s ease-out, which covers half the way in its first
+         frame - on a phone that read as the sheet vanishing. Now it slides
+         from where the finger let go, as the start sheet does
+         (attachSheetSwipe): never under .18s or over .3s, to the same
+         translateY(102%) the closed class rests at, so handing back to the
+         class moves nothing. Closed at once (the sound, the state); the
+         flat fill stays on until the slide ends. */
+      const ms = Math.round(Math.max(180, Math.min(300, (ph - dragDy) / Math.max(1.6, dragVel || 0))));
+      panel.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
+      panel.style.transform = "translate3d(0,102%,0)";
       closeChatDock();
-      requestAnimationFrame(() => { panel.style.transform = ""; });
+      clearTimeout(endDrag._t);
+      endDrag._t = setTimeout(() => {
+        panel.classList.remove("is-settling");
+        /* reopened mid-slide: let the class bring it back up */
+        if(!chatDockOpen) panel.style.transition = "none";
+        panel.style.transform = "";
+        requestAnimationFrame(() => { panel.style.transition = ""; });
+      }, ms + 30);
     } else {
       panel.style.transform = "";
     }
@@ -91291,6 +91634,14 @@ function openPersonSheet(entry){
       entry.banner && bannerDef(entry.banner) ? entry.banner : ""));
     sheet.classList.add("has-cover");
     sheet.appendChild(cover);
+    /* the banner's own colours run on down into the glass (build 327z10):
+       "People's banners also look weird, they should fade better into the
+       Liquid Glass" - the strip faded out onto plain grey, as the Profile
+       card did before it took its banner's two colours (bannerTintOf) */
+    try{
+      const tint = entry.banner && bannerDef(entry.banner) ? bannerTintOf(entry.banner) : null;
+      if(tint){ sheet.classList.add("has-tint"); sheet.style.setProperty("--pc-t1", tint[0]); sheet.style.setProperty("--pc-t2", tint[1]); }
+    }catch(e){}
   }
 
   /* ---- NOVA'S CARD (build 324) ----
@@ -93566,22 +93917,39 @@ function showSliderTopNote(sect, btn, title, sub){
    finger, half-way through the slide - and then waited out its own
    delays. While the slider is held (btn._held, set by both sliders) the
    button keeps its quiet "on" look; the release calls back in here, and
-   the fill and the punch start that frame (no delay in the CSS any more). */
+   the fill and the punch start that frame (no delay in the CSS any more).
+   (Superseded in 327z10: the fill is live, the punch stays on the release.) */
 function syncTopButton(btn, atTop){
-  if(btn._held && !atTop && btn.classList.contains("on")){ btn._pendingOff = true; return; }
-  btn._pendingOff = false;
+  /* LIVE UNDER THE FINGER, THE PUNCH ON THE RELEASE (build 327z10): "if you
+     slide this to the left so it's off, the buttons aren't changing
+     properly, it's not a fast smooth thing." Since 314 a held slider kept
+     the button's "on" look until the finger lifted (_pendingOff), so it
+     sat wrong under the slide and then changed all at once. Now the
+     button starts its fill the moment the thumb leaves the top, and only
+     the punch waits for the release - which is what 314 asked for ("it
+     activates right when I stop touching it"). Back at the top before
+     the release, it goes quiet again and nothing pops. */
   const wasOn = btn.classList.contains("on");
   btn.classList.toggle("on", atTop);
   btn.setAttribute("aria-pressed", atTop ? "true" : "false");
+  const punch = () => {
+    btn._punchOnRelease = false;
+    btn.classList.remove("ready-pop"); void btn.offsetWidth;
+    btn.classList.add("ready-pop");
+    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760);
+  };
   if(wasOn && !atTop && btn.isConnected && !btn.disabled){
-    btn.classList.remove("just-ready", "ready-pop"); void btn.offsetWidth;
-    btn.classList.add("just-ready", "ready-pop");
+    btn.classList.remove("just-ready", "ready-pop", "ready-settle"); void btn.offsetWidth;
+    btn.classList.add("just-ready");
     clearTimeout(btn._readyT); btn._readyT = setTimeout(() => {
       btn.classList.add("ready-settle"); btn.classList.remove("just-ready"); void btn.offsetWidth;
       requestAnimationFrame(() => requestAnimationFrame(() => btn.classList.remove("ready-settle")));
     }, 340);
-    clearTimeout(btn._popT); btn._popT = setTimeout(() => btn.classList.remove("ready-pop"), 760);
-  } else if(atTop){ clearTimeout(btn._readyT); clearTimeout(btn._popT); btn.classList.remove("just-ready", "ready-pop", "ready-settle"); }
+    if(btn._held) btn._punchOnRelease = true; else punch();
+  } else if(atTop){
+    btn._punchOnRelease = false;
+    clearTimeout(btn._readyT); clearTimeout(btn._popT); btn.classList.remove("just-ready", "ready-pop", "ready-settle");
+  } else if(!btn._held && btn._punchOnRelease){ punch(); }
 }
 function plainSlider(labelText, min, max, step, get, set, formatVal, onChange, topLabel){
   const sect = document.createElement("div");
@@ -93850,7 +94218,7 @@ function showSetup(){
     box.type = "button";
     const ic = document.createElement("span"); ic.className = "pick-flagged-icon"; ic.setAttribute("aria-hidden", "true");
     const txt = document.createElement("span"); txt.className = "pick-flagged-text";
-    const nm = document.createElement("span"); nm.className = "pname"; nm.textContent = "Starred questions";
+    const nm = document.createElement("span"); nm.className = "pname"; nm.textContent = "Starred";
     const sub = document.createElement("span"); sub.className = "pcount";
     txt.append(nm, sub);
     const go = document.createElement("span"); go.className = "pick-flagged-go"; go.setAttribute("aria-hidden", "true"); go.textContent = "\u203A";
@@ -93859,12 +94227,14 @@ function showSetup(){
     box._paint = () => {
       const fl = flaggedIndexes();
       const fUnits = starredUnits(fl);
-      box.className = "pick pick-flagged-all" + (fl.length ? "" : " is-empty");
+      box.className = "pick-flagged-all starred-pill" + (fl.length ? "" : " is-empty");
       ic.replaceChildren(buildStarredCardStar(fl.length > 0));
-      sub.textContent = fl.length
-        ? fl.length + (fl.length === 1 ? " question" : " questions") + " \u00b7 " + fUnits.length + (fUnits.length === 1 ? " unit" : " units")
-        : "Tap the star on any question to save it here";
-      go.hidden = !fl.length;
+      /* the pill says how many; the whole of it is said to a screen reader */
+      sub.textContent = fl.length ? String(fl.length) : "";
+      box.setAttribute("aria-label", fl.length
+        ? "Starred questions: " + fl.length + (fl.length === 1 ? " question" : " questions") + " in " + fUnits.length + (fUnits.length === 1 ? " unit" : " units")
+        : "Starred questions: none yet. Tap the star on any question to save it here.");
+      go.hidden = true;
     };
     box._paint();
     box.addEventListener("click", () => {
@@ -93884,6 +94254,17 @@ function showSetup(){
     box.addEventListener("pointerdown", e => { if(!e.button) press(true); });
     ["pointerup", "pointercancel", "pointerleave"].forEach(t => box.addEventListener(t, () => press(false)));
     starredRow = box;
+    /* BESIDE SELECT ALL, NOT UNDER EVERY UNIT (build 327z10): "Starred
+       questions being at the very bottom of review isn't the move? There's
+       gotta be a better way." At the top as a wide box (297) it was "not a
+       fan"; as the last row (323) it sat under sixteen units. It is a pill
+       now, in the row the list's own tools are in - seen as the screen
+       opens, and no card of its own above the units. Same box, same
+       paint, same tap: it opens every starred question. */
+    const tools = document.createElement("div");
+    tools.className = "picks-tools";
+    selAll.replaceWith(tools);
+    tools.append(selAll, box);
   }
 
   all.forEach(name => {
@@ -93924,7 +94305,6 @@ function showSetup(){
     attachUnitHold(row, name, cfg.mode);
     list.appendChild(row);
   });
-  if(starredRow) list.appendChild(starredRow);
 
   /* Placeholder tiles for units whose study guide hasn't been released
      yet — empty by default; add names here once they're known and
@@ -96807,25 +97187,24 @@ function homeTapCopyFlare(key){
    light. Round four: "Your flares", in the theme's own colour (--theme-c2,
    lifted a little for a dark screen - see .hc-item.is-planet), and the
    rank/level/badges line is gone. */
-function homeTapCopyPlanet(n){
-  if(n % 2 === 1){
-    const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
-    let parts;
-    if(next){
-      const left = tierShortfall(TIER_UNLOCKS[next]);
-      parts = ["Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light."];
-    } else {
-      parts = homeRingTier() && secretFlaresAllFound() ? ["Every flare is lit,", "the secret ones too."] : ["Every rank flare is lit."];
-    }
-    return { kind: "planet", name: "Your flares", state: "", color: "", parts };
-  }
+function homeTapCopyPlanet(){
+  /* ONE ANSWER (build 327z10): "When tapping the large planet back to
+     back, it brings up two different messages, shouldn't that just be
+     combined to one message?" Where you stand and what is next used to
+     take turns, one per tap; they are one caption now, and a second tap
+     while it is up keeps it up (homeCaptionShow: same key, same words). */
   const keys = homeFlareKeys(), f = store.mysteryColorsFound || {};
   const lit = TIER_ORDER_FULL.filter(t => tierColorUnlocked(t)).length;
   const found = keys.filter(k => f[k]).length;
-  return { kind: "planet", name: "Your flares", state: "", color: "",
-    /* no total for the secret flares (build 326): more of them come into
-       view as you find them, so "of 3" was never the whole of it */
-    parts: [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."] };
+  /* no total for the secret flares (build 326): more of them come into
+     view as you find them, so "of 3" was never the whole of it */
+  const parts = [lit + " of " + TIER_ORDER_FULL.length + " rank flares lit,", found ? found + (found === 1 ? " secret flare found." : " secret flares found.") : "no secret flares found yet."];
+  const next = TIER_ORDER_FULL.find(t => !tierColorUnlocked(t));
+  if(next){
+    const left = tierShortfall(TIER_UNLOCKS[next]);
+    parts.push("Next: the " + (ACCENT_DISPLAY_NAME[next] || RANK_DISPLAY_NAME[next]) + " flare.", left.length ? homeJoin(left) + " to go." : "It is ready to light.");
+  } else if(homeRingTier() && secretFlaresAllFound()) parts.push("Every flare is lit, the secret ones too.");
+  return { kind: "planet", name: "Your flares", state: "", color: "", parts };
 }
 
 /* ---- THE CAPTION ----
@@ -97002,7 +97381,7 @@ function homeCaptionHide(panel){
   homeCaptionState.key = null;
 }
 __bm("L96077");
-const homeCaptionState = { key: null, planetN: 0, timer: 0 };
+const homeCaptionState = { key: null, timer: 0 };
 function homeCaptionShow(panel, item, key){
   if(!panel || !panel.isConnected || !item) return null;
   item.text = (item.parts || [item.text || ""]).filter(Boolean).join(" ");
@@ -97625,7 +98004,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-23-327z9";
+const APP_BUILD = "2026-10-23-327z10";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -122431,6 +122810,13 @@ function showAnswerReview(units, source, versions, opts){
   searchInput.setAttribute("aria-label", "Search questions");
   searchWrap.append(searchIcon, searchInput);
   panel.appendChild(searchWrap);
+  /* Apple Music's search, beside the tab bar (build 327z10): the field up
+     here goes while that one is there, and that one drives the same filter */
+  requestAnimationFrame(() => {
+    if(!panel.isConnected || typeof registerTabSearch !== "function") return;
+    if(registerTabSearch(panel, { placeholder: "Search questions", onQuery: v => { searchInput.value = v; searchInput.dispatchEvent(new Event("input", { bubbles: true })); } }))
+      searchWrap.hidden = true;
+  });
 
   const list = document.createElement("div");
   list.className = "cal-list";
@@ -123500,7 +123886,7 @@ function buildProfileGoal(prog){
     none.append(n1, " ", n2);
     box.append(ck, none);
     const foot = document.createElement("span");
-    foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
+    foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
     box.appendChild(foot);
     box.setAttribute("aria-label", "Max rank, " + RANK_DISPLAY_NAME.titan + ". No rank challenges left. Open the Rank screen.");
     box.addEventListener("click", () => showRanksScreen("ranks"));
@@ -123561,7 +123947,7 @@ function buildProfileGoal(prog){
   box.appendChild(rk);
   box.appendChild(buildRankRewardTiles(rc.key));
   const foot = document.createElement("span");
-  foot.className = "pf-goal-foot"; foot.textContent = "See every rank ›";
+  foot.className = "pf-goal-foot"; foot.textContent = "See every rank";
   box.appendChild(foot);
   box.setAttribute("aria-label", "To reach " + rc.name + ": " +
     rc.list.map(c => (c.kind === "level" ? "Reach Level " + c.need : c.label) + " " + Math.min(c.now, c.need) + " of " + c.need + (c.met ? " done" : "")).join(", ") + ". Open the Rank screen.");
@@ -130012,6 +130398,10 @@ function applyGlassRefraction(el, mapImgId){
       '<path class="tg-stem" fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2z"/>' +
       '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
   };
+  /* how long after the lens lifts a tapped tab's screen is built: the
+     glide (LENS.glide) is over the tab by ~75ms, the reference's page
+     changes ~100ms after the press (see navigateTab) */
+  const TAB_SCREEN_AFTER = 110;
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
     if(dest === "profile"){
@@ -130094,8 +130484,21 @@ function applyGlassRefraction(el, mapImgId){
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); }
       };
-      requestAnimationFrame(() => setTimeout(navRun, 0));
-      setTimeout(navRun, 120);
+      /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
+         clicking to other tabs it shoots over instantly, the glass bubble
+         does not roll over to it like the video." His recording (iOS 26,
+         60fps): the press lifts the lens at frame 7, it is over the new tab
+         by 12, and the page only starts to change at 13. Here the screen
+         was built on the frame after the click - with a quick tap that is
+         ~70ms after the press, while the lens was still in flight - and
+         its build (100ms+ at 4x CPU) landed on the glide, so the lens was
+         next seen already there. The build now waits until the lens has
+         had TAB_SCREEN_AFTER ms from its lift; the highlight still moves
+         at once, and a drag released over a tab (lifted long ago) builds
+         as before. */
+      const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9)));
+      setTimeout(() => requestAnimationFrame(() => setTimeout(navRun, 0)), wait);
+      setTimeout(navRun, wait + 120);
     };
     tab.addEventListener("click", navigateTab);
     /* the drag-release path below uses the same steps (build 314) */
@@ -130778,6 +131181,8 @@ function applyGlassRefraction(el, mapImgId){
     lensBarSwell([[0, sw && sw !== "none" ? sw : "1 1"], [160, LENS_SWELL]]);
     bar.classList.add("lens-up", "is-pressing");
     lensPressT = performance.now(); lensAt = target;
+    /* when it lifted, for the screen to wait on (navigateTab, build 327z10) */
+    bar._lensPressAt = lensPressT;
     lensPlay(lensSpring(s0, v0, () => ({ cx: ti.c, W: ti.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
     if(lensRun) lensRun.lift = true;
     lensMagnify(ti.c, 1, 220, 0);
@@ -130925,6 +131330,204 @@ function applyGlassRefraction(el, mapImgId){
     if(now) slideBubbleToActiveTab(true);
   }
   bar._lensHide = lensHide;
+  /* THE BAR CHANGES SHAPE UNDER THE GLASS (build 327z10): "When in the unit
+     selection screen, and tapping the tab to go somewhere else, the bottom
+     tab lags and kinda has a weird placement of the bubble." There the bar
+     has the Start pill and icon-only tabs; the tapped screen takes them
+     away, and every tab widens and gains its word - while the lens is
+     still up, measured for the old shape. It shrank into the platter
+     where its tab USED to be (over Profile when Leaderboard was tapped)
+     and the platter then jumped across. Called by syncStartAction when
+     the bar's shape changes: the lens is re-measured, carried to the same
+     tab in the new shape, and lands there as it would have. */
+  bar._lensRelayout = () => {
+    if(!lensG || !lens.classList.contains("is-up")) return;
+    const at = lensAt, old = lensInfo(at);
+    lensStopFollow();
+    lensStopTrack();
+    const g = lensMeasure();
+    if(!g || !lensS){ lensHide(true); return; }
+    const was = lensG;
+    lensG = g; lensSize(g);
+    const nu = lensInfo(at);
+    if(!old || !nu){ lensHide(true); return; }
+    /* the same place relative to its tab, in the new tab's units */
+    const k = nu.w / Math.max(1, old.w);
+    lensS = { cx: nu.c + (lensS.cx - old.c) * k, W: lensS.W * (nu.pw / Math.max(1, old.pw)),
+              H: lensS.H * (g.pillH / Math.max(1, was.pillH)), st: 0 };
+    lensV = { cx: 0, W: 0, H: 0, st: 0 };
+    lensWrite(lensS);
+    if(tabDragActive){
+      /* still held: it goes on lifting towards the tab it is on */
+      lensPlay(lensSpring(lensS, lensV, () => ({ cx: nu.c, W: nu.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
+      if(lensRun) lensRun.lift = true;
+      lensMagnify(nu.c, 1, 0, 0);
+    } else lensRelease(at);
+  };
+  /* ---- SEARCH BESIDE THE TAB BAR, AS APPLE MUSIC DOES (build 327z10) ----
+     "The search button, while in a review can we make the search function
+     similar to how the Apple Music search function is?" With his iOS 26
+     screenshots and recording: a glass circle with a magnifier stands
+     beside the tab bar; tap it and the bar draws in to one circle - the
+     tab you are on - while the magnifier's circle stretches across into a
+     search field and the keyboard comes up under it. Tap the small
+     circle and it all goes back.
+     A screen with a list asks for it with registerTabSearch(screen,
+     { placeholder, onQuery }) and gets true if it is shown (the bar is up
+     and plain); it then hides its own search field. Typing calls
+     onQuery(text) - the screen's own filter. Leaving the screen takes it
+     away. The circle is its own fixed glass beside the bar, never a child
+     of it: a backdrop blur inside the bar's blur would only see the bar.
+     While it is open the bar's own touch handling never sees a touch: the
+     capture listener below closes the search instead. */
+  const tsEl = document.createElement("div");
+  tsEl.id = "tabsearch"; tsEl.className = "tabsearch"; tsEl.hidden = true;
+  const tsBtn = document.createElement("button");
+  tsBtn.type = "button"; tsBtn.className = "tabsearch-btn"; tsBtn.setAttribute("aria-label", "Search");
+  tsBtn.appendChild(buildMagnifyIcon());
+  const tsField = document.createElement("div"); tsField.className = "tabsearch-field";
+  const tsGlass = buildMagnifyIcon(); tsGlass.setAttribute("class", "tabsearch-glass");
+  const tsInput = document.createElement("input");
+  tsInput.type = "search"; tsInput.className = "tabsearch-input"; tsInput.setAttribute("enterkeyhint", "search");
+  tsInput.autocomplete = "off"; tsInput.spellcheck = false;
+  const tsClear = document.createElement("button");
+  tsClear.type = "button"; tsClear.className = "tabsearch-clear"; tsClear.setAttribute("aria-label", "Clear search"); tsClear.hidden = true;
+  tsField.append(tsGlass, tsInput, tsClear);
+  tsEl.append(tsBtn, tsField);
+  document.body.appendChild(tsEl);
+  let ts = null;              /* { screen, onQuery } while a screen has it */
+  let tsOpen = false, tsLift = 0, tsHome = null;
+  const TS_GAP = 8;
+  const tsCalm = () => document.documentElement.dataset.reduceMotion === "true";
+  /* where the circle sits: level with the bar, TS_GAP past its end */
+  function tsPlace(){
+    if(!ts || bar.hidden){ tsEl.hidden = true; return; }
+    const r = bar.getBoundingClientRect();
+    const d = Math.round(r.height);
+    document.body.style.setProperty("--ts-d", d + "px");
+    tsEl.hidden = false;
+    /* the bar's rect carries the keyboard lift; the circle carries its own */
+    tsEl.style.top = (r.top + (tsOpen ? tsLift : 0)) + "px";
+    tsEl.style.height = d + "px";
+    if(tsOpen){
+      const L = r.left + d + TS_GAP;
+      tsEl.style.left = L + "px";
+      tsEl.style.width = Math.max(d, (tsHome ? tsHome.right : r.right + TS_GAP + d) - L) + "px";
+    } else {
+      /* closing: where it will be once the bar has its width back */
+      tsEl.style.left = (tsHome ? tsHome.right - d : r.right + TS_GAP) + "px";
+      tsEl.style.width = d + "px";
+    }
+  }
+  /* the keyboard: both ride just above it (the chat sheet's reading of it) */
+  function tsKb(){
+    const v = window.visualViewport;
+    let kb = 0;
+    if(v && tsOpen && document.activeElement === tsInput && !(v.scale > 1.01)) kb = Math.round(window.innerHeight - (v.offsetTop + v.height));
+    const gap = tsHome ? Math.max(0, window.innerHeight - tsHome.bottom) : 0;
+    const lift = kb > 120 ? Math.max(0, kb - gap + 10) : 0;
+    if(lift === tsLift) return;
+    tsLift = lift;
+    const t = lift ? "0 " + (-lift) + "px" : "";
+    bar.style.translate = tsOpen ? (lift ? t : "none") : "";
+    tsEl.style.translate = t;
+  }
+  try{
+    const v0 = window.visualViewport;
+    if(v0){ v0.addEventListener("resize", tsKb); v0.addEventListener("scroll", tsKb); }
+  }catch(e){}
+  tsInput.addEventListener("focus", () => { tsKb(); setTimeout(tsKb, 350); });
+  tsInput.addEventListener("blur", () => setTimeout(tsKb, 120));
+  function tsQuery(v){
+    tsClear.hidden = !v;
+    if(ts && ts.onQuery){ try{ ts.onQuery(v); }catch(e){} }
+  }
+  tsInput.addEventListener("input", () => tsQuery(tsInput.value));
+  tsInput.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); tsInput.blur(); } });
+  tsClear.addEventListener("click", () => { tsInput.value = ""; tsQuery(""); try{ tsInput.focus(); }catch(e){} });
+  let tsAnimT = 0;
+  function tsAnim(){
+    bar.classList.add("ts-anim");
+    clearTimeout(tsAnimT); tsAnimT = setTimeout(() => bar.classList.remove("ts-anim"), 420);
+  }
+  function tsOpenNow(){
+    if(!ts || tsOpen || bar.hidden) return;
+    const r = bar.getBoundingClientRect();
+    tsHome = { left: r.left, right: r.right + TS_GAP + r.height, bottom: r.bottom };
+    if(bar._lensHide && bar.classList.contains("lens-up")) bar._lensHide(true);
+    /* the bar keeps its left edge while it draws in (it is centred by a
+       -50% translate otherwise, and would slide to the middle) */
+    bar.style.left = r.left + "px"; bar.style.transform = "none"; bar.style.translate = "none";
+    const lit = navrow.querySelector(".bottomtab.active") || navrow.querySelector(".bottomtab");
+    navrow.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("ts-keep", t === lit));
+    tsOpen = true;
+    tsAnim();
+    document.body.classList.add("tabsearch-open");
+    bar.classList.add("ts-open");
+    tsEl.classList.add("is-open");
+    tsInput.placeholder = ts.placeholder || "Search";
+    tsInput.setAttribute("aria-label", ts.placeholder || "Search");
+    try{ playSound("ui.tab.bottom"); }catch(e){}
+    tsPlace();
+    /* in the tap itself, or iOS will not raise the keyboard */
+    try{ tsInput.focus({ preventScroll: true }); }catch(e){ try{ tsInput.focus(); }catch(e2){} }
+  }
+  function tsCloseNow(quiet){
+    if(!tsOpen) return;
+    tsOpen = false;
+    try{ tsInput.blur(); }catch(e){}
+    if(tsInput.value){ tsInput.value = ""; tsQuery(""); }
+    tsLift = 0; tsEl.style.translate = "";
+    tsAnim();
+    document.body.classList.remove("tabsearch-open");
+    bar.classList.remove("ts-open");
+    tsEl.classList.remove("is-open");
+    if(!quiet){ try{ playSound("ui.tab.bottom"); }catch(e){} }
+    tsPlace();
+    /* back to centred once the bar has its tabs again */
+    const done = () => {
+      if(tsOpen) return;
+      bar.style.left = ""; bar.style.transform = ""; bar.style.translate = "";
+      navrow.querySelectorAll(".bottomtab.ts-keep").forEach(t => t.classList.remove("ts-keep"));
+      tsHome = null;
+      try{ slideBubbleToActiveTab(true); }catch(e){}
+      tsPlace();
+    };
+    setTimeout(done, tsCalm() ? 0 : 380);
+  }
+  tsBtn.addEventListener("click", tsOpenNow);
+  /* the small circle the bar became: a touch on it closes the search and
+     reaches nothing else (no lens, no tab) */
+  ["pointerdown", "pointerup", "click", "touchstart"].forEach(t => bar.addEventListener(t, e => {
+    if(!tsOpen) return;
+    e.stopPropagation();
+    if(t === "click"){ e.preventDefault(); tsCloseNow(false); }
+  }, true));
+  function tsUnregister(){
+    if(!ts) return;
+    tsCloseNow(true);
+    ts = null;
+    document.body.classList.remove("has-tabsearch");
+    tsEl.hidden = true;
+    setTimeout(() => { try{ slideBubbleToActiveTab(true); }catch(e){} }, 0);
+  }
+  window.registerTabSearch = (screen, opts) => {
+    tsUnregister();
+    if(!screen || bar.hidden || bar.classList.contains("has-start-tab") || document.documentElement.dataset.layout !== "modern") return false;
+    ts = { screen, placeholder: (opts && opts.placeholder) || "Search", onQuery: opts && opts.onQuery };
+    document.body.classList.add("has-tabsearch");
+    requestAnimationFrame(() => { try{ slideBubbleToActiveTab(true); }catch(e){} tsPlace(); });
+    tsPlace();
+    return true;
+  };
+  /* the screen it was asked for is gone, or the bar went: it goes too */
+  new MutationObserver(() => {
+    if(!ts) return;
+    if(!ts.screen.isConnected || bar.hidden || bar.classList.contains("has-start-tab")) tsUnregister();
+  }).observe(stage, { childList: true });
+  new MutationObserver(() => { if(ts && (bar.hidden || bar.classList.contains("has-start-tab"))) tsUnregister(); else if(ts) tsPlace(); })
+    .observe(bar, { attributes: true, attributeFilter: ["hidden", "class"] });
+  window.addEventListener("resize", () => { if(ts){ if(tsOpen){ const r = bar.getBoundingClientRect(); tsHome = tsHome && { left: tsHome.left, right: Math.min(window.innerWidth - 8, tsHome.right), bottom: r.bottom }; } tsPlace(); } });
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }
   window.addEventListener("resize", refreshGlass);
   /* The header is sticky and always present (unlike the bottom bar,
@@ -131081,6 +131684,7 @@ function applyGlassRefraction(el, mapImgId){
          active tab instead of sized for a tab that no longer exists
          at that size. */
       if(typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab(!hadStart);
+      if(!hadStart && bar._lensRelayout) bar._lensRelayout();
       /* Each split pill gets its own real refraction map now too, per
          explicit request \u2014 not just the plain blur both already had.
          requestAnimationFrame first so this measures the pills at
@@ -131106,6 +131710,7 @@ function applyGlassRefraction(el, mapImgId){
          left sized/positioned for the small compact tab that no
          longer exists at that size. */
       if(hadStart && typeof slideBubbleToActiveTab === "function") slideBubbleToActiveTab(true);
+      if(hadStart && bar._lensRelayout) bar._lensRelayout();
     }
   }
   new MutationObserver(syncStartAction).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "disabled"] });

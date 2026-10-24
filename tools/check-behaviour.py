@@ -7241,15 +7241,17 @@ def check_b297(br):
         /* 1. the Flagged box: first in the grid, both columns wide */
         cfg.mode = 'review'; cfg.units = []; cfg.source = 'all'; showSetup(); await wait(600);
         const grid = document.querySelector('.screen-setup .picks');
-        const box = grid && grid.querySelector('.pick-flagged-all');
+        const box = document.querySelector('.screen-setup .pick-flagged-all');
         const cards = [...grid.querySelectorAll('.pick:not(.pick-flagged-all):not(.pick-tba)')];
         /* MOVED (build 323): "I'm still not a fan of how the review section
            shows the starred question at the top." The box is a row after
            the units now (check_b323u_units); what still holds is that it
            is there, full width, and counts what is starred. */
-        const unitRows = [...grid.querySelectorAll('label.pick')];
-        out.box = box ? { first: !!(unitRows.length && (unitRows[unitRows.length - 1].compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING)), text: box.textContent,
-          wide: Math.abs(box.getBoundingClientRect().width - grid.getBoundingClientRect().width) < 2 } : null;
+        /* MOVED AGAIN (327z10): "Starred questions being at the very bottom
+           of review isn't the move". It is a pill beside Select all, above
+           the units; what holds is that it is there and counts what is starred. */
+        out.box = box ? { tools: !!box.closest('.picks-tools'), above: box.getBoundingClientRect().bottom <= grid.getBoundingClientRect().top + 1,
+          text: box.getAttribute('aria-label') || box.textContent } : null;
         out.cardCounts = cards.map(c => (c.querySelector('.pcount') || {}).textContent).filter(t => /flag/i.test(t || ''));
         out.oldUi = !!document.querySelector('.review-flagged-card, .review-bank');
 
@@ -7320,8 +7322,8 @@ def check_b297(br):
     if r.get("threw"):
         print("   threw:", r["threw"][:400])
     bx = r.get("box") or {}
-    check("Review's list has a Starred questions row after the units, full width",
-          bx.get("first") is True and bx.get("wide") is True and "3 questions" in bx.get("text", "") and r.get("oldUi") is False, {**bx, "oldUi": r.get("oldUi")})
+    check("Review has a Starred questions pill beside Select all, above the units, counting what is starred",
+          bx.get("tools") is True and bx.get("above") is True and "3 questions" in bx.get("text", "") and r.get("oldUi") is False, {**bx, "oldUi": r.get("oldUi")})
     check("no unit card says how many are flagged", r.get("cardCounts") == [], r.get("cardCounts"))
     sw = r.get("afterSwipe") or {}
     check("swiping the Review start sheet down closes it and opens nothing",
@@ -13098,7 +13100,7 @@ def check_b314_slider_release(br):
             g = pg.evaluate("""([sel,bsel])=>{ const s=document.querySelector('#unitoptions-modal '+sel); s.scrollIntoView({block:'center'});
               const r=s.getBoundingClientRect(); const b=document.querySelector('#unitoptions-modal '+bsel);
               /* the first thing the release dispatches is pointerup; read the button just before the app hears it */
-              window.__rel={}; document.addEventListener('pointerup', ()=>{ __rel.t=performance.now(); __rel.before={ lit:b.classList.contains('just-ready'), on:b.classList.contains('on') };
+              window.__rel={}; document.addEventListener('pointerup', ()=>{ __rel.t=performance.now(); __rel.before={ lit:b.classList.contains('just-ready'), on:b.classList.contains('on'), pop:b.classList.contains('ready-pop') };
                 setTimeout(()=>{ const a=b.getAnimations({subtree:true}); const p=a.find(x=>x.animationName==='start-ready-punch');
                   __rel.after={ lit:b.classList.contains('just-ready')||b.classList.contains('ready-pop'), on:b.classList.contains('on'), delay:p?p.effect.getComputedTiming().delay:null }; }, 30); }, { capture:true, once:true });
               return [r.right-12, r.top+r.height/2, r.left, r.width]; }""", [sel, bsel])
@@ -13113,8 +13115,12 @@ def check_b314_slider_release(br):
         for name in ("All", "Max"):
             o = out.get(name) or {}
             b, a = o.get("before") or {}, o.get("after") or {}
-            check("%s %s stays quiet while the finger is still down below the top" % (label, name),
-                  b.get("lit") is False and b.get("on") is True, o)
+            # MOVED IN 327z10: "if you slide this to the left so it's off, the
+            # buttons aren't changing properly" - the button leaves its "on"
+            # look under the finger, as the thumb leaves the top; the punch
+            # still waits for the release (below)
+            check("%s %s has already left its \"on\" look under the finger, below the top, and has not punched yet" % (label, name),
+                  b.get("on") is False and not b.get("pop"), o)
             check("%s %s lights the moment the finger lets go, its punch with no delay" % (label, name),
                   a.get("lit") is True and a.get("on") is False and a.get("delay") == 0, o)
 
@@ -17346,11 +17352,13 @@ def check_b317_hometaps(br):
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
               # MOVED IN 326 (b326e): no total for the secret flares - more
               # come into view as you find them ("it says there's only 3")
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and PL.get("text") == "3 of 7 rank flares lit, 2 secret flares found."
+              # MOVED IN 327z10: one answer - where you stand and what is next
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and (PL.get("text") or "").startswith("3 of 7 rank flares lit, 2 secret flares found. Next: the Platinum flare.")
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
-        check(dev + ": tapped again it says what is next, and the first ripple is still running beside the second",
-              (PL2.get("text") or "").startswith("Next: the Platinum flare.") and PL2.get("ripples", 0) >= 2, PL2)
+        # MOVED IN 327z10: a second tap keeps the same one answer up ("shouldn't that just be combined to one message?")
+        check(dev + ": tapped again it keeps the same one answer, and the first ripple is still running beside the second",
+              PL2.get("text") == PL.get("text") and PL2.get("ripples", 0) >= 2, [PL, PL2])
         check(dev + ": the light lands on the pointerdown with the words, and a second tap carries it on from where it is",
               chain.get("captionOnDown") and chain.get("lightOnDown") and chain.get("same") and chain.get("o1", 0) > .3 and abs(chain.get("o2", 9) - chain.get("o1", -9)) < .06, chain)
         check(dev + ": a new answer fades through the last (one leaving, one arriving a beat behind it)",
@@ -24525,8 +24533,11 @@ def check_b320h_fixes(br):
         img = _Im.open(_io.BytesIO(pg.screenshot(clip={"x": bx[0] - m, "y": bx[1] - m, "width": bx[2] + 2 * m, "height": bx[3] + 2 * m})))
         S = img.size[0] / (bx[2] + 2 * m)
         cx, cy = img.size[0] / 2, img.size[1] / 2
-        R = (bx[2] / 2 + 6) * S
-        prof = _b320h_ring_profile(img, cx, cy, R - 5 * S, R + 0.5 * S)
+        # MOVED IN 327z10: the ring is a slim line ON the button's rim (327z5
+        # put it there; 327z10 thinned it), so the band is read round the rim,
+        # not 6px out where 320's ring sat
+        R = (bx[2] / 2) * S
+        prof = _b320h_ring_profile(img, cx, cy, R - 3 * S, R + 2 * S)
         srt = sorted(prof); med = srt[len(srt) // 2]
         n = len(prof); win = lambda deg: [prof[(int(round(deg / 360.0 * n)) + k) % n] for k in range(-4, 5)]
         top, bot = win(0), win(180)
@@ -26785,13 +26796,11 @@ def check_b323u_units(br):
           cfg.mode = 'review'; cfg.units = []; showSetup(); await wait(800);
           document.querySelectorAll('.picks .pick').forEach(p => p.classList.add('pick-revealed')); await wait(500);
           const L = document.querySelector('.screen-setup .picks');
-          const star = L.querySelector('.pick-flagged-all');
+          const star = document.querySelector('.screen-setup .pick-flagged-all');
           const units = [...L.querySelectorAll('label.pick')];
-          const sb = star ? star.getBoundingClientRect() : null, ub = units[0].getBoundingClientRect(), last = units[units.length - 1];
-          out.star = star ? { first: L.firstElementChild === star, afterUnits: !!(last.compareDocumentPosition(star) & Node.DOCUMENT_POSITION_FOLLOWING),
-            below: sb.top > last.getBoundingClientRect().top, w: Math.round(sb.width), uw: Math.round(ub.width),
-            h: Math.round(sb.height), uh: Math.round(Math.min(...units.map(u => u.getBoundingClientRect().height))),
-            text: star.textContent } : null;
+          const sb = star ? star.getBoundingClientRect() : null;
+          out.star = star ? { tools: !!star.closest('.picks-tools'), inList: L.contains(star), above: sb.bottom <= L.getBoundingClientRect().top + 1,
+            h: Math.round(sb.height), text: star.getAttribute('aria-label') || star.textContent } : null;
           /* 6. the mode cards */
           showModeSelect(); await wait(500);
           out.cards = [...document.querySelectorAll('.modeselect .modecard')].map(c => ({ mode: c.dataset.mode,
@@ -26830,11 +26839,12 @@ def check_b323u_units(br):
               cl.get("to") == 0 and 0 < cl.get("endsAt", 0) <= 420 and cl.get("opAtRemove") is not None
               and cl.get("gone") is True, cl)
         st = r.get("star") or {}
-        # Kept in 325 with the squares back: after the units, not on top -
-        # full width under the squares, as it was full width over them.
-        check("%s Review's Starred questions is after the units, full width, not a box on top" % label,
-              st.get("first") is False and st.get("afterUnits") is True and st.get("below") is True
-              and abs(st.get("w", 0) - r.get("lw", -9)) <= 2 and "3 questions" in st.get("text", ""), st)
+        # MOVED IN 327z10 ("at the very bottom of review isn't the move"): a
+        # pill in the list's tools row beside Select all - not a card on top
+        # of the units (323: "not a fan"), not a row under all of them.
+        check("%s Review's Starred questions is a pill beside Select all, above the units and not one of them" % label,
+              st.get("tools") is True and st.get("inList") is False and st.get("above") is True
+              and st.get("h", 0) >= 36 and "3 questions" in st.get("text", ""), st)
         cards = {c["mode"]: c for c in r.get("cards") or []}
         d = cards.get("drill") or {}
         ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)
