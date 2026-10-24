@@ -17,12 +17,26 @@
      the page) while the month's other buttons still do; the month is one
      card holding its title, a Today pill and arrows in one row, the days,
      the key and the picked day; on a phone a day is a number, not a tile.
-  O. "can [hundos] and xp be like [overall] ... the title header thing":
-     This Week and Hundos carry Overall's header and three columns, the
-     third being the board's own number; Find me carries an icon.
+  O. "can [hundos] and xp be like [overall] ... the title header thing",
+     then "just stuff relevant to that leaderboard tab": This Week and
+     Hundos carry a header and ONE column, their own number (XP, Hundos);
+     Overall keeps its three; Find me carries an icon.
   P. "The daily question button did not get better": waiting, the button is
      lit in the rank's colour with no ring drawn on it; answered, it is the
      plain glass with a slim arc.
+
+  Round 2 (same build):
+  Q. "That look you get when tapping someone's profile ... could it be like
+     that? ... the friends box is hidden under the profile stuff ... Chat
+     tab may make more sense": Profile is three sibling cards (you, the
+     next rank, the badge case), the first in the person card's glass (the
+     page's card body under its banner pools, the surface blur), with no
+     Friends box; the chat's Friends tab opens with a Friends bar whose
+     button opens the Friends screen, and that screen's back link returns
+     to the tab it was opened over, which stays lit.
+  R. "The question mark is not centered": the mark's ink is centred in the
+     button within half a pixel both ways, waiting and answered; answered,
+     it shows a tick instead.
 """
 import importlib.util
 import os
@@ -37,7 +51,7 @@ cb = z5b.cb
 check = cb.check
 from playwright.sync_api import sync_playwright
 
-ONLY = os.environ.get("B327Z12_ONLY", "LMNOP")
+ONLY = os.environ.get("B327Z12_ONLY", "LMNOPQR")
 UA_IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
 IPHONE_INIT = "Object.defineProperty(navigator,'userAgent',{get:()=>%r});try{Object.defineProperty(navigator,'standalone',{get:()=>true});}catch(e){}" % UA_IPHONE
 CLEAN = "() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .invite-overlay').forEach(x => x.remove())"
@@ -123,7 +137,8 @@ def boards(br):
     label, w, h, dpr = z5b.PHONE
     ctx, pg = z5b.boot(br, w, h, dpr)
     pg.wait_for_timeout(2500)
-    for tab, third in (("This Week", "XP"), ("Hundos", "Hundos"), ("Overall", "Badges")):
+    # round 2: This Week and Hundos carry ONLY their own column
+    for tab, heads in (("This Week", ["XP"]), ("Hundos", ["Hundos"]), ("Overall", ["Rank", "Level", "Badges"])):
         pg.evaluate("() => showRankings()")
         pg.wait_for_timeout(700)
         pg.evaluate(CLEAN)
@@ -132,10 +147,10 @@ def boards(br):
         r = pg.evaluate("""() => { const h = document.querySelector('#stage .rank-row-head');
           const rows = [...document.querySelectorAll('#stage .rank-row:not(.rank-row-head)')];
           return { head: h ? [...h.querySelectorAll('.rank-col-head')].map(e => e.textContent.trim()) : null,
-            rows: rows.length, cols: rows.filter(r => r.querySelectorAll(':scope > .rank-cols > .rank-col').length === 3).length,
+            rows: rows.length, ncols: rows.map(r => r.querySelectorAll(':scope > .rank-cols > .rank-col').length),
             icon: !!document.querySelector('#stage .rank-me-btn svg') }; }""")
-        check("%s: O. %s has the header %s and every row three columns (%d of %d)" % (label, tab, r["head"], r["cols"], r["rows"]),
-              r["head"] and len(r["head"]) == 3 and r["head"][2].lower() == third.lower() and r["rows"] >= 1 and r["cols"] == r["rows"], r)
+        check("%s: O. %s has the header %s and every row exactly those columns (%s)" % (label, tab, r["head"], r["ncols"]),
+              r["head"] == heads and r["rows"] >= 1 and all(n == len(heads) for n in r["ncols"]), r)
     check("%s: O. Find me carries an icon" % label, r["icon"], r)
     ctx.close()
 
@@ -149,7 +164,7 @@ def daily(br):
       const prog = ring && ring.querySelector('.dq-ring-prog'), k = ring ? ring.querySelector('svg').getBoundingClientRect().width / 100 : 0;
       return { ready: b.classList.contains('is-ready'), ringOp: ring ? +getComputedStyle(ring).opacity : 0,
         progPx: prog ? parseFloat(getComputedStyle(prog).strokeWidth) * k : 0,
-        lit: /radial-gradient/.test(cs.backgroundImage), img: cs.backgroundImage.slice(0, 80) }; }"""
+        lit: /radial-gradient/.test(cs.backgroundImage), img: cs.backgroundImage }; }"""
     pg.evaluate("() => { store.dailyQuestionDate = ''; showHome(); }")
     pg.wait_for_timeout(1500)
     pg.evaluate(CLEAN)
@@ -158,15 +173,95 @@ def daily(br):
     pg.evaluate("() => { store.dailyQuestionDate = dailyPeriodKey(); showHome(); }")
     pg.wait_for_timeout(1500)
     b = pg.evaluate(READ)
-    check("%s: P. answered, the plain glass and a slim arc (%.1fpx)" % (label, b["progPx"]),
-          not b["lit"] and b["ringOp"] > .9 and 0 < b["progPx"] <= 2.0, b)
+    # round 2: answered is the lit orb's quieter sibling - a different, fainter
+    # glass (not the waiting one), and the slim arc
+    check("%s: P. answered, not the waiting orb, and a slim arc (%.1fpx)" % (label, b["progPx"]),
+          b["img"] != a["img"] and b["ringOp"] > .9 and 0 < b["progPx"] <= 2.0, b)
+    ctx.close()
+
+
+def profile_friends(br):
+    print("\nQ. Profile in three glass cards; Friends in the chat")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    pg.evaluate("() => { showProfile('profile'); }")
+    pg.wait_for_timeout(1500)
+    pg.evaluate(CLEAN)
+    r = pg.evaluate("""() => { const tab = document.querySelector('#stage .profile-identity-tab');
+      const kids = tab ? [...tab.children].filter(e => getComputedStyle(e).display !== 'none') : [];
+      const hero = document.querySelector('#stage .profile-hero'), cs = getComputedStyle(hero);
+      const probe = document.createElement('div'); probe.style.cssText = 'position:fixed;background:var(--pop-bg-card);backdrop-filter:var(--surface-blur)'; document.body.appendChild(probe);
+      const want = getComputedStyle(probe).backgroundImage, blur = getComputedStyle(probe).backdropFilter; probe.remove();
+      const rects = kids.map(e => e.getBoundingClientRect());
+      return { kinds: kids.map(e => e.classList.contains('profile-hero') ? 'hero' : e.classList.contains('pf-goal') ? 'goal' : e.classList.contains('pf-case') ? 'case' : e.className),
+        nested: !!hero.querySelector('.pf-goal, .pf-case'), friendBox: !!document.querySelector('#stage .profile-friendcard'),
+        glass: cs.backgroundImage.endsWith(want.slice(want.indexOf('linear-gradient'))) && cs.backdropFilter === blur,
+        gaps: rects.slice(1).map((r, i) => Math.round(r.top - rects[i].bottom)) }; }""")
+    check("%s: Q. Profile is three cards - you, the next rank, the case - none inside another (%s)" % (label, r["kinds"]),
+          r["kinds"][:3] == ["hero", "goal", "case"] and not r["nested"] and all(g >= 8 for g in r["gaps"]), r)
+    check("%s: Q. the top card is the person card's glass (its body and frost under the pools)" % label, r["glass"], r)
+    check("%s: Q. no Friends box on Profile" % label, not r["friendBox"], r)
+    hid = pg.evaluate("""async () => { showProfile('stats'); await new Promise(r => setTimeout(r, 700));
+      const t = document.querySelector('#stage .profile-identity-tab'); return t ? { hidden: t.hidden, shown: getComputedStyle(t).display !== 'none' } : null; }""")
+    check("%s: Q. on the Stats tab the Profile cards are not shown" % label, hid and hid["hidden"] and not hid["shown"], hid)
+    pg.evaluate("() => { showCalendarTab(); }")
+    pg.wait_for_timeout(1200)
+    pg.evaluate(CLEAN)
+    pg.evaluate("() => { chatDockTab = 'friends'; openChatDock(); }")
+    pg.wait_for_timeout(900)
+    a = pg.evaluate("""() => { const bar = document.querySelector('.chatdock-panel .chatdock-friendsbar'); const b = bar && bar.querySelector('button');
+      const out = { bar: !!bar, h: b ? Math.round(b.getBoundingClientRect().height) : 0, first: !!(bar && bar === bar.parentElement.firstElementChild || (bar && bar.previousElementSibling && bar.previousElementSibling.classList.contains('chatdock-note'))) };
+      if(b) b.click(); return out; }""")
+    pg.wait_for_timeout(1200)
+    b = pg.evaluate("""() => ({ friends: !!document.querySelector('#stage > .screen-friends'), back: (document.querySelector('#stage .back-link') || {}).textContent,
+      open: chatDockOpen, lit: [...document.querySelectorAll('.bottomtab.active')].map(x => x.id) })""")
+    check("%s: Q. the chat's Friends tab opens with a Friends bar, its button 44px+" % label, a["bar"] and a["h"] >= 44, a)
+    check("%s: Q. it opens Friends over the tab it came from: back to %s, %s lit, the chat shut" % (label, b["back"], b["lit"]),
+          b["friends"] and "Calendar" in (b["back"] or "") and b["lit"] == ["bottomtab-calendar"] and not b["open"], b)
+    pg.evaluate("() => document.querySelector('#stage .back-link').click()")
+    pg.wait_for_timeout(1000)
+    c = pg.evaluate("() => !!document.querySelector('#stage > .screen-calendar-tab')")
+    check("%s: Q. and back lands on the Calendar" % label, c, c)
+    ctx.close()
+
+
+def daily_mark(br):
+    print("\nR. the daily button's mark is centred")
+    import io
+    from PIL import Image
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    for done in (False, True):
+        pg.evaluate("d => { store.dailyQuestionDate = d ? dailyPeriodKey() : ''; showHome(); }", done)
+        pg.wait_for_timeout(1500)
+        pg.evaluate(CLEAN)
+        box = pg.evaluate("""() => { const f = document.querySelector('.daily-question-fab');
+          f.style.cssText += ';background:#000 !important;box-shadow:none !important;border-color:transparent !important;animation:none !important';
+          f.classList.remove('is-ready', 'is-fresh'); f.querySelectorAll('.dq-ring').forEach(r => r.style.opacity = 0);
+          const g = f.querySelector('.dq-glyph'); g.style.opacity = 1; g.style.color = '#fff';
+          const r = f.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height,
+            tick: !!f.querySelector('.dq-mark-done') && getComputedStyle(f.querySelector('.dq-mark-done')).display !== 'none' }; }""")
+        pg.wait_for_timeout(250)
+        im = Image.open(io.BytesIO(pg.screenshot(clip={"x": box["x"], "y": box["y"], "width": box["w"], "height": box["h"]}))).convert("L")
+        W, H = im.size
+        pts = [(x, y) for y in range(H) for x in range(W) if im.getpixel((x, y)) > 140]
+        if not pts:
+            check("%s: R. the mark is drawn (%s)" % (label, "answered" if done else "waiting"), False, box)
+            continue
+        xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+        k = W / box["w"]
+        dx = ((min(xs) + max(xs)) / 2 - W / 2) / k; dy = ((min(ys) + max(ys)) / 2 - H / 2) / k
+        check("%s: R. %s, the mark's ink is centred (%.2f, %.2f px off)%s" % (label, "answered" if done else "waiting", dx, dy, ", a tick" if done else ""),
+              abs(dx) <= .5 and abs(dy) <= .5 and box["tick"] == done, (dx, dy, box))
     ctx.close()
 
 
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("L", chars_move), ("M", chat_open), ("N", calendar), ("O", boards), ("P", daily)):
+        for k, fn in (("L", chars_move), ("M", chat_open), ("N", calendar), ("O", boards), ("P", daily), ("Q", profile_friends), ("R", daily_mark)):
             if k in ONLY:
                 try:
                     fn(br)

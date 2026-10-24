@@ -27133,3 +27133,36 @@ Madison's list after 327z11, each fixed and gated in `tools/check-b327z12.py`
   shows the ring. Answered: plain glass, dim "?", slim 2.6/100 arc. The
   drop-shadow filter on the ring is gone (it moves).
 - APP_BUILD / version.json `2026-10-24-327z12`.
+
+### Build 327z12, round 2 (same build, not pushed - "Don't push anything until I say so")
+
+- **This Week / Hundos: "just stuff relevant to that leaderboard tab".** Round 1
+  gave them Overall's Rank / Level plus their number; now they carry a header
+  and ONE column (`.rank-cols-one`, 4.2rem): XP (white, `lbCompact`) or Hundos
+  (gold). Overall keeps Rank / Level / Badges. Gate O.
+- **Daily button: "The question mark is not centered".** The "?" was typed
+  text, ~1.2px high in Chromium and placed by the system font's line box on
+  an iPhone. It is a drawn mark now (`.dq-mark-q`, ink centred in a 24 box),
+  in a grid-centred `.dq-glyph` at 58% of the button. Answered shows a tick
+  (`.dq-mark-done`, CSS on `.is-done`, so the 5pm reset needs no JS).
+  Answered look ("How could the non ready version look better?"): the ready
+  orb's quieter sibling - glass with a breath of `--dq-c`, tick in `--dq-c`,
+  arc on a faint same-hue track. Gate R (ink within .5px both states).
+- **Profile: "that Liquid Glass look ... with the fade, could it be like
+  that? ... split up less crowded".** `.profile-identity-tab` is three sibling
+  cards: the hero (person card recipe: `--pop-bg-card` with the banner's two
+  colours as 30%-high pools, surface blur, 22px, the person card's longer
+  cover fade), the next-rank card (`.pf-goal`, its colour a corner pool) and
+  the shut badge case. Tour targets now `.profile-identity-tab .pf-goal/.pf-case`.
+  No presence on Profile any more (`attachPresence` removed from showProfile).
+- **Friends moved to the chat ("Chat tab may make more sense").** The Profile
+  Friends box (friendSect, its preview, FRIEND_PREVIEW_MAX) is gone. The
+  chat's Friends tab opens with `.chatdock-friendsbar`: "N friends · M online"
+  and one pill - Add friends, or "N requests" (yellow) - which calls
+  `openFriendsFromChat()`: shuts the dock, remembers the tab it was over
+  (`friendsBack` {label, nav, go}) and opens Friends; its back link returns
+  there and the bar keeps that tab lit (`.screen-friends[data-from]`, read in
+  the bar's lit logic). Any other way in resets to Profile
+  (`friendsBackFresh`). Copy that said "Profile › Friends" now says "the chat
+  › Friends". Gate Q. Old gates moved (MOVED IN 327z12 round 2): b319h_layout
+  Friends block, b321f/b323 friends box, b324n2 Nova count.

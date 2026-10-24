@@ -26693,6 +26693,8 @@
      a hundo is gold, as everywhere a hundo is counted (build 327z12) */
   .rank-me-btn{ display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
   .rank-me-btn .rank-me-ico{ width:1rem; height:1rem; flex:none; color:#5CA8FF; }
+  /* one column (This Week, Hundos): wide enough for 12.3k at every size */
+  .rank-cols.rank-cols-one{ grid-template-columns:4.2rem !important; }
   .rank-col-xp{ color:var(--ink); }
   .rank-col-hundo{ color:#FFD36A; }
   .rank-col-head.rank-col-xp{ color:var(--soft); }
@@ -32569,6 +32571,30 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring{ opacity:0; }
   html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):active{ transform:scale(.94); }
   .daily-question-fab .dq-ring-prog{ filter:none; }
+  /* the drawn mark, dead centre (round 2) */
+  html[data-theme][data-layout] .daily-question-fab{ display:grid; place-items:center; padding:0; }
+  .daily-question-fab .dq-glyph{ display:grid; place-items:center; width:58%; height:auto; aspect-ratio:1; line-height:0; }
+  .daily-question-fab .dq-mark{ grid-area:1/1; width:100%; height:100%; display:block; overflow:visible; }
+  .daily-question-fab .dq-mark-done{ display:none; }
+  .daily-question-fab.is-done .dq-mark-q{ display:none; }
+  .daily-question-fab.is-done .dq-mark-done{ display:block; }
+  /* ---- ANSWERED: DONE, IN THE RANK'S OWN COLOUR, NOT GREYED OUT (round 2) ----
+     "How could the non ready version look better? I like the ready
+     version." Answered, it was a dark disc with a dimmed "?" - it read as
+     switched off. Now it is the ready orb's quieter sibling: the same
+     glass with only a breath of the rank colour in it, a tick in that
+     colour, and the time to the next question as an arc of it round the
+     rim on a faint track of the same hue. */
+  html[data-theme][data-layout] .daily-question-fab.is-done{
+    background:
+      radial-gradient(90% 70% at 50% 8%, rgba(255,255,255,.1), rgba(255,255,255,0) 62%),
+      radial-gradient(120% 120% at 50% 100%, color-mix(in srgb, var(--dq-c) 16%, transparent), transparent 75%),
+      rgba(12,13,19,.62) !important;
+    box-shadow:0 4px 14px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.14) !important;
+    color:var(--dq-c);
+  }
+  html[data-theme][data-layout] .daily-question-fab.is-done .dq-glyph{ opacity:.95; }
+  html[data-theme][data-layout] .daily-question-fab.is-done .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 18%, rgba(255,255,255,.08)); }
   .daily-question-fab.is-done .dq-ring circle{ stroke-width:2.6; }
   .daily-question-fab.is-done .dq-ring-prog{ opacity:1; }
 
@@ -32895,6 +32921,62 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
       display:flex; flex-wrap:wrap; justify-content:center; gap:.3rem .95rem; font-size:.74rem;
     }
   }
+
+  /* ===================== PROFILE IN THE PERSON CARD'S GLASS (build 327z12 round 2) =====================
+     "That look you get when tapping someone's profile, that Liquid Glass
+     look is great with the fade, could it be like that? I feel like it's
+     now the most lacking screen ... maybe the stuff could be split up less
+     crowded." Three cards where there was one:
+       - YOU: the person card's recipe - the banner fading on its long eased
+         curve into glass, its two colours only as pools at the top (by the
+         middle the card is the plain glass), the 22px corner, the frost;
+       - THE NEXT RANK and THE BADGE CASE: cards of their own under it,
+         spaced like the Stats tab's, the next rank's colour a pool in its
+         corner rather than a wash over a box inside a box. */
+  /* :not([hidden]) - a display here would beat the tab's own hidden */
+  .screen-profile .profile-identity-tab:not([hidden]){ display:flex; flex-direction:column; gap:1.1rem; }
+  .screen-profile .profile-identity-tab > *{ margin-top:0 !important; margin-bottom:0 !important; }
+  html[data-theme="dark"][data-layout="modern"] .screen-profile .profile-hero.has-cover.has-tint{
+    background:
+      radial-gradient(120% 30% at 18% 0%, color-mix(in srgb, var(--hero-t1) 26%, transparent), transparent 100%),
+      radial-gradient(120% 30% at 82% 4%, color-mix(in srgb, var(--hero-t2) 22%, transparent), transparent 100%),
+      var(--pop-bg-card) !important;
+    border:1px solid var(--surface-border) !important; border-radius:22px !important;
+    box-shadow:var(--surface-shadow) !important;
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+  }
+  .screen-profile .profile-hero.has-cover.has-tint .profile-cover{
+    --cover-fade:linear-gradient(180deg, #000 0%, #000 24%, rgba(0,0,0,.94) 34%, rgba(0,0,0,.82) 44%,
+      rgba(0,0,0,.66) 54%, rgba(0,0,0,.48) 63%, rgba(0,0,0,.31) 72%, rgba(0,0,0,.17) 81%, rgba(0,0,0,.07) 89%,
+      rgba(0,0,0,.02) 95%, transparent 100%);
+    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  }
+  html[data-theme="dark"][data-layout="modern"] .screen-profile .profile-identity-tab > .pf-goal{
+    padding:1.25rem 1.2rem 1.15rem; border-radius:22px;
+    background:
+      radial-gradient(90% 45% at 0% 0%, color-mix(in srgb, var(--nx) 22%, transparent), transparent 100%),
+      var(--pop-bg-card);
+    border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+  }
+  /* the shut case stands on its own, in the cards' 22px corner (one
+     family with the next rank card above it); its handle needs the gap */
+  .screen-profile .profile-identity-tab > .pf-case.pf-case-closed{ --pfc-r:22px; margin-top:.45rem !important; }
+
+  /* ---- FRIENDS, AT THE TOP OF THE CHAT'S FRIENDS TAB (round 2) ---- */
+  .chatdock-friendsbar{
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+    margin:0 0 .55rem; padding:.55rem .55rem .55rem .9rem; border-radius:16px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  }
+  .chatdock-friendsbar-info{ margin:0; min-width:0; font-size:.86rem; color:var(--soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chatdock-friendsbar-info b{ color:var(--ink); font-weight:800; }
+  html[data-theme][data-layout] .chatdock-friendsbar-btn{
+    flex:none; width:auto; margin:0; min-height:44px; padding:0 1.05rem; border-radius:999px;
+    font-size:.9rem; font-weight:800;
+  }
+  html[data-theme][data-layout] .chatdock-friendsbar-btn.has-req{ background:var(--new-dot, #FFD43B) !important; color:#1A1400 !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -76436,7 +76518,7 @@ const RELEASE_NOTES = [
     groups: [
       { label: "Chat & Friends", items: [
         { icon: buildDevicesIcon, color: "#8E7CF5", title: "Chat Lobbies", body: "A button in the top right of every screen opens a chat you can keep going while you study. Start one, invite your friends, and only the people in it can see what is said \u2014 leave and you are out until somebody invites you back." },
-        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code from Profile \u203a Friends, or tap anybody on the Leaderboard and send them a request. Friends are who you can invite to a chat or a Virtual Room." },
+        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code from the chat \u203a Friends, or tap anybody on the Leaderboard and send them a request. Friends are who you can invite to a chat or a Virtual Room." },
         { icon: buildCloudIcon, color: "#3DA9FC", title: "Inbox", body: "The same button holds everything waiting on you \u2014 friend requests, chat invites and Virtual Room invites \u2014 with a count on it when there is something new, and a preview when somebody sends a message." },
         { icon: buildOfflineIcon, color: "#F5B54D", title: "Who Is Online", body: "The friends list now shows who actually has the app open, rather than who answered a question recently." }
       ]},
@@ -83516,9 +83598,9 @@ const PROFILE_TIPS_289 = [
     text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further. Tap the badge count to see them." },
-  { target: ".profile-hero .pf-goal", align: "left", vplacement: "above",
+  { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
     text: "The challenges for your next rank, ticked off as you go, and what it unlocks. When you rank up, it plays out on the road map. Tap to see every rank." },
-  { target: ".profile-hero .pf-case", align: "left", vplacement: "above",
+  { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
     text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap to open the case, then tap a badge to hold it and spin it. Badges get dirty over the weeks, so rub them clean." }
 ];
 
@@ -88190,7 +88272,7 @@ function novaReplyFor(raw){
   if(has(/ (ship|blast|wreck|lost|explorer|space|save you|finish\w*|end) /))
     return "My ship was studying a planet much like yours when its core gave way. The blast threw my flares, my badges and the whole crew across this system. My scanners keep finding more of my ship further out, so there’s always more to bring home.";
   if(has(/ (friends?|friend code|add) /))
-    return "Add classmates from Profile › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
+    return "Add classmates from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
     return "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
   if(has(/ (who are you|your name|about you|are you real|ai|bot|robot|human|chatgpt) /))
@@ -90277,12 +90359,41 @@ function renderFriendChatList(){
   /* Nova is on this tab once he is your friend (build 324) - a row like
      any friend's, sorted with them, counted by nobody else. */
   const nova = novaIsFriend();
+  /* ---- FRIENDS LIVES HERE NOW (build 327z12 round 2) ----
+     "I kinda feel like the friends box is hidden under the profile
+     stuff, so maybe the friends stuff is its own tab? Or maybe it's
+     accessible within the chat tab? Chat tab may make more sense." The
+     Friends box came off Profile; its door is the top of this tab: who
+     you have (and how many are on) on the left, and one pill on the
+     right - Add friends, or the requests waiting on you, counted. It
+     opens the Friends screen (your code, add, remove), whose back link
+     returns to whatever tab you were on. */
+  {
+    const bar = document.createElement("div");
+    bar.className = "chatdock-friendsbar";
+    const info = document.createElement("p");
+    info.className = "chatdock-friendsbar-info";
+    const shownN = shownFriendsCount();
+    const onN = pubs.map(p => rows[p]).filter(e => e && isOnline(e)).length + ((nova && !novaAway()) ? 1 : 0);
+    const b1 = document.createElement("b");
+    b1.textContent = shownN ? shownN + (shownN === 1 ? " friend" : " friends") : "No friends yet";
+    info.appendChild(b1);
+    if(onN) info.appendChild(document.createTextNode(" \u00b7 " + onN + " online"));
+    const reqN = incomingFriendRequests().length;
+    const open = document.createElement("button");
+    open.type = "button"; open.className = "next chatdock-friendsbar-btn" + (reqN ? " has-req" : "");
+    open.textContent = reqN ? (reqN === 1 ? "1 request" : reqN + " requests") : "Add friends";
+    open.setAttribute("aria-label", reqN ? "Friends - " + open.textContent + " waiting" : "Add or manage friends");
+    open.addEventListener("click", openFriendsFromChat);
+    bar.append(info, open);
+    chatTabBody.appendChild(bar);
+  }
   const intro = document.createElement("p");
   intro.className = "chatdock-note";
   intro.textContent = pubs.length
     ? "A chat with each of your friends. Messages clear after a day."
-    : nova ? "Add classmates from Profile \u203a Friends and they\u2019ll appear here beside Nova, each with their own chat."
-    : "Your friends appear here, each with their own chat. Add friends from Profile \u203a Friends.";
+    : nova ? "Add classmates with Add friends and they\u2019ll appear here beside Nova, each with their own chat."
+    : "Your friends appear here, each with their own chat. Tap Add friends to swap codes with a classmate.";
   chatTabBody.appendChild(intro);
   if(!pubs.length){
     if(nova){
@@ -90292,11 +90403,6 @@ function renderFriendChatList(){
       chatTabBody.appendChild(only);
       paintChatRow(NOVA_CODE);
     }
-    const go = document.createElement("button");
-    go.type = "button"; go.className = "next chatdock-act";
-    go.textContent = "Find friends";
-    go.addEventListener("click", () => { closeChatDock(); showFriends(); });
-    chatTabBody.appendChild(go);
     return;
   }
   const seen = chatSeenMap();
@@ -91322,7 +91428,7 @@ function openChatInviteSheet(){
   if(!people.length){
     const none = document.createElement("p");
     none.className = "friend-hint";
-    none.textContent = "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+    none.textContent = "No friends yet \u2014 add someone from the chat \u203a Friends first.";
     body.appendChild(none);
   } else {
     const list = document.createElement("div");
@@ -92156,7 +92262,18 @@ function showHome(){
   /* The "?" in its own span so the recharge can dim and flare the mark
      without touching the button's box (build 245). */
   const dailyGlyph = document.createElement("span");
-  dailyGlyph.className = "dq-glyph"; dailyGlyph.textContent = "?";
+  dailyGlyph.className = "dq-glyph";
+  /* DRAWN, AND CENTRED ON ITS INK (build 327z12 round 2): "The question
+     mark is not centered in the daily question button." A "?" typed in
+     the system font sits where that font's line box puts it - high, and
+     by a different amount on an iPhone than anywhere it can be measured
+     here. It is a drawn mark now, its ink centred in a 24 box, so it is
+     centred in the button on every device. Answered, the button wears a
+     tick instead (.is-done shows .dq-mark-done): done, not disabled. The
+     5pm reset takes .is-done off, and the "?" is back with no JS. */
+  dailyGlyph.innerHTML = '<svg class="dq-mark dq-mark-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.9 8.6a3.1 3.1 0 1 1 4.4 2.8c-.8.36-1.3 1.1-1.3 1.95v.85" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17.5" r="1.55" fill="currentColor"/></svg>'
+    + '<svg class="dq-mark dq-mark-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 11.9l3.6 3.6 7.2-7.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  dailyBtn.setAttribute("aria-label", "Daily question");
   dailyBtn.appendChild(dailyGlyph);
   /* the ring: whole while the question waits, the time to the next one
      once it is answered (build 320, .dq-ring) */
@@ -114880,7 +114997,7 @@ function openInviteFriendsSheet(roomCode){
         ? "Loading your friends\u2026"
         : store.leaderboardOptIn === false
           ? "Turn on class sharing in Settings to use friends."
-          : "No friends yet \u2014 add someone from Profile \u203a Friends first.";
+          : "No friends yet \u2014 add someone from the chat \u203a Friends first.";
       body.appendChild(none);
       return;
     }
@@ -120179,9 +120296,10 @@ function lbWatchOffscreen(rows){
 /* THE OTHER TWO BOARDS IN THE SAME TABLE (build 327z12): "overall has the
    stuff on the right, can [hundos] and xp be like that and then at the
    top have the title header thing similar to overall?" This Week and
-   Hundos keep Overall's Rank and Level columns, and their own number -
-   this week's XP, the hundo count - takes the third, where Overall has
-   its badges. `third` is that column: its class and its value. */
+   Hundos take Overall's header row and right-hand column - but only
+   their own number (round 2: "just stuff relevant to that leaderboard
+   tab"): this week's XP, the hundo count. `third` is that column: its
+   label, class and value. */
 const LB_THIRD_COL = {
   week: { label: "XP", cls: " rank-col-xp", val: e => lbCompact(Number(e.weekPoints) || 0) },
   hundos: { label: "Hundos", cls: " rank-col-hundo", val: e => String(Number(e.hundos) || 0) }
@@ -120195,6 +120313,18 @@ function lbCompact(n){
 function buildOverallCols(entry, keptMarks, third){
   const cols = document.createElement("span");
   cols.className = "rank-cols";
+  /* ONLY ITS OWN NUMBER (build 327z12 round 2): "the this week and hundo
+     one don't [need] all the stuff, just stuff relevant to that
+     leaderboard tab". Rank and level are Overall's business; This Week
+     and Hundos are one column each, under its own header. */
+  if(third){
+    const one = document.createElement("span");
+    one.className = "rank-col rank-col-num" + third.cls;
+    one.textContent = third.val(entry);
+    cols.classList.add("rank-cols-one");
+    cols.appendChild(one);
+    return cols;
+  }
   const rk = rankOfEntry(entry);
   const rc = document.createElement("span");
   rc.className = "rank-col rank-col-rank";
@@ -120236,8 +120366,8 @@ function buildOverallHead(third){
   const spacer = document.createElement("span");
   spacer.className = "rank-head-spacer";
   const cols = document.createElement("span");
-  cols.className = "rank-cols";
-  [["Rank", ""], ["Level", " rank-col-lvl"], third ? [third.label, third.cls] : ["Badges", " rank-col-bdg"]].forEach(([t, extra]) => {
+  cols.className = "rank-cols" + (third ? " rank-cols-one" : "");
+  (third ? [[third.label, third.cls]] : [["Rank", ""], ["Level", " rank-col-lvl"], ["Badges", " rank-col-bdg"]]).forEach(([t, extra]) => {
     const c = document.createElement("span");
     c.className = "rank-col rank-col-head" + extra; c.textContent = t;
     cols.appendChild(c);
@@ -121773,7 +121903,31 @@ function attachFriendsBoardListener(){
    until something else caused a redraw. */
 let refreshPresenceViews = function(){};
 
+/* WHERE FRIENDS GOES BACK TO (build 327z12 round 2). Friends is opened
+   from the chat's Friends tab now, from any tab, so its back link goes
+   to the screen it was opened over rather than always to Profile. Set by
+   openFriendsFromChat; the screen's own repaints keep it. */
+let friendsBack = null;
+function openFriendsFromChat(){
+  const s = stage.firstElementChild;
+  let back = null;
+  if(s && s.classList){
+    if(s.classList.contains("screen-calendar-tab")) back = { label: "Calendar", nav: "calendar", go: showCalendarTab };
+    else if(s.classList.contains("screen-rankings")) back = { label: "Leaderboard", nav: "rewards", go: () => showRankings() };
+    else if(s.classList.contains("screen-profile")) back = { label: "Profile", nav: "profile", go: () => showProfile("profile") };
+    else if(s.dataset && s.dataset.screen === "home") back = { label: "Home", nav: "home", go: () => showHome() };
+  }
+  closeChatDock();
+  friendsBack = back;
+  friendsBackFresh = true;
+  showFriends();
+}
+let friendsBackFresh = false;
 function showFriends(){
+  /* a repaint of this screen keeps where it goes back to; arriving any
+     other way (a notification, an older link) goes back to Profile */
+  if(!friendsBackFresh && !document.querySelector("#stage > .screen-friends")) friendsBack = null;
+  friendsBackFresh = false;
   attachPresence();
   /* Repaint when presence lands, because the listener attaches after
      this screen is already drawn and its first snapshot is what puts
@@ -121796,7 +121950,8 @@ function showFriends(){
     showFriends();
   };
   window.forceHideBottomTabs = false;
-  setActiveNav("profile");
+  /* the tab it was opened over stays lit (round 2) */
+  setActiveNav(friendsBack ? friendsBack.nav : "profile");
   countEl.textContent = "Friends";
   updateHeaderTitle();
   if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();
@@ -121804,11 +121959,14 @@ function showFriends(){
 
   const panel = document.createElement("section");
   panel.className = "panel screen-friends";
+  /* the bar keeps the tab it was opened over lit (round 2) */
+  panel.dataset.from = (friendsBack && friendsBack.nav) || "profile";
 
   const back = document.createElement("button");
   back.type = "button"; back.className = "back-link";
-  fillBackLabel(back, "Profile");
-  back.addEventListener("click", () => showProfile("profile"));
+  const backTo = friendsBack || { label: "Profile", go: () => showProfile("profile") };
+  fillBackLabel(back, backTo.label);
+  back.addEventListener("click", () => { friendsBack = null; backTo.go(); });
   panel.appendChild(back);
 
   const title = document.createElement("p");
@@ -124215,12 +124373,10 @@ function buildProfileCase(have, total){
   return box;
 }
 
-/* How many friends the Profile card lists before "and N more" (build 323). */
-const FRIEND_PREVIEW_MAX = 4;
 function showProfile(defaultTab, opts){
-  /* The Profile card counts how many friends are online, so it needs
-     presence too - and like Friends it detaches on the next screen. */
-  attachPresence();
+  /* No presence here since build 327z12 round 2: the friends card that
+     counted who was online moved to the chat. Nothing on Profile
+     repaints on it. */
   refreshPresenceViews = function(){};
   /* a listener hands over a MouseEvent; only a plain object is options */
   const tabOpts = (opts && typeof opts === "object" && !(typeof Event !== "undefined" && opts instanceof Event)) ? opts : null;
@@ -124558,205 +124714,25 @@ function showProfile(defaultTab, opts){
      top is not the move, revert that location at the bottom." Where you
      stand, the next rank (its challenges and unlocks), then the case,
      its new-badge dot still against the arrow. */
-  heroSect.appendChild(buildProfileGoal(prog));
-  heroSect.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
+  /* THREE CARDS, NOT ONE (build 327z12 round 2): "I think the profile
+     layout is good but this could look better? That look you get when
+     tapping someone's profile, that Liquid Glass look is great with the
+     fade, could it be like that? ... maybe the stuff could be split up
+     less crowded." The card is who you are - banner, character, name,
+     level - in the person card's glass and fade; the next rank and the
+     badge case are cards of their own under it, not boxes inside it.
+     Friends moved to the chat (see the dock's Friends tab). */
+  identityTab.classList.add("profile-identity-tab");
+  identityTab.appendChild(heroSect);
+  identityTab.appendChild(buildProfileGoal(prog));
+  identityTab.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
   /* The Class 26E box is not on this tab any more: it heads the
      Calendar tab, right above the calendar it describes (build 319,
-     builder h - buildClassCard). The Friends box stays below the card. */
-  identityTab.appendChild(heroSect);
+     builder h - buildClassCard). */
 
-  /* FRIENDS IS ITS OWN CARD NOW. It was a second button inside the
-     Class 26E box, beside View class calendar - which made "who you
-     know" read as a fact about the course, and buried the one place
-     on this screen where somebody else can be waiting on you.
-     Reported as wanting to be its own thing, and it earns that: it is
-     the only card here with live state in it.
-     Built as a card rather than a button so it can SAY something
-     before you tap it - how many friends, how many are on right now,
-     how many are waiting on an answer. A row that only says "Friends"
-     is a button wearing a card's clothes. */
-  /* .profile-classcard, not a surface of its own: this sits directly
-     under the Class 26E card and the two are a pair of destinations, so
-     they share the card, the header row, the serif title and the
-     coloured figure in the corner. A second card an inch away in a
-     different shape reads as a mistake, and it did - the first pass
-     gave this one a small uppercase label beside the class card's
-     serif heading. */
-  const friendSect = document.createElement("div");
-  friendSect.className = "profile-classcard profile-friendcard";
-
-  const fHead = document.createElement("div");
-  fHead.className = "profile-classcard-head";
-  const fTitle = document.createElement("p");
-  fTitle.className = "profile-classcard-title";
-  fTitle.textContent = "Friends";
-  const friendIds = friendPublicIds();
-  const pendingN = incomingFriendRequests().length;
-  const fCount = document.createElement("span");
-  fCount.className = "profile-classcard-count";
-  /* Worded, like "178 class days left" opposite it, rather than a bare
-     numeral. A lone "1" in the corner of a card says nothing about
-     what it counts. */
-  /* Nova counts here now that he is shown here (b324n2) */
-  const fShownN = shownFriendsCount();
-  fCount.textContent = fShownN
-    ? fShownN + (fShownN === 1 ? " friend" : " friends")
-    : "none yet";
-  fHead.append(fTitle, fCount);
-  friendSect.appendChild(fHead);
-
-  /* ---- YOUR FRIENDS, RIGHT ON THE CARD (build 323) ----
-     "the 'friends' section in profile where it says manage friends need a
-     little more so it can make up for the last space the calendar had.
-     Not much bigger just a little taller and maybe would show your
-     friends right there before even hitting manage? ... show your current
-     friends and what they are doing currently or if they are offline."
-     Up to FRIEND_PREVIEW_MAX of them, on first: character, name, and what
-     they are doing (the same ACTIVITY_TEXT labels as everywhere) or
-     Offline. Read from what is already loaded - the class board's rows
-     and the presence document Profile attaches anyway - so this costs no
-     read of its own. Manage friends is unchanged (add, remove, your code). */
-  const fLine = document.createElement("p");
-  fLine.className = "profile-friendcard-line";
-  const fList = document.createElement("div");
-  fList.className = "pf-friends";
-  const fMore = document.createElement("p");
-  fMore.className = "pf-friends-more";
-  let fShownSig = null;
-  /* Nova is one of them (b324n2), in the same order as everybody: on
-     first (he is "on" while available), then by name. */
-  function friendPreviewEntries(){
-    const rows = rowsByPublicId();
-    const out = friendPublicIds().map(pub => rows[pub]).filter(e => e && e.pub)
-      .map(e => ({ e, on: isOnline(e) }));
-    if(novaIsFriend()) out.push({ e: novaFriendEntry(), on: !novaAway() });
-    return out.sort((a, b) => (b.on - a.on) || String(a.e.firstName || "").localeCompare(String(b.e.firstName || "")));
-  }
-  function friendPreviewReal(){ return friendPreviewEntries().filter(x => !x.e.nova); }
-  /* The four on the card. He never falls into "and N more": where the
-     order would put him past the fourth, he takes the fourth. */
-  function friendPreviewShown(all){
-    const shown = all.slice(0, FRIEND_PREVIEW_MAX);
-    const nv = all.find(x => x.e.nova);
-    if(!nv || shown.indexOf(nv) >= 0) return shown;
-    return all.filter(x => !x.e.nova).slice(0, FRIEND_PREVIEW_MAX - 1).concat([nv]);
-  }
-  function friendPreviewSig(){
-    return friendPreviewShown(friendPreviewEntries())
-      .map(x => x.e.pub + (x.on ? ":" + ((presenceActivity && presenceActivity[x.e.pub]) || "app") : ":off") + ":" + (x.e.avatarChar || "") + ":" + (x.e.firstName || ""))
-      .join("|") + "#" + shownFriendsCount();
-  }
-  function paintFriendPreview(){
-    fShownSig = friendPreviewSig();
-    const ids = friendPublicIds();
-    const all = friendPreviewEntries();
-    const shown = friendPreviewShown(all);
-    fList.replaceChildren();
-    fLine.classList.remove("is-online");
-    if(!ids.length && !shown.length){
-      fLine.textContent = "No friends yet. Swap friend codes with a classmate to add one.";
-      fLine.hidden = false;
-    } else if(ids.length && !friendPreviewReal().length){
-      fLine.textContent = "Your friends show here once the class list has loaded.";
-      fLine.hidden = false;
-    } else {
-      fLine.hidden = true;
-    }
-    shown.forEach(({ e, on }) => {
-      const row = document.createElement("div");
-      row.className = "pf-friend is-tappable" + (on ? " is-on" : "");
-      row.setAttribute("role", "button");
-      row.tabIndex = 0;
-      row.dataset.pub = e.pub;
-      const art = document.createElement("div");
-      art.className = "friend-row-art pf-friend-art" + (e.nova ? " is-nova" : "");
-      art.appendChild(e.nova ? novaAvatarSpan() : avatarSpanFor(e));
-      if(e.firstName && !e.nova) setCharState(art, on ? "live" : "sleep");
-      /* the green dot, repainted by presence where it stands (his is not
-         presence's to repaint) */
-      const dot = document.createElement("span");
-      dot.className = "friend-online-dot pf-friend-dot" + (on ? " is-online" : "");
-      if(!e.nova) dot.dataset.onlinePub = e.pub;
-      dot.setAttribute("aria-hidden", "true");
-      art.appendChild(dot);
-      const text = document.createElement("div");
-      text.className = "pf-friend-text";
-      const nm = document.createElement("p");
-      nm.className = "pf-friend-name";
-      nm.textContent = e.firstName || "Anonymous";
-      const st = document.createElement("p");
-      st.className = "pf-friend-status";
-      const off = document.createElement("span");
-      off.className = "pf-friend-off";
-      off.textContent = e.nova ? NOVA_AWAY_LABEL : "Offline";
-      if(e.nova){
-        const act = document.createElement("span");
-        act.className = "friend-row-on pf-friend-act";
-        act.textContent = "Available";
-        act.hidden = !on;
-        st.append(act, off);
-      } else st.append(activityLabel(e.pub, true, "friend-row-on pf-friend-act"), off);
-      text.append(nm, st);
-      row.append(art, text);
-      const openCard = () => { try{ if(e.nova) openNovaCard(); else openPersonSheet(e); }catch(err){ showFriends(); } };
-      row.addEventListener("click", openCard);
-      row.addEventListener("keydown", ev => {
-        if((ev.key === "Enter" || ev.key === " ") && ev.target === row){ ev.preventDefault(); openCard(); }
-      });
-      fList.appendChild(row);
-    });
-    const more = all.length - shown.length;
-    fMore.hidden = more <= 0;
-    fMore.textContent = more > 0 ? "and " + more + " more" : "";
-    fList.hidden = !shown.length;
-  }
-  paintFriendPreview();
-  friendSect.append(fLine, fList, fMore);
-  /* A presence snapshot or the class list landing repaints the rows -
-     only when something on them changed, so a character is never
-     restarted under somebody for nothing. */
-  refreshPresenceViews = () => {
-    if(!fList.isConnected) return;
-    if(document.querySelector(".invite-overlay .person-card")) return;
-    if(friendPreviewSig() !== fShownSig) paintFriendPreview();
-  };
-  if(friendIds.length && !friendPreviewReal().length){
-    /* the class list Home reads, on its own fifteen minutes */
-    try{ fetchBoardForInvites(false); }catch(e){}
-    let tries = 0;
-    const waitRows = () => {
-      if(!fList.isConnected || ++tries > 12) return;
-      if(friendPreviewReal().length){ refreshPresenceViews(); return; }
-      setTimeout(waitRows, 700);
-    };
-    setTimeout(waitRows, 700);
-  }
-
-  /* The count of people waiting rides up here rather than on the
-     button's label, because a request nobody is told about is a
-     request nobody answers - and inside the old button it was a
-     middle dot and a number on a line already carrying a word. */
-  if(pendingN){
-    const fPend = document.createElement("p");
-    fPend.className = "profile-friendcard-pending";
-    fPend.textContent = pendingN === 1
-      ? "1 friend request waiting" : pendingN + " friend requests waiting";
-    friendSect.appendChild(fPend);
-  }
-
-  const fBtns = document.createElement("div");
-  fBtns.className = "profile-classcard-btns";
-  const friendsLine = document.createElement("button");
-  friendsLine.type = "button";
-  friendsLine.className = "next ghost profile-classcard-btn profile-classline";
-  /* nobody yet: the same screen, named for the one thing to do there */
-  friendsLine.textContent = pendingN ? "Open friends" : friendIds.length ? "Manage friends" : "Add friends";
-  if(pendingN) friendsLine.classList.add("has-pending");
-  friendsLine.addEventListener("click", showFriends);
-  fBtns.appendChild(friendsLine);
-  friendSect.appendChild(fBtns);
-
-  identityTab.appendChild(friendSect);
+  /* (THE FRIENDS CARD - friendSect, its four-friend preview and Manage
+     friends - came off Profile in build 327z12 round 2: Friends is the top
+     of the chat's Friends tab now, see renderFriendChatList.) */
 
   /* Kicked off when the Profile tab is actually SHOWN, not when it is
      built - showProfile("stats") builds this panel hidden. Since build 325
@@ -125151,8 +125127,10 @@ function showProfile(defaultTab, opts){
          the Profile tab), and a hidden element's getBoundingClientRect()
          is all zeros, which breaks the tour's connector-line positioning
          outright. */
-      { target: ".profile-friendcard", align: "left", vplacement: "above",
-        text: "Friends shows who is on and what they are doing. Manage friends is where you add or remove them." },
+      /* Friends moved to the chat (build 327z12 round 2): the step points
+         at the chat button, where its Friends tab now starts */
+      { target: "#chatdock-btn", align: "right", vplacement: "below",
+        text: "Friends are in the chat. Its Friends tab shows who is on, with Add friends at the top for swapping codes with a classmate." },
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
         text: "Stats has your study time, your testing stats and your test history, all in one place." },
       /* Settings is Profile's third tab (build 323). */
@@ -130842,7 +130820,10 @@ function applyGlassRefraction(el, mapImgId){
        bottom tab still shows me as within that tab." Friends, Customize,
        the calendar and the test review screens are all reached from the
        Profile card and lit nothing; the bug report is Settings' own. */
-    const onProfileSub = !!document.querySelector(".screen-friends, .screen-customize, .screen-testreview");
+    /* Friends is opened from the chat over any tab since build 327z12
+       round 2, and keeps THAT tab lit (its data-from) */
+    const frFrom = (document.querySelector("#stage .screen-friends") || { dataset: {} }).dataset.from || "";
+    const onProfileSub = !!document.querySelector(".screen-customize, .screen-testreview") || frFrom === "profile";
     const onSettingsSub = !!document.querySelector(".screen-bugreport");
     /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
        Calendar, not Profile - wherever it is drawn, as its own screen or
@@ -130851,15 +130832,15 @@ function applyGlassRefraction(el, mapImgId){
        and its bug report light Profile; if a build still carries a
        Settings button, it is lit as before. Every lookup tolerates a
        button that is not there. */
-    const calShown = [...document.querySelectorAll("#stage .screen-calendar")].some(el => !el.closest("[hidden]"));
+    const calShown = [...document.querySelectorAll("#stage .screen-calendar")].some(el => !el.closest("[hidden]")) || frFrom === "calendar";
     const settingsBtn = bar.querySelector("#bottomtab-settings");
     const onSettingsAny = onSettings || onSettingsSub;
     const lit = (id, on) => { const b = bar.querySelector(id); if(b) b.classList.toggle("active", !!on); };
     lit("#bottomtab-profile", !calShown && (onProfile || onRanks || onProfileSub || (onSettingsAny && !settingsBtn)));
-    lit("#bottomtab-rewards", onRewards && !calShown);
+    lit("#bottomtab-rewards", (onRewards || frFrom === "rewards") && !calShown);
     lit("#bottomtab-calendar", calShown);
     lit("#bottomtab-settings", onSettingsAny && !calShown);
-    lit("#bottomtab-home", onHome && !calShown);
+    lit("#bottomtab-home", (onHome || frFrom === "home") && !calShown);
     slideBubbleToActiveTab();
   }
   /* Moves and resizes the glass bubble to sit exactly behind whichever

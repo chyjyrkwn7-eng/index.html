@@ -3009,13 +3009,13 @@ def check_b241(br):
       /* 3. profile: one level plate, a badges section, a one-colour rank bar */
       showProfile('profile'); await wait(900);
       /* build 315: the level is said once, in the standing block */
-      out.plates = document.querySelectorAll('.profile-hero .pf-level').length;
+      out.plates = document.querySelectorAll('.profile-identity-tab .pf-level').length;
       /* Build 243: the badge row is the badges themselves, no meter.
          Build 315: as the badge case strip, every slot, earned or not. */
       out.badgeCells = document.querySelectorAll('.profile-hero .badge-meter-seg').length;
-      out.caseCells = document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell').length;
-      out.caseEarned = document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell.is-earned').length;
-      out.caseNum = (document.querySelector('.profile-hero .pf-case .pf-case-num') || {}).textContent || null;
+      out.caseCells = document.querySelectorAll('.profile-identity-tab .pf-case .badge-strip-cell').length;
+      out.caseEarned = document.querySelectorAll('.profile-identity-tab .pf-case .badge-strip-cell.is-earned').length;
+      out.caseNum = (document.querySelector('.profile-identity-tab .pf-case .pf-case-num') || {}).textContent || null;
       out.units = units.length;
       const fill = document.querySelector('.pf-standing .pf-bar i, .profile-rankplate-fill');
       out.fillBg = fill ? getComputedStyle(fill).backgroundImage : '';
@@ -3193,9 +3193,9 @@ def check_b242(br):
       out.codeBoxBg = getComputedStyle(document.querySelector('.friend-mycode')).backgroundColor;
       /* 3. Profile: a meter and the closest badge, not the whole set */
       showProfile('profile'); await wait(900);
-      out.profile = { strip: document.querySelectorAll('.profile-hero .pf-case .badge-strip-cell').length,
+      out.profile = { strip: document.querySelectorAll('.profile-identity-tab .pf-case .badge-strip-cell').length,
         segs: document.querySelectorAll('.profile-hero .badge-meter-seg').length,
-        count: (document.querySelector('.profile-hero .pf-case .pf-case-count') || {}).textContent || '',
+        count: (document.querySelector('.profile-identity-tab .pf-case .pf-case-count') || {}).textContent || '',
         units: topicsIn(QUESTIONS).length };
       /* 4. the rank box: a full-width bar, the next rank as a chip, what is left.
          Build 315: the rank box is the standing block, and the next rank
@@ -6883,7 +6883,8 @@ def check_b289(br):
            all, and anything the case casts is pure black - no colour, no
            light. The radius rule stands ("without ruining the
            cohesiveness"): the case keeps the card's corner. */
-        const bl = ['.pf-standing', '.pf-goal', '.pf-case'].map(q => document.querySelector('.profile-hero ' + q));
+        /* MOVED IN 327z12 round 2: the next rank and the case are cards of their own beside the Profile card */
+        const bl = ['.pf-standing', '.pf-goal', '.pf-case'].map(q => document.querySelector('.profile-identity-tab ' + q));
         if(bl.every(Boolean)){
           const cs = bl.map(b => getComputedStyle(b)), rs = bl.map(b => b.getBoundingClientRect());
           const black = s => s === 'none' || (s.match(/(?:rgba?|color)\\([^)]*\\)/g) || ['?']).every(c => {
@@ -6904,9 +6905,12 @@ def check_b289(br):
              it should all feel smooth when you look down it." The shut
              case on the card is drawn in the card's own surface, so its
              corner is the Next rank box's, not the briefcase's square. */
+          /* MOVED IN 327z12 round 2: the next rank and the case are cards of
+             their own beside the Profile card - one family with each other
+             (width, corner), the next rank a card with the cards' shadow */
           out.box = { radius: !tray && cs[2].borderTopLeftRadius === cs[1].borderTopLeftRadius && parseFloat(cs[1].borderTopLeftRadius) > 4,
-            width: rs.every(q => Math.abs(q.width - rs[0].width) < 1),
-            shadow: cs[0].boxShadow === 'none' && cs[1].boxShadow === 'none' && black(cs[2].boxShadow),
+            width: Math.abs(rs[1].width - rs[2].width) < 1,
+            shadow: cs[0].boxShadow === 'none' && black(cs[2].boxShadow),
             unboxed: cs[0].backgroundImage === 'none' && parseFloat(cs[0].borderTopWidth) === 0,
             wm: !document.querySelector('.profile-hero .profile-rankplate-wm') };
         }
@@ -7911,7 +7915,7 @@ def check_b299(br):
         check(f"{dev}: the congratulations popup's podium is not tappable (no card over a card)", r4.get("picTappable") == 0, r4.get("picTappable"))
         # "Level at the bottom, badges between the other two."
         order = pg.evaluate("""async ()=>{ showProfile('profile'); await new Promise(r => setTimeout(r, 600));
-          const hero = document.querySelector('.profile-hero');
+          const hero = document.querySelector('.profile-identity-tab');  /* MOVED IN 327z12 r2: three cards in the tab */
           /* build 315: the mock-up Madison picked - where you stand (rank
              and level), the next rank, the badge case */
           const pick = el => el.matches('.pf-standing') ? 'standing' : el.matches('.pf-goal') ? 'next' : el.matches('.pf-case') ? 'case' : null;
@@ -13735,13 +13739,13 @@ def check_b317_pfcard(br):
           if(!store.seenUnlocks) store.seenUnlocks = { chars: [], banners: [], themes: [], badges: [] };
           store.seenUnlocks.badges = units.slice(0, 2);
           showProfile('profile'); await wait(900); clean();
-          const cs = document.querySelector('.profile-hero .pf-case');
+          const cs = document.querySelector('.profile-identity-tab .pf-case');
           const dot = cs && cs.querySelector('.new-dot');
           out.dot = box(dot); out.arrow = box(cs && cs.querySelector('.pf-case-arrow'));
           out.strip = box(cs && cs.querySelector('.pf-strip'));
           out.inKick = !!(dot && dot.closest('.pf-kick'));
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
-          const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-hero .pf-goal');
+          const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-identity-tab .pf-goal');
           out.caseLast = !!(cs && gl && (gl.compareDocumentPosition(cs) & 4) && cs.parentElement.lastElementChild === cs);
           out.gaps = (st && cs && gl) ? [Math.round(gl.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
             Math.round(cs.getBoundingClientRect().top - gl.getBoundingClientRect().bottom)] : null;
@@ -13766,8 +13770,8 @@ def check_b317_pfcard(br):
           if(t){ t.click(); await wait(500); }
           document.querySelectorAll('.unlock-detail, .unlockdetail-overlay, [class*="unlock-detail"]').forEach(n => n.remove());
           showProfile('profile'); await wait(700); clean();
-          out.dotAfter = !!document.querySelector('.profile-hero .pf-case .new-dot');
-          out.newAfter = !!document.querySelector('.profile-hero .pf-case .pf-case-new');
+          out.dotAfter = !!document.querySelector('.profile-identity-tab .pf-case .new-dot');
+          out.newAfter = !!document.querySelector('.profile-identity-tab .pf-case .pf-case-new');
           /* Supernova - and level 80 past what an 81st level would cost,
              the over-the-wall state (317 touch-up: the XP blue there too) */
           seat(units.length, xpForLevel(80) + 60000);
@@ -13776,7 +13780,7 @@ def check_b317_pfcard(br):
           try{ localStorage.setItem('class26e.pfxp.seen', String(store.lifetime.points)); }catch(e){}
           showProfile('profile'); await wait(900); clean();
           out.top = rankOf(store);
-          const tg = document.querySelector('.profile-hero .pf-goal');
+          const tg = document.querySelector('.profile-identity-tab .pf-goal');
           out.topCls = tg ? tg.className : null;
           out.topText = tg ? tg.textContent : null;
           out.topTasks = tg ? tg.querySelectorAll('.pf-task').length : -1;
@@ -13803,8 +13807,11 @@ def check_b317_pfcard(br):
         # the card, so it takes the boxes' own .8rem; its handle stands in it.
         # REVISED IN 321: "The badge case under the rank challenge thing, the
         # spacing is a smidge too close" - 1.15rem under the Next rank box.
-        check(f"{dev}: ...with the card's gaps (1.05rem under the bar, 1.15rem from the Next rank box to the case)",
-              bool(g) and abs(g[0] - 1.05 * rem) <= 1.5 and abs(g[1] - 1.15 * rem) <= 1.5, [g, rem])
+        # MOVED IN 327z12 round 2: three cards - the next rank a card of its
+        # own (the cards' 1.1rem gap below the Profile card), the case's
+        # handle .45rem more under it
+        check(f"{dev}: ...with the cards' gaps (1.1rem+ under the Profile card, 1.55rem from the Next rank card to the case)",
+              bool(g) and g[0] >= 1.1 * rem - 1.5 and abs(g[1] - 1.55 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
@@ -13848,15 +13855,15 @@ def check_b317_pfcard(br):
       if(!store.seenUnlocks) store.seenUnlocks = { chars: [], banners: [], themes: [], badges: [] };
       store.seenUnlocks.badges = units.slice(0, Math.max(0, n - fresh));
       showProfile('profile'); await wait(900);
-      const B = s => { const e = document.querySelector('.profile-hero ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+      const B = s => { const e = document.querySelector('.profile-identity-tab ' + s); if(!e) return null; const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
       /* REVISED IN 317 (badge2): the case's name is its side plate, not a heading over the tray */
       out.kick = B('.pf-case-front .nova-case-sideplate'); out.num = B('.pf-case-num'); out.nums = B('.pf-xpnums'); out.xn = B('.pf-xpnums .xpnums'); out.tot = B('.pf-xp-total'); out.to = B('.pf-xp-to');
-      out.tasks = [...document.querySelectorAll('.profile-hero .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
+      out.tasks = [...document.querySelectorAll('.profile-identity-tab .pf-task')].map(t => { const a = t.querySelector('.pf-task-label').getBoundingClientRect(), v = t.querySelector('.pf-task-val').getBoundingClientRect();
         const lab = t.querySelector('.pf-task-label');
         /* the label's TEXT, not its box: squeezed, the box was 28px and the words ran out of it into the count */
         return { clear: lab.scrollWidth <= lab.clientWidth + 0.5 && (v.left >= a.right - 0.5 || v.top >= a.bottom - 0.5), txt: lab.textContent, sw: lab.scrollWidth, cw: lab.clientWidth }; });
-      out.cut = [...document.querySelectorAll('.profile-hero .pf-rw-lab')].filter(l => l.scrollWidth > l.clientWidth + 0.5).map(l => l.textContent);
-      out.tiles = document.querySelectorAll('.profile-hero .pf-rw').length;
+      out.cut = [...document.querySelectorAll('.profile-identity-tab .pf-rw-lab')].filter(l => l.scrollWidth > l.clientWidth + 0.5).map(l => l.textContent);
+      out.tiles = document.querySelectorAll('.profile-identity-tab .pf-rw').length;
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }"""
     for (w, h, dev, st) in ((375, 667, "SE 2/3, a new badge", (3, 33, 1)), (375, 667, "SE 2/3, level 80", (16, 80, 0)),
@@ -19786,7 +19793,7 @@ def check_b317_badgecase(br):
           if(typeof badgeInspectNow !== 'undefined' && badgeInspectNow) badgeInspectNow.teardown();
           document.querySelectorAll('.invite-overlay, .unlock-detail, .unlockdetail-overlay').forEach(n => n.remove());
           showProfile('profile'); await wait(900);
-          out.pf = mat(document.querySelector('.profile-hero .pf-case'));
+          out.pf = mat(document.querySelector('.profile-identity-tab .pf-case'));
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""", MAT)
         tab, pf = r.get("tab") or {}, r.get("pf") or {}
@@ -20099,8 +20106,8 @@ def check_b317_badge2(br):
           return l ? { text: l.textContent.trim(), font: getComputedStyle(l).fontWeight, bg: sl ? getComputedStyle(sl).backgroundImage.slice(0, 60) : '' } : null; }""")
         pg.evaluate("() => showProfile('profile')")
         pg.wait_for_timeout(1200)
-        pf = pg.evaluate(SIDE, ".profile-hero .pf-case .pf-case-front .nova-case-sideplate")
-        pfHead = pg.evaluate("() => { const h = document.querySelector('.profile-hero .pf-case .pf-case-head'); return h ? /badge case/i.test(h.textContent) : null; }")
+        pf = pg.evaluate(SIDE, ".profile-identity-tab .pf-case .pf-case-front .nova-case-sideplate")
+        pfHead = pg.evaluate("() => { const h = document.querySelector('.profile-identity-tab .pf-case .pf-case-head'); return h ? /badge case/i.test(h.textContent) : null; }")
         pg.evaluate("() => showRanksScreen('badges')")
         pg.wait_for_timeout(1500)
         tab = pg.evaluate(SIDE, ".badge-case .badge-case-front .nova-case-sideplate")
@@ -20347,7 +20354,7 @@ def check_b318_badges(br):
           return { rad, guard, box, glow }; }"""
         pg.evaluate("() => showProfile('profile')")
         pg.wait_for_timeout(1500)
-        pf = pg.evaluate("""() => { const px = v => parseFloat(v) || 0; const c = document.querySelector('.profile-hero .pf-case');
+        pf = pg.evaluate("""() => { const px = v => parseFloat(v) || 0; const c = document.querySelector('.profile-identity-tab .pf-case');
           const f = c && c.querySelector('.pf-case-front'), p = f && f.querySelector('.nova-case-sideplate'), hd = c && c.querySelector('.pf-case-handle');
           const B = e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, h: b.height }; };
           if(!c || !f || !p || !hd) return null;
@@ -21407,8 +21414,8 @@ def check_b319_badges(br):
             if(sh && badgeInspectNow) badgeInspectNow.teardown(); await wait(200); }
           return out; }""")
         pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(1500)
-        pf = pg.evaluate(CASE, ".profile-hero .pf-case .ncase") or pg.evaluate(CASE, ".profile-hero .pf-case")
-        pg_shut = pg.evaluate("""() => { const k = document.querySelector('.profile-hero .pf-case'); if(!k) return null;
+        pf = pg.evaluate(CASE, ".profile-identity-tab .pf-case .ncase") or pg.evaluate(CASE, ".profile-identity-tab .pf-case")
+        pg_shut = pg.evaluate("""() => { const k = document.querySelector('.profile-identity-tab .pf-case'); if(!k) return null;
           return { front: !!k.querySelector('.pf-case-front'), handle: !!k.querySelector('.nova-case-handle'),
                    tray: !!k.querySelector('.ncase-tray, .ncase-lining, .nova-case-lining') }; }""")
         res = pg.evaluate("""async () => { const units = unitsInTeachingOrder(); const t = units[2];
@@ -21820,7 +21827,7 @@ B319G_PROFILE = """async () => {
   const hero = document.querySelector('.screen-profile .profile-hero');
   const lv = document.querySelector('.screen-profile .pf-standing .pf-level');
   const bc = document.querySelector('.screen-profile .pf-standing .pf-badgecount');
-  const kase = document.querySelector('.screen-profile .profile-hero .pf-case');
+  const kase = document.querySelector('.screen-profile .profile-identity-tab .pf-case');
   const cs = el => { if(!el) return null; const c = getComputedStyle(el); return [c.fontSize, c.fontWeight, c.color, c.fontFamily].join('|'); };
   return {
     want: badgeCountOf(store), total: topicsIn(QUESTIONS).length,
@@ -21894,7 +21901,7 @@ B319G_CLASS = """async () => {
 B319H_RECTS = """(hideText) => {
   document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
   document.querySelectorAll('.bottomtabs, #__statusbar, .chatdock, .wrap > .top').forEach(e => e.style.visibility = 'hidden');
-  const kase = document.querySelector('.screen-profile .profile-hero .pf-case');
+  const kase = document.querySelector('.screen-profile .profile-identity-tab .pf-case');
   if(!kase) return null;
   kase.scrollIntoView({ block: 'center', behavior: 'instant' });
   kase.querySelectorAll('*').forEach(e => { if(hideText) e.style.setProperty('color', 'transparent', 'important'); else e.style.removeProperty('color'); });
@@ -21903,9 +21910,10 @@ B319H_RECTS = """(hideText) => {
   const box = R(body);
   const h = kase.querySelector('.nova-case-handle');
   const hr = h ? R(h) : box;
-  const goal = document.querySelector('.screen-profile .profile-hero .pf-goal');
+  const goal = document.querySelector('.screen-profile .profile-identity-tab .pf-goal');
   return { box, strip: [Math.min(box[0], hr[0]), Math.min(box[1], hr[1]), Math.max(box[2], hr[2]), Math.max(box[3], hr[3])],
-           hero: R(document.querySelector('.screen-profile .profile-hero')), goal: goal ? R(goal) : null,
+           /* MOVED IN 327z12 round 2: "the card" is the three Profile cards */
+           hero: R(document.querySelector('.screen-profile .profile-identity-tab')), goal: goal ? R(goal) : null,
            radius: parseFloat(getComputedStyle(body).borderTopLeftRadius) || 0,
            goalRadius: goal ? parseFloat(getComputedStyle(goal).borderTopLeftRadius) || 0 : 0,
            dpr: devicePixelRatio };
@@ -22093,7 +22101,8 @@ def check_b319h_layout(br):
                       [bx, gl, rc.get("radius"), rc.get("goalRadius")])
                 gap = (bx[1] - gl[3]) if (bx and gl) else None
                 # REVISED IN 321: "the spacing is a smidge too close" - 1.15rem
-                check("%s: ...and a gap above it of 1.15rem (321; .8rem before)" % dev, gap is not None and abs(gap - 18.4) <= 1.5, gap)
+                # MOVED IN 327z12 round 2: the cards' 1.1rem gap plus .45rem for the handle
+                check("%s: ...and a gap above it of 1.55rem (327z12 r2; 1.15rem in the old one card)" % dev, gap is not None and abs(gap - 24.8) <= 1.5, gap)
                 hw, al = (m or {}).get("hw") or {}, (m or {}).get("all") or {}
                 print("     %s case strip: %s" % (dev, json.dumps({"hardware": hw, "with text": al})))
                 check("%s: the strip's metal is not the brightest thing on the card (peak %s against the card's %s)" % (dev, hw.get("strip_peak"), al.get("card_peak")),
@@ -22104,18 +22113,15 @@ def check_b319h_layout(br):
                       bool(al) and al["strip_local"] < al["goal_local"], [al.get("strip_local"), al.get("goal_local")])
                 check("%s: its outline is no harder than the Next rank box's (%s <= %s)" % (dev, hw.get("strip_edge"), hw.get("goal_edge")),
                       bool(hw) and hw["strip_edge"] <= hw["goal_edge"] + 0.5, [hw.get("strip_edge"), hw.get("goal_edge")])
-            # ---- the Friends box is back on Profile ----
+            # ---- MOVED IN 327z12 round 2: Friends left Profile for the chat's Friends tab ----
             fr = pg.evaluate("""async () => {
               showProfile('profile'); await new Promise(r => setTimeout(r, 600));
               document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast, .rs-spot').forEach(x => x.remove());
-              const hero = document.querySelector('.screen-profile .profile-hero');
-              const box = document.querySelector('.screen-profile .profile-friendcard');
-              const out = { box: !!box, below: !!(box && hero && box.getBoundingClientRect().top >= hero.getBoundingClientRect().bottom),
-                            title: box ? (box.querySelector('.profile-classcard-title') || {}).textContent : null,
-                            sameWidth: !!(box && hero) && Math.abs(box.getBoundingClientRect().left - hero.getBoundingClientRect().left) <= 1
-                                       && Math.abs(box.getBoundingClientRect().right - hero.getBoundingClientRect().right) <= 1,
-                            presence: typeof presenceUnsub !== 'undefined' && !!presenceUnsub };
-              const btn = box && box.querySelector('button');
+              const out = { box: !!document.querySelector('.screen-profile .profile-friendcard') };
+              chatDockTab = 'friends'; openChatDock(); await new Promise(r => setTimeout(r, 500));
+              const bar = document.querySelector('.chatdock-panel .chatdock-friendsbar');
+              out.bar = !!bar;
+              const btn = bar && bar.querySelector('button');
               if(btn) btn.click();
               await new Promise(r => setTimeout(r, 500));
               const fs = document.querySelector('#stage > .screen-friends');
@@ -22123,29 +22129,25 @@ def check_b319h_layout(br):
               out.litF = [...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b => b.id);
               if(fs && fs.querySelector('.back-link')) fs.querySelector('.back-link').click();
               await new Promise(r => setTimeout(r, 500));
-              out.backTo = !!document.querySelector('#stage > .screen-profile .profile-hero:not([hidden])') && !!document.querySelector('#stage .profile-friendcard');
-              /* a friend request waiting says so on the box */
+              out.backTo = !!document.querySelector('#stage > .screen-profile .profile-hero:not([hidden])');
+              /* a friend request waiting is said on the bar's button */
               const real = window.incomingFriendRequests;
               window.incomingFriendRequests = () => [{ pub: 'zz-test', firstName: 'Test' }];
-              showProfile('profile'); await new Promise(r => setTimeout(r, 500));
-              const b2 = document.querySelector('.screen-profile .profile-friendcard');
-              out.pending = b2 ? ((b2.querySelector('.profile-friendcard-pending') || {}).textContent || null) : null;
-              out.pendingBtn = !!(b2 && b2.querySelector('.has-pending'));
+              chatDockTab = 'friends'; rebuildChatTab(); await new Promise(r => setTimeout(r, 300));
+              const b2 = document.querySelector('.chatdock-panel .chatdock-friendsbar-btn');
+              out.pending = b2 ? b2.textContent : null;
+              out.pendingBtn = !!(b2 && b2.classList.contains('has-req'));
               window.incomingFriendRequests = real;
-              const src = renderFriendChatList.toString() + openChatInviteSheet.toString() + openInviteFriendsSheet.toString();
-              /* each of the three says it at least once (build 324: the chat list's
-                 empty state has a second line for when Nova is the only friend) */
+              closeChatDock();
               out.chatCopy = [renderFriendChatList, openChatInviteSheet, openInviteFriendsSheet]
-                .every(f => f.toString().indexOf('Profile \\\\u203a Friends') >= 0) && src.indexOf('Class \\\\u203a') < 0;
+                .every(f => f.toString().indexOf('Profile \\u203a Friends') < 0 && f.toString().indexOf('Profile \u203a Friends') < 0);
               return out; }""")
-            check("%s: the Friends box is back on Profile, under the card, the card's width" % dev,
-                  fr["box"] and fr["below"] and fr["sameWidth"] and (fr["title"] or "").strip() == "Friends", fr)
-            check("%s: Profile counts who is online again (presence attached)" % dev, fr["presence"], fr["presence"])
-            check("%s: Manage friends opens the Friends screen with its back link, Profile lit, and back lands on Profile" % dev,
+            check("%s: no Friends box on Profile; the chat's Friends tab has the Friends bar (327z12 r2)" % dev, not fr["box"] and fr["bar"], fr)
+            check("%s: its button opens the Friends screen with its back link, the tab it was opened over lit, and back lands there" % dev,
                   fr["friends"] and fr["back"] and fr["litF"] == ["bottomtab-profile"] and fr["backTo"], fr)
-            check("%s: a friend request waiting is said on the Friends box" % dev,
-                  bool(fr["pending"]) and "waiting" in fr["pending"] and fr["pendingBtn"], [fr["pending"], fr["pendingBtn"]])
-            check("%s: chat and invite copy point to Profile \u203a Friends again" % dev, fr["chatCopy"], fr["chatCopy"])
+            check("%s: a friend request waiting is said on the bar's button" % dev,
+                  bool(fr["pending"]) and "request" in fr["pending"] and fr["pendingBtn"], [fr["pending"], fr["pendingBtn"]])
+            check("%s: chat and invite copy no longer send anyone to Profile \u203a Friends" % dev, fr["chatCopy"], fr["chatCopy"])
             # ---- Profile's tabs, read off the page ----
             pg.evaluate("() => { showProfile('profile'); }"); pg.wait_for_timeout(600)
             t = pg.evaluate(B319H_TABS)
@@ -23621,7 +23623,7 @@ def check_b320g_inspect(br):
         pg.evaluate(SEED, {"fresh": True})
         pg.evaluate("() => showProfile('profile')"); pg.wait_for_timeout(900)
         before = pg.evaluate("""() => { try{ syncProfileTabDot(); }catch(e){}
-          return { only: (() => { try{ return newCountOf(['chars', 'banners', 'themes', 'fx']) === 0 && !rankIsNew() && badgeNewCount() === 1; }catch(e){ return null; } })(), pf: !!document.querySelector('.profile-hero .pf-case .pf-case-new .new-dot, .pf-case .new-dot'),
+          return { only: (() => { try{ return newCountOf(['chars', 'banners', 'themes', 'fx']) === 0 && !rankIsNew() && badgeNewCount() === 1; }catch(e){ return null; } })(), pf: !!document.querySelector('.profile-identity-tab .pf-case .pf-case-new .new-dot, .pf-case .new-dot'),
                    tab: !!(document.getElementById('bottomtab-profile') || {classList:{contains(){return false;}}}).classList.contains('has-new') }; }""")
         pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
         clk = _StepperS(pg)
@@ -25731,7 +25733,7 @@ def check_b321f_profile(br):
       store.rankUpShown = null; store.rankUpFrom = null; persistLocally();
       showProfile(tab || 'profile'); await wait(1400);
       const Q = s => document.querySelector(s), col = e => e ? getComputedStyle(e).color : null;
-      const st = Q('.profile-hero .pf-standing'), g = Q('.profile-hero .pf-goal'), cs = Q('.profile-hero .pf-case');
+      const st = Q('.profile-hero .pf-standing'), g = Q('.profile-identity-tab .pf-goal'), cs = Q('.profile-identity-tab .pf-case');
       const rows = g ? [...g.querySelectorAll('.pf-task')].map(r => ({ k: r.dataset.kind, met: r.classList.contains('is-met'),
         label: ((r.querySelector('.pf-task-label') || {}).innerText || '').trim(), shown: ((r.querySelector('.pf-task-val') || {}).innerText || '').replace(/\s+/g, ' ').trim(),
         bar: !!r.querySelector('.pf-bar > i'), tick: (r.querySelector('.pf-check') || {}).textContent,
@@ -25873,6 +25875,8 @@ B323N_NAV = """async () => {
   return out; }"""
 
 B323N_FRIENDS_BOX = """async () => {
+  /* MOVED IN 327z12 round 2: the Profile Friends box came off Profile; who
+     you have and who is on is the top of the chat's Friends tab */
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const out = { err: null };
   try{
@@ -25881,28 +25885,25 @@ B323N_FRIENDS_BOX = """async () => {
     fbDb.collection = function(n){ if(n === 'leaderboard') boardReads++; return realColl.apply(this, arguments); };
     showProfile('profile'); await wait(800);
     document.querySelectorAll('#tour-overlay, #tour-tooltip, .daily-alert, .toast').forEach(x => x.remove());
-    const box = document.querySelector('#stage .profile-friendcard');
-    const rows = box ? [...box.querySelectorAll('.pf-friend')] : [];
-    const shown = el => !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
-    out.rows = rows.map(r => ({ name: (r.querySelector('.pf-friend-name') || {}).textContent,
-      status: [...r.querySelectorAll('.pf-friend-status > *')].filter(shown).map(e => e.textContent.trim()).join(' '),
-      dot: shown(r.querySelector('.friend-online-dot')),
-      dotGreen: (() => { const d = r.querySelector('.friend-online-dot'); return d ? getComputedStyle(d).backgroundColor : null; })(),
-      avatar: !!r.querySelector('.rank-avatar, svg') }));
-    out.more = box ? ((box.querySelector('.pf-friends-more') || {}).textContent || '').trim() : null;
-    const btn = box && [...box.querySelectorAll('button')].find(b => /friends/i.test(b.textContent));
+    out.profileBox = !!document.querySelector('#stage .profile-friendcard');
+    chatDockTab = 'friends'; openChatDock(); await wait(500);
+    const rows = [...document.querySelectorAll('.chatdock-panel .chatdock-chatrow.is-friend')];
+    out.rows = rows.map(r => ({ name: (r.querySelector('.chatdock-chatrow-name') || {}).textContent,
+      on: !!r.querySelector('.chatdock-chatrow-avatar.is-online'), avatar: !!r.querySelector('.rank-avatar, svg') }));
+    out.info = ((document.querySelector('.chatdock-panel .chatdock-friendsbar-info') || {}).textContent || '').trim();
+    const btn = document.querySelector('.chatdock-panel .chatdock-friendsbar-btn');
     out.btn = btn ? btn.textContent.trim() : null;
     out.boardReads = boardReads;
     fbDb.collection = realColl;
     if(btn){ btn.click(); await wait(500); }
     out.opens = !!document.querySelector('#stage > .screen-friends');
-    /* nobody yet: a line and the button */
+    /* nobody yet: the bar says so and offers Add friends */
     store.friendsIn = []; leaderboardRows = [];
-    showProfile('profile'); await wait(600);
-    const b2 = document.querySelector('#stage .profile-friendcard');
-    out.empty = { rows: b2 ? b2.querySelectorAll('.pf-friend').length : -1,
-      line: b2 ? ((b2.querySelector('.profile-friendcard-line') || {}).textContent || '').trim() : null,
-      btn: !!(b2 && b2.querySelector('button')) };
+    chatDockTab = 'friends'; openChatDock(); await wait(400);
+    out.empty = { rows: document.querySelectorAll('.chatdock-panel .chatdock-chatrow.is-friend').length,
+      line: ((document.querySelector('.chatdock-panel .chatdock-friendsbar-info') || {}).textContent || '').trim(),
+      btn: ((document.querySelector('.chatdock-panel .chatdock-friendsbar-btn') || {}).textContent || '').trim() };
+    closeChatDock();
   }catch(e){ out.err = String(e && e.stack || e).slice(0, 300); }
   return out; }"""
 
@@ -25995,21 +25996,17 @@ def check_b323n_nav(br):
             seen.append(pg.evaluate("() => (document.querySelector('#stage > .screen-profile > .navsegment > .iconbtn.active') || {}).textContent || null"))
             pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(x => x.remove())")
         check("a swipe moves one Profile tab at a time: Stats, Settings, stays, Stats", seen == ["Stats", "Settings", "Settings", "Stats"], seen)
-        # ---- the Friends box ----
+        # ---- the Friends box (MOVED IN 327z12 round 2: the chat's Friends tab) ----
         pg.evaluate(B323N_FRIENDS)
         fb = pg.evaluate(B323N_FRIENDS_BOX)
         rows = fb.get("rows") or []
-        check("the Friends box lists friends (3-5), each with a character and a name", 3 <= len(rows) <= 5 and all(x["avatar"] and x["name"] for x in rows), [fb.get("err"), rows])
-        on = [x for x in rows if x["dot"]]
-        check("the ones on come first, with what they are doing and the green dot",
-              len(on) == 2 and rows[0]["dot"] and rows[1]["dot"] and {rows[0]["status"], rows[1]["status"]} == {"In a Drill", "On the main menu"}
-              and all(x["dotGreen"] == "rgb(74, 222, 128)" for x in on), rows[:2])
-        check("everybody else says Offline, with no dot", all(x["status"] == "Offline" and not x["dot"] for x in rows[2:]) and len(rows) > 2, rows[2:])
-        check("the rest are counted, then Manage friends, which opens the Friends screen",
-              fb.get("more") == "and %d more" % (6 - len(rows)) and fb.get("btn") == "Manage friends" and fb.get("opens"), [fb.get("more"), fb.get("btn"), fb.get("opens")])
-        check("the box reads nothing of its own from the class board (already loaded)", fb.get("boardReads") == 0, fb.get("boardReads"))
+        check("no Friends box on Profile; the chat's Friends tab lists every friend, each with a character and a name",
+              not fb.get("profileBox") and len(rows) >= 6 and all(x["avatar"] and x["name"] for x in rows), [fb.get("err"), rows])
+        check("the ones on carry the online mark, and the bar counts them", sum(1 for x in rows if x["on"]) == 2 and "2 online" in (fb.get("info") or ""), [fb.get("info"), rows])
+        check("the bar's button is Add friends and opens the Friends screen", fb.get("btn") == "Add friends" and fb.get("opens"), [fb.get("btn"), fb.get("opens")])
+        check("none of it reads the class board of its own (already loaded)", fb.get("boardReads") == 0, fb.get("boardReads"))
         e = fb.get("empty") or {}
-        check("with no friends: no rows, a short line, and the button", e.get("rows") == 0 and bool(e.get("line")) and e.get("btn"), e)
+        check("with no friends: no rows, the bar says so, and Add friends", e.get("rows") == 0 and "No friends" in (e.get("line") or "") and e.get("btn") == "Add friends", e)
     except Exception as ex:
         check("build 323 navigation could be driven at all", False, str(ex)[:300])
     ctx.close()
@@ -28689,18 +28686,14 @@ def check_b324n2_friends(br):
       presenceMap = null;
       store.friendsIn = leaderboardRows.map(e => e.pub);
       const koi0 = BANNERS.find(b => b.id === 'tests500').have();
-      showProfile('profile'); await wait(700);
-      const read = () => ({ count: (document.querySelector('.profile-classcard-count') || {}).textContent,
-        rows: [...document.querySelectorAll('.pf-friend')].map(r => (r.dataset.pub === 'nova' ? 'NOVA:' : '') + r.querySelector('.pf-friend-name').textContent
-          + '|' + [...r.querySelectorAll('.pf-friend-act, .pf-friend-off')].filter(x => getComputedStyle(x).display !== 'none' && !x.hidden).map(x => x.textContent).join('')),
-        more: (document.querySelector('.pf-friends-more') || {}).textContent });
-      const avail = read();
-      novaAwayForce = true; showProfile('profile'); await wait(700);
-      const away = read();
-      novaAwayForce = false; showProfile('profile'); await wait(700);
-      document.querySelector('.pf-friend[data-pub="nova"]').click(); await wait(500);
-      const card = !!document.querySelector('.person-card.is-nova');
-      document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
+      /* MOVED IN 327z12 round 2: the Profile Friends box is gone; the count
+         is the chat Friends tab's bar */
+      const read = async () => { chatDockTab = 'friends'; openChatDock(); await wait(400);
+        const info = ((document.querySelector('.chatdock-panel .chatdock-friendsbar-info') || {}).textContent || '').trim();
+        closeChatDock(); await wait(300); return { info }; };
+      const avail = await read();
+      novaAwayForce = true; const away = await read();
+      novaAwayForce = false;
       showFriends(); await wait(600);
       const nrow = document.querySelector('.friend-sect .friend-row.is-nova');
       const manage = { has: !!nrow, buttons: nrow ? nrow.querySelectorAll('button').length : -1, text: nrow ? nrow.textContent : '',
@@ -28710,20 +28703,13 @@ def check_b324n2_friends(br):
       nrow.click(); await wait(500);
       manage.card = !!document.querySelector('.person-card.is-nova');
       document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
-      return { avail, away, card, manage, ids: friendPublicIds(), koi0, koi: BANNERS.find(b => b.id === 'tests500').have(),
+      return { avail, away, manage, ids: friendPublicIds(), koi0, koi: BANNERS.find(b => b.id === 'tests500').have(),
                w: window.__fsw.slice(), push: window.__push }; }""")
     av, aw, mg = r.get("avail") or {}, r.get("away") or {}, r.get("manage") or {}
-    check("Profile's Friends box shows Nova, online-first by name while available, with 'Available'",
-          (av.get("rows") or [])[:3] == ["Ann|Online", "NOVA:Nova|Available", "Zed|Online"] or
-          ((av.get("rows") or [""])[1].startswith("NOVA:Nova|Available") and len(av.get("rows") or []) == 4), av)
-    check("...and counts him: '6 friends', four rows, 'and 2 more'", av.get("count") == "6 friends" and len(av.get("rows") or []) == 4 and av.get("more") == "and 2 more", av)
-    # MOVED IN 326 (b326e): away is "Out of range" - he is out scanning the
-    # debris field ("When nova says he away in chat make it more
-    # game/storyline like")
-    check("away, he says Out of range and drops below the friends who are on, but never into 'and N more' (he takes the fourth row)",
-          [x.split("|")[0] for x in aw.get("rows") or []] == ["Ann", "Zed", "Bob", "NOVA:Nova"] and (aw.get("rows") or [""])[-1] == "NOVA:Nova|Out of range"
-          and aw.get("more") == "and 2 more", aw)
-    check("tapping him on the Friends box opens his card", r.get("card"), r.get("card"))
+    # MOVED IN 327z12 round 2: no Friends box on Profile - the chat's Friends bar counts him
+    check("the chat's Friends bar counts him: '6 friends', 3 online while he is available",
+          (av.get("info") or "").startswith("6 friends") and "3 online" in (av.get("info") or ""), av)
+    check("away, he is not counted online (2 online)", (aw.get("info") or "").startswith("6 friends") and "2 online" in (aw.get("info") or ""), aw)
     check("Manage friends lists Nova with his rank and no Remove (no button at all), the others keep theirs",
           mg.get("has") and mg.get("buttons") == 0 and "Supernova" in (mg.get("text") or "") and "Available" in (mg.get("text") or "")
           and mg.get("removes") == 5 and (mg.get("order") or [])[:3] == ["Ann", "Nova", "Zed"], mg)

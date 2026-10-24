@@ -288,6 +288,11 @@ def round2(br):
     pg2.evaluate("()=>showFriends()"); pg2.wait_for_timeout(2500)
     r11 = pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
       .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
+    # MOVED IN 327z12 round 2: Profile's wide button was the Friends box's,
+    # which moved to the chat - Settings' wide buttons are read as well
+    pg2.evaluate("()=>showAppearance()"); pg2.wait_for_timeout(2500)
+    r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
+      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
     pg2.evaluate("()=>showProfile()"); pg2.wait_for_timeout(2500)
     r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
       .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
