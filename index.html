@@ -72409,8 +72409,12 @@ function nswLensFor(track, on){
 document.addEventListener("pointerdown", e => {
   if(e.button > 0 || e.isPrimary === false) return;
   /* on an iPhone the row's own input lies over its box as a native switch
-     (hsw-opt, build 327z10): a press on it is a press on the box */
-  const tg = e.target && e.target.classList && e.target.classList.contains("hsw-opt") ? e.target.parentElement.querySelector(":scope > .box") : e.target;
+     (hsw-opt, build 327z10): a press on it is a press on the box; and a
+     switch button's haptic switch (.nova-hsw) is a press on its track */
+  const t0 = e.target;
+  const tg = t0 && t0.classList && t0.classList.contains("hsw-opt") ? t0.parentElement.querySelector(":scope > .box")
+    : t0 && t0.classList && t0.classList.contains("nova-hsw") && t0.parentElement && t0.parentElement.matches('[role="switch"]') ? t0.parentElement.querySelector(".nsw") || t0
+    : t0;
   const track = tg && tg.closest ? tg.closest(NSW_SEL) : null;
   if(!track || nswCalm()) return;
   const host = nswHost(track);
@@ -72419,19 +72423,28 @@ document.addEventListener("pointerdown", e => {
   const run = nswLensFor(track, host.on());
   if(!run) return;
   nswMorph(run, true, 0);
-  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false, native: tg !== e.target };
+  nswActive = { track, host, run, id: e.pointerId, x0: e.clientX, y0: e.clientY, c0: run.c, drag: false, native: tg !== e.target, on0: host.on() };
   if(e.pointerType === "mouse"){ try{ track.setPointerCapture(e.pointerId); }catch(err){} }
 }, { passive: true });
 document.addEventListener("pointermove", e => {
   const a = nswActive;
   if(!a || e.pointerId !== a.id) return;
-  /* a native switch drags itself (and ticks); ours would flip it a second time */
-  if(a.native) return;
+  /* SWIPED, NOT ONLY TAPPED (327z15): "The toggle switches, they only
+     switch if you tap, they also need to work if you swipe, similar to the
+     bottom tab." On an iPhone the press lands on the native switch laid
+     over the track, and this used to step aside for it - "a native switch
+     drags itself" - but invisible, and with its change kept from the row,
+     it moved nothing you could see and committed nothing. The glass knob
+     follows the finger from any start now, and the release decides. */
   const dx = e.clientX - a.x0, dy = e.clientY - a.y0;
   if(!a.drag){
     if(Math.abs(dx) < 5 || Math.abs(dx) < Math.abs(dy)) return;
     a.drag = true; a.track.classList.add("nsw-drag");
   }
+  /* how fast it is going, for a flick (px per ms, eased) */
+  const now = performance.now();
+  if(a.lastT){ const v = (e.clientX - a.lastX) / Math.max(1, now - a.lastT); a.vx = a.vx == null ? v : a.vx * .5 + v * .5; }
+  a.lastT = now; a.lastX = e.clientX;
   const g = a.run.g;
   let c = a.c0 + dx;
   /* a little give past either end, never more than 4px */
@@ -72449,12 +72462,22 @@ function nswRelease(e){
   /* a scroll took the finger, or the press was abandoned: back as it was */
   if(e.type === "pointercancel"){ nswSettle(run, a.host.on()); return; }
   if(a.drag){
-    const want = run.c > (run.g.offC + run.g.onC) / 2;
+    /* where it is let go decides - or, for a flick, which way it was going */
+    const dxAll = (typeof e.clientX === "number" ? e.clientX : a.x0) - a.x0;
+    const flick = a.lastT && performance.now() - a.lastT < 90 && Math.abs(a.vx || 0) > .25;
+    const want = flick ? a.vx > 0 : Math.abs(dxAll) >= 14 && (dxAll > 0) !== a.on0 ? dxAll > 0 : run.c > (run.g.offC + run.g.onC) / 2;
     nswSuppressUntil = performance.now() + 450;
+    /* a native switch under the finger may have flipped itself on the way
+       (its own tick): it is put back to where the press began, and the one
+       commit below is the row's own click - its handler, lock, save and
+       sound - as a tap would run them */
+    if(a.native && a.host.el && a.host.el.type === "checkbox" && a.host.el.checked !== a.on0){ try{ a.host.el.checked = a.on0; }catch(err){} }
     if(want !== a.host.on()){
       nswCommitting = true;
       try{ a.host.commit(); }finally{ nswCommitting = false; }
     }
+    /* and nothing after it - a native switch's own late flip - moves it again */
+    if(a.host.el && a.host.el.type === "checkbox") nswHold = { el: a.host.el, val: a.host.el.checked, until: performance.now() + 500 };
     nswSettle(run, a.host.on());
     return;
   }
@@ -72465,6 +72488,13 @@ function nswRelease(e){
   clearTimeout(run.t);
   run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; nswSettle(run, a.host.on()); } }, 350);
 }
+let nswHold = null;
+["change", "click"].forEach(ev => document.addEventListener(ev, e => {
+  const h = nswHold;
+  if(!h || nswCommitting) return;
+  if(performance.now() > h.until){ nswHold = null; return; }
+  if(e.target === h.el && h.el.checked !== h.val){ try{ h.el.checked = h.val; }catch(err){} e.preventDefault(); e.stopImmediatePropagation(); }
+}, true));
 document.addEventListener("pointerup", nswRelease, { passive: true });
 document.addEventListener("pointercancel", nswRelease, { passive: true });
 /* the click a drag leaves behind is not a second tap */
@@ -109400,7 +109430,7 @@ function showBugReport(){
   const sub = document.createElement("p");
   sub.className = "cal-sub bugreport-sub";
   sub.textContent = "Describe what went wrong and what you were doing when it happened. "
-    + "Your report goes to whoever maintains Nova, with your first name, app version "
+    + "Your report goes to the Nova admin, with your first name, app version "
     + "and device attached so the problem can be tracked down and fixed.";
   form.appendChild(sub);
 
@@ -109477,7 +109507,7 @@ function showBugReport(){
     head.className = "bugreport-sent-title"; head.textContent = "Report sent";
     const line = document.createElement("p");
     line.className = "bugreport-sent-text";
-    line.textContent = "Thank you. It’s with whoever maintains Nova now.";
+    line.textContent = "Thank you. It’s with the Nova admin now.";
     const back = document.createElement("button");
     back.type = "button"; back.className = "next bugreport-done";
     back.textContent = "Back to Settings";

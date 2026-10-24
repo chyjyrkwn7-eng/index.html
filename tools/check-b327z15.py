@@ -78,6 +78,13 @@ Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
      fill is still grey (no word lights before the fill).
   V. Calendar: the finals and graduation are one card of pages with a dot per
      page, and a swipe moves it on a page.
+
+  Round 6:
+  W. "The toggle switches, they only switch if you tap, they also need to
+     work if you swipe": as an iPhone (the native switch over the track), a
+     swipe across a Settings switch moves its glass knob with the finger and
+     flips it, both ways; a tap still flips it.
+  X. Report a bug says where a report goes without "whoever maintains".
 """
 import importlib.util
 import itertools
@@ -93,7 +100,9 @@ cb = z5b.cb
 check = cb.check
 from playwright.sync_api import sync_playwright
 
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUV")
+UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
+      "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWX")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -567,10 +576,63 @@ def section_v(br):
     ctx.close()
 
 
+def section_w(br):
+    print("\nW. switches follow a swipe (as an iPhone)")
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True, is_mobile=True, device_scale_factor=2, user_agent=UA)
+    ctx.add_init_script(z5b.STANDALONE)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}" % cb.USED_ACCOUNT)
+    pg = cb.open_page(ctx)
+    pg.goto(cb.URL)
+    pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    pg.wait_for_timeout(2500)
+    pg.evaluate("() => { showAppearance(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(1200)
+    ROW = "() => [...document.querySelectorAll('#stage .opt')].filter(r => r.querySelector(':scope > .box') && r.offsetHeight && !/Reduce motion/.test(r.textContent))[0]"
+    info = pg.evaluate("() => { const row = (" + ROW + ")(); row.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = row.querySelector(':scope > .box').getBoundingClientRect(); const cb = row.querySelector(':scope > input'); return { x0: b.left + b.height / 2, x1: b.right - b.height / 2, y: b.top + b.height / 2, native: cb.classList.contains('hsw-opt') }; }")
+    state = lambda: pg.evaluate("() => (" + ROW + ")().querySelector(':scope > input').checked")
+    cdp = ctx.new_cdp_session(pg)
+    def swipe(xa, xb):
+        y = info["y"]
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": xa, "y": y}]})
+        pg.wait_for_timeout(40)
+        for i in range(1, 13):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": xa + (xb - xa) * i / 12, "y": y}]})
+            pg.wait_for_timeout(16)
+        lx = pg.evaluate("() => { const l = document.querySelector('.nsw-lens'); return l ? new DOMMatrixReadOnly(getComputedStyle(l).transform).m41 : null; }")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(800)
+        return lx
+    check("W. the switch has the iPhone's native switch over it", info["native"], info)
+    a = state()
+    l1 = swipe(info["x1"], info["x0"]) if a else swipe(info["x0"], info["x1"])
+    b = state()
+    l2 = swipe(info["x1"], info["x0"]) if b else swipe(info["x0"], info["x1"])
+    c = state()
+    check("W. a swipe flips it, and a swipe back flips it back (%s -> %s -> %s)" % (a, b, c), a != b and b != c, (a, b, c))
+    check("W. the glass knob is under the finger mid-swipe (%s, %s)" % (l1, l2), l1 is not None and l2 is not None and abs((l1 or 0) - (l2 or 0)) > 12, (l1, l2))
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": info["x0"] + 8, "y": info["y"]}]})
+    pg.wait_for_timeout(60)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(800)
+    d = state()
+    check("W. a tap still flips it (%s -> %s)" % (c, d), d != c, (c, d))
+    ctx.close()
+
+
+def section_x(br):
+    print("\nX. Report a bug says where it goes")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    t = pg.evaluate("() => { try{ showBugReport(); }catch(e){ try{ showReportBug(); }catch(e2){} } return document.querySelector('#stage') ? document.querySelector('#stage').textContent : ''; }")
+    check("X. no 'whoever maintains' on Report a bug", "whoever maintains" not in t and "Nova admin" in t, t[:200])
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x)):
             if k in ONLY:
                 try:
                     fn(br)

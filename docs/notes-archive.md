@@ -27486,3 +27486,24 @@ Madison's list, item by item (gate: check-b327z15 P-V, each failing on 327z14):
   first (ring, class days left, date), then each final exam (big day count,
   name, date; a tap picks its day), scroll-snap pages, a dot per page and
   "n of N" in the head. The old builders stay unused for a revert.
+
+#### 327z15, round 6 - switches follow a swipe; bug reports go to the Nova admin
+
+- Madison: *"The toggle switches, they only switch if you tap, they also need
+  to work if you swipe, similar to the bottom tab."* The glass-knob layer
+  (NSW_SEL, build 325) already dragged - but on an iPhone the press lands on
+  the row's own input laid over the track as a native switch (hsw-opt), and
+  pointermove returned for it ("a native switch drags itself"): invisible,
+  it moved nothing you could see and committed nothing. Reproduced in
+  Chromium with an iPhone user agent (the hsw layer then mounts). Now the
+  knob follows the finger from any start, including a switch button's
+  `.nova-hsw` (mapped to its `.nsw`); the release decides by where it is
+  let go, or by direction for a flick (velocity) or a 14px move away from
+  where it started; a native switch's own flip during the drag is put back
+  first, and `nswHold` keeps a late native flip (change/click within 500ms)
+  from moving it again. A tap is unchanged. Haptic tick on a scripted
+  commit is not guaranteed on iOS (only a native flip ticks) - phone only.
+- Report a bug: "Your report goes to the Nova admin" / "It's with the Nova
+  admin now." (was "whoever maintains Nova").
+- Gate: check-b327z15 W (as an iPhone: swipe flips both ways, knob under the
+  finger, tap still flips) and X.
