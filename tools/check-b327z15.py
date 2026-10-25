@@ -526,13 +526,16 @@ def section_t(br):
       const hc = hd ? getComputedStyle(hd).color : null;
       const me = document.querySelector('#stage .rank-me-btn');
       const bg = me ? getComputedStyle(me).backgroundColor : null;
-      return { wc, hc, bg }; }""")
+      const sb = document.querySelector('#stage .searchbox'); const sbg = sb ? getComputedStyle(sb).backgroundColor : null;
+      return { wc, hc, bg, sbg }; }""")
     check("%s: T. the hundo count is This Week's colour (%s / %s)" % (label, r["hc"], r["wc"]), r["hc"] and r["hc"] == r["wc"], r)
     import re as _re
     m = _re.findall(r"[\d.]+", r["bg"] or "")
     lum = sum(float(x) for x in m[:3]) / 3 if len(m) >= 3 else 255
     alpha = float(m[3]) if len(m) >= 4 else 1
-    check("%s: T. Find me is a dark, solid button (%s)" % (label, r["bg"]), lum < 30 and alpha > .9, r)
+    # MOVED IN round 31: "The black 'find me' button is not the move, revert
+    # that" - it is the search field's glass again, not a solid black
+    check("%s: T. Find me is the field's glass again, not solid black (%s)" % (label, r["bg"]), not (lum < 30 and alpha > .9), r)
     ctx.close()
 
 

@@ -6145,19 +6145,9 @@
     will-change:backdrop-filter; backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
     box-shadow:var(--surface-shadow);
   }
-  /* A BLACK BUTTON BESIDE THE GLASS FIELD (327z15): "The find me button on
-     leaderboard, I don't like it. Maybe it's because it doesn't go with the
-     search bar? ... maybe the button should be a black button?" As glass it
-     read as a second field. It is the app's black button now (the
-     Customize, Close and back buttons), at the field's height, in the
-     field's own type size so the two words sit level. */
-  html[data-theme][data-layout="modern"] .iconbtn.rank-me-btn{
-    background:#0A0A0C !important; border:1px solid rgba(255,255,255,.1) !important; color:#FFFFFF !important;
-    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset, 0 4px 12px rgba(0,0,0,.4) !important;
-    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
-    font-size:1rem; font-weight:700; letter-spacing:0;
-  }
-  html[data-theme][data-layout="modern"] .iconbtn.rank-me-btn:active{ background:#0A0A0C !important; opacity:1; transform:scale(.96); }
+  /* (The black Find me of 327z15 is reverted in round 31 - "The black
+     'find me' button is not the move, revert that." It is the field's own
+     glass again, as above.) */
   /* The top three carry their medal colour through the row's own text,
      not just the rank circle, per explicit request - name and stat line
      both. Everyone from fourth down keeps the ordinary --ink/--soft
@@ -21881,7 +21871,8 @@
   .picks > label.pick > .pname, .picks > label.pick > .pcount{ padding-top:0; padding-bottom:0; }
   .picks > label.pick > .pick-stars{ display:contents; }
   .picks > label.pick .pick-progress-label{ display:none; }
-  .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:start; width:2.6rem; height:2.6rem; margin:-.25rem -.2rem -.35rem .4rem; }
+  /* equal insets from the top and the right (round 31): .55rem each on a phone (.8rem top padding less .25, .85rem right less .3) */
+  .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:start; width:2.6rem; height:2.6rem; margin:-.25rem -.3rem -.35rem .4rem; }
   .picks > label.pick .pick-barrow{ grid-area:bar; align-self:end; width:100%; gap:.5rem; }
   .picks > label.pick .pick-bar-track{ height:4px; background:rgba(255,255,255,.12); }
   .picks > label.pick .pick-bar-count{ font-size:.68rem; color:var(--soft); }
@@ -21890,6 +21881,7 @@
   @media (max-width:24.5rem){
     [data-layout="modern"] .picks > label.pick{ padding-left:.75rem; padding-right:.65rem; }
     .picks > label.pick > .pname{ font-size:.8rem; letter-spacing:0; }
+    .picks > label.pick .pick-badge{ margin-right:-.1rem; }
   }
   /* selected */
   /* build 327z5: the card's own grid hands any extra height (another card
@@ -21967,7 +21959,9 @@
      a small amber dot, no box round it. */
   [data-layout="modern"] .picks > label.pick{
     grid-template-columns:auto minmax(0,1fr) auto;
-    grid-template-rows:auto auto minmax(0,1fr) auto auto;
+    /* the bar's row keeps its height when there is no bar (an earned badge
+       has none), so the count sits in the same place on every card (round 31) */
+    grid-template-rows:auto auto minmax(0,1fr) auto minmax(.95rem, auto);
     grid-template-areas:"box next badge" "name name name" "ver ver ver" "count count count" "bar bar bar";
   }
   @media (min-width:40rem){
@@ -22007,12 +22001,17 @@
   /* the "more units coming" tile keeps its own quiet layout, on the same corner */
   [data-layout="modern"] .picks > .pick.pick-tba{ border-radius:18px; }
   @media (min-width:40rem){
-    [data-layout="modern"] .picks > label.pick{ padding:1.05rem 1.15rem 1rem 1.15rem; grid-template-rows:auto auto auto minmax(0,1fr) auto 1.15rem; border-radius:20px; }
+    /* round 31: five rows for the five areas (box/next/badge, name, ver,
+       count, bar) - this said six, so on an iPad and a laptop the count fell
+       into the slack row's top, right under the name, with the card's empty
+       space below it. The count and bar are at the foot now. */
+    [data-layout="modern"] .picks > label.pick{ padding:1.05rem 1.15rem 1rem 1.15rem; grid-template-rows:auto auto minmax(0,1fr) auto 1.15rem; border-radius:20px; }
     .picks > label.pick > .box{ width:26px; height:26px; }
     .picks > label.pick > .pname{ margin-top:.75rem; font-size:1.12rem; line-height:1.25; min-height:calc(2 * 1.25em); }
     .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
     .picks > label.pick > .pcount{ font-size:.8rem; margin-top:.7rem; }
-    .picks > label.pick .pick-badge{ width:3.3rem; height:3.3rem; margin:-.35rem -.25rem -.5rem .6rem; }
+    /* the badge as far from the top edge as from the right (round 31: "aren't perfectly centered to the corner") - .7rem each */
+    .picks > label.pick .pick-badge{ width:3.3rem; height:3.3rem; margin:-.35rem -.45rem -.5rem .6rem; }
     .picks > label.pick .pick-bar-count{ font-size:.76rem; }
     .picks{ gap:.85rem; }
   }
@@ -26656,16 +26655,21 @@
     position:relative;
   }
   .pick-badge svg{ width:100%; height:100%; display:block; position:relative; z-index:1; }
+  /* THE GLOW KEPT OFF THE CARD'S EDGE (327z15 round 31): "the glow is too
+     close to the border ... less glow or another glow". It reached 28% past
+     the badge - past the card's rim, sitting 11px in. Now a soft pool that
+     ends inside the badge's own width (inset -6%, fading by 64%), and the
+     emblem's own halo is a tighter 4px. */
   .pick-badge.earned::before{
-    content:""; position:absolute; inset:-28%; border-radius:50%; pointer-events:none;
+    content:""; position:absolute; inset:-6%; border-radius:50%; pointer-events:none;
     background:radial-gradient(circle,
-      color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 48%, transparent) 0%,
-      color-mix(in srgb, var(--badge-glow, var(--theme-c2)) 20%, transparent) 42%,
-      transparent 70%);
+      color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 34%, transparent) 0%,
+      color-mix(in srgb, var(--badge-glow, var(--theme-c2)) 12%, transparent) 40%,
+      transparent 64%);
   }
   .pick-badge.earned svg{
-    filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))
-           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 60%, transparent));
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))
+           drop-shadow(0 0 4px color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 50%, transparent));
   }
   .pick-badge:not(.earned) svg{ opacity:.78; }
   /* .pick is a GRID with explicit placement, not a column - appended
@@ -32873,6 +32877,18 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     top:calc((100dvh - 6rem) / 2 + 1rem + var(--lap-hero) * .04 - var(--dq-size) / 2); bottom:auto;
     width:var(--dq-size); height:var(--dq-size); font-size:1.75rem;
   }
+  /* THE PAGE'S NAME IN THE TOP-LEFT CORNER (327z15 round 31): "The words at
+     the top of the screen, like select a mode ... shouldn't that page word
+     be in the top left corner?" On a laptop it sat at the left of the
+     centred column, far from any corner. Now it is the mirror of the chat
+     button: the same inset from the left as that button has from the right,
+     level with its middle, and it scrolls away with the page (absolute, not
+     fixed, so nothing passes under it). A test keeps its own header - the
+     mode, the count and the progress line belong together there. */
+  html[data-layout] body .wrap:not(:has(> .meter:not([hidden]))) > #count{
+    position:absolute; z-index:5; left:1.5rem; top:calc(env(safe-area-inset-top, 0px) + .75rem + 35px); translate:0 -50%;
+    margin:0; padding:0 !important; border:0; font-size:1.02rem; letter-spacing:.01em;
+  }
   /* the daily question's card (round 31): under NOVA's line, ranged to the
      planet's side like the words; its "?" in normal flow inside it */
   html[data-layout] body .panel.home.screen-home-actual > .dq-card{
@@ -32951,6 +32967,13 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-layout] body .screen-calendar-tab > .cal-count-card{ grid-column:1; grid-row:3 / 5; align-self:stretch; margin:1rem 0 0 !important;
     display:flex; flex-direction:column; }
   html[data-layout] body .screen-calendar-tab > .cal-count-card > .cal-count-track{ flex:1 1 auto; align-items:center; }
+  /* round 31: "the countdown for graduation one, the box is much bigger than
+     that one thing. Make sure all the stuff within the box is sized
+     bigger/better to fit it best" - each page's contents a third larger and
+     centred in the card's width, the kicker over them */
+  html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page{ display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page > *{ zoom:1.35; }
+  html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page > .cal-count-kick{ zoom:1.15; align-self:center; margin-bottom:.6rem; }
   /* (round 26) "perfect the spacing of the boxes": the month card's top
      lines up with Today's (a later theme rule gave it a 1.2rem top margin),
      every gap between boxes is the same 1rem, and the day tiles are a
@@ -33512,6 +33535,15 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      placeholder stays the soft grey under it, as in his screenshot. */
   [data-theme="dark"] .tabsearch-glass,
   [data-theme="dark"] .searchicon{ color:rgba(243,245,247,.92); }
+  /* ...and it is drawn ON the field: the glass field (its backdrop-filter is
+     a layer of its own, after the icon) painted over the unit search's
+     magnifier, which is why it still read grey through the glass */
+  .searchicon{ z-index:2; }
+  /* ONE SEARCH FIELD (round 31): "Search names in leaderboard? ... ensure
+     all the other search bars are updated to be the same" - the board's
+     field has the unit search's magnifier at its start too */
+  .rank-search-wrap > .searchicon{ left:.95rem; }
+  .rank-search-wrap > .rank-search{ padding-left:2.6rem; }
   .tabsearch-input{
     flex:1 1 auto; min-width:0; height:100%; border:0; outline:none; background:none; padding:0;
     font:inherit; font-size:17px; color:var(--ink); -webkit-appearance:none; appearance:none;
@@ -127230,7 +127262,8 @@ function showRankings(defaultBoard){
     paint();
   });
   search.addEventListener("input", () => { clearBtn.hidden = !search.value; });
-  searchWrap.append(search, clearBtn);
+  /* the same magnifier as the unit search (round 31) */
+  searchWrap.append(searchMagnifier(), search, clearBtn);
   const meBtn = document.createElement("button");
   meBtn.type = "button"; meBtn.className = "iconbtn rank-me-btn";
   /* (327z12 gave it a blue "where am I" arrow; it came off in 327z13 -
