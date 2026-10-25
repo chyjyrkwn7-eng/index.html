@@ -34005,6 +34005,26 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   .chatdock-note.is-foot{ margin:.7rem 0 0; text-align:center; font-size:.8rem; opacity:.75; }
   html[data-theme][data-layout] .chatdock-friendsbar-btn.has-req{ background:var(--new-dot, #FFD43B) !important; color:#1A1400 !important; }
+
+  /* ---- NO FROST ON WHAT SCROLLS (327z15 round 36) ----
+     Madison: "Ensure the bottom tab lag is not there, the pill/bubble lags and isn't extremely
+     smooth. Ensure each page opens extremely smooth." The app's code for a tab switch is now
+     small (a screen's build ~15ms on a phone); what is left is the GPU's. Every card, row and
+     section on a page carried the floating controls' 24px backdrop blur (and will-change on it,
+     a layer each): the unit screen sixteen at once, Profile's cards up to 360x562, the calendar's
+     month 360x512. A blur behind something that moves is re-done every frame on an iPhone - every
+     frame of a scroll and of a page's entrance, under the tab bar's own glass. On a 62% dark pane
+     over the app's dark sky the frost was all but invisible (the next-rank card is opaque: none
+     at all). Here only what floats keeps it - the tab bar, the chat and daily question buttons,
+     Pause, the search pills, the pop-ups; what scrolls is the same pane a shade denser, no frost. */
+  html[data-layout] :is(.motion-summary, .cal-month-head, .cal-action-btn, .cal-row, .cal-grid-arrow, .cal-daycard, .lb-row,
+    .vroom-roster, .rank-row, .vroom-test-summary, .welcomeintro-row, .speedopt, .chip, .info-note, .codereveal-box,
+    .results-review, .points-progress-sect, .points-stat-box, .pbbanner, .stat-card, .modecard, .pick, .more-toggle,
+    .unlock-row, .cz-row, .friend-sect, .settings-card, .cal-monthview, .profile-hero, .pf-goal){
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
+    /* the pane a shade denser, so the sky's stars do not show through where the frost hid them */
+    --surface-1:rgba(12,13,19,.7); --surface-2:rgba(18,20,28,.7);
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>

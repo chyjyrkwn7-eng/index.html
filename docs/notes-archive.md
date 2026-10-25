@@ -28367,3 +28367,31 @@ different screens or clicking stuff, there is lag/delay."*
   slices at 4x, one 66ms at 1x) already wait 2s after any touch and 1.6s
   after a screen goes in; Home's cost in headless Chromium is software
   raster, which a phone's GPU does not pay.
+
+## Build 327z15 round 36 - no frost on what scrolls
+
+Madison: *"Ensure the bottom tab lag is not there, the pill/bubble lags and
+isn't extremely smooth. Ensure each page opens extremely smooth."*
+
+- Measured first. The lens, the platter and the bar's swell are all Web
+  Animations of transform/opacity (compositor; builds 310, 327z5-13). At 1x
+  CPU every screen idles at 60fps; a tab switch's own code is small
+  (navRun ~15-18ms at 1x, Home 18ms, no long tasks in 2.5s after arriving).
+  What is left of a switch is drawing - the GPU's on a phone.
+- **No backdrop blur on anything that scrolls.** 30 kinds of card, row and
+  section (`.pick` x16 on the unit screen, `.pf-goal` 360x562, `.cal-monthview`
+  360x512, `.cal-month-head`, `.rank-row`, `.modecard`, `.settings-card`,
+  `.points-progress-sect`...) carried the floating controls' 24px frost with
+  `will-change:backdrop-filter` (a layer each). A blur behind something that
+  moves is redone every frame on iOS - every frame of a scroll and of a
+  page's entrance. Their fill was 62% dark over the dark sky (the next-rank
+  card opaque), so the frost was all but invisible: one override at the end
+  of the main style block takes it (and the will-change) off and makes the
+  pane 70% (`--surface-1/2` on those elements) so no star shows through.
+  Pixel diff against before, seven screens: mean < 0.8 levels, < 0.03% of
+  pixels over 20 levels (a star's 3px dot, and the tab bar's own glass now
+  seeing crisp cards under it). What floats keeps its glass: the tab bar,
+  the chat / daily question / room chat buttons, Pause, the search pills,
+  Find me, Select all, back to top, every pop-up.
+- Not measurable here: the phone's GPU (headless Chromium rasterises in
+  software). Confirm on an iPhone.
