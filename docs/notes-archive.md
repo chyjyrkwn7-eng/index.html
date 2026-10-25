@@ -28570,3 +28570,20 @@ failed ([99, 89, 99]): the floor trailed the account by the last few
 minutes. Madison asked for fewer writes only if it "still works properly",
 so the floor goes on every hide again; a hide with nothing new already
 writes none (publishNow). check-b327z15-fb H2 now asserts that.
+
+Round 43: "Lobby invites to virtual rooms and stuff, the same treatment ...
+Any other relevant pops similar need the same look? ... ensure they are all
+complete." Rendered every pop-up side by side. Already the banner: friend
+requests, lobby/chat invites, Nova's challenge, the daily question, the
+passive lines, toasts (bottom, by design), and the message previews (41).
+Not yet: the update notice and the two Home Screen notices (add to Home,
+re-add with the code). dressNoticeBar() in showNoticeBar gives them the
+kind bar, glyph and tag (UPDATE blue, HOME SCREEN amber) and the drawn x;
+clearNoticeOfChat now settles a glass notice under the chat button at full
+width like the banners. Their buttons were ~33px: now 44px, letters
+centred (display:inline-block + text-box trim; a flex button's anonymous
+text item is never trimmed). check-ink-centre measures the three notices
+too: 177 controls, ALL PASS.
+Left as they are on purpose: the celebration banners (rank up, badge
+found, character/theme unlocked, secret flare) - their own designed pill,
+not a notice.

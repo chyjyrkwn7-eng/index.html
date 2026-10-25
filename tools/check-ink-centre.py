@@ -128,7 +128,7 @@ def main():
             # Ensure all buttons are good to go" - of a banner's View. The pop-ups were
             # never measured: every banner, the sheets and cards, the chat, the tips.
             CLEAR = ("()=>{ document.querySelectorAll('.app-banner, .daily-alert, .vroom-chat-alert, #intro-pop, #resume-offer, "
-                     "#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot, .invite-overlay').forEach(n=>n.remove()); "
+                     "#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot, .invite-overlay, #updatebanner').forEach(n=>n.remove()); "
                      "try{ if(chatDockOpen) closeChatDock(); }catch(e){} }")
             BAN = "(id,k,m,a)=>{ const el=buildAppBanner(id,k,m,a,()=>{},()=>{}); document.body.appendChild(el); placeTopBanner(el); el.classList.add('show'); el.style.transition='none'; }"
             pg.evaluate("()=>showHome()"); pg.wait_for_timeout(900)
@@ -138,6 +138,9 @@ def main():
                 ("banner join", "()=>(" + BAN + ")('lobby-invite','vroom','Alex invited you to a Virtual Room','Join')"),
                 ("banner accept", "()=>(" + BAN + ")('nova-challenge','vroom','Nova challenged you to a match','Accept')"),
                 ("whatsnew", "()=>showIntroPopup()"),
+                ("update notice", "()=>showUpdateBanner({build:'x'})"),
+                ("home notice", "()=>showAddToHomeNotice()"),
+                ("frame notice", "()=>showFrameNotice({frameId:'x'})"),
                 ("resume", "()=>{ localStorage.setItem(RUN_SESSION_KEY, JSON.stringify({v:1,at:Date.now(),cfg:{mode:'drill',units:[]},runMode:'drill',order:[0,1,2,3],pos:1,answers:{},saved:true})); startStudying(); }"),
                 ("tips", "()=>startSimpleTour(mainMenuTourSteps(false), ()=>{})"),
                 ("chat", "()=>{ chatDockTab='friends'; openChatDock(); }"),

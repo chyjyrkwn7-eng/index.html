@@ -34070,6 +34070,20 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-sub{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   html[data-layout] .vroom-chat-alert.is-glass .daily-alert-go{ flex:0 0 auto; color:var(--soft); width:.55rem; height:.85rem; }
   html[data-layout] .vroom-chat-alert.is-glass.show{ transform:translateY(0); }
+  /* the notices (dressNoticeBar): the banner's bar, glyph, tag and x */
+  html[data-layout] .update-banner.is-glass{ border-left:3px solid var(--banner-color); }
+  html[data-layout] .update-banner.is-glass .app-banner-icon{ align-self:center; display:block; }
+  html[data-layout] .update-banner.is-glass .app-banner-body{ flex:1 1 auto; }
+  html[data-layout] .update-banner.is-glass .update-banner-close{ display:grid; place-items:center; opacity:1; color:var(--soft); }
+  html[data-layout] .update-banner.is-glass .update-banner-close svg{ width:15px; height:15px; display:block; }
+  html[data-layout] .update-banner.is-glass .update-banner-btn{ min-height:44px; padding-inline:1rem; }
+  @supports (text-box: trim-both cap alphabetic){
+    /* a flex box's text is an anonymous item the trim never reaches: a plain
+       block whose padding makes 44px around the capitals */
+    html[data-layout] .update-banner.is-glass .update-banner-btn{ display:inline-block; text-box:trim-both cap alphabetic;
+      min-height:0; padding-block:calc((44px - 1cap) / 2); white-space:nowrap; }
+  }
+  html[data-layout] .update-banner.is-glass .update-banner-head{ display:flex; align-items:center; gap:.5rem; padding-right:1.8rem; }
   @media (max-width:639px){
     html[data-layout] .vroom-chat-alert.is-glass{ left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
   }
@@ -100368,7 +100382,44 @@ const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
    frame, so the fade and lift themselves are unaffected; only rotation
    afterwards animates the position, which is what the bottom transition
    is actually for. */
+/* ---- THE NOTICES ON THE ACCOUNT BANNER'S GLASS (build 327z15) ----
+   "Any other relevant pops similar need the same look? ... ensure they
+   are all complete." The update notice and the two Home Screen notices
+   already had the glass; they get the rest of the banner: the kind's
+   colour as a 3px bar down the left, its glyph, a tag, and the drawn x.
+   Their words, buttons and placement are unchanged. */
+const NOTICE_KINDS = {
+  update: { tag: "UPDATE", color: "#7CC8FF",
+    glyph: "M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.5A10 10 0 1 0 22 12h-2a8 8 0 1 1-8-8Z" },
+  home:   { tag: "HOME SCREEN", color: "#F5C518",
+    glyph: "M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 3v13h8V5H8Zm3 5h2v2h2v2h-2v2h-2v-2H9v-2h2v-2Z" }
+};
+function dressNoticeBar(bar){
+  if(bar.classList.contains("is-glass")) return;
+  const k = NOTICE_KINDS[bar.classList.contains("is-frame") ? "home" : "update"];
+  bar.classList.add("is-glass");
+  bar.style.setProperty("--banner-color", k.color);
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("class", "app-banner-icon"); icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = '<path fill="currentColor" fill-rule="evenodd" d="' + k.glyph + '"/>';
+  const tag = document.createElement("span"); tag.className = "app-banner-tag"; tag.textContent = k.tag;
+  const text = bar.querySelector(".update-banner-text");
+  if(bar.classList.contains("is-frame")){
+    /* stacked: the icon and tag head the notice, over its sentence */
+    const head = document.createElement("div"); head.className = "update-banner-head";
+    head.append(icon, tag);
+    if(text) bar.insertBefore(head, text); else bar.prepend(head);
+  } else if(text){
+    const body = document.createElement("span"); body.className = "app-banner-body";
+    bar.insertBefore(icon, text); bar.insertBefore(body, text);
+    body.append(tag, text);
+  }
+  bar.querySelectorAll(".update-banner-close").forEach(x => {
+    x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>';
+  });
+}
 function showNoticeBar(bar){
+  try{ dressNoticeBar(bar); }catch(e){}
   document.body.appendChild(bar);
   playSound("ui.notice");
   bar.style.transition = "none";
@@ -100400,6 +100451,9 @@ function positionNotice(){
    not `transform`, so it composes with anything the hero already does. */
 function clearNoticeOfChat(bar){
   bar.style.right = "";
+  /* (327z15) a notice on the banners' glass sits where they do: the full
+     width, under the chat button (settleTopBanner), not cut short of it */
+  if(bar.classList.contains("is-glass")){ settleTopBanner(bar); return; }
   const chat = document.querySelector(".chatdock-btn");
   if(!chat) return;
   const c = chat.getBoundingClientRect(), b = bar.getBoundingClientRect();
