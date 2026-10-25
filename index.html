@@ -32902,7 +32902,7 @@ html.is-browser[data-layout="modern"]{
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
-    var(--edge-bottom);
+    var(--paper);   /* the root's colour stays the paper in a tab - Safari fills its bars with it (see html.is-browser above) */
   background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
   background-repeat:no-repeat;
 }
@@ -32916,7 +32916,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
-    var(--edge-bottom);
+    var(--paper);   /* the root's colour stays the paper in a tab - Safari fills its bars with it (see html.is-browser above) */
   background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
   background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0, 0 0;
   background-repeat:no-repeat;

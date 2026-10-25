@@ -28063,3 +28063,9 @@ chat is open, it's covering the actual chat button".
 - Gates: check-b327z15 section & (EE) - all five checks fail on the round-26
   commit and on 327z14 live. Section P and CC moved (no tiles; the pill on
   the bar's middle). check-behaviour 'plate' moved (rank over level).
+- Caught by check-b327z15 BB: round 26's html.is-browser background
+  shorthand ended in var(--edge-bottom), which overrode
+  html.is-browser[data-layout][data-theme]{ background-color:var(--paper) }
+  - the root colour Safari paints its bars with became (35,35,34) against
+  a page faded to paper (18,22,27): the line under the bars would have come
+  back. Both rules end in var(--paper) now; BB measures 0 levels off.
