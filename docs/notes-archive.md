@@ -28433,3 +28433,39 @@ all the tool tips are good to go as well"*.
   exclamation marks.
 - tools/record-sound.py: `--mode installed|safari` and `--device phone-safari`
   (440x838) for the tab-bar videos.
+
+## Build 327z15, round 38 (2026-10-25): Version 9.2, Firestore savings
+
+"This is gonna be version 9.2". RELEASE_NOTES gains a 9.2 entry at the top
+(New In / Better In Version 9.2) describing this build; Version 9 keeps only
+what shipped with it. Home's "Version X" / "vX" read RELEASE_NOTES[0], so they
+say 9.2. The What's New card (WHATS_NEW_320, INTRO_REV 5) is unchanged.
+
+Firestore check (live, via tools/firestore-admin.py helpers): progress 162
+docs (62 __floor) ~8.8MB, largest 249KB; leaderboard 43 rows 62KB; vrooms
+164 docs 237KB. Storage is under 1% of the 1GiB free tier. Reads are the
+tighter limit (~18-22k a normal day, 35-45k heavy, of 50k), ~60% of them
+whole-board reads. Done, all invisible:
+- fetchBoardForInvites: the first fetch of a launch (and one every
+  BOARD_FULL_MS = 6h) reads the whole board; later ones query
+  lastModified > last fetch - BOARD_DELTA_SLACK_MS (10 min, for slow phone
+  clocks) and merge by pub. Removal is only taken from a full answer. A
+  refused query (boardDeltaOk=false) goes back to full fetches.
+- sendOffline writes once per hide (offlineSent, cleared by a beat): iOS
+  fires visibilitychange then pagehide on a close. Same for the chat's away
+  mark (chatAwaySent); the hide now also clears the typing dot.
+- writeLeaderboardRow no longer sets lastHeartbeatAt: presence is read from
+  the presence doc first (isOnline), so a row push that reset the beat left
+  it up to 4 min stale and friends showed offline mid-test. (Bug fix.)
+- The Friends screen's whole-board listener detaches when no
+  .screen-friends is on stage (it used to live for the rest of the session).
+Left alone on purpose: room beat while hidden (a host could drop a player
+who switched apps); marking vrRetroDone at publicId mint (could skip an
+old account's backfill; saves ~330 reads per new account only).
+Asked Madison (not done): chat beat only while the dock is open; __floor
+cadence on hide; leaderboard rows publish `chats` (group chat codes).
+Gate: tools/check-b327z15-fb.py (A-D), fails on the previous build.
+
+Sign-up with Nova: Home is built under him before the name is asked, so the
+fade showed "Good evening" and then ", <name>" popped in on the rebuild.
+homeGreetingText() is shared and novaSignupCreate() refreshes .homegreeting.

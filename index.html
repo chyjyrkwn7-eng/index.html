@@ -82844,6 +82844,19 @@ function finishWelcomeStartFresh(then){
     (typeof then === "function" ? then : startNewAccount)();
   });
 }
+/* Home's greeting (split out in build 327z15 so a sign-up with Nova can
+   name the Home already built under him before he fades out). */
+function homeGreetingText(){
+  const hour = new Date().getHours();
+  const isLateNight = hour < 5 || hour >= 21;
+  const baseGreeting = isLateNight ? "Studying late"
+    : hour < 12 ? "Good morning"
+    : hour < 17 ? "Good afternoon"
+    : "Good evening";
+  return store.firstName
+    ? baseGreeting + ", " + getFirstName(store.firstName) + (isLateNight ? "?" : "")
+    : baseGreeting + (isLateNight ? "?" : "");
+}
 function startNewAccount(){
   setSyncCode(generateSyncCode());
   saveStore();
@@ -82886,6 +82899,7 @@ function novaSignupCreate(){
   try{ markIntroSeen(); }catch(e){}
   saveStore();
   updateHeaderTitle();
+  try{ stage.querySelectorAll(".homegreeting").forEach(g => { g.textContent = homeGreetingText(); }); }catch(e){}
   onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
 }
 /* His question: your name. The board's rule as the username screen had it -
@@ -93878,15 +93892,7 @@ function showHome(){
 
   const greeting = document.createElement("p");
   greeting.className = "homegreeting";
-  const hour = new Date().getHours();
-  const isLateNight = hour < 5 || hour >= 21;
-  const baseGreeting = isLateNight ? "Studying late"
-    : hour < 12 ? "Good morning"
-    : hour < 17 ? "Good afternoon"
-    : "Good evening";
-  greeting.textContent = store.firstName
-    ? baseGreeting + ", " + getFirstName(store.firstName) + (isLateNight ? "?" : "")
-    : baseGreeting + (isLateNight ? "?" : "");
+  greeting.textContent = homeGreetingText();
   panel.appendChild(greeting);
 
 
