@@ -32810,9 +32810,14 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     grid-column:1; grid-row:3; margin:.9rem 0 0; max-width:min(var(--lap-side), 24rem);
     font-size:clamp(1rem, 1.25vw, 1.25rem); line-height:1.45; text-wrap:balance;
   }
+  /* round 31: "the buttons should absolutely not be on the left, it will
+     be under the large planet". They stand where Home's tab bar stands,
+     centred under the planet, side by side, each with its line under it. */
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions{
-    grid-column:1; grid-row:4; margin:1.8rem 0 0 !important; width:min(var(--lap-side), 22rem);
-    display:flex; flex-direction:column; align-items:stretch; text-align:center;
+    position:fixed; z-index:6; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1rem); translate:-50% 0;
+    margin:0 !important; width:min(36rem, 92vw);
+    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; grid-auto-flow:column; column-gap:1.1rem; row-gap:.35rem;
+    align-items:start; text-align:center;
   }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ width:100%; max-width:none; min-height:3.1rem; font-size:1.05rem; }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-cap{ text-wrap:balance; }
@@ -32834,6 +32839,20 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel) > .next.playbtn{
     margin-top:2rem !important;
   }
+  /* THE SIGN-UP STEPS, ONE COLUMN (round 31): "the other screens, seems like
+     the screens aren't centered or spaced out correctly, the back buttons
+     are centered on a lot of them". Each step is a 44rem column in the
+     middle of the screen - the code screen, New to Nova?, What this
+     actually is and the class pick the same width - with Back at the
+     column's top-left, as every other screen has it, not centred over the
+     title. */
+  html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel){
+    max-width:44rem; margin-left:auto; margin-right:auto; align-items:center;
+  }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel) > .back-link{
+    align-self:flex-start; margin:0 0 1.4rem;
+  }
+  html[data-layout] body #stage > :is(.welcomeintro-panel) > .welcomeintro-row{ width:100%; }
   /* NOVA'S INTRODUCTION ON A LAPTOP (round 27): he stood 20rem tall in the
      bottom-left corner with his bubble beside him and the right half of a
      1440 screen empty. Here he and his bubble are one group in the middle
