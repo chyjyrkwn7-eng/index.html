@@ -6840,6 +6840,12 @@
       0 2px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
   }
   .chatdock:has(.chatdock-btn.is-introduced){ z-index:370; }
+  /* UNDER THE TIPS' DIM (327z15 round 46): "ensure none of the buttons work when going through
+     the tool tips. It looks like the chat button isn't greyed out like the others. So ensure only
+     the next button works." The dock (300) sat over #tour-overlay (205): lit and tappable through
+     every tip. While a tour is up it goes under the dim with the tab bar - unless a tip is
+     introducing the chat button itself, which stays lit and untappable (.is-introduced). */
+  body:has(#tour-overlay) .chatdock:not(:has(.chatdock-btn.is-introduced)){ z-index:200; }
   /* A four-inch phone cannot fit three explanations and a button, and
      it is not expected to - it scrolls, the same call "What This
      Actually Is" already makes. Tightening what can be tightened
@@ -92649,7 +92655,11 @@ onCutsceneFocusRelease(() => {
    the same reason dataset.screen gates the notices. A scene inside the
    rank-up journey nests under the journey's own hold. */
 const CUTSCENE_SCENE_SEL = ".bc-scene:not(.bc-out), .sf-scene:not(.sf-out), #supernova-cutscene, #badge-cutscene, " +
-  "#vroom-cutscene, #vroom-race-cut:not(.is-done), #void-cutscene, .hfx-layer.is-page";
+  "#vroom-cutscene, #vroom-race-cut:not(.is-done), #void-cutscene, .hfx-layer.is-page, " +
+  /* (327z15 round 46) the unlock spotlight is a scene too: "after ranking up ... ensure the chat
+     and button tab slide from the bottom and top ... Ensure that kind of function is applied
+     anywhere else where appropriate" - out as the card comes up, back once it is gone */
+  ".rs-spot";
 /* the one kind that holds focus softly - see syncCutsceneSoft */
 const CUTSCENE_SOFT_SEL = ".hfx-layer.is-page";
 const CUTSCENE_SCENE_CLASSED = ".bc-scene, .sf-scene, #vroom-race-cut";

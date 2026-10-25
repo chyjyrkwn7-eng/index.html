@@ -20,6 +20,10 @@
      Studying asks to continue it.
   J. What's New is shown again for 9.2 (INTRO_REV past 5), with the two
      new rows first.
+  K. During the tips nothing but the tips takes a tap - the chat button
+     included.
+  L. An unlock spotlight is a scene: the chat button and the tab bar slide
+     out for it and back after it.
 
   python3 tools/check-b327z15-fb.py
   python3 tools/check-b327z15-fb.py --against /path/to/old-index.html
@@ -147,8 +151,8 @@ def main():
         check("A2. the next fetch asks only for rows changed since", r["second"] == "where", r["second"])
         check("A3. it keeps everybody, updates the changed row and adds the new one",
               r["rows"] == "a1,b2,c3" and r["bLevel"] == 9, (r["rows"], r["bLevel"]))
-        check("A4. a full fetch again once the full answer is old", r["fullLater"] == "get", r["fullLater"])
-        check("A5. a refused delta query is followed by a full fetch", r["afterRefuse"] == "get", r["afterRefuse"])
+        check("A4. a full fetch again once the full answer is old", (r["fullLater"] or "").split(",")[0] == "get", r["fullLater"])
+        check("A5. a refused delta query is followed by a full fetch", (r["afterRefuse"] or "").split(",")[0] == "get", r["afterRefuse"])
 
         print("\nB. a row push does not hold back the presence beat")
         r = pg.evaluate("""async()=>{
@@ -302,6 +306,32 @@ def main():
         check("J3. no 'Mock, a real test' row (only the name changed)", "modes" not in r["all"], r["all"])
         check("J4. the card fits the screen with nothing to scroll, Got it still 44px+",
               r["fits"] and r["goH"] >= 44, (r["fits"], r["goH"]))
+
+        print("\nK. only the tips take a tap during the tips")
+        r = pg.evaluate("""async()=>{
+          document.querySelectorAll('.rs-spot, #intro-pop, #resume-offer, .app-banner').forEach(n=>n.remove());
+          showHome(); await new Promise(r => setTimeout(r, 600));
+          startSimpleTour(mainMenuTourSteps(false), ()=>{}); await new Promise(r => setTimeout(r, 900));
+          const leaks = new Set();
+          for(let y = 4; y < innerHeight; y += 16) for(let x = 4; x < innerWidth; x += 16){
+            const e = document.elementFromPoint(x, y);
+            if(e && !e.closest('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot')) leaks.add((e.id || e.className || e.tagName).toString().slice(0, 30)); }
+          document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(n=>n.remove());
+          return [...leaks]; }""")
+        check("K1. nothing outside the tips is reachable while they are up", not r, r)
+
+        print("\nL. an unlock spotlight moves the controls out and back")
+        r = pg.evaluate("""async()=>{
+          const w = ms => new Promise(r => setTimeout(r, ms));
+          playUnlockSpotlight({ kind:'character', character:'detective', feat:true, kicker:'Character unlocked', name:'Detective',
+            sub:'x', need:'x', color:'#C9A46A', art:()=>buildAvatarCharSVGSafe('detective') }, 1, 1, ()=>{});
+          await w(1500);
+          const during = document.body.classList.contains('cutscene-focus');
+          document.querySelectorAll('.rs-spot').forEach(n=>n.remove()); await w(80);
+          const back = document.body.classList.contains('cutscene-return') && !document.body.classList.contains('cutscene-focus');
+          return { during, back }; }""")
+        check("L1. the spotlight holds focus: the chat button and tab bar slide out", r["during"], r)
+        check("L2. and slide back when it goes", r["back"], r)
 
         check("Z. no page errors", not errs, errs[:3])
         ctx.close(); br.close()

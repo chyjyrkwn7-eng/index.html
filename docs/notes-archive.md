@@ -28609,3 +28609,21 @@ pill's computed values: #ECEFF3 face, #1A2027 ink, 700 .8rem, the inset lit
 top / shaded lip and the three drops; scale .96 on press. The resume offer
 keeps its light + dark pair (the app's two-choice convention). Ink check
 177 controls ALL PASS.
+
+Round 46: "ensure none of the buttons work when going through the tool tips.
+It looks like the chat button isn't greyed out like the others. So ensure
+only the next button works." The chat dock (z 300) sat over #tour-overlay
+(205): lit and tappable through every tip. body:has(#tour-overlay) puts the
+dock at 200, under the dim with the tab bar, unless a tip is introducing
+the chat button (.is-introduced keeps it lit, pointer-events none). Probed
+every 12px on phone and laptop through all main-menu tips: only the tips'
+own layers answer.
+"after ranking up, when in profile at the end of the cutscene ensure the
+chat and button tab slide from the bottom and top ... applied anywhere else
+where appropriate." Already so for the rank-up journey (rankUpNewScene ->
+setCutsceneFocus, cutscene-return slides them back), the badge case,
+Supernova, the badge/void/room cutscenes. The unlock spotlight (.rs-spot)
+was not a scene: the controls sat dimmed under it and never moved. It is in
+CUTSCENE_SCENE_SEL now - out as the card comes up, back when it goes, and
+banners are held meanwhile. check-b327z15-fb K, L (fail on the previous
+build); A4/A5 read the first fetch only (a second refresh can land).
