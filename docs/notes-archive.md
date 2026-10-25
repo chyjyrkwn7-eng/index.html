@@ -28564,3 +28564,9 @@ text-box:trim-both cap alphabetic (with padding given back on #tour-next);
 the chat dock's text "x" -> the banners' drawn x (inlined: BANNER_X_SVG is
 a var far below the dock's builder). 157 controls, ALL PASS; fails 15 on
 the previous build.
+Round 42 also: the round 39 floor-on-hide gap (FLOOR_HIDE_GAP_MS) is undone.
+check-sync's "leaving the app puts the latest progress in both, at once"
+failed ([99, 89, 99]): the floor trailed the account by the last few
+minutes. Madison asked for fewer writes only if it "still works properly",
+so the floor goes on every hide again; a hide with nothing new already
+writes none (publishNow). check-b327z15-fb H2 now asserts that.

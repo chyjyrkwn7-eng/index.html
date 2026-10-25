@@ -57732,11 +57732,6 @@ function handleRemoteReset(){
 const CLOUD_PUSH_MIN_GAP_MS = 60 * 1000;
 __bm("L55739");
 const FLOOR_MIN_GAP_MS = 10 * 60 * 1000;
-/* ON THE WAY OUT TOO, BUT NOT EVERY TIME (build 327z15): hiding the app to
-   read a text was a floor write each time. The account itself still goes on
-   every hide; the floor goes if it is this far behind, so it trails the
-   account by at most a few minutes of play. */
-const FLOOR_HIDE_GAP_MS = 3 * 60 * 1000;
 let lastCloudPushAt = 0, lastFloorPushAt = 0, lastPushCode = "";
 /* the gaps are per account: a device that has just switched to another
    code (a sign-up, a link) pushes that one at once */
@@ -58044,8 +58039,7 @@ function publishNow(){
     }
     /* nothing queued, but the high-water mark is behind the account: it
        goes now, so leaving never strands it ten minutes back */
-    else if(floorMergedFor === syncCode && cloudConfirmedFor === syncCode && lastFloorPushAt < lastCloudPushAt
-      && sincePush(lastFloorPushAt) >= FLOOR_HIDE_GAP_MS){
+    else if(floorMergedFor === syncCode && cloudConfirmedFor === syncCode && lastFloorPushAt < lastCloudPushAt){
       lastFloorPushAt = Date.now();
       writeAccount(syncCode, false, true, false);
     }
@@ -58222,7 +58216,12 @@ function pushToCloud(leaving){
   lastCloudPushAt = Date.now();
   /* the high-water mark, once this launch has read it (see above) - at
      most every ten minutes, and always on the way out */
-  const withFloor = floorMergedFor === syncCode && sincePush(lastFloorPushAt) >= (leaving === true ? FLOOR_HIDE_GAP_MS : FLOOR_MIN_GAP_MS);
+  /* (327z15 round 42) back to always on the way out: a FLOOR_HIDE_GAP_MS
+     gap (round 39) let the floor trail the account by minutes of play, and
+     check-sync's "leaving puts the latest progress in both, at once" is the
+     incident it was built from. A hide with nothing new already writes no
+     floor (publishNow: lastFloorPushAt < lastCloudPushAt). */
+  const withFloor = floorMergedFor === syncCode && (leaving === true || sincePush(lastFloorPushAt) >= FLOOR_MIN_GAP_MS);
   if(withFloor) lastFloorPushAt = Date.now();
   writeAccount(syncCode, true, withFloor, leaving === true);
 }

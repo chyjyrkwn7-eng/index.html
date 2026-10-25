@@ -15,8 +15,7 @@
   F. The public leaderboard row no longer carries the person's chat codes.
   G. A chat beats every CHAT_BEAT_MS and counts a member here for
      CHAT_STALE_MS; a Virtual Room keeps its own shorter window.
-  H. Hiding the app twice inside FLOOR_HIDE_GAP_MS writes the account
-     twice and the __floor once.
+  H. Hiding the app writes the account and the __floor each time (round 42).
   I. A test the app lost is not a pop-up on Home: it is kept, and Start
      Studying asks to continue it.
   J. What's New is shown again for 9.2 (INTRO_REV past 5), with the two
@@ -259,7 +258,9 @@ def main():
                    floor: sets.filter(x => String(x.id).endsWith('__floor')).length };
         }""")
         check("H1. the account goes on every hide", r["main"] == 2, r)
-        check("H2. the __floor goes once for two quick hides", r["floor"] == 1, r)
+        # MOVED IN round 42: the floor goes on every hide again (check-sync's
+        # "leaving puts the latest progress in both, at once")
+        check("H2. the __floor goes with the account on each hide", r["floor"] == 2, r)
 
         print("\nI. a lost test waits for Start Studying")
         r = pg.evaluate("""async()=>{
