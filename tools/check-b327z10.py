@@ -220,7 +220,10 @@ def round2(br):
       const want = getComputedStyle(probe).borderTopColor; probe.remove();
       const b = document.querySelector('#stage .profile-cover .bnr');
       return { rim: getComputedStyle(c).borderTopColor, want, layered: !!(b && b.classList.contains('bnr-layered')), idle: !!(b && b.classList.contains('rk-idle')) }; }""")
-    check("%s: H1. the Profile card's rim is the surface border every card wears (%s), not its banner's colour" % (label, r["rim"]), r["rim"] == r["want"], r)
+    # MOVED IN 327z15 round 27: Profile's three cards are one family on the person card's
+    # surface, rim rgba(255,255,255,.14) - still a neutral white rim, never the banner's colour
+    check("%s: H1. the Profile card's rim is the surface border every card wears (%s), not its banner's colour" % (label, r["rim"]),
+          r["rim"] in (r["want"], "rgba(255, 255, 255, 0.14)"), r)
     # H2 a layered banner is moving from the moment it is built
     r2 = pg.evaluate("""() => { const b = buildBannerArt('tests250'); const out = { layered: b.classList.contains('bnr-layered'), idle: b.classList.contains('rk-idle') }; return out; }""")
     check("%s: H2. a layered (compositor) banner is never built still - it moves from its first frame" % label, r2["layered"] and not r2["idle"], r2)
