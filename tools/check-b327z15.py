@@ -714,7 +714,15 @@ def section_bb(br):
                 pg.evaluate("() => showWelcome()")
             pg.wait_for_timeout(1500)
             pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro').forEach(n => n.remove())")
-            r = pg.evaluate("() => ({ browser: document.documentElement.classList.contains('is-browser'), sh: document.documentElement.scrollHeight, ih: innerHeight })")
+            r = pg.evaluate("() => ({ browser: document.documentElement.classList.contains('is-browser'), sh: document.documentElement.scrollHeight, ih: innerHeight, root: getComputedStyle(document.documentElement).backgroundColor })")
+            if screen == "welcome" and W == 440 and H == 780:
+                import io
+                from PIL import Image
+                im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+                rc = [int(v) for v in r["root"][r["root"].index("(") + 1:-1].split(",")[:3]]
+                edges = [im.getpixel((x, y)) for y in (1, im.height - 2) for x in (20, im.width // 2, im.width - 20)]
+                far = max(max(abs(a - b) for a, b in zip(px, rc)) for px in edges)
+                check("BB. the page's top and bottom edges are the colour Safari fills its bars with (off by %d)" % far, far <= 3, {"root": rc, "edges": edges})
             if not r["browser"] or r["sh"] > r["ih"] + 1:
                 bad.append((W, H, screen, r))
             ctx.close()

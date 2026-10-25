@@ -27678,3 +27678,20 @@ STILL and the page is scrolling? Like legit scrolling."
 - Gates: check-b327z15 Z (Welcome's icons are not the glass), "@" (rings),
   "#" (BB: Safari-UA phone tabs 375x630..440x840, Home and Welcome no
   taller than the screen).
+
+## Build 327z15 round 14 - no line under Safari's bars
+
+A Safari 26 screenshot (327z14 Welcome) with the status-bar band and the
+toolbar band circled. Sampled: the top band is flat (19,21,25) - the root's
+var(--paper), #12161B - and the page right under it starts in the warm
+corner glow, (41,33,32): a hard line. Safari does not draw the page under
+its status bar at the top of a page, so 327z14's bleed never reached there.
+In a browser tab body::before now has two more layers on top: the paper
+fading out over the top 6rem and the bottom 4rem of the viewport, so both
+edges ARE the band's colour and blend into the sky. Background only.
+Chromium with an iPhone UA reproduces the live colours exactly (41,33,32 at
+the top edge vs root 18,22,27); the new build's edges equal the root.
+Gate: check-b327z15 "#" BB adds the edge-colour check (fails on 327z14).
+Together with round 13 (nothing scrolls in a tab) this is the whole of
+"cut off at the top and bottom ... and the page is scrolling". Only
+confirmable on an iPhone.

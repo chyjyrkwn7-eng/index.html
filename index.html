@@ -32617,6 +32617,33 @@ html.is-browser .edge-tint{
 }
 html.is-browser #edge-tint-top{ top:0; }
 html.is-browser #edge-tint-bottom{ bottom:0; }
+/* NO LINE UNDER SAFARI'S BARS (327z15). A Safari 26 screenshot, top and
+   bottom circled: the band behind the status bar is flat #131519 - Safari
+   fills it with the root's colour, var(--paper) - and the page under it
+   starts in the warm corner glow (#292120), so the two meet in a hard line.
+   The bleed (327z14) does not reach there: Safari does not draw the page
+   under its status bar at the top of a page. So in a browser tab the sky
+   itself fades into the paper over its top 6rem and its bottom 4rem -
+   exactly the colour Safari puts in the bands - and the edge disappears.
+   Background layers only (body::before), so nothing on the screen is
+   covered; the stars are already masked off the top (--sky-clear). */
+html.is-browser[data-layout="modern"] body::before{
+  background:
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
+    linear-gradient(to top, var(--paper) var(--bleed), transparent calc(var(--bleed) + 4rem)),
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
+    var(--paper);
+}
+html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
+  background:
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
+    linear-gradient(to top, var(--paper) var(--bleed), transparent calc(var(--bleed) + 4rem)),
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    var(--paper);
+}
 /* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
    cut off at the top and bottom STILL and the page is scrolling? Like legit
    scrolling." The planet's size cap is min(32rem, 58vh), and in a browser
