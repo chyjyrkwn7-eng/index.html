@@ -33,6 +33,8 @@ SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"
         '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,"seenMainMenuTour":true,'
         '"seenRankingsTour":true,"seenAppearanceTour":true,"novaMet":99,"lifetime":{"points":12400,"answered":5400,"correct":4980,"perfectTests":141}}')
 CAND = """()=>{ const out=[]; const seen=new Set();
+ /* round 33: a pass's ids start at 0 again - last pass's must go, or [data-ink-id] finds a stale control */
+ document.querySelectorAll('[data-ink-id]').forEach(n=>n.removeAttribute('data-ink-id'));
  document.querySelectorAll('button, a, [role=button], .back-link, .chip, .rs-mode, .sheet-tag, .iconbtn, .friend-act').forEach(el=>{
    if(seen.has(el)) return; seen.add(el);
    const r=el.getBoundingClientRect(); if(r.width<28||r.height<18||r.height>80) return;
@@ -63,7 +65,14 @@ def audit(pg, tag, rows):
         clip = {"x": c["x"], "y": c["y"], "width": c["w"], "height": c["h"]}
         # round 29: the element's own screenshot, so a scrolled page is measured where it is
         el = pg.query_selector('[data-ink-id="%d"]' % c["id"])
-        a = Image.open(io.BytesIO(el.screenshot())).convert("RGB")
+        # round 33: centred first (a screenshot scrolls a control only just into view, under a
+        # sticky header), and skipped if anything still lies over its middle
+        if not el.evaluate("""e=>{ e.scrollIntoView({block:'center', inline:'nearest', behavior:'instant'}); const r=e.getBoundingClientRect();
+             const h=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); return !!h && (h===e || e.contains(h)); }"""):
+            if os.environ.get("INK_SKIPS"): print("  skip", tag, c["t"], el.evaluate("e=>{const r=e.getBoundingClientRect(); const h=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); return [Math.round(r.top), h && (h.className||h.tagName).toString().slice(0,40)]}"))
+            continue
+        shot = lambda: el.screenshot()
+        a = Image.open(io.BytesIO(shot())).convert("RGB")
         pg.evaluate("""(id)=>{ const el=document.querySelector('[data-ink-id="'+id+'"]');
            /* a pill's arrow keeps the colour it has (it draws in currentColor, which the letters are about to lose) */
            if(el.matches('.stx-allpill, .pf-goal-foot, .pf-case-count')) el.querySelectorAll('svg').forEach(s=>{ s.__sc=s.getAttribute('style')||''; s.style.setProperty('color', getComputedStyle(s).color, 'important'); });
@@ -74,7 +83,7 @@ def audit(pg, tag, rows):
            if(!el.matches('.stx-allpill, .pf-goal-foot, .pf-case-count')) el.querySelectorAll('svg, img, i').forEach(s=>{ s.__v=s.style.visibility; s.style.visibility='hidden'; });
            /* round 29: a child with its own colour (a pill's inner span) keeps its letters unless it is cleared too */
            el.querySelectorAll('*:not(svg):not(svg *)').forEach(k=>{ k.__c=k.getAttribute('style')||''; k.style.setProperty('color','transparent','important'); k.style.setProperty('-webkit-text-fill-color','transparent','important'); }); }""", c["id"])
-        b = Image.open(io.BytesIO(el.screenshot())).convert("RGB")
+        b = Image.open(io.BytesIO(shot())).convert("RGB")
         pg.evaluate("""(id)=>{ const el=document.querySelector('[data-ink-id="'+id+'"]'); el.setAttribute('style', el.__old); el.querySelectorAll('*').forEach(k=>{ if(k.__c!==undefined) k.setAttribute('style', k.__c); }); el.querySelectorAll('svg').forEach(s=>{ if(s.__sc!==undefined){ s.setAttribute('style', s.__sc); delete s.__sc; } }); el.querySelectorAll('svg, img, i').forEach(s=>{ s.style.visibility=s.__v||''; }); }""", c["id"])
         bb = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 60 else 0).getbbox()
         if not bb: continue

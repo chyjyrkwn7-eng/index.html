@@ -33961,6 +33961,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     .profile-edit-btn:not(.profile-hero .profile-edit-btn){ text-box:trim-both cap alphabetic; padding-block:calc(.4rem + (1lh - 1cap)/2); }
     .rank-me-btn, .stx-allbtn.stx-allpill > span > b,
     .pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count{ text-box:trim-both cap alphabetic; }
+    /* round 33: text-box does nothing on a flex box (the pills are flex), so the words' own box
+       is trimmed - See rank ladder sat 1.5px high on an iPad; and Settings' buttons ("Add to Home
+       Screen" 1px high) */
+    .pf-goal .pf-goal-foot > .pf-goal-foot-word, .pf-case-closed .pf-case-count > .pf-case-num{ display:block; text-box:trim-both cap alphabetic; }
+    .screen-settings .cal-profile-btn{ text-box:trim-both cap alphabetic; }
   }
 
   /* ---- FRIENDS, AT THE TOP OF THE CHAT'S FRIENDS TAB (round 2) ---- */
@@ -126028,7 +126033,10 @@ function buildProfileTask(c, color){
 function pfGoalFoot(){
   const foot = document.createElement("button");
   foot.type = "button";
-  foot.className = "pf-goal-foot"; foot.textContent = "See rank ladder";
+  foot.className = "pf-goal-foot";
+  /* the words in a box of their own: text-box trims a block, not the pill's flex box (round 33) */
+  const word = document.createElement("span"); word.className = "pf-goal-foot-word"; word.textContent = "See rank ladder";
+  foot.append(word);
   foot.addEventListener("click", () => showRanksScreen("ranks"));
   return foot;
 }

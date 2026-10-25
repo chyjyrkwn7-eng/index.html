@@ -28251,3 +28251,14 @@ Round 31, item by item:
     the case count); tapping where you stand opens nothing (round 5); the
     climb opens from See rank ladder.
   - check-sync: the Hundos board's row ends with the bare count ("Billy5").
+- Centring, again ("a lot of these aren't perfectly centered, fix them
+  all"): check-ink-centre's foot passes had been measuring the WRONG
+  controls since round 29 - each pass numbers its controls from 0 and the
+  previous pass's data-ink-id was left on the page, so [data-ink-id] found
+  a stale one (Stats' week switch measured as Profile's tabs). Ids are
+  cleared per pass and each control is centred (behavior instant) before
+  its screenshot. That showed two real ones: See rank ladder 1.5px high on
+  an iPad (text-box was on the pill, a FLEX box, where it does nothing -
+  the words are a .pf-goal-foot-word span now, trimmed, as the case
+  count's .pf-case-num is) and Settings' buttons ("Add to Home Screen" 1px
+  high; .screen-settings .cal-profile-btn trimmed). All 96 within .5px.
