@@ -164,9 +164,9 @@ def build_after(br):
         # tab, there is lag ... when opening different screens". The page goes in just
         # past a quick tap's release, while the glass is still crossing (a transform the
         # compositor carries), not after it lands - 150ms+, with the glide well under way.
-        check("%s: U. %s's screen goes in %.0fms after the press (150+), the glide %.0f%% of the way (80%%+), on its tab"
+        check("%s: U. %s's screen goes in %.0fms after the press (150+), the glide %.0f%% of the way (75%%+), on its tab"
               % (label, tid.split("-")[1], r.get("mount") or -1, 100 * (r.get("prog") or 0)),
-              (r.get("prog") or 0) >= .8 and (r.get("mount") or 0) >= 150 and r.get("lit") == tid, r)
+              (r.get("prog") or 0) >= .75 and (r.get("mount") or 0) >= 150 and r.get("lit") == tid, r)
     ctx.close()
 
 

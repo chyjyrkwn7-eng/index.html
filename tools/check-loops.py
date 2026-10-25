@@ -21,6 +21,10 @@ KNOWN = {
     "bnr-grid": "shifted by exactly one 16px grid cell",
     "bnr-holo": "shifted by whole periods of a 300% background",
     "bnr-sheen": "a sweep from off one edge to off the other",
+    # 327z15: the unfound flare bubble's shine and the rank lore dots' shine - each starts wholly off the
+    # left edge of a clipped box (left -80% / -90%, skewed) and ends wholly off the right (420% of its width)
+    "cof-sweep": "a sweep from off one edge to off the other",
+    "ranklore-sweep": "a sweep from off one edge to off the other",
     "cosmic-orbit-spin": "a full turn",
     # Build 326: the Supernova crack's motes (scarMotes) - three nested loops on one clock; the mote itself
     # (csc-mote-look / csc-mote-chip) is at opacity 0 at both ends, so where the outer two jump it cannot be seen.
