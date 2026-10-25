@@ -34039,6 +34039,31 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     /* the pane a shade denser, so the sky's stars do not show through where the frost hid them */
     --surface-1:rgba(12,13,19,.7); --surface-2:rgba(18,20,28,.7);
   }
+  /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
+     .app-banner's own values, on the preview's own placement (it centres
+     with left:50% and a translate, and keeps its show/hide and timing). */
+  html[data-layout] .vroom-chat-alert.is-glass{
+    left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    right:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    margin:0 auto; width:auto; max-width:min(26rem, calc(100vw - 2rem));
+    transform:translateY(-8px);
+    gap:.6rem; padding:.9rem 1rem .9rem 1.1rem; border-radius:16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4);
+    border:1px solid rgba(255,255,255,.11);
+    border-left:3px solid var(--banner-color, var(--accent));
+    backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
+    box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
+    font-size:inherit; color:var(--ink);
+  }
+  html[data-layout] .vroom-chat-alert.is-glass > .app-banner-icon{ align-self:center; display:block; }
+  html[data-layout] .vroom-chat-alert.is-glass .app-banner-text{ display:block; min-width:0; }
+  html[data-layout] .vroom-chat-alert.is-glass .vroom-chat-alert-who{ flex:none; }
+  html[data-layout] .vroom-chat-alert.is-glass .app-banner-sub{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  html[data-layout] .vroom-chat-alert.is-glass .daily-alert-go{ flex:0 0 auto; color:var(--soft); width:.55rem; height:.85rem; }
+  html[data-layout] .vroom-chat-alert.is-glass.show{ transform:translateY(0); }
+  @media (max-width:639px){
+    html[data-layout] .vroom-chat-alert.is-glass{ left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -90494,18 +90519,49 @@ function previewNewPings(){
     });
   });
 }
+/* ---- A MESSAGE ON THE ACCOUNT BANNER'S GLASS (build 327z15) ----
+   "When friend requests come in, when people message you ... can they be
+   the same Liquid Glass thing ... like the save your sync code pop up?"
+   Requests and invites already were (buildAppBanner); the message
+   previews were the older flat strip. They keep their own place, timing
+   and tap, and wear the banner: the frosted glass and hairline rim, the
+   kind's colour as a 3px bar down the left, its glyph, the tag, the
+   sender as the title and the message under it, and a chevron because
+   the whole banner opens the chat. */
+function dressMessageAlert(bar, o){
+  const kind = BANNER_KINDS[o.kind] || BANNER_KINDS.chat;
+  bar.classList.add("is-glass");
+  bar.style.setProperty("--banner-color", o.color || kind.color);
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("class", "app-banner-icon");
+  icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = '<path fill="currentColor" d="' + kind.glyph + '"/>';
+  const body = document.createElement("span"); body.className = "app-banner-body";
+  const tag = document.createElement("span"); tag.className = "app-banner-tag"; tag.textContent = o.tag || kind.tag;
+  const text = document.createElement("span"); text.className = "app-banner-text";
+  const ttl = document.createElement("span"); ttl.className = "app-banner-title vroom-chat-alert-who"; ttl.textContent = o.title;
+  if(o.whoColor) ttl.style.color = o.whoColor;
+  text.appendChild(ttl);
+  if(o.sub){ const sub = document.createElement("span"); sub.className = "app-banner-sub vroom-chat-alert-text"; sub.textContent = o.sub; text.appendChild(sub); }
+  body.append(tag, text);
+  const go = document.createElement("span");
+  go.className = "daily-alert-go daily-alert-chev";
+  go.setAttribute("aria-hidden", "true");
+  go.innerHTML = "<svg viewBox=\"0 0 8 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" " +
+    "stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1.5 1.5L6.5 7l-5 5.5\"/></svg>";
+  bar.replaceChildren(icon, body, go);
+}
 function showChatPreview(who, text, onTap){
   if(holdForCutscene("chatping", () => showChatPreview(who, text, onTap))) return;
   document.querySelectorAll(".vroom-chat-alert.is-ping").forEach(e => e.remove());
   const bar = document.createElement("div");
   bar.className = "vroom-chat-alert is-ping";
   bar.setAttribute("role", "button");
-  const w = document.createElement("span"); w.className = "vroom-chat-alert-who"; w.textContent = who;
-  const t = document.createElement("span"); t.className = "vroom-chat-alert-text"; t.textContent = text;
-  bar.append(w, t);
+  dressMessageAlert(bar, { kind: "chat", tag: "MESSAGE", title: who, sub: text });
   document.body.appendChild(bar);
-  const off = topNoticeOffset(bar);
-  if(off != null) bar.style.top = Math.round(off) + "px";
+  /* where the account banner goes, under the chat button (327z15) */
+  placeTopBanner(bar);
   let gone = false;
   const drop = () => { if(gone) return; gone = true; bar.classList.remove("show"); setTimeout(() => bar.remove(), 260); };
   bar.addEventListener("click", () => { drop(); onTap(); });
@@ -118820,21 +118876,12 @@ function buildVroomChatPanel(container, ctx){
        even tell after tapping, because both open something called
        chat. The tag is on the CTX, so a DM preview carries none and
        reads exactly as it did. */
-    if(CTX.alertTag){
-      bar.classList.add("vroom-chat-alert-tagged");
-      const tag = document.createElement("span");
-      tag.className = "vroom-chat-alert-tag";
-      tag.textContent = CTX.alertTag;
-      bar.appendChild(tag);
-    }
-    const who = document.createElement("span");
-    who.className = "vroom-chat-alert-who";
-    who.textContent = (msg.name || "Someone") + " sent a message";
-    if(color) who.style.color = color;
-    const text = document.createElement("span");
-    text.className = "vroom-chat-alert-text";
-    text.textContent = msg.text || "";
-    bar.append(who, text);
+    if(CTX.alertTag) bar.classList.add("vroom-chat-alert-tagged");
+    /* the account banner's glass (327z15, dressMessageAlert): the room's
+       tag and blue, or a chat's; the sender keeps their own colour */
+    dressMessageAlert(bar, CTX.alertTag
+      ? { kind: "vroom", tag: CTX.alertTag, title: (msg.name || "Someone") + " sent a message", sub: msg.text || "", whoColor: color || "" }
+      : { kind: "chat", tag: "MESSAGE", title: (msg.name || "Someone") + " sent a message", sub: msg.text || "", whoColor: color || "" });
     /* Parked below whatever the current screen puts along its top, the
        same measurement the update notice, the daily alert and the flare
        banner all share. On the lobby that is nothing and it sits at the
@@ -118849,13 +118896,11 @@ function buildVroomChatPanel(container, ctx){
     /* Measured AFTER it is in the document - topNoticeOffset reads the
        banner's own box to exclude it from what it measures against, and
        a node that is not mounted has no box. */
-    const topOffset = topNoticeOffset(bar);
-    if(topOffset != null){
-      bar.style.transition = "none";
-      bar.style.top = Math.round(topOffset) + "px";
-      void bar.offsetHeight;
-      bar.style.transition = "";
-    }
+    bar.style.transition = "none";
+    /* where the account banner goes, under the chat button (327z15) */
+    placeTopBanner(bar);
+    void bar.offsetHeight;
+    bar.style.transition = "";
     alertEl = bar;
     requestAnimationFrame(() => bar.classList.add("show"));
     alertTimer = setTimeout(() => {

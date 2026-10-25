@@ -115,7 +115,8 @@ def check_story(br):
       try{ out.existing = txt(novaIntroLines({ existing: true })); }catch(e){ out.existing = []; out.err = String(e); }
       out.keys = novaIntroLines({}).map(l => Object.keys(l).filter(k => k !== 'text' && k !== 'gesture').sort().join('+'));
       out.ranks = TIER_ORDER_FULL.map((k, i) => { try{ return novaRankLine(i); }catch(e){ return ''; } });
-      out.note = ((RELEASE_NOTES[0].groups || []).flatMap(g => g.items || []).find(i => /Your Instructor/.test(i.title)) || {}).body || '';
+      /* MOVED IN 327z15: Version 9.2 is RELEASE_NOTES[0] now; the note is Version 9's */
+      out.note = (((RELEASE_NOTES.find(v => v.version === '9') || {}).groups || []).flatMap(g => g.items || []).find(i => /Your Instructor/.test(i.title)) || {}).body || '';
       out.chats = ['why is my planet cracking', 'what do i get for helping you', 'where are my crew', 'where are you'].map(q => novaReplyFor(q));
       out.tip = NOVA_NEW_TIPS_321.map(t => t.text).join(' | ');
       out.lore = RANK_LORE.titan + ' | ' + RANK_LORE.veteran;

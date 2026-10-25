@@ -308,6 +308,8 @@ def run_class(src_dir, label):
               document.body.appendChild(el);
               placeTopBanner(el);
               el.classList.add("show");
+              /* at rest: mid-slide it is still 8px up (MOVED IN 327z15) */
+              el.style.transition = "none"; el.getBoundingClientRect();
               const r = el.getBoundingClientRect();
               const br = b.getBoundingClientRect();
               const overlap = !(r.right <= br.left || r.left >= br.right ||
@@ -323,8 +325,12 @@ def run_class(src_dir, label):
                 # AND IT IS STILL AT THE TOP. Clearing the button by being
                 # shoved down the screen passes the test above and fails
                 # the person trying to read it.
-                if off["bannerTop"] > off["btnBottom"]:
-                    fails.append("a top banner sits below the chat button, not beside it: %s" % off)
+                # MOVED IN 327z15: since 327z5 a banner spans the screen less
+                # 1rem each side and clears the button by going UNDER it
+                # (settleTopBanner, 8px gap) - "still at the top" is now
+                # "directly under the button", not beside it.
+                if off["bannerTop"] - off["btnBottom"] > 16:
+                    fails.append("a top banner is pushed down the screen, not directly under the chat button: %s" % off)
 
             # 3. starting a chat makes a room, and the panel binds to it
             started = pg.evaluate("""()=>{
@@ -554,8 +560,11 @@ def run_intro(src_dir, label):
                          review" and "Remove the weekly recap and badge case from
                          what's new" - neither word is asked for, and both must be gone
                          MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz" */
-                      says78: ['nova', 'sound', 'quiz', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
-                        && ['briefing', 'badge case', 'weekly recap'].every(w => txt.indexOf(w) < 0)
+                      /* MOVED IN 327z15: Mock (a quiz for one build) is no row of its
+                         own - "that's not a thing, all we did was change the name" -
+                         and the Nova row no longer lists the room games */
+                      says78: ['nova', 'sound', 'profile', 'calendar', 'save a test', 'study'].every(w => txt.indexOf(w) >= 0)
+                        && ['briefing', 'badge case', 'weekly recap', 'a real test'].every(w => txt.indexOf(w) < 0)
                         && txt.indexOf('version 9') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:

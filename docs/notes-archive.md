@@ -28537,3 +28537,19 @@ it keep their size, the button stays 48px) down to .7, and below ~.78 (a
 not scroll (.intro-pop:has(> .intro-card-compact)). Measured: iPhone 17 Pro
 Max .947, Safari .915, iPad landscape .877, laptop 1, SE titles only.
 Gate: check-b327z15-fb J3-J4.
+
+Round 41: "When friend requests come in, when people message you ... can they
+be the same Liquid Glass thing ... like the save your sync code pop up?"
+Requests and invites were already buildAppBanner. The message previews
+(showChatPreview's ping and the lobby/room chat's alert) were the older
+flat .vroom-chat-alert strip. dressMessageAlert() puts the account banner
+on them (classes app-banner-icon/-body/-tag/-title/-sub, chevron, kind
+colour bar: chat purple "MESSAGE", room blue "VIRTUAL ROOM"); CSS
+.vroom-chat-alert.is-glass at the end of the main <style>, same insets and
+width as .app-banner; both placed with placeTopBanner (under the chat
+button). .vroom-chat-alert-who/-text stay on the title/sub for the gates.
+Gates brought up to date: check-chat (banner measured at rest, "directly
+under the button" since 327z5; What's New words without quiz/Mock),
+check-b326-e (Version 9's note, now RELEASE_NOTES[1]).
+60fps tab recordings old/new: the old lens held near-still ~8 frames then
+dropped; the new one runs from the glide into a ~5 frame shrink.
