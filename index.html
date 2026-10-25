@@ -34111,10 +34111,17 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-text{ display:block; min-width:0; }
   html[data-layout] .vroom-chat-alert.is-glass .vroom-chat-alert-who{ flex:none; }
   html[data-layout] .vroom-chat-alert.is-glass .app-banner-sub{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* (round 48) one rhythm in every banner, whatever element carries it (a button sets its own
+     font and line-height): the tag, the title (.94rem/1.25) and its line (.8rem/1.3, .1rem under) */
+  html[data-layout] :is(.vroom-chat-alert.is-glass, .update-banner.is-glass) :is(.app-banner-title, .app-banner-sub, .app-banner-tag){ font-family:inherit; text-align:left; }
+  html[data-layout] :is(.vroom-chat-alert.is-glass, .update-banner.is-glass) .app-banner-title{ display:block; font-size:.94rem; line-height:1.25; font-weight:700; color:var(--ink, #F2F4F7); }
+  html[data-layout] :is(.vroom-chat-alert.is-glass, .update-banner.is-glass) .app-banner-sub{ display:block; margin-top:.1rem; font-size:.8rem; line-height:1.3; font-weight:400; color:var(--soft, #A9B1BC); }
   html[data-layout] .vroom-chat-alert.is-glass .daily-alert-go{ flex:0 0 auto; color:var(--soft); width:.55rem; height:.85rem; }
   html[data-layout] .vroom-chat-alert.is-glass.show{ transform:translateY(0); }
   /* the notices (dressNoticeBar): the banner's bar, glyph, tag and x */
   html[data-layout] .update-banner.is-glass{ border-left:3px solid var(--banner-color); }
+  /* the update notice's insides on the banners' measure (its icon and words were 4px further in) */
+  html[data-layout] .update-banner.is-glass:not(.is-frame){ gap:.6rem; padding:.9rem 1rem .9rem 1.1rem; }
   html[data-layout] .update-banner.is-glass .app-banner-icon{ align-self:center; display:block; }
   html[data-layout] .update-banner.is-glass .app-banner-body{ flex:1 1 auto; }
   html[data-layout] .update-banner.is-glass .update-banner-close{ display:grid; place-items:center; opacity:1; color:var(--soft); }
@@ -87986,6 +87993,18 @@ function settleTopBanner(el){
    the point: the locked popup and Find me's answer are plain sentences
    and stay plain sentences. Only the once-a-day announcement asks for
    `live`, and only that one becomes a tappable, flourishing banner. */
+/* (327z15 round 48) "Ensure the spacing of the words here in the pops are good to go ... This
+   isn't cohesive." Every banner reads as a title over its line, as iPhone notifications do: a
+   sentence written "headline — the rest" is shown that way (the headline in the ink, the rest
+   in the soft grey, its first letter raised); one with no dash stays one line. */
+function bannerTitleSub(text, msg){
+  const s = String(msg || ""), i = s.indexOf(" \u2014 ");
+  if(i <= 0){ text.textContent = s; return; }
+  const rest = s.slice(i + 3).trim();
+  const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = s.slice(0, i);
+  const sub = document.createElement("span"); sub.className = "app-banner-sub"; sub.textContent = rest.charAt(0).toUpperCase() + rest.slice(1);
+  text.append(ttl, document.createTextNode(" "), sub);
+}
 function showDailyAlert(msg, opts){
   /* a notice banner: held while a cutscene has the screen (build 320) */
   if(typeof holdForCutscene === "function" && holdForCutscene("dailyalert:" + msg, () => showDailyAlert(msg, opts))) return null;
@@ -88018,7 +88037,7 @@ function showDailyAlert(msg, opts){
     const tag = document.createElement("span");
     tag.className = "app-banner-tag daily-alert-tag"; tag.textContent = "DAILY QUESTION";
     const text = document.createElement("span");
-    text.className = "app-banner-text daily-alert-text"; text.textContent = msg;
+    text.className = "app-banner-text daily-alert-text"; bannerTitleSub(text, msg);
     body.append(tag, text);
     /* A chevron rather than the word TAP (build 245): the banner is
        narrower now it clears the chat button on both sides, and the
@@ -88090,7 +88109,7 @@ function showDailyAlert(msg, opts){
         const sub = document.createElement("span"); sub.className = "app-banner-sub"; sub.textContent = msg;
         text.append(document.createTextNode(" "), sub);
       }
-    } else text.textContent = msg;
+    } else bannerTitleSub(text, msg);
     body.append(tag, text);
     const shut = document.createElement("button");
     shut.type = "button"; shut.className = "app-banner-x";
@@ -89969,7 +89988,7 @@ function novaChallengeAnnounce(wk, msg){
 }
 function novaChallengeBanner(wk){
   if(document.getElementById("nova-challenge")) return null;
-  const el = buildAppBanner("nova-challenge", "vroom", "Nova challenged you to a match", "Accept",
+  const el = buildAppBanner("nova-challenge", "vroom", "Nova\nChallenged you to a match.", "Accept",
     () => novaAcceptChallenge(wk), () => {});
   const ico = el.querySelector(".app-banner-icon");
   if(ico){
@@ -93170,7 +93189,7 @@ function checkChatInvites(){
      "not now", not a "never", and the next snapshot re-checks. */
   chatInviteSeen = at;
   const el = buildAppBanner("chat-invite", "chat",
-    (newest.from.firstName || "A classmate") + " invited you to a chat",
+    (newest.from.firstName || "A classmate") + "\nInvited you to a chat.",
     "Join",
     () => {
       /* Same rule as the Inbox's Join: every invite to this chat is answered. */
@@ -100708,7 +100727,13 @@ function showUpdateBanner(info){
 
   const text = document.createElement("span");
   text.className = "update-banner-text";
-  text.textContent = info.note || "A new version of Nova is ready.";
+  /* (round 48) a title over its line, as every banner reads */
+  if(info.note) text.textContent = info.note;
+  else {
+    const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = "A new version is ready";
+    const sub = document.createElement("span"); sub.className = "app-banner-sub"; sub.textContent = "Update to get the latest.";
+    text.append(ttl, document.createTextNode(" "), sub);
+  }
 
   const act = document.createElement("button");
   act.className = "update-banner-btn";
@@ -114002,7 +114027,10 @@ function dismissInvite(code){
    of them survives being read in a hurry, and the other survives being
    read by somebody who cannot tell those colours apart. */
 const BANNER_KINDS = {
-  vroom:  { tag: "VIRTUAL ROOM", color: "#3DA9FC", glyph: "M4 10 12 4l8 6v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" },
+  /* (327z15 round 48) "Why is the icon for virtual room a home?" - a room is people studying
+     together live: three of them, the middle one in front, the friend glyph's own weight */
+  vroom:  { tag: "VIRTUAL ROOM", color: "#3DA9FC",
+    glyph: "M12 11.2a3.3 3.3 0 1 0 0-6.6 3.3 3.3 0 0 0 0 6.6Zm-6.3 1a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm12.6 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM12 12.6c-3.5 0-6 1.9-6 4.1V19h12v-2.3c0-2.2-2.5-4.1-6-4.1Zm-7.1.9C2.6 13.8 1 15.2 1 16.9V19h3.6v-2.3c0-1.2.5-2.3 1.3-3.2h-1Zm14.2 0h-1c.8.9 1.3 2 1.3 3.2V19H23v-2.1c0-1.7-1.6-3.1-3.9-3.4Z" },
   friend: { tag: "FRIENDS",      color: "#4ADE80", glyph: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 2c-4 0-7 2-7 4.5V20h14v-1.5C19 16 16 14 12 14" },
   /* Amber, and a key rather than a person or a room: this one is not
      somebody asking you for something, it is the app telling you to
@@ -114024,7 +114052,8 @@ const BANNER_KINDS = {
   /* Back on your account (build 327z5): "The 'welcome back your progress
      is here' thing ... should be bigger like and better like the sync
      one". Green, a cloud with a tick: your progress came down. */
-  welcome: { tag: "WELCOME BACK", color: "#5FD99A",
+  /* (round 48) the tag says what happened, the title greets: "WELCOME BACK" over "Welcome back" said it twice */
+  welcome: { tag: "SIGNED IN", color: "#5FD99A",
     svg: '<path d="M7.3 18.4h10.2a4 4 0 0 0 .5-7.96A5.6 5.6 0 0 0 7.3 9.1a4.65 4.65 0 0 0 0 9.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.4 13.7l1.9 1.9 3.5-3.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
   /* A test saved with Save and exit (build 327z5): "Maybe when you save a
      test and go back to main menu you'd get one for that?" A bookmark,
@@ -114109,7 +114138,7 @@ function showLobbyInviteBanner(from, code){
   if(document.getElementById("lobby-invite")) return;
   if(holdForCutscene("lobbyinvite", () => checkLobbyInvites())) return;
   const el = buildAppBanner("lobby-invite", "vroom",
-    (from.firstName || "A classmate") + " invited you to a Virtual Room",
+    (from.firstName || "A classmate") + "\nInvited you to a Virtual Room.",
     "Join",
     () => { dismissInvite(code); joinVirtualRoomLobby(code); },
     () => dismissInvite(code));
@@ -114162,8 +114191,9 @@ function checkFriendRequests(){
   if(!pending.length) return;
   const who = pending[0];
   const more = pending.length - 1;
-  const msg = (who.firstName || "A classmate") + " wants to be friends"
-    + (more > 0 ? " (+" + more + " more)" : "");
+  /* (round 48) a name over what they ask, as every banner reads */
+  const msg = (who.firstName || "A classmate") + (more > 0 ? " and " + more + " more" : "")
+    + "\n" + (more > 0 ? "Want to be friends." : "Wants to be friends.");
   const el = buildAppBanner("friend-request", "friend", msg, "View",
     () => showFriends(),
     () => pending.forEach(e => dismissFriendReq(e.pub)));
@@ -114282,7 +114312,8 @@ function checkSaveCodeReminder(){
      people". A banner still pushing the idea Settings had just dropped
      would be the app disagreeing with itself, so both say code now. */
   const el = buildAppBanner("save-code", "account",
-    "Save your sync code \u2014 it is the only way back if this device loses its data",
+    /* (round 48) a title over its reason, as every banner reads */
+    "Save your sync code\nIt is the only way back if this device loses its data.",
     /* "Save it", not "Copy code" - the share sheet puts it in Notes or
        a message to yourself, which is what "save" has to mean for
        something whose whole job is outliving this phone. */
@@ -118996,9 +119027,12 @@ function buildVroomChatPanel(container, ctx){
     if(CTX.alertTag) bar.classList.add("vroom-chat-alert-tagged");
     /* the account banner's glass (327z15, dressMessageAlert): the room's
        tag and blue, or a chat's; the sender keeps their own colour */
+    /* (round 48) "Why does one say Alex sent a message and why does one say Alex? Why is one
+       orange? This isn't cohesive." Every message reads the same: the sender as the title in
+       the ink, what they said under it; the tag and its colour say where it came from */
     dressMessageAlert(bar, CTX.alertTag
-      ? { kind: "vroom", tag: CTX.alertTag, title: (msg.name || "Someone") + " sent a message", sub: msg.text || "", whoColor: color || "" }
-      : { kind: "chat", tag: "MESSAGE", title: (msg.name || "Someone") + " sent a message", sub: msg.text || "", whoColor: color || "" });
+      ? { kind: "vroom", tag: CTX.alertTag, title: msg.name || "Someone", sub: msg.text || "sent a message" }
+      : { kind: "chat", tag: "MESSAGE", title: msg.name || "Someone", sub: msg.text || "sent a message" });
     /* Parked below whatever the current screen puts along its top, the
        same measurement the update notice, the daily alert and the flare
        banner all share. On the lobby that is nothing and it sits at the

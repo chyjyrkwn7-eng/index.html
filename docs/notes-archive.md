@@ -28655,3 +28655,27 @@ and under .is-lighting the pill's base was the accent, not the lit white
 (#E7EDF1 vs #ECEFF3 on ink/titan) - now var(--vroom-lit). check-b327z z11
 sets character art aside (its sway follows the row's own live state; failed
 the same way on round 38's build).
+
+Round 48: "Ensure the spacing of the words here in the pops are good to go, and
+ensure the icons/colors makes sense. Why is the icon for virtual room a home?
+Why does one say Alex sent a message and why does one say Alex? Why is one
+orange? This isn't cohesive." Every banner now reads as a title over its
+line, iPhone-notification style:
+- requests and invites: the name over what they ask ("Alex" / "Wants to be
+  friends.", "Invited you to a Virtual Room.", "Invited you to a chat.",
+  "Nova" / "Challenged you to a match.");
+- messages, chat and room alike: the sender in the ink over the message (the
+  room's orange race colour and "sent a message" title are gone); the tag
+  and its colour say where it came from;
+- save your code: "Save your sync code" / "It is the only way back if this
+  device loses its data."; showDailyAlert splits "headline - the rest" at
+  its em dash (bannerTitleSub) so the daily and passive lines read the same;
+  the welcome banner's tag is SIGNED IN (it said WELCOME BACK over "Welcome
+  back"); the update notice "A new version is ready" / "Update to get the
+  latest." with the banners' padding and gap;
+- the Virtual Room glyph is three people (a room is people studying live),
+  not a house; one type rhythm in every banner (tag, title .94/1.25, line
+  .8/1.3 .1rem under), including the button-built room alert.
+Gates brought up: check-b327z5-c (SIGNED IN; the daily button's soft rim
+under its ring), check-save-code (its account has a finished test - the
+reminder has waited for one since round 31; failed the same on round 38).
