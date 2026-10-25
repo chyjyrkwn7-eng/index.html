@@ -10,6 +10,8 @@
   C. Hiding the app and then closing it writes "away" once, to presence and
      to the open chat, and the chat's typing dot is cleared by the hide.
   D. The Friends screen's board listener detaches when Friends leaves.
+  E. Somebody signing up never gets the What's New card, even on a device
+     whose older account had not seen it.
 
   python3 tools/check-b327z15-fb.py
   python3 tools/check-b327z15-fb.py --against /path/to/old-index.html
@@ -200,6 +202,21 @@ def main():
         }""")
         check("D1. leaving Friends detaches its board listener",
               r["listening"] and r["before"] == 0 and r["after"] == 1, r)
+
+        print("\nE. no What's New for a sign-up")
+        r = pg.evaluate("""async()=>{
+          try{ localStorage.removeItem(INTRO_KEY); }catch(e){}
+          store.onboardingComplete = true; store.novaMet = 999;
+          signupInNova = true;
+          showHome(); maybeShowIntro();
+          await new Promise(r => setTimeout(r, 3200));
+          const card = !!document.getElementById('intro-pop');
+          const seen = introSeen();
+          signupInNova = false;
+          return { card, seen };
+        }""")
+        check("E1. no What's New card during a sign-up", not r["card"], r)
+        check("E2. and it is marked seen for that device", r["seen"], r)
 
         check("Z. no page errors", not errs, errs[:3])
         ctx.close(); br.close()

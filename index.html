@@ -93509,6 +93509,10 @@ function maybeShowIntro(){
   let tries = 0;
   const attempt = () => {
     if(!store || !store.onboardingComplete){ introPending = false; return; }
+    /* A sign-up never sees What's New (327z15): there is nothing new to
+       somebody who has just arrived. novaSignupCreate marks it seen; this
+       covers a device whose older account had not, mid-introduction. */
+    if(signupInNova){ markIntroSeen(); introPending = false; return; }
     /* dataset.screen is set in exactly two places in this file, so
        "still on Home" is structural rather than a list to maintain.
        Leaving Home ends this attempt; the next showHome() starts a
@@ -93518,6 +93522,7 @@ function maybeShowIntro(){
     /* Busy, not finished: the splash, a tour's dim, or the generating
        overlay. Come back and look again. */
     const busy = document.getElementById("splashscreen") || document.getElementById("install-update")
+      || document.getElementById("nova-intro")
       || document.getElementById("tour-overlay")
       || document.getElementById("genprofile-overlay")
       || document.querySelector(".rs-spot, #badge-cutscene, #supernova-cutscene, #void-cutscene, #vroom-cutscene, #resume-offer");

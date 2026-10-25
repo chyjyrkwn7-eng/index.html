@@ -28469,3 +28469,10 @@ Gate: tools/check-b327z15-fb.py (A-D), fails on the previous build.
 Sign-up with Nova: Home is built under him before the name is asked, so the
 fade showed "Good evening" and then ", <name>" popped in on the rebuild.
 homeGreetingText() is shared and novaSignupCreate() refreshes .homegreeting.
+
+"Ensure the what's new card doesn't show up for users signing up.. wouldn't
+make sense." Both sign-up paths already marked it seen (novaSignupCreate,
+showHome's pendingMainMenuTour branch). Gap closed: maybeShowIntro's attempt
+now waits while #nova-intro is up, and during a sign-up (signupInNova) it marks
+What's New seen and stops - a device whose older account never saw the card
+showed it over Nova. Gate: check-b327z15-fb.py E (fails on the previous build).
