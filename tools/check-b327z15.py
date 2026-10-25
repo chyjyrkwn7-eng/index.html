@@ -174,7 +174,8 @@ def expect_builds(seq, gap):
     and none if it is the screen that was already up (Home, where every
     run starts). Further apart, each tap may build its own tab - but a
     tab whose screen is already up is never built again."""
-    if gap < 290:
+    # MOVED IN round 35: a tab's screen is built 170ms from the press (was 290)
+    if gap < 170:
         return 0 if seq[-1] == "home" else 1
     n, cur = 0, "home"
     for d in seq:

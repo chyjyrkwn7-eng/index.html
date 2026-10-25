@@ -28328,3 +28328,42 @@ sound and haptic is fixed and the stuff I've mentioned a bunch of times
   no-line are unchanged and still pass; only a real iPhone shows Safari's
   bars.
 - Gate: check-b327z15 II (~), all four fail on round 33 (ff6dc20).
+
+## Build 327z15 round 35 - the unit search's x, Review's bar as every other, no lag in Review, tabs answer sooner
+
+Madison: *"when searching the leaderboard by name, there's an x there to
+erase it. The unit selection screens search bar is missing this"*; *"In
+review ... The bottom tab becomes a lot different, the bottom tab gets
+pushed together, it should still look identical ... Ensure the search
+button is fixed along with it"*; *"I'm still seeing a lot of lag, like when
+in review, using the search function it lags, when hitting the drop down
+there is lag. When using the bottom tab, there is lag, when opening
+different screens or clicking stuff, there is lag/delay."*
+
+- **addSearchClear(wrap, input)**: the board's x (`.rank-search-clear`) in
+  the unit picker's and the Virtual Room's "Search units", there only while
+  something is typed; clearing fires the field's own input event, keeps
+  focus. Safari's own cancel button is hidden in `.searchwrap`.
+- **Review's bar is the bar** (327z10's narrowing and side-by-side pair
+  removed): `#tabsearch` is a 52px glass circle over the bar's right end
+  (TS_GAP+4 above it); tapped, it opens into a field the bar's width just
+  above the bar (clear x, Enter keeps results); an empty field that loses
+  focus folds back; a touch on the bar closes it on the way. The keyboard
+  lifts the field only. `.backtotop` stands its height + 10px higher while
+  the search is registered.
+- **Review's list builds lazily and filters in place** (showAnswerReview):
+  a unit's questions are built the first time it opens or a search reaches
+  it and kept (`nodeOf`); a search shows/hides built ones (110ms after the
+  typing stops; an emptied field at once); `.review-question` has
+  `content-visibility:auto`. Six units at 4x CPU: open 630ms -> ~130ms,
+  nodes 4,251 -> 66; a keystroke ~260ms -> ~30ms; a drop-down's slide six
+  50-120ms frames -> one ~60ms (with the idle warm-ups waiting, as they do
+  under a finger).
+- **TAB_SCREEN_AFTER 290 -> 170ms** (from the press): his iOS reference
+  changes the page at ~215ms; a tab's screen now starts building just after
+  a quick tap's release, while the glass is still crossing. check-b327z15 F's
+  "closer than the glide" threshold follows (170).
+- Measured, not changed: the idle badge warm-ups (warmBadgeStrikes, 50-240ms
+  slices at 4x, one 66ms at 1x) already wait 2s after any touch and 1.6s
+  after a screen goes in; Home's cost in headless Chromium is software
+  raster, which a phone's GPU does not pay.
