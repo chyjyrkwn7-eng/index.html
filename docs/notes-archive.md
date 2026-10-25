@@ -27587,3 +27587,19 @@ The description under sign in doesn't make sense, fix that as well"
 - check-b327z15 Z rewritten: six line icons, no rank emblems, each with the
   fill/rim/lens/layout size of Home's unreached rank bubble, no taps, store
   untouched, sky-home. Fails on 327z14 (glass, sky).
+
+## Build 327z15 round 10 - Welcome's learning icons drawn like Home's flares
+
+"the flares need to be the old icons like I said. IT GIVES IT MORE OF A
+LEARNING VIBE. All I wanted was the flare bubbles and the icons to get an
+updated look to be similar to what's on the main menu"
+
+- Round 9 put the old line icons in Home's glass but left the icons
+  themselves flat. welcomeIconDrawing(d, n) now draws each of the same six
+  symbols the way a rank emblem sits in its bubble: a faint disc, a dashed
+  ring turning (38s), an inner hairline ring, the symbol in light (1.3 stroke,
+  faint fill) over a wider faint stroke of itself as its halo (no SVG
+  filter), and four 4-point specks twinkling on staggered clocks; the symbol
+  breathes on opacity. Transform/opacity only; all still under Reduce motion.
+- The symbols, their order and their places are untouched.
+- check-b327z15 Z: each of the six carries the drawing (.cl-ring + >=3 .cl-tw).
