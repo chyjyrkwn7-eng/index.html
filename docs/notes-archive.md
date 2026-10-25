@@ -28627,3 +28627,20 @@ was not a scene: the controls sat dimmed under it and never moved. It is in
 CUTSCENE_SCENE_SEL now - out as the card comes up, back when it goes, and
 banners are held meanwhile. check-b327z15-fb K, L (fail on the previous
 build); A4/A5 read the first fetch only (a second refresh can land).
+
+Round 47: "The iPhone SE layout ... Why is the planet system so tiny and the
+start studying button massive? Why is the bottom tab like that? ... the se (or
+any smaller phone) has really bad proportions." An upright SE fell into the
+short-window tiers (max-height 38/36rem, written for laptop windows and
+phones on their side): a 139px planet, 147px empty over a 79px bar.
+@media (orientation:portrait) and (max-width:26rem) and (max-height:46rem)
+(SE 1 at 320x568, SE 2/3 at 375x667): Home's planet min(92vw, 23rem,
+100dvh - 19.5rem) (SE1 139 -> 226, SE3 197 -> 277), greeting .86rem, NOVA
+2rem; the tab bar compact (67px: tab padding .62rem .2rem, 1.5rem icons,
+.62rem labels); the daily question 5.7rem up so Start Studying clears it;
+Welcome's planet min(92vw, 23rem, 100dvh - 21rem) (SE1 176 -> 218, SE3 207
+-> 311). Welcome's two buttons are 44px on every phone (were 37-38).
+Under 360px wide the screen panel's side padding is 4px (the wrap's 20px
+and the panel's 20px stacked to 40 a side: 240px of 320 for every card;
+the leaderboard name read "J...."); Find me .75rem a side there so "Search
+names" is whole. The wrap itself is untouched (CLAUDE.md).
