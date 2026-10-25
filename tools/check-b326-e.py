@@ -510,7 +510,7 @@ def check_away(br):
               re.search(r"back in range", r.get("status", "")) and not re.search(r"\bAway\b", r.get("status", "")), r.get("status"))
         check("%s: the composer is off and says he is out of range" % dev, r.get("disabled") and re.search(r"out of range", r.get("ph", ""), re.I), r.get("ph"))
         check("%s: above it, his own words: out searching for more of his ship, back in range soon" % dev,
-              re.search(r"ship|signal|debris", r.get("note", "")) and re.search(r"back in range", r.get("note", "")) and r.get("noteAbove") and r.get("noteIn"),
+              re.search(r"ship|signal|debris|storm|scann|cargo", r.get("note", "")) and re.search(r"back in range", r.get("note", "")) and r.get("noteAbove") and r.get("noteIn"),
               {k: r.get(k) for k in ("note", "noteAbove", "noteIn")})
         check("%s: his card and Manage friends say 'Out of range' too" % dev,
               r.get("cell") == "Out of range" and "Out of range" in (r.get("manage") or ""), {k: r.get(k) for k in ("cell", "manage")})

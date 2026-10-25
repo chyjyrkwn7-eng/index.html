@@ -27784,3 +27784,46 @@ the test walk. Nothing changed for it.
   untouched.
 - Gate: check-b327z15 "$" (CC) - 3 laptop sizes: planet >= 62% of the
   height, title and button right of it, no scroll; fails on 327z14.
+
+## Build 327z15 round 18 - short boxes, Nova at every rank, a quieter chat, Challenge any time, "Up late"
+
+Madison sent a screen recording of Professor Oak's introduction (Pokemon):
+"I like the new approach of the story but some of the wording and sentences
+are weird ... the text boxes ... are super long. In Pokemon when oak
+introduces himself it's so good because it's short and sweet ... Novas rank
+up system will need to be more storyline ... each rank nova can come on
+screen ... I also don't want the nova chat to just become spam ... The
+challenges from nova need to be random but also, you can challenge nova
+whenever you want ... He's hard to beat though. It says 'studying late' ...
+this app won't be based on studying but learning".
+
+- novaIntroLines rewritten as short boxes (one thought each, <= 14 words;
+  a new account's is 19 boxes): "Hello there, <username>!" / "Welcome aboard.
+  My name is Nova." / "I'm an explorer, and I'll be your instructor." / ship:
+  "I sail the stars, learning everything I can." / "And my ship carries all
+  I've collected." / storm: "But on the way here, a storm hit us!" / "My
+  badges, my flares and my crew were scattered." / "The good news? It all
+  landed in your class material." / "Learn it, and we'll find it all again."
+  / flares, ranks, badges ("Score 100% on a unit enough times, and its badge
+  is yours."), crew ("Every one you find joins your team."), modes, the
+  friend line ("I've added you as a friend. I'll keep in touch."), "Your
+  adventure starts now. Let's go!". An existing account's opening and goodbye
+  are short too (its recap lines are unchanged).
+- playNovaRankTalk(idx) (NOVA_RANK_BEATS): when a rank-up journey has played
+  to its end (rankUpSceneEnd), Nova comes on over the relit flare (scaled up)
+  - "<name>! You found my Gold flare!", that rank's two beats (Gold: "Your
+  planet is taking in more light now." / "See the cracks? Your badges will
+  hold it together."), "Keep learning, and we'll find the rest." (Supernova:
+  "Thank you ... There's always more to learn!"). It moves heard "@rank", so
+  his chat no longer sends the rank-up message.
+- His chat: NOVA_QUIET_MS 20h -> 44h (two days between messages), tips at
+  most weekly (NOVA_TIP_GAP_MS 7 days), a level is news only at each ten.
+- His challenges: novaChallengeDue(wk, now) - by an FNV hash of the account
+  and the week, about one week in three is a challenge week, on a hashed day
+  Monday-Saturday (every device agrees; nothing stored). Challenge any time:
+  a "Challenge" button (44px) in his chat header, novaChallengeNow() (a lobby
+  with him invited). His hello, his VR reply, What's New and the help note
+  say so. He is as hard as he was ("almost never misses").
+- Home's late greeting: "Up late, <name>?" (was "Studying late").
+- Gates moved: check-b327-c (short boxes <= 14 words, <= 22; the story order;
+  existing flow names the class material), check-b326-e away note.
