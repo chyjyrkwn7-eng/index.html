@@ -28141,3 +28141,60 @@ perfectly centered, fix them all)".
   itself (a scrolled page), clears the colour of children too (a pill's
   inner span kept its letters), and for an arrow pill measures the letters
   alone with the arrow's colour pinned.
+
+## Build 327z15 rounds 30-31 - the white magnifier, and Madison's laptop/sign-up batch
+
+Round 30: an Apple Music screenshot - "the magnifying glass thing should be
+white". [data-theme="dark"] .tabsearch-glass / .searchicon are
+rgba(243,245,247,.92); .searchicon has z-index:2 (the glass field's
+backdrop-filter layer was painting over the unit search's magnifier, which
+is why it still read grey); the board's "Search names" has the same
+magnifier (searchMagnifier()) with a 2.6rem start padding.
+
+Round 31, item by item:
+- Unit cards: the >=40rem rule gave the five-area grid six rows, so on an
+  iPad and a laptop the count sat under the name with the card's slack
+  below; five rows now (auto auto minmax(0,1fr) auto 1.15rem) and the base
+  bar row is minmax(.95rem,auto) so an earned badge (no bar) does not move
+  the count. The badge's top and right insets are equal (phone .55rem, the
+  375px phone too, tablet .7rem). The earned glow ends inside the badge's
+  width (inset -6%, fading by 64%; the emblem's halo 4px) - it reached 28%
+  past it, over the card's rim.
+- The daily question's disabled Submit was the white pill with its 55% white
+  words (the dark theme's white .next !important beat #44474B): excluded
+  in that rule's :where().
+- Laptop page name (#count, outside a test) is absolute at the top-left, at
+  the chat button's inset, level with its middle. A test keeps its header.
+- Stats on a laptop has no Back because it is a tab (Profile › Stats), as
+  on a phone - Home, Leaderboard, Calendar and the Profile tabs never have
+  one; screens you go INTO do.
+- Countdown card (laptop): each page centred, its contents zoom 1.35.
+- Find me's black (327z15) reverted: the field's glass again.
+- Start Studying is in the bar on a laptop: syncStartAction treats laptop
+  Home's .playbtn as the floating button (label "Start Studying", the play
+  mark); #homestart retired (hsPlace on=false); the bar is centred. The
+  Start pill from 40rem is 5.1rem tall (was 4rem in a 101px bar - a phone's
+  is 64px in 79); the main-menu tip's target is #bottomtab-start on a laptop.
+- The daily question on a laptop is a card (.dq-card) in the words' column
+  under the tagline: the real button (ring, reset, announcements) moved
+  inside it in normal flow, "Daily question" and today's state beside it.
+- Next question vs the line: the line was .foot's top border; gone.
+- Laptop sign-up: Welcome's two buttons stand centred under the planet
+  where Home's bar stands (fixed, side by side, captions under each); the
+  steps are one 44rem centred column with Back at its top-left.
+- Copy: "Built for one thing" - "Studying you'll actually enjoy. Every
+  question comes straight from your class's material, from the police
+  academy to fire code."; Virtual Room "against your class"; class pick
+  "Select your classes" / "Pick what you're studying for. More classes are
+  on the way, and you'll be able to add them later."
+- Nova's name field: user-select:text, cursor:text, a solid caret colour and
+  its own layer (the scene is user-select:none - iOS draws an unsteady caret
+  in an input under a no-select ancestor). Starter characters: a centred
+  wrap (3 over 2 on a phone, all five in a row from 40rem).
+- Save your sync code: not before a finished test, not during the tips,
+  only on Home.
+- scheduleNovaGoodLuck(): ten seconds after the main-menu tips end, once
+  (id goodluck-327z15), only while Home is up (otherwise it waits).
+- Gates: check-b327z15 GG (=) - every check fails on round 28 (0a83454); CC,
+  EE, FF and T moved (Start in the bar, the card, Welcome's buttons under
+  the planet, Find me glass).
