@@ -15368,19 +15368,8 @@
      an unreached rank flare - frost, rim light, lens, shadow - and the
      same size, the line icon sitting in it the way the emblem does. */
   .cosmic-icon-badge.cosmic-badge-glass{ width:2.9rem; height:2.9rem; overflow:hidden; isolation:isolate; color:rgba(255,255,255,.88); }
-  .cosmic-icon-badge.cosmic-badge-glass svg.cosmic-learn-art{ position:relative; z-index:0; width:100%; height:100%; flex:none; overflow:visible; }
-  .cosmic-learn-art .cl-ring{ transform-box:view-box; transform-origin:24px 24px; animation:cl-turn 38s linear var(--ld, 0s) infinite; }
-  .cosmic-learn-art .cl-tw{ opacity:.15; animation:cl-twinkle 4.2s ease-in-out infinite; }
-  .cosmic-learn-art .cl-glyph{ animation:cl-breathe 5.6s ease-in-out var(--ld, 0s) infinite; }
-  @keyframes cl-turn{ to{ transform:rotate(360deg); } }
-  @keyframes cl-twinkle{ 0%, 100%{ opacity:.12; } 45%{ opacity:.95; } 60%{ opacity:.3; } }
-  @keyframes cl-breathe{ 0%, 100%{ opacity:.82; } 50%{ opacity:1; } }
-  [data-reduce-motion="true"] .cosmic-learn-art .cl-ring,
-  [data-reduce-motion="true"] .cosmic-learn-art .cl-tw,
-  [data-reduce-motion="true"] .cosmic-learn-art .cl-glyph{ animation:none !important; }
-  @media (prefers-reduced-motion: reduce){
-    .cosmic-learn-art .cl-ring, .cosmic-learn-art .cl-tw, .cosmic-learn-art .cl-glyph{ animation:none !important; }
-  }
+  .cosmic-icon-badge.cosmic-badge-glass svg{ position:relative; z-index:0; width:1.3rem; height:1.3rem;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
   .cosmic-icon-badge.cosmic-badge-glass::after{
     content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:1;
     background:
@@ -79612,36 +79601,6 @@ let cosmicDepthSeq = 0;
    box - and see the measurements in CLAUDE.md (build 313, under the
    glass). Welcome keeps its 152. */
 const HOME_OUTER_R = 140;
-/* WELCOME'S LEARNING ICONS, DRAWN LIKE HOME'S FLARES (327z15): "the flares
-   need to be the old icons ... All I wanted was the flare bubbles and the
-   icons to get an updated look to be similar to what's on the main menu."
-   The same six symbols, but as a small etched drawing the way a rank's
-   emblem is in its bubble: a faint dashed ring turning behind it, the
-   symbol in light with a soft halo of itself (a wider, fainter stroke -
-   no SVG filter), and four specks that twinkle on their own clocks. Only
-   transform and opacity move. */
-function welcomeIconDrawing(d, n){
-  const NS = "http://www.w3.org/2000/svg";
-  const mk = (tag, a) => { const e = document.createElementNS(NS, tag); for(const k in a) e.setAttribute(k, a[k]); return e; };
-  const svg = mk("svg", { viewBox: "0 0 48 48", class: "cosmic-learn-art", "aria-hidden": "true" });
-  svg.style.setProperty("--ld", (-[0, 1.7, 3.1, .9, 2.4, 4.0][n % 6]) + "s");
-  svg.appendChild(mk("circle", { cx: 24, cy: 24, r: 21, fill: "rgba(255,255,255,.05)" }));
-  svg.appendChild(mk("circle", { cx: 24, cy: 24, r: 18.5, fill: "none", stroke: "rgba(255,255,255,.26)",
-    "stroke-width": ".7", "stroke-dasharray": "1.4 3.2", class: "cl-ring" }));
-  svg.appendChild(mk("circle", { cx: 24, cy: 24, r: 14.5, fill: "none", stroke: "rgba(255,255,255,.12)", "stroke-width": ".5" }));
-  const g = mk("g", { transform: "translate(9 9) scale(1.25)", class: "cl-glyph" });
-  g.appendChild(mk("path", { d, fill: "none", stroke: "rgba(220,232,255,.28)", "stroke-width": "2.8", "stroke-linecap": "round", "stroke-linejoin": "round" }));
-  g.appendChild(mk("path", { d, fill: "rgba(255,255,255,.10)", stroke: "#F6F8FF", "stroke-width": "1.3", "stroke-linecap": "round", "stroke-linejoin": "round" }));
-  svg.appendChild(g);
-  [[9, 12, 1.1], [38, 10, .8], [40, 35, 1.0], [11, 37, .7]].forEach(([x, y, r], k) => {
-    const sp = mk("path", { d: "M" + x + " " + (y - r * 2.2) + "L" + (x + r * .45) + " " + (y - r * .45) + "L" + (x + r * 2.2) + " " + y +
-      "L" + (x + r * .45) + " " + (y + r * .45) + "L" + x + " " + (y + r * 2.2) + "L" + (x - r * .45) + " " + (y + r * .45) +
-      "L" + (x - r * 2.2) + " " + y + "L" + (x - r * .45) + " " + (y - r * .45) + "Z", fill: "#FFFFFF", class: "cl-tw" });
-    sp.style.animationDelay = "calc(var(--ld) - " + (k * 1.3) + "s)";
-    svg.appendChild(sp);
-  });
-  return svg;
-}
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -80536,7 +80495,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     /* Welcome keeps its learning icons (327z15: "I like the sign up icons
        ... IT GIVES A SENSE OF LEARNING"), in the glass bubble Home's rank
        flares are made of now. */
-    if(!useTierIcons){ badge.appendChild(welcomeIconDrawing(iconGlyphs[pos.icon], i)); badge.classList.add("cosmic-badge-glass"); }
+    if(!useTierIcons){ badge.appendChild(iconSvg); badge.classList.add("cosmic-badge-glass"); }
     /* Interactive on Home specifically (useTierIcons is only ever
        true there) \u2014 tapping a "flare" that isn't lit yet tells you
        exactly what's left to reach it, using the same live numbers
@@ -81303,7 +81262,7 @@ function showWelcome(){
 
   const sub = document.createElement("p");
   sub.className = "cosmic-welcome-sub";
-  sub.textContent = "Master the material, one rank at a time.";
+  sub.textContent = "Practice, track your mastery, and be ready for whatever comes next.";
   wrap.appendChild(sub);
 
   /* SIGN IN FIRST (build 322) - see fillWelcomeActions. A device that

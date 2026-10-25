@@ -27603,3 +27603,18 @@ updated look to be similar to what's on the main menu"
   breathes on opacity. Transform/opacity only; all still under Reduce motion.
 - The symbols, their order and their places are untouched.
 - check-b327z15 Z: each of the six carries the drawing (.cl-ring + >=3 .cl-tw).
+
+## Build 327z15 round 11 - simple icons back; Welcome's line reworded
+
+"No I really like how simple the welcome screens icons are, it gives it a
+vibe of learning" - round 10's drawn icons (welcomeIconDrawing, .cosmic-learn-
+art) are removed. Welcome's six line icons are as simple as they were, in
+round 9's glass bubble (.cosmic-badge-glass). DO NOT decorate them.
+
+"keep the practice, track your mastery, part but change the ending ... this
+app shouldn't be designed just for test day": the subtitle is "Practice,
+track your mastery, and be ready for whatever comes next." (round 9 had
+swapped it for Home's line; that is undone).
+
+His message also began "Look at how the background of the welcome screen is,
+it's alm..." and broke off - asked about, nothing changed for it.
