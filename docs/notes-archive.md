@@ -28230,3 +28230,24 @@ Round 31, item by item:
 - Gates: check-b327z15 HH (^) - all six fail on the round-31 commit. FF
   moved (Welcome no lower than Home), CC/GG moved (the card bottom-right),
   GG's badge check reads the bottom inset.
+
+#### 327z15, round 33 - an earned unit card's count at its foot; stale gates brought up to date
+
+- **"The amount of questions, on the unit card, that should be lowered once
+  you earn the badge so it's closest to the bottom border, all devices"**: a
+  mastered unit has no `.pick-barrow` (no bar is built when `earned`), so
+  `.picks > label.pick:not(:has(.pick-barrow)) > .pcount` takes rows 4-5
+  (`grid-row:4 / 6; align-self:end; margin-bottom:0`) and sits on the card's
+  floor beside the badge. Measured: phone 13px from the card's foot (was
+  29px, same as a card with a bar), laptop 17px (was 37px). check-b327z15 GG
+  allows two foot distances, one per kind of card.
+- Gates whose expectations this build changed on purpose, moved (each was
+  red on round 31 too, none on this round's work):
+  - check-b326-e: Nova's gap is 44h since the 327z15 quieter chat
+    (`NOVA_QUIET_MS`), so "the next one" is two days on, not one; the recap
+    scenario marks this launch's server copy read (`cloudConfirmedFor`) -
+    since 327z the recap waits for it, and the fixture has a code but no cloud.
+  - check-curve: Profile's blocks hold exactly their pills (See rank ladder,
+    the case count); tapping where you stand opens nothing (round 5); the
+    climb opens from See rank ladder.
+  - check-sync: the Hundos board's row ends with the bare count ("Billy5").

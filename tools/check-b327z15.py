@@ -1023,14 +1023,16 @@ def section_gg(br):
       showRankings(); await wait(1000);
       const rs = !!document.querySelector('#stage .rank-search-wrap .searchicon');
       return { foot, ins, ic, rs }; }""")
-    check("GG. unit cards: the count is at the same distance from every card's foot", len(set(r["foot"])) == 1, r)
+    # MOVED IN round 32: an earned card (no bar) has its count on the floor, a card with a bar
+    # has it over the bar - so the distance is one of two, each the same on every card of its kind
+    check("GG. unit cards: the count is at the same distance from every card's foot (one per kind)", 1 <= len(set(r["foot"])) <= 2, r)
     # ...and on a laptop it is AT the foot - the six-row grid left it under the name there
     c2, p2 = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)
     lf = p2.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       showModeSelect(); await wait(500); document.querySelector('.modeselect .modecard').click(); await wait(1200);
       return [...document.querySelectorAll('#stage .picks > label.pick')].slice(0, 6).map(c => { const b = c.getBoundingClientRect(), n = c.querySelector('.pcount').getBoundingClientRect(); return Math.round(b.bottom - n.bottom); }); }""")
     c2.close()
-    check("GG. laptop unit cards: the count sits at the foot (within 40px of it) on every card", lf and max(lf) <= 40 and len(set(lf)) == 1, lf)
+    check("GG. laptop unit cards: the count sits at the foot (within 40px of it) on every card", lf and max(lf) <= 40 and len(set(lf)) <= 2, lf)
     check("GG. unit cards: the badge in the bottom-right, as far from the bottom as from the right (within 1px)", r["ins"] and max(r["ins"]) <= 1, r)
     check("GG. the magnifier is white and on the field; the board's search has one",
           r["ic"] and r["ic"]["col"].startswith("rgba(243, 245, 247") and r["ic"]["z"] not in ("auto", "0") and r["rs"], r)

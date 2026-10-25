@@ -434,7 +434,8 @@ with sync_playwright() as pw:
     pg.evaluate("()=>showRankings('hundos')"); pg.wait_for_timeout(500)
     rich = [n for n in names() if "Billy" in n]
     check("and it is the row with the real progress",
-          bool(rich) and "5 hundos" in rich[0], str(rich))
+          # 327z15: the Hundos board shows its own column, the bare count under a header ("1Billy5")
+          bool(rich) and re.search(r"Billy\D*5( hundos)?$", rich[0]), str(rich))
     check("two people sharing a name both stay",
           len([n for n in shown if "Sam" in n]) == 2, str(shown))
 

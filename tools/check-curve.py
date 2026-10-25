@@ -676,6 +676,9 @@ def main():
                 blocks: order.map(n => !!n),
                 inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
                 nested: document.querySelectorAll('.pf-standing button, .pf-goal button, .pf-case button').length,
+                /* 327z15: the rank ladder and the badge case open from their own pills, and only those */
+                nestedOther: [...document.querySelectorAll('.pf-standing button, .pf-goal button, .pf-case button')].filter(b => !b.matches('.pf-goal-foot, .pf-case-count')).map(b => b.className),
+                totalShown: (n => !!n && getComputedStyle(n).display !== 'none' && n.getClientRects().length > 0)(document.querySelector('.pf-standing .pf-xp-total')),
                 study: /\bStudy\b/.test(q('.pf-goal') || ''),
                 level: q('.pf-standing .pf-level'), rank: q('.pf-standing .pf-rankname'),
                 nums: q('.pf-standing .pf-xpnums .xpnums'), over: !!document.querySelector('.pf-standing .xpnums.is-over'),
@@ -722,7 +725,7 @@ def main():
                        title: (document.getElementById('count') || {}).textContent || null };
             };
             out.taps = { standing: await tapAt('.pf-standing', '.pf-xpbar'), goalTile: await tapAt('.pf-goal', '.pf-rw.is-flare'),
-                         goalTask: await tapAt('.pf-goal', '.pf-task .pf-bar'), caseStrip: await tapAt('.pf-case', '.badge-strip-cell:nth-child(9)') };
+                         goalTask: await tapAt('.pf-goal', '.pf-task .pf-bar'), ladder: await tapAt('.pf-goal', '.pf-goal-foot'), caseStrip: await tapAt('.pf-case', '.badge-strip-cell:nth-child(9)') };
             document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
@@ -789,8 +792,10 @@ def main():
             # put above the rank challenge box thing?" - standing, case, next.
             # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the
             # top is not the move, revert that location at the bottom."
-            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them, no Study button",
-                  pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] == 0 and not pf["study"], pf)
+            # MOVED IN 327z15: the ladder and the case open only from their own pills
+            # ("See rank ladder", "N of 16 badges") - those are the only buttons in them
+            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them but their pills, no Study button",
+                  pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] >= 1 and pf.get("nestedOther") == [] and not pf["study"], pf)
             # "How do we still get that nice xp stuff where it shows how much
             # over you are, how much till the next level ... we wouldn't need
             # that total xp there because it'd be with all the xp stuff"
@@ -809,7 +814,7 @@ def main():
             check("Profile at a cap: this level's XP marked over under the bar (both numbers one blue), the total under the bar saying 'total XP' in the level's colour, the bar banked, and no Next gate box",
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
                   and pf["haveCol"] == pf["needCol"] and blue(pf["needCol"])
-                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and pf["totalCol"] == pf["lvCol"] and not blue(pf["totalCol"]) and pf["banked"]
+                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and (not pf.get("totalShown") or pf["totalCol"] == pf["lvCol"]) and not blue(pf["totalCol"]) and pf["banked"]
                   and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 21", pf)
             # "I don't like how it means that 5th badge part": no ordinal.
             # REVISED IN 316: no count either - it says this is as high as the
@@ -882,10 +887,12 @@ def main():
                   all(x["note"] is None for x in t49 + t), [x["note"] for x in t49 + t])
             check("...and nothing is under the bar for Silver either (321)", p49["note"] is None, p49["note"])
             tp = w["taps"]
-            check("tapping where you stand opens the climb", tp["standing"]["hit"] and tp["standing"]["map"], tp["standing"])
-            # "assuming you click anywhere in that box, it opens up the rank road map"
-            check("tapping the next rank anywhere - a reward tile or a task's bar - opens the climb",
-                  tp["goalTile"]["hit"] and tp["goalTile"]["map"] and tp["goalTask"]["hit"] and tp["goalTask"]["map"], tp)
+            # MOVED IN 327z15 round 5: "Why ... when I click my xp the rank road map pops up?" -
+            # where you stand opens nothing; the climb opens from See rank ladder, not from
+            # anywhere in the next rank's box (a challenge row opens its How, a tile its preview)
+            check("tapping where you stand opens nothing", tp["standing"]["hit"] and not tp["standing"]["map"] and not tp["standing"]["badges"], tp["standing"])
+            check("See rank ladder opens the climb",
+                  tp["ladder"]["hit"] and tp["ladder"]["map"], tp["ladder"])
             # "ensure if you click anywhere on that, it opens up the larger one"
             check("tapping any badge in the strip opens the badge case",
                   tp["caseStrip"]["hit"] and tp["caseStrip"]["badges"] and not tp["caseStrip"]["map"], tp["caseStrip"])

@@ -21881,6 +21881,12 @@
   /* as far from the bottom edge as from the right (.5rem on a phone) */
   .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:end; width:2.6rem; height:2.6rem; margin:0 -.35rem -.25rem .55rem; }
   .picks > label.pick .pick-barrow{ grid-area:bar; align-self:end; width:100%; gap:.5rem; }
+  /* AN EARNED CARD'S COUNT AT ITS FOOT (327z15 round 32): "The amount of
+     questions ... should be lowered once you earn the badge so it's closest
+     to the bottom border, all devices". A mastered unit has no bar, so its
+     count takes the bar's row as well and sits on the card's floor, beside
+     the badge. */
+  .picks > label.pick:not(:has(.pick-barrow)) > .pcount{ grid-row:4 / 6; align-self:end; margin-bottom:0; }
   .picks > label.pick .pick-bar-track{ height:4px; background:rgba(255,255,255,.12); }
   .picks > label.pick .pick-bar-count{ font-size:.68rem; color:var(--soft); }
   /* a 375px phone's column is 117px of text: "Professionalism" in the
