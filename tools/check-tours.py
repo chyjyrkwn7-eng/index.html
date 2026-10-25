@@ -171,7 +171,8 @@ def declared_steps(src):
     m = re.search(r"function mainMenuTourSteps\([^)]*\)\{(.*?)\n\}", src, re.S) \
         or re.search(r"function startMainMenuTour\(\)\{(.*?)\n\}", src, re.S)
     if m:
-        out["startMainMenuTour"] = len(re.findall(r"\btarget\s*:", m.group(1)))
+        # Build 327z15: the centred welcome step has no target but renders.
+        out["startMainMenuTour"] = len(re.findall(r"\b(?:target|center)\s*:", m.group(1)))
         if "function startNovaReturnTour(" in src:
             # build 325: the meeting's tips are the new ones alone ("all the
             # walk through stuff on the main menu can be removed, only the

@@ -842,7 +842,8 @@ def section_dd(br):
     after = pg.evaluate("() => ({ code: !!syncCode, done: !!store.onboardingComplete, name: store.firstName, ch: store.avatarChar })")
     check("DD. the pick makes the account, with that name and character", after["code"] and after["done"] and after["name"] == "J.Smith" and bool(after["ch"]), after)
     until("gone", 400)
-    pg.wait_for_timeout(1500)
+    # (round 37) the tips wait 2.5s so Home has its moment first
+    pg.wait_for_timeout(4000)
     home = pg.evaluate("() => ({ greet: (document.querySelector('.homegreeting') || {}).textContent || '', tour: !!document.getElementById('tour-tooltip') })")
     check("DD. Home greets the new name and the main-menu tips start", "J.Smith" in home["greet"] and home["tour"], home)
     ctx.close()
