@@ -95112,32 +95112,47 @@ const DRAG_SELECT_LOCK = 10;
    unit card takes the tallest card's height (the full-width Starred box
    and "More units coming" keep their own). Measured whenever the list
    changes width (a rotation, the first layout) and when it is filled. */
+/* ONE MEASURE, NOT THREE, AND NOT ON THE TAP (327z15 round 49): "Ensure there isn't any lag
+   when ... opening the units, the test start menu". This read every card's height (a forced
+   layout of the whole new screen) on the first layout, again on the next frame and again when
+   the fonts settled - 22ms at full speed, ~90ms at a phone's, inside the tap. The height is
+   kept per list width: a list opened again at a width already measured takes it at once (no
+   read), and the measure itself runs in an idle moment after the screen is up. */
+var pickHeightAt = {};
 function equalizePickHeights(list){
-  let last = "";
-  const run = () => {
+  const cards = () => [...list.querySelectorAll(":scope > label.pick")];
+  const apply = v => cards().forEach(c => { c.style.minHeight = v; });
+  let w = -1;
+  const measure = () => {
     if(!list.isConnected) return;
-    const cards = [...list.querySelectorAll(":scope > label.pick")];
-    if(!cards.length) return;
-    cards.forEach(c => { c.style.minHeight = ""; });
+    const cs = cards();
+    if(!cs.length) return;
+    cs.forEach(c => { c.style.minHeight = ""; });
     let h = 0;
-    cards.forEach(c => { if(c.offsetParent !== null) h = Math.max(h, c.getBoundingClientRect().height); });
+    cs.forEach(c => { if(c.offsetParent !== null) h = Math.max(h, c.getBoundingClientRect().height); });
     if(!h) return;
     const v = Math.ceil(h * 2) / 2 + "px";
-    cards.forEach(c => { c.style.minHeight = v; });
-    last = v;
+    cs.forEach(c => { c.style.minHeight = v; });
+    if(w > 0) pickHeightAt[w + ":" + cs.length] = v;
   };
-  list.__equalize = run;
+  const idle = fn => (typeof requestIdleCallback === "function") ? requestIdleCallback(fn, { timeout: 600 }) : setTimeout(fn, 120);
+  /* the list's own handle (filters, search, a re-fill) measures now, as before */
+  list.__equalize = measure;
+  const at = nw => {
+    w = nw;
+    const v = pickHeightAt[w + ":" + cards().length];
+    if(v){ apply(v); idle(measure); }
+    else measure();
+  };
   try{
-    let w = -1;
     const ro = new ResizeObserver(entries => {
       const nw = Math.round(entries[0].contentRect.width);
-      if(nw === w) return;
-      w = nw; run();
+      if(nw === w || !nw) return;
+      at(nw);
     });
     ro.observe(list);
-  }catch(e){}
-  requestAnimationFrame(run);
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(run).catch(() => {});
+  }catch(e){ requestAnimationFrame(() => at(Math.round(list.clientWidth))); }
+  if(document.fonts && document.fonts.status !== "loaded" && document.fonts.ready) document.fonts.ready.then(() => idle(measure)).catch(() => {});
 }
 function attachDragSelect(list, onChange){
   let st = null, rafPending = false, scrollRaf = 0;

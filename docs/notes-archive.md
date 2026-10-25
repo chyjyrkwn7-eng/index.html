@@ -28679,3 +28679,20 @@ line, iPhone-notification style:
 Gates brought up: check-b327z5-c (SIGNED IN; the daily button's soft rim
 under its ring), check-save-code (its account has a finished test - the
 reminder has waited for one since round 31; failed the same on round 38).
+
+Round 49: "Ensure the isn't any log [lag] when opening a test, going through a
+test, opening the units, the test start menu, or when loading home". Measured
+(tools-style probe, 4x CPU, 3 runs, branch vs main): every step is level with
+main or faster; answering and the next question 20-55ms; the one per-session
+cost is the sound engine's AudioContext on the first tap (~30ms at full speed;
+iOS needs it made inside a gesture, check-b327-a). With animations paused the
+start sheet is 15ms of script and 14ms of style at full speed on both. The one
+script hotspot was equalizePickHeights: it measured every unit card (a forced
+layout of the new screen) up to three times per open - on the first layout,
+the next frame and fonts.ready - 22ms at full speed, ~90 at 4x. Now it
+measures once (ResizeObserver), keeps the height per list width and card
+count (pickHeightAt), applies it at once on a later open and re-checks in an
+idle moment; fonts.ready only when the fonts are not loaded yet. Units opened
+again: 104ms at 4x (main 137). Equal heights hold on a first open, a second,
+rotated and back. Home's planet still runs two SVG animations (pulse ring,
+core flare) on the main thread - noted, not changed.
