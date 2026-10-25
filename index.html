@@ -79599,8 +79599,10 @@ let cosmicDepthSeq = 0;
    their centres and the outer secret flares ride it. 140, not the drawn
    152 it used to be - centred on 152 the top bubble rose above the hero's
    box - and see the measurements in CLAUDE.md (build 313, under the
-   glass). Welcome keeps its 152. */
-const HOME_OUTER_R = 140;
+   glass). Welcome keeps its 152.
+   327z15: 152 again, Welcome's. "The welcome screen planet size, and the
+   rings spacing is PERFECT ... The main menu needs to be ... like it." */
+const HOME_OUTER_R = 152;
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -92752,10 +92754,11 @@ function showHome(){
      top or bottom edge depending on viewport height. Living inside
      heroWrap, sized and centered off that box, the glow now always
      covers wherever the sphere actually ends up. */
-  const glow = homeGlowCanvas() || document.createElement("div");
-  glow.classList.add("homeglow", "homeglow-hero");
-  glow.setAttribute("aria-hidden", "true");
-  heroWrap.appendChild(glow);
+  /* NO HALO BEHIND THE PLANET (327z15): "The background behind it [on
+     Welcome] is perfect too. The main menu needs to be ... like it."
+     Welcome never had the .homeglow-hero wash - the rose haze round
+     Home's planet - so Home goes without it too: the sky and the
+     planet's own glow, as on Welcome. homeGlowCanvas() is kept. */
 
   panel.appendChild(heroWrap);
 

@@ -102,7 +102,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -679,10 +679,28 @@ def section_z(br):
     check("Z. Welcome is under Home's full sky", r["sky"], r)
     ctx.close()
 
+def section_aa(br):
+    print("\nAA. Home's planet system is Welcome's: the same planet, the same rings, no halo behind it")
+    for label, w, h, dpr in (z5b.PHONE, ("iPad Pro 11", 834, 1194, 2)):
+        ctx, pg = z5b.boot(br, w, h, dpr)
+        M = """() => { const h = document.querySelector('#stage .cosmic-hero-wrap'); if(!h) return null;
+          const radii = [...new Set([...h.querySelectorAll('svg circle')].map(c => +c.getAttribute('r')).filter(r => r >= 100))].sort((a, b) => a - b);
+          const W = h.getBoundingClientRect();
+          return { w: Math.round(W.width), radii, halo: !!h.querySelector('.homeglow-hero') }; }"""
+        pg.evaluate("() => { showWelcome(); }"); pg.wait_for_timeout(900)
+        wel = pg.evaluate(M)
+        pg.evaluate("() => { showHome(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }"); pg.wait_for_timeout(1500)
+        home = pg.evaluate(M)
+        check("AA. %s: Home's rings are Welcome's (%s vs %s)" % (label, home and home["radii"], wel and wel["radii"]),
+              bool(home and wel) and home["radii"][:2] == wel["radii"][:2] and abs(home["w"] - wel["w"]) <= 4, {"home": home, "welcome": wel})
+        check("AA. %s: no halo behind Home's planet, as on Welcome" % label, bool(home) and not home["halo"] and not wel["halo"], home)
+        ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa)):
             if k in ONLY:
                 try:
                     fn(br)

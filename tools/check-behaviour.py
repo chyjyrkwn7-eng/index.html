@@ -6770,8 +6770,11 @@ def check_b288(br):
           str(r.get("chev") or "").startswith("M9 5l6 7"), str(r.get("chev")))
     check("swipe to advance is switched on once, and turning it off afterwards sticks",
           r.get("swipeOnce") is True and r.get("swipeStaysOff") is True, str([r.get("swipeOnce"), r.get("swipeStaysOff")]))
-    check("Home's halo is a canvas drawn once, clipped at the screen",
-          r.get("halo") == "CANVAS" and r.get("clip") == "clip", str([r.get("halo"), r.get("clip")]))
+    # MOVED IN 327z15: Home has no halo now ("The background behind it [on
+    # Welcome] is perfect ... The main menu needs to be ... like it") - so
+    # nothing of one is drawn at all, and the screen still clips.
+    check("Home draws no halo behind the planet, and clips at the screen",
+          r.get("halo") is None and r.get("clip") == "clip", str([r.get("halo"), r.get("clip")]))
     check("the orbit's emblems hold still and the badge cutscene has no full-screen blur",
           r.get("orbitAnims") == 0 and r.get("badgeBlur") == "none", str([r.get("orbitAnims"), r.get("badgeBlur")]))
     check("a second Home visit reuses the sphere glow it already drew", r.get("glowReused") is True, str(r.get("glowReused")))

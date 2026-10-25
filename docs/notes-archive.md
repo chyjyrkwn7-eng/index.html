@@ -27618,3 +27618,23 @@ swapped it for Home's line; that is undone).
 
 His message also began "Look at how the background of the welcome screen is,
 it's alm..." and broke off - asked about, nothing changed for it.
+
+## Build 327z15 round 12 - Home's planet system is Welcome's
+
+"The welcome screen planet size, and the rings spacing is PERFECT ... The
+background behind it is perfect too. The main menu needs to be updated and
+improved and be like it" (with a screenshot of 327z14's Welcome).
+
+- Measured: the planet and the hero box were already the same size on both
+  (415px hero on the Pro Max, 573 on the iPad Pro 11, sphere r52, inner ring
+  108). The differences were the outer ring - Home's HOME_OUTER_R 140 (build
+  313), Welcome's 152 - and the background: Home alone had .homeglow-hero, the
+  rose halo canvas round the planet.
+- HOME_OUTER_R is 152 again. The outer rank bubbles and outer secret flares
+  ride it, so they move out with it; everything that reads HOME_OUTER_R (the
+  ring draw-on, the rank-up scenes) follows.
+- showHome no longer appends the halo. homeGlowCanvas() and its CSS are left
+  in place, unused by Home.
+- check-behaviour b288's halo check moved (no halo at all, still clipped).
+- Gate: check-b327z15 "@" (AA) - Home's two ring radii and hero width equal
+  Welcome's on a phone and an iPad, and neither has the halo; fails on 327z14.
