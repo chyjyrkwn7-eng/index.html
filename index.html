@@ -1883,12 +1883,29 @@
   .nt-ask{ display:flex; flex-direction:column; align-items:center; gap:.8rem; width:min(22rem, 92%); transition:opacity .25s ease; }
   .nt-ask.is-out{ opacity:0; }
   .nt-ask .nt-ask-input{ width:100%; font-size:1.15rem; text-align:center; padding-top:.85rem; padding-bottom:.85rem; }
+  /* THE NAME FIELD STOPS GLITCHING (327z15 round 31): "When entering your
+     username, the bar is glitching because the cursor is flashing". The
+     scene is user-select:none and cursor:pointer (a tap anywhere goes on),
+     and an input inside a no-select ancestor is where iOS draws its caret
+     unsteadily - the field takes text selection, a text cursor and a solid
+     caret colour back, and sits on its own layer so the scene's animations
+     around it do not repaint it. */
+  .nt-ask .nt-ask-input{ -webkit-user-select:text; user-select:text; cursor:text; caret-color:#FFD27A;
+    -webkit-touch-callout:default; transform:translateZ(0); }
   .nt-ask .nt-ask-go{ min-height:48px; min-width:12rem; margin:0; }
   .nt-ask .nt-ask-signin{ min-height:44px; margin:0; }
   .nt-ask .nt-ask-msg{ margin:0; font-size:.92rem; line-height:1.4; color:var(--soft); }
   .nt-ask-char{ width:min(28rem, 96%); }
-  .nt-ask .nt-ask-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; width:100%; margin:0; }
-  .nt-ask .nt-ask-grid .avatarchar-option{ width:100%; min-height:44px; aspect-ratio:1; }
+  /* THE STARTERS, CENTRED (327z15 round 31): "two options, they aren't
+     centered cause the top is 3 the bottom is 2". A centred wrap, not a
+     3-column grid: on a phone three over two with the two in the middle,
+     and from 40rem all five on one line. */
+  .nt-ask .nt-ask-grid{ display:flex; flex-wrap:wrap; justify-content:center; gap:.6rem; width:100%; margin:0; }
+  .nt-ask .nt-ask-grid .avatarchar-option{ flex:0 0 calc((100% - 1.2rem) / 3); width:auto; min-height:44px; aspect-ratio:1; }
+  @media (min-width:40rem){
+    .nt-ask-char{ width:min(36rem, 96%); }
+    .nt-ask .nt-ask-grid .avatarchar-option{ flex-basis:calc((100% - 2.4rem) / 5); }
+  }
   .nt-picked{ display:block; width:min(9rem, 40vw); aspect-ratio:1; }
   .nt-picked svg{ width:100%; height:100%; display:block; }
   .nt-codebox{ margin:0; padding:1.1rem 1.6rem; }
@@ -10653,8 +10670,12 @@
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtabs-navrow .bottomtab{
       padding-left:1.35rem; padding-right:1.35rem;
     }
+    /* round 31: "that button doesn't fit the sized up bottom tab as good as
+       it does on the phone" - on a phone it is 64px in a 79px bar (7px of
+       bar round it); here it was 64px in a 101px bar. 5.1rem leaves the
+       phone's rim (and the laptop's zoom scales it with the bar). */
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start{
-      width:auto; min-width:7.2rem; min-height:4rem; padding:0 1.35rem; gap:.5rem; font-size:1rem;
+      width:auto; min-width:7.4rem; min-height:5.1rem; padding:0 1.4rem; gap:.5rem; font-size:1.02rem;
     }
     .bottomtabs.has-start-tab:not(.has-options-tab) .bottomtab-start .bottomtab-icon{
       width:1.3rem; height:1.3rem;
@@ -20143,6 +20164,7 @@
      is what the merged bottom-bar tab forwards to) but visually hidden
      once merged into the bar \u2014 see setupBottomTabs' syncStartAction(). */
   .floatbtn.merged-into-bar{ display:none; }
+  .screen-home-actual > .playbtn.merged-into-bar{ display:none; }   /* a laptop's Home: Start Studying is in the bar (round 31) */
   /* 8rem, not 7.5: the bar itself was grown by ~9px per the report that
      it "could also be a smidge larger", and this reservation is what
      guarantees the bar's whole footprint still fits under the panel. The
@@ -85227,7 +85249,7 @@ function mainMenuTourSteps(returning){
       text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one for a closer look."
         : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one for a closer look." },
     /* (327z15) on a laptop Start Studying is the tab bar's Start pill */
-    { target: (window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches) ? "#homestart" : "#nextbtn", align: "left", vplacement: "above",
+    { target: (window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches) ? "#bottomtab-start" : "#nextbtn", align: "left", vplacement: "above",
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
         : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
   ];
@@ -133573,7 +133595,15 @@ const LAST_TAB_KEY = "class26e.lastTab";
   const wideHomeMq = (typeof matchMedia === "function") ? matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)") : null;
   function syncStartAction(){
     try{ hsPlace(); }catch(e){}
-    const floatBtn = stage.querySelector(".floatbtn");
+    /* START STUDYING IN THE BAR ON A LAPTOP (327z15 round 31): "I really
+       don't like how the actual bottom tab isn't centered, I think the
+       start studying button should just be put inside the bottom tab
+       similar to the start button ... for the unit selection screen". On a
+       wide screen Home's own button is carried into the bar's Start pill,
+       the way every screen's floating button is - the bar stays centred. */
+    const wideHome = !!(wideHomeMq && wideHomeMq.matches) && stage.querySelector(".screen-home-actual > .playbtn");
+    const floatBtn = stage.querySelector(".floatbtn") || (wideHome ? stage.querySelector(".screen-home-actual > .playbtn") : null);
+    if(wideHome && floatBtn && !floatBtn.dataset.tabLabel) floatBtn.dataset.tabLabel = "Start Studying";
     /* Only a change of size needs the bubble re-measured (build 281): this
        runs on every mutation in the screen, and a forced re-measure here
        laid the whole new screen out on the spot - 90ms of the Progress
@@ -133669,8 +133699,9 @@ const LAST_TAB_KEY = "class26e.lastTab";
   hsEl.addEventListener("click", () => { const b = stage.querySelector(".screen-home-actual > .playbtn"); if(b) b.click(); });
   document.body.appendChild(hsEl);
   function hsPlace(){
-    const on = !!(wideHomeMq && wideHomeMq.matches) && !bar.hidden && !!stage.querySelector(".screen-home-actual > .playbtn")
-      && !document.body.classList.contains("has-tabsearch");
+    /* round 31: Start Studying is in the bar itself now (syncStartAction) -
+       the separate white pill beside it is retired, the bar centred */
+    const on = false;
     document.body.classList.toggle("has-homestart", on);
     if(!on){ hsEl.hidden = true; return; }
     hsEl.hidden = false;
