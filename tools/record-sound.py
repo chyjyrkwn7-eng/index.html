@@ -51,7 +51,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 FF = "/usr/bin/ffmpeg" if os.path.exists("/usr/bin/ffmpeg") else "ffmpeg"
-DEVICES = {"phone": (440, 956, 3), "ipad": (834, 1194, 2), "laptop": (1440, 820, 2)}
+DEVICES = {"phone": (440, 956, 3), "ipad": (834, 1194, 2), "laptop": (1440, 820, 2), "phone-safari": (440, 838, 3)}
 SR = 48000
 
 
@@ -62,6 +62,18 @@ def arg(name, default=None):
 SRC = arg("--against") or os.path.join(ROOT, "index.html")
 FPS = int(arg("--fps", "30"))
 DEV = arg("--device", "phone")
+# (327z15 round 38) --mode installed: the Home Screen app (navigator.standalone);
+# --mode safari: an iPhone Safari tab (its user agent, touch, not standalone)
+MODE = arg("--mode", "")
+IPHONE_SAFARI_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
+                    "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
+STANDALONE_JS = """
+Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
+(function(){ const mm = window.matchMedia.bind(window);
+  window.matchMedia = q => /display-mode:\\s*standalone/.test(q)
+    ? {matches:true, media:q, addListener(){}, removeListener(){},
+       addEventListener(){}, removeEventListener(){}, onchange:null, dispatchEvent(){return false;}}
+    : mm(q); })();"""
 
 FIRESTORE_STUB = """
   window.__stub = function(){
@@ -316,7 +328,10 @@ class Rec:
         w, h, dpr = DEVICES[DEV]
         self.w, self.h = w, h
         self.br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required", "--force-device-scale-factor=%d" % dpr])
-        self.ctx = self.br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr)
+        extra = {"user_agent": IPHONE_SAFARI_UA, "is_mobile": True, "has_touch": True} if MODE == "safari" else {}
+        self.ctx = self.br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr, **extra)
+        if MODE == "installed":
+            self.ctx.add_init_script(STANDALONE_JS)
         self.ctx.add_init_script(FAKE_FS)
         self.ctx.add_init_script(SEED_FRESH if mode == "fresh" else SEED_LS)
         self.ctx.add_init_script(REC_AUDIO.replace("%BUDGET%", str(budget)))
