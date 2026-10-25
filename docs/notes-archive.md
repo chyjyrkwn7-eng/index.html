@@ -28198,3 +28198,35 @@ Round 31, item by item:
 - Gates: check-b327z15 GG (=) - every check fails on round 28 (0a83454); CC,
   EE, FF and T moved (Start in the bar, the card, Welcome's buttons under
   the planet, Find me glass).
+
+## Build 327z15 round 32 - laptop polish: no fades, the card bottom-right, the badge at the foot, sign-up placed
+
+- Nova's character and badge rows glide on a laptop: from 40rem the parade
+  is a 30rem window (was the whole stage, so every row measured as fitting
+  and stood still).
+- The daily question's Submit: already grey before a pick (round 31) and
+  dark words on white after; nothing more to change.
+- The laptop daily question card is a sibling of the panel again, fixed
+  bottom-right (right 1.5rem), its middle level with the bar's (bottom
+  env + 3.4rem, translate 50%), never into the bar (max-width = the room
+  between the bar's end and the edge, its two lines ellipsised).
+- No edge fades with a mouse: the Safari fades read --fade-top /
+  --fade-bot-solid / --fade-bot; (hover:hover) and (pointer:fine) sets them
+  to 0 on html.is-browser. Touch phones and iPads keep them (their Safari
+  bars are why the fades exist).
+- Unit cards: the badge is in the bottom-right - grid areas "box next next"
+  / "name name name" / "ver ver ver" / "count count badge" / "bar bar badge",
+  align-self:end, insets equal from the bottom and the right (phone 9px,
+  tablet/laptop 12px). The 26.5rem rule that shrank the badge beside the
+  next test is gone (they no longer share a row).
+- Select all joins the search field's own glass lists (with .searchbox and
+  Find me), and both take the magnifier's white for their words.
+- Laptop sign-up: the steps start at the top (the tablet ::before spacer is
+  off, justify flex-start, padding-top clamp(1.5rem, 8vh, 5rem)), so Back
+  and the title are at the same place on all four; the page's foot padding
+  is .5rem there (it made "What this actually is" scroll). Welcome's two
+  buttons are one above the other, fixed and centred under the planet; the
+  planet, title and line ride 3.6rem higher than Home's to make the room.
+- Gates: check-b327z15 HH (^) - all six fail on the round-31 commit. FF
+  moved (Welcome no lower than Home), CC/GG moved (the card bottom-right),
+  GG's badge check reads the bottom inset.

@@ -2187,6 +2187,12 @@
     .nt-crewpar .nt-slot{ width:5.2rem; height:5.2rem; }
     .nt-badgepar .nt-slot{ width:5.4rem; height:5.4rem; }
     .nt-parade, .nt-parade-track{ gap:.9rem; }
+    /* THEY PAN ON A BIG SCREEN TOO (327z15 round 32): "ensure the characters
+       and badges do the rotating thing ... make those more like the phone".
+       A laptop's stage was wide enough for every row, so each row measured
+       as fitting and stood still. The rows are a phone-like window here -
+       narrower than what they carry - so they glide as they do on a phone. */
+    .nt-parade:not(:is([data-reduce-motion="true"] *)){ width:min(30rem, 100%); margin-left:auto; margin-right:auto; }
     [data-reduce-motion="true"] .nt-parade{ max-width:44rem; gap:.5rem; }
     [data-reduce-motion="true"] .nt-crewpar .nt-slot, [data-reduce-motion="true"] .nt-badgepar .nt-slot{ width:3.6rem; height:3.6rem; }
     .nt-kinds, .nt-modes{ width:min(36rem, 100%); gap:1rem; }
@@ -21872,7 +21878,8 @@
   .picks > label.pick > .pick-stars{ display:contents; }
   .picks > label.pick .pick-progress-label{ display:none; }
   /* equal insets from the top and the right (round 31): .55rem each on a phone (.8rem top padding less .25, .85rem right less .3) */
-  .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:start; width:2.6rem; height:2.6rem; margin:-.25rem -.3rem -.35rem .4rem; }
+  /* as far from the bottom edge as from the right (.5rem on a phone) */
+  .picks > label.pick .pick-badge{ grid-area:badge; justify-self:end; align-self:end; width:2.6rem; height:2.6rem; margin:0 -.35rem -.25rem .55rem; }
   .picks > label.pick .pick-barrow{ grid-area:bar; align-self:end; width:100%; gap:.5rem; }
   .picks > label.pick .pick-bar-track{ height:4px; background:rgba(255,255,255,.12); }
   .picks > label.pick .pick-bar-count{ font-size:.68rem; color:var(--soft); }
@@ -21881,7 +21888,7 @@
   @media (max-width:24.5rem){
     [data-layout="modern"] .picks > label.pick{ padding-left:.75rem; padding-right:.65rem; }
     .picks > label.pick > .pname{ font-size:.8rem; letter-spacing:0; }
-    .picks > label.pick .pick-badge{ margin-right:-.1rem; }
+    .picks > label.pick .pick-badge{ margin-right:-.15rem; }
   }
   /* selected */
   /* build 327z5: the card's own grid hands any extra height (another card
@@ -21962,7 +21969,12 @@
     /* the bar's row keeps its height when there is no bar (an earned badge
        has none), so the count sits in the same place on every card (round 31) */
     grid-template-rows:auto auto minmax(0,1fr) auto minmax(.95rem, auto);
-    grid-template-areas:"box next badge" "name name name" "ver ver ver" "count count count" "bar bar bar";
+    /* THE BADGE IN THE BOTTOM-RIGHT (327z15 round 32): "the unit cards would
+       look better if the badge was in the bottom right but idk how we'd do
+       that cause the progress bar?" The count and the bar take the left of
+       the card's foot and the badge stands at its right, across both rows -
+       and the name gets the card's whole width up top. */
+    grid-template-areas:"box next next" "name name name" "ver ver ver" "count count badge" "bar bar badge";
   }
   @media (min-width:40rem){
     [data-layout="modern"] .picks > label.pick{ grid-template-rows:auto auto minmax(0,1fr) auto 1.15rem; }
@@ -21978,7 +21990,7 @@
   @media (min-width:40rem){ .picks > label.pick > .pick-nexttest{ font-size:.68rem; margin-left:.7rem; margin-top:0; } }
   @media (max-width:26.5rem){
     .picks > label.pick > .pick-nexttest{ font-size:.54rem; letter-spacing:.035em; margin-left:.4rem; }
-    .picks > label.pick:has(> .pick-nexttest) .pick-badge{ margin-left:.15rem; width:2.1rem; height:2.1rem; margin-right:-.3rem; }
+    /* (round 32: the badge is at the card's foot now, so the next test no longer shares its row and it keeps its size) */
     .picks > label.pick > .pick-nexttest .pick-nexttest-what::before{ display:none; }
     .picks > label.pick > .pick-nexttest .pick-nexttest-when{ padding-left:0; }
   }
@@ -22011,7 +22023,7 @@
     .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
     .picks > label.pick > .pcount{ font-size:.8rem; margin-top:.7rem; }
     /* the badge as far from the top edge as from the right (round 31: "aren't perfectly centered to the corner") - .7rem each */
-    .picks > label.pick .pick-badge{ width:3.3rem; height:3.3rem; margin:-.35rem -.45rem -.5rem .6rem; }
+    .picks > label.pick .pick-badge{ width:3.3rem; height:3.3rem; margin:0 -.45rem -.3rem .75rem; }   /* .7rem from the bottom and the right */
     .picks > label.pick .pick-bar-count{ font-size:.76rem; }
     .picks{ gap:.85rem; }
   }
@@ -30315,7 +30327,7 @@
      --surface-2, --surface-shadow): the sheen's bright top repeated under
      the see-through bottom border, and the recipe's 0-blur inset lip. Both
      go the way the circles' did; cards keep their edge. */
-  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .cal-action-btn, .cal-grid-arrow,
+  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .selall-btn, .cal-action-btn, .cal-grid-arrow,
     .roomchat-fab, .chip, .more-toggle){
     background-repeat:no-repeat !important; background-origin:border-box !important;
     box-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03),
@@ -30337,7 +30349,7 @@
      hairline lip). */
   /* build 327 round 10: "the background to top button is the old color, fix
      it. And anywhere else." Back to top and the plain toast join the list. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -32588,7 +32600,7 @@
      the back buttons, not every button" - and the chat box itself (below).
      Back links, the calendar's arrows, and every action button keep their
      own look. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .backtotop),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -32799,13 +32811,17 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     grid-column:2; grid-row:1 / -1; align-self:center; justify-self:center;
     width:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
     max-width:none !important; margin:0 !important; transform:none !important;
-    /* level with Home's planet (measured 18px lower without it), so Welcome hands over to Home in place */
-    translate:0 -1.125rem;
+    /* level with Home's planet (measured 18px lower without it), so Welcome
+       hands over to Home in place - and 3rem higher again (round 32) for the
+       two buttons stacked under it */
+    translate:0 calc(-1.125rem - 3.6rem);
   }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-title{
     grid-column:1; grid-row:2; margin:0; max-width:var(--lap-side);
     font-size:clamp(2.6rem, 4.2vw, 4.6rem); line-height:1.02; letter-spacing:.01em; text-wrap:balance;
   }
+  /* the words ride up with the planet (round 32), level with its middle */
+  html[data-layout] body .cosmic-welcome > :is(.cosmic-welcome-title, .cosmic-welcome-sub){ translate:0 calc(-1.125rem - 3.6rem); }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-sub{
     grid-column:1; grid-row:3; margin:.9rem 0 0; max-width:min(var(--lap-side), 24rem);
     font-size:clamp(1rem, 1.25vw, 1.25rem); line-height:1.45; text-wrap:balance;
@@ -32813,12 +32829,17 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* round 31: "the buttons should absolutely not be on the left, it will
      be under the large planet". They stand where Home's tab bar stands,
      centred under the planet, side by side, each with its line under it. */
+  /* round 32: "the sign in and sign up buttons being side by side are not
+     the move. Put those on top [of] each [other] under the planet" - one
+     above the other, centred under it, each with its line, and the planet
+     rides 3rem higher to make the room (a laptop has no top fade now). */
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions{
     position:fixed; z-index:6; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1rem); translate:-50% 0;
-    margin:0 !important; width:min(36rem, 92vw);
-    display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; grid-auto-flow:column; column-gap:1.1rem; row-gap:.35rem;
-    align-items:start; text-align:center;
+    margin:0 !important; width:min(22rem, 92vw);
+    display:flex; flex-direction:column; align-items:stretch; gap:.3rem; text-align:center;
   }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-cap{ margin:0 0 .45rem; }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-cap:last-child{ margin-bottom:0; }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ width:100%; max-width:none; min-height:3.1rem; font-size:1.05rem; }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-cap{ text-wrap:balance; }
   /* THE SIGN-UP STEPS ON A LAPTOP (round 27): the code screen, "New to
@@ -32846,9 +32867,23 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      actually is and the class pick the same width - with Back at the
      column's top-left, as every other screen has it, not centred over the
      title. */
+  /* round 32: "The enter your code screen, it's all at the bottom, put it
+     towards the top, same for new to nova ... select classes should be
+     moved up (ensure all the screens are cohesive ... so the back button
+     would be in the spots)". Each step starts at the same height from the
+     top, so Back, the title and what follows sit in the same places on
+     every one, and the button follows its content. */
   html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel){
     max-width:44rem; margin-left:auto; margin-right:auto; align-items:center;
+    justify-content:flex-start !important; padding-top:clamp(1.5rem, 8vh, 5rem) !important; padding-bottom:1rem !important; min-height:0 !important;
   }
+  /* the page's own foot padding (room for a tab bar these screens do not
+     have) made "What this actually is" scroll by 40-50px (longhand - never
+     the .wrap shorthand, it wipes the safe-area insets) */
+  html[data-layout] body .wrap:has(> #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel)){ padding-bottom:.5rem; }
+  /* the tablet layout's spacer (an auto top margin on ::before) floated each
+     step to the middle; here the steps start at the top */
+  html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel)::before{ content:none !important; }
   html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel) > .back-link{
     align-self:flex-start; margin:0 0 1.4rem;
   }
@@ -32910,23 +32945,26 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   }
   /* the daily question's card (round 31): under NOVA's line, ranged to the
      planet's side like the words; its "?" in normal flow inside it */
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card{
-    grid-column:1; grid-row:4; justify-self:end; align-self:start; margin-top:2.2rem; translate:0 1.25rem;
-    display:flex; align-items:center; gap:1rem; padding:.75rem 1.5rem .75rem .75rem; border-radius:999px;
-    max-width:var(--lap-side); text-align:left; cursor:pointer;
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)), rgba(14,16,22,.55);
+  html[data-layout] body #stage > .dq-card{
+    position:fixed; z-index:150; right:1.5rem; bottom:calc(env(safe-area-inset-bottom, 0px) + 3.4rem); translate:0 50%;   /* level with the bar's middle */
+    display:flex; align-items:center; gap:1rem; padding:.7rem 1.5rem .7rem .7rem; border-radius:999px;
+    /* never into the bar: the room between the bar's end and the edge */
+    max-width:min(22rem, calc(50vw - var(--tabbar-half, 18rem) - 2.75rem)); text-align:left; cursor:pointer;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)), rgba(14,16,22,.62);
     border:1px solid rgba(255,255,255,.12); box-shadow:0 10px 28px -12px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(20px) saturate(1.2); -webkit-backdrop-filter:blur(20px) saturate(1.2);
     -webkit-tap-highlight-color:transparent; transition:transform .14s ease, border-color .2s ease;
   }
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card:hover{ border-color:rgba(255,215,130,.35); }
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card:active{ transform:scale(.98); }
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card > .daily-question-fab{
+  html[data-layout] body #stage > .dq-card:hover{ border-color:rgba(255,215,130,.35); }
+  html[data-layout] body #stage > .dq-card:active{ transform:scale(.98); }
+  html[data-layout] body #stage > .dq-card > .daily-question-fab{
     position:relative !important; inset:auto !important; left:auto !important; top:auto !important; right:auto !important; bottom:auto !important;
     flex:none; width:3.6rem !important; height:3.6rem !important; margin:0; translate:none; font-size:1.5rem;
   }
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card .dq-card-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card .dq-card-title{ font-size:1.12rem; font-weight:800; color:#F3F5F7; letter-spacing:.005em; }
-  html[data-layout] body .panel.home.screen-home-actual > .dq-card .dq-card-sub{ font-size:.92rem; color:var(--soft); }
+  html[data-layout] body #stage > .dq-card .dq-card-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
+  html[data-layout] body #stage > .dq-card .dq-card-title{ font-size:1.12rem; font-weight:800; color:#F3F5F7; letter-spacing:.005em; }
+  html[data-layout] body #stage > .dq-card .dq-card-sub{ font-size:.92rem; color:var(--soft); }
+  html[data-layout] body #stage > .dq-card :is(.dq-card-title, .dq-card-sub){ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* THE TWO ROUND BUTTONS ONE SIZE ON A LAPTOP (round 25): "The daily question
      button ... it's too big now, also ensure the chat buttons size is a little
      bigger (they'd be the same size". 4rem both - the chat button on every
@@ -33019,16 +33057,16 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    covered; the stars are already masked off the top (--sky-clear). */
 html.is-browser[data-layout="modern"] body::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
     var(--paper);
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
@@ -33047,16 +33085,16 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
 html[data-layout="modern"] body.has-active-question{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
 html.is-browser[data-layout="modern"] body.has-active-question::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 2%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 2%, transparent), transparent var(--bg-glow-r2)),
     var(--paper);
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-question::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
     var(--paper);
@@ -33070,8 +33108,8 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-questio
    body::before's fades have - and every glow layer is kept as it was. */
 html.is-browser[data-layout="modern"]{
   background:
-    linear-gradient(to bottom, var(--paper), transparent 6rem),
-    linear-gradient(to top, var(--paper) 1.5rem, transparent 5.5rem),
+    linear-gradient(to bottom, var(--paper), transparent var(--fade-top, 6rem)),
+    linear-gradient(to top, var(--paper) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
@@ -33081,8 +33119,8 @@ html.is-browser[data-layout="modern"]{
 }
 html.is-browser[data-theme="dark"][data-layout="modern"]{
   background:
-    linear-gradient(to bottom, var(--paper), transparent 6rem),
-    linear-gradient(to top, var(--paper) 1.5rem, transparent 5.5rem),
+    linear-gradient(to bottom, var(--paper), transparent var(--fade-top, 6rem)),
+    linear-gradient(to top, var(--paper) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
@@ -33093,6 +33131,15 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
   background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0, 0 0;
   background-repeat:no-repeat;
+}
+/* NO FADES ON A LAPTOP (327z15 round 32): "the top and bottoms edges have
+   the dark black fading thing ... it looks off ... so close to the planet
+   system". Those fades exist for Safari on a phone or an iPad, whose bars
+   are painted in the root's flat colour; a laptop's browser has no such
+   bars over the page, so with a mouse or trackpad the sky runs to both
+   edges as it does in the installed app. */
+@media (hover:hover) and (pointer:fine){
+  html.is-browser{ --fade-top:0px; --fade-bot-solid:0px; --fade-bot:0px; }
 }
 /* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
    cut off at the top and bottom STILL and the page is scrolling? Like legit
@@ -33353,6 +33400,17 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   @media (hover:hover){
     [data-theme="dark"][data-layout="modern"] .selall-btn:hover{ background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.07) 55%), rgba(12,13,19,.62); color:var(--ink); }
   }
+  /* ONE FAMILY WITH THE SEARCH FIELD (327z15 round 32): "The select all
+     button, should look more like the search button ... whatever color you
+     make the new magnifying glass and word text, ensure the select all
+     button ... matches ... ensure the find me button matches as well". Both
+     take the search field's own surface (its sheen, fill, rim, shadow and
+     blur tokens) and the magnifier's white for their words and marks. */
+  /* (the surface: .selall-btn joins the search field's own glass lists -
+     the shared floating-glass rules below that give .searchbox and Find me
+     their fill, rim and lips) */
+  [data-theme="dark"][data-layout="modern"] .selall-btn,
+  [data-theme="dark"][data-layout="modern"] .iconbtn.rank-me-btn{ color:rgba(243,245,247,.92) !important; }
 
   /* ---- THE RANK BOX AND THE CASE SAY "OPEN ME" (build 327z10) ----
      "See every rank, and the case, it's not obvious enough that if you
@@ -93875,8 +93933,11 @@ function showHome(){
     tx.append(t1, t2);
     card.append(dailyBtn, tx);
     tx.addEventListener("click", () => dailyBtn.click());
-    panel.appendChild(card);
+    /* round 32: "should be on the right side though near the bottom right" -
+       a sibling of the panel (as the floating button was), fixed level with
+       the tab bar at the right, the mirror of the version line at the left */
     stage.replaceChildren(panel);
+    stage.appendChild(card);
   } else {
     stage.replaceChildren(panel);
     stage.appendChild(dailyBtn);
