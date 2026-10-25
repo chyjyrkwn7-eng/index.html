@@ -47496,13 +47496,14 @@ function readRunSession(){
 }
 /* An interrupted run that was turned down for now becomes a saved test:
    it stops holding Home's cards and waits for Start Studying. */
-function markRunSessionSaved(){
+function markRunSessionSaved(unfinished){
   try{
     const raw = localStorage.getItem(RUN_SESSION_KEY);
     if(!raw) return;
     const s = JSON.parse(raw);
     if(!s || s.saved) return;
     s.saved = true; s.savedAt = Date.now();
+    if(unfinished) s.unfinished = true;
     if(!s.pub) s.pub = (store && store.publicId) || null;
     try{ s.runStartLocked = Array.from(lockedCharacterSet()); s.runStartBanners = Array.from(earnedBannerSet()); }catch(e){}
     if(!s.qkeys){
@@ -47624,11 +47625,18 @@ let resumeOfferShown = false;
 function scheduleResumeOffer(){
   if(resumeOfferShown || testInProgress) return;
   const s = readRunSession();
-  /* a SAVED test waits for Start Studying (build 319); only a run the app
-     lost is offered on Home */
+  /* a SAVED test waits for Start Studying (build 319) */
   if(!s || s.saved) return;
   resumeOfferShown = true;
-  setTimeout(() => showResumeOffer(0), 1500);
+  /* NO POP-UP FOR A RUN THE APP LOST (build 327z15): "Interrupted sounds
+     like the app broke ... maybe it doesn't show up and when you hit start
+     studying it asks if you want to continue where you left off". It is
+     kept as a saved test, marked unfinished, and Start Studying offers it
+     (showRunOffer "start"). What it held back for its results is
+     announced now, as "Not now" used to. showResumeOffer is kept for the
+     gates and anything that still calls it. */
+  markRunSessionSaved(true);
+  setTimeout(() => { try{ homeUnlocksAfterSync(); }catch(e){} }, 1500);
 }
 function showResumeOffer(tries){
   const s = readRunSession();
@@ -47685,7 +47693,7 @@ function showRunOffer(s, via){
   const offer = () => {
     const f = runOfferFacts(s);
     const h = document.createElement("p"); h.className = "resume-title"; h.id = "resume-title";
-    h.textContent = s.saved ? "You have a saved test" : "Your test was interrupted";
+    h.textContent = s.unfinished || !s.saved ? "Continue your test?" : "You have a saved test";
     const facts = document.createElement("div"); facts.className = "resume-facts";
     const mode = document.createElement("p"); mode.className = "resume-mode"; mode.textContent = f.mode;
     const units = document.createElement("p"); units.className = "resume-units"; units.textContent = f.units;
@@ -47717,9 +47725,9 @@ function showRunOffer(s, via){
     const h = document.createElement("p"); h.className = "resume-title"; h.id = "resume-title";
     h.textContent = "Start a new test?";
     const sub = document.createElement("p"); sub.className = "resume-sub";
-    sub.textContent = "Your saved test will be deleted. You will not be able to resume it.";
+    sub.textContent = (s.unfinished ? "Your unfinished test" : "Your saved test") + " will be deleted. You will not be able to resume it.";
     const actions = document.createElement("div"); actions.className = "resume-actions";
-    const keep = btn("Keep saved test", "next", "resume-keep", offer);
+    const keep = btn(s.unfinished ? "Keep unfinished test" : "Keep saved test", "next", "resume-keep", offer);
     const del = btn("Delete and start new", "next danger", "resume-delete", () => {
       clearRunSession(); close(); showModeSelect();
     });
@@ -57671,6 +57679,11 @@ function handleRemoteReset(){
 const CLOUD_PUSH_MIN_GAP_MS = 60 * 1000;
 __bm("L55739");
 const FLOOR_MIN_GAP_MS = 10 * 60 * 1000;
+/* ON THE WAY OUT TOO, BUT NOT EVERY TIME (build 327z15): hiding the app to
+   read a text was a floor write each time. The account itself still goes on
+   every hide; the floor goes if it is this far behind, so it trails the
+   account by at most a few minutes of play. */
+const FLOOR_HIDE_GAP_MS = 3 * 60 * 1000;
 let lastCloudPushAt = 0, lastFloorPushAt = 0, lastPushCode = "";
 /* the gaps are per account: a device that has just switched to another
    code (a sign-up, a link) pushes that one at once */
@@ -57830,7 +57843,10 @@ function buildLeaderboardRow(){
            are different things and a reader must not have to guess
            which one a code belongs to. */
         cinv: store.chatInvitesOut || {},
-        chats: store.chats || [],
+        /* `chats` (this person's group chat codes) is no longer published
+           (build 327z15): the board is readable by the whole class and no
+           reader ever used it - the account copy carries the list. set()
+           replaces the row, so each person's next push removes it. */
         lastModified: Date.now(),
         /* THE HEARTBEAT HAS TO SURVIVE THIS WRITE. set() replaces the
            whole document, so a stats push landing a second after a
@@ -57975,7 +57991,8 @@ function publishNow(){
     }
     /* nothing queued, but the high-water mark is behind the account: it
        goes now, so leaving never strands it ten minutes back */
-    else if(floorMergedFor === syncCode && cloudConfirmedFor === syncCode && lastFloorPushAt < lastCloudPushAt){
+    else if(floorMergedFor === syncCode && cloudConfirmedFor === syncCode && lastFloorPushAt < lastCloudPushAt
+      && sincePush(lastFloorPushAt) >= FLOOR_HIDE_GAP_MS){
       lastFloorPushAt = Date.now();
       writeAccount(syncCode, false, true, false);
     }
@@ -58152,7 +58169,7 @@ function pushToCloud(leaving){
   lastCloudPushAt = Date.now();
   /* the high-water mark, once this launch has read it (see above) - at
      most every ten minutes, and always on the way out */
-  const withFloor = floorMergedFor === syncCode && (leaving === true || sincePush(lastFloorPushAt) >= FLOOR_MIN_GAP_MS);
+  const withFloor = floorMergedFor === syncCode && sincePush(lastFloorPushAt) >= (leaving === true ? FLOOR_HIDE_GAP_MS : FLOOR_MIN_GAP_MS);
   if(withFloor) lastFloorPushAt = Date.now();
   writeAccount(syncCode, true, withFloor, leaving === true);
 }
@@ -77678,6 +77695,7 @@ const RELEASE_NOTES = [
         { icon: buildChecklistIcon, color: "#B79BFF", title: "Search, Refined", body: "Review's search button sits above the tab bar, which keeps its usual shape. Unit search has a clear button, and every search bar matches." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Leaderboard Columns", body: "This Week and Hundos each show only their own column." },
         { icon: buildToggleIcon, color: "#4ADE80", title: "Switches Follow A Swipe", body: "Every switch now moves with a swipe as well as a tap." },
+        { icon: buildRetryIcon, color: "#4ADE80", title: "Continue Your Test", body: "A test the app closed on no longer brings up a pop-up on Home. Start Studying offers to continue it, like a saved test." },
         { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Faster Screens", body: "Tabs open sooner after a tap, Review opens and searches faster, and scrolling is lighter on every screen." },
         { icon: buildRetryIcon, color: "#4DD0E1", title: "Finishing Touches", body: "Button labels sit exactly centred, the keyboard hint shows only where a keyboard can be used, tests stay dark on larger screens, and leaving the app is silent." }
       ]}
@@ -90333,7 +90351,7 @@ const CHAT_CTX = {
       return {};
     }
     const members = chatMemberMap(raw, data);
-    const p = presentParticipants(members);
+    const p = presentParticipants(members, CHAT_STALE_MS);
     /* Same reason as the Virtual Room's, one function up: withMeInChat()
        has to be answerable from the invite sheet and the notifications
        list, neither of which can see this panel's own state. The PRESENT
@@ -90599,8 +90617,18 @@ function chatUnreadByTab(){
 const PRESENCE_BEAT_MS = 45 * 1000;
 __bm("L87531");
 const PRESENCE_STALE_MS = 150 * 1000;
-function presentParticipants(participants){
+/* CHATS BEAT EVERY TWO MINUTES (build 327z15). A chat stays "current" on a
+   device across launches, so its beat ran the whole time the app was open,
+   chat dock shut or not - the largest steady writer in the project. Leaving
+   is already said at once (the away mark on hide and pagehide), so the beat
+   only matters for an app that died without saying so: a chat now counts a
+   member here for CHAT_STALE_MS after their last beat. Two minutes stays
+   inside the 150s an older build allows, so those still read people right. */
+const CHAT_BEAT_MS = 120 * 1000;
+const CHAT_STALE_MS = 330 * 1000;
+function presentParticipants(participants, staleMs){
   if(!participants) return participants;
+  const stale = staleMs || PRESENCE_STALE_MS;
   const now = Date.now();
   const out = {};
   Object.keys(participants).forEach(k => {
@@ -90613,7 +90641,7 @@ function presentParticipants(participants){
        still shows 'someone' when they aren't on". */
     if(!e.name) return;
     /* No stamp means an older client, which cannot be judged. */
-    if(typeof e.seen !== "number" || (now - e.seen) < PRESENCE_STALE_MS) out[k] = e;
+    if(typeof e.seen !== "number" || (now - e.seen) < stale) out[k] = e;
   });
   return out;
 }
@@ -90932,7 +90960,7 @@ function startChatPresence(){
     try{
       fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
     }catch(e){}
-  }, PRESENCE_BEAT_MS);
+  }, CHAT_BEAT_MS);
 }
 
 /* Starting one and joining one are the same write with a different
@@ -93215,7 +93243,7 @@ const INTRO_MAX_TRIES = 20;
    "7.8" became Version 8, never launched) and 4 never went out, but a device that saw 320's What's New is shown this
    one. The meeting with Nova an existing account gets with it is gated on
    the ACCOUNT (store.novaMet), so it plays once however many devices. */
-const INTRO_REV = 5;
+const INTRO_REV = 6;   /* 6: Version 9.2 (build 327z15) */
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
   catch(e){ return true; }
@@ -93305,6 +93333,16 @@ function levelGateNoteText(s){
    flares, said in his voice. One short line each.
    Builds 319 and 320 ship together, so this is both of their news. */
 const WHATS_NEW_320 = [
+  /* VERSION 9.2 (327z15): "Existing users give them the 9.2 card. Not much
+     should change on the card. You can add that the device layout has been
+     updated or something? Bug fixes and improvements can be one as well."
+     Two rows on top of Version 9's; INTRO_REV 6 shows it once more. */
+  { key: "devices92", color: "#7CC8FF", title: "Made for every screen",
+    glyph: "M4 5h12a1 1 0 0 1 1 1v8H3V6a1 1 0 0 1 1-1Zm1 2v5h10V7H5ZM1 15h17v1.5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V15Zm18-6h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 2v5.5h2V11h-2Z",
+    body: "Every screen has been laid out again for laptops and iPads, with Start Studying in the tab bar. Sound now plays in Safari as well." },
+  { key: "fixes92", color: "#4ADE80", title: "Fixes and improvements",
+    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 13.6-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7Z",
+    body: "Faster tabs and screens, quicker search in Review, a clear button on unit search, and many smaller fixes." },
   /* Version 9's own news that everybody will notice (the rest of 9 - sign
      in first, the rankings - is for new devices and the board) */
   { key: "sound", color: "#FFD27A", title: "Sound effects",

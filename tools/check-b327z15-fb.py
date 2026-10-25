@@ -12,6 +12,15 @@
   D. The Friends screen's board listener detaches when Friends leaves.
   E. Somebody signing up never gets the What's New card, even on a device
      whose older account had not seen it.
+  F. The public leaderboard row no longer carries the person's chat codes.
+  G. A chat beats every CHAT_BEAT_MS and counts a member here for
+     CHAT_STALE_MS; a Virtual Room keeps its own shorter window.
+  H. Hiding the app twice inside FLOOR_HIDE_GAP_MS writes the account
+     twice and the __floor once.
+  I. A test the app lost is not a pop-up on Home: it is kept, and Start
+     Studying asks to continue it.
+  J. What's New is shown again for 9.2 (INTRO_REV past 5), with the two
+     new rows first.
 
   python3 tools/check-b327z15-fb.py
   python3 tools/check-b327z15-fb.py --against /path/to/old-index.html
@@ -217,6 +226,73 @@ def main():
         }""")
         check("E1. no What's New card during a sign-up", not r["card"], r)
         check("E2. and it is marked seen for that device", r["seen"], r)
+
+        print("\nF. no chat codes on the public row")
+        r = pg.evaluate("""()=>{ store.chats = [{ code:'GRPX-TEST', name:'g' }];
+          const row = buildLeaderboardRow(); return { has: 'chats' in row }; }""")
+        check("F1. the leaderboard row has no `chats`", not r["has"], r)
+
+        print("\nG. chat presence")
+        r = pg.evaluate("""()=>{
+          const now = Date.now();
+          const m = { a:{ name:'A', seen: now - 200e3 }, b:{ name:'B', seen: now - 400e3 } };
+          let chat = null, room = null, beat = null;
+          try{ chat = Object.keys(presentParticipants(m, CHAT_STALE_MS)).join(','); }catch(e){ chat = 'n/a'; }
+          room = Object.keys(presentParticipants(m)).join(',');
+          try{ beat = CHAT_BEAT_MS; }catch(e){}
+          return { chat, room, beat, stale: PRESENCE_STALE_MS };
+        }""")
+        check("G1. a chat member who beat 200s ago is still here, 400s ago is not", r["chat"] == "a", r)
+        check("G2. a Virtual Room keeps its own window", r["room"] == "", r)
+        check("G3. the chat beat stays inside an older build's window", bool(r["beat"]) and r["beat"] < r["stale"], r)
+
+        print("\nH. the __floor on hide")
+        r = pg.evaluate("""async()=>{
+          cloudConfirmedFor = syncCode; floorMergedFor = syncCode; lastPushCode = syncCode;
+          lastFloorPushAt = Date.now() - 20 * 60e3; accountWriteAt = 0;
+          const wait = () => new Promise(r => setTimeout(r, 80));
+          __log = [];
+          pushToCloud(true); await wait(); accountWriteAt = 0;
+          pushToCloud(true); await wait();
+          const sets = __log.filter(x => x.c === 'progress' && x.op === 'set');
+          return { main: sets.filter(x => x.id === syncCode).length,
+                   floor: sets.filter(x => String(x.id).endsWith('__floor')).length };
+        }""")
+        check("H1. the account goes on every hide", r["main"] == 2, r)
+        check("H2. the __floor goes once for two quick hides", r["floor"] == 1, r)
+
+        print("\nI. a lost test waits for Start Studying")
+        r = pg.evaluate("""async()=>{
+          const s = { v:1, at: Date.now(), cfg:{ mode:'drill', units:[] }, runMode:'drill', order:[0,1,2,3], pos:1,
+                      answers:{}, saved:false };
+          try{ localStorage.setItem(RUN_SESSION_KEY, JSON.stringify(s)); }catch(e){}
+          resumeOfferShown = false;
+          showHome();
+          await new Promise(r => setTimeout(r, 3500));
+          const popup = !!document.getElementById('resume-offer');
+          let kept = null; try{ kept = JSON.parse(localStorage.getItem(RUN_SESSION_KEY)); }catch(e){}
+          let title = '';
+          if(kept){ startStudying(); await new Promise(r => setTimeout(r, 400));
+            title = (document.getElementById('resume-title') || {}).textContent || ''; }
+          document.getElementById('resume-offer')?.remove();
+          try{ localStorage.removeItem(RUN_SESSION_KEY); }catch(e){}
+          return { popup, kept: !!kept, saved: !!(kept && kept.saved), title };
+        }""")
+        check("I1. no pop-up on Home", not r["popup"], r)
+        check("I2. the test is kept for later", r["kept"] and r["saved"], r)
+        check("I3. Start Studying offers to continue it, without 'interrupted'",
+              bool(r["title"]) and "nterrupt" not in r["title"], r)
+
+        print("\nJ. What's New for 9.2")
+        r = pg.evaluate("""async()=>{
+          document.getElementById('resume-offer')?.remove();
+          showIntroPopup(); await new Promise(r => setTimeout(r, 300));
+          const rows = [...document.querySelectorAll('#intro-pop .intro-row')].map(x => x.dataset.key);
+          document.getElementById('intro-pop')?.remove();
+          return { rev: INTRO_REV, rows: rows.slice(0, 3) };
+        }""")
+        check("J1. a device that saw Version 9's card sees it again", r["rev"] > 5, r)
+        check("J2. the layout and fixes rows lead", r["rows"][:2] == ["devices92", "fixes92"], r)
 
         check("Z. no page errors", not errs, errs[:3])
         ctx.close(); br.close()

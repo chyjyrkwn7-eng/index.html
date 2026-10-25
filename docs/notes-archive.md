@@ -28476,3 +28476,32 @@ showHome's pendingMainMenuTour branch). Gap closed: maybeShowIntro's attempt
 now waits while #nova-intro is up, and during a sign-up (signupInNova) it marks
 What's New seen and stops - a device whose older account never saw the card
 showed it over Nova. Gate: check-b327z15-fb.py E (fails on the previous build).
+
+## Build 327z15, round 39 (2026-10-25): Madison's answers on the Firestore list
+
+- Chat codes off the public row ("the one you recommend to remove ... do
+  it"): buildLeaderboardRow no longer writes `chats`. No reader used a
+  classmate's row.chats; the account copy keeps the list. set() replaces the
+  row, so each person's next push clears theirs.
+- Chat online ("it should show if someone is online ... maybe there's a
+  better way to save usage"): CHAT_BEAT_MS 120s (was PRESENCE_BEAT_MS 45s)
+  and chats read members with CHAT_STALE_MS 330s
+  (presentParticipants(members, CHAT_STALE_MS)). Hide/pagehide still mark
+  away at once, so only a crashed app shows "here" longer. 120s < the 150s
+  older builds allow, so they still read new builds right. Virtual Rooms
+  unchanged (45s / 150s).
+- __floor on hide ("save less often while hidden ... still work properly"):
+  a hide pushes the account as before; the floor only if its last write is
+  over FLOOR_HIDE_GAP_MS (3 min) old - pushToCloud(true) and publishNow's
+  floor-only branch. The floor trails the account by at most 3 min of play.
+- "Your test was interrupted" is gone ("sounds like the app broke ... maybe
+  it doesn't show up and when you hit start studying it asks if you want to
+  continue"): scheduleResumeOffer now marks a lost run saved + `unfinished`
+  (markRunSessionSaved(true)) and releases Home's held unlocks; Start
+  Studying's offer reads "Continue your test?". showResumeOffer is unused
+  but kept. In RELEASE_NOTES 9.2 as "Continue Your Test".
+- What's New for 9.2 ("not much should change ... device layout ... bug
+  fixes and improvements can be one"): INTRO_REV 6; WHATS_NEW_320 gains
+  devices92 ("Made for every screen") and fixes92 ("Fixes and
+  improvements") first. Sign-ups still never see it.
+Gate: check-b327z15-fb.py F-J (all fail on the previous build).
