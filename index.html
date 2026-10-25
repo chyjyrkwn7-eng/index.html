@@ -88004,7 +88004,12 @@ function showDailyAlert(msg, opts){
     el.style.setProperty("--banner-color", o.color || def.color);
     el.setAttribute("role", "status");
     let icon;
-    if(o.character){
+    if(o.iconEl){
+      /* a drawn mark of its own - the badge itself (327z15) */
+      icon = document.createElement("span");
+      icon.className = "app-banner-icon app-banner-face";
+      icon.appendChild(o.iconEl);
+    } else if(o.character){
       icon = document.createElement("span");
       icon.className = "app-banner-icon app-banner-face";
       /* not yours yet (the Detective's run): its cut-out (build 325) */
@@ -94628,26 +94633,14 @@ function playQueuedBadgeCutscenes(){
    colour, a badge is already a mounted object and gets the disc out of
    its way. */
 function showTierUpStyleBadgeNote(unit){
-  const bar = document.createElement("div");
-  bar.className = "tierup-banner badgeup-banner";
-  const icon = document.createElement("div");
-  icon.className = "tierup-banner-icon badgeup-banner-icon";
-  icon.appendChild(buildUnitBadgeSVG(unit, true));
-  const text = document.createElement("div");
-  const kicker = document.createElement("p");
-  kicker.className = "tierup-banner-kicker"; kicker.textContent = "BADGE FOUND";
-  const name = document.createElement("p");
-  name.className = "tierup-banner-name"; name.textContent = badgeTitle(unit);
-  text.append(kicker, name);
-  bar.append(icon, text);
-  document.body.appendChild(bar);
-  const dismiss = () => {
-    bar.classList.remove("tierup-banner-show");
-    setTimeout(() => bar.remove(), 400);
-  };
-  bar.addEventListener("click", dismiss);
-  requestAnimationFrame(() => bar.classList.add("tierup-banner-show"));
-  setTimeout(dismiss, 3400);
+  /* ON THE BANNER GLASS (327z15 round 44): "Idk what these pop ups are" - the
+     badge pill is what Reduce Motion gets instead of the badge cutscene, the
+     only one of the old celebration pills still reached (rank up, the secret
+     flare, theme and character unlocked are announced by their cutscenes and
+     centre cards; their pills are no longer called). It is the account
+     banner now: the badge as its mark, BADGE FOUND, the badge's name. */
+  let art = null; try{ art = buildUnitBadgeSVG(unit, true); }catch(e){}
+  showDailyAlert(badgeTitle(unit) + " is yours.", { tag: "BADGE FOUND", color: "#F5C518", iconEl: art || undefined });
 }
 
 /* A bold, single-choice landing spot for what kind of test to take —

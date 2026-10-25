@@ -28587,3 +28587,16 @@ too: 177 controls, ALL PASS.
 Left as they are on purpose: the celebration banners (rank up, badge
 found, character/theme unlocked, secret flare) - their own designed pill,
 not a notice.
+
+Round 44: "The word update in the update button is not centered, I thought we
+fixed this already? ... the ones I circled? Idk what these pop ups are or why
+they are a thing ... Check the others". His grid was the pre-fix audit shot
+(the Update button there is the old 33px one; fixed in round 43). The
+circled pills: showTierUpBanner, showFlareFoundBanner, showThemeUnlockBanner
+have no callers; showCharacterUnlockBanner is reached only through
+announceCharacterUnlocks, which has none (and showChallengeUnlock's catch) -
+none of them is ever seen; their moments are cutscenes and centre cards.
+("undefined - the 0th" was the audit script's call, not the app.) The one
+still reached is showTierUpStyleBadgeNote: Reduce Motion's stand-in for the
+badge cutscene. It is now a passive account banner (showDailyAlert with
+iconEl: the badge, BADGE FOUND, "<badge> is yours.").
