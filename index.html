@@ -32779,7 +32779,13 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      last line. Here each step is one group, centred on the screen, set
      larger (a uniform 1.15), with its button straight under it. */
   html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel){
-    justify-content:center; zoom:1.15; min-height:calc((100dvh - 4.5rem) / 1.15);
+    justify-content:center; min-height:calc(100dvh - 5.5rem);
+  }
+  /* the 1.15 only where it fits: a 1366x638 laptop ran "What this actually is" to its floor */
+  @media (min-height:45rem){
+    html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel){
+      zoom:1.15; min-height:calc((100dvh - 5.5rem) / 1.15);
+    }
   }
   html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel) > .next.playbtn{
     margin-top:2rem !important;

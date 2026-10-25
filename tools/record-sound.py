@@ -51,7 +51,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 FF = "/usr/bin/ffmpeg" if os.path.exists("/usr/bin/ffmpeg") else "ffmpeg"
-DEVICES = {"phone": (440, 956, 3), "ipad": (834, 1194, 2)}
+DEVICES = {"phone": (440, 956, 3), "ipad": (834, 1194, 2), "laptop": (1440, 820, 2)}
 SR = 48000
 
 
