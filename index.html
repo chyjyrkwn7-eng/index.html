@@ -34095,12 +34095,17 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      planet (Home would scroll, check-fixes' bottom-edge seam) - a tab keeps the short tiers */
   @media (orientation:portrait) and (max-width:26rem) and (max-height:46rem){
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
-      max-width:none; width:min(calc(100vw - 1.5rem), 23rem, calc(100dvh - 17rem)); flex:none; align-self:center; margin-bottom:.4rem; }
+      max-width:none; width:min(calc(100vw - 1.5rem), 91vw, 23rem, calc(100dvh - 17rem)); flex:none; align-self:center; margin-bottom:.4rem; }
     /* (round 50) "the se start studying button still doesn't look proportional": the screen's
        20px side padding held a 320px SE's planet to 240px while the button stayed a big phone's
        168x46. The planet gets a phone's side room and the ~2rem the lower bar gave back; the
        button is sized to it (about 0.55 of the planet's width, as on a 6.1" iPhone), still 44px tall. */
-    html[data-layout]:not(.is-browser) body #stage > .panel.home.screen-home-actual{ padding-left:.45rem; padding-right:.45rem; }
+    html[data-layout]:not(.is-browser) body #stage > .panel.home.screen-home-actual{ padding-left:.45rem; padding-right:.45rem; padding-bottom:.5rem; }
+    /* (round 51) Home's reserve is the compact bar's own (12 + 67px + a little), not a big phone's
+       8rem: with the larger planet the old reserve made Home taller than the screen (it scrolled and
+       check-fixes saw the fallback layer at the bottom edge) */
+    html[data-layout]:not(.is-browser) body.has-bottomtabs:has(.screen-home-actual){ --panel-reserve: calc(1.25rem + var(--tabs-bottom) + 4.7rem + 4px); }
+    html[data-layout]:not(.is-browser) body.has-bottomtabs:has(.screen-home-actual) .wrap{ padding-bottom:calc(var(--tabs-bottom) + 4.7rem); }
     /* (round 51) "start studying button is still huge and not close enough to the bottom tab.
        The daily question button is big for the screen too": the button is drawn 40px tall in
        .88rem words (its ::after keeps the 44px tap target), the circle 2.4rem, and the planet
