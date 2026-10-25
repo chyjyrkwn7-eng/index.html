@@ -28418,3 +28418,18 @@ all the tool tips are good to go as well"*.
   Calendar; were Home, Leaderboard, Profile, Calendar). Every step on an
   iPhone 17 Pro Max, a 375x667 SE, an iPad landscape and a laptop: on
   screen, its line on its target.
+
+## Build 327z15 round 38 - the welcome in one line, Version 9's notes caught up
+
+- The new account's centred welcome: "Welcome to Nova, <name>! Let me show
+  you around." (Madison did not like the "...start studying the moment they
+  are done" tail).
+- RELEASE_NOTES Version 9 (still the live version; this build adds to it):
+  Sound Effects says sound plays in a Safari tab too, Home's ambient music in
+  the installed app (round 34); Nova's Introduction says a new account picks
+  its username and first character with him, then he shows you around Home;
+  "Faster Screens" (Better In Version 9): tabs sooner, Review faster, lighter
+  scrolling, the clear buttons. check-b327z15 K: 122 titles, none twice, no
+  exclamation marks.
+- tools/record-sound.py: `--mode installed|safari` and `--device phone-safari`
+  (440x838) for the tab-bar videos.
