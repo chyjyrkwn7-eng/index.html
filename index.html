@@ -32729,6 +32729,72 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      called massive and Home's own phone size) */
   html[data-layout] body .panel.home.screen-home-actual .hometitle{ font-size:clamp(3rem, 5.4vw, 6.4rem); line-height:.95; letter-spacing:.06em; }
   html[data-layout] body .panel.home.screen-home-actual .hometagline{ font-size:clamp(1rem, 1.3vw, 1.45rem); margin-top:.6rem; text-wrap:balance; }
+  /* WELCOME ON A LAPTOP IS HOME ON A LAPTOP (327z15 round 27): "The sign up
+     process, ensure it looks good on the laptop ... the planet system is
+     gonna have to get a lot bigger how big the main menu is so ensure they
+     are the same". It was the phone's column - a 394px planet over a
+     352px column of buttons in the middle of a 1440 screen. Now it is
+     Home's own grid: the same three columns, the planet centred at
+     exactly Home's width formula (so the rings, the bubbles and the
+     plasma are Home's size), and on its left, set the way Home's
+     greeting and NOVA are, "Welcome to Nova", its line, and the two
+     buttons with their captions, ranged to the planet's side. */
+  html[data-layout] .wrap:has(> #stage > .cosmic-welcome){ max-width:min(110rem, 98vw); }
+  html[data-layout] body .cosmic-welcome{
+    /* Home's own two numbers, so the planet's width formula gives the same planet */
+    --lap-side:clamp(15rem, 23vw, 27rem); --lap-gap:clamp(1.5rem, 3vw, 4rem);
+    display:grid; grid-template-columns:minmax(var(--lap-side), 1fr) auto minmax(var(--lap-side), 1fr);
+    grid-template-rows:1fr auto auto auto 1fr; column-gap:var(--lap-gap); row-gap:0;
+    align-items:center; justify-items:end; text-align:right;
+    min-height:calc(100dvh - 4.5rem); padding:0;
+    /* the orbit layers' empty boxes reach past the screen's foot on a tall
+       monitor (8px of scroll at 1920x970); nothing drawn is out there */
+    overflow:clip; overflow-clip-margin:2.5rem;
+  }
+  html[data-layout] body .cosmic-welcome > .cosmic-hero-wrap{
+    grid-column:2; grid-row:1 / -1; align-self:center; justify-self:center;
+    width:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
+    max-width:none !important; margin:0 !important; transform:none !important;
+    /* level with Home's planet (measured 18px lower without it), so Welcome hands over to Home in place */
+    translate:0 -1.125rem;
+  }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-title{
+    grid-column:1; grid-row:2; margin:0; max-width:var(--lap-side);
+    font-size:clamp(2.6rem, 4.2vw, 4.6rem); line-height:1.02; letter-spacing:.01em; text-wrap:balance;
+  }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-sub{
+    grid-column:1; grid-row:3; margin:.9rem 0 0; max-width:min(var(--lap-side), 24rem);
+    font-size:clamp(1rem, 1.25vw, 1.25rem); line-height:1.45; text-wrap:balance;
+  }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions{
+    grid-column:1; grid-row:4; margin:1.8rem 0 0 !important; width:min(var(--lap-side), 22rem);
+    display:flex; flex-direction:column; align-items:stretch; text-align:center;
+  }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ width:100%; max-width:none; min-height:3.1rem; font-size:1.05rem; }
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-cap{ text-wrap:balance; }
+  /* THE SIGN-UP STEPS ON A LAPTOP (round 27): the code screen, "New to
+     Nova?", "What this actually is" and the class pick were the phone's
+     column at the phone's type, with the button pinned to the floor -
+     on a 1440x820 screen a 30px title and a 224px button 185px under the
+     last line. Here each step is one group, centred on the screen, set
+     larger (a uniform 1.15), with its button straight under it. */
+  html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel){
+    justify-content:center; zoom:1.15; min-height:calc((100dvh - 4.5rem) / 1.15);
+  }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .welcomeintro-panel, .classselect-panel, .synccode-entry-panel) > .next.playbtn{
+    margin-top:2rem !important;
+  }
+  /* NOVA'S INTRODUCTION ON A LAPTOP (round 27): he stood 20rem tall in the
+     bottom-left corner with his bubble beside him and the right half of a
+     1440 screen empty. Here he and his bubble are one group in the middle
+     of the screen - he is larger (to two-fifths of the height), the
+     bubble wider with larger words - so the scene is balanced like Home. */
+  html[data-layout] body .nova-talk .nt-talk{ width:min(68rem, 100%); margin-left:auto; margin-right:auto; column-gap:2rem; }
+  html[data-layout] body .nova-talk .nt-nova{ width:min(25rem, calc(42vh * 48 / 56)); margin-left:0; }
+  html[data-layout] body .nova-talk .nt-bubble{ max-width:40rem; padding:1.5rem 1.8rem 1.55rem; }
+  html[data-layout] body .nova-talk .nt-text{ font-size:1.5rem; }
+  html[data-layout] body .nova-talk .nt-who{ font-size:.86rem; }
+  html[data-layout] body .nova-talk .nt-hint{ font-size:1rem; }
   /* Start Studying is its own pill beside the bar here (#homestart) */
   html[data-layout] body.has-homestart .panel.home.screen-home-actual > .playbtn{ display:none; }
   /* the bar gives up the pill's width and the two are centred together */

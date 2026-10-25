@@ -28079,3 +28079,27 @@ chat is open, it's covering the actual chat button".
   never asks somebody who just typed their code. (The demo account needs a
   lastModified after FRESH_START_CUTOFF or the app rightly calls it
   not-found.)
+
+## Build 327z15 round 28 - sign-up on a laptop: Welcome's planet is Home's
+
+"The sign up process, ensure it looks good on the laptop and stuff bigger
+devices too, that means the planet system is gonna have to get a lot
+bigger how big the main menu is so ensure they are the same".
+
+- Welcome in the laptop media query is Home's grid: the same three columns
+  (Home's own --lap-side / --lap-gap), the planet in the middle at Home's
+  exact width formula, translate 0 -1.125rem so it sits where Home's does
+  (measured equal to the pixel on 1366x638, 1440x820, 1920x970 and a
+  landscape iPad Pro 11 - was 217/394/466/400px against Home's
+  418/609/767/533). "Welcome to Nova", its line and the two buttons with
+  their captions are on the planet's left, ranged right like Home's words.
+  overflow:clip with a 2.5rem margin: the orbit layers' empty boxes made
+  8px of scroll at 1920x970.
+- The sign-up steps (code, New to Nova?, What this actually is, the class
+  pick): one group centred on the screen, zoom 1.15, the button 2rem under
+  the content (it was pinned to the floor, 120-185px under the last line).
+- Nova's introduction: he and his bubble one group in the middle (68rem
+  wide) instead of the bottom-left corner; he is up to 42vh tall, the
+  bubble 40rem with 1.5rem words.
+- check-b327z15 section * (FF): all three checks fail on the round-27
+  commit and pass now.

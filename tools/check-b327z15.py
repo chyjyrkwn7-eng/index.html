@@ -96,6 +96,11 @@ Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
      the Calendar's countdowns step with arrows (the first dim at the start);
      the open chat starts below its button (laptop tab, landscape iPad) and
      the white pill is not seen through it.
+  FF (*). Sign-up on a laptop: Welcome's planet is Home's (same width and
+     place, within 2px), its words and buttons on the planet's left, no
+     scroll, at three laptop sizes; each sign-up step's button sits just
+     under its content (not pinned 180px down); Nova's introduction is
+     one group in the middle of the screen.
 """
 import importlib.util
 import itertools
@@ -113,7 +118,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%&")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%&*")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -895,10 +900,58 @@ def section_ee(br):
     check("EE. the open chat starts below its button, and the white pill is not seen through it", not bad, bad)
 
 
+def section_ff(br):
+    print("\nFF. Sign-up on a laptop: Welcome's planet is Home's, the steps hold together, Nova in the middle")
+    bad = []
+    for W, H in ((1366, 638), (1440, 820), (1920, 970)):
+        ctx = br.new_context(viewport={"width": W, "height": H})
+        pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+        pg.evaluate("document.getElementById('splashscreen')?.remove()")
+        if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome')"):
+            pg.evaluate("() => showWelcome()")
+        pg.wait_for_timeout(1500)
+        BOX = """() => { const h = document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); return { w: h.width, top: h.top, left: h.left, right: h.right }; }"""
+        wel = pg.evaluate(BOX)
+        wel.update(pg.evaluate("""() => { const t = document.querySelector('.cosmic-welcome-title').getBoundingClientRect(), a = document.querySelector('.cosmic-welcome-actions').getBoundingClientRect();
+          return { words: Math.max(t.right, a.right), sh: document.documentElement.scrollHeight, ih: innerHeight }; }"""))
+        pg.evaluate("""() => { store.onboardingComplete = true; store.firstName = 'Recruit'; store.novaMet = 99; store.tourRev = 99; store.seenProfileTour = true;
+          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false; showHome(); }""")
+        pg.wait_for_timeout(1500)
+        home = pg.evaluate(BOX)
+        if not (abs(wel["w"] - home["w"]) <= 2 and abs(wel["top"] - home["top"]) <= 2 and wel["words"] <= wel["left"] + 4 and wel["sh"] <= wel["ih"] + 1):
+            bad.append((W, H, wel, home))
+        ctx.close()
+    check("FF. Welcome's planet is Home's on 3 laptops (width and place), its words and buttons on its left, no scroll", not bad, bad)
+    ctx = br.new_context(viewport={"width": 1440, "height": 820})
+    pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+    pg.evaluate("document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(1200)
+    gaps = {}
+    pg.click(".cosmic-welcome-btn.welcome-new"); pg.wait_for_timeout(900)
+    GAP = """(sel) => { const p = document.querySelector('#stage > *'); const b = p.querySelector(sel).getBoundingClientRect();
+      const before = [...p.children].filter(c => c.offsetHeight && !c.classList.contains('homeglow') && c.getBoundingClientRect().bottom <= b.top + 1);
+      const last = Math.max(...before.map(c => c.getBoundingClientRect().bottom)); return Math.round(b.top - last); }"""
+    gaps["check"] = pg.evaluate(GAP, ".signupcheck-go")
+    pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(900)
+    gaps["intro"] = pg.evaluate(GAP, ":scope > .next.playbtn")
+    check("FF. each sign-up step's button sits just under its content (within 60px)", all(0 <= v <= 60 for v in gaps.values()), gaps)
+    pg.click(".welcomeintro-panel .next.playbtn"); pg.wait_for_timeout(900)
+    pg.click(".classselect-panel .modecard"); pg.wait_for_timeout(300)
+    pg.click(".classselect-panel .next.playbtn")
+    try:
+        pg.wait_for_selector("#nova-intro .nt-talk", timeout=25000)
+    except Exception:
+        pass
+    pg.wait_for_timeout(2000)
+    r = pg.evaluate("""() => { const t = document.querySelector('#nova-intro .nt-talk'); if(!t) return null; const n = t.querySelector('.nt-nova').getBoundingClientRect(), b = t.querySelector('.nt-bubble').getBoundingClientRect();
+      return { mid: Math.round((n.left + b.right) / 2 - innerWidth / 2), nova: Math.round(n.left) }; }""")
+    check("FF. Nova's introduction: he and his bubble one group in the middle (within 60px), not in the corner", r and abs(r["mid"]) <= 60 and r["nova"] > 100, r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd), ("&", section_ee)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd), ("&", section_ee), ("*", section_ff)):
             if k in ONLY:
                 try:
                     fn(br)
