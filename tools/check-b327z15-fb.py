@@ -287,12 +287,20 @@ def main():
         r = pg.evaluate("""async()=>{
           document.getElementById('resume-offer')?.remove();
           showIntroPopup(); await new Promise(r => setTimeout(r, 300));
+          const pop = document.getElementById('intro-pop');
           const rows = [...document.querySelectorAll('#intro-pop .intro-row')].map(x => x.dataset.key);
-          document.getElementById('intro-pop')?.remove();
-          return { rev: INTRO_REV, rows: rows.slice(0, 3) };
+          const b = pop.querySelector('.intro-card').getBoundingClientRect();
+          const go = pop.querySelector('.intro-go').getBoundingClientRect();
+          const fits = b.top >= 0 && b.bottom <= innerHeight && pop.scrollHeight <= pop.clientHeight + 1
+            && getComputedStyle(pop).overflowY !== 'auto';
+          pop.remove();
+          return { rev: INTRO_REV, rows: rows.slice(0, 3), all: rows, fits, goH: Math.round(go.height) };
         }""")
         check("J1. a device that saw Version 9's card sees it again", r["rev"] > 5, r)
-        check("J2. the layout and fixes rows lead", r["rows"][:2] == ["devices92", "fixes92"], r)
+        check("J2. the layout and fixes rows lead", r["rows"][:2] == ["devices92", "fixes92"], r["rows"])
+        check("J3. no 'Mock, a real test' row (only the name changed)", "modes" not in r["all"], r["all"])
+        check("J4. the card fits the screen with nothing to scroll, Got it still 44px+",
+              r["fits"] and r["goH"] >= 44, (r["fits"], r["goH"]))
 
         check("Z. no page errors", not errs, errs[:3])
         ctx.close(); br.close()

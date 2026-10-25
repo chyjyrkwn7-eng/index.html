@@ -28525,3 +28525,15 @@ write is a read on every open board.
 
 check-savetest section 10 rewritten for round 39 (no Home pop-up; unfinished
 saved test; Start Studying offers it).
+
+Round 40b: "Remove the 'mock is now a real test' that's not a thing, all we
+did was change the name ... we want it to fit on the screen so don't make it
+scrollable." The `modes` row is gone from WHATS_NEW_320, and Version 9's
+"Exam Is Now Mock" history entry now only says it was renamed (Mock always
+held feedback to the grade). Every row's body is one sentence. The rows sit
+in .intro-rows; showIntroPopup's fit() zooms only that block (heading and Got
+it keep their size, the button stays 48px) down to .7, and below ~.78 (a
+4-inch SE) the rows show their titles alone (.is-titles). The overlay does
+not scroll (.intro-pop:has(> .intro-card-compact)). Measured: iPhone 17 Pro
+Max .947, Safari .915, iPad landscape .877, laptop 1, SE titles only.
+Gate: check-b327z15-fb J3-J4.

@@ -6764,6 +6764,8 @@
     opacity:0; transition:opacity .24s ease;
     overflow-y:auto;
   }
+  /* What's New fits the screen (327z15, showIntroPopup's fit): nothing to scroll */
+  .intro-pop:has(> .intro-card-compact){ overflow:hidden; align-items:center; }
   .intro-pop.show{ opacity:1; }
   .intro-card{
     width:100%; max-width:26rem; text-align:left; margin:auto;
@@ -6811,6 +6813,18 @@
   .intro-card-compact .intro-row-icon{ width:1.3rem; height:1.3rem; }
   .intro-card-compact .intro-row-title{ font-size:.88rem; margin-bottom:.1rem; }
   .intro-card-compact .intro-row-body{ font-size:.8rem; line-height:1.38; }
+  .intro-card.is-titles .intro-row-body{ display:none; }
+  .intro-card.is-titles .intro-row{ align-items:center; }
+  .intro-card.is-titles .intro-row-icon{ margin-top:0; }
+  .intro-card.is-titles .intro-row-title{ margin:0; }
+  /* (327z15) one sentence a row, and nothing scrolls: tighter on a short screen */
+  @media (max-height:52rem){
+    .intro-card-compact{ padding-top:1rem; padding-bottom:.9rem; }
+    .intro-card-compact .intro-title{ font-size:1.3rem; margin-bottom:.4rem; }
+    .intro-card-compact .intro-row{ padding:.42rem 0; gap:.6rem; }
+    .intro-card-compact .intro-row-body{ line-height:1.3; }
+    .intro-card-compact .intro-go{ margin-top:.7rem; }
+  }
   /* The real button, ringed while the card is explaining it - so "the
      button in the top right" is something to look at rather than hunt
      for. The ring is on the BUTTON and the dock sits above the dim, so
@@ -77719,7 +77733,7 @@ const RELEASE_NOTES = [
         { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar now has its own tab: today, your next test, the month and the days left in the course. Settings has moved into Profile." },
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question button now shows a \"?\", and the question opens with its own header, like a test. Its result is a single card with your verdict and the XP earned." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends In The Chat", body: "Friends now open from the chat, which shows how many are online and any requests waiting. Managing friends works as before." },
-        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Exam Is Now Mock", body: "Exam mode is now called Mock: a full test with no feedback until your grade. Every mode also has its own icon and colour." },
+        { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Exam Is Now Mock", body: "Exam mode is now called Mock. Every mode also has its own icon and colour." },
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats adds a chart of this week's study time. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
@@ -93344,36 +93358,33 @@ const WHATS_NEW_320 = [
      Two rows on top of Version 9's; INTRO_REV 6 shows it once more. */
   { key: "devices92", color: "#7CC8FF", title: "Made for every screen",
     glyph: "M4 5h12a1 1 0 0 1 1 1v8H3V6a1 1 0 0 1 1-1Zm1 2v5h10V7H5ZM1 15h17v1.5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V15Zm18-6h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 2v5.5h2V11h-2Z",
-    body: "Every screen has been laid out again for laptops and iPads, with Start Studying in the tab bar. Sound now plays in Safari as well." },
+    body: "Every screen is laid out again for laptops and iPads. Sound now plays in Safari too." },
   { key: "fixes92", color: "#4ADE80", title: "Fixes and improvements",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 13.6-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7Z",
-    body: "Faster tabs and screens, quicker search in Review, a clear button on unit search, and many smaller fixes." },
+    body: "Faster tabs and screens, quicker Review search and many smaller fixes." },
   /* Version 9's own news that everybody will notice (the rest of 9 - sign
      in first, the rankings - is for new devices and the board) */
   { key: "sound", color: "#FFD27A", title: "Sound effects",
     glyph: "M4 9h4l5-4v14l-5-4H4V9Zm12.5-1.8a6.5 6.5 0 0 1 0 9.6l-1.4-1.4a4.5 4.5 0 0 0 0-6.8l1.4-1.4Zm2.8-2.8a10.5 10.5 0 0 1 0 15.2l-1.4-1.4a8.5 8.5 0 0 0 0-12.4l1.4-1.4Z",
-    body: "On by default, and you can turn them off in Settings: sounds for your answers, your results, Home, badges, cutscenes and more.",
+    body: "Sounds for answers, results, badges and more. Turn them off in Settings.",
     say: "First, something you can hear. Sound effects are on, and you can turn them off in Settings." },
   /* build 327 round 8: "If Haptic Touch is introduced (it will be) we will
      show that as one of the new features in the what's new" */
   { key: "haptics", color: "#7CC8FF", title: "Haptic Touch",
     glyph: "M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm0 3v13h6V5H9ZM3.6 7.5l1.6.6-.9 3.9.9 3.9-1.6.6L2.6 12l1-4.5Zm16.8 0 1 4.5-1 4.5-1.6-.6.9-3.9-.9-3.9 1.6-.6Z",
-    body: "On iPhone you feel a light tap as you answer, star, flip a switch, change tabs and touch the planet. On by default; turn it off under Sound & vibration in Settings.",
+    body: "On iPhone, a light tap as you answer, change tabs and touch the planet.",
     say: "Next, something you can feel. On an iPhone, Nova taps back: a light tick as you answer, change tabs or touch the planet." },
   /* build 326: Review is Review again ("I kinda prefer briefing to be
      called review actually"), so only the Qualifier is a new name - and
      its mark is modeIcon's own (`icon`), not a copy of it */
-  { key: "modes", color: "#FF9A3C", title: "Mock, a real test", icon: () => modeIcon("exam"),
-    body: "Mock is now a real test, with nothing shown until your grade.",
-    say: "Mock is a real test now: no feedback on any question until you see your grade at the end." },
   /* build 323: the calendar to the bar, Settings into Profile */
   { key: "profile", color: "#5CA8FF", title: "Calendar in the tab bar",
     glyph: "M3 4.5h5.2v4.2H3V4.5Zm6.4 0h5.2v4.2H9.4V4.5Zm6.4 0H21v4.2h-5.2V4.5ZM3 10.2h18V20H3v-9.8Z",
-    body: "The class calendar has its own tab in the bar. Profile is Profile, Stats and Settings, and your Friends box shows who is on and what they are doing.",
+    body: "The class calendar has its own tab. Settings is now in Profile.",
     say: "The class calendar has its own tab at the bottom now. Settings moved into Profile, and your Friends box shows who is on." },
   { key: "save", color: "#4ADE80", title: "Save a test for later",
     glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-3.4 6.2h2.3v7.6H8.6V8.2Zm4.5 0h2.3v7.6h-2.3V8.2Z",
-    body: "Pause a Drill or Mock and tap Save and exit. Start Studying offers it back, and Resume loads it right where you left off.",
+    body: "Pause a Drill or Mock and tap Save and exit. Start Studying brings it back.",
     say: "You can save a test for later. Pause it, tap Save and exit, and Resume picks it up right where you left off." },
   /* BUILD 325: "Results grade first, characters celebrate, the ranking up
      on the road map, a planet that cracks, supernovas mark, the daily
@@ -93383,15 +93394,15 @@ const WHATS_NEW_320 = [
      still in RELEASE_NOTES (Version 8); these are Version 9's own. */
   { key: "hours", color: "#A694FF", title: "Your study hours",
     glyph: "M4 20V11h3.2v9H4Zm6.4 0V4h3.2v16h-3.2Zm6.4 0v-6.5H20V20h-3.2Z",
-    body: "Stats has a chart of your study time this week. Tap a day for its exact time, or look back at last week.",
+    body: "Stats charts your study time for the week, day by day.",
     say: "Stats now charts your study time for the week. Tap a day to see exactly how long you studied." },
   { key: "novachat", color: "#8E7CF5", title: "Message Nova",
     glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
-    body: "Nova is in your chats. He passes on news and what is on the next test, tells you what each rank-up did for your planet, and answers questions when he is in range.",
+    body: "Nova is in your chats with news, the next test and answers to questions.",
     say: "My chat isn’t one-way, either. Ask me about ranks, badges, the modes or the next test, and I’ll answer when I’m around." },
   { key: "novavr", color: "#E23B3B", title: "Challenge Nova",
     glyph: "M13.4 2 4.6 13.6h6.1L9.6 22l9.8-12.4h-6.2L13.4 2Z",
-    body: "Challenge Nova from his chat any time: Race, Tug of War or Battle. Now and then he challenges you himself. He almost never misses. Beat him and the Sheriff is yours.",
+    body: "Challenge Nova from his chat. Beat him and the Sheriff is yours.",
     say: "Challenge me from my chat any time: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and the Sheriff is yours." },
   /* BUILD 326: "Remove the weekly recap and badge case from what's new."
      Both are still in RELEASE_NOTES (Version 9's history). */
@@ -93446,11 +93457,13 @@ function showIntroPopup(o){
     st.note.forEach(t => { const b = document.createElement("p"); b.className = "intro-gate-body"; b.textContent = t; n.appendChild(b); });
     card.appendChild(n);
   }
+  const rows = document.createElement("div"); rows.className = "intro-rows";
   WHATS_NEW_320.forEach(it => {
     const row = introRow(it.icon || it.glyph, it.color, it.title, it.body);
     row.dataset.key = it.key;
-    card.appendChild(row);
+    rows.appendChild(row);
   });
+  card.appendChild(rows);
   const go = document.createElement("button");
   go.type = "button"; go.className = "next intro-go";
   go.textContent = "Got it";
@@ -93460,6 +93473,7 @@ function showIntroPopup(o){
   const close = reason => {
     if(done) return; done = true;
     try{ onNavigate.disconnect(); }catch(e){}
+    window.removeEventListener("resize", fit);
     closeIntroPopup(el, !!o.chained);
     if(typeof o.then === "function") setTimeout(() => o.then(reason), reason === "nav" ? 0 : 300);
   };
@@ -93467,6 +93481,26 @@ function showIntroPopup(o){
   /* On <body>, like every other fixed overlay here - #stage animates, and a
      transform on an ancestor re-parents a fixed element's containing block. */
   document.body.appendChild(el);
+  /* ON THE SCREEN WHOLE, NEVER SCROLLED (build 327z15): "we want it to fit
+     on the screen so don't make it scrollable". The rows are one sentence
+     each; where the card is still taller than the room (a short phone, a
+     laptop window), it is zoomed down as a whole - zoom, not a transform,
+     so it lays out at its fitted size and the show animation is untouched. */
+  const fit = () => {
+    rows.style.zoom = ""; card.classList.remove("is-titles");
+    const cs = getComputedStyle(el);
+    const room = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const need = () => { const over = card.offsetHeight - room, rh = rows.offsetHeight;
+      return (over > 0 && room > 0 && rh > 0) ? Math.floor((rh - over) / rh * 1000) / 1000 : 1; };
+    /* only the rows: the heading and Got it (a 44px+ target) keep their size.
+       Below ~3/4 the sentences are too small to read; there (a 4-inch phone)
+       the rows keep their titles alone. */
+    let k = need();
+    if(k < .78){ card.classList.add("is-titles"); k = need(); }
+    if(k < 1) rows.style.zoom = String(Math.max(.7, k));
+  };
+  fit();
+  window.addEventListener("resize", fit);
   void el.offsetHeight;
   el.classList.add("show");
   playSound("ui.notice");
