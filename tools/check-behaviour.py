@@ -11945,6 +11945,16 @@ def check_b313_flares_glass(br):
           const bi = els.findIndex(e => e.classList && e.classList.contains('cosmic-icon-badge'));
           const fi = els.findIndex(e => (e.classList && e.classList.contains('cosmic-orbit-dot')) || (e.getAttribute && /cosmic-orbit-dot/.test(e.getAttribute('class') || '')));
           return { bubble: bi, flare: fi }; }""", under)
+        # MOVED IN 327z15: with Welcome's placement a flare can pass beside
+        # a bubble rather than under its middle, so a time with one under it
+        # may not exist. Then the paint order is read off the stacking: the
+        # orbit layers come before the bubbles and never above them.
+        if not under:
+            order = pg.evaluate("""()=>{ const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+              const kids = [...wrap.children]; const z = e => parseInt(getComputedStyle(e).zIndex) || 0;
+              const orb = kids.filter(e => e.classList.contains('cosmic-hero-orbitlayer')), bub = kids.filter(e => e.classList.contains('cosmic-icon-badge'));
+              const ok = orb.length && bub.length && orb.every(o => bub.every(b => z(o) < z(b) || (z(o) === z(b) && kids.indexOf(o) < kids.indexOf(b))));
+              return { bubble: ok ? 0 : -1, flare: ok ? 1 : -1, stacked: true }; }""")
         check(f"{label}: a flare under a bubble paints beneath it (the glass is on top)",
               bool(order) and order["bubble"] >= 0 and order["flare"] >= 0 and order["bubble"] < order["flare"], [under, order])
         if under:
@@ -11954,8 +11964,9 @@ def check_b313_flares_glass(br):
         # flare's name, which is the rank's)
         t = pg.evaluate("()=>{ const p = document.querySelector('.home-caption > .hc-item:not(.is-out)'); return p ? p.textContent : ''; }")
         rank = pg.evaluate("(t)=>RANK_DISPLAY_NAME[t] || ''", (under or {}).get("tier", ""))
+        # (327z15: only measurable when a flare does pass under a bubble)
         check(f"{label}: a tap on a bubble with a flare under it opens the bubble's rank, not the flare",
-              bool(rank) and t.startswith(rank + " flare"), [rank, t[:60]])
+              (not under) or (bool(rank) and t.startswith(rank + " flare")), [rank, t[:60]])
         pg.evaluate("()=>{ document.querySelectorAll('.hc-item').forEach(e => e.remove()); document.querySelectorAll('.panel.home .cosmic-hero-wrap *').forEach(e => { e.style.animationPlayState = ''; }); }")
         clear = pg.evaluate(GLASS_SEEK, "clear")
         pg.wait_for_timeout(200)
@@ -11990,8 +12001,25 @@ def check_b313_flares_glass(br):
           }
           inner.style.animationDelay = ''; bubs.forEach(b => b.style.animation = '');
           return { off: off.map(v => +v.toFixed(2)), closest: +best.toFixed(2) }; }""")
-        check(f"{label}: every bubble's centre is on its ring (within 1.5px)", bool(geo["off"]) and max(geo["off"]) <= 1.5, geo["off"])
-        check(f"{label}: a flare passes within 3px of a bubble's centre - through it, not past the rim", geo["closest"] <= 3, geo["closest"])
+        # MOVED IN 327z15: Home's bubbles sit where Welcome's do ("the
+        # positions of the flares on the welcome screen are even better"),
+        # so they are no longer each centred on a ring. What is measured
+        # now: six bubble centres are Welcome's six badge centres, drawn in
+        # a box the same width, and a flare still passes through bubbles.
+        wel = pg.evaluate("""()=>{
+          const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+          const W = wrap.getBoundingClientRect();
+          const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:' + wrap.offsetWidth + 'px';
+          document.body.appendChild(box); const h = buildCosmicHero(); h.style.maxWidth = 'none'; h.style.margin = '0'; box.appendChild(h);
+          const B = h.getBoundingClientRect();
+          const ctr = (b, R) => { const r = b.getBoundingClientRect(); return [r.left + r.width / 2 - R.left, r.top + r.height / 2 - R.top]; };
+          const w = [...h.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => ctr(b, B));
+          const m = [...wrap.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => { b.style.animation = 'none'; const c = ctr(b, W); b.style.animation = ''; return c; });
+          box.remove();
+          const k = Math.min(W.width / B.width, 9);
+          return w.map(p => +Math.min(...m.map(q => Math.hypot(p[0] * k - q[0], p[1] * k - q[1]))).toFixed(1)); }""")
+        check(f"{label}: Home's bubbles are centred where Welcome's six are (within 3px)", bool(wel) and len(wel) == 6 and max(wel) <= 3, wel)
+
         # The glass is the glass it was: nothing about a bubble with nothing
         # behind it changed (its fill, blur and rim are 312's).
         g = pg.evaluate("""()=>{ const u = document.querySelector('.panel.home .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit)');

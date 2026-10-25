@@ -15272,8 +15272,7 @@
      46px circle), and only on these: the lit bubbles are opaque and
      never needed one. check-behaviour's Home raster budget (section 15)
      is what says this is affordable, not this comment. */
-  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit):not(.cosmic-badge-noir),
-  .cosmic-icon-badge.cosmic-badge-glass{
+  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit):not(.cosmic-badge-noir){
     background:rgba(255,255,255,.09);
     background-image:
       radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
@@ -15363,24 +15362,6 @@
   .cosmic-icon-badge.cosmic-badge-rank::before{
     content:""; position:absolute; inset:1px; border-radius:50%; pointer-events:none; z-index:2;
     box-shadow:inset 1px 2px 4px rgba(255,255,255,.2), inset -1px -2px 4px rgba(255,255,255,.08);
-  }
-  /* WELCOME'S LEARNING ICONS IN HOME'S GLASS (327z15): the same bubble as
-     an unreached rank flare - frost, rim light, lens, shadow - and the
-     same size, the line icon sitting in it the way the emblem does. */
-  .cosmic-icon-badge.cosmic-badge-glass{ width:2.9rem; height:2.9rem; overflow:hidden; isolation:isolate; color:rgba(255,255,255,.88); }
-  .cosmic-icon-badge.cosmic-badge-glass svg{ position:relative; z-index:0; width:1.3rem; height:1.3rem;
-    filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
-  .cosmic-icon-badge.cosmic-badge-glass::after{
-    content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:1;
-    background:
-      radial-gradient(circle at 32% 26%, rgba(255,255,255,.16), rgba(255,255,255,0) 52%),
-      radial-gradient(circle at 34% 30%, rgba(0,0,0,0) 50%, rgba(0,0,0,.12) 76%, rgba(0,0,0,.26) 100%);
-    box-shadow:inset -3px -4px 7px rgba(0,0,0,.18);
-  }
-  .cosmic-icon-badge.cosmic-badge-glass::before{
-    content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:2;
-    box-shadow:inset 1px 2px 5px rgba(255,255,255,.2), inset -1px -2px 5px rgba(255,255,255,.08),
-      inset 0 0 3px 0 rgba(255,255,255,.1);
   }
   /* Only Home's badges get this (Welcome's stay purely decorative,
      untouched) \u2014 a genuine tap target, not just a hover cue, since
@@ -32636,6 +32617,26 @@ html.is-browser .edge-tint{
 }
 html.is-browser #edge-tint-top{ top:0; }
 html.is-browser #edge-tint-bottom{ bottom:0; }
+/* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
+   cut off at the top and bottom STILL and the page is scrolling? Like legit
+   scrolling." The planet's size cap is min(32rem, 58vh), and in a browser
+   tab vh is the LARGE viewport - the screen under Safari's address bar and
+   toolbar as well - so the planet never shrank for them: measured in a
+   760px-tall tab, Home came to 864px (the planet 419px, everything else
+   443) and Welcome to 881 in an 840 one. Here the cap also stops at what the
+   visible height (dvh) leaves once the rest of the screen is laid out:
+   28rem on Home (greeting, title, button, the tab bar's padding), 29.5rem
+   on Welcome (title, line, both buttons and their lines). The installed app
+   is untouched (no bars, dvh = vh, and the cap never binds there). */
+@media (max-width:639px){
+  html.is-browser .panel.home.screen-home-actual .cosmic-hero-wrap{ max-width:min(32rem, 58vh, calc(100dvh - 28rem)); }
+  html.is-browser .cosmic-welcome .cosmic-hero-wrap{ max-width:min(32rem, 58vh, calc(100dvh - 29.5rem)); }
+}
+/* a short phone's Home keeps more around the planet (an SE-height tab
+   measured 22px over with 28rem) */
+@media (max-width:639px) and (max-height:41rem){
+  html.is-browser .panel.home.screen-home-actual .cosmic-hero-wrap{ max-width:min(32rem, 58vh, calc(100dvh - 30rem)); }
+}
   /* NO GLASS ON WHAT CANNOT BE SEEN (build 327z3). Back to top sits at
      opacity 0 on every screen until it is needed, and its 30px backdrop
      blur was still a layer the phone had to fill behind it on every frame
@@ -80406,33 +80407,29 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      version was tuned for exactly eight items and wouldn't
      redistribute cleanly for any other count, which is exactly what
      read as "heavy on one side" once it was seven instead. */
+  /* ---- HOME'S BUBBLES SIT WHERE WELCOME'S DO (327z15) ----
+     "the planet systems spacing of the rings and the placement of them all
+     are just so much better [on Welcome] ... I feel like the positions of
+     the flares on the welcome screen are even better too." Build 313 put
+     Home's seven on 360/7 degree steps, alternating rings, each centre on
+     its ring. Now each takes the CENTRE of one of Welcome's six (Welcome
+     places a 2.6rem badge by its top-left corner, so its centre is that
+     corner plus 1.3rem), going round clockwise from the top left, and the
+     seventh rank takes the one gap Welcome leaves, the bottom of the outer
+     ring. The secret flares were already on Welcome's rings. */
+  const welcomeCentre = (topPct, leftPct) => ({ top: "calc(" + topPct + "% + 1.3rem)", left: "calc(" + leftPct + "% + 1.3rem)" });
+  const homeSpots = [
+    welcomeCentre(7.4, 10),    /* book's place, top left */
+    welcomeCentre(5.4, 62),    /* cap's, top right */
+    welcomeCentre(40.2, 82),   /* rocket's, right */
+    welcomeCentre(78.8, 70),   /* trophy's, bottom right */
+    { top: "91.1%", left: "42.7%" },  /* the gap: the outer ring at 190 degrees */
+    welcomeCentre(73, 6),      /* bulb's, bottom left */
+    welcomeCentre(42, 8)       /* check's, left */
+  ];
   const homePositions = TIER_ORDER_FULL.map((tier, i) => {
-    const angleStep = 360 / TIER_ORDER_FULL.length;
-    const angle = (i * angleStep) * (Math.PI / 180);
-    /* 38, not 42. A badge is positioned by its TOP-LEFT corner, not its
-       centre, so an outer-ring badge on the right put its own 2.6rem
-       width past the coordinate: measured on a 17 Pro Max the Comet
-       flare's box ended 7px outside .cosmic-hero-wrap and its glow a
-       good deal further, which is the reported "the flare on the right
-       looks like it's cut off or something". Pulling the outer ring in
-       is the fix that does not move the other six: the inner ring is
-       untouched, and the top badge keeps its clearance from the notice
-       banner above it. */
-    /* ---- ON THE RING, BY THE CENTRE (build 313) ----
-       "Ensure those go under the flare bubble when passing through." A
-       bubble was placed by its top-left corner at 38% / 30% of the box,
-       so its centre sat half a bubble down and right of any ring - the
-       secret flares on those rings only ever grazed a rim. Now each
-       bubble's CENTRE is on its ring, worked out in the planet's own
-       viewBox units (centre 180,150 in 0 -12 360 342, so the two axes
-       are scaled separately), and the bubble is centred on it with a
-       translate (.is-centred). The inner ring is 108, as drawn; the
-       outer one is HOME_OUTER_R, drawn there too, and the outer secret
-       flares ride it - so every flare passes straight under the middle
-       of the bubbles on its ring. */
-    const R = (i % 2 === 0) ? HOME_OUTER_R : 108;
-    const cx = 180 + R * Math.sin(angle), cy = 150 - R * Math.cos(angle);
-    return { icon: "book", top: ((cy + 12) / 342 * 100).toFixed(2) + "%", left: (cx / 360 * 100).toFixed(2) + "%", tier, centred: true };
+    const at = homeSpots[i % homeSpots.length];
+    return { icon: "book", top: at.top, left: at.left, tier, centred: true };
   });
   const positions = useTierIcons ? homePositions : welcomePositions;
   /* Tracks which tiers were already unlocked as of the last time Home
@@ -80494,10 +80491,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     path.setAttribute("fill", "none"); path.setAttribute("stroke", "currentColor");
     path.setAttribute("stroke-width", "1.6"); path.setAttribute("stroke-linecap", "round"); path.setAttribute("stroke-linejoin", "round");
     iconSvg.appendChild(path);
-    /* Welcome keeps its learning icons (327z15: "I like the sign up icons
-       ... IT GIVES A SENSE OF LEARNING"), in the glass bubble Home's rank
-       flares are made of now. */
-    if(!useTierIcons){ badge.appendChild(iconSvg); badge.classList.add("cosmic-badge-glass"); }
+    /* Welcome keeps its learning icons exactly as they were (327z15: "make
+       them very simple and easy to see like before") - no glass. */
+    if(!useTierIcons) badge.appendChild(iconSvg);
     /* Interactive on Home specifically (useTierIcons is only ever
        true there) \u2014 tapping a "flare" that isn't lit yet tells you
        exactly what's left to reach it, using the same live numbers

@@ -102,7 +102,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -653,7 +653,7 @@ def section_y(br):
 
 
 def section_z(br):
-    print("\nZ. Welcome keeps its learning icons in Home's glass bubbles, under Home's sky; nothing taps or saves")
+    print("\nZ. Welcome keeps its plain learning icons, under Home's sky; nothing taps or saves")
     label, w, h, dpr = z5b.PHONE
     ctx, pg = z5b.boot(br, w, h, dpr)
     r = pg.evaluate("""() => { const before = JSON.stringify(store.seenUnlockedTiers || null);
@@ -674,8 +674,8 @@ def section_z(br):
               sky: document.body.classList.contains('sky-home'),
               same: before === JSON.stringify(store.seenUnlockedTiers || null) }); }, 900)); }""")
     check("Z. the learning icons stay: six line icons, no rank emblems (%d, %d)" % (r["icons"], r["rank"]), r["icons"] == 6 and r["withLine"] == 6 and r["rank"] == 0 and r["flares"] >= 6, r)
-    check("Z. each is the glass of Home's unreached rank bubble (fill, rim, lens, size)", r["glass"], {"want": r["want"], "got": r["got"][:2]})
-    check("Z. nothing on Welcome's planet answers a tap or writes the store", r["taps"] == 0 and r["same"], r)
+    check("Z. Welcome's icons are the plain ones they were - no glass bubble (%s)" % (r["got"][:1],),
+          bool(r["got"]) and all(g["bg"] != r["want"]["bg"] for g in r["got"]), r["got"][:2])
     check("Z. Welcome is under Home's full sky", r["sky"], r)
     ctx.close()
 
@@ -697,10 +697,34 @@ def section_aa(br):
         ctx.close()
 
 
+def section_bb(br):
+    print("\nBB. A Safari tab: Home and Welcome fit the visible height - nothing scrolls")
+    ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    bad = []
+    for W, H in ((375, 630), (393, 700), (430, 760), (440, 780), (440, 840)):
+        for screen in ("welcome", "home"):
+            ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=2, user_agent=ua, is_mobile=True, has_touch=True)
+            pg = cb.open_page(ctx) if hasattr(cb, "open_page") else ctx.new_page()
+            pg.goto(cb.URL if hasattr(cb, "URL") else z5b.URL); pg.wait_for_timeout(2500)
+            pg.evaluate("document.getElementById('splashscreen')?.remove()")
+            if screen == "home":
+                pg.evaluate("""() => { store.onboardingComplete = true; store.firstName = 'Recruit'; store.novaMet = 99; store.tourRev = 99; store.seenProfileTour = true;
+                  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false; showHome(); }""")
+            else:
+                pg.evaluate("() => showWelcome()")
+            pg.wait_for_timeout(1500)
+            pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro').forEach(n => n.remove())")
+            r = pg.evaluate("() => ({ browser: document.documentElement.classList.contains('is-browser'), sh: document.documentElement.scrollHeight, ih: innerHeight })")
+            if not r["browser"] or r["sh"] > r["ih"] + 1:
+                bad.append((W, H, screen, r))
+            ctx.close()
+    check("BB. in a Safari tab Home and Welcome are no taller than the screen at 5 phone heights", not bad, bad)
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb)):
             if k in ONLY:
                 try:
                     fn(br)

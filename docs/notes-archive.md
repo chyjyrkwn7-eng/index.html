@@ -27638,3 +27638,43 @@ improved and be like it" (with a screenshot of 327z14's Welcome).
 - check-behaviour b288's halo check moved (no halo at all, still clipped).
 - Gate: check-b327z15 "@" (AA) - Home's two ring radii and hero width equal
   Welcome's on a phone and an iPad, and neither has the halo; fails on 327z14.
+
+## Build 327z15 round 13 - Welcome's icons exactly as before; Home's bubbles in Welcome's places; nothing scrolls in a Safari tab
+
+"don't make the icons in the welcome screen all crazy and weird, make them
+very simple and easy to see like before. The background of the welcome
+screen is better, idk if it's because there's not that glow? And the planet
+systems spacing of the rings and the placement of them all are just so much
+better. We need that. I feel like the positions of the flares on the welcome
+screen are even better too. ... The app is cut off at the top and bottom
+STILL and the page is scrolling? Like legit scrolling."
+
+- Welcome's badges are 327z14's exactly: the plain dark bubble and line icon.
+  .cosmic-badge-glass (round 9) is deleted, CSS and all.
+- Home's seven rank bubbles take Welcome's places (homeSpots): each the
+  CENTRE of one of Welcome's six (its top-left % + 1.3rem, since Welcome
+  places a 2.6rem badge by its corner), clockwise from the top left (book,
+  cap, rocket, trophy), the seventh rank in Welcome's one gap - the outer
+  ring at 190 degrees (91.1%, 42.7%) - then bulb, check. Build 313's
+  360/7 steps on alternating rings are gone, with round 12's 152 ring and no
+  halo kept. The old map is not kept; it was angle = i*360/7, R alternating
+  HOME_OUTER_R / 108, centre on the ring.
+- check-behaviour b313_flares_glass moved: bubble centres = Welcome's six
+  (0px measured); the flare-under-a-bubble paint order falls back to the
+  stacking (orbit layers before/below the bubbles) when no flare passes
+  under a bubble's middle - with Welcome's places they pass beside them;
+  the "within 3px of a centre" check is dropped (it measured 313's ring
+  centring, which was asked away).
+- SAFARI TAB SCROLL. Measured with an iPhone UA, not standalone: in a 760px
+  tab Home came to 864px and Welcome to 881 in an 840 one. The hero's cap is
+  min(32rem, 58vh), and in a browser tab vh is the LARGE viewport (under
+  Safari's bars too), so the planet never shrank for the bars. In
+  html.is-browser, phone widths, the cap also stops at calc(100dvh - 28rem)
+  on Home (30rem under 41rem tall) and calc(100dvh - 29.5rem) on Welcome.
+  Swept 375x560 to 440x860: nothing scrolls (before: Home scrolled at every
+  height measured). The installed app is untouched. The planet is smaller in
+  a Safari tab as a result (e.g. 332px in a 440x780 tab, 415 installed).
+  Only confirmable on an iPhone.
+- Gates: check-b327z15 Z (Welcome's icons are not the glass), "@" (rings),
+  "#" (BB: Safari-UA phone tabs 375x630..440x840, Home and Welcome no
+  taller than the screen).
