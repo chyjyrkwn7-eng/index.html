@@ -30551,6 +30551,11 @@
      screen to make the room there, rather than down it. */
   @media (max-aspect-ratio:13/10){ .bc-scene{ --open-y:calc(var(--cw) * .07); } }
   @media (min-width:40rem) and (max-aspect-ratio:13/10){ .bc-scene{ --cw:min(62vw, 29rem, 44vh, calc((100vh - 17rem) / 1.75)); } }
+  /* six by four (build 328): shallower when open, so wider - badgeCaseWidthPx() mirrors it */
+  .bc-scene.bc-wide{ --cw:min(94vw, 27rem, 52vh); }
+  @media (min-width:40rem){ .bc-scene.bc-wide{ --cw:min(74vw, 34rem, 52vh); } }
+  @media (max-aspect-ratio:13/10){ .bc-scene.bc-wide{ --cw:min(94vw, 27rem, 52vh, calc((100vh - 15rem) / 1.45)); } }
+  @media (min-width:40rem) and (max-aspect-ratio:13/10){ .bc-scene.bc-wide{ --cw:min(74vw, 34rem, 52vh, calc((100vh - 17rem) / 1.45)); } }
   .bc-scene.bc-in{ background:rgba(5,7,11,.93); }
   .bc-scene.bc-out{ opacity:0; }
   body.bc-covering #stage{ visibility:hidden; }
@@ -34124,6 +34129,17 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     /* the daily question keeps its gap over the shorter bar, clear of Start Studying */
     html[data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{ bottom:calc(var(--tabs-bottom) + 4.95rem); right:max(1.2rem, env(safe-area-inset-right, 0px)); }
   }
+  /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
+     The Leaderboard's segmented control, a level's picked count beside its name. */
+  html[data-layout] .screen-setup .setup-levels{ margin:.1rem 0 .85rem; width:100%; }
+  html[data-layout] .screen-setup .setup-levels .iconbtn{ flex:1 1 0; display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
+  html[data-layout] .screen-setup .setup-levels .iconbtn.is-empty:not(.active){ color:rgba(255,255,255,.42); }
+  .setup-level-count{
+    min-width:1.3rem; padding:.05rem .38rem; border-radius:999px; font-size:.72rem; line-height:1.35; font-weight:800;
+    background:var(--accent); color:var(--accent-ink, #0B0D12); font-variant-numeric:tabular-nums;
+  }
+  .setup-level-count[hidden]{ display:none; }
+  .picks > .pick.is-other-level{ display:none; }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
@@ -36810,7 +36826,8 @@ const QUESTIONS = [
   {
     topic: "US and Texas Constitution and Rights",
     src: 13,
-    q: "The “3 Cs” or components of the criminal justice system are:",
+    q: "The “3 Cs,” or components of the criminal justice system, are:",
+    keyText: "The “3 Cs” or components of the criminal justice system are:",
     ref: "(US & TX Constitution, 7.2)",
     choices: [
       "Cops, Courts, Corrections",
@@ -36836,7 +36853,8 @@ const QUESTIONS = [
   {
     topic: "US and Texas Constitution and Rights",
     src: 15,
-    q: "The case, Miranda v. Arizona, dealt strongly with the right to be free from self-incrimination. The right is associated with what Amendment to the US Constitution?",
+    q: "The case Miranda v. Arizona dealt strongly with the right to be free from self-incrimination. The right is associated with which Amendment to the US Constitution?",
+    keyText: "The case, Miranda v. Arizona, dealt strongly with the right to be free from self-incrimination. The right is associated with what Amendment to the US Constitution?",
     ref: "(Arrest, Search, and Seizure 10.6 or TX & US Constitution, Section 7.1)",
     choices: [
       "5th",
@@ -37004,7 +37022,8 @@ const QUESTIONS = [
   {
     topic: "US and Texas Constitution and Rights",
     src: 28,
-    q: "Which amendment to the U.S. Constitution says that U.S. law supersedes state law, and that people are entitled to due process of the law as well as equal protection?",
+    q: "Which amendment to the U.S. Constitution says that U.S. law supersedes state law, and that people are entitled to due process of law as well as equal protection?",
+    keyText: "Which amendment to the U.S. Constitution says that U.S. law supersedes state law, and that people are entitled to due process of the law as well as equal protection?",
     ref: "(US & TX Constitution Section 7.1)",
     choices: [
       "Tenth",
@@ -37191,9 +37210,10 @@ const QUESTIONS = [
     src: 42,
     q: "The First Amendment to the U.S. Constitution prohibits",
     ref: "(US & TX Constitution, 7.1)",
+    keyChoices: ["The government should not establish a religion.", "assemblies that stop traffic", "Petitions to the government other than to senators and representatives.", "Speech that interferes with national security"],
     choices: [
       "The government should not establish a religion.",
-      "assemblies that stop traffic",
+      "Assemblies that stop traffic",
       "Petitions to the government other than to senators and representatives.",
       "Speech that interferes with national security",
     ],
@@ -37204,11 +37224,12 @@ const QUESTIONS = [
     src: 43,
     q: "The __________ has jurisdiction over cases of divorce.",
     ref: "(US and TX Constitutions, Section 7.5; CCP 4.05)",
+    keyChoices: ["Justice Court", "County Court", "District Court", "All the above"],
     choices: [
       "Justice Court",
       "County Court",
       "District Court",
-      "All the above",
+      "All of the above",
     ],
     answer: 2
   },
@@ -37505,11 +37526,12 @@ const QUESTIONS = [
     src: 66,
     q: "Civil law is that portion of the law that defines the personal and property rights of individuals to prevent a wrong and to",
     ref: "(US & TX Constitution Section 7.4)",
+    keyChoices: ["allow individuals to seek redress of grievance", "bring a person charged with an offense before a grand jury", "Bring a person charged with an offense before a magistrate", "prevent harm to society"],
     choices: [
       "allow individuals to seek redress of grievance",
       "bring a person charged with an offense before a grand jury",
       "Bring a person charged with an offense before a magistrate",
-      "prevent harm to society",
+      "Prevent harm to society",
     ],
     answer: 0
   },
@@ -40836,6 +40858,7 @@ const QUESTIONS = [
   {
     topic: "Penal Code",
     src: 243,
+    /* BUILD 328: “in penal code, q243 the question about the letter bomb in the mail. The answer is the one about false report.” The 8-14-26 guide still highlights Terroristic Threat; the instructor's answer (relayed by an admin) is False Alarm or Report, which PC 42.06 in its own ref is. Its Sexual Assault twin (#30) is gone from that unit's 9-17-26 guide. */
     q: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed?",
     ref: "(PC 42.06 (a) (1-3), PC Section 8.27)",
     choices: [
@@ -40844,7 +40867,7 @@ const QUESTIONS = [
       "Disorderly Conduct",
       "Interference with Duties of Public Servants",
     ],
-    answer: 0
+    answer: 1
   },
   {
     topic: "Penal Code",
@@ -42214,11 +42237,12 @@ const QUESTIONS = [
     src: 4,
     q: "The primary duties of a Peace Officer who investigates a family violence allegation include",
     ref: "(CCP 5.04 (a); CCP Section 9.4)",
+    keyChoices: ["protect any potential victim", "Enforce a protective order", "make lawful arrests of violators", "all of the above"],
     choices: [
-      "protect any potential victim",
+      "Protect any potential victim",
       "Enforce a protective order",
-      "make lawful arrests of violators",
-      "all of the above",
+      "Make lawful arrests of violators",
+      "All of the above",
     ],
     answer: 3
   },
@@ -42422,11 +42446,12 @@ const QUESTIONS = [
     src: 20,
     q: "Which of the below are NOT peace officers as defined by the CCP?",
     ref: "(CCP Section 9.2; CCP 2A.001 (#26, 7, & 12))",
+    keyChoices: ["State Insurance Fraud Investigator", "Arson Investigators", "Parks and Wildlife officers", "All the above are peace officers"],
     choices: [
       "State Insurance Fraud Investigator",
       "Arson Investigators",
       "Parks and Wildlife officers",
-      "All the above are peace officers",
+      "All of the above are peace officers",
     ],
     answer: 3
   },
@@ -43021,6 +43046,7 @@ const QUESTIONS = [
   {
     topic: "Arrest, Search, and Seizure",
     src: 31,
+    /* BUILD 328: the 8-28-26 guide (downloaded 10-25) marks D on #31 and C on #55, its twin. Asked of the instructor; until then both count C and say so in red (buildBankNote, verifyNote). */
     q: "Consent is considered involuntary if it is obtained by duress, coercion, or __________",
     ref: "(Arrest, Search, and Seizure, Section 10.8, Warrantless Search – Lecture Scenario, page 7 of 11) (Civilian Interaction, Section 37.4)",
     choices: [
@@ -43033,6 +43059,7 @@ const QUESTIONS = [
        given only because an officer claims the authority to search is not
        consent (Bumper v. North Carolina) - "Is a mere acquiescence to
        authority" is right and "Revoked" was a slip, so both say C now. */
+    verifyNote: "An admin is verifying this answer with the instructor. The 10-26 study guide marks “Revoked by the person granting consent” for #31 and “Is a mere acquiescence to authority claimed by the officer” for #55, the same question. Until it is confirmed, this test counts “Is a mere acquiescence to authority claimed by the officer.”",
     answer: 2
   },
   {
@@ -43337,6 +43364,7 @@ const QUESTIONS = [
   {
     topic: "Arrest, Search, and Seizure",
     src: 55,
+    /* BUILD 328: the 8-28-26 guide (downloaded 10-25) marks D on #31 and C on #55, its twin. Asked of the instructor; until then both count C and say so in red (buildBankNote, verifyNote). */
     q: "Consent is considered involuntary if it is obtained by duress, coercion, or",
     ref: "(Section 10.8, Lecture Scenario #1)",
     choices: [
@@ -43345,6 +43373,7 @@ const QUESTIONS = [
       "Is a mere acquiescence to authority claimed by the officer",
       "Revoked by the person granting consent",
     ],
+    verifyNote: "An admin is verifying this answer with the instructor. The 10-26 study guide marks “Revoked by the person granting consent” for #31 and “Is a mere acquiescence to authority claimed by the officer” for #55, the same question. Until it is confirmed, this test counts “Is a mere acquiescence to authority claimed by the officer.”",
     answer: 2
   },
   {
@@ -43480,14 +43509,17 @@ const QUESTIONS = [
   {
     topic: "Arrest, Search, and Seizure",
     src: 66,
+    /* BUILD 328: the first import lost choice A (“12 hours”) into ref; restored from the guide. keyChoices keeps its identity. */
     q: "The person making the arrest or the person having custody of the person arrested shall take the person arrested or have him taken without unnecessary delay, but not later than _____ after the person is arrested, before the magistrate who may have ordered the arrest.",
-    ref: "(CCP 14.06 (a); Arrest, Search, and Seizure, Section 10.4) A. 12 hours",
+    ref: "(CCP 14.06 (a); Arrest, Search, and Seizure, Section 10.4)",
+    keyChoices: ["24 hours", "48 hours", "72 hours"],
     choices: [
+      "12 hours",
       "24 hours",
       "48 hours",
       "72 hours",
     ],
-    answer: 1
+    answer: 2
   },
   {
     topic: "Arrest, Search, and Seizure",
@@ -44408,7 +44440,8 @@ const QUESTIONS = [
   {
     topic: "Missing and Exploited Children",
     src: 1,
-    q: "A person who knowingly owns, invests in, finances, controls, supervises, or manages a prostitution enterprise that uses_____ or more prostitutes commits the crime of aggravated promotion of prostitution.",
+    q: "A person who knowingly owns, invests in, finances, controls, supervises, or manages a prostitution enterprise that uses_____ or more prostitutes commit the crime of aggravated promotion of prostitution.",
+    keyText: "A person who knowingly owns, invests in, finances, controls, supervises, or manages a prostitution enterprise that uses_____ or more prostitutes commits the crime of aggravated promotion of prostitution.",
     ref: "(PC Section 43.04 (a); Missing and Exploited Children, Section 18.11)",
     choices: [
       "One",
@@ -44477,9 +44510,10 @@ const QUESTIONS = [
     q: "Sexual assault is committed without consent of the other person if",
     keyText: "Sexual assault is committed without consent of the other person if (PC 22.011 (b)",
     ref: "(PC 22.011 (b) (3), (5) and (8); PC Section 8.13; Missing and Exploited Children, Section 18.7; Human Trafficking, Section 21.20; Sexual Assault and Family Violence, Section 17.16)",
+    keyChoices: ["The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.", "the other person has not consented, and the other person is unaware that the sexual assault is occurring", "The actor is a public servant who coerces the other person to submit or participate", "A, B, and C"],
     choices: [
       "The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.",
-      "the other person has not consented, and the other person is unaware that the sexual assault is occurring",
+      "The other person has not consented, and the other person is unaware that the sexual assault is occurring",
       "The actor is a public servant who coerces the other person to submit or participate",
       "A, B, and C",
     ],
@@ -44569,10 +44603,11 @@ const QUESTIONS = [
     src: 13,
     q: "A “pimp” arrested for managing two prostitutes is charged with",
     ref: "(PC 43.04 (a), Missing & Exploited Children or Trafficking, Human Trafficking, Section 21.20)",
+    keyChoices: ["Promotion of prostitution", "Prostitution", "obscene display or distribution", "Aggravated promotion of prostitution"],
     choices: [
       "Promotion of prostitution",
       "Prostitution",
-      "obscene display or distribution",
+      "Obscene display or distribution",
       "Aggravated promotion of prostitution",
     ],
     answer: 3
@@ -44580,7 +44615,7 @@ const QUESTIONS = [
   {
     topic: "Missing and Exploited Children",
     src: 14,
-    q: "According to Sec. 22.021 of the Penal Code a person commits the offense of Aggravated Sexual assault if he commits sexual assault and:",
+    q: "According to Sec. 22.021 of the Penal Code, a person commits the offense of Aggravated Sexual assault if he commits sexual assault and:",
     keyText: "According to Sec. 22.021 of the Penal Code a person commits the offense of Aggravated Sexual assault if he commits sexual assault and: (Sexual Assault and Family Violence, 17.16; (PC 22.021 (2) (A) (iv), (2) (B), & (2) (C))",
     ref: "(PC 22.021 (2) (A) (iv), (2) (B), & (2) (C); Sexual Assault and Family Violence, Section 17.16; Human Trafficking, Section 21.20; Criminal Investigations, Section 32.15; Missing and Exploited Children, Section 18.7)",
     choices: [
@@ -44753,7 +44788,7 @@ const QUESTIONS = [
   {
     topic: "Missing and Exploited Children",
     src: 27,
-    q: "John (w/m 35yoa) walks up to Jane (w/f 16 yoa) while inside a shopping mall. Jane does not know John. Jane is the daughter of the Vice-President of IBM. John has his hands in his coat pockets and tells Jane that she is to do what he says, or he will kill her. John gives Jane commands to walk out of the mall to his vehicle. John threatens to shoot Jane if she makes any noise or overt moves. John comments on Jane, “Your daddy is going to have to pay a bunch of money if he is ever going to see you again.” Based on this information, what would be the most appropriate charge you would file on John?",
+    q: "John (w/m 35yoa) walks up to Jane (w/f 16 yoa) while inside a shopping mall. Jane does not know John. Jane is the daughter of IBM's Vice President. John has his hands in his coat pockets and tells Jane that she is to do what he says, or he will kill her. John gives Jane commands to walk out of the mall to his vehicle. John threatens to shoot Jane if she makes any noise or overt moves. John comments on Jane, “Your daddy is going to have to pay a bunch of money if he is ever going to see you again.” Based on this information, what would be the most appropriate charge you would file on John?",
     keyText: "John (w/m 35yoa) walks up to Jane (w/f 16 yoa) while inside a shopping mall. Jane does not know John. Jane is the daughter of the Vice-President of IBM. John has his hands in his coat pockets and tells Jane that she is to do what he says, or he will kill her. John gives Jane commands to walk out of the mall to his vehicle. John threatens to shoot Jane if she makes any noise or overt moves. John comments on Jane, “Your daddy is going to have to pay a bunch of money if he is ever going to see you again.” Based on this information, what would be the most appropriate charge you would file on John? (PC Section 8.10; PC 20.04 (a) (1)); Missing and Exploited Children, Section 18.1; Sexual Assault and Family Violence, Section 17.16)",
     ref: "(PC 20.04 (a) (1); PC Section 8.10; Missing and Exploited Children, Section 18.1; Sexual Assault and Family Violence, Section 17.16)",
     choices: [
@@ -45323,6 +45358,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 4,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "_____ occurs when a person intentionally or knowingly harms or threatens to harm another by an unlawful act, because the victim is a public servant, witness, prospective witness, informant, or person who reports a crime.",
     ref: "(PC 36.06 (a) (1) (A) & (B); Professionalism & Ethics Section 1.6)",
     choices: [
@@ -45336,6 +45373,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 5,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "A person abducts another and threatens to harm the victim if he or she does not go along peacefully. What crime, if any, does the actor commit?",
     ref: "(PC 20.04 (a) (5); PC Section 8.10; Missing and Exploited Children, Section 18.1)",
     choices: [
@@ -45349,6 +45388,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 6,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "A person commits the offense of _____ if he commits an act clearly dangerous to human life, with the intention of causing serious bodily injury, and causes the death of an individual.",
     ref: "(PC 19.02 (b) (2), Section 8.9; Criminal Investigation, Section 32.15)",
     choices: [
@@ -45362,7 +45403,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 7,
-    q: "Which are methods for approaching the scene with caution?",
+    q: "Which are the methods for approaching the scene with caution?",
+    keyText: "Which are methods for approaching the scene with caution?",
     ref: "(Sexual Assault & Family Violence, Section 17.14)",
     choices: [
       "At least 2 officers should respond",
@@ -45375,6 +45417,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 8,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "A person uses a hostage as a shield while escaping from a scene. Which of the following offenses is the most serious offense for which the suspect may be charged?",
     ref: "(PC 20.04 (a) (2), PC Section 8.10; Missing and Exploited Children, Section 18.1)",
     choices: [
@@ -45391,9 +45435,10 @@ const QUESTIONS = [
     q: "Sexual assault is committed without consent of the other person if",
     keyText: "Sexual assault is committed without consent of the other person if (PC 22.011 (b)",
     ref: "(PC 22.011 (b) (3), (5) and (8); PC Section 8.13; Missing and Exploited Children; Human Trafficking, Section 21.20; Sexual Assault and Family Violence, Section 17.1)",
+    keyChoices: ["The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.", "the other person has not consented, and the other person is unaware that the sexual assault is occurring", "The actor is a public servant who coerces the other person to submit or participate", "A, B, and C"],
     choices: [
       "The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.",
-      "the other person has not consented, and the other person is unaware that the sexual assault is occurring",
+      "The other person has not consented, and the other person is unaware that the sexual assault is occurring",
       "The actor is a public servant who coerces the other person to submit or participate",
       "A, B, and C",
     ],
@@ -45402,6 +45447,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 10,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "According to Penal Code a person commits an offense if the person, over the internet, by electronic mail or text message or other electronic message service or system, or through a commercial online service, knowingly solicits a _____ to meet another person, including the actor, with the intent that the _____ will engage in sexual contact, sexual intercourse, or deviate sexual intercourse with the actor or another person.",
     ref: "(PC 33.021 (c); PC Section 8.21 and Missing & Exploited Children)",
     choices: [
@@ -45415,6 +45462,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 11,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "Research has demonstrated and NCIC reports support, children are more likely to be abducted by _______________.",
     ref: "(Missing & Exploited Children, Section 18.1)",
     choices: [
@@ -45443,11 +45492,12 @@ const QUESTIONS = [
     src: 13,
     q: "When approaching the scene of a family violence situation, an officer should",
     ref: "(Sexual Assault & Family Violence, Section 17.14)",
+    keyChoices: ["Listen carefully", "Rush to locate the victim", "approach cautiously", "both A & C"],
     choices: [
       "Listen carefully",
       "Rush to locate the victim",
-      "approach cautiously",
-      "both A & C",
+      "Approach cautiously",
+      "Both A & C",
     ],
     answer: 3
   },
@@ -45520,6 +45570,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 19,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "What can be considered a form of human trafficking?",
     ref: "(Human Trafficking Section 21.2 & 21.17 page 2, & 38)",
     choices: [
@@ -45572,6 +45624,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 23,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "A man restricts his wife's movements without her consent by confining her in their bedroom; after a day passes, he lets her go free. What crime, if any, did the man commit?",
     ref: "(PC 20.02 (a); Penal Code, Section 8.10; Missing and Exploited Children, Section 18.1)",
     choices: [
@@ -45598,6 +45652,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 25,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "John (w/m 35yoa) walks up to Jane (w/f 16 yoa) while inside a shopping mall. Jane does not know John. Jane is the daughter of the Vice-President of IBM. John has his hands in his coat pockets and tells Jane that she is to do what he says or he will kill her. John gives Jane commands to walk out of the mall to his vehicle. John threatens to shoot Jane if she makes any noise or overt moves. John makes a comment to Jane, “Your daddy is going to have to pay a bunch of money if he is ever going to see you again.” Based on this information, what would be the most appropriate charge you would file on John?",
     keyText: "John (w/m 35yoa) walks up to Jane (w/f 16 yoa) while inside a shopping mall. Jane does not know John. Jane is the daughter of the Vice-President of IBM. John has his hands in his coat pockets and tells Jane that she is to do what he says or he will kill her. John gives Jane commands to walk out of the mall to his vehicle. John threatens to shoot Jane if she makes any noise or overt moves. John makes a comment to Jane, “Your daddy is going to have to pay a bunch of money if he is ever going to see you again.” Based on this information, what would be the most appropriate charge you would file on John? (PC Section 8.10; PC 20.04 (a) (1)); Missing and Exploited Children Section 18.1)",
     ref: "(PC 20.04 (a) (1); PC Section 8.10; Missing and Exploited Children, Section 18.1)",
@@ -45665,6 +45721,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 30,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed?",
     keyText: "Peter has been terminated from the Post Office. In anger, he calls and states that there is a letter bomb in the mail. This causes the evacuation of the Post Office and the alert of the fire department and bomb squad. What offense has been committed? (PC 42.06 (a) (1-3), PC Section 8.27), https://quizlet.com/221179173/penal-code-flash-cards/ #36 of 121, JeanBrent",
     /* BUILD 325: the same question is Penal Code #243, keyed Terroristic
@@ -45686,6 +45744,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 31,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "A person offers money to a witness in exchange for testimony that is otherwise correct if he just forgets to mention the second suspect who acted as the lookout. What offense has occurred?",
     keyText: "A person offers money to a witness in exchange for testimony that is otherwise correct if he just forgets to mention the second suspect who acted as the lookout. What offense has occurred? (PC 36.05 (a)",
     ref: "(PC 36.05 (a) (1); PC Section 8.23; Professionalism & Ethics, Section 1.6; Criminal Investigations, Section 32.57)",
@@ -45753,6 +45813,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 36,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "According to Sec. 22.021 of the Penal Code a person commits the offense of Aggravated Sexual assault if he commits sexual assault and:",
     keyText: "According to Sec. 22.021 of the Penal Code a person commits the offense of Aggravated Sexual assault if he commits sexual assault and: (PC 22.021 (2) (A) (iv), (2) (B), & (2) (C), page 7 of 14)",
     ref: "(PC 22.021 (2) (A) (iv), (2) (B), & (2) (C), page 7 of 14; Human Trafficking, Section 21.20, page 46; Criminal Investigations, Section 32.15; Missing and Exploited Children, Section 18.1, pages 60, 89, 115)",
@@ -45780,6 +45842,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 38,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "According to Sec. 36.06 of the Penal Code, a person commits an offense if he intentionally or knowingly harms or threatens to harm another by an unlawful act on account of the victim's testifying in court. The offense would be:",
     ref: "(Professionalism & Ethics Section 1.6)",
     choices: [
@@ -45845,6 +45909,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 43,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "Harassment cannot be initiated by ________________.",
     keyText: "Harassment cannot be initiated by ________________. (PC, Sec. 42.07, (a)",
     ref: "(PC 42.07 (a) (8), (4), (5), (6) or (3); PC Section 8.27, page 25 of 32)",
@@ -45873,6 +45939,8 @@ const QUESTIONS = [
   {
     topic: "Sexual Assault and Family Violence",
     src: 45,
+    /* RETIRED in build 328: not in the 9-17-26 guide. versionOnly with no version keeps it out of the unit, tests and the daily pool, and keeps every index and key where it was. */
+    versionOnly: true,
     q: "A person commits “aggravated sexual assault” if the person intentionally or knowingly case the penetration of the anus or female sexual organ of a person by any means:",
     ref: "(PC 22.021 (2) (A) (i), (2) (B), and (2) (A) (iv); Criminal Investigation, Section 32.15 page 11 of 52; PC Section 8.13 page 7 of 32)",
     choices: [
@@ -45928,7 +45996,8 @@ const QUESTIONS = [
   {
     topic: "Verbal Communication",
     src: 3,
-    q: "Enforcing very strict obedience to authority, much like an autocrat, a dictator, oppressive, or tyrant would best describe:",
+    q: "Enforcing very strict obedience to authority, much like an autocrat, a dictator, an oppressive, or a tyrant would best describe:",
+    keyText: "Enforcing very strict obedience to authority, much like an autocrat, a dictator, oppressive, or tyrant would best describe:",
     ref: "(Verbal Communication, 25.2 & 25.15)",
     choices: [
       "Authoritative",
@@ -46882,6 +46951,2729 @@ const QUESTIONS = [
       "15 YOA",
     ],
     answer: 1
+  },
+
+  /* ================= BUILD 328: THE REST OF LEVEL 1 =================
+     “The instruction has finally added multiple new units ... THIS IS everything from level 1”.
+     Appended at the END, as every addition is: indices and KEYS of everything above are untouched.
+     Word for word the study guides downloaded 10-25-26 (the guide's own typos included), the
+     guide's number as src. Sexual Assault and Family Violence's 9-17-26 guide adds #47-51; Missing
+     and Exploited Children's adds #46. */
+
+  /* ---------- Missing and Exploited Children (build 328) ---------- */
+  {
+    topic: "Missing and Exploited Children",
+    src: 46,
+    q: "Child sex trafficking: There is no requirement that the person selling or buying the youth be aware of the:",
+    ref: "(Missing and Exploited Children, Section 18.11)",
+    choices: [
+      "a specific type of offense they are committing",
+      "child's gender",
+      "child's age",
+      "all of the above",
+    ],
+    answer: 2
+  },
+
+  /* ---------- Sexual Assault and Family Violence (build 328) ---------- */
+  {
+    topic: "Sexual Assault and Family Violence",
+    src: 47,
+    q: "A twenty-year-old girl has sexual intercourse with her sixteen-year-old boyfriend who consents and says that he wants to marry the girl. The girl has committed",
+    ref: "(PC 22.011 (a) (2); PC Section 8.13), (Sexual Assault and Family Violence, Section 17.1)",
+    choices: [
+      "No crime.",
+      "Aggravated sexual assault",
+      "sexual assault",
+      "Indecent exposure",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Sexual Assault and Family Violence",
+    src: 48,
+    q: "A couple is on a date at a party located on a public beach. The female becomes intoxicated and passes out. The female wakes up to discover her date performing oral sex on her. She is very upset and calls the police. What offense has occurred?",
+    ref: "(PC 22.011 (a) (1) & (b) (3); Sexual Assault & Family Violence, Section 17.1)",
+    choices: [
+      "Public lewdness",
+      "Assault – contact",
+      "Sexual assault",
+      "Aggravated sexual assault",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Sexual Assault and Family Violence",
+    src: 49,
+    q: "Sexual assault is committed without consent of the person if________________",
+    ref: "(PC 22.011 (b) (2), (4) & (8); PC Section 8.13), Sexual Assault and Family Violence, Section 17.1)",
+    choices: [
+      "The actor compels the other person to submit or participate by threatening to use force or violence against any person",
+      "As a result of mental disease or defect, the other person is at the time of the sexual assault incapable either of appraising the nature of the act",
+      "The actor is a public servant who coerces the other person to submit or participate",
+      "Any of the above are without consent",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Sexual Assault and Family Violence",
+    src: 50,
+    q: "A 20-year-old man has sexual intercourse with a 16-year-old girl who consents because they are boyfriend and girlfriend. What offense, if any, was committed?",
+    ref: "(PC 22.011 (a) (2) (A), (c) (1); PC Section 22.11)(Sexual Assault and Family Violence, Section 17.1)",
+    choices: [
+      "Assault",
+      "Sexual assault",
+      "Aggravated assault",
+      "No offense",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Sexual Assault and Family Violence",
+    src: 51,
+    q: "Sexual assault is committed without the consent of the other person if",
+    ref: "(PC 22.011 (b) (3, 5, and 8, PC Section 8.13) (Sexual Assault and Family Violence, Section 17.1)",
+    choices: [
+      "The other person has not consented, and the actor knows that the other person is unaware that the sexual assault is unconscious.",
+      "The other person has not consented, and the other person is unaware that the sexual assault is occurring",
+      "The actor is a public servant who coerces the other person to submit or participate",
+      "A, B, and C",
+    ],
+    answer: 3
+  },
+
+  /* ---------- Consular Notification (build 328, new unit) ---------- */
+  {
+    topic: "Consular Notification",
+    src: 1,
+    q: "Right to privacy to Foreign Nationals.",
+    ref: "(Consular Notification, Section 13.1)",
+    choices: [
+      "Does",
+      "Does Not",
+      "Might",
+      "None",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Consular Notification",
+    src: 2,
+    q: "Right to Privacy: _____________ apply to mandatory notification of foreign nationals covered by a bilateral treaty.",
+    ref: "(Consular Notification, Section 13.1)",
+    choices: [
+      "Does not",
+      "Does",
+      "Might",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Consular Notification",
+    src: 3,
+    q: "Which is a form of access a consular official may have to an arrested foreign national?",
+    ref: "(Consular Notification, Section 13.4)",
+    choices: [
+      "Visit",
+      "Call",
+      "Write",
+      "All of the Above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Consular Notification",
+    src: 4,
+    q: "Which of the listed is NOT a service provided by the consular officer?",
+    ref: "(Consular Notification Section 13.4)",
+    choices: [
+      "Arrange legal representation",
+      "Ensure a fair trial",
+      "Care for the detainee’s family",
+      "Monitor conditions of confinement",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Consular Notification",
+    src: 5,
+    q: "What is the name of the treaty that ensures a foreign national is not placed in a situation in which he cannot receive assistance from his own government?",
+    ref: "(Consular Notification Section 13.3)",
+    choices: [
+      "Vienna Convention on Consular Relations",
+      "Paris Treaty",
+      "Avalon Project",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Consular Notification",
+    src: 6,
+    q: "The rules of the VCCR apply to",
+    ref: "(Consular Notification, Section 13.1)",
+    choices: [
+      "only detainees who are in the country illegally",
+      "all detainees, whether in the country illegally or not",
+      "only detainees who are in the country legally",
+      "only detainees from certain countries",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Consular Notification",
+    src: 7,
+    q: "Which of the listed is not a service of a consular officer?",
+    ref: "(Consular Notification, Section 13.4)",
+    choices: [
+      "Arranging legal representation",
+      "Financial support for the arrested foreign national’s family",
+      "Ensuring a fair trial",
+      "Providing reading material, food, or medicine",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Consular Notification",
+    src: 8,
+    q: "According to Consular Notification VCCR Article 36, Basic Rule: Applies to ______ foreign detainees, whether in the country illegally or not.",
+    ref: "(Consular Notification, Section 13.1)",
+    choices: [
+      "many",
+      "some",
+      "most",
+      "all",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Consular Notification",
+    src: 9,
+    q: "The purpose of the _____________ is to ensure that a foreign national is not placed in situation in which he cannot receive assistance from his own government.",
+    ref: "(Consular Notification, Section 13.3)",
+    choices: [
+      "Treaty of Versailles",
+      "Camp David Accords",
+      "Vienna Convention on Consular Relations (VCCR)",
+      "None of the above",
+    ],
+    answer: 2
+  },
+
+  /* ---------- Crisis Intervention Training (build 328, new unit) ---------- */
+  {
+    topic: "Crisis Intervention Training",
+    src: 1,
+    q: "A _____ or _____ statement is often the best technique when facing verbal abuse.",
+    ref: "(CIT Section 29.53)",
+    choices: [
+      "Deflecting or redirecting",
+      "Inflating or deflating",
+      "Stabilizing or destabilizing",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 2,
+    q: "According to the Police Executive Forum (2016), non-verbal communication should be:",
+    ref: "(CIT Section 29.47)",
+    choices: [
+      "Aggressive and hostile",
+      "Ambiguous",
+      "Friendly and helpful",
+      "None of the above",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 3,
+    q: "Bipolar Disorder is a mental illness involving cycles between extreme activity (mania) and depression. The strongest predictors of bipolar disorders appear to be baseline_____, which increases the risk from 2% to 49%.",
+    ref: "(CIT Section 29.19)",
+    choices: [
+      "anxiety and depression",
+      "schizophrenia",
+      "drug abuse",
+      "intellectual disability",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 4,
+    q: "_____ Diversion is shifting someone away from the criminal justice system (no arrest or charges made), and guiding them to another form of intervention.",
+    ref: "(CIT Section 29.59)",
+    choices: [
+      "pre-crime",
+      "pre-arrest",
+      "post-arrest",
+      "jail",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 5,
+    q: "One way to change the current police culture around mental health is:",
+    ref: "(CIT Section 29.43)",
+    choices: [
+      "By developing “cradle-to-grave’ wellness programs for law enforcement",
+      "Making sure everyone is repressing emotions and trauma, or getting rid of them",
+      "Increasing peer support and access to specialized mental health providers",
+      "A and C",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 6,
+    q: "Deinstitutionalization is a term used to describe:",
+    ref: "(CIT Section 29.54) (Same as 30)",
+    choices: [
+      "The release of those suffering severe mental illness from inpatient mental health facilities.",
+      "A reduction in treatment options for those who need medication, stabilization, or therapy.",
+      "A reduction of referrals into mental health treatment, and an increase in incarceration in jails and prisons.",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 7,
+    q: "Offenders who are arrested and complete the mental health court program have much lower recidivism rate than their peers: ______ percent versus 72 percent.",
+    ref: "(CIT, Section 29.60)",
+    choices: [
+      "10",
+      "20",
+      "40",
+      "80",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 8,
+    q: "Crisis Intervention Training (CIT) is important because mental health calls for service are frequent. Which of the following statements are true about crisis calls?",
+    ref: "(CIT Section 29.2)",
+    choices: [
+      "No less than 1 in 10 calls for police service involve individuals with mental illness",
+      "Mental health calls rarely occur in most jurisdictions",
+      "EMS should handle all mental health calls",
+      "Mental health crises are only a problem for social workers",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 9,
+    q: "Which of the following is NOT a myth?",
+    ref: "(CIT, Section 29.16)",
+    choices: [
+      "Mental illness does not affect the average person",
+      "A person with a mental illness is also intellectually challenged.",
+      "If you have a mental illness, you are “crazy” all the time.",
+      "About two-thirds of Americans who have a mental illness live in the community and lead productive lives.",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 10,
+    q: "The primary goal of CIT involves calming persons with mental illness who are in crisis and:",
+    ref: "(CIT, Section 29.4)",
+    choices: [
+      "Ignoring officer safety concerns",
+      "Referring them to mental health care services",
+      "Disregarding law and policy",
+      "Doing social work",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 11,
+    q: "Individuals who are ________________ typically have more chronic physical and mental health problems and substance abuse issues than do the general population.",
+    ref: "(CIT Section 29.55)",
+    choices: [
+      "Single",
+      "Married",
+      "Homeless",
+      "Introverted",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 12,
+    q: "_____ statements are often interpreted as accusatory and are helpful when dealing with someone in crisis.",
+    ref: "(CIT, Section 29.51)",
+    choices: [
+      "You",
+      "I",
+      "We",
+      "Them",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 13,
+    q: "More police die by ______ than by homicide.",
+    ref: "(CIT Section 29.42)",
+    choices: [
+      "Car Accidents",
+      "Heart Disease",
+      "Cancer",
+      "Suicide",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 14,
+    q: "A terminal illness is considered a _______________ that is a greater rick of suicide.",
+    ref: "(CIT, Section 29.41)",
+    choices: [
+      "Symptom",
+      "Statistic",
+      "Chronic stressor",
+      "Practical Suggestion",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 15,
+    q: "Individuals with mental illness are traditionally not _____________.",
+    ref: "(CIT Section 29.5)",
+    choices: [
+      "Cooperative",
+      "Taking medication",
+      "Compliant",
+      "Career criminals",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 16,
+    q: "People with severe mental illnesses are over 10 times more likely to be ______________, violent crime that the general population.",
+    ref: "(C.I.T. Section 29.56)",
+    choices: [
+      "committing",
+      "victims of",
+      "accomplices to",
+      "none of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 17,
+    q: "6 out of 10 people with Alzheimer’s will _______. If not found within 24 hours, up to half of those who do risk serious injury or death (2017).",
+    ref: "(C.I.T. Section 29.24)",
+    choices: [
+      "Wander",
+      "Drive",
+      "Tell rambling stories",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 18,
+    q: "The term _____________ refers to any medication capable of affecting the mind, emotions, and behavior.",
+    ref: "(C.I.T. Section 29.14)",
+    choices: [
+      "“Psychotropic medication”",
+      "“Congestion medication”",
+      "“Illegal Medication”",
+      "“Dangerous drugs”",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 19,
+    q: "Texas SB 1849 includes requirements for peace officers to reduce the use of force, and make a good faith effort to:",
+    ref: "(CIT Section 29.3)",
+    choices: [
+      "Arrest as many people suffering from mental illness as possible",
+      "Diagnose and treat people suffering from mental illness",
+      "Divert a person suffering from a mental health crisis or substance abuse to proper treatment.",
+      "Move homeless individuals with mental health problems to another jurisdiction",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 20,
+    q: "An “____” statement gives the speaker responsibility for their part of the interaction, helps build rapport, and eases communication.",
+    ref: "(CIT, Section 29.51)",
+    choices: [
+      "You",
+      "I",
+      "Me",
+      "They",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 21,
+    q: "A suicide risk assessment includes several parts. Which of the below answers represent those parts?",
+    ref: "(CIT Section 29.40)",
+    choices: [
+      "Gun, Knife, Poison, Rape",
+      "Thinking, Planning, Action",
+      "Plan, Method, Means, Intent",
+      "None of the above",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 22,
+    q: "Which of the following proven effective communication methods for interacting with someone experiencing dementia?",
+    ref: "(CIT Section 29.25)",
+    choices: [
+      "Making sure the person responds to demands or questions immediately",
+      "Talk louder",
+      "Ask simple “yes” or “no” questions",
+      "None of the above",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 23,
+    q: "Medications used to control the symptoms of many mental illnesses have unpleasant side effects. Select the answer that most accurately describes some of those effects.",
+    ref: "(CIT, Section 29.15)",
+    choices: [
+      "Change in skin pigmentation",
+      "Extreme weight gain, severe constipation, sexual dysfunction, and the risk of neurological damage.",
+      "Gluten sensitivity, softening of fingernails, loss of hair, and detached retinas",
+      "None of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 24,
+    q: "Dementia is a name for a group of symptoms caused by disorders that affect the ____________.",
+    ref: "(CIT, Section 29.24)",
+    choices: [
+      "Brain",
+      "Liver",
+      "Kidneys",
+      "Pituitary Gland",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 25,
+    q: "In recognizing PTSD in a veteran, an/a _________ is an internal thought or feeling not outwardly obvious.",
+    ref: "(CIT, Section 29.35)",
+    choices: [
+      "Intrusion symptom",
+      "Avoidance symptom",
+      "Negative symptom",
+      "Mood symptom",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 26,
+    q: "Mood disorders are demonstrated by disturbances in emotional reactions and feelings. In other words, one’s emotional experience (mood) is ________________ with his or her circumstances.",
+    ref: "(CIT 29.19)",
+    choices: [
+      "Matched",
+      "Appropriate",
+      "Inconsistent",
+      "None of the above",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 27,
+    q: "A performance test that might help an officer determine if someone has an intellectual disability is:",
+    ref: "(CIT Section 29.29)",
+    choices: [
+      "Standardized Field Sobriety",
+      "A spelling bee",
+      "Ask them to read or write a simple statement",
+      "Ask them to complete a Sudoku puzzle",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 28,
+    q: "According to your CIT training, mental illnesses are more common than _______________.",
+    ref: "(CIT, Section 29.11)",
+    choices: [
+      "Cancer",
+      "Diabetes",
+      "Heart disease",
+      "All the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 29,
+    q: "The purpose of ________________ is to provide the subject with a clearer interpretation of your behavior as a police officer, and to convey your mutual interest in assuring the safety of everyone involved.",
+    ref: "(CIT, Section 29.52)",
+    choices: [
+      "Tactical communication",
+      "Tactical counseling",
+      "Tactical debriefing",
+      "Tactical transparency",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 30,
+    q: "Deinstitutionalization is a term used to describe:",
+    ref: "(CIT, Section 29.54) (Same as 6)",
+    choices: [
+      "The release of those suffering from severe mental illness from inpatient mental health facilities",
+      "A reduction in treatment options for those who need medication, stabilization, or therapy",
+      "A reduction of referrals into mental health treatment, and an increase in incarceration in jails and prisons",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 31,
+    q: "Intellectual Disability is a fixed mental condition that unlike many mental illnesses cannot be __________________.",
+    ref: "(CIT, Section 29.27)",
+    choices: [
+      "“duplicated”",
+      "\"cured”",
+      "“medicated”",
+      "“noticed”",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 32,
+    q: "Which of the following types of events might result in a person feeling as though he/she is in a crisis situation:",
+    ref: "(CIT Section 29.7)",
+    choices: [
+      "Death of a pet",
+      "Getting locked out of the house/car.",
+      "Divorce, separation, or child custody",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 33,
+    q: "Putting another’s meaning into your words and delivering it back to them would best describe",
+    ref: "(CIT Section 29.49)",
+    choices: [
+      "Paralinguistic",
+      "Paraphrase",
+      "Active listening",
+      "None of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 34,
+    q: "Crisis Intervention Training was designed so that law enforcement officers can",
+    ref: "(CIT, Section 29.1)",
+    choices: [
+      "Understand mental illness",
+      "Learn successful techniques and tactics for responding to the experienced crisis",
+      "Learn new skills to manage conflict",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 35,
+    q: "Personality disorders include:",
+    ref: "(CIT Section 29.18)",
+    choices: [
+      "Paranoid, Anti-social, Borderline, and Narcissistic",
+      "Rude, Obnoxious, Loud, and Overbearing",
+      "Shy, Nervous, Quiet, and Introverted",
+      "Friendly, Funny, Silly, and Ridiculous",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 36,
+    q: "When an officer takes a person into custody for mental health issues the person shall be immediately transported to the _______ appropriate inpatient mental health facility.",
+    ref: "(CIT Section 29.57)",
+    choices: [
+      "Nearest",
+      "Nicest",
+      "Insurance approved",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 37,
+    q: "Veterans and law enforcement share many commonalities. Which of these expresses one of those areas?",
+    ref: "(CIT, Section 29.36)",
+    choices: [
+      "The need to repress emotional or instinctual responses",
+      "A desire for recognition and attention",
+      "The need for gratitude and accolades",
+      "A willingness to bend the rules or skip the established protocols",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 38,
+    q: "According to a 2016 study by the Texas Dept of State Health Services (DSHS), in addition to a higher risk of suffering severe mental illness, homeless individuals are at higher risk for:",
+    ref: "(CIT, Section 29.55)",
+    choices: [
+      "Infectious diseases",
+      "Diabetes",
+      "Heart Disease",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 39,
+    q: "The Three Point Assessment includes consideration of what three parts of mental function?",
+    ref: "(CIT, Section 29.45)",
+    choices: [
+      "Walking, talking, and writing",
+      "Level of intoxication, driving, and answering questions",
+      "Arguing, ignoring, and answering questions",
+      "Level of comprehension, behavior, and emotion",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 40,
+    q: "Available mental health resource services depend on which of the following?",
+    ref: "(CIT, Section 29.61)",
+    choices: [
+      "Timing",
+      "Resources",
+      "Program eligibility criteria",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 41,
+    q: "Post-Traumatic Stress Disorder can involve:",
+    ref: "(CIT, Section 29.31)",
+    choices: [
+      "Intrusive symptoms",
+      "Negative changes in mood and thought patterns",
+      "Increased arousal and reactivity",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 42,
+    q: "Which of the following is a known and quantifiable suicide risk factor?",
+    ref: "(CIT, Section 29.38)",
+    choices: [
+      "Substance intoxication",
+      "Mage, age 15-34",
+      "Lack of support system or connection to loved ones",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 43,
+    q: "Mental Health Courts are:",
+    ref: "(CIT, Section 29.60)",
+    choices: [
+      "A diversion from the traditional court system for those meeting certain criteria",
+      "An early out for felons and violent offenders who also have mental health issues",
+      "A way for people to “get away with” committing crimes with no consequences",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 44,
+    q: "Major Depressive disorder is not just feeling sad or “blue”. It is an intense level of depression that persists for at least _____________.",
+    ref: "(CIT, Section 29.19)",
+    choices: [
+      "Two days",
+      "Two weeks",
+      "Two months",
+      "Two years",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 45,
+    q: "Mental illness can impact a person's",
+    ref: "(CIT Section 29.8)",
+    choices: [
+      "Thinking",
+      "Felling or mood",
+      "Ability to relate to others",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 46,
+    q: "Jail Diversion goals include:",
+    ref: "(CIT section 29.59)",
+    choices: [
+      "Reduction of inappropriate incarceration of persons with mental illness",
+      "Reduce violence and victimization",
+      "Cost savings as compared to incarceration and/or hospitalization",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 47,
+    q: "Suicide is the second leading (second only to __________) cause of death among 15-24-year-olds.",
+    ref: "(CIT Section 29.37)",
+    choices: [
+      "Wrecks",
+      "Drownings",
+      "Lightning strikes",
+      "Overdoses",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 48,
+    q: "Which of the following answers is NOT one of the Five Universal Truths of human interaction?",
+    ref: "(CIT Section 29.46)",
+    choices: [
+      "All people can be real jerks sometimes",
+      "All people would rather be asked than told what to do",
+      "All people want a second chance to make matters right",
+      "All people want to know why they are asked or told to do something",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 49,
+    q: "The 80/20 rule is:",
+    ref: "(CIT Section 29.48; De-Escalation Section 27.10)",
+    choices: [
+      "Listen 80% of the time, talk 20% of the time.",
+      "Ask questions 80% of the time, listen 20% of the time.",
+      "Write down 80% of the information, and remember 20% of it",
+      "Pay attention 80% of the time, ignore 20% of the information",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 50,
+    q: "Certain characteristics are quantifiable protective factors against suicide. Which of the below answers is NOT one of these?",
+    ref: "(CIT Section 29.39)",
+    choices: [
+      "Effective Mental Health Care",
+      "Unemployment",
+      "Spiritual or religious beliefs",
+      "Positive coping skills",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 51,
+    q: "Select the following statement that is NOT a reflective statement.",
+    ref: "(CIT, Section 29.50)",
+    choices: [
+      "“I see.”",
+      "“What is your problem?”",
+      "“Tell me more about that.”",
+      "“That might be an option.”",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 52,
+    q: "_________ are fixed false beliefs that are maintained despite overwhelming evidence to the contrary.",
+    ref: "(CIT Section 29.20)",
+    choices: [
+      "Delusions",
+      "Hallucinations",
+      "Psychosis",
+      "Bipolar Disorder",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 53,
+    q: "Which of the following is NOT a good communication or rapport-building technique?",
+    ref: "(CIT Section 29.47)",
+    choices: [
+      "Empathize with a person’s position",
+      "Minimize distractions, or multiple officers talking at once",
+      "Interrupt often",
+      "Use engaged body language",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 54,
+    q: "L.E.A.P.S. Communication stands for:",
+    ref: "(CIT Section 29.49)",
+    choices: [
+      "Loud, Earful, Annoying, Personality, Superimpose",
+      "Liking, Eager, Application, Politically correct, Sycophant",
+      "Lithe, Energetic, Aerobic, People, Surprise",
+      "Listen, Empathize, ask questions, Paraphrase, Summarize",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 55,
+    q: "A mental illness can be diagnosed based on behaviors and thinking evaluated by all of the following EXCEPT:",
+    ref: "(CIT, Section 29.9)",
+    choices: [
+      "psychiatrist or psychologist",
+      "A friend that reads a lot on the internet",
+      "licensed social worker or professional counselor",
+      "other qualified professionals",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 56,
+    q: "______________ is the leading cause of female homicides and injury-related deaths during pregnancy.",
+    ref: "(CIT, Section 29.36)",
+    choices: [
+      "Parental Violence",
+      "Dating Violence",
+      "Random Violence",
+      "Interpersonal Violence",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 57,
+    q: "Which answer is the best definition of survivor’s guilt?",
+    ref: "(CIT, Section 29.43)",
+    choices: [
+      "When someone survives an incident and is left feeling that they should have died instead",
+      "When someone physically survives but suffers severe PTSD",
+      "While someone fails to survive an event",
+      "All of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 58,
+    q: "Alzheimer’s Disease and other forms of dementia, including Traumatic Brain Injury, are considered:",
+    ref: "(CIT Section 29.22)",
+    choices: [
+      "Age-related illnesses",
+      "Cognitive Disorders",
+      "Intellectual Disorders",
+      "Mental Illnesses",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 59,
+    q: "The severity of a brain injury can range from:",
+    ref: "(TBI, Section 30.13; CIT Section 29.17 and 29.22)",
+    choices: [
+      "confusion to memory loss",
+      "small, medium, large",
+      "mild, to moderate, to severe",
+      "stroke leading to death",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 60,
+    q: "An IQ below 20 is considered",
+    ref: "(CIT, Section 29.28)",
+    choices: [
+      "Borderline intellectual functioning",
+      "Mild Intellectual disability",
+      "Moderate Intellectual disability",
+      "Profound intellectual disability",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 61,
+    q: "Post-Traumatic Stress Disorder can involve",
+    ref: "(CIT, Section 29.31)",
+    choices: [
+      "Intrusive symptoms",
+      "Negative changes in mood and thought patterns",
+      "Increased arousal and reactivity",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 62,
+    q: "Veterans and law enforcement share many commonalities. Which of these expresses one of those areas?",
+    ref: "(CIT Section 29.36)",
+    choices: [
+      "The need to repress emotional or instinctual responses",
+      "A desire for recognition and attention",
+      "The need for gratitude and accolades",
+      "A willingness to bend the rules or skip established protocols.",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 63,
+    q: "A study of the U.S. Homeless population in 2015 indicated that at minimum, ______ were seriously mentally ill at any given point in time.",
+    ref: "(CIT Section 29.55)",
+    choices: [
+      "5%",
+      "15%",
+      "25%",
+      "75%",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 64,
+    q: "A recent study indicated that up to 40% of rural communities don’t have adequate internet access. What is a resource you could give someone to help someone in crisis who doesn’t have internet access?",
+    choices: [
+      "The Suicide Prevention hotline 1-800-273-TALK",
+      "Alzheimer’s Association hotline 1-888-572-8566",
+      "Mental Health Texas hotline 211",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 65,
+    q: "A veteran from out of state calls you, in crisis, and you don’t know about their local resources. What is the best referral you can make for them?",
+    choices: [
+      "Ask Alexa",
+      "Google",
+      "Veterans Crisis Line (phone or website)",
+      "None of the above",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 66,
+    q: "One of the best online resources for finding State (and county) mental health services in Texas is provided by:",
+    choices: [
+      "The Texas Secretary of State",
+      "Texas Department of Transportation",
+      "Texas Department of Health and Human Services",
+      "The Tax Assessor Collector’s Office",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Crisis Intervention Training",
+    src: 67,
+    q: "Certain characteristics are quantifiable suicide risk factors. Which of the below answers is NOT a recognized risk factor?",
+    ref: "(CIT, Section 29.38)",
+    choices: [
+      "Ethnicity",
+      "Gender",
+      "Recent loss",
+      "Previous suicide attempts",
+    ],
+    answer: 0
+  },
+
+  /* ---------- De-Escalation (build 328, new unit) ---------- */
+  {
+    topic: "De-Escalation",
+    src: 1,
+    q: "When responding to a critical incident as a team, how many officers should be communicating with the subject?",
+    ref: "(De-Escalation Strategies, Section 27.16)",
+    choices: [
+      "One",
+      "Two",
+      "Everyone takes turns",
+      "Everyone talks at the same time",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 2,
+    q: "In which step of the De-Escalation Critical Decision-Making Model should an officer determine how to proceed?",
+    ref: "(De-escalation strategies Section 27.2 and 27.15)",
+    choices: [
+      "Collect information",
+      "Consider police powers and agency policy",
+      "Identify options and determine the best course of action",
+      "Assess situation, threats, and risks",
+    ],
+    answer: 2
+  },
+  {
+    topic: "De-Escalation",
+    src: 3,
+    q: "The CDM which guide thinking during critical incident, also serves as a tool for _____",
+    ref: "(De-escalation Strategies, Section 27.19)",
+    choices: [
+      "Examining decision-making after the fact",
+      "Criticizing others’ performance",
+      "Making future plans",
+      "Making conversation",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 4,
+    q: "Distance + cover = _____.",
+    ref: "(De-escalation Strategies Section 27.17)",
+    choices: [
+      "Safety",
+      "Time",
+      "Tactics",
+      "Strength",
+    ],
+    answer: 1
+  },
+  {
+    topic: "De-Escalation",
+    src: 5,
+    q: "When responding to a person in behavioral crisis, your mission is",
+    ref: "(De-escalation, Section 27.6)",
+    choices: [
+      "to solve the person’s issues",
+      "to successfully diagnose the person",
+      "not to diagnose or treat/solve issues",
+      "to escalate the situation",
+    ],
+    answer: 2
+  },
+  {
+    topic: "De-Escalation",
+    src: 6,
+    q: "What is the top priority when responding to a person in behavioral crisis?",
+    ref: "(De-Escalation Strategies, Section 27.6)",
+    choices: [
+      "To verbally defuse and stabilize the situation",
+      "To take the person into custody",
+      "To diagnose the rest of the crisis",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 7,
+    q: "Which of the listed is a key principle of the Critical Decision-Making Model (CDM)?",
+    ref: "(De-escalation, Section 27.1)",
+    choices: [
+      "Police ethics",
+      "Proportionally",
+      "The sanctity of human life",
+      "All the above are key principles",
+    ],
+    answer: 3
+  },
+  {
+    topic: "De-Escalation",
+    src: 8,
+    q: "The concept of “slowing the situation down” and using that as a tactical advantage is called ____________.",
+    ref: "(De-escalation, Section 27.17)",
+    choices: [
+      "pausing",
+      "taking time",
+      "distance and cover",
+      "tactical pause",
+    ],
+    answer: 3
+  },
+  {
+    topic: "De-Escalation",
+    src: 9,
+    q: "Which is a behavior associated with a person experiencing a behavioral crisis?",
+    ref: "(De-escalation, Section 27.5)",
+    choices: [
+      "Agitated",
+      "Lack of coherence",
+      "Poor hygiene",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "De-Escalation",
+    src: 10,
+    q: "Which of the following is incorrect concerning de-escalation “After-Action Reviews”?",
+    ref: "(De-escalation, Section 27.18)",
+    choices: [
+      "Someone, regardless of rank or position, has all the answers.",
+      "They are part of a continuous learning process",
+      "Include the topic of implicit bias in your review of the incident.",
+      "The purpose is to improve future performance.",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 11,
+    q: "When using de-escalation techniques, officers should ask themselves questions concerning which of the following areas during Step 3: “Consider police powers and agency policy?”",
+    ref: "(De-escalation, 27.2) (ICAT Integrating, Communications, Assessment & Tactics – Training Mod. 2 – Critical Decision-Making Model pg. 30, Step 3 – Consider police powers & agency policy)",
+    choices: [
+      "Additional sources",
+      "Working strategy",
+      "Legal authority",
+      "Do I take immediate action?",
+    ],
+    answer: 2
+  },
+  {
+    topic: "De-Escalation",
+    src: 12,
+    q: "______% of your time is spent listening and _____% talking",
+    ref: "(De-escalation, Section 27.10)",
+    choices: [
+      "80/20",
+      "20/80",
+      "60/30",
+      "90/20",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 13,
+    q: "What is an alternative to the adversarial phrase: “What’s your problem?”",
+    ref: "(De-escalation Strategies, Section 27.13)",
+    choices: [
+      "What’s wrong with you?",
+      "What do you want?",
+      "Calm down!",
+      "What can I do to help you?",
+    ],
+    answer: 3
+  },
+  {
+    topic: "De-Escalation",
+    src: 14,
+    q: "During a critical incident, everyone should have a _____________.",
+    ref: "(De-Escalation Strategies, Section 27.16)",
+    choices: [
+      "say in how to execute",
+      "lunch break",
+      "key role",
+      "weapon",
+    ],
+    answer: 2
+  },
+  {
+    topic: "De-Escalation",
+    src: 15,
+    q: "Maintaining a position of advantage and a safety zone is known as _______________.",
+    ref: "(De-Escalation Strategies Section 27.17)",
+    choices: [
+      "distance and cover",
+      "tactical repositioning",
+      "slowing down",
+      "cover",
+    ],
+    answer: 1
+  },
+  {
+    topic: "De-Escalation",
+    src: 16,
+    q: "When officers respond to a de-escalation incident that does not require the immediate neutralization of an active threat, the first step is to _____________.",
+    ref: "(De-Escalation Strategies, Section 27.2)",
+    choices: [
+      "gather information",
+      "Assess situation, threats, and risks",
+      "act",
+      "identify options",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 17,
+    q: "As emotions rise, rational thinking ________________.",
+    ref: "(De-Escalation Strategies, Section 27.8)",
+    choices: [
+      "rises",
+      "levels out",
+      "declines",
+      "stops",
+    ],
+    answer: 2
+  },
+  {
+    topic: "De-Escalation",
+    src: 18,
+    q: "Which is an important non-verbal communication skill?",
+    ref: "(De-Escalation Strategies, Section 27.11)",
+    choices: [
+      "Projecting the correct body language",
+      "Making eye contact",
+      "Modulating your tone of voice",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "De-Escalation",
+    src: 19,
+    q: "Which answer is NOT a step in the De-Escalation “Critical Decision-Making Model”",
+    ref: "(De-Escalation Strategies, Section 27.2)",
+    choices: [
+      "Provide information",
+      "Assess situation, threats, and risks",
+      "Consider police powers and agency policy",
+      "Act, review, and re-assess",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 20,
+    q: "The 80/20 rule is:",
+    ref: "(De-Escalation Strategies, Section 27.10.)",
+    choices: [
+      "Listen 80% of the time, talk 20% of the time.",
+      "Ask questions 80% of the time, listen 20% of the time",
+      "Write down 80% of the information, and remember 20% of it",
+      "Pay attention 80% of the time, ignore 20% of the information",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 21,
+    q: "After-Action Reviews are designed for what purpose?",
+    ref: "(De-escalation Strategies, Section 27.19)",
+    choices: [
+      "To answer questions contained in the CDM",
+      "To criticize the team's performance",
+      "Tactical evaluation",
+      "Communication",
+    ],
+    answer: 0
+  },
+  {
+    topic: "De-Escalation",
+    src: 22,
+    q: "Officers must be prepared to act as soon as they arrive on the scene. But if there is no immediate threat and they have time to “slow the situation down,” they should use that to their tactical advantage.",
+    ref: "(De-Escalation Strategies, Section 27.17)",
+    choices: [
+      "tactical repositioning",
+      "taking time",
+      "distance and cover",
+      "tactical pause",
+    ],
+    answer: 3
+  },
+
+  /* ---------- Health and Safety Code (build 328, new unit) ---------- */
+  {
+    topic: "Health and Safety Code",
+    src: 1,
+    q: "_____ means a product produced directly or indirectly by extraction from substance of vegetable origin, independently by means of chemical synthesis, or by combination of extraction and chemical synthesis.",
+    ref: "(Health and Safety Code – Controlled Substance Act, Section 15.1; HSC 481.002 #29)",
+    choices: [
+      "drug",
+      "narcotic drug",
+      "poppy straw",
+      "opiates",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 2,
+    q: "Cocaine, heroin, and methamphetamine are all part of:",
+    ref: "(HSC 481.112 and 481.115; HSC Section 15.3)",
+    choices: [
+      "Penalty Group 4",
+      "Penalty Group 2 and 2A",
+      "Penalty Group 1A",
+      "Penalty Group 1",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 3,
+    q: "_____ includes the manufacturing, planting, cultivating, growing, or harvesting of a controlled substance.",
+    ref: "(HCS 481.002 #43, HSC Section 15.1)",
+    choices: [
+      "Manufacture",
+      "Delivery",
+      "Dispense",
+      "Production",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 4,
+    q: "_________ means to transfer, actually or constructively, to another a controlled substance, counterfeit substance, or drug paraphernalia, regardless of whether there is an agency relationship.",
+    ref: "(Health & Safety Code, 481.002 #8) (Health and Safety Code-Controlled Substance Act, 15.1)",
+    choices: [
+      "Distribute",
+      "Delivery",
+      "Deliver",
+      "Dispensation",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 5,
+    q: "________________ means a devise or drug that is unsafe for self-medication and that is not included in Schedules I through V or Penalty Groups 1 through 4 of Chapter 481 (Texas Controlled Substances Act).",
+    ref: "(Health and Safety Code, 483.001 (2)) (Health and Safety Code – Controlled Substance Act, Section 15.6)",
+    choices: [
+      "“Dangerous Drug”",
+      "“Pharmacy”",
+      "“Prescription”",
+      "“Wholesaler”",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 6,
+    q: "Officers can make drug interdiction cases on routine patrol by being __________. Keeping their eyes and ears open and asking questions.",
+    ref: "(Health and Safety Code, Section 15.14",
+    choices: [
+      "Observant",
+      "Aware",
+      "Distracted",
+      "Aggressive",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 7,
+    q: "A conviction cannot be had upon the testimony of an accomplice unless corroborated by other _________ tending to connect the defendant with the offense committed.",
+    ref: "(Health & Safety Code, Section 15.17; CCP Art. 38.14)",
+    choices: [
+      "Action",
+      "Evidence",
+      "Opinions",
+      "Beliefs",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 8,
+    q: "Which is one of the six major categories of a controlled substance?",
+    ref: "(H & S. C. Section 15.2)",
+    choices: [
+      "Narcotics",
+      "Hallucinogens",
+      "Marihuana",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 9,
+    q: "__________________ means the injection, inhalation, ingestion, or application of a substance to or into a human body.",
+    ref: "(H & S Code Section 15.1; H&S C 481.001 #21)",
+    choices: [
+      "Human consumption",
+      "Human injection",
+      "Drug abuse",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 10,
+    q: "The penalty for manufacture or delivery of a substance in Penalty Group 3 or 4 is a state jail felony if the amount of substance has an aggregate weight of",
+    ref: "(Health and Safety Code Section 15.3; HSC 481.114)",
+    choices: [
+      "Less than 18 grams",
+      "Less than 28 grams",
+      "Less than 10 grams",
+      "Less than 1 gram",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 11,
+    q: "__________ means an order from a practitioner, or an agent of the practitioner designated in writing as authorized to communicate prescriptions.",
+    ref: "(Health and Safety Code 483.001 #13; Health and Safety Code-Controlled Substance Act Section 15.6)",
+    choices: [
+      "Doctor’s orders",
+      "Prescription",
+      "Order prescription",
+      "None of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 12,
+    q: "_________ means a substance, other than a device or a component, part, or accessory of a device that is intended for use in the diagnoses, cure, treatment, or prevention of disease in man or animals.",
+    ref: "(Health and Safety Code-Controlled Substance Act Section 15.1; HSC 481.002 #16 (B))",
+    choices: [
+      "Drug",
+      "Controlled substance",
+      "Paraphernalia",
+      "Counterfeit substance",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 13,
+    q: "________ means to directly apply a controlled substance by injection, inhalation, ingestion, or other means to the body of a patent of research subject.",
+    ref: "(Health and Safety Code-Controlled Substance Act Section 15.1; HSC 481.002 #1)",
+    choices: [
+      "Administer",
+      "Dispense",
+      "Issue",
+      "Distribute",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 14,
+    q: "One of two methods of identifying suspected controlled substances and dangerous drugs is",
+    ref: "(Health and Safety Code-Controlled Substance Act Section 15.12)",
+    choices: [
+      "Ask a supervisor",
+      "Current field test kit",
+      "Taste the substance",
+      "None of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 15,
+    q: "A “controlled substance” is any item",
+    ref: "(Health & Safety Code-Controlled Substance Act 481.002 #5; HSC Section 15.1)",
+    choices: [
+      "That is unsafe for self-medication and is not included in Schedule I through V or Penalty Groups 1 through 4 of the Health and Safety Code.",
+      "Any substance included in Schedule I through V or Penalty Groups 1 through 4 of the Health and Safety Code.",
+      "Restricted to the narcotic group of drugs",
+      "that includes a device or a drug that bears or is required to bear the legend: “Caution: federal law prohibits dispensing without prescription.”",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 16,
+    q: "Which of the following is not one of the six major categories of controlled substances?",
+    ref: "(Health and Safety Code, Section 15.2)",
+    choices: [
+      "Dangerous drugs",
+      "Narcotics",
+      "Hallucinogens",
+      "Marijuana",
+      "Simulated controlled substances",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 17,
+    q: "A person commits an offense if the person ________________ delivers a controlled substance listed in Penalty Group, I, 1-A, 2 or 3, or ________________ delivers marijuana and the person delivers the controlled substance of marijuana to a person who is a child.",
+    ref: "(HSC 481.122 (a); Health and Safety Code Section 15.3, page 2 of 6)",
+    choices: [
+      "Intentionally, intentionally",
+      "Intentionally, knowingly",
+      "Knowingly, knowingly",
+      "Knowingly, intentionally",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 18,
+    q: "Possession of more than 2 ounces but less than 4 ounces of marijuana is a",
+    ref: "(Health & Safety Code, HSC 481.121, Section 15.3, page 2 of 6)",
+    choices: [
+      "class A misdemeanor",
+      "class B misdemeanor",
+      "class C misdemeanor",
+      "third-degree felony",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 19,
+    q: "Identify one common place of concealment of controlled substances and dangerous drugs in a vehicle:",
+    ref: "(Health and Safety Code-Controlled Substance Act, Section 15.16)",
+    choices: [
+      "On the driver’s clothing",
+      "Door panels",
+      "Antenna",
+      "None of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 20,
+    q: "What is a characteristic of drug smugglers?",
+    ref: "(Health and Safety Code, Section 15.15)",
+    choices: [
+      "Extended travel without luggage",
+      "Traveling to Mexico",
+      "Appears nervous upon contact with the officer",
+      "Both A and C",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 21,
+    q: "_________ means to transfer, actually or constructively, to another a controlled substance, counterfeit substance, or drug paraphernalia, regardless of whether there is an agency relationship.",
+    ref: "(Health & Safety Code – Control Substance Act Section 15.1; Health & Safety Code 482.002 #6)",
+    choices: [
+      "Distribute",
+      "Delivery",
+      "Deliver",
+      "Dispense",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 22,
+    q: "_______________ means to prepare, package, compound, or label a dangerous drug includes the prescribing, administering, packaging, labeling, or compounding necessary to prepare the substance for delivery.",
+    ref: "(HSC 481.002 and HSC 483.001, H&SC Section 15.1)",
+    choices: [
+      "Deliver",
+      "Distribute",
+      "Administer",
+      "Dispense",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 23,
+    q: "Which of the following is not included in the list of “Controlled substances?”",
+    ref: "(Health and Safety Code-Controlled Substance Act 15.2) (H&SC Section 15.7)",
+    choices: [
+      "Opium and heroin (narcotics)",
+      "Amphetamines (stimulants)",
+      "Tranquilizers (depressants)",
+      "Quinine hydrochloride (dilutant)",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 24,
+    q: "Which is not considered drug paraphernalia?",
+    ref: "(Health and Safety Code-Controlled Section 15.1; H.S.C. Section 15.1 #17, (K), (A), & (E))",
+    choices: [
+      "Mirror with cocaine",
+      "Pack of rolling papers",
+      "Kit used to grow marijuana",
+      "Scale used to weigh cocaine",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 25,
+    q: "A person commits an offense if with the intent to unlawfully manufacture a controlled substance, the person ______ or _____ (1) anhydrous ammonia (2) an immediate precursor (3) a chemical precursor or an additional chemical substance named as a precursor by the director.",
+    ref: "(HSC 481.124 (a); HSC Section 15.3, page 2 of 6)",
+    choices: [
+      "Possesses or transports",
+      "Hides or conceals",
+      "Purchases or possesses",
+      "Knowingly or intentionally",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Health and Safety Code",
+    src: 26,
+    q: "________Means the plant cannabis sativa L., whether growing or not, the seeds of the plant, and every compound, manufacture, salt, derivative, mixture, or preparation of the plant or its seeds.",
+    ref: "(H&SC 481.002 #26; H&SC Section 15.1)",
+    choices: [
+      "Marijuana",
+      "LSD",
+      "Poppy seeds",
+      "Cocaine",
+    ],
+    answer: 0
+  },
+
+  /* ---------- Interacting with Deaf or Hard-of-Hearing (build 328, new unit) ---------- */
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 1,
+    q: "A hearing status of such severity that an individual must depend on visual methods to communicate is the definition of a _____ person.",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.1)",
+    choices: [
+      "Deaf",
+      "Inattentive",
+      "Blind",
+      "Hard of hearing",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 2,
+    q: "If someone cannot understand you, write a note asking what communication mode is best for their situation. Understand that, some deaf people cannot _____ or _____ English.",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.3)",
+    choices: [
+      "Read or write",
+      "Speak or write",
+      "Read or speak",
+      "Write or speak",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 3,
+    q: "The ADA requires that:",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.2)",
+    choices: [
+      "Law Enforcement agencies must provide the communication aids and services needed to communicate effectively with people who are deaf or hard of hearing",
+      "Agencies cannot charge the person for the communication aids or services provided.",
+      "Agencies do not have to provide personally prescribed devices such as hearing aids.",
+      "All of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 4,
+    q: "What is the name for the specialty license plate in the TxDMV’s motor vehicle database for persons who are deaf or hard of hearing?",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.6)",
+    choices: [
+      "Deaf Driver Alert",
+      "Disabled Driver Alert",
+      "Disabled Driver Awareness",
+      "Deaf Driver Awareness",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 5,
+    q: "What percentage of the US Population has some hearing loss?",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38)",
+    choices: [
+      "90",
+      "50",
+      "10",
+      "5",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 6,
+    q: "The Texas Transportation Code §521.125 allows the Texas Department of Public Safety to include a notice on a state driver’s license or identification card for persons who indicate they have a health condition that may impede their ability to communicate readily with a law enforcement officer. A written statement from a physician (form DL-101) must be available discussing the health condition and presented at the driver’s license office before the _________________________________can be included on the license or card.",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.4)",
+    choices: [
+      "communication impediment notice (program)",
+      "Deaf or hard-of-hearing disabilities act",
+      "U.S. Department of Justice",
+      "Texas Health and Human Services Deaf and Hard of Hearing notice",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 7,
+    q: "Who should not be used as interpreters?",
+    ref: "(Interacting with Deaf & Hard of Hearing, 38.3)",
+    choices: [
+      "Family members",
+      "(VIS) Video Interpreting Service",
+      "Children",
+      "Both A & C",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 8,
+    q: "The communication impediment program provides for a notice on a person’s ____________ to indicate they have a health condition that may impede their ability to communicate readily to a law enforcement officer.",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.4)",
+    choices: [
+      "State Fishing License",
+      "State Hunting License",
+      "State Driver’s License",
+      "State Voter Registration",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 9,
+    q: "ASL means:",
+    ref: "(Interacting with Deaf or Hard of Hearing Section 38.3)",
+    choices: [
+      "American Signal League",
+      "American Sign Department",
+      "American Sign Language",
+      "All Signing Languages",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 10,
+    q: "When approaching the deaf person, what is the first thing you should do?",
+    ref: "(Interacting with Deaf or Hard of Hearing, Section 38.3)",
+    choices: [
+      "Talk as loud as possible",
+      "Talk as normal",
+      "Get their attention",
+      "Walk softly",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Interacting with Deaf or Hard-of-Hearing",
+    src: 11,
+    q: "____% of the US population has some hearing loss.",
+    ref: "(Interacting with Deaf or Hard of Hearing, Unit Goal 38.1)",
+    choices: [
+      "90",
+      "50",
+      "10",
+      "5",
+    ],
+    answer: 2
+  },
+
+  /* ---------- Radio Communications, Alerts, and TCIC-TLETS (build 328, new unit) ---------- */
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 1,
+    q: "_____ alerts inform the public of serious child abductions.",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.5)",
+    choices: [
+      "Amber",
+      "Silver",
+      "Blue",
+      "Adam",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 2,
+    q: "According to radio protocol, what must be repeated during transmission?",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS Section 36.3)",
+    choices: [
+      "dates",
+      "times",
+      "names",
+      "addresses",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 3,
+    q: "_________ alert inform the public of suspect violent criminals who kill or seriously wound local, state, or federal law enforcement officers.",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, 36.7)",
+    choices: [
+      "ADAM",
+      "BLUE",
+      "SILVER",
+      "AMBER",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 4,
+    q: "What does the acronym PSAP stand for?",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.1)",
+    choices: [
+      "Public Safety Answering Point",
+      "Public Safety Answering Phone",
+      "Primary Safety Answering Point",
+      "None of the above",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 5,
+    q: "Who coordinates the dissemination of qualifying missing person information with its resource partners, whose goal is to rapidly notify the public of specific missing person cases?",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.4)",
+    choices: [
+      "Texas Attorney General’s Office",
+      "Texas Department of Public Safety (DPS) State Operations Center (SOC)",
+      "Texas Commission on Law Enforcement Field Services Section",
+      "Texas Division of Emergency Management",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 6,
+    q: "______________ alerts inform the public of missing older adults with documented mental condition.",
+    ref: "(Radio Communications / Alerts / TCIC-TLETS, Section 36.6)",
+    choices: [
+      "BLUE",
+      "ADAM",
+      "AMBER",
+      "SILVER",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 7,
+    q: "To request an alert, a representative from a law enforcement agency may obtain the appropriate forms through",
+    ref: "(Radio Communications, TCIC-TLETS, 36.10)",
+    choices: [
+      "EMS",
+      "CIA",
+      "FBI",
+      "DPS",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 8,
+    q: "What federal agency is responsible for implementing and enforcing America’s communications law and regulations?",
+    ref: "(Radio Communications / Alerts / TCIC-TLETS, Section 36.3)",
+    choices: [
+      "FDA",
+      "OSHA",
+      "FCC",
+      "FDIC",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 9,
+    q: "Which is NOT a public safety entity?",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.1)",
+    choices: [
+      "Fire service",
+      "911 emergency service communication",
+      "Street services",
+      "Law enforcement",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 10,
+    q: "The acronym CYMBALS stands for:",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.3)",
+    choices: [
+      "color, year, make/model, body style, additional information, license plate state",
+      "color, year, make/model, body damage, any information, state",
+      "color, year, modifications, body damage, any information, license plate state",
+      "none of the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 11,
+    q: "These alerts inform the public of a missing person (of any age) with an intellectual disability:",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.8)",
+    choices: [
+      "AMBER Alerts",
+      "Endangered Missing Persons Alerts",
+      "Silver Alerts",
+      "Blue Alerts",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 12,
+    q: "The time “zero zero zero one” is at the ________ of the day.",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS Section 36.3)",
+    choices: [
+      "end",
+      "middle",
+      "beginning",
+      "busy part",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 13,
+    q: "The goal of the State Network is to _______________________.",
+    ref: "(Radio Communications / Alerts / TCIC-TLETS, Section 36.4)",
+    choices: [
+      "Slowly notify the public of specific missing person cases",
+      "rapidly notify the public of specific missing person cases",
+      "efficiently notify the public of specific missing person cases",
+      "none of the above",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 14,
+    q: "People descriptions are given from:",
+    ref: "(Radio Communications/Alerts/TCIC-TLETS, Section 36.3)",
+    choices: [
+      "Toe to Head",
+      "Front to Back",
+      "Head to Toe",
+      "Back to Front",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Radio Communications, Alerts, and TCIC-TLETS",
+    src: 15,
+    q: "_________ alerts inform the public of missing older adults with documented mental conditions.",
+    ref: "(Radio Communications, Section 36.6)",
+    choices: [
+      "Amber",
+      "Silver",
+      "Blue",
+      "Endangered Missing Persons",
+    ],
+    answer: 1
+  },
+
+  /* ---------- Traumatic Brain Injury (build 328, new unit) ---------- */
+  {
+    topic: "Traumatic Brain Injury",
+    src: 1,
+    q: "Studies estimate the prevalence of TBI in domestic violence survivors is over _____.",
+    ref: "(TBI Section 30.10)",
+    choices: [
+      "50%",
+      "35%",
+      "25%",
+      "10%",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 2,
+    q: "What are the signs and symptoms of brain injury:",
+    ref: "(TBI Section 30.23)",
+    choices: [
+      "Dizziness",
+      "Severe headache",
+      "Nausea or vomiting",
+      "All the above",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 3,
+    q: "Which of the listed is a common behavioral change an individual with a brain injury experiences?",
+    ref: "(TBI, Section 30.16)",
+    choices: [
+      "Can't remember answers to simple questions (most common cognitive changes)",
+      "Inappropriate social behavior",
+      "Poor balance",
+      "Inattention",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 4,
+    q: "In Texas, _______ mandates that coaches and trainers in school district athletic activities be trained on how to best manage a concussion.",
+    ref: "(Traumatic Brain Injury, Section 30.19)",
+    choices: [
+      "Natasha’s Law",
+      "Natalie’s Law",
+      "Play Protocol",
+      "Nat’s Law",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 5,
+    q: "Easy way to remember the signs of a stroke?",
+    ref: "(TBI, Section 30.22)",
+    choices: [
+      "FALL",
+      "ROGER",
+      "RIP",
+      "FAST",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 6,
+    q: "Which of the listed is a common cognitive change an individual with a brain injury experiences?",
+    ref: "(Traumatic Brain Injury, Section 30.16)",
+    choices: [
+      "Personality Change",
+      "Difficulty with memory",
+      "Reckless decision-making",
+      "All of the above are common",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 7,
+    q: "The severity of a brain injury can range from:",
+    ref: "(TBI, Section 30.13)",
+    choices: [
+      "confusion to memory loss",
+      "small, medium, large",
+      "mild, to moderate, to severe",
+      "stroke leading to death",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 8,
+    q: "A _______________ is a type of acquired brain injury that disrupts the normal function of the brain and is caused by a blow to the head or penetrating head injury.",
+    ref: "(Traumatic Brain Injury, Section 30.3)",
+    choices: [
+      "Traumatic brain injury",
+      "Closed-head injury",
+      "Open-head injury",
+      "Non-traumatic brain injury",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 9,
+    q: "The F in FAST stands for:",
+    ref: "(Traumatic Brain Injury, Section 30.23)",
+    choices: [
+      "Face drooping",
+      "Flushing",
+      "Fast heartbeat",
+      "Frowning",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 10,
+    q: "For the acronym of FAST, signs and symptoms of a stroke, what does the letter “T” stand for?",
+    ref: "(Traumatic Brain Injury, Section 30.23)",
+    choices: [
+      "technique",
+      "time",
+      "trouble",
+      "threat",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 11,
+    q: "For brain injury resources, a person may contact",
+    ref: "(Traumatic Brain Injury, Section 30.28, page 31 of 34)",
+    choices: [
+      "The Office of the Attorney General",
+      "The Office of Acquired Brain Injury",
+      "2-1-1 Texas",
+      "The Office of Traumatic Brain Injury",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Traumatic Brain Injury",
+    src: 12,
+    q: "Which of the following factors is not considered when determining child passenger safety seat compliance?",
+    ref: "(TBI -30.21 or Traffic 545.412, Traffic Section 22.15)",
+    choices: [
+      "The weight of the child",
+      "The size-appropriate car seat or booster seat",
+      "The age of the child",
+      "The height of the child",
+    ],
+    answer: 0
+  },
+
+  /* ---------- Phonetic Alphabet and Military Time (build 328, new unit) ----------
+     “I also added the alphabet and time. Combine those and make that another unit. We are
+     gonna have to make up our own questions for the letter ones. Each question would say the z
+     and then give 4 options, one of them being the right answer ... Not sure how to test the time
+     one ... make it super simple and make it make sense.” The handouts are a list, not a quiz,
+     so these are written for the app from them: one question a letter (the three wrong words start
+     with the same letter - the military/NATO word where it differs, which is the usual mix-up),
+     and the times on the sheet each way round, plus how two of them are said. */
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 1,
+    q: "In the law enforcement phonetic alphabet, the letter A is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Adam",
+      "Apple",
+      "Alfa",
+      "Alan",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 2,
+    q: "In the law enforcement phonetic alphabet, the letter B is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Bobby",
+      "Bravo",
+      "Baker",
+      "Boy",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 3,
+    q: "In the law enforcement phonetic alphabet, the letter C is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Charles",
+      "Charlie",
+      "Carl",
+      "Cindy",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 4,
+    q: "In the law enforcement phonetic alphabet, the letter D is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "David",
+      "Dog",
+      "Daniel",
+      "Delta",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 5,
+    q: "In the law enforcement phonetic alphabet, the letter E is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Edward",
+      "Easy",
+      "Echo",
+      "Eddie",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 6,
+    q: "In the law enforcement phonetic alphabet, the letter F is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Foxtrot",
+      "Frank",
+      "Fox",
+      "Fred",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 7,
+    q: "In the law enforcement phonetic alphabet, the letter G is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Golf",
+      "Gary",
+      "George",
+      "Gold",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 8,
+    q: "In the law enforcement phonetic alphabet, the letter H is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Hotel",
+      "Henry",
+      "Hank",
+      "Harry",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 9,
+    q: "In the law enforcement phonetic alphabet, the letter I is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Item",
+      "Ivan",
+      "Ida",
+      "India",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 10,
+    q: "In the law enforcement phonetic alphabet, the letter J is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Juliett",
+      "Jack",
+      "John",
+      "James",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 11,
+    q: "In the law enforcement phonetic alphabet, the letter K is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Kilo",
+      "Kevin",
+      "Kate",
+      "King",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 12,
+    q: "In the law enforcement phonetic alphabet, the letter L is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Lima",
+      "Lincoln",
+      "Love",
+      "Larry",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 13,
+    q: "In the law enforcement phonetic alphabet, the letter M is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Martin",
+      "Mary",
+      "Mike",
+      "Mother",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 14,
+    q: "In the law enforcement phonetic alphabet, the letter N is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "November",
+      "Nathan",
+      "Nancy",
+      "Nora",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 15,
+    q: "In the law enforcement phonetic alphabet, the letter O is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Ocean",
+      "Opal",
+      "Oscar",
+      "Oliver",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 16,
+    q: "In the law enforcement phonetic alphabet, the letter P is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Paul",
+      "Peter",
+      "Papa",
+      "Penny",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 17,
+    q: "In the law enforcement phonetic alphabet, the letter Q is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Quiet",
+      "Quincy",
+      "Queen",
+      "Quebec",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 18,
+    q: "In the law enforcement phonetic alphabet, the letter R is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Ray",
+      "Roger",
+      "Romeo",
+      "Robert",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 19,
+    q: "In the law enforcement phonetic alphabet, the letter S is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Sierra",
+      "Steve",
+      "Sam",
+      "Sugar",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 20,
+    q: "In the law enforcement phonetic alphabet, the letter T is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Tiger",
+      "Tango",
+      "Tim",
+      "Tom",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 21,
+    q: "In the law enforcement phonetic alphabet, the letter U is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Ursula",
+      "Union",
+      "Uncle",
+      "Uniform",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 22,
+    q: "In the law enforcement phonetic alphabet, the letter V is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Venus",
+      "Victor",
+      "Valley",
+      "Vincent",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 23,
+    q: "In the law enforcement phonetic alphabet, the letter W is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Wanda",
+      "Walter",
+      "William",
+      "Whiskey",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 24,
+    q: "In the law enforcement phonetic alphabet, the letter X is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Xavier",
+      "X-Factor",
+      "Xylophone",
+      "X-Ray",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 25,
+    q: "In the law enforcement phonetic alphabet, the letter Y is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Yolanda",
+      "Yankee",
+      "Young",
+      "Yellow",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 26,
+    q: "In the law enforcement phonetic alphabet, the letter Z is:",
+    ref: "(American Law Enforcement Phonetic Alphabet)",
+    choices: [
+      "Zachary",
+      "Zero",
+      "Zebra",
+      "Zulu",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 27,
+    q: "The time 0001 is the ________ of the day.",
+    ref: "(Military Time)",
+    choices: [
+      "busy part",
+      "end",
+      "beginning",
+      "middle",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 28,
+    q: "0015 is:",
+    ref: "(Military Time)",
+    choices: [
+      "1:50 AM",
+      "3:00 PM",
+      "Quarter past midnight (12:15 AM)",
+      "Quarter past noon (12:15 PM)",
+    ],
+    answer: 2
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 29,
+    q: "1:00 AM in military time is:",
+    ref: "(Military Time)",
+    choices: [
+      "1300",
+      "0001",
+      "1000",
+      "0100",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 30,
+    q: "0200 is:",
+    ref: "(Military Time)",
+    choices: [
+      "2:00 AM",
+      "2:00 PM",
+      "12:00 AM",
+      "8:00 PM",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 31,
+    q: "10:00 AM in military time is:",
+    ref: "(Military Time)",
+    choices: [
+      "2200",
+      "1000",
+      "0100",
+      "0010",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 32,
+    q: "1200 is:",
+    ref: "(Military Time)",
+    choices: [
+      "Midnight",
+      "2:00 AM",
+      "2:00 PM",
+      "Noon",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 33,
+    q: "1:00 PM in military time is:",
+    ref: "(Military Time)",
+    choices: [
+      "1000",
+      "1100",
+      "0100",
+      "1300",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 34,
+    q: "1345 is:",
+    ref: "(Military Time)",
+    choices: [
+      "3:45 PM",
+      "1:45 PM",
+      "1:45 AM",
+      "11:45 AM",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 35,
+    q: "2:00 PM in military time is:",
+    ref: "(Military Time)",
+    choices: [
+      "1600",
+      "1400",
+      "0200",
+      "1200",
+    ],
+    answer: 1
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 36,
+    q: "2100 is:",
+    ref: "(Military Time)",
+    choices: [
+      "9:00 PM",
+      "7:00 PM",
+      "9:00 AM",
+      "11:00 PM",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 37,
+    q: "Midnight in military time is:",
+    ref: "(Military Time)",
+    choices: [
+      "2400",
+      "0012",
+      "1200",
+      "0100",
+    ],
+    answer: 0
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 38,
+    q: "1300 is said:",
+    ref: "(Military Time)",
+    choices: [
+      "One thousand three hundred",
+      "One three hundred",
+      "Thirteen o’clock",
+      "Thirteen hundred",
+    ],
+    answer: 3
+  },
+  {
+    topic: "Phonetic Alphabet and Military Time",
+    src: 39,
+    q: "1345 is said:",
+    ref: "(Military Time)",
+    choices: [
+      "One three four five",
+      "Thirteen hundred forty-five",
+      "One forty-five",
+      "Thirteen forty-five",
+    ],
+    answer: 3
   },
 ];
 
@@ -61457,11 +64249,26 @@ const BADGE_THRESHOLD = 35;
    at or below the one it replaces, so this only ADDS badges - and the
    ones it adds are celebrated on the next finished test, exactly as 210's
    were (grantRetroBadgesOnce, now version 3). */
-const BADGE_THRESHOLD_BANDS = [
+/* ---- BUILD 328: LOWER AGAIN, WITH THE REST OF LEVEL 1 ----
+   "most people don't even have 1 badge yet ... I think 15 hundos is too
+   much, even on the shorter ones, so anything at 15 goes to 10. 12 will
+   go to 8 and so on ... The ones that need [8] goes to 6." So 15 -> 10,
+   12 -> 8, 8 -> 6, and "so on" takes 4 to 3; Penal Code stays at 2 (the
+   floor the table has always kept above one). Every band is again at or
+   below the one before, so this only ADDS badges, celebrated on the next
+   finished test (grantRetroBadgesOnce, version 4). */
+const LEGACY_BADGE_BANDS_279 = [
   { max: 25,       hundos: 15 },
   { max: 50,       hundos: 12 },
   { max: 100,      hundos: 8  },
   { max: 200,      hundos: 4  },
+  { max: Infinity, hundos: 2  }
+];
+const BADGE_THRESHOLD_BANDS = [
+  { max: 25,       hundos: 10 },
+  { max: 50,       hundos: 8  },
+  { max: 100,      hundos: 6  },
+  { max: 200,      hundos: 3  },
   { max: Infinity, hundos: 2  }
 ];
 /* `var`, not `let`, and that is deliberate. This file has now been taken
@@ -61582,11 +64389,20 @@ function legacyBadgeThreshold210(name){
   }
   return BADGE_THRESHOLD;
 }
-var BADGE_BANDS_VERSION = 3;
+function legacyBadgeThreshold279(name){
+  const n = unitQuestionCount(name);
+  if(!n) return BADGE_THRESHOLD;
+  for(let i = 0; i < LEGACY_BADGE_BANDS_279.length; i++){
+    if(n <= LEGACY_BADGE_BANDS_279[i].max) return LEGACY_BADGE_BANDS_279[i].hundos;
+  }
+  return BADGE_THRESHOLD;
+}
+var BADGE_BANDS_VERSION = 4;
 function grantRetroBadgesOnce(){
   if(store.badgeBandsVersion >= BADGE_BANDS_VERSION) return;
   const perf = store.unitPerfects || {};
-  const was = store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
+  const was = store.badgeBandsVersion >= 3 ? legacyBadgeThreshold279
+    : store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
   const owed = topicsIn(QUESTIONS).filter(u =>
     (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < was(u));
   /* Added to whatever is still waiting, never in place of it: a badge
@@ -61696,7 +64512,20 @@ const UNIT_BADGE_THEME = {
   "Identity Crimes":                               ["magenta"],
   "Sexual Assault and Family Violence":            ["mauve"],
   "Verbal Communication":                          ["sky"],
-  "Civil Process and Liability":                   ["olive"]
+  "Civil Process and Liability":                   ["olive"],
+  /* build 328: the five families no unit had, then three that share a
+     colour with an older badge but never its shape - Radio takes the
+     Amber Alert's amber, the brain injury unit the brain's pink, and
+     Consular Notification Multiculturalism's teal (both about people from
+     elsewhere) */
+  "Consular Notification":                         ["teal"],
+  "Crisis Intervention Training":                  ["purple"],
+  "De-Escalation":                                 ["emerald"],
+  "Health and Safety Code":                        ["orange"],
+  "Interacting with Deaf or Hard-of-Hearing":      ["crimson"],
+  "Radio Communications, Alerts, and TCIC-TLETS":  ["amber"],
+  "Traumatic Brain Injury":                        ["pink"],
+  "Phonetic Alphabet and Military Time":           ["terracotta"]
 };
 /* A unit the table does not know still has to draw something - the
    leaderboard lost three classmates to a builder returning null for an
@@ -61812,6 +64641,24 @@ const BADGE_SHAPE = {
     d: "M28.1 13.7Q30.0 8.0 36.0 8.0L64.0 8.0Q70.0 8.0 71.9 13.7L76.1 26.3Q78.0 32.0 83.0 35.3L85.0 36.7Q90.0 40.0 90.0 46.0L90.0 86.0Q90.0 92.0 84.0 92.0L16.0 92.0Q10.0 92.0 10.0 86.0L10.0 46.0Q10.0 40.0 15.0 36.7L17.0 35.3Q22.0 32.0 23.9 26.3Z" },
   quatre:     { c: [50.0, 50.0], cuts: ["M-10 50H110", "M50 -10V110"],
     d: "M27.1 27.1A23.0 23.0 0 1 1 72.9 27.1A23.0 23.0 0 1 1 72.9 72.9A23.0 23.0 0 1 1 27.1 72.9A23.0 23.0 0 1 1 27.1 27.1Z" },
+  /* Build 328, the rest of Level 1: eight more outlines in the same hand - rounded corners
+     (a Q through each vertex), one or two channels, nothing that draws its subject. */
+  octagon:    { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M88.3 71.8L71.8 88.3Q67.6 92.5 61.6 92.5L38.4 92.5Q32.4 92.5 28.2 88.3L11.7 71.8Q7.5 67.6 7.5 61.6L7.5 38.4Q7.5 32.4 11.7 28.2L28.2 11.7Q32.4 7.5 38.4 7.5L61.6 7.5Q67.6 7.5 71.8 11.7L88.3 28.2Q92.5 32.4 92.5 38.4L92.5 61.6Q92.5 67.6 88.3 71.8Z" },
+  shield:     { c: [50.0, 48.0], cuts: ["M50 -10V110"],
+    d: "M18.0 10.0L82.0 10.0Q88.0 10.0 88.0 16.0L88.0 44.0Q88.0 50.0 85.5 55.5L80.5 66.5Q78.0 72.0 73.2 75.6L54.8 89.4Q50.0 93.0 45.2 89.4L26.8 75.6Q22.0 72.0 19.5 66.5L14.5 55.5Q12.0 50.0 12.0 44.0L12.0 16.0Q12.0 10.0 18.0 10.0Z" },
+  hexstar:    { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M52.6 6.7L62.4 20.4Q65.0 24.0 69.5 24.5L86.2 26.1Q90.7 26.5 88.8 30.6L81.9 45.9Q80.0 50.0 81.9 54.1L88.8 69.4Q90.7 73.5 86.2 73.9L69.5 75.5Q65.0 76.0 62.4 79.6L52.6 93.3Q50.0 97.0 47.4 93.3L37.6 79.6Q35.0 76.0 30.5 75.5L13.8 73.9Q9.3 73.5 11.2 69.4L18.1 54.1Q20.0 50.0 18.1 45.9L11.2 30.6Q9.3 26.5 13.8 26.1L30.5 24.5Q35.0 24.0 37.6 20.4L47.4 6.7Q50.0 3.0 52.6 6.7Z" },
+  chevron:    { c: [50.0, 56.0], cuts: ["M50 -10V110"],
+    d: "M13.4 20.6L44.6 35.4Q50.0 38.0 55.4 35.4L86.6 20.6Q92.0 18.0 92.0 24.0L92.0 56.0Q92.0 62.0 87.0 65.3L55.0 86.7Q50.0 90.0 45.0 86.7L13.0 65.3Q8.0 62.0 8.0 56.0L8.0 24.0Q8.0 18.0 13.4 20.6Z" },
+  bilobe:     { c: [50.0, 50.0], cuts: ["M50 -10V110"],
+    d: "M50 29.5A26 26 0 1 0 50 70.5A26 26 0 1 0 50 29.5Z" },
+  hourglass:  { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M17.0 8.0L83.0 8.0Q88.0 8.0 88.0 12.5L88.0 13.5Q88.0 18.0 84.7 21.8L63.3 46.2Q60.0 50.0 63.3 53.8L84.7 78.2Q88.0 82.0 88.0 86.5L88.0 87.5Q88.0 92.0 83.0 92.0L17.0 92.0Q12.0 92.0 12.0 87.5L12.0 86.5Q12.0 82.0 15.3 78.2L36.7 53.8Q40.0 50.0 36.7 46.2L15.3 21.8Q12.0 18.0 12.0 13.5L12.0 12.5Q12.0 8.0 17.0 8.0Z" },
+  drop:       { c: [50.0, 60.0], cuts: ["M-10 62H110"],
+    d: "M46.6 10.4Q50 5 53.4 10.4L74.6 44.2A29 29 0 1 1 25.4 44.2Z" },
+  lens:       { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M9.9 45.6Q50 -6 90.1 45.6Q93.5 50 90.1 54.4Q50 106 9.9 54.4Q6.5 50 9.9 45.6Z" },
 };
 /* One shape per unit, by hand, because sixteen units and sixteen shapes
    is a pairing and not a lottery - a hash into this table would double
@@ -61836,7 +64683,16 @@ const UNIT_BADGE_SHAPE = {
   "Identity Crimes":                               "bolt",
   "Sexual Assault and Family Violence":            "fan",
   "Verbal Communication":                          "disc",
-  "Civil Process and Liability":                   "wedge"
+  "Civil Process and Liability":                   "wedge",
+  /* build 328 */
+  "Consular Notification":                         "hexstar",
+  "Crisis Intervention Training":                  "shield",
+  "De-Escalation":                                 "octagon",
+  "Health and Safety Code":                        "drop",
+  "Interacting with Deaf or Hard-of-Hearing":      "lens",
+  "Radio Communications, Alerts, and TCIC-TLETS":  "chevron",
+  "Traumatic Brain Injury":                        "bilobe",
+  "Phonetic Alphabet and Military Time":           "hourglass"
 };
 __bm("L59652");
 const BADGE_SHAPE_KEYS = Object.keys(BADGE_SHAPE);
@@ -77600,7 +80456,16 @@ const UNIT_CALENDAR_PATTERN = {
   "Identity Crimes": /Identity/i,
   "Sexual Assault and Family Violence": /Sexual Assault/i,
   "Verbal Communication": /Verbal Comm/i,
-  "Civil Process and Liability": /Civil Process|Civil Liab/i
+  "Civil Process and Liability": /Civil Process|Civil Liab/i,
+  "Consular Notification": /Consular/i,
+  "Crisis Intervention Training": /Crisis Intervention/i,
+  "De-Escalation": /De-?escalation/i,
+  "Health and Safety Code": /Health and Safety/i,
+  "Interacting with Deaf or Hard-of-Hearing": /Deaf/i,
+  "Radio Communications, Alerts, and TCIC-TLETS": /Radio Comm/i,
+  "Traumatic Brain Injury": /Traumatic Brain|\bTBI\b/i,
+  /* taught with Radio Communications (the handouts came with it) */
+  "Phonetic Alphabet and Military Time": /Radio Comm/i
 };
 __bm("L74959");
 let unitTeachOrderCache = null;
@@ -77845,6 +80710,9 @@ const RELEASE_NOTES = [
     version: "9.2",
     groups: [
       { label: "New In Version 9.2", items: [
+        { icon: buildChecklistIcon, color: "#7CC8FF", title: "All Of Level 1", body: "Eight more units complete Level 1: Consular Notification, Crisis Intervention Training, De-Escalation, Health and Safety Code, Interacting with Deaf or Hard-of-Hearing, Radio Communications, Traumatic Brain Injury, and Phonetic Alphabet and Military Time. Every unit was checked against its latest study guide." },
+        { icon: buildDualBoardIcon, color: "#5CA8FF", title: "Units By Level", body: "The unit screen has a tab for each level of the class. A level with units picked shows how many." },
+        { icon: buildStarIcon, color: "#FFD27A", title: "Badges Come Sooner", body: "A badge takes fewer hundos: 10 where it took 15, 8 where it took 12, 6 where it took 8 and 3 where it took 4. A badge this gives you is celebrated after your next test. The badge case holds all 24, with eight new badges." },
         { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Sign Up With Nova", body: "A new account now picks its username and first character with Nova during his introduction, and he then shows you around Home." },
         { icon: buildDevicesIcon, color: "#7CC8FF", title: "Made For Laptops And iPads", body: "On a laptop or iPad, Home centres the planet with Nova's name beside it, Start Studying sits in the tab bar and the daily question is a card in the corner. Every tab and the sign-up screens use the larger space." },
         { icon: buildSparkleIcon, color: "#FF9EC8", title: "Sound In Safari", body: "Sound now plays in a Safari tab as well as in the installed app. Home's ambient music stays in the installed app." },
@@ -93553,6 +96421,11 @@ const WHATS_NEW_320 = [
      should change on the card. You can add that the device layout has been
      updated or something? Bug fixes and improvements can be one as well."
      Two rows on top of Version 9's; INTRO_REV 6 shows it once more. */
+  /* build 328: the rest of Level 1, first - it is the news */
+  { key: "level1", color: "#FFD27A", title: "All of Level 1",
+    glyph: "M4 4h16v4H4V4Zm0 6h16v4H4v-4Zm0 6h16v4H4v-4Z",
+    body: "Eight new units and their badges. Badges now take fewer hundos.",
+    say: "Level 1 is complete: eight new units, each with its own badge. And badges take fewer hundos now." },
   { key: "devices92", color: "#7CC8FF", title: "Made for every screen",
     glyph: "M4 5h12a1 1 0 0 1 1 1v8H3V6a1 1 0 0 1 1-1Zm1 2v5h10V7H5ZM1 15h17v1.5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V15Zm18-6h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 2v5.5h2V11h-2Z",
     body: "Every screen is laid out again for laptops and iPads. Sound now plays in Safari too." },
@@ -96404,6 +99277,53 @@ function maybeShowPenalVersionNote(tries){
   overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
   mountSheetOverlay(overlay);
 }
+/* ---- THE CLASS'S LEVELS (build 328) ----
+   "now that we have everything from level 1 the unit selection screens are
+   gonna have drop downs. Level 1 level 2 and level 3 ... Are drop downs the
+   best answer? Or should there be buttons at the top for each level ...
+   And if you have units selected from 1 it's highlighted?" Buttons: the
+   same segmented control as the Leaderboard and Profile tabs, one tap and
+   every level in sight, where a drop-down hides two of three behind a tap.
+   A level with units picked in it carries their count. `units: null` is
+   every unit no other level claims, so Level 1 needs no list; Level 2 and
+   3 get theirs when their guides arrive. `complete` is whether the
+   "More units coming soon" tile closes the list. */
+const UNIT_LEVELS = [
+  { level: 1, label: "Level 1", units: null, complete: true },
+  { level: 2, label: "Level 2", units: [],   complete: false },
+  { level: 3, label: "Level 3", units: [],   complete: false }
+];
+function unitsOfLevel(lv, all){
+  const L = UNIT_LEVELS.find(x => x.level === lv) || UNIT_LEVELS[0];
+  if(Array.isArray(L.units)) return all.filter(u => L.units.indexOf(u) >= 0);
+  const claimed = new Set();
+  UNIT_LEVELS.forEach(o => { if(Array.isArray(o.units)) o.units.forEach(u => claimed.add(u)); });
+  return all.filter(u => !claimed.has(u));
+}
+let setupLevel = 1;
+/* A level with nothing in it yet answers with this, and the tab stays where it was. */
+function showLevelComingSheet(lv){
+  const overlay = document.createElement("div");
+  overlay.className = "invite-overlay";
+  const sheet = document.createElement("div");
+  sheet.className = "invite-sheet person-card penal-note-sheet level-coming-sheet";
+  const kick = document.createElement("p");
+  kick.className = "unlock-card-kicker"; kick.textContent = "Coming soon";
+  const nm = document.createElement("h2");
+  nm.className = "unlock-card-name"; nm.textContent = "Level " + lv + " units";
+  const p = document.createElement("p");
+  p.className = "penal-note-body";
+  p.textContent = "More units are on the way. Level " + lv + "\u2019s units will be added here as their study guides are released.";
+  const close = document.createElement("button");
+  close.type = "button"; close.className = "next";
+  close.textContent = "Got it";
+  close.addEventListener("click", () => overlay.remove());
+  sheet.append(kick, nm, p, close);
+  overlay.appendChild(sheet);
+  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  mountSheetOverlay(overlay);
+  try{ playSound("ui.popup.open"); }catch(e){}
+}
 function showSetup(){
   /* Arriving with no units picked (from the mode menu, which clears them)
      is a new test: defaults. Arriving WITH units picked is a round trip -
@@ -96473,6 +99393,30 @@ function showSetup(){
   unitSect.appendChild(unitLab);
 
   const allUnitNames = topicsIn(QUESTIONS);
+
+  /* the class's levels (build 328), above the search */
+  const levelSeg = document.createElement("div");
+  levelSeg.className = "navsegment profiletabs setup-levels";
+  levelSeg.setAttribute("role", "tablist");
+  const levelBtns = {};
+  UNIT_LEVELS.forEach(L => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "iconbtn"; b.setAttribute("role", "tab");
+    b.dataset.level = String(L.level);
+    const t = document.createElement("span"); t.textContent = L.label;
+    const n = document.createElement("span"); n.className = "setup-level-count"; n.hidden = true;
+    b.append(t, n);
+    b.addEventListener("click", () => {
+      if(!unitsOfLevel(L.level, unitsInTeachingOrder()).length){ showLevelComingSheet(L.level); return; }
+      if(setupLevel === L.level) return;
+      setupLevel = L.level;
+      try{ playSound("ui.tab.top"); }catch(e){}
+      showLevelRows();
+    });
+    levelBtns[L.level] = b;
+    levelSeg.appendChild(b);
+  });
+  unitSect.appendChild(levelSeg);
 
   const searchWrap = document.createElement("div");
   searchWrap.className = "searchwrap";
@@ -96644,6 +99588,7 @@ function showSetup(){
   });
   const moreComingRow = document.createElement("div");
   moreComingRow.className = "pick pick-tba pick-more-coming";
+  moreComingRow.hidden = true;
   const moreBox = document.createElement("span");
   moreBox.className = "box tba-lock"; moreBox.setAttribute("aria-hidden", "true");
   moreBox.textContent = "+";
@@ -96654,6 +99599,38 @@ function showSetup(){
   moreSub.textContent = "Additional units will be added as more study guides become available.";
   moreComingRow.append(moreBox, moreLabel, moreSub);
   list.appendChild(moreComingRow);
+
+  /* Which level's cards are showing, and the count on every level that has
+     units picked in it. A search reaches every level (it unhides its own
+     matches), so this re-runs when the search clears. */
+  function showLevelRows(){
+    const inLevel = new Set(unitsOfLevel(setupLevel, all));
+    const L = UNIT_LEVELS.find(x => x.level === setupLevel) || UNIT_LEVELS[0];
+    [...list.querySelectorAll("label.pick")].forEach(row => {
+      const cb = row.querySelector("input");
+      row.classList.toggle("is-other-level", !!cb && !inLevel.has(cb.value));
+    });
+    moreComingRow.hidden = !!L.complete;
+    Object.keys(levelBtns).forEach(k => {
+      const lv = Number(k), b = levelBtns[k];
+      b.classList.toggle("active", lv === setupLevel);
+      b.setAttribute("aria-selected", lv === setupLevel ? "true" : "false");
+      const picked = unitsOfLevel(lv, all).filter(u => cfg.units.indexOf(u) >= 0).length;
+      const c = b.querySelector(".setup-level-count");
+      c.hidden = !picked; c.textContent = picked ? String(picked) : "";
+      b.classList.toggle("has-picks", picked > 0);
+      b.classList.toggle("is-empty", !unitsOfLevel(lv, all).length);
+    });
+    try{ levelSeg._slide && levelSeg._slide(); }catch(e){}
+  }
+  {
+    const firstPicked = cfg.units.length ? UNIT_LEVELS.find(L => unitsOfLevel(L.level, all).indexOf(cfg.units[0]) >= 0) : null;
+    if(firstPicked) setupLevel = firstPicked.level;
+    if(!unitsOfLevel(setupLevel, all).length) setupLevel = 1;
+  }
+  showLevelRows();
+  try{ attachSegSlider(levelSeg, ".iconbtn.active"); }catch(e){}
+  list.addEventListener("change", () => setTimeout(showLevelRows, 0));   /* after the delegate that writes cfg.units */
 
   unitSect.appendChild(list);
 
@@ -98176,6 +101153,24 @@ function drawMeter(){
    is shown; in an Exam, Practice test or Virtual Room it is in the review
    at the end, where a wrong answer is seen. */
 function buildBankNote(item){
+  /* AN ANSWER BEING CHECKED (build 328): "put a notice in the questions ... a
+     notice at the bottom in red saying something about the question and say
+     the admin needs to verify with instructor." The question's own words, in
+     the same red note, wherever the answer is shown. */
+  if(item && typeof item.verifyNote === "string" && item.verifyNote){
+    const note = document.createElement("div");
+    note.className = "bank-note";
+    note.setAttribute("role", "note");
+    const icon = document.createElement("span");
+    icon.className = "bank-note-icon"; icon.textContent = "!";
+    const body = document.createElement("p");
+    body.className = "bank-note-text";
+    const a = document.createElement("strong");
+    a.textContent = "Being verified.";
+    body.append(a, document.createTextNode(" " + item.verifyNote));
+    note.append(icon, body);
+    return note;
+  }
   if(!item || typeof item.bankNoteAnswer !== "number" || !item.choices || !item.choices[item.bankNoteAnswer]) return null;
   const note = document.createElement("div");
   note.className = "bank-note";
@@ -105477,6 +108472,12 @@ function badgeCaseWidthPx(){
   const W = innerWidth, H = innerHeight, upright = W <= H * 1.3;
   let cw = wide ? Math.min(W * .62, 29 * rem, H * .44) : Math.min(W * .8, 22.5 * rem, H * .44);
   if(upright) cw = Math.min(cw, (H - (wide ? 17 : 15) * rem) / 1.75);
+  /* a case wider than it is deep (six by four) is drawn wider: .bc-wide */
+  const g = badgeCaseGrid(badgeCaseUnits(BADGE_CASES[0]).length);
+  if(g.cols > g.rows){
+    cw = wide ? Math.min(W * .74, 34 * rem, H * .52) : Math.min(W * .94, 27 * rem, H * .52);
+    if(upright) cw = Math.min(cw, (H - (wide ? 17 : 15) * rem) / 1.45);
+  }
   return cw;
 }
 function badgeCaseSlotPx(){
@@ -105907,7 +108908,7 @@ function playBadgeCaseScene(units, done, retro, opts){
   const col = ((badgeThemeFor(units[0]) || {}).p) || "#9FACBA";
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
 
-  const overlay = mk("bc-scene" + (still ? " bc-still" : ""));
+  const overlay = mk("bc-scene" + (still ? " bc-still" : "") + ((g0 => g0.cols > g0.rows)(badgeCaseGrid(all.length)) ? " bc-wide" : ""));
   overlay.style.setProperty("--badge-col", col);
   overlay.appendChild(mk("bc-glow"));
   overlay.appendChild(mk("bc-dither"));
@@ -122714,10 +125715,17 @@ function badgeCaseUnits(kase){
 function badgeCaseName(kase){ return (kase || BADGE_CASES[0]).name; }
 /* Its slots, laid out from how many it holds: as square as the count
    allows, never more columns than rows plus one - 16 is four by four,
-   17 to 20 five by four, 21 to 25 five by five. */
+   17 to 20 five by four, 21 to 25 five by five.
+   A FULL RECTANGLE WHERE THERE IS ONE (build 328): 24 badges came out five
+   by five with a hole at the end. A count that fills a grid up to two
+   columns wider than the square one takes it - 24 is six by four - and
+   that case is drawn wider (.bc-wide), so its badges keep their size.
+   Four by six was tried: upright, its lid swung off the top of a phone. */
 function badgeCaseGrid(n){
-  const cols = Math.max(1, Math.ceil(Math.sqrt(Math.max(1, n))));
-  return { cols: cols, rows: Math.max(1, Math.ceil(Math.max(1, n) / cols)) };
+  n = Math.max(1, n);
+  const sq = Math.ceil(Math.sqrt(n));
+  for(let c = sq; c <= sq + 2; c++){ if(n % c === 0 && n / c <= c) return { cols: c, rows: n / c }; }
+  return { cols: sq, rows: Math.max(1, Math.ceil(n / sq)) };
 }
 function applyBadgeCaseGrid(el, n){
   const g = badgeCaseGrid(n);
