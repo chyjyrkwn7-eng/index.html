@@ -77651,17 +77651,40 @@ const RELEASE_NOTES = [
   /* Release history, edited for tone and repeats in build 327z15: each feature
      is announced once, later versions read as improvements of earlier ones.
      The newest entry also feeds Welcome's What's New, so its items keep an icon. */
+  /* VERSION 9.2 (build 327z15): "This is gonna be version 9.2". What this build adds to the
+     live Version 9; Version 9 below says only what shipped with it. */
+  {
+    version: "9.2",
+    groups: [
+      { label: "New In Version 9.2", items: [
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Sign Up With Nova", body: "A new account now picks its username and first character with Nova during his introduction, and he then shows you around Home." },
+        { icon: buildDevicesIcon, color: "#7CC8FF", title: "Made For Laptops And iPads", body: "On a laptop or iPad, Home centres the planet with Nova's name beside it, Start Studying sits in the tab bar and the daily question is a card in the corner. Every tab and the sign-up screens use the larger space." },
+        { icon: buildSparkleIcon, color: "#FF9EC8", title: "Sound In Safari", body: "Sound now plays in a Safari tab as well as in the installed app. Home's ambient music stays in the installed app." },
+        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Countdowns On The Calendar", body: "The Calendar tab's countdowns are one card you swipe or step through with arrows: graduation, then each final exam." }
+      ]},
+      { label: "Better In Version 9.2", items: [
+        { icon: buildPersonIcon, color: "#5CA8FF", title: "Matching Profile Cards", body: "Profile is three matching cards: you, your next rank and your badge case. Your level and badge count sit under your rank, and a rank challenge opens to show how it is done." },
+        { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "A Quieter Nova", body: "Nova messages less often, checks in at every rank-up, and sends his weekly challenge at random." },
+        { icon: buildStarIcon, color: "#C9D3DE", title: "Unit Cards", body: "An earned badge sits in its unit card's corner, with the question count at the card's foot." },
+        { icon: buildChecklistIcon, color: "#B79BFF", title: "Search, Refined", body: "Review's search button sits above the tab bar, which keeps its usual shape. Unit search has a clear button, and every search bar matches." },
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "Leaderboard Columns", body: "This Week and Hundos each show only their own column." },
+        { icon: buildToggleIcon, color: "#4ADE80", title: "Switches Follow A Swipe", body: "Every switch now moves with a swipe as well as a tap." },
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Faster Screens", body: "Tabs open sooner after a tap, Review opens and searches faster, and scrolling is lighter on every screen." },
+        { icon: buildRetryIcon, color: "#4DD0E1", title: "Finishing Touches", body: "Button labels sit exactly centred, the keyboard hint shows only where a keyboard can be used, tests stay dark on larger screens, and leaving the app is silent." }
+      ]}
+    ]
+  },
   {
     version: "9",
     groups: [
       { label: "New In Version 9", items: [
-        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "Sound now accompanies answers, results, Home, badges, cutscenes, the Leaderboard and the Virtual Room, in the app and in a Safari tab. Home's ambient music plays in the app installed on your Home Screen. Sound can be turned off in Settings." },
+        { icon: buildSparkleIcon, color: "#FFD27A", title: "Sound Effects", body: "Sound now accompanies answers, results, Home, badges, cutscenes, the Leaderboard and the Virtual Room. It plays in the app installed on your Home Screen, and can be turned off in Settings." },
         { icon: buildDevicesIcon, color: "#7CC8FF", title: "Haptic Touch", body: "On iPhone, a light tap confirms answers, starred questions, switches, tab changes and taps on the planet. On by default, including in a Safari tab, under Sound & vibration in Settings." },
         { icon: buildDevicesIcon, color: "#4ADE80", title: "Vibration On Android", body: "Android phones can vibrate on answers and key moments. Off by default, under Sound & vibration in Settings." },
         { icon: buildPersonIcon, color: "#5CA8FF", title: "Sign In First", body: "Welcome now leads with Sign in. Signing up asks whether you have used Nova before and warns you if a username already belongs to an account." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "Rankings That Match Profile", body: "Your rank, level and badges on the Leaderboard now always match your Profile." },
         { icon: buildPillTabBarIcon, color: "#FFFFFF", title: "A Liquid Glass Tab Bar", body: "The tab bar is redesigned in clear glass, with a lens that follows your finger between tabs, and tapping the current tab scrolls back to the top. The chat button, Pause and the search bars share the same glass." },
-        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar now has its own tab, opening on today and your next test, then the month, then one card you swipe through for graduation and each final exam. Settings has moved into Profile." },
+        { icon: buildCalendarGridIcon, color: "#FFD27A", title: "Calendar On The Tab Bar", body: "The class calendar now has its own tab: today, your next test, the month and the days left in the course. Settings has moved into Profile." },
         { icon: buildQuestionMarkIcon, color: "#FFD84D", title: "The Daily Question Card", body: "The daily question button now shows a \"?\", and the question opens with its own header, like a test. Its result is a single card with your verdict and the XP earned." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Friends In The Chat", body: "Friends now open from the chat, which shows how many are online and any requests waiting. Managing friends works as before." },
         { icon: () => modeIcon("exam"), color: "#FF9A3C", title: "Exam Is Now Mock", body: "Exam mode is now called Mock: a full test with no feedback until your grade. Every mode also has its own icon and colour." },
@@ -77669,7 +77692,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Meet Nova", items: [
         { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and instructor. A storm opened his ship’s hold on its way through this system and scattered his badges, flares and crew into your class material. Each unit you master recovers a badge, each rank relights a flare, and each character you find returns a member of his crew." },
-        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed. A new account picks its username and first character with him, then he shows you around Home." },
+        { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed." },
         { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you rank up or find something of his, sends a weekly challenge, and can be messaged directly." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents the previous week's top three, with comebacks, close finishes and honourable mentions." },
         { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Challenge Nova from his chat any time, or accept a challenge when he sends one. Finish ahead of him to unlock the Sheriff." }
@@ -77688,8 +77711,7 @@ const RELEASE_NOTES = [
         { icon: buildToggleIcon, color: "#5CA8FF", title: "Clearer Settings", body: "Plainer names for each switch, a larger sync code, and more space in the Sync section." },
         { icon: buildDualBoardIcon, color: "#F5C518", title: "The Leaderboard", body: "Each player's rank now shows as their animated flare, and the top three receive gold, silver and bronze, with a crown for first." },
         { icon: buildChecklistIcon, color: "#B79BFF", title: "Unlock Progress", body: "Unlock progress bars show today's count or your current run, state when they reset, and update automatically." },
-        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 124–256", body: "The shorter Penal Code version now covers the 116 questions from slides 124–256." },
-        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Faster Screens", body: "Tabs open sooner after a tap, Review opens and searches faster, and scrolling is lighter on every screen. Unit search and Review search each have a clear button." }
+        { icon: buildClipboardIcon, color: "#FF7A59", title: "Penal Code: Slides 124–256", body: "The shorter Penal Code version now covers the 116 questions from slides 124–256." }
       ]},
       { label: "Included From Version 8", items: [
         { icon: buildRocketIcon, color: "#F5804D", title: "Version 8 (Not Launched)", body: "Version 8 was not released on its own; its features arrive with Version 9. They include results that lead with your grade, badges you can pick up and clean, the rank-up shown on the road map, a planet that cracks with each rank, a redesigned Profile, and Save and exit for tests." }
