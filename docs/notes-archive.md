@@ -27538,3 +27538,29 @@ good to go and ready for new accounts ... not a crazy amount but a good amount
     (gone since 327 round 10).
 - Gate: check-b327z15.py Y (Profile tour 3-6 steps, every one showing); fails
   on 327z14 (7 steps).
+
+## Build 327z15 round 8 - Welcome wears Home's planet system and sky
+
+Asked: "The sign in planet system ... similar to the one now on the main menu.
+The sign in/sign up flares need the new look. Ensure the background is
+updated too during it ... sign up and sign in process is perfect".
+
+- Welcome built its hero with buildCosmicHero() (no tier icons): the old
+  generic icon set (book, cap, rocket, bulb, trophy, check) on a 152 outer
+  ring. It now calls buildCosmicHero("showcase"): Home's layout - the seven
+  rank bubbles with their emblems at HOME_OUTER_R, the six secret flares with
+  their 327z15 rays/orbit - with nothing interactive (no homeTapBind, no
+  role=button, no planet tap) and nothing stored (seenUnlockedTiers untouched,
+  no ring draw-on). A blank store means every bubble dim and every flare
+  unfound, exactly what a new account's Home shows after sign-up.
+- The rank bubbles animate on Welcome (startOrbitEmblemAnims 1.2s after
+  mount), which also warms the sheets Home uses later.
+- Sky: syncSky gives body.sky-home (full-strength stars) to Welcome and to
+  every screen before an account exists (!store.onboardingComplete) - sign in,
+  the check, What This Actually Is, class, username, character, all set - so
+  sign-up is under the same night as Home, not the .6 sky.
+- Gate: check-b327z15.py Z (Welcome: >=6 rank bubbles, 0 generic, >=6 flares,
+  no tap targets, store untouched, sky-home); fails on 327z14.
+- Note: in the sandbox the username Continue says "Checking..." for up to 5s
+  because the fake Firestore has no board read; on a phone the board is read
+  as the screen opens (fetchBoardForInvites), so it is normally instant.

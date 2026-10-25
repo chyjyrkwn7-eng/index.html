@@ -46470,7 +46470,12 @@ try{ buildSkyTiles(); }catch(e){}
 function syncSky(isQuestion){
   const b = document.body;
   if(isQuestion){ b.classList.remove("sky-home"); b.classList.add("sky-calm"); return; }
-  b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]'));
+  /* 327z15: Welcome, sign-in and every sign-up screen are under Home's
+     full sky as well ("Ensure the background is updated too during it") -
+     the first thing anybody sees is the same night as Home. */
+  let preAccount = false;
+  try{ preAccount = !!stage.querySelector('[data-screen="welcome"]') || !(store && store.onboardingComplete); }catch(e){}
+  b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]') || preAccount);
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the
      question; only a question or a flashcard on screen is now. */
@@ -79578,6 +79583,12 @@ let cosmicDepthSeq = 0;
    glass). Welcome keeps its 152. */
 const HOME_OUTER_R = 140;
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
+  /* WELCOME WEARS HOME'S SYSTEM (327z15): "The sign in planet system ...
+     similar to the one now on the main menu. The sign in/sign up flares
+     need the new look." useTierIcons "showcase" is Home's layout - the
+     rank bubbles with their emblems, the secret flares on the rings -
+     drawn for nobody yet: nothing taps, nothing is stored. */
+  const showcase = useTierIcons === "showcase";
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
   wrap.className = "cosmic-hero-wrap";
@@ -79784,7 +79795,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   /* A ring tier this device has not shown yet draws itself on (see
      playRingDraw): showHome hands over the tier it showed last, and only
      that one build uses it. */
-  const drawFrom = (useTierIcons && typeof ringDrawFrom === "string" && ringTier &&
+  const drawFrom = (useTierIcons && !showcase && typeof ringDrawFrom === "string" && ringTier &&
     RING_TIER_RANK[ringTier] > (RING_TIER_RANK[ringDrawFrom] || 0)) ? ringDrawFrom : null;
   ringDrawFrom = null;
   const radii = [108, useTierIcons ? HOME_OUTER_R : 152];
@@ -80031,7 +80042,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   let planetHsw = null;
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
-  if(useTierIcons){
+  if(useTierIcons && !showcase){
     /* A small, playful easter egg \u2014 tapping the sphere itself (not
        one of the orbiting badges) gets a little "..... " thinking
        bubble, reusing the same contextual popup used elsewhere for
@@ -80254,7 +80265,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     el.innerHTML = '<i class="cof-halo"></i><i class="cof-rays"></i><i class="cof-ring"></i><i class="cof-body"></i><i class="cof-tint"></i><i class="cof-sheen"></i><i class="cof-core"></i><i class="cof-spark"></i><i class="cof-orbit"><b></b></i>';
     /* the mote and the rays turn on their own clocks too (327z15) */
     el.style.setProperty("--fo", ([5.6, 6.8, 6.1, 7.4, 5.2, 6.5][k] || 6) + "s");
-    if(useTierIcons){
+    if(useTierIcons && !showcase){
       el.classList.add("cosmic-badge-tappable");
       el.setAttribute("role", "button");
       el.setAttribute("tabindex", "0");
@@ -80415,7 +80426,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      actual "cool animation when the bubble lights up, seen next time
      you're on Home" request \u2014 rather than every already-unlocked
      badge replaying that animation on every single visit. */
-  const seenUnlocked = useTierIcons ? (store.seenUnlockedTiers || []) : [];
+  const seenUnlocked = (useTierIcons && !showcase) ? (store.seenUnlockedTiers || []) : [];
   const newlySeenThisRender = [];
   positions.forEach((pos, i) => {
     const badge = document.createElement("div");
@@ -80423,7 +80434,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        Home until the rank-up's own cutscene has lit it (build 319) */
     const achieved = typeof tierColorUnlocked === "function" && tierColorUnlocked(pos.tier) &&
       !(useTierIcons && typeof rankUpHolds === "function" && rankUpHolds(pos.tier));
-    const isNewlyLit = useTierIcons && achieved && !seenUnlocked.includes(pos.tier);
+    const isNewlyLit = useTierIcons && !showcase && achieved && !seenUnlocked.includes(pos.tier);
     badge.className = "cosmic-icon-badge cosmic-icon-badge-" + (i % 3) + (achieved ? " cosmic-badge-lit" : "") + (isNewlyLit ? " cosmic-badge-newly-lit" : "");
     badge.style.top = pos.top; badge.style.left = pos.left;
     if(pos.centred) badge.classList.add("is-centred");
@@ -80474,7 +80485,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        exactly what's left to reach it, using the same live numbers
        the Mastery Ladder itself is built from, rather than leaving
        these as purely decorative badges with no info behind a tap. */
-    if(useTierIcons){
+    if(useTierIcons && !showcase){
       badge.classList.add("cosmic-badge-tappable");
       badge.setAttribute("role", "button");
       badge.setAttribute("tabindex", "0");
@@ -80525,7 +80536,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      replay that animation on every subsequent Home visit \u2014 only a
      genuinely new unlock (one not in this saved list yet) gets the
      one-time treatment above. */
-  if(useTierIcons && newlySeenThisRender.length){
+  if(useTierIcons && !showcase && newlySeenThisRender.length){
     store.seenUnlockedTiers = newlySeenThisRender.slice();
     saveStore();
   }
@@ -81212,7 +81223,7 @@ function showWelcome(){
   const wrap = document.createElement("div");
   wrap.className = "cosmic-welcome";
 
-  wrap.appendChild(buildCosmicHero());
+  wrap.appendChild(buildCosmicHero("showcase"));
 
   /* Appended to #stage rather than into the panel, for the same reason
      versionTag is on Home: this is position:fixed, and a transform on
@@ -81263,6 +81274,8 @@ function showWelcome(){
   wrap.dataset.screen = "welcome";
   stage.replaceChildren(wrap);
   toTop();
+  /* the rank bubbles move here as they do on Home (327z15) */
+  setTimeout(() => { try{ if(wrap.isConnected) startOrbitEmblemAnims(wrap); }catch(e){} }, 1200);
 }
 
 /* ---- SIGN IN FIRST, AND NO SECOND ACCOUNT BY ACCIDENT (build 322) ----

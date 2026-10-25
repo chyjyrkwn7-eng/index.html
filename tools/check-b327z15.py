@@ -102,7 +102,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXY")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -652,10 +652,29 @@ def section_y(br):
     ctx.close()
 
 
+def section_z(br):
+    print("\nZ. Welcome wears Home's planet system and Home's sky, and nothing on it taps or saves")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""() => { const before = JSON.stringify(store.seenUnlockedTiers || null);
+      showWelcome();
+      return new Promise(res => setTimeout(() => { const hero = document.querySelector('#stage .cosmic-welcome .cosmic-hero-wrap');
+        res({ rank: hero ? hero.querySelectorAll('.cosmic-badge-rank').length : -1,
+              generic: hero ? hero.querySelectorAll('.cosmic-icon-badge:not(.cosmic-badge-rank)').length : -1,
+              flares: hero ? hero.querySelectorAll('.cosmic-flare-dot').length : -1,
+              taps: hero ? hero.querySelectorAll('.cosmic-badge-tappable, [role=button]').length : -1,
+              sky: document.body.classList.contains('sky-home'),
+              same: before === JSON.stringify(store.seenUnlockedTiers || null) }); }, 900)); }""")
+    check("Z. the rank bubbles and secret flares are Home's (%s)" % r, r["rank"] >= 6 and r["generic"] == 0 and r["flares"] >= 6, r)
+    check("Z. nothing on Welcome's planet answers a tap or writes the store", r["taps"] == 0 and r["same"], r)
+    check("Z. Welcome is under Home's full sky", r["sky"], r)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z)):
             if k in ONLY:
                 try:
                     fn(br)
