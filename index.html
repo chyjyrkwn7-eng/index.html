@@ -32723,15 +32723,21 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-layout] body:has(.screen-home-actual){
     --lap-side:clamp(15rem, 23vw, 27rem); --lap-gap:clamp(1.5rem, 3vw, 4rem);
     --lap-hero:min(48rem, calc((100dvh - 13rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
-    --dq-size:6rem;
+    --dq-size:4rem;
   }
   html[data-layout] body:has(.screen-home-actual) .daily-question-fab{
     /* round 24: "it needs to be lower and slightly to the right" - level
        with the planet's middle, a little past the right column's centre */
     left:calc(75vw + var(--lap-hero) / 4 + var(--lap-gap) / 2 + 2.5vw - var(--dq-size) / 2); right:auto;
     top:calc((100dvh - 6rem) / 2 + var(--lap-hero) * .04 - var(--dq-size) / 2); bottom:auto;
-    width:var(--dq-size); height:var(--dq-size); font-size:2.6rem;
+    width:var(--dq-size); height:var(--dq-size); font-size:1.75rem;
   }
+  /* THE TWO ROUND BUTTONS ONE SIZE ON A LAPTOP (round 25): "The daily question
+     button ... it's too big now, also ensure the chat buttons size is a little
+     bigger (they'd be the same size". 4rem both - the chat button on every
+     screen, the daily question on Home. */
+  html[data-layout] body .chatdock-btn{ width:4rem; height:4rem; }
+  html[data-layout] body .chatdock-btn svg{ width:1.6rem; height:1.6rem; }
 }
 .homestart{ display:none; }
 @media (min-width:64rem) and (min-aspect-ratio:5/4){

@@ -27965,3 +27965,11 @@ it needs to be lower and slightly to the right (this is all about laptops)".
   takes the bar's measured height.
 - The daily question: level with the planet's middle (+4% of the planet) and
   2.5vw further right than round 23.
+
+## Build 327z15 round 25 - the two round buttons one size on a laptop
+
+"The daily question button size increase, it's too big now, also ensure the
+chat buttons size is a little bigger (they'd be the same size". In the
+laptop media query the daily question (Home) and the chat button (every
+screen) are both 4rem (64px; were 96 and 52), the chat mark 1.6rem, the
+question mark 1.75rem. Phones and upright iPads keep theirs.
