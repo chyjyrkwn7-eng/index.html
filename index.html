@@ -82881,6 +82881,12 @@ function showWelcomeCodeEntry(){
           "> syncing XP and streaks...",
           "> finalizing sync..."
         ], 3200, () => {
+          /* NO "SAVE YOUR SYNC CODE" RIGHT AFTER TYPING IT (327z15 round 27):
+             somebody who just signed in with their code has it - the
+             banner asking them to save it landed on the first frame of
+             Home, over "Welcome back". Recorded as asked on this device
+             (the same once-only key the banner itself sets). */
+          try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
           showHome();
           /* The same pause the create-account path gets, and for the same
              reason. That one is covered by holdNoticesAfterTour() firing
@@ -110893,6 +110899,8 @@ function showAppearance(opts){
           attachLiveListener(code);
           updateHeaderTitle();
           renderSyncBody();
+          /* typed in by hand: no "save your sync code" after it (round 27) */
+          try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
           showHome();
           showWelcomeBackBanner("Linked \u2014 this device is now synced.");
         } else {

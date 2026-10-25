@@ -45,7 +45,7 @@ first did it was never in the repo):
 Scenarios drive the real app: a drill of Identity Crimes answered by real
 clicks for the results screens and the test, the Rank tab's climb, the badge
 case cutscene, a rank-up, Supernova (Home and its cutscene)."""
-import base64, functools, http.server, io, json, os, re, socket, subprocess, sys, threading, wave
+import base64, functools, http.server, io, json, os, re, socket, subprocess, sys, threading, time, wave
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -919,6 +919,28 @@ def nova_existing(r, out):
     r.wait(2.5)
 
 
+def sign_in(r, out):
+    """Signing in on a new device (327z15): Welcome, Sign in, the code typed,
+    "This code belongs to", Sync This Device, then Home as that account. The
+    account is a demo one in the fake cloud (no real code)."""
+    acct = json.loads(ACCOUNT)
+    acct.update({"firstName": "J.Smith", "novaMet": 9, "publicId": "PUBDEMO00001", "syncCode": "NOVA-2601",
+                 "lastModified": int(time.time() * 1000) - 3600000})  # after the fresh-start cutoff
+    r.js("(a) => { localStorage.setItem('fakefs::progress', JSON.stringify({ 'NOVA-2601': a })); fbDb = window.__fakeDb; if(window.__osr0) onSnapshotResilient = window.__osr0; }", acct)
+    r.start(out)
+    r.wait(1.5)
+    r.tap("document.querySelector('.cosmic-welcome-btn.welcome-signin')"); r.wait(1.4)
+    r.tap("document.querySelector('.synccode-entry-panel input')"); r.wait(.4)
+    for ch in "NOVA2601":
+        r.pg.keyboard.type(ch); r.wait(.14)
+    r.wait(.6)
+    r.tap("document.querySelector('.synccode-entry-panel #nextbtn')"); r.wait(.5)
+    r.until("(() => { const c = document.querySelector('.synccode-confirm'); return !!c && c.offsetHeight > 0; })()", 12, then=1.6)
+    r.tap("Array.from(document.querySelectorAll('.synccode-entry-panel .next.playbtn')).find(b => /sync this device/i.test(b.textContent))"); r.wait(.5)
+    r.until("!!document.querySelector('#stage .screen-home-actual')", 20, then=4)
+    r.wait(2)
+
+
 SCENARIOS = {
     "home-idle": (home_idle, 60, "Home on its own for 20s: the ambience he loves, untouched"),
     "results-hundo": (results(0), 150, "a real Identity Crimes drill, every answer right: count, grade, XP box, bar, the hundo effect"),
@@ -949,6 +971,7 @@ SCENARIOS = {
     "selections": (selections, 150, "the mode, units ticked, untick, drag-select, the start sheet's switches and slider, Settings switches, Customize picks"),
     "chat": (chat, 90, "the chat dock: its tabs, a group chat, a message sent, a classmate answering"),
     "nova-new": (nova_new, 600, "a brand-new install: sign-up, GENERATING PROFILE, Nova's introduction, the main-menu tips", "fresh"),
+    "sign-in": (sign_in, 120, "signing in on a new device: Welcome, Sign in, the code, Sync This Device, Home", "fresh"),
     "nova-existing": (nova_existing, 600, "an account from before Nova: his signal, introduction and recap, What's New, the returning tips"),
     "test": (test, 120, "a drill from LOADING TEST: a wrong answer, then right answers into the 10-in-a-row streak pop"),
 }

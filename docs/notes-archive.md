@@ -28069,3 +28069,13 @@ chat is open, it's covering the actual chat button".
   - the root colour Safari paints its bars with became (35,35,34) against
   a page faded to paper (18,22,27): the line under the bars would have come
   back. Both rules end in var(--paper) now; BB measures 0 levels off.
+- Sign-in video (tools/record-sound.py sign-in, new): a demo account in the
+  fake cloud (J.Smith, code NOVA-2601 - not a real code), Welcome > Sign in
+  > the code typed > "This code belongs to" > Sync This Device > Home. It
+  showed "Save your sync code - it is the only way back" landing on Home
+  over "Welcome back", right after the code was typed in. Both sign-in
+  paths (Welcome's code screen and Settings > Sync > Link) now record
+  class26e.savecode.asked on this device when they succeed, so the banner
+  never asks somebody who just typed their code. (The demo account needs a
+  lastModified after FRESH_START_CUTOFF or the app rightly calls it
+  not-found.)
