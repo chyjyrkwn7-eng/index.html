@@ -32708,6 +32708,13 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      question button could be somewhere floating on the right side ... and
      not on the bottom near the tab?" Level with the planet's middle, in the
      right-hand space the planet leaves. */
+  /* THE BAR AT A LAPTOP'S SIZE (327z15 round 24): "the bottom tab is massive
+     now". A laptop got the iPad's bar - 101px tall, 38px marks - a sixth of
+     a 1366x768 screen. zoom takes the whole bar down together (its tabs,
+     marks, bubble and glass keep their proportions and stay in step), to
+     about a phone's height; the Start Studying pill follows its measured
+     height. */
+  html[data-layout] body .bottomtabs{ zoom:.8; }
   /* (round 23) bigger, and placed: centred in the empty right-hand column
      (the mirror of the words on the left) and level with the planet's upper
      half - the right column's middle is 75vw + a quarter of the planet +
@@ -32719,8 +32726,10 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     --dq-size:6rem;
   }
   html[data-layout] body:has(.screen-home-actual) .daily-question-fab{
-    left:calc(75vw + var(--lap-hero) / 4 + var(--lap-gap) / 2 - var(--dq-size) / 2); right:auto;
-    top:calc((100dvh - 6.5rem) / 2 - var(--lap-hero) * .2 - var(--dq-size) / 2); bottom:auto;
+    /* round 24: "it needs to be lower and slightly to the right" - level
+       with the planet's middle, a little past the right column's centre */
+    left:calc(75vw + var(--lap-hero) / 4 + var(--lap-gap) / 2 + 2.5vw - var(--dq-size) / 2); right:auto;
+    top:calc((100dvh - 6rem) / 2 + var(--lap-hero) * .04 - var(--dq-size) / 2); bottom:auto;
     width:var(--dq-size); height:var(--dq-size); font-size:2.6rem;
   }
 }
@@ -32729,16 +32738,17 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   body.has-homestart .homestart:not([hidden]){
     position:fixed; z-index:201; box-sizing:border-box; border-radius:999px; display:flex; align-items:center; gap:.55rem;
     padding:0 1.6rem 0 1.35rem; width:var(--hs-w, 13rem); justify-content:center; cursor:pointer;
-    font:inherit; font-size:1.05rem; font-weight:700; letter-spacing:.01em; color:var(--ink);
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
-    background-repeat:no-repeat; background-origin:border-box;
-    border:1px solid rgba(255,255,255,.16);
-    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
-    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
+    font:inherit; font-size:1.05rem; font-weight:800; letter-spacing:.01em; color:#12161B;
+    /* white, as Start Studying always is ("should still be white") - the
+       Home button's own white, with the bar's depth */
+    background:linear-gradient(180deg, #FFFFFF, #E9ECF0);
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.18) inset,
+      0 4px 14px rgba(0,0,0,.35), 0 10px 28px -8px rgba(0,0,0,.5);
     -webkit-tap-highlight-color:transparent; transition:background-color .15s ease, transform .15s ease;
   }
   body.has-homestart .homestart svg{ width:1.15rem; height:1.15rem; flex:none; }
-  body.has-homestart .homestart:hover{ background-color:rgba(30,32,42,.8); }
+  body.has-homestart .homestart:hover{ background:linear-gradient(180deg, #FFFFFF, #F1F3F6); }
   body.has-homestart .homestart:active{ transform:scale(.97); }
 }
 /* EVERY TAB ON A LAPTOP (327z15): "Ensure all tabs and pages account for the

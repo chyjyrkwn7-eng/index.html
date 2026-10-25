@@ -27949,3 +27949,19 @@ somewhere placed on the right side ... but make it look good/intentional."
   above the planet's middle - the mirror of the words on the left. The
   laptop variables (--lap-side, --lap-gap, --lap-hero) now live on body so
   the fixed button can use them.
+
+## Build 327z15 round 24 - laptop: Start Studying white, a smaller bar, the daily question lower and further right
+
+"the start studying button should still be white ... I feel like the bottom
+tab is massive now ... The daily question buttons position is not good ...
+it needs to be lower and slightly to the right (this is all about laptops)".
+
+- #homestart is white - the Home button's own white (linear #FFF -> #E9ECF0,
+  #12161B text) with the bar's depth - not the search circle's dark glass.
+- The bar on a laptop was the iPad's (101px tall, 484 wide, 38px marks).
+  In the laptop media query .bottomtabs has zoom:.8 (81px, 388 wide, 31px
+  marks - a phone's size); the bubble stays centred on the tab (measured 0px
+  off on all four), real clicks land on the right tab, and the Start pill
+  takes the bar's measured height.
+- The daily question: level with the planet's middle (+4% of the planet) and
+  2.5vw further right than round 23.
