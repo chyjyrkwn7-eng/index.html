@@ -13790,6 +13790,12 @@ def check_b317_pfcard(br):
           const cs = document.querySelector('.profile-identity-tab .pf-case');
           const dot = cs && cs.querySelector('.new-dot');
           out.dot = box(dot); out.arrow = box(cs && cs.querySelector('.pf-case-arrow'));
+          /* MOVED IN 327z15: the case count is a pill (327z10) whose arrow is its ::after disc,
+             in its right padding - the old text arrow is display:none */
+          const cc = cs && cs.querySelector('.pf-case-count');
+          if(cc && (!out.arrow || !out.arrow.r)){ const r = cc.getBoundingClientRect(), a = getComputedStyle(cc, '::after');
+            const w = parseFloat(a.width) || 0, rt = parseFloat(a.right) || 0;
+            out.arrow = { l: r.right - rt - w, r: r.right - rt, t: r.top + r.height / 2 - w / 2, b: r.top + r.height / 2 + w / 2 }; }
           out.strip = box(cs && cs.querySelector('.pf-strip'));
           out.inKick = !!(dot && dot.closest('.pf-kick'));
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
@@ -15657,7 +15663,7 @@ def check_b317_specials(br):
       document.body.appendChild(h);
       const ok = playCharSpecial(h);
       const during = { cls: h.classList.contains('char-special'), live: h.classList.contains('char-live'),
-        play: getComputedStyle(play).display, svg: getComputedStyle(svg).visibility,
+        play: getComputedStyle(play).display, playVis: getComputedStyle(play).visibility, svg: getComputedStyle(svg).visibility,
         idle: [...svg.querySelectorAll('.cx-fx')].some(n => n.getAnimations().length > 0) };
       const twice = playCharSpecial(h);
       await new Promise(r => setTimeout(r, CHAR_SPECIAL_MS.lunar + 400));
@@ -15671,7 +15677,9 @@ def check_b317_specials(br):
         check("playCharSpecial adds .char-special (and not twice at once)",
               pc["ok"] and pc["during"]["cls"] and not pc["twice"], pc)
         check("during it the flip-book is hidden and the live drawing shown, idle running",
-              pc["during"]["play"] == "none" and pc["during"]["svg"] == "visible" and pc["during"]["live"]
+              # MOVED IN 327z15 round 4: hidden by visibility, not display:none - display:none
+              # cancelled the flip-book's animation, so the loop jumped when the special handed back
+              (pc["during"]["play"] == "none" or pc["during"].get("playVis") == "hidden") and pc["during"]["svg"] == "visible" and pc["during"]["live"]
               and pc["during"]["idle"], pc["during"])
         check("afterwards the class is gone and the flip-book is back",
               not pc["after"]["cls"] and not pc["after"]["live"] and pc["after"]["play"] != "none"

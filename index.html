@@ -32946,7 +32946,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      fixed, so nothing passes under it). A test keeps its own header - the
      mode, the count and the progress line belong together there. */
   html[data-layout] body .wrap:not(:has(> .meter:not([hidden]))) > #count{
-    position:absolute; z-index:5; left:1.5rem; top:calc(env(safe-area-inset-top, 0px) + .75rem + 35px); translate:0 -50%;
+    position:absolute; z-index:5; left:calc(env(safe-area-inset-left, 0px) + 1.5rem); top:calc(env(safe-area-inset-top, 0px) + .75rem + 35px); translate:0 -50%;
     margin:0; padding:0 !important; border:0; font-size:1.02rem; letter-spacing:.01em;
   }
   /* the daily question's card (round 31): under NOVA's line, ranged to the
@@ -33908,6 +33908,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-idsub{ display:inline-flex; align-items:baseline; gap:.4rem; }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-idsub .pf-idsep-b{ display:inline; color:#AEB7C2; }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-badgecount{ padding:0; margin:0; }
+  /* the total under the bar in the line's grey too (321: "Total xp probably should be the same
+     color as the other stuff") - the card family above made "Level N" #AEB7C2 and left it white */
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-xp-total{ color:#AEB7C2; }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-xp{
     margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.1);
   }

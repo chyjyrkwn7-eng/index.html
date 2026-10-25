@@ -28262,3 +28262,12 @@ Round 31, item by item:
   the words are a .pf-goal-foot-word span now, trimmed, as the case
   count's .pf-case-num is) and Settings' buttons ("Add to Home Screen" 1px
   high; .screen-settings .cal-profile-btn trimmed). All 96 within .5px.
+- Profile's "N total XP" under the bar is the line's grey (#AEB7C2) again -
+  the three-cards block made "Level N" that grey and left the total white
+  (321: "Total xp probably should be the same color as the other stuff").
+- The laptop page name (#count, round 31) adds the left safe-area inset: an
+  iPhone on its side at 85% zoom matches the laptop query, and it sat under
+  the notch.
+- Gates moved: check-behaviour's new-badge dot reads the case pill's ::after
+  disc (the text arrow is display:none since 327z10); a special hides the
+  flip-book by visibility (round 4), not display.
