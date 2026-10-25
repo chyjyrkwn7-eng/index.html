@@ -15908,6 +15908,15 @@
      button or the hero into uselessness. */
   @media (max-height:36rem){
     .cosmic-hero-wrap{ max-width:min(23rem, 26vh); margin-bottom:.1rem; }
+    /* (327z15 round 33) a bubble keeps its 1.75rem floor on this small a hero and bobs on its
+       ring, so the lowest one ran up to 8px past the hero, 2px off the greeting: the greeting
+       stands that much further down */
+    .panel.home.screen-home-actual .cosmic-hero-wrap{ margin-bottom:12px; }
+    /* and its floor a little lower: at 1.75rem Amethyst and Supernova (the two nearest each other
+       on this hero) touched as they bobbed, 1-3px, on a 320x568 phone */
+    .panel.home.screen-home-actual .cosmic-icon-badge.cosmic-badge-rank{
+      width:max(1.5rem, min(2.9rem, 10.7cqw)); height:max(1.5rem, min(2.9rem, 10.7cqw));
+    }
     .hometitle-wrap{ margin-bottom:.45rem; }
     .homegreeting{ font-size:.8rem; margin:.25rem 0 .15rem; }
     .hometitle{ font-size:clamp(1.2rem, 4vh, 1.7rem); }
@@ -132543,7 +132552,9 @@ const LAST_TAB_KEY = "class26e.lastTab";
          a second tap on Profile, the Leaderboard or the Calendar while its
          own screen is up rebuilt the whole screen - a long task for a
          screen that was already there. As on iOS, it scrolls to the top. */
-      const ROOT_OF = { profile: ".screen-profile", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+      /* (round 33) Profile counts only on its own page: from Profile's Stats or Settings the tab goes
+         back to Profile, at its top at once (tapping it there only glided Settings to its top) */
+      const ROOT_OF = { profile: ".screen-profile .profile-identity-tab:not([hidden])", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
       if(!testInProgress && ROOT_OF[dest] && stage.querySelector(ROOT_OF[dest])){
         if(pend){ syncActive(); slideBubbleToActiveTab(true); }
         try{ window.scrollTo({ top: 0, behavior: lensCalm() ? "auto" : "smooth" }); }catch(e){ window.scrollTo(0, 0); }

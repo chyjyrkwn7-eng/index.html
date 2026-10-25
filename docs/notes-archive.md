@@ -28271,3 +28271,14 @@ Round 31, item by item:
 - Gates moved: check-behaviour's new-badge dot reads the case pill's ::after
   disc (the text arrow is display:none since 327z10); a special hides the
   flip-book by visibility (round 4), not display.
+- Tapping Profile on the bar from Profile's Stats or Settings only glided
+  that page to its top (the round-1 "tab you are on" short cut matched any
+  .screen-profile). It counts only when Profile's own page is up
+  (.profile-identity-tab:not([hidden])); from Stats/Settings the tab goes
+  to Profile, at its top at once. check-behaviour 10 moved (the new screen
+  waits a frame for the glass) and fails on round 31 (the glide).
+- Home on a 320x568 phone (max-height:36rem): the hero has 12px more under
+  it and the bubbles' floor is 1.5rem there (was 1.75rem) - the floored
+  bubbles bobbed into the greeting (1px clear) and Amethyst and Supernova
+  touched. check-behaviour audit_a measures the greeting's clearance over
+  2.5s of bobbing.

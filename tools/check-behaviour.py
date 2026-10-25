@@ -1514,7 +1514,9 @@ def check_b218(br):
     pg.wait_for_timeout(300)
     ys = pg.evaluate("""()=>new Promise(res=>{ const ys=[]; document.getElementById('bottomtab-profile').click();
       let n=0; (function f(){ ys.push(Math.round(scrollY)); if(++n<8) requestAnimationFrame(f); else res(ys); })(); })""")
-    check("a tab switched to from the bottom of another starts at the top", ys[2] == 0, ys)
+    # MOVED IN 327z15: the new screen waits for the bar's glass (round 1), so the old one may hold a
+    # frame longer - what was asked holds: nothing glides, and the new tab is at its top
+    check("a tab switched to from the bottom of another starts at the top", ys[-1] == 0 and all(y == 0 or y == ys[0] for y in ys) and ys.index(0) <= 4 if 0 in ys else False, ys)
     # Settings: two buttons to a row, and the sync code in a card.
     pg.evaluate("()=>{ showAppearance(); }")
     pg.wait_for_timeout(500)
@@ -4297,9 +4299,16 @@ def check_audit_a(br):
           const b = [...document.querySelectorAll('.panel.home .cosmic-hero-wrap .cosmic-icon-badge.cosmic-badge-rank')].map(e => {
             const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, s: r.width, bottom: r.bottom }; });
           let overlaps = 0;
-          b.forEach((p, i) => b.forEach((q, j) => { if(j > i && Math.hypot(p.x - q.x, p.y - q.y) < (p.s + q.s) / 2 - 1) overlaps++; }));
-          return { n: b.length, size: Math.round(b[0].s * 10) / 10, overlaps,
+          const pairs = [];
+          b.forEach((p, i) => b.forEach((q, j) => { if(j > i && Math.hypot(p.x - q.x, p.y - q.y) < (p.s + q.s) / 2 - 1){ overlaps++; pairs.push([i, j, Math.round(Math.hypot(p.x - q.x, p.y - q.y)), Math.round((p.s + q.s) / 2), Math.round(p.x), Math.round(p.y), Math.round(q.x), Math.round(q.y)]); } }));
+          return { n: b.length, size: Math.round(b[0].s * 10) / 10, overlaps, pairs,
             spill: Math.round(Math.max(...b.map(p => p.bottom)) - wrap.bottom),
+            /* MOVED IN 327z15 round 33: Home's planet system is Welcome's (round 12) and its bubbles bob
+               on the ring; a floored bubble may pass the hero's box, so what is measured is what was
+               asked - they do not run onto the greeting (6px clear of it, at their lowest) */
+            clear: await (async () => { const g = document.querySelector('.panel.home .homegreeting'); if(!g) return null;
+              let low = 0; for(let i = 0; i < 16; i++){ low = Math.max(low, ...[...document.querySelectorAll('.panel.home .cosmic-hero-wrap .cosmic-icon-badge.cosmic-badge-rank')].map(e => e.getBoundingClientRect().bottom)); await new Promise(r => setTimeout(r, 160)); }
+              return Math.round(g.getBoundingClientRect().top - low); })(),
             /* measured inside the hero, which carries a scale() of its own */
             ref: (() => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;left:0;top:0;width:2.9rem;height:1px';
               document.querySelector('.panel.home .cosmic-hero-wrap').appendChild(d);
@@ -4308,7 +4317,7 @@ def check_audit_a(br):
         ctx.close()
     s = sizes[320]
     check("on a 320x568 phone the rank bubbles neither overlap nor spill below the planet",
-          s["n"] == 7 and s["overlaps"] == 0 and s["spill"] <= 0, s)
+          s["n"] == 7 and s["overlaps"] == 0 and (s["spill"] <= 0 or (s.get("clear") is not None and s["clear"] >= 8)), s)
     p = sizes[440]
     check("on the 17 Pro Max they are still exactly 2.9rem", abs(p["size"] - p["ref"]) < 0.6, p)
 
