@@ -28600,3 +28600,12 @@ none of them is ever seen; their moments are cutscenes and centre cards.
 still reached is showTierUpStyleBadgeNote: Reduce Motion's stand-in for the
 badge cutscene. It is now a passive account banner (showDailyAlert with
 iconEl: the badge, BADGE FOUND, "<badge> is yours.").
+
+Round 45: "You see how great the view button looks? It has the 3d look ... The
+other buttons in the pops don't have that. The got it button doesn't match.
+The update and home screen one don't have it". The notices' buttons
+(.update-banner-btn and .ghost, glass notices only) wear the banner action
+pill's computed values: #ECEFF3 face, #1A2027 ink, 700 .8rem, the inset lit
+top / shaded lip and the three drops; scale .96 on press. The resume offer
+keeps its light + dark pair (the app's two-choice convention). Ink check
+177 controls ALL PASS.

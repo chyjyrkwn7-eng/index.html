@@ -34077,6 +34077,19 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   html[data-layout] .update-banner.is-glass .update-banner-close{ display:grid; place-items:center; opacity:1; color:var(--soft); }
   html[data-layout] .update-banner.is-glass .update-banner-close svg{ width:15px; height:15px; display:block; }
   html[data-layout] .update-banner.is-glass .update-banner-btn{ min-height:44px; padding-inline:1rem; }
+  /* (327z15 round 45) "You see how great the view button looks? It has the 3d look ... The
+     other buttons in the pops don't have that ... ensure all the others do." Every notice
+     button wears the banner's own action pill (.app-banner-act, the .next pill): light face,
+     lit top edge, a shade under the bottom lip, and its drop. */
+  html[data-layout] .update-banner.is-glass .update-banner-btn,
+  html[data-layout] .update-banner.is-glass .update-banner-btn.ghost{
+    background:#ECEFF3; color:#1A2027; border:0; border-radius:999px;
+    font-weight:700; font-size:.8rem; letter-spacing:-.01em;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.95), inset 0 -2px 2px rgba(20,28,40,.26),
+      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
+    transition:transform .12s ease;
+  }
+  html[data-layout] .update-banner.is-glass .update-banner-btn:active{ transform:scale(.96); }
   @supports (text-box: trim-both cap alphabetic){
     /* a flex box's text is an anonymous item the trim never reaches: a plain
        block whose padding makes 44px around the capitals */
