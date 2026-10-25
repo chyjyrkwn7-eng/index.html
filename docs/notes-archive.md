@@ -28505,3 +28505,23 @@ showed it over Nova. Gate: check-b327z15-fb.py E (fails on the previous build).
   devices92 ("Made for every screen") and fixes92 ("Fixes and
   improvements") first. Sign-ups still never see it.
 Gate: check-b327z15-fb.py F-J (all fail on the previous build).
+
+## Build 327z15, round 40: tab bar joins, leaderboard pace
+
+"The bottom tab smoothness is really good but it didn't seem perfect, I saw
+a little rigidity." The tab videos run on record-sound's virtual clock, so
+main-thread builds cannot show as stutter there: what showed was the motion.
+Frame by frame (30fps): the glide is clean, but its tail crept for ~170ms
+while the lens waited out minUp 300, then settle [520, .62] dropped it into
+the platter in ~2 frames. Now minUp 240 (the landing starts with the glide
+~90% there, so the glide runs into the shrink), settle [380, .7] (softer,
+~5% over), and LENS_DT 1000/120 (WAAPI interpolates keyframes linearly; at
+60 per second a 120Hz iPhone saw a speed step every other frame).
+
+"Maybe to save space the leaderboard can update less often": ROW_SCORE_PUSH_MS
+90s -> 5 min. Only lazy fields wait on it (mid-run that is `correct`); XP,
+level and hundos change at a run's end and are flushed at once. Each row
+write is a read on every open board.
+
+check-savetest section 10 rewritten for round 39 (no Home pop-up; unfinished
+saved test; Start Studying offers it).

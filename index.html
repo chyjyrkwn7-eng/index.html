@@ -55437,8 +55437,13 @@ const ROW_LAZY_FIELDS = ["correct", "level", "badges", "mystery",
    and nobody is watching them live - they ride with the next push. */
 ROW_LAZY_FIELDS.push("wk", "pwk");
 /* Long enough to collapse a whole drill into one or two writes, short
-   enough that a board somebody is watching is never stale for long. */
-const ROW_SCORE_PUSH_MS = 90 * 1000;
+   enough that a board somebody is watching is never stale for long.
+   FIVE MINUTES, NOT 90s (build 327z15): "maybe to save space the
+   leaderboard can update less often". Only the lazy fields wait on this -
+   mid-run that is the right-answer count; XP, level and hundos change at
+   the end of a run and go at once (flushLeaderboardRow) - and every write
+   is read again by each open board. */
+const ROW_SCORE_PUSH_MS = 5 * 60 * 1000;
 __bm("L53559");
 let lastRowSig = null, lastRowUrgentSig = null, lastRowPushAt = 0, rowPushTimer = null;
 /* WHICH DOCUMENT THE CACHED SIGNATURE DESCRIBES. Without this, "the row
@@ -133359,9 +133364,22 @@ const LAST_TAB_KEY = "class26e.lastTab";
      16, no overshoot - a glide you watch cross; a tap stays up until it
      has arrived (minUp 300); and the screen waits for it (TAB_SCREEN_AFTER
      290, the glass ~94% there). */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 300, linger: 110,
-    pop: [2000, .72], glide: [260, .95], settle: [520, .62], follow: [1700, .8], st: [520, .42] };
-  const LENS_DT = 1000 / 60;
+  /* NO STOP BEFORE THE LANDING (build 327z15 round 40): "the bottom tab
+     smoothness is really good but ... I saw a little rigidity, not
+     absolutely butter smooth." Frame by frame, the glide itself was clean;
+     the joins were not. The glide's last few pixels crept for ~170ms (a
+     near-critical spring's tail) while the lens waited out minUp 300, and
+     then the settle [520, .62] dropped it into the platter in about two
+     30fps frames - a stop, then a snap. Now the landing starts while the
+     glass is still arriving (minUp 240, the glide ~90% there), so its last
+     stretch runs straight into the shrink, and the shrink is softer and
+     less bouncy ([380, .7]: ~5% over, not ~8%). The tracks are written at
+     120 frames a second, not 60: Web Animations draws straight lines
+     between keyframes, which on a 120Hz iPhone made every other frame a
+     small change of speed. */
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
+    pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42] };
+  const LENS_DT = 1000 / 120;
   let lensG = null;           /* this touch's geometry (null: no lens) */
   let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */
   let lensRun = null;         /* the Web Animations track playing, if any */

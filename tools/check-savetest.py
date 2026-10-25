@@ -590,18 +590,20 @@ def check_update(br):
 
 
 def check_interrupted(br):
-    print("\n10. a run the app lost is still offered on Home; Not now keeps it as the saved test")
+    # Build 327z15 round 39: "Interrupted sounds like the app broke ... maybe it
+    # doesn't show up and when you hit start studying it asks if you want to
+    # continue where you left off". No pop-up on Home: the lost run is kept as
+    # a saved test (marked unfinished), Home's cards are not held for it, and
+    # Start Studying offers it and resumes where it was.
+    print("\n10. a run the app lost waits for Start Studying (no pop-up on Home) and resumes where it was")
     ctx, pg, errors = booted(br, 440, 956)
     ev(pg, "await start('drill'); for(let k = 0; k < 4; k++){ await answer(false); await next(); } document.dispatchEvent(new Event('visibilitychange'));")
     relaunch(pg)
     pg.wait_for_timeout(3600)
     r = ev(pg, """
-      const o = document.getElementById('resume-offer');
-      out.offer = o ? o.textContent : null;
-      out.btns = o ? [...o.querySelectorAll('button')].map(b => b.textContent.trim()) : null;
-      out.heldWhileOffered = homeUnlockBlocked();
-      document.getElementById('resume-later')?.click(); await wait(500);
-      out.savedNow = (readRunSession() || {}).saved === true;
+      out.offer = !!document.getElementById('resume-offer');
+      const s = readRunSession() || {};
+      out.savedNow = s.saved === true; out.unfinished = s.unfinished === true;
       out.heldAfter = homeUnlockBlocked();
     """)
     relaunch(pg)
@@ -609,16 +611,17 @@ def check_interrupted(br):
     r2 = ev(pg, """
       out.offerAgain = !!document.getElementById('resume-offer');
       document.querySelector('[data-screen="home"] #nextbtn').click(); await wait(600);
+      out.title = (document.getElementById('resume-title') || {}).textContent || '';
       out.atStart = !!document.getElementById('resume-go');
       document.getElementById('resume-go')?.click(); await until(() => document.querySelector('.qpanel .choice'), 8000);
       out.pos = pos;
     """)
-    check("Home offers the lost run: Resume test / Not now",
-          bool(r.get("offer")) and "interrupted" in r["offer"] and r.get("btns") == ["Resume test", "Not now"], (r.get("offer"), r.get("btns")))
-    check("Not now keeps it, as a saved test that no longer holds Home's cards",
-          r.get("savedNow") is True and r.get("heldAfter") is False, (r.get("savedNow"), r.get("heldAfter")))
-    check("after that it waits for Start Studying, not Home, and resumes where it was",
-          r2.get("offerAgain") is False and r2.get("atStart") is True and r2.get("pos") == 4, r2)
+    check("no pop-up on Home for the lost run", r.get("offer") is False, r)
+    check("it is kept as an unfinished saved test that does not hold Home's cards",
+          r.get("savedNow") is True and r.get("unfinished") is True and r.get("heldAfter") is False, r)
+    check("Start Studying offers to continue it, never 'interrupted', and resumes where it was",
+          r2.get("offerAgain") is False and r2.get("atStart") is True and r2.get("pos") == 4
+          and r2.get("title") and "nterrupt" not in r2["title"], r2)
     check("no page errors", not errors, errors[:3])
     ctx.close()
 
