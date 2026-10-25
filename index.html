@@ -1892,6 +1892,13 @@
      around it do not repaint it. */
   .nt-ask .nt-ask-input{ -webkit-user-select:text; user-select:text; cursor:text; caret-color:#FFD27A;
     -webkit-touch-callout:default; transform:translateZ(0); }
+  /* AND ITS CARET IS NOT IN THE MIDDLE OF A WORD (round 34): "the curser is glitched and
+     starts flashing" - the field is centred, so an empty one blinked its caret in the middle
+     of the placeholder ("Your us|ername"), gold over grey letters. Focused, the placeholder
+     goes and the caret is the letters' own white: one steady line where the name will start. */
+  .nt-ask .nt-ask-input{ caret-color:currentColor; }
+  .nt-ask .nt-ask-input:focus::placeholder{ color:transparent; }
+  .nt-ask .nt-ask-input:focus::-webkit-input-placeholder{ color:transparent; }
   .nt-ask .nt-ask-go{ min-height:48px; min-width:12rem; margin:0; }
   .nt-ask .nt-ask-signin{ min-height:44px; margin:0; }
   .nt-ask .nt-ask-msg{ margin:0; font-size:.92rem; line-height:1.4; color:var(--soft); }
@@ -72542,6 +72549,15 @@ const NovaSound = (function(){
   }
   function startAmbience(id, opts){
     if(!SOUND_AMBIENCE[id]) return;
+    /* SOUND IN A SAFARI TAB, WITHOUT THE AMBIENCE (327z15 round 34). Madison: "Ensure the sound
+       and haptic is fixed" in Safari. Sound came off in iPhone Safari tabs twice after a freeze
+       (327z2, 327z14), never reproduced off a phone. Of everything the sound engine does, the Home
+       ambience is the one long job: its whole graph is built on the main thread (75ms at 4x CPU
+       here, more on a phone), then 24s of audio rendered offline, then held as a 20s looping
+       buffer for as long as Home is up. A tab gets every tap, answer and scene sound; the
+       ambience stays the installed app's. "safariSound": false in version.json still turns a
+       tab's sound off with no build. */
+    if(iosTabIs) return;
     st.ambWant = { id, owner: (opts && opts.owner) || null };
     if(!st.ambWatch) st.ambWatch = setInterval(() => {
       if(!st.ambWant){ clearInterval(st.ambWatch); st.ambWatch = 0; return; }
@@ -72632,7 +72648,7 @@ const NovaSound = (function(){
       () => { sndImpulseData(48000, 2.6, 2.4); },
       /* the three noises a tap's sound is made of (build 327z13) */
       () => { ["w", "p", "b"].forEach(c => sndNoiseSamples(48000, c)); },
-      () => { ambRendered("amb.home"); },
+      () => { if(!iosTabIs) ambRendered("amb.home"); },
       /* the other rate an output commonly runs at */
       () => { sndImpulseData(44100, 2.6, 2.4); }
     ];
@@ -132689,7 +132705,14 @@ const LAST_TAB_KEY = "class26e.lastTab";
     bar.hidden = !show;
     /* the lens never outlives the bar (build 323) */
     if(!show && bar._lensHide && bar.classList.contains("lens-up")) bar._lensHide(true);
-    document.body.classList.toggle("has-bottomtabs", show);
+    /* HOME IS LAID OUT FOR ITS BAR BEFORE THE BAR IS THERE (327z15 round 34): "when the
+       transition from the intro to the Home Screen happens, it's not smooth. The planet system
+       and a bunch of stuff shift". A new account's Home is mounted under GENERATING PROFILE
+       and Nova's introduction with the bar off (onboarding is not done), so it was laid out
+       without the bar's room - and moved 32px (laptop) / 64px (phone) when the bar came. Home
+       keeps the bar's room whether or not the bar is up yet. */
+    const homeUp = !!stage.querySelector(".screen-home-actual") && !window.forceHideBottomTabs;
+    document.body.classList.toggle("has-bottomtabs", show || homeUp);
     /* The chat dock rides the same recalculation, so the bar and the
        dock cannot disagree about whether onboarding is finished.
        This already runs on every stage mutation. */
@@ -133859,7 +133882,9 @@ const LAST_TAB_KEY = "class26e.lastTab";
         applyGlassRefraction(document.querySelector(".bottomtabs-extrarow"), "glassRefractionExtrarowMap");
       });
     } else {
-      if(floatBtn) floatBtn.classList.remove("merged-into-bar");
+      /* (round 34) a laptop's Home under Nova's introduction (the bar not up yet): Start
+         Studying stays where it will be - in the bar - rather than standing in the top-left */
+      if(floatBtn) floatBtn.classList.toggle("merged-into-bar", !!wideHome && floatBtn === wideHome);
       startTab.hidden = true;
       bar.classList.remove("has-start-tab");
       /* The missing half of the same fix noted above — confirmed

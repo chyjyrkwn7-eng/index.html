@@ -28293,3 +28293,38 @@ Round 31, item by item:
   whirl's flare-under-glass frames are counted over both devices (round 15
   left a phone 3 crossings, an iPad none). 29 other check-behaviour
   failures fail on main too (327z14) and are older than this build.
+
+## Build 327z15 round 34 - the intro hands over to Home without a shift, the name field's caret, sound in Safari tabs
+
+Madison, from the laptop sign-up video: *"When entering a username, the
+curser is glitched and starts flashing"*; *"when the transition from the
+intro to the Home Screen happens, it's not smooth. The planet system and a
+bunch of stuff shift at just a moment, the start studying button is in a
+weird spot"*; *"Please ensure the safari version is good to go. Ensure the
+sound and haptic is fixed and the stuff I've mentioned a bunch of times
+(like the layout not showing at the top and bottom) are all fixed"*.
+
+- **Home is laid out for its bar before the bar is there.** A new account's
+  Home is mounted under GENERATING PROFILE and Nova's introduction with the
+  bar off (onboarding not done), so it had no bar room: the laptop planet sat
+  32px lower and Start Studying stood in the top-left (syncStartAction only
+  carried it into the bar while the bar was up); a phone's title and Start
+  sat 64px lower. syncVisibility keeps `has-bottomtabs` on the body whenever
+  Home is on the stage; syncStartAction keeps the laptop's Home button merged
+  even with the bar down. Measured: identical rects before and after.
+- **The name field's caret.** The field is centred, so an empty one blinked
+  its gold caret in the middle of the placeholder ("Your us|ername").
+  Focused (it focuses itself 320ms in), the placeholder is transparent and
+  the caret is the text colour.
+- **Sound in Safari tabs again, without the ambience.** version.json
+  `"safariSound": true`. The Home ambience (its graph built on the main
+  thread, ~75ms at 4x CPU in Chromium, then 24s rendered offline and held
+  as a looping buffer) never starts in an iPhone/iPad browser tab
+  (`iosTabIs` in startAmbience and prewarm); every tap, answer and scene
+  sound plays. Haptics were already on there (327z14). The freeze that
+  twice followed sound was never reproduced off a phone: if it comes back,
+  `"safariSound": false` turns tab sound off with no build.
+- Safari's top and bottom: 327z14's sky under the bars and round 14's
+  no-line are unchanged and still pass; only a real iPhone shows Safari's
+  bars.
+- Gate: check-b327z15 II (~), all four fail on round 33 (ff6dc20).

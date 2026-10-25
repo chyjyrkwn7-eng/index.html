@@ -134,7 +134,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%&*=^")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%&*=^~")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -1142,10 +1142,59 @@ def section_hh(br):
     ctx.close()
 
 
+def section_ii(br):
+    print("\nII. Round 34: the intro hands over to Home without a shift, the name field's caret, sound in a Safari tab")
+    M = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const q = s => { const e = document.querySelector(s); if(!e) return null; const r = e.getBoundingClientRect();
+        return [Math.round(r.left), Math.round(r.top), Math.round(r.width), getComputedStyle(e).display]; };
+      const read = () => ({ planet: q('#stage .screen-home-actual .cosmic-hero-wrap'), title: q('#stage .screen-home-actual .hometitle'),
+                            play: q('#stage .screen-home-actual > .playbtn') });
+      homeUnlocksOwed = () => false; showHome(); await wait(1200);
+      const done = read();
+      /* a new account's Home under GENERATING PROFILE and Nova's introduction: onboarding not done, no bar */
+      store.onboardingComplete = false; const d = document.createElement('i'); stage.appendChild(d); d.remove(); await wait(700);
+      const intro = read(); intro.bar = !document.getElementById('bottomtabs').hidden;
+      return { done, intro }; }"""
+    for lab, W, H in (("laptop", 1440, 820), ("phone", 440, 956)):
+        ctx, pg = cb.booted(br, W, H, seed=cb.USED_ACCOUNT)
+        r = pg.evaluate(M)
+        ctx.close()
+        same = r["done"]["planet"] == r["intro"]["planet"] and r["done"]["title"] == r["intro"]["title"]
+        play_ok = (r["intro"]["play"] is None or r["intro"]["play"][3] == "none") if lab == "laptop" else r["done"]["play"] == r["intro"]["play"]
+        check("II. %s: Home under the intro (no bar yet) is laid out as it will be - planet and title where they end up, Start Studying not standing apart" % lab,
+              r["intro"]["bar"] is False and same and play_ok, r)
+    ctx, pg = cb.booted(br, 440, 956, seed=cb.USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const host = document.createElement('div'); host.className = 'nova-talk'; document.body.appendChild(host);
+      try{ const c = novaAskName({ stage: host, close(){} }, () => {}); if(c && !c.isConnected) host.appendChild(c); }catch(e){}
+      await wait(500); const inp = host.querySelector('.nt-ask-input'); if(!inp) return { missing: true }; inp.focus(); await wait(200);
+      const cs = getComputedStyle(inp), ph = getComputedStyle(inp, '::placeholder');
+      const out = { focused: document.activeElement === inp, caret: cs.caretColor, color: cs.color, ph: ph.color };
+      host.remove(); return out; }""")
+    ctx.close()
+    clear = lambda c: c in ("transparent", "rgba(0, 0, 0, 0)")
+    check("II. the name field, focused: no placeholder for the caret to blink inside, and the caret is the letters' own colour",
+          r["focused"] and clear(r["ph"]) and r["caret"] == r["color"], r)
+    ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
+    ctx = br.new_context(viewport={"width": 440, "height": 830}, device_scale_factor=2, user_agent=ua, is_mobile=True, has_touch=True)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');localStorage.removeItem('class26e.safarisound');}catch(e){}" % cb.USED_ACCOUNT)
+    pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.getElementById('splashscreen')?.remove(); theme.soundOn = true;
+      homeUnlocksOwed = () => false; showHome(); await wait(600);
+      NovaSound.wake(); await wait(300);
+      NovaSound.startAmbience('amb.home', { owner: document.querySelector('#stage .screen-home-actual') }); await wait(400);
+      const s = NovaSound.state();
+      return { tab: NovaSound.iosTab, off: NovaSound.tabOff(), on: s.on, ambWant: s.ambWant, amb: s.amb }; }""")
+    ctx.close()
+    check("II. an iPhone Safari tab has sound (the switch not set) but never builds or plays the Home ambience",
+          r["tab"] is True and r["off"] is False and r["on"] is True and r["ambWant"] is None and r["amb"] is None, r)
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd), ("&", section_ee), ("*", section_ff), ("=", section_gg), ("^", section_hh)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd), ("&", section_ee), ("*", section_ff), ("=", section_gg), ("^", section_hh), ("~", section_ii)):
             if k in ONLY:
                 try:
                     fn(br)
