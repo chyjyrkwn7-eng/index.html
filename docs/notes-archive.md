@@ -27564,3 +27564,26 @@ updated too during it ... sign up and sign in process is perfect".
 - Note: in the sandbox the username Continue says "Checking..." for up to 5s
   because the fake Firestore has no board read; on a phone the board is read
   as the screen opens (fetchBoardForInvites), so it is normally instant.
+
+## Build 327z15 round 9 - Welcome keeps its learning icons (round 8 reverted in part)
+
+"no no I like the sign up icons!!!!! IT GIVES A SENSE OF LEARNING DO NOT
+CHANGE THE ICONS. The flares bubbles just have a newer look on the main menu.
+The sentence under welcome to nova needs to be updated too, to the new one.
+The description under sign in doesn't make sense, fix that as well"
+
+- Round 8's buildCosmicHero("showcase") is gone. Welcome is buildCosmicHero()
+  again - its own six learning icons (book, cap, rocket, bulb, trophy, check)
+  in their own places. DO NOT swap them for rank emblems.
+- What changed is the bubble: Welcome's badges carry .cosmic-badge-glass, the
+  recipe of Home's unreached rank bubble (frosted fill, rim light, lens
+  ::after, rim ::before, 2.9rem), with the line icon sitting in it.
+- Welcome's subtitle is Home's: "Master the material, one rank at a time."
+- Sign in's line: "Have an account? Sign in with your sync code." (was
+  "Already use Nova on another phone or before? Use your sync code.").
+  check-b327-i's Welcome order check moved to shape (B, P, B, P; Sign in's
+  line names the sync code).
+- The full sky on Welcome and every pre-account screen (round 8) stays.
+- check-b327z15 Z rewritten: six line icons, no rank emblems, each with the
+  fill/rim/lens/layout size of Home's unreached rank bubble, no taps, store
+  untouched, sky-home. Fails on 327z14 (glass, sky).

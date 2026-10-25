@@ -15272,7 +15272,8 @@
      46px circle), and only on these: the lit bubbles are opaque and
      never needed one. check-behaviour's Home raster budget (section 15)
      is what says this is affordable, not this comment. */
-  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit):not(.cosmic-badge-noir){
+  .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit):not(.cosmic-badge-noir),
+  .cosmic-icon-badge.cosmic-badge-glass{
     background:rgba(255,255,255,.09);
     background-image:
       radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
@@ -15362,6 +15363,24 @@
   .cosmic-icon-badge.cosmic-badge-rank::before{
     content:""; position:absolute; inset:1px; border-radius:50%; pointer-events:none; z-index:2;
     box-shadow:inset 1px 2px 4px rgba(255,255,255,.2), inset -1px -2px 4px rgba(255,255,255,.08);
+  }
+  /* WELCOME'S LEARNING ICONS IN HOME'S GLASS (327z15): the same bubble as
+     an unreached rank flare - frost, rim light, lens, shadow - and the
+     same size, the line icon sitting in it the way the emblem does. */
+  .cosmic-icon-badge.cosmic-badge-glass{ width:2.9rem; height:2.9rem; overflow:hidden; isolation:isolate; color:rgba(255,255,255,.88); }
+  .cosmic-icon-badge.cosmic-badge-glass svg{ position:relative; z-index:0; width:1.3rem; height:1.3rem;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .cosmic-icon-badge.cosmic-badge-glass::after{
+    content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:1;
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255,255,255,.16), rgba(255,255,255,0) 52%),
+      radial-gradient(circle at 34% 30%, rgba(0,0,0,0) 50%, rgba(0,0,0,.12) 76%, rgba(0,0,0,.26) 100%);
+    box-shadow:inset -3px -4px 7px rgba(0,0,0,.18);
+  }
+  .cosmic-icon-badge.cosmic-badge-glass::before{
+    content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:2;
+    box-shadow:inset 1px 2px 5px rgba(255,255,255,.2), inset -1px -2px 5px rgba(255,255,255,.08),
+      inset 0 0 3px 0 rgba(255,255,255,.1);
   }
   /* Only Home's badges get this (Welcome's stay purely decorative,
      untouched) \u2014 a genuine tap target, not just a hover cue, since
@@ -79583,12 +79602,6 @@ let cosmicDepthSeq = 0;
    glass). Welcome keeps its 152. */
 const HOME_OUTER_R = 140;
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
-  /* WELCOME WEARS HOME'S SYSTEM (327z15): "The sign in planet system ...
-     similar to the one now on the main menu. The sign in/sign up flares
-     need the new look." useTierIcons "showcase" is Home's layout - the
-     rank bubbles with their emblems, the secret flares on the rings -
-     drawn for nobody yet: nothing taps, nothing is stored. */
-  const showcase = useTierIcons === "showcase";
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
   wrap.className = "cosmic-hero-wrap";
@@ -79795,7 +79808,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   /* A ring tier this device has not shown yet draws itself on (see
      playRingDraw): showHome hands over the tier it showed last, and only
      that one build uses it. */
-  const drawFrom = (useTierIcons && !showcase && typeof ringDrawFrom === "string" && ringTier &&
+  const drawFrom = (useTierIcons && typeof ringDrawFrom === "string" && ringTier &&
     RING_TIER_RANK[ringTier] > (RING_TIER_RANK[ringDrawFrom] || 0)) ? ringDrawFrom : null;
   ringDrawFrom = null;
   const radii = [108, useTierIcons ? HOME_OUTER_R : 152];
@@ -80042,7 +80055,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
   let planetHsw = null;
   sphere.setAttribute("cx", 180); sphere.setAttribute("cy", 150); sphere.setAttribute("r", 52);
   sphere.setAttribute("fill", "url(#cosmicSphereGrad)");
-  if(useTierIcons && !showcase){
+  if(useTierIcons){
     /* A small, playful easter egg \u2014 tapping the sphere itself (not
        one of the orbiting badges) gets a little "..... " thinking
        bubble, reusing the same contextual popup used elsewhere for
@@ -80265,7 +80278,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     el.innerHTML = '<i class="cof-halo"></i><i class="cof-rays"></i><i class="cof-ring"></i><i class="cof-body"></i><i class="cof-tint"></i><i class="cof-sheen"></i><i class="cof-core"></i><i class="cof-spark"></i><i class="cof-orbit"><b></b></i>';
     /* the mote and the rays turn on their own clocks too (327z15) */
     el.style.setProperty("--fo", ([5.6, 6.8, 6.1, 7.4, 5.2, 6.5][k] || 6) + "s");
-    if(useTierIcons && !showcase){
+    if(useTierIcons){
       el.classList.add("cosmic-badge-tappable");
       el.setAttribute("role", "button");
       el.setAttribute("tabindex", "0");
@@ -80426,7 +80439,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      actual "cool animation when the bubble lights up, seen next time
      you're on Home" request \u2014 rather than every already-unlocked
      badge replaying that animation on every single visit. */
-  const seenUnlocked = (useTierIcons && !showcase) ? (store.seenUnlockedTiers || []) : [];
+  const seenUnlocked = useTierIcons ? (store.seenUnlockedTiers || []) : [];
   const newlySeenThisRender = [];
   positions.forEach((pos, i) => {
     const badge = document.createElement("div");
@@ -80434,7 +80447,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
        Home until the rank-up's own cutscene has lit it (build 319) */
     const achieved = typeof tierColorUnlocked === "function" && tierColorUnlocked(pos.tier) &&
       !(useTierIcons && typeof rankUpHolds === "function" && rankUpHolds(pos.tier));
-    const isNewlyLit = useTierIcons && !showcase && achieved && !seenUnlocked.includes(pos.tier);
+    const isNewlyLit = useTierIcons && achieved && !seenUnlocked.includes(pos.tier);
     badge.className = "cosmic-icon-badge cosmic-icon-badge-" + (i % 3) + (achieved ? " cosmic-badge-lit" : "") + (isNewlyLit ? " cosmic-badge-newly-lit" : "");
     badge.style.top = pos.top; badge.style.left = pos.left;
     if(pos.centred) badge.classList.add("is-centred");
@@ -80479,13 +80492,16 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     path.setAttribute("fill", "none"); path.setAttribute("stroke", "currentColor");
     path.setAttribute("stroke-width", "1.6"); path.setAttribute("stroke-linecap", "round"); path.setAttribute("stroke-linejoin", "round");
     iconSvg.appendChild(path);
-    if(!useTierIcons) badge.appendChild(iconSvg);
+    /* Welcome keeps its learning icons (327z15: "I like the sign up icons
+       ... IT GIVES A SENSE OF LEARNING"), in the glass bubble Home's rank
+       flares are made of now. */
+    if(!useTierIcons){ badge.appendChild(iconSvg); badge.classList.add("cosmic-badge-glass"); }
     /* Interactive on Home specifically (useTierIcons is only ever
        true there) \u2014 tapping a "flare" that isn't lit yet tells you
        exactly what's left to reach it, using the same live numbers
        the Mastery Ladder itself is built from, rather than leaving
        these as purely decorative badges with no info behind a tap. */
-    if(useTierIcons && !showcase){
+    if(useTierIcons){
       badge.classList.add("cosmic-badge-tappable");
       badge.setAttribute("role", "button");
       badge.setAttribute("tabindex", "0");
@@ -80536,7 +80552,7 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      replay that animation on every subsequent Home visit \u2014 only a
      genuinely new unlock (one not in this saved list yet) gets the
      one-time treatment above. */
-  if(useTierIcons && !showcase && newlySeenThisRender.length){
+  if(useTierIcons && newlySeenThisRender.length){
     store.seenUnlockedTiers = newlySeenThisRender.slice();
     saveStore();
   }
@@ -81223,7 +81239,7 @@ function showWelcome(){
   const wrap = document.createElement("div");
   wrap.className = "cosmic-welcome";
 
-  wrap.appendChild(buildCosmicHero("showcase"));
+  wrap.appendChild(buildCosmicHero());
 
   /* Appended to #stage rather than into the panel, for the same reason
      versionTag is on Home: this is position:fixed, and a transform on
@@ -81246,7 +81262,7 @@ function showWelcome(){
 
   const sub = document.createElement("p");
   sub.className = "cosmic-welcome-sub";
-  sub.textContent = "Practice, track your mastery, and walk into test day ready.";
+  sub.textContent = "Master the material, one rank at a time.";
   wrap.appendChild(sub);
 
   /* SIGN IN FIRST (build 322) - see fillWelcomeActions. A device that
@@ -81274,8 +81290,6 @@ function showWelcome(){
   wrap.dataset.screen = "welcome";
   stage.replaceChildren(wrap);
   toTop();
-  /* the rank bubbles move here as they do on Home (327z15) */
-  setTimeout(() => { try{ if(wrap.isConnected) startOrbitEmblemAnims(wrap); }catch(e){} }, 1200);
 }
 
 /* ---- SIGN IN FIRST, AND NO SECOND ACCOUNT BY ACCIDENT (build 322) ----
@@ -81374,7 +81388,7 @@ function fillWelcomeActions(actions, title, trace){
        measured exactly as before. */
     const signinCap = document.createElement("p");
     signinCap.className = "cosmic-welcome-cap welcome-signin-cap";
-    signinCap.textContent = "Already use Nova on another phone or before? Use your sync code.";
+    signinCap.textContent = "Have an account? Sign in with your sync code.";
     hint.classList.add("welcome-new-cap");
     hint.textContent = "Never used Nova before.";
     actions.append(primary, signinCap, second, hint);

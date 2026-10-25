@@ -653,23 +653,31 @@ def section_y(br):
 
 
 def section_z(br):
-    print("\nZ. Welcome wears Home's planet system and Home's sky, and nothing on it taps or saves")
+    print("\nZ. Welcome keeps its learning icons in Home's glass bubbles, under Home's sky; nothing taps or saves")
     label, w, h, dpr = z5b.PHONE
     ctx, pg = z5b.boot(br, w, h, dpr)
     r = pg.evaluate("""() => { const before = JSON.stringify(store.seenUnlockedTiers || null);
       showWelcome();
       return new Promise(res => setTimeout(() => { const hero = document.querySelector('#stage .cosmic-welcome .cosmic-hero-wrap');
-        res({ rank: hero ? hero.querySelectorAll('.cosmic-badge-rank').length : -1,
-              generic: hero ? hero.querySelectorAll('.cosmic-icon-badge:not(.cosmic-badge-rank)').length : -1,
-              flares: hero ? hero.querySelectorAll('.cosmic-flare-dot').length : -1,
+        const home = document.createElement('div'); home.style.cssText = 'position:fixed;left:-999px;top:0;width:400px';
+        document.body.appendChild(home); home.appendChild(buildCosmicHero(true));
+        const unlit = home.querySelector('.cosmic-badge-rank:not(.cosmic-badge-lit)');
+        const icons = hero ? [...hero.querySelectorAll('.cosmic-icon-badge')] : [];
+        const cs = n => { const c = getComputedStyle(n); return { bg: c.backgroundColor, border: c.borderTopColor, w: n.offsetWidth, lens: getComputedStyle(n, '::after').content !== 'none' }; };
+        const want = unlit ? cs(unlit) : null;
+        const got = icons.map(cs);
+        home.remove();
+        res({ icons: icons.length, withLine: icons.filter(n => n.querySelector('svg path')).length, rank: hero ? hero.querySelectorAll('.cosmic-badge-rank').length : -1,
+              flares: hero ? hero.querySelectorAll('.cosmic-flare-dot').length : -1, want, got,
+              glass: !!want && got.length > 0 && got.every(g => g.bg === want.bg && g.border === want.border && g.lens && Math.abs(g.w - want.w) <= 1),
               taps: hero ? hero.querySelectorAll('.cosmic-badge-tappable, [role=button]').length : -1,
               sky: document.body.classList.contains('sky-home'),
               same: before === JSON.stringify(store.seenUnlockedTiers || null) }); }, 900)); }""")
-    check("Z. the rank bubbles and secret flares are Home's (%s)" % r, r["rank"] >= 6 and r["generic"] == 0 and r["flares"] >= 6, r)
+    check("Z. the learning icons stay: six line icons, no rank emblems (%d, %d)" % (r["icons"], r["rank"]), r["icons"] == 6 and r["withLine"] == 6 and r["rank"] == 0 and r["flares"] >= 6, r)
+    check("Z. each is the glass of Home's unreached rank bubble (fill, rim, lens, size)", r["glass"], {"want": r["want"], "got": r["got"][:2]})
     check("Z. nothing on Welcome's planet answers a tap or writes the store", r["taps"] == 0 and r["same"], r)
     check("Z. Welcome is under Home's full sky", r["sky"], r)
     ctx.close()
-
 
 def main():
     with sync_playwright() as pw:
