@@ -102,7 +102,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -750,10 +750,61 @@ def section_cc(br):
         ctx.close()
     check("CC. on 3 laptop screens: planet >= 62% of the height and centred, words on its left, Start in the bar, the daily button clear of it, no scroll", not bad, bad)
 
+def section_dd(br):
+    print("\nDD. Sign-up with Nova: he asks the username (one per person) and the first character; the account is made on the pick")
+    ctx, pg = cb.booted(br, 440, 956, touch=True, dpr=2, init=z5b.STANDALONE)
+    pg.wait_for_timeout(1500)
+    pg.evaluate("() => { document.getElementById('splashscreen')?.remove(); }")
+    if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
+        pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".welcomeintro-panel .next.playbtn", ".classselect-panel .modecard", ".classselect-panel .next.playbtn"):
+        pg.click(sel); pg.wait_for_timeout(600)
+    pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
+    try:
+        pg.wait_for_selector("#nova-intro", timeout=8000)
+    except Exception:
+        pass
+    pg.wait_for_timeout(1200)
+    ADV = """() => { const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return 'gone';
+      if(el.__nova.typing){ el.__nova.advance(); return 'typing'; }
+      if(el.__nova.asking) return el.querySelector('.nt-ask-name') ? 'name' : el.querySelector('.nt-ask-char') ? 'char' : 'ask';
+      if(el.__nova.index === el.__nova.count - 1){ el.querySelector('.nt-go').click(); return 'next'; }
+      el.__nova.advance(); return 'next'; }"""
+    def until(kind, n=200):
+        for _ in range(n):
+            k = pg.evaluate(ADV)
+            if k == kind or k == "gone":
+                return k
+            pg.wait_for_timeout(120)
+        return None
+    got = until("name")
+    before = pg.evaluate("() => ({ code: syncCode || null, done: !!store.onboardingComplete })")
+    check("DD. he asks the name before any account exists", got == "name" and not before["code"] and not before["done"], [got, before])
+    pg.evaluate("""() => { leaderboardRows = (leaderboardRows || []).concat([{ pub: 'tsaleshotaaa', firstName: 'TSale', avatarChar: 'alien', level: 24 }]); boardFetchedAt = Date.now(); }""")
+    pg.fill(".nt-ask-input", "TSale"); pg.click(".nt-ask-name .nt-ask-go"); pg.wait_for_timeout(600)
+    clash = pg.evaluate("() => ({ msg: !document.querySelector('.nt-ask-msg').hidden, signin: !document.querySelector('.nt-ask-signin').hidden, still: !!document.getElementById('nova-intro').__nova.asking, name: store.firstName })")
+    check("DD. a name somebody already wears stops it and offers to sign in", clash["msg"] and clash["signin"] and clash["still"] and clash["name"] != "TSale", clash)
+    pg.fill(".nt-ask-input", "J.Smith"); pg.click(".nt-ask-name .nt-ask-go"); pg.wait_for_timeout(800)
+    said = pg.evaluate("() => document.querySelector('#nova-intro .nt-text').textContent")
+    check("DD. a free name goes on, and he says it back", "J.Smith" in (said or "") or pg.evaluate("() => store.firstName") == "J.Smith", said)
+    got = until("char")
+    mid = pg.evaluate("() => ({ code: syncCode || null, n: document.querySelectorAll('.nt-ask-char .avatarchar-option').length })")
+    check("DD. then the starter characters, still no account", got == "char" and not mid["code"] and mid["n"] >= 4, [got, mid])
+    pg.click(".nt-ask-char .avatarchar-option >> nth=1"); pg.wait_for_timeout(200)
+    pg.click(".nt-ask-char .nt-ask-go"); pg.wait_for_timeout(600)
+    after = pg.evaluate("() => ({ code: !!syncCode, done: !!store.onboardingComplete, name: store.firstName, ch: store.avatarChar })")
+    check("DD. the pick makes the account, with that name and character", after["code"] and after["done"] and after["name"] == "J.Smith" and bool(after["ch"]), after)
+    until("gone", 400)
+    pg.wait_for_timeout(1500)
+    home = pg.evaluate("() => ({ greet: (document.querySelector('.homegreeting') || {}).textContent || '', tour: !!document.getElementById('tour-tooltip') })")
+    check("DD. Home greets the new name and the main-menu tips start", "J.Smith" in home["greet"] and home["tour"], home)
+    ctx.close()
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd)):
             if k in ONLY:
                 try:
                     fn(br)

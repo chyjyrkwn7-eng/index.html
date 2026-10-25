@@ -830,7 +830,8 @@ AT_WALL = """() => {
   saveStore(); return levelStateFor(store); }"""
 
 NOVA_ADV = """() => { const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return null;
-  const n = el.__nova; return { i: n.index, c: n.count, typing: n.typing, sig: !!el.querySelector('.nt-signal:not(.is-found)') }; }"""
+  const n = el.__nova; return { i: n.index, c: n.count, typing: n.typing, asking: !!n.asking,
+    name: !!el.querySelector('.nt-ask-name'), char: !!el.querySelector('.nt-ask-char'), sig: !!el.querySelector('.nt-signal:not(.is-found)') }; }"""
 
 
 def nova_talk(r, read=1.6, max_sec=420):
@@ -844,6 +845,22 @@ def nova_talk(r, read=1.6, max_sec=420):
             return
         if st["sig"] or st["typing"]:
             r.frame(); continue
+        # 327z15: he asks your name, and who comes home first
+        if st.get("asking"):
+            r.wait(read)
+            if st.get("name"):
+                r.tap("document.querySelector('#nova-intro .nt-ask-input')"); r.wait(.4)
+                for ch in NOVA_NEW_NAME:
+                    r.pg.keyboard.type(ch); r.wait(.12)
+                r.wait(.6)
+                r.tap("document.querySelector('#nova-intro .nt-ask-name .nt-ask-go')"); r.wait(1.2)
+                r.until("!(document.getElementById('nova-intro') || {}).querySelector || !document.querySelector('#nova-intro .nt-ask-name')", 8)
+            elif st.get("char"):
+                r.tap("document.querySelectorAll('#nova-intro .nt-ask-char .avatarchar-option')[2]"); r.wait(.8)
+                r.tap("document.querySelectorAll('#nova-intro .nt-ask-char .avatarchar-option')[0]"); r.wait(1.0)
+                r.tap("document.querySelector('#nova-intro .nt-ask-char .nt-ask-go')"); r.wait(1.0)
+            last = None
+            continue
         if st["i"] != last:
             last = st["i"]; r.wait(read)
             continue
@@ -864,33 +881,25 @@ def tour_through(r, read=1.6, max_steps=14):
         r.tap("document.getElementById('tour-next')", max_sec=2); r.wait(.5)
 
 
+NOVA_NEW_NAME = "J.Smith"
+
+
 def nova_new(r, out):
-    """A brand-new install: Welcome, I'm new here, the check,
-    the class, a username, a character, all set, GENERATING PROFILE, then
-    Nova's introduction and the main-menu tooltips."""
-    pg = r.pg
+    """A brand-new install (327z15): Welcome, I'm new here, the check, the
+    class, GENERATING PROFILE, then Nova - who asks the username and has
+    you pick your first character in his introduction - and the main-menu
+    tooltips."""
     r.start(out)
     r.wait(1.5)
     r.tap("document.querySelector('.cosmic-welcome-btn.welcome-new')"); r.wait(1.4)
     r.tap("document.querySelector('.signupcheck-panel .signupcheck-go')"); r.wait(1.6)
     r.tap("document.querySelector('.welcomeintro-panel .next.playbtn')"); r.wait(1.4)
     r.tap("document.querySelector('.classselect-panel .modecard')"); r.wait(.8)
-    r.tap("document.querySelector('.classselect-panel .next.playbtn')"); r.wait(1.0)
-    r.tap("document.querySelector('.onboarding-shortform-panel .searchbox')"); r.wait(.4)
-    for ch in "Madison":
-        pg.keyboard.type(ch); r.wait(.12)
-    r.wait(.8)
-    r.tap("document.querySelector('.onboarding-shortform-panel .next.playbtn')"); r.wait(1.2)
-    r.until("!!document.querySelector('.charselect-panel .avatarchar-option')", 6)
-    r.tap("document.querySelectorAll('.charselect-panel .avatarchar-option')[2]"); r.wait(.8)
-    r.tap("document.querySelectorAll('.charselect-panel .avatarchar-option')[0]"); r.wait(1.0)
-    r.tap("document.querySelector('.charselect-panel .next.playbtn')"); r.wait(1.4)
-    r.tap("document.querySelector('.onboarding-shortform-panel .next.playbtn')"); r.wait(.5)
+    r.tap("document.querySelector('.classselect-panel .next.playbtn')"); r.wait(.5)
     r.until("!document.getElementById('genprofile-overlay') && !!document.getElementById('nova-intro')", 30, then=.5)
     nova_talk(r)
     tour_through(r)
     r.wait(2.5)
-
 
 def nova_existing(r, out):
     """An account from before him (Silver, three badges): Home, the signal,

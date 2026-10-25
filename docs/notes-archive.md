@@ -27870,3 +27870,39 @@ to min(84rem, 94vw):
 - Study modes: the four cards in one row (.modecards nowrap, flex 1 1 0) -
   the mode screen no longer scrolls on a 1366x638 laptop (was 707px tall).
 - The Leaderboard keeps its column (a table reads best that wide).
+
+## Build 327z15 round 21 - Nova asks your username and your first character
+
+"we won't pick genders of course, but maybe that's where you pick your
+starting character, and your username? Could be a better tie in" - asked
+with the flow laid out, answered "Yes, build it".
+
+- Sign-up: Welcome -> I'm new here -> the check -> What This Actually Is ->
+  class -> GENERATING PROFILE -> Home under Nova. The username and character
+  screens are no longer in the flow (showWelcomeNamePrompt and
+  showWelcomeCharacterPrompt still exist; older gates call them directly).
+- startSignupWithNova(): finishWelcomeStartFresh(then) - the same
+  no-account-over-another check, now with what to do next - clears the name
+  and character, sets signupInNova and pendingMainMenuTour, GENERATING.
+- novaTalk lines can ASK: `ask(ctx, answered)` puts its question on the
+  stage once the line is typed and nothing moves on until answered()
+  (taps, Enter and the hint are held; .nova-talk.is-asking); `text` may be
+  a function, read when the line comes up. ctx.close is exposed.
+- Nova's sign-up lines: "Hello there!" ... "First, what should I call you?"
+  (novaAskName: one name per person on the board, as the username screen
+  had it - a name somebody wears says so and offers "That's me - sign in",
+  which closes him and opens the code screen) -> "So you're <name>! Great
+  to meet you." -> the story -> "My crew are waiting in their pods." ->
+  "Who should I bring home to be by your side?" (novaAskCharacter: the
+  starter characters; "Bring <Name> home") -> novaSignupCreate() makes the
+  account: setSyncCode, onboardingComplete, tourRev, novaMet,
+  badgeBandsVersion, markIntroSeen, save, push + live listener (startNewAccount's
+  steps and showHome's sign-up marks) -> "<Name> is home, and on your team
+  now!" (their art) -> "Find the rest, and they'll join you too." -> "This
+  is your sync code. It signs you in on any device." (the code, which
+  replaces the old You're All Set screen) -> modes, friend, "Your adventure
+  starts now. Let's go!". Then Home is built again (name, character) and
+  the main-menu tips run.
+- Closed before the pick: no account exists; the next launch is Welcome.
+- Tools: record-sound nova_new and shoot-flow walk the new flow (types
+  "J.Smith", picks a character). Gate: check-b327z15 "%" (DD).

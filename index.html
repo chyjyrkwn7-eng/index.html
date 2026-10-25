@@ -1864,6 +1864,24 @@
     gap:.8rem; text-align:center; opacity:0; transform:translateY(10px) scale(.96);
     transition:opacity .35s ease, transform .5s cubic-bezier(.25,1.3,.4,1); pointer-events:none; }
   .nt-prop.is-in{ opacity:1; transform:none; }
+  /* HIS QUESTIONS (327z15): a name field and the starter characters, on his
+     stage - the one place a prop is touchable */
+  .nt-prop:has(.nt-ask){ pointer-events:auto; }
+  .nt-ask{ display:flex; flex-direction:column; align-items:center; gap:.8rem; width:min(22rem, 92%); transition:opacity .25s ease; }
+  .nt-ask.is-out{ opacity:0; }
+  .nt-ask .nt-ask-input{ width:100%; font-size:1.15rem; text-align:center; padding-top:.85rem; padding-bottom:.85rem; }
+  .nt-ask .nt-ask-go{ min-height:48px; min-width:12rem; margin:0; }
+  .nt-ask .nt-ask-signin{ min-height:44px; margin:0; }
+  .nt-ask .nt-ask-msg{ margin:0; font-size:.92rem; line-height:1.4; color:var(--soft); }
+  .nt-ask-char{ width:min(28rem, 96%); }
+  .nt-ask .nt-ask-grid{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:.6rem; width:100%; margin:0; }
+  .nt-ask .nt-ask-grid .avatarchar-option{ width:100%; min-height:44px; aspect-ratio:1; }
+  .nt-picked{ display:block; width:min(9rem, 40vw); aspect-ratio:1; }
+  .nt-picked svg{ width:100%; height:100%; display:block; }
+  .nt-codebox{ margin:0; padding:1.1rem 1.6rem; }
+  .nt-codebox .codereveal-value{ font-size:1.7rem; letter-spacing:.08em; margin:.35rem 0; }
+  /* the tap-to-go-on hint is meaningless while he waits for an answer */
+  .nova-talk.is-asking .nt-hint{ visibility:hidden; }
   /* made ahead (build 326): laid out under the slide that is up, unseen
      and untouchable, until his line comes */
   .nt-prop.is-prepped{ z-index:-1; opacity:.002; transform:none; transition:none; }
@@ -81889,7 +81907,10 @@ function showClassSelection(){
   continueBtn.type = "button"; continueBtn.className = "next playbtn"; continueBtn.id = "nextbtn";
   continueBtn.textContent = "Continue";
   continueBtn.hidden = true;
-  continueBtn.addEventListener("click", showWelcomeNamePrompt);
+  /* (327z15) the username and the character are asked by Nova now, in his
+     introduction - "maybe that's where you pick your starting character,
+     and your username? Could be a better tie in" */
+  continueBtn.addEventListener("click", startSignupWithNova);
   panel.appendChild(continueBtn);
 
   classCard.addEventListener("click", () => {
@@ -82174,7 +82195,7 @@ function showWelcomeCharacterPrompt(){
   toTop();
 }
 
-function finishWelcomeStartFresh(){
+function finishWelcomeStartFresh(then){
   /* a new account has no last week to be told about (build 327z) */
   accountArrivedThisLaunch = true;
   /* NO NEW ACCOUNT OVER ONE THIS DEVICE STILL HOLDS (build 322) unless
@@ -82198,7 +82219,7 @@ function finishWelcomeStartFresh(){
       applyTheme(); saveTheme();
       store.firstName = name; store.avatarChar = avatar;
     }
-    startNewAccount();
+    (typeof then === "function" ? then : startNewAccount)();
   });
 }
 function startNewAccount(){
@@ -82215,6 +82236,121 @@ function startNewAccount(){
   showWelcomeCodeReveal();
 }
 
+/* ---- SIGN-UP WITH NOVA (327z15) ----
+   "we won't pick genders of course, but maybe that's where you pick your
+   starting character, and your username? Could be a better tie in." After
+   the class: the same no-account-over-another check as before
+   (finishWelcomeStartFresh), GENERATING PROFILE, and Nova - who asks your
+   name and has you pick who comes home first, and only then is the account
+   made (novaSignupCreate): the same steps startNewAccount takes, and the
+   same completion marks showHome made for a sign-up. Closed before that, no
+   account exists and the next launch is Welcome again. */
+let signupInNova = false;
+function startSignupWithNova(){
+  finishWelcomeStartFresh(() => {
+    store.firstName = ""; store.avatarChar = null;
+    signupInNova = true;
+    pendingMainMenuTour = true;
+    showGeneratingProfile();
+  });
+}
+function novaSignupCreate(){
+  if(syncCode) return;
+  setSyncCode(generateSyncCode());
+  store.onboardingComplete = true;
+  store.tourRev = TOUR_REV;
+  store.novaMet = NOVA_MEET_REV;
+  store.badgeBandsVersion = BADGE_BANDS_VERSION;
+  try{ markIntroSeen(); }catch(e){}
+  saveStore();
+  updateHeaderTitle();
+  onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
+}
+/* His question: your name. The board's rule as the username screen had it -
+   one name per person; a name somebody already wears offers to sign in. */
+function novaAskName(ctx, answered){
+  const card = document.createElement("div"); card.className = "nt-ask nt-ask-name";
+  const input = document.createElement("input");
+  input.type = "text"; input.className = "searchbox searchbox-plain nt-ask-input";
+  input.placeholder = "Your username"; input.maxLength = 40; input.spellcheck = false;
+  input.setAttribute("autocorrect", "off"); input.setAttribute("autocapitalize", "words");
+  input.setAttribute("aria-label", "Your username");
+  const msg = document.createElement("p"); msg.className = "nt-ask-msg"; msg.hidden = true;
+  const signIn = document.createElement("button"); signIn.type = "button"; signIn.className = "next ghost nt-ask-signin"; signIn.hidden = true;
+  signIn.textContent = "That’s me — sign in";
+  signIn.addEventListener("click", () => { signupInNova = false; pendingMainMenuTour = false; try{ ctx.close("signin"); }catch(e){} showWelcomeCodeEntry(); });
+  const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn nt-ask-go"; go.textContent = "That’s me"; go.hidden = true;
+  let checking = false;
+  const submit = () => {
+    const name = input.value.trim();
+    if(!name || checking) return;
+    const decide = () => {
+      checking = false; go.disabled = false; go.textContent = "That’s me";
+      if(!card.isConnected || input.value.trim() !== name) return;
+      const row = boardRowForName(name);
+      if(row){
+        msg.textContent = String(row.firstName || name).trim() + " already has a Nova account. If that’s you, sign in. If not, pick another name.";
+        msg.hidden = false; signIn.hidden = false; go.hidden = true;
+        return;
+      }
+      store.firstName = name.slice(0, 40);
+      updateHeaderTitle();
+      answered();
+    };
+    if(!boardKnown() && fbDb){ checking = true; go.disabled = true; go.textContent = "Checking…"; }
+    whenBoardKnown(5000, decide);
+  };
+  input.addEventListener("input", () => { msg.hidden = true; signIn.hidden = true; go.hidden = !input.value.trim(); });
+  input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); submit(); } });
+  go.addEventListener("click", submit);
+  card.append(input, msg, go, signIn);
+  try{ fetchBoardForInvites(false); }catch(e){}
+  novaProp(ctx, card);
+  setTimeout(() => { try{ input.focus({ preventScroll: true }); }catch(e){} }, 320);
+}
+/* His second: who comes home first - the starter characters, as the
+   character screen offered them. The account is made on the answer. */
+function novaAskCharacter(ctx, answered){
+  const card = document.createElement("div"); card.className = "nt-ask nt-ask-char";
+  const grid = document.createElement("div"); grid.className = "avatarchar-grid nt-ask-grid";
+  let picked = null;
+  const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn nt-ask-go"; go.textContent = "Bring them home"; go.hidden = true;
+  AVATAR_CHARACTERS.forEach(c => {
+    if(c.retired || c.legacy || c.unlock || c.feat) return;
+    if(isLockedCharacter(c.id)) return;
+    const opt = document.createElement("button"); opt.type = "button";
+    opt.className = "avatarchar-option";
+    opt.style.setProperty("--char-glow", avatarGlowColor(c.id));
+    opt.setAttribute("aria-label", AVATAR_DISPLAY_NAME[c.id] || c.id);
+    opt.appendChild(pickerCharSVG(c.id));
+    addPickCheck(opt);
+    opt.addEventListener("click", () => {
+      picked = c.id;
+      grid.querySelectorAll(".avatarchar-option.selected").forEach(glowOff);
+      opt.classList.add("selected"); opt.blur();
+      go.hidden = false;
+      go.textContent = "Bring " + (AVATAR_DISPLAY_NAME[c.id] || "them") + " home";
+    });
+    grid.appendChild(opt);
+  });
+  go.addEventListener("click", () => {
+    if(!picked) return;
+    store.avatarChar = picked;
+    novaSignupCreate();
+    answered();
+  });
+  card.append(grid, go);
+  novaProp(ctx, card);
+}
+/* The new account's code, on his stage */
+function novaCodeProp(){
+  const box = document.createElement("div"); box.className = "codereveal-box nt-codebox";
+  const lab = document.createElement("p"); lab.className = "codereveal-label"; lab.textContent = "Your sync code";
+  const val = document.createElement("p"); val.className = "codereveal-value"; val.textContent = syncCode || "";
+  const sub = document.createElement("p"); sub.className = "codereveal-label"; sub.textContent = "It’s in Settings too.";
+  box.append(lab, val, sub);
+  return box;
+}
 /* A brief, deliberately game-like loading moment between finishing sign-up
    and landing on the code reveal \u2014 purely theatrical (everything it's
    "waiting" on has already finished by the time this runs), but gives
@@ -82866,7 +83002,7 @@ function novaTalk(o){
   const lines = o.lines;
   lines.forEach(() => prog.appendChild(document.createElement("i")));
   const ctx = { el, stage, fig, bubble };
-  let idx = -1, typer = null, closed = false;
+  let idx = -1, typer = null, closed = false, asking = false;
   const entered = new Set();
   const enter = (i, instant) => {
     if(entered.has(i)) return;
@@ -82888,11 +83024,24 @@ function novaTalk(o){
     if(!still){ bubble.classList.remove("bump"); void bubble.offsetWidth; bubble.classList.add("bump"); }
     novaGesture(fig, line.gesture);
     if(typer) typer.cancel();
-    typer = novaType(text, line.text, NOVA_TYPE_CPS, {
+    /* A LINE CAN ASK (327z15): `ask(ctx, answered)` puts its question on
+       the stage once the line is typed, and nothing moves on until it is
+       answered; `text` may be a function, read when the line comes up,
+       so a line can use the answer before it. */
+    asking = !!line.ask;
+    el.classList.toggle("is-asking", asking);
+    const words = typeof line.text === "function" ? line.text() : line.text;
+    typer = novaType(text, words, NOVA_TYPE_CPS, {
       talk: on => fig.classList.toggle("is-talking", !!on && !still),
       done: () => {
         fig.classList.remove("is-talking");
         bubble.classList.add("is-done");
+        if(line.ask){
+          try{ line.ask(ctx, () => { if(closed || idx !== i) return; asking = false; el.classList.remove("is-asking");
+            ctx.stage.querySelectorAll(".nt-ask").forEach(n => { n.classList.add("is-out"); setTimeout(() => n.remove(), 260); });
+            if(i < lines.length - 1) show(i + 1); }); }catch(e){ asking = false; }
+          return;
+        }
         if(!line.final) hint.classList.add("is-on");
         else setTimeout(() => { try{ go.focus({ preventScroll: true }); }catch(e){} }, 60);
       }
@@ -82901,6 +83050,7 @@ function novaTalk(o){
   function advance(){
     if(closed || idx < 0) return;
     if(typer && !typer.done){ typer.finish(); return; }
+    if(asking) return;
     if(idx < lines.length - 1) show(idx + 1);
   }
   function close(reason){
@@ -82927,18 +83077,19 @@ function novaTalk(o){
   function onKey(e){
     if(closed || !el.isConnected) return;
     if(e.key === "Escape"){ if(!o.noSkip){ e.preventDefault(); skipAll(); } }
-    else if((e.key === " " || e.key === "Enter" || e.key === "ArrowRight") && !(e.target && e.target.closest && e.target.closest("button"))){
+    else if((e.key === " " || e.key === "Enter" || e.key === "ArrowRight") && !(e.target && e.target.closest && e.target.closest("button, input, .nt-ask"))){
       e.preventDefault(); advance();
     }
   }
   el.addEventListener("click", e => {
-    if(e.target.closest(".nt-skip, .nt-go")) return;
+    if(e.target.closest(".nt-skip, .nt-go, .nt-ask")) return;
     advance();
   });
   skip.addEventListener("click", e => { e.stopPropagation(); skipAll(); });
   go.addEventListener("click", e => { e.stopPropagation(); close("done"); });
   document.addEventListener("keydown", onKey, true);
-  el.__nova = { advance, skip: skipAll, close, get index(){ return idx; }, get count(){ return lines.length; },
+  ctx.close = close;
+  el.__nova = { advance, skip: skipAll, close, get asking(){ return asking; }, get index(){ return idx; }, get count(){ return lines.length; },
                 get typing(){ return !!(typer && !typer.done); } };
 
   document.body.appendChild(el);
@@ -84179,6 +84330,13 @@ function novaIntroLines(o){
     lines.push({ gesture: "wave", text: "There you are, " + name + "!", enter: hello });
     lines.push({ text: "I’m Nova. Explorer, and instructor." });
     lines.push({ gesture: "raise", text: "My ship’s been out of range since the storm." });
+  } else if(o.signup){
+    /* (327z15) a sign-up: he asks the name himself */
+    lines.push({ gesture: "wave", text: "Hello there!", enter: hello });
+    lines.push({ text: "Welcome aboard. My name is Nova." });
+    lines.push({ text: "I’m an explorer, and I’ll be your instructor." });
+    lines.push({ gesture: "raise", text: "First, what should I call you?", ask: novaAskName });
+    lines.push({ gesture: "wave", text: () => "So you’re " + novaName() + "! Great to meet you.", enter: hello });
   } else {
     lines.push({ gesture: "wave", text: "Hello there, " + name + "!", enter: hello });
     lines.push({ text: "Welcome aboard. My name is Nova." });
@@ -84205,8 +84363,20 @@ function novaIntroLines(o){
       ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap("Every unit has its own badge"))) });
     lines.push({ text: "Score 100% on a unit enough times, and its badge is yours." });
     lines.push({ gesture: "raise", text: "My crew are waiting in their pods.",
-      ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
-    lines.push({ text: "Every one you find joins your team." });
+      ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(o.signup ? "My crew" : crew.have + " of " + crew.total + " characters found"))) });
+    if(o.signup){
+      /* (327z15) you pick who comes home first, and the account is made */
+      lines.push({ gesture: "raise", text: "Who should I bring home to be by your side?", ask: novaAskCharacter });
+      lines.push({ gesture: "nod", text: () => novaCrewName(store.avatarChar) + " is home, and on your team now!",
+        enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
+          try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
+          novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } });
+      lines.push({ text: "Find the rest, and they’ll join you too." });
+      lines.push({ gesture: "raise", text: "This is your sync code. It signs you in on any device.",
+        enter: ctx => novaProp(ctx, novaStack(novaCodeProp())) });
+    } else {
+      lines.push({ text: "Every one you find joins your team." });
+    }
     lines.push({ text: "Drill, Mock, Review and the Virtual Room will get you there.",
       ...novaSlide("modes", () => novaModeRow()) });
   }
@@ -93286,7 +93456,22 @@ function showHome(){
   scheduleRankUpLock();
   /* Nova looks for anything he has to say once Home has settled (build 324) */
   try{ novaTickSoon(3500); }catch(e){}
-  if(pendingMainMenuTour){
+  if(pendingMainMenuTour && signupInNova){
+    /* (327z15) a sign-up made in Nova's introduction: the account (and every
+       completion mark) is made there, on the character's pick
+       (novaSignupCreate); when he is done Home is built again with the name
+       and the character, and the main-menu tips run. */
+    pendingMainMenuTour = false;
+    try{ localStorage.removeItem("class26e.nova"); }catch(e){}
+    setTimeout(() => {
+      if(document.querySelector(".homeversion-btn")) playNovaIntro(reason => {
+        signupInNova = false;
+        if(reason === "signin" || !syncCode) return;
+        showHome();
+        setTimeout(() => { if(document.querySelector(".homeversion-btn")) startMainMenuTour(); }, 350);
+      }, { signup: true });
+    }, 400);
+  } else if(pendingMainMenuTour){
     pendingMainMenuTour = false;
     /* The genuine completion point for a fresh signup \\u2014 flipped here
        rather than earlier in the chain (username entry, character
