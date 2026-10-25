@@ -27931,3 +27931,21 @@ tab theme? ... why is the word nova so massive, revert that".
 - The main-menu tour's last step points at #homestart there.
 - Gate CC rewritten: the pill beside the bar (and it opens the modes), the
   daily question clear of the bar and right of the planet.
+
+## Build 327z15 round 23 - laptop Home: the words as round 19 had them; "Studying late"; the daily question placed
+
+From a screenshot of round 19's laptop Home: "These proportions of the words
+on the left are perfect. The 'up late' thing isn't it. We can keep it as
+studying actually. The daily question button can be a little bigger and
+somewhere placed on the right side ... but make it look good/intentional."
+
+- The greeting (clamp(1.05rem, 1.35vw, 1.4rem)), NOVA (clamp(3rem, 5.4vw,
+  6.4rem)) and the line (clamp(1rem, 1.3vw, 1.45rem)) are round 19's again.
+  (Round 22's "revert" was answering round 20's 7vw NOVA.)
+- Home's late greeting is "Studying late" again (round 18's "Up late" is
+  undone).
+- The daily question on laptop Home: 6rem, centred in the right-hand column
+  (75vw + a quarter of the planet + half the gap) and a fifth of the planet
+  above the planet's middle - the mirror of the words on the left. The
+  laptop variables (--lap-side, --lap-gap, --lap-hero) now live on body so
+  the fixed button can use them.

@@ -32691,11 +32691,15 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* the bubbles grow with the planet here (Home's phone rule stops them at 2.9rem) */
   html[data-layout] body .panel.home.screen-home-actual .cosmic-icon-badge.cosmic-badge-rank{ width:min(4.4rem, 10.7cqw); height:min(4.4rem, 10.7cqw); }
   /* the words: left of the planet, set large, ranged to its side */
-  html[data-layout] body .panel.home.screen-home-actual > .homegreeting{ grid-column:1; grid-row:2; justify-self:end; text-align:right; margin:0 0 .4rem; }
+  html[data-layout] body .panel.home.screen-home-actual > .homegreeting{ grid-column:1; grid-row:2; justify-self:end; text-align:right;
+    margin:0 0 .4rem; font-size:clamp(1.05rem, 1.35vw, 1.4rem); letter-spacing:.01em; }
   html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ grid-column:1; grid-row:3; justify-self:end; text-align:right; margin:0; }
   html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ max-width:var(--lap-side); }
-  /* (NOVA keeps its own size: "why is the word nova so massive, revert that") */
-  html[data-layout] body .panel.home.screen-home-actual .hometagline{ text-wrap:balance; }
+  /* the words' sizes Madison picked from a screenshot: "These proportions of
+     the words on the left are perfect" (round 19's, between the 7vw NOVA he
+     called massive and Home's own phone size) */
+  html[data-layout] body .panel.home.screen-home-actual .hometitle{ font-size:clamp(3rem, 5.4vw, 6.4rem); line-height:.95; letter-spacing:.06em; }
+  html[data-layout] body .panel.home.screen-home-actual .hometagline{ font-size:clamp(1rem, 1.3vw, 1.45rem); margin-top:.6rem; text-wrap:balance; }
   /* Start Studying is its own pill beside the bar here (#homestart) */
   html[data-layout] body.has-homestart .panel.home.screen-home-actual > .playbtn{ display:none; }
   /* the bar gives up the pill's width and the two are centred together */
@@ -32704,9 +32708,20 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      question button could be somewhere floating on the right side ... and
      not on the bottom near the tab?" Level with the planet's middle, in the
      right-hand space the planet leaves. */
+  /* (round 23) bigger, and placed: centred in the empty right-hand column
+     (the mirror of the words on the left) and level with the planet's upper
+     half - the right column's middle is 75vw + a quarter of the planet +
+     half the gap; the planet's middle is half the height above the bar's
+     reserve, and the button sits a fifth of the planet above it */
+  html[data-layout] body:has(.screen-home-actual){
+    --lap-side:clamp(15rem, 23vw, 27rem); --lap-gap:clamp(1.5rem, 3vw, 4rem);
+    --lap-hero:min(48rem, calc((100dvh - 13rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
+    --dq-size:6rem;
+  }
   html[data-layout] body:has(.screen-home-actual) .daily-question-fab{
-    top:calc(50% - 4.2rem); bottom:auto; right:clamp(2rem, calc((50vw - 24rem) / 2), 12rem); left:auto;
-    width:5.2rem; height:5.2rem; font-size:2.2rem;
+    left:calc(75vw + var(--lap-hero) / 4 + var(--lap-gap) / 2 - var(--dq-size) / 2); right:auto;
+    top:calc((100dvh - 6.5rem) / 2 - var(--lap-hero) * .2 - var(--dq-size) / 2); bottom:auto;
+    width:var(--dq-size); height:var(--dq-size); font-size:2.6rem;
   }
 }
 .homestart{ display:none; }
@@ -93223,7 +93238,7 @@ function showHome(){
   greeting.className = "homegreeting";
   const hour = new Date().getHours();
   const isLateNight = hour < 5 || hour >= 21;
-  const baseGreeting = isLateNight ? "Up late"
+  const baseGreeting = isLateNight ? "Studying late"
     : hour < 12 ? "Good morning"
     : hour < 17 ? "Good afternoon"
     : "Good evening";
