@@ -32748,6 +32748,11 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      bigger (they'd be the same size". 4rem both - the chat button on every
      screen, the daily question on Home. */
   html[data-layout] body .chatdock-btn{ width:4.4rem; height:4.4rem; }   /* round 26: "chat button is a little small" - daily matches */
+  /* ...except in a test, where it sits in a row with Pause: there it takes
+     Pause's height (52px) so the two read as one row and it stays clear of
+     the test's clock below them (at 4.4rem it reached 2px into the clock on
+     a landscape iPad - check-fixes) */
+  html[data-layout] body .chatdock.in-test .chatdock-btn{ width:52px; height:52px; }
   html[data-layout] body .chatdock-btn svg{ width:1.65rem; height:1.65rem; }
 }
 .homestart{ display:none; }
@@ -32809,12 +32814,15 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    under its status bar at the top of a page. So in a browser tab the sky
    itself fades into the paper over its top 6rem and its bottom 4rem -
    exactly the colour Safari puts in the bands - and the edge disappears.
+   (Round 26: the bottom holds solid paper for its last 1.5rem before the
+   fade, so the very edge is exactly the root's colour - check-fixes'
+   grey-bar check measured up to 46 levels between them in every tab.)
    Background layers only (body::before), so nothing on the screen is
    covered; the stars are already masked off the top (--sky-clear). */
 html.is-browser[data-layout="modern"] body::before{
   background:
     linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
-    linear-gradient(to top, var(--paper) var(--bleed), transparent calc(var(--bleed) + 4rem)),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
     var(--paper);
@@ -32822,11 +32830,44 @@ html.is-browser[data-layout="modern"] body::before{
 html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
     linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
-    linear-gradient(to top, var(--paper) var(--bleed), transparent calc(var(--bleed) + 4rem)),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
     var(--paper);
+}
+/* ...and the root's fallback carries the same two fades (round 26). What a
+   rubber-band past the bottom reveals is html's background, and with the
+   glows alone there check-fixes measured 31-46 levels between it and the
+   faded edge in every browser tab. The fades are html's first two layers,
+   sized to its whole box: at the top of the page its top is the screen's
+   top, at the bottom its bottom is the screen's bottom - the same geometry
+   body::before's fades have - and every glow layer is kept as it was. */
+html.is-browser[data-layout="modern"]{
+  background:
+    linear-gradient(to bottom, var(--paper), transparent 6rem),
+    linear-gradient(to top, var(--paper) 1.5rem, transparent 5.5rem),
+    radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
+    linear-gradient(var(--paper), var(--paper)),
+    var(--edge-bottom);
+  background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
+  background-repeat:no-repeat;
+}
+html.is-browser[data-theme="dark"][data-layout="modern"]{
+  background:
+    linear-gradient(to bottom, var(--paper), transparent 6rem),
+    linear-gradient(to top, var(--paper) 1.5rem, transparent 5.5rem),
+    radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+    linear-gradient(var(--paper), var(--paper)),
+    var(--edge-bottom);
+  background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
+  background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0, 0 0;
+  background-repeat:no-repeat;
 }
 /* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
    cut off at the top and bottom STILL and the page is scrolling? Like legit

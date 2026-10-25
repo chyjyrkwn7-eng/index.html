@@ -565,14 +565,16 @@ def main():
                           pauseRun(); await wait(700);
                           const pa={clock:R('.timerline .tmain'),chip:R('.timerline .tpaused'),dock:R('#chatdock-btn')};
                           o.paChip=hit(pa.chip,pa.dock); o.paClock=hit(pa.clock,pa.dock);
+                          const rr=q=>q?[Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)]:null;
+                          o.at={clock:rr(un.clock), dock:rr(un.dock), pclock:rr(pa.clock), pdock:rr(pa.dock)};
                           try{ document.getElementById('pause-quit').click(); await wait(400); document.getElementById('quit-confirm').click(); await wait(600); }catch(e){}
                           return o;}""")
                         if not tm["running"]:
                             fails.append(f"{tag}: a timed drill did not show its clock")
                         if tm["unPause"]: fails.append(f"{tag}: the test clock sits under Pause")
-                        if tm["unDock"]: fails.append(f"{tag}: the test clock sits under the chat button")
+                        if tm["unDock"]: fails.append(f"{tag}: the test clock sits under the chat button {tm.get('at')}")
                         if tm["paChip"]: fails.append(f"{tag}: paused, the PAUSED chip sits under the chat button")
-                        if tm["paClock"]: fails.append(f"{tag}: paused, the clock sits under the chat button")
+                        if tm["paClock"]: fails.append(f"{tag}: paused, the clock sits under the chat button {tm.get('at')}")
 
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');

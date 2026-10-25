@@ -28001,3 +28001,20 @@ little bigger), the chat button a little small.
 - Stats > Recent tests: the full-width "Test history" button is now a small
   pill at the right of the section header (.stx-recent-top / .stx-allpill),
   "All N tests" once there are any.
+- check-fixes caught two things this round and both are fixed:
+  - GREY BAR in every browser tab (31-46 levels): the Safari paper fades on
+    body::before (round 18) were not on html, which is what a rubber-band
+    past the end reveals. html.is-browser now repeats the full html
+    background (light and dark) with the two fades as its first layers,
+    sized to html's box, and body::before's bottom fade holds solid paper
+    for its last 1.5rem. (Flat paper on html was tried first and fails the
+    "html fallback glow" check - the glows have to stay.)
+  - the test clock under the chat button on a landscape iPad (the laptop
+    media query covers it): at 4.4rem the button reached 2px into the
+    clock. In a test (.chatdock.in-test) it takes Pause's 52px - the two sit
+    in one row there anyway.
+- check-fixes' clock failures now print the clock and button rects.
+- check-b326-e e1 MOVED IN 327z15 to the voyage story (storm, scattered,
+  class material, joins your team, open end; at most 20 lines for a new
+  account, which now has two asks); the Version 9 note check reads the
+  storm text; the returning-tip check no longer expects the crack line.
