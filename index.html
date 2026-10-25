@@ -56591,6 +56591,9 @@ const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 const HEARTBEAT_MS = 4 * 60 * 1000;
 let heartbeatTimer = null;
 let lastHeartbeatAt = 0;
+/* Hiding the app fires visibilitychange and then, on a close, pagehide:
+   one "left" mark is enough until a beat says they are back (build 327z15). */
+let offlineSent = false;
 /* ---- PRESENCE LIVES IN ITS OWN DOCUMENT ----
    THE DOT WAS NEVER THE PROBLEM; WHERE IT WAS WRITTEN WAS. `seenAt`
    used to be stamped into this person's LEADERBOARD ROW - the document
@@ -56628,6 +56631,7 @@ function sendHeartbeat(force){
   const now = Date.now();
   if(!force && now - lastHeartbeatAt < HEARTBEAT_MS - 5000) return;
   lastHeartbeatAt = now;
+  offlineSent = false;
   /* set(..., {merge:true}) rather than update(): update() rejects when
      the document does not exist yet, and somebody has to be first. */
   const act = currentActivity();
@@ -56699,6 +56703,7 @@ function shareActivity(){
   const now = Date.now();
   activityShared = act; activityLastWrite = now;
   lastHeartbeatAt = now;
+  offlineSent = false;
   try{
     fbDb.collection("vrooms").doc(PRESENCE_DOC)
       .set({ kind: "presence", p: { [store.publicId]: now }, a: { [store.publicId]: act } }, { merge: true })
@@ -56823,6 +56828,8 @@ const OFFLINE_GRACE_MS = 2 * 60 * 1000;
 function sendOffline(){
   if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
   lastHeartbeatAt = 0;
+  if(offlineSent) return;
+  offlineSent = true;
   try{
     fbDb.collection("vrooms").doc(PRESENCE_DOC)
       .set({ kind: "presence", p: { [store.publicId]: -Date.now() } }, { merge: true })
@@ -57876,9 +57883,11 @@ function writeLeaderboardRow(row){
   lastRowUrgentSig = rowSignature(row, true);
   lastRowKey = publicIdOf();
   lastRowPushAt = Date.now();
-  /* set() replaces the whole document and this row carries seenAt, so
-     a push IS a heartbeat - the same reasoning as before. */
-  lastHeartbeatAt = lastRowPushAt;
+  /* Build 327z15: a row push no longer counts as a heartbeat. Presence is
+     read from the presence document first (isOnline), and the row's seenAt
+     only when that has no answer, so a push that reset the beat timer left
+     the presence document four minutes stale - a friend mid-test showed
+     offline while they answered. */
   /* the account has been read again since a row said this copy was
      behind it: what goes up now is the truth, whatever the row says */
   const reread = rowRecheckFor === code;
@@ -91756,6 +91765,7 @@ function startChatDock(){
    the last chance to say so. Best effort by definition - if it does
    not land, the presence stamp above is what eventually takes the
    entry off everybody's roster. */
+let chatAwaySent = false;
 window.addEventListener("pagehide", () => {
   /* A queued score that never lands is a score that never appears. */
   try{ if(rowPushTimer) flushLeaderboardRow(); }catch(e){}
@@ -91766,7 +91776,9 @@ window.addEventListener("pagehide", () => {
        the "Someone". Closing the app is not leaving a chat: the entry
        stays, with its stamp set to 0 so it reads as away at once. Leave
        is still the one exit that removes you and says so. */
-    if(chatMayStamp()){
+    /* already marked away by the hide just before this (build 327z15) */
+    if(chatMayStamp() && !chatAwaySent){
+      chatAwaySent = true;
       const patch = chatPresencePatch(0);
       patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
       fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
@@ -91789,7 +91801,13 @@ document.addEventListener("visibilitychange", () => {
   try{
     if(!chatMayStamp()) return;
     const visible = document.visibilityState === "visible";
-    fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(visible ? Date.now() : 0)).catch(() => {});
+    /* Closing the app fires this and then pagehide; the away mark (with
+       the typing dot cleared) is written once, here (build 327z15). */
+    if(!visible && chatAwaySent) return;
+    chatAwaySent = !visible;
+    const patch = chatPresencePatch(visible ? Date.now() : 0);
+    if(!visible) patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
+    fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
   }catch(e){}
 });
 
@@ -114108,14 +114126,32 @@ function placeTopBanner(el){
 const BOARD_REFETCH_MS = 15 * 60 * 1000;
 let boardFetchedAt = 0;
 let boardFetchInFlight = false;
+const BOARD_FULL_MS = 6 * 60 * 60 * 1000;
+const BOARD_DELTA_SLACK_MS = 10 * 60 * 1000;
+let boardFullAt = 0;
+let boardDeltaOk = true;
 
 function fetchBoardForInvites(force){
   if(!fbDb){ onFirebaseReady(() => fetchBoardForInvites(true)); return; }
   if(boardFetchInFlight) return;
   if(!force && Date.now() - boardFetchedAt < BOARD_REFETCH_MS) return;
   boardFetchInFlight = true;
+  /* ONLY WHAT CHANGED, AFTER THE FIRST (build 327z15). The first fetch of a
+     launch, and one every BOARD_FULL_MS, reads the whole board; the ones in
+     between ask only for rows whose lastModified moved since the last fetch
+     (every row write stamps it), with BOARD_DELTA_SLACK_MS of overlap for a
+     phone whose clock runs slow. Rows read are rows returned, so a quiet
+     evening costs one read instead of the whole class. A removed row is
+     only noticed by the next full fetch - removal was always the server's
+     full answer's word (mergeBoardSnapshot). If the query is refused the
+     next fetch is a full one again. */
+  const col = fbDb.collection("leaderboard");
+  const delta = !!(boardFullAt && Date.now() - boardFullAt < BOARD_FULL_MS && boardDeltaOk
+    && leaderboardRowsFromServer && Array.isArray(leaderboardRows) && leaderboardRows.length
+    && typeof col.where === "function");
+  const since = boardFetchedAt - BOARD_DELTA_SLACK_MS;
   try{
-    fbDb.collection("leaderboard").get().then(snap => {
+    (delta ? col.where("lastModified", ">", since) : col).get().then(snap => {
       boardFetchInFlight = false;
       boardFetchedAt = Date.now();
       const next = [];
@@ -114125,14 +114161,28 @@ function fetchBoardForInvites(force){
         e.rawWeekPoints = e.weekPoints; e.weekPoints = weekPointsOfEntry(e); fixBoardLevel(e);
         next.push(e);
       });
-      /* An empty answer never takes the class away - the same rule the
-         listener carried. */
-      leaderboardRows = mergeBoardSnapshot(leaderboardRows, next, snap); leaderboardRowsFromServer = !(snap && snap.metadata && snap.metadata.fromCache); try{ settleWeeklyWinQueued(); }catch(e){}
+      const fromCache = !!(snap && snap.metadata && snap.metadata.fromCache);
+      if(delta){
+        /* changed rows replace their old copy; anyone new joins */
+        if(next.length){
+          const byPub = new Map(next.map(e => [e.pub, e]));
+          const out = leaderboardRows.map(e => (e && byPub.has(e.pub)) ? byPub.get(e.pub) : e);
+          const have = new Set(leaderboardRows.map(e => e && e.pub));
+          next.forEach(e => { if(!have.has(e.pub)) out.push(e); });
+          leaderboardRows = out;
+        }
+      } else {
+        if(!fromCache) boardFullAt = boardFetchedAt;
+        /* An empty answer never takes the class away - the same rule the
+           listener carried. */
+        leaderboardRows = mergeBoardSnapshot(leaderboardRows, next, snap); leaderboardRowsFromServer = !fromCache;
+      }
+      try{ settleWeeklyWinQueued(); }catch(e){}
       try{ syncChatDockDot(); }catch(e){}
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
-    }).catch(() => { boardFetchInFlight = false; });
-  }catch(e){ boardFetchInFlight = false; }
+    }).catch(() => { boardFetchInFlight = false; if(delta) boardDeltaOk = false; });
+  }catch(e){ boardFetchInFlight = false; if(delta) boardDeltaOk = false; }
 }
 
 /* Kept as the name every call site already uses. */
@@ -123661,6 +123711,16 @@ function attachFriendsBoardListener(){
       friendsShownSignature = sig;
       showFriends();
     });
+    /* GONE WITH ITS SCREEN (build 327z15), as the Rankings listener is.
+       Left attached it read every push in the class for the rest of the
+       session. Friends redraws itself in place, so what is checked is
+       whether any Friends screen is still up, not this one node. */
+    const obs = new MutationObserver(() => {
+      if(stage.querySelector(".screen-friends")) return;
+      obs.disconnect();
+      if(friendsLiveUnsub){ try{ friendsLiveUnsub(); }catch(e){} friendsLiveUnsub = null; }
+    });
+    obs.observe(stage, { childList: true });
   }catch(e){}
 }
 
