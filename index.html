@@ -4187,9 +4187,14 @@
   @media (hover:hover){ .choice.locked:hover{ border-color:var(--rule); } }
   @media (hover:hover){ .choice.is-right.locked:hover{ border-color:var(--right); } }
 
+  /* NO LINE UNDER THE ANSWERS (327z15 round 31): "The next question button
+     looks funny crossing the line that's there, do we remove the line or
+     make it so it can't go past it?" The hairline was this foot's top edge,
+     and Next question floats over the bottom of the screen, so on a short
+     screen it sat across the line. The line is gone; the space stays. */
   .foot{
     display:flex; align-items:center; justify-content:space-between;
-    gap:1rem; flex-wrap:wrap; border-top:1px solid var(--rule); padding-top:1rem;
+    gap:1rem; flex-wrap:wrap; border-top:0; padding-top:1rem;
   }
   .status{ font-size:.92rem; color:var(--soft); margin:0; max-width:34em; }
   .status.bad{ color:var(--wrong); }
@@ -32326,11 +32331,14 @@
      matte black pill they were drawn as - see .friend-send. Excluded inside
      :where(), so the rule keeps the specificity every override of it was
      written against: two more :not()s out-ranked the start sheet's glass X.) */
+  /* (327z15 round 31: nor the daily question's Submit answer before an
+     answer is picked - "looks all white and you can't see the words": the
+     white fill beat its grey #44474B and kept its 55% white words) */
   /* (327z15: nor the Virtual Room pill's button while it is unlit or
      lighting - this !important fill beat both its grey "not yet" and the
      grey its lighting beat holds, so it was white from the first frame and
      the fill growing from the centre was never seen; lit, it is this white) */
-  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):where(:not(.friend-send):not(.friend-act):not(.vroom-setup-go.is-inert):not(.vroom-setup-go.is-lighting):not(.vroom-readyup-btn:disabled):not(.vroom-readyup-btn.is-waiting):not(.vroom-readyup-btn.is-lighting)),
+  [data-theme="dark"][data-layout="modern"] .next:not(.ghost):not(.danger):where(:not(.friend-send):not(.friend-act):not(.vroom-setup-go.is-inert):not(.vroom-setup-go.is-lighting):not(.vroom-readyup-btn:disabled):not(.vroom-readyup-btn.is-waiting):not(.vroom-readyup-btn.is-lighting):not(.dailyq-btn:disabled)),
   [data-theme="dark"][data-layout="modern"] .chip.on{
     /* THE OTHER BUTTONS' RECIPE, IN WHITE (build 327 round 10): "the white
        button does not look like the other 3d buttons". Quit and Save and
@@ -32865,6 +32873,25 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     top:calc((100dvh - 6rem) / 2 + 1rem + var(--lap-hero) * .04 - var(--dq-size) / 2); bottom:auto;
     width:var(--dq-size); height:var(--dq-size); font-size:1.75rem;
   }
+  /* the daily question's card (round 31): under NOVA's line, ranged to the
+     planet's side like the words; its "?" in normal flow inside it */
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card{
+    grid-column:1; grid-row:4; justify-self:end; align-self:start; margin-top:2.2rem; translate:0 1.25rem;
+    display:flex; align-items:center; gap:1rem; padding:.75rem 1.5rem .75rem .75rem; border-radius:999px;
+    max-width:var(--lap-side); text-align:left; cursor:pointer;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)), rgba(14,16,22,.55);
+    border:1px solid rgba(255,255,255,.12); box-shadow:0 10px 28px -12px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
+    -webkit-tap-highlight-color:transparent; transition:transform .14s ease, border-color .2s ease;
+  }
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card:hover{ border-color:rgba(255,215,130,.35); }
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card:active{ transform:scale(.98); }
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card > .daily-question-fab{
+    position:relative !important; inset:auto !important; left:auto !important; top:auto !important; right:auto !important; bottom:auto !important;
+    flex:none; width:3.6rem !important; height:3.6rem !important; margin:0; translate:none; font-size:1.5rem;
+  }
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card .dq-card-tx{ display:flex; flex-direction:column; gap:.18rem; min-width:0; }
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card .dq-card-title{ font-size:1.12rem; font-weight:800; color:#F3F5F7; letter-spacing:.005em; }
+  html[data-layout] body .panel.home.screen-home-actual > .dq-card .dq-card-sub{ font-size:.92rem; color:var(--soft); }
   /* THE TWO ROUND BUTTONS ONE SIZE ON A LAPTOP (round 25): "The daily question
      button ... it's too big now, also ensure the chat buttons size is a little
      bigger (they'd be the same size". 4rem both - the chat button on every
@@ -93776,8 +93803,33 @@ function showHome(){
   /* Two seconds after Home, once, per explicit request. It re-checks
      its own preconditions when the timer fires - see maybeShowIntro. */
   maybeShowIntro();
-  stage.replaceChildren(panel);
-  stage.appendChild(dailyBtn);
+  /* THE DAILY QUESTION IS A CARD ON A LAPTOP (327z15 round 31): "I'm still
+     not a fan of how it looks on the larger devices ... should the daily
+     question button be bigger or an actual thing somewhere on the left
+     side? Cause the random bubble just looks so random and out of place".
+     On a wide screen it is a card under NOVA's line, in the words' column:
+     the same round "?" (its ring, its reset and its announcements are this
+     very button, moved inside the card, in normal flow) beside "Daily
+     question" and where it stands today. The whole card starts it. A
+     phone and an upright iPad keep the floating button. */
+  const wideHomeNow = !!(window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches);
+  if(wideHomeNow){
+    const card = document.createElement("div");
+    card.className = "dq-card" + (doneToday ? " is-done" : "");
+    const tx = document.createElement("span"); tx.className = "dq-card-tx";
+    const t1 = document.createElement("b"); t1.className = "dq-card-title"; t1.textContent = "Daily question";
+    const t2 = document.createElement("span"); t2.className = "dq-card-sub";
+    t2.textContent = doneToday ? (store.dailyQuestionCorrect ? "Answered right today. A new one at 5pm." : "Done for today. A new one at 5pm.")
+                               : "One question, one attempt.";
+    tx.append(t1, t2);
+    card.append(dailyBtn, tx);
+    tx.addEventListener("click", () => dailyBtn.click());
+    panel.appendChild(card);
+    stage.replaceChildren(panel);
+  } else {
+    stage.replaceChildren(panel);
+    stage.appendChild(dailyBtn);
+  }
   dailyRingTick();
   /* the orbit's emblems, recorded once Home has settled (build 298); any
      already recorded this session play from the first frame (build 300) */
