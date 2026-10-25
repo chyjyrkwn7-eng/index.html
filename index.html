@@ -85223,6 +85223,28 @@ function startSimpleTour(steps, onComplete, _waitedMs){
        has nothing left to render, so this is a no-op, not an error. */
     if(stepIndex >= steps.length) return;
     const step = steps[stepIndex];
+    /* A STEP WITH NOTHING TO POINT AT (327z15 round 37): "The first thing that should pop up
+       should be a centered one that says welcome to nova (username) let me show around". The
+       bubble in the middle of the screen, no line and no dot. */
+    if(step.center){
+      line.style.display = "none"; lineDot.style.display = "none";
+      if(tourTyper) tourTyper.cancel();
+      playSound("ob.tooltip");
+      tourTyper = novaType(text, step.text, NOVA_TOUR_CPS, {
+        talk: on => face.classList.toggle("is-talking", !!on),
+        done: () => face.classList.remove("is-talking")
+      });
+      nextBtn.textContent = stepIndex === steps.length - 1 ? "Got it" : "Next";
+      tooltip.className = "has-nova tour-center";
+      tooltip.style.visibility = "hidden"; tooltip.style.right = "auto"; tooltip.style.bottom = "auto";
+      tooltip.style.left = "0px"; tooltip.style.top = "0px";
+      const cr = tooltip.getBoundingClientRect();
+      tooltip.style.left = Math.max(12, (window.innerWidth - cr.width) / 2) + "px";
+      tooltip.style.top = Math.max(10, (window.innerHeight - cr.height) / 2) + "px";
+      tooltip.style.visibility = "";
+      return;
+    }
+    line.style.display = ""; lineDot.style.display = "";
     const el = document.querySelector(step.target);
     if(!el){ advance(); return; }
     /* Auto-scrolls the actual target into view first, per explicit
@@ -85425,15 +85447,20 @@ function startSimpleTour(steps, onComplete, _waitedMs){
    Nova (build 321) - its flares are not all dark, and it is not told that
    more tips will follow, because for it none do. */
 function mainMenuTourSteps(returning){
+  const nm = String((store && store.firstName) || "").trim();
   return [
+    /* (round 37) a new account's tips open on its welcome, in the middle of the screen */
+    ...(returning ? [] : [{ center: true,
+      text: "Welcome to Nova" + (nm ? ", " + nm : "") + "! Let me show you around before you start studying." }]),
     { target: "#bottomtab-home", align: "left", vplacement: "above",
       text: "Home always brings you back here, wherever you are in the app." },
-    { target: "#bottomtab-rewards", align: "left", vplacement: "above",
-      text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
+    /* (round 37) in the bar's own order: Home, Profile, Leaderboard, Calendar */
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
         ? "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs, and Settings has a guide for adding this app to your Home Screen."
         : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs." },
+    { target: "#bottomtab-rewards", align: "left", vplacement: "above",
+      text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     /* Calendar took Settings' place on the bar (build 323) */
     { target: "#bottomtab-calendar", align: "right", vplacement: "above",
       text: "Calendar is Class 26E\u2019s: what\u2019s on today, your next test and what\u2019s on it, the final exams, and every day of the course." },
@@ -94111,7 +94138,9 @@ function showHome(){
         signupInNova = false;
         if(reason === "signin" || !syncCode) return;
         showHome();
-        setTimeout(() => { if(document.querySelector(".homeversion-btn")) startMainMenuTour(); }, 350);
+        /* (round 37) "The tool tips show up almost instantly, wait like 2-3 seconds": Home has
+           its moment first */
+        setTimeout(() => { if(document.querySelector(".homeversion-btn") && !document.getElementById("tour-overlay")) startMainMenuTour(); }, 2500);
       }, { signup: true });
     }, 400);
   } else if(pendingMainMenuTour){
@@ -94151,7 +94180,7 @@ function showHome(){
          tooltips run in his bubbles. Not again after this until the next
          What's New: the account is marked past the current one above. */
       if(document.querySelector(".homeversion-btn")) playNovaIntro(() => {
-        if(document.querySelector(".homeversion-btn")) startMainMenuTour();
+        setTimeout(() => { if(document.querySelector(".homeversion-btn") && !document.getElementById("tour-overlay")) startMainMenuTour(); }, 2500);
       });
     }, 400);
   } else {
@@ -132791,8 +132820,12 @@ const LAST_TAB_KEY = "class26e.lastTab";
        untrue: the same flag decides, at boot, whether the app shows
        onboarding at all (see the !store.onboardingComplete branch at the
        bottom of this file), so the two can never disagree. */
+    /* (round 37) "the bottom tab doesn't appear at first though, it takes a second to load in":
+       a new account's Home under Nova's introduction (z 360, over the bar's 200) has its bar
+       there already, so it is uncovered with Home as he fades - not built a beat after */
+    const homeUnder = !!stage.querySelector(".screen-home-actual") && !!document.querySelector("#nova-intro, #genprofile-overlay");
     const show = isModern && oldNavVisible && !window.forceHideBottomTabs
-                 && !!(typeof store !== "undefined" && store && store.onboardingComplete);
+                 && (!!(typeof store !== "undefined" && store && store.onboardingComplete) || homeUnder);
     bar.hidden = !show;
     /* the lens never outlives the bar (build 323) */
     if(!show && bar._lensHide && bar.classList.contains("lens-up")) bar._lensHide(true);
@@ -132838,6 +132871,8 @@ const LAST_TAB_KEY = "class26e.lastTab";
   if(oldNav){
     new MutationObserver(syncVisibility).observe(oldNav, { attributes: true, childList: true, subtree: true });
     new MutationObserver(syncVisibility).observe(stage, { childList: true });
+    /* Nova's introduction and GENERATING PROFILE are body's own children (round 37) */
+    new MutationObserver(syncVisibility).observe(document.body, { childList: true });
     new MutationObserver(syncVisibility).observe(document.documentElement, { attributes: true, attributeFilter: ["data-layout"] });
   }
   syncVisibility();

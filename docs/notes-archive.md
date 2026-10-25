@@ -28395,3 +28395,26 @@ isn't extremely smooth. Ensure each page opens extremely smooth."*
   Find me, Select all, back to top, every pop-up.
 - Not measurable here: the phone's GPU (headless Chromium rasterises in
   software). Confirm on an iPhone.
+
+## Build 327z15 round 37 - the bar under Nova's goodbye, a welcome before the tips
+
+Madison: *"the bottom tab doesn't appear at first though, it takes a second to
+load in"*; *"The tool tips show up almost instantly, wait like 2-3 seconds.
+The first thing that should pop up should be a centered one that says welcome
+to nova (username) let me show around ... And then the first tool tip. Ensure
+all the tool tips are good to go as well"*.
+
+- The bar is there under the introduction: onboarding completes at the
+  character pick, but syncVisibility only ran on a stage mutation, and none
+  came until the intro ended and Home was built again. It shows now whenever
+  Home is on the stage under `#nova-intro` / `#genprofile-overlay` (z 360 /
+  400 over its 200, so it is uncovered with Home), and runs again on body's
+  own children coming and going.
+- The tips wait 2.5s after Nova goes (both sign-up paths), and open on a
+  CENTRED step: `{ center: true, text }` in startSimpleTour (the bubble in
+  the middle of the screen, no line or dot) - "Welcome to Nova, <name>! Let
+  me show you around before you start studying."
+- The tab tips follow the bar's order (Home, Profile, Leaderboard,
+  Calendar; were Home, Leaderboard, Profile, Calendar). Every step on an
+  iPhone 17 Pro Max, a 375x667 SE, an iPad landscape and a laptop: on
+  screen, its line on its target.
