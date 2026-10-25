@@ -28018,3 +28018,48 @@ little bigger), the chat button a little small.
   class material, joins your team, open end; at most 20 lines for a new
   account, which now has two asks); the Version 9 note check reads the
   storm text; the returning-tip check no longer expects the crack line.
+
+## Build 327z15 round 27 - a dark test on big screens, Home's pill and planet, Profile's cards, countdown arrows, chat clear of its button
+
+Madison: "On the phone, the test background is super nice and dark ... On
+the larger devices it's brighter"; "The white start studying button doesn't
+look right.. why does it look bigger than the bottom tab? The planet system
+is a little too close to the black fading part at the top"; "Why does the
+profile box have those 4 new things ... Remove those ... the profile box,
+challenge box, and badge case should all look a little more alike and
+better"; countdown card "should we put an arrow on that box"; "When the
+chat is open, it's covering the actual chat button".
+
+- Test sky: two causes. A browser tab's fade rules (html.is-browser
+  body::before) out-rank body.has-active-question::before, so a laptop test
+  had Home's full glows (corner 48,35,35 vs an installed phone's 25,25,28 -
+  327z14 live was the same); and from 40rem the glow radii are 100% (a
+  phone's 40%/45%). Now in a question the radii are the phone's at every
+  size (on body), and html.is-browser body.has-active-question::before has
+  the dimmed glows with the fades. Measured within 1 level on phone, iPad
+  both ways and a laptop tab.
+- #homestart: 78% of the bar's measured height, centred on its middle (the
+  bar's tab bubble height), 12.25rem, nowrap, a lighter shadow; the bar's
+  shift is divided by its zoom (.9) so the pair is centred exactly. Hidden
+  (opacity 0) while the chat is open - it showed through the panel's glass.
+- Laptop Home planet: (100dvh - 15rem) * 1.05 (was 13rem) and translate
+  0 1.25rem; the greeting and NOVA move down the same 1.25rem; the daily
+  question +1rem. Top bubble 107-137px from the top (the fade is 96px).
+- Profile: buildProfileProgressTiles removed (and its .pf-progress rule).
+  THE THREE PROFILE CARDS, ONE FAMILY: hero, next-rank card and the case's
+  body all on the person card's surface (linear #14171C -> #0B0D11, rim
+  rgba(255,255,255,.14), inset top light, 22px), each with one colour pool
+  at the top. The rank name is the headline over "Level N" (uppercase, rank
+  colour, glow, no emblem - 321's "remove the tiny icon" stands), a hairline
+  over the XP bar. The next-rank head is centred (emblem, To reach, RANK in
+  its colour, n of m done); "Rank challenges" / "<Rank> unlocks" are
+  centred small caps over hairlines; the case's plate is the same label.
+- Calendar countdowns: .cal-count-nav = prev arrow, the dots, next arrow
+  (2.1rem discs, 44px hit area, dim at the ends, smooth scroll one page).
+  The card also had no gap above it on a phone (0px) - 1.5rem now.
+- Chat panel on a laptop/landscape iPad: top = inset + .75rem + 4.4rem +
+  .6rem (it was cleared for the 52px button and sat 10px under the 4.4rem
+  one); in a test the button is 52px and the old rule stands.
+- Gates: check-b327z15 section & (EE) - all five checks fail on the round-26
+  commit and on 327z14 live. Section P and CC moved (no tiles; the pill on
+  the bar's middle). check-behaviour 'plate' moved (rank over level).

@@ -2446,8 +2446,12 @@ def check_b235(br):
         const lab = document.querySelector('.pf-standing .pf-level');
         if(e || !nm || !lab) return 'an emblem on the line, or no rank name / level';
         const a = lab.getBoundingClientRect(), b = nm.getBoundingClientRect();
-        const off = Math.round(Math.abs((a.top + a.height / 2) - (b.top + b.height / 2)));
-        return a.left >= b.right ? off : 'not rank, level in that order'; });
+        /* MOVED IN 327z15 round 26: "the profile box ... needs to look more
+           like the profile thing when you click on someone" - the rank is the
+           headline over the level, as on the person card; still no emblem.
+           So: the name above the level, the two centred on each other. */
+        const off = Math.round(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)));
+        return b.bottom <= a.top + 2 ? off : 'not the rank over the level'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.

@@ -5424,6 +5424,18 @@
   .cal-count-exam .cal-big-name{ font-size:1.15rem; font-weight:800; color:var(--ink); line-height:1.2; }
   .cal-count-exam .cal-big-when{ font-size:.9rem; color:var(--soft); }
   .cal-count-dots{ display:flex; justify-content:center; gap:.45rem; margin:.75rem 0 .1rem; }
+  .cal-count-nav{ display:flex; align-items:center; justify-content:center; gap:.6rem; margin:.45rem 0 -.35rem; }
+  .cal-count-nav > .cal-count-dots{ margin:0; }
+  .cal-count-nav.is-single > .cal-count-arrow{ display:none; }
+  .cal-count-arrow{ -webkit-appearance:none; appearance:none; position:relative; flex:none; width:2.1rem; height:2.1rem; padding:0; margin:0;
+    display:grid; place-items:center; border-radius:50%; cursor:pointer; color:var(--ink);
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    -webkit-tap-highlight-color:transparent; transition:opacity .2s ease, transform .14s ease, background-color .15s ease; }
+  .cal-count-arrow::after{ content:""; position:absolute; inset:-6px; }   /* 44px to tap */
+  .cal-count-arrow svg{ width:1rem; height:1rem; }
+  .cal-count-arrow:hover:not(:disabled){ background:rgba(255,255,255,.11); }
+  .cal-count-arrow:active:not(:disabled){ transform:scale(.92); }
+  .cal-count-arrow:disabled{ opacity:.28; cursor:default; }
   .cal-count-dots > i{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.22); transition:background-color .25s ease, transform .25s ease; }
   .cal-count-dots > i.is-on{ background:rgba(255,255,255,.9); transform:scale(1.25); }
   .cal-big-row{
@@ -5571,10 +5583,11 @@
   .screen-calendar .cal-nexttest-card.is-bigexam .cal-nt-count{ border-color:transparent; }
   /* the same rhythm between every block under the month */
   .screen-calendar-tab > .cal-big-card, .screen-calendar-tab > .cal-course-card{ margin-top:1rem; }
+  .screen-calendar-tab > .cal-count-card{ margin-top:1.5rem; }   /* round 26: the countdowns card sat flush under the month (0px); the month's own gap above it */
   @media (min-width:40rem){
     .screen-calendar{ --cal-dot:.44rem; }
     .screen-calendar .cal-grid-legend{ display:flex; font-size:.82rem; gap:.4rem 1.4rem; }
-    .screen-calendar-tab > .cal-big-card, .screen-calendar-tab > .cal-course-card{ margin-top:1.25rem; }
+    .screen-calendar-tab > .cal-big-card, .screen-calendar-tab > .cal-course-card, .screen-calendar-tab > .cal-count-card{ margin-top:1.25rem; }
   }
   /* The two-board leaderboard layout, per explicit request \u2014 genuinely
      side by side (not stacked), each a compact self-contained ranked
@@ -32691,8 +32704,11 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   }
   html[data-layout] body .panel.home.screen-home-actual::before{ display:none; }
   html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap{
+    /* round 26: "a little too close to the black fading part at the top" -
+       2rem less height and 1.25rem lower (translate, below), so its outer
+       flares clear the browser tab's 6rem top fade */
     grid-column:2; grid-row:1 / -1; align-self:center;
-    width:min(48rem, calc((100dvh - 13rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem)); max-width:none; margin:0; translate:none;
+    width:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem)); max-width:none; margin:0; translate:0 1.25rem;
   }
   /* a tapped bubble's caption sits under the planet here, clear of the words,
      so the greeting and NOVA stay (on a phone it lands over them) */
@@ -32706,6 +32722,8 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
     margin:0 0 .4rem; font-size:clamp(1.05rem, 1.35vw, 1.4rem); letter-spacing:.01em; }
   html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ grid-column:1; grid-row:3; justify-self:end; text-align:right; margin:0; }
   html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ max-width:var(--lap-side); }
+  /* round 26: the words move down with the planet (translate 1.25rem above) so they stay level with its middle */
+  html[data-layout] body .panel.home.screen-home-actual > :is(.homegreeting, .hometitle-wrap){ translate:0 1.25rem; }
   /* the words' sizes Madison picked from a screenshot: "These proportions of
      the words on the left are perfect" (round 19's, between the 7vw NOVA he
      called massive and Home's own phone size) */
@@ -32714,7 +32732,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* Start Studying is its own pill beside the bar here (#homestart) */
   html[data-layout] body.has-homestart .panel.home.screen-home-actual > .playbtn{ display:none; }
   /* the bar gives up the pill's width and the two are centred together */
-  html[data-layout] body.has-homestart .bottomtabs:not(.has-start-tab){ translate:calc(-.5 * (var(--hs-w, 13rem) + 8px)) 0; }
+  html[data-layout] body.has-homestart .bottomtabs:not(.has-start-tab){ translate:calc(-.5 * (var(--hs-w, 12.25rem) + 10px) / .9) 0; }   /* in the bar's own zoomed px */
   /* THE DAILY QUESTION FLOATS ON THE RIGHT (327z15): "Maybe the daily
      question button could be somewhere floating on the right side ... and
      not on the bottom near the tab?" Level with the planet's middle, in the
@@ -32733,14 +32751,14 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      reserve, and the button sits a fifth of the planet above it */
   html[data-layout] body:has(.screen-home-actual){
     --lap-side:clamp(15rem, 23vw, 27rem); --lap-gap:clamp(1.5rem, 3vw, 4rem);
-    --lap-hero:min(48rem, calc((100dvh - 13rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
+    --lap-hero:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
     --dq-size:4.4rem;
   }
   html[data-layout] body:has(.screen-home-actual) .daily-question-fab{
     /* round 24: "it needs to be lower and slightly to the right" - level
        with the planet's middle, a little past the right column's centre */
     left:calc(75vw + var(--lap-hero) / 4 + var(--lap-gap) / 2 + 2.5vw - var(--dq-size) / 2); right:auto;
-    top:calc((100dvh - 6rem) / 2 + var(--lap-hero) * .04 - var(--dq-size) / 2); bottom:auto;
+    top:calc((100dvh - 6rem) / 2 + 1rem + var(--lap-hero) * .04 - var(--dq-size) / 2); bottom:auto;
     width:var(--dq-size); height:var(--dq-size); font-size:1.75rem;
   }
   /* THE TWO ROUND BUTTONS ONE SIZE ON A LAPTOP (round 25): "The daily question
@@ -32753,25 +32771,32 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      the test's clock below them (at 4.4rem it reached 2px into the clock on
      a landscape iPad - check-fixes) */
   html[data-layout] body .chatdock.in-test .chatdock-btn{ width:52px; height:52px; }
+  /* round 26: "When the chat is open, it's covering the actual chat
+     button" - the panel opens under the button's own size here (it was
+     cleared for the 52px button, so the 4.4rem one sat 10px under it) */
+  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem); }
+  html[data-layout] body .chatdock:not(.in-test) .chatdock-panel.is-kb{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem + var(--kb-top, 0px)); }
   html[data-layout] body .chatdock-btn svg{ width:1.65rem; height:1.65rem; }
 }
 .homestart{ display:none; }
 @media (min-width:64rem) and (min-aspect-ratio:5/4){
   body.has-homestart .homestart:not([hidden]){
     position:fixed; z-index:201; box-sizing:border-box; border-radius:999px; display:flex; align-items:center; gap:.55rem;
-    padding:0 1.4rem 0 1.2rem; width:var(--hs-w, 12.5rem); justify-content:center; cursor:pointer;
+    padding:0 1.2rem 0 1rem; width:var(--hs-w, 12.25rem); white-space:nowrap; justify-content:center; cursor:pointer;
     font:inherit; font-size:1rem; font-weight:800; letter-spacing:.01em; color:#12161B;
     /* white, as Start Studying always is ("should still be white") - the
        Home button's own white, with the bar's depth */
     background:linear-gradient(180deg, #FFFFFF, #E9ECF0);
     border:1px solid rgba(255,255,255,.9);
     box-shadow:0 1px 1px rgba(255,255,255,.95) inset, 0 -2px 2px rgba(18,26,32,.18) inset,
-      0 4px 14px rgba(0,0,0,.35), 0 10px 28px -8px rgba(0,0,0,.5);
+      0 3px 10px rgba(0,0,0,.3);
     -webkit-tap-highlight-color:transparent; transition:background-color .15s ease, transform .15s ease;
   }
   body.has-homestart .homestart svg{ width:1.15rem; height:1.15rem; flex:none; }
   body.has-homestart .homestart:hover{ background:linear-gradient(180deg, #FFFFFF, #F1F3F6); }
   body.has-homestart .homestart:active{ transform:scale(.97); }
+  /* under an open chat the white pill would show through its glass (round 26) */
+  body.has-homestart:has(.chatdock.is-open) .homestart{ opacity:0; pointer-events:none; }
 }
 /* EVERY TAB ON A LAPTOP (327z15): "Ensure all tabs and pages account for the
    large screen size." On a wide screen in landscape the app was one 53rem
@@ -32834,6 +32859,33 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    var(--paper);
+}
+/* A TEST IS AS DARK ON A LAPTOP AS ON A PHONE (round 26). "On the phone,
+   the test background is super nice and dark ... On the larger devices
+   it's brighter." Two causes, both fixed here: in a browser tab (every
+   laptop) the two fade rules above out-rank the dimmed in-a-question sky,
+   so a test showed Home's full glows (measured 47,34,33 in a laptop's
+   corner against 25,25,28 on an installed phone); and from 40rem up the
+   glows are 100% radius rather than a phone's 40%/45%, so even dimmed
+   they spread over the whole screen. In a question the radii are the
+   phone's at every size, and a browser tab gets the dimmed glows with
+   its fades. */
+html[data-layout="modern"] body.has-active-question{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
+html.is-browser[data-layout="modern"] body.has-active-question::before{
+  background:
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 2%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 2%, transparent), transparent var(--bg-glow-r2)),
+    var(--paper);
+}
+html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-question::before{
+  background:
+    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + 6rem)),
+    linear-gradient(to top, var(--paper) calc(var(--bleed) + 1.5rem), transparent calc(var(--bleed) + 5.5rem)),
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
     var(--paper);
 }
 /* ...and the root's fallback carries the same two fades (round 26). What a
@@ -33496,7 +33548,6 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #fff) 20%, #1C212B), #11141B 72%) !important;
     box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45) !important;
   }
-  .screen-profile .profile-hero > .pf-progress{ margin-top:1rem; }
   /* the clean tip over a dull badge (327z15) */
   .badge-tile.has-clean-tip{ position:relative; overflow:visible; z-index:2; }
   .badge-clean-tip{ position:absolute; left:50%; bottom:calc(100% + 6px); translate:-50% 0; white-space:nowrap; pointer-events:none;
@@ -33549,6 +33600,81 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   /* the shut case stands on its own, in the cards' 22px corner (one
      family with the next rank card above it); its handle needs the gap */
   .screen-profile .profile-identity-tab > .pf-case.pf-case-closed{ --pfc-r:22px; margin-top:.45rem !important; }
+
+  /* ===================== THE THREE PROFILE CARDS, ONE FAMILY (327z15 round 26) =====================
+     "the profile box, it needs to look more like the profile thing when you
+     click on someone, the profile box, challenge box, and badge case should
+     all look a little more alike and better". All three now stand on the
+     person card's own surface - its dark top-lit gradient (#14171C to
+     #0B0D11), its 14% rim, its inset top light and its lift, the 22px
+     corner - each with one pool of its own colour at the top (the banner's,
+     the next rank's, the case's silver). Inside, each is laid out the way
+     the person card is: centred, the headline in its colour, a hairline,
+     then a small-caps label over what follows. */
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .profile-hero.has-cover.has-tint{
+    background:
+      radial-gradient(120% 30% at 18% 0%, color-mix(in srgb, var(--hero-t1) 26%, transparent), transparent 100%),
+      radial-gradient(120% 30% at 82% 4%, color-mix(in srgb, var(--hero-t2) 22%, transparent), transparent 100%),
+      linear-gradient(180deg, #14171C 0%, #0B0D11 100%) !important;
+    border:1px solid rgba(255,255,255,.14) !important; border-radius:22px !important;
+    box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal{
+    padding:1.3rem 1.2rem 1.15rem; border-radius:22px;
+    background:
+      radial-gradient(70% 34% at 50% 0%, color-mix(in srgb, var(--nx) 20%, transparent), transparent 100%),
+      linear-gradient(180deg, #14171C 0%, #0B0D11 100%);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase{
+    background:
+      radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--case-tint) 12%, transparent), transparent 100%),
+      linear-gradient(180deg, #14171C 0%, #0B0D11 100%);
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase::before{ opacity:.12; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-lid{ border-bottom-color:rgba(255,255,255,.06); background:none; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-front{ padding-top:.9rem; padding-bottom:1.1rem; }
+  /* YOU: the rank is the headline under the name, in its colour and
+     lit, as on the person card, with "Level N" under it in the card's
+     grey - the same two lines, no emblem (321's "Remove the tiny icon"
+     stands). Then a hairline over the XP bar, as the person card has
+     over its Progress. */
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-idline{
+    display:flex; flex-direction:column; align-items:center; gap:.12rem;
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-idsep-a{ display:none; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-rankname{
+    font-size:1.35rem; font-weight:900; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--rank-color, #fff); filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent));
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-level{ font-size:.95rem; font-weight:700; color:#AEB7C2; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-xp{
+    margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.1);
+  }
+  /* THE NEXT RANK: its emblem, "To reach", the rank in its colour as the
+     headline and how far along, centred like the person card's head; the
+     two labels centred over a hairline like its "Progress" */
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal .pf-goal-head{
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:.5rem;
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal .pf-goal-tx{ align-items:center; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal .pf-goal-name{
+    font-family:inherit; font-size:1.35rem; font-weight:900; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--nx, #fff); filter:drop-shadow(0 0 14px color-mix(in srgb, var(--nx, #fff) 45%, transparent));
+  }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal .pf-goal-sub{ font-size:.95rem; font-weight:700; color:#AEB7C2; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal .pf-kick.pf-tasks-kick,
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-goal .pf-kick.pf-rewards-kick{
+    display:block; text-align:center; margin-top:1.1rem; padding-top:.9rem; border-top:1px solid rgba(255,255,255,.1);
+    margin-bottom:.6rem;
+  }
+  /* THE CASE: its plate is the same small-caps label */
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case .pf-ccase .nova-case-sideplate{
+    font-size:.68rem; font-weight:800; letter-spacing:.12em; color:#8A93A0; background:none; box-shadow:none; padding:0;
+  }
 
   /* ---- FRIENDS, AT THE TOP OF THE CHAT'S FRIENDS TAB (round 2) ---- */
   .chatdock-friendsbar{
@@ -124366,7 +124492,28 @@ function buildCalendarPane(panel){
     const dots = document.createElement("div");
     dots.className = "cal-count-dots"; dots.setAttribute("aria-hidden", "true");
     pages.forEach(() => dots.appendChild(document.createElement("i")));
-    card.appendChild(dots);
+    /* ARROWS EITHER SIDE OF THE DOTS (327z15 round 26): "should we put an
+       arrow on that box so people know you can click/scroll them? Cause on
+       non touchscreen things they'd need a way". A laptop has no swipe:
+       each arrow steps one page (the track's own smooth scroll), and goes
+       dim at its end. Round, 44px to tap. */
+    const nav = document.createElement("div");
+    nav.className = "cal-count-nav";
+    const arrowBtn = (dir, label) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "cal-count-arrow is-" + dir; b.setAttribute("aria-label", label);
+      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + (dir === "prev" ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7") + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      b.addEventListener("click", () => {
+        const w = track.clientWidth || 1;
+        const to = Math.max(0, Math.min(pages.length - 1, (at < 0 ? 0 : at) + (dir === "prev" ? -1 : 1)));
+        try{ track.scrollTo({ left: to * w, behavior: theme.reduceMotion ? "auto" : "smooth" }); }catch(e){ track.scrollLeft = to * w; }
+      });
+      return b;
+    };
+    const prevBtn = arrowBtn("prev", "Previous countdown"), nextBtn = arrowBtn("next", "Next countdown");
+    nav.append(prevBtn, dots, nextBtn);
+    if(pages.length < 2) nav.classList.add("is-single");
+    card.appendChild(nav);
     let at = -1;
     const paint = () => {
       const w = track.clientWidth || 1;
@@ -124374,6 +124521,7 @@ function buildCalendarPane(panel){
       if(i === at) return;
       at = i;
       [...dots.children].forEach((d, k) => d.classList.toggle("is-on", k === i));
+      prevBtn.disabled = i === 0; nextBtn.disabled = i === pages.length - 1;
       aside.textContent = (i + 1) + " of " + pages.length;
     };
     let raf = 0;
@@ -125359,35 +125507,6 @@ function buildProfileStanding(prog, rankNow){
     "level " + prog.level + ", " + prog.total.toLocaleString() + " total XP.");
   return box;
 }
-/* YOUR NUMBERS IN THE PERSON CARD'S TILES (build 327z15): "the profile box
-   at the top, I feel like it needs that same Liquid Glass look that you
-   see when you click on someone's profile". The person card's Progress
-   grid, the same four numbers a classmate sees on yours, read the same
-   way the published row is (republishRowOnLaunch). Not buttons. */
-function buildProfileProgressTiles(){
-  const prog = document.createElement("div");
-  prog.className = "person-card-progress pf-progress";
-  const lab = document.createElement("p");
-  lab.className = "person-card-proglabel"; lab.textContent = "Progress";
-  const grid = document.createElement("div");
-  grid.className = "person-card-grid";
-  let total = 16;
-  try{ total = topicsIn(QUESTIONS).length; }catch(e){}
-  const L = store.lifetime || {};
-  [["XP", Number(L.points || 0).toLocaleString()],
-   ["Badges", badgeCountOf(store) + " / " + total],
-   ["Hundos", String(hundosOf(store))],
-   ["Correct answers", Number(L.correct || 0).toLocaleString()]].forEach(([label, value]) => {
-    const cell = document.createElement("div");
-    cell.className = "person-card-cell";
-    const v = document.createElement("span"); v.className = "person-card-cell-value"; v.textContent = value;
-    const l = document.createElement("span"); l.className = "person-card-cell-label"; l.textContent = label;
-    cell.append(v, l);
-    grid.appendChild(cell);
-  });
-  prog.append(lab, grid);
-  return prog;
-}
 /* THE PROFILE BAR AFTER XP WAS EARNED INTO A FULL BAR (build 317). The
    bar fills from empty every time the tab is shown, which is not earning
    anything; but XP that arrived since this DEVICE last showed the bar,
@@ -126083,7 +126202,9 @@ function showProfile(defaultTab, opts){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
-  heroSect.appendChild(buildProfileProgressTiles());
+  /* (round 26: "Why does the profile box have those 4 new things ... Remove
+     those." The person card's Progress tiles came off; the person card
+     keeps its own grid.) */
   /* THE BADGE CASE IS AT THE BOTTOM AGAIN (317 touch-up, reverting build
      317's move above the Next rank card): "The badge case being at the
      top is not the move, revert that location at the bottom." Where you
@@ -133386,9 +133507,14 @@ const LAST_TAB_KEY = "class26e.lastTab";
     if(!on){ hsEl.hidden = true; return; }
     hsEl.hidden = false;
     requestAnimationFrame(() => {
+      /* round 26: "why does it look bigger than the bottom tab?" - at the
+         bar's full height the white read as the larger of the two. It is
+         now the height of the bar's own tab bubble (the bar less its inner
+         padding, about four fifths), centred on the bar's middle. */
       const r = bar.getBoundingClientRect();
-      hsEl.style.top = r.top + "px"; hsEl.style.height = Math.round(r.height) + "px";
-      hsEl.style.left = (r.right + 8) + "px";
+      const h = Math.round(r.height * .78);
+      hsEl.style.top = Math.round(r.top + (r.height - h) / 2) + "px"; hsEl.style.height = h + "px";
+      hsEl.style.left = (r.right + 10) + "px";
     });
   }
   try{ new ResizeObserver(() => hsPlace()).observe(bar); }catch(e){}

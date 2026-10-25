@@ -85,6 +85,17 @@ Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
      swipe across a Settings switch moves its glass knob with the finger and
      flips it, both ways; a tap still flips it.
   X. Report a bug says where a report goes without "whoever maintains".
+
+  Round 26:
+  EE (&). A test is as dark on a laptop tab as on an installed phone (the
+     sky's corner within 3 levels); laptop Home: the white Start Studying is
+     shorter than the bar and centred on its middle, on one line, and the
+     planet's highest bubble clears the tab's 6rem top fade at three sizes;
+     Profile: no Progress tiles, the three cards on one surface (the person
+     card's dark gradient and rim), the rank a headline over the level;
+     the Calendar's countdowns step with arrows (the first dim at the start);
+     the open chat starts below its button (laptop tab, landscape iPad) and
+     the white pill is not seen through it.
 """
 import importlib.util
 import itertools
@@ -102,7 +113,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%&")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -419,8 +430,10 @@ def section_p(br):
       return { was, after1, after2, isButton: st ? st.tagName === 'BUTTON' : null, cells, cellBg: bg(cell), rowBg: bg(row), foot }; }""")
     check("%s: P. the level block is not a button and a tap on it stays on Profile" % label, r["was"] and r["after1"] and r["isButton"] is False, r)
     check("%s: P. a tap on its numbers stays on Profile" % label, r["after2"], r)
-    check("%s: P. four Progress tiles under it" % label, r["cells"] == 4, r)
-    check("%s: P. the challenge rows wear the tiles' surface" % label, r["rowBg"] is not None and r["rowBg"] == r["cellBg"], r)
+    # MOVED IN round 26: "Why does the profile box have those 4 new things in
+    # profile? Remove those." - no tiles; the rows keep the tiles' surface
+    check("%s: P. no Progress tiles under it (round 26)" % label, r["cells"] == 0, r)
+    check("%s: P. the challenge rows wear the person card's tile surface" % label, r["rowBg"] == "rgba(255, 255, 255, 0.05)|14px", r)
     check("%s: P. the ladder button is renamed (%s)" % (label, r["foot"].strip()), r["foot"].strip() and r["foot"].strip() != "See every rank", r)
     ctx.close()
 
@@ -743,7 +756,8 @@ def section_cc(br):
           const fab = document.querySelector('.daily-question-fab'), bar = document.getElementById('bottomtabs');
           const fr = fab ? fab.getBoundingClientRect() : null, br = bar.getBoundingClientRect(), sr = hs ? hs.getBoundingClientRect() : null;
           return { hero: h.width, centre: Math.abs((h.left + h.width / 2) - innerWidth / 2), left: t.right <= h.left + 4 && t.left >= 0,
-                   start: !!(sr && !hs.hidden && sr.width > 100 && sr.left >= br.right && sr.left - br.right <= 16 && Math.abs(sr.top - br.top) < 2),
+                   /* MOVED IN round 26: centred on the bar's middle, not level with its top */
+                   start: !!(sr && !hs.hidden && sr.width > 100 && sr.left >= br.right && sr.left - br.right <= 16 && Math.abs((sr.top + sr.height / 2) - (br.top + br.height / 2)) < 2),
                    fabSide: !!fr && fr.bottom < br.top - 40 && fr.left > h.right,
                    sh: document.documentElement.scrollHeight, ih: innerHeight }; }""")
         pg.evaluate("() => document.getElementById('homestart').click()"); pg.wait_for_timeout(900)
@@ -804,10 +818,87 @@ def section_dd(br):
     ctx.close()
 
 
+def section_ee(br):
+    print("\nEE. Round 26: a dark test on a laptop, Home's pill and planet, Profile's cards, the countdown arrows, the chat clear of its button")
+    DRILL = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner').forEach(n => n.remove());
+      const ids = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Identity Crimes');
+      cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.versions = {}; cfg.source = 'all'; cfg.size = 0; cfg.flashcards = false;
+      beginRun(freshOrder(ids), null);
+      for(let t = 0; t < 120 && !document.querySelector('.qpanel .choice'); t++) await wait(60);
+      await wait(900); }"""
+    def corner(pg):
+        pg.evaluate("() => { const s = document.createElement('style'); s.textContent = 'body > *{ visibility:hidden !important }'; document.head.appendChild(s); }")
+        pg.wait_for_timeout(250)
+        im = z5b.shot(pg); W, H = im.size
+        return z5b.mean(im, (int(W * .01), int(H * .12), int(W * .08), int(H * .2)))
+    ctx, pg = z5b.boot(br, 440, 956, 1)
+    pg.evaluate(DRILL); phone = corner(pg); ctx.close()
+    ctx, pg = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)
+    pg.evaluate(DRILL); lap = corner(pg); ctx.close()
+    d = max(abs(a - b) for a, b in zip(phone, lap))
+    check("EE. a test's sky on a laptop tab is the installed phone's (within 3 levels): %.1f" % d, d <= 3, [phone, lap])
+
+    bad = []
+    for W, H in ((1366, 638), (1440, 820), (1920, 970)):
+        ctx, pg = cb.booted(br, W, H, seed=cb.USED_ACCOUNT)
+        pg.evaluate("""() => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false; showHome(); }""")
+        pg.wait_for_timeout(2200)
+        r = pg.evaluate("""() => { const hs = document.getElementById('homestart'), bar = document.getElementById('bottomtabs');
+          const s = hs.getBoundingClientRect(), b = bar.getBoundingClientRect(), t = hs.querySelector('span').getBoundingClientRect();
+          const tops = [...document.querySelectorAll('.screen-home-actual .cosmic-icon-badge')].map(e => e.getBoundingClientRect().top);
+          return { h: s.height, bh: b.height, mid: Math.abs((s.top + s.height / 2) - (b.top + b.height / 2)),
+                   oneLine: t.height < parseFloat(getComputedStyle(hs).fontSize) * 1.8, top: Math.min(...tops),
+                   fade: parseFloat(getComputedStyle(document.documentElement).fontSize) * 6 }; }""")
+        if not (r["h"] < .85 * r["bh"] and r["mid"] < 2 and r["oneLine"] and r["top"] >= r["fade"]):
+            bad.append((W, H, r))
+        ctx.close()
+    check("EE. laptop Home: Start Studying shorter than the bar, on its middle, one line; the planet's top bubble clears the 6rem fade", not bad, bad)
+
+    ctx, pg = z5b.boot(br, 440, 956, 1)
+    r = pg.evaluate("""async () => { showProfile('profile'); await new Promise(r => setTimeout(r, 900));
+      const tab = document.querySelector('#stage .profile-identity-tab');
+      const cards = [tab.querySelector(':scope > .profile-hero'), tab.querySelector(':scope > .pf-goal'), tab.querySelector(':scope > .pf-case .pf-ccase')];
+      const look = cards.map(e => e ? { rim: getComputedStyle(e).borderTopColor, img: getComputedStyle(e).backgroundImage.indexOf('rgb(20, 23, 28)') >= 0 } : null);
+      const nm = document.querySelector('#stage .pf-standing .pf-rankname'), lv = document.querySelector('#stage .pf-standing .pf-level');
+      const stacked = !nm || (nm.getBoundingClientRect().bottom <= lv.getBoundingClientRect().top + 2 && getComputedStyle(nm).textTransform === 'uppercase');
+      return { tiles: document.querySelectorAll('#stage .profile-hero .person-card-cell').length, look, stacked }; }""")
+    same = all(r["look"]) and len({x["rim"] for x in r["look"]}) == 1 and all(x["img"] for x in r["look"])
+    check("EE. Profile: no tiles, the three cards on the person card's surface, the rank a headline over the level", r["tiles"] == 0 and same and r["stacked"], r)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showCalendarTab(); await wait(900);
+      const card = document.querySelector('#stage .cal-count-card'); if(!card) return { card: false };
+      const prev = card.querySelector('.cal-count-arrow.is-prev'), next = card.querySelector('.cal-count-arrow.is-next');
+      const tr = card.querySelector('.cal-count-track'); const n = card.querySelectorAll('.cal-count-page').length;
+      if(!prev || !next) return { card: true, arrows: false };
+      card.scrollIntoView({ block: 'center' }); await wait(300);
+      const start = { prevOff: prev.disabled, at: tr.scrollLeft };
+      next.click(); await wait(900);
+      const page = Math.round(tr.scrollLeft / tr.clientWidth);
+      const tap = Math.min(prev.getBoundingClientRect().width, prev.getBoundingClientRect().height);
+      return { card: true, arrows: true, n, start, page, prevOn: !prev.disabled, tap }; }""")
+    check("EE. Calendar: the countdowns step with arrows (prev dim at the start, next moves one page)",
+          r.get("arrows") and r["start"]["prevOff"] and r["page"] == 1 and r["prevOn"], r)
+    ctx.close()
+
+    bad = []
+    for W, H, inst in ((1440, 820, False), (1194, 834, True)):
+        ctx, pg = (z5b.boot(br, W, H, 1) if inst else cb.booted(br, W, H, seed=cb.USED_ACCOUNT))
+        pg.evaluate("""() => { homeUnlocksOwed = () => false; showHome(); }"""); pg.wait_for_timeout(1500)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner').forEach(n => n.remove())")
+        pg.evaluate("() => document.getElementById('chatdock-btn').click()"); pg.wait_for_timeout(1200)
+        r = pg.evaluate("""() => { const b = document.getElementById('chatdock-btn').getBoundingClientRect(), p = document.querySelector('.chatdock-panel').getBoundingClientRect();
+          const hs = document.getElementById('homestart');
+          return { gap: Math.round(p.top - b.bottom), pill: hs && !hs.hidden ? getComputedStyle(hs).opacity : 'none' }; }""")
+        if not (r["gap"] >= 0 and r["pill"] in ("0", "none")):
+            bad.append((W, H, r))
+        ctx.close()
+    check("EE. the open chat starts below its button, and the white pill is not seen through it", not bad, bad)
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd), ("&", section_ee)):
             if k in ONLY:
                 try:
                     fn(br)
