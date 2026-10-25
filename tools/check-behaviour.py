@@ -12017,8 +12017,12 @@ def check_b313_flares_glass(br):
           const m = [...wrap.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => { b.style.animation = 'none'; const c = ctr(b, W); b.style.animation = ''; return c; });
           box.remove();
           const k = Math.min(W.width / B.width, 9);
-          return w.map(p => +Math.min(...m.map(q => Math.hypot(p[0] * k - q[0], p[1] * k - q[1]))).toFixed(1)); }""")
-        check(f"{label}: Home's bubbles are centred where Welcome's six are (within 3px)", bool(wel) and len(wel) == 6 and max(wel) <= 3, wel)
+          return { off: w.map(p => +Math.min(...m.map(q => Math.hypot(p[0] * k - q[0], p[1] * k - q[1]))).toFixed(1)), W: W.width }; }""")
+        # (327z15 round 15: Home's places are in the planet's units, measured
+        # from Welcome on a Pro Max; Welcome's are rem-offset, so on a bigger
+        # planet they part by a little - within 2.5% of the planet's width)
+        check(f"{label}: Home's bubbles are centred where Welcome's six are (within 3px, or 2.5% of the planet on a bigger one)",
+              bool(wel) and len(wel["off"]) == 6 and max(wel["off"]) <= max(3, .025 * wel["W"]), wel)
 
         # The glass is the glass it was: nothing about a bubble with nothing
         # behind it changed (its fill, blur and rim are 312's).
@@ -17454,7 +17458,7 @@ def check_b317_hometaps(br):
           return { still: !!(fx && fx.classList.contains('is-still')), surge: [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation) || a.playbackRate !== 1).length) }; }"""))
         pg.evaluate("() => { theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; }")
         check(dev + ": Reduce motion: a locked rank dips, still, with its caption - no shake",
-              RL.get("shake") == 0 and RL.get("dim") and RL.get("light") == 0 and "Reach level 60" in (RL.get("text") or ""), RL)
+              RL.get("shake") == 0 and RL.get("dim") and RL.get("light") == 0 and (RL.get("text") or "").startswith("Not lit yet"), RL)  # MOVED IN 327z15: the locked wording is vague
         check(dev + ": Reduce motion: a held rank's light shows still, no press, no halo",
               RH.get("lightStill") and RH.get("light") == 0 and RH.get("press") == 0 and RH.get("halo") == 0 and RH.get("name") == "Gold flare", RH)
         check(dev + ": Reduce motion: a found flare's ring shows still, no swell, no sparks",

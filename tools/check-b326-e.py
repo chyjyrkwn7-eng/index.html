@@ -160,7 +160,7 @@ def check_story(br):
     # planet together, the crack is the strain, Supernova a star that held
     check("his chat replies tell the same story: the planet held by badges (a star at Supernova), what you get, the crew joining you, where he is",
           len(ch) == 4 and re.search(r"star", ch[0]) and re.search(r"[Bb]adges are what hold", ch[0]) and re.search(r"rewards", ch[1])
-          and re.search(r"joins you", ch[2]) and re.search(r"debris field", ch[3]),
+          and re.search(r"joins you", ch[2]) and re.search(r"scanning|storm", ch[3]),  # MOVED IN 327z15: no debris field - the storm story
           [c[:60] for c in ch])
     check("the Version 9 'Nova, Your Instructor' note gives the cause, what a badge is, and the open end",
           re.search(r"more light than it could hold", r.get("note", "")) and re.search(r"badges are what hold it together", r.get("note", ""))

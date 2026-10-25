@@ -2556,6 +2556,23 @@
   @keyframes nw2-beacon{ 0%, 100%{ opacity:.25; } 50%{ opacity:.9; } }
   [data-reduce-motion="true"] .nw2 *, .nw2.is-still *{ animation:none !important; }
   @media (prefers-reduced-motion:reduce){ .nw2 *{ animation:none !important; } }
+  /* NOVA'S VOYAGE (327z15) - see buildNovaVoyage */
+  .nw3-bob{ animation:nw3-bob 3.2s ease-in-out infinite alternate; }
+  @keyframes nw3-bob{ from{ transform:translateY(-2%) rotate(-.6deg); } to{ transform:translateY(2%) rotate(.6deg); } }
+  .nw3 .nw3-cloud, .nw3 .nw3-flash, .nw3 .nw3-flare, .nw3 .nw3-badge{ position:absolute; display:block; pointer-events:none; }
+  .nw3-cloud{ aspect-ratio:1.5; translate:-50% -50%; border-radius:50%;
+    background:radial-gradient(closest-side, color-mix(in srgb, var(--theme-c3, #7C5CFF) 30%, transparent), color-mix(in srgb, var(--theme-c1, #5CA8FF) 14%, transparent) 55%, transparent); }
+  .nw3-flash{ aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, rgba(235,242,255,.75), rgba(170,190,255,.25) 45%, transparent); }
+  .nw3-hatch{ left:46%; top:58%; width:16%; aspect-ratio:1; translate:-50% -50%; border-radius:50%; opacity:0;
+    background:radial-gradient(closest-side, #FFFFFF, rgba(190,215,255,.7) 40%, transparent); }
+  .nw3 .nw2-shipspin > .nw3-hatch{ position:absolute; display:block; pointer-events:none; }
+  .nw3-flare{ aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(circle at 38% 34%, #FFFFFF, #E4ECF8 40%, #B9C4D6 70%, rgba(185,196,214,.0) 100%);
+    box-shadow:0 0 6px 1px rgba(220,230,255,.45); animation:nw3-glow 3s ease-in-out var(--fd, 0s) infinite; }
+  @keyframes nw3-glow{ 0%, 100%{ box-shadow:0 0 5px 1px rgba(220,230,255,.3); } 50%{ box-shadow:0 0 10px 3px rgba(220,230,255,.6); } }
+  .nw3-badge{ aspect-ratio:1; clip-path:polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    background:linear-gradient(150deg, #FFFFFF, #C9D2E0 45%, #8E99AD); opacity:.95; }
 
   /* The contextual info popup \u2014 same reverted Liquid Glass recipe as
      the tour tooltip (background back to .55, blur nudged up instead
@@ -76973,7 +76990,7 @@ const RELEASE_NOTES = [
         { icon: buildBarStatsIcon, color: "#A694FF", title: "Your Study Hours", body: "Stats adds a chart of this week's study time. Tap a day for its exact time, or look back at last week." }
       ]},
       { label: "Meet Nova", items: [
-        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and instructor whose planet exploded, scattering his badges, flares and crew across this system. Each unit you master recovers a badge, each rank relights a flare, and each character you find returns a member of his crew." },
+        { icon: buildTooltipBubbleIcon, color: "#FFD27A", title: "Nova, Your Instructor", body: "Nova is a space explorer and instructor. A storm opened his ship’s hold on its way through this system and scattered his badges, flares and crew into your class material. Each unit you master recovers a badge, each rank relights a flare, and each character you find returns a member of his crew." },
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed." },
         { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you rank up or find something of his, sends a weekly challenge, and can be messaged directly." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents the previous week's top three, with comebacks, close finishes and honourable mentions." },
@@ -83084,6 +83101,96 @@ function nwPodSVG(c){
     '<path d="M5 2.4H16C18.6 2.4 20.4 3.4 21.2 4.6H3C3.4 3.2 4 2.4 5 2.4Z" fill="#FFFFFF" opacity=".6"/>' +
     '<ellipse cx="15.5" cy="6" rx="3.4" ry="2.3" fill="' + c + '" stroke="#2A3048" stroke-width=".7"/><circle cx="2" cy="6" r="1.4" fill="' + c + '"/></svg>';
 }
+/* ---- NOVA'S VOYAGE (327z15) ----
+   "We aren't gonna do the whole 'my planet blew up I lost guys' path. It
+   should be like I've been studying and I lost things on my ship ... a mix
+   of feeling like you are on a learning adventure." The story's picture is
+   his ship, not a planet blowing up: it cruises across the stars, then (on
+   the next line, storm()) a storm catches it, its hold opens, and what he
+   carried drifts out behind it - his flares (pale, dark-for-now lights),
+   his badges and his crew in their pods - and comes to rest scattered
+   across the dark, for you to find. The ship and the pods are the
+   wreck's own drawings (NW_SHIP_SVG, nwPodSVG); the box is the wreck's
+   camera (.nt-wreck.nw2). Transform and opacity only; under Reduce motion
+   (or skipped to) it is the resting frame. */
+function buildNovaVoyage(stormNow){
+  const still = novaMotionOff();
+  const rnd = nwRand(4417);
+  const box = document.createElement("div");
+  box.className = "nt-wreck nw2 nw3" + (still ? " is-still" : "");
+  const cam = document.createElement("div"); cam.className = "nw2-cam";
+  const el = (cls, css, parent, tag) => { const e = document.createElement(tag || "i"); e.className = cls; if(css) e.style.cssText = css; (parent || cam).appendChild(e); return e; };
+  const anims = [];
+  const play = (e, frames, o) => {
+    if(still){ const f = frames[frames.length - 1]; for(const k in f) if(k !== "offset" && k !== "easing") e.style[k] = f[k]; return null; }
+    try{ const a = e.animate(frames, Object.assign({ fill: "both" }, o)); anims.push(a); return a; }catch(err){ return null; }
+  };
+  for(let i = 0; i < 34; i++) el("nw2-star", "left:" + (rnd() * 100).toFixed(1) + "%;top:" + (rnd() * 100).toFixed(1) + "%;--s:" + (1 + rnd() * 1.7).toFixed(1) + "px;animation-delay:" + (-rnd() * 4).toFixed(2) + "s", box);
+  box.appendChild(cam);
+  /* the storm: a soft cloud of the theme's colour that gathers, and a few
+     flickers of light inside it */
+  const cloud = el("nw3-cloud", "left:58%;top:44%;width:86%");
+  cloud.style.opacity = "0";
+  /* his ship, cruising in from the left with its engines lit */
+  const SW = 24, SH = SW * 64 / 160;
+  const ship = el("nw2-ship", "left:" + (-SW / 2) + "%;top:" + (-SH / 2) + "%;width:" + SW + "%;height:" + SH.toFixed(2) + "%", cam, "div");
+  const bob = el("nw2-shipspin nw3-bob", "", ship, "div");
+  const flames = el("nw2-flames", "", bob, "div");
+  el("nw2-flame", "top:" + (24.75 / 64 * 100).toFixed(1) + "%", flames);
+  el("nw2-flame", "top:" + (41.25 / 64 * 100).toFixed(1) + "%;animation-delay:-.13s", flames);
+  bob.insertAdjacentHTML("beforeend", NW_SHIP_SVG);
+  const hatch = el("nw3-hatch", "", bob);
+  const pos = (x, y, r) => "translate(" + (x / SW * 100).toFixed(1) + "%," + (y / SH * 100).toFixed(1) + "%) rotate(" + r + "deg)";
+  const cruise = play(ship, [
+    { transform: pos(-14, 56, 4), easing: "cubic-bezier(.25,.6,.4,1)" },
+    { transform: pos(46, 50, -2) }
+  ], { duration: 4200 });
+  /* what is in its hold, all at the ship until the storm */
+  const cargo = [];
+  for(let i = 0; i < 4; i++) cargo.push({ e: el("nw3-flare", "--fd:" + (-rnd() * 3).toFixed(2) + "s"), w: 3.2 });
+  for(let i = 0; i < 4; i++) cargo.push({ e: el("nw3-badge"), w: 3.6 });
+  NW_POD_COLORS.forEach(c => {
+    const pod = el("nw2-pod", "--c:" + c, cam, "div");
+    pod.innerHTML = nwPodSVG(c) + '<i class="nw2-beacon"></i>';
+    cargo.push({ e: pod, w: 7, pod: true });
+  });
+  /* where each comes to rest: spread round the frame, never on the ship */
+  const rest = [[12, 20], [30, 12], [70, 14], [88, 26], [9, 46], [86, 62], [14, 74], [36, 86], [62, 88], [84, 82], [24, 34], [76, 40], [50, 22], [48, 76]];
+  cargo.forEach((c, i) => {
+    c.e.style.left = (-c.w / 2) + "%"; c.e.style.top = (-c.w / (c.pod ? 4 : 2)) + "%"; c.e.style.width = c.w + "%";
+    c.at = rest[i % rest.length];
+    c.e.style.opacity = "0";
+  });
+  const HX = 44, HY = 52;   /* the hold, where the ship stops */
+  const tf = (c, x, y, r, s) => "translate(" + (x / c.w * 100).toFixed(0) + "%," + (y / (c.pod ? c.w / 2 : c.w) * 100).toFixed(0) + "%) rotate(" + r + "deg) scale(" + s + ")";
+  let stormed = false;
+  const storm = () => {
+    if(stormed) return; stormed = true;
+    if(cruise && !still){ try{ cruise.finish(); }catch(e){} }
+    play(cloud, [{ opacity: 0, transform: "scale(.7)" }, { opacity: .9, transform: "scale(1)", offset: .35 }, { opacity: .55, transform: "scale(1.15)" }],
+      { duration: 3200, easing: "ease-out" });
+    if(!still){
+      for(let k = 0; k < 5; k++){
+        const f = el("nw3-flash", "left:" + (40 + rnd() * 40).toFixed(1) + "%;top:" + (28 + rnd() * 30).toFixed(1) + "%;width:" + (14 + rnd() * 14).toFixed(1) + "%");
+        play(f, [{ opacity: 0 }, { opacity: .85, offset: .12 }, { opacity: 0, offset: .3 }, { opacity: .5, offset: .4 }, { opacity: 0 }],
+          { duration: 900, delay: 200 + k * 520, fill: "none" });
+      }
+      play(ship, [{ transform: pos(46, 50, -2) }, { transform: pos(47.5, 48.6, -9) , offset: .2 }, { transform: pos(46, 51, 5), offset: .45 }, { transform: pos(46.6, 50, -3) }],
+        { duration: 1700, delay: 300, fill: "none" });
+    }
+    play(hatch, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1.15)", offset: .3 }, { opacity: .55, transform: "none" }], { duration: 900, delay: 500 });
+    cargo.forEach((c, i) => {
+      const [ex, ey] = c.at;
+      play(c.e, [{ opacity: 0, transform: tf(c, HX, HY, 0, .3) }, { opacity: 1, offset: .06 },
+        { opacity: .95, transform: tf(c, ex, ey, c.pod ? Math.round((rnd() - .5) * 60) : 0, 1) }],
+        { duration: 2600 + rnd() * 1300, delay: 800 + i * 95, easing: "cubic-bezier(.12,.66,.25,1)" });
+    });
+  };
+  box.__nw = { anims, still };
+  box.__storm = storm;
+  if(stormNow) storm();
+  return box;
+}
 function buildNovaWreck(){
   const still = novaMotionOff();
   const rnd = nwRand(90210);
@@ -83988,41 +84095,47 @@ function novaIntroLines(o){
     /* build 327 round 9: "add another slide before it ... talking about why
        we haven't seen Mr nova or where he's been" */
     lines.push({ gesture: "raise",
-      text: "I’ve been lost in the dark since the blast. My signal has only just reached this system." });
+      text: "My ship has been out of range since the storm. My signal has only just reached this system." });
   } else {
-    lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here, and I need your help.", enter: hello });
+    lines.push({ gesture: "wave", text: "Hello, " + name + "! I’m Nova, an explorer and an instructor. I’ll be your guide here.", enter: hello });
   }
-  lines.push({ text: "My ship was studying a planet much like the one on your Home screen. It had taken in more light than it could hold, and it began to crack.",
-    enter: (ctx, instant) => { novaProp(ctx, buildNovaWreck()); if(!instant && !novaMotionOff()) playSound("cs.planet"); } });
-  lines.push({ gesture: "raise", text: "Then it exploded, and the blast threw my flares, my badges and the whole crew across this system." });
-  /* build 327 round 9: "the storyline at the very beginning is kinda weak. I
-     want the storyline to feel so good". The stakes and the ask come right
-     after the blast, so everything he describes after them is something you
-     are helping him get back, and why. */
-  /* build 327c: the stakes line is gone (the ask below says the same) - "shorten the Nova introduction" */
-  lines.push({ gesture: "raise", text: "Then I found your class. Every unit you master finds one of my badges, and every rank you reach relights one of my flares. Help me bring them home, and I’ll help you pass the real exam." });
+  /* THE STORY IS A VOYAGE, NOT A DISASTER (327z15): "We aren't gonna do the
+     whole 'my planet blew up I lost guys' path. It should be like I've been
+     studying and I lost things on my ship ... a mix of feeling like you are
+     on a learning adventure. It'll talk about badges, and ranking up." His
+     ship cruises (buildNovaVoyage), a storm opens its hold and what he
+     carried drifts off, and finding it again is learning the material. */
+  lines.push({ text: "I sail between the stars studying everything I can, and I keep what I learn on my ship: my badges, my flares, and a crew who help me teach.",
+    enter: ctx => novaProp(ctx, buildNovaVoyage(false)) });
+  lines.push({ gesture: "raise", text: "On my way through your system, a storm caught us. The hold burst open, and my badges, my flares and my crew drifted off into the dark.",
+    enter: (ctx, instant) => {
+      const box = ctx.stage.querySelector(".nt-prop .nw3");
+      if(box && !instant && box.__storm) box.__storm();
+      else novaProp(ctx, buildNovaVoyage(true));
+    } });
+  lines.push({ gesture: "raise", text: "Here’s the good part: all of it landed in your class material. Every unit you’ve mastered finds a badge, and every rank you reach relights a flare. Bring my things home, and I’ll get you ready for the real exam." });
   /* build 327c: an account that has been here already knows its flares, badges,
      characters, banners and modes - so the introduction is only the story and
      what has changed (the recap below), and the walk through all of it is for a
      new account. */
   if(!existing){
   lines.push({ text: existing && rankIdx >= 0
-      ? "The blast put my flares’ light out. They’re the flares on your Home screen. My secret flares were thrown further, into your tests."
-      : "The blast put my flares’ light out. That’s why the flares on your Home screen are dark. My secret flares were thrown further, into your tests.",
+      ? "My flares came to rest around the planet on your Home screen. My secret flares drifted further, into your tests."
+      : "My flares came to rest around the planet on your Home screen, and their light went out on the way. My secret flares drifted further, into your tests.",
     /* build 327 (b327m): the secret flares are said here, over the same
        picture, instead of on a line of their own ("I think the nova intro
        may be a little drawn out") */
     enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap(rankIdx >= 0 ? (rankIdx + 1) + " of " + TIER_ORDER_FULL.length + " lit again" : "My flares, all dark"))) });
   lines.push({ gesture: "raise", text: existing && rankIdx >= 0
       ? "A flare only lights for someone who has earned it. Every rank relights one, and you’ve already lit " + (rankIdx === 0 ? "the first" : (["two", "three", "four", "five", "six"][rankIdx - 1] || (rankIdx + 1))) + ". Each comes with my thanks: that rank’s rewards."
-      : "A flare only lights for someone who has earned it. Every rank relights one, with my thanks.",
+      : "A flare only lights for someone who has earned it. Every rank you reach relights one, and each comes with my thanks: that rank’s rewards.",
     enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
   /* WHAT A BADGE IS, IN THE APP AND IN THE STORY (build 327): "The badge
      explanation is bad at the end, it says something about finding them so
      I can teach you that unit? That's terrible." A badge is a unit
      mastered - its threshold of hundos (badgeThresholdFor) - and in the
      story it is what holds a planet together. */
-  lines.push({ text: "My badges landed one in every unit. Score enough hundos on a whole unit and its badge is yours. That’s why a rank asks for badges as well as a level.",
+  lines.push({ text: "My badges landed one in every unit. Score enough hundos on a whole unit and it’s mastered: its badge is yours. That’s why a rank asks for badges as well as a level.",
     /* build 326: this slide and the four after it are made ahead (novaSlide) */
     ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(existing && st.badges > 0 ? st.badges + (st.badges === 1 ? " badge" : " badges") + " found so far" : "Every unit has its own badge"))) });
   /* WHY YOUR PLANET CRACKS, AND WHY IT MUST NOT GO THE WAY HIS DID (build
@@ -84038,12 +84151,12 @@ function novaIntroLines(o){
      make sense ... Remove that one"). The level rule is said once instead:
      to an existing account on its recap ("let's see how you're doing"),
      and to a new one here, on the badges slide, since they have no recap. */
-  lines.push({ gesture: "raise", text: "My crew got away in escape pods. They’re the characters in this app, and every one you find joins you.",
+  lines.push({ gesture: "raise", text: "My crew are safe in their pods, waiting to be found. They’re the characters in this app, and every one you find joins you.",
     ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(crew.have + " of " + crew.total + " characters found"))) });
   /* build 327 round 9: said on the crew slide, its own picture gone ("How
      my crew comes home ... remove that slide ... Just add another text box
      after the first one on the character slide") */
-  lines.push({ text: "Each one comes home a different way: a rank, a challenge, a secret flare, or nearly everything else." });
+  lines.push({ text: "Each one comes home a different way: some with a rank, most with a challenge, and a few behind my secret flares." });
   /* build 327 (b327m): the Virtual Room is said here, on the modes slide
      (which already shows it), not on a line and a picture of its own */
   lines.push({ text: "Drill to learn, Mock to prove you’re ready, Review to go over the material, and a Virtual Room to race your classmates or challenge me. Banners and effects await in Customize.",
@@ -84061,7 +84174,7 @@ function novaIntroLines(o){
     enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
     lines.push(friendLine);
-    lines.push({ gesture: "nod", final: true, text: "So that’s the job: light my flares, find my badges, bring my crew home. Let me show you around.",
+    lines.push({ gesture: "nod", final: true, text: "That’s our adventure: learn it, rank up, and bring it all home. Let me show you around.",
       enter: ctx => novaProp(ctx, null) });
     return lines;
   }
@@ -84097,8 +84210,7 @@ function playNovaIntro(then, o){
   novaIntroOn = true;
   const lines = novaIntroLines(o);
   const recapAt = lines.findIndex(l => l.recap);
-  /* the art of the crack the wreck forms, made while he says hello */
-  setTimeout(() => { try{ if(!novaMotionOff()) warmCrackForm(0, CRACK_TOP); }catch(e){} }, 900);
+  /* (327z15: no wreck in the story any more, so no crack art to warm) */
   /* and the parades of characters and badges (build 325) */
   novaWarmProps();
   novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "Goodbye" : "Let’s go",
@@ -88117,7 +88229,7 @@ function novaRankLine(idx, extra){
   let t = head + " " + novaRankThanks(k);
   const more = extra ? novaProgressTail(extra, null) : "";
   if(more) t += more;
-  if(idx === TIER_ORDER_FULL.length - 1) t += " And my scanners have already picked up more of my ship further out, so we’re not finished yet.";
+  if(idx === TIER_ORDER_FULL.length - 1) t += " And my scanners have already picked up more of my cargo further out, so we’re not finished yet.";
   return t;
 }
 function novaHelloLine(fromIntro){
@@ -88207,7 +88319,7 @@ function novaProgressLine(p){
   if(p.level){
     return novaPickOf([
       "Level " + p.level + ", " + n + ". Every level you climb, my scanners reach a little further out. Keep going.",
-      "Level " + p.level + ". My scanners picked up another piece of my ship as you climbed, " + n + ". There’s always more out there."
+      "Level " + p.level + ". My scanners picked up more of my cargo as you climbed, " + n + ". There’s always more out there."
     ], p.level);
   }
   return "";
@@ -88296,11 +88408,11 @@ function novaBackInMin(now){
    says Away; what he is doing on his chat's header; his own words in the
    chat above the composer. */
 const NOVA_AWAY_JOBS = [
-  { short: "Scanning the debris field", say: "I’m out scanning the debris field for more of my ship." },
+  { short: "Scanning the system", say: "I’m out scanning the system for more of what the storm scattered." },
   { short: "Following a signal", say: "I’m following a signal out past the rings. It could be one of my crew’s escape pods." },
-  { short: "Searching the outer rings", say: "I’m searching the outer rings for pieces of my ship." }
+  { short: "Searching the outer rings", say: "I’m searching the outer rings for more of my cargo." }
 ];
-const NOVA_AWAY_NIGHT = { short: "On night watch", say: "I’m on night watch over the debris field." };
+const NOVA_AWAY_NIGHT = { short: "On night watch", say: "I’m on night watch, keeping my ship steady." };
 const NOVA_AWAY_LABEL = "Out of range";
 function novaAwayJob(now){
   now = now || Date.now();
@@ -88857,15 +88969,15 @@ function novaReplyFor(raw){
     return "Drill to learn a unit, a Mock to test yourself, and Review to go over the material first. They’re all under Start Studying on Home.";
   /* the story as his introduction tells it (build 326) */
   if(has(/ (planet|crack\w*|becoming a star) /))
-    return "The planet I was studying took in more light than it could hold, with nothing holding it together, and it exploded. Yours cracks a little more with every rank from Gold up: the strain of a brighter flare. Badges are what hold it together, which is why every rank asks for them. Keep finding them and it holds, all the way to Supernova, where it becomes a star.";
+    return "The planet on your Home screen is yours, and my flares rest around it. It takes in more light with every rank, and from Gold up you’ll see it strain and crack with it. Badges are what hold it together, which is why every rank asks for them. Keep finding them and it holds, all the way to Supernova, where it becomes a star.";
   if(has(/ (crew|characters?|pods?) /))
-    return "My crew got away from the blast in escape pods and landed all over this system. They’re the characters. Every one you find comes home and joins you: some with a rank, most with a challenge, a few behind my secret flares.";
+    return "When the storm opened my hold, my crew drifted off in their pods and landed all over this system. They’re the characters. Every one you find comes home and joins you: some with a rank, most with a challenge, a few behind my secret flares.";
   if(has(/ (flares?|secret) /))
-    return "My flares came to rest around your planet, dark. Every rank you reach relights one. My secret flares were thrown further, into your tests. I’ve lost count of how many.";
+    return "My flares came to rest around your planet, dark. Every rank you reach relights one. My secret flares drifted further, into your tests. I’ve lost count of how many.";
   if(has(/ (where are you|away|range|scanning|scanner\w*|busy|offline) /))
-    return "When I’m out of range I’m scanning the debris field for more of my ship. The top of this chat says what I’m doing and when I’ll be back.";
+    return "When I’m out of range I’m scanning the system for more of what the storm scattered. The top of this chat says what I’m doing and when I’ll be back.";
   if(has(/ (ship|blast|wreck|lost|explorer|space|save you|finish\w*|end) /))
-    return "My ship was studying a planet much like yours when its core gave way. The blast threw my flares, my badges and the whole crew across this system. My scanners keep finding more of my ship further out, so there’s always more to bring home.";
+    return "I sail between the stars studying everything I can. On my way through your system a storm opened my ship’s hold, and my badges, my flares and my crew drifted off. They landed in your class material, so every unit you learn brings some of it home. My scanners keep finding more further out, so there’s always more to find.";
   if(has(/ (friends?|friend code|add) /))
     return "Add classmates from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
@@ -92597,7 +92709,7 @@ function openPersonSheet(entry){
   prog.className = "person-card-progress";
   const progLab = document.createElement("p");
   progLab.className = "person-card-proglabel";
-  progLab.textContent = isNova ? "Lost in the blast \u00b7 found by you" : "Progress";
+  progLab.textContent = isNova ? "Lost in the storm \u00b7 found by you" : "Progress";
   prog.appendChild(progLab);
   const grid = document.createElement("div");
   grid.className = "person-card-grid";

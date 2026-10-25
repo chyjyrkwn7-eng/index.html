@@ -266,14 +266,21 @@ def story_section(br):
     check("no badge 'so I can teach you that unit', and no instructor's log pages",
           not re.search(r"teach (you )?(that|this|\w+ properly)|instructor.s log|page of (my|his) log|pages of my log|from it\.", everything, re.I),
           re.findall(r".{30}(?:teach|log).{30}", everything)[:3])
-    i_crack = next((i for i, t in enumerate(fresh) if re.search(r"more light than it could hold", t)), -1)
-    i_boom = next((i for i, t in enumerate(fresh) if re.search(r"explod", t)), -1)
+    # MOVED IN 327z15: "We aren't gonna do the whole 'my planet blew up I lost
+    # guys' path. It should be like I've been studying and I lost things on
+    # my ship." The order is now: he studies aboard his ship, a storm scatters
+    # what he carried, and it is found by mastering units.
+    i_crack = next((i for i, t in enumerate(fresh) if re.search(r"studying", t) and re.search(r"ship", t)), -1)
+    i_boom = next((i for i, t in enumerate(fresh) if re.search(r"storm", t)), -1)
     i_badge = next((i for i, t in enumerate(fresh) if re.search(r"badge", t) and re.search(r"mastered", t) and re.search(r"hundo", t)), -1)
     i_wall = next((i for i, t in enumerate(fresh) if re.search(r"level waits", t) and re.search(r"badges", t)), -1)
     # build 327 round 9: the strain slide ("your planet is a lot like that one ... cracks") was removed on
     # request - the cracks story did not make sense beside "badges hold a planet together"
-    check("in order: his planet took in more light than it could hold, it exploded; then a badge is a unit mastered (hundos)",
-          0 <= i_crack < i_boom < i_badge, {"crack": i_crack, "boom": i_boom, "badge": i_badge})
+    check("in order: he studies aboard his ship, a storm scatters his things; then a badge is a unit mastered (hundos)",
+          0 <= i_crack < i_boom < i_badge, {"ship": i_crack, "storm": i_boom, "badge": i_badge})
+    check("no planet blowing up anywhere he speaks (intro, chat, the help note)",
+          not re.search(r"explod|blast|blew up|debris", everything, re.I),
+          re.findall(r".{30}(?:explod|blast|blew up|debris).{30}", everything, re.I)[:3])
     check("the strain slide is gone: no intro line says your planet cracks",
           not any(re.search(r"crack", t) and re.search(r"\byour planet\b|\byours\b", t) for t in fresh + existing),
           [t for t in fresh + existing if re.search(r"crack", t) and re.search(r"\byour planet\b|\byours\b", t)][:2])

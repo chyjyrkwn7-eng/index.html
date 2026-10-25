@@ -27724,3 +27724,38 @@ Refine the placements".
 - check-behaviour moved: b317_hometaps' caption texts (round 3's wording:
   no "Lit when you reached", locked vague with no numbers, the planet's
   plain line), b317_planet's outer secret flares at 152.
+
+## Build 327z15 round 16 - Nova's story is a voyage, not a planet blowing up
+
+"The storyline absolutely doesn't make sense as a new user ... a mix of
+feeling like you are on a learning adventure. It'll talk about badges, and
+ranking up ... We aren't gonna do the whole 'my planet blew up I lost guys'
+path. It should be like I've been studying and I lost things on my ship."
+(It is going to be shown to captains, chiefs and supervisors next week.)
+
+- novaIntroLines: hello; "I sail between the stars studying everything I
+  can, and I keep what I learn on my ship: my badges, my flares, and a crew
+  who help me teach" (his ship cruising, buildNovaVoyage); "On my way through
+  your system, a storm caught us. The hold burst open ..." (the same scene's
+  storm(): a cloud, flickers, the hold glowing, 4 flares, 4 badges and 6 crew
+  pods drifting out and settling across the frame); "Here's the good part:
+  all of it landed in your class material. Every unit you've mastered finds a
+  badge, and every rank you reach relights a flare. Bring my things home, and
+  I'll get you ready for the real exam." Then, for a new account: the flares
+  (their light went out on the way; secret flares drifted into your tests),
+  ranks relight them with that rank's rewards, badges (a unit mastered), the
+  crew "safe in their pods, waiting to be found", how each comes home, the
+  modes, the friend line, and "That's our adventure: learn it, rank up, and
+  bring it all home. Let me show you around." 12 lines, as before.
+- An existing account's second line: "My ship has been out of range since
+  the storm."
+- buildNovaWreck is no longer used by the intro (kept; its sound and the
+  crack warm-up are not played). The Supernova/crack mechanics of YOUR planet
+  are unchanged; Nova's chat answer about the planet now explains them
+  without his planet ("The planet on your Home screen is yours ...").
+- Also reworded: his chat answers (crew, flares, ship/story), his away jobs
+  (no debris field), the rank-line "more of my cargo", the Version-9 help
+  card ("A storm opened his ship's hold ..."), his profile row "Lost in the
+  storm · found by you".
+- Gates moved: check-b327-c story order (ship -> storm -> badge mastered, and
+  nothing explodes anywhere he speaks), check-b326-e away reply.
