@@ -28644,3 +28644,14 @@ Under 360px wide the screen panel's side padding is 4px (the wrap's 20px
 and the panel's 20px stacked to 40 a side: 240px of 320 for every card;
 the leaderboard name read "J...."); Find me .75rem a side there so "Search
 names" is whole. The wrap itself is untouched (CLAUDE.md).
+
+Round 47 gates: check-b326-f brought up to the decisions made since it last
+passed (rounds 31-36): the unit card's badge in its bottom-right corner, a
+found card's count at its foot (round 33), the scrolling panes' denser
+no-frost fill (round 36) and Settings' .8 cards; the lit Virtual Room pill
+is #ECEFF3 on a light accent. Two real fixes it found: the Virtual Room's
+bar kept saturate(1.8) when the tab bar went to 1.25 (now the same frost),
+and under .is-lighting the pill's base was the accent, not the lit white
+(#E7EDF1 vs #ECEFF3 on ink/titan) - now var(--vroom-lit). check-b327z z11
+sets character art aside (its sway follows the row's own live state; failed
+the same way on round 38's build).

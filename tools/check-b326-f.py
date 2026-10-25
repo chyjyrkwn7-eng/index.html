@@ -269,7 +269,8 @@ def check_bar_unlit(br):
             acc_col = pg.evaluate("() => { const p = document.createElement('i'); p.style.color = 'var(--accent)'; document.body.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; }")
             check("%s, %s: lit by a tap, the grey holds while the fill grows from the centre (as Start's), then the accent - and no flash back" % (label, acc),
                   fr["lighting"] and fr["early"] == ref["bg"] and "start-fill-in" in fr["names"] and fr["clip"] not in (None, "none")
-                  and fr["late"] == acc_col and fr["base"] == acc_col,
+                  # MOVED IN 327z15: on a light accent (ink, titan) the lit pill is the white face (#ECEFF3)
+                  and fr["late"] in (acc_col, "rgb(236, 239, 243)") and fr["base"] == fr["late"],
                   {"accent": acc_col, "beat": fr})
             ctx.close()
 
@@ -362,7 +363,10 @@ def check_surfaces(br):
         # a wrapper with no fill of its own (the sheet's Timer group: its card is the .timer-sect inside) is not a box
         found = [(s, e) for s, els in r["out"].items() for e in els if rgba(e["bg"])[3] > 0 or e["bgi"] != "none"]
         bgs = set(e["bg"] for _, e in found)
-        on_token = bool(found) and len(toks) == 3 and all(e["bg"] in toks for _, e in found)
+        # MOVED IN 327z15 round 36: what scrolls lost its frost and is the pane a shade denser
+        # (rgba(12,13,19,.7) / (18,20,28,.7)); Settings' cards are .8 (round 31) - still dark and opaque
+        R36 = {"rgba(12, 13, 19, 0.7)", "rgba(18, 20, 28, 0.7)", "rgba(12, 13, 19, 0.8)"}
+        on_token = bool(found) and len(toks) == 3 and all(e["bg"] in toks or e["bg"] in R36 for _, e in found)
         # a screen's boxes of one kind share one surface; page cards are dark and opaque enough to read on
         page = [e for s, e in found if "unitoptions" not in s and "motion-summary" not in s and "searchbox" not in s]
         # MOVED IN BUILD 327: "the new darker Liquid Glass ... doesn't go with
@@ -516,18 +520,27 @@ def check_unit_cards(br):
         pg.wait_for_timeout(1500)
         cards = pg.evaluate(CARDS)
         rem = pg.evaluate("() => parseFloat(getComputedStyle(document.documentElement).fontSize)")
-        top_line = all(c["box"] and c["badge"] and abs((c["box"]["y"] + c["box"]["h"] / 2) - (c["badge"]["y"] + c["badge"]["h"] / 2)) <= c["badge"]["h"] * 0.35
-                       and c["badge"]["x"] > c["w"] / 2 and c["badge"]["r"] <= 16 and c["badge"]["w"] >= 2.4 * rem for c in cards)
+        # MOVED IN 327z15 rounds 31-32: the badge sits in the card's bottom-right corner (the circle stays top-left)
+        top_line = all(c["box"] and c["badge"] and c["box"]["y"] < c["h"] / 3
+                       and c["badge"]["x"] > c["w"] / 2 and c["badge"]["y"] > c["h"] / 2 and c["badge"]["r"] <= 16 and c["badge"]["w"] >= 2.4 * rem for c in cards)
         headline = all(c["pname"]["fs"] > c["pcount"]["fs"] + 1 and c["pname"]["fw"] >= 700 and c["pname"]["y"] > c["box"]["y"] + c["box"]["h"] - 1 for c in cards)
         # footers: the question counts in a row of cards share one line
         rows = {}
         for c in cards:
             rows.setdefault(round(c["top"]), []).append(c)
-        aligned = all(max(abs(a["pcount"]["y"] - b["pcount"]["y"]) for a in r for b in r) <= 1 for r in rows.values())
+        # MOVED IN 327z15 round 33: "the amount of questions ... should be lowered once you earn the
+        # badge so it's closest to the bottom border" - a found card (no bar) has its count at its foot;
+        # the cards still working on theirs line up with each other
+        def _al(r):
+            work = [c for c in r if c.get("bar")]
+            done = [c for c in r if not c.get("bar")]
+            return (len(work) < 2 or max(abs(a["pcount"]["y"] - b["pcount"]["y"]) for a in work for b in work) <= 1) \
+                and all(c["h"] - (c["pcount"]["y"] + c["pcount"]["h"]) <= 24 for c in done)
+        aligned = all(_al(r) for r in rows.values())
         squares = len(rows) >= 6 and all(len(r) == 2 for r in list(rows.values())[:-1])
         radius = len(set(c["radius"] for c in cards)) == 1
         targets = all(c["h"] >= 44 and c["w"] >= 44 for c in cards)
-        check("%s: every card has the circle and the badge (>=2.4rem) on its top line, the name below as the headline, two across"
+        check("%s: every card has the circle on its top line and the badge (>=2.4rem) in its bottom-right corner, the name below as the headline, two across"
               % label, top_line and headline and squares and radius and targets,
               {"first": cards[0] if cards else None, "rows": len(rows)})
         check("%s: in every row the cards' footers (question count) line up, found badge or not" % label, aligned,

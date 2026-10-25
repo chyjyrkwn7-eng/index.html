@@ -7929,7 +7929,8 @@
     background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
     box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.3);
     will-change:backdrop-filter;
-    backdrop-filter:blur(30px) saturate(1.8); -webkit-backdrop-filter:blur(30px) saturate(1.8);
+    /* the tab bar's frost (327z15: it went to saturate(1.25) and this bar was left at 1.8) */
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
   }
   [data-theme="dark"] .startbar.vroom-setup-bar{
     background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
@@ -8008,6 +8009,9 @@
   }
   /* lit, the dark layout's buttons are its white (see .next's !important rule) */
   [data-theme="dark"][data-layout="modern"] #stage > .vroom-setup-bar > :is(.vroom-setup-go, .vroom-readyup-btn){ --vroom-lit:#ECEFF3; }
+  /* and under the lighting class itself, so no frame between the beat's end and the class coming
+     off can show the accent instead of the white (ink and titan: #E7EDF1 then #ECEFF3) */
+  [data-theme="dark"][data-layout="modern"] #stage > .vroom-setup-bar > :is(.vroom-setup-go, .vroom-readyup-btn).is-lighting{ background-color:var(--vroom-lit); }
   /* the words wait with the fill (327z15): "the match settings button lags
      and only highlights the words match settings before the effect
      happens" - the base colour's own .2s transition turned the words dark
