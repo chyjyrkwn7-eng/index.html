@@ -28736,3 +28736,65 @@ the bar: Start Studying is 142x40 in .88rem words (an ::after keeps the 44px
 tap area) and sits 36px over the bar on a 320x568 SE (was 61-84), 26px on a
 375x667; the daily circle is 2.4rem (was 2.6). The other SE screens (units,
 modes, a test, leaderboard, profile, calendar) were walked: nothing clipped.
+
+## Build 328 - the rest of Level 1 (Oct 25)
+
+Madison: "The instruction has finally added multiple new units ... THIS IS
+everything from level 1 in the class", with every study guide downloaded again
+(26 files, 25 different: CCP twice). Parsed with python-docx (scratchpad
+parseguide.py): a question is a numbered line or the first line of a block,
+choices are lettered lines or list items, the answer is the highlighted one
+(every question in all 25 guides has exactly one). Matched to the bank by text,
+not number. Questions are word for word the guides, typos included.
+
+- **Existing units, what changed in the guides** (refs and editing notes aside -
+  refs were left as they are; the guides added more "Googled"/Quizlet notes):
+  CCP #4 and #20 choices (capitals; "All of the above"); Missing #1 ("commit"),
+  #6 and #13 (capitals), #14 (a comma), #27 ("IBM's Vice President"); Sexual
+  Assault #7 ("the methods"), #9 and #13 (capitals); US/TX #13, #15, #28 wording,
+  #42, #43, #66 choices; Verbal #3 ("an oppressive, or a tyrant"). Each with
+  keyText/keyChoices pinned the first time it changes. KEYS of all 912 old
+  questions are byte-identical (check-b328-level1 328a).
+- **Arrest #66** had lost choice A ("12 hours") into its ref at the first import;
+  restored (answer 48 hours, now index 2), keyChoices keeps its identity.
+- **Arrest #31 / #55** (one question twice): the 8-28-26 guide marks D on #31 and C
+  on #55. Madison is asking the instructor; both count C (build 325) and carry
+  `verifyNote` - buildBankNote draws it in the same red note as bankNoteAnswer:
+  "Being verified. An admin is verifying this answer with the instructor ...".
+- **Penal #243** (letter bomb): "The answer is the one about false report" -
+  answer 1, False Alarm or Report (the guide still highlights Terroristic Threat;
+  its ref is PC 42.06, False Alarm). Sexual Assault #30 is gone from that guide.
+- **Sexual Assault** was renumbered to the new curriculum (36 questions): fifteen
+  are no longer in it (4, 5, 6, 8, 10, 11, 19, 23, 25, 30, 31, 36, 38, 43, 45) and
+  are RETIRED as `versionOnly` with no version - out of the unit, tests and the
+  daily pool, every index and key where it was. #47-51 are new (#51 is #9 again,
+  worded "without the consent"). Missing #46 is new.
+- **New units** (all appended at the END of QUESTIONS, src = guide number):
+  Consular Notification 9, Crisis Intervention Training 67, De-Escalation 22,
+  Health and Safety Code 26, Interacting with Deaf or Hard-of-Hearing 11, Radio
+  Communications, Alerts, and TCIC-TLETS 15, Traumatic Brain Injury 12, and
+  Phonetic Alphabet and Military Time 39 - written for the app from the two
+  handouts: 26 letters (right word + the NATO word where it differs + two names,
+  same first letter) and 13 times from the sheet each way round. Refs split off
+  by the first citation-looking parenthesis; flash-card usernames stripped.
+- **Unit names shown** (`unitTitle`, UNIT_TITLES): CCP and Bill of Rights, Civil
+  Process, Verbal Communications - the guides' titles. The stored topic never
+  changes (it is part of KEYS and keys unitPerfects).
+- **Levels**: UNIT_LEVELS (Level 1 = every unit, complete; 2 and 3 empty). The
+  unit screen has the Leaderboard's segmented control; a level with picks shows
+  the count; an empty level opens a "Coming soon" sheet and the tab stays.
+  Level 1 has no "More units coming soon" tile. Chosen over a drop-down: every
+  level in sight, one tap.
+- **Badges**: bands 15/12/8/4/2 -> 10/8/6/3/2 ("15 goes to 10. 12 will go to 8
+  and so on ... [8] goes to 6"; 4 -> 3 is the "so on"; Penal stays 2).
+  BADGE_BANDS_VERSION 4 with LEGACY_BADGE_BANDS_279 as the "was": badges this
+  hands out are celebrated after the next finished test. Eight new outlines
+  (hexstar, shield, octagon, drop, lens, chevron, bilobe, hourglass) in the same
+  rounded hand; colours terracotta/teal/purple/emerald/orange/crimson/amber/pink
+  as nods. A first try had a thin 4-point star (all silver), a tablet that read
+  as Verbal's disc and a pentagon like CCP's: replaced. 24 badges sit six by
+  four (badgeCaseGrid takes a full rectangle up to two columns wider than the
+  square one); `.bc-wide` draws that case wider so badges keep their size -
+  four by six put the open lid off the top of a phone.
+- What's New 9.2 leads with "All of Level 1"; RELEASE_NOTES 9.2 has three items.
+- Gate `tools/check-b328-level1.py` (fails on ba173e4).

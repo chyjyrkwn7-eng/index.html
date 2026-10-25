@@ -80657,7 +80657,7 @@ function scopeLabel(){
   const all = topicsIn(QUESTIONS);
   let base;
   if(cfg.units.length === 0 || cfg.units.length === all.length) base = "All units";
-  else if(cfg.units.length === 1) base = cfg.units[0];
+  else if(cfg.units.length === 1) base = unitTitle(cfg.units[0]);
   else base = cfg.units.length + " units";
   if(cfg.source === "recent") base += ", most missed";
   if(cfg.source === "flagged") base += ", starred";
@@ -97555,7 +97555,7 @@ function playQueuedBadgeCutscenes(){
 
   const name = document.createElement("p");
   name.className = "badge-cutscene-name";
-  name.textContent = unit;
+  name.textContent = unitTitle(unit);
   overlay.appendChild(name);
 
   const sub = document.createElement("p");
@@ -98328,7 +98328,7 @@ function openUnitDetail(row, name, mode){
   const head = document.createElement("div");
   head.className = "unitdetail-head";
   const nm = document.createElement("p");
-  nm.className = "pname"; nm.textContent = name;
+  nm.className = "pname"; nm.textContent = unitTitle(name);
   const cnt = document.createElement("p");
   cnt.className = "pcount"; cnt.textContent = unitQuestionCount(name) + " questions";
   head.append(nm, cnt);
@@ -99542,7 +99542,7 @@ function showSetup(){
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
     appendPickTick(box);
     const label = document.createElement("span");
-    label.className = "pname"; label.textContent = name;
+    label.className = "pname"; label.textContent = unitTitle(name);
     row.append(cb, box, label);
     appendUnitNextTestTag(row, name);
     appendUnitVersionTag(row, name);
@@ -99576,7 +99576,7 @@ function showSetup(){
     box.className = "box tba-lock"; box.setAttribute("aria-hidden", "true");
     box.appendChild(buildLockIcon());
     const label = document.createElement("span");
-    label.className = "pname"; label.textContent = name;
+    label.className = "pname"; label.textContent = unitTitle(name);
     const badge = document.createElement("span");
     badge.className = "tba-badge"; badge.textContent = "TBA";
     row.append(box, label, badge);
@@ -110739,7 +110739,7 @@ function buildRunHead(run){
     list.className = "rs-unitlist";
     units.forEach(u => {
       const li = document.createElement("li");
-      li.textContent = u;
+      li.textContent = unitTitle(u);
       list.appendChild(li);
     });
     head.appendChild(list);
@@ -116542,7 +116542,7 @@ function showVirtualRoomSetup(editRoom){
     box.className = "box"; box.setAttribute("aria-hidden", "true"); box.textContent = "\u2713";
     appendPickTick(box);
     const label = document.createElement("span");
-    label.className = "pname"; label.textContent = name;
+    label.className = "pname"; label.textContent = unitTitle(name);
     row.append(cb, box, label);
     appendUnitNextTestTag(row, name);
     appendUnitVersionTag(row, name);
@@ -125686,7 +125686,17 @@ function bannerDetail(id){
    I click off the tab"). The bar counts hundos in that unit against what
    its badge needs. */
 /* A badge's name, wherever it is written as a title (build 319). */
-function badgeTitle(unit){ return unit + " Badge"; }
+function badgeTitle(unit){ return unitTitle(unit) + " Badge"; }
+/* A UNIT'S NAME AS ITS STUDY GUIDE NOW TITLES IT (build 328): "Some of the
+   titles even changed so update the titles. Like I know the CCP one changed
+   its title." A topic name is part of every question's KEY and keys
+   unitPerfects, so the name stored never changes; what is shown does. */
+var UNIT_TITLES = {   /* var: hoisted, so a boot-time badgeTitle() cannot meet a TDZ */
+  "Code of Criminal Procedure and Bill of Rights": "CCP and Bill of Rights",
+  "Civil Process and Liability": "Civil Process",
+  "Verbal Communication": "Verbal Communications"
+};
+function unitTitle(unit){ return (UNIT_TITLES && UNIT_TITLES[unit]) || unit; }
 /* ---- THE CASES (build 320) ----
    "This badge case is gonna be called level 1 badge case ... this case
    holds 16 badges, when we get more units (which we will) the new case
@@ -131485,7 +131495,7 @@ function buildBadgesTab(opts){
     tile.appendChild(art);
     const name = document.createElement("span");
     name.className = "badge-tile-name sr-only";
-    name.textContent = unit;
+    name.textContent = unitTitle(unit);
     tile.appendChild(name);
     /* a badge you have not looked at since it was found (build 299) */
     const clearNew = has ? attachNewDot(art, "badges", unit) : () => {};
