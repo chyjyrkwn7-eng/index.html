@@ -28103,3 +28103,41 @@ bigger how big the main menu is so ensure they are the same".
   bubble 40rem with 1.5rem words.
 - check-b327z15 section * (FF): all three checks fail on the round-27
   commit and pass now.
+- Short laptops: the steps' 1.15 is only under (min-height:45rem) - at
+  1366x638 it ran "What this actually is" to the floor - and the steps'
+  min-height is 100dvh - 5.5rem (4.5 left 16px of scroll).
+
+## Build 327z15 round 29 - the keys line, the badge count, every word centred, equal Stats tiles
+
+"The 'press 1-4 to pick an answer' ... only there if you are on a computer
+... iPads would count ... but not phones"; "In the profile box, it has your
+rank, and right under it is your level, your badge count should still be
+there as well"; "The word change in the change button next to your name,
+it's not centered"; "In the at a glance box in stats, the 4 boxes ... aren't
+all the same size"; "7 of 16 ... not centered. See rank ladder isn't
+centered. The word test history ... isn't centered (a lot of these aren't
+perfectly centered, fix them all)".
+
+- #hint (Press 1 through 4 ...) was hidden on every touch screen, iPads too.
+  Now only (hover:none) and (pointer:coarse) and (max-width:39.99rem) - or
+  max-height:31rem, a phone on its side. iPads and anything with a fine
+  pointer show it.
+- Profile: under the rank, ".pf-idsub" = "Level N · N badges" on one row
+  (the badge count came off with the tiles in round 26/27). check-behaviour
+  'plate' measures that row now.
+- Pills with an arrow (See rank ladder, the case's "N of 16 badges", Test
+  history): the same padding both sides, the arrow absolutely placed in the
+  right padding - the WORD is in the middle (was ~9px left). Test history's
+  outer button is even both sides too.
+- Letters up-down: text-box: trim-both cap alphabetic (with padding giving
+  back what it trims) on Customize's Change (every .profile-edit-btn, not
+  only the hero's), Find me, the pills; the week switch is an inline-flex
+  2rem chip with its letters in the middle.
+- Stats At a glance: grid-auto-rows:1fr - on a phone the second row was
+  103px against 84 (a two-line label).
+- tools/check-ink-centre.py: measures each screen at its top AND at its foot
+  (the pills were below the fold), adds Customize and the Calendar, measures
+  labels with a descender across (not up-down), screenshots each control by
+  itself (a scrolled page), clears the colour of children too (a pill's
+  inner span kept its letters), and for an arrow pill measures the letters
+  alone with the arrow's colour pinned.

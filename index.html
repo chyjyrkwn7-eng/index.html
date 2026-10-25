@@ -1865,6 +1865,8 @@
     transition:opacity .35s ease, transform .5s cubic-bezier(.25,1.3,.4,1); pointer-events:none; }
   .nt-prop.is-in{ opacity:1; transform:none; }
   /* Stats' Recent tests heading with its Test history pill (327z15 round 26) */
+  /* round 29: "the 4 boxes with stats, they aren't all the same size" - on a phone the second row was 19px taller (a two-line label); every row is one height */
+  .stx-glance .stat-grid-four{ grid-auto-rows:1fr; }
   .stx-recent-top{ display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
   .stx-recent-top > .slab{ margin-bottom:0; }
   .stx-allbtn.stx-allpill{ flex:none; display:inline-flex; align-items:center; gap:.25rem; min-height:44px; margin:-.5rem -.4rem -.5rem 0;
@@ -12428,8 +12430,16 @@
     }
   }
 
-  @media (hover:none) and (pointer:coarse){
+  /* THE KEYS LINE ONLY WHERE A KEYBOARD CAN BE (327z15 round 29): "only
+     there if you are on a computer ... iPads would count cause there are
+     iPad attachments but not phones". It was hidden on every touch screen,
+     iPads included; now only on a phone - a touch screen under 40rem wide,
+     or one under 31rem tall (a phone on its side). */
+  @media (hover:none) and (pointer:coarse) and (max-width:39.99rem),
+         (hover:none) and (pointer:coarse) and (max-height:31rem){
     .hint{ display:none; }
+  }
+  @media (hover:none) and (pointer:coarse){
     .choice .key, .choice .text{ padding-top:1.05rem; padding-bottom:1.05rem; }
     .pick .pname, .pick .pcount{ padding-top:1.05rem; padding-bottom:1.05rem; }
     .next{ padding:.95rem 1.3rem; font-size:1rem; }
@@ -33445,6 +33455,14 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .tabsearch.is-open .tabsearch-btn{ opacity:0; pointer-events:none; }
   .tabsearch.is-open .tabsearch-field{ opacity:1; pointer-events:auto; }
   .tabsearch-glass{ width:1.25rem; height:1.25rem; flex:none; color:var(--soft); }
+  /* THE MAGNIFIER IS WHITE (327z15 round 30). An Apple Music screenshot:
+     "The search bars, I feel like the magnifying glass thing should be
+     white ... Such a better look." In the dark theme every search field's
+     glass - the Review bar's and the unit search's - is the ink white, a
+     touch under full so the typed words stay the brightest thing; the
+     placeholder stays the soft grey under it, as in his screenshot. */
+  [data-theme="dark"] .tabsearch-glass,
+  [data-theme="dark"] .searchicon{ color:rgba(243,245,247,.92); }
   .tabsearch-input{
     flex:1 1 auto; min-width:0; height:100%; border:0; outline:none; background:none; padding:0;
     font:inherit; font-size:17px; color:var(--ink); -webkit-appearance:none; appearance:none;
@@ -33722,7 +33740,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     font-size:1.35rem; font-weight:900; letter-spacing:.04em; text-transform:uppercase;
     color:var(--rank-color, #fff); filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent));
   }
-  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-level{ font-size:.95rem; font-weight:700; color:#AEB7C2; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing :is(.pf-level, .pf-badgecount){ font-size:.95rem; font-weight:700; color:#AEB7C2; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-idsub{ display:inline-flex; align-items:baseline; gap:.4rem; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-idsub .pf-idsep-b{ display:inline; color:#AEB7C2; }
+  html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-badgecount{ padding:0; margin:0; }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab .pf-standing .pf-xp{
     margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.1);
   }
@@ -33746,6 +33767,36 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   /* THE CASE: its plate is the same small-caps label */
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case .pf-ccase .nova-case-sideplate{
     font-size:.68rem; font-weight:800; letter-spacing:.12em; color:#8A93A0; background:none; box-shadow:none; padding:0;
+  }
+
+  /* ===================== EVERY WORD IN THE MIDDLE OF ITS PILL (327z15 round 29) =====================
+     "The case case in profile with the button it says 7 of 16, it's not
+     centered. See rank ladder isn't centered. The word test history in the
+     test history button isn't centered (a lot of these aren't perfectly
+     centered, fix them all)". Two separate faults:
+       - ACROSS: a pill with an arrow centred the word-plus-arrow, so the
+         word sat left of the middle (by ~9px on See rank ladder). Now the
+         padding is the same on both sides and the arrow sits inside the
+         right-hand padding, out of the flow - the WORD is in the middle;
+       - UP AND DOWN: a label's letters are not centred in its line box,
+         by a different amount in every font (San Francisco on the phone
+         is not Inter here). text-box trims the box to the capitals and
+         the baseline, so the letters centre in any font; the padding gives
+         back what the trim takes. Already done for Profile's Customize in
+         build 327 - now Customize's Change, Find me, the week switch and
+         these pills too. tools/check-ink-centre.py measures the letters. */
+  .pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count{ position:relative; padding-left:2.4rem; padding-right:2.4rem; }
+  .pf-goal .pf-goal-foot::after, .pf-case-closed .pf-case-count::after{ position:absolute; right:.6rem; top:50%; translate:0 -50%; }
+  .stx-allbtn.stx-allpill > span{ position:relative; padding-left:1.6rem; padding-right:1.6rem; }
+  /* the button round the pill is even on both sides too, so the pill (and its word) is where the button is */
+  .stx-allbtn.stx-allpill{ padding-left:.4rem; padding-right:.4rem; margin-right:-.4rem; }
+  /* the week switch: the box is the chip's height and its letters sit in its middle */
+  .stx-dots-switch > button{ display:inline-flex; align-items:center; justify-content:center; height:2rem; min-height:0; padding-block:0; line-height:1; }
+  .stx-allbtn.stx-allpill > span > svg{ position:absolute; right:.45rem; top:50%; translate:0 -50%; }
+  @supports (text-box: trim-both cap alphabetic){
+    .profile-edit-btn:not(.profile-hero .profile-edit-btn){ text-box:trim-both cap alphabetic; padding-block:calc(.4rem + (1lh - 1cap)/2); }
+    .rank-me-btn, .stx-allbtn.stx-allpill > span > b,
+    .pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count{ text-box:trim-both cap alphabetic; }
   }
 
   /* ---- FRIENDS, AT THE TOP OF THE CHAT'S FRIENDS TAB (round 2) ---- */
@@ -82096,9 +82147,14 @@ function showWelcomeIntro(){
      (fewer wrapped lines = a shorter screen) rather than shrinking
      the still-readable .88rem/1.45 body type back down, which was
      itself an earlier explicit fix for text that read as too small. */
+  /* REWORDED FOR MORE THAN ONE CLASS (327z15 round 31): "This app was built
+     for studying, but it was for enjoying to study. This won't just be an
+     app for my police academy classmates anymore ... used at work for my
+     fire marshals office too for fire code." The title he loves stays; the
+     line says what it is for and that it is not one class's app. */
   const items = [
-    { head: "Built for one thing", body: "Every question is written to match what you'll actually see on test day \u2014 by classmates studying the exact same material." },
-    { head: "Four ways to study", body: "Drill gives instant feedback, Mock is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against classmates." },
+    { head: "Built for one thing", body: "Studying you'll actually enjoy. Every question comes straight from your class's material, from the police academy to fire code." },
+    { head: "Four ways to study", body: "Drill gives instant feedback, Mock is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against your class." },
     { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
@@ -82150,14 +82206,17 @@ function showClassSelection(){
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title";
-  title.textContent = "Pick your class";
+  /* "Select your classes" (round 31): "it says 'you can't change this
+     later' but you'll be able to because you will be able to sign up for
+     more than one class eventually". */
+  title.textContent = "Select your classes";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
   /* A class rather than an inline style, so the tablet block can size
      this line up without having to out-specify an inline declaration. */
   sub.className = "cal-sub classselect-sub";
-  sub.textContent = "This is your currently enrolled class \u2014 you won't be able to change this later.";
+  sub.textContent = "Pick what you're studying for. More classes are on the way, and you'll be able to add them later.";
   panel.appendChild(sub);
 
   const cards = document.createElement("div");
@@ -85182,7 +85241,23 @@ function startMainMenuTour(){
      tooltip rendering above the top of the viewport) while the
      newer one had already been fixed. One shared implementation
      means a future fix here benefits every tour, not just one. */
-  startSimpleTour(mainMenuTourSteps(false), awardWelcomeBonus);
+  startSimpleTour(mainMenuTourSteps(false), () => { awardWelcomeBonus(); scheduleNovaGoodLuck(); });
+}
+/* HIS SEND-OFF IN THE CHAT (327z15 round 31): "When the tool tips are over
+   ... like 10 seconds after all the tool tips, you should get a message
+   from nova that says good luck on your learning adventure, you can
+   message me with any questions". Once per account (its id), ten seconds
+   after the last tip, and only on Home - if they have already gone into a
+   test it waits until they are back, so it never lands over a question. */
+function scheduleNovaGoodLuck(){
+  const send = () => {
+    if(!stage.querySelector(".screen-home-actual") || document.getElementById("tour-overlay") || document.querySelector(".rs-spot, .bc-scene")){
+      setTimeout(send, 5000); return;
+    }
+    const nm = (store.firstName || "").trim();
+    try{ novaSendDM("Good luck on your learning adventure" + (nm ? ", " + nm : "") + "! If you ever have a question, message me right here.", { id: "goodluck-327z15" }); }catch(e){}
+  };
+  setTimeout(send, 10000);
 }
 /* What is new since an existing account last looked, said on the screen
    it is on (build 321): "They could get new ones like showing the new
@@ -113609,6 +113684,14 @@ function checkSaveCodeReminder(){
      and has no code by design. */
   if(!store.onboardingComplete || !syncCode || syncOff) return;
   if(store.savedCodeSaved) return;
+  /* NOT DURING THE FIRST WALK-THROUGH (327z15 round 31): "Save your sync
+     code appears in the tool tip walk through after signing up. That
+     shouldn't pop up till after someone takes their first test and they
+     are on home. It'd be a good reminder and wouldn't overwhelm them."
+     So it waits for a finished test, the tips to be gone, and Home. */
+  if(!Object.keys(store.testStats || {}).length) return;
+  if(document.getElementById("tour-overlay") || document.getElementById("tour-tooltip") || pendingMainMenuTour) return;
+  if(!stage.querySelector(".screen-home-actual")) return;
   if((store.savedCodePrompts || 0) >= SAVE_CODE_MAX_PROMPTS) return;
 
   /* THE CODE, NOT A LINK. This asked people to save a "sign-in link"
@@ -125528,9 +125611,14 @@ function buildProfileStanding(prog, rankNow){
   const bc = document.createElement("span");
   bc.className = "pf-badgecount";
   bc.textContent = nBadges + (nBadges === 1 ? " badge" : " badges");
-  /* the badge count is a tile under the bar now (327z15) */
-  void bc;
-  line.appendChild(lv);
+  /* THE BADGE COUNT IS BACK BESIDE THE LEVEL (327z15 round 29): "it has
+     your rank, and right under it is your level, your badge count should
+     still be there as well". The tiles it had moved to came off in round
+     27; it is "Level N · N badges" under the rank again, one row. */
+  const sub = document.createElement("span");
+  sub.className = "pf-idsub";
+  sub.append(lv, sep("b"), bc);
+  line.appendChild(sub);
   box.appendChild(line);
   const xp = document.createElement("span");
   xp.className = "pf-xp";

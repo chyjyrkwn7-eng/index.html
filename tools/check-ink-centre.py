@@ -23,7 +23,7 @@ from playwright.sync_api import sync_playwright
 from PIL import Image, ImageChops
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" if os.path.exists("/opt/pw-browsers/chromium-1194/chrome-linux/chrome") else None
 def arg(n, d=None): return sys.argv[sys.argv.index(n) + 1] if n in sys.argv else d
 SRC = arg("--against") or os.path.join(ROOT, "index.html")
 TOL = float(arg("--tol", "0.8"))
@@ -38,11 +38,13 @@ CAND = """()=>{ const out=[]; const seen=new Set();
    const r=el.getBoundingClientRect(); if(r.width<28||r.height<18||r.height>80) return;
    const cs=getComputedStyle(el); if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity<.5) return;
    if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth) return;
-   const t=(el.innerText||'').trim(); if(!t||t.length>26||/[gjpqyQ,;()@]/.test(t)||/\\n/.test(t)||/^\\d+$/.test(t)) return;
+   const t=(el.innerText||'').trim(); if(!t||t.length>26||/[,;()@]/.test(t)||/\\n/.test(t)||/^\\d+$/.test(t)) return;
+   /* round 29: a descender only spoils the UP-DOWN measure; across, it counts like any letter */
+   const desc=/[gjpqyQ]/.test(t);
    if(el.classList.contains('bottomtab')||el.classList.contains('cal-cell')) return;
    const hit=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); if(!hit||!(el===hit||el.contains(hit))) return;
    el.dataset.inkId=String(out.length);
-   out.push({id:out.length, t, cls:String((el.className&&el.className.baseVal!==undefined?el.className.baseVal:el.className)||el.tagName), x:r.left,y:r.top,w:r.width,h:r.height});
+   out.push({id:out.length, t, desc, cls:String((el.className&&el.className.baseVal!==undefined?el.className.baseVal:el.className)||el.tagName), x:r.left,y:r.top,w:r.width,h:r.height});
  }); return out; }"""
 
 def serve():
@@ -55,20 +57,31 @@ def serve():
     return srv, f"http://127.0.0.1:{port}/" + os.path.basename(SRC)
 
 def audit(pg, tag, rows):
-    for c in pg.evaluate(CAND):
+    cands = pg.evaluate(CAND)
+    if os.environ.get("INK_LIST") and os.environ["INK_LIST"] in tag: print("  cand", tag, [c["t"] for c in cands], pg.evaluate("()=>[scrollY, document.documentElement.scrollHeight, innerHeight]"))
+    for c in cands:
         clip = {"x": c["x"], "y": c["y"], "width": c["w"], "height": c["h"]}
-        a = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
-        pg.evaluate("""(id)=>{ const el=document.querySelector('[data-ink-id="'+id+'"]'); el.__old=el.getAttribute('style')||'';
+        # round 29: the element's own screenshot, so a scrolled page is measured where it is
+        el = pg.query_selector('[data-ink-id="%d"]' % c["id"])
+        a = Image.open(io.BytesIO(el.screenshot())).convert("RGB")
+        pg.evaluate("""(id)=>{ const el=document.querySelector('[data-ink-id="'+id+'"]');
+           /* a pill's arrow keeps the colour it has (it draws in currentColor, which the letters are about to lose) */
+           if(el.matches('.stx-allpill, .pf-goal-foot, .pf-case-count')) el.querySelectorAll('svg').forEach(s=>{ s.__sc=s.getAttribute('style')||''; s.style.setProperty('color', getComputedStyle(s).color, 'important'); });
+           el.__old=el.getAttribute('style')||'';
            el.style.setProperty('color','transparent','important'); el.style.setProperty('-webkit-text-fill-color','transparent','important'); el.style.setProperty('text-shadow','none','important');
-           el.querySelectorAll('svg, img, i').forEach(s=>{ s.__v=s.style.visibility; s.style.visibility='hidden'; }); }""", c["id"])
-        b = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
-        pg.evaluate("""(id)=>{ const el=document.querySelector('[data-ink-id="'+id+'"]'); el.setAttribute('style', el.__old); el.querySelectorAll('svg, img, i').forEach(s=>{ s.style.visibility=s.__v||''; }); }""", c["id"])
+           /* an icon is part of a label's group - except a pill's trailing arrow, which since round 29 sits in its
+              padding outside the flow so the WORD is in the middle: there the letters alone are measured */
+           if(!el.matches('.stx-allpill, .pf-goal-foot, .pf-case-count')) el.querySelectorAll('svg, img, i').forEach(s=>{ s.__v=s.style.visibility; s.style.visibility='hidden'; });
+           /* round 29: a child with its own colour (a pill's inner span) keeps its letters unless it is cleared too */
+           el.querySelectorAll('*:not(svg):not(svg *)').forEach(k=>{ k.__c=k.getAttribute('style')||''; k.style.setProperty('color','transparent','important'); k.style.setProperty('-webkit-text-fill-color','transparent','important'); }); }""", c["id"])
+        b = Image.open(io.BytesIO(el.screenshot())).convert("RGB")
+        pg.evaluate("""(id)=>{ const el=document.querySelector('[data-ink-id="'+id+'"]'); el.setAttribute('style', el.__old); el.querySelectorAll('*').forEach(k=>{ if(k.__c!==undefined) k.setAttribute('style', k.__c); }); el.querySelectorAll('svg').forEach(s=>{ if(s.__sc!==undefined){ s.setAttribute('style', s.__sc); delete s.__sc; } }); el.querySelectorAll('svg, img, i').forEach(s=>{ s.style.visibility=s.__v||''; }); }""", c["id"])
         bb = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 60 else 0).getbbox()
         if not bb: continue
         sc = a.size[1] / c["h"]
         top, bot = bb[1] / sc, (a.size[1] - bb[3]) / sc
         left, right = bb[0] / sc, (a.size[0] - bb[2]) / sc
-        rows.append((tag, c["t"], c["cls"][:36], round(c["h"], 1), round((top - bot) / 2, 2), round((left - right) / 2, 2)))
+        rows.append((tag, c["t"], c["cls"][:36], round(c["h"], 1), 0.0 if c.get("desc") else round((top - bot) / 2, 2), round((left - right) / 2, 2)))
 
 def main():
     rows = []; fails = []
@@ -87,14 +100,25 @@ def main():
             pg.goto(url); pg.wait_for_timeout(2500)
             pg.evaluate("document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(500)
             pg.evaluate("()=>{ try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} store.novaMet=99; saveStore(); }")
+            # 327z15 round 29: "a lot of these aren't perfectly centered, fix
+            # them all" - the pills he named were below the fold (Profile's
+            # See rank ladder and badge case, Stats' Test history) or on
+            # screens this never opened (Customize's Change), so each screen
+            # is measured at its top AND scrolled to its foot, and Customize
+            # and the Calendar are on the list.
             for tag, js in [("home", "showHome()"), ("mode", "showModeSelect()"), ("profile", "showProfile()"), ("leaderboard", "showRankings()"),
-                            ("settings", "showAppearance()"), ("stats", "showProfile('stats')"), ("friends", "showFriends()")]:
+                            ("settings", "showAppearance()"), ("stats", "showProfile('stats')"), ("friends", "showFriends()"),
+                            ("customize", "showCustomize()"), ("calendar", "showCalendarTab()")]:
                 pg.evaluate("()=>" + js); pg.wait_for_timeout(1200); audit(pg, name + " " + tag, rows)
+                pg.evaluate("()=>{ document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n=>n.remove()); window.scrollTo(0, 99999); }")
+                pg.wait_for_timeout(700); audit(pg, name + " " + tag + "/foot", rows)
+                pg.evaluate("()=>window.scrollTo(0, 0)")
             pg.evaluate("()=>showModeSelect()"); pg.wait_for_timeout(500)
             pg.click(".modecard[data-mode='drill']"); pg.wait_for_timeout(1000); audit(pg, name + " units", rows)
             ctx.close()
         br.close()
     srv.shutdown()
+    if os.environ.get("INK_LIST"): [print("   ", r) for r in rows if os.environ["INK_LIST"] in r[0]]
     print("%d controls measured, letters centred within %.1fpx:" % (len(rows), TOL))
     for r in sorted(rows, key=lambda r: -abs(r[4])):
         if abs(r[4]) > TOL: fails.append(r); print("  FAIL %-24s %-16s %-34s h=%-5s letters %+.2fpx %s" % (r[0], r[1], r[2], r[3], r[4], "high" if r[4] < 0 else "low"))

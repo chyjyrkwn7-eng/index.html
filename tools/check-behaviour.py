@@ -2443,7 +2443,8 @@ def check_b235(br):
          line (within 2px). */
       await T('plate', () => { const e = document.querySelector('.pf-standing .pf-idline svg');
         const nm = document.querySelector('.pf-standing .pf-rankname');
-        const lab = document.querySelector('.pf-standing .pf-level');
+        /* round 29: the level and the badge count are one row under the name */
+        const lab = document.querySelector('.pf-standing .pf-idsub') || document.querySelector('.pf-standing .pf-level');
         if(e || !nm || !lab) return 'an emblem on the line, or no rank name / level';
         const a = lab.getBoundingClientRect(), b = nm.getBoundingClientRect();
         /* MOVED IN 327z15 round 26: "the profile box ... needs to look more
