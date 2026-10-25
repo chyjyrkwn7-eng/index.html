@@ -28704,3 +28704,27 @@ first. The SE layout (round 47) now applies in the installed app only
 scrolled and showed the fallback seam at its foot, and on a 320x458 tab Start
 Studying met the daily circle; a tab keeps the short tiers (the 320px width
 fix applies everywhere). check-chat reads a message as sender + words (round 48).
+
+Round 50: "Look at the placement of the bottom tab in relations to the bottom of
+the screen ... Some are too close and some are too far away" (with Instagram and
+a subscriptions app on iOS 26 as the reference: the floating bar's lower edge
+~22pt off the bottom, over the home indicator's zone). One value now places
+the bar: --tabs-bottom = max(12px, inset - 12px) - 22px on a Face ID iPhone
+(was .6rem + 34 = 44), 12px with no inset (SE, a Safari tab; was ~10), and
+from 40rem max(16px, inset - 4px) (iPad 16, was 30). The vroom setup bar, the
+corner back-to-top, the daily question circle (phone, tablet, the laptop's
+card, the SE), the tablet version label and a test's Next pill are written as
+--tabs-bottom + their old offset over the bar, so they moved with it.
+--tabs-drop (how far the bar came down) is given back from .wrap's 8rem
+bottom reserve and --panel-reserve, so every screen still ends the same
+distance above the bar and Home's centred column keeps its spacing.
+SE (installed, upright small phone): "the se start studying button still
+doesn't look proportional". The screen's 20px side padding held a 320px SE's
+planet to 240px while Start stayed a big phone's 168x46: Home's panel gets a
+phone's .45rem sides, the planet's cap is 100dvh - 17.5rem (was 19.5), and
+Start is .95rem with min-width released - 153x44, ~0.57 of the planet, the
+ratio a 6.1" iPhone has (200 / 352). The daily circle sits 13px over the
+shorter bar and 19px in from the edge, clear of Start.
+sweep-layout (MOVED IN): a .bottomtab may enter the bottom inset but must
+clear the indicator pill (21px off the bottom); everything else still keeps
+out of the whole inset.

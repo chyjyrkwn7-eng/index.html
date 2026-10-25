@@ -884,6 +884,20 @@
      the top with dead space below it. Written this way each formula
      collapses back to exactly its original value when the insets are 0,
      which is the property that makes it safe. */
+  /* WHERE THE BOTTOM BAR SITS (327z15 round 34): the bar's lower edge
+     sits 22px off the bottom on an iPhone with a home indicator, over the
+     top of the indicator's zone, as iOS 26's own floating tab bars do
+     (was .6rem + the 34px inset = 44px, which read as floating too high).
+     With no inset (a Home-button iPhone, a Safari tab, a laptop) it is
+     12px, the bar's own side margin on a phone. A tablet keeps a little
+     more. Everything placed against the bar is written as this plus its
+     own offset, so moving the bar moves them with it. */
+  :root{ --tabs-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px)); }
+  @media (min-width:40rem){ :root{ --tabs-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) - 4px)); } }
+  /* How far the bar came down from where it was (.6rem + the inset): the
+     page's reservation for the bar gives that much back, so screens end
+     the same distance above the bar as before rather than further off. */
+  :root{ --tabs-drop: calc(.6rem + env(safe-area-inset-bottom, 0px) - var(--tabs-bottom)); }
   :root{
     --pad-inset-top: max(0px, env(safe-area-inset-top, 0px) - 1.25rem);
     --pad-inset-bottom: max(0px, env(safe-area-inset-bottom, 0px) - 4rem);
@@ -899,7 +913,7 @@
   /* The tab bar's reservation is its own now, because the bar grew and a
      floating button did not. They shared one constant while they happened
      to want the same number; they do not any more. */
-  body.has-bottomtabs{ --panel-reserve: 9.5rem; }
+  body.has-bottomtabs{ --panel-reserve: calc(9.5rem - var(--tabs-drop)); }
   /* Welcome has no tab bar, no floating button and nothing else along the
      bottom, so the 4rem of .wrap padding under it is reserved for
      furniture that is not there - and it is the entire reason the hint
@@ -4265,7 +4279,7 @@
   [data-layout="modern"] .foot > .floatbtn.qnext,
   .foot > .floatbtn.qnext{
     left:50%; right:auto; width:min(23rem, calc(100% - 2.5rem));
-    bottom:calc(var(--vv-lift, 0px) + max(1.1rem, calc(env(safe-area-inset-bottom, 0px) + .35rem)));
+    bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom));
     padding:1.02rem 1.6rem; border:none; border-radius:999px;
     transform:translateX(-50%);
     font-size:1.08rem; font-weight:800; letter-spacing:-.005em;
@@ -7921,7 +7935,7 @@
      "Set up lobby, 29 questions" onto two lines inside the pill). */
   .startbar.vroom-setup-bar{
     position:fixed; left:50%; transform:translateX(-50%);
-    bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+    bottom:var(--tabs-bottom);
     z-index:200; box-sizing:border-box; width:min(23.7rem, calc(100vw - 1.5rem)); max-width:none;
     margin:0; padding:.42rem;
     display:flex; align-items:center; justify-content:space-between; gap:.5rem; overflow:hidden; isolation:isolate;
@@ -8050,12 +8064,12 @@
   /* The bar holds no space, so the page keeps the tab bar's reservation
      under its last card, and back-to-top clears it as it clears the bar. */
   body:has(#stage > .vroom-setup-bar) .wrap{ padding-bottom:8rem; }
-  body:has(#stage > .vroom-setup-bar) .backtotop{ bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem); }
+  body:has(#stage > .vroom-setup-bar) .backtotop{ bottom:calc(var(--tabs-bottom) + 5.6rem); }
   /* ...and from 44rem it sits in the corner beside the pill, as it does
      beside the tab bar on a test's unit screen (the same two lines). */
   @media (min-width:44rem){
     body:has(#stage > .vroom-setup-bar) .backtotop{
-      bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+      bottom:var(--tabs-bottom);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     }
   }
@@ -9704,7 +9718,7 @@
        inset it clears by the same 10px. The bar only moves DOWN, so the
        7.5rem .wrap reserves for it (see the padding note there) still
        covers its whole footprint with more room, not less. */
-    bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+    bottom:var(--tabs-bottom);
     /* Shrink-to-fit with no ceiling meant the bar was a flat 344px wide
        whatever the screen was, so on a 320px phone (an SE, or a narrow
        desktop window) it ran 12px off BOTH edges - measured. A ceiling
@@ -10886,7 +10900,7 @@
      asks. inset + 6.2rem leaves a constant ~16px on every phone, notched
      or not, installed or in a browser tab. */
   body.has-bottomtabs:not(.has-floatbtn) .backtotop{
-    bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem);
+    bottom:calc(var(--tabs-bottom) + 5.6rem);
   }
   /* The dual-pill bottom layout (unit selection's Options/Start pill
      sitting beside the main tab bar) reaches slightly higher than a
@@ -10895,7 +10909,7 @@
      edge by about 4px. A little extra clearance here specifically
      for that combination fixes it with room to spare. */
   body.has-floatbtn.has-bottomtabs .backtotop{
-    bottom:calc(env(safe-area-inset-bottom, 0px) + 6.2rem);
+    bottom:calc(var(--tabs-bottom) + 5.6rem);
   }
   /* Tablet clearance, and it has to live HERE rather than up with the
      tablet size rule. These selectors have identical specificity to the
@@ -10926,7 +10940,7 @@
      grows away from the edge as the viewport widens. */
   @media (min-width:44rem){
     body.has-bottomtabs:not(:has(.floatbtn:not(.merged-into-bar))):not(:has(.daily-question-fab)) .backtotop{
-      bottom:calc(.6rem + env(safe-area-inset-bottom, 0px));
+      bottom:var(--tabs-bottom);
       right:max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1.2rem));
     }
   }
@@ -16043,7 +16057,7 @@
        the bar's top edge was at 119px - measured on an iPhone 15, the
        label sat 20px BEHIND the bar. The inset has to be carried here
        too, or this is hidden on exactly the devices it is read on. */
-    bottom:calc(6.8rem + env(safe-area-inset-bottom, 0px));
+    bottom:calc(var(--tabs-bottom) + 6.2rem);
   }
   /* "Version 6.0" is a lot of label for a 393px screen sitting beside a
      centred tab bar. The full form is set in JS; this hides the word on a
@@ -16768,7 +16782,7 @@
      3.7rem up from the same inset. The daily-question circle gets the same treatment on
      its own side - they are a pair and they have to read as one. */
   @media (min-width:40rem){
-    .homeversion{ bottom:calc(2.95rem + env(safe-area-inset-bottom, 0px)); }
+    .homeversion{ bottom:calc(var(--tabs-bottom) + 2.35rem); }
   }
   /* Underlined at full strength on a .55-opacity label, it read as a
      stray anchor dropped in the corner rather than as part of the
@@ -16867,7 +16881,7 @@
        1-1.4px into the bar on every phone. 6.8rem leaves it ~6.6px clear.
        Start Studying sits beside the circle, not above it, on every phone
        that shares its row, so it does not move. Gate: check-fixes 9c. */
-    position:fixed; bottom:calc(env(safe-area-inset-bottom, 0px) + 6.8rem);
+    position:fixed; bottom:calc(var(--tabs-bottom) + 6.2rem);
     right:max(1.8rem, calc(50% - 22rem + 1.8rem)); z-index:150;
     /* 2.6rem is 41.6px - under the 44px minimum tap target, on a control
        that sits alone in a corner with nothing to aim at but itself. The
@@ -17217,7 +17231,7 @@
          bottom edge and is 101px tall; this circle is 4.6rem, and
          measured across the matrix 1.83rem puts the two centre lines at
          exactly 0px apart. */
-      bottom:calc(1.46rem + env(safe-area-inset-bottom, 0px));
+      bottom:calc(var(--tabs-bottom) + .86rem);
       /* 21rem again since build 284: the fifth tab (and its 22rem) is gone.
          327z15: the bar's half-width is measured (--tabbar-half, set by
          syncStartAction) so a bar that carries Start sits clear of it too;
@@ -20223,7 +20237,7 @@
      two numbers move together or the bar starts eating the primary
      button again - which is the bug the reservation exists to prevent.
      --panel-reserve (.wrap's top padding plus this) moves with it. */
-  body.has-bottomtabs .wrap{ padding-bottom:8rem; }
+  body.has-bottomtabs .wrap{ padding-bottom:calc(8rem - var(--tabs-drop)); }
   [data-theme="dark"][data-layout="modern"] .next{
     box-shadow:0 1px 1px rgba(255,255,255,.18) inset, 0 -1px 2px rgba(0,0,0,.35) inset,
       0 1px 3px rgba(0,0,0,.3), 0 5px 10px rgba(0,0,0,.3), 0 14px 28px -8px rgba(0,0,0,.5);
@@ -33010,7 +33024,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* the daily question's card (round 31): under NOVA's line, ranged to the
      planet's side like the words; its "?" in normal flow inside it */
   html[data-layout] body #stage > .dq-card{
-    position:fixed; z-index:150; right:1.5rem; bottom:calc(env(safe-area-inset-bottom, 0px) + 3.4rem); translate:0 50%;   /* level with the bar's middle */
+    position:fixed; z-index:150; right:1.5rem; bottom:calc(var(--tabs-bottom) + 2.8rem); translate:0 50%;   /* level with the bar's middle */
     display:flex; align-items:center; gap:1rem; padding:.7rem 1.5rem .7rem .7rem; border-radius:999px;
     /* never into the bar: the room between the bar's end and the edge */
     max-width:min(22rem, calc(50vw - var(--tabbar-half, 18rem) - 2.75rem)); text-align:left; cursor:pointer;
@@ -34081,7 +34095,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      planet (Home would scroll, check-fixes' bottom-edge seam) - a tab keeps the short tiers */
   @media (orientation:portrait) and (max-width:26rem) and (max-height:46rem){
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
-      max-width:min(92vw, 23rem, calc(100dvh - 19.5rem)); margin-bottom:.4rem; }
+      max-width:min(92vw, 23rem, calc(100dvh - 17.5rem)); margin-bottom:.4rem; }
+    /* (round 50) "the se start studying button still doesn't look proportional": the screen's
+       20px side padding held a 320px SE's planet to 240px while the button stayed a big phone's
+       168x46. The planet gets a phone's side room and the ~2rem the lower bar gave back; the
+       button is sized to it (about 0.55 of the planet's width, as on a 6.1" iPhone), still 44px tall. */
+    html[data-layout]:not(.is-browser) body #stage > .panel.home.screen-home-actual{ padding-left:.45rem; padding-right:.45rem; }
+    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .playbtn{ font-size:.95rem; padding:.78rem 1.25rem; min-height:44px; min-width:0; }
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .homegreeting{ font-size:.86rem; margin:.3rem 0 .2rem; }
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .hometitle{ font-size:2rem; }
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.9rem; }
@@ -34091,7 +34111,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     /* Welcome is the same planet: it takes the room over its words and two buttons */
     html[data-layout]:not(.is-browser) body .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(92vw, 23rem, calc(100dvh - 21rem)); }
     /* the daily question keeps its gap over the shorter bar, clear of Start Studying */
-    html[data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{ bottom:calc(env(safe-area-inset-bottom, 0px) + 5.7rem); }
+    html[data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{ bottom:calc(var(--tabs-bottom) + 4.95rem); right:max(1.2rem, env(safe-area-inset-right, 0px)); }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres

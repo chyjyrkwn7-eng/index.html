@@ -301,8 +301,14 @@ AUDIT = """(inset) => {
       const padR = parseFloat(cs.paddingRight) || 0;
       if (inset.top && r.top + padT < inset.top - 0.5)
         problems.push(`${name(el)} under the status bar / notch (content top ${Math.round(r.top + padT)} < ${inset.top})`);
-      if (inset.bottom && pinned(el) && r.bottom - padB > vh - inset.bottom + 0.5)
-        problems.push(`pinned ${name(el)} under the home indicator (content bottom ${Math.round(r.bottom - padB)} > ${vh - inset.bottom})`);
+      /* MOVED IN 327z15 round 50: the floating tab bar sits 22px off the
+         bottom over the indicator's zone, as iOS 26's own tab bars do (asked
+         for, with screenshots). Its tabs may enter the inset but must clear
+         the indicator itself: a ~5px pill 8px off the bottom, so 21px with
+         its margin. Everything else still keeps out of the whole inset. */
+      const floor = el.matches('.bottomtab') ? vh - Math.min(inset.bottom, 21) : vh - inset.bottom;
+      if (inset.bottom && pinned(el) && r.bottom - padB > floor + 0.5)
+        problems.push(`pinned ${name(el)} under the home indicator (content bottom ${Math.round(r.bottom - padB)} > ${floor})`);
       if (inset.left && r.left + padL < inset.left - 0.5)
         problems.push(`${name(el)} under the left inset (content ${Math.round(r.left + padL)} < ${inset.left})`);
       if (inset.right && r.right - padR > vw - inset.right + 0.5)
