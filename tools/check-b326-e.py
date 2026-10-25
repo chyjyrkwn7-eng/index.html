@@ -67,6 +67,12 @@ PRE = r"""
      ticks him itself, through the same function */
   if(!window.__realTick){ window.__realTick = novaTick; novaTick = function(){ if(window.__hold) return; return window.__realTick.apply(this, arguments); }; }
   window.__hold = true;
+  /* MOVED IN 327z15: "The challenges from nova need to be random" - his
+     challenge now comes two weeks in five, on a day of its own
+     (novaChallengeDue). What these scenarios measure is what happens in a
+     week that has one, so every week here is one; check-b327z15 and the
+     notes cover the draw itself. */
+  if(!window.__dueAll){ window.__dueAll = true; novaChallengeDue = function(){ return true; }; }
   const ticks = async n => { for(let i = 0; i < (n || 4); i++){ window.__realTick(); await wait(80); } };
   const home = async () => { showHome(); await wait(500); clearTop(); try{ clearTimeout(homeUnlockTimer); homeUnlockTimer = null; }catch(e){}
     store.pendingBadgeUnlocks = []; };
@@ -166,7 +172,7 @@ def check_story(br):
     # MOVED IN 327z15: the note tells the voyage - a storm scattered them
     check("the Version 9 'Nova, Your Instructor' note gives the cause (a storm), what a badge is (a unit mastered), and the crew coming back",
           re.search(r"storm", r.get("note", "")) and re.search(r"scattered", r.get("note", ""))
-          and re.search(r"master", r.get("note", "")) and re.search(r"crew", r.get("note", "")) and not re.search(r"explo|blew up|debris", r.get("note", "")),
+          and re.search(r"master", r.get("note", "")) and re.search(r"crew", r.get("note", "")) and not re.search(r"explod|blew up|debris", r.get("note", "")),  # "explorer" is fine
           r.get("note", "")[:160])
     # MOVED IN 327 (b327m): "So the nova instructor won't go through what's
     # new one by one" - nothing of his is said on What's New any more
