@@ -32634,6 +32634,40 @@ html.is-browser .edge-tint{
 }
 html.is-browser #edge-tint-top{ top:0; }
 html.is-browser #edge-tint-bottom{ bottom:0; }
+/* HOME ON A LAPTOP: THE PLANET BESIDE THE WORDS (327z15). "a lot of people
+   will share this on laptops ... that will be the first place they see it
+   ... there's so much empty space, maybe for laptops and stuff the planet
+   system should be even bigger." A laptop is wide and short, and Home was
+   one column: on a 1366x638 screen the planet came to 217px with half the
+   screen empty either side of it. On a wide screen in landscape the planet
+   takes the left of the screen at the full height there is, and the
+   greeting, NOVA, the line and Start Studying sit centred on the right.
+   Phones, iPads upright and anything narrower than 64rem are untouched. */
+@media (min-width:64rem) and (min-aspect-ratio:5/4){
+  html[data-layout] .wrap:has(> #stage > .screen-home-actual){ max-width:min(100rem, 96vw); }
+  html[data-layout] body .panel.home.screen-home-actual{
+    display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(19rem, .8fr);
+    grid-template-rows:1fr auto auto auto 1fr; column-gap:clamp(1.5rem, 4vw, 5rem);
+    align-items:center; justify-items:center;
+  }
+  html[data-layout] body .panel.home.screen-home-actual::before{ display:none; }
+  html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap{
+    grid-column:1; grid-row:1 / -1; align-self:center;
+    width:100%; max-width:min(46rem, calc((100dvh - 13.5rem) * 1.05)); margin:0 auto; translate:none;
+  }
+  /* a tapped bubble's caption sits under the planet here, clear of the words,
+     so the greeting and NOVA stay (on a phone it lands over them) */
+  html[data-layout] body .panel.home.screen-home-actual.hc-over-greeting > .homegreeting,
+  html[data-layout] body .panel.home.screen-home-actual.hc-over-title > .homegreeting,
+  html[data-layout] body .panel.home.screen-home-actual.hc-over-title > .hometitle-wrap{ opacity:1; }
+  /* the bubbles grow with the planet here (Home's phone rule stops them at 2.9rem) */
+  html[data-layout] body .panel.home.screen-home-actual .cosmic-icon-badge.cosmic-badge-rank{ width:min(4.4rem, 10.7cqw); height:min(4.4rem, 10.7cqw); }
+  html[data-layout] body .panel.home.screen-home-actual > .homegreeting{ grid-column:2; grid-row:2; margin:0 0 .5rem; font-size:1.05rem; }
+  html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ grid-column:2; grid-row:3; margin:0; }
+  html[data-layout] body .panel.home.screen-home-actual .hometitle{ font-size:clamp(2.6rem, 5.2vw, 4.2rem); }
+  html[data-layout] body .panel.home.screen-home-actual .hometagline{ font-size:clamp(1.05rem, 1.4vw, 1.35rem); }
+  html[data-layout] body .panel.home.screen-home-actual > .playbtn{ grid-column:2; grid-row:4; margin:2.2rem 0 0; min-width:14rem; }
+}
 /* NO LINE UNDER SAFARI'S BARS (327z15). A Safari 26 screenshot, top and
    bottom circled: the band behind the status bar is flat #131519 - Safari
    fills it with the root's colour, var(--paper) - and the page under it

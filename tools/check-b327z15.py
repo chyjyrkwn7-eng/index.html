@@ -102,7 +102,7 @@ from playwright.sync_api import sync_playwright
 
 UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
       "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
-ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$")
 TABS = ["home", "profile", "rewards", "calendar"]
 
 STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
@@ -729,10 +729,28 @@ def section_bb(br):
     check("BB. in a Safari tab Home and Welcome are no taller than the screen at 5 phone heights", not bad, bad)
 
 
+def section_cc(br):
+    print("\nCC. A laptop: Home's planet fills the left, the words sit beside it, nothing scrolls, taps still answer")
+    bad = []
+    for W, H in ((1366, 638), (1512, 852), (1920, 1080)):
+        ctx, pg = z5b.boot(br, W, H, 1)
+        pg.evaluate("""() => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false;
+          document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner').forEach(n => n.remove()); showHome(); }""")
+        pg.wait_for_timeout(2000)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner, .rs-spot').forEach(n => n.remove())")
+        r = pg.evaluate("""() => { const p = document.querySelector('.screen-home-actual'); const h = p.querySelector('.cosmic-hero-wrap').getBoundingClientRect();
+          const t = p.querySelector('.hometitle-wrap').getBoundingClientRect(), b = p.querySelector('.playbtn').getBoundingClientRect();
+          return { hero: h.width, heroH: h.height, side: t.left > h.right && b.left > h.right, sh: document.documentElement.scrollHeight, ih: innerHeight }; }""")
+        if not (r["hero"] >= .62 * H and r["side"] and r["sh"] <= r["ih"] + 2):
+            bad.append((W, H, r))
+        ctx.close()
+    check("CC. on 3 laptop screens the planet is at least 62% of the height, beside the words, and the page does not scroll", not bad, bad)
+
+
 def main():
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb)):
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc)):
             if k in ONLY:
                 try:
                     fn(br)

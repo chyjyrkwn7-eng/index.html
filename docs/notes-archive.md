@@ -27759,3 +27759,28 @@ path. It should be like I've been studying and I lost things on my ship."
   storm · found by you".
 - Gates moved: check-b327-c story order (ship -> storm -> badge mastered, and
   nothing explodes anywhere he speaks), check-b326-e away reply.
+
+## Build 327z15 round 17 - Home on a laptop: the planet beside the words
+
+"it's gonna be used by a lot of people on laptops ... that will be the first
+place they see it ... there's so much empty space, maybe for laptops and stuff
+the planet system should be even bigger?" Also: "It should not say hello
+recruit, it should say hello 'name' username" - it already does (novaName() is
+store.firstName, the sign-up username); "Recruit" was the username typed in
+the test walk. Nothing changed for it.
+
+- @media (min-width:64rem) and (min-aspect-ratio:5/4): Home's panel is a grid
+  - the planet in the left column across every row, at
+  min(46rem, (100dvh - 13.5rem) * 1.05) (the height there is, less the tab
+  bar's reserve); the greeting, NOVA (bigger), the line and Start Studying
+  centred in the right column; .wrap widened to min(100rem, 96vw) on Home.
+  The rank bubbles grow with the planet (min(4.4rem, 10.7cqw)). The caption a
+  tap shows sits under the planet, clear of the words, so the greeting and
+  NOVA no longer fade for it here.
+- Measured (planet width before -> after): 1366x638 217 -> 443, 1512x852
+  409 -> 668, 1440x900 432 -> 718, 1920x1080 518 -> 736, iPad landscape
+  400 -> 606. No page grows past the screen (the 2px they already had).
+  All 7 bubbles tap and caption on every one. Phones and upright iPads are
+  untouched.
+- Gate: check-b327z15 "$" (CC) - 3 laptop sizes: planet >= 62% of the
+  height, title and button right of it, no scroll; fails on 327z14.
