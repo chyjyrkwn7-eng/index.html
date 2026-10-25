@@ -414,7 +414,12 @@ def glide_pace(br):
       const cx = k => { const m = /translate3d\(([-\d.]+)px[^)]*\) scale\(([-\d.]+)/.exec(k.transform || ''); return m ? +m[1] + +m[2] * 50 : null; };
       const xs = a.effect.getKeyframes().map(cx).filter(v => v !== null);
       const a0 = xs[0], a1 = xs[xs.length - 1];
-      return xs.map(v => +((v - a0) / ((a1 - a0) || 1)).toFixed(3)); }""")
+      /* MOVED IN 327z15 round 40: the track is written at 120 keyframes a
+         second now - read at 60 a second, by its duration, so "frame 4" is
+         still 67ms from the press */
+      const per = (xs.length - 1) / ((a.effect.getTiming().duration || 1) / (1000 / 60));
+      const at60 = []; for(let f = 0; f * per <= xs.length - 1; f++) at60.push(xs[Math.round(f * per)]);
+      return at60.map(v => +((v - a0) / ((a1 - a0) || 1)).toFixed(3)); }""")
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     # MOVED IN 327z13: "still moves too fast" - slower again, [260, .95]:
     # about .32 / .67 / .94 at frames 4 / 8 / 16 (check-b327z13 S has it)
