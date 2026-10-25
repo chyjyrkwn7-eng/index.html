@@ -739,16 +739,19 @@ def section_cc(br):
         pg.wait_for_timeout(2000)
         pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner, .rs-spot').forEach(n => n.remove())")
         r = pg.evaluate("""() => { const p = document.querySelector('.screen-home-actual'); const h = p.querySelector('.cosmic-hero-wrap').getBoundingClientRect();
-          const t = p.querySelector('.hometitle-wrap').getBoundingClientRect(); const st = document.getElementById('bottomtab-start');
+          const t = p.querySelector('.hometitle-wrap').getBoundingClientRect(); const hs = document.getElementById('homestart');
           const fab = document.querySelector('.daily-question-fab'), bar = document.getElementById('bottomtabs');
-          const fr = fab ? fab.getBoundingClientRect() : null, br = bar.getBoundingClientRect();
+          const fr = fab ? fab.getBoundingClientRect() : null, br = bar.getBoundingClientRect(), sr = hs ? hs.getBoundingClientRect() : null;
           return { hero: h.width, centre: Math.abs((h.left + h.width / 2) - innerWidth / 2), left: t.right <= h.left + 4 && t.left >= 0,
-                   start: !!(st && !st.hidden && st.offsetWidth), fabClear: !fr || fr.left >= br.right - 1,
+                   start: !!(sr && !hs.hidden && sr.width > 100 && sr.left >= br.right && sr.left - br.right <= 16 && Math.abs(sr.top - br.top) < 2),
+                   fabSide: !!fr && fr.bottom < br.top - 40 && fr.left > h.right,
                    sh: document.documentElement.scrollHeight, ih: innerHeight }; }""")
-        if not (r["hero"] >= .62 * H and r["centre"] <= 8 and r["left"] and r["start"] and r["fabClear"] and r["sh"] <= r["ih"] + 2):
+        pg.evaluate("() => document.getElementById('homestart').click()"); pg.wait_for_timeout(900)
+        r["startGoes"] = pg.evaluate("() => !document.querySelector('.screen-home-actual') && !!document.querySelector('#stage .modecards, #stage .modeselect')")
+        if not (r["hero"] >= .62 * H and r["centre"] <= 8 and r["left"] and r["start"] and r["fabSide"] and r["startGoes"] and r["sh"] <= r["ih"] + 2):
             bad.append((W, H, r))
         ctx.close()
-    check("CC. on 3 laptop screens: planet >= 62% of the height and centred, words on its left, Start in the bar, the daily button clear of it, no scroll", not bad, bad)
+    check("CC. on 3 laptop screens: planet >= 62% of the height and centred, words on its left, Start Studying its own pill beside the bar (and it starts), the daily question floating on the right, no scroll", not bad, bad)
 
 def section_dd(br):
     print("\nDD. Sign-up with Nova: he asks the username (one per person) and the first character; the account is made on the pick")

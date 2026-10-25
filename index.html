@@ -32691,14 +32691,40 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   /* the bubbles grow with the planet here (Home's phone rule stops them at 2.9rem) */
   html[data-layout] body .panel.home.screen-home-actual .cosmic-icon-badge.cosmic-badge-rank{ width:min(4.4rem, 10.7cqw); height:min(4.4rem, 10.7cqw); }
   /* the words: left of the planet, set large, ranged to its side */
-  html[data-layout] body .panel.home.screen-home-actual > .homegreeting{ grid-column:1; grid-row:2; justify-self:end; text-align:right;
-    margin:0 0 .4rem; font-size:clamp(1.05rem, 1.35vw, 1.4rem); letter-spacing:.01em; }
+  html[data-layout] body .panel.home.screen-home-actual > .homegreeting{ grid-column:1; grid-row:2; justify-self:end; text-align:right; margin:0 0 .4rem; }
   html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ grid-column:1; grid-row:3; justify-self:end; text-align:right; margin:0; }
   html[data-layout] body .panel.home.screen-home-actual > .hometitle-wrap{ max-width:var(--lap-side); }
-  html[data-layout] body .panel.home.screen-home-actual .hometitle{ font-size:clamp(3rem, 5.4vw, 6.4rem); line-height:.95; letter-spacing:.06em; }
-  html[data-layout] body .panel.home.screen-home-actual .hometagline{ font-size:clamp(1rem, 1.3vw, 1.45rem); margin-top:.6rem; text-wrap:balance; }
-  /* Start Studying is in the tab bar here */
-  html[data-layout] body .panel.home.screen-home-actual > .playbtn.merged-into-bar{ display:none; }
+  /* (NOVA keeps its own size: "why is the word nova so massive, revert that") */
+  html[data-layout] body .panel.home.screen-home-actual .hometagline{ text-wrap:balance; }
+  /* Start Studying is its own pill beside the bar here (#homestart) */
+  html[data-layout] body.has-homestart .panel.home.screen-home-actual > .playbtn{ display:none; }
+  /* the bar gives up the pill's width and the two are centred together */
+  html[data-layout] body.has-homestart .bottomtabs:not(.has-start-tab){ translate:calc(-.5 * (var(--hs-w, 13rem) + 8px)) 0; }
+  /* THE DAILY QUESTION FLOATS ON THE RIGHT (327z15): "Maybe the daily
+     question button could be somewhere floating on the right side ... and
+     not on the bottom near the tab?" Level with the planet's middle, in the
+     right-hand space the planet leaves. */
+  html[data-layout] body:has(.screen-home-actual) .daily-question-fab{
+    top:calc(50% - 4.2rem); bottom:auto; right:clamp(2rem, calc((50vw - 24rem) / 2), 12rem); left:auto;
+    width:5.2rem; height:5.2rem; font-size:2.2rem;
+  }
+}
+.homestart{ display:none; }
+@media (min-width:64rem) and (min-aspect-ratio:5/4){
+  body.has-homestart .homestart:not([hidden]){
+    position:fixed; z-index:201; box-sizing:border-box; border-radius:999px; display:flex; align-items:center; gap:.55rem;
+    padding:0 1.6rem 0 1.35rem; width:var(--hs-w, 13rem); justify-content:center; cursor:pointer;
+    font:inherit; font-size:1.05rem; font-weight:700; letter-spacing:.01em; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
+    background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.16);
+    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
+    -webkit-tap-highlight-color:transparent; transition:background-color .15s ease, transform .15s ease;
+  }
+  body.has-homestart .homestart svg{ width:1.15rem; height:1.15rem; flex:none; }
+  body.has-homestart .homestart:hover{ background-color:rgba(30,32,42,.8); }
+  body.has-homestart .homestart:active{ transform:scale(.97); }
 }
 /* EVERY TAB ON A LAPTOP (327z15): "Ensure all tabs and pages account for the
    large screen size." On a wide screen in landscape the app was one 53rem
@@ -84849,7 +84875,7 @@ function mainMenuTourSteps(returning){
       text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one for a closer look."
         : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one for a closer look." },
     /* (327z15) on a laptop Start Studying is the tab bar's Start pill */
-    { target: (window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches) ? "#bottomtab-start" : "#nextbtn", align: "left", vplacement: "above",
+    { target: (window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches) ? "#homestart" : "#nextbtn", align: "left", vplacement: "above",
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
         : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
   ];
@@ -133158,13 +133184,10 @@ const LAST_TAB_KEY = "class26e.lastTab";
      point into the exact same sheet, per explicit request. */
   extraRow.append(startTab);
 
-  /* (327z15) on a laptop Home's Start Studying is the bar's Start pill */
   const wideHomeMq = (typeof matchMedia === "function") ? matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)") : null;
   function syncStartAction(){
-    const homeStart = (wideHomeMq && wideHomeMq.matches) ? stage.querySelector(".screen-home-actual > .playbtn") : null;
-    if(homeStart && !homeStart.dataset.tabLabel){ homeStart.dataset.tabLabel = "Start Studying"; }
-    if(!(wideHomeMq && wideHomeMq.matches)){ const hs = stage.querySelector(".screen-home-actual > .playbtn.merged-into-bar"); if(hs) hs.classList.remove("merged-into-bar"); }
-    const floatBtn = stage.querySelector(".floatbtn") || homeStart;
+    try{ hsPlace(); }catch(e){}
+    const floatBtn = stage.querySelector(".floatbtn");
     /* Only a change of size needs the bubble re-measured (build 281): this
        runs on every mutation in the screen, and a forced re-measure here
        laid the whole new screen out on the spot - 90ms of the Progress
@@ -133247,6 +133270,32 @@ const LAST_TAB_KEY = "class26e.lastTab";
   }
   new MutationObserver(syncStartAction).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "disabled"] });
   try{ if(wideHomeMq) wideHomeMq.addEventListener("change", () => syncStartAction()); }catch(e){}
+  /* ---- START STUDYING BESIDE THE BAR ON A LAPTOP (327z15) ----
+     "make it disconnected from the bottom tab, kinda similar to how the
+     search button is disconnected in review ... but it would still match
+     the bottom tab theme". Its own glass pill (the search circle's glass,
+     .tabsearch's recipe), level with the bar and 8px past its end, the two
+     centred together; a tap is Home's own Start Studying. Laptop Home only:
+     everywhere else Home's button is where it was. */
+  const hsEl = document.createElement("button");
+  hsEl.type = "button"; hsEl.id = "homestart"; hsEl.className = "homestart"; hsEl.hidden = true;
+  hsEl.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Start Studying</span>';
+  hsEl.addEventListener("click", () => { const b = stage.querySelector(".screen-home-actual > .playbtn"); if(b) b.click(); });
+  document.body.appendChild(hsEl);
+  function hsPlace(){
+    const on = !!(wideHomeMq && wideHomeMq.matches) && !bar.hidden && !!stage.querySelector(".screen-home-actual > .playbtn")
+      && !document.body.classList.contains("has-tabsearch");
+    document.body.classList.toggle("has-homestart", on);
+    if(!on){ hsEl.hidden = true; return; }
+    hsEl.hidden = false;
+    requestAnimationFrame(() => {
+      const r = bar.getBoundingClientRect();
+      hsEl.style.top = r.top + "px"; hsEl.style.height = Math.round(r.height) + "px";
+      hsEl.style.left = (r.right + 8) + "px";
+    });
+  }
+  try{ new ResizeObserver(() => hsPlace()).observe(bar); }catch(e){}
+  window.addEventListener("resize", () => { try{ hsPlace(); }catch(e){} });
   /* the bar's measured half-width, for what sits beside it (327z15) */
   const syncBarHalf = () => { try{ const w = bar.hidden ? 0 : bar.getBoundingClientRect().width;
     if(w > 0) document.documentElement.style.setProperty("--tabbar-half", (w / 2).toFixed(1) + "px"); }catch(e){} };

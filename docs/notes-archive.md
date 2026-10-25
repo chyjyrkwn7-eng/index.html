@@ -27906,3 +27906,28 @@ with the flow laid out, answered "Yes, build it".
 - Closed before the pick: no account exists; the next launch is Welcome.
 - Tools: record-sound nova_new and shoot-flow walk the new flow (types
   "J.Smith", picks a character). Gate: check-b327z15 "%" (DD).
+
+## Build 327z15 round 22 - laptop Home: NOVA its own size, Start Studying its own pill, the daily question on the right
+
+"Maybe the daily question button could be somewhere floating on the right
+side or left side too and not on the bottom near the tab? The start studying
+button, make it disconnected from the bottom tab, kinda similar to how the
+search button is disconnected in review? But it would still match the bottom
+tab theme? ... why is the word nova so massive, revert that".
+
+- NOVA, the greeting and the line keep Home's own sizes on a laptop (round
+  19's clamp(3rem, 5.4vw, 6.4rem) and the greeting's size are gone); they
+  stay right-aligned left of the planet.
+- Start Studying is no longer carried into the bar (syncStartAction's
+  homeStart is gone). #homestart is its own fixed glass pill - the Review
+  search circle's glass (.tabsearch's recipe) - level with the bar and 8px
+  past its end; body.has-homestart shifts the bar left by half the pill so
+  the two are centred together. Its tap is Home's own button. hsPlace()
+  runs with syncStartAction, on the bar's ResizeObserver and on resize; laptop
+  Home only (wideHomeMq), never with the search circle.
+- The daily question floats on the right on laptop Home: level with the
+  planet's middle (top: 50% - 4.2rem), in the right-hand space
+  (right: clamp(2rem, (50vw - 24rem) / 2, 12rem)), 5.2rem.
+- The main-menu tour's last step points at #homestart there.
+- Gate CC rewritten: the pill beside the bar (and it opens the modes), the
+  daily question clear of the bar and right of the planet.
