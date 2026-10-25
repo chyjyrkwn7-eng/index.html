@@ -27827,3 +27827,30 @@ this app won't be based on studying but learning".
 - Home's late greeting: "Up late, <name>?" (was "Studying late").
 - Gates moved: check-b327-c (short boxes <= 14 words, <= 22; the story order;
   existing flow names the class material), check-b326-e away note.
+
+## Build 327z15 round 19 - laptop Home: planet centred, words grand on the left, Start Studying in the tab bar
+
+Three options were shown (two columns; button above the bar; planet centred
+with words left and button right). Madison: "What if the start studying
+button was on the bottom tab for laptops/bigger devices? And the planet
+system got centered. And then words and stuff is on the left but ensure it
+looks great and grand. Ensure all tabs and pages account for the large
+screen size".
+
+- @media (min-width:64rem) and (min-aspect-ratio:5/4): Home's panel is a
+  3-column grid (side | planet | side), side columns
+  --lap-side = clamp(15rem, 23vw, 27rem), so the planet is centred on the
+  screen. Its width: min(48rem, (100dvh - 13rem) * 1.05, 100vw - both sides
+  and gaps). The greeting, NOVA (clamp(3rem, 5.4vw, 6.4rem)) and the line sit
+  right-aligned in the left column.
+- syncStartAction (the bar's Start pill, which already carries a screen's
+  .floatbtn) also takes Home's .playbtn while wideHomeMq matches, labelled
+  "Start Studying"; the button itself is hidden there (.merged-into-bar).
+  The main-menu tour's last step points at #bottomtab-start there.
+- The daily-question button's right offset was calc(50% - 21rem) - the
+  plain bar's half (15rem) plus 6rem; the bar now publishes its measured
+  half-width (--tabbar-half, ResizeObserver) and the button uses it, so a
+  bar carrying Start no longer covers it.
+- Measured planet: 1366x638 452, 1512x852 676, 1440x900 651, 1920x1080 768,
+  iPad landscape 533, 12.9" landscape 616. No page scrolls.
+- Gate: check-b327z15 "$" (CC) rewritten for this layout.

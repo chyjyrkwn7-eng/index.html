@@ -730,7 +730,7 @@ def section_bb(br):
 
 
 def section_cc(br):
-    print("\nCC. A laptop: Home's planet fills the left, the words sit beside it, nothing scrolls, taps still answer")
+    print("\nCC. A laptop: Home's planet centred and large, the words on its left, Start Studying in the tab bar, nothing scrolls")
     bad = []
     for W, H in ((1366, 638), (1512, 852), (1920, 1080)):
         ctx, pg = z5b.boot(br, W, H, 1)
@@ -739,13 +739,16 @@ def section_cc(br):
         pg.wait_for_timeout(2000)
         pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner, .rs-spot').forEach(n => n.remove())")
         r = pg.evaluate("""() => { const p = document.querySelector('.screen-home-actual'); const h = p.querySelector('.cosmic-hero-wrap').getBoundingClientRect();
-          const t = p.querySelector('.hometitle-wrap').getBoundingClientRect(), b = p.querySelector('.playbtn').getBoundingClientRect();
-          return { hero: h.width, heroH: h.height, side: t.left > h.right && b.left > h.right, sh: document.documentElement.scrollHeight, ih: innerHeight }; }""")
-        if not (r["hero"] >= .62 * H and r["side"] and r["sh"] <= r["ih"] + 2):
+          const t = p.querySelector('.hometitle-wrap').getBoundingClientRect(); const st = document.getElementById('bottomtab-start');
+          const fab = document.querySelector('.daily-question-fab'), bar = document.getElementById('bottomtabs');
+          const fr = fab ? fab.getBoundingClientRect() : null, br = bar.getBoundingClientRect();
+          return { hero: h.width, centre: Math.abs((h.left + h.width / 2) - innerWidth / 2), left: t.right <= h.left + 4 && t.left >= 0,
+                   start: !!(st && !st.hidden && st.offsetWidth), fabClear: !fr || fr.left >= br.right - 1,
+                   sh: document.documentElement.scrollHeight, ih: innerHeight }; }""")
+        if not (r["hero"] >= .62 * H and r["centre"] <= 8 and r["left"] and r["start"] and r["fabClear"] and r["sh"] <= r["ih"] + 2):
             bad.append((W, H, r))
         ctx.close()
-    check("CC. on 3 laptop screens the planet is at least 62% of the height, beside the words, and the page does not scroll", not bad, bad)
-
+    check("CC. on 3 laptop screens: planet >= 62% of the height and centred, words on its left, Start in the bar, the daily button clear of it, no scroll", not bad, bad)
 
 def main():
     with sync_playwright() as pw:
