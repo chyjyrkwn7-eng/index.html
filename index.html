@@ -1864,6 +1864,17 @@
     gap:.8rem; text-align:center; opacity:0; transform:translateY(10px) scale(.96);
     transition:opacity .35s ease, transform .5s cubic-bezier(.25,1.3,.4,1); pointer-events:none; }
   .nt-prop.is-in{ opacity:1; transform:none; }
+  /* Stats' Recent tests heading with its Test history pill (327z15 round 26) */
+  .stx-recent-top{ display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+  .stx-recent-top > .slab{ margin-bottom:0; }
+  .stx-allbtn.stx-allpill{ flex:none; display:inline-flex; align-items:center; gap:.25rem; min-height:44px; margin:-.5rem -.4rem -.5rem 0;
+    padding:.35rem .55rem .35rem .85rem; border:0; border-radius:999px; background:none; cursor:pointer;
+    font:inherit; font-size:.84rem; font-weight:700; color:var(--soft); -webkit-tap-highlight-color:transparent; width:auto; }
+  .stx-allbtn.stx-allpill > span{ display:inline-flex; align-items:center; gap:.2rem; padding:.32rem .55rem .32rem .8rem; border-radius:999px;
+    background:var(--surface-2, rgba(255,255,255,.07)); border:1px solid var(--surface-border, rgba(255,255,255,.1)); color:var(--ink); }
+  .stx-allbtn.stx-allpill b{ font-weight:700; }
+  .stx-allbtn.stx-allpill svg{ width:.95rem; height:.95rem; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; opacity:.7; }
+  .stx-allbtn.stx-allpill:active > span{ background:rgba(255,255,255,.12); }
   /* HIS QUESTIONS (327z15): a name field and the starter characters, on his
      stage - the one place a prop is touchable */
   .nt-prop:has(.nt-ask){ pointer-events:auto; }
@@ -32714,7 +32725,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      marks, bubble and glass keep their proportions and stay in step), to
      about a phone's height; the Start Studying pill follows its measured
      height. */
-  html[data-layout] body .bottomtabs{ zoom:.8; }
+  html[data-layout] body .bottomtabs{ zoom:.9; }   /* round 26: "could maybe be slightly bigger" (.8 -> .9) */
   /* (round 23) bigger, and placed: centred in the empty right-hand column
      (the mirror of the words on the left) and level with the planet's upper
      half - the right column's middle is 75vw + a quarter of the planet +
@@ -32723,7 +32734,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-layout] body:has(.screen-home-actual){
     --lap-side:clamp(15rem, 23vw, 27rem); --lap-gap:clamp(1.5rem, 3vw, 4rem);
     --lap-hero:min(48rem, calc((100dvh - 13rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
-    --dq-size:4rem;
+    --dq-size:4.4rem;
   }
   html[data-layout] body:has(.screen-home-actual) .daily-question-fab{
     /* round 24: "it needs to be lower and slightly to the right" - level
@@ -32736,15 +32747,15 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      button ... it's too big now, also ensure the chat buttons size is a little
      bigger (they'd be the same size". 4rem both - the chat button on every
      screen, the daily question on Home. */
-  html[data-layout] body .chatdock-btn{ width:4rem; height:4rem; }
-  html[data-layout] body .chatdock-btn svg{ width:1.6rem; height:1.6rem; }
+  html[data-layout] body .chatdock-btn{ width:4.4rem; height:4.4rem; }   /* round 26: "chat button is a little small" - daily matches */
+  html[data-layout] body .chatdock-btn svg{ width:1.65rem; height:1.65rem; }
 }
 .homestart{ display:none; }
 @media (min-width:64rem) and (min-aspect-ratio:5/4){
   body.has-homestart .homestart:not([hidden]){
     position:fixed; z-index:201; box-sizing:border-box; border-radius:999px; display:flex; align-items:center; gap:.55rem;
-    padding:0 1.6rem 0 1.35rem; width:var(--hs-w, 13rem); justify-content:center; cursor:pointer;
-    font:inherit; font-size:1.05rem; font-weight:800; letter-spacing:.01em; color:#12161B;
+    padding:0 1.4rem 0 1.2rem; width:var(--hs-w, 12.5rem); justify-content:center; cursor:pointer;
+    font:inherit; font-size:1rem; font-weight:800; letter-spacing:.01em; color:#12161B;
     /* white, as Start Studying always is ("should still be white") - the
        Home button's own white, with the bar's depth */
     background:linear-gradient(180deg, #FFFFFF, #E9ECF0);
@@ -32763,29 +32774,32 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    modes get the width and lay out across it; Settings stays one readable
    column; phones and upright iPads are untouched. */
 @media (min-width:64rem) and (min-aspect-ratio:5/4){
-  html[data-layout] .wrap:has(> #stage > .screen-profile),
-  html[data-layout] .wrap:has(> #stage > .screen-calendar-tab),
-  html[data-layout] .wrap:has(> #stage > .modeselect){ max-width:min(84rem, 94vw); }
-  /* Profile: your card on the left; the next rank and the badge case beside it */
-  html[data-layout] body .screen-profile > .profile-identity-tab:not([hidden]){
-    display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:1.4rem; row-gap:1.2rem; align-items:start; }
-  html[data-layout] body .screen-profile > .profile-identity-tab > .profile-hero{ grid-column:1; grid-row:1 / span 2; margin:0; }
-  html[data-layout] body .screen-profile > .profile-identity-tab > .pf-goal{ grid-column:2; grid-row:1; margin:0; }
-  html[data-layout] body .screen-profile > .profile-identity-tab > .pf-case{ grid-column:2; grid-row:2; margin:0; }
-  /* Settings keeps a comfortable line length in the wider panel */
-  html[data-layout] body .screen-profile > .profile-settings-tab{ max-width:52rem; margin-left:auto; margin-right:auto; width:100%; }
+  /* (round 26) Profile stays one column, as on a phone - "all of that stuff
+     should not be side by side, it could still be beneath each other" - and
+     the study modes stay 2x2 ("I preferred them 2x2"). Only the Calendar
+     spreads out. */
+  html[data-layout] .wrap:has(> #stage > .screen-calendar-tab){ max-width:min(84rem, 94vw); }
   /* Calendar: today, the next test and the countdowns on the left; the month on the right */
   html[data-layout] body .screen-calendar-tab{
     display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1.1fr); grid-template-rows:auto auto auto 1fr;
     column-gap:1.4rem; align-items:start; }
   html[data-layout] body .screen-calendar-tab > *{ grid-column:1 / -1; }
-  html[data-layout] body .screen-calendar-tab > .cal-glance{ grid-column:1; grid-row:2; display:flex; flex-direction:column; gap:1rem; }
+  html[data-layout] body .screen-calendar-tab > .cal-glance{ grid-column:1; grid-row:2; display:flex; flex-direction:column; gap:1rem; margin:0 !important; }
   html[data-layout] body .screen-calendar-tab > .cal-glance > *{ width:100%; }
   html[data-layout] body .screen-calendar-tab > .cal-monthview{ grid-column:2; grid-row:2 / 5; margin-top:0; }
-  html[data-layout] body .screen-calendar-tab > .cal-count-card{ grid-column:1; grid-row:3; }
-  /* the study modes: all four in one row */
-  html[data-layout] body .modeselect > .modecards{ flex-wrap:nowrap; }
-  html[data-layout] body .modeselect > .modecards > .modecard{ flex:1 1 0; min-width:0; }
+  html[data-layout] body .screen-calendar-tab > .cal-count-card{ grid-column:1; grid-row:3 / 5; align-self:stretch; margin:1rem 0 0 !important;
+    display:flex; flex-direction:column; }
+  html[data-layout] body .screen-calendar-tab > .cal-count-card > .cal-count-track{ flex:1 1 auto; align-items:center; }
+  /* (round 26) "perfect the spacing of the boxes": the month card's top
+     lines up with Today's (a later theme rule gave it a 1.2rem top margin),
+     every gap between boxes is the same 1rem, and the day tiles are a
+     touch shorter so the month ends level with the left column instead of
+     running under the tab bar. */
+  html[data-theme][data-layout] body .screen-calendar-tab > .cal-monthview{ margin-top:0; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid{ gap:.4rem; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid .cal-cell{ min-height:4.75rem; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid-nav{ margin-bottom:.35rem; }
+
 }
 /* NO LINE UNDER SAFARI'S BARS (327z15). A Safari 26 screenshot, top and
    bottom circled: the band behind the status bar is flat #131519 - Safari
@@ -82371,7 +82385,7 @@ function novaAskCharacter(ctx, answered){
   const card = document.createElement("div"); card.className = "nt-ask nt-ask-char";
   const grid = document.createElement("div"); grid.className = "avatarchar-grid nt-ask-grid";
   let picked = null;
-  const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn nt-ask-go"; go.textContent = "Bring them home"; go.hidden = true;
+  const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn nt-ask-go"; go.textContent = "Choose"; go.hidden = true;
   AVATAR_CHARACTERS.forEach(c => {
     if(c.retired || c.legacy || c.unlock || c.feat) return;
     if(isLockedCharacter(c.id)) return;
@@ -82386,7 +82400,7 @@ function novaAskCharacter(ctx, answered){
       grid.querySelectorAll(".avatarchar-option.selected").forEach(glowOff);
       opt.classList.add("selected"); opt.blur();
       go.hidden = false;
-      go.textContent = "Bring " + (AVATAR_DISPLAY_NAME[c.id] || "them") + " home";
+      go.textContent = "Choose " + (AVATAR_DISPLAY_NAME[c.id] || "them");
     });
     grid.appendChild(opt);
   });
@@ -84423,12 +84437,15 @@ function novaIntroLines(o){
       ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(o.signup ? "My crew" : crew.have + " of " + crew.total + " characters found"))) });
     if(o.signup){
       /* (327z15) you pick who comes home first, and the account is made */
-      lines.push({ gesture: "raise", text: "Who should I bring home to be by your side?", ask: novaAskCharacter });
-      lines.push({ gesture: "nod", text: () => novaCrewName(store.avatarChar) + " is home, and on your team now!",
+      /* (round 26) the starters are all yours from day one - "you get all
+         the freebies at the beginning" - so he offers a partner from the
+         ones who stayed aboard, not a rescue */
+      lines.push({ gesture: "raise", text: "A few of them stayed aboard with me. Who do you want as your partner?", ask: novaAskCharacter });
+      lines.push({ gesture: "nod", text: () => novaCrewName(store.avatarChar) + " it is! You can switch any time in Customize.",
         enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
           try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
           novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } });
-      lines.push({ text: "Find the rest, and they’ll join you too." });
+      lines.push({ text: "The rest of my crew are still out there. Find them, and they’ll join you too." });
       lines.push({ gesture: "raise", text: "This is your sync code. It signs you in on any device.",
         enter: ctx => novaProp(ctx, novaStack(novaCodeProp())) });
     } else {
@@ -126229,9 +126246,16 @@ function showProfile(defaultTab, opts){
   /* The last three tests, as the history shows them. */
   const recentSect = document.createElement("div");
   recentSect.className = "points-progress-sect stx-recent";
+  /* (327z15 round 26) "the test history button is way too long. There's
+     gotta be a better way to do that than just making an extremely long
+     button" - it is a small pill at the right of the card's own heading,
+     the way a list says "see all" */
+  const recentTop = document.createElement("div");
+  recentTop.className = "stx-recent-top";
   const recentHead = document.createElement("p");
   recentHead.className = "slab"; recentHead.textContent = "Recent tests";
-  recentSect.appendChild(recentHead);
+  recentTop.appendChild(recentHead);
+  recentSect.appendChild(recentTop);
   const hist = testHistoryEntries();
   if(hist.length){
     const list = document.createElement("div");
@@ -126245,10 +126269,11 @@ function showProfile(defaultTab, opts){
     recentSect.appendChild(p);
   }
   const reviewBtn = document.createElement("button");
-  reviewBtn.type = "button"; reviewBtn.className = "next ghost stx-allbtn";
-  reviewBtn.textContent = hist.length > 3 ? "All " + hist.length + " tests" : "Test history";
+  reviewBtn.type = "button"; reviewBtn.className = "stx-allbtn stx-allpill";
+  reviewBtn.innerHTML = '<span><b></b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>';
+  reviewBtn.querySelector("b").textContent = hist.length > 3 ? "All " + hist.length + " tests" : "Test history";
   reviewBtn.addEventListener("click", showTestReviewList);
-  recentSect.appendChild(reviewBtn);
+  recentTop.appendChild(reviewBtn);
   statsTab.appendChild(recentSect);
 
   /* (YOUR UNITS - the weakest and strongest units, "Needs work" and

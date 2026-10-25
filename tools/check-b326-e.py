@@ -122,29 +122,30 @@ def check_story(br):
     src = cb.BODY
     fresh, existing = r.get("fresh") or [], r.get("existing") or []
     allt = " | ".join(fresh + existing)
-    # MOVED IN 327 (b327c): "'every flare you light pours its light into
-    # your planet, it can't hold it all..' I don't like this one at all" and
-    # "it says something about finding them so I can teach you that unit?
-    # That's terrible". The crack is now the strain of a brighter flare,
-    # held by badges; a badge is a unit mastered (check-b327-c says more).
-    star = [t for t in fresh if re.search(r"planet", t) and re.search(r"crack", t) and re.search(r"badges are what hold", t, re.I)]
-    check("why your planet cracks: a line says each rank from Gold cracks it and badges hold it together (not 'pours its light')",
-          len(star) == 1 and not re.search(r"pours", star[0]), star or fresh[3:8])
-    i_relit = next((i for i, t in enumerate(fresh) if re.search(r"flare", t) and re.search(r"earned", t)), -1)
-    i_star = fresh.index(star[0]) if star else -1
-    check("...said after the flares are relit by ranks, so it follows from them", 0 <= i_relit < i_star, {"relit": i_relit, "star": i_star})
-    check("what you get: his thanks with each rank's rewards, a badge is a unit mastered, the crew join you",
-          re.search(r"thanks.*rewards|rewards.*thanks", allt) and re.search(r"mastered that unit", allt) and re.search(r"joins you", allt)
-          and not re.search(r"instructor.s log|teach you", allt),
-          [t for t in fresh if re.search(r"rewards|mastered|joins", t)])
-    check("no end: his scanners keep finding more of his ship (new account's last line, and his goodbye)",
-          re.search(r"scanners", fresh[-1] if fresh else "") and re.search(r"more", fresh[-1] if fresh else "")
-          # MOVED IN 327 (b327m): his goodbye is the existing account's last line
-          and re.search(r"scanners", existing[-1] if existing else ""), [fresh[-1:], existing[-1:]] )
+    # MOVED IN 327z15: "We aren't gonna do the whole 'my planet blew up'
+    # path" - the introduction is now the voyage: he sails the stars, a
+    # storm scatters his badges, flares and crew into the class material,
+    # each one you find joins you, and it ends on the start of your
+    # adventure (new) / What's New on Home (existing). The planet and its
+    # crack stay in the rank-up lines and his chat (checked below);
+    # check-b327-c carries the voyage itself (order, no explosion, short boxes).
+    storm = [i for i, t in enumerate(fresh) if re.search(r"storm", t, re.I)]
+    scat = [i for i, t in enumerate(fresh) if re.search(r"scattered", t) and re.search(r"badges", t) and re.search(r"flares", t) and re.search(r"crew", t)]
+    check("why things are lost: a storm hit his ship, then his badges, flares and crew were scattered (in that order)",
+          storm and scat and storm[0] < scat[0], fresh[:6])
+    land = [i for i, t in enumerate(fresh) if re.search(r"class material", t)]
+    check("...and they landed in your class material, after the storm", land and scat and land[0] > scat[0], fresh[:7])
+    check("what you get: every one you find joins your team, and no 'teach you' / log",
+          re.search(r"joins your team|join you", allt) and not re.search(r"instructor.s log|teach you", allt),
+          [t for t in fresh if re.search(r"join", t)])
+    check("an open end: a new account's last line starts the adventure; an existing one is pointed to What's New on Home",
+          re.search(r"adventure", fresh[-1] if fresh else "") and re.search(r"Home", existing[-1] if existing else ""), [fresh[-1:], existing[-1:]])
     bad = [t for t in fresh + existing if re.search(r"\b(all seven|seven|sixteen|16|only three|three secret|a few secret flares)\b", t, re.I)]
     check("no fixed totals in his introduction (no 'seven', '16', 'a few secret flares')", not bad, bad[:3])
-    check("the planet line costs nothing: a new account still hears at most 16 lines, an existing one at most 21 (325: 15 and 18; D's banners-and-effects slide, asked for by Madison, is the one extra line), and every slide trigger is kept",
-          star and 0 < len(fresh) <= 16 and 0 < len(existing) <= 21
+    # MOVED IN 327z15: a new account's introduction now asks his name and
+    # his first character inside it (2 asks + the pick's answer), so 16 -> 20
+    check("short: a new account hears at most 20 lines (two of them asks), an existing one at most 21, and every slide trigger is kept",
+          0 < len(fresh) <= 20 and 0 < len(existing) <= 21
           and any("friend" in k for k in r.get("keys") or []) and any("final" in k for k in r.get("keys") or []) and sum(1 for k in r.get("keys") or [] if "enter" in k) >= 9,
           {"new": len(fresh), "existing": len(existing), "keys": r.get("keys")})
     ranks = r.get("ranks") or []
@@ -162,15 +163,18 @@ def check_story(br):
           len(ch) == 4 and re.search(r"star", ch[0]) and re.search(r"[Bb]adges are what hold", ch[0]) and re.search(r"rewards", ch[1])
           and re.search(r"joins you", ch[2]) and re.search(r"scanning|storm", ch[3]),  # MOVED IN 327z15: no debris field - the storm story
           [c[:60] for c in ch])
-    check("the Version 9 'Nova, Your Instructor' note gives the cause, what a badge is, and the open end",
-          re.search(r"more light than it could hold", r.get("note", "")) and re.search(r"badges are what hold it together", r.get("note", ""))
-          and re.search(r"mastered", r.get("note", "")) and re.search(r"scanners", r.get("note", "")),
+    # MOVED IN 327z15: the note tells the voyage - a storm scattered them
+    check("the Version 9 'Nova, Your Instructor' note gives the cause (a storm), what a badge is (a unit mastered), and the crew coming back",
+          re.search(r"storm", r.get("note", "")) and re.search(r"scattered", r.get("note", ""))
+          and re.search(r"master", r.get("note", "")) and re.search(r"crew", r.get("note", "")) and not re.search(r"explo|blew up|debris", r.get("note", "")),
           r.get("note", "")[:160])
     # MOVED IN 327 (b327m): "So the nova instructor won't go through what's
     # new one by one" - nothing of his is said on What's New any more
     check("What's New (on its own) is not narrated - he does not tell the story there", r.get("news", "") == "", r.get("news", "")[:300])
-    check("the planet's returning tip and the Rank tab's lore say the crack comes from his light and badges hold it, and Supernova makes it a star",
-          re.search(r"badges are what hold it", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
+    # MOVED IN 327z15: the returning tips no longer retell the crack (the
+    # planet tip is about tapping it); the Rank tab's lore still carries it
+    check("the Rank tab's lore says the crack comes from his light, and Supernova makes it a star; no returning tip has the planet blowing up",
+          not re.search(r"explo|blew up", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
           [r.get("tip", "")[:200], r.get("lore", "")[:200]])
     check("no totals the story cannot keep: Home's planet says how many secret flares you found (not 'of 3'), his card counts without '/'",
           not re.search(r"of \d+ secret", r.get("planet", "")) and r.get("cells") and not any("/" in c for c in r.get("cells") or []),

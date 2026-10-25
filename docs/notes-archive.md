@@ -27973,3 +27973,31 @@ chat buttons size is a little bigger (they'd be the same size". In the
 laptop media query the daily question (Home) and the chat button (every
 screen) are both 4rem (64px; were 96 and 52), the chat mark 1.6rem, the
 question mark 1.75rem. Phones and upright iPads keep theirs.
+
+## Build 327z15 round 26 - Profile stacked, modes 2x2, Calendar spacing, Test history pill, Home sizing
+
+Two laptop screenshots: "Profile ... should not be side by side, it could
+still be beneath each other", "I preferred them 2x2" (study modes), the
+Calendar side by side is fine but "perfect the spacing of the boxes", the
+starter-character step should not read as a rescue (starters are free),
+"Test history button is too long", and Home: bar a good size (maybe a
+little bigger), the chat button a little small.
+
+- Laptop media query: the Profile/Settings widening and the one-row study
+  modes are gone - Profile is one column and modes are 2x2 as on an iPad.
+  Only the Calendar's .wrap widens (min(84rem, 94vw)).
+- Calendar on a laptop: the month card's top now lines up with Today's (a
+  later theme rule had given it margin-top 1.2rem - beaten with the same
+  html[data-theme][data-layout] prefix), .cal-glance has no bottom margin,
+  every gap is 1rem, and the Countdowns card spans rows 3-4 and stretches so
+  its bottom is level with the month's; its slide track takes the spare
+  height and centres the page. Day tiles 4.75rem, grid gap .4rem.
+- Bar zoom .9 (was .8). Chat button and daily question both 4.4rem.
+  Start Studying 12.5rem wide, 1rem text.
+- Nova's character step: "A few of them stayed aboard with me. Who do you
+  want as your partner?" -> "<Name> it is! You can switch any time in
+  Customize." -> "The rest of my crew are still out there. Find them, and
+  they'll join you too." Button "Choose <Name>".
+- Stats > Recent tests: the full-width "Test history" button is now a small
+  pill at the right of the section header (.stx-recent-top / .stx-allpill),
+  "All N tests" once there are any.
