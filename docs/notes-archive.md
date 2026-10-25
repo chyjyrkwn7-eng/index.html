@@ -27854,3 +27854,19 @@ screen size".
 - Measured planet: 1366x638 452, 1512x852 676, 1440x900 651, 1920x1080 768,
   iPad landscape 533, 12.9" landscape 616. No page scrolls.
 - Gate: check-b327z15 "$" (CC) rewritten for this layout.
+
+## Build 327z15 round 20 - every tab on a laptop
+
+"Ensure all tabs and pages account for the large screen size." Same media
+query as Home's laptop layout. Profile, Calendar and the study modes widen
+to min(84rem, 94vw):
+- Profile: .profile-identity-tab is two columns - the person card (hero)
+  left across two rows, the next rank (.pf-goal) and the badge case right.
+  Settings keeps a 52rem column centred in the wider panel; Stats spreads
+  its tiles.
+- Calendar: today, the next test (.cal-glance, stacked) and the countdowns
+  on the left; the month (.cal-monthview, rows 2-4, a 1fr last row takes
+  the slack so no gap opens on the left) on the right.
+- Study modes: the four cards in one row (.modecards nowrap, flex 1 1 0) -
+  the mode screen no longer scrolls on a 1366x638 laptop (was 707px tall).
+- The Leaderboard keeps its column (a table reads best that wide).
