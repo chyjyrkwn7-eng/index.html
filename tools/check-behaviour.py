@@ -14973,7 +14973,8 @@ def check_b317_planet(br):
     radii = {k: round((fl.get(k) or {}).get("r", 0)) for k in rings}
     check("Void's three on the outer ring, Umbra's, Horizon's and Genesis's on the inner - each riding its ring's own line",
           rings == {"red": "out", "orange": "out", "yellow": "out", "violet": "in", "white": "in", "core": "in"}
-          and all(abs(radii[k] - 140) <= 2 for k in ("red", "orange", "yellow")) and all(abs(radii[k] - 108) <= 2 for k in ("violet", "white", "core")),
+          # MOVED IN 327z15: the outer ring is Welcome's 152 again (HOME_OUTER_R)
+          and all(abs(radii[k] - 152) <= 2 for k in ("red", "orange", "yellow")) and all(abs(radii[k] - 108) <= 2 for k in ("violet", "white", "core")),
           (rings, radii))
     def gaps(keys):
         a = sorted((fl.get(k) or {}).get("a", 0) for k in keys)
@@ -17384,12 +17385,12 @@ def check_b317_hometaps(br):
                   inslot(X) and X.get("popups") == 0, X)
         check(dev + ": a held rank says its flare, what it is and when it was lit - and lights, presses and lets a halo go, no shake",
               HL.get("kind") == "is-held" and HL.get("name") == "Gold flare" and HL.get("state") == "Lit"
-              and "A sun that makes its own light." in (HL.get("text") or "") and "Lit when you reached Gold rank." in (HL.get("text") or "")
+              and "A sun that makes its own light." in (HL.get("text") or "") and "Lit when" not in (HL.get("text") or "")  # MOVED IN 327z15: "remove that part"
               and HL.get("light", 0) >= 1 and HL.get("press", 0) >= 1 and HL.get("halo", 0) >= 1 and HL.get("shake") == 0
               and (HL.get("title") or {}).get("nearest") == "veteran" and ((HL.get("title") or {}).get("dist") if (HL.get("title") or {}).get("dist") is not None else 99) <= 10, HL)
         check(dev + ": a locked rank says what reaching it takes and what is left - and shakes and dips, never lights",
               LK.get("kind") == "is-locked" and LK.get("name") == "Sapphire flare" and LK.get("state") == "Locked"
-              and "Reach level 60 and earn 9 badges to light it." in (LK.get("text") or "") and "20 more levels and 4 more badges to go." in (LK.get("text") or "")
+              and (LK.get("text") or "").startswith("Not lit yet") and not any(ch.isdigit() for ch in (LK.get("text") or ""))  # MOVED IN 327z15: vague, like the secret ones
               and LK.get("shake", 0) >= 1 and LK.get("dim") and LK.get("light") == 0 and LK.get("press") == 0
               and (LK.get("title") or {}).get("nearest") == "adept" and ((LK.get("title") or {}).get("dist") if (LK.get("title") or {}).get("dist") is not None else 99) <= 10, LK)
         check(dev + ": a found secret flare is its name in its colour and its one line, nothing after - and sparkles: a swell, a ring and sparks, no shake",
@@ -17407,7 +17408,8 @@ def check_b317_hometaps(br):
               # MOVED IN 326 (b326e): no total for the secret flares - more
               # come into view as you find them ("it says there's only 3")
               # MOVED IN 327z10: one answer - where you stand and what is next
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and (PL.get("text") or "").startswith("3 of 7 rank flares lit, 2 secret flares found. Next: the Platinum flare.")
+              # MOVED IN 327z15: the planet's line made plain ("The description that the large planet gives you is also confusing")
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and (PL.get("text") or "").startswith("3 of 7 rank flares lit. 2 secret flares found.")
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
         # MOVED IN 327z10: a second tap keeps the same one answer up ("shouldn't that just be combined to one message?")

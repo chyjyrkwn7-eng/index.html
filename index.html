@@ -79631,6 +79631,29 @@ let cosmicDepthSeq = 0;
    327z15: 152 again, Welcome's. "The welcome screen planet size, and the
    rings spacing is PERFECT ... The main menu needs to be ... like it." */
 const HOME_OUTER_R = 152;
+/* WHERE HOME'S SEVEN RANK BUBBLES SIT (327z15), in TIER_ORDER_FULL order:
+   `a` degrees clockwise from the top and `R` from the planet's centre, in
+   the planet's own units (centre 180,150 in the 0 -12 360 342 viewBox), so
+   they scale with the planet on every device. Six are Welcome's six badge
+   centres, measured on a 17 Pro Max ("the positions of the flares on the
+   welcome screen are even better"): Bronze where the book is, Silver the
+   cap, Gold the rocket, Platinum the trophy, Amethyst the bulb, Supernova
+   the check. Sapphire takes Welcome's one gap, at the bottom, at the radius
+   Gold and Supernova share - "closer to the first ring ... move it up a
+   little". buildCosmicHero places them; buildRankTrails' bands follow. */
+const HOME_SPOTS = [
+  { a: 313.3, R: 173.0 },   /* rookie   - Bronze    */
+  { a: 26.0,  R: 139.6 },   /* ranger   - Silver    */
+  { a: 87.2,  R: 133.4 },   /* veteran  - Gold      */
+  { a: 144.4, R: 154.5 },   /* vanguard - Platinum  */
+  { a: 188.0, R: 134.0 },   /* adept    - Sapphire  */
+  { a: 233.0, R: 175.7 },   /* elite    - Amethyst  */
+  { a: 270.1, R: 133.2 }    /* titan    - Supernova */
+];
+function homeSpotXY(i){
+  const sp = HOME_SPOTS[i % HOME_SPOTS.length], r = sp.a * Math.PI / 180;
+  return { cx: 180 + sp.R * Math.sin(r), cy: 150 - sp.R * Math.cos(r) };
+}
 function buildCosmicHero(useTierIcons, forceAccent, reuse){
   const svgNS = "http://www.w3.org/2000/svg";
   const wrap = document.createElement("div");
@@ -80289,7 +80312,9 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      three): a found one its name and a line about it, a missing one a
      hint that gives nothing away. */
   const makeFlare = (key) => {
-    const state = (typeof store !== "undefined") ? flareHuntState(key) : "missing";
+    /* Welcome is nobody's yet: every flare the same unfound light (327z15:
+       "some of the secret flares are different colors slightly") */
+    const state = (useTierIcons && typeof store !== "undefined") ? flareHuntState(key) : "missing";
     const el = document.createElement("span");
     el.className = "cosmic-orbit-dot cosmic-flare-dot" + (state === "found" ? " cosmic-orbit-dot-found is-found" :
       state === "hunting" ? " is-next is-hunting" : state === "next" ? " is-next" : "");
@@ -80435,28 +80460,12 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
      redistribute cleanly for any other count, which is exactly what
      read as "heavy on one side" once it was seven instead. */
   /* ---- HOME'S BUBBLES SIT WHERE WELCOME'S DO (327z15) ----
-     "the planet systems spacing of the rings and the placement of them all
-     are just so much better [on Welcome] ... I feel like the positions of
-     the flares on the welcome screen are even better too." Build 313 put
-     Home's seven on 360/7 degree steps, alternating rings, each centre on
-     its ring. Now each takes the CENTRE of one of Welcome's six (Welcome
-     places a 2.6rem badge by its top-left corner, so its centre is that
-     corner plus 1.3rem), going round clockwise from the top left, and the
-     seventh rank takes the one gap Welcome leaves, the bottom of the outer
-     ring. The secret flares were already on Welcome's rings. */
-  const welcomeCentre = (topPct, leftPct) => ({ top: "calc(" + topPct + "% + 1.3rem)", left: "calc(" + leftPct + "% + 1.3rem)" });
-  const homeSpots = [
-    welcomeCentre(7.4, 10),    /* book's place, top left */
-    welcomeCentre(5.4, 62),    /* cap's, top right */
-    welcomeCentre(40.2, 82),   /* rocket's, right */
-    welcomeCentre(78.8, 70),   /* trophy's, bottom right */
-    { top: "91.1%", left: "42.7%" },  /* the gap: the outer ring at 190 degrees */
-    welcomeCentre(73, 6),      /* bulb's, bottom left */
-    welcomeCentre(42, 8)       /* check's, left */
-  ];
+     "the positions of the flares on the welcome screen are even better".
+     Build 313 put the seven on 360/7 degree steps on alternating rings;
+     now each is a HOME_SPOTS place, centred on its point. */
   const homePositions = TIER_ORDER_FULL.map((tier, i) => {
-    const at = homeSpots[i % homeSpots.length];
-    return { icon: "book", top: at.top, left: at.left, tier, centred: true };
+    const { cx, cy } = homeSpotXY(i);
+    return { icon: "book", top: ((cy + 12) / 342 * 100).toFixed(2) + "%", left: (cx / 360 * 100).toFixed(2) + "%", tier, centred: true };
   });
   const positions = useTierIcons ? homePositions : welcomePositions;
   /* Tracks which tiers were already unlocked as of the last time Home
@@ -85076,8 +85085,14 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
     const N = TIER_ORDER_FULL.length, k = TIER_ORDER_FULL.indexOf(tierKey);
     const PALE = "222,230,244";
     const rgbOf = c => badgeHexRgb(c).join(",");
-    const ringOf = i => (i % 2 === 0) ? HOME_OUTER_R : 108;
-    const items = TIER_ORDER_FULL.map((t, i) => ({ i, a: i * 360 / N, R: ringOf(i),
+    /* (327z15) the bubbles are at HOME_SPOTS, not on two rings: a trail
+       band runs at the mean radius of the bubbles nearer each ring, and
+       every streak leaves from its bubble's own angle */
+    const inR = HOME_SPOTS.filter(sp => sp.R < 145), outR = HOME_SPOTS.filter(sp => sp.R >= 145);
+    const mean = l => Math.round(l.reduce((t, sp) => t + sp.R, 0) / Math.max(1, l.length));
+    const BAND_IN = inR.length ? mean(inR) : 108, BAND_OUT = outR.length ? mean(outR) : HOME_OUTER_R;
+    const ringOf = i => (HOME_SPOTS[i % HOME_SPOTS.length].R < 145) ? BAND_IN : BAND_OUT;
+    const items = TIER_ORDER_FULL.map((t, i) => ({ i, a: HOME_SPOTS[i % HOME_SPOTS.length].a, R: ringOf(i),
       rgb: i < k ? rgbOf(flareColorOf(t)) : PALE }));
     /* the gradient round the ring: at each angle every bubble's trail
        weighs in - its own colour, bright at the bubble and fading behind
@@ -85129,7 +85144,7 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
       return el;
     };
     const out = { short: [], long: [] };
-    [108, HOME_OUTER_R].forEach(R => {
+    [BAND_IN, BAND_OUT].forEach(R => {
       const on = items.filter(it => it.R === R);
       if(!on.length) return;
       out.short.push(layer(R, stops(on, 75, 7, .9, 0), 1, "is-short"));
@@ -85152,7 +85167,7 @@ function buildRankTrails(hero, orbit, tierKey, withVoid){
        ring included, so they cut through its red too. */
     if(withVoid){
       out.void = [];
-      [108, HOME_OUTER_R].forEach((R, ri) => {
+      [BAND_IN, BAND_OUT].forEach((R, ri) => {
         const pts = [];
         for(let th = 0; th <= 360; th += 3){
           /* four dark streaks a ring, uneven, each fading in behind an

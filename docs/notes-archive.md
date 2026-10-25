@@ -27695,3 +27695,32 @@ Gate: check-b327z15 "#" BB adds the edge-colour check (fails on 327z14).
 Together with round 13 (nothing scrolls in a tab) this is the whole of
 "cut off at the top and bottom ... and the page is scrolling". Only
 confirmable on an iPhone.
+
+## Build 327z15 round 15 - Home's new layout followed everywhere; Welcome's flares one colour; Sapphire moved up
+
+"Since you messed with the main menu planet system, ensure all the chances
+are good to go ... tapping any of the stuff ... On the welcome screen, some
+of the secret flares are different colors slightly? ... all devices ... the
+sapphire flare could be closer to the first ring, so move it up a little.
+Refine the placements".
+
+- HOME_SPOTS (global, next to HOME_OUTER_R): the seven bubbles as angle and
+  radius in the planet's units, so they scale with the planet on every
+  device (round 13's calc(% + 1.3rem) did not: rem is fixed, the planet is
+  not). Six are Welcome's six centres measured on a Pro Max; Sapphire
+  (adept) is at 188 deg, R 134 - Gold's and Supernova's radius, up from the
+  bottom of the outer ring. homeSpotXY(i) gives the centre.
+- buildRankTrails (the rank-up light trails) assumed 360/7 steps on two
+  rings: each streak now leaves from its bubble's HOME_SPOTS angle, on one of
+  two bands at the mean radius of the bubbles nearer each ring (BAND_IN,
+  BAND_OUT), the void streaks too. rankOrbitFlares copies the bubbles'
+  own places, so the cutscene carrier needed nothing. Played: no errors, the
+  trails ride the bubbles.
+- Welcome's secret flares: makeFlare read flareHuntState() on Welcome too, so
+  with a blank store the next-to-hunt one wore the "next" pulse and looked a
+  different shade. On Welcome every flare is "missing" now.
+- Every device in shoot-flow's list (7): all seven bubbles on screen and the
+  topmost element at their centre (tappable), no page errors.
+- check-behaviour moved: b317_hometaps' caption texts (round 3's wording:
+  no "Lit when you reached", locked vague with no numbers, the planet's
+  plain line), b317_planet's outer secret flares at 152.
