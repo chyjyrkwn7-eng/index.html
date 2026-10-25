@@ -124,6 +124,33 @@ def main():
                 pg.evaluate("()=>window.scrollTo(0, 0)")
             pg.evaluate("()=>showModeSelect()"); pg.wait_for_timeout(500)
             pg.click(".modecard[data-mode='drill']"); pg.wait_for_timeout(1000); audit(pg, name + " units", rows)
+            # 327z15 round 42: "Seems like some of these buttons word aren't centered.
+            # Ensure all buttons are good to go" - of a banner's View. The pop-ups were
+            # never measured: every banner, the sheets and cards, the chat, the tips.
+            CLEAR = ("()=>{ document.querySelectorAll('.app-banner, .daily-alert, .vroom-chat-alert, #intro-pop, #resume-offer, "
+                     "#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot, .invite-overlay').forEach(n=>n.remove()); "
+                     "try{ if(chatDockOpen) closeChatDock(); }catch(e){} }")
+            BAN = "(id,k,m,a)=>{ const el=buildAppBanner(id,k,m,a,()=>{},()=>{}); document.body.appendChild(el); placeTopBanner(el); el.classList.add('show'); el.style.transition='none'; }"
+            pg.evaluate("()=>showHome()"); pg.wait_for_timeout(900)
+            for tag, js in [
+                ("banner view", "()=>(" + BAN + ")('friend-request','friend','Alex wants to be friends','View')"),
+                ("banner save", "()=>(" + BAN + ")('save-code','account','Save your sync code','Save it')"),
+                ("banner join", "()=>(" + BAN + ")('lobby-invite','vroom','Alex invited you to a Virtual Room','Join')"),
+                ("banner accept", "()=>(" + BAN + ")('nova-challenge','vroom','Nova challenged you to a match','Accept')"),
+                ("whatsnew", "()=>showIntroPopup()"),
+                ("resume", "()=>{ localStorage.setItem(RUN_SESSION_KEY, JSON.stringify({v:1,at:Date.now(),cfg:{mode:'drill',units:[]},runMode:'drill',order:[0,1,2,3],pos:1,answers:{},saved:true})); startStudying(); }"),
+                ("tips", "()=>startSimpleTour(mainMenuTourSteps(false), ()=>{})"),
+                ("chat", "()=>{ chatDockTab='friends'; openChatDock(); }"),
+                ("chat groups", "()=>{ document.querySelector('.chatdock-tab[data-tab=groups]')?.click(); }"),
+                ("chat inbox", "()=>{ document.querySelector('.chatdock-tab[data-tab=notifs]')?.click(); }"),
+            ]:
+                pg.evaluate(js); pg.wait_for_timeout(900); audit(pg, name + " " + tag, rows)
+                if not tag.startswith("chat") or tag == "chat inbox":
+                    pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+            try: pg.evaluate("()=>localStorage.removeItem(RUN_SESSION_KEY)")
+            except Exception: pass
+            pg.evaluate("()=>{ store.onboardingComplete=false; showWelcome(); }"); pg.wait_for_timeout(1200); audit(pg, name + " welcome", rows)
+            pg.evaluate("()=>{ store.onboardingComplete=true; }")
             ctx.close()
         br.close()
     srv.shutdown()

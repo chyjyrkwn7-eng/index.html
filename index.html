@@ -7085,7 +7085,9 @@
     margin-left:auto; width:32px; height:32px; padding:0; line-height:1;
     background:none; border:none; color:var(--soft);
     font-size:1.3rem; cursor:pointer;
+    display:grid; place-items:center;
   }
+  .chatdock-close svg{ width:16px; height:16px; display:block; }
   .chatdock-body{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
   .chatdock-body[hidden]{ display:none; }
   .chatdock-note{
@@ -32424,6 +32426,13 @@
     .profile-hero .profile-edit-btn{ text-box:trim-both cap alphabetic; padding-block:calc(.46rem + (1lh - 1cap)/2); }
     @media (min-width:40rem){ .profile-hero .profile-edit-btn{ padding-block:calc(.5rem + (1lh - 1cap)/2); } }
     .friend-act{ text-box:trim-both cap alphabetic; }
+    /* (327z15 round 42) the pop-ups' buttons, measured at last: "Seems like some of these
+       buttons word aren't centered" - a banner's View/Join/Save it (a 44px floor holds the
+       height), Welcome's Continue (3.1rem floor) and the tips' Next (padding gives back the trim) */
+    .app-banner .app-banner-act{ text-box:trim-both cap alphabetic; }
+    html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ text-box:trim-both cap alphabetic; }
+    #tour-next{ text-box:trim-both cap alphabetic; padding-block:calc(.4rem + (1lh - 1cap)/2); }
+    @media (min-width:40rem){ #tour-next{ padding-block:calc(.6rem + (1lh - 1cap)/2); } }
     @media (max-width:639px){
       .homeversion.homeversion-btn{ text-box:trim-both cap alphabetic; padding-block:calc(.7rem + (1.15em - 1cap)/2); }
     }
@@ -91475,7 +91484,9 @@ function startChatDock(){
   notifTabBtn.appendChild(notifCount);
   const closeBtn = document.createElement("button");
   closeBtn.type = "button"; closeBtn.className = "chatdock-close";
-  closeBtn.setAttribute("aria-label", "Close"); closeBtn.textContent = "×";
+  closeBtn.setAttribute("aria-label", "Close");
+  /* the banners' drawn x (327z15 round 42): a text "×" sits 1.5px high in its box in any font */
+  closeBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>';
   closeBtn.addEventListener("click", () => closeChatDock());
   /* NO EXPAND BUTTON. It came back as "the expand screen button in the
      app needs to be removed. Stick to the drag to expand function for

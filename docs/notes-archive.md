@@ -28553,3 +28553,14 @@ under the button" since 327z5; What's New words without quiz/Mock),
 check-b326-e (Version 9's note, now RELEASE_NOTES[1]).
 60fps tab recordings old/new: the old lens held near-still ~8 frames then
 dropped; the new one runs from the glide into a ~5 frame shrink.
+
+Round 42: "Seems like some of these buttons word aren't centered. Ensure all
+buttons are good to go" (a banner's View). check-ink-centre never opened a
+pop-up; it now also measures every banner (View, Save it, Join, Accept),
+What's New, the Continue your test offer, the tips, the chat dock's three
+tabs and Welcome, on the 17 Pro Max and the iPad. 15 were 1.2-1.9px high:
+.app-banner-act, Welcome's Continue (.cosmic-welcome-btn), #tour-next ->
+text-box:trim-both cap alphabetic (with padding given back on #tour-next);
+the chat dock's text "x" -> the banners' drawn x (inlined: BANNER_X_SVG is
+a var far below the dock's builder). 157 controls, ALL PASS; fails 15 on
+the previous build.
