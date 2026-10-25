@@ -155,6 +155,10 @@ def main():
                         errs = []
                         pg.on("pageerror", lambda e: errs.append(str(e)[:120]))
                         pg.goto(url); pg.wait_for_timeout(1400)
+                        # MOVED IN 327z15 round 46: an unlock spotlight is a scene (the chat button and tab
+                        # bar slide out, banners wait). This fixture owes a character, whose spotlight came up
+                        # over Home mid-check; owed unlocks are marked shown first, as the other gates do.
+                        pg.evaluate("()=>{ try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){} }")
 
                         # --- REPRODUCTION, not a happy path. The splash bug is
                         # an oversized fixed box during an iOS launch, which

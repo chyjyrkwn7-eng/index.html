@@ -34077,19 +34077,21 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      nothing above a 79px bar, Start Studying as wide as the planet. Upright and small, Home is
      laid out for the room it has: the planet takes what the words, the button and a compact
      bar leave (100dvh less ~19rem), the words are a phone's, and the bar is iPhone-tab-bar tall. */
+  /* (round 49) the installed app's: a Safari tab's bars leave too little height for the larger
+     planet (Home would scroll, check-fixes' bottom-edge seam) - a tab keeps the short tiers */
   @media (orientation:portrait) and (max-width:26rem) and (max-height:46rem){
-    html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap{
+    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
       max-width:min(92vw, 23rem, calc(100dvh - 19.5rem)); margin-bottom:.4rem; }
-    html[data-layout] body .panel.home.screen-home-actual .homegreeting{ font-size:.86rem; margin:.3rem 0 .2rem; }
-    html[data-layout] body .panel.home.screen-home-actual .hometitle{ font-size:2rem; }
-    html[data-layout] body .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.9rem; }
-    html[data-layout] body .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding:.62rem .2rem; gap:.12rem; }
-    html[data-layout] body .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:1.5rem; height:1.5rem; }
-    html[data-layout] body .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.62rem; }
+    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .homegreeting{ font-size:.86rem; margin:.3rem 0 .2rem; }
+    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .hometitle{ font-size:2rem; }
+    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .hometitle-wrap{ margin-bottom:.9rem; }
+    html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding:.62rem .2rem; gap:.12rem; }
+    html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:1.5rem; height:1.5rem; }
+    html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.62rem; }
     /* Welcome is the same planet: it takes the room over its words and two buttons */
-    html[data-layout] body .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(92vw, 23rem, calc(100dvh - 21rem)); }
+    html[data-layout]:not(.is-browser) body .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(92vw, 23rem, calc(100dvh - 21rem)); }
     /* the daily question keeps its gap over the shorter bar, clear of Start Studying */
-    html[data-layout] body:has(.screen-home-actual) .daily-question-fab{ bottom:calc(env(safe-area-inset-bottom, 0px) + 5.7rem); }
+    html[data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{ bottom:calc(env(safe-area-inset-bottom, 0px) + 5.7rem); }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres

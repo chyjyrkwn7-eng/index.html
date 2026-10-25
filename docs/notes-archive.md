@@ -28696,3 +28696,11 @@ idle moment; fonts.ready only when the fonts are not loaded yet. Units opened
 again: 104ms at 4x (main 137). Equal heights hold on a first open, a second,
 rotated and back. Home's planet still runs two SVG animations (pulse ring,
 core flare) on the main thread - noted, not changed.
+Round 49 gates: check-fixes' fixture owes a character, whose spotlight (a scene
+since round 46) slid the chat button out and held the daily banner mid-check
+(153 failures, none on the build before 46): owed unlocks are marked shown
+first. The SE layout (round 47) now applies in the installed app only
+(html:not(.is-browser)): in a Safari tab the bars left too little height, Home
+scrolled and showed the fallback seam at its foot, and on a 320x458 tab Start
+Studying met the daily circle; a tab keeps the short tiers (the 320px width
+fix applies everywhere). check-chat reads a message as sender + words (round 48).

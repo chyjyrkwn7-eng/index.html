@@ -132,7 +132,9 @@ def run(src_dir, label):
                              f"title row (box {out['dotW']}px wide)")
             if out["dotText"] != "3": fails.append(f"the unread badge reads {out['dotText']!r}, not a count of 3")
             if not out["alert"]: fails.append("nothing announced who sent the message")
-            elif "sent a message" not in out["alert"]: fails.append(f"the announcement reads {out['alert']!r}")
+            # MOVED IN 327z15 round 48: a message reads as the sender over what they said ("Why does one say
+            # Alex sent a message and why does one say Alex?") - the sender and the words are what is asked
+            elif not ("Cy" in out["alert"] and "ready" in out["alert"]): fails.append(f"the announcement reads {out['alert']!r}")
             if not out["alertShown"]: fails.append("the announcement never animated in")
             others = [n for n in out["names"] if not n["me"]]
             cols = set(n["c"] for n in others)
@@ -418,7 +420,8 @@ def run_class(src_dir, label):
                 fails.append("two people in the chat share a colour: %s" % spoke["colors"])
             # ASKED FOR BY NAME - "you will get message previews when
             # someone sends a chat even if you don't have the chat open".
-            if not spoke["preview"] or "sent a message" not in spoke["preview"]:
+            # MOVED IN round 48: the sender over the message, not "<name> sent a message"
+            if not spoke["preview"] or not ("Cy" in spoke["preview"] and "ready" in spoke["preview"]):
                 fails.append("no message preview when the chat is closed: %r" % spoke["preview"])
 
             # 5. a Virtual Room does NOT take your DMs away any more
