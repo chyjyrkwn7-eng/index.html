@@ -28728,3 +28728,11 @@ shorter bar and 19px in from the edge, clear of Start.
 sweep-layout (MOVED IN): a .bottomtab may enter the bottom inset but must
 clear the indicator pill (21px off the bottom); everything else still keeps
 out of the whole inset.
+Round 51 (SE, installed): "start studying button is still huge and not close
+enough to the bottom tab. The daily question button is big for the screen
+too". The planet now takes the screen's width (min(100vw - 1.5rem, 23rem,
+100dvh - 17rem), outside the panel's padding) so the column reaches down to
+the bar: Start Studying is 142x40 in .88rem words (an ::after keeps the 44px
+tap area) and sits 36px over the bar on a 320x568 SE (was 61-84), 26px on a
+375x667; the daily circle is 2.4rem (was 2.6). The other SE screens (units,
+modes, a test, leaderboard, profile, calendar) were walked: nothing clipped.
