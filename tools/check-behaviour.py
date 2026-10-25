@@ -2850,7 +2850,9 @@ def check_b237(br):
                button: p.tagName }; }""")
     # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
     check("the rank leads the card as one line under the name - the rank, the level, the XP, no emblem (321) - with no box round it, as one button across the card",
-          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
+          # MOVED IN 327z15 round 5: the standing block is a div (role=group) - it opens nothing ("Why ...
+          # when I click my xp the rank road map pops up?"); round 27 put the rank over "Level N"
+          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") in ("BUTTON", "DIV"), r)
     # REVISED IN 267: "the current rank in the profile box has a progress
     # bar, let's remove that". REVISED IN 315: the bar under the rank is
     # the XP bar, asked back ("how do we still get that nice xp stuff");
@@ -4597,7 +4599,8 @@ def check_b245_bugreport(br):
         check("%s: inside the screen" % label, r["hs"] <= 0 and r["right"] <= r["vw"], [r["hs"], r["right"]])
         check("%s: and clear of the Send button" % label, r["gap"] is not None and r["gap"] >= 8, r["gap"])
         check("%s: the words say where it goes and nothing about codes" % label,
-              "whoever maintains Nova" in r["text"] and not re.search(r"\bcode\b|sync", r["text"], re.I),
+              # MOVED IN 327z15 round 6: "Your report goes to the Nova admin" (was "whoever maintains Nova")
+              re.search(r"Nova admin|whoever maintains Nova", r["text"]) and not re.search(r"\bcode\b|sync", r["text"], re.I),
               r["text"][:240])
         ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=code)
@@ -4927,7 +4930,8 @@ def check_b246(br):
         out[id] = !!now && now !== before && !now.classList.contains('screen-home-actual');
       }
       /* build 284: no Progress tab - the Profile card's rank row opens it */
-      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.pf-standing') || {click(){}}).click(), await wait(900),
+      /* MOVED IN 327z15 round 5: the climb opens from See rank ladder, not the standing block */
+      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.pf-goal-foot') || document.querySelector('.pf-standing') || {click(){}}).click(), await wait(900),
                          !!document.querySelector('.screen-ranks'));
       out.hiddenArt = ['umbra', 'singularity'].map(id => !!characterDetail(id).hideArt);
       out.animated = ['adept_rank', 'elite_rank', 'titan_rank'].map(id => !buildBannerArt(id).classList.contains('is-still'));
@@ -6560,7 +6564,9 @@ def check_b284(br):
       out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
       showProfile(); await wait(900);
       /* build 315: the rank row is the standing block */
-      const plate = document.querySelector('.pf-standing');
+      /* MOVED IN 327z15 round 5: "Why ... when I click my xp the rank road map pops up?" -
+         the standing block opens nothing; See rank ladder opens the climb */
+      const plate = document.querySelector('.pf-goal-foot') || document.querySelector('.pf-standing');
       if(plate) plate.click(); await wait(900);
       out.rankOpens = !!document.querySelector('.screen-ranks .rankmap-stop');
       out.profileLit = !!document.querySelector('#bottomtab-profile.active');
@@ -9298,7 +9304,11 @@ def check_b308_unlocks(br):
           const slots = [...o.querySelectorAll('.rank-orbit-slot')].map(s => s.getBoundingClientRect());
           const cx = slots.reduce((a, r) => a + r.left + r.width / 2, 0) / slots.length;
           const cy = slots.reduce((a, r) => a + r.top + r.height / 2, 0) / slots.length;
-          const off = Math.hypot(cx - (main.left + main.width / 2), cy - (main.top + main.height * 162 / 342)) / main.width;
+          /* MOVED IN 327z15 round 15: the flares sit at Home's own spots (HOME_SPOTS), not evenly round
+             the ring, so their average is not the planet - the orbit they turn in is what is centred */
+          const orr = o.getBoundingClientRect();
+          const off = Math.hypot(orr.left + orr.width / 2 - (main.left + main.width / 2), orr.top + orr.height / 2 - (main.top + main.height * 162 / 342)) / main.width;
+          const offSlots = Math.hypot(cx - (main.left + main.width / 2), cy - (main.top + main.height * 162 / 342)) / main.width;
           const rot1 = getComputedStyle(o).rotate;
           await wait(1800);
           const rot2 = getComputedStyle(o).rotate;
@@ -9979,7 +9989,8 @@ def check_b314h_lead2(br):
       out.sliderOn = !!(sl && act && Math.abs(sl.getBoundingClientRect().left - act.getBoundingClientRect().left) < 2);
       /* the countdowns - the Calendar tab's The course card since build 324 */
       showCalendar(); await wait(500);
-      const course = document.querySelector('#stage .cal-course-card');
+      /* MOVED IN 327z15 round 5: The course is the countdown card's Graduation page */
+      const course = document.querySelector('#stage .cal-course-card') || document.querySelector('#stage .cal-count-page.is-course');
       out.tiles = course ? [...course.querySelectorAll('.cal-stat')].map(e => [...e.children].map(c => c.textContent.trim()).join(' ')) : [];
       out.courseBig = course ? ((course.querySelector('.stx-hero-big') || {}).textContent || '') : '';
       out.daysLeft = typeof classDaysRemaining === 'function' ? classDaysRemaining() : null;
@@ -10503,7 +10514,10 @@ def check_b311_rank(br):
       nodes[nodes.length - 1].click(); await wait(500);
       c = document.querySelector('.ranklore-card');
       out.locked = c ? { cls: c.className, lore: c.querySelector('.ranklore-text').textContent,
-                         grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter } : null;
+                         grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter,
+                         /* 327z15: dark, not filtered - the emblem moves now; faded under a shade of night */
+                         dim: +getComputedStyle(c.querySelector('.ranklore-art svg')).opacity,
+                         shade: getComputedStyle(c.querySelector('.ranklore-art'), '::after').backgroundImage } : null;
       document.querySelector('.invite-overlay')?.remove();
       }catch(e){ out.threw = String(e); }
       return out; }""")
@@ -10523,7 +10537,8 @@ def check_b311_rank(br):
           r.get("reached") and "is-reached" in r["reached"]["cls"] and len(r["reached"]["lore"]) > 60 and "story" not in r["reached"]["lore"]
           and r["reached"]["reqs"] == 2 and r["reached"]["gifts"] >= 2, r.get("reached"))
     check("a locked rank's card is grey and keeps its story back",
-          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and "grayscale" in r["locked"]["grey"], r.get("locked"))
+          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and ("grayscale" in r["locked"]["grey"]
+          or (r["locked"].get("dim", 1) <= .5 and "gradient" in (r["locked"].get("shade") or ""))), r.get("locked"))
     ctx.close()
 
 
@@ -13751,8 +13766,10 @@ def check_b316_tiles(br):
         # case in its own grained shell; it "sticks out", so the strip is the
         # Next rank card's flow again - a diagonal light and a tinted edge.
         check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
-              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.2
-              and not all(abs(x - 1) < 0.01 or abs(x - 255) < 1 for x in ch), [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
+              # MOVED IN 327z15 round 27: "the profile box, challenge box, and badge case should all look
+              # a little more alike" - one family on the person card's surface, its white .14 rim, one
+              # colour pool at the top; a light and an edge still, never a flat box
+              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.12, [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
 
@@ -14410,8 +14427,12 @@ def check_b317_cutspin(br):
                 if not x["ok"]:
                     bad.append((i, x))
         ctx.close()
+        # MOVED IN 327z15 round 15: the bubbles sit at Home's spots (HOME_SPOTS), so a secret flare
+        # crosses a big one on far fewer frames (3 on a phone, none on an iPad) - every crossing is
+        # checked, and the crossings are counted over both devices below
         check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its glass (and never sharper than it)" % label,
-              n >= 10 and not bad, (n, len(bad), bad[:2]))
+              not bad, (n, len(bad), bad[:2]))
+        globals().setdefault("_CUTSPIN_N", []).append(n)
         # build 320 (b320d): the run-up into the flash is 1.3s longer, so
         # the flash lands ~20.9s (frame ~627) rather than ~19.6s
         check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~20.9s, build 320)" % label,
@@ -14428,6 +14449,8 @@ def check_b317_cutspin(br):
               len(during) >= 20 and all(x["parts"] == "rb-core,rb-glow,rb-ring" for x in during)
               and all(x["pool"] < .02 for i_, x in igs),
               (len(during), [x for x in during if x["parts"] != "rb-core,rb-glow,rb-ring"][:1], max([x["pool"] for i_, x in igs], default=None)))
+    cn = globals().pop("_CUTSPIN_N", [])
+    check("...and the whirl was seen crossing a big bubble at all (frames counted, over the devices)", sum(cn) >= 3, cn)
 
     # Round five: "there's like a flare floating across the screen?" The
     # outro must hold the planet system still while it fades, and the bridge
@@ -19633,11 +19656,12 @@ def check_b318_flares(br):
               else "They say this one is seen in tests from level %s." % g.get("violet"))
     check("the next flare's caption is a rumour of its real level - no name, no colour", y[:3] == ["Secret flare", "Not found", ""] and y[3:] == [want_y], [lv, g, y])
     check("with Void held, the fourth (the next) gets the rumour and the fifth only 'not found'",
-          v[3:] == [want_v] and w[2:] == ["Secret flare has not been found."], [v, w])
+          # MOVED IN 327z15 round 3: an unfound one says "Not found yet." (the hunted one keeps its rumour)
+          v[3:] == [want_v] and w[2:] in (["Secret flare has not been found."], ["Not found yet."]), [v, w])
     check("in Void's hunt only the next one hints (orange, one found); a later one says only 'not found'",
-          (cp.get("orangeNext") or "").startswith("They say this one") and cp.get("yellowNotNext") == "Secret flare has not been found.", cp)
+          (cp.get("orangeNext") or "").startswith("They say this one") and cp.get("yellowNotNext") in ("Secret flare has not been found.", "Not found yet."), cp)
     check("tapped on Home: the next flare's caption carries the rumour, another unfound one does not",
-          "They say this one" in (r.get("tapViolet") or "") and "has not been found" in (r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
+          "They say this one" in (r.get("tapViolet") or "") and re.search(r"has not been found|Not found yet", r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
           [r.get("tapViolet"), r.get("tapWhite")])
     s = _b318_umbra(br)
     a, b, c3, d = s.get("1.2") or {}, s.get("3.2") or {}, s.get("6.0") or {}, s.get("9.6") or {}

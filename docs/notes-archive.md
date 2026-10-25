@@ -28282,3 +28282,14 @@ Round 31, item by item:
   bubbles bobbed into the greeting (1px clear) and Amethyst and Supernova
   touched. check-behaviour audit_a measures the greeting's clearance over
   2.5s of bobbing.
+- check-behaviour moved for this build's own changes (each passes on main,
+  fails here by design): Report a bug says "the Nova admin" (round 6); the
+  standing block is a div that opens nothing and See rank ladder opens the
+  climb (round 5); a locked rank's emblem is dark under a shade, no filter
+  (round 5); the case is the person card's surface, white .14 rim (round
+  27); an unfound secret flare says "Not found yet." (round 3); The course
+  is the countdown card's Graduation page (round 5); the rank orbit's own
+  centre is the planet's (its flares sit at HOME_SPOTS, round 15); the
+  whirl's flare-under-glass frames are counted over both devices (round 15
+  left a phone 3 crossings, an iPad none). 29 other check-behaviour
+  failures fail on main too (327z14) and are older than this build.
