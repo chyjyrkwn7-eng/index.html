@@ -7642,7 +7642,7 @@ def check_b298(br):
       const notes = QUESTIONS.map((q, i) => i).filter(i => bad.test(QUESTIONS[i].q) || inText.test(QUESTIONS[i].q) || bad.test((QUESTIONS[i].ref || '').replace(/\\(#\\d+\\)/g, '')) || (QUESTIONS[i].choices || []).some(c => bad.test(c)))
         .map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src);
       const edited = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].keyText != null);
-      const keep = edited.every(i => KEYS[i] === (QUESTIONS[i].topic || '') + '|' + QUESTIONS[i].src + '|' + hashOf(String(QUESTIONS[i].keyText) + '\\u0001' + QUESTIONS[i].choices.join('\\u0001')));
+      const keep = edited.every(i => KEYS[i] === (QUESTIONS[i].topic || '') + '|' + QUESTIONS[i].src + '|' + hashOf(String(QUESTIONS[i].keyText) + '\\u0001' + (QUESTIONS[i].keyChoices || QUESTIONS[i].choices).join('\\u0001')));   /* 329: keyChoices pins repaired choices too, as KEYS does */
       const boat = QUESTIONS.find(q => (q.topic || '').trim() === 'Penal Code' && q.src === 239);
       return { notes, edited: edited.length, keep, boat: boat && boat.q.slice(0, 40) }; }""")
     check("no question carries an editing note: no \"duplicate\", no Quizlet or Googled source, no links, no stray numbers",
