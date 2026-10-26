@@ -34139,7 +34139,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
      The Leaderboard's segmented control, a level's picked count beside its name. */
-  html[data-layout] .screen-setup .setup-levels{ margin:.1rem 0 .85rem; width:100%; }
+  html[data-layout] .screen-setup .setup-levels{ margin:1rem 0 .85rem; width:100%; }
+  /* (Oct 26 night) "the level thing, it's really close to the name of the mode" - 1rem under
+     the mode's chip; "why is there 2 numbers of the same? It's random" - the picked count
+     beside "Level 1" read as a second 1, so it is gone (the cards' checkmarks say it) */
+  html[data-layout] .screen-setup .setup-levels .setup-level-count{ display:none !important; }
   html[data-layout] .screen-setup .setup-levels .iconbtn{ flex:1 1 0; display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
   html[data-layout] .screen-setup .setup-levels .iconbtn.is-empty:not(.active){ color:rgba(255,255,255,.42); }
   .setup-level-count{
@@ -34263,6 +34267,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ margin:.15rem 0 0 !important; }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometitle-wrap{ margin:0 0 calc(var(--hg) * 1.4) !important; }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin:0 !important; }
+    /* (Oct 26 night) "you lowered it way too much. Raise it back up and then fix the spacing of
+       everything else": the planet sits at the top of the column, and whatever room is left
+       is shared by the two gaps under it - planet to words, words to Start Studying - instead
+       of above it */
+    html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ justify-content:flex-start !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap + *,
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:auto !important; }
   }
   @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
@@ -34302,6 +34313,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-title{ margin:0 0 .3rem !important; }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-sub{ margin:0 0 calc(var(--hg) * 1.4) !important; }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-actions{ margin:0 !important; }
+    /* the same: planet at the top, the room left shared by planet-to-title and words-to-buttons */
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome{ justify-content:flex-start !important; }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-hero-wrap + *,
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-actions{ margin-top:auto !important; }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
@@ -137366,7 +137381,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
       tsEl.style.left = Math.round(r.left) + "px";
       tsEl.style.width = Math.round(r.width) + "px";
     } else {
-      tsEl.style.left = Math.round(ts.withStart ? r.left : r.right - TS_SIZE) + "px";
+      tsEl.style.left = Math.round(r.right - TS_SIZE) + "px"; /* (Oct 26 night) "Shouldn't the search button be on the right?" - on the unit screen too, over Start */
       tsEl.style.width = TS_SIZE + "px";
     }
   }
@@ -137439,8 +137454,8 @@ const LAST_TAB_KEY = "class26e.lastTab";
   }
   window.registerTabSearch = (screen, opts) => {
     tsUnregister();
-    /* withStart (build 328): the unit screen's bar carries Start at its right end, so its
-       circle stands over the bar's LEFT end instead */
+    /* withStart (build 328): the unit screen's bar carries Start at its right end, and it
+       keeps the search (its circle over the bar's right end, as on Review) */
     const withStart = !!(opts && opts.withStart);
     if(!screen || bar.hidden || (bar.classList.contains("has-start-tab") && !withStart) || document.documentElement.dataset.layout !== "modern") return false;
     ts = { screen, placeholder: (opts && opts.placeholder) || "Search", onQuery: opts && opts.onQuery, withStart };

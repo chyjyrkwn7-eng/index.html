@@ -28870,3 +28870,10 @@ not number. Questions are word for word the guides, typos included.
   screen?"): buildCosmicHero lights a flare only with useTierIcons (Home).
 - **--tabs-bottom** gains a third term, .6 x the inset: a 24px Android gesture area had the
   bar at 12px and the Start pill 2px inside it (sweep-layout). iPhones unchanged.
+- **Planet raised (Oct 26 night):** "you lowered it way too much. Raise it back up and then
+  fix the spacing of everything else". Home and Welcome columns are top-aligned (planet
+  right under the 1.25rem top), and the room left is shared by two auto margins: planet to
+  words, words to the button(s). Pro Max Home: planet top 158 -> 97, gaps 95/92.
+- **Unit screen:** the search circle is over the bar's RIGHT end (as on Review, over Start);
+  the level tabs' picked count is gone ("why is there 2 numbers of the same? It's random");
+  the level tabs sit 1rem under the mode chip ("really close to the name of the mode").
