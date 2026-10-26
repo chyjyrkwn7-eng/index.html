@@ -5307,7 +5307,7 @@ def check_b258(br):
     # no unit, no hundos.
     check("the badge case says its count on its shut front - no badges, no ring, no unit, no hundos",
           r.get("badgeSvgs", 0) == 0 and r.get("badgeMedal") == 0 and "hundo" not in r.get("badgeText", "")
-          and "of 24 badges" in r.get("badgeText", "")   # 328: Level 1 complete and not r.get("plateBar"), r)
+          and "of 24 badges" in r.get("badgeText", "") and not r.get("plateBar"), r)   # 328: Level 1 complete, 24 units
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
