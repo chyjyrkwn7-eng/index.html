@@ -20314,7 +20314,7 @@ def check_b317_badge2(br):
       document.body.appendChild(host); return out; }""", BIG)
     pg.wait_for_timeout(1500)
     pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
-    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 4 * BIG}))).convert("RGB")
+    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 6 * BIG}))).convert("RGB")   # 24 units (328), four across, six rows
     ctx.close()
     D = 3
     steps, slivers = {}, {}
