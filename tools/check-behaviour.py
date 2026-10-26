@@ -8971,6 +8971,7 @@ def check_b304_noxpfly(br):
       const mo = new MutationObserver(() => { if(document.getElementById('welcomebonus-banner')) flew = true; });
       mo.observe(document.body, { childList: true, subtree: true });
       const mm = [...document.querySelectorAll('.rs-actions button')].find(b => /Main menu/.test(b.textContent));
+      await w(1000);   /* 328: the results' buttons ignore a tap for 0.6s after they arrive */
       const had = !!mm; if(mm) mm.click(); await w(2500); mo.disconnect();
       return { had, flew, home: !!document.querySelector('[data-screen="home"]') }; }""")
     ctx.close()
