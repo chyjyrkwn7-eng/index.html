@@ -29030,3 +29030,26 @@ This round:
   the mini and 10.2" iPads; Welcome takes Home's 3.5% shrink on tall phones.
 - Gate: `tools/check-b329.py` (bubble size, new-class cue, SE sizes, hunted flare, copy, the
   first-visit flow, the +100 XP pop-up); every section fails on build 328.
+
+## Build 329, second session (Oct 26 morning) - takeover, Get Started guard, names reverted
+The first session stalled (waiting on a sweep that never wrote FIN) and was archived after it
+pushed 07a918c. Picked up here.
+- **Madison's answers:** keep the Get Started page (he had said "the start up page is a lot nvm",
+  then chose to keep what was built). Character names: he first asked for every character to be
+  renamed, then "revert all the characters names actually" - every name, starters included, is
+  as it was before build 329 (Ninja, Ghost, Wizard, Bear, Alien; Detective, Sheriff, Koi...).
+  Do not rename characters without asking again.
+- **Get Started only on a device with no account on it** (`showWelcomeFirst`): a code in
+  localStorage, a name in the store, or the mirror's copy (findAccountTrace, async - if it turns
+  up after the page is drawn, Welcome replaces it) means Welcome, which holds the recovery paths
+  ("Continue as ..."), and the page is marked seen. check-sync caught it (recovery landed on Get
+  Started); check-b329 "flow" now asserts it and fails on 07a918c. Gate fixtures for a fresh
+  device that test Welcome set `class26e.getstarted` = "1" (check-sync's FLAGS).
+- **Dropdown label opaque** (`.csi-label` background rgb, not .86 alpha): on a tablet the list opens
+  over the planet and a moon moving behind "Add a class" showed through (check-ink-centre, iPad 11).
+- **Grey bar on a sideways Pro Max at 85% (1125x458 browser):** 22b292a's laptop planet floor
+  (69dvh) reached it; under 36rem tall the 328 size holds. Bisected; main and this build pass.
+- check-results waits 700ms before "Back to results": the review's buttons rise too and keep the
+  0.6s tap guard.
+- Sandbox note: python Playwright was missing (pip install playwright==1.63.0) and the tools name
+  /opt/pw-browsers/chromium-1194; a symlink to chromium-1243/chrome-linux64 stands in.
