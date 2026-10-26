@@ -8699,6 +8699,10 @@ def check_b304(br):
           const out = {};
           try{
           %s
+          /* 327z15: a run the app lost is no pop-up on Home ("Interrupted sounds like the app
+             broke"): it waits as a saved test, and Start Studying offers it back */
+          out.homePopup = !!document.getElementById('resume-offer');
+          if(!out.homePopup){ const pb = document.querySelector('.panel.home .playbtn'); if(pb) pb.click(); await wait(900); }
           const offer = document.getElementById('resume-offer');
           out.offer = offer ? offer.textContent : null;
           /* build 320 (b320h): Resume shows the LOADING TEST bar (~2.5s) before
@@ -8778,8 +8782,8 @@ def check_b304(br):
         ctx.close()
         check(dev + ": no error in the 304 run", "err" not in r and "err" not in r2, (r.get("err"), r2.get("err")))
         check(dev + ": a run in progress is saved as it goes", r.get("saved") is True)
-        check(dev + ": coming back, it asks to continue the interrupted test",
-              bool(r2.get("offer")) and "interrupted" in (r2.get("offer") or "").lower(), r2.get("offer"))
+        check(dev + ": coming back, no pop-up on Home, and Start Studying offers to pick up where you left off (327z15)",
+              not r2.get("homePopup") and "left off" in (r2.get("offer") or "").lower() and "interrupted" not in (r2.get("offer") or "").lower(), (r2.get("homePopup"), r2.get("offer")))
         check(dev + ": and Continue picks up on the same question",
               r2.get("inTest") is True and r2.get("pos") == r.get("pos") and r2.get("q") == r.get("q"), (r.get("pos"), r2.get("pos"), r2.get("inTest")))
         check(dev + ": Ronin asks for 500 questions", "500" in (r2.get("ronin") or ""), r2.get("ronin"))
