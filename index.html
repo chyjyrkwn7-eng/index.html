@@ -34243,8 +34243,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
       flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
-      height:calc(min(100vw, 30rem) * .95) !important; aspect-ratio:100 / 95 !important;
-      align-self:center !important; margin:0 auto var(--hg) !important;
+      height:calc(min(100vw, 31rem) * .95) !important; aspect-ratio:100 / 95 !important;
+      /* centred even when it is wider than the column (auto margins pin an overflowing item to the start) */
+      align-self:center !important; margin:0 0 var(--hg) !important;
     }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > :not(.cosmic-hero-wrap){ flex:none !important; }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .homegreeting{ margin:0 0 .15rem !important; }
@@ -34255,6 +34256,29 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
+  }
+  /* ---- WELCOME ON EVERY PHONE, THE SAME LAYOUT AS HOME (build 328) ----
+     "Ensure all the devices changed are reflected app wide for their welcome screen and all
+     those other buttons as well." Measured: Welcome scrolled on an SE (5px) and an iPhone 16
+     (20px), and its planet was 218px on an SE and 344px in a Pro Max Safari tab where Home's
+     is 253 and 414. The same rules as Home: the column is exactly the room the screen leaves,
+     the planet the largest that fits (same box, same shape, same shrink), one --hg rhythm. */
+  @media (max-width:39.99rem) and (orientation:portrait){
+    html[data-layout][data-theme] body.on-welcome{ --hg:clamp(10px, 2.4dvh, 22px); }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome{
+      height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom)) !important; min-height:0 !important;
+      display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
+      padding-top:2rem !important; padding-bottom:calc(var(--hg) * .6) !important; box-sizing:border-box !important;
+    }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{
+      flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
+      height:calc(min(100vw, 31rem) * .95) !important; aspect-ratio:100 / 95 !important;
+      align-self:center !important; margin:0 0 var(--hg) !important;
+    }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > :not(.cosmic-hero-wrap){ flex:none !important; }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-title{ margin:0 0 .3rem !important; }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-sub{ margin:0 0 calc(var(--hg) * 1.4) !important; }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-actions{ margin:0 !important; }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres

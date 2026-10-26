@@ -28840,3 +28840,9 @@ not number. Questions are word for word the guides, typos included.
   before vs after (planet->greeting / words->Start): SE 19/21 -> 21/19, Pro Max 97/56
   -> 35/31; no phone scrolls (the 12 mini did by 3px); an SE-sized Safari tab's planet
   69px -> 210px. Planet 94% of the width wherever the height allows.
+- **Welcome on every phone, Home's layout:** the same column/planet rules on
+  .cosmic-welcome (body.on-welcome); 2rem clear above. It scrolled on an SE (5px) and
+  an iPhone 16 (20px); now never. Planet (box) SE 197, SE 2/3 288, mini 342, 16 369,
+  Pro Max 414, Pro Max Safari 409. Home's planet box is min(100vw, 31rem) x .95 and
+  centred with margin 0 (auto margins pinned an overflowing box to the left); its
+  outer bubbles keep >= 20px from the screen edge on every phone.
