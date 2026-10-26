@@ -27302,3 +27302,1787 @@ that doesn't match up with our results screen anymore"*.
   all fits.
 - Gate: `tools/check-b327z14.py` A-E (`B327Z14_ONLY=`), ALL PASS here; 11
   failures against 327z12 (live).
+
+### Build 327z15 - fast tab taps: the last tap wins, nothing extra is built
+
+Madison: *"When clicking the button tabs fast sometimes it lags, the bubble
+pill lags and the screen lags ... Check all possible sequences and
+combinations and make it run so smooth."*
+
+Traced with real touches (iPhone 17 Pro Max, 1x and 4x CPU), event by event:
+- **A 130ms lock dropped taps**, and a long build held that lock's own timer
+  shut (one Profile build: 830ms). Gone.
+- **The wrong tab won.** A screen waits TAB_SCREEN_AFTER (290ms) for the
+  glass, so the old screen is still up meanwhile: Profile then Home found
+  Home "already showing", refused the Home tap and then built Profile.
+  Against 327z14, 53 of 153 pair/triple sequences ended on the wrong tab.
+- **Every intermediate tab was built**, one long task per tap.
+
+Now `bar._navPend` holds the one navigation waiting to build:
+- a tap on another tab cancels it before anything is built; a tap on the
+  same tab is already on its way; Home "already showing" counts only when
+  nothing is pending (then the highlight is put back on Home);
+- a press anywhere on the bar re-times the pending build from that press
+  (`me.schedule()` from navrow's pointerdown), so no build lands under a
+  glide or a held finger;
+- a tab whose root screen is already up (`ROOT_OF`: `.screen-profile`,
+  `.screen-rankings`, `.screen-calendar-tab`) scrolls to the top instead of
+  being built again, as on iOS. From a sub-screen (Customize, Friends) the
+  tab still goes back to its root;
+- `bar._navBuilds` counts builds (for the gate).
+- `orbitGeomKey` reads a kept viewport size (`orbitVP`, cleared on resize):
+  `innerWidth`/`innerHeight` mid-build laid the half-built Home out on the
+  spot, 56-83ms of a Home switch at 4x CPU.
+
+Gate: `tools/check-b327z15.py` F (every ordered pair and triple from Home at
+60/150/300ms: 153 sequences) and G (the reported runs at 4x CPU, 120/250/
+400ms). ALL PASS here; 53 + 8 sequences fail on 327z14.
+
+#### 327z15, round 2 - a silent exit for real, no black restart, the answered daily button, the version history, the back button
+
+- **Leaving with sound on still glitched.** 327z14 faded the master over
+  ~40ms and suspended 90ms later on a timer; iOS throttles a hidden page's
+  timers, so the suspend could come late or never and the audio thread ran
+  on starved. `away()` now needs no timer: master set to 0 at once
+  (`g.value = 0` and on the next quantum), the ambience loop and every voice
+  stopped outright (the ambience is still wanted, so it comes back with the
+  page), the context suspended in the same call. Blur mutes the same way.
+  check-b327z14 A also holds that no voice and no loop is left running.
+- **Black for a few seconds on coming back** is a fresh start: iOS closed the
+  app or an update was waiting, and the 8MB page downloads and parses. The
+  splash group's reveal waited on animation frames that cannot run until the
+  main script is parsed, so it was a dark splash with nothing on it.
+  `#splash-group` now also reveals itself from CSS (`splash-in .4s .45s`),
+  which the compositor runs; the pixel placement script still runs first.
+  With scripts off, NOVA is on screen by 1.5s (0 lit pixels on 327z14).
+- **The answered daily button is the chat button's glass**: the same fill,
+  sheen, rim and shadow, the "?" in the same white at .78, and the time to
+  the next question as a 1.6px line of white light along the rim (no gold
+  arc, no track). The ready orb and the 5pm recharge are unchanged.
+- **Back buttons no longer change colour when pressed** (`.back-link:active`
+  keeps #0A0A0C; only the scale gives) and blur on click, as the tabs do.
+  Not reproduced in Chromium; this removes the only colour change there was.
+- **The version history was rewritten** for a professional release-note
+  voice: each feature announced once, later versions written as
+  improvements, version 9 corrected (no "Your units" box, Friends in the
+  chat, sound in the installed app only, Bubbles 150 / UFO 200, re-tap
+  scrolls to top). 9: 36 to 31 items, 6.0: 36 to 27, every icon and colour
+  kept. Version numbers unchanged.
+- Gate: check-b327z15 H (splash with no script), I (daily = chat glass),
+  J (`:active` forced: same colour), K (no title in two versions, no "!").
+  All fail on 327z14 except where noted; all pass here.
+
+#### 327z15, round 3 - Friends from the chat, Home's captions
+
+Madison: *"the add friends button ... has the list of your friends. So instead
+of add friends should it say manage friends? And then when you are in there
+it says back to home but shouldn't it say back to chat ... when you go back
+it all goes away"*; *"When clicking the flares on Home Screen, it says 'lit
+when reached rank' remove that part ... make the wording of stuff a little
+bigger"*; *"The locked flares (the ranked ones) should have a similar vague
+wording like the secret ones ... The description that the large planet
+gives you is also confusing."*
+
+- The chat's Friends bar button is **Manage friends** (or the requests count).
+- `openFriendsFromChat()` wraps the screen underneath's back target: the
+  Friends screen's back link reads **Chat** and puts that screen back with
+  the chat open on its Friends tab (`chatDockTab = "friends"`, any open
+  friend chat closed). The tab bar still lights the tab underneath.
+- The chat's Friends tab: the sentence above the list (which repeated the
+  button) is a short footer under the list (`.chatdock-note.is-foot`).
+- Captions: a lit rank flare is only its line (`HOME_FLARE_MEANING`); a
+  locked one is "Not lit yet. It lights at <Rank> rank." (no level, badge or
+  shortfall numbers - the Rank screen has those); a secret one not found is
+  "Not found yet." (the hunted one keeps its rumour); the planet is "N of 7
+  rank flares lit." and the secret count (or "Every flare is lit, the secret
+  ones too."). `.hc-text` 1rem (was .86), `.hc-name` .8rem (was .7); the
+  tablet and smallest-screen steps moved up to match.
+- Gate: check-b327z15 L and M.
+
+#### 327z15, round 4 - specials hand back on the frame; secret flares that move
+
+Madison: *"The animation of void, when it does the cool effect and finishes
+it, it lags or kinda moves back to the other animation but it's not smooth.
+There's like a pause ... Ensure each character's way of doing this is fixed
+in every way"* and *"Could the secret flares look a little better ... they
+don't look animated except the flashing part. Ensure whatever change you
+make reflects app wide"*.
+
+Specials (`playCharSpecial`), measured for all 30 characters:
+- **Cut or held.** CHAR_SPECIAL_MS was set by hand; eleven specials ran past
+  it (Void 220ms, Genesis 530, Ghost 450, Celestial 360, Oracle 330...) and
+  were cut mid-move, Inferno ended 200ms early and stood still. A special
+  now ends 20ms after the last of its own animations (read off
+  getComputedTiming().endTime, 400-8000ms, else the table).
+- **Snap back.** Parts left away from rest on the last frame (a glow lit, a
+  layer showing) snapped when the class came off. Every special target and
+  `.cx-sp` group whose opacity/transform/translate/rotate/scale differs
+  between the last frame and rest eases back over 260ms (WAAPI, no filter).
+- **The loop's pose jumped (small tiles).** `.char-special .char-flip-play`
+  (and the react/sleep ones) was `display:none`, which cancels the sheet's
+  CSS animation; it restarted from its old delay. It is `visibility:hidden`
+  now, so its clock runs on. And `charSyncLiveToSheet(el, svg)` puts the
+  live drawing's loops on the sheet's clock for the special (currentTime =
+  tau * c * P / L, playbackRate = c * P / L, exactly as recordCharSheet
+  plays them; a loop the sheet holds still is held still), restored to 1
+  after. Sheet vs live at the same instant: Void 1168 differing pixels
+  unsynced, 168 synced (the rest is raster difference).
+Secret flares:
+- `buildFlareOrb` (a test's glint, the found banner, every flare cutscene,
+  the unlock card, a character's hint card) gains `.fo-rays` (two unequal
+  streaks in its colour, turning 16s), `.fo-orbit` (a white mote circling,
+  5.8s) and a breathing `.fo-core`.
+- Home's dots gain `.cof-rays` (turning, 3x --fo) and `.cof-orbit > b` (a
+  mote circling at --fo, twinkling) when found, and `.cof-sheen` (a band of
+  light across the glass every --fo + 1.5s) when not found - still no
+  colour on one not found. Per-flare clocks (`--fo`). Reduce motion: none.
+- Gate: check-b327z15 N and O.
+
+#### 327z15, round 5 - Profile, challenge cards, badges, rank cards, leaderboard, Match settings, calendar
+
+Madison's list, item by item (gate: check-b327z15 P-V, each failing on 327z14):
+- **Profile box in the person card's look**: the glass recipe was already the
+  person card's (327z12); what differed was its numbers. The person card's
+  Progress grid (`buildProfileProgressTiles`: XP, Badges n/16, Hundos,
+  Correct answers - the same four a classmate sees) sits under the XP bar;
+  the badge count left the level line (it is a tile).
+- **"Why ... when I click my xp the rank road map pops up? ... badge count"**:
+  `.pf-standing` is a `div role=group` with no click handler now.
+- **Challenge box goes with the rest**: its rows and unlock tiles take the
+  Progress tiles' surface (14px, .05 fill, .07 rim), its kicks the Progress
+  label's type; its rank emblem is on the moving list (17779) and floats
+  with a breathing ring of the rank's colour (`pf-emb-breathe`).
+- **"See every rank" -> "See rank ladder"**.
+- **Challenge card count**: the number alone, dead centre (the "of N" under
+  it pushed it 7px off; the bar under the ring says "2 of 5").
+- **How**: badge "Score 100% on a whole unit enough times and its badge is
+  yours. Every unit has one."; level "Earn XP by finishing tests. Right
+  answers, hundos and answer streaks add the most."; a met challenge keeps
+  the How tray.
+- **Flare card**: `.unlock-card-rankflare .unlock-card-art` is 6.6rem square
+  (it took the card's width and drew the bubble as an oval).
+- **Badges blurb**: "Tap a badge to pick it up and examine it, or an empty
+  slot to see how to find it." The clean instruction is a tip
+  (`.badge-clean-tip`) on the dullest badge, only while one is dull.
+- **Rank card (showRankLore)**: opens on the tap (the 140ms wait for the
+  node's pop is gone); `.ranklore-art` and `.pf-goal-emb` on the moving
+  list; a locked emblem is faded with a dark overlay (no filter on a moving
+  drawing); `.ranklore-reqfill` has a 1.1s transition (it had none, so the
+  bars jumped); `buildRankGifts(key, true)` draws a locked rank's flare
+  unlit, the chips move (flare float, swatch sweep, character live), dark
+  when locked. A first-open frame of ~200ms at 4x remains in Chromium -
+  Layerize of the Rank screen's animated layers; warming did not help (the
+  warm hook is kept, harmless).
+- **Leaderboard**: `.rank-col-hundo` is --ink (This Week's); Find me is the
+  black button at the field's height and type.
+- **Match settings lag**: the `.next` dark-modern `!important` white beat
+  both the unlit grey and the lighting beat's grey hold, so the button was
+  white from the first frame and only the words changed (check-b326-f had
+  been failing on exactly this). Excluded for the pill's button while
+  inert/lighting; `vroomBarLight` lights it in one style change;
+  `.is-lighting` runs no transitions; the hold holds the words too.
+- **Calendar**: Today, Next test and the month stay; the Final Exams and The
+  course cards are one card of pages (`buildCountdownCard`): Graduation
+  first (ring, class days left, date), then each final exam (big day count,
+  name, date; a tap picks its day), scroll-snap pages, a dot per page and
+  "n of N" in the head. The old builders stay unused for a revert.
+
+#### 327z15, round 6 - switches follow a swipe; bug reports go to the Nova admin
+
+- Madison: *"The toggle switches, they only switch if you tap, they also need
+  to work if you swipe, similar to the bottom tab."* The glass-knob layer
+  (NSW_SEL, build 325) already dragged - but on an iPhone the press lands on
+  the row's own input laid over the track as a native switch (hsw-opt), and
+  pointermove returned for it ("a native switch drags itself"): invisible,
+  it moved nothing you could see and committed nothing. Reproduced in
+  Chromium with an iPhone user agent (the hsw layer then mounts). Now the
+  knob follows the finger from any start, including a switch button's
+  `.nova-hsw` (mapped to its `.nsw`); the release decides by where it is
+  let go, or by direction for a flick (velocity) or a 14px move away from
+  where it started; a native switch's own flip during the drag is put back
+  first, and `nswHold` keeps a late native flip (change/click within 500ms)
+  from moving it again. A tap is unchanged. Haptic tick on a scripted
+  commit is not guaranteed on iOS (only a native flip ticks) - phone only.
+- Report a bug: "Your report goes to the Nova admin" / "It's with the Nova
+  admin now." (was "whoever maintains Nova").
+- Gate: check-b327z15 W (as an iPhone: swipe flips both ways, knob under the
+  finger, tap still flips) and X.
+
+## Build 327z15 round 7 - sign-up order, tips for a new account
+
+Asked: "new accounts, they should go with the sign up stuff first, not meeting
+the nova introduction ... then if it's a new account they would go through
+the nova introduction ... and then the main page. Ensure the tool tips are
+good to go and ready for new accounts ... not a crazy amount but a good amount
+... Ensure if you sign up then it doesn't treat you like you are new account"
+(read as: signing IN with an existing code is not treated as new).
+
+- Order confirmed by walking it (record-sound.py nova-new): Welcome -> I'm new
+  here -> the check -> What This Actually Is -> class -> username -> character
+  -> all set -> GENERATING PROFILE -> Nova's introduction -> Home with the
+  main-menu tips. Nova never comes before sign-up.
+- Sign in with a code (adoptFromCloud, markIntroSeen) walked with a cloud copy
+  of a used account: lands on Home, no Nova introduction, no main-menu tips;
+  the account's own seen-tour flags come with it (applyLoadedData).
+- Tip copy brought up to date with the current screens:
+  - PROFILE_TIPS_289: no "tap the badge count" on the standing card (it is not
+    a button since round 5); the goal card's step names the challenge rows and
+    See rank ladder; the case step says the badge count opens the case.
+  - Profile tour 7 -> 6 steps: Stats and Settings share one step (Settings has
+    its own tour the first time it opens).
+  - NOVA_NEW_TIPS_321: Friends is in the chat, not under Profile; Stats no
+    longer claims a units list that opens Drill; the calendar tip describes
+    the countdown card.
+  - Flares tip: "Tap one for a closer look" (locked flares are vague now).
+  - Settings tour step 1 no longer mentions the class days countdown switch
+    (gone since 327 round 10).
+- Gate: check-b327z15.py Y (Profile tour 3-6 steps, every one showing); fails
+  on 327z14 (7 steps).
+
+## Build 327z15 round 8 - Welcome wears Home's planet system and sky
+
+Asked: "The sign in planet system ... similar to the one now on the main menu.
+The sign in/sign up flares need the new look. Ensure the background is
+updated too during it ... sign up and sign in process is perfect".
+
+- Welcome built its hero with buildCosmicHero() (no tier icons): the old
+  generic icon set (book, cap, rocket, bulb, trophy, check) on a 152 outer
+  ring. It now calls buildCosmicHero("showcase"): Home's layout - the seven
+  rank bubbles with their emblems at HOME_OUTER_R, the six secret flares with
+  their 327z15 rays/orbit - with nothing interactive (no homeTapBind, no
+  role=button, no planet tap) and nothing stored (seenUnlockedTiers untouched,
+  no ring draw-on). A blank store means every bubble dim and every flare
+  unfound, exactly what a new account's Home shows after sign-up.
+- The rank bubbles animate on Welcome (startOrbitEmblemAnims 1.2s after
+  mount), which also warms the sheets Home uses later.
+- Sky: syncSky gives body.sky-home (full-strength stars) to Welcome and to
+  every screen before an account exists (!store.onboardingComplete) - sign in,
+  the check, What This Actually Is, class, username, character, all set - so
+  sign-up is under the same night as Home, not the .6 sky.
+- Gate: check-b327z15.py Z (Welcome: >=6 rank bubbles, 0 generic, >=6 flares,
+  no tap targets, store untouched, sky-home); fails on 327z14.
+- Note: in the sandbox the username Continue says "Checking..." for up to 5s
+  because the fake Firestore has no board read; on a phone the board is read
+  as the screen opens (fetchBoardForInvites), so it is normally instant.
+
+## Build 327z15 round 9 - Welcome keeps its learning icons (round 8 reverted in part)
+
+"no no I like the sign up icons!!!!! IT GIVES A SENSE OF LEARNING DO NOT
+CHANGE THE ICONS. The flares bubbles just have a newer look on the main menu.
+The sentence under welcome to nova needs to be updated too, to the new one.
+The description under sign in doesn't make sense, fix that as well"
+
+- Round 8's buildCosmicHero("showcase") is gone. Welcome is buildCosmicHero()
+  again - its own six learning icons (book, cap, rocket, bulb, trophy, check)
+  in their own places. DO NOT swap them for rank emblems.
+- What changed is the bubble: Welcome's badges carry .cosmic-badge-glass, the
+  recipe of Home's unreached rank bubble (frosted fill, rim light, lens
+  ::after, rim ::before, 2.9rem), with the line icon sitting in it.
+- Welcome's subtitle is Home's: "Master the material, one rank at a time."
+- Sign in's line: "Have an account? Sign in with your sync code." (was
+  "Already use Nova on another phone or before? Use your sync code.").
+  check-b327-i's Welcome order check moved to shape (B, P, B, P; Sign in's
+  line names the sync code).
+- The full sky on Welcome and every pre-account screen (round 8) stays.
+- check-b327z15 Z rewritten: six line icons, no rank emblems, each with the
+  fill/rim/lens/layout size of Home's unreached rank bubble, no taps, store
+  untouched, sky-home. Fails on 327z14 (glass, sky).
+
+## Build 327z15 round 10 - Welcome's learning icons drawn like Home's flares
+
+"the flares need to be the old icons like I said. IT GIVES IT MORE OF A
+LEARNING VIBE. All I wanted was the flare bubbles and the icons to get an
+updated look to be similar to what's on the main menu"
+
+- Round 9 put the old line icons in Home's glass but left the icons
+  themselves flat. welcomeIconDrawing(d, n) now draws each of the same six
+  symbols the way a rank emblem sits in its bubble: a faint disc, a dashed
+  ring turning (38s), an inner hairline ring, the symbol in light (1.3 stroke,
+  faint fill) over a wider faint stroke of itself as its halo (no SVG
+  filter), and four 4-point specks twinkling on staggered clocks; the symbol
+  breathes on opacity. Transform/opacity only; all still under Reduce motion.
+- The symbols, their order and their places are untouched.
+- check-b327z15 Z: each of the six carries the drawing (.cl-ring + >=3 .cl-tw).
+
+## Build 327z15 round 11 - simple icons back; Welcome's line reworded
+
+"No I really like how simple the welcome screens icons are, it gives it a
+vibe of learning" - round 10's drawn icons (welcomeIconDrawing, .cosmic-learn-
+art) are removed. Welcome's six line icons are as simple as they were, in
+round 9's glass bubble (.cosmic-badge-glass). DO NOT decorate them.
+
+"keep the practice, track your mastery, part but change the ending ... this
+app shouldn't be designed just for test day": the subtitle is "Practice,
+track your mastery, and be ready for whatever comes next." (round 9 had
+swapped it for Home's line; that is undone).
+
+His message also began "Look at how the background of the welcome screen is,
+it's alm..." and broke off - asked about, nothing changed for it.
+
+## Build 327z15 round 12 - Home's planet system is Welcome's
+
+"The welcome screen planet size, and the rings spacing is PERFECT ... The
+background behind it is perfect too. The main menu needs to be updated and
+improved and be like it" (with a screenshot of 327z14's Welcome).
+
+- Measured: the planet and the hero box were already the same size on both
+  (415px hero on the Pro Max, 573 on the iPad Pro 11, sphere r52, inner ring
+  108). The differences were the outer ring - Home's HOME_OUTER_R 140 (build
+  313), Welcome's 152 - and the background: Home alone had .homeglow-hero, the
+  rose halo canvas round the planet.
+- HOME_OUTER_R is 152 again. The outer rank bubbles and outer secret flares
+  ride it, so they move out with it; everything that reads HOME_OUTER_R (the
+  ring draw-on, the rank-up scenes) follows.
+- showHome no longer appends the halo. homeGlowCanvas() and its CSS are left
+  in place, unused by Home.
+- check-behaviour b288's halo check moved (no halo at all, still clipped).
+- Gate: check-b327z15 "@" (AA) - Home's two ring radii and hero width equal
+  Welcome's on a phone and an iPad, and neither has the halo; fails on 327z14.
+
+## Build 327z15 round 13 - Welcome's icons exactly as before; Home's bubbles in Welcome's places; nothing scrolls in a Safari tab
+
+"don't make the icons in the welcome screen all crazy and weird, make them
+very simple and easy to see like before. The background of the welcome
+screen is better, idk if it's because there's not that glow? And the planet
+systems spacing of the rings and the placement of them all are just so much
+better. We need that. I feel like the positions of the flares on the welcome
+screen are even better too. ... The app is cut off at the top and bottom
+STILL and the page is scrolling? Like legit scrolling."
+
+- Welcome's badges are 327z14's exactly: the plain dark bubble and line icon.
+  .cosmic-badge-glass (round 9) is deleted, CSS and all.
+- Home's seven rank bubbles take Welcome's places (homeSpots): each the
+  CENTRE of one of Welcome's six (its top-left % + 1.3rem, since Welcome
+  places a 2.6rem badge by its corner), clockwise from the top left (book,
+  cap, rocket, trophy), the seventh rank in Welcome's one gap - the outer
+  ring at 190 degrees (91.1%, 42.7%) - then bulb, check. Build 313's
+  360/7 steps on alternating rings are gone, with round 12's 152 ring and no
+  halo kept. The old map is not kept; it was angle = i*360/7, R alternating
+  HOME_OUTER_R / 108, centre on the ring.
+- check-behaviour b313_flares_glass moved: bubble centres = Welcome's six
+  (0px measured); the flare-under-a-bubble paint order falls back to the
+  stacking (orbit layers before/below the bubbles) when no flare passes
+  under a bubble's middle - with Welcome's places they pass beside them;
+  the "within 3px of a centre" check is dropped (it measured 313's ring
+  centring, which was asked away).
+- SAFARI TAB SCROLL. Measured with an iPhone UA, not standalone: in a 760px
+  tab Home came to 864px and Welcome to 881 in an 840 one. The hero's cap is
+  min(32rem, 58vh), and in a browser tab vh is the LARGE viewport (under
+  Safari's bars too), so the planet never shrank for the bars. In
+  html.is-browser, phone widths, the cap also stops at calc(100dvh - 28rem)
+  on Home (30rem under 41rem tall) and calc(100dvh - 29.5rem) on Welcome.
+  Swept 375x560 to 440x860: nothing scrolls (before: Home scrolled at every
+  height measured). The installed app is untouched. The planet is smaller in
+  a Safari tab as a result (e.g. 332px in a 440x780 tab, 415 installed).
+  Only confirmable on an iPhone.
+- Gates: check-b327z15 Z (Welcome's icons are not the glass), "@" (rings),
+  "#" (BB: Safari-UA phone tabs 375x630..440x840, Home and Welcome no
+  taller than the screen).
+
+## Build 327z15 round 14 - no line under Safari's bars
+
+A Safari 26 screenshot (327z14 Welcome) with the status-bar band and the
+toolbar band circled. Sampled: the top band is flat (19,21,25) - the root's
+var(--paper), #12161B - and the page right under it starts in the warm
+corner glow, (41,33,32): a hard line. Safari does not draw the page under
+its status bar at the top of a page, so 327z14's bleed never reached there.
+In a browser tab body::before now has two more layers on top: the paper
+fading out over the top 6rem and the bottom 4rem of the viewport, so both
+edges ARE the band's colour and blend into the sky. Background only.
+Chromium with an iPhone UA reproduces the live colours exactly (41,33,32 at
+the top edge vs root 18,22,27); the new build's edges equal the root.
+Gate: check-b327z15 "#" BB adds the edge-colour check (fails on 327z14).
+Together with round 13 (nothing scrolls in a tab) this is the whole of
+"cut off at the top and bottom ... and the page is scrolling". Only
+confirmable on an iPhone.
+
+## Build 327z15 round 15 - Home's new layout followed everywhere; Welcome's flares one colour; Sapphire moved up
+
+"Since you messed with the main menu planet system, ensure all the chances
+are good to go ... tapping any of the stuff ... On the welcome screen, some
+of the secret flares are different colors slightly? ... all devices ... the
+sapphire flare could be closer to the first ring, so move it up a little.
+Refine the placements".
+
+- HOME_SPOTS (global, next to HOME_OUTER_R): the seven bubbles as angle and
+  radius in the planet's units, so they scale with the planet on every
+  device (round 13's calc(% + 1.3rem) did not: rem is fixed, the planet is
+  not). Six are Welcome's six centres measured on a Pro Max; Sapphire
+  (adept) is at 188 deg, R 134 - Gold's and Supernova's radius, up from the
+  bottom of the outer ring. homeSpotXY(i) gives the centre.
+- buildRankTrails (the rank-up light trails) assumed 360/7 steps on two
+  rings: each streak now leaves from its bubble's HOME_SPOTS angle, on one of
+  two bands at the mean radius of the bubbles nearer each ring (BAND_IN,
+  BAND_OUT), the void streaks too. rankOrbitFlares copies the bubbles'
+  own places, so the cutscene carrier needed nothing. Played: no errors, the
+  trails ride the bubbles.
+- Welcome's secret flares: makeFlare read flareHuntState() on Welcome too, so
+  with a blank store the next-to-hunt one wore the "next" pulse and looked a
+  different shade. On Welcome every flare is "missing" now.
+- Every device in shoot-flow's list (7): all seven bubbles on screen and the
+  topmost element at their centre (tappable), no page errors.
+- check-behaviour moved: b317_hometaps' caption texts (round 3's wording:
+  no "Lit when you reached", locked vague with no numbers, the planet's
+  plain line), b317_planet's outer secret flares at 152.
+
+## Build 327z15 round 16 - Nova's story is a voyage, not a planet blowing up
+
+"The storyline absolutely doesn't make sense as a new user ... a mix of
+feeling like you are on a learning adventure. It'll talk about badges, and
+ranking up ... We aren't gonna do the whole 'my planet blew up I lost guys'
+path. It should be like I've been studying and I lost things on my ship."
+(It is going to be shown to captains, chiefs and supervisors next week.)
+
+- novaIntroLines: hello; "I sail between the stars studying everything I
+  can, and I keep what I learn on my ship: my badges, my flares, and a crew
+  who help me teach" (his ship cruising, buildNovaVoyage); "On my way through
+  your system, a storm caught us. The hold burst open ..." (the same scene's
+  storm(): a cloud, flickers, the hold glowing, 4 flares, 4 badges and 6 crew
+  pods drifting out and settling across the frame); "Here's the good part:
+  all of it landed in your class material. Every unit you've mastered finds a
+  badge, and every rank you reach relights a flare. Bring my things home, and
+  I'll get you ready for the real exam." Then, for a new account: the flares
+  (their light went out on the way; secret flares drifted into your tests),
+  ranks relight them with that rank's rewards, badges (a unit mastered), the
+  crew "safe in their pods, waiting to be found", how each comes home, the
+  modes, the friend line, and "That's our adventure: learn it, rank up, and
+  bring it all home. Let me show you around." 12 lines, as before.
+- An existing account's second line: "My ship has been out of range since
+  the storm."
+- buildNovaWreck is no longer used by the intro (kept; its sound and the
+  crack warm-up are not played). The Supernova/crack mechanics of YOUR planet
+  are unchanged; Nova's chat answer about the planet now explains them
+  without his planet ("The planet on your Home screen is yours ...").
+- Also reworded: his chat answers (crew, flares, ship/story), his away jobs
+  (no debris field), the rank-line "more of my cargo", the Version-9 help
+  card ("A storm opened his ship's hold ..."), his profile row "Lost in the
+  storm · found by you".
+- Gates moved: check-b327-c story order (ship -> storm -> badge mastered, and
+  nothing explodes anywhere he speaks), check-b326-e away reply.
+
+## Build 327z15 round 17 - Home on a laptop: the planet beside the words
+
+"it's gonna be used by a lot of people on laptops ... that will be the first
+place they see it ... there's so much empty space, maybe for laptops and stuff
+the planet system should be even bigger?" Also: "It should not say hello
+recruit, it should say hello 'name' username" - it already does (novaName() is
+store.firstName, the sign-up username); "Recruit" was the username typed in
+the test walk. Nothing changed for it.
+
+- @media (min-width:64rem) and (min-aspect-ratio:5/4): Home's panel is a grid
+  - the planet in the left column across every row, at
+  min(46rem, (100dvh - 13.5rem) * 1.05) (the height there is, less the tab
+  bar's reserve); the greeting, NOVA (bigger), the line and Start Studying
+  centred in the right column; .wrap widened to min(100rem, 96vw) on Home.
+  The rank bubbles grow with the planet (min(4.4rem, 10.7cqw)). The caption a
+  tap shows sits under the planet, clear of the words, so the greeting and
+  NOVA no longer fade for it here.
+- Measured (planet width before -> after): 1366x638 217 -> 443, 1512x852
+  409 -> 668, 1440x900 432 -> 718, 1920x1080 518 -> 736, iPad landscape
+  400 -> 606. No page grows past the screen (the 2px they already had).
+  All 7 bubbles tap and caption on every one. Phones and upright iPads are
+  untouched.
+- Gate: check-b327z15 "$" (CC) - 3 laptop sizes: planet >= 62% of the
+  height, title and button right of it, no scroll; fails on 327z14.
+
+## Build 327z15 round 18 - short boxes, Nova at every rank, a quieter chat, Challenge any time, "Up late"
+
+Madison sent a screen recording of Professor Oak's introduction (Pokemon):
+"I like the new approach of the story but some of the wording and sentences
+are weird ... the text boxes ... are super long. In Pokemon when oak
+introduces himself it's so good because it's short and sweet ... Novas rank
+up system will need to be more storyline ... each rank nova can come on
+screen ... I also don't want the nova chat to just become spam ... The
+challenges from nova need to be random but also, you can challenge nova
+whenever you want ... He's hard to beat though. It says 'studying late' ...
+this app won't be based on studying but learning".
+
+- novaIntroLines rewritten as short boxes (one thought each, <= 14 words;
+  a new account's is 19 boxes): "Hello there, <username>!" / "Welcome aboard.
+  My name is Nova." / "I'm an explorer, and I'll be your instructor." / ship:
+  "I sail the stars, learning everything I can." / "And my ship carries all
+  I've collected." / storm: "But on the way here, a storm hit us!" / "My
+  badges, my flares and my crew were scattered." / "The good news? It all
+  landed in your class material." / "Learn it, and we'll find it all again."
+  / flares, ranks, badges ("Score 100% on a unit enough times, and its badge
+  is yours."), crew ("Every one you find joins your team."), modes, the
+  friend line ("I've added you as a friend. I'll keep in touch."), "Your
+  adventure starts now. Let's go!". An existing account's opening and goodbye
+  are short too (its recap lines are unchanged).
+- playNovaRankTalk(idx) (NOVA_RANK_BEATS): when a rank-up journey has played
+  to its end (rankUpSceneEnd), Nova comes on over the relit flare (scaled up)
+  - "<name>! You found my Gold flare!", that rank's two beats (Gold: "Your
+  planet is taking in more light now." / "See the cracks? Your badges will
+  hold it together."), "Keep learning, and we'll find the rest." (Supernova:
+  "Thank you ... There's always more to learn!"). It moves heard "@rank", so
+  his chat no longer sends the rank-up message.
+- His chat: NOVA_QUIET_MS 20h -> 44h (two days between messages), tips at
+  most weekly (NOVA_TIP_GAP_MS 7 days), a level is news only at each ten.
+- His challenges: novaChallengeDue(wk, now) - by an FNV hash of the account
+  and the week, about one week in three is a challenge week, on a hashed day
+  Monday-Saturday (every device agrees; nothing stored). Challenge any time:
+  a "Challenge" button (44px) in his chat header, novaChallengeNow() (a lobby
+  with him invited). His hello, his VR reply, What's New and the help note
+  say so. He is as hard as he was ("almost never misses").
+- Home's late greeting: "Up late, <name>?" (was "Studying late").
+- Gates moved: check-b327-c (short boxes <= 14 words, <= 22; the story order;
+  existing flow names the class material), check-b326-e away note.
+
+## Build 327z15 round 19 - laptop Home: planet centred, words grand on the left, Start Studying in the tab bar
+
+Three options were shown (two columns; button above the bar; planet centred
+with words left and button right). Madison: "What if the start studying
+button was on the bottom tab for laptops/bigger devices? And the planet
+system got centered. And then words and stuff is on the left but ensure it
+looks great and grand. Ensure all tabs and pages account for the large
+screen size".
+
+- @media (min-width:64rem) and (min-aspect-ratio:5/4): Home's panel is a
+  3-column grid (side | planet | side), side columns
+  --lap-side = clamp(15rem, 23vw, 27rem), so the planet is centred on the
+  screen. Its width: min(48rem, (100dvh - 13rem) * 1.05, 100vw - both sides
+  and gaps). The greeting, NOVA (clamp(3rem, 5.4vw, 6.4rem)) and the line sit
+  right-aligned in the left column.
+- syncStartAction (the bar's Start pill, which already carries a screen's
+  .floatbtn) also takes Home's .playbtn while wideHomeMq matches, labelled
+  "Start Studying"; the button itself is hidden there (.merged-into-bar).
+  The main-menu tour's last step points at #bottomtab-start there.
+- The daily-question button's right offset was calc(50% - 21rem) - the
+  plain bar's half (15rem) plus 6rem; the bar now publishes its measured
+  half-width (--tabbar-half, ResizeObserver) and the button uses it, so a
+  bar carrying Start no longer covers it.
+- Measured planet: 1366x638 452, 1512x852 676, 1440x900 651, 1920x1080 768,
+  iPad landscape 533, 12.9" landscape 616. No page scrolls.
+- Gate: check-b327z15 "$" (CC) rewritten for this layout.
+
+## Build 327z15 round 20 - every tab on a laptop
+
+"Ensure all tabs and pages account for the large screen size." Same media
+query as Home's laptop layout. Profile, Calendar and the study modes widen
+to min(84rem, 94vw):
+- Profile: .profile-identity-tab is two columns - the person card (hero)
+  left across two rows, the next rank (.pf-goal) and the badge case right.
+  Settings keeps a 52rem column centred in the wider panel; Stats spreads
+  its tiles.
+- Calendar: today, the next test (.cal-glance, stacked) and the countdowns
+  on the left; the month (.cal-monthview, rows 2-4, a 1fr last row takes
+  the slack so no gap opens on the left) on the right.
+- Study modes: the four cards in one row (.modecards nowrap, flex 1 1 0) -
+  the mode screen no longer scrolls on a 1366x638 laptop (was 707px tall).
+- The Leaderboard keeps its column (a table reads best that wide).
+
+## Build 327z15 round 21 - Nova asks your username and your first character
+
+"we won't pick genders of course, but maybe that's where you pick your
+starting character, and your username? Could be a better tie in" - asked
+with the flow laid out, answered "Yes, build it".
+
+- Sign-up: Welcome -> I'm new here -> the check -> What This Actually Is ->
+  class -> GENERATING PROFILE -> Home under Nova. The username and character
+  screens are no longer in the flow (showWelcomeNamePrompt and
+  showWelcomeCharacterPrompt still exist; older gates call them directly).
+- startSignupWithNova(): finishWelcomeStartFresh(then) - the same
+  no-account-over-another check, now with what to do next - clears the name
+  and character, sets signupInNova and pendingMainMenuTour, GENERATING.
+- novaTalk lines can ASK: `ask(ctx, answered)` puts its question on the
+  stage once the line is typed and nothing moves on until answered()
+  (taps, Enter and the hint are held; .nova-talk.is-asking); `text` may be
+  a function, read when the line comes up. ctx.close is exposed.
+- Nova's sign-up lines: "Hello there!" ... "First, what should I call you?"
+  (novaAskName: one name per person on the board, as the username screen
+  had it - a name somebody wears says so and offers "That's me - sign in",
+  which closes him and opens the code screen) -> "So you're <name>! Great
+  to meet you." -> the story -> "My crew are waiting in their pods." ->
+  "Who should I bring home to be by your side?" (novaAskCharacter: the
+  starter characters; "Bring <Name> home") -> novaSignupCreate() makes the
+  account: setSyncCode, onboardingComplete, tourRev, novaMet,
+  badgeBandsVersion, markIntroSeen, save, push + live listener (startNewAccount's
+  steps and showHome's sign-up marks) -> "<Name> is home, and on your team
+  now!" (their art) -> "Find the rest, and they'll join you too." -> "This
+  is your sync code. It signs you in on any device." (the code, which
+  replaces the old You're All Set screen) -> modes, friend, "Your adventure
+  starts now. Let's go!". Then Home is built again (name, character) and
+  the main-menu tips run.
+- Closed before the pick: no account exists; the next launch is Welcome.
+- Tools: record-sound nova_new and shoot-flow walk the new flow (types
+  "J.Smith", picks a character). Gate: check-b327z15 "%" (DD).
+
+## Build 327z15 round 22 - laptop Home: NOVA its own size, Start Studying its own pill, the daily question on the right
+
+"Maybe the daily question button could be somewhere floating on the right
+side or left side too and not on the bottom near the tab? The start studying
+button, make it disconnected from the bottom tab, kinda similar to how the
+search button is disconnected in review? But it would still match the bottom
+tab theme? ... why is the word nova so massive, revert that".
+
+- NOVA, the greeting and the line keep Home's own sizes on a laptop (round
+  19's clamp(3rem, 5.4vw, 6.4rem) and the greeting's size are gone); they
+  stay right-aligned left of the planet.
+- Start Studying is no longer carried into the bar (syncStartAction's
+  homeStart is gone). #homestart is its own fixed glass pill - the Review
+  search circle's glass (.tabsearch's recipe) - level with the bar and 8px
+  past its end; body.has-homestart shifts the bar left by half the pill so
+  the two are centred together. Its tap is Home's own button. hsPlace()
+  runs with syncStartAction, on the bar's ResizeObserver and on resize; laptop
+  Home only (wideHomeMq), never with the search circle.
+- The daily question floats on the right on laptop Home: level with the
+  planet's middle (top: 50% - 4.2rem), in the right-hand space
+  (right: clamp(2rem, (50vw - 24rem) / 2, 12rem)), 5.2rem.
+- The main-menu tour's last step points at #homestart there.
+- Gate CC rewritten: the pill beside the bar (and it opens the modes), the
+  daily question clear of the bar and right of the planet.
+
+## Build 327z15 round 23 - laptop Home: the words as round 19 had them; "Studying late"; the daily question placed
+
+From a screenshot of round 19's laptop Home: "These proportions of the words
+on the left are perfect. The 'up late' thing isn't it. We can keep it as
+studying actually. The daily question button can be a little bigger and
+somewhere placed on the right side ... but make it look good/intentional."
+
+- The greeting (clamp(1.05rem, 1.35vw, 1.4rem)), NOVA (clamp(3rem, 5.4vw,
+  6.4rem)) and the line (clamp(1rem, 1.3vw, 1.45rem)) are round 19's again.
+  (Round 22's "revert" was answering round 20's 7vw NOVA.)
+- Home's late greeting is "Studying late" again (round 18's "Up late" is
+  undone).
+- The daily question on laptop Home: 6rem, centred in the right-hand column
+  (75vw + a quarter of the planet + half the gap) and a fifth of the planet
+  above the planet's middle - the mirror of the words on the left. The
+  laptop variables (--lap-side, --lap-gap, --lap-hero) now live on body so
+  the fixed button can use them.
+
+## Build 327z15 round 24 - laptop: Start Studying white, a smaller bar, the daily question lower and further right
+
+"the start studying button should still be white ... I feel like the bottom
+tab is massive now ... The daily question buttons position is not good ...
+it needs to be lower and slightly to the right (this is all about laptops)".
+
+- #homestart is white - the Home button's own white (linear #FFF -> #E9ECF0,
+  #12161B text) with the bar's depth - not the search circle's dark glass.
+- The bar on a laptop was the iPad's (101px tall, 484 wide, 38px marks).
+  In the laptop media query .bottomtabs has zoom:.8 (81px, 388 wide, 31px
+  marks - a phone's size); the bubble stays centred on the tab (measured 0px
+  off on all four), real clicks land on the right tab, and the Start pill
+  takes the bar's measured height.
+- The daily question: level with the planet's middle (+4% of the planet) and
+  2.5vw further right than round 23.
+
+## Build 327z15 round 25 - the two round buttons one size on a laptop
+
+"The daily question button size increase, it's too big now, also ensure the
+chat buttons size is a little bigger (they'd be the same size". In the
+laptop media query the daily question (Home) and the chat button (every
+screen) are both 4rem (64px; were 96 and 52), the chat mark 1.6rem, the
+question mark 1.75rem. Phones and upright iPads keep theirs.
+
+## Build 327z15 round 26 - Profile stacked, modes 2x2, Calendar spacing, Test history pill, Home sizing
+
+Two laptop screenshots: "Profile ... should not be side by side, it could
+still be beneath each other", "I preferred them 2x2" (study modes), the
+Calendar side by side is fine but "perfect the spacing of the boxes", the
+starter-character step should not read as a rescue (starters are free),
+"Test history button is too long", and Home: bar a good size (maybe a
+little bigger), the chat button a little small.
+
+- Laptop media query: the Profile/Settings widening and the one-row study
+  modes are gone - Profile is one column and modes are 2x2 as on an iPad.
+  Only the Calendar's .wrap widens (min(84rem, 94vw)).
+- Calendar on a laptop: the month card's top now lines up with Today's (a
+  later theme rule had given it margin-top 1.2rem - beaten with the same
+  html[data-theme][data-layout] prefix), .cal-glance has no bottom margin,
+  every gap is 1rem, and the Countdowns card spans rows 3-4 and stretches so
+  its bottom is level with the month's; its slide track takes the spare
+  height and centres the page. Day tiles 4.75rem, grid gap .4rem.
+- Bar zoom .9 (was .8). Chat button and daily question both 4.4rem.
+  Start Studying 12.5rem wide, 1rem text.
+- Nova's character step: "A few of them stayed aboard with me. Who do you
+  want as your partner?" -> "<Name> it is! You can switch any time in
+  Customize." -> "The rest of my crew are still out there. Find them, and
+  they'll join you too." Button "Choose <Name>".
+- Stats > Recent tests: the full-width "Test history" button is now a small
+  pill at the right of the section header (.stx-recent-top / .stx-allpill),
+  "All N tests" once there are any.
+- check-fixes caught two things this round and both are fixed:
+  - GREY BAR in every browser tab (31-46 levels): the Safari paper fades on
+    body::before (round 18) were not on html, which is what a rubber-band
+    past the end reveals. html.is-browser now repeats the full html
+    background (light and dark) with the two fades as its first layers,
+    sized to html's box, and body::before's bottom fade holds solid paper
+    for its last 1.5rem. (Flat paper on html was tried first and fails the
+    "html fallback glow" check - the glows have to stay.)
+  - the test clock under the chat button on a landscape iPad (the laptop
+    media query covers it): at 4.4rem the button reached 2px into the
+    clock. In a test (.chatdock.in-test) it takes Pause's 52px - the two sit
+    in one row there anyway.
+- check-fixes' clock failures now print the clock and button rects.
+- check-b326-e e1 MOVED IN 327z15 to the voyage story (storm, scattered,
+  class material, joins your team, open end; at most 20 lines for a new
+  account, which now has two asks); the Version 9 note check reads the
+  storm text; the returning-tip check no longer expects the crack line.
+
+## Build 327z15 round 27 - a dark test on big screens, Home's pill and planet, Profile's cards, countdown arrows, chat clear of its button
+
+Madison: "On the phone, the test background is super nice and dark ... On
+the larger devices it's brighter"; "The white start studying button doesn't
+look right.. why does it look bigger than the bottom tab? The planet system
+is a little too close to the black fading part at the top"; "Why does the
+profile box have those 4 new things ... Remove those ... the profile box,
+challenge box, and badge case should all look a little more alike and
+better"; countdown card "should we put an arrow on that box"; "When the
+chat is open, it's covering the actual chat button".
+
+- Test sky: two causes. A browser tab's fade rules (html.is-browser
+  body::before) out-rank body.has-active-question::before, so a laptop test
+  had Home's full glows (corner 48,35,35 vs an installed phone's 25,25,28 -
+  327z14 live was the same); and from 40rem the glow radii are 100% (a
+  phone's 40%/45%). Now in a question the radii are the phone's at every
+  size (on body), and html.is-browser body.has-active-question::before has
+  the dimmed glows with the fades. Measured within 1 level on phone, iPad
+  both ways and a laptop tab.
+- #homestart: 78% of the bar's measured height, centred on its middle (the
+  bar's tab bubble height), 12.25rem, nowrap, a lighter shadow; the bar's
+  shift is divided by its zoom (.9) so the pair is centred exactly. Hidden
+  (opacity 0) while the chat is open - it showed through the panel's glass.
+- Laptop Home planet: (100dvh - 15rem) * 1.05 (was 13rem) and translate
+  0 1.25rem; the greeting and NOVA move down the same 1.25rem; the daily
+  question +1rem. Top bubble 107-137px from the top (the fade is 96px).
+- Profile: buildProfileProgressTiles removed (and its .pf-progress rule).
+  THE THREE PROFILE CARDS, ONE FAMILY: hero, next-rank card and the case's
+  body all on the person card's surface (linear #14171C -> #0B0D11, rim
+  rgba(255,255,255,.14), inset top light, 22px), each with one colour pool
+  at the top. The rank name is the headline over "Level N" (uppercase, rank
+  colour, glow, no emblem - 321's "remove the tiny icon" stands), a hairline
+  over the XP bar. The next-rank head is centred (emblem, To reach, RANK in
+  its colour, n of m done); "Rank challenges" / "<Rank> unlocks" are
+  centred small caps over hairlines; the case's plate is the same label.
+- Calendar countdowns: .cal-count-nav = prev arrow, the dots, next arrow
+  (2.1rem discs, 44px hit area, dim at the ends, smooth scroll one page).
+  The card also had no gap above it on a phone (0px) - 1.5rem now.
+- Chat panel on a laptop/landscape iPad: top = inset + .75rem + 4.4rem +
+  .6rem (it was cleared for the 52px button and sat 10px under the 4.4rem
+  one); in a test the button is 52px and the old rule stands.
+- Gates: check-b327z15 section & (EE) - all five checks fail on the round-26
+  commit and on 327z14 live. Section P and CC moved (no tiles; the pill on
+  the bar's middle). check-behaviour 'plate' moved (rank over level).
+- Caught by check-b327z15 BB: round 26's html.is-browser background
+  shorthand ended in var(--edge-bottom), which overrode
+  html.is-browser[data-layout][data-theme]{ background-color:var(--paper) }
+  - the root colour Safari paints its bars with became (35,35,34) against
+  a page faded to paper (18,22,27): the line under the bars would have come
+  back. Both rules end in var(--paper) now; BB measures 0 levels off.
+- Sign-in video (tools/record-sound.py sign-in, new): a demo account in the
+  fake cloud (J.Smith, code NOVA-2601 - not a real code), Welcome > Sign in
+  > the code typed > "This code belongs to" > Sync This Device > Home. It
+  showed "Save your sync code - it is the only way back" landing on Home
+  over "Welcome back", right after the code was typed in. Both sign-in
+  paths (Welcome's code screen and Settings > Sync > Link) now record
+  class26e.savecode.asked on this device when they succeed, so the banner
+  never asks somebody who just typed their code. (The demo account needs a
+  lastModified after FRESH_START_CUTOFF or the app rightly calls it
+  not-found.)
+
+## Build 327z15 round 28 - sign-up on a laptop: Welcome's planet is Home's
+
+"The sign up process, ensure it looks good on the laptop and stuff bigger
+devices too, that means the planet system is gonna have to get a lot
+bigger how big the main menu is so ensure they are the same".
+
+- Welcome in the laptop media query is Home's grid: the same three columns
+  (Home's own --lap-side / --lap-gap), the planet in the middle at Home's
+  exact width formula, translate 0 -1.125rem so it sits where Home's does
+  (measured equal to the pixel on 1366x638, 1440x820, 1920x970 and a
+  landscape iPad Pro 11 - was 217/394/466/400px against Home's
+  418/609/767/533). "Welcome to Nova", its line and the two buttons with
+  their captions are on the planet's left, ranged right like Home's words.
+  overflow:clip with a 2.5rem margin: the orbit layers' empty boxes made
+  8px of scroll at 1920x970.
+- The sign-up steps (code, New to Nova?, What this actually is, the class
+  pick): one group centred on the screen, zoom 1.15, the button 2rem under
+  the content (it was pinned to the floor, 120-185px under the last line).
+- Nova's introduction: he and his bubble one group in the middle (68rem
+  wide) instead of the bottom-left corner; he is up to 42vh tall, the
+  bubble 40rem with 1.5rem words.
+- check-b327z15 section * (FF): all three checks fail on the round-27
+  commit and pass now.
+- Short laptops: the steps' 1.15 is only under (min-height:45rem) - at
+  1366x638 it ran "What this actually is" to the floor - and the steps'
+  min-height is 100dvh - 5.5rem (4.5 left 16px of scroll).
+
+## Build 327z15 round 29 - the keys line, the badge count, every word centred, equal Stats tiles
+
+"The 'press 1-4 to pick an answer' ... only there if you are on a computer
+... iPads would count ... but not phones"; "In the profile box, it has your
+rank, and right under it is your level, your badge count should still be
+there as well"; "The word change in the change button next to your name,
+it's not centered"; "In the at a glance box in stats, the 4 boxes ... aren't
+all the same size"; "7 of 16 ... not centered. See rank ladder isn't
+centered. The word test history ... isn't centered (a lot of these aren't
+perfectly centered, fix them all)".
+
+- #hint (Press 1 through 4 ...) was hidden on every touch screen, iPads too.
+  Now only (hover:none) and (pointer:coarse) and (max-width:39.99rem) - or
+  max-height:31rem, a phone on its side. iPads and anything with a fine
+  pointer show it.
+- Profile: under the rank, ".pf-idsub" = "Level N · N badges" on one row
+  (the badge count came off with the tiles in round 26/27). check-behaviour
+  'plate' measures that row now.
+- Pills with an arrow (See rank ladder, the case's "N of 16 badges", Test
+  history): the same padding both sides, the arrow absolutely placed in the
+  right padding - the WORD is in the middle (was ~9px left). Test history's
+  outer button is even both sides too.
+- Letters up-down: text-box: trim-both cap alphabetic (with padding giving
+  back what it trims) on Customize's Change (every .profile-edit-btn, not
+  only the hero's), Find me, the pills; the week switch is an inline-flex
+  2rem chip with its letters in the middle.
+- Stats At a glance: grid-auto-rows:1fr - on a phone the second row was
+  103px against 84 (a two-line label).
+- tools/check-ink-centre.py: measures each screen at its top AND at its foot
+  (the pills were below the fold), adds Customize and the Calendar, measures
+  labels with a descender across (not up-down), screenshots each control by
+  itself (a scrolled page), clears the colour of children too (a pill's
+  inner span kept its letters), and for an arrow pill measures the letters
+  alone with the arrow's colour pinned.
+
+## Build 327z15 rounds 30-31 - the white magnifier, and Madison's laptop/sign-up batch
+
+Round 30: an Apple Music screenshot - "the magnifying glass thing should be
+white". [data-theme="dark"] .tabsearch-glass / .searchicon are
+rgba(243,245,247,.92); .searchicon has z-index:2 (the glass field's
+backdrop-filter layer was painting over the unit search's magnifier, which
+is why it still read grey); the board's "Search names" has the same
+magnifier (searchMagnifier()) with a 2.6rem start padding.
+
+Round 31, item by item:
+- Unit cards: the >=40rem rule gave the five-area grid six rows, so on an
+  iPad and a laptop the count sat under the name with the card's slack
+  below; five rows now (auto auto minmax(0,1fr) auto 1.15rem) and the base
+  bar row is minmax(.95rem,auto) so an earned badge (no bar) does not move
+  the count. The badge's top and right insets are equal (phone .55rem, the
+  375px phone too, tablet .7rem). The earned glow ends inside the badge's
+  width (inset -6%, fading by 64%; the emblem's halo 4px) - it reached 28%
+  past it, over the card's rim.
+- The daily question's disabled Submit was the white pill with its 55% white
+  words (the dark theme's white .next !important beat #44474B): excluded
+  in that rule's :where().
+- Laptop page name (#count, outside a test) is absolute at the top-left, at
+  the chat button's inset, level with its middle. A test keeps its header.
+- Stats on a laptop has no Back because it is a tab (Profile › Stats), as
+  on a phone - Home, Leaderboard, Calendar and the Profile tabs never have
+  one; screens you go INTO do.
+- Countdown card (laptop): each page centred, its contents zoom 1.35.
+- Find me's black (327z15) reverted: the field's glass again.
+- Start Studying is in the bar on a laptop: syncStartAction treats laptop
+  Home's .playbtn as the floating button (label "Start Studying", the play
+  mark); #homestart retired (hsPlace on=false); the bar is centred. The
+  Start pill from 40rem is 5.1rem tall (was 4rem in a 101px bar - a phone's
+  is 64px in 79); the main-menu tip's target is #bottomtab-start on a laptop.
+- The daily question on a laptop is a card (.dq-card) in the words' column
+  under the tagline: the real button (ring, reset, announcements) moved
+  inside it in normal flow, "Daily question" and today's state beside it.
+- Next question vs the line: the line was .foot's top border; gone.
+- Laptop sign-up: Welcome's two buttons stand centred under the planet
+  where Home's bar stands (fixed, side by side, captions under each); the
+  steps are one 44rem centred column with Back at its top-left.
+- Copy: "Built for one thing" - "Studying you'll actually enjoy. Every
+  question comes straight from your class's material, from the police
+  academy to fire code."; Virtual Room "against your class"; class pick
+  "Select your classes" / "Pick what you're studying for. More classes are
+  on the way, and you'll be able to add them later."
+- Nova's name field: user-select:text, cursor:text, a solid caret colour and
+  its own layer (the scene is user-select:none - iOS draws an unsteady caret
+  in an input under a no-select ancestor). Starter characters: a centred
+  wrap (3 over 2 on a phone, all five in a row from 40rem).
+- Save your sync code: not before a finished test, not during the tips,
+  only on Home.
+- scheduleNovaGoodLuck(): ten seconds after the main-menu tips end, once
+  (id goodluck-327z15), only while Home is up (otherwise it waits).
+- Gates: check-b327z15 GG (=) - every check fails on round 28 (0a83454); CC,
+  EE, FF and T moved (Start in the bar, the card, Welcome's buttons under
+  the planet, Find me glass).
+
+## Build 327z15 round 32 - laptop polish: no fades, the card bottom-right, the badge at the foot, sign-up placed
+
+- Nova's character and badge rows glide on a laptop: from 40rem the parade
+  is a 30rem window (was the whole stage, so every row measured as fitting
+  and stood still).
+- The daily question's Submit: already grey before a pick (round 31) and
+  dark words on white after; nothing more to change.
+- The laptop daily question card is a sibling of the panel again, fixed
+  bottom-right (right 1.5rem), its middle level with the bar's (bottom
+  env + 3.4rem, translate 50%), never into the bar (max-width = the room
+  between the bar's end and the edge, its two lines ellipsised).
+- No edge fades with a mouse: the Safari fades read --fade-top /
+  --fade-bot-solid / --fade-bot; (hover:hover) and (pointer:fine) sets them
+  to 0 on html.is-browser. Touch phones and iPads keep them (their Safari
+  bars are why the fades exist).
+- Unit cards: the badge is in the bottom-right - grid areas "box next next"
+  / "name name name" / "ver ver ver" / "count count badge" / "bar bar badge",
+  align-self:end, insets equal from the bottom and the right (phone 9px,
+  tablet/laptop 12px). The 26.5rem rule that shrank the badge beside the
+  next test is gone (they no longer share a row).
+- Select all joins the search field's own glass lists (with .searchbox and
+  Find me), and both take the magnifier's white for their words.
+- Laptop sign-up: the steps start at the top (the tablet ::before spacer is
+  off, justify flex-start, padding-top clamp(1.5rem, 8vh, 5rem)), so Back
+  and the title are at the same place on all four; the page's foot padding
+  is .5rem there (it made "What this actually is" scroll). Welcome's two
+  buttons are one above the other, fixed and centred under the planet; the
+  planet, title and line ride 3.6rem higher than Home's to make the room.
+- Gates: check-b327z15 HH (^) - all six fail on the round-31 commit. FF
+  moved (Welcome no lower than Home), CC/GG moved (the card bottom-right),
+  GG's badge check reads the bottom inset.
+
+#### 327z15, round 33 - an earned unit card's count at its foot; stale gates brought up to date
+
+- **"The amount of questions, on the unit card, that should be lowered once
+  you earn the badge so it's closest to the bottom border, all devices"**: a
+  mastered unit has no `.pick-barrow` (no bar is built when `earned`), so
+  `.picks > label.pick:not(:has(.pick-barrow)) > .pcount` takes rows 4-5
+  (`grid-row:4 / 6; align-self:end; margin-bottom:0`) and sits on the card's
+  floor beside the badge. Measured: phone 13px from the card's foot (was
+  29px, same as a card with a bar), laptop 17px (was 37px). check-b327z15 GG
+  allows two foot distances, one per kind of card.
+- Gates whose expectations this build changed on purpose, moved (each was
+  red on round 31 too, none on this round's work):
+  - check-b326-e: Nova's gap is 44h since the 327z15 quieter chat
+    (`NOVA_QUIET_MS`), so "the next one" is two days on, not one; the recap
+    scenario marks this launch's server copy read (`cloudConfirmedFor`) -
+    since 327z the recap waits for it, and the fixture has a code but no cloud.
+  - check-curve: Profile's blocks hold exactly their pills (See rank ladder,
+    the case count); tapping where you stand opens nothing (round 5); the
+    climb opens from See rank ladder.
+  - check-sync: the Hundos board's row ends with the bare count ("Billy5").
+- Centring, again ("a lot of these aren't perfectly centered, fix them
+  all"): check-ink-centre's foot passes had been measuring the WRONG
+  controls since round 29 - each pass numbers its controls from 0 and the
+  previous pass's data-ink-id was left on the page, so [data-ink-id] found
+  a stale one (Stats' week switch measured as Profile's tabs). Ids are
+  cleared per pass and each control is centred (behavior instant) before
+  its screenshot. That showed two real ones: See rank ladder 1.5px high on
+  an iPad (text-box was on the pill, a FLEX box, where it does nothing -
+  the words are a .pf-goal-foot-word span now, trimmed, as the case
+  count's .pf-case-num is) and Settings' buttons ("Add to Home Screen" 1px
+  high; .screen-settings .cal-profile-btn trimmed). All 96 within .5px.
+- Profile's "N total XP" under the bar is the line's grey (#AEB7C2) again -
+  the three-cards block made "Level N" that grey and left the total white
+  (321: "Total xp probably should be the same color as the other stuff").
+- The laptop page name (#count, round 31) adds the left safe-area inset: an
+  iPhone on its side at 85% zoom matches the laptop query, and it sat under
+  the notch.
+- Gates moved: check-behaviour's new-badge dot reads the case pill's ::after
+  disc (the text arrow is display:none since 327z10); a special hides the
+  flip-book by visibility (round 4), not display.
+- Tapping Profile on the bar from Profile's Stats or Settings only glided
+  that page to its top (the round-1 "tab you are on" short cut matched any
+  .screen-profile). It counts only when Profile's own page is up
+  (.profile-identity-tab:not([hidden])); from Stats/Settings the tab goes
+  to Profile, at its top at once. check-behaviour 10 moved (the new screen
+  waits a frame for the glass) and fails on round 31 (the glide).
+- Home on a 320x568 phone (max-height:36rem): the hero has 12px more under
+  it and the bubbles' floor is 1.5rem there (was 1.75rem) - the floored
+  bubbles bobbed into the greeting (1px clear) and Amethyst and Supernova
+  touched. check-behaviour audit_a measures the greeting's clearance over
+  2.5s of bobbing.
+- check-behaviour moved for this build's own changes (each passes on main,
+  fails here by design): Report a bug says "the Nova admin" (round 6); the
+  standing block is a div that opens nothing and See rank ladder opens the
+  climb (round 5); a locked rank's emblem is dark under a shade, no filter
+  (round 5); the case is the person card's surface, white .14 rim (round
+  27); an unfound secret flare says "Not found yet." (round 3); The course
+  is the countdown card's Graduation page (round 5); the rank orbit's own
+  centre is the planet's (its flares sit at HOME_SPOTS, round 15); the
+  whirl's flare-under-glass frames are counted over both devices (round 15
+  left a phone 3 crossings, an iPad none). 29 other check-behaviour
+  failures fail on main too (327z14) and are older than this build.
+
+## Build 327z15 round 34 - the intro hands over to Home without a shift, the name field's caret, sound in Safari tabs
+
+Madison, from the laptop sign-up video: *"When entering a username, the
+curser is glitched and starts flashing"*; *"when the transition from the
+intro to the Home Screen happens, it's not smooth. The planet system and a
+bunch of stuff shift at just a moment, the start studying button is in a
+weird spot"*; *"Please ensure the safari version is good to go. Ensure the
+sound and haptic is fixed and the stuff I've mentioned a bunch of times
+(like the layout not showing at the top and bottom) are all fixed"*.
+
+- **Home is laid out for its bar before the bar is there.** A new account's
+  Home is mounted under GENERATING PROFILE and Nova's introduction with the
+  bar off (onboarding not done), so it had no bar room: the laptop planet sat
+  32px lower and Start Studying stood in the top-left (syncStartAction only
+  carried it into the bar while the bar was up); a phone's title and Start
+  sat 64px lower. syncVisibility keeps `has-bottomtabs` on the body whenever
+  Home is on the stage; syncStartAction keeps the laptop's Home button merged
+  even with the bar down. Measured: identical rects before and after.
+- **The name field's caret.** The field is centred, so an empty one blinked
+  its gold caret in the middle of the placeholder ("Your us|ername").
+  Focused (it focuses itself 320ms in), the placeholder is transparent and
+  the caret is the text colour.
+- **Sound in Safari tabs again, without the ambience.** version.json
+  `"safariSound": true`. The Home ambience (its graph built on the main
+  thread, ~75ms at 4x CPU in Chromium, then 24s rendered offline and held
+  as a looping buffer) never starts in an iPhone/iPad browser tab
+  (`iosTabIs` in startAmbience and prewarm); every tap, answer and scene
+  sound plays. Haptics were already on there (327z14). The freeze that
+  twice followed sound was never reproduced off a phone: if it comes back,
+  `"safariSound": false` turns tab sound off with no build.
+- Safari's top and bottom: 327z14's sky under the bars and round 14's
+  no-line are unchanged and still pass; only a real iPhone shows Safari's
+  bars.
+- Gate: check-b327z15 II (~), all four fail on round 33 (ff6dc20).
+
+## Build 327z15 round 35 - the unit search's x, Review's bar as every other, no lag in Review, tabs answer sooner
+
+Madison: *"when searching the leaderboard by name, there's an x there to
+erase it. The unit selection screens search bar is missing this"*; *"In
+review ... The bottom tab becomes a lot different, the bottom tab gets
+pushed together, it should still look identical ... Ensure the search
+button is fixed along with it"*; *"I'm still seeing a lot of lag, like when
+in review, using the search function it lags, when hitting the drop down
+there is lag. When using the bottom tab, there is lag, when opening
+different screens or clicking stuff, there is lag/delay."*
+
+- **addSearchClear(wrap, input)**: the board's x (`.rank-search-clear`) in
+  the unit picker's and the Virtual Room's "Search units", there only while
+  something is typed; clearing fires the field's own input event, keeps
+  focus. Safari's own cancel button is hidden in `.searchwrap`.
+- **Review's bar is the bar** (327z10's narrowing and side-by-side pair
+  removed): `#tabsearch` is a 52px glass circle over the bar's right end
+  (TS_GAP+4 above it); tapped, it opens into a field the bar's width just
+  above the bar (clear x, Enter keeps results); an empty field that loses
+  focus folds back; a touch on the bar closes it on the way. The keyboard
+  lifts the field only. `.backtotop` stands its height + 10px higher while
+  the search is registered.
+- **Review's list builds lazily and filters in place** (showAnswerReview):
+  a unit's questions are built the first time it opens or a search reaches
+  it and kept (`nodeOf`); a search shows/hides built ones (110ms after the
+  typing stops; an emptied field at once); `.review-question` has
+  `content-visibility:auto`. Six units at 4x CPU: open 630ms -> ~130ms,
+  nodes 4,251 -> 66; a keystroke ~260ms -> ~30ms; a drop-down's slide six
+  50-120ms frames -> one ~60ms (with the idle warm-ups waiting, as they do
+  under a finger).
+- **TAB_SCREEN_AFTER 290 -> 170ms** (from the press): his iOS reference
+  changes the page at ~215ms; a tab's screen now starts building just after
+  a quick tap's release, while the glass is still crossing. check-b327z15 F's
+  "closer than the glide" threshold follows (170).
+- Measured, not changed: the idle badge warm-ups (warmBadgeStrikes, 50-240ms
+  slices at 4x, one 66ms at 1x) already wait 2s after any touch and 1.6s
+  after a screen goes in; Home's cost in headless Chromium is software
+  raster, which a phone's GPU does not pay.
+
+## Build 327z15 round 36 - no frost on what scrolls
+
+Madison: *"Ensure the bottom tab lag is not there, the pill/bubble lags and
+isn't extremely smooth. Ensure each page opens extremely smooth."*
+
+- Measured first. The lens, the platter and the bar's swell are all Web
+  Animations of transform/opacity (compositor; builds 310, 327z5-13). At 1x
+  CPU every screen idles at 60fps; a tab switch's own code is small
+  (navRun ~15-18ms at 1x, Home 18ms, no long tasks in 2.5s after arriving).
+  What is left of a switch is drawing - the GPU's on a phone.
+- **No backdrop blur on anything that scrolls.** 30 kinds of card, row and
+  section (`.pick` x16 on the unit screen, `.pf-goal` 360x562, `.cal-monthview`
+  360x512, `.cal-month-head`, `.rank-row`, `.modecard`, `.settings-card`,
+  `.points-progress-sect`...) carried the floating controls' 24px frost with
+  `will-change:backdrop-filter` (a layer each). A blur behind something that
+  moves is redone every frame on iOS - every frame of a scroll and of a
+  page's entrance. Their fill was 62% dark over the dark sky (the next-rank
+  card opaque), so the frost was all but invisible: one override at the end
+  of the main style block takes it (and the will-change) off and makes the
+  pane 70% (`--surface-1/2` on those elements) so no star shows through.
+  Pixel diff against before, seven screens: mean < 0.8 levels, < 0.03% of
+  pixels over 20 levels (a star's 3px dot, and the tab bar's own glass now
+  seeing crisp cards under it). What floats keeps its glass: the tab bar,
+  the chat / daily question / room chat buttons, Pause, the search pills,
+  Find me, Select all, back to top, every pop-up.
+- Not measurable here: the phone's GPU (headless Chromium rasterises in
+  software). Confirm on an iPhone.
+
+## Build 327z15 round 37 - the bar under Nova's goodbye, a welcome before the tips
+
+Madison: *"the bottom tab doesn't appear at first though, it takes a second to
+load in"*; *"The tool tips show up almost instantly, wait like 2-3 seconds.
+The first thing that should pop up should be a centered one that says welcome
+to nova (username) let me show around ... And then the first tool tip. Ensure
+all the tool tips are good to go as well"*.
+
+- The bar is there under the introduction: onboarding completes at the
+  character pick, but syncVisibility only ran on a stage mutation, and none
+  came until the intro ended and Home was built again. It shows now whenever
+  Home is on the stage under `#nova-intro` / `#genprofile-overlay` (z 360 /
+  400 over its 200, so it is uncovered with Home), and runs again on body's
+  own children coming and going.
+- The tips wait 2.5s after Nova goes (both sign-up paths), and open on a
+  CENTRED step: `{ center: true, text }` in startSimpleTour (the bubble in
+  the middle of the screen, no line or dot) - "Welcome to Nova, <name>! Let
+  me show you around before you start studying."
+- The tab tips follow the bar's order (Home, Profile, Leaderboard,
+  Calendar; were Home, Leaderboard, Profile, Calendar). Every step on an
+  iPhone 17 Pro Max, a 375x667 SE, an iPad landscape and a laptop: on
+  screen, its line on its target.
+
+## Build 327z15 round 38 - the welcome in one line, Version 9's notes caught up
+
+- The new account's centred welcome: "Welcome to Nova, <name>! Let me show
+  you around." (Madison did not like the "...start studying the moment they
+  are done" tail).
+- RELEASE_NOTES Version 9 (still the live version; this build adds to it):
+  Sound Effects says sound plays in a Safari tab too, Home's ambient music in
+  the installed app (round 34); Nova's Introduction says a new account picks
+  its username and first character with him, then he shows you around Home;
+  "Faster Screens" (Better In Version 9): tabs sooner, Review faster, lighter
+  scrolling, the clear buttons. check-b327z15 K: 122 titles, none twice, no
+  exclamation marks.
+- tools/record-sound.py: `--mode installed|safari` and `--device phone-safari`
+  (440x838) for the tab-bar videos.
+
+## Build 327z15, round 38 (2026-10-25): Version 9.2, Firestore savings
+
+"This is gonna be version 9.2". RELEASE_NOTES gains a 9.2 entry at the top
+(New In / Better In Version 9.2) describing this build; Version 9 keeps only
+what shipped with it. Home's "Version X" / "vX" read RELEASE_NOTES[0], so they
+say 9.2. The What's New card (WHATS_NEW_320, INTRO_REV 5) is unchanged.
+
+Firestore check (live, via tools/firestore-admin.py helpers): progress 162
+docs (62 __floor) ~8.8MB, largest 249KB; leaderboard 43 rows 62KB; vrooms
+164 docs 237KB. Storage is under 1% of the 1GiB free tier. Reads are the
+tighter limit (~18-22k a normal day, 35-45k heavy, of 50k), ~60% of them
+whole-board reads. Done, all invisible:
+- fetchBoardForInvites: the first fetch of a launch (and one every
+  BOARD_FULL_MS = 6h) reads the whole board; later ones query
+  lastModified > last fetch - BOARD_DELTA_SLACK_MS (10 min, for slow phone
+  clocks) and merge by pub. Removal is only taken from a full answer. A
+  refused query (boardDeltaOk=false) goes back to full fetches.
+- sendOffline writes once per hide (offlineSent, cleared by a beat): iOS
+  fires visibilitychange then pagehide on a close. Same for the chat's away
+  mark (chatAwaySent); the hide now also clears the typing dot.
+- writeLeaderboardRow no longer sets lastHeartbeatAt: presence is read from
+  the presence doc first (isOnline), so a row push that reset the beat left
+  it up to 4 min stale and friends showed offline mid-test. (Bug fix.)
+- The Friends screen's whole-board listener detaches when no
+  .screen-friends is on stage (it used to live for the rest of the session).
+Left alone on purpose: room beat while hidden (a host could drop a player
+who switched apps); marking vrRetroDone at publicId mint (could skip an
+old account's backfill; saves ~330 reads per new account only).
+Asked Madison (not done): chat beat only while the dock is open; __floor
+cadence on hide; leaderboard rows publish `chats` (group chat codes).
+Gate: tools/check-b327z15-fb.py (A-D), fails on the previous build.
+
+Sign-up with Nova: Home is built under him before the name is asked, so the
+fade showed "Good evening" and then ", <name>" popped in on the rebuild.
+homeGreetingText() is shared and novaSignupCreate() refreshes .homegreeting.
+
+"Ensure the what's new card doesn't show up for users signing up.. wouldn't
+make sense." Both sign-up paths already marked it seen (novaSignupCreate,
+showHome's pendingMainMenuTour branch). Gap closed: maybeShowIntro's attempt
+now waits while #nova-intro is up, and during a sign-up (signupInNova) it marks
+What's New seen and stops - a device whose older account never saw the card
+showed it over Nova. Gate: check-b327z15-fb.py E (fails on the previous build).
+
+## Build 327z15, round 39 (2026-10-25): Madison's answers on the Firestore list
+
+- Chat codes off the public row ("the one you recommend to remove ... do
+  it"): buildLeaderboardRow no longer writes `chats`. No reader used a
+  classmate's row.chats; the account copy keeps the list. set() replaces the
+  row, so each person's next push clears theirs.
+- Chat online ("it should show if someone is online ... maybe there's a
+  better way to save usage"): CHAT_BEAT_MS 120s (was PRESENCE_BEAT_MS 45s)
+  and chats read members with CHAT_STALE_MS 330s
+  (presentParticipants(members, CHAT_STALE_MS)). Hide/pagehide still mark
+  away at once, so only a crashed app shows "here" longer. 120s < the 150s
+  older builds allow, so they still read new builds right. Virtual Rooms
+  unchanged (45s / 150s).
+- __floor on hide ("save less often while hidden ... still work properly"):
+  a hide pushes the account as before; the floor only if its last write is
+  over FLOOR_HIDE_GAP_MS (3 min) old - pushToCloud(true) and publishNow's
+  floor-only branch. The floor trails the account by at most 3 min of play.
+- "Your test was interrupted" is gone ("sounds like the app broke ... maybe
+  it doesn't show up and when you hit start studying it asks if you want to
+  continue"): scheduleResumeOffer now marks a lost run saved + `unfinished`
+  (markRunSessionSaved(true)) and releases Home's held unlocks; Start
+  Studying's offer reads "Continue your test?". showResumeOffer is unused
+  but kept. In RELEASE_NOTES 9.2 as "Continue Your Test".
+- What's New for 9.2 ("not much should change ... device layout ... bug
+  fixes and improvements can be one"): INTRO_REV 6; WHATS_NEW_320 gains
+  devices92 ("Made for every screen") and fixes92 ("Fixes and
+  improvements") first. Sign-ups still never see it.
+Gate: check-b327z15-fb.py F-J (all fail on the previous build).
+
+## Build 327z15, round 40: tab bar joins, leaderboard pace
+
+"The bottom tab smoothness is really good but it didn't seem perfect, I saw
+a little rigidity." The tab videos run on record-sound's virtual clock, so
+main-thread builds cannot show as stutter there: what showed was the motion.
+Frame by frame (30fps): the glide is clean, but its tail crept for ~170ms
+while the lens waited out minUp 300, then settle [520, .62] dropped it into
+the platter in ~2 frames. Now minUp 240 (the landing starts with the glide
+~90% there, so the glide runs into the shrink), settle [380, .7] (softer,
+~5% over), and LENS_DT 1000/120 (WAAPI interpolates keyframes linearly; at
+60 per second a 120Hz iPhone saw a speed step every other frame).
+
+"Maybe to save space the leaderboard can update less often": ROW_SCORE_PUSH_MS
+90s -> 5 min. Only lazy fields wait on it (mid-run that is `correct`); XP,
+level and hundos change at a run's end and are flushed at once. Each row
+write is a read on every open board.
+
+check-savetest section 10 rewritten for round 39 (no Home pop-up; unfinished
+saved test; Start Studying offers it).
+
+Round 40b: "Remove the 'mock is now a real test' that's not a thing, all we
+did was change the name ... we want it to fit on the screen so don't make it
+scrollable." The `modes` row is gone from WHATS_NEW_320, and Version 9's
+"Exam Is Now Mock" history entry now only says it was renamed (Mock always
+held feedback to the grade). Every row's body is one sentence. The rows sit
+in .intro-rows; showIntroPopup's fit() zooms only that block (heading and Got
+it keep their size, the button stays 48px) down to .7, and below ~.78 (a
+4-inch SE) the rows show their titles alone (.is-titles). The overlay does
+not scroll (.intro-pop:has(> .intro-card-compact)). Measured: iPhone 17 Pro
+Max .947, Safari .915, iPad landscape .877, laptop 1, SE titles only.
+Gate: check-b327z15-fb J3-J4.
+
+Round 41: "When friend requests come in, when people message you ... can they
+be the same Liquid Glass thing ... like the save your sync code pop up?"
+Requests and invites were already buildAppBanner. The message previews
+(showChatPreview's ping and the lobby/room chat's alert) were the older
+flat .vroom-chat-alert strip. dressMessageAlert() puts the account banner
+on them (classes app-banner-icon/-body/-tag/-title/-sub, chevron, kind
+colour bar: chat purple "MESSAGE", room blue "VIRTUAL ROOM"); CSS
+.vroom-chat-alert.is-glass at the end of the main <style>, same insets and
+width as .app-banner; both placed with placeTopBanner (under the chat
+button). .vroom-chat-alert-who/-text stay on the title/sub for the gates.
+Gates brought up to date: check-chat (banner measured at rest, "directly
+under the button" since 327z5; What's New words without quiz/Mock),
+check-b326-e (Version 9's note, now RELEASE_NOTES[1]).
+60fps tab recordings old/new: the old lens held near-still ~8 frames then
+dropped; the new one runs from the glide into a ~5 frame shrink.
+
+Round 42: "Seems like some of these buttons word aren't centered. Ensure all
+buttons are good to go" (a banner's View). check-ink-centre never opened a
+pop-up; it now also measures every banner (View, Save it, Join, Accept),
+What's New, the Continue your test offer, the tips, the chat dock's three
+tabs and Welcome, on the 17 Pro Max and the iPad. 15 were 1.2-1.9px high:
+.app-banner-act, Welcome's Continue (.cosmic-welcome-btn), #tour-next ->
+text-box:trim-both cap alphabetic (with padding given back on #tour-next);
+the chat dock's text "x" -> the banners' drawn x (inlined: BANNER_X_SVG is
+a var far below the dock's builder). 157 controls, ALL PASS; fails 15 on
+the previous build.
+Round 42 also: the round 39 floor-on-hide gap (FLOOR_HIDE_GAP_MS) is undone.
+check-sync's "leaving the app puts the latest progress in both, at once"
+failed ([99, 89, 99]): the floor trailed the account by the last few
+minutes. Madison asked for fewer writes only if it "still works properly",
+so the floor goes on every hide again; a hide with nothing new already
+writes none (publishNow). check-b327z15-fb H2 now asserts that.
+
+Round 43: "Lobby invites to virtual rooms and stuff, the same treatment ...
+Any other relevant pops similar need the same look? ... ensure they are all
+complete." Rendered every pop-up side by side. Already the banner: friend
+requests, lobby/chat invites, Nova's challenge, the daily question, the
+passive lines, toasts (bottom, by design), and the message previews (41).
+Not yet: the update notice and the two Home Screen notices (add to Home,
+re-add with the code). dressNoticeBar() in showNoticeBar gives them the
+kind bar, glyph and tag (UPDATE blue, HOME SCREEN amber) and the drawn x;
+clearNoticeOfChat now settles a glass notice under the chat button at full
+width like the banners. Their buttons were ~33px: now 44px, letters
+centred (display:inline-block + text-box trim; a flex button's anonymous
+text item is never trimmed). check-ink-centre measures the three notices
+too: 177 controls, ALL PASS.
+Left as they are on purpose: the celebration banners (rank up, badge
+found, character/theme unlocked, secret flare) - their own designed pill,
+not a notice.
+
+Round 44: "The word update in the update button is not centered, I thought we
+fixed this already? ... the ones I circled? Idk what these pop ups are or why
+they are a thing ... Check the others". His grid was the pre-fix audit shot
+(the Update button there is the old 33px one; fixed in round 43). The
+circled pills: showTierUpBanner, showFlareFoundBanner, showThemeUnlockBanner
+have no callers; showCharacterUnlockBanner is reached only through
+announceCharacterUnlocks, which has none (and showChallengeUnlock's catch) -
+none of them is ever seen; their moments are cutscenes and centre cards.
+("undefined - the 0th" was the audit script's call, not the app.) The one
+still reached is showTierUpStyleBadgeNote: Reduce Motion's stand-in for the
+badge cutscene. It is now a passive account banner (showDailyAlert with
+iconEl: the badge, BADGE FOUND, "<badge> is yours.").
+
+Round 45: "You see how great the view button looks? It has the 3d look ... The
+other buttons in the pops don't have that. The got it button doesn't match.
+The update and home screen one don't have it". The notices' buttons
+(.update-banner-btn and .ghost, glass notices only) wear the banner action
+pill's computed values: #ECEFF3 face, #1A2027 ink, 700 .8rem, the inset lit
+top / shaded lip and the three drops; scale .96 on press. The resume offer
+keeps its light + dark pair (the app's two-choice convention). Ink check
+177 controls ALL PASS.
+
+Round 46: "ensure none of the buttons work when going through the tool tips.
+It looks like the chat button isn't greyed out like the others. So ensure
+only the next button works." The chat dock (z 300) sat over #tour-overlay
+(205): lit and tappable through every tip. body:has(#tour-overlay) puts the
+dock at 200, under the dim with the tab bar, unless a tip is introducing
+the chat button (.is-introduced keeps it lit, pointer-events none). Probed
+every 12px on phone and laptop through all main-menu tips: only the tips'
+own layers answer.
+"after ranking up, when in profile at the end of the cutscene ensure the
+chat and button tab slide from the bottom and top ... applied anywhere else
+where appropriate." Already so for the rank-up journey (rankUpNewScene ->
+setCutsceneFocus, cutscene-return slides them back), the badge case,
+Supernova, the badge/void/room cutscenes. The unlock spotlight (.rs-spot)
+was not a scene: the controls sat dimmed under it and never moved. It is in
+CUTSCENE_SCENE_SEL now - out as the card comes up, back when it goes, and
+banners are held meanwhile. check-b327z15-fb K, L (fail on the previous
+build); A4/A5 read the first fetch only (a second refresh can land).
+
+Round 47: "The iPhone SE layout ... Why is the planet system so tiny and the
+start studying button massive? Why is the bottom tab like that? ... the se (or
+any smaller phone) has really bad proportions." An upright SE fell into the
+short-window tiers (max-height 38/36rem, written for laptop windows and
+phones on their side): a 139px planet, 147px empty over a 79px bar.
+@media (orientation:portrait) and (max-width:26rem) and (max-height:46rem)
+(SE 1 at 320x568, SE 2/3 at 375x667): Home's planet min(92vw, 23rem,
+100dvh - 19.5rem) (SE1 139 -> 226, SE3 197 -> 277), greeting .86rem, NOVA
+2rem; the tab bar compact (67px: tab padding .62rem .2rem, 1.5rem icons,
+.62rem labels); the daily question 5.7rem up so Start Studying clears it;
+Welcome's planet min(92vw, 23rem, 100dvh - 21rem) (SE1 176 -> 218, SE3 207
+-> 311). Welcome's two buttons are 44px on every phone (were 37-38).
+Under 360px wide the screen panel's side padding is 4px (the wrap's 20px
+and the panel's 20px stacked to 40 a side: 240px of 320 for every card;
+the leaderboard name read "J...."); Find me .75rem a side there so "Search
+names" is whole. The wrap itself is untouched (CLAUDE.md).
+
+Round 47 gates: check-b326-f brought up to the decisions made since it last
+passed (rounds 31-36): the unit card's badge in its bottom-right corner, a
+found card's count at its foot (round 33), the scrolling panes' denser
+no-frost fill (round 36) and Settings' .8 cards; the lit Virtual Room pill
+is #ECEFF3 on a light accent. Two real fixes it found: the Virtual Room's
+bar kept saturate(1.8) when the tab bar went to 1.25 (now the same frost),
+and under .is-lighting the pill's base was the accent, not the lit white
+(#E7EDF1 vs #ECEFF3 on ink/titan) - now var(--vroom-lit). check-b327z z11
+sets character art aside (its sway follows the row's own live state; failed
+the same way on round 38's build).
+
+Round 48: "Ensure the spacing of the words here in the pops are good to go, and
+ensure the icons/colors makes sense. Why is the icon for virtual room a home?
+Why does one say Alex sent a message and why does one say Alex? Why is one
+orange? This isn't cohesive." Every banner now reads as a title over its
+line, iPhone-notification style:
+- requests and invites: the name over what they ask ("Alex" / "Wants to be
+  friends.", "Invited you to a Virtual Room.", "Invited you to a chat.",
+  "Nova" / "Challenged you to a match.");
+- messages, chat and room alike: the sender in the ink over the message (the
+  room's orange race colour and "sent a message" title are gone); the tag
+  and its colour say where it came from;
+- save your code: "Save your sync code" / "It is the only way back if this
+  device loses its data."; showDailyAlert splits "headline - the rest" at
+  its em dash (bannerTitleSub) so the daily and passive lines read the same;
+  the welcome banner's tag is SIGNED IN (it said WELCOME BACK over "Welcome
+  back"); the update notice "A new version is ready" / "Update to get the
+  latest." with the banners' padding and gap;
+- the Virtual Room glyph is three people (a room is people studying live),
+  not a house; one type rhythm in every banner (tag, title .94/1.25, line
+  .8/1.3 .1rem under), including the button-built room alert.
+Gates brought up: check-b327z5-c (SIGNED IN; the daily button's soft rim
+under its ring), check-save-code (its account has a finished test - the
+reminder has waited for one since round 31; failed the same on round 38).
+
+Round 49: "Ensure the isn't any log [lag] when opening a test, going through a
+test, opening the units, the test start menu, or when loading home". Measured
+(tools-style probe, 4x CPU, 3 runs, branch vs main): every step is level with
+main or faster; answering and the next question 20-55ms; the one per-session
+cost is the sound engine's AudioContext on the first tap (~30ms at full speed;
+iOS needs it made inside a gesture, check-b327-a). With animations paused the
+start sheet is 15ms of script and 14ms of style at full speed on both. The one
+script hotspot was equalizePickHeights: it measured every unit card (a forced
+layout of the new screen) up to three times per open - on the first layout,
+the next frame and fonts.ready - 22ms at full speed, ~90 at 4x. Now it
+measures once (ResizeObserver), keeps the height per list width and card
+count (pickHeightAt), applies it at once on a later open and re-checks in an
+idle moment; fonts.ready only when the fonts are not loaded yet. Units opened
+again: 104ms at 4x (main 137). Equal heights hold on a first open, a second,
+rotated and back. Home's planet still runs two SVG animations (pulse ring,
+core flare) on the main thread - noted, not changed.
+Round 49 gates: check-fixes' fixture owes a character, whose spotlight (a scene
+since round 46) slid the chat button out and held the daily banner mid-check
+(153 failures, none on the build before 46): owed unlocks are marked shown
+first. The SE layout (round 47) now applies in the installed app only
+(html:not(.is-browser)): in a Safari tab the bars left too little height, Home
+scrolled and showed the fallback seam at its foot, and on a 320x458 tab Start
+Studying met the daily circle; a tab keeps the short tiers (the 320px width
+fix applies everywhere). check-chat reads a message as sender + words (round 48).
+
+Round 50: "Look at the placement of the bottom tab in relations to the bottom of
+the screen ... Some are too close and some are too far away" (with Instagram and
+a subscriptions app on iOS 26 as the reference: the floating bar's lower edge
+~22pt off the bottom, over the home indicator's zone). One value now places
+the bar: --tabs-bottom = max(12px, inset - 12px) - 22px on a Face ID iPhone
+(was .6rem + 34 = 44), 12px with no inset (SE, a Safari tab; was ~10), and
+from 40rem max(16px, inset - 4px) (iPad 16, was 30). The vroom setup bar, the
+corner back-to-top, the daily question circle (phone, tablet, the laptop's
+card, the SE), the tablet version label and a test's Next pill are written as
+--tabs-bottom + their old offset over the bar, so they moved with it.
+--tabs-drop (how far the bar came down) is given back from .wrap's 8rem
+bottom reserve and --panel-reserve, so every screen still ends the same
+distance above the bar and Home's centred column keeps its spacing.
+SE (installed, upright small phone): "the se start studying button still
+doesn't look proportional". The screen's 20px side padding held a 320px SE's
+planet to 240px while Start stayed a big phone's 168x46: Home's panel gets a
+phone's .45rem sides, the planet's cap is 100dvh - 17.5rem (was 19.5), and
+Start is .95rem with min-width released - 153x44, ~0.57 of the planet, the
+ratio a 6.1" iPhone has (200 / 352). The daily circle sits 13px over the
+shorter bar and 19px in from the edge, clear of Start.
+sweep-layout (MOVED IN): a .bottomtab may enter the bottom inset but must
+clear the indicator pill (21px off the bottom); everything else still keeps
+out of the whole inset.
+Round 51 (SE, installed): "start studying button is still huge and not close
+enough to the bottom tab. The daily question button is big for the screen
+too". The planet now takes the screen's width (min(100vw - 1.5rem, 23rem,
+100dvh - 17rem), outside the panel's padding) so the column reaches down to
+the bar: Start Studying is 142x40 in .88rem words (an ::after keeps the 44px
+tap area) and sits 36px over the bar on a 320x568 SE (was 61-84), 26px on a
+375x667; the daily circle is 2.4rem (was 2.6). The other SE screens (units,
+modes, a test, leaderboard, profile, calendar) were walked: nothing clipped.
+
+## Build 328 - the rest of Level 1 (Oct 25)
+
+Madison: "The instruction has finally added multiple new units ... THIS IS
+everything from level 1 in the class", with every study guide downloaded again
+(26 files, 25 different: CCP twice). Parsed with python-docx (scratchpad
+parseguide.py): a question is a numbered line or the first line of a block,
+choices are lettered lines or list items, the answer is the highlighted one
+(every question in all 25 guides has exactly one). Matched to the bank by text,
+not number. Questions are word for word the guides, typos included.
+
+- **Existing units, what changed in the guides** (refs and editing notes aside -
+  refs were left as they are; the guides added more "Googled"/Quizlet notes):
+  CCP #4 and #20 choices (capitals; "All of the above"); Missing #1 ("commit"),
+  #6 and #13 (capitals), #14 (a comma), #27 ("IBM's Vice President"); Sexual
+  Assault #7 ("the methods"), #9 and #13 (capitals); US/TX #13, #15, #28 wording,
+  #42, #43, #66 choices; Verbal #3 ("an oppressive, or a tyrant"). Each with
+  keyText/keyChoices pinned the first time it changes. KEYS of all 912 old
+  questions are byte-identical (check-b328-level1 328a).
+- **Arrest #66** had lost choice A ("12 hours") into its ref at the first import;
+  restored (answer 48 hours, now index 2), keyChoices keeps its identity.
+- **Arrest #31 / #55** (one question twice): the 8-28-26 guide marks D on #31 and C
+  on #55. Madison is asking the instructor; both count C (build 325) and carry
+  `verifyNote` - buildBankNote draws it in the same red note as bankNoteAnswer:
+  "Being verified. An admin is verifying this answer with the instructor ...".
+- **Penal #243** (letter bomb): "The answer is the one about false report" -
+  answer 1, False Alarm or Report (the guide still highlights Terroristic Threat;
+  its ref is PC 42.06, False Alarm). Sexual Assault #30 is gone from that guide.
+- **Sexual Assault** was renumbered to the new curriculum (36 questions): fifteen
+  are no longer in it (4, 5, 6, 8, 10, 11, 19, 23, 25, 30, 31, 36, 38, 43, 45) and
+  are RETIRED as `versionOnly` with no version - out of the unit, tests and the
+  daily pool, every index and key where it was. #47-51 are new (#51 is #9 again,
+  worded "without the consent"). Missing #46 is new.
+- **New units** (all appended at the END of QUESTIONS, src = guide number):
+  Consular Notification 9, Crisis Intervention Training 67, De-Escalation 22,
+  Health and Safety Code 26, Interacting with Deaf or Hard-of-Hearing 11, Radio
+  Communications, Alerts, and TCIC-TLETS 15, Traumatic Brain Injury 12, and
+  Phonetic Alphabet and Military Time 39 - written for the app from the two
+  handouts: 26 letters (right word + the NATO word where it differs + two names,
+  same first letter) and 13 times from the sheet each way round. Refs split off
+  by the first citation-looking parenthesis; flash-card usernames stripped.
+- **Unit names shown** (`unitTitle`, UNIT_TITLES): CCP and Bill of Rights, Civil
+  Process, Verbal Communications - the guides' titles. The stored topic never
+  changes (it is part of KEYS and keys unitPerfects).
+- **Levels**: UNIT_LEVELS (Level 1 = every unit, complete; 2 and 3 empty). The
+  unit screen has the Leaderboard's segmented control; a level with picks shows
+  the count; an empty level opens a "Coming soon" sheet and the tab stays.
+  Level 1 has no "More units coming soon" tile. Chosen over a drop-down: every
+  level in sight, one tap.
+- **Badges**: bands 15/12/8/4/2 -> 10/8/6/3/2 ("15 goes to 10. 12 will go to 8
+  and so on ... [8] goes to 6"; 4 -> 3 is the "so on"; Penal stays 2).
+  BADGE_BANDS_VERSION 4 with LEGACY_BADGE_BANDS_279 as the "was": badges this
+  hands out are celebrated after the next finished test. Eight new outlines
+  (hexstar, shield, octagon, drop, lens, chevron, bilobe, hourglass) in the same
+  rounded hand; colours terracotta/teal/purple/emerald/orange/crimson/amber/pink
+  as nods. A first try had a thin 4-point star (all silver), a tablet that read
+  as Verbal's disc and a pentagon like CCP's: replaced. 24 badges sit six by
+  four (badgeCaseGrid takes a full rectangle up to two columns wider than the
+  square one); `.bc-wide` draws that case wider so badges keep their size -
+  four by six put the open lid off the top of a phone.
+- What's New 9.2 leads with "All of Level 1"; RELEASE_NOTES 9.2 has three items.
+- Gate `tools/check-b328-level1.py` (fails on ba173e4).
+- **Oct 26 (same build):** the instructor's email - "Your next test will cover the
+  CCP and Arrest, Search, and Seizure ... on Monday, November 2, 2026" -
+  TEST_TOPICS["2026-11-02"] = CCP and Bill of Rights, Arrest, Search, and Seizure
+  (nextTestUnits matches a topic by a unit's stored name or its unitTitle).
+  "CCP ... we have a different title (update it) update this app wide": the
+  unit shows as CCP and Bill of Rights everywhere a unit's name is drawn (cards,
+  details, version pop-up, run and Pause labels, results list and breakdown,
+  history, Virtual Room chips, badge titles and cutscene). "on Monday at 9pm, the
+  [penal] code slide version will be removed": PENAL_VERSIONS_END_AT (02:00Z Oct
+  27 = 9 PM CDT); from then UNIT_TEST_VERSIONS["Penal Code"] is undefined - no
+  pop-up, no card tag, no note, and a saved "test" choice is the whole unit.
+  check-b328-level1 328g holds both sides of 9 PM.
+- **9 PM handover:** nextTestEntry() treats a test day as past from 21:00 local
+  (TEST_DAY_HANDOVER_HOUR) - "it shouldn't [show] next week's test and this test
+  showing as next test". Before 9 PM Monday only Penal Code carries the mark;
+  from 9 PM only CCP and Arrest (check-b328-level1 328g, America/Chicago).
+- **Phones' unit cards:** no hundo bar under 40rem (the hold card keeps it); every
+  card's count spans the count/bar rows, end-aligned, so all sit on one line beside
+  the badge. iPads and laptops unchanged.
+- **Top pop-ups** (.daily-alert, which every showDailyAlert banner is): .34s fade,
+  .52s rise from -14px with a soft overshoot (was .22s / -8px).
+- **Search bars and Find me:** every input.searchbox's words come down 2px (measured
+  at 2x: the glass and Find me centred on the field, the placeholder 2px high);
+  Find me is the field's 17px at weight 500, white (was 15.2px/700).
+- **Back pills:** left padding 1.5px shorter (the chevron's viewBox air); ink gaps equal at 2x.
+- **Unit cards without the circle:** the name opens the card at its top-left; the
+  tick is a 1.6rem disc ON the card's top-right corner (half outside, so it covers no
+  word), popping in when picked beside the accent edge and glow; next test is a line
+  above the name. Count never wraps; under 360px the count is .66rem and the badge
+  2.1rem. No count/badge or name/edge overlap on SE, SE 2/3, iPhone 16 or iPad.
+- **Profile XP line:** no "to Level N" (pfXpToText returns "").
+- **Start Studying on every phone** (under 40rem): one rule - words clamp(.86rem, 4.1vw, 1.06rem), width clamp(140px, 46vw, 205px), height clamp(44px, 11.5vw, 50px). SE 147x44, 375 173x44, 6.1" 181x45, Pro Max 202x50 (was 168x46 / 200x46 / 216x61 by steps). Home still fits SE and SE 2/3 exactly.
+- **Upright iPads' planet:** max-width min(44rem, 53vh, 82vw) between 40rem and 64rem portrait (was 48vh): 11" 573 -> 633px, mini 544 -> 600; Home still exactly one screen; landscape/laptop untouched.
+- **Home on every phone, one layout** (portrait, under 40rem, installed and Safari):
+  the panel's height is its min-height (exactly the room the screen leaves); flex
+  column, centred; --hg = clamp(10px, 2.4dvh, 22px) sets every gap (planet->greeting
+  1x, words->Start 1.4x); the planet's box starts at min(100vw, 30rem) x .95 with
+  aspect-ratio 100/95 and flex-shrink, so it is the largest planet that fits (it draws
+  at .94 of its box); 3rem clear above for the chat button, 1.2 hg below. Measured
+  before vs after (planet->greeting / words->Start): SE 19/21 -> 21/19, Pro Max 97/56
+  -> 35/31; no phone scrolls (the 12 mini did by 3px); an SE-sized Safari tab's planet
+  69px -> 210px. Planet 94% of the width wherever the height allows.
+- **Welcome on every phone, Home's layout:** the same column/planet rules on
+  .cosmic-welcome (body.on-welcome); 2rem clear above. It scrolled on an SE (5px) and
+  an iPhone 16 (20px); now never. Planet (box) SE 197, SE 2/3 288, mini 342, 16 369,
+  Pro Max 414, Pro Max Safari 409. Home's planet box is min(100vw, 31rem) x .95 and
+  centred with margin 0 (auto margins pinned an overflowing box to the left); its
+  outer bubbles keep >= 20px from the screen edge on every phone.
+- **SE tab bar:** the compact bar's avatar is 26px (the others 24px; the 6.1" bar's ratio) with -2/-3px margins, so all four labels share one line (Profile's sat 3-7px low).
+- **Unit screen top (Oct 26 evening):** "The unit, above the search, all being above
+  select all. There must be a better way ... Does the function need to go above the
+  bottom tab, similar to the review mode?" The search is Review's glass circle above
+  the bar (registerTabSearch with withStart: over the bar's LEFT end, Start being at
+  its right), opening into a field just above the bar; it searches every level (a
+  query lifts the level filter). The "Units" label is gone (the page title says it);
+  the order is Back, the mode, Level 1-3, Select all, the hold hint, the cards.
+- **Next test on a unit card:** under the name ("not at the top above the words").
+- **Home's page reserves the bar itself** (--home-pb: tabs-bottom + 5rem, 4.2rem on
+  the installed SE's compact bar, + 6px) instead of 8rem: an SE-sized Safari tab's
+  planet 210 -> 242, a 6.1" Safari tab's 332 -> 364. Planet centring measured: the
+  ring's centre is the screen's centre on every phone; the core within 1-2px.
+- **Planet size, final for 328 (Oct 26 night):** "I don't necessarily want bigger, I just
+  want it to be sized perfectly" - the reference is the 327z14 Welcome in his Pro Max
+  Safari screenshot (outer ring 78% of the screen width). Box = screen width (ring 80%) on
+  any phone tall enough; shorter phones get the largest that fits, helped by the column's
+  top padding dropping to 1.25rem (the orbits are circles; measured, they clear the chat
+  button and the version tag as they turn). A 1.13x box (ring 94%) was tried and reverted.
+  Welcome's line under its title hides under 620px of height (as Home's tagline does).
+- **Welcome's bubbles are never lit** ("Why is the book flare glowing on the welcome
+  screen?"): buildCosmicHero lights a flare only with useTierIcons (Home).
+- **--tabs-bottom** gains a third term, .6 x the inset: a 24px Android gesture area had the
+  bar at 12px and the Start pill 2px inside it (sweep-layout). iPhones unchanged.
+- **Planet raised (Oct 26 night):** "you lowered it way too much. Raise it back up and then
+  fix the spacing of everything else". Home and Welcome columns are top-aligned (planet
+  right under the 1.25rem top), and the room left is shared by two auto margins: planet to
+  words, words to the button(s). Pro Max Home: planet top 158 -> 97, gaps 95/92.
+- **Unit screen:** the search circle is over the bar's RIGHT end (as on Review, over Start);
+  the level tabs' picked count is gone ("why is there 2 numbers of the same? It's random");
+  the level tabs sit 1rem under the mode chip ("really close to the name of the mode").
+- **Welcome's flares scale with its planet** ("They aren't proportional. The flares are the
+  same size as the planet"): they were a fixed 2.6rem (41.6px on a 263px SE system as on a
+  414px Pro Max one). Now 9.45cqw of the hero (the Pro Max's own share), places already in %.
+- **Welcome's small lines under the buttons step aside on screens up to 760px tall** (an
+  error in the hint still shows: it drops .is-quiet). Planet: SE 263 -> 301 (Safari tab
+  249 -> 298), SE as an app 285 -> 334, a 6.1" Safari tab 314 -> 351 (full width, as Home).
+- **Flare caption on Home (Oct 26 night):** "the words that show up when clicking a flare
+  will not fit". Cause: the planet-to-words auto margin was on `.cosmic-hero-wrap + *`, and
+  homeCaptionShow puts .home-caption right after the hero - after the first tap the words
+  lost their margin and jumped up 30-60px. Now named (.homegreeting / .cosmic-welcome-title).
+  Measured (cap.py, every flare): the caption sits in the gap, covering nothing, on mini,
+  iPhone 16, Pro Max and Pro Max Safari (main covers the greeting on mini/16/Pro Max Safari);
+  SE sizes fade the title for it, as main does.
+- **Start Studying higher:** the column's foot is 2.4 x --hg (was 1.2): Start to bar 48-62px.
+- **Welcome's icons** are 46% of their bubble (were a fixed 1.2rem inside scaled bubbles).
+## Another class, for one account (build 328, Oct 26 night) - NOVA_CLASS
+His words: "add a button on the left side that's a bubble, but it's a drop down ... how you
+access other classes you are enrolled into ... Your rank level and all that stuff would only
+show for that class ... I can't earn xp in one class and the leaderboard for police academy
+class 26 go up ... THIS ONLY APPLIES TO MY ACCOUNT NO ONE ELSE ... fire code class ... a
+fire symbol ... the police one can be like police lights ... The icon of the bubble can be
+for the class you are in."
+- **Owner:** publicId `xph5b57jbp5a` (Maddog, looked up with firestore-admin; a publicId is
+  public - it keys leaderboard rows - so it may live in the repo; codes may not).
+- **The switch** is `localStorage["class26e.activeclass"] = "ifc"` + a reload. The head
+  script (first <script>) honours it only when the academy's saved copy on this device is
+  the owner's; anyone else's key is removed and they stay in the academy.
+- **The sandbox:** every class26e.* key is redirected to class26e.ifc.* (device settings in
+  SHARED excepted), IndexedDB names get "ifc:", initFirebase() returns false and
+  setSyncCode() is a no-op - no cloud, no leaderboard, no code, nothing of the academy's
+  written. First visit seeds name/character/theme/seen-tips from the academy copy
+  (read-only, NOVA_ACADEMY_RAW) with every count at zero and leaderboardOptIn false.
+- **Questions:** IFC_QUESTIONS (after QUESTIONS) replaces the bank in place in that class.
+  Empty until he sends the guide; Start Studying and the daily question say "This class's
+  questions have not been added yet."
+- **The bubble:** Home's top-left, the chat button's twin (version tag steps right); icon is
+  the current class (police lights taking turns / a flickering flame); a "Your classes" list
+  drops from it, current one ticked; picking the other saves and reloads into it.
+- Gate: tools/check-b328-classes.py (fails against the build before).
+- Still academy-only content inside the Fire Code copy: calendar, test topics, unit levels,
+  badges/badge names keyed by academy topics - to adapt once the guide arrives.
+## Fire Code class built from the hand-off kit v5.4 (build 328, Oct 26 night)
+His words: "The drop down will be the bubble for the class you're currently in. When you hit
+the drop down there will be a + icon or the other classes you are in ... When you hit the plus
+you shown the class similar to what you see when signing up ... if you are already enrolled
+... say enrolled ... ours will be fire code and it's gonna IFC 2021 and HC Amendments ... In
+order to access the class you will need to input your own pdf copy of the 2021 IFC. (Ensure
+the loading screen for this is cool, like a nice green loading bar analyzing the document,
+make it take like 10-15 seconds ...) ... Put the drop down bubble thing on the left side below
+the planet system."
+- **Kit:** class26e-ifc-handoff-v5.4 (1,777 questions, 58 units, schema 5). Its
+  acceptance test (check-my-copy.mjs against the owner's own IFC, pdf.js 5.4.149) gave
+  "same-book check: EXACT", 1356/1356 IFC and 421/421 county references cut, "RESULT: this
+  copy behaves like the reference copy." The owner's IFC PDF and the kit's screenshots are
+  licensed book pages: NEVER in the repo (kept in the session scratchpad only).
+- **Files:** ifc/bank.js (tools/gen-ifc-bank.py from ifc_question_bank.json, every field kept:
+  the viewer reads them), ifc/ifc-viewer.js (the kit's viewer, unchanged),
+  ifc/harris-county-amendments.pdf (the county's public booklet, served for county clips).
+  pdf.js 5.4.149 is imported from jsDelivr only when a reference or enrolment needs it.
+- **In the class:** the head script document.writes ifc/bank.js; IFC_QUESTIONS makes the
+  app's fields (topic "Chapter 10: Means of Egress", src = position in unit, q, choices,
+  answer index, explanation) and keeps the bank's question as `ifc`. One level (no tabs), no
+  TEST_TOPICS. buildBankNote(item) returns buildIfcRef(item) for an `ifc` item - every mode
+  that shows an answer shows: explanation, "Reference: <citation.label>", and a "Show the
+  code" drop-down (opens by itself after a wrong first try): county = clip from the booklet
+  (+ whole page, Show as text); IFC = clip from the reader's own book (+ whole book page),
+  or a locked card with "Load my IFC PDF". Before answering (render -> ifcPreAnswer): a
+  blurred-definition picture with blurStem (42 questions, needs the book) and, in a Drill,
+  "Hint: show the code, answer hidden" (V.answerNumbers / V.hideAnswer). Rendered nodes are
+  cached per question (ifcNodeCache) so re-renders do not redraw.
+- **The book:** IndexedDB "ifc:class26e-ifc-book" (keys pdf, index), the same DB from the
+  academy (named in full) and from the class (the head script adds "ifc:").
+  ifcAnalyzeBook: page count, buildIndex, checkEdition, verifyCopy against the bank, save.
+- **Enrolling:** class bubble now under the planet at the left edge (placed from the hero's
+  box); it opens a dimmed stack of bubbles - other enrolled classes, then "+ Add a class" ->
+  showClassCatalog (cards with descriptions; "You're here" / "Enrolled" / "Enroll") ->
+  showIfcEnroll -> file picker -> runIfcAnalysis: the green analyzing screen (scan line,
+  bar, percentage, five steps), at least 12 s (IFC_ANALYSIS_MIN_MS) and never before the real
+  check is done; refused files say why. Enrolled classes: localStorage class26e.enrolled
+  (shared between classes). Still owner-only (classSwitchAllowed).
+- **To decide with him:** whether the code opens by itself after a wrong try (now yes),
+  whether Quiz/Exam should offer the Hint (now Drill only), a "show references during the
+  test" option, the class's own calendar/badges.
+- **Class bubble, second pass (Oct 26 night):** "more to the left and a little down" (left
+  .55rem, top = the planet's bottom + 2px); "don't like the black arrow thing" (the caret is
+  gone); "don't like the annoying flashing lights. Maybe a soft glow" (no animation: a soft
+  glow in the class's colour, coral/periwinkle for the academy, amber for Fire Code);
+  "the entire screen does not need to go blurry" (no scrim); "the + still needs to be connected
+  to the icons drop down ... same glossy look" (the list is one glass capsule that grows from
+  the bubble, the items glossy circles inside it, labels beside them). Lag: no backdrop-filter
+  on anything that moves, the catalogue's glows are plain gradients (no CSS blur), the
+  analyzing screen has no backdrop blur. Measured over the open and the "+": 0-1 frames over
+  50ms in Chromium; the real feel needs a phone.
+- **Nova greets a newly enrolled class:** class26e.greet.ifc ("pending" when enrolling, "done"
+  once he has spoken; shared between the classes, so SHARED has greet.*). First Home in Fire
+  Code: 8 short boxes (placeholders for how the class differs - rank/level fresh, the academy
+  untouched, the code with every question).
+
+## Build 329 (Oct 26, "More fixes", for the chiefs' presentation) - on the branch claude/b327z15-tabs, NOT main
+
+Corrections round after the class bubble (earlier this day, all pushed): auto-pause when the app
+is left mid-test (`autoPauseOnLeave`), `rsTapGuardUntil` (a tap in the 0.7s after results settle is
+ignored - the review-tap bug; gates wait 900ms before tapping), the classes screen as a 2-up
+`.class-cards` grid with a "More classes / Coming soon" box and "Enrolled" wording, the dropdown in
+glass, "Ref. IFC 2021, 1003.2" / "Ref. HC Amendments, 101.2.1" references, planet sizes per device
+(iPad 12.9 60vh, tall phones 3.5% smaller, Dell hero 440), smooth CDP-screencast videos.
+
+This round:
+- **Every button centred, and a gate for it.** A flex box does not trim its text, so
+  `.cc-status` (Enroll / Enrolled / Selected / Coming soon) and `.csi-label` ("Add a class") are
+  now blocks the height of their capitals with equal padding (`text-box:trim-both cap alphabetic`
+  + `calc((H - 1cap)/2)`); a word with ascenders (Enroll, Add a class) takes a 0.65-1.2px optical
+  nudge so the ink, not the cap box, is centred. `tools/check-ink-centre.py` now measures the
+  classes screen, the enrol screen and the open dropdown (the seed carries the owner's publicId)
+  and fails on the old build (6 fails) - the dropdown rows are skipped when closed.
+- **Class bubble = the daily question's size** (`place()` copies the fab's width into `--cb`), hover
+  and focus states for a mouse (class bubble, stack, cards). **A class new to you:** shared
+  `class26e.classseen` (default `["academy","ifc"]`, so a class added later is new): the bubble
+  gets a breathing ring (`cb-new`, transform/opacity only) and a corner dot, one banner on Home
+  ("Tap the class button to look"), and opening the list marks it seen (`unseenClasses`,
+  `markClassesSeen`, `maybeNewClassBanner`). To announce a new class: add it to `NOVA_CLASSES`
+  and `NOVA_CLASS_INFO`.
+- **SE (short portrait phones, max-height 43.75rem):** chat button 38px with a 3px invisible
+  touch margin (so 44px to touch), Start Studying 38px tall in .88rem words with a 3px margin.
+  The laptop 4.4rem chat button was never on a phone.
+- **Hunted flare gone:** `flareHuntState` returns only "found" or "missing" - no ring, no tint, no
+  rumour on a tap. The hunt itself (what tests show) is unchanged. `.cosmic-flare-dot.is-next`
+  CSS and the `cof-call` keyframe are left dormant (check-loops lists the keyframe).
+- **Nova's intro:** class-agnostic ("your studies", "any class"), a longer storm, "It's an adventure
+  now! Study on, and we'll bring it all home.", the sync code ("It signs you in on other devices.
+  Find it any time in Settings."), two boxes on the modes, "Rank up. Find my badges. Bring the
+  crew home." before "Your adventure starts now. Let's go!". Gates: new-account cap 22 -> 26
+  lines (14 words each). Tips: the calendar tip names no class, the daily tip no XP; the last tip
+  says "Rank up, find my badges". Starters renamed: Ninja->Kage, Ghost->Wraith, Wizard->Arcane,
+  Bear->Ursa, Alien->Xeno (display names only; the other characters keep theirs - ask Madison).
+- **Sign-up:** Welcome -> check -> class screen (no "What This Actually Is"; `showWelcomeIntro`
+  is dead code, still renderable for the layout gates). The class screen uses the Classes screen's
+  cards (Police Academy - Select/Selected, More classes - Coming soon; Fire Code is not offered).
+  The username check: the class board is asked for on Welcome, the poll is 60ms, and a green
+  "Verified" shows for 650ms before Nova carries on. In the sandbox Firebase never answers, so
+  the check waits its 5s cap there; the gate sets `boardFetchedAt` to stand in for the board.
+- **+100 XP:** the banner is the account banner's glass (16px, 3px blue bar, tag), no backdrop
+  blur, only transform/opacity move, flight .8s.
+- **Get Started page** (`showGetStarted`, first visit only, `class26e.getstarted`): a warp-in, then a
+  scrolling trailer over the app - Nova wordmark, two flanking phones on desktop, four scenes with
+  looping muted clips (`landing/test|hundo|rank|customize.mp4` + `.jpg` stills, recorded by
+  `tools/record-landing.py`, ~1.3MB together, first frames cut so there is no white flash),
+  a fixed "Let's get started" -> Welcome. Clips play only while on screen. Chromium here lacks H.264,
+  so the sandbox shows the stills; browsers play them.
+- Planet: upright tablets also take `calc(100dvh - 28rem)` so Start Studying stays above the bar on
+  the mini and 10.2" iPads; Welcome takes Home's 3.5% shrink on tall phones.
+- Gate: `tools/check-b329.py` (bubble size, new-class cue, SE sizes, hunted flare, copy, the
+  first-visit flow, the +100 XP pop-up); every section fails on build 328.
+
+## Build 329, second session (Oct 26 morning) - takeover, Get Started guard, names reverted
+The first session stalled (waiting on a sweep that never wrote FIN) and was archived after it
+pushed 07a918c. Picked up here.
+- **Madison's answers:** keep the Get Started page (he had said "the start up page is a lot nvm",
+  then chose to keep what was built). Character names: he first asked for every character to be
+  renamed, then "revert all the characters names actually" - every name, starters included, is
+  as it was before build 329 (Ninja, Ghost, Wizard, Bear, Alien; Detective, Sheriff, Koi...).
+  Do not rename characters without asking again.
+- **Get Started only on a device with no account on it** (`showWelcomeFirst`): a code in
+  localStorage, a name in the store, or the mirror's copy (findAccountTrace, async - if it turns
+  up after the page is drawn, Welcome replaces it) means Welcome, which holds the recovery paths
+  ("Continue as ..."), and the page is marked seen. check-sync caught it (recovery landed on Get
+  Started); check-b329 "flow" now asserts it and fails on 07a918c. Gate fixtures for a fresh
+  device that test Welcome set `class26e.getstarted` = "1" (check-sync's FLAGS).
+- **Dropdown label opaque** (`.csi-label` background rgb, not .86 alpha): on a tablet the list opens
+  over the planet and a moon moving behind "Add a class" showed through (check-ink-centre, iPad 11).
+- **Grey bar on a sideways Pro Max at 85% (1125x458 browser):** 22b292a's laptop planet floor
+  (69dvh) reached it; under 36rem tall the 328 size holds. Bisected; main and this build pass.
+- check-results waits 700ms before "Back to results": the review's buttons rise too and keep the
+  0.6s tap guard.
+- Sandbox note: python Playwright was missing (pip install playwright==1.63.0) and the tools name
+  /opt/pw-browsers/chromium-1194; a symlink to chromium-1243/chrome-linux64 stands in.
+- **Afternoon (same session):** the SE's chat panel `top` (f66cecc) hung the CLOSED phone sheet from the
+  top, 100px of it over the foot catching taps (a Virtual Room's Main menu, check-vroom) - removed, a
+  phone's panel is the bottom sheet. First-gen SE: class cards tightened under 22.5rem (Coming soon ran
+  off its card, the page scrolled 46px), the character step's grid margins trimmed (scrolled 9px) - every
+  sign-up Continue on one line (check-b329 "narrow"; check-positions flags nothing). Get Started's stars
+  drift one tile a cycle (gs-drift had a seam). firestore-admin.py carries the 24 units and 328's bands.
+- **Gates brought up to date** (each was written before a change Madison asked for): check-curve (328
+  bands), check-behaviour (24 badges, 328 thresholds in two fixtures, the phone XP line without "to Level",
+  the tall phones' 3.5% smidge, no "interrupted" pop-up - Start Studying offers the lost run, no "Paused"
+  word, keyChoices in identity, Penal's repeat block), check-loops (cb-new, ia-shine, gs-drift),
+  check-positions (laptop round 32, What This Actually Is retired), sweep-layout (owed unlocks marked
+  shown: a character spotlight slid the tab bar out mid-sweep).
+- **Still failing on live AND here (not this build's):** check-behaviour's badge case lining, Badges tab
+  case/lid, the daily bubble "beside the button", a selected character's glow, an earned badge's glow
+  edge, the start sheet's swipe-down from its middle. Final run: sweep 74/74, check-fixes, ink-centre,
+  b329, sync, results, vroom, chat, curve, loops, positions, tours, unlocks, sound, friends, b328-* pass.
+
+## Fire Code kit 5.4.1 (build 330)
+Madison sent class26e-ifc-update-5.4.1.zip: two questions added to the 5.4 bank (1,779 total, 58 units),
+nothing else changed. ifc/bank.js regenerated with tools/gen-ifc-bank.py from its ifc_question_bank.json.
+chAppH-805 (Appendix H, IFC 2021 H103.1, key D) is cut from the reader's own IFC and cannot be shown
+without that PDF - Madison opens it; chExhB-801 (Exhibit B, IBC Table 1004.5, key A: 200) cuts from the
+county booklet and was checked in the app (the row is highlighted). Unit sizes come from the bank
+(Appendix H 3, Exhibit B 7). Hard-coded "1,777" in the class card and the analysis step is now 1,779
+(and check-b328-classes). The kit's PDF study guide is not in the repo.
+
+## Fire Code bank checked against the owner's own IFC (build 330, final)
+Madison sent class26e-ifc-handoff-v5.4.zip again, with his own 2021 IFC PDF (local only, never in the repo).
+The repo's `ifc/ifc-viewer.js` is byte-identical to the kit's. The kit's `check-my-copy.mjs` (pdf.js 5.4.149)
+run on the 1,779-question bank (5.4.1, with the two Appendix H questions): same-book check EXACT, 1,357 IFC
+references all cut from the page, 0 not found, 0 page-label differences, 169/169 stop pointers, 44/44 table
+rows, Hint and blurred definitions as before. RESULT: behaves like the reference copy.
+Decision: tapping the level number on the Profile card does NOT open the Rank screen (left as is).

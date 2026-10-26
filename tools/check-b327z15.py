@@ -1,0 +1,1208 @@
+#!/usr/bin/env python3
+"""Build 327z15: the tab bar under fast tapping - every sequence lands.
+
+Madison: "When clicking the button tabs fast sometimes it lags, the bubble
+pill lags and the screen lags ... Check all possible sequences and
+combinations and make it run so smooth."
+
+Real touches on an iPhone 17 Pro Max (440x956 @3), installed:
+
+  python3 tools/check-b327z15.py
+  python3 tools/check-b327z15.py --against /path/to/old/index.html
+
+  F. Every ordered pair and triple of the four tabs (same tab twice too),
+     tapped 60, 150 and 300ms apart from Home: when it settles the screen
+     up is the LAST tab tapped (read off the highlight, which syncActive
+     takes from the screen itself), exactly one tab is lit, the grey
+     platter sits under it, the lens is down - and nothing is built that
+     need not be: taps closer than the glide build only the last tab,
+     and a tab whose screen is already up is never built again (a second
+     tap on it scrolls to the top).
+  G. The same, with the phone at a quarter speed (a build is then a long
+     task the taps land in), for the sequences that went wrong:
+     Profile-Home, Home-Profile-Home, Leaderboard-Profile-Calendar-Home.
+
+  Round 2 (the same build):
+  H. "coming back; the entire screen is black for a few seconds": a fresh
+     start shows NOVA before any script has run - with scripts off, the
+     middle of the splash 1.5s in is lit, not the bare background.
+  I. "The daily question button ... doesn't feel like it goes with the
+     screen": answered, its fill, rim and shadow are the chat button's.
+  J. "tapping the back button, it makes it change color": a back button
+     held down keeps the colour it had.
+  K. The version history: no item title is announced in two versions (the
+     per-version fixes line aside), and no exclamation marks.
+
+  Round 3:
+  L. Friends from the chat: the chat's button reads differently from "Add"
+     (it manages a list that is right there); the Friends screen it opens
+     goes back to the chat - its back link is not the screen underneath's
+     name, and pressing it leaves the chat open on its Friends tab over
+     that screen.
+  M. Home's captions: a lit rank flare is one line (no "when you reached");
+     a locked one has no numbers in it (no levels, badges or counts to go);
+     the planet's says no more than two sentences and no "to go"; the words
+     are at least 16px on a phone.
+
+  Round 4:
+  N. "The animation of void, when it does the cool effect and finishes it,
+     it lags or kinda moves back ... Ensure each character's way of doing
+     this is fixed": for every character with a special, the special ends
+     within 60ms after the last of its own parts finishes - never before
+     (a hold) and never cut short; and on a small tile (a recorded loop)
+     the loop keeps running while the special plays (it is hidden, not
+     removed), with the live drawing's loops set to the loop's own place.
+  O. "Could the secret flares look a little better ... they don't look
+     animated except the flashing part. Ensure whatever change you make
+     reflects app wide": the orb every secret flare outside Home is drawn
+     as has parts that turn; on Home a found flare has a turning part as
+     well as its breath and flicker, and one not yet found has motion of
+     its own.
+
+  Round 5 (one section per report):
+  P. Profile: the level/XP block opens nothing (a tap on it or on the badge
+     count stays on Profile); the person card's Progress tiles are under it;
+     the challenge rows wear the tiles' surface; the ladder button is not
+     "See every rank".
+  Q. Challenge cards: the count is centred in its ring (within 2px); a met
+     level challenge still shows its How; a rank flare's card draws the
+     flare round (its art is as wide as it is tall).
+  R. Badges: the blurb does not tell you to clean; a tip sits on a dull
+     badge only when one is dull.
+  S. A rank's card: it opens on the tap (no wait), its big emblem moves, a
+     locked one is darkened without a filter, the bars fill (a transition),
+     and a locked rank's flare chip is unlit.
+  T. Leaderboard: the hundo count is the same colour as This Week's; Find me
+     is a dark button.
+  U. Match settings: picking a unit, the button's words stay unlit while its
+     fill is still grey (no word lights before the fill).
+  V. Calendar: the finals and graduation are one card of pages with a dot per
+     page, and a swipe moves it on a page.
+
+  Round 6:
+  W. "The toggle switches, they only switch if you tap, they also need to
+     work if you swipe": as an iPhone (the native switch over the track), a
+     swipe across a Settings switch moves its glass knob with the finger and
+     flips it, both ways; a tap still flips it.
+  X. Report a bug says where a report goes without "whoever maintains".
+
+  Round 26:
+  EE (&). A test is as dark on a laptop tab as on an installed phone (the
+     sky's corner within 3 levels); laptop Home: the white Start Studying is
+     shorter than the bar and centred on its middle, on one line, and the
+     planet's highest bubble clears the tab's 6rem top fade at three sizes;
+     Profile: no Progress tiles, the three cards on one surface (the person
+     card's dark gradient and rim), the rank a headline over the level;
+     the Calendar's countdowns step with arrows (the first dim at the start);
+     the open chat starts below its button (laptop tab, landscape iPad) and
+     the white pill is not seen through it.
+  FF (*). Sign-up on a laptop: Welcome's planet is Home's (same width and
+     place, within 2px), its words and buttons on the planet's left, no
+     scroll, at three laptop sizes; each sign-up step's button sits just
+     under its content (not pinned 180px down); Nova's introduction is
+     one group in the middle of the screen.
+  GG (=). Rounds 29-31: the keys line hides on a touch phone and shows on a
+     touch iPad; under the rank, "Level N · N badges"; a pill's word in its
+     middle; Stats' glance tiles one height; the daily question's Submit
+     grey before a pick (not white); no line over Next question; a unit
+     card's count at its foot and its badge as far from the top as the
+     right; the magnifier white and drawn on the field, the board's search
+     has one; laptop: the page's name top-left, the daily question a card;
+     sign-up words ("Select your classes", nothing about not changing it,
+     fire code named); the save-code banner waits for a first test; Nova's
+     good-luck message ten seconds after the tips, once.
+  HH (^). Round 32 (laptop): no edge fades with a mouse (a touch phone keeps
+     them); Select all and Find me wear the search field's surface and the
+     magnifier's white; the sign-up steps put Back and the title in the same
+     places on every step, near the top; Welcome's buttons one above the
+     other, under the planet; the daily question card at the bottom right;
+     Nova's character and badge rows glide on a laptop.
+"""
+import importlib.util
+import itertools
+import os
+import sys
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+_spec = importlib.util.spec_from_file_location("z5b", os.path.join(HERE, "check-b327z5-b.py"))
+z5b = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(z5b)
+cb = z5b.cb
+check = cb.check
+from playwright.sync_api import sync_playwright
+
+UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
+      "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
+ONLY = os.environ.get("B327Z15_ONLY", "FGHIJKLMNOPQRSTUVWXYZ@#$%&*=^~")
+TABS = ["home", "profile", "rewards", "calendar"]
+
+STATE = """() => { const bar = document.getElementById('bottomtabs'), sl = document.getElementById('bottomtabs-slider');
+  const lit = [...bar.querySelectorAll('.bottomtab.active')];
+  let off = null;
+  if(lit.length === 1){ const a = lit[0].getBoundingClientRect(), b = sl.getBoundingClientRect();
+    off = Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)); }
+  const home = !!document.querySelector('#stage .screen-home-actual');
+  return { lit: lit.map(b => b.dataset.dest), off, lensUp: bar.classList.contains('lens-up'), builds: bar._navBuilds || 0, home,
+           pend: !!bar._navPend }; }"""
+
+
+def tap(cdp, pt, hold=0.05):
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [pt]})
+    time.sleep(hold)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+
+
+def run(pg, cdp, pts, seq, gap):
+    """From Home, tap seq with gap ms between presses; return (state, builds)."""
+    pg.evaluate("() => { if(!document.querySelector('#stage .screen-home-actual')) showHome(); }")
+    pg.wait_for_timeout(700)
+    b0 = pg.evaluate(STATE)["builds"]
+    for i, d in enumerate(seq):
+        t0 = time.time()
+        tap(cdp, pts[d])
+        if i < len(seq) - 1:
+            left = gap / 1000 - (time.time() - t0)
+            if left > 0: time.sleep(left)
+    pg.wait_for_timeout(1300)
+    st = pg.evaluate(STATE)
+    return st, st["builds"] - b0
+
+
+def expect_builds(seq, gap):
+    """Taps closer than the glide (290ms) build only the last tab, once,
+    and none if it is the screen that was already up (Home, where every
+    run starts). Further apart, each tap may build its own tab - but a
+    tab whose screen is already up is never built again."""
+    # MOVED IN round 35: a tab's screen is built 170ms from the press (was 290)
+    if gap < 170:
+        return 0 if seq[-1] == "home" else 1
+    n, cur = 0, "home"
+    for d in seq:
+        if d != cur: n += 1
+        cur = d
+    return n
+
+
+def sweep(pg, cdp, label, seqs, gaps):
+    pts = {d: pg.evaluate("d => { const r = document.querySelector('.bottomtab[data-dest=\"' + d + '\"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }", d) for d in TABS}
+    bad = []
+    for gap in gaps:
+        for seq in seqs:
+            st, nb = run(pg, cdp, pts, seq, gap)
+            ok = (st["lit"] == [seq[-1]] and st["off"] is not None and st["off"] < 3 and not st["lensUp"]
+                  and not st["pend"] and nb <= expect_builds(seq, gap) and (st["home"] == (seq[-1] == "home")))
+            if not ok:
+                bad.append((gap, "-".join(seq), st, nb))
+    n = len(seqs) * len(gaps)
+    check("%s: %d of %d sequences land on the last tab, lit once, platter under it, lens down, nothing extra built"
+          % (label, n - len(bad), n), not bad, bad[:6])
+
+
+def section_f(br):
+    print("\nF. every pair and triple, full speed")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    cdp = ctx.new_cdp_session(pg)
+    seqs = [list(p) for p in itertools.product(TABS, repeat=2) if p[0] != "home" or p[1] != "home"]
+    seqs += [list(p) for p in itertools.product(TABS, repeat=3) if p[0] != p[1] and p[1] != p[2]]
+    sweep(pg, cdp, label, seqs, (60, 150, 300))
+    ctx.close()
+
+
+def section_g(br):
+    print("\nG. the reported runs, at a quarter speed")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.wait_for_timeout(2500)
+    cdp = ctx.new_cdp_session(pg)
+    # warm every screen once, then throttle
+    for d in ("profile", "rewards", "calendar", "home"):
+        pg.evaluate("d => document.querySelector('.bottomtab[data-dest=\"' + d + '\"]')._navigate()", d)
+        pg.wait_for_timeout(900)
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    seqs = [["profile", "home"], ["home", "profile", "home"], ["profile", "home", "profile", "home"],
+            ["rewards", "profile", "calendar", "home"], ["calendar", "rewards"], ["profile", "calendar", "profile"]]
+    sweep(pg, cdp, label + " at 4x CPU", seqs, (120, 250, 400))
+    ctx.close()
+
+
+def section_h(br):
+    print("\nH. a fresh start shows NOVA before the app's script runs")
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, java_script_enabled=False)
+    pg = cb.open_page(ctx)   # serves --against too
+    pg.goto(cb.URL)
+    pg.wait_for_timeout(1500)
+    from PIL import Image
+    import io
+    im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    W, H = im.size
+    # the wordmark is a block of bright gradient text in the middle band; a
+    # star is a dot - count the bright pixels, not the brightest one
+    lit = 0
+    for y in range(int(H * .40), int(H * .60)):
+        for x in range(int(W * .25), int(W * .75)):
+            if max(im.getpixel((x, y))) >= 120: lit += 1
+    check("H. NOVA is on the splash with no script (%d lit pixels, needs 300+)" % lit, lit >= 300, lit)
+    ctx.close()
+
+
+def section_i(br):
+    print("\nI. answered, the daily button is the chat button's glass")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""() => { store.dailyQuestionDate = dailyPeriodKey(); showHome();
+      return new Promise(res => setTimeout(() => { const d = document.querySelector('.daily-question-fab'), c = document.querySelector('.chatdock-btn');
+        if(!d || !c) return res(null);
+        const D = getComputedStyle(d), C = getComputedStyle(c);
+        res({ done: d.classList.contains('is-done'), bg: [D.backgroundImage, D.backgroundColor], cbg: [C.backgroundImage, C.backgroundColor],
+              rim: D.borderTopColor, crim: C.borderTopColor, sh: D.boxShadow, csh: C.boxShadow }); }, 1200)); }""")
+    check("%s: I. the button is up and answered" % label, r and r["done"], r)
+    if r:
+        check("%s: I. same fill as the chat button" % label, r["bg"] == r["cbg"], r)
+        check("%s: I. same rim and shadow" % label, r["rim"] == r["crim"] and r["sh"] == r["csh"], r)
+    ctx.close()
+
+
+def section_j(br):
+    print("\nJ. a back button held down keeps its colour")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => showReleaseHistory()")
+    pg.wait_for_timeout(700)
+    c = pg.evaluate("() => { const b = document.querySelector('#stage .back-link'); const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, bg: getComputedStyle(b).backgroundColor }; }")
+    # :active forced on the button itself (a synthetic touch does not hold it)
+    cdp = ctx.new_cdp_session(pg)
+    cdp.send("DOM.enable"); cdp.send("CSS.enable")
+    root = cdp.send("DOM.getDocument")["root"]["nodeId"]
+    nid = cdp.send("DOM.querySelector", {"nodeId": root, "selector": "#stage .back-link"})["nodeId"]
+    cdp.send("CSS.forcePseudoState", {"nodeId": nid, "forcedPseudoClasses": ["active"]})
+    pg.wait_for_timeout(300)
+    held = pg.evaluate("() => getComputedStyle(document.querySelector('#stage .back-link')).backgroundColor")
+    check("%s: J. held, %s; at rest, %s" % (label, held, c["bg"]), held == c["bg"], (held, c["bg"]))
+    ctx.close()
+
+
+def section_k(br):
+    print("\nK. the version history says each thing once")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""() => { const seen = {}, dup = [], bang = [];
+      RELEASE_NOTES.forEach(v => v.groups.forEach(g => g.items.forEach(it => {
+        const k = String(it.title).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        if(/^(fixes|performance)/.test(k)) return;
+        if(seen[k] && seen[k] !== v.version) dup.push(it.title + ' (' + seen[k] + ', ' + v.version + ')');
+        seen[k] = seen[k] || v.version;
+        if(/!/.test(it.title + it.body)) bang.push(it.title); })));
+      return { dup, bang, n: Object.keys(seen).length }; }""")
+    check("K. no title in two versions (%d titles)" % r["n"], not r["dup"], r["dup"][:8])
+    check("K. no exclamation marks", not r["bang"], r["bang"][:8])
+    ctx.close()
+
+
+def section_l(br):
+    print("\nL. Friends from the chat goes back to the chat")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { chatDockTab = 'friends'; openChatDock(); }")
+    pg.wait_for_timeout(900)
+    btn = pg.evaluate("() => document.querySelector('.chatdock-friendsbar-btn')?.textContent || null")
+    check("%s: L. the chat's Friends button is not 'Add friends' (%s)" % (label, btn), btn and not btn.lower().startswith("add"), btn)
+    pg.evaluate("() => document.querySelector('.chatdock-friendsbar-btn').click()")
+    pg.wait_for_timeout(1000)
+    back = pg.evaluate("() => document.querySelector('#stage .screen-friends .back-link')?.textContent || null")
+    check("%s: L. the Friends screen's back link is not the Home screen's name (%s)" % (label, back), back and back.strip().lower() != "home", back)
+    pg.evaluate("() => document.querySelector('#stage .screen-friends .back-link').click()")
+    pg.wait_for_timeout(1200)
+    st = pg.evaluate("() => ({ open: chatDockOpen, tab: chatDockTab, home: !!document.querySelector('#stage .screen-home-actual') })")
+    check("%s: L. back: Home underneath, the chat open on Friends" % label, st["open"] and st["tab"] == "friends" and st["home"], st)
+    ctx.close()
+
+
+def section_m(br):
+    print("\nM. Home's captions: short, plain, bigger")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""() => { const out = {};
+      // a held rank, whatever the account: every rank lit, for this read only
+      const orig = window.tierColorUnlocked; let held;
+      try{ window.tierColorUnlocked = () => true; held = homeTapCopyRank(TIER_ORDER_FULL[0]); }catch(e){}
+      window.tierColorUnlocked = orig;
+      out.heldParts = held && held.kind === 'held' ? held.parts.filter(Boolean).length : null;
+      out.heldText = held ? held.parts.join(' ') : '';
+      const lockedTier = TIER_ORDER_FULL.slice().reverse().find(t => !tierColorUnlocked(t));
+      const locked = lockedTier ? homeTapCopyRank(lockedTier) : null;
+      out.locked = locked ? locked.parts.join(' ') : null;
+      const planet = homeTapCopyPlanet();
+      out.planet = planet.parts.join(' ');
+      const p = document.querySelector('.panel.home.screen-home-actual');
+      homeCaptionShow(p, planet, 'm');
+      return new Promise(res => setTimeout(() => { const tx = document.querySelector('.hc-item .hc-text');
+        out.px = tx ? parseFloat(getComputedStyle(tx).fontSize) : 0; res(out); }, 500)); }""")
+    if True:
+        check("%s: M. a lit flare says only what it is (%r)" % (label, r["heldText"]), r["heldParts"] == 1 and "reached" not in r["heldText"], r)
+    check("%s: M. a locked flare has no numbers (%r)" % (label, r["locked"]), r["locked"] is not None and not any(ch.isdigit() for ch in r["locked"]), r)
+    sentences = [x for x in r["planet"].replace("!", ".").split(".") if x.strip()]
+    check("%s: M. the planet's is two sentences at most, no 'to go' (%r)" % (label, r["planet"]), len(sentences) <= 2 and "to go" not in r["planet"], r)
+    check("%s: M. caption words are 16px or more (%.1f)" % (label, r["px"]), r["px"] >= 16, r)
+    ctx.close()
+
+
+def section_n(br):
+    print("\nN. a special ends when its move ends; a small tile's loop keeps its clock")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => {
+      const bad = [], ok = [];
+      for(const c of AVATAR_CHARACTERS.filter(c => !c.retired)){
+        const el = document.createElement('div'); el.className = 'profile-hero-avatar __n';
+        el.style.cssText = 'position:fixed;left:0;top:0;width:160px;height:160px';
+        let svg; try{ svg = buildAvatarCharSVGSafe(c.id); }catch(e){ continue; }
+        el.appendChild(svg); document.body.appendChild(el); el.classList.add('char-live');
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        if(!charHasSpecial(el)){ el.remove(); continue; }
+        const before = new Set(svg.getAnimations({ subtree: true }));
+        charSpecialBusyUntil = 0;
+        const t0 = Date.now();
+        playCharSpecial(el);
+        const planned = charSpecialBusyUntil - 400 - t0;
+        let end = 0;
+        svg.getAnimations({ subtree: true }).forEach(a => { if(before.has(a)) return; const e = a.effect.getComputedTiming().endTime; if(isFinite(e)) end = Math.max(end, e); });
+        (planned >= end - 5 && planned <= end + 60 ? ok : bad).push(c.id + ' ' + Math.round(planned) + '/' + Math.round(end));
+        el.__charSpecial = null; el.classList.remove('char-special'); el.remove();
+      }
+      return { bad, n: ok.length + bad.length }; }""")
+    check("%s: N. all %d specials end with their own last part (no hold, no cut)" % (label, r["n"]), not r["bad"] and r["n"] >= 10, r["bad"][:10])
+    r = pg.evaluate("""async () => {
+      const el = document.createElement('div'); el.className = 'profile-hero-avatar __n';
+      el.style.cssText = 'position:fixed;left:20px;top:20px;width:56px;height:56px';
+      el.appendChild(buildAvatarCharSVGSafe('voidwalker')); document.body.appendChild(el);
+      setCharState(el, 'live', { solo: true });
+      for(let i = 0; i < 160 && !el.querySelector('.char-flip-play img'); i++) await new Promise(r => setTimeout(r, 250));
+      const img = el.querySelector('.char-flip-play img');
+      if(!img) return { sheet: false };
+      await new Promise(r => setTimeout(r, 600));
+      charSpecialBusyUntil = 0; playCharSpecial(el);
+      await new Promise(r => setTimeout(r, 400));
+      const running = img.getAnimations().filter(a => a.playState === 'running').length;
+      // each looping part of the live drawing at the loop's own place
+      const L = CHAR_ANIM_LOOP_MS, tau = ((Date.now() + Number(el.dataset.flipPhase || 0)) % L + L) % L;
+      let off = 0, n = 0;
+      el.querySelector('svg.avatarchar-svg').getAnimations({ subtree: true }).forEach(a => {
+        const t = a.effect.getTiming(); if(isFinite(Number(t.iterations))) return;
+        const P = (Number(t.duration) || 1000) * (String(t.direction || '').indexOf('alternate') >= 0 ? 2 : 1);
+        const turn = /^cx-spin/.test(a.animationName || ''); const c = P > (turn ? 3.5 : 2.5) * L ? 0 : Math.max(1, Math.round(L / P));
+        if(!c) return;
+        const want = (tau * c * P / L) % P, got = (Number(a.currentTime) || 0) % P;
+        off = Math.max(off, Math.min(Math.abs(want - got), P - Math.abs(want - got))); n++;
+      });
+      return { sheet: true, running, off: Math.round(off), n }; }""")
+    if r.get("sheet"):
+        check("%s: N. the tile's loop keeps running under the special (%d)" % (label, r["running"]), r["running"] >= 1, r)
+        check("%s: N. the live drawing's %d loops are within 80ms of the loop's place (worst %dms)" % (label, r["n"], r["off"]), r["n"] >= 1 and r["off"] <= 80, r)
+    else:
+        check("%s: N. a small tile got its recorded loop" % label, False, r)
+    ctx.close()
+
+
+def section_o(br):
+    print("\nO. secret flares move, everywhere")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => {
+      const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:90px;height:90px';
+      const orb = buildFlareOrb(MYSTERY_COLOR.red, 'gate'); orb.style.width = orb.style.height = '90px';
+      box.appendChild(orb); document.body.appendChild(box);
+      await new Promise(r => setTimeout(r, 300));
+      const turns = a => /rotate|turn|spin/.test(a.animationName || '') || /rotate/.test(JSON.stringify(a.effect.getKeyframes()));
+      const oa = orb.getAnimations({ subtree: true });
+      store.mysteryColorsFound = { red: true }; showHome();
+      await new Promise(r => setTimeout(r, 1500));
+      const found = document.querySelector('.cosmic-flare-dot.is-found');
+      const missing = document.querySelector('.cosmic-flare-dot:not(.is-found):not(.is-next)');
+      const fa = found ? found.getAnimations({ subtree: true }) : [];
+      const ma = missing ? missing.getAnimations({ subtree: true }) : [];
+      return { orb: oa.length, orbTurn: oa.filter(turns).length, found: !!found, foundN: fa.length, foundTurn: fa.filter(turns).length,
+               missing: !!missing, missingN: ma.length }; }""")
+    check("%s: O. the orb (tests, banner, cutscenes, cards) has turning parts (%d of %d)" % (label, r["orbTurn"], r["orb"]), r["orbTurn"] >= 1, r)
+    check("%s: O. a found flare on Home has a turning part" % label, r["found"] and r["foundTurn"] >= 1, r)
+    if r["missing"]:
+        check("%s: O. one not found yet moves too (%d)" % (label, r["missingN"]), r["missingN"] >= 1, r)
+    ctx.close()
+
+
+def section_p(br):
+    print("\nP. Profile: read, not pressed; the Progress tiles")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { showProfile('profile'); await new Promise(r => setTimeout(r, 900));
+      document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove());
+      const st = document.querySelector('#stage .pf-standing');
+      const was = !!document.querySelector('#stage .screen-profile');
+      st && st.click(); await new Promise(r => setTimeout(r, 500));
+      const after1 = !!document.querySelector('#stage .screen-profile');
+      const bc = document.querySelector('#stage .pf-badgecount, #stage .pf-standing .pf-xpnums');
+      bc && bc.click(); await new Promise(r => setTimeout(r, 500));
+      const after2 = !!document.querySelector('#stage .screen-profile');
+      const cells = document.querySelectorAll('#stage .profile-hero .person-card-cell').length;
+      const cell = document.querySelector('#stage .profile-hero .person-card-cell'), row = document.querySelector('#stage .pf-goal .pf-task');
+      const bg = e => e ? getComputedStyle(e).backgroundColor + '|' + getComputedStyle(e).borderTopLeftRadius : null;
+      const foot = (document.querySelector('#stage .pf-goal-foot') || {}).textContent || '';
+      return { was, after1, after2, isButton: st ? st.tagName === 'BUTTON' : null, cells, cellBg: bg(cell), rowBg: bg(row), foot }; }""")
+    check("%s: P. the level block is not a button and a tap on it stays on Profile" % label, r["was"] and r["after1"] and r["isButton"] is False, r)
+    check("%s: P. a tap on its numbers stays on Profile" % label, r["after2"], r)
+    # MOVED IN round 26: "Why does the profile box have those 4 new things in
+    # profile? Remove those." - no tiles; the rows keep the tiles' surface
+    check("%s: P. no Progress tiles under it (round 26)" % label, r["cells"] == 0, r)
+    check("%s: P. the challenge rows wear the person card's tile surface" % label, r["rowBg"] == "rgba(255, 255, 255, 0.05)|14px", r)
+    check("%s: P. the ladder button is renamed (%s)" % (label, r["foot"].strip()), r["foot"].strip() and r["foot"].strip() != "See every rank", r)
+    ctx.close()
+
+
+def section_q(br):
+    print("\nQ. challenge cards and the flare card")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { const out = {};
+      const open = async o => { document.querySelectorAll('.invite-overlay').forEach(n => n.remove()); showUnlockDetail(o); await new Promise(r => setTimeout(r, 700)); };
+      await open(rankChallengeDetail({ kind: 'badges', label: 'Earn 5 badges', now: 5, need: 5, met: true }, '#E3C77A', 'Gold'));
+      const ring = document.querySelector('.unlock-card-art .unlock-card-ring'), b = document.querySelector('.unlock-card-chnum b');
+      if(ring && b){ const R = ring.getBoundingClientRect(), B = b.getBoundingClientRect(); out.dy = Math.abs((R.top + R.height / 2) - (B.top + B.height / 2)); out.dx = Math.abs((R.left + R.width / 2) - (B.left + B.width / 2)); }
+      await open(rankChallengeDetail({ kind: 'level', label: 'Reach Level 21', now: 21, need: 21, met: true }, '#6FC2FF', 'Gold'));
+      const d = document.querySelector('.unlock-card .unlock-card-desc');
+      out.levelHow = d ? { shown: getComputedStyle(d).display !== 'none' && d.getBoundingClientRect().height > 20, tray: getComputedStyle(d).backgroundColor, text: d.textContent } : null;
+      await open(rankFlareDetail('veteran'));
+      const a = document.querySelector('.unlock-card-rankflare .unlock-card-art > *');
+      if(a){ const A = a.getBoundingClientRect(); out.flare = [Math.round(A.width), Math.round(A.height)]; }
+      return out; }""")
+    check("%s: Q. the count is centred in its ring (%.1f, %.1f px off)" % (label, r.get("dy", 99), r.get("dx", 99)), r.get("dy", 99) <= 2 and r.get("dx", 99) <= 2, r)
+    lh = r.get("levelHow") or {}
+    check("%s: Q. a met level challenge still shows its How, in a tray" % label, lh.get("shown") and lh.get("tray") not in (None, "rgba(0, 0, 0, 0)"), lh)
+    f = r.get("flare") or [0, 1]
+    check("%s: Q. the flare card's flare is round (%s)" % (label, f), f[0] > 40 and abs(f[0] - f[1]) <= 2, r)
+    ctx.close()
+
+
+def section_r(br):
+    print("\nR. Badges: a tip on a dull badge, only then")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { const units = topicsIn(QUESTIONS); window.unitBadgeEarned = u => units.indexOf(u) < 4;
+      const clean = () => { store.badgeCleanedAt = {}; units.forEach(u => store.badgeCleanedAt[u] = Date.now() - 1000); };
+      clean(); showRanksScreen('badges'); await new Promise(r => setTimeout(r, 900));
+      const blurb = (document.querySelector('#stage .badges-blurb') || {}).textContent || '';
+      const tipClean = document.querySelectorAll('#stage .badge-clean-tip').length;
+      clean(); store.badgeCleanedAt[units[1]] = Date.now() - 3 * BADGE_DIRT_WEEK_MS - 1000;
+      showRanksScreen('badges'); await new Promise(r => setTimeout(r, 900));
+      const tips = [...document.querySelectorAll('#stage .badge-clean-tip')];
+      return { blurb, tipClean, tipDirty: tips.length, onDirty: tips.length ? !!tips[0].closest('.badge-tile[data-dirt]') : null }; }""")
+    check("R. the blurb does not tell you to clean (%r)" % r["blurb"][:60], not any(w in r["blurb"].lower() for w in ("rub", "clean")), r)
+    check("R. no tip while every badge shines", r["tipClean"] == 0, r)
+    check("R. one tip, on the dull badge, once one is dull", r["tipDirty"] == 1 and r["onDirty"], r)
+    ctx.close()
+
+
+def section_s(br):
+    print("\nS. a rank's card")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { showRanksScreen('ranks'); await new Promise(r => setTimeout(r, 1500));
+      document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove());
+      const held = rankOf(store), hi = held ? TIER_ORDER_FULL.indexOf(held) : -1;
+      const lockedKey = TIER_ORDER_FULL[Math.min(TIER_ORDER_FULL.length - 1, hi + 2)];
+      const node = [...document.querySelectorAll('#stage .rankmap-node')][TIER_ORDER_FULL.indexOf(lockedKey)];
+      const t0 = performance.now(); node.click();
+      await new Promise(r => setTimeout(r, 40));
+      const fast = !!document.querySelector('.ranklore-card');
+      await new Promise(r => setTimeout(r, 900));
+      const svg = document.querySelector('.ranklore-art svg');
+      const running = svg ? svg.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : 0;
+      const card = document.querySelector('.ranklore-card');
+      const fill = document.querySelector('.ranklore-reqfill');
+      const chip = document.querySelector('.ranklore-card .rankmap-giftbubble .flare-solo');
+      return { fast, running, locked: card && card.classList.contains('is-locked'), filter: svg ? getComputedStyle(svg).filter : null,
+               fillDur: fill ? parseFloat(getComputedStyle(fill).transitionDuration) : 0, chipLit: chip ? chip.classList.contains('cosmic-badge-lit') : null }; }""")
+    check("%s: S. the card is up 40ms after the tap" % label, r["fast"], r)
+    check("%s: S. its big emblem moves (%d)" % (label, r["running"]), r["running"] >= 1, r)
+    check("%s: S. a locked rank's emblem is darkened without a filter" % label, r["locked"] and r["filter"] == "none", r)
+    check("%s: S. its bars fill (a transition)" % label, r["fillDur"] >= .3, r)
+    check("%s: S. a locked rank's flare chip is unlit" % label, r["chipLit"] is False, r)
+    ctx.close()
+
+
+def section_t(br):
+    print("\nT. Leaderboard: hundos white, Find me dark")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""async () => { showRankings(); await new Promise(r => setTimeout(r, 1200));
+      const go = async t => { const b = [...document.querySelectorAll('#stage button, #stage [role=tab]')].find(x => new RegExp(t, 'i').test(x.textContent)); b && b.click(); await new Promise(r => setTimeout(r, 900)); };
+      await go('week'); const wk = document.querySelector('#stage .rank-row:not(.rank-row-head) .rank-col-xp');
+      const wc = wk ? getComputedStyle(wk).color : null;
+      await go('hundo'); const hd = document.querySelector('#stage .rank-row:not(.rank-row-head) .rank-col-hundo');
+      const hc = hd ? getComputedStyle(hd).color : null;
+      const me = document.querySelector('#stage .rank-me-btn');
+      const bg = me ? getComputedStyle(me).backgroundColor : null;
+      const sb = document.querySelector('#stage .searchbox'); const sbg = sb ? getComputedStyle(sb).backgroundColor : null;
+      return { wc, hc, bg, sbg }; }""")
+    check("%s: T. the hundo count is This Week's colour (%s / %s)" % (label, r["hc"], r["wc"]), r["hc"] and r["hc"] == r["wc"], r)
+    import re as _re
+    m = _re.findall(r"[\d.]+", r["bg"] or "")
+    lum = sum(float(x) for x in m[:3]) / 3 if len(m) >= 3 else 255
+    alpha = float(m[3]) if len(m) >= 4 else 1
+    # MOVED IN round 31: "The black 'find me' button is not the move, revert
+    # that" - it is the search field's glass again, not a solid black
+    check("%s: T. Find me is the field's glass again, not solid black (%s)" % (label, r["bg"]), not (lum < 30 and alpha > .9), r)
+    ctx.close()
+
+
+def section_u(br):
+    print("\nU. Match settings: the words wait for the fill")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { showVirtualRoomSetup(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(1500)
+    c = pg.evaluate("() => { const p = document.querySelector('#stage .pick'); p.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = p.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }")
+    pg.evaluate("""() => { window.__s = []; const b = document.querySelector('#stage .vroom-setup-go'); let t0 = 0;
+      const f = () => { const cs = getComputedStyle(b); window.__s.push([performance.now() - t0, cs.color, cs.backgroundColor]); if(performance.now() - t0 < 700) requestAnimationFrame(f); };
+      window.__go = () => { t0 = performance.now(); requestAnimationFrame(f); }; }""")
+    pg.evaluate("() => window.__go()")
+    pg.mouse.click(c["x"], c["y"])
+    pg.wait_for_timeout(900)
+    s = pg.evaluate("() => window.__s")
+    import re as _re
+    def lum(v):
+        m = _re.findall(r"[\d.]+", v)
+        a = float(m[3]) if len(m) >= 4 else 1
+        return sum(float(x) for x in m[:3]) / 3 * a
+    first = s[1] if len(s) > 1 else None
+    bad = [x for x in s if lum(x[2]) < 120 and lum(x[1]) < 90]   # dark words on a fill that is not lit yet
+    lit_end = s[-1] if s else None
+    check("%s: U. no frame has dark words on the unlit fill (%d of %d)" % (label, len(bad), len(s)), not bad and len(s) > 10, (first, bad[:3]))
+    check("%s: U. it ends lit: the light fill under dark words" % label, lit_end and lum(lit_end[2]) > 180 and lum(lit_end[1]) < 90, lit_end)
+    check("%s: U. the unlit fill is seen at all (it was white from the first frame)" % label, any(lum(x[2]) < 120 for x in s), s[:3])
+    ctx.close()
+
+
+def section_v(br):
+    print("\nV. Calendar: one card of pages")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { showCalendarTab(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(1300)
+    r = pg.evaluate("""() => { const tab = document.querySelector('#stage .screen-calendar-tab');
+      const cards = [...tab.querySelectorAll(':scope > .cal-card, :scope > section')].filter(c => c.offsetHeight > 0);
+      const track = tab.querySelector('.cal-count-track'), dots = tab.querySelectorAll('.cal-count-dots > i');
+      const pages = track ? [...track.children] : [];
+      if(track) track.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const R = track ? track.getBoundingClientRect() : null;
+      return { pages: pages.length, dots: dots.length, separateBig: !!tab.querySelector(':scope > .cal-big-card:not([hidden])'), separateCourse: !!tab.querySelector(':scope > .cal-course-card:not([hidden])'),
+               box: R ? { y: R.top + R.height / 2 } : null, onDot: [...dots].findIndex(d => d.classList.contains('is-on')) }; }""")
+    check("%s: V. the finals and graduation are pages of one card (%d pages, %d dots)" % (label, r["pages"], r["dots"]),
+          r["pages"] >= 2 and r["dots"] == r["pages"] and not r["separateBig"] and not r["separateCourse"], r)
+    if r["box"]:
+        cdp = ctx.new_cdp_session(pg)
+        y = r["box"]["y"]
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": 360, "y": y}]})
+        for i in range(1, 11):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": 360 - i * 26, "y": y}]})
+            pg.wait_for_timeout(16)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(900)
+        on = pg.evaluate("() => [...document.querySelectorAll('#stage .cal-count-dots > i')].findIndex(d => d.classList.contains('is-on'))")
+        check("%s: V. a swipe moves it one page (dot %d -> %d)" % (label, r["onDot"], on), r["onDot"] == 0 and on == 1, (r["onDot"], on))
+    ctx.close()
+
+
+def section_w(br):
+    print("\nW. switches follow a swipe (as an iPhone)")
+    ctx = br.new_context(viewport={"width": 440, "height": 956}, has_touch=True, is_mobile=True, device_scale_factor=2, user_agent=UA)
+    ctx.add_init_script(z5b.STANDALONE)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.drill.v1', '%s');localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}" % cb.USED_ACCOUNT)
+    pg = cb.open_page(ctx)
+    pg.goto(cb.URL)
+    pg.wait_for_timeout(2600)
+    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    pg.wait_for_timeout(2500)
+    pg.evaluate("() => { showAppearance(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    pg.wait_for_timeout(1200)
+    ROW = "() => [...document.querySelectorAll('#stage .opt')].filter(r => r.querySelector(':scope > .box') && r.offsetHeight && !/Reduce motion/.test(r.textContent))[0]"
+    info = pg.evaluate("() => { const row = (" + ROW + ")(); row.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = row.querySelector(':scope > .box').getBoundingClientRect(); const cb = row.querySelector(':scope > input'); return { x0: b.left + b.height / 2, x1: b.right - b.height / 2, y: b.top + b.height / 2, native: cb.classList.contains('hsw-opt') }; }")
+    state = lambda: pg.evaluate("() => (" + ROW + ")().querySelector(':scope > input').checked")
+    cdp = ctx.new_cdp_session(pg)
+    def swipe(xa, xb):
+        y = info["y"]
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": xa, "y": y}]})
+        pg.wait_for_timeout(40)
+        for i in range(1, 13):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": xa + (xb - xa) * i / 12, "y": y}]})
+            pg.wait_for_timeout(16)
+        lx = pg.evaluate("() => { const l = document.querySelector('.nsw-lens'); return l ? new DOMMatrixReadOnly(getComputedStyle(l).transform).m41 : null; }")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(800)
+        return lx
+    check("W. the switch has the iPhone's native switch over it", info["native"], info)
+    a = state()
+    l1 = swipe(info["x1"], info["x0"]) if a else swipe(info["x0"], info["x1"])
+    b = state()
+    l2 = swipe(info["x1"], info["x0"]) if b else swipe(info["x0"], info["x1"])
+    c = state()
+    check("W. a swipe flips it, and a swipe back flips it back (%s -> %s -> %s)" % (a, b, c), a != b and b != c, (a, b, c))
+    check("W. the glass knob is under the finger mid-swipe (%s, %s)" % (l1, l2), l1 is not None and l2 is not None and abs((l1 or 0) - (l2 or 0)) > 12, (l1, l2))
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": info["x0"] + 8, "y": info["y"]}]})
+    pg.wait_for_timeout(60)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    pg.wait_for_timeout(800)
+    d = state()
+    check("W. a tap still flips it (%s -> %s)" % (c, d), d != c, (c, d))
+    ctx.close()
+
+
+def section_x(br):
+    print("\nX. Report a bug says where it goes")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    t = pg.evaluate("() => { try{ showBugReport(); }catch(e){ try{ showReportBug(); }catch(e2){} } return document.querySelector('#stage') ? document.querySelector('#stage').textContent : ''; }")
+    check("X. no 'whoever maintains' on Report a bug", "whoever maintains" not in t and "Nova admin" in t, t[:200])
+    ctx.close()
+
+
+def section_y(br):
+    print("\nY. The Profile tour for a new account: a handful of steps, each on something showing")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    pg.evaluate("() => { store.seenProfileTour = false; store.profileTips289 = false; showProfile(); }")
+    pg.wait_for_timeout(2500)
+    seen, off = [], []
+    for _ in range(14):
+        st = pg.evaluate("""() => { const t = document.getElementById('tour-tooltip'); if(!t) return null;
+          const r = t.getBoundingClientRect(); return { text: t.textContent.slice(0, 80), w: r.width, h: r.height }; }""")
+        if not st:
+            break
+        if not seen or seen[-1] != st["text"]:
+            seen.append(st["text"])
+            if not (st["w"] > 0 and st["h"] > 0):
+                off.append(st["text"])
+        pg.evaluate("() => document.getElementById('tour-next') && document.getElementById('tour-next').click()")
+        pg.wait_for_timeout(700)
+    check("Y. the Profile tour is a few steps, not a lecture (%d)" % len(seen), 3 <= len(seen) <= 6, seen)
+    check("Y. every step shows", not off, off)
+    ctx.close()
+
+
+def section_z(br):
+    print("\nZ. Welcome keeps its plain learning icons, under Home's sky; nothing taps or saves")
+    label, w, h, dpr = z5b.PHONE
+    ctx, pg = z5b.boot(br, w, h, dpr)
+    r = pg.evaluate("""() => { const before = JSON.stringify(store.seenUnlockedTiers || null);
+      showWelcome();
+      return new Promise(res => setTimeout(() => { const hero = document.querySelector('#stage .cosmic-welcome .cosmic-hero-wrap');
+        const home = document.createElement('div'); home.style.cssText = 'position:fixed;left:-999px;top:0;width:400px';
+        document.body.appendChild(home); home.appendChild(buildCosmicHero(true));
+        const unlit = home.querySelector('.cosmic-badge-rank:not(.cosmic-badge-lit)');
+        const icons = hero ? [...hero.querySelectorAll('.cosmic-icon-badge')] : [];
+        const cs = n => { const c = getComputedStyle(n); return { bg: c.backgroundColor, border: c.borderTopColor, w: n.offsetWidth, lens: getComputedStyle(n, '::after').content !== 'none' }; };
+        const want = unlit ? cs(unlit) : null;
+        const got = icons.map(cs);
+        home.remove();
+        res({ icons: icons.length, withLine: icons.filter(n => n.querySelector('svg path')).length, rank: hero ? hero.querySelectorAll('.cosmic-badge-rank').length : -1,
+              flares: hero ? hero.querySelectorAll('.cosmic-flare-dot').length : -1, want, got,
+              glass: !!want && got.length > 0 && got.every(g => g.bg === want.bg && g.border === want.border && g.lens && Math.abs(g.w - want.w) <= 1),
+              taps: hero ? hero.querySelectorAll('.cosmic-badge-tappable, [role=button]').length : -1,
+              sky: document.body.classList.contains('sky-home'),
+              same: before === JSON.stringify(store.seenUnlockedTiers || null) }); }, 900)); }""")
+    check("Z. the learning icons stay: six line icons, no rank emblems (%d, %d)" % (r["icons"], r["rank"]), r["icons"] == 6 and r["withLine"] == 6 and r["rank"] == 0 and r["flares"] >= 6, r)
+    check("Z. Welcome's icons are the plain ones they were - no glass bubble (%s)" % (r["got"][:1],),
+          bool(r["got"]) and all(g["bg"] != r["want"]["bg"] for g in r["got"]), r["got"][:2])
+    check("Z. Welcome is under Home's full sky", r["sky"], r)
+    ctx.close()
+
+def section_aa(br):
+    print("\nAA. Home's planet system is Welcome's: the same planet, the same rings, no halo behind it")
+    for label, w, h, dpr in (z5b.PHONE, ("iPad Pro 11", 834, 1194, 2)):
+        ctx, pg = z5b.boot(br, w, h, dpr)
+        M = """() => { const h = document.querySelector('#stage .cosmic-hero-wrap'); if(!h) return null;
+          const radii = [...new Set([...h.querySelectorAll('svg circle')].map(c => +c.getAttribute('r')).filter(r => r >= 100))].sort((a, b) => a - b);
+          const W = h.getBoundingClientRect();
+          return { w: Math.round(W.width), radii, halo: !!h.querySelector('.homeglow-hero') }; }"""
+        pg.evaluate("() => { showWelcome(); }"); pg.wait_for_timeout(900)
+        wel = pg.evaluate(M)
+        pg.evaluate("() => { showHome(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }"); pg.wait_for_timeout(1500)
+        home = pg.evaluate(M)
+        check("AA. %s: Home's rings are Welcome's (%s vs %s)" % (label, home and home["radii"], wel and wel["radii"]),
+              bool(home and wel) and home["radii"][:2] == wel["radii"][:2] and abs(home["w"] - wel["w"]) <= 4, {"home": home, "welcome": wel})
+        check("AA. %s: no halo behind Home's planet, as on Welcome" % label, bool(home) and not home["halo"] and not wel["halo"], home)
+        ctx.close()
+
+
+def section_bb(br):
+    print("\nBB. A Safari tab: Home and Welcome fit the visible height - nothing scrolls")
+    ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"
+    bad = []
+    for W, H in ((375, 630), (393, 700), (430, 760), (440, 780), (440, 840)):
+        for screen in ("welcome", "home"):
+            ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=2, user_agent=ua, is_mobile=True, has_touch=True)
+            pg = cb.open_page(ctx) if hasattr(cb, "open_page") else ctx.new_page()
+            pg.goto(cb.URL if hasattr(cb, "URL") else z5b.URL); pg.wait_for_timeout(2500)
+            pg.evaluate("document.getElementById('splashscreen')?.remove()")
+            if screen == "home":
+                pg.evaluate("""() => { store.onboardingComplete = true; store.firstName = 'Recruit'; store.novaMet = 99; store.tourRev = 99; store.seenProfileTour = true;
+                  try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false; showHome(); }""")
+            else:
+                pg.evaluate("() => showWelcome()")
+            pg.wait_for_timeout(1500)
+            pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro').forEach(n => n.remove())")
+            r = pg.evaluate("() => ({ browser: document.documentElement.classList.contains('is-browser'), sh: document.documentElement.scrollHeight, ih: innerHeight, root: getComputedStyle(document.documentElement).backgroundColor })")
+            if screen == "welcome" and W == 440 and H == 780:
+                import io
+                from PIL import Image
+                im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+                rc = [int(v) for v in r["root"][r["root"].index("(") + 1:-1].split(",")[:3]]
+                edges = [im.getpixel((x, y)) for y in (1, im.height - 2) for x in (20, im.width // 2, im.width - 20)]
+                far = max(max(abs(a - b) for a, b in zip(px, rc)) for px in edges)
+                check("BB. the page's top and bottom edges are the colour Safari fills its bars with (off by %d)" % far, far <= 3, {"root": rc, "edges": edges})
+            if not r["browser"] or r["sh"] > r["ih"] + 1:
+                bad.append((W, H, screen, r))
+            ctx.close()
+    check("BB. in a Safari tab Home and Welcome are no taller than the screen at 5 phone heights", not bad, bad)
+
+
+def section_cc(br):
+    print("\nCC. A laptop: Home's planet centred and large, the words on its left, Start Studying in the tab bar, nothing scrolls")
+    bad = []
+    for W, H in ((1366, 638), (1512, 852), (1920, 1080)):
+        ctx, pg = z5b.boot(br, W, H, 1)
+        pg.evaluate("""() => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false;
+          document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner').forEach(n => n.remove()); showHome(); }""")
+        pg.wait_for_timeout(2000)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner, .rs-spot').forEach(n => n.remove())")
+        # MOVED IN round 31: "the start studying button should just be put
+        # inside the bottom tab similar to the start button ... for the unit
+        # selection screen" and the daily question "an actual thing ... on the
+        # left side": Start Studying is the bar's Start pill (the bar centred),
+        # the daily question a card in the words' column
+        r = pg.evaluate("""() => { const p = document.querySelector('.screen-home-actual'); const h = p.querySelector('.cosmic-hero-wrap').getBoundingClientRect();
+          const t = p.querySelector('.hometitle-wrap').getBoundingClientRect(); const st = document.getElementById('bottomtab-start');
+          const card = document.querySelector('#stage > .dq-card'), bar = document.getElementById('bottomtabs');
+          const cr = card ? card.getBoundingClientRect() : null, br = bar.getBoundingClientRect();
+          return { hero: h.width, centre: Math.abs((h.left + h.width / 2) - innerWidth / 2), left: t.right <= h.left + 4 && t.left >= 0,
+                   start: !!(st && !st.hidden && /Start Studying/.test(st.textContent) && bar.contains(st)) && Math.abs((br.left + br.right) / 2 - innerWidth / 2) < 2,
+                   /* MOVED IN round 32: "should be on the right side though near the bottom right" */
+                   fabSide: !!cr && cr.left >= br.right + 8 && Math.abs((cr.top + cr.bottom) / 2 - (br.top + br.bottom) / 2) < 3 && !!card.querySelector('.daily-question-fab'),
+                   sh: document.documentElement.scrollHeight, ih: innerHeight }; }""")
+        pg.evaluate("() => document.getElementById('bottomtab-start').click()"); pg.wait_for_timeout(900)
+        r["startGoes"] = pg.evaluate("() => !document.querySelector('.screen-home-actual') && !!document.querySelector('#stage .modecards, #stage .modeselect')")
+        if not (r["hero"] >= .62 * H and r["centre"] <= 8 and r["left"] and r["start"] and r["fabSide"] and r["startGoes"] and r["sh"] <= r["ih"] + 2):
+            bad.append((W, H, r))
+        ctx.close()
+    check("CC. on 3 laptop screens: planet >= 62% of the height and centred, words on its left, Start Studying in the centred bar (and it starts), the daily question a card at the bottom right level with the bar, no scroll", not bad, bad)
+
+def section_dd(br):
+    print("\nDD. Sign-up with Nova: he asks the username (one per person) and the first character; the account is made on the pick")
+    ctx, pg = cb.booted(br, 440, 956, touch=True, dpr=2, init=z5b.STANDALONE)
+    pg.wait_for_timeout(1500)
+    pg.evaluate("() => { document.getElementById('splashscreen')?.remove(); }")
+    if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
+        pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn"):
+        pg.click(sel); pg.wait_for_timeout(600)
+    pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
+    try:
+        pg.wait_for_selector("#nova-intro", timeout=8000)
+    except Exception:
+        pass
+    pg.wait_for_timeout(1200)
+    ADV = """() => { const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return 'gone';
+      if(el.__nova.typing){ el.__nova.advance(); return 'typing'; }
+      if(el.__nova.asking) return el.querySelector('.nt-ask-name') ? 'name' : el.querySelector('.nt-ask-char') ? 'char' : 'ask';
+      if(el.__nova.index === el.__nova.count - 1){ el.querySelector('.nt-go').click(); return 'next'; }
+      el.__nova.advance(); return 'next'; }"""
+    def until(kind, n=200):
+        for _ in range(n):
+            k = pg.evaluate(ADV)
+            if k == kind or k == "gone":
+                return k
+            pg.wait_for_timeout(120)
+        return None
+    got = until("name")
+    before = pg.evaluate("() => ({ code: syncCode || null, done: !!store.onboardingComplete })")
+    check("DD. he asks the name before any account exists", got == "name" and not before["code"] and not before["done"], [got, before])
+    pg.evaluate("""() => { leaderboardRows = (leaderboardRows || []).concat([{ pub: 'tsaleshotaaa', firstName: 'TSale', avatarChar: 'alien', level: 24 }]); boardFetchedAt = Date.now(); }""")
+    pg.fill(".nt-ask-input", "TSale"); pg.click(".nt-ask-name .nt-ask-go"); pg.wait_for_timeout(600)
+    clash = pg.evaluate("() => ({ msg: !document.querySelector('.nt-ask-msg').hidden, signin: !document.querySelector('.nt-ask-signin').hidden, still: !!document.getElementById('nova-intro').__nova.asking, name: store.firstName })")
+    check("DD. a name somebody already wears stops it and offers to sign in", clash["msg"] and clash["signin"] and clash["still"] and clash["name"] != "TSale", clash)
+    pg.fill(".nt-ask-input", "J.Smith"); pg.click(".nt-ask-name .nt-ask-go"); pg.wait_for_timeout(800)
+    said = pg.evaluate("() => document.querySelector('#nova-intro .nt-text').textContent")
+    check("DD. a free name goes on, and he says it back", "J.Smith" in (said or "") or pg.evaluate("() => store.firstName") == "J.Smith", said)
+    got = until("char")
+    mid = pg.evaluate("() => ({ code: syncCode || null, n: document.querySelectorAll('.nt-ask-char .avatarchar-option').length })")
+    check("DD. then the starter characters, still no account", got == "char" and not mid["code"] and mid["n"] >= 4, [got, mid])
+    pg.click(".nt-ask-char .avatarchar-option >> nth=1"); pg.wait_for_timeout(200)
+    pg.click(".nt-ask-char .nt-ask-go"); pg.wait_for_timeout(600)
+    after = pg.evaluate("() => ({ code: !!syncCode, done: !!store.onboardingComplete, name: store.firstName, ch: store.avatarChar })")
+    check("DD. the pick makes the account, with that name and character", after["code"] and after["done"] and after["name"] == "J.Smith" and bool(after["ch"]), after)
+    until("gone", 400)
+    # (round 37) the tips wait 2.5s so Home has its moment first
+    pg.wait_for_timeout(4000)
+    home = pg.evaluate("() => ({ greet: (document.querySelector('.homegreeting') || {}).textContent || '', tour: !!document.getElementById('tour-tooltip') })")
+    check("DD. Home greets the new name and the main-menu tips start", "J.Smith" in home["greet"] and home["tour"], home)
+    ctx.close()
+
+
+def section_ee(br):
+    print("\nEE. Round 26: a dark test on a laptop, Home's pill and planet, Profile's cards, the countdown arrows, the chat clear of its button")
+    DRILL = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner').forEach(n => n.remove());
+      const ids = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Identity Crimes');
+      cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.versions = {}; cfg.source = 'all'; cfg.size = 0; cfg.flashcards = false;
+      beginRun(freshOrder(ids), null);
+      for(let t = 0; t < 120 && !document.querySelector('.qpanel .choice'); t++) await wait(60);
+      await wait(900); }"""
+    def corner(pg):
+        pg.evaluate("() => { const s = document.createElement('style'); s.textContent = 'body > *{ visibility:hidden !important }'; document.head.appendChild(s); }")
+        pg.wait_for_timeout(250)
+        im = z5b.shot(pg); W, H = im.size
+        return z5b.mean(im, (int(W * .01), int(H * .12), int(W * .08), int(H * .2)))
+    ctx, pg = z5b.boot(br, 440, 956, 1)
+    pg.evaluate(DRILL); phone = corner(pg); ctx.close()
+    ctx, pg = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)
+    pg.evaluate(DRILL); lap = corner(pg); ctx.close()
+    d = max(abs(a - b) for a, b in zip(phone, lap))
+    check("EE. a test's sky on a laptop tab is the installed phone's (within 3 levels): %.1f" % d, d <= 3, [phone, lap])
+
+    bad = []
+    for W, H in ((1366, 638), (1440, 820), (1920, 970)):
+        ctx, pg = cb.booted(br, W, H, seed=cb.USED_ACCOUNT)
+        pg.evaluate("""() => { try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false; showHome(); }""")
+        pg.wait_for_timeout(2200)
+        # MOVED IN round 31: Start Studying is the bar's own Start pill - it
+        # fills the bar as a phone's does (at least 75% of its height), on one line
+        r = pg.evaluate("""() => { const st = document.getElementById('bottomtab-start'), bar = document.getElementById('bottomtabs');
+          const s = st.getBoundingClientRect(), b = bar.getBoundingClientRect(), t = st.querySelector('.bottomtab-label').getBoundingClientRect();
+          const tops = [...document.querySelectorAll('.screen-home-actual .cosmic-icon-badge')].map(e => e.getBoundingClientRect().top);
+          return { h: s.height, bh: b.height, mid: Math.abs((s.top + s.height / 2) - (b.top + b.height / 2)),
+                   oneLine: t.height < parseFloat(getComputedStyle(st).fontSize) * 1.8, top: Math.min(...tops),
+                   fade: parseFloat(getComputedStyle(document.documentElement).fontSize) * 6 }; }""")
+        if not (r["h"] >= .75 * r["bh"] and r["h"] < r["bh"] and r["mid"] < 2 and r["oneLine"] and r["top"] >= r["fade"]):
+            bad.append((W, H, r))
+        ctx.close()
+    check("EE. laptop Home: Start Studying fills the bar as on a phone, on its middle, one line; the planet's top bubble clears the 6rem fade", not bad, bad)
+
+    ctx, pg = z5b.boot(br, 440, 956, 1)
+    r = pg.evaluate("""async () => { showProfile('profile'); await new Promise(r => setTimeout(r, 900));
+      const tab = document.querySelector('#stage .profile-identity-tab');
+      const cards = [tab.querySelector(':scope > .profile-hero'), tab.querySelector(':scope > .pf-goal'), tab.querySelector(':scope > .pf-case .pf-ccase')];
+      const look = cards.map(e => e ? { rim: getComputedStyle(e).borderTopColor, img: getComputedStyle(e).backgroundImage.indexOf('rgb(20, 23, 28)') >= 0 } : null);
+      const nm = document.querySelector('#stage .pf-standing .pf-rankname'), lv = document.querySelector('#stage .pf-standing .pf-level');
+      const stacked = !nm || (nm.getBoundingClientRect().bottom <= lv.getBoundingClientRect().top + 2 && getComputedStyle(nm).textTransform === 'uppercase');
+      return { tiles: document.querySelectorAll('#stage .profile-hero .person-card-cell').length, look, stacked }; }""")
+    same = all(r["look"]) and len({x["rim"] for x in r["look"]}) == 1 and all(x["img"] for x in r["look"])
+    check("EE. Profile: no tiles, the three cards on the person card's surface, the rank a headline over the level", r["tiles"] == 0 and same and r["stacked"], r)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showCalendarTab(); await wait(900);
+      const card = document.querySelector('#stage .cal-count-card'); if(!card) return { card: false };
+      const prev = card.querySelector('.cal-count-arrow.is-prev'), next = card.querySelector('.cal-count-arrow.is-next');
+      const tr = card.querySelector('.cal-count-track'); const n = card.querySelectorAll('.cal-count-page').length;
+      if(!prev || !next) return { card: true, arrows: false };
+      card.scrollIntoView({ block: 'center' }); await wait(300);
+      const start = { prevOff: prev.disabled, at: tr.scrollLeft };
+      next.click(); await wait(900);
+      const page = Math.round(tr.scrollLeft / tr.clientWidth);
+      const tap = Math.min(prev.getBoundingClientRect().width, prev.getBoundingClientRect().height);
+      return { card: true, arrows: true, n, start, page, prevOn: !prev.disabled, tap }; }""")
+    check("EE. Calendar: the countdowns step with arrows (prev dim at the start, next moves one page)",
+          r.get("arrows") and r["start"]["prevOff"] and r["page"] == 1 and r["prevOn"], r)
+    ctx.close()
+
+    bad = []
+    for W, H, inst in ((1440, 820, False), (1194, 834, True)):
+        ctx, pg = (z5b.boot(br, W, H, 1) if inst else cb.booted(br, W, H, seed=cb.USED_ACCOUNT))
+        pg.evaluate("""() => { homeUnlocksOwed = () => false; showHome(); }"""); pg.wait_for_timeout(1500)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay, #tour-tooltip, .app-banner').forEach(n => n.remove())")
+        pg.evaluate("() => document.getElementById('chatdock-btn').click()"); pg.wait_for_timeout(1200)
+        r = pg.evaluate("""() => { const b = document.getElementById('chatdock-btn').getBoundingClientRect(), p = document.querySelector('.chatdock-panel').getBoundingClientRect();
+          const hs = document.getElementById('homestart');
+          return { gap: Math.round(p.top - b.bottom), pill: hs && !hs.hidden ? getComputedStyle(hs).opacity : 'none' }; }""")
+        if not (r["gap"] >= 0 and r["pill"] in ("0", "none")):
+            bad.append((W, H, r))
+        ctx.close()
+    check("EE. the open chat starts below its button, and the white pill is not seen through it", not bad, bad)
+
+
+def section_ff(br):
+    print("\nFF. Sign-up on a laptop: Welcome's planet is Home's, the steps hold together, Nova in the middle")
+    bad = []
+    for W, H in ((1366, 638), (1440, 820), (1920, 970)):
+        ctx = br.new_context(viewport={"width": W, "height": H})
+        pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+        pg.evaluate("document.getElementById('splashscreen')?.remove()")
+        if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome')"):
+            pg.evaluate("() => showWelcome()")
+        pg.wait_for_timeout(1500)
+        BOX = """() => { const h = document.querySelector('#stage .cosmic-hero-wrap').getBoundingClientRect(); return { w: h.width, top: h.top, left: h.left, right: h.right }; }"""
+        wel = pg.evaluate(BOX)
+        wel.update(pg.evaluate("""() => { const t = document.querySelector('.cosmic-welcome-title').getBoundingClientRect(), a = document.querySelector('.cosmic-welcome-actions').getBoundingClientRect();
+          /* MOVED IN round 31: "the buttons should absolutely not be on the left" - the words stay
+             left, the buttons stand centred under the planet */
+          return { words: t.right, acts: Math.abs((a.left + a.right) / 2 - innerWidth / 2), actsTop: a.top, sh: document.documentElement.scrollHeight, ih: innerHeight }; }"""))
+        pg.evaluate("""() => { store.onboardingComplete = true; store.firstName = 'Recruit'; store.novaMet = 99; store.tourRev = 99; store.seenProfileTour = true;
+          try{ const u = pendingHomeUnlocks(); markUnlocksShown(u.chars, u.banners, u.fx); }catch(e){} homeUnlocksOwed = () => false; showHome(); }""")
+        pg.wait_for_timeout(1500)
+        home = pg.evaluate(BOX)
+        if not (abs(wel["w"] - home["w"]) <= 2 and home["top"] - 70 <= wel["top"] <= home["top"] + 2 and wel["words"] <= wel["left"] + 4 and wel["acts"] < 3 and wel["actsTop"] > wel["top"] + wel["w"] * .8 and wel["sh"] <= wel["ih"] + 1):
+            bad.append((W, H, wel, home))
+        ctx.close()
+    # MOVED IN round 32: the planet rides up to 3.6rem higher than Home's for the two buttons stacked under it
+    check("FF. Welcome's planet is Home's size on 3 laptops (no lower than Home's), its words on its left, its buttons centred under it, no scroll", not bad, bad)
+    ctx = br.new_context(viewport={"width": 1440, "height": 820})
+    pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+    pg.evaluate("document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(1200)
+    gaps = {}
+    pg.click(".cosmic-welcome-btn.welcome-new"); pg.wait_for_timeout(900)
+    GAP = """(sel) => { const p = document.querySelector('#stage > *'); const b = p.querySelector(sel).getBoundingClientRect();
+      const before = [...p.children].filter(c => c.offsetHeight && !c.classList.contains('homeglow') && c.getBoundingClientRect().bottom <= b.top + 1);
+      const last = Math.max(...before.map(c => c.getBoundingClientRect().bottom)); return Math.round(b.top - last); }"""
+    gaps["check"] = pg.evaluate(GAP, ".signupcheck-go")
+    pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(900)
+    check("FF. each sign-up step's button sits just under its content (within 60px)", all(0 <= v <= 60 for v in gaps.values()), gaps)
+    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300)
+    pg.click(".classselect-panel .next.playbtn")
+    try:
+        pg.wait_for_selector("#nova-intro .nt-talk", timeout=25000)
+    except Exception:
+        pass
+    pg.wait_for_timeout(2000)
+    r = pg.evaluate("""() => { const t = document.querySelector('#nova-intro .nt-talk'); if(!t) return null; const n = t.querySelector('.nt-nova').getBoundingClientRect(), b = t.querySelector('.nt-bubble').getBoundingClientRect();
+      return { mid: Math.round((n.left + b.right) / 2 - innerWidth / 2), nova: Math.round(n.left) }; }""")
+    check("FF. Nova's introduction: he and his bubble one group in the middle (within 60px), not in the corner", r and abs(r["mid"]) <= 60 and r["nova"] > 100, r)
+    ctx.close()
+
+
+def section_gg(br):
+    print("\nGG. Rounds 29-31")
+    # the keys line: a touch phone hides it, a touch iPad shows it
+    seen = {}
+    for lab, W, H in (("phone", 440, 956), ("ipad", 834, 1194)):
+        ctx, pg = cb.booted(br, W, H, seed=cb.USED_ACCOUNT, touch=True, dpr=2)
+        seen[lab] = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          const ix = QUESTIONS.map((q, i) => i).filter(i => (QUESTIONS[i].topic || '').trim() === 'Identity Crimes').slice(0, 3);
+          cfg.mode = 'drill'; cfg.units = ['Identity Crimes']; cfg.source = 'all'; cfg.size = 0; runMode = 'drill'; beginRun(ix, null);
+          for(let t = 0; t < 120 && !document.querySelector('.qpanel .choice'); t++) await wait(60); await wait(400);
+          const h = document.getElementById('hint'); const foot = document.querySelector('.qpanel .foot, .foot');
+          return { hint: !!h && !h.hidden && getComputedStyle(h).display !== 'none' && h.offsetHeight > 0,
+                   line: foot ? getComputedStyle(foot).borderTopWidth : null }; }""")
+        ctx.close()
+    check("GG. the keys line: hidden on a touch phone, shown on a touch iPad", seen["phone"]["hint"] is False and seen["ipad"]["hint"] is True, seen)
+    check("GG. no line over Next question (the foot has no top border)", seen["phone"]["line"] in ("0px", None), seen)
+
+    ctx, pg = z5b.boot(br, 440, 956, 1)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      showProfile('profile'); await wait(900);
+      const sub = document.querySelector('#stage .pf-standing .pf-idsub');
+      const pill = document.querySelector('#stage .pf-goal-foot'); const pr = pill.getBoundingClientRect();
+      const range = document.createRange(); range.selectNodeContents(pill); const tr = [...range.getClientRects()].filter(x => x.width > 4)[0];
+      const word = tr ? Math.abs((tr.left + tr.right) / 2 - (pr.left + pr.right) / 2) : 99;
+      showProfile('stats'); await wait(900);
+      const hs = [...document.querySelectorAll('#stage .stx-glance .stat-card')].map(e => Math.round(e.getBoundingClientRect().height));
+      startDailyQuestion(); await wait(1200);
+      const sb = [...document.querySelectorAll('button')].find(x => /Submit answer/.test(x.textContent));
+      const sbg = sb ? getComputedStyle(sb).backgroundColor : null;
+      return { sub: sub ? sub.textContent.replace(/\s+/g, ' ').trim() : null, word, hs, sbg }; }""")
+    check("GG. under the rank: 'Level N · N badges'", bool(r["sub"]) and bool(__import__("re").match(r"^Level \d+\s*·\s*\d+ badges?$", r["sub"])), r)
+    check("GG. See rank ladder's word in the pill's middle (within 1.5px)", r["word"] <= 1.5, r)
+    check("GG. Stats' four glance tiles are one height", len(r["hs"]) == 4 and len(set(r["hs"])) == 1, r)
+    m = __import__("re").findall(r"[\d.]+", r["sbg"] or "")
+    check("GG. the daily question's Submit is grey before a pick, not white (%s)" % r["sbg"], len(m) >= 3 and max(float(x) for x in m[:3]) < 120, r)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      showModeSelect(); await wait(500); document.querySelector('.modeselect .modecard').click(); await wait(1200);
+      const cards = [...document.querySelectorAll('#stage .picks > label.pick')].slice(0, 6);
+      const foot = cards.map(c => { const b = c.getBoundingClientRect(), n = c.querySelector('.pcount').getBoundingClientRect(); return Math.round(b.bottom - n.bottom); });
+      /* MOVED IN round 32: the badge is at the card's foot - its bottom inset equals its right one */
+      const ins = cards.map(c => { const b = c.getBoundingClientRect(), g = c.querySelector('.pick-badge'); if(!g) return null; const r = g.getBoundingClientRect(); return Math.round(Math.abs((b.bottom - r.bottom) - (b.right - r.right))) + (r.top < b.top + b.height / 2 ? 50 : 0); }).filter(x => x != null);
+      const icon = document.querySelector('#stage .searchwrap .searchicon, #stage .searchicon');
+      const ic = icon ? { col: getComputedStyle(icon).color, z: getComputedStyle(icon).zIndex } : null;
+      showRankings(); await wait(1000);
+      const rs = !!document.querySelector('#stage .rank-search-wrap .searchicon');
+      return { foot, ins, ic, rs }; }""")
+    # MOVED IN round 32: an earned card (no bar) has its count on the floor, a card with a bar
+    # has it over the bar - so the distance is one of two, each the same on every card of its kind
+    check("GG. unit cards: the count is at the same distance from every card's foot (one per kind)", 1 <= len(set(r["foot"])) <= 2, r)
+    # ...and on a laptop it is AT the foot - the six-row grid left it under the name there
+    c2, p2 = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)
+    lf = p2.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      showModeSelect(); await wait(500); document.querySelector('.modeselect .modecard').click(); await wait(1200);
+      return [...document.querySelectorAll('#stage .picks > label.pick')].slice(0, 6).map(c => { const b = c.getBoundingClientRect(), n = c.querySelector('.pcount').getBoundingClientRect(); return Math.round(b.bottom - n.bottom); }); }""")
+    c2.close()
+    check("GG. laptop unit cards: the count sits at the foot (within 40px of it) on every card", lf and max(lf) <= 40 and len(set(lf)) <= 2, lf)
+    check("GG. unit cards: the badge in the bottom-right, as far from the bottom as from the right (within 1px)", r["ins"] and max(r["ins"]) <= 1, r)
+    check("GG. the magnifier is white and on the field; the board's search has one",
+          r["ic"] and r["ic"]["col"].startswith("rgba(243, 245, 247") and r["ic"]["z"] not in ("auto", "0") and r["rs"], r)
+    ctx.close()
+
+    ctx, pg = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      homeUnlocksOwed = () => false; showHome(); await wait(1200);
+      const card = document.querySelector('#stage > .dq-card');
+      showModeSelect(); await wait(900);
+      const c = document.getElementById('count').getBoundingClientRect(), ch = document.getElementById('chatdock-btn').getBoundingClientRect();
+      return { card: !!card && /Daily question/.test(card.textContent), left: Math.round(c.left), mirror: Math.round(innerWidth - ch.right),
+               mid: Math.round(Math.abs((c.top + c.bottom) / 2 - (ch.top + ch.bottom) / 2)) }; }""")
+    check("GG. laptop: the daily question is a card on Home", r["card"], r)
+    check("GG. laptop: the page's name is top-left, mirroring the chat button", abs(r["left"] - r["mirror"]) <= 2 and r["mid"] <= 3, r)
+    ctx.close()
+
+    src = cb.BODY
+    check("GG. sign-up words: 'Select your classes', no 'can't change this later', fire code named",
+          "Select your classes" in src and "won't be able to change this later" not in src and "fire code" in src, None)
+
+    ctx, pg = z5b.boot(br, 440, 956, 1)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      try{ localStorage.removeItem(SAVE_CODE_ASKED_KEY); }catch(e){}
+      store.savedCodeSaved = false; store.savedCodePrompts = 0; const ts = store.testStats; store.testStats = {};
+      homeUnlocksOwed = () => false; showHome(); await wait(400); document.getElementById('save-code')?.remove(); checkSaveCodeReminder(); await wait(300);
+      const before = !!document.getElementById('save-code');
+      store.testStats = ts && Object.keys(ts).length ? ts : { x: { plays: 1 } }; checkSaveCodeReminder(); await wait(300);
+      const after = !!document.getElementById('save-code');
+      return { before, after }; }""")
+    check("GG. the save-code banner waits for a first test, then asks on Home", r["before"] is False and r["after"] is True, r)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      if(typeof scheduleNovaGoodLuck !== 'function') return { fn: false };
+      const gl = () => novaThread().filter(m => m.key === 'nova' && /Good luck on your learning adventure/.test(m.text || ''));
+      const n0 = gl().length; scheduleNovaGoodLuck(); await wait(6000); const n1 = gl().length; await wait(5500);
+      const t = gl(); const last = t[t.length - 1];
+      scheduleNovaGoodLuck(); await wait(11000); const n3 = gl().length;
+      return { fn: true, early: n1 - n0, got: t.length - n0, text: last && last.text, again: n3 - t.length }; }""")
+    check("GG. Nova's good-luck message: not before ten seconds, then one, and never twice",
+          r.get("fn") and r["early"] == 0 and r["got"] == 1 and "Good luck" in (r["text"] or "") and r["again"] == 0, r)
+    ctx.close()
+
+
+def section_hh(br):
+    print("\nHH. Round 32 (laptop)")
+    ctx, pg = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      homeUnlocksOwed = () => false; showHome(); await wait(800);
+      const fade = getComputedStyle(document.documentElement).getPropertyValue('--fade-top').trim();
+      showModeSelect(); await wait(500); document.querySelector('.modeselect .modecard').click(); await wait(1000);
+      const sa = document.querySelector('#stage .selall-btn'), sb = document.querySelector('#stage .searchbox');
+      const look = e => e ? [getComputedStyle(e).backgroundColor, getComputedStyle(e).borderTopColor] : null;
+      const sac = sa ? getComputedStyle(sa).color : null, sal = look(sa), sbl = look(sb);
+      showRankings(); await wait(900);
+      const me = document.querySelector('#stage .rank-me-btn'), sb2 = document.querySelector('#stage .rank-search');
+      return { fade, sac, sal, sbl, mel: look(me), mec: me ? getComputedStyle(me).color : null, sbl2: look(sb2) }; }""")
+    check("HH. a laptop (mouse) has no edge fades", r["fade"] in ("0px", "0"), r)
+    check("HH. Select all and Find me wear the search field's surface and the magnifier's white",
+          r["sal"] == r["sbl"] and r["mel"] == r["sbl2"] and r["sac"] == "rgba(243, 245, 247, 0.92)" and r["mec"] in ("rgba(243, 245, 247, 0.92)", "rgb(243, 245, 247)"), r)   # 328: Find me's words are plain white ("I like how the wording is white")
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      homeUnlocksOwed = () => false; showHome(); await wait(1200);
+      const c = document.querySelector('#stage > .dq-card'), b = document.getElementById('bottomtabs');
+      if(!c) return null; const cr = c.getBoundingClientRect(), br = b.getBoundingClientRect();
+      return { right: Math.round(innerWidth - cr.right), clear: Math.round(cr.left - br.right), mid: Math.round(Math.abs((cr.top + cr.bottom) / 2 - (br.top + br.bottom) / 2)) }; }""")
+    check("HH. the daily question card at the bottom right, clear of the bar, level with it", r and r["right"] <= 32 and r["clear"] >= 8 and r["mid"] <= 3, r)
+    ctx.close()
+    ctx = br.new_context(viewport={"width": 1440, "height": 820}); pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+    pg.evaluate("document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(1200)
+    W = pg.evaluate("""() => { const a = [...document.querySelectorAll('.cosmic-welcome-actions > .cosmic-welcome-btn')].map(b => b.getBoundingClientRect());
+      const h = document.querySelector('.cosmic-welcome .cosmic-hero-wrap').getBoundingClientRect();
+      return a.length === 2 ? { stacked: a[1].top >= a[0].bottom && Math.abs(a[0].left - a[1].left) < 2, under: a[0].top >= h.bottom - 12, mid: Math.abs((a[0].left + a[0].right) / 2 - innerWidth / 2) } : null; }""")
+    check("HH. Welcome's two buttons one above the other, centred under the planet", W and W["stacked"] and W["under"] and W["mid"] < 3, W)
+    spots = {}
+    POS = """() => { const p = document.querySelector('#stage > *'); const b = p.querySelector('.back-link').getBoundingClientRect(), t = p.querySelector('.hometitle, .welcomeintro-title').getBoundingClientRect();
+      return [Math.round(b.left), Math.round(b.top), Math.round(t.top), document.documentElement.scrollHeight <= innerHeight + 1]; }"""
+    pg.click(".cosmic-welcome-btn.welcome-signin"); pg.wait_for_timeout(800); spots["code"] = pg.evaluate(POS)
+    pg.click(".synccode-entry-panel .back-link"); pg.wait_for_timeout(600)
+    pg.click(".cosmic-welcome-btn.welcome-new"); pg.wait_for_timeout(800); spots["check"] = pg.evaluate(POS)
+    pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(800); spots["class"] = pg.evaluate(POS)
+    same = len({tuple(v[:3]) for v in spots.values()}) == 1
+    check("HH. the sign-up steps: Back and the title in the same places on every step, in the top fifth, nothing scrolls",
+          same and all(v[1] < 820 * .2 and v[3] for v in spots.values()), spots)
+    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn")
+    try:
+        pg.wait_for_selector("#nova-intro", timeout=25000)
+    except Exception:
+        pass
+    moving = False
+    for _ in range(160):
+        moving = pg.evaluate("""() => { const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return 'gone';
+          const rows = [...el.querySelectorAll('.nt-prop.is-in .nt-parade-row')];
+          if(rows.length && rows.some(r => !r.classList.contains('is-still'))) return true;
+          if(el.__nova.typing){ el.__nova.advance(); return false; }
+          if(el.__nova.asking){
+            const nm = el.querySelector('.nt-ask-name .nt-ask-input');
+            if(nm && !nm.value){ nm.value = 'HH.Laptop'; nm.dispatchEvent(new Event('input', { bubbles: true })); el.querySelector('.nt-ask-name .nt-ask-go').click(); return false; }
+            const ch = el.querySelector('.nt-ask-char .avatarchar-option');
+            if(ch && !el.querySelector('.nt-ask-char .avatarchar-option.selected')){ ch.click(); return false; }
+            const go = el.querySelector('.nt-ask-char .nt-ask-go'); if(go && !go.hidden){ go.click(); return false; }
+            return false; }
+          el.__nova.advance(); return false; }""")
+        if moving is True or moving == "gone":
+            break
+        pg.wait_for_timeout(250)
+    check("HH. Nova's character/badge rows glide on a laptop (a row is not still)", moving is True, moving)
+    ctx.close()
+
+
+def section_ii(br):
+    print("\nII. Round 34: the intro hands over to Home without a shift, the name field's caret, sound in a Safari tab")
+    M = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const q = s => { const e = document.querySelector(s); if(!e) return null; const r = e.getBoundingClientRect();
+        return [Math.round(r.left), Math.round(r.top), Math.round(r.width), getComputedStyle(e).display]; };
+      const read = () => ({ planet: q('#stage .screen-home-actual .cosmic-hero-wrap'), title: q('#stage .screen-home-actual .hometitle'),
+                            play: q('#stage .screen-home-actual > .playbtn') });
+      homeUnlocksOwed = () => false; showHome(); await wait(1200);
+      const done = read();
+      /* a new account's Home under GENERATING PROFILE and Nova's introduction: onboarding not done, no bar */
+      store.onboardingComplete = false; const d = document.createElement('i'); stage.appendChild(d); d.remove(); await wait(700);
+      const intro = read(); intro.bar = !document.getElementById('bottomtabs').hidden;
+      return { done, intro }; }"""
+    for lab, W, H in (("laptop", 1440, 820), ("phone", 440, 956)):
+        ctx, pg = cb.booted(br, W, H, seed=cb.USED_ACCOUNT)
+        r = pg.evaluate(M)
+        ctx.close()
+        same = r["done"]["planet"] == r["intro"]["planet"] and r["done"]["title"] == r["intro"]["title"]
+        play_ok = (r["intro"]["play"] is None or r["intro"]["play"][3] == "none") if lab == "laptop" else r["done"]["play"] == r["intro"]["play"]
+        check("II. %s: Home under the intro (no bar yet) is laid out as it will be - planet and title where they end up, Start Studying not standing apart" % lab,
+              r["intro"]["bar"] is False and same and play_ok, r)
+    ctx, pg = cb.booted(br, 440, 956, seed=cb.USED_ACCOUNT)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      const host = document.createElement('div'); host.className = 'nova-talk'; document.body.appendChild(host);
+      try{ const c = novaAskName({ stage: host, close(){} }, () => {}); if(c && !c.isConnected) host.appendChild(c); }catch(e){}
+      await wait(500); const inp = host.querySelector('.nt-ask-input'); if(!inp) return { missing: true }; inp.focus(); await wait(200);
+      const cs = getComputedStyle(inp), ph = getComputedStyle(inp, '::placeholder');
+      const out = { focused: document.activeElement === inp, caret: cs.caretColor, color: cs.color, ph: ph.color };
+      host.remove(); return out; }""")
+    ctx.close()
+    clear = lambda c: c in ("transparent", "rgba(0, 0, 0, 0)")
+    check("II. the name field, focused: no placeholder for the caret to blink inside, and the caret is the letters' own colour",
+          r["focused"] and clear(r["ph"]) and r["caret"] == r["color"], r)
+    ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
+    ctx = br.new_context(viewport={"width": 440, "height": 830}, device_scale_factor=2, user_agent=ua, is_mobile=True, has_touch=True)
+    ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');localStorage.removeItem('class26e.safarisound');}catch(e){}" % cb.USED_ACCOUNT)
+    pg = cb.open_page(ctx); pg.goto(cb.URL); pg.wait_for_timeout(2500)
+    r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+      document.getElementById('splashscreen')?.remove(); theme.soundOn = true;
+      homeUnlocksOwed = () => false; showHome(); await wait(600);
+      NovaSound.wake(); await wait(300);
+      NovaSound.startAmbience('amb.home', { owner: document.querySelector('#stage .screen-home-actual') }); await wait(400);
+      const s = NovaSound.state();
+      return { tab: NovaSound.iosTab, off: NovaSound.tabOff(), on: s.on, ambWant: s.ambWant, amb: s.amb }; }""")
+    ctx.close()
+    check("II. an iPhone Safari tab has sound (the switch not set) but never builds or plays the Home ambience",
+          r["tab"] is True and r["off"] is False and r["on"] is True and r["ambWant"] is None and r["amb"] is None, r)
+
+
+def main():
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(executable_path=cb.CHROME)
+        for k, fn in (("F", section_f), ("G", section_g), ("H", section_h), ("I", section_i), ("J", section_j), ("K", section_k), ("L", section_l), ("M", section_m), ("N", section_n), ("O", section_o), ("P", section_p), ("Q", section_q), ("R", section_r), ("S", section_s), ("T", section_t), ("U", section_u), ("V", section_v), ("W", section_w), ("X", section_x), ("Y", section_y), ("Z", section_z), ("@", section_aa), ("#", section_bb), ("$", section_cc), ("%", section_dd), ("&", section_ee), ("*", section_ff), ("=", section_gg), ("^", section_hh), ("~", section_ii)):
+            if k in ONLY:
+                try:
+                    fn(br)
+                except Exception as e:
+                    check("section %s ran" % k, False, repr(e)[:300])
+        br.close()
+    print("\n%s" % ("ALL PASS" if not cb.FAILURES else "%d FAILED" % len(cb.FAILURES)))
+    sys.exit(1 if cb.FAILURES else 0)
+
+
+if __name__ == "__main__":
+    main()

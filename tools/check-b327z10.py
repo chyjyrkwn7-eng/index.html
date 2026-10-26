@@ -220,7 +220,10 @@ def round2(br):
       const want = getComputedStyle(probe).borderTopColor; probe.remove();
       const b = document.querySelector('#stage .profile-cover .bnr');
       return { rim: getComputedStyle(c).borderTopColor, want, layered: !!(b && b.classList.contains('bnr-layered')), idle: !!(b && b.classList.contains('rk-idle')) }; }""")
-    check("%s: H1. the Profile card's rim is the surface border every card wears (%s), not its banner's colour" % (label, r["rim"]), r["rim"] == r["want"], r)
+    # MOVED IN 327z15 round 27: Profile's three cards are one family on the person card's
+    # surface, rim rgba(255,255,255,.14) - still a neutral white rim, never the banner's colour
+    check("%s: H1. the Profile card's rim is the surface border every card wears (%s), not its banner's colour" % (label, r["rim"]),
+          r["rim"] in (r["want"], "rgba(255, 255, 255, 0.14)"), r)
     # H2 a layered banner is moving from the moment it is built
     r2 = pg.evaluate("""() => { const b = buildBannerArt('tests250'); const out = { layered: b.classList.contains('bnr-layered'), idle: b.classList.contains('rk-idle') }; return out; }""")
     check("%s: H2. a layered (compositor) banner is never built still - it moves from its first frame" % label, r2["layered"] and not r2["idle"], r2)
@@ -352,35 +355,41 @@ def tab_search(br):
         pg.wait_for_timeout(1500)
         R = """() => { const rr = e => { if(!e) return null; const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height }; };
           return { bar: rr(document.querySelector('.bottomtabs')), ts: document.getElementById('tabsearch') && !document.getElementById('tabsearch').hidden ? rr(document.getElementById('tabsearch')) : null,
-                   top: !!document.querySelector('#stage .screen-answerreview .searchwrap:not([hidden])'), sects: document.querySelectorAll('#stage .cal-list .cal-month-sect').length,
+                   top: !!document.querySelector('#stage .screen-answerreview .searchwrap:not([hidden])'), sects: document.querySelectorAll('#stage .cal-list .cal-month-sect:not([hidden])').length,
                    tabs: [...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t => t.getBoundingClientRect().width > 4 && +getComputedStyle(t).opacity > .5).length,
                    focus: document.activeElement && document.activeElement.className, vw: innerWidth }; }"""
         c = pg.evaluate(R)
-        ok = c["ts"] and abs(c["ts"]["t"] - c["bar"]["t"]) < 1.5 and abs(c["ts"]["h"] - c["bar"]["h"]) < 1.5 and 4 <= c["ts"]["l"] - c["bar"]["r"] <= 14 \
-            and abs((c["bar"]["l"] + c["ts"]["r"]) / 2 - c["vw"] / 2) < 2 and not c["top"]
-        check("%s: J. closed, a circle the bar's height stands beside it, the pair centred, Review's own field gone" % label, ok, c)
+        # MOVED IN 327z15 round 35: "the bottom tab gets pushed together, it should still look
+        # identical to the way the bottom tab looks elsewhere" - the bar keeps its shape (the
+        # Leaderboard's), the circle stands over its right end, and opens into a field the bar's
+        # width above it
+        ref = pg.evaluate("() => { showRankings(); return new Promise(r => setTimeout(() => { const b = document.querySelector('.bottomtabs').getBoundingClientRect(); r({ l: b.left, w: b.width }); }, 700)); }")
+        pg.evaluate("() => { const u = topicsIn(QUESTIONS).slice(0, 3); showAnswerReview(u, 'all', {}, {}); }")
+        pg.wait_for_timeout(1200)
+        c = pg.evaluate(R)
+        ok = c["ts"] and abs(c["bar"]["l"] - ref["l"]) < 1.5 and abs(c["bar"]["w"] - ref["w"]) < 1.5 and c["tabs"] == 4 \
+            and c["ts"]["b"] <= c["bar"]["t"] and abs(c["ts"]["r"] - c["bar"]["r"]) < 2 and c["ts"]["w"] >= 44 and not c["top"]
+        check("%s: J. closed, the bar is the bar (the Leaderboard's shape, four tabs) and a circle stands over its right end, Review's own field gone" % label, ok, [c, ref])
         cdp = ctx.new_cdp_session(pg)
         b = pg.evaluate("() => { const r = document.querySelector('#tabsearch .tabsearch-btn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
         cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": b[0], "y": b[1]}]}); time.sleep(0.06)
         cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
         pg.wait_for_timeout(600)
         o = pg.evaluate(R)
-        ok2 = o["tabs"] == 1 and o["ts"] and o["ts"]["l"] - o["bar"]["r"] < 14 and o["ts"]["w"] > c["bar"]["w"] * .6 and o["focus"] == "tabsearch-input" \
-            and abs(o["ts"]["r"] - c["ts"]["r"]) < 2
-        check("%s: J. tapped, the bar is one tab's circle and the field runs to where the circle was, focused" % label, ok2, o)
+        ok2 = o["tabs"] == 4 and o["ts"] and abs(o["ts"]["l"] - o["bar"]["l"]) < 2 and abs(o["ts"]["w"] - o["bar"]["w"]) < 2 and o["ts"]["b"] <= o["bar"]["t"] \
+            and o["focus"] == "tabsearch-input" and abs(o["bar"]["w"] - c["bar"]["w"]) < 1.5
+        check("%s: J. tapped, the field opens the bar's width just above it, focused, and the bar is unchanged" % label, ok2, o)
         n0 = o["sects"]
-        pg.keyboard.type("ethics"); pg.wait_for_timeout(400)
+        pg.keyboard.type("ethics"); pg.wait_for_timeout(500)
         f = pg.evaluate(R)
         check("%s: J. typing filters the list (%d -> %d sections)" % (label, n0, f["sects"]), 0 < f["sects"] < n0 or (n0 == 1 and f["sects"] == 1), f)
-        bb = pg.evaluate("() => { const r = document.querySelector('.bottomtabs').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }")
-        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": bb[0], "y": bb[1]}]}); time.sleep(0.06)
-        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-        pg.wait_for_timeout(700)
+        pg.evaluate("() => document.querySelector('#tabsearch .tabsearch-clear').click()"); pg.wait_for_timeout(200)
+        pg.evaluate("() => document.activeElement && document.activeElement.blur()"); pg.wait_for_timeout(700)
         e = pg.evaluate(R)
         scr = pg.evaluate("() => (document.querySelector('#stage > *') || {}).className")
-        ok3 = e["tabs"] == 4 and abs(e["bar"]["l"] - c["bar"]["l"]) < 1.5 and abs(e["bar"]["w"] - c["bar"]["w"]) < 1.5 and abs(e["ts"]["l"] - c["ts"]["l"]) < 1.5 \
+        ok3 = e["tabs"] == 4 and e["ts"] and abs(e["ts"]["l"] - c["ts"]["l"]) < 1.5 and abs(e["ts"]["w"] - c["ts"]["w"]) < 1.5 \
             and e["sects"] == n0 and "answerreview" in (scr or "")
-        check("%s: J. the small circle puts it all back where it was, the search cleared, still on Review" % label, ok3, [e, scr])
+        check("%s: J. cleared and left, it folds back to its circle, the whole list back, still on Review" % label, ok3, [e, scr])
         ctx.close()
 
 
@@ -405,7 +414,12 @@ def glide_pace(br):
       const cx = k => { const m = /translate3d\(([-\d.]+)px[^)]*\) scale\(([-\d.]+)/.exec(k.transform || ''); return m ? +m[1] + +m[2] * 50 : null; };
       const xs = a.effect.getKeyframes().map(cx).filter(v => v !== null);
       const a0 = xs[0], a1 = xs[xs.length - 1];
-      return xs.map(v => +((v - a0) / ((a1 - a0) || 1)).toFixed(3)); }""")
+      /* MOVED IN 327z15 round 40: the track is written at 120 keyframes a
+         second now - read at 60 a second, by its duration, so "frame 4" is
+         still 67ms from the press */
+      const per = (xs.length - 1) / ((a.effect.getTiming().duration || 1) / (1000 / 60));
+      const at60 = []; for(let f = 0; f * per <= xs.length - 1; f++) at60.push(xs[Math.round(f * per)]);
+      return at60.map(v => +((v - a0) / ((a1 - a0) || 1)).toFixed(3)); }""")
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     # MOVED IN 327z13: "still moves too fast" - slower again, [260, .95]:
     # about .32 / .67 / .94 at frames 4 / 8 / 16 (check-b327z13 S has it)

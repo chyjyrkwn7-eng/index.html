@@ -266,21 +266,32 @@ def story_section(br):
     check("no badge 'so I can teach you that unit', and no instructor's log pages",
           not re.search(r"teach (you )?(that|this|\w+ properly)|instructor.s log|page of (my|his) log|pages of my log|from it\.", everything, re.I),
           re.findall(r".{30}(?:teach|log).{30}", everything)[:3])
-    i_crack = next((i for i, t in enumerate(fresh) if re.search(r"more light than it could hold", t)), -1)
-    i_boom = next((i for i, t in enumerate(fresh) if re.search(r"explod", t)), -1)
-    i_badge = next((i for i, t in enumerate(fresh) if re.search(r"badge", t) and re.search(r"mastered", t) and re.search(r"hundo", t)), -1)
+    # MOVED IN 327z15: "We aren't gonna do the whole 'my planet blew up I lost
+    # guys' path. It should be like I've been studying and I lost things on
+    # my ship." The order is now: he studies aboard his ship, a storm scatters
+    # what he carried, and it is found by mastering units.
+    i_crack = next((i for i, t in enumerate(fresh) if re.search(r"sail|ship", t)), -1)
+    i_boom = next((i for i, t in enumerate(fresh) if re.search(r"storm", t)), -1)
+    # MOVED IN 327z15 (short boxes): the badge is "yours" for a unit scored 100% enough times
+    i_badge = next((i for i, t in enumerate(fresh) if re.search(r"badge", t) and re.search(r"100%|hundo|master", t)), -1)
     i_wall = next((i for i, t in enumerate(fresh) if re.search(r"level waits", t) and re.search(r"badges", t)), -1)
     # build 327 round 9: the strain slide ("your planet is a lot like that one ... cracks") was removed on
     # request - the cracks story did not make sense beside "badges hold a planet together"
-    check("in order: his planet took in more light than it could hold, it exploded; then a badge is a unit mastered (hundos)",
-          0 <= i_crack < i_boom < i_badge, {"crack": i_crack, "boom": i_boom, "badge": i_badge})
+    check("in order: he studies aboard his ship, a storm scatters his things; then a badge is a unit mastered (hundos)",
+          0 <= i_crack < i_boom < i_badge, {"ship": i_crack, "storm": i_boom, "badge": i_badge})
+    check("no planet blowing up anywhere he speaks (intro, chat, the help note)",
+          not re.search(r"explod|blast|blew up|debris", everything, re.I),
+          re.findall(r".{30}(?:explod|blast|blew up|debris).{30}", everything, re.I)[:3])
     check("the strain slide is gone: no intro line says your planet cracks",
           not any(re.search(r"crack", t) and re.search(r"\byour planet\b|\byours\b", t) for t in fresh + existing),
           [t for t in fresh + existing if re.search(r"crack", t) and re.search(r"\byour planet\b|\byours\b", t)][:2])
-    check("both flows say what a badge is (the existing account too)",
-          any(re.search(r"mastered", t) for t in existing), existing[3:10])
-    check("line counts stay sensible: a new account at most 16 lines, an existing one at most 21",
-          0 < len(fresh) <= 16 and 0 < len(existing) <= 21, [len(fresh), len(existing)])
+    # MOVED IN 327z15: an existing account has its own recap of its badges; the shared
+    # story says where they are (your class material)
+    check("both flows say where the badges are (the existing account too)",
+          any(re.search(r"your studies", t) for t in existing), existing[3:10])
+    # MOVED IN 327z15: "short and sweet text boxes" - more boxes, each short
+    check("short boxes: every line of a new account's intro is 14 words or fewer, and there are at most 26 (329: a longer storm, sync-code and mode boxes)",
+          0 < len(fresh) <= 26 and all(len(t.split()) <= 14 for t in fresh), [len(fresh), [t for t in fresh if len(t.split()) > 14][:3]])
     ranks = r.get("ranks") or []
     check("Gold's rank-up says the crack is strain and the badges hold it; Supernova's: it held, a star",
           len(ranks) == 7 and re.search(r"crack", ranks[2]) and re.search(r"badges", ranks[2]) and re.search(r"held", ranks[6]) and re.search(r"star", ranks[6]),

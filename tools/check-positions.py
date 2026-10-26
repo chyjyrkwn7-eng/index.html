@@ -90,7 +90,9 @@ Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
        addEventListener(){}, removeEventListener(){}, onchange:null, dispatchEvent(){return false;}}
     : mm(q); })();"""
 
-ONBOARDING = ["showSignUpCheck", "showWelcomeIntro", "showClassSelection", "showWelcomeNamePrompt",
+# 329: "What This Actually Is" (showWelcomeIntro) is no longer a sign-up step - the check goes
+# straight to the class screen - so it is not walked here.
+ONBOARDING = ["showSignUpCheck", "showClassSelection", "showWelcomeNamePrompt",
               "showWelcomeCharacterPrompt", "showWelcomeCodeEntry", "showWelcomeCodeReveal"]
 
 def patched(insets):
@@ -247,8 +249,13 @@ def main():
                           fabClearsTabs: tbt===null?null:Math.round(tbt-fab.bottom)};}""")
                 rows.append((tag, spread, tops[0], scrolls, wel, home))
 
-                if spread > 2: flags.append(f"{tag}: onboarding Continue spread {spread}px {tops}")
-                if home["above"] is not None and home["below"] is not None:
+                # 327z15 round 32: on a laptop (the 64rem, 5/4 layout) sign-up's steps start at the
+                # top so Back and the title line up on every step, and Home's words sit BESIDE the
+                # planet - neither "Continue on one line" nor "Start Studying between the tagline and
+                # the floor" is that layout's rule (check-b327z15 HH owns it).
+                laptop = page.evaluate("()=>matchMedia('(min-width:64rem) and (min-aspect-ratio:5/4)').matches")
+                if spread > 2 and not laptop: flags.append(f"{tag}: onboarding Continue spread {spread}px {tops}")
+                if home["above"] is not None and home["below"] is not None and not laptop:
                     d = abs(home["above"] - home["below"])
                     if d > 45: flags.append(f"{tag}: Start Studying off-centre by {d}px ({home['above']} above / {home['below']} below)")
                 if home["below"] is not None and home["below"] < 8:

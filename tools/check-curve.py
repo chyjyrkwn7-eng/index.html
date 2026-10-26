@@ -132,14 +132,17 @@ def main():
         # Build 314 proposed 3/2/1 and it was rejected outright: "DONT
         # change the badge requirement" - so these are asserted as the
         # numbers on dd6cfae, not as a decision this build may revisit.
-        bands = [(0, 25, 15), (26, 50, 12), (51, 100, 8), (101, 200, 4), (201, 10 ** 6, 2)]
+        # BUILD 328 MOVED THEM, on Madison's word: "I think 15 hundos is too much,
+        # even on the shorter ones, so anything at 15 goes to 10. 12 will go to 8
+        # and so on ... The ones that need 8 goes to 6."
+        bands = [(0, 25, 10), (26, 50, 8), (51, 100, 6), (101, 200, 3), (201, 10 ** 6, 2)]
         wrong = []
         for u, v in units.items():
             want = next(h for lo, hi, h in bands if lo <= v["q"] <= hi)
             if v["need"] != want:
                 wrong.append((u, v["q"], v["need"], want))
         check("every unit sits in the band its size puts it in", not wrong, wrong)
-        check("sixteen units", len(units) == 16, len(units))
+        check("twenty-four units (Level 1 complete, build 328)", len(units) == 24, len(units))
         """Lowering a threshold can only ADD a badge; raising one takes a
         badge off somebody who holds it, because a badge is computed
         fresh from the hundo count rather than stored. So no band may be
@@ -155,29 +158,29 @@ def main():
                   for u, v in units.items()
                   if v["need"] > next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
         check("no unit needs more hundos than it did on build 279", not raised, raised)
-        lowered = [(u, v["q"], v["need"]) for u, v in units.items()
-                   if v["need"] < next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
-        check("...nor fewer: the badge requirement did not change", not lowered, lowered)
         live = pg.evaluate("""()=>({ bands: JSON.parse(JSON.stringify(BADGE_THRESHOLD_BANDS, (k, v) => v === Infinity ? 'inf' : v)),
           ver: BADGE_BANDS_VERSION })""")
-        check("BADGE_THRESHOLD_BANDS is byte-for-byte the live table (dd6cfae)",
-              live["bands"] == [{"max": 25, "hundos": 15}, {"max": 50, "hundos": 12}, {"max": 100, "hundos": 8},
-                                {"max": 200, "hundos": 4}, {"max": "inf", "hundos": 2}], live["bands"])
-        check("no new badge hand-out: BADGE_BANDS_VERSION is still 3", live["ver"] == 3, live["ver"])
-        # the per-unit numbers dd6cfae computes, so no unit's badge costs
-        # a hundo more or less than live
-        LIVE_313 = {"Professionalism and Ethics": 12, "Professional Policing": 15,
-                    "Fitness, Wellness, and Stress Management": 12, "TCOLE Rules": 15,
-                    "Multiculturalism and Human Relations": 12, "Racial Profiling": 15,
-                    "US and Texas Constitution and Rights": 8, "Penal Code": 2,
-                    "Code of Criminal Procedure and Bill of Rights": 12, "Arrest, Search, and Seizure": 4,
-                    "Victims of Crime": 15, "Missing and Exploited Children": 8, "Identity Crimes": 15,
-                    "Sexual Assault and Family Violence": 12, "Verbal Communication": 12,
-                    "Civil Process and Liability": 15}
-        diff = {u: (v["need"], LIVE_313.get(u)) for u, v in units.items() if v["need"] != LIVE_313.get(u)}
-        check("every unit's badge costs exactly what it does on dd6cfae", not diff and len(units) == 16, diff)
+        check("BADGE_THRESHOLD_BANDS is build 328's table",
+              live["bands"] == [{"max": 25, "hundos": 10}, {"max": 50, "hundos": 8}, {"max": 100, "hundos": 6},
+                                {"max": 200, "hundos": 3}, {"max": "inf", "hundos": 2}], live["bands"])
+        check("the new bands hand out what they newly qualify: BADGE_BANDS_VERSION is 4 (build 328)", live["ver"] == 4, live["ver"])
+        # the per-unit numbers build 328 computes, so no unit's badge costs a
+        # hundo more or less than Madison agreed
+        LIVE_328 = {"Professionalism and Ethics": 8, "Professional Policing": 10,
+                    "Fitness, Wellness, and Stress Management": 8, "TCOLE Rules": 10,
+                    "Multiculturalism and Human Relations": 8, "Racial Profiling": 10,
+                    "US and Texas Constitution and Rights": 6, "Penal Code": 2,
+                    "Code of Criminal Procedure and Bill of Rights": 8, "Arrest, Search, and Seizure": 3,
+                    "Victims of Crime": 10, "Missing and Exploited Children": 6, "Identity Crimes": 10,
+                    "Sexual Assault and Family Violence": 8, "Verbal Communication": 8,
+                    "Civil Process and Liability": 10, "Consular Notification": 10,
+                    "Crisis Intervention Training": 6, "De-Escalation": 10, "Health and Safety Code": 8,
+                    "Interacting with Deaf or Hard-of-Hearing": 10, "Radio Communications, Alerts, and TCIC-TLETS": 10,
+                    "Traumatic Brain Injury": 10, "Phonetic Alphabet and Military Time": 8}
+        diff = {u: (v["need"], LIVE_328.get(u)) for u, v in units.items() if v["need"] != LIVE_328.get(u)}
+        check("every unit's badge costs exactly what build 328 set", not diff and len(units) == 24, diff)
         rng = pg.evaluate("()=> typeof badgeRangeText === 'function' ? badgeRangeText() : null")
-        check("the copy states the range the bands actually ask", rng == "2 to 15 hundos", rng)
+        check("the copy states the range the bands actually ask", rng == "2 to 10 hundos", rng)
 
         print("\n2. nobody's level drops, for any XP total")
         drop = pg.evaluate("""()=>{
@@ -676,6 +679,9 @@ def main():
                 blocks: order.map(n => !!n),
                 inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
                 nested: document.querySelectorAll('.pf-standing button, .pf-goal button, .pf-case button').length,
+                /* 327z15: the rank ladder and the badge case open from their own pills, and only those */
+                nestedOther: [...document.querySelectorAll('.pf-standing button, .pf-goal button, .pf-case button')].filter(b => !b.matches('.pf-goal-foot, .pf-case-count')).map(b => b.className),
+                totalShown: (n => !!n && getComputedStyle(n).display !== 'none' && n.getClientRects().length > 0)(document.querySelector('.pf-standing .pf-xp-total')),
                 study: /\bStudy\b/.test(q('.pf-goal') || ''),
                 level: q('.pf-standing .pf-level'), rank: q('.pf-standing .pf-rankname'),
                 nums: q('.pf-standing .pf-xpnums .xpnums'), over: !!document.querySelector('.pf-standing .xpnums.is-over'),
@@ -722,7 +728,7 @@ def main():
                        title: (document.getElementById('count') || {}).textContent || null };
             };
             out.taps = { standing: await tapAt('.pf-standing', '.pf-xpbar'), goalTile: await tapAt('.pf-goal', '.pf-rw.is-flare'),
-                         goalTask: await tapAt('.pf-goal', '.pf-task .pf-bar'), caseStrip: await tapAt('.pf-case', '.badge-strip-cell:nth-child(9)') };
+                         goalTask: await tapAt('.pf-goal', '.pf-task .pf-bar'), ladder: await tapAt('.pf-goal', '.pf-goal-foot'), caseStrip: await tapAt('.pf-case', '.badge-strip-cell:nth-child(9)') };
             document.querySelectorAll('.invite-overlay').forEach(n => n.remove());
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
@@ -789,8 +795,10 @@ def main():
             # put above the rank challenge box thing?" - standing, case, next.
             # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the
             # top is not the move, revert that location at the bottom."
-            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them, no Study button",
-                  pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] == 0 and not pf["study"], pf)
+            # MOVED IN 327z15: the ladder and the case open only from their own pills
+            # ("See rank ladder", "N of 16 badges") - those are the only buttons in them
+            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them but their pills, no Study button",
+                  pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] >= 1 and pf.get("nestedOther") == [] and not pf["study"], pf)
             # "How do we still get that nice xp stuff where it shows how much
             # over you are, how much till the next level ... we wouldn't need
             # that total xp there because it'd be with all the xp stuff"
@@ -809,7 +817,7 @@ def main():
             check("Profile at a cap: this level's XP marked over under the bar (both numbers one blue), the total under the bar saying 'total XP' in the level's colour, the bar banked, and no Next gate box",
                   pf["nums"] and re.match(r"^[0-9,]+ / [0-9,]+ XP$", pf["nums"]) and pf["over"]
                   and pf["haveCol"] == pf["needCol"] and blue(pf["needCol"])
-                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and pf["totalCol"] == pf["lvCol"] and not blue(pf["totalCol"]) and pf["banked"]
+                  and re.match(r"^[0-9,]+ total XP$", pf["total"] or "") and pf["totalUnder"] and (not pf.get("totalShown") or pf["totalCol"] == pf["lvCol"]) and not blue(pf["totalCol"]) and pf["banked"]
                   and not pf["max"] and not pf["nextGate"] and pf["level"] == "Level 21", pf)
             # "I don't like how it means that 5th badge part": no ordinal.
             # REVISED IN 316: no count either - it says this is as high as the
@@ -882,10 +890,12 @@ def main():
                   all(x["note"] is None for x in t49 + t), [x["note"] for x in t49 + t])
             check("...and nothing is under the bar for Silver either (321)", p49["note"] is None, p49["note"])
             tp = w["taps"]
-            check("tapping where you stand opens the climb", tp["standing"]["hit"] and tp["standing"]["map"], tp["standing"])
-            # "assuming you click anywhere in that box, it opens up the rank road map"
-            check("tapping the next rank anywhere - a reward tile or a task's bar - opens the climb",
-                  tp["goalTile"]["hit"] and tp["goalTile"]["map"] and tp["goalTask"]["hit"] and tp["goalTask"]["map"], tp)
+            # MOVED IN 327z15 round 5: "Why ... when I click my xp the rank road map pops up?" -
+            # where you stand opens nothing; the climb opens from See rank ladder, not from
+            # anywhere in the next rank's box (a challenge row opens its How, a tile its preview)
+            check("tapping where you stand opens nothing", tp["standing"]["hit"] and not tp["standing"]["map"] and not tp["standing"]["badges"], tp["standing"])
+            check("See rank ladder opens the climb",
+                  tp["ladder"]["hit"] and tp["ladder"]["map"], tp["ladder"])
             # "ensure if you click anywhere on that, it opens up the larger one"
             check("tapping any badge in the strip opens the badge case",
                   tp["caseStrip"]["hit"] and tp["caseStrip"]["badges"] and not tp["caseStrip"]["map"], tp["caseStrip"])

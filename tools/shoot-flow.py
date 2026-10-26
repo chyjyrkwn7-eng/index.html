@@ -250,6 +250,13 @@ def main():
                 page.wait_for_timeout(2400)
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
                 page.wait_for_timeout(400)
+                # build 329: a first visit opens on the Get Started page; its button leads to Welcome
+                if page.evaluate("()=>!!document.querySelector('.gs-page')"):
+                    page.wait_for_timeout(2600)
+                    shot(page, 0.5, "get-started")
+                    # 330: its button rises in once the last section is reached
+                    page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(900)
+                    page.click(".gs-go"); page.wait_for_timeout(1200)
 
                 shot(page, 1, "welcome")
                 # the sign-in-with-a-code screen, then back. Build 322:
@@ -263,32 +270,11 @@ def main():
                 page.click(".cosmic-welcome-btn.welcome-new");        shot(page, 2.8, "new-to-nova")
                 # build 327: no What's New list in sign-up - the check goes
                 # straight on to "What This Actually Is"
-                page.click(".signupcheck-panel .signupcheck-go");     shot(page, 4, "what-this-actually-is")
-                page.click(".welcomeintro-panel .next.playbtn");      shot(page, 5, "pick-your-class")
-                page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)
+                page.click(".signupcheck-panel .signupcheck-go");     shot(page, 5, "pick-your-class")
+                page.click(".classselect-panel .class-card.is-academy"); page.wait_for_timeout(250)
                 shot(page, 5.5, "pick-your-class-picked")
-                page.click(".classselect-panel .next.playbtn");       shot(page, 6, "enter-a-username")
-                # Build 327 (b327h): a name somebody already wears stops
-                # sign-up. The fake board's rows are keyed by code-shaped
-                # ids, which every reader skips (build 318), so the one
-                # row this needs is put on the board directly.
-                page.evaluate("""()=>{ leaderboardRows = (leaderboardRows || []).concat([{ pub: 'tsaleshotaaa',
-                  firstName: 'TSale', avatarChar: 'alien', level: 24 }]); boardFetchedAt = Date.now(); }""")
-                page.fill(".searchbox", "T.Sale"); page.wait_for_timeout(250)
-                page.click(".onboarding-shortform-panel .next.playbtn"); page.wait_for_timeout(350)
-                shot(page, 6.2, "username-taken")
-                page.click(".namecheck-card .namecheck-other"); page.wait_for_timeout(300)
-                shot(page, 6.3, "username-taken-different-person")
-                page.fill(".searchbox", "Madison"); page.wait_for_timeout(250)
-                # The armed state as well as the gated one: these screens
-                # hide Continue until something is chosen, and where it
-                # lands once it appears is the thing worth looking at.
-                shot(page, 6.5, "enter-a-username-filled")
-                page.click(".onboarding-shortform-panel .next.playbtn"); shot(page, 7, "choose-a-character")
-                page.click(".avatarchar-option"); page.wait_for_timeout(250)
-                shot(page, 7.5, "choose-a-character-picked")
-                page.click(".charselect-panel .next.playbtn");        shot(page, 8, "youre-all-set")
-                page.click(".onboarding-shortform-panel .next.playbtn")
+                # 327z15: the username and the character are asked by Nova
+                page.click(".classselect-panel .next.playbtn")
                 # The loading screen, caught while it is still up. Waiting
                 # for it to detach is what stops a Settings tour being
                 # photographed on top of it; catching it first is how it
@@ -302,12 +288,21 @@ def main():
                 # Shoot him once, then tap him through.
                 page.wait_for_timeout(1800)
                 shot(page, 8.8, "nova-intro", bar_ok=True)
-                for _ in range(60):
+                for _ in range(120):
                     if not page.evaluate("()=>!!document.getElementById('nova-intro')"): break
-                    page.evaluate("()=>{ const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return;"
+                    ask = page.evaluate("()=>{ const el = document.getElementById('nova-intro'); if(!el || !el.__nova || el.__nova.typing || !el.__nova.asking) return ''; return el.querySelector('.nt-ask-name') ? 'name' : el.querySelector('.nt-ask-char') ? 'char' : ''; }")
+                    if ask == "name":
+                        shot(page, 8.9, "nova-asks-name", bar_ok=True)
+                        page.fill(".nt-ask-input", "J.Smith"); page.wait_for_timeout(200)
+                        page.click(".nt-ask-name .nt-ask-go"); page.wait_for_timeout(6000); continue
+                    if ask == "char":
+                        page.click(".nt-ask-char .avatarchar-option"); page.wait_for_timeout(300)
+                        shot(page, 8.95, "nova-asks-character", bar_ok=True)
+                        page.click(".nt-ask-char .nt-ask-go"); page.wait_for_timeout(500); continue
+                    page.evaluate("()=>{ const el = document.getElementById('nova-intro'); if(!el || !el.__nova || el.__nova.asking) return;"
                                   " if(el.__nova.index === el.__nova.count - 1 && !el.__nova.typing) el.querySelector('.nt-go').click();"
                                   " else el.__nova.advance(); }")
-                    page.wait_for_timeout(120)
+                    page.wait_for_timeout(150)
                 page.wait_for_timeout(1200)
                 shot(page, 9, "home-with-tour", bar_ok=True)
                 for _ in range(16):                            # click the tour through

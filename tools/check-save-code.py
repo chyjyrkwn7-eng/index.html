@@ -42,7 +42,8 @@ BODY=re.sub(r"env\(safe-area-inset-(top|bottom|left|right)(?:\s*,[^()]*)?\)", la
 m=re.search(r'APP_BUILD\s*=\s*"([^"]+)"', src)
 SERVED_BUILD=m.group(1) if m else ""
 VERSION_JSON=json.dumps({"build":SERVED_BUILD,"note":"","frameId":"","frameNote":"","force":False})
-STORE='{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"leaderboardOptIn":true,"tourRev":999,"lastModified":1790400000000,"lifetime":{"points":420,"correct":88}}'
+# MOVED IN 327z15 round 31: the reminder waits for a finished test (testStats) and Home
+STORE='{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"leaderboardOptIn":true,"tourRev":999,"lastModified":1790400000000,"lifetime":{"points":420,"correct":88},"testStats":{"Penal Code":{"plays":1}}}'
 so=socket.socket(); so.bind(("127.0.0.1",0)); PORT=so.getsockname()[1]; so.close()
 class Q(http.server.SimpleHTTPRequestHandler):
     def log_message(self,*a): pass

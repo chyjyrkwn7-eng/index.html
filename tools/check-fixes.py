@@ -155,6 +155,10 @@ def main():
                         errs = []
                         pg.on("pageerror", lambda e: errs.append(str(e)[:120]))
                         pg.goto(url); pg.wait_for_timeout(1400)
+                        # MOVED IN 327z15 round 46: an unlock spotlight is a scene (the chat button and tab
+                        # bar slide out, banners wait). This fixture owes a character, whose spotlight came up
+                        # over Home mid-check; owed unlocks are marked shown first, as the other gates do.
+                        pg.evaluate("()=>{ try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){} }")
 
                         # --- REPRODUCTION, not a happy path. The splash bug is
                         # an oversized fixed box during an iOS launch, which
@@ -565,14 +569,16 @@ def main():
                           pauseRun(); await wait(700);
                           const pa={clock:R('.timerline .tmain'),chip:R('.timerline .tpaused'),dock:R('#chatdock-btn')};
                           o.paChip=hit(pa.chip,pa.dock); o.paClock=hit(pa.clock,pa.dock);
+                          const rr=q=>q?[Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)]:null;
+                          o.at={clock:rr(un.clock), dock:rr(un.dock), pclock:rr(pa.clock), pdock:rr(pa.dock)};
                           try{ document.getElementById('pause-quit').click(); await wait(400); document.getElementById('quit-confirm').click(); await wait(600); }catch(e){}
                           return o;}""")
                         if not tm["running"]:
                             fails.append(f"{tag}: a timed drill did not show its clock")
                         if tm["unPause"]: fails.append(f"{tag}: the test clock sits under Pause")
-                        if tm["unDock"]: fails.append(f"{tag}: the test clock sits under the chat button")
+                        if tm["unDock"]: fails.append(f"{tag}: the test clock sits under the chat button {tm.get('at')}")
                         if tm["paChip"]: fails.append(f"{tag}: paused, the PAUSED chip sits under the chat button")
-                        if tm["paClock"]: fails.append(f"{tag}: paused, the clock sits under the chat button")
+                        if tm["paClock"]: fails.append(f"{tag}: paused, the clock sits under the chat button {tm.get('at')}")
 
                         misc = pg.evaluate("""()=>{showReleaseHistory();
                           const back=!!document.querySelector('.panel .back-link');

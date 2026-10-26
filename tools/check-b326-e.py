@@ -67,6 +67,12 @@ PRE = r"""
      ticks him itself, through the same function */
   if(!window.__realTick){ window.__realTick = novaTick; novaTick = function(){ if(window.__hold) return; return window.__realTick.apply(this, arguments); }; }
   window.__hold = true;
+  /* MOVED IN 327z15: "The challenges from nova need to be random" - his
+     challenge now comes two weeks in five, on a day of its own
+     (novaChallengeDue). What these scenarios measure is what happens in a
+     week that has one, so every week here is one; check-b327z15 and the
+     notes cover the draw itself. */
+  if(!window.__dueAll){ window.__dueAll = true; novaChallengeDue = function(){ return true; }; }
   const ticks = async n => { for(let i = 0; i < (n || 4); i++){ window.__realTick(); await wait(80); } };
   const home = async () => { showHome(); await wait(500); clearTop(); try{ clearTimeout(homeUnlockTimer); homeUnlockTimer = null; }catch(e){}
     store.pendingBadgeUnlocks = []; };
@@ -109,7 +115,8 @@ def check_story(br):
       try{ out.existing = txt(novaIntroLines({ existing: true })); }catch(e){ out.existing = []; out.err = String(e); }
       out.keys = novaIntroLines({}).map(l => Object.keys(l).filter(k => k !== 'text' && k !== 'gesture').sort().join('+'));
       out.ranks = TIER_ORDER_FULL.map((k, i) => { try{ return novaRankLine(i); }catch(e){ return ''; } });
-      out.note = ((RELEASE_NOTES[0].groups || []).flatMap(g => g.items || []).find(i => /Your Instructor/.test(i.title)) || {}).body || '';
+      /* MOVED IN 327z15: Version 9.2 is RELEASE_NOTES[0] now; the note is Version 9's */
+      out.note = (((RELEASE_NOTES.find(v => v.version === '9') || {}).groups || []).flatMap(g => g.items || []).find(i => /Your Instructor/.test(i.title)) || {}).body || '';
       out.chats = ['why is my planet cracking', 'what do i get for helping you', 'where are my crew', 'where are you'].map(q => novaReplyFor(q));
       out.tip = NOVA_NEW_TIPS_321.map(t => t.text).join(' | ');
       out.lore = RANK_LORE.titan + ' | ' + RANK_LORE.veteran;
@@ -122,29 +129,31 @@ def check_story(br):
     src = cb.BODY
     fresh, existing = r.get("fresh") or [], r.get("existing") or []
     allt = " | ".join(fresh + existing)
-    # MOVED IN 327 (b327c): "'every flare you light pours its light into
-    # your planet, it can't hold it all..' I don't like this one at all" and
-    # "it says something about finding them so I can teach you that unit?
-    # That's terrible". The crack is now the strain of a brighter flare,
-    # held by badges; a badge is a unit mastered (check-b327-c says more).
-    star = [t for t in fresh if re.search(r"planet", t) and re.search(r"crack", t) and re.search(r"badges are what hold", t, re.I)]
-    check("why your planet cracks: a line says each rank from Gold cracks it and badges hold it together (not 'pours its light')",
-          len(star) == 1 and not re.search(r"pours", star[0]), star or fresh[3:8])
-    i_relit = next((i for i, t in enumerate(fresh) if re.search(r"flare", t) and re.search(r"earned", t)), -1)
-    i_star = fresh.index(star[0]) if star else -1
-    check("...said after the flares are relit by ranks, so it follows from them", 0 <= i_relit < i_star, {"relit": i_relit, "star": i_star})
-    check("what you get: his thanks with each rank's rewards, a badge is a unit mastered, the crew join you",
-          re.search(r"thanks.*rewards|rewards.*thanks", allt) and re.search(r"mastered that unit", allt) and re.search(r"joins you", allt)
-          and not re.search(r"instructor.s log|teach you", allt),
-          [t for t in fresh if re.search(r"rewards|mastered|joins", t)])
-    check("no end: his scanners keep finding more of his ship (new account's last line, and his goodbye)",
-          re.search(r"scanners", fresh[-1] if fresh else "") and re.search(r"more", fresh[-1] if fresh else "")
-          # MOVED IN 327 (b327m): his goodbye is the existing account's last line
-          and re.search(r"scanners", existing[-1] if existing else ""), [fresh[-1:], existing[-1:]] )
+    # MOVED IN 327z15: "We aren't gonna do the whole 'my planet blew up'
+    # path" - the introduction is now the voyage: he sails the stars, a
+    # storm scatters his badges, flares and crew into the class material,
+    # each one you find joins you, and it ends on the start of your
+    # adventure (new) / What's New on Home (existing). The planet and its
+    # crack stay in the rank-up lines and his chat (checked below);
+    # check-b327-c carries the voyage itself (order, no explosion, short boxes).
+    storm = [i for i, t in enumerate(fresh) if re.search(r"storm", t, re.I)]
+    scat = [i for i, t in enumerate(fresh) if re.search(r"scattered", t) and re.search(r"badges", t) and re.search(r"flares", t) and re.search(r"crew", t)]
+    check("why things are lost: a storm hit his ship, then his badges, flares and crew were scattered (in that order)",
+          storm and scat and storm[0] < scat[0], fresh[:6])
+    land = [i for i, t in enumerate(fresh) if re.search(r"your studies", t)]
+    check("...and they landed in your studies, after the storm", land and scat and land[0] > scat[0], fresh[:7])
+    check("what you get: every one you find joins your team, and no 'teach you' / log",
+          re.search(r"joins your team|join you", allt) and not re.search(r"instructor.s log|teach you", allt),
+          [t for t in fresh if re.search(r"join", t)])
+    check("an open end: a new account's last line starts the adventure; an existing one is pointed to What's New on Home",
+          re.search(r"adventure", fresh[-1] if fresh else "") and re.search(r"Home", existing[-1] if existing else ""), [fresh[-1:], existing[-1:]])
     bad = [t for t in fresh + existing if re.search(r"\b(all seven|seven|sixteen|16|only three|three secret|a few secret flares)\b", t, re.I)]
     check("no fixed totals in his introduction (no 'seven', '16', 'a few secret flares')", not bad, bad[:3])
-    check("the planet line costs nothing: a new account still hears at most 16 lines, an existing one at most 21 (325: 15 and 18; D's banners-and-effects slide, asked for by Madison, is the one extra line), and every slide trigger is kept",
-          star and 0 < len(fresh) <= 16 and 0 < len(existing) <= 21
+    # MOVED IN 327z15: a new account's introduction now asks his name and
+    # his first character inside it (2 asks + the pick's answer), so 16 -> 20
+    # MOVED IN 329: Madison asked for a longer storm, a sync-code line and two boxes on the modes, so 20 -> 26
+    check("short: a new account hears at most 26 lines (two of them asks), an existing one at most 21, and every slide trigger is kept",
+          0 < len(fresh) <= 26 and 0 < len(existing) <= 21
           and any("friend" in k for k in r.get("keys") or []) and any("final" in k for k in r.get("keys") or []) and sum(1 for k in r.get("keys") or [] if "enter" in k) >= 9,
           {"new": len(fresh), "existing": len(existing), "keys": r.get("keys")})
     ranks = r.get("ranks") or []
@@ -160,17 +169,20 @@ def check_story(br):
     # planet together, the crack is the strain, Supernova a star that held
     check("his chat replies tell the same story: the planet held by badges (a star at Supernova), what you get, the crew joining you, where he is",
           len(ch) == 4 and re.search(r"star", ch[0]) and re.search(r"[Bb]adges are what hold", ch[0]) and re.search(r"rewards", ch[1])
-          and re.search(r"joins you", ch[2]) and re.search(r"debris field", ch[3]),
+          and re.search(r"joins you", ch[2]) and re.search(r"scanning|storm", ch[3]),  # MOVED IN 327z15: no debris field - the storm story
           [c[:60] for c in ch])
-    check("the Version 9 'Nova, Your Instructor' note gives the cause, what a badge is, and the open end",
-          re.search(r"more light than it could hold", r.get("note", "")) and re.search(r"badges are what hold it together", r.get("note", ""))
-          and re.search(r"mastered", r.get("note", "")) and re.search(r"scanners", r.get("note", "")),
+    # MOVED IN 327z15: the note tells the voyage - a storm scattered them
+    check("the Version 9 'Nova, Your Instructor' note gives the cause (a storm), what a badge is (a unit mastered), and the crew coming back",
+          re.search(r"storm", r.get("note", "")) and re.search(r"scattered", r.get("note", ""))
+          and re.search(r"master", r.get("note", "")) and re.search(r"crew", r.get("note", "")) and not re.search(r"explod|blew up|debris", r.get("note", "")),  # "explorer" is fine
           r.get("note", "")[:160])
     # MOVED IN 327 (b327m): "So the nova instructor won't go through what's
     # new one by one" - nothing of his is said on What's New any more
     check("What's New (on its own) is not narrated - he does not tell the story there", r.get("news", "") == "", r.get("news", "")[:300])
-    check("the planet's returning tip and the Rank tab's lore say the crack comes from his light and badges hold it, and Supernova makes it a star",
-          re.search(r"badges are what hold it", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
+    # MOVED IN 327z15: the returning tips no longer retell the crack (the
+    # planet tip is about tapping it); the Rank tab's lore still carries it
+    check("the Rank tab's lore says the crack comes from his light, and Supernova makes it a star; no returning tip has the planet blowing up",
+          not re.search(r"explo|blew up", r.get("tip", "")) and re.search(r"becomes a star", r.get("lore", "")) and re.search(r"Nova's light", r.get("lore", "")),
           [r.get("tip", "")[:200], r.get("lore", "")[:200]])
     check("no totals the story cannot keep: Home's planet says how many secret flares you found (not 'of 3'), his card counts without '/'",
           not re.search(r"of \d+ secret", r.get("planet", "")) and r.get("cells") and not any("/" in c for c in r.get("cells") or []),
@@ -240,7 +252,8 @@ def check_day(br):
         check("%s: ...announced with the chat's own banner, and nothing more that day (even in a new session)" % dev,
               r.get("banner") and r.get("again") == 1, {"banner": r.get("banner"), "again": r.get("again")})
         # the next day, the next one: the week's challenge
-        at(pg, WED + datetime.timedelta(days=1))
+        # (327z15) his gap is 44h, not 20h (NOVA_QUIET_MS, two days between messages): 'the next' is two days on
+        at(pg, WED + datetime.timedelta(days=2))
         r2 = pg.evaluate("async () => {" + PRE + """
           await home(); novaSessionAt = 0; await ticks(6);
           const m = own();
@@ -256,7 +269,7 @@ def check_day(br):
               r2.get("kinds") == ["rank", "challenge"] and r2.get("banner") and r2.get("act") == "Accept" and r2.get("face")
               and r2.get("rect") and r2["rect"][0] >= 0 and r2["rect"][2] <= r2.get("vw", 0) + 1, r2)
         # the badge and crew were said with the rank-up: they never come again
-        at(pg, WED + datetime.timedelta(days=2))
+        at(pg, WED + datetime.timedelta(days=3))
         r3 = pg.evaluate("async () => {" + PRE + """
           novaSessionAt = 0; store.studyLog = {}; store.testHistory = []; await home(); await ticks(6);
           return { kinds: own().map(x => x.kind) }; }""")
@@ -291,7 +304,8 @@ def check_devices(br):
         ctx.close()
         return
     check("device A says the rank-up; device B, synced, says nothing that day", r.get("a") == ["rank"] and r.get("b") == [], r)
-    at(pg, WED + datetime.timedelta(days=1))
+    # (327z15) his gap is 44h, not 20h (NOVA_QUIET_MS, two days between messages): 'the next' is two days on
+    at(pg, WED + datetime.timedelta(days=2))
     r2 = pg.evaluate("async () => {" + PRE + """
       novaSessionAt = 0; await home(); await ticks(6);
       const b = own().map(x => x.kind);
@@ -347,7 +361,8 @@ def check_quiet(br):
       novaSessionAt = 0; await ticks(6);
       return { day1: own().map(x => x.kind), u }; }""")
     check("a new account's first day stays quiet beyond his introduction, with a badge and a character found", r3.get("day1") == [], r3)
-    at(pg, WED + datetime.timedelta(days=4, hours=2))
+    # (327z15) his gap is 44h, not 20h (NOVA_QUIET_MS, two days between messages): 'the next' is two days on
+    at(pg, WED + datetime.timedelta(days=5, hours=2))
     r4 = pg.evaluate("async () => {" + PRE + """
       novaSessionAt = 0; await home(); await ticks(6);
       return { kinds: own().map(x => x.kind) }; }""")
@@ -470,6 +485,9 @@ def check_rules(br):
     at(pg, datetime.datetime(2026, 10, 28, 10, 0))
     r3 = pg.evaluate("async () => {" + PRE + """
       settled(); store.leaderboardOptIn = false; localStorage.removeItem('class26e.weekrecap.v1');
+      /* (327z15) since 327z the recap waits for this launch's server copy (cloudConfirmedFor);
+         this account has a code and no cloud here, so it is marked read */
+      if(syncCode) cloudConfirmedFor = syncCode;
       novaHeardMap()['@last'] = Date.now() - 2 * D; novaSessionAt = 0;
       await home(); try{ clearTimeout(weekRecapTimer); }catch(e){}
       maybeShowWeekRecap(0); await wait(600);
@@ -510,7 +528,7 @@ def check_away(br):
               re.search(r"back in range", r.get("status", "")) and not re.search(r"\bAway\b", r.get("status", "")), r.get("status"))
         check("%s: the composer is off and says he is out of range" % dev, r.get("disabled") and re.search(r"out of range", r.get("ph", ""), re.I), r.get("ph"))
         check("%s: above it, his own words: out searching for more of his ship, back in range soon" % dev,
-              re.search(r"ship|signal|debris", r.get("note", "")) and re.search(r"back in range", r.get("note", "")) and r.get("noteAbove") and r.get("noteIn"),
+              re.search(r"ship|signal|debris|storm|scann|cargo", r.get("note", "")) and re.search(r"back in range", r.get("note", "")) and r.get("noteAbove") and r.get("noteIn"),
               {k: r.get(k) for k in ("note", "noteAbove", "noteIn")})
         check("%s: his card and Manage friends say 'Out of range' too" % dev,
               r.get("cell") == "Out of range" and "Out of range" in (r.get("manage") or ""), {k: r.get(k) for k in ("cell", "manage")})

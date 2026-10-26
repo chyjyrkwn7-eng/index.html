@@ -261,6 +261,7 @@ with sync_playwright() as pw:
     res_btns = pg.evaluate("()=>[...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent)")
     ck("and Re-run and Main menu beside it, on the results",
        res_btns == ["Continue to review (3 missed)", "Re-run", "Main menu"], res_btns)
+    pg.wait_for_timeout(900)   # 328: a tap in the 0.7s after the results settle is ignored (the review-tap bug), so a real one waits
     pg.evaluate("()=>document.querySelector('#stage .rs-continue') && document.querySelector('#stage .rs-continue').click()")
     pg.wait_for_timeout(400)
     rev = pg.evaluate("""()=>({
@@ -278,6 +279,7 @@ with sync_playwright() as pw:
        rev["btns"] == ["Retake missed questions (3)", "Back to results"], rev)
     ck("so no Re-run and no Main menu while reviewing",
        not any(b in ("Re-run", "Main menu") for b in rev["btns"]), rev)
+    pg.wait_for_timeout(700)   # 329: the review's buttons rise too, and ignore a tap for 0.6s after they arrive
     pg.evaluate("()=>[...document.querySelectorAll('#stage .actions button')].find(b=>/Back to results/.test(b.textContent)).click()")
     pg.wait_for_timeout(300)
     back = pg.evaluate("()=>({ done: !!document.querySelector('.rs-rewards.rs-done'),"

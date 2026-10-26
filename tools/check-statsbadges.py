@@ -246,7 +246,9 @@ def main():
                    earnedBox: box(earned), lockedBox: box(locked),
                    glow: earned ? (earned.querySelector('.badge-tile-art')
                                    .style.getPropertyValue('--badge-glow') || '') : null };}""")
-        check("sixteen tiles", tiles["n"] == 16, tiles["n"])
+        # MOVED IN build 328: Level 1 is 24 units; a tile per unit, read off the bank
+        nunits = pg.evaluate("() => topicsIn(QUESTIONS).length")
+        check("a tile for every unit", tiles["n"] == nunits, [tiles["n"], nunits])
         check("an earned tile carries its unit's own colour",
               bool((tiles["glow"] or "").strip()), tiles["glow"])
         if tiles["lockedBox"] and tiles["lockedBox"].get("pool") == "none":

@@ -21,6 +21,10 @@ KNOWN = {
     "bnr-grid": "shifted by exactly one 16px grid cell",
     "bnr-holo": "shifted by whole periods of a 300% background",
     "bnr-sheen": "a sweep from off one edge to off the other",
+    # 327z15: the unfound flare bubble's shine and the rank lore dots' shine - each starts wholly off the
+    # left edge of a clipped box (left -80% / -90%, skewed) and ends wholly off the right (420% of its width)
+    "cof-sweep": "a sweep from off one edge to off the other",
+    "ranklore-sweep": "a sweep from off one edge to off the other",
     "cosmic-orbit-spin": "a full turn",
     # Build 326: the Supernova crack's motes (scarMotes) - three nested loops on one clock; the mote itself
     # (csc-mote-look / csc-mote-chip) is at opacity 0 at both ends, so where the outer two jump it cannot be seen.
@@ -85,6 +89,10 @@ KNOWN = {
     "cx-sg3-orbit": "Horizon's disk: shifted by exactly one lap (18.78 = the ellipse's circumference = its dash + gap)",
     # Build 313: the secret flares.
     "cof-call": "the hunted flare's ring: fades to nothing at the end, restarts from small",
+    # Build 329.
+    "cb-new": "the class bubble's new-class ring: fades to nothing as it spreads, restarts from the bubble",
+    "ia-shine": "the IFC analysis bar's shine: a 220% band swept from 120% to -120%, off the bar at both ends",
+    "gs-drift": "Get Started's stars: each layer shifted by exactly one of its own tiles (--gs-tile)",
     "cx-gn-spin": "Genesis's moon round its ring - a full turn",
     "cx-gn-back": "Genesis's moon kept upright - a full turn the other way",
     "cx-gn-drift": "Genesis's weather bands: shifted by exactly one 8-unit period of bands drawn twice",

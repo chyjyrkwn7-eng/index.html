@@ -508,7 +508,11 @@ def z11(br):
     SNAP1 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
       /* MOVED IN 327z10: a switch row's own input IS its switch on an iPhone
          (.hsw-opt) and grows over the track by design - it is set aside */
-      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw') && !e.classList.contains('hsw-opt'));
+      /* MOVED IN 327z15 round 47: a character's own art is set aside too - its sway runs while
+         the character is live (.char-live), which a list row turns on and off on its own clock,
+         so between the two snapshots it moved without any switch being touched (failed the same
+         way on round 38's build) */
+      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw') && !e.classList.contains('hsw-opt') && !e.closest('.avatarchar-svg'));
       window.__zEls = els; return els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
     SNAP2 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
       return window.__zEls.map(e => { if(!e.isConnected) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
@@ -546,6 +550,9 @@ def z11(br):
                     if any(abs(a[k] - b[k]) > .6 for k in range(4)):
                         diffs.append("%d:%s->%s" % (i, a, b))
                         if len(diffs) > 4: break
+                if diffs and os.environ.get("Z11_WHO"):
+                    idx = [int(d.split(":")[0]) for d in diffs]
+                    print("   who", pg.evaluate("ix => ix.map(i => { const e = window.__zEls[i]; return e ? [e.tagName, String(e.className && e.className.baseVal !== undefined ? e.className.baseVal : e.className).slice(0,60), (e.textContent||'').trim().slice(0,30), e.parentElement && String(e.parentElement.className).slice(0,50)] : null; })", idx))
                 check("z11 %s: %d switches, no element moves or resizes by them" % (name, n_on), not diffs and n_on > 0, "; ".join(diffs)[:300])
             except Exception as e:
                 check("z11 %s ran" % name, False, str(e)[:200])

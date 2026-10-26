@@ -132,7 +132,9 @@ def run(src_dir, label):
                              f"title row (box {out['dotW']}px wide)")
             if out["dotText"] != "3": fails.append(f"the unread badge reads {out['dotText']!r}, not a count of 3")
             if not out["alert"]: fails.append("nothing announced who sent the message")
-            elif "sent a message" not in out["alert"]: fails.append(f"the announcement reads {out['alert']!r}")
+            # MOVED IN 327z15 round 48: a message reads as the sender over what they said ("Why does one say
+            # Alex sent a message and why does one say Alex?") - the sender and the words are what is asked
+            elif not ("Cy" in out["alert"] and "ready" in out["alert"]): fails.append(f"the announcement reads {out['alert']!r}")
             if not out["alertShown"]: fails.append("the announcement never animated in")
             others = [n for n in out["names"] if not n["me"]]
             cols = set(n["c"] for n in others)
@@ -308,6 +310,8 @@ def run_class(src_dir, label):
               document.body.appendChild(el);
               placeTopBanner(el);
               el.classList.add("show");
+              /* at rest: mid-slide it is still 8px up (MOVED IN 327z15) */
+              el.style.transition = "none"; el.getBoundingClientRect();
               const r = el.getBoundingClientRect();
               const br = b.getBoundingClientRect();
               const overlap = !(r.right <= br.left || r.left >= br.right ||
@@ -323,8 +327,12 @@ def run_class(src_dir, label):
                 # AND IT IS STILL AT THE TOP. Clearing the button by being
                 # shoved down the screen passes the test above and fails
                 # the person trying to read it.
-                if off["bannerTop"] > off["btnBottom"]:
-                    fails.append("a top banner sits below the chat button, not beside it: %s" % off)
+                # MOVED IN 327z15: since 327z5 a banner spans the screen less
+                # 1rem each side and clears the button by going UNDER it
+                # (settleTopBanner, 8px gap) - "still at the top" is now
+                # "directly under the button", not beside it.
+                if off["bannerTop"] - off["btnBottom"] > 16:
+                    fails.append("a top banner is pushed down the screen, not directly under the chat button: %s" % off)
 
             # 3. starting a chat makes a room, and the panel binds to it
             started = pg.evaluate("""()=>{
@@ -412,7 +420,8 @@ def run_class(src_dir, label):
                 fails.append("two people in the chat share a colour: %s" % spoke["colors"])
             # ASKED FOR BY NAME - "you will get message previews when
             # someone sends a chat even if you don't have the chat open".
-            if not spoke["preview"] or "sent a message" not in spoke["preview"]:
+            # MOVED IN round 48: the sender over the message, not "<name> sent a message"
+            if not spoke["preview"] or not ("Cy" in spoke["preview"] and "ready" in spoke["preview"]):
                 fails.append("no message preview when the chat is closed: %r" % spoke["preview"])
 
             # 5. a Virtual Room does NOT take your DMs away any more
@@ -554,8 +563,11 @@ def run_intro(src_dir, label):
                          review" and "Remove the weekly recap and badge case from
                          what's new" - neither word is asked for, and both must be gone
                          MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz" */
-                      says78: ['nova', 'sound', 'quiz', 'profile', 'calendar', 'save a test', 'study', 'virtual room'].every(w => txt.indexOf(w) >= 0)
-                        && ['briefing', 'badge case', 'weekly recap'].every(w => txt.indexOf(w) < 0)
+                      /* MOVED IN 327z15: Mock (a quiz for one build) is no row of its
+                         own - "that's not a thing, all we did was change the name" -
+                         and the Nova row no longer lists the room games */
+                      says78: ['nova', 'sound', 'profile', 'calendar', 'save a test', 'study'].every(w => txt.indexOf(w) >= 0)
+                        && ['briefing', 'badge case', 'weekly recap', 'a real test'].every(w => txt.indexOf(w) < 0)
                         && txt.indexOf('version 9') >= 0,
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:

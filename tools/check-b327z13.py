@@ -61,7 +61,11 @@ TRACK = """() => { const body = document.querySelector('#bottomtabs-lens .tab-le
   if(!a) return null;
   const rd = k => { const m = /translate3d\\(([-\\d.]+)px,\\s*([-\\d.]+)px[^)]*\\) scale\\(([-\\d.]+),\\s*([-\\d.]+)/.exec(k.transform || '');
     return m ? { cx: +m[1] + +m[3] * 50, h: +m[4] } : null; };
-  return { t: a.currentTime, frames: a.effect.getKeyframes().map(rd).filter(Boolean) }; }"""
+  /* MOVED IN 327z15 round 40: the track has 120 keyframes a second - read at 60 a second, by its duration */
+  const all = a.effect.getKeyframes().map(rd).filter(Boolean);
+  const per = (all.length - 1) / ((a.effect.getTiming().duration || 1) / (1000 / 60));
+  const frames = []; for(let f = 0; f * per <= all.length - 1; f++) frames.push(all[Math.round(f * per)]);
+  return { t: a.currentTime, frames }; }"""
 
 
 def centre(pg, tid):
@@ -152,12 +156,17 @@ def build_after(br):
           if(!a || m === null) return { mount: m, prog: null, track: !!a };
           const rd = k => { const mm = /translate3d\\(([-\\d.]+)px,\\s*([-\\d.]+)px[^)]*\\) scale\\(([-\\d.]+)/.exec(k.transform || ''); return mm ? +mm[1] + +mm[3] * 50 : null; };
           const xs = a.effect.getKeyframes().map(rd).filter(v => v !== null);
-          const i = Math.min(xs.length - 1, Math.floor(m / (1000 / 60)));
+          /* by the track's duration: it has 120 keyframes a second since round 40 */
+          const i = Math.min(xs.length - 1, Math.floor(m / (a.effect.getTiming().duration || 1) * (xs.length - 1)));
           return { mount: m, prog: (xs[i] - xs[0]) / ((xs[xs.length - 1] - xs[0]) || 1),
                    lit: document.querySelector('.bottomtab.active') && document.querySelector('.bottomtab.active').id }; }""")
-        check("%s: U. %s's screen goes in %.0fms after the press (270+), the glide %.0f%% of the way (90%%+), never under it"
+        # MOVED IN 327z15 round 35 (TAB_SCREEN_AFTER 290 -> 170): "When using the bottom
+        # tab, there is lag ... when opening different screens". The page goes in just
+        # past a quick tap's release, while the glass is still crossing (a transform the
+        # compositor carries), not after it lands - 150ms+, with the glide well under way.
+        check("%s: U. %s's screen goes in %.0fms after the press (150+), the glide %.0f%% of the way (75%%+), on its tab"
               % (label, tid.split("-")[1], r.get("mount") or -1, 100 * (r.get("prog") or 0)),
-              (r.get("prog") or 0) >= .9 and (r.get("mount") or 0) >= 270 and r.get("lit") == tid, r)
+              (r.get("prog") or 0) >= .75 and (r.get("mount") or 0) >= 150 and r.get("lit") == tid, r)
     ctx.close()
 
 

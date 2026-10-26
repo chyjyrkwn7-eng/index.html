@@ -201,9 +201,12 @@ def section_copy(br):
           return out; }""")
         ctx.close()
         check("%s: Welcome reads Sign in, its line, I'm new here, its line - one line each, in that order" % dev,
-              not r.get("err") and r.get("order") == [
-                  "B:Sign in", "P:Already use Nova on another phone or before? Use your sync code.",
-                  "B:I’m new here", "P:Never used Nova before."] and r.get("capsVisible"), r.get("order"))
+              # MOVED IN 327z15: "The description under sign in doesn't make sense" -
+              # its line is reworded, so the shape is checked: a line under each
+              # button, and Sign in's names the sync code
+              not r.get("err") and [o[:2] for o in (r.get("order") or [])] == ["B:", "P:", "B:", "P:"]
+              and (r.get("order") or ["", ""])[0] == "B:Sign in" and "sync code" in (r.get("order") or ["", ""])[1]
+              and (r.get("order") or ["", "", ""])[2] == "B:I’m new here" and r.get("capsVisible"), r.get("order"))
         # MOVED IN 327: "New to Nova ... 'puts you on the leaderboard twice' part of the description, remove that."
         check("%s: the check says a second account splits your progress, and nothing about the leaderboard" % dev,
               "second account splits your progress" in r.get("check", "") and "leaderboard" not in r.get("check", "").lower(),

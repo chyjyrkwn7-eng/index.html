@@ -176,6 +176,9 @@ def check_launch(br):
     for label, w, h in DEVICES:
         ctx = br.new_context(viewport={"width": w, "height": h})
         ctx.add_init_script(LAUNCH_LIE)
+        # 330: a first visit has no loading screen at all (it opens on Get Started), so the splash is
+        # measured on a RETURNING device - one that has a sync code - where it still runs
+        ctx.add_init_script("try{localStorage.setItem('class26e.synccode','TEST-0001');}catch(e){}")
         pg = open_page(ctx)
         pg.goto(URL)
         pg.wait_for_timeout(1400)
@@ -202,6 +205,11 @@ def check_launch(br):
               end is not None and end["o"] > 0.5 and end_off <= 4,
               "%dpx" % end_off)
         ctx.close()
+        ctxf = br.new_context(viewport={"width": w, "height": h})
+        pgf = open_page(ctxf); pgf.goto(URL); pgf.wait_for_timeout(1400)
+        shown = pgf.evaluate("() => { const sp = document.getElementById('splashscreen'); return !!sp && getComputedStyle(sp).visibility !== 'hidden' && getComputedStyle(sp).opacity !== '0'; }")
+        check("%s: a first visit shows no loading screen (it opens on Get Started)" % label, shown is False, shown)
+        ctxf.close()
 
 
 # --------------------------------------------------------------------------
@@ -1514,7 +1522,9 @@ def check_b218(br):
     pg.wait_for_timeout(300)
     ys = pg.evaluate("""()=>new Promise(res=>{ const ys=[]; document.getElementById('bottomtab-profile').click();
       let n=0; (function f(){ ys.push(Math.round(scrollY)); if(++n<8) requestAnimationFrame(f); else res(ys); })(); })""")
-    check("a tab switched to from the bottom of another starts at the top", ys[2] == 0, ys)
+    # MOVED IN 327z15: the new screen waits for the bar's glass (round 1), so the old one may hold a
+    # frame longer - what was asked holds: nothing glides, and the new tab is at its top
+    check("a tab switched to from the bottom of another starts at the top", ys[-1] == 0 and all(y == 0 or y == ys[0] for y in ys) and ys.index(0) <= 4 if 0 in ys else False, ys)
     # Settings: two buttons to a row, and the sync code in a card.
     pg.evaluate("()=>{ showAppearance(); }")
     pg.wait_for_timeout(500)
@@ -2170,8 +2180,9 @@ def check_b232(br):
       T('hero', () => ({ gauges: document.querySelectorAll('.rankhero .rankhero-gauge').length,
                          bar: !!document.querySelector('.rankhero-fill, .rankhero-track'),
                          chips: !!document.querySelector('.rankhero-chip') }));
-      showProfile('badges');
-      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .ncase-lining, .badges-tab .badge-grid')).backgroundImage;
+      /* MOVED: the badge case is the Rank screen's Badges tab now (Profile's tabs are Profile, Stats, Settings) */
+      showRanksScreen('badges');
+      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .badge-case-lining, .badges-tab .badge-grid')).backgroundImage;
         const cols = [...bg.matchAll(/rgb\\((\\d+), (\\d+), (\\d+)\\)/g)].map(m => [+m[1], +m[2], +m[3]]);
         return cols.map(c => c[2] - c[0]); });
       cfg.mode = 'drill'; const u = topicsIn(QUESTIONS)[0]; store.unitPerfects[u] = 999; showSetup();
@@ -2443,11 +2454,16 @@ def check_b235(br):
          line (within 2px). */
       await T('plate', () => { const e = document.querySelector('.pf-standing .pf-idline svg');
         const nm = document.querySelector('.pf-standing .pf-rankname');
-        const lab = document.querySelector('.pf-standing .pf-level');
+        /* round 29: the level and the badge count are one row under the name */
+        const lab = document.querySelector('.pf-standing .pf-idsub') || document.querySelector('.pf-standing .pf-level');
         if(e || !nm || !lab) return 'an emblem on the line, or no rank name / level';
         const a = lab.getBoundingClientRect(), b = nm.getBoundingClientRect();
-        const off = Math.round(Math.abs((a.top + a.height / 2) - (b.top + b.height / 2)));
-        return a.left >= b.right ? off : 'not rank, level in that order'; });
+        /* MOVED IN 327z15 round 26: "the profile box ... needs to look more
+           like the profile thing when you click on someone" - the rank is the
+           headline over the level, as on the person card; still no emblem.
+           So: the name above the level, the two centred on each other. */
+        const off = Math.round(Math.abs((a.left + a.width / 2) - (b.left + b.width / 2)));
+        return b.bottom <= a.top + 2 ? off : 'not the rank over the level'; });
       await T('heroLive', () => document.querySelector('.profile-hero-avatar').classList.contains('char-live'));
       // An existing account on Gold, opening this build for the first
       // time, then winning a week off-screen.
@@ -2843,7 +2859,9 @@ def check_b237(br):
                button: p.tagName }; }""")
     # REVISED IN 321: "Remove the tiny icon" - no emblem on the line.
     check("the rank leads the card as one line under the name - the rank, the level, the XP, no emblem (321) - with no box round it, as one button across the card",
-          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") == "BUTTON", r)
+          # MOVED IN 327z15 round 5: the standing block is a div (role=group) - it opens nothing ("Why ...
+          # when I click my xp the rank road map pops up?"); round 27 put the rank over "Level N"
+          isinstance(r, dict) and r.get("w", 0) > 300 and not r.get("emb") and not r.get("bubble") and r.get("boxed") is False and r.get("button") in ("BUTTON", "DIV"), r)
     # REVISED IN 267: "the current rank in the profile box has a progress
     # bar, let's remove that". REVISED IN 315: the bar under the rank is
     # the XP bar, asked back ("how do we still get that nice xp stuff");
@@ -3219,9 +3237,10 @@ def check_b242(br):
            just combined with the other one and put on top?" - nothing on
            the front; the name is on the lid's one nameplate (shut) and in
            its cushion (open), from the same badgeCaseName */
-        lid: !!document.querySelector('.badge-case .badge-case-lid') && !document.querySelector('.badge-case .badge-case-front .nova-case-sideplate, .badge-case .badge-case-front .nova-case-plate')
-          && (document.querySelector('.badge-case .badge-case-lid .nova-case-lidlabel') || {}).textContent === badgeCaseName(BADGE_CASES[0]),
-        clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
+        /* REDRAWN (the caseKit case, build 326-327): no separate lid - the shut front carries the
+           case's one name plate between its two latches */
+        lid: (document.querySelector('.badge-case .badge-case-front .bcs-plate-text') || {}).textContent === badgeCaseName(BADGE_CASES[0]),
+        clasps: document.querySelectorAll('.badge-case .badge-case-front .bcs-latch').length,
         earned: String(badgesEarnedList().length) };
       /* 6. an earned badge: no printed grain, and a shadow in its slot */
       const bsvg = buildUnitBadgeSVG(units[0], true);
@@ -4292,9 +4311,16 @@ def check_audit_a(br):
           const b = [...document.querySelectorAll('.panel.home .cosmic-hero-wrap .cosmic-icon-badge.cosmic-badge-rank')].map(e => {
             const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, s: r.width, bottom: r.bottom }; });
           let overlaps = 0;
-          b.forEach((p, i) => b.forEach((q, j) => { if(j > i && Math.hypot(p.x - q.x, p.y - q.y) < (p.s + q.s) / 2 - 1) overlaps++; }));
-          return { n: b.length, size: Math.round(b[0].s * 10) / 10, overlaps,
+          const pairs = [];
+          b.forEach((p, i) => b.forEach((q, j) => { if(j > i && Math.hypot(p.x - q.x, p.y - q.y) < (p.s + q.s) / 2 - 1){ overlaps++; pairs.push([i, j, Math.round(Math.hypot(p.x - q.x, p.y - q.y)), Math.round((p.s + q.s) / 2), Math.round(p.x), Math.round(p.y), Math.round(q.x), Math.round(q.y)]); } }));
+          return { n: b.length, size: Math.round(b[0].s * 10) / 10, overlaps, pairs,
             spill: Math.round(Math.max(...b.map(p => p.bottom)) - wrap.bottom),
+            /* MOVED IN 327z15 round 33: Home's planet system is Welcome's (round 12) and its bubbles bob
+               on the ring; a floored bubble may pass the hero's box, so what is measured is what was
+               asked - they do not run onto the greeting (6px clear of it, at their lowest) */
+            clear: await (async () => { const g = document.querySelector('.panel.home .homegreeting'); if(!g) return null;
+              let low = 0; for(let i = 0; i < 16; i++){ low = Math.max(low, ...[...document.querySelectorAll('.panel.home .cosmic-hero-wrap .cosmic-icon-badge.cosmic-badge-rank')].map(e => e.getBoundingClientRect().bottom)); await new Promise(r => setTimeout(r, 160)); }
+              return Math.round(g.getBoundingClientRect().top - low); })(),
             /* measured inside the hero, which carries a scale() of its own */
             ref: (() => { const d = document.createElement('div'); d.style.cssText = 'position:absolute;left:0;top:0;width:2.9rem;height:1px';
               document.querySelector('.panel.home .cosmic-hero-wrap').appendChild(d);
@@ -4303,9 +4329,10 @@ def check_audit_a(br):
         ctx.close()
     s = sizes[320]
     check("on a 320x568 phone the rank bubbles neither overlap nor spill below the planet",
-          s["n"] == 7 and s["overlaps"] == 0 and s["spill"] <= 0, s)
+          s["n"] == 7 and s["overlaps"] == 0 and (s["spill"] <= 0 or (s.get("clear") is not None and s["clear"] >= 8)), s)
     p = sizes[440]
-    check("on the 17 Pro Max they are still exactly 2.9rem", abs(p["size"] - p["ref"]) < 0.6, p)
+    # 329 (22b292a): "shrink JUST A TINY SMIDGE" - tall phones' planet is 3.5% smaller and its bubbles scale with it
+    check("on the 17 Pro Max they are 2.9rem, less the tall phones' 3.5% smidge at most", p["ref"] * 0.965 - 0.6 < p["size"] <= p["ref"] + 0.6, p)
 
     # R7: the secret-flare dots are ~44px to tap without looking any
     # different: a point 15px off a dot's centre is still the dot.
@@ -4583,7 +4610,8 @@ def check_b245_bugreport(br):
         check("%s: inside the screen" % label, r["hs"] <= 0 and r["right"] <= r["vw"], [r["hs"], r["right"]])
         check("%s: and clear of the Send button" % label, r["gap"] is not None and r["gap"] >= 8, r["gap"])
         check("%s: the words say where it goes and nothing about codes" % label,
-              "whoever maintains Nova" in r["text"] and not re.search(r"\bcode\b|sync", r["text"], re.I),
+              # MOVED IN 327z15 round 6: "Your report goes to the Nova admin" (was "whoever maintains Nova")
+              re.search(r"Nova admin|whoever maintains Nova", r["text"]) and not re.search(r"\bcode\b|sync", r["text"], re.I),
               r["text"][:240])
         ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init=code)
@@ -4723,8 +4751,11 @@ def check_b245_daily_announce(br):
         if settled:
             a = settled[0]["a"]; fx, fy = r["fab"]
             gap = max(a[0] - fx, fx - a[2], a[1] - fy, fy - a[3])
-            check("%s: the bubble opens beside the button, not at the top" % label,
-                  a[1] > 0.5 * r["vh"] and gap <= 80, [a, r["fab"]])  # from the button's CENTRE: its radius + the 10px gap
+            # REVISED IN 327z15: every pop-up is the top Liquid Glass banner, the daily question's
+            # included - "it like shoots over to the pop up animation ... super cool" - so it settles
+            # in the top third, centred on the screen
+            check("%s: the announcement settles as the top glass banner, centred" % label,
+                  a[1] < 0.3 * r["vh"] and abs((a[0] + a[2]) / 2 - w / 2) <= 3, [a, w])
             ch = r["chat"]
             clear = ch is None or a[2] <= ch[0] - 4 or a[3] <= ch[1] or a[1] >= ch[3]
             check("%s: clear of the chat button" % label, clear, [a, ch])
@@ -4868,7 +4899,9 @@ def check_b246(br):
                   and the selection ring, neither of which is masked */
                flipping: !!o && o.classList.contains('char-flip'),
                poolGlow: !!o && /gradient/.test(getComputedStyle(o, '::before').backgroundImage),
-               ring: !!o && getComputedStyle(o, '::after').opacity === '1' }; }""")
+               /* REVISED IN 327 (round 11): "the character you have selected being circled is not the
+                  move, just the checkmark is okay" - the mark is the tick, not a ring */
+               ring: !!o && getComputedStyle(o, '::after').opacity === '0' && !!o.querySelector('.avatarchar-check') && getComputedStyle(o.querySelector('.avatarchar-check')).display !== 'none' }; }""")
     # The cause, checked directly: CSS applies an element's filter before
     # its mask, so a glow on the masked drawing is cut to the mask's
     # rectangle. Pixel tests at the box edge could not tell the two apart
@@ -4913,7 +4946,8 @@ def check_b246(br):
         out[id] = !!now && now !== before && !now.classList.contains('screen-home-actual');
       }
       /* build 284: no Progress tab - the Profile card's rank row opens it */
-      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.pf-standing') || {click(){}}).click(), await wait(900),
+      /* MOVED IN 327z15 round 5: the climb opens from See rank ladder, not the standing block */
+      out.ranksScreen = (showProfile(), await wait(700), (document.querySelector('.pf-goal-foot') || document.querySelector('.pf-standing') || {click(){}}).click(), await wait(900),
                          !!document.querySelector('.screen-ranks'));
       out.hiddenArt = ['umbra', 'singularity'].map(id => !!characterDetail(id).hideArt);
       out.animated = ['adept_rank', 'elite_rank', 'titan_rank'].map(id => !buildBannerArt(id).classList.contains('is-still'));
@@ -5132,18 +5166,25 @@ def check_b250(br):
     # Measured as the brightness step across the box edge (255: 8).
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
-    pg.evaluate("""async ()=>{ window.unitBadgeEarned = () => true; showProfile('badges');
+    # MOVED: the badge case is the Rank screen's Badges tab, and the art now fills its box to the
+    # rim - so what is measured is the light POOL's own edge (the art's ::after, past the art),
+    # which is where a glow that is cut off shows a step
+    pg.evaluate("""async ()=>{ window.unitBadgeEarned = () => true; showRanksScreen('badges');
       await new Promise(r => setTimeout(r, 1500));
       document.querySelector('.badge-tile.is-earned .badge-tile-art').scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
     pg.wait_for_timeout(800)
     from PIL import Image as _Im
-    bx = pg.evaluate("()=>{ const b = document.querySelector('.badge-tile.is-earned .badge-tile-art').getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }")
+    bx = pg.evaluate("""()=>{ const t = document.querySelector('.badge-tile.is-earned .badge-tile-art'), b = t.getBoundingClientRect(), a = getComputedStyle(t, '::after');
+      const [it, il] = a.inset.split(' ').map(parseFloat);
+      return [b.left + il, b.top + it, parseFloat(a.width), parseFloat(a.height)]; }""")
     im = _Im.open(io.BytesIO(pg.screenshot())).convert("L")
     x, y, w, h = [v * 3 for v in bx]
     px = lambda a, b: im.getpixel((int(a), int(b)))
     steps = []
     for f in (0.3, 0.5, 0.7):
-        steps += [abs(px(x + w * f, y + h - 2) - px(x + w * f, y + h + 2)),
+        # the top edge, not the foot (the badge's name sits under the pool) and clear of the
+        # "new" dot at the top right
+        steps += [abs(px(x + w * min(f, 0.5), y + 2) - px(x + w * min(f, 0.5), y - 2)),
                   abs(px(x + 2, y + h * f) - px(x - 2, y + h * f)),
                   abs(px(x + w - 2, y + h * f) - px(x + w + 2, y + h * f))]
     check("an earned badge's glow fades out before its box ends - no hard edge", max(steps) <= 3, steps)
@@ -5169,14 +5210,14 @@ def check_b258(br):
       try{
       let p = 0; while(levelProgress(p).level < 30) p += 500; store.lifetime.points = p + 900;
       const us = topicsIn(QUESTIONS); us.forEach(u => store.unitPerfects[u] = 0);
-      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = 11;
+      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = badgeThresholdFor(us[3]) - 1;   /* 328: one short of its badge (11 is a whole one at 10) */
       store.rankMapSeen = 99; store.rankMapFx244 = true;
       showProfile('profile'); await wait(1400);
       const thr = badgeThresholdFor(us[3]);
       /* build 266: the slower requirement, over the step from the rank held. */
       { const H = TIER_UNLOCKS[rankOf(store)] || {}, nk = TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(rankOf(store)) + 1], N = TIER_UNLOCKS[nk] || {};
         const b0 = Math.min(H.badges || 0, N.badges || 0);
-        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + 11 / thr - b0) / ((N.badges || 0) - b0);
+        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + (thr - 1) / thr - b0) / ((N.badges || 0) - b0);
         const lvl = levelOf(store) >= (N.level || 0) ? 1 : 0;
         out.lvlMet = lvl === 1; out.expect = Math.min(lvl === 1 ? 1 : 0.999, bdg); }
       out.rank = rankOf(store); out.level = levelOf(store);
@@ -5288,7 +5329,7 @@ def check_b258(br):
     # no unit, no hundos.
     check("the badge case says its count on its shut front - no badges, no ring, no unit, no hundos",
           r.get("badgeSvgs", 0) == 0 and r.get("badgeMedal") == 0 and "hundo" not in r.get("badgeText", "")
-          and "of 16 badges" in r.get("badgeText", "") and not r.get("plateBar"), r)
+          and "of 24 badges" in r.get("badgeText", "") and not r.get("plateBar"), r)   # 328: Level 1 complete, 24 units
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
@@ -5518,6 +5559,9 @@ def check_b267(br):
       const lv = document.querySelector('.pf-standing .pf-level');
       out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth,
                     round: Math.abs(lv.getBoundingClientRect().width - lv.getBoundingClientRect().height) < 1 && parseFloat(getComputedStyle(lv).borderTopLeftRadius) >= lv.getBoundingClientRect().width / 2 - 1 };
+      /* the unit screen's one-time "Penal Code updated" card is modal and sat over the sheet, taking
+         the swipe: this account has seen it, as the other fixtures' accounts have */
+      try{ localStorage.setItem(penalVersionNoteKey(), '1'); }catch(e){}
       cfg.mode = 'drill'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
       document.getElementById('nextbtn').click(); await wait(500);
       showToast('test toast'); await wait(300);
@@ -5525,17 +5569,26 @@ def check_b267(br):
       out.toastZ = t ? parseInt(getComputedStyle(t).zIndex) : -1; out.sheetZ = m ? parseInt(getComputedStyle(m).zIndex) : -1;
       const sh = document.querySelector('.unitoptions-modal-sheet').getBoundingClientRect();
       out.sheetMid = [Math.round(innerWidth / 2), Math.round(sh.top + Math.min(160, sh.height / 2))];
+      { const el = document.elementFromPoint(out.sheetMid[0], out.sheetMid[1]); out.under = el ? (el.tagName + '.' + String(el.className).slice(0, 50)) : null; out.sheetH = Math.round(sh.height); }
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
-    x, y = (r.get("sheetMid") or [220, 500])
+    # REVISED IN 327z8: "it goes away even if you barely swipe down, it should be like if you swipe
+    # really fast or slowly slide down it does" - a slow pull closes past 40% of the sheet and a
+    # short one springs back (a flick needs real speed). The old 182px pull is neither now.
+    x, y = (r.get("sheetMid") or [220, 500]); H = r.get("sheetH") or 700
     cdp = ctx.new_cdp_session(pg)
-    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
-    for i in range(1, 14):
-        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y + i * 14}]})
-        pg.wait_for_timeout(16)
-    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-    pg.wait_for_timeout(600)
-    closed = pg.evaluate("()=>{ const m = document.getElementById('unitoptions-modal'); return !!m && m.hidden; }")
+    def pull(dist, steps):
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+        for i in range(1, steps + 1):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y + dist * i / steps}]})
+            pg.wait_for_timeout(40)
+        pg.wait_for_timeout(150)   # held: a slow pull, not a flick
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(700)
+        return pg.evaluate("()=>{ const m = document.getElementById('unitoptions-modal'); return !m || m.hidden; }")
+    springs = not pull(int(H * 0.15), 12)
+    closed = pull(int(H * 0.45), 24)
+    if not (springs and closed): print("    (sheet swipe: under the finger %s, sheet %spx tall, short pull kept it open %s, long pull closed it %s)" % (r.get("under"), H, springs, closed))
     o = r.get("orbit") or {}
     check("the middle ring's dot turns faster than the outer ring", o.get("innerDots", 0) >= 1 and 0 < o.get("inner", 0) < o.get("outer", 0), o)
     check("both Virtual Room card icons are mode icons, in colour (build 287)", r.get("icons") == [True, True], r.get("icons"))
@@ -5554,7 +5607,8 @@ def check_b267(br):
     # a round lit well, not the square plate 267 removed.
     check("the level is not in a square box", lv.get("bg") in ("rgba(0, 0, 0, 0)", "transparent") or lv.get("radius", "").endswith("%") or lv.get("round"), lv)
     check("a toast sits above an open start sheet", r.get("toastZ", -1) > r.get("sheetZ", 0) > 0, [r.get("toastZ"), r.get("sheetZ")])
-    check("the start sheet closes on a swipe down from its middle", closed is True, closed)
+    check("a short slow pull from the start sheet's middle springs back", springs is True, springs)
+    check("the start sheet closes on a slow pull down past 40% from its middle", closed is True, closed)
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
@@ -6132,10 +6186,11 @@ def check_b279_merge(br):
       try{
       const U = 'Identity Crimes';
       const key0 = Object.keys(store.stats || {})[0];
-      /* the account being joined: its own name and id, 10 of 15 hundos */
+      /* the account being joined: its own name and id, 5 short of the badge (328: 10 was a whole one) */
+      const thr = badgeThresholdFor(U); out.thr = thr;
       const main = Object.assign(JSON.parse(JSON.stringify(store)), {
         firstName: 'Main', publicId: 'pubmain00001', lastModified: 5, mergeHold: null,
-        unitPerfects: { [U]: 10 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
+        unitPerfects: { [U]: thr - 5 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
         studyLog: { '2026-09-30': 60000 }, vrWins: 2 });
       main.lifetime = Object.assign({}, main.lifetime, { points: xpForLevel(20) + 100, correct: 900, answered: 1000 });
       main.stats = { [key0]: { n: 4, m: 1, r: [10] } };
@@ -6192,7 +6247,7 @@ def check_b279_merge(br):
           r.get("code") == "JKLM-NPQR" and r.get("name") == "Main" and r.get("pub") == "pubmain00001"
           and (r.get("retired") or [None])[0] == "pubdup000002" and r.get("done") is True, r)
     check("its XP, right answers and hundos are added to the real account's",
-          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == 16, r)
+          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == (r.get("thr") or 0) - 5 + 6, r)
     check("so are its question stats, history and study time",
           (r.get("stat") or {}).get("n") == 7 and (r.get("stat") or {}).get("m") == 3
           and r.get("hist") == ["new", "old"] and r.get("day") == 90000 and r.get("vrWins") == 3, r)
@@ -6546,7 +6601,9 @@ def check_b284(br):
       out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
       showProfile(); await wait(900);
       /* build 315: the rank row is the standing block */
-      const plate = document.querySelector('.pf-standing');
+      /* MOVED IN 327z15 round 5: "Why ... when I click my xp the rank road map pops up?" -
+         the standing block opens nothing; See rank ladder opens the climb */
+      const plate = document.querySelector('.pf-goal-foot') || document.querySelector('.pf-standing');
       if(plate) plate.click(); await wait(900);
       out.rankOpens = !!document.querySelector('.screen-ranks .rankmap-stop');
       out.profileLit = !!document.querySelector('#bottomtab-profile.active');
@@ -6770,8 +6827,11 @@ def check_b288(br):
           str(r.get("chev") or "").startswith("M9 5l6 7"), str(r.get("chev")))
     check("swipe to advance is switched on once, and turning it off afterwards sticks",
           r.get("swipeOnce") is True and r.get("swipeStaysOff") is True, str([r.get("swipeOnce"), r.get("swipeStaysOff")]))
-    check("Home's halo is a canvas drawn once, clipped at the screen",
-          r.get("halo") == "CANVAS" and r.get("clip") == "clip", str([r.get("halo"), r.get("clip")]))
+    # MOVED IN 327z15: Home has no halo now ("The background behind it [on
+    # Welcome] is perfect ... The main menu needs to be ... like it") - so
+    # nothing of one is drawn at all, and the screen still clips.
+    check("Home draws no halo behind the planet, and clips at the screen",
+          r.get("halo") is None and r.get("clip") == "clip", str([r.get("halo"), r.get("clip")]))
     check("the orbit's emblems hold still and the badge cutscene has no full-screen blur",
           r.get("orbitAnims") == 0 and r.get("badgeBlur") == "none", str([r.get("orbitAnims"), r.get("badgeBlur")]))
     check("a second Home visit reuses the sphere glow it already drew", r.get("glowReused") is True, str(r.get("glowReused")))
@@ -7597,7 +7657,8 @@ def check_b298(br):
           guide(r["both"]["orders"]) and guide(r["exam"]), r["both"])
     check("one with \"All of the above\" shows the study guide's exact order on shuffle", guide(r["above"]), r["above"])
     check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
-    check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
+    # 328: Level 1 added 207 questions, the alphabet and time unit's letter choices among them
+    check("about a hundred and eighty questions in the bank are held in order", 150 <= r["count"] <= 210, r["count"])
     # REVISED 6 Oct: exact guide order outranks "always at the bottom" -
     # the one guide question with "All the listed" third keeps it third
     check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice stays exactly where the study guide puts it",
@@ -7619,7 +7680,7 @@ def check_b298(br):
       const notes = QUESTIONS.map((q, i) => i).filter(i => bad.test(QUESTIONS[i].q) || inText.test(QUESTIONS[i].q) || bad.test((QUESTIONS[i].ref || '').replace(/\\(#\\d+\\)/g, '')) || (QUESTIONS[i].choices || []).some(c => bad.test(c)))
         .map(i => QUESTIONS[i].topic + ' ' + QUESTIONS[i].src);
       const edited = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].keyText != null);
-      const keep = edited.every(i => KEYS[i] === (QUESTIONS[i].topic || '') + '|' + QUESTIONS[i].src + '|' + hashOf(String(QUESTIONS[i].keyText) + '\\u0001' + QUESTIONS[i].choices.join('\\u0001')));
+      const keep = edited.every(i => KEYS[i] === (QUESTIONS[i].topic || '') + '|' + QUESTIONS[i].src + '|' + hashOf(String(QUESTIONS[i].keyText) + '\\u0001' + (QUESTIONS[i].keyChoices || QUESTIONS[i].choices).join('\\u0001')));   /* 329: keyChoices pins repaired choices too, as KEYS does */
       const boat = QUESTIONS.find(q => (q.topic || '').trim() === 'Penal Code' && q.src === 239);
       return { notes, edited: edited.length, keep, boat: boat && boat.q.slice(0, 40) }; }""")
     check("no question carries an editing note: no \"duplicate\", no Quizlet or Googled source, no links, no stray numbers",
@@ -7663,8 +7724,15 @@ def check_b298(br):
                keysUnique: new Set(all.map(i => KEYS[i])).size === all.length,
                /* build 325: the 256-578 version-only entries (358-364, some with no repeatOf) follow the
                   repeats - every version-only question is one block at the end, so no other question moves */
-               repeatLast: (() => { const vo = QUESTIONS.filter(q => q.versionOnly).length;
-                 return vo >= reps.length && QUESTIONS.slice(-vo).every(q => q.versionOnly) && reps.every(q => QUESTIONS.indexOf(q) >= QUESTIONS.length - vo); })(),
+               /* 328: Level 1's new units were added AFTER this block (every live question kept its
+                  place - compared index for index against main), so the block is one run that only
+                  later additions follow, not the very end of the bank */
+               /* ...and Penal's alone: 328 keeps Sexual Assault's pre-renumbering questions as version-only
+                  in their own places (no question moved), which is not this block */
+               repeatLast: (() => { const idx = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].versionOnly && (QUESTIONS[i].topic || '').trim() === 'Penal Code');
+                 const a = idx[0], z = idx[idx.length - 1];
+                 return idx.length >= reps.length && z - a + 1 === idx.length && reps.every(q => QUESTIONS.indexOf(q) >= a)
+                   && QUESTIONS.slice(z + 1).every(q => (q.topic || '').trim() !== 'Penal Code'); })(),
                dailyRepeat: days.some(i => QUESTIONS[i] && (QUESTIONS[i].repeatOf != null || QUESTIONS[i].versionOnly)) }; }""")
     guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
     # Build 300: "remove it from the entire unit one, the entire unit one
@@ -8305,7 +8373,9 @@ def check_b302(br):
         # become a little much ... it's mostly the iPhone" - on a phone the
         # line under the bar is "x / y XP to Level N" and the total is on
         # Stats; a tablet keeps this level's XP and the total, as above.
-        want_nums = (r"^[0-9,]+ / [0-9,]+ XP to Level \d+$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
+        # REVISED IN 328: "Why does the xp underneath it say 'to level 24' remove that" - a phone's
+        # line is "x / y XP", nothing after it.
+        want_nums = (r"^[0-9,]+ / [0-9,]+ XP$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
         check(f"{dev}: under the bar, this level's XP and " + ("what it leads to (phone)" if w < 640 else "the total XP") + "; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])
@@ -8540,7 +8610,8 @@ def check_b303(br):
           out.starNote = (document.querySelector('.flag-note') || {}).textContent || '';
           /* 6. paused: the clock stays, in amber */
           document.getElementById('pausebtn').click(); await wait(400);
-          out.pausedTimer = !tl.hidden && tl.classList.contains('is-paused') && getComputedStyle(tl.querySelector('.tpaused')).display !== 'none';
+          /* REVISED IN 327 (round 11): "no need for the word paused" - the clock stays up in its paused colour, no word */
+          out.pausedTimer = !tl.hidden && tl.classList.contains('is-paused') && getComputedStyle(tl).display !== 'none';
           document.getElementById('resumebtn').click(); await wait(300);
           out.resumedTimer = !tl.classList.contains('is-paused');
           /* 7. Exam: the switch is Exam's alone, and with it a pick is judged and locked */
@@ -8676,6 +8747,10 @@ def check_b304(br):
           const out = {};
           try{
           %s
+          /* 327z15: a run the app lost is no pop-up on Home ("Interrupted sounds like the app
+             broke"): it waits as a saved test, and Start Studying offers it back */
+          out.homePopup = !!document.getElementById('resume-offer');
+          if(!out.homePopup){ const pb = document.querySelector('.panel.home .playbtn'); if(pb) pb.click(); await wait(900); }
           const offer = document.getElementById('resume-offer');
           out.offer = offer ? offer.textContent : null;
           /* build 320 (b320h): Resume shows the LOADING TEST bar (~2.5s) before
@@ -8755,8 +8830,8 @@ def check_b304(br):
         ctx.close()
         check(dev + ": no error in the 304 run", "err" not in r and "err" not in r2, (r.get("err"), r2.get("err")))
         check(dev + ": a run in progress is saved as it goes", r.get("saved") is True)
-        check(dev + ": coming back, it asks to continue the interrupted test",
-              bool(r2.get("offer")) and "interrupted" in (r2.get("offer") or "").lower(), r2.get("offer"))
+        check(dev + ": coming back, no pop-up on Home, and Start Studying offers to pick up where you left off (327z15)",
+              not r2.get("homePopup") and "left off" in (r2.get("offer") or "").lower() and "interrupted" not in (r2.get("offer") or "").lower(), (r2.get("homePopup"), r2.get("offer")))
         check(dev + ": and Continue picks up on the same question",
               r2.get("inTest") is True and r2.get("pos") == r.get("pos") and r2.get("q") == r.get("q"), (r.get("pos"), r2.get("pos"), r2.get("inTest")))
         check(dev + ": Ronin asks for 500 questions", "500" in (r2.get("ronin") or ""), r2.get("ronin"))
@@ -8887,7 +8962,8 @@ def check_b304_noxpfly(br):
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
     play(True)
     pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('.rs-continue').click(); await w(900);
+      await w(1000);   /* 328: the results ignore a tap for the first 0.7s after they settle (the review-tap bug) */
+      document.querySelector('.rs-continue').click(); await w(1300);
       [...document.querySelectorAll('button')].find(b => /Retake missed/.test(b.textContent)).click(); }""")
     play(False)
     r = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
@@ -8895,6 +8971,7 @@ def check_b304_noxpfly(br):
       const mo = new MutationObserver(() => { if(document.getElementById('welcomebonus-banner')) flew = true; });
       mo.observe(document.body, { childList: true, subtree: true });
       const mm = [...document.querySelectorAll('.rs-actions button')].find(b => /Main menu/.test(b.textContent));
+      await w(1000);   /* 328: the results' buttons ignore a tap for 0.6s after they arrive */
       const had = !!mm; if(mm) mm.click(); await w(2500); mo.disconnect();
       return { had, flew, home: !!document.querySelector('[data-screen="home"]') }; }""")
     ctx.close()
@@ -9281,7 +9358,11 @@ def check_b308_unlocks(br):
           const slots = [...o.querySelectorAll('.rank-orbit-slot')].map(s => s.getBoundingClientRect());
           const cx = slots.reduce((a, r) => a + r.left + r.width / 2, 0) / slots.length;
           const cy = slots.reduce((a, r) => a + r.top + r.height / 2, 0) / slots.length;
-          const off = Math.hypot(cx - (main.left + main.width / 2), cy - (main.top + main.height * 162 / 342)) / main.width;
+          /* MOVED IN 327z15 round 15: the flares sit at Home's own spots (HOME_SPOTS), not evenly round
+             the ring, so their average is not the planet - the orbit they turn in is what is centred */
+          const orr = o.getBoundingClientRect();
+          const off = Math.hypot(orr.left + orr.width / 2 - (main.left + main.width / 2), orr.top + orr.height / 2 - (main.top + main.height * 162 / 342)) / main.width;
+          const offSlots = Math.hypot(cx - (main.left + main.width / 2), cy - (main.top + main.height * 162 / 342)) / main.width;
           const rot1 = getComputedStyle(o).rotate;
           await wait(1800);
           const rot2 = getComputedStyle(o).rotate;
@@ -9628,7 +9709,9 @@ def check_b314h_chat(br):
           info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bf"] != "none", a)
     # a real pull down closes it; every move after the first is claimed
     pg.evaluate("""() => { window.__prevented = 0; window.__moves = 0; document.querySelector('.chatdock-panel').addEventListener('touchmove', e => { __moves++; setTimeout(() => { if(e.defaultPrevented) __prevented++; }, 0); }, { passive: true }); }""")
-    _swipe(cdp, info["x"], info["y"], 0, 220, steps=10)
+    # REVISED IN 327z8/z15 ("it goes away even if you barely swipe down, it should be like if you swipe really
+    # fast or slowly slide down it does"): a pull past 40% of the sheet closes it (a flick needs real speed)
+    _swipe(cdp, info["x"], info["y"], 0, 440, steps=10)
     pg.wait_for_timeout(500)
     b = pg.evaluate("() => ({ open: chatDockOpen, moves: __moves, prevented: __prevented })")
     check("a pull down the sheet closes it, and every move of it was the sheet's (none left to the page)",
@@ -9962,7 +10045,8 @@ def check_b314h_lead2(br):
       out.sliderOn = !!(sl && act && Math.abs(sl.getBoundingClientRect().left - act.getBoundingClientRect().left) < 2);
       /* the countdowns - the Calendar tab's The course card since build 324 */
       showCalendar(); await wait(500);
-      const course = document.querySelector('#stage .cal-course-card');
+      /* MOVED IN 327z15 round 5: The course is the countdown card's Graduation page */
+      const course = document.querySelector('#stage .cal-course-card') || document.querySelector('#stage .cal-count-page.is-course');
       out.tiles = course ? [...course.querySelectorAll('.cal-stat')].map(e => [...e.children].map(c => c.textContent.trim()).join(' ')) : [];
       out.courseBig = course ? ((course.querySelector('.stx-hero-big') || {}).textContent || '') : '';
       out.daysLeft = typeof classDaysRemaining === 'function' ? classDaysRemaining() : null;
@@ -10486,7 +10570,10 @@ def check_b311_rank(br):
       nodes[nodes.length - 1].click(); await wait(500);
       c = document.querySelector('.ranklore-card');
       out.locked = c ? { cls: c.className, lore: c.querySelector('.ranklore-text').textContent,
-                         grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter } : null;
+                         grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter,
+                         /* 327z15: dark, not filtered - the emblem moves now; faded under a shade of night */
+                         dim: +getComputedStyle(c.querySelector('.ranklore-art svg')).opacity,
+                         shade: getComputedStyle(c.querySelector('.ranklore-art'), '::after').backgroundImage } : null;
       document.querySelector('.invite-overlay')?.remove();
       }catch(e){ out.threw = String(e); }
       return out; }""")
@@ -10506,7 +10593,8 @@ def check_b311_rank(br):
           r.get("reached") and "is-reached" in r["reached"]["cls"] and len(r["reached"]["lore"]) > 60 and "story" not in r["reached"]["lore"]
           and r["reached"]["reqs"] == 2 and r["reached"]["gifts"] >= 2, r.get("reached"))
     check("a locked rank's card is grey and keeps its story back",
-          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and "grayscale" in r["locked"]["grey"], r.get("locked"))
+          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and ("grayscale" in r["locked"]["grey"]
+          or (r["locked"].get("dim", 1) <= .5 and "gradient" in (r["locked"].get("shade") or ""))), r.get("locked"))
     ctx.close()
 
 
@@ -11758,7 +11846,7 @@ def check_b313_flares(br):
         lit = r.get("lit") or []
         check(f"{label}: every found flare on Home is lit in its own colour (they computed white)",
               len(lit) == 3 and all(x["ok"] for x in lit), lit)
-        check(f"{label}: the flare being hunted next is marked (once Void is held) - in plain light, not its colour (build 314)", r.get("nextTinted") is True, r.get("nextTinted"))
+        check(f"{label}: no flare is marked as the one being hunted, Void held or not (build 329: the hunted-flare design is gone)", r.get("nextTinted") is False, r.get("nextTinted"))
         # MOVED IN 326 (b326d): all six on Home from day one; the found ones lit
         check(f"{label}: all six secret flares on Home whatever is found - none, Void, five, all",
               (r.get("count3"), r.get("countVoid"), r.get("count6"), r.get("countAll")) == (6, 6, 6, 6),
@@ -11942,6 +12030,16 @@ def check_b313_flares_glass(br):
           const bi = els.findIndex(e => e.classList && e.classList.contains('cosmic-icon-badge'));
           const fi = els.findIndex(e => (e.classList && e.classList.contains('cosmic-orbit-dot')) || (e.getAttribute && /cosmic-orbit-dot/.test(e.getAttribute('class') || '')));
           return { bubble: bi, flare: fi }; }""", under)
+        # MOVED IN 327z15: with Welcome's placement a flare can pass beside
+        # a bubble rather than under its middle, so a time with one under it
+        # may not exist. Then the paint order is read off the stacking: the
+        # orbit layers come before the bubbles and never above them.
+        if not under:
+            order = pg.evaluate("""()=>{ const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+              const kids = [...wrap.children]; const z = e => parseInt(getComputedStyle(e).zIndex) || 0;
+              const orb = kids.filter(e => e.classList.contains('cosmic-hero-orbitlayer')), bub = kids.filter(e => e.classList.contains('cosmic-icon-badge'));
+              const ok = orb.length && bub.length && orb.every(o => bub.every(b => z(o) < z(b) || (z(o) === z(b) && kids.indexOf(o) < kids.indexOf(b))));
+              return { bubble: ok ? 0 : -1, flare: ok ? 1 : -1, stacked: true }; }""")
         check(f"{label}: a flare under a bubble paints beneath it (the glass is on top)",
               bool(order) and order["bubble"] >= 0 and order["flare"] >= 0 and order["bubble"] < order["flare"], [under, order])
         if under:
@@ -11951,8 +12049,9 @@ def check_b313_flares_glass(br):
         # flare's name, which is the rank's)
         t = pg.evaluate("()=>{ const p = document.querySelector('.home-caption > .hc-item:not(.is-out)'); return p ? p.textContent : ''; }")
         rank = pg.evaluate("(t)=>RANK_DISPLAY_NAME[t] || ''", (under or {}).get("tier", ""))
+        # (327z15: only measurable when a flare does pass under a bubble)
         check(f"{label}: a tap on a bubble with a flare under it opens the bubble's rank, not the flare",
-              bool(rank) and t.startswith(rank + " flare"), [rank, t[:60]])
+              (not under) or (bool(rank) and t.startswith(rank + " flare")), [rank, t[:60]])
         pg.evaluate("()=>{ document.querySelectorAll('.hc-item').forEach(e => e.remove()); document.querySelectorAll('.panel.home .cosmic-hero-wrap *').forEach(e => { e.style.animationPlayState = ''; }); }")
         clear = pg.evaluate(GLASS_SEEK, "clear")
         pg.wait_for_timeout(200)
@@ -11987,8 +12086,29 @@ def check_b313_flares_glass(br):
           }
           inner.style.animationDelay = ''; bubs.forEach(b => b.style.animation = '');
           return { off: off.map(v => +v.toFixed(2)), closest: +best.toFixed(2) }; }""")
-        check(f"{label}: every bubble's centre is on its ring (within 1.5px)", bool(geo["off"]) and max(geo["off"]) <= 1.5, geo["off"])
-        check(f"{label}: a flare passes within 3px of a bubble's centre - through it, not past the rim", geo["closest"] <= 3, geo["closest"])
+        # MOVED IN 327z15: Home's bubbles sit where Welcome's do ("the
+        # positions of the flares on the welcome screen are even better"),
+        # so they are no longer each centred on a ring. What is measured
+        # now: six bubble centres are Welcome's six badge centres, drawn in
+        # a box the same width, and a flare still passes through bubbles.
+        wel = pg.evaluate("""()=>{
+          const wrap = document.querySelector('.panel.home .cosmic-hero-wrap');
+          const W = wrap.getBoundingClientRect();
+          const box = document.createElement('div'); box.style.cssText = 'position:fixed;left:0;top:0;width:' + wrap.offsetWidth + 'px';
+          document.body.appendChild(box); const h = buildCosmicHero(); h.style.maxWidth = 'none'; h.style.margin = '0'; box.appendChild(h);
+          const B = h.getBoundingClientRect();
+          const ctr = (b, R) => { const r = b.getBoundingClientRect(); return [r.left + r.width / 2 - R.left, r.top + r.height / 2 - R.top]; };
+          const w = [...h.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => ctr(b, B));
+          const m = [...wrap.querySelectorAll(':scope > .cosmic-icon-badge')].map(b => { b.style.animation = 'none'; const c = ctr(b, W); b.style.animation = ''; return c; });
+          box.remove();
+          const k = Math.min(W.width / B.width, 9);
+          return { off: w.map(p => +Math.min(...m.map(q => Math.hypot(p[0] * k - q[0], p[1] * k - q[1]))).toFixed(1)), W: W.width }; }""")
+        # (327z15 round 15: Home's places are in the planet's units, measured
+        # from Welcome on a Pro Max; Welcome's are rem-offset, so on a bigger
+        # planet they part by a little - within 2.5% of the planet's width)
+        check(f"{label}: Home's bubbles are centred where Welcome's six are (within 3px, or 2.5% of the planet on a bigger one)",
+              bool(wel) and len(wel["off"]) == 6 and max(wel["off"]) <= max(3, .025 * wel["W"]), wel)
+
         # The glass is the glass it was: nothing about a bubble with nothing
         # behind it changed (its fill, blur and rim are 312's).
         g = pg.evaluate("""()=>{ const u = document.querySelector('.panel.home .cosmic-icon-badge.cosmic-badge-rank:not(.cosmic-badge-lit)');
@@ -13702,8 +13822,10 @@ def check_b316_tiles(br):
         # case in its own grained shell; it "sticks out", so the strip is the
         # Next rank card's flow again - a diagonal light and a tinted edge.
         check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
-              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.2
-              and not all(abs(x - 1) < 0.01 or abs(x - 255) < 1 for x in ch), [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
+              # MOVED IN 327z15 round 27: "the profile box, challenge box, and badge case should all look
+              # a little more alike" - one family on the person card's surface, its white .14 rim, one
+              # colour pool at the top; a light and an edge still, never a flat box
+              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.12, [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
 
@@ -13750,6 +13872,12 @@ def check_b317_pfcard(br):
           const cs = document.querySelector('.profile-identity-tab .pf-case');
           const dot = cs && cs.querySelector('.new-dot');
           out.dot = box(dot); out.arrow = box(cs && cs.querySelector('.pf-case-arrow'));
+          /* MOVED IN 327z15: the case count is a pill (327z10) whose arrow is its ::after disc,
+             in its right padding - the old text arrow is display:none */
+          const cc = cs && cs.querySelector('.pf-case-count');
+          if(cc && (!out.arrow || !out.arrow.r)){ const r = cc.getBoundingClientRect(), a = getComputedStyle(cc, '::after');
+            const w = parseFloat(a.width) || 0, rt = parseFloat(a.right) || 0;
+            out.arrow = { l: r.right - rt - w, r: r.right - rt, t: r.top + r.height / 2 - w / 2, b: r.top + r.height / 2 + w / 2 }; }
           out.strip = box(cs && cs.querySelector('.pf-strip'));
           out.inKick = !!(dot && dot.closest('.pf-kick'));
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
@@ -14355,8 +14483,12 @@ def check_b317_cutspin(br):
                 if not x["ok"]:
                     bad.append((i, x))
         ctx.close()
+        # MOVED IN 327z15 round 15: the bubbles sit at Home's spots (HOME_SPOTS), so a secret flare
+        # crosses a big one on far fewer frames (3 on a phone, none on an iPad) - every crossing is
+        # checked, and the crossings are counted over both devices below
         check("%s: every frame of the whirl, a secret flare on a big bubble is UNDER its glass (and never sharper than it)" % label,
-              n >= 10 and not bad, (n, len(bad), bad[:2]))
+              not bad, (n, len(bad), bad[:2]))
+        globals().setdefault("_CUTSPIN_N", []).append(n)
         # build 320 (b320d): the run-up into the flash is 1.3s longer, so
         # the flash lands ~20.9s (frame ~627) rather than ~19.6s
         check("%s: the mini-bang goes off for about a second at the top speed, and the big flash comes on time (~20.9s, build 320)" % label,
@@ -14373,6 +14505,8 @@ def check_b317_cutspin(br):
               len(during) >= 20 and all(x["parts"] == "rb-core,rb-glow,rb-ring" for x in during)
               and all(x["pool"] < .02 for i_, x in igs),
               (len(during), [x for x in during if x["parts"] != "rb-core,rb-glow,rb-ring"][:1], max([x["pool"] for i_, x in igs], default=None)))
+    cn = globals().pop("_CUTSPIN_N", [])
+    check("...and the whirl was seen crossing a big bubble at all (frames counted, over the devices)", sum(cn) >= 3, cn)
 
     # Round five: "there's like a flare floating across the screen?" The
     # outro must hold the planet system still while it fades, and the bridge
@@ -14942,7 +15076,8 @@ def check_b317_planet(br):
     radii = {k: round((fl.get(k) or {}).get("r", 0)) for k in rings}
     check("Void's three on the outer ring, Umbra's, Horizon's and Genesis's on the inner - each riding its ring's own line",
           rings == {"red": "out", "orange": "out", "yellow": "out", "violet": "in", "white": "in", "core": "in"}
-          and all(abs(radii[k] - 140) <= 2 for k in ("red", "orange", "yellow")) and all(abs(radii[k] - 108) <= 2 for k in ("violet", "white", "core")),
+          # MOVED IN 327z15: the outer ring is Welcome's 152 again (HOME_OUTER_R)
+          and all(abs(radii[k] - 152) <= 2 for k in ("red", "orange", "yellow")) and all(abs(radii[k] - 108) <= 2 for k in ("violet", "white", "core")),
           (rings, radii))
     def gaps(keys):
         a = sorted((fl.get(k) or {}).get("a", 0) for k in keys)
@@ -15616,7 +15751,7 @@ def check_b317_specials(br):
       document.body.appendChild(h);
       const ok = playCharSpecial(h);
       const during = { cls: h.classList.contains('char-special'), live: h.classList.contains('char-live'),
-        play: getComputedStyle(play).display, svg: getComputedStyle(svg).visibility,
+        play: getComputedStyle(play).display, playVis: getComputedStyle(play).visibility, svg: getComputedStyle(svg).visibility,
         idle: [...svg.querySelectorAll('.cx-fx')].some(n => n.getAnimations().length > 0) };
       const twice = playCharSpecial(h);
       await new Promise(r => setTimeout(r, CHAR_SPECIAL_MS.lunar + 400));
@@ -15630,7 +15765,9 @@ def check_b317_specials(br):
         check("playCharSpecial adds .char-special (and not twice at once)",
               pc["ok"] and pc["during"]["cls"] and not pc["twice"], pc)
         check("during it the flip-book is hidden and the live drawing shown, idle running",
-              pc["during"]["play"] == "none" and pc["during"]["svg"] == "visible" and pc["during"]["live"]
+              # MOVED IN 327z15 round 4: hidden by visibility, not display:none - display:none
+              # cancelled the flip-book's animation, so the loop jumped when the special handed back
+              (pc["during"]["play"] == "none" or pc["during"].get("playVis") == "hidden") and pc["during"]["svg"] == "visible" and pc["during"]["live"]
               and pc["during"]["idle"], pc["during"])
         check("afterwards the class is gone and the flip-book is back",
               not pc["after"]["cls"] and not pc["after"]["live"] and pc["after"]["play"] != "none"
@@ -17353,12 +17490,12 @@ def check_b317_hometaps(br):
                   inslot(X) and X.get("popups") == 0, X)
         check(dev + ": a held rank says its flare, what it is and when it was lit - and lights, presses and lets a halo go, no shake",
               HL.get("kind") == "is-held" and HL.get("name") == "Gold flare" and HL.get("state") == "Lit"
-              and "A sun that makes its own light." in (HL.get("text") or "") and "Lit when you reached Gold rank." in (HL.get("text") or "")
+              and "A sun that makes its own light." in (HL.get("text") or "") and "Lit when" not in (HL.get("text") or "")  # MOVED IN 327z15: "remove that part"
               and HL.get("light", 0) >= 1 and HL.get("press", 0) >= 1 and HL.get("halo", 0) >= 1 and HL.get("shake") == 0
               and (HL.get("title") or {}).get("nearest") == "veteran" and ((HL.get("title") or {}).get("dist") if (HL.get("title") or {}).get("dist") is not None else 99) <= 10, HL)
         check(dev + ": a locked rank says what reaching it takes and what is left - and shakes and dips, never lights",
               LK.get("kind") == "is-locked" and LK.get("name") == "Sapphire flare" and LK.get("state") == "Locked"
-              and "Reach level 60 and earn 9 badges to light it." in (LK.get("text") or "") and "20 more levels and 4 more badges to go." in (LK.get("text") or "")
+              and (LK.get("text") or "").startswith("Not lit yet") and not any(ch.isdigit() for ch in (LK.get("text") or ""))  # MOVED IN 327z15: vague, like the secret ones
               and LK.get("shake", 0) >= 1 and LK.get("dim") and LK.get("light") == 0 and LK.get("press") == 0
               and (LK.get("title") or {}).get("nearest") == "adept" and ((LK.get("title") or {}).get("dist") if (LK.get("title") or {}).get("dist") is not None else 99) <= 10, LK)
         check(dev + ": a found secret flare is its name in its colour and its one line, nothing after - and sparkles: a swell, a ring and sparks, no shake",
@@ -17368,15 +17505,16 @@ def check_b317_hometaps(br):
         # build 318: yellow is the NEXT flare here (two of Void's found), so
         # its words are the rumour of its level; any other unfound one says
         # only "not found" (check_b318_flares)
-        check(dev + ": an unfound secret flare has no name and no colour (the next one a rumour of its level) - and shakes like every locked thing, no sparkle",
+        check(dev + ": an unfound secret flare has no name and no colour (build 329: no rumour on any) - and shakes like every locked thing, no sparkle",
               UF.get("kind") == "is-unfound" and UF.get("name") == "Secret flare" and UF.get("state") == "Not found"
-              and (UF.get("text") or "").startswith("They say this one") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
+              and "They say" not in (UF.get("text") or "") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
               # MOVED IN 326 (b326e): no total for the secret flares - more
               # come into view as you find them ("it says there's only 3")
               # MOVED IN 327z10: one answer - where you stand and what is next
-              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and (PL.get("text") or "").startswith("3 of 7 rank flares lit, 2 secret flares found. Next: the Platinum flare.")
+              # MOVED IN 327z15: the planet's line made plain ("The description that the large planet gives you is also confusing")
+              PL.get("kind") == "is-planet" and PL.get("name") == "Your flares" and (PL.get("text") or "").startswith("3 of 7 rank flares lit. 2 secret flares found.")
               and ((PL.get("title") or {}).get("dist") if (PL.get("title") or {}).get("dist") is not None else 99) <= 10
               and PL.get("fxMoving", 0) >= 4 and PL.get("fxFiltered") == 0 and len(PL.get("surge") or []) == 2 and all(n >= 1 for n in PL.get("surge") or [0]), PL)
         # MOVED IN 327z10: a second tap keeps the same one answer up ("shouldn't that just be combined to one message?")
@@ -17421,7 +17559,7 @@ def check_b317_hometaps(br):
           return { still: !!(fx && fx.classList.contains('is-still')), surge: [...document.querySelectorAll('.screen-home-actual .cosmic-hero-orbitlayer')].map(l => l.getAnimations().filter(a => !(window.CSSAnimation && a instanceof CSSAnimation) || a.playbackRate !== 1).length) }; }"""))
         pg.evaluate("() => { theme.reduceMotion = false; delete document.documentElement.dataset.reduceMotion; }")
         check(dev + ": Reduce motion: a locked rank dips, still, with its caption - no shake",
-              RL.get("shake") == 0 and RL.get("dim") and RL.get("light") == 0 and "Reach level 60" in (RL.get("text") or ""), RL)
+              RL.get("shake") == 0 and RL.get("dim") and RL.get("light") == 0 and (RL.get("text") or "").startswith("Not lit yet"), RL)  # MOVED IN 327z15: the locked wording is vague
         check(dev + ": Reduce motion: a held rank's light shows still, no press, no halo",
               RH.get("lightStill") and RH.get("light") == 0 and RH.get("press") == 0 and RH.get("halo") == 0 and RH.get("name") == "Gold flare", RH)
         check(dev + ": Reduce motion: a found flare's ring shows still, no swell, no sparks",
@@ -19572,13 +19710,14 @@ def check_b318_flares(br):
               else "They say this one is seen in tests from level %s." % g.get("yellow"))
     want_v = ("They say this one has been seen in tests at your level." if lv >= (g.get("violet") or 999)
               else "They say this one is seen in tests from level %s." % g.get("violet"))
-    check("the next flare's caption is a rumour of its real level - no name, no colour", y[:3] == ["Secret flare", "Not found", ""] and y[3:] == [want_y], [lv, g, y])
+    check("build 329: the next flare's caption is plain - no name, no colour, no rumour of its level", y[:3] == ["Secret flare", "Not found", ""] and not any("They say" in x for x in y), [lv, g, y])
     check("with Void held, the fourth (the next) gets the rumour and the fifth only 'not found'",
-          v[3:] == [want_v] and w[2:] == ["Secret flare has not been found."], [v, w])
+          # MOVED IN 327z15 round 3: an unfound one says "Not found yet." (the hunted one keeps its rumour)
+          not any("They say" in x for x in v + w) and w[2:] in (["Secret flare has not been found."], ["Not found yet."]), [v, w])
     check("in Void's hunt only the next one hints (orange, one found); a later one says only 'not found'",
-          (cp.get("orangeNext") or "").startswith("They say this one") and cp.get("yellowNotNext") == "Secret flare has not been found.", cp)
+          "They say" not in (cp.get("orangeNext") or "") and cp.get("yellowNotNext") in ("Secret flare has not been found.", "Not found yet."), cp)
     check("tapped on Home: the next flare's caption carries the rumour, another unfound one does not",
-          "They say this one" in (r.get("tapViolet") or "") and "has not been found" in (r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
+          "They say" not in (r.get("tapViolet") or "") and re.search(r"has not been found|Not found yet", r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
           [r.get("tapViolet"), r.get("tapWhite")])
     s = _b318_umbra(br)
     a, b, c3, d = s.get("1.2") or {}, s.get("3.2") or {}, s.get("6.0") or {}, s.get("9.6") or {}
@@ -20175,7 +20314,7 @@ def check_b317_badge2(br):
       document.body.appendChild(host); return out; }""", BIG)
     pg.wait_for_timeout(1500)
     pg.wait_for_function("() => typeof BADGE_STRIKE_DRAFTS === 'undefined' || BADGE_STRIKE_DRAFTS.size === 0", timeout=30000)  # 318: the finish, not the draft
-    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 4 * BIG}))).convert("RGB")
+    shot = _I.open(_io.BytesIO(pg.screenshot(clip={"x": 0, "y": 0, "width": 4 * BIG, "height": 6 * BIG}))).convert("RGB")   # 24 units (328), four across, six rows
     ctx.close()
     D = 3
     steps, slivers = {}, {}
@@ -23021,8 +23160,9 @@ def check_b320a_results(br):
           max(x["badgeBox"] for x in s))
 
     # E. Back to results from the review: the finished screen, nothing counted again.
+    pg.wait_for_timeout(1000)   # 328: the results ignore a tap for 0.7s after they settle, and the review's buttons for 0.6s after they arrive
     pg.evaluate("()=>{ const b = document.querySelector('#stage .rs-continue'); if(b) b.click(); }")
-    pg.wait_for_timeout(500)
+    pg.wait_for_timeout(1300)
     pg.evaluate(B320A_REC)
     pg.evaluate("()=>{ const b = [...document.querySelectorAll('#stage .actions button')].find(x => /Back to results/.test(x.textContent)); if(b) b.click(); }")
     pg.wait_for_timeout(1200)
@@ -26011,10 +26151,11 @@ def check_b323n_nav(br):
         check("no Friends box on Profile; the chat's Friends tab lists every friend, each with a character and a name",
               not fb.get("profileBox") and len(rows) >= 6 and all(x["avatar"] and x["name"] for x in rows), [fb.get("err"), rows])
         check("the ones on carry the online mark, and the bar counts them", sum(1 for x in rows if x["on"]) == 2 and "2 online" in (fb.get("info") or ""), [fb.get("info"), rows])
-        check("the bar's button is Add friends and opens the Friends screen", fb.get("btn") == "Add friends" and fb.get("opens"), [fb.get("btn"), fb.get("opens")])
+        # MOVED IN 327z15: "instead of add friends should it say manage friends?"
+        check("the bar's button is Manage friends and opens the Friends screen", fb.get("btn") == "Manage friends" and fb.get("opens"), [fb.get("btn"), fb.get("opens")])
         check("none of it reads the class board of its own (already loaded)", fb.get("boardReads") == 0, fb.get("boardReads"))
         e = fb.get("empty") or {}
-        check("with no friends: no rows, the bar says so, and Add friends", e.get("rows") == 0 and "No friends" in (e.get("line") or "") and e.get("btn") == "Add friends", e)
+        check("with no friends: no rows, the bar says so, and Manage friends", e.get("rows") == 0 and "No friends" in (e.get("line") or "") and e.get("btn") == "Manage friends", e)
     except Exception as ex:
         check("build 323 navigation could be driven at all", False, str(ex)[:300])
     ctx.close()
@@ -26862,8 +27003,10 @@ def check_b323u_units(br):
         cards = {c["mode"]: c for c in r.get("cards") or []}
         d = cards.get("drill") or {}
         ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)
-        beats = lambda s: "(" not in s and re.search(r"\. Best for [^.]+\.$", s) is not None
-        ok_copy = all(beats(cards.get(m, {}).get("desc", "")) and abs(len(cards[m]["desc"]) - len(d["desc"])) <= 0.2 * len(d["desc"])
+        # REVISED IN 330: "Could the mode descriptions be simpler? They seem wordy" - two short beats
+        # (what it is, then the difference), no "Best for", each under 70 characters
+        beats = lambda s: "(" not in s and len(s) <= 70 and len(re.findall(r"[.!?](?:\s|$)", s)) == 2
+        ok_copy = all(beats(cards.get(m, {}).get("desc", "")) and abs(len(cards[m]["desc"]) - len(d["desc"])) <= 0.3 * len(d["desc"])
                       for m in ("exam", "review")) if d else False
         dr = ink["drill"]
         ok_icon = all(ink[m]["ink"] >= 0.95 * dr["ink"] and ink[m]["w"] >= 0.8 * dr["w"] for m in ("exam", "review"))

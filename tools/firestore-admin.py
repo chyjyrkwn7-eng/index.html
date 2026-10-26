@@ -979,11 +979,17 @@ UNIT_QUESTIONS = {
     "Multiculturalism and Human Relations": 35, "Racial Profiling": 13,
     "US and Texas Constitution and Rights": 77, "Penal Code": 340,
     "Code of Criminal Procedure and Bill of Rights": 35, "Arrest, Search, and Seizure": 120,
-    "Victims of Crime": 15, "Missing and Exploited Children": 54, "Identity Crimes": 12,
-    "Sexual Assault and Family Violence": 46, "Verbal Communication": 29,
+    "Victims of Crime": 15, "Missing and Exploited Children": 55, "Identity Crimes": 12,
+    "Sexual Assault and Family Violence": 36, "Verbal Communication": 29,
     "Civil Process and Liability": 22,
+    # build 328: the rest of Level 1
+    "Consular Notification": 9, "Crisis Intervention Training": 67, "De-Escalation": 22,
+    "Health and Safety Code": 26, "Interacting with Deaf or Hard-of-Hearing": 11,
+    "Radio Communications, Alerts, and TCIC-TLETS": 15, "Traumatic Brain Injury": 12,
+    "Phonetic Alphabet and Military Time": 39,
 }
-BADGE_BANDS = [(25, 15), (50, 12), (100, 8), (200, 4), (float("inf"), 2)]
+# build 328: "anything at 15 goes to 10. 12 will go to 8 and so on"
+BADGE_BANDS = [(25, 10), (50, 8), (100, 6), (200, 3), (float("inf"), 2)]
 RANKS = [(21, 1), (30, 3), (40, 5), (50, 7), (60, 9), (70, 12), (80, 14)]
 
 

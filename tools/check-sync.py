@@ -434,7 +434,8 @@ with sync_playwright() as pw:
     pg.evaluate("()=>showRankings('hundos')"); pg.wait_for_timeout(500)
     rich = [n for n in names() if "Billy" in n]
     check("and it is the row with the real progress",
-          bool(rich) and "5 hundos" in rich[0], str(rich))
+          # 327z15: the Hundos board shows its own column, the bare count under a header ("1Billy5")
+          bool(rich) and re.search(r"Billy\D*5( hundos)?$", rich[0]), str(rich))
     check("two people sharing a name both stay",
           len([n for n in shown if "Sam" in n]) == 2, str(shown))
 
@@ -1335,7 +1336,7 @@ with sync_playwright() as pw:
     # using two accounts. People who are signing up, could we make it
     # where it asks you to sign in first and then you have to hit I'm new
     # here sign up or something?" Every check below fails on 6a387e2.
-    FLAGS = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
+    FLAGS = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.getstarted','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
              "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
              "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');")
     def booted(extra=""):
@@ -1389,9 +1390,9 @@ with sync_playwright() as pw:
         showSignUpCheck(); await wait(300);
         document.querySelector('.signupcheck-go').click(); await wait(400);
         /* MOVED IN 327: no What's New list in sign-up - the check goes
-           straight on to "What This Actually Is", whose Back returns here */
-        out.goOpens = !!document.querySelector('.welcomeintro-panel') && !document.querySelector('.releasenotes-panel');
-        document.querySelector('.welcomeintro-panel .back-link').click(); await wait(300);
+           straight on to the class screen (329: "What This Actually Is" is gone), whose Back returns here */
+        out.goOpens = !!document.querySelector('.classselect-panel') && !document.querySelector('.releasenotes-panel');
+        document.querySelector('.classselect-panel .back-link').click(); await wait(300);
         out.backTo = !!document.querySelector('.signupcheck-panel');
         /* and a device with nothing on it signs up exactly as before */
         store.firstName = 'Newbie'; store.avatarChar = AVATAR_CHARACTERS[0].id;

@@ -175,9 +175,12 @@ CAL_JS = r"""async ([iso, months]) => {
     out.next = nt ? { date: nt.dataset.date || null, big: nt.classList.contains('is-bigexam'), chipMark: vis(nt.querySelector('.cal-nt-big .cal-cell-dot-big')),
                       title: (nt.querySelector('.cal-nt-title') || {}).textContent || '', topics: [...nt.querySelectorAll('.cal-topics-list li')].map(li => li.textContent) } : null;
     /* the big exams card */
-    const bc = tab.querySelector('.cal-big-card');
+    /* MOVED IN 327z15: the exams are pages of the Countdowns card, each its
+       count in the key's orange box rather than a row with the key's dot */
+    const bc = tab.querySelector('.cal-big-card:not([hidden]), .cal-count-card');
+    const cnt = r => { const n = r.querySelector('.cal-count-num'); return n ? [...n.children].map(x => x.textContent).join(' ') : (r.querySelector('.cal-big-count') || {}).textContent; };
     out.bigCard = bc && vis(bc) ? { rows: [...bc.querySelectorAll('.cal-big-row')].map(r => ({ d: r.dataset.date, n: (r.querySelector('.cal-big-name') || {}).textContent,
-                      c: (r.querySelector('.cal-big-count') || {}).textContent, mark: vis(r.querySelector('.cal-cell-dot-big')) })) } : null;
+                      c: cnt(r), mark: vis(r.querySelector('.cal-cell-dot-big')) || !!r.querySelector('.cal-count-num') })) } : null;
     if(bc){ const r = bc.querySelector('.cal-big-row[data-date="2027-06-21"]'); if(r){ r.click(); await wait(300);
       out.pick = { sel: (tab.querySelector('.cal-cell-sel') || {}).dataset ? tab.querySelector('.cal-cell-sel').dataset.date : null,
                    card: (tab.querySelector('.cal-daycard') || {}).textContent || '' }; } }

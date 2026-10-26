@@ -220,11 +220,13 @@ def profile_friends(br):
       open: chatDockOpen, lit: [...document.querySelectorAll('.bottomtab.active')].map(x => x.id) })""")
     check("%s: Q. the chat's Friends tab opens with a Friends bar, its button 44px+" % label, a["bar"] and a["h"] >= 44, a)
     check("%s: Q. it opens Friends over the tab it came from: back to %s, %s lit, the chat shut" % (label, b["back"], b["lit"]),
-          b["friends"] and "Calendar" in (b["back"] or "") and b["lit"] == ["bottomtab-calendar"] and not b["open"], b)
+          # MOVED IN 327z15: "it says back to home but shouldn't it say back to
+          # chat" - opened from the chat, Friends goes back to the chat
+          b["friends"] and "Chat" in (b["back"] or "") and b["lit"] == ["bottomtab-calendar"] and not b["open"], b)
     pg.evaluate("() => document.querySelector('#stage .back-link').click()")
     pg.wait_for_timeout(1000)
-    c = pg.evaluate("() => !!document.querySelector('#stage > .screen-calendar-tab')")
-    check("%s: Q. and back lands on the Calendar" % label, c, c)
+    c = pg.evaluate("() => !!document.querySelector('#stage > .screen-calendar-tab') && chatDockOpen && chatDockTab === 'friends'")
+    check("%s: Q. and back lands on the Calendar with the chat open on Friends (327z15)" % label, c, c)
     ctx.close()
 
 

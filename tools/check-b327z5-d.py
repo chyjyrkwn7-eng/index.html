@@ -61,7 +61,7 @@ CAL = """() => {
   document.body.appendChild(probe);
   const P = getComputedStyle(probe), want = { bg: P.backgroundImage, bc: P.borderTopColor, bf: P.backdropFilter || P.webkitBackdropFilter };
   probe.remove();
-  const cards = [...document.querySelectorAll('#stage .cal-today-card, #stage .cal-nexttest-card, #stage .cal-big-card, #stage .cal-course-card, #stage .cal-monthview')]  /* MOVED IN 327z12: the day card is a section of the month's card */
+  const cards = [...document.querySelectorAll('#stage .cal-today-card, #stage .cal-nexttest-card, #stage .cal-big-card, #stage .cal-course-card, #stage .cal-count-card, #stage .cal-monthview')]  /* MOVED IN 327z15: the countdowns are one card */  /* MOVED IN 327z12: the day card is a section of the month's card */
     .filter(c => c.offsetParent !== null);
   const off = cards.map(c => { const s = getComputedStyle(c); return { c: c.className.split(' ')[0], ok: s.backgroundImage === want.bg && s.borderTopColor === want.bc && (s.backdropFilter || s.webkitBackdropFilter) === want.bf, bg: s.backgroundImage.slice(0, 70), bc: s.borderTopColor }; }).filter(x => !x.ok);
   const m = document.querySelector('#stage .cal-grid-month');

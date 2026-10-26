@@ -294,7 +294,9 @@ CAL_JS = r"""async (iso) => {
     const items = [...tab.querySelectorAll('.cal-grid-legend > *')];
     out.key = items.map(it => ({ t: it.textContent.trim(), bg: (it.querySelector('i') && look(it.querySelector('i')).bg) || null }));
     out.bigRows = [...tab.querySelectorAll('.cal-big-row')].map(r => ({ n: (r.querySelector('.cal-big-name') || {}).textContent,
-      w: (r.querySelector('.cal-big-when') || {}).textContent, c: (r.querySelector('.cal-big-count') || {}).textContent }));
+      w: (r.querySelector('.cal-big-when') || {}).textContent,
+      /* MOVED IN 327z15: a page of the Countdowns card - its count box */
+      c: (r.querySelector('.cal-big-count') || r.querySelector('.cal-count-num b') || {}).textContent }));
     out.today = (tab.querySelector('.cal-today-status') || {}).textContent || '';
     out.ptIsExam = typeof isPtFinalDay === 'function' ? CALENDAR_DATA.filter(isPtFinalDay).map(e => isExamDay(e)) : null;
     /* calm cells: an ordinary class day has no outline */

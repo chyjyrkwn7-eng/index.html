@@ -45,13 +45,13 @@ first did it was never in the repo):
 Scenarios drive the real app: a drill of Identity Crimes answered by real
 clicks for the results screens and the test, the Rank tab's climb, the badge
 case cutscene, a rank-up, Supernova (Home and its cutscene)."""
-import base64, functools, http.server, io, json, os, re, socket, subprocess, sys, threading, wave
+import base64, functools, http.server, io, json, os, re, socket, subprocess, sys, threading, time, wave
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 FF = "/usr/bin/ffmpeg" if os.path.exists("/usr/bin/ffmpeg") else "ffmpeg"
-DEVICES = {"phone": (440, 956, 3), "ipad": (834, 1194, 2)}
+DEVICES = {"phone": (440, 956, 3), "ipad": (834, 1194, 2), "laptop": (1440, 820, 2), "phone-safari": (440, 838, 3)}
 SR = 48000
 
 
@@ -62,6 +62,18 @@ def arg(name, default=None):
 SRC = arg("--against") or os.path.join(ROOT, "index.html")
 FPS = int(arg("--fps", "30"))
 DEV = arg("--device", "phone")
+# (327z15 round 38) --mode installed: the Home Screen app (navigator.standalone);
+# --mode safari: an iPhone Safari tab (its user agent, touch, not standalone)
+MODE = arg("--mode", "")
+IPHONE_SAFARI_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 "
+                    "(KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1")
+STANDALONE_JS = """
+Object.defineProperty(navigator,'standalone',{get:()=>true,configurable:true});
+(function(){ const mm = window.matchMedia.bind(window);
+  window.matchMedia = q => /display-mode:\\s*standalone/.test(q)
+    ? {matches:true, media:q, addListener(){}, removeListener(){},
+       addEventListener(){}, removeEventListener(){}, onchange:null, dispatchEvent(){return false;}}
+    : mm(q); })();"""
 
 FIRESTORE_STUB = """
   window.__stub = function(){
@@ -316,7 +328,10 @@ class Rec:
         w, h, dpr = DEVICES[DEV]
         self.w, self.h = w, h
         self.br = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required", "--force-device-scale-factor=%d" % dpr])
-        self.ctx = self.br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr)
+        extra = {"user_agent": IPHONE_SAFARI_UA, "is_mobile": True, "has_touch": True} if MODE == "safari" else {}
+        self.ctx = self.br.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr, **extra)
+        if MODE == "installed":
+            self.ctx.add_init_script(STANDALONE_JS)
         self.ctx.add_init_script(FAKE_FS)
         self.ctx.add_init_script(SEED_FRESH if mode == "fresh" else SEED_LS)
         self.ctx.add_init_script(REC_AUDIO.replace("%BUDGET%", str(budget)))
@@ -830,7 +845,8 @@ AT_WALL = """() => {
   saveStore(); return levelStateFor(store); }"""
 
 NOVA_ADV = """() => { const el = document.getElementById('nova-intro'); if(!el || !el.__nova) return null;
-  const n = el.__nova; return { i: n.index, c: n.count, typing: n.typing, sig: !!el.querySelector('.nt-signal:not(.is-found)') }; }"""
+  const n = el.__nova; return { i: n.index, c: n.count, typing: n.typing, asking: !!n.asking,
+    name: !!el.querySelector('.nt-ask-name'), char: !!el.querySelector('.nt-ask-char'), sig: !!el.querySelector('.nt-signal:not(.is-found)') }; }"""
 
 
 def nova_talk(r, read=1.6, max_sec=420):
@@ -844,6 +860,22 @@ def nova_talk(r, read=1.6, max_sec=420):
             return
         if st["sig"] or st["typing"]:
             r.frame(); continue
+        # 327z15: he asks your name, and who comes home first
+        if st.get("asking"):
+            r.wait(read)
+            if st.get("name"):
+                r.tap("document.querySelector('#nova-intro .nt-ask-input')"); r.wait(.4)
+                for ch in NOVA_NEW_NAME:
+                    r.pg.keyboard.type(ch); r.wait(.12)
+                r.wait(.6)
+                r.tap("document.querySelector('#nova-intro .nt-ask-name .nt-ask-go')"); r.wait(1.2)
+                r.until("!(document.getElementById('nova-intro') || {}).querySelector || !document.querySelector('#nova-intro .nt-ask-name')", 8)
+            elif st.get("char"):
+                r.tap("document.querySelectorAll('#nova-intro .nt-ask-char .avatarchar-option')[2]"); r.wait(.8)
+                r.tap("document.querySelectorAll('#nova-intro .nt-ask-char .avatarchar-option')[0]"); r.wait(1.0)
+                r.tap("document.querySelector('#nova-intro .nt-ask-char .nt-ask-go')"); r.wait(1.0)
+            last = None
+            continue
         if st["i"] != last:
             last = st["i"]; r.wait(read)
             continue
@@ -864,33 +896,24 @@ def tour_through(r, read=1.6, max_steps=14):
         r.tap("document.getElementById('tour-next')", max_sec=2); r.wait(.5)
 
 
+NOVA_NEW_NAME = "J.Smith"
+
+
 def nova_new(r, out):
-    """A brand-new install: Welcome, I'm new here, the check,
-    the class, a username, a character, all set, GENERATING PROFILE, then
-    Nova's introduction and the main-menu tooltips."""
-    pg = r.pg
+    """A brand-new install (327z15): Welcome, I'm new here, the check, the
+    class, GENERATING PROFILE, then Nova - who asks the username and has
+    you pick your first character in his introduction - and the main-menu
+    tooltips."""
     r.start(out)
     r.wait(1.5)
     r.tap("document.querySelector('.cosmic-welcome-btn.welcome-new')"); r.wait(1.4)
     r.tap("document.querySelector('.signupcheck-panel .signupcheck-go')"); r.wait(1.6)
-    r.tap("document.querySelector('.welcomeintro-panel .next.playbtn')"); r.wait(1.4)
-    r.tap("document.querySelector('.classselect-panel .modecard')"); r.wait(.8)
-    r.tap("document.querySelector('.classselect-panel .next.playbtn')"); r.wait(1.0)
-    r.tap("document.querySelector('.onboarding-shortform-panel .searchbox')"); r.wait(.4)
-    for ch in "Madison":
-        pg.keyboard.type(ch); r.wait(.12)
-    r.wait(.8)
-    r.tap("document.querySelector('.onboarding-shortform-panel .next.playbtn')"); r.wait(1.2)
-    r.until("!!document.querySelector('.charselect-panel .avatarchar-option')", 6)
-    r.tap("document.querySelectorAll('.charselect-panel .avatarchar-option')[2]"); r.wait(.8)
-    r.tap("document.querySelectorAll('.charselect-panel .avatarchar-option')[0]"); r.wait(1.0)
-    r.tap("document.querySelector('.charselect-panel .next.playbtn')"); r.wait(1.4)
-    r.tap("document.querySelector('.onboarding-shortform-panel .next.playbtn')"); r.wait(.5)
+    r.tap("document.querySelector('.classselect-panel .class-card.is-academy')"); r.wait(.8)
+    r.tap("document.querySelector('.classselect-panel .next.playbtn')"); r.wait(.5)
     r.until("!document.getElementById('genprofile-overlay') && !!document.getElementById('nova-intro')", 30, then=.5)
     nova_talk(r)
     tour_through(r)
     r.wait(2.5)
-
 
 def nova_existing(r, out):
     """An account from before him (Silver, three badges): Home, the signal,
@@ -908,6 +931,28 @@ def nova_existing(r, out):
     r.tap("Array.from(document.querySelectorAll('#intro-pop button')).find(b => /got it/i.test(b.textContent))"); r.wait(1)
     tour_through(r)
     r.wait(2.5)
+
+
+def sign_in(r, out):
+    """Signing in on a new device (327z15): Welcome, Sign in, the code typed,
+    "This code belongs to", Sync This Device, then Home as that account. The
+    account is a demo one in the fake cloud (no real code)."""
+    acct = json.loads(ACCOUNT)
+    acct.update({"firstName": "J.Smith", "novaMet": 9, "publicId": "PUBDEMO00001", "syncCode": "NOVA-2601",
+                 "lastModified": int(time.time() * 1000) - 3600000})  # after the fresh-start cutoff
+    r.js("(a) => { localStorage.setItem('fakefs::progress', JSON.stringify({ 'NOVA-2601': a })); fbDb = window.__fakeDb; if(window.__osr0) onSnapshotResilient = window.__osr0; }", acct)
+    r.start(out)
+    r.wait(1.5)
+    r.tap("document.querySelector('.cosmic-welcome-btn.welcome-signin')"); r.wait(1.4)
+    r.tap("document.querySelector('.synccode-entry-panel input')"); r.wait(.4)
+    for ch in "NOVA2601":
+        r.pg.keyboard.type(ch); r.wait(.14)
+    r.wait(.6)
+    r.tap("document.querySelector('.synccode-entry-panel #nextbtn')"); r.wait(.5)
+    r.until("(() => { const c = document.querySelector('.synccode-confirm'); return !!c && c.offsetHeight > 0; })()", 12, then=1.6)
+    r.tap("Array.from(document.querySelectorAll('.synccode-entry-panel .next.playbtn')).find(b => /sync this device/i.test(b.textContent))"); r.wait(.5)
+    r.until("!!document.querySelector('#stage .screen-home-actual')", 20, then=4)
+    r.wait(2)
 
 
 SCENARIOS = {
@@ -940,6 +985,7 @@ SCENARIOS = {
     "selections": (selections, 150, "the mode, units ticked, untick, drag-select, the start sheet's switches and slider, Settings switches, Customize picks"),
     "chat": (chat, 90, "the chat dock: its tabs, a group chat, a message sent, a classmate answering"),
     "nova-new": (nova_new, 600, "a brand-new install: sign-up, GENERATING PROFILE, Nova's introduction, the main-menu tips", "fresh"),
+    "sign-in": (sign_in, 120, "signing in on a new device: Welcome, Sign in, the code, Sync This Device, Home", "fresh"),
     "nova-existing": (nova_existing, 600, "an account from before Nova: his signal, introduction and recap, What's New, the returning tips"),
     "test": (test, 120, "a drill from LOADING TEST: a wrong answer, then right answers into the 10-in-a-row streak pop"),
 }

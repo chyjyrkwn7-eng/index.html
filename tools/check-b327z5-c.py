@@ -86,7 +86,8 @@ def banners(br):
                   len(mids) == 3 and max(mids) - min(mids) <= 2, (g["iconMid"], g["textMid"], g["xMid"]))
             check("%s: %s - no wash: no ::after sweep" % (dev, name), not g["after"], g["after"][:120])
             if name == "welcome":
-                check("%s: welcome back is tagged WELCOME BACK" % dev, g["tag"] == "WELCOME BACK", g["tag"])
+                # MOVED IN 327z15 round 48: the tag says what happened, the title greets ("Welcome back")
+                check("%s: welcome back is tagged SIGNED IN" % dev, g["tag"] == "SIGNED IN", g["tag"])
             if name in ("account", "rank up"):
                 check("%s: %s icon is strokes, no filled shape" % (dev, name), g["filled"] == 0, g["filled"])
             if name in ("daily done", "daily out"):
@@ -125,8 +126,12 @@ def banners(br):
                 cap: p && getComputedStyle(p).strokeLinecap }; }""")
             check("%s: %s ring on the button's rim" % (dev, st), bool(ring) and ring["d"] <= 2, ring)
             if ring:
-                check("%s: %s button's own border stood down" % (dev, st),
-                      ring["border"] in ("rgba(0, 0, 0, 0)", "transparent"), ring["border"])
+                # MOVED IN 327z15 (the daily button redrawn: "centre the ?, better answered look"): the button
+                # keeps a soft rim of its own and the ring runs on it - a rim, not a solid edge (alpha <= .7)
+                import re as _re
+                _a = _re.findall(r"[\d.]+", ring["border"])
+                check("%s: %s button's own edge is a soft rim under the ring" % (dev, st),
+                      ring["border"] in ("rgba(0, 0, 0, 0)", "transparent") or (len(_a) >= 4 and float(_a[-1]) <= .7), ring["border"])
                 if not ring["full"]:
                     check("%s: %s ring has round ends while it fills" % (dev, st), ring["cap"] == "round", ring["cap"])
         z = pg.evaluate("""() => { const r = document.querySelector('.dq-ring'); if(!r) return null;

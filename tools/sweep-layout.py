@@ -259,7 +259,8 @@ AUDIT = """(inset) => {
   }
   if (tabs && !buried(tabs)) {
     const b = tabs.getBoundingClientRect();
-    if (b.bottom > vh + 1) problems.push(`tab bar below the fold by ${Math.round(b.bottom-vh)}px`);
+    if (b.bottom > vh + 1) problems.push(`tab bar below the fold by ${Math.round(b.bottom-vh)}px` +
+      ` [tf ${getComputedStyle(tabs).transform.slice(0, 40)}; body ${String(document.body.className).slice(0, 80)}; scene ${[...document.querySelectorAll('.rs-spot, .unlock-spotlight, [id$="-cutscene"], .scene-bridge, .ul-spot')].map(e => e.id || e.className).join(',').slice(0, 60)}]`);
     if (b.right > vw + 1 || b.left < -1)
       problems.push(`tab bar off-screen sideways (${Math.round(b.left)}..${Math.round(b.right)} of ${vw})`);
   }
@@ -301,8 +302,14 @@ AUDIT = """(inset) => {
       const padR = parseFloat(cs.paddingRight) || 0;
       if (inset.top && r.top + padT < inset.top - 0.5)
         problems.push(`${name(el)} under the status bar / notch (content top ${Math.round(r.top + padT)} < ${inset.top})`);
-      if (inset.bottom && pinned(el) && r.bottom - padB > vh - inset.bottom + 0.5)
-        problems.push(`pinned ${name(el)} under the home indicator (content bottom ${Math.round(r.bottom - padB)} > ${vh - inset.bottom})`);
+      /* MOVED IN 327z15 round 50: the floating tab bar sits 22px off the
+         bottom over the indicator's zone, as iOS 26's own tab bars do (asked
+         for, with screenshots). Its tabs may enter the inset but must clear
+         the indicator itself: a ~5px pill 8px off the bottom, so 21px with
+         its margin. Everything else still keeps out of the whole inset. */
+      const floor = el.matches('.bottomtab') ? vh - Math.min(inset.bottom, 21) : vh - inset.bottom;
+      if (inset.bottom && pinned(el) && r.bottom - padB > floor + 0.5)
+        problems.push(`pinned ${name(el)} under the home indicator (content bottom ${Math.round(r.bottom - padB)} > ${floor})`);
       if (inset.left && r.left + padL < inset.left - 0.5)
         problems.push(`${name(el)} under the left inset (content ${Math.round(r.left + padL)} < ${inset.left})`);
       if (inset.right && r.right - padR > vw - inset.right + 0.5)
@@ -394,6 +401,10 @@ def main():
                 page.goto(url)
                 page.wait_for_timeout(2600)
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
+                # 329: the fixture owes a character, and its unlock spotlight is a scene - the tab bar
+                # slides out for it (by design), so it came up over a screen now and then and read as
+                # "tab bar below the fold". Owed unlocks are marked shown first, as check-fixes does.
+                page.evaluate("()=>{ try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){} document.querySelectorAll('.rs-spot').forEach(n=>n.remove()); document.body.classList.remove('cutscene-focus'); }")
                 ins = {"top": insets[0], "right": insets[1], "bottom": insets[2], "left": insets[3]}
                 found = {}
                 for fn in SCREENS:
