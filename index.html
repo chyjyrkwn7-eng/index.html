@@ -11373,10 +11373,13 @@
     will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
     font-size:.9rem; line-height:1.4; text-align:center;
     box-shadow:0 2px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-    opacity:0; transform:translateY(-8px); transition:opacity .22s ease, transform .22s ease;
+    /* (build 328) "it could even be slightly slowed down ... ensure when the other pop
+       ups come up they come in a nice way": a little further, a little slower, settling
+       with a soft overshoot instead of a 220ms fade - transform and opacity only */
+    opacity:0; transform:translateY(-14px) scale(.97); transition:opacity .34s ease, transform .52s cubic-bezier(.2, 1.25, .35, 1);
     pointer-events:none;
   }
-  .daily-alert.show{ opacity:1; transform:translateY(0); }
+  .daily-alert.show{ opacity:1; transform:translateY(0) scale(1); }
   /* ---- THE ONE THAT SAYS THE QUESTION IS OUT ----
      Every other message this banner carries is a plain sentence, and it
      should stay one. This variant is the announcement, which is the one
