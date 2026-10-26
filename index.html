@@ -50973,7 +50973,7 @@ function saveRunSession(asSaved){
              source: cfg.source, size: cfg.size, timer: cfg.timer, timerMinutes: cfg.timerMinutes,
              recall: cfg.recall, shuffle: cfg.shuffle },
       order: order.slice(), pos, attempts, picked, firstPick, layout, timedOutSet,
-      runLabel, runMode, isMissedRetake, practiceTestMinutes, runTrackable,
+      runLabel, runMode, isMissedRetake, retakeRound, practiceTestMinutes, runTrackable,
       runLiveStreak, qTimeMs: qt, cleared, lastWrong, hinted, revealed,
       elapsedMs: runStartTime ? Math.max(0, at - runStartTime) : 0,
       timerLeftMs: (timerDeadline && (cfg.timer === "down" || practiceTestMinutes != null)) ? Math.max(0, timerDeadline - at) : null,
@@ -51147,6 +51147,7 @@ function resumeRunSession(s){
   originalTestPool = (s.originalTestPool || s.order).slice(); originalTestLabel = s.originalTestLabel || null;
   practiceTestMinutes = s.practiceTestMinutes == null ? null : s.practiceTestMinutes;
   isMissedRetake = !!s.isMissedRetake;
+  retakeRound = s.isMissedRetake ? (s.retakeRound | 0) : 0;
   qTimeMs = s.qTimeMs || {}; qClockQi = null; runLiveStreak = s.runLiveStreak || 0;
   pendingXpFly = 0;
   mysteryFoundThisSession = false; flareCompletedVoidThisSession = false;
@@ -79384,7 +79385,7 @@ function unitsFullyCoveredBy(runOrder){
 }
 
 function recordUnitHundoStreak(runOrder, missed){
-  if(runLabel === "Daily question" || cfg.source !== "all") return;
+  if(runLabel === "Daily question" || (cfg.source !== "all" && cfg.source !== "flagged")) return;
   const units = unitsFullyCoveredBy(runOrder);
   if(!units.length) return;
   const missedSet = new Set(missed);
@@ -79403,7 +79404,7 @@ function recordUnitHundoStreak(runOrder, missed){
 
 function recordUnitPerfectIfEligible(pct){
   if(runLabel === "Daily question") return null;
-  if(cfg.source !== "all" || !isFullUnitRun() || pct !== 100) return null;
+  if((cfg.source !== "all" && cfg.source !== "flagged") || !isFullUnitRun() || pct !== 100) return null;
   const name = cfg.units[0];
   const before = unitLevel(name);
   store.unitPerfects[name] = unitPerfectCount(name) + 1;
@@ -79426,7 +79427,7 @@ function recordMultiUnitPerfectsIfEligible(order, missed){
   /* Same widening as the single-unit function above: any test type, never
      the daily question. */
   if(runLabel === "Daily question") return { perfected: [], newlyStarred: [] };
-  if(cfg.source !== "all" || cfg.units.length < 2) return { perfected: [], newlyStarred: [] };
+  if((cfg.source !== "all" && cfg.source !== "flagged") || cfg.units.length < 2) return { perfected: [], newlyStarred: [] };
   const missedSet = new Set(missed);
   const perfected = [];
   const newlyStarred = [];
@@ -80234,6 +80235,7 @@ let runLabel = null;
 let runMode = "drill";
 let runTrackable = false;  // true only for a fresh, full run started from setup
 let isMissedRetake = false;  // true only for a run started via "Retake missed questions"
+let retakeRound = 0;          // build 330: 1 = the first retake of a test's misses
 let mysteryFoundThisSession = false;  // set true if the hidden button was clicked this run
 let flareCompletedVoidThisSession = false;  // the find this run was the third, the one that makes Void
 let mysteryAppearsAtPos = -1;  // which question index (if any) shows it this run; decided once per run, not per-question
@@ -101911,6 +101913,8 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
     originalTestLabel = label || null;
   }
   practiceTestMinutes = practiceMinutes || null;
+  /* which retake this is: 1 for the first retake of a test's misses, 2+ for a retake of a retake */
+  retakeRound = missedRetake ? (isMissedRetake ? retakeRound + 1 : 1) : 0;
   isMissedRetake = !!missedRetake;
   qTimeMs = {}; qClockQi = null; runLiveStreak = 0;
   pendingXpFly = 0;
@@ -101945,7 +101949,11 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
      activity each time it runs, not a re-count of old questions, so
      it needs its own explicit exception here rather than silently
      falling into the same bucket as a retake. */
-  runTrackable = (runLabel === null || runLabel === "Daily question") && cfg.source === "all";
+  /* STARRED RUNS SCORE (build 330): "Why are starred runs just practice with no xp. They shouldn't
+     count as hundos (unless you managed to star every question from an entire unit) but yeah you
+     should still get xp for starred tests." A starred run earns its XP; every hundo below already
+     needs the whole unit, so a starred run is one only when its stars cover a unit. */
+  runTrackable = (runLabel === null || runLabel === "Daily question") && (cfg.source === "all" || cfg.source === "flagged");
   timedOut = false;
   paused = false;
   pauseStartedAt = null;
@@ -111712,6 +111720,7 @@ function multiUnitMultiplier(wholeUnits){
 function runStreakSub(tiers, keys){
   return keys.map(t => t.toLocaleString() + (tiers[t] > 1 ? " \u00d7" + tiers[t] : "")).join(" \u00b7 ") + " in a row";
 }
+const RETAKE_DONE_XP = 25, RETAKE_PERFECT_XP = 75;
 function computeRunXp(r){
   const lines = [];
   const add = (key, label, value, extra) => {
@@ -111744,7 +111753,14 @@ function computeRunXp(r){
       { sub: r.good + " \u00d7 " + POINTS_PER_QUESTION + " XP", base: true });
   /* A retake is "literally gonna be just purely retake": the answers it
      got right, and nothing else of any kind. */
-  if(r.retake) return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
+  /* THE RETAKE PAYS FOR FINISHING (build 330): "You should get 25xp for finishing a review test
+     (the one where you take the ones you got wrong) ... If you get them all right again on the first
+     retake that turns into 75xp." The first retake of a test's misses only, so retaking the same
+     handful over and over is not a farm; later retakes keep their answers' XP. */
+  if(r.retake){
+    if(r.round === 1) add("retake", r.allRight ? "Retake, all right" : "Retake finished", r.allRight ? RETAKE_PERFECT_XP : RETAKE_DONE_XP);
+    return { lines: lines, total: lines.reduce((s, l) => s + l.value, 0) };
+  }
 
   /* a hundo is called a Hundo (build 326 - "perfect" was the word Stats
      was told to drop, and this line said it too) */
@@ -113585,7 +113601,7 @@ function showRunRewards(run, hooks, opts){
   if(!run.xpLines.length){
     const none = document.createElement("p");
     none.className = "rs-xpline rs-xpline-none rs-land";
-    none.textContent = (run.source === "recent" || run.source === "flagged") ? "Starred runs are practice — no XP."
+    none.textContent = run.source === "recent" ? "Most-missed runs are practice, with no XP."
       : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
       : "No XP this run.";
     xp.appendChild(none);
@@ -114744,7 +114760,7 @@ function summarize(){
        units. This call only moved; it was the same call, further down,
        and it has to run after the beforeTiers snapshot because it awards
        stars and stars move tiers. */
-    if(cfg.source === "all"){
+    if(cfg.source === "all" || cfg.source === "flagged"){
       multiUnitStarsEarned = recordMultiUnitPerfectsIfEligible(order, missed);
     }
     /* Falls back to the whole run when there are no per-unit perfects to
@@ -114845,7 +114861,7 @@ function summarize(){
        that pushes an already-star-sufficient tier over its point
        threshold too. Checked around the whole points block rather
        than only inside the star-tracking branch below. */
-    if(cfg.source === "all"){
+    if(cfg.source === "all" || cfg.source === "flagged"){
       leveledUpTo = recordUnitPerfectIfEligible(pct);
     }
     /* After every recording call above, so the diff sees whatever any
@@ -114993,7 +115009,7 @@ function summarize(){
     /* A retake earns the answers it got right and nothing else - "you
        get nothing cool out of it, but you will get xp for the questions
        you get right through the retake(s)". */
-    runXp = computeRunXp({ retake: true, good: good });
+    runXp = computeRunXp({ retake: true, good: good, round: retakeRound, allRight: good === total && missed.length === 0 });
     awardXp(runXp.total);
     /* The Masked One's count was added here, all at once, until build
        289 - it is counted per question as each is answered now, so a
@@ -115226,7 +115242,7 @@ function summarize(){
      a hundo on a unit that I already have a badge on, you don't need to
      show the badge stuff there, no point". A badge earned by this very
      run still gets its row - that is the moment it is about. */
-  const progUnits = (runTrackable && !timedOut && cfg.source === "all")
+  const progUnits = (runTrackable && !timedOut && (cfg.source === "all" || cfg.source === "flagged"))
     ? (cfg.units || []).filter(u => unitQuestionCount(u) > 0 && unitPerfectCount(u) > (perfectsBefore[u] || 0) && !badgesBefore.has(u))
     : [];
   /* The units the run actually covered, in the order they were chosen -
