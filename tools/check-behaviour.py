@@ -176,6 +176,9 @@ def check_launch(br):
     for label, w, h in DEVICES:
         ctx = br.new_context(viewport={"width": w, "height": h})
         ctx.add_init_script(LAUNCH_LIE)
+        # 330: a first visit has no loading screen at all (it opens on Get Started), so the splash is
+        # measured on a RETURNING device - one that has a sync code - where it still runs
+        ctx.add_init_script("try{localStorage.setItem('class26e.synccode','TEST-0001');}catch(e){}")
         pg = open_page(ctx)
         pg.goto(URL)
         pg.wait_for_timeout(1400)
@@ -202,6 +205,11 @@ def check_launch(br):
               end is not None and end["o"] > 0.5 and end_off <= 4,
               "%dpx" % end_off)
         ctx.close()
+        ctxf = br.new_context(viewport={"width": w, "height": h})
+        pgf = open_page(ctxf); pgf.goto(URL); pgf.wait_for_timeout(1400)
+        shown = pgf.evaluate("() => { const sp = document.getElementById('splashscreen'); return !!sp && getComputedStyle(sp).visibility !== 'hidden' && getComputedStyle(sp).opacity !== '0'; }")
+        check("%s: a first visit shows no loading screen (it opens on Get Started)" % label, shown is False, shown)
+        ctxf.close()
 
 
 # --------------------------------------------------------------------------
