@@ -63149,9 +63149,18 @@ function appendPickTick(box){
 }
 /* The next test still to sit, today included - the same days
    testsRemaining() counts, so the card and the count can never disagree. */
+/* A TEST DAY HANDS OVER AT 9 PM (build 328): "Monday at 9pm ... all the next
+   test stuff will be updated ... right now the unit selection has one box that
+   says next test, when this update goes out it shouldn't [show] next week's test
+   and this test showing as next test". Until 9 PM on a test day, that day's
+   test is the next one; from 9 PM the one after it is - one test at a time,
+   everywhere nextTestEntry() is asked (the unit cards' mark, Home, Nova, the
+   Calendar's countdown). */
+const TEST_DAY_HANDOVER_HOUR = 21;
 function nextTestEntry(){
   const k = todayCalendarKey();
-  return CALENDAR_DATA.find(d => d.date >= k && isExamDay(d)) || null;
+  const late = new Date().getHours() >= TEST_DAY_HANDOVER_HOUR;
+  return CALENDAR_DATA.find(d => (late ? d.date > k : d.date >= k) && isExamDay(d)) || null;
 }
 /* Whole days from one ISO date to another, by the local calendar (noon,
    so a daylight-saving change cannot round a day away). */
