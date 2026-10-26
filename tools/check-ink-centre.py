@@ -29,13 +29,13 @@ SRC = arg("--against") or os.path.join(ROOT, "index.html")
 TOL = float(arg("--tol", "0.8"))
 HTOL = float(arg("--htol", "1.5"))
 
-SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"leaderboardOptIn":true,"lastModified":1700000000000,'
+SEED = ('{"publicId":"xph5b57jbp5a","firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"leaderboardOptIn":true,"lastModified":1700000000000,'
         '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,"seenMainMenuTour":true,'
         '"seenRankingsTour":true,"seenAppearanceTour":true,"novaMet":99,"lifetime":{"points":12400,"answered":5400,"correct":4980,"perfectTests":141}}')
 CAND = """()=>{ const out=[]; const seen=new Set();
  /* round 33: a pass's ids start at 0 again - last pass's must go, or [data-ink-id] finds a stale control */
  document.querySelectorAll('[data-ink-id]').forEach(n=>n.removeAttribute('data-ink-id'));
- document.querySelectorAll('button, a, [role=button], .back-link, .chip, .rs-mode, .sheet-tag, .iconbtn, .friend-act').forEach(el=>{
+ document.querySelectorAll('button, a, [role=button], .back-link, .chip, .rs-mode, .sheet-tag, .iconbtn, .friend-act, .cc-status, .csi-label, .ifc-tag, .ifc-link').forEach(el=>{
    if(seen.has(el)) return; seen.add(el);
    const r=el.getBoundingClientRect(); if(r.width<28||r.height<18||r.height>80) return;
    const cs=getComputedStyle(el); if(cs.visibility==='hidden'||cs.display==='none'||+cs.opacity<.5) return;
@@ -43,6 +43,7 @@ CAND = """()=>{ const out=[]; const seen=new Set();
    const t=(el.innerText||'').trim(); if(!t||t.length>26||/[,;()@]/.test(t)||/\\n/.test(t)||/^\\d+$/.test(t)) return;
    /* round 29: a descender only spoils the UP-DOWN measure; across, it counts like any letter */
    const desc=/[gjpqyQ]/.test(t);
+   if(el.classList.contains('class-stack-item')||el.closest('.class-bubble-wrap:not(.is-open) .class-stack')) return;
    if(el.classList.contains('bottomtab')||el.classList.contains('cal-cell')) return;
    const hit=document.elementFromPoint(r.left+r.width/2, r.top+r.height/2); if(!hit||!(el===hit||el.contains(hit))) return;
    el.dataset.inkId=String(out.length);
@@ -122,6 +123,16 @@ def main():
                 pg.evaluate("()=>{ document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n=>n.remove()); window.scrollTo(0, 99999); }")
                 pg.wait_for_timeout(700); audit(pg, name + " " + tag + "/foot", rows)
                 pg.evaluate("()=>window.scrollTo(0, 0)")
+            # 328: the classes screen, its Enroll / Enrolled chips, the dropdown's labels, the Fire Code tags
+            for tag, js in [("classes", "showClassCatalog()"), ("enroll", "showIfcEnroll()")]:
+                try:
+                    pg.evaluate("()=>" + js); pg.wait_for_timeout(900); audit(pg, name + " " + tag, rows)
+                except Exception as e: print("  (could not open %s: %s)" % (tag, str(e)[:60]))
+            try:
+                pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(900)
+                pg.evaluate("()=>{ const b=document.querySelector('.class-bubble'); if(b) b.click(); }"); pg.wait_for_timeout(900); audit(pg, name + " dropdown", rows)
+                pg.evaluate("()=>{ const b=document.querySelector('.class-bubble'); if(b) b.click(); }")
+            except Exception as e: print("  (dropdown: %s)" % str(e)[:60])
             pg.evaluate("()=>showModeSelect()"); pg.wait_for_timeout(500)
             pg.click(".modecard[data-mode='drill']"); pg.wait_for_timeout(1000); audit(pg, name + " units", rows)
             # 327z15 round 42: "Seems like some of these buttons word aren't centered.

@@ -11790,7 +11790,7 @@ def check_b313_flares(br):
         lit = r.get("lit") or []
         check(f"{label}: every found flare on Home is lit in its own colour (they computed white)",
               len(lit) == 3 and all(x["ok"] for x in lit), lit)
-        check(f"{label}: the flare being hunted next is marked (once Void is held) - in plain light, not its colour (build 314)", r.get("nextTinted") is True, r.get("nextTinted"))
+        check(f"{label}: no flare is marked as the one being hunted, Void held or not (build 329: the hunted-flare design is gone)", r.get("nextTinted") is False, r.get("nextTinted"))
         # MOVED IN 326 (b326d): all six on Home from day one; the found ones lit
         check(f"{label}: all six secret flares on Home whatever is found - none, Void, five, all",
               (r.get("count3"), r.get("countVoid"), r.get("count6"), r.get("countAll")) == (6, 6, 6, 6),
@@ -17449,9 +17449,9 @@ def check_b317_hometaps(br):
         # build 318: yellow is the NEXT flare here (two of Void's found), so
         # its words are the rumour of its level; any other unfound one says
         # only "not found" (check_b318_flares)
-        check(dev + ": an unfound secret flare has no name and no colour (the next one a rumour of its level) - and shakes like every locked thing, no sparkle",
+        check(dev + ": an unfound secret flare has no name and no colour (build 329: no rumour on any) - and shakes like every locked thing, no sparkle",
               UF.get("kind") == "is-unfound" and UF.get("name") == "Secret flare" and UF.get("state") == "Not found"
-              and (UF.get("text") or "").startswith("They say this one") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
+              and "They say" not in (UF.get("text") or "") and ((UF.get("title") or {}).get("chroma") or 99) <= 24
               and UF.get("shake", 0) >= 1 and UF.get("dim") and UF.get("sparks") == 0 and UF.get("press") == 0, UF)
         check(dev + ": the planet keeps its touch (press, ripple, halo, rings, both flare rings surge, no filter) and counts your flares under \"Your flares\" in the theme's colour",
               # MOVED IN 326 (b326e): no total for the secret flares - more
@@ -19654,14 +19654,14 @@ def check_b318_flares(br):
               else "They say this one is seen in tests from level %s." % g.get("yellow"))
     want_v = ("They say this one has been seen in tests at your level." if lv >= (g.get("violet") or 999)
               else "They say this one is seen in tests from level %s." % g.get("violet"))
-    check("the next flare's caption is a rumour of its real level - no name, no colour", y[:3] == ["Secret flare", "Not found", ""] and y[3:] == [want_y], [lv, g, y])
+    check("build 329: the next flare's caption is plain - no name, no colour, no rumour of its level", y[:3] == ["Secret flare", "Not found", ""] and not any("They say" in x for x in y), [lv, g, y])
     check("with Void held, the fourth (the next) gets the rumour and the fifth only 'not found'",
           # MOVED IN 327z15 round 3: an unfound one says "Not found yet." (the hunted one keeps its rumour)
-          v[3:] == [want_v] and w[2:] in (["Secret flare has not been found."], ["Not found yet."]), [v, w])
+          not any("They say" in x for x in v + w) and w[2:] in (["Secret flare has not been found."], ["Not found yet."]), [v, w])
     check("in Void's hunt only the next one hints (orange, one found); a later one says only 'not found'",
-          (cp.get("orangeNext") or "").startswith("They say this one") and cp.get("yellowNotNext") in ("Secret flare has not been found.", "Not found yet."), cp)
+          "They say" not in (cp.get("orangeNext") or "") and cp.get("yellowNotNext") in ("Secret flare has not been found.", "Not found yet."), cp)
     check("tapped on Home: the next flare's caption carries the rumour, another unfound one does not",
-          "They say this one" in (r.get("tapViolet") or "") and re.search(r"has not been found|Not found yet", r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
+          "They say" not in (r.get("tapViolet") or "") and re.search(r"has not been found|Not found yet", r.get("tapWhite") or "") and "They say" not in (r.get("tapWhite") or ""),
           [r.get("tapViolet"), r.get("tapWhite")])
     s = _b318_umbra(br)
     a, b, c3, d = s.get("1.2") or {}, s.get("3.2") or {}, s.get("6.0") or {}, s.get("9.6") or {}

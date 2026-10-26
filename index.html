@@ -34241,6 +34241,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
             mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
   .cc-status.is-enroll{ background:linear-gradient(180deg, #FF9A4A, #F0661F); color:#1A0D05; box-shadow:0 4px 14px rgba(255,110,30,.3); }
   .cc-status.is-soon{ background:rgba(255,255,255,.07); color:var(--soft); border:1px solid rgba(255,255,255,.12); }
+  /* Build 329: "the word enroll ... is not centered" - a flex box does not trim its text, so the chip is a
+     block of text the height of its capitals, with equal padding either side (the check mark rides the word). */
+  @supports (text-box:trim-both cap alphabetic){
+    .cc-status{ display:inline-block; height:30px; padding:calc((28px - 1cap)/2) .8rem; text-align:center; white-space:nowrap; text-box:trim-both cap alphabetic; }
+    .cc-status.is-enrolled::before{ display:inline-block; vertical-align:-1px; margin-right:.35rem; }
+    .cc-status.is-enroll{ padding-top:calc((28px - 1cap)/2 + 1.2px); padding-bottom:calc((28px - 1cap)/2 - 1.2px); }
+  }
   .class-enroll{ display:flex; flex-direction:column; }
   .ce-emblem{ width:84px; height:84px; margin:1rem 0 .4rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 60%, rgba(255,122,26,.35), rgba(255,122,26,.05) 70%); border:1px solid rgba(255,140,60,.35); box-shadow:0 0 40px rgba(255,110,30,.25); }
@@ -34396,7 +34403,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     font-size:.88rem; font-weight:650; line-height:1; color:var(--ink);
     background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 55%), rgba(14,16,24,.74); background-repeat:no-repeat; background-origin:border-box;
     border:1px solid rgba(255,255,255,.15); box-shadow:0 4px 14px rgba(0,0,0,.32), inset 0 3px 5px -2px rgba(255,255,255,.18), inset 0 -3px 5px -2px rgba(0,0,0,.26); }
-  @supports (text-box:trim-both cap alphabetic){ .csi-label{ text-box:trim-both cap alphabetic; } }
+  @supports (text-box:trim-both cap alphabetic){ .csi-label{ display:block; height:36px; padding:calc((34px - 1cap)/2 - .65px) .95rem calc((34px - 1cap)/2 + .65px); text-align:center; text-box:trim-both cap alphabetic; } }
   .class-stack-item:active .csi-bubble{ transform:scale(.94); }
   html.class-switching body{ opacity:0; transition:opacity .35s ease; }
   .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
@@ -34411,7 +34418,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     box-shadow:0 3px 12px rgba(0,0,0,.35), 0 0 14px var(--cc, rgba(255,255,255,.12)), inset 0 1px 1px rgba(255,255,255,.28), inset 0 -3px 6px rgba(0,0,0,.28); }
   .csi-bubble svg{ width:25px; height:25px; overflow:visible; }
   .class-stack-item.is-add .csi-bubble{ color:var(--ink); }
-  .csi-label{ padding:.4rem .8rem; border-radius:999px; font-size:.86rem; font-weight:650; white-space:nowrap;
+  .csi-label{ border-radius:999px; font-size:.86rem; font-weight:650; white-space:nowrap;
     background:var(--surface-sheen), rgba(22,24,34,.86); border:1px solid var(--surface-border); box-shadow:0 4px 14px rgba(0,0,0,.35); }
   .class-stack-item:active .csi-bubble{ transform:scale(.94); }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
@@ -80171,9 +80178,11 @@ function homeFlareKeys(){
 function flareHuntState(key){
   const f = (typeof store !== "undefined" && store.mysteryColorsFound) || {};
   if(f[key]) return "found";
-  if(nextNeededMysteryColor() !== key) return "missing";
-  try{ if(levelOf(store) >= mysteryLevelGate(key)) return "hunting"; }catch(e){}
-  return "next";
+  /* Build 329: "I don't want hunted secret flares or rank flares." No flare on the
+     planet is marked as the one being hunted any more - no ring, no tint, no rumour
+     on its tap. A flare is found or it is the same plain unfound light as the rest.
+     (The hunt in tests is unchanged; it just shows nothing on Home.) */
+  return "missing";
 }
 /* HOW HIDDEN, and it is measured in TESTS COMPLETED rather than in runs
    between appearances. Asked for by number: "a person should see the
