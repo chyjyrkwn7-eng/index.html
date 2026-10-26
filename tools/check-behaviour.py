@@ -9709,7 +9709,9 @@ def check_b314h_chat(br):
           info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bf"] != "none", a)
     # a real pull down closes it; every move after the first is claimed
     pg.evaluate("""() => { window.__prevented = 0; window.__moves = 0; document.querySelector('.chatdock-panel').addEventListener('touchmove', e => { __moves++; setTimeout(() => { if(e.defaultPrevented) __prevented++; }, 0); }, { passive: true }); }""")
-    _swipe(cdp, info["x"], info["y"], 0, 220, steps=10)
+    # REVISED IN 327z8/z15 ("it goes away even if you barely swipe down, it should be like if you swipe really
+    # fast or slowly slide down it does"): a pull past 40% of the sheet closes it (a flick needs real speed)
+    _swipe(cdp, info["x"], info["y"], 0, 440, steps=10)
     pg.wait_for_timeout(500)
     b = pg.evaluate("() => ({ open: chatDockOpen, moves: __moves, prevented: __prevented })")
     check("a pull down the sheet closes it, and every move of it was the sheet's (none left to the page)",
