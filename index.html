@@ -34252,7 +34252,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
       flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
-      height:calc(min(100vw, 31rem) * .95) !important; aspect-ratio:100 / 95 !important;
+      height:calc(min((100vw - 24px) * 1.13, 33rem) * .95) !important; aspect-ratio:100 / 95 !important;
       /* centred even when it is wider than the column (auto margins pin an overflowing item to the start) */
       align-self:center !important; margin:0 0 var(--hg) !important;
     }
@@ -34267,6 +34267,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-sub{ display:none !important; }
   }
+  /* Width (same day): the planet's moons turn inside 88% of its box (measured over a whole
+     turn: 24..390 of 414), so a box as wide as the screen left the system at 83% of a tall
+     phone's width with blank sides. The box is now (100vw - 24px) x 1.13 - wider than the
+     screen, which .wrap's overflow-x:clip allows - so the outermost moon passes 12px from
+     each edge; where the height runs out first it still gives way as before. */
   /* (Oct 26, his iOS 26 Safari screenshot: "The planet system needs to be perfectly sized, as
      big as it can be") The column used to keep 3rem (Welcome 2rem) clear above the planet for
      the chat button and the version tag. The orbits are circles, so the box's top corners are
@@ -34289,7 +34294,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{
       flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
-      height:calc(min(100vw, 31rem) * .95) !important; aspect-ratio:100 / 95 !important;
+      height:calc(min((100vw - 24px) * 1.13, 33rem) * .95) !important; aspect-ratio:100 / 95 !important;
       align-self:center !important; margin:0 0 var(--hg) !important;
     }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > :not(.cosmic-hero-wrap){ flex:none !important; }
