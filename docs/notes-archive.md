@@ -28798,3 +28798,15 @@ not number. Questions are word for word the guides, typos included.
   four by six put the open lid off the top of a phone.
 - What's New 9.2 leads with "All of Level 1"; RELEASE_NOTES 9.2 has three items.
 - Gate `tools/check-b328-level1.py` (fails on ba173e4).
+- **Oct 26 (same build):** the instructor's email - "Your next test will cover the
+  CCP and Arrest, Search, and Seizure ... on Monday, November 2, 2026" -
+  TEST_TOPICS["2026-11-02"] = CCP and Bill of Rights, Arrest, Search, and Seizure
+  (nextTestUnits matches a topic by a unit's stored name or its unitTitle).
+  "CCP ... we have a different title (update it) update this app wide": the
+  unit shows as CCP and Bill of Rights everywhere a unit's name is drawn (cards,
+  details, version pop-up, run and Pause labels, results list and breakdown,
+  history, Virtual Room chips, badge titles and cutscene). "on Monday at 9pm, the
+  [penal] code slide version will be removed": PENAL_VERSIONS_END_AT (02:00Z Oct
+  27 = 9 PM CDT); from then UNIT_TEST_VERSIONS["Penal Code"] is undefined - no
+  pop-up, no card tag, no note, and a saved "test" choice is the whole unit.
+  check-b328-level1 328g holds both sides of 9 PM.

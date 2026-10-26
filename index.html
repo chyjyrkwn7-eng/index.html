@@ -50605,7 +50605,7 @@ function runOfferFacts(s){
   const c = s.cfg || {};
   const all = topicsIn(QUESTIONS);
   const us = c.units || [];
-  const names = us.map(u => (c.versions && c.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u);
+  const names = us.map(u => (c.versions && c.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : unitTitle(u));
   const units = (us.length === 0 || us.length === all.length) ? "All units"
     : names.length <= 2 ? names.join(" · ") : names.length + " units";
   const mode = s.runMode === "exam" ? modeTitleOf("exam") : (s.isMissedRetake ? "Retake" : "Drill");
@@ -62650,8 +62650,16 @@ const PENAL_256_VERSION = {
    short version exists ("ensure the unit box mentions it has the 0-85
    version ... so people know and want to click it"). Another unit gets
    a short version by adding a line. */
+/* THE SLIDES VERSION ENDS (build 328): "on Monday at 9pm, the [penal] code
+   slide version will be removed. The regular penal code will be the only one
+   available". From PENAL_VERSIONS_END_AT the getter is undefined, so every
+   picker, the pop-up, the card's tag and the "Penal Code updated" note see a
+   unit with no short version; a saved choice of "test" (cfg.versions, a saved
+   run, a room's settings) reads as the whole unit through inChosenVersion. */
+const PENAL_VERSIONS_END_AT = Date.UTC(2026, 9, 27, 2, 0, 0); /* 9:00 PM Mon Oct 26, Central (CDT, UTC-5) */
+function penalVersionsOver(){ return Date.now() >= PENAL_VERSIONS_END_AT; }
 const UNIT_TEST_VERSIONS = {
-  get "Penal Code"(){ return penal256Live() ? PENAL_256_VERSION : PENAL_124_VERSION; }
+  get "Penal Code"(){ return penalVersionsOver() ? undefined : penal256Live() ? PENAL_256_VERSION : PENAL_124_VERSION; }
 };
 function unitHasTestVersion(name){ return !!UNIT_TEST_VERSIONS[name]; }
 /* Is this question part of its WHOLE unit? Everything is, except a
@@ -63070,7 +63078,11 @@ function formatCalendarDate(iso){
    is the one the version switches to at 8 PM Monday (PENAL_256_AT). */
 const TEST_TOPICS = {
   "2026-10-19": { topics: ["Penal Code \u2014 slides 124\u2013256"], postedAt: "2026-10-18" },
-  "2026-10-26": { topics: ["Penal Code \u2014 slides 256\u2013578"], postedAt: "2026-10-18" }
+  "2026-10-26": { topics: ["Penal Code \u2014 slides 256\u2013578"], postedAt: "2026-10-18" },
+  /* build 328, the instructor's email of Oct 26: "Your next test will cover the CCP
+     and Arrest, Search, and Seizure ... on Monday, November 2, 2026. You need to
+     study ahead because Arrest, Search, and Seizure doesn't end until October 30" */
+  "2026-11-02": { topics: ["CCP and Bill of Rights", "Arrest, Search, and Seizure"], postedAt: "2026-10-26" }
 };
 /* The topics for one test date, cleaned, or null when none are posted. */
 function testTopicsFor(iso){
@@ -63101,8 +63113,8 @@ function nextTestUnits(){
     : formatCalendarDate(e.date).replace(/^[A-Za-z]+,\s*/, "");
   const units = new Set();
   unitsInTeachingOrder().forEach(u => {
-    const n = String(u).toLowerCase();
-    if(t.topics.some(tp => { const x = tp.toLowerCase(); return x === n || (x.startsWith(n) && /^[\s\u2014\u2013:,(-]/.test(x.slice(n.length))); })) units.add(u);
+    const names = [String(u).toLowerCase(), String(unitTitle(u)).toLowerCase()];
+    if(t.topics.some(tp => { const x = tp.toLowerCase(); return names.some(n => x === n || (x.startsWith(n) && /^[\s\u2014\u2013:,(-]/.test(x.slice(n.length)))); })) units.add(u);
   });
   return units.size ? { date: e.date, when, units } : null;
 }
@@ -78504,7 +78516,7 @@ function renderPausedScreen(){
   if(runLabel !== "Daily question"){
     const all = topicsIn(QUESTIONS);
     const names = (cfg.units.length === 0 || cfg.units.length === all.length) ? ["All units"]
-      : cfg.units.map(u => (cfg.versions && cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u);
+      : cfg.units.map(u => (cfg.versions && cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : unitTitle(u));
     const unitsEl = document.createElement("p");
     unitsEl.className = "pause-units";
     unitsEl.textContent = names.join(" \u00b7 ") + (cfg.source === "flagged" ? " (starred questions)" : "");
@@ -98321,7 +98333,7 @@ function openUnitDetail(row, name, mode){
   const card = document.createElement("div");
   card.className = "unitdetail";
   card.setAttribute("role", "dialog");
-  card.setAttribute("aria-label", name + " details");
+  card.setAttribute("aria-label", unitTitle(name) + " details");
 
   /* THE SAME CARD: its name, question count, badge and bar, built by the
      same function the grid uses so the two cannot disagree. */
@@ -98710,7 +98722,7 @@ function askUnitVersion(name, onPick){
   card.setAttribute("aria-modal", "true");
   card.setAttribute("aria-labelledby", "unitver-title");
   const title = document.createElement("p");
-  title.className = "unitver-title"; title.id = "unitver-title"; title.textContent = name;
+  title.className = "unitver-title"; title.id = "unitver-title"; title.textContent = unitTitle(name);
   const sub = document.createElement("p");
   sub.className = "unitver-sub"; sub.textContent = "Choose a version.";
   const opts = document.createElement("div");
@@ -100366,7 +100378,7 @@ function showSetup(){
        so the choice can be checked here before Begin. */
     aboutTake.textContent = cfg.units.length === 0 ? "" :
       (cfg.units.length === all.length ? "All units"
-        : cfg.units.map(u => (cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : u).join(" \u00b7 "));
+        : cfg.units.map(u => (cfg.versions[u] === "test" && UNIT_TEST_VERSIONS[u]) ? UNIT_TEST_VERSIONS[u].label : unitTitle(u)).join(" \u00b7 "));
     if(aboutTake.parentNode !== sheetSummary) sheetSummary.appendChild(aboutTake);
 
     /* One answer per section, in one place. These used to be split
@@ -112306,7 +112318,7 @@ function showRunRewards(run, hooks, opts){
         row.className = "unit-breakdown-row";
         const top = document.createElement("div");
         top.className = "unit-breakdown-top";
-        const a = document.createElement("span"); a.className = "unit-breakdown-name"; a.textContent = nm;
+        const a = document.createElement("span"); a.className = "unit-breakdown-name"; a.textContent = unitTitle(nm);
         let b = null;
         if(!single){ b = document.createElement("span"); b.className = "unit-breakdown-score"; rsPair(b, countIt ? 0 : right, st.total); }
         top.append(a); if(b) top.append(b);
@@ -115476,7 +115488,7 @@ function testHistoryUnitLine(entry){
   const all = topicsIn(QUESTIONS);
   let what;
   if(units.length === all.length) what = "All " + units.length + " units";
-  else if(units.length === 1) what = units[0];
+  else if(units.length === 1) what = unitTitle(units[0]);
   else {
     /* Name as many as fit a budget, then count the rest. A fixed number of
        names cannot work here because the names are not a fixed length:
@@ -115487,13 +115499,13 @@ function testHistoryUnitLine(entry){
     const shown = [];
     let used = 0;
     for(let i = 0; i < units.length; i++){
-      const cost = units[i].length + (shown.length ? 2 : 0);
+      const cost = unitTitle(units[i]).length + (shown.length ? 2 : 0);
       if(shown.length && used + cost > TEST_ROW_NAME_BUDGET) break;
-      shown.push(units[i]); used += cost;
+      shown.push(unitTitle(units[i])); used += cost;
     }
     /* Never "+1 more": a count of one hides exactly one name and saves
        nothing, so the last one is always spelled out. */
-    if(units.length - shown.length === 1) shown.push(units[units.length - 1]);
+    if(units.length - shown.length === 1) shown.push(unitTitle(units[units.length - 1]));
     what = shown.join(", ");
     if(shown.length < units.length) what += " +" + (units.length - shown.length) + " more";
   }
@@ -115900,7 +115912,7 @@ function showTestHistoryDetail(entry){
     units.forEach(u => {
       const r = document.createElement("div"); r.className = "thx-unit";
       const own = entry.up && typeof entry.up[u] === "number" ? entry.up[u] : (units.length === 1 ? entry.pct : null);
-      const n = document.createElement("span"); n.className = "thx-unit-name"; n.textContent = u;
+      const n = document.createElement("span"); n.className = "thx-unit-name"; n.textContent = unitTitle(u);
       r.appendChild(n);
       if(typeof own === "number"){
         const v = document.createElement("span"); v.className = "thx-unit-pct"; v.textContent = own + "%";
@@ -120801,7 +120813,7 @@ function showVirtualRoomLobby(){
       units.forEach(name => {
         const c = document.createElement("span");
         c.className = "vroom-unit-chip";
-        c.textContent = name;
+        c.textContent = unitTitle(name);
         chips.appendChild(c);
       });
       testSummary.appendChild(chips);

@@ -153,5 +153,33 @@ with sync_playwright() as p:
     check("a picked unit shows on its level's tab as a count", cnt == "1", cnt)
     ctx.close(); srv.shutdown()
 
+with sync_playwright() as p:
+    import datetime
+    b = p.chromium.launch(executable_path=CHROME)
+    print("\n328g. the Penal Code slides version ends at 9 PM Mon Oct 26; Nov 2's topics")
+    srv, url = serve(target)
+    def at(when):
+        ctx = b.new_context(viewport={"width": 393, "height": 852}); pg = ctx.new_page()
+        pg.add_init_script("try{localStorage.setItem('class26e.intro.seen','99')}catch(e){}")
+        pg.clock.install(time=datetime.datetime.fromisoformat(when)); pg.goto(url); pg.wait_for_timeout(2000)
+        return ctx, pg
+    ctx, pg = at("2026-10-26T20:59:00-05:00")
+    pre = pg.evaluate("() => ({ has: unitHasTestVersion('Penal Code'), n: unitVersionCount('Penal Code', 'test') })"); ctx.close()
+    ctx, pg = at("2026-10-26T21:00:30-05:00")
+    post = pg.evaluate("""() => { const i = QUESTIONS.findIndex(q => q.topic === 'Penal Code');
+      return { has: unitHasTestVersion('Penal Code'), whole: unitVersionCount('Penal Code', null),
+        chosen: QUESTIONS.reduce((k, q, j) => k + (q.topic === 'Penal Code' && inChosenVersion(j, {'Penal Code': 'test'}) ? 1 : 0), 0) }; }""")
+    check("at 8:59 PM the slides 256-578 version is still offered", pre["has"] and pre["n"] == 132, pre)
+    check("at 9:00 PM there is no short version, and a saved 'test' choice is the whole unit (340)", (not post["has"]) and post["chosen"] == 340 and post["whole"] == 340, post)
+    pg.evaluate("() => showSetup()"); pg.wait_for_timeout(1200)
+    tag = pg.evaluate("() => { const r = [...document.querySelectorAll('.picks > label.pick')].find(r => r.querySelector('input').value === 'Penal Code'); return r ? r.textContent : null; }")
+    check("the Penal Code card no longer mentions a slides version", tag is not None and "Slides" not in tag and "version" not in tag.lower(), tag)
+    nt = pg.evaluate("() => { const t = testTopicsFor('2026-11-02'); const u = nextTestUnits(); return { t: t && t.topics, u: u ? [...u.units] : null, d: u && u.date }; }")
+    check("Nov 2's test is CCP and Arrest, Search, and Seizure, and both units carry the next-test mark",
+          nt["t"] == ["CCP and Bill of Rights", "Arrest, Search, and Seizure"] and sorted(nt["u"] or []) == sorted(["Code of Criminal Procedure and Bill of Rights", "Arrest, Search, and Seizure"]), nt)
+    shown = pg.evaluate("() => { const r = [...document.querySelectorAll('.picks > label.pick')].find(r => r.querySelector('input').value === 'Code of Criminal Procedure and Bill of Rights'); return r && r.querySelector('.pname').textContent; }")
+    check("CCP is shown as CCP and Bill of Rights", shown == "CCP and Bill of Rights", shown)
+    ctx.close(); srv.shutdown()
+
 print("\n" + ("ALL PASS" if not fails else "%d FAILED" % fails))
 sys.exit(1 if fails else 0)
