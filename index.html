@@ -34165,6 +34165,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      weight, white. */
   html[data-layout] body input.searchbox{ padding-top:calc(.7rem + 2px) !important; padding-bottom:calc(.7rem - 2px) !important; }
   html[data-theme][data-layout] body .rank-tools .iconbtn.rank-me-btn{ font-size:1.0625rem; font-weight:500; letter-spacing:0; color:#F3F5F7 !important; }
+  /* (build 328) "the back button isn't perfectly centered either": the chevron's own
+     viewBox has 5px of air on its left, so the ink sat 1.5px right of centre. Measured
+     at 2x: equal ink gaps with the left padding 1.5px shorter. Every Back pill. */
+  html[data-layout] body .back-link{ padding-left:calc(1rem - 1.5px) !important; padding-right:1rem !important; }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */

@@ -28822,3 +28822,4 @@ not number. Questions are word for word the guides, typos included.
 - **Search bars and Find me:** every input.searchbox's words come down 2px (measured
   at 2x: the glass and Find me centred on the field, the placeholder 2px high);
   Find me is the field's 17px at weight 500, white (was 15.2px/700).
+- **Back pills:** left padding 1.5px shorter (the chevron's viewBox air); ink gaps equal at 2x.
