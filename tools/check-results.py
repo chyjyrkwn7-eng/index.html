@@ -261,6 +261,7 @@ with sync_playwright() as pw:
     res_btns = pg.evaluate("()=>[...document.querySelectorAll('#stage .actions button')].map(b=>b.textContent)")
     ck("and Re-run and Main menu beside it, on the results",
        res_btns == ["Continue to review (3 missed)", "Re-run", "Main menu"], res_btns)
+    pg.wait_for_timeout(900)   # 328: a tap in the 0.7s after the results settle is ignored (the review-tap bug), so a real one waits
     pg.evaluate("()=>document.querySelector('#stage .rs-continue') && document.querySelector('#stage .rs-continue').click()")
     pg.wait_for_timeout(400)
     rev = pg.evaluate("""()=>({

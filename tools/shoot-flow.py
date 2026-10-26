@@ -263,9 +263,8 @@ def main():
                 page.click(".cosmic-welcome-btn.welcome-new");        shot(page, 2.8, "new-to-nova")
                 # build 327: no What's New list in sign-up - the check goes
                 # straight on to "What This Actually Is"
-                page.click(".signupcheck-panel .signupcheck-go");     shot(page, 4, "what-this-actually-is")
-                page.click(".welcomeintro-panel .next.playbtn");      shot(page, 5, "pick-your-class")
-                page.click(".classselect-panel .modecard"); page.wait_for_timeout(250)
+                page.click(".signupcheck-panel .signupcheck-go");     shot(page, 5, "pick-your-class")
+                page.click(".classselect-panel .class-card.is-academy"); page.wait_for_timeout(250)
                 shot(page, 5.5, "pick-your-class-picked")
                 # 327z15: the username and the character are asked by Nova
                 page.click(".classselect-panel .next.playbtn")

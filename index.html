@@ -34607,7 +34607,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      Measured outer ring: 12.9" 540 -> 640px, Pro 11" 534 -> 560px, mini 507 -> 530px. */
   @media (min-width:40rem) and (orientation:portrait){
     html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap,
-    html[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60vh, 84vw) !important; }
+    html[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60vh, 84vw, calc(100dvh - 28rem)) !important; }   /* the last term keeps Start Studying above the bar on the shorter iPads (mini, 10.2") */
   }
   /* ---- HOME ON EVERY PHONE, ONE LAYOUT (build 328) ----
      "We need to maximize the size of the planet system but still make it look good for
@@ -34737,6 +34737,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome{ justify-content:flex-start !important; }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-title,
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-actions{ margin-top:auto !important; }
+  }
+  /* Welcome is Home's planet on every phone 736px tall and up: the same 3.5% shrink (build 329) */
+  @media (max-width:39.99rem) and (orientation:portrait) and (min-height:46rem){
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ height:calc(min(100vw, 31rem) * .95 * .965) !important; }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
@@ -104808,7 +104812,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-24-327z15";
+const APP_BUILD = "2026-10-26-329";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

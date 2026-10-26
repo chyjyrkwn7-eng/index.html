@@ -28974,3 +28974,59 @@ the planet system."
   once he has spoken; shared between the classes, so SHARED has greet.*). First Home in Fire
   Code: 8 short boxes (placeholders for how the class differs - rank/level fresh, the academy
   untouched, the code with every question).
+
+## Build 329 (Oct 26, "More fixes", for the chiefs' presentation) - on the branch claude/b327z15-tabs, NOT main
+
+Corrections round after the class bubble (earlier this day, all pushed): auto-pause when the app
+is left mid-test (`autoPauseOnLeave`), `rsTapGuardUntil` (a tap in the 0.7s after results settle is
+ignored - the review-tap bug; gates wait 900ms before tapping), the classes screen as a 2-up
+`.class-cards` grid with a "More classes / Coming soon" box and "Enrolled" wording, the dropdown in
+glass, "Ref. IFC 2021, 1003.2" / "Ref. HC Amendments, 101.2.1" references, planet sizes per device
+(iPad 12.9 60vh, tall phones 3.5% smaller, Dell hero 440), smooth CDP-screencast videos.
+
+This round:
+- **Every button centred, and a gate for it.** A flex box does not trim its text, so
+  `.cc-status` (Enroll / Enrolled / Selected / Coming soon) and `.csi-label` ("Add a class") are
+  now blocks the height of their capitals with equal padding (`text-box:trim-both cap alphabetic`
+  + `calc((H - 1cap)/2)`); a word with ascenders (Enroll, Add a class) takes a 0.65-1.2px optical
+  nudge so the ink, not the cap box, is centred. `tools/check-ink-centre.py` now measures the
+  classes screen, the enrol screen and the open dropdown (the seed carries the owner's publicId)
+  and fails on the old build (6 fails) - the dropdown rows are skipped when closed.
+- **Class bubble = the daily question's size** (`place()` copies the fab's width into `--cb`), hover
+  and focus states for a mouse (class bubble, stack, cards). **A class new to you:** shared
+  `class26e.classseen` (default `["academy","ifc"]`, so a class added later is new): the bubble
+  gets a breathing ring (`cb-new`, transform/opacity only) and a corner dot, one banner on Home
+  ("Tap the class button to look"), and opening the list marks it seen (`unseenClasses`,
+  `markClassesSeen`, `maybeNewClassBanner`). To announce a new class: add it to `NOVA_CLASSES`
+  and `NOVA_CLASS_INFO`.
+- **SE (short portrait phones, max-height 43.75rem):** chat button 38px with a 3px invisible
+  touch margin (so 44px to touch), Start Studying 38px tall in .88rem words with a 3px margin.
+  The laptop 4.4rem chat button was never on a phone.
+- **Hunted flare gone:** `flareHuntState` returns only "found" or "missing" - no ring, no tint, no
+  rumour on a tap. The hunt itself (what tests show) is unchanged. `.cosmic-flare-dot.is-next`
+  CSS and the `cof-call` keyframe are left dormant (check-loops lists the keyframe).
+- **Nova's intro:** class-agnostic ("your studies", "any class"), a longer storm, "It's an adventure
+  now! Study on, and we'll bring it all home.", the sync code ("It signs you in on other devices.
+  Find it any time in Settings."), two boxes on the modes, "Rank up. Find my badges. Bring the
+  crew home." before "Your adventure starts now. Let's go!". Gates: new-account cap 22 -> 26
+  lines (14 words each). Tips: the calendar tip names no class, the daily tip no XP; the last tip
+  says "Rank up, find my badges". Starters renamed: Ninja->Kage, Ghost->Wraith, Wizard->Arcane,
+  Bear->Ursa, Alien->Xeno (display names only; the other characters keep theirs - ask Madison).
+- **Sign-up:** Welcome -> check -> class screen (no "What This Actually Is"; `showWelcomeIntro`
+  is dead code, still renderable for the layout gates). The class screen uses the Classes screen's
+  cards (Police Academy - Select/Selected, More classes - Coming soon; Fire Code is not offered).
+  The username check: the class board is asked for on Welcome, the poll is 60ms, and a green
+  "Verified" shows for 650ms before Nova carries on. In the sandbox Firebase never answers, so
+  the check waits its 5s cap there; the gate sets `boardFetchedAt` to stand in for the board.
+- **+100 XP:** the banner is the account banner's glass (16px, 3px blue bar, tag), no backdrop
+  blur, only transform/opacity move, flight .8s.
+- **Get Started page** (`showGetStarted`, first visit only, `class26e.getstarted`): a warp-in, then a
+  scrolling trailer over the app - Nova wordmark, two flanking phones on desktop, four scenes with
+  looping muted clips (`landing/test|hundo|rank|customize.mp4` + `.jpg` stills, recorded by
+  `tools/record-landing.py`, ~1.3MB together, first frames cut so there is no white flash),
+  a fixed "Let's get started" -> Welcome. Clips play only while on screen. Chromium here lacks H.264,
+  so the sandbox shows the stills; browsers play them.
+- Planet: upright tablets also take `calc(100dvh - 28rem)` so Start Studying stays above the bar on
+  the mini and 10.2" iPads; Welcome takes Home's 3.5% shrink on tall phones.
+- Gate: `tools/check-b329.py` (bubble size, new-class cue, SE sizes, hunted flare, copy, the
+  first-visit flow, the +100 XP pop-up); every section fails on build 328.

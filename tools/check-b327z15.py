@@ -804,7 +804,7 @@ def section_dd(br):
     pg.evaluate("() => { document.getElementById('splashscreen')?.remove(); }")
     if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
         pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
-    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".welcomeintro-panel .next.playbtn", ".classselect-panel .modecard", ".classselect-panel .next.playbtn"):
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn"):
         pg.click(sel); pg.wait_for_timeout(600)
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
     try:
@@ -963,10 +963,8 @@ def section_ff(br):
       const last = Math.max(...before.map(c => c.getBoundingClientRect().bottom)); return Math.round(b.top - last); }"""
     gaps["check"] = pg.evaluate(GAP, ".signupcheck-go")
     pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(900)
-    gaps["intro"] = pg.evaluate(GAP, ":scope > .next.playbtn")
     check("FF. each sign-up step's button sits just under its content (within 60px)", all(0 <= v <= 60 for v in gaps.values()), gaps)
-    pg.click(".welcomeintro-panel .next.playbtn"); pg.wait_for_timeout(900)
-    pg.click(".classselect-panel .modecard"); pg.wait_for_timeout(300)
+    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300)
     pg.click(".classselect-panel .next.playbtn")
     try:
         pg.wait_for_selector("#nova-intro .nt-talk", timeout=25000)
@@ -1113,12 +1111,11 @@ def section_hh(br):
     pg.click(".cosmic-welcome-btn.welcome-signin"); pg.wait_for_timeout(800); spots["code"] = pg.evaluate(POS)
     pg.click(".synccode-entry-panel .back-link"); pg.wait_for_timeout(600)
     pg.click(".cosmic-welcome-btn.welcome-new"); pg.wait_for_timeout(800); spots["check"] = pg.evaluate(POS)
-    pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(800); spots["intro"] = pg.evaluate(POS)
-    pg.click(".welcomeintro-panel .next.playbtn"); pg.wait_for_timeout(800); spots["class"] = pg.evaluate(POS)
+    pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(800); spots["class"] = pg.evaluate(POS)
     same = len({tuple(v[:3]) for v in spots.values()}) == 1
     check("HH. the sign-up steps: Back and the title in the same places on every step, in the top fifth, nothing scrolls",
           same and all(v[1] < 820 * .2 and v[3] for v in spots.values()), spots)
-    pg.click(".classselect-panel .modecard"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn")
+    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn")
     try:
         pg.wait_for_selector("#nova-intro", timeout=25000)
     except Exception:
