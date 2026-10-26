@@ -8954,7 +8954,8 @@ def check_b304_noxpfly(br):
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
     play(True)
     pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('.rs-continue').click(); await w(900);
+      await w(1000);   /* 328: the results ignore a tap for the first 0.7s after they settle (the review-tap bug) */
+      document.querySelector('.rs-continue').click(); await w(1300);
       [...document.querySelectorAll('button')].find(b => /Retake missed/.test(b.textContent)).click(); }""")
     play(False)
     r = pg.evaluate("""async ()=>{ const w = ms => new Promise(r => setTimeout(r, ms));
