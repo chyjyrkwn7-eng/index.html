@@ -28829,3 +28829,4 @@ not number. Questions are word for word the guides, typos included.
   above the name. Count never wraps; under 360px the count is .66rem and the badge
   2.1rem. No count/badge or name/edge overlap on SE, SE 2/3, iPhone 16 or iPad.
 - **Profile XP line:** no "to Level N" (pfXpToText returns "").
+- **Big phones' Start Studying** (26.5rem-40rem): 17.6px, 208x51 (was 19.2px, 216x61); a 6.1" iPhone's stays 200x46.

@@ -34201,6 +34201,12 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   /* the name's first line no longer shares its row with anything */
   html[data-layout] .picks > label.pick > .pname{ margin-top:0 !important; }
+  /* (build 328) "Pro max could be slightly better, the start studying button is just slightly
+     too big": the big phones (Plus, Pro Max) had 216x61 in 19.2px words against a 6.1"
+     iPhone's 200x46. A step down: 17.6px words, 208x~53 - still the big phone's button. */
+  @media (min-width:26.5rem) and (max-width:39.99rem){
+    html[data-layout] body .panel.home.screen-home-actual > .playbtn{ font-size:1.1rem !important; padding:.95rem 1.4rem !important; min-width:208px !important; }
+  }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
