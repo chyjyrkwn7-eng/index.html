@@ -4321,7 +4321,8 @@ def check_audit_a(br):
     check("on a 320x568 phone the rank bubbles neither overlap nor spill below the planet",
           s["n"] == 7 and s["overlaps"] == 0 and (s["spill"] <= 0 or (s.get("clear") is not None and s["clear"] >= 8)), s)
     p = sizes[440]
-    check("on the 17 Pro Max they are still exactly 2.9rem", abs(p["size"] - p["ref"]) < 0.6, p)
+    # 329 (22b292a): "shrink JUST A TINY SMIDGE" - tall phones' planet is 3.5% smaller and its bubbles scale with it
+    check("on the 17 Pro Max they are 2.9rem, less the tall phones' 3.5% smidge at most", p["ref"] * 0.965 - 0.6 < p["size"] <= p["ref"] + 0.6, p)
 
     # R7: the secret-flare dots are ~44px to tap without looking any
     # different: a point 15px off a dot's centre is still the dot.
@@ -5187,14 +5188,14 @@ def check_b258(br):
       try{
       let p = 0; while(levelProgress(p).level < 30) p += 500; store.lifetime.points = p + 900;
       const us = topicsIn(QUESTIONS); us.forEach(u => store.unitPerfects[u] = 0);
-      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = 11;
+      store.unitPerfects[us[0]] = badgeThresholdFor(us[0]); store.unitPerfects[us[3]] = badgeThresholdFor(us[3]) - 1;   /* 328: one short of its badge (11 is a whole one at 10) */
       store.rankMapSeen = 99; store.rankMapFx244 = true;
       showProfile('profile'); await wait(1400);
       const thr = badgeThresholdFor(us[3]);
       /* build 266: the slower requirement, over the step from the rank held. */
       { const H = TIER_UNLOCKS[rankOf(store)] || {}, nk = TIER_ORDER_FULL[TIER_ORDER_FULL.indexOf(rankOf(store)) + 1], N = TIER_UNLOCKS[nk] || {};
         const b0 = Math.min(H.badges || 0, N.badges || 0);
-        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + 11 / thr - b0) / ((N.badges || 0) - b0);
+        const bdg = 1 >= (N.badges || 0) ? 1 : (1 + (thr - 1) / thr - b0) / ((N.badges || 0) - b0);
         const lvl = levelOf(store) >= (N.level || 0) ? 1 : 0;
         out.lvlMet = lvl === 1; out.expect = Math.min(lvl === 1 ? 1 : 0.999, bdg); }
       out.rank = rankOf(store); out.level = levelOf(store);
@@ -5306,7 +5307,7 @@ def check_b258(br):
     # no unit, no hundos.
     check("the badge case says its count on its shut front - no badges, no ring, no unit, no hundos",
           r.get("badgeSvgs", 0) == 0 and r.get("badgeMedal") == 0 and "hundo" not in r.get("badgeText", "")
-          and "of 16 badges" in r.get("badgeText", "") and not r.get("plateBar"), r)
+          and "of 24 badges" in r.get("badgeText", "")   # 328: Level 1 complete and not r.get("plateBar"), r)
     # REVERSED IN 259: "No no no, the profile change is bad there. I don't
     # like the bronze all the way through." The level is blue again and
     # the default cover is the theme, with no rank on it.
@@ -6150,10 +6151,11 @@ def check_b279_merge(br):
       try{
       const U = 'Identity Crimes';
       const key0 = Object.keys(store.stats || {})[0];
-      /* the account being joined: its own name and id, 10 of 15 hundos */
+      /* the account being joined: its own name and id, 5 short of the badge (328: 10 was a whole one) */
+      const thr = badgeThresholdFor(U); out.thr = thr;
       const main = Object.assign(JSON.parse(JSON.stringify(store)), {
         firstName: 'Main', publicId: 'pubmain00001', lastModified: 5, mergeHold: null,
-        unitPerfects: { [U]: 10 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
+        unitPerfects: { [U]: thr - 5 }, testHistory: [{ label: 'old', playedAt: 1000, pct: 50, units: [U], mode: 'drill' }],
         studyLog: { '2026-09-30': 60000 }, vrWins: 2 });
       main.lifetime = Object.assign({}, main.lifetime, { points: xpForLevel(20) + 100, correct: 900, answered: 1000 });
       main.stats = { [key0]: { n: 4, m: 1, r: [10] } };
@@ -6210,7 +6212,7 @@ def check_b279_merge(br):
           r.get("code") == "JKLM-NPQR" and r.get("name") == "Main" and r.get("pub") == "pubmain00001"
           and (r.get("retired") or [None])[0] == "pubdup000002" and r.get("done") is True, r)
     check("its XP, right answers and hundos are added to the real account's",
-          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == 16, r)
+          r.get("correct") == 900 + 170 + 40 and r.get("hundos") == (r.get("thr") or 0) - 5 + 6, r)
     check("so are its question stats, history and study time",
           (r.get("stat") or {}).get("n") == 7 and (r.get("stat") or {}).get("m") == 3
           and r.get("hist") == ["new", "old"] and r.get("day") == 90000 and r.get("vrWins") == 3, r)
@@ -7620,7 +7622,8 @@ def check_b298(br):
           guide(r["both"]["orders"]) and guide(r["exam"]), r["both"])
     check("one with \"All of the above\" shows the study guide's exact order on shuffle", guide(r["above"]), r["above"])
     check("a plain question, and one whose answer only starts with \"All\", still shuffle", r["plain"] > 1 and r["prose"] > 1, (r["plain"], r["prose"]))
-    check("about a hundred questions in the bank are held in order", 90 <= r["count"] <= 130, r["count"])
+    # 328: Level 1 added 207 questions, the alphabet and time unit's letter choices among them
+    check("about a hundred and eighty questions in the bank are held in order", 150 <= r["count"] <= 210, r["count"])
     # REVISED 6 Oct: exact guide order outranks "always at the bottom" -
     # the one guide question with "All the listed" third keeps it third
     check("on shuffle, an \"of the above\" / \"All the listed\" / \"All are true\" choice stays exactly where the study guide puts it",
@@ -7686,8 +7689,13 @@ def check_b298(br):
                keysUnique: new Set(all.map(i => KEYS[i])).size === all.length,
                /* build 325: the 256-578 version-only entries (358-364, some with no repeatOf) follow the
                   repeats - every version-only question is one block at the end, so no other question moves */
-               repeatLast: (() => { const vo = QUESTIONS.filter(q => q.versionOnly).length;
-                 return vo >= reps.length && QUESTIONS.slice(-vo).every(q => q.versionOnly) && reps.every(q => QUESTIONS.indexOf(q) >= QUESTIONS.length - vo); })(),
+               /* 328: Level 1's new units were added AFTER this block (every live question kept its
+                  place - compared index for index against main), so the block is one run that only
+                  later additions follow, not the very end of the bank */
+               repeatLast: (() => { const idx = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].versionOnly);
+                 const a = idx[0], z = idx[idx.length - 1];
+                 return idx.length >= reps.length && z - a + 1 === idx.length && reps.every(q => QUESTIONS.indexOf(q) >= a)
+                   && QUESTIONS.slice(z + 1).every(q => (q.topic || '').trim() !== 'Penal Code'); })(),
                dailyRepeat: days.some(i => QUESTIONS[i] && (QUESTIONS[i].repeatOf != null || QUESTIONS[i].versionOnly)) }; }""")
     guide = [n for n in range(1, 347) if n not in (122, 137, 148, 237, 256, 258)]
     # Build 300: "remove it from the entire unit one, the entire unit one
@@ -8328,7 +8336,9 @@ def check_b302(br):
         # become a little much ... it's mostly the iPhone" - on a phone the
         # line under the bar is "x / y XP to Level N" and the total is on
         # Stats; a tablet keeps this level's XP and the total, as above.
-        want_nums = (r"^[0-9,]+ / [0-9,]+ XP to Level \d+$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
+        # REVISED IN 328: "Why does the xp underneath it say 'to level 24' remove that" - a phone's
+        # line is "x / y XP", nothing after it.
+        want_nums = (r"^[0-9,]+ / [0-9,]+ XP$" if w < 640 else r"^[0-9,]+ / [0-9,]+ XP ?[0-9,]+ total XP$")
         check(f"{dev}: under the bar, this level's XP and " + ("what it leads to (phone)" if w < 640 else "the total XP") + "; the total is not on the rank line",
               r.get("totalOnLine") is False and re.match(r"^[0-9,]+ total XP$", r.get("total") or "")
               and re.match(want_nums, r.get("barNums") or ""), [r.get("totalOnLine"), r.get("total"), r.get("barNums")])

@@ -728,7 +728,8 @@ def sections_246(ctx, open_tab, args):
         mm = lv.evaluate("""()=>{ const b=[...document.querySelectorAll('#vroom-race-cut .vrc-exits button')].find(x=>/main menu/i.test(x.textContent));
             const r=b.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
             const top=(cy>0&&cy<innerHeight)?document.elementFromPoint(cx,cy):null;
-            return {y:Math.round(r.top), bottom:Math.round(r.bottom), vh:innerHeight, hit: !!top && (top===b||b.contains(top))}; }""")
+            return {y:Math.round(r.top), bottom:Math.round(r.bottom), vh:innerHeight, hit: !!top && (top===b||b.contains(top)),
+                    over: top && !(top===b||b.contains(top)) ? ((top.id ? '#' + top.id + ' ' : '') + String(top.className || top.tagName).slice(0, 60)) : null}; }""")
         check("in a room of eight on a 320px phone, the scene's Main menu is on screen and tappable",
               mm["hit"] and mm["bottom"] <= mm["vh"], mm)
         lv.click("#vroom-race-cut .vrc-exits button.ghost")

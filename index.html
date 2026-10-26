@@ -34716,7 +34716,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout] body .chatdock:not(.in-test) .chatdock-btn{ width:38px; height:38px; }
     html[data-layout] body .chatdock:not(.in-test) .chatdock-btn::after{ content:""; position:absolute; inset:-3px; }
     html[data-layout] body .chatdock:not(.in-test) .chatdock-btn svg{ width:1rem; height:1rem; }
-    html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 38px + .6rem); }
+    /* no `top` for the panel here: on a phone it is the sheet from the bottom, and a top set from the
+       button's size hung the closed sheet from the top, 100px of it over the screen's foot catching
+       taps (a Virtual Room's Main menu on a 320px phone, check-vroom) */
     html[data-layout] body .panel.home.screen-home-actual > .playbtn{ font-size:.88rem !important; padding:calc((38px - 1cap)/2) 1.3em !important; min-width:0 !important; min-height:38px !important; }
     html[data-layout] body .panel.home.screen-home-actual > .playbtn{ position:relative; }
     html[data-layout] body .panel.home.screen-home-actual > .playbtn::after{ content:""; position:absolute; inset:-3px 0; }
