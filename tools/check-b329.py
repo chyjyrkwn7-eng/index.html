@@ -73,7 +73,8 @@ with sync_playwright() as pw:
           const tips = mainMenuTourSteps(false);
           const cal = tips.find(x => /Calendar/.test(x.text)).text, daily = tips.find(x => /daily question/i.test(x.text)).text;
           const names = ['ninja','ghost','wizard','grizzly','alien'].map(k => AVATAR_DISPLAY_NAME[k]);
-          return {lines, cal, daily, names, last: tips[tips.length-1].text} }""")
+          const earned = AVATAR_CHARACTERS.filter(c => !c.retired).map(c => AVATAR_DISPLAY_NAME[c.id] || c.id);
+          return {lines, cal, daily, names, earned, last: tips[tips.length-1].text} }""")
         chk("intro: nothing says 'my class' or 'class material' (he has several classes)", not __import__("re").search(r"my class|class material", r["lines"], __import__("re").I), r["lines"][:200])
         chk("intro: the storm, and the word adventure", "storm" in r["lines"] and "adventure" in r["lines"].lower(), r["lines"][:200])
         chk("intro: the sync code is said to be in Settings and to sign you in on other devices", "Settings" in r["lines"] and "other devices" in r["lines"], r["lines"][-600:])
@@ -81,6 +82,9 @@ with sync_playwright() as pw:
         chk("tips: the calendar tip names no class and the daily tip no XP", "26E" not in r["cal"] and "XP" not in r["daily"], [r["cal"], r["daily"]])
         chk("tips: the last tip points at ranking up and badges", "Rank up" in r["last"] and "badges" in r["last"], r["last"])
         chk("starters have names of their own, not what they literally are", not set(n.lower() for n in r["names"]) & {"ninja", "ghost", "wizard", "bear", "alien"} and len(set(r["names"])) == 5, r["names"])
+        # "Rename them all": no character in the app is named for what it literally is
+        lit = {"detective", "the masked one", "masked one", "zeus", "sheriff", "clown", "koi", "marksman", "hacker", "timekeeper", "hive"}
+        chk("every character has a name of its own, not what it literally is", not set(n.lower() for n in r["earned"]) & lit and len(set(r["earned"])) == len(r["earned"]), r["earned"])
         ctx.close()
     if "flow" in want:
         w, h, ins, inst = DEV["15"]; g["new_page"].w, g["new_page"].h = w, h
@@ -94,6 +98,16 @@ with sync_playwright() as pw:
         page.wait_for_timeout(2200)
         r = page.evaluate("()=>{ const b=document.querySelector('.gs-go').getBoundingClientRect(); return {w:Math.round(b.width), h:Math.round(b.height), bottom:Math.round(innerHeight-b.bottom)} }")
         chk("its button is on screen and at least 44px tall", r["h"] >= 44 and r["bottom"] >= 0, r)
+        # A device that still has an account on it (a half-finished sign-up,
+        # or a code whose account comes down at launch) goes to Welcome, which
+        # offers it back - Get Started over it hid the recovery (check-sync).
+        for label, js in (("its code", "localStorage.setItem('class26e.synccode','WXYZ-7777');"),
+                          ("a name in its store", "localStorage.setItem('class26e.drill.v1', JSON.stringify({firstName:'Madison'}));")):
+            c2, p2 = g["new_page"](br, ins, inst, False)
+            c2.add_init_script("try{" + js + "}catch(e){}")
+            p2.goto(url); p2.wait_for_timeout(3500)
+            chk("a device with an account on it (" + label + ") never sees Get Started", p2.evaluate("()=>!document.querySelector('.gs-page') && !!document.querySelector('#stage .cosmic-welcome, #stage .panel')"), p2.evaluate("()=>[...document.querySelectorAll('#stage > *')].map(n=>n.className)"))
+            c2.close()
         page.click(".gs-go"); page.wait_for_timeout(1200)
         chk("Let's get started leads to Welcome, and the page is gone", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
         page.reload(); page.wait_for_timeout(3500); page.evaluate("document.getElementById('splashscreen')?.remove()"); page.wait_for_timeout(600)

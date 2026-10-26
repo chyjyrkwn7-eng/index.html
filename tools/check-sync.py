@@ -1336,7 +1336,7 @@ with sync_playwright() as pw:
     # using two accounts. People who are signing up, could we make it
     # where it asks you to sign in first and then you have to hit I'm new
     # here sign up or something?" Every check below fails on 6a387e2.
-    FLAGS = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
+    FLAGS = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.getstarted','1');localStorage.setItem('class26e.frame.ok','go-live-1');"
              "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
              "localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');")
     def booted(extra=""):

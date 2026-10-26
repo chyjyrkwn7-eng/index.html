@@ -286,7 +286,7 @@ def check_whatsnew(br):
     # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz" - the
     # row is Quiz.
     adds = [n for n, rx in (("Mock", r"\bMock\b"), ("message him", r"Message Nova|message"),
-                            ("challenge him", r"Challenge Nova|Sheriff"), ("study hours", r"study time|study hours"))
+                            ("challenge him", r"Challenge Nova|Maverick"), ("study hours", r"study time|study hours"))
             if re.search(rx, " ".join(r["rows"]), re.I)]
     check("Version 9's real additions are in it: Mock as a real test, messaging and challenging Nova, study hours",
           len(adds) == 4, adds)

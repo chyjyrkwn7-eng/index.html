@@ -34450,8 +34450,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     box-shadow:0 3px 12px rgba(0,0,0,.35), 0 0 14px var(--cc, rgba(255,255,255,.12)), inset 0 1px 1px rgba(255,255,255,.28), inset 0 -3px 6px rgba(0,0,0,.28); }
   .csi-bubble svg{ width:25px; height:25px; overflow:visible; }
   .class-stack-item.is-add .csi-bubble{ color:var(--ink); }
+  /* opaque: on a tablet the list opens over the planet, and a moon gliding behind the words
+     showed through (build 329) */
   .csi-label{ border-radius:999px; font-size:.86rem; font-weight:650; white-space:nowrap;
-    background:var(--surface-sheen), rgba(22,24,34,.86); border:1px solid var(--surface-border); box-shadow:0 4px 14px rgba(0,0,0,.35); }
+    background:var(--surface-sheen), rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 4px 14px rgba(0,0,0,.35); }
   .class-stack-item:active .csi-bubble{ transform:scale(.94); }
   /* ---- THE GET STARTED PAGE (build 329) ----
      A fixed, self-scrolling trailer over the app on a first visit. Only transform and opacity move;
@@ -52141,20 +52143,20 @@ const AVATAR_CHARACTERS = [
 ];
 /* The name under a character in a grid, where the full one would not fit
    on one line (build 243). Everywhere else says the full name. */
-const AVATAR_GRID_NAME = { masked: "Masked One" };
+const AVATAR_GRID_NAME = {};
 __bm("L46316");
 const AVATAR_DISPLAY_NAME = {
   lunar: "Lunar", solar: "Solar", tempest: "Tempest", frost: "Frost", oracle: "Oracle", inferno: "Inferno",
-  swat: "SWAT", valkyrie: "Koi", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
+  swat: "SWAT", valkyrie: "Ripple", hacker: "Cipher", timekeeper: "Chrono", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
   ninja: "Kage", ghost: "Wraith", queen: "Queen", wizard: "Arcane",
   grizzly: "Ursa", alien: "Xeno", samurai: "Samurai", dragon: "Dragon",
-  officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Orion",
-  detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
+  officer: "Officer", clown: "Jinx", robot: "Robot", astronaut: "Orion",
+  detective: "Noir", zeus: "Volt", masked: "Phantom", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Horizon", genesis: "Genesis",
-  poseidon: "Sheriff", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Marksman",
-  blitz: "Blitz", hive: "Hive", zenith: "Zenith", astral: "Astral", celestial: "Celestial"
+  poseidon: "Maverick", spartan: "Spartan", pharaoh: "Pharaoh", marksman: "Deadeye",
+  blitz: "Blitz", hive: "Nexus", zenith: "Zenith", astral: "Astral", celestial: "Celestial"
 };
 /* ZENITH'S LOOK (build 304, redrawn). "Zenith design is kinda eh ... Not a
    fan of the gold and rainbow." Three looks were drawn, each a character,
@@ -81793,7 +81795,7 @@ const RELEASE_NOTES = [
         { icon: buildTooltipBubbleIcon, color: "#B79BFF", title: "Nova's Introduction", body: "Every account meets Nova once. He explains the story, reviews your progress and shows what has changed." },
         { icon: buildTooltipBubbleIcon, color: "#4ADE80", title: "Nova In Your Chats", body: "Nova now appears in your chats. He checks in when you rank up or find something of his, sends a weekly challenge, and can be messaged directly." },
         { icon: buildTrophyIcon, color: "#F5C518", title: "The Weekly Recap", body: "Every Tuesday on Home, Nova presents the previous week's top three, with comebacks, close finishes and honourable mentions." },
-        { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Challenge Nova from his chat any time, or accept a challenge when he sends one. Finish ahead of him to unlock the Sheriff." }
+        { icon: buildDevicesIcon, color: "#E23B3B", title: "Challenge Nova", body: "Challenge Nova from his chat any time, or accept a challenge when he sends one. Finish ahead of him to unlock Maverick." }
       ]},
       { label: "Better In Version 9", items: [
         { icon: buildTrophyIcon, color: "#4ADE80", title: "Results", body: "Your grade now climbs from red to green, and a 100 glows before your hundo effect plays. XP counts up with the bar, and badges and unlocks share one Found & Unlocked box." },
@@ -81853,7 +81855,7 @@ const RELEASE_NOTES = [
     version: "7.3",
     groups: [
       { label: "Characters", items: [
-        { icon: buildPersonIcon, color: "#FF2E88", title: "Redrawn And New Characters", body: "Every character has been redrawn with its own background scene. New additions include a character for every rank from Silver up, challenge characters such as the Ronin, Orion, the Sheriff, the Marksman, the Hacker and the Koi, and the secret characters Umbra and Horizon." },
+        { icon: buildPersonIcon, color: "#FF2E88", title: "Redrawn And New Characters", body: "Every character has been redrawn with its own background scene. New additions include a character for every rank from Silver up, challenge characters such as the Ronin, Orion, Maverick, Deadeye, Cipher and Ripple, and the secret characters Umbra and Horizon." },
         { icon: buildSparkleIcon, color: "#7FC8FF", title: "Two More Secret Flares", body: "Violet and ice-blue flares join the original three, unlocking Umbra and Horizon. Each flare is worn by its character, and the orbit on Home lights up as you find them." },
         { icon: buildPaletteIcon, color: "#C583FF", title: "Banners", body: "Banners to earn for your profile and your name in a Virtual Room. Press and hold any item in Customize to see what it takes to unlock." }
       ]},
@@ -81921,7 +81923,7 @@ const RELEASE_NOTES = [
         { icon: buildLadderIcon, color: "#FFD84D", title: "Rank Emblems", body: "Each of the seven ranks now has its own emblem, shown beside your name wherever others can see you." },
         { icon: buildStarIcon, color: "#4DD0E1", title: "A Badge For Every Unit", body: "Sixteen units, each with its own badge shape. Finish a unit at 100% thirty-five times to earn its badge; until then, its empty slot shows what you are working towards." },
         { icon: buildPersonIcon, color: "#4ADE80", title: "Characters For The Top Ranks", body: "The last four ranks each award a character: a robot, a clown, an officer and an astronaut. All four are visible, locked, from the start." },
-        { icon: buildPersonIcon, color: "#D9A441", title: "Characters To Earn", body: "A detective, a masked character, a marble Zeus and Void are earned through challenges rather than ranks: ten daily questions right in a row, a hundo in ten different units in a row, passing the Practice Test, and finding the Secret Flares." },
+        { icon: buildPersonIcon, color: "#D9A441", title: "Characters To Earn", body: "Noir, Phantom, Volt and Void are earned through challenges rather than ranks: ten daily questions right in a row, a hundo in ten different units in a row, passing the Practice Test, and finding the Secret Flares." },
         { icon: buildStarIcon, color: "#F97316", title: "The Secret Flares", body: "Three flares, red, orange and yellow, are hidden one at a time inside tests, with no hints. The lights orbiting Home show how many you have found." },
         { icon: buildSwatchClusterIcon, color: "#C583FF", title: "Theme Colours, App-Wide", body: "A rank's theme colour now recolours the whole app: the planet, the background glow, the loading screen and every control." }
       ]},
@@ -86552,8 +86554,17 @@ function showGetStarted(){
   stop.observe(stage, { childList: true });
   setTimeout(() => hc.classList.add("is-in"), 1500);
 }
+/* Get Started is for a device with no account on it. A device that still
+   has one (its code, a name in the store, or the mirror's copy) goes to
+   Welcome, which offers that account first - the recovery paths live
+   there - and the page is marked seen so it never shows on it later. */
 function showWelcomeFirst(){
-  if(!gsSeen()) showGetStarted(); else showWelcome();
+  if(gsSeen() || accountTraceNow() || String(store.firstName || "").trim()){ gsMarkSeen(); showWelcome(); return; }
+  showGetStarted();
+  findAccountTrace().then(t => {
+    if(!t || !stage.querySelector('[data-screen="getstarted"]')) return;
+    gsMarkSeen(); showWelcome();
+  });
 }
 function showWelcomeIntro(){
   setOnboardingHeader();
@@ -93388,7 +93399,7 @@ function novaChallengeLine(wk){
   const n = novaName();
   const pick = NOVA_WEEK_LINES[novaWeekNumber(wk || weekKeyNow()) % NOVA_WEEK_LINES.length];
   let beaten = false; try{ beaten = !!store.novaBeaten; }catch(e){}
-  return pick(n) + (beaten ? " You’ve beaten me before. Let’s see you do it again." : " Beat me and the Sheriff is yours.")
+  return pick(n) + (beaten ? " You’ve beaten me before. Let’s see you do it again." : " Beat me and Maverick is yours.")
     + " Tap Accept and I’ll meet you in the lobby. This one stands until Sunday.";
 }
 /* ---- WHEN YOU FIND SOMETHING OF HIS ----
@@ -94104,7 +94115,7 @@ function novaReplyFor(raw){
     return "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
   if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
-      ? "I’m always up for a match. Tap Challenge at the top of this chat: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and you’ll unlock the Sheriff."
+      ? "I’m always up for a match. Tap Challenge at the top of this chat: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and you’ll unlock Maverick."
       : "A Virtual Room is a race against your classmates. Open one from Start Studying and invite your friends.";
   /* what helping him gets you (build 326) */
   if(has(/ (rewards?|what do i get|what do we get|in return|why help|why should i|what's in it|whats in it) /))
@@ -97596,8 +97607,8 @@ const WHATS_NEW_320 = [
     say: "My chat isn’t one-way, either. Ask me about ranks, badges, the modes or the next test, and I’ll answer when I’m around." },
   { key: "novavr", color: "#E23B3B", title: "Challenge Nova",
     glyph: "M13.4 2 4.6 13.6h6.1L9.6 22l9.8-12.4h-6.2L13.4 2Z",
-    body: "Challenge Nova from his chat. Beat him and the Sheriff is yours.",
-    say: "Challenge me from my chat any time: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and the Sheriff is yours." },
+    body: "Challenge Nova from his chat. Beat him and Maverick is yours.",
+    say: "Challenge me from my chat any time: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and Maverick is yours." },
   /* BUILD 326: "Remove the weekly recap and badge case from what's new."
      Both are still in RELEASE_NOTES (Version 9's history). */
 ];
@@ -121497,7 +121508,7 @@ function novaVrOutcome(data, myKey){
 function novaVrMatchLine(out, earned, game){
   const n = novaName();
   const mode = game === "tug" ? "Tug of War" : game === "battle" ? "Battle" : "race";
-  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. The Sheriff, one of my crew, is with you now. Wear the badge well.";
+  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. Maverick, one of my crew, is with you now. Wear the badge well.";
   if(out === "won") return "You got me again, " + n + ". I’m going to need more practice. Invite me back any time.";
   if(out === "draw") return "A dead heat, " + n + ". Neither of us gave an inch. Next time one of us won’t be so lucky.";
   return "Good " + mode + ", " + n + ". I had the edge today, but you made me work for it. Invite me any time you want another go.";
