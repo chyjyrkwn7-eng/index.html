@@ -34195,32 +34195,41 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .class-catalog, .class-enroll{ text-align:left; }
   .class-catalog-title, .ce-title{ margin:.6rem 0 .3rem; font-family:var(--serif, Georgia, serif); font-size:clamp(1.9rem, 8vw, 2.4rem); font-weight:700; color:var(--ink); }
   .class-catalog-sub{ margin:0 0 1.2rem; font-size:.95rem; color:var(--soft); }
-  .class-cards{ display:flex; flex-direction:column; gap:.9rem; }
-  .class-card{ position:relative; overflow:hidden; display:grid; grid-template-columns:auto 1fr; grid-template-areas:"emb text" "emb status"; gap:.2rem 1rem;
-    width:100%; padding:1.1rem 1.1rem 1.05rem; margin:0; border-radius:1.35rem; text-align:left; font:inherit; color:var(--ink); cursor:pointer;
+  .class-cards{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-auto-rows:1fr; gap:.8rem; }
+  @media (min-width:40rem){ .class-cards{ grid-template-columns:repeat(3, minmax(0, 1fr)); gap:1rem; max-width:60rem; } }
+  .class-card{ position:relative; overflow:hidden; display:flex; flex-direction:column; align-items:flex-start; gap:.55rem;
+    width:100%; min-height:13.5rem; padding:1rem .95rem .95rem; margin:0; border-radius:1.35rem; text-align:left; font:inherit; color:var(--ink); cursor:pointer;
     background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
     -webkit-tap-highlight-color:transparent; opacity:0; transform:translateY(12px);
     animation:cc-in .5s cubic-bezier(.2, 1, .3, 1) forwards; animation-delay:calc(var(--k) * 90ms + 60ms); transition:transform .15s ease; }
   @keyframes cc-in{ to{ opacity:1; transform:none; } }
   .class-card:active{ transform:scale(.985); }
-  .cc-glow{ position:absolute; inset:-40% auto auto -20%; width:70%; height:140%; border-radius:50%; pointer-events:none; opacity:.5; }
+  .class-card.is-here{ border-color:rgba(255,255,255,.42); box-shadow:var(--surface-shadow), 0 0 0 1px rgba(255,255,255,.1); }
+  .class-card.is-soon{ cursor:default; border-style:dashed; border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.025); box-shadow:none; }
+  .class-card.is-soon:active{ transform:none; }
+  .cc-glow{ position:absolute; inset:-30% auto auto -25%; width:90%; height:80%; border-radius:50%; pointer-events:none; opacity:.5; }
   .class-card.is-academy .cc-glow{ background:radial-gradient(circle at 35% 50%, rgba(150,170,255,.4), rgba(255,156,143,.2) 55%, transparent 72%); }
   .class-card.is-ifc .cc-glow{ background:radial-gradient(circle, rgba(255,140,70,.45), rgba(255,100,40,.14) 55%, transparent 72%); }
-  .cc-emblem{ grid-area:emb; position:relative; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
-  .cc-emblem svg{ width:34px; height:34px; overflow:visible; }
-  .cc-text{ grid-area:text; position:relative; display:flex; flex-direction:column; min-width:0; }
-  .cc-kicker{ font-size:.72rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
-  .cc-title{ font-size:1.3rem; font-weight:750; margin:.1rem 0 .35rem; }
-  .cc-desc{ font-size:.9rem; line-height:1.45; color:rgba(236,240,245,.8); }
-  .cc-needs{ display:block; margin:.6rem 0 0; padding:.55rem .7rem; border-radius:.7rem; font-size:.84rem; line-height:1.4; color:#FFD4A8; background:rgba(255,122,26,.1); border:1px solid rgba(255,122,26,.25); }
-  .cc-status{ grid-area:status; justify-self:start; position:relative; margin-top:.75rem; display:inline-flex; align-items:center; gap:.4rem; height:32px; padding:0 .85rem;
-    border-radius:999px; font-size:.82rem; font-weight:750; }
-  .cc-status.is-enrolled, .cc-status.is-here{ background:rgba(46,204,113,.14); color:#6BE39A; border:1px solid rgba(46,204,113,.3); }
-  .cc-status.is-enrolled::before, .cc-status.is-here::before{ content:""; width:12px; height:12px; background:currentColor;
+  .cc-emblem{ position:relative; flex:none; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.2), rgba(255,255,255,.04) 55%), rgba(24,26,36,.7); border:1px solid rgba(255,255,255,.2);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.26), inset 0 -3px 6px rgba(0,0,0,.26); }
+  .class-card.is-academy .cc-emblem{ box-shadow:0 0 16px rgba(150,170,255,.3), inset 0 1px 1px rgba(255,255,255,.26), inset 0 -3px 6px rgba(0,0,0,.26); }
+  .class-card.is-ifc .cc-emblem{ box-shadow:0 0 16px rgba(255,140,70,.34), inset 0 1px 1px rgba(255,255,255,.26), inset 0 -3px 6px rgba(0,0,0,.26); }
+  .class-card.is-soon .cc-emblem{ color:rgba(236,240,245,.55); box-shadow:none; background:rgba(255,255,255,.04); }
+  .cc-emblem svg{ width:30px; height:30px; overflow:visible; }
+  .cc-text{ position:relative; display:flex; flex-direction:column; min-width:0; flex:1; }
+  .cc-kicker{ font-size:.66rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); }
+  .cc-title{ font-size:1.15rem; font-weight:750; line-height:1.2; margin:.15rem 0 .35rem; }
+  .cc-desc{ font-size:.82rem; line-height:1.4; color:rgba(236,240,245,.78); }
+  .cc-foot{ position:relative; width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:.4rem; margin-top:auto; }
+  .cc-needs{ font-size:.74rem; line-height:1.3; color:#FFD4A8; }
+  .cc-status{ display:inline-flex; align-items:center; justify-content:center; gap:.35rem; height:30px; padding:0 .8rem; border-radius:999px; font-size:.8rem; font-weight:750; line-height:1; box-sizing:border-box; }
+  .cc-status.is-enrolled{ background:rgba(46,204,113,.14); color:#6BE39A; border:1px solid rgba(46,204,113,.3); }
+  .cc-status.is-enrolled::before{ content:""; width:12px; height:12px; background:currentColor;
     -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
             mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
-  .cc-status.is-enroll{ background:linear-gradient(180deg, #FF8A3D, #F0601A); color:#1A0D05; box-shadow:0 4px 14px rgba(255,110,30,.35); }
+  .cc-status.is-enroll{ background:linear-gradient(180deg, #FF9A4A, #F0661F); color:#1A0D05; box-shadow:0 4px 14px rgba(255,110,30,.3); }
+  .cc-status.is-soon{ background:rgba(255,255,255,.07); color:var(--soft); border:1px solid rgba(255,255,255,.12); }
   .class-enroll{ display:flex; flex-direction:column; }
   .ce-emblem{ width:84px; height:84px; margin:1rem 0 .4rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 60%, rgba(255,122,26,.35), rgba(255,122,26,.05) 70%); border:1px solid rgba(255,140,60,.35); box-shadow:0 0 40px rgba(255,110,30,.25); }
@@ -34330,31 +34339,54 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      flashing). It drops a glass capsule that stays joined to it: the other classes, then "+".
      No backdrop blur anywhere on it (it moves), no screen dimming. */
   .class-bubble-wrap{ position:fixed; z-index:301; left:max(.55rem, calc(env(safe-area-inset-left, 0px) + .4rem)); top:40%; --cb:46px; --cg:8px; }
+  /* the app's glass, as the tab bar and the chat button wear it: a see-through near-black body under
+     a faint lift, one soft rim - and none of the hard edge lines (the gradient does not repeat
+     under the border; the shadows are blurred, so no line shows at the top or the bottom of the
+     circle). The capsule behind the list has no outline of its own, so nothing sits inside
+     another outline. */
   .class-dock{
-    position:absolute; left:-4px; top:-4px; width:calc(var(--cb) + 8px); height:calc(var(--cb) + 8px); border-radius:calc(var(--cb) / 2 + 4px);
-    background:var(--surface-sheen), rgba(22,24,34,.82); border:1px solid var(--surface-border);
-    box-shadow:0 8px 26px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
-    opacity:0; transform:scale(.9); transform-origin:50% 0; pointer-events:none;
+    position:absolute; left:-5px; top:-5px; width:calc(var(--cb) + 10px); height:calc(var(--cb) + 10px); border-radius:calc(var(--cb) / 2 + 5px);
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03) 55%), rgba(12,13,19,.74); background-repeat:no-repeat; background-origin:border-box;
+    box-shadow:0 10px 28px rgba(0,0,0,.42), inset 0 3px 6px -3px rgba(255,255,255,.18), inset 0 -3px 6px -3px rgba(0,0,0,.3);
+    opacity:0; transform:scale(.92); transform-origin:50% 0; pointer-events:none;
     transition:height .4s cubic-bezier(.2, 1, .3, 1), opacity .2s ease, transform .3s ease;
   }
-  .class-bubble-wrap.is-open .class-dock{ opacity:1; transform:none; height:calc(var(--cb) + 8px + var(--n) * (var(--cb) + var(--cg))); }
-  .class-bubble{
-    position:relative; z-index:2; width:var(--cb); height:var(--cb); padding:0; margin:0; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
-    background:radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.2), rgba(255,255,255,.04) 55%), rgba(24,26,36,.78);
-    border:1px solid rgba(255,255,255,.2);
-    box-shadow:0 4px 16px rgba(0,0,0,.4), 0 0 20px var(--cc, rgba(255,160,90,.34)), inset 0 1px 1px rgba(255,255,255,.28), inset 0 -3px 6px rgba(0,0,0,.28);
-    transition:transform .18s ease;
+  .class-bubble-wrap.is-open .class-dock{ opacity:1; transform:none; height:calc(var(--cb) + 10px + var(--n) * (var(--cb) + var(--cg))); }
+  .class-bubble, .csi-bubble{
+    border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 55%), rgba(14,16,24,.7); background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.15);
+    box-shadow:0 4px 16px rgba(0,0,0,.35), 0 0 18px var(--cc, rgba(255,255,255,.1)), inset 0 3px 5px -2px rgba(255,255,255,.2), inset 0 -3px 5px -2px rgba(0,0,0,.28);
   }
+  .class-bubble{ position:relative; z-index:2; width:var(--cb); height:var(--cb); padding:0; margin:0; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .18s ease; }
   .class-bubble:active{ transform:scale(.94); }
-  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cc:rgba(150,170,255,.38); }
-  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cc:rgba(255,140,70,.4); }
-  .class-bubble > svg{ width:27px; height:27px; display:block; overflow:visible; }
-  @media (min-width:40rem){ .class-bubble-wrap{ --cb:54px; } .class-bubble > svg{ width:30px; height:30px; } }
-  /* the colours sit in the app's own palette: coral and periwinkle, amber and gold */
-  .cb-red{ fill:#FF9C8F; } .cb-blue{ fill:#93B5FF; }
-  .cb-ray-r{ stroke:#FFB3A8; } .cb-ray-b{ stroke:#B2CBFF; }
-  .cb-flame{ fill:#FF9648; } .cb-flame-core{ fill:#FFD98A; }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble, .class-card.is-academy{ --cc:rgba(150,170,255,.34); }
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble, .class-card.is-ifc{ --cc:rgba(255,140,70,.36); }
+  .class-bubble > svg{ width:28px; height:28px; display:block; overflow:visible; }
+  /* bigger screens: the way the daily question grows, and up in the top-left corner (the chat button's
+     opposite) where there is room */
+  @media (min-width:40rem){
+    .class-bubble-wrap{ --cb:56px; top:calc(env(safe-area-inset-top, 0px) + .75rem) !important; left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
+    .class-bubble > svg{ width:32px; height:32px; }
+  }
+  html.class-switching body{ opacity:0; transition:opacity .35s ease; }
+  .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
+  .class-stack{ position:absolute; left:0; top:calc(var(--cb) + var(--cg)); z-index:2; display:flex; flex-direction:column; gap:var(--cg); }
+  .class-stack-item{ display:flex; align-items:center; gap:.65rem; height:var(--cb); padding:0; margin:0; border:0; background:none; color:var(--ink); font:inherit; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; opacity:0; transform:translateY(-10px); will-change:transform, opacity;
+    transition:opacity .18s ease calc(var(--k) * 55ms + 70ms), transform .34s cubic-bezier(.2, 1.2, .4, 1) calc(var(--k) * 55ms + 70ms); }
+  .class-bubble-wrap.is-open .class-stack-item{ opacity:1; transform:none; }
+  .csi-bubble{ flex:none; width:var(--cb); height:var(--cb); box-sizing:border-box; }
+  .csi-bubble svg{ width:26px; height:26px; overflow:visible; }
+  .class-stack-item.is-add .csi-bubble{ color:var(--ink); }
+  .class-stack-item.is-add .csi-bubble svg{ width:22px; height:22px; }
+  /* the words beside the bubble: the same glass, on the bubble's own centre line */
+  .csi-label{ display:inline-flex; align-items:center; height:36px; padding:0 .95rem; border-radius:999px; box-sizing:border-box; white-space:nowrap;
+    font-size:.88rem; font-weight:650; line-height:1; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 55%), rgba(14,16,24,.74); background-repeat:no-repeat; background-origin:border-box;
+    border:1px solid rgba(255,255,255,.15); box-shadow:0 4px 14px rgba(0,0,0,.32), inset 0 3px 5px -2px rgba(255,255,255,.18), inset 0 -3px 5px -2px rgba(0,0,0,.26); }
+  @supports (text-box:trim-both cap alphabetic){ .csi-label{ text-box:trim-both cap alphabetic; } }
+  .class-stack-item:active .csi-bubble{ transform:scale(.94); }
   html.class-switching body{ opacity:0; transition:opacity .35s ease; }
   .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
   .class-stack{ position:absolute; left:0; top:calc(var(--cb) + var(--cg)); z-index:2; display:flex; flex-direction:column; gap:var(--cg); }
@@ -51203,10 +51235,12 @@ function startStudying(){
    only the class owner's account ever gets it. It opens a short list of the classes; picking
    another saves, records the choice on this device and reloads into it. */
 const NOVA_CLASSES = [
+  /* the two marks share Nova's own vocabulary - a soft gradient and the four-point spark that
+     sits in his name */
   { key: "academy", name: "Police Academy", sub: "Class 26E",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="cb-red" d="M2.4 14.2a4.8 5.6 0 0 1 9.1 0z"/><path class="cb-blue" d="M12.5 14.2a4.8 5.6 0 0 1 9.1 0z"/><rect x="1.6" y="14.2" width="20.8" height="4.4" rx="1.6" fill="currentColor"/><path class="cb-ray-r" d="M1.2 6.9l1.8 1.6M5.9 3l.7 2.2" fill="none" stroke-width="1.8" stroke-linecap="round"/><path class="cb-ray-b" d="M22.8 6.9l-1.8 1.6M18.1 3l-.7 2.2" fill="none" stroke-width="1.8" stroke-linecap="round"/></svg>' },
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgp" x1="3" y1="2" x2="21" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB0A3"/><stop offset=".55" stop-color="#C7B3FF"/><stop offset="1" stop-color="#8FB4FF"/></linearGradient></defs><path d="M12 2.4 4.2 5.2v6.1c0 4.7 3.1 8.2 7.8 10.3 4.7-2.1 7.8-5.6 7.8-10.3V5.2z" fill="url(#cgp)" fill-opacity=".22" stroke="url(#cgp)" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 7.2l1.3 3.5 3.5 1.3-3.5 1.3L12 16.8l-1.3-3.5L7.2 12l3.5-1.3z" fill="url(#cgp)"/></svg>' },
   { key: "ifc", name: "Fire Code", sub: "IFC",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="cb-flame" d="M12.3 1.6c.7 3.4-1.8 5.2-3.4 7.4-1.4 1.9-2.8 3.8-2.8 6.4a6.1 6.1 0 0 0 6.1 6.1 6.1 6.1 0 0 0 6.1-6.1c0-2.8-1.2-4.6-2.7-6.2-.3 1.5-1 2.6-2.2 3.1.5-4.1-.7-7.8-1.1-10.7z"/><path class="cb-flame-core" d="M12.3 12.2c-1 1.4-2.4 2.5-2.4 4.3a2.4 2.4 0 0 0 4.8.1c0-1.8-1.3-2.9-2.4-4.4z"/></svg>' }
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFD98A"/><stop offset=".5" stop-color="#FF9A4A"/><stop offset="1" stop-color="#F0594A"/></linearGradient></defs><path d="M12.2 2.4c.7 3.3-1.7 5-3.3 7.1-1.4 1.8-2.7 3.7-2.7 6.2a6 6 0 0 0 6 6 6 6 0 0 0 6-6c0-2.7-1.2-4.5-2.7-6-.3 1.4-1 2.5-2.1 3 .5-3.9-.6-7.4-1.2-10.3z" fill="url(#cgf)" fill-opacity=".28" stroke="url(#cgf)" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 11.3l1.1 2.9 2.9 1.1-2.9 1.1L12 19.3l-1.1-2.9L8 15.3l2.9-1.1z" fill="url(#cgf)"/></svg>' }
 ];
 function classSwitchAllowed(){
   return !!window.NOVA_CLASS_OWNER && (window.NOVA_CLASS !== "academy" || (store && store.publicId === window.NOVA_CLASS_OWNER));
@@ -51272,6 +51306,7 @@ function mountClassBubble(){
   /* under the planet, near the left edge: placed from the planet's own box, again whenever the screen changes size */
   const place = () => {
     if(!wrap.isConnected){ window.removeEventListener("resize", place); return; }
+    if(window.matchMedia && matchMedia("(min-width:40rem)").matches){ wrap.style.top = ""; return; }   /* top-left corner on a tablet or laptop */
     const hero = document.querySelector("#stage .panel.home > .cosmic-hero-wrap");
     if(!hero) return;
     wrap.style.top = Math.round(hero.getBoundingClientRect().bottom + 2) + "px";
@@ -51318,7 +51353,7 @@ function maybeClassGreeting(){
     try{ localStorage.setItem("class26e.greet.ifc", "done"); }catch(e){}
     try{ novaWarmProps(); }catch(e){}
     novaTalk({ id: "nova-class-greet", label: "Nova welcomes you to Fire Code", lines: ifcGreetingLines(), finalLabel: "Let’s begin", noSkip: false,
-      onClose: () => { try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){} } });
+      onClose: () => { try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){} setTimeout(() => showEnrolledBanner("ifc"), 450); } });
   }, 1100);
 }
 /* ---- THE CLASS LIST (the "+" in the class bubble) ----
@@ -51327,11 +51362,15 @@ function maybeClassGreeting(){
    but say enrolled." Fire Code asks for the reader's own 2021 IFC first. */
 const NOVA_CLASS_INFO = {
   academy: { title: "Police Academy", kicker: "Class 26E",
-    desc: "The Class 26E police academy: every unit of the study guides, the class calendar and the class leaderboard." },
-  ifc: { title: "Fire Code", kicker: "IFC 2021 and HC Amendments",
-    desc: "The 2021 International Fire Code with the Harris County amendments, which supersede the IFC wherever they differ. 1,777 questions in 58 chapters, each with its code reference.",
-    needs: "To enroll, load your own PDF copy of the 2021 IFC. It stays on this device and is never uploaded." }
+    desc: "Every unit, the class calendar and the leaderboard." },
+  ifc: { title: "Fire Code", kicker: "IFC 2021 + HC",
+    desc: "The 2021 IFC with the Harris County amendments. 1,777 questions.",
+    needs: "Needs your own IFC PDF" }
 };
+/* "Don't put them beneath each other ... unless it's a bigger screen device. Also ensure each box is
+   the same size. Also ensure there's a box that says more classes coming soon." Two across on a
+   phone, three on a tablet or laptop; every box the same size; "Enrolled" for any class you are in
+   (the one you are in is ringed). */
 function showClassCatalog(){
   const panel = document.createElement("section");
   panel.className = "panel class-catalog";
@@ -51345,19 +51384,18 @@ function showClassCatalog(){
     const info = NOVA_CLASS_INFO[c.key] || {};
     const enrolled = mine.indexOf(c.key) >= 0, here = c.key === window.NOVA_CLASS;
     const card = document.createElement("button");
-    card.type = "button"; card.className = "class-card is-" + c.key + (enrolled ? " is-enrolled" : "");
+    card.type = "button"; card.className = "class-card is-" + c.key + (enrolled ? " is-enrolled" : "") + (here ? " is-here" : "");
     card.style.setProperty("--k", k);
     card.innerHTML = '<span class="cc-glow" aria-hidden="true"></span><span class="cc-emblem">' + c.icon + '</span>' +
-      '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span><span class="cc-needs"></span></span>' +
-      '<span class="cc-status"></span>';
+      '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span></span>' +
+      '<span class="cc-foot"><span class="cc-status"></span></span>';
     card.querySelector(".cc-kicker").textContent = info.kicker || c.sub;
     card.querySelector(".cc-title").textContent = info.title || c.name;
     card.querySelector(".cc-desc").textContent = info.desc || "";
-    const needs = card.querySelector(".cc-needs");
-    if(!enrolled && info.needs) needs.textContent = info.needs; else needs.remove();
     const st = card.querySelector(".cc-status");
-    st.textContent = here ? "You're here" : enrolled ? "Enrolled" : "Enroll";
-    st.classList.add(here ? "is-here" : enrolled ? "is-enrolled" : "is-enroll");
+    st.textContent = enrolled ? "Enrolled" : "Enroll";
+    st.classList.add(enrolled ? "is-enrolled" : "is-enroll");
+    if(!enrolled && info.needs){ const n = document.createElement("span"); n.className = "cc-needs"; n.textContent = info.needs; card.querySelector(".cc-foot").prepend(n); }
     card.addEventListener("click", () => {
       if(here){ showHome(); return; }
       if(enrolled){ switchClass(c.key); return; }
@@ -51365,10 +51403,28 @@ function showClassCatalog(){
     });
     list.appendChild(card);
   });
+  const soon = document.createElement("div");
+  soon.className = "class-card is-soon"; soon.style.setProperty("--k", NOVA_CLASSES.length);
+  soon.innerHTML = '<span class="cc-emblem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v6l3.6 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3.4"/></svg></span>' +
+    '<span class="cc-text"><span class="cc-kicker">Soon</span><span class="cc-title">More classes</span><span class="cc-desc">New classes will be added here.</span></span>' +
+    '<span class="cc-foot"><span class="cc-status is-soon">Coming soon</span></span>';
+  list.appendChild(soon);
   panel.appendChild(list);
   stage.replaceChildren(panel);
   try{ window.scrollTo(0, 0); }catch(e){}
   try{ playSound("ui.sheet.open"); }catch(e){}
+}
+/* The notice after a class is joined (and after signing up, for the class you start in): the
+   account banner's glass, on Home once Nova has gone. */
+function showEnrolledBanner(key){
+  const c = NOVA_CLASSES.find(x => x.key === key); if(!c) return;
+  const info = NOVA_CLASS_INFO[key] || {};
+  const wrap = document.createElement("span"); wrap.innerHTML = c.icon;
+  setTimeout(() => {
+    if(!onNovaHome()) return;
+    showDailyAlert(info.kicker || "", { kind: "enrolled", tag: "ENROLLED", title: "You’re enrolled in " + (info.title || c.name),
+      color: key === "ifc" ? "#FF9648" : "#93B5FF", iconEl: wrap.firstElementChild, id: "enrolled-banner", stay: 6000 });
+  }, 700);
 }
 function showIfcEnroll(){
   const c = NOVA_CLASSES.find(x => x.key === "ifc");
@@ -89403,7 +89459,7 @@ function startMainMenuTour(){
      tooltip rendering above the top of the viewport) while the
      newer one had already been fixed. One shared implementation
      means a future fix here benefits every tour, not just one. */
-  startSimpleTour(mainMenuTourSteps(false), () => { awardWelcomeBonus(); scheduleNovaGoodLuck(); });
+  startSimpleTour(mainMenuTourSteps(false), () => { awardWelcomeBonus(); scheduleNovaGoodLuck(); showEnrolledBanner("academy"); });
 }
 /* HIS SEND-OFF IN THE CHAT (327z15 round 31): "When the tool tips are over
    ... like 10 seconds after all the tool tips, you should get a message
@@ -118282,6 +118338,7 @@ function dismissInvite(code){
    of them survives being read in a hurry, and the other survives being
    read by somebody who cannot tell those colours apart. */
 const BANNER_KINDS = {
+  enrolled: { tag: "ENROLLED", color: "#93B5FF", glyph: "M12 2.8a9.2 9.2 0 1 0 0 18.4 9.2 9.2 0 0 0 0-18.4m4.2 6.9-5 5.4-2.4-2.4 1.1-1.1 1.3 1.3 3.9-4.3z" },
   /* (327z15 round 48) "Why is the icon for virtual room a home?" - a room is people studying
      together live: three of them, the middle one in front, the friend glyph's own weight */
   vroom:  { tag: "VIRTUAL ROOM", color: "#3DA9FC",
