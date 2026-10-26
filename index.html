@@ -34579,6 +34579,23 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      viewBox has 5px of air on its left, so the ink sat 1.5px right of centre. Measured
      at 2x: equal ink gaps with the left padding 1.5px shorter. Every Back pill. */
   html[data-layout] body .back-link{ padding-left:calc(1rem - 1.5px) !important; padding-right:1rem !important; }
+  /* EVERY BACK BUTTON ON THE LEFT (build 330): "The back button on the 'how do you want to study'
+     screen ... it needs to be on the left similar to how the others are. Ensure all back buttons are
+     cohesive and the same." The mode screen (a block, so its pill was centred by the text) and the
+     sign-up steps on a phone or tablet (a column centring its children) were the only centred ones.
+     One size everywhere too: the laptop's sign-up steps had grown theirs. */
+  html[data-layout] body #stage > .panel.modeselect > .back-link{ display:flex; width:fit-content; margin-left:0; margin-right:auto; }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .charselect-panel, .namecheck-panel) > .back-link{ align-self:flex-start; }
+  /* those panels pad .45rem where the rest pad 20px: the pill takes the difference, so it lines up */
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .charselect-panel, .namecheck-panel) > .back-link{ margin-left:calc(20px - .45rem); }
+  }
+  /* THE MODE CARDS FIT THEIR WORDS (build 330): "Could the mode descriptions be simpler? ... maybe
+     change the descriptions look since they will be shorter". The 10.4rem floor was for four-line
+     descriptions; at two short lines each card is its words, the four still one height, centred. */
+  html[data-layout] body .panel.modeselect .modecard{ min-height:6.4rem; justify-content:center; padding-top:1.05rem; padding-bottom:1.05rem; }
+  html[data-layout] body .panel.modeselect .modecards{ align-items:stretch; }
+  html[data-layout] body #stage .back-link{ font-size:.85rem !important; min-height:calc(1em + 1rem) !important; padding-top:.5rem !important; padding-bottom:.5rem !important; }
   .pf-xp-to:empty{ display:none; }
   /* ---- THE UNIT CARD WITHOUT ITS CIRCLE (build 328) ----
      "Still looks crowded on the phones. The start of the title ... is underneath the
@@ -60992,7 +61009,7 @@ function celebrateNewFriend(pub, tries){
   }
   try{ const m = friendMomentShown(); m[pub] = Date.now(); localStorage.setItem(FRIEND_MOMENT_KEY, JSON.stringify(m)); }catch(e){}
   const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || {});
-  const name = e.firstName || "Your classmate";
+  const name = e.firstName || "A friend";
   if(typeof theme === "object" && theme && theme.muteBanners){
     showToast("You and " + name + " are now friends.", "good");
     return;
@@ -81833,7 +81850,7 @@ const RELEASE_NOTES = [
         { icon: buildSparkleIcon, color: "#FF9EC8", title: "Hundo Effects Unlock Sooner", body: "Bubbles now unlocks at 150 hundos and the UFO at 200. Every character celebrates a 100, and each face matches your grade." },
         { icon: buildStarIcon, color: "#C9D3DE", title: "The Badge Case", body: "A sleeker badge case, identical on the Badges screen and in the cutscene. Badges have a cleaner finish, an engraved back and bevelled edges, and each settles into its slot." },
         { icon: buildLadderIcon, color: "#F5804D", title: "Ranking Up", body: "Flares animate through the rank-up and the planet pulses before the flash. Back on Profile, your XP counts up into your new levels." },
-        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "A Simpler Profile", body: "Your profile card shows your progress the way a classmate's card does. The rank card and the badge case open from their own buttons, and locked unlocks open a preview card. Tap your character to see its move." },
+        { icon: buildBarStatsIcon, color: "#5CA8FF", title: "A Simpler Profile", body: "Your profile card shows your progress the way a friend's card does. The rank card and the badge case open from their own buttons, and locked unlocks open a preview card. Tap your character to see its move." },
         { icon: buildPlanetIcon, color: "#FF7A59", title: "Home And The Sky", body: "Faint stars now sit behind Home and every theme. At Supernova, a streak runs around Home's rings when you tap the planet." },
         { icon: buildChecklistIcon, color: "#5CA8FF", title: "Choosing Your Units", body: "Units are full-width rows again; tick one to see its details. Starred questions follow as their own row." },
         { icon: buildClipboardIcon, color: "#FFD27A", title: "Start Menus", body: "Every mode's start menu now ends with a summary above Begin: the mode, your units, the number of questions and the options you turned on." },
@@ -81920,7 +81937,7 @@ const RELEASE_NOTES = [
     groups: [
       { label: "Chat & Friends", items: [
         { icon: buildDevicesIcon, color: "#8E7CF5", title: "Chat Lobbies", body: "A chat button on every screen opens a chat that stays available while you study. Only invited members can read it, and leaving removes you until someone invites you back." },
-        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a classmate with your friend code, or send a request from the Leaderboard. Friends can be invited to chats and Virtual Rooms." },
+        { icon: buildPhoneAddIcon, color: "#4ADE80", title: "Friends", body: "Add a friend with your friend code, or send a request from the Leaderboard. Friends can be invited to chats and Virtual Rooms." },
         { icon: buildCloudIcon, color: "#3DA9FC", title: "Inbox", body: "The chat button also holds friend requests, chat invites and Virtual Room invites, with a count for anything new and a preview of incoming messages." },
         { icon: buildOfflineIcon, color: "#F5B54D", title: "Who Is Online", body: "The friends list shows who has the app open right now." }
       ]},
@@ -81972,7 +81989,7 @@ const RELEASE_NOTES = [
       ]},
       { label: "Modes", items: [
         { icon: () => modeIcon("drill"), title: "Drill", body: "Drill now allows unlimited retries on each question until you answer correctly." },
-        { icon: () => modeIcon("vroom"), title: "Virtual Room", body: "Take the same test live against classmates in a shared lobby, ranked by score and time, with chat before and after." }
+        { icon: () => modeIcon("vroom"), title: "Virtual Room", body: "Take the same test live against friends in a shared lobby, ranked by score and time, with chat before and after." }
       ]},
       { label: "Tests & Unit Selection", items: [
         { icon: buildClipboardIcon, color: "#4ADE80", title: "Review & Start, One Sheet", body: "Tapping Start now opens a summary first: the mode, units, question count and options such as the timer." },
@@ -88621,7 +88638,7 @@ const NOVA_MODE_LINES = {
   drill: "Learn a unit, answer by answer",
   exam: "Prove you’re ready, graded at the end",
   review: "Go over every question and its answer",
-  vroom: "Take a test live with your classmates"
+  vroom: "Take a test live with your friends"
 };
 function novaModeRow(){
   const row = document.createElement("div"); row.className = "nt-modes";
@@ -89207,7 +89224,9 @@ function novaIntroLines(o){
       enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap("My flares, all dark"))) });
     lines.push({ gesture: "raise", text: "Reach a new rank, and one lights back up.",
       enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
-    lines.push({ text: "My badges are hidden in your units.",
+    /* (330) "says hidden ... but should say something simple but more inline with finding them by
+       scoring enough hundreds" - the next line says how */
+    lines.push({ text: "Every unit has one of my badges to win.",
       ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap("Every unit has its own badge"))) });
     lines.push({ text: "Score 100% on a unit enough times, and its badge is yours." });
     lines.push({ gesture: "raise", text: "My crew are waiting in their pods.",
@@ -89232,7 +89251,7 @@ function novaIntroLines(o){
     lines.push({ text: "There are four ways to train: Drill, Mock, Review and the Virtual Room.",
       ...novaSlide("modes", () => novaModeRow()) });
     lines.push({ text: "Drill is practice, with answers as you go. Mock is graded at the end." });
-    lines.push({ text: "Review goes over every answer. In a Virtual Room, you test live with classmates." });
+    lines.push({ text: "Review goes over every answer. In a Virtual Room, you test live with friends." });
   }
   /* he becomes your friend partway through (build 324) */
   const friendLine = { gesture: "raise", friend: true,
@@ -94147,7 +94166,7 @@ function novaReplyFor(raw){
   if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
       ? "I’m always up for a match. Tap Challenge at the top of this chat: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and you’ll unlock the Sheriff."
-      : "A Virtual Room is a race against your classmates. Open one from Start Studying and invite your friends.";
+      : "A Virtual Room is a race against your friends. Open one from Start Studying and invite your friends.";
   /* what helping him gets you (build 326) */
   if(has(/ (rewards?|what do i get|what do we get|in return|why help|why should i|what's in it|whats in it) /))
     return "For every flare you light, I give you that rank’s rewards. Every badge is a unit you’ve mastered and one more thing holding your planet together, and every one of my crew you find joins you.";
@@ -94173,7 +94192,7 @@ function novaReplyFor(raw){
   if(has(/ (ship|blast|wreck|lost|explorer|space|save you|finish\w*|end) /))
     return "I sail between the stars studying everything I can. On my way through your system a storm opened my ship’s hold, and my badges, my flares and my crew drifted off. They landed in your class material, so every unit you learn brings some of it home. My scanners keep finding more further out, so there’s always more to find.";
   if(has(/ (friends?|friend code|add) /))
-    return "Add classmates from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
+    return "Add friends from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
     return "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
   if(has(/ (who are you|your name|about you|are you real|ai|bot|robot|human|chatgpt) /))
@@ -94961,7 +94980,7 @@ function openChatMembers(){
     art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ninja" }));
     const nm = document.createElement("span");
     nm.className = "chat-member-name";
-    nm.textContent = k === chatMyKey ? (e.name || "You") + " (you)" : (e.name || "Classmate");
+    nm.textContent = k === chatMyKey ? (e.name || "You") + " (you)" : (e.name || "Student");
     const st = document.createElement("span");
     st.className = "chat-member-state" + (here[k] ? " is-here" : "");
     st.textContent = here[k] ? "Here now" : "Away";
@@ -95478,7 +95497,7 @@ function openDirectChatWith(entry){
   openChatDock();
   const code = generateSyncCode();
   const me = publicIdOf();
-  const theirName = entry.firstName || entry.name || "Classmate";
+  const theirName = entry.firstName || entry.name || "Student";
   const them = { name: theirName, avatarChar: entry.avatarChar || "ninja",
                  level: entry.level || 0, badges: entry.badges || 0,
                  joinedAt: Date.now(), seen: 0 };
@@ -96356,7 +96375,7 @@ function renderFriendChatList(){
   intro.className = "chatdock-note is-foot";
   intro.textContent = pubs.length
     ? "Messages clear after a day."
-    : "Swap codes with a classmate under Manage friends to chat with them here.";
+    : "Swap codes with a friend under Manage friends to chat with them here.";
   if(!pubs.length){
     if(nova){
       const only = document.createElement("div");
@@ -97256,7 +97275,7 @@ function checkChatInvites(){
      "not now", not a "never", and the next snapshot re-checks. */
   chatInviteSeen = at;
   const el = buildAppBanner("chat-invite", "chat",
-    (newest.from.firstName || "A classmate") + "\nInvited you to a chat.",
+    (newest.from.firstName || "A student") + "\nInvited you to a chat.",
     "Join",
     () => {
       /* Same rule as the Inbox's Join: every invite to this chat is answered. */
@@ -97272,7 +97291,7 @@ function checkChatInvites(){
   clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
   /* Who it is with, once the room has been looked at (build 313). */
-  const name = newest.from.firstName || "A classmate";
+  const name = newest.from.firstName || "A student";
   const bt = el.querySelector(".app-banner-text");
   if(bt) bt.textContent = name + " invited you to a group chat";
   peekChatInvite(newest.code, p => {
@@ -97414,7 +97433,7 @@ function openChatInviteSheet(){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = e.firstName || "Classmate";
+      nm.textContent = e.firstName || "Student";
       text.appendChild(nm);
       /* What they are doing right now (build 240) - hidden when they are not on. */
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
@@ -97969,7 +97988,7 @@ function openPersonSheet(entry){
 
   const name = document.createElement("p");
   name.className = "person-sheet-name";
-  name.textContent = entry.firstName || "Classmate";
+  name.textContent = entry.firstName || "Student";
   sheet.append(art, name);
 
   /* THE RANK IS THE HEADLINE, IN ITS OWN COLOUR, with the level under
@@ -98884,7 +98903,7 @@ function showModeSelect(){
        says it in those words. Exam names its Instant feedback switch
        because that is the one way the answer changes. */
     { value: "drill", title: "Drill",
-      desc: "A test that shows you right away if you got each question right or wrong. Miss one and you try again before moving on. Best for learning." },
+      desc: "See if you’re right after every question. Miss one, try again." },
     /* TWO BEATS, LIKE DRILL AND THE VIRTUAL ROOM (build 323): the Exam
        card ran a parenthesis through its middle and Review opened on a
        disclaimer; both now say what the mode is and then what it is best
@@ -98895,7 +98914,7 @@ function showModeSelect(){
        grade." Instant feedback is gone, so the card says it outright:
        nothing on any question, the grade at the end. */
     { value: "exam", title: modeTitleOf("exam"),
-      desc: "A real test with no feedback on any question. You find out what you got right and wrong only when you see your grade. Best for knowing you are ready." },
+      desc: "A real test. No feedback until your grade at the end." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -98921,9 +98940,9 @@ function showModeSelect(){
        review and exam descriptions ... but could they be better?" It
        leads with what it is NOT, because the other three are tests. */
     { value: "review", title: modeTitleOf("review"),
-      desc: "Not a test. Every question is shown with its answer, as a list or as flashcards, so you can study it. Best for going over material." },
+      desc: "Not a test. Study every question with its answer." },
     { value: "vroom", title: "Virtual Room",
-      desc: "Take tests together, live \u2014 everyone answers the same questions at the same time. Best for studying with classmates." }
+      desc: "Take the same test live with friends." }
   ];
 
   MODES.forEach(m => {
@@ -98999,7 +99018,7 @@ function showModeSelect(){
          hardcoding a fixed opposite direction lets that shared,
          already-correct logic decide for both consistently. */
       { target: '.modecard[data-mode="vroom"]', align: "left", vplacement: "below",
-        text: "Virtual Room is studying together: you and your classmates take the same test at the same time, live." }
+        text: "Virtual Room is studying together: you and your friends take the same test at the same time, live." }
     ]);
   }
 }
@@ -116626,7 +116645,7 @@ function showAppearance(opts){
      introduces - reported as "the spacing of those buttons, the
      description above it is bad too, it's too too tight". */
   shareHint.className = "sync-note-plain settings-lead";
-  shareHint.textContent = "Send it to a classmate, or put it on your own Home Screen so it opens like an app.";
+  shareHint.textContent = "Send it to a friend, or put it on your own Home Screen so it opens like an app.";
   /* BUILD 324: "the spacing of the stuff under the sync code section and
      beyond is pretty tight, could this be updated and better?" Every
      section above Sync is a header over a card; these two were a header
@@ -117777,7 +117796,7 @@ function showVirtualRoomChoice(){
   /* NOT "PRIVATE" (build 287): "The host one says it's private but it's
      not, it's default private but can be public." So it says so. */
   const host = card("host", "host", "Host a room",
-    "Make your own room, pick the game and units, and invite classmates. It starts invite only \u2014 you can open it to the class from the lobby.");
+    "Make your own room, pick the game and units, and invite friends. It starts invite only \u2014 you can open it to the class from the lobby.");
   /* STRAIGHT INTO THE LOBBY. Picking units before the room existed was
      the same screen twice - "the unit selection screen should ONLY be
      available from within a lobby". The room is created EMPTY - no
@@ -117807,7 +117826,7 @@ function showVirtualRoomChoice(){
      private by default, so nothing appears there that its host did not
      deliberately open. */
   const browse = card("browse", "join", "Join an open room",
-    "See the rooms classmates have opened to everyone, and hop into one \u2014 even if a match is already going.");
+    "See the rooms others have opened to everyone, and hop into one \u2014 even if a match is already going.");
   browse.b.addEventListener("click", showRoomBrowser);
   actions.append(host.b, browse.b);
   panel.appendChild(actions);
@@ -117923,7 +117942,7 @@ function vroomBarLight(btn, lit){
 function vroomPersonEntry(key, p){
   /* Nova's own card, the one his chat opens (build 324) */
   if(key === "nova" || (p && p.nova)) return { pub: "nova", nova: true, firstName: "Nova", banner: "titan_rank", avatarChar: "nova" };
-  return Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Classmate" });
+  return Object.assign({}, p || {}, { pub: key, firstName: (p && p.name) || "Student" });
 }
 function buildVroomModeArt(key){
   const NS = "http://www.w3.org/2000/svg";
@@ -118753,7 +118772,7 @@ function showLobbyInviteBanner(from, code){
   if(document.getElementById("lobby-invite")) return;
   if(holdForCutscene("lobbyinvite", () => checkLobbyInvites())) return;
   const el = buildAppBanner("lobby-invite", "vroom",
-    (from.firstName || "A classmate") + "\nInvited you to a Virtual Room.",
+    (from.firstName || "A student") + "\nInvited you to a Virtual Room.",
     "Join",
     () => { dismissInvite(code); joinVirtualRoomLobby(code); },
     () => dismissInvite(code));
@@ -118807,7 +118826,7 @@ function checkFriendRequests(){
   const who = pending[0];
   const more = pending.length - 1;
   /* (round 48) a name over what they ask, as every banner reads */
-  const msg = (who.firstName || "A classmate") + (more > 0 ? " and " + more + " more" : "")
+  const msg = (who.firstName || "A student") + (more > 0 ? " and " + more + " more" : "")
     + "\n" + (more > 0 ? "Want to be friends." : "Wants to be friends.");
   const el = buildAppBanner("friend-request", "friend", msg, "View",
     () => showFriends(),
@@ -121716,7 +121735,7 @@ function openInviteFriendsSheet(roomCode){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Classmate");
+      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Student");
       text.appendChild(nm);
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
       const b = document.createElement("button");
@@ -121856,7 +121875,7 @@ function showRoomBrowser(){
      into, and the second half explained a rule about rooms that are
      NOT on the screen. What somebody needs here is what tapping Join
      does. */
-  hint.textContent = "Rooms classmates have opened to everyone. Tap Join and you are in their lobby \u2014 if a match is going, you are in the next one.";
+  hint.textContent = "Rooms others have opened to everyone. Tap Join and you are in their lobby \u2014 if a match is going, you are in the next one.";
   panel.appendChild(hint);
 
   const list = document.createElement("div");
@@ -121890,7 +121909,7 @@ function showRoomBrowser(){
       t.className = "rooms-empty-title"; t.textContent = "No open rooms found at this time";
       const d = document.createElement("p");
       d.className = "rooms-empty-text";
-      d.textContent = "When a classmate turns on Open room in their lobby, it shows up here. You can also host one yourself.";
+      d.textContent = "When someone turns on Open room in their lobby, it shows up here. You can also host one yourself.";
       empty.append(ic, t, d);
       list.appendChild(empty);
       return;
@@ -121906,7 +121925,7 @@ function showRoomBrowser(){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = (r.hostName || "A classmate") + "\u2019s room";
+      nm.textContent = (r.hostName || "A student") + "\u2019s room";
       /* WHO IS IN IT AND WHERE THEY ARE, then the match settings ONLY IF
          THEY ARE SET (build 287): "it just shows how many people are in
          and match settings IF they are set ... state whether they are at
@@ -128908,7 +128927,7 @@ function showFriends(){
      question nobody standing here asked, using a word from a different
      screen. Somebody reading their friend code out needs to know what
      it is for, nothing else. */
-  mhint.textContent = "Give this to a classmate so they can add you.";
+  mhint.textContent = "Give this to a friend so they can add you.";
   mine.append(mh, codeWrap, mhint);
 
   /* ---- add someone ---- */
@@ -128975,7 +128994,7 @@ function showFriends(){
     if(nova) list.appendChild(novaManageRow());
     const none = document.createElement("p");
     none.className = "friend-hint";
-    none.textContent = nova ? "No classmates yet. Send someone your code, or add theirs above."
+    none.textContent = nova ? "No friends yet. Send someone your code, or add theirs above."
       : "Nobody yet. Send someone your code, or add theirs above.";
     list.appendChild(none);
   } else {
@@ -132022,7 +132041,7 @@ function showProfile(defaultTab, opts){
       t1.className = "stx-vr-empty-title"; t1.textContent = "No matches yet";
       const t2 = document.createElement("p");
       t2.className = "stx-vr-empty-sub";
-      t2.textContent = "Race classmates live in the Virtual Room and your matches, wins and top 3 finishes show up here.";
+      t2.textContent = "Race friends live in the Virtual Room and your matches, wins and top 3 finishes show up here.";
       txt.append(t1, t2);
       empty.append(ico, txt);
       vrSect.appendChild(empty);
@@ -132084,7 +132103,7 @@ function showProfile(defaultTab, opts){
       /* Friends moved to the chat (build 327z12 round 2): the step points
          at the chat button, where its Friends tab now starts */
       { target: "#chatdock-btn", align: "right", vplacement: "below",
-        text: "Friends are in the chat. Its Friends tab shows who is on, with Manage friends at the top for swapping codes with a classmate." },
+        text: "Friends are in the chat. Its Friends tab shows who is on, with Manage friends at the top for swapping codes with a friend." },
       /* Stats and Settings in one step (327z15: "not a crazy amount");
          Settings has a tour of its own the first time it opens. */
       { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
@@ -134554,7 +134573,7 @@ function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
 const RANK_LORE = {
   rookie: "A nebula: a cloud of gas and dust where every star begins. Nothing shines yet, but the work has started, and every rank above this one started right here.",
   ranger: "A protostar. The cloud has pulled itself together into a young star, still wrapped in the disc it feeds on, firing light out of both ends. The habits are forming.",
-  veteran: "A sun, making its own light, with a world turning round it. This is where you stop borrowing light and start giving it — the one classmates come to with questions. It is also where your planet starts to crack under Nova's light, and where your badges start to matter most: they are what hold it together.",
+  veteran: "A sun, making its own light, with a world turning round it. This is where you stop borrowing light and start giving it — the one others come to with questions. It is also where your planet starts to crack under Nova's light, and where your badges start to matter most: they are what hold it together.",
   vanguard: "A binary: two stars holding each other in orbit. Neither one drifts, because each keeps the other steady — the way a good partner does.",
   adept: "A spiral galaxy, billions of stars turning together as one. From here on the ranks are not single stars any more, and the units stop being separate subjects.",
   elite: "A quasar: the black hole at the heart of a galaxy, feeding, so bright it can be seen from across the universe. Very few make it this far.",

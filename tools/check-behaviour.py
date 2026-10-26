@@ -26990,8 +26990,10 @@ def check_b323u_units(br):
         cards = {c["mode"]: c for c in r.get("cards") or []}
         d = cards.get("drill") or {}
         ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)
-        beats = lambda s: "(" not in s and re.search(r"\. Best for [^.]+\.$", s) is not None
-        ok_copy = all(beats(cards.get(m, {}).get("desc", "")) and abs(len(cards[m]["desc"]) - len(d["desc"])) <= 0.2 * len(d["desc"])
+        # REVISED IN 330: "Could the mode descriptions be simpler? They seem wordy" - two short beats
+        # (what it is, then the difference), no "Best for", each under 70 characters
+        beats = lambda s: "(" not in s and len(s) <= 70 and len(re.findall(r"[.!?](?:\s|$)", s)) == 2
+        ok_copy = all(beats(cards.get(m, {}).get("desc", "")) and abs(len(cards[m]["desc"]) - len(d["desc"])) <= 0.3 * len(d["desc"])
                       for m in ("exam", "review")) if d else False
         dr = ink["drill"]
         ok_icon = all(ink[m]["ink"] >= 0.95 * dr["ink"] and ink[m]["w"] >= 0.8 * dr["w"] for m in ("exam", "review"))
