@@ -34248,7 +34248,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{
       height:calc(100dvh - max(1.25rem, env(safe-area-inset-top, 0px)) - var(--home-pb) - 4px) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
-      padding-top:3rem !important; padding-bottom:calc(var(--hg) * 1.2) !important; box-sizing:border-box !important;
+      padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * 1.2) !important; box-sizing:border-box !important;
     }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
       flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
@@ -34265,7 +34265,15 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-sub{ display:none !important; }
   }
+  /* (Oct 26, his iOS 26 Safari screenshot: "The planet system needs to be perfectly sized, as
+     big as it can be") The column used to keep 3rem (Welcome 2rem) clear above the planet for
+     the chat button and the version tag. The orbits are circles, so the box's top corners are
+     empty: measured, at 1.25rem the outer ring and its moons clear both with room to spare as
+     they turn, and the planet grows - Home on an SE 255 -> 283px, an SE-sized Safari tab
+     242 -> 271; Welcome 197 -> 283 (and under 620px of height its line under the title steps
+     aside, as Home's tagline does). */
   /* ---- WELCOME ON EVERY PHONE, THE SAME LAYOUT AS HOME (build 328) ----
      "Ensure all the devices changed are reflected app wide for their welcome screen and all
      those other buttons as well." Measured: Welcome scrolled on an SE (5px) and an iPhone 16
@@ -34277,7 +34285,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome{
       height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom)) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
-      padding-top:2rem !important; padding-bottom:calc(var(--hg) * .6) !important; box-sizing:border-box !important;
+      padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * .6) !important; box-sizing:border-box !important;
     }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{
       flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
