@@ -34288,16 +34288,21 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .ifc-code > summary::after{ content:""; width:7px; height:7px; margin-left:.15rem; border-right:1.8px solid currentColor; border-bottom:1.8px solid currentColor;
     transform:translateY(-2px) rotate(45deg); transition:transform .2s ease; opacity:.8; }
   .ifc-code[open] > summary::after{ transform:translateY(2px) rotate(-135deg); }
-  .ifc-tag{ display:inline-flex; align-items:center; height:28px; padding:0 .6rem; border-radius:999px; font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .ifc-tag{ display:inline-flex; align-items:center; justify-content:center; height:28px; padding:0 .7rem 0 calc(.7rem + .08em); border-radius:999px; font-size:.7rem; font-weight:800; line-height:1; letter-spacing:.08em; text-transform:uppercase; box-sizing:border-box; }
+  @supports (text-box:trim-both cap alphabetic){ .ifc-tag{ text-box:trim-both cap alphabetic; } }
   .ifc-tag.is-ifc{ background:rgba(255,122,26,.18); color:#FFB35C; }
   .ifc-tag.is-county{ background:rgba(90,170,255,.18); color:#8FC4FF; }
   .ifc-code-head{ margin:.75rem 0 .35rem; }
   .ifc-ptr{ margin:0; font-size:.86rem; font-weight:650; color:var(--ink); line-height:1.35; }
   .ifc-pages{ margin:.15rem 0 0; font-size:.78rem; color:var(--soft); }
-  .ifc-code-body{ max-height:min(26rem, 60vh); overflow:auto; -webkit-overflow-scrolling:touch; border-radius:.75rem; }
+  .ifc-code-body{ border-radius:.75rem; }
+  .ifc-clips.is-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:.35rem; }
+  .ifc-clips.is-scroll canvas{ flex:none; }
+  .ifc-ref{ margin-bottom:1.5rem; }
   .ifc-busy, .ifc-note, .ifc-foot{ margin:.4rem 0 0; font-size:.82rem; line-height:1.4; color:var(--soft); }
   .ifc-foot:empty{ display:none; }
   .ifc-clips{ display:flex; flex-direction:column; gap:.4rem; }
+  .ifc-clips[hidden], .ifc-county-text[hidden]{ display:none; }
   .ifc-clips canvas{ display:block; max-width:100%; height:auto !important; border-radius:.6rem; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.35); }
   .ifc-links{ display:flex; flex-wrap:wrap; gap:.35rem 1rem; margin:.45rem 0 0; }
   .ifc-link{ min-height:44px; padding:0; border:0; background:none; font:inherit; font-size:.86rem; font-weight:650; color:#FFB35C; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
@@ -102045,24 +102050,33 @@ function ifcCountyDoc(){
   })().catch(() => { ifcCountyP = null; return null; }));
 }
 function ifcEl(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+/* "ref." wording (build 328): "Where code says something like IFC 2021 1003.2 put a comma after
+   the year ... The word amendments is capitalized." The stored label stays as the bank has it. */
+function ifcRefLabel(label){
+  return String(label || "").replace(/^IFC 2021\s+/i, "IFC 2021, ").replace(/^HC amendments\s+/i, "HC Amendments, ");
+}
+function ifcExceptionName(c){
+  if(!c || !c.exception) return "";
+  return /^exception$/i.test(c.exception) ? "The exception" : c.exception;
+}
 function ifcPointerLine(c){
-  if(c.source === "amendment") return "Harris County Fire Code · " + (/^(chapter|exhibit)/i.test(c.section) ? c.section : (c.section === "202" ? "Definitions" : "Section " + c.section)) + (c.heading && c.section !== "202" ? " · " + c.heading : "");
+  const exc = c.exception ? " \u00b7 " + (/^exception$/i.test(c.exception) ? "Exception" : c.exception) : "";
+  if(c.source === "amendment") return "HC Amendments \u00b7 " + (/^(chapter|exhibit)/i.test(c.section) ? c.section : (c.section === "202" ? "Definitions" + (c.heading ? " \u00b7 " + c.heading : "") : "Section " + c.section + (c.heading ? " \u00b7 " + c.heading : ""))) + exc;
   const bits = ["IFC 2021"];
-  if(c.section === "80" && c.entry) bits.push("Referenced standard · " + (c.org ? c.org + " " : "") + c.entry);
+  if(c.section === "80" && c.entry) bits.push("Referenced standard \u00b7 " + (c.org ? c.org + " " : "") + c.entry);
   else if(/^figure\s/i.test(c.section)){ bits.push(c.section); if(c.heading) bits.push(c.heading); }
   else if(/^table/i.test(c.section)){ bits.push(c.section); if(c.row) bits.push("row: " + [].concat(c.row).join("; ")); }
-  else if(c.section === "202") bits.push("Definitions");
+  else if(c.section === "202") bits.push("Definitions" + (c.heading ? " \u00b7 " + c.heading : ""));
   else if(/^(chapter|appendix|exhibit)\b/i.test(c.section)) bits.push(c.section);
   else { bits.push("Section " + c.section); if(c.heading) bits.push(c.heading); if(c.through) bits.push("through " + c.through); }
-  return bits.join(" · ");
+  return bits.join(" \u00b7 ") + exc;
 }
 function ifcPageLine(c){
-  if(c.source === "amendment") return "County booklet, PDF page " + c.pdfPage;
   const bits = [];
-  if(c.printedPage) bits.push("page " + c.printedPage);
-  bits.push("PDF page " + c.pdfPage);
-  if(c.exception) bits.push(c.exception + " is the one the question asks about");
-  return bits.join(" · ");
+  if(c.source === "amendment") bits.push("HC Amendments, PDF page " + c.pdfPage);
+  else { if(c.printedPage) bits.push("page " + c.printedPage); bits.push("PDF page " + c.pdfPage); }
+  if(c.exception) bits.push(ifcExceptionName(c) + " is the one the question asks about");
+  return bits.join(" \u00b7 ");
 }
 function ifcMarkedLine(text, hl){
   const p = ifcEl("p"); const i = hl ? text.indexOf(hl) : -1;
@@ -102078,8 +102092,22 @@ function ifcCountyText(c){
     ex.append(ifcEl("div", "ifc-exc-label", c.exception), ifcMarkedLine(c.exceptionText || "", c.highlight || ""));
     box.appendChild(ex);
   }
-  if(c.partial) box.appendChild(ifcEl("p", "ifc-note", "Excerpt of " + (c.section === "202" ? "the definitions" : "Section " + c.section) + "."));
+  if(c.partial) box.appendChild(ifcEl("p", "ifc-note", "Excerpt of " + (c.section === "202" ? "the definitions" : "Section " + c.section) + " of the HC Amendments."));
   return box;
+}
+/* A cropped page is drawn at book size x1.7 and was squeezed to the screen's width: the HC
+   Amendments pages are wide (952pt), so a one-line crop came out 18px tall on a phone and could
+   not be read ("ensure the references are displayed properly and not cut off"). A picture wider
+   than the room is shown at reading size instead, and the reader swipes sideways. */
+function ifcFitPictures(holder, room, scale){
+  let wide = false;
+  const dpr = window.devicePixelRatio || 1;
+  holder.querySelectorAll("canvas").forEach(cv => {
+    const nat = cv.width / ((scale || 1.7) * dpr);          /* the clip's width at book size, in CSS px */
+    if(nat * 0.8 > room){ cv.style.maxWidth = "none"; cv.style.width = Math.round(nat) + "px"; wide = true; }
+  });
+  holder.classList.toggle("is-scroll", wide);
+  return wide;
 }
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
@@ -102093,18 +102121,26 @@ async function ifcFillCode(item, body, foot){
     if(!clip.ok) return;
     const holder = ifcEl("div", "ifc-clips");
     await V.paint(doc, clip, holder, { scale: 1.7 });
-    text.hidden = true; body.prepend(holder);
+    body.prepend(holder);
+    /* on a phone the exact text is the clear view, the page picture one tap away */
+    const wide = ifcFitPictures(holder, body.clientWidth || 300, 1.7);
+    if(wide) holder.hidden = true; else text.hidden = true;
     const links = ifcEl("div", "ifc-links");
+    const pic = ifcEl("button", "ifc-link", "Show the page picture"); pic.type = "button";
+    pic.addEventListener("click", () => { holder.hidden = false; text.hidden = true; pic.hidden = true; asText.hidden = false; });
     const whole = ifcEl("button", "ifc-link", "Show the whole page"); whole.type = "button";
     whole.addEventListener("click", async () => {
-      whole.disabled = true; holder.textContent = "";
+      whole.disabled = true; holder.hidden = false; text.hidden = true; pic.hidden = true; asText.hidden = false; holder.textContent = "";
       await V.paintPages(doc, clip.pages, holder, { scale: 1.4, ...ifcCountyOpts, clip });
-      foot.textContent = "The whole booklet page. The highlighted lines are the code this question cites.";
+      ifcFitPictures(holder, body.clientWidth || 300, 1.4);
+      foot.textContent = "The whole page of the HC Amendments. The highlighted lines are the code this question cites.";
       whole.remove();
     });
     const asText = ifcEl("button", "ifc-link", "Show as text"); asText.type = "button";
-    asText.addEventListener("click", () => { text.hidden = false; holder.remove(); links.remove(); foot.textContent = ""; });
-    links.append(whole, asText); body.appendChild(links);
+    asText.addEventListener("click", () => { text.hidden = false; holder.hidden = true; asText.hidden = true; pic.hidden = false; foot.textContent = ""; });
+    asText.hidden = !!wide;
+    pic.hidden = !wide;
+    links.append(pic, whole, asText); body.appendChild(links);
     return;
   }
   const book = await ifcEnsureBook();
@@ -102143,6 +102179,7 @@ async function ifcFillCode(item, body, foot){
     foot.textContent = "The whole page from your book.";
   }
   body.appendChild(holder);
+  ifcFitPictures(holder, body.clientWidth || 300, shown ? 1.7 : 1.4);
   if(shown){
     const links = ifcEl("div", "ifc-links");
     const whole = ifcEl("button", "ifc-link", "Show the whole book page"); whole.type = "button";
@@ -102150,6 +102187,7 @@ async function ifcFillCode(item, body, foot){
       whole.disabled = true; holder.textContent = "";
       const pages = theClip && theClip.pages.length ? theClip.pages : V.wholePages(book.index, c, 3);
       await V.paintPages(book.doc, pages, holder, { scale: 1.4, ...book.opts, clip: theClip });
+      ifcFitPictures(holder, body.clientWidth || 300, 1.4);
       foot.textContent = "The whole book page. The section the question cites is washed pale yellow; the sentence that decides the answer is the stronger gold.";
       whole.remove();
     });
@@ -102220,10 +102258,10 @@ function buildIfcRef(item){
   const c = item.ifc.citation;
   const box = ifcEl("div", "ifc-ref");
   if(item.ifc.explanation) box.appendChild(ifcEl("p", "ifc-expl", item.ifc.explanation));
-  box.appendChild(ifcEl("p", "ifc-label", "Reference: " + c.label));
+  box.appendChild(ifcEl("p", "ifc-label", "Ref. " + ifcRefLabel(c.label)));
   const det = ifcEl("details", "ifc-code");
   const sum = ifcEl("summary", "ifc-code-sum");
-  sum.append(ifcEl("span", "ifc-tag " + (c.source === "amendment" ? "is-county" : "is-ifc"), c.source === "amendment" ? "County" : "IFC"), ifcEl("span", "ifc-sum-text", "Show the code"));
+  sum.append(ifcEl("span", "ifc-tag " + (c.source === "amendment" ? "is-county" : "is-ifc"), c.source === "amendment" ? "Amendments" : "IFC"), ifcEl("span", "ifc-sum-text", "Show the code"));
   const head = ifcEl("div", "ifc-code-head");
   head.append(ifcEl("p", "ifc-ptr", ifcPointerLine(c)), ifcEl("p", "ifc-pages", ifcPageLine(c)));
   const body = ifcEl("div", "ifc-code-body"), foot = ifcEl("p", "ifc-foot");
