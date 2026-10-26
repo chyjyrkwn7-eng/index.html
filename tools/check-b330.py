@@ -103,7 +103,7 @@ with sync_playwright() as pw:
           const c = document.querySelector('.classselect-panel .affiliation-note'); return { settings, classes: c ? c.textContent : '' }; }""")
         chk("Settings: made by M. Davis, the copyright, and not affiliated with HCC, TCOLE or the ICC",
             all(x in r["settings"] for x in ("M. Davis", "\u00a9", "HCC", "TCOLE", "International Code Council", "study only")), r["settings"][:200])
-        chk("the sign-up class screen's note is general (any class): independent, not affiliated with any organization, study only", all(x in r["classes"] for x in ("independent", "any school", "study only")) and "Police" not in r["classes"] and "Fire" not in r["classes"], r["classes"])
+        chk("the sign-up class screen's note is general (any class): independent, not affiliated with any school, agency or organization", all(x in r["classes"] for x in ("independent", "any school", "organization")) and "Police" not in r["classes"] and "Fire" not in r["classes"], r["classes"])
         ctx.close()
     if "modes" in want:
         ctx, page = page_for(br, "promax")

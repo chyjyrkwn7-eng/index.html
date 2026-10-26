@@ -17442,7 +17442,7 @@
      up 49px and out of line with every other sign-up step (check-positions). Here it takes the free space
      the button's auto margin was going to take anyway, and the button stays at its spot. */
   .affiliation-note.legal-classes{ margin:1.1rem auto 0; max-width:30rem; opacity:.62; }
-  @media (max-width:22.5rem){ .affiliation-note.legal-classes{ margin-top:.3rem; font-size:.62rem; } }
+  @media (max-width:22.5rem){ .affiliation-note.legal-classes{ margin-top:.2rem; font-size:.62rem; } .affiliation-note.legal-classes > p{ line-height:1.25; } }
 
   .progressring-wrap{
     position:relative; width:11.5rem; height:11.5rem; margin:0 auto 1.4rem; z-index:1;
@@ -86584,7 +86584,7 @@ function buildLegalNote(where){
     p("International Fire Code is a trademark of the International Code Council. The Fire Code class uses your own copy of the code.");
     p("\u00a9 " + LEGAL_YEAR + " M. Davis. All rights reserved.");
   } else if(where === "classes"){
-    p("Nova is an independent study app, not affiliated with or endorsed by any school, agency or organization. Classes are for study only.");
+    p("An independent study app, not affiliated with or endorsed by any school, agency or organization.");
   } else {
     p("An independent study app. Not affiliated with or endorsed by HCC, TCOLE, the ICC or any academy or agency.");
     p("\u00a9 " + LEGAL_YEAR + " Nova. All rights reserved.");
