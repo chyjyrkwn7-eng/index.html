@@ -34542,6 +34542,16 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        there the planet comes back to its full width, as on Home) */
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome-actions > :is(.welcome-signin-cap, .welcome-new-cap, .cosmic-welcome-hint.is-quiet){ display:none !important; }
   }
+  /* (check-fixes, after the planet moved up) an SE-sized phone as an app: a moon passed under
+     the version tag (0px, measured over a whole turn) - the column starts 2rem down there
+     (8-14px clear). And on a 320px-wide screen the "?" is 46px and nearer the edge, so it
+     clears Start Studying by 24px (it was 3px in a Safari tab). */
+  @media (max-width:39.99rem) and (orientation:portrait) and (max-height:43.75rem){
+    html[data-layout][data-theme]:not(.x):not(.is-browser) body #stage > .panel.home.screen-home-actual{ padding-top:2rem !important; }
+  }
+  @media (max-width:21rem) and (orientation:portrait){
+    html[data-layout] body:has(.screen-home-actual) .daily-question-fab{ width:46px !important; height:46px !important; right:max(1rem, env(safe-area-inset-right, 0px)) !important; }
+  }
   /* ---- WELCOME ON EVERY PHONE, THE SAME LAYOUT AS HOME (build 328) ----
      "Ensure all the devices changed are reflected app wide for their welcome screen and all
      those other buttons as well." Measured: Welcome scrolled on an SE (5px) and an iPhone 16
