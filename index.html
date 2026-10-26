@@ -34184,11 +34184,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      a word. The next-test mark is a line above the name when there is one. The hidden
      box stays in the DOM for the gates and anything that reads it. */
   html[data-layout] .picks > label.pick{
-    grid-template-areas:"next next next" "name name name" "ver ver ver" "count count badge" "bar bar badge" !important;
+    /* (build 328) the next-test mark sits UNDER the name: "the 'next test' stuff will be under
+       the unit title in the center, not at the top above the words" */
+    grid-template-areas:"name name name" "next next next" "ver ver ver" "count count badge" "bar bar badge" !important;
     position:relative; overflow:visible !important;
   }
   html[data-layout] .picks{ overflow:visible; }
-  html[data-layout] .picks > label.pick > .pick-nexttest{ margin:0 0 .3rem 0 !important; }
+  html[data-layout] .picks > label.pick > .pick-nexttest{ margin:.4rem 0 0 0 !important; align-self:start !important; }
   html[data-layout] .picks > label.pick > .box{
     position:absolute !important; top:-.5rem; right:-.5rem; left:auto; margin:0 !important; z-index:2;
     width:1.6rem !important; height:1.6rem !important; min-width:0 !important; border-radius:50% !important;
@@ -99558,6 +99560,8 @@ function showSetup(){
   const unitLab = document.createElement("p");
   unitLab.className = "slab";
   unitLab.textContent = "Units";
+  /* (build 328) not drawn: "Choose your units" titles the screen, and the level tabs open it */
+  unitLab.hidden = true;
   unitSect.appendChild(unitLab);
 
   const allUnitNames = topicsIn(QUESTIONS);
@@ -99600,6 +99604,10 @@ function showSetup(){
       const name = row.querySelector(".pname").textContent.toLowerCase();
       row.hidden = q.length > 0 && !name.includes(q);
     });
+    /* a search reaches every level (build 328: "people would assume the search bar would
+       search every unit"); clearing it shows the chosen level again */
+    if(q.length) [...list.querySelectorAll("label.pick")].forEach(row => row.classList.remove("is-other-level"));
+    else try{ showLevelRows(); }catch(e){}
   });
   searchWrap.appendChild(searchInput);
   addSearchClear(searchWrap, searchInput);
@@ -99799,6 +99807,16 @@ function showSetup(){
   showLevelRows();
   try{ attachSegSlider(levelSeg, ".iconbtn.active"); }catch(e){}
   list.addEventListener("change", () => setTimeout(showLevelRows, 0));   /* after the delegate that writes cfg.units */
+  /* SEARCH ABOVE THE TAB BAR, AS IN REVIEW (build 328): "Does the function need to go above
+     the bottom tab, similar to the review mode? That maybe be a great idea." The glass circle
+     stands over the bar's left end (Start is at its right) and opens into a field just above
+     the bar; it drives this screen's own filter, so the field up here goes. */
+  requestAnimationFrame(() => {
+    if(!panel.isConnected || typeof registerTabSearch !== "function") return;
+    if(registerTabSearch(panel, { placeholder: "Search units", withStart: true,
+        onQuery: v => { searchInput.value = v; searchInput.dispatchEvent(new Event("input", { bubbles: true })); } }))
+      searchWrap.hidden = true;
+  });
 
   unitSect.appendChild(list);
 
@@ -137331,7 +137349,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
       tsEl.style.left = Math.round(r.left) + "px";
       tsEl.style.width = Math.round(r.width) + "px";
     } else {
-      tsEl.style.left = Math.round(r.right - TS_SIZE) + "px";
+      tsEl.style.left = Math.round(ts.withStart ? r.left : r.right - TS_SIZE) + "px";
       tsEl.style.width = TS_SIZE + "px";
     }
   }
@@ -137404,8 +137422,11 @@ const LAST_TAB_KEY = "class26e.lastTab";
   }
   window.registerTabSearch = (screen, opts) => {
     tsUnregister();
-    if(!screen || bar.hidden || bar.classList.contains("has-start-tab") || document.documentElement.dataset.layout !== "modern") return false;
-    ts = { screen, placeholder: (opts && opts.placeholder) || "Search", onQuery: opts && opts.onQuery };
+    /* withStart (build 328): the unit screen's bar carries Start at its right end, so its
+       circle stands over the bar's LEFT end instead */
+    const withStart = !!(opts && opts.withStart);
+    if(!screen || bar.hidden || (bar.classList.contains("has-start-tab") && !withStart) || document.documentElement.dataset.layout !== "modern") return false;
+    ts = { screen, placeholder: (opts && opts.placeholder) || "Search", onQuery: opts && opts.onQuery, withStart };
     document.body.classList.add("has-tabsearch");
     requestAnimationFrame(() => { try{ slideBubbleToActiveTab(true); }catch(e){} tsPlace(); });
     tsPlace();
@@ -137414,9 +137435,9 @@ const LAST_TAB_KEY = "class26e.lastTab";
   /* the screen it was asked for is gone, or the bar went: it goes too */
   new MutationObserver(() => {
     if(!ts) return;
-    if(!ts.screen.isConnected || bar.hidden || bar.classList.contains("has-start-tab")) tsUnregister();
+    if(!ts.screen.isConnected || bar.hidden || (bar.classList.contains("has-start-tab") && !ts.withStart)) tsUnregister();
   }).observe(stage, { childList: true });
-  new MutationObserver(() => { if(ts && (bar.hidden || bar.classList.contains("has-start-tab"))) tsUnregister(); else if(ts) tsPlace(); })
+  new MutationObserver(() => { if(ts && (bar.hidden || (bar.classList.contains("has-start-tab") && !ts.withStart))) tsUnregister(); else if(ts) tsPlace(); })
     .observe(bar, { attributes: true, attributeFilter: ["hidden", "class"] });
   window.addEventListener("resize", () => { if(ts){ if(tsOpen){ const r = bar.getBoundingClientRect(); tsHome = tsHome && { left: tsHome.left, right: Math.min(window.innerWidth - 8, tsHome.right), bottom: r.bottom }; } tsPlace(); } });
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }

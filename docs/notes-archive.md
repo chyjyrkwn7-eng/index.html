@@ -28847,3 +28847,15 @@ not number. Questions are word for word the guides, typos included.
   centred with margin 0 (auto margins pinned an overflowing box to the left); its
   outer bubbles keep >= 20px from the screen edge on every phone.
 - **SE tab bar:** the compact bar's avatar is 26px (the others 24px; the 6.1" bar's ratio) with -2/-3px margins, so all four labels share one line (Profile's sat 3-7px low).
+- **Unit screen top (Oct 26 evening):** "The unit, above the search, all being above
+  select all. There must be a better way ... Does the function need to go above the
+  bottom tab, similar to the review mode?" The search is Review's glass circle above
+  the bar (registerTabSearch with withStart: over the bar's LEFT end, Start being at
+  its right), opening into a field just above the bar; it searches every level (a
+  query lifts the level filter). The "Units" label is gone (the page title says it);
+  the order is Back, the mode, Level 1-3, Select all, the hold hint, the cards.
+- **Next test on a unit card:** under the name ("not at the top above the words").
+- **Home's page reserves the bar itself** (--home-pb: tabs-bottom + 5rem, 4.2rem on
+  the installed SE's compact bar, + 6px) instead of 8rem: an SE-sized Safari tab's
+  planet 210 -> 242, a 6.1" Safari tab's 332 -> 364. Planet centring measured: the
+  ring's centre is the screen's centre on every phone; the core within 1-2px.
