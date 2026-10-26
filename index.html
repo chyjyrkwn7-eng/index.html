@@ -34127,6 +34127,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding:.62rem .2rem; gap:.12rem; }
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:1.5rem; height:1.5rem; }
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.62rem; }
+    /* (build 328) the avatar keeps its 34px but takes the 24px the other icons take, so the
+       four labels share one line ("The bottom tab looks misaligned on the smaller devices") */
+    html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-icon.bottomtab-icon-avatar{ width:26px !important; height:26px !important; margin-top:-2px !important; margin-bottom:-3px !important; }
     /* Welcome is the same planet: it takes the room over its words and two buttons */
     html[data-layout]:not(.is-browser) body .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(92vw, 23rem, calc(100dvh - 21rem)); }
     /* the daily question keeps its gap over the shorter bar, clear of Start Studying */

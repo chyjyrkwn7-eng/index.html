@@ -28846,3 +28846,4 @@ not number. Questions are word for word the guides, typos included.
   Pro Max 414, Pro Max Safari 409. Home's planet box is min(100vw, 31rem) x .95 and
   centred with margin 0 (auto margins pinned an overflowing box to the left); its
   outer bubbles keep >= 20px from the screen edge on every phone.
+- **SE tab bar:** the compact bar's avatar is 26px (the others 24px; the 6.1" bar's ratio) with -2/-3px margins, so all four labels share one line (Profile's sat 3-7px low).
