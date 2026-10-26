@@ -34767,6 +34767,17 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   @media (max-width:21rem) and (orientation:portrait){
     html[data-layout] body:has(.screen-home-actual) .daily-question-fab{ width:46px !important; height:46px !important; right:max(1rem, env(safe-area-inset-right, 0px)) !important; }
   }
+  /* Build 330: the daily "?" on a phone - same place, cleaner: a few points up and in so it
+     clears the tab bar's rounded corner, a softer glow and a lighter shadow */
+  @media (max-width:39.99rem) and (orientation:portrait){
+    html[data-theme][data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{
+      bottom:calc(var(--tabs-bottom) + 6.2rem) !important; right:max(1.5rem, env(safe-area-inset-right, 0px)) !important; }
+    html[data-theme][data-layout] body:has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+      box-shadow:0 4px 12px -6px color-mix(in srgb, var(--dq-c) 40%, transparent),
+                 0 1px 4px rgba(0,0,0,.22),
+                 inset 0 1px 1px rgba(255,255,255,.35),
+                 inset 0 -5px 10px -6px color-mix(in srgb, var(--dq-c) 55%, transparent) !important; }
+  }
   /* Build 329: "On the SE home the chat button is huge ... Start Studying is way too big still".
      An SE-sized phone (a short screen) gets a smaller chat button everywhere - 38px, with the same
      44px of touch around it - and a slimmer Start Studying pill. */

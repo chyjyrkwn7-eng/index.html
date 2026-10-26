@@ -1,5 +1,5 @@
 """Build 330: starred runs score, the retake pays for finishing, and the rest of the round.
-Run:  python3 tools/check-b330.py [section ...]   (sections: starred retake first legal modes bg)"""
+Run:  python3 tools/check-b330.py [section ...]   (sections: starred retake first legal modes bg dq)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "shoot-flow.py")).read().rsplit("\nmain()", 1)[0]
@@ -52,7 +52,7 @@ RETAKE = """async (wrongAgain)=>{
   order.forEach((qi, k) => { attempts[qi] = k < wrongAgain ? 2 : 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
   stopQuestionTimer(); summarize(); await wait(500);
   return { n: order.length, retake: isMissedRetake, xp: store.lifetime.points - xp0 }; }"""
-want = sys.argv[1:] or ["starred", "retake", "first", "legal", "modes", "bg"]
+want = sys.argv[1:] or ["starred", "retake", "first", "legal", "modes", "bg", "dq"]
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
     if "starred" in want:
@@ -133,6 +133,16 @@ with sync_playwright() as pw:
         for dev in ("ipad11", "mac"):
             v = edge(dev)
             chk(dev + ": Home's background away from the glow is as dark as the phone's (within 10 levels, each colour)", all(abs(a - b) <= 10 for a, b in zip(v, ref)), [ref, v])
+    if "dq" in want:
+        # THE DAILY "?" ON A PHONE: same place, cleaner - clear of the tab bar by a margin, off the edge, soft glow
+        for dev in ("promax", "se1"):
+            ctx, page = page_for(br, dev)
+            r = page.evaluate("""()=>{ const f = document.querySelector('.daily-question-fab'), t = document.querySelector('.bottomtabs');
+              const a = f.getBoundingClientRect(), b = t.getBoundingClientRect(), cs = getComputedStyle(f);
+              const m = /0px ([0-9.]+)px ([0-9.]+)px/.exec(cs.boxShadow);
+              return { gapBar: Math.round(b.top - a.bottom), gapEdge: Math.round(innerWidth - a.right), blur: m ? parseFloat(m[1]) : null }; }""")
+            chk(dev + ": the daily button clears the tab bar by 16px or more and the screen edge by 22px or more", r["gapBar"] >= 16 and r["gapEdge"] >= 22, r)
+            ctx.close()
     br.close()
 print("\nALL PASS" if ok else "\nFAILED")
 sys.exit(0 if ok else 1)
