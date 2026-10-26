@@ -23160,8 +23160,9 @@ def check_b320a_results(br):
           max(x["badgeBox"] for x in s))
 
     # E. Back to results from the review: the finished screen, nothing counted again.
+    pg.wait_for_timeout(1000)   # 328: the results ignore a tap for 0.7s after they settle, and the review's buttons for 0.6s after they arrive
     pg.evaluate("()=>{ const b = document.querySelector('#stage .rs-continue'); if(b) b.click(); }")
-    pg.wait_for_timeout(500)
+    pg.wait_for_timeout(1300)
     pg.evaluate(B320A_REC)
     pg.evaluate("()=>{ const b = [...document.querySelectorAll('#stage .actions button')].find(x => /Back to results/.test(x.textContent)); if(b) b.click(); }")
     pg.wait_for_timeout(1200)
