@@ -33149,6 +33149,14 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem); }
   html[data-layout] body .chatdock:not(.in-test) .chatdock-panel.is-kb{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 4.4rem + .6rem + var(--kb-top, 0px)); }
   html[data-layout] body .chatdock-btn svg{ width:1.65rem; height:1.65rem; }
+  /* the 69dvh floor above is for laptops (the Dell's 638px). A phone held sideways in a zoomed-out
+     browser tab (Pro Max at 85%, 1125x458) is this layout too, and there the floor made the planet
+     taller than the room: the page scrolled past the screen and a grey band showed at the foot
+     (check-fixes, build 329). Under 36rem tall the planet keeps the 328 size. */
+  @media (max-height:35.99rem){
+    html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap,
+    html[data-layout] body .cosmic-welcome > .cosmic-hero-wrap{ width:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem)); }
+  }
 }
 .homestart{ display:none; }
 @media (min-width:64rem) and (min-aspect-ratio:5/4){
