@@ -34216,6 +34216,12 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
       min-width:clamp(140px, 46vw, 205px) !important; min-height:clamp(44px, 11.5vw, 50px) !important;
     }
   }
+  /* (build 328) "iPad Pro 11. The planet system could be a little bigger": an upright iPad
+     held the planet to 48vh (573px on an 11") with ~110px spare between Start Studying
+     and the bar. Upright tablets only: 53vh, ~11% larger; landscape and laptops unchanged. */
+  @media (min-width:40rem) and (max-width:63.99rem) and (orientation:portrait){
+    html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap{ max-width:min(44rem, 53vh, 82vw) !important; }
+  }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
