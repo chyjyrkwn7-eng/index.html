@@ -259,7 +259,8 @@ AUDIT = """(inset) => {
   }
   if (tabs && !buried(tabs)) {
     const b = tabs.getBoundingClientRect();
-    if (b.bottom > vh + 1) problems.push(`tab bar below the fold by ${Math.round(b.bottom-vh)}px`);
+    if (b.bottom > vh + 1) problems.push(`tab bar below the fold by ${Math.round(b.bottom-vh)}px` +
+      ` [tf ${getComputedStyle(tabs).transform.slice(0, 40)}; body ${String(document.body.className).slice(0, 80)}; scene ${[...document.querySelectorAll('.rs-spot, .unlock-spotlight, [id$="-cutscene"], .scene-bridge, .ul-spot')].map(e => e.id || e.className).join(',').slice(0, 60)}]`);
     if (b.right > vw + 1 || b.left < -1)
       problems.push(`tab bar off-screen sideways (${Math.round(b.left)}..${Math.round(b.right)} of ${vw})`);
   }
@@ -400,6 +401,10 @@ def main():
                 page.goto(url)
                 page.wait_for_timeout(2600)
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
+                # 329: the fixture owes a character, and its unlock spotlight is a scene - the tab bar
+                # slides out for it (by design), so it came up over a screen now and then and read as
+                # "tab bar below the fold". Owed unlocks are marked shown first, as check-fixes does.
+                page.evaluate("()=>{ try{ const u=pendingHomeUnlocks(); markUnlocksShown(u.chars,u.banners,u.fx); }catch(e){} try{ homeUnlocksOwed=()=>false; }catch(e){} document.querySelectorAll('.rs-spot').forEach(n=>n.remove()); document.body.classList.remove('cutscene-focus'); }")
                 ins = {"top": insets[0], "right": insets[1], "bottom": insets[2], "left": insets[3]}
                 found = {}
                 for fn in SCREENS:
