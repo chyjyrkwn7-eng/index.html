@@ -17,7 +17,7 @@ def seed(pid):
     d = json.loads(g["SEED"].replace("__WEEK__", g["week_key_now"]())); d["publicId"]=pid; d["firstName"]="Maddog"; d["novaMet"]=99
     return json.dumps(d)
 INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
- localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0001');
+ localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0001'); localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc']));
  ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
 ok=True
@@ -43,7 +43,7 @@ with sync_playwright() as pw:
         chk("owner: class bubble on Home", has)
         before = page.evaluate("()=>localStorage.getItem('class26e.drill.v1')")
         page.click(".class-bubble"); page.wait_for_timeout(500)
-        page.click(".class-menu-row.is-ifc"); page.wait_for_timeout(4500)
+        page.click(".class-stack-item.is-ifc"); page.wait_for_timeout(4500)
         page.evaluate("document.getElementById('splashscreen')?.remove()")
         page.evaluate("()=>{ try{ showHome(); }catch(e){} }"); page.wait_for_timeout(1500)
         st = page.evaluate("""()=>({cls:window.NOVA_CLASS, pts:store.lifetime.points, ans:store.lifetime.answered, name:store.firstName, pid:store.publicId,
@@ -55,9 +55,7 @@ with sync_playwright() as pw:
         chk("same person: name + publicId, onboarding done", st["name"]=="Maddog" and st["pid"]=="xph5b57jbp5a" and st["onb"] is True, st)
         chk("off the leaderboard, no cloud, no sync code", st["lb"] is False and st["fb"] is None and st["code"] is None, st)
         chk("Home shows with the flame bubble", st["home"] and "is-ifc" in (st["icon"] or ""), st)
-        page.click("#nextbtn"); page.wait_for_timeout(700)
-        toast = page.evaluate("()=>document.getElementById('toast')?.textContent||''")
-        chk("Start Studying with no questions yet says so", "not been added" in toast, toast)
+        chk("Fire Code's own bank is loaded: 1,777 questions", st["q"] == 1777, st["q"])
         # the academy's copy, untouched (read raw, past the shim)
         raw = page.evaluate("""()=>{ const k='class26e.drill.v1'; const n=localStorage.length; for(let i=0;i<n;i++){ if(localStorage.key(i)===k) return localStorage[k]; } return null; }""")
         chk("academy's saved copy byte-for-byte unchanged", raw==before)
@@ -67,7 +65,7 @@ with sync_playwright() as pw:
         print("   IndexedDB:", dbs)
         # back
         page.click(".class-bubble"); page.wait_for_timeout(500)
-        page.click(".class-menu-row.is-academy"); page.wait_for_timeout(4500)
+        page.click(".class-stack-item.is-academy"); page.wait_for_timeout(4500)
         st2 = page.evaluate("()=>({cls:window.NOVA_CLASS, pts:store.lifetime.points, code:syncCode, raw:localStorage.getItem('class26e.drill.v1')})")
         chk("back in the academy with its progress and code", st2["cls"]=="academy" and st2["pts"]==12400 and st2["code"]=="TEST-0001", {k:st2[k] for k in ("cls","pts","code")})
         chk("no page errors", not errs, errs[:3])

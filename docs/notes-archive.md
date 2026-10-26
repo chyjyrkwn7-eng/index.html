@@ -28918,3 +28918,45 @@ for the class you are in."
 - Gate: tools/check-b328-classes.py (fails against the build before).
 - Still academy-only content inside the Fire Code copy: calendar, test topics, unit levels,
   badges/badge names keyed by academy topics - to adapt once the guide arrives.
+## Fire Code class built from the hand-off kit v5.4 (build 328, Oct 26 night)
+His words: "The drop down will be the bubble for the class you're currently in. When you hit
+the drop down there will be a + icon or the other classes you are in ... When you hit the plus
+you shown the class similar to what you see when signing up ... if you are already enrolled
+... say enrolled ... ours will be fire code and it's gonna IFC 2021 and HC Amendments ... In
+order to access the class you will need to input your own pdf copy of the 2021 IFC. (Ensure
+the loading screen for this is cool, like a nice green loading bar analyzing the document,
+make it take like 10-15 seconds ...) ... Put the drop down bubble thing on the left side below
+the planet system."
+- **Kit:** class26e-ifc-handoff-v5.4 (1,777 questions, 58 units, schema 5). Its
+  acceptance test (check-my-copy.mjs against the owner's own IFC, pdf.js 5.4.149) gave
+  "same-book check: EXACT", 1356/1356 IFC and 421/421 county references cut, "RESULT: this
+  copy behaves like the reference copy." The owner's IFC PDF and the kit's screenshots are
+  licensed book pages: NEVER in the repo (kept in the session scratchpad only).
+- **Files:** ifc/bank.js (tools/gen-ifc-bank.py from ifc_question_bank.json, every field kept:
+  the viewer reads them), ifc/ifc-viewer.js (the kit's viewer, unchanged),
+  ifc/harris-county-amendments.pdf (the county's public booklet, served for county clips).
+  pdf.js 5.4.149 is imported from jsDelivr only when a reference or enrolment needs it.
+- **In the class:** the head script document.writes ifc/bank.js; IFC_QUESTIONS makes the
+  app's fields (topic "Chapter 10: Means of Egress", src = position in unit, q, choices,
+  answer index, explanation) and keeps the bank's question as `ifc`. One level (no tabs), no
+  TEST_TOPICS. buildBankNote(item) returns buildIfcRef(item) for an `ifc` item - every mode
+  that shows an answer shows: explanation, "Reference: <citation.label>", and a "Show the
+  code" drop-down (opens by itself after a wrong first try): county = clip from the booklet
+  (+ whole page, Show as text); IFC = clip from the reader's own book (+ whole book page),
+  or a locked card with "Load my IFC PDF". Before answering (render -> ifcPreAnswer): a
+  blurred-definition picture with blurStem (42 questions, needs the book) and, in a Drill,
+  "Hint: show the code, answer hidden" (V.answerNumbers / V.hideAnswer). Rendered nodes are
+  cached per question (ifcNodeCache) so re-renders do not redraw.
+- **The book:** IndexedDB "ifc:class26e-ifc-book" (keys pdf, index), the same DB from the
+  academy (named in full) and from the class (the head script adds "ifc:").
+  ifcAnalyzeBook: page count, buildIndex, checkEdition, verifyCopy against the bank, save.
+- **Enrolling:** class bubble now under the planet at the left edge (placed from the hero's
+  box); it opens a dimmed stack of bubbles - other enrolled classes, then "+ Add a class" ->
+  showClassCatalog (cards with descriptions; "You're here" / "Enrolled" / "Enroll") ->
+  showIfcEnroll -> file picker -> runIfcAnalysis: the green analyzing screen (scan line,
+  bar, percentage, five steps), at least 12 s (IFC_ANALYSIS_MIN_MS) and never before the real
+  check is done; refused files say why. Enrolled classes: localStorage class26e.enrolled
+  (shared between classes). Still owner-only (classSwitchAllowed).
+- **To decide with him:** whether the code opens by itself after a wrong try (now yes),
+  whether Quiz/Exam should offer the Hint (now Drill only), a "show references during the
+  test" option, the class's own calendar/badges.
