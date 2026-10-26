@@ -83,7 +83,10 @@ with sync_playwright() as p:
             s30 = f('Sexual Assault and Family Violence', 30), p243 = f('Penal Code', 243);
       return { a31: a31.choices[a31.answer], a55: a55.choices[a55.answer], s30: s30.choices[s30.answer], p243: p243.choices[p243.answer] }; }""")
     check("Arrest, Search and Seizure #31 keys what #55 keys (mere acquiescence)", ans["a31"] == ans["a55"] and "acquiescence" in ans["a31"], ans)
-    check("Sexual Assault #30 keys what Penal Code #243 keys (Terroristic Threat)", ans["s30"] == ans["p243"] == "Terroristic Threat", ans)
+    # MOVED IN build 328: "in penal code, q243 the question about the letter bomb in the mail. The answer
+    # is the one about false report", and Sexual Assault #30 is retired (not in its 9-17-26 guide)
+    check("Penal Code #243 keys False Alarm or Report; Sexual Assault #30 is retired", ans["p243"] == "False Alarm or Report"
+          and pg.evaluate("() => !!QUESTIONS.find(q => q.topic === 'Sexual Assault and Family Violence' && q.src === 30 && q.versionOnly)"), ans)
 
     print("\n325pc. the next two tests' topics are posted")
     tp = pg.evaluate("() => [testTopicsFor('2026-10-19'), testTopicsFor('2026-10-26')]")
