@@ -17438,8 +17438,11 @@
   .affiliation-note > p{ margin:0 0 .45rem; line-height:1.45; }
   .affiliation-note > p:last-child{ margin-bottom:0; }
   .affiliation-note.legal-settings{ opacity:.7; max-width:30rem; margin-left:auto; margin-right:auto; }
+  /* ABOVE the pinned Continue, under the cards: Continue is margin-top:auto, so a note under it pushed it
+     up 49px and out of line with every other sign-up step (check-positions). Here it takes the free space
+     the button's auto margin was going to take anyway, and the button stays at its spot. */
   .affiliation-note.legal-classes{ margin:1.1rem auto 0; max-width:30rem; opacity:.62; }
-  @media (max-width:22.5rem){ .affiliation-note.legal-classes{ margin-top:.45rem; font-size:.62rem; } }
+  @media (max-width:22.5rem){ .affiliation-note.legal-classes{ margin-top:.3rem; font-size:.62rem; } }
 
   .progressring-wrap{
     position:relative; width:11.5rem; height:11.5rem; margin:0 auto 1.4rem; z-index:1;
@@ -86810,9 +86813,10 @@ function showClassSelection(){
      introduction - "maybe that's where you pick your starting character,
      and your username? Could be a better tie in" */
   continueBtn.addEventListener("click", startSignupWithNova);
-  panel.appendChild(continueBtn);
-  /* (330) "something at the bottom saying something about the classes to CYA" */
+  /* (330) "something at the bottom saying something about the classes to CYA" - under the cards, above the
+     pinned Continue, so the button stays where every other sign-up step has its own */
   panel.appendChild(buildLegalNote("classes"));
+  panel.appendChild(continueBtn);
 
   classCard.addEventListener("click", () => {
     classCard.classList.add("selected", "is-picked");
