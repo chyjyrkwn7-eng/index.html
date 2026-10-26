@@ -250,6 +250,11 @@ def main():
                 page.wait_for_timeout(2400)
                 page.evaluate("document.getElementById('splashscreen')?.remove()")
                 page.wait_for_timeout(400)
+                # build 329: a first visit opens on the Get Started page; its button leads to Welcome
+                if page.evaluate("()=>!!document.querySelector('.gs-page')"):
+                    page.wait_for_timeout(2600)
+                    shot(page, 0.5, "get-started")
+                    page.click(".gs-go"); page.wait_for_timeout(1200)
 
                 shot(page, 1, "welcome")
                 # the sign-in-with-a-code screen, then back. Build 322:
