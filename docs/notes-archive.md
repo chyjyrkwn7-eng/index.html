@@ -28883,3 +28883,12 @@ not number. Questions are word for word the guides, typos included.
 - **Welcome's small lines under the buttons step aside on screens up to 760px tall** (an
   error in the hint still shows: it drops .is-quiet). Planet: SE 263 -> 301 (Safari tab
   249 -> 298), SE as an app 285 -> 334, a 6.1" Safari tab 314 -> 351 (full width, as Home).
+- **Flare caption on Home (Oct 26 night):** "the words that show up when clicking a flare
+  will not fit". Cause: the planet-to-words auto margin was on `.cosmic-hero-wrap + *`, and
+  homeCaptionShow puts .home-caption right after the hero - after the first tap the words
+  lost their margin and jumped up 30-60px. Now named (.homegreeting / .cosmic-welcome-title).
+  Measured (cap.py, every flare): the caption sits in the gap, covering nothing, on mini,
+  iPhone 16, Pro Max and Pro Max Safari (main covers the greeting on mini/16/Pro Max Safari);
+  SE sizes fade the title for it, as main does.
+- **Start Studying higher:** the column's foot is 2.4 x --hg (was 1.2): Start to bar 48-62px.
+- **Welcome's icons** are 46% of their bubble (were a fixed 1.2rem inside scaled bubbles).

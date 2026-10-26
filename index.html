@@ -15410,6 +15410,10 @@
      places are already percentages of the box, so the whole system scales as one. */
   .cosmic-welcome .cosmic-hero-wrap{ container-type:inline-size; }
   .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge{ width:max(1.5rem, min(2.9rem, 9.45cqw)); height:max(1.5rem, min(2.9rem, 9.45cqw)); }
+  /* and the icon inside keeps its share of the bubble (1.2rem of 2.6rem), so a small bubble
+     does not carry a full-size icon ("some of the flares look bad because the icons inside
+     them didn't get their sizes changed") */
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge svg{ width:46%; height:46%; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
   /* the recorded motion, laid exactly over the still emblem (build 298) */
   .cosmic-icon-badge.cosmic-badge-rank .cosmic-rank-anim{ position:absolute; inset:0; overflow:hidden; border-radius:50%; pointer-events:none; z-index:0; mix-blend-mode:screen; }
@@ -34260,7 +34264,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{
       height:calc(100dvh - max(1.25rem, env(safe-area-inset-top, 0px)) - var(--home-pb) - 4px) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
-      padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * 1.2) !important; box-sizing:border-box !important;
+      padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * 2.4) !important; box-sizing:border-box !important;
     }
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
       flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
@@ -34279,7 +34283,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        is shared by the two gaps under it - planet to words, words to Start Studying - instead
        of above it */
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ justify-content:flex-start !important; }
-    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap + *,
+    /* (and Start Studying stands higher: "It now looks like the start studying button needs to
+       be raised up some" - the column's foot is 2.4 x --hg, 24-53px, not 1.2 x) */
+    /* (named, not "+ *": a flare's caption is put right after the planet when it is tapped, and
+       took the auto margin with it - the words jumped up 30-60px under the caption) */
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .homegreeting,
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:auto !important; }
   }
   @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
@@ -34331,7 +34339,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-actions{ margin:0 !important; }
     /* the same: planet at the top, the room left shared by planet-to-title and words-to-buttons */
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome{ justify-content:flex-start !important; }
-    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-hero-wrap + *,
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-title,
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-actions{ margin-top:auto !important; }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
