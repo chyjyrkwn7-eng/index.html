@@ -51524,8 +51524,25 @@ function saveAndExitTest(){
   showHome();
   showSavedTestBanner();
 }
-document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden") saveRunSession(); });
-window.addEventListener("pagehide", saveRunSession);
+/* LEAVING THE APP PAUSES THE TEST (build 328): "if I'm mid test, and I go to another app and
+   come back, make it so that the app automatically pauses. So when I come back I'm in the test's
+   pause menu." A test that is running and can be held (a Drill, Quiz, Mock, Practice test or the
+   daily question - not a Virtual Room match, whose Pause is a way out, nor results, flash cards
+   or a screen with no question) is paused the moment the page is hidden: the clock stops and the
+   pause screen is up behind the other app, so it is what is there on the way back. The run is
+   saved either way. */
+function autoPauseOnLeave(){
+  try{
+    if(paused || !testInProgress || order.length === 0 || !runStartTime) return;
+    if(typeof inVirtualRoom !== "undefined" && inVirtualRoom) return;
+    if(vroomAwaitingOthers || fc || (typeof resultsScreenUp === "function" && resultsScreenUp())) return;
+    if(!document.querySelector(".qpanel")) return;
+    if(!pauseBtn || pauseBtn.hidden) return;
+    pauseRun();
+  }catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden"){ autoPauseOnLeave(); saveRunSession(); } });
+window.addEventListener("pagehide", () => { autoPauseOnLeave(); saveRunSession(); });
 
 /* What the top-left of a question says (build 303). The daily question
    has its own title on the screen and says nothing up here. */
@@ -111791,9 +111808,17 @@ function rsLand(el, instant){
    follow them down as rsLand's does, to where they will REST. Nothing
    moves with motion off. Returns how long the rise takes. */
 const RS_RISE_MS = 620, RS_RISE_ROW_MS = 90;
+/* THE RESULTS' BUTTONS IGNORE A TAP MEANT FOR THE SCREEN (build 328): "Going through the review
+   phase of missed questions during a test. Just by tapping the screen while it loaded it backed
+   me out to the main menu. Massive bug." A tap on the results speeds up the card on screen, and
+   the buttons then rise into place - under the finger that was still tapping, so the next tap
+   (or the click that follows a tap) landed on "Main menu". For 700ms after any tap on the
+   results, and for 600ms after the buttons arrive, a button there does not answer. */
+let rsTapGuardUntil = 0;
 function rsRise(el, o){
   o = o || {};
   if(!el) return 0;
+  rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 600);
   el.classList.remove("rs-in"); el.classList.add("rs-in-now");
   if(o.instant || resultsMotionOff()) return 0;
   const btns = [...el.children].filter(b => b.matches("button, .next") && !b.hidden);
@@ -114000,6 +114025,7 @@ function showRunRewards(run, hooks, opts){
      timeline and keep their own tap. */
   panel.addEventListener("click", e => {
     if(e.target.closest("button")) return;
+    rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 700);
     if(resultsSeq !== seq || seq.isHeld()) return;
     if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
     rsFinishMoving(panel);
@@ -114842,7 +114868,7 @@ function summarize(){
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = cls; if(id) btn.id = id;
       btn.textContent = label;
-      btn.addEventListener("click", () => { endResultsReveal(); fn(); });
+      btn.addEventListener("click", () => { if(Date.now() < rsTapGuardUntil) return; endResultsReveal(); fn(); });
       return btn;
     };
     /* THE REVIEW: only what to do about the misses - retake them (Drill),
