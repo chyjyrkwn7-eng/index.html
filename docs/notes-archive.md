@@ -29053,3 +29053,19 @@ pushed 07a918c. Picked up here.
   0.6s tap guard.
 - Sandbox note: python Playwright was missing (pip install playwright==1.63.0) and the tools name
   /opt/pw-browsers/chromium-1194; a symlink to chromium-1243/chrome-linux64 stands in.
+- **Afternoon (same session):** the SE's chat panel `top` (f66cecc) hung the CLOSED phone sheet from the
+  top, 100px of it over the foot catching taps (a Virtual Room's Main menu, check-vroom) - removed, a
+  phone's panel is the bottom sheet. First-gen SE: class cards tightened under 22.5rem (Coming soon ran
+  off its card, the page scrolled 46px), the character step's grid margins trimmed (scrolled 9px) - every
+  sign-up Continue on one line (check-b329 "narrow"; check-positions flags nothing). Get Started's stars
+  drift one tile a cycle (gs-drift had a seam). firestore-admin.py carries the 24 units and 328's bands.
+- **Gates brought up to date** (each was written before a change Madison asked for): check-curve (328
+  bands), check-behaviour (24 badges, 328 thresholds in two fixtures, the phone XP line without "to Level",
+  the tall phones' 3.5% smidge, no "interrupted" pop-up - Start Studying offers the lost run, no "Paused"
+  word, keyChoices in identity, Penal's repeat block), check-loops (cb-new, ia-shine, gs-drift),
+  check-positions (laptop round 32, What This Actually Is retired), sweep-layout (owed unlocks marked
+  shown: a character spotlight slid the tab bar out mid-sweep).
+- **Still failing on live AND here (not this build's):** check-behaviour's badge case lining, Badges tab
+  case/lid, the daily bubble "beside the button", a selected character's glow, an earned badge's glow
+  edge, the start sheet's swipe-down from its middle. Final run: sweep 74/74, check-fixes, ink-centre,
+  b329, sync, results, vroom, chat, curve, loops, positions, tours, unlocks, sound, friends, b328-* pass.
