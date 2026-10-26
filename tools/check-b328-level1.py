@@ -136,7 +136,7 @@ with sync_playwright() as p:
     check("an account at 10 hundos in a 12-question unit is owed that badge's celebration", retro == ["Identity Crimes"], retro)
 
     print("\n328f. levels on the unit screen")
-    pg.evaluate("() => showSetup()"); pg.wait_for_timeout(1500)
+    pg.evaluate("() => { store.seenUnitSelectTour = true; saveStore(); try{ localStorage.setItem(penalVersionNoteKey(), '1'); }catch(e){} showSetup(); }"); pg.wait_for_timeout(1500)   # the first-time unit tour is not what is measured
     lv = pg.evaluate("""() => ({ tabs: [...document.querySelectorAll('.screen-setup .setup-levels .iconbtn')].map(b => b.textContent.trim()),
       active: (document.querySelector('.screen-setup .setup-levels .iconbtn.active') || {}).textContent,
       shown: [...document.querySelectorAll('.picks > label.pick')].filter(r => getComputedStyle(r).display !== 'none').length,
