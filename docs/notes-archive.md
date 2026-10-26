@@ -28823,3 +28823,9 @@ not number. Questions are word for word the guides, typos included.
   at 2x: the glass and Find me centred on the field, the placeholder 2px high);
   Find me is the field's 17px at weight 500, white (was 15.2px/700).
 - **Back pills:** left padding 1.5px shorter (the chevron's viewBox air); ink gaps equal at 2x.
+- **Unit cards without the circle:** the name opens the card at its top-left; the
+  tick is a 1.6rem disc ON the card's top-right corner (half outside, so it covers no
+  word), popping in when picked beside the accent edge and glow; next test is a line
+  above the name. Count never wraps; under 360px the count is .66rem and the badge
+  2.1rem. No count/badge or name/edge overlap on SE, SE 2/3, iPhone 16 or iPad.
+- **Profile XP line:** no "to Level N" (pfXpToText returns "").

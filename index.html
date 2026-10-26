@@ -34169,6 +34169,38 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      viewBox has 5px of air on its left, so the ink sat 1.5px right of centre. Measured
      at 2x: equal ink gaps with the left padding 1.5px shorter. Every Back pill. */
   html[data-layout] body .back-link{ padding-left:calc(1rem - 1.5px) !important; padding-right:1rem !important; }
+  .pf-xp-to:empty{ display:none; }
+  /* ---- THE UNIT CARD WITHOUT ITS CIRCLE (build 328) ----
+     "Still looks crowded on the phones. The start of the title ... is underneath the
+     circle but we are gonna make it against the top now. We are also gonna go away
+     with the circle checkmark ... When you select a unit maybe the very top left corner
+     gets a mark? Or maybe that's when a checkmark pops up?" The name opens the card at
+     its top-left; a picked card keeps its accent edge and glow, and its tick pops in on
+     the card's top-right corner, sitting ON the corner (half outside) so it never covers
+     a word. The next-test mark is a line above the name when there is one. The hidden
+     box stays in the DOM for the gates and anything that reads it. */
+  html[data-layout] .picks > label.pick{
+    grid-template-areas:"next next next" "name name name" "ver ver ver" "count count badge" "bar bar badge" !important;
+    position:relative; overflow:visible !important;
+  }
+  html[data-layout] .picks{ overflow:visible; }
+  html[data-layout] .picks > label.pick > .pick-nexttest{ margin:0 0 .3rem 0 !important; }
+  html[data-layout] .picks > label.pick > .box{
+    position:absolute !important; top:-.5rem; right:-.5rem; left:auto; margin:0 !important; z-index:2;
+    width:1.6rem !important; height:1.6rem !important; min-width:0 !important; border-radius:50% !important;
+    opacity:0; transform:scale(.4); pointer-events:none;
+    transition:transform .34s cubic-bezier(.3,1.7,.5,1), opacity .16s ease !important;
+    box-shadow:0 0 0 2px var(--paper, #0E1014), 0 4px 10px rgba(0,0,0,.45) !important;
+  }
+  html[data-layout] .picks > label.pick.pick-checked > .box,
+  html[data-layout] .picks > label.pick:has(input:checked) > .box{ opacity:1; transform:scale(1); }
+  html[data-layout] .picks > label.pick > .pcount{ white-space:nowrap; }
+  @media (max-width:359px){
+    html[data-layout] .picks > label.pick > .pcount{ font-size:.66rem; }
+    html[data-layout] .picks > label.pick .pick-badge{ width:2.1rem !important; height:2.1rem !important; }
+  }
+  /* the name's first line no longer shares its row with anything */
+  html[data-layout] .picks > label.pick > .pname{ margin-top:0 !important; }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
@@ -129356,10 +129388,9 @@ function buildRankRewardTiles(key, taps){
    the left, what is left to the next level on the right. At a badge wall
    there is no next level to name (and, since build 321, no note under
    the bar). Still one button to the road map, with no chrome of its own. */
-function pfXpToText(prog){
-  if(!prog || prog.atCap || prog.stopped || prog.held) return "";
-  return "to Level " + ((Number(prog.level) || 0) + 1);
-}
+/* (build 328) "Why does the xp underneath it say 'to level 24' remove that." The
+   numbers stand alone; the level is already on the line above. */
+function pfXpToText(prog){ return ""; }
 /* The rank-up's stand-in and climb redraw the level under the bar; the
    phone's "to Level N" follows them (build 320). */
 function syncPfXpTo(standing, prog){
