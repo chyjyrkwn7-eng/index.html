@@ -1,5 +1,5 @@
 """Build 330: starred runs score, the retake pays for finishing, and the rest of the round.
-Run:  python3 tools/check-b330.py [section ...]   (sections: starred retake first legal modes)"""
+Run:  python3 tools/check-b330.py [section ...]   (sections: starred retake first legal modes bg)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "shoot-flow.py")).read().rsplit("\nmain()", 1)[0]
@@ -52,7 +52,7 @@ RETAKE = """async (wrongAgain)=>{
   order.forEach((qi, k) => { attempts[qi] = k < wrongAgain ? 2 : 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
   stopQuestionTimer(); summarize(); await wait(500);
   return { n: order.length, retake: isMissedRetake, xp: store.lifetime.points - xp0 }; }"""
-want = sys.argv[1:] or ["starred", "retake", "first", "legal", "modes"]
+want = sys.argv[1:] or ["starred", "retake", "first", "legal", "modes", "bg"]
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
     if "starred" in want:
@@ -118,6 +118,21 @@ with sync_playwright() as pw:
         chk("the mode descriptions are short (70 characters or fewer) and none says classmates",
             r["descs"] and all(len(d) <= 70 for d in r["descs"]) and not any("classmate" in d.lower() for d in r["descs"]) and not r["classmates"], r["descs"])
         ctx.close()
+    if "bg" in want:
+        # ONE LOOK ON EVERY DEVICE: the corner glows are the same size relative to the screen, so the
+        # edge of Home away from the glow is as dark on an iPad or a laptop as on a phone
+        import io
+        from PIL import Image
+        def edge(dev):
+            ctx, page = page_for(br, dev)
+            page.evaluate("()=>{ showHome(); document.querySelectorAll('#tour-overlay,#tour-tooltip,#nova-intro').forEach(n=>n.remove()); }"); page.wait_for_timeout(1200)
+            im = Image.open(io.BytesIO(page.screenshot())).convert("RGB"); w, h = im.size
+            reg = im.crop((0, int(h * .4), int(w * .2), int(h * .8))).resize((20, 30)); px = list(reg.getdata())
+            ctx.close(); return [sum(p[i] for p in px) / len(px) for i in range(3)]
+        ref = edge("promax")
+        for dev in ("ipad11", "mac"):
+            v = edge(dev)
+            chk(dev + ": Home's background away from the glow is as dark as the phone's (within 10 levels, each colour)", all(abs(a - b) <= 10 for a, b in zip(v, ref)), [ref, v])
     br.close()
 print("\nALL PASS" if ok else "\nFAILED")
 sys.exit(0 if ok else 1)

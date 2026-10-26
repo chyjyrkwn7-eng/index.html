@@ -846,8 +846,13 @@
      below (min-width:40rem) rather than changed here, so phone - which
      was never reported as broken - keeps its exact original look. */
   [data-layout="modern"]{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
+  /* ONE LOOK ON EVERY DEVICE (build 330): "why is the smaller device have the darker/better background? ...
+     It needs to be cohesive across all devices." The 100% radii spread the warm glow over the whole of a
+     tablet or laptop, so it read lighter and redder than the phone's (measured: an iPad's left edge 43.8
+     against the phone's 21.8). The radius is now the phone's own proportions - about 87% of the width, and
+     no more than half the height - so the glow is the same size relative to the screen on all of them. */
   @media (min-width:40rem){
-    [data-layout="modern"]{ --bg-glow-r1:100%; --bg-glow-r2:100%; }
+    [data-layout="modern"]{ --bg-glow-r1:min(100%, 87vw, 50vh); --bg-glow-r2:min(100%, 87vw, 50vh); }
   }
   /* --edge-bottom: the colour the app actually is along the very BOTTOM
      edge of the screen, and the companion to --statusbar-mix2/3 below,
