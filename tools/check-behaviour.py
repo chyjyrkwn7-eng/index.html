@@ -3479,7 +3479,7 @@ def check_b243(br):
       out.fieldShare = f && row ? Math.round(f.getBoundingClientRect().width / row.getBoundingClientRect().width * 100) : 0;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
-    check("five starters: Ninja, Ghost, Wizard, Bear, Alien",
+    check("five starters: Kage, Wraith, Arcane, Ursa, Xeno",
           isinstance(r, dict) and r.get("starters") == ["ninja", "ghost", "wizard", "grizzly", "alien"], r)
     # Build 244 moved these on: six rank characters from the second rank
     # up, the Scholar/Wolf/Pirate challenges and SWAT as its own secret.
@@ -5252,7 +5252,7 @@ def check_b258(br):
       out.marks = f.streak100.need;
       /* 9. hold something you already have: the same card, marked held */
       store.avatarChar = 'ghost'; showCustomize('character'); await wait(700);
-      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Ninja');
+      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Kage');
       nj.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5, pointerId: 1 }));
       await wait(650);
       const held = document.querySelector('.unlock-card.is-unlocked');

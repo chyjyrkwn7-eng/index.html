@@ -288,10 +288,10 @@ def story_section(br):
     # MOVED IN 327z15: an existing account has its own recap of its badges; the shared
     # story says where they are (your class material)
     check("both flows say where the badges are (the existing account too)",
-          any(re.search(r"class material", t) for t in existing), existing[3:10])
+          any(re.search(r"your studies", t) for t in existing), existing[3:10])
     # MOVED IN 327z15: "short and sweet text boxes" - more boxes, each short
-    check("short boxes: every line of a new account's intro is 14 words or fewer, and there are at most 22",
-          0 < len(fresh) <= 22 and all(len(t.split()) <= 14 for t in fresh), [len(fresh), [t for t in fresh if len(t.split()) > 14][:3]])
+    check("short boxes: every line of a new account's intro is 14 words or fewer, and there are at most 26 (329: a longer storm, sync-code and mode boxes)",
+          0 < len(fresh) <= 26 and all(len(t.split()) <= 14 for t in fresh), [len(fresh), [t for t in fresh if len(t.split()) > 14][:3]])
     ranks = r.get("ranks") or []
     check("Gold's rank-up says the crack is strain and the badges hold it; Supernova's: it held, a star",
           len(ranks) == 7 and re.search(r"crack", ranks[2]) and re.search(r"badges", ranks[2]) and re.search(r"held", ranks[6]) and re.search(r"star", ranks[6]),

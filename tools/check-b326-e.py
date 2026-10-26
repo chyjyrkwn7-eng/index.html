@@ -140,8 +140,8 @@ def check_story(br):
     scat = [i for i, t in enumerate(fresh) if re.search(r"scattered", t) and re.search(r"badges", t) and re.search(r"flares", t) and re.search(r"crew", t)]
     check("why things are lost: a storm hit his ship, then his badges, flares and crew were scattered (in that order)",
           storm and scat and storm[0] < scat[0], fresh[:6])
-    land = [i for i, t in enumerate(fresh) if re.search(r"class material", t)]
-    check("...and they landed in your class material, after the storm", land and scat and land[0] > scat[0], fresh[:7])
+    land = [i for i, t in enumerate(fresh) if re.search(r"your studies", t)]
+    check("...and they landed in your studies, after the storm", land and scat and land[0] > scat[0], fresh[:7])
     check("what you get: every one you find joins your team, and no 'teach you' / log",
           re.search(r"joins your team|join you", allt) and not re.search(r"instructor.s log|teach you", allt),
           [t for t in fresh if re.search(r"join", t)])
@@ -151,8 +151,9 @@ def check_story(br):
     check("no fixed totals in his introduction (no 'seven', '16', 'a few secret flares')", not bad, bad[:3])
     # MOVED IN 327z15: a new account's introduction now asks his name and
     # his first character inside it (2 asks + the pick's answer), so 16 -> 20
-    check("short: a new account hears at most 20 lines (two of them asks), an existing one at most 21, and every slide trigger is kept",
-          0 < len(fresh) <= 20 and 0 < len(existing) <= 21
+    # MOVED IN 329: Madison asked for a longer storm, a sync-code line and two boxes on the modes, so 20 -> 26
+    check("short: a new account hears at most 26 lines (two of them asks), an existing one at most 21, and every slide trigger is kept",
+          0 < len(fresh) <= 26 and 0 < len(existing) <= 21
           and any("friend" in k for k in r.get("keys") or []) and any("final" in k for k in r.get("keys") or []) and sum(1 for k in r.get("keys") or [] if "enter" in k) >= 9,
           {"new": len(fresh), "existing": len(existing), "keys": r.get("keys")})
     ranks = r.get("ranks") or []

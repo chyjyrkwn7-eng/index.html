@@ -1960,6 +1960,8 @@
   .nt-ask .nt-ask-go{ min-height:48px; min-width:12rem; margin:0; }
   .nt-ask .nt-ask-signin{ min-height:44px; margin:0; }
   .nt-ask .nt-ask-msg{ margin:0; font-size:.92rem; line-height:1.4; color:var(--soft); }
+  .nt-ask .nt-ask-msg.is-verified{ display:flex; align-items:center; justify-content:center; gap:.4rem; color:#6BE39A; font-weight:700; }
+  .nt-ask .nt-ask-msg.is-verified::before{ content:""; width:16px; height:16px; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 10.4l3.5 3.5L15.5 6' fill='none' stroke='black' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat; }
   .nt-ask-char{ width:min(28rem, 96%); }
   /* THE STARTERS, CENTRED (327z15 round 31): "two options, they aren't
      centered cause the top is 3 the bottom is 2". A centred wrap, not a
@@ -30570,10 +30572,24 @@
   @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.7rem; } .dailyq-outro-next{ font-size:1.12rem; } }
 
   /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
+  /* Build 329: "the +100 XP animation ... a smidge rugged ... can that pop up look more like the other
+     Liquid Glass pop up". The account banner's own glass (a 3px bar, a tag, one line) - and, because
+     it moves, no backdrop blur at all: the body is the glass colour itself, so only transform and
+     opacity change in flight (the blur was what made it stutter). */
   #welcomebonus-banner, [data-theme="dark"] #welcomebonus-banner{
-    background:rgba(20,28,42,.7); color:#8FC1FF;
-    border:1px solid rgba(143,193,255,.3);
-    box-shadow:0 8px 24px rgba(0,0,0,.3), 0 0 18px rgba(61,139,255,.3), inset 0 1px 0 rgba(255,255,255,.08);
+    display:flex; align-items:center; gap:.7rem; padding:.85rem 1.2rem .85rem 1rem; border-radius:16px; color:var(--ink);
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(24,29,38,.94);
+    border:1px solid rgba(255,255,255,.11); border-left:3px solid #4B9BFF;
+    -webkit-backdrop-filter:none; backdrop-filter:none; will-change:transform, opacity;
+    box-shadow:0 8px 24px rgba(0,0,0,.34), inset 0 3px 5px -2px rgba(255,255,255,.12);
+    font-weight:650; font-size:.88rem; transform-origin:50% 50%;
+  }
+  #welcomebonus-banner .wb-tag{ font-size:.6rem; font-weight:800; letter-spacing:.12em; color:#8FC1FF; }
+  #welcomebonus-banner .wb-text{ line-height:1.3; }
+  #welcomebonus-banner.welcomebonus-fly{
+    transition:transform .8s cubic-bezier(.5,.02,.25,1), opacity .35s ease .45s;
+    transform:translateX(calc(-50% + var(--flyx, 0px))) translateY(var(--flyy, 0px)) scale(.28);
+    opacity:0;
   }
 
   /* ---- THE BADGE CASE (build 317, badge round: a case in 3D whose lid
@@ -34215,6 +34231,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     animation:cc-in .5s cubic-bezier(.2, 1, .3, 1) forwards; animation-delay:calc(var(--k) * 90ms + 60ms); transition:transform .15s ease; }
   @keyframes cc-in{ to{ opacity:1; transform:none; } }
   .class-card:active{ transform:scale(.985); }
+  .class-card.is-picked{ border-color:rgba(255,255,255,.5); box-shadow:var(--surface-shadow), 0 0 0 1px rgba(255,255,255,.14), 0 0 22px var(--cc, rgba(255,255,255,.12)); }
   .class-card.is-here{ border-color:rgba(255,255,255,.42); box-shadow:var(--surface-shadow), 0 0 0 1px rgba(255,255,255,.1); }
   .class-card.is-soon{ cursor:default; border-style:dashed; border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.025); box-shadow:none; }
   .class-card.is-soon:active{ transform:none; }
@@ -34436,6 +34453,61 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .csi-label{ border-radius:999px; font-size:.86rem; font-weight:650; white-space:nowrap;
     background:var(--surface-sheen), rgba(22,24,34,.86); border:1px solid var(--surface-border); box-shadow:0 4px 14px rgba(0,0,0,.35); }
   .class-stack-item:active .csi-bubble{ transform:scale(.94); }
+  /* ---- THE GET STARTED PAGE (build 329) ----
+     A fixed, self-scrolling trailer over the app on a first visit. Only transform and opacity move;
+     nothing blurred. Fixed dark colours on purpose: it is a trailer, not a settings screen. */
+  .gs-page{ position:fixed; inset:0; z-index:60; background:#05060D; color:#F2F4FA; overflow:hidden; }
+  .gs-stars{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+  .gs-stars i{ position:absolute; left:0; right:0; top:0; height:200%; background-repeat:repeat; will-change:transform; animation:gs-drift 90s linear infinite; }
+  .gs-stars .gs-s1{ background-image:radial-gradient(1.2px 1.2px at 30px 40px, #fff, transparent), radial-gradient(1px 1px at 120px 150px, #cfd8ff, transparent), radial-gradient(1.4px 1.4px at 210px 90px, #ffe3c4, transparent); background-size:260px 260px; opacity:.85; }
+  .gs-stars .gs-s2{ background-image:radial-gradient(1px 1px at 60px 200px, #fff, transparent), radial-gradient(1px 1px at 180px 30px, #bcc9ff, transparent); background-size:190px 190px; opacity:.55; animation-duration:140s; }
+  .gs-stars .gs-s3{ background-image:radial-gradient(1.6px 1.6px at 90px 120px, #fff, transparent); background-size:340px 340px; opacity:.7; animation-duration:60s; }
+  @keyframes gs-drift{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
+  .gs-scroll{ position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px)); }
+  .gs-hero{ position:relative; min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0 1.2rem; box-sizing:border-box; }
+  .gs-warp{ position:absolute; left:50%; top:50%; width:150vmax; height:150vmax; margin:-75vmax 0 0 -75vmax; pointer-events:none; opacity:0;
+    background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(214,226,255,.9) 0 .3deg, transparent .3deg 5deg);
+    -webkit-mask-image:radial-gradient(circle at 50% 50%, transparent 8%, #000 38%, transparent 72%); mask-image:radial-gradient(circle at 50% 50%, transparent 8%, #000 38%, transparent 72%);
+    will-change:transform, opacity; animation:gs-warp 1.9s cubic-bezier(.3,.1,.2,1) .1s both; }
+  @keyframes gs-warp{ 0%{ transform:scale(.12); opacity:0; } 18%{ opacity:1; } 100%{ transform:scale(1.5); opacity:0; } }
+  .gs-hero-copy{ position:relative; z-index:2; text-align:center; opacity:0; transform:scale(.94); transition:opacity 1s ease, transform 1.1s cubic-bezier(.2,.9,.3,1); }
+  .gs-hero-copy.is-in{ opacity:1; transform:none; }
+  .gs-eyebrow{ margin:0 0 .4rem; font-size:.9rem; letter-spacing:.32em; text-transform:uppercase; color:rgba(220,228,255,.7); }
+  .gs-logo{ margin:0; font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif; font-size:clamp(4rem, 17vw, 8rem); font-weight:700; letter-spacing:.12em; line-height:1; text-indent:.12em;
+    background:linear-gradient(180deg, #fff 20%, #aab8ff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+  .gs-tag{ margin:1rem 0 0; font-size:1.05rem; color:rgba(236,240,255,.82); }
+  .gs-scrollcue{ margin:2.4rem 0 0; font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:rgba(220,228,255,.5); animation:gs-bob 2.2s ease-in-out infinite; }
+  @keyframes gs-bob{ 0%,100%{ transform:translateY(0); opacity:.45; } 50%{ transform:translateY(6px); opacity:.9; } }
+  .gs-phone{ position:relative; flex:none; width:clamp(200px, 58vw, 270px); aspect-ratio:9 / 19.5; border-radius:34px; overflow:hidden; background:#0A0B14;
+    border:1px solid rgba(255,255,255,.2); box-shadow:0 24px 60px rgba(0,0,0,.55), 0 0 40px rgba(120,140,255,.18); }
+  .gs-phone video{ display:block; width:100%; height:100%; object-fit:cover; background:#0A0B14; }
+  .gs-side{ display:none; position:absolute; top:50%; z-index:1; width:clamp(190px, 17vw, 270px); }
+  .gs-scene{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:1.8rem; padding:3.2rem 1.4rem; max-width:62rem; margin:0 auto; box-sizing:border-box;
+    opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
+  .gs-scene.is-in, .gs-end.is-in{ opacity:1; transform:none; }
+  .gs-copy{ text-align:center; max-width:26rem; }
+  .gs-kicker{ margin:0 0 .5rem; font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:#9DB0FF; font-weight:700; }
+  .gs-title{ margin:0 0 .7rem; font-size:clamp(1.7rem, 6.4vw, 2.5rem); line-height:1.12; font-weight:750; }
+  .gs-body{ margin:0; font-size:1.02rem; line-height:1.5; color:rgba(230,236,255,.74); }
+  .gs-end{ position:relative; z-index:1; text-align:center; padding:4rem 1.4rem 2rem; opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
+  .gs-bar{ position:absolute; left:0; right:0; bottom:0; z-index:3; display:flex; justify-content:center; padding:2.2rem 1.2rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(180deg, rgba(5,6,13,0), rgba(5,6,13,.92) 60%); pointer-events:none; }
+  .gs-bar .gs-go{ pointer-events:auto; margin:0; width:min(100%, 22rem); min-height:50px; }
+  @supports (text-box:trim-both cap alphabetic){ .gs-bar .gs-go{ text-box:trim-both cap alphabetic; padding-block:calc((50px - 1cap)/2); } }
+  @media (min-width:56rem){
+    .gs-side{ display:block; }
+    .gs-side.is-left{ left:max(2rem, 7vw); transform:translateY(-50%) rotate(-7deg); }
+    .gs-side.is-right{ right:max(2rem, 7vw); transform:translateY(-50%) rotate(7deg); }
+    .gs-phone{ width:clamp(220px, 19vw, 290px); }
+    .gs-scene{ flex-direction:row; justify-content:space-between; gap:5rem; padding:5rem 2rem; }
+    .gs-scene.is-flip{ flex-direction:row-reverse; }
+    .gs-copy{ text-align:left; max-width:28rem; }
+    .gs-title{ font-size:clamp(2.2rem, 3.6vw, 3.2rem); }
+    .gs-body{ font-size:1.12rem; }
+  }
+  @media (prefers-reduced-motion:reduce){ .gs-warp{ display:none; } .gs-stars i, .gs-scrollcue{ animation:none; } .gs-scene, .gs-end, .gs-hero-copy{ transition:none; opacity:1; transform:none; } }
+  [data-reduce-motion="true"] .gs-warp{ display:none; }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
      The Leaderboard's segmented control, a level's picked count beside its name. */
   html[data-layout] .screen-setup .setup-levels{ margin:1rem 0 .85rem; width:100%; }
@@ -52072,8 +52144,8 @@ const AVATAR_DISPLAY_NAME = {
   swat: "SWAT", valkyrie: "Koi", hacker: "Hacker", timekeeper: "Timekeeper", ronin: "Ronin", nightowl: "Night Owl", knight: "Knight",
   pirate: "Pirate", scholar: "Scholar", wolf: "Wolf",
   paladin: "Paladin", sentinel: "Sentinel", k9: "K-9",
-  ninja: "Ninja", ghost: "Ghost", queen: "Queen", wizard: "Wizard",
-  grizzly: "Bear", alien: "Alien", samurai: "Samurai", dragon: "Dragon",
+  ninja: "Kage", ghost: "Wraith", queen: "Queen", wizard: "Arcane",
+  grizzly: "Ursa", alien: "Xeno", samurai: "Samurai", dragon: "Dragon",
   officer: "Officer", clown: "Clown", robot: "Robot", astronaut: "Orion",
   detective: "Detective", zeus: "Zeus", masked: "The Masked One", voidwalker: "Void",
   champion: "Champion", umbra: "Umbra", singularity: "Horizon", genesis: "Genesis",
@@ -86009,6 +86081,8 @@ function showWelcome(){
   pauseBtn.hidden = true;
   countEl.textContent = "";
   setOnboardingHeader();
+  /* the username check later reads the class board; ask for it now, while they read Welcome (build 329) */
+  try{ fetchBoardForInvites(false); }catch(e){}
 
   /* Full-bleed, borderless first screen \u2014 no card, no panel border,
      just the cosmic hero and content sitting directly on the app
@@ -86331,8 +86405,9 @@ function showSignUpCheck(){
       /* Straight on to the course (build 327): no What's New list in
          sign-up - "listing all the what's new stuff is not the move".
          A new account hears the story from Nova; the version history
-         is in Settings. */
-      showWelcomeIntro();
+         is in Settings. (329: and no "What This Actually Is" either - the
+         Get Started page, before Welcome, says that now.) */
+      showClassSelection();
     });
   });
 
@@ -86383,9 +86458,9 @@ function whenBoardKnown(ms, cb){
   const t0 = Date.now();
   const tick = () => {
     if(boardKnown() || Date.now() - t0 >= ms) return cb();
-    setTimeout(tick, 150);
+    setTimeout(tick, 60);
   };
-  setTimeout(tick, 150);
+  setTimeout(tick, 60);
 }
 
 /* A short, purpose-explaining screen between the feature overview and
@@ -86397,6 +86472,85 @@ function whenBoardKnown(ms, cb){
    TCOLE Rules, use-of-force units) already makes that obvious to
    anyone it's actually for, and "made by a classmate" carries the
    same real story without turning it into a label on the app. */
+/* ---- THE GET STARTED PAGE (build 329) ----
+   "A get started page ... some previews on the left and right ... almost like a trailer as you
+   scroll down ... nova themed, spacey ... a Let's get started button that leads to the Welcome to
+   Nova screen." Shown once per device, before Welcome, on a first visit (class26e.getstarted);
+   it replaces the "What This Actually Is" step of sign-up. It opens with a short warp-in, then
+   scrolls through four short clips (landing/*.mp4, muted, looping, played only while on screen). */
+const GS_SCENES = [
+  { key: "test", kicker: "Study", title: "Questions that feel like play", body: "Drill, Mock and Review turn your class material into quick questions you will actually want to answer." },
+  { key: "hundo", kicker: "Score", title: "Go for the hundo", body: "Get every question right and the whole screen celebrates, with a new effect to unlock each time." },
+  { key: "rank", kicker: "Rank up", title: "Every win lights a flare", body: "Levels climb a ladder of ranks. Reach a new one and a flare lights up around your planet." },
+  { key: "customize", kicker: "Customize", title: "Make Nova yours", body: "Collect characters, banners and effects as you go, then pick the ones that are you." }
+];
+function gsSeen(){ try{ return localStorage.getItem("class26e.getstarted") === "1"; }catch(e){ return false; } }
+function gsMarkSeen(){ try{ localStorage.setItem("class26e.getstarted", "1"); }catch(e){} }
+function showGetStarted(){
+  stopTimer(); stopQuestionTimer();
+  meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true; timerlineEl.hidden = true;
+  appearanceBtn.hidden = true; homeBtn.hidden = true; profileBtn.hidden = true; pauseBtn.hidden = true;
+  countEl.textContent = "";
+  setOnboardingHeader();
+  const page = document.createElement("section");
+  page.className = "gs-page"; page.setAttribute("data-screen", "getstarted");
+  const stars = document.createElement("div"); stars.className = "gs-stars"; stars.setAttribute("aria-hidden", "true");
+  stars.innerHTML = '<i class="gs-s1"></i><i class="gs-s2"></i><i class="gs-s3"></i>';
+  const scroll = document.createElement("div"); scroll.className = "gs-scroll";
+  const vid = key => {
+    const f = document.createElement("div"); f.className = "gs-phone";
+    const v = document.createElement("video");
+    v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = "metadata";
+    v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
+    v.poster = "landing/" + key + ".jpg"; v.src = "landing/" + key + ".mp4"; v.dataset.gs = key;
+    f.appendChild(v);
+    return f;
+  };
+  const hero = document.createElement("header"); hero.className = "gs-hero";
+  const warp = document.createElement("div"); warp.className = "gs-warp"; warp.setAttribute("aria-hidden", "true");
+  const hl = vid("hundo"), hr = vid("rank"); hl.classList.add("gs-side", "is-left"); hr.classList.add("gs-side", "is-right");
+  const hc = document.createElement("div"); hc.className = "gs-hero-copy";
+  hc.innerHTML = '<p class="gs-eyebrow">Welcome to</p><h1 class="gs-logo">NOVA</h1><p class="gs-tag">Study smarter. Rank up. Explore.</p><p class="gs-scrollcue" aria-hidden="true">Scroll</p>';
+  hero.append(warp, hl, hc, hr);
+  scroll.appendChild(hero);
+  GS_SCENES.forEach((sc, i) => {
+    const row = document.createElement("section"); row.className = "gs-scene" + (i % 2 ? " is-flip" : "");
+    const copy = document.createElement("div"); copy.className = "gs-copy";
+    const k = document.createElement("p"); k.className = "gs-kicker"; k.textContent = sc.kicker;
+    const h = document.createElement("h2"); h.className = "gs-title"; h.textContent = sc.title;
+    const b = document.createElement("p"); b.className = "gs-body"; b.textContent = sc.body;
+    copy.append(k, h, b);
+    row.append(copy, vid(sc.key));
+    scroll.appendChild(row);
+  });
+  const end = document.createElement("section"); end.className = "gs-end";
+  end.innerHTML = '<h2 class="gs-title">Ready when you are</h2><p class="gs-body">Your adventure starts with one tap.</p>';
+  scroll.appendChild(end);
+  const bar = document.createElement("div"); bar.className = "gs-bar";
+  const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn gs-go"; go.textContent = "Let’s get started";
+  go.addEventListener("click", () => { gsMarkSeen(); showWelcome(); });
+  bar.appendChild(go);
+  page.append(stars, scroll, bar);
+  stage.replaceChildren(page);
+  try{ window.scrollTo(0, 0); }catch(e){}
+  /* a clip plays only while it is on screen, and each scene fades in as it arrives */
+  const vids = Array.from(page.querySelectorAll("video"));
+  const reveal = new IntersectionObserver(es => es.forEach(e => {
+    if(e.isIntersecting) e.target.classList.add("is-in");
+  }), { root: scroll, threshold: .2 });
+  scroll.querySelectorAll(".gs-scene, .gs-end, .gs-hero-copy").forEach(n => reveal.observe(n));
+  const play = new IntersectionObserver(es => es.forEach(e => {
+    const v = e.target.querySelector("video"); if(!v) return;
+    if(e.isIntersecting){ const p = v.play(); if(p && p.catch) p.catch(() => {}); } else v.pause();
+  }), { root: scroll, threshold: .35 });
+  page.querySelectorAll(".gs-phone").forEach(n => play.observe(n));
+  const stop = new MutationObserver(() => { if(!page.isConnected){ reveal.disconnect(); play.disconnect(); stop.disconnect(); vids.forEach(v => { try{ v.pause(); v.removeAttribute("src"); v.load(); }catch(e){} }); } });
+  stop.observe(stage, { childList: true });
+  setTimeout(() => hc.classList.add("is-in"), 1500);
+}
+function showWelcomeFirst(){
+  if(!gsSeen()) showGetStarted(); else showWelcome();
+}
 function showWelcomeIntro(){
   setOnboardingHeader();
   const panel = document.createElement("section");
@@ -86472,7 +86626,7 @@ function showClassSelection(){
   panel.className = "panel home classselect-panel";
   /* Genuinely missing before \u2014 confirmed directly, no buildBackLink
      call existed anywhere in this function either. */
-  panel.appendChild(buildBackLink("Back", showWelcomeIntro));
+  panel.appendChild(buildBackLink("Back", showSignUpCheck));
 
   const title = document.createElement("h1");
   title.className = "welcomeintro-title";
@@ -86489,41 +86643,27 @@ function showClassSelection(){
   sub.textContent = "Pick what you're studying for. More classes are on the way, and you'll be able to add them later.";
   panel.appendChild(sub);
 
+  /* Build 329: the same cards as the Classes screen (the class button's "Add a class"): an emblem,
+     the class's name and a line about it, and a chip - here "Select" - with a "More classes,
+     Coming soon" box beside it. Fire Code is not offered at sign-up. */
   const cards = document.createElement("div");
-  cards.className = "modecards classselect-cards";
-
+  cards.className = "class-cards classselect-cards";
+  const academy = NOVA_CLASSES.find(c => c.key === "academy"), ainfo = NOVA_CLASS_INFO.academy || {};
   const classCard = document.createElement("button");
-  classCard.type = "button"; classCard.className = "modecard";
-  const classTitle = document.createElement("span");
-  classTitle.className = "modecardtitle"; classTitle.textContent = "Class 26E";
-  /* A short description here now too, matching the "More classes" card
-     right next to it \u2014 that one already had its own descriptive line,
-     which made this card's own empty space underneath its title look
-     like something was missing, not intentionally simpler. Police
-     academy specifically, since that's genuinely what this class is. */
-  /* A short sentence now, not just a label \u2014 matching the style of
-     "No other classes available yet." right next to it, per explicit
-     request for something a bit more than a bare two-word fragment. */
-  const classDesc = document.createElement("span");
-  /* Third wording, and the shortest. "For police academy cadets" never
-     said which class; "The Class 26E police academy class" said class
-     twice; "The police academy class this app was built for" was flagged
-     for talking about the app instead of the class. What is left is the
-     thing itself. */
-  classDesc.className = "modecarddesc"; classDesc.textContent = "Class 26E police academy.";
-  classCard.append(classTitle, classDesc);
+  classCard.type = "button"; classCard.className = "class-card is-academy";
+  classCard.innerHTML = '<span class="cc-glow" aria-hidden="true"></span><span class="cc-emblem">' + academy.icon + '</span>' +
+    '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span></span>' +
+    '<span class="cc-foot"><span class="cc-status is-enroll">Select</span></span>';
+  classCard.querySelector(".cc-kicker").textContent = ainfo.kicker || academy.sub;
+  classCard.querySelector(".cc-title").textContent = ainfo.title || academy.name;
+  classCard.querySelector(".cc-desc").textContent = ainfo.desc || "";
   cards.appendChild(classCard);
-
-  const otherCard = document.createElement("button");
-  otherCard.type = "button"; otherCard.className = "modecard locked";
-  const otherTitle = document.createElement("span");
-  otherTitle.className = "modecardtitle"; otherTitle.textContent = "More classes";
-  const otherDesc = document.createElement("span");
-  otherDesc.className = "modecarddesc"; otherDesc.textContent = "No other classes available yet.";
-  otherCard.append(otherTitle, otherDesc);
-  otherCard.addEventListener("click", () => showToast("No other classes are available yet \u2014 check back later."));
-  cards.appendChild(otherCard);
-
+  const soonCard = document.createElement("div");
+  soonCard.className = "class-card is-soon";
+  soonCard.innerHTML = '<span class="cc-emblem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v6l3.6 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>' +
+    '<span class="cc-text"><span class="cc-kicker">Soon</span><span class="cc-title">More classes</span><span class="cc-desc">New classes will be added here.</span></span>' +
+    '<span class="cc-foot"><span class="cc-status is-soon">Coming soon</span></span>';
+  cards.appendChild(soonCard);
   panel.appendChild(cards);
 
   /* A real Continue step now, rather than the card itself navigating
@@ -86553,7 +86693,8 @@ function showClassSelection(){
   panel.appendChild(continueBtn);
 
   classCard.addEventListener("click", () => {
-    classCard.classList.add("selected");
+    classCard.classList.add("selected", "is-picked");
+    const chip = classCard.querySelector(".cc-status"); chip.className = "cc-status is-enrolled"; chip.textContent = "Selected";
     continueBtn.hidden = false;
   });
 
@@ -86948,12 +87089,14 @@ function novaAskName(ctx, answered){
       }
       store.firstName = name.slice(0, 40);
       updateHeaderTitle();
-      answered();
+      /* Build 329: the check says so - a green "Verified" for a beat before he carries on */
+      msg.textContent = "Verified"; msg.className = "nt-ask-msg is-verified"; msg.hidden = false; go.hidden = true;
+      setTimeout(() => { if(card.isConnected) answered(); }, 650);
     };
     if(!boardKnown() && fbDb){ checking = true; go.disabled = true; go.textContent = "Checking…"; }
     whenBoardKnown(5000, decide);
   };
-  input.addEventListener("input", () => { msg.hidden = true; signIn.hidden = true; go.hidden = !input.value.trim(); });
+  input.addEventListener("input", () => { msg.hidden = true; msg.className = "nt-ask-msg"; signIn.hidden = true; go.hidden = !input.value.trim(); });
   input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); submit(); } });
   go.addEventListener("click", submit);
   card.append(input, msg, go, signIn);
@@ -89003,16 +89146,16 @@ function novaIntroLines(o){
   }
   lines.push({ text: "I sail the stars, learning everything I can.",
     enter: ctx => novaProp(ctx, buildNovaVoyage(false)) });
-  lines.push({ text: "And my ship carries all I’ve collected." });
-  lines.push({ gesture: "raise", text: "But on the way here, a storm hit us!",
+  lines.push({ text: "My ship carries every badge, flare and crew mate I’ve gathered." });
+  lines.push({ gesture: "raise", text: "Then the sky went black. A storm tore my ship apart!",
     enter: (ctx, instant) => {
       const box = ctx.stage.querySelector(".nt-prop .nw3");
       if(box && !instant && box.__storm) box.__storm();
       else novaProp(ctx, buildNovaVoyage(true));
     } });
-  lines.push({ text: "My badges, my flares and my crew were scattered." });
-  lines.push({ gesture: "nod", text: "The good news? It all landed in your class material." });
-  lines.push({ text: "Learn it, and we’ll find it all again." });
+  lines.push({ text: "My badges, flares and crew were scattered across the night." });
+  lines.push({ gesture: "nod", text: "But the stars looked after it. It all landed in your studies." });
+  lines.push({ text: "It’s an adventure now! Study on, and we’ll bring it all home." });
   if(!existing){
     lines.push({ text: "My flares rest around your planet, dark for now.",
       enter: ctx => novaProp(ctx, novaStack(novaFlareRow(rankIdx), novaCap("My flares, all dark"))) });
@@ -89034,13 +89177,16 @@ function novaIntroLines(o){
           try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
           novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } });
       lines.push({ text: "The rest of my crew are still out there. Find them, and they’ll join you too." });
-      lines.push({ gesture: "raise", text: "This is your sync code. It signs you in on any device.",
+      lines.push({ gesture: "raise", text: "This is your sync code.",
         enter: ctx => novaProp(ctx, novaStack(novaCodeProp())) });
+      lines.push({ text: "It signs you in on other devices. Find it any time in Settings." });
     } else {
       lines.push({ text: "Every one you find joins your team." });
     }
-    lines.push({ text: "Drill, Mock, Review and the Virtual Room will get you there.",
+    lines.push({ text: "There are four ways to train: Drill, Mock, Review and the Virtual Room.",
       ...novaSlide("modes", () => novaModeRow()) });
+    lines.push({ text: "Drill is practice, with answers as you go. Mock is graded at the end." });
+    lines.push({ text: "Review goes over every answer. In a Virtual Room, you test live with classmates." });
   }
   /* he becomes your friend partway through (build 324) */
   const friendLine = { gesture: "raise", friend: true,
@@ -89048,6 +89194,7 @@ function novaIntroLines(o){
     enter: ctx => { if(!existing) novaProp(ctx, novaStack(novaFriendProp(), novaCap("Friends"))); novaFriendMoment(); } };
   if(!existing){
     lines.push(friendLine);
+    lines.push({ text: "Rank up. Find my badges. Bring the crew home." });
     lines.push({ gesture: "nod", final: true, text: "Your adventure starts now. Let’s go!",
       enter: ctx => novaProp(ctx, null) });
     return lines;
@@ -89526,21 +89673,21 @@ function mainMenuTourSteps(returning){
       text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     /* Calendar took Settings' place on the bar (build 323) */
     { target: "#bottomtab-calendar", align: "right", vplacement: "above",
-      text: "Calendar is Class 26E\u2019s: what\u2019s on today, your next test and what\u2019s on it, the final exams, and every day of the course." },
+      text: "Calendar is your class\u2019s schedule: what\u2019s on today, your next test and what\u2019s on it, the final exams, and every day of the course." },
     /* Added right after the bottom-tab run, per explicit request,
        since the daily question button sits right there on Home
        already \u2014 no reason to make it wait for a separate pass
        through the tour when it's a natural continuation of the
        screen the person is already looking at. */
     { target: ".daily-question-fab", align: "right", vplacement: "above",
-      text: "Your daily question: one a day, one try, worth " + DAILY_XP + " XP. After you answer, its ring fills until the next one. No retakes, so take your time." },
+      text: "Your daily question: one a day, one try. After you answer, its ring fills until the next one. No retakes, so take your time." },
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
       text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one for a closer look."
         : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one for a closer look." },
     /* (327z15) on a laptop Start Studying is the tab bar's Start pill */
     { target: (window.matchMedia && matchMedia("(min-width:64rem) and (min-aspect-ratio:5/4)").matches) ? "#bottomtab-start" : "#nextbtn", align: "left", vplacement: "above",
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
-        : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. I\u2019ll pop up with tips like these as you explore." }
+        : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. Rank up, find my badges, and I\u2019ll pop up with tips like these as you explore." }
   ];
 }
 function startMainMenuTour(){
@@ -89634,7 +89781,10 @@ function showPointsFlyEffect(message){
   const avatarBtn = document.getElementById("bottomtab-profile");
   const banner = document.createElement("div");
   banner.id = "welcomebonus-banner";
-  banner.textContent = message;
+  /* Build 329: on the account banner's glass - the blue bar, a small tag, one line */
+  const bTag = document.createElement("span"); bTag.className = "wb-tag"; bTag.textContent = "XP";
+  const bText = document.createElement("span"); bText.className = "wb-text"; bText.textContent = message;
+  banner.append(bTag, bText);
   document.body.appendChild(banner);
 
   requestAnimationFrame(() => {
@@ -89663,7 +89813,7 @@ function showPointsFlyEffect(message){
           setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
         }
         if(statsPopoverOpen) renderStatsPopoverContent();
-      }, 500);
+      }, 820);
     }, 900);
   });
 }
@@ -139244,7 +139394,7 @@ else if(!store.onboardingComplete){
      onboarding (and the tour) entirely. This restarts the short
      onboarding sequence from the top for anyone who hasn't actually
      finished it, rather than assuming a sync code alone means done. */
-  showWelcome();
+  showWelcomeFirst();
 } else {
   showHome();
   /* BACK WHERE YOU WERE AFTER SAFARI RELOADS THE TAB (build 327z13). "It
