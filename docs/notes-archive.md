@@ -28831,3 +28831,12 @@ not number. Questions are word for word the guides, typos included.
 - **Profile XP line:** no "to Level N" (pfXpToText returns "").
 - **Start Studying on every phone** (under 40rem): one rule - words clamp(.86rem, 4.1vw, 1.06rem), width clamp(140px, 46vw, 205px), height clamp(44px, 11.5vw, 50px). SE 147x44, 375 173x44, 6.1" 181x45, Pro Max 202x50 (was 168x46 / 200x46 / 216x61 by steps). Home still fits SE and SE 2/3 exactly.
 - **Upright iPads' planet:** max-width min(44rem, 53vh, 82vw) between 40rem and 64rem portrait (was 48vh): 11" 573 -> 633px, mini 544 -> 600; Home still exactly one screen; landscape/laptop untouched.
+- **Home on every phone, one layout** (portrait, under 40rem, installed and Safari):
+  the panel's height is its min-height (exactly the room the screen leaves); flex
+  column, centred; --hg = clamp(10px, 2.4dvh, 22px) sets every gap (planet->greeting
+  1x, words->Start 1.4x); the planet's box starts at min(100vw, 30rem) x .95 with
+  aspect-ratio 100/95 and flex-shrink, so it is the largest planet that fits (it draws
+  at .94 of its box); 3rem clear above for the chat button, 1.2 hg below. Measured
+  before vs after (planet->greeting / words->Start): SE 19/21 -> 21/19, Pro Max 97/56
+  -> 35/31; no phone scrolls (the 12 mini did by 3px); an SE-sized Safari tab's planet
+  69px -> 210px. Planet 94% of the width wherever the height allows.

@@ -34222,6 +34222,40 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   @media (min-width:40rem) and (max-width:63.99rem) and (orientation:portrait){
     html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap{ max-width:min(44rem, 53vh, 82vw) !important; }
   }
+  /* ---- HOME ON EVERY PHONE, ONE LAYOUT (build 328) ----
+     "We need to maximize the size of the planet system but still make it look good for
+     every device ... perfect spacing and perfect cohesiveness and consistency." Measured
+     before: the planet-to-greeting gap ran 19px (SE) to 97px (Pro Max), the words-to-
+     button gap 21 to 84, a 12 mini scrolled by 3px and an SE-sized Safari tab drew a
+     69px planet - each phone had its own tier. Now, on every phone, installed or in
+     Safari: Home's panel is exactly the room the screen leaves (its min-height, made its
+     height); one rhythm, --hg (2.4% of the screen's height, 10-22px), sets every gap; the
+     planet starts as wide as the screen (it draws at .94 of its box) and, where the
+     height runs out first, gives way - its box keeps its shape (aspect-ratio) and shrinks
+     with the column (flex-shrink), so it is always the largest planet that fits. What is
+     left is shared above and below. Under 620px of height the tagline steps aside. */
+  @media (max-width:39.99rem) and (orientation:portrait){
+    html[data-layout][data-theme] body:has(.screen-home-actual){ --hg:clamp(10px, 2.4dvh, 22px); }
+    html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{
+      height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom)) !important; min-height:0 !important;
+      display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
+      padding-top:3rem !important; padding-bottom:calc(var(--hg) * 1.2) !important; box-sizing:border-box !important;
+    }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap{
+      flex:0 1 auto !important; min-height:0 !important; width:auto !important; max-width:none !important;
+      height:calc(min(100vw, 30rem) * .95) !important; aspect-ratio:100 / 95 !important;
+      align-self:center !important; margin:0 auto var(--hg) !important;
+    }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > :not(.cosmic-hero-wrap){ flex:none !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .homegreeting{ margin:0 0 .15rem !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometitle{ margin:0 !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ margin:.15rem 0 0 !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometitle-wrap{ margin:0 0 calc(var(--hg) * 1.4) !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin:0 !important; }
+  }
+  @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
+  }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
