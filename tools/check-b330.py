@@ -1,5 +1,5 @@
 """Build 330: starred runs score, the retake pays for finishing, and the rest of the round.
-Run:  python3 tools/check-b330.py [section ...]   (sections: starred retake)"""
+Run:  python3 tools/check-b330.py [section ...]   (sections: starred retake first legal modes)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "shoot-flow.py")).read().rsplit("\nmain()", 1)[0]
@@ -52,7 +52,7 @@ RETAKE = """async (wrongAgain)=>{
   order.forEach((qi, k) => { attempts[qi] = k < wrongAgain ? 2 : 1; picked[qi] = optionOrder(qi).indexOf(QUESTIONS[qi].answer); });
   stopQuestionTimer(); summarize(); await wait(500);
   return { n: order.length, retake: isMissedRetake, xp: store.lifetime.points - xp0 }; }"""
-want = sys.argv[1:] or ["starred", "retake"]
+want = sys.argv[1:] or ["starred", "retake", "first", "legal", "modes"]
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
     if "starred" in want:
@@ -76,6 +76,47 @@ with sync_playwright() as pw:
         chk("the first retake finished with a miss pays 25 on top of its answers (2 x 10)", r.get("n") == 3 and r.get("xp") == 2 * 10 + 25, r)
         r = page.evaluate(RETAKE, 0)
         chk("a retake of that retake pays only its answers - no farming the bonus", r.get("n") == 1 and r.get("xp") == 10, r)
+        ctx.close()
+    if "first" in want:
+        # a first visit: no loading screen in front of Get Started, the button waits for the end
+        w, h, ins, inst = DEV["promax"]; g["new_page"].w, g["new_page"].h = w, h
+        ctx, page = g["new_page"](br, ins, inst, False)
+        page.goto(url); page.wait_for_timeout(1500)
+        r = page.evaluate("""()=>{ const sp = document.getElementById('splashscreen'); const vis = !!sp && getComputedStyle(sp).visibility !== 'hidden' && getComputedStyle(sp).opacity !== '0';
+          return { gs: !!document.querySelector('.gs-page'), splash: vis }; }""")
+        chk("first visit: Get Started is up 1.5s in, with no loading screen over it", r["gs"] and not r["splash"], r)
+        page.wait_for_timeout(2500)
+        before = page.evaluate("()=>{ const b=document.querySelector('.gs-bar'); return { ready: b.classList.contains('is-ready'), op: +getComputedStyle(b).opacity }; }")
+        chk("the Let's get started button is not there until the end of the page", not before["ready"] and before["op"] < 0.1, before)
+        page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(1200)
+        after = page.evaluate("""()=>{ const b=document.querySelector('.gs-bar'), go=document.querySelector('.gs-go').getBoundingClientRect(); const l=document.querySelector('.gs-end .gs-legal');
+          return { ready: b.classList.contains('is-ready'), op: +getComputedStyle(b).opacity, h: go.height, legal: l ? l.textContent : '',
+                   scenes: [...document.querySelectorAll('.gs-scene video')].map(v => v.dataset.gs) }; }""")
+        chk("...and rises in at the end", after["ready"] and after["op"] > 0.9 and after["h"] >= 44, after)
+        chk("the page's foot says it is independent and carries the copyright, with no name", "Not affiliated" in after["legal"] and "\u00a9" in after["legal"] and "Davis" not in after["legal"], after["legal"])
+        chk("a Fire Code scene with its own clip", "ifc" in after["scenes"], after["scenes"])
+        ctx.close()
+    if "legal" in want:
+        ctx, page = page_for(br, "promax")
+        r = page.evaluate("""async ()=>{ showAppearance(); await new Promise(r => setTimeout(r, 700)); const n = document.querySelector('.affiliation-note.legal-settings');
+          const settings = n ? n.textContent : ''; showClassSelection(); await new Promise(r => setTimeout(r, 500));
+          const c = document.querySelector('.classselect-panel .affiliation-note'); return { settings, classes: c ? c.textContent : '' }; }""")
+        chk("Settings: made by M. Davis, the copyright, and not affiliated with HCC, TCOLE or the ICC",
+            all(x in r["settings"] for x in ("M. Davis", "\u00a9", "HCC", "TCOLE", "International Code Council", "study only")), r["settings"][:200])
+        chk("the sign-up class screen says classes are study sets, not a real course", "not enroll you in a real course" in r["classes"], r["classes"])
+        ctx.close()
+    if "modes" in want:
+        ctx, page = page_for(br, "promax")
+        r = page.evaluate("""async ()=>{ const W = ms => new Promise(r => setTimeout(r, ms)); const xs = {};
+          for(const [k, f] of [['modes', () => showModeSelect()], ['units', () => { cfg.mode = 'drill'; showSetup(); }], ['friends', () => showFriends()], ['ranks', () => showRanksScreen()],
+                               ['check', () => showSignUpCheck()], ['classes', () => showClassSelection()]]){
+            f(); await W(500); const b = document.querySelector('#stage .back-link'); xs[k] = b ? Math.round(b.getBoundingClientRect().left) : null; }
+          showModeSelect(); await W(400);
+          const descs = [...document.querySelectorAll('.modecard .modecarddesc')].map(d => d.textContent);
+          return { xs, descs, classmates: /classmate/i.test(document.body.innerText) }; }""")
+        chk("every Back button sits at the same left edge (the mode screen and sign-up included)", len(set(r["xs"].values())) == 1 and None not in r["xs"].values(), r["xs"])
+        chk("the mode descriptions are short (70 characters or fewer) and none says classmates",
+            r["descs"] and all(len(d) <= 70 for d in r["descs"]) and not any("classmate" in d.lower() for d in r["descs"]) and not r["classmates"], r["descs"])
         ctx.close()
     br.close()
 print("\nALL PASS" if ok else "\nFAILED")

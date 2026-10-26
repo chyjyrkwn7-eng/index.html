@@ -76556,7 +76556,8 @@ const NovaSound = (function(){
        wakes the sound, on Home or Welcome - an intro into the ambience. */
     if(st.ctx && !had && !st.started){
       st.started = true;
-      try{ if(document.querySelector('[data-screen="home"], [data-screen="welcome"]')) setTimeout(() => play("app.start"), 30); }catch(e){}
+      /* (330) and on the Get Started page, where a first visit's first touch is */
+      try{ if(document.querySelector('[data-screen="home"], [data-screen="welcome"], [data-screen="getstarted"]')) setTimeout(() => play("app.start"), 30); }catch(e){}
     }
   }
   ["touchend", "pointerup", "click", "keydown"].forEach(ev => document.addEventListener(ev, onGesture, { capture: true, passive: true }));
@@ -86556,6 +86557,9 @@ function whenBoardKnown(ms, cb){
    scrolls through four short clips (landing/*.mp4, muted, looping, played only while on screen). */
 const GS_SCENES = [
   { key: "test", kicker: "Study", title: "Questions that feel like play", body: "Drill, Mock and Review turn your class material into quick questions you will actually want to answer." },
+  /* (330) "make the test stuff shown related to fire code, show another box with the ifc cropped stuff and
+     loading pdf thing" - the test clip is a Fire Code drill opening its code, and this is the analysis */
+  { key: "ifc", kicker: "Fire Code", title: "The code behind every answer", body: "Load your own copy of the 2021 IFC once, and every answer shows the exact section it comes from." },
   { key: "hundo", kicker: "Score", title: "Go for the hundo", body: "Get every question right and the whole screen celebrates, with a new effect to unlock each time." },
   { key: "rank", kicker: "Rank up", title: "Every win lights a flare", body: "Levels climb a ladder of ranks. Reach a new one and a flare lights up around your planet." },
   { key: "customize", kicker: "Customize", title: "Make Nova yours", body: "Collect characters, banners and effects as you go, then pick the ones that are you." }
@@ -104934,7 +104938,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-26-329";
+const APP_BUILD = "2026-10-26-330";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113675,8 +113679,7 @@ function showRunRewards(run, hooks, opts){
   if(!run.xpLines.length){
     const none = document.createElement("p");
     none.className = "rs-xpline rs-xpline-none rs-land";
-    none.textContent = run.source === "recent" ? "Most-missed runs are practice, with no XP."
-      : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
+    none.textContent = run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
       : "No XP this run.";
     xp.appendChild(none);
     lineEls.push(none);

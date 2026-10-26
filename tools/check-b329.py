@@ -88,7 +88,8 @@ with sync_playwright() as pw:
         page.evaluate("document.getElementById('splashscreen')?.remove()"); page.wait_for_timeout(600)
         chk("first visit: the Get Started page, not Welcome", page.evaluate("()=>!!document.querySelector('.gs-page') && !document.querySelector('.cosmic-welcome')"))
         r = page.evaluate("()=>{ const v=[...document.querySelectorAll('.gs-page video')]; return {n:v.length, srcs:v.map(x=>x.getAttribute('src')), scenes:document.querySelectorAll('.gs-scene').length} }")
-        chk("it has four clips beside its four scenes", r["n"] == 6 and r["scenes"] == 4 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
+        # 330: a fifth scene, Fire Code's
+        chk("it has a clip beside each of its five scenes, and two beside the title", r["n"] == 7 and r["scenes"] == 5 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
         page.wait_for_timeout(2200)
         # 330: the button waits for the end of the page
         page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(900)
