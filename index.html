@@ -15403,6 +15403,13 @@
      a % translate is of the bubble's own box. `translate`, so the float,
      the press and the newly-lit pop (all `transform`) compose with it. */
   .cosmic-hero-wrap > .cosmic-icon-badge.is-centred, .rank-orbit-slot.is-centred{ translate:-50% -50%; }
+  /* (Oct 26 night) "They aren't proportional. The flares are the same size as the planet" -
+     Welcome's bubbles were a fixed 2.6rem whatever the planet's size: 41.6px on a 414px
+     system (Pro Max, 10%) and the same 41.6px on a 263px one (SE, 16%). They now scale with
+     the planet, at the Pro Max's own share, so every phone shows the same picture. Their
+     places are already percentages of the box, so the whole system scales as one. */
+  .cosmic-welcome .cosmic-hero-wrap{ container-type:inline-size; }
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge{ width:max(1.5rem, min(2.9rem, 9.45cqw)); height:max(1.5rem, min(2.9rem, 9.45cqw)); }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
   /* the recorded motion, laid exactly over the still emblem (build 298) */
   .cosmic-icon-badge.cosmic-badge-rank .cosmic-rank-anim{ position:absolute; inset:0; overflow:hidden; border-radius:50%; pointer-events:none; z-index:0; mix-blend-mode:screen; }
@@ -34278,6 +34285,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-sub{ display:none !important; }
+    /* (Oct 26 night) "Don't you see how tiny the planet system is in comparison to the buttons" -
+       the buttons are already at the 44px floor, so on a short screen the small lines under them
+       step aside (an error still shows: it drops .is-quiet), and the planet takes the ~55px */
+
   }
   /* Width (same day, his words): "I don't necessarily want bigger, I just want it to be sized
      perfectly" - the size of the 327z14 Welcome in his Pro Max Safari screenshot, whose outer
@@ -34291,6 +34302,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      they turn, and the planet grows - Home on an SE 255 -> 283px, an SE-sized Safari tab
      242 -> 271; Welcome 197 -> 283 (and under 620px of height its line under the title steps
      aside, as Home's tagline does). */
+  @media (max-width:39.99rem) and (orientation:portrait) and (max-height:47.5rem){
+    /* (on screens up to 760px tall: an SE as an app, a Safari tab on an SE or a 6.1" phone -
+       there the planet comes back to its full width, as on Home) */
+    html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome-actions > :is(.welcome-signin-cap, .welcome-new-cap, .cosmic-welcome-hint.is-quiet){ display:none !important; }
+  }
   /* ---- WELCOME ON EVERY PHONE, THE SAME LAYOUT AS HOME (build 328) ----
      "Ensure all the devices changed are reflected app wide for their welcome screen and all
      those other buttons as well." Measured: Welcome scrolled on an SE (5px) and an iPhone 16
@@ -85381,6 +85397,7 @@ function fillWelcomeActions(actions, title, trace){
     hint.textContent = trace.link
       ? "This page remembers an account. Continue only if it's yours."
       : "Your account is still on this device. Continue to pick up where you left off.";
+    hint.classList.add("is-quiet");
   } else {
     delete actions.dataset.trace;
     title.textContent = "Welcome to Nova";
@@ -85441,7 +85458,7 @@ function continueWithTrace(t, btn, note){
       showToast("That account is no longer available. Sign in with your code, or choose I’m new here.");
       return;
     }
-    note.textContent = "Couldn’t reach your account right now — try again in a moment.";
+    note.classList.remove("is-quiet"); note.textContent = "Couldn’t reach your account right now — try again in a moment.";
   };
   if(t.code && t.code === syncCode){
     if(store.onboardingComplete || String(store.firstName || "").trim()) return land();

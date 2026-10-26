@@ -28877,3 +28877,9 @@ not number. Questions are word for word the guides, typos included.
 - **Unit screen:** the search circle is over the bar's RIGHT end (as on Review, over Start);
   the level tabs' picked count is gone ("why is there 2 numbers of the same? It's random");
   the level tabs sit 1rem under the mode chip ("really close to the name of the mode").
+- **Welcome's flares scale with its planet** ("They aren't proportional. The flares are the
+  same size as the planet"): they were a fixed 2.6rem (41.6px on a 263px SE system as on a
+  414px Pro Max one). Now 9.45cqw of the hero (the Pro Max's own share), places already in %.
+- **Welcome's small lines under the buttons step aside on screens up to 760px tall** (an
+  error in the hint still shows: it drops .is-quiet). Planet: SE 263 -> 301 (Safari tab
+  249 -> 298), SE as an app 285 -> 334, a 6.1" Safari tab 314 -> 351 (full width, as Home).
