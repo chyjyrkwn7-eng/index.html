@@ -29078,3 +29078,11 @@ without that PDF - Madison opens it; chExhB-801 (Exhibit B, IBC Table 1004.5, ke
 county booklet and was checked in the app (the row is highlighted). Unit sizes come from the bank
 (Appendix H 3, Exhibit B 7). Hard-coded "1,777" in the class card and the analysis step is now 1,779
 (and check-b328-classes). The kit's PDF study guide is not in the repo.
+
+## Fire Code bank checked against the owner's own IFC (build 330, final)
+Madison sent class26e-ifc-handoff-v5.4.zip again, with his own 2021 IFC PDF (local only, never in the repo).
+The repo's `ifc/ifc-viewer.js` is byte-identical to the kit's. The kit's `check-my-copy.mjs` (pdf.js 5.4.149)
+run on the 1,779-question bank (5.4.1, with the two Appendix H questions): same-book check EXACT, 1,357 IFC
+references all cut from the page, 0 not found, 0 page-label differences, 169/169 stop pointers, 44/44 table
+rows, Hint and blurred definitions as before. RESULT: behaves like the reference copy.
+Decision: tapping the level number on the Profile card does NOT open the Rank screen (left as is).
