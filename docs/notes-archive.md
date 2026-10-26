@@ -28810,3 +28810,12 @@ not number. Questions are word for word the guides, typos included.
   27 = 9 PM CDT); from then UNIT_TEST_VERSIONS["Penal Code"] is undefined - no
   pop-up, no card tag, no note, and a saved "test" choice is the whole unit.
   check-b328-level1 328g holds both sides of 9 PM.
+- **9 PM handover:** nextTestEntry() treats a test day as past from 21:00 local
+  (TEST_DAY_HANDOVER_HOUR) - "it shouldn't [show] next week's test and this test
+  showing as next test". Before 9 PM Monday only Penal Code carries the mark;
+  from 9 PM only CCP and Arrest (check-b328-level1 328g, America/Chicago).
+- **Phones' unit cards:** no hundo bar under 40rem (the hold card keeps it); every
+  card's count spans the count/bar rows, end-aligned, so all sit on one line beside
+  the badge. iPads and laptops unchanged.
+- **Top pop-ups** (.daily-alert, which every showDailyAlert banner is): .34s fade,
+  .52s rise from -14px with a soft overshoot (was .22s / -8px).
