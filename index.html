@@ -32518,6 +32518,12 @@
        height), Welcome's Continue (3.1rem floor) and the tips' Next (padding gives back the trim) */
     .app-banner .app-banner-act{ text-box:trim-both cap alphabetic; }
     html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ text-box:trim-both cap alphabetic; }
+    /* (Oct 26 night) "Is the word 'start studying' not perfectly centered on that button either?" -
+       the capitals themselves on the middle (a phone's 44-50px floor holds its height; a tablet's
+       padding gives back the trim), and the letter-spacing's trailing space taken out of the
+       centring (text-indent) */
+    .panel.home.screen-home-actual > .playbtn{ text-box:trim-both cap alphabetic; text-indent:.03em; }
+    @media (min-width:40rem){ .panel.home.screen-home-actual > .playbtn{ padding-block:calc(.82em + (1lh - 1cap)/2); } }
     #tour-next{ text-box:trim-both cap alphabetic; padding-block:calc(.4rem + (1lh - 1cap)/2); }
     @media (min-width:40rem){ #tour-next{ padding-block:calc(.6rem + (1lh - 1cap)/2); } }
     @media (max-width:639px){
@@ -32905,7 +32911,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
        2rem less height and 1.25rem lower (translate, below), so its outer
        flares clear the browser tab's 6rem top fade */
     grid-column:2; grid-row:1 / -1; align-self:center;
-    width:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem)); max-width:none; margin:0; translate:0 1.25rem;
+    width:min(48rem, max(calc((100dvh - 15rem) * 1.05), 69dvh), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem)); max-width:none; margin:0; translate:0 1.25rem;
   }
   /* a tapped bubble's caption sits under the planet here, clear of the words,
      so the greeting and NOVA stay (on a phone it lands over them) */
@@ -32950,12 +32956,17 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
   }
   html[data-layout] body .cosmic-welcome > .cosmic-hero-wrap{
     grid-column:2; grid-row:1 / -1; align-self:center; justify-self:center;
-    width:min(48rem, calc((100dvh - 15rem) * 1.05), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
+    width:min(48rem, max(calc((100dvh - 15rem) * 1.05), 69dvh), calc(100vw - 2 * var(--lap-side) - 2 * var(--lap-gap) - 2.5rem));
     max-width:none !important; margin:0 !important; transform:none !important;
     /* level with Home's planet (measured 18px lower without it), so Welcome
        hands over to Home in place - and 3rem higher again (round 32) for the
        two buttons stacked under it */
     translate:0 calc(-1.125rem - 3.6rem);
+  }
+  /* a short laptop (Dell 1366x638, 1280x670): its planet is a little larger now, so Welcome's keeps
+     its distance from the top fade */
+  @media (max-height:45rem){
+    html[data-layout] body .cosmic-welcome > .cosmic-hero-wrap{ translate:0 calc(-1.125rem - 3.6rem + .8rem); }
   }
   html[data-layout] body .cosmic-welcome > .cosmic-welcome-title{
     grid-column:1; grid-row:2; margin:0; max-width:var(--lap-side);
@@ -34497,9 +34508,12 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   /* (build 328) "iPad Pro 11. The planet system could be a little bigger": an upright iPad
      held the planet to 48vh (573px on an 11") with ~110px spare between Start Studying
      and the bar. Upright tablets only: 53vh, ~11% larger; landscape and laptops unchanged. */
-  @media (min-width:40rem) and (max-width:63.99rem) and (orientation:portrait){
+  /* (Oct 26 night, "The iPad Pro 12.9 the planet system could be a lot bigger") every upright tablet,
+     the 12.9" included (1024px wide is 64rem, past the old 63.99rem limit): 60vh, 52rem at most (the 12.9"s ring is then 68% of its width, as the 11"s).
+     Measured outer ring: 12.9" 540 -> 640px, Pro 11" 534 -> 560px, mini 507 -> 530px. */
+  @media (min-width:40rem) and (orientation:portrait){
     html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap,
-    html[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(44rem, 53vh, 82vw) !important; }
+    html[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60vh, 84vw) !important; }
   }
   /* ---- HOME ON EVERY PHONE, ONE LAYOUT (build 328) ----
      "We need to maximize the size of the planet system but still make it look good for
@@ -34547,6 +34561,14 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .homegreeting,
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:auto !important; }
   }
+  /* (Oct 26 night) "The iPhone 15 and 17 Pro Max ... the planet system is pretty close to the version
+     history number. Maybe it should shrink JUST A TINY SMIDGE and/or be brought down JUST A TINY
+     SMIDGE." Phones 736px tall and up: the planet 3.5% smaller and its column 0.4rem lower, so the
+     outer moons clear the "v9.2" tag (iPhone 15, 16, 12 mini, Pro Max, Plus). */
+  @media (max-width:39.99rem) and (orientation:portrait) and (min-height:46rem){
+    html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ padding-top:1.65rem !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .cosmic-hero-wrap{ height:calc(min(100vw, 31rem) * .95 * .965) !important; }
+  }
   @media (max-width:39.99rem) and (orientation:portrait) and (max-height:38.75rem){
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual .hometagline{ display:none !important; }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome > .cosmic-welcome-sub{ display:none !important; }
@@ -34591,7 +34613,8 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   @media (max-width:39.99rem) and (orientation:portrait){
     html[data-layout][data-theme] body.on-welcome{ --hg:clamp(10px, 2.4dvh, 22px); }
     html[data-layout][data-theme]:not(.x) body.on-welcome .cosmic-welcome{
-      height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom)) !important; min-height:0 !important;
+      /* the buttons end 36-40px above the foot on every phone, as on the iPad Pro 11" (33px): a home-indicator inset over 22px is taken out of the gap */
+      height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom) + max(0px, calc(env(safe-area-inset-bottom, 0px) - 22px))) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
       padding-top:1.25rem !important; padding-bottom:calc(var(--hg) * .6) !important; box-sizing:border-box !important;
     }
