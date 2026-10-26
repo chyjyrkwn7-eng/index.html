@@ -29069,3 +29069,12 @@ pushed 07a918c. Picked up here.
   case/lid, the daily bubble "beside the button", a selected character's glow, an earned badge's glow
   edge, the start sheet's swipe-down from its middle. Final run: sweep 74/74, check-fixes, ink-centre,
   b329, sync, results, vroom, chat, curve, loops, positions, tours, unlocks, sound, friends, b328-* pass.
+
+## Fire Code kit 5.4.1 (build 330)
+Madison sent class26e-ifc-update-5.4.1.zip: two questions added to the 5.4 bank (1,779 total, 58 units),
+nothing else changed. ifc/bank.js regenerated with tools/gen-ifc-bank.py from its ifc_question_bank.json.
+chAppH-805 (Appendix H, IFC 2021 H103.1, key D) is cut from the reader's own IFC and cannot be shown
+without that PDF - Madison opens it; chExhB-801 (Exhibit B, IBC Table 1004.5, key A: 200) cuts from the
+county booklet and was checked in the app (the row is highlighted). Unit sizes come from the bank
+(Appendix H 3, Exhibit B 7). Hard-coded "1,777" in the class card and the analysis step is now 1,779
+(and check-b328-classes). The kit's PDF study guide is not in the repo.

@@ -55,7 +55,7 @@ with sync_playwright() as pw:
         chk("same person: name + publicId, onboarding done", st["name"]=="Maddog" and st["pid"]=="xph5b57jbp5a" and st["onb"] is True, st)
         chk("off the leaderboard, no cloud, no sync code", st["lb"] is False and st["fb"] is None and st["code"] is None, st)
         chk("Home shows with the flame bubble", st["home"] and "is-ifc" in (st["icon"] or ""), st)
-        chk("Fire Code's own bank is loaded: 1,777 questions", st["q"] == 1777, st["q"])
+        chk("Fire Code's own bank is loaded: 1,779 questions (kit 5.4.1)", st["q"] == 1779, st["q"])
         # the academy's copy, untouched (read raw, past the shim)
         raw = page.evaluate("""()=>{ const k='class26e.drill.v1'; const n=localStorage.length; for(let i=0;i<n;i++){ if(localStorage.key(i)===k) return localStorage[k]; } return null; }""")
         chk("academy's saved copy byte-for-byte unchanged", raw==before)
