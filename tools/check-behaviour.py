@@ -2172,8 +2172,9 @@ def check_b232(br):
       T('hero', () => ({ gauges: document.querySelectorAll('.rankhero .rankhero-gauge').length,
                          bar: !!document.querySelector('.rankhero-fill, .rankhero-track'),
                          chips: !!document.querySelector('.rankhero-chip') }));
-      showProfile('badges');
-      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .ncase-lining, .badges-tab .badge-grid')).backgroundImage;
+      /* MOVED: the badge case is the Rank screen's Badges tab now (Profile's tabs are Profile, Stats, Settings) */
+      showRanksScreen('badges');
+      T('case', () => { const bg = getComputedStyle(document.querySelector('.badges-tab .badge-case-lining, .badges-tab .badge-grid')).backgroundImage;
         const cols = [...bg.matchAll(/rgb\\((\\d+), (\\d+), (\\d+)\\)/g)].map(m => [+m[1], +m[2], +m[3]]);
         return cols.map(c => c[2] - c[0]); });
       cfg.mode = 'drill'; const u = topicsIn(QUESTIONS)[0]; store.unitPerfects[u] = 999; showSetup();
@@ -3228,9 +3229,10 @@ def check_b242(br):
            just combined with the other one and put on top?" - nothing on
            the front; the name is on the lid's one nameplate (shut) and in
            its cushion (open), from the same badgeCaseName */
-        lid: !!document.querySelector('.badge-case .badge-case-lid') && !document.querySelector('.badge-case .badge-case-front .nova-case-sideplate, .badge-case .badge-case-front .nova-case-plate')
-          && (document.querySelector('.badge-case .badge-case-lid .nova-case-lidlabel') || {}).textContent === badgeCaseName(BADGE_CASES[0]),
-        clasps: document.querySelectorAll('.badge-case .badge-case-front span').length,
+        /* REDRAWN (the caseKit case, build 326-327): no separate lid - the shut front carries the
+           case's one name plate between its two latches */
+        lid: (document.querySelector('.badge-case .badge-case-front .bcs-plate-text') || {}).textContent === badgeCaseName(BADGE_CASES[0]),
+        clasps: document.querySelectorAll('.badge-case .badge-case-front .bcs-latch').length,
         earned: String(badgesEarnedList().length) };
       /* 6. an earned badge: no printed grain, and a shadow in its slot */
       const bsvg = buildUnitBadgeSVG(units[0], true);
@@ -4741,8 +4743,11 @@ def check_b245_daily_announce(br):
         if settled:
             a = settled[0]["a"]; fx, fy = r["fab"]
             gap = max(a[0] - fx, fx - a[2], a[1] - fy, fy - a[3])
-            check("%s: the bubble opens beside the button, not at the top" % label,
-                  a[1] > 0.5 * r["vh"] and gap <= 80, [a, r["fab"]])  # from the button's CENTRE: its radius + the 10px gap
+            # REVISED IN 327z15: every pop-up is the top Liquid Glass banner, the daily question's
+            # included - "it like shoots over to the pop up animation ... super cool" - so it settles
+            # in the top third, centred on the screen
+            check("%s: the announcement settles as the top glass banner, centred" % label,
+                  a[1] < 0.3 * r["vh"] and abs((a[0] + a[2]) / 2 - w / 2) <= 3, [a, w])
             ch = r["chat"]
             clear = ch is None or a[2] <= ch[0] - 4 or a[3] <= ch[1] or a[1] >= ch[3]
             check("%s: clear of the chat button" % label, clear, [a, ch])
@@ -4886,7 +4891,9 @@ def check_b246(br):
                   and the selection ring, neither of which is masked */
                flipping: !!o && o.classList.contains('char-flip'),
                poolGlow: !!o && /gradient/.test(getComputedStyle(o, '::before').backgroundImage),
-               ring: !!o && getComputedStyle(o, '::after').opacity === '1' }; }""")
+               /* REVISED IN 327 (round 11): "the character you have selected being circled is not the
+                  move, just the checkmark is okay" - the mark is the tick, not a ring */
+               ring: !!o && getComputedStyle(o, '::after').opacity === '0' && !!o.querySelector('.avatarchar-check') && getComputedStyle(o.querySelector('.avatarchar-check')).display !== 'none' }; }""")
     # The cause, checked directly: CSS applies an element's filter before
     # its mask, so a glow on the masked drawing is cut to the mask's
     # rectangle. Pixel tests at the box edge could not tell the two apart
@@ -5151,18 +5158,25 @@ def check_b250(br):
     # Measured as the brightness step across the box edge (255: 8).
     ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
-    pg.evaluate("""async ()=>{ window.unitBadgeEarned = () => true; showProfile('badges');
+    # MOVED: the badge case is the Rank screen's Badges tab, and the art now fills its box to the
+    # rim - so what is measured is the light POOL's own edge (the art's ::after, past the art),
+    # which is where a glow that is cut off shows a step
+    pg.evaluate("""async ()=>{ window.unitBadgeEarned = () => true; showRanksScreen('badges');
       await new Promise(r => setTimeout(r, 1500));
       document.querySelector('.badge-tile.is-earned .badge-tile-art').scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
     pg.wait_for_timeout(800)
     from PIL import Image as _Im
-    bx = pg.evaluate("()=>{ const b = document.querySelector('.badge-tile.is-earned .badge-tile-art').getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }")
+    bx = pg.evaluate("""()=>{ const t = document.querySelector('.badge-tile.is-earned .badge-tile-art'), b = t.getBoundingClientRect(), a = getComputedStyle(t, '::after');
+      const [it, il] = a.inset.split(' ').map(parseFloat);
+      return [b.left + il, b.top + it, parseFloat(a.width), parseFloat(a.height)]; }""")
     im = _Im.open(io.BytesIO(pg.screenshot())).convert("L")
     x, y, w, h = [v * 3 for v in bx]
     px = lambda a, b: im.getpixel((int(a), int(b)))
     steps = []
     for f in (0.3, 0.5, 0.7):
-        steps += [abs(px(x + w * f, y + h - 2) - px(x + w * f, y + h + 2)),
+        # the top edge, not the foot (the badge's name sits under the pool) and clear of the
+        # "new" dot at the top right
+        steps += [abs(px(x + w * min(f, 0.5), y + 2) - px(x + w * min(f, 0.5), y - 2)),
                   abs(px(x + 2, y + h * f) - px(x - 2, y + h * f)),
                   abs(px(x + w - 2, y + h * f) - px(x + w + 2, y + h * f))]
     check("an earned badge's glow fades out before its box ends - no hard edge", max(steps) <= 3, steps)
@@ -5537,6 +5551,9 @@ def check_b267(br):
       const lv = document.querySelector('.pf-standing .pf-level');
       out.level = { bg: getComputedStyle(lv).backgroundColor, border: getComputedStyle(lv).borderTopWidth,
                     round: Math.abs(lv.getBoundingClientRect().width - lv.getBoundingClientRect().height) < 1 && parseFloat(getComputedStyle(lv).borderTopLeftRadius) >= lv.getBoundingClientRect().width / 2 - 1 };
+      /* the unit screen's one-time "Penal Code updated" card is modal and sat over the sheet, taking
+         the swipe: this account has seen it, as the other fixtures' accounts have */
+      try{ localStorage.setItem(penalVersionNoteKey(), '1'); }catch(e){}
       cfg.mode = 'drill'; cfg.units = [topicsIn(QUESTIONS)[0]]; showSetup(); await wait(600);
       document.getElementById('nextbtn').click(); await wait(500);
       showToast('test toast'); await wait(300);
@@ -5544,17 +5561,26 @@ def check_b267(br):
       out.toastZ = t ? parseInt(getComputedStyle(t).zIndex) : -1; out.sheetZ = m ? parseInt(getComputedStyle(m).zIndex) : -1;
       const sh = document.querySelector('.unitoptions-modal-sheet').getBoundingClientRect();
       out.sheetMid = [Math.round(innerWidth / 2), Math.round(sh.top + Math.min(160, sh.height / 2))];
+      { const el = document.elementFromPoint(out.sheetMid[0], out.sheetMid[1]); out.under = el ? (el.tagName + '.' + String(el.className).slice(0, 50)) : null; out.sheetH = Math.round(sh.height); }
       } catch(e){ out.threw = String(e && e.stack || e); }
       return out; }""")
-    x, y = (r.get("sheetMid") or [220, 500])
+    # REVISED IN 327z8: "it goes away even if you barely swipe down, it should be like if you swipe
+    # really fast or slowly slide down it does" - a slow pull closes past 40% of the sheet and a
+    # short one springs back (a flick needs real speed). The old 182px pull is neither now.
+    x, y = (r.get("sheetMid") or [220, 500]); H = r.get("sheetH") or 700
     cdp = ctx.new_cdp_session(pg)
-    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
-    for i in range(1, 14):
-        cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y + i * 14}]})
-        pg.wait_for_timeout(16)
-    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-    pg.wait_for_timeout(600)
-    closed = pg.evaluate("()=>{ const m = document.getElementById('unitoptions-modal'); return !!m && m.hidden; }")
+    def pull(dist, steps):
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]})
+        for i in range(1, steps + 1):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x, "y": y + dist * i / steps}]})
+            pg.wait_for_timeout(40)
+        pg.wait_for_timeout(150)   # held: a slow pull, not a flick
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+        pg.wait_for_timeout(700)
+        return pg.evaluate("()=>{ const m = document.getElementById('unitoptions-modal'); return !m || m.hidden; }")
+    springs = not pull(int(H * 0.15), 12)
+    closed = pull(int(H * 0.45), 24)
+    if not (springs and closed): print("    (sheet swipe: under the finger %s, sheet %spx tall, short pull kept it open %s, long pull closed it %s)" % (r.get("under"), H, springs, closed))
     o = r.get("orbit") or {}
     check("the middle ring's dot turns faster than the outer ring", o.get("innerDots", 0) >= 1 and 0 < o.get("inner", 0) < o.get("outer", 0), o)
     check("both Virtual Room card icons are mode icons, in colour (build 287)", r.get("icons") == [True, True], r.get("icons"))
@@ -5573,7 +5599,8 @@ def check_b267(br):
     # a round lit well, not the square plate 267 removed.
     check("the level is not in a square box", lv.get("bg") in ("rgba(0, 0, 0, 0)", "transparent") or lv.get("radius", "").endswith("%") or lv.get("round"), lv)
     check("a toast sits above an open start sheet", r.get("toastZ", -1) > r.get("sheetZ", 0) > 0, [r.get("toastZ"), r.get("sheetZ")])
-    check("the start sheet closes on a swipe down from its middle", closed is True, closed)
+    check("a short slow pull from the start sheet's middle springs back", springs is True, springs)
+    check("the start sheet closes on a slow pull down past 40% from its middle", closed is True, closed)
     check("no exception", not r.get("threw"), r.get("threw"))
     ctx.close()
 
