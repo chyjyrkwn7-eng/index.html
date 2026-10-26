@@ -34140,6 +34140,18 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   .setup-level-count[hidden]{ display:none; }
   .picks > .pick.is-other-level{ display:none; }
+  /* ---- NO HUNDO BAR ON A PHONE'S UNIT CARD (build 328) ----
+     "on the unit cards (this is mainly for iPhones, phones, smaller devices)
+     let's not put the bar with how many hundos you have. You'll still see it
+     when you hold it down ... laptops, iPads can keep it ... All devices can
+     still keep the badge spot." The bar is gone under 40rem; the hold card
+     (.unitdetail) keeps it. The count line sits at the card's foot beside the
+     badge, so the card reads name / count / badge with nothing crowded. */
+  @media (max-width:39.99rem){
+    html[data-layout] .picks > .pick .pick-barrow{ display:none !important; }
+    /* every card's count then sits on the same line at the foot, beside the badge (an earned card's already did) */
+    html[data-layout] .picks > .pick .pcount{ grid-row:count-start / bar-end; align-self:end; }
+  }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
