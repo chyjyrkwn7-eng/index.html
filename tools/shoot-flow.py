@@ -254,6 +254,8 @@ def main():
                 if page.evaluate("()=>!!document.querySelector('.gs-page')"):
                     page.wait_for_timeout(2600)
                     shot(page, 0.5, "get-started")
+                    # 330: its button rises in once the last section is reached
+                    page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(900)
                     page.click(".gs-go"); page.wait_for_timeout(1200)
 
                 shot(page, 1, "welcome")

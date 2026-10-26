@@ -90,6 +90,8 @@ with sync_playwright() as pw:
         r = page.evaluate("()=>{ const v=[...document.querySelectorAll('.gs-page video')]; return {n:v.length, srcs:v.map(x=>x.getAttribute('src')), scenes:document.querySelectorAll('.gs-scene').length} }")
         chk("it has four clips beside its four scenes", r["n"] == 6 and r["scenes"] == 4 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
         page.wait_for_timeout(2200)
+        # 330: the button waits for the end of the page
+        page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(900)
         r = page.evaluate("()=>{ const b=document.querySelector('.gs-go').getBoundingClientRect(); return {w:Math.round(b.width), h:Math.round(b.height), bottom:Math.round(innerHeight-b.bottom)} }")
         chk("its button is on screen and at least 44px tall", r["h"] >= 44 and r["bottom"] >= 0, r)
         # A device that still has an account on it (a half-finished sign-up,

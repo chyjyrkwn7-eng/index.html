@@ -1382,6 +1382,7 @@
     transition:opacity .5s ease;
   }
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
+  #splashscreen.splash-first{ visibility:hidden; }   /* a first visit never shows it (330) */
   /* Positioned in PIXELS from the top-left, not centred inside its
      parent, and that distinction is the whole fix for the bottom-right
      launch.
@@ -17434,6 +17435,11 @@
   .affiliation-note{
     font-size:.68rem; color:var(--soft); opacity:.55; text-align:center; margin:1.3rem 0 0;
   }
+  .affiliation-note > p{ margin:0 0 .45rem; line-height:1.45; }
+  .affiliation-note > p:last-child{ margin-bottom:0; }
+  .affiliation-note.legal-settings{ opacity:.7; max-width:30rem; margin-left:auto; margin-right:auto; }
+  .affiliation-note.legal-classes{ margin:1.1rem auto 0; max-width:30rem; opacity:.62; }
+  @media (max-width:22.5rem){ .affiliation-note.legal-classes{ margin-top:.45rem; font-size:.62rem; } }
 
   .progressring-wrap{
     position:relative; width:11.5rem; height:11.5rem; margin:0 auto 1.4rem; z-index:1;
@@ -34278,13 +34284,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      them beneath each other unless it's a bigger screen"); the card, its emblem, words and chip tighten. */
   @media (max-width:22.5rem){
     .class-cards{ gap:.55rem; }
-    .class-card{ min-height:0; padding:.8rem .6rem .75rem; gap:.4rem; border-radius:1.15rem; }
+    .class-card{ min-height:0; padding:.7rem .6rem .65rem; gap:.3rem; border-radius:1.15rem; }
     .cc-emblem{ width:42px; height:42px; }
     .cc-emblem svg{ width:24px; height:24px; }
     .cc-title{ font-size:1.02rem; margin:.1rem 0 .25rem; }
     .cc-desc{ font-size:.76rem; line-height:1.35; }
     .cc-status{ font-size:.74rem; padding-left:.6rem; padding-right:.6rem; max-width:100%; }
-    .panel.home.classselect-panel .classselect-sub{ margin-bottom:.5rem; }
+    .panel.home.classselect-panel .classselect-sub{ margin-bottom:.35rem; }
   }
   /* ...and on the first-gen SE (320x568) the character step scrolled 9px and its Continue sat 29px
      below every other step's: the grid's margins give the room back */
@@ -34523,6 +34529,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .gs-bar{ position:absolute; left:0; right:0; bottom:0; z-index:3; display:flex; justify-content:center; padding:2.2rem 1.2rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
     background:linear-gradient(180deg, rgba(5,6,13,0), rgba(5,6,13,.92) 60%); pointer-events:none; }
   .gs-bar .gs-go{ pointer-events:auto; margin:0; width:min(100%, 22rem); min-height:50px; }
+  .gs-bar{ opacity:0; transform:translateY(26px); transition:opacity .45s ease, transform .55s cubic-bezier(.2,1.1,.35,1); }
+  .gs-bar:not(.is-ready) .gs-go{ pointer-events:none; }
+  .gs-bar.is-ready{ opacity:1; transform:none; }
+  .gs-end .gs-legal{ margin:2.6rem auto 0; max-width:26rem; color:rgba(220,228,255,.62); opacity:1; font-size:.68rem; }
   @supports (text-box:trim-both cap alphabetic){ .gs-bar .gs-go{ text-box:trim-both cap alphabetic; padding-block:calc((50px - 1cap)/2); } }
   @media (min-width:56rem){
     .gs-side{ display:block; }
@@ -35083,6 +35093,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        on it - so it gets the brisk returning-user pace rather than the
        long first-run one, whichever kind of user triggered it. */
     var duration = isUpdating ? 2600 : (isReturningUser ? 2500 : 8000);
+    /* A FIRST VISIT OPENS ON GET STARTED, NOT THE LOADING SCREEN (build 330): "The start up sequence, it
+       does the loading thing first before the start up, don't do that." Nothing on this device - no code,
+       no progress, Get Started never seen - so there is nothing to load: the splash steps aside at once and
+       the Get Started page's own warp-in is the first thing seen. */
+    var firstVisit = false;
+    try { firstVisit = !isReturningUser && !isUpdating && !window.localStorage.getItem("class26e.getstarted") && !window.localStorage.getItem("class26e.drill.v1"); } catch(e){}
+    if(firstVisit){ duration = 60; splash.classList.add("splash-first"); }
     /* ---- INSTALLING UPDATE (build 327 round 7) ----
        "Let's make this 'pushing update' screen like 10 seconds longer and
        with some new words going across like initiating sound system stuff
@@ -86545,6 +86562,28 @@ const GS_SCENES = [
 ];
 function gsSeen(){ try{ return localStorage.getItem("class26e.getstarted") === "1"; }catch(e){ return false; } }
 function gsMarkSeen(){ try{ localStorage.setItem("class26e.getstarted", "1"); }catch(e){} }
+/* THE SMALL PRINT (build 330), in one place: Settings carries all of it and the credit; the sign-up
+   class screen and the Get Started page carry their own short line. Plain words, no styling of its own
+   beyond .affiliation-note. */
+const LEGAL_YEAR = 2026;
+function buildLegalNote(where){
+  const box = document.createElement("div");
+  box.className = "affiliation-note legal-" + where;
+  const p = t => { const e = document.createElement("p"); e.textContent = t; box.appendChild(e); return e; };
+  if(where === "settings"){
+    p("Nova is an independent study app made by M. Davis.");
+    p("It is not affiliated with, sponsored by or endorsed by Houston Community College (HCC), the Texas Commission on Law Enforcement (TCOLE), the International Code Council (ICC), Harris County, or any academy, school or agency.");
+    p("Questions come from course study guides and are for study only. Nova is not official course material, legal advice or a substitute for your training: check answers against your official material and instructors.");
+    p("International Fire Code is a trademark of the International Code Council. The Fire Code class uses your own copy of the code.");
+    p("\u00a9 " + LEGAL_YEAR + " M. Davis. All rights reserved.");
+  } else if(where === "classes"){
+    p("Classes are study sets only. Nova is not affiliated with any school, academy or agency, and this does not enroll you in a real course.");
+  } else {
+    p("An independent study app. Not affiliated with or endorsed by HCC, TCOLE, the ICC or any academy or agency.");
+    p("\u00a9 " + LEGAL_YEAR + " Nova. All rights reserved.");
+  }
+  return box;
+}
 function showGetStarted(){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true; timerlineEl.hidden = true;
@@ -86584,6 +86623,8 @@ function showGetStarted(){
   });
   const end = document.createElement("section"); end.className = "gs-end";
   end.innerHTML = '<h2 class="gs-title">Ready when you are</h2><p class="gs-body">Your adventure starts with one tap.</p>';
+  /* (330) the small print and the copyright, at the very foot */
+  const legal = buildLegalNote("getstarted"); legal.classList.add("gs-legal"); end.appendChild(legal);
   scroll.appendChild(end);
   const bar = document.createElement("div"); bar.className = "gs-bar";
   const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn gs-go"; go.textContent = "Let’s get started";
@@ -86598,12 +86639,18 @@ function showGetStarted(){
     if(e.isIntersecting) e.target.classList.add("is-in");
   }), { root: scroll, threshold: .2 });
   scroll.querySelectorAll(".gs-scene, .gs-end, .gs-hero-copy").forEach(n => reveal.observe(n));
+  /* THE BUTTON WAITS FOR THE END (build 330): "shouldn't the get started button not appear till you
+     scroll through it and get to the bottom?" It rises in once the last section is on screen. */
+  const atEnd = new IntersectionObserver(es => es.forEach(e => {
+    if(e.isIntersecting){ bar.classList.add("is-ready"); atEnd.disconnect(); }
+  }), { root: scroll, threshold: .25 });
+  atEnd.observe(end);
   const play = new IntersectionObserver(es => es.forEach(e => {
     const v = e.target.querySelector("video"); if(!v) return;
     if(e.isIntersecting){ const p = v.play(); if(p && p.catch) p.catch(() => {}); } else v.pause();
   }), { root: scroll, threshold: .35 });
   page.querySelectorAll(".gs-phone").forEach(n => play.observe(n));
-  const stop = new MutationObserver(() => { if(!page.isConnected){ reveal.disconnect(); play.disconnect(); stop.disconnect(); vids.forEach(v => { try{ v.pause(); v.removeAttribute("src"); v.load(); }catch(e){} }); } });
+  const stop = new MutationObserver(() => { if(!page.isConnected){ reveal.disconnect(); play.disconnect(); atEnd.disconnect(); stop.disconnect(); vids.forEach(v => { try{ v.pause(); v.removeAttribute("src"); v.load(); }catch(e){} }); } });
   stop.observe(stage, { childList: true });
   setTimeout(() => hc.classList.add("is-in"), 1500);
 }
@@ -86708,7 +86755,8 @@ function showClassSelection(){
   /* A class rather than an inline style, so the tablet block can size
      this line up without having to out-specify an inline declaration. */
   sub.className = "cal-sub classselect-sub";
-  sub.textContent = "Pick what you're studying for. More classes are on the way, and you'll be able to add them later.";
+  /* (330) shorter: the More classes card already says more are coming, and the small print needs the room */
+  sub.textContent = "Pick what you\u2019re studying for. You can add more classes later.";
   panel.appendChild(sub);
 
   /* Build 329: the same cards as the Classes screen (the class button's "Add a class"): an emblem,
@@ -86759,6 +86807,8 @@ function showClassSelection(){
      and your username? Could be a better tie in" */
   continueBtn.addEventListener("click", startSignupWithNova);
   panel.appendChild(continueBtn);
+  /* (330) "something at the bottom saying something about the classes to CYA" */
+  panel.appendChild(buildLegalNote("classes"));
 
   classCard.addEventListener("click", () => {
     classCard.classList.add("selected", "is-picked");
@@ -116722,10 +116772,9 @@ function showAppearance(opts){
      (Leaderboard, Answer Review, the end-of-test summary) keep theirs,
      since those genuinely have no tab of their own to return from. */
 
-  const affiliationNote = document.createElement("p");
-  affiliationNote.className = "affiliation-note";
-  affiliationNote.textContent = "Not affiliated with or endorsed by HCC or TCOLE.";
-  panel.appendChild(affiliationNote);
+  /* ABOUT (build 330): "Not affiliated or endorsed by HCC or TCOLE. That's good but we need more to
+     CYA ... Mention here it was made by M. Davis." The credit is here only (his call). */
+  panel.appendChild(buildLegalNote("settings"));
 
   /* (mounted by showProfile, inside its Settings tab - build 323) */
   /* INSTANT WHEN WE ARE ABOUT TO SCROLL SOMEWHERE ELSE. A plain toTop()
