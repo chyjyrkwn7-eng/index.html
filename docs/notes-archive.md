@@ -28829,4 +28829,4 @@ not number. Questions are word for word the guides, typos included.
   above the name. Count never wraps; under 360px the count is .66rem and the badge
   2.1rem. No count/badge or name/edge overlap on SE, SE 2/3, iPhone 16 or iPad.
 - **Profile XP line:** no "to Level N" (pfXpToText returns "").
-- **Big phones' Start Studying** (26.5rem-40rem): 17.6px, 208x51 (was 19.2px, 216x61); a 6.1" iPhone's stays 200x46.
+- **Start Studying on every phone** (under 40rem): one rule - words clamp(.86rem, 4.1vw, 1.06rem), width clamp(140px, 46vw, 205px), height clamp(44px, 11.5vw, 50px). SE 147x44, 375 173x44, 6.1" 181x45, Pro Max 202x50 (was 168x46 / 200x46 / 216x61 by steps). Home still fits SE and SE 2/3 exactly.

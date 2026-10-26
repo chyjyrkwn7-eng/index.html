@@ -34118,7 +34118,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        The daily question button is big for the screen too": the button is drawn 40px tall in
        .88rem words (its ::after keeps the 44px tap target), the circle 2.4rem, and the planet
        takes the screen's width so the column reaches down towards the bar. */
-    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .playbtn{ position:relative; font-size:.88rem; padding:.6rem 1.15rem; min-height:40px; min-width:0; margin-bottom:1rem; }
+    html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .playbtn{ position:relative; font-size:.88rem; padding:.6rem 1.15rem; min-height:40px; min-width:0; margin-bottom:.7rem; }
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual > .playbtn::after{ content:""; position:absolute; inset:-2px 0; }
     html[data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{ width:2.4rem; height:2.4rem; font-size:1.1rem; }
     html[data-layout]:not(.is-browser) body .panel.home.screen-home-actual .homegreeting{ font-size:.86rem; margin:.3rem 0 .2rem; }
@@ -34204,8 +34204,17 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   /* (build 328) "Pro max could be slightly better, the start studying button is just slightly
      too big": the big phones (Plus, Pro Max) had 216x61 in 19.2px words against a 6.1"
      iPhone's 200x46. A step down: 17.6px words, 208x~53 - still the big phone's button. */
-  @media (min-width:26.5rem) and (max-width:39.99rem){
-    html[data-layout] body .panel.home.screen-home-actual > .playbtn{ font-size:1.1rem !important; padding:.95rem 1.4rem !important; min-width:208px !important; }
+  @media (max-width:39.99rem){
+    /* ONE RULE FOR EVERY PHONE (build 328): "the too big button is the same problem with
+       the 16 pro max. Noticing a theme here, fix it." Each phone size had its own Start
+       Studying (SE 168x46, 6.1" 200x46, Plus/Pro Max 216x61), sized by steps rather than
+       by the screen. Now its words and width follow the screen's width - about 46% of it,
+       the share the planet's column gives it - and its height follows its words, never
+       under the 44px tap height. */
+    html[data-layout] body .panel.home.screen-home-actual > .playbtn{
+      font-size:clamp(.86rem, 4.1vw, 1.06rem) !important; padding:.72em 1.3em !important;
+      min-width:clamp(140px, 46vw, 205px) !important; min-height:clamp(44px, 11.5vw, 50px) !important;
+    }
   }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
