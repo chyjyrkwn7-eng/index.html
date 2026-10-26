@@ -28,7 +28,7 @@ def page_for(br, dev, extra="", pid="xph5b57jbp5a"):
     page.evaluate("()=>{ homeUnlocksOwed=()=>false; showHome(); }"); page.wait_for_timeout(1500)
     return ctx, page
 R = "s=>{const e=document.querySelector(s); if(!e) return null; const b=e.getBoundingClientRect(); return {w:Math.round(b.width),h:Math.round(b.height),l:Math.round(b.left),t:Math.round(b.top)}}"
-want = [a for a in sys.argv[1:]] or ["bubble", "new", "se", "flare", "copy", "flow", "xp"]
+want = [a for a in sys.argv[1:]] or ["bubble", "new", "se", "flare", "copy", "flow", "narrow", "xp"]
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
     if "bubble" in want:
@@ -131,6 +131,18 @@ with sync_playwright() as pw:
         took = round(time.time() - t1, 2)
         chk("the username check says Verified, in green, a beat after the board is in (under 1.5s)", r and r["t"] == "Verified" and r["c"].startswith("rgb(107") and took < 1.5, [r, took])
         chk("no page errors through the flow", not errs, errs[:3])
+        ctx.close()
+    if "narrow" in want:
+        # a first-gen SE: the sign-up class screen fits, and no card's chip runs off its card
+        w, h, ins, inst = DEV["se1"]; g["new_page"].w, g["new_page"].h = w, h
+        ctx, page = g["new_page"](br, ins, inst, False)
+        ctx.add_init_script("try{localStorage.setItem('class26e.getstarted','1');}catch(e){}")
+        page.goto(url); page.wait_for_timeout(3000); page.evaluate("document.getElementById('splashscreen')?.remove()")
+        page.evaluate("()=>showClassSelection()"); page.wait_for_timeout(1400)
+        r = page.evaluate("""()=>({ scroll: document.documentElement.scrollHeight - innerHeight,
+          spill: Math.max(...[...document.querySelectorAll('.class-card')].map(c => { const a = c.getBoundingClientRect(), t = c.querySelector('.cc-status').getBoundingClientRect(); return Math.round(t.right - (a.right - 1)); })) })""")
+        chk("se1: the sign-up class screen does not scroll", r["scroll"] <= 0, r)
+        chk("se1: every class card's chip sits inside its card", r["spill"] <= 0, r)
         ctx.close()
     if "xp" in want:
         ctx, page = page_for(br, "15")

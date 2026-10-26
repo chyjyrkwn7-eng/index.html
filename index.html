@@ -34273,6 +34273,24 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     .cc-status.is-enrolled::before{ display:inline-block; vertical-align:-1px; margin-right:.35rem; }
     .cc-status.is-enroll{ padding-top:calc((28px - 1cap)/2 + 1.2px); padding-bottom:calc((28px - 1cap)/2 - 1.2px); }
   }
+  /* The narrowest phones (a first-gen SE, 320px): two across leaves a card about 83px inside, and
+     "Coming soon" ran off its edge while the sign-up page scrolled 46px. Two across stays ("don't put
+     them beneath each other unless it's a bigger screen"); the card, its emblem, words and chip tighten. */
+  @media (max-width:22.5rem){
+    .class-cards{ gap:.55rem; }
+    .class-card{ min-height:0; padding:.8rem .6rem .75rem; gap:.4rem; border-radius:1.15rem; }
+    .cc-emblem{ width:42px; height:42px; }
+    .cc-emblem svg{ width:24px; height:24px; }
+    .cc-title{ font-size:1.02rem; margin:.1rem 0 .25rem; }
+    .cc-desc{ font-size:.76rem; line-height:1.35; }
+    .cc-status{ font-size:.74rem; padding-left:.6rem; padding-right:.6rem; max-width:100%; }
+    .panel.home.classselect-panel .classselect-sub{ margin-bottom:.5rem; }
+  }
+  /* ...and on the first-gen SE (320x568) the character step scrolled 9px and its Continue sat 29px
+     below every other step's: the grid's margins give the room back */
+  @media (max-width:22.5rem) and (max-height:36rem){
+    .panel.home.charselect-panel > .avatarchar-grid{ margin-top:.4rem !important; margin-bottom:.2rem !important; }
+  }
   .class-enroll{ display:flex; flex-direction:column; }
   .ce-emblem{ width:84px; height:84px; margin:1rem 0 .4rem; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 60%, rgba(255,122,26,.35), rgba(255,122,26,.05) 70%); border:1px solid rgba(255,140,60,.35); box-shadow:0 0 40px rgba(255,110,30,.25); }
