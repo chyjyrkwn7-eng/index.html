@@ -7692,7 +7692,9 @@ def check_b298(br):
                /* 328: Level 1's new units were added AFTER this block (every live question kept its
                   place - compared index for index against main), so the block is one run that only
                   later additions follow, not the very end of the bank */
-               repeatLast: (() => { const idx = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].versionOnly);
+               /* ...and Penal's alone: 328 keeps Sexual Assault's pre-renumbering questions as version-only
+                  in their own places (no question moved), which is not this block */
+               repeatLast: (() => { const idx = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].versionOnly && (QUESTIONS[i].topic || '').trim() === 'Penal Code');
                  const a = idx[0], z = idx[idx.length - 1];
                  return idx.length >= reps.length && z - a + 1 === idx.length && reps.every(q => QUESTIONS.indexOf(q) >= a)
                    && QUESTIONS.slice(z + 1).every(q => (q.topic || '').trim() !== 'Penal Code'); })(),
