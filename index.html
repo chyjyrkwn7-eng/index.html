@@ -34127,6 +34127,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtabs-navrow .bottomtab{ padding:.62rem .2rem; gap:.12rem; }
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-icon{ width:1.5rem; height:1.5rem; }
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-label{ font-size:.62rem; }
+    html[data-layout][data-theme]:not(.is-browser) body:has(.screen-home-actual){ --home-bar:4.2rem; }
     /* (build 328) the avatar keeps its 34px but takes the 24px the other icons take, so the
        four labels share one line ("The bottom tab looks misaligned on the smaller devices") */
     html[data-layout]:not(.is-browser) body .bottomtabs:not(.has-start-tab) .bottomtab-icon.bottomtab-icon-avatar{ width:26px !important; height:26px !important; margin-top:-2px !important; margin-bottom:-3px !important; }
@@ -34238,9 +34239,12 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      with the column (flex-shrink), so it is always the largest planet that fits. What is
      left is shared above and below. Under 620px of height the tagline steps aside. */
   @media (max-width:39.99rem) and (orientation:portrait){
-    html[data-layout][data-theme] body:has(.screen-home-actual){ --hg:clamp(10px, 2.4dvh, 22px); }
+    /* the page under Home reserves the bar itself (its offset, its height, 6px), not the
+       8rem a scrolling page keeps - in a Safari tab that was 41px of nothing under Start */
+    html[data-layout][data-theme] body:has(.screen-home-actual){ --hg:clamp(10px, 2.4dvh, 22px); --home-bar:5rem; --home-pb:calc(var(--tabs-bottom) + var(--home-bar) + 6px); }
+    html[data-layout][data-theme]:not(.x) body.has-bottomtabs:has(.screen-home-actual) .wrap{ padding-bottom:var(--home-pb) !important; }
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{
-      height:calc(100dvh - var(--panel-reserve) - var(--pad-inset-top) - var(--pad-inset-bottom)) !important; min-height:0 !important;
+      height:calc(100dvh - max(1.25rem, env(safe-area-inset-top, 0px)) - var(--home-pb) - 4px) !important; min-height:0 !important;
       display:flex !important; flex-direction:column !important; justify-content:center !important; align-items:center !important;
       padding-top:3rem !important; padding-bottom:calc(var(--hg) * 1.2) !important; box-sizing:border-box !important;
     }
