@@ -28859,3 +28859,14 @@ not number. Questions are word for word the guides, typos included.
   the installed SE's compact bar, + 6px) instead of 8rem: an SE-sized Safari tab's
   planet 210 -> 242, a 6.1" Safari tab's 332 -> 364. Planet centring measured: the
   ring's centre is the screen's centre on every phone; the core within 1-2px.
+- **Planet size, final for 328 (Oct 26 night):** "I don't necessarily want bigger, I just
+  want it to be sized perfectly" - the reference is the 327z14 Welcome in his Pro Max
+  Safari screenshot (outer ring 78% of the screen width). Box = screen width (ring 80%) on
+  any phone tall enough; shorter phones get the largest that fits, helped by the column's
+  top padding dropping to 1.25rem (the orbits are circles; measured, they clear the chat
+  button and the version tag as they turn). A 1.13x box (ring 94%) was tried and reverted.
+  Welcome's line under its title hides under 620px of height (as Home's tagline does).
+- **Welcome's bubbles are never lit** ("Why is the book flare glowing on the welcome
+  screen?"): buildCosmicHero lights a flare only with useTierIcons (Home).
+- **--tabs-bottom** gains a third term, .6 x the inset: a 24px Android gesture area had the
+  bar at 12px and the Start pill 2px inside it (sweep-layout). iPhones unchanged.

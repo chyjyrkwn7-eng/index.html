@@ -892,7 +892,8 @@
      12px, the bar's own side margin on a phone. A tablet keeps a little
      more. Everything placed against the bar is written as this plus its
      own offset, so moving the bar moves them with it. */
-  :root{ --tabs-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px)); }
+  :root{ --tabs-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px), calc(env(safe-area-inset-bottom, 0px) * .6)); }
+  /* (.6 of the inset: a 24px Android gesture area put the bar at 12px and the taller Start pill 2px into it; iPhones (0, 34px) are unchanged) */
   @media (min-width:40rem){ :root{ --tabs-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) - 4px)); } }
   /* How far the bar came down from where it was (.6rem + the inset): the
      page's reservation for the bar gives that much back, so screens end
@@ -84438,7 +84439,10 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     const badge = document.createElement("div");
     /* a rank whose rank-up is still to be shown keeps its flare dark on
        Home until the rank-up's own cutscene has lit it (build 319) */
-    const achieved = typeof tierColorUnlocked === "function" && tierColorUnlocked(pos.tier) &&
+    /* (Oct 26) "Why is the book flare glowing on the welcome screen?" - Welcome's bubbles are
+       its icons, not anyone's flares, so none is lit there (it lit the first for an account
+       that had reached its first rank, which only Home should say) */
+    const achieved = useTierIcons && typeof tierColorUnlocked === "function" && tierColorUnlocked(pos.tier) &&
       !(useTierIcons && typeof rankUpHolds === "function" && rankUpHolds(pos.tier));
     const isNewlyLit = useTierIcons && achieved && !seenUnlocked.includes(pos.tier);
     badge.className = "cosmic-icon-badge cosmic-icon-badge-" + (i % 3) + (achieved ? " cosmic-badge-lit" : "") + (isNewlyLit ? " cosmic-badge-newly-lit" : "");
