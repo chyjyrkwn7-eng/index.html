@@ -85,7 +85,7 @@
     /* its question bank, a file of its own (1.4 MB) that only this class loads: written in
        here so it runs, in order, before the app's script reads it (window.IFC_BANK) */
     document.write('<script src="ifc/bank.js"><\/script>');
-    var SHARED = /^class26e\.(activeclass|enrolled|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
+    var SHARED = /^class26e\.(activeclass|enrolled|classseen|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -34378,6 +34378,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   .class-bubble{ position:relative; z-index:2; width:var(--cb); height:var(--cb); padding:0; margin:0; cursor:pointer; -webkit-tap-highlight-color:transparent; transition:transform .18s ease; }
   .class-bubble:active{ transform:scale(.94); }
+  /* a class you have not looked at yet: a soft ring breathes out from the bubble (transform and
+     opacity only - nothing blurred moves) and a small dot sits on its corner */
+  .class-bubble-wrap.has-new .class-bubble::before{ content:""; position:absolute; inset:-2px; border-radius:50%; border:2px solid rgba(255,150,72,.7); opacity:0; pointer-events:none; animation:cb-new 2.6s ease-out infinite; }
+  .class-bubble-wrap.has-new .class-bubble::after{ content:""; position:absolute; top:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#FF9648; border:2px solid rgba(14,16,24,.9); box-sizing:border-box; }
+  @keyframes cb-new{ 0%{ transform:scale(1); opacity:.85; } 100%{ transform:scale(1.55); opacity:0; } }
+  [data-reduce-motion="true"] .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; }
+  @media (prefers-reduced-motion:reduce){ .class-bubble-wrap.has-new .class-bubble::before{ animation:none; opacity:.5; } }
   .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble, .class-card.is-academy{ --cc:rgba(150,170,255,.34); }
   .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble, .class-card.is-ifc{ --cc:rgba(255,140,70,.36); }
   .class-bubble > svg{ width:28px; height:28px; display:block; overflow:visible; }
@@ -34610,6 +34617,18 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   }
   @media (max-width:21rem) and (orientation:portrait){
     html[data-layout] body:has(.screen-home-actual) .daily-question-fab{ width:46px !important; height:46px !important; right:max(1rem, env(safe-area-inset-right, 0px)) !important; }
+  }
+  /* Build 329: "On the SE home the chat button is huge ... Start Studying is way too big still".
+     An SE-sized phone (a short screen) gets a smaller chat button everywhere - 38px, with the same
+     44px of touch around it - and a slimmer Start Studying pill. */
+  @media (max-width:39.99rem) and (orientation:portrait) and (max-height:43.75rem){
+    html[data-layout] body .chatdock:not(.in-test) .chatdock-btn{ width:38px; height:38px; }
+    html[data-layout] body .chatdock:not(.in-test) .chatdock-btn::after{ content:""; position:absolute; inset:-3px; }
+    html[data-layout] body .chatdock:not(.in-test) .chatdock-btn svg{ width:1rem; height:1rem; }
+    html[data-layout] body .chatdock:not(.in-test) .chatdock-panel{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 38px + .6rem); }
+    html[data-layout] body .panel.home.screen-home-actual > .playbtn{ font-size:.88rem !important; padding:calc((38px - 1cap)/2) 1.3em !important; min-width:0 !important; min-height:38px !important; }
+    html[data-layout] body .panel.home.screen-home-actual > .playbtn{ position:relative; }
+    html[data-layout] body .panel.home.screen-home-actual > .playbtn::after{ content:""; position:absolute; inset:-3px 0; }
   }
   /* ---- WELCOME ON EVERY PHONE, THE SAME LAYOUT AS HOME (build 328) ----
      "Ensure all the devices changed are reflected app wide for their welcome screen and all
@@ -51292,6 +51311,34 @@ function setEnrolled(key, on){
    under the planet at the screen's left edge, and opens downward into a stack of bubbles -
    each other class you are in, then "+" for the class list ("Since I'm not in any besides
    mine I will see just the +"). */
+/* ---- A CLASS THAT IS NEW TO YOU (build 329) ----
+   "When new classes get added, make the class bubble pulse so people know to look, and maybe a
+   pop-up." class26e.classseen is the classes this device has been shown in the list; with
+   nothing stored it is the two that exist today, so a class added later is new to everybody.
+   The bubble pulses softly and one banner says so; opening the classes list marks them seen. */
+function unseenClasses(){
+  let seen = ["academy", "ifc"];
+  try{ const v = JSON.parse(localStorage.getItem("class26e.classseen") || "null"); if(Array.isArray(v)) seen = v; }catch(e){}
+  return NOVA_CLASSES.filter(c => seen.indexOf(c.key) < 0);
+}
+function markClassesSeen(){
+  try{ localStorage.setItem("class26e.classseen", JSON.stringify(NOVA_CLASSES.map(c => c.key))); }catch(e){}
+  const w = document.querySelector(".class-bubble-wrap"); if(w) w.classList.remove("has-new");
+}
+function maybeNewClassBanner(){
+  const fresh = unseenClasses(); if(!fresh.length) return;
+  let said = null; try{ said = sessionStorage.getItem("class26e.newclass.said"); }catch(e){}
+  if(said === fresh.map(c => c.key).join()) return;
+  setTimeout(() => {
+    if(!onNovaHome() || document.getElementById("nova-intro") || document.getElementById("nova-class-greet")) return;
+    try{ sessionStorage.setItem("class26e.newclass.said", fresh.map(c => c.key).join()); }catch(e){}
+    const c = fresh[0], info = NOVA_CLASS_INFO[c.key] || {};
+    const ic = document.createElement("span"); ic.innerHTML = c.icon;
+    showDailyAlert("Tap the class button to look", { kind: "enrolled", tag: "NEW CLASS", title: (info.title || c.name) + " is open to join",
+      color: "#FF9648", iconEl: ic.firstElementChild, id: "newclass-banner", stay: 7000,
+      onTap: () => { const b = document.querySelector(".class-bubble"); if(b) b.click(); } });
+  }, 2400);
+}
 function mountClassBubble(){
   if(!classSwitchAllowed()) return;
   const cur = NOVA_CLASSES.find(c => c.key === window.NOVA_CLASS) || NOVA_CLASSES[0];
@@ -51330,12 +51377,17 @@ function mountClassBubble(){
     stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = -1; });
     document.removeEventListener("pointerdown", outside, true);
   }
-  btn.addEventListener("click", () => { if(wrap.classList.contains("is-open")) closeStack(); else openStack(); });
+  btn.addEventListener("click", () => { markClassesSeen(); if(wrap.classList.contains("is-open")) closeStack(); else openStack(); });
   wrap.append(dock, btn, stack);
+  if(unseenClasses().length) wrap.classList.add("has-new");
   stage.appendChild(wrap);
   /* under the planet, near the left edge: placed from the planet's own box, again whenever the screen changes size */
   const place = () => {
     if(!wrap.isConnected){ window.removeEventListener("resize", place); return; }
+    /* the bubble is the daily question's size, whatever the screen makes that */
+    const dq = document.querySelector(".daily-question-fab");
+    const dw = dq ? Math.round(dq.getBoundingClientRect().width) : 0;
+    if(dw >= 36 && dw <= 90) wrap.style.setProperty("--cb", dw + "px");
     if(window.matchMedia && matchMedia("(min-width:40rem)").matches){ wrap.style.top = ""; return; }   /* top-left corner on a tablet or laptop */
     const hero = document.querySelector("#stage .panel.home > .cosmic-hero-wrap");
     if(!hero) return;
@@ -51402,6 +51454,7 @@ const NOVA_CLASS_INFO = {
    phone, three on a tablet or laptop; every box the same size; "Enrolled" for any class you are in
    (the one you are in is ringed). */
 function showClassCatalog(){
+  markClassesSeen();
   const panel = document.createElement("section");
   panel.className = "panel class-catalog";
   panel.appendChild(buildBackLink("Back", showHome));
@@ -98228,7 +98281,7 @@ function showHome(){
   versionTag.append(verLong, verShort);
   versionTag.addEventListener("click", showReleaseHistory);
   stage.appendChild(versionTag);
-  try{ mountClassBubble(); maybeClassGreeting(); }catch(e){}
+  try{ mountClassBubble(); maybeClassGreeting(); if(classSwitchAllowed()) maybeNewClassBanner(); }catch(e){}
 
   toTop();
   /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
