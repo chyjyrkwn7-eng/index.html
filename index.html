@@ -58,6 +58,46 @@
      while still beating first paint. -->
 <meta name="theme-color" id="themecolor" content="#271E23">
 <script>
+  /* ---- ANOTHER CLASS, FOR ONE ACCOUNT (build 328, NOVA_CLASS) ----
+     "add a button ... This button will be how you access other classes you are enrolled
+     into ... When you go to another class. Your rank level and all that stuff would only
+     show for that class ... I can't earn xp in one class and the leaderboard for police
+     academy class 26 go up ... AGAIN THIS ONLY APPLIES TO MY ACCOUNT NO ONE ELSE."
+
+     Only the account whose publicId is CLASS_OWNER can be in another class, and only on a
+     device where that account is the one signed in (read here, read-only, from the
+     academy's own saved copy). The other class runs as a separate copy of the app on this
+     device: every class26e.* key this page reads or writes is redirected to class26e.ifc.*
+     (device settings excepted), IndexedDB names get an "ifc:" prefix, and initFirebase()
+     stands down - so nothing it does can reach the academy's saved progress, its backup,
+     its sync code, the cloud account, the leaderboard or any classmate. Switching is a
+     reload (switchClass()). This runs before every other script, so they all see it. */
+  (function(){
+    var CLASS_OWNER = "xph5b57jbp5a", ACTIVE = "class26e.activeclass";
+    window.NOVA_CLASS = "academy"; window.NOVA_CLASS_OWNER = CLASS_OWNER;
+    var want = null, owner = false, academyRaw = null;
+    try{ want = localStorage.getItem(ACTIVE); }catch(e){}
+    try{ academyRaw = localStorage.getItem("class26e.drill.v1"); var a = JSON.parse(academyRaw || "null"); owner = !!a && a.publicId === CLASS_OWNER; }catch(e){}
+    if(want !== "ifc") return;
+    if(!owner){ try{ localStorage.removeItem(ACTIVE); }catch(e){} return; }
+    window.NOVA_CLASS = "ifc";
+    window.NOVA_ACADEMY_RAW = academyRaw;
+    var SHARED = /^class26e\.(activeclass|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
+    var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
+    try{
+      var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
+      P.getItem = function(k){ return g.call(this, this === window.localStorage ? map(k) : k); };
+      P.setItem = function(k, v){ return st.call(this, this === window.localStorage ? map(k) : k, v); };
+      P.removeItem = function(k){ return rm.call(this, this === window.localStorage ? map(k) : k); };
+    }catch(e){}
+    try{
+      var F = IDBFactory.prototype, op = F.open, del = F.deleteDatabase;
+      F.open = function(n, v){ return v === undefined ? op.call(this, "ifc:" + n) : op.call(this, "ifc:" + n, v); };
+      F.deleteDatabase = function(n){ return del.call(this, "ifc:" + n); };
+    }catch(e){}
+  })();
+</script>
+<script>
   /* Deliberately inline, synchronous, and this early: it has to finish
      before the first paint for iOS to pick the value up, which rules out
      the main script block (far below, after all the CSS) and anything
@@ -34148,6 +34188,78 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     /* the daily question keeps its gap over the shorter bar, clear of Start Studying */
     html[data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{ bottom:calc(var(--tabs-bottom) + 4.95rem); right:max(1.2rem, env(safe-area-inset-right, 0px)); }
   }
+  /* ---- THE CLASS BUBBLE AND ITS LIST (build 328, mountClassBubble) ----
+     The chat button's twin in Home's top-left corner, the same glass; the version tag steps
+     right of it. Police lights take turns; the flame flickers (transform/opacity only). */
+  .class-bubble{
+    position:fixed; z-index:301;
+    top:calc(env(safe-area-inset-top, 0px) + .75rem + var(--vv-shift, 0px));
+    left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem));
+    width:44px; height:44px; padding:0; margin:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow); color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    transition:transform .18s ease;
+  }
+  .class-bubble:active{ transform:scale(.94); }
+  .class-bubble > svg{ width:26px; height:26px; display:block; overflow:visible; }
+  .class-bubble .cb-caret{
+    position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%;
+    background:var(--surface-2); border:1px solid var(--surface-border); box-shadow:0 1px 4px rgba(0,0,0,.35);
+  }
+  .class-bubble .cb-caret::before{
+    content:""; position:absolute; left:50%; top:50%; width:5px; height:5px; margin:-4px 0 0 -3px;
+    border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor; transform:rotate(45deg);
+    transition:transform .22s ease, margin .22s ease;
+  }
+  .class-bubble.is-open .cb-caret::before{ transform:rotate(-135deg); margin-top:-1px; }
+  @media (min-width:40rem){ .class-bubble{ width:52px; height:52px; } .class-bubble > svg{ width:28px; height:28px; } }
+  #stage:has(> .class-bubble) > .homeversion{ left:calc(max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)) + 44px + .75rem) !important; }
+  @media (min-width:40rem){ #stage:has(> .class-bubble) > .homeversion{ left:calc(max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)) + 52px + .75rem) !important; } }
+  .cb-red{ fill:#FF4757; } .cb-blue{ fill:#3E8BFF; }
+  .cb-ray-r{ stroke:#FF4757; } .cb-ray-b{ stroke:#3E8BFF; }
+  .cb-flame{ fill:#FF7A1A; } .cb-flame-core{ fill:#FFD34D; }
+  .class-bubble .cb-red, .class-bubble .cb-ray-r{ animation:cb-lights 1.6s steps(1, end) infinite; }
+  .class-bubble .cb-blue, .class-bubble .cb-ray-b{ animation:cb-lights 1.6s steps(1, end) -.8s infinite; }
+  @keyframes cb-lights{ 0%{ opacity:1; } 50%{ opacity:.35; } }
+  .class-bubble .cb-flame, .class-bubble .cb-flame-core{ transform-box:fill-box; transform-origin:50% 100%; animation:cb-flicker 2.2s ease-in-out infinite; }
+  .class-bubble .cb-flame-core{ animation-duration:1.5s; }
+  @keyframes cb-flicker{ 0%,100%{ transform:scale(1, 1); } 30%{ transform:scale(.96, 1.05); } 60%{ transform:scale(1.03, .97); } }
+  @media (prefers-reduced-motion:reduce){ .class-bubble svg *{ animation:none !important; } }
+  .class-menu{
+    position:fixed; z-index:302;
+    top:calc(env(safe-area-inset-top, 0px) + .75rem + 44px + .5rem + var(--vv-shift, 0px));
+    left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem));
+    width:min(17rem, calc(100vw - 3rem)); padding:.45rem; border-radius:1.15rem; box-sizing:border-box;
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow), 0 16px 40px rgba(0,0,0,.45);
+    transform-origin:22px 0; opacity:0; transform:translateY(-6px) scale(.92);
+    transition:opacity .2s ease, transform .32s cubic-bezier(.2, 1.2, .35, 1);
+  }
+  .class-menu.is-in{ opacity:1; transform:none; }
+  @media (min-width:40rem){ .class-menu{ top:calc(env(safe-area-inset-top, 0px) + .75rem + 52px + .5rem + var(--vv-shift, 0px)); } }
+  .class-menu-head{ margin:.3rem .6rem .45rem; font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
+  .class-menu-row{
+    display:flex; align-items:center; gap:.75rem; width:100%; min-height:52px; padding:.45rem .6rem; margin:0;
+    border:0; border-radius:.85rem; background:transparent; color:var(--ink); text-align:left; font:inherit; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; transition:background .15s ease, transform .15s ease;
+  }
+  .class-menu-row:active{ transform:scale(.98); }
+  .class-menu-row.is-current{ background:rgba(255,255,255,.07); }
+  .class-menu-row.is-going{ background:rgba(255,255,255,.12); }
+  .cmr-icon{ flex:none; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:var(--ink); }
+  .cmr-icon svg{ width:24px; height:24px; overflow:visible; }
+  .cmr-text{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .cmr-name{ font-size:1rem; font-weight:650; line-height:1.25; }
+  .cmr-sub{ font-size:.8rem; color:var(--soft); line-height:1.3; }
+  .cmr-check{ flex:none; width:20px; height:20px; }
+  .class-menu-row.is-current .cmr-check{ border-radius:50%; background:var(--accent);
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.4l3.2 3.2L15 6.8' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;
+            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.4l3.2 3.2L15 6.8' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat; }
+  html.class-switching body{ opacity:0; transition:opacity .35s ease; }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
      The Leaderboard's segmented control, a level's picked count beside its name. */
   html[data-layout] .screen-setup .setup-levels{ margin:1rem 0 .85rem; width:100%; }
@@ -49879,6 +49991,14 @@ const QUESTIONS = [
   },
 ];
 
+/* ---- THE FIRE CODE CLASS'S QUESTIONS (NOVA_CLASS "ifc") ----
+   Same shape as QUESTIONS. In that class they ARE the bank: QUESTIONS is emptied and
+   refilled in place (it is a const), before anything below reads it. Waiting on the
+   guide ("I send you the file"). */
+const IFC_QUESTIONS = [
+];
+if(window.NOVA_CLASS === "ifc"){ QUESTIONS.length = 0; Array.prototype.push.apply(QUESTIONS, IFC_QUESTIONS); }
+
 /* ==========================================================================
    Everything below runs the drill. You should not need to edit it.
    ========================================================================== */
@@ -50922,10 +51042,71 @@ function showSavedTestDropped(){
 }
 /* Home's Start Studying. A test in the slot is offered first. */
 function startStudying(){
+  if(!QUESTIONS.length){ showToast("This class's questions have not been added yet."); return; }
   const s = readRunSession();
   if(s){ showRunOffer(s, "start"); return; }
   if(takeSavedTestDropped()){ showSavedTestDropped(); return; }
   showModeSelect();
+}
+/* ---- THE CLASS BUBBLE (build 328, NOVA_CLASS - see the top of the document) ----
+   "a button on the left side that's a bubble, but it's a drop down ... shaped like the daily
+   question ... The icon of the bubble can be for the class you are in ... a fire symbol ...
+   the police one can be like police lights". Home's top-left corner, the chat button's twin;
+   only the class owner's account ever gets it. It opens a short list of the classes; picking
+   another saves, records the choice on this device and reloads into it. */
+const NOVA_CLASSES = [
+  { key: "academy", name: "Police Academy", sub: "Class 26E",
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="cb-red" d="M2.4 14.2a4.8 5.6 0 0 1 9.1 0z"/><path class="cb-blue" d="M12.5 14.2a4.8 5.6 0 0 1 9.1 0z"/><rect x="1.6" y="14.2" width="20.8" height="4.4" rx="1.6" fill="currentColor"/><path class="cb-ray-r" d="M1.2 6.9l1.8 1.6M5.9 3l.7 2.2" fill="none" stroke-width="1.8" stroke-linecap="round"/><path class="cb-ray-b" d="M22.8 6.9l-1.8 1.6M18.1 3l-.7 2.2" fill="none" stroke-width="1.8" stroke-linecap="round"/></svg>' },
+  { key: "ifc", name: "Fire Code", sub: "IFC",
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="cb-flame" d="M12.3 1.6c.7 3.4-1.8 5.2-3.4 7.4-1.4 1.9-2.8 3.8-2.8 6.4a6.1 6.1 0 0 0 6.1 6.1 6.1 6.1 0 0 0 6.1-6.1c0-2.8-1.2-4.6-2.7-6.2-.3 1.5-1 2.6-2.2 3.1.5-4.1-.7-7.8-1.1-10.7z"/><path class="cb-flame-core" d="M12.3 12.2c-1 1.4-2.4 2.5-2.4 4.3a2.4 2.4 0 0 0 4.8.1c0-1.8-1.3-2.9-2.4-4.4z"/></svg>' }
+];
+function classSwitchAllowed(){
+  return !!window.NOVA_CLASS_OWNER && (window.NOVA_CLASS !== "academy" || (store && store.publicId === window.NOVA_CLASS_OWNER));
+}
+function mountClassBubble(){
+  if(!classSwitchAllowed()) return;
+  const cur = NOVA_CLASSES.find(c => c.key === window.NOVA_CLASS) || NOVA_CLASSES[0];
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
+  btn.setAttribute("aria-label", "Classes: " + cur.name);
+  btn.setAttribute("aria-expanded", "false");
+  btn.innerHTML = cur.icon + '<span class="cb-caret" aria-hidden="true"></span>';
+  const menu = document.createElement("div");
+  menu.className = "class-menu"; menu.setAttribute("role", "menu"); menu.hidden = true;
+  const head = document.createElement("p"); head.className = "class-menu-head"; head.textContent = "Your classes";
+  menu.appendChild(head);
+  NOVA_CLASSES.forEach(c => {
+    const row = document.createElement("button");
+    row.type = "button"; row.className = "class-menu-row is-" + c.key + (c.key === cur.key ? " is-current" : "");
+    row.setAttribute("role", "menuitemradio"); row.setAttribute("aria-checked", c.key === cur.key ? "true" : "false");
+    row.innerHTML = '<span class="cmr-icon">' + c.icon + '</span><span class="cmr-text"><span class="cmr-name"></span><span class="cmr-sub"></span></span><span class="cmr-check" aria-hidden="true"></span>';
+    row.querySelector(".cmr-name").textContent = c.name;
+    row.querySelector(".cmr-sub").textContent = c.sub;
+    row.addEventListener("click", () => { if(c.key === cur.key) closeMenu(); else switchClass(c.key, row); });
+    menu.appendChild(row);
+  });
+  const outside = (e) => { if(!menu.contains(e.target) && !btn.contains(e.target)) closeMenu(); };
+  function openMenu(){
+    menu.hidden = false; btn.setAttribute("aria-expanded", "true"); btn.classList.add("is-open");
+    requestAnimationFrame(() => menu.classList.add("is-in"));
+    try{ playSound("ui.popup.open"); }catch(e){}
+    setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
+  }
+  function closeMenu(){
+    menu.classList.remove("is-in"); btn.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false");
+    document.removeEventListener("pointerdown", outside, true);
+    setTimeout(() => { if(!menu.classList.contains("is-in")) menu.hidden = true; }, 220);
+  }
+  btn.addEventListener("click", () => { if(menu.hidden || !menu.classList.contains("is-in")) openMenu(); else closeMenu(); });
+  stage.append(btn, menu);
+}
+function switchClass(key, row){
+  if(!classSwitchAllowed() || !NOVA_CLASSES.some(c => c.key === key)) return;
+  try{ persistLocally(); }catch(e){}
+  try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){ return; }
+  if(row) row.classList.add("is-going");
+  document.documentElement.classList.add("class-switching");
+  setTimeout(() => location.reload(), 380);
 }
 /* Pause's Save and exit (build 319). The clock stopped at the pause, so
    the save is measured there; the study log takes the first half now. */
@@ -59333,6 +59514,8 @@ function persistLocally(){
 
 let fbDb = null;
 function initFirebase(){
+  /* another class (NOVA_CLASS, top of the document) never reaches the cloud */
+  if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy") return false;
   try {
     if(window.firebase && !fbDb){
       const firebaseConfig = {
@@ -60482,6 +60665,8 @@ function migrateLeaderboardKey(){
 }
 
 function setSyncCode(code){
+  /* another class (NOVA_CLASS) has no account of its own in the cloud, so no code either */
+  if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy") return;
   /* Swapping codes - linking this device to another account, from
      Settings or from the sign-in screen - used to abandon the old code's
      rankings row with nothing left pointing at it: an entry on everyone
@@ -91008,6 +91193,7 @@ function dailyQuestionIndexForToday(){
   return dailyQuestionIndexFor(dailyPeriodKey());
 }
 function startDailyQuestion(){
+  if(!QUESTIONS.length){ showToast("This class's questions have not been added yet."); return; }
   /* No retake within the same period, pass or fail, per explicit
      request \u2014 checked here too (not just by graying out the button),
      since this is the actual enforcement point, not just the visual
@@ -97546,6 +97732,7 @@ function showHome(){
   versionTag.append(verLong, verShort);
   versionTag.addEventListener("click", showReleaseHistory);
   stage.appendChild(versionTag);
+  try{ mountClassBubble(); }catch(e){}
 
   toTop();
   /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
@@ -138035,6 +138222,21 @@ restartEl.addEventListener("click", confirmMainMenu);
 /* ---------- boot -------------------------------------------------------- */
 
 __bm("loadStore");loadStore();
+/* ANOTHER CLASS'S FIRST VISIT (NOVA_CLASS): the same person, nothing earned. Name, character,
+   look and the tips already seen come across from the academy's copy (read-only); every
+   count, rank, level, badge and history starts at zero ("my rank will be at 0 level 1"),
+   and it stays off the leaderboard. Saved under the class's own keys from then on. */
+if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
+  try{
+    const a = JSON.parse(window.NOVA_ACADEMY_RAW || "null") || {};
+    const seed = { lastModified: Date.now() };
+    ["firstName", "username", "avatarChar", "publicId", "theme", "onboardingComplete", "tourRev", "novaMet", "novaHeard",
+     "levelWallRule", "challengeSeed289", "koiRevoked295", "sheriffMoved324", "lateHundosSeed312", "fullTestsSeeded"].forEach(k => { if(a[k] !== undefined) seed[k] = a[k]; });
+    Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k)) seed[k] = a[k]; });
+    seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
+    if(applyLoadedData(seed)){ storageHadData = true; persistLocally(); }
+  }catch(e){}
+}
 
 /* ---------- THE ONE-TIME FRESH START ----------
    Every device clears itself once and lands back on Welcome. Asked for

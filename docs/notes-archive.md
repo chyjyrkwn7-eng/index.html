@@ -28892,3 +28892,29 @@ not number. Questions are word for word the guides, typos included.
   SE sizes fade the title for it, as main does.
 - **Start Studying higher:** the column's foot is 2.4 x --hg (was 1.2): Start to bar 48-62px.
 - **Welcome's icons** are 46% of their bubble (were a fixed 1.2rem inside scaled bubbles).
+## Another class, for one account (build 328, Oct 26 night) - NOVA_CLASS
+His words: "add a button on the left side that's a bubble, but it's a drop down ... how you
+access other classes you are enrolled into ... Your rank level and all that stuff would only
+show for that class ... I can't earn xp in one class and the leaderboard for police academy
+class 26 go up ... THIS ONLY APPLIES TO MY ACCOUNT NO ONE ELSE ... fire code class ... a
+fire symbol ... the police one can be like police lights ... The icon of the bubble can be
+for the class you are in."
+- **Owner:** publicId `xph5b57jbp5a` (Maddog, looked up with firestore-admin; a publicId is
+  public - it keys leaderboard rows - so it may live in the repo; codes may not).
+- **The switch** is `localStorage["class26e.activeclass"] = "ifc"` + a reload. The head
+  script (first <script>) honours it only when the academy's saved copy on this device is
+  the owner's; anyone else's key is removed and they stay in the academy.
+- **The sandbox:** every class26e.* key is redirected to class26e.ifc.* (device settings in
+  SHARED excepted), IndexedDB names get "ifc:", initFirebase() returns false and
+  setSyncCode() is a no-op - no cloud, no leaderboard, no code, nothing of the academy's
+  written. First visit seeds name/character/theme/seen-tips from the academy copy
+  (read-only, NOVA_ACADEMY_RAW) with every count at zero and leaderboardOptIn false.
+- **Questions:** IFC_QUESTIONS (after QUESTIONS) replaces the bank in place in that class.
+  Empty until he sends the guide; Start Studying and the daily question say "This class's
+  questions have not been added yet."
+- **The bubble:** Home's top-left, the chat button's twin (version tag steps right); icon is
+  the current class (police lights taking turns / a flickering flame); a "Your classes" list
+  drops from it, current one ticked; picking the other saves and reloads into it.
+- Gate: tools/check-b328-classes.py (fails against the build before).
+- Still academy-only content inside the Fire Code copy: calendar, test topics, unit levels,
+  badges/badge names keyed by academy topics - to adapt once the guide arrives.
