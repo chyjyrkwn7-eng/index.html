@@ -72,19 +72,13 @@ with sync_playwright() as pw:
           const lines = novaIntroLines({signup:true}).map(t).join(' | ');
           const tips = mainMenuTourSteps(false);
           const cal = tips.find(x => /Calendar/.test(x.text)).text, daily = tips.find(x => /daily question/i.test(x.text)).text;
-          const names = ['ninja','ghost','wizard','grizzly','alien'].map(k => AVATAR_DISPLAY_NAME[k]);
-          const earned = AVATAR_CHARACTERS.filter(c => !c.retired).map(c => AVATAR_DISPLAY_NAME[c.id] || c.id);
-          return {lines, cal, daily, names, earned, last: tips[tips.length-1].text} }""")
+          return {lines, cal, daily, last: tips[tips.length-1].text} }""")
         chk("intro: nothing says 'my class' or 'class material' (he has several classes)", not __import__("re").search(r"my class|class material", r["lines"], __import__("re").I), r["lines"][:200])
         chk("intro: the storm, and the word adventure", "storm" in r["lines"] and "adventure" in r["lines"].lower(), r["lines"][:200])
         chk("intro: the sync code is said to be in Settings and to sign you in on other devices", "Settings" in r["lines"] and "other devices" in r["lines"], r["lines"][-600:])
         chk("intro: the modes get more than one box", "Drill is practice" in r["lines"] and "Review goes over" in r["lines"], r["lines"][-600:])
         chk("tips: the calendar tip names no class and the daily tip no XP", "26E" not in r["cal"] and "XP" not in r["daily"], [r["cal"], r["daily"]])
         chk("tips: the last tip points at ranking up and badges", "Rank up" in r["last"] and "badges" in r["last"], r["last"])
-        chk("starters have names of their own, not what they literally are", not set(n.lower() for n in r["names"]) & {"ninja", "ghost", "wizard", "bear", "alien"} and len(set(r["names"])) == 5, r["names"])
-        # "Rename them all": no character in the app is named for what it literally is
-        lit = {"detective", "the masked one", "masked one", "zeus", "sheriff", "clown", "koi", "marksman", "hacker", "timekeeper", "hive"}
-        chk("every character has a name of its own, not what it literally is", not set(n.lower() for n in r["earned"]) & lit and len(set(r["earned"])) == len(r["earned"]), r["earned"])
         ctx.close()
     if "flow" in want:
         w, h, ins, inst = DEV["15"]; g["new_page"].w, g["new_page"].h = w, h

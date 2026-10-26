@@ -2543,7 +2543,7 @@ def check_b235(br):
           sc.get("solarOwed") is False and not r.get("solarCard"), [r["second"], r.get("solarCard")])
     st = str(fc.get("text"))
     check("Zeus, won away from any results screen, plays first as a finished challenge",
-          "Volt" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["first"])
+          "Zeus" in st and st.count("Challenge complete") == 1 and "Character unlocked" in st, r["first"])
     fl = r["flying"] if isinstance(r["flying"], dict) else {}
     check("tapping it away flies it to the Profile tab (fixed, above the screen) and rings the tab",
           fl.get("pos") == "fixed" and 0 < fl.get("y", -1) < 956 and r["pulse"] is True, [r["flying"], r["pulse"]])
@@ -3479,7 +3479,7 @@ def check_b243(br):
       out.fieldShare = f && row ? Math.round(f.getBoundingClientRect().width / row.getBoundingClientRect().width * 100) : 0;
       } catch(e){ out.threw = String(e) + ' ' + (e.stack || '').split('\\n')[1]; }
       return out; }""")
-    check("five starters: Kage, Wraith, Arcane, Ursa, Xeno",
+    check("five starters: Ninja, Ghost, Wizard, Bear, Alien",
           isinstance(r, dict) and r.get("starters") == ["ninja", "ghost", "wizard", "grizzly", "alien"], r)
     # Build 244 moved these on: six rank characters from the second rank
     # up, the Scholar/Wolf/Pirate challenges and SWAT as its own secret.
@@ -3492,7 +3492,7 @@ def check_b243(br):
     check("every retired character is drawn as what replaced it",
           r.get("retiredTo") == ["ninja", "clown", "starblade", "solar", "oracle", "koi", "hacker", "solar", "tempest", "koi", "hacker", "timekeeper", "ninja"], r.get("retiredTo"))
     # build 265/267: the Valkyrie's id drew the Viper, then the Koi (and the characters retired into it).
-    check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Cipher", "Chrono", "Ripple"], r.get("names"))
+    check("the new ones are named", r.get("names") == ["Lunar", "Solar", "Tempest", "Frost", "Oracle", "Inferno", "Hacker", "Timekeeper", "Koi"], r.get("names"))
     check("whoever held the Clown under the old ranks keeps it, and nobody at all has the Robot (build 244) - an old Robot is drawn as the Ninja",
           r.get("kept") == ["clown"] and r.get("robotHeld") is False and r.get("robotNew") is True, r)
     # Build 304: the Ultimate group (Zenith) is the last one, after the secrets.
@@ -5252,7 +5252,7 @@ def check_b258(br):
       out.marks = f.streak100.need;
       /* 9. hold something you already have: the same card, marked held */
       store.avatarChar = 'ghost'; showCustomize('character'); await wait(700);
-      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Kage');
+      const nj = [...document.querySelectorAll('.screen-customize .avatarchar-option')].find(b => b.title === 'Ninja');
       nj.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5, pointerId: 1 }));
       await wait(650);
       const held = document.querySelector('.unlock-card.is-unlocked');
@@ -5468,11 +5468,11 @@ def check_b266(br):
     check("Sapphire has a black dot at its heart", r.get("sapphireDot") is True, r)
     check("Amethyst is a black hole with no flattened planet disc", r.get("amethystHole") is True and r.get("amethystFlat") is False, r)
     # REVISED IN 271-273: the Kraken became the Kitsune, the Vampire, then the Sheriff.
-    check("Poseidon's id draws the Sheriff, and says so", "cx-k-sheriff" in r["kraken"]["kind"] and r["kraken"]["name"] == "Maverick", r["kraken"])
+    check("Poseidon's id draws the Sheriff, and says so", "cx-k-sheriff" in r["kraken"]["kind"] and r["kraken"]["name"] == "Sheriff", r["kraken"])
     check("the Hacker sits at a laptop with code raining behind", r["hacker"]["rain"] and r["hacker"]["laptop"], r["hacker"])
     # REVISED IN 267: "That snake character is bad, try something else" and
     # "the singularity, idek what that is".
-    check("the Valkyrie's id is the Koi, a fish swimming laps in a pink bowl", r["viper"]["tongue"] and r["viper"]["name"] == "Ripple", r["viper"])
+    check("the Valkyrie's id is the Koi, a fish swimming laps in a pink bowl", r["viper"]["tongue"] and r["viper"]["name"] == "Koi", r["viper"])
     # REVISED IN 271: "The singularity is a cat. That needs to be changed
     # immediately" - a hooded figure caught in an accretion disk.
     check("the Singularity has its rising hair and its eyes", r["sing"]["swirl"] and r["sing"]["eyes"] >= 2, r["sing"])
