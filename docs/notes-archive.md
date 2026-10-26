@@ -28960,3 +28960,17 @@ the planet system."
 - **To decide with him:** whether the code opens by itself after a wrong try (now yes),
   whether Quiz/Exam should offer the Hint (now Drill only), a "show references during the
   test" option, the class's own calendar/badges.
+- **Class bubble, second pass (Oct 26 night):** "more to the left and a little down" (left
+  .55rem, top = the planet's bottom + 2px); "don't like the black arrow thing" (the caret is
+  gone); "don't like the annoying flashing lights. Maybe a soft glow" (no animation: a soft
+  glow in the class's colour, coral/periwinkle for the academy, amber for Fire Code);
+  "the entire screen does not need to go blurry" (no scrim); "the + still needs to be connected
+  to the icons drop down ... same glossy look" (the list is one glass capsule that grows from
+  the bubble, the items glossy circles inside it, labels beside them). Lag: no backdrop-filter
+  on anything that moves, the catalogue's glows are plain gradients (no CSS blur), the
+  analyzing screen has no backdrop blur. Measured over the open and the "+": 0-1 frames over
+  50ms in Chromium; the real feel needs a phone.
+- **Nova greets a newly enrolled class:** class26e.greet.ifc ("pending" when enrolling, "done"
+  once he has spoken; shared between the classes, so SHARED has greet.*). First Home in Fire
+  Code: 8 short boxes (placeholders for how the class differs - rank/level fresh, the academy
+  untouched, the code with every question).

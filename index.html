@@ -85,7 +85,7 @@
     /* its question bank, a file of its own (1.4 MB) that only this class loads: written in
        here so it runs, in order, before the app's script reads it (window.IFC_BANK) */
     document.write('<script src="ifc/bank.js"><\/script>');
-    var SHARED = /^class26e\.(activeclass|enrolled|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
+    var SHARED = /^class26e\.(activeclass|enrolled|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -34203,9 +34203,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     animation:cc-in .5s cubic-bezier(.2, 1, .3, 1) forwards; animation-delay:calc(var(--k) * 90ms + 60ms); transition:transform .15s ease; }
   @keyframes cc-in{ to{ opacity:1; transform:none; } }
   .class-card:active{ transform:scale(.985); }
-  .cc-glow{ position:absolute; inset:-40% auto auto -20%; width:70%; height:140%; border-radius:50%; pointer-events:none; opacity:.55; filter:blur(36px); }
-  .class-card.is-academy .cc-glow{ background:radial-gradient(circle at 35% 50%, rgba(255,71,87,.45), rgba(62,139,255,.35) 55%, transparent 70%); }
-  .class-card.is-ifc .cc-glow{ background:radial-gradient(circle, rgba(255,122,26,.55), rgba(255,60,20,.2) 55%, transparent 70%); }
+  .cc-glow{ position:absolute; inset:-40% auto auto -20%; width:70%; height:140%; border-radius:50%; pointer-events:none; opacity:.5; }
+  .class-card.is-academy .cc-glow{ background:radial-gradient(circle at 35% 50%, rgba(150,170,255,.4), rgba(255,156,143,.2) 55%, transparent 72%); }
+  .class-card.is-ifc .cc-glow{ background:radial-gradient(circle, rgba(255,140,70,.45), rgba(255,100,40,.14) 55%, transparent 72%); }
   .cc-emblem{ grid-area:emb; position:relative; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
   .cc-emblem svg{ width:34px; height:34px; overflow:visible; }
@@ -34233,8 +34233,8 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     font-size:.8rem; font-weight:800; color:#FFB35C; background:rgba(255,122,26,.12); border:1px solid rgba(255,122,26,.3); }
   .ce-go{ align-self:center; }
   .ifc-analyze{ position:fixed; inset:0; z-index:900; display:flex; align-items:center; justify-content:center; padding:1.25rem;
-    background:radial-gradient(120% 70% at 50% 35%, rgba(30,200,110,.16), transparent 60%), rgba(4,7,10,.94);
-    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); opacity:0; transition:opacity .35s ease; }
+    background:radial-gradient(120% 70% at 50% 35%, rgba(30,200,110,.16), transparent 60%), rgba(4,7,10,.97);
+    opacity:0; transition:opacity .35s ease; }
   .ifc-analyze.is-in{ opacity:1; }
   .ia-card{ width:min(26rem, 100%); text-align:center; }
   .ia-doc{ position:relative; width:86px; height:108px; margin:0 auto 1.3rem; }
@@ -34321,59 +34321,51 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .ifc-hint-btn.is-on{ background:rgba(255,214,90,.2); }
   .ifc-hintpic:not(:empty){ margin:.6rem 0 0; }
   /* ---- THE CLASS BUBBLE AND ITS LIST (build 328, mountClassBubble) ----
-     The chat button's twin in Home's top-left corner, the same glass; the version tag steps
-     right of it. Police lights take turns; the flame flickers (transform/opacity only). */
-  .class-bubble-wrap{ position:fixed; z-index:301; left:max(1.25rem, calc(env(safe-area-inset-left, 0px) + 1rem)); top:40%; }
+     A glass bubble under the planet at the left edge, a soft glow in the class's colour (no
+     flashing). It drops a glass capsule that stays joined to it: the other classes, then "+".
+     No backdrop blur anywhere on it (it moves), no screen dimming. */
+  .class-bubble-wrap{ position:fixed; z-index:301; left:max(.55rem, calc(env(safe-area-inset-left, 0px) + .4rem)); top:40%; --cb:46px; --cg:8px; }
+  .class-dock{
+    position:absolute; left:-4px; top:-4px; width:calc(var(--cb) + 8px); height:calc(var(--cb) + 8px); border-radius:calc(var(--cb) / 2 + 4px);
+    background:var(--surface-sheen), rgba(22,24,34,.82); border:1px solid var(--surface-border);
+    box-shadow:0 8px 26px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
+    opacity:0; transform:scale(.9); transform-origin:50% 0; pointer-events:none;
+    transition:height .4s cubic-bezier(.2, 1, .3, 1), opacity .2s ease, transform .3s ease;
+  }
+  .class-bubble-wrap.is-open .class-dock{ opacity:1; transform:none; height:calc(var(--cb) + 8px + var(--n) * (var(--cb) + var(--cg))); }
   .class-bubble{
-    position:relative;
-    width:44px; height:44px; padding:0; margin:0; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
-    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur);
-    box-shadow:var(--surface-shadow); color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    position:relative; z-index:2; width:var(--cb); height:var(--cb); padding:0; margin:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent;
+    background:radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.2), rgba(255,255,255,.04) 55%), rgba(24,26,36,.78);
+    border:1px solid rgba(255,255,255,.2);
+    box-shadow:0 4px 16px rgba(0,0,0,.4), 0 0 20px var(--cc, rgba(255,160,90,.34)), inset 0 1px 1px rgba(255,255,255,.28), inset 0 -3px 6px rgba(0,0,0,.28);
     transition:transform .18s ease;
   }
   .class-bubble:active{ transform:scale(.94); }
-  .class-bubble > svg{ width:26px; height:26px; display:block; overflow:visible; }
-  .class-bubble .cb-caret{
-    position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%;
-    background:var(--surface-2); border:1px solid var(--surface-border); box-shadow:0 1px 4px rgba(0,0,0,.35);
-  }
-  .class-bubble .cb-caret::before{
-    content:""; position:absolute; left:50%; top:50%; width:5px; height:5px; margin:-4px 0 0 -3px;
-    border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor; transform:rotate(45deg);
-    transition:transform .22s ease, margin .22s ease;
-  }
-  .class-bubble.is-open .cb-caret::before{ transform:rotate(-135deg); margin-top:-1px; }
-  @media (min-width:40rem){ .class-bubble{ width:52px; height:52px; } .class-bubble > svg{ width:28px; height:28px; } }
-  .cb-red{ fill:#FF4757; } .cb-blue{ fill:#3E8BFF; }
-  .cb-ray-r{ stroke:#FF4757; } .cb-ray-b{ stroke:#3E8BFF; }
-  .cb-flame{ fill:#FF7A1A; } .cb-flame-core{ fill:#FFD34D; }
-  .class-bubble .cb-red, .class-bubble .cb-ray-r{ animation:cb-lights 1.6s steps(1, end) infinite; }
-  .class-bubble .cb-blue, .class-bubble .cb-ray-b{ animation:cb-lights 1.6s steps(1, end) -.8s infinite; }
-  @keyframes cb-lights{ 0%{ opacity:1; } 50%{ opacity:.35; } }
-  .class-bubble .cb-flame, .class-bubble .cb-flame-core{ transform-box:fill-box; transform-origin:50% 100%; animation:cb-flicker 2.2s ease-in-out infinite; }
-  .class-bubble .cb-flame-core{ animation-duration:1.5s; }
-  @keyframes cb-flicker{ 0%,100%{ transform:scale(1, 1); } 30%{ transform:scale(.96, 1.05); } 60%{ transform:scale(1.03, .97); } }
-  @media (prefers-reduced-motion:reduce){ .class-bubble svg *{ animation:none !important; } }
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cc:rgba(150,170,255,.38); }
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cc:rgba(255,140,70,.4); }
+  .class-bubble > svg{ width:27px; height:27px; display:block; overflow:visible; }
+  @media (min-width:40rem){ .class-bubble-wrap{ --cb:54px; } .class-bubble > svg{ width:30px; height:30px; } }
+  /* the colours sit in the app's own palette: coral and periwinkle, amber and gold */
+  .cb-red{ fill:#FF9C8F; } .cb-blue{ fill:#93B5FF; }
+  .cb-ray-r{ stroke:#FFB3A8; } .cb-ray-b{ stroke:#B2CBFF; }
+  .cb-flame{ fill:#FF9648; } .cb-flame-core{ fill:#FFD98A; }
   html.class-switching body{ opacity:0; transition:opacity .35s ease; }
-  .class-stack-scrim{ position:fixed; inset:0; z-index:300; background:rgba(5,7,10,.6); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); opacity:0; transition:opacity .25s ease; }
-  .class-stack-scrim.is-in{ opacity:1; }
   .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
-  .class-stack{ position:absolute; left:0; top:calc(100% + .55rem); display:flex; flex-direction:column; gap:.55rem; }
+  .class-stack{ position:absolute; left:0; top:calc(var(--cb) + var(--cg)); z-index:2; display:flex; flex-direction:column; gap:var(--cg); }
   .class-stack-item{ display:flex; align-items:center; gap:.6rem; padding:0; margin:0; border:0; background:none; color:var(--ink); font:inherit; cursor:pointer;
-    -webkit-tap-highlight-color:transparent; opacity:0; transform:translateY(-14px) scale(.7); transform-origin:22px 22px;
-    transition:opacity .2s ease calc(var(--k) * 60ms), transform .42s cubic-bezier(.2, 1.35, .4, 1) calc(var(--k) * 60ms); }
-  .class-stack.is-in .class-stack-item{ opacity:1; transform:none; }
-  .csi-bubble{ flex:none; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
-    backdrop-filter:var(--surface-blur); -webkit-backdrop-filter:var(--surface-blur); box-shadow:var(--surface-shadow); }
-  .csi-bubble svg{ width:24px; height:24px; overflow:visible; }
-  .class-stack-item.is-add .csi-bubble{ border-style:dashed; border-color:rgba(255,255,255,.32); color:var(--ink); }
-  .csi-label{ padding:.35rem .7rem; border-radius:999px; font-size:.85rem; font-weight:650; white-space:nowrap;
-    background:rgba(10,12,16,.72); border:1px solid rgba(255,255,255,.1); }
+    -webkit-tap-highlight-color:transparent; opacity:0; transform:translateY(-10px); will-change:transform, opacity;
+    transition:opacity .18s ease calc(var(--k) * 55ms + 70ms), transform .34s cubic-bezier(.2, 1.2, .4, 1) calc(var(--k) * 55ms + 70ms); }
+  .class-bubble-wrap.is-open .class-stack-item{ opacity:1; transform:none; }
+  .csi-bubble{ flex:none; width:var(--cb); height:var(--cb); border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.2), rgba(255,255,255,.04) 55%), rgba(24,26,36,.78);
+    border:1px solid rgba(255,255,255,.2);
+    box-shadow:0 3px 12px rgba(0,0,0,.35), 0 0 14px var(--cc, rgba(255,255,255,.12)), inset 0 1px 1px rgba(255,255,255,.28), inset 0 -3px 6px rgba(0,0,0,.28); }
+  .csi-bubble svg{ width:25px; height:25px; overflow:visible; }
+  .class-stack-item.is-add .csi-bubble{ color:var(--ink); }
+  .csi-label{ padding:.4rem .8rem; border-radius:999px; font-size:.86rem; font-weight:650; white-space:nowrap;
+    background:var(--surface-sheen), rgba(22,24,34,.86); border:1px solid var(--surface-border); box-shadow:0 4px 14px rgba(0,0,0,.35); }
   .class-stack-item:active .csi-bubble{ transform:scale(.94); }
-  @media (min-width:40rem){ .csi-bubble{ width:52px; height:52px; } .csi-bubble svg{ width:28px; height:28px; } }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
      The Leaderboard's segmented control, a level's picked count beside its name. */
   html[data-layout] .screen-setup .setup-levels{ margin:1rem 0 .85rem; width:100%; }
@@ -51235,19 +51227,21 @@ function mountClassBubble(){
   const cur = NOVA_CLASSES.find(c => c.key === window.NOVA_CLASS) || NOVA_CLASSES[0];
   const wrap = document.createElement("div");
   wrap.className = "class-bubble-wrap";
+  const dock = document.createElement("div"); dock.className = "class-dock"; dock.setAttribute("aria-hidden", "true");
   const btn = document.createElement("button");
   btn.type = "button"; btn.className = "class-bubble is-" + cur.key;
   btn.setAttribute("aria-label", "Your class: " + cur.name + ". Open your classes");
   btn.setAttribute("aria-expanded", "false");
-  btn.innerHTML = cur.icon + '<span class="cb-caret" aria-hidden="true"></span>';
+  btn.innerHTML = cur.icon;
   const stack = document.createElement("div");
-  stack.className = "class-stack"; stack.hidden = true;
+  stack.className = "class-stack";
   const others = enrolledClasses().filter(k => k !== cur.key).map(k => NOVA_CLASSES.find(c => c.key === k));
   const items = others.map(c => ({ cls: "is-" + c.key, icon: c.icon, label: c.name, run: () => switchClass(c.key) }));
   items.push({ cls: "is-add", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>', label: "Add a class", run: () => { closeStack(); showClassCatalog(); } });
+  wrap.style.setProperty("--n", items.length);
   items.forEach((it, k) => {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "class-stack-item " + it.cls;
+    b.type = "button"; b.className = "class-stack-item " + it.cls; b.tabIndex = -1;
     b.style.setProperty("--k", k);
     b.innerHTML = '<span class="csi-bubble">' + it.icon + '</span><span class="csi-label"></span>';
     b.querySelector(".csi-label").textContent = it.label;
@@ -51255,31 +51249,26 @@ function mountClassBubble(){
     stack.appendChild(b);
   });
   const outside = (e) => { if(!wrap.contains(e.target)) closeStack(); };
-  const scrim = document.createElement("div");
-  scrim.className = "class-stack-scrim"; scrim.hidden = true;
   function openStack(){
-    scrim.hidden = false; requestAnimationFrame(() => scrim.classList.add("is-in"));
-    stack.hidden = false; btn.setAttribute("aria-expanded", "true"); btn.classList.add("is-open");
-    requestAnimationFrame(() => requestAnimationFrame(() => stack.classList.add("is-in")));
+    wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
+    stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = 0; });
     try{ playSound("ui.popup.open"); }catch(e){}
     setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
   }
   function closeStack(){
-    stack.classList.remove("is-in"); btn.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false");
+    wrap.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false");
+    stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = -1; });
     document.removeEventListener("pointerdown", outside, true);
-    scrim.classList.remove("is-in");
-    setTimeout(() => { if(!stack.classList.contains("is-in")){ stack.hidden = true; scrim.hidden = true; } }, 260);
   }
-  btn.addEventListener("click", () => { if(stack.classList.contains("is-in")) closeStack(); else openStack(); });
-  wrap.append(btn, stack);
-  stage.append(scrim, wrap);
-  /* under the planet: placed from the planet's own box, again whenever the screen changes size */
+  btn.addEventListener("click", () => { if(wrap.classList.contains("is-open")) closeStack(); else openStack(); });
+  wrap.append(dock, btn, stack);
+  stage.appendChild(wrap);
+  /* under the planet, near the left edge: placed from the planet's own box, again whenever the screen changes size */
   const place = () => {
     if(!wrap.isConnected){ window.removeEventListener("resize", place); return; }
     const hero = document.querySelector("#stage .panel.home > .cosmic-hero-wrap");
     if(!hero) return;
-    const r = hero.getBoundingClientRect();
-    wrap.style.top = Math.round(r.bottom - 22) + "px";
+    wrap.style.top = Math.round(hero.getBoundingClientRect().bottom + 2) + "px";
   };
   place(); requestAnimationFrame(place); setTimeout(place, 400); setTimeout(place, 1200);
   window.addEventListener("resize", place, { passive: true });
@@ -51291,6 +51280,40 @@ function switchClass(key, row){
   if(row) row.classList.add("is-going");
   document.documentElement.classList.add("class-switching");
   setTimeout(() => location.reload(), 380);
+}
+/* ---- NOVA GREETS A NEW CLASS (build 328) ----
+   "When signing up the new class, ensure you get greeted by nova for signing up, he will talk
+   about the differences (which we will update later) but for now just do something."
+   Once, on the first Home inside a class you have just enrolled in (class26e.greet.<class>,
+   set to "pending" when enrolling, shared between the classes). The lines below are
+   placeholders for how the class differs; they are one thought a box like the rest of his talk. */
+function ifcGreetingLines(){
+  const name = novaName();
+  const hello = ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
+    novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
+  return [
+    { gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: hello },
+    { text: "Same me, a brand new class." },
+    { gesture: "raise", text: "Your rank and level start fresh here." },
+    { text: "Nothing you earn here changes the academy." },
+    { text: "Every question comes with the code it’s from." },
+    { gesture: "nod", text: "Answer one, and I’ll show you the page." },
+    { text: "A few things work differently in this class." },
+    { gesture: "wave", text: "I’ll point them out as we go. Ready?" }
+  ];
+}
+function maybeClassGreeting(){
+  if(window.NOVA_CLASS !== "ifc") return;
+  let st = null; try{ st = localStorage.getItem("class26e.greet.ifc"); }catch(e){}
+  if(st !== "pending") return;
+  setTimeout(() => {
+    if(document.getElementById("nova-intro") || document.getElementById("nova-class-greet") || !onNovaHome()) return;
+    if(typeof novaIntroOn !== "undefined" && novaIntroOn) return;
+    try{ localStorage.setItem("class26e.greet.ifc", "done"); }catch(e){}
+    try{ novaWarmProps(); }catch(e){}
+    novaTalk({ id: "nova-class-greet", label: "Nova welcomes you to Fire Code", lines: ifcGreetingLines(), finalLabel: "Let’s begin", noSkip: false,
+      onClose: () => { try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){} } });
+  }, 1100);
 }
 /* ---- THE CLASS LIST (the "+" in the class bubble) ----
    "When you hit the plus you shown the class similar to what you see when signing up. It will
@@ -51428,6 +51451,7 @@ function runIfcAnalysis(file, opts){
     const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn";
     if(opts.enroll){
       setEnrolled("ifc", true);
+      try{ localStorage.setItem("class26e.greet.ifc", "pending"); }catch(e){}
       go.textContent = "Go to Fire Code";
       go.addEventListener("click", () => switchClass("ifc"));
     } else {
@@ -98093,7 +98117,7 @@ function showHome(){
   versionTag.append(verLong, verShort);
   versionTag.addEventListener("click", showReleaseHistory);
   stage.appendChild(versionTag);
-  try{ mountClassBubble(); }catch(e){}
+  try{ mountClassBubble(); maybeClassGreeting(); }catch(e){}
 
   toTop();
   /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
