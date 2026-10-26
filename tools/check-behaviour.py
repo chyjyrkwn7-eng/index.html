@@ -8575,7 +8575,8 @@ def check_b303(br):
           out.starNote = (document.querySelector('.flag-note') || {}).textContent || '';
           /* 6. paused: the clock stays, in amber */
           document.getElementById('pausebtn').click(); await wait(400);
-          out.pausedTimer = !tl.hidden && tl.classList.contains('is-paused') && getComputedStyle(tl.querySelector('.tpaused')).display !== 'none';
+          /* REVISED IN 327 (round 11): "no need for the word paused" - the clock stays up in its paused colour, no word */
+          out.pausedTimer = !tl.hidden && tl.classList.contains('is-paused') && getComputedStyle(tl).display !== 'none';
           document.getElementById('resumebtn').click(); await wait(300);
           out.resumedTimer = !tl.classList.contains('is-paused');
           /* 7. Exam: the switch is Exam's alone, and with it a pick is judged and locked */
