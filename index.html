@@ -34468,11 +34468,12 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      nothing blurred. Fixed dark colours on purpose: it is a trailer, not a settings screen. */
   .gs-page{ position:fixed; inset:0; z-index:60; background:#05060D; color:#F2F4FA; overflow:hidden; }
   .gs-stars{ position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-  .gs-stars i{ position:absolute; left:0; right:0; top:0; height:200%; background-repeat:repeat; will-change:transform; animation:gs-drift 90s linear infinite; }
-  .gs-stars .gs-s1{ background-image:radial-gradient(1.2px 1.2px at 30px 40px, #fff, transparent), radial-gradient(1px 1px at 120px 150px, #cfd8ff, transparent), radial-gradient(1.4px 1.4px at 210px 90px, #ffe3c4, transparent); background-size:260px 260px; opacity:.85; }
-  .gs-stars .gs-s2{ background-image:radial-gradient(1px 1px at 60px 200px, #fff, transparent), radial-gradient(1px 1px at 180px 30px, #bcc9ff, transparent); background-size:190px 190px; opacity:.55; animation-duration:140s; }
-  .gs-stars .gs-s3{ background-image:radial-gradient(1.6px 1.6px at 90px 120px, #fff, transparent); background-size:340px 340px; opacity:.7; animation-duration:60s; }
-  @keyframes gs-drift{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
+  .gs-stars i{ position:absolute; left:0; right:0; top:0; height:200%; background-repeat:repeat; will-change:transform; animation:gs-drift 26s linear infinite; }
+  .gs-stars .gs-s1{ background-image:radial-gradient(1.2px 1.2px at 30px 40px, #fff, transparent), radial-gradient(1px 1px at 120px 150px, #cfd8ff, transparent), radial-gradient(1.4px 1.4px at 210px 90px, #ffe3c4, transparent); --gs-tile:260px; background-size:260px 260px; opacity:.85; }
+  .gs-stars .gs-s2{ background-image:radial-gradient(1px 1px at 60px 200px, #fff, transparent), radial-gradient(1px 1px at 180px 30px, #bcc9ff, transparent); --gs-tile:190px; background-size:190px 190px; opacity:.55; animation-duration:30s; }
+  .gs-stars .gs-s3{ background-image:radial-gradient(1.6px 1.6px at 90px 120px, #fff, transparent); --gs-tile:340px; background-size:340px 340px; opacity:.7; animation-duration:23s; }
+  /* each layer drifts exactly one of its own tiles a cycle, so the loop has no seam (the same speeds as before) */
+  @keyframes gs-drift{ from{ transform:translateY(0); } to{ transform:translateY(calc(-1 * var(--gs-tile))); } }
   .gs-scroll{ position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
     padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px)); }
   .gs-hero{ position:relative; min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0 1.2rem; box-sizing:border-box; }

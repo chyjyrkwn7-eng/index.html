@@ -89,6 +89,10 @@ KNOWN = {
     "cx-sg3-orbit": "Horizon's disk: shifted by exactly one lap (18.78 = the ellipse's circumference = its dash + gap)",
     # Build 313: the secret flares.
     "cof-call": "the hunted flare's ring: fades to nothing at the end, restarts from small",
+    # Build 329.
+    "cb-new": "the class bubble's new-class ring: fades to nothing as it spreads, restarts from the bubble",
+    "ia-shine": "the IFC analysis bar's shine: a 220% band swept from 120% to -120%, off the bar at both ends",
+    "gs-drift": "Get Started's stars: each layer shifted by exactly one of its own tiles (--gs-tile)",
     "cx-gn-spin": "Genesis's moon round its ring - a full turn",
     "cx-gn-back": "Genesis's moon kept upright - a full turn the other way",
     "cx-gn-drift": "Genesis's weather bands: shifted by exactly one 8-unit period of bands drawn twice",

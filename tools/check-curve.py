@@ -132,14 +132,17 @@ def main():
         # Build 314 proposed 3/2/1 and it was rejected outright: "DONT
         # change the badge requirement" - so these are asserted as the
         # numbers on dd6cfae, not as a decision this build may revisit.
-        bands = [(0, 25, 15), (26, 50, 12), (51, 100, 8), (101, 200, 4), (201, 10 ** 6, 2)]
+        # BUILD 328 MOVED THEM, on Madison's word: "I think 15 hundos is too much,
+        # even on the shorter ones, so anything at 15 goes to 10. 12 will go to 8
+        # and so on ... The ones that need 8 goes to 6."
+        bands = [(0, 25, 10), (26, 50, 8), (51, 100, 6), (101, 200, 3), (201, 10 ** 6, 2)]
         wrong = []
         for u, v in units.items():
             want = next(h for lo, hi, h in bands if lo <= v["q"] <= hi)
             if v["need"] != want:
                 wrong.append((u, v["q"], v["need"], want))
         check("every unit sits in the band its size puts it in", not wrong, wrong)
-        check("sixteen units", len(units) == 16, len(units))
+        check("twenty-four units (Level 1 complete, build 328)", len(units) == 24, len(units))
         """Lowering a threshold can only ADD a badge; raising one takes a
         badge off somebody who holds it, because a badge is computed
         fresh from the hundo count rather than stored. So no band may be
@@ -155,29 +158,29 @@ def main():
                   for u, v in units.items()
                   if v["need"] > next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
         check("no unit needs more hundos than it did on build 279", not raised, raised)
-        lowered = [(u, v["q"], v["need"]) for u, v in units.items()
-                   if v["need"] < next(h for lo, hi, h in old_bands if lo <= v["q"] <= hi)]
-        check("...nor fewer: the badge requirement did not change", not lowered, lowered)
         live = pg.evaluate("""()=>({ bands: JSON.parse(JSON.stringify(BADGE_THRESHOLD_BANDS, (k, v) => v === Infinity ? 'inf' : v)),
           ver: BADGE_BANDS_VERSION })""")
-        check("BADGE_THRESHOLD_BANDS is byte-for-byte the live table (dd6cfae)",
-              live["bands"] == [{"max": 25, "hundos": 15}, {"max": 50, "hundos": 12}, {"max": 100, "hundos": 8},
-                                {"max": 200, "hundos": 4}, {"max": "inf", "hundos": 2}], live["bands"])
-        check("no new badge hand-out: BADGE_BANDS_VERSION is still 3", live["ver"] == 3, live["ver"])
-        # the per-unit numbers dd6cfae computes, so no unit's badge costs
-        # a hundo more or less than live
-        LIVE_313 = {"Professionalism and Ethics": 12, "Professional Policing": 15,
-                    "Fitness, Wellness, and Stress Management": 12, "TCOLE Rules": 15,
-                    "Multiculturalism and Human Relations": 12, "Racial Profiling": 15,
-                    "US and Texas Constitution and Rights": 8, "Penal Code": 2,
-                    "Code of Criminal Procedure and Bill of Rights": 12, "Arrest, Search, and Seizure": 4,
-                    "Victims of Crime": 15, "Missing and Exploited Children": 8, "Identity Crimes": 15,
-                    "Sexual Assault and Family Violence": 12, "Verbal Communication": 12,
-                    "Civil Process and Liability": 15}
-        diff = {u: (v["need"], LIVE_313.get(u)) for u, v in units.items() if v["need"] != LIVE_313.get(u)}
-        check("every unit's badge costs exactly what it does on dd6cfae", not diff and len(units) == 16, diff)
+        check("BADGE_THRESHOLD_BANDS is build 328's table",
+              live["bands"] == [{"max": 25, "hundos": 10}, {"max": 50, "hundos": 8}, {"max": 100, "hundos": 6},
+                                {"max": 200, "hundos": 3}, {"max": "inf", "hundos": 2}], live["bands"])
+        check("the new bands hand out what they newly qualify: BADGE_BANDS_VERSION is 4 (build 328)", live["ver"] == 4, live["ver"])
+        # the per-unit numbers build 328 computes, so no unit's badge costs a
+        # hundo more or less than Madison agreed
+        LIVE_328 = {"Professionalism and Ethics": 8, "Professional Policing": 10,
+                    "Fitness, Wellness, and Stress Management": 8, "TCOLE Rules": 10,
+                    "Multiculturalism and Human Relations": 8, "Racial Profiling": 10,
+                    "US and Texas Constitution and Rights": 6, "Penal Code": 2,
+                    "Code of Criminal Procedure and Bill of Rights": 8, "Arrest, Search, and Seizure": 3,
+                    "Victims of Crime": 10, "Missing and Exploited Children": 6, "Identity Crimes": 10,
+                    "Sexual Assault and Family Violence": 8, "Verbal Communication": 8,
+                    "Civil Process and Liability": 10, "Consular Notification": 10,
+                    "Crisis Intervention Training": 6, "De-Escalation": 10, "Health and Safety Code": 8,
+                    "Interacting with Deaf or Hard-of-Hearing": 10, "Radio Communications, Alerts, and TCIC-TLETS": 10,
+                    "Traumatic Brain Injury": 10, "Phonetic Alphabet and Military Time": 8}
+        diff = {u: (v["need"], LIVE_328.get(u)) for u, v in units.items() if v["need"] != LIVE_328.get(u)}
+        check("every unit's badge costs exactly what build 328 set", not diff and len(units) == 24, diff)
         rng = pg.evaluate("()=> typeof badgeRangeText === 'function' ? badgeRangeText() : null")
-        check("the copy states the range the bands actually ask", rng == "2 to 15 hundos", rng)
+        check("the copy states the range the bands actually ask", rng == "2 to 10 hundos", rng)
 
         print("\n2. nobody's level drops, for any XP total")
         drop = pg.evaluate("""()=>{
