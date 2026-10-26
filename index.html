@@ -34595,6 +34595,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      descriptions; at two short lines each card is its words, the four still one height, centred. */
   html[data-layout] body .panel.modeselect .modecard{ min-height:6.4rem; justify-content:center; padding-top:1.05rem; padding-bottom:1.05rem; }
   html[data-layout] body .panel.modeselect .modecards{ align-items:stretch; }
+  /* the sign-up class screen's Continue: its letters sat 1.5px high (a block's line box, not its
+     capitals, was centred) - the capitals in the middle, the same 45.6px button */
+  @supports (text-box:trim-both cap alphabetic){
+    html[data-layout] body .classselect-panel > .next.playbtn{ text-box:trim-both cap alphabetic; height:auto; padding-top:calc((45.6px - 1cap)/2); padding-bottom:calc((45.6px - 1cap)/2); }
+  }
   html[data-layout] body #stage .back-link{ font-size:.85rem !important; min-height:calc(1em + 1rem) !important; padding-top:.5rem !important; padding-bottom:.5rem !important; }
   .pf-xp-to:empty{ display:none; }
   /* ---- THE UNIT CARD WITHOUT ITS CIRCLE (build 328) ----

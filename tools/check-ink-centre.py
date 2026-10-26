@@ -124,7 +124,9 @@ def main():
                 pg.wait_for_timeout(700); audit(pg, name + " " + tag + "/foot", rows)
                 pg.evaluate("()=>window.scrollTo(0, 0)")
             # 328: the classes screen, its Enroll / Enrolled chips, the dropdown's labels, the Fire Code tags
-            for tag, js in [("classes", "showClassCatalog()"), ("enroll", "showIfcEnroll()")]:
+            # 330: the sign-up class screen's Select / Selected / Coming soon chips too
+            for tag, js in [("classes", "showClassCatalog()"), ("enroll", "showIfcEnroll()"), ("signup-classes", "showClassSelection()"),
+                            ("signup-picked", "(showClassSelection(), document.querySelector('.classselect-panel .class-card.is-academy').click())")]:
                 try:
                     pg.evaluate("()=>" + js); pg.wait_for_timeout(900); audit(pg, name + " " + tag, rows)
                 except Exception as e: print("  (could not open %s: %s)" % (tag, str(e)[:60]))
