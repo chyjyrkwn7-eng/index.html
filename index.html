@@ -34461,7 +34461,8 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
      held the planet to 48vh (573px on an 11") with ~110px spare between Start Studying
      and the bar. Upright tablets only: 53vh, ~11% larger; landscape and laptops unchanged. */
   @media (min-width:40rem) and (max-width:63.99rem) and (orientation:portrait){
-    html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap{ max-width:min(44rem, 53vh, 82vw) !important; }
+    html[data-layout] body .panel.home.screen-home-actual > .cosmic-hero-wrap,
+    html[data-layout] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(44rem, 53vh, 82vw) !important; }
   }
   /* ---- HOME ON EVERY PHONE, ONE LAYOUT (build 328) ----
      "We need to maximize the size of the planet system but still make it look good for

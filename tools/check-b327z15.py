@@ -1093,7 +1093,7 @@ def section_hh(br):
       return { fade, sac, sal, sbl, mel: look(me), mec: me ? getComputedStyle(me).color : null, sbl2: look(sb2) }; }""")
     check("HH. a laptop (mouse) has no edge fades", r["fade"] in ("0px", "0"), r)
     check("HH. Select all and Find me wear the search field's surface and the magnifier's white",
-          r["sal"] == r["sbl"] and r["mel"] == r["sbl2"] and r["sac"] == "rgba(243, 245, 247, 0.92)" and r["mec"] == "rgba(243, 245, 247, 0.92)", r)
+          r["sal"] == r["sbl"] and r["mel"] == r["sbl2"] and r["sac"] == "rgba(243, 245, 247, 0.92)" and r["mec"] in ("rgba(243, 245, 247, 0.92)", "rgb(243, 245, 247)"), r)   # 328: Find me's words are plain white ("I like how the wording is white")
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       homeUnlocksOwed = () => false; showHome(); await wait(1200);
       const c = document.querySelector('#stage > .dq-card'), b = document.getElementById('bottomtabs');
