@@ -28819,3 +28819,6 @@ not number. Questions are word for word the guides, typos included.
   the badge. iPads and laptops unchanged.
 - **Top pop-ups** (.daily-alert, which every showDailyAlert banner is): .34s fade,
   .52s rise from -14px with a soft overshoot (was .22s / -8px).
+- **Search bars and Find me:** every input.searchbox's words come down 2px (measured
+  at 2x: the glass and Find me centred on the field, the placeholder 2px high);
+  Find me is the field's 17px at weight 500, white (was 15.2px/700).

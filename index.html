@@ -34155,6 +34155,16 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     /* every card's count then sits on the same line at the foot, beside the badge (an earned card's already did) */
     html[data-layout] .picks > .pick .pcount{ grid-row:count-start / bar-end; align-self:end; }
   }
+  /* ---- SEARCH BARS AND FIND ME (build 328) ----
+     "The words in find me ... the letters size and everything doesn't really match
+     the search names look ... the text looks thicker. Also, the magnifying glass and
+     the words search names doesn't look centered." Measured: the glass and Find me
+     sit on the field's centre line; the field's words sat 2px high (an input centres
+     its line box, and lowercase words ride above that line's middle). Every search
+     bar's words come down 2px, and Find me takes the field's size and a regular
+     weight, white. */
+  html[data-layout] body input.searchbox{ padding-top:calc(.7rem + 2px) !important; padding-bottom:calc(.7rem - 2px) !important; }
+  html[data-theme][data-layout] body .rank-tools .iconbtn.rank-me-btn{ font-size:1.0625rem; font-weight:500; letter-spacing:0; color:#F3F5F7 !important; }
   /* ---- MESSAGE PREVIEWS ON THE ACCOUNT BANNER'S GLASS (327z15, dressMessageAlert) ----
      .app-banner's own values, on the preview's own placement (it centres
      with left:50% and a translate, and keeps its show/hide and timing). */
