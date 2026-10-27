@@ -29105,3 +29105,23 @@ is null and the old words blamed the network. `academyOnly(what, fallback)` now 
 Chat / Virtual Room> is only for the Police Academy class." in another class and the old wording otherwise
 (leaderboard, test leaderboard, Virtual Room x3, Chat x4). `tools/check-b332.py`: fails on 331 with the old
 sentence, passes on 332. `APP_BUILD` / `version.json` = 2026-10-27-332.
+
+## Build 333 - Fire Code references under the question, the page viewer, the class bubble
+Madison: *"none of them have their reference showing under the question similar how the penal code does it"*;
+*"difficult to see the cropped photo ... hard to see the full page ... maybe when you hit full page it goes full
+page, you can still see the app around all the edges, and then you can zoom in"*; *"the bubble doesn't go with the
+Home Screen"*.
+- **Reference under the question.** `IFC_QUESTIONS` sets `ref` ("(IFC 2021, 304.3.1)" / "(HC Amendments, 112.4.2)")
+  from the citation label, so the `.ref` line under the question text, the review lines and flashcards read like the
+  Penal Code's. NOT set where the label gives the answer away: the chapter finder (the label is the chapter) and any
+  question whose answer text or number (3+ digits) is in the label (a standard's number, a table's quantity). The
+  explanation box drops its own "Ref." line when `item.ref` is set. Question identity (KEYS) is untouched.
+- **Page viewer (`ifcOpenViewer`).** "Enlarge" and a tap on the crop open the crop, "Show the whole (book) page" the
+  whole page (cited lines still highlighted), in a rounded card inset 10-12px from every edge over the dimmed app
+  (opacity/transform entrance, no blur). Pinch (two pointers), double-tap (fit <-> 2.5x), +/- buttons (1.5x steps) and
+  ctrl+wheel, 1x-5x; zoom changes the pictures' width only (drawn once, at 2.2-2.6x). Done, Escape, a tap on the edge
+  or leaving the screen closes it. `touch-action:pan-x pan-y` on the scroller.
+- **Class bubble on a phone** (portrait, under 40rem): the daily question's mirror - bottom-left, on its line, same
+  size - and its list opens upward. Tablet/laptop unchanged (top-left). `tools/check-b333.py` (needs PDFJS_DIR).
+- Not done: the whole-page view does not yet start zoomed on the highlighted lines.
+`APP_BUILD` / `version.json` = 2026-10-27-333.
