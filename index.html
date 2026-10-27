@@ -104958,7 +104958,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-26-330";
+const APP_BUILD = "2026-10-27-331";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -105828,6 +105828,14 @@ function forcedUpdateBlocked(){
   if(document.querySelector(".vroom-lobby-panel, .vroom-chat-slot, .vroom-results-panel, .vroom-finale-panel, " +
      ".screen-vroom-lobby, .screen-vroom-choice, .screen-rooms, .screen-tug, .screen-tug-wait, .screen-tug-result, " +
      ".screen-battle, .screen-battle-wait, .screen-battle-result")) return true;
+
+  /* THE RANK-UP JOURNEY, EVERY PHASE OF IT (build 331). A forced update that landed
+     between its cutscene and its last step reloaded the app before the rank was
+     marked shown, so the journey played again from the top ("it refreshed at the
+     end, or went back to Home and did it again"). It goes the moment the journey ends. */
+  try{ if(rankUpScene) return true; }catch(e){}
+  if(document.documentElement.classList.contains("ru-scene") || document.body.classList.contains("ru-journey") ||
+     document.querySelector(".ru-blocker, .ru-curtain.is-on, .rs-spot")) return true;
 
   /* Half-way through signing up: a reload there starts it over. */
   if(document.querySelector(".welcomeintro-panel, .charselect-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel")) return true;
