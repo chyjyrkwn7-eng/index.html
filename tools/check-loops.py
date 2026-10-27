@@ -26,12 +26,6 @@ KNOWN = {
     "cof-sweep": "a sweep from off one edge to off the other",
     "ranklore-sweep": "a sweep from off one edge to off the other",
     "cosmic-orbit-spin": "a full turn",
-    # Build 326: the Supernova crack's motes (scarMotes) - three nested loops on one clock; the mote itself
-    # (csc-mote-look / csc-mote-chip) is at opacity 0 at both ends, so where the outer two jump it cannot be seen.
-    "csc-mote-turn": "the angle of a mote that is invisible (opacity 0) at both ends of its loop (csc-mote-look)",
-    "csc-mote-out": "the radius of a mote that is invisible (opacity 0) at both ends of its loop (csc-mote-look)",
-    "csc-mote-look": "a mote of light: opacity 0 at both ends - it leaves the crack and fades out on the ring",
-    "csc-mote-chip": "a chip off the crack: opacity 0 at both ends - it leaves the crack and fades out on the ring",
     "nv-mote": "stardust on Nova's coat: rises and fades to nothing at both ends (build 320)",
     "bn-beam": "a spotlight on a pendulum - played alternate, so it swings back instead of jumping",
     "bn-sweep": "a band of light from off one edge to off the other, invisible at both ends",

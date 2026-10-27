@@ -103,8 +103,8 @@ def run(src_dir, label):
                 "()=> typeof safariHandoffTarget === 'function' ? safariHandoffTarget() : null")
             if not handoff:
                 fails.append("openInSafari produced no hand-off URL at all")
-            elif CODE not in (handoff or ""):
-                fails.append(f"the Safari hand-off does not carry the code: {handoff!r}")
+            elif CODE in (handoff or "") or "k=" in (handoff or ""):
+                fails.append(f"the Safari hand-off carries the code (build 339: no code in a browser address): {handoff!r}")
 
             # --- 3. REMOVE THE ICON. This is the whole event: iOS destroys
             #        the app's storage jar, localStorage and IndexedDB together.

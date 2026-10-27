@@ -65,10 +65,10 @@ home.flare.elite home.flare.titan home.flare.locked home.secret.found home.daily
 res.xp.line res.xp.count res.xp.total
 badge.case.open badge.case.close badge.lift badge.spin badge.rub badge.squeak badge.sparkle badge.drop cs.badge
 rank.road.scroll rank.challenge.tick rank.road.fill rank.unlock.pop rank.flare.zoom rank.windup rank.flash
-rank.crack rank.supernova rank.upnext rank.card rank.xp.climb rank.whirl
+rank.supernova rank.upnext rank.card rank.xp.climb rank.whirl
 lb.switch lb.findme lb.winner vr.lobby vr.join vr.leave vr.ready vr.count vr.go vr.progress vr.tug vr.end vr.podium
 chat.send chat.receive chat.react chat.invite
-ob.step pick.character nova.arrive nova.blip cs.planet ob.whatsnew ob.tooltip
+ob.step pick.character nova.arrive nova.blip ob.whatsnew ob.tooltip
 cust.theme ui.locked bc.rise badge.slide rank.word
 """.split()
 

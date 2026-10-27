@@ -29151,3 +29151,69 @@ revert the size of them (only some)"*; *"every time I close the app out, the lon
   one; the same for an account with no code yet. Returning = any of synccode, drill.v1, ifc.drill.v1, activeclass.
   (A truly empty device is still the Get Started skip of 330.)
 In `tools/check-b333.py` (all three fail on 333); `check-b330`/`check-behaviour` copy limits 70 -> 130.
+
+## Build 335 - Start Studying in the middle of its room
+Madison: *"The studying button needs to be centred between the bottom and the 'master the material' sentence shouldn't it?"*
+On a phone (portrait, under 40rem) the room under the tagline is now shared by three equal auto margins (the words'
+top, the button's top and bottom) and the panel's foot is `max(0, 1.4 x --hg - 9px)` (the 1.4 x --hg the title block
+already puts above the button, less the 9px between the panel's foot and the bar), so the gap above the button equals
+the gap to the tab bar: Pro Max 74/74 (was 80/62), Plus 70/70 (was 74/62), 6.1" 59/58. The SE rules (38px pill)
+are unchanged. The planet stays where it was; the words and button move up/down a few px. `tools/check-b335.py` (fails on 334).
+
+## Build 336 - the badge is sharp as it comes out of the case
+Madison: *"When clicking a badge from the case to view it, it's blurry as it comes to full size."* The lift began on
+the slot's own picture (88px wide) and grew it to ~317 css px (3.5x) until the big face was drawn at 60ms + its render,
+which showed at ~400ms of a lift that is nearly done by then. Now `badgeInspectPrewarm(unit)` draws the big draft face on
+the slot's `pointerdown` (the 60-100ms before the tap lands; it is cached, so a second press costs nothing) and
+`openBadgeInspect` finds it through `peekFace`; a tap with no press before it lifts as before. Measured at 1x: first
+frame 636px for a 43px badge growing to 317px (was 88px for 421ms). `tools/check-b336.py` fails on 335.
+This branch also carries build 335 (Start Studying centred).
+
+## Build 337 - the cracked planet is gone
+Madison: *"The whole 'cracked planet thing' we are not gonna do that anymore. Makes the story line confusing for no
+reason. Remove it, remove it from cutscenes and the story line completely. No more cracked planet, you don't get a
+cracked planet."* Everything is written up in `retired/cracked-planet.md` (what it was, what stayed, how to put it
+back; the whole removal is one `index.html` commit, also saved as `retired/cracked-planet.patch`). In short:
+- Home's planet never cracks and a Supernova account carries no scar, debris, motes or soot; the planet looks as it
+  does below Gold, and a Supernova account's Home is that planet with orange rings.
+- The rank-up scenes no longer form a crack after the flash; Supernova's scene keeps the swell, flash, shockwaves,
+  dust and flung shards but no fracture, no scar, no debris sweep. `sn-scarred` / `sn-swept` / `csc-live` are gone;
+  the new planet's extra layers settle in at `sn-settled`, the rings turn at `sn-rings`.
+- Nova's planet-explosion scene (`buildNovaWreck`, `cs.planet`) and the strain planet are deleted (the voyage keeps the
+  ship's drawings). Story text: the Gold and Platinum rank messages, the Gold rank beat and lore, the chat's planet
+  and badges answers and the badge-found lines no longer say a planet cracks or that badges hold it together; a
+  badge is "one of mine brought home". Sounds `rank.crack` and `cs.planet` removed.
+- Gates: the crack/scar/wreck sections of `check-behaviour.py`, `check-b325-c.py`, `check-b326-c.py`,
+  `check-b327-e.py` are deleted, the old story gates `check-b327-c` (c3) and `check-b326-e` (e1) are left out of their
+  default runs (they tested a story that changed in 327z15), `check-b325-d` now checks the story has no crack, and
+  `check-loops.py` / `check-sound.py` lost the dead names. `tools/check-b337.py` is the new check.
+
+## Build 338 - the app runs under Safari's bars on a phone (the black bands)
+Madison, with the top and bottom circled on an iPhone 17 Pro Max in Safari: *"Safari fix (I've asked for this to be fixed
+over 15 times) is not in. THE APP ISN'T VISIBLE ON THE TOP OR BOTTOM WHILE IN SAFARI."* Measured off his screenshot:
+the band behind the status bar and the strip under the toolbar were flat (20,22,26), the paper, and the page's own
+content (a card at the bottom) faded to it. Cause, in our own CSS: in a browser tab on a phone (no mouse) body::before
+(the sky) carried 327z15's "no line under Safari's bars" fades - solid paper in the 200px under the bars, fading out over
+the top 6rem and the bottom 5.5rem - and its base was the `var(--paper)` background COLOUR on a fixed, full-width element,
+which Safari 26 reads as the tint of its bars. So the bars were flat black boxes where the installed app has its warm glow
+and stars (measured in Chromium with touch: the top row (19,22,27) in a tab against (41,33,32) installed). Now:
+- the fade layers use `var(--fade-paper, var(--paper))` and `html.is-browser{ --fade-paper:transparent }`: no fade, the
+  sky runs under the bars exactly as installed (Chromium, touch: within 2 levels top and bottom);
+- every `html.is-browser ... body::before` ends in `linear-gradient(var(--paper), var(--paper))` (an image layer) instead of
+  the colour, so no fixed full-width element carries an opaque background colour;
+- the root's colour (what Safari fills its status-bar band with) is `--band`, set by refreshEdgeTints (EDGE_TINTS_OFF
+  stays on): the sky's top colour averaged across the width, mixed with its bottom colour (one colour has to do for
+  both bands) - (33,29,33) on the default theme.
+Only an iPhone shows Safari's bars: if its bands are still a different colour, `--band` is the one number to move. Gate:
+`tools/check-b338.py` (fails on 337: 14 levels and an opaque fixed body::before).
+
+## BUILD 339 — links: Share URL and sync code out of browser addresses
+
+Madison: the in-app Share link errored for recipients, and a link copied from a Safari tab made the recipient's device ask "Continue as <name>" — the sync code was riding in the address.
+
+- Share button used `https://chyjyrkwn7-eng.github.io/Nova/` (no such page). Now `SHARE_URL = https://chyjyrkwn7-eng.github.io/index.html/` (plain, never a fragment/query).
+- `syncBrowserCodeUrl()` (build 327z) wrote `#k=<code>` into every signed-in browser tab's address. It now only strips. The code is put in the address by `installCodeInUrl(true)` ONLY while the iOS Add to Home Screen walkthrough (`showInstallGuide`) is open (needed so the icon launches with it); closing the guide, or 3 minutes, strips it.
+- Boot: in a browser tab a `#k=`/`?k=` in the address is stripped and ignored — no "Continue as", no `browserLinkCode`. Links already sent are now plain links. The installed app still adopts its own launch URL silently (check-readd).
+- `safariHandoffTarget()` no longer carries the code (re-add notice sends people to Safari; they sign in with their code).
+- Anyone who already copied a Safari link with `#k=` exposed that code; Madison may want to change his.
+- Gates: `tools/check-b339.py` (fails on 338), `check-readd.py` now asserts the hand-off has no code.

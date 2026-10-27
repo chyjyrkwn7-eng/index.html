@@ -486,105 +486,10 @@ def section_streak(br):
 
 
 # --------------------------------------------------------------------------
-def section_scar(br):
-    print("\nH. Supernova's mark is a crack with a faint light inside it, not a burn")
-    ctx, pg = boot(br, *PHONE[1:])
-    r = pg.evaluate("""async () => {
-      const art = cosmicScarArt();
-      if(!art) return { none: true };
-      const N = art.n, g = art.burn.getContext('2d'), d = g.getImageData(0, 0, N, N).data;
-      const e = art.ember ? art.ember.getContext('2d').getImageData(0, 0, N, N).data : null;
-      const cx = (art.crater[0] / 100) * N, cy = (art.crater[1] / 100) * N, R = .2 * N / 2;
-      /* the impact: how much of a disc round it is solid dark */
-      let disc = 0, dark = 0;
-      for(let y = Math.floor(cy - R); y <= cy + R; y++) for(let x = Math.floor(cx - R); x <= cx + R; x++){
-        if((x - cx) ** 2 + (y - cy) ** 2 > R * R) continue; disc++; const k = (y * N + x) * 4; if(d[k + 3] > 170) dark++; }
-      /* the light inside the crack: ember pixels away from the impact */
-      let glowFar = 0;
-      if(e) for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){ const k = (y * N + x) * 4; if(e[k + 3] > 60 && Math.hypot(x - cx, y - cy) > R * 1.5) glowFar++; }
-      store.supernovaAchieved = true; saveStore(); showHome(); await new Promise(r => setTimeout(r, 1500));
-      return { darkShare: Math.round(dark / disc * 1000) / 1000, glowFar, smoke: document.querySelectorAll('.panel.home .csc-smoke').length,
-               scar: !!document.querySelector('.panel.home .cosmic-scar') };
-    }""")
-    # MOVED IN 326: the arms are 1.9x wider ("a large large crack") and meet
-    # at the impact, so more of the disc round it is crack - still no crater
-    # (324's was all of it)
-    check("no crater at the impact: under two thirds of the disc round it is solid dark (324: all of it; under half before 326's wider arms)",
-          not r.get("none") and r["darkShare"] < 0.67, r)
-    check("the fissures carry a light inside them along their length (ember pixels away from the impact)", r.get("glowFar", 0) > 150, r)
-    check("no smoke rising off it on Home, and the mark is still there", r.get("scar") and r.get("smoke") == 0, r)
-    ctx.close()
-
-
-# --------------------------------------------------------------------------
-def section_scene_flares(br):
-    print("\nI. in a rank cutscene the secret flares orbit at the bubbles' pace, before and after the whirl")
-    ctx, pg = boot(br, *PHONE[1:])
-    r = pg.evaluate("""async () => {
-      store.mysteryColorsFound = {}; MYSTERY_ORDER.forEach((k, i) => store.mysteryColorsFound[k] = i < 3);
-      playTierCutscene('veteran', { from: 'ranger', onDone: () => {} });
-      const ang = () => { const ov = document.getElementById('supernova-cutscene'); const h = ov && ov.querySelector('.rank-before .cosmic-hero-wrap');
-        const d = h && h.querySelector(':scope > .cosmic-hero-orbitlayer:not(.cosmic-hero-orbitlayer-inner) .cosmic-flare-dot');
-        const m = h && h.querySelector('.cosmic-hero-main'); if(!d || !m) return null;
-        const a = d.getBoundingClientRect(), b = m.getBoundingClientRect();
-        return Math.atan2(a.top + a.height / 2 - (b.top + b.height / 2), a.left + a.width / 2 - (b.left + b.width / 2)) * 180 / Math.PI; };
-      const speed = async (ms) => { const a0 = ang(); await new Promise(r => setTimeout(r, ms)); const a1 = ang(); if(a0 == null || a1 == null) return null;
-        let d = a1 - a0; while(d > 180) d -= 360; while(d < -180) d += 360; return Math.round(Math.abs(d) / ms * 1000 * 10) / 10; };
-      await new Promise(r => setTimeout(r, 3200));
-      const before = await speed(2000);
-      const ov = document.getElementById('supernova-cutscene');
-      for(let i = 0; i < 300 && !(ov.classList.contains('is-cutrest')); i++) await new Promise(r => setTimeout(r, 100));
-      await new Promise(r => setTimeout(r, 600));
-      const after = await speed(2000);
-      const rk = ov.querySelector('.rank-before .rank-orbit');
-      return { before, after, bubbles: rk ? parseFloat(getComputedStyle(rk).animationDuration) : null };
-    }""")
-    check("the outer secret flares turn 8+ degrees a second before the whirl and after it (Home's 3 read as standing still beside the bubbles' 12)",
-          (r["before"] or 0) >= 8 and (r["after"] or 0) >= 8, r)
-    ctx.close()
-
-
-# --------------------------------------------------------------------------
-def section_handoff(br):
-    print("\nJ. from the road map, the flare goes into the planet system as the same lit flare, the same size, in the same place")
-    for label, w, h in (PHONE, TABLET):
-        ctx, pg = boot(br, w, h)
-        pg.evaluate(cb.B319_RU_SEED, {})
-        pg.evaluate(cb.B319_RU_RUN, {})
-        pg.evaluate("()=>{ showHome(); }")
-        for i in range(80):
-            if pg.evaluate("()=>document.body.classList.contains('rankup-lock')"):
-                break
-            pg.evaluate("()=>{ const sp=document.querySelector('.rs-spot.is-up'); if(sp) sp.click(); }")
-            pg.wait_for_timeout(150)
-        pg.evaluate("""()=>{ window.__hand = null; const orig = rankCutHandoff;
-          rankCutHandoff = function(ov, sw, hb, key, ghost){ const r = orig(ov, sw, hb, key, ghost);
-            const b = rankTierBadge(hb, key);
-            const R = e => { const q = e.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2, q.width]; };
-            const g = R(ghost), bb = b ? R(b) : null;
-            window.__hand = { took: r, key, lit: !!(b && b.classList.contains('cosmic-badge-lit')), glow: b ? b.style.getPropertyValue('--tier-glow') : null,
-                              inBubble: !!(b && ghost && b.contains(ghost)), want: flareColorOf(key),
-                              off: bb ? Math.round(Math.max(Math.abs(g[0] - bb[0]), Math.abs(g[1] - bb[1]), Math.abs(g[2] - bb[2])) * 10) / 10 : null,
-                              g: g.map(Math.round), b: bb && bb.map(Math.round) };
-            return r; }; }""")
-        pg.evaluate("()=>document.getElementById('bottomtab-profile').click()")
-        for i in range(1500):
-            if pg.evaluate("()=>!!window.__hand"):
-                break
-            pg.wait_for_timeout(50)
-        hnd = pg.evaluate("()=>window.__hand")
-        # the size is the iPad's: the draw-back's finished fill (scale .84)
-        # outlived getAnimations() and held a 220px copy at 185px, 59px off
-        # the 72px bubble (on the iPhone .84 happened to be the right ratio)
-        check("%s: the road map's circle lands in the scene's bubble - same centre and size within 2px - and that bubble is already lit in the flare's own colour (not the unlit glass it turned into)" % label,
-              bool(hnd) and hnd["took"] and hnd["inBubble"] and hnd["lit"] and hnd["glow"] == hnd["want"] and hnd["off"] is not None and hnd["off"] <= 2, hnd)
-        ctx.close()
-
-
 def main():
     only = os.environ.get("ONLY")
     secs = [section_wall, section_profile_bar, section_nudge, section_pool, section_xpcard, section_rings,
-            section_streak, section_scar, section_scene_flares, section_handoff]
+            section_streak, section_scene_flares, section_handoff]
     with sync_playwright() as pw:
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:

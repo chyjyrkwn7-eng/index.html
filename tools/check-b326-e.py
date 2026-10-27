@@ -542,7 +542,7 @@ def main():
         br = pw.chromium.launch(executable_path=cb.CHROME)
         try:
             fns = os.environ.get("ONLY_FN")
-            for fn in (fns.split(",") if fns else ["check_story", "check_day", "check_devices", "check_quiet", "check_week", "check_rules", "check_away"]):
+            for fn in (fns.split(",") if fns else ["check_day", "check_devices", "check_quiet", "check_week", "check_rules", "check_away"]):
                 globals()[fn](br)
         finally:
             br.close()

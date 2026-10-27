@@ -8,6 +8,7 @@ app; GitHub Pages serves it, but nothing links to it.
 |---|---|---|---|
 | Game mode | build 283 | `148456e`, then its banners `5006899` (284) | [game-mode.md](game-mode.md) |
 | Practice Test | build 283 | `ca1e133` | [practice-test.md](practice-test.md) |
+| The cracked planet (crack stages, Supernova scar, fracture and wreck scenes, the story lines) | build 337 | the commit "Remove the cracked planet completely" | [cracked-planet.md](cracked-planet.md) |
 
 Both were taken out on 2026-10-02 because almost nobody used them.
 Counted from the live data on the day: Drill had 282 runs from 35

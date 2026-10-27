@@ -325,7 +325,7 @@ def issues_section(br):
 
 def main():
     only = os.environ.get("ONLY")
-    secs = [("recap", recap_section), ("cal", cal_section), ("story", story_section), ("issues", issues_section)]
+    secs = [("recap", recap_section), ("cal", cal_section), ("issues", issues_section)]
     with sync_playwright() as p:
         br = p.chromium.launch(executable_path=cb.CHROME)
         for name, fn in secs:

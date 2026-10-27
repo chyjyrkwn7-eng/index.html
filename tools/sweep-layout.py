@@ -357,10 +357,9 @@ def main():
     ap.add_argument("--only", help="substring of the device label")
     ap.add_argument("--quick", action="store_true", help="one representative per family")
     ap.add_argument("--verbose", action="store_true", help="print every passing combination")
-    # Build 317: the Supernova scar lives on Home's planet only once the
-    # account has reached Supernova, which the seed has not - so a sweep
-    # of the scar has to ask for it.
-    ap.add_argument("--supernova", action="store_true", help="seed the account as having reached Supernova (Home's planet carries the scar)")
+    # A Supernova account's Home (orange rings) is only drawn once the account has reached Supernova,
+    # which the seed has not - so a sweep of it has to ask for it.
+    ap.add_argument("--supernova", action="store_true", help="seed the account as having reached Supernova (Home's orange rings)")
     args = ap.parse_args()
     seed = SEED.replace("leaderboardOptIn:true,", "leaderboardOptIn:true,supernovaAchieved:true,") if args.supernova else SEED
     if args.supernova:
