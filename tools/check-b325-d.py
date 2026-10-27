@@ -120,14 +120,8 @@ def story_checks(dev, r, truth, existing):
     props = r.get("props") or {}
     who = "existing" if existing else "new"
     txt = " | ".join(lines)
-    # 1. the story's causes: the planet was cracking, then exploded; the
-    #    flares are dark BECAUSE of the blast, and a rank relights one
-    i_crack = next((i for i, t in enumerate(lines) if re.search(r"crack", t, re.I) and re.search(r"planet", t, re.I)), -1)
-    i_boom = next((i for i, t in enumerate(lines) if re.search(r"explod", t, re.I)), -1)
-    i_flare = next((i for i, t in enumerate(lines) if re.search(r"flares", t) and re.search(r"blast", t) and re.search(r"Home screen", t)), -1)
-    i_relit = next((i for i, t in enumerate(lines) if re.search(r"flare", t) and re.search(r"rank", t) and re.search(r"earned", t)), -1)
-    check("%s %s: the story runs in order - the planet cracking, then exploding, then his flares dark on your Home screen because of the blast, then a rank relighting one" % (dev, who),
-          0 <= i_crack < i_boom < i_flare <= i_relit, {"crack": i_crack, "boom": i_boom, "flare": i_flare, "relit": i_relit, "head": lines[:6]})
+    # 1. no cracked planet anywhere in the story (removed in 337)
+    check("%s %s: the story has no cracked planet" % (dev, who), not re.search(r"crack|strain|explod", txt, re.I), [t for t in lines if re.search(r"crack|strain|explod", t, re.I)][:3])
     # 2. the Virtual Room is in the walkthrough
     check("%s %s: the walkthrough mentions the Virtual Room" % (dev, who), "Virtual Room" in txt, lines[-6:])
     # 3. no badge total, said or printed

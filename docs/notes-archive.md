@@ -29168,3 +29168,22 @@ the slot's `pointerdown` (the 60-100ms before the tap lands; it is cached, so a 
 `openBadgeInspect` finds it through `peekFace`; a tap with no press before it lifts as before. Measured at 1x: first
 frame 636px for a 43px badge growing to 317px (was 88px for 421ms). `tools/check-b336.py` fails on 335.
 This branch also carries build 335 (Start Studying centred).
+
+## Build 337 - the cracked planet is gone
+Madison: *"The whole 'cracked planet thing' we are not gonna do that anymore. Makes the story line confusing for no
+reason. Remove it, remove it from cutscenes and the story line completely. No more cracked planet, you don't get a
+cracked planet."* Everything is written up in `retired/cracked-planet.md` (what it was, what stayed, how to put it
+back; the whole removal is one `index.html` commit, also saved as `retired/cracked-planet.patch`). In short:
+- Home's planet never cracks and a Supernova account carries no scar, debris, motes or soot; the planet looks as it
+  does below Gold, and a Supernova account's Home is that planet with orange rings.
+- The rank-up scenes no longer form a crack after the flash; Supernova's scene keeps the swell, flash, shockwaves,
+  dust and flung shards but no fracture, no scar, no debris sweep. `sn-scarred` / `sn-swept` / `csc-live` are gone;
+  the new planet's extra layers settle in at `sn-settled`, the rings turn at `sn-rings`.
+- Nova's planet-explosion scene (`buildNovaWreck`, `cs.planet`) and the strain planet are deleted (the voyage keeps the
+  ship's drawings). Story text: the Gold and Platinum rank messages, the Gold rank beat and lore, the chat's planet
+  and badges answers and the badge-found lines no longer say a planet cracks or that badges hold it together; a
+  badge is "one of mine brought home". Sounds `rank.crack` and `cs.planet` removed.
+- Gates: the crack/scar/wreck sections of `check-behaviour.py`, `check-b325-c.py`, `check-b326-c.py`,
+  `check-b327-e.py` are deleted, the old story gates `check-b327-c` (c3) and `check-b326-e` (e1) are left out of their
+  default runs (they tested a story that changed in 327z15), `check-b325-d` now checks the story has no crack, and
+  `check-loops.py` / `check-sound.py` lost the dead names. `tools/check-b337.py` is the new check.

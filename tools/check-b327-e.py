@@ -242,68 +242,10 @@ def section_d(br):
         ctx.close()
 
 
-SN = r"""async () => {
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-  heroCrackStageFor = undefined; store.supernovaAchieved = true; store.rankUpShown = 7; saveStore();
-  try{ localStorage.setItem('class26e.ringtier.seen', homeRingTier()); }catch(e){}
-  showProfile('stats'); await wait(200); showHome(); await wait(1600);
-  const hero = document.querySelector('.panel.home .cosmic-hero-wrap');
-  const motes = hero ? [...hero.querySelectorAll(':scope > .csc-motes > i')] : [];
-  const frag = hero && hero.querySelector('.csc-ringfrag');
-  const fragBg = frag ? getComputedStyle(frag, '::after').backgroundImage : '';
-  const shapes = frag ? [...new Set([...hero.querySelectorAll('.csc-ringfrag')].map(f => getComputedStyle(f, '::after').clipPath))] : [];
-  const out = { motes: motes.length, fragBg, shapes, rocks: motes.map(m => { const u = m.querySelector('b > u');
-    const cs = u ? getComputedStyle(u) : null;
-    const bg = cs ? cs.backgroundImage : '';
-    return { bg, stone: bg.slice(bg.indexOf('linear-gradient')), clip: cs ? cs.clipPath : '', hot: /^radial-gradient\(.*rgba\(255, \d+, \d+/.test(bg) }; }) };
-  /* the shine: dark cover in the highlight's disc, away from the branch that runs into it */
-  const shine = (art) => { if(!art || !art.burn) return null; const N = art.n, g = art.burn.getContext('2d'), d = g.getImageData(0, 0, N, N).data;
-    const br = (art.fronts || []).filter(f => f.main).slice(-1)[0];
-    const bpts = br ? br.pts.map(q => [(q[0] + 1) / 2 * N, (q[1] + 1) / 2 * N]) : [];
-    const cx = (SCAR_SHINE.x + 1) / 2 * N, cy = (SCAR_SHINE.y + 1) / 2 * N, R = SCAR_SHINE.r * .7 / 2 * N, keep = .05 * N;
-    let tot = 0, dark = 0;
-    for(let y = Math.floor(cy - R); y <= cy + R; y++) for(let x = Math.floor(cx - R); x <= cx + R; x++){
-      if((x - cx) * (x - cx) + (y - cy) * (y - cy) > R * R) continue;
-      if(bpts.some(p => Math.hypot(p[0] - x, p[1] - y) < keep)) continue;
-      tot++; if(d[(y * N + x) * 4 + 3] > 77) dark++; }
-    return tot ? dark / tot : null; };
-  out.shineSn = shine(cosmicScarArt()); out.shineAme = shine(cosmicScarArt(4));
-  /* a rank's crack carries the seam from Platinum, brighter each rank */
-  out.ranks = [];
-  for(const st of [1, 2, 3, 4]){
-    store.supernovaAchieved = false; heroCrackStageFor = st; showProfile('stats'); await wait(150); showHome(); await wait(900);
-    const sc = document.querySelector('.panel.home .cosmic-hero-wrap > .cosmic-scar');
-    const seam = sc && sc.querySelector('.csc-disc > svg.csc-seam:not(.is-breath)');
-    out.ranks.push({ st, seam: !!seam, op: seam ? +getComputedStyle(seam).opacity : 0, paths: seam ? seam.querySelectorAll('path').length : 0 });
-  }
-  heroCrackStageFor = undefined; store.supernovaAchieved = true; saveStore();
-  return out; }"""
-
-
-def section_e(br):
-    print("\nE. Supernova's crack: rocks come out of it, one crack, the light grows rank by rank")
-    for label, w, h in (PHONE, TABLET):
-        ctx, pg = boot(br, w, h)
-        r = pg.evaluate(SN)
-        rocks = r["rocks"]
-        bad = [x for x in rocks if x["stone"] != r["fragBg"] or x["clip"] not in r["shapes"]]
-        check("%s: all %d pieces leaving the crack are the ring debris' own rock (its stone, one of its %d shapes)" % (label, len(rocks), len(r["shapes"])),
-              len(rocks) >= 14 and r["fragBg"] and not bad, bad[:2] or {"fragBg": r["fragBg"][:60]})
-        check("%s: ...each with its underside still hot from the crack" % label,
-              rocks and all(x["hot"] for x in rocks), rocks[:2])
-        check("%s: no crazing of its own on the shine - Supernova %.1f%%, Amethyst %.1f%% dark (under 4%%)" % (label, 100 * (r["shineSn"] if r["shineSn"] is not None else 1), 100 * (r["shineAme"] if r["shineAme"] is not None else 1)),
-              r["shineSn"] is not None and r["shineSn"] < .04 and r["shineAme"] is not None and r["shineAme"] < .04, [r["shineSn"], r["shineAme"]])
-        rk = r["ranks"]
-        ok = (len(rk) == 4 and not rk[0]["seam"] and all(x["seam"] and x["paths"] > 4 for x in rk[1:])
-              and rk[1]["op"] < rk[2]["op"] < rk[3]["op"] < 1)
-        check("%s: from Platinum each rank's crack carries the seam's light, brighter rank by rank (Gold none)" % label, ok, rk)
-        ctx.close()
-
-
 def main():
     with sync_playwright() as p:
         br = p.chromium.launch(executable_path=cb.CHROME)
-        for k, fn in (("A", section_a), ("B", section_b), ("C", section_c), ("D", section_d), ("E", section_e)):
+        for k, fn in (("A", section_a), ("B", section_b), ("C", section_c), ("D", section_d)):
             if k in ONLY:
                 try:
                     fn(br)
