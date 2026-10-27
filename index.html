@@ -102798,7 +102798,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-339";
+const APP_BUILD = "2026-10-27-340";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -135690,7 +135690,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
         bar._navBuilds = (bar._navBuilds || 0) + 1;
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
-        finally{ syncActive(); beginSettle(360); }
+        finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){} }
       };
       /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
          clicking to other tabs it shoots over instantly, the glass bubble
@@ -135923,6 +135923,44 @@ const LAST_TAB_KEY = "class26e.lastTab";
     placeBubble(tb.x, tb.w, slider.classList.contains("ready") && force !== true);
     slider.classList.add("ready");
     bubbleAt = activeTab;
+  }
+  /* BUILD 340: THE PLATTER IS CHECKED AGAINST ITS TAB, NOT TRUSTED. "This is
+     kinda messed up sometimes on the left when you click Home": on his phone
+     the grey platter came to rest about a dozen points left of the Home tab,
+     out past the bar's edge, and stayed there. The placement is computed
+     from measurements, and a measurement taken at the wrong moment (or read
+     differently by Safari than here) leaves it off by whatever it was off by.
+     So once things have settled, the platter's own box is read next to the lit
+     tab's - the same engine, the same units, no conversion - and if the two
+     disagree it is put right, with no animation. Nothing moves when they
+     agree, which is every time in a browser that measures correctly. */
+  let verifyT1 = 0, verifyT2 = 0;
+  function verifyBubble(){
+    if(bar.hidden || lensG || bar.classList.contains("lens-up") || slider.classList.contains("dragging")) return;
+    if(!slider.classList.contains("ready") || tabDragActive) return;
+    const act = navrow.querySelector(".bottomtab.active");
+    if(!act || !act.offsetWidth) return;
+    /* anything still in flight is not at rest: try again later */
+    if(slider.getAnimations().length || (bar._swell && bar._swell.playState === "running")) return;
+    if([...navrow.querySelectorAll(".bottomtab")].some(t => t.style.transform || t.getAnimations().length)) return;
+    if(parseFloat(getComputedStyle(slider).opacity) < .9) return;
+    const a = act.getBoundingClientRect(), r = slider.getBoundingClientRect();
+    if(!a.width || !r.width) return;
+    const dc = (r.left + r.width / 2) - (a.left + a.width / 2), dw = r.width - a.width;
+    if(Math.abs(dc) < .75 && Math.abs(dw) < 1.5) return;
+    slideBubbleToActiveTab(true);
+    const r2 = slider.getBoundingClientRect();
+    const dc2 = (r2.left + r2.width / 2) - (a.left + a.width / 2), dw2 = r2.width - a.width;
+    if(Math.abs(dc2) < .75 && Math.abs(dw2) < 1.5) return;
+    /* still off: the units differ, so move it by the difference it shows */
+    const rr = navrow.getBoundingClientRect();
+    const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1) || 1;
+    placeBubble(bubbleX - dc2 / k, Math.max(8, bubbleW - dw2 / k), false);
+  }
+  function verifyBubbleSoon(){
+    clearTimeout(verifyT1); clearTimeout(verifyT2);
+    verifyT1 = setTimeout(() => { try{ verifyBubble(); }catch(e){} }, 480);
+    verifyT2 = setTimeout(() => { try{ verifyBubble(); }catch(e){} }, 1300);
   }
   /* THE PLATTER IS NEVER TALLER THAN IT IS WIDE (build 325): on a 320px
      phone a tab is 66px wide and 77 tall, and the platter came out an
@@ -136588,6 +136626,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
     /* the landing tab and the lit tab agree unless a navigation was
        refused or locked out; then the platter goes where the light is */
     slideBubbleToActiveTab();
+    verifyBubbleSoon();
   }
   function lensHide(now){
     clearTimeout(lensT1); lensT1 = null;

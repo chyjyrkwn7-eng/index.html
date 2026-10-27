@@ -29217,3 +29217,11 @@ Madison: the in-app Share link errored for recipients, and a link copied from a 
 - `safariHandoffTarget()` no longer carries the code (re-add notice sends people to Safari; they sign in with their code).
 - Anyone who already copied a Safari link with `#k=` exposed that code; Madison may want to change his.
 - Gates: `tools/check-b339.py` (fails on 338), `check-readd.py` now asserts the hand-off has no code.
+
+## BUILD 340 — the tab bar's platter is checked against its lit tab
+
+Madison (screenshot, twice): after tapping Home the grey platter sat about a dozen points left of the Home tab, out past the bar's left edge, and stayed. Not reproducible in Chromium (the platter always lands 10px inside the bar, tapped from every tab, at 1x and 4x CPU), so the cause on iOS is unconfirmed: a measurement taken at the wrong moment, or Safari reading CSS `zoom` (the bar has `zoom:.9`) differently from Chromium.
+- `verifyBubble()` (tab bar block, next to `slideBubbleToActiveTab`): once the bar is at rest (no lens, no drag, no swell or tab transform running, platter fully visible) it reads the platter's box beside the lit tab's - same engine, same units - and if centre differs by more than .75px or width by more than 1.5px it re-places the platter (forced, no animation), then, if still off, moves it by the difference it shows. Run 480ms and 1300ms after `lensFinish` and after each navigation's `navRun`. Nothing moves when they agree.
+- Tried and REMOVED (no measurable gain, A/B within noise): caching tab boxes between taps.
+- Findings for the lag (not fixed): Leaderboard idle forces ~270 layouts/s from the animated character avatars (SVG parts redraw each frame); Calendar ~0. Offered: keep only visible avatars animating and freeze them around a tab tap.
+- Gate: `tools/check-b340.py` (breaks the platter after the lens has handed over, no further tap, expects it healed; fails on 339).
