@@ -34760,7 +34760,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     /* (named, not "+ *": a flare's caption is put right after the planet when it is tapped, and
        took the auto margin with it - the words jumped up 30-60px under the caption) */
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .homegreeting,
-    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:auto !important; }
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:auto !important; }    /* START STUDYING IN THE MIDDLE OF ITS ROOM (build 335): "the studying button needs to be centred between the
+       bottom and the 'Master the material' sentence". The room under the words is shared equally above and
+       below it, so the gap to the tab bar equals the gap to the words. */
+    html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-bottom:auto !important; }
+    html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ padding-bottom:max(0px, calc(var(--hg) * 1.4 - 9px)) !important; }
   }
   /* (Oct 26 night) "The iPhone 15 and 17 Pro Max ... the planet system is pretty close to the version
      history number. Maybe it should shrink JUST A TINY SMIDGE and/or be brought down JUST A TINY
@@ -105120,7 +105124,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-334";
+const APP_BUILD = "2026-10-27-335";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

@@ -29151,3 +29151,11 @@ revert the size of them (only some)"*; *"every time I close the app out, the lon
   one; the same for an account with no code yet. Returning = any of synccode, drill.v1, ifc.drill.v1, activeclass.
   (A truly empty device is still the Get Started skip of 330.)
 In `tools/check-b333.py` (all three fail on 333); `check-b330`/`check-behaviour` copy limits 70 -> 130.
+
+## Build 335 - Start Studying in the middle of its room
+Madison: *"The studying button needs to be centred between the bottom and the 'master the material' sentence shouldn't it?"*
+On a phone (portrait, under 40rem) the room under the tagline is now shared by three equal auto margins (the words'
+top, the button's top and bottom) and the panel's foot is `max(0, 1.4 x --hg - 9px)` (the 1.4 x --hg the title block
+already puts above the button, less the 9px between the panel's foot and the bar), so the gap above the button equals
+the gap to the tab bar: Pro Max 74/74 (was 80/62), Plus 70/70 (was 74/62), 6.1" 59/58. The SE rules (38px pill)
+are unchanged. The planet stays where it was; the words and button move up/down a few px. `tools/check-b335.py` (fails on 334).
