@@ -81937,7 +81937,7 @@ const RELEASE_NOTES = [
    by tapping the version number on Main Menu \u2014 same underlying data as
    the first-run screen, just denser, since this is a reference someone's
    checking back on rather than a first impression. */
-function showReleaseHistory(){
+function showReleaseHistory(from){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -81955,7 +81955,8 @@ function showReleaseHistory(){
      from here. */
   /* build 327 round 9: "Ensure there is a back button in the version stuff" -
      the history is long, so the way out is at the top as well as the foot */
-  panel.appendChild(buildBackLink("Home", showHome));
+  /* opened from Settings (build 346), the way back is Settings */
+  panel.appendChild(from === "settings" ? buildBackLink("Settings", () => showAppearance()) : buildBackLink("Home", showHome));
   const head = document.createElement("p");
   head.className = "slab section-divider";
   head.textContent = "Release History";
@@ -102920,7 +102921,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-345";
+const APP_BUILD = "2026-10-27-346";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114747,6 +114748,16 @@ function showAppearance(opts){
      side by side instead, it would make it less cluttered". */
   updRow.appendChild(bugBtn);
   updRow.classList.add("settings-pair");
+  /* BUILD 346: "Put version history button in settings (we are gonna overhaul settings this weekend but put it
+     there for now)." The Release History Home's version tag opens, from Settings too, with Settings as its way back. */
+  const verRow = document.createElement("div");
+  verRow.className = "cal-profile-row settings-actions";
+  const verBtn = document.createElement("button");
+  verBtn.type = "button"; verBtn.className = "cal-profile-btn"; verBtn.id = "settings-version-history";
+  verBtn.textContent = "Version history";
+  verBtn.addEventListener("click", () => showReleaseHistory("settings"));
+  verRow.appendChild(verBtn);
+  updSect.appendChild(verRow);
 
   /* Advanced is its own heading because everything under it is a
      one-way door - it is the only group on this screen that can lose
