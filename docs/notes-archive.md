@@ -29086,3 +29086,14 @@ run on the 1,779-question bank (5.4.1, with the two Appendix H questions): same-
 references all cut from the page, 0 not found, 0 page-label differences, 169/169 stop pointers, 44/44 table
 rows, Hint and blurred definitions as before. RESULT: behaves like the reference copy.
 Decision: tapping the level number on the Profile card does NOT open the Rank screen (left as is).
+
+## Build 331 - a forced update no longer lands inside the rank-up journey
+Madison: the rank-up walk played, then the screen refreshed at the end (or it went Home and did the
+journey again). Cause: `forcedUpdateBlocked()` held updates for tests, results, rooms, sign-up and a few
+named cutscenes, but not the rank-up journey itself (only its `#supernova-cutscene` phase). A push that
+landed in any other phase reloaded the app before `rankUpMarkShown` ran, so the journey owed itself again
+on the next launch. Now it is held while `rankUpScene`, `html.ru-scene`, `body.ru-journey`, `.ru-blocker`,
+`.ru-curtain.is-on` or `.rs-spot` is up, and goes when the journey ends. `tools/check-b331.py` polls every
+phase of a journey; on build 330 the page reloaded mid-journey (reproduced), on 331 every phase is held.
+Not reproducible without an update landing: the journey itself plays once, also at 6x CPU and with reduced
+motion, and two owed ranks play one after the other and stop. `APP_BUILD` / `version.json` = 2026-10-27-331.
