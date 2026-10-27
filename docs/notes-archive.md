@@ -29232,3 +29232,14 @@ Madison, fifth screenshot (iPhone, Safari 26, Home): the status-bar band is one 
 - New `--fade-paper-top` (set to `var(--band)` on touch/coarse devices in a browser tab; laptops have --fade-top:0): the top fade layers of body::before (4 rules) and html (2 rules) now start at the band colour and ease into the sky over --fade-top (6rem), instead of starting transparent. Bottom fades and `--fade-paper:transparent` are unchanged. Gradient image layers only - never a background colour (338).
 - Gate: `tools/check-b341.py` (top row == --band across the width; no line in the first 140px; fails on 340: 10 levels).
 - Cannot be confirmed in Chromium: Safari's band and its glass are Safari's. If a seam remains, the number to move is --band (what Safari fills with) against the sky's top colour.
+
+## BUILD 342-343 — Fire Code bar and modes, the class button, the share card, mode cards big again
+
+Madison: Fire Code's bar should have Settings (like the reference: an outlined gear) instead of Calendar; no Mock in Fire Code; the class button on Home should go with the app (colours, size); the shared link says "Class 26E" and shows no icon; the Home Screen add gives a long name and no new icon; the mode cards "still look small".
+- **Bar (342):** `#bottomtab-settings` (hidden, `data-dest="settings"`) joins the bar; `NOVA_CLASS === "ifc"` hides Calendar and shows it, before the tab icons are built (`iconPaths.settings`, an outlined gear). A shown Settings tab takes Settings' screen for itself in `syncActive` (Settings is a tab of the Profile screen, which lit both and parked the platter on Profile). The first tour's Calendar step names Settings in Fire Code.
+- **No Mock in Fire Code (342):** `showModeSelect` drops the `exam` card for `ifc` and the tour drops its step. Academy unchanged. On a tablet an odd count's last card keeps the others' width, centred (343).
+- **Class button (342):** `.class-bubble` is the daily question's twin: its glass (`rgba(14,15,22,.5)` body, rim, blur, soft shadow), no coloured glow, size by `place()` from the daily button, phone position its mirror (`left:max(1.5rem, safe inset)`); list bubbles lose the glow too.
+- **Share (342):** `tools/gen-share-card.py` now writes ABSOLUTE og/twitter image URLs (`SITE`), no class name anywhere in the preview ("Nova", "Study app for police academy cadets"), a new card; `SHARE_URL` text updated.
+- **Home Screen (342):** the name comes from `document.title`, which was set to "Nova — Class 26E Study" at runtime; now "Nova". The apple-touch-icon is a real file (`share/apple-touch-icon.png`, 180px, the live icon art) at an absolute URL; `tools/gen-app-icon.py` writes/checks it. The manifest and favicon stay embedded. iOS only: confirm on a phone.
+- **Mode cards (343):** floor back to 10.4rem (166px), 1.5rem padding, descriptions 1rem. (334's 8.6rem was the "small" he saw.)
+- Gate: `tools/check-b342.py`.

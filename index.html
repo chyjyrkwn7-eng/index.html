@@ -17213,6 +17213,9 @@
   @media (min-width:40rem){
     .modecards:not(.classselect-cards){ flex-wrap:wrap; }
     .modecards:not(.classselect-cards) .modecard{ flex:1 1 40%; min-width:16rem; }
+    /* an odd number of cards (the Fire Code class has three, no Mock): the last keeps the others' width, centred,
+       instead of stretching across the whole row (build 343) */
+    .modecards:not(.classselect-cards) .modecard:last-child:nth-child(odd){ flex:0 1 calc(50% - .5rem); margin-left:auto; margin-right:auto; }
   }
   .modecard{
     display:flex; flex-direction:column; align-items:flex-start; gap:.4rem;
@@ -34302,7 +34305,11 @@ html.is-browser{ --fade-paper: transparent; }
   /* THE MODE CARDS FIT THEIR WORDS (build 330): "Could the mode descriptions be simpler? ... maybe
      change the descriptions look since they will be shorter". The 10.4rem floor was for four-line
      descriptions; at two short lines each card is its words, the four still one height, centred. */
-  html[data-layout] body .panel.modeselect .modecard{ min-height:8.6rem; justify-content:center; padding-top:1.3rem; padding-bottom:1.3rem; }
+  /* BUILD 343: "The buttons for mode selection still look small and not big like before." Before 330 each card was
+     the 10.4rem floor with four lines of copy; 334's 8.6rem was a compromise nobody asked for. Back to the 10.4rem
+     floor and generous padding, with the description a size up so the card is filled by its words, not by air. */
+  html[data-layout] body .panel.modeselect .modecard{ min-height:10.4rem; justify-content:center; padding:1.5rem 1.5rem; gap:.5rem; }
+  html[data-layout] body .panel.modeselect .modecarddesc{ font-size:1rem; line-height:1.45; margin-top:.35rem; }
   html[data-layout] body .panel.modeselect .modecards{ align-items:stretch; }
   /* the sign-up class screen's Continue: its letters sat 1.5px high (a block's line box, not its
      capitals, was centred) - the capitals in the middle, the same 45.6px button */
@@ -102830,7 +102837,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-342";
+const APP_BUILD = "2026-10-27-343";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

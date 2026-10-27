@@ -49,9 +49,17 @@ with sync_playwright() as pw:
             if SHOTS: pg.screenshot(path=SHOTS + "/settings-ifc.png")
         pg.evaluate("()=>{ showModeSelect(); }"); pg.wait_for_timeout(900)
         modes = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>c.dataset.mode)")
+        hs = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>Math.round(c.getBoundingClientRect().height))")
+        chk(tag + ": the mode cards are big (10.4rem, 166px, or more; got %s)" % hs, hs and min(hs) >= 160, hs)
         if ifc: chk(tag + ": no Mock card (" + ",".join(modes) + ")", "exam" not in modes and "drill" in modes, modes)
         else: chk(tag + ": Mock is still a card", "exam" in modes, modes)
         ctx.close()
+    # Fire Code on a tablet: three cards, the last the others' width and centred
+    ctx, pg = rc["new_page"](br, port, 834, 1194, seed); go(pg, True)
+    pg.evaluate("()=>{ showModeSelect(); }"); pg.wait_for_timeout(900)
+    w = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>{ const r=c.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.left + r.width/2)]; })")
+    chk("Fire Code on a tablet: three cards, the last as wide as the others and centred (%s)" % w, len(w) == 3 and abs(w[2][0] - w[0][0]) <= 2 and abs(w[2][1] - 417) <= 6, w)
+    ctx.close()
     # the shared link and the Home Screen
     ctx, pg = rc["new_page"](br, port, 440, 956, seed); pg.reload(); pg.wait_for_timeout(2500)
     m = pg.evaluate("""()=>({ title: document.title, ogs: [...document.querySelectorAll('meta[property^="og:"],meta[name^="twitter:"],meta[name="description"]')].map(m=>m.content),
