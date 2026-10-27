@@ -61140,6 +61140,9 @@ function setSyncCode(code){
    still has nothing in their URL - so they still need to have written it
    down, and the notice still makes them say they have. */
 const RECOVERY_PARAM = "k";
+/* BUILD 339: the one address the Share button hands out. It is a plain
+   page address - never a code, never a fragment or query. */
+const SHARE_URL = "https://chyjyrkwn7-eng.github.io/index.html/";
 /* The alphabet generateSyncCode() draws from, which deliberately has no
    0/O/1/I in it. Anything else in the URL is not a code and is ignored
    rather than adopted. */
@@ -61200,14 +61203,27 @@ function hashRecoveryCode(){
     return SYNC_CODE_RE.test(v) ? v : null;
   }catch(e){ return null; }
 }
+/* BUILD 339: "it asked on their device if they wanted to sign in as me".
+   The address of a browser tab is copied and sent to people all the time,
+   so a sync code must never sit in it. This now only keeps the address
+   clean. The one exception is the Add to Home Screen walkthrough
+   (installCodeInUrl), which needs the code in the address for the
+   seconds the person is using Share -> Add to Home Screen. */
 function syncBrowserCodeUrl(){
   if(isStandaloneApp()) return;
+  if(installCodeTimer) return;
+  stripBrowserCodeUrl();
+}
+var installCodeTimer = 0;
+function installCodeInUrl(on){
+  if(isStandaloneApp()) return;
   try{
+    clearTimeout(installCodeTimer); installCodeTimer = 0;
+    if(!on){ stripBrowserCodeUrl(); return; }
     if(!syncCode || syncOff || !store || !store.onboardingComplete) return;
-    if(hashRecoveryCode() === syncCode) return;
     const search = location.search.replace(/([?&])k=[^&]*&?/, "$1").replace(/[?&]$/, "");
     history.replaceState(history.state, "", location.pathname + search + "#" + RECOVERY_PARAM + "=" + syncCode);
-    sessionStorage.setItem(CODE_URL_OURS_KEY, "1");
+    installCodeTimer = setTimeout(() => { installCodeTimer = 0; stripBrowserCodeUrl(); }, 180000);
   }catch(e){}
 }
 /* Off the address entirely: a reset, "Use a different account", a new
@@ -78295,12 +78311,14 @@ function showInstallGuide(platform){
   const closeBtn = document.createElement("button");
   closeBtn.type = "button"; closeBtn.className = "next";
   closeBtn.textContent = "Got it";
-  closeBtn.addEventListener("click", () => overlay.remove());
+  const closeGuide = () => { overlay.remove(); installCodeInUrl(false); };
+  closeBtn.addEventListener("click", closeGuide);
   card.appendChild(closeBtn);
 
   overlay.appendChild(card);
-  overlay.addEventListener("click", (e) => { if(e.target === overlay) overlay.remove(); });
+  overlay.addEventListener("click", (e) => { if(e.target === overlay) closeGuide(); });
   mountSheetOverlay(overlay);
+  if(platform !== "android") installCodeInUrl(true);
 }
 
 function buildPauseIcon(){
@@ -102780,7 +102798,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-338";
+const APP_BUILD = "2026-10-27-339";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -103436,7 +103454,7 @@ function showFrameNotice(info){
    computed somewhere a check can call. */
 function safariHandoffTarget(){
   const base = "x-safari-https://" + location.host + location.pathname + location.search;
-  return syncCode ? base + "#" + RECOVERY_PARAM + "=" + encodeURIComponent(syncCode) : base;
+  return base;
 }
 
 function openInSafari(bar, info){
@@ -114238,7 +114256,7 @@ function showAppearance(opts){
        page was loaded (a query string, a sub-path, or the installed
        PWA's own start_url), so this is what actually gets shared
        regardless of that. */
-    const shareData = { title: "Nova \u2014 Class 26E Study", text: "Nova study practice for Class 26E", url: "https://chyjyrkwn7-eng.github.io/Nova/" };
+    const shareData = { title: "Nova \u2014 Class 26E Study", text: "Nova study practice for Class 26E", url: SHARE_URL };
     /* The actual likely cause of "works on iPad, not on iPhone": if
        navigator.share exists but the call itself fails for a reason
        OTHER than the user cancelling \u2014 iOS has historically had
@@ -137449,19 +137467,10 @@ const launchCode = readRecoveryCode();
    as "Continue as <name>" (findAccountTrace), with "Use a different
    account" beside it. The installed app's launch URL is set by its own
    icon and is still adopted silently, as before. */
-if(launchCode && !syncCode && !syncOff && !isStandaloneApp() && !store.onboardingComplete){
-  browserLinkCode = launchCode;
-  onFirebaseReady(() => {
-    try{
-      fbDb.collection("progress").doc(launchCode).get().then(d => {
-        if(browserLinkCode !== launchCode) return;
-        const data = d && d.exists ? d.data() : null;
-        if(!data){ browserLinkCode = null; stripBrowserCodeUrl(); }
-        else browserLinkName = String(data.firstName || "").trim();
-        if(stage.querySelector('[data-screen="welcome"]') && !welcomeTraceSkip) showWelcome();
-      }).catch(() => {});
-    }catch(e){}
-  });
+if(launchCode && !isStandaloneApp()){
+  /* BUILD 339: a code in a browser address is never offered or adopted.
+     Links that already went out carrying one are now just plain links. */
+  stripBrowserCodeUrl();
 } else if(launchCode && !syncCode && !syncOff){
   adoptedLaunchCode = true;
   setSyncCode(launchCode);

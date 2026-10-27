@@ -29206,3 +29206,14 @@ and stars (measured in Chromium with touch: the top row (19,22,27) in a tab agai
   both bands) - (33,29,33) on the default theme.
 Only an iPhone shows Safari's bars: if its bands are still a different colour, `--band` is the one number to move. Gate:
 `tools/check-b338.py` (fails on 337: 14 levels and an opaque fixed body::before).
+
+## BUILD 339 — links: Share URL and sync code out of browser addresses
+
+Madison: the in-app Share link errored for recipients, and a link copied from a Safari tab made the recipient's device ask "Continue as <name>" — the sync code was riding in the address.
+
+- Share button used `https://chyjyrkwn7-eng.github.io/Nova/` (no such page). Now `SHARE_URL = https://chyjyrkwn7-eng.github.io/index.html/` (plain, never a fragment/query).
+- `syncBrowserCodeUrl()` (build 327z) wrote `#k=<code>` into every signed-in browser tab's address. It now only strips. The code is put in the address by `installCodeInUrl(true)` ONLY while the iOS Add to Home Screen walkthrough (`showInstallGuide`) is open (needed so the icon launches with it); closing the guide, or 3 minutes, strips it.
+- Boot: in a browser tab a `#k=`/`?k=` in the address is stripped and ignored — no "Continue as", no `browserLinkCode`. Links already sent are now plain links. The installed app still adopts its own launch URL silently (check-readd).
+- `safariHandoffTarget()` no longer carries the code (re-add notice sends people to Safari; they sign in with their code).
+- Anyone who already copied a Safari link with `#k=` exposed that code; Madison may want to change his.
+- Gates: `tools/check-b339.py` (fails on 338), `check-readd.py` now asserts the hand-off has no code.
