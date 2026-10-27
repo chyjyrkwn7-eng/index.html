@@ -135606,7 +135606,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
          cause of a tab looking permanently smaller after being
          tapped. Explicitly blurring it clears that lingering state
          immediately rather than leaving it to chance. */
-      tab.blur();
+      if(document.activeElement === tab) tab.blur();
       /* A short lock while the entrance animation plays \u2014 without
          this, rapidly tapping between tabs could fire a second
          navigation call before the first screen had even finished
@@ -135914,12 +135914,28 @@ const LAST_TAB_KEY = "class26e.lastTab";
     const w = r.width / k / s, c = (r.left + r.width / 2 - rr.left) / k;
     return { c, w, x: c - w / 2 };
   }
+  /* BUILD 340: THE BAR'S REST GEOMETRY IS MEASURED ONCE. Every tab tap
+     re-read the rects and computed styles of the row and all five tabs (and
+     again on each settle), forcing layout in the middle of the press while
+     a screen was being built. The tabs do not move between resizes, so the
+     boxes are kept until the row or a tab changes size (onBarResize) or a
+     forced re-place; a measurement taken while the lens is up is never kept. */
+  const boxCache = new Map();
+  let pillCache = null;
+  function dropBoxCache(){ boxCache.clear(); pillCache = null; }
+  function tabBoxC(t){
+    if(bar.classList.contains("lens-up")) return tabBox(t);
+    let b = boxCache.get(t);
+    if(!b){ b = tabBox(t); boxCache.set(t, b); }
+    return b;
+  }
   function slideBubbleToActiveTab(force){
+    if(force === true) dropBoxCache();
     const activeTab = navrow.querySelector(".bottomtab.active");
     if(!activeTab){ slider.classList.remove("ready"); bubbleAt = null; return; }
     if(force !== true && bubbleAt === activeTab && slider.classList.contains("ready")) return;
     if(!activeTab.offsetWidth){ bubbleAt = null; return; }
-    const tb = tabBox(activeTab);
+    const tb = tabBoxC(activeTab);
     placeBubble(tb.x, tb.w, slider.classList.contains("ready") && force !== true);
     slider.classList.add("ready");
     bubbleAt = activeTab;
@@ -135934,10 +135950,13 @@ const LAST_TAB_KEY = "class26e.lastTab";
   const PILL_IN_X = -4;
   const pillInY = () => parseFloat(getComputedStyle(bar).getPropertyValue("--pill-in-y")) || 5;
   function pillBoxH(){
+    if(pillCache && !bar.classList.contains("lens-up")) return pillCache;
     const rowH = parseFloat(getComputedStyle(navrow).height) || navrow.offsetHeight;
     let minW = Infinity;
-    navrow.querySelectorAll(".bottomtab").forEach(t => { if(!t.hidden && t.offsetWidth) minW = Math.min(minW, tabBox(t).w); });
-    return { rowH, boxH: Math.min(rowH, minW - 2 * PILL_IN_X + 2 * pillInY()) };
+    navrow.querySelectorAll(".bottomtab").forEach(t => { if(!t.hidden && t.offsetWidth) minW = Math.min(minW, tabBoxC(t).w); });
+    const out = { rowH, boxH: Math.min(rowH, minW - 2 * PILL_IN_X + 2 * pillInY()) };
+    if(!bar.classList.contains("lens-up")) pillCache = out;
+    return out;
   }
   /* ---- THE BUBBLE MOVES ON THE COMPOSITOR ALONE (build 310) ----
      "There is still lag when clicking a new tab, the bottom tab doesn't
@@ -135993,9 +136012,9 @@ const LAST_TAB_KEY = "class26e.lastTab";
     const d = (h + l) / 2 - p;
     pfTab.style.left = Math.abs(d) < .25 ? "" : d.toFixed(2) + "px";
   }
-  const onBarResize = () => { centreProfileTab(); slideBubbleToActiveTab(true); };
+  const onBarResize = () => { dropBoxCache(); centreProfileTab(); slideBubbleToActiveTab(true); };
   window.addEventListener("resize", onBarResize);
-  try{ const ro = new ResizeObserver(onBarResize); ro.observe(navrow); [pfTab].concat(pfNeighbours).forEach(t => t && ro.observe(t)); }catch(e){}
+  try{ const ro = new ResizeObserver(onBarResize); ro.observe(navrow); [pfTab].concat(pfNeighbours).forEach(t => t && ro.observe(t)); navrow.querySelectorAll(".bottomtab").forEach(t => ro.observe(t)); }catch(e){}
 
   /* Real drag-to-switch on the tab bar itself, not just a swipe
      anywhere on the page \u2014 press on the bar and the glass bubble
