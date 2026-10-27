@@ -34,6 +34,27 @@ with sync_playwright() as pw:
     chk("the class button's list buttons wear the glass too (a highlight gradient in their body)", "radial-gradient" in r["lBg"], r["lBg"][:140])
     chk("the glass blurs a little and holds no will-change layer of its own", "blur" in r["qBlur"] and "blur" in r["bBlur"] and r["qWill"] in ("auto", "") and r["bWill"] in ("auto", ""), r)
     chk("the same glass, a different thing in the middle (their icons differ)", r["qSvg"] != r["bSvg"] and r["bSvg"] != r["lSvg"], (r["qSvg"], r["bSvg"], r["lSvg"]))
+    # the tab bar's record of what a tap did
+    tabs = {t[0]: t for t in pg.evaluate("()=>[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].map(t=>{const r=t.getBoundingClientRect(); return [t.id, r.left+r.width/2, r.top+r.height/2]})")}
+    pg.evaluate("()=>{ try{ localStorage.removeItem('class26e.tabperf'); }catch(e){} }")
+    for sid in ("bottomtab-profile", "bottomtab-rewards", "bottomtab-home"):
+        t = tabs[sid]; pg.mouse.click(t[1], t[2]); pg.wait_for_timeout(1700)
+    txt = pg.evaluate("()=>tabPerfText()")
+    #print("DBG", pg.evaluate("()=>({chat:document.body.classList.contains('chatdock-open'), barHidden:document.getElementById('bottomtabs').hidden, op:getComputedStyle(document.getElementById('bottomtabs')).opacity, stack:document.querySelector('.class-bubble-wrap').classList.contains('is-open'), ls:localStorage.getItem('class26e.tabperf')})"), tabs)
+    chk("after tab taps the device has a record: frames, worst gap, counts over 34/50/100ms and the screen's build time", re.search(r"rewards.*f\d+ worst\d+ >34:\d+ >50:\d+ >100:\d+ build\d+x\d+", txt) is not None, txt)
+    chk("a bug report would carry it (tabPerfText is wired into the report)", "perf: (typeof tabPerfText" in open(ROOT + "/index.html", encoding="utf-8").read())
+    # the marks are silver, tinted by the theme (not a lilac shield / an orange flame)
+    def stops(accent):
+        return pg.evaluate("""(a)=>{ document.documentElement.dataset.accent=a; return [...document.querySelectorAll('.class-bubble svg stop')].map(s=>getComputedStyle(s).stopColor); }""", accent)
+    def rgb(c):
+        m = [float(x) for x in re.findall(r"[\d.]+", c)[:3]]
+        return [v * 255 for v in m] if c.startswith("color(") else m
+    silver = [rgb(c) for c in stops("ranger")]
+    chroma = max(max(c) - min(c) for c in silver) if silver else 999
+    chk("on the silver theme the class button's mark is plain silver (largest colour spread %d, 40 allowed)" % chroma, silver and chroma <= 40, silver)
+    red = [rgb(c) for c in stops("titan")]
+    chk("on a colour theme the silver leans towards the theme's colour (red over blue on Titan)", red and all(c[0] - c[2] >= 12 for c in red), red)
+    pg.evaluate("()=>{ document.documentElement.dataset.accent='ink'; }")
     # whole pixels, so the 1px rim is not drawn between two rows
     px = pg.evaluate("""()=>{ const f=e=>{ const r=e.getBoundingClientRect(); return [r.width, r.height, r.bottom]; }; return { q:f(document.querySelector('.daily-question-fab')), b:f(document.querySelector('.class-bubble')) }; }""")
     frac = [abs(v - round(v)) for v in px["q"] + px["b"]]
@@ -45,13 +66,5 @@ with sync_playwright() as pw:
     top = pg.evaluate("(p)=>{ const e=document.elementFromPoint(p[0],p[1]); return { inWrap: !!(e && e.closest('.class-bubble-wrap')), tag: e ? (e.className||e.tagName).toString().slice(0,40) : null, chat: document.body.classList.contains('chatdock-open') }; }", cb)
     chk("with the chat open nothing of the class button is over it", top["chat"] and not top["inWrap"], top)
     pg.evaluate("()=>{ try{ closeChatDock && closeChatDock(); }catch(e){} document.querySelectorAll('.chatdock-close, .chatdock-panel .back-link').forEach(b=>b.click()); }"); pg.wait_for_timeout(800)
-    # the tab bar's record of what a tap did
-    tabs = {t[0]: t for t in pg.evaluate("()=>[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].map(t=>{const r=t.getBoundingClientRect(); return [t.id, r.left+r.width/2, r.top+r.height/2]})")}
-    pg.evaluate("()=>{ try{ localStorage.removeItem('class26e.tabperf'); }catch(e){} }")
-    for sid in ("bottomtab-profile", "bottomtab-rewards", "bottomtab-home"):
-        t = tabs[sid]; pg.mouse.click(t[1], t[2]); pg.wait_for_timeout(1700)
-    txt = pg.evaluate("()=>tabPerfText()")
-    chk("after tab taps the device has a record: frames, worst gap, counts over 34/50/100ms and the screen's build time", re.search(r"rewards.*f\d+ worst\d+ >34:\d+ >50:\d+ >100:\d+ build\d+x\d+", txt) is not None, txt)
-    chk("a bug report would carry it (tabPerfText is wired into the report)", "perf: (typeof tabPerfText" in open(ROOT + "/index.html", encoding="utf-8").read())
     ctx.close(); br.close()
 sys.exit(0 if ok else 1)

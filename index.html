@@ -34649,6 +34649,25 @@ html.is-browser{ --fade-paper: transparent; }
       html[data-theme][data-layout] body .class-bubble-wrap{ --cb:round(nearest, 3.4rem, 1px); bottom:round(nearest, calc(var(--tabs-bottom, 12px) + 6.2rem), 1px); }
     }
   }
+
+  /* ---- THE ORBS FOLLOW THE THEME, IN SILVER (build 344c) ----
+     "I kinda [like] the icon (it didn't have color) it matches silver well. Could we make them all like that for the
+     themes." The marks on the class button and its list were drawn in colour (a lilac shield, an orange flame) and the
+     daily question's ring in gold. They are silver now - the same mark, the colour taken out - and the theme tints the
+     glass: the rim, the wash at the foot and the silver itself lean a little towards the theme's own colour (the rank
+     colour under a rank theme, the accent otherwise), so Silver's is plain silver and the rest are silver touched with
+     theirs. One variable (--orb-tint) feeds all three. */
+  html[data-theme][data-layout] body{ --orb-tint:var(--rank-accent, var(--theme-c1, #C9CDD4)); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:first-child{ stop-color:color-mix(in srgb, var(--orb-tint) 14%, #FFFFFF); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:not(:first-child){ stop-color:color-mix(in srgb, var(--orb-tint) 34%, #BFC4CC); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble){
+    border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 5px color-mix(in srgb, var(--orb-tint) 22%, rgba(255,255,255,.1)), inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  html[data-theme][data-layout] body .daily-question-fab:not(.is-ready){
+    border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -102901,7 +102920,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-344";
+const APP_BUILD = "2026-10-27-345";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
