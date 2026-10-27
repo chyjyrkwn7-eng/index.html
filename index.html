@@ -32871,7 +32871,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    covered; the stars are already masked off the top (--sky-clear). */
 html.is-browser[data-layout="modern"] body::before{
   background:
-    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
     linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
@@ -32879,7 +32879,7 @@ html.is-browser[data-layout="modern"] body::before{
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
-    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
     linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
@@ -32899,7 +32899,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
 html[data-layout="modern"] body.has-active-question{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
 html.is-browser[data-layout="modern"] body.has-active-question::before{
   background:
-    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
     linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 2%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 2%, transparent), transparent var(--bg-glow-r2)),
@@ -32907,7 +32907,7 @@ html.is-browser[data-layout="modern"] body.has-active-question::before{
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-question::before{
   background:
-    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
     linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
@@ -32922,7 +32922,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-questio
    body::before's fades have - and every glow layer is kept as it was. */
 html.is-browser[data-layout="modern"]{
   background:
-    linear-gradient(to bottom, var(--fade-paper, var(--paper)), transparent var(--fade-top, 6rem)),
+    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))), transparent var(--fade-top, 6rem)),
     linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
@@ -32933,7 +32933,7 @@ html.is-browser[data-layout="modern"]{
 }
 html.is-browser[data-theme="dark"][data-layout="modern"]{
   background:
-    linear-gradient(to bottom, var(--fade-paper, var(--paper)), transparent var(--fade-top, 6rem)),
+    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))), transparent var(--fade-top, 6rem)),
     linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
@@ -32962,6 +32962,16 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
    the bars, exactly as in the installed app, and the root's colour is the sky's own top colour (--band, from
    syncStatusBarColor), so the status-bar band Safari fills with it is the colour the sky already is there. */
 html.is-browser{ --fade-paper: transparent; }
+/* BUILD 341: THE SEAM UNDER SAFARI'S STATUS BAND. Measured off his screenshot (iPhone, Safari 26, Home): the band
+   behind the status bar is one flat colour (31,33,38) right across, ending in a hard line where the page starts,
+   under which the sky is (37,40,45) at the left and (27,30,35) at the right - a step of 6 to 10 levels along the
+   whole width, so the band still read as a box. Safari fills the band with the root's colour (--band); the sky now
+   STARTS at that same colour at the top edge of the page and eases into its own over --fade-top, so there is no
+   line. The colour is --band itself, so the two cannot disagree. Top only: under the toolbar the sky already
+   continues without a step (measured). A gradient image layer, never a background colour (see 338). */
+@media (hover:none), (pointer:coarse){
+  html.is-browser{ --fade-paper-top: var(--band, transparent); }
+}
 /* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
    cut off at the top and bottom STILL and the page is scrolling? Like legit
    scrolling." The planet's size cap is min(32rem, 58vh), and in a browser
@@ -102798,7 +102808,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-340";
+const APP_BUILD = "2026-10-27-341";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

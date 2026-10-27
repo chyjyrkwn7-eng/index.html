@@ -29225,3 +29225,10 @@ Madison (screenshot, twice): after tapping Home the grey platter sat about a doz
 - Tried and REMOVED (no measurable gain, A/B within noise): caching tab boxes between taps.
 - Findings for the lag (not fixed): Leaderboard idle forces ~270 layouts/s from the animated character avatars (SVG parts redraw each frame); Calendar ~0. Offered: keep only visible avatars animating and freeze them around a tab tap.
 - Gate: `tools/check-b340.py` (breaks the platter after the lens has handed over, no further tap, expects it healed; fails on 339).
+
+## BUILD 341 — no seam under Safari's status band
+
+Madison, fifth screenshot (iPhone, Safari 26, Home): the status-bar band is one flat colour (31,33,38) edge to edge ending in a hard line where the page starts; the sky just under it is (37,40,45) at the left and (27,30,35) at the right, so the band still reads as a box. The toolbar end was already continuous (measured, no step), so only the top changes.
+- New `--fade-paper-top` (set to `var(--band)` on touch/coarse devices in a browser tab; laptops have --fade-top:0): the top fade layers of body::before (4 rules) and html (2 rules) now start at the band colour and ease into the sky over --fade-top (6rem), instead of starting transparent. Bottom fades and `--fade-paper:transparent` are unchanged. Gradient image layers only - never a background colour (338).
+- Gate: `tools/check-b341.py` (top row == --band across the width; no line in the first 140px; fails on 340: 10 levels).
+- Cannot be confirmed in Chromium: Safari's band and its glass are Safari's. If a seam remains, the number to move is --band (what Safari fills with) against the sky's top colour.
