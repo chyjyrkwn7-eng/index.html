@@ -29159,3 +29159,12 @@ top, the button's top and bottom) and the panel's foot is `max(0, 1.4 x --hg - 9
 already puts above the button, less the 9px between the panel's foot and the bar), so the gap above the button equals
 the gap to the tab bar: Pro Max 74/74 (was 80/62), Plus 70/70 (was 74/62), 6.1" 59/58. The SE rules (38px pill)
 are unchanged. The planet stays where it was; the words and button move up/down a few px. `tools/check-b335.py` (fails on 334).
+
+## Build 336 - the badge is sharp as it comes out of the case
+Madison: *"When clicking a badge from the case to view it, it's blurry as it comes to full size."* The lift began on
+the slot's own picture (88px wide) and grew it to ~317 css px (3.5x) until the big face was drawn at 60ms + its render,
+which showed at ~400ms of a lift that is nearly done by then. Now `badgeInspectPrewarm(unit)` draws the big draft face on
+the slot's `pointerdown` (the 60-100ms before the tap lands; it is cached, so a second press costs nothing) and
+`openBadgeInspect` finds it through `peekFace`; a tap with no press before it lifts as before. Measured at 1x: first
+frame 636px for a 43px badge growing to 317px (was 88px for 421ms). `tools/check-b336.py` fails on 335.
+This branch also carries build 335 (Start Studying centred).

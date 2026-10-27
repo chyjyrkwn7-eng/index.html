@@ -105124,7 +105124,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-335";
+const APP_BUILD = "2026-10-27-336";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -133335,6 +133335,7 @@ function buildBadgesTab(opts){
     /* a badge you have not looked at since it was found (build 299) */
     const clearNew = has ? attachNewDot(art, "badges", unit) : () => {};
     /* build 320 (b320g): the badge in your hand, not the unlock card */
+    if(has) tile.addEventListener("pointerdown", () => badgeInspectPrewarm(unit), { passive: true });
     tile.addEventListener("click", () => { clearNew(); tile.querySelector(".badge-clean-tip")?.remove(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
     return tile;
   });
@@ -134195,6 +134196,20 @@ function badgeBackFaceFlatURL(unitName, W){
   g.save(); g.translate(0, lip); badgeBackDrawPlan(g, plan, W, "rgba(255,255,255,.55)"); g.restore();
   badgeBackDrawPlan(g, plan, W, "rgba(26,30,36,.92)");
   return cv.toDataURL("image/png");
+}
+/* THE BADGE IS SHARP FROM THE FIRST FRAME OF ITS LIFT (build 336). "When clicking a badge from the case to view
+   it, it's blurry as it comes to full size": the lift started from the slot's own picture (88px) and grew it
+   3x until the big face was drawn (a few hundred ms later, when the lift was nearly over). The big face is
+   now drawn when the finger goes DOWN on the slot - the 60-100ms before the tap lands - so the lift opens on
+   it (peekFace finds it). A tap that lands before it is ready lifts as it did. */
+function badgeInspectPrewarm(unit){
+  if(badgeInspectNow || !unitBadgeEarned(unit)) return;
+  try{
+    const probe = document.createElement("div"); probe.className = "binspect"; probe.style.visibility = "hidden"; probe.style.pointerEvents = "none";
+    const f = document.createElement("div"); f.className = "binspect-float"; probe.appendChild(f); document.body.appendChild(probe);
+    const size = Math.max(60, f.getBoundingClientRect().width || 280); probe.remove();
+    badgeStrikeEntry(unit, false, Math.min(864, badgeStrikeSize(size * badgeDpr())), true, badgeDirtStage(unit));
+  }catch(e){}
 }
 /* What is open now, for the gates and the recorder. */
 let badgeInspectNow = null;
