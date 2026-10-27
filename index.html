@@ -60232,6 +60232,11 @@ function persistLocally(){
    replacement for it. */
 
 let fbDb = null;
+/* In another class (NOVA_CLASS "ifc") there is no cloud on purpose: the words say so (build 332)
+   instead of asking for a connection that would never come. */
+function academyOnly(what, fallback){
+  return (window.NOVA_CLASS && window.NOVA_CLASS !== "academy") ? what + " is only for the Police Academy class." : fallback;
+}
 function initFirebase(){
   /* another class (NOVA_CLASS, top of the document) never reaches the cloud */
   if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy") return false;
@@ -94178,7 +94183,7 @@ function novaAcceptChallenge(wk){
   document.querySelectorAll("#nova-challenge").forEach(b => b.remove());
   if(!novaChallengeLive(wk)){ showToast("That challenge has ended. Challenge Nova from his chat any time."); return false; }
   if(typeof testInProgress !== "undefined" && testInProgress) return false;
-  if(!fbDb){ showToast("Virtual Room needs a live connection — check your connection and try again."); return false; }
+  if(!fbDb){ showToast(academyOnly("Virtual Room", "Virtual Room needs a live connection — check your connection and try again.")); return false; }
   if(typeof vroomCode !== "undefined" && vroomCode){ showToast("You’re already in a Virtual Room."); return false; }
   const s = novaState(); s.accepted = Object.assign({}, s.accepted || {}, { [wk]: Date.now() });
   Object.keys(s.accepted).sort().slice(0, -8).forEach(k => delete s.accepted[k]);
@@ -94192,7 +94197,7 @@ function novaAcceptChallenge(wk){
 /* A match with him whenever you like (327z15): a Virtual Room, with him in it. */
 function novaChallengeNow(){
   if(typeof testInProgress !== "undefined" && testInProgress) return false;
-  if(!fbDb){ showToast("Virtual Room needs a live connection — check your connection and try again."); return false; }
+  if(!fbDb){ showToast(academyOnly("Virtual Room", "Virtual Room needs a live connection — check your connection and try again.")); return false; }
   if(typeof vroomCode !== "undefined" && vroomCode){ showToast("You’re already in a Virtual Room."); return false; }
   try{ if(chatDockOpen){ closeChatRoom(); closeChatDock(); } }catch(e){}
   return Promise.resolve(createVirtualRoomLobby([], null)).then(ok => {
@@ -94495,7 +94500,7 @@ function openFriendChat(pub){
   if(!code) return;
   chatDockTab = "friends";
   if(!chatDockOpen) openChatDock();
-  if(!fbDb){ showToast("Chat needs a live connection \u2014 check your connection and try again."); return; }
+  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection \u2014 check your connection and try again.")); return; }
   const me = publicIdOf();
   const row = rowsByPublicId()[pub] || {};
   rememberChat(code, row.firstName || (chatEntry(code) || {}).name || "", [pub]);
@@ -95308,7 +95313,7 @@ function startChatPresence(){
 /* Starting one and joining one are the same write with a different
    document id, so they are one function. */
 function createChatRoom(){
-  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return; }
+  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection — check your connection and try again.")); return; }
   const code = generateSyncCode();
   const me = publicIdOf();
   /* RETURNED, so "message this person" can invite them the moment the
@@ -95338,7 +95343,7 @@ function joinChatRoom(rawCode){
   lastJoinGone = false;
   const code = String(rawCode || "").trim().toUpperCase();
   if(!code){ showToast("Type a chat code first."); return Promise.resolve(false); }
-  if(!fbDb){ showToast("Chat needs a live connection — check your connection and try again."); return Promise.resolve(false); }
+  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection — check your connection and try again.")); return Promise.resolve(false); }
   const me = publicIdOf();
   return fbDb.collection("vrooms").doc(code).get().then(snap => {
     /* A DEAD INVITE SAYS IT IS DEAD (build 240) - "if the invite is no
@@ -95572,7 +95577,7 @@ function openDirectChatWith(entry){
   chatDockTab = "groups";
   const existing = chatWithPerson(pub);
   if(existing){ openChatDock(); enterChatRoom(existing.code); return; }
-  if(!fbDb){ showToast("Chat needs a live connection \u2014 check your connection and try again."); return; }
+  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection \u2014 check your connection and try again.")); return; }
   openChatDock();
   const code = generateSyncCode();
   const me = publicIdOf();
@@ -104958,7 +104963,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-331";
+const APP_BUILD = "2026-10-27-332";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -117802,7 +117807,7 @@ function showVirtualRoomChoice(){
   if(!fbDb){
     const note = document.createElement("p");
     note.className = "info-note"; note.style.marginTop = "1rem";
-    note.textContent = "Virtual Room needs a live connection \u2014 check your connection and try again.";
+    note.textContent = academyOnly("Virtual Room", "Virtual Room needs a live connection \u2014 check your connection and try again.");
     panel.appendChild(note);
     stage.replaceChildren(panel);
     toTop();
@@ -125639,7 +125644,7 @@ function renderLeaderboardList(list){
   if(!fbDb){
     const p = document.createElement("p");
     p.className = "info-note";
-    p.textContent = "The leaderboard needs a live connection \u2014 check your connection and reopen this screen.";
+    p.textContent = academyOnly("The leaderboard", "The leaderboard needs a live connection \u2014 check your connection and reopen this screen.");
     list.appendChild(p);
     return;
   }
@@ -132795,7 +132800,7 @@ function showRankings(defaultBoard){
       rows.replaceChildren();
       const p = document.createElement("p");
       p.className = "info-note";
-      p.textContent = "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.";
+      p.textContent = academyOnly("The leaderboard", "The leaderboard needs a connection \u2014 it\u2019ll appear once you\u2019re back online.");
       rows.appendChild(p);
     }
   } else {

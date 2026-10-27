@@ -29097,3 +29097,11 @@ on the next launch. Now it is held while `rankUpScene`, `html.ru-scene`, `body.r
 phase of a journey; on build 330 the page reloaded mid-journey (reproduced), on 331 every phase is held.
 Not reproducible without an update landing: the journey itself plays once, also at 6x CPU and with reduced
 motion, and two owed ranks play one after the other and stop. `APP_BUILD` / `version.json` = 2026-10-27-331.
+
+## Build 332 - the Fire Code class says why there is no leaderboard
+Madison, in the Fire Code class on his own device: the Leaderboard said "needs a connection". In another
+class the app has no cloud on purpose (`initFirebase()` stands down, `NOVA_CLASS` != "academy"), so `fbDb`
+is null and the old words blamed the network. `academyOnly(what, fallback)` now gives "<The leaderboard /
+Chat / Virtual Room> is only for the Police Academy class." in another class and the old wording otherwise
+(leaderboard, test leaderboard, Virtual Room x3, Chat x4). `tools/check-b332.py`: fails on 331 with the old
+sentence, passes on 332. `APP_BUILD` / `version.json` = 2026-10-27-332.
