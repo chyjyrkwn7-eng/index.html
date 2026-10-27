@@ -29125,3 +29125,10 @@ Home Screen"*.
   size - and its list opens upward. Tablet/laptop unchanged (top-left). `tools/check-b333.py` (needs PDFJS_DIR).
 - Not done: the whole-page view does not yet start zoomed on the highlighted lines.
 `APP_BUILD` / `version.json` = 2026-10-27-333.
+
+## Build 333 (cont.) - amendments open on the picture; Nova names what the class has
+Madison: *"make it mention what the class has in Nova's text box, 2021 IFC and HC amendments"*; *"why is the
+amendments not showing the cropped photo? It should be"*. `ifcGreetingLines()` gains "This class has the 2021 IFC
+and the Harris County (HC) amendments." An HC Amendments reference now opens on the cropped page picture (wide ones
+scroll sideways or open in Enlarge) with "Show as text" one tap away; it used to open on the text on a phone.
+Both in `tools/check-b333.py` (fail on the build before).

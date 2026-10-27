@@ -51641,6 +51641,7 @@ function ifcGreetingLines(){
     novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
   return [
     { gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: hello },
+    { text: "This class has the 2021 IFC and the Harris County (HC) amendments." },
     { text: "Same me, a brand new class." },
     { gesture: "raise", text: "Your rank and level start fresh here." },
     { text: "Nothing you earn here changes the academy." },
@@ -102725,9 +102726,10 @@ async function ifcFillCode(item, body, foot){
     const holder = ifcEl("div", "ifc-clips");
     await V.paint(doc, clip, holder, { scale: 1.7 });
     body.prepend(holder);
-    /* on a phone the exact text is the clear view, the page picture one tap away */
+    /* THE PICTURE FIRST (build 333): "why is the amendments not showing the cropped photo? It should be". A wide
+       crop scrolls sideways (or Enlarge); the exact text is one tap away. */
     const wide = ifcFitPictures(holder, body.clientWidth || 300, 1.7);
-    if(wide) holder.hidden = true; else text.hidden = true;
+    text.hidden = true;
     const links = ifcEl("div", "ifc-links");
     const pic = ifcEl("button", "ifc-link", "Show the page picture"); pic.type = "button";
     pic.addEventListener("click", () => { holder.hidden = false; text.hidden = true; pic.hidden = true; asText.hidden = false; });
@@ -102740,8 +102742,8 @@ async function ifcFillCode(item, body, foot){
     const big = ifcEl("button", "ifc-link", "Enlarge"); big.type = "button"; big.addEventListener("click", () => viewOf(false));
     const asText = ifcEl("button", "ifc-link", "Show as text"); asText.type = "button";
     asText.addEventListener("click", () => { text.hidden = false; holder.hidden = true; asText.hidden = true; pic.hidden = false; foot.textContent = ""; });
-    asText.hidden = !!wide;
-    pic.hidden = !wide;
+    asText.hidden = false;
+    pic.hidden = true;
     links.append(big, pic, whole, asText); body.appendChild(links);
     return;
   }
