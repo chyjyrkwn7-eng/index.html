@@ -32510,20 +32510,20 @@ html.is-browser{ overscroll-behavior-y:none; }
    anything Safari shows past even that. Browser tabs only; the installed
    app has no Safari bars. Confirmable only on an iPhone. */
 html.is-browser{ --bleed:200px; }
-html.is-browser[data-layout][data-theme]{ background-color:var(--paper); }
+html.is-browser[data-layout][data-theme]{ background-color:var(--band, var(--paper)); }
 html.is-browser[data-layout="modern"] body::before{
   top:calc(-1 * var(--bleed)); bottom:calc(-1 * var(--bleed)); height:auto;
   background:
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
-    var(--paper);
+    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
-    var(--paper);
+    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 html.is-browser[data-layout="modern"] body::after{
   top:calc(-1 * var(--bleed)); bottom:calc(-1 * var(--bleed)); height:auto;
@@ -32871,20 +32871,20 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
    covered; the stars are already masked off the top (--sky-clear). */
 html.is-browser[data-layout="modern"] body::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
+    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
-    var(--paper);
+    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
+    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
-    var(--paper);
+    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 /* A TEST IS AS DARK ON A LAPTOP AS ON A PHONE (round 26). "On the phone,
    the test background is super nice and dark ... On the larger devices
@@ -32899,19 +32899,19 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
 html[data-layout="modern"] body.has-active-question{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
 html.is-browser[data-layout="modern"] body.has-active-question::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
+    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 2%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 2%, transparent), transparent var(--bg-glow-r2)),
-    var(--paper);
+    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-question::before{
   background:
-    linear-gradient(to bottom, var(--paper) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
-    linear-gradient(to top, var(--paper) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
+    linear-gradient(to bottom, var(--fade-paper, var(--paper)) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
+    linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
     radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
-    var(--paper);
+    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 /* ...and the root's fallback carries the same two fades (round 26). What a
    rubber-band past the bottom reveals is html's background, and with the
@@ -32922,26 +32922,26 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-questio
    body::before's fades have - and every glow layer is kept as it was. */
 html.is-browser[data-layout="modern"]{
   background:
-    linear-gradient(to bottom, var(--paper), transparent var(--fade-top, 6rem)),
-    linear-gradient(to top, var(--paper) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
+    linear-gradient(to bottom, var(--fade-paper, var(--paper)), transparent var(--fade-top, 6rem)),
+    linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
-    var(--paper);   /* the root's colour stays the paper in a tab - Safari fills its bars with it (see html.is-browser above) */
+    var(--band, var(--paper));   /* the root's colour in a tab is the sky's own top colour - Safari fills its status-bar band with it (--band, set from JS) */
   background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
   background-repeat:no-repeat;
 }
 html.is-browser[data-theme="dark"][data-layout="modern"]{
   background:
-    linear-gradient(to bottom, var(--paper), transparent var(--fade-top, 6rem)),
-    linear-gradient(to top, var(--paper) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
+    linear-gradient(to bottom, var(--fade-paper, var(--paper)), transparent var(--fade-top, 6rem)),
+    linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
     radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
-    var(--paper);   /* the root's colour stays the paper in a tab - Safari fills its bars with it (see html.is-browser above) */
+    var(--band, var(--paper));   /* the root's colour in a tab is the sky's own top colour - Safari fills its status-bar band with it (--band, set from JS) */
   background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
   background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0, 0 0;
   background-repeat:no-repeat;
@@ -32955,6 +32955,13 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
 @media (hover:hover) and (pointer:fine){
   html.is-browser{ --fade-top:0px; --fade-bot-solid:0px; --fade-bot:0px; }
 }
+/* THE APP RUNS UNDER SAFARI'S BARS, NO BLACK FADES (build 338). "THE APP ISN'T VISIBLE ON THE TOP OR BOTTOM
+   WHILE IN SAFARI." On a phone's Safari tab the sky faded into flat paper over its top 6rem and bottom 5.5rem
+   (and was solid paper in the 200px under the bars) so the root's colour and the bands would match - which
+   made both bands black boxes where the installed app has its glow and stars. The sky now runs unbroken under
+   the bars, exactly as in the installed app, and the root's colour is the sky's own top colour (--band, from
+   syncStatusBarColor), so the status-bar band Safari fills with it is the colour the sky already is there. */
+html.is-browser{ --fade-paper: transparent; }
 /* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
    cut off at the top and bottom STILL and the page is scrolling? Like legit
    scrolling." The planet's size cap is min(32rem, 58vh), and in a browser
@@ -72664,6 +72671,14 @@ function refreshEdgeTints(topColor){
       document.querySelectorAll(".edge-tint").forEach((n) => n.remove());
       root.style.backgroundColor = "";
       edgeTintSig = "";
+      /* the root's colour (what Safari fills its status-bar band with) is the sky's own top colour */
+      try{
+        /* Safari fills BOTH of its bands with the root's colour, so it is one colour between the sky's two
+           edges: its top colour (averaged across the width - the corner glow is strongest at one side)
+           and its bottom colour, so neither band is a visible box against the sky beside it */
+        const band = cssColorHex("color-mix(in srgb, color-mix(in srgb, color-mix(in srgb, var(--bg-c3) var(--statusbar-mix3), color-mix(in srgb, var(--bg-c2) var(--statusbar-mix2), var(--paper))) 70%, var(--paper)) 55%, color-mix(in srgb, var(--bg-c1) 4%, var(--paper)))") || appTopEdgeColor();
+        if(band) root.style.setProperty("--band", band);
+      }catch(e){}
       return;
     }
     if(splashOwnsFrame()){
@@ -102765,7 +102780,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-337";
+const APP_BUILD = "2026-10-27-338";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

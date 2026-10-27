@@ -29187,3 +29187,22 @@ back; the whole removal is one `index.html` commit, also saved as `retired/crack
   `check-b327-e.py` are deleted, the old story gates `check-b327-c` (c3) and `check-b326-e` (e1) are left out of their
   default runs (they tested a story that changed in 327z15), `check-b325-d` now checks the story has no crack, and
   `check-loops.py` / `check-sound.py` lost the dead names. `tools/check-b337.py` is the new check.
+
+## Build 338 - the app runs under Safari's bars on a phone (the black bands)
+Madison, with the top and bottom circled on an iPhone 17 Pro Max in Safari: *"Safari fix (I've asked for this to be fixed
+over 15 times) is not in. THE APP ISN'T VISIBLE ON THE TOP OR BOTTOM WHILE IN SAFARI."* Measured off his screenshot:
+the band behind the status bar and the strip under the toolbar were flat (20,22,26), the paper, and the page's own
+content (a card at the bottom) faded to it. Cause, in our own CSS: in a browser tab on a phone (no mouse) body::before
+(the sky) carried 327z15's "no line under Safari's bars" fades - solid paper in the 200px under the bars, fading out over
+the top 6rem and the bottom 5.5rem - and its base was the `var(--paper)` background COLOUR on a fixed, full-width element,
+which Safari 26 reads as the tint of its bars. So the bars were flat black boxes where the installed app has its warm glow
+and stars (measured in Chromium with touch: the top row (19,22,27) in a tab against (41,33,32) installed). Now:
+- the fade layers use `var(--fade-paper, var(--paper))` and `html.is-browser{ --fade-paper:transparent }`: no fade, the
+  sky runs under the bars exactly as installed (Chromium, touch: within 2 levels top and bottom);
+- every `html.is-browser ... body::before` ends in `linear-gradient(var(--paper), var(--paper))` (an image layer) instead of
+  the colour, so no fixed full-width element carries an opaque background colour;
+- the root's colour (what Safari fills its status-bar band with) is `--band`, set by refreshEdgeTints (EDGE_TINTS_OFF
+  stays on): the sky's top colour averaged across the width, mixed with its bottom colour (one colour has to do for
+  both bands) - (33,29,33) on the default theme.
+Only an iPhone shows Safari's bars: if its bands are still a different colour, `--band` is the one number to move. Gate:
+`tools/check-b338.py` (fails on 337: 14 levels and an opaque fixed body::before).
