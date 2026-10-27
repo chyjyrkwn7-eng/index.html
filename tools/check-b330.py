@@ -115,8 +115,8 @@ with sync_playwright() as pw:
           const descs = [...document.querySelectorAll('.modecard .modecarddesc')].map(d => d.textContent);
           return { xs, descs, classmates: /classmate/i.test(document.body.innerText) }; }""")
         chk("every Back button sits at the same left edge (the mode screen and sign-up included)", len(set(r["xs"].values())) == 1 and None not in r["xs"].values(), r["xs"])
-        chk("the mode descriptions are short (70 characters or fewer) and none says classmates",
-            r["descs"] and all(len(d) <= 70 for d in r["descs"]) and not any("classmate" in d.lower() for d in r["descs"]) and not r["classmates"], r["descs"])
+        chk("the mode descriptions are two short sentences (130 characters or fewer) and none says classmates",
+            r["descs"] and all(len(d) <= 130 for d in r["descs"]) and not any("classmate" in d.lower() for d in r["descs"]) and not r["classmates"], r["descs"])
         ctx.close()
     if "bg" in want:
         # ONE LOOK ON EVERY DEVICE: the corner glows are the same size relative to the screen, so the

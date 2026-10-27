@@ -87,5 +87,19 @@ with sync_playwright() as pw:
     pg.evaluate("()=>document.querySelector('.class-bubble').click()"); pg.wait_for_timeout(900)
     up = pg.evaluate("()=>{ const b = document.querySelector('.class-bubble').getBoundingClientRect(), i = document.querySelector('.class-stack-item').getBoundingClientRect(); return { bub: Math.round(b.top), item: Math.round(i.bottom) }; }")
     chk("its list opens upward from the bubble", up["item"] <= up["bub"], up)
+    # Start Studying on a big phone, the mode cards, the loading screen on a relaunch
+    pg.set_viewport_size({"width": 440, "height": 956}); pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(1500)
+    for _ in range(3):
+        pg.evaluate("()=>{ [...document.querySelectorAll('button')].filter(b=>/^Got it$/.test(b.textContent.trim())).forEach(b=>b.click()); document.querySelectorAll('.rs-spot,.unlock-card').forEach(n=>n.remove()); }"); pg.wait_for_timeout(500)
+    sb = pg.evaluate("()=>{ const r = document.querySelector('.panel.home .playbtn').getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; }")
+    chk("Start Studying on a Pro Max-sized phone is at least 210 x 54 (it had shrunk to 202 x 50)", sb["w"] >= 210 and sb["h"] >= 54, sb)
+    pg.evaluate("()=>{ cfg.mode = 'drill'; showModeSelect(); }"); pg.wait_for_timeout(900)
+    mc = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c => ({ h: Math.round(c.getBoundingClientRect().height), d: (c.querySelector('.modecarddesc') || {}).textContent || '' }))")
+    chk("the four mode cards are at least 130px tall, their descriptions 60-130 characters and none says classmates",
+        len(mc) == 4 and all(m["h"] >= 130 and 60 <= len(m["d"]) <= 130 and "classmate" not in m["d"].lower() for m in mc), mc)
+    pg.evaluate("()=>{ localStorage.removeItem('class26e.synccode'); }")
+    pg.reload(); pg.wait_for_timeout(4800)
+    sp = pg.evaluate("()=>{ const s = document.getElementById('splashscreen'); return !s || s.hidden || getComputedStyle(s).display === 'none' || getComputedStyle(s).visibility === 'hidden' || parseFloat(getComputedStyle(s).opacity) === 0; }")
+    chk("a relaunch with a saved account but no sync code (the Fire Code class) is past the loading screen by 4.8s", sp, sp)
     br.close()
 print("\nALL PASS" if ok else "\nFAILED"); sys.exit(0 if ok else 1)

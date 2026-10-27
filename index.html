@@ -34649,7 +34649,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   /* THE MODE CARDS FIT THEIR WORDS (build 330): "Could the mode descriptions be simpler? ... maybe
      change the descriptions look since they will be shorter". The 10.4rem floor was for four-line
      descriptions; at two short lines each card is its words, the four still one height, centred. */
-  html[data-layout] body .panel.modeselect .modecard{ min-height:6.4rem; justify-content:center; padding-top:1.05rem; padding-bottom:1.05rem; }
+  html[data-layout] body .panel.modeselect .modecard{ min-height:8.6rem; justify-content:center; padding-top:1.3rem; padding-bottom:1.3rem; }
   html[data-layout] body .panel.modeselect .modecards{ align-items:stretch; }
   /* the sign-up class screen's Continue: its letters sat 1.5px high (a block's line box, not its
      capitals, was centred) - the capitals in the middle, the same 45.6px button */
@@ -34702,8 +34702,8 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        the share the planet's column gives it - and its height follows its words, never
        under the 44px tap height. */
     html[data-layout] body .panel.home.screen-home-actual > .playbtn{
-      font-size:clamp(.86rem, 4.1vw, 1.06rem) !important; padding:.72em 1.3em !important;
-      min-width:clamp(140px, 46vw, 205px) !important; min-height:clamp(44px, 11.5vw, 50px) !important;
+      font-size:clamp(.88rem, 4.4vw, 1.2rem) !important; padding:.72em 1.3em !important;
+      min-width:clamp(146px, 49vw, 216px) !important; min-height:clamp(44px, 12.8vw, 60px) !important;
     }
   }
   /* (build 328) "iPad Pro 11. The planet system could be a little bigger": an upright iPad
@@ -35121,7 +35121,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        key the app itself uses, before the rest of the app has even
        loaded. */
     var isReturningUser = false;
-    try { isReturningUser = !!window.localStorage.getItem("class26e.synccode"); } catch(e){}
+    /* ANY SAVED ACCOUNT ON THIS DEVICE (build 333): "everytime I close the app out, the longer loading screen
+       happens". The long one is for a device with nothing on it; the Fire Code class keeps its own copy
+       (class26e.ifc.*), so its code was never seen here, and a device whose account has no code yet read as new. */
+    try { isReturningUser = !!(window.localStorage.getItem("class26e.synccode") || window.localStorage.getItem("class26e.drill.v1") || window.localStorage.getItem("class26e.ifc.drill.v1") || window.localStorage.getItem("class26e.activeclass")); } catch(e){}
     /* Tapping Update reloads the page, which means the ordinary splash
        runs and cheerfully narrates "loading Drill, Game & Exam modes" at
        someone who just asked for an update - so the one moment the app is
@@ -99039,7 +99042,7 @@ function showModeSelect(){
        says it in those words. Exam names its Instant feedback switch
        because that is the one way the answer changes. */
     { value: "drill", title: "Drill",
-      desc: "See if you’re right after every question. Miss one, try again." },
+      desc: "Find out right away if each answer is right or wrong. Miss one and you try it again before moving on." },
     /* TWO BEATS, LIKE DRILL AND THE VIRTUAL ROOM (build 323): the Exam
        card ran a parenthesis through its middle and Review opened on a
        disclaimer; both now say what the mode is and then what it is best
@@ -99050,7 +99053,7 @@ function showModeSelect(){
        grade." Instant feedback is gone, so the card says it outright:
        nothing on any question, the grade at the end. */
     { value: "exam", title: modeTitleOf("exam"),
-      desc: "A real test. No feedback until your grade at the end." },
+      desc: "A real test with no feedback on any question. You see your grade, and what you missed, at the end." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -99076,9 +99079,9 @@ function showModeSelect(){
        review and exam descriptions ... but could they be better?" It
        leads with what it is NOT, because the other three are tests. */
     { value: "review", title: modeTitleOf("review"),
-      desc: "Not a test. Study every question with its answer." },
+      desc: "Not a test. Go through every question with its answer, as a list or as flashcards." },
     { value: "vroom", title: "Virtual Room",
-      desc: "Take the same test live with friends." }
+      desc: "Take the same test live with friends. Everyone gets the same questions at the same time." }
   ];
 
   MODES.forEach(m => {
@@ -105117,7 +105120,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-333";
+const APP_BUILD = "2026-10-27-334";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
