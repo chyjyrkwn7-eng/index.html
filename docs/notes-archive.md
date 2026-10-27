@@ -29256,3 +29256,8 @@ Madison: the tab bar still lags "for over a week"; the daily question button "wh
 
 ## BUILD 346 — Version history in Settings
 Madison: "Put version history button in settings (we are gonna overhaul settings this weekend but put it there for now)". `#settings-version-history`, a full-width `cal-profile-btn` under Check for update / Report a bug in the Help card, opens `showReleaseHistory("settings")` (its Back link says Settings and returns to it; Home's version tag still opens it with Back to Home). Gate: `tools/check-b346.py`.
+
+## BUILD 347 — Home proportions he prefers; enrolled classes are not tappable
+- **Home (phones 736px tall and up):** Madison sent a Home from his iPhone ("I prefer these proportions ... ensure this is updated for my phone and everywhere else"). Measured off it on a 440x956 screen: the words' top 595px, 60px from "Master the material" to Start Studying, 55px from Start to the bar (the 335 rule shared that room in equal thirds: 74/74). The two small gaps are now fixed to the screen's height (Start's top margin `clamp(40px, 6.3dvh, 72px)` less the title block's own 1.4 x --hg; the panel's foot `clamp(24px, 5.8dvh - 9px, 56px)`) and the greeting's auto margin takes the rest, so the planet is where it was and the words sit lower. A short phone keeps the thirds (its planet needs the room); tablets and laptops are untouched. Start Studying keeps 334's size.
+- **Classes list:** a class you are in keeps its card and its "Enrolled" status but is `aria-disabled`, `pointer-events:none`, no click (switching classes is the class button's list); a class you are not in still opens its enrolment.
+- Gate: `tools/check-b347.py` (fails on 346). Builds 345 (silver orbs) and 346 (Version history in Settings) ride in the same merge.

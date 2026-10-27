@@ -34425,6 +34425,16 @@ html.is-browser{ --fade-paper: transparent; }
        below it, so the gap to the tab bar equals the gap to the words. */
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-bottom:auto !important; }
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ padding-bottom:max(0px, calc(var(--hg) * 1.4 - 9px)) !important; }
+    /* THE PROPORTIONS HE PREFERS (build 347). He sent a Home from his iPhone and said "I prefer these proportions ...
+       ensure this is updated for my phone and everywhere else": the planet where it is, the words and Start Studying
+       LOWER, nearer the tab bar - measured off it on a 440x956 screen: the greeting's top 595px (was 559), the gap
+       from "Master the material" to Start 60px (was 74) and from Start to the bar 55px (was 74). So the room under the
+       planet is no longer shared in three; the two small gaps are fixed to the screen's height (6.3dvh and 5.8dvh) and
+       the first takes all the rest. (335's equal thirds were his own ask a day earlier; this is his newer one.) */
+    @media (min-height:46rem){
+      html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:max(0px, calc(clamp(40px, 6.3dvh, 72px) - var(--hg) * 1.4)) !important; margin-bottom:0 !important; }
+      html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ padding-bottom:clamp(24px, calc(5.8dvh - 9px), 56px) !important; }
+    }   /* (a short phone keeps the thirds: its planet needs the room) */
   }
   /* (Oct 26 night) "The iPhone 15 and 17 Pro Max ... the planet system is pretty close to the version
      history number. Maybe it should shrink JUST A TINY SMIDGE and/or be brought down JUST A TINY
@@ -34668,6 +34678,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body .daily-question-fab:not(.is-ready){
     border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
   }
+  .class-card.is-enrolled[aria-disabled="true"]{ cursor:default; pointer-events:none; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -51459,9 +51470,12 @@ function showClassCatalog(){
     st.textContent = enrolled ? "Enrolled" : "Enroll";
     st.classList.add(enrolled ? "is-enrolled" : "is-enroll");
     if(!enrolled && info.needs){ const n = document.createElement("span"); n.className = "cc-needs"; n.textContent = info.needs; card.querySelector(".cc-foot").prepend(n); }
+    /* BUILD 347: "When hitting add a class, it shouldn't let me click or add classes in the classes thing that I'm
+       already enrolled in." A class you are in is listed, says Enrolled, and does nothing when tapped (switching
+       between classes is the class button's own list). */
+    if(enrolled){ card.setAttribute("aria-disabled", "true"); card.tabIndex = -1; }
     card.addEventListener("click", () => {
-      if(here){ showHome(); return; }
-      if(enrolled){ switchClass(c.key); return; }
+      if(enrolled) return;
       if(c.key === "ifc") showIfcEnroll();
     });
     list.appendChild(card);
@@ -102921,7 +102935,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-346";
+const APP_BUILD = "2026-10-27-347";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
