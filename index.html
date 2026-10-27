@@ -34585,6 +34585,49 @@ html.is-browser{ --fade-paper: transparent; }
   @media (max-width:639px){
     html[data-layout] .vroom-chat-alert.is-glass{ left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
   }
+
+  /* ---- LIQUID GLASS ORBS (build 344) ----
+     "The daily question button, not a fan of how this looks when it's ready, it doesn't go with the app, it needs a
+     nice Liquid Glass look" and "The class button and the buttons within it, it needs the same look but a different
+     thing in the middle." One recipe for the daily question, the class button and the buttons in its list: a clear
+     body that lets the sky through, light pooled at the top-left and a faint return at the foot, a bright hairline
+     rim with its specular catch along the top edge and a soft shadow below - what the tab bar's glass is made of,
+     as a circle. Ready is the same glass with the rank's own colour washed up from its foot and in its rim, the "?"
+     white; it is not a lit coloured orb any more. The ring that leaves it is kept, quieter. */
+  html[data-theme][data-layout] body .daily-question-fab,
+  html[data-theme][data-layout] body .class-bubble,
+  html[data-theme][data-layout] body .csi-bubble{
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.30), rgba(255,255,255,.07) 42%, rgba(255,255,255,0) 66%),
+      linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 42%, rgba(255,255,255,.07)),
+      rgba(18,20,30,.36);
+    border:1px solid rgba(255,255,255,.26);
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px rgba(255,255,255,.1), inset 0 0 0 1px rgba(255,255,255,.04);
+    -webkit-backdrop-filter:blur(6px) saturate(1.6); backdrop-filter:blur(6px) saturate(1.6);
+    will-change:auto;
+  }
+  /* the list's buttons move as it opens: no blur on them, a slightly denser body in its place */
+  html[data-theme][data-layout] body .csi-bubble{ -webkit-backdrop-filter:none; backdrop-filter:none; background-color:rgba(22,24,34,.62); }
+  html[data-theme][data-layout] body .daily-question-fab.is-ready:not(.is-done),
+  html[data-theme][data-layout] body:has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.30), rgba(255,255,255,.07) 42%, rgba(255,255,255,0) 66%),
+      radial-gradient(110% 80% at 50% 118%, color-mix(in srgb, var(--dq-c) 46%, transparent), color-mix(in srgb, var(--dq-c) 12%, transparent) 62%, transparent 80%),
+      rgba(18,20,30,.36) !important;
+    border:1px solid color-mix(in srgb, var(--dq-c) 38%, rgba(255,255,255,.3)) !important;
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               0 0 14px -4px color-mix(in srgb, var(--dq-c) 40%, transparent),
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 5px color-mix(in srgb, var(--dq-c) 40%, transparent) !important;
+    color:#FFFFFF;
+  }
+  html[data-theme][data-layout] body .daily-question-fab.is-done{
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.2), rgba(255,255,255,.05) 42%, rgba(255,255,255,0) 66%),
+      rgba(18,20,30,.34) !important;
+    border-color:rgba(255,255,255,.16) !important;
+  }
+  .daily-question-fab.is-ready::after{ border-width:1px; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -102837,7 +102880,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-343";
+const APP_BUILD = "2026-10-27-344";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113631,6 +113674,7 @@ function showBugReport(){
         ua: (navigator.userAgent || "").slice(0, 200),
         viewport: vw + "x" + vh,
         standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: (typeof tabPerfText === "function") ? tabPerfText() : "",
         at: Date.now()
       }).then(() => {
         clearTimeout(timer);
@@ -135543,6 +135587,44 @@ function applyGlassRefraction(el, mapImgId){
 
 /* the bottom tab a browser tab was last on, in its sessionStorage (327z13) */
 const LAST_TAB_KEY = "class26e.lastTab";
+/* BUILD 344: WHAT A PHONE REALLY DOES WHEN A TAB IS TAPPED. The tab bar's lag has only ever been measured in
+   Chromium, which is not an iPhone. For one second after a burst of tab taps, the frame gaps are counted (over 34ms,
+   50ms, 100ms, and the worst) and the build time of the screen the tap asked for is noted; the last twelve bursts
+   are kept in this device's storage and ride along with a bug report ("perf"), so the real numbers can be read with
+   `firestore-admin.py bugs`. Nothing runs between taps and nothing is sent anywhere by itself. */
+const TAB_PERF_KEY = "class26e.tabperf";
+let tabPerfActive = null;
+function tabPerfStart(dest){
+  try{
+    const now = performance.now();
+    if(tabPerfActive){ tabPerfActive.seq.push(dest); tabPerfActive.end = now + 1000; return tabPerfActive; }
+    const rec = { at: Date.now(), seq: [dest], end: now + 1000, f: 0, g: 0, n34: 0, n50: 0, n100: 0, b: 0, bn: 0 };
+    tabPerfActive = rec;
+    let last = now;
+    const tick = (t) => {
+      const dt = t - last; last = t; rec.f++;
+      if(dt > 34) rec.n34++; if(dt > 50) rec.n50++; if(dt > 100) rec.n100++; if(dt > rec.g) rec.g = Math.round(dt);
+      if(t < rec.end) requestAnimationFrame(tick); else { tabPerfActive = null; tabPerfSave(rec); }
+    };
+    requestAnimationFrame(tick);
+    return rec;
+  }catch(e){ return null; }
+}
+function tabPerfSave(rec){
+  try{
+    let list = []; try{ list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || []; }catch(e){}
+    list.push({ at: rec.at, seq: rec.seq.join(">"), f: rec.f, g: rec.g, n34: rec.n34, n50: rec.n50, n100: rec.n100, b: Math.round(rec.b), bn: rec.bn });
+    localStorage.setItem(TAB_PERF_KEY, JSON.stringify(list.slice(-12)));
+  }catch(e){}
+}
+function tabPerfText(){
+  try{
+    const list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || [];
+    const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + " | " + list.map(r =>
+      r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn).join(" | ")).slice(0, 1700);
+  }catch(e){ return ""; }
+}
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
@@ -135713,6 +135795,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
       bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
       slideBubbleToActiveTab();
       beginSettle();
+      const perfRec = tabPerfStart(dest);
       /* The settle window restarts once the new screen is in (build 302):
          counted from the tap, a slow build used most of it up, and the
          emblems and characters woke while the screen was still landing. */
@@ -135734,9 +135817,11 @@ const LAST_TAB_KEY = "class26e.lastTab";
         me.timers.forEach(clearTimeout);
         if(bar._navPend === me) bar._navPend = null;
         bar._navBuilds = (bar._navBuilds || 0) + 1;
+        const buildT0 = performance.now();
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
-        finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){} }
+        finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
+          if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++; } }
       };
       /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
          clicking to other tabs it shoots over instantly, the glass bubble
