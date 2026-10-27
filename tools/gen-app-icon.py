@@ -415,11 +415,17 @@ def write_into_index(variant):
     master = render(variant, BASE)
     src = io.open(INDEX, encoding="utf-8").read()
 
-    apple = data_uri(master.resize((180, 180), Image.LANCZOS))
-    new_src, n = re.subn(r'(<link rel="apple-touch-icon" href=")[^"]+(")',
-                         lambda m: m.group(1) + apple + m.group(2), src, count=1)
-    if not n:
-        sys.exit("could not find the apple-touch-icon link in index.html")
+    # BUILD 342: the apple-touch-icon is a REAL FILE, not a data: URI. Safari
+    # fetches the touch icon itself when someone adds the app to the Home
+    # Screen, and the embedded copy was not being used (the new icon never
+    # arrived); the manifest and the favicon stay embedded.
+    apple_img = master.resize((180, 180), Image.LANCZOS)
+    os.makedirs(os.path.join(ROOT, "share"), exist_ok=True)
+    apple_img.save(os.path.join(ROOT, "share", "apple-touch-icon.png"), optimize=True)
+    apple = ""
+    new_src = src
+    if not re.search(r'<link rel="apple-touch-icon"[^>]*share/apple-touch-icon\.png', src):
+        sys.exit("the apple-touch-icon link is not the share/apple-touch-icon.png file")
 
     # The browser-tab favicon. A separate <link rel="icon"> that is easy to
     # forget and was: the first pass of this script updated apple-touch-icon
@@ -451,8 +457,8 @@ def write_into_index(variant):
     new_src = new_src[:m.start(2)] + encoded + new_src[m.end(2):]
 
     io.open(INDEX, "w", encoding="utf-8").write(new_src)
-    total = len(apple) + len(favicon) + sum(len(i["src"]) for i in manifest["icons"])
-    print(f"wrote the {variant} icon: apple-touch-icon at 180, favicon at 64, "
+    total = len(favicon) + sum(len(i["src"]) for i in manifest["icons"])
+    print(f"wrote the {variant} icon: apple-touch-icon file at 180, favicon at 64, "
           f"manifest at {MANIFEST_SIZES} plus a 512 maskable ({total/1024:.0f} KB of data URIs)")
 
 
@@ -473,9 +479,13 @@ def check():
     """
     src = io.open(INDEX, encoding="utf-8").read()
     found = {}
+    apple_path = os.path.join(ROOT, "share", "apple-touch-icon.png")
+    if not os.path.exists(apple_path) or not re.search(r'<link rel="apple-touch-icon"[^>]*share/apple-touch-icon\.png', src):
+        print("MISSING: the apple-touch-icon file or its link")
+        return 1
+    found["apple-touch-icon"] = Image.open(apple_path).convert("RGB")
     for label, pattern in (
-            ("apple-touch-icon", r'<link rel="apple-touch-icon" href="data:image/png;base64,([^"]+)"'),
-            ("favicon", r'<link rel="icon" href="data:image/png;base64,([^"]+)"')):
+            ("favicon", r'<link rel="icon" href="data:image/png;base64,([^"]+)"'),):
         m = re.search(pattern, src)
         if not m:
             print(f"MISSING: no {label} link in index.html")
