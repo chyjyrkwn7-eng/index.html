@@ -34679,6 +34679,11 @@ html.is-browser{ --fade-paper: transparent; }
     border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
   }
   .class-card.is-enrolled[aria-disabled="true"]{ cursor:default; pointer-events:none; }
+  /* the daily question's invisible tap pad (build 348): 9px all round, so a thumb that lands beside the circle still hits it */
+  .daily-question-fab::before{ content:""; position:absolute; inset:-9px; border-radius:50%; }
+  /* its Submit answer pill, a little higher (build 348): "the submit answer button, it should be a little higher" - it stood
+     22px off the bottom of the screen, in the home indicator's zone */
+  .foot > .floatbtn.qnext.dailyq-btn{ bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom) + 12px); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -96253,7 +96258,21 @@ function showHome(){
   dailyBtn.title = doneToday
     ? "Daily question \u2014 " + (store.dailyQuestionCorrect ? "correct today" : "done for today") + ". Resets at 5pm."
     : "Today's daily question \u2014 one quick question, no retakes.";
-  dailyBtn.addEventListener("click", startDailyQuestion);
+  /* BUILD 348: "You have to click it multiple times to register the click." A tap on a phone is a click only if the
+     finger lands and lifts on the same element and nothing under it changes in between; this button is small, glassy
+     and ringed by a pulsing light, and iOS drops the click now and then. So the press itself is also listened for: a
+     touch that lands on it and lifts on it (moving less than 12px) starts the question when no click has come within
+     90ms, once. (A mouse keeps the plain click. The invisible pad round it, in the stylesheet, makes it harder to
+     miss, too.) */
+  let dqFired = false, dqX = 0, dqY = 0, dqAt = 0;
+  dailyBtn.addEventListener("click", () => { dqFired = true; startDailyQuestion(); });
+  dailyBtn.addEventListener("pointerdown", e => { dqFired = false; dqX = e.clientX; dqY = e.clientY; dqAt = performance.now(); });
+  dailyBtn.addEventListener("pointerup", e => {
+    if(e.pointerType === "mouse" || !dqAt) return;
+    if(Math.abs(e.clientX - dqX) > 12 || Math.abs(e.clientY - dqY) > 12) return;
+    const at = dqAt;
+    setTimeout(() => { if(!dqFired && dqAt === at && document.body.contains(dailyBtn)){ dqFired = true; startDailyQuestion(); } }, 90);
+  });
 
   /* Three separate things, in the order they can happen:
 
@@ -102935,7 +102954,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-347";
+const APP_BUILD = "2026-10-27-348";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -124900,7 +124919,12 @@ function renderRankingRows(rows, entries, board, opts){
   const trend = lbTrendFor(board, sorted, board.sort || ((a, b) => (val(b) - val(a)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || ""))));
 
-  shown.forEach(({ entry, place }) => {
+  /* BUILD 348: "switching tabs in the leaderboard ... lags". Every switch rebuilt all the rows at once - forty-odd
+     characters of about 250 parts each, re-inserted and restyled in one go (about 11,000 parts: 100ms or more of
+     style work on a laptop, several times that on a phone) before the next frame. The screenful and a little more
+     is built now; the rest follows six rows to a frame (progressive, below), and Find me finishes the list first
+     if it is asked for before it is done. */
+  const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
     /* Matched on the sync code, not the name. Two classmates called
@@ -125045,9 +125069,21 @@ function renderRankingRows(rows, entries, board, opts){
       } else row.insertBefore(bWrap, row.firstChild);
     }
     rows.appendChild(row);
-  });
+  };
+  const FIRST_ROWS = Math.max(6, Math.ceil(((window.innerHeight || 800) - 260) / 60) + 1);
+  let built = 0;
+  const token = (rows._lbFill = (rows._lbFill || 0) + 1);
+  const buildRows = n => { const end = Math.min(shown.length, built + n); for(; built < end; built++) addRow(shown[built], built); };
+  buildRows(FIRST_ROWS);
   lbWatchOffscreen(rows);
   startRankMarks(rows);
+  const buildMore = () => {
+    if(rows._lbFill !== token || !rows.isConnected) return;
+    buildRows(6); lbWatchOffscreen(rows, true); startRankMarks(rows);
+    if(built < shown.length) requestAnimationFrame(buildMore);
+  };
+  if(built < shown.length) requestAnimationFrame(buildMore);
+  rows._lbFinish = () => { if(rows._lbFill === token && built < shown.length){ buildRows(shown.length); lbWatchOffscreen(rows, true); startRankMarks(rows); } };
 }
 
 /* Forty animated characters in one list is forty svgs repainting every
@@ -125055,8 +125091,10 @@ function renderRankingRows(rows, entries, board, opts){
    swatch pickers: a row out of view is paused, one in view plays, so
    nothing anybody can see changes. One observer per list, replaced on
    every rebuild and dropped once the list leaves the document. */
-function lbWatchOffscreen(rows){
+function lbWatchOffscreen(rows, more){
   if(!rows || typeof IntersectionObserver !== "function") return;
+  /* `more`: rows added to a list being built a few at a time - the same observer takes them on */
+  if(more && rows._lbIo){ rows.querySelectorAll(".rank-row, .lw-podium-spot").forEach(r => rows._lbIo.observe(r)); return; }
   if(rows._lbIo) rows._lbIo.disconnect();
   const io = new IntersectionObserver(list => {
     if(!document.contains(rows)){ io.disconnect(); return; }
@@ -130694,6 +130732,7 @@ function showRankings(defaultBoard){
     if(!store.leaderboardOptIn){ showRankings(rankingsBoardKey); return; }
     playSound("lb.findme");
     if(search.value){ search.value = ""; paint(); }
+    if(rows._lbFinish) rows._lbFinish();
     const mine = rows.querySelector('[data-me="1"]');
     if(!mine){
       /* Three different reasons your row can be missing, and naming the
