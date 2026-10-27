@@ -339,8 +339,8 @@ with sync_playwright() as pw:
         return { url: u, read: SYNC_CODE_RE.test(v) ? v : null,
                  handoff: safariHandoffTarget() }; }""")
     check("the recovery link still round-trips", back.get("read") == "WXYZ-7777", str(back))
-    check("and the Safari hand-off still carries the code",
-          "k=WXYZ-7777" in (back.get("handoff") or ""), back.get("handoff"))
+    check("and the Safari hand-off carries no code (build 339: a copied link must not hold one)",
+          "k=" not in (back.get("handoff") or "") and "WXYZ-7777" not in (back.get("handoff") or ""), back.get("handoff"))
     ctx.close()
 
     # ---- 4e. a cloud document must not cost you your publicId ----
