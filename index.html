@@ -34388,6 +34388,34 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   .ifc-clips{ display:flex; flex-direction:column; gap:.4rem; }
   .ifc-clips[hidden], .ifc-county-text[hidden]{ display:none; }
   .ifc-clips canvas{ display:block; max-width:100%; height:auto !important; border-radius:.6rem; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .ifc-clips.is-zoomable{ cursor:zoom-in; }
+  /* THE PAGE VIEWER (build 333): a card inset from every edge over the dimmed app, opacity/transform only */
+  .ifc-vz{ position:fixed; inset:0; z-index:1500; display:flex; }
+  .ifc-vz-dim{ position:absolute; inset:0; background:rgba(6,7,12,.6); opacity:0; transition:opacity .26s ease; }
+  .ifc-vz-card{ position:relative; display:flex; flex-direction:column; width:100%; min-width:0; overflow:hidden; border-radius:1.3rem;
+    margin:max(10px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    background:rgb(22,24,34); border:1px solid var(--surface-border); box-shadow:0 18px 50px rgba(0,0,0,.55);
+    opacity:0; transform:translateY(18px) scale(.96); transition:transform .34s cubic-bezier(.2,.9,.3,1), opacity .26s ease; }
+  .ifc-vz.is-in .ifc-vz-dim{ opacity:1; }
+  .ifc-vz.is-in .ifc-vz-card{ opacity:1; transform:none; }
+  .ifc-vz.is-leaving .ifc-vz-dim{ opacity:0; transition-duration:.2s; }
+  .ifc-vz.is-leaving .ifc-vz-card{ opacity:0; transform:translateY(12px) scale(.97); transition-duration:.2s; }
+  .ifc-vz-bar{ flex:none; display:flex; align-items:center; gap:.5rem; padding:.55rem .6rem .55rem .9rem; border-bottom:1px solid rgba(255,255,255,.08); }
+  .ifc-vz-title{ flex:1; min-width:0; display:flex; flex-direction:column; gap:.1rem; }
+  .ifc-vz-title strong{ font-size:.82rem; font-weight:700; color:var(--ink); line-height:1.25; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .ifc-vz-title span{ font-size:.72rem; color:var(--soft); line-height:1.25; }
+  .ifc-vz-ctl{ flex:none; display:flex; gap:.3rem; }
+  .ifc-vz-btn{ min-width:44px; min-height:44px; padding:0 .8rem; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08);
+    color:var(--ink); font:inherit; font-size:1.2rem; font-weight:700; line-height:1; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .ifc-vz-btn:disabled{ opacity:.35; }
+  .ifc-vz-btn.is-done{ font-size:.88rem; font-weight:700; background:rgba(255,122,26,.2); border-color:rgba(255,179,92,.4); color:#FFB35C; }
+  .ifc-vz-scroll{ flex:1; min-height:0; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-x pan-y; padding:.5rem; background:rgb(14,15,22); }
+  .ifc-vz-pages{ width:100%; display:flex; flex-direction:column; gap:.5rem; }
+  .ifc-vz-pages canvas{ display:block; width:100% !important; max-width:none !important; height:auto !important; border-radius:.4rem; background:#fff; flex:none; }
+  .ifc-vz-busy{ margin:2rem 0; text-align:center; font-size:.9rem; color:var(--soft); }
+  .ifc-vz-hint{ flex:none; margin:0; padding:.4rem .9rem calc(.4rem + 2px); text-align:center; font-size:.74rem; line-height:1.35; color:var(--soft); border-top:1px solid rgba(255,255,255,.06); }
+  .ifc-vz.is-zoomed .ifc-vz-hint{ opacity:.0; }
+  @media (prefers-reduced-motion:reduce){ .ifc-vz-dim, .ifc-vz-card{ transition:none; } }
   .ifc-links{ display:flex; flex-wrap:wrap; gap:.35rem 1rem; margin:.45rem 0 0; }
   .ifc-link{ min-height:44px; padding:0; border:0; background:none; font:inherit; font-size:.86rem; font-weight:650; color:#FFB35C; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
   .ifc-link:disabled{ opacity:.5; }
@@ -34458,6 +34486,16 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   @media (min-width:40rem){
     .class-bubble-wrap{ --cb:56px; top:calc(env(safe-area-inset-top, 0px) + .75rem) !important; left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
     .class-bubble > svg{ width:32px; height:32px; }
+  }
+  /* ON A PHONE, THE DAILY QUESTION'S MIRROR (build 333): "the bubble doesn't go with the Home Screen". It sat
+     alone under the planet; it now stands in the bottom-left corner on the daily question's line, the same
+     size, so Home reads as two corner buttons either side of Start Studying. The list opens upward. */
+  @media (max-width:39.99rem) and (orientation:portrait){
+    .class-bubble-wrap{ top:auto !important; bottom:calc(var(--tabs-bottom, 12px) + 6.2rem); left:max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1.2rem)); }
+    .class-dock{ top:auto; bottom:-5px; transform-origin:50% 100%; }
+    .class-stack{ top:auto !important; bottom:calc(var(--cb) + var(--cg)); flex-direction:column-reverse; }
+    .class-stack-item{ transform:translateY(10px); }
+    .class-bubble-wrap.is-open .class-stack-item{ transform:none; }
   }
   html.class-switching body{ opacity:0; transition:opacity .35s ease; }
   .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
@@ -34611,7 +34649,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
   /* THE MODE CARDS FIT THEIR WORDS (build 330): "Could the mode descriptions be simpler? ... maybe
      change the descriptions look since they will be shorter". The 10.4rem floor was for four-line
      descriptions; at two short lines each card is its words, the four still one height, centred. */
-  html[data-layout] body .panel.modeselect .modecard{ min-height:6.4rem; justify-content:center; padding-top:1.05rem; padding-bottom:1.05rem; }
+  html[data-layout] body .panel.modeselect .modecard{ min-height:8.6rem; justify-content:center; padding-top:1.3rem; padding-bottom:1.3rem; }
   html[data-layout] body .panel.modeselect .modecards{ align-items:stretch; }
   /* the sign-up class screen's Continue: its letters sat 1.5px high (a block's line box, not its
      capitals, was centred) - the capitals in the middle, the same 45.6px button */
@@ -34664,8 +34702,8 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        the share the planet's column gives it - and its height follows its words, never
        under the 44px tap height. */
     html[data-layout] body .panel.home.screen-home-actual > .playbtn{
-      font-size:clamp(.86rem, 4.1vw, 1.06rem) !important; padding:.72em 1.3em !important;
-      min-width:clamp(140px, 46vw, 205px) !important; min-height:clamp(44px, 11.5vw, 50px) !important;
+      font-size:clamp(.88rem, 4.4vw, 1.2rem) !important; padding:.72em 1.3em !important;
+      min-width:clamp(146px, 49vw, 216px) !important; min-height:clamp(44px, 12.8vw, 60px) !important;
     }
   }
   /* (build 328) "iPad Pro 11. The planet system could be a little bigger": an upright iPad
@@ -35083,7 +35121,10 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
        key the app itself uses, before the rest of the app has even
        loaded. */
     var isReturningUser = false;
-    try { isReturningUser = !!window.localStorage.getItem("class26e.synccode"); } catch(e){}
+    /* ANY SAVED ACCOUNT ON THIS DEVICE (build 333): "everytime I close the app out, the longer loading screen
+       happens". The long one is for a device with nothing on it; the Fire Code class keeps its own copy
+       (class26e.ifc.*), so its code was never seen here, and a device whose account has no code yet read as new. */
+    try { isReturningUser = !!(window.localStorage.getItem("class26e.synccode") || window.localStorage.getItem("class26e.drill.v1") || window.localStorage.getItem("class26e.ifc.drill.v1") || window.localStorage.getItem("class26e.activeclass")); } catch(e){}
     /* Tapping Update reloads the page, which means the ordinary splash
        runs and cheerfully narrates "loading Drill, Game & Exam modes" at
        someone who just asked for an update - so the one moment the app is
@@ -50393,9 +50434,21 @@ const IFC_QUESTIONS = (function(){
     const u = byId[q.unit];
     seen[q.unit] = (seen[q.unit] || 0) + 1;
     const letters = ["A", "B", "C", "D"];
-    out.push({ topic: ifcUnitTopic(u), src: seen[q.unit], q: q.question,
+    const it = { topic: ifcUnitTopic(u), src: seen[q.unit], q: q.question,
                choices: letters.map(k => q.options[k]), answer: letters.indexOf(q.answer),
-               explanation: q.explanation, ifc: q });
+               explanation: q.explanation, ifc: q };
+    /* THE REFERENCE UNDER THE QUESTION, as the Penal Code has it (build 333): "none of them have
+       their reference showing under the question". Not where the label would give the answer
+       away - the chapter finder (the label IS the chapter) and a question whose answer is in the
+       label (a standard's number, a table's quantity). */
+    try{
+      const lab = String((q.citation && q.citation.label) || ""), ans = String(q.options[q.answer] || "");
+      const nums = ans.match(/\d[\d.,\/-]*\d|\d/g) || [];
+      const gives = (u && u.kind === "finder") || q.type === "chapter_finder" ||
+        nums.some(n => n.length >= 3 && lab.indexOf(n) >= 0) || (ans.length > 3 && lab.toLowerCase().indexOf(ans.toLowerCase()) >= 0);
+      if(lab && !gives) it.ref = "(" + lab.replace(/^IFC 2021\s+/i, "IFC 2021, ").replace(/^HC amendments\s+/i, "HC Amendments, ") + ")";
+    }catch(e){}
+    out.push(it);
   });
   return out;
 })();
@@ -51563,6 +51616,7 @@ function mountClassBubble(){
     const dw = dq ? Math.round(dq.getBoundingClientRect().width) : 0;
     if(dw >= 36 && dw <= 90) wrap.style.setProperty("--cb", dw + "px");
     if(window.matchMedia && matchMedia("(min-width:40rem)").matches){ wrap.style.top = ""; return; }   /* top-left corner on a tablet or laptop */
+    if(window.matchMedia && matchMedia("(max-width:39.99rem) and (orientation:portrait)").matches){ wrap.style.top = ""; return; }   /* the daily question's mirror on a phone (CSS) */
     const hero = document.querySelector("#stage .panel.home > .cosmic-hero-wrap");
     if(!hero) return;
     wrap.style.top = Math.round(hero.getBoundingClientRect().bottom + 2) + "px";
@@ -51590,6 +51644,7 @@ function ifcGreetingLines(){
     novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
   return [
     { gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: hello },
+    { text: "This class has the 2021 IFC and the Harris County (HC) amendments." },
     { text: "Same me, a brand new class." },
     { gesture: "raise", text: "Your rank and level start fresh here." },
     { text: "Nothing you earn here changes the academy." },
@@ -98987,7 +99042,7 @@ function showModeSelect(){
        says it in those words. Exam names its Instant feedback switch
        because that is the one way the answer changes. */
     { value: "drill", title: "Drill",
-      desc: "See if you’re right after every question. Miss one, try again." },
+      desc: "Find out right away if each answer is right or wrong. Miss one and you try it again before moving on." },
     /* TWO BEATS, LIKE DRILL AND THE VIRTUAL ROOM (build 323): the Exam
        card ran a parenthesis through its middle and Review opened on a
        disclaimer; both now say what the mode is and then what it is best
@@ -98998,7 +99053,7 @@ function showModeSelect(){
        grade." Instant feedback is gone, so the card says it outright:
        nothing on any question, the grade at the end. */
     { value: "exam", title: modeTitleOf("exam"),
-      desc: "A real test. No feedback until your grade at the end." },
+      desc: "A real test with no feedback on any question. You see your grade, and what you missed, at the end." },
     /* THIRD, UNDER EXAM (build 245): "The review option on the mode
        selection screen should not be at the bottom on the iPhone, it'll
        need to be the 3rd one listed, under exam instead." One list, so
@@ -99024,9 +99079,9 @@ function showModeSelect(){
        review and exam descriptions ... but could they be better?" It
        leads with what it is NOT, because the other three are tests. */
     { value: "review", title: modeTitleOf("review"),
-      desc: "Not a test. Study every question with its answer." },
+      desc: "Not a test. Go through every question with its answer, as a list or as flashcards." },
     { value: "vroom", title: "Virtual Room",
-      desc: "Take the same test live with friends." }
+      desc: "Take the same test live with friends. Everyone gets the same questions at the same time." }
   ];
 
   MODES.forEach(m => {
@@ -102563,6 +102618,104 @@ function ifcFitPictures(holder, room, scale){
   holder.classList.toggle("is-scroll", wide);
   return wide;
 }
+/* THE PAGE VIEWER (build 333): "it's a little difficult to see the cropped photo ... hard to see the
+   full page ... maybe when you hit full page it goes full page, you can still see the app around all
+   the edges, and then you can zoom in". The code opens over the app in a rounded card inset from every
+   edge (the app stays visible, dimmed, around it), fades and rises in, and can be pinched, double-tapped
+   or stepped with + / - up to 5x. The pictures are drawn once, large; zooming only changes their width,
+   so nothing is redrawn. transform/opacity only in the entrance, no blur. */
+var ifcViewerEl = null;
+function ifcCloseViewer(){
+  const v = ifcViewerEl; if(!v) return;
+  ifcViewerEl = null;
+  try{ v.obs && v.obs.disconnect(); }catch(e){}
+  document.removeEventListener("keydown", v.onKey, true);
+  const gone = () => { try{ v.root.remove(); }catch(e){} document.documentElement.classList.remove("ifc-vz-open"); };
+  if(v.still){ gone(); return; }
+  v.root.classList.add("is-leaving"); setTimeout(gone, 220);
+}
+async function ifcOpenViewer(opts){
+  if(ifcViewerEl) ifcCloseViewer();
+  const still = (() => { try{ return ruStill(); }catch(e){ return false; } })();
+  const root = ifcEl("div", "ifc-vz"); root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-label", opts.title || "The code");
+  const dim = ifcEl("div", "ifc-vz-dim");
+  const card = ifcEl("div", "ifc-vz-card");
+  const bar = ifcEl("div", "ifc-vz-bar");
+  const ttl = ifcEl("div", "ifc-vz-title");
+  ttl.append(ifcEl("strong", null, opts.title || ""), ifcEl("span", null, opts.sub || ""));
+  const mk = (cls, label, text) => { const b = ifcEl("button", "ifc-vz-btn " + cls, text); b.type = "button"; b.setAttribute("aria-label", label); return b; };
+  const out = mk("is-out", "Zoom out", "−"), zin = mk("is-in", "Zoom in", "+"), done = mk("is-done", "Close", "Done");
+  const ctl = ifcEl("div", "ifc-vz-ctl"); ctl.append(out, zin);
+  bar.append(ttl, ctl, done);
+  const scroll = ifcEl("div", "ifc-vz-scroll"); scroll.tabIndex = 0;
+  const pages = ifcEl("div", "ifc-vz-pages");
+  pages.appendChild(ifcEl("p", "ifc-vz-busy", "Opening the page…"));
+  scroll.appendChild(pages);
+  const hint = ifcEl("p", "ifc-vz-hint", "Pinch or double-tap to zoom");
+  card.append(bar, scroll, hint);
+  root.append(dim, card);
+  const v = { root, still, obs: null, onKey: e => { if(e.key === "Escape"){ e.stopPropagation(); ifcCloseViewer(); } } };
+  ifcViewerEl = v;
+  document.addEventListener("keydown", v.onKey, true);
+  document.body.appendChild(root);
+  document.documentElement.classList.add("ifc-vz-open");
+  if(!still) requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add("is-in")));
+  else root.classList.add("is-in");
+  /* the screen under it changing (a tab, a new question) closes it */
+  try{
+    const anchor = opts.anchor;
+    v.obs = new MutationObserver(() => { setTimeout(() => { if(ifcViewerEl === v && anchor && !anchor.isConnected) ifcCloseViewer(); }, 0); });
+    v.obs.observe(stage, { childList: true });
+  }catch(e){}
+  dim.addEventListener("click", ifcCloseViewer); done.addEventListener("click", ifcCloseViewer);
+  let z = 1; const ZMAX = 5;
+  const setZ = (nz, fx, fy) => {
+    nz = Math.max(1, Math.min(ZMAX, nz)); if(Math.abs(nz - z) < 0.001) return;
+    const r = nz / z; if(fx == null){ fx = scroll.clientWidth / 2; fy = scroll.clientHeight / 2; }
+    const sl = scroll.scrollLeft, st = scroll.scrollTop;
+    z = nz; pages.style.width = (z * 100) + "%";
+    scroll.scrollLeft = (sl + fx) * r - fx; scroll.scrollTop = (st + fy) * r - fy;
+    out.disabled = z <= 1.001; zin.disabled = z >= ZMAX - 0.001;
+    root.classList.toggle("is-zoomed", z > 1.001);
+  };
+  out.disabled = true;
+  out.addEventListener("click", () => setZ(z / 1.5)); zin.addEventListener("click", () => setZ(z * 1.5));
+  /* pinch (two pointers), double-tap, ctrl + wheel */
+  const ptr = new Map(); let lastD = 0, lastTap = 0, tapX = 0, tapY = 0, moved = 0;
+  const rect = () => scroll.getBoundingClientRect();
+  scroll.addEventListener("pointerdown", e => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastD = 0; moved = 0; });
+  scroll.addEventListener("pointermove", e => {
+    const p = ptr.get(e.pointerId); if(!p) return;
+    moved += Math.abs(e.clientX - p.x) + Math.abs(e.clientY - p.y);
+    p.x = e.clientX; p.y = e.clientY;
+    if(ptr.size === 2){
+      const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if(lastD){ const r0 = rect(); setZ(z * d / lastD, (a.x + b.x) / 2 - r0.left, (a.y + b.y) / 2 - r0.top); }
+      lastD = d; moved = 99;
+    }
+  });
+  const up = e => {
+    const had = ptr.size; ptr.delete(e.pointerId); lastD = 0;
+    if(had === 1 && e.type === "pointerup" && moved < 10){
+      const now = performance.now();
+      if(now - lastTap < 320 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 24){
+        const r0 = rect(); setZ(z > 1.2 ? 1 : 2.5, e.clientX - r0.left, e.clientY - r0.top); lastTap = 0;
+      } else { lastTap = now; tapX = e.clientX; tapY = e.clientY; }
+    }
+  };
+  scroll.addEventListener("pointerup", up); scroll.addEventListener("pointercancel", up);
+  scroll.addEventListener("wheel", e => { if(!e.ctrlKey) return; e.preventDefault(); const r0 = rect(); setZ(z * Math.exp(-e.deltaY * 0.01), e.clientX - r0.left, e.clientY - r0.top); }, { passive: false });
+  try{
+    const holder = ifcEl("div", "ifc-vz-draw");
+    await opts.render(holder);
+    if(ifcViewerEl !== v) return;
+    pages.replaceChildren(...holder.childNodes);
+    if(opts.note){ hint.textContent = opts.note + " · pinch or double-tap to zoom"; }
+  }catch(e){
+    if(ifcViewerEl === v){ pages.replaceChildren(ifcEl("p", "ifc-vz-busy", "Could not open this page: " + ((e && e.message) || e))); }
+  }
+}
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
   body.textContent = "";
@@ -102576,25 +102729,25 @@ async function ifcFillCode(item, body, foot){
     const holder = ifcEl("div", "ifc-clips");
     await V.paint(doc, clip, holder, { scale: 1.7 });
     body.prepend(holder);
-    /* on a phone the exact text is the clear view, the page picture one tap away */
+    /* THE PICTURE FIRST (build 333): "why is the amendments not showing the cropped photo? It should be". A wide
+       crop scrolls sideways (or Enlarge); the exact text is one tap away. */
     const wide = ifcFitPictures(holder, body.clientWidth || 300, 1.7);
-    if(wide) holder.hidden = true; else text.hidden = true;
+    text.hidden = true;
     const links = ifcEl("div", "ifc-links");
     const pic = ifcEl("button", "ifc-link", "Show the page picture"); pic.type = "button";
     pic.addEventListener("click", () => { holder.hidden = false; text.hidden = true; pic.hidden = true; asText.hidden = false; });
     const whole = ifcEl("button", "ifc-link", "Show the whole page"); whole.type = "button";
-    whole.addEventListener("click", async () => {
-      whole.disabled = true; holder.hidden = false; text.hidden = true; pic.hidden = true; asText.hidden = false; holder.textContent = "";
-      await V.paintPages(doc, clip.pages, holder, { scale: 1.4, ...ifcCountyOpts, clip });
-      ifcFitPictures(holder, body.clientWidth || 300, 1.4);
-      foot.textContent = "The whole page of the HC Amendments. The highlighted lines are the code this question cites.";
-      whole.remove();
-    });
+    const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
+      note: wholePage ? "The whole page of the HC Amendments. The highlighted lines are the code this question cites." : "",
+      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip }) : V.paint(doc, clip, box, { scale: 2.6 }) });
+    whole.addEventListener("click", () => viewOf(true));
+    holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
+    const big = ifcEl("button", "ifc-link", "Enlarge"); big.type = "button"; big.addEventListener("click", () => viewOf(false));
     const asText = ifcEl("button", "ifc-link", "Show as text"); asText.type = "button";
     asText.addEventListener("click", () => { text.hidden = false; holder.hidden = true; asText.hidden = true; pic.hidden = false; foot.textContent = ""; });
-    asText.hidden = !!wide;
-    pic.hidden = !wide;
-    links.append(pic, whole, asText); body.appendChild(links);
+    asText.hidden = false;
+    pic.hidden = true;
+    links.append(big, pic, whole, asText); body.appendChild(links);
     return;
   }
   const book = await ifcEnsureBook();
@@ -102634,18 +102787,22 @@ async function ifcFillCode(item, body, foot){
   }
   body.appendChild(holder);
   ifcFitPictures(holder, body.clientWidth || 300, shown ? 1.7 : 1.4);
-  if(shown){
+  {
     const links = ifcEl("div", "ifc-links");
     const whole = ifcEl("button", "ifc-link", "Show the whole book page"); whole.type = "button";
-    whole.addEventListener("click", async () => {
-      whole.disabled = true; holder.textContent = "";
-      const pages = theClip && theClip.pages.length ? theClip.pages : V.wholePages(book.index, c, 3);
-      await V.paintPages(book.doc, pages, holder, { scale: 1.4, ...book.opts, clip: theClip });
-      ifcFitPictures(holder, body.clientWidth || 300, 1.4);
-      foot.textContent = "The whole book page. The section the question cites is washed pale yellow; the sentence that decides the answer is the stronger gold.";
-      whole.remove();
-    });
-    links.appendChild(whole); body.appendChild(links);
+    const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
+      note: wholePage ? "The section the question cites is washed pale yellow; the sentence that decides the answer is the stronger gold." : "",
+      render: box => {
+        if(!wholePage && theClip) return V.paint(book.doc, theClip, box, { scale: 2.6 });
+        const pages = theClip && theClip.pages.length ? theClip.pages : V.wholePages(book.index, c, shown ? 3 : 2);
+        return V.paintPages(book.doc, pages, box, { scale: 2.2, ...book.opts, clip: theClip });
+      } });
+    whole.addEventListener("click", () => viewOf(true));
+    holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
+    const big = ifcEl("button", "ifc-link", "Enlarge"); big.type = "button"; big.addEventListener("click", () => viewOf(false));
+    links.append(big);
+    if(shown) links.appendChild(whole);
+    body.appendChild(links);
   }
 }
 /* The bank, wherever it is needed outside the class (enrolling reads it to check the book). */
@@ -102712,7 +102869,7 @@ function buildIfcRef(item){
   const c = item.ifc.citation;
   const box = ifcEl("div", "ifc-ref");
   if(item.ifc.explanation) box.appendChild(ifcEl("p", "ifc-expl", item.ifc.explanation));
-  box.appendChild(ifcEl("p", "ifc-label", "Ref. " + ifcRefLabel(c.label)));
+  if(!item.ref) box.appendChild(ifcEl("p", "ifc-label", "Ref. " + ifcRefLabel(c.label)));
   const det = ifcEl("details", "ifc-code");
   const sum = ifcEl("summary", "ifc-code-sum");
   sum.append(ifcEl("span", "ifc-tag " + (c.source === "amendment" ? "is-county" : "is-ifc"), c.source === "amendment" ? "Amendments" : "IFC"), ifcEl("span", "ifc-sum-text", "Show the code"));
@@ -104963,7 +105120,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-332";
+const APP_BUILD = "2026-10-27-334";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates

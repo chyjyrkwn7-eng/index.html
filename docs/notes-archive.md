@@ -29105,3 +29105,49 @@ is null and the old words blamed the network. `academyOnly(what, fallback)` now 
 Chat / Virtual Room> is only for the Police Academy class." in another class and the old wording otherwise
 (leaderboard, test leaderboard, Virtual Room x3, Chat x4). `tools/check-b332.py`: fails on 331 with the old
 sentence, passes on 332. `APP_BUILD` / `version.json` = 2026-10-27-332.
+
+## Build 333 - Fire Code references under the question, the page viewer, the class bubble
+Madison: *"none of them have their reference showing under the question similar how the penal code does it"*;
+*"difficult to see the cropped photo ... hard to see the full page ... maybe when you hit full page it goes full
+page, you can still see the app around all the edges, and then you can zoom in"*; *"the bubble doesn't go with the
+Home Screen"*.
+- **Reference under the question.** `IFC_QUESTIONS` sets `ref` ("(IFC 2021, 304.3.1)" / "(HC Amendments, 112.4.2)")
+  from the citation label, so the `.ref` line under the question text, the review lines and flashcards read like the
+  Penal Code's. NOT set where the label gives the answer away: the chapter finder (the label is the chapter) and any
+  question whose answer text or number (3+ digits) is in the label (a standard's number, a table's quantity). The
+  explanation box drops its own "Ref." line when `item.ref` is set. Question identity (KEYS) is untouched.
+- **Page viewer (`ifcOpenViewer`).** "Enlarge" and a tap on the crop open the crop, "Show the whole (book) page" the
+  whole page (cited lines still highlighted), in a rounded card inset 10-12px from every edge over the dimmed app
+  (opacity/transform entrance, no blur). Pinch (two pointers), double-tap (fit <-> 2.5x), +/- buttons (1.5x steps) and
+  ctrl+wheel, 1x-5x; zoom changes the pictures' width only (drawn once, at 2.2-2.6x). Done, Escape, a tap on the edge
+  or leaving the screen closes it. `touch-action:pan-x pan-y` on the scroller.
+- **Class bubble on a phone** (portrait, under 40rem): the daily question's mirror - bottom-left, on its line, same
+  size - and its list opens upward. Tablet/laptop unchanged (top-left). `tools/check-b333.py` (needs PDFJS_DIR).
+- Not done: the whole-page view does not yet start zoomed on the highlighted lines.
+`APP_BUILD` / `version.json` = 2026-10-27-333.
+
+## Build 333 (cont.) - amendments open on the picture; Nova names what the class has
+Madison: *"make it mention what the class has in Nova's text box, 2021 IFC and HC amendments"*; *"why is the
+amendments not showing the cropped photo? It should be"*. `ifcGreetingLines()` gains "This class has the 2021 IFC
+and the Harris County (HC) amendments." An HC Amendments reference now opens on the cropped page picture (wide ones
+scroll sideways or open in Enlarge) with "Show as text" one tap away; it used to open on the text on a phone.
+Both in `tools/check-b333.py` (fail on the build before).
+
+## Build 334 - Start Studying, the mode cards, the relaunch loading screen
+Madison (iPhone 17 Pro Max): *"why is the start studying button so much smaller now ... bigger and more proportional
+for each device"*; *"the mode selection boxes are so much smaller ... the descriptions are also too vague now ...
+revert the size of them (only some)"*; *"every time I close the app out, the longer loading screen happens"*.
+- **Start Studying** on phones (the "one rule for every phone" of 328): words `clamp(.88rem, 4.4vw, 1.2rem)`,
+  width `clamp(146px, 49vw, 216px)`, height `clamp(44px, 12.8vw, 60px)` - a Pro Max 216x56 in 19.2px (was 202x50 in
+  17px); a 390px phone 191x50; the SE rule (38px) is unchanged.
+- **Mode cards:** floor 6.4rem -> 8.6rem (the old 10.4rem was for four-line copy), padding 1.3rem; descriptions are
+  two plain sentences of 80-105 characters (was 40-60, before 330 it was 130-160 with "Best for"): Drill "Find out right
+  away if each answer is right or wrong. Miss one and you try it again before moving on."; Mock "A real test with no
+  feedback on any question. You see your grade, and what you missed, at the end."; Review "Not a test. Go through every
+  question with its answer, as a list or as flashcards."; Virtual Room "Take the same test live with friends. Everyone
+  gets the same questions at the same time." Pro Max cards 138-143px.
+- **Relaunch loading screen:** the splash chose the 8s first-run length unless `class26e.synccode` existed. In the Fire
+  Code class every `class26e.*` key reads as `class26e.ifc.*`, so the code was never seen and each launch got the long
+  one; the same for an account with no code yet. Returning = any of synccode, drill.v1, ifc.drill.v1, activeclass.
+  (A truly empty device is still the Get Started skip of 330.)
+In `tools/check-b333.py` (all three fail on 333); `check-b330`/`check-behaviour` copy limits 70 -> 130.

@@ -27004,8 +27004,8 @@ def check_b323u_units(br):
         d = cards.get("drill") or {}
         ok_shape = all(cards.get(m, {}).get("shape") == d.get("shape") for m in ("exam", "review", "vroom")) and bool(d)
         # REVISED IN 330: "Could the mode descriptions be simpler? They seem wordy" - two short beats
-        # (what it is, then the difference), no "Best for", each under 70 characters
-        beats = lambda s: "(" not in s and len(s) <= 70 and len(re.findall(r"[.!?](?:\s|$)", s)) == 2
+        # (what it is, then the difference), no "Best for", each under 130 characters (REVISED IN 333: 70 was too vague)
+        beats = lambda s: "(" not in s and len(s) <= 130 and len(re.findall(r"[.!?](?:\s|$)", s)) == 2
         ok_copy = all(beats(cards.get(m, {}).get("desc", "")) and abs(len(cards[m]["desc"]) - len(d["desc"])) <= 0.3 * len(d["desc"])
                       for m in ("exam", "review")) if d else False
         dr = ink["drill"]
