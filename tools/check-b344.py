@@ -34,13 +34,24 @@ with sync_playwright() as pw:
     chk("the class button's list buttons wear the glass too (a highlight gradient in their body)", "radial-gradient" in r["lBg"], r["lBg"][:140])
     chk("the glass blurs a little and holds no will-change layer of its own", "blur" in r["qBlur"] and "blur" in r["bBlur"] and r["qWill"] in ("auto", "") and r["bWill"] in ("auto", ""), r)
     chk("the same glass, a different thing in the middle (their icons differ)", r["qSvg"] != r["bSvg"] and r["bSvg"] != r["lSvg"], (r["qSvg"], r["bSvg"], r["lSvg"]))
+    # whole pixels, so the 1px rim is not drawn between two rows
+    px = pg.evaluate("""()=>{ const f=e=>{ const r=e.getBoundingClientRect(); return [r.width, r.height, r.bottom]; }; return { q:f(document.querySelector('.daily-question-fab')), b:f(document.querySelector('.class-bubble')) }; }""")
+    frac = [abs(v - round(v)) for v in px["q"] + px["b"]]
+    chk("the daily question and the class button sit on whole pixels (size and foot) so their rim is not broken (%s)" % (px,), max(frac) < .06, px)
+    # the class button is under an open chat, not over it
+    pg.evaluate("()=>{ document.querySelector('.class-bubble').click(); }"); pg.wait_for_timeout(500)
+    cb = pg.evaluate("()=>{ const b=document.querySelector('.class-bubble').getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }")
+    pg.evaluate("()=>{ const c=document.querySelector('.chatdock-btn'); if(c) c.click(); }"); pg.wait_for_timeout(1500)
+    top = pg.evaluate("(p)=>{ const e=document.elementFromPoint(p[0],p[1]); return { inWrap: !!(e && e.closest('.class-bubble-wrap')), tag: e ? (e.className||e.tagName).toString().slice(0,40) : null, chat: document.body.classList.contains('chatdock-open') }; }", cb)
+    chk("with the chat open nothing of the class button is over it", top["chat"] and not top["inWrap"], top)
+    pg.evaluate("()=>{ try{ closeChatDock && closeChatDock(); }catch(e){} document.querySelectorAll('.chatdock-close, .chatdock-panel .back-link').forEach(b=>b.click()); }"); pg.wait_for_timeout(800)
     # the tab bar's record of what a tap did
     tabs = {t[0]: t for t in pg.evaluate("()=>[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].map(t=>{const r=t.getBoundingClientRect(); return [t.id, r.left+r.width/2, r.top+r.height/2]})")}
     pg.evaluate("()=>{ try{ localStorage.removeItem('class26e.tabperf'); }catch(e){} }")
     for sid in ("bottomtab-profile", "bottomtab-rewards", "bottomtab-home"):
         t = tabs[sid]; pg.mouse.click(t[1], t[2]); pg.wait_for_timeout(1700)
     txt = pg.evaluate("()=>tabPerfText()")
-    chk("after tab taps the device has a record: frames, worst gap, counts over 34/50/100ms and the screen's build time", re.search(r"profile.*f\d+ worst\d+ >34:\d+ >50:\d+ >100:\d+ build\d+x\d+", txt) is not None, txt)
+    chk("after tab taps the device has a record: frames, worst gap, counts over 34/50/100ms and the screen's build time", re.search(r"rewards.*f\d+ worst\d+ >34:\d+ >50:\d+ >100:\d+ build\d+x\d+", txt) is not None, txt)
     chk("a bug report would carry it (tabPerfText is wired into the report)", "perf: (typeof tabPerfText" in open(ROOT + "/index.html", encoding="utf-8").read())
     ctx.close(); br.close()
 sys.exit(0 if ok else 1)

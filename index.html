@@ -34087,7 +34087,7 @@ html.is-browser{ --fade-paper: transparent; }
      A glass bubble under the planet at the left edge, a soft glow in the class's colour (no
      flashing). It drops a glass capsule that stays joined to it: the other classes, then "+".
      No backdrop blur anywhere on it (it moves), no screen dimming. */
-  .class-bubble-wrap{ position:fixed; z-index:301; left:max(.55rem, calc(env(safe-area-inset-left, 0px) + .4rem)); top:40%; --cb:46px; --cg:8px; }
+  .class-bubble-wrap{ position:fixed; z-index:150; left:max(.55rem, calc(env(safe-area-inset-left, 0px) + .4rem)); top:40%; --cb:46px; --cg:8px; }
   /* the app's glass, as the tab bar and the chat button wear it: a see-through near-black body under
      a faint lift, one soft rim - and none of the hard edge lines (the gradient does not repeat
      under the border; the shadows are blurred, so no line shows at the top or the bottom of the
@@ -34606,6 +34606,10 @@ html.is-browser{ --fade-paper: transparent; }
                inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px rgba(255,255,255,.1), inset 0 0 0 1px rgba(255,255,255,.04);
     -webkit-backdrop-filter:blur(6px) saturate(1.6); backdrop-filter:blur(6px) saturate(1.6);
     will-change:auto;
+    /* BUILD 344b: "like a broken line at the bottom of the circles". The body's gradient layers REPEATED under the
+       1px rim (a background paints under its own border), and their first row came back along the bottom edge as a
+       hairline. One paint of each, laid out from the border box - what the tab bar's own glass does. */
+    background-repeat:no-repeat; background-origin:border-box;
   }
   /* the list's buttons move as it opens: no blur on them, a slightly denser body in its place */
   html[data-theme][data-layout] body .csi-bubble{ -webkit-backdrop-filter:none; backdrop-filter:none; background-color:rgba(22,24,34,.62); }
@@ -34615,6 +34619,7 @@ html.is-browser{ --fade-paper: transparent; }
       radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.30), rgba(255,255,255,.07) 42%, rgba(255,255,255,0) 66%),
       radial-gradient(110% 80% at 50% 118%, color-mix(in srgb, var(--dq-c) 46%, transparent), color-mix(in srgb, var(--dq-c) 12%, transparent) 62%, transparent 80%),
       rgba(18,20,30,.36) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
     border:1px solid color-mix(in srgb, var(--dq-c) 38%, rgba(255,255,255,.3)) !important;
     box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
                0 0 14px -4px color-mix(in srgb, var(--dq-c) 40%, transparent),
@@ -34625,9 +34630,25 @@ html.is-browser{ --fade-paper: transparent; }
     background:
       radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.2), rgba(255,255,255,.05) 42%, rgba(255,255,255,0) 66%),
       rgba(18,20,30,.34) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
     border-color:rgba(255,255,255,.16) !important;
   }
   .daily-question-fab.is-ready::after{ border-width:1px; }
+
+  /* ---- WHOLE PIXELS FOR THE ORBS (build 344b) ----
+     "Look at the bottom of the circles (especially the class one), there's like a broken line." 3.4rem is 54.4px and
+     the corner's bottom edge fell at .81 of a pixel, so the 1px rim of each circle sat between two rows of pixels
+     and was drawn broken - a bright flat dash at the foot on one, a gap on the other. On a phone the size and the
+     line the corner buttons stand on are snapped to whole pixels. (round() is Safari 15.4+, Chrome 125+; anywhere
+     else the sizes stay as they were.) */
+  @supports (width: round(nearest, 1.4px, 1px)){
+    @media (max-width:39.99rem) and (orientation:portrait){
+      html[data-theme][data-layout] body .daily-question-fab{ width:round(nearest, 3.4rem, 1px); height:round(nearest, 3.4rem, 1px); }
+      html[data-theme][data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{
+        bottom:round(nearest, calc(var(--tabs-bottom) + 6.2rem), 1px) !important; }
+      html[data-theme][data-layout] body .class-bubble-wrap{ --cb:round(nearest, 3.4rem, 1px); bottom:round(nearest, calc(var(--tabs-bottom, 12px) + 6.2rem), 1px); }
+    }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
