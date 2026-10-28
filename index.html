@@ -34363,7 +34363,7 @@ html.is-browser{ --fade-paper: transparent; }
        under the 44px tap height. */
     html[data-layout] body .panel.home.screen-home-actual > .playbtn{
       font-size:clamp(.88rem, 4.4vw, 1.2rem) !important; padding:.72em 1.3em !important;
-      min-width:clamp(146px, 49vw, 216px) !important; min-height:clamp(44px, 12.8vw, 60px) !important;
+      min-width:clamp(146px, min(49vw, calc(100vw - 192px)), 216px) !important; min-height:clamp(44px, 12.8vw, 60px) !important;   /* (348: never nearer the daily circle than 12px, on a 360px screen where 49vw would be) */
     }
   }
   /* (build 328) "iPad Pro 11. The planet system could be a little bigger": an upright iPad
