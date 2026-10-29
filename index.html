@@ -34732,7 +34732,6 @@ html.is-browser{ --fade-paper: transparent; }
   /* build 351: rows below the screen are neither laid out nor painted until they come near it (Safari 18 and Chromium
      both do this; the estimate is the 60px every row is). The tab's character is its own layer, so the bar's swell
      and slide move a picture instead of repainting 230 svg parts. */
-  .rank-rows > .rank-row{ content-visibility:auto; contain-intrinsic-size:auto 60px; }
   #bottomtab-profile .bottomtab-icon-avatar{ will-change:transform; transform:translateZ(0); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -82732,8 +82731,20 @@ function loopWallMs(lag){ return Date.now() - LOOP_EPOCH - (lag || 0) - loopHidd
    away and, coming back, the planet system appears already moved on. So a second clock: a one-second tick says the
    page was alive; if the page comes back and that tick is stale, the page was away without being told - the loops
    are put back by the time away (to the pose they left in) before they go on. */
-let loopAliveAt = Date.now();
-setInterval(() => { if(!document.hidden) loopAliveAt = Date.now(); }, 1000);
+let loopAliveAt = Date.now(), loopRefSnap = null;
+/* the reference loop: the planet system's outer turning layer. Its pose, not a clock, says where the loops were. */
+function loopRef(){
+  try{
+    const l = document.querySelector(".cosmic-hero-orbitlayer");
+    return l ? (l.getAnimations().find(a => a.animationName === "cosmic-orbit-spin") || null) : null;
+  }catch(e){ return null; }
+}
+setInterval(() => {
+  if(document.hidden) return;
+  loopAliveAt = Date.now();
+  const r = loopRef();
+  if(r && r.playState === "running" && typeof r.currentTime === "number") loopRefSnap = { at: Date.now(), ct: r.currentTime };
+}, 1000);
 const LOOP_RESUME_KEY = "class26e.resumelog";
 function loopResumeNote(line){
   try{
@@ -82765,7 +82776,13 @@ function loopsBack(){
     gap = Date.now() - loopAliveAt;
     if(gap < 2500) return;
     told = false;
-    resume = loopsPauseAll(gap);
+    /* how far the loops have been carried since they were last seen is read off the reference loop's POSE (the page's
+       clocks cannot be trusted across a freeze): its pose now against its pose at the last tick (+ half a tick) */
+    let shift = gap;
+    const rf = loopRef();
+    if(rf && loopRefSnap && typeof rf.currentTime === "number") shift = Math.max(0, rf.currentTime - (loopRefSnap.ct + 500));
+    gap = Math.max(gap, shift);
+    resume = loopsPauseAll(shift);
   }
   loopHiddenMs += gap; loopHiddenAt = 0;
   const t0 = performance.now();
@@ -82780,8 +82797,17 @@ function loopsBack(){
   const go = () => {
     resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
     /* the time they stood still is time off the loop clock too, or the next Home built would put them ahead */
-    loopHiddenMs += performance.now() - t0;
-    loopResumeNote((told ? "told" : "NOTTOLD") + " away" + Math.round(gap) + " first" + first + " held" + Math.round(performance.now() - t0) + " n" + resume.length);
+    /* and the loop clock is made to agree with where the reference loop actually is, so a Home built next lands on it */
+    const r2 = loopRef();
+    if(r2 && typeof r2.currentTime === "number") loopHiddenMs = Date.now() - LOOP_EPOCH - (r2.currentTime - (typeof orbitAdvanceMs === "number" ? orbitAdvanceMs : 0));
+    else loopHiddenMs += performance.now() - t0;
+    const c0 = r2 && r2.currentTime, w0 = performance.now(), note = "away" + Math.round(gap) + " first" + first + " held" + Math.round(w0 - t0) + " n" + resume.length;
+    setTimeout(() => {
+      /* how far the reference loop has moved in 600ms, against the 600 it should (a jump shows here) */
+      const r3 = loopRef(); let drift = "-";
+      if(r3 && c0 != null && typeof r3.currentTime === "number") drift = Math.round(r3.currentTime - c0 - (performance.now() - w0));
+      loopResumeNote((told ? "told " : "NOTTOLD ") + note + " drift" + drift);
+    }, 600);
   };
   const tick = t => {
     if(document.hidden){ resume.forEach(a => loopPausedByUs.add(a)); return; }
@@ -103141,7 +103167,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-355";
+const APP_BUILD = "2026-10-29-356";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113878,7 +113904,7 @@ async function runLagTest(onDone){
         kind: "bug", text: "Tab speed test", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
         from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
         viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
-        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text).slice(0, 1700),
+        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text + (() => { try{ return " | resume: " + (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){ return ""; } })()).slice(0, 1700),
         at: Date.now() }).then(() => { sent = true; }), wait(6000)]);
     }
   }catch(e){}
@@ -125214,6 +125240,7 @@ function renderRankingRows(rows, entries, board, opts){
      style work on a laptop, several times that on a phone) before the next frame. The screenful and a little more
      is built now; the rest follows six rows to a frame (progressive, below), and Find me finishes the list first
      if it is asked for before it is done. */
+  const artNow = lbArtNow();
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
@@ -125271,7 +125298,7 @@ function renderRankingRows(rows, entries, board, opts){
          first screenful is built as its words and numbers with an empty frame where the character and the flare go
          (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
          quiet after the list is up. */
-      if(rowIdx >= LB_ART_NOW){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; }
+      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; }
       else {
         avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
         /* Alive on the boards (build 304): "make all characters in the
@@ -125312,7 +125339,7 @@ function renderRankingRows(rows, entries, board, opts){
        on one number and keep their line. */
     let cols = null;
     if(board.key === "overall" || third){
-      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= LB_ART_NOW);
+      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= artNow);
       if(third) cols.classList.add("rank-cols-" + board.key);
     } else {
       stats.textContent = board.unit(val(entry), entry);
@@ -125388,15 +125415,15 @@ function renderRankingRows(rows, entries, board, opts){
     }
   }catch(e){}
   const artWatch = () => { if(rows._lbLazyIo) rows.querySelectorAll(":scope > .rank-row[data-lazy-art]").forEach(r => { if(!r._lazyWatched){ r._lazyWatched = true; rows._lbLazyIo.observe(r); } }); };
+  /* the whole of what is left goes on the queue as soon as the list is built (and the tab's own glide is done): the
+     queue gives it a few ms a frame, the rows nearest the view first, so it is all in within about a second (build 356:
+     it was one row a tenth of a second, and rows below the screen sat bare for four) */
   const artQuiet = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
-    if(built < shown.length){ setTimeout(artQuiet, 120); return; }
-    const next = rows.querySelector(":scope > .rank-row[data-lazy-art]");
-    if(!next) return;
-    if(!(rows._lbQ && rows._lbQ.length) && !rows._lbPump) lbArtQueue(rows, [next]);
-    setTimeout(artQuiet, 90);
+    if(built < shown.length){ setTimeout(artQuiet, 80); return; }
+    lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")]);
   };
-  setTimeout(artQuiet, 900);
+  setTimeout(artQuiet, 350);
   artWatch();
   lbWatchOffscreen(rows);
   startRankMarks(rows);
@@ -125415,7 +125442,8 @@ function renderRankingRows(rows, entries, board, opts){
    swatch pickers: a row out of view is paused, one in view plays, so
    nothing anybody can see changes. One observer per list, replaced on
    every rebuild and dropped once the list leaves the document. */
-const LB_ART_NOW = 10;
+/* the rows whose art is built with the row: a screenful and a little more (the rest waits, and fills in the first second) */
+function lbArtNow(){ return Math.max(10, Math.ceil(((window.innerHeight || 800) - 250) / 60) + 2); }
 function lbFillArt(row, rows, quiet){
   if(!row || !row.dataset || !row.dataset.lazyArt) return;
   delete row.dataset.lazyArt;
@@ -125446,7 +125474,8 @@ function lbArtQueue(rows, list){
   const mid = (window.innerHeight || 800) / 2;
   const step = () => {
     if(!rows.isConnected){ rows._lbPump = false; rows._lbQ = []; return; }
-    q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid));
+    const sy = window.scrollY || 0;
+    if(rows._lbSortY !== sy || !rows._lbSorted){ rows._lbSortY = sy; rows._lbSorted = true; q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid)); }
     const t0 = performance.now(); let did = 0;
     while(q.length && (did < 1 || performance.now() - t0 < 5)){ lbFillArt(q.shift(), rows, true); did++; }
     if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
@@ -136170,6 +136199,8 @@ function tabPerfText(){
      (~215ms); 170ms from the press is just past a quick tap's release, so the build starts as
      the glass is still crossing - the page answers about a tenth of a second sooner. */
   const TAB_SCREEN_AFTER = 170;
+  /* the extra wait for a tap that follows another within half a second (build 356) */
+  const TAB_RUN_EXTRA = 280;
   /* BUILD 342: IN THE FIRE CODE CLASS THE BAR'S FOURTH TAB IS SETTINGS, NOT CALENDAR. "For the Fire Code class,
      remove the calendar and put the settings there again." The Fire Code class has no class calendar of its
      own; Settings is the tab that used to stand here (build 323 replaced it with Calendar in the academy). */
@@ -136235,6 +136266,15 @@ function tabPerfText(){
          is ever built. */
       /* Home locked to the Profile tab after a rank-up (build 317) */
       if(rankUpLockRefuses(dest)) return;
+      /* build 356: A TAP SOON AFTER ANOTHER IS A RUN OF TAPS. Each one used to start its screen's build ~170ms after its
+         press, so tapping through the tabs quickly built a screen under nearly every tap - each a long task that froze
+         the glass and the page (his spam recording). A tap within half a second of the last one now waits a little
+         longer for its build, so the build comes when the fingers pause; the glass and the highlight still move at
+         once, and a single tap answers exactly as before. */
+      const prevTapAt = bar._lastTapAt || -1e9;
+      bar._lastTapAt = performance.now();
+      const sincePrev = bar._lastTapAt - prevTapAt;
+      const rapidRun = sincePrev < 500 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 900 ? TAB_RUN_EXTRA * .45 : 0;
       const pend = bar._navPend;
       if(pend && pend.dest === dest) return;
       if(pend){ pend.cancel(); bar._navPend = null; }
@@ -136315,7 +136355,7 @@ function tabPerfText(){
       me.schedule = () => {
         if(navRan) return;
         me.timers.forEach(clearTimeout); me.timers = [];
-        const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9)));
+        const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9))) + rapidRun;
         me.timers.push(setTimeout(() => requestAnimationFrame(() => { if(!navRan) me.timers.push(setTimeout(navRun, 0)); }), wait));
         me.timers.push(setTimeout(navRun, wait + 120));
       };

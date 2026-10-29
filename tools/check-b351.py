@@ -21,7 +21,7 @@ with sync_playwright() as pw:
     chk("on a slow device the tap builds only a few rows (%s)" % (r,), 3 <= r["first"] <= 9, r)
     chk("and the rest of the list follows (%s)" % (r,), r["all"] >= 60, r)
     cv = pg.evaluate("()=>{ const r=document.querySelector('.rank-rows .rank-row'); return r ? getComputedStyle(r).contentVisibility : null; }")
-    chk("rows below the screen are skipped by the browser (%s)" % cv, cv == "auto", cv)
+    chk("rows are not hidden from the browser while off screen (build 356 took content-visibility off: they showed blank on scroll) (%s)" % cv, cv in (None, "visible"), cv)
     wc = pg.evaluate("()=>{ const e=document.querySelector('#bottomtab-profile .bottomtab-icon-avatar'); return e ? getComputedStyle(e).willChange : null; }")
     chk("the tab's character is its own layer (%s)" % wc, wc and "transform" in wc, wc)
     t = pg.evaluate("async ()=>(await runLagTest()).text")
