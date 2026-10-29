@@ -50758,7 +50758,10 @@ function syncSky(isQuestion){
   b.classList.toggle("sky-calm", !!(isQuestion || window.forceHideBottomTabs
     || stage.querySelector(".qnumrow, .fc-screen, .actions-results")));
 }
-new MutationObserver(() => {
+new MutationObserver(ms => {
+  /* build 358: not for the Leaderboard's rows or Home's planet system filling in (a row's art, a sheet going on): the
+     list's art alone put a scan of the whole 15,000-element stage and a check for an update into every frame it came in */
+  if(ms.every(m => { const t = m.target; return t && t !== stage && t.closest && t.closest(".rank-rows, .cosmic-hero-wrap"); })) return;
   document.body.classList.toggle("has-floatbtn", !!stage.querySelector(".floatbtn"));
   /* The same pattern, extended: detects an active question screen via
      .choice (the answer-button class, present only while a question is
@@ -82767,6 +82770,66 @@ function loopsPauseAll(shiftBack){
   }catch(e){}
   return out;
 }
+/* build 357: LESS TO KEEP WHILE AWAY. iOS ends a backgrounded page that is holding a lot, and the app then comes back as
+   a white screen and a cold start (his recording: Leaderboard, switch away, back: grey, then the splash). The two
+   heaviest things the app holds are the Leaderboard's rows (15,000 elements: each character a ~175-part drawing and a
+   moving sheet, each rank flare ~95 parts and a sheet) and Home's four moving-emblem sheets (~1000x1260px each,
+   decoded). While hidden, the rows go back to bare frames and the sheets come off; on the way back, once frames are
+   steady, they are put back the way they came in (the queue, nearest the view first; the sheets decoded async). */
+function trimForBackground(){
+  try{
+    document.querySelectorAll(".rank-rows > .rank-row:not([data-lazy-art])").forEach(row => {
+      const aw = row.querySelector(".rank-avatar-wrap");
+      if(aw && !aw.dataset.lazyAv && row.dataset.av !== undefined){
+        aw.querySelectorAll(".char-flip-play").forEach(n => n.remove());
+        const av = aw.querySelector(".rank-avatar"); if(av) av.querySelectorAll("svg").forEach(n => n.remove());
+        try{ setCharState(aw, "still"); }catch(e){}
+        aw.dataset.lazyAv = row.dataset.av || "";
+        row.dataset.lazyArt = "1";
+      }
+      const em = row.querySelector(".rank-mark:not([data-lazy-mark])");
+      if(em && em.dataset.rankTier){
+        const ph = document.createElement("span");
+        ph.className = "cosmic-icon-badge cosmic-badge-rank flare-solo cosmic-badge-lit rank-mark rank-col-flare is-lazy";
+        ph.dataset.lazyMark = em.dataset.rankTier; if(em.dataset.mark) ph.dataset.mark = em.dataset.mark;
+        em.replaceWith(ph); row.dataset.lazyArt = "1";
+      }
+    });
+    document.querySelectorAll(".cosmic-hero-wrap .cosmic-rank-anim").forEach(w => {
+      const b = w.closest(".cosmic-badge-rank"); const sv = b && b.querySelector("svg.cosmic-rank-emblem");
+      if(sv){ sv.classList.remove("rk-under-anim"); try{ sv.getAnimations().forEach(a => { if(a.__sheetFade) a.cancel(); }); }catch(e){} }
+      w.remove();
+    });
+  }catch(e){}
+}
+function restoreAfterBackground(){
+  try{
+    const rows = document.querySelector(".rank-rows");
+    if(rows) lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")]);
+    const hero = document.querySelector(".cosmic-hero-wrap");
+    if(hero) startOrbitEmblemAnimsKnown(hero.parentElement || hero);
+  }catch(e){}
+}
+/* and a note of how the last run ended, so that a page that was ended in the background shows up in the report */
+const SESSION_KEY = "class26e.session", CRASH_KEY = "class26e.crashlog";
+(function(){
+  try{
+    const prev = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    if(prev && prev.state !== "closed"){
+      let l = []; try{ l = JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []; }catch(e){}
+      l.push("ENDED-" + prev.state + " " + (prev.screen || "?") + " " + Math.round((Date.now() - (prev.t || Date.now())) / 1000) + "s-ago b" + String(prev.build || "").slice(-3));
+      localStorage.setItem(CRASH_KEY, JSON.stringify(l.slice(-6)));
+    }
+  }catch(e){}
+})();
+function sessionMark(state){
+  try{
+    const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : "other";
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ state, t: Date.now(), screen: scr, build: typeof APP_BUILD === "string" ? APP_BUILD : "" }));
+  }catch(e){}
+}
+setInterval(() => { if(!document.hidden) sessionMark("visible"); }, 6000);
+window.addEventListener("pagehide", e => { sessionMark(e && e.persisted ? "hidden" : "closed"); });
 function loopsBack(){
   let gap = 0, told = true, resume;
   if(loopHiddenAt){
@@ -82796,6 +82859,7 @@ function loopsBack(){
   let good = 0, tries = 0, lastT = t0, first = 0;
   const go = () => {
     resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    restoreAfterBackground(); sessionMark("visible");
     /* the time they stood still is time off the loop clock too, or the next Home built would put them ahead */
     /* and the loop clock is made to agree with where the reference loop actually is, so a Home built next lands on it */
     const r2 = loopRef();
@@ -82827,6 +82891,7 @@ document.addEventListener("visibilitychange", () => {
     loopHiddenAt = Date.now();
     loopPausedByUs.clear();
     loopsPauseAll(0).forEach(a => loopPausedByUs.add(a));
+    sessionMark("hidden"); trimForBackground();
   } else loopsBack();
 });
 window.addEventListener("pageshow", e => { if(!document.hidden) loopsBack(); });
@@ -82901,7 +82966,7 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   badge.dataset.sheetPending = "1";
   const put = () => {
     delete badge.dataset.sheetPending;
-    if(!badge.isConnected || !svg.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) return;
+    if(document.hidden || !badge.isConnected || !svg.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) return;
     attachOrbitSheetNow(badge, svg, wrap, g, true);
     try{ syncLoopClock(wrap); }catch(e){}
   };
@@ -103182,7 +103247,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-357";
+const APP_BUILD = "2026-10-29-358";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113949,7 +114014,7 @@ async function runLagTest(onDone){
         kind: "bug", text: "Tab speed test", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
         from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
         viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
-        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text + (() => { try{ return " | resume: " + (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){ return ""; } })()).slice(0, 1700),
+        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text + (() => { try{ return " | resume: " + (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; ") + " | ended: " + (JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []).join("; "); }catch(e){ return ""; } })()).slice(0, 1700),
         at: Date.now() }).then(() => { sent = true; }), wait(6000)]);
     }
   }catch(e){}
@@ -136246,7 +136311,7 @@ function tabPerfText(){
      after the tap at 4x CPU. His own iOS 26 recording changes the page at frame 13 of the press
      (~215ms); 170ms from the press is just past a quick tap's release, so the build starts as
      the glass is still crossing - the page answers about a tenth of a second sooner. */
-  const TAB_SCREEN_AFTER = 170;
+  const TAB_SCREEN_AFTER = 120;
   /* the extra wait for a tap that follows another within half a second (build 356) */
   const TAB_RUN_EXTRA = 280;
   /* BUILD 342: IN THE FIRE CODE CLASS THE BAR'S FOURTH TAB IS SETTINGS, NOT CALENDAR. "For the Fire Code class,
@@ -137187,6 +137252,10 @@ function tabPerfText(){
     }
     lensFade(lens, [[0, 1], [1, 1]]);
     lensFade(slider, [[0, 0], [1, 0]]);
+    /* build 357: the platter is hidden NOW, not when the fade above gets its first frame - a press that lands in a
+       busy moment (the Leaderboard filling in) left it showing, and the release then moved it to the new tab with
+       nothing to hide it: it snapped across with no glass (his recording). The fade's end clears this. */
+    slider.style.opacity = "0";
     /* the grey clears to glass in about two frames (b0324-b0325) */
     const g0 = lensOp(LENS_GLASS[0]);
     LENS_GLASS.forEach(el => lensFade(el, [[0, g0], [70, 1]]));
@@ -137315,6 +137384,7 @@ function tabPerfText(){
     LENS_GREY.forEach(el => lensFade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 56, 1]]));
     lensFade(lens, [[0, 1], [handAt, 1], [handAt + 1, 0]]);
     lensFade(slider, [[0, 0], [handAt, 0], [handAt + 1, 1]]);
+    slider.style.opacity = "0";
     lensMagnify(hi.c, 0, 150, Math.max(0, greyAt - 110));
     /* tidy up once the platter has it and the tab has shrunk back */
     lensT1 = setTimeout(() => lensFinish(), Math.max(handAt + 60, greyAt + 220));
@@ -137324,6 +137394,7 @@ function tabPerfText(){
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
     if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
+    slider.style.opacity = "";
     if(bar._swell && bar._swell.playState === "finished"){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
     if(lensG) lensG.tabs.forEach(t => { t.el.style.transition = ""; t.el.style.transform = ""; });
     lensG = null; lensAt = null;
@@ -137337,6 +137408,7 @@ function tabPerfText(){
     lensStopFollow();
     if(lensRun){ lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); lensRun = null; }
     [lens, slider].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
+    slider.style.opacity = "";
     lensBarSwell(null);
     lens.style.opacity = "0";
     lens.classList.remove("is-up");
