@@ -18,7 +18,7 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ showRankings(); }"); pg.wait_for_timeout(300)
     a = pg.evaluate(M)
     chk("rows below the first screenful start bare (%d of %d)" % (a["bare"], a["n"]), a["n"] >= 40 and a["bare"] >= 15 and a["emptyAv"] == a["bare"], a)
-    pg.wait_for_timeout(9000)
+    pg.wait_for_timeout(2600)
     b = pg.evaluate(M)
     chk("and every one has its character and flare in the quiet after (%d bare, %d empty, %d flares)" % (b["bare"], b["emptyAv"], b["marks"]), b["bare"] == 0 and b["emptyAv"] == 0 and b["marks"] >= 40, b)
     chk("nothing moved when the art went in (same row heights)", a["h"] == b["h"], (a["h"], b["h"]))

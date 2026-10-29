@@ -29388,3 +29388,25 @@ they stood still is also taken off the loop clock (`loopHiddenMs`), so a Home bu
 pose. Every way back is noted in localStorage `class26e.resumelog` (told/NOTTOLD, time away, first frame, time held,
 loops held) and shows in the bug report's perf line as "resume: ...". Gate: check-b355 (fails on 354).
 Folded in: build 354's speed test (steady / fast / spam taps with an end-state check), PR #23.
+
+## Build 356 (2026-10-29): coming back by pose, the Leaderboard filled in, a run of taps builds once
+
+Madison's recording of build 355 (leave, come back, then the speed test):
+- COMING BACK: in the first ~0.35s the planet system stood still, then the secret flares jumped ~25 degrees (the
+  inner layer turns 7 deg/s, the outer 3: a few seconds' worth) as the loops were let go. 355 rewound loops by
+  Date.now() minus the last alive tick - an assumption about the page's clocks across a freeze. 356 reads the
+  reference loop's POSE instead (`loopRef`, the outer turning layer; `loopRefSnap` kept every second): the shift is its
+  pose now against its pose at the last tick (+ half a tick), never negative; and when the loops are let go the
+  loop clock (`loopHiddenMs`) is re-made so that `loopWallMs` agrees with the reference loop's real pose, so
+  nothing that re-syncs later (a Home build, startRankMarks) can move them. Every return is noted
+  (`class26e.resumelog`: told/NOTTOLD, away, first frame, held, loops, `drift` = how far the reference moved in 600ms
+  against 600) and the speed test's report now carries "resume: ..." (355 put it only in the manual bug report).
+- LEADERBOARD: rows below the first screenful sat bare (empty frames where the character and flare go) for ~4s
+  and then only filled as he scrolled: the quiet fill was one row per 90ms, from 0.9s, and content-visibility:auto
+  showed unrendered rows while scrolling. Now: `content-visibility` is gone; `lbArtNow()` rows (a screenful + 2,
+  at least 10) are built whole; the rest are put on the queue as soon as the list is built (350ms), nearest the
+  view first, ~5ms a frame - all in within about a second on a slow device. Gate: check-b356.
+- TAB TAPS: a tap within 500ms of the last one waits +280ms for its screen build (+126ms within 900ms): in the
+  spam run a screen was being built under nearly every tap (9 builds for 10 taps at 4x CPU; now 1-2), each a long
+  task that froze the glass. A single tap answers as before. The glass and the highlight still move at once.
+- Not done: Home's own mount cost (syncLoopClock's getAnimations flush ~70ms at 4x, the planet system build).
