@@ -29268,3 +29268,27 @@ Madison: "Put version history button in settings (we are gonna overhaul settings
 - **Submit answer** on the daily question: 12px higher (`.foot > .floatbtn.qnext.dailyq-btn`), 34px off the bottom on a 956px screen (was 22).
 - Gate: `tools/check-b348.py` (fails on 347).
 - **348 (Start Studying on a 360px screen):** check-fixes caught Start Studying 9px from the daily circle on an Android 360x744 browser tab once the words and the button sat lower (they now share a row with the circle). The button's width is `clamp(146px, min(49vw, 100vw - 192px), 216px)`: 168px at 360 (was 176), the same everywhere wider. **Known, older than this stretch:** check-fixes' "GREY BAR 7 levels" on an iPhone SE 1st gen 568x260 browser tab (landscape) fails identically on builds 334, 340 and 343 - not touched here.
+
+## Build 349 (2026-10-29): zoom, class list, Start Studying, flares on the rings, waking, Leaderboard
+
+"Fix all this" after a screen recording.
+- Page viewer (`ifcOpenViewer`): the scroller had `touch-action:pan-x pan-y`, so the browser took every two-finger
+  touch and a pinch never reached the code. It is now `touch-action:none`, `overflow:hidden`, and zoom/pan are ONE
+  transform on `.ifc-vz-pages` (origin 0 0, `translate3d + scale`, clamped, 1x-5x): pinch about the midpoint (and
+  the midpoint's drag), one-finger pan with a glide, double tap toggles 1x / 2.5x, wheel pans, ctrl+wheel zooms,
+  +/- buttons animate. Padding moved from the scroller to `.ifc-vz-pages` so the clamp sees the whole box.
+- Class list: `.class-stack` is `pointer-events:none` until `.is-open` (it covered Start Studying's left side); in
+  portrait phones the order is `column-reverse` so the current class is at the bottom, enrolled classes above it
+  and "+" last. Per-rank class button colour (`--orb-tint`, default Nova rose).
+- Daily question: `armTapFallback` (pointerdown/up fallback when the click is lost because a pick re-rendered the
+  footer) for Submit and Exit; `touch-action:manipulation`; the not-ready look has a tinted ring.
+- Home: Gold, Sapphire, Supernova rank bubbles moved to R=152 (the outer ring) in `HOME_SPOTS`, so the outer ring's
+  secret flares pass under their glass.
+- Coming back from another app: loops are played on the next frame; presence heartbeat, Virtual Room resubscribe,
+  character wake and the forced update check wait 1.5-2.5s. NOTE: a new build on the server still reloads the app
+  on return (`force` in version.json) - that is a black screen by design; set `force:false` to stop it.
+- Leaderboard: first batch is 7 rows, then 3 per frame (4x CPU longest task 421ms -> ~200ms).
+- Not changed / unconfirmed: the tab-switch freezes were measured on desktop Chromium only; there is no on-device
+  data yet. Calendar (~130ms @4x, Layerize) and the Leaderboard rows (UpdateLayoutTree, avatar SVGs) remain the
+  heaviest builds.
+- Gate: `tools/check-b349.py` (fails on 348).
