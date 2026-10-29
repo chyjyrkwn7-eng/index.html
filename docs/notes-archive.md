@@ -29317,3 +29317,17 @@ worst main-thread hold, worst frame gap, slow-frame count and frames. Read with
 - (350) Coming back from another app: the loops paused on hide are played again only after four steady frames in a
   row (at most ~1.5s), from the pose they were paused at, so a first-frames stall no longer lets them run on the wall
   clock and appear already moved on. Gate: check-b350 (the pose holds while away and in the first frames back).
+
+## Build 351 (2026-10-29): what the five-pass test said, and the first fixes
+
+Madison's build 350 run (iPhone, 4 cores, dpr 3), worst frame ms / slow frames (>34ms) / frames drawn in 3s:
+Leaderboard base 191/27/102; animations off 149/20/113; blur off 172/28/92; filters off 177/28/95; drawings hidden
+140/20/121. Home 105/6/176 (main-thread hold 112ms; 44ms with the drawings hidden). Profile ~100/4/138. Calendar
+~40/4/177. So no page-wide switch (animations, blur, filters) fixes the Leaderboard; only less drawing helps a
+little: the cost is the amount of character art laid out and painted for 44 rows, and the build. Home's hold
+shrinks a lot when the (static) tab character is hidden.
+351: rows are built by the clock (4 at least / ~9ms in the tap's task, then ~5ms a frame), rows below the screen
+use `content-visibility:auto` (60px estimate), the tab character is its own layer (will-change:transform), and the
+speed test's passes are now base / nobar (tab character) / norows / nohero / nobnr (row characters and banners) to
+split what is left. Gate: check-b351 (fails on 350). check-b348's "screenful" ceiling was dropped: a fast machine
+builds every row inside the budget.

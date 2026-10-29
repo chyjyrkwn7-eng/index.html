@@ -1,4 +1,4 @@
-"""Build 350: the tab speed test runs five passes (base, still, flat, nofx, nosvg) and leaves no style behind.
+"""Build 350: the tab speed test runs five passes and leaves no style behind.
 Run:  python3 tools/check-b350.py"""
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +13,7 @@ with sync_playwright() as pw:
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     r = pg.evaluate("async ()=>await runLagTest()")
     t = (r or {}).get("text", "")
-    for v in ("base", "still", "flat", "nofx", "nosvg"):
+    for v in ("base", "nobar", "norows", "nohero", "nobnr"):
         chk("the speed test has a [%s] pass for the Leaderboard" % v, ("[" + v + "]rewards") in t, t[:200])
     left = pg.evaluate("()=>!!document.getElementById('lagtest-variant')")
     chk("it leaves no variant style on the page", left is False, left)
