@@ -29366,3 +29366,12 @@ handed over. It is now 150ms from greyAt-110 with a plain ease, so it is over be
 Gate: check-b353 (platter on the tapped tab for the whole time it shows; fails on 352 for Leaderboard -> Home).
 Still open: Home's frame stalls (planet system; syncLoopClock's getAnimations ~70ms at 4x on each Home mount is
 the largest JS item in the Home mount profile), the Leaderboard fill-in smoothness.
+
+## Build 354 (2026-10-29): the speed test taps the way he does
+
+Madison: "the lag is a lot better" after 353; wants the test faster and spammed "so you can really see what I see".
+`runLagTest` (Settings > Report a bug > Test tab speed) now runs [steady] (a tap every 1.5s, per tab), [fast] (every
+0.6s, 12 taps) and [spam] (every 0.17s, 30 taps in a scrambled order, 35ms holds), reporting per run the worst
+main-thread hold, worst frame, slow frames (>34ms) and frames drawn, and after the last tap whether the right screen
+is up, the right tab lit and the platter on it (offset px). At 4x CPU here: spam = main hold ~540ms, 77 of 245 frames
+slow, end state correct. Gate: check-b354 (fails on 353).

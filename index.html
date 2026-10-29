@@ -103102,7 +103102,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-353";
+const APP_BUILD = "2026-10-29-354";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113777,39 +113777,54 @@ async function runLagTest(onDone){
   try{
     try{ showHome(); }catch(e){}
     await wait(1800);
-    /* Each pass switches one thing off for the whole page, so the passes show which thing the frames are waiting on
-       (build 352): [base] nothing off; [nocols] the rank flares in the rows; [noavw] the characters in the rows;
-       [nohead] the Leaderboard's header and search; [nohero] Home's planet system. */
-    const VARIANTS = [["base", ""],
-      ["nocols", ".rank-cols{display:none !important}"],
-      ["noavw", ".rank-avatar-wrap{display:none !important}"],
-      ["nohead", ".screen-rankings .profiletabs,.screen-rankings .rank-search,.screen-rankings .rank-me-btn,.screen-rankings .rank-col-head{display:none !important}"],
-      ["nohero", ".cosmic-hero-wrap{display:none !important}"]];
-    const ids = ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"];
+    /* build 354: three runs of taps the way a finger does them - [steady] one tap every 1.5s (per tab), [fast] one every
+       0.6s, [spam] one every 0.17s in a scrambled order. Per run: worst main-thread hold, worst frame, slow frames
+       (>34ms) and frames drawn; and after the last tap, whether the right screen is up, the right tab is lit and the
+       grey platter sits on it (offset in px). */
+    const SEL = { home: ".screen-home-actual", profile: ".screen-profile", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+    const tapTab = async (d, hold) => {
+      const el = document.getElementById("bottomtab-" + d);
+      if(!el || el.hidden || !el.getClientRects().length) return false;
+      const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+      const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
+      el.dispatchEvent(mk("pointerdown")); await wait(hold); el.dispatchEvent(mk("pointerup"));
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+      return true;
+    };
+    const mxOf = a => Math.round(a.reduce((m, v) => v > m ? v : m, 0));
+    const endState = d => {
+      const act = document.querySelector(".bottomtab.active"), sl = document.getElementById("bottomtabs-slider");
+      let off = -1;
+      try{ const a = act.getBoundingClientRect(), r = sl.getBoundingClientRect(); off = Math.round(Math.abs((r.left + r.width / 2) - (a.left + a.width / 2)) * 10) / 10; }catch(e){}
+      return "screen" + (document.querySelector(SEL[d]) ? "ok" : "WRONG") + " lit" + (act && act.id === "bottomtab-" + d ? "ok" : "WRONG") + " platter" + off + "px";
+    };
     mc.port2.postMessage(0); requestAnimationFrame(rafTick);
-    const vs = document.createElement("style"); vs.id = "lagtest-variant"; document.head.appendChild(vs);
-    for(const [vname, css] of VARIANTS){
-      vs.textContent = css;
-      note.textContent = "Testing tab speed (" + vname + ")… don't touch the screen";
+    const RUNS = [
+      ["steady", ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"], 1500, 60, false],
+      ["fast", ["rewards", "home", "calendar", "profile", "rewards", "calendar", "home", "profile", "rewards", "home", "calendar", "profile"], 600, 50, true],
+      ["spam", ["rewards", "home", "calendar", "profile", "home", "rewards", "profile", "calendar", "rewards", "home", "profile", "calendar", "home", "rewards", "calendar", "profile",
+                "rewards", "profile", "home", "calendar", "rewards", "home", "calendar", "home", "profile", "rewards", "calendar", "home", "rewards", "home"], 170, 35, true]];
+    for(const [rname, ids, gap, hold, whole] of RUNS){
+      note.textContent = "Testing tab speed (" + rname + ")… don't touch the screen";
       try{ showHome(); }catch(e){}
       await wait(1500);
-      const agg = {};
+      const agg = {}; let all = { m: 0, f: 0, s: 0, n: 0 }, taps = 0, last = "home";
+      if(whole){ rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now(); }
       for(const d of ids){
-        const el = document.getElementById("bottomtab-" + d);
-        if(!el || el.hidden || !el.getClientRects().length) continue;
-        const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
-        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
-        const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
-        el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
-        el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
-        await wait(1500);
-        const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0 });
-        a.m = Math.max(a.m, Math.round(rec.main.reduce((m, v) => v > m ? v : m, 0))); a.f = Math.max(a.f, Math.round(rec.raf.reduce((m, v) => v > m ? v : m, 0)));
-        a.s += rec.raf.filter(v => v > 34).length; a.n += rec.raf.length;
+        if(!whole){ rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now(); }
+        if(await tapTab(d, hold)){ taps++; last = d; }
+        await wait(gap - (whole ? hold : 0));
+        if(!whole){
+          const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0 });
+          a.m = Math.max(a.m, mxOf(rec.main)); a.f = Math.max(a.f, mxOf(rec.raf));
+          a.s += rec.raf.filter(v => v > 34).length; a.n += rec.raf.length;
+        }
       }
-      Object.keys(agg).forEach(d => rows.push("[" + vname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n));
+      if(whole){ all = { m: mxOf(rec.main), f: mxOf(rec.raf), s: rec.raf.filter(v => v > 34).length, n: rec.raf.length }; }
+      await wait(2200);
+      if(whole) rows.push("[" + rname + "] taps" + taps + " main" + all.m + " frame" + all.f + " slow" + all.s + " n" + all.n + " " + endState(last));
+      else { Object.keys(agg).forEach(d => rows.push("[" + rname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n)); rows.push("[" + rname + "] " + endState(last)); }
     }
-    try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ note.remove(); }catch(e){}
