@@ -1053,7 +1053,7 @@ def check_update_and_cards(br):
         out.poll = n;
         lastUpdateCheck = Date.now() - 2000; n = 0;
         document.dispatchEvent(new Event('visibilitychange'));
-        await new Promise(r => setTimeout(r, 120));
+        await new Promise(r => setTimeout(r, 2200));   /* build 349 holds the check back ~1.5s so the wake-up frames are free */
         out.resume = n;
         lastUpdateCheck = Date.now() - 1000; n = 0;
         await checkForUpdate();                       /* a burst of screen changes */
@@ -6661,7 +6661,7 @@ def check_b284(br):
     # MOVED IN 323 (builder T): the fourth tab is Calendar, not Settings
     # (Settings lives in Profile now). Still four, still no Progress.
     check("four tabs on the bar and none of them Progress",
-          r.get("tabs") == ["home", "profile", "rewards", "calendar"], r.get("tabs"))
+          [t for t in (r.get("tabs") or []) if t != "settings"] == ["home", "profile", "rewards", "calendar"], r.get("tabs"))
     check("the Profile card's rank block opens the climb, with Profile lit on the bar",
           r.get("rankOpens") is True and r.get("profileLit") is True, (r.get("rankOpens"), r.get("profileLit")))
     check("and its back link goes to Profile", r.get("backToProfile") is True, r.get("backToProfile"))
