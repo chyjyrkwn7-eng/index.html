@@ -103084,7 +103084,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-349";
+const APP_BUILD = "2026-10-29-350";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113759,20 +113759,39 @@ async function runLagTest(onDone){
   try{
     try{ showHome(); }catch(e){}
     await wait(1800);
-    const ids = ["rewards", "profile", "home", "calendar", "rewards", "home", "profile", "rewards", "calendar", "home"];
+    /* Each pass switches one thing off for the whole page, so the passes show which thing the frames are waiting on
+       (build 350): [base] nothing off; [still] every CSS animation off; [flat] every backdrop blur off;
+       [nofx] every filter off; [nosvg] the character drawings hidden. */
+    const VARIANTS = [["base", ""],
+      ["still", "*,*::before,*::after{animation:none !important;transition:none !important}"],
+      ["flat", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
+      ["nofx", "*,*::before,*::after{filter:none !important}"],
+      ["nosvg", ".avatarchar-svg,.char-flip-play{display:none !important}"]];
+    const ids = ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"];
     mc.port2.postMessage(0); requestAnimationFrame(rafTick);
-    for(const d of ids){
-      const el = document.getElementById("bottomtab-" + d);
-      if(!el || el.hidden || !el.getClientRects().length) continue;
-      const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
-      rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
-      const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
-      el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
-      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    const vs = document.createElement("style"); vs.id = "lagtest-variant"; document.head.appendChild(vs);
+    for(const [vname, css] of VARIANTS){
+      vs.textContent = css;
+      note.textContent = "Testing tab speed (" + vname + ")… don't touch the screen";
+      try{ showHome(); }catch(e){}
       await wait(1500);
-      const mx = Math.round(Math.max(0, ...rec.main)), rx = Math.round(Math.max(0, ...rec.raf));
-      rows.push(d + " main" + mx + " frame" + rx + " m>50:" + rec.main.filter(v => v > 50).length + " f>34:" + rec.raf.filter(v => v > 34).length + " f>100:" + rec.raf.filter(v => v > 100).length + " n" + rec.raf.length);
+      const agg = {};
+      for(const d of ids){
+        const el = document.getElementById("bottomtab-" + d);
+        if(!el || el.hidden || !el.getClientRects().length) continue;
+        const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+        const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
+        el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
+        el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+        await wait(1500);
+        const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0 });
+        a.m = Math.max(a.m, Math.round(rec.main.reduce((m, v) => v > m ? v : m, 0))); a.f = Math.max(a.f, Math.round(rec.raf.reduce((m, v) => v > m ? v : m, 0)));
+        a.s += rec.raf.filter(v => v > 34).length; a.n += rec.raf.length;
+      }
+      Object.keys(agg).forEach(d => rows.push("[" + vname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n));
     }
+    try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ note.remove(); }catch(e){}
