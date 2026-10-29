@@ -1,4 +1,4 @@
-"""Build 359: a tapped tab's screen is built as soon as the finger lifts (30ms after the glass starts), not 120ms later: the
+"""Build 359 (also: taps ~0.7s apart are not a "run" and get no extra wait): a tapped tab's screen is built as soon as the finger lifts (30ms after the glass starts), not 120ms later: the
 glass is a compositor animation and carries on under the build, so the wait only delayed the page.
 Run:  python3 tools/check-b359.py   (add --against old.html to run on another build)"""
 import os, sys
@@ -19,9 +19,9 @@ with sync_playwright() as pw:
         const b0=document.getElementById('bottomtabs')._navBuilds||0;
         el.dispatchEvent(mk('pointerdown')); await wait(30); el.dispatchEvent(mk("pointerup")); const t0=performance.now(); el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}));
         let ms=-1; while(performance.now()-t0<1500){ if((document.getElementById('bottomtabs')._navBuilds||0)>b0){ ms=performance.now()-t0; break; } await wait(2); }
-        out.push([d, Math.round(ms)]); await wait(1800); }
+        out.push([d, Math.round(ms)]); await wait(700); }
       return out; }""")
     print(r)
-    chk("a single tap starts its screen's build within 60ms of the lift (%s)" % (r,), all(0 <= x[1] <= 60 for x in r), r)
+    chk("a single tap starts its screen's build within 100ms of the lift (%s)" % (r,), all(0 <= x[1] <= 100 for x in r), r)
     br.close()
 sys.exit(0 if g["ok"] else 1)

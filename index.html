@@ -136387,7 +136387,7 @@ function tabPerfText(){
       const prevTapAt = bar._lastTapAt || -1e9;
       bar._lastTapAt = performance.now();
       const sincePrev = bar._lastTapAt - prevTapAt;
-      const rapidRun = sincePrev < 500 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 900 ? TAB_RUN_EXTRA * .45 : 0;
+      const rapidRun = sincePrev < 330 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 600 ? TAB_RUN_EXTRA * .4 : 0;
       const pend = bar._navPend;
       if(pend && pend.dest === dest) return;
       if(pend){ pend.cancel(); bar._navPend = null; }

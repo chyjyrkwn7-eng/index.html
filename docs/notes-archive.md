@@ -29472,3 +29472,10 @@ Tried and dropped: drawing Home's sphere noise once to a bitmap (instead of feTu
 in Chromium (~85ms either way), so not shipped.
 Still open: the build itself (Home ~0.4s at 4x, Rank ~0.3s, Profile sustained slow frames from the live avatar's
 filter:url(#avatarDepth)). iOS cannot be reproduced here; needs Madison's next recording.
+
+Build 359, second part (from his 12:58 recording, 120fps): measured press-to-screen on the phone 0.27-0.54s (lens lifts at press, the
+glide takes ~250ms, the list lands ~200ms after the glide ends). His taps are 0.4-0.9s apart, and the "run" rule from 356 added
++280ms (<500ms apart) or +126ms (<900ms apart) to every one of them. A run now means <330ms apart (+280) and 330-600ms (+112);
+taps 0.6s+ apart wait nothing. Reference app he sent (13:06 recording): the page crossfades ~100ms after the lens lifts and is done
+~230ms from the press. Ours is a hard cut at ~300ms+ on the phone; the build (style/layout/paint) is the rest and needs a bigger
+change (screens kept alive / built before the tap) - NOT done, risky (lifecycle/side effects of showX), needs his go.
