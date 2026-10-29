@@ -29302,3 +29302,18 @@ Madison: "Put version history button in settings (we are gonna overhaul settings
   large with main small = the graphics side (layers, blur, filters). It sends itself as a bug report with the text
   "Tab speed test"; read it with `python3 tools/firestore-admin.py bugs` (the `perf:` line). Decide the next round
   from that.
+
+## Build 350 (2026-10-29): the tab speed test finds the cause
+
+First real data (Madison's iPhone, build 349, `bugs` perf line): main-thread holds stayed under ~60ms, but FRAME gaps
+were large - Leaderboard worst 170-180ms with 13 slow frames and ~47 frames in 1.5s, Home ~100-130ms, Profile ~100ms,
+Calendar ~45ms. So the stalls are the graphics side (raster/compositing), not script. Leaderboard (44 characters),
+Home (planet + sheets) and Profile (big character) are worst; Calendar, with no character art, is fine.
+`runLagTest` now runs five passes, each switching one thing off page-wide: [base], [still] CSS animations off,
+[flat] backdrop blurs off, [nofx] filters off, [nosvg] character drawings hidden; per pass and tab it reports
+worst main-thread hold, worst frame gap, slow-frame count and frames. Read with
+`python3 tools/firestore-admin.py bugs`; whichever pass brings Leaderboard/Home/Profile frames down to Calendar's
+~45ms is the cause to remove. Gate: tools/check-b350.py.
+- (350) Coming back from another app: the loops paused on hide are played again only after four steady frames in a
+  row (at most ~1.5s), from the pose they were paused at, so a first-frames stall no longer lets them run on the wall
+  clock and appear already moved on. Gate: check-b350 (the pose holds while away and in the first frames back).
