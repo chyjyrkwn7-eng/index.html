@@ -103102,7 +103102,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-352";
+const APP_BUILD = "2026-10-29-353";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -137000,7 +137000,9 @@ function tabPerfText(){
     const reach = lensWAt(c == null ? lensG.lo : c) * .62;
     lensG.tabs.forEach(t => {
       const k = c == null ? 0 : Math.max(0, 1 - Math.abs(c - t.c) / reach) * lift;
-      t.el.style.transition = ms ? "transform " + ms + "ms cubic-bezier(.3,1.25,.5,1) " + (delay || 0) + "ms" : "none";
+      /* the way back (lift 0) is a plain ease with no overshoot, and is over by the time the glass hands over (build 353:
+         the label of the widest tab, Leaderboard, was still large and soft after the glass had gone) */
+      t.el.style.transition = ms ? "transform " + ms + "ms " + (lift === 0 ? "cubic-bezier(.3,.7,.4,1)" : "cubic-bezier(.3,1.25,.5,1)") + " " + (delay || 0) + "ms" : "none";
       t.el.style.transform = k > .001 ? "scale(" + (1 + LENS.mag * k).toFixed(4) + ")" : "";
     });
   }
@@ -137170,7 +137172,7 @@ function tabPerfText(){
     LENS_GREY.forEach(el => lensFade(el, [[0, 1 - gl], [gIn, 0], [greyAt, 0], [greyAt + 56, 1]]));
     lensFade(lens, [[0, 1], [handAt, 1], [handAt + 1, 0]]);
     lensFade(slider, [[0, 0], [handAt, 0], [handAt + 1, 1]]);
-    lensMagnify(hi.c, 0, 260, Math.max(0, greyAt - 60));
+    lensMagnify(hi.c, 0, 150, Math.max(0, greyAt - 110));
     /* tidy up once the platter has it and the tab has shrunk back */
     lensT1 = setTimeout(() => lensFinish(), Math.max(handAt + 60, greyAt + 220));
   }
@@ -137396,7 +137398,19 @@ function tabPerfText(){
   }
   /* "hidden" too (build 323): the calendar can be a pane that is shown by
      un-hiding it, and that lights Calendar rather than Profile. */
-  new MutationObserver(syncActive).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
+  /* build 353: only a change of SCREEN lights a tab, and never while a tap's own navigation is waiting for its screen.
+     The old observer ran syncActive on every class change anywhere in the stage (sheets, rows, animations) and, in the
+     ~half second between a tap and its screen being built, read the OLD screen and put the grey platter back on the
+     tab you had just left - it glided back, then to the new tab again, overshooting to the left of Home (his
+     recording, 352). */
+  const classOf = n => { const c = n && n.className; return String(c && c.baseVal !== undefined ? c.baseVal : (c || "")); };
+  new MutationObserver(ms => {
+    if(bar._navPend) return;
+    const screenish = ms.some(m => m.target === stage
+      || (m.type === "attributes" ? (m.attributeName === "hidden" || /\bscreen-/.test(classOf(m.target)))
+          : [...m.addedNodes, ...m.removedNodes].some(n => n.nodeType === 1 && (/\bscreen-/.test(classOf(n)) || (n.querySelector && n.querySelector("[class*='screen-']"))))));
+    if(screenish) syncActive();
+  }).observe(stage, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
   syncActive();
   /* the Profile tab's new-item dot, once per screen mount (build 299),
      once the switch has settled (build 314 - syncProfileTabDotSoon) */

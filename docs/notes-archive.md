@@ -29348,3 +29348,21 @@ size, `data-lazy-art`); the art goes in from a queue (nearest the view first, ~5
 `_lbFinish` (Find me) fills everything. A frame carried over from the last drawing stays flagged bare. Speed test
 passes now: base / nocols / noavw / nohead / nohero. Gate: check-b352 (fails on 351). The behaviour gate for
 "every character on the board is alive" calls `_lbFinish` first.
+
+## Build 353 (2026-10-29): the grey platter's flash and overshoot, and the glass leaving the icon big
+
+Madison's screen recording of the build 352 speed test (iPhone, 60fps crops of the bar): tapping Home, the platter
+showed on the tab he had LEFT for a moment, glided to Home overshooting out past the bar's left edge, and settled;
+and the Leaderboard tab's icon and label stayed enlarged and soft for ~6 frames after the glass had gone.
+Cause 1 (traced at 4x CPU with a log in placeBubble): `new MutationObserver(syncActive)` on the whole stage
+(subtree, class/hidden attributes) ran syncActive on every class change anywhere - and in the ~half second between
+a tap and its screen being built (the screen waits for the glass), it read the OLD screen, lit the old tab and slid
+the platter back to it (animated, with the lens' overshooting ease); navRun's own syncActive then slid it back to
+the new tab. Now the observer ignores everything while `bar._navPend` is set, and reacts only to a change of SCREEN
+(stage's own children, screen-* classes, [hidden]). Also far fewer syncActive runs (each is a dozen
+querySelectors; ~100ms at 4x in the profile).
+Cause 2: lensMagnify's way back (260ms, spring ease with overshoot, starting greyAt-60) finished after the glass
+handed over. It is now 150ms from greyAt-110 with a plain ease, so it is over before the hand-over.
+Gate: check-b353 (platter on the tapped tab for the whole time it shows; fails on 352 for Leaderboard -> Home).
+Still open: Home's frame stalls (planet system; syncLoopClock's getAnimations ~70ms at 4x on each Home mount is
+the largest JS item in the Home mount profile), the Leaderboard fill-in smoothness.
