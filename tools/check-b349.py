@@ -35,7 +35,8 @@ with sync_playwright() as pw:
     # Home's rank bubbles on the ring
     sp = pg.evaluate("()=>({ R: HOME_OUTER_R, spots: HOME_SPOTS.map(s=>s.R) })")
     n = sum(1 for r in sp["spots"] if abs(r - sp["R"]) < 1)
-    chk("at least three rank bubbles sit on the outer ring (%d)" % n, n >= 3, sp)
+    m = sum(1 for r in sp["spots"] if abs(r - 108) < 1)
+    chk("at least two rank bubbles sit on the outer ring (%d) and two on the inner (%d)" % (n, m), n >= 2 and m >= 2, sp)
     # coming back from another app
     pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(1500)
     pg.evaluate("""()=>{ window.__u=0; window.__h=0; const cu=checkForUpdate, sh=sendHeartbeat; checkForUpdate=function(){ window.__u++; return cu.apply(this,arguments); }; try{ sendHeartbeat=function(){ window.__h++; return sh.apply(this,arguments); }; }catch(e){}
