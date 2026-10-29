@@ -18,7 +18,7 @@ with sync_playwright() as pw:
     r = pg.evaluate("""async ()=>{ const real = buildAvatarCharSVGSafe; window.buildAvatarCharSVGSafe = function(){ const t=performance.now(); while(performance.now()-t < 6){} return real.apply(this, arguments); };
       showRankings(); const first = document.querySelectorAll('.rank-rows .rank-row').length;
       await new Promise(r=>setTimeout(r, 2500)); const all = document.querySelectorAll('.rank-rows .rank-row').length; window.buildAvatarCharSVGSafe = real; return { first, all }; }""")
-    chk("on a slow device the tap builds only a few rows (%s)" % (r,), 3 <= r["first"] <= 9, r)
+    chk("on a slow device the tap builds the whole list (its rows are cheap; the art follows) (%s)" % (r,), r["first"] >= 40, r)
     chk("and the rest of the list follows (%s)" % (r,), r["all"] >= 60, r)
     cv = pg.evaluate("()=>{ const r=document.querySelector('.rank-rows .rank-row'); return r ? getComputedStyle(r).contentVisibility : null; }")
     chk("rows are not hidden from the browser while off screen (build 356 took content-visibility off: they showed blank on scroll) (%s)" % cv, cv in (None, "visible"), cv)

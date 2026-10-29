@@ -103167,7 +103167,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-356";
+const APP_BUILD = "2026-10-29-357";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113847,6 +113847,9 @@ async function runLagTest(onDone){
        (>34ms) and frames drawn; and after the last tap, whether the right screen is up, the right tab is lit and the
        grey platter sits on it (offset in px). */
     const SEL = { home: ".screen-home-actual", profile: ".screen-profile", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+    /* how long from the tap until the screen is there (polled each frame), for the steady run's per-tab line */
+    let lastLat = 0;
+    const waitScreen = (d, t0) => new Promise(res => { const tick = () => { if(document.querySelector(SEL[d])){ lastLat = Math.round(performance.now() - t0); res(); } else if(performance.now() - t0 > 2500){ lastLat = 2500; res(); } else requestAnimationFrame(tick); }; tick(); });
     const tapTab = async (d, hold) => {
       const el = document.getElementById("bottomtab-" + d);
       if(!el || el.hidden || !el.getClientRects().length) return false;
@@ -113877,10 +113880,11 @@ async function runLagTest(onDone){
       if(whole){ rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now(); }
       for(const d of ids){
         if(!whole){ rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now(); }
-        if(await tapTab(d, hold)){ taps++; last = d; }
-        await wait(gap - (whole ? hold : 0));
+        const tt0 = performance.now(); lastLat = 0;
+        if(await tapTab(d, hold)){ taps++; last = d; if(!whole){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); } }
+        await wait(Math.max(0, gap - (whole ? hold : 0) - (!whole ? lastLat : 0)));
         if(!whole){
-          const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0 });
+          const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0, l: 0 }); a.l = Math.max(a.l, lastLat);
           a.m = Math.max(a.m, mxOf(rec.main)); a.f = Math.max(a.f, mxOf(rec.raf));
           a.s += rec.raf.filter(v => v > 34).length; a.n += rec.raf.length;
         }
@@ -113888,8 +113892,34 @@ async function runLagTest(onDone){
       if(whole){ all = { m: mxOf(rec.main), f: mxOf(rec.raf), s: rec.raf.filter(v => v > 34).length, n: rec.raf.length }; }
       await wait(2200);
       if(whole) rows.push("[" + rname + "] taps" + taps + " main" + all.m + " frame" + all.f + " slow" + all.s + " n" + all.n + " " + endState(last));
-      else { Object.keys(agg).forEach(d => rows.push("[" + rname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n)); rows.push("[" + rname + "] " + endState(last)); }
+      else { Object.keys(agg).forEach(d => rows.push("[" + rname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n + " lat" + agg[d].l)); rows.push("[" + rname + "] " + endState(last)); }
+    
     }
+    /* build 357: the same four taps with one part of Home (or of the Leaderboard) off, to see which part the frames wait on:
+       [nosheets] the planet system's moving emblems, [nosmoke] the planet's smoke and light, [noglow] the rings and
+       their glow, [nobubbles] the rank bubbles, [noorbit] the turning layers with the secret flares */
+    const VARS = [["base", ""],
+      ["nosheets", ".cosmic-rank-anim{display:none !important}"],
+      ["nosmoke", ".cosmic-plasma,.cosmic-smoke,.cosmic-hero-glowbox{display:none !important}"],
+      ["nobubbles", ".cosmic-icon-badge{display:none !important}"],
+      ["noorbit", ".cosmic-hero-orbitlayer,.cosmic-hero-ringlayer,.cosmic-hero-ringold{display:none !important}"]];
+    const vs = document.createElement("style"); vs.id = "lagtest-variant"; document.head.appendChild(vs);
+    for(const [vname, css] of VARS){
+      vs.textContent = css;
+      note.textContent = "Testing tab speed (" + vname + ")… don't touch the screen";
+      try{ showHome(); }catch(e){}
+      await wait(1500);
+      const parts = [];
+      for(const d of ["home", "rewards", "profile", "home"]){
+        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+        const tt0 = performance.now(); lastLat = 0;
+        if(await tapTab(d, 60)){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); }
+        await wait(1100);
+        parts.push(d[0] + " w" + mxOf(rec.raf) + "/s" + rec.raf.filter(v => v > 34).length + "/l" + lastLat);
+      }
+      rows.push("[v:" + vname + "] " + parts.join(" "));
+    }
+    try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ note.remove(); }catch(e){}
@@ -125405,7 +125435,7 @@ function renderRankingRows(rows, entries, board, opts){
      task about 9ms (four at the least). On the phone a row costs several times what it does here. */
   const buildFor = (atLeast, ms) => { const t0 = performance.now(); let k = 0;
     while(built < shown.length && (k < atLeast || performance.now() - t0 < ms)){ addRow(shown[built], built); built++; k++; } };
-  buildFor(4, 9);
+  buildFor(shown.length, 40);
   /* the art of the rows built bare: when one comes near the view, and then one at a time in the quiet */
   rows._lbFillArt = row => lbFillArt(row, rows);
   try{
@@ -125423,7 +125453,7 @@ function renderRankingRows(rows, entries, board, opts){
     if(built < shown.length){ setTimeout(artQuiet, 80); return; }
     lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")]);
   };
-  setTimeout(artQuiet, 350);
+  setTimeout(artQuiet, 0);
   artWatch();
   lbWatchOffscreen(rows);
   startRankMarks(rows);
@@ -125442,8 +125472,11 @@ function renderRankingRows(rows, entries, board, opts){
    swatch pickers: a row out of view is paused, one in view plays, so
    nothing anybody can see changes. One observer per list, replaced on
    every rebuild and dropped once the list leaves the document. */
-/* the rows whose art is built with the row: a screenful and a little more (the rest waits, and fills in the first second) */
-function lbArtNow(){ return Math.max(10, Math.ceil(((window.innerHeight || 800) - 250) / 60) + 2); }
+/* build 357: NO ROW IS BUILT WITH ITS ART. A row is its place, name and numbers (a few elements) with an empty frame where the
+   character and the flare go; the whole list is there in the tap's own task, and the art goes in from the queue, the
+   rows nearest the view first. On the phone a list that builds a few rows a frame, behind frames that are slow, was a
+   screen with empty space under seven rows for over a second (his recording of 356). */
+function lbArtNow(){ return 0; }
 function lbFillArt(row, rows, quiet){
   if(!row || !row.dataset || !row.dataset.lazyArt) return;
   delete row.dataset.lazyArt;
