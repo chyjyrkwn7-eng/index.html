@@ -34728,6 +34728,7 @@ html.is-browser{ --fade-paper: transparent; }
      and in list rows (forty at once) the filter is off; the single big drawings keep it. */
   #bottomtab-profile .avatarchar-svg,
   .rank-rows .avatarchar-svg, .rank-row .avatarchar-svg, .friend-row-art .avatarchar-svg{ filter:none !important; }
+  .homeversion-btn[hidden]{ display:none !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -83629,16 +83630,16 @@ const HOME_OUTER_R = 152;
    the check. Sapphire takes Welcome's one gap, at the bottom, at the radius
    Gold and Supernova share - "closer to the first ring ... move it up a
    little". buildCosmicHero places them; buildRankTrails' bands follow. */
-/* Build 349: "a few ON the rings so the secret flares pass under the Liquid Glass". Gold sits on the outer
-   ring (152) and Sapphire on the inner (108); the rest stay between the rings, so it does not look laid out. */
+/* Build 349: every rank bubble rides a ring - four on the outer (152), three on the inner (108), each a few units off
+   the line and at uneven angles, so it reads as scattered but is spaced round the planet. None over the planet. */
 const HOME_SPOTS = [
-  { a: 313.3, R: 173.0 },   /* rookie   - Bronze    */
-  { a: 26.0,  R: 139.6 },   /* ranger   - Silver    */
-  { a: 87.2,  R: 152.0 },   /* veteran  - Gold      */
-  { a: 144.4, R: 154.5 },   /* vanguard - Platinum  */
-  { a: 188.0, R: 108.0 },   /* adept    - Sapphire  */
-  { a: 233.0, R: 175.7 },   /* elite    - Amethyst  */
-  { a: 270.1, R: 133.2 }    /* titan    - Supernova */
+  { a: 318.0, R: 156.0 },   /* rookie   - Bronze    (outer) */
+  { a: 8.0,   R: 106.0 },   /* ranger   - Silver    (inner) */
+  { a: 62.0,  R: 148.0 },   /* veteran  - Gold      (outer) */
+  { a: 120.0, R: 111.0 },   /* vanguard - Platinum  (inner) */
+  { a: 168.0, R: 155.0 },   /* adept    - Sapphire  (outer) */
+  { a: 270.0, R: 104.0 },   /* elite    - Amethyst  (inner) */
+  { a: 232.0, R: 150.0 }    /* titan    - Supernova (outer) */
 ];
 function homeSpotXY(i){
   const sp = HOME_SPOTS[i % HOME_SPOTS.length], r = sp.a * Math.PI / 180;
@@ -96556,7 +96557,8 @@ function showHome(){
   verShort.className = "homeversion-short";
   verShort.textContent = "v" + RELEASE_NOTES[0].version;
   versionTag.append(verLong, verShort);
-  versionTag.addEventListener("click", showReleaseHistory);
+  /* build 349: the version history lives in Settings only; this tag stays in the page as the "Home is up" marker but is not shown or tappable */
+  versionTag.hidden = true; versionTag.tabIndex = -1; versionTag.setAttribute("aria-hidden", "true");
   stage.appendChild(versionTag);
   try{ mountClassBubble(); maybeClassGreeting(); if(classSwitchAllowed()) maybeNewClassBanner(); }catch(e){}
 

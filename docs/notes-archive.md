@@ -29292,7 +29292,7 @@ Madison: "Put version history button in settings (we are gonna overhaul settings
   data yet. Calendar (~130ms @4x, Layerize) and the Leaderboard rows (UpdateLayoutTree, avatar SVGs) remain the
   heaviest builds.
 - Gate: `tools/check-b349.py` (fails on 348).
-- (349, later) Home bubbles: only Gold (outer ring) and Sapphire (inner ring) sit on a ring; the rest sit between
+- (349, later) Home bubbles: all seven ride a ring (four outer, three inner), a few units off the line at uneven angles; none over the planet. Home no longer shows the version tag (kept hidden as the Home marker); history is in Settings only.
   them - "too intentional on the rings".
 - (349, later) TAB LAG, round one: the Profile tab's character is a still picture (no live drawing, no sheet
   recording, not in CHAR_SPECIAL_PROMINENT). Madison: it can stop animating if that helps.

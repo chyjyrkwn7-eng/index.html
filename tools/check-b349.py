@@ -34,9 +34,12 @@ with sync_playwright() as pw:
     pg.evaluate("()=>ifcCloseViewer()"); pg.wait_for_timeout(300)
     # Home's rank bubbles on the ring
     sp = pg.evaluate("()=>({ R: HOME_OUTER_R, spots: HOME_SPOTS.map(s=>s.R) })")
-    n = sum(1 for r in sp["spots"] if abs(r - sp["R"]) < 1)
-    m = sum(1 for r in sp["spots"] if abs(r - 108) < 1)
-    chk("some rank bubbles sit on the outer ring (%d) and one on the inner (%d), most between" % (n, m), n >= 1 and m >= 1 and n + m <= 4, sp)
+    n = sum(1 for r in sp["spots"] if abs(r - sp["R"]) < 10)
+    m = sum(1 for r in sp["spots"] if abs(r - 108) < 10)
+    chk("every rank bubble rides a ring: four-ish outer, three-ish inner, none nearer than the inner ring (%d outer, %d inner)" % (n, m), n >= 3 and m >= 2 and all(abs(r - sp["R"]) < 10 or abs(r - 108) < 10 for r in sp["spots"]), sp)
+    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(1500)
+    tag = pg.evaluate("()=>{ const t=document.querySelector('.homeversion-btn'); return !t || t.getClientRects().length === 0; }")
+    chk("Home no longer shows the version tag (history is in Settings)", tag, tag)
     # coming back from another app
     pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(1500)
     pg.evaluate("""()=>{ window.__u=0; window.__h=0; const cu=checkForUpdate, sh=sendHeartbeat; checkForUpdate=function(){ window.__u++; return cu.apply(this,arguments); }; try{ sendHeartbeat=function(){ window.__h++; return sh.apply(this,arguments); }; }catch(e){}
