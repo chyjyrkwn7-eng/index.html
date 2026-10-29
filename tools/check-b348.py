@@ -17,7 +17,7 @@ with sync_playwright() as pw:
     full = pg.evaluate("()=>document.querySelectorAll('.rank-rows .rank-row').length")
     chk("the board ends up with every row (%d)" % full, full >= 42, full)
     now = pg.evaluate("""()=>{ [...document.querySelectorAll('.profiletabs .iconbtn')].find(b=>b.textContent.trim()==='Hundos').click(); return document.querySelectorAll('.rank-rows .rank-row').length; }""")
-    chk("right after a switch only a screenful is built (%d of %d)" % (now, full), 6 <= now <= 22, now)
+    chk("right after a switch only a screenful is built (%d of %d)" % (now, full), 6 <= now, now)  # build 351: rows are built by the clock now; a fast machine builds them all in the budget (check-b351 slows the rows down and checks the cut)
     pg.wait_for_timeout(1500)
     later = pg.evaluate("()=>document.querySelectorAll('.rank-rows .rank-row').length")
     chk("and the rest follows on the next frames (%d)" % later, later >= 42, later)

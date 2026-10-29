@@ -34729,6 +34729,11 @@ html.is-browser{ --fade-paper: transparent; }
   #bottomtab-profile .avatarchar-svg,
   .rank-rows .avatarchar-svg, .rank-row .avatarchar-svg, .friend-row-art .avatarchar-svg{ filter:none !important; }
   .homeversion-btn[hidden]{ display:none !important; }
+  /* build 351: rows below the screen are neither laid out nor painted until they come near it (Safari 18 and Chromium
+     both do this; the estimate is the 60px every row is). The tab's character is its own layer, so the bar's swell
+     and slide move a picture instead of repainting 230 svg parts. */
+  .rank-rows > .rank-row{ content-visibility:auto; contain-intrinsic-size:auto 60px; }
+  #bottomtab-profile .bottomtab-icon-avatar{ will-change:transform; transform:translateZ(0); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -103097,7 +103102,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-350";
+const APP_BUILD = "2026-10-29-351";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113773,13 +113778,13 @@ async function runLagTest(onDone){
     try{ showHome(); }catch(e){}
     await wait(1800);
     /* Each pass switches one thing off for the whole page, so the passes show which thing the frames are waiting on
-       (build 350): [base] nothing off; [still] every CSS animation off; [flat] every backdrop blur off;
-       [nofx] every filter off; [nosvg] the character drawings hidden. */
+       (build 351): [base] nothing off; [nobar] the tab bar's character; [norows] the Leaderboard rows;
+       [nohero] Home's planet system; [nobnr] the characters and banners in the rows. */
     const VARIANTS = [["base", ""],
-      ["still", "*,*::before,*::after{animation:none !important;transition:none !important}"],
-      ["flat", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
-      ["nofx", "*,*::before,*::after{filter:none !important}"],
-      ["nosvg", ".avatarchar-svg,.char-flip-play{display:none !important}"]];
+      ["nobar", "#bottomtab-profile .avatarchar-svg,#bottomtab-profile .char-flip-play{display:none !important}"],
+      ["norows", ".rank-rows{display:none !important}"],
+      ["nohero", ".cosmic-hero-wrap{display:none !important}"],
+      ["nobnr", ".lb-row-bnr,.rank-row .rank-avatar,.rank-row .lb-avatar{display:none !important}"]];
     const ids = ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"];
     mc.port2.postMessage(0); requestAnimationFrame(rafTick);
     const vs = document.createElement("style"); vs.id = "lagtest-variant"; document.head.appendChild(vs);
@@ -125302,16 +125307,19 @@ function renderRankingRows(rows, entries, board, opts){
     rows.appendChild(row);
   };
   /* build 349: seven rows in the tap's own task, then three a frame - a long frame under a tab tap is the freeze */
-  const FIRST_ROWS = 7;
   let built = 0;
   const token = (rows._lbFill = (rows._lbFill || 0) + 1);
   const buildRows = n => { const end = Math.min(shown.length, built + n); for(; built < end; built++) addRow(shown[built], built); };
-  buildRows(FIRST_ROWS);
+  /* build 351: by the clock, not by the count - a frame gets about 5ms of rows (one at the least), the tap's own
+     task about 9ms (four at the least). On the phone a row costs several times what it does here. */
+  const buildFor = (atLeast, ms) => { const t0 = performance.now(); let k = 0;
+    while(built < shown.length && (k < atLeast || performance.now() - t0 < ms)){ addRow(shown[built], built); built++; k++; } };
+  buildFor(4, 9);
   lbWatchOffscreen(rows);
   startRankMarks(rows);
   const buildMore = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
-    buildRows(3); lbWatchOffscreen(rows, true); startRankMarks(rows);
+    buildFor(1, 5); lbWatchOffscreen(rows, true); startRankMarks(rows);
     if(built < shown.length) requestAnimationFrame(buildMore);
   };
   if(built < shown.length) requestAnimationFrame(buildMore);
