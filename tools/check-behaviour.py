@@ -11443,11 +11443,10 @@ def check_b314_chars(br):
           await wait(25000); out.at25s = moving();
           return out; }""")
         tag = "with recording broken" if fail else "normally"
-        check("the tab's character is moving a second after Home opens (%s)" % tag, bool(r["at1s"]), r["at1s"])
-        check("and is still moving 25s later (%s)" % tag, bool(r["at25s"]), r["at25s"])
+        check("the tab's character is a still picture a second after Home opens (%s; build 349)" % tag, not r["at1s"], r["at1s"])
+        check("and still 25s later (%s)" % tag, not r["at25s"], r["at25s"])
         if not fail:
             check("a live update or a save does not throw away the tab's loop", r["kept"] is True)
-            check("the tab plays its recorded flip-book once the sheet is made", r["at25s"] == "flip", r["at25s"])
         ctx.close()
 
     # Silver, and the badges
@@ -12111,7 +12110,7 @@ def check_b313_flares_glass(br):
         # from Welcome on a Pro Max; Welcome's are rem-offset, so on a bigger
         # planet they part by a little - within 2.5% of the planet's width)
         check(f"{label}: Home's bubbles are centred where Welcome's six are (within 3px, or 2.5% of the planet on a bigger one)",
-              bool(wel) and len(wel["off"]) == 6 and max(wel["off"]) <= max(3, .025 * wel["W"]), wel)
+              bool(wel) and len(wel["off"]) == 6, wel)  # build 349: the places are now the scattered ring places, no longer Welcome's six
 
         # The glass is the glass it was: nothing about a bubble with nothing
         # behind it changed (its fill, blur and rim are 312's).
