@@ -13,7 +13,7 @@ with sync_playwright() as pw:
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     r = pg.evaluate("async ()=>await runLagTest()")
     t = (r or {}).get("text", "")
-    for v in ("base", "nobar", "norows", "nohero", "nobnr"):
+    for v in ("base", "nocols", "noavw", "nohead", "nohero"):
         chk("the speed test has a [%s] pass for the Leaderboard" % v, ("[" + v + "]rewards") in t, t[:200])
     left = pg.evaluate("()=>!!document.getElementById('lagtest-variant')")
     chk("it leaves no variant style on the page", left is False, left)

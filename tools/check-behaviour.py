@@ -8803,6 +8803,8 @@ def check_b304(br):
           rows.splice(3, 0, { pub: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, level: 57, badges: 12, hundos: 70, xp: 80000, correct: 8000, week: 3900, lastModified: Date.now() });
           leaderboardRows = rows;
           showRankings('level'); await wait(1500);
+          try{ document.querySelector('.rank-rows')._lbFinish(); }catch(e){}   /* build 352: rows below the first screenful get their art in the quiet; the gate is about the characters being alive */
+          await wait(300);
           const all = [...document.querySelectorAll('.rank-row:not(.rank-row-head)')];
           out.rows = all.length;
           /* char-flip counts (build 308): a row's character plays its

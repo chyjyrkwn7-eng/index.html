@@ -25,7 +25,7 @@ with sync_playwright() as pw:
     wc = pg.evaluate("()=>{ const e=document.querySelector('#bottomtab-profile .bottomtab-icon-avatar'); return e ? getComputedStyle(e).willChange : null; }")
     chk("the tab's character is its own layer (%s)" % wc, wc and "transform" in wc, wc)
     t = pg.evaluate("async ()=>(await runLagTest()).text")
-    for v in ("base", "nobar", "norows", "nohero", "nobnr"):
+    for v in ("base", "nocols", "noavw", "nohead", "nohero"):
         chk("the speed test has a [%s] pass for Home" % v, ("[" + v + "]home") in t, t[:160])
     ctx.close(); br.close()
 sys.exit(0 if g["ok"] else 1)

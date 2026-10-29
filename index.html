@@ -103102,7 +103102,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-351";
+const APP_BUILD = "2026-10-29-352";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113778,13 +113778,13 @@ async function runLagTest(onDone){
     try{ showHome(); }catch(e){}
     await wait(1800);
     /* Each pass switches one thing off for the whole page, so the passes show which thing the frames are waiting on
-       (build 351): [base] nothing off; [nobar] the tab bar's character; [norows] the Leaderboard rows;
-       [nohero] Home's planet system; [nobnr] the characters and banners in the rows. */
+       (build 352): [base] nothing off; [nocols] the rank flares in the rows; [noavw] the characters in the rows;
+       [nohead] the Leaderboard's header and search; [nohero] Home's planet system. */
     const VARIANTS = [["base", ""],
-      ["nobar", "#bottomtab-profile .avatarchar-svg,#bottomtab-profile .char-flip-play{display:none !important}"],
-      ["norows", ".rank-rows{display:none !important}"],
-      ["nohero", ".cosmic-hero-wrap{display:none !important}"],
-      ["nobnr", ".lb-row-bnr,.rank-row .rank-avatar,.rank-row .lb-avatar{display:none !important}"]];
+      ["nocols", ".rank-cols{display:none !important}"],
+      ["noavw", ".rank-avatar-wrap{display:none !important}"],
+      ["nohead", ".screen-rankings .profiletabs,.screen-rankings .rank-search,.screen-rankings .rank-me-btn,.screen-rankings .rank-col-head{display:none !important}"],
+      ["nohero", ".cosmic-hero-wrap{display:none !important}"]];
     const ids = ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"];
     mc.port2.postMessage(0); requestAnimationFrame(rafTick);
     const vs = document.createElement("style"); vs.id = "lagtest-variant"; document.head.appendChild(vs);
@@ -125211,12 +125211,20 @@ function renderRankingRows(rows, entries, board, opts){
       const avatar = document.createElement("span");
       avatar.className = "rank-avatar";
       try{ avatar.style.setProperty("--char-glow", avatarGlowColor(entry.avatarChar)); }catch(e){}
-      avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
       avatarWrap.appendChild(avatar);
-      /* Alive on the boards (build 304): "make all characters in the
-         leaderboard have their animations, would make people want them
-         all". A row scrolled out of view is paused (lbWatchOffscreen). */
-      setCharState(avatarWrap, "live");
+      /* BUILD 352, THE ROWS' ART COMES LATER: on the phone the 44 rows' characters and rank flares were the whole of
+         the Leaderboard's stall (the speed test: rows hidden = smooth, characters hidden = no better). A row below the
+         first screenful is built as its words and numbers with an empty frame where the character and the flare go
+         (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
+         quiet after the list is up. */
+      if(rowIdx >= LB_ART_NOW){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; }
+      else {
+        avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
+        /* Alive on the boards (build 304): "make all characters in the
+           leaderboard have their animations, would make people want them
+           all". A row scrolled out of view is paused (lbWatchOffscreen). */
+        setCharState(avatarWrap, "live");
+      }
     }
     /* ---- NO EMBLEM ON THE CHARACTER HERE ----
        "Let's also remove the rank icon that's showing on the character
@@ -125250,7 +125258,7 @@ function renderRankingRows(rows, entries, board, opts){
        on one number and keep their line. */
     let cols = null;
     if(board.key === "overall" || third){
-      cols = buildOverallCols(entry, keptMarks, third);
+      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= LB_ART_NOW);
       if(third) cols.classList.add("rank-cols-" + board.key);
     } else {
       stats.textContent = board.unit(val(entry), entry);
@@ -125304,6 +125312,8 @@ function renderRankingRows(rows, entries, board, opts){
         avatarWrap.insertBefore(bWrap, avatarWrap.firstChild);
       } else row.insertBefore(bWrap, row.firstChild);
     }
+    /* a bare frame carried over from the last drawing of this board is still bare */
+    if(!row.dataset.lazyArt && row.querySelector("[data-lazy-av], [data-lazy-mark]")) row.dataset.lazyArt = "1";
     rows.appendChild(row);
   };
   /* build 349: seven rows in the tap's own task, then three a frame - a long frame under a tab tap is the freeze */
@@ -125315,15 +125325,35 @@ function renderRankingRows(rows, entries, board, opts){
   const buildFor = (atLeast, ms) => { const t0 = performance.now(); let k = 0;
     while(built < shown.length && (k < atLeast || performance.now() - t0 < ms)){ addRow(shown[built], built); built++; k++; } };
   buildFor(4, 9);
+  /* the art of the rows built bare: when one comes near the view, and then one at a time in the quiet */
+  rows._lbFillArt = row => lbFillArt(row, rows);
+  try{
+    if(rows._lbLazyIo){ rows._lbLazyIo.disconnect(); rows._lbLazyIo = null; }
+    if(typeof IntersectionObserver === "function"){
+      rows._lbLazyIo = new IntersectionObserver(es => { const hit = es.filter(e => e.isIntersecting).map(e => e.target); hit.forEach(t => rows._lbLazyIo && rows._lbLazyIo.unobserve(t)); if(hit.length) lbArtQueue(rows, hit); }, { rootMargin: "500px 0px 500px 0px" });
+    }
+  }catch(e){}
+  const artWatch = () => { if(rows._lbLazyIo) rows.querySelectorAll(":scope > .rank-row[data-lazy-art]").forEach(r => { if(!r._lazyWatched){ r._lazyWatched = true; rows._lbLazyIo.observe(r); } }); };
+  const artQuiet = () => {
+    if(rows._lbFill !== token || !rows.isConnected) return;
+    if(built < shown.length){ setTimeout(artQuiet, 120); return; }
+    const next = rows.querySelector(":scope > .rank-row[data-lazy-art]");
+    if(!next) return;
+    if(!(rows._lbQ && rows._lbQ.length) && !rows._lbPump) lbArtQueue(rows, [next]);
+    setTimeout(artQuiet, 90);
+  };
+  setTimeout(artQuiet, 900);
+  artWatch();
   lbWatchOffscreen(rows);
   startRankMarks(rows);
   const buildMore = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
-    buildFor(1, 5); lbWatchOffscreen(rows, true); startRankMarks(rows);
+    buildFor(1, 5); artWatch(); lbWatchOffscreen(rows, true); startRankMarks(rows);
     if(built < shown.length) requestAnimationFrame(buildMore);
   };
   if(built < shown.length) requestAnimationFrame(buildMore);
-  rows._lbFinish = () => { if(rows._lbFill === token && built < shown.length){ buildRows(shown.length); lbWatchOffscreen(rows, true); startRankMarks(rows); } };
+  rows._lbFinish = () => { if(rows._lbFill === token && built < shown.length){ buildRows(shown.length); lbWatchOffscreen(rows, true); startRankMarks(rows); }
+    rows.querySelectorAll(":scope > .rank-row[data-lazy-art]").forEach(r => lbFillArt(r, rows, true)); try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} };
 }
 
 /* Forty animated characters in one list is forty svgs repainting every
@@ -125331,6 +125361,45 @@ function renderRankingRows(rows, entries, board, opts){
    swatch pickers: a row out of view is paused, one in view plays, so
    nothing anybody can see changes. One observer per list, replaced on
    every rebuild and dropped once the list leaves the document. */
+const LB_ART_NOW = 10;
+function lbFillArt(row, rows, quiet){
+  if(!row || !row.dataset || !row.dataset.lazyArt) return;
+  delete row.dataset.lazyArt;
+  try{
+    const aw = row.querySelector(".rank-avatar-wrap[data-lazy-av]");
+    if(aw){
+      const id = aw.dataset.lazyAv; delete aw.dataset.lazyAv;
+      const av = aw.querySelector(".rank-avatar");
+      if(av){ av.appendChild(buildAvatarCharSVGSafe(id)); }
+      setCharState(aw, "live");
+    }
+    const em = row.querySelector(".rank-mark[data-lazy-mark]");
+    if(em){
+      const rk = em.dataset.lazyMark, mk = em.dataset.mark;
+      let real = null;
+      try{ real = buildRankMark(rk, "rank-col-flare"); }catch(e){}
+      if(real){ if(mk) real.dataset.mark = mk; em.replaceWith(real); }
+    }
+    if(!quiet && rows && rows.isConnected){ lbWatchOffscreen(rows, true); startRankMarks(rows); }
+  }catch(e){}
+}
+/* the rows' art goes in a few ms a frame, the ones nearest the view first */
+function lbArtQueue(rows, list){
+  const q = rows._lbQ || (rows._lbQ = []);
+  list.forEach(r => { if(r && r.dataset && r.dataset.lazyArt && q.indexOf(r) < 0) q.push(r); });
+  if(rows._lbPump) return;
+  rows._lbPump = true;
+  const mid = (window.innerHeight || 800) / 2;
+  const step = () => {
+    if(!rows.isConnected){ rows._lbPump = false; rows._lbQ = []; return; }
+    q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid));
+    const t0 = performance.now(); let did = 0;
+    while(q.length && (did < 1 || performance.now() - t0 < 5)){ lbFillArt(q.shift(), rows, true); did++; }
+    if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
+    if(q.length) requestAnimationFrame(step); else rows._lbPump = false;
+  };
+  requestAnimationFrame(step);
+}
 function lbWatchOffscreen(rows, more){
   if(!rows || typeof IntersectionObserver !== "function") return;
   /* `more`: rows added to a list being built a few at a time - the same observer takes them on */
@@ -125373,7 +125442,7 @@ function lbCompact(n){
   const k = n / 1000;
   return (k < 100 ? (Math.floor(k * 10) / 10).toFixed(1).replace(/\.0$/, "") : String(Math.floor(k))) + "k";
 }
-function buildOverallCols(entry, keptMarks, third){
+function buildOverallCols(entry, keptMarks, third, lazyArt){
   const cols = document.createElement("span");
   cols.className = "rank-cols";
   /* ONLY ITS OWN NUMBER (build 327z12 round 2): "the this week and hundo
@@ -125399,6 +125468,12 @@ function buildOverallCols(entry, keptMarks, third){
     const mk = entry.pub ? entry.pub + "|" + rk : null;
     let em = mk && keptMarks ? keptMarks.get(mk) : null;
     if(em) keptMarks.delete(mk);
+    else if(lazyArt){
+      /* an empty frame the flare's size; lbFillArt puts the flare in */
+      em = document.createElement("span");
+      em.className = "cosmic-icon-badge cosmic-badge-rank flare-solo cosmic-badge-lit rank-mark rank-col-flare is-lazy";
+      em.dataset.lazyMark = rk;
+    }
     else {
       try{ em = buildRankMark(rk, "rank-col-flare"); }
       catch(e){ em = document.createElement("span"); em.className = "rank-col-flare"; }
@@ -136435,11 +136510,17 @@ function tabPerfText(){
     const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1) || 1;
     placeBubble(bubbleX - dc2 / k, Math.max(8, bubbleW - dw2 / k), false);
   }
+  let verifyT3 = 0, verifyT4 = 0;
   function verifyBubbleSoon(){
-    clearTimeout(verifyT1); clearTimeout(verifyT2);
+    clearTimeout(verifyT1); clearTimeout(verifyT2); clearTimeout(verifyT3); clearTimeout(verifyT4);
     verifyT1 = setTimeout(() => { try{ verifyBubble(); }catch(e){} }, 480);
     verifyT2 = setTimeout(() => { try{ verifyBubble(); }catch(e){} }, 1300);
+    /* build 352: a screen that takes long to build keeps things "in flight" past those two looks, and verifyBubble
+       gives up while they are - so it looks twice more, later ("the grey circle is sometimes a little left") */
+    verifyT3 = setTimeout(() => { try{ verifyBubble(); }catch(e){} }, 2600);
+    verifyT4 = setTimeout(() => { try{ verifyBubble(); }catch(e){} }, 5000);
   }
+  document.addEventListener("visibilitychange", () => { if(!document.hidden) setTimeout(() => { try{ slideBubbleToActiveTab(true); verifyBubbleSoon(); }catch(e){} }, 400); });
   /* THE PLATTER IS NEVER TALLER THAN IT IS WIDE (build 325): on a 320px
      phone a tab is 66px wide and 77 tall, and the platter came out an
      upright capsule. The slider box is cut there so the platter is no

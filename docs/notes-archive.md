@@ -29331,3 +29331,20 @@ use `content-visibility:auto` (60px estimate), the tab character is its own laye
 speed test's passes are now base / nobar (tab character) / norows / nohero / nobnr (row characters and banners) to
 split what is left. Gate: check-b351 (fails on 350). check-b348's "screenful" ceiling was dropped: a fast machine
 builds every row inside the budget.
+
+## Build 352 (2026-10-29): the Leaderboard's art comes in late; the platter is checked again
+
+Madison's build 351 run (frame ms / slow frames / frames in 3s): Leaderboard base 215/11/120; rank flares hidden,
+characters hidden and banners hidden did not help (main-thread hold 106-192ms), but hiding the rows entirely gave
+35/1/189. Home: hiding the planet system gave 42/4/186 (main hold 120ms -> 42); the tab character hidden did not
+help. Calendar ~46ms throughout. So each row's 280 nodes (the character ~175, the rank flare ~94) are the cost.
+He also reported: the Leaderboard tab's icon grows and shrinks on selection (the lens magnify stretched by the long
+build, not a tab-specific animation - left to the lag fix), and the grey platter sometimes sits a little left of Home
+(and Calendar): verifyBubble gave up when something was "in flight" at its 480ms and 1300ms looks, so it now also
+looks at 2.6s and 5s and after coming back to the app (not reproduced in Chromium, even at 6x CPU).
+352: rows from the 11th down are built bare (words and numbers, an empty frame the character's and the flare's
+size, `data-lazy-art`); the art goes in from a queue (nearest the view first, ~5ms a frame) as a row comes within
+500px of the view (IntersectionObserver) and in the quiet after the list is built (from 0.9s, a row every ~90ms);
+`_lbFinish` (Find me) fills everything. A frame carried over from the last drawing stays flagged bare. Speed test
+passes now: base / nocols / noavw / nohead / nohero. Gate: check-b352 (fails on 351). The behaviour gate for
+"every character on the board is alive" calls `_lbFinish` first.
