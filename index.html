@@ -103259,6 +103259,8 @@ function showAddToHomeNotice(){
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
                              ".panel > .navsegment", ".welcome-build",
                              ".vroom-chat-alert", ".homeversion-btn",
+                             /* build 349: Home's version tag is gone, which was what kept a notice below the corner buttons */
+                             "body:has(.screen-home-actual) .chatdock-btn",
                              ];
 
 /* Shared by both notices. The measured offset is applied with transitions

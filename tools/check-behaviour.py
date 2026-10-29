@@ -9775,6 +9775,7 @@ _LB_FAKE = """async () => {
 }"""
 
 _LB_EXPECT = """(key) => {
+  { const rr = document.querySelector('.rank-rows'); if(rr && rr._lbFinish) rr._lbFinish(); }   /* build 348/349: rows arrive a few a frame; the data is what is compared */
   const board = RANKING_BOARDS.find(b => b.key === key);
   const val = e => Number(e && e[board.field]) || 0;
   const mine = { pub: publicIdOf(), firstName: store.firstName || 'Anonymous', avatarChar: store.avatarChar, level: levelOf(store), badges: badgeCountOf(store),
