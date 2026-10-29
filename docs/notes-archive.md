@@ -29459,3 +29459,16 @@ Two more recordings from Madison (build 356):
 - Folded in: build 357 (PR #26: whole cheap Leaderboard list + queue; Home sheets decoded async; tap latency and Home
   part passes in the speed test).
 Gate: check-b358.
+
+## Build 359 - tab taps answer sooner
+
+Madison (recording of 358): tapping a tab still felt slow, the pill sometimes flashed, and from the Leaderboard it did not
+shoot over. Measured at 4x CPU: tap to new screen 250-650ms, of which TAB_SCREEN_AFTER (120ms from the press) was a fixed
+wait before any build began. The glass (lens) is a Web Animations transform, so it runs on the compositor under a build;
+the wait only delayed the page. TAB_SCREEN_AFTER is now 30 (the glass's first frame is committed, then the build). Taps in
+a run still wait TAB_RUN_EXTRA, so spam builds are unchanged. Result: a single tap starts its build 25-40ms after the lift
+(was 60-135ms). check-b359.py (fails on 358).
+Tried and dropped: drawing Home's sphere noise once to a bitmap (instead of feTurbulence rects) - no change in raster time
+in Chromium (~85ms either way), so not shipped.
+Still open: the build itself (Home ~0.4s at 4x, Rank ~0.3s, Profile sustained slow frames from the live avatar's
+filter:url(#avatarDepth)). iOS cannot be reproduced here; needs Madison's next recording.
