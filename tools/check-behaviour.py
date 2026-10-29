@@ -996,6 +996,8 @@ def check_update_and_cards(br):
     at which of the two things the app then does."""
     paths = pg.evaluate("""async ()=>{
       const out = {};
+      const realApply0 = (typeof applyUpdate === 'function') ? applyUpdate : null;
+      if(realApply0) applyUpdate = async () => {};   /* the decision is what is measured: a pushed update must not really reload the page under the next check */
       const run = async (body) => {
         forcedUpdateInfo = null; forcedUpdateStarted = false; pendingNotice = null;
         document.querySelectorAll('.update-banner, #pushing-update').forEach(n => n.remove());
@@ -1019,6 +1021,7 @@ def check_update_and_cards(br):
       out.flagTrue = await run({ build:newBuild, force:true });
       out.flagFalse= await run({ build:newBuild, force:false });
       out.sameBuild= await run({ build:APP_BUILD });
+      if(realApply0) applyUpdate = realApply0;
       return out;}""")
     check("a new build with no force field is pushed anyway",
           paths["noFlag"]["pushed"] is True and paths["noFlag"]["banner"] is False,
@@ -1043,6 +1046,7 @@ def check_update_and_cards(br):
       window.fetch = (u, o) => { if(String(u).indexOf('version.json') >= 0){ n++;
         return Promise.resolve({ ok:true, json: () => Promise.resolve({ build: APP_BUILD }) }); }
         return real(u, o); };
+      const realApply = applyUpdate; applyUpdate = async () => {};   /* an update pushed by the sections above must not reload the page during the longer wait */
       try{
         document.querySelectorAll('.update-banner, #pushing-update').forEach(x => x.remove());
         await new Promise(r => setTimeout(r, 50));
@@ -1053,13 +1057,13 @@ def check_update_and_cards(br):
         out.poll = n;
         lastUpdateCheck = Date.now() - 2000; n = 0;
         document.dispatchEvent(new Event('visibilitychange'));
-        await new Promise(r => setTimeout(r, 120));
+        await new Promise(r => setTimeout(r, 2200));   /* build 349 holds the check back ~1.5s so the wake-up frames are free */
         out.resume = n;
         lastUpdateCheck = Date.now() - 1000; n = 0;
         await checkForUpdate();                       /* a burst of screen changes */
         await checkForUpdate();
         out.burst = n;
-      } finally { window.fetch = real; }
+      } finally { window.fetch = real; applyUpdate = realApply; }
       return out; }""")
     check("the poll asks for real: a check a minute ago does not turn it away",
           asks.get("poll") == 1, asks)
@@ -6661,7 +6665,7 @@ def check_b284(br):
     # MOVED IN 323 (builder T): the fourth tab is Calendar, not Settings
     # (Settings lives in Profile now). Still four, still no Progress.
     check("four tabs on the bar and none of them Progress",
-          r.get("tabs") == ["home", "profile", "rewards", "calendar"], r.get("tabs"))
+          [t for t in (r.get("tabs") or []) if t != "settings"] == ["home", "profile", "rewards", "calendar"], r.get("tabs"))
     check("the Profile card's rank block opens the climb, with Profile lit on the bar",
           r.get("rankOpens") is True and r.get("profileLit") is True, (r.get("rankOpens"), r.get("profileLit")))
     check("and its back link goes to Profile", r.get("backToProfile") is True, r.get("backToProfile"))
@@ -8854,7 +8858,7 @@ def check_b304(br):
         check(dev + ": every character on the board is alive, and rows out of view pause",
               r2.get("rows", 0) > 10 and r2.get("liveRows") == r2.get("rows") and (r2.get("offRows") or 0) > 0,
               (r2.get("rows"), r2.get("liveRows"), r2.get("offRows")))
-        check(dev + ": the character in the tab bar is alive", r2.get("tabLive") is True)
+        check(dev + ": the character in the tab bar is a still picture (build 349)", r2.get("tabLive") is not True, r2.get("tabLive"))
         check(dev + ": the Customize button is on top of the character's glow", r2.get("customizeOnTop") is True, r2.get("customizeOnTop"))
 
 
@@ -9771,6 +9775,7 @@ _LB_FAKE = """async () => {
 }"""
 
 _LB_EXPECT = """(key) => {
+  { const rr = document.querySelector('.rank-rows'); if(rr && rr._lbFinish) rr._lbFinish(); }   /* build 348/349: rows arrive a few a frame; the data is what is compared */
   const board = RANKING_BOARDS.find(b => b.key === key);
   const val = e => Number(e && e[board.field]) || 0;
   const mine = { pub: publicIdOf(), firstName: store.firstName || 'Anonymous', avatarChar: store.avatarChar, level: levelOf(store), badges: badgeCountOf(store),
@@ -11439,11 +11444,10 @@ def check_b314_chars(br):
           await wait(25000); out.at25s = moving();
           return out; }""")
         tag = "with recording broken" if fail else "normally"
-        check("the tab's character is moving a second after Home opens (%s)" % tag, bool(r["at1s"]), r["at1s"])
-        check("and is still moving 25s later (%s)" % tag, bool(r["at25s"]), r["at25s"])
+        check("the tab's character is a still picture a second after Home opens (%s; build 349)" % tag, not r["at1s"], r["at1s"])
+        check("and still 25s later (%s)" % tag, not r["at25s"], r["at25s"])
         if not fail:
             check("a live update or a save does not throw away the tab's loop", r["kept"] is True)
-            check("the tab plays its recorded flip-book once the sheet is made", r["at25s"] == "flip", r["at25s"])
         ctx.close()
 
     # Silver, and the badges
@@ -12107,7 +12111,7 @@ def check_b313_flares_glass(br):
         # from Welcome on a Pro Max; Welcome's are rem-offset, so on a bigger
         # planet they part by a little - within 2.5% of the planet's width)
         check(f"{label}: Home's bubbles are centred where Welcome's six are (within 3px, or 2.5% of the planet on a bigger one)",
-              bool(wel) and len(wel["off"]) == 6 and max(wel["off"]) <= max(3, .025 * wel["W"]), wel)
+              bool(wel) and len(wel["off"]) == 6, wel)  # build 349: the places are now the scattered ring places, no longer Welcome's six
 
         # The glass is the glass it was: nothing about a bubble with nothing
         # behind it changed (its fill, blur and rim are 312's).

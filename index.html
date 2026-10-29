@@ -34055,8 +34055,8 @@ html.is-browser{ --fade-paper: transparent; }
     color:var(--ink); font:inherit; font-size:1.2rem; font-weight:700; line-height:1; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   .ifc-vz-btn:disabled{ opacity:.35; }
   .ifc-vz-btn.is-done{ font-size:.88rem; font-weight:700; background:rgba(255,122,26,.2); border-color:rgba(255,179,92,.4); color:#FFB35C; }
-  .ifc-vz-scroll{ flex:1; min-height:0; overflow:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-x pan-y; padding:.5rem; background:rgb(14,15,22); }
-  .ifc-vz-pages{ width:100%; display:flex; flex-direction:column; gap:.5rem; }
+  .ifc-vz-scroll{ flex:1; min-height:0; overflow:hidden; overscroll-behavior:contain; touch-action:none; padding:0; background:rgb(14,15,22); }
+  .ifc-vz-pages{ width:100%; box-sizing:border-box; padding:.5rem; display:flex; flex-direction:column; gap:.5rem; }
   .ifc-vz-pages canvas{ display:block; width:100% !important; max-width:none !important; height:auto !important; border-radius:.4rem; background:#fff; flex:none; }
   .ifc-vz-busy{ margin:2rem 0; text-align:center; font-size:.9rem; color:var(--soft); }
   .ifc-vz-hint{ flex:none; margin:0; padding:.4rem .9rem calc(.4rem + 2px); text-align:center; font-size:.74rem; line-height:1.35; color:var(--soft); border-top:1px solid rgba(255,255,255,.06); }
@@ -34667,13 +34667,17 @@ html.is-browser{ --fade-paper: transparent; }
      glass: the rim, the wash at the foot and the silver itself lean a little towards the theme's own colour (the rank
      colour under a rank theme, the accent otherwise), so Silver's is plain silver and the rest are silver touched with
      theirs. One variable (--orb-tint) feeds all three. */
-  html[data-theme][data-layout] body{ --orb-tint:var(--rank-accent, var(--theme-c1, #C9CDD4)); }
-  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:first-child{ stop-color:color-mix(in srgb, var(--orb-tint) 14%, #FFFFFF); }
-  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:not(:first-child){ stop-color:color-mix(in srgb, var(--orb-tint) 34%, #BFC4CC); }
+  html[data-theme][data-layout] body{ --orb-tint:var(--rank-accent, #EE94B8); }
+  html[data-theme][data-layout][data-accent]:not([data-accent="ink"]) body{ --orb-tint:var(--rank-accent, var(--accent, #EE94B8)); }
+  /* BUILD 349: "the color of the default isn't a good color, + it looks the same as the bronze": the default theme's
+     orbs took its warm gold, which sat between Bronze and Veteran. They are Nova's own rose now (the brand's magenta,
+     lifted for a dark screen) and every rank keeps its own colour, a little stronger than before. */
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:first-child{ stop-color:color-mix(in srgb, var(--orb-tint) 24%, #FFFFFF); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:not(:first-child){ stop-color:color-mix(in srgb, var(--orb-tint) 52%, #BFC4CC); }
   html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble){
-    border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
+    border-color:color-mix(in srgb, var(--orb-tint) 34%, rgba(255,255,255,.26));
     box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
-               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 5px color-mix(in srgb, var(--orb-tint) 22%, rgba(255,255,255,.1)), inset 0 0 0 1px rgba(255,255,255,.04);
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 5px color-mix(in srgb, var(--orb-tint) 38%, rgba(255,255,255,.1)), inset 0 0 0 1px rgba(255,255,255,.04);
   }
   html[data-theme][data-layout] body .daily-question-fab:not(.is-ready){
     border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
@@ -34684,6 +34688,47 @@ html.is-browser{ --fade-paper: transparent; }
   /* its Submit answer pill, a little higher (build 348): "the submit answer button, it should be a little higher" - it stood
      22px off the bottom of the screen, in the home indicator's zone */
   .foot > .floatbtn.qnext.dailyq-btn{ bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom) + 12px); }
+  /* ---- THE CLASS LIST (build 349) ----
+     "The start studying button with fire code doesn't work unless I click it on the right side." The closed list
+     was invisible (opacity 0) but still there, over the left half of Start Studying (it opens upward from the corner
+     and Start now stands low), and took the taps. A closed list takes none; an open one does. */
+  .class-bubble-wrap .class-stack{ pointer-events:none; }
+  .class-bubble-wrap.is-open .class-stack{ pointer-events:auto; }
+  /* "The + ... should be at the end and the classes you have already should be towards the button of the class you
+     are in": from the button outwards - your other classes, then Add a class last. A later copy of the list's rules had
+     put the column back the right way up, which put "+" next to the button. */
+  @media (max-width:39.99rem) and (orientation:portrait){
+    .class-bubble-wrap .class-stack{ flex-direction:column-reverse !important; }
+  }
+  /* the Submit / Next pills are taps, not swipes: a thumb that moves a little must still be a click (build 349) */
+  body.has-active-question .foot > .floatbtn.qnext{ touch-action:manipulation !important; }
+  /* ---- THE DAILY QUESTION WHEN IT IS NOT READY (build 349) ----
+     "The daily question button could look (when not ready) a little better?" It was the dull glass with a thin white arc
+     and a grey "?". It is a clock now: the same glass with the theme's colour in its rim and a breath of it at the
+     foot, the whole face of the clock drawn faint, the time that has passed drawn over it in the theme's own light, and
+     the "?" soft white. The ready look and its ring are untouched. */
+  html[data-theme][data-layout] body .daily-question-fab.is-done:not(.is-charging){
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.24), rgba(255,255,255,.05) 42%, rgba(255,255,255,0) 66%),
+      radial-gradient(110% 80% at 50% 118%, color-mix(in srgb, var(--dq-c) 20%, transparent), transparent 74%),
+      rgba(18,20,30,.34) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               inset 0 1.5px 1px rgba(255,255,255,.45), inset 0 -2px 5px color-mix(in srgb, var(--dq-c) 22%, transparent) !important;
+  }
+  html[data-theme][data-layout] .daily-question-fab.is-done .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 26%, rgba(255,255,255,.07)); }
+  html[data-theme][data-layout] .daily-question-fab.is-done:not(.is-charging) .dq-ring-prog{ stroke:color-mix(in srgb, var(--dq-c) 72%, #FFFFFF); opacity:1; }
+  .daily-question-fab.is-done .dq-ring circle{ stroke-width:3; }
+  html[data-theme][data-layout] .daily-question-fab.is-done .dq-glyph{ opacity:.9; color:color-mix(in srgb, var(--dq-c) 16%, #F3F5F7); }
+  /* build 349, TAB LAG. A closed chat sheet is not drawn at all: it sat off-screen with a 30px backdrop blur promoted
+     to its own layer on every screen. It stays visible for the slide out, then goes. */
+  .chatdock:not(.is-open) .chatdock-panel{ visibility:hidden; transition:transform .26s cubic-bezier(.2,.8,.25,1), opacity .2s ease, visibility 0s linear .32s; }
+  /* The character drawing carries an SVG filter (blur, specular light, erode, drop shadow) that Safari paints on the
+     CPU - and again whenever what holds it is scaled or moved. In the tab bar (which swells and slides on every tap)
+     and in list rows (forty at once) the filter is off; the single big drawings keep it. */
+  #bottomtab-profile .avatarchar-svg,
+  .rank-rows .avatarchar-svg, .rank-row .avatarchar-svg, .friend-row-art .avatarchar-svg{ filter:none !important; }
+  .homeversion-btn[hidden]{ display:none !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -59268,7 +59313,9 @@ function syncBottomTabAvatar(){
     if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want;
       /* the plate under it is lit in the character's own colour */
       try{ tabIcon.style.setProperty("--char-glow", avatarGlowColor(want)); }catch(e){}
-      setCharState(tabIcon, "live", { solo: true }); return; }
+      /* build 349: STILL. "The character on the bottom tab can't animate if that fixes the lag": no live drawing, no
+         recorded sheet, no special - the tab's picture is one still svg. */
+      setCharState(tabIcon, "still"); return; }
   }
   delete tabIcon.dataset.char;
   tabIcon.textContent = getInitials(store.firstName) || "";
@@ -60274,7 +60321,8 @@ function trackVroomHandle(handle){
 }
 document.addEventListener("visibilitychange", () => {
   if(document.hidden) return;
-  vroomLiveHandles.forEach(h => { try { h.resubscribe && h.resubscribe(); } catch(e){} });
+  /* build 349: not in the frames that wake the page */
+  setTimeout(() => { if(!document.hidden) vroomLiveHandles.forEach(h => { try { h.resubscribe && h.resubscribe(); } catch(e){} }); }, 2200);
 });
 
 function generateSyncCode(){
@@ -60745,7 +60793,7 @@ function startHeartbeat(){
      four minutes later - that gap is the whole difference between a
      list that is useful and one that is stale. */
   document.addEventListener("visibilitychange", () => {
-    if(document.visibilityState === "visible") sendHeartbeat(true);
+    if(document.visibilityState === "visible") setTimeout(() => { if(!document.hidden) sendHeartbeat(true); }, 1800);
     else sendOffline();
   });
 }
@@ -72057,7 +72105,7 @@ function setCharState(el, state, opts){
    aren't animated on the bottom tab." Their resting loop is a blink and a
    few specks, which at the tab's size reads as a still picture; the tab
    plays its special now and then like the Profile card does. */
-var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar, #bottomtab-profile .bottomtab-icon-avatar";
+var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar";
 /* first special no sooner than ~8s after a character is on screen, then
    every 12-30s; a gate may shorten these */
 var charSpecialTiming = { first: [8000, 16000], gap: [12000, 30000] };
@@ -72231,7 +72279,7 @@ function charSpecialTick(){
   const el = due[Math.floor(Math.random() * due.length)];
   if(playCharSpecial(el)) el.dataset.spNext = String(now + charSpecialMsFor(el.querySelector("svg.avatarchar-svg")) + charSpecialRand(charSpecialTiming.gap));
 }
-document.addEventListener("visibilitychange", () => { if(!document.hidden) charSpecialWake(); });
+document.addEventListener("visibilitychange", () => { if(!document.hidden) setTimeout(() => { if(!document.hidden) charSpecialWake(); }, 2500); });
 function isFriendPub(pub){
   try{ return !!pub && friendPublicIds().indexOf(pub) >= 0; }catch(e){ return false; }
 }
@@ -82690,8 +82738,11 @@ document.addEventListener("visibilitychange", () => {
   } else {
     if(!loopHiddenAt) return;
     loopHiddenMs += Date.now() - loopHiddenAt; loopHiddenAt = 0;
-    loopPausedByUs.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
-    loopPausedByUs.clear();
+    /* build 349: played on the next frame, after the page has painted once, and the other wake-up work (presence,
+       listeners, the update check) is held back a couple of seconds - "lag, a second of black, the planet system
+       loads its positions late" came from everything starting in the same frames */
+    const resume = Array.from(loopPausedByUs); loopPausedByUs.clear();
+    requestAnimationFrame(() => resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} }));
     /* waking is work enough: nothing optional for a couple of seconds */
     try{ recUserAt = performance.now(); }catch(e){}
   }
@@ -83579,14 +83630,16 @@ const HOME_OUTER_R = 152;
    the check. Sapphire takes Welcome's one gap, at the bottom, at the radius
    Gold and Supernova share - "closer to the first ring ... move it up a
    little". buildCosmicHero places them; buildRankTrails' bands follow. */
+/* Build 349: every rank bubble rides a ring - four on the outer (152), three on the inner (108), each a few units off
+   the line and at uneven angles, so it reads as scattered but is spaced round the planet. None over the planet. */
 const HOME_SPOTS = [
-  { a: 313.3, R: 173.0 },   /* rookie   - Bronze    */
-  { a: 26.0,  R: 139.6 },   /* ranger   - Silver    */
-  { a: 87.2,  R: 133.4 },   /* veteran  - Gold      */
-  { a: 144.4, R: 154.5 },   /* vanguard - Platinum  */
-  { a: 188.0, R: 134.0 },   /* adept    - Sapphire  */
-  { a: 233.0, R: 175.7 },   /* elite    - Amethyst  */
-  { a: 270.1, R: 133.2 }    /* titan    - Supernova */
+  { a: 318.0, R: 156.0 },   /* rookie   - Bronze    (outer) */
+  { a: 8.0,   R: 106.0 },   /* ranger   - Silver    (inner) */
+  { a: 62.0,  R: 148.0 },   /* veteran  - Gold      (outer) */
+  { a: 120.0, R: 111.0 },   /* vanguard - Platinum  (inner) */
+  { a: 168.0, R: 155.0 },   /* adept    - Sapphire  (outer) */
+  { a: 270.0, R: 104.0 },   /* elite    - Amethyst  (inner) */
+  { a: 232.0, R: 150.0 }    /* titan    - Supernova (outer) */
 ];
 function homeSpotXY(i){
   const sp = HOME_SPOTS[i % HOME_SPOTS.length], r = sp.a * Math.PI / 180;
@@ -89936,6 +89989,36 @@ function dailyQuestionIndexFor(key){
 }
 function dailyQuestionIndexForToday(){
   return dailyQuestionIndexFor(dailyPeriodKey());
+}
+/* BUILD 349: A TAP THAT THE SCREEN CHANGED UNDER. "The submit answer button on daily question, I have to click it
+   multiple times for some reason." Picking an answer re-draws the whole question screen (the pill included), and a
+   press that lands in the middle of a re-draw is on a button that has just gone: no click ever follows. So the press
+   is remembered by where it landed; when the finger lifts within 12px of it (the same finger, not dragged away) and no
+   click has come within 70ms, the button that is THERE now is pressed, once. `get` finds that button (the old one may
+   be detached), `act` is what it does. A mouse is left to its plain click. */
+let tapClickAt = -1e9;   /* the last click on ANY armed button: a re-drawn screen has a new button, with its own click */
+function armTapFallback(el, get, act){
+  let down = null;
+  el.addEventListener("click", () => { tapClickAt = performance.now(); });
+  el.addEventListener("pointerdown", e => {
+    if(e.pointerType === "mouse" || e.button > 0) return;
+    down = { id: e.pointerId, x: e.clientX, y: e.clientY, at: performance.now() };
+    const up = ev => {
+      if(!down || ev.pointerId !== down.id) return;
+      document.removeEventListener("pointerup", up, true); document.removeEventListener("pointercancel", up, true);
+      const d = down; down = null;
+      if(ev.type !== "pointerup" || Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 12 || performance.now() - d.at > 900) return;
+      setTimeout(() => {
+        if(performance.now() - tapClickAt < 450) return;
+        const now = get();
+        if(!now || now.disabled || !now.isConnected) return;
+        const r = now.getBoundingClientRect();
+        if(ev.clientX < r.left - 10 || ev.clientX > r.right + 10 || ev.clientY < r.top - 10 || ev.clientY > r.bottom + 10) return;
+        tapClickAt = performance.now(); act();
+      }, 70);
+    };
+    document.addEventListener("pointerup", up, true); document.addEventListener("pointercancel", up, true);
+  });
 }
 function startDailyQuestion(){
   if(!QUESTIONS.length){ showToast("This class's questions have not been added yet."); return; }
@@ -96474,7 +96557,8 @@ function showHome(){
   verShort.className = "homeversion-short";
   verShort.textContent = "v" + RELEASE_NOTES[0].version;
   versionTag.append(verLong, verShort);
-  versionTag.addEventListener("click", showReleaseHistory);
+  /* build 349: the version history lives in Settings only; this tag stays in the page as the "Home is up" marker but is not shown or tappable */
+  versionTag.hidden = true; versionTag.tabIndex = -1; versionTag.setAttribute("aria-hidden", "true");
   stage.appendChild(versionTag);
   try{ mountClassBubble(); maybeClassGreeting(); if(classSwitchAllowed()) maybeNewClassBanner(); }catch(e){}
 
@@ -100504,43 +100588,87 @@ async function ifcOpenViewer(opts){
     v.obs.observe(stage, { childList: true });
   }catch(e){}
   dim.addEventListener("click", ifcCloseViewer); done.addEventListener("click", ifcCloseViewer);
-  let z = 1; const ZMAX = 5;
-  const setZ = (nz, fx, fy) => {
-    nz = Math.max(1, Math.min(ZMAX, nz)); if(Math.abs(nz - z) < 0.001) return;
-    const r = nz / z; if(fx == null){ fx = scroll.clientWidth / 2; fy = scroll.clientHeight / 2; }
-    const sl = scroll.scrollLeft, st = scroll.scrollTop;
-    z = nz; pages.style.width = (z * 100) + "%";
-    scroll.scrollLeft = (sl + fx) * r - fx; scroll.scrollTop = (st + fy) * r - fy;
+  /* zoom and pan are one transform on the pages (nothing reflows while a finger is down): two fingers pinch about
+     their midpoint, one finger drags with a little glide, a double tap toggles, the wheel pans, ctrl + wheel zooms */
+  let z = 1, tx = 0, ty = 0; const ZMAX = 5;
+  pages.style.transformOrigin = "0 0"; pages.style.willChange = "transform";
+  const clampT = () => {
+    const cw = scroll.clientWidth, ch = scroll.clientHeight, w = pages.offsetWidth * z, h = pages.offsetHeight * z;
+    tx = w <= cw ? (cw - w) / 2 : Math.min(0, Math.max(cw - w, tx));
+    ty = h <= ch ? 0 : Math.min(0, Math.max(ch - h, ty));
+  };
+  const apply = () => {
+    clampT(); pages.style.transform = "translate3d(" + tx + "px," + ty + "px,0) scale(" + z + ")";
     out.disabled = z <= 1.001; zin.disabled = z >= ZMAX - 0.001;
     root.classList.toggle("is-zoomed", z > 1.001);
   };
+  const setZ = (nz, fx, fy, soft) => {
+    nz = Math.max(1, Math.min(ZMAX, nz));
+    if(fx == null){ fx = scroll.clientWidth / 2; fy = scroll.clientHeight / 2; }
+    const r = nz / z; tx = fx - (fx - tx) * r; ty = fy - (fy - ty) * r; z = nz;
+    if(soft && !still){ pages.style.transition = "transform .22s cubic-bezier(.2,.8,.2,1)"; setTimeout(() => { pages.style.transition = ""; }, 260); }
+    apply();
+  };
   out.disabled = true;
-  out.addEventListener("click", () => setZ(z / 1.5)); zin.addEventListener("click", () => setZ(z * 1.5));
-  /* pinch (two pointers), double-tap, ctrl + wheel */
-  const ptr = new Map(); let lastD = 0, lastTap = 0, tapX = 0, tapY = 0, moved = 0;
+  out.addEventListener("click", () => setZ(z / 1.5, null, null, true)); zin.addEventListener("click", () => setZ(z * 1.5, null, null, true));
+  const ptr = new Map(); let lastD = 0, lastTap = 0, tapX = 0, tapY = 0, moved = 0, vx = 0, vy = 0, lastT = 0, glide = 0, downAt = 0;
   const rect = () => scroll.getBoundingClientRect();
-  scroll.addEventListener("pointerdown", e => { ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastD = 0; moved = 0; });
+  const stopGlide = () => { if(glide){ cancelAnimationFrame(glide); glide = 0; } };
+  scroll.addEventListener("pointerdown", e => {
+    stopGlide(); pages.style.transition = "";
+    try{ scroll.setPointerCapture(e.pointerId); }catch(_){}
+    ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastD = 0; vx = vy = 0; lastT = e.timeStamp;
+    if(ptr.size === 1){ moved = 0; downAt = e.timeStamp; } else moved = 99;
+  });
   scroll.addEventListener("pointermove", e => {
     const p = ptr.get(e.pointerId); if(!p) return;
-    moved += Math.abs(e.clientX - p.x) + Math.abs(e.clientY - p.y);
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
     p.x = e.clientX; p.y = e.clientY;
-    if(ptr.size === 2){
-      const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-      if(lastD){ const r0 = rect(); setZ(z * d / lastD, (a.x + b.x) / 2 - r0.left, (a.y + b.y) / 2 - r0.top); }
-      lastD = d; moved = 99;
+    if(ptr.size >= 2){
+      const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y), r0 = rect();
+      if(lastD){
+        const mx = (a.x + b.x) / 2 - r0.left, my = (a.y + b.y) / 2 - r0.top;
+        const nz = Math.max(1, Math.min(ZMAX, z * d / lastD)), r = nz / z;
+        tx = mx - (mx - tx) * r + dx / 2; ty = my - (my - ty) * r + dy / 2; z = nz; apply();
+      }
+      lastD = d; moved = 99; return;
     }
+    moved += Math.abs(dx) + Math.abs(dy);
+    if(moved < 6) return;
+    const dt = Math.max(1, e.timeStamp - lastT); lastT = e.timeStamp;
+    vx = vx * .5 + (dx / dt) * .5; vy = vy * .5 + (dy / dt) * .5;
+    tx += dx; ty += dy; apply();
   });
   const up = e => {
     const had = ptr.size; ptr.delete(e.pointerId); lastD = 0;
-    if(had === 1 && e.type === "pointerup" && moved < 10){
+    if(had === 2){ const [q] = [...ptr.values()]; vx = vy = 0; return; }
+    if(had !== 1) return;
+    if(e.type === "pointerup" && moved < 10 && e.timeStamp - downAt < 400){
       const now = performance.now();
-      if(now - lastTap < 320 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 24){
-        const r0 = rect(); setZ(z > 1.2 ? 1 : 2.5, e.clientX - r0.left, e.clientY - r0.top); lastTap = 0;
+      if(now - lastTap < 320 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 28){
+        const r0 = rect(); setZ(z > 1.2 ? 1 : 2.5, e.clientX - r0.left, e.clientY - r0.top, true); lastTap = 0;
       } else { lastTap = now; tapX = e.clientX; tapY = e.clientY; }
+      return;
+    }
+    if(e.type === "pointerup" && !still && (Math.abs(vx) > .05 || Math.abs(vy) > .05) && e.timeStamp - lastT < 80){
+      let last = performance.now();
+      const step = t => {
+        const dt = Math.min(40, t - last); last = t;
+        tx += vx * dt; ty += vy * dt; const k = Math.pow(.994, dt); vx *= k; vy *= k;
+        const bx = tx, by = ty; apply();
+        if((bx !== tx) ) vx = 0; if(by !== ty) vy = 0;
+        glide = (Math.abs(vx) > .02 || Math.abs(vy) > .02) ? requestAnimationFrame(step) : 0;
+      };
+      glide = requestAnimationFrame(step);
     }
   };
   scroll.addEventListener("pointerup", up); scroll.addEventListener("pointercancel", up);
-  scroll.addEventListener("wheel", e => { if(!e.ctrlKey) return; e.preventDefault(); const r0 = rect(); setZ(z * Math.exp(-e.deltaY * 0.01), e.clientX - r0.left, e.clientY - r0.top); }, { passive: false });
+  scroll.addEventListener("wheel", e => {
+    e.preventDefault(); const r0 = rect();
+    if(e.ctrlKey) setZ(z * Math.exp(-e.deltaY * 0.01), e.clientX - r0.left, e.clientY - r0.top);
+    else { tx -= e.deltaX; ty -= e.deltaY; apply(); }
+  }, { passive: false });
+  new ResizeObserver(() => apply()).observe(pages);
   try{
     const holder = ifcEl("div", "ifc-vz-draw");
     await opts.render(holder);
@@ -101195,14 +101323,16 @@ function render(){
     dq.type = "button"; dq.className = "next floatbtn playbtn qnext dailyq-btn";
     dq.id = answered ? "dailyq-exitbtn" : "dailyq-submitbtn";
     dq.textContent = answered ? "Exit to main menu" : "Submit answer";
-    if(answered) dq.addEventListener("click", showHome);
+    if(answered){ dq.addEventListener("click", showHome); armTapFallback(dq, () => document.getElementById("dailyq-exitbtn"), showHome); }
     else {
       dq.disabled = dailyPickSlot == null;
-      dq.addEventListener("click", () => {
+      const submitDaily = () => {
         if(dailyPickSlot == null) return;
         dailySubmitting = true;
         try{ choose(dailyPickSlot); } finally { dailySubmitting = false; }
-      });
+      };
+      dq.addEventListener("click", submitDaily);
+      armTapFallback(dq, () => document.getElementById("dailyq-submitbtn"), submitDaily);
     }
     foot.appendChild(dq);
   }
@@ -102954,7 +103084,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-348";
+const APP_BUILD = "2026-10-29-349";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -103129,6 +103259,8 @@ function showAddToHomeNotice(){
 const NOTICE_OBSTRUCTIONS = [".wrap > .top", ".wrap > .count", ".back-link",
                              ".panel > .navsegment", ".welcome-build",
                              ".vroom-chat-alert", ".homeversion-btn",
+                             /* build 349: Home's version tag is gone, which was what kept a notice below the corner buttons */
+                             "body:has(.screen-home-actual) .chatdock-btn",
                              ];
 
 /* Shared by both notices. The measured offset is applied with transitions
@@ -103965,7 +104097,7 @@ window.addEventListener("load", () => setTimeout(checkForUpdate, 1500));
    says. On iOS a Home Screen app is resumed far more often than it is
    launched cold. */
 document.addEventListener("visibilitychange", () => {
-  if(!document.hidden) checkForUpdate(true);
+  if(!document.hidden) setTimeout(() => { if(!document.hidden) checkForUpdate(true); }, 1500);
 });
 
 /* ---- AND WHILE SOMEBODY IS JUST USING IT ----
@@ -113602,6 +113734,66 @@ function showResetWarning(){
 const BUG_REPORT_MAX = 1200;
 __bm("L107220");
 const BUG_REPORT_TIMEOUT_MS = 15000;
+/* THE TAB SPEED TEST (build 349). Taps every bottom tab the way a finger does (pointerdown, pointerup, click) and
+   measures, for each tap, how long the page was held up (a message-channel loop: the main thread) and how long
+   frames were (requestAnimationFrame gaps). If frames stall while the main thread does not, it is the graphics side,
+   not the script. The summary is sent to the admin as a bug report (kind "bug", text "Tab speed test"); it
+   carries no code and no name beyond the first name every report has. */
+let lagTestRunning = false;
+async function runLagTest(onDone){
+  if(lagTestRunning) return;
+  lagTestRunning = true;
+  const note = document.createElement("div");
+  note.setAttribute("aria-hidden", "true");
+  note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none";
+  note.textContent = "Testing tab speed… don't touch the screen";
+  document.body.appendChild(note);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const rec = { main: [], raf: [] };
+  let on = true;
+  const mc = new MessageChannel(); let lastM = performance.now();
+  mc.port1.onmessage = () => { const n = performance.now(); rec.main.push(n - lastM); lastM = n; if(on) setTimeout(() => mc.port2.postMessage(0), 0); };
+  let lastR = performance.now();
+  const rafTick = t => { rec.raf.push(t - lastR); lastR = t; if(on) requestAnimationFrame(rafTick); };
+  const rows = [];
+  try{
+    try{ showHome(); }catch(e){}
+    await wait(1800);
+    const ids = ["rewards", "profile", "home", "calendar", "rewards", "home", "profile", "rewards", "calendar", "home"];
+    mc.port2.postMessage(0); requestAnimationFrame(rafTick);
+    for(const d of ids){
+      const el = document.getElementById("bottomtab-" + d);
+      if(!el || el.hidden || !el.getClientRects().length) continue;
+      const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+      rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+      const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
+      el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+      await wait(1500);
+      const mx = Math.round(Math.max(0, ...rec.main)), rx = Math.round(Math.max(0, ...rec.raf));
+      rows.push(d + " main" + mx + " frame" + rx + " m>50:" + rec.main.filter(v => v > 50).length + " f>34:" + rec.raf.filter(v => v > 34).length + " f>100:" + rec.raf.filter(v => v > 100).length + " n" + rec.raf.length);
+    }
+  }catch(e){ rows.push("error " + ((e && e.message) || e)); }
+  on = false;
+  try{ note.remove(); }catch(e){}
+  lagTestRunning = false;
+  const text = rows.join(" | ");
+  let vw = 0, vh = 0; try{ vw = Math.round(innerWidth); vh = Math.round(innerHeight); }catch(e){}
+  let sent = false;
+  try{
+    if(fbDb && navigator.onLine !== false){
+      const id = "bug-" + Date.now().toString(36) + "-lag" + Math.random().toString(36).slice(2, 5);
+      await Promise.race([fbDb.collection("vrooms").doc(id).set({
+        kind: "bug", text: "Tab speed test", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+        from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
+        viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text).slice(0, 1700),
+        at: Date.now() }).then(() => { sent = true; }), wait(6000)]);
+    }
+  }catch(e){}
+  try{ onDone && onDone({ text, sent }); }catch(e){}
+  return { text, sent };
+}
 function showBugReport(){
   setActiveNav("settings");
   countEl.textContent = "Report a bug";
@@ -113624,6 +113816,13 @@ function showBugReport(){
     + "Your report goes to the Nova admin, with your first name, app version "
     + "and device attached so the problem can be tracked down and fixed.";
   form.appendChild(sub);
+
+  /* build 349: a one-tap measurement of the bottom tabs on this device, sent to the admin with no typing */
+  const lagBtn = document.createElement("button");
+  lagBtn.type = "button"; lagBtn.className = "next bugreport-send";
+  lagBtn.textContent = "Test tab speed";
+  lagBtn.addEventListener("click", () => { if(!lagTestRunning) runLagTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The tab speed test was sent to the Nova admin." : "The tab speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
+  form.appendChild(lagBtn);
 
   const boxId = "bugreport-text";
   const lab = document.createElement("label");
@@ -125070,7 +125269,8 @@ function renderRankingRows(rows, entries, board, opts){
     }
     rows.appendChild(row);
   };
-  const FIRST_ROWS = Math.max(6, Math.ceil(((window.innerHeight || 800) - 260) / 60) + 1);
+  /* build 349: seven rows in the tap's own task, then three a frame - a long frame under a tab tap is the freeze */
+  const FIRST_ROWS = 7;
   let built = 0;
   const token = (rows._lbFill = (rows._lbFill || 0) + 1);
   const buildRows = n => { const end = Math.min(shown.length, built + n); for(; built < end; built++) addRow(shown[built], built); };
@@ -125079,7 +125279,7 @@ function renderRankingRows(rows, entries, board, opts){
   startRankMarks(rows);
   const buildMore = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
-    buildRows(6); lbWatchOffscreen(rows, true); startRankMarks(rows);
+    buildRows(3); lbWatchOffscreen(rows, true); startRankMarks(rows);
     if(built < shown.length) requestAnimationFrame(buildMore);
   };
   if(built < shown.length) requestAnimationFrame(buildMore);
