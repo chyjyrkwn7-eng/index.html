@@ -1043,6 +1043,7 @@ def check_update_and_cards(br):
       window.fetch = (u, o) => { if(String(u).indexOf('version.json') >= 0){ n++;
         return Promise.resolve({ ok:true, json: () => Promise.resolve({ build: APP_BUILD }) }); }
         return real(u, o); };
+      const realApply = applyUpdate; applyUpdate = async () => {};   /* an update pushed by the sections above must not reload the page during the longer wait */
       try{
         document.querySelectorAll('.update-banner, #pushing-update').forEach(x => x.remove());
         await new Promise(r => setTimeout(r, 50));
@@ -1059,7 +1060,7 @@ def check_update_and_cards(br):
         await checkForUpdate();                       /* a burst of screen changes */
         await checkForUpdate();
         out.burst = n;
-      } finally { window.fetch = real; }
+      } finally { window.fetch = real; applyUpdate = realApply; }
       return out; }""")
     check("the poll asks for real: a check a minute ago does not turn it away",
           asks.get("poll") == 1, asks)
