@@ -503,6 +503,8 @@ def cmd_bugs(limit):
         print("  %s  %s%s" % (f.get("viewport") or "?",
                               (f.get("ua") or "")[:70],
                               " [installed]" if f.get("standalone") else ""))
+        if f.get("perf"):
+            print("  tab perf: %s" % f.get("perf"))
         for line in (f.get("text") or "").splitlines() or [""]:
             print("    " + line)
         print("  id: %s\n" % rid)

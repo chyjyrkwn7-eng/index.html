@@ -34087,7 +34087,7 @@ html.is-browser{ --fade-paper: transparent; }
      A glass bubble under the planet at the left edge, a soft glow in the class's colour (no
      flashing). It drops a glass capsule that stays joined to it: the other classes, then "+".
      No backdrop blur anywhere on it (it moves), no screen dimming. */
-  .class-bubble-wrap{ position:fixed; z-index:301; left:max(.55rem, calc(env(safe-area-inset-left, 0px) + .4rem)); top:40%; --cb:46px; --cg:8px; }
+  .class-bubble-wrap{ position:fixed; z-index:150; left:max(.55rem, calc(env(safe-area-inset-left, 0px) + .4rem)); top:40%; --cb:46px; --cg:8px; }
   /* the app's glass, as the tab bar and the chat button wear it: a see-through near-black body under
      a faint lift, one soft rim - and none of the hard edge lines (the gradient does not repeat
      under the border; the shadows are blurred, so no line shows at the top or the bottom of the
@@ -34363,7 +34363,7 @@ html.is-browser{ --fade-paper: transparent; }
        under the 44px tap height. */
     html[data-layout] body .panel.home.screen-home-actual > .playbtn{
       font-size:clamp(.88rem, 4.4vw, 1.2rem) !important; padding:.72em 1.3em !important;
-      min-width:clamp(146px, 49vw, 216px) !important; min-height:clamp(44px, 12.8vw, 60px) !important;
+      min-width:clamp(146px, min(49vw, calc(100vw - 192px)), 216px) !important; min-height:clamp(44px, 12.8vw, 60px) !important;   /* (348: never nearer the daily circle than 12px, on a 360px screen where 49vw would be) */
     }
   }
   /* (build 328) "iPad Pro 11. The planet system could be a little bigger": an upright iPad
@@ -34425,6 +34425,16 @@ html.is-browser{ --fade-paper: transparent; }
        below it, so the gap to the tab bar equals the gap to the words. */
     html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-bottom:auto !important; }
     html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ padding-bottom:max(0px, calc(var(--hg) * 1.4 - 9px)) !important; }
+    /* THE PROPORTIONS HE PREFERS (build 347). He sent a Home from his iPhone and said "I prefer these proportions ...
+       ensure this is updated for my phone and everywhere else": the planet where it is, the words and Start Studying
+       LOWER, nearer the tab bar - measured off it on a 440x956 screen: the greeting's top 595px (was 559), the gap
+       from "Master the material" to Start 60px (was 74) and from Start to the bar 55px (was 74). So the room under the
+       planet is no longer shared in three; the two small gaps are fixed to the screen's height (6.3dvh and 5.8dvh) and
+       the first takes all the rest. (335's equal thirds were his own ask a day earlier; this is his newer one.) */
+    @media (min-height:46rem){
+      html[data-layout][data-theme]:not(.x) body .panel.home.screen-home-actual > .playbtn{ margin-top:max(0px, calc(clamp(40px, 6.3dvh, 72px) - var(--hg) * 1.4)) !important; margin-bottom:0 !important; }
+      html[data-layout][data-theme]:not(.x) body #stage > .panel.home.screen-home-actual{ padding-bottom:clamp(24px, calc(5.8dvh - 9px), 56px) !important; }
+    }   /* (a short phone keeps the thirds: its planet needs the room) */
   }
   /* (Oct 26 night) "The iPhone 15 and 17 Pro Max ... the planet system is pretty close to the version
      history number. Maybe it should shrink JUST A TINY SMIDGE and/or be brought down JUST A TINY
@@ -34585,6 +34595,95 @@ html.is-browser{ --fade-paper: transparent; }
   @media (max-width:639px){
     html[data-layout] .vroom-chat-alert.is-glass{ left:max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); }
   }
+
+  /* ---- LIQUID GLASS ORBS (build 344) ----
+     "The daily question button, not a fan of how this looks when it's ready, it doesn't go with the app, it needs a
+     nice Liquid Glass look" and "The class button and the buttons within it, it needs the same look but a different
+     thing in the middle." One recipe for the daily question, the class button and the buttons in its list: a clear
+     body that lets the sky through, light pooled at the top-left and a faint return at the foot, a bright hairline
+     rim with its specular catch along the top edge and a soft shadow below - what the tab bar's glass is made of,
+     as a circle. Ready is the same glass with the rank's own colour washed up from its foot and in its rim, the "?"
+     white; it is not a lit coloured orb any more. The ring that leaves it is kept, quieter. */
+  html[data-theme][data-layout] body .daily-question-fab,
+  html[data-theme][data-layout] body .class-bubble,
+  html[data-theme][data-layout] body .csi-bubble{
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.30), rgba(255,255,255,.07) 42%, rgba(255,255,255,0) 66%),
+      linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 42%, rgba(255,255,255,.07)),
+      rgba(18,20,30,.36);
+    border:1px solid rgba(255,255,255,.26);
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 4px rgba(255,255,255,.1), inset 0 0 0 1px rgba(255,255,255,.04);
+    -webkit-backdrop-filter:blur(6px) saturate(1.6); backdrop-filter:blur(6px) saturate(1.6);
+    will-change:auto;
+    /* BUILD 344b: "like a broken line at the bottom of the circles". The body's gradient layers REPEATED under the
+       1px rim (a background paints under its own border), and their first row came back along the bottom edge as a
+       hairline. One paint of each, laid out from the border box - what the tab bar's own glass does. */
+    background-repeat:no-repeat; background-origin:border-box;
+  }
+  /* the list's buttons move as it opens: no blur on them, a slightly denser body in its place */
+  html[data-theme][data-layout] body .csi-bubble{ -webkit-backdrop-filter:none; backdrop-filter:none; background-color:rgba(22,24,34,.62); }
+  html[data-theme][data-layout] body .daily-question-fab.is-ready:not(.is-done),
+  html[data-theme][data-layout] body:has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.30), rgba(255,255,255,.07) 42%, rgba(255,255,255,0) 66%),
+      radial-gradient(110% 80% at 50% 118%, color-mix(in srgb, var(--dq-c) 46%, transparent), color-mix(in srgb, var(--dq-c) 12%, transparent) 62%, transparent 80%),
+      rgba(18,20,30,.36) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid color-mix(in srgb, var(--dq-c) 38%, rgba(255,255,255,.3)) !important;
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               0 0 14px -4px color-mix(in srgb, var(--dq-c) 40%, transparent),
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 5px color-mix(in srgb, var(--dq-c) 40%, transparent) !important;
+    color:#FFFFFF;
+  }
+  html[data-theme][data-layout] body .daily-question-fab.is-done{
+    background:
+      radial-gradient(130% 100% at 28% 0%, rgba(255,255,255,.2), rgba(255,255,255,.05) 42%, rgba(255,255,255,0) 66%),
+      rgba(18,20,30,.34) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border-color:rgba(255,255,255,.16) !important;
+  }
+  .daily-question-fab.is-ready::after{ border-width:1px; }
+
+  /* ---- WHOLE PIXELS FOR THE ORBS (build 344b) ----
+     "Look at the bottom of the circles (especially the class one), there's like a broken line." 3.4rem is 54.4px and
+     the corner's bottom edge fell at .81 of a pixel, so the 1px rim of each circle sat between two rows of pixels
+     and was drawn broken - a bright flat dash at the foot on one, a gap on the other. On a phone the size and the
+     line the corner buttons stand on are snapped to whole pixels. (round() is Safari 15.4+, Chrome 125+; anywhere
+     else the sizes stay as they were.) */
+  @supports (width: round(nearest, 1.4px, 1px)){
+    @media (max-width:39.99rem) and (orientation:portrait){
+      html[data-theme][data-layout] body .daily-question-fab{ width:round(nearest, 3.4rem, 1px); height:round(nearest, 3.4rem, 1px); }
+      html[data-theme][data-layout]:not(.is-browser) body:has(.screen-home-actual) .daily-question-fab{
+        bottom:round(nearest, calc(var(--tabs-bottom) + 6.2rem), 1px) !important; }
+      html[data-theme][data-layout] body .class-bubble-wrap{ --cb:round(nearest, 3.4rem, 1px); bottom:round(nearest, calc(var(--tabs-bottom, 12px) + 6.2rem), 1px); }
+    }
+  }
+
+  /* ---- THE ORBS FOLLOW THE THEME, IN SILVER (build 344c) ----
+     "I kinda [like] the icon (it didn't have color) it matches silver well. Could we make them all like that for the
+     themes." The marks on the class button and its list were drawn in colour (a lilac shield, an orange flame) and the
+     daily question's ring in gold. They are silver now - the same mark, the colour taken out - and the theme tints the
+     glass: the rim, the wash at the foot and the silver itself lean a little towards the theme's own colour (the rank
+     colour under a rank theme, the accent otherwise), so Silver's is plain silver and the rest are silver touched with
+     theirs. One variable (--orb-tint) feeds all three. */
+  html[data-theme][data-layout] body{ --orb-tint:var(--rank-accent, var(--theme-c1, #C9CDD4)); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:first-child{ stop-color:color-mix(in srgb, var(--orb-tint) 14%, #FFFFFF); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:not(:first-child){ stop-color:color-mix(in srgb, var(--orb-tint) 34%, #BFC4CC); }
+  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble){
+    border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
+               inset 0 1.5px 1px rgba(255,255,255,.55), inset 0 -2px 5px color-mix(in srgb, var(--orb-tint) 22%, rgba(255,255,255,.1)), inset 0 0 0 1px rgba(255,255,255,.04);
+  }
+  html[data-theme][data-layout] body .daily-question-fab:not(.is-ready){
+    border-color:color-mix(in srgb, var(--orb-tint) 20%, rgba(255,255,255,.26));
+  }
+  .class-card.is-enrolled[aria-disabled="true"]{ cursor:default; pointer-events:none; }
+  /* the daily question's invisible tap pad (build 348): 9px all round, so a thumb that lands beside the circle still hits it */
+  .daily-question-fab::before{ content:""; position:absolute; inset:-9px; border-radius:50%; }
+  /* its Submit answer pill, a little higher (build 348): "the submit answer button, it should be a little higher" - it stood
+     22px off the bottom of the screen, in the home indicator's zone */
+  .foot > .floatbtn.qnext.dailyq-btn{ bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom) + 12px); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -51376,9 +51475,12 @@ function showClassCatalog(){
     st.textContent = enrolled ? "Enrolled" : "Enroll";
     st.classList.add(enrolled ? "is-enrolled" : "is-enroll");
     if(!enrolled && info.needs){ const n = document.createElement("span"); n.className = "cc-needs"; n.textContent = info.needs; card.querySelector(".cc-foot").prepend(n); }
+    /* BUILD 347: "When hitting add a class, it shouldn't let me click or add classes in the classes thing that I'm
+       already enrolled in." A class you are in is listed, says Enrolled, and does nothing when tapped (switching
+       between classes is the class button's own list). */
+    if(enrolled){ card.setAttribute("aria-disabled", "true"); card.tabIndex = -1; }
     card.addEventListener("click", () => {
-      if(here){ showHome(); return; }
-      if(enrolled){ switchClass(c.key); return; }
+      if(enrolled) return;
       if(c.key === "ifc") showIfcEnroll();
     });
     list.appendChild(card);
@@ -81854,7 +81956,7 @@ const RELEASE_NOTES = [
    by tapping the version number on Main Menu \u2014 same underlying data as
    the first-run screen, just denser, since this is a reference someone's
    checking back on rather than a first impression. */
-function showReleaseHistory(){
+function showReleaseHistory(from){
   stopTimer(); stopQuestionTimer();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
@@ -81872,7 +81974,8 @@ function showReleaseHistory(){
      from here. */
   /* build 327 round 9: "Ensure there is a back button in the version stuff" -
      the history is long, so the way out is at the top as well as the foot */
-  panel.appendChild(buildBackLink("Home", showHome));
+  /* opened from Settings (build 346), the way back is Settings */
+  panel.appendChild(from === "settings" ? buildBackLink("Settings", () => showAppearance()) : buildBackLink("Home", showHome));
   const head = document.createElement("p");
   head.className = "slab section-divider";
   head.textContent = "Release History";
@@ -96155,7 +96258,21 @@ function showHome(){
   dailyBtn.title = doneToday
     ? "Daily question \u2014 " + (store.dailyQuestionCorrect ? "correct today" : "done for today") + ". Resets at 5pm."
     : "Today's daily question \u2014 one quick question, no retakes.";
-  dailyBtn.addEventListener("click", startDailyQuestion);
+  /* BUILD 348: "You have to click it multiple times to register the click." A tap on a phone is a click only if the
+     finger lands and lifts on the same element and nothing under it changes in between; this button is small, glassy
+     and ringed by a pulsing light, and iOS drops the click now and then. So the press itself is also listened for: a
+     touch that lands on it and lifts on it (moving less than 12px) starts the question when no click has come within
+     90ms, once. (A mouse keeps the plain click. The invisible pad round it, in the stylesheet, makes it harder to
+     miss, too.) */
+  let dqFired = false, dqX = 0, dqY = 0, dqAt = 0;
+  dailyBtn.addEventListener("click", () => { dqFired = true; startDailyQuestion(); });
+  dailyBtn.addEventListener("pointerdown", e => { dqFired = false; dqX = e.clientX; dqY = e.clientY; dqAt = performance.now(); });
+  dailyBtn.addEventListener("pointerup", e => {
+    if(e.pointerType === "mouse" || !dqAt) return;
+    if(Math.abs(e.clientX - dqX) > 12 || Math.abs(e.clientY - dqY) > 12) return;
+    const at = dqAt;
+    setTimeout(() => { if(!dqFired && dqAt === at && document.body.contains(dailyBtn)){ dqFired = true; startDailyQuestion(); } }, 90);
+  });
 
   /* Three separate things, in the order they can happen:
 
@@ -102837,7 +102954,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-27-343";
+const APP_BUILD = "2026-10-27-348";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113631,6 +113748,7 @@ function showBugReport(){
         ua: (navigator.userAgent || "").slice(0, 200),
         viewport: vw + "x" + vh,
         standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: (typeof tabPerfText === "function") ? tabPerfText() : "",
         at: Date.now()
       }).then(() => {
         clearTimeout(timer);
@@ -114663,6 +114781,16 @@ function showAppearance(opts){
      side by side instead, it would make it less cluttered". */
   updRow.appendChild(bugBtn);
   updRow.classList.add("settings-pair");
+  /* BUILD 346: "Put version history button in settings (we are gonna overhaul settings this weekend but put it
+     there for now)." The Release History Home's version tag opens, from Settings too, with Settings as its way back. */
+  const verRow = document.createElement("div");
+  verRow.className = "cal-profile-row settings-actions";
+  const verBtn = document.createElement("button");
+  verBtn.type = "button"; verBtn.className = "cal-profile-btn"; verBtn.id = "settings-version-history";
+  verBtn.textContent = "Version history";
+  verBtn.addEventListener("click", () => showReleaseHistory("settings"));
+  verRow.appendChild(verBtn);
+  updSect.appendChild(verRow);
 
   /* Advanced is its own heading because everything under it is a
      one-way door - it is the only group on this screen that can lose
@@ -124791,7 +124919,12 @@ function renderRankingRows(rows, entries, board, opts){
   const trend = lbTrendFor(board, sorted, board.sort || ((a, b) => (val(b) - val(a)) ||
                     String(a.firstName || "").localeCompare(String(b.firstName || ""))));
 
-  shown.forEach(({ entry, place }) => {
+  /* BUILD 348: "switching tabs in the leaderboard ... lags". Every switch rebuilt all the rows at once - forty-odd
+     characters of about 250 parts each, re-inserted and restyled in one go (about 11,000 parts: 100ms or more of
+     style work on a laptop, several times that on a phone) before the next frame. The screenful and a little more
+     is built now; the rest follows six rows to a frame (progressive, below), and Find me finishes the list first
+     if it is asked for before it is done. */
+  const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
     /* Matched on the sync code, not the name. Two classmates called
@@ -124936,9 +125069,21 @@ function renderRankingRows(rows, entries, board, opts){
       } else row.insertBefore(bWrap, row.firstChild);
     }
     rows.appendChild(row);
-  });
+  };
+  const FIRST_ROWS = Math.max(6, Math.ceil(((window.innerHeight || 800) - 260) / 60) + 1);
+  let built = 0;
+  const token = (rows._lbFill = (rows._lbFill || 0) + 1);
+  const buildRows = n => { const end = Math.min(shown.length, built + n); for(; built < end; built++) addRow(shown[built], built); };
+  buildRows(FIRST_ROWS);
   lbWatchOffscreen(rows);
   startRankMarks(rows);
+  const buildMore = () => {
+    if(rows._lbFill !== token || !rows.isConnected) return;
+    buildRows(6); lbWatchOffscreen(rows, true); startRankMarks(rows);
+    if(built < shown.length) requestAnimationFrame(buildMore);
+  };
+  if(built < shown.length) requestAnimationFrame(buildMore);
+  rows._lbFinish = () => { if(rows._lbFill === token && built < shown.length){ buildRows(shown.length); lbWatchOffscreen(rows, true); startRankMarks(rows); } };
 }
 
 /* Forty animated characters in one list is forty svgs repainting every
@@ -124946,8 +125091,10 @@ function renderRankingRows(rows, entries, board, opts){
    swatch pickers: a row out of view is paused, one in view plays, so
    nothing anybody can see changes. One observer per list, replaced on
    every rebuild and dropped once the list leaves the document. */
-function lbWatchOffscreen(rows){
+function lbWatchOffscreen(rows, more){
   if(!rows || typeof IntersectionObserver !== "function") return;
+  /* `more`: rows added to a list being built a few at a time - the same observer takes them on */
+  if(more && rows._lbIo){ rows.querySelectorAll(".rank-row, .lw-podium-spot").forEach(r => rows._lbIo.observe(r)); return; }
   if(rows._lbIo) rows._lbIo.disconnect();
   const io = new IntersectionObserver(list => {
     if(!document.contains(rows)){ io.disconnect(); return; }
@@ -130585,6 +130732,7 @@ function showRankings(defaultBoard){
     if(!store.leaderboardOptIn){ showRankings(rankingsBoardKey); return; }
     playSound("lb.findme");
     if(search.value){ search.value = ""; paint(); }
+    if(rows._lbFinish) rows._lbFinish();
     const mine = rows.querySelector('[data-me="1"]');
     if(!mine){
       /* Three different reasons your row can be missing, and naming the
@@ -135543,6 +135691,44 @@ function applyGlassRefraction(el, mapImgId){
 
 /* the bottom tab a browser tab was last on, in its sessionStorage (327z13) */
 const LAST_TAB_KEY = "class26e.lastTab";
+/* BUILD 344: WHAT A PHONE REALLY DOES WHEN A TAB IS TAPPED. The tab bar's lag has only ever been measured in
+   Chromium, which is not an iPhone. For one second after a burst of tab taps, the frame gaps are counted (over 34ms,
+   50ms, 100ms, and the worst) and the build time of the screen the tap asked for is noted; the last twelve bursts
+   are kept in this device's storage and ride along with a bug report ("perf"), so the real numbers can be read with
+   `firestore-admin.py bugs`. Nothing runs between taps and nothing is sent anywhere by itself. */
+const TAB_PERF_KEY = "class26e.tabperf";
+let tabPerfActive = null;
+function tabPerfStart(dest){
+  try{
+    const now = performance.now();
+    if(tabPerfActive){ tabPerfActive.seq.push(dest); tabPerfActive.end = now + 1000; return tabPerfActive; }
+    const rec = { at: Date.now(), seq: [dest], end: now + 1000, f: 0, g: 0, n34: 0, n50: 0, n100: 0, b: 0, bn: 0 };
+    tabPerfActive = rec;
+    let last = now;
+    const tick = (t) => {
+      const dt = t - last; last = t; rec.f++;
+      if(dt > 34) rec.n34++; if(dt > 50) rec.n50++; if(dt > 100) rec.n100++; if(dt > rec.g) rec.g = Math.round(dt);
+      if(t < rec.end) requestAnimationFrame(tick); else { tabPerfActive = null; tabPerfSave(rec); }
+    };
+    requestAnimationFrame(tick);
+    return rec;
+  }catch(e){ return null; }
+}
+function tabPerfSave(rec){
+  try{
+    let list = []; try{ list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || []; }catch(e){}
+    list.push({ at: rec.at, seq: rec.seq.join(">"), f: rec.f, g: rec.g, n34: rec.n34, n50: rec.n50, n100: rec.n100, b: Math.round(rec.b), bn: rec.bn });
+    localStorage.setItem(TAB_PERF_KEY, JSON.stringify(list.slice(-12)));
+  }catch(e){}
+}
+function tabPerfText(){
+  try{
+    const list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || [];
+    const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + " | " + list.map(r =>
+      r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn).join(" | ")).slice(0, 1700);
+  }catch(e){ return ""; }
+}
 (function setupBottomTabs(){
   const bar = document.getElementById("bottomtabs");
   if(!bar) return;
@@ -135713,6 +135899,7 @@ const LAST_TAB_KEY = "class26e.lastTab";
       bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
       slideBubbleToActiveTab();
       beginSettle();
+      const perfRec = tabPerfStart(dest);
       /* The settle window restarts once the new screen is in (build 302):
          counted from the tap, a slow build used most of it up, and the
          emblems and characters woke while the screen was still landing. */
@@ -135734,9 +135921,11 @@ const LAST_TAB_KEY = "class26e.lastTab";
         me.timers.forEach(clearTimeout);
         if(bar._navPend === me) bar._navPend = null;
         bar._navBuilds = (bar._navBuilds || 0) + 1;
+        const buildT0 = performance.now();
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
-        finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){} }
+        finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
+          if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++; } }
       };
       /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
          clicking to other tabs it shoots over instantly, the glass bubble
