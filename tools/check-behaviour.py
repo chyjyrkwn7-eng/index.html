@@ -996,6 +996,8 @@ def check_update_and_cards(br):
     at which of the two things the app then does."""
     paths = pg.evaluate("""async ()=>{
       const out = {};
+      const realApply0 = (typeof applyUpdate === 'function') ? applyUpdate : null;
+      if(realApply0) applyUpdate = async () => {};   /* the decision is what is measured: a pushed update must not really reload the page under the next check */
       const run = async (body) => {
         forcedUpdateInfo = null; forcedUpdateStarted = false; pendingNotice = null;
         document.querySelectorAll('.update-banner, #pushing-update').forEach(n => n.remove());
@@ -1019,6 +1021,7 @@ def check_update_and_cards(br):
       out.flagTrue = await run({ build:newBuild, force:true });
       out.flagFalse= await run({ build:newBuild, force:false });
       out.sameBuild= await run({ build:APP_BUILD });
+      if(realApply0) applyUpdate = realApply0;
       return out;}""")
     check("a new build with no force field is pushed anyway",
           paths["noFlag"]["pushed"] is True and paths["noFlag"]["banner"] is False,
