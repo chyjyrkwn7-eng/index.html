@@ -29366,3 +29366,25 @@ handed over. It is now 150ms from greyAt-110 with a plain ease, so it is over be
 Gate: check-b353 (platter on the tapped tab for the whole time it shows; fails on 352 for Leaderboard -> Home).
 Still open: Home's frame stalls (planet system; syncLoopClock's getAnimations ~70ms at 4x on each Home mount is
 the largest JS item in the Home mount profile), the Leaderboard fill-in smoothness.
+
+## Build 354 (2026-10-29): the speed test taps the way he does
+
+Madison: "the lag is a lot better" after 353; wants the test faster and spammed "so you can really see what I see".
+`runLagTest` (Settings > Report a bug > Test tab speed) now runs [steady] (a tap every 1.5s, per tab), [fast] (every
+0.6s, 12 taps) and [spam] (every 0.17s, 30 taps in a scrambled order, 35ms holds), reporting per run the worst
+main-thread hold, worst frame, slow frames (>34ms) and frames drawn, and after the last tap whether the right screen
+is up, the right tab lit and the platter on it (offset px). At 4x CPU here: spam = main hold ~540ms, 77 of 245 frames
+slow, end state correct. Gate: check-b354 (fails on 353).
+
+## Build 355 (2026-10-29): coming back when the page was never told it was hidden
+
+Madison: the planet system still lags weirdly after leaving the app and coming back. Build 350 held the loops on
+their pose until four steady frames - but only if the "hidden" event had run. iOS can freeze a Home Screen app
+before that event (and `if(!loopHiddenAt) return` then did nothing), so the loops ran on the wall clock while the
+app was away and the planet system appeared already moved on. Now: a 1-second tick (`loopAliveAt`) says the page was
+alive; `loopsBack()` (visibilitychange visible and pageshow) sees a stale tick (>2.5s) with no hidden mark, pauses
+every infinite loop, puts each back by the time away, and holds it until frames are steady as before. The time
+they stood still is also taken off the loop clock (`loopHiddenMs`), so a Home built afterwards lands on the same
+pose. Every way back is noted in localStorage `class26e.resumelog` (told/NOTTOLD, time away, first frame, time held,
+loops held) and shows in the bug report's perf line as "resume: ...". Gate: check-b355 (fails on 354).
+Folded in: build 354's speed test (steady / fast / spam taps with an end-state check), PR #23.

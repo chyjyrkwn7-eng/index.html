@@ -82727,44 +82727,83 @@ function heroSettleSkip(root){
 let loopHiddenMs = 0, loopHiddenAt = 0;
 const loopPausedByUs = new Set();
 function loopWallMs(lag){ return Date.now() - LOOP_EPOCH - (lag || 0) - loopHiddenMs - (loopHiddenAt ? Date.now() - loopHiddenAt : 0); }
+/* build 355: WHEN THE PAGE IS FROZEN BEFORE IT HEARS IT IS HIDDEN. iOS can suspend a Home Screen app without the
+   "hidden" event ever running, and then nothing is paused: every loop runs on the wall clock while the page is
+   away and, coming back, the planet system appears already moved on. So a second clock: a one-second tick says the
+   page was alive; if the page comes back and that tick is stale, the page was away without being told - the loops
+   are put back by the time away (to the pose they left in) before they go on. */
+let loopAliveAt = Date.now();
+setInterval(() => { if(!document.hidden) loopAliveAt = Date.now(); }, 1000);
+const LOOP_RESUME_KEY = "class26e.resumelog";
+function loopResumeNote(line){
+  try{
+    let l = []; try{ l = JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []; }catch(e){}
+    l.push(line); localStorage.setItem(LOOP_RESUME_KEY, JSON.stringify(l.slice(-6)));
+  }catch(e){}
+}
+function loopsPauseAll(shiftBack){
+  const out = [];
+  try{
+    document.getAnimations().forEach(a => {
+      try{
+        const t = a.effect && a.effect.getTiming();
+        if(!t || t.iterations !== Infinity || a.playState !== "running") return;
+        a.pause();
+        if(shiftBack > 0 && typeof a.currentTime === "number") a.currentTime = Math.max(0, a.currentTime - shiftBack);
+        out.push(a);
+      }catch(e){}
+    });
+  }catch(e){}
+  return out;
+}
+function loopsBack(){
+  let gap = 0, told = true, resume;
+  if(loopHiddenAt){
+    gap = Date.now() - loopHiddenAt;
+    resume = Array.from(loopPausedByUs); loopPausedByUs.clear();
+  } else {
+    gap = Date.now() - loopAliveAt;
+    if(gap < 2500) return;
+    told = false;
+    resume = loopsPauseAll(gap);
+  }
+  loopHiddenMs += gap; loopHiddenAt = 0;
+  const t0 = performance.now();
+  /* build 349: played on the next frame, after the page has painted once, and the other wake-up work (presence,
+     listeners, the update check) is held back a couple of seconds - "lag, a second of black, the planet system
+     loads its positions late" came from everything starting in the same frames */
+  /* build 350: and not before the page is drawing steadily again. iOS drops the page's graphics while it is away, and
+     the first frames back are a stall; loops started inside that stall run on the wall clock while nothing is drawn
+     and then appear already moved on ("the planet system freezes, then loads to where it went"). They stay on their
+     pose until four frames in a row come at a normal pace (at most ~1.5s), then go on from that pose. */
+  let good = 0, tries = 0, lastT = t0, first = 0;
+  const go = () => {
+    resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    /* the time they stood still is time off the loop clock too, or the next Home built would put them ahead */
+    loopHiddenMs += performance.now() - t0;
+    loopResumeNote((told ? "told" : "NOTTOLD") + " away" + Math.round(gap) + " first" + first + " held" + Math.round(performance.now() - t0) + " n" + resume.length);
+  };
+  const tick = t => {
+    if(document.hidden){ resume.forEach(a => loopPausedByUs.add(a)); return; }
+    if(!first) first = Math.round(t - t0);
+    const dt = t - lastT; lastT = t;
+    good = dt < 40 ? good + 1 : 0;
+    if(good >= 4 || ++tries > 90){ go(); return; }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  /* waking is work enough: nothing optional for a couple of seconds */
+  try{ recUserAt = performance.now(); }catch(e){}
+}
 document.addEventListener("visibilitychange", () => {
   if(document.hidden){
     if(loopHiddenAt) return;
     loopHiddenAt = Date.now();
-    try{
-      document.getAnimations().forEach(a => {
-        try{
-          const t = a.effect && a.effect.getTiming();
-          if(!t || t.iterations !== Infinity || a.playState !== "running") return;
-          a.pause(); loopPausedByUs.add(a);
-        }catch(e){}
-      });
-    }catch(e){}
-  } else {
-    if(!loopHiddenAt) return;
-    loopHiddenMs += Date.now() - loopHiddenAt; loopHiddenAt = 0;
-    /* build 349: played on the next frame, after the page has painted once, and the other wake-up work (presence,
-       listeners, the update check) is held back a couple of seconds - "lag, a second of black, the planet system
-       loads its positions late" came from everything starting in the same frames */
-    const resume = Array.from(loopPausedByUs); loopPausedByUs.clear();
-    /* build 350: and not before the page is drawing steadily again. iOS drops the page's graphics while it is away, and
-       the first frames back are a stall; loops started inside that stall run on the wall clock while nothing is drawn
-       and then appear already moved on ("the planet system freezes, then loads to where it went"). They stay on their
-       pose until four frames in a row come at a normal pace (at most ~1.5s), then go on from that pose. */
-    let good = 0, tries = 0, lastT = performance.now();
-    const go = () => resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
-    const tick = t => {
-      if(document.hidden){ resume.forEach(a => loopPausedByUs.add(a)); return; }
-      const dt = t - lastT; lastT = t;
-      good = dt < 40 ? good + 1 : 0;
-      if(good >= 4 || ++tries > 90){ go(); return; }
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    /* waking is work enough: nothing optional for a couple of seconds */
-    try{ recUserAt = performance.now(); }catch(e){}
-  }
+    loopPausedByUs.clear();
+    loopsPauseAll(0).forEach(a => loopPausedByUs.add(a));
+  } else loopsBack();
 });
+window.addEventListener("pageshow", e => { if(!document.hidden) loopsBack(); });
 function syncLoopClock(root){
   if(!root || !root.getAnimations) return;
   let anims;
@@ -103102,7 +103141,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-353";
+const APP_BUILD = "2026-10-29-355";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -113777,39 +113816,54 @@ async function runLagTest(onDone){
   try{
     try{ showHome(); }catch(e){}
     await wait(1800);
-    /* Each pass switches one thing off for the whole page, so the passes show which thing the frames are waiting on
-       (build 352): [base] nothing off; [nocols] the rank flares in the rows; [noavw] the characters in the rows;
-       [nohead] the Leaderboard's header and search; [nohero] Home's planet system. */
-    const VARIANTS = [["base", ""],
-      ["nocols", ".rank-cols{display:none !important}"],
-      ["noavw", ".rank-avatar-wrap{display:none !important}"],
-      ["nohead", ".screen-rankings .profiletabs,.screen-rankings .rank-search,.screen-rankings .rank-me-btn,.screen-rankings .rank-col-head{display:none !important}"],
-      ["nohero", ".cosmic-hero-wrap{display:none !important}"]];
-    const ids = ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"];
+    /* build 354: three runs of taps the way a finger does them - [steady] one tap every 1.5s (per tab), [fast] one every
+       0.6s, [spam] one every 0.17s in a scrambled order. Per run: worst main-thread hold, worst frame, slow frames
+       (>34ms) and frames drawn; and after the last tap, whether the right screen is up, the right tab is lit and the
+       grey platter sits on it (offset in px). */
+    const SEL = { home: ".screen-home-actual", profile: ".screen-profile", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
+    const tapTab = async (d, hold) => {
+      const el = document.getElementById("bottomtab-" + d);
+      if(!el || el.hidden || !el.getClientRects().length) return false;
+      const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+      const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
+      el.dispatchEvent(mk("pointerdown")); await wait(hold); el.dispatchEvent(mk("pointerup"));
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+      return true;
+    };
+    const mxOf = a => Math.round(a.reduce((m, v) => v > m ? v : m, 0));
+    const endState = d => {
+      const act = document.querySelector(".bottomtab.active"), sl = document.getElementById("bottomtabs-slider");
+      let off = -1;
+      try{ const a = act.getBoundingClientRect(), r = sl.getBoundingClientRect(); off = Math.round(Math.abs((r.left + r.width / 2) - (a.left + a.width / 2)) * 10) / 10; }catch(e){}
+      return "screen" + (document.querySelector(SEL[d]) ? "ok" : "WRONG") + " lit" + (act && act.id === "bottomtab-" + d ? "ok" : "WRONG") + " platter" + off + "px";
+    };
     mc.port2.postMessage(0); requestAnimationFrame(rafTick);
-    const vs = document.createElement("style"); vs.id = "lagtest-variant"; document.head.appendChild(vs);
-    for(const [vname, css] of VARIANTS){
-      vs.textContent = css;
-      note.textContent = "Testing tab speed (" + vname + ")… don't touch the screen";
+    const RUNS = [
+      ["steady", ["rewards", "home", "profile", "calendar", "rewards", "home", "profile", "calendar"], 1500, 60, false],
+      ["fast", ["rewards", "home", "calendar", "profile", "rewards", "calendar", "home", "profile", "rewards", "home", "calendar", "profile"], 600, 50, true],
+      ["spam", ["rewards", "home", "calendar", "profile", "home", "rewards", "profile", "calendar", "rewards", "home", "profile", "calendar", "home", "rewards", "calendar", "profile",
+                "rewards", "profile", "home", "calendar", "rewards", "home", "calendar", "home", "profile", "rewards", "calendar", "home", "rewards", "home"], 170, 35, true]];
+    for(const [rname, ids, gap, hold, whole] of RUNS){
+      note.textContent = "Testing tab speed (" + rname + ")… don't touch the screen";
       try{ showHome(); }catch(e){}
       await wait(1500);
-      const agg = {};
+      const agg = {}; let all = { m: 0, f: 0, s: 0, n: 0 }, taps = 0, last = "home";
+      if(whole){ rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now(); }
       for(const d of ids){
-        const el = document.getElementById("bottomtab-" + d);
-        if(!el || el.hidden || !el.getClientRects().length) continue;
-        const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
-        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
-        const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
-        el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
-        el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
-        await wait(1500);
-        const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0 });
-        a.m = Math.max(a.m, Math.round(rec.main.reduce((m, v) => v > m ? v : m, 0))); a.f = Math.max(a.f, Math.round(rec.raf.reduce((m, v) => v > m ? v : m, 0)));
-        a.s += rec.raf.filter(v => v > 34).length; a.n += rec.raf.length;
+        if(!whole){ rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now(); }
+        if(await tapTab(d, hold)){ taps++; last = d; }
+        await wait(gap - (whole ? hold : 0));
+        if(!whole){
+          const a = agg[d] || (agg[d] = { m: 0, f: 0, s: 0, n: 0 });
+          a.m = Math.max(a.m, mxOf(rec.main)); a.f = Math.max(a.f, mxOf(rec.raf));
+          a.s += rec.raf.filter(v => v > 34).length; a.n += rec.raf.length;
+        }
       }
-      Object.keys(agg).forEach(d => rows.push("[" + vname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n));
+      if(whole){ all = { m: mxOf(rec.main), f: mxOf(rec.raf), s: rec.raf.filter(v => v > 34).length, n: rec.raf.length }; }
+      await wait(2200);
+      if(whole) rows.push("[" + rname + "] taps" + taps + " main" + all.m + " frame" + all.f + " slow" + all.s + " n" + all.n + " " + endState(last));
+      else { Object.keys(agg).forEach(d => rows.push("[" + rname + "]" + d + " main" + agg[d].m + " frame" + agg[d].f + " slow" + agg[d].s + " n" + agg[d].n)); rows.push("[" + rname + "] " + endState(last)); }
     }
-    try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ note.remove(); }catch(e){}
@@ -136040,7 +136094,8 @@ function tabPerfText(){
   try{
     const list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || [];
     const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
-    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + " | " + list.map(r =>
+    let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (rl ? " | resume: " + rl : "") + " | " + list.map(r =>
       r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn).join(" | ")).slice(0, 1700);
   }catch(e){ return ""; }
 }
