@@ -29410,3 +29410,26 @@ Madison's recording of build 355 (leave, come back, then the speed test):
   spam run a screen was being built under nearly every tap (9 builds for 10 taps at 4x CPU; now 1-2), each a long
   task that froze the glass. A single tap answers as before. The glass and the highlight still move at once.
 - Not done: Home's own mount cost (syncLoopClock's getAnimations flush ~70ms at 4x, the planet system build).
+
+## Build 357 (2026-10-29): the Leaderboard arrives whole, Home's emblems are decoded off the screen change
+
+Madison's recording of the build 356 speed test (iPhone 17 Pro Max, 60fps):
+- LEADERBOARD: on opening, only ~7 rows showed with empty space under them for ~1s. 356 built rows a few a frame
+  (and art for the first screenful with each row) behind frames that are slow on the phone. Now no row is built
+  with its art (`lbArtNow()` = 0): the whole list (place, name, numbers, an empty frame for the character and the
+  flare) is built in the tap's own task (a few ms), and the queue fills the art in, nearest the view first
+  (~5ms a frame; first screenful by ~0.25s even when each character costs 6ms).
+- HOME is the slowest tab to appear: tap-to-screen from the video ~620ms (Home), 480 (Leaderboard), 435 (Profile),
+  295 (Calendar); the old screen stands frozen under the settled platter for ~0.5s while Home builds. Layer dump
+  (Chromium): the four lit bubbles' sheets are ~1008x1260px `<img decoding="sync">` (decode ~20-70ms each at 4x CPU).
+  `attachOrbitSheet` now decodes async (`img.decode()`, 1.5s cap) and only then puts the layer on, crossfaded (the
+  late-sheet path); `data-sheet-pending` dedupes; the rank-up scene (`rankSceneEmblemAnims`) keeps the immediate
+  sync path (`immediate` argument). Unconfirmed on a phone.
+- SPEED TEST: per-tab `lat` (ms from tap to its screen being there) in the steady run; five more passes of four
+  taps with one part off: [v:base] [v:nosheets] (the emblems' sheets) [v:nosmoke] (planet smoke/light/glowbox)
+  [v:nobubbles] [v:noorbit] (turning layers, rings) - each "home/rewards/profile/home" as `w<worst frame>/s<slow>/l<lat>`.
+  Read them with `python3 tools/firestore-admin.py bugs`; the part whose removal brings Home's `l` and `w` down is
+  the next thing to cut.
+- The 356 speed test's resume log (his build 356 run): told, away 2.6-8.7s, first frame 1-11ms, held 21-57ms,
+  drift -7..+2ms: the return is smooth by that measure.
+Gate: check-b357 (fails on 356).

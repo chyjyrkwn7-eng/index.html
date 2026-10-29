@@ -24,5 +24,13 @@ with sync_playwright() as pw:
     chk("the tap builds the whole list in a short task, even with each character costing 6ms (%s)" % (r,), r["n"] >= 40 and r["took"] <= 70, r)
     chk("without building any character in it (%s)" % (r["svgNow"],), r["svgNow"] <= 3, r)
     chk("and the screenful has its characters by 0.6s (%s of %s bare)" % (r["visibleBare"], r["visible"]), r["visibleBare"] == 0, r)
+    # Home's moving emblems are decoded off the screen change: they are not there in the first frame back, and they all arrive
+    pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(1500)
+    h = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome();
+      const out = { first: document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length, syncImgs: [...document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim img')].filter(i=>i.decoding==='sync').length };
+      await wait(2500); out.later = document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length; out.pending = document.querySelectorAll('.cosmic-hero-wrap [data-sheet-pending]').length;
+      out.asyncImgs = [...document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim img')].filter(i=>i.decoding==='async').length; return out; }""")
+    chk("on a return to Home no moving emblem is decoded in the screen change (%s)" % (h,), h["first"] == 0 and h["syncImgs"] == 0, h)
+    chk("and they all arrive within a couple of seconds (%s)" % (h,), h["later"] >= 1 and h["pending"] == 0 and h["asyncImgs"] == h["later"], h)
     ctx.close(); br.close()
 sys.exit(0 if g["ok"] else 1)

@@ -82878,7 +82878,7 @@ function orbitGeomKey(badge, tier){ return tier + "|" + (badge.classList.contain
    breath) - a one-frame pop in each bubble on the first Home of a
    session, which is one of the flashes reported. A sheet put on before
    the first paint (startOrbitEmblemAnimsKnown) has nothing to fade from. */
-function attachOrbitSheet(badge, svg, sp, g, fade){
+function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   const wrap = document.createElement("div");
   wrap.className = "cosmic-rank-anim";
   wrap.setAttribute("aria-hidden", "true");
@@ -82888,12 +82888,28 @@ function attachOrbitSheet(badge, svg, sp, g, fade){
   frame.style.width = frame.style.height = g.cellCss + "px";
   frame.style.marginLeft = frame.style.marginTop = (-g.cellCss / 2) + "px";
   const img = document.createElement("img");
-  img.alt = ""; img.decoding = "sync"; img.src = sp.url;
+  /* build 357: DECODED OFF THE SCREEN CHANGE. A sheet is ~1000x1260px; four of them were decoded synchronously in the
+     frame a Home arrived in (and on the main thread, in WebKit). The still emblem is already there to look at, so the
+     sheet is decoded first and only then put on, crossfaded in as a late sheet always has been. */
+  img.alt = ""; img.decoding = immediate ? "sync" : "async"; img.src = sp.url;
   img.style.width = (sp.cols * g.cellCss) + "px";
   img.style.height = (sp.rows * g.cellCss) + "px";
   img.style.animation = orbitAnimKeyframes(g.cellCss, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
   frame.appendChild(img);
   wrap.appendChild(frame);
+  if(immediate){ attachOrbitSheetNow(badge, svg, wrap, g, fade); return; }
+  badge.dataset.sheetPending = "1";
+  const put = () => {
+    delete badge.dataset.sheetPending;
+    if(!badge.isConnected || !svg.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) return;
+    attachOrbitSheetNow(badge, svg, wrap, g, true);
+    try{ syncLoopClock(wrap); }catch(e){}
+  };
+  let decoded = false;
+  const once = () => { if(!decoded){ decoded = true; put(); } };
+  try{ img.decode().then(once, once); setTimeout(once, 1500); }catch(e){ once(); }
+}
+function attachOrbitSheetNow(badge, svg, wrap, g, fade){
   svg.after(wrap);
   if(fade && !ringMotionOff()){
     try{
@@ -82914,7 +82930,7 @@ function startOrbitEmblemAnimsKnown(root){
   if(!root || !orbitAnimAllowed()) return;
   root.querySelectorAll(".cosmic-badge-rank").forEach(badge => {
     const svg = badge.querySelector("svg.cosmic-rank-emblem"), tier = badge.dataset.rankTier;
-    if(!svg || !tier || badge.querySelector(".cosmic-rank-anim")) return;
+    if(!svg || !tier || badge.querySelector(".cosmic-rank-anim") || badge.dataset.sheetPending) return;
     const g = orbitSheetGeom.get(orbitGeomKey(badge, tier));
     const sp = g && orbitAnimReady.get(orbitAnimDrawing(tier).id + "|" + g.px);
     if(sp) attachOrbitSheet(badge, svg, sp, g);
@@ -82929,7 +82945,7 @@ function startOrbitEmblemAnims(root, readyOnly){
     for(const badge of badges){
       const svg = badge.querySelector("svg.cosmic-rank-emblem");
       const tier = badge.dataset.rankTier;
-      if(!svg || !tier || !badge.isConnected || badge.querySelector(".cosmic-rank-anim")) continue;
+      if(!svg || !tier || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || badge.dataset.sheetPending) continue;
       /* The hero sits inside a scaled wrapper (0.94), so whole CSS pixels
          are not whole SCREEN pixels. Size the cell from what is on screen
          and divide that scale back out: each frame step is then exactly
@@ -82950,7 +82966,6 @@ function startOrbitEmblemAnims(root, readyOnly){
       const g = { px, cellCss: sp.px / scale / S, filter: cs.filter, opacity: cs.opacity };
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
       attachOrbitSheet(badge, svg, sp, g, true);
-      syncLoopClock(badge.querySelector(".cosmic-rank-anim"));
     }
   })();
 }
@@ -88867,7 +88882,7 @@ function rankSceneEmblemAnims(hero){
       const put = (sp, fade) => {
         if(!sp || !badge.isConnected || badge.querySelector(".cosmic-rank-anim")) return;
         const op = getComputedStyle(svg).opacity;
-        attachOrbitSheet(badge, svg, sp, { px: sp.px, cellCss: W, filter: "", opacity: op }, fade);
+        attachOrbitSheet(badge, svg, sp, { px: sp.px, cellCss: W, filter: "", opacity: op }, fade, true);
         const w = badge.querySelector(".cosmic-rank-anim");
         if(w){ w.style.opacity = ""; w.classList.add("is-scene"); syncLoopClock(w); }
       };
