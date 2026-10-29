@@ -34720,6 +34720,14 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] .daily-question-fab.is-done:not(.is-charging) .dq-ring-prog{ stroke:color-mix(in srgb, var(--dq-c) 72%, #FFFFFF); opacity:1; }
   .daily-question-fab.is-done .dq-ring circle{ stroke-width:3; }
   html[data-theme][data-layout] .daily-question-fab.is-done .dq-glyph{ opacity:.9; color:color-mix(in srgb, var(--dq-c) 16%, #F3F5F7); }
+  /* build 349, TAB LAG. A closed chat sheet is not drawn at all: it sat off-screen with a 30px backdrop blur promoted
+     to its own layer on every screen. It stays visible for the slide out, then goes. */
+  .chatdock:not(.is-open) .chatdock-panel{ visibility:hidden; transition:transform .26s cubic-bezier(.2,.8,.25,1), opacity .2s ease, visibility 0s linear .32s; }
+  /* The character drawing carries an SVG filter (blur, specular light, erode, drop shadow) that Safari paints on the
+     CPU - and again whenever what holds it is scaled or moved. In the tab bar (which swells and slides on every tap)
+     and in list rows (forty at once) the filter is off; the single big drawings keep it. */
+  #bottomtab-profile .avatarchar-svg,
+  .rank-rows .avatarchar-svg, .rank-row .avatarchar-svg, .friend-row-art .avatarchar-svg{ filter:none !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
