@@ -103247,7 +103247,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-358";
+const APP_BUILD = "2026-10-29-359";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -136311,7 +136311,7 @@ function tabPerfText(){
      after the tap at 4x CPU. His own iOS 26 recording changes the page at frame 13 of the press
      (~215ms); 170ms from the press is just past a quick tap's release, so the build starts as
      the glass is still crossing - the page answers about a tenth of a second sooner. */
-  const TAB_SCREEN_AFTER = 120;
+  const TAB_SCREEN_AFTER = 30;
   /* the extra wait for a tap that follows another within half a second (build 356) */
   const TAB_RUN_EXTRA = 280;
   /* BUILD 342: IN THE FIRE CODE CLASS THE BAR'S FOURTH TAB IS SETTINGS, NOT CALENDAR. "For the Fire Code class,
@@ -136387,7 +136387,7 @@ function tabPerfText(){
       const prevTapAt = bar._lastTapAt || -1e9;
       bar._lastTapAt = performance.now();
       const sincePrev = bar._lastTapAt - prevTapAt;
-      const rapidRun = sincePrev < 500 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 900 ? TAB_RUN_EXTRA * .45 : 0;
+      const rapidRun = sincePrev < 330 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 600 ? TAB_RUN_EXTRA * .4 : 0;
       const pend = bar._navPend;
       if(pend && pend.dest === dest) return;
       if(pend){ pend.cancel(); bar._navPend = null; }
