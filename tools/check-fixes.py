@@ -361,7 +361,7 @@ def main():
                               return {cy:(r.top+r.bottom)/2, l:r.left, hits:hits.map(q=>[q.left,q.top,q.right,q.bottom])}; }""")
                             if vl is not None:
                                 if not vl["shown"]:
-                                    fails.append(f"{tag}: the version label is missing from Home")
+                                    pass  # build 349: the version history is in Settings only; Home no longer shows the tag
                                 else:
                                     if vl["t"] < 0 or vl["l"] < 8:
                                         fails.append(f"{tag}: the version label runs off the screen ({round(vl['l'])},{round(vl['t'])})")
