@@ -53,7 +53,7 @@ with sync_playwright() as pw:
     # leaderboard
     pg.evaluate(FILL)
     now = pg.evaluate("()=>{ showRankings(); return document.querySelectorAll('.rank-rows .rank-row').length; }")
-    chk("the Leaderboard builds seven rows in the tap's own task (%d)" % now, 1 <= now <= 8, now)
+    chk("the Leaderboard has its whole list in the tap's own task (%d; build 357: rows are cheap, the art follows)" % now, now >= 40, now)
     pg.wait_for_timeout(2500)
     full = pg.evaluate("()=>document.querySelectorAll('.rank-rows .rank-row').length")
     chk("and finishes the list (%d)" % full, full >= 42, full)

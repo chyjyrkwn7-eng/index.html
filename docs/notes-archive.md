@@ -29410,3 +29410,52 @@ Madison's recording of build 355 (leave, come back, then the speed test):
   spam run a screen was being built under nearly every tap (9 builds for 10 taps at 4x CPU; now 1-2), each a long
   task that froze the glass. A single tap answers as before. The glass and the highlight still move at once.
 - Not done: Home's own mount cost (syncLoopClock's getAnimations flush ~70ms at 4x, the planet system build).
+
+## Build 357 (2026-10-29): the Leaderboard arrives whole, Home's emblems are decoded off the screen change
+
+Madison's recording of the build 356 speed test (iPhone 17 Pro Max, 60fps):
+- LEADERBOARD: on opening, only ~7 rows showed with empty space under them for ~1s. 356 built rows a few a frame
+  (and art for the first screenful with each row) behind frames that are slow on the phone. Now no row is built
+  with its art (`lbArtNow()` = 0): the whole list (place, name, numbers, an empty frame for the character and the
+  flare) is built in the tap's own task (a few ms), and the queue fills the art in, nearest the view first
+  (~5ms a frame; first screenful by ~0.25s even when each character costs 6ms).
+- HOME is the slowest tab to appear: tap-to-screen from the video ~620ms (Home), 480 (Leaderboard), 435 (Profile),
+  295 (Calendar); the old screen stands frozen under the settled platter for ~0.5s while Home builds. Layer dump
+  (Chromium): the four lit bubbles' sheets are ~1008x1260px `<img decoding="sync">` (decode ~20-70ms each at 4x CPU).
+  `attachOrbitSheet` now decodes async (`img.decode()`, 1.5s cap) and only then puts the layer on, crossfaded (the
+  late-sheet path); `data-sheet-pending` dedupes; the rank-up scene (`rankSceneEmblemAnims`) keeps the immediate
+  sync path (`immediate` argument). Unconfirmed on a phone.
+- SPEED TEST: per-tab `lat` (ms from tap to its screen being there) in the steady run; five more passes of four
+  taps with one part off: [v:base] [v:nosheets] (the emblems' sheets) [v:nosmoke] (planet smoke/light/glowbox)
+  [v:nobubbles] [v:noorbit] (turning layers, rings) - each "home/rewards/profile/home" as `w<worst frame>/s<slow>/l<lat>`.
+  Read them with `python3 tools/firestore-admin.py bugs`; the part whose removal brings Home's `l` and `w` down is
+  the next thing to cut.
+- The 356 speed test's resume log (his build 356 run): told, away 2.6-8.7s, first frame 1-11ms, held 21-57ms,
+  drift -7..+2ms: the return is smooth by that measure.
+Gate: check-b357 (fails on 356).
+
+## Build 358 (2026-10-29): the white-screen reload, the platter's snap, less to keep while away
+
+Two more recordings from Madison (build 356):
+- THE RANDOM RELOAD IS ON VIDEO: Leaderboard screen up, he switches apps and comes back: a grey frame, then Nova's
+  cold-start splash ("syncing unit progress... initializing badge case... ready") - iOS ended the page while it was in
+  the background (memory), and the app started again. We cannot read iOS memory; what we can do is hold less while
+  away and note it when it happens. (1) `trimForBackground()` on hide: the Leaderboard's rows go back to bare frames
+  (characters, flares, moving sheets removed; `data-lazy-art` set again) and Home's moving-emblem sheets come off
+  (the heaviest things held: ~15,000 elements on the board, four ~1000x1260px sheets on Home);
+  `restoreAfterBackground()` puts them back once frames are steady (`lbArtQueue`, `startOrbitEmblemAnimsKnown`).
+  (2) `class26e.session` (state visible/hidden/closed, time, screen, build; written every 6s and on hide, "closed" only
+  on a real pagehide) and `class26e.crashlog`: at the next start a run whose last state was not "closed" is noted as
+  `ENDED-<state> <screen> <s>-ago b<build>`; it rides in the speed test report as "ended: ...". NOTE: swiping the app
+  away in the switcher also reads "ENDED-hidden", so judge by how often it appears right after a return.
+- THE PLATTER SNAPPED ACROSS WITH NO GLASS (Leaderboard -> Home): the slider's fade was a WAAPI animation that had not
+  had its first frame when the release moved the platter to the new tab (the Leaderboard filling in kept the main
+  thread busy), so the platter showed at its new place for the length of the stall. The slider now gets inline
+  `opacity:0` at the press and at the release, cleared in lensFinish/lensHide.
+- Tap latency: TAB_SCREEN_AFTER 170 -> 120ms.
+- The stage mutation observer (screen-change bookkeeping: has-floatbtn, `.choice` scan, sky, update check) ignores
+  mutations inside `.rank-rows` and `.cosmic-hero-wrap`: the art fill was putting a scan of the 15,000-element stage
+  and a check for an update into every frame.
+- Folded in: build 357 (PR #26: whole cheap Leaderboard list + queue; Home sheets decoded async; tap latency and Home
+  part passes in the speed test).
+Gate: check-b358.
