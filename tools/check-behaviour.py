@@ -8858,7 +8858,7 @@ def check_b304(br):
         check(dev + ": every character on the board is alive, and rows out of view pause",
               r2.get("rows", 0) > 10 and r2.get("liveRows") == r2.get("rows") and (r2.get("offRows") or 0) > 0,
               (r2.get("rows"), r2.get("liveRows"), r2.get("offRows")))
-        check(dev + ": the character in the tab bar is alive", r2.get("tabLive") is True)
+        check(dev + ": the character in the tab bar is a still picture (build 349)", r2.get("tabLive") is not True, r2.get("tabLive"))
         check(dev + ": the Customize button is on top of the character's glow", r2.get("customizeOnTop") is True, r2.get("customizeOnTop"))
 
 
