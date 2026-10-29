@@ -59304,7 +59304,9 @@ function syncBottomTabAvatar(){
     if(svg){ tabIcon.replaceChildren(svg); tabIcon.dataset.char = want;
       /* the plate under it is lit in the character's own colour */
       try{ tabIcon.style.setProperty("--char-glow", avatarGlowColor(want)); }catch(e){}
-      setCharState(tabIcon, "live", { solo: true }); return; }
+      /* build 349: STILL. "The character on the bottom tab can't animate if that fixes the lag": no live drawing, no
+         recorded sheet, no special - the tab's picture is one still svg. */
+      setCharState(tabIcon, "still"); return; }
   }
   delete tabIcon.dataset.char;
   tabIcon.textContent = getInitials(store.firstName) || "";
@@ -72094,7 +72096,7 @@ function setCharState(el, state, opts){
    aren't animated on the bottom tab." Their resting loop is a blink and a
    few specks, which at the tab's size reads as a still picture; the tab
    plays its special now and then like the Profile card does. */
-var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar, #bottomtab-profile .bottomtab-icon-avatar";
+var CHAR_SPECIAL_PROMINENT = ".profile-hero-avatar, .person-card-art, .cz-pick-character, .results-level-avatar";
 /* first special no sooner than ~8s after a character is on screen, then
    every 12-30s; a gate may shorten these */
 var charSpecialTiming = { first: [8000, 16000], gap: [12000, 30000] };
@@ -113720,6 +113722,66 @@ function showResetWarning(){
 const BUG_REPORT_MAX = 1200;
 __bm("L107220");
 const BUG_REPORT_TIMEOUT_MS = 15000;
+/* THE TAB SPEED TEST (build 349). Taps every bottom tab the way a finger does (pointerdown, pointerup, click) and
+   measures, for each tap, how long the page was held up (a message-channel loop: the main thread) and how long
+   frames were (requestAnimationFrame gaps). If frames stall while the main thread does not, it is the graphics side,
+   not the script. The summary is sent to the admin as a bug report (kind "bug", text "Tab speed test"); it
+   carries no code and no name beyond the first name every report has. */
+let lagTestRunning = false;
+async function runLagTest(onDone){
+  if(lagTestRunning) return;
+  lagTestRunning = true;
+  const note = document.createElement("div");
+  note.setAttribute("aria-hidden", "true");
+  note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none";
+  note.textContent = "Testing tab speed… don't touch the screen";
+  document.body.appendChild(note);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const rec = { main: [], raf: [] };
+  let on = true;
+  const mc = new MessageChannel(); let lastM = performance.now();
+  mc.port1.onmessage = () => { const n = performance.now(); rec.main.push(n - lastM); lastM = n; if(on) setTimeout(() => mc.port2.postMessage(0), 0); };
+  let lastR = performance.now();
+  const rafTick = t => { rec.raf.push(t - lastR); lastR = t; if(on) requestAnimationFrame(rafTick); };
+  const rows = [];
+  try{
+    try{ showHome(); }catch(e){}
+    await wait(1800);
+    const ids = ["rewards", "profile", "home", "calendar", "rewards", "home", "profile", "rewards", "calendar", "home"];
+    mc.port2.postMessage(0); requestAnimationFrame(rafTick);
+    for(const d of ids){
+      const el = document.getElementById("bottomtab-" + d);
+      if(!el || el.hidden || !el.getClientRects().length) continue;
+      const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+      rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+      const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 31, isPrimary: true, clientX: x, clientY: y });
+      el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+      await wait(1500);
+      const mx = Math.round(Math.max(0, ...rec.main)), rx = Math.round(Math.max(0, ...rec.raf));
+      rows.push(d + " main" + mx + " frame" + rx + " m>50:" + rec.main.filter(v => v > 50).length + " f>34:" + rec.raf.filter(v => v > 34).length + " f>100:" + rec.raf.filter(v => v > 100).length + " n" + rec.raf.length);
+    }
+  }catch(e){ rows.push("error " + ((e && e.message) || e)); }
+  on = false;
+  try{ note.remove(); }catch(e){}
+  lagTestRunning = false;
+  const text = rows.join(" | ");
+  let vw = 0, vh = 0; try{ vw = Math.round(innerWidth); vh = Math.round(innerHeight); }catch(e){}
+  let sent = false;
+  try{
+    if(fbDb && navigator.onLine !== false){
+      const id = "bug-" + Date.now().toString(36) + "-lag" + Math.random().toString(36).slice(2, 5);
+      await Promise.race([fbDb.collection("vrooms").doc(id).set({
+        kind: "bug", text: "Tab speed test", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+        from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
+        viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text).slice(0, 1700),
+        at: Date.now() }).then(() => { sent = true; }), wait(6000)]);
+    }
+  }catch(e){}
+  try{ onDone && onDone({ text, sent }); }catch(e){}
+  return { text, sent };
+}
 function showBugReport(){
   setActiveNav("settings");
   countEl.textContent = "Report a bug";
@@ -113742,6 +113804,13 @@ function showBugReport(){
     + "Your report goes to the Nova admin, with your first name, app version "
     + "and device attached so the problem can be tracked down and fixed.";
   form.appendChild(sub);
+
+  /* build 349: a one-tap measurement of the bottom tabs on this device, sent to the admin with no typing */
+  const lagBtn = document.createElement("button");
+  lagBtn.type = "button"; lagBtn.className = "next bugreport-send";
+  lagBtn.textContent = "Test tab speed";
+  lagBtn.addEventListener("click", () => { if(!lagTestRunning) runLagTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The tab speed test was sent to the Nova admin." : "The tab speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
+  form.appendChild(lagBtn);
 
   const boxId = "bugreport-text";
   const lab = document.createElement("label");

@@ -29292,3 +29292,13 @@ Madison: "Put version history button in settings (we are gonna overhaul settings
   data yet. Calendar (~130ms @4x, Layerize) and the Leaderboard rows (UpdateLayoutTree, avatar SVGs) remain the
   heaviest builds.
 - Gate: `tools/check-b349.py` (fails on 348).
+- (349, later) Home bubbles: only Gold (outer ring) and Sapphire (inner ring) sit on a ring; the rest sit between
+  them - "too intentional on the rings".
+- (349, later) TAB LAG, round one: the Profile tab's character is a still picture (no live drawing, no sheet
+  recording, not in CHAR_SPECIAL_PROMINENT). Madison: it can stop animating if that helps.
+  Desktop traces at 4x CPU show the screen builds are small; his iPhone 17 Pro Max stalls of 184-534ms cannot be
+  script alone. `runLagTest()` (Settings > Report a bug > "Test tab speed") taps every tab like a finger and
+  records, per tap, the longest main-thread hold (message-channel loop) and the longest frame gap (rAF). Frame gaps
+  large with main small = the graphics side (layers, blur, filters). It sends itself as a bug report with the text
+  "Tab speed test"; read it with `python3 tools/firestore-admin.py bugs` (the `perf:` line). Decide the next round
+  from that.

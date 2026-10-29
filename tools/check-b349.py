@@ -62,5 +62,12 @@ with sync_playwright() as pw:
       const st=document.querySelector('.class-bubble-wrap .class-stack'); return { left:hit(q.left+8), right:hit(q.right-8), stack: st? getComputedStyle(st).pointerEvents : 'none' }; }""")
     chk("Start Studying answers on its left and right edges", r and r["left"] and r["right"], r)
     chk("the closed class list takes no touches", r and r["stack"] == "none", r)
+    # the bottom tab's character is a still
+    a = pg.evaluate("()=>{ const el=document.querySelector('#bottomtab-profile .bottomtab-icon-avatar'); return el ? el.getAnimations({subtree:true}).length + (el.classList.contains('char-live') ? 100 : 0) : -1; }")
+    chk("the Profile tab's character is a still picture (animations %s)" % a, a == 0, a)
+    # the tab speed test runs every tap and reports
+    r = pg.evaluate("async ()=>await runLagTest()")
+    rows = (r or {}).get("text", "").count("main")
+    chk("the tab speed test measures at least eight taps (%d)" % rows, rows >= 8, r)
     ctx.close(); br.close()
 sys.exit(0 if g["ok"] else 1)
