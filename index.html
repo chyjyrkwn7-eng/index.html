@@ -83619,16 +83619,16 @@ const HOME_OUTER_R = 152;
    the check. Sapphire takes Welcome's one gap, at the bottom, at the radius
    Gold and Supernova share - "closer to the first ring ... move it up a
    little". buildCosmicHero places them; buildRankTrails' bands follow. */
-/* Build 349: "a few ON the rings so the secret flares pass under the Liquid Glass". Gold, Sapphire and Supernova
-   sit on the outer ring (152) now, so the outer ring's flares ride under them as they turn. */
+/* Build 349: "a few ON the rings so the secret flares pass under the Liquid Glass". Gold sits on the outer
+   ring (152) and Sapphire on the inner (108); the rest stay between the rings, so it does not look laid out. */
 const HOME_SPOTS = [
   { a: 313.3, R: 173.0 },   /* rookie   - Bronze    */
-  { a: 26.0,  R: 108.0 },   /* ranger   - Silver    */
+  { a: 26.0,  R: 139.6 },   /* ranger   - Silver    */
   { a: 87.2,  R: 152.0 },   /* veteran  - Gold      */
   { a: 144.4, R: 154.5 },   /* vanguard - Platinum  */
   { a: 188.0, R: 108.0 },   /* adept    - Sapphire  */
   { a: 233.0, R: 175.7 },   /* elite    - Amethyst  */
-  { a: 270.1, R: 152.0 }    /* titan    - Supernova */
+  { a: 270.1, R: 133.2 }    /* titan    - Supernova */
 ];
 function homeSpotXY(i){
   const sp = HOME_SPOTS[i % HOME_SPOTS.length], r = sp.a * Math.PI / 180;
