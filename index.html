@@ -82742,7 +82742,20 @@ document.addEventListener("visibilitychange", () => {
        listeners, the update check) is held back a couple of seconds - "lag, a second of black, the planet system
        loads its positions late" came from everything starting in the same frames */
     const resume = Array.from(loopPausedByUs); loopPausedByUs.clear();
-    requestAnimationFrame(() => resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} }));
+    /* build 350: and not before the page is drawing steadily again. iOS drops the page's graphics while it is away, and
+       the first frames back are a stall; loops started inside that stall run on the wall clock while nothing is drawn
+       and then appear already moved on ("the planet system freezes, then loads to where it went"). They stay on their
+       pose until four frames in a row come at a normal pace (at most ~1.5s), then go on from that pose. */
+    let good = 0, tries = 0, lastT = performance.now();
+    const go = () => resume.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+    const tick = t => {
+      if(document.hidden){ resume.forEach(a => loopPausedByUs.add(a)); return; }
+      const dt = t - lastT; lastT = t;
+      good = dt < 40 ? good + 1 : 0;
+      if(good >= 4 || ++tries > 90){ go(); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
     /* waking is work enough: nothing optional for a couple of seconds */
     try{ recUserAt = performance.now(); }catch(e){}
   }

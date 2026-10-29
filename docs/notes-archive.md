@@ -29314,3 +29314,6 @@ Home (planet + sheets) and Profile (big character) are worst; Calendar, with no 
 worst main-thread hold, worst frame gap, slow-frame count and frames. Read with
 `python3 tools/firestore-admin.py bugs`; whichever pass brings Leaderboard/Home/Profile frames down to Calendar's
 ~45ms is the cause to remove. Gate: tools/check-b350.py.
+- (350) Coming back from another app: the loops paused on hide are played again only after four steady frames in a
+  row (at most ~1.5s), from the pose they were paused at, so a first-frames stall no longer lets them run on the wall
+  clock and appear already moved on. Gate: check-b350 (the pose holds while away and in the first frames back).
