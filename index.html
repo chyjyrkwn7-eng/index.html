@@ -103252,7 +103252,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-360";
+const APP_BUILD = "2026-10-30-361";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114003,6 +114003,35 @@ async function runLagTest(onDone){
         parts.push(d[0] + " w" + mxOf(rec.raf) + "/s" + rec.raf.filter(v => v > 34).length + "/l" + lastLat);
       }
       rows.push("[v:" + vname + "] " + parts.join(" "));
+    }
+    /* build 361: WHICH KIND OF DRAWING COSTS THE PHONE THE MOST. The tab's wait on his phone is mostly drawing, not script (frames
+       stall 270-500ms while the page is held up 85-195ms). Each variant switches one kind of effect off for every screen and
+       taps all four tabs: [g:noblur] backdrop blur, [g:nobarblur] the bar's own blur, [g:nofilter] css/svg filters,
+       [g:noshadow] shadows, [g:noanim] animations and transitions, [g:nolens] the moving glass, [g:bare] all of them. Per tap:
+       l (tap to screen), p (tap to the second frame after it), w (worst frame), s (frames over 34ms). */
+    const GV = [["base", ""],
+      ["noblur", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
+      ["nobarblur", ".bottomtabs,.bottomtabs *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
+      ["nofilter", "*,*::before,*::after{filter:none !important}"],
+      ["noshadow", "*,*::before,*::after{box-shadow:none !important;text-shadow:none !important}"],
+      ["noanim", "*,*::before,*::after{animation:none !important;transition:none !important}"],
+      ["nolens", ".tab-lens,#bottomtabs-slider{display:none !important}"],
+      ["bare", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;box-shadow:none !important;text-shadow:none !important;animation:none !important;transition:none !important}"]];
+    const frames2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    for(const [gname, css] of GV){
+      vs.textContent = css;
+      note.textContent = "Testing tab speed (" + gname + ")… don't touch the screen";
+      try{ showHome(); }catch(e){}
+      await wait(1500);
+      const parts = [];
+      for(const d of ["rewards", "profile", "calendar", "home"]){
+        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+        const tt0 = performance.now(); lastLat = 0; let pl = 0;
+        if(await tapTab(d, 60)){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); await frames2(); pl = Math.round(performance.now() - tt0); }
+        await wait(1100);
+        parts.push(d[0] + " l" + lastLat + "/p" + pl + "/w" + mxOf(rec.raf) + "/s" + rec.raf.filter(v => v > 34).length);
+      }
+      rows.push("[g:" + gname + "] " + parts.join(" "));
     }
     try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
