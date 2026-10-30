@@ -103252,7 +103252,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-30-361";
+const APP_BUILD = "2026-10-30-362";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114004,34 +114004,36 @@ async function runLagTest(onDone){
       }
       rows.push("[v:" + vname + "] " + parts.join(" "));
     }
-    /* build 361: WHICH KIND OF DRAWING COSTS THE PHONE THE MOST. The tab's wait on his phone is mostly drawing, not script (frames
-       stall 270-500ms while the page is held up 85-195ms). Each variant switches one kind of effect off for every screen and
-       taps all four tabs: [g:noblur] backdrop blur, [g:nobarblur] the bar's own blur, [g:nofilter] css/svg filters,
-       [g:noshadow] shadows, [g:noanim] animations and transitions, [g:nolens] the moving glass, [g:bare] all of them. Per tap:
-       l (tap to screen), p (tap to the second frame after it), w (worst frame), s (frames over 34ms). */
+    /* build 361/362: WHAT THE PHONE SPENDS ITS FIRST DRAW ON. His 361 run: a screen is in the page ~100-170ms after the tap (l) but
+       first drawn 300-690ms after that (p, two frames after it) - and with every blur, filter, shadow and animation switched
+       off ([g:bare]) the Leaderboard and Home are still slow, so it is the content. Each variant takes one thing off every
+       screen and taps Leaderboard, Profile, Calendar, Home three times round; per tab the MEDIAN l and p, the worst frame w
+       and the slow frames s: [g:nobody] the page's own glow and star layers, [g:noart] the list's characters and flares and
+       the Profile's character, goal emblem and reward tiles, [g:nohero] Home's planet system and Profile's hero card, [g:bare] all of those and the
+       effects. */
     const GV = [["base", ""],
-      ["noblur", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
-      ["nobarblur", ".bottomtabs,.bottomtabs *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
-      ["nofilter", "*,*::before,*::after{filter:none !important}"],
-      ["noshadow", "*,*::before,*::after{box-shadow:none !important;text-shadow:none !important}"],
-      ["noanim", "*,*::before,*::after{animation:none !important;transition:none !important}"],
-      ["nolens", ".tab-lens,#bottomtabs-slider{display:none !important}"],
-      ["bare", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;box-shadow:none !important;text-shadow:none !important;animation:none !important;transition:none !important}"]];
+      ["nobody", "body::before,body::after,html::before,html::after{display:none !important}"],
+      ["noart", ".rank-avatar,.rank-mark,.profile-hero-avatar,.pf-goal-emb,.pf-rw-art{display:none !important}"],
+      ["nohero", ".cosmic-hero-wrap,.profile-hero{display:none !important}"],
+      ["bare", "body::before,body::after,html::before,html::after{display:none !important}*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;box-shadow:none !important;text-shadow:none !important;animation:none !important;transition:none !important}.rank-avatar,.rank-mark,.cosmic-hero-wrap,.profile-hero{display:none !important}"]];
     const frames2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const medOf = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
     for(const [gname, css] of GV){
       vs.textContent = css;
       note.textContent = "Testing tab speed (" + gname + ")… don't touch the screen";
       try{ showHome(); }catch(e){}
       await wait(1500);
-      const parts = [];
-      for(const d of ["rewards", "profile", "calendar", "home"]){
-        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
-        const tt0 = performance.now(); lastLat = 0; let pl = 0;
-        if(await tapTab(d, 60)){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); await frames2(); pl = Math.round(performance.now() - tt0); }
-        await wait(1100);
-        parts.push(d[0] + " l" + lastLat + "/p" + pl + "/w" + mxOf(rec.raf) + "/s" + rec.raf.filter(v => v > 34).length);
+      const got = { rewards: { l: [], p: [], w: [], s: 0 }, profile: { l: [], p: [], w: [], s: 0 }, calendar: { l: [], p: [], w: [], s: 0 }, home: { l: [], p: [], w: [], s: 0 } };
+      for(let round = 0; round < 3; round++){
+        for(const d of ["rewards", "profile", "calendar", "home"]){
+          rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+          const tt0 = performance.now(); lastLat = 0; let pl = 0;
+          if(await tapTab(d, 60)){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); await frames2(); pl = Math.round(performance.now() - tt0); }
+          await wait(1000);
+          const g2 = got[d]; g2.l.push(lastLat); g2.p.push(pl); g2.w.push(mxOf(rec.raf)); g2.s += rec.raf.filter(v => v > 34).length;
+        }
       }
-      rows.push("[g:" + gname + "] " + parts.join(" "));
+      rows.push("[g:" + gname + "] " + ["rewards", "profile", "calendar", "home"].map(d => d[0] + " l" + medOf(got[d].l) + "/p" + medOf(got[d].p) + "/w" + mxOf(got[d].w) + "/s" + got[d].s).join(" "));
     }
     try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
@@ -125385,9 +125387,16 @@ function renderRankingRows(rows, entries, board, opts){
      is built now; the rest follows six rows to a frame (progressive, below), and Find me finishes the list first
      if it is asked for before it is done. */
   const artNow = lbArtNow();
+  /* build 362: THE FIRST DRAW IS ONLY WHAT IS IN VIEW. On his phone a tab's screen was in the page ~130ms after the tap but
+     first drawn 300-680ms later (the Leaderboard the longest): the page laid out all forty-odd rows, and the rows off the
+     screen were only marked off screen after that frame (the observer reports later). Rows past the view are now born
+     skipped (.is-offscreen, content-visibility:hidden) with a row's height held, and the observer brings them in as they
+     come within 240px. A tall screen (an iPad) gets more rows drawn up front. */
+  const lbDrawnFirst = Math.ceil((window.innerHeight || 800) / 60) + 3;
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
+    if(rowIdx >= lbDrawnFirst){ row.classList.add("is-offscreen"); row.style.containIntrinsicHeight = "35px"; }
     /* Matched on the sync code, not the name. Two classmates called
        Madison would otherwise both light up as "me". The code is NOT a
        published field - it is the document's own id, attached when the
