@@ -15,7 +15,7 @@ with sync_playwright() as pw:
     ctx, pg = g["page_for"](br, "promax")
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     pg.evaluate(FILL)
-    pg.evaluate("()=>{ showRankings(); }"); pg.wait_for_timeout(300)
+    pg.evaluate("()=>{ showRankings(); }")
     a = pg.evaluate(M)
     chk("rows below the first screenful start bare (%d of %d)" % (a["bare"], a["n"]), a["n"] >= 40 and a["bare"] >= 15 and a["emptyAv"] == a["bare"], a)
     pg.wait_for_timeout(2600)

@@ -103252,7 +103252,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-30-361";
+const APP_BUILD = "2026-10-30-362";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114004,34 +114004,36 @@ async function runLagTest(onDone){
       }
       rows.push("[v:" + vname + "] " + parts.join(" "));
     }
-    /* build 361: WHICH KIND OF DRAWING COSTS THE PHONE THE MOST. The tab's wait on his phone is mostly drawing, not script (frames
-       stall 270-500ms while the page is held up 85-195ms). Each variant switches one kind of effect off for every screen and
-       taps all four tabs: [g:noblur] backdrop blur, [g:nobarblur] the bar's own blur, [g:nofilter] css/svg filters,
-       [g:noshadow] shadows, [g:noanim] animations and transitions, [g:nolens] the moving glass, [g:bare] all of them. Per tap:
-       l (tap to screen), p (tap to the second frame after it), w (worst frame), s (frames over 34ms). */
+    /* build 361/362: WHAT THE PHONE SPENDS ITS FIRST DRAW ON. His 361 run: a screen is in the page ~100-170ms after the tap (l) but
+       first drawn 300-690ms after that (p, two frames after it) - and with every blur, filter, shadow and animation switched
+       off ([g:bare]) the Leaderboard and Home are still slow, so it is the content. Each variant takes one thing off every
+       screen and taps Leaderboard, Profile, Calendar, Home three times round; per tab the MEDIAN l and p, the worst frame w
+       and the slow frames s: [g:nobody] the page's own glow and star layers, [g:noart] the list's characters and flares and
+       the Profile's character, goal emblem and reward tiles, [g:nohero] Home's planet system and Profile's hero card, [g:bare] all of those and the
+       effects. */
     const GV = [["base", ""],
-      ["noblur", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
-      ["nobarblur", ".bottomtabs,.bottomtabs *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
-      ["nofilter", "*,*::before,*::after{filter:none !important}"],
-      ["noshadow", "*,*::before,*::after{box-shadow:none !important;text-shadow:none !important}"],
-      ["noanim", "*,*::before,*::after{animation:none !important;transition:none !important}"],
-      ["nolens", ".tab-lens,#bottomtabs-slider{display:none !important}"],
-      ["bare", "*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;box-shadow:none !important;text-shadow:none !important;animation:none !important;transition:none !important}"]];
+      ["nobody", "body::before,body::after,html::before,html::after{display:none !important}"],
+      ["noart", ".rank-avatar,.rank-mark,.profile-hero-avatar,.pf-goal-emb,.pf-rw-art{display:none !important}"],
+      ["nohero", ".cosmic-hero-wrap,.profile-hero{display:none !important}"],
+      ["bare", "body::before,body::after,html::before,html::after{display:none !important}*,*::before,*::after{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;filter:none !important;box-shadow:none !important;text-shadow:none !important;animation:none !important;transition:none !important}.rank-avatar,.rank-mark,.cosmic-hero-wrap,.profile-hero{display:none !important}"]];
     const frames2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const medOf = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.floor(b.length / 2)] : 0; };
     for(const [gname, css] of GV){
       vs.textContent = css;
       note.textContent = "Testing tab speed (" + gname + ")… don't touch the screen";
       try{ showHome(); }catch(e){}
       await wait(1500);
-      const parts = [];
-      for(const d of ["rewards", "profile", "calendar", "home"]){
-        rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
-        const tt0 = performance.now(); lastLat = 0; let pl = 0;
-        if(await tapTab(d, 60)){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); await frames2(); pl = Math.round(performance.now() - tt0); }
-        await wait(1100);
-        parts.push(d[0] + " l" + lastLat + "/p" + pl + "/w" + mxOf(rec.raf) + "/s" + rec.raf.filter(v => v > 34).length);
+      const got = { rewards: { l: [], p: [], w: [], s: 0 }, profile: { l: [], p: [], w: [], s: 0 }, calendar: { l: [], p: [], w: [], s: 0 }, home: { l: [], p: [], w: [], s: 0 } };
+      for(let round = 0; round < 3; round++){
+        for(const d of ["rewards", "profile", "calendar", "home"]){
+          rec.main.length = 0; rec.raf.length = 0; lastM = lastR = performance.now();
+          const tt0 = performance.now(); lastLat = 0; let pl = 0;
+          if(await tapTab(d, 60)){ document.querySelector(SEL[d]) ? (lastLat = 0) : await waitScreen(d, tt0); await frames2(); pl = Math.round(performance.now() - tt0); }
+          await wait(1000);
+          const g2 = got[d]; g2.l.push(lastLat); g2.p.push(pl); g2.w.push(mxOf(rec.raf)); g2.s += rec.raf.filter(v => v > 34).length;
+        }
       }
-      rows.push("[g:" + gname + "] " + parts.join(" "));
+      rows.push("[g:" + gname + "] " + ["rewards", "profile", "calendar", "home"].map(d => d[0] + " l" + medOf(got[d].l) + "/p" + medOf(got[d].p) + "/w" + mxOf(got[d].w) + "/s" + got[d].s).join(" "));
     }
     try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
@@ -114054,6 +114056,25 @@ async function runLagTest(onDone){
   }catch(e){}
   try{ onDone && onDone({ text, sent }); }catch(e){}
   return { text, sent };
+}
+/* build 362: ONE TAP SENDS HOW THE TABS HAVE BEEN IN USE. Every real tab tap already keeps its frames and its build time (the last 30);
+   the tap-to-screen (l) and tap-to-second-frame (p) are kept now too. This sends them as a report with no typing, so a few minutes of
+   ordinary use - not a staged test - is what the admin reads. */
+async function sendTabTimings(onDone){
+  let sent = false;
+  try{
+    if(fbDb && navigator.onLine !== false){
+      const id = "bug-" + Date.now().toString(36) + "-use" + Math.random().toString(36).slice(2, 5);
+      let vw = 0, vh = 0; try{ vw = Math.round(innerWidth); vh = Math.round(innerHeight); }catch(e){}
+      await Promise.race([fbDb.collection("vrooms").doc(id).set({
+        kind: "bug", text: "Tab timings (in use)", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+        from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
+        viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: tabPerfText(), at: Date.now() }).then(() => { sent = true; }), new Promise(r => setTimeout(r, 6000))]);
+    }
+  }catch(e){}
+  try{ onDone && onDone(sent); }catch(e){}
+  return sent;
 }
 function showBugReport(){
   setActiveNav("settings");
@@ -114084,6 +114105,11 @@ function showBugReport(){
   lagBtn.textContent = "Test tab speed";
   lagBtn.addEventListener("click", () => { if(!lagTestRunning) runLagTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The tab speed test was sent to the Nova admin." : "The tab speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
   form.appendChild(lagBtn);
+  const useBtn = document.createElement("button");
+  useBtn.type = "button"; useBtn.className = "next bugreport-send";
+  useBtn.textContent = "Send tab timings";
+  useBtn.addEventListener("click", () => { useBtn.disabled = true; sendTabTimings(ok => { try{ useBtn.disabled = false; const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = ok ? "The tab timings from your recent use were sent to the Nova admin." : "The tab timings could not be sent. Check your connection and try again."; }catch(e){} }); });
+  form.appendChild(useBtn);
 
   const boxId = "bugreport-text";
   const lab = document.createElement("label");
@@ -125385,9 +125411,16 @@ function renderRankingRows(rows, entries, board, opts){
      is built now; the rest follows six rows to a frame (progressive, below), and Find me finishes the list first
      if it is asked for before it is done. */
   const artNow = lbArtNow();
+  /* build 362: THE FIRST DRAW IS ONLY WHAT IS IN VIEW. On his phone a tab's screen was in the page ~130ms after the tap but
+     first drawn 300-680ms later (the Leaderboard the longest): the page laid out all forty-odd rows, and the rows off the
+     screen were only marked off screen after that frame (the observer reports later). Rows past the view are now born
+     skipped (.is-offscreen, content-visibility:hidden) with a row's height held, and the observer brings them in as they
+     come within 240px. A tall screen (an iPad) gets more rows drawn up front. */
+  const lbDrawnFirst = Math.ceil((window.innerHeight || 800) / 60) + 3;
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
+    if(rowIdx >= lbDrawnFirst){ row.classList.add("is-offscreen"); row.style.containIntrinsicHeight = "35px"; }
     /* Matched on the sync code, not the name. Two classmates called
        Madison would otherwise both light up as "me". The code is NOT a
        published field - it is the document's own id, attached when the
@@ -125624,7 +125657,12 @@ function lbArtQueue(rows, list){
     const sy = window.scrollY || 0;
     if(rows._lbSortY !== sy || !rows._lbSorted){ rows._lbSortY = sy; rows._lbSorted = true; q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid)); }
     const t0 = performance.now(); let did = 0;
-    while(q.length && (did < 1 || performance.now() - t0 < 5)){ lbFillArt(q.shift(), rows, true); did++; }
+    /* build 362: the steps in the first 700ms after a list is built take up to 40ms - the rows in view, nearest the middle first, in
+       a few frames - where it was 5ms a frame (a row every ~45ms at 4x: the visible rows' characters filled in one by one over ~430ms, each
+       a frame of its own). Every later step is 5ms as before. */
+    if(!rows._lbT0) rows._lbT0 = t0;
+    const budget = t0 - rows._lbT0 < 700 ? 40 : 5;
+    while(q.length && (did < 1 || performance.now() - t0 < budget)){ lbFillArt(q.shift(), rows, true); did++; }
     if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
     if(q.length) requestAnimationFrame(step); else rows._lbPump = false;
   };
@@ -136249,8 +136287,8 @@ let tabPerfActive = null;
 function tabPerfStart(dest){
   try{
     const now = performance.now();
-    if(tabPerfActive){ tabPerfActive.seq.push(dest); tabPerfActive.end = now + 1000; return tabPerfActive; }
-    const rec = { at: Date.now(), seq: [dest], end: now + 1000, f: 0, g: 0, n34: 0, n50: 0, n100: 0, b: 0, bn: 0 };
+    if(tabPerfActive){ tabPerfActive.seq.push(dest); tabPerfActive.end = now + 1000; tabPerfActive.tl = now; return tabPerfActive; }
+    const rec = { at: Date.now(), seq: [dest], end: now + 1000, f: 0, g: 0, n34: 0, n50: 0, n100: 0, b: 0, bn: 0, tl: now, l: 0, p: 0 };
     tabPerfActive = rec;
     let last = now;
     const tick = (t) => {
@@ -136265,8 +136303,8 @@ function tabPerfStart(dest){
 function tabPerfSave(rec){
   try{
     let list = []; try{ list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || []; }catch(e){}
-    list.push({ at: rec.at, seq: rec.seq.join(">"), f: rec.f, g: rec.g, n34: rec.n34, n50: rec.n50, n100: rec.n100, b: Math.round(rec.b), bn: rec.bn });
-    localStorage.setItem(TAB_PERF_KEY, JSON.stringify(list.slice(-12)));
+    list.push({ at: rec.at, seq: rec.seq.join(">"), f: rec.f, g: rec.g, n34: rec.n34, n50: rec.n50, n100: rec.n100, b: Math.round(rec.b), bn: rec.bn, l: rec.l || 0, p: rec.p || 0 });
+    localStorage.setItem(TAB_PERF_KEY, JSON.stringify(list.slice(-30)));
   }catch(e){}
 }
 function tabPerfText(){
@@ -136275,7 +136313,7 @@ function tabPerfText(){
     const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
     let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
     return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (rl ? " | resume: " + rl : "") + " | " + list.map(r =>
-      r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn).join(" | ")).slice(0, 1700);
+      r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn + (r.p ? " l" + (r.l || 0) + "/p" + r.p : "")).join(" | ")).slice(0, 3200);
   }catch(e){ return ""; }
 }
 (function setupBottomTabs(){
@@ -136485,7 +136523,12 @@ function tabPerfText(){
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
-          if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++; } }
+          if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++;
+            /* build 362: tap to the screen being in the page (l) and to two frames after it (p): the same two numbers the speed test
+               reports, kept for every real tap so a report carries how the tabs felt in use */
+            const tl = perfRec.tl || buildT0, mine = perfRec;
+            mine.l = Math.round(performance.now() - tl);
+            requestAnimationFrame(() => requestAnimationFrame(() => { mine.p = Math.round(performance.now() - tl); })); } }
       };
       /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
          clicking to other tabs it shoots over instantly, the glass bubble
@@ -137428,12 +137471,31 @@ function tabPerfText(){
     /* tidy up once the platter has it and the tab has shrunk back */
     lensT1 = setTimeout(() => lensFinish(), Math.max(handAt + 60, greyAt + 220));
   }
+  /* build 362: THE PLATTER NEVER FLASHES WHEN THE GLASS HANDS OVER TO IT. "The pill or grey thing flashes when you select one."
+     In his 120fps recording the platter's brightness dips ~520ms after the tap - the moment the glass finishes - and fades
+     back over ~120ms. The handover cancelled the platter's opacity fade (which was holding it at 1) while an inline
+     opacity:0 was still on it, then cleared that inline value: the 0 shows for a frame and clearing it starts the slider's own
+     opacity .2s transition from 0 - a dip and a ramp. Now the inline value is set to what the platter should be (1 when lit, 0
+     when no tab is) with its transition off, the fade is cancelled over that, and the inline value goes later, again with no
+     transition, when it is the same as the stylesheet's. */
+  function settleSliderOpacity(){
+    const want = slider.classList.contains("ready") ? "1" : "0";
+    slider.style.transition = "none";
+    slider.style.opacity = want;
+    if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
+    void slider.offsetWidth;
+    slider.style.transition = "";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if(lensG || bar.classList.contains("lens-up")) return;
+      if(want === "1"){ slider.style.transition = "none"; slider.style.opacity = ""; void slider.offsetWidth; slider.style.transition = ""; }
+      else slider.style.opacity = "";   /* a tab lit since then fades in as it always did */
+    }));
+  }
   function lensFinish(){
     lensT1 = null;
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
-    if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
-    slider.style.opacity = "";
+    settleSliderOpacity();
     if(bar._swell && bar._swell.playState === "finished"){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
     if(lensG) lensG.tabs.forEach(t => { t.el.style.transition = ""; t.el.style.transform = ""; });
     lensG = null; lensAt = null;
@@ -137446,8 +137508,8 @@ function tabPerfText(){
     clearTimeout(lensT1); lensT1 = null;
     lensStopFollow();
     if(lensRun){ lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); lensRun = null; }
-    [lens, slider].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
-    slider.style.opacity = "";
+    [lens].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
+    settleSliderOpacity();
     lensBarSwell(null);
     lens.style.opacity = "0";
     lens.classList.remove("is-up");

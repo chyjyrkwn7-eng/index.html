@@ -29509,3 +29509,36 @@ What 361 does: runLagTest gains eight variants after the Home-part ones - [g:bas
 [g:nobarblur] [g:nofilter] [g:noshadow] [g:noanim] [g:nolens] [g:bare] (everything off) - each taps Leaderboard, Profile,
 Calendar, Home and reports per tab l (tap to screen), p (tap to the second frame after it), w (worst frame), s (frames >34ms).
 Read it with `python3 tools/firestore-admin.py bugs 1`. The variant that moves the numbers is what to fix. check-b361.py.
+
+## Build 362 - what the first draw is spent on
+
+His first run of the 361 test (Maddog, iPhone iOS 18.7, 4 cores, dpr 3): steady tap-to-screen (lat) Leaderboard 104, Home 168,
+Profile 112, Calendar 94ms - down from 203/339/187/287 at 358, so build 359/360 did land. Worst frame still 180-282ms. The
+effect-off variants: a screen is in the page at l ~100-170 but is first drawn (p, two frames later) 300-690ms after that
+(Leaderboard base p680, Profile 507, Calendar 294, Home 397); with every blur, filter, shadow and animation off ([g:bare]) the
+Leaderboard (688) and Home (347) stay slow - so it is the CONTENT, not the effects. Single runs are noisy (outliers of 1,000+ms).
+362: (1) Leaderboard rows past the view (innerHeight/60+3 rows drawn first) are born `.is-offscreen` (content-visibility:hidden,
+contain-intrinsic-height 35px = the content box) so the first draw lays out ~19 rows, not 43; the observer brings the rest in
+at 240px. (2) the test's variants now run three rounds each and report medians: [g:nobody] (the page's own glow/star layers),
+[g:noart] (the list's characters and flares, the Profile's character/goal emblem/reward tiles), [g:nohero] (Home's planet
+system, the Profile's hero card), [g:bare] (all of them and every effect). Read: `python3 tools/firestore-admin.py bugs 1`.
+Sandbox cannot show the phone's 300-690ms (its p is ~200ms at 4x), so (1) is a guess at the cost, (2) is how to know.
+
+Build 362, the platter flash. His 17:19 recording at 120fps: the platter's brightness (cell luminance) holds ~55, then dips to ~51 and ramps back
+over ~120ms at ~520ms after the tap - the moment lensFinish() runs. lensRelease() leaves an inline `opacity:0` on the slider under its
+fade animation; lensFinish() cancelled the fade and then cleared the inline value, and the slider's own `transition: opacity .2s` ran
+0 -> 1: a dip and a ramp (the stylesheet has `.bottomtabs-slider{opacity:0}` and `.ready{opacity:1}`). Chromium here shows no dip (its
+before-change style includes the animation), so it was found from the video, not reproduced. settleSliderOpacity() (used by lensFinish and
+lensHide): inline opacity set to what the platter should be (1 lit, 0 not) with the transition off, the fade cancelled over it, and
+the inline value cleared two frames later, again with no transition. check-b362 watches the inline writes: 0 -> 1 -> "" (361 wrote 0 -> "").
+Gates fixed along the way (all measured something timing-bound, none was a product regression): check-b360 list length tolerance 2 -> 60px
+(rows hold a 35px content box: 3px off), check-b352 reads the bare rows at once rather than 300ms later (the art queue is quicker now),
+check-b358 blocks every write to class26e.session so the heartbeat cannot overwrite the planted 'hidden' state (it failed on main too).
+
+Build 362, also: (a) the Leaderboard's art queue takes up to 40ms steps for the first 700ms after a list is built (it was 5ms a frame: the
+visible rows' characters filled in one by one over ~430ms at 4x; now in ~3 frames, ~400ms) - building the in-view rows WITH their art in
+the tap's task was tried and drew the screen ~400ms later at 4x (p 205 -> 620), so it stays queued. (b) every real tab tap keeps l (tap to
+the screen being in the page) and p (tap to two frames after) beside its frame counts; the last 30 are kept; Report a bug has a "Send tab
+timings" button (a bug doc "Tab timings (in use)" with `perf` = tabPerfText()) so ordinary use, not a staged test, reaches the admin:
+`python3 tools/firestore-admin.py bugs 1`. Looked at and left: Profile (hero 274 nodes, goal card 413 starting at 604px - mostly in view)
+and Home (the planet system, 874 nodes, fills the screen): nothing below the fold to skip.

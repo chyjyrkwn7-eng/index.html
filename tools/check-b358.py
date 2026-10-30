@@ -38,8 +38,8 @@ with sync_playwright() as pw:
       const atRelease = sl.style.opacity; await new Promise(r=>setTimeout(r,2600)); return { atPress, atRelease, end: sl.style.opacity, shown: parseFloat(getComputedStyle(sl).opacity) }; }""")
     chk("the platter is hidden at the press and the release, and clear at the end (%s)" % (s,), s["atPress"] == "0" and s["atRelease"] == "0" and s["end"] == "" and s["shown"] > .9, s)
     # a run that ended in the background is noted at the next start
-    pg.evaluate("()=>{ const real=Storage.prototype.setItem; Storage.prototype.setItem=function(k,v){ if(k==='class26e.session' && /closed/.test(v)) return; return real.call(this,k,v); }; }")
-    pg.evaluate("()=>{ localStorage.setItem('class26e.session', JSON.stringify({state:'hidden', t:Date.now()-5000, screen:'board', build:'x'})); localStorage.removeItem('class26e.crashlog'); }")
+    pg.evaluate("()=>{ const real=Storage.prototype.setItem; window.__realSet=real; Storage.prototype.setItem=function(k,v){ if(k==='class26e.session') return; return real.call(this,k,v); }; }")
+    pg.evaluate("()=>{ window.__realSet.call(localStorage, 'class26e.session', JSON.stringify({state:'hidden', t:Date.now()-5000, screen:'board', build:'x'})); localStorage.removeItem('class26e.crashlog'); }")
     pg.reload(); pg.wait_for_timeout(3500)
     c = pg.evaluate("()=>localStorage.getItem('class26e.crashlog')")
     chk("a run that ended while hidden is noted at the next start (%s)" % (c,), c and "ENDED-hidden" in c and "board" in c, c)
