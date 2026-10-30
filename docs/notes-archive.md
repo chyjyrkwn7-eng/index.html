@@ -29496,3 +29496,16 @@ build runs from its timer, not timer -> rAF -> timer (a frame is ~65ms at 4x on 
 At 4x from the Leaderboard: press -> build start 330-550ms (359) -> 190-300ms. check-b360.py (fails on 359).
 Still open: the build itself is ~230ms at 4x for Profile/Home (a major GC fell inside it once); Leaderboard frames are still
 heavier than Home's; screens built ahead of the tap would be the real fix.
+
+## Build 361 - the phone measures which kind of drawing costs it most (a TEST build: nothing visible changes)
+
+Madison, after 20+ recordings: the bottom tab's interaction is the app's biggest problem and "works at 70%". His own Tab speed
+test at build 358 (iPhone, iOS 18.7, 4 cores, dpr 3): per-tap latency 187-339ms, worst frame 266-499ms, main thread held only
+85-195ms - the delay is mostly DRAWING, not script, and my sandbox (software raster, CPU-throttled) cannot reproduce that.
+Measured here, 4x CPU: putting a saved screen back instead of building it saves Profile 196->61ms and Home 160->84ms but nothing
+for the Leaderboard (81->335, the whole list draws at once) or Calendar (50->43) - so "keep screens alive" is NOT the instant swap
+it sounds like, and was not built.
+What 361 does: runLagTest gains eight variants after the Home-part ones - [g:base] [g:noblur] (all backdrop blur off)
+[g:nobarblur] [g:nofilter] [g:noshadow] [g:noanim] [g:nolens] [g:bare] (everything off) - each taps Leaderboard, Profile,
+Calendar, Home and reports per tab l (tap to screen), p (tap to the second frame after it), w (worst frame), s (frames >34ms).
+Read it with `python3 tools/firestore-admin.py bugs 1`. The variant that moves the numbers is what to fix. check-b361.py.
