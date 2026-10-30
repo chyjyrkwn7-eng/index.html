@@ -137437,12 +137437,31 @@ function tabPerfText(){
     /* tidy up once the platter has it and the tab has shrunk back */
     lensT1 = setTimeout(() => lensFinish(), Math.max(handAt + 60, greyAt + 220));
   }
+  /* build 362: THE PLATTER NEVER FLASHES WHEN THE GLASS HANDS OVER TO IT. "The pill or grey thing flashes when you select one."
+     In his 120fps recording the platter's brightness dips ~520ms after the tap - the moment the glass finishes - and fades
+     back over ~120ms. The handover cancelled the platter's opacity fade (which was holding it at 1) while an inline
+     opacity:0 was still on it, then cleared that inline value: the 0 shows for a frame and clearing it starts the slider's own
+     opacity .2s transition from 0 - a dip and a ramp. Now the inline value is set to what the platter should be (1 when lit, 0
+     when no tab is) with its transition off, the fade is cancelled over that, and the inline value goes later, again with no
+     transition, when it is the same as the stylesheet's. */
+  function settleSliderOpacity(){
+    const want = slider.classList.contains("ready") ? "1" : "0";
+    slider.style.transition = "none";
+    slider.style.opacity = want;
+    if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
+    void slider.offsetWidth;
+    slider.style.transition = "";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if(lensG || bar.classList.contains("lens-up")) return;
+      if(want === "1"){ slider.style.transition = "none"; slider.style.opacity = ""; void slider.offsetWidth; slider.style.transition = ""; }
+      else slider.style.opacity = "";   /* a tab lit since then fades in as it always did */
+    }));
+  }
   function lensFinish(){
     lensT1 = null;
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
-    if(slider._fade){ try{ slider._fade.cancel(); }catch(e){} slider._fade = null; }
-    slider.style.opacity = "";
+    settleSliderOpacity();
     if(bar._swell && bar._swell.playState === "finished"){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
     if(lensG) lensG.tabs.forEach(t => { t.el.style.transition = ""; t.el.style.transform = ""; });
     lensG = null; lensAt = null;
@@ -137455,8 +137474,8 @@ function tabPerfText(){
     clearTimeout(lensT1); lensT1 = null;
     lensStopFollow();
     if(lensRun){ lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); lensRun = null; }
-    [lens, slider].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
-    slider.style.opacity = "";
+    [lens].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
+    settleSliderOpacity();
     lensBarSwell(null);
     lens.style.opacity = "0";
     lens.classList.remove("is-up");

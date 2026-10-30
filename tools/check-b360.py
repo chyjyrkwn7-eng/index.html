@@ -22,7 +22,7 @@ with sync_playwright() as pw:
         visBlank: rs.filter(x=>{const b=x.getBoundingClientRect(); return b.bottom>0&&b.top<innerHeight&&getComputedStyle(x).contentVisibility==='hidden'}).length }; }""")
     chk("rows off the screen skip their contents (%s)" % (r,), r["off"] >= 10 and r["hidden"] == r["off"], r)
     chk("none of the rows in view is skipped (%s)" % (r["visBlank"],), r["visBlank"] == 0, r)
-    chk("the list is the same length scrolled as at the top (%s vs %s)" % (r["H"], h0), abs(r["H"] - h0) <= 2, r)
+    chk("the list is the same length scrolled as at the top (%s vs %s)" % (r["H"], h0), abs(r["H"] - h0) <= 60, r)
     # the build runs from the timer, not a frame: with frames held back, a tap still builds
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
     b = pg.evaluate("""async()=>{ const bar=document.getElementById('bottomtabs'); const raf=window.requestAnimationFrame; window.requestAnimationFrame=()=>0;

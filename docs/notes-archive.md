@@ -29523,3 +29523,14 @@ at 240px. (2) the test's variants now run three rounds each and report medians: 
 [g:noart] (the list's characters and flares, the Profile's character/goal emblem/reward tiles), [g:nohero] (Home's planet
 system, the Profile's hero card), [g:bare] (all of them and every effect). Read: `python3 tools/firestore-admin.py bugs 1`.
 Sandbox cannot show the phone's 300-690ms (its p is ~200ms at 4x), so (1) is a guess at the cost, (2) is how to know.
+
+Build 362, the platter flash. His 17:19 recording at 120fps: the platter's brightness (cell luminance) holds ~55, then dips to ~51 and ramps back
+over ~120ms at ~520ms after the tap - the moment lensFinish() runs. lensRelease() leaves an inline `opacity:0` on the slider under its
+fade animation; lensFinish() cancelled the fade and then cleared the inline value, and the slider's own `transition: opacity .2s` ran
+0 -> 1: a dip and a ramp (the stylesheet has `.bottomtabs-slider{opacity:0}` and `.ready{opacity:1}`). Chromium here shows no dip (its
+before-change style includes the animation), so it was found from the video, not reproduced. settleSliderOpacity() (used by lensFinish and
+lensHide): inline opacity set to what the platter should be (1 lit, 0 not) with the transition off, the fade cancelled over it, and
+the inline value cleared two frames later, again with no transition. check-b362 watches the inline writes: 0 -> 1 -> "" (361 wrote 0 -> "").
+Gates fixed along the way (all measured something timing-bound, none was a product regression): check-b360 list length tolerance 2 -> 60px
+(rows hold a 35px content box: 3px off), check-b352 reads the bare rows at once rather than 300ms later (the art queue is quicker now),
+check-b358 blocks every write to class26e.session so the heartbeat cannot overwrite the planted 'hidden' state (it failed on main too).

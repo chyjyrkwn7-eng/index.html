@@ -33,5 +33,15 @@ with sync_playwright() as pw:
     parts = [p for p in text.split(" | ") if p.startswith("[g:")]
     names = [p[3:p.index("]")] for p in parts]
     chk("the speed test's variants are base, nobody, noart, nohero, bare (%s)" % (names,), names == ["base", "nobody", "noart", "nohero", "bare"], text)
+    # the platter's inline opacity goes 0 -> 1 -> "" when the glass hands over, never 0 -> "" (a dip, then a .2s ramp)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
+    seq = pg.evaluate("""async()=>{ const s=document.getElementById('bottomtabs-slider'); const seq=[];
+      const mo=new MutationObserver(()=>{ seq.push(s.style.opacity); }); mo.observe(s,{attributes:true,attributeFilter:['style']});
+      const el=document.getElementById('bottomtab-profile'); const b=el.getBoundingClientRect(); const x=b.left+b.width/2,y=b.top+b.height/2;
+      const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:52,isPrimary:true,clientX:x,clientY:y});
+      el.dispatchEvent(mk('pointerdown')); await new Promise(r=>setTimeout(r,60)); el.dispatchEvent(mk('pointerup')); el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}));
+      await new Promise(r=>setTimeout(r,1800)); mo.disconnect(); return seq; }""")
+    i1 = max([i for i, v in enumerate(seq) if v == "0"] or [-1]); tail = seq[i1 + 1:]
+    chk("the platter's opacity is held at 1 before it is released (%s)" % (seq,), tail[:1] == ["1"] and "" in tail[1:], seq)
     br.close()
 sys.exit(0 if g["ok"] else 1)
