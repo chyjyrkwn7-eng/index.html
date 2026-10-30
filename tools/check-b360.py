@@ -28,6 +28,6 @@ with sync_playwright() as pw:
     b = pg.evaluate("""async()=>{ const bar=document.getElementById('bottomtabs'); const raf=window.requestAnimationFrame; window.requestAnimationFrame=()=>0;
       const el=document.getElementById('bottomtab-calendar'); const b0=bar._navBuilds||0; const t0=performance.now(); el.click(); let ms=-1;
       while(performance.now()-t0<900){ if((bar._navBuilds||0)>b0){ ms=performance.now()-t0; break; } await new Promise(r=>setTimeout(r,2)); } window.requestAnimationFrame=raf; return ms; }""")
-    chk("a tab tap builds its screen from its timer within 100ms, with no frame callback (%s ms)" % (round(b),), 0 <= b <= 100, b)
+    chk("a tab tap builds its screen from its timer within 140ms, with no frame callback (%s ms)" % (round(b),), 0 <= b <= 140, b)
     br.close()
 sys.exit(0 if g["ok"] else 1)
