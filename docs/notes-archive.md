@@ -29479,3 +29479,20 @@ glide takes ~250ms, the list lands ~200ms after the glide ends). His taps are 0.
 taps 0.6s+ apart wait nothing. Reference app he sent (13:06 recording): the page crossfades ~100ms after the lens lifts and is done
 ~230ms from the press. Ours is a hard cut at ~300ms+ on the phone; the build (style/layout/paint) is the rest and needs a bigger
 change (screens kept alive / built before the tap) - NOT done, risky (lifecycle/side effects of showX), needs his go.
+
+## Build 360 - leaving the Leaderboard
+
+His 17:19 recording of 359 (120fps): taps from Home reach the new screen in ~0.18s (was 0.27-0.54s), but a tap that leaves the
+Leaderboard still took 0.32-0.37s. Spam taps behave as designed (the lens follows each tap, the screen follows the last).
+Traced at 4x CPU: sitting on the Leaderboard, every main-thread frame spent ~40ms in Layerize - the forty-odd rows' avatar and
+flare svgs are ~9,000 elements, paused or not - so the tap's pointer events, timer and rAF each queued behind a ~65ms frame
+(Home's idle frames are cheap). Removing the avatar svgs took Layerize to ~3ms a frame; hiding only the rows off screen took it
+from ~40ms to ~11ms. Tried, no use: pausing all animations, setting characters still, `contain:strict` on avatar/mark,
+and a `.xfreeze` universal selector at press (the recalc made it slower - never do that).
+Changes: (1) `.screen-rankings .rank-row.is-offscreen{content-visibility:hidden}`; the observer margin is 240px (was 120) and
+sets `contain-intrinsic-height` (content box: height minus padding and border) as a row leaves, so the list length does not change
+(first try with `auto 64px` shortened the page by ~200px; second try forgot the padding and lengthened it). (2) the tab's screen
+build runs from its timer, not timer -> rAF -> timer (a frame is ~65ms at 4x on the Leaderboard); TAB_SCREEN_AFTER 30 -> 40.
+At 4x from the Leaderboard: press -> build start 330-550ms (359) -> 190-300ms. check-b360.py (fails on 359).
+Still open: the build itself is ~230ms at 4x for Profile/Home (a major GC fell inside it once); Leaderboard frames are still
+heavier than Home's; screens built ahead of the tap would be the real fix.

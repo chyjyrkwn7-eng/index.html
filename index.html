@@ -3265,6 +3265,11 @@
     will-change:opacity;
   }
   .avatarchar-option.selected::before{ opacity:1; }
+  /* build 360: A ROW OFF THE SCREEN IS NOT DRAWN AT ALL. Sitting on the Leaderboard, every frame had to lay out the paint of all
+     forty-odd rows' characters and flares (about 9,000 svg elements, paused or not): that one step took ~40ms of every frame at
+     4x CPU, and a tap on the tab bar waited behind it - leaving the Leaderboard took 0.3s against 0.18s from Home on his
+     phone. A row the observer has marked off screen (120px out) keeps its size and its place and skips its contents: ~9ms. */
+  .screen-rankings .rank-row.is-offscreen{ content-visibility:hidden; contain-intrinsic-height:64px; }
   /* Build 290: see the IntersectionObserver in showCustomize(). */
   :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen *,
   :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen *::before, :is(.banner-opt, .swatch, .rank-row, .lw-podium-spot, .hfx-opt).is-offscreen *::after{ animation-play-state:paused !important; }
@@ -103247,7 +103252,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-29-359";
+const APP_BUILD = "2026-10-29-360";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -125604,12 +125609,15 @@ function lbWatchOffscreen(rows, more){
   const io = new IntersectionObserver(list => {
     if(!document.contains(rows)){ io.disconnect(); return; }
     list.forEach(e => {
+      /* the row's own height is its place while its contents are skipped (content-visibility; the size given is the
+         content box, so the padding and border come off), so the list does not change length under a scroll */
+      if(!e.isIntersecting && e.target.classList.contains("rank-row")){ const cs = getComputedStyle(e.target), h = e.boundingClientRect.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0); if(h > 1) e.target.style.containIntrinsicHeight = (Math.round(h * 10) / 10) + "px"; }
       e.target.classList.toggle("is-offscreen", !e.isIntersecting);
       /* a rank flare paused off screen comes back on the shared clock
          (build 324), level with every other flare of its rank */
       if(e.isIntersecting) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
     });
-  }, { rootMargin: "120px 0px" });
+  }, { rootMargin: "240px 0px" });
   rows._lbIo = io;
   /* not marked off-screen up front (build 310): the observer's first
      report does that for the rows really out of view, and pre-marking
@@ -136311,7 +136319,7 @@ function tabPerfText(){
      after the tap at 4x CPU. His own iOS 26 recording changes the page at frame 13 of the press
      (~215ms); 170ms from the press is just past a quick tap's release, so the build starts as
      the glass is still crossing - the page answers about a tenth of a second sooner. */
-  const TAB_SCREEN_AFTER = 30;
+  const TAB_SCREEN_AFTER = 40;
   /* the extra wait for a tap that follows another within half a second (build 356) */
   const TAB_RUN_EXTRA = 280;
   /* BUILD 342: IN THE FIRE CODE CLASS THE BAR'S FOURTH TAB IS SETTINGS, NOT CALENDAR. "For the Fire Code class,
@@ -136469,8 +136477,10 @@ function tabPerfText(){
         if(navRan) return;
         me.timers.forEach(clearTimeout); me.timers = [];
         const wait = Math.max(0, TAB_SCREEN_AFTER - (performance.now() - (bar._lensPressAt || -1e9))) + rapidRun;
-        me.timers.push(setTimeout(() => requestAnimationFrame(() => { if(!navRan) me.timers.push(setTimeout(navRun, 0)); }), wait));
-        me.timers.push(setTimeout(navRun, wait + 120));
+        /* build 360: the build runs from the timer itself. It used to wait for a frame as well (rAF, then another
+           timer), and on a screen that is busy - the Leaderboard's frames are long - that was one more frame's wait
+           (about 65ms at 4x CPU, more on a phone) between the glass landing and the page changing. */
+        me.timers.push(setTimeout(navRun, wait));
       };
       me.cancel = () => { navRan = true; me.timers.forEach(clearTimeout); };
       bar._navPend = me;
