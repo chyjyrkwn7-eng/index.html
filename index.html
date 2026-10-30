@@ -114057,6 +114057,25 @@ async function runLagTest(onDone){
   try{ onDone && onDone({ text, sent }); }catch(e){}
   return { text, sent };
 }
+/* build 362: ONE TAP SENDS HOW THE TABS HAVE BEEN IN USE. Every real tab tap already keeps its frames and its build time (the last 30);
+   the tap-to-screen (l) and tap-to-second-frame (p) are kept now too. This sends them as a report with no typing, so a few minutes of
+   ordinary use - not a staged test - is what the admin reads. */
+async function sendTabTimings(onDone){
+  let sent = false;
+  try{
+    if(fbDb && navigator.onLine !== false){
+      const id = "bug-" + Date.now().toString(36) + "-use" + Math.random().toString(36).slice(2, 5);
+      let vw = 0, vh = 0; try{ vw = Math.round(innerWidth); vh = Math.round(innerHeight); }catch(e){}
+      await Promise.race([fbDb.collection("vrooms").doc(id).set({
+        kind: "bug", text: "Tab timings (in use)", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+        from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
+        viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: tabPerfText(), at: Date.now() }).then(() => { sent = true; }), new Promise(r => setTimeout(r, 6000))]);
+    }
+  }catch(e){}
+  try{ onDone && onDone(sent); }catch(e){}
+  return sent;
+}
 function showBugReport(){
   setActiveNav("settings");
   countEl.textContent = "Report a bug";
@@ -114086,6 +114105,11 @@ function showBugReport(){
   lagBtn.textContent = "Test tab speed";
   lagBtn.addEventListener("click", () => { if(!lagTestRunning) runLagTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The tab speed test was sent to the Nova admin." : "The tab speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
   form.appendChild(lagBtn);
+  const useBtn = document.createElement("button");
+  useBtn.type = "button"; useBtn.className = "next bugreport-send";
+  useBtn.textContent = "Send tab timings";
+  useBtn.addEventListener("click", () => { useBtn.disabled = true; sendTabTimings(ok => { try{ useBtn.disabled = false; const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = ok ? "The tab timings from your recent use were sent to the Nova admin." : "The tab timings could not be sent. Check your connection and try again."; }catch(e){} }); });
+  form.appendChild(useBtn);
 
   const boxId = "bugreport-text";
   const lab = document.createElement("label");
@@ -125633,7 +125657,12 @@ function lbArtQueue(rows, list){
     const sy = window.scrollY || 0;
     if(rows._lbSortY !== sy || !rows._lbSorted){ rows._lbSortY = sy; rows._lbSorted = true; q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid)); }
     const t0 = performance.now(); let did = 0;
-    while(q.length && (did < 1 || performance.now() - t0 < 5)){ lbFillArt(q.shift(), rows, true); did++; }
+    /* build 362: the steps in the first 700ms after a list is built take up to 40ms - the rows in view, nearest the middle first, in
+       a few frames - where it was 5ms a frame (a row every ~45ms at 4x: the visible rows' characters filled in one by one over ~430ms, each
+       a frame of its own). Every later step is 5ms as before. */
+    if(!rows._lbT0) rows._lbT0 = t0;
+    const budget = t0 - rows._lbT0 < 700 ? 40 : 5;
+    while(q.length && (did < 1 || performance.now() - t0 < budget)){ lbFillArt(q.shift(), rows, true); did++; }
     if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
     if(q.length) requestAnimationFrame(step); else rows._lbPump = false;
   };
@@ -136258,8 +136287,8 @@ let tabPerfActive = null;
 function tabPerfStart(dest){
   try{
     const now = performance.now();
-    if(tabPerfActive){ tabPerfActive.seq.push(dest); tabPerfActive.end = now + 1000; return tabPerfActive; }
-    const rec = { at: Date.now(), seq: [dest], end: now + 1000, f: 0, g: 0, n34: 0, n50: 0, n100: 0, b: 0, bn: 0 };
+    if(tabPerfActive){ tabPerfActive.seq.push(dest); tabPerfActive.end = now + 1000; tabPerfActive.tl = now; return tabPerfActive; }
+    const rec = { at: Date.now(), seq: [dest], end: now + 1000, f: 0, g: 0, n34: 0, n50: 0, n100: 0, b: 0, bn: 0, tl: now, l: 0, p: 0 };
     tabPerfActive = rec;
     let last = now;
     const tick = (t) => {
@@ -136274,8 +136303,8 @@ function tabPerfStart(dest){
 function tabPerfSave(rec){
   try{
     let list = []; try{ list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || []; }catch(e){}
-    list.push({ at: rec.at, seq: rec.seq.join(">"), f: rec.f, g: rec.g, n34: rec.n34, n50: rec.n50, n100: rec.n100, b: Math.round(rec.b), bn: rec.bn });
-    localStorage.setItem(TAB_PERF_KEY, JSON.stringify(list.slice(-12)));
+    list.push({ at: rec.at, seq: rec.seq.join(">"), f: rec.f, g: rec.g, n34: rec.n34, n50: rec.n50, n100: rec.n100, b: Math.round(rec.b), bn: rec.bn, l: rec.l || 0, p: rec.p || 0 });
+    localStorage.setItem(TAB_PERF_KEY, JSON.stringify(list.slice(-30)));
   }catch(e){}
 }
 function tabPerfText(){
@@ -136284,7 +136313,7 @@ function tabPerfText(){
     const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
     let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
     return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (rl ? " | resume: " + rl : "") + " | " + list.map(r =>
-      r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn).join(" | ")).slice(0, 1700);
+      r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn + (r.p ? " l" + (r.l || 0) + "/p" + r.p : "")).join(" | ")).slice(0, 3200);
   }catch(e){ return ""; }
 }
 (function setupBottomTabs(){
@@ -136494,7 +136523,12 @@ function tabPerfText(){
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
-          if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++; } }
+          if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++;
+            /* build 362: tap to the screen being in the page (l) and to two frames after it (p): the same two numbers the speed test
+               reports, kept for every real tap so a report carries how the tabs felt in use */
+            const tl = perfRec.tl || buildT0, mine = perfRec;
+            mine.l = Math.round(performance.now() - tl);
+            requestAnimationFrame(() => requestAnimationFrame(() => { mine.p = Math.round(performance.now() - tl); })); } }
       };
       /* THE GLASS ROLLS OVER, THEN THE PAGE CHANGES (build 327z10). "When
          clicking to other tabs it shoots over instantly, the glass bubble

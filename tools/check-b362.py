@@ -43,5 +43,15 @@ with sync_playwright() as pw:
       await new Promise(r=>setTimeout(r,1800)); mo.disconnect(); return seq; }""")
     i1 = max([i for i, v in enumerate(seq) if v == "0"] or [-1]); tail = seq[i1 + 1:]
     chk("the platter's opacity is held at 1 before it is released (%s)" % (seq,), tail[:1] == ["1"] and "" in tail[1:], seq)
+    # every real tap keeps its tap-to-screen (l) and tap-to-second-frame (p); one tap in Report a bug sends them
+    pg.evaluate("()=>{ try{ localStorage.removeItem('class26e.tabperf'); }catch(e){} showHome(); }"); pg.wait_for_timeout(2000)
+    for d in ("rewards", "profile", "home"):
+        pg.evaluate("(d)=>document.getElementById('bottomtab-'+d).click()", d); pg.wait_for_timeout(2300)
+    txt = pg.evaluate("()=>tabPerfText()")
+    import re
+    chk("real taps keep l/p (%s)" % (txt[-160:],), len(re.findall(r"l\d+/p\d+", txt)) >= 3, txt)
+    pg.evaluate("()=>showBugReport()"); pg.wait_for_timeout(500)
+    btns = pg.evaluate("()=>[...document.querySelectorAll('.screen-bugreport button')].map(b=>b.textContent.trim())")
+    chk("Report a bug has a Send tab timings button (%s)" % (btns,), "Send tab timings" in btns and "Test tab speed" in btns, btns)
     br.close()
 sys.exit(0 if g["ok"] else 1)

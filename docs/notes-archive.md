@@ -29534,3 +29534,11 @@ the inline value cleared two frames later, again with no transition. check-b362 
 Gates fixed along the way (all measured something timing-bound, none was a product regression): check-b360 list length tolerance 2 -> 60px
 (rows hold a 35px content box: 3px off), check-b352 reads the bare rows at once rather than 300ms later (the art queue is quicker now),
 check-b358 blocks every write to class26e.session so the heartbeat cannot overwrite the planted 'hidden' state (it failed on main too).
+
+Build 362, also: (a) the Leaderboard's art queue takes up to 40ms steps for the first 700ms after a list is built (it was 5ms a frame: the
+visible rows' characters filled in one by one over ~430ms at 4x; now in ~3 frames, ~400ms) - building the in-view rows WITH their art in
+the tap's task was tried and drew the screen ~400ms later at 4x (p 205 -> 620), so it stays queued. (b) every real tab tap keeps l (tap to
+the screen being in the page) and p (tap to two frames after) beside its frame counts; the last 30 are kept; Report a bug has a "Send tab
+timings" button (a bug doc "Tab timings (in use)" with `perf` = tabPerfText()) so ordinary use, not a staged test, reaches the admin:
+`python3 tools/firestore-admin.py bugs 1`. Looked at and left: Profile (hero 274 nodes, goal card 413 starting at 604px - mostly in view)
+and Home (the planet system, 874 nodes, fills the screen): nothing below the fold to skip.
