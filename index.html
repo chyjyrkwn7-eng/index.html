@@ -103292,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-367";
+const APP_BUILD = "2026-10-31-368";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -131130,6 +131130,14 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))){
       startX = null; startY = null; locked = false; return;
     }
+    /* build 368: NOT A TOUCH ON THE TAB BAR'S OWN SPACE. A slide across the bar that began in its margin (the gap round the pill, which is the
+       bare page - html or body - as far as the target goes) was a swipe of the screen: on the Leaderboard it changed board with the
+       "ding" of the board switch, on Profile it changed the top tab, "at random times", depending on where the finger landed. The bar's
+       box and 14px round it belong to the bar. */
+    try{
+      const bb = document.getElementById("bottomtabs");
+      if(bb && !bb.hidden){ const r = bb.getBoundingClientRect(); if(r.height && t.clientY >= r.top - 14 && t.clientY <= r.bottom + 30){ startX = null; startY = null; locked = false; return; } }
+    }catch(e){}
     startX = t.clientX; startY = t.clientY; locked = false;
   };
   host.addEventListener("touchstart", onStart, { passive: true });
