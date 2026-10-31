@@ -29642,3 +29642,8 @@ times a second, was over the Leaderboard/Profile/Calendar: the bar's backdrop bl
 and the glass is drawn on top - the one look that halved the compositor's draw time in the sandbox is no bar blur. 369: the Drag test opens the Leaderboard first (rows animating under the
 bar), a release during it stays put (`window.__dragTestOn`), and the looks are A as is, B bar solid while the glass is up, C animations paused while the bar is held
 (`html.tab-held`, set in lensDown, taken off in lensFinish/lensHide), D = B+C, E no glass. check-b369; check-b367 now expects five looks.
+Build 369, a sixth look. Madison on the 368 drag test: "the sliding lag looks to be mostly happening during the slide/swipe and when the bubble pill gets smaller and shrinks to the one you
+selected". The landing is where the bar's own swell animation (`scale` on the backdrop-filter bar, 1.084 -> 1 over 300ms, lensBarSwell) runs back, the glass shrinks into the platter, the
+platter takes over and a screen is built and drawn behind it. Sandbox compositor traces could not separate swell from no swell (DrawAndSwap ~630ms either way over a drag + landing; software
+raster), so look F = no bar swell (`window.__noSwell` makes lensBarSwell a no-op). The test stays on its screen on a release, so F shows the glass's own landing without a build behind it:
+if A hitches at the shrink and F does not, the swell goes; if both do, it is the glass (B, E say which part).

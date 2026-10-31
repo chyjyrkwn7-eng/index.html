@@ -114157,7 +114157,8 @@ const DRAG_LOOKS = [
   ["B", DRAG_SOLID],
   ["C", DRAG_PAUSE],
   ["D", DRAG_SOLID + DRAG_PAUSE],
-  ["E", ".tab-lens{display:none !important}"]];
+  ["E", ".tab-lens{display:none !important}"],
+  ["F", ""]];   /* F: the bar does not swell (window.__noSwell) - the scale animation of a backdrop-filter bar, at the press and as the glass lands */
 async function runDragTest(){
   if(dragTestRunning) return;
   dragTestRunning = true;
@@ -114175,12 +114176,12 @@ async function runDragTest(){
   try{
     for(let k = 3; k > 0; k--){ note.textContent = "Slide across the bar in " + k; await wait(1000); }
     for(const [name, css] of DRAG_LOOKS){
-      st.textContent = css;
+      st.textContent = css; window.__noSwell = (name === "F");
       for(let t = 7; t > 0; t--){ note.textContent = "Look " + name + " - keep sliding (" + t + ")"; await wait(1000); }
     }
   }catch(e){}
   try{ st.remove(); note.remove(); }catch(e){}
-  window.__dragTestOn = false;
+  window.__dragTestOn = false; window.__noSwell = false;
   dragTestRunning = false;
 }
 function showBugReport(){
@@ -114219,7 +114220,7 @@ function showBugReport(){
   form.appendChild(useBtn);
   /* build 367: DRAG TEST, FOR A SCREEN RECORDING. His 366 speed test showed the drag drawn at 60fps by the page's own clock in every variant, while
      his screen recording shows the glass updating only 20-40 times a second as he drags - the cost is in the graphics, which a script cannot see.
-     Start the screen recording, tap this, and slide a finger back and forth across the bar the whole time: five looks of the bar, 7s each (the
+     Start the screen recording, tap this, and slide a finger back and forth across the bar the whole time: six looks of the bar, 7s each (the
      banner names the one on), A being the bar as it is. The recording is then read frame by frame, look by look. */
   const dragBtn = document.createElement("button");
   dragBtn.type = "button"; dragBtn.className = "next bugreport-send";
@@ -137431,7 +137432,7 @@ function tabPerfText(){
   }
   function lensBarSwell(pts){
     if(bar._swell){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
-    if(!canAnim || !pts) return;
+    if(!canAnim || !pts || window.__noSwell) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
     try{
       const a = bar._swell = bar.animate(pts.map(p => ({ scale: p[1], offset: Math.min(1, Math.max(0, p[0] / D)), easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
