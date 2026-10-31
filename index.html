@@ -103252,7 +103252,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-363";
+const APP_BUILD = "2026-10-31-364";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -136467,7 +136467,12 @@ function tabPerfText(){
       const prevTapAt = bar._lastTapAt || -1e9;
       bar._lastTapAt = performance.now();
       const sincePrev = bar._lastTapAt - prevTapAt;
-      const rapidRun = sincePrev < 330 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 600 ? TAB_RUN_EXTRA * .4 : 0;
+      /* build 364: THE HOLD IS FOR SPAM, NOT FOR QUICK TAPPING. His 363 tab timings: every run of quick taps (a tap within 330ms of the
+         last) waited 280ms for its build - a screen at l295-389 where a lone tap is l4-20 - though a build is 3-56ms on his phone now.
+         Only taps under 200ms apart (spam) or with a build still pending keep the full hold; 200-600ms apart wait a build's own cost
+         (2.5x the recent builds, 50-120ms), so the screen follows the fingers. */
+      const smallHold = Math.min(120, Math.max(50, (bar._buildEma || 40) * 2.5));
+      const rapidRun = sincePrev < 200 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 600 ? smallHold : 0;
       const pend = bar._navPend;
       if(pend && pend.dest === dest) return;
       if(pend){ pend.cancel(); bar._navPend = null; }
@@ -136528,6 +136533,7 @@ function tabPerfText(){
         try{ go(); }
         catch(err){ try{ console.error("tab navigation failed", err); }catch(e2){} }
         finally{ syncActive(); beginSettle(360); try{ verifyBubbleSoon(); }catch(e2){}
+          { const dur = performance.now() - buildT0; bar._buildEma = bar._buildEma ? bar._buildEma * .6 + dur * .4 : dur; }
           if(perfRec){ perfRec.b = Math.max(perfRec.b, performance.now() - buildT0); perfRec.bn++;
             /* build 362: tap to the screen being in the page (l) and to two frames after it (p): the same two numbers the speed test
                reports, kept for every real tap so a report carries how the tabs felt in use */

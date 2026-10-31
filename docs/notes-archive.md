@@ -29568,3 +29568,12 @@ Build 363, Fire Code "I click Profile and it also goes to Settings": syncActive 
 own third panel (hidden), so with the Fire Code bar (a Settings tab of its own) every Profile tap lit Settings and left Profile dark (the Academy bar lit
 both, the hidden Settings tab included). It now counts only a Settings screen that is showing. check-b363-ifc (Fire Code and Academy). His 22:27 recording
 (Test tab speed, 362): Home -> Leaderboard, the glass lands ~0.25s after the tap, the Leaderboard (characters already drawn) arrives ~0.6s after it.
+
+## Build 364 - quick tapping is not spam
+
+His 363 tab timings (the first run on 363, ordinary use): a lone tap l4-66/p35-185 (warm Home 35-38, Profile 47-53, Calendar 43-47, Leaderboard 82-92; cold
+first visits p100-185), but every run of quick taps shows l295-389 (the 280ms spam hold) or l116-129 (the 112ms second tier): a screen 0.3-0.5s after the last
+tap (p418/515). A build is 3-56ms on that phone now, so the hold costs more than it saves. 364: under 200ms apart (or a build still pending) keeps the full
+280ms hold (spam still collapses to the last tap, check-b356); 200-600ms apart waits 2.5x the recent builds' cost (EMA, 50-120ms) instead of 280/112ms;
+600ms+ nothing. check-b364. Looked at in the same report, left: rapid sequences have 12-29 frames over 34ms and a worst frame of 116-157ms (acceptable);
+`ended:` log has a new entry ENDED-hidden other b362/b363 only (no ENDED-visible since b362).
