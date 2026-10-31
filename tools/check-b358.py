@@ -22,9 +22,9 @@ with sync_playwright() as pw:
       const out={ before: cnt() };
       window.__h=true; document.dispatchEvent(new Event('visibilitychange')); await wait(100); out.hidden=cnt();
       window.__h=false; document.dispatchEvent(new Event('visibilitychange')); await wait(3500); out.back=cnt(); return out; }""")
-    chk("the Leaderboard has its art before leaving (%s)" % (r["before"],), r["before"]["svgs"] >= 30, r)
+    chk("the Leaderboard has its art before leaving (%s)" % (r["before"],), r["before"]["svgs"] >= 12, r)
     chk("while hidden its rows are bare frames: no drawing, no flare, no moving sheet (%s)" % (r["hidden"],), r["hidden"]["svgs"] == 0 and r["hidden"]["marks"] == 0 and r["hidden"]["flip"] == 0 and r["hidden"]["bare"] >= 30, r)
-    chk("and it is all back a few seconds after returning (%s)" % (r["back"],), r["back"]["svgs"] >= 30 and r["back"]["bare"] == 0, r)
+    chk("and the rows near the view are back a few seconds after returning (build 366: only those; the rest come as they are scrolled toward) (%s)" % (r["back"],), r["back"]["svgs"] >= 12 and r["back"]["svgs"] == r["before"]["svgs"], r)
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(4500)
     h = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const cnt=()=>document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length; const out={ before: cnt() };
       window.__h=true; document.dispatchEvent(new Event('visibilitychange')); await wait(100); out.hidden=cnt();

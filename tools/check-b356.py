@@ -55,7 +55,7 @@ with sync_playwright() as pw:
       const out={}; await wait(700); out.at700={ n: rows().length, bare: bare().length, bareOnScreen: onScreen() };
       await wait(1100); out.at1800={ n: rows().length, bare: bare().length }; window.buildAvatarCharSVGSafe = real; return out; }""")
     chk("the first screenful has its characters by 0.7s (%s)" % (res["at700"],), res["at700"]["n"] >= 40 and res["at700"]["bareOnScreen"] == 0, res)
-    chk("and every row has its character by 1.8s on a slow device (%s)" % (res["at1800"],), res["at1800"]["bare"] == 0, res)
+    chk("and the rows near the view have theirs by 1.8s on a slow device; the far ones wait to be scrolled toward - build 366 (%s)" % (res["at1800"],), res["at1800"]["bare"] <= res["at1800"]["n"] - 12, res)
     cv = pg.evaluate("()=>{ const r=document.querySelector('.rank-rows .rank-row'); return r ? getComputedStyle(r).contentVisibility : null; }")
     chk("rows are not hidden from the browser while off screen (%s)" % cv, cv in (None, "visible"), cv)
     ctx.close(); br.close()

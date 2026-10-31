@@ -29589,3 +29589,25 @@ character frame is a soft disc in its own glow (--char-glow) and the flare frame
 badge's own gradient). (3) lensMagnify returns early when LENS.mag is 0 (it wrote every tab's style each drag frame). (4) the speed test drags Home -> Calendar twice per
 variant ([d:base] [d:noblend] [d:nomask] [d:noshadow] [d:nobarblur] [d:nolens]: frames n, worst w, slow s): in the sandbox a drag is 60fps even at 4x CPU, so what costs on
 the phone is drawing the glass (plus-lighter blend + mask-image seams + inset rim shadows on layers that scale every frame). Read with `bugs 1`; fix whichever variant moves.
+
+## Build 366 - THE CRASH: every Leaderboard visit kept its whole list in memory
+
+His speed test crashed (white screen, splash, back to the menu) when it reached the Leaderboard, on 361/362/365 - "inexcusable". Measured here: the renderer's
+RSS over the full speed test went 469MB -> 2.9GB (186s, +14MB/s); 30 Leaderboard<->Home visits 535MB -> 1.5GB; 30 Profile<->Home visits flat (~775MB); Calendar flat.
+`Performance.getMetrics` Nodes (after forced GC) 9k -> 401k over six rounds of the four tabs; JSEventListeners 279 -> 876. Bisected by stubbing: `lbFillArt` off = flat;
+`buildAvatarCharSVGSafe` stubbed = flat. A V8 heap snapshot (3-6 visits) and a reverse walk from detached SVGs to the roots found the retainers:
+1. `showRankings`/renderRankingRows added `document.addEventListener("visibilitychange", onVisible)` on EVERY visit; it only removed itself when the event fired after
+   the list had left - tapping through tabs never fires it - so each visit's closure kept `rows` and with it the whole list (43 rows x ~250-part characters): ~35MB a visit.
+   Now one document listener at load, and `rankingsOnVisible = { rows, paint }` holds only the latest screen.
+2. `charFlipWatched` (swept only above 60), `charRecWaiters`, `orbitRecWaiters` (pruned only when asked): each held a tile and through it a row and its screen. Swept from 24, on
+   every add, and every 4s by a timer.
+3. recordRankSheet / recordCharSheet left their 5-8MB canvas to the collector on every early exit (a visit that ended); freed in `finally`. A recording now waits until the
+   screen has been up 3s (REC_VISIT_MS, CHAR_REC_SETTLE_MS 700 -> 3000) so a visit that is about to end does not start 100+ frames of work and abandon it.
+4. artQuiet queued the art of EVERY row; now the rows within 1.6 screens below / .6 above (the lazy observer, 500px out, fills the rest as they are scrolled toward).
+Result in the sandbox: Leaderboard<->Home x18 +600MB -> +106MB; the whole speed test 469->2886MB -> 377->1741MB (still growing: Chromium keeps its heap; the retained
+screens are gone - the remaining retainer is the latest screen only). check-b366 (no listener added per visit; no stale tile in the sets). iOS may still end a page
+for other reasons; the `ended:` log in Send tab timings says when it does.
+Build 366, gates updated for what it changes on purpose: b352/b356/b358 expected every row to have its art (now the rows within 1.6 screens below / .6 above the view; `lbNearRows`, also what
+restoreAfterBackground queues - it queued all 43), b357 waits for Home's first emblem sheet before the return (a recording starts once the screen has been up 3s), b366 also checks that
+scrolling to the bottom fills the far rows. His 11:41 recording on 365 (28s of tapping, many Leaderboard visits): press-to-screen 0.2-0.65s and spikes - that is the leak at work (each
+visit +35MB, GC pauses and memory pressure grow with it), not the tap code; 366 is the answer.

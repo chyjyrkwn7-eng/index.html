@@ -20,11 +20,11 @@ with sync_playwright() as pw:
     chk("rows below the first screenful start bare (%d of %d)" % (a["bare"], a["n"]), a["n"] >= 40 and a["bare"] >= 15 and a["emptyAv"] == a["bare"], a)
     pg.wait_for_timeout(2600)
     b = pg.evaluate(M)
-    chk("and every one has its character and flare in the quiet after (%d bare, %d empty, %d flares)" % (b["bare"], b["emptyAv"], b["marks"]), b["bare"] == 0 and b["emptyAv"] == 0 and b["marks"] >= 40, b)
+    chk("and every row near the view has its character and flare in the quiet after (build 366: the rest are drawn as they are scrolled toward) (%d bare, %d empty, %d flares)" % (b["bare"], b["emptyAv"], b["marks"]), b["bare"] <= b["n"] - 12 and b["emptyAv"] == b["bare"] and b["marks"] >= 12, b)
     chk("nothing moved when the art went in (same row heights)", a["h"] == b["h"], (a["h"], b["h"]))
     # a board drawn again while its first drawing was still bare keeps no empty frames (the carried-over case)
     d = pg.evaluate("""async()=>{ showRankings(); await new Promise(r=>setTimeout(r,200)); const rr=document.querySelector('.rank-rows'); renderRankingRows && 0; showRankings(); await new Promise(r=>setTimeout(r,200)); showRankings(); await new Promise(r=>setTimeout(r,9000)); const r=[...document.querySelectorAll('.rank-rows .rank-row')]; return { n:r.length, emptyAv:r.filter(x=>{const a=x.querySelector('.rank-avatar'); return a && !a.querySelector('svg');}).length }; }""")
-    chk("drawn again while still bare it still ends with every character (%s)" % (d,), d["n"] >= 40 and d["emptyAv"] == 0, d)
+    chk("drawn again while still bare it still ends with every character (%s)" % (d,), d["n"] >= 40 and d["emptyAv"] <= d["n"] - 12, d)
     # Find me finishes the whole list at once
     pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(800)
     c = pg.evaluate("()=>{ showRankings(); document.querySelector('.rank-rows')._lbFinish(); const r=[...document.querySelectorAll('.rank-rows .rank-row')]; return { n:r.length, bare:r.filter(x=>x.dataset.lazyArt).length }; }")

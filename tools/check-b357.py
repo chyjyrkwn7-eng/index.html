@@ -25,6 +25,11 @@ with sync_playwright() as pw:
     chk("without building any character in it (%s)" % (r["svgNow"],), r["svgNow"] <= 3, r)
     chk("and the screenful has its characters by 1.2s (the art waits 450ms for the screen to land, then a row a frame - build 363) (%s of %s bare)" % (r["visibleBare"], r["visible"]), r["visibleBare"] == 0, r)
     # Home's moving emblems are decoded off the screen change: they are not there in the first frame back, and they all arrive
+    # build 366: a recording starts once a screen has been up 3s, so let Home stay up until its first emblem sheet is recorded
+    pg.evaluate("()=>showHome()")
+    for _ in range(60):
+        pg.wait_for_timeout(1000)
+        if pg.evaluate("()=>document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length") >= 1: break
     pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(1500)
     h = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome();
       const out = { first: document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length, syncImgs: [...document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim img')].filter(i=>i.decoding==='sync').length };
