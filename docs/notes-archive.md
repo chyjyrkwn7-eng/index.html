@@ -29563,3 +29563,8 @@ iOS for XS/XR: ~3-4GB RAM). Open: cap how many character sheets are decoded at o
 Build 363, the glass no longer enlarges the tab under it. His screenshot while pressing Leaderboard: the tab's icon and word are enlarged (LENS.mag .16 on the
 tab under the lens, with the bar's own swell 1.084x1.043 the reference's 1.23x) and shrink back after - "it's bad". LENS.mag is 0 now; the glass,
 its stretch and the bar's swell are unchanged. check-b363 samples every tab's transform while pressing: 363 never above 1, 362 reached 1.163.
+
+Build 363, Fire Code "I click Profile and it also goes to Settings": syncActive counted ".screen-settings" anywhere in the page; Profile builds Settings as its
+own third panel (hidden), so with the Fire Code bar (a Settings tab of its own) every Profile tap lit Settings and left Profile dark (the Academy bar lit
+both, the hidden Settings tab included). It now counts only a Settings screen that is showing. check-b363-ifc (Fire Code and Academy). His 22:27 recording
+(Test tab speed, 362): Home -> Leaderboard, the glass lands ~0.25s after the tap, the Leaderboard (characters already drawn) arrives ~0.6s after it.

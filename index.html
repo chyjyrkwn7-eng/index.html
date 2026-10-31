@@ -136696,7 +136696,10 @@ function tabPerfText(){
        the tour targets, the points-fly destination and every selector
        in the harnesses for a label change nobody can see. */
     const onRewards = !!document.querySelector(".screen-rankings, .screen-rewards");
-    const onSettings = !!document.querySelector(".screen-settings");
+    /* build 363: only a Settings screen that is SHOWING. Profile builds Settings as its own third panel, hidden, so with the Fire
+       Code bar (a Settings tab of its own) every tap on Profile found ".screen-settings", lit Settings and left Profile dark:
+       "when I click profile it also goes to settings". */
+    const onSettings = [...document.querySelectorAll(".screen-settings")].some(el => !el.closest("[hidden]"));
     const onHome = !!document.querySelector(".homeversion-btn");
     /* The rank road map and the badge case are opened from the Profile
        card since build 284 (no tab of their own), so Profile stays lit. */
