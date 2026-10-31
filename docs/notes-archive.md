@@ -29632,3 +29632,13 @@ floating pill with a margin round it; a slide that starts in that margin has `<b
 (overall -> hundos) and played the board switch's sound; on Profile it changed the top tab. Random because it depends on where the finger lands. Reproduced with synthetic touches
 (a slide starting 6px below the bar, and 8px above its top: board overall -> hundos on 367; unchanged on 368; a swipe on the screen itself still changes it). onStart now ignores a
 touch whose y is within the bar's box -14px above / +30px below. check-b368. (368 also carries 367's Drag test.)
+
+## Build 369 - the drag test, again, over an animated screen
+
+His 17:42 recording of the 368 Drag test (A-F, 7s each; looks read from the banner; 120fps; bar crop; intervals between distinct bar frames while moving): share of updates at 60Hz or
+better - A (as is) 89%, B (bar solid while held) 93%, C (no blend/masks) 88%, D (bar blur 10px) 85%, E (B+C+no rim shadow) 69%, F (no glass) 87%; hitches (gaps over 2 frames) A 15,
+B 21, C 28, D 20, E 40, F 9. So on the Report a bug screen the drag is already ~60Hz in every look - nothing to choose between. His 16:29 recording (366), where the glass updated 20-40
+times a second, was over the Leaderboard/Profile/Calendar: the bar's backdrop blur has to be redone whenever what is BEHIND it changes (animated characters and flares scroll under it)
+and the glass is drawn on top - the one look that halved the compositor's draw time in the sandbox is no bar blur. 369: the Drag test opens the Leaderboard first (rows animating under the
+bar), a release during it stays put (`window.__dragTestOn`), and the looks are A as is, B bar solid while the glass is up, C animations paused while the bar is held
+(`html.tab-held`, set in lensDown, taken off in lensFinish/lensHide), D = B+C, E no glass. check-b369; check-b367 now expects five looks.
