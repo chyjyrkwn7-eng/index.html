@@ -103252,7 +103252,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-30-362";
+const APP_BUILD = "2026-10-31-363";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -125654,14 +125654,18 @@ function lbArtQueue(rows, list){
   const mid = (window.innerHeight || 800) / 2;
   const step = () => {
     if(!rows.isConnected){ rows._lbPump = false; rows._lbQ = []; return; }
+    if(!rows._lbT0) rows._lbT0 = performance.now();
+    const hold = rows._lbT0 + 450 - performance.now();
+    if(hold > 0){ setTimeout(() => requestAnimationFrame(step), hold); return; }
     const sy = window.scrollY || 0;
     if(rows._lbSortY !== sy || !rows._lbSorted){ rows._lbSortY = sy; rows._lbSorted = true; q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid)); }
-    const t0 = performance.now(); let did = 0;
-    /* build 362: the steps in the first 700ms after a list is built take up to 40ms - the rows in view, nearest the middle first, in
-       a few frames - where it was 5ms a frame (a row every ~45ms at 4x: the visible rows' characters filled in one by one over ~430ms, each
-       a frame of its own). Every later step is 5ms as before. */
-    if(!rows._lbT0) rows._lbT0 = t0;
-    const budget = t0 - rows._lbT0 < 700 ? 40 : 5;
+    let did = 0;
+    /* build 363: THE ART WAITS FOR THE SCREEN TO LAND, THEN FILLS A ROW A FRAME. His phone's 362 test: with the rows' characters and flares
+       hidden the Leaderboard's first draw was 293ms; with them 762ms (worst frame 531) - they are drawn on the main thread, ~40ms or more
+       a row there, and 362's 40ms steps made the frames worse, not better. The queue now holds off 450ms after it is first asked (the
+       lens has landed and the page has been drawn by then), and a step is 5ms (one row at least), as before 362. */
+    const t0 = performance.now();
+    const budget = 5;
     while(q.length && (did < 1 || performance.now() - t0 < budget)){ lbFillArt(q.shift(), rows, true); did++; }
     if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
     if(q.length) requestAnimationFrame(step); else rows._lbPump = false;
@@ -136312,7 +136316,8 @@ function tabPerfText(){
     const list = JSON.parse(localStorage.getItem(TAB_PERF_KEY) || "[]") || [];
     const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
     let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
-    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (rl ? " | resume: " + rl : "") + " | " + list.map(r =>
+    let ended = ""; try{ ended = (JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []).join("; "); }catch(e){}
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
       r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn + (r.p ? " l" + (r.l || 0) + "/p" + r.p : "")).join(" | ")).slice(0, 3200);
   }catch(e){ return ""; }
 }
@@ -136691,7 +136696,10 @@ function tabPerfText(){
        the tour targets, the points-fly destination and every selector
        in the harnesses for a label change nobody can see. */
     const onRewards = !!document.querySelector(".screen-rankings, .screen-rewards");
-    const onSettings = !!document.querySelector(".screen-settings");
+    /* build 363: only a Settings screen that is SHOWING. Profile builds Settings as its own third panel, hidden, so with the Fire
+       Code bar (a Settings tab of its own) every tap on Profile found ".screen-settings", lit Settings and left Profile dark:
+       "when I click profile it also goes to settings". */
+    const onSettings = [...document.querySelectorAll(".screen-settings")].some(el => !el.closest("[hidden]"));
     const onHome = !!document.querySelector(".homeversion-btn");
     /* The rank road map and the badge case are opened from the Profile
        card since build 284 (no tab of their own), so Profile stays lit. */
@@ -137037,7 +137045,8 @@ function tabPerfText(){
      and aspect: never narrower than this for its height (the reference's
      held lens is 1.4 to 1; 1.2 keeps ours on an end tab inside the bar's
      end, where the reference's sits).
-     mag: the tab under the middle of it grows by this, which with the
+     mag (build 363: 0 - "the leaderboard icon and word gets enlarged and then returns to normal size, it's bad": the tab's icon and word no longer grow
+     under the glass; the glass and the bar's swell are as they were): the tab under the middle of it grew by this, which with the
      bar's swell is the reference's 1.23. stretch/stretchMax: how far it
      lengthens per px/s of travel, and at most; it keeps its AREA
      (416x191 against 330x240 at speed), and the stretch is a soft spring
@@ -137084,7 +137093,7 @@ function tabPerfText(){
      120 frames a second, not 60: Web Animations draws straight lines
      between keyframes, which on a 120Hz iPhone made every other frame a
      small change of speed. */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: 0, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
     pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42] };
   const LENS_DT = 1000 / 120;
   let lensG = null;           /* this touch's geometry (null: no lens) */

@@ -29542,3 +29542,29 @@ the screen being in the page) and p (tap to two frames after) beside its frame c
 timings" button (a bug doc "Tab timings (in use)" with `perf` = tabPerfText()) so ordinary use, not a staged test, reaches the admin:
 `python3 tools/firestore-admin.py bugs 1`. Looked at and left: Profile (hero 274 nodes, goal card 413 starting at 604px - mostly in view)
 and Home (the planet system, 874 nodes, fills the screen): nothing below the fold to skip.
+
+## Build 363 - the Leaderboard's art waits for the screen to land
+
+His full 362 speed test (iPhone iOS 18.7, 4 cores, dpr 3; read with firestore-admin `bugs`): [g:base] Leaderboard l101/p762 worst frame 531;
+[g:noart] (rows' characters and flares hidden; Profile's character/goal/rewards too) Leaderboard p293 - so the characters and flares of the
+visible rows cost ~470ms of first draw there; [g:nobody] 631 and [g:nohero] 626 for the Leaderboard (little); [g:bare] (everything off) p
+160/118/117/102 for Leaderboard/Profile/Calendar/Home. Profile: base 268 vs noart 172; Home: base 230 vs nohero 122; Calendar 171 vs 117-146.
+Ordinary use (tab timings, 30 taps): Home p131-204, Profile p79-209, Calendar p50-97, Leaderboard p114-292 with one first visit at p864 /
+worst frame 799 / 3 frames in a second. 362's 40ms art steps were a mistake (worse frames than the 5ms steps).
+363: the art queue holds 450ms from the first time it is asked (the screen lands bare), then 5ms a frame, a row at least (as before 362).
+check-b357's "screenful has its characters by 0.6s" is now 1.2s. check-b363. The Tab timings report now carries the `ended:` log.
+THE CRASH (white screen, splash, reload during the speed test): his `ended:` log shows ENDED-visible home b361 and ENDED-visible cal b362 -
+runs that ended while the page was in front, so iOS ended the page (memory), not a script error. In Chromium here the DOM node count
+(Performance.getMetrics Nodes, after forced GC) goes 9k -> 401k over 6 rounds of the four tabs, ~66k per Leaderboard visit and almost
+nothing for the others; JS heap stays ~8MB and a V8 heap snapshot shows only ~26k detached nodes, so it is probably Blink's cache of the
+SVG data-URL images the sheet recorder makes (one document each), not a retained screen - unproven. His iPhone is an iOS 18.7 model (last
+iOS for XS/XR: ~3-4GB RAM). Open: cap how many character sheets are decoded at once; ask him for the ended log after the next crash.
+
+Build 363, the glass no longer enlarges the tab under it. His screenshot while pressing Leaderboard: the tab's icon and word are enlarged (LENS.mag .16 on the
+tab under the lens, with the bar's own swell 1.084x1.043 the reference's 1.23x) and shrink back after - "it's bad". LENS.mag is 0 now; the glass,
+its stretch and the bar's swell are unchanged. check-b363 samples every tab's transform while pressing: 363 never above 1, 362 reached 1.163.
+
+Build 363, Fire Code "I click Profile and it also goes to Settings": syncActive counted ".screen-settings" anywhere in the page; Profile builds Settings as its
+own third panel (hidden), so with the Fire Code bar (a Settings tab of its own) every Profile tap lit Settings and left Profile dark (the Academy bar lit
+both, the hidden Settings tab included). It now counts only a Settings screen that is showing. check-b363-ifc (Fire Code and Academy). His 22:27 recording
+(Test tab speed, 362): Home -> Leaderboard, the glass lands ~0.25s after the tap, the Leaderboard (characters already drawn) arrives ~0.6s after it.
