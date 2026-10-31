@@ -29559,3 +29559,7 @@ runs that ended while the page was in front, so iOS ended the page (memory), not
 nothing for the others; JS heap stays ~8MB and a V8 heap snapshot shows only ~26k detached nodes, so it is probably Blink's cache of the
 SVG data-URL images the sheet recorder makes (one document each), not a retained screen - unproven. His iPhone is an iOS 18.7 model (last
 iOS for XS/XR: ~3-4GB RAM). Open: cap how many character sheets are decoded at once; ask him for the ended log after the next crash.
+
+Build 363, the glass no longer enlarges the tab under it. His screenshot while pressing Leaderboard: the tab's icon and word are enlarged (LENS.mag .16 on the
+tab under the lens, with the bar's own swell 1.084x1.043 the reference's 1.23x) and shrink back after - "it's bad". LENS.mag is 0 now; the glass,
+its stretch and the bar's swell are unchanged. check-b363 samples every tab's transform while pressing: 363 never above 1, 362 reached 1.163.

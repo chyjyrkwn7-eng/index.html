@@ -137042,7 +137042,8 @@ function tabPerfText(){
      and aspect: never narrower than this for its height (the reference's
      held lens is 1.4 to 1; 1.2 keeps ours on an end tab inside the bar's
      end, where the reference's sits).
-     mag: the tab under the middle of it grows by this, which with the
+     mag (build 363: 0 - "the leaderboard icon and word gets enlarged and then returns to normal size, it's bad": the tab's icon and word no longer grow
+     under the glass; the glass and the bar's swell are as they were): the tab under the middle of it grew by this, which with the
      bar's swell is the reference's 1.23. stretch/stretchMax: how far it
      lengthens per px/s of travel, and at most; it keeps its AREA
      (416x191 against 330x240 at speed), and the stretch is a soft spring
@@ -137089,7 +137090,7 @@ function tabPerfText(){
      120 frames a second, not 60: Web Animations draws straight lines
      between keyframes, which on a 120Hz iPhone made every other frame a
      small change of speed. */
-  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: .16, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
+  const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: 0, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
     pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42] };
   const LENS_DT = 1000 / 120;
   let lensG = null;           /* this touch's geometry (null: no lens) */

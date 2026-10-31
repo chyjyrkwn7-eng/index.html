@@ -23,5 +23,13 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ try{ localStorage.setItem('class26e.crashlog', JSON.stringify(['ENDED-visible board 3s-ago b363'])); }catch(e){} }")
     txt = pg.evaluate("()=>tabPerfText()")
     chk("the tab timings carry the ended log (%s)" % (txt[:140],), "ended: ENDED-visible board" in txt, txt)
+    # the tab's icon and word do not grow under the glass
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
+    m = pg.evaluate("""async()=>{ const el=document.getElementById('bottomtab-rewards'); const b=el.getBoundingClientRect(); const x=b.left+b.width/2,y=b.top+b.height/2; const out={max:1};
+      const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:61,isPrimary:true,clientX:x,clientY:y});
+      const tabs=[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t=>t.offsetWidth); let stop=false;
+      const tick=()=>{ tabs.forEach(t=>{ const m=getComputedStyle(t).transform; if(m&&m!=='none'){ const k=parseFloat(m.slice(7)); if(k>out.max) out.max=k; } }); if(!stop) requestAnimationFrame(tick); }; tick();
+      el.dispatchEvent(mk('pointerdown')); await new Promise(r=>setTimeout(r,500)); el.dispatchEvent(mk('pointerup')); el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y})); await new Promise(r=>setTimeout(r,1500)); stop=true; return out; }""")
+    chk("no tab is scaled up while the glass is over it (largest scale %s)" % (m["max"],), m["max"] <= 1.001, m)
     br.close()
 sys.exit(0 if g["ok"] else 1)
