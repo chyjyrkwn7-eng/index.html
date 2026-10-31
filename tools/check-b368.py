@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 chk = g["chk"]
 CLEAR = "()=>{ [...document.querySelectorAll('button')].filter(b=>/^Got it$/.test(b.textContent.trim())).forEach(b=>b.click()); document.querySelectorAll('.rs-spot,.unlock-card').forEach(n=>n.remove()); }"
 FILL = """()=>{ const n=AVATAR_CHARACTERS.length; const rows=[]; for(let i=0;i<42;i++){ rows.push(Object.assign({pub:'zz'+i, firstName:'Cadet'+i, avatarChar:AVATAR_CHARACTERS[i%n].id}, boardNumbersOf(store), {weekPoints:1000-i*17, hundos:60-i, correct:5000-i*70, level:40-(i>>1), badges:20-(i>>2)})); } leaderboardRows = rows; }"""
-SW = """async(y, dx)=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const x=220;
+SW = """async([y, dx])=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const x=220;
   const mk=(type,xx)=>{ const t=new Touch({identifier:7,target:document.body,clientX:xx,clientY:y}); return new TouchEvent(type,{bubbles:true,cancelable:true,touches:type==='touchend'?[]:[t],targetTouches:type==='touchend'?[]:[t],changedTouches:[t]}); };
   document.body.dispatchEvent(mk('touchstart',x)); await wait(20); document.body.dispatchEvent(mk('touchmove',x+dx/2)); await wait(20); document.body.dispatchEvent(mk('touchmove',x+dx)); await wait(20); document.body.dispatchEvent(mk('touchend',x+dx)); await wait(300);
   return rankingsBoardKey; }"""

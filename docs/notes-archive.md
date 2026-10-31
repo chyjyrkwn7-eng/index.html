@@ -29623,3 +29623,12 @@ only a ranking): Display::DrawAndSwap total over a drag - base 160ms, noblend 15
 C no plus-lighter blend or seam masks on the glass halves; D bar blur 10px instead of 30px; E B+C and no rim shadow; F no glass), the banner naming the look; taken off at the end. He slides
 across the bar throughout while recording; read the recording with the interval of distinct bar frames (crop y 2560-2820 of 2868 at 120fps, mean abs diff > .35) per 7s window. The look
 that brings the interval to 2 frames (60Hz) or 1 is the fix. check-b367.
+
+## Build 368 - the "ding" when sliding across the bar from the Leaderboard
+
+Madison: "at random times, if I'm on the leaderboard, and start swiping to other tabs, the sound effect is different ... like a ding". attachTabSwipe (the Leaderboard's board swipe,
+Profile's top-tab swipe, ...) listens on `document` and accepts a touch whose target is `<html>`, `<body>` or inside `.wrap` - "the bare page below the screen". The tab bar is a
+floating pill with a margin round it; a slide that starts in that margin has `<body>` for a target, so it was read as a swipe of the screen: on the Leaderboard it changed board
+(overall -> hundos) and played the board switch's sound; on Profile it changed the top tab. Random because it depends on where the finger lands. Reproduced with synthetic touches
+(a slide starting 6px below the bar, and 8px above its top: board overall -> hundos on 367; unchanged on 368; a swipe on the screen itself still changes it). onStart now ignores a
+touch whose y is within the bar's box -14px above / +30px below. check-b368. (368 also carries 367's Drag test.)
