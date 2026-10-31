@@ -17,13 +17,13 @@ with sync_playwright() as pw:
       const t0 = performance.now(); showRankings(); const took = performance.now() - t0;
       const rows=()=>[...document.querySelectorAll('.rank-rows .rank-row')].filter(x=>x.querySelector('.rank-avatar'));
       const out = { took: Math.round(took), n: rows().length, svgNow: document.querySelectorAll('.rank-rows .rank-avatar svg').length };
-      await new Promise(r=>setTimeout(r, 600));
+      await new Promise(r=>setTimeout(r, 1200));
       const visible = rows().filter(x=>x.getBoundingClientRect().top < innerHeight - 90);
       out.visible = visible.length; out.visibleBare = visible.filter(x=>!x.querySelector('.rank-avatar svg')).length;
       window.buildAvatarCharSVGSafe = real; return out; }""")
     chk("the tap builds the whole list in a short task, even with each character costing 6ms (%s)" % (r,), r["n"] >= 40 and r["took"] <= 70, r)
     chk("without building any character in it (%s)" % (r["svgNow"],), r["svgNow"] <= 3, r)
-    chk("and the screenful has its characters by 0.6s (%s of %s bare)" % (r["visibleBare"], r["visible"]), r["visibleBare"] == 0, r)
+    chk("and the screenful has its characters by 1.2s (the art waits 450ms for the screen to land, then a row a frame - build 363) (%s of %s bare)" % (r["visibleBare"], r["visible"]), r["visibleBare"] == 0, r)
     # Home's moving emblems are decoded off the screen change: they are not there in the first frame back, and they all arrive
     pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(1500)
     h = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome();
