@@ -82539,6 +82539,7 @@ function recordRankEmblemFrames(tier, live, px){
   {
     let set = orbitRecWaiters.get(key);
     if(!set){ set = new Set(); orbitRecWaiters.set(key, set); }
+    set.forEach(t => { if(t !== true && !t.isConnected) set.delete(t); });   /* build 366: see charRecWant */
     /* asked for without a place on a screen: wanted until it is made */
     set.add(live && live.nodeType === 1 ? live : true);
   }
@@ -82595,7 +82596,13 @@ function recordRankSheet(drawing, px, key){
     live.style.cssText = "width:" + px + "px;height:" + px + "px;";
     host.appendChild(live);
     document.body.appendChild(host);
+    let sheetToFree = null;
     try{
+      /* build 366: A RECORDING IS NOT STARTED FOR A VISIT THAT IS ABOUT TO END (see CHAR_REC_SETTLE_MS) */
+      for(let w = 0; w < 30 && performance.now() - stageMountedAt < REC_VISIT_MS; w++){
+        await new Promise(r => setTimeout(r, REC_VISIT_MS - (performance.now() - stageMountedAt) + 20));
+      }
+      if(!orbitRecWanted(key)) return null;
       await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       const anims = live.getAnimations ? live.getAnimations({ subtree: true }) : [];
       if(!anims.length) return null;
@@ -82616,7 +82623,7 @@ function recordRankSheet(drawing, px, key){
       const els = [...live.querySelectorAll("*")];
       const moving = new Set(anims.map(a => a.effect && a.effect.target));
       const cols = ORBIT_ANIM_COLS, rows = Math.ceil(N / cols);
-      const sheet = document.createElement("canvas");
+      const sheet = document.createElement("canvas"); sheetToFree = sheet;
       sheet.width = cols * px; sheet.height = rows * px;
       const g = sheet.getContext("2d");
       const ser = new XMLSerializer();
@@ -82662,7 +82669,7 @@ function recordRankSheet(drawing, px, key){
       orbitAnimCachePut(id, px, blob);
       return await orbitAnimSheetFromBlob(blob, px);
     } catch(e){ return null; }
-    finally { host.remove(); }
+    finally { host.remove(); try{ if(sheetToFree) sheetToFree.width = sheetToFree.height = 0; }catch(e2){} }
   })();
 }
 /* One keyframe list per sheet shape, written once: frame k at k/N of
@@ -83147,7 +83154,13 @@ const CHAR_ANIM_PROPS = ["transform", "transformOrigin", "transformBox", "rotate
    and twelve recorders interleaving would make the first one wait for
    all of them (see charRecPump for which one goes first). */
 /* When #stage last got a new screen, for recordCharFrames to wait out. */
-const CHAR_REC_SETTLE_MS = 700;
+/* build 366: a recording takes 5-50s on a phone and is only worth starting for a screen that is going to stay: the speed test (and any
+   quick tapping) visited the Leaderboard dozens of times, each visit started recordings it then abandoned, and each abandoned one left
+   a 5-8MB canvas and hundreds of decoded frames for the collector - in the sandbox the page grew ~30MB a visit (0.5 to 1.5GB over 30
+   visits; Profile visits stay flat), which on his iPhone is the white screen and the splash. A recording now waits until the screen
+   has been up REC_VISIT_MS, and every exit frees its canvas. */
+const REC_VISIT_MS = 3000;
+const CHAR_REC_SETTLE_MS = 3000;
 let stageMountedAt = 0;
 try{ new MutationObserver(() => { stageMountedAt = performance.now(); }).observe(document.getElementById("stage"), { childList: true }); }catch(e){}
 /* THE RECORDER IS A QUEUE THAT LOOKS AT THE SCREEN (build 314). "My
@@ -83180,6 +83193,9 @@ function charRecWant(key, el){
   if(!el) return;
   let set = charRecWaiters.get(key);
   if(!set){ set = new Set(); charRecWaiters.set(key, set); }
+  /* build 366: a tile that has left the page is dropped from the set when another is added. The set held every tile ever asked
+     for (a recording that never ran never cleared it), and each held its whole row: ~40 rows a Leaderboard visit, never freed. */
+  set.forEach(t => { if(t !== el && !t.isConnected) set.delete(t); });
   set.add(el);
 }
 /* 0 your own tab, 1 on (or near) the screen, 2 further down the page,
@@ -83215,6 +83231,16 @@ function charRecYield(){
     setTimeout(go, 50);
   });
 }
+/* build 366: what the recorders and the flip-book watcher hold on tiles is swept every few seconds, not only when something is added to
+   it: a set that is never added to again (its character is not on the next screen) kept its last tile - and that tile's whole row, and
+   the screen it was on - for good. */
+setInterval(() => {
+  try{
+    charRecWaiters.forEach((set, key) => { set.forEach(t => { if(!t.isConnected) set.delete(t); }); if(!set.size) charRecWaiters.delete(key); });
+    orbitRecWaiters.forEach((set, key) => { set.forEach(t => { if(t !== true && !t.isConnected) set.delete(t); }); if(!set.size) orbitRecWaiters.delete(key); });
+    charFlipWatched.forEach(t => { if(!t.isConnected){ try{ charFlipIO && charFlipIO.unobserve(t); }catch(e){} charFlipWatched.delete(t); } });
+  }catch(e){}
+}, 4000);
 function charRecWithin(p, ms){ return Promise.race([p, new Promise(r => setTimeout(() => r("__timeout"), ms))]); }
 function recordCharFrames(charId, px, el){
   const drawing = charAnimDrawing(charId);
@@ -83272,6 +83298,7 @@ async function recordCharSheet(drawing, px){
     live.style.cssText = "width:" + px + "px;height:" + px + "px;";
     host.appendChild(live);
     document.body.appendChild(host);
+    let sheetToFree = null;
     try{
       await charRecWithin(new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))), 1500);
       const anims = live.getAnimations ? live.getAnimations({ subtree: true }) : [];
@@ -83389,7 +83416,7 @@ async function recordCharSheet(drawing, px){
         return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(out);
       };
       const cols = CHAR_ANIM_COLS, rows = Math.ceil(N / cols);
-      const sheet = document.createElement("canvas");
+      const sheet = document.createElement("canvas"); sheetToFree = sheet;
       sheet.width = cols * px; sheet.height = rows * px;
       const g = sheet.getContext("2d");
       /* Small batches with a yield between frames while building and
@@ -83423,7 +83450,7 @@ async function recordCharSheet(drawing, px){
       charAnimCachePut(drawing.id, px, blob);
       return await charAnimSheetFromBlob(blob, px);
     } catch(e){ return null; }
-    finally { host.remove(); }
+    finally { host.remove(); try{ if(sheetToFree) sheetToFree.width = sheetToFree.height = 0; }catch(e2){} }
 }
 /* Which character a drawing is: the span's data-char when the builder
    set one, else the cx-k-<kind> on its figure. */
@@ -83485,7 +83512,7 @@ function charFlipWatch(el){
   }
   /* the observer cannot see a tile leave the page while it is already
      off screen, so the set is swept as it grows */
-  if(charFlipWatched.size > 60) charFlipWatched.forEach(t => { if(!t.isConnected){ charFlipIO.unobserve(t); charFlipWatched.delete(t); } });
+  if(charFlipWatched.size > 24) charFlipWatched.forEach(t => { if(!t.isConnected){ charFlipIO.unobserve(t); charFlipWatched.delete(t); } });
   charFlipWatched.add(el);
   charFlipIO.observe(el);
 }
@@ -103265,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-365";
+const APP_BUILD = "2026-10-31-366";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -125644,7 +125671,12 @@ function renderRankingRows(rows, entries, board, opts){
   const artQuiet = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
     if(built < shown.length){ setTimeout(artQuiet, 80); return; }
-    lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")]);
+    /* build 366: ONLY THE ROWS NEAR THE VIEW. This queued every row, so a visit drew ~43 characters of ~250 parts each
+       whether or not anyone scrolled to them - in the sandbox ~35MB of page memory a visit (30 visits: 0.5 to 1.5GB; with the
+       characters not drawn it stays flat), which on his iPhone is the white screen and the splash. The rows further down are
+       filled by the observer below (500px out) as they are scrolled toward, and Find me finishes the list. */
+    const vh = window.innerHeight || 800;
+    lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")].filter(r => { const b = r.getBoundingClientRect(); return b.top < vh * 1.6 && b.bottom > -vh * .6; }));
   };
   setTimeout(artQuiet, 0);
   artWatch();
@@ -131171,6 +131203,13 @@ function buildRankingsOptedOut(boardKey){
   panel.appendChild(card);
   return panel;
 }
+let rankingsOnVisible = null;
+document.addEventListener("visibilitychange", () => {
+  const f = rankingsOnVisible;
+  if(!f) return;
+  if(!f.rows.isConnected){ rankingsOnVisible = null; return; }
+  if(!document.hidden) f.paint();
+});
 function showRankings(defaultBoard){
   setActiveNav(null);
   countEl.textContent = "Leaderboard";
@@ -131354,11 +131393,11 @@ function showRankings(defaultBoard){
   /* Lets go once this board has left the page. It used to stay
      attached for good, so every visit to Rankings added another one
      and coming back to the app repainted every board ever opened. */
-  const onVisible = () => {
-    if(!rows.isConnected){ document.removeEventListener("visibilitychange", onVisible); return; }
-    if(!document.hidden) paint();
-  };
-  document.addEventListener("visibilitychange", onVisible);
+  /* build 366: ONE LISTENER, FOR THE SCREEN THAT IS UP. This added a document listener on every visit, and it only took itself off when
+     "visibilitychange" fired after the list had gone - which tapping through the tabs never does - so each visit's whole list (its rows,
+     ~40 characters of ~250 parts each) stayed in memory for good: ~35MB a visit, and the white screen and splash on his phone after a
+     few dozen (the speed test does ~60). */
+  rankingsOnVisible = { rows, paint };
 
   /* Scrolls your own row into view and flashes it. The flash is a
      class removed on animationend rather than a timer, so pressing
