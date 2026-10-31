@@ -29611,3 +29611,15 @@ Build 366, gates updated for what it changes on purpose: b352/b356/b358 expected
 restoreAfterBackground queues - it queued all 43), b357 waits for Home's first emblem sheet before the return (a recording starts once the screen has been up 3s), b366 also checks that
 scrolling to the bottom fills the far rows. His 11:41 recording on 365 (28s of tapping, many Leaderboard visits): press-to-screen 0.2-0.65s and spikes - that is the leak at work (each
 visit +35MB, GC pauses and memory pressure grow with it), not the tap code; 366 is the answer.
+
+## Build 367 - the drag, from a screen recording (a TEST build: only Report a bug changes)
+
+His full 366 speed test completed (no crash; `ended:` has no ENDED-visible since b362) and the numbers are good: steady tap-to-screen 81-126ms, worst frame 42-122ms, [spam] worst frame 147
+(was 255-421), Leaderboard first draw [g:base] p263 / worst frame 130 (was p762 / 531), [g:bare] p100-117. The drag variants [d:*] are all n62-65 w17-19 s0 - 60fps by the page's clock in
+every variant including base - but his 16:29 recording (120fps, ~30s of sliding) shows the glass changing on screen only every 3 frames (40Hz), 4 (30Hz) and 6 (20Hz) of 120 during a slide:
+the presented frame rate is low while rAF is on time, so the cost is in the graphics (the compositor/GPU), which no script on iOS can read. Sandbox compositor traces (software raster, so
+only a ranking): Display::DrawAndSwap total over a drag - base 160ms, noblend 152, nomask 145, noshadow 163, nobarblur 73 (the bar's own backdrop-filter is the largest piece), nolens 41.
+367 adds "Drag test (screen-record it)" to Report a bug: three seconds' notice, then six looks of the bar for 7s each (A as it is; B the bar solid, no backdrop blur, while the glass is up;
+C no plus-lighter blend or seam masks on the glass halves; D bar blur 10px instead of 30px; E B+C and no rim shadow; F no glass), the banner naming the look; taken off at the end. He slides
+across the bar throughout while recording; read the recording with the interval of distinct bar frames (crop y 2560-2820 of 2868 at 120fps, mean abs diff > .35) per 7s window. The look
+that brings the interval to 2 frames (60Hz) or 1 is the fix. check-b367.
