@@ -103292,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-366";
+const APP_BUILD = "2026-10-31-368";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114149,6 +114149,33 @@ async function sendTabTimings(onDone){
   try{ onDone && onDone(sent); }catch(e){}
   return sent;
 }
+let dragTestRunning = false;
+const DRAG_LOOKS = [
+  ["A", ""],
+  ["B", ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}"],
+  ["C", ".tab-lens-clip{mix-blend-mode:normal !important;-webkit-mask-image:none !important;mask-image:none !important}"],
+  ["D", ".bottomtabs,.bottomtabs.has-glass-refraction{backdrop-filter:blur(10px) saturate(1.25) !important;-webkit-backdrop-filter:blur(10px) saturate(1.25) !important}"],
+  ["E", ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}.tab-lens-clip{mix-blend-mode:normal !important;-webkit-mask-image:none !important;mask-image:none !important}.tab-lens-glass,.tab-lens-grey{box-shadow:none !important}"],
+  ["F", ".tab-lens{display:none !important}"]];
+async function runDragTest(){
+  if(dragTestRunning) return;
+  dragTestRunning = true;
+  const note = document.createElement("div");
+  note.setAttribute("aria-hidden", "true");
+  note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 18px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 17px/1.2 system-ui,sans-serif;pointer-events:none;white-space:nowrap;";
+  document.body.appendChild(note);
+  const st = document.createElement("style"); st.id = "drag-look"; document.head.appendChild(st);
+  const tick = window.__dragTick || 1000, wait = ms => new Promise(r => setTimeout(r, ms * tick / 1000));
+  try{
+    for(let k = 3; k > 0; k--){ note.textContent = "Slide across the bar in " + k; await wait(1000); }
+    for(const [name, css] of DRAG_LOOKS){
+      st.textContent = css;
+      for(let t = 7; t > 0; t--){ note.textContent = "Look " + name + " - keep sliding (" + t + ")"; await wait(1000); }
+    }
+  }catch(e){}
+  try{ st.remove(); note.remove(); }catch(e){}
+  dragTestRunning = false;
+}
 function showBugReport(){
   setActiveNav("settings");
   countEl.textContent = "Report a bug";
@@ -114183,6 +114210,15 @@ function showBugReport(){
   useBtn.textContent = "Send tab timings";
   useBtn.addEventListener("click", () => { useBtn.disabled = true; sendTabTimings(ok => { try{ useBtn.disabled = false; const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = ok ? "The tab timings from your recent use were sent to the Nova admin." : "The tab timings could not be sent. Check your connection and try again."; }catch(e){} }); });
   form.appendChild(useBtn);
+  /* build 367: DRAG TEST, FOR A SCREEN RECORDING. His 366 speed test showed the drag drawn at 60fps by the page's own clock in every variant, while
+     his screen recording shows the glass updating only 20-40 times a second as he drags - the cost is in the graphics, which a script cannot see.
+     Start the screen recording, tap this, and slide a finger back and forth across the bar the whole time: six looks of the bar, 7s each (the
+     banner names the one on), A being the bar as it is. The recording is then read frame by frame, look by look. */
+  const dragBtn = document.createElement("button");
+  dragBtn.type = "button"; dragBtn.className = "next bugreport-send";
+  dragBtn.textContent = "Drag test (screen-record it)";
+  dragBtn.addEventListener("click", () => { if(!dragTestRunning) runDragTest(); });
+  form.appendChild(dragBtn);
 
   const boxId = "bugreport-text";
   const lab = document.createElement("label");
@@ -131094,6 +131130,14 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
     if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))){
       startX = null; startY = null; locked = false; return;
     }
+    /* build 368: NOT A TOUCH ON THE TAB BAR'S OWN SPACE. A slide across the bar that began in its margin (the gap round the pill, which is the
+       bare page - html or body - as far as the target goes) was a swipe of the screen: on the Leaderboard it changed board with the
+       "ding" of the board switch, on Profile it changed the top tab, "at random times", depending on where the finger landed. The bar's
+       box and 14px round it belong to the bar. */
+    try{
+      const bb = document.getElementById("bottomtabs");
+      if(bb && !bb.hidden){ const r = bb.getBoundingClientRect(); if(r.height && t.clientY >= r.top - 14 && t.clientY <= r.bottom + 30){ startX = null; startY = null; locked = false; return; } }
+    }catch(e){}
     startX = t.clientX; startY = t.clientY; locked = false;
   };
   host.addEventListener("touchstart", onStart, { passive: true });
