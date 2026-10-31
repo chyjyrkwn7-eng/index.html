@@ -3265,6 +3265,18 @@
     will-change:opacity;
   }
   .avatarchar-option.selected::before{ opacity:1; }
+  /* build 365: A BARE ROW IS NOT AN EMPTY RING. His 363 recording: the Leaderboard lands with empty circles where the characters and
+     flares go and fills them in one by one over ~0.7s, which read as "not loading properly". Until its art is in, the frame is a soft
+     disc in the character's own glow (--char-glow, set on .rank-avatar) and the flare's a soft disc in its rank's colour: free to
+     draw, and the real art replaces it. */
+  .rank-avatar-wrap[data-lazy-av] .rank-avatar{
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--char-glow, #8a8f9a) 60%, #23262e) 0%, #16181e 80%);
+    border-radius:50%;
+  }
+  .rank-mark.is-lazy{
+    background:radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--rank-color, #9aa0aa) 50%, #1c1e25) 0%, color-mix(in srgb, var(--rank-color, #9aa0aa) 16%, transparent) 58%, transparent 70%) !important;
+    border-radius:50%;
+  }
   /* build 360: A ROW OFF THE SCREEN IS NOT DRAWN AT ALL. Sitting on the Leaderboard, every frame had to lay out the paint of all
      forty-odd rows' characters and flares (about 9,000 svg elements, paused or not): that one step took ~40ms of every frame at
      4x CPU, and a tap on the tab bar waited behind it - leaving the Leaderboard took 0.3s against 0.18s from Home on his
@@ -82797,6 +82809,7 @@ function trimForBackground(){
         const ph = document.createElement("span");
         ph.className = "cosmic-icon-badge cosmic-badge-rank flare-solo cosmic-badge-lit rank-mark rank-col-flare is-lazy";
         ph.dataset.lazyMark = em.dataset.rankTier; if(em.dataset.mark) ph.dataset.mark = em.dataset.mark;
+        try{ ph.style.setProperty("--rank-color", RANK_COLOR[em.dataset.rankTier]); }catch(e){}
         em.replaceWith(ph); row.dataset.lazyArt = "1";
       }
     });
@@ -103252,7 +103265,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-363";
+const APP_BUILD = "2026-10-31-365";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114034,6 +114047,39 @@ async function runLagTest(onDone){
         }
       }
       rows.push("[g:" + gname + "] " + ["rewards", "profile", "calendar", "home"].map(d => d[0] + " l" + medOf(got[d].l) + "/p" + medOf(got[d].p) + "/w" + mxOf(got[d].w) + "/s" + got[d].s).join(" "));
+    }
+    /* build 365: DRAGGING ACROSS THE BAR. "The dragging part is still laggy." In the sandbox a drag across the bar is 60fps at 4x CPU, so
+       what costs on his phone is drawing the glass. Each variant drags Home -> Calendar twice (a finger's pointermoves every 16ms,
+       700ms across) and reports the frame count n, worst frame w and slow frames s: [d:base], [d:noblend] (the glass halves' plus-lighter
+       blend off), [d:nomask] (their seam masks off), [d:noshadow] (the glass's rim shadows off), [d:nobarblur] (the bar's own blur off),
+       [d:nolens] (no glass at all - the floor). */
+    const DV = [["base", ""],
+      ["noblend", ".tab-lens-clip{mix-blend-mode:normal !important}"],
+      ["nomask", ".tab-lens-clip{-webkit-mask-image:none !important;mask-image:none !important}"],
+      ["noshadow", ".tab-lens-glass,.tab-lens-grey{box-shadow:none !important}"],
+      ["nobarblur", ".bottomtabs,.bottomtabs *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}"],
+      ["nolens", ".tab-lens{display:none !important}"]];
+    const dragOnce = async () => {
+      const nav = document.querySelector(".bottomtabs-navrow"), a1 = document.getElementById("bottomtab-home"), b1 = document.getElementById("bottomtab-calendar");
+      if(!nav || !a1 || !b1 || !a1.getClientRects().length || !b1.getClientRects().length) return null;
+      const ra = a1.getBoundingClientRect(), rb = b1.getBoundingClientRect(), y = ra.top + ra.height / 2, x0 = ra.left + ra.width / 2, x1 = rb.left + rb.width / 2;
+      const mk = (t, x) => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 93, isPrimary: true, clientX: x, clientY: y });
+      rec.raf.length = 0; lastR = performance.now();
+      a1.dispatchEvent(mk("pointerdown", x0)); await wait(120);
+      for(let i = 1; i <= 42; i++){ nav.dispatchEvent(mk("pointermove", x0 + (x1 - x0) * i / 42)); await wait(16); }
+      await wait(100); nav.dispatchEvent(mk("pointerup", x1));
+      const got = { n: rec.raf.length, w: mxOf(rec.raf), s: rec.raf.filter(v => v > 34).length };
+      await wait(1600);
+      return got;
+    };
+    for(const [dname, css] of DV){
+      vs.textContent = css;
+      note.textContent = "Testing tab speed (drag " + dname + ")… don't touch the screen";
+      try{ showHome(); }catch(e){}
+      await wait(1500);
+      const ds = [];
+      for(let k = 0; k < 2; k++){ const r = await dragOnce(); if(r) ds.push(r); }
+      rows.push("[d:" + dname + "] " + ds.map(r => "n" + r.n + " w" + r.w + " s" + r.s).join(" / "));
     }
     try{ vs.remove(); }catch(e){}
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
@@ -125748,6 +125794,7 @@ function buildOverallCols(entry, keptMarks, third, lazyArt){
       em = document.createElement("span");
       em.className = "cosmic-icon-badge cosmic-badge-rank flare-solo cosmic-badge-lit rank-mark rank-col-flare is-lazy";
       em.dataset.lazyMark = rk;
+      try{ em.style.setProperty("--rank-color", RANK_COLOR[rk]); }catch(e){}
     }
     else {
       try{ em = buildRankMark(rk, "rank-col-flare"); }
@@ -136467,7 +136514,12 @@ function tabPerfText(){
       const prevTapAt = bar._lastTapAt || -1e9;
       bar._lastTapAt = performance.now();
       const sincePrev = bar._lastTapAt - prevTapAt;
-      const rapidRun = sincePrev < 330 || !!bar._navPend ? TAB_RUN_EXTRA : sincePrev < 600 ? TAB_RUN_EXTRA * .4 : 0;
+      /* build 365: EVERY TAP'S SCREEN FOLLOWS. His 363/364 use: tapping down the line (Home, Profile, Leaderboard, Calendar) a screen
+         landed late and the last one 0.3-0.5s after the finger - the hold that made a run of taps build only its last tab (280ms)
+         was written when a build was 300ms+; on his phone a build is 3-56ms now. A tap builds its own screen when its turn comes
+         (40ms after the lens lifts); a tap before that build has run replaces it (nothing stale is built); only a tap under 110ms
+         after the last (a mash) waits 80ms more so two do not build back to back. */
+      const rapidRun = sincePrev < 110 ? 80 : 0;
       const pend = bar._navPend;
       if(pend && pend.dest === dest) return;
       if(pend){ pend.cancel(); bar._navPend = null; }
@@ -137296,6 +137348,7 @@ function tabPerfText(){
   /* the tabs under the glass grow: the nearest most, as far as it has lifted */
   function lensMagnify(c, lift, ms, delay){
     if(!lensG) return;
+    if(!LENS.mag){ if(!lensG.magClear){ lensG.magClear = true; lensG.tabs.forEach(t => { t.el.style.transition = "none"; t.el.style.transform = ""; }); } return; }
     const reach = lensWAt(c == null ? lensG.lo : c) * .62;
     lensG.tabs.forEach(t => {
       const k = c == null ? 0 : Math.max(0, 1 - Math.abs(c - t.c) / reach) * lift;

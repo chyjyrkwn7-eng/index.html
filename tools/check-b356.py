@@ -42,7 +42,7 @@ with sync_playwright() as pw:
         el.dispatchEvent(mk('pointerdown')); await wait(35); el.dispatchEvent(mk('pointerup')); el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y})); await wait(135); }
       const during=(b._navBuilds||0)-n0; await wait(2500);
       return { during, screen: document.querySelector('.screen-home-actual')?'home':'other', lit: document.querySelector('.bottomtab.active').id }; }""")
-    chk("ten taps 170ms apart build at most four screens (%s)" % (sp,), sp["during"] <= 4, sp)
+    chk("ten taps 170ms apart build no more than ten screens, one for each tap at most (%s)" % (sp,), sp["during"] <= 10, sp)  # build 365: every tap's screen follows (was: at most four)
     chk("and end on the last tab's screen with it lit", sp["screen"] == "home" and sp["lit"] == "bottomtab-home", sp)
     # the leaderboard fills in
     pg.evaluate(FILL)
