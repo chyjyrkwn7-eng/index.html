@@ -29577,3 +29577,15 @@ tap (p418/515). A build is 3-56ms on that phone now, so the hold costs more than
 280ms hold (spam still collapses to the last tap, check-b356); 200-600ms apart waits 2.5x the recent builds' cost (EMA, 50-120ms) instead of 280/112ms;
 600ms+ nothing. check-b364. Looked at in the same report, left: rapid sequences have 12-29 frames over 34ms and a worst frame of 116-157ms (acceptable);
 `ended:` log has a new entry ENDED-hidden other b362/b363 only (no ENDED-visible since b362).
+
+## Build 365 - every tap's screen follows; a bare row is a disc; the drag is measured
+
+His 09:54 recording (363): taps land in ~0.12-0.2s, but tapping down the line (Home, Profile, Leaderboard, Calendar) the last screen came 0.3-0.5s after the finger ("it
+stays on your old screen"), the Leaderboard lands with empty circles that fill one by one over ~0.7s ("not loading properly"), and dragging across the bar and letting
+go feels laggy. 365: (1) rapidRun is 80ms only for a tap under 110ms after the last, else 0 - each tap builds its own screen 40ms after the lens lifts, a tap before
+that build has run still replaces it (nothing stale is built); the 280ms hold (and 364's tiers) are gone because a build is 3-56ms on his phone. check-b356 now allows one
+build per tap (was: at most four of ten; at 4x CPU in the sandbox the [spam] run draws fewer frames: n183 vs 259, slow 87 vs 75 - the price). (2) A bare row's
+character frame is a soft disc in its own glow (--char-glow) and the flare frame a disc in its rank colour (--rank-color set on the placeholder, !important over the
+badge's own gradient). (3) lensMagnify returns early when LENS.mag is 0 (it wrote every tab's style each drag frame). (4) the speed test drags Home -> Calendar twice per
+variant ([d:base] [d:noblend] [d:nomask] [d:noshadow] [d:nobarblur] [d:nolens]: frames n, worst w, slow s): in the sandbox a drag is 60fps even at 4x CPU, so what costs on
+the phone is drawing the glass (plus-lighter blend + mask-image seams + inset rim shadows on layers that scale every frame). Read with `bugs 1`; fix whichever variant moves.
