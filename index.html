@@ -82830,7 +82830,7 @@ function trimForBackground(){
 function restoreAfterBackground(){
   try{
     const rows = document.querySelector(".rank-rows");
-    if(rows) lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")]);
+    if(rows) lbArtQueue(rows, lbNearRows(rows));
     const hero = document.querySelector(".cosmic-hero-wrap");
     if(hero) startOrbitEmblemAnimsKnown(hero.parentElement || hero);
   }catch(e){}
@@ -125675,8 +125675,7 @@ function renderRankingRows(rows, entries, board, opts){
        whether or not anyone scrolled to them - in the sandbox ~35MB of page memory a visit (30 visits: 0.5 to 1.5GB; with the
        characters not drawn it stays flat), which on his iPhone is the white screen and the splash. The rows further down are
        filled by the observer below (500px out) as they are scrolled toward, and Find me finishes the list. */
-    const vh = window.innerHeight || 800;
-    lbArtQueue(rows, [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")].filter(r => { const b = r.getBoundingClientRect(); return b.top < vh * 1.6 && b.bottom > -vh * .6; }));
+    lbArtQueue(rows, lbNearRows(rows));
   };
   setTimeout(artQuiet, 0);
   artWatch();
@@ -125702,6 +125701,11 @@ function renderRankingRows(rows, entries, board, opts){
    rows nearest the view first. On the phone a list that builds a few rows a frame, behind frames that are slow, was a
    screen with empty space under seven rows for over a second (his recording of 356). */
 function lbArtNow(){ return 0; }
+/* build 366: the bare rows within 1.6 screens below / .6 above the view: the only ones whose art is drawn without being scrolled toward */
+function lbNearRows(rows){
+  const vh = window.innerHeight || 800;
+  return [...rows.querySelectorAll(":scope > .rank-row[data-lazy-art]")].filter(r => { const b = r.getBoundingClientRect(); return b.top < vh * 1.6 && b.bottom > -vh * .6; });
+}
 function lbFillArt(row, rows, quiet){
   if(!row || !row.dataset || !row.dataset.lazyArt) return;
   delete row.dataset.lazyArt;

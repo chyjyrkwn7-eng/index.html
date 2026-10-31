@@ -29607,3 +29607,7 @@ RSS over the full speed test went 469MB -> 2.9GB (186s, +14MB/s); 30 Leaderboard
 Result in the sandbox: Leaderboard<->Home x18 +600MB -> +106MB; the whole speed test 469->2886MB -> 377->1741MB (still growing: Chromium keeps its heap; the retained
 screens are gone - the remaining retainer is the latest screen only). check-b366 (no listener added per visit; no stale tile in the sets). iOS may still end a page
 for other reasons; the `ended:` log in Send tab timings says when it does.
+Build 366, gates updated for what it changes on purpose: b352/b356/b358 expected every row to have its art (now the rows within 1.6 screens below / .6 above the view; `lbNearRows`, also what
+restoreAfterBackground queues - it queued all 43), b357 waits for Home's first emblem sheet before the return (a recording starts once the screen has been up 3s), b366 also checks that
+scrolling to the bottom fills the far rows. His 11:41 recording on 365 (28s of tapping, many Leaderboard visits): press-to-screen 0.2-0.65s and spikes - that is the leak at work (each
+visit +35MB, GC pauses and memory pressure grow with it), not the tap code; 366 is the answer.

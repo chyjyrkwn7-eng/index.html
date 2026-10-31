@@ -22,5 +22,11 @@ with sync_playwright() as pw:
       return { vis: window.__vis, stale, held, watchedStale: ws }; }""")
     chk("six Leaderboard visits add no document visibilitychange listener (%s)" % (r["vis"],), r["vis"] == 0, r)
     chk("the recorders' and watcher's sets keep no tile that has left the page (%s)" % (r,), r["stale"] == 0 and r["watchedStale"] == 0, r)
+    # the rows far down are drawn when they are scrolled toward
+    pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(3500)
+    far0 = pg.evaluate("()=>[...document.querySelectorAll('.rank-rows .rank-row')].filter(r=>r.dataset.lazyArt).length")
+    pg.evaluate("()=>window.scrollTo(0, document.documentElement.scrollHeight)"); pg.wait_for_timeout(3000)
+    last = pg.evaluate("()=>{ const rs=[...document.querySelectorAll('.rank-rows .rank-row')]; const v=rs.filter(r=>{const b=r.getBoundingClientRect(); return b.top<innerHeight&&b.bottom>0}); return { vis: v.length, bare: v.filter(r=>r.dataset.lazyArt).length }; }")
+    chk("some far rows start bare (%s), and scrolled to they have their characters (%s)" % (far0, last), far0 >= 10 and last["vis"] >= 5 and last["bare"] == 0, [far0, last])
     br.close()
 sys.exit(0 if g["ok"] else 1)
