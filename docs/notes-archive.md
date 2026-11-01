@@ -29701,3 +29701,11 @@ Change: `html.tab-dragging #stage *{animation-play-state:paused !important}`, se
 removed at the START of endTabDrag (before the release navigates, so the next screen's entrance runs) and in lensFinish/lensHide as a backstop.
 The bar and body background are outside #stage and keep moving. The art is untouched; only a pause for the length of a slide.
 check-b373.py (fails on 372). To judge it on the phone: Drag test look A (Leaderboard) over34 should fall from 5-8 toward 0-2 and its max from 150+.
+
+## Build 374 (2026-11-01): build 372's art fade-in taken out
+
+Madison, on 372 (Profile character/emblems drawn after the screen and faded in): "the fade in is absolutely not it". Profile's character, rank emblem
+and reward art are drawn inside the tap again, exactly as before 372 (artLater and check-b372 removed; check-b374 asserts the art is in as soon as
+showProfile returns, with no inline opacity/transition; fails on 373). Rule for next time: NO art that appears late or fades in on a main tab -
+whatever is on those screens must be there when the screen is. Profile's first frame cost (~120ms of art on his phone) is therefore back; any fix
+for it must keep the art present at first paint (cheaper art, not later art).
