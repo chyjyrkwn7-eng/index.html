@@ -1,7 +1,10 @@
 """Build 379: (1) the board counts the rows it shows at its top on this device, and the next visit brings only those (and one more) up
 with their loops in the mounting task - not 16; (2) the rows past them get their loops from the queue just after (loops alone, no drawing
 under them), with none of the first 16 left bare; (3) html.lb-paint.lb-win: painted loops, each window a small layer - the board looks the
-same frame for frame and the loops move; (4) the Leaderboard speed test's looks are base, paint, paintwin, noloops, norows.
+same frame for frame and the loops move; (4) the Leaderboard speed test's looks are base, nostill, paintwin, noloops, norows;
+(5) a board opened from the tab comes up with every loop still (painted, paused - none moving on a layer) while the glass is up, and once it
+has landed the rows take their moving loops back a row a frame (never more than one row's two loops a frame) until every loop moves and the
+board is no longer still.
 Run:  python3 tools/check-b379.py   (--against: copy the old index.html and version.json over first)"""
 import os, sys, time, io, re
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -57,7 +60,28 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ const c=document.documentElement.classList; c.remove('lb-paint'); c.remove('lb-win'); }")
     # (4)
     looks = pg.evaluate("()=>typeof BOARD_TEST_LOOKS!=='undefined' ? BOARD_TEST_LOOKS.map(l=>l[0]+':'+l[2]) : null")
-    chk("the speed test's looks are base, paint, paintwin, noloops, norows (%s)" % (looks,),
-        looks == ["base:", "paint:lb-paint", "paintwin:lb-paint lb-win", "noloops:", "norows:"], looks)
+    chk("the speed test's looks are base, nostill, paintwin, noloops, norows (%s)" % (looks,),
+        looks == ["base:", "nostill:lb-nostill", "paintwin:lb-paint lb-win", "noloops:", "norows:"], looks)
+    # (5) still first, then a row a frame
+    pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1500)
+    L = pg.evaluate("""async()=>{ const el=document.getElementById('bottomtab-rewards'); const b=el.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
+      const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:41,isPrimary:true,clientX:x,clientY:y});
+      const L=[]; const T0=performance.now(); let done=false;
+      const tick=()=>{ const rows=document.querySelector('.screen-rankings .rank-rows'); if(rows){ const imgs=[...rows.querySelectorAll('.char-flip-play img, .rk-frame img')];
+          L.push({ t: Math.round(performance.now()-T0), still: rows.classList.contains('lb-still'), moving: imgs.filter(i=>getComputedStyle(i).animationName.startsWith('rk-sheet')).length, movingVis: imgs.filter(i=>!i.closest('.is-offscreen') && getComputedStyle(i).animationName.startsWith('rk-sheet')).length,
+            layered: imgs.filter(i=>getComputedStyle(i).willChange==='transform').length, n: imgs.length, up: !!document.querySelector('#bottomtabs-lens.is-up') }); }
+        if(performance.now()-T0<3200) requestAnimationFrame(tick); else done=true; };
+      el.dispatchEvent(mk('pointerdown')); await new Promise(r=>setTimeout(r,60)); el.dispatchEvent(mk('pointerup')); el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}));
+      requestAnimationFrame(tick); while(!done) await new Promise(r=>setTimeout(r,100)); return L; }""")
+    upf = [f for f in L if f["up"]]
+    still_up = bool(upf) and all(f["still"] and f["moving"] == 0 and f["layered"] == 0 and f["n"] >= 10 for f in upf)
+    steps = [L[i]["movingVis"] - L[i - 1]["movingVis"] for i in range(1, len(L))]   # rows skipped by the browser (off screen) cost nothing
+    end = L[-1] if L else {}
+    first_move = next((f["t"] for f in L if f["moving"] > 0), None)
+    landed = next((f["t"] for f in L if not f["up"]), None)
+    chk("a board opened from the tab is still while the glass is up (%s frames up, all still: %s), moves a row a frame once it has landed (landed %sms, first loop moving %sms, most loops on screen started in one frame %s) until all %s move (%s, board still: %s)"
+        % (len(upf), still_up, landed, first_move, max(steps) if steps else None, end.get("n"), end.get("moving"), end.get("still")),
+        still_up and first_move is not None and landed is not None and first_move >= landed and max(steps) <= 2 and end.get("moving") == end.get("n") and end.get("still") is False,
+        [L[:3], L[-3:]])
     br.close()
 sys.exit(0 if g["ok"] else 1)

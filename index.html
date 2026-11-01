@@ -15154,6 +15154,10 @@
   /* build 379: painted, each loop's window on a small layer of its own - a step repaints only that window, not the row under it (his
      378 test: painted loops drew the board 140ms sooner but its idle frames fell from 90 to 50 in 1.5s) */
   html.lb-paint.lb-win .rank-rows .char-flip-play, html.lb-paint.lb-win .rank-rows .rk-frame{ will-change:transform; }
+  /* build 379: THE BOARD COMES UP STILL, THEN MOVES (lbStillGo). Each loop is first a painted frame - its left/top twin, paused: no layer,
+     nothing repainted - and a row at a time, once the glass has landed, it takes its moving loop back (.lb-go). */
+  .rank-rows.lb-still > .rank-row:not(.lb-go) .char-flip-play img, .rank-rows.lb-still > .rank-row:not(.lb-go) .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; animation-play-state:paused !important; }
+  .rank-rows.lb-still > .rank-row:not(.lb-go) .rk-frame img{ position:relative; }
   /* ...or kept a layer, but moved on a linear clock that holds each frame (html.lb-hold): WebKit hands no steps() animation to the
      compositor, so a stepped loop is moved by the page itself every frame; held frames on a linear clock look the same and can be. */
   html.lb-hold .rank-rows .char-flip-play img, html.lb-hold .rank-rows .rk-frame img{ animation-name:var(--hk, none) !important; animation-timing-function:linear !important; }
@@ -114254,7 +114258,8 @@ async function sendTabTimings(onDone){
 /* build 378: THE LEADERBOARD SPEED TEST. "The leaderboard still takes a minute can you tell?" - his 377 timings: the Leaderboard's screen is
    built in 5-18ms but first drawn 265-370ms after the tap (Profile ~110, Calendar ~50), so it is the drawing, which only the phone can
    measure. Taps Leaderboard then Profile, three rounds of the looks taken in turn: [b:base] as it is; [b:paint] the loops painted
-   (html.lb-paint) instead of each sheet a layer; [b:paintwin] (build 379) painted, each loop's window a small layer of its own
+   (html.lb-paint) instead of each sheet a layer; (build 379: [b:base] is now the board coming up still and moving a row a frame after
+   the glass lands, [b:nostill] the board as 378 had it, loops moving from the first frame) [b:paintwin] (build 379) painted, each loop's window a small layer of its own
    (html.lb-paint.lb-win); [b:noloops] no loops at all; [b:norows] no rows (the floor). His 378 run dropped [b:hold] (975ms, idle
    frames 266ms), [b:nofx] and [b:noglass] (no different from base). Per look: the median and each of the Leaderboard's tap-to-second-
    frame (p); in the 1.5s after it, the worst frame w, slow frames s, frames drawn n and how free the page was (f: message round trips
@@ -114263,12 +114268,12 @@ let boardTestRunning = false;
 const BOARD_TEST_NOLOOPS = ".rank-rows .char-flip-play,.rank-rows .cosmic-rank-anim{display:none !important}";
 const BOARD_TEST_NOFX = ".rank-rows .char-flip-play{-webkit-mask-image:none !important;mask-image:none !important}.rank-rows .cosmic-rank-anim,.rank-rows svg.cosmic-rank-emblem{mix-blend-mode:normal !important;filter:none !important}";
 const BOARD_TEST_LOOKS = [
-  ["base", "", ""], ["paint", "", "lb-paint"], ["paintwin", "", "lb-paint lb-win"], ["noloops", BOARD_TEST_NOLOOPS, ""],
+  ["base", "", ""], ["nostill", "", "lb-nostill"], ["paintwin", "", "lb-paint lb-win"], ["noloops", BOARD_TEST_NOLOOPS, ""],
   ["norows", ".screen-rankings .rank-rows{display:none !important}", ""]];
 async function runBoardTest(onDone){
   if(boardTestRunning || lagTestRunning) return;
   boardTestRunning = true;
-  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold", "lb-win"].filter(c => root.classList.contains(c));
+  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold", "lb-win", "lb-nostill"].filter(c => root.classList.contains(c));
   const note = document.createElement("div");
   note.setAttribute("aria-hidden", "true");
   note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none;white-space:nowrap";
@@ -114310,7 +114315,7 @@ async function runBoardTest(onDone){
     for(let round = 0; round < 3; round++){
       for(const [name, css, mode] of BOARD_TEST_LOOKS){
         note.textContent = "Testing Leaderboard speed (" + (round + 1) + "/3 " + name + ")… don't touch the screen";
-        st.textContent = css; root.classList.remove("lb-paint", "lb-hold", "lb-win"); if(mode) mode.split(" ").forEach(c => root.classList.add(c));
+        st.textContent = css; root.classList.remove("lb-paint", "lb-hold", "lb-win", "lb-nostill"); if(mode) mode.split(" ").forEach(c => root.classList.add(c));
         await wait(250);
         const g = got[name];
         g.p.push(await visit("rewards"));
@@ -114326,7 +114331,7 @@ async function runBoardTest(onDone){
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ st.remove(); note.remove(); }catch(e){}
-  root.classList.remove("lb-paint", "lb-hold", "lb-win"); modesWas.forEach(c => root.classList.add(c));
+  root.classList.remove("lb-paint", "lb-hold", "lb-win", "lb-nostill"); modesWas.forEach(c => root.classList.add(c));
   boardTestRunning = false;
   const text = rows.join(" | ");
   let sent = false;
@@ -125720,6 +125725,9 @@ function renderRankingRows(rows, entries, board, opts){
      person's character is now carried over to their new row, and its
      loop runs on a shared clock (charFlipResync), so a rebuilt row picks
      up exactly where it was. */
+  /* build 379: still first, unless a speed test look says otherwise (html.lb-nostill: as 378; lb-paint: painted for good) */
+  const lbStill = !document.documentElement.classList.contains("lb-nostill") && !lbLoopAlt();
+  rows.classList.toggle("lb-still", lbStill);
   lbPaintWatch(rows);
   const keptAvatars = new Map();
   rows.querySelectorAll(".rank-row[data-pub]").forEach(r => {
@@ -125949,6 +125957,7 @@ function renderRankingRows(rows, entries, board, opts){
   const buildFor = (atLeast, ms) => { const t0 = performance.now(); let k = 0;
     while(built < shown.length && (k < atLeast || performance.now() - t0 < ms)){ addRow(shown[built], built); built++; k++; } };
   buildFor(shown.length, 40);
+  if(lbStill){ lbPaintAll(rows, true); lbStillGo(rows, token); }
   /* the art of the rows built bare: when one comes near the view, and then one at a time in the quiet */
   rows._lbFillArt = row => lbFillArt(row, rows);
   try{
@@ -126182,15 +126191,39 @@ function lbPaintKF(img){
     if(img.style.getPropertyValue("--hk") !== hname) img.style.setProperty("--hk", hname);
   }catch(e){}
 }
+/* build 379: the rows take their moving loops back one row a frame (a row with no loop in view costs nothing and does not count), once the
+   board has been drawn and the glass has landed - the ~9ms a loop that was the board's first draw (his 378 test: 448ms with them moving,
+   218ms with none) is spread over frames where nothing else is moving */
+function lbStillGo(rows, token){
+  const t0 = performance.now();
+  const go = () => {
+    if(rows._lbFill !== token || !rows.isConnected) return;
+    let n = 0;
+    for(const r of rows.querySelectorAll(":scope > .rank-row:not(.lb-go)")){
+      if(n >= 1) break;
+      r.classList.add("lb-go");
+      if(!r.classList.contains("is-offscreen") && r.querySelector(".char-flip-play img, .rk-frame img")) n++;
+    }
+    if(rows.querySelector(":scope > .rank-row:not(.lb-go)")) requestAnimationFrame(go);
+    else rows.classList.remove("lb-still");
+  };
+  const wait = () => {
+    if(rows._lbFill !== token || !rows.isConnected) return;
+    const busy = document.querySelector("#bottomtabs-lens.is-up") || Date.now() < settleUntil || document.documentElement.classList.contains("tab-dragging");
+    if(busy && performance.now() - t0 < 2500){ setTimeout(wait, 40); return; }
+    requestAnimationFrame(go);
+  };
+  requestAnimationFrame(() => requestAnimationFrame(wait));
+}
 function lbLoopAlt(){ const c = document.documentElement.classList; return c.contains("lb-paint") || c.contains("lb-hold"); }
-function lbPaintAll(root){
-  if(!root || !lbLoopAlt()) return;
+function lbPaintAll(root, force){
+  if(!root || !(force || lbLoopAlt())) return;
   root.querySelectorAll(".char-flip-play img, .rk-frame img").forEach(lbPaintKF);
 }
 function lbPaintWatch(rows){
-  if(!rows || rows._paintMo || typeof MutationObserver !== "function" || !lbLoopAlt()) return;
+  if(!rows || rows._paintMo || typeof MutationObserver !== "function" || !(lbLoopAlt() || rows.classList.contains("lb-still"))) return;
   rows._paintMo = new MutationObserver(recs => {
-    if(!lbLoopAlt()) return;
+    if(!lbLoopAlt() && !rows.classList.contains("lb-still")) return;
     for(const r of recs){
       if(r.type === "attributes"){ if(r.target.tagName === "IMG") lbPaintKF(r.target); continue; }
       r.addedNodes.forEach(n => { if(n.nodeType !== 1) return; if(n.tagName === "IMG") lbPaintKF(n); else lbPaintAll(n); });

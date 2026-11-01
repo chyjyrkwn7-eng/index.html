@@ -29932,3 +29932,23 @@ His 378 runs (16:10-16:13 UTC, build 378, battery fine this time):
   paint's sooner first draw without its idle cost. Both still OFF by default.
 
 Gate: tools/check-b379.py (4 parts; all 4 FAIL against 378). check-b378 part (1) accepts the new look list.
+
+### 379, second half: his 10:28 recording of 378 - the glass hangs over the Leaderboard; the board now comes up still
+
+"I did the tests thing and I sent videos of the bottom tab still not working properly.. We have been working on this bottom tab for
+almost a week." His 10:28 recording (378, battery 82%), read per frame (header label for the screen, the lens off the bar strip):
+taps to Calendar, Profile and Home land in ~200-300ms; a tap to the Leaderboard leaves the glass up, swollen over it, for 600-800ms
+(the 375 await: the glass lands once the new screen is drawn, at most LENS_AWAIT_MAX 650ms after the release) - that is what reads
+as the bar not working. His 16:29 timings agree: the Leaderboard's p (tap to the second frame) 302-559ms, Calendar 48-76.
+
+So the bar's last problem is the board's first draw, and his 378 speed test says what it is: the loops on layers (448 -> 218ms
+without them). Painting them drew the board in 306ms - the idle cost of paint was only its stepping. So now:
+- THE BOARD COMES UP STILL (.rank-rows.lb-still): every loop is its painted left/top twin (rk-pos-*, lbPaintKF), PAUSED - the frame
+  the shared clock says, no layer, nothing repainted. lbStillGo waits for two frames and then until the glass is down (not is-up,
+  settle passed, no slide; at most 2.5s), and gives the rows their moving loops back (.lb-go) one row a frame - a row the browser
+  skips (.is-offscreen) costs nothing and does not count - and drops lb-still when every row has gone. Sandbox: still while the glass
+  is up (0 loops on layers), landed ~520ms, first loop moving ~610ms, all 36 by ~860ms, never more than one row's two loops a frame.
+- The speed test's [b:base] is this; [b:nostill] (html.lb-nostill) is 378's board (moving from the first frame), so the next run
+  reads the gain directly. [b:paintwin] stays for comparison.
+
+Gate: tools/check-b379.py part (5) (fails against 378).

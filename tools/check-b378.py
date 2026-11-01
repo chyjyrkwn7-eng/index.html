@@ -128,7 +128,7 @@ with sync_playwright() as pw:
     looks = re.findall(r"\[b:(\w+)\] r p(\d+) \(([\d,]+)\) idle w(\d+)/s(\d+)/n(\d+)/f(\d+) \| p p(\d+)", res[0]) if res else []
     names = [l[0] for l in looks]
     chk("Report a bug has the Leaderboard speed test (%s); it reports every look three times (%s) and leaves the page as it was (%s)" % (btn, names, res[1:] if res else res),
-        btn and names in (["base", "paint", "hold", "noloops", "nofx", "noglass", "norows"], ["base", "paint", "paintwin", "noloops", "norows"]) and all(len(l[2].split(",")) == 3 and int(l[1]) > 0 and int(l[7]) > 0 for l in looks) and res[1] is True and res[2] is False and res[3] is False,
+        btn and names in (["base", "paint", "hold", "noloops", "nofx", "noglass", "norows"], ["base", "paint", "paintwin", "noloops", "norows"], ["base", "nostill", "paintwin", "noloops", "norows"]) and all(len(l[2].split(",")) == 3 and int(l[1]) > 0 and int(l[7]) > 0 for l in looks) and res[1] is True and res[2] is False and res[3] is False,
         res)
     pg.evaluate("()=>document.documentElement.classList.remove('lb-paint')")
     br.close()
