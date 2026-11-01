@@ -133705,7 +133705,8 @@ setTimeout(() => {
 }, 4000);
 __bm("L125832");
 var settleUntil = 0;
-function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
+/* (build 377: never shortened - the glass's landing extends it, below, and a later screen's settle must not cut that short) */
+function beginSettle(ms){ settleUntil = Math.max(settleUntil, Date.now() + (ms || 420)); }
 
 /* ---- A RANK YOU CAN OPEN (build 311) ----
    "It'd be cool if the rank screen was interactive somehow ... maybe by
@@ -137957,6 +137958,10 @@ function tabPerfText(){
       if(i * LENS_DT >= greyAt + 56 && Math.abs(f.H - g.pillH) < 1.2 && Math.abs(f.W - hi.pw) < 1.6 && Math.abs(f.cx - hi.c) < 1){ handAt = i * LENS_DT; break; }
     }
     handAt = Math.min(handAt, total);
+    /* build 377: THE LANDING HAS ITS FRAMES TO ITSELF. Everything a new screen puts off "until it has settled" (characters going live,
+       emblems waking, the first-paint queue, recordings) waits until the glass has handed over to the platter - his recording showed the
+       Leaderboard's after-mount work freezing the shrink for ~250ms */
+    try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 80); }catch(e){}
     bar.classList.remove("is-pressing");
     /* the bar stays swollen while the lens is up, and goes back as it lands */
     const sw = getComputedStyle(bar).scale;

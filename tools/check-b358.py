@@ -1,4 +1,4 @@
-"""Build 358: while the app is hidden the Leaderboard's rows go back to bare frames and Home's moving-emblem sheets come
+"""Build 358 (rows part reversed in 377: they keep their art): while the app is hidden Home's moving-emblem sheets come
 off (less to keep, so iOS is less likely to end the page), and come back when it returns; the grey platter is hidden the
 instant the glass is pressed (it cannot snap across with no glass); a run that ended in the background is noted.
 Run:  python3 tools/check-b358.py"""
@@ -23,7 +23,9 @@ with sync_playwright() as pw:
       window.__h=true; document.dispatchEvent(new Event('visibilitychange')); await wait(100); out.hidden=cnt();
       window.__h=false; document.dispatchEvent(new Event('visibilitychange')); await wait(3500); out.back=cnt(); return out; }""")
     chk("the Leaderboard has its art before leaving (%s)" % (r["before"],), r["before"]["svgs"] >= 12, r)
-    chk("while hidden its rows are bare frames: no drawing, no flare, no moving sheet (%s)" % (r["hidden"],), r["hidden"]["svgs"] == 0 and r["hidden"]["marks"] == 0 and r["hidden"]["flip"] == 0 and r["hidden"]["bare"] >= 30, r)
+    # build 377: REVERSED. The rows keep their art while hidden - stripping them made the board come back as discs and empty rings for
+    # seconds ("the leaderboard not loading properly" after a return); the leak that made the page too big for iOS is fixed (375)
+    chk("while hidden its rows keep their art (build 377) (%s)" % (r["hidden"],), r["hidden"]["svgs"] == r["before"]["svgs"] and r["hidden"]["marks"] == r["before"]["marks"] and r["hidden"]["bare"] <= r["before"]["bare"], r)
     chk("and the rows near the view are back a few seconds after returning (build 366: only those; the rest come as they are scrolled toward) (%s)" % (r["back"],), r["back"]["svgs"] >= 12 and r["back"]["svgs"] == r["before"]["svgs"], r)
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(4500)
     h = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const cnt=()=>document.querySelectorAll('.cosmic-hero-wrap .cosmic-rank-anim').length; const out={ before: cnt() };

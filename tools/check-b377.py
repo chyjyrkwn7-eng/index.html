@@ -3,7 +3,8 @@ in the ended log; (2) the board's characters that have never been recorded on th
 anybody looking at the board; (3) a ready sheet keeps its decoded picture while the app is up and lets it go when the app is hidden;
 (4) a slide across the bar takes the tabs' native switches away while it lasts (no ticks on the way) and puts them back; (5) a board left in
 the background keeps its art; (6) a board switch brings the screenful back as loops only (no drawing under them, nothing queued) and its
-flares as loops only; (7) the bar is see-through glass (a blur of at most 10px over a body at most 30% dark).
+flares as loops only; (7) the bar is see-through glass (a blur of at most 10px over a body at most 30% dark); (8) what a new screen puts off until it has settled
+waits until the glass has handed over to the platter (the settle window is still open at the hand-over).
 Run:  python3 tools/check-b377.py   (--against: copy the old index.html and version.json over first)"""
 import os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -79,6 +80,15 @@ with sync_playwright() as pw:
       const during=n(); for(let i=9;i>=0;i--){ nav.dispatchEvent(mk('pointermove',x0+(x1-x0)*i/20)); await wait(16); } nav.dispatchEvent(mk('pointerup',x0)); await wait(600);
       return { before, during, after: n() }; }""")
     chk("a slide takes the tabs' switches away while it lasts and puts them back (%s)" % (hs,), hs["before"] >= 4 and hs["during"] == 0 and hs["after"] == hs["before"], hs)
+    # (8) the settle window outlasts the landing
+    st = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome(); await wait(2500);
+      const tab=document.getElementById('bottomtab-calendar'); const b=tab.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
+      const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:96,isPrimary:true,clientX:x,clientY:y});
+      const lens=document.getElementById('bottomtabs-lens'); let sawUp=false, left=null;
+      const tick=()=>{ const op=getComputedStyle(lens).opacity; if(op!=='0') sawUp=true; else if(sawUp && left===null){ left=settleUntil-Date.now(); return; } requestAnimationFrame(tick); };
+      tab.dispatchEvent(mk('pointerdown')); requestAnimationFrame(tick); await wait(80); tab.dispatchEvent(mk('pointerup')); tab.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}));
+      await wait(1500); return { sawUp, left }; }""")
+    chk("what a new screen puts off waits until the glass has handed over (settle open %sms past the hand-over)" % (st["left"],), st["sawUp"] and st["left"] is not None and st["left"] >= 0, st)
     # (7) see-through glass
     gl = pg.evaluate("""()=>{ const c=getComputedStyle(document.querySelector('.bottomtabs')); const bf=c.backdropFilter||c.webkitBackdropFilter||''; const m=/blur\(([\d.]+)px\)/.exec(bf);
       const bg=c.backgroundColor; const a=/rgba?\([^,]+,[^,]+,[^,]+(?:,\s*([\d.]+))?\)/.exec(bg); return { blur: m?parseFloat(m[1]):-1, bodyAlpha: a&&a[1]!==undefined?parseFloat(a[1]):1, bf, bg }; }""")

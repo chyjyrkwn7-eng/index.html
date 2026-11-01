@@ -29834,3 +29834,6 @@ Build 377, more (his 00:53 tab video, 00:54 Leaderboard video, and notes):
 - RECORDING IN THE QUIET IS QUIETER: a charRecBg-only job waits for 5s with no touch (was the general 2s), so a recording slice is less often
   under a finger.
 check-b350's "stays on its pose" is read one frame after the return (two steady frames now). check-b377: 8 parts, all fail on 376.
+- THE LANDING HAS ITS FRAMES TO ITSELF: lensRelease sets settleUntil = max(settleUntil, now + handAt + 80), and beginSettle never shortens it
+  (max) - characters going live, emblems waking, the first-paint queue and recordings wait until the glass has handed over. check-b377 (8).
+- check-b358's "rows bare while hidden" reversed to "rows keep their art while hidden" (377).
