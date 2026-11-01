@@ -51767,6 +51767,12 @@ document.addEventListener("visibilitychange", () => { if(document.visibilityStat
    picture. The window loses focus first (the app switcher, another app, the notification shade), while the page can still draw - the
    pause screen is drawn then, so it is what the picture shows and what is there on the way back. */
 window.addEventListener("blur", () => { setTimeout(() => { try{ if(!document.hasFocus()) autoPauseOnLeave(); }catch(e){} }, 0); });
+/* build 376: "when I swipe to view the app it's still on the test question". Swiping up from the bottom edge for the app switcher, iOS takes
+   the touch away from the page (touchcancel) before the app goes - the moment the pause screen can still be drawn into the picture iOS keeps. */
+let edgeTouch = false;
+document.addEventListener("touchstart", e => { try{ const t = e.touches && e.touches[0]; edgeTouch = !!t && t.clientY > (window.innerHeight || 0) - 22; }catch(x){ edgeTouch = false; } }, { capture: true, passive: true });
+document.addEventListener("touchcancel", () => { if(edgeTouch){ edgeTouch = false; try{ autoPauseOnLeave(); }catch(x){} } }, { capture: true, passive: true });
+document.addEventListener("touchend", () => { edgeTouch = false; }, { capture: true, passive: true });
 window.addEventListener("pagehide", () => { autoPauseOnLeave(); saveRunSession(); });
 
 /* What the top-left of a question says (build 303). The daily question
@@ -76121,9 +76127,9 @@ const NovaSound = (function(){
   ["click", "change", "input", "focus", "focusin", "blur", "focusout"].forEach(ev => window.addEventListener(ev, e => {
     if(e.target && hapticNodes.has(e.target)){ e.stopImmediatePropagation(); }
   }, true));
-  function taptic(){
+  function taptic(force){
     const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
-    if(now - hapticAt < TICK_GAP_MS) return false;
+    if(!force && now - hapticAt < TICK_GAP_MS) return false;
     const host = document.head || document.documentElement;
     if(!host) return false;
     hapticAt = now;
@@ -76429,8 +76435,10 @@ const NovaSound = (function(){
   /* haptics are not part of the Safari switch (build 327z14): the switch
      is for sound, which is what the freezes have followed */
   const hapticsWanted = () => !!(theme && (canTaptic() ? theme.haptics !== false : theme.vibrate));
-  function haptic(kind){
+  function haptic(kind, force){
     if(!kind || !hapticsWanted()) return;
+    /* build 376: a tick that must be tried again in a later moment of the same touch (a slide's landing, see the tab bar) */
+    if(force && canTaptic()){ taptic(true); return; }
     if(canTaptic()){
       if(downDispatch){
         /* one touch, one tick: the strongest kind it asked for */
@@ -103340,7 +103348,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-375";
+const APP_BUILD = "2026-11-01-376";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -125957,7 +125965,8 @@ async function lbArtPreload(){
   try{
     const G = lbGeomGet();
     if(!G || typeof leaderboardRows === "undefined" || !Array.isArray(leaderboardRows) || !leaderboardRows.length) return;
-    const pause = () => new Promise(r => quietIdle(() => r(), 2000));
+    /* build 376: not behind quietIdle's two quiet seconds - he opens the Leaderboard straight after launch, still tapping */
+    const pause = async () => { do{ await new Promise(r => setTimeout(r, 40)); } while(Date.now() < settleUntil || document.documentElement.classList.contains("tab-held")); };
     if(G.flip && G.flip.px > 0){
       const ids = [];
       leaderboardRows.forEach(e => { const c = e && e.avatarChar && e.avatarChar !== "nova" ? lbCharId(e.avatarChar) : null; if(c && ids.indexOf(c) < 0) ids.push(c); });
@@ -126008,6 +126017,9 @@ function lbArtQueue(rows, list){
     if(!rows._lbT0) rows._lbT0 = performance.now();
     const hold = rows._lbT0 + 450 - performance.now();
     if(hold > 0){ setTimeout(() => requestAnimationFrame(step), hold); return; }
+    /* build 376: AND NOT WHILE THE GLASS IS UP. The glass now lands once the board is drawn (build 375), and on the phone the rows filling
+       in at 450ms landed on its shrink ("the bubble loads and lags for the leaderboard tab"); the fill starts the moment it has landed */
+    if(document.querySelector("#bottomtabs-lens.is-up") && performance.now() - rows._lbT0 < 2500){ setTimeout(() => requestAnimationFrame(step), 50); return; }
     const sy = window.scrollY || 0;
     if(rows._lbSortY !== sy || !rows._lbSorted){ rows._lbSortY = sy; rows._lbSorted = true; q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid)); }
     let did = 0;
@@ -137283,6 +137295,31 @@ function tabPerfText(){
      whichever tab it's over when you lift, the way iOS's own Liquid
      Glass tab bars behave. */
   let tabDragActive = false;
+  /* build 376: WHAT IS BEHIND THE BAR HOLDS STILL WHILE A FINGER SLIDES. "The swipe/drag function works really well for calendar but lags
+     for all the other three tabs." Calendar has nothing moving behind the bar; the Leaderboard has rows' characters and flares, Profile
+     and Home their moving pieces there - and the bar is glass: every frame anything moves behind it, the blur of what is behind it is
+     made again, with the lens drawn over it. Build 373 paused the whole page and the page was seen to stop; now only the animations of
+     what is under the bar (and just above it) pause, behind the blur, and go on from where they were when the finger lets go. */
+  let barUnderPaused = [];
+  function barUnderPause(){
+    barUnderResume();
+    try{
+      const st = document.getElementById("stage"), br = bar.getBoundingClientRect();
+      if(!st || !br.height) return;
+      const top = br.top - 24, bottom = br.bottom + 8;
+      st.getAnimations({ subtree: true }).forEach(a => {
+        if(a.playState !== "running") return;
+        const t = a.effect && a.effect.target;
+        if(!t || !t.getBoundingClientRect) return;
+        const r = t.getBoundingClientRect();
+        if(r.width > 0 && r.bottom > top && r.top < bottom){ try{ a.pause(); barUnderPaused.push(a); }catch(e){} }
+      });
+    }catch(e){}
+  }
+  function barUnderResume(){
+    const list = barUnderPaused; barUnderPaused = [];
+    list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+  }
   let tabDragMoved = false;
   let tabDragPointerId = null;
   const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
@@ -137333,8 +137370,9 @@ function tabPerfText(){
        wanders off the bar mid-drag keeps delivering moves and the up. */
     if(!tabDragMoved){
       slider.classList.add("dragging"); try{ navrow.setPointerCapture(e.pointerId); }catch(err){}
-      /* build 373: the page under the bar holds still while the finger slides (see .tab-dragging) */
       document.documentElement.classList.add("tab-dragging");
+      /* build 376: only what is BEHIND THE BAR holds still while the finger slides */
+      barUnderPause();
     }
     tabDragMoved = true;
     /* The lens follows the finger (build 323, 325); the platter waits,
@@ -137347,6 +137385,7 @@ function tabPerfText(){
   function endTabDrag(e){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
+    barUnderResume();
     /* BEFORE the release navigates: the screen it brings in must run its own entrance */
     document.documentElement.classList.remove("tab-dragging");
     slider.classList.remove("dragging");
@@ -137366,6 +137405,7 @@ function tabPerfText(){
        tap layer says nothing for it (build 323) */
     if(tab && !tab.classList.contains("active") && bar.dataset.navigating !== "1" && typeof playSound === "function"){
       try{ playSound("ui.tab.bottom"); }catch(err){}
+      bar._dragLandAt = performance.now();
     }
     /* build 375: let go over the tab that is already lit, a slide changes nothing - it used to go through the tab's own tap, which
        scrolls a screen that is up back to its top ("if you swipe but don't end up swiping to another, the page scrolls back to the top") */
@@ -137379,6 +137419,14 @@ function tabPerfText(){
     else slideBubbleToActiveTab(true); // dropped somewhere odd (e.g. off the bar) — snap back
   }
   navrow.addEventListener("pointerup", endTabDrag);
+  /* build 376: THE TICK FOR A SLIDE'S LANDING, ON THE TOUCH'S OWN END. "The Haptic Touch feature, it works on the bottom tab taps but it
+     also needs to work when you swipe to one." A slide's landing ticked from its pointerup, and a finger that has moved is, it seems, not
+     a gesture iOS gives a haptic for there; the touchend of the same touch is tried as well (only after a slide that landed on another tab). */
+  navrow.addEventListener("touchend", () => {
+    if(performance.now() - (bar._dragLandAt || -1e9) > 250) return;
+    bar._dragLandAt = -1e9;
+    try{ NovaSound.haptic("tap", true); }catch(e){}
+  }, { passive: true });
   navrow.addEventListener("pointercancel", endTabDrag);
 
   /* ---- THE LENS, AS iOS 26 DRAWS IT (build 325) ----
@@ -137938,6 +137986,7 @@ function tabPerfText(){
   }
   function lensFinish(){
     lensT1 = null;
+    barUnderResume();
     document.documentElement.classList.remove("tab-held", "tab-dragging");
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
@@ -137952,6 +138001,7 @@ function tabPerfText(){
   }
   function lensHide(now){
     clearTimeout(lensT1); lensT1 = null;
+    barUnderResume();
     lensAwaitClear();
     document.documentElement.classList.remove("tab-held", "tab-dragging");
     lensStopFollow();

@@ -68,7 +68,9 @@ with sync_playwright() as pw:
     # (3) and (4): on a scrolled board, a slide out and back to the lit tab
     pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(2500)
     r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); window.scrollTo(0,500); await wait(400); const y0=window.scrollY;
-      const st=document.getElementById('stage'); const run=()=>st.getAnimations({subtree:true}).filter(a=>a.playState==='running').length;
+      /* (build 376: what is behind the bar pauses during a slide on purpose - counted here is what is above it) */
+      const st=document.getElementById('stage'), bt=document.querySelector('.bottomtabs').getBoundingClientRect().top;
+      const run=()=>st.getAnimations({subtree:true}).filter(a=>{ if(a.playState!=='running') return false; const t=a.effect&&a.effect.target; if(!t||!t.getBoundingClientRect) return false; const r=t.getBoundingClientRect(); return r.width>0 && r.bottom < bt-60; }).length;
       const nav=document.querySelector('.bottomtabs-navrow'), tab=document.getElementById('bottomtab-rewards'); const b=tab.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
       const mk=(t,xx)=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:83,isPrimary:true,clientX:xx,clientY:y});
       const before=run(); tab.dispatchEvent(mk('pointerdown',x)); await wait(60);
