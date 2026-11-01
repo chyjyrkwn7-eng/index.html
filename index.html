@@ -93999,6 +93999,7 @@ function incomingChatInvites(){
    change anyway. */
 let chatDock = null;
 let chatDockOpen = false;
+let chatDockOpenSeq = 0;   /* build 380: counts openings, so a close put off by a frame knows the dock was not opened again meanwhile */
 let chatDockTab = "friends";
 let chatTabBody = null;
 let notifTabBody = null;
@@ -94351,7 +94352,10 @@ function startChatDock(){
       const ms = Math.round(Math.max(180, Math.min(300, (ph - dragDy) / Math.max(1.6, dragVel || 0))));
       panel.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
       panel.style.transform = "translate3d(0,102%,0)";
-      closeChatDock();
+      /* build 380: the close's own work (state, sound, the dock's classes) a frame later, so the slide's first frames are its own - run in
+         the same task it held the transition's start back, and the sheet's first visible frame was already half way down */
+      const seq = chatDockOpenSeq;
+      requestAnimationFrame(() => setTimeout(() => { if(chatDockOpen && seq === chatDockOpenSeq) closeChatDock(); }, 0));
       clearTimeout(endDrag._t);
       endDrag._t = setTimeout(() => {
         panel.classList.remove("is-settling");
@@ -94546,7 +94550,7 @@ var chatDockPageAt = null;
 function toggleChatDock(){ chatDockOpen ? closeChatDock() : openChatDock(); }
 function openChatDock(){
   if(!chatDock) return;
-  chatDockOpen = true;
+  chatDockOpen = true; chatDockOpenSeq++;
   /* where the page stood (build 327): see closeChatDock */
   chatDockPageAt = { y: window.scrollY, screen: stage.firstElementChild };
   try{ if(chatDockKbSync) chatDockKbSync(); }catch(e){}

@@ -30057,3 +30057,12 @@ read layout inside rAF (the layout the frame does anyway).
   * check-b327z z9 ("no switch hidden") counted the closed chat dock's five switches - hidden because their buttons are. It now judges a
     switch with its control; every tab's switch is real, native and visible.
   Still failing, and not the tab bar: z10 B (the chat sheet's slide-off curve), z12 Q (the person card's glass), z14 D (the root's colour).
+- And the three that were not the tab bar, looked at too:
+  * check-b327z10 B (the chat sheet's slide off, "over 58% at a quarter is a leap"): REAL - closeChatDock() ran in the release's own task,
+    so the CSS transition started a frame late and the first frame the sheet was seen in was already 63-83% down. The close's work now
+    runs a frame later (rAF + timeout, and only if the dock was not opened again meanwhile: chatDockOpenSeq). Now 53-59% (the curve
+    itself is ~51% at a quarter; the gate's frames are 60Hz, so it sits on its 58% line - 6 of 8 runs pass). check-chat passes.
+  * check-b327z12 Q ("the top card is the person card's glass") was replaced in 327z ("THE THREE PROFILE CARDS, ONE FAMILY ... the
+    person card's surface (linear #14171C -> #0B0D11)"): Q now asserts that surface.
+  * check-b327z14 D ("the root's colour is the paper") was replaced in 338 (the root's colour is --band, the sky's top colour, for
+    Safari's status-bar band): D now asserts --band.
