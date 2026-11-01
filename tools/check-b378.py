@@ -5,7 +5,12 @@ reports each look's numbers, and leaves the page as it found it (no look's class
 move, and the board has at most half the layers it has as it is;
 (3) html.lb-hold: the loops are moved on a linear clock that holds each frame - the board looks the same frame for frame and every loop
 runs linear;
-(4) a board built while a look is on comes up in that look (every loop in it, not only the ones there when the look was turned on).
+(4) a board built while a look is on comes up in that look (every loop in it, not only the ones there when the look was turned on);
+(5) a real touch slide that starts on a tab's native switch (iPhone-only; put in by hand) opens the screen it is let go over, the switches
+stay in the page the whole time, and the touch's end reaches the bar (the landing's tick);
+(6) a board character never recorded here is not recorded while nobody is on the board (a test is quiet time);
+(7) while a test is on the screen the ready loops hold no decoded pictures, and get them back after;
+(8) the mark the page leaves every 6s while in use carries what it held (so an end while in use says it).
 Run:  python3 tools/check-b378.py   (--against: copy the old index.html and version.json over first)"""
 import os, sys, time, io
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -75,6 +80,46 @@ with sync_playwright() as pw:
     switched = pg.evaluate("()=>{ const a=[...document.querySelectorAll(%s)]; return [a.length, a.filter(i=>getComputedStyle(i).animationName.startsWith('rk-hold')).length]; }" % LOOPS)
     chk("a board built (%s) or switched (%s) while a look is on comes up in it" % (built, switched), built[0] >= 10 and built[1] == built[0] and switched[0] >= 10 and switched[1] == switched[0], [built, switched])
     pg.evaluate("()=>document.documentElement.classList.remove('lb-hold')"); pg.wait_for_timeout(300)
+    # (5) a real touch slide that starts on a tab's switch
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
+    cdp = ctx.new_cdp_session(pg); cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
+    ADD = "()=>{ [...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].forEach(t=>{ if(!t.querySelector(':scope > .nova-hsw')){ const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.className='nova-hsw'; t.setAttribute('data-hsw',''); t.appendChild(i); } }); }"
+    pg.evaluate(ADD); pg.wait_for_timeout(200)
+    pg.evaluate("()=>{ window.__hc=[]; window.__hreal=NovaSound.haptic; NovaSound.haptic=(k,f)=>{ __hc.push(!!f); }; window.__swMin=99; const n=()=>document.querySelectorAll('.bottomtabs-navrow .bottomtab > .nova-hsw').length; const tick=()=>{ __swMin=Math.min(__swMin,n()); if(window.__swWatch) requestAnimationFrame(tick); }; window.__swWatch=true; requestAnimationFrame(tick); }")
+    def cen(i): return pg.evaluate("(id)=>{const b=document.getElementById(id).getBoundingClientRect(); return [b.left+b.width/2,b.top+b.height/2];}", i)
+    slides = []
+    for a1, b1, scr in [("bottomtab-home", "bottomtab-profile", ".screen-profile"), ("bottomtab-profile", "bottomtab-calendar", ".screen-calendar-tab"), ("bottomtab-calendar", "bottomtab-home", ".screen-home-actual")]:
+        pg.evaluate(ADD)
+        x0, y = cen(a1); x1, _ = cen(b1)
+        on_switch = pg.evaluate("(p)=>{ const e=document.elementFromPoint(p[0],p[1]); return !!(e && e.classList.contains('nova-hsw')); }", [x0, y])
+        n0 = pg.evaluate("()=>__hc.filter(Boolean).length")
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y}]}); pg.wait_for_timeout(120)
+        for i in range(1, 26):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x0 + (x1 - x0) * i / 25, "y": y}]}); pg.wait_for_timeout(16)
+        pg.wait_for_timeout(80)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}); pg.wait_for_timeout(1500)
+        slides.append([on_switch, pg.evaluate("(s)=>!!document.querySelector(s)", scr), pg.evaluate("()=>__hc.filter(Boolean).length") - n0])
+    sw_min = pg.evaluate("()=>{ window.__swWatch=false; NovaSound.haptic=window.__hreal; return __swMin; }")
+    cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": False}); cdp.detach()
+    chk("a real touch slide that starts on a tab's switch opens the screen it lands on, with its tick ([on switch, screen, ticks] %s), and the switches stay (fewest seen %s)" % (slides, sw_min),
+        all(sl[0] and sl[1] and sl[2] >= 1 for sl in slides) and sw_min >= 4, [slides, sw_min])
+    # (6) nobody on the board: a character never recorded is not recorded
+    pg.evaluate("""()=>{ const ids=['alien','robot','dragon']; const rows=[]; for(let i=0;i<12;i++){ rows.push(Object.assign({pub:'yy'+i, firstName:'Cadet'+i, avatarChar:ids[i%3]}, boardNumbersOf(store), {weekPoints:900-i, hundos:9, correct:900, level:9, badges:2})); } leaderboardRows = rows; showProfile(); lbArtPreloadSoon(); }""")
+    pg.wait_for_timeout(12000)
+    rec = pg.evaluate("()=>{ const G=lbGeomGet(); if(!G||!G.flip) return 'nogeom'; return ['alien','robot','dragon'].filter(c=>{ const d=charAnimDrawings.get(c); const k=d&&(d.id+'|'+G.flip.px); return k && (charAnimReady.has(k) || charAnimSheets.has(k) || charRecPending.has(k)); }).length + (charRecBusy ? 10 : 0); }")
+    chk("with nobody on the board, characters never recorded here are not recorded (%s started)" % rec, rec == 0, rec)
+    # (7) a test holds no decoded sheets
+    pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(3000)
+    t7 = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const held=()=>[...charAnimReady.values()].filter(sp=>sp&&sp.pre).length;
+      const before=held(); const unit=(QUESTIONS[0].topic||'').trim(); cfg.source='all'; cfg.mode='drill'; cfg.units=[unit];
+      const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit).slice(0,5); beginRun(idx);
+      for(let t=0;t<80 && !document.querySelector('.qpanel');t++) await wait(100);
+      await wait(6800); const during=held(); const onTest=!!document.querySelector('.qpanel');
+      showHome(); await wait(7500); return { before, onTest, during, after: held() }; }""")
+    chk("while a test is up the ready loops hold no decoded pictures, and get them back after (%s)" % (t7,), t7["before"] >= 2 and t7["onTest"] and t7["during"] == 0 and t7["after"] >= t7["before"] - 1, t7)
+    # (8) the in-use mark carries the footprint
+    mk = pg.evaluate("()=>JSON.parse(localStorage.getItem('class26e.session')||'null')")
+    chk("the in-use mark carries what the page held (%s)" % (mk,), mk and mk.get("state") == "visible" and (mk.get("fp") or "").startswith("el") and " sh" in mk.get("fp", ""), mk)
     # (1) the test itself
     pg.evaluate("()=>showBugReport()"); pg.wait_for_timeout(500)
     btn = pg.evaluate("()=>[...document.querySelectorAll('.screen-bugreport button')].some(b=>/Leaderboard speed/i.test(b.textContent))")

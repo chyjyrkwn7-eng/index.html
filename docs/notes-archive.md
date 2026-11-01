@@ -29877,4 +29877,32 @@ the phone. Neither can be confirmed here, so 378 measures it on the phone:
   [b:base] (and near [b:noloops]) = paint the board's loops; [b:hold] with the most free page (f) = hold-frame keyframes for every
   stepped loop in the app (board, Home's flares, the tab bar's character).
 
-Gate: tools/check-b378.py (4 parts; all 4 FAIL against 377).
+### 378, second half: his 08:24 recording of 377 (slide broken) and a page that ended mid-test
+
+"Sliding now is broken, if you slide to another tab it won't actually open that screen. Even when sliding does work it's still not
+smooth at all. Big big big bug, middle of my test the app just white screened, showed the loading splash screen, and sent me back to
+home." Read frame by frame: five slides Home -> Profile in a row, the glass went over Profile each time and came back to Home, and the
+screen never changed; slides from other tabs sometimes landed. NOTE: his battery reads 1% in that recording (grey icon, dimmed screen) -
+iOS throttles hard there, so its smoothness numbers (bar updated ~20-40 times a second mid-slide) are not a fair read of the build.
+
+- THE SLIDE: build 377's tabSwitchesOut() took the tabs' native haptic switches (.nova-hsw, iPhone only - hswSync attaches them only
+  where canTaptic()) out of the page as a slide began. The switch a finger lands on IS the touch's target; on iOS a touch whose target
+  leaves the page did not finish the slide (the release came back as a cancel: lensRelease(null), the glass home, no navigation). Even
+  in Chromium the touch's END then goes to the removed switch and never bubbles to the bar, which is where build 376's landing tick
+  listens. The sandbox never saw any of it because the switches are not attached off an iPhone. Now tabSwitchesOut() does nothing; the
+  switches stay. (Also: hsw's own MutationObserver re-attached a NEW switch to a host whose switch was removed, so 377's removal churned
+  switches mid-slide besides.)
+- THE PAGE THAT ENDED: build 377 recorded never-recorded board characters in "the quiet after launch" (charRecBg: 5s without a touch) -
+  and a test question being read is 5s without a touch. A recording is the heaviest thing the app does to memory (a 5-8MB canvas and
+  144 decoded svg frames). That is gone: lbArtPreload only reads saved sheets back; recording happens on the board, as before 377.
+  And while a test is on the screen (.qpanel / .pausepanel) the ready loops let go of their decoded pictures (sp.pre, kept since 377 for
+  the board's first frame), checked every 6s (testTrimSheets) and at load (charAnimSheetFromBlob); decoded again once the test is gone.
+- NEXT TIME IT HAPPENS: the 6s in-use mark (class26e.session) now carries the same footprint as the hide (el/img/mp/cv/sh), plus
+  "rec<n>" while a recording is running and "tt" while trimmed for a test, so an ENDED-visible line in the next report says what the page
+  held and whether it was recording. (Before, an in-use mark had no footprint.)
+- tools/check-bugreport.py clicked the FIRST .bugreport-send, which since build 349 is "Test tab speed" - it timed out on every build
+  since; it now clicks "Send report". check-b377 parts (2) and (4) are reversed (marked in its docstring).
+
+Gate: tools/check-b378.py (8 parts; all 8 FAIL against 377): (5) a real touch slide (CDP touch emulation) that starts ON a tab's switch
+lands on the screen it is let go over with its tick, switches never fewer; (6) no recording with nobody on the board; (7) a test holds no
+decoded pictures, back after; (8) the in-use mark carries the footprint.

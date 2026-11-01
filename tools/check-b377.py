@@ -1,7 +1,7 @@
 """Build 377: (1) when the page is hidden it notes what it held (elements, images, canvases, sheets) with the hide, and the next launch puts it
-in the ended log; (2) the board's characters that have never been recorded on this device are recorded in the quiet after launch, without
+in the ended log; (2) [reversed in 378: NOT recorded] the board's characters that have never been recorded on this device are recorded in the quiet after launch, without
 anybody looking at the board; (3) a ready sheet keeps its decoded picture while the app is up and lets it go when the app is hidden;
-(4) a slide across the bar takes the tabs' native switches away while it lasts (no ticks on the way) and puts them back; (5) a board left in
+(4) [reversed in 378: they stay] a slide across the bar takes the tabs' native switches away while it lasts (no ticks on the way) and puts them back; (5) a board left in
 the background keeps its art; (6) a board switch brings the screenful back as loops only (no drawing under them, nothing queued) and its
 flares as loops only; (7) the bar is see-through glass (a blur of at most 10px over a body at most 30% dark); (8) what a new screen puts off until it has settled
 waits until the glass has handed over to the platter (the settle window is still open at the hand-over).
@@ -58,17 +58,18 @@ with sync_playwright() as pw:
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     log = pg.evaluate("()=>JSON.parse(localStorage.getItem('class26e.crashlog')||'[]')")
     chk("the next launch's ended log carries it (%s)" % (log[-1:] if log else log,), bool(log) and "ENDED-hidden" in log[-1] and " el" in log[-1] and "mp" in log[-1], log)
-    # (2) a character never recorded here is recorded in the quiet after launch, nobody on the board
+    # (2) REVERSED in build 378 (a recording in the quiet ran during a test; the page ended): a character never recorded here is NOT
+    # recorded with nobody on the board
     pg.evaluate(fill("['ninja','wizard','ghost','alien']"))
     before = pg.evaluate("()=>charAnimReady.size")
     pg.evaluate("()=>{ showProfile(); if(typeof lbArtPreloadSoon==='function') lbArtPreloadSoon(); }")
     t0 = time.time(); now = before
-    while time.time() - t0 < 120:
+    while time.time() - t0 < 25:
         pg.wait_for_timeout(2000)
         now = pg.evaluate("()=>{ const G=lbGeomGet(); if(!G||!G.flip) return -1; const d=charAnimDrawings.get('alien'); return d && charAnimReady.has(d.id+'|'+G.flip.px) ? 100 : charAnimReady.size; }")
         if now == 100: break
-    chk("a board character never recorded on this device is recorded after launch with nobody on the board (%s)" % ("yes" if now == 100 else "no: %s ready" % now), now == 100, [before, now])
-    # (4) a slide takes the tabs' native switches away while it lasts (iPhone-only in the app; put in by hand here) and puts them back
+    chk("(build 378) a board character never recorded on this device is not recorded with nobody on the board (%s)" % ("recorded" if now == 100 else "not recorded: %s ready" % now), now != 100 and now != -1, [before, now])
+    # (4) REVERSED in build 378 (taking the switch under the finger away broke the slide on the phone): a slide leaves the switches in place
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
     hs = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const tabs=[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].filter(t=>t.offsetWidth);
       tabs.forEach(t=>{ if(!t.querySelector(':scope > .nova-hsw')){ const i=document.createElement('input'); i.type='checkbox'; i.className='nova-hsw'; t.appendChild(i); } });
@@ -79,7 +80,7 @@ with sync_playwright() as pw:
       const before=n(); a.dispatchEvent(mk('pointerdown',x0)); await wait(60); for(let i=1;i<=10;i++){ nav.dispatchEvent(mk('pointermove',x0+(x1-x0)*i/20)); await wait(16); }
       const during=n(); for(let i=9;i>=0;i--){ nav.dispatchEvent(mk('pointermove',x0+(x1-x0)*i/20)); await wait(16); } nav.dispatchEvent(mk('pointerup',x0)); await wait(600);
       return { before, during, after: n() }; }""")
-    chk("a slide takes the tabs' switches away while it lasts and puts them back (%s)" % (hs,), hs["before"] >= 4 and hs["during"] == 0 and hs["after"] == hs["before"], hs)
+    chk("(build 378) a slide leaves the tabs' switches where they are (%s)" % (hs,), hs["before"] >= 4 and hs["during"] == hs["before"] and hs["after"] == hs["before"], hs)
     # (8) the settle window outlasts the landing
     st = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome(); await wait(2500);
       const tab=document.getElementById('bottomtab-calendar'); const b=tab.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
