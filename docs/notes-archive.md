@@ -29906,3 +29906,78 @@ iOS throttles hard there, so its smoothness numbers (bar updated ~20-40 times a 
 Gate: tools/check-b378.py (8 parts; all 8 FAIL against 377): (5) a real touch slide (CDP touch emulation) that starts ON a tab's switch
 lands on the screen it is let go over with its tick, switches never fewer; (6) no recording with nobody on the board; (7) a test holds no
 decoded pictures, back after; (8) the in-use mark carries the footprint.
+
+## Build 2026-11-01-379 - his 378 Leaderboard speed test, read; only the rows on screen come up moving
+
+His 378 runs (16:10-16:13 UTC, build 378, battery fine this time):
+- Leaderboard speed test, median tap-to-second-frame (p) and the 1.5s after it (n = frames drawn of 90, s = slow frames):
+  base p448 n90 s1 | paint p306 n50 s59 | hold p975 w266 | noloops p218 n89 | nofx p422 | noglass p451 | norows p116; Profile p165-209.
+  So: the board's moving art (character and flare loops) is ~230ms of its first draw, ~9ms a loop. Painting them (lb-paint) draws the
+  board 140ms sooner but its idle frames fall to ~33 a second (every step repaints into the row's layer). Held frames (lb-hold) are far
+  worse - WebKit/CA with 300+ keyframes per loop - and are out. The round mask / screen blend / filter and the screen's blurs cost
+  nothing measurable.
+- His 10:13 recording (slides and taps across all four tabs): every slide landed on the screen it was let go over (the 378 fix); the glass
+  updated ~60 times a second (Safari's most) on most lifts, ~40 on several toward Leaderboard/Calendar.
+- Ended log: "ENDED-visible test 2s-ago b377" - the page that ended mid-test was 377 on a test, as he said (378 took out the background
+  recording that ran in a test's quiet).
+
+379:
+- ONLY THE ROWS ON THE SCREEN come up with their loops in the mounting task: the board counts the rows it shows at its top on each visit
+  (lbCountVisible, two frames after the build; kept in lbGeom as .vis) and lbKnownRows() is that + 1 (16 before any count; never more).
+  Sandbox Pro Max: 10 rows shown -> 11 loops at mount (16 before). The rest are built bare and filled from the queue after the glass
+  lands - and lbFillArt now gives a row whose loop is ready the loop alone (lbFlipKnown) and its flare as a loop (lbMarkKnown), never the
+  ~250-part drawing under it (rows 17+ near the view used to get drawings).
+- The speed test's looks are now base, paint, paintwin, noloops, norows. paintwin = html.lb-paint.lb-win: painted loops with each loop's
+  window (.char-flip-play / .rk-frame) a small layer of its own, so a step repaints only that window - the question is whether that keeps
+  paint's sooner first draw without its idle cost. Both still OFF by default.
+
+Gate: tools/check-b379.py (4 parts; all 4 FAIL against 378). check-b378 part (1) accepts the new look list.
+
+### 379, second half: his 10:28 recording of 378 - the glass hangs over the Leaderboard; the board now comes up still
+
+"I did the tests thing and I sent videos of the bottom tab still not working properly.. We have been working on this bottom tab for
+almost a week." His 10:28 recording (378, battery 82%), read per frame (header label for the screen, the lens off the bar strip):
+taps to Calendar, Profile and Home land in ~200-300ms; a tap to the Leaderboard leaves the glass up, swollen over it, for 600-800ms
+(the 375 await: the glass lands once the new screen is drawn, at most LENS_AWAIT_MAX 650ms after the release) - that is what reads
+as the bar not working. His 16:29 timings agree: the Leaderboard's p (tap to the second frame) 302-559ms, Calendar 48-76.
+
+So the bar's last problem is the board's first draw, and his 378 speed test says what it is: the loops on layers (448 -> 218ms
+without them). Painting them drew the board in 306ms - the idle cost of paint was only its stepping. So now:
+- THE BOARD COMES UP STILL (.rank-rows.lb-still): every loop is its painted left/top twin (rk-pos-*, lbPaintKF), PAUSED - the frame
+  the shared clock says, no layer, nothing repainted. lbStillGo waits for two frames and then until the glass is down (not is-up,
+  settle passed, no slide; at most 2.5s), and gives the rows their moving loops back (.lb-go) one row a frame - a row the browser
+  skips (.is-offscreen) costs nothing and does not count - and drops lb-still when every row has gone. Sandbox: still while the glass
+  is up (0 loops on layers), landed ~520ms, first loop moving ~610ms, all 36 by ~860ms, never more than one row's two loops a frame.
+- The speed test's [b:base] is this; [b:nostill] (html.lb-nostill) is 378's board (moving from the first frame), so the next run
+  reads the gain directly. [b:paintwin] stays for comparison.
+
+Gate: tools/check-b379.py part (5) (fails against 378).
+
+### 379: Arrest, Search, and Seizure #31 / #55 - each keeps the guide's own answer
+
+Madison (screenshot of #31 on a Drill, marked C with the red "Being verified" note, and the guide "Arrest, Search, and Seizure Study Test
+Questions, reviewed 8-28-26"): "In the arrest search and seizure unit there are two of these questions. Ensure they are each marked
+correctly even though it's the same question with two different answers, don't change the answers.. not sure why you did that."
+The guide: "31 & 55. Consent is considered involuntary if it is obtained by duress, coercion, or __________" marks D (Revoked by the person
+granting consent); "55 & 31. ... coercion, or" marks C (Is a mere acquiescence to authority claimed by the officer). Build 325 had changed
+#31 to C to agree with #55 (a judgment on the law - against the rule that answers are word for word the guide), and build 328 put the red
+verifyNote on both. Now #31 is answer 3 (D) again, #55 stays 2 (C), and neither has a note. Answer is not part of KEYS, so nobody's
+progress on either question is orphaned. The whole unit was compared with the guide (120 questions, parsed from the docx: question
+number, choices, highlighted answer): #31 was the only answer that differed. check-b328-level1 328d reversed; check-b379 part (6).
+
+Follow-up, same build: "Keep the notes, cause we aren't sure abt it yet." Both keep the red verifyNote; each names the answer THAT question
+counts (#31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer"). check-b328-level1
+328d and check-b379 (6) assert both answers and both notes.
+
+### 379: a tap that ticked but did not pick the answer
+
+His 11:07 recording (Drill, question 93): he presses C several times - it dips, the tick plays - and nothing is picked, until a later
+press finally counts. Every answer choice carries a native switch (.nova-hsw, iPhone only) for its tick; the tick is the switch being
+toggled, and iOS can toggle it - a press that rolls the finger is a drag of the switch's thumb - WITHOUT sending the click that the
+choice's own handler (choose) waits for. (His UA reads iPhone OS 18_7, which iOS 26 also reports - the switch tick is the 26.5 path.)
+The choice's handler itself had nothing that drops a tap (only paused/cleared guards).
+Fix (in the hsw layer, next to the drag rule): a touch that began on a switch, did not move 10px (not a drag - those are still
+swallowed, so a scroll that starts on a choice never picks it) and ended with NO click at all within 140ms is clicked on its control
+(host.click()); a trusted click that arrives late on the same switch within 700ms of that is the same tap and is swallowed. Each rescue
+is counted in class26e.hswrescue and shows in "Send tab timings" as "taps rescued N" - so the next report says how often the phone
+dropped one. Gate: check-b379 (7) - real tap picks once, touch with no click still picks, slide picks nothing (fails against 378).

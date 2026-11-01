@@ -120,7 +120,7 @@ with sync_playwright() as pw:
     # (8) the in-use mark carries the footprint
     mk = pg.evaluate("()=>JSON.parse(localStorage.getItem('class26e.session')||'null')")
     chk("the in-use mark carries what the page held (%s)" % (mk,), mk and mk.get("state") == "visible" and (mk.get("fp") or "").startswith("el") and " sh" in mk.get("fp", ""), mk)
-    # (1) the test itself
+    # (1) the test itself (build 379 changed its looks to base, paint, paintwin, noloops, norows - his 378 run settled the others)
     pg.evaluate("()=>showBugReport()"); pg.wait_for_timeout(500)
     btn = pg.evaluate("()=>[...document.querySelectorAll('.screen-bugreport button')].some(b=>/Leaderboard speed/i.test(b.textContent))")
     res = pg.evaluate("async()=>{ if(typeof runBoardTest!=='function') return null; document.documentElement.classList.add('lb-paint'); const r=await runBoardTest(); const c=document.documentElement.classList; return [r.text, c.contains('lb-paint'), c.contains('lb-hold'), !!document.getElementById('board-test-look')]; }")
@@ -128,7 +128,7 @@ with sync_playwright() as pw:
     looks = re.findall(r"\[b:(\w+)\] r p(\d+) \(([\d,]+)\) idle w(\d+)/s(\d+)/n(\d+)/f(\d+) \| p p(\d+)", res[0]) if res else []
     names = [l[0] for l in looks]
     chk("Report a bug has the Leaderboard speed test (%s); it reports every look three times (%s) and leaves the page as it was (%s)" % (btn, names, res[1:] if res else res),
-        btn and names == ["base", "paint", "hold", "noloops", "nofx", "noglass", "norows"] and all(len(l[2].split(",")) == 3 and int(l[1]) > 0 and int(l[7]) > 0 for l in looks) and res[1] is True and res[2] is False and res[3] is False,
+        btn and names in (["base", "paint", "hold", "noloops", "nofx", "noglass", "norows"], ["base", "paint", "paintwin", "noloops", "norows"], ["base", "nostill", "paintwin", "noloops", "norows"]) and all(len(l[2].split(",")) == 3 and int(l[1]) > 0 and int(l[7]) > 0 for l in looks) and res[1] is True and res[2] is False and res[3] is False,
         res)
     pg.evaluate("()=>document.documentElement.classList.remove('lb-paint')")
     br.close()

@@ -8,7 +8,7 @@
 3. The guide's changes: Penal Code #243 counts False Alarm or Report; Arrest, Search
    and Seizure #66 has its lost choice back; Sexual Assault's fifteen dropped
    questions are out of the unit and the daily pool, and #47-51 are in.
-4. Arrest, Search and Seizure #31 and #55 show the red "Being verified" note once
+4. Arrest, Search and Seizure #31 and #55 show the red "Being verified" note once (379: each counts the guide's own answer; its note names that answer)
    answered in a Drill.
 5. Badges: 10 / 8 / 6 / 3 / 2 hundos by unit size; every unit has its own shape;
    24 badges sit six by four.
@@ -114,12 +114,14 @@ with sync_playwright() as p:
       return out; }""")
     check("500 days of daily questions, none retired", daily == [], daily[:4])
 
-    print("\n328d. the answer being verified says so in red")
+    print("\n328d. the answer being verified says so in red (build 379: each twin counts the guide's own answer, and its note names it)")
     note = pg.evaluate("""() => { const f = s => QUESTIONS.find(q => q.topic === 'Arrest, Search, and Seizure' && q.src === s);
-      return [31, 55].map(s => { const n = buildBankNote(f(s)); return n ? n.textContent : null; }); }""")
-    check("#31 and #55 each draw a red note naming the instructor", all(n and "instructor" in n and "verif" in n.lower() for n in note), note)
+      return [31, 55].map(s => { const q = f(s), n = buildBankNote(q); return [q.choices[q.answer], n ? n.textContent : null]; }); }""")
+    check("#31 and #55 each draw a red note naming the instructor and the answer that question counts",
+          note[0][0] == "Revoked by the person granting consent" and note[1][0] == "Is a mere acquiescence to authority claimed by the officer"
+          and all(n[1] and "instructor" in n[1] and "verif" in n[1].lower() and n[0] in n[1] for n in note), note)
     check("a plain question draws none", pg.evaluate("() => buildBankNote(QUESTIONS[0]) === null"))
-    color = pg.evaluate("""() => { const n = buildBankNote(QUESTIONS.find(q => q.verifyNote)); document.body.appendChild(n);
+    color = pg.evaluate("""() => { const n = buildBankNote(Object.assign({}, QUESTIONS[0], { verifyNote: 'An admin is confirming this answer with the instructor.' })); document.body.appendChild(n);
       const c = getComputedStyle(n.querySelector('.bank-note-text')).color; n.remove(); return c; }""")
     rgb = [int(x) for x in color.strip("rgba() ").split(",")[:3]] if color else [0, 0, 0]
     check("the note is the red bank-note (a red cast: R well above G and B)", rgb[0] > rgb[1] + 20 and rgb[0] > rgb[2] + 10, color)
