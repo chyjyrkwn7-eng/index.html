@@ -29796,3 +29796,20 @@ the app switcher still shows the test question; haptic on a swipe; swipe lags on
   visible handler defers ~2s); "Send tab timings" right after it happens carries ended: (iOS ended the page = cold start) and resume:
   (first frame / steady frames / drift of the planets' loop) to tell which.
 check-b376.py (5 parts) and check-b376-b.py fail on 375; check-b375 (3) now counts only the animations above the bar.
+
+## Build 377 (2026-11-01): the board's characters recorded in the quiet; decoded sheets kept while up; what the page held, noted at the hide
+
+His report (05:51, b376): resume first 4-100ms, steady 37-462ms; ended: hidden 0-3s after leaving on 365/368/371/373/375 (the black screen =
+the page ended as it was put away, a cold start on return). His notes: Profile's glass slow to shrink, Leaderboard much worse; the board
+"takes a minute to load" and still does not populate; swipe best on Calendar > Home > Profile > Leaderboard; planets on return still
+noticeable; black screen still too long.
+- RECORDED IN THE QUIET: a board character gets a sheet only once it has been recorded (5-50s each on a phone, one at a time, only while the
+  board was up and wanted it) - so most classmates' rows opened bare and filled from the queue. lbArtPreload now queues every board
+  character with no saved sheet (charRecBg: priority 2, behind anything on screen) - recorded in the recorder's slices, wherever he is,
+  once per device (Cache Storage).
+- DECODED WHILE UP: charAnimSheetFromBlob keeps `pre` (the decoded Image) on the sheet; a board row's pre-attached loop is then not decoded
+  inside the board's first frame (which the glass waits on since 375). trimForBackground drops every sp.pre.
+- NOTED AT THE HIDE: sessionMark("hidden") (now after the trim) stores fp = "el<elements> img<n>/<decoded mp> cv<canvas mp> sh<sheets>"; the
+  next launch's ENDED line carries it. screen "test" for a question/pause panel. To read the next report's ended: lines.
+- PLANETS ON RETURN: loopsBack resumes after 2 steady frames (was 4) or ~40 tries (was 90).
+check-b377.py (4 parts) fails on 376.
