@@ -15151,6 +15151,9 @@
      Stepped left/top only paints the one frame in view. Off unless the Leaderboard speed test turns it on for one of its looks. */
   html.lb-paint .rank-rows .char-flip-play img, html.lb-paint .rank-rows .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; }
   html.lb-paint .rank-rows .rk-frame img{ position:relative; }
+  /* build 379: painted, each loop's window on a small layer of its own - a step repaints only that window, not the row under it (his
+     378 test: painted loops drew the board 140ms sooner but its idle frames fell from 90 to 50 in 1.5s) */
+  html.lb-paint.lb-win .rank-rows .char-flip-play, html.lb-paint.lb-win .rank-rows .rk-frame{ will-change:transform; }
   /* ...or kept a layer, but moved on a linear clock that holds each frame (html.lb-hold): WebKit hands no steps() animation to the
      compositor, so a stepped loop is moved by the page itself every frame; held frames on a linear clock look the same and can be. */
   html.lb-hold .rank-rows .char-flip-play img, html.lb-hold .rank-rows .rk-frame img{ animation-name:var(--hk, none) !important; animation-timing-function:linear !important; }
@@ -103391,7 +103394,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-378";
+const APP_BUILD = "2026-11-01-379";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114250,23 +114253,22 @@ async function sendTabTimings(onDone){
 }
 /* build 378: THE LEADERBOARD SPEED TEST. "The leaderboard still takes a minute can you tell?" - his 377 timings: the Leaderboard's screen is
    built in 5-18ms but first drawn 265-370ms after the tap (Profile ~110, Calendar ~50), so it is the drawing, which only the phone can
-   measure. Taps Leaderboard then Profile, three rounds of seven looks taken in turn: [b:base] as it is; [b:paint] the loops painted
-   (html.lb-paint) instead of each sheet a layer; [b:hold] the loops on a linear clock that holds each frame (html.lb-hold), which the
-   compositor can run; [b:noloops] no loops at all; [b:nofx] the loops without their round mask, blend and filter; [b:noglass] no
-   blurred surfaces on the screen; [b:norows] no rows (the floor). Per look: the median and each of the Leaderboard's tap-to-second-
+   measure. Taps Leaderboard then Profile, three rounds of the looks taken in turn: [b:base] as it is; [b:paint] the loops painted
+   (html.lb-paint) instead of each sheet a layer; [b:paintwin] (build 379) painted, each loop's window a small layer of its own
+   (html.lb-paint.lb-win); [b:noloops] no loops at all; [b:norows] no rows (the floor). His 378 run dropped [b:hold] (975ms, idle
+   frames 266ms), [b:nofx] and [b:noglass] (no different from base). Per look: the median and each of the Leaderboard's tap-to-second-
    frame (p); in the 1.5s after it, the worst frame w, slow frames s, frames drawn n and how free the page was (f: message round trips
    per 10ms - higher is freer); and Profile's p. */
 let boardTestRunning = false;
 const BOARD_TEST_NOLOOPS = ".rank-rows .char-flip-play,.rank-rows .cosmic-rank-anim{display:none !important}";
 const BOARD_TEST_NOFX = ".rank-rows .char-flip-play{-webkit-mask-image:none !important;mask-image:none !important}.rank-rows .cosmic-rank-anim,.rank-rows svg.cosmic-rank-emblem{mix-blend-mode:normal !important;filter:none !important}";
 const BOARD_TEST_LOOKS = [
-  ["base", "", ""], ["paint", "", "lb-paint"], ["hold", "", "lb-hold"], ["noloops", BOARD_TEST_NOLOOPS, ""], ["nofx", BOARD_TEST_NOFX, ""],
-  ["noglass", ".screen-rankings,.screen-rankings *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}", ""],
+  ["base", "", ""], ["paint", "", "lb-paint"], ["paintwin", "", "lb-paint lb-win"], ["noloops", BOARD_TEST_NOLOOPS, ""],
   ["norows", ".screen-rankings .rank-rows{display:none !important}", ""]];
 async function runBoardTest(onDone){
   if(boardTestRunning || lagTestRunning) return;
   boardTestRunning = true;
-  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold"].filter(c => root.classList.contains(c));
+  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold", "lb-win"].filter(c => root.classList.contains(c));
   const note = document.createElement("div");
   note.setAttribute("aria-hidden", "true");
   note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none;white-space:nowrap";
@@ -114308,7 +114310,7 @@ async function runBoardTest(onDone){
     for(let round = 0; round < 3; round++){
       for(const [name, css, mode] of BOARD_TEST_LOOKS){
         note.textContent = "Testing Leaderboard speed (" + (round + 1) + "/3 " + name + ")… don't touch the screen";
-        st.textContent = css; root.classList.remove("lb-paint", "lb-hold"); if(mode) root.classList.add(mode);
+        st.textContent = css; root.classList.remove("lb-paint", "lb-hold", "lb-win"); if(mode) mode.split(" ").forEach(c => root.classList.add(c));
         await wait(250);
         const g = got[name];
         g.p.push(await visit("rewards"));
@@ -114324,7 +114326,7 @@ async function runBoardTest(onDone){
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ st.remove(); note.remove(); }catch(e){}
-  root.classList.remove("lb-paint", "lb-hold"); modesWas.forEach(c => root.classList.add(c));
+  root.classList.remove("lb-paint", "lb-hold", "lb-win"); modesWas.forEach(c => root.classList.add(c));
   boardTestRunning = false;
   const text = rows.join(" | ");
   let sent = false;
@@ -125770,6 +125772,8 @@ function renderRankingRows(rows, entries, board, opts){
      skipped (.is-offscreen, content-visibility:hidden) with a row's height held, and the observer brings them in as they
      come within 240px. A tall screen (an iPad) gets more rows drawn up front. */
   const lbDrawnFirst = Math.ceil((window.innerHeight || 800) / 60) + 3;
+  const knownRows = lbKnownRows();
+  requestAnimationFrame(() => requestAnimationFrame(() => lbCountVisible(rows)));
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
     row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
@@ -125821,7 +125825,7 @@ function renderRankingRows(rows, entries, board, opts){
        ready takes a new frame holding only the loop (its place in the loop kept, so nothing jumps); the drawing goes back in from the
        queue, under it, a little at a time. */
     let keptPhase = null;
-    if(avatarWrap && rowIdx < LB_KNOWN_ROWS && rowIdx >= artNow && avatarWrap.querySelector("svg") && avatarWrap.querySelector(".char-flip-play") && lbFlipReady(entry.avatarChar)){
+    if(avatarWrap && rowIdx < knownRows && rowIdx >= artNow && avatarWrap.querySelector("svg") && avatarWrap.querySelector(".char-flip-play") && lbFlipReady(entry.avatarChar)){
       keptPhase = avatarWrap.dataset.flipPhase; keptAvatars.delete(keptKey); avatarWrap = null;
     }
     if(avatarWrap){ keptAvatars.delete(keptKey); charFlipResync(avatarWrap); }
@@ -125837,7 +125841,7 @@ function renderRankingRows(rows, entries, board, opts){
          first screenful is built as its words and numbers with an empty frame where the character and the flare go
          (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
          quiet after the list is up. */
-      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase; if(rowIdx < LB_KNOWN_ROWS) lbFlipKnown(avatarWrap, entry.avatarChar); }
+      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase; if(rowIdx < knownRows) lbFlipKnown(avatarWrap, entry.avatarChar); }
       else {
         avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
         /* Alive on the boards (build 304): "make all characters in the
@@ -125878,7 +125882,7 @@ function renderRankingRows(rows, entries, board, opts){
        on one number and keep their line. */
     let cols = null;
     if(board.key === "overall" || third){
-      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= artNow, rowIdx < LB_KNOWN_ROWS);
+      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= artNow, rowIdx < knownRows);
       if(third) cols.classList.add("rank-cols-" + board.key);
     } else {
       stats.textContent = board.unit(val(entry), entry);
@@ -125999,9 +126003,12 @@ function lbFillArt(row, rows, quiet){
   if(!row || !row.dataset || !row.dataset.lazyArt) return;
   delete row.dataset.lazyArt;
   try{
-    const aw = row.querySelector(".rank-avatar-wrap[data-lazy-av]");
+    let aw = row.querySelector(".rank-avatar-wrap[data-lazy-av]");
+    /* build 379: a row filled from the queue whose loop is ready gets the loop alone (no drawing under it), as the first screenful does */
+    if(aw && !aw.dataset.flipPre && lbFlipReady(aw.dataset.lazyAv) && lbFlipKnown(aw, aw.dataset.lazyAv)){ delete aw.dataset.flipPre; delete aw.dataset.lazyAv; aw = null; }
     if(aw){
-      const id = aw.dataset.lazyAv; delete aw.dataset.lazyAv;
+      const id = aw.dataset.lazyAv;
+      delete aw.dataset.lazyAv;
       const av = aw.querySelector(".rank-avatar");
       /* build 375: a row that came up with its loop already playing keeps it; the drawing goes in under it */
       const pre = aw.dataset.flipPre && av && av.querySelector(":scope > .char-flip-play");
@@ -126023,7 +126030,7 @@ function lbFillArt(row, rows, quiet){
     if(em){
       const rk = em.dataset.lazyMark, mk = em.dataset.mark;
       let real = null;
-      try{ real = buildRankMark(rk, "rank-col-flare"); }catch(e){}
+      try{ real = lbMarkKnown(rk) || buildRankMark(rk, "rank-col-flare"); }catch(e){}
       if(real){ if(mk) real.dataset.mark = mk; em.replaceWith(real); }
     }
     if(!quiet && rows && rows.isConnected){ lbWatchOffscreen(rows, true); startRankMarks(rows); }
@@ -126042,6 +126049,21 @@ function lbFillArt(row, rows, quiet){
 const LB_GEOM_KEY = "class26e.lbgeom";
 /* the rows that can come up with their loops on: a screenful and a bit (the rest fill as they are scrolled toward, as before) */
 const LB_KNOWN_ROWS = 16;
+/* build 379: ONLY THE ROWS ON THE SCREEN. His 378 speed test: the board's moving art is ~230ms of its first draw (448ms as it is, 218ms
+   with no loops) - about 9ms a loop - and 16 rows came up with theirs, several of them below the screen. The rows a board shows at its top
+   on this device are counted on each visit (lbGeom .vis) and only those, and one more, come up with their loops; the rest get theirs from
+   the queue just after the glass lands (as loops - lbFillArt - never as drawings). */
+function lbKnownRows(){ try{ const G = lbGeomGet(); return G && G.vis > 0 ? Math.min(LB_KNOWN_ROWS, G.vis + 1) : LB_KNOWN_ROWS; }catch(e){ return LB_KNOWN_ROWS; } }
+function lbCountVisible(rows){
+  try{
+    if(!rows || !rows.isConnected) return;
+    const list = rows.querySelectorAll(":scope > .rank-row[data-pub]");
+    if(!list.length || list[0].getBoundingClientRect().top < 0) return;
+    const vh = window.innerHeight || 800; let n = 0;
+    for(const r of list){ if(r.getBoundingClientRect().top < vh) n++; else break; }
+    if(n > 0) lbGeomPut(cur => { cur.vis = n; });
+  }catch(e){}
+}
 var lbGeomAll = null;
 function lbGeomVP(){ return orbitVPNow() + "|" + (window.devicePixelRatio || 1); }
 function lbGeomGet(){

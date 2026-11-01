@@ -29906,3 +29906,29 @@ iOS throttles hard there, so its smoothness numbers (bar updated ~20-40 times a 
 Gate: tools/check-b378.py (8 parts; all 8 FAIL against 377): (5) a real touch slide (CDP touch emulation) that starts ON a tab's switch
 lands on the screen it is let go over with its tick, switches never fewer; (6) no recording with nobody on the board; (7) a test holds no
 decoded pictures, back after; (8) the in-use mark carries the footprint.
+
+## Build 2026-11-01-379 - his 378 Leaderboard speed test, read; only the rows on screen come up moving
+
+His 378 runs (16:10-16:13 UTC, build 378, battery fine this time):
+- Leaderboard speed test, median tap-to-second-frame (p) and the 1.5s after it (n = frames drawn of 90, s = slow frames):
+  base p448 n90 s1 | paint p306 n50 s59 | hold p975 w266 | noloops p218 n89 | nofx p422 | noglass p451 | norows p116; Profile p165-209.
+  So: the board's moving art (character and flare loops) is ~230ms of its first draw, ~9ms a loop. Painting them (lb-paint) draws the
+  board 140ms sooner but its idle frames fall to ~33 a second (every step repaints into the row's layer). Held frames (lb-hold) are far
+  worse - WebKit/CA with 300+ keyframes per loop - and are out. The round mask / screen blend / filter and the screen's blurs cost
+  nothing measurable.
+- His 10:13 recording (slides and taps across all four tabs): every slide landed on the screen it was let go over (the 378 fix); the glass
+  updated ~60 times a second (Safari's most) on most lifts, ~40 on several toward Leaderboard/Calendar.
+- Ended log: "ENDED-visible test 2s-ago b377" - the page that ended mid-test was 377 on a test, as he said (378 took out the background
+  recording that ran in a test's quiet).
+
+379:
+- ONLY THE ROWS ON THE SCREEN come up with their loops in the mounting task: the board counts the rows it shows at its top on each visit
+  (lbCountVisible, two frames after the build; kept in lbGeom as .vis) and lbKnownRows() is that + 1 (16 before any count; never more).
+  Sandbox Pro Max: 10 rows shown -> 11 loops at mount (16 before). The rest are built bare and filled from the queue after the glass
+  lands - and lbFillArt now gives a row whose loop is ready the loop alone (lbFlipKnown) and its flare as a loop (lbMarkKnown), never the
+  ~250-part drawing under it (rows 17+ near the view used to get drawings).
+- The speed test's looks are now base, paint, paintwin, noloops, norows. paintwin = html.lb-paint.lb-win: painted loops with each loop's
+  window (.char-flip-play / .rk-frame) a small layer of its own, so a step repaints only that window - the question is whether that keeps
+  paint's sooner first draw without its idle cost. Both still OFF by default.
+
+Gate: tools/check-b379.py (4 parts; all 4 FAIL against 378). check-b378 part (1) accepts the new look list.
