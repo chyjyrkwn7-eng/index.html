@@ -76449,6 +76449,33 @@ const NovaSound = (function(){
   window.addEventListener("click", e => {
     if(hswDragged && hswIs(e.target)){ hswDragged = false; e.preventDefault(); e.stopImmediatePropagation(); try{ e.target.checked = false; }catch(err){} }
   }, true);
+  /* build 379: A TAP THAT TICKED IS A TAP. "Haptic Touch registers when I click an answer and the button looks like I clicked it but it
+     doesn't register and nothing happens." The native switch plays its tick when IT is toggled, and iOS can toggle it - a press that
+     rolls the finger a little is a drag of the switch's thumb - without sending the click the control's own handler waits for. So a touch
+     that began on a switch, did not move off it (not a scroll: under the 10px the drag rule above already uses) and ended with no click
+     at all within 140ms is clicked on its control here; a click that does come late, after one of these, is the same tap and is let go
+     by. Each rescue is counted (class26e.hswrescue) and rides the next "Send tab timings". */
+  let hswPend = null, hswSynthAt = -1e9, hswSynthSw = null;
+  window.addEventListener("touchend", e => {
+    if(!hswDragXY || hswDragged) return;
+    const sw = e.target;
+    if(!hswIs(sw) || !sw.isConnected) return;
+    const host = sw.parentElement;
+    if(!host || host.disabled) return;
+    const me = hswPend = { sw, host, at: hswNow() };
+    setTimeout(() => {
+      if(hswPend !== me) return;
+      hswPend = null;
+      if(!host.isConnected || host.disabled || !sw.isConnected) return;
+      hswSynthAt = hswNow(); hswSynthSw = sw;
+      try{ const n = (parseInt(localStorage.getItem("class26e.hswrescue") || "0", 10) || 0) + 1; localStorage.setItem("class26e.hswrescue", String(n)); }catch(err){}
+      try{ host.click(); }catch(err){}
+    }, 140);
+  }, { capture: true, passive: true });
+  window.addEventListener("click", e => {
+    if(hswPend){ hswPend = null; return; }
+    if(e.isTrusted && hswSynthSw && e.target === hswSynthSw && hswNow() - hswSynthAt < 700){ hswSynthSw = null; e.preventDefault(); e.stopImmediatePropagation(); }
+  }, true);
   const hswTapped = () => hswNow() - hswDownAt < HSW_TAP_MS;
   const TAPTIC_RANK = { tick: 0, tap: 1, select: 1, toggle: 1, swipe: 1, heavy: 2, success: 3, error: 3, boom: 4, celebrate: 5 };
   /* haptics are not part of the Safari switch (build 327z14): the switch
@@ -136991,7 +137018,8 @@ function tabPerfText(){
     const dpr = Math.round((window.devicePixelRatio || 1) * 10) / 10;
     let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
     let ended = ""; try{ ended = (JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []).join("; "); }catch(e){}
-    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
+    let hr = ""; try{ hr = localStorage.getItem("class26e.hswrescue") || ""; }catch(e){}
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (hr ? " | taps rescued " + hr : "") + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
       r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn + (r.p ? " l" + (r.l || 0) + "/p" + r.p : "")).join(" | ")).slice(0, 3200);
   }catch(e){ return ""; }
 }

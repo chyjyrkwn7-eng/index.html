@@ -29968,3 +29968,16 @@ number, choices, highlighted answer): #31 was the only answer that differed. che
 Follow-up, same build: "Keep the notes, cause we aren't sure abt it yet." Both keep the red verifyNote; each names the answer THAT question
 counts (#31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer"). check-b328-level1
 328d and check-b379 (6) assert both answers and both notes.
+
+### 379: a tap that ticked but did not pick the answer
+
+His 11:07 recording (Drill, question 93): he presses C several times - it dips, the tick plays - and nothing is picked, until a later
+press finally counts. Every answer choice carries a native switch (.nova-hsw, iPhone only) for its tick; the tick is the switch being
+toggled, and iOS can toggle it - a press that rolls the finger is a drag of the switch's thumb - WITHOUT sending the click that the
+choice's own handler (choose) waits for. (His UA reads iPhone OS 18_7, which iOS 26 also reports - the switch tick is the 26.5 path.)
+The choice's handler itself had nothing that drops a tap (only paused/cleared guards).
+Fix (in the hsw layer, next to the drag rule): a touch that began on a switch, did not move 10px (not a drag - those are still
+swallowed, so a scroll that starts on a choice never picks it) and ended with NO click at all within 140ms is clicked on its control
+(host.click()); a trusted click that arrives late on the same switch within 700ms of that is the same tap and is swallowed. Each rescue
+is counted in class26e.hswrescue and shows in "Send tab timings" as "taps rescued N" - so the next report says how often the phone
+dropped one. Gate: check-b379 (7) - real tap picks once, touch with no click still picks, slide picks nothing (fails against 378).

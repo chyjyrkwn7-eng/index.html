@@ -7,7 +7,10 @@ has landed the rows take their moving loops back a row a frame (never more than 
 board is no longer still;
 (6) Arrest, Search, and Seizure #31 and #55 (the same question twice in the 8-28-26 guide, with different answers) each count the guide's
 own answer - #31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer" - and each
-keeps its red "being verified" note, naming the answer that question counts.
+keeps its red "being verified" note, naming the answer that question counts;
+(7) an answer under its native switch (iPhone-only; put in by hand) is picked once by a real tap, is still picked when the touch ends
+with no click at all (what iOS does when it takes the press as a drag of the switch: the tick, and nothing), and is not picked by a touch
+that slides off it.
 Run:  python3 tools/check-b379.py   (--against: copy the old index.html and version.json over first)"""
 import os, sys, time, io, re
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -92,5 +95,35 @@ with sync_playwright() as pw:
     chk("#31 counts '%s' and #55 '%s', each with its being-verified note naming that answer" % (tw["a31"], tw["a55"]),
         tw["a31"] == "Revoked by the person granting consent" and tw["a55"] == "Is a mere acquiescence to authority claimed by the officer"
         and "Being verified" in tw["n31"] and tw["a31"] in tw["n31"] and "Being verified" in tw["n55"] and tw["a55"] in tw["n55"], tw)
+    # (7) a tap that ticked is a tap
+    pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome(); await wait(600); const unit='Arrest, Search, and Seizure';
+      cfg.source='all'; cfg.mode='drill'; cfg.units=[unit]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit).slice(0,6); beginRun(idx);
+      for(let t=0;t<80 && !document.querySelector('.qpanel .choice');t++) await wait(100); }""")
+    pg.wait_for_timeout(800)
+    pg.evaluate("()=>{ window.__picks=[]; const real=window.choose; window.choose=(s)=>{ __picks.push(s); }; window.__realChoose=real; }")
+    ADDC = "()=>{ document.querySelectorAll('.qpanel .choice').forEach(c=>{ if(!c.querySelector(':scope > .nova-hsw')){ const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.className='nova-hsw'; c.setAttribute('data-hsw',''); c.appendChild(i); } }); }"
+    pg.evaluate(ADDC)
+    cdp = ctx.new_cdp_session(pg); cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
+    c = pg.evaluate("()=>{ const b=document.querySelectorAll('.qpanel .choice')[2].getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }")
+    on_sw = pg.evaluate("(p)=>{ const e=document.elementFromPoint(p[0],p[1]); return !!(e && e.classList.contains('nova-hsw')); }", c)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": c[0], "y": c[1]}]}); pg.wait_for_timeout(70)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}); pg.wait_for_timeout(900)
+    real_tap = pg.evaluate("()=>__picks.slice()")
+    # a touch that ends with no click (dispatched as touch events only, the way the phone's lost tap arrives)
+    nc = pg.evaluate("""async()=>{ __picks.length=0; const sw=document.querySelectorAll('.qpanel .choice')[1].querySelector('.nova-hsw'); const b=sw.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
+      const t=new Touch({identifier:7, target:sw, clientX:x, clientY:y}); sw.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,cancelable:true,touches:[t],targetTouches:[t],changedTouches:[t]}));
+      await new Promise(r=>setTimeout(r,80)); sw.dispatchEvent(new TouchEvent('touchend',{bubbles:true,cancelable:true,touches:[],targetTouches:[],changedTouches:[t]}));
+      await new Promise(r=>setTimeout(r,600)); return __picks.slice(); }""")
+    # a touch that slides off (a scroll): nothing
+    sl = pg.evaluate("""async()=>{ __picks.length=0; const sw=document.querySelectorAll('.qpanel .choice')[0].querySelector('.nova-hsw'); const b=sw.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
+      const t=new Touch({identifier:8, target:sw, clientX:x, clientY:y}), t2=new Touch({identifier:8, target:sw, clientX:x, clientY:y-40});
+      sw.dispatchEvent(new TouchEvent('touchstart',{bubbles:true,cancelable:true,touches:[t],targetTouches:[t],changedTouches:[t]}));
+      await new Promise(r=>setTimeout(r,40)); sw.dispatchEvent(new TouchEvent('touchmove',{bubbles:true,cancelable:true,touches:[t2],targetTouches:[t2],changedTouches:[t2]}));
+      await new Promise(r=>setTimeout(r,40)); sw.dispatchEvent(new TouchEvent('touchend',{bubbles:true,cancelable:true,touches:[],targetTouches:[],changedTouches:[t2]}));
+      await new Promise(r=>setTimeout(r,600)); return __picks.slice(); }""")
+    cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": False}); cdp.detach()
+    pg.evaluate("()=>{ window.choose=window.__realChoose; }")
+    chk("an answer under its switch: a real tap picks it once (%s, on the switch: %s), a touch that ends with no click still picks it (%s), a slide off it picks nothing (%s)" % (real_tap, on_sw, nc, sl),
+        on_sw and real_tap == [2] and nc == [1] and sl == [], [real_tap, nc, sl])
     br.close()
 sys.exit(0 if g["ok"] else 1)
