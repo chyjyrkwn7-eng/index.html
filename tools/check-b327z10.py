@@ -169,7 +169,7 @@ def planet(br):
 
 
 def tab_special(br):
-    print("\nF. the Profile tab's character plays its special")
+    print("\nF. (since 349) the Profile tab's character is still")
     label, w, h, dpr = z5b.PHONE
     ctx, pg = z5b.boot(br, w, h, dpr)
     pg.wait_for_timeout(2500)
@@ -182,8 +182,10 @@ def tab_special(br):
       const on = el.classList.contains('char-special');
       const moving = [...el.querySelectorAll('.cx-sp *')].some(n => n.getAnimations().some(a => a.playState === 'running'));
       return { el: true, listed, on, moving }; }""")
-    check("%s: F. the tab's character is one the specials scheduler plays, and its special runs" % label,
-          r.get("listed") and r.get("on") and r.get("moving"), r)
+    # SUPERSEDED IN 349 ("TAB LAG, round one: the Profile tab's character is a still picture ... not in CHAR_SPECIAL_PROMINENT.
+    # Madison: it can stop animating if that helps"): the tab's character is still - the scheduler does not take it
+    check("%s: F. (349) the tab's character is a still picture: the specials scheduler does not play it" % label,
+          r.get("el") and not r.get("listed") and not r.get("on"), r)
     ctx.close()
 
 

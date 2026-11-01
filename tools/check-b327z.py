@@ -336,7 +336,9 @@ HSW_STATE = """() => { const all = [...document.querySelectorAll('.nova-hsw')];
   return { n: all.length, count: NovaSound.hswCount ? NovaSound.hswCount() : null,
     tabsWith: tabs.filter(t => t.lastElementChild && t.lastElementChild.classList.contains('nova-hsw')).length, tabs: tabs.length,
     native: all.length && all.every(e => e.tagName === 'INPUT' && e.type === 'checkbox' && e.hasAttribute('switch')),
-    hidden: all.filter(e => { const c = cs(e); return c.display === 'none' || c.visibility === 'hidden' || c.appearance === 'none' || c.webkitAppearance === 'none'; }).length,
+    /* (build 380) a switch is judged with its control: one inside something hidden on purpose (the closed chat dock's buttons) is hidden
+       because its control is, which is not a stripped switch */
+    hidden: all.filter(e => { const c = cs(e), hc = e.parentElement ? cs(e.parentElement) : null; if(hc && (hc.visibility === 'hidden' || hc.display === 'none')) return false; return c.display === 'none' || c.visibility === 'hidden' || c.appearance === 'none' || c.webkitAppearance === 'none'; }).length,
     opaque: all.filter(e => parseFloat(cs(e).opacity) > 0.02).length,
     badParent: all.filter(e => !e.parentElement || e.parentElement.lastElementChild !== e).length,
     nested: all.filter(e => e.parentElement && e.parentElement.closest('.nova-hsw')).length }; }"""

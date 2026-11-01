@@ -30049,3 +30049,11 @@ read layout inside rAF (the layout the frame does anyway).
 - Tried and taken back: the tab buttons as layers all the time (to stop four layers being made and dropped per press) - at rest it moved
   the inactive tabs' words and icons by a fraction of a pixel (2,300 px of the bar off at 2x); not worth a changed look tonight.
 - Memory soak with the iPhone layer: 60 tab taps, the JS heap 6.4 -> 7.2MB, elements and images flat - no leak.
+- THE OLD TAB-BAR GATE FAILURES, EACH LOOKED AT (they had been failing since before 375 and been called "pre-existing"):
+  * check-b327z13 U ("screen goes in 150ms+ after the press, the glide 75%+ there") was written for TAB_SCREEN_AFTER 170; build 359 cut
+    it to 30 (now 40) on purpose ("tab taps answer sooner"). U now asserts 359's rule: in 40-200ms, the glide under way (40%+), on its tab.
+  * check-b327z10 F ("the tab's character plays its special") was undone on purpose in 349 ("the Profile tab's character is a still
+    picture ... Madison: it can stop animating if that helps"). F now asserts it is still.
+  * check-b327z z9 ("no switch hidden") counted the closed chat dock's five switches - hidden because their buttons are. It now judges a
+    switch with its control; every tab's switch is real, native and visible.
+  Still failing, and not the tab bar: z10 B (the chat sheet's slide-off curve), z12 Q (the person card's glass), z14 D (the root's colour).
