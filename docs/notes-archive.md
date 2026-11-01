@@ -29659,3 +29659,20 @@ and the cost of compositing a page this size under it.
 Build 370 changes the looks only (no app change): A as is; B glass blend off; C glass masks off; D glass rim shadows off; E page hidden while the bar
 is held (`html.tab-held #stage{visibility:hidden}`); F all four. Read the next recording the same way (bar crop at 60fps, count updated frames per
 second per look). If E alone reaches 60Hz the cost is the page under the glass; if B/C/D alone does, that piece goes. check-b370.py (fails on 369).
+
+## Build 371 (2026-11-01): Drag test round 3 - blurred surfaces (test build)
+
+Madison's 370 recording (20:41, 60fps, 59s), read the same way as 369 (bar crop, frame-to-frame difference, 6 looks of 7s: 6, 13, 20, 27, 34, 42s):
+bar updates per second A 28, B 29, C 24, D 25, E 29, F 25 - a steady 30Hz (alternate frames) in every look, with the page static (body change 0).
+E (page hidden while the bar is held) and F (glass blend+masks+rim shadows off AND page hidden) did not help. So after 369 (bar blur, page animations, bar swell)
+and 370 (glass recipe, the page) nothing tried so far moves it. In the sandbox (4x CPU) the main thread is fine on both the Leaderboard and Report a bug
+(rAF 16.7ms, ~1s script per 3s of dragging), so it is not the page's JS there.
+What differs: his 60Hz drag (17:42, build 368) was over Report a bug, which has 4 backdrop-filter surfaces (bar, navsegment, textarea, chat dock);
+the Leaderboard has 6 non-bar-ish plus the bar (2 navsegments, search box, "me" button, chat dock button + panel; the chat dock is a full-screen
+fixed layer). Each is a separate blur pass over what is behind it.
+Build 371 looks (Drag test, 7s each, banner shown only the first 2s of each look): A Leaderboard as is; B Report a bug screen (control); C every
+blur except the bar's off (`html:not(#a):not(#b):not(#c) *:not(.bottomtabs):not(.bottomtabs *)` - the plain selector LOSES to the app's own
+!important backdrop-filter rules, found by reading computed style); D chat dock `display:none`; E C+D; F E + page hidden. Each look's rAF
+intervals are sent to the admin as a bug doc "Drag test (frames per look)" with lines `[drag:A] n med p95 max over34` (read with
+`python3 tools/firestore-admin.py bugs N`); window.__dragLines holds them for the gate. The 369 solid-bar look WAS applied (checked: computed
+backdrop-filter none). check-b371.py (fails on 370); check-b370.py removed (its looks are gone).
