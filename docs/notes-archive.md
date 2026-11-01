@@ -30100,3 +30100,35 @@ fail on 379.
     correctly" with "1 still to review" under it (.rs-retake-sub, its own line - one line with a dot wrapped onto the dot). check-b380 (15).
   * The hundo's dim (HFX_DIM .5, his own ask in 325) is NOT changed: he asked whether to take it out; recommended, waiting on his word
     (HFX_DIM.a = 0 is the whole change; check-b325-a / check-b326-a / check-behaviour assert the dim and would move with it).
+
+### 380, badges: the unlock coin, the lift out of the case, the put back; the results guard counts a held-back tap
+
+Madison: "The badge unlock cutscene is good but when the badge comes up it lags like it not shiny for a second or something and then is?
+... When at the badge case and you select a badge to view, it does the same thing, as it pulls up (zooms in to get bigger) it lags and it
+doesn't have a consistent look the entire way through ... When you click close to get off the badge, when it goes back to the case it lags
+as it gets put in the case".
+- THE UNLOCK COIN: buildBadgeCoin is ~22 <img>s on data: URLs (face, silhouette mask, the edge layers, the back). warmBadgeCoinFaces made
+  the URLs ahead but nothing decoded them, so the coin came up with its pictures arriving over the first frames (the shine and edges a beat
+  behind the face). bcPredecode(url) keeps a decoded Image per URL (BC_DECODED, at most BC_DECODE_MAX 64, oldest dropped) and the warm-up
+  decodes every picture the coin will use. Sandbox: 22 of 22 complete the moment the coin is built (379: 0 at once, 2 by the first frame).
+- THE LIFT: the big face (ensureFace) was rendered when the tap landed - a few hundred ms on a phone - so the badge lifted out on its small
+  slot picture and the big face took its place part way up. binspectWarmSoon(), called at the end of buildBadgesTab, renders each found
+  badge's big face, back and edges at the size .binspect-float shows (binspectW) in the quiet once the tab is up - one job per 150ms, never
+  under a settle, a touch (recUserAt 900ms), an open badge or a hidden page, and only while #stage .ncase is up. A finger coming down on a
+  found tile decodes those pictures (binspectPredecode). Sandbox at 4x CPU: pointerdown 345ms -> 26ms, one face through the whole lift.
+- THE PUT BACK: putBack built the badge for the slot at the DEFAULT size (152px) as a draft, then badgeStrikeWatch measured the slot (88px
+  at 2x) and rendered again, then the finish replaced it - three pictures and two renders in the frames it landed. The slot is now drawn at
+  the slot's own measured size (slotOpts { px: slotRect.width }), and cleanOne renders that picture for the new stage 700ms after a stage
+  comes off, so the put back finds it finished. (The empty slot a lifted badge leaves is a vector hole - no picture - and was never part of
+  it.)
+- THE RESULTS GUARD, AGAIN: one gate run of the 30-tap test pressed "Main menu". The taps were 450ms apart in the gate's own clock and one
+  gap reached ~700ms - a tap reaching the page late is the same thing a phone does when the page is busy (the save at a test's end). The
+  button now judges a tap by when it happened: rsTapAt(e) takes the event's own time (when given) and, while a results screen is up, a
+  frame beat (rsBeatStart from rsRise; no frame for 120ms = the page was busy and the tap came in during it, counted from the last frame).
+  The 30-tap test now taps from inside the page.
+Gate: check-b380 (16) a found badge: finger cost and one face, (17) the coin complete when built, (18) the put back one finished picture,
+(19) a tap held 900ms behind a busy page 120ms after a tap does not press Main menu - all four fail on 379 (19 also fails on 380 before this
+pass). All 19 parts fail on 379 (run against origin/main: the local `main` ref in this sandbox is stale at 327t - use origin/main).
+Also run: check-results, check-b328-fixes, check-b336, check-sound all pass. check-b325-b's "name's letters at least 9.2px" fails on the
+Phonetic Alphabet badge (8.8px) on 379 too - older than this build, not touched. check-behaviour's badge sections fail the same 10 checks on
+379 and 380 (sections for case designs later builds replaced).

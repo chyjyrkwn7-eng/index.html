@@ -13,11 +13,16 @@ With the iPhone layer on (an iPhone's user agent: every control carries a native
 (11) a slide only starts on the lit tab: a press on another tab that slides on to a third opens neither (back home), let go on the
 pressed tab it opens it, and a slide from the lit tab still lands where it is let go;
 (12) on a test's results, taps that keep coming never press a button that rises under them (the guard restarts with each refused tap),
+(19) nor does a tap the page gets late (held behind 900ms of work: it counts from when it happened, not when it arrived),
 and a tap after a pause does; (13) a tap finishes the whole box that is coming in (the grade lands on its number at once) and the next
 box comes in by itself;
 (14) the grade's count does not sit on the number before the grade: on a 100 the 99 shows for under 650ms (it was ~1.2s), on an 80 the 79
 the same; (15) a retake's card says what it was and how it went ("Retake of missed questions" / "All 3 answered correctly" or "2 of 4
 answered correctly" with "2 still to review" under it);
+(16) the badge case: once the Badges tab has been up a few seconds, a finger on a found badge costs next to nothing (its big face is already
+made) and the lift shows one face from its first frame to its last; (17) the badge-unlock coin: once warmed, every one of its pictures is
+decoded the moment it is built (none come in after it is up); (18) the badge put back after a rub is one finished picture from its first frame in the slot (no draft, no
+second render once measured);
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -123,10 +128,13 @@ with sync_playwright() as pw:
     # keep tapping where the buttons rise (a run with misses: no pop-ups to hold it); then pause and tap a button
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
     pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 3])
-    LOG = []
-    for k in range(30):
-        LOG.append(pg.evaluate("()=>{ const p=document.querySelector('.rs-screen'); if(!p) return 'left:' + ((document.querySelector('#stage > *')||{}).className||'').slice(0,30); const b=[...p.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); const t=(b && getComputedStyle(b).pointerEvents!=='none') ? b : p; t.dispatchEvent(new MouseEvent('click',{bubbles:true})); return t===p ? 'panel' : 'button'; }"))
-        pg.wait_for_timeout(450)
+    # the taps are timed in the page (450ms apart), so the gate's own timing never makes a pause
+    LOG = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const LOG=[];
+      for(let k=0;k<30;k++){ const p=document.querySelector('.rs-screen'); if(!p){ LOG.push('left:' + ((document.querySelector('#stage > *')||{}).className||'').slice(0,30)); }
+        else { const b=[...p.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); const t=(b && getComputedStyle(b).pointerEvents!=='none') ? b : p;
+          t.dispatchEvent(new MouseEvent('click',{bubbles:true})); LOG.push(t===p ? 'panel' : 'button'); }
+        await wait(450); }
+      return LOG; }""")
     on_results = pg.evaluate("()=>!!document.querySelector('.rs-screen')")
     pg.wait_for_timeout(900)
     pg.evaluate("()=>{ const b=[...document.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); b && b.click(); }")
@@ -134,6 +142,29 @@ with sync_playwright() as pw:
     went = pg.evaluate("()=>!!document.querySelector('.screen-home-actual')")
     chk("taps that keep coming never press a results button (%s button taps of 30, still on the results: %s); a tap after a pause does (home: %s)" % (LOG.count("button"), on_results, went),
         LOG.count("button") >= 5 and on_results and went, LOG)
+    # (19) a tap held back by a busy page
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+    pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 3])
+    pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); for(let k=0;k<40;k++){ const p=document.querySelector('.rs-screen'); if(!p) return;
+      const b=[...p.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); if(b && getComputedStyle(b).pointerEvents!=='none') break;
+      p.dispatchEvent(new MouseEvent('click',{bubbles:true})); await wait(300); } }""")
+    pg.wait_for_timeout(1800)
+    bx = pg.evaluate("""()=>{ const b=[...document.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); if(!b) return null; b.scrollIntoView({block:'center',behavior:'instant'});
+      const r=b.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height/2; return { x, y, hit: document.elementFromPoint(x,y)===b || b.contains(document.elementFromPoint(x,y)) }; }""")
+    pg.wait_for_timeout(300)
+    held = None
+    if bx and bx["hit"]:
+        pg.evaluate("""()=>{ const p=document.querySelector('.rs-screen'); p.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+          setTimeout(()=>{ const t=performance.now(); while(performance.now()-t<900){} }, 30); }""")
+        pg.wait_for_timeout(120)
+        pg.mouse.click(bx["x"], bx["y"])
+        pg.wait_for_timeout(800)
+        held = pg.evaluate("()=>!!document.querySelector('.rs-screen')")
+        pg.wait_for_timeout(1200)
+        pg.mouse.click(bx["x"], bx["y"]); pg.wait_for_timeout(700)
+    later = pg.evaluate("()=>!!document.querySelector('.screen-home-actual')")
+    chk("a tap held back 900ms by a busy page, 120ms after a tap on the results, does not press Main menu (still on the results: %s); one after a pause does (home: %s)" % (held, later),
+        held is True and later, [bx, held, later])
     # (14) the count's last number
     holds = []
     for wrong in (0, 3):
@@ -151,6 +182,46 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1500)
     card = pg.evaluate("()=>{ const k=document.querySelector('#stage .rs-retake-note .rs-kicker'), l=document.querySelector('#stage .rs-retake-line'); return [k && k.textContent, l && l.textContent]; }")
     chk("a retake's card says what it was and how it went (%s)" % (card,), card[0] == "Retake of missed questions" and card[1] == "All 3 answered correctly", card)
+    # (16) the badge case
+    pg.evaluate("()=>{ showProfile('badges'); }"); pg.wait_for_timeout(9000)
+    bc = pg.evaluate("""async()=>{ const t=document.querySelector('.ncase-cell.is-earned'); if(!t) return null;
+      const srcs=[]; let on=true; const obs=()=>{ const im=document.querySelector('.binspect-art.is-current'); if(im) srcs.push(im.getAttribute('src')); if(on) requestAnimationFrame(obs); }; requestAnimationFrame(obs);
+      const T0=performance.now(); t.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); const downMs=performance.now()-T0;
+      await new Promise(r=>setTimeout(r,90)); t.click(); await new Promise(r=>setTimeout(r,1800)); on=false;
+      try{ badgeInspectNow && badgeInspectNow.teardown(); }catch(e){}
+      return { downMs: Math.round(downMs), faces: new Set(srcs).size, frames: srcs.length }; }""")
+    chk("a found badge in the case: the finger costs %sms, the lift shows %s face(s) over %s frames" % (bc and bc["downMs"], bc and bc["faces"], bc and bc["frames"]),
+        bc and bc["downMs"] < 80 and bc["faces"] == 1 and bc["frames"] > 20, bc)
+    # (17) the unlock coin
+    cr = pg.evaluate("""async()=>{ const u=unitsInTeachingOrder().find(x=>unitBadgeEarned(x)) || 'Victims of Crime'; warmBadgeCoinFaces([u]); await new Promise(r=>setTimeout(r,4000));
+      const c=buildBadgeCoin(u); document.body.appendChild(c); const imgs=[...c.querySelectorAll('img')]; const ready=imgs.filter(i=>i.complete && i.naturalWidth>0).length; c.remove();
+      return { imgs: imgs.length, ready }; }""")
+    chk("the badge-unlock coin is complete the moment it is built (%s of %s pictures decoded)" % (cr["ready"], cr["imgs"]), cr["imgs"] >= 20 and cr["ready"] == cr["imgs"], cr)
+    # (18) the slot left and the badge put back
+    pg.evaluate("()=>{ showHome(); unitsInTeachingOrder().filter(u=>unitBadgeEarned(u)).forEach(u=>setBadgeDirtStage(u,4)); }"); pg.wait_for_timeout(600)
+    pg.evaluate("()=>{ showProfile('badges'); }"); pg.wait_for_timeout(9000)
+    ci = pg.evaluate("()=>{ const c=[...document.querySelectorAll('.ncase-cell')]; const t=c.find(x=>x.classList.contains('is-earned')); t.scrollIntoView({block:'center',behavior:'instant'}); return c.indexOf(t); }")
+    WATCH = """(i)=>{ const cell=document.querySelectorAll('.ncase-cell')[i]; window.__slotLooks=[]; window.__slotOn=true;
+      const obs=()=>{ const im=cell.querySelector('image.badge-raster'); if(im) window.__slotLooks.push((im.__strike&&im.__strike.draft?'draft':'final')+':'+(im.__strike&&im.__strike.grey?'grey':'found')+':'+(im.getAttribute('href')||'').length); if(window.__slotOn) requestAnimationFrame(obs); }; requestAnimationFrame(obs); }"""
+    LOOKS = "()=>{ window.__slotOn=false; const s=window.__slotLooks; const out=[]; s.forEach(x=>{ if(out[out.length-1]!==x) out.push(x); }); return out; }"
+    tb = pg.evaluate("(i)=>{ const r=document.querySelectorAll('.ncase-cell')[i].getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }", ci)
+    pg.wait_for_timeout(300)
+    pg.mouse.click(tb[0], tb[1]); pg.wait_for_timeout(1600)
+    s0 = pg.evaluate("()=>badgeInspectNow && badgeInspectNow.state().stage")
+    fx, fy, fw = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
+    per = pg.evaluate("() => BINSPECT.rubPerStage")
+    pg.mouse.move(fx, fy); pg.mouse.down()
+    for k in range(per * 3 + 6):
+        pos = (k % 6) if (k % 6) < 3 else 6 - (k % 6)
+        pg.mouse.move(fx - fw * .08 + pos * fw * .055, fy + (k % 2)); pg.wait_for_timeout(16)
+        if pg.evaluate("()=>badgeInspectNow.state().stage") != s0: break
+    pg.mouse.up()
+    s1 = pg.evaluate("()=>badgeInspectNow && badgeInspectNow.state().stage")
+    pg.wait_for_timeout(1500)
+    pg.evaluate(WATCH, ci); pg.evaluate("()=>badgeInspectNow.close()"); pg.wait_for_timeout(2500)
+    back = pg.evaluate(LOOKS)
+    chk("a badge put back a stage cleaner (%s -> %s) shows one finished picture in its slot (%s)" % (s0, s1, back),
+        s1 is not None and s0 is not None and s1 < s0 and len(back) == 1 and back[0].startswith("final:found"), back)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);

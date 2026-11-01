@@ -108676,14 +108676,32 @@ function badgeCoinBackPx(){
   const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
   return Math.min(864, badgeStrikeSize(css * badgeDpr()));
 }
+/* build 380: THE PICTURES ARE DECODED BEFORE THE BADGE COMES UP. "The badge unlock cutscene is good but when the badge comes up it lags
+   like it not shiny for a second or something and then is." The coin is ~22 images (its faces, its side's slices) and its shine is drawn
+   through a mask (the silhouette, an SVG) - all data: URLs, which the browser decodes after they are put in the page, so the coin's first
+   frames could be without some of them, the shine's mask among them. Each is decoded here first, while the results run, and held (a few
+   at a time: BC_DECODE_MAX), so the coin is complete on its first frame. */
+var BC_DECODED = new Map();
+var BC_DECODE_MAX = 64;
+function bcPredecode(url){
+  try{
+    if(!url) return;
+    const m = /^url\("(.*)"\)$/.exec(url); if(m) url = m[1];
+    if(BC_DECODED.has(url)){ const im0 = BC_DECODED.get(url); BC_DECODED.delete(url); BC_DECODED.set(url, im0); return; }
+    const im = new Image(); im.decoding = "async"; im.src = url;
+    BC_DECODED.set(url, im);
+    if(im.decode) im.decode().catch(() => {});
+    while(BC_DECODED.size > BC_DECODE_MAX) BC_DECODED.delete(BC_DECODED.keys().next().value);
+  }catch(e){}
+}
 function warmBadgeCoinFaces(units){
   try{
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
-    /* ...and its side's five tones (build 326: each a small lit image) */
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); }catch(e){} }));
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ bcPredecode(badgeCoinFaceURL(u)); bcPredecode(badgeSilhouetteURL(u)); }catch(e){} }));
+    /* ...and its side's five tones (build 326: each a small lit image) - and the very slices buildBadgeCoin puts on, decoded */
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); for(let i = 0; i < BC_EDGE_LAYERS; i++) bcPredecode(badgeEdgeURL(u, Math.sin(Math.PI * i / (BC_EDGE_LAYERS - 1)), 0)); }catch(e){} }));
     /* ...and its back (build 321: rendered like the front, about as dear) */
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeBackFaceURL(u, badgeCoinBackPx(), 0); }catch(e){} }));
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ bcPredecode(badgeBackFaceURL(u, badgeCoinBackPx(), 0)); }catch(e){} }));
     const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
     unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W, badgeDirtStage(u)); }catch(e){} }));
   }catch(e){}
@@ -110861,10 +110879,29 @@ const RS_RISE_MS = 620, RS_RISE_ROW_MS = 90;
    (or the click that follows a tap) landed on "Main menu". For 700ms after any tap on the
    results, and for 600ms after the buttons arrive, a button there does not answer. */
 let rsTapGuardUntil = 0;
+/* build 380: WHEN THE TAP HAPPENED, not when the page got to it. A tap the phone holds while the page is busy (the save at a test's end,
+   a scene being built) reaches the page late, so one tap of a run of taps could arrive past the guard and press "Main menu". The event's
+   own time (when the finger did it, where the browser gives that) and a frame beat while the results are up (no frame for 120ms: the page
+   was busy and the tap came in during it - counted from the last frame) put it back where it was. */
+let rsBeatAt = 0, rsBeatOn = false;
+function rsBeatStart(){
+  if(rsBeatOn) return;
+  rsBeatOn = true;
+  const beat = () => { rsBeatAt = performance.now(); if(document.querySelector("#stage .rs-screen")) requestAnimationFrame(beat); else rsBeatOn = false; };
+  requestAnimationFrame(beat);
+}
+function rsTapAt(e){
+  const now = performance.now();
+  let t = now;
+  if(e && typeof e.timeStamp === "number" && e.timeStamp > 0 && e.timeStamp < now) t = e.timeStamp;
+  if(rsBeatOn && rsBeatAt && now - rsBeatAt > 120) t = Math.min(t, rsBeatAt + 17);
+  return Date.now() - (now - t);
+}
 function rsRise(el, o){
   o = o || {};
   if(!el) return 0;
   rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 600);
+  try{ rsBeatStart(); }catch(e){}
   el.classList.remove("rs-in"); el.classList.add("rs-in-now");
   if(o.instant || resultsMotionOff()) return 0;
   const btns = [...el.children].filter(b => b.matches("button, .next") && !b.hidden);
@@ -113931,7 +113968,7 @@ function summarize(){
          and I click the screen, the test goes away and takes me to the main menu". Tapping the results along, once the buttons had risen
          under the finger each refused tap left the guard where it was, so the next tap, 440ms later, was past it and went home. Now while
          taps keep coming the buttons stay quiet; a tap after a pause of 700ms is a press. */
-      btn.addEventListener("click", () => { if(Date.now() < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; } endResultsReveal(); fn(); });
+      btn.addEventListener("click", e => { if(rsTapAt(e) < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; } endResultsReveal(); fn(); });
       return btn;
     };
     /* THE REVIEW: only what to do about the misses - retake them (Drill),
@@ -132592,6 +132629,8 @@ function buildBadgesTab(opts){
     /* build 320 (b320g): the badge in your hand, not the unlock card */
     if(has) tile.addEventListener("pointerdown", () => badgeInspectPrewarm(unit), { passive: true });
     tile.addEventListener("click", () => { clearNew(); tile.querySelector(".badge-clean-tip")?.remove(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
+    /* build 380: the finger is down ~100ms before the click - its big faces start decoding then */
+    tile.addEventListener("pointerdown", () => { try{ binspectPredecode(unit); }catch(e){} }, { passive: true });
     return tile;
   });
   tab.appendChild(kase);
@@ -132634,6 +132673,8 @@ function buildBadgesTab(opts){
       openBadgeCaseLid(kase, Math.max(0, Math.min(600, wait)));
     }
   };
+  /* build 380: the found badges' big faces, made in the quiet once the tab is up (binspectWarmSoon) */
+  try{ binspectWarmSoon(); }catch(e){}
   return tab;
 }
 
@@ -133468,6 +133509,47 @@ function badgeInspectPrewarm(unit){
 }
 /* What is open now, for the gates and the recorder. */
 let badgeInspectNow = null;
+/* build 380: "When at the badge case and you select a badge to view ... as it pulls up (zooms in to get bigger) it lags and it doesn't
+   have a consistent look the entire way through." It lifted out showing its slot's small picture and the big face, rendered a moment
+   later (ensureFace - a few hundred ms on a phone), took its place mid-way. So the Badges tab renders each found badge's big face, back
+   and side for the badge in your hand (binspectW: the size .binspect-float is shown at) in the quiet once it is up - one at a time, never
+   under a finger or a settle - and the lift starts on the finished face. Only the renders are kept (as data: URLs, in their caches);
+   the pictures are decoded when a finger comes down on the badge (binspectPredecode). */
+function binspectW(){
+  const ov = document.createElement("div"); ov.className = "binspect"; ov.style.visibility = "hidden"; ov.style.pointerEvents = "none";
+  const st = document.createElement("div"); st.className = "binspect-stage"; const fl = document.createElement("div"); fl.className = "binspect-float";
+  st.appendChild(fl); ov.appendChild(st); document.body.appendChild(ov);
+  const size = Math.max(60, fl.getBoundingClientRect().width || 280); ov.remove();
+  return Math.min(864, badgeStrikeSize(size * badgeDpr()));
+}
+var binspectWarmT = 0, binspectWarmJobs = [];
+function binspectWarmSoon(){
+  clearTimeout(binspectWarmT); binspectWarmJobs = [];
+  binspectWarmT = setTimeout(() => {
+    let W = 0; try{ W = binspectW(); }catch(e){ return; }
+    let units = []; try{ units = unitsInTeachingOrder().filter(u => unitBadgeEarned(u)); }catch(e){}
+    units.forEach(u => {
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, W, false, d); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeBackEntry(u, W, d, false); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); for(let i = 0; i < BINSPECT.edges; i++) badgeEdgeURL(u, Math.sin(Math.PI * i / (BINSPECT.edges - 1)), d); });
+    });
+    const step = () => {
+      binspectWarmT = 0;
+      if(!binspectWarmJobs.length || !document.querySelector("#stage .ncase")) return;
+      if(document.hidden || badgeInspectNow || (typeof settleUntil === "number" && Date.now() < settleUntil) || performance.now() - recUserAt < 900){ binspectWarmT = setTimeout(step, 400); return; }
+      try{ binspectWarmJobs.shift()(); }catch(e){}
+      binspectWarmT = setTimeout(step, 150);
+    };
+    step();
+  }, 1200);
+}
+function binspectPredecode(unit){
+  if(!unitBadgeEarned(unit)) return;
+  const W = binspectW(), d = badgeDirtStage(unit);
+  (BADGE_STRIKE_CACHE[String(unit) + "|c" + (d ? "|d" + d : "")] || []).forEach(e => { if(e && e.W >= W * .9 && !e.draft) bcPredecode(e.url); });
+  const b = BADGE_BACK_CACHE[unit + "|" + W + "|" + d]; if(b) bcPredecode(b.url);
+  try{ bcPredecode(badgeSilhouetteURL(unit)); }catch(e){}
+}
 function openBadgeInspect(unit, tile){
   if(badgeInspectNow) return badgeInspectNow;
   const B = BINSPECT;
@@ -133717,6 +133799,9 @@ function openBadgeInspect(unit, tile){
     playSound("badge.squeak", { clean: 1 - dirt / BADGE_DIRT_MAX });
     if(dirt === 0) setTimeout(() => playSound("badge.sparkle"), 120);
     try{ setBadgeDirtStage(unit, dirt); }catch(e){}
+    /* build 380: the slot's picture at this stage, made now and not as the badge is put back ("when it goes back to the case it lags
+       as it gets put in the case": putBack drew the slot again at the new stage in the frame it landed in) */
+    { const d = dirt; setTimeout(() => { if(closed || dirt !== d) return; try{ badgeStrikeURL(unit, false, badgeStrikeSize((slotOpts ? slotOpts.px : badgeCaseSlotPx()) * badgeDpr()), d); }catch(e){} }, 700); }
     const url = ready[dirt] || ensureFace(dirt);
     if(url) swapFace(url, dirt, 380);
     ov.style.setProperty("--glow-k", String(BADGE_DIRT.glow[dirt]));
@@ -133859,6 +133944,10 @@ function openBadgeInspect(unit, tile){
   const art = tile && tile.querySelector(".badge-tile-art");
   const slotSvg = art && art.querySelector("svg.badge-art");
   const slotRect = (slotSvg || tile || float).getBoundingClientRect();
+  /* build 380: a badge put back a stage cleaner is drawn at the slot's own size (what the case's tiles end up at once measured).
+     Built at the default size it was a draft at 152px, then a second render at the slot's 88 once measured, then the finish - three
+     pictures and two renders in the frames it landed in ("it lags as it gets put in the case"). cleanOne renders this one ahead. */
+  const slotOpts = slotSvg && slotRect.width > 8 ? { px: slotRect.width } : undefined;
   const scroll0 = window.scrollY || 0;
   let emptySlot = null;
   const lift = () => {
@@ -133868,7 +133957,7 @@ function openBadgeInspect(unit, tile){
   const putBack = () => {
     if(!emptySlot || !emptySlot.parentNode) return;
     let svg = slotSvg;
-    if(dirt !== dirt0){ try{ svg = buildUnitBadgeSVG(unit, true); }catch(e){} }
+    if(dirt !== dirt0){ try{ svg = buildUnitBadgeSVG(unit, true, slotOpts); }catch(e){} }
     try{ art.replaceChild(svg, emptySlot); }catch(e){}
     art.dataset.dirt = String(dirt);
     tile.classList.remove("is-lifted");
