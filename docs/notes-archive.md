@@ -29964,3 +29964,7 @@ granting consent); "55 & 31. ... coercion, or" marks C (Is a mere acquiescence t
 verifyNote on both. Now #31 is answer 3 (D) again, #55 stays 2 (C), and neither has a note. Answer is not part of KEYS, so nobody's
 progress on either question is orphaned. The whole unit was compared with the guide (120 questions, parsed from the docx: question
 number, choices, highlighted answer): #31 was the only answer that differed. check-b328-level1 328d reversed; check-b379 part (6).
+
+Follow-up, same build: "Keep the notes, cause we aren't sure abt it yet." Both keep the red verifyNote; each names the answer THAT question
+counts (#31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer"). check-b328-level1
+328d and check-b379 (6) assert both answers and both notes.

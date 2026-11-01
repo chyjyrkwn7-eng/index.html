@@ -43640,7 +43640,8 @@ const QUESTIONS = [
     /* BUILD 379: AS THE GUIDE MARKS IT. "There are two of these questions. Ensure they are each marked correctly even though it's the same
        question with two different answers, don't change the answers." The 8-28-26 guide marks D here and C on #55, its twin; build 325 had
        changed this one to C to agree with #55, and build 328 put a red "being verified" note on both. Each is its own question and keeps its
-       own answer, as the guide has it, with no note. */
+       own answer, as the guide has it; the note stays on both ("Keep the notes, cause we aren't sure abt it yet"), each naming the answer
+       that question counts. */
     q: "Consent is considered involuntary if it is obtained by duress, coercion, or __________",
     ref: "(Arrest, Search, and Seizure, Section 10.8, Warrantless Search – Lecture Scenario, page 7 of 11) (Civilian Interaction, Section 37.4)",
     choices: [
@@ -43649,6 +43650,7 @@ const QUESTIONS = [
       "Is a mere acquiescence to authority claimed by the officer",
       "Revoked by the person granting consent",
     ],
+    verifyNote: "An admin is confirming this answer with the instructor. Until then, this test counts “Revoked by the person granting consent.”",
     answer: 3
   },
   {
@@ -43953,7 +43955,7 @@ const QUESTIONS = [
   {
     topic: "Arrest, Search, and Seizure",
     src: 55,
-    /* build 379: C, as the guide marks it (#31, its twin, is D - see there); no note */
+    /* build 379: C, as the guide marks it (#31, its twin, is D - see there); the note stays */
     q: "Consent is considered involuntary if it is obtained by duress, coercion, or",
     ref: "(Section 10.8, Lecture Scenario #1)",
     choices: [
@@ -43962,6 +43964,7 @@ const QUESTIONS = [
       "Is a mere acquiescence to authority claimed by the officer",
       "Revoked by the person granting consent",
     ],
+    verifyNote: "An admin is confirming this answer with the instructor. Until then, this test counts “Is a mere acquiescence to authority claimed by the officer.”",
     answer: 2
   },
   {

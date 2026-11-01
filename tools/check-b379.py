@@ -6,8 +6,8 @@ same frame for frame and the loops move; (4) the Leaderboard speed test's looks 
 has landed the rows take their moving loops back a row a frame (never more than one row's two loops a frame) until every loop moves and the
 board is no longer still;
 (6) Arrest, Search, and Seizure #31 and #55 (the same question twice in the 8-28-26 guide, with different answers) each count the guide's
-own answer - #31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer" - and no
-question carries a "being verified" note.
+own answer - #31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer" - and each
+keeps its red "being verified" note, naming the answer that question counts.
 Run:  python3 tools/check-b379.py   (--against: copy the old index.html and version.json over first)"""
 import os, sys, time, io, re
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -87,8 +87,10 @@ with sync_playwright() as pw:
         still_up and first_move is not None and landed is not None and first_move >= landed and max(steps) <= 2 and end.get("moving") == end.get("n") and end.get("still") is False,
         [L[:3], L[-3:]])
     # (6) the twins keep the guide's answers
-    tw = pg.evaluate("""()=>{ const f=s=>QUESTIONS.find(q=>q.topic==='Arrest, Search, and Seizure' && q.src===s); return { a31: f(31).choices[f(31).answer], a55: f(55).choices[f(55).answer], notes: QUESTIONS.filter(q=>q.verifyNote).length }; }""")
-    chk("#31 counts '%s', #55 '%s', %s questions with a being-verified note" % (tw["a31"], tw["a55"], tw["notes"]),
-        tw["a31"] == "Revoked by the person granting consent" and tw["a55"] == "Is a mere acquiescence to authority claimed by the officer" and tw["notes"] == 0, tw)
+    tw = pg.evaluate("""()=>{ const f=s=>QUESTIONS.find(q=>q.topic==='Arrest, Search, and Seizure' && q.src===s); const nt=q=>{ const n=buildBankNote(q); return n ? n.textContent : ''; };
+      return { a31: f(31).choices[f(31).answer], a55: f(55).choices[f(55).answer], n31: nt(f(31)), n55: nt(f(55)) }; }""")
+    chk("#31 counts '%s' and #55 '%s', each with its being-verified note naming that answer" % (tw["a31"], tw["a55"]),
+        tw["a31"] == "Revoked by the person granting consent" and tw["a55"] == "Is a mere acquiescence to authority claimed by the officer"
+        and "Being verified" in tw["n31"] and tw["a31"] in tw["n31"] and "Being verified" in tw["n55"] and tw["a55"] in tw["n55"], tw)
     br.close()
 sys.exit(0 if g["ok"] else 1)
