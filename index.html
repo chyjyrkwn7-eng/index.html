@@ -15154,6 +15154,16 @@
   /* build 379: painted, each loop's window on a small layer of its own - a step repaints only that window, not the row under it (his
      378 test: painted loops drew the board 140ms sooner but its idle frames fell from 90 to 50 in 1.5s) */
   html.lb-paint.lb-win .rank-rows .char-flip-play, html.lb-paint.lb-win .rank-rows .rk-frame{ will-change:transform; }
+  /* build 380: EVERY LOOP IN THE APP, A WINDOW-SIZED LAYER. A loop was its whole recorded sheet (every frame) on a layer of its own,
+     moved by a stepped transform - measured here at the phone's scale, ~158MB of layers on a Leaderboard and ~57MB on Home, made anew on
+     each visit: the iPhone's compositor took that in while the glass was landing (the glass freezing, waiting) and it is the likeliest
+     thing iOS ends the page over (his crash at 11:37, switching Leaderboard and Profile). Now the window (the one frame you see, ~100px
+     a side at 3x) is the layer, and the sheet steps through it by left/top - the same frames on the same clock (lbPaintKF's twin of the
+     transform keyframes). On by default (html.loops-paint, set at start); loopsWatch puts the old way back on a phone where it is not
+     smooth. */
+  html.loops-paint .char-flip-play img, html.loops-paint .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; }
+  html.loops-paint .rk-frame img{ position:relative; }
+  html.loops-paint .char-flip-play, html.loops-paint .rk-frame{ will-change:transform; }
   /* build 379: THE BOARD COMES UP STILL, THEN MOVES (lbStillGo). Each loop is first a painted frame - its left/top twin, paused: no layer,
      nothing repainted - and a row at a time, once the glass has landed, it takes its moving loop back (.lb-go). */
   .rank-rows.lb-still > .rank-row:not(.lb-go) .char-flip-play img, .rank-rows.lb-still > .rank-row:not(.lb-go) .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; animation-play-state:paused !important; }
@@ -83073,6 +83083,7 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   img.style.width = (sp.cols * g.cellCss) + "px";
   img.style.height = (sp.rows * g.cellCss) + "px";
   img.style.animation = orbitAnimKeyframes(g.cellCss, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
+  lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
   frame.appendChild(img);
   wrap.appendChild(frame);
   if(immediate){ attachOrbitSheetNow(badge, svg, wrap, g, fade); return; }
@@ -83799,6 +83810,7 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
          into the page carries on rather than jumping (charFlipResync) */
       if(el.dataset.flipPhase == null) el.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
       img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(el) + "ms infinite";
+      lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
       play.appendChild(img);
       if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
       svg.after(play);
@@ -103425,7 +103437,12 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-379";
+const APP_BUILD = "2026-11-01-380";
+/* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
+   them on this device (loopsWatch) */
+const LOOP_MODE_KEY = "class26e.loopmode";
+try{ const lm = localStorage.getItem(LOOP_MODE_KEY) || ""; if(!(lm.indexOf("layers|") === 0 && lm.indexOf("|" + APP_BUILD) > 0)) document.documentElement.classList.add("loops-paint"); }
+catch(e){ document.documentElement.classList.add("loops-paint"); }
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114285,7 +114302,8 @@ async function sendTabTimings(onDone){
 /* build 378: THE LEADERBOARD SPEED TEST. "The leaderboard still takes a minute can you tell?" - his 377 timings: the Leaderboard's screen is
    built in 5-18ms but first drawn 265-370ms after the tap (Profile ~110, Calendar ~50), so it is the drawing, which only the phone can
    measure. Taps Leaderboard then Profile, three rounds of the looks taken in turn: [b:base] as it is; [b:paint] the loops painted
-   (html.lb-paint) instead of each sheet a layer; (build 379: [b:base] is now the board coming up still and moving a row a frame after
+   (html.lb-paint) instead of each sheet a layer; (build 380: the looks are [b:base] - every loop a window-sized layer, html.loops-paint -
+   [b:layers] each loop its whole sheet on a layer as 379 had it, [b:noloops], [b:norows]) (build 379: [b:base] is now the board coming up still and moving a row a frame after
    the glass lands, [b:nostill] the board as 378 had it, loops moving from the first frame) [b:paintwin] (build 379) painted, each loop's window a small layer of its own
    (html.lb-paint.lb-win); [b:noloops] no loops at all; [b:norows] no rows (the floor). His 378 run dropped [b:hold] (975ms, idle
    frames 266ms), [b:nofx] and [b:noglass] (no different from base). Per look: the median and each of the Leaderboard's tap-to-second-
@@ -114295,12 +114313,13 @@ let boardTestRunning = false;
 const BOARD_TEST_NOLOOPS = ".rank-rows .char-flip-play,.rank-rows .cosmic-rank-anim{display:none !important}";
 const BOARD_TEST_NOFX = ".rank-rows .char-flip-play{-webkit-mask-image:none !important;mask-image:none !important}.rank-rows .cosmic-rank-anim,.rank-rows svg.cosmic-rank-emblem{mix-blend-mode:normal !important;filter:none !important}";
 const BOARD_TEST_LOOKS = [
-  ["base", "", ""], ["nostill", "", "lb-nostill"], ["paintwin", "", "lb-paint lb-win"], ["noloops", BOARD_TEST_NOLOOPS, ""],
+  ["base", "", ""], ["layers", "", "-loops-paint"], ["noloops", BOARD_TEST_NOLOOPS, ""],
   ["norows", ".screen-rankings .rank-rows{display:none !important}", ""]];
 async function runBoardTest(onDone){
   if(boardTestRunning || lagTestRunning) return;
   boardTestRunning = true;
-  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold", "lb-win", "lb-nostill"].filter(c => root.classList.contains(c));
+  const TEST_CLASSES = ["lb-paint", "lb-hold", "lb-win", "lb-nostill", "loops-paint"];
+  const root = document.documentElement, modesWas = TEST_CLASSES.filter(c => root.classList.contains(c));
   const note = document.createElement("div");
   note.setAttribute("aria-hidden", "true");
   note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none;white-space:nowrap";
@@ -114342,7 +114361,9 @@ async function runBoardTest(onDone){
     for(let round = 0; round < 3; round++){
       for(const [name, css, mode] of BOARD_TEST_LOOKS){
         note.textContent = "Testing Leaderboard speed (" + (round + 1) + "/3 " + name + ")… don't touch the screen";
-        st.textContent = css; root.classList.remove("lb-paint", "lb-hold", "lb-win", "lb-nostill"); if(mode) mode.split(" ").forEach(c => root.classList.add(c));
+        /* build 380: a look starts from the app as it is; "-x" takes a class away */
+        st.textContent = css; TEST_CLASSES.forEach(c => root.classList.toggle(c, modesWas.indexOf(c) >= 0));
+        if(mode) mode.split(" ").forEach(c => { if(c[0] === "-") root.classList.remove(c.slice(1)); else root.classList.add(c); });
         await wait(250);
         const g = got[name];
         g.p.push(await visit("rewards"));
@@ -114358,7 +114379,7 @@ async function runBoardTest(onDone){
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ st.remove(); note.remove(); }catch(e){}
-  root.classList.remove("lb-paint", "lb-hold", "lb-win", "lb-nostill"); modesWas.forEach(c => root.classList.add(c));
+  TEST_CLASSES.forEach(c => root.classList.toggle(c, modesWas.indexOf(c) >= 0));
   boardTestRunning = false;
   const text = rows.join(" | ");
   let sent = false;
@@ -126152,6 +126173,7 @@ function lbFlipKnown(aw, charId){
     img.style.height = (sp.rows * f.cell) + "px";
     if(aw.dataset.flipPhase == null) aw.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
     img.style.animation = orbitAnimKeyframes(f.cell, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(aw) + "ms infinite";
+    lbPaintKF(img);   /* build 380 */
     play.appendChild(img);
     if(f.rel) av.style.position = "relative";
     av.appendChild(play);
@@ -126185,7 +126207,7 @@ function lbMarkKnown(rk){
 }
 /* build 378: the left/top twin of a loop's stepped transform (orbitAnimKeyframes), for html.lb-paint: the same frames on the same clock,
    moved by layout instead of by the compositor, so no layer holds the whole sheet */
-const lbPaintKFMade = new Set();
+var lbPaintKFMade = new Set();
 function lbPaintKF(img){
   try{
     const m = /rk-sheet-(\d+)-(\d+)-([\d_]+)/.exec(img.style.animationName || "");
@@ -126203,6 +126225,8 @@ function lbPaintKF(img){
     }
     if(img.style.getPropertyValue("--pk") !== name) img.style.setProperty("--pk", name);
     const hname = "rk-hold-" + m[1] + "-" + m[2] + "-" + m[3];
+    /* build 380: the held twin only for its speed-test look (every loop now makes its painted twin, and a keyframes rule added is a style pass) */
+    if(!document.documentElement.classList.contains("lb-hold")) return;
     if(!lbPaintKFMade.has(hname)){
       const cols = +m[1], n = +m[2], cell = parseFloat(m[3].replace("_", "."));
       const at = k => "translate3d(" + (-(k % cols) * cell) + "px," + (-Math.floor(k / cols) * cell) + "px,0)";
@@ -126242,7 +126266,7 @@ function lbStillGo(rows, token){
   };
   requestAnimationFrame(() => requestAnimationFrame(wait));
 }
-function lbLoopAlt(){ const c = document.documentElement.classList; return c.contains("lb-paint") || c.contains("lb-hold"); }
+function lbLoopAlt(){ const c = document.documentElement.classList; return c.contains("lb-paint") || c.contains("lb-hold") || c.contains("loops-paint"); }
 function lbPaintAll(root, force){
   if(!root || !(force || lbLoopAlt())) return;
   root.querySelectorAll(".char-flip-play img, .rk-frame img").forEach(lbPaintKF);
@@ -136988,6 +137012,46 @@ const LAST_TAB_KEY = "class26e.lastTab";
    are kept in this device's storage and ride along with a bug report ("perf"), so the real numbers can be read with
    `firestore-admin.py bugs`. Nothing runs between taps and nothing is sent anywhere by itself. */
 const TAB_PERF_KEY = "class26e.tabperf";
+/* build 380: IS A PAINTED LOOP SMOOTH HERE? Every 7s, on a screen with four or more loops moving in view and nothing else going on (no
+   glass up, no slide, settled, no touch during it), the frames are counted for 1.5s. Two counts in a row with over 35% of frames longer
+   than 25ms put the loops back as they were (each its whole sheet on a layer) for the rest of this build on this device, and say so in
+   "Send tab timings" (loops: paint/layers and the last counts). His 378 test: painted into the rows' own layer, an idle board drew 50
+   frames in 1.5s (base 90) - the look this build ships puts each window on its own layer to not do that; this is the check that it
+   does not, on the phone. */
+const loopsWatch = { strikes: 0, last: [], busy: false, touchAt: -1e9 };
+try{ window.addEventListener("touchstart", () => { loopsWatch.touchAt = performance.now(); }, { capture: true, passive: true }); }catch(e){}
+function loopsInView(){
+  let n = 0; const vh = window.innerHeight || 800;
+  try{ document.querySelectorAll("#stage .char-flip-play img, #stage .rk-frame img").forEach(i => { if(n >= 4) return; const w = i.parentElement; const b = w && w.getBoundingClientRect(); if(b && b.width && b.bottom > 0 && b.top < vh && getComputedStyle(i).animationName.indexOf("rk-pos") === 0) n++; }); }catch(e){}
+  return n;
+}
+function loopsWatchTick(force){
+  try{
+    const root = document.documentElement;
+    if(force) loopsWatch.touchAt = -1e9;
+    if(document.hidden || loopsWatch.busy || !root.classList.contains("loops-paint") || lagTestRunning || boardTestRunning) return;
+    if(document.querySelector("#bottomtabs-lens.is-up") || root.classList.contains("tab-dragging") || (!force && Date.now() < settleUntil)) return;
+    if(performance.now() - loopsWatch.touchAt < 1500 || loopsInView() < (force ? 1 : 4)) return;
+    loopsWatch.busy = true;
+    const iv = [], t0 = performance.now(); let last = t0;
+    const tick = t => {
+      iv.push(t - last); last = t;
+      if(t - t0 < 1500 && !document.hidden) { requestAnimationFrame(tick); return; }
+      loopsWatch.busy = false;
+      if(document.hidden || performance.now() - loopsWatch.touchAt < 1600 || iv.length < 10) return;
+      const slow = iv.filter(v => v > 25).length;
+      loopsWatch.last.push("n" + iv.length + "/s" + slow); if(loopsWatch.last.length > 6) loopsWatch.last.shift();
+      if(slow / iv.length > .35){
+        if(++loopsWatch.strikes >= 2){
+          root.classList.remove("loops-paint");
+          try{ localStorage.setItem(LOOP_MODE_KEY, "layers|" + loopsWatch.last.join(",") + "|" + APP_BUILD); }catch(e){}
+        }
+      } else loopsWatch.strikes = 0;
+    };
+    requestAnimationFrame(tick);
+  }catch(e){ loopsWatch.busy = false; }
+}
+setInterval(loopsWatchTick, 7000);
 let tabPerfActive = null;
 function tabPerfStart(dest){
   try{
@@ -137019,7 +137083,8 @@ function tabPerfText(){
     let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
     let ended = ""; try{ ended = (JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []).join("; "); }catch(e){}
     let hr = ""; try{ hr = localStorage.getItem("class26e.hswrescue") || ""; }catch(e){}
-    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (hr ? " | taps rescued " + hr : "") + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
+    let lm = ""; try{ lm = " | loops " + (document.documentElement.classList.contains("loops-paint") ? "paint" : "layers") + (loopsWatch.last.length ? " " + loopsWatch.last.join(",") : "") + ((localStorage.getItem(LOOP_MODE_KEY) || "").indexOf("layers|") === 0 ? " (fell back: " + localStorage.getItem(LOOP_MODE_KEY) + ")" : ""); }catch(e){}
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + lm + (hr ? " | taps rescued " + hr : "") + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
       r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn + (r.p ? " l" + (r.l || 0) + "/p" + r.p : "")).join(" | ")).slice(0, 3200);
   }catch(e){ return ""; }
 }
@@ -138242,7 +138307,9 @@ function tabPerfText(){
     /* build 377: THE LANDING HAS ITS FRAMES TO ITSELF. Everything a new screen puts off "until it has settled" (characters going live,
        emblems waking, the first-paint queue, recordings) waits until the glass has handed over to the platter - his recording showed the
        Leaderboard's after-mount work freezing the shrink for ~250ms */
-    try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 80); }catch(e){}
+    /* build 380: +160, not +80 - the landing is planned at the release again (no wait for the screen), and the screen's own build lands
+       inside it, so the hand-over's frame can come late */
+    try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 160); }catch(e){}
     bar.classList.remove("is-pressing");
     /* the bar stays swollen while the lens is up, and goes back as it lands */
     const sw = getComputedStyle(bar).scale;
@@ -138278,10 +138345,19 @@ function tabPerfText(){
      shrinks into the platter on its own clock: it stays up as clear glass on its tab (a still lens cannot stutter) until the screen
      has been drawn - two frames after it was built - and lands then; LENS_AWAIT_MAX is the most it will wait. A release with no
      screen to wait for lands as before. */
+  /* build 380: THE GLASS NO LONGER WAITS FOR THE SCREEN. "The bubble takes a minute to shrink down to the one you clicked." His 11:40
+     recording at 30fps: Profile -> Home, the glass over Home 100ms after the press and still up 170ms after that, until Home was drawn.
+     The wait (375) was there because the landing, planned at the release as one compositor track, stood still on the phone while a new
+     screen was drawn - and what the phone's compositor was busy with then was the new screen's loops, each its whole sheet on a layer
+     (~158MB on a Leaderboard, ~57MB on Home). 380 makes every loop a window-sized layer (html.loops-paint), so the landing goes back to
+     its own clock, planned at the release: every tab lands the same, however long its screen takes. (A timer could never have ended the
+     wait sooner: while a screen is being drawn the page runs nothing.) LENS_AWAIT_ON brings the wait back if it is ever wanted. */
+  const LENS_AWAIT_ON = false;
   const LENS_AWAIT_MAX = 650;
   let lensAwait = null;
   function lensAwaitClear(){ if(lensAwait){ clearTimeout(lensAwait.timer); lensAwait = null; } }
   bar._lensAwaitScreen = () => {
+    if(!LENS_AWAIT_ON) return;
     if(lensAwait || !lensG || !lensAt || lensFollow || tabDragActive || !lens.classList.contains("is-up")) return;
     const tab = lensAt, hi = lensInfo(tab), g = lensG;
     if(!hi) return;

@@ -29981,3 +29981,41 @@ swallowed, so a scroll that starts on a choice never picks it) and ended with NO
 (host.click()); a trusted click that arrives late on the same switch within 700ms of that is the same tap and is swallowed. Each rescue
 is counted in class26e.hswrescue and shows in "Send tab timings" as "taps rescued N" - so the next report says how often the phone
 dropped one. Gate: check-b379 (7) - real tap picks once, touch with no click still picks, slide picks nothing (fails against 378).
+
+## Build 2026-11-01-380 - every loop a window-sized layer; the glass no longer waits for the screen
+
+Madison (11:37 and 11:40 recordings, 379): "App crashed, the tapping is getting better I think but idk, it still has some lag, when on
+home I can tell it lags when clicking leaderboard, big thing I see I like the bubble takes a minute to shrink down to the one you
+clicked, there is still lag and stuff when swiping dragging ... This is getting kinda ridiculous. We need this fixed."
+
+Read:
+- 11:37 at 41-44s: on the Leaderboard, switching Leaderboard <-> Profile; a Live Activity banner from another app (a fantasy-league
+  score) dropped in at the top, then black, grey, the splash ("connecting to cloud sync") and Home - iOS ended the page. His 17:36
+  report predates it (its ended log stops at b377), so the next report's ended log will carry it (with the 378 footprint).
+- 11:40 at 30fps, the bar: Profile -> Home, the glass over Home ~100ms after the press and held up ~170ms more until Home was drawn
+  (~230ms); Home -> Leaderboard, the board in ~170ms (379's still board) and the glass held for it the same way; Leaderboard ->
+  Calendar, Calendar at once and the glass down at ~230ms. "Takes a minute to shrink" is the 375 wait for the screen.
+- Sandbox at his scale (3x), the layers loops make: a Leaderboard's 36 loops each their WHOLE sheet as a layer, ~158MB of layers (if
+  backed whole, as WebKit backs a non-tiled layer); Home's 5 flare sheets ~57MB; Profile none. Made anew on every visit.
+
+Why one fix answers four complaints: the landing is planned at the release as a compositor track (lensRelease), and 375 found it
+standing still on the phone while a screen was drawn - the compositor taking in a screen's worth of whole-sheet layers. That intake
+is also the Leaderboard's first draw (his 378 test: 448ms with loops, 218 without) and the likeliest thing iOS ends the page over.
+
+380:
+- html.loops-paint (set at start, before anything is built; LOOP_MODE_KEY can turn it off for this build): every loop in the app -
+  board characters and flares, Home's flares, the tab bar's character - steps its sheet by left/top (lbPaintKF's rk-pos twin of the
+  transform keyframes; --pk set where each loop starts: attachOrbitSheet, charFlipAttach, lbFlipKnown) with the sheet img NOT a layer
+  and its window (.char-flip-play / .rk-frame) the layer - ~100px a side at 3x. Sandbox: 0 sheet layers anywhere (board 36 -> 0, Home
+  5 -> 0), and every loop on screen shows the same frame as the old way at the same time (left/top = the old transform offset).
+  The held twin (rk-hold) is now made only for its look (a keyframes rule added is a style pass).
+- loopsWatch: every 7s on a screen with 4+ loops moving in view and nothing else going on (no glass, no slide, settled, no touch), 1.5s
+  of frames are counted; two counts in a row with over 35% of frames over 25ms put the loops back on whole-sheet layers and note
+  "layers|<counts>|<build>" for this build on this device. "Send tab timings" says "loops paint|layers <counts>" (and the fallback).
+- THE GLASS NO LONGER WAITS (LENS_AWAIT_ON = false): the landing is planned at the release again, on its own clock - every tab the
+  same. (No timer could have ended the wait early: while a screen is drawn the page runs nothing.)
+- The 379 still-first board is off while loops-paint is on (nothing heavy to hold off); the speed test's looks are base, layers
+  (html without loops-paint = 379), noloops, norows.
+
+Gate: tools/check-b380.py (6 parts). Reversed on purpose: check-b375 (1) (the glass waited for a slow screen). check-b378 and
+check-b379 take loops-paint off before measuring the old layers.
