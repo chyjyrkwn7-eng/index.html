@@ -29813,3 +29813,24 @@ noticeable; black screen still too long.
   next launch's ENDED line carries it. screen "test" for a question/pause panel. To read the next report's ended: lines.
 - PLANETS ON RETURN: loopsBack resumes after 2 steady frames (was 4) or ~40 tries (was 90).
 check-b377.py (4 parts) fails on 376.
+Build 377, more (his 00:53 tab video, 00:54 Leaderboard video, and notes):
+- TAB VIDEO (120fps, 58 taps/slides read event by event): Home/Calendar taps glide and shrink at 60Hz, screen ~75-225ms after the press.
+  The bad ones are the Leaderboard: the board drawn, then the glass held at full size ~250ms with no frame, then one jump into the
+  platter - the board's after-mount work on the frames the landing needed.
+- LEADERBOARD VIDEO: back from another app, the board sat as discs/empty rings for seconds: trimForBackground (357) stripped every row's
+  art on the way out and it refilled a row a frame. NOW NOT STRIPPED (the leak that made the page too big is fixed in 375; his ended log
+  shows no page ended in the background since 376). The decoded sheets (sp.pre) still go, and come back 1.2s after a return
+  (restoreAfterBackground, decode in the quiet).
+- STRAY TICKS ON A SLIDE: each tab holds a real native switch (.nova-hsw, the iOS 26.5+ tap tick); a sliding finger drags it and every flip
+  ticks. tabSwitchesOut() takes the tab switches out as the slide starts, tabSwitchesBack() on release / lensFinish / lensHide.
+- SEE-THROUGH GLASS ("like the rank flares"): .bottomtabs backdrop blur(30px) saturate(1.25) -> blur(7px) saturate(1.5); dark body .74 -> .26.
+- BOARD SWITCH LAG (traced 4x CPU): ~3,900 elements restyled in one frame after a switch - the carried-over characters' and flares' drawings
+  (~250 / ~95 parts) re-inserted into the rebuilt rows - then the queue putting drawings under loops a row a frame for ~1s. Now a row in the
+  first screenful (LB_KNOWN_ROWS) whose loop is ready is the loop alone (lbFlipKnown also deletes data-lazy-av: the row is complete, never
+  queued; a carried frame with a drawing is replaced by a loop, its loop phase kept); a flare with its loop is the bubble + loop with the
+  emblem drawing removed (data-loop-only); a carried flare with its drawing is replaced. After: ~2,200 restyled, no queue. Main-thread per
+  switch at 4x is ~1.2s/1.2s on both builds - the board's frames are full regardless (animations, layers, the recorder) - so this is less
+  work, not proven smoother; the phone decides.
+- RECORDING IN THE QUIET IS QUIETER: a charRecBg-only job waits for 5s with no touch (was the general 2s), so a recording slice is less often
+  under a finger.
+check-b350's "stays on its pose" is read one frame after the return (two steady frames now). check-b377: 8 parts, all fail on 376.
