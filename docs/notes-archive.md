@@ -29952,3 +29952,15 @@ without them). Painting them drew the board in 306ms - the idle cost of paint wa
   reads the gain directly. [b:paintwin] stays for comparison.
 
 Gate: tools/check-b379.py part (5) (fails against 378).
+
+### 379: Arrest, Search, and Seizure #31 / #55 - each keeps the guide's own answer
+
+Madison (screenshot of #31 on a Drill, marked C with the red "Being verified" note, and the guide "Arrest, Search, and Seizure Study Test
+Questions, reviewed 8-28-26"): "In the arrest search and seizure unit there are two of these questions. Ensure they are each marked
+correctly even though it's the same question with two different answers, don't change the answers.. not sure why you did that."
+The guide: "31 & 55. Consent is considered involuntary if it is obtained by duress, coercion, or __________" marks D (Revoked by the person
+granting consent); "55 & 31. ... coercion, or" marks C (Is a mere acquiescence to authority claimed by the officer). Build 325 had changed
+#31 to C to agree with #55 (a judgment on the law - against the rule that answers are word for word the guide), and build 328 put the red
+verifyNote on both. Now #31 is answer 3 (D) again, #55 stays 2 (C), and neither has a note. Answer is not part of KEYS, so nobody's
+progress on either question is orphaned. The whole unit was compared with the guide (120 questions, parsed from the docx: question
+number, choices, highlighted answer): #31 was the only answer that differed. check-b328-level1 328d reversed; check-b379 part (6).
