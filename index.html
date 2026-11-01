@@ -15146,6 +15146,14 @@
   .cosmic-rank-anim .rk-frame{ position:absolute; left:50%; top:50%; overflow:hidden; }
   .cosmic-rank-anim .rk-frame img{ display:block; max-width:none; will-change:transform; backface-visibility:hidden; }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem.rk-under-anim{ visibility:hidden; }
+  /* build 378: A BOARD LOOP CAN BE PAINTED INSTEAD OF COMPOSITED (html.lb-paint, see lbPaintKF). The stepped transform made each
+     loop's whole sheet (every frame, ~800px square) a layer of its own, so a phone may draw all of each sheet when the board opens.
+     Stepped left/top only paints the one frame in view. Off unless the Leaderboard speed test turns it on for one of its looks. */
+  html.lb-paint .rank-rows .char-flip-play img, html.lb-paint .rank-rows .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; }
+  html.lb-paint .rank-rows .rk-frame img{ position:relative; }
+  /* ...or kept a layer, but moved on a linear clock that holds each frame (html.lb-hold): WebKit hands no steps() animation to the
+     compositor, so a stepped loop is moved by the page itself every frame; held frames on a linear clock look the same and can be. */
+  html.lb-hold .rank-rows .char-flip-play img, html.lb-hold .rank-rows .rk-frame img{ animation-name:var(--hk, none) !important; animation-timing-function:linear !important; }
   /* a cutscene's flip-book (rankSceneEmblemAnims) takes the emblem's own
      look from the bubble's state, which changes during the scene */
   .cosmic-icon-badge.cosmic-badge-rank > .cosmic-rank-anim.is-scene{ filter:grayscale(1) brightness(1.9) contrast(.9); opacity:.62; }
@@ -103367,7 +103375,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-377";
+const APP_BUILD = "2026-11-01-378";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114224,6 +114232,101 @@ async function sendTabTimings(onDone){
   try{ onDone && onDone(sent); }catch(e){}
   return sent;
 }
+/* build 378: THE LEADERBOARD SPEED TEST. "The leaderboard still takes a minute can you tell?" - his 377 timings: the Leaderboard's screen is
+   built in 5-18ms but first drawn 265-370ms after the tap (Profile ~110, Calendar ~50), so it is the drawing, which only the phone can
+   measure. Taps Leaderboard then Profile, three rounds of seven looks taken in turn: [b:base] as it is; [b:paint] the loops painted
+   (html.lb-paint) instead of each sheet a layer; [b:hold] the loops on a linear clock that holds each frame (html.lb-hold), which the
+   compositor can run; [b:noloops] no loops at all; [b:nofx] the loops without their round mask, blend and filter; [b:noglass] no
+   blurred surfaces on the screen; [b:norows] no rows (the floor). Per look: the median and each of the Leaderboard's tap-to-second-
+   frame (p); in the 1.5s after it, the worst frame w, slow frames s, frames drawn n and how free the page was (f: message round trips
+   per 10ms - higher is freer); and Profile's p. */
+let boardTestRunning = false;
+const BOARD_TEST_NOLOOPS = ".rank-rows .char-flip-play,.rank-rows .cosmic-rank-anim{display:none !important}";
+const BOARD_TEST_NOFX = ".rank-rows .char-flip-play{-webkit-mask-image:none !important;mask-image:none !important}.rank-rows .cosmic-rank-anim,.rank-rows svg.cosmic-rank-emblem{mix-blend-mode:normal !important;filter:none !important}";
+const BOARD_TEST_LOOKS = [
+  ["base", "", ""], ["paint", "", "lb-paint"], ["hold", "", "lb-hold"], ["noloops", BOARD_TEST_NOLOOPS, ""], ["nofx", BOARD_TEST_NOFX, ""],
+  ["noglass", ".screen-rankings,.screen-rankings *{backdrop-filter:none !important;-webkit-backdrop-filter:none !important}", ""],
+  ["norows", ".screen-rankings .rank-rows{display:none !important}", ""]];
+async function runBoardTest(onDone){
+  if(boardTestRunning || lagTestRunning) return;
+  boardTestRunning = true;
+  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold"].filter(c => root.classList.contains(c));
+  const note = document.createElement("div");
+  note.setAttribute("aria-hidden", "true");
+  note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none;white-space:nowrap";
+  note.textContent = "Testing Leaderboard speed… don't touch the screen";
+  document.body.appendChild(note);
+  const st = document.createElement("style"); st.id = "board-test-look"; document.head.appendChild(st);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const frames2 = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const SEL = { rewards: ".screen-rankings", profile: ".screen-profile" };
+  const raf = []; let lastR = performance.now(), on = true;
+  const rafTick = t => { raf.push(t - lastR); lastR = t; if(on) requestAnimationFrame(rafTick); };
+  requestAnimationFrame(rafTick);
+  const tapTab = async d => {
+    const el = document.getElementById("bottomtab-" + d);
+    if(!el || el.hidden || !el.getClientRects().length) return false;
+    const b = el.getBoundingClientRect(), x = b.left + b.width / 2, y = b.top + b.height / 2;
+    const mk = t => new PointerEvent(t, { bubbles: true, cancelable: true, pointerType: "touch", pointerId: 37, isPrimary: true, clientX: x, clientY: y });
+    el.dispatchEvent(mk("pointerdown")); await wait(60); el.dispatchEvent(mk("pointerup"));
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: x, clientY: y }));
+    return true;
+  };
+  const visit = async d => {
+    const t0 = performance.now();
+    if(!(await tapTab(d))) return 0;
+    while(!document.querySelector(SEL[d]) && performance.now() - t0 < 2500) await new Promise(r => requestAnimationFrame(r));
+    await frames2();
+    return Math.round(performance.now() - t0);
+  };
+  const med = a => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[b.length >> 1] : 0; };
+  const got = {};
+  BOARD_TEST_LOOKS.forEach(([n]) => { got[n] = { p: [], w: 0, s: 0, n: 0, f: 0, pp: [] }; });
+  let pings = 0, pinging = false; const mc = new MessageChannel();
+  mc.port1.onmessage = () => { pings++; if(pinging) mc.port2.postMessage(0); };
+  const rows = [];
+  try{
+    try{ showHome(); }catch(e){}
+    await wait(1500);
+    await visit("rewards"); await wait(1500); await visit("profile"); await wait(1000);
+    for(let round = 0; round < 3; round++){
+      for(const [name, css, mode] of BOARD_TEST_LOOKS){
+        note.textContent = "Testing Leaderboard speed (" + (round + 1) + "/3 " + name + ")… don't touch the screen";
+        st.textContent = css; root.classList.remove("lb-paint", "lb-hold"); if(mode) root.classList.add(mode);
+        await wait(250);
+        const g = got[name];
+        g.p.push(await visit("rewards"));
+        raf.length = 0; lastR = performance.now(); pings = 0; pinging = true; mc.port2.postMessage(0);
+        await wait(1500);
+        pinging = false;
+        g.w = Math.max(g.w, Math.round(raf.reduce((m, v) => v > m ? v : m, 0))); g.s += raf.filter(v => v > 34).length; g.n += raf.length; g.f += pings / 150;
+        g.pp.push(await visit("profile"));
+        await wait(900);
+      }
+    }
+    BOARD_TEST_LOOKS.forEach(([n]) => { const g = got[n]; rows.push("[b:" + n + "] r p" + med(g.p) + " (" + g.p.join(",") + ") idle w" + g.w + "/s" + g.s + "/n" + Math.round(g.n / 3) + "/f" + Math.round(g.f / 3) + " | p p" + med(g.pp)); });
+  }catch(e){ rows.push("error " + ((e && e.message) || e)); }
+  on = false;
+  try{ st.remove(); note.remove(); }catch(e){}
+  root.classList.remove("lb-paint", "lb-hold"); modesWas.forEach(c => root.classList.add(c));
+  boardTestRunning = false;
+  const text = rows.join(" | ");
+  let sent = false;
+  try{
+    if(fbDb && navigator.onLine !== false){
+      const id = "bug-" + Date.now().toString(36) + "-brd" + Math.random().toString(36).slice(2, 5);
+      let vw = 0, vh = 0; try{ vw = Math.round(innerWidth); vh = Math.round(innerHeight); }catch(e){}
+      await Promise.race([fbDb.collection("vrooms").doc(id).set({
+        kind: "bug", text: "Leaderboard speed test", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+        from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
+        viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        perf: ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + (window.devicePixelRatio || 1) + " | " + text).slice(0, 1700),
+        at: Date.now() }).then(() => { sent = true; }), wait(6000)]);
+    }
+  }catch(e){}
+  try{ onDone && onDone({ text, sent }); }catch(e){}
+  return { text, sent };
+}
 let dragTestRunning = false;
 const DRAG_PAUSE = "html.tab-held #stage *,html.tab-held #stage *::before,html.tab-held #stage *::after{animation-play-state:paused !important}";
 const DRAG_SOLID = ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}";
@@ -114327,6 +114430,11 @@ function showBugReport(){
   useBtn.textContent = "Send tab timings";
   useBtn.addEventListener("click", () => { useBtn.disabled = true; sendTabTimings(ok => { try{ useBtn.disabled = false; const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = ok ? "The tab timings from your recent use were sent to the Nova admin." : "The tab timings could not be sent. Check your connection and try again."; }catch(e){} }); });
   form.appendChild(useBtn);
+  const boardBtn = document.createElement("button");
+  boardBtn.type = "button"; boardBtn.className = "next bugreport-send";
+  boardBtn.textContent = "Test Leaderboard speed";
+  boardBtn.addEventListener("click", () => { if(!boardTestRunning && !lagTestRunning) runBoardTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The Leaderboard speed test was sent to the Nova admin." : "The Leaderboard speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
+  form.appendChild(boardBtn);
   /* build 367: DRAG TEST, FOR A SCREEN RECORDING. His 366 speed test showed the drag drawn at 60fps by the page's own clock in every variant, while
      his screen recording shows the glass updating only 20-40 times a second as he drags - the cost is in the graphics, which a script cannot see.
      Start the screen recording, tap this, and slide a finger back and forth across the bar the whole time: six looks of the bar, 7s each (the
@@ -125594,6 +125702,7 @@ function renderRankingRows(rows, entries, board, opts){
      person's character is now carried over to their new row, and its
      loop runs on a shared clock (charFlipResync), so a rebuilt row picks
      up exactly where it was. */
+  lbPaintWatch(rows);
   const keptAvatars = new Map();
   rows.querySelectorAll(".rank-row[data-pub]").forEach(r => {
     const a = r.querySelector(":scope > .rank-avatar-wrap");
@@ -125999,6 +126108,57 @@ function lbMarkKnown(rk){
     real.dataset.loopOnly = "1";
     return real;
   }catch(e){ return null; }
+}
+/* build 378: the left/top twin of a loop's stepped transform (orbitAnimKeyframes), for html.lb-paint: the same frames on the same clock,
+   moved by layout instead of by the compositor, so no layer holds the whole sheet */
+const lbPaintKFMade = new Set();
+function lbPaintKF(img){
+  try{
+    const m = /rk-sheet-(\d+)-(\d+)-([\d_]+)/.exec(img.style.animationName || "");
+    if(!m) return;
+    const name = "rk-pos-" + m[1] + "-" + m[2] + "-" + m[3];
+    if(!lbPaintKFMade.has(name)){
+      const cols = +m[1], n = +m[2], cell = parseFloat(m[3].replace("_", "."));
+      let css = "@keyframes " + name + "{";
+      for(let k = 0; k < n; k++) css += (k * 100 / n).toFixed(4) + "%{left:" + (-(k % cols) * cell) + "px;top:" + (-Math.floor(k / cols) * cell) + "px}";
+      css += "100%{left:" + (-((n - 1) % cols) * cell) + "px;top:" + (-Math.floor((n - 1) / cols) * cell) + "px}}";
+      let st = document.getElementById("rk-sheet-keyframes");
+      if(!st){ st = document.createElement("style"); st.id = "rk-sheet-keyframes"; document.head.appendChild(st); }
+      st.appendChild(document.createTextNode(css));
+      lbPaintKFMade.add(name);
+    }
+    if(img.style.getPropertyValue("--pk") !== name) img.style.setProperty("--pk", name);
+    const hname = "rk-hold-" + m[1] + "-" + m[2] + "-" + m[3];
+    if(!lbPaintKFMade.has(hname)){
+      const cols = +m[1], n = +m[2], cell = parseFloat(m[3].replace("_", "."));
+      const at = k => "translate3d(" + (-(k % cols) * cell) + "px," + (-Math.floor(k / cols) * cell) + "px,0)";
+      let css = "@keyframes " + hname + "{";
+      for(let k = 0; k < n; k++){
+        css += (k * 100 / n).toFixed(4) + "%{transform:" + at(k) + "}";
+        css += ((k + 1) * 100 / n - .0002).toFixed(4) + "%{transform:" + at(k) + "}";
+      }
+      css += "100%{transform:" + at(n - 1) + "}}";
+      document.getElementById("rk-sheet-keyframes").appendChild(document.createTextNode(css));
+      lbPaintKFMade.add(hname);
+    }
+    if(img.style.getPropertyValue("--hk") !== hname) img.style.setProperty("--hk", hname);
+  }catch(e){}
+}
+function lbLoopAlt(){ const c = document.documentElement.classList; return c.contains("lb-paint") || c.contains("lb-hold"); }
+function lbPaintAll(root){
+  if(!root || !lbLoopAlt()) return;
+  root.querySelectorAll(".char-flip-play img, .rk-frame img").forEach(lbPaintKF);
+}
+function lbPaintWatch(rows){
+  if(!rows || rows._paintMo || typeof MutationObserver !== "function" || !lbLoopAlt()) return;
+  rows._paintMo = new MutationObserver(recs => {
+    if(!lbLoopAlt()) return;
+    for(const r of recs){
+      if(r.type === "attributes"){ if(r.target.tagName === "IMG") lbPaintKF(r.target); continue; }
+      r.addedNodes.forEach(n => { if(n.nodeType !== 1) return; if(n.tagName === "IMG") lbPaintKF(n); else lbPaintAll(n); });
+    }
+  });
+  rows._paintMo.observe(rows, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
 }
 /* saved loops read back in the quiet after launch, for the characters and ranks on the board (never recorded here) */
 var lbPreloadT = 0, lbPreloadBusy = false;
