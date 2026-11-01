@@ -103292,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-371";
+const APP_BUILD = "2026-11-01-372";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -129696,7 +129696,7 @@ function buildRankRewardTiles(key, taps){
     const t = document.createElement("span");
     t.className = "pf-rw " + cls;
     const a = document.createElement("span");
-    a.className = "pf-rw-art"; a.appendChild(art);
+    a.className = "pf-rw-art"; artLater(a, art);
     const l = document.createElement("span");
     l.className = "pf-rw-lab"; l.textContent = label;
     const lk = document.createElement("span");
@@ -130075,7 +130075,7 @@ function buildProfileGoal(prog){
     box.style.setProperty("--nx", RANK_COLOR.titan);
     const h = document.createElement("span"); h.className = "pf-goal-head";
     const emb = document.createElement("span"); emb.className = "pf-goal-emb";
-    try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG("titan"), "titan")); }catch(e){}
+    try{ artLater(emb, fitRankEmblem(buildRankEmblemSVG("titan"), "titan")); }catch(e){}
     const tx = document.createElement("span"); tx.className = "pf-goal-tx";
     const k = document.createElement("span"); k.className = "pf-kick"; k.textContent = "Max rank";
     const nm = document.createElement("span"); nm.className = "pf-goal-name"; nm.textContent = RANK_DISPLAY_NAME.titan;
@@ -130103,7 +130103,7 @@ function buildProfileGoal(prog){
   head.className = "pf-goal-head";
   const emb = document.createElement("span");
   emb.className = "pf-goal-emb";
-  try{ emb.appendChild(fitRankEmblem(buildRankEmblemSVG(rc.key), rc.key)); }catch(e){}
+  try{ artLater(emb, fitRankEmblem(buildRankEmblemSVG(rc.key), rc.key)); }catch(e){}
   const tx = document.createElement("span");
   tx.className = "pf-goal-tx";
   const k = document.createElement("span");
@@ -130378,8 +130378,7 @@ function showProfile(defaultTab, opts){
      picker reads, so the light on this card is the light that was
      previewed when it was chosen. */
   heroAvatar.style.setProperty("--char-glow", avatarGlowColor(store.avatarChar));
-  heroAvatar.appendChild(platePortrait(avatarSpanFor({ avatarChar: store.avatarChar })));
-  setCharState(heroAvatar, "live");
+  artLater(heroAvatar, platePortrait(avatarSpanFor({ avatarChar: store.avatarChar })), () => setCharState(heroAvatar, "live"));
   /* TAP YOUR CHARACTER (build 327z13): "In profile, if I tap my character,
      it should do a thing." It gives under the finger and springs back,
      and plays its special move - the one it otherwise does now and then on
@@ -133425,6 +133424,24 @@ function afterFirstPaint(fn){
     if(afterPaintQueue.length) requestAnimationFrame(() => setTimeout(step, 0));
   };
   requestAnimationFrame(() => setTimeout(step, 0));
+}
+/* ART THAT FILLS IN AFTER THE SCREEN IS UP (build 372). Profile's character and its emblems were drawn inside the tap: on his phone Profile's
+   first frame took 120-400ms, about 120ms of it this art, and the sandbox shows the same (hiding it takes Profile's slow-frame time from ~110ms to
+   ~30ms). The node is built as before and put in WHEN the screen has painted and settled (afterFirstPaint: one item a frame, never during the
+   entrance), and fades in. The box it goes in already has its size, so nothing moves. `done` runs once it is in. */
+function artLater(parent, node, done){
+  if(!parent || !node) return;
+  afterFirstPaint(() => {
+    try{
+      node.style.opacity = "0"; node.style.transition = "opacity .2s ease-out";
+      parent.appendChild(node);
+      if(done) done();
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        node.style.opacity = "";
+        setTimeout(() => { try{ node.style.transition = ""; }catch(e){} }, 260);
+      }));
+    }catch(e){}
+  });
 }
 /* ---- THE SETTLE WINDOW (build 281) ----
    "Switching between tabs lags badly, the animation when opening up tabs
