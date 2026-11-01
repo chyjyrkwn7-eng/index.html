@@ -110689,7 +110689,7 @@ function makeRevealSequence(alive){
   let i = 0, timer = null, due = 0, left = 0;
   let paused = false, fast = false, finished = false, holder = null;
   const seq = {
-    add(delay, fn, wait){ steps.push({ delay: delay, fn: fn, wait: !!wait }); return seq; },
+    add(delay, fn, wait, group){ steps.push({ delay: delay, fn: fn, wait: !!wait, group: group || null }); return seq; },
     start(){ advance(); return seq; },
     isRunning(){ return !finished; },
     pause(){
@@ -110717,6 +110717,28 @@ function makeRevealSequence(alive){
       if(finished || paused || holder) return false;
       if(timer){ clearTimeout(timer); timer = null; fire(); return true; }
       return false;
+    },
+    /* THE WHOLE BOX, NOT ONE STEP (build 380): "if you tap it while it loads it would finish instantly and then go to the xp box and do it
+       normally, if you tap it again that would finish and so on". Steps carry the box they belong to (`group`); a tap while a box is
+       still coming in runs the rest of that box at once (each step told it is instant: a count lands on its number, a bar on its fill)
+       and the next box comes in after a short beat and plays as it always does. Between two boxes it brings the next one now, as
+       next() does. A banner, a scene or a pop-up (a `wait` step) is never run early - they keep their own tap. */
+    nextBox(){
+      if(finished || paused || holder || !timer) return false;
+      const cur = i > 0 ? steps[i - 1].group : (steps[0] && steps[0].group);   /* a tap before the first box is on its way finishes that box */
+      clearTimeout(timer); timer = null;
+      if(cur && steps[i] && !steps[i].wait && steps[i].group === cur){
+        while(i < steps.length && !steps[i].wait && steps[i].group === cur){
+          if(alive && !alive()){ seq.stop(); return true; }
+          const st = steps[i++];
+          try{ st.fn(true); }catch(e){ console.error(e); }
+        }
+        if(i >= steps.length){ finished = true; return true; }
+        wait(steps[i].wait ? steps[i].delay : Math.min(steps[i].delay, 260));
+        return true;
+      }
+      fire();
+      return true;
     },
     isHeld(){ return !!holder; },
     stop(){
@@ -112933,23 +112955,23 @@ function showRunRewards(run, hooks, opts){
   /* What a tap finishes besides the panel's own animations: the grade's
      count, the XP bar's fill and its number (build 320). */
   let moving = null;
-  seq.add(120, instant => rsLand(head, instant));
+  seq.add(120, instant => rsLand(head, instant), false, "grade");
   if(countIt){
-    seq.add(380, instant => rsLand(grade, instant));
+    seq.add(380, instant => rsLand(grade, instant), false, "grade");
     /* a beat on the empty card, then the bars */
-    seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } });
-    seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); });
+    seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } }, false, "grade");
+    seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); }, false, "grade");
   } else {
-    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); });
+    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); }, false, "grade");
   }
   /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in ---- */
   const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
   /* how long a 100's effect has the screen before anything else may come:
      its tail (HUNDO_FX_TAIL_AT, where its last pieces start fading) */
   const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
-  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant));
-  lineEls.forEach(l => seq.add(380, instant => { rsLand(l, instant); if(!instant) sndXpLine(l); }));
-  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
+  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant), false, "xp");
+  lineEls.forEach(l => seq.add(380, instant => { rsLand(l, instant); if(!instant) sndXpLine(l); }, false, "xp"));
+  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); }, false, "xp");
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
      goes to the xp bar is too fast and could be more suspenseful ... when
      the number goes up it needs to be after that bar effect". The block
@@ -112962,8 +112984,8 @@ function showRunRewards(run, hooks, opts){
     xp.classList.add("is-charging");
     moving = () => { if(levelBlock.setFinal) levelBlock.setFinal(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); };
     levelBlock.runFill();
-  });
-  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  }, false, "xp");
+  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); }, false, "xp");
   /* ---- A 100's HUNDO EFFECT, ONCE BOTH BARS HAVE RUN (build 320) ----
      "the loading bar is going while the Hundo effect happens. Let the bar
      run and then the effect." The grade's bars are home and its number
@@ -113050,7 +113072,7 @@ function showRunRewards(run, hooks, opts){
     if(resultsSeq !== seq || seq.isHeld()) return;
     if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
     rsFinishMoving(panel);
-    seq.next();
+    seq.nextBox();
   });
   seq.start();
 }
@@ -113889,7 +113911,11 @@ function summarize(){
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = cls; if(id) btn.id = id;
       btn.textContent = label;
-      btn.addEventListener("click", () => { if(Date.now() < rsTapGuardUntil) return; endResultsReveal(); fn(); });
+      /* build 380: a tap the guard refuses is still a tap on the screen, and restarts it - "at the end of a test, when I finish the retake
+         and I click the screen, the test goes away and takes me to the main menu". Tapping the results along, once the buttons had risen
+         under the finger each refused tap left the guard where it was, so the next tap, 440ms later, was past it and went home. Now while
+         taps keep coming the buttons stay quiet; a tap after a pause of 700ms is a press. */
+      btn.addEventListener("click", () => { if(Date.now() < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; } endResultsReveal(); fn(); });
       return btn;
     };
     /* THE REVIEW: only what to do about the misses - retake them (Drill),
@@ -137713,6 +137739,11 @@ function tabPerfText(){
      whichever tab it's over when you lift, the way iOS's own Liquid
      Glass tab bars behave. */
   let tabDragActive = false;
+  /* build 380: A SLIDE STARTS ON THE TAB THAT IS LIT. "If I use the swipe way instead of the tap, it lets me swipe even if I don't
+     initiate the swipe from the current tab, that shouldn't ever happen." A press on another tab is a tap on it: moving the finger does
+     not slide the glass; let go on that tab and it opens (its own click), let go off it and nothing opens - the glass goes back to the
+     lit tab. */
+  let tabDragFromActive = true, tabDragStartTab = null;
   /* build 376: WHAT IS BEHIND THE BAR HOLDS STILL WHILE A FINGER SLIDES. "The swipe/drag function works really well for calendar but lags
      for all the other three tabs." Calendar has nothing moving behind the bar; the Leaderboard has rows' characters and flares, Profile
      and Home their moving pieces there - and the bar is glass: every frame anything moves behind it, the blur of what is behind it is
@@ -137789,6 +137820,8 @@ function tabPerfText(){
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
+    tabDragStartTab = (e.target && e.target.closest && e.target.closest(".bottomtab")) || tabAtPoint(e.clientX);
+    tabDragFromActive = !!(tabDragStartTab && tabDragStartTab.classList.contains("active"));
     /* the lens lifts out of the platter under the finger at once (build 323, 325) */
     if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
     /* a screen still waiting to be built waits for this press too (327z15) */
@@ -137796,6 +137829,8 @@ function tabPerfText(){
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
+    /* build 380: a press that began on another tab never becomes a slide */
+    if(!tabDragFromActive) return;
     /* the lens is under the finger from the first pixel (build 327z5); only
        turning the touch into a drag waits for the slop */
     if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP){ if(lensG && Math.abs(e.clientX - tabDragX0) > 1.5) lensMove(e.clientX); return; }
@@ -137836,6 +137871,12 @@ function tabPerfText(){
     /* the lens settles on the tab it was let go over and becomes the
        platter there; a cancelled touch takes it home */
     if(e.type === "pointercancel" || (window.__dragTestOn && tabDragMoved)) lensRelease(null);
+    else if(!tabDragFromActive){
+      /* build 380: a press on another tab - it lands there if the finger is still on that tab (its click opens it), home if not */
+      const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
+      lensRelease(over && over === tabDragStartTab ? over : null);
+      return;
+    }
     else lensRelease(lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
     if(e.type === "pointercancel" || window.__dragTestOn){ slideBubbleToActiveTab(true); return; }   /* build 369: the Drag test stays on its screen */

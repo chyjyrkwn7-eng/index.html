@@ -10,6 +10,11 @@ within 400ms of it.
 With the iPhone layer on (an iPhone's user agent: every control carries a native haptic switch):
 (7) a tab tap that leaves its switch focused is not taken for typing - nothing focused is blurred at the next press or at the screen's mount;
 (8) the switches of a new screen go in after the glass has landed (not inside the settle window) and all in one pass;
+(11) a slide only starts on the lit tab: a press on another tab that slides on to a third opens neither (back home), let go on the
+pressed tab it opens it, and a slide from the lit tab still lands where it is let go;
+(12) on a test's results, taps that keep coming never press a button that rises under them (the guard restarts with each refused tap),
+and a tap after a pause does; (13) a tap finishes the whole box that is coming in (the grade lands on its number at once) and the next
+box comes in by itself;
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -77,6 +82,55 @@ with sync_playwright() as pw:
     # (5)
     looks = pg.evaluate("()=>typeof BOARD_TEST_LOOKS!=='undefined' ? BOARD_TEST_LOOKS.map(l=>l[0]+':'+l[2]) : null")
     chk("the speed test's looks are base, layers, noloops, norows (%s)" % (looks,), looks == ["base:", "layers:-loops-paint", "noloops:", "norows:"], looks)
+    # (11) a slide starts only on the lit tab
+    cdp = ctx.new_cdp_session(pg); cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
+    def cen(i): return pg.evaluate("(id)=>{const b=document.getElementById(id).getBoundingClientRect(); return [b.left+b.width/2,b.top+b.height/2];}", i)
+    def slide(a, b, steps=20):
+        x0, y = cen(a); x1, _ = cen(b)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y}]}); pg.wait_for_timeout(100)
+        for k in range(1, steps + 1):
+            cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x0 + (x1 - x0) * k / steps, "y": y}]}); pg.wait_for_timeout(16)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}); pg.wait_for_timeout(1500)
+    lit = lambda: pg.evaluate("()=>{ const a=document.querySelector('.bottomtab.active'); return a && a.id; }")
+    on = lambda s: pg.evaluate("(s)=>!!document.querySelector(s)", s)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2000)
+    slide("bottomtab-profile", "bottomtab-calendar")
+    off_lit = [lit(), on(".screen-home-actual"), on(".screen-calendar-tab"), on(".screen-profile")]
+    x, y = cen("bottomtab-profile")
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]}); pg.wait_for_timeout(80)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x + 4, "y": y}]}); pg.wait_for_timeout(30)
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []}); pg.wait_for_timeout(1500)
+    tap_other = [lit(), on(".screen-profile")]
+    slide("bottomtab-profile", "bottomtab-calendar")
+    from_lit = [lit(), on(".screen-calendar-tab")]
+    cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": False}); cdp.detach()
+    chk("a slide starts only on the lit tab: from another tab to a third %s, a press let go on it %s, from the lit tab %s" % (off_lit, tap_other, from_lit),
+        off_lit == ["bottomtab-home", True, False, False] and tap_other == ["bottomtab-profile", True] and from_lit == ["bottomtab-calendar", True], [off_lit, tap_other, from_lit])
+    # (12)/(13) the results
+    RUN0 = g["RUN"].replace("stopQuestionTimer(); summarize(); await wait(500);", "stopQuestionTimer(); summarize(); return {};")
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+    pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 0])
+    pg.wait_for_timeout(700)
+    g13 = pg.evaluate("""async()=>{ const p=document.querySelector('.rs-screen'); const gr=()=>{ const e=p.querySelector('.rs-grade'); return e ? e.textContent : ''; };
+      const before=gr(); p.dispatchEvent(new MouseEvent('click',{bubbles:true})); await new Promise(r=>setTimeout(r,60)); const after=gr();
+      await new Promise(r=>setTimeout(r,900)); const xpIn=!!p.querySelector('.rs-xp.rs-in, .rs-xp.rs-in-now, [class*=rs-xp].rs-in, [class*=rs-xp].rs-in-now');
+      return { before: before.slice(0,12), after: after.slice(0,12), xpIn }; }""")
+    chk("a tap finishes the grade box at once (%s -> %s) and the XP box comes in by itself (%s)" % (g13["before"], g13["after"], g13["xpIn"]),
+        g13["before"] != g13["after"] and "100%" in g13["after"] and g13["xpIn"], g13)
+    # keep tapping where the buttons rise (a run with misses: no pop-ups to hold it); then pause and tap a button
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+    pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 3])
+    LOG = []
+    for k in range(30):
+        LOG.append(pg.evaluate("()=>{ const p=document.querySelector('.rs-screen'); if(!p) return 'left:' + ((document.querySelector('#stage > *')||{}).className||'').slice(0,30); const b=[...p.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); const t=(b && getComputedStyle(b).pointerEvents!=='none') ? b : p; t.dispatchEvent(new MouseEvent('click',{bubbles:true})); return t===p ? 'panel' : 'button'; }"))
+        pg.wait_for_timeout(450)
+    on_results = pg.evaluate("()=>!!document.querySelector('.rs-screen')")
+    pg.wait_for_timeout(900)
+    pg.evaluate("()=>{ const b=[...document.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); b && b.click(); }")
+    pg.wait_for_timeout(600)
+    went = pg.evaluate("()=>!!document.querySelector('.screen-home-actual')")
+    chk("taps that keep coming never press a results button (%s button taps of 30, still on the results: %s); a tap after a pause does (home: %s)" % (LOG.count("button"), on_results, went),
+        LOG.count("button") >= 5 and on_results and went, LOG)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);

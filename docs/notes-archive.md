@@ -30066,3 +30066,29 @@ read layout inside rAF (the layout the frame does anyway).
     person card's surface (linear #14171C -> #0B0D11)"): Q now asserts that surface.
   * check-b327z14 D ("the root's colour is the paper") was replaced in 338 (the root's colour is --band, the sky's top colour, for
     Safari's status-bar band): D now asserts --band.
+
+### 380, third pass: his four asks (results taps, tap-through, slide from the lit tab, board characters)
+
+Madison: "at the end of a test, when I finish the retake and I click the screen, the tests goes away and takes me to the main menu ...
+(I thought we fixed this already because I've mentioned it before)"; "if you tap it while it loads it would finish instantly and then go to
+the xp box and do it normally, if you tap it again that would finish and so on" (pop-ups for unlocks and the hundo stay unskippable);
+"if I use the swipe way instead of the tap, it lets me swipe even if I don't initiate the swipe from the current tab, that shouldn't ever
+happen"; and "Should we make it so that the leaderboard characters don't animate when looking at the entire leaderboard? Would that fix
+the lag?"
+- THE MAIN MENU BUG (reproduced: a retake's results, a tap every 440ms where "Main menu" rises - home on the 8th): build 328's guard
+  (rsTapGuardUntil: 700ms after a tap on the results, 600ms after the buttons rise) had a hole - a tap ON a risen button that the guard
+  refused did not restart it (only the panel's own click handler did, and it returns early for a button), so the next tap was past it.
+  Now a refused button tap restarts the guard: while taps keep coming the buttons stay quiet; a tap after a 700ms pause is a press.
+- TAP-THROUGH, BOX BY BOX: build 305's tap ran ONE step of the timeline (the grade box is four: head, card, a beat, the count), so a tap
+  often seemed to do nothing. makeRevealSequence steps now carry their box (`group`: "grade", "xp"); seq.nextBox() runs the rest of the
+  box that is coming in at once (each step told instant: the count lands on its number, the bar on its fill) and brings the next box in
+  after a 260ms beat, playing normally. Between boxes a tap brings the next one now. A `wait` step (an unlock's pop-up, a scene, the badge
+  case) is never run early; the hundo effect is its own step and plays. Sandbox: 6-7s with a tap every 0.7s (20s+ untouched).
+- THE SLIDE STARTS ON THE LIT TAB: pointerdown notes the tab under the finger (tabDragStartTab) and whether it is lit; a press on another
+  tab never becomes a slide (pointermove ignores it) - let go on it and its own click opens it, let go off it and the glass goes back to
+  the lit tab (lensRelease(null)), nothing opens.
+- THE BOARD'S CHARACTERS: not taken out. His 378 test put their cost at ~230ms of the board's first draw (448 -> 218 without loops) -
+  that was the whole-sheet layers; 380 makes each a window-sized layer (sheet layers 36 -> 0). If the phone still shows the board slow
+  after 380, a still board (the 379 lb-still look, kept) is the next step, not a guess before the numbers.
+Gate: check-b380 (11) slide from another tab, (12) the guard under taps that keep coming, (13) one tap finishes the grade box - all three
+fail on 379.
