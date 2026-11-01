@@ -29837,3 +29837,7 @@ check-b350's "stays on its pose" is read one frame after the return (two steady 
 - THE LANDING HAS ITS FRAMES TO ITSELF: lensRelease sets settleUntil = max(settleUntil, now + handAt + 80), and beginSettle never shortens it
   (max) - characters going live, emblems waking, the first-paint queue and recordings wait until the glass has handed over. check-b377 (8).
 - check-b358's "rows bare while hidden" reversed to "rows keep their art while hidden" (377).
+- NOTHING NEW STARTS UNDER A SLIDE: the settle window is held open while a slide lasts (and set to +120ms at its release, the landing then
+  extends it); a recorded loop that arrives meanwhile waits for it (charFlipThen's run re-queues itself); startRankMarks waits out the
+  settle too (a flare taking its loop crossfades). barUnderPause scans -40/+14px around the bar (its swell is still growing at a slide's start
+  - a flare on the edge was missed one run in three) and again on the next frame.

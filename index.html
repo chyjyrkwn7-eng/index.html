@@ -83651,7 +83651,10 @@ function charFlipAttach(el){
   return true;
 }
 function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
-  return sp => {
+  const run = sp => {
+    /* build 377: a sheet that arrives during a slide or the glass's landing waits for it to end - a loop starting is new motion */
+    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(wait > 0 && sp){ setTimeout(() => run(sp), Math.min(wait, 1500) + 20); return; }
     clearTimeout(waitT);
     const el = ref.deref();
     if(!el) return;
@@ -83752,6 +83755,7 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
       if(el.dataset.flipSolo) el.classList.remove("char-live");
       if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-live"); }
   };
+  return run;
 }
 function homeRankEmblem(tier){
   try {
@@ -129914,10 +129918,14 @@ function startRankMarks(root){
   if(!root) return;
   try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => syncLoopClock(a)); }catch(e){}
   if(root._rankMarkRaf) return;
-  root._rankMarkRaf = requestAnimationFrame(() => setTimeout(() => {
+  /* build 377: and not inside a screen's settle (a slide, the glass landing): a flare taking its loop crossfades, which is new motion */
+  const go = () => {
+    const w = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(w > 0){ setTimeout(() => requestAnimationFrame(go), Math.min(w, 1000)); return; }
     root._rankMarkRaf = 0;
     try{ if(root.isConnected) startOrbitEmblemAnims(root); }catch(e){}
-  }, 0));
+  };
+  root._rankMarkRaf = requestAnimationFrame(() => setTimeout(go, 0));
 }
 /* A theme as its swatch in Customize draws it: the swirl and the sheen
    that sweeps across it ("ensure the theme is the animated look"). */
@@ -137347,6 +137355,7 @@ function tabPerfText(){
      made again, with the lens drawn over it. Build 373 paused the whole page and the page was seen to stop; now only the animations of
      what is under the bar (and just above it) pause, behind the blur, and go on from where they were when the finger lets go. */
   let tabSwitchesAway = [];
+  let slideHeldSettle = false;
   function tabSwitchesOut(){
     navrow.querySelectorAll(".bottomtab > .nova-hsw").forEach(sw => { try{ sw.checked = false; }catch(e){} tabSwitchesAway.push([sw, sw.parentNode]); sw.remove(); });
   }
@@ -137355,12 +137364,17 @@ function tabPerfText(){
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
   let barUnderPaused = [];
-  function barUnderPause(){
-    barUnderResume();
+  function barUnderPause(again){
+    if(!again){
+      barUnderResume();
+      /* once more on the next frame: an animation that started in the press (a loop just put on) exists only from the next style pass */
+      requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(true); });
+    }
     try{
       const st = document.getElementById("stage"), br = bar.getBoundingClientRect();
       if(!st || !br.height) return;
-      const top = br.top - 24, bottom = br.bottom + 8;
+      /* wider than the bar as it is now: at a slide's start its swell (1.043 tall) is still growing */
+      const top = br.top - 40, bottom = br.bottom + 14;
       st.getAnimations({ subtree: true }).forEach(a => {
         if(a.playState !== "running") return;
         const t = a.effect && a.effect.target;
@@ -137432,6 +137446,9 @@ function tabPerfText(){
          a finger that slides drags the switch it landed on, and every time it flips across its middle iOS plays a tick. The switches leave
          the moment a slide starts (the touch is the bar's, captured) and come back when it ends: the only tick is the landing's. */
       tabSwitchesOut();
+      /* and nothing new starts under it while it slides (a flare taking its loop, a character going live): the settle window is held
+         open for as long as the finger is down, and closed back to the landing's own on release */
+      try{ settleUntil = Math.max(settleUntil, Date.now() + 8000); slideHeldSettle = true; }catch(err){}
     }
     tabDragMoved = true;
     /* The lens follows the finger (build 323, 325); the platter waits,
@@ -137446,6 +137463,7 @@ function tabPerfText(){
     tabDragActive = false; tabDragPointerId = null;
     barUnderResume();
     tabSwitchesBack();
+    if(slideHeldSettle){ slideHeldSettle = false; try{ settleUntil = Date.now() + 120; }catch(err){} }
     /* BEFORE the release navigates: the screen it brings in must run its own entrance */
     document.documentElement.classList.remove("tab-dragging");
     slider.classList.remove("dragging");
