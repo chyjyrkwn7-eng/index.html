@@ -29647,3 +29647,15 @@ selected". The landing is where the bar's own swell animation (`scale` on the ba
 platter takes over and a screen is built and drawn behind it. Sandbox compositor traces could not separate swell from no swell (DrawAndSwap ~630ms either way over a drag + landing; software
 raster), so look F = no bar swell (`window.__noSwell` makes lensBarSwell a no-op). The test stays on its screen on a release, so F shows the glass's own landing without a build behind it:
 if A hitches at the shrink and F does not, the swell goes; if both do, it is the glass (B, E say which part).
+
+## Build 370 (2026-11-01): Drag test, round 2 - the glass and the page under it (test build)
+
+Madison's 369 recording (20:20, 60fps, 65s) read per frame (bar crop, frame-to-frame difference): over the Leaderboard the bar presents about
+20-31 updates a second in EVERY look, in bursts (two updates, two held frames), with nothing changing in the page at all. A (as is) 19-29/s with three
+gaps over 115ms; B (solid bar while held) 18-31/s; C (animations paused) 21-31/s, no long gaps; D (B+C) 12-31/s with a 45-frame gap; F (no bar swell) 26-30/s.
+E (no glass) showed no bar change at all (nothing else on the bar moves). So the bar's own backdrop blur (B), the page's animations (C) and the bar swell
+(F) are NOT what holds it to ~30Hz; the page was static. Left: the glass halves (plus-lighter blend, seam masks, ten-layer rim shadow, scaled capsules),
+and the cost of compositing a page this size under it.
+Build 370 changes the looks only (no app change): A as is; B glass blend off; C glass masks off; D glass rim shadows off; E page hidden while the bar
+is held (`html.tab-held #stage{visibility:hidden}`); F all four. Read the next recording the same way (bar crop at 60fps, count updated frames per
+second per look). If E alone reaches 60Hz the cost is the page under the glass; if B/C/D alone does, that piece goes. check-b370.py (fails on 369).

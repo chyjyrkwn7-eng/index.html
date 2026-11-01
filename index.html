@@ -103292,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-369";
+const APP_BUILD = "2026-11-01-370";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114152,13 +114152,20 @@ async function sendTabTimings(onDone){
 let dragTestRunning = false;
 const DRAG_PAUSE = "html.tab-held #stage *,html.tab-held #stage *::before,html.tab-held #stage *::after{animation-play-state:paused !important}";
 const DRAG_SOLID = ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}";
+/* build 370: his 369 recording showed the bar updating only ~30 times a second in EVERY look (even D: solid bar, nothing animating, the page
+   not changing at all), so the cost is not the bar's blur or the page's animations. What is left is the glass itself (its blend, masks and
+   rim shadows) and the sheer size of the page under it. */
+const DRAG_NOBLEND = ".tab-lens-clip{mix-blend-mode:normal !important}";
+const DRAG_NOMASK = ".tab-lens-clip{-webkit-mask-image:none !important;mask-image:none !important}";
+const DRAG_NOSHADOW = ".tab-lens-glass,.tab-lens-grey{box-shadow:none !important}";
+const DRAG_NOSTAGE = "html.tab-held #stage{visibility:hidden !important}";
 const DRAG_LOOKS = [
   ["A", ""],
-  ["B", DRAG_SOLID],
-  ["C", DRAG_PAUSE],
-  ["D", DRAG_SOLID + DRAG_PAUSE],
-  ["E", ".tab-lens{display:none !important}"],
-  ["F", ""]];   /* F: the bar does not swell (window.__noSwell) - the scale animation of a backdrop-filter bar, at the press and as the glass lands */
+  ["B", DRAG_NOBLEND],
+  ["C", DRAG_NOMASK],
+  ["D", DRAG_NOSHADOW],
+  ["E", DRAG_NOSTAGE],
+  ["F", DRAG_NOBLEND + DRAG_NOMASK + DRAG_NOSHADOW + DRAG_NOSTAGE]];
 async function runDragTest(){
   if(dragTestRunning) return;
   dragTestRunning = true;
@@ -114176,7 +114183,7 @@ async function runDragTest(){
   try{
     for(let k = 3; k > 0; k--){ note.textContent = "Slide across the bar in " + k; await wait(1000); }
     for(const [name, css] of DRAG_LOOKS){
-      st.textContent = css; window.__noSwell = (name === "F");
+      st.textContent = css;
       for(let t = 7; t > 0; t--){ note.textContent = "Look " + name + " - keep sliding (" + t + ")"; await wait(1000); }
     }
   }catch(e){}
