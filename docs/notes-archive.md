@@ -29709,3 +29709,65 @@ and reward art are drawn inside the tap again, exactly as before 372 (artLater a
 showProfile returns, with no inline opacity/transition; fails on 373). Rule for next time: NO art that appears late or fades in on a main tab -
 whatever is on those screens must be there when the screen is. Profile's first frame cost (~120ms of art on his phone) is therefore back; any fix
 for it must keep the art present at first paint (cheaper art, not later art).
+
+## Build 375 (2026-11-01): the glass lands after the new screen is drawn; the Leaderboard arrives with its art
+
+Madison: "The clear bubble ... when swiping/sliding it's still laggy ... laggy when it shrinks down and goes when you swipe to the tab you want.
+The leaderboard tab also doesn't load because some of the rows and the stuff on them aren't loading properly, same goes for home and profile."
+
+READ OFF HIS 21:06 RECORDING (120fps, 12 tab changes), per event, the bar crop's frame-to-frame change and the header's change (= the new screen
+on the glass): the new screen shows 225-425ms after the press, and in that window the lens - whose lift, glide and landing are already
+Web Animations tracks (the compositor's) - stood still for 50-180ms at a time and then jumped (e.g. ".#......#..................#....."
+over 400ms). So on his phone drawing a new screen takes the frames the glass needs, however the glass is animated. The 371 Drag test
+(Low Power Mode off) showed the slide itself at a clean 60Hz in every look: 97% of intervals exactly 2 frames at 120fps. Safari renders
+the page at 60fps on his 120Hz screen (rAF median 17ms; even the WAAPI tracks were 60Hz in the video) - 120Hz is not available to the page.
+Home, Profile and Calendar arrived complete in one frame in that recording; the Leaderboard arrived with every character a soft disc and
+every flare an empty ring, the characters coming one at a time from ~450ms (the queue's hold, build 363).
+
+1. THE LANDING WAITS FOR THE SCREEN (bar code, near lensRelease): when a release is followed by a navigation, navigateTab calls
+   bar._lensAwaitScreen(): the release track is replaced by one that stays (or keeps arriving) at the lens's held size over the tab, glass
+   clear, platter hidden, bar swollen; navRun, after building, waits two frames (the frame after the one that drew it) and calls
+   bar._lensScreenIn() -> lensRelease(tab, true): hold = max(0, minUp - upFor) (no linger, it has waited), then the normal settle.
+   LENS_AWAIT_MAX 650ms caps the wait. lensDown/lensHide/lensRelease clear the wait. A tap on the tab already up (no navigation) lands as before.
+   A still lens cannot stutter, so the drawing happens under a still glass; the shrink then has the frames to itself. TAB_SCREEN_AFTER (40)
+   is unchanged - the tap->screen timing he liked is the same; a tap's glass stays up until its screen is drawn, then lands.
+2. THE LEADERBOARD'S FIRST FRAME IS THE FINISHED BOARD. Building the art in the tap was measured (4x CPU): ~13ms a row (the ~250-part
+   drawing built and painted) = ~a second on the phone for a screenful; NOT shipped (an in-view fill was tried first and measured 150ms
+   task / 317ms to two frames vs 11 / 56). Instead: what a row SHOWS is its character's recorded loop and its flare's loop. When the loop is in
+   memory (charAnimReady: every sheet that resolves; orbitAnimReady for flares) and the row's geometry is known (lbGeom, measured by the
+   first real charFlipAttach / startOrbitEmblemAnims on a board row and kept in localStorage `class26e.lbgeom`, keyed by viewport+dpr),
+   the row is built with the loop playing (lbFlipKnown: the same .char-flip-play charFlipAttach makes, from the kept left/top/cell) and the
+   flare is the real mark with its sheet attached immediately (lbMarkKnown). The drawing still goes in later from the queue, under the loop
+   (lbFillArt keeps a pre-attached loop: svg inserted before it with .char-under-flip, char-flip state set without setCharState, which would
+   remove the loop). `.rank-avatar-wrap[data-lazy-av]:not([data-flip-pre])` keeps the soft disc only for rows with nothing to show.
+   lbArtPreload() reads the saved loops (Cache Storage) for the characters and ranks on the board in quietIdle slots - at 3.5s and 1.5s after
+   every board fetch (lbArtPreloadSoon) - so the first board after a launch is finished too. It never records.
+   First board ever on a device (nothing recorded, no geometry): as before (discs, then the queue), and that visit records what the next needs.
+Sandbox: second visit and post-relaunch first visit: 8 of 9 visible rows looping and flaring in the mounting task, 0 discs; the first frame and
+the settled board differ by 0.025 mean (flare column mid-frame). check-b375.py fails on 374 (all three parts).
+Build 375, more (same build, his next message):
+- "When you start the swiping animation, the screen you are on stops moving" = build 373's pause (html.tab-dragging #stage * paused). TAKEN OUT;
+  the class is still set during a slide. check-b373.py removed; check-b375 (3) asserts >= 80% of the page's animations keep running mid-slide.
+- "If the screen is scrolled down, if you swipe but don't end up swiping to another, the page scrolls back to the top" = a slide released over
+  the lit tab went through the tab's tap, whose ROOT_OF rule scrolls a screen that is up to its top. endTabDrag now does nothing but
+  slideBubbleToActiveTab(true) when the tab let go over is .active. check-b375 (4).
+- "Leaving the app mid test ... the test is there for a few seconds and then it pauses" = iOS shows the picture it took as the app left until
+  the page draws again; the pause went on at visibilitychange-hidden, after the picture. window "blur" (with !document.hasFocus()) now runs
+  autoPauseOnLeave too, while the page can still draw. check-b375-b.py.
+- "When leaving the page and coming back, the entire screen is black for a good amount of time" - his tab-timings `ended:` log shows the page
+  ENDED while hidden 0-3s after leaving (b365, b368, b371): iOS ending it in the background, then a cold start on return. MEASURED A LEAK:
+  every Leaderboard visit stayed in memory (Home <-> Leaderboard x20: 26k -> 501k elements, +300MB; Home/Profile/Calendar flat). Retainer
+  (heap snapshot, a tagged board): charAnimSheets -> a pending sheet Promise -> its reaction (charFlipAttach's .then closure) -> the row's
+  avatar -> the board. A sheet waits in the recorder's queue for minutes on a phone (5-50s each, one at a time), so each visit's board was
+  held for as long. Now: charFlipThen(WeakRef(el), ...) - a separate function so the closure holds nothing else of charFlipAttach's -
+  and startOrbitEmblemAnims holds its bubbles by WeakRef across each await; the board's own IntersectionObservers are disconnected and its
+  tiles taken out of the shared ones when it leaves (lbReleaseBoard, from the screen's own MutationObserver), rankingsOnVisible dropped.
+  After: x20 fast visits 142k elements (boards held ~6s by short retry timers), back to 27k after 12s idle; 374: 502k. check-b375 (5).
+- The landing never comes sooner than it did before 375: _lensAwaitScreen keeps `earliest` = now + max(linger, minUp - upFor) and the landing's
+  hold is max(minUp - upFor, earliest - now) - a quick screen keeps the tap's own timing; a slow one waits for its first frame.
+  check-b327z13 T now reads the glass as DRAWN (centre off the lens transform, the landing from its glass starting to grey), because the
+  release no longer plans the landing; read that way 374 gives 0.95 / 291ms and 375 0.91-0.92 / 307-314ms, so its bar is 90% / 280ms
+  (was 95% / 320 off the planned track). U (3 failures, screen mounts 106-127ms vs 150+) is unchanged from 374 and before.
+Gates on 375 (sequential): check-js, b375 (all 6), b375-b, b374, b371, b369, b368, b367, b366, b365, b364, b363, b363-ifc, b362, b361, b360,
+b359, b358, b357, b356, b355, b354, b353, b352, b351, b350, b349, b328-fixes, unlocks, results, curve, profilecard: pass; sweep-layout --quick
+14/14; b327z13 T pass, U 3 pre-existing; check-tours mainmenu/modeselect 4 pre-existing.
