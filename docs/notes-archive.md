@@ -30132,3 +30132,9 @@ pass). All 19 parts fail on 379 (run against origin/main: the local `main` ref i
 Also run: check-results, check-b328-fixes, check-b336, check-sound all pass. check-b325-b's "name's letters at least 9.2px" fails on the
 Phonetic Alphabet badge (8.8px) on 379 too - older than this build, not touched. check-behaviour's badge sections fail the same 10 checks on
 379 and 380 (sections for case designs later builds replaced).
+- Re-run one at a time on the final 380 (the /tmp lane logs that showed b376/b377/z13 failing were gates run side by side - timing):
+  check-b377 ALL PASS; check-b327z, z12, z13, z14 ALL PASS; check-b376 passes 4 of 5 runs (once, 1 animation under the bar was running
+  mid-slide - not reproduced in 4 more runs with the list printed; at worst an animation started during the slide runs for it);
+  check-b327z10 B (the chat sheet's swipe-down close, not the tab bar) 59% vs its 58% line (379: 65%) - the same frames as 379, the
+  first visible frame already ~33ms in; left as is. check-b325-b's Phonetic Alphabet back letters (8.8px vs 9.2) since 327z15 added the
+  unit: the five-word name on the hourglass auto-fits smaller; changing it moves three badges' backs - for Madison to see first.
