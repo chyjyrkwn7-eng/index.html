@@ -126015,10 +126015,11 @@ function lbArtQueue(rows, list){
   const step = () => {
     if(!rows.isConnected){ rows._lbPump = false; rows._lbQ = []; return; }
     if(!rows._lbT0) rows._lbT0 = performance.now();
-    /* build 376: 800, not 450 - the glass now lands once the board is drawn (build 375), and the rows below the screen filling in at 450ms
-       landed on its shrink ("the bubble loads and lags for the leaderboard tab") */
-    const hold = rows._lbT0 + 800 - performance.now();
+    const hold = rows._lbT0 + 450 - performance.now();
     if(hold > 0){ setTimeout(() => requestAnimationFrame(step), hold); return; }
+    /* build 376: AND NOT WHILE THE GLASS IS UP. The glass now lands once the board is drawn (build 375), and on the phone the rows filling
+       in at 450ms landed on its shrink ("the bubble loads and lags for the leaderboard tab"); the fill starts the moment it has landed */
+    if(document.querySelector("#bottomtabs-lens.is-up") && performance.now() - rows._lbT0 < 2500){ setTimeout(() => requestAnimationFrame(step), 50); return; }
     const sy = window.scrollY || 0;
     if(rows._lbSortY !== sy || !rows._lbSorted){ rows._lbSortY = sy; rows._lbSorted = true; q.sort((a, b) => Math.abs(a.getBoundingClientRect().top - mid) - Math.abs(b.getBoundingClientRect().top - mid)); }
     let did = 0;

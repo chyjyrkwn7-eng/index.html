@@ -29787,8 +29787,9 @@ the app switcher still shows the test question; haptic on a swipe; swipe lags on
 - BOARD FIRST OPEN: lbArtPreload's pause was quietIdle (2s with no touch) - never, while he taps straight after launch. Now 40ms steps,
   waiting only out a screen's entrance (settleUntil) and a held bar. NB 375's first board visit had no geometry yet (it is measured on that
   visit), so it was bare by design; later launches have it.
-- LEADERBOARD BUBBLE: the art queue's hold 450 -> 800ms: the rows below the screen filling at 450ms landed on the glass's shrink (375 lands it
-  once the board is drawn).
+- LEADERBOARD BUBBLE: the art queue (rows still to fill) waits while the glass is up (#bottomtabs-lens.is-up, at most 2.5s), after its
+  450ms hold: the rows filling at 450ms landed on the glass's shrink (375 lands it once the board is drawn). A fixed 800ms hold was tried
+  first and failed check-b356 (first screenful by 0.7s on a first visit) - waiting on the glass itself keeps both.
 - SWIPE-UP PAUSE: touchstart in the bottom 22px then touchcancel (iOS taking the touch for the app switcher) -> autoPauseOnLeave(), while the
   page can still draw (blur alone did not do it on his phone).
 - NOT DONE, needs his phone: the black screen on return and the planets' freeze/jump - nothing heavy runs on our side on the way back (every

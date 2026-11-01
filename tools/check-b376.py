@@ -17,9 +17,16 @@ with sync_playwright() as pw:
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     pg.evaluate(FILL); pg.wait_for_timeout(500)
     # (4) first: a fresh board, nothing recorded yet
-    q = pg.evaluate("""async()=>{ showRankings(); await new Promise(r=>setTimeout(r,650)); const rows=[...document.querySelectorAll('.rank-rows > .rank-row')];
-      const body=rows.filter(r=>!r.classList.contains('rank-row-head')); return { rows: body.length, filled: body.filter(r=>!r.dataset.lazyArt).length }; }""")
-    chk("650ms after the board opens its art queue has not started yet (%s of %s rows filled)" % (q["filled"], q["rows"]), q["rows"] >= 20 and q["filled"] == 0, q)
+    # a finger holds the bar (the glass is up) while the board comes in: nothing fills until it has landed, then it does
+    q = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const tab=document.getElementById('bottomtab-rewards'); const b=tab.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
+      const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:94,isPrimary:true,clientX:x,clientY:y});
+      tab.dispatchEvent(mk('pointerdown')); showRankings(); await wait(900);
+      const body=()=>[...document.querySelectorAll('.rank-rows > .rank-row')].filter(r=>!r.classList.contains('rank-row-head'));
+      const held={ up: !!document.querySelector('#bottomtabs-lens.is-up'), rows: body().length, filled: body().filter(r=>!r.dataset.lazyArt).length };
+      tab.dispatchEvent(mk('pointerup')); await wait(1400);
+      return { held, after: body().filter(r=>!r.dataset.lazyArt).length }; }""")
+    chk("while the glass is up the board's art queue waits (%s of %s rows filled at 900ms), and fills once it has landed (%s)" % (q["held"]["filled"], q["held"]["rows"], q["after"]),
+        q["held"]["up"] and q["held"]["rows"] >= 20 and q["held"]["filled"] == 0 and q["after"] > 0, q)
     # let the board record its loops (as a visit does), so there is motion behind the bar and loops to read back after a relaunch
     PROBE = "()=>{ const vis=[...document.querySelectorAll('.screen-rankings .rank-rows > .rank-row')].filter(r=>{const b=r.getBoundingClientRect(); return b.top<innerHeight-90 && b.bottom>60;}); return [vis.length, vis.filter(r=>r.querySelector('.char-flip-play')).length]; }"
     t0 = time.time()
