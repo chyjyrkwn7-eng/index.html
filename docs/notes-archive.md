@@ -29691,3 +29691,13 @@ Change: `artLater(parent, node, done)` (next to afterFirstPaint): the node is bu
 hero character (+ setCharState live as `done`), `.pf-goal-emb` (both the top-rank and normal goal) and `.pf-rw-art` tiles. The boxes keep their CSS size, so nothing moves.
 check-b372.py (fails on 371). Pre-existing failures, identical on main: check-b327z13 U (3: screen mount 114-123ms vs 150+, from builds 359/360),
 check-b327z5-d B calendar cards (2), check-tours mainmenu/modeselect (4).
+
+## Build 373 (2026-11-01): the page holds still while a finger slides across the bar
+
+His 371 recording with Low Power Mode off: the slide is ~58 updates/s in every look, but the page's own frame clock over the Leaderboard showed 5-8 frames
+over 34ms in 7s (worst 152-202ms) in looks A, C, D, E and 2 (worst 38ms) with the page hidden (F); Report a bug (nothing animating) had 0 (worst 22ms).
+Blurs and the chat dock made no difference (C, D, E). The Leaderboard runs ~16 CSS animations (breathe, drift, twinkle, blink, flutter on SVG groups).
+Change: `html.tab-dragging #stage *{animation-play-state:paused !important}`, set when a slide is confirmed (past the 10px slop, not on a plain press/tap),
+removed at the START of endTabDrag (before the release navigates, so the next screen's entrance runs) and in lensFinish/lensHide as a backstop.
+The bar and body background are outside #stage and keep moving. The art is untouched; only a pause for the length of a slide.
+check-b373.py (fails on 372). To judge it on the phone: Drag test look A (Leaderboard) over34 should fall from 5-8 toward 0-2 and its max from 150+.
