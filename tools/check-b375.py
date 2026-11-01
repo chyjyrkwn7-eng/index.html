@@ -27,15 +27,14 @@ TAP = """async()=>{
   const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:71,isPrimary:true,clientX:x,clientY:y});
   const sy=()=>{ const m=getComputedStyle(body).transform; if(!m||m==='none') return 0; const v=m.slice(m.indexOf('(')+1,-1).split(',').map(Number); return v.length===6?v[3]:v[5]; };
   const samples=[]; let on=true, frameAfterBuild=0, framesSinceBuild=0;
-  const tick=()=>{ const t=performance.now(); if(builtAt && t>builtAt){ framesSinceBuild++; if(framesSinceBuild===2) frameAfterBuild=t; } samples.push([t, sy(), getComputedStyle(document.getElementById('bottomtabs-lens')).opacity]); if(on) requestAnimationFrame(tick); };
+  const tick=()=>{ const t=performance.now(); if(builtAt && t>builtAt){ framesSinceBuild++; if(framesSinceBuild===2) frameAfterBuild=t; } samples.push([t, sy(), getComputedStyle(document.getElementById('bottomtabs-lens')).opacity, parseFloat(getComputedStyle(document.querySelector('#bottomtabs-lens .tab-lens-glass')).opacity)]); if(on) requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
   const t0=performance.now();
   tab.dispatchEvent(mk('pointerdown')); await wait(80); tab.dispatchEvent(mk('pointerup')); tab.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y}));
   await wait(1600); on=false; window.showProfile=real;
-  const up=samples.filter(s=>s[0]>t0 && s[2]>0.5 && s[1]>0);
-  const top=Math.max(...up.map(s=>s[1]));
-  /* the first frame the lens is clearly shorter than it was held - the shrink has begun */
-  const shrinkAt=(up.find(s=>s[0]>t0+100 && s[1]<top*0.93)||[0])[0];
+  /* the shrink begins as the glass turns grey (greyAt in lensRelease): the first frame, once it has been clear glass, that it is fading */
+  const clearAt=(samples.find(s=>s[0]>t0 && s[3]>0.95)||[0])[0];
+  const shrinkAt=clearAt ? (samples.find(s=>s[0]>clearAt && s[3]<0.9)||[0])[0] : 0;
   return { builtAt:Math.round(builtAt-t0), frameAfterBuild:Math.round(frameAfterBuild-t0), shrinkAt:shrinkAt?Math.round(shrinkAt-t0):null, onProfile:!!document.querySelector('.screen-profile'), lensGone:getComputedStyle(document.getElementById('bottomtabs-lens')).opacity==='0' };
 }"""
 with sync_playwright() as pw:
@@ -45,7 +44,7 @@ with sync_playwright() as pw:
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
     r = pg.evaluate(TAP)
     chk("a slow screen (built %sms after the tap, drawn by %sms): the glass starts to shrink only after that (%sms)" % (r["builtAt"], r["frameAfterBuild"], r["shrinkAt"]),
-        r["onProfile"] and r["shrinkAt"] is not None and r["frameAfterBuild"] > 0 and r["shrinkAt"] >= r["frameAfterBuild"] and r["lensGone"], r)
+        r["onProfile"] and r["shrinkAt"] is not None and r["frameAfterBuild"] > 0 and r["shrinkAt"] > r["frameAfterBuild"] and r["lensGone"], r)
     # (2) the board
     pg.evaluate(FILL); pg.wait_for_timeout(500)
     pg.evaluate("()=>showRankings()")

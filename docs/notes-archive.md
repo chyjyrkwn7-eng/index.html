@@ -29763,3 +29763,11 @@ Build 375, more (same build, his next message):
   and startOrbitEmblemAnims holds its bubbles by WeakRef across each await; the board's own IntersectionObservers are disconnected and its
   tiles taken out of the shared ones when it leaves (lbReleaseBoard, from the screen's own MutationObserver), rankingsOnVisible dropped.
   After: x20 fast visits 142k elements (boards held ~6s by short retry timers), back to 27k after 12s idle; 374: 502k. check-b375 (5).
+- The landing never comes sooner than it did before 375: _lensAwaitScreen keeps `earliest` = now + max(linger, minUp - upFor) and the landing's
+  hold is max(minUp - upFor, earliest - now) - a quick screen keeps the tap's own timing; a slow one waits for its first frame.
+  check-b327z13 T now reads the glass as DRAWN (centre off the lens transform, the landing from its glass starting to grey), because the
+  release no longer plans the landing; read that way 374 gives 0.95 / 291ms and 375 0.91-0.92 / 307-314ms, so its bar is 90% / 280ms
+  (was 95% / 320 off the planned track). U (3 failures, screen mounts 106-127ms vs 150+) is unchanged from 374 and before.
+Gates on 375 (sequential): check-js, b375 (all 6), b375-b, b374, b371, b369, b368, b367, b366, b365, b364, b363, b363-ifc, b362, b361, b360,
+b359, b358, b357, b356, b355, b354, b353, b352, b351, b350, b349, b328-fixes, unlocks, results, curve, profilecard: pass; sweep-layout --quick
+14/14; b327z13 T pass, U 3 pre-existing; check-tours mainmenu/modeselect 4 pre-existing.

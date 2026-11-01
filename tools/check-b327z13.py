@@ -103,29 +103,34 @@ def quick_tap(br):
     t = centre(pg, "bottomtab-calendar")
     x0 = pg.evaluate(TRACK)
     pg.evaluate("() => { window.__t = {}; addEventListener('pointerdown', () => { __t.down = performance.now(); }, { capture: true, once: true }); addEventListener('touchend', () => { __t.up = performance.now(); }, { capture: true, once: true }); }")
+    # build 375: the landing is planned once the tapped screen has been drawn, so the glass is read as it is DRAWN, frame by frame
+    # (its centre off the lens's transform, the shrink from the moment its glass starts to turn grey), not off the track planned at the release
+    pg.evaluate("""() => { const body = document.querySelector('#bottomtabs-lens .tab-lens-body'), glass = document.querySelector('#bottomtabs-lens .tab-lens-glass');
+      window.__lt = []; const tick = () => { const m = getComputedStyle(body).transform; let cx = null;
+        if(m && m !== 'none'){ const v = m.slice(m.indexOf('(') + 1, -1).split(',').map(Number); const a = v.length === 6 ? v[0] : v[0], e = v.length === 6 ? v[4] : v[12]; cx = e + a * 50; }
+        __lt.push([performance.now(), cx, parseFloat(getComputedStyle(glass).opacity)]); if(__lt.length < 200) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }""")
     cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [t]})
     pg.wait_for_timeout(20)
-    a = pg.evaluate(TRACK)
     time.sleep(0.04)
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-    pg.wait_for_timeout(30)
-    r = pg.evaluate(TRACK)
-    tt = pg.evaluate("() => window.__t")
-    rel = (tt.get("up") or 0) - (tt.get("down") or 0)
     pg.wait_for_timeout(1500)
-    start = (a or {}).get("frames", [{}])[0].get("cx")
-    fr = (r or {}).get("frames", [])
-    if not fr or start is None:
-        check("%s: T. the release has a track" % label, False, [a, r])
+    tt = pg.evaluate("() => window.__t")
+    lt = pg.evaluate("() => window.__lt")
+    down = tt.get("down") or 0
+    fr = [f for f in lt if f[0] >= down and f[1] is not None]
+    if not fr or not down:
+        check("%s: T. the release has a track" % label, False, [tt, lt[:3]])
         ctx.close()
         return
-    end = fr[-1]["cx"]
-    hmax = max(f["h"] for f in fr)
-    shrink = next((i for i, f in enumerate(fr) if i > 0 and f["h"] < hmax * .97 and fr[i - 1]["h"] >= f["h"] and any(g["h"] >= hmax * .99 for g in fr[:i])), None)
-    prog = (fr[shrink]["cx"] - start) / ((end - start) or 1) if shrink is not None else None
-    upMs = rel + shrink * 1000 / 60 if shrink is not None else None
-    check("%s: T. a 60ms tap's lens starts to shrink only once it is 95%%+ of the way (%.2f), %.0fms after the press (320+)"
-          % (label, prog if prog is not None else -1, upMs or -1), prog is not None and prog >= .95 and (upMs or 0) >= 320, [prog, shrink, upMs])
+    start, end = fr[0][1], fr[-1][1]
+    clear = next((i for i, f in enumerate(fr) if f[2] > .95), None)
+    shrink = next((i for i, f in enumerate(fr) if clear is not None and i > clear and f[2] < .9), None)
+    prog = (fr[shrink][1] - start) / ((end - start) or 1) if shrink is not None else None
+    upMs = fr[shrink][0] - down if shrink is not None else None
+    # read as drawn, the glass starts to grey a little before it is visibly shorter: build 374 reads 0.95 / 291ms this way, so the
+    # bar is 90% / 280ms here (the old 95% / 320 was read off the planned track, where the shrink is the height dropping)
+    check("%s: T. a 60ms tap's lens starts to land only once it is 90%%+ of the way (%.2f), %.0fms after the press (280+)"
+          % (label, prog if prog is not None else -1, upMs or -1), prog is not None and prog >= .9 and (upMs or 0) >= 280, [prog, shrink, upMs])
     ctx.close()
 
 

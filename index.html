@@ -137829,7 +137829,7 @@ function tabPerfText(){
     /* a quick tap still swells before it settles, and every lens stays up a
        few frames on its tab after the finger has gone (b0161-b0165) */
     /* (build 375) a lens that has waited up for its screen has lingered already: it lands now */
-    const hold = landing ? Math.max(0, LENS.minUp - upFor) : Math.max(LENS.linger, LENS.minUp - upFor);
+    const hold = landing ? Math.max(0, LENS.minUp - upFor, typeof landing === "number" ? landing - performance.now() : 0) : Math.max(LENS.linger, LENS.minUp - upFor);
     const frames = lensSpring(now.s, now.v,
       t => t < hold ? { cx: hi.c, W: hi.lw, H: g.lensH } : { cx: hi.c, W: hi.pw, H: g.pillH },
       t => t < hold ? { cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st } : { cx: LENS.settle, W: LENS.settle, H: LENS.settle, st: LENS.st },
@@ -137905,13 +137905,15 @@ function tabPerfText(){
     slider.style.opacity = "0";
     const sw = getComputedStyle(bar).scale;
     lensBarSwell([[0, sw && sw !== "none" ? sw : "1 1"], [160, LENS_SWELL]]);
-    lensAwait = { tab, timer: setTimeout(lensLandNow, LENS_AWAIT_MAX) };
+    /* never sooner than it would have landed without waiting: a quick screen keeps the tap's own timing (its linger, minUp) */
+    const upFor = performance.now() - lensPressT;
+    lensAwait = { tab, earliest: performance.now() + Math.max(LENS.linger, LENS.minUp - upFor), timer: setTimeout(lensLandNow, LENS_AWAIT_MAX) };
   };
   function lensLandNow(){
     if(!lensAwait) return;
-    const tab = lensAwait.tab;
+    const tab = lensAwait.tab, earliest = lensAwait.earliest;
     lensAwaitClear();
-    if(lensG && lens.classList.contains("is-up")) lensRelease(tab, true);
+    if(lensG && lens.classList.contains("is-up")) lensRelease(tab, earliest || true);
   }
   bar._lensScreenIn = () => { if(lensAwait) lensLandNow(); };
   /* build 362: THE PLATTER NEVER FLASHES WHEN THE GLASS HANDS OVER TO IT. "The pill or grey thing flashes when you select one."
