@@ -82908,7 +82908,7 @@ function trimForBackground(){
 }
 function restoreAfterBackground(){
   /* build 377: the decoded sheets let go on the way out come back, in the quiet, so the next board's rows are not decoded in its first frame */
-  try{ setTimeout(() => { charAnimReady.forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden) sp.pre = im; }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
+  try{ setTimeout(() => { charPreList.slice().forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden){ sp.pre = im; charPreKeep(sp); } }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
   try{
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
@@ -82960,7 +82960,7 @@ function testTrimSheets(){
     if(onTest){ testTrimmed = true; charAnimReady.forEach(sp => { if(sp) sp.pre = null; }); }
     else if(!onTest && testTrimmed){
       testTrimmed = false;
-      charAnimReady.forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden && !testTrimmed) sp.pre = im; }, () => {}); }catch(e){} } });
+      charPreList.slice().forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden && !testTrimmed){ sp.pre = im; charPreKeep(sp); } }, () => {}); }catch(e){} } });
     }
   }catch(e){}
 }
@@ -83265,6 +83265,19 @@ async function charAnimCachePut(id, px, blob){
     await c.put(charAnimCacheKey(id, px), new Response(blob, { headers: { "Content-Type": "image/png" } }));
   }catch(e){}
 }
+/* build 380: AT MOST 14 DECODED SHEETS KEPT. Build 377 kept every ready character sheet decoded while the app is up (~2.5MB each), and
+   Customize alone makes ~30 ready - his 377 report held 37 sheets at one hide. The 14 used most lately keep theirs (a board's screenful
+   and the tab bar's); the rest decode when they are shown, as before 377. */
+var charPreList = [];
+const CHAR_PRE_MAX = 14;
+function charPreKeep(sp){
+  try{
+    if(!sp || !sp.pre) return;
+    const i = charPreList.indexOf(sp); if(i >= 0) charPreList.splice(i, 1);
+    charPreList.push(sp);
+    while(charPreList.length > CHAR_PRE_MAX){ const old = charPreList.shift(); if(old) old.pre = null; }
+  }catch(e){}
+}
 async function charAnimSheetFromBlob(blob, px){
   const url = URL.createObjectURL(blob);
   const pre = new Image(); pre.src = url;
@@ -83273,7 +83286,9 @@ async function charAnimSheetFromBlob(blob, px){
   if(pre.naturalWidth !== cols * px || pre.naturalHeight !== rows * px){ URL.revokeObjectURL(url); return null; }
   /* build 377: the decoded picture is kept with the sheet while the app is up, so a board row that puts it on before its first frame does
      not decode it in that frame (each a ~800px PNG; a screenful of them was the Leaderboard's glass waiting longer than the others) */
-  return { url, px, n: CHAR_ANIM_FRAMES, cols, rows, pre: testTrimmed ? null : pre };
+  const sp = { url, px, n: CHAR_ANIM_FRAMES, cols, rows, pre: testTrimmed ? null : pre };
+  charPreKeep(sp);
+  return sp;
 }
 /* Everything an idle loop moves. `rotate`, `scale` and `translate` are
    separate properties from `transform` and several loops layer them, so
@@ -126176,6 +126191,7 @@ function lbFlipKnown(aw, charId){
     const sp = d && charAnimReady.get(d.id + "|" + f.px);
     const av = aw.querySelector(".rank-avatar");
     if(!sp || !av) return false;
+    if(sp.pre) charPreKeep(sp);
     const play = document.createElement("span");
     play.className = "char-flip-play";
     play.setAttribute("aria-hidden", "true");

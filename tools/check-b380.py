@@ -10,6 +10,7 @@ within 400ms of it.
 With the iPhone layer on (an iPhone's user agent: every control carries a native haptic switch):
 (7) a tab tap that leaves its switch focused is not taken for typing - nothing focused is blurred at the next press or at the screen's mount;
 (8) the switches of a new screen go in after the glass has landed (not inside the settle window) and all in one pass;
+(10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
 Run:  python3 tools/check-b380.py   (--against: copy the old index.html and version.json over first)"""
@@ -76,6 +77,11 @@ with sync_playwright() as pw:
     # (5)
     looks = pg.evaluate("()=>typeof BOARD_TEST_LOOKS!=='undefined' ? BOARD_TEST_LOOKS.map(l=>l[0]+':'+l[2]) : null")
     chk("the speed test's looks are base, layers, noloops, norows (%s)" % (looks,), looks == ["base:", "layers:-loops-paint", "noloops:", "norows:"], looks)
+    # (10) the decoded-sheet cap
+    cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
+      charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);
+      const held=made.filter(sp=>sp.pre); return { held: held.length, newest: !!extra.pre, touched: !!made[6].pre, oldest: !!made[7].pre }; }""")
+    chk("at most 14 character sheets stay decoded, the ones used last (%s)" % (cap,), cap and cap["held"] == 14 and cap["newest"] and cap["touched"] and not cap["oldest"], cap)
     # (6) the landing is planned at the release: the glass's fade to grey is on its track the moment the finger lifts, whatever the screen
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
     r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const real=window.showProfile; let builtAt=0;

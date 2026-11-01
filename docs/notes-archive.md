@@ -30043,3 +30043,9 @@ Measured with the iPhone layer, sum of per-tab medians over 12 taps at 4x: style
 Home and Profile; the only long frames are the first 1-5 of a slide (the lift), mostly rendering (layerize/commit/paint), not script.
 Not changed (checked): the sound room's impulse is already made in quiet time (quietIdle); syncBackToTop and the segment slider's place()
 read layout inside rAF (the layout the frame does anyway).
+- AT MOST 14 DECODED CHARACTER SHEETS (charPreKeep / CHAR_PRE_MAX): 377 kept every ready sheet decoded while up (~2.5MB each) and
+  Customize alone makes ~30 ready (his 377 report: 37 sheets held at a hide). The 14 used most lately keep theirs (lbFlipKnown touches
+  a sheet as it puts it on); the return from the background and the end of a test decode only those again. check-b380 (10).
+- Tried and taken back: the tab buttons as layers all the time (to stop four layers being made and dropped per press) - at rest it moved
+  the inactive tabs' words and icons by a fraction of a pixel (2,300 px of the bar off at 2x); not worth a changed look tonight.
+- Memory soak with the iPhone layer: 60 tab taps, the JS heap 6.4 -> 7.2MB, elements and images flat - no leak.
