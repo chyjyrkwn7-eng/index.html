@@ -103292,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-10-31-368";
+const APP_BUILD = "2026-10-31-369";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114150,13 +114150,15 @@ async function sendTabTimings(onDone){
   return sent;
 }
 let dragTestRunning = false;
+const DRAG_PAUSE = "html.tab-held #stage *,html.tab-held #stage *::before,html.tab-held #stage *::after{animation-play-state:paused !important}";
+const DRAG_SOLID = ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}";
 const DRAG_LOOKS = [
   ["A", ""],
-  ["B", ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}"],
-  ["C", ".tab-lens-clip{mix-blend-mode:normal !important;-webkit-mask-image:none !important;mask-image:none !important}"],
-  ["D", ".bottomtabs,.bottomtabs.has-glass-refraction{backdrop-filter:blur(10px) saturate(1.25) !important;-webkit-backdrop-filter:blur(10px) saturate(1.25) !important}"],
-  ["E", ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}.tab-lens-clip{mix-blend-mode:normal !important;-webkit-mask-image:none !important;mask-image:none !important}.tab-lens-glass,.tab-lens-grey{box-shadow:none !important}"],
-  ["F", ".tab-lens{display:none !important}"]];
+  ["B", DRAG_SOLID],
+  ["C", DRAG_PAUSE],
+  ["D", DRAG_SOLID + DRAG_PAUSE],
+  ["E", ".tab-lens{display:none !important}"],
+  ["F", ""]];   /* F: the bar does not swell (window.__noSwell) - the scale animation of a backdrop-filter bar, at the press and as the glass lands */
 async function runDragTest(){
   if(dragTestRunning) return;
   dragTestRunning = true;
@@ -114166,14 +114168,20 @@ async function runDragTest(){
   document.body.appendChild(note);
   const st = document.createElement("style"); st.id = "drag-look"; document.head.appendChild(st);
   const tick = window.__dragTick || 1000, wait = ms => new Promise(r => setTimeout(r, ms * tick / 1000));
+  window.__dragTestOn = true;
+  /* build 369: it runs on the Leaderboard, where characters and flares are animating under the bar (his smooth drag test was on the Report a
+     bug screen, which has nothing moving under it; his 20-40 updates a second were on the boards and Profile), and a release stays put */
+  try{ showRankings(); }catch(e){}
+  await wait(1500);
   try{
     for(let k = 3; k > 0; k--){ note.textContent = "Slide across the bar in " + k; await wait(1000); }
     for(const [name, css] of DRAG_LOOKS){
-      st.textContent = css;
+      st.textContent = css; window.__noSwell = (name === "F");
       for(let t = 7; t > 0; t--){ note.textContent = "Look " + name + " - keep sliding (" + t + ")"; await wait(1000); }
     }
   }catch(e){}
   try{ st.remove(); note.remove(); }catch(e){}
+  window.__dragTestOn = false; window.__noSwell = false;
   dragTestRunning = false;
 }
 function showBugReport(){
@@ -137101,10 +137109,10 @@ function tabPerfText(){
     slider.classList.remove("dragging");
     /* the lens settles on the tab it was let go over and becomes the
        platter there; a cancelled touch takes it home */
-    if(e.type === "pointercancel") lensRelease(null);
+    if(e.type === "pointercancel" || (window.__dragTestOn && tabDragMoved)) lensRelease(null);
     else lensRelease(lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
-    if(e.type === "pointercancel"){ slideBubbleToActiveTab(true); return; }
+    if(e.type === "pointercancel" || window.__dragTestOn){ slideBubbleToActiveTab(true); return; }   /* build 369: the Drag test stays on its screen */
     /* preventDefault on the pointerup stops the click a release would
        synthesise on whatever is under the finger, which used to navigate
        a second time and win. */
@@ -137424,7 +137432,7 @@ function tabPerfText(){
   }
   function lensBarSwell(pts){
     if(bar._swell){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
-    if(!canAnim || !pts) return;
+    if(!canAnim || !pts || window.__noSwell) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
     try{
       const a = bar._swell = bar.animate(pts.map(p => ({ scale: p[1], offset: Math.min(1, Math.max(0, p[0] / D)), easing: "cubic-bezier(.3,1.25,.5,1)" })), { duration: D, fill: "forwards" });
@@ -137447,6 +137455,7 @@ function tabPerfText(){
   }
   function lensDown(clientX){
     clearTimeout(lensT1); lensT1 = null;
+    document.documentElement.classList.add("tab-held");   /* build 369: the tab bar is held (see the Drag test looks) */
     if(lensCalm() || !canAnim){ lensG = null; return; }
     const caught = lens.classList.contains("is-up") && lensG && lensS;
     const now = caught ? lensNow() : null;
@@ -137642,6 +137651,7 @@ function tabPerfText(){
   }
   function lensFinish(){
     lensT1 = null;
+    document.documentElement.classList.remove("tab-held");
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
     settleSliderOpacity();
@@ -137655,6 +137665,7 @@ function tabPerfText(){
   }
   function lensHide(now){
     clearTimeout(lensT1); lensT1 = null;
+    document.documentElement.classList.remove("tab-held");
     lensStopFollow();
     if(lensRun){ lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); lensRun = null; }
     [lens].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });

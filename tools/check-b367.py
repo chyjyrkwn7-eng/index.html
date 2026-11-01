@@ -20,6 +20,6 @@ with sync_playwright() as pw:
       const iv=setInterval(()=>{ const n=[...document.body.children].find(e=>e.tagName==='DIV'&&/^(Look |Slide across)/.test(e.textContent||'')); const t=n?n.textContent:''; if(t!==last){ last=t; const st=document.getElementById('drag-look'); seen.push([t.slice(0,18), st?st.textContent.length:-1]); } },5);
       await p; clearInterval(iv); return { seen, left: !!document.getElementById('drag-look'), banner: [...document.body.children].some(e=>e.tagName==='DIV'&&/^Look /.test(e.textContent||'')) }; }""")
     letters = "".join(sorted(set(x[0][5] for x in r["seen"] if x[0].startswith("Look "))))
-    chk("the six looks run in turn and are all taken off at the end (%s, left %s)" % (letters, r["left"]), letters == "ABCDEF" and not r["left"] and not r["banner"], r)
+    chk("the looks run in turn (six from build 369) and are all taken off at the end (%s, left %s)" % (letters, r["left"]), letters == "ABCDEF" and not r["left"] and not r["banner"], r)
     br.close()
 sys.exit(0 if g["ok"] else 1)
