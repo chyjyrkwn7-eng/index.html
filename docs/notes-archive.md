@@ -29676,3 +29676,18 @@ blur except the bar's off (`html:not(#a):not(#b):not(#c) *:not(.bottomtabs):not(
 intervals are sent to the admin as a bug doc "Drag test (frames per look)" with lines `[drag:A] n med p95 max over34` (read with
 `python3 tools/firestore-admin.py bugs N`); window.__dragLines holds them for the gate. The 369 solid-bar look WAS applied (checked: computed
 backdrop-filter none). check-b371.py (fails on 370); check-b370.py removed (its looks are gone).
+
+## Build 372 (2026-11-01): Profile's character and emblems fill in after the screen is up
+
+Read of the Low Power Mode round (his phone's yellow battery in the 369/370/371-first recordings; 20:54 recording at 17%; the 21:00 and 21:06 recordings with it off):
+with Low Power Mode off the bar slides at 54-58 updates/s in every Drag-test look, incl. the Leaderboard as is; the lens lands cleanly (checked frame
+by frame, Profile -> Leaderboard); app frame timer median 17ms in every look. Left over (21:06 "Send tab timings", 30 taps): tap -> screen median 36ms
+(single) / 21ms (chains), tap -> drawn ~200ms, Home and Profile first frames sometimes 100-400ms worst. Earlier phone data ([g:*] in the 368 report):
+Home hero ~110ms of p, Profile art ~120ms of p (noart w119 -> w59).
+Sandbox (4x-6x CPU) sees the same shape: hiding the Profile avatar takes Profile's slow-frame time from ~100 to ~35ms; first frame of a Profile
+visit ~105-125ms before, ~67-70ms after. Home's glow is already cached on revisits (build 288), so Home was NOT touched.
+Change: `artLater(parent, node, done)` (next to afterFirstPaint): the node is built as before and appended once the screen has painted and settled
+(afterFirstPaint: one item a frame, never during the entrance), fading in over .2s (inline opacity/transition, cleared after). Used for the Profile
+hero character (+ setCharState live as `done`), `.pf-goal-emb` (both the top-rank and normal goal) and `.pf-rw-art` tiles. The boxes keep their CSS size, so nothing moves.
+check-b372.py (fails on 371). Pre-existing failures, identical on main: check-b327z13 U (3: screen mount 114-123ms vs 150+, from builds 359/360),
+check-b327z5-d B calendar cards (2), check-tours mainmenu/modeselect (4).
