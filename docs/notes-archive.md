@@ -29771,3 +29771,27 @@ Build 375, more (same build, his next message):
 Gates on 375 (sequential): check-js, b375 (all 6), b375-b, b374, b371, b369, b368, b367, b366, b365, b364, b363, b363-ifc, b362, b361, b360,
 b359, b358, b357, b356, b355, b354, b353, b352, b351, b350, b349, b328-fixes, unlocks, results, curve, profilecard: pass; sweep-layout --quick
 14/14; b327z13 T pass, U 3 pre-existing; check-tours mainmenu/modeselect 4 pre-existing.
+
+## Build 376 (2026-11-01): what is behind the bar holds still during a slide; the slide's tick; the board's first open; the swipe-up pause
+
+His notes on 375 (no new report sent): taps good; Home/Profile load a little slower than Calendar; the Leaderboard tab's bubble "loads and
+lags", and the board's first open after launch has characters missing; the planets lag/freeze/jump on return; the black screen on return;
+the app switcher still shows the test question; haptic on a swipe; swipe lags on every tab but Calendar.
+- SLIDE: Calendar has nothing animating behind the bar; the others do (rows' loops and flares; Profile's and Home's moving pieces), and the bar
+  is glass - anything moving behind it makes the blur be redone every frame, with the lens on top. barUnderPause() on the slide's start
+  pauses (Animation.pause) only the #stage animations whose targets overlap the bar's box (-24/+8px); barUnderResume() on the release (and in
+  lensFinish/lensHide) plays them on. The rest of the page keeps moving (373's whole-page pause was seen and refused). Not proven on the phone.
+- HAPTIC ON A SLIDE: the landing's playSound ran in pointerup; a finger that has moved seems not to get a haptic there. navrow touchend after
+  a landing (bar._dragLandAt, 250ms) calls NovaSound.haptic("tap", true); haptic(kind, force) -> taptic(true) skips the 45ms tick gap.
+  Unverified on the phone (Chromium has no Taptic path).
+- BOARD FIRST OPEN: lbArtPreload's pause was quietIdle (2s with no touch) - never, while he taps straight after launch. Now 40ms steps,
+  waiting only out a screen's entrance (settleUntil) and a held bar. NB 375's first board visit had no geometry yet (it is measured on that
+  visit), so it was bare by design; later launches have it.
+- LEADERBOARD BUBBLE: the art queue's hold 450 -> 800ms: the rows below the screen filling at 450ms landed on the glass's shrink (375 lands it
+  once the board is drawn).
+- SWIPE-UP PAUSE: touchstart in the bottom 22px then touchcancel (iOS taking the touch for the app switcher) -> autoPauseOnLeave(), while the
+  page can still draw (blur alone did not do it on his phone).
+- NOT DONE, needs his phone: the black screen on return and the planets' freeze/jump - nothing heavy runs on our side on the way back (every
+  visible handler defers ~2s); "Send tab timings" right after it happens carries ended: (iOS ended the page = cold start) and resume:
+  (first frame / steady frames / drift of the planets' loop) to tell which.
+check-b376.py (5 parts) and check-b376-b.py fail on 375; check-b375 (3) now counts only the animations above the bar.
