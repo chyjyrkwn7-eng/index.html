@@ -50373,9 +50373,14 @@ new MutationObserver(() => {
    the scroll on its own, the way it does everywhere else in the OS.
    Capture phase, because a handler on the button itself would run after
    the browser had already decided what to do with focus. */
+/* build 380: A FIELD YOU TYPE IN, not any input. On an iPhone every tappable control carries a native switch (an <input type=checkbox
+   switch>, the haptic layer) and a tap leaves it focused - so to these three keyboard fixes every tab tap looked like typing: the next
+   press blurred it (a style pass in the press), and every screen mount blurred it again and ran the keyboard unwind's four passes.
+   Traced with the iPhone layer on, at 4x CPU: ~35ms of every tab tap. */
+const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|reset|range|color|file|image|hidden)$/i.test(el.type || "")));
 document.addEventListener("pointerdown", (e) => {
   const a = document.activeElement;
-  if(!a || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+  if(!isTextEntry(a)) return;
   /* Not when the tap is on the field itself, or inside it - moving the
      caret must not dismiss the keyboard. */
   if(a === e.target || (a.contains && a.contains(e.target))) return;
@@ -50407,11 +50412,11 @@ new MutationObserver((muts) => {
    to be displaced, so that is the only time it runs. */
 var lastTextFocusAt = 0;
 ["focusin", "focusout"].forEach(t => document.addEventListener(t, (e) => {
-  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) lastTextFocusAt = Date.now();
+  if(isTextEntry(e.target)) lastTextFocusAt = Date.now();
 }, true));
 new MutationObserver(() => {
   const focused = document.activeElement;
-  const typing = focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName);
+  const typing = isTextEntry(focused);
   if(!typing && Date.now() - lastTextFocusAt > 4000) return;
   if(typing){
     focused.blur();
@@ -76352,6 +76357,9 @@ const NovaSound = (function(){
     hswTimer = 0;
     if(!hswObs) { hswQueue.clear(); return; }
     const t0 = hswNow();
+    /* build 380: every size read first, then every switch put in. Judging one added node and attaching its switches before judging the
+       next made each node's first size read lay the whole screen out again (a board's rows arrive as one node each). */
+    const todo = [], opts = [];
     while(hswQueue.size){
       const n = hswQueue.values().next().value;
       hswQueue.delete(n);
@@ -76359,12 +76367,13 @@ const NovaSound = (function(){
       const hosts = [];
       if(n.matches(HSW_HOSTS)) hosts.push(n);
       n.querySelectorAll(HSW_HOSTS).forEach(x => hosts.push(x));
-      const todo = hosts.filter(h => !(h.__hsw && h.__hsw.parentNode === h) && hswOk(h));
-      todo.forEach(hswAttach);
-      if(n.matches(HSW_OPT)) hswOptAttach(n);
-      n.querySelectorAll(HSW_OPT).forEach(hswOptAttach);
+      hosts.forEach(h => { if(!(h.__hsw && h.__hsw.parentNode === h) && todo.indexOf(h) < 0 && hswOk(h)) todo.push(h); });
+      if(n.matches(HSW_OPT)) opts.push(n);
+      n.querySelectorAll(HSW_OPT).forEach(x => opts.push(x));
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
+    todo.forEach(hswAttach);
+    opts.forEach(hswOptAttach);
     if(hswQueue.size) hswSchedule();
   }
   /* a control that was hidden (another tab's pane) had no size when it was
@@ -76387,11 +76396,16 @@ const NovaSound = (function(){
     if(hswTimer || !hswObs) return;
     /* a beat after a screen is mounted, never inside its first frames: a
        control with no switch yet still works, it only waits to tick */
+    /* build 380: AND NOT WHILE THE GLASS IS LANDING. Safari has no idle callback, so this was a plain 90ms timer - inside the landing of
+       every tab tap, on the frames the glass needed (the screen it attaches to arrives then). It waits out the settle window (the landing's
+       hand-over, see lensRelease) and a slide. */
+    const wait = Math.max(90, (typeof settleUntil === "number" ? settleUntil - Date.now() : 0));
     hswTimer = setTimeout(() => {
       hswTimer = 0;
+      if((typeof settleUntil === "number" && Date.now() < settleUntil) || document.documentElement.classList.contains("tab-dragging")){ hswSchedule(); return; }
       if(typeof requestIdleCallback === "function") requestIdleCallback(hswFlush, { timeout: 300 });
       else hswFlush();
-    }, 90);
+    }, wait);
   }
   function hswQueueAdd(n){
     if(!n || n.nodeType !== 1 || hswIs(n)) return;
@@ -126377,10 +126391,12 @@ function lbWatchOffscreen(rows, more){
       /* the row's own height is its place while its contents are skipped (content-visibility; the size given is the
          content box, so the padding and border come off), so the list does not change length under a scroll */
       if(!e.isIntersecting && e.target.classList.contains("rank-row")){ const cs = getComputedStyle(e.target), h = e.boundingClientRect.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0); if(h > 1) e.target.style.containIntrinsicHeight = (Math.round(h * 10) / 10) + "px"; }
+      const wasOff = e.target.classList.contains("is-offscreen");
       e.target.classList.toggle("is-offscreen", !e.isIntersecting);
       /* a rank flare paused off screen comes back on the shared clock
-         (build 324), level with every other flare of its rank */
-      if(e.isIntersecting) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
+         (build 324), level with every other flare of its rank - (build 380) only one that WAS off screen: the observer's first report on
+         every row on screen re-synced flares put on the clock a moment before (a style pass each) */
+      if(e.isIntersecting && wasOff) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
     });
   }, { rootMargin: "240px 0px" });
   rows._lbIo = io;
@@ -130200,7 +130216,9 @@ function buildRankMark(key, cls){
    where it was instead of starting its loop again. */
 function startRankMarks(root){
   if(!root) return;
-  try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => syncLoopClock(a)); }catch(e){}
+  /* build 380: only a mark new to its row (built, or carried into a rebuilt row) is put on the loop clock - every art-queue step re-synced
+     every mark on the board, a getAnimations (a style pass) each (traced on the iPhone layer: ~30ms a tap at 4x) */
+  try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { const row = a.closest(".rank-row") || root; if(a._syncRow === row) return; a._syncRow = row; syncLoopClock(a); }); }catch(e){}
   if(root._rankMarkRaf) return;
   /* build 377: and not inside a screen's settle (a slide, the glass landing): a flare taking its loop crossfades, which is new motion */
   const go = () => {

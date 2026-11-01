@@ -30019,3 +30019,27 @@ is also the Leaderboard's first draw (his 378 test: 448ms with loops, 218 withou
 
 Gate: tools/check-b380.py (6 parts). Reversed on purpose: check-b375 (1) (the glass waited for a slow screen). check-b378 and
 check-b379 take loops-paint off before measuring the old layers.
+
+### 380, second pass: the tab bar checked top to bottom with the iPhone layer on
+
+Madison's goal: "please get the bottom tab acting perfectly smooth, flawless, no lag jumps/spikes ... tapping ... sliding ... no
+crashes ... Do an entire check on the bottom tab top to bottom". Every gate so far ran WITHOUT the iPhone-only layer: hswSync attaches
+the native haptic switches only where canTaptic() (an iPhone UA, no vibrate), so the sandbox never had them. The audit now runs with an
+iPhone user agent (init script: Navigator.prototype.userAgent, vibrate deleted) + CDP touch, at 4x CPU, CPU profile per tap/slide.
+Found, only with that layer on (each also confirmed absent/failing on 379 by check-b380 7-9):
+1. EVERY TAB TAP WAS TAKEN FOR TYPING. A tap leaves the tab's switch (an <input type=checkbox switch>) focused; the three keyboard fixes
+   (pointerdown blur, focusin's lastTextFocusAt, the #stage MutationObserver's unwind) tested /^(INPUT|TEXTAREA)$/ - so the next press
+   blurred it and every screen mount blurred it again and ran the unwind's passes. ~285ms of blur self-time over 8 taps at 4x. Now
+   isTextEntry(): a TEXTAREA or an INPUT that is not checkbox/radio/button/submit/reset/range/color/file/image/hidden.
+2. THE SWITCHES WENT IN DURING THE GLASS'S LANDING. Safari has no requestIdleCallback, so hswSchedule was a plain 90ms timer - on 379,
+   36 of 43 switches went in inside the settle window. Now it waits out settleUntil and a slide (first switch ~600ms after the tap, none
+   inside). And hswFlush judges every queued node's hosts first (size reads) and only then attaches (writes): judging and attaching one
+   node at a time laid the screen out again per node (a board's rows each arrive as a node).
+3. THE BOARD'S FLARES WERE RE-SYNCED OVER AND OVER: startRankMarks synced every mark on every art-queue step, and the row observer's
+   first report re-synced every row on screen - 62 syncLoopClock (getAnimations: a style pass each) for 18 flares. Now a mark is synced
+   when it is new to its row (a._syncRow) and the observer only syncs a row coming back from off screen (wasOff): 29 for 18.
+Measured with the iPhone layer, sum of per-tab medians over 12 taps at 4x: style 1058 -> 777ms, script 3004 -> 2245ms, worst frames
+700 -> 550ms (379 -> 380; layout/paint up a little - the loops now step on the page). Slides: median and p95 frame 17ms on Board,
+Home and Profile; the only long frames are the first 1-5 of a slide (the lift), mostly rendering (layerize/commit/paint), not script.
+Not changed (checked): the sound room's impulse is already made in quiet time (quietIdle); syncBackToTop and the segment slider's place()
+read layout inside rAF (the layout the frame does anyway).

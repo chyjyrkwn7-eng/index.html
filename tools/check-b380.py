@@ -7,6 +7,11 @@ timings" says so; (4) the next launch of this build starts on layers, a launch o
 (5) the Leaderboard speed test's looks are base, layers, noloops, norows;
 (6) a screen that takes 800ms to build no longer holds the glass up for it: the landing (its turn to grey) is planned at the release,
 within 400ms of it.
+With the iPhone layer on (an iPhone's user agent: every control carries a native haptic switch):
+(7) a tab tap that leaves its switch focused is not taken for typing - nothing focused is blurred at the next press or at the screen's mount;
+(8) the switches of a new screen go in after the glass has landed (not inside the settle window) and all in one pass;
+(9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
+every art-queue step or at the row observer's first report.
 Run:  python3 tools/check-b380.py   (--against: copy the old index.html and version.json over first)"""
 import os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -87,5 +92,50 @@ with sync_playwright() as pw:
       return { greyPlannedAt: atRelease, greyPlannedSoon: soon, builtAfterRelease: Math.round(builtAt-rel), onProfile: !!document.querySelector('.screen-profile'), lensGone: getComputedStyle(document.getElementById('bottomtabs-lens')).opacity==='0' }; }""")
     chk("the landing is planned at the release (greys %sms after it), not when the 800ms screen is done (%sms)" % (r["greyPlannedAt"], r["builtAfterRelease"]),
         r["onProfile"] and r["lensGone"] and r["greyPlannedAt"] is not None and 0 <= r["greyPlannedAt"] <= 400 and r["builtAfterRelease"] >= 750, r)
+    br.close()
+    # ---- the iPhone layer ----
+    IPH = """(()=>{ const ua='Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
+      Object.defineProperty(Navigator.prototype,'userAgent',{get:()=>ua,configurable:true}); try{ delete Navigator.prototype.vibrate; }catch(e){}
+      window.__blurs=0; const rb=HTMLElement.prototype.blur; HTMLElement.prototype.blur=function(){ if(this === document.activeElement) __blurs++; return rb.apply(this, arguments); };
+      window.__hswAt=[]; new MutationObserver(ms=>{ ms.forEach(m=>m.addedNodes.forEach(n=>{ if(n.nodeType===1 && n.classList.contains('nova-hsw')) __hswAt.push([performance.now(), Date.now() < (window.settleUntil||0)]); })); }).observe(document, {childList:true, subtree:true}); })()"""
+    br = pw.chromium.launch(executable_path=g["g"]["CHROME"])
+    w, h, ins, inst = g["DEV"]["promax"]; g["g"]["new_page"].w, g["g"]["new_page"].h = w, h
+    ctx, pg = g["g"]["new_page"](br, ins, inst, False)
+    ctx.add_init_script(IPH)
+    pg.add_init_script(g["INIT"] % __import__("json").dumps(g["seed"]()))
+    pg.goto(g["url"]); pg.wait_for_timeout(3000)
+    pg.evaluate("document.getElementById('splashscreen')?.remove()")
+    pg.evaluate("()=>{ homeUnlocksOwed=()=>false; showHome(); }"); pg.wait_for_timeout(1500)
+    for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+    pg.evaluate(FILL); pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(16000)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(3000)
+    nsw = pg.evaluate("()=>document.querySelectorAll('.bottomtab > .nova-hsw').length")
+    cdp = ctx.new_cdp_session(pg); cdp.send("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
+    def cen(i): return pg.evaluate("(id)=>{const b=document.getElementById(id).getBoundingClientRect(); return [b.left+b.width/2,b.top+b.height/2];}", i)
+    def tap(i):
+        x, y = cen(i)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x, "y": y}]}); pg.wait_for_timeout(60)
+        cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+    # (7)
+    pg.evaluate("()=>{ const sw=document.querySelector('#bottomtab-profile > .nova-hsw'); if(sw) sw.focus(); window.__blurs=0; }")
+    focused = pg.evaluate("()=>!!(document.activeElement && document.activeElement.classList.contains('nova-hsw'))")
+    tap("bottomtab-profile"); pg.wait_for_timeout(1200); tap("bottomtab-calendar"); pg.wait_for_timeout(1200)
+    blurs = pg.evaluate("()=>__blurs")
+    chk("a tab tap with its switch focused (%s, %s switches on the bar) is not taken for typing: %s blurs over two taps" % (focused, nsw, blurs), nsw >= 4 and focused and blurs == 0, [focused, nsw, blurs])
+    # (8)
+    pg.evaluate("()=>{ __hswAt.length=0; }")
+    t0 = pg.evaluate("()=>performance.now()")
+    tap("bottomtab-rewards"); pg.wait_for_timeout(3000)
+    at = pg.evaluate("()=>__hswAt.slice()")
+    inside = [a for a in at if a[1]]
+    first = round(at[0][0] - t0) if at else None
+    chk("a new screen's switches go in after the glass has landed (%s put in, first %sms after the tap, %s inside the settle window)" % (len(at), first, len(inside)),
+        len(at) >= 5 and not inside and first is not None and first >= 300, [len(at), first, len(inside)])
+    # (9)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
+    sy = pg.evaluate("""async()=>{ let n=0; const real=window.syncLoopClock; window.syncLoopClock=function(r){ if(r && r.classList && r.classList.contains('cosmic-rank-anim')) n++; return real.apply(this, arguments); };
+      showRankings(); await new Promise(r=>setTimeout(r,3500)); window.syncLoopClock=real;
+      return { syncs: n, marks: document.querySelectorAll('.screen-rankings .rank-mark > .cosmic-rank-anim').length }; }""")
+    chk("a board's flares are put on the loop clock once each (%s syncs for %s flares)" % (sy["syncs"], sy["marks"]), sy["marks"] >= 8 and sy["syncs"] <= 2 * sy["marks"], sy)
     br.close()
 sys.exit(0 if g["ok"] else 1)
