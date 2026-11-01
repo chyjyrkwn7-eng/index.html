@@ -30092,3 +30092,11 @@ the lag?"
   after 380, a still board (the 379 lb-still look, kept) is the next step, not a guess before the numbers.
 Gate: check-b380 (11) slide from another tab, (12) the guard under taps that keep coming, (13) one tap finishes the grade box - all three
 fail on 379.
+- THE RESULTS, touched up (his 1:37 screenshot of a retake's card; "when the grade loads in, it's at 99 for too long"):
+  * The count shows floor(count); RS_GRADE_LAST_EASE 3.6 reached the number before the grade ~72% of the way in and held it there - on a
+    100, 99 showed ~1.2s (measured on 379: 1216ms; 79 before an 80: 1000ms). Now 1.9 (still slowing into the finish) and the last unit's
+    f^3 term 1400 -> 700 (a 100 counts 3.8s, not 4.5): 99 shows ~0.48s, 79 ~0.45s. check-b380 (14).
+  * A retake's card: "Retake of missed questions" over "All 3 answered correctly" ("Answered correctly" for one), or "2 of 3 answered
+    correctly" with "1 still to review" under it (.rs-retake-sub, its own line - one line with a dot wrapped onto the dot). check-b380 (15).
+  * The hundo's dim (HFX_DIM .5, his own ask in 325) is NOT changed: he asked whether to take it out; recommended, waiting on his word
+    (HFX_DIM.a = 0 is the whole change; check-b325-a / check-b326-a / check-behaviour assert the dim and would move with it).

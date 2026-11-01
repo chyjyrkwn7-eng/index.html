@@ -15,6 +15,9 @@ pressed tab it opens it, and a slide from the lit tab still lands where it is le
 (12) on a test's results, taps that keep coming never press a button that rises under them (the guard restarts with each refused tap),
 and a tap after a pause does; (13) a tap finishes the whole box that is coming in (the grade lands on its number at once) and the next
 box comes in by itself;
+(14) the grade's count does not sit on the number before the grade: on a 100 the 99 shows for under 650ms (it was ~1.2s), on an 80 the 79
+the same; (15) a retake's card says what it was and how it went ("Retake of missed questions" / "All 3 answered correctly" or "2 of 4
+answered correctly" with "2 still to review" under it);
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -131,6 +134,23 @@ with sync_playwright() as pw:
     went = pg.evaluate("()=>!!document.querySelector('.screen-home-actual')")
     chk("taps that keep coming never press a results button (%s button taps of 30, still on the results: %s); a tap after a pause does (home: %s)" % (LOG.count("button"), on_results, went),
         LOG.count("button") >= 5 and on_results and went, LOG)
+    # (14) the count's last number
+    holds = []
+    for wrong in (0, 3):
+        pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+        pg.evaluate(RUN0, ["Victims of Crime", "all", 0, wrong])
+        r = pg.evaluate("""async()=>{ const T0=performance.now(); const seen=[]; let last=null;
+          while(performance.now()-T0<9000){ const e=document.querySelector('.rs-screen .rs-pct'); const v=e?e.textContent.replace(/[^0-9]/g,''):null; if(v!==last){ seen.push([Math.round(performance.now()-T0), v]); last=v; } await new Promise(r=>requestAnimationFrame(r)); }
+          return seen; }""")
+        holds.append([r[-1][1], r[-2][1], r[-1][0] - r[-2][0]] if len(r) > 1 else None)
+    chk("the count does not sit on the number before the grade (%s)" % (holds,), all(h and int(h[1]) == int(h[0]) - 1 and h[2] < 650 for h in holds), holds)
+    # (15) the retake card
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+    pg.evaluate(g["RUN"], ["Victims of Crime", "all", 0, 3])
+    rk = pg.evaluate(g["RETAKE"], 0)
+    pg.wait_for_timeout(1500)
+    card = pg.evaluate("()=>{ const k=document.querySelector('#stage .rs-retake-note .rs-kicker'), l=document.querySelector('#stage .rs-retake-line'); return [k && k.textContent, l && l.textContent]; }")
+    chk("a retake's card says what it was and how it went (%s)" % (card,), card[0] == "Retake of missed questions" and card[1] == "All 3 answered correctly", card)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);
