@@ -10211,6 +10211,12 @@
      tap's press and release land in one frame, and a class added and taken
      off in one frame never swells at all. Reduce motion: no lens, no swell. */
   .bottomtabs{ transform-origin:0 50%; }
+  /* THE PAGE HOLDS STILL WHILE THE FINGER SLIDES ACROSS THE BAR (build 373). His 371 recording, Low Power Mode off: the slide itself is ~58
+     updates a second, but over the Leaderboard the page's own frame clock showed 5-8 stalls of 150-200ms in 7 seconds, and almost none with the
+     page hidden (2, worst 38ms); Report a bug, which has nothing animating, had none. The Leaderboard runs ~16 animations (breathing, drifting,
+     blinking characters) that the browser repaints every frame, and the bar's glass is drawn over them. Paused only while a slide is going
+     (not for a tap), and taken off BEFORE the release navigates, so the next screen's entrance is not held. */
+  html.tab-dragging #stage *, html.tab-dragging #stage *::before, html.tab-dragging #stage *::after{ animation-play-state:paused !important; }
   /* the tabs under the glass are scaled by the lens (an inline transform);
      a layer each so that is a composite, not a repaint */
   .bottomtabs.lens-up .bottomtabs-navrow .bottomtab{ will-change:transform; }
@@ -103292,7 +103298,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-372";
+const APP_BUILD = "2026-11-01-373";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -137145,7 +137151,11 @@ function tabPerfText(){
     /* Pointer capture only once a drag is actually confirmed (a plain
        tap's click must still reach its own button), so a finger that
        wanders off the bar mid-drag keeps delivering moves and the up. */
-    if(!tabDragMoved){ slider.classList.add("dragging"); try{ navrow.setPointerCapture(e.pointerId); }catch(err){} }
+    if(!tabDragMoved){
+      slider.classList.add("dragging"); try{ navrow.setPointerCapture(e.pointerId); }catch(err){}
+      /* build 373: the page under the bar holds still while the finger slides (see .tab-dragging) */
+      document.documentElement.classList.add("tab-dragging");
+    }
     tabDragMoved = true;
     /* The lens follows the finger (build 323, 325); the platter waits,
        hidden, and is put in place once, on release. Reduce motion has no
@@ -137157,6 +137167,8 @@ function tabPerfText(){
   function endTabDrag(e){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
+    /* BEFORE the release navigates: the screen it brings in must run its own entrance */
+    document.documentElement.classList.remove("tab-dragging");
     slider.classList.remove("dragging");
     /* the lens settles on the tab it was let go over and becomes the
        platter there; a cancelled touch takes it home */
@@ -137702,7 +137714,7 @@ function tabPerfText(){
   }
   function lensFinish(){
     lensT1 = null;
-    document.documentElement.classList.remove("tab-held");
+    document.documentElement.classList.remove("tab-held", "tab-dragging");
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
     settleSliderOpacity();
@@ -137716,7 +137728,7 @@ function tabPerfText(){
   }
   function lensHide(now){
     clearTimeout(lensT1); lensT1 = null;
-    document.documentElement.classList.remove("tab-held");
+    document.documentElement.classList.remove("tab-held", "tab-dragging");
     lensStopFollow();
     if(lensRun){ lensRun.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); lensRun = null; }
     [lens].concat(LENS_GLASS, LENS_GREY).forEach(el => { if(el._fade){ try{ el._fade.cancel(); }catch(e){} el._fade = null; } });
