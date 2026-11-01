@@ -26,7 +26,7 @@ with sync_playwright() as pw:
       Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.__h}); Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>window.__h?'hidden':'visible'});
       out.t0=a.currentTime; window.__h=true; document.dispatchEvent(new Event('visibilitychange')); await wait(2500);
       out.hiddenMove=a.currentTime-out.t0; window.__h=false; document.dispatchEvent(new Event('visibilitychange'));
-      await wait(30); out.soon=a.playState; await wait(1500); out.later=a.playState; out.total=a.currentTime-out.t0; return out; }""")
+      await new Promise(r=>requestAnimationFrame(r)); out.soon=a.playState; /* (build 377: two steady frames, not four - read on the first) */ await wait(1500); out.later=a.playState; out.total=a.currentTime-out.t0; return out; }""")
     chk("the planet system does not move while the app is away", r and abs(r["hiddenMove"]) < 200, r)
     chk("and stays on its pose in the first frames back", r and r["soon"] == "paused", r)
     chk("then goes on from that pose, not from where the clock has got to (%s)" % (r and r.get("total")), r and r["later"] == "running" and r["total"] < 2500, r)

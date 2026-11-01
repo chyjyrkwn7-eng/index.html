@@ -10852,7 +10852,11 @@
      Declared after the refraction rule so it wins on every device. */
   [data-layout="modern"] .bottomtabs,
   [data-layout="modern"] .bottomtabs.has-glass-refraction{
-    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    /* build 377: SEE-THROUGH, LIKE THE FLARES. "You should be able to see through the bottom tab well, similar to how you can see through
+       the rank flares to see the secret flares passing under ... it's hard to see through." The flares are a 6px blur over a near-clear
+       body; the bar was a 30px blur over a 74% dark body, which hid what was under it. Now 7px and a light body (below): what passes
+       under is seen, softened; the icons and words keep their own shadow to read against it. (7px over a 26% body.) */
+    backdrop-filter:blur(7px) saturate(1.5); -webkit-backdrop-filter:blur(7px) saturate(1.5);
     /* THE TEAR, AGAIN (build 308): "the settings tab on the bottom has
        glitched lines running through it" on the Reset screen. The same
        iOS fault the update banner had (see Known quirks): solid layers
@@ -10880,7 +10884,7 @@
        Now: a near-black, see-through body with a faint white lift, the
        blur kept (it still hides what scrolls under it), less saturation so
        the glow behind does not tint it, and a single half-pixel ring. */
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.74);
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26);
     /* The edge IS the bar's 1px border (the base rule's var(--rule) is a
        blue-grey that stacked with an inset ring into a thick double rim). */
     border-color:rgba(255,255,255,.16);
@@ -82822,29 +82826,13 @@ function loopsPauseAll(shiftBack){
    decoded). While hidden, the rows go back to bare frames and the sheets come off; on the way back, once frames are
    steady, they are put back the way they came in (the queue, nearest the view first; the sheets decoded async). */
 function trimForBackground(){
+  /* build 377: the decoded sheets let go (kept again as they are used) */
+  try{ charAnimReady.forEach(sp => { if(sp) sp.pre = null; }); }catch(e){}
   try{
-    document.querySelectorAll(".rank-rows > .rank-row .rank-avatar-wrap[data-flip-pre]").forEach(aw => {
-      aw.querySelectorAll(".char-flip-play").forEach(n => n.remove());
-      delete aw.dataset.flipPre;
-    });
-    document.querySelectorAll(".rank-rows > .rank-row:not([data-lazy-art])").forEach(row => {
-      const aw = row.querySelector(".rank-avatar-wrap");
-      if(aw && !aw.dataset.lazyAv && row.dataset.av !== undefined){
-        aw.querySelectorAll(".char-flip-play").forEach(n => n.remove());
-        const av = aw.querySelector(".rank-avatar"); if(av) av.querySelectorAll("svg").forEach(n => n.remove());
-        try{ setCharState(aw, "still"); }catch(e){}
-        aw.dataset.lazyAv = row.dataset.av || "";
-        row.dataset.lazyArt = "1";
-      }
-      const em = row.querySelector(".rank-mark:not([data-lazy-mark])");
-      if(em && em.dataset.rankTier){
-        const ph = document.createElement("span");
-        ph.className = "cosmic-icon-badge cosmic-badge-rank flare-solo cosmic-badge-lit rank-mark rank-col-flare is-lazy";
-        ph.dataset.lazyMark = em.dataset.rankTier; if(em.dataset.mark) ph.dataset.mark = em.dataset.mark;
-        try{ ph.style.setProperty("--rank-color", RANK_COLOR[em.dataset.rankTier]); }catch(e){}
-        em.replaceWith(ph); row.dataset.lazyArt = "1";
-      }
-    });
+    /* build 377: THE BOARD KEEPS ITS ART WHILE AWAY. His recording (00:54): back from another app, the Leaderboard sat as discs and empty
+       rings for seconds while its art went back in a row at a time - stripped here on the way out (build 357, for memory: iOS was ending
+       the page in the background). The leak that made the page that big is fixed (375) and his reports since show no page ended in the
+       background; the decoded sheets still go (above). */
     document.querySelectorAll(".cosmic-hero-wrap .cosmic-rank-anim").forEach(w => {
       const b = w.closest(".cosmic-badge-rank"); const sv = b && b.querySelector("svg.cosmic-rank-emblem");
       if(sv){ sv.classList.remove("rk-under-anim"); try{ sv.getAnimations().forEach(a => { if(a.__sheetFade) a.cancel(); }); }catch(e){} }
@@ -82853,6 +82841,8 @@ function trimForBackground(){
   }catch(e){}
 }
 function restoreAfterBackground(){
+  /* build 377: the decoded sheets let go on the way out come back, in the quiet, so the next board's rows are not decoded in its first frame */
+  try{ setTimeout(() => { charAnimReady.forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden) sp.pre = im; }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
   try{
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
@@ -82867,15 +82857,28 @@ const SESSION_KEY = "class26e.session", CRASH_KEY = "class26e.crashlog";
     const prev = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
     if(prev && prev.state !== "closed"){
       let l = []; try{ l = JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []; }catch(e){}
-      l.push("ENDED-" + prev.state + " " + (prev.screen || "?") + " " + Math.round((Date.now() - (prev.t || Date.now())) / 1000) + "s-ago b" + String(prev.build || "").slice(-3));
+      l.push("ENDED-" + prev.state + " " + (prev.screen || "?") + " " + Math.round((Date.now() - (prev.t || Date.now())) / 1000) + "s-ago b" + String(prev.build || "").slice(-3) + (prev.fp ? " " + prev.fp : ""));
       localStorage.setItem(CRASH_KEY, JSON.stringify(l.slice(-6)));
     }
   }catch(e){}
 })();
 function sessionMark(state){
   try{
-    const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : "other";
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ state, t: Date.now(), screen: scr, build: typeof APP_BUILD === "string" ? APP_BUILD : "" }));
+    const scr = document.querySelector(".screen-home-actual") ? "home" : document.querySelector(".screen-rankings") ? "board" : document.querySelector(".screen-profile") ? "profile" : document.querySelector(".screen-calendar-tab") ? "cal" : document.querySelector(".qpanel, .pausepanel") ? "test" : "other";
+    /* build 377: WHAT THE PAGE HELD AS IT WENT. His report: ended in the background 0-3s after leaving on 365, 368, 371, 373 and 375 - iOS
+       ending the page as it was put away, then the black screen of a cold start on the way back. Noted with the hide, read back on the next
+       launch into the ended log: elements, images and their decoded megapixels, canvases' megapixels, sheets in memory. */
+    let fp = "";
+    if(state === "hidden"){
+      try{
+        let imgMp = 0, imgs = 0, cvMp = 0;
+        document.querySelectorAll("img").forEach(i => { if(i.naturalWidth){ imgs++; imgMp += i.naturalWidth * i.naturalHeight / 1e6; } });
+        document.querySelectorAll("canvas").forEach(c => { cvMp += (c.width * c.height) / 1e6; });
+        try{ if(typeof heroGlowCache !== "undefined" && heroGlowCache.canvas && !heroGlowCache.canvas.isConnected) cvMp += heroGlowCache.canvas.width * heroGlowCache.canvas.height / 1e6; }catch(e){}
+        fp = "el" + document.getElementsByTagName("*").length + " img" + imgs + "/" + imgMp.toFixed(1) + "mp cv" + cvMp.toFixed(1) + "mp sh" + (charAnimReady.size + orbitAnimReady.size);
+      }catch(e){}
+    }
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ state, t: Date.now(), screen: scr, build: typeof APP_BUILD === "string" ? APP_BUILD : "", fp }));
   }catch(e){}
 }
 setInterval(() => { if(!document.hidden) sessionMark("visible"); }, 6000);
@@ -82928,7 +82931,9 @@ function loopsBack(){
     if(!first) first = Math.round(t - t0);
     const dt = t - lastT; lastT = t;
     good = dt < 40 ? good + 1 : 0;
-    if(good >= 4 || ++tries > 90){ go(); return; }
+    /* build 377: two steady frames (was four) and at most ~40 (was 90): "the lag on the planet system when leaving and coming back is
+       better, not good enough" - his resume log reached steady frames in 37-462ms, the loops waited on top of that */
+    if(good >= 2 || ++tries > 40){ go(); return; }
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
@@ -82941,7 +82946,7 @@ document.addEventListener("visibilitychange", () => {
     loopHiddenAt = Date.now();
     loopPausedByUs.clear();
     loopsPauseAll(0).forEach(a => loopPausedByUs.add(a));
-    sessionMark("hidden"); trimForBackground();
+    trimForBackground(); sessionMark("hidden");
   } else loopsBack();
 });
 window.addEventListener("pageshow", e => { if(!document.hidden) loopsBack(); });
@@ -83183,7 +83188,9 @@ async function charAnimSheetFromBlob(blob, px){
   try{ await pre.decode(); }catch(e){ URL.revokeObjectURL(url); return null; }
   const cols = CHAR_ANIM_COLS, rows = Math.ceil(CHAR_ANIM_FRAMES / cols);
   if(pre.naturalWidth !== cols * px || pre.naturalHeight !== rows * px){ URL.revokeObjectURL(url); return null; }
-  return { url, px, n: CHAR_ANIM_FRAMES, cols, rows };
+  /* build 377: the decoded picture is kept with the sheet while the app is up, so a board row that puts it on before its first frame does
+     not decode it in that frame (each a ~800px PNG; a screenful of them was the Leaderboard's glass waiting longer than the others) */
+  return { url, px, n: CHAR_ANIM_FRAMES, cols, rows, pre };
 }
 /* Everything an idle loop moves. `rotate`, `scale` and `translate` are
    separate properties from `transform` and several loops layer them, so
@@ -83237,6 +83244,8 @@ function charRecWant(key, el){
   set.forEach(t => { if(t !== el && !t.isConnected) set.delete(t); });
   set.add(el);
 }
+/* build 377: sheets wanted for the board before anybody looks at it - the characters on it, at its row size (lbArtPreload) */
+const charRecBg = new Set();
 /* 0 your own tab, 1 on (or near) the screen, 2 further down the page,
    3 gone - see charFlipWatch for flipNear */
 function charRecPriority(key){
@@ -83247,6 +83256,7 @@ function charRecPriority(key){
     const p = (el.dataset.flipSolo || el.closest(".bottomtabs")) ? 0 : (el.dataset.flipNear === "0" ? 2 : 1);
     if(p < best) best = p;
   });
+  if(best === 3 && charRecBg.has(key)) best = 2;
   return best;
 }
 /* THE YIELD BETWEEN FRAMES OF A RECORDING. Where the browser has idle
@@ -83289,7 +83299,7 @@ function recordCharFrames(charId, px, el){
   let settle;
   const job = new Promise(r => { settle = r; });
   charAnimSheets.set(key, job);
-  job.then(v => { if(!v) charAnimSheets.delete(key); else charAnimReady.set(key, v); charRecWaiters.delete(key); });
+  job.then(v => { if(!v) charAnimSheets.delete(key); else charAnimReady.set(key, v); charRecWaiters.delete(key); charRecBg.delete(key); });
   /* a sheet already saved is read at once, out of turn */
   charAnimCacheGet(drawing.id, px).then(async blob => {
     const sp = blob ? await charAnimSheetFromBlob(blob, px) : null;
@@ -83311,6 +83321,11 @@ async function charRecPump(){
       /* nobody on the page wants it any more: nothing recorded, and no
          failure remembered - the next tile to ask starts again */
       if(pickP >= 3){ job.settle(false); continue; }
+      /* build 377: a sheet wanted only for later (charRecBg - nothing on the screen asks for it) waits for 5 quiet seconds, not 2: a
+         recording's slice that is already running when a finger comes down lands on that touch */
+      if(pickP === 2 && charRecBg.has(pick) && !charRecWaiters.get(pick)){
+        while(performance.now() - recUserAt < 5000 || document.hidden){ await new Promise(r => setTimeout(r, 600)); }
+      }
       let sp = null;
       try{ sp = await recordCharSheet(job.drawing, job.px); }catch(e){ sp = null; }
       job.settle(sp);
@@ -83636,7 +83651,10 @@ function charFlipAttach(el){
   return true;
 }
 function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
-  return sp => {
+  const run = sp => {
+    /* build 377: a sheet that arrives during a slide or the glass's landing waits for it to end - a loop starting is new motion */
+    const wait = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(wait > 0 && sp){ setTimeout(() => run(sp), Math.min(wait, 1500) + 20); return; }
     clearTimeout(waitT);
     const el = ref.deref();
     if(!el) return;
@@ -83737,6 +83755,7 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
       if(el.dataset.flipSolo) el.classList.remove("char-live");
       if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-live"); }
   };
+  return run;
 }
 function homeRankEmblem(tier){
   try {
@@ -103348,7 +103367,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-376";
+const APP_BUILD = "2026-11-01-377";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -125671,6 +125690,15 @@ function renderRankingRows(rows, entries, board, opts){
     if(entry.pub){ row.dataset.pub = entry.pub; row.dataset.av = entry.avatarChar || ""; }
     const keptKey = entry.pub ? entry.pub + "|" + (entry.avatarChar || "") : null;
     let avatarWrap = keptKey ? keptAvatars.get(keptKey) : null;
+    /* build 377: A BOARD SWITCH MOVES PICTURES, NOT DRAWINGS. "There is also lag within the leader board when switching between the
+       types of leaderboards." Traced at 4x CPU: a switch re-inserted every visible row's carried-over character - a ~250-part drawing
+       under its loop - and restyling them was ~90ms of one frame (worst frame 170-330ms). A row in the first screenful whose loop is
+       ready takes a new frame holding only the loop (its place in the loop kept, so nothing jumps); the drawing goes back in from the
+       queue, under it, a little at a time. */
+    let keptPhase = null;
+    if(avatarWrap && rowIdx < LB_KNOWN_ROWS && rowIdx >= artNow && avatarWrap.querySelector("svg") && avatarWrap.querySelector(".char-flip-play") && lbFlipReady(entry.avatarChar)){
+      keptPhase = avatarWrap.dataset.flipPhase; keptAvatars.delete(keptKey); avatarWrap = null;
+    }
     if(avatarWrap){ keptAvatars.delete(keptKey); charFlipResync(avatarWrap); }
     else {
       avatarWrap = document.createElement("span");
@@ -125684,7 +125712,7 @@ function renderRankingRows(rows, entries, board, opts){
          first screenful is built as its words and numbers with an empty frame where the character and the flare go
          (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
          quiet after the list is up. */
-      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(rowIdx < LB_KNOWN_ROWS) lbFlipKnown(avatarWrap, entry.avatarChar); }
+      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase; if(rowIdx < LB_KNOWN_ROWS) lbFlipKnown(avatarWrap, entry.avatarChar); }
       else {
         avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
         /* Alive on the boards (build 304): "make all characters in the
@@ -125780,7 +125808,7 @@ function renderRankingRows(rows, entries, board, opts){
       } else row.insertBefore(bWrap, row.firstChild);
     }
     /* a bare frame carried over from the last drawing of this board is still bare */
-    if(!row.dataset.lazyArt && row.querySelector("[data-lazy-av], [data-lazy-mark]")) row.dataset.lazyArt = "1";
+    if(row.querySelector("[data-lazy-av], [data-lazy-mark]")) row.dataset.lazyArt = "1"; else delete row.dataset.lazyArt;
     rows.appendChild(row);
   };
   /* build 349: seven rows in the tap's own task, then three a frame - a long frame under a tab tap is the freeze */
@@ -125912,6 +125940,14 @@ function lbCharId(id){
   if(!AVATAR_CHARACTERS.find(c => c.id === cid)) cid = AVATAR_CHARACTERS[0].id;
   return cid;
 }
+function lbFlipReady(charId){
+  try{
+    if(!charId || charId === "nova") return false;
+    const G = lbGeomGet(), f = G && G.flip; if(!f || !(f.cell > 0)) return false;
+    const d = charAnimDrawings.get(lbCharId(charId));
+    return !!(d && charAnimReady.get(d.id + "|" + f.px));
+  }catch(e){ return false; }
+}
 /* a board row's character, its recorded loop playing, as charFlipAttach puts it on - from the kept geometry, no measuring */
 function lbFlipKnown(aw, charId){
   try{
@@ -125937,6 +125973,10 @@ function lbFlipKnown(aw, charId){
     if(f.rel) av.style.position = "relative";
     av.appendChild(play);
     aw.dataset.flipPre = "1";
+    /* build 377: and that is the row's character, done - the drawing under a loop is never seen and nothing on a board takes the loop
+       off (rows are not parked, the background no longer strips them), so it is not queued: putting ~250-part drawings in under loops
+       a row a frame was the second of lag after every board switch */
+    delete aw.dataset.lazyAv;
     return true;
   }catch(e){ return false; }
 }
@@ -125953,6 +125993,10 @@ function lbMarkKnown(rk){
     const svg = real.querySelector("svg.cosmic-rank-emblem");
     if(!svg) return null;
     attachOrbitSheet(real, svg, sp, g, false, true);
+    /* build 377: the emblem drawing under a playing loop is never seen (rk-under-anim) - it is ~95 parts to style and lay out on every
+       board built or switched, so a board flare that comes up with its loop leaves it out */
+    svg.remove();
+    real.dataset.loopOnly = "1";
     return real;
   }catch(e){ return null; }
 }
@@ -125977,6 +126021,9 @@ async function lbArtPreload(){
         const blob = await charAnimCacheGet(d.id, G.flip.px);
         const sp = blob ? await charAnimSheetFromBlob(blob, G.flip.px) : null;
         if(sp && !charAnimReady.has(key)){ charAnimReady.set(key, sp); if(!charAnimSheets.has(key)) charAnimSheets.set(key, Promise.resolve(sp)); }
+        /* build 377: never recorded on this device - recorded now, in the recorder's quiet slices, once; it is kept for good ("the stuff in
+           the screen still isn't populating properly": a character got its loop only after he had sat on the board while it was made) */
+        else if(!sp && !charAnimReady.has(key)){ charRecBg.add(key); try{ recordCharFrames(cid, G.flip.px, null); }catch(e){} }
       }
     }
     const tiers = [];
@@ -126105,7 +126152,9 @@ function buildOverallCols(entry, keptMarks, third, lazyArt, known){
        character, so a classmate's push elsewhere never restarts it. */
     const mk = entry.pub ? entry.pub + "|" + rk : null;
     let em = mk && keptMarks ? keptMarks.get(mk) : null;
-    if(em) keptMarks.delete(mk);
+    /* build 377: a board switch carries a flare over only if it is already just its loop; one with its drawing is made again as a loop */
+    if(em && known && !em.dataset.loopOnly){ const fresh = lbMarkKnown(rk); if(fresh){ keptMarks.delete(mk); em = fresh; } }
+    if(em && keptMarks.get(mk) === em) keptMarks.delete(mk);
     else if(lazyArt && known && (em = lbMarkKnown(rk))){ /* build 375: the flare with its loop on, from the first frame */ }
     else if(lazyArt){
       /* an empty frame the flare's size; lbFillArt puts the flare in */
@@ -129869,10 +129918,14 @@ function startRankMarks(root){
   if(!root) return;
   try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => syncLoopClock(a)); }catch(e){}
   if(root._rankMarkRaf) return;
-  root._rankMarkRaf = requestAnimationFrame(() => setTimeout(() => {
+  /* build 377: and not inside a screen's settle (a slide, the glass landing): a flare taking its loop crossfades, which is new motion */
+  const go = () => {
+    const w = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
+    if(w > 0){ setTimeout(() => requestAnimationFrame(go), Math.min(w, 1000)); return; }
     root._rankMarkRaf = 0;
     try{ if(root.isConnected) startOrbitEmblemAnims(root); }catch(e){}
-  }, 0));
+  };
+  root._rankMarkRaf = requestAnimationFrame(() => setTimeout(go, 0));
 }
 /* A theme as its swatch in Customize draws it: the swirl and the sheen
    that sweeps across it ("ensure the theme is the animated look"). */
@@ -133660,7 +133713,8 @@ setTimeout(() => {
 }, 4000);
 __bm("L125832");
 var settleUntil = 0;
-function beginSettle(ms){ settleUntil = Date.now() + (ms || 420); }
+/* (build 377: never shortened - the glass's landing extends it, below, and a later screen's settle must not cut that short) */
+function beginSettle(ms){ settleUntil = Math.max(settleUntil, Date.now() + (ms || 420)); }
 
 /* ---- A RANK YOU CAN OPEN (build 311) ----
    "It'd be cool if the rank screen was interactive somehow ... maybe by
@@ -137300,13 +137354,27 @@ function tabPerfText(){
      and Home their moving pieces there - and the bar is glass: every frame anything moves behind it, the blur of what is behind it is
      made again, with the lens drawn over it. Build 373 paused the whole page and the page was seen to stop; now only the animations of
      what is under the bar (and just above it) pause, behind the blur, and go on from where they were when the finger lets go. */
+  let tabSwitchesAway = [];
+  let slideHeldSettle = false;
+  function tabSwitchesOut(){
+    navrow.querySelectorAll(".bottomtab > .nova-hsw").forEach(sw => { try{ sw.checked = false; }catch(e){} tabSwitchesAway.push([sw, sw.parentNode]); sw.remove(); });
+  }
+  function tabSwitchesBack(){
+    const list = tabSwitchesAway; tabSwitchesAway = [];
+    list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
+  }
   let barUnderPaused = [];
-  function barUnderPause(){
-    barUnderResume();
+  function barUnderPause(again){
+    if(!again){
+      barUnderResume();
+      /* once more on the next frame: an animation that started in the press (a loop just put on) exists only from the next style pass */
+      requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(true); });
+    }
     try{
       const st = document.getElementById("stage"), br = bar.getBoundingClientRect();
       if(!st || !br.height) return;
-      const top = br.top - 24, bottom = br.bottom + 8;
+      /* wider than the bar as it is now: at a slide's start its swell (1.043 tall) is still growing */
+      const top = br.top - 40, bottom = br.bottom + 14;
       st.getAnimations({ subtree: true }).forEach(a => {
         if(a.playState !== "running") return;
         const t = a.effect && a.effect.target;
@@ -137373,6 +137441,14 @@ function tabPerfText(){
       document.documentElement.classList.add("tab-dragging");
       /* build 376: only what is BEHIND THE BAR holds still while the finger slides */
       barUnderPause();
+      /* build 377: NO TICKS ON THE WAY. "The bottom tab swipe Haptic Touch ... does it even when you swipe over, pass other tabs on the
+         way to the one you select." Each tab carries a real native switch for its tap's tick (NovaSound, "A REAL SWITCH UNDER THE FINGER");
+         a finger that slides drags the switch it landed on, and every time it flips across its middle iOS plays a tick. The switches leave
+         the moment a slide starts (the touch is the bar's, captured) and come back when it ends: the only tick is the landing's. */
+      tabSwitchesOut();
+      /* and nothing new starts under it while it slides (a flare taking its loop, a character going live): the settle window is held
+         open for as long as the finger is down, and closed back to the landing's own on release */
+      try{ settleUntil = Math.max(settleUntil, Date.now() + 8000); slideHeldSettle = true; }catch(err){}
     }
     tabDragMoved = true;
     /* The lens follows the finger (build 323, 325); the platter waits,
@@ -137386,6 +137462,8 @@ function tabPerfText(){
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
     tabDragActive = false; tabDragPointerId = null;
     barUnderResume();
+    tabSwitchesBack();
+    if(slideHeldSettle){ slideHeldSettle = false; try{ settleUntil = Date.now() + 120; }catch(err){} }
     /* BEFORE the release navigates: the screen it brings in must run its own entrance */
     document.documentElement.classList.remove("tab-dragging");
     slider.classList.remove("dragging");
@@ -137898,6 +137976,10 @@ function tabPerfText(){
       if(i * LENS_DT >= greyAt + 56 && Math.abs(f.H - g.pillH) < 1.2 && Math.abs(f.W - hi.pw) < 1.6 && Math.abs(f.cx - hi.c) < 1){ handAt = i * LENS_DT; break; }
     }
     handAt = Math.min(handAt, total);
+    /* build 377: THE LANDING HAS ITS FRAMES TO ITSELF. Everything a new screen puts off "until it has settled" (characters going live,
+       emblems waking, the first-paint queue, recordings) waits until the glass has handed over to the platter - his recording showed the
+       Leaderboard's after-mount work freezing the shrink for ~250ms */
+    try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 80); }catch(e){}
     bar.classList.remove("is-pressing");
     /* the bar stays swollen while the lens is up, and goes back as it lands */
     const sw = getComputedStyle(bar).scale;
@@ -137986,7 +138068,7 @@ function tabPerfText(){
   }
   function lensFinish(){
     lensT1 = null;
-    barUnderResume();
+    barUnderResume(); tabSwitchesBack();
     document.documentElement.classList.remove("tab-held", "tab-dragging");
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
@@ -138001,7 +138083,7 @@ function tabPerfText(){
   }
   function lensHide(now){
     clearTimeout(lensT1); lensT1 = null;
-    barUnderResume();
+    barUnderResume(); tabSwitchesBack();
     lensAwaitClear();
     document.documentElement.classList.remove("tab-held", "tab-dragging");
     lensStopFollow();

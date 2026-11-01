@@ -29796,3 +29796,48 @@ the app switcher still shows the test question; haptic on a swipe; swipe lags on
   visible handler defers ~2s); "Send tab timings" right after it happens carries ended: (iOS ended the page = cold start) and resume:
   (first frame / steady frames / drift of the planets' loop) to tell which.
 check-b376.py (5 parts) and check-b376-b.py fail on 375; check-b375 (3) now counts only the animations above the bar.
+
+## Build 377 (2026-11-01): the board's characters recorded in the quiet; decoded sheets kept while up; what the page held, noted at the hide
+
+His report (05:51, b376): resume first 4-100ms, steady 37-462ms; ended: hidden 0-3s after leaving on 365/368/371/373/375 (the black screen =
+the page ended as it was put away, a cold start on return). His notes: Profile's glass slow to shrink, Leaderboard much worse; the board
+"takes a minute to load" and still does not populate; swipe best on Calendar > Home > Profile > Leaderboard; planets on return still
+noticeable; black screen still too long.
+- RECORDED IN THE QUIET: a board character gets a sheet only once it has been recorded (5-50s each on a phone, one at a time, only while the
+  board was up and wanted it) - so most classmates' rows opened bare and filled from the queue. lbArtPreload now queues every board
+  character with no saved sheet (charRecBg: priority 2, behind anything on screen) - recorded in the recorder's slices, wherever he is,
+  once per device (Cache Storage).
+- DECODED WHILE UP: charAnimSheetFromBlob keeps `pre` (the decoded Image) on the sheet; a board row's pre-attached loop is then not decoded
+  inside the board's first frame (which the glass waits on since 375). trimForBackground drops every sp.pre.
+- NOTED AT THE HIDE: sessionMark("hidden") (now after the trim) stores fp = "el<elements> img<n>/<decoded mp> cv<canvas mp> sh<sheets>"; the
+  next launch's ENDED line carries it. screen "test" for a question/pause panel. To read the next report's ended: lines.
+- PLANETS ON RETURN: loopsBack resumes after 2 steady frames (was 4) or ~40 tries (was 90).
+check-b377.py (4 parts) fails on 376.
+Build 377, more (his 00:53 tab video, 00:54 Leaderboard video, and notes):
+- TAB VIDEO (120fps, 58 taps/slides read event by event): Home/Calendar taps glide and shrink at 60Hz, screen ~75-225ms after the press.
+  The bad ones are the Leaderboard: the board drawn, then the glass held at full size ~250ms with no frame, then one jump into the
+  platter - the board's after-mount work on the frames the landing needed.
+- LEADERBOARD VIDEO: back from another app, the board sat as discs/empty rings for seconds: trimForBackground (357) stripped every row's
+  art on the way out and it refilled a row a frame. NOW NOT STRIPPED (the leak that made the page too big is fixed in 375; his ended log
+  shows no page ended in the background since 376). The decoded sheets (sp.pre) still go, and come back 1.2s after a return
+  (restoreAfterBackground, decode in the quiet).
+- STRAY TICKS ON A SLIDE: each tab holds a real native switch (.nova-hsw, the iOS 26.5+ tap tick); a sliding finger drags it and every flip
+  ticks. tabSwitchesOut() takes the tab switches out as the slide starts, tabSwitchesBack() on release / lensFinish / lensHide.
+- SEE-THROUGH GLASS ("like the rank flares"): .bottomtabs backdrop blur(30px) saturate(1.25) -> blur(7px) saturate(1.5); dark body .74 -> .26.
+- BOARD SWITCH LAG (traced 4x CPU): ~3,900 elements restyled in one frame after a switch - the carried-over characters' and flares' drawings
+  (~250 / ~95 parts) re-inserted into the rebuilt rows - then the queue putting drawings under loops a row a frame for ~1s. Now a row in the
+  first screenful (LB_KNOWN_ROWS) whose loop is ready is the loop alone (lbFlipKnown also deletes data-lazy-av: the row is complete, never
+  queued; a carried frame with a drawing is replaced by a loop, its loop phase kept); a flare with its loop is the bubble + loop with the
+  emblem drawing removed (data-loop-only); a carried flare with its drawing is replaced. After: ~2,200 restyled, no queue. Main-thread per
+  switch at 4x is ~1.2s/1.2s on both builds - the board's frames are full regardless (animations, layers, the recorder) - so this is less
+  work, not proven smoother; the phone decides.
+- RECORDING IN THE QUIET IS QUIETER: a charRecBg-only job waits for 5s with no touch (was the general 2s), so a recording slice is less often
+  under a finger.
+check-b350's "stays on its pose" is read one frame after the return (two steady frames now). check-b377: 8 parts, all fail on 376.
+- THE LANDING HAS ITS FRAMES TO ITSELF: lensRelease sets settleUntil = max(settleUntil, now + handAt + 80), and beginSettle never shortens it
+  (max) - characters going live, emblems waking, the first-paint queue and recordings wait until the glass has handed over. check-b377 (8).
+- check-b358's "rows bare while hidden" reversed to "rows keep their art while hidden" (377).
+- NOTHING NEW STARTS UNDER A SLIDE: the settle window is held open while a slide lasts (and set to +120ms at its release, the landing then
+  extends it); a recorded loop that arrives meanwhile waits for it (charFlipThen's run re-queues itself); startRankMarks waits out the
+  settle too (a flare taking its loop crossfades). barUnderPause scans -40/+14px around the bar (its swell is still growing at a slide's start
+  - a flare on the edge was missed one run in three) and again on the next frame.
