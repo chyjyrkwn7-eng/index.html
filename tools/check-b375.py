@@ -1,6 +1,8 @@
 """Build 375: (1) THE GLASS LANDS AFTER THE NEW SCREEN HAS BEEN DRAWN. A tap whose screen takes a long time to draw (a 350ms build,
 as on the phone) keeps its lens up, at full height, until the frame after the one that drew the screen, and only then shrinks into
 the platter - it never shrinks while the screen is being drawn. A tap on the tab already showing lands as before.
+(3) a slide across the bar does not stop the page's animations; (4) a slide let go over the tab already lit leaves a scrolled screen where it
+was; (5) a Leaderboard that has been left is let go (six quick visits, then 7s: none of the six boards is still in memory).
 (2) THE LEADERBOARD ARRIVES WITH ITS ART. Once a board's character loops and flare loops have been made (and its row geometry seen
 once), the next board - and the first board after a relaunch, once the loops have been read back - is built with every row's loop
 playing and its flare's loop on, in the same task that mounts it: no bare discs, no empty rings, nothing drawn later.
@@ -64,5 +66,28 @@ with sync_playwright() as pw:
     cold = pg.evaluate("()=>{ showRankings(); return (" + PROBE + ")(); }")
     chk("after a relaunch the first board is built the same way once the saved loops are read back (%s of %s looping, %s discs)" % (cold["loop"], cold["n"], cold["disc"]),
         cold["n"] >= 6 and cold["loop"] >= cold["n"] - 1 and cold["flare"] >= cold["n"] - 1 and cold["disc"] <= 1, cold)
+    # (3) and (4): on a scrolled board, a slide out and back to the lit tab
+    pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(2500)
+    r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); window.scrollTo(0,500); await wait(400); const y0=window.scrollY;
+      const st=document.getElementById('stage'); const run=()=>st.getAnimations({subtree:true}).filter(a=>a.playState==='running').length;
+      const nav=document.querySelector('.bottomtabs-navrow'), tab=document.getElementById('bottomtab-rewards'); const b=tab.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
+      const mk=(t,xx)=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:83,isPrimary:true,clientX:xx,clientY:y});
+      const before=run(); tab.dispatchEvent(mk('pointerdown',x)); await wait(60);
+      for(let i=1;i<=10;i++){ nav.dispatchEvent(mk('pointermove',x+i*6)); await wait(16); }
+      const during=run();
+      for(let i=9;i>=0;i--){ nav.dispatchEvent(mk('pointermove',x+i*6)); await wait(16); }
+      nav.dispatchEvent(mk('pointerup',x)); await wait(1200);
+      return { y0, y1: Math.round(window.scrollY), before, during, onBoard: !!document.querySelector('.screen-rankings') }; }""")
+    chk("the page goes on moving while a finger slides across the bar (%s animations running, %s before)" % (r["during"], r["before"]), r["before"] > 0 and r["during"] >= 0.8 * r["before"], r)
+    chk("let go over the tab already lit, the board stays scrolled where it was (%s -> %s)" % (r["y0"], r["y1"]), r["y0"] >= 400 and abs(r["y1"] - r["y0"]) < 30 and r["onBoard"], r)
+    # (5) boards that have been left are let go
+    pg.evaluate("()=>{ window.__wrs=[]; }")
+    for k in range(6):
+        pg.evaluate("()=>{ showRankings(); __wrs.push(new WeakRef(document.querySelector('.rank-rows'))); }"); pg.wait_for_timeout(1300)
+        pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(1300)
+    pg.wait_for_timeout(7000)
+    cdp = ctx.new_cdp_session(pg); cdp.send("HeapProfiler.collectGarbage"); pg.wait_for_timeout(300); cdp.send("HeapProfiler.collectGarbage")
+    alive = pg.evaluate("()=>__wrs.map(w=>!!w.deref())")
+    chk("six Leaderboards visited and left: none still held 7s later (%s)" % (alive,), not any(alive), alive)
     br.close()
 sys.exit(0 if g["ok"] else 1)

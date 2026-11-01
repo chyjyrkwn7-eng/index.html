@@ -29745,3 +29745,21 @@ every flare an empty ring, the characters coming one at a time from ~450ms (the 
    First board ever on a device (nothing recorded, no geometry): as before (discs, then the queue), and that visit records what the next needs.
 Sandbox: second visit and post-relaunch first visit: 8 of 9 visible rows looping and flaring in the mounting task, 0 discs; the first frame and
 the settled board differ by 0.025 mean (flare column mid-frame). check-b375.py fails on 374 (all three parts).
+Build 375, more (same build, his next message):
+- "When you start the swiping animation, the screen you are on stops moving" = build 373's pause (html.tab-dragging #stage * paused). TAKEN OUT;
+  the class is still set during a slide. check-b373.py removed; check-b375 (3) asserts >= 80% of the page's animations keep running mid-slide.
+- "If the screen is scrolled down, if you swipe but don't end up swiping to another, the page scrolls back to the top" = a slide released over
+  the lit tab went through the tab's tap, whose ROOT_OF rule scrolls a screen that is up to its top. endTabDrag now does nothing but
+  slideBubbleToActiveTab(true) when the tab let go over is .active. check-b375 (4).
+- "Leaving the app mid test ... the test is there for a few seconds and then it pauses" = iOS shows the picture it took as the app left until
+  the page draws again; the pause went on at visibilitychange-hidden, after the picture. window "blur" (with !document.hasFocus()) now runs
+  autoPauseOnLeave too, while the page can still draw. check-b375-b.py.
+- "When leaving the page and coming back, the entire screen is black for a good amount of time" - his tab-timings `ended:` log shows the page
+  ENDED while hidden 0-3s after leaving (b365, b368, b371): iOS ending it in the background, then a cold start on return. MEASURED A LEAK:
+  every Leaderboard visit stayed in memory (Home <-> Leaderboard x20: 26k -> 501k elements, +300MB; Home/Profile/Calendar flat). Retainer
+  (heap snapshot, a tagged board): charAnimSheets -> a pending sheet Promise -> its reaction (charFlipAttach's .then closure) -> the row's
+  avatar -> the board. A sheet waits in the recorder's queue for minutes on a phone (5-50s each, one at a time), so each visit's board was
+  held for as long. Now: charFlipThen(WeakRef(el), ...) - a separate function so the closure holds nothing else of charFlipAttach's -
+  and startOrbitEmblemAnims holds its bubbles by WeakRef across each await; the board's own IntersectionObservers are disconnected and its
+  tiles taken out of the shared ones when it leaves (lbReleaseBoard, from the screen's own MutationObserver), rankingsOnVisible dropped.
+  After: x20 fast visits 142k elements (boards held ~6s by short retry timers), back to 27k after 12s idle; 374: 502k. check-b375 (5).

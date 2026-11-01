@@ -10216,7 +10216,8 @@
      page hidden (2, worst 38ms); Report a bug, which has nothing animating, had none. The Leaderboard runs ~16 animations (breathing, drifting,
      blinking characters) that the browser repaints every frame, and the bar's glass is drawn over them. Paused only while a slide is going
      (not for a tap), and taken off BEFORE the release navigates, so the next screen's entrance is not held. */
-  html.tab-dragging #stage *, html.tab-dragging #stage *::before, html.tab-dragging #stage *::after{ animation-play-state:paused !important; }
+  /* (build 375: TAKEN OUT - "when you start the swiping animation, the screen you are on stops moving for some reason? Fix that." The
+     page keeps moving under a slide; html.tab-dragging is still set while one is going, for anything that wants to know.) */
   /* the tabs under the glass are scaled by the lens (an inline transform);
      a layer each so that is a composite, not a repaint */
   .bottomtabs.lens-up .bottomtabs-navrow .bottomtab{ will-change:transform; }
@@ -51760,6 +51761,12 @@ function autoPauseOnLeave(){
   }catch(e){}
 }
 document.addEventListener("visibilitychange", () => { if(document.visibilityState === "hidden"){ autoPauseOnLeave(); saveRunSession(); } });
+/* build 375: AND AS SOON AS THE APP STARTS TO GO. "When leaving the app mid test and coming back, it does automatically pause but the timing
+   is off, you come back and the test is there for a few seconds and then it pauses." iOS keeps a picture of the app taken as it leaves and
+   shows that on the way back until the page draws again; the pause went on when the page was already hidden, too late to be in the
+   picture. The window loses focus first (the app switcher, another app, the notification shade), while the page can still draw - the
+   pause screen is drawn then, so it is what the picture shows and what is there on the way back. */
+window.addEventListener("blur", () => { setTimeout(() => { try{ if(!document.hasFocus()) autoPauseOnLeave(); }catch(e){} }, 0); });
 window.addEventListener("pagehide", () => { autoPauseOnLeave(); saveRunSession(); });
 
 /* What the top-left of a question says (build 303). The daily question
@@ -82808,6 +82815,10 @@ function loopsPauseAll(shiftBack){
    steady, they are put back the way they came in (the queue, nearest the view first; the sheets decoded async). */
 function trimForBackground(){
   try{
+    document.querySelectorAll(".rank-rows > .rank-row .rank-avatar-wrap[data-flip-pre]").forEach(aw => {
+      aw.querySelectorAll(".char-flip-play").forEach(n => n.remove());
+      delete aw.dataset.flipPre;
+    });
     document.querySelectorAll(".rank-rows > .rank-row:not([data-lazy-art])").forEach(row => {
       const aw = row.querySelector(".rank-avatar-wrap");
       if(aw && !aw.dataset.lazyAv && row.dataset.av !== undefined){
@@ -83037,9 +83048,15 @@ function startOrbitEmblemAnims(root, readyOnly){
   const all = [...root.querySelectorAll(".cosmic-badge-rank")];
   const badges = all.filter(b => b.classList.contains("cosmic-badge-lit")).concat(all.filter(b => !b.classList.contains("cosmic-badge-lit")));
   const scale = Math.min(window.devicePixelRatio || 1, 2);
+  /* build 375: held weakly across the wait for a recording (see charFlipThen): this loop waits on one sheet at a time, minutes on a
+     phone, and held every bubble it was given - a whole board's flares - for as long */
+  const refs = badges.map(b => typeof WeakRef === "function" ? new WeakRef(b) : { deref: (k => () => k)(b) });
+  badges.length = 0;
   (async () => {
-    for(const badge of badges){
-      const svg = badge.querySelector("svg.cosmic-rank-emblem");
+    for(const ref of refs){
+      let badge = ref.deref();
+      if(!badge) continue;
+      let svg = badge.querySelector("svg.cosmic-rank-emblem");
       const tier = badge.dataset.rankTier;
       if(!svg || !tier || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || badge.dataset.sheetPending) continue;
       /* The hero sits inside a scaled wrapper (0.94), so whole CSS pixels
@@ -83056,8 +83073,12 @@ function startOrbitEmblemAnims(root, readyOnly){
       px -= px % 2;
       if(px < 12) continue;
       if(readyOnly && !orbitAnimReady.has(orbitAnimDrawing(tier).id + "|" + px)) continue;
-      const sp = await recordRankEmblemFrames(tier, svg, px);
-      if(!sp || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) continue;
+      const pending = recordRankEmblemFrames(tier, svg, px);
+      badge = svg = null;
+      const sp = await pending;
+      badge = ref.deref();
+      svg = badge && badge.querySelector("svg.cosmic-rank-emblem");
+      if(!sp || !badge || !svg || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) continue;
       const cs = getComputedStyle(svg);
       const g = { px, cellCss: sp.px / scale / S, filter: cs.filter, opacity: cs.opacity };
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
@@ -83598,104 +83619,116 @@ function charFlipAttach(el){
       el.classList.add("char-live", "char-flip-wait");
     }, 450);
   }
-  recordCharFrames(charId, px, el).then(sp => {
-    clearTimeout(waitT);
-    /* false: dropped because nobody wanted it at the time - a tile that
-       is here after all asks again; null: it could not be made */
-    if(sp === false){ setTimeout(() => { if(el.isConnected && !el.querySelector(".char-flip-play")) charFlipAttach(el); }, 0); return; }
-    /* a board row already live while it waited stays live (327z13) */
-    if(!sp){ if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-flip"); el.classList.add("char-flip-fallback"); return; } charFlipFallback(el); return; }
-    if(!el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
-    if(!svg.isConnected || el.querySelector(".char-flip-play")) return;
-    /* parked while it was being recorded: it plays when it comes back */
-    if(el.dataset.flipNear === "0" && !el.dataset.flipSolo && !el.closest(".bottomtabs")) return;
-    const cellCss = sp.px / scale;
-    const play = document.createElement("span");
-    play.className = "char-flip-play";
-    play.setAttribute("aria-hidden", "true");
-    /* EXACTLY OVER THE DRAWING, CENTRE ON CENTRE (build 313). "The
-       characters move positions within their circle and aren't properly
-       centered." The board scales its drawing (.94 about 50% 56%) and
-       this used to measure the SCALED box and lay an unscaled sheet at
-       its corner: every flip-book landed 1.5px right and down of the
-       still drawing and 7% bigger, so each character visibly jumped off
-       centre the moment its loop took over, and back on every rebuild.
-       Now the drawing's own layout box is measured with its transform
-       lifted for the read, the sheet is centred on it (a cell is within
-       a quarter pixel of the box), and it carries the drawing's own
-       transform about the same point - so the two are one picture. */
-    const par = svg.parentNode, pr = par.getBoundingClientRect();
-    const svgCs = getComputedStyle(svg);
-    const svgT = svgCs.transform, svgO = svgCs.transformOrigin;
-    const prevT = svg.style.transform;
-    svg.style.transform = "none";
-    const sr = svg.getBoundingClientRect();
-    svg.style.transform = prevT;
-    const S = sr.width > 0 ? sr.width / layoutW : 1;
-    const inset = (layoutW - cellCss) / 2;
-    if(wide){
-      /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
-         sheet takes exactly the same box, so no reading can catch it
-         half-way through the bar coming back */
-      play.classList.add(svg.classList.contains("cx-plate") ? "cx-plate" : "cx-wide");
-    } else if(ownScale){
-      /* centred on the drawing as it is SHOWN, on whole device pixels */
-      const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-      const snap = v => Math.round(v * dpr) / dpr;
-      const cx = (shown.left + shown.width / 2 - pr.left) / S - par.clientLeft;
-      const cy = (shown.top + shown.height / 2 - pr.top) / S - par.clientTop;
-      play.style.left = snap(cx - cellCss / 2) + "px";
-      play.style.top = snap(cy - cellCss / 2) + "px";
-      play.style.width = play.style.height = cellCss + "px";
-      /* AN UNTRANSFORMED DRAWING IS PLACED BY ITS LAYOUT (build 317). The
-         tab bar's Profile icon was measured while the bar was still coming
-         back after a test, and the sheet landed 14px up and left of the
-         drawing - the tab showed a zoomed-in corner of the character,
-         reported as the Profile tab "looks broken". A drawing with no
-         transform that fills its box exactly is centred by CSS, which no
-         transition can catch half-way; the measured centre above stays
-         for a scaled one (the boards' .94), which is what it was written
-         for. (An SVG element has no offsetLeft to read instead.) */
-      if((!svgT || svgT === "none") && Math.abs(svg.clientWidth - par.clientWidth) < 1 && Math.abs(svg.clientHeight - par.clientHeight) < 1){
-        /* the drawing fills its box exactly, so its centre IS the box's */
-        play.style.left = play.style.top = "50%";
-        play.style.marginLeft = play.style.marginTop = (-cellCss / 2) + "px";
-      }
-    } else {
-    play.style.left = ((sr.left - pr.left) / S - par.clientLeft + inset) + "px";
-    play.style.top = ((sr.top - pr.top) / S - par.clientTop + inset) + "px";
-    play.style.width = play.style.height = cellCss + "px";
-    }
-    if(!ownScale && svgT && svgT !== "none"){
-      const o = String(svgO || "").split(" ").map(v => parseFloat(v));
-      play.style.transform = svgT;
-      if(o.length >= 2 && o.every(v => isFinite(v))) play.style.transformOrigin = (o[0] - inset) + "px " + (o[1] - inset) + "px";
-    }
-    const img = document.createElement("img");
-    img.alt = ""; img.decoding = "sync"; img.src = sp.url;
-    img.style.width = (sp.cols * cellCss) + "px";
-    img.style.height = (sp.rows * cellCss) + "px";
-    /* each tile starts somewhere different in its loop, so a board of
-       one character does not blink in unison - but that place is kept
-       on the tile and read off one clock (build 310), so a tile put back
-       into the page carries on rather than jumping (charFlipResync) */
-    if(el.dataset.flipPhase == null) el.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
-    img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(el) + "ms infinite";
-    play.appendChild(img);
-    if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
-    svg.after(play);
-    svg.classList.add("char-under-flip");
-    /* build 375: a board row's place for its loop, kept so the next board can put loops on before its first frame */
-    if(!wide && ownScale && !el.dataset.flipSolo && el.closest(".screen-rankings .rank-rows")){
-      const fl = { px: sp.px, cell: cellCss, left: play.style.left, top: play.style.top, rel: par.style.position === "relative" };
-      lbGeomPut(c => { c.flip = fl; });
-    }
-    /* a solo tile was live while it waited (setCharState), and so was a
-       board row (327z13) */
-    if(el.dataset.flipSolo) el.classList.remove("char-live");
-    if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-live"); }
-  });
+  /* build 375: THE WAIT FOR A SHEET DOES NOT HOLD THE TILE. A sheet still to be recorded (5-50s each on a phone, one at a time) is a
+     promise that stays open; what it was going to do with the tile was a closure over the tile - so every Leaderboard visit's whole board
+     stayed in memory until the last of its characters had been recorded (measured: ~24,000 elements a visit, never freed). The tile is
+     held weakly now (charFlipThen, a function of its own so the closure has nothing else of this one's), and a tile that has gone by
+     the time its sheet is ready is simply not there to be given it. */
+  recordCharFrames(charId, px, el).then(charFlipThen(typeof WeakRef === "function" ? new WeakRef(el) : { deref: (k => () => k)(el) }, waitT, scale, layoutW, ownScale, wide));
   return true;
+}
+function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
+  return sp => {
+    clearTimeout(waitT);
+    const el = ref.deref();
+    if(!el) return;
+    const svg = el.querySelector("svg.avatarchar-svg");
+    if(!svg) return;
+      /* false: dropped because nobody wanted it at the time - a tile that
+         is here after all asks again; null: it could not be made */
+      if(sp === false){ setTimeout(() => { if(el.isConnected && !el.querySelector(".char-flip-play")) charFlipAttach(el); }, 0); return; }
+      /* a board row already live while it waited stays live (327z13) */
+      if(!sp){ if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-flip"); el.classList.add("char-flip-fallback"); return; } charFlipFallback(el); return; }
+      if(!el.isConnected || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
+      if(!svg.isConnected || el.querySelector(".char-flip-play")) return;
+      /* parked while it was being recorded: it plays when it comes back */
+      if(el.dataset.flipNear === "0" && !el.dataset.flipSolo && !el.closest(".bottomtabs")) return;
+      const cellCss = sp.px / scale;
+      const play = document.createElement("span");
+      play.className = "char-flip-play";
+      play.setAttribute("aria-hidden", "true");
+      /* EXACTLY OVER THE DRAWING, CENTRE ON CENTRE (build 313). "The
+         characters move positions within their circle and aren't properly
+         centered." The board scales its drawing (.94 about 50% 56%) and
+         this used to measure the SCALED box and lay an unscaled sheet at
+         its corner: every flip-book landed 1.5px right and down of the
+         still drawing and 7% bigger, so each character visibly jumped off
+         centre the moment its loop took over, and back on every rebuild.
+         Now the drawing's own layout box is measured with its transform
+         lifted for the read, the sheet is centred on it (a cell is within
+         a quarter pixel of the box), and it carries the drawing's own
+         transform about the same point - so the two are one picture. */
+      const par = svg.parentNode, pr = par.getBoundingClientRect();
+      const svgCs = getComputedStyle(svg);
+      const svgT = svgCs.transform, svgO = svgCs.transformOrigin;
+      const prevT = svg.style.transform;
+      svg.style.transform = "none";
+      const sr = svg.getBoundingClientRect();
+      svg.style.transform = prevT;
+      const S = sr.width > 0 ? sr.width / layoutW : 1;
+      const inset = (layoutW - cellCss) / 2;
+      if(wide){
+        /* the tab's wide drawing hangs over its icon by CSS (.cx-wide); the
+           sheet takes exactly the same box, so no reading can catch it
+           half-way through the bar coming back */
+        play.classList.add(svg.classList.contains("cx-plate") ? "cx-plate" : "cx-wide");
+      } else if(ownScale){
+        /* centred on the drawing as it is SHOWN, on whole device pixels */
+        const shown = svg.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+        const snap = v => Math.round(v * dpr) / dpr;
+        const cx = (shown.left + shown.width / 2 - pr.left) / S - par.clientLeft;
+        const cy = (shown.top + shown.height / 2 - pr.top) / S - par.clientTop;
+        play.style.left = snap(cx - cellCss / 2) + "px";
+        play.style.top = snap(cy - cellCss / 2) + "px";
+        play.style.width = play.style.height = cellCss + "px";
+        /* AN UNTRANSFORMED DRAWING IS PLACED BY ITS LAYOUT (build 317). The
+           tab bar's Profile icon was measured while the bar was still coming
+           back after a test, and the sheet landed 14px up and left of the
+           drawing - the tab showed a zoomed-in corner of the character,
+           reported as the Profile tab "looks broken". A drawing with no
+           transform that fills its box exactly is centred by CSS, which no
+           transition can catch half-way; the measured centre above stays
+           for a scaled one (the boards' .94), which is what it was written
+           for. (An SVG element has no offsetLeft to read instead.) */
+        if((!svgT || svgT === "none") && Math.abs(svg.clientWidth - par.clientWidth) < 1 && Math.abs(svg.clientHeight - par.clientHeight) < 1){
+          /* the drawing fills its box exactly, so its centre IS the box's */
+          play.style.left = play.style.top = "50%";
+          play.style.marginLeft = play.style.marginTop = (-cellCss / 2) + "px";
+        }
+      } else {
+      play.style.left = ((sr.left - pr.left) / S - par.clientLeft + inset) + "px";
+      play.style.top = ((sr.top - pr.top) / S - par.clientTop + inset) + "px";
+      play.style.width = play.style.height = cellCss + "px";
+      }
+      if(!ownScale && svgT && svgT !== "none"){
+        const o = String(svgO || "").split(" ").map(v => parseFloat(v));
+        play.style.transform = svgT;
+        if(o.length >= 2 && o.every(v => isFinite(v))) play.style.transformOrigin = (o[0] - inset) + "px " + (o[1] - inset) + "px";
+      }
+      const img = document.createElement("img");
+      img.alt = ""; img.decoding = "sync"; img.src = sp.url;
+      img.style.width = (sp.cols * cellCss) + "px";
+      img.style.height = (sp.rows * cellCss) + "px";
+      /* each tile starts somewhere different in its loop, so a board of
+         one character does not blink in unison - but that place is kept
+         on the tile and read off one clock (build 310), so a tile put back
+         into the page carries on rather than jumping (charFlipResync) */
+      if(el.dataset.flipPhase == null) el.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
+      img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(el) + "ms infinite";
+      play.appendChild(img);
+      if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
+      svg.after(play);
+      svg.classList.add("char-under-flip");
+      /* build 375: a board row's place for its loop, kept so the next board can put loops on before its first frame */
+      if(!wide && ownScale && !el.dataset.flipSolo && el.closest(".screen-rankings .rank-rows")){
+        const fl = { px: sp.px, cell: cellCss, left: play.style.left, top: play.style.top, rel: par.style.position === "relative" };
+        lbGeomPut(c => { c.flip = fl; });
+      }
+      /* a solo tile was live while it waited (setCharState), and so was a
+         board row (327z13) */
+      if(el.dataset.flipSolo) el.classList.remove("char-live");
+      if(el.classList.contains("char-flip-wait")){ el.classList.remove("char-flip-wait", "char-live"); }
+  };
 }
 function homeRankEmblem(tier){
   try {
@@ -125643,7 +125676,7 @@ function renderRankingRows(rows, entries, board, opts){
          first screenful is built as its words and numbers with an empty frame where the character and the flare go
          (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
          quiet after the list is up. */
-      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; lbFlipKnown(avatarWrap, entry.avatarChar); }
+      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(rowIdx < LB_KNOWN_ROWS) lbFlipKnown(avatarWrap, entry.avatarChar); }
       else {
         avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
         /* Alive on the boards (build 304): "make all characters in the
@@ -125684,7 +125717,7 @@ function renderRankingRows(rows, entries, board, opts){
        on one number and keep their line. */
     let cols = null;
     if(board.key === "overall" || third){
-      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= artNow);
+      cols = buildOverallCols(entry, keptMarks, third, rowIdx >= artNow, rowIdx < LB_KNOWN_ROWS);
       if(third) cols.classList.add("rank-cols-" + board.key);
     } else {
       stats.textContent = board.unit(val(entry), entry);
@@ -125846,6 +125879,8 @@ function lbFillArt(row, rows, quiet){
    board's first frame is the finished board. The drawings themselves still go in from the queue, under the loops, as before. A row
    with nothing recorded yet waits as it did. */
 const LB_GEOM_KEY = "class26e.lbgeom";
+/* the rows that can come up with their loops on: a screenful and a bit (the rest fill as they are scrolled toward, as before) */
+const LB_KNOWN_ROWS = 16;
 var lbGeomAll = null;
 function lbGeomVP(){ return orbitVPNow() + "|" + (window.devicePixelRatio || 1); }
 function lbGeomGet(){
@@ -125951,6 +125986,16 @@ async function lbArtPreload(){
   finally{ lbPreloadBusy = false; }
 }
 setTimeout(() => { try{ lbArtPreload(); }catch(e){} }, 3500);
+function lbReleaseBoard(rows){
+  if(!rows) return;
+  try{ if(rows._lbLazyIo){ rows._lbLazyIo.disconnect(); rows._lbLazyIo = null; } }catch(e){}
+  try{ if(rows._lbIo){ rows._lbIo.disconnect(); rows._lbIo = null; } }catch(e){}
+  rows._lbQ = []; rows._lbFill = (rows._lbFill || 0) + 1; rows._lbFillArt = null; rows._lbFinish = null;
+  try{
+    rows.querySelectorAll(".rank-avatar-wrap").forEach(t => { try{ charFlipIO && charFlipIO.unobserve(t); }catch(e){} charFlipWatched.delete(t); });
+    rows.querySelectorAll("svg").forEach(t => { try{ _rkIO && _rkIO.unobserve(t); }catch(e){} _rkSeen.delete(t); });
+  }catch(e){}
+}
 /* the rows' art goes in a few ms a frame, the ones nearest the view first */
 function lbArtQueue(rows, list){
   const q = rows._lbQ || (rows._lbQ = []);
@@ -126023,7 +126068,7 @@ function lbCompact(n){
   const k = n / 1000;
   return (k < 100 ? (Math.floor(k * 10) / 10).toFixed(1).replace(/\.0$/, "") : String(Math.floor(k))) + "k";
 }
-function buildOverallCols(entry, keptMarks, third, lazyArt){
+function buildOverallCols(entry, keptMarks, third, lazyArt, known){
   const cols = document.createElement("span");
   cols.className = "rank-cols";
   /* ONLY ITS OWN NUMBER (build 327z12 round 2): "the this week and hundo
@@ -126049,7 +126094,7 @@ function buildOverallCols(entry, keptMarks, third, lazyArt){
     const mk = entry.pub ? entry.pub + "|" + rk : null;
     let em = mk && keptMarks ? keptMarks.get(mk) : null;
     if(em) keptMarks.delete(mk);
-    else if(lazyArt && (em = lbMarkKnown(rk))){ /* build 375: the flare with its loop on, from the first frame */ }
+    else if(lazyArt && known && (em = lbMarkKnown(rk))){ /* build 375: the flare with its loop on, from the first frame */ }
     else if(lazyArt){
       /* an empty frame the flare's size; lbFillArt puts the flare in */
       em = document.createElement("span");
@@ -131809,6 +131854,13 @@ function showRankings(defaultBoard){
       if(document.contains(mine)) return;
       obs.disconnect();
       if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
+      /* build 375: AND EVERY WATCHER ON ITS ROWS LETS GO. Measured: each Leaderboard visit stayed in memory after it was left - the
+         whole board, ~24,000 elements (Home <-> Leaderboard x20: 26k to 501k elements, the page +300MB; Home, Profile and Calendar flat).
+         An IntersectionObserver holds on to what it watches until it is disconnected, and the board's own two (lazy art, off-screen)
+         were never disconnected, nor were its tiles taken out of the shared ones (characters, flares) before their sweeps came round. A
+         page that size is what iOS ends in the background - the black screen and the cold start on the way back. */
+      try{ lbReleaseBoard(rows); }catch(e){}
+      if(rankingsOnVisible && rankingsOnVisible.rows === rows) rankingsOnVisible = null;
     });
     obs.observe(stage, { childList: true });
   })();
@@ -137315,6 +137367,9 @@ function tabPerfText(){
     if(tab && !tab.classList.contains("active") && bar.dataset.navigating !== "1" && typeof playSound === "function"){
       try{ playSound("ui.tab.bottom"); }catch(err){}
     }
+    /* build 375: let go over the tab that is already lit, a slide changes nothing - it used to go through the tab's own tap, which
+       scrolls a screen that is up back to its top ("if you swipe but don't end up swiping to another, the page scrolls back to the top") */
+    if(tab && tab.classList.contains("active")){ slideBubbleToActiveTab(true); return; }
     if(tab && tab._navigate && bar.dataset.navigating !== "1") tab._navigate();
     else if(tab && tabDests[tab.id] && bar.dataset.navigating !== "1"){
       bar.dataset.navigating = "1";
