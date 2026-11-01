@@ -70,12 +70,12 @@ with sync_playwright() as pw:
     # writes through the same stub, so a stale __wrote from that is not
     # evidence the report screen wrote anything.
     pg.evaluate("()=>{ window.__wrote = null; }")
-    pg.click(".screen-bugreport .bugreport-send"); pg.wait_for_timeout(400)
+    pg.click(".screen-bugreport .bugreport-send:has-text(\"Send report\")"); pg.wait_for_timeout(400)
     ck("an empty report is refused", pg.evaluate("()=>window.__wrote")is None)
     pg.fill(".bug-report-box", "The lobby jumps around when I open it.")
     pg.wait_for_timeout(200)
     if OUT: pg.screenshot(path=os.path.join(OUT,"bugreport.png"))
-    pg.click(".screen-bugreport .bugreport-send"); pg.wait_for_timeout(900)
+    pg.click(".screen-bugreport .bugreport-send:has-text(\"Send report\")"); pg.wait_for_timeout(900)
     w=pg.evaluate("()=>window.__wrote")
     ck("it writes somewhere listable", bool(w) and w["coll"]=="vrooms", w and w["coll"])
     ck("with a bug- id", bool(w) and w["id"].startswith("bug-"), w and w["id"])

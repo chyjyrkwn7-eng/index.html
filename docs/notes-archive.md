@@ -29841,3 +29841,68 @@ check-b350's "stays on its pose" is read one frame after the return (two steady 
   extends it); a recorded loop that arrives meanwhile waits for it (charFlipThen's run re-queues itself); startRankMarks waits out the
   settle too (a flare taking its loop crossfades). barUnderPause scans -40/+14px around the bar (its swell is still growing at a slide's start
   - a flare on the edge was missed one run in three) and again on the next frame.
+
+## Build 2026-11-01-378 - Leaderboard first draw: the measurement, and two candidate ways to play a board loop
+
+Madison, on his 08:22 recording of 377: "I think all the switching tabs by tapping is good to go except the leaderboard still. The
+leaderboard still takes a minute can you tell?" Yes: read frame by frame, the Leaderboard's screen came up 258/317/325ms after the
+press, every other tab 42-108ms. His 377 "Tab timings (in use)" agree and say where: the board's screen is BUILT in 5-18ms (build10x1 ..
+build11x1) but first drawn (p, tap to the second frame after it) 265-370ms after the tap - Profile ~93-122, Home ~150-170, Calendar ~43-83.
+So it is not the script; it is what the phone does to draw the board, which the sandbox (Chromium) cannot show.
+
+What the sandbox can show (tools: LayerTree over CDP): the board's first frame makes ~110-190 layers (Profile ~70). Per row on screen:
+the character's loop window (.char-flip-play, masked round), the loop's <img> - the WHOLE recorded sheet (12x12 frames, 792px square
+natural, 396px CSS) on a layer of its own because it is moved by a stepped transform (will-change:transform) - the flare's loop
+(.cosmic-rank-anim, screen-blended and filtered) and its <img> (the whole 12x15 sheet), and the flare's ::after forced up by overlap.
+Chromium only rasters the clipped 33px of each sheet layer; WebKit allocates and paints a non-tiled layer's backing store whole, at the
+screen's scale (a 396px sheet at 3x is ~1190px square, ~5.6MB) - ~30 of those per board visit would be the missing ~150-250ms, and it
+is paid on every visit because each visit's rows are new layers. Also: WebKit does not hand a steps() animation to Core Animation
+(GraphicsLayerCA falls back to software for steps timing), so every stepped loop in the app may be moved by the page every frame on
+the phone. Neither can be confirmed here, so 378 measures it on the phone:
+
+- "Test Leaderboard speed" (Report a bug, under Send tab timings) - runBoardTest(). ~70s. Taps Leaderboard then Profile; three rounds of
+  seven looks taken in turn (so drift spreads evenly): [b:base] as is; [b:paint] html.lb-paint; [b:hold] html.lb-hold; [b:noloops] no
+  loops; [b:nofx] loops without the round mask / screen blend / filter; [b:noglass] no backdrop blur on the screen; [b:norows] no rows
+  (floor). Per look: Leaderboard p median and the three values, then in the 1.5s after it the worst frame w, slow frames s (>34ms),
+  frames drawn n and f (MessageChannel round trips per 10ms - how free the page was), and Profile's p. Sent as a bug doc "Leaderboard
+  speed test" (id ...-brd...), no code, like the others; read with `firestore-admin.py bugs`.
+- html.lb-paint (lbPaintKF / lbPaintAll / lbPaintWatch): each board loop img keeps its sheet but is moved by stepped left/top keyframes
+  (rk-pos-*, the same frames, the same clock - only animation-name is swapped, via --pk, so the delays and resync still apply) with
+  will-change off: no layer per sheet, only the one frame in view is painted. Measured here: board layers 107-119 -> 25, pixels the same
+  (32 antialiasing px of 880x1300 differ, max 44/255), loops still move.
+- html.lb-hold: each loop keeps its layer but runs rk-hold-* keyframes - every frame held from its offset to 0.0002% before the next,
+  linear timing - which looks identical to step-end (0 px off at three times) and which WebKit can give to the compositor.
+- A board built or switched while a look is on comes up in it (a MutationObserver on the rows, installed only when a look is on).
+- Both looks are OFF by default: nothing changes for the class in 378. The test's result picks what 379 does - [b:paint] much below
+  [b:base] (and near [b:noloops]) = paint the board's loops; [b:hold] with the most free page (f) = hold-frame keyframes for every
+  stepped loop in the app (board, Home's flares, the tab bar's character).
+
+### 378, second half: his 08:24 recording of 377 (slide broken) and a page that ended mid-test
+
+"Sliding now is broken, if you slide to another tab it won't actually open that screen. Even when sliding does work it's still not
+smooth at all. Big big big bug, middle of my test the app just white screened, showed the loading splash screen, and sent me back to
+home." Read frame by frame: five slides Home -> Profile in a row, the glass went over Profile each time and came back to Home, and the
+screen never changed; slides from other tabs sometimes landed. NOTE: his battery reads 1% in that recording (grey icon, dimmed screen) -
+iOS throttles hard there, so its smoothness numbers (bar updated ~20-40 times a second mid-slide) are not a fair read of the build.
+
+- THE SLIDE: build 377's tabSwitchesOut() took the tabs' native haptic switches (.nova-hsw, iPhone only - hswSync attaches them only
+  where canTaptic()) out of the page as a slide began. The switch a finger lands on IS the touch's target; on iOS a touch whose target
+  leaves the page did not finish the slide (the release came back as a cancel: lensRelease(null), the glass home, no navigation). Even
+  in Chromium the touch's END then goes to the removed switch and never bubbles to the bar, which is where build 376's landing tick
+  listens. The sandbox never saw any of it because the switches are not attached off an iPhone. Now tabSwitchesOut() does nothing; the
+  switches stay. (Also: hsw's own MutationObserver re-attached a NEW switch to a host whose switch was removed, so 377's removal churned
+  switches mid-slide besides.)
+- THE PAGE THAT ENDED: build 377 recorded never-recorded board characters in "the quiet after launch" (charRecBg: 5s without a touch) -
+  and a test question being read is 5s without a touch. A recording is the heaviest thing the app does to memory (a 5-8MB canvas and
+  144 decoded svg frames). That is gone: lbArtPreload only reads saved sheets back; recording happens on the board, as before 377.
+  And while a test is on the screen (.qpanel / .pausepanel) the ready loops let go of their decoded pictures (sp.pre, kept since 377 for
+  the board's first frame), checked every 6s (testTrimSheets) and at load (charAnimSheetFromBlob); decoded again once the test is gone.
+- NEXT TIME IT HAPPENS: the 6s in-use mark (class26e.session) now carries the same footprint as the hide (el/img/mp/cv/sh), plus
+  "rec<n>" while a recording is running and "tt" while trimmed for a test, so an ENDED-visible line in the next report says what the page
+  held and whether it was recording. (Before, an in-use mark had no footprint.)
+- tools/check-bugreport.py clicked the FIRST .bugreport-send, which since build 349 is "Test tab speed" - it timed out on every build
+  since; it now clicks "Send report". check-b377 parts (2) and (4) are reversed (marked in its docstring).
+
+Gate: tools/check-b378.py (8 parts; all 8 FAIL against 377): (5) a real touch slide (CDP touch emulation) that starts ON a tab's switch
+lands on the screen it is let go over with its tick, switches never fewer; (6) no recording with nobody on the board; (7) a test holds no
+decoded pictures, back after; (8) the in-use mark carries the footprint.
