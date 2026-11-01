@@ -103292,7 +103292,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-370";
+const APP_BUILD = "2026-11-01-371";
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -114152,20 +114152,23 @@ async function sendTabTimings(onDone){
 let dragTestRunning = false;
 const DRAG_PAUSE = "html.tab-held #stage *,html.tab-held #stage *::before,html.tab-held #stage *::after{animation-play-state:paused !important}";
 const DRAG_SOLID = ".bottomtabs.lens-up{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;background:rgba(36,39,48,.9) !important}";
-/* build 370: his 369 recording showed the bar updating only ~30 times a second in EVERY look (even D: solid bar, nothing animating, the page
-   not changing at all), so the cost is not the bar's blur or the page's animations. What is left is the glass itself (its blend, masks and
-   rim shadows) and the sheer size of the page under it. */
-const DRAG_NOBLEND = ".tab-lens-clip{mix-blend-mode:normal !important}";
-const DRAG_NOMASK = ".tab-lens-clip{-webkit-mask-image:none !important;mask-image:none !important}";
-const DRAG_NOSHADOW = ".tab-lens-glass,.tab-lens-grey{box-shadow:none !important}";
+/* build 371: his 370 recording: ~30 updates a second in EVERY look again, including the page hidden and the glass stripped, so it is neither the
+   glass nor the page. His smooth recording (build 367) was dragged over the Report a bug screen, which has fewer blurred (backdrop-filter)
+   surfaces. The Leaderboard has more: two segment controls, the search box, the "me" button - and every screen has the chat dock's full-screen
+   layer. Each blurred surface is a separate pass over what is behind it, redone for every frame the bar draws. So the looks now take blurred
+   surfaces away: A as is (Leaderboard); B the Report a bug screen instead (the control); C every blur but the bar's off; D only the chat dock
+   gone; E C and D; F E and the page hidden (only the bar is left). The banner is up for 2s of each look, then off, so the banner is ruled out
+   inside every look. Each look's frame intervals are sent to the admin with the recording. */
+const DRAG_NOBLUR = "html:not(#a):not(#b):not(#c) *:not(.bottomtabs):not(.bottomtabs *){backdrop-filter:none !important;-webkit-backdrop-filter:none !important}";
+const DRAG_NODOCK = "#chatdock{display:none !important}";
 const DRAG_NOSTAGE = "html.tab-held #stage{visibility:hidden !important}";
 const DRAG_LOOKS = [
-  ["A", ""],
-  ["B", DRAG_NOBLEND],
-  ["C", DRAG_NOMASK],
-  ["D", DRAG_NOSHADOW],
-  ["E", DRAG_NOSTAGE],
-  ["F", DRAG_NOBLEND + DRAG_NOMASK + DRAG_NOSHADOW + DRAG_NOSTAGE]];
+  ["A", "", "board"],
+  ["B", "", "bug"],
+  ["C", DRAG_NOBLUR, "board"],
+  ["D", DRAG_NODOCK, "board"],
+  ["E", DRAG_NOBLUR + DRAG_NODOCK, "board"],
+  ["F", DRAG_NOBLUR + DRAG_NODOCK + DRAG_NOSTAGE, "board"]];
 async function runDragTest(){
   if(dragTestRunning) return;
   dragTestRunning = true;
@@ -114176,19 +114179,43 @@ async function runDragTest(){
   const st = document.createElement("style"); st.id = "drag-look"; document.head.appendChild(st);
   const tick = window.__dragTick || 1000, wait = ms => new Promise(r => setTimeout(r, ms * tick / 1000));
   window.__dragTestOn = true;
-  /* build 369: it runs on the Leaderboard, where characters and flares are animating under the bar (his smooth drag test was on the Report a
-     bug screen, which has nothing moving under it; his 20-40 updates a second were on the boards and Profile), and a release stays put */
-  try{ showRankings(); }catch(e){}
+  /* the frame clock, per look (what the page's own loop sees; the recording shows what reached the screen) */
+  let cur = null, last = performance.now(), looping = true; const stats = {};
+  const loop = () => { const t = performance.now(); if(cur) stats[cur].push(Math.round(t - last)); last = t; if(looping) requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+  const lines = [];
+  const board = () => { try{ showRankings(); }catch(e){} }, bug = () => { try{ showBugReport(); }catch(e){} };
+  board();
   await wait(1500);
   try{
-    for(let k = 3; k > 0; k--){ note.textContent = "Slide across the bar in " + k; await wait(1000); }
-    for(const [name, css] of DRAG_LOOKS){
-      st.textContent = css;
-      for(let t = 7; t > 0; t--){ note.textContent = "Look " + name + " - keep sliding (" + t + ")"; await wait(1000); }
+    for(let k = 3; k > 0; k--){ note.style.visibility = ""; note.textContent = "Slide across the bar in " + k; await wait(1000); }
+    for(const [name, css, scr] of DRAG_LOOKS){
+      st.textContent = css; (scr === "bug" ? bug : board)();
+      stats[name] = []; cur = null; note.style.visibility = ""; note.textContent = "Look " + name + " - keep sliding";
+      await wait(300); cur = name;
+      await wait(1700); note.style.visibility = "hidden";
+      await wait(5000);
+      cur = null;
     }
   }catch(e){}
+  looping = false; cur = null;
   try{ st.remove(); note.remove(); }catch(e){}
   window.__dragTestOn = false; window.__noSwell = false;
+  board();
+  try{
+    for(const [name] of DRAG_LOOKS){
+      const a = (stats[name] || []).slice(), s = a.slice().sort((x, y) => x - y);
+      lines.push("[drag:" + name + "] n" + a.length + " med" + (s[s.length >> 1] || 0) + " p95" + (s[Math.floor(s.length * .95)] || 0) + " max" + (s[s.length - 1] || 0) + " over34 " + a.filter(v => v > 34).length);
+    }
+    window.__dragLines = lines;
+    const id = "bug-" + Date.now().toString(36) + "-drag" + Math.random().toString(36).slice(2, 5);
+    let vw = 0, vh = 0; try{ vw = Math.round(innerWidth); vh = Math.round(innerHeight); }catch(e){}
+    await Promise.race([fbDb.collection("vrooms").doc(id).set({
+      kind: "bug", text: "Drag test (frames per look)", build: (typeof APP_BUILD === "string") ? APP_BUILD : "",
+      from: store.publicId || "", name: store.firstName || "", ua: (navigator.userAgent || "").slice(0, 200),
+      viewport: vw + "x" + vh, standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+      perf: lines.join("\n"), at: Date.now() }), new Promise(r => setTimeout(r, 6000))]);
+  }catch(e){}
   dragTestRunning = false;
 }
 function showBugReport(){
