@@ -94354,10 +94354,11 @@ function startChatDock(){
       const ms = Math.round(Math.max(180, Math.min(300, (ph - dragDy) / Math.max(1.6, dragVel || 0))));
       panel.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
       panel.style.transform = "translate3d(0,102%,0)";
-      /* build 380: the close's own work (state, sound, the dock's classes) a frame later, so the slide's first frames are its own - run in
-         the same task it held the transition's start back, and the sheet's first visible frame was already half way down */
+      /* build 380: the close's own work (state, sound, the dock's classes) two frames later, so the slide's first frames are its own - run
+         in the same task it held the transition's start back, and the sheet's first visible frame was already half way down; a frame
+         later, its restyle of the whole page (body.chatdock-open) still took the slide's second frame */
       const seq = chatDockOpenSeq;
-      requestAnimationFrame(() => setTimeout(() => { if(chatDockOpen && seq === chatDockOpenSeq) closeChatDock(); }, 0));
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => { if(chatDockOpen && seq === chatDockOpenSeq) closeChatDock(); }, 0)));
       clearTimeout(endDrag._t);
       endDrag._t = setTimeout(() => {
         panel.classList.remove("is-settling");
@@ -137865,8 +137866,9 @@ function tabPerfText(){
     const list = tabSwitchesAway; tabSwitchesAway = [];
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
-  let barUnderPaused = [];
+  let barUnderPaused = [], barUnderAt = 0;
   function barUnderPause(again){
+    barUnderAt = performance.now();
     if(!again){
       barUnderResume();
       /* once more on the next frame: an animation that started in the press (a loop just put on) exists only from the next style pass */
@@ -137881,7 +137883,9 @@ function tabPerfText(){
         if(a.playState !== "running") return;
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
-        const r = t.getBoundingClientRect();
+        /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
+           in and out of the bar's band while what is seen stays put */
+        const r = ((t.closest && t.closest(".rk-frame, .char-flip-play")) || t).getBoundingClientRect();
         if(r.width > 0 && r.bottom > top && r.top < bottom){ try{ a.pause(); barUnderPaused.push(a); }catch(e){} }
       });
     }catch(e){}
@@ -137957,6 +137961,9 @@ function tabPerfText(){
       try{ settleUntil = Math.max(settleUntil, Date.now() + 8000); slideHeldSettle = true; }catch(err){}
     }
     tabDragMoved = true;
+    /* build 380: and again every 100ms of the slide (~0.5ms at 4x CPU) - something that comes on under the bar mid-slide (a row's loop
+       running again as it comes into view, which is where rows come in) holds still too; check-b376 once saw one running */
+    if(performance.now() - barUnderAt > 100) barUnderPause(true);
     /* The lens follows the finger (build 323, 325); the platter waits,
        hidden, and is put in place once, on release. Reduce motion has no
        lens: the platter itself steps from tab to tab. */

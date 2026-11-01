@@ -30138,3 +30138,15 @@ Phonetic Alphabet badge (8.8px) on 379 too - older than this build, not touched.
   check-b327z10 B (the chat sheet's swipe-down close, not the tab bar) 59% vs its 58% line (379: 65%) - the same frames as 379, the
   first visible frame already ~33ms in; left as is. check-b325-b's Phonetic Alphabet back letters (8.8px vs 9.2) since 327z15 added the
   unit: the five-word name on the hourglass auto-fits smaller; changing it moves three badges' backs - for Madison to see first.
+- THE SLIDE FROZE CHARACTERS ABOVE THE BAR (since 376, found chasing check-b376's 1-in-5): barUnderPause judged "behind the bar" by
+  the animated element's own box - for a loop that is the SHEET, many frames tall, which reaches down into the bar's band from a
+  window well above it (and with 380's left/top stepping it wanders in and out from frame to frame). So a slide on the board paused
+  4-7 characters that are seen ABOVE the bar, and now and then missed one. It now reads a loop where its window is
+  (closest .rk-frame / .char-flip-play): 4 paused (the ones really under the bar), none above; and again every 100ms of the slide
+  (~0.5ms at 4x) for a loop that comes on under the bar mid-slide. check-b376 (1) reads the same way (window; rows marked
+  .is-offscreen are left out - CSS pauses those) - 6 of 6 pass; against 380 as it was it fails (abovePaused 4 and 7). Slides at 4x:
+  median/p95 17ms, 0-1 frames over 34ms in ~175, Home and board.
+- THE CHAT SHEET'S SWIPE-DOWN: closeChatDock (body.chatdock-open off = a restyle of the page) now runs two frames after the release,
+  not one - it was taking the slide's second frame. First visible frame 15% of the way (was 31%); check-b327z10 B 55-57% in 4 of 4
+  (was 59%, 379 65%). check-chat and check-behaviour b314h chat/sheet/chat2/tabs pass.
+- Re-run after: check-b380, b377, b375, b378, b379, b327z, b327z13 - no failures.
