@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The save-your-code banner, and the build number on Welcome.
+"""The save-your-code card (the banner until build 382), and the build number on Welcome.
 
 Both exist because of one report - "got randomly signed out" - and both
 were written against build 158, where they fail. Run it with --against
@@ -85,112 +85,74 @@ with sync_playwright() as pw:
         if OUT: pg.screenshot(path=os.path.join(OUT,name+"-welcome.png"))
         ctx.close()
 
-    print("\n2. the save-your-code banner on Home")
-    ctx=br.new_context(viewport={"width":440,"height":956},permissions=["clipboard-read","clipboard-write"])
+    # BUILD 382: THE BANNER IS RETIRED, THE CARD REPLACES IT. Madison, after
+    # dropping usernames and passwords: "ensure it's apparent that the user
+    # needs to remember the code and write it down". The one-showing banner
+    # (dismissable with its x) is now a card that shows the code, offers
+    # Save it, and needs "I've written it down or saved it" (or a Save that
+    # worked) before Continue - once per account, after the server copy is
+    # read. check-b382-savecode covers it in full; this keeps the old
+    # invariants: it appears for an account with no saved code, it is
+    # tappable at 44px, answering it ends it, and it never comes back.
+    print("\n2. the save-your-code card on Home (the banner's replacement since 382)")
+    INIT="try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE
+    def card_wait(pg, ms):
+        t=0
+        while t<ms:
+            if pg.evaluate("()=>!!document.getElementById('savecode-card')"): return True
+            pg.wait_for_timeout(250); t+=250
+        return pg.evaluate("()=>!!document.getElementById('savecode-card')")
+    ctx=br.new_context(viewport={"width":440,"height":956})
     pg=ctx.new_page(); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e)))
     pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
     pg.route("**/version.json", lambda r: r.fulfill(status=200,headers={"content-type":"application/json"},body=VERSION_JSON))
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE)
+    pg.add_init_script(INIT)
     pg.goto(URL); pg.wait_for_timeout(3000)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
-    pg.wait_for_timeout(1200)
-    b=pg.evaluate("""()=>{const e=document.getElementById('save-code');
-      if(!e) return {missing:true};
-      const r=e.getBoundingClientRect(); const cs=getComputedStyle(e);
-      const act=e.querySelector('.app-banner-act').getBoundingClientRect();
-      return {tag:e.querySelector('.app-banner-tag').textContent,
-              text:e.querySelector('.app-banner-text').textContent,
-              top:Math.round(r.top), h:Math.round(r.height), pe:cs.pointerEvents,
-              colour:cs.getPropertyValue('--banner-color').trim(),
-              actH:Math.round(act.height), prompts:store.savedCodePrompts};}""")
-    ck("the banner appears on Home", not b.get("missing"), b)
-    ck("it is tagged YOUR ACCOUNT", b.get("tag")=="YOUR ACCOUNT", b.get("tag"))
-    ck("its colour differs from friend/vroom", b.get("colour")=="#F5B54D", b.get("colour"))
-    ck("it is tappable (pointer-events)", b.get("pe")=="auto", b.get("pe"))
-    ck("the action button clears 44px", b.get("actH",0)>=44, b.get("actH"))
-    ck("the show is counted", b.get("prompts")==1, b.get("prompts"))
-    ck("it clears the top inset", b.get("top",0)>=59, b.get("top"))
-    if OUT: pg.screenshot(path=os.path.join(OUT,"home-save-banner.png"))
-    # A REAL hit-tested tap, not element.click(). Guarded, because on a
-    # build without the banner this would otherwise die on a 30s
-    # Playwright timeout and report a crash rather than a failure -
-    # and --against on the old build is exactly when that happens.
-    # THE LABEL IS NOT THE ASSERTION - the action button was "Copy code"
-    # and is "Save it" now, and a check naming either would fail the app
-    # for being right. What has to hold is that ONE tap puts the real
-    # code somewhere and only then marks the prompt satisfied.
-    if b.get("missing"):
-        for n in ("one tap lands on Settings",
-                  "with the Sync section in view", "and lit up",
-                  "the banner goes", "tapping it does not claim the code is saved",
-                  "and Save code there really does save it"):
-            ck(n, False, "no banner to tap")
+    up=card_wait(pg, 10000)
+    ck("the card appears on Home", up)
+    ck("the old banner does not", pg.evaluate("()=>!document.getElementById('save-code')"))
+    if up:
+        b=pg.evaluate("""()=>{ const e=document.getElementById('savecode-card');
+          const h=s=>Math.round(e.querySelector(s).getBoundingClientRect().height);
+          return { code:e.querySelector('.savecode-value').textContent, pe:getComputedStyle(e).pointerEvents,
+                   save:h('.savecode-save'), ack:h('.savecode-ack'), go:h('.savecode-continue'),
+                   off:e.querySelector('.savecode-continue').disabled,
+                   top:Math.round(e.querySelector('.savecode-sheet').getBoundingClientRect().top) }; }""")
+        ck("it shows this account's code", b["code"]=="WXYZ-7777", b)
+        ck("it is tappable and every control clears 44px", b["pe"]!="none" and min(b["save"],b["ack"],b["go"])>=44, b)
+        ck("it clears the top inset", b["top"]>=59, b["top"])
+        ck("Continue waits for an answer", b["off"] is True)
+        if OUT: pg.screenshot(path=os.path.join(OUT,"home-save-card.png"))
+        pg.click("#savecode-card .savecode-ack"); pg.wait_for_timeout(150)
+        pg.click("#savecode-card .savecode-continue"); pg.wait_for_timeout(500)
+        done=pg.evaluate("()=>({ gone:!document.getElementById('savecode-card'), saved:!!store.savedCodeSaved })")
+        ck("answering it ends it and records it saved", done["gone"] and done["saved"], done)
     else:
-        # THE DECISION CHANGED, SO THIS CHECK CHANGED WITH IT. The banner
-        # used to fire the share sheet straight from Home and mark the
-        # code saved on the tap. Asked against: it should "directly take
-        # you to the settings, scroll down to the sync section, and flash
-        # it". So what has to hold now is that ONE tap puts somebody in
-        # front of the real control - and that tapping a banner is no
-        # longer mistaken for having saved anything.
-        pg.click("#save-code .app-banner-act"); pg.wait_for_timeout(900)
-        landed = pg.evaluate("""()=>{
-          const sect = document.getElementById('settings-sync-sect');
-          if(!sect) return { onSettings: false };
-          const r = sect.getBoundingClientRect();
-          return { onSettings: true,
-                   inView: r.top < innerHeight && r.bottom > 0,
-                   flashed: sect.classList.contains('settings-flash'),
-                   saved: !!store.savedCodeSaved,
-                   gone: !document.getElementById('save-code') };}""")
-        ck("one tap lands on Settings", landed.get("onSettings") is True, landed)
-        ck("with the Sync section in view", landed.get("inView") is True, landed)
-        ck("and lit up", landed.get("flashed") is True, landed)
-        ck("the banner goes", landed.get("gone") is True, landed)
-        # TAPPING IT ENDS IT (build 203). This asserted the opposite -
-        # "tapping is not saving" - while the reminder was allowed three
-        # showings and something else could mark it saved. Nothing else
-        # ever did (the Save code button it relied on was taken off
-        # Settings by request), so the only way it ever ended was running
-        # out, and "it keeps popping up over and over" was the result.
-        # The tap lands on the code itself, which is as saved as the app
-        # can make anybody be.
-        ck("tapping it ends the reminder for good",
-           landed.get("saved") is True, landed)
-    if errs: ck("no JS errors", False, errs[:2])
-    else: ck("no JS errors", True)
-    ctx.close()
+        for n in ("it shows this account's code","it is tappable and every control clears 44px","it clears the top inset",
+                  "Continue waits for an answer","answering it ends it and records it saved"):
+            ck(n, False, "no card")
+    ck("no JS errors", not errs, errs[:2])
 
     print("\n3. it shows once, and never for a device with no code")
-    ctx=br.new_context(viewport={"width":440,"height":956})
-    pg=ctx.new_page()
-    pg.route("**/index.html", lambda r: r.fulfill(status=200,headers={"content-type":"text/html; charset=utf-8"},body=BODY))
-    pg.route("**/version.json", lambda r: r.fulfill(status=200,headers={"content-type":"application/json"},body=VERSION_JSON))
-    pg.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');localStorage.setItem('class26e.drill.v1','%s');localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}"%STORE)
-    pg.goto(URL); pg.wait_for_timeout(3000)
-    pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
-    pg.wait_for_timeout(900)
     seen=[]
-    for i in range(5):
-        seen.append(pg.evaluate("()=>!!document.getElementById('save-code')"))
-        pg.evaluate("()=>{document.getElementById('save-code')?.remove(); showHome();}")
-        pg.wait_for_timeout(350)
-    ck("shown once, then never again", seen==[True,False,False,False,False], seen)
-    # A PULL FROM THE CLOUD CAN PUT AN OLDER COUNT BACK ON `store`. That
-    # is one of the ways it came back "over and over", so the device's
-    # own record has to hold even when the account's says zero.
-    back=pg.evaluate("""()=>{ store.savedCodePrompts=0; store.savedCodeSaved=false;
-       document.getElementById('save-code')?.remove(); showHome(); return true; }""")
-    pg.wait_for_timeout(400)
-    ck("and an older count from the cloud does not bring it back",
-       pg.evaluate("()=>!!document.getElementById('save-code')") is False)
-    off=pg.evaluate("""()=>{ store.savedCodePrompts=0; store.savedCodeSaved=false;
-       try{ localStorage.removeItem('class26e.savecode.asked'); }catch(e){}
-       syncOff=true; document.getElementById('save-code')?.remove(); showHome(); return true; }""")
-    pg.wait_for_timeout(400)
+    for i in range(4):
+        pg.evaluate("()=>{ showHome(); setTimeout(checkSaveCodeReminder, 50); }")
+        pg.wait_for_timeout(900)
+        seen.append(pg.evaluate("()=>!!document.getElementById('savecode-card')"))
+    ck("shown once, then never again", up and seen==[False,False,False,False], seen)
+    # A PULL FROM THE CLOUD CAN PUT AN OLDER FLAG BACK ON `store`; the
+    # device's own record has to hold.
+    pg.evaluate("()=>{ store.savedCodeSaved=false; showHome(); setTimeout(checkSaveCodeReminder, 50); }")
+    pg.wait_for_timeout(900)
+    ck("and an older copy from the cloud does not bring it back",
+       pg.evaluate("()=>!!document.getElementById('savecode-card')") is False)
+    pg.evaluate("""()=>{ store.savedCodeSaved=false; try{ localStorage.removeItem('class26e.savecode.card'); }catch(e){}
+       syncOff=true; showHome(); setTimeout(checkSaveCodeReminder, 50); }""")
+    pg.wait_for_timeout(900)
     ck("never shown to a device that opted out of syncing",
-       pg.evaluate("()=>!!document.getElementById('save-code')") is False)
+       pg.evaluate("()=>!!document.getElementById('savecode-card')") is False)
     ctx.close()
     br.close()
 print("\n%s (%d failure(s))"%("ALL PASS" if not fails else "FAILED: "+", ".join(fails),len(fails)))

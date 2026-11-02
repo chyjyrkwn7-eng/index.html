@@ -35240,6 +35240,59 @@ html.is-browser{ --fade-paper: transparent; }
   }
   @keyframes lb-art-in{ from{ opacity:0; } to{ opacity:1; } }
   .screen-rankings .rank-row.lb-art-in .rank-avatar > *, .screen-rankings .rank-row.lb-art-in .rank-col-flare > *{ animation:lb-art-in .24s ease-out both; }
+
+  /* ---- THE SAVE-YOUR-CODE CARD and the "I'm new here" confirm (build 382) ----
+     showSaveCodeCard / showNewAccountConfirm. A centred sheet over a plain
+     dim, the pop-up glass every pop-up takes; only opacity and transform
+     move. Above Nova's talk (360), since his sign-up line asks it. */
+  .savecode-card{
+    position:fixed; inset:0; z-index:420; display:flex; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding-top:calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px);
+    padding-left:calc(env(safe-area-inset-left, 0px) + 16px); padding-right:calc(env(safe-area-inset-right, 0px) + 16px);
+    background:rgba(4,6,10,.66); opacity:0; transition:opacity .22s ease; cursor:default;
+  }
+  .savecode-card.show{ opacity:1; }
+  .savecode-sheet{
+    width:100%; max-width:26rem; margin:auto; box-sizing:border-box;
+    padding:1.35rem 1.25rem 1.05rem; border-radius:22px; color:#F3F5F7; text-align:center;
+    background:var(--pop-bg-card); border:var(--pop-border); box-shadow:var(--pop-shadow-card);
+    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
+    transform:translateY(14px); transition:transform .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .savecode-card.show .savecode-sheet{ transform:none; }
+  .savecode-tag{ margin:0 0 .35rem; font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#F5B54D; }
+  .savecode-title{ margin:0 0 .9rem; font-size:1.35rem; font-weight:800; letter-spacing:-.01em; color:#F3F5F7; }
+  .savecode-value{
+    margin:0 0 .9rem; padding:.85rem .5rem; border-radius:14px;
+    font-family:var(--mono); font-size:2rem; font-weight:800; letter-spacing:.12em; line-height:1.1;
+    color:#FFFFFF; background:rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.12);
+    user-select:all; -webkit-user-select:all; overflow-wrap:anywhere;
+  }
+  .savecode-body{ margin:0 0 1rem; font-size:.98rem; line-height:1.45; color:rgba(243,245,247,.86); text-align:left; }
+  html[data-layout] body .savecode-card .next{ display:block; width:100%; min-height:48px; margin:0; animation:none; }
+  html[data-layout] body .savecode-card .next.ghost:disabled{ opacity:.38; }
+  html[data-layout] body .savecode-card .savecode-continue{ margin-top:.6rem; }
+  .savecode-status{ min-height:1.2rem; margin:.45rem 0 .2rem; font-size:.88rem; line-height:1.35; color:rgba(243,245,247,.75); }
+  .savecode-status.is-good{ color:#5FD38A; }
+  .savecode-ack{
+    display:flex; align-items:center; gap:.75rem; width:100%; min-height:48px; margin:.2rem 0 0; padding:.55rem .75rem;
+    font:inherit; font-size:.98rem; font-weight:600; color:#F3F5F7; text-align:left;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:12px; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .savecode-ack-box{
+    flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:7px;
+    border:2px solid rgba(243,245,247,.6); color:transparent; transition:background-color .15s ease, border-color .15s ease;
+  }
+  .savecode-ack-box svg{ width:18px; height:18px; }
+  .savecode-ack.is-on .savecode-ack-box{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink, #fff); }
+  .savecode-foot{ margin:.8rem 0 0; font-size:.82rem; line-height:1.35; color:rgba(243,245,247,.62); }
+  .newacct-confirm .savecode-title{ margin-bottom:.7rem; }
+  .signin-keep-note{ margin:.75rem 0 0; font-size:.85rem; line-height:1.4; color:var(--soft); }
+  @media (min-width:40rem){
+    .savecode-sheet{ max-width:28rem; padding:1.6rem 1.6rem 1.25rem; }
+    .savecode-value{ font-size:2.3rem; }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -62919,7 +62972,38 @@ function resetEverything(){
    deleted \u2014 meaning the account was reset from a different device. Mirrors
    the same reset here, so every device sharing a code actually ends up in
    the same fresh state, not just the one where "reset" was tapped. */
+/* ---- A MISSING DOCUMENT IS CHECKED BEFORE IT WIPES ANYTHING (build 382) ----
+   "We have to absolutely sure people can't be randomly logged out." The
+   listener's server-confirmed exists:false used to wipe this device on the
+   spot - and the account's __floor backup with it. A deliberate Reset on
+   another device deletes BOTH the account and its floor; anything that
+   removes only the progress document (an admin cleanup, a move done in the
+   wrong order) is not a reset. So: wait a moment, read the account from the
+   server again, and the floor too (given a few more seconds, since the
+   resetting device deletes it second). Only both gone is a reset. A failed
+   read does nothing - this device keeps its account, and its next save
+   writes it back. */
+var remoteResetCheckingFor = "";
+var REMOTE_RESET_CONFIRM_MS = 2500, REMOTE_RESET_FLOOR_WAIT_MS = 8000;
 function handleRemoteReset(){
+  const code = syncCode;
+  if(!code || !fbDb || remoteResetCheckingFor === code) return;
+  remoteResetCheckingFor = code;
+  const done = () => { if(remoteResetCheckingFor === code) remoteResetCheckingFor = ""; };
+  const gone = ref => ref.get({ source: "server" }).then(s => !!s && !s.exists && !(s.metadata && s.metadata.fromCache));
+  setTimeout(() => {
+    if(code !== syncCode || !fbDb){ done(); return; }
+    let accountRef, floorRef;
+    try{ accountRef = fbDb.collection("progress").doc(code); floorRef = floorRefFor(code); }catch(e){ done(); return; }
+    gone(accountRef).then(accountGone => {
+      if(!accountGone || code !== syncCode){ done(); return; }
+      return gone(floorRef)
+        .then(g => g ? true : new Promise(r => setTimeout(r, REMOTE_RESET_FLOOR_WAIT_MS)).then(() => gone(floorRef)))
+        .then(floorGone => { done(); if(floorGone && code === syncCode) applyRemoteReset(); });
+    }).catch(done);
+  }, REMOTE_RESET_CONFIRM_MS);
+}
+function applyRemoteReset(){
   /* Mirrors resetEverything's leaderboard cleanup. The device that
      tapped Reset removes the shared code's entry, but if this device
      gets here first - or that delete failed - clearing it from here too
@@ -63390,6 +63474,8 @@ function markCloudConfirmed(docExists){
     if(code !== syncCode || cloudConfirmedFor === code) return;
     cloudConfirmedFor = code;
     clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
+    /* build 382: the save-your-code card waits for this */
+    setTimeout(() => { try{ checkSaveCodeReminder(); }catch(e){} }, 900);
     /* a held save carries the held row with it - pushToCloud publishes
        the row after the account write, so the board is never ahead of
        the account even for the 2.5s the save waits */
@@ -64500,7 +64586,7 @@ function mergeSameAccount(dst, src){
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324",
-   "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295"].forEach(k => orInto(dst, k, src[k]));
+   "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* this week's board: only where both copies are on the same week */
   if(src.weekKey && src.weekKey === dst.weekKey) maxInto(dst, "weekPoints", src.weekPoints);
@@ -87059,7 +87145,7 @@ function fillWelcomeActions(actions, title, trace){
     primary.addEventListener("click", showWelcomeCodeEntry);
     second.classList.add("welcome-new");
     second.textContent = "I’m new here";
-    second.addEventListener("click", showSignUpCheck);
+    second.addEventListener("click", welcomeNewTapped);   /* build 382: asks first on a device that has held an account */
     /* ONE LINE UNDER EACH BUTTON SAYING WHAT IT IS (build 327, b327h):
        "when you get on and you aren't logged in, ensure that page is
        clear and makes sense to prevent people from making a second
@@ -87156,6 +87242,7 @@ function continueWithTrace(t, btn, note){
        answer, a code of its own under the same public id */
     if(!syncCode && !syncOff){
       setSyncCode(generateSyncCode());
+      codeIssuedFresh();   /* build 382 */
       onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
     }
     land();
@@ -87922,6 +88009,7 @@ function homeGreetingText(){
 }
 function startNewAccount(){
   setSyncCode(generateSyncCode());
+  codeIssuedFresh();   /* build 382 */
   saveStore();
   /* onFirebaseReady, not a bare call. Sign-up is the one moment a
      person is MOST likely to be on a slow connection with the SDK
@@ -87955,6 +88043,7 @@ function startSignupWithNova(){
 function novaSignupCreate(){
   if(syncCode) return;
   setSyncCode(generateSyncCode());
+  codeIssuedFresh();   /* build 382 */
   store.onboardingComplete = true;
   store.tourRev = TOUR_REV;
   store.novaMet = NOVA_MEET_REV;
@@ -88274,7 +88363,7 @@ function showWelcomeCodeEntry(){
   const syncBtn = document.createElement("button");
   syncBtn.type = "button"; syncBtn.className = "next playbtn";
   syncBtn.textContent = "Sync This Device";
-  confirmCard.append(confirmLabel, confirmName, syncBtn);
+  confirmCard.append(confirmLabel, confirmName, syncBtn, buildSignInKeepNote());   /* build 382: one line, not the card */
   panel.appendChild(confirmCard);
 
   function showStatus(msg, tone, shake){
@@ -88363,6 +88452,7 @@ function showWelcomeCodeEntry(){
              Home, over "Welcome back". Recorded as asked on this device
              (the same once-only key the banner itself sets). */
           try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
+          noteCodeTypedIn();   /* build 382 */
           showHome();
           /* The same pause the create-account path gets, and for the same
              reason. That one is covered by holdNoticesAfterTour() firing
@@ -89758,7 +89848,7 @@ function novaIntroLines(o){
           novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } });
       lines.push({ text: "The rest of my crew are still out there. Find them, and they’ll join you too." });
       lines.push({ gesture: "raise", text: "This is your sync code.",
-        enter: ctx => novaProp(ctx, novaStack(novaCodeProp())) });
+        enter: ctx => novaProp(ctx, novaStack(novaCodeProp())), ask: novaAskSaveCode /* build 382: the save-your-code card */ });
       lines.push({ text: "It signs you in on other devices. Find it any time in Settings." });
     } else {
       lines.push({ text: "Every one you find joins your team." });
@@ -98888,6 +98978,7 @@ function showHome(){
   setTimeout(() => {
     checkLobbyInvites(); checkFriendRequests(); checkChatInvites();
     checkSaveCodeReminder();
+    noteDeviceHadAccount();   /* build 382 */
   }, 0);
   /* Two seconds after Home, once, per explicit request. It re-checks
      its own preconditions when the timer fires - see maybeShowIntro. */
@@ -117768,7 +117859,11 @@ function showAppearance(opts){
       row.append(txt);
       card.appendChild(row);
       syncSect.appendChild(card);
-      return;
+      /* THE CODE STAYS ON SHOW OFFLINE (build 382). It used to stop here,
+         so with no connection Settings had no code to read out or save -
+         the one moment somebody may be setting up a new phone. The code
+         needs no network; only Start syncing / Enter a code do. */
+      if(!syncCode) return;
     }
 
     if(syncCode){
@@ -117777,7 +117872,7 @@ function showAppearance(opts){
       const label = document.createElement("span");
       label.className = "otext";
       const labelWord = document.createElement("span");
-      labelWord.className = "sync-code-label"; labelWord.textContent = "Sync code";
+      labelWord.className = "sync-code-label"; labelWord.textContent = "Your sync code";
       label.appendChild(labelWord);
       const hint = document.createElement("span");
       hint.className = "ohint"; hint.textContent = "Tap to show. Use it to link another device.";
@@ -117877,6 +117972,11 @@ function showAppearance(opts){
       saveNote.textContent = "Keep this somewhere off this phone. If this device ever loses its "
         + "data, the code is what puts you back on your account.";
       card.appendChild(saveNote);
+      /* SAVE IT IS BACK (build 382), as the one row under the code. It came
+         off for making the section a pile; it returns because saving the
+         code is now the thing the app asks of everybody, and the place it
+         is found again has to be able to do it. */
+      card.appendChild(buildSettingsSaveCodeRow());
 
       /* NO "STOP SYNCING THIS DEVICE". Asked against directly - "it's
          pointless and doesn't need to be there at all, we already have
@@ -117895,9 +117995,10 @@ function showAppearance(opts){
       const startBtn = settingsRow("cloudup", "Start syncing");
       startBtn.addEventListener("click", () => {
         setSyncCode(generateSyncCode());
+        codeIssuedFresh();   /* build 382 */
         onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
         renderSyncBody();
-        showToast("Sync is on \u2014 your code is ready to view above.");
+        showSaveCodeCard({ mode: "settings" });
       });
       const enterBtn = settingsRow("entercode", "Enter a code");
       enterBtn.addEventListener("click", () => renderEnterCodeForm());
@@ -117945,6 +118046,7 @@ function showAppearance(opts){
           renderSyncBody();
           /* typed in by hand: no "save your sync code" after it (round 27) */
           try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
+          noteCodeTypedIn();   /* build 382 */
           showHome();
           showWelcomeBackBanner("Linked \u2014 this device is now synced.");
         } else {
@@ -120475,72 +120577,293 @@ const SAVE_CODE_MAX_PROMPTS = 1;
 __bm("L110550");
 const SAVE_CODE_ASKED_KEY = "class26e.savecode.asked";
 
-function checkSaveCodeReminder(){
-  if(document.getElementById("save-code")) return;
-  if(holdForCutscene("savecode", () => checkSaveCodeReminder())) return;
-  try{ if(localStorage.getItem(SAVE_CODE_ASKED_KEY)) return; }catch(e){}
-  /* The introduction gets the screen to itself, and gets it FIRST. */
-  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
-  /* Both of the others are somebody else waiting on you; this one can
-     wait a launch. Same precedence rule the friend banner already
-     follows against the Virtual Room. */
-  if(document.getElementById("lobby-invite")) return;
-  if(document.getElementById("friend-request")) return;
-  /* Nothing to save, or a device that opted out of syncing on purpose
-     and has no code by design. */
-  if(!store.onboardingComplete || !syncCode || syncOff) return;
-  if(store.savedCodeSaved) return;
-  /* NOT DURING THE FIRST WALK-THROUGH (327z15 round 31): "Save your sync
-     code appears in the tool tip walk through after signing up. That
-     shouldn't pop up till after someone takes their first test and they
-     are on home. It'd be a good reminder and wouldn't overwhelm them."
-     So it waits for a finished test, the tips to be gone, and Home. */
-  if(!Object.keys(store.testStats || {}).length) return;
-  if(document.getElementById("tour-overlay") || document.getElementById("tour-tooltip") || pendingMainMenuTour) return;
-  if(!stage.querySelector(".screen-home-actual")) return;
-  if((store.savedCodePrompts || 0) >= SAVE_CODE_MAX_PROMPTS) return;
+/* ---- THE SAVE-YOUR-CODE CARD (build 382) ----
+   Madison, after dropping usernames and passwords: "We just have to
+   ensure it's apparent that the user needs to remember the code and
+   write it down or something when they receive it and we have to
+   absolutely sure people can't be randomly logged out."
+   One card, used in three places:
+   - a NEW account: Nova's "This is your sync code." line asks it
+     (novaAskSaveCode) and he does not go on until it is answered;
+   - an EXISTING account that never confirmed saving (no savedCodeSaved):
+     once, on Home, after the server's copy is read (cloudConfirmedFor),
+     after any Nova talk, tour or cutscene, never over a test. This
+     REPLACES the amber banner (class26e.savecode.asked), which only asked
+     once and could be dismissed with the x: the card cannot be dismissed
+     without an answer, and it ends for good on that answer;
+   - Settings > Sync > Start syncing (a code issued from Settings).
+   Continue stays disabled until "I've written it down or saved it" is
+   ticked or Save it succeeded. The answer is savedCodeSaved on the account
+   (OR-merged, so one device's answer is every device's) and
+   class26e.savecode.card on this device (no cloud pull can rewind it).
+   A classmate who signs in by typing the code already has it: the card is
+   marked done on that device (noteCodeTypedIn) and the sign-in card says
+   one line about keeping it. */
+var SAVE_CODE_CARD_KEY = "class26e.savecode.card";
+var HAD_ACCOUNT_KEY = "class26e.hadaccount";
+function saveCodeCardAnswered(){
+  if(store && store.savedCodeSaved) return true;
+  try{ if(localStorage.getItem("class26e.savecode.card")) return true; }catch(e){}
+  return false;
+}
+/* A code was just made for this device (sign-up, Start syncing, or the
+   boot self-heal minting over an onboarded store): whatever was saved
+   before is not this code, so the card has to be answered again. */
+function codeIssuedFresh(){
+  try{ store.savedCodeSaved = false; }catch(e){}
+  try{ localStorage.removeItem("class26e.savecode.card"); }catch(e){}
+}
+/* Signed in by typing the code: they have it. The device never asks, and
+   the account is onboarded on this device whatever the cloud copy says
+   (an old document can lack onboardingComplete, which would put the next
+   launch on Welcome - it read as being signed out). */
+function noteCodeTypedIn(){
+  try{ localStorage.setItem("class26e.savecode.card", String(Date.now())); }catch(e){}
+  try{ localStorage.setItem("class26e.savecode.asked", String(Date.now())); }catch(e){}
+  try{ if(store && !store.onboardingComplete){ store.onboardingComplete = true; persistLocally(); } }catch(e){}
+}
+/* The one line the sign-in confirmation carries (lighter than the card). */
+function buildSignInKeepNote(){
+  const p = document.createElement("p");
+  p.className = "signin-keep-note";
+  p.textContent = "Keep your sync code written down somewhere safe. It is the only way back into this account.";
+  return p;
+}
+function showSaveCodeCard(opts){
+  opts = opts || {};
+  if(!syncCode) { if(typeof opts.onDone === "function") opts.onDone(); return null; }
+  const old = document.getElementById("savecode-card");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "savecode-card";
+  el.className = "savecode-card";
+  el.dataset.mode = opts.mode || "new";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-modal", "true");
+  el.setAttribute("aria-labelledby", "savecode-title");
+  const sheet = document.createElement("div");
+  sheet.className = "savecode-sheet";
+  const tag = document.createElement("p");
+  tag.className = "savecode-tag"; tag.textContent = "Your account";
+  const title = document.createElement("h2");
+  title.className = "savecode-title"; title.id = "savecode-title";
+  title.textContent = "Save your sync code";
+  const code = document.createElement("p");
+  code.className = "savecode-value"; code.textContent = syncCode;
+  code.setAttribute("aria-label", "Sync code " + syncCode.split("").join(" "));
+  const body = document.createElement("p");
+  body.className = "savecode-body";
+  body.textContent = "This is your sync code. Write it down or save it somewhere safe. It is the only way to get your progress back on a new phone or if this app is deleted.";
+  const save = document.createElement("button");
+  save.type = "button"; save.className = "next savecode-save";
+  save.textContent = "Save it";
+  const status = document.createElement("p");
+  status.className = "savecode-status"; status.setAttribute("role", "status");
+  const ack = document.createElement("button");
+  ack.type = "button"; ack.className = "savecode-ack";
+  ack.setAttribute("role", "checkbox"); ack.setAttribute("aria-checked", "false");
+  const box = document.createElement("span"); box.className = "savecode-ack-box"; box.setAttribute("aria-hidden", "true");
+  box.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const ackText = document.createElement("span"); ackText.className = "savecode-ack-text";
+  ackText.textContent = "I’ve written it down or saved it";
+  ack.append(box, ackText);
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next ghost savecode-continue";
+  go.textContent = "Continue";
+  const foot = document.createElement("p");
+  foot.className = "savecode-foot"; foot.textContent = "You can find it again any time in Settings, under Sync.";
+  sheet.append(tag, title, code, body, save, status, ack, go, foot);
+  el.appendChild(sheet);
 
-  /* THE CODE, NOT A LINK. This asked people to save a "sign-in link"
-     until that button came off Settings for being a second thing to
-     understand - "I don't even know what that is and it will confuse
-     people". A banner still pushing the idea Settings had just dropped
-     would be the app disagreeing with itself, so both say code now. */
-  const el = buildAppBanner("save-code", "account",
-    /* (round 48) a title over its reason, as every banner reads */
-    "Save your sync code\nIt is the only way back if this device loses its data.",
-    /* "Save it", not "Copy code" - the share sheet puts it in Notes or
-       a message to yourself, which is what "save" has to mean for
-       something whose whole job is outliving this phone. */
-    "Save it",
-    /* No anchor element: buildAppBanner removes the banner before it
-       calls this, so the button is already detached - and centring it
-       would be pointless anyway. That matters for more than tidiness:
-       the anchor path awaits two animation frames before calling
-       share(), and on iOS that would step outside the user gesture
-       share() requires. A banner has no scrolling to fight, so it takes
-       the straight path. */
-    /* STRAIGHT TO THE CONTROL, not straight to a share sheet. Asked
-       for directly - "when you hit that it just directly takes you to
-       the settings, scrolls down to the sync section of it, and
-       flashes it". Firing share() from here answered "save it" by
-       dropping somebody into an iOS sheet with no idea what they were
-       looking at or where it came from; landing on the section, lit
-       up, is the version that teaches them where it lives for the
-       second time they need it. It also stops marking the code as
-       saved on a tap, which was never true - tapping is not saving. */
-    () => { store.savedCodeSaved = true; saveStore(); showAppearance({ focus: "sync" }); },
-    /* The x is a "not now" - but it is still the one showing. */
-    () => {});
-  /* Counted on SHOW, not on dismiss - a banner someone scrolled past,
-     ignored, or navigated away from has still had its turn, and
-     counting only the x would let it reappear forever. */
-  try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
-  store.savedCodePrompts = (store.savedCodePrompts || 0) + 1;
-  saveStore();
+  let ticked = false, saved = false, closed = false;
+  const refresh = () => {
+    const ok = ticked || saved;
+    go.disabled = !ok;
+    go.setAttribute("aria-disabled", ok ? "false" : "true");
+    ack.setAttribute("aria-checked", ticked ? "true" : "false");
+    ack.classList.toggle("is-on", ticked);
+  };
+  ack.addEventListener("click", () => { ticked = !ticked; refresh(); });
+  save.addEventListener("click", async () => {
+    if(save.disabled) return;
+    save.disabled = true;
+    const viaShare = !!navigator.share;
+    let ok = false;
+    /* no anchor: the card does not scroll, and awaiting frames first would
+       step outside the tap iOS requires for share() */
+    try{ ok = await saveSyncCodeVia(null); }catch(e){ ok = false; }
+    save.disabled = false;
+    if(ok){
+      saved = true;
+      status.textContent = viaShare ? "Saved." : "Copied. Paste it into Notes or a message to yourself.";
+      status.className = "savecode-status is-good";
+    } else {
+      status.textContent = "Not saved. Write the code down instead, then tick the box below.";
+      status.className = "savecode-status";
+    }
+    refresh();
+  });
+  go.addEventListener("click", () => {
+    if(go.disabled || closed) return;
+    closed = true;
+    store.savedCodeSaved = true;
+    try{ localStorage.setItem("class26e.savecode.card", String(Date.now())); }catch(e){}
+    try{ localStorage.setItem("class26e.savecode.asked", String(Date.now())); }catch(e){}
+    saveStore();
+    el.classList.remove("show");
+    setTimeout(() => el.remove(), 220);
+    if(typeof opts.onDone === "function"){ try{ opts.onDone(); }catch(e){} }
+  });
+  /* taps on the card never reach what is under it (Nova's tap-to-continue) */
+  el.addEventListener("click", e => e.stopPropagation());
+  refresh();
   document.body.appendChild(el);
-  placeTopBanner(el);
+  /* Over Home it leaves with the screen (a rank-up taking Home to Profile):
+     unanswered, so it comes back on the next Home. */
+  if(opts.mode === "existing") clearBannerOnScreenChange(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { try{ save.focus({ preventScroll: true }); }catch(e){} }, 80);
+  return el;
+}
+/* Settings > Sync: Save it, under the code (a settingsRow, 44px+). */
+function buildSettingsSaveCodeRow(){
+  const row = settingsRow("share", "Save it", "Send it to Notes or a message to yourself");
+  row.classList.add("sync-save-code-row");
+  row.addEventListener("click", async () => {
+    if(row.disabled) return;
+    row.disabled = true;
+    const viaShare = !!navigator.share;
+    let ok = false;
+    try{ ok = await saveSyncCodeVia(null); }catch(e){ ok = false; }
+    row.disabled = false;
+    if(ok){
+      store.savedCodeSaved = true;
+      try{ localStorage.setItem("class26e.savecode.card", String(Date.now())); }catch(e){}
+      saveStore();
+      showToast(viaShare ? "Saved." : "Copied. Paste it into Notes or a message to yourself.");
+    } else showToast("Not saved. Write the code down instead.");
+  });
+  return row;
+}
+/* Nova's line asks it: he waits until the card is answered. */
+function novaAskSaveCode(ctx, answered){
+  showSaveCodeCard({ mode: "new", onDone: answered });
+}
+
+/* ---- "I'M NEW HERE" ON A DEVICE THAT HAS HELD AN ACCOUNT (build 382) ----
+   "People keep creating new accounts again and again instead of keeping
+   the same one." Welcome already offers an account the device still holds
+   ("Continue as"), and the check screen names it. What slipped through was
+   a device whose code and progress were gone - a reset, a retired code
+   handed back, "Use a different account" - with nothing left to name: the
+   check read as the generic "Have you used Nova before?" and its primary
+   button was "I'm new, continue". So a device remembers, without anything
+   secret, that it once held an account (class26e.hadaccount: when, and the
+   username, which the board shows anyway), and "I'm new here" there asks
+   first, with Sign in as the primary. */
+function noteDeviceHadAccount(){
+  try{
+    if(!syncCode || !store || !store.onboardingComplete) return;
+    const cur = localStorage.getItem("class26e.hadaccount");
+    const name = String(store.firstName || "").trim().slice(0, 40);
+    let old = null; try{ old = JSON.parse(cur || "null"); }catch(e){}
+    if(old && old.name === name) return;
+    localStorage.setItem("class26e.hadaccount", JSON.stringify({ at: (old && old.at) || Date.now(), name: name }));
+  }catch(e){}
+}
+/* Resolves true when anything on this device says it has held an account:
+   the marker, the save-code keys, a stopped sync, a code or a store with a
+   public id in the IndexedDB mirror. Never rejects. */
+function deviceHadAccount(){
+  try{
+    if(localStorage.getItem("class26e.hadaccount") || localStorage.getItem("class26e.savecode.asked")
+       || localStorage.getItem("class26e.savecode.card") || localStorage.getItem("class26e.syncoff")) return Promise.resolve(true);
+  }catch(e){}
+  if(syncCode) return Promise.resolve(true);
+  return Promise.all([idbLoad(), idbLoadCode()]).then(([data, code]) => {
+    if(typeof code === "string" && code) return true;
+    return !!(data && typeof data === "object" && data.publicId && (String(data.firstName || "").trim() || data.onboardingComplete));
+  }).catch(() => false);
+}
+/* Welcome's "I'm new here": the confirm sheet on a device that has held an
+   account; otherwise the check screen as before. */
+function welcomeNewTapped(){
+  deviceHadAccount().then(had => {
+    if(!stage.querySelector('[data-screen="welcome"]')) return;
+    if(had) showNewAccountConfirm(); else showSignUpCheck();
+  });
+}
+function showNewAccountConfirm(){
+  const old = document.getElementById("newacct-confirm");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "newacct-confirm";
+  el.className = "savecode-card newacct-confirm";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-modal", "true");
+  el.setAttribute("aria-labelledby", "newacct-title");
+  const sheet = document.createElement("div");
+  sheet.className = "savecode-sheet";
+  const title = document.createElement("h2");
+  title.className = "savecode-title"; title.id = "newacct-title";
+  title.textContent = "Already have an account?";
+  const body = document.createElement("p");
+  body.className = "savecode-body";
+  body.textContent = "This device was already signed in to Nova. Starting over makes a brand-new account with no progress. To keep your progress, sign in with your sync code.";
+  const signIn = document.createElement("button");
+  signIn.type = "button"; signIn.className = "next savecode-save newacct-signin";
+  signIn.textContent = "Sign in with my code";
+  const fresh = document.createElement("button");
+  fresh.type = "button"; fresh.className = "next ghost savecode-continue newacct-fresh";
+  fresh.textContent = "Start a new account";
+  const lost = document.createElement("p");
+  lost.className = "savecode-foot"; lost.textContent = "Lost your code? Ask an admin for help.";
+  sheet.append(title, body, signIn, fresh, lost);
+  el.appendChild(sheet);
+  const close = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 220); };
+  signIn.addEventListener("click", () => { close(); showWelcomeCodeEntry(); });
+  fresh.addEventListener("click", () => {
+    close();
+    /* the check screen still runs when the device holds an account it can
+       name; otherwise this sheet was the check */
+    findAccountTrace().then(t => {
+      if(t){ showSignUpCheck(); return; }
+      signupTraceAck = "";
+      showClassSelection();
+    });
+  });
+  /* a tap on the dim outside is "not now", back to Welcome */
+  el.addEventListener("click", e => { if(e.target === el) close(); });
+  document.body.appendChild(el);
   clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { try{ signIn.focus({ preventScroll: true }); }catch(e){} }, 80);
+  return el;
+}
+
+function checkSaveCodeReminder(){
+  if(document.getElementById("savecode-card")) return;
+  if(holdForCutscene("savecode", () => checkSaveCodeReminder())) return;
+  /* Nova's talks (introduction, What's New, the weekly recap) get the
+     screen first. */
+  if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro") || document.getElementById("nova-rank"))) return;
+  if(document.getElementById("lobby-invite")) return;
+  if(document.getElementById("friend-request")) return;
+  /* Nothing to save, or a device that opted out of syncing on purpose. */
+  if(!store.onboardingComplete || !syncCode || syncOff) return;
+  if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy") return;
+  if(saveCodeCardAnswered()) return;
+  /* After this launch has read the server's copy, which may already say
+     another device answered it. markCloudConfirmed asks again. */
+  if(cloudConfirmedFor !== syncCode) return;
+  if(document.getElementById("tour-overlay") || document.getElementById("tour-tooltip") || pendingMainMenuTour || signupInNova) return;
+  if(testInProgress) return;
+  if(!stage.querySelector(".screen-home-actual")) return;
+  /* the re-add notice is about the same code: one thing at a time */
+  try{ if(pendingNotice && pendingNotice.kind && pendingNotice.kind !== "update") return; }catch(e){}
+  const wait = Math.max(typeof tourQuietUntil === "number" ? tourQuietUntil : 0, typeof popupGapUntil === "number" ? popupGapUntil : 0) - Date.now();
+  if(wait > 0){ setTimeout(checkSaveCodeReminder, wait + 120); return; }
+  showSaveCodeCard({ mode: "existing" });
 }
 
 /* Both banners place themselves the same way, and neither may sit
@@ -142171,6 +142494,7 @@ if(store.onboardingComplete && !syncCode && !syncOff){
   idbLoadCode().then(mirrored => {
     if(syncCode || syncOff) return;
     setSyncCode(mirrored || generateSyncCode());
+    if(!mirrored) codeIssuedFresh();   /* build 382: a new code is shown with the card */
     onFirebaseReady(() => {
       /* A recovered code is pulled, never pushed. Pushing would hand the
          cloud whatever this device happens to hold, and the whole reason
@@ -142323,7 +142647,7 @@ if(!storageHadData){
        overwrites the progress that had just been recovered behind it.
        Recovery now restores the code too, reconnects, and lands on Home. */
     if(code && !syncCode) setSyncCode(code);
-    else if(store.onboardingComplete && !syncCode && !syncOff) setSyncCode(generateSyncCode());
+    else if(store.onboardingComplete && !syncCode && !syncOff){ setSyncCode(generateSyncCode()); codeIssuedFresh(); }
     if(syncCode) onFirebaseReady(() => {
       pullFromCloud(syncCode, (ok) => {
         updateHeaderTitle();
