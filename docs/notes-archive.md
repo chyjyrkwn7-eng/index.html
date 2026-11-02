@@ -30364,3 +30364,13 @@ however the sliding is now the problem, it's okay but not perfect like the tappi
 - Gate: tools/check-b381-share.py - SHARE_URL is the share page, the page is small and names the card and the app's description, both
   touch icons are versioned and the same, and opening /share/?from=link#x lands in the booted app at /?from=link#x. All 5 fail on 380.
 - A link pasted by hand as .../index.html/ still points iOS at the big page; the share page is the one to send.
+- THE CLASS BUTTON (381, same build): "the class button, when I click it, it doesn't open the drop down, it just takes me to the class
+  sign up thing, so right now I can't even switch classes". Reproduced with an iPhone UA and real touch events (installed and Safari
+  tab): the finger landed on a .nova-hsw - the haptic switch of the list's "+" item. Since 380 the closed list sits INSIDE the class
+  button (each item translateY'd into it, scale .4), and .nova-hsw's own `pointer-events:auto` beat .class-stack's closed `none`, so the
+  hidden "+" took the tap and opened the class list. A mouse (and every non-iPhone) has no switches, which is why gates missed it.
+  FIX: `.class-bubble-wrap:not(.is-open) .class-stack .nova-hsw{ pointer-events:none }`. Gate: tools/check-b381-class.py (iPhone UA,
+  CDP touch): the tap opens the list (installed phone, Safari tab, Pro Max at 85%), Fire Code in it switches class (read before the
+  380ms reload), the "+" opens the class list. On 380 every tap opened the class list.
+- LESSON: anything moved over or tucked under another control must also turn off its .nova-hsw - the switch takes touches whatever its
+  ancestors say, and only an iPhone (canTaptic) has them.

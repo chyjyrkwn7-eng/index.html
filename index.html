@@ -34735,6 +34735,11 @@ html.is-browser{ --fade-paper: transparent; }
      and Start now stands low), and took the taps. A closed list takes none; an open one does. */
   .class-bubble-wrap .class-stack{ pointer-events:none; }
   .class-bubble-wrap.is-open .class-stack{ pointer-events:auto; }
+  /* build 381: "the class button, when I click it, it doesn't open the drop down, it just takes me to the class sign up thing". Since 380
+     the closed list sits INSIDE the class button (it retracts into it), and on an iPhone each item carries its haptic switch (.nova-hsw),
+     whose own pointer-events:auto beat the closed list's none: a tap on the class button was a tap on the hidden "+" (the class list).
+     Closed, the list's switches take nothing either. */
+  .class-bubble-wrap:not(.is-open) .class-stack .nova-hsw{ pointer-events:none; }
   /* "The + ... should be at the end and the classes you have already should be towards the button of the class you
      are in": from the button outwards - your other classes, then Add a class last. A later copy of the list's rules had
      put the column back the right way up, which put "+" next to the button. */
