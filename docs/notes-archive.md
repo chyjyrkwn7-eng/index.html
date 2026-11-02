@@ -30428,3 +30428,14 @@ the status bar's height easing into the sky with no seam (341 working); the bott
   (drag or slide) `.foot > .floatbtn.qnext` is opacity 0 !important (its rise is an animation), a .1s fade, pointer-events none, and
   comes back on a spring-back. check-b380 (25) now expects 2.85-3.65rem; check-b382-input gains both checks (fail on the code before).
   check-behaviour check_swipe failed once under load (7 agents' browsers) and passed on re-runs before and after.
+
+### 382 (badges): no more lost shine, no rubbing; one look, a smidge dirtier
+Madison: "let's get rid of the 'lost its shine' thing for badges, no more rubbing badges to clean them. You can still pull the
+badges up though ... give them a smidge more of a dirty look ... less shine more dirty but not a lot." badgeDirtStage() is now 0
+for every badge whatever its clean time; stage 0 of BADGE_DIRT (each [0]) moved half way to build 321's stage 1 (glow .88, shine .87
+in the hand). Gone: the case's "Lost its shine - tap to clean" pill, "Rub to clean it.", the rub gesture (every drag is a spin), its
+sparkle, setBadgeDirtStage, the case's per-stage glow CSS, the tour's "rub them clean". store.badgeCleanedAt is still
+defaulted/merged/synced but nothing draws from it; stages 1-4 and the badge.rub/squeak/sparkle sounds are kept, unused. Gate:
+tools/check-b382-badges.py (11 of 13 fail on 381). check-behaviour 320g/321d, check-b380 (18), check-b327z15 R rewritten to the new
+decision; 320g's "a tap anywhere on a slot lands on that slot" and 321d's "every one of the sixteen sits on the middle" fail the
+same way on the code before.
