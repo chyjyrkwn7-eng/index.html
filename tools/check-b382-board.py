@@ -12,7 +12,9 @@ With an iPhone user agent, touch, 440x956 at 3x and the CPU slowed 4x:
 (5) a still board (the watchdog's layers) starts moving as one: every row takes its moving loop in the same frame;
 (6) the look, read off the page at the Pro Max and an iPad 11: the medals are circles, the place's "#" is quieter than its number, gold,
     silver and bronze rows each carry their metal ring and their own light, your row wears the accent's ring and a wash of it, every
-    real row is one height (>= 44px) with no backdrop blur, the column labels are spaced capitals.
+    real row is one height (>= 44px) with no backdrop blur. (Updated for the iOS look, build 382: your row in the grouped list is the
+    accent's wash with your place in the accent - the ring stays on the podium - and the column labels are grey sentence case, not
+    spaced capitals; check-b382-ios.py measures the rest of the look.)
 Run:  python3 tools/check-b382-board.py   (--against: copy the old index.html over first)"""
 import os, sys, time, json
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -45,9 +47,10 @@ LOOK = """()=>{ const scr=document.querySelector('.screen-rankings'); const rows
     return { ring: be.content!=='none' && be.backgroundImage.includes('gradient'), light: cs(r).backgroundImage.includes('radial-gradient') }; });
   const me=scr.querySelector('.rank-row.lb-row-me'); const acc=me ? (()=>{ const t=document.createElement('span'); t.style.color='var(--accent)'; me.appendChild(t); const c=cs(t).color; t.remove(); return c; })() : null;
   const hs=rows.map(r=>Math.round(r.getBoundingClientRect().height*10)/10);
-  const head=[...scr.querySelectorAll('.rank-row-head .rank-col-head')].map(h=>px(cs(h).letterSpacing)/px(cs(h).fontSize));
+  const head=[...scr.querySelectorAll('.rank-row-head .rank-col-head')].map(h=>cs(h).textTransform);
   return { med, hash: hash ? +cs(hash).opacity : null, hashText: r4 ? r4.querySelector('.rank-place').textContent : null, pod,
-    me: me ? { border: cs(me).borderTopColor, acc, wash: cs(me).backgroundImage.includes('gradient') } : null,
+    me: me ? { border: cs(me).borderTopColor, acc, wash: cs(me).backgroundImage.includes('gradient'), podium: /rank-podium-[123]/.test(me.className),
+      place: (me.querySelector('.rank-place:not(.lb-rank-medal)') ? cs(me.querySelector('.rank-place')).color : null) } : null,
     hmin: Math.min(...hs), hmax: Math.max(...hs), blur: rows.filter(r=>{ const f=cs(r).backdropFilter||cs(r).webkitBackdropFilter||'none'; return f!=='none'; }).length,
     head }; }"""
 
@@ -126,9 +129,11 @@ with sync_playwright() as pw:
     def look_ok(lk):
         circ = len(lk["med"]) >= 3 and all(abs(w - h) <= 1 and w >= 20 for w, h in lk["med"])
         pod = all(p and p["ring"] and p["light"] for p in lk["pod"])
-        me = lk["me"] and lk["me"]["border"] == lk["me"]["acc"] and lk["me"]["wash"]
+        # build 382 iOS look: in the grouped list your row is the accent's wash with your place in the accent (no ring breaking
+        # the card); on the podium it keeps the accent's ring
+        me = lk["me"] and lk["me"]["wash"] and (lk["me"]["border"] == lk["me"]["acc"] if lk["me"]["podium"] else lk["me"]["place"] == lk["me"]["acc"])
         return circ and lk["hash"] is not None and lk["hash"] < 0.9 and (lk["hashText"] or "").startswith("#") and pod and me \
-            and lk["hmax"] - lk["hmin"] <= 1 and lk["hmin"] >= 44 and lk["blur"] == 0 and lk["head"] and min(lk["head"]) >= 0.05
+            and lk["hmax"] - lk["hmin"] <= 1 and lk["hmin"] >= 44 and lk["blur"] == 0 and lk["head"] and all(t == "none" for t in lk["head"])
     lk = pg.evaluate(LOOK)
     chk("the look on a Pro Max: %s" % (lk,), look_ok(lk), lk)
     br.close()

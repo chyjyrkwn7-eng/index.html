@@ -270,7 +270,7 @@ with sync_playwright() as pw:
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
-    pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(700)
+    pg.evaluate("()=>showAppearance({ page: 'sync' })"); pg.wait_for_timeout(700)   # build 382: Sync is its own page
     pg.evaluate("()=>document.querySelector('.sync-code-row').scrollIntoView({block:'center',behavior:'instant'})")
     pg.wait_for_timeout(300)
     """THE SAVE CODE BUTTON IS GONE, ON REQUEST, AND THIS CHECK WAS
