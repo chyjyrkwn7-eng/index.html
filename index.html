@@ -22436,16 +22436,25 @@
     margin:.5rem 0 0; padding-top:.5rem; font-size:.82rem; line-height:1.35; color:rgba(255,255,255,.62);
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
+  /* BUILD 382: NO LAYOUT IS ANIMATED HERE. "When toggling stuff, the words coming up at the bottom come in a little laggy." The
+     line used to fold by a grid-template-rows / margin-top transition: every frame of it laid the sheet out again and moved the
+     whole sheet (it grows up from the bottom), and on his iPhone it stepped at ~20fps with a jump at the end. The layout now
+     changes once, at the tap, and foldSummaryOpts() glides it with transforms and opacity only (see the script). */
   .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{
     flex:0 0 100%; display:grid; grid-template-rows:1fr; margin-top:.35rem;
-    transition:grid-template-rows .22s cubic-bezier(.3,.7,.3,1), margin-top .22s cubic-bezier(.3,.7,.3,1);
   }
   .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap.is-empty{ grid-template-rows:0fr; margin-top:0; }
   .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opts{
     min-height:0; overflow:hidden; margin:0; padding:0; text-align:left; white-space:normal; line-height:1.35;
-    transition:opacity .18s ease;
   }
   .unitoptions-modal-sheet.is-setup .start-summary .is-empty > .sheet-summary-opts{ opacity:0; }
+  /* while it glides: the box is drawn by a stand-in behind it (it shrinks or grows from the box's foot), the words that
+     are leaving fade where they were, and the sheet - opaque here - samples no blur while it moves (the swipe's rule) */
+  .unitoptions-modal-sheet.is-setup .sheet-summary.start-summary{ position:relative; }
+  .unitoptions-modal-sheet.is-setup .sheet-summary.start-summary.is-folding{ background:transparent !important; border-color:transparent !important; box-shadow:none !important; }
+  .sheet-summary-foldbg{ position:absolute; z-index:-1; pointer-events:none; box-sizing:border-box; transform-origin:50% 100%; will-change:transform; }
+  .sheet-summary-foldghost{ position:absolute; margin:0 !important; pointer-events:none; will-change:opacity; }
+  [data-layout="modern"] .unitoptions-modal-sheet.is-folding-opaque{ backdrop-filter:none; -webkit-backdrop-filter:none; }
   .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-opt.is-set{ color:#4ADE80; }
   [data-reduce-motion="true"] .unitoptions-modal-sheet.is-setup .start-summary .sheet-summary-optswrap{ transition:none; }
   /* A SHORT SCREEN KEEPS THE SHEET'S ROWS IN VIEW (327 audit). On an SE the
@@ -78562,7 +78571,10 @@ function currentStreak(){
    glide a CSS transition. Reduce motion: no lens, the plain quick switch. */
 const NSW_SEL = ".opt > .box, .nsw";
 __bm("L70613");
-const NSW_T = { pop: 260, shrink: 360, LX: 1.44, LY: 1.4, MAG: .82,
+/* BUILD 382: "the Liquid Glass gets picked and put down just a smidge too slow ... a smidge faster". The swell (pop) and the
+   settle (shrink) are about a fifth shorter - 260 -> 210ms and 360 -> 290ms - on the same curves; the glide along the track and the
+   tap/haptic logic are as they were. */
+const NSW_T = { pop: 210, shrink: 290, LX: 1.44, LY: 1.4, MAG: .82,
   POP: "cubic-bezier(.3,1.25,.5,1)", GLIDE: "cubic-bezier(.32,1.06,.42,1)", SETTLE: "cubic-bezier(.3,1.04,.4,1)" };
 const nswRuns = new WeakMap();
 let nswActive = null, nswPending = null, nswCommitting = false, nswSuppressUntil = 0;
@@ -101061,6 +101073,80 @@ function showSetup(){
   const sheetSummaryOptsWrap = document.createElement("div");
   sheetSummaryOptsWrap.className = "sheet-summary-optswrap is-empty";
   sheetSummaryOptsWrap.appendChild(sheetSummaryOpts);
+  /* BUILD 382: THE FOLD IS TRANSFORMS AND OPACITY ONLY. "When toggling stuff, the words coming up at the bottom come in a
+     little laggy." His recording: the line's grid-row transition re-laid the sheet out every frame and the whole sheet (it
+     grows up from the bottom) stepped at ~20fps, ending in a jump. Now the layout changes ONCE, in the tap's own task, and
+     what moved is drawn back where it was and glided home (FLIP): the sheet by its top, Begin and the box held still
+     against it, the box's top half and its body (a stand-in, scaled from its foot), the new words faded in, the old ones
+     faded out where they were. Reduce motion, a short screen (the line is hidden) or a closed sheet: it simply changes. */
+  let optsFold = null;
+  function foldSummaryOpts(empty){
+    const wrap = sheetSummaryOptsWrap;
+    if(wrap.classList.contains("is-empty") === empty) return;
+    const sheet = wrap.isConnected ? wrap.closest(".unitoptions-modal-sheet") : null;
+    const bar = sheetSummary.parentNode && sheetSummary.parentNode.classList && sheetSummary.parentNode.classList.contains("sheet-begin-bar") ? sheetSummary.parentNode : null;
+    const live = sheet && bar && !nswCalm() && wrap.getClientRects().length && !sheet.classList.contains("is-dragging") && !sheet.style.transform;
+    const prev = optsFold;
+    if(!live){ if(prev) prev.end(); wrap.classList.toggle("is-empty", empty); return; }
+    /* where everything is drawn now - mid-glide included */
+    const s0 = sheet.getBoundingClientRect().top;
+    const c0 = (prev && prev.bg ? prev.bg : sheetSummary).getBoundingClientRect().top;
+    const w0 = empty ? sheetSummaryOpts.getBoundingClientRect() : null;
+    if(prev) prev.end();
+    wrap.classList.toggle("is-empty", empty);
+    const s1 = sheet.getBoundingClientRect().top, cr = sheetSummary.getBoundingClientRect();
+    const dS = s0 - s1, dC = c0 - cr.top;
+    if(Math.abs(dS) < .5 && Math.abs(dC) < .5) return;
+    const D = 220, E = "cubic-bezier(.3,.7,.3,1)", o = { duration: D, easing: E };
+    const anims = [], extra = [];
+    const run = (el, kf, opt) => { try{ anims.push(el.animate(kf, opt || o)); }catch(e){} };
+    const ty = v => "translate3d(0," + v.toFixed(2) + "px,0)";
+    const cs = getComputedStyle(sheetSummary), bw = parseFloat(cs.borderTopWidth) || 0;
+    /* the box's body: a stand-in with its look, scaled from the box's foot */
+    const bg = document.createElement("span");
+    bg.className = "sheet-summary-foldbg"; bg.setAttribute("aria-hidden", "true");
+    bg.style.cssText = "inset:" + (-bw) + "px;border-radius:" + cs.borderTopLeftRadius + ";background-color:" + cs.backgroundColor
+      + ";background-image:" + cs.backgroundImage + ";border:" + bw + "px " + cs.borderTopStyle + " " + cs.borderTopColor + ";box-shadow:" + cs.boxShadow;
+    sheetSummary.appendChild(bg); extra.push(bg);
+    sheetSummary.classList.add("is-folding");
+    const H = cr.height || 1;
+    run(bg, [{ transform: "scaleY(" + Math.max(.05, (H - dC) / H).toFixed(4) + ")" }, { transform: "none" }]);
+    /* the sheet from its old top, with Begin and the box held still against it */
+    let cover = null;
+    if(Math.abs(dS) >= .5){
+      const opaque = /^rgb\(/.test(getComputedStyle(sheet).backgroundColor);
+      if(opaque) sheet.classList.add("is-folding-opaque");
+      /* a sheet that starts higher than it ends would show a strip under its foot: its own colour fills it */
+      if(dS < 0){ cover = sheet.style.boxShadow; const sc = getComputedStyle(sheet);
+        sheet.style.boxShadow = (sc.boxShadow && sc.boxShadow !== "none" ? sc.boxShadow + ", " : "") + "0 " + Math.ceil(-dS + 2) + "px 0 0 " + (opaque ? sc.backgroundColor : "#0F1115"); }
+      run(sheet, [{ transform: ty(dS) }, { transform: "none" }]);
+      [...bar.children].forEach(k => run(k, [{ transform: ty(-dS) }, { transform: "none" }]));
+    }
+    /* the box's top half (mode, count, units) from where it was */
+    [...sheetSummary.children].forEach(k => { if(k !== wrap && k !== bg) run(k, [{ transform: ty(dC) }, { transform: "none" }]); });
+    if(!empty){
+      /* the words come in as the box opens - opacity only, once the units have mostly moved off them */
+      run(sheetSummaryOpts, [{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1 }], { duration: D, easing: "ease-out" });
+    } else if(w0 && w0.height > 1){
+      const g = sheetSummaryOpts.cloneNode(true);
+      g.classList.add("sheet-summary-foldghost"); g.setAttribute("aria-hidden", "true");
+      g.style.left = (w0.left - cr.left - bw).toFixed(2) + "px"; g.style.top = (w0.top - cr.top - bw).toFixed(2) + "px"; g.style.width = w0.width.toFixed(2) + "px";
+      sheetSummary.appendChild(g); extra.push(g);
+      run(g, [{ opacity: 1 }, { opacity: 0, offset: .2 }, { opacity: 0 }], { duration: D, easing: "linear", fill: "forwards" });
+    }
+    const me = { bg, end(){
+      if(optsFold !== me) return; optsFold = null;
+      anims.forEach(a => { try{ a.cancel(); }catch(e){} });
+      extra.forEach(n => n.remove());
+      sheetSummary.classList.remove("is-folding"); sheet.classList.remove("is-folding-opaque");
+      if(cover !== null) sheet.style.boxShadow = cover;
+    } };
+    optsFold = me;
+    /* done when every piece has finished - or been cancelled by something else (a cancelled one must not leave the
+       stand-in up and the box's own look off) - and, whatever happens, a little after it should have */
+    Promise.all(anims.map(a => a.finished.catch(() => {}))).then(() => me.end());
+    setTimeout(() => me.end(), D + 700);
+  }
   optionsModalBody.appendChild(srcSect);
 
   let lastSliderSize = cfg.size > 0 ? cfg.size : 10;
@@ -101765,7 +101851,7 @@ function showSetup(){
           sheetSummaryOpts.appendChild(w);
         });
       }
-      sheetSummaryOptsWrap.classList.toggle("is-empty", on.length === 0);
+      foldSummaryOpts(on.length === 0);
       sheetSummaryOptsWrap.setAttribute("aria-hidden", on.length ? "false" : "true");
     }
     if(sheetSummary.lastChild !== sheetSummaryOptsWrap) sheetSummary.appendChild(sheetSummaryOptsWrap);
