@@ -30541,3 +30541,20 @@ to go at all."
   or at the first touch). +/Done/pinch/double-tap unchanged.
 - Gate: tools/check-b382-test.py (needs PDFJS_DIR, an unpacked pdfjs-dist 5.4.149; 37 of 40 fail on the code before). Merged with the
   slide and input work: check-b382-test and check-b382-input ALL PASS.
+
+### 382, Settings in colour; Advanced is a page; Contributors
+Madison (two inspirations, then two more screenshots): "I love how they have color ... I also really like credits section where it has
+the contributors." Contributors: "me, (Madison Davis) Cameron Wharton, Alexis Sauceda, Bryan Darjean" - HIS OWN REQUEST overrides
+CLAUDE.md's "never put his name in anything the app shows" for the Contributors page and the Settings footer ONLY.
+- Every Settings row has a solid tile (settingsTileColor per row, not the accent) with a white glyph; cards stay the dark glass. Switch
+  rows get theirs in tileSwitchRows (beside .otext, never in it). Headings grey sentence case, inset to the text; hairlines at the words.
+- Advanced settings is showAdvancedSettings(): settingsSubPage() (round back button, centred title, .screen-settings-sub lights what
+  Settings lights). Resets are red settingsTextRow()s (armConfirm still relabels them); info-icon text is now footnotes; a clear
+  redraws the page.
+- Credits group: Contributors row -> showCredits() (creditsPeople(): Madison Davis first, then by surname; no links or handles).
+  buildCreditsFooter() (CREATOR / LAYOUT / TESTING / IDEAS) above the legal note.
+- Gate: tools/check-b382-credits.py (25 fail before). check-b382-settings and check-behaviour b246 updated for the Advanced page;
+  check-behaviour b314h_settings_calendar still looks for .more-toggle (stale since the 382 rows) - rewrite or retire.
+- Next for this look (owner: "If our app needs to take on this kinda interface app wide ... do it"), after the units/board/tab merges:
+  Report a bug & Version history headers; Customize & Friends grouped rows; badge case & road map; Calendar lists; unit detail sheet's
+  Reset; Virtual Room lobby settings; the start sheet's options; Welcome "Enter a code".
