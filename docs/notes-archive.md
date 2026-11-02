@@ -30454,3 +30454,19 @@ the characters ... that aren't the starters. The Zeus character on the fire code
   (from applyLoadedData) takes it off a saved avatar and out of pendingCharUnlocks. Nothing is deleted from the store.
 - Gate: tools/check-b382-ifcart.py (drawing hashes per class, every drawing builds, Zeus gone, saved Zeus falls back; 5 fail on
   381). check-b328-classes crashes on the class-switch reload identically on 381; check-unlocks' daily-question failures too.
+
+### Build 382 - every character and banner viewable again, locked ones greyed
+"we made the character unlocks hidden, we can remove that ... just make it on the intro like greyed out ... they are gonna be
+viewable again" / "all the banners will be viewable ... remove that."
+- `charLockLook()` returns null: no cut-out anywhere (Customize, unlock card, flare hint ghost, the Detective's banner). Every
+  locked character is the rank's greyed STILL preview (cheaper: the seven secret/ultimate flip-books Customize recorded are gone).
+  charSilhouetteSVG kept, unused. The secret-flare-found scene still reveals from a silhouette (a moment, not a list).
+- Nova's crew slide: a missing crewman is his drawing, `.is-ranklocked` (NOVA_LOST_LOOK unused). His character question adds
+  "Still to find" (one novaParade of greyed tiles, not buttons); showWelcomeCharacterPrompt adds a greyed, padlocked grid under
+  Continue (tap = lock message).
+- `isVeiledBanner()` returns false. The four flare banners and three ultimates, while locked, are ONE still picture
+  (`lockedBannerStill` from bannerStaticSVG, in the deferred banner pass), greyed, padlock showing; their card shows the live
+  banner. Customize lists every banner (no secret filter). Copy: "A secret flare character." (no "hidden until it is yours").
+- Gate: check-b382-unhide (academy + Fire Code; 12 fail on 381). b313_flares/b314_chars/b314_unlocks/b317, b325-d, b326-d,
+  b327z13 Y updated from "hidden" to "shown greyed". Merged with the Fire Code art: unhide, ifcart and badges gates all pass
+  together (unhide's Fire Code road-map check failed once under 9 agents' load, passed on re-run).
