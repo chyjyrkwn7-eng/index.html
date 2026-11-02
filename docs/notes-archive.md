@@ -30707,3 +30707,61 @@ Madison: "they all are there own tab where you click and get more information? .
 - check-b382-settings was updated. Both fail on the code before.
 - toggles, behaviour b218/b324g and sync were updated to open the pages.
 - About 20 older gates still call `showAppearance()` expecting switches on the menu. They are to be pointed at the pages before the final run.
+
+### 382: the Leaderboard and the Calendar in Settings' language (clean iOS; merged 2026-11-02)
+Madison: "the rest of the app has that nice new look ... leaderboard could have such a nice look ... calendar could be a smidge better ... clean clean clean CLEAN IOS".
+
+**Title**
+- #count is the page's big bold title on .screen-rankings and .screen-calendar-tab (2rem; 2.25rem on tablet).
+- There is no second heading in the panel.
+
+**Board**
+- The switch is an iOS segmented control: 44px segments, the slider restyled, full column width.
+- The search field is filled, with the placeholder on the left. Find me is tinted with the accent.
+- The top three are each their own card: a 1px metal ring at .62, a faint corner light, medals without the glow, names in ink.
+- 4th place down is ONE grouped card:
+  - The rows touch and only the ends are rounded.
+  - The ::after hairline starts at --lb-hair-l, the name's x.
+  - Row padding is .45rem, so every row is exactly --lb-row-h.
+- Your row gets an accent wash and your place in the accent. It has a ring only on the podium.
+- Placeholders 1-3 carry .rank-skel-podium(-N), so the podium cards land exactly where the placeholders stood (0px shift).
+- Skeletons pulse their bars, not the row.
+
+**Calendar**
+- Cards are flat, 20px corners, no frost. This rule beats the (0,5,0) `.screen-calendar :is(...).points-progress-sect` rule.
+- Headings are grey sentence case.
+- Topics are rows with hairlines between them.
+- Today is the accent's circle: filled when it is the picked day, a ring otherwise. On tablet, only today's number gets the circle.
+- Any other picked day gets a grey fill.
+
+**Gates**
+- tools/check-b382-ios.py: 40 fail on the build before.
+- check-b382-board's look checks were updated for the new your-row and the sentence-case captions.
+
+### 382: Contributors like Delta's, every group labelled, the tiles redrawn (merged 2026-11-02)
+Madison: "Not sure why ours has numbers ... Cam helped with virtual room ... Darjean helped with the chat. I created and designed it" / "Don't put the contributions there ... just say made by Davis but make it look nice. Ensure each [group] of stuff is labeled" / "Look at how nice those icons look".
+
+**Contributors**
+- `creditsPeople` rows are {t, open}.
+- Chat opens `openChatDock()`.
+- Virtual Room opens `showVirtualRoomChoice()`. It is academy only and plain text in Fire Code.
+- No counts and no totals.
+- Cards have 20px corners and sit 28px apart. Rows are 52px. Hairlines are inset 18px at both ends.
+- Logan's line is a placeholder until Madison says what he helped with.
+
+**Footer**
+- "MADE BY", then "Davis" in an italic serif with the brand gradient, then NOVA.
+- No names grid.
+
+**Labels**
+- The menu groups are General, Account, App, Credits and Support.
+- The Share page's group is labelled "This app"; Legal's is labelled "Notices".
+
+**Tiles**
+- One line-icon family: 1.6 stroke, none filled.
+- 30px squircles with 7px corners, each with its own-hue vertical gradient and a half-pixel rim.
+- 14px gap to the label.
+- Check for update is green.
+
+**Gate**
+- check-b382-credits: 13 fail on e3aa7a8.
