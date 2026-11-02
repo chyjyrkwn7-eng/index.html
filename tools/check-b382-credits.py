@@ -3,19 +3,22 @@ Madison: "they all are there own tab where you click and get more information? W
 bottom? All the copyright stuff? That shouldn't be there at the bottom, that should be in another thing towards the
 bottom similar to the screenshot how it has a support section" / "Contributors section needs something like this. You
 can add Logan Preston" / "made by M. Davis and then the word nova in a nice cool way under it".
-(1) The menu: category rows only (Sound & Haptics, Study, Motion & Effects, Sync, Leaderboard & Privacy - not in Fire
+(1) The menu: every card group under a grey label (General, Account, App, Credits, Support); category rows only (Sound & Haptics, Study, Motion & Effects, Sync, Leaderboard & Privacy - not in Fire
     Code -, Share & Install), each with a solid, non-grey tile, a chevron, 44px+, colours differing in a card; no switch,
     slider or legal paragraph on it; Credits = Contributors and Legal (words and a chevron, no tile); Support = Report a
-    bug, Version history, Terms of Use, Privacy (coloured words, no tile, no chevron); the foot names the five, Madison
-    first, then "Made by M. Davis" and a NOVA wordmark in gradient text, last on the screen.
+    bug, Version history, Terms of Use, Privacy (coloured words, no tile, no chevron); no names at the foot (that is
+    Contributors' job), only "Made by Davis" (the name in gradient text) and a NOVA wordmark in
+    gradient text, last on the screen.
 (2) Every category opens its own page (round back button, title) holding its settings, each switch row with a coloured
     tile; a page lights the tab Settings lights; back is the menu.
 (3) Every handler still fires (spied): share, install walkthrough, version check, report screen, release history, a
     switch, the sync code reveal; the two new switches (Tap sounds, Longer pause) save to the theme.
 (4) Advanced settings opens its page: red word rows, Reset opens the warning.
 (5) Legal holds every line of the old foot word for word; Terms of Use and Privacy open.
-(6) Contributors: five people, Madison Davis first, Logan Preston there, each with a role and a count badge equal to
-    their rows, totals at the top; the tab bar lights what Settings lights; back is the menu; a tab tap clears it.
+(6) Contributors (round 3, "Not sure why ours has numbers"): five people, Madison Davis first, Logan Preston there;
+    no counts anywhere; each card's first row is the name with a role and no chevron, then its rows; a chevron only
+    on a row that opens something - in the academy the chat and the Virtual Room, opened; the foot's five in
+    Madison's order; the tab bar lights what Settings lights; back is the menu; a tab tap clears it.
 (7) No sideways scroll, nothing past the edge, on the menu and the pages at 440x956, 518x1125, 375x667, iPad 834x1194
     and a laptop; academy and Fire Code.
 Run:  python3 tools/check-b382-credits.py   (--against: copy the old index.html over first)"""
@@ -85,9 +88,15 @@ MENU = """()=>{ const S=document.querySelector('#stage .screen-settings'); if(!S
   const shown=[...S.children].filter(e=>e.offsetParent);
   return { switches: S.querySelectorAll('label.opt, .box, input[type=range], .nsw').length,
     legal: /not affiliated|All rights reserved|trademark of the International/i.test(txt),
-    footNames: foot ? [...foot.querySelectorAll('.settings-credits-name')].map(e=>e.textContent.trim()) : [],
-    footRoles: foot ? [...foot.querySelectorAll('.settings-credits-role')].map(e=>e.textContent.trim()) : [],
+    /* the foot is a signature and the wordmark only: no names grid, no names but the signature's */
+    footNames: foot ? [...foot.querySelectorAll('.settings-credits-name, .settings-credits-cell')].length : -1,
+    footText: foot ? foot.textContent.replace(/\\s+/g, ' ').trim() : '',
     madeBy: (S.querySelector('.settings-madeby')||{}).textContent||'',
+    madeByGrad: (()=>{ const e=S.querySelector('.settings-madeby-name'); if(!e) return false; const c=getComputedStyle(e);
+      return /gradient/.test(c.backgroundImage) && /text/.test((c.webkitBackgroundClip||'') + (c.backgroundClip||'')); })(),
+    /* every card group on the menu has a grey label straight above it */
+    unlabelled: [...S.querySelectorAll(':scope > .settings-card')].filter(c=>{ const p=c.previousElementSibling; return !(p && p.classList.contains('slab') && p.textContent.trim()); }).length,
+    cards: S.querySelectorAll(':scope > .settings-card').length,
     word: wm ? wm.textContent.trim() : '',
     wordGrad: ws ? (/gradient/.test(ws.backgroundImage) && (/text/.test(ws.webkitBackgroundClip||'') || /text/.test(ws.backgroundClip||''))) : false,
     footLast: !!foot && foot === shown[shown.length - 1] }; }"""
@@ -114,6 +123,8 @@ PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
          "sync": ["Sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"]}
 PEOPLE = ["Madison Davis", "Bryan Darjean", "Logan Preston", "Alexis Sauceda", "Cameron Wharton"]
+# the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
+FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
@@ -144,10 +155,12 @@ with sync_playwright() as pw:
         chk("%s Support: coloured words only, no tile, no chevron, 44px+ (%s)" % (tag, [r["title"] for r in sup]),
             [r["title"] for r in sup][:2] == ["Report a bug", "Version history"] and len(sup) >= 3
             and all(not r["chev"] and not r["tile"] and r["h"] >= 44 and chroma(r["color"]) >= 40 for r in sup), sup)
-        chk("%s the foot names the five, Madison first, each with a role (%s)" % (tag, m.get("footNames")),
-            m.get("footNames") == PEOPLE and len(m.get("footRoles", [])) == 5 and all(m["footRoles"]), m)
-        chk("%s it ends on 'Made by M. Davis' and a NOVA wordmark in gradient text" % tag,
-            m.get("madeBy") == "Made by M. Davis" and m.get("word") == "NOVA" and m.get("wordGrad") and m.get("footLast"), m)
+        chk("%s every group on the menu has its label (%s cards, %s without)" % (tag, m.get("cards"), m.get("unlabelled")),
+            m.get("cards", 0) >= 5 and m.get("unlabelled") == 0, m)
+        chk("%s the foot has no names grid, no contributors' names (%s)" % (tag, m.get("footText")),
+            m.get("footNames") == 0 and not any(n.split()[1] in m.get("footText", "") for n in PEOPLE[1:]), m)
+        chk("%s it ends on 'Made by Davis' (the name in gradient text) and a NOVA wordmark" % tag,
+            m.get("madeBy").replace(" ", "").lower() == "madebydavis" and m.get("madeByGrad") and m.get("word") == "NOVA" and m.get("wordGrad") and m.get("footLast"), m)
 
         # (2) each category is a page
         for k in want:
@@ -157,6 +170,11 @@ with sync_playwright() as pw:
             pr = pg.evaluate("""()=>{ const p=document.querySelector('#stage .screen-settings-page'); if(!p) return null;
               return { title:(p.querySelector('.settings-nav-title')||{}).textContent, back: !!p.querySelector('.settings-nav-back'), menuGone: !document.querySelector('#stage .screen-settings') }; }""")
             prow = pg.evaluate(ROWS) or []
+            unl = pg.evaluate("""()=>{ const p=document.querySelector('#stage .screen-settings-page'); if(!p) return -1;
+              return [...p.querySelectorAll('.settings-card')].filter(c=>{ let e=c.previousElementSibling; while(e && !e.classList.contains('slab')) e=e.previousElementSibling;
+                const host=c.parentElement; const lab=e || (host && host.querySelector(':scope > .slab'));
+                return !lab; }).length; }""")
+            chk("%s %s page: every group has a label (%s without)" % (tag, k, unl), unl == 0, unl)
             titles = [r["title"] for r in prow]
             if k == "sync" and cls == "ifc":
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
@@ -234,19 +252,38 @@ with sync_playwright() as pw:
         settings(pg)
         opened = tap(pg, "Contributors"); pg.wait_for_timeout(1300)
         cr = pg.evaluate("""()=>{ const p=document.querySelector('#stage .screen-credits'); if(!p) return null;
-          const cards=[...p.querySelectorAll('.credits-card')].map(c=>({ name:(c.querySelector('.credits-name')||{}).textContent, role:(c.querySelector('.credits-role')||{}).textContent,
-             count:(c.querySelector('.credits-count')||{}).textContent,
-             items:[...c.querySelectorAll('.credits-item')].map(i=>({ t:i.textContent.trim(), h:Math.round(i.getBoundingClientRect().height) })) }));
-          return { title:(p.querySelector('.settings-nav-title')||{}).textContent, intro:(p.querySelector('.credits-intro')||{}).textContent, cards,
-                   stats:[...p.querySelectorAll('.credits-stat')].map(e=>e.textContent.trim()), lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].filter(b=>b.offsetParent).map(b=>b.id) }; }""")
+          const cards=[...p.querySelectorAll('.credits-card')].map(c=>{ const first=c.firstElementChild;
+             return { name:(c.querySelector('.credits-name')||{}).textContent, nameFirst: !!first && !!first.querySelector('.credits-name'),
+               nameChev: !!first && !!first.querySelector('.settings-row-chev'),
+               role:(first && first.querySelector('.credits-role')||{}).textContent,
+               items:[...c.children].slice(1).map(i=>({ t:i.textContent.trim(), h:Math.round(i.getBoundingClientRect().height), link: i.tagName==='BUTTON', chev: !!i.querySelector('.settings-row-chev') })) }; });
+          /* no counts anywhere: no badge, no pill, no element whose words are only a number */
+          const numbers=[...p.querySelectorAll('*')].filter(e=>!e.children.length && /^\\s*\\d+\\s*$/.test(e.textContent||'')).length
+             + p.querySelectorAll('.credits-count, .credits-stat, .credits-stats').length;
+          return { title:(p.querySelector('.settings-nav-title')||{}).textContent, intro:(p.querySelector('.credits-intro')||{}).textContent, cards, numbers,
+                   introNum: /\\d+ contribut/i.test((p.querySelector('.credits-intro')||{}).textContent||''),
+                   lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].filter(b=>b.offsetParent).map(b=>b.id) }; }""")
         names = [c["name"] for c in (cr or {}).get("cards", [])]
         chk("%s Contributors opens (%s)" % (tag, cr and cr["title"]), opened and cr and cr["title"] == "Contributors" and cr["intro"], cr)
         chk("%s five people, Madison Davis first, Logan Preston there (%s)" % (tag, names), names == PEOPLE, names)
-        chk("%s each has a role, contribution rows 44px+ and a count badge equal to them" % tag,
-            cr and all(c["role"] and c["items"] and all(i["h"] >= 44 for i in c["items"]) and c["count"] == str(len(c["items"])) for c in cr["cards"]), cr and cr["cards"])
-        total = sum(len(c["items"]) for c in (cr or {}).get("cards", []))
-        chk("%s the totals: 5 contributors, %d contributions (%s)" % (tag, total, cr and cr["stats"]),
-            cr and any(s.startswith("5 ") for s in cr["stats"]) and any(s.startswith(str(total) + " ") for s in cr["stats"]), cr and cr["stats"])
+        chk("%s no counts: no badge, no totals, no bare numbers (%s)" % (tag, cr and cr["numbers"]), cr and cr["numbers"] == 0 and not cr["introNum"], cr and cr["numbers"])
+        chk("%s each card: the name row first (a role, no chevron), then its rows, 44px+" % tag,
+            cr and all(c["nameFirst"] and c["role"] and not c["nameChev"] and c["items"] and all(i["h"] >= 44 for i in c["items"]) for c in cr["cards"]), cr and cr["cards"])
+        links = [i for c in (cr or {}).get("cards", []) for i in c["items"] if i["link"]]
+        chk("%s a chevron only on a row that opens something (%d linked rows)" % (tag, len(links)),
+            cr and all(i["chev"] == i["link"] for c in cr["cards"] for i in c["items"]) and len(links) == (0 if cls == "ifc" else 2), [c["items"] for c in (cr or {}).get("cards", [])])
+        if cls != "ifc":
+            got = []
+            for n in range(len(links)):
+                pg.evaluate("()=>showCredits()"); pg.wait_for_timeout(900)
+                got.append(pg.evaluate("""async (n)=>{ const b=[...document.querySelectorAll('#stage .screen-credits button.credits-item')][n]; if(!b) return null;
+                  b.click(); await new Promise(r=>setTimeout(r,1200));
+                  const out = { chat: typeof chatDockOpen !== 'undefined' && chatDockOpen === true, room: !!document.querySelector('#stage .screen-vroom-choice') };
+                  try{ if(chatDockOpen) closeChatDock(); }catch(e){} return out; }""", n))
+            chk("%s the two linked rows open the chat and the Virtual Room (%s)" % (tag, got),
+                len(got) == 2 and sorted([bool(x and x["chat"]) for x in got]) == [False, True] and sorted([bool(x and x["room"]) for x in got]) == [False, True], got)
+            pg.wait_for_timeout(600)
+            settings(pg); tap(pg, "Contributors"); pg.wait_for_timeout(1300)
         chk("%s the tab bar lights what Settings lights (%s / %s)" % (tag, cr and cr["lit"], litSettings), cr and cr["lit"] and cr["lit"] == litSettings, cr and cr["lit"])
         pg.evaluate("()=>document.querySelector('#stage .settings-nav-back')?.click()"); pg.wait_for_timeout(1300)
         chk("%s back from Contributors is the menu" % tag, pg.evaluate("()=>!!document.getElementById('settings-contributors') && !document.querySelector('.screen-credits')"))

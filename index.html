@@ -32377,7 +32377,7 @@
      press lights the whole row. */
   [data-layout="modern"] .screen-settings .settings-card.settings-list{ padding:0; }
   .settings-row{
-    position:relative; display:flex; align-items:center; gap:.85rem;
+    position:relative; display:flex; align-items:center; gap:14px;
     width:100%; min-height:3.25rem; margin:0; padding:.7rem 1rem;
     font:inherit; color:var(--ink); text-align:left;
     background:transparent; border:0; border-radius:0; box-shadow:none; cursor:pointer;
@@ -32387,7 +32387,7 @@
   .settings-row-static{ cursor:default; align-items:flex-start; }
   .settings-row + .settings-row::before,
   .settings-adv-card > .more-body.open::before{
-    content:""; position:absolute; top:0; left:calc(1rem + 30px + .85rem); right:0; height:1px;
+    content:""; position:absolute; top:0; left:calc(1rem + 30px + 14px); right:0; height:1px;
     background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
   }
   .settings-list > .settings-row:first-child{ border-top-left-radius:15px; border-top-right-radius:15px; }
@@ -32442,13 +32442,14 @@
   .settings-row-icon,
   .settings-row-icon.is-accent,
   .settings-row-icon.is-muted{
-    flex:0 0 30px; width:30px; height:30px; border-radius:8px;
+    flex:0 0 30px; width:30px; height:30px; border-radius:7px;
     background-color:var(--tile, #8E8E93);
-    background-image:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 62%);
-    box-shadow:inset 0 0 0 .5px rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.28);
+    /* its own hue, lighter at the top, deeper at the foot - gradients only */
+    background-image:linear-gradient(180deg, rgba(255,255,255,.24) 0%, rgba(255,255,255,.06) 48%, rgba(0,0,0,.12) 100%);
+    box-shadow:inset 0 0 0 .5px rgba(255,255,255,.22), inset 0 .5px 0 rgba(255,255,255,.32), 0 1px 1.5px rgba(0,0,0,.22);
     color:#fff;
   }
-  .settings-row-icon svg{ width:20px; height:20px; }
+  .settings-row-icon svg{ width:21px; height:21px; }
   .settings-row-label{ font-weight:500; }
   .settings-row-value{
     flex:0 0 auto; margin-left:.25rem; font-size:.92rem; font-weight:500; color:var(--soft);
@@ -32466,20 +32467,20 @@
   [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child,
   [data-layout="modern"] .screen-settings-sub .settings-nav + .slab.motion-summary{ margin-top:.4rem; }
   /* the switch rows: tile, words, switch; the hairline starts at the words */
-  [data-layout="modern"] .settings-card > label.opt.has-tile{ position:relative; gap:.85rem; }
+  [data-layout="modern"] .settings-card > label.opt.has-tile{ position:relative; gap:14px; }
   .settings-card > label.opt.has-tile > .settings-row-icon{ order:0; align-self:flex-start; margin-top:.05rem; }
   [data-layout="modern"] .settings-card > label.opt.has-tile + label.opt,
   [data-layout="modern"] .settings-card > .settings-volume + label.opt.has-tile{ border-top:0; }
   .settings-card > label.opt.has-tile + label.opt::before,
   .settings-card > .settings-volume + label.opt.has-tile::before{
-    content:""; position:absolute; top:0; left:calc(30px + .85rem); right:-1rem; height:1px;
+    content:""; position:absolute; top:0; left:calc(30px + 14px); right:-1rem; height:1px;
     background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
   }
   /* the volume lines up with the words of the switch above it */
-  [data-layout="modern"] .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(30px + .85rem); gap:.75rem; }
+  [data-layout="modern"] .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(30px + 14px); gap:.75rem; }
   .settings-card > .settings-sound-row.has-tile + .settings-volume .slider{ min-width:0; }
   /* the sync code: its tile beside the label, the well under both */
-  .sync-code-head{ display:flex; align-items:center; gap:.85rem; min-width:0; }
+  .sync-code-head{ display:flex; align-items:center; gap:14px; min-width:0; }
   .sync-code-head > .otext{ flex:1 1 auto; min-width:0; }
   /* the Advanced card stands alone, without a heading */
   [data-layout="modern"] .screen-settings .settings-card.settings-card-solo{ margin-top:1.6rem; }
@@ -32522,36 +32523,29 @@
     margin:0; padding:0 52px; font-size:1.15rem; font-weight:700; line-height:1.25;
     letter-spacing:0; text-align:center; color:var(--ink);
   }
-  /* Contributors (build 382): the inspiration's page - an intro, then a card
-     per person: the name, a count badge, the role in grey; what they did as rows */
-  .credits-intro{ margin:0 1rem 1.3rem; font-size:.9rem; line-height:1.5; color:var(--soft); }
-  .credits-intro > p{ margin:0 0 .7rem; }
-  .credits-heart{ display:inline-block; width:1.05em; height:1.05em; vertical-align:-.16em; color:#FF5C8A; }
+  /* Contributors (build 382, round 3): Delta's page, in its proportions - two
+     grey lines of thanks, then one inset card a person (20px corners, 28px
+     apart), the name in bold with the role in grey, then a row for what they
+     did, 52px tall, hairlines inset 18px at both ends; a chevron only where a
+     row opens something. No counts. */
+  .credits-intro{ margin:0 18px 1.6rem; font-size:.94rem; line-height:1.5; color:var(--soft); }
+  .credits-intro > p{ margin:0 0 .9rem; }
+  .credits-intro > p:last-child{ margin-bottom:0; }
+  .credits-heart{ display:inline-block; width:1.1em; height:1.1em; vertical-align:-.18em; color:#BF5AF2; }
   .credits-heart svg{ width:100%; height:100%; display:block; }
-  .credits-stats{ display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.2rem; }
-  .credits-stat{
-    display:inline-flex; align-items:baseline; gap:.1rem; padding:.3rem .7rem; border-radius:999px;
-    font-size:.8rem; font-weight:600; color:var(--soft);
-    background:var(--surface-lift); border:1px solid var(--surface-border);
-  }
-  .credits-stat > b{
-    font-size:.95rem; font-weight:800; margin-right:.15rem;
-    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2) 60%, var(--theme-c3));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  [data-layout="modern"] .screen-credits .settings-card.credits-card{ margin:0 0 1rem; }
+  [data-layout="modern"] .screen-credits .settings-card.credits-card{ margin:0 0 28px; border-radius:20px; }
+  .credits-card > .settings-row{ min-height:52px; padding:.8rem 18px; gap:.75rem; }
   .credits-card > .settings-row-static{ align-items:center; cursor:default; }
-  .credits-name-row{ gap:.55rem; }
-  .credits-name{ min-width:0; font-size:1.02rem; font-weight:700; }
-  .credits-count{
-    flex:0 0 auto; min-width:1.45rem; height:1.45rem; padding:0 .4rem; border-radius:999px;
-    display:inline-flex; align-items:center; justify-content:center;
-    font-size:.74rem; font-weight:800; color:#1A0F14; line-height:1;
-    background:linear-gradient(135deg, var(--theme-c1), var(--theme-c2) 55%, var(--theme-c3));
-    box-shadow:0 1px 6px color-mix(in srgb, var(--theme-c2) 40%, transparent);
-  }
-  .credits-name-row > .credits-role{ margin-left:auto; }
-  .credits-item{ font-size:.95rem; font-weight:500; }
+  .credits-card > .settings-row:first-child{ border-top-left-radius:19px; border-top-right-radius:19px; }
+  .credits-card > .settings-row:last-child{ border-bottom-left-radius:19px; border-bottom-right-radius:19px; }
+  .settings-list.credits-card > .settings-row + .settings-row::before{ left:18px; right:18px; }
+  .credits-name{ flex:1 1 auto; min-width:0; font-size:1.06rem; font-weight:700; color:var(--ink); }
+  .credits-card > .credits-name-row{ align-items:baseline; }
+  .credits-name-row > .credits-role{ margin-left:auto; font-size:1rem; font-weight:500; }
+  .credits-item{ font-size:1.02rem; font-weight:500; color:var(--ink); }
+  .credits-item.credits-link{ justify-content:space-between; }
+  .credits-item.credits-link .settings-row-label{ flex:1 1 auto; font-size:1.02rem; font-weight:500; }
+  @media (min-width:40rem){ .screen-credits .credits-card, .screen-credits .credits-intro{ max-width:40rem; margin-left:auto; margin-right:auto; } }
   /* the menu: category rows, then Credits' word rows, then Support's links */
   [data-layout="modern"] .screen-settings .settings-card.settings-menu-first{ margin-top:.5rem; }
   .settings-row.settings-plainrow{ justify-content:space-between; }
@@ -32565,23 +32559,21 @@
   .settings-prose > p + p{ margin-top:.75rem; }
   /* a category page's first heading sits close under the title */
   [data-layout="modern"] .screen-settings-sub .settings-nav + * > .slab.motion-summary:first-child{ margin-top:.4rem; }
-  /* the foot of Settings: who made it, then the name */
-  .settings-foot{ margin:2.2rem 0 .6rem; text-align:center; }
-  .settings-credits-footer{
-    display:flex; flex-wrap:wrap; justify-content:center; gap:1rem .5rem;
-    max-width:24rem; margin:0 auto; text-align:center;
+  /* the foot of Settings: the signature, then the name */
+  .settings-foot{ margin:2.6rem 0 .8rem; text-align:center; }
+  .settings-madeby{
+    margin:0 0 .35rem; display:flex; align-items:baseline; justify-content:center; gap:.55rem; line-height:1.2;
   }
-  .settings-credits-cell{ flex:0 0 calc(50% - .5rem); min-width:0; }
-  @media (min-width:40rem){
-    .settings-credits-footer{ max-width:44rem; }
-    .settings-credits-cell{ flex:0 0 calc(20% - .5rem); }
+  .settings-madeby-by{
+    font-size:.68rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
+    color:color-mix(in srgb, var(--ink) 52%, transparent);
   }
-  .settings-credits-role{
-    display:block; font-size:.66rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--soft);
+  .settings-madeby-name{
+    font-family:var(--serif); font-style:italic; font-size:1.3rem; font-weight:700; letter-spacing:.01em;
+    padding:0 .08em;
+    background-image:linear-gradient(90deg, var(--theme-c1), var(--theme-c2) 55%, var(--theme-c3));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
   }
-  .settings-credits-name{ display:block; margin-top:.2rem; font-size:.86rem; font-weight:700; color:var(--theme-c1); }
-  .settings-madeby{ margin:1.9rem 0 .1rem; font-size:1rem; font-weight:700; color:var(--theme-c1); }
   .settings-wordmark{ margin:0; line-height:1; }
   .settings-wordmark-text{
     display:inline-block; font-family:var(--serif); font-size:2.3rem; font-weight:800; letter-spacing:.16em;
@@ -118366,50 +118358,57 @@ function moreBodyMoving(body){
    would read thin at 18px (star, heart, sparkle). `tone` "muted" is the one
    grey tile, kept for the sync-unreachable status (a status, not a row). */
 function settingsTileColor(kind){
+  /* iOS system hues; no two tiles side by side share one (build 382, round 3) */
   const C = {
-    motion: "#5E5CE6", sound: "#FF375F", haptics: "#FF9F0A",
-    swipe: "#30D158", forward: "#32ADE6", star: "#F5B400", party: "#BF5AF2",
+    motion: "#5E5CE6", effects: "#5E5CE6", sound: "#FF375F", haptics: "#FF9F0A",
+    swipe: "#30D158", forward: "#32ADE6", star: "#FFB800", party: "#BF5AF2",
     trophy: "#FF9F0A", key: "#0A84FF", cloudup: "#0A84FF", entercode: "#30B0C7",
     share: "#0A84FF", install: "#30D158",
-    update: "#32ADE6", bug: "#FF453A", history: "#5E5CE6",
-    advanced: "#6E7F9E", credits: "#FF375F", cloudoff: "#8E8E93",
-    /* the menu's categories and the two switches added with it (build 382) */
+    update: "#34C759", bug: "#FF453A", history: "#5E5CE6",
+    advanced: "#7C8696", credits: "#FF375F", cloudoff: "#8E8E93",
     study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A"
   };
   return C[kind] || "#8E8E93";
 }
+/* ---- THE GLYPHS (build 382, round 3) ----
+   "Look at how nice those icons look in settings, please make ours look that
+   good." One family, the SF Symbols way: every glyph is a line drawing on the
+   same 24 grid, about 17 of it tall, at one 1.75 stroke with round caps and
+   joins, none filled; the tile is a 30px squircle (7px corners) whose own hue
+   runs lighter at the top and deeper at the foot under a half-pixel rim. */
 function settingsRowIcon(kind, tone){
   const paths = {
-    share: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M6 11v7.5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V11"/>',
-    install: '<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M12 8.5v7M8.5 12h7"/>',
-    update: '<path d="M19.5 11A7.5 7.5 0 0 0 6.2 6.6L4.5 8.3"/><path d="M4.5 4.5v3.8h3.8"/><path d="M4.5 13a7.5 7.5 0 0 0 13.3 4.4l1.7-1.7"/><path d="M19.5 19.5v-3.8h-3.8"/>',
-    bug: '<rect x="8" y="7.5" width="8" height="12" rx="4"/><path d="M12 11.5v8M9.5 7.6 8 5.5M14.5 7.6 16 5.5M8 11.5H4.5M8 15.5H5M16 11.5h3.5M16 15.5h3"/>',
-    history: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4.5v4.1h4.1"/><path d="M12 8v4.4l2.9 1.8"/>',
-    advanced: '<path d="M4 7.5h9M17.5 7.5H20M4 16.5h2.5M11 16.5h9"/><circle cx="15.2" cy="7.5" r="2.2"/><circle cx="8.8" cy="16.5" r="2.2"/>',
-    cloudoff: '<path d="M8.2 18.5H17a3.8 3.8 0 0 0 1.2-7.4A6 6 0 0 0 7.4 8.6 4.6 4.6 0 0 0 8.2 18.5z"/><path d="M4.5 4.5l15 15"/>',
-    motion: '<circle cx="14.5" cy="12" r="5"/><path d="M3.5 8.5h4.5M2.5 12h4.5M3.5 15.5h4.5"/>',
-    sound: '<path d="M4.5 9.5h3l4.5-4v13l-4.5-4h-3z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.5a7.8 7.8 0 0 1 0 11"/>',
-    haptics: '<rect x="8" y="4" width="8" height="16" rx="2.4"/><path d="M4.5 9v6M19.5 9v6"/>',
-    swipe: '<path d="M19.5 12H7"/><path d="M11.5 7.5 7 12l4.5 4.5"/><path d="M4 6.5v11"/>',
-    forward: '<path d="M5 6.5 10.5 12 5 17.5"/><path d="M12.5 6.5 18 12l-5.5 5.5"/>',
-    star: '<path d="M12 4l2.45 5 5.45.8-3.95 3.85.93 5.43L12 16.5l-4.88 2.58.93-5.43L4.1 9.8l5.45-.8z" fill="currentColor"/>',
-    party: '<path d="M10.5 3.5l1.55 4.45L16.5 9.5l-4.45 1.55L10.5 15.5l-1.55-4.45L4.5 9.5l4.45-1.55z" fill="currentColor"/><path d="M17.5 14v6M14.5 17h6"/>',
-    trophy: '<path d="M8 4.5h8V10a4 4 0 0 1-8 0z"/><path d="M8 6.5H5.2a2.8 2.8 0 0 0 3.1 3.6M16 6.5h2.8a2.8 2.8 0 0 1-3.1 3.6"/><path d="M12 14v3.5M8.5 19.5h7"/>',
-    key: '<circle cx="8" cy="12" r="3.6"/><path d="M11.6 12H20M17 12v3M20 12v2.6"/>',
-    cloudup: '<path d="M7.5 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.7 3.7 0 0 1-.8 7.4"/><path d="M12 19.5v-7M9.2 15.3 12 12.5l2.8 2.8"/>',
-    entercode: '<rect x="3.5" y="7" width="17" height="10" rx="2.6"/><path d="M7.5 12h.01M10.5 12h.01M13.5 12h.01M16.5 12h.01"/>',
-    credits: '<path d="M12 19.5s-7.2-4.4-7.2-9.6A4 4 0 0 1 12 7.6a4 4 0 0 1 7.2 2.3c0 5.2-7.2 9.6-7.2 9.6z" fill="currentColor"/>',
-    study: '<path d="M12 6.5C10.4 5.2 8 4.6 4.5 4.8v12.7c3.5-.2 5.9.4 7.5 1.7 1.6-1.3 4-1.9 7.5-1.7V4.8c-3.5-.2-5.9.4-7.5 1.7z"/><path d="M12 6.5v12.7"/>',
-    sync: '<path d="M7.5 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.7 3.7 0 0 1-.8 7.4z"/><path d="M9.3 13.6l1.9 1.9 3.6-3.7"/>',
+    sound: '<path d="M3.6 9.6h3.1l4.8-4.1v13l-4.8-4.1H3.6z"/><path d="M15.2 9.2a4 4 0 0 1 0 5.6"/><path d="M17.9 6.6a7.7 7.7 0 0 1 0 10.8"/>',
+    study: '<path d="M12 7C10.3 5.6 7.6 5 3.8 5.2v13c3.8-.2 6.5.4 8.2 1.8 1.7-1.4 4.4-2 8.2-1.8v-13C16.4 5 13.7 5.6 12 7z"/><path d="M12 7v13"/>',
+    effects: '<path d="M10 3.8l1.6 4.6 4.6 1.6-4.6 1.6L10 16.2l-1.6-4.6L3.8 10l4.6-1.6z"/><path d="M17.6 14.2l.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8z"/>',
+    motion: '<circle cx="14.6" cy="12" r="5.2"/><path d="M3.6 8.6h4.2M2.8 12h4.2M3.6 15.4h4.2"/>',
+    sync: '<path d="M19.4 12a7.4 7.4 0 0 1-12.7 5.2"/><path d="M4.6 12a7.4 7.4 0 0 1 12.7-5.2"/><path d="M17.3 3.6v3.6h-3.6"/><path d="M6.7 20.4v-3.6h3.6"/>',
+    trophy: '<path d="M7.8 4.4h8.4V10a4.2 4.2 0 0 1-8.4 0z"/><path d="M7.8 6.4H5a2.8 2.8 0 0 0 3.1 3.7"/><path d="M16.2 6.4H19a2.8 2.8 0 0 1-3.1 3.7"/><path d="M12 14.2v3.6"/><path d="M8.6 19.6h6.8"/>',
+    share: '<path d="M12 3.6v11"/><path d="M8.2 7.4 12 3.6l3.8 3.8"/><path d="M8.6 10.4H7.2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h9.6a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1.4"/>',
+    update: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.6v8.4"/><path d="M8.6 12.6 12 16l3.4-3.4"/>',
+    advanced: '<path d="M4 7.6h8.6M17.8 7.6H20M4 16.4h2.2M11.4 16.4H20"/><circle cx="15.2" cy="7.6" r="2.4"/><circle cx="8.8" cy="16.4" r="2.4"/>',
+    install: '<rect x="4" y="4" width="16" height="16" rx="4.4"/><path d="M12 8.4v7.2M8.4 12h7.2"/>',
+    bug: '<rect x="8.2" y="7.6" width="7.6" height="12" rx="3.8"/><path d="M12 11.6v8M9.6 7.8 8 5.6M14.4 7.8 16 5.6M8.2 11.6H4.6M8.2 15.6H5M15.8 11.6h3.6M15.8 15.6H19"/>',
+    history: '<path d="M4.2 12a7.8 7.8 0 1 0 2.3-5.5L4.2 8.8"/><path d="M4.2 4.6v4.2h4.2"/><path d="M12 8v4.4l2.8 1.8"/>',
+    cloudoff: '<path d="M8.2 18.4H17a3.8 3.8 0 0 0 1.2-7.4A6 6 0 0 0 7.4 8.6a4.6 4.6 0 0 0 .8 9.8z"/><path d="M4.6 4.6l14.8 14.8"/>',
+    haptics: '<rect x="8.2" y="4" width="7.6" height="16" rx="2.2"/><path d="M4.6 9.2v5.6M19.4 9.2v5.6"/>',
+    swipe: '<path d="M19.4 12H7.4"/><path d="M11.4 7.8 7.2 12l4.2 4.2"/><path d="M4.2 6.8v10.4"/>',
+    forward: '<path d="M5.2 6.6 10.6 12l-5.4 5.4"/><path d="M12.6 6.6 18 12l-5.4 5.4"/>',
+    star: '<path d="M12 4.2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.6l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/>',
+    party: '<path d="M4.2 19.8 8.8 7.8l7.4 7.4z"/><path d="M13.6 3.8v2.2M18 10.4h2.2M16.4 5.6 18 4"/><path d="M11.4 9.8c1.2-1.6 3.2-2.2 4.8-1.4"/>',
+    key: '<circle cx="8" cy="12" r="3.8"/><path d="M11.8 12H20M17.2 12v3M20 12v2.6"/>',
+    cloudup: '<path d="M7.6 18.4a4.4 4.4 0 0 1-.6-8.8 6 6 0 0 1 11.3 1.6 3.6 3.6 0 0 1-.8 7.2"/><path d="M12 19.6v-7.2M9.2 15.2 12 12.4l2.8 2.8"/>',
+    entercode: '<rect x="3.6" y="7" width="16.8" height="10" rx="2.6"/><path d="M7.6 12h.01M10.6 12h.01M13.6 12h.01M16.6 12h.01"/>',
+    credits: '<path d="M12 19.6s-7.4-4.4-7.4-9.8A4.1 4.1 0 0 1 12 7.4a4.1 4.1 0 0 1 7.4 2.4c0 5.4-7.4 9.8-7.4 9.8z"/>',
     tap: '<path d="M10 11V5.8a1.6 1.6 0 0 1 3.2 0V11"/><path d="M13.2 10.2a1.6 1.6 0 0 1 3.2 0v1.2a1.6 1.6 0 0 1 3.1.5v2.6a6 6 0 0 1-6 6h-.8a5.6 5.6 0 0 1-4.5-2.3l-2.7-3.7a1.5 1.5 0 0 1 2.3-1.9L10 14.6"/>',
-    pause: '<circle cx="12" cy="12.5" r="7.5"/><path d="M12 8.5v4.2l2.6 1.6"/><path d="M9.5 2.8h5"/>'
+    pause: '<circle cx="12" cy="12.8" r="7.4"/><path d="M12 8.8v4.2l2.6 1.6"/><path d="M9.6 3h4.8"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
   tile.dataset.tile = kind;
   tile.style.setProperty("--tile", settingsTileColor(kind));
   tile.setAttribute("aria-hidden", "true");
-  tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
     + (paths[kind] || "") + "</svg>";
   return tile;
 }
@@ -118525,66 +118524,71 @@ function settingsSubPage(title, cls){
    name row bold with the role on the right, then what they did as rows.
    No links or handles. The creator first, then the rest by surname. */
 function creditsPeople(){
-  /* Logan Preston added at Madison's ask ("You can add Logan Preston in the
-     contributors"); what he did was not said, so his credit is general -
-     Madison to confirm. */
+  /* Build 382, round 3: "Cam helped with virtual room so go on that. Darjean
+     helped with the chat. I created and designed it." Each person's role is
+     the thing they helped with; a row that is a feature in the app opens it
+     (`open`), the way the app opens it everywhere else. Logan Preston's line
+     is general until Madison says what he did. Creator first, then by
+     surname. */
+  const ifc = window.NOVA_CLASS === "ifc";
+  const chatOpen = (typeof chatDock !== "undefined" && chatDock && !ifc) ? () => openChatDock() : null;
+  const roomOpen = !ifc ? () => { cfg.mode = "vroom"; showVirtualRoomChoice(); } : null;
   return [
-    { name: "Madison Davis", role: "Creator", did: ["Design and development", "The study experience", "Building the question banks", "Ranks, badges and characters"] },
-    { name: "Bryan Darjean", role: "Layout", did: ["Screen layout feedback", "Look and feel suggestions"] },
-    { name: "Logan Preston", role: "Feedback", did: ["Early testing", "Feedback and suggestions"] },
-    { name: "Alexis Sauceda", role: "Testing", did: ["Question testing", "Answer checks", "Testing and feedback"] },
-    { name: "Cameron Wharton", role: "Ideas", did: ["Inspiration", "Game-based ideas", "Challenges and rewards ideas"] }
+    { name: "Madison Davis", role: "Creator", did: [{ t: "Created and designed Nova" }, { t: "Questions, ranks and characters" }] },
+    { name: "Bryan Darjean", role: "Chat", did: [{ t: "Chat", open: chatOpen }] },
+    { name: "Logan Preston", role: "Feedback", did: [{ t: "Testing and feedback" }] },
+    { name: "Alexis Sauceda", role: "Testing", did: [{ t: "Question testing" }] },
+    { name: "Cameron Wharton", role: "Virtual Room", did: [{ t: "Virtual Room", open: roomOpen }] }
   ];
 }
-/* "Give the total for what they helped with something cool": each name row
-   carries a small count badge, and the intro ends with the totals. */
+/* "It should look more like this. Not sure why ours has numbers for how many
+   you did and how many contributed?" No counts: two lines of thanks, then a
+   card a person - the name in bold with the role in grey, then what they did,
+   a chevron only on a row that goes somewhere. */
 function showCredits(){
   const panel = settingsSubPage("Contributors", "screen-credits");
-  const people = creditsPeople();
-  const total = people.reduce((n, p) => n + p.did.length, 0);
   const intro = document.createElement("div");
   intro.className = "credits-intro";
   const p1 = document.createElement("p");
-  p1.textContent = "These people helped build Nova for the class.";
+  p1.textContent = window.NOVA_CLASS === "ifc" ? "These people helped build Nova for the class." : "These people helped build Nova for Class 26E.";
   const p2 = document.createElement("p");
-  p2.append(document.createTextNode("Thank you to everyone who contributed, your help is much appreciated. "));
+  p2.append(document.createTextNode("Thank you to everyone who contributed. Your help is much appreciated. "));
   const heart = document.createElement("span");
   heart.className = "credits-heart"; heart.setAttribute("aria-hidden", "true");
   heart.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 20.2s-7.6-4.6-7.6-10.1A4.2 4.2 0 0 1 12 7.7a4.2 4.2 0 0 1 7.6 2.4c0 5.5-7.6 10.1-7.6 10.1z" fill="currentColor"/></svg>';
   p2.appendChild(heart);
   intro.append(p1, p2);
-  const stats = document.createElement("div");
-  stats.className = "credits-stats";
-  [[people.length, "contributors"], [total, "contributions"]].forEach(([n, w]) => {
-    const c = document.createElement("span");
-    c.className = "credits-stat";
-    const num = document.createElement("b"); num.textContent = String(n);
-    c.append(num, document.createTextNode(" " + w));
-    stats.appendChild(c);
-  });
-  intro.appendChild(stats);
   panel.appendChild(intro);
-  people.forEach(p => {
+  creditsPeople().forEach(p => {
     const card = document.createElement("div");
     card.className = "settings-card settings-list credits-card";
     const head = document.createElement("div");
     head.className = "settings-row settings-row-static credits-name-row";
     const nm = document.createElement("span");
     nm.className = "credits-name"; nm.textContent = p.name;
-    const count = document.createElement("span");
-    count.className = "credits-count";
-    count.textContent = String(p.did.length);
-    count.setAttribute("aria-label", p.did.length + (p.did.length === 1 ? " contribution" : " contributions"));
-    count.title = count.getAttribute("aria-label");
     const role = document.createElement("span");
     role.className = "settings-row-value credits-role"; role.textContent = p.role;
-    head.append(nm, count, role);
+    head.append(nm, role);
     card.appendChild(head);
-    p.did.forEach(t => {
-      const r = document.createElement("div");
-      r.className = "settings-row settings-row-static credits-item";
-      r.textContent = t;
-      card.appendChild(r);
+    p.did.forEach(d => {
+      if(d.open){
+        const r = document.createElement("button");
+        r.type = "button";
+        r.className = "settings-row credits-item credits-link";
+        const lab = document.createElement("span");
+        lab.className = "settings-row-label"; lab.textContent = d.t;
+        const chev = document.createElement("span");
+        chev.className = "settings-row-chev"; chev.setAttribute("aria-hidden", "true");
+        chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+        r.append(lab, chev);
+        r.addEventListener("click", () => d.open());
+        card.appendChild(r);
+      } else {
+        const r = document.createElement("div");
+        r.className = "settings-row settings-row-static credits-item";
+        r.textContent = d.t;
+        card.appendChild(r);
+      }
     });
     panel.appendChild(card);
   });
@@ -118592,35 +118596,29 @@ function showCredits(){
   toTop(true);
 }
 /* ---- THE FOOT OF SETTINGS (build 382) ----
-   The inspiration's DEVELOPER / OPERATIONS / DESIGNER line (role in small
-   caps, the name in the brand colour), then "Made by M. Davis" and the NOVA
-   wordmark with a slow sheen to end on ("made by M. Davis and then the word
-   nova in a nice cool way under it"). No legal text here: it is on Legal,
-   Terms of Use and Privacy. */
+   "Don't put the contributions there, that's what the contributors section
+   is for. Where it says made by m. Davis have it just say made by Davis but
+   make it look nice." A signature and the name, nothing else: "MADE BY"
+   small and tracked in grey, "Davis" in the wordmark's serif, italic, in the
+   brand gradient, then the NOVA wordmark with its slow sheen (off with Reduce
+   motion). No legal text here either: Legal, Terms of Use and Privacy. */
 function buildCreditsFooter(){
   const wrap = document.createElement("div");
   wrap.className = "settings-foot";
-  const box = document.createElement("div");
-  box.className = "settings-credits-footer";
-  creditsPeople().forEach(p => {
-    const cell = document.createElement("div");
-    cell.className = "settings-credits-cell";
-    const r = document.createElement("span");
-    r.className = "settings-credits-role"; r.textContent = p.role;
-    const n = document.createElement("span");
-    n.className = "settings-credits-name"; n.textContent = p.name;
-    cell.append(r, n);
-    box.appendChild(cell);
-  });
   const made = document.createElement("p");
-  made.className = "settings-madeby"; made.textContent = "Made by M. Davis";
+  made.className = "settings-madeby";
+  made.setAttribute("aria-label", "Made by Davis");
+  const by = document.createElement("span");
+  by.className = "settings-madeby-by"; by.textContent = "Made by";
+  const who = document.createElement("span");
+  who.className = "settings-madeby-name"; who.textContent = "Davis";
+  made.append(by, who);
   const mark = document.createElement("p");
   mark.className = "settings-wordmark"; mark.setAttribute("aria-label", "Nova");
   const word = document.createElement("span");
   word.className = "settings-wordmark-text"; word.textContent = "NOVA";
-  word.dataset.text = "NOVA";
   mark.appendChild(word);
-  wrap.append(box, made, mark);
+  wrap.append(made, mark);
   return wrap;
 }
 /* ---- LEGAL, TERMS OF USE, PRIVACY (build 382) ----
@@ -118652,7 +118650,7 @@ function showSettingsText(kind){
     if(window.NOVA_CLASS !== "ifc") block("Leaderboard", ["Show me in the rankings shares only your username, avatar and your ranking numbers. With it off, you can't see the rankings either."]);
     block("Bug reports", ["Your report goes to the Nova admin, with your first name, app version and device attached so the problem can be tracked down and fixed."]);
   } else {
-    block("", lines);
+    block("Notices", lines);
   }
   stage.replaceChildren(panel);
   toTop(true);
@@ -119492,7 +119490,7 @@ function showAppearance(opts){
       study:  ["Study", [studyDetails]],
       motion: ["Motion & Effects", [motionDetails]],
       sync:   ["Sync", [syncSect]],
-      share:  ["Share & Install", [shareCard]]
+      share:  ["Share & Install", [settingsHeader("This app"), shareCard]]
     };
     if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
     const def = PAGES[page];
@@ -119521,17 +119519,21 @@ function showAppearance(opts){
     };
     const tabNoSound = !!(NovaSound.tabOff && NovaSound.tabOff());
     const vol = Math.round((typeof theme.soundVolume === "number" ? theme.soundVolume : SOUND_DEFAULT_VOLUME) * 100);
+    /* "Ensure each [group] of stuff is labeled like this is" (build 382) */
+    host.appendChild(settingsHeader("General", "settings-group-general"));
     host.appendChild(card("settings-menu-first", [
       cat("sound", "sound", "Sound & Haptics", (theme.soundOn && !tabNoSound) ? vol + "%" : "Off"),
       cat("study", "study", "Study", theme.autoAdvance ? "Auto-advance" : null),
-      cat("motion", "motion", "Motion & Effects", theme.reduceMotion ? "Reduced" : null)
+      cat("motion", "effects", "Motion & Effects", theme.reduceMotion ? "Reduced" : null)
     ]));
+    host.appendChild(settingsHeader("Account", "settings-group-account"));
     host.appendChild(card("", [
       cat("sync", "sync", "Sync", !fbDb ? "Unreachable" : (syncCode ? "On" : "Off")),
       noBoard ? null : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
     dataSect.classList.add("settings-menu-card");
     dataSect.replaceChildren(cat("share", "share", "Share & Install"), updBtn, ...dataSect.children);
+    host.appendChild(settingsHeader("App", "settings-group-app"));
     host.appendChild(dataSect);
 
     host.appendChild(settingsHeader("Credits", "settings-credits"));
