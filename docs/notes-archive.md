@@ -30673,3 +30673,37 @@ Madison on round 1: "This is fire code. We are fire prevention agency." No fire 
 
 Gate: check-b382-ifcart is extended, with round 1 hashes from 9ab1bc6. It fails 10 checks there.
 Pending Madison's look: the sheets in the scratchpad, ifc-art-sheet-2.png and ifc-hundo-sheet.png.
+
+### 382: Settings is a menu (his inspirations, round 2; merged 2026-11-02)
+Madison: "they all are there own tab where you click and get more information? ... All the copyright stuff ... should be in another thing towards the bottom"
+
+**How the menu is built**
+- `showAppearance` builds every control as before, into a holder.
+- The menu (`into`) shows category rows: `settingsRow` plus a grey value.
+- `showAppearance({page})` mounts one category as a `settingsSubPage`. The pages are sound, study, motion, sync, rankings (not in Fire Code) and share.
+- Back, the bug report and version history return to the menu.
+- The save-code banner opens the Sync page.
+- When Firebase arrives, an open page is redrawn in place.
+
+**Credits and Support**
+- Credits: Contributors and Legal (`settingsPlainRow`).
+- Support: Report a bug, Version history, Terms of Use and Privacy (`settingsLinkRow`, coloured `--theme-c1`).
+- `showSettingsText(legal|terms|privacy)`:
+  - Legal is `buildLegalNote("settings")` word for word.
+  - Privacy only repeats what the app already says.
+
+**Foot**
+- The roles (`creditsPeople`) come first. There are now 5 people, including Logan Preston, whose credit is general until Madison confirms what he did.
+- Then "Made by M. Davis" and the NOVA serif gradient wordmark with a sheen. The sheen is off with Reduce motion.
+- There is no legal text on the menu.
+
+**New theme switches**
+- `tapSounds` silences "ui." sounds in `NovaSound.play`. Haptics are kept.
+- `autoAdvanceLong` uses `AUTO_ADVANCE_LONG_MS` (1100).
+- Skip celebrations moved to Motion & Effects.
+
+**Gates**
+- check-b382-credits was rewritten. Its Fire Code seed needs the owner's publicId.
+- check-b382-settings was updated. Both fail on the code before.
+- toggles, behaviour b218/b324g and sync were updated to open the pages.
+- About 20 older gates still call `showAppearance()` expecting switches on the menu. They are to be pointed at the pages before the final run.
