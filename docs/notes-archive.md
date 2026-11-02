@@ -30594,3 +30594,255 @@ Madison: "The leaderboard is still very glitchy when opening it up" / "it could 
   Warm-board timing (recorded loops) unmeasurable at load 23-36 - phone check.
 - CHECK-SYNC on the merged build (Fire Code + Settings + slide + test + ...): "the restored account is what goes up, to the account
   and the floor" FAILED (pushed None) - being compared against 381 before shipping.
+- CHECK-SYNC 8f "the restored account is what goes up" (382): failed on the merged 382 in full runs, passed on 381 once. Isolated
+  (tools section 8f alone, 3+3 runs, push timed): the restored account always goes up correctly (17,585 / 13) on BOTH builds, 4.8-7.6s
+  after launch under load (381: 7.6/5.6/4.9s; 382: 5.3/4.8/6.1s) - the gate's fixed 4.2s wait was the flake, not the app. 8f now waits
+  for the push (up to 12s) and checks the same values.
+
+## PLAN (decided 2026-11-02, after build 382 ships, NOT built yet): username + password accounts replace the sync code
+Madison, after weighing Google sign-in and email: "Yeah just a username and password may be the safest choice. If someone forgets
+their username or password. They would need to let me know or there would be a notify admin, I'd be notified and then I could ask you
+to give them the reset option.. would be best." Decisions:
+- Firebase Authentication email/password provider used for USERNAME + password only - no real emails collected (a synthetic
+  address derived from the username, never shown); passwords held by Firebase only. Google sign-in and email resets were considered
+  and dropped (personal data + Home Screen redirect issues); an optional reset email may be added later if resets get frequent.
+- "Forgot your username or password?" on sign-in sends an ADMIN REQUEST (like bug reports: a document the admin tools list) -
+  nothing resets automatically. The owner asks a session to reset; the session uses the admin key (environment only, never in the
+  app or repo) via tools/firestore-admin.py to set a one-time temporary password (or read back the username); the app forces a new
+  password on first sign-in with it.
+- Firestore security rules locked per user (uid): own account/progress read+write only; leaderboard readable by signed-in users,
+  writable only on one's own row; requests write-only. The owner pastes the rules and enables the provider in the Firebase console
+  (step-by-step instructions to be given).
+- Migration: an existing account signs in once with its sync code, picks a username + password, progress carries over; sync codes
+  kept only as a fallback during the switch. Fire Code currently has no cloud - accounts there are a separate decision.
+- Test against a separate Firebase test project / on his phone first (the sandbox cannot reach Firebase).
+
+## 382: BACK TO TOP, THE START SHEET'S DIM, UNIT DETAILS (merged 2026-11-02)
+
+**(a) Back to top stays at the bottom.** Madison: "The scroll back to top button randomly disappears when you are at the bottom."
+- `backToTopBlocked()` hid the button whenever anything tappable sat under it in the last 260px of a page. On Topics that was always true (the last unit card); elsewhere it was chance.
+- NOW the button shows on scroll position alone (on past 320, off under 180).
+- `backToTopRoom()` gives `#stage` just enough padding-bottom that, at the very end, the last control sits 8px above the button. It measures the last 40 tappable items and skips fixed elements. It runs when the screen or window changes, resets per screen, and adds 0 on screens that can't scroll past 320.
+- The one exception is `.dailyq-outro`: the app scrolls it over the Exit pill, so the button still steps aside there.
+- Measured padding: Topics +70px (Pro Max, iPhone 15), +36px (SE), 0 on iPad.
+
+**(b) The Start sheet's dim leaves with it.** Madison: "the background goes from dark to light too late."
+- The scrim stayed fully dim until `onDismiss()` hid the modal, then vanished in one frame about 500ms after the close began.
+- NOW `attachSheetSwipe` changes only opacity. The scrim (the sheet's sibling) fades with the pull (1 − pull/height), fades out over the slide's own time and curve, and springs back with the sheet. `unitoptions-scrim-in` (.25s) fades it in.
+- Tap-to-close still hides the sheet and the dim together in one frame.
+
+**(c) Unit details: Starred and Back without the wait.**
+- Back now resizes the card on the tap. The old code waited for a 320ms `setTimeout`.
+- `pinPane()` pins both panes to a fixed px height while the card moves.
+- `.was-listing` drops the .16s stats delay.
+- Stale list panes are removed first, which also fixes a 520px card under an open list.
+- Open: in Chromium, any element inserted into `<body>` re-styles the whole page (~200 elements) because of three `:has()` rules: `.wrap:has(> #stage > .screen-home-actual)`, `.pick:has(input:checked) > .box`, and the tier-cutscene `:not(:has(> .cosmic-badge-lit))`. Not checked in Safari.
+
+Gate: `tools/check-b382-screens.py`. 65/65 on 382; fails 31 checks on 381.
+
+## PLAN REVERSED (2026-11-02): NO USERNAME + PASSWORD ACCOUNTS. THE SYNC CODE STAYS.
+Madison, after weighing admin resets, recovery keys and recovery emails: "I think the sync code option may just be best at the moment. We just have to ensure it's apparent that the user needs to remember the code and write it down or something when they receive it and we have to absolutely sure people can't be randomly logged out. So nvm, no username and password yet. I don't like the idea of being responsible for someone's username and email and stuff cause I'd be afraid something would happen and I'd be held liable."
+- The "PLAN (decided 2026-11-02 ...)" entry above is withdrawn. Do not build Firebase Auth, passwords or recovery emails unless he asks again.
+- 382 instead: make saving the code unmistakable when it is first given, and re-audit every path that could sign someone out.
+
+## Build 382 round 2 - Fire Code art for a prevention agency (merged 2026-11-02)
+Madison on round 1: "This is fire code. We are fire prevention agency." No fire helmets, engines, ladders, crews or dogs.
+
+**IFC_CHAR_LOOK**
+- Inspector: uniform, shield, mic, tablet; the glasses kept.
+- Chief: dress blues and a peaked cap.
+- Investigator, K9 Officer (the handler only), Logistics, Horn Strobe, Sprinkler Head, Drone Pilot, Dispatcher.
+- Flares: Breacher, Recon, Thermal, Flashbang.
+- Ultimates: Cyber Marshal, Grand Marshal, Commander.
+- Smoke Diver is kept. The Hazmat placard is rebuilt: shared corners, mitred edges.
+- Characters seat at -0.4 so chest gear stays in the circle. The Drone Pilot art is drawn at 0.86 scale.
+- New motions: cx-fx-fcbeam, fcwave, fcflash, fcspray, fchover, fcrotor, fcradar, fcholo.
+- HFX_FACE_FIX is dropped for these ids in Fire Code.
+
+**IFC_BANNER_ART**
+- New banners: Headquarters, Spill Response, Field Kit, Alarm Panel, Hazmat, Code 3, Grand Marshal.
+- Air Tanker is redrawn. The Code Book banner has no helmet.
+- Fire Watch and Dispatch are now layered.
+- Every non-rank Fire Code banner moves (fbSUV, fbDrum, fbPlacard, fbSuit).
+
+**IFX_DEF / IFX_BUILD (hundo effects)**
+- In Fire Code, fireworks, underwater, bubbles and ufo play Sirens, Sprinklers, Hazmat and Fire Alarm.
+- Ids, counts and picks are unchanged.
+- Each has its own tile, still, totals, tint and SND_IFX sound. The reaction is the same as confetti's.
+- Confetti is untouched.
+
+Gate: check-b382-ifcart is extended, with round 1 hashes from 9ab1bc6. It fails 10 checks there.
+Pending Madison's look: the sheets in the scratchpad, ifc-art-sheet-2.png and ifc-hundo-sheet.png.
+
+### 382: Settings is a menu (his inspirations, round 2; merged 2026-11-02)
+Madison: "they all are there own tab where you click and get more information? ... All the copyright stuff ... should be in another thing towards the bottom"
+
+**How the menu is built**
+- `showAppearance` builds every control as before, into a holder.
+- The menu (`into`) shows category rows: `settingsRow` plus a grey value.
+- `showAppearance({page})` mounts one category as a `settingsSubPage`. The pages are sound, study, motion, sync, rankings (not in Fire Code) and share.
+- Back, the bug report and version history return to the menu.
+- The save-code banner opens the Sync page.
+- When Firebase arrives, an open page is redrawn in place.
+
+**Credits and Support**
+- Credits: Contributors and Legal (`settingsPlainRow`).
+- Support: Report a bug, Version history, Terms of Use and Privacy (`settingsLinkRow`, coloured `--theme-c1`).
+- `showSettingsText(legal|terms|privacy)`:
+  - Legal is `buildLegalNote("settings")` word for word.
+  - Privacy only repeats what the app already says.
+
+**Foot**
+- The roles (`creditsPeople`) come first. There are now 5 people, including Logan Preston, whose credit is general until Madison confirms what he did.
+- Then "Made by M. Davis" and the NOVA serif gradient wordmark with a sheen. The sheen is off with Reduce motion.
+- There is no legal text on the menu.
+
+**New theme switches**
+- `tapSounds` silences "ui." sounds in `NovaSound.play`. Haptics are kept.
+- `autoAdvanceLong` uses `AUTO_ADVANCE_LONG_MS` (1100).
+- Skip celebrations moved to Motion & Effects.
+
+**Gates**
+- check-b382-credits was rewritten. Its Fire Code seed needs the owner's publicId.
+- check-b382-settings was updated. Both fail on the code before.
+- toggles, behaviour b218/b324g and sync were updated to open the pages.
+- About 20 older gates still call `showAppearance()` expecting switches on the menu. They are to be pointed at the pages before the final run.
+
+### 382: the Leaderboard and the Calendar in Settings' language (clean iOS; merged 2026-11-02)
+Madison: "the rest of the app has that nice new look ... leaderboard could have such a nice look ... calendar could be a smidge better ... clean clean clean CLEAN IOS".
+
+**Title**
+- #count is the page's big bold title on .screen-rankings and .screen-calendar-tab (2rem; 2.25rem on tablet).
+- There is no second heading in the panel.
+
+**Board**
+- The switch is an iOS segmented control: 44px segments, the slider restyled, full column width.
+- The search field is filled, with the placeholder on the left. Find me is tinted with the accent.
+- The top three are each their own card: a 1px metal ring at .62, a faint corner light, medals without the glow, names in ink.
+- 4th place down is ONE grouped card:
+  - The rows touch and only the ends are rounded.
+  - The ::after hairline starts at --lb-hair-l, the name's x.
+  - Row padding is .45rem, so every row is exactly --lb-row-h.
+- Your row gets an accent wash and your place in the accent. It has a ring only on the podium.
+- Placeholders 1-3 carry .rank-skel-podium(-N), so the podium cards land exactly where the placeholders stood (0px shift).
+- Skeletons pulse their bars, not the row.
+
+**Calendar**
+- Cards are flat, 20px corners, no frost. This rule beats the (0,5,0) `.screen-calendar :is(...).points-progress-sect` rule.
+- Headings are grey sentence case.
+- Topics are rows with hairlines between them.
+- Today is the accent's circle: filled when it is the picked day, a ring otherwise. On tablet, only today's number gets the circle.
+- Any other picked day gets a grey fill.
+
+**Gates**
+- tools/check-b382-ios.py: 40 fail on the build before.
+- check-b382-board's look checks were updated for the new your-row and the sentence-case captions.
+
+### 382: Contributors like Delta's, every group labelled, the tiles redrawn (merged 2026-11-02)
+Madison: "Not sure why ours has numbers ... Cam helped with virtual room ... Darjean helped with the chat. I created and designed it" / "Don't put the contributions there ... just say made by Davis but make it look nice. Ensure each [group] of stuff is labeled" / "Look at how nice those icons look".
+
+**Contributors**
+- `creditsPeople` rows are {t, open}.
+- Chat opens `openChatDock()`.
+- Virtual Room opens `showVirtualRoomChoice()`. It is academy only and plain text in Fire Code.
+- No counts and no totals.
+- Cards have 20px corners and sit 28px apart. Rows are 52px. Hairlines are inset 18px at both ends.
+- Logan's line is a placeholder until Madison says what he helped with.
+
+**Footer**
+- "MADE BY", then "Davis" in an italic serif with the brand gradient, then NOVA.
+- No names grid.
+
+**Labels**
+- The menu groups are General, Account, App, Credits and Support.
+- The Share page's group is labelled "This app"; Legal's is labelled "Notices".
+
+**Tiles**
+- One line-icon family: 1.6 stroke, none filled.
+- 30px squircles with 7px corners, each with its own-hue vertical gradient and a half-pixel rim.
+- 14px gap to the label.
+- Check for update is green.
+
+**Gate**
+- check-b382-credits: 13 fail on e3aa7a8.
+
+- Logan Preston, confirmed by Madison 2026-11-02: "Logan helped with the question bank and test format and stuff." Role "Questions"; rows "Question bank", "Test format".
+
+### 382: Units screen, faster and in Settings' look (merged 2026-11-02)
+
+**Cause of the lag: the `:has()` invalidation set**
+- Three card rules made every `:has()` re-check under `<body>` restyle every card, about 680 elements a tick:
+  - `:has(input:checked) > .box`
+  - `:has(> .pick-version) > .pname`
+  - `:not(:has(.pick-barrow)) > .pcount`
+- A bare `svg` in a cutscene rule did the same.
+- These are now classes: `.pick-checked`, `.has-version`, `.pick-mastered`, and `--cib-dim` for the cutscene.
+- RULE: never put a common element (svg, `.pname`, `.box`) to the right of a `:has()`.
+
+**Other speed fixes**
+- Card badges are one cached `<img>` each (`cardBadgeSVG`). A badge stays live SVG only while its token render is a draft.
+- Haptic switches read every size before writing anything (`hswOptMeasure`).
+- Back-word centring is cached per width.
+- Counts are made once when the screen opens.
+- The next-test lookup is cached for a second.
+
+**Measured** (CPU ×4, base → 382)
+- Open: 374 → 243ms main thread.
+- Elements restyled per tick: 682 → 217.
+- Elements restyled per scroll: 74 → 4.
+
+**Look**
+- Settings' header: round back button, centred "Choose your units".
+- Levels are an iOS segmented control.
+- Select all and Starred are flat 44px pills.
+- Cards are flat tiles. A picked card gets an accent check inside its corner, or on the corner below 400px wide.
+
+**Changed outside the screen**
+- the cutscene rule
+- `centerBackWord()`
+- `hswOptMeasure` / `hswOptAttach`
+- the tab-search placement observer
+
+**Gate:** check-b382-units. It fails 9 of 13 on the base.
+
+**Open (other areas)**
+- Badge warm-up uses about 60% of the main thread 5–15s after launch.
+- The first-tap sound prewarm is a 170–400ms task.
+- check-b380's switch-timing check finds no switch (probably the Settings menu); recheck in the final run.
+- check-positions flags `showWelcomeCharacterPrompt` scrolling on 3 laptop sizes; recheck against the base.
+
+## Build 382 round 3 - Fire Code: the agency's own look (merged 2026-11-02)
+Madison: "We don't wear police styled hats. We wear cowboy hats" / "white Chevy pickups, think of game wardens" / "I don't like the police lights one.. or fire alarm one".
+
+**Characters** (same ids)
+- Inspector: back toward round 1, in a silverbelly hat and khaki shirt, with the glasses and clipboard.
+- Chief: western. White hat, sport coat, bolo, gold star.
+- Investigator: the agency's blue with a dark felt hat.
+- clown -> "Strobe": a sleek red machine with a flashing visor.
+- Plans Examiner and Public Educator replace K9 Officer and Logistics.
+- Dispatcher: back toward round 1.
+- Drone Pilot: FPV goggles and a racing drone.
+- Sprinkler Head: chrome.
+- Hazmat: round 1's drawing, with the placard whole.
+  - The placard is classed `fc-placard`, not `cx-`, because `[class*="cx-"]` gets `transform-box:fill-box`, which moves a transform attribute.
+- Whiteout (the winter concept) and a new Flashbang.
+- Ultimates, one space-fire set: Nebula Marshal, Star Ranger, Solar Flare (fcOrbit, cx-fx-fccorona).
+- Kept: Breacher, Recon and Smoke Diver.
+- Hats are fcCowboy (cx-fc-hat-<kind>). fcCap is removed.
+
+**Banners**
+- fbPickup replaces fbSUV (Headquarters, Code 3).
+- Exit replaces Fire Watch (hundos100).
+- Code Book is redone without the badge or clipboard.
+- Nebula, Star Ranger and Solar Flare banners for the ultimates.
+- All other banners are as round 2 left them.
+
+**Hundo effects**
+- fireworks -> Emergency Lights (ifxEmergency).
+- ufo -> Fire Alarm, rebuilt: a wall strobe at 1 Hz, a bloom, the panel, and a NORMAL reset.
+- Both have their own tiles, stills and SND_IFX sounds.
+- A WAAPI easing on a multi-keyframe animation warps the whole timeline, so keep those linear.
+
+**Gate:** check-b382-ifcart holds the R2 hashes as "before". 14 fail there, 39 pass after.
+
+**MERGE HAZARD seen here:** the art branch's commit was made over an older tree. A plain merge deleted check-b382-ios/units and reverted the Leaderboard, Contributors and units work. It was caught before pushing, reset, and applied as a patch from the branch's real base (e3aa7a8). Always read a merge's --stat for deletions before pushing.

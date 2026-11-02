@@ -270,7 +270,7 @@ with sync_playwright() as pw:
                         "localStorage.setItem('class26e.synccode','WXYZ-7777');}catch(e){}" % STORE)
     pg = page(ctx); pg.goto(URL); pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake([]);}")
-    pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(700)
+    pg.evaluate("()=>showAppearance({ page: 'sync' })"); pg.wait_for_timeout(700)   # build 382: Sync is its own page
     pg.evaluate("()=>document.querySelector('.sync-code-row').scrollIntoView({block:'center',behavior:'instant'})")
     pg.wait_for_timeout(300)
     """THE SAVE CODE BUTTON IS GONE, ON REQUEST, AND THIS CHECK WAS
@@ -924,7 +924,11 @@ with sync_playwright() as pw:
       if(cb) cb({ exists: true, metadata: { fromCache: false }, data: () => clone(server) });
       await wait(400);
       out.floorWritesBeforeRead = writes.filter(w => /__floor$/.test(w.id)).length;
-      await wait(4200);
+      /* build 382: WAIT FOR THE PUSH, not a fixed 4.2s. Measured on 381 and 382 alike under load: the restored account goes up
+         4.8-7.6s after launch (the floor read alone is a 1.5s stand-in, then the push's own gap) - a fixed wait failed on either
+         build whenever the machine was slow. What goes up is still checked exactly as before. */
+      for(let i = 0; i < 120 && !writes.some(w => w.id === 'NOVA-2602'); i++) await wait(100);
+      await wait(600);
       const prog = writes.filter(w => w.id === 'NOVA-2602'), fl = writes.filter(w => /__floor$/.test(w.id));
       const lastP = prog[prog.length - 1] || {}, lastF = fl[fl.length - 1] || {};
       out.restored = { local: store.lifetime.points, localU: (store.unitPerfects || {}).U, cred: store.creditsApplied,
