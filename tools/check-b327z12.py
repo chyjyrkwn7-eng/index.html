@@ -199,10 +199,13 @@ def profile_friends(br):
       return { kinds: kids.map(e => e.classList.contains('profile-hero') ? 'hero' : e.classList.contains('pf-goal') ? 'goal' : e.classList.contains('pf-case') ? 'case' : e.className),
         nested: !!hero.querySelector('.pf-goal, .pf-case'), friendBox: !!document.querySelector('#stage .profile-friendcard'),
         glass: cs.backgroundImage.endsWith(want.slice(want.indexOf('linear-gradient'))) && cs.backdropFilter === blur,
+        surface: /linear-gradient\(rgb\(20, 23, 28\) 0%, rgb\(11, 13, 17\) 100%\)$/.test(cs.backgroundImage),
         gaps: rects.slice(1).map((r, i) => Math.round(r.top - rects[i].bottom)) }; }""")
     check("%s: Q. Profile is three cards - you, the next rank, the case - none inside another (%s)" % (label, r["kinds"]),
           r["kinds"][:3] == ["hero", "goal", "case"] and not r["nested"] and all(g >= 8 for g in r["gaps"]), r)
-    check("%s: Q. the top card is the person card's glass (its body and frost under the pools)" % label, r["glass"], r)
+    # SUPERSEDED LATER IN 327z (notes: "THE THREE PROFILE CARDS, ONE FAMILY: hero, next-rank card and the case's body all on the person
+    # card's surface (linear #14171C -> #0B0D11 ...), each with one colour pool at the top"): the top card is that surface, under its pools
+    check("%s: Q. the top card is on the person card's surface (#14171C -> #0B0D11, under its pools)" % label, r["surface"], r)
     check("%s: Q. no Friends box on Profile" % label, not r["friendBox"], r)
     hid = pg.evaluate("""async () => { showProfile('stats'); await new Promise(r => setTimeout(r, 700));
       const t = document.querySelector('#stage .profile-identity-tab'); return t ? { hidden: t.hidden, shown: getComputedStyle(t).display !== 'none' } : null; }""")

@@ -26,6 +26,8 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["g"]["CHROME"])
     ctx, pg = g["page_for"](br, "promax")
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+    # build 380 made every loop a window-sized layer by default (html.loops-paint); this gate measures the looks against the old layers
+    pg.evaluate("()=>document.documentElement.classList.remove('loops-paint')")
     pg.evaluate(FILL); pg.wait_for_timeout(300)
     pg.evaluate("()=>showRankings()")
     PROBE = "()=>{ const vis=[...document.querySelectorAll('.screen-rankings .rank-rows > .rank-row')].filter(r=>{const b=r.getBoundingClientRect(); return b.top<innerHeight-90 && b.bottom>60;}); return [vis.length, vis.filter(r=>r.querySelector('.char-flip-play')).length, vis.filter(r=>r.querySelector('.cosmic-rank-anim')).length]; }"
@@ -128,7 +130,7 @@ with sync_playwright() as pw:
     looks = re.findall(r"\[b:(\w+)\] r p(\d+) \(([\d,]+)\) idle w(\d+)/s(\d+)/n(\d+)/f(\d+) \| p p(\d+)", res[0]) if res else []
     names = [l[0] for l in looks]
     chk("Report a bug has the Leaderboard speed test (%s); it reports every look three times (%s) and leaves the page as it was (%s)" % (btn, names, res[1:] if res else res),
-        btn and names in (["base", "paint", "hold", "noloops", "nofx", "noglass", "norows"], ["base", "paint", "paintwin", "noloops", "norows"], ["base", "nostill", "paintwin", "noloops", "norows"]) and all(len(l[2].split(",")) == 3 and int(l[1]) > 0 and int(l[7]) > 0 for l in looks) and res[1] is True and res[2] is False and res[3] is False,
+        btn and names in (["base", "paint", "hold", "noloops", "nofx", "noglass", "norows"], ["base", "paint", "paintwin", "noloops", "norows"], ["base", "nostill", "paintwin", "noloops", "norows"], ["base", "layers", "noloops", "norows"]) and all(len(l[2].split(",")) == 3 and int(l[1]) > 0 and int(l[7]) > 0 for l in looks) and res[1] is True and res[2] is False and res[3] is False,
         res)
     pg.evaluate("()=>document.documentElement.classList.remove('lb-paint')")
     br.close()

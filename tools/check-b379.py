@@ -26,6 +26,8 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["g"]["CHROME"])
     ctx, pg = g["page_for"](br, "promax")
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+    # build 380 made every loop a window-sized layer by default (html.loops-paint); the still-first board and paintwin are measured against the old layers
+    pg.evaluate("()=>document.documentElement.classList.remove('loops-paint')")
     pg.evaluate(FILL); pg.evaluate("()=>showRankings()")
     t0 = time.time()
     while time.time() - t0 < 120:
@@ -67,7 +69,7 @@ with sync_playwright() as pw:
     # (4)
     looks = pg.evaluate("()=>typeof BOARD_TEST_LOOKS!=='undefined' ? BOARD_TEST_LOOKS.map(l=>l[0]+':'+l[2]) : null")
     chk("the speed test's looks are base, nostill, paintwin, noloops, norows (%s)" % (looks,),
-        looks == ["base:", "nostill:lb-nostill", "paintwin:lb-paint lb-win", "noloops:", "norows:"], looks)
+        looks in (["base:", "nostill:lb-nostill", "paintwin:lb-paint lb-win", "noloops:", "norows:"], ["base:", "layers:-loops-paint", "noloops:", "norows:"]), looks)
     # (5) still first, then a row a frame
     pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1500)
     L = pg.evaluate("""async()=>{ const el=document.getElementById('bottomtab-rewards'); const b=el.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;

@@ -30,9 +30,11 @@ with sync_playwright() as pw:
         qSvg: (q.querySelector('svg')||q).innerHTML.slice(0,80), bSvg: b.querySelector('svg').innerHTML.slice(0,80), lSvg: l ? l.querySelector('svg').innerHTML.slice(0,80) : '' }; }""")
     chk("the daily question is ready in this check", "is-ready" in r["qClass"], r["qClass"])
     chk("the daily question and the class button share the glass's top light (the same first gradient)", r["qBg"].split("radial-gradient")[1][:60] == r["bBg"].split("radial-gradient")[1][:60], (r["qBg"][:140], r["bBg"][:140]))
-    chk("ready adds the rank's colour wash (a second radial gradient the class button does not have)", r["qBg"].count("radial-gradient") >= 2 and r["bBg"].count("radial-gradient") == 1, (r["qBg"][:200], r["bBg"][:200]))
+    # (380) the class button carries a breath of its class's colour in the middle now; ready's wash is the one that rises from the foot
+    chk("ready adds the rank's colour wash rising from the foot (a gradient at 118% the class button does not have)", "118%" in r["qBg"] and "118%" not in r["bBg"], (r["qBg"][:200], r["bBg"][:200]))
     chk("the class button's list buttons wear the glass too (a highlight gradient in their body)", "radial-gradient" in r["lBg"], r["lBg"][:140])
-    chk("the glass blurs a little and holds no will-change layer of its own", "blur" in r["qBlur"] and "blur" in r["bBlur"] and r["qWill"] in ("auto", "") and r["bWill"] in ("auto", ""), r)
+    # (380) "give it the same feel as the Home Screen": the rank bubbles' glass, which has no blur
+    chk("the glass is Home's bubbles' (no blur, as theirs) and holds no will-change layer of its own", r["qBlur"] in ("none", "") and r["bBlur"] in ("none", "") and r["qWill"] in ("auto", "") and r["bWill"] in ("auto", ""), r)
     chk("the same glass, a different thing in the middle (their icons differ)", r["qSvg"] != r["bSvg"] and r["bSvg"] != r["lSvg"], (r["qSvg"], r["bSvg"], r["lSvg"]))
     # the tab bar's record of what a tap did
     tabs = {t[0]: t for t in pg.evaluate("()=>[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].map(t=>{const r=t.getBoundingClientRect(); return [t.id, r.left+r.width/2, r.top+r.height/2]})")}
@@ -51,9 +53,11 @@ with sync_playwright() as pw:
         return [v * 255 for v in m] if c.startswith("color(") else m
     silver = [rgb(c) for c in stops("ranger")]
     chroma = max(max(c) - min(c) for c in silver) if silver else 999
-    chk("on the silver theme the class button's mark is plain silver (largest colour spread %d, 40 allowed)" % chroma, silver and chroma <= 40, silver)
+    # REVERSED IN 380: "Maybe the icons colors for the class should be there after all so the fire should be orange" - the mark
+    # keeps its own colours on every theme
+    chk("on the silver theme the class button's mark keeps its own colours (largest colour spread %d, over 40)" % chroma, silver and chroma > 40, silver)
     red = [rgb(c) for c in stops("titan")]
-    chk("on a colour theme the silver leans towards the theme's colour (red over blue on Titan)", red and all(c[0] - c[2] >= 12 for c in red), red)
+    chk("...and the same colours on a colour theme (Titan's red does not change them)", red and silver and red == silver, [red, silver])
     pg.evaluate("()=>{ document.documentElement.dataset.accent='ink'; }")
     # whole pixels, so the 1px rim is not drawn between two rows
     px = pg.evaluate("""()=>{ const f=e=>{ const r=e.getBoundingClientRect(); return [r.width, r.height, r.bottom]; }; return { q:f(document.querySelector('.daily-question-fab')), b:f(document.querySelector('.class-bubble')) }; }""")

@@ -148,11 +148,14 @@ def sky(br):
       return { browser: document.documentElement.classList.contains('is-browser'),
         top: parseFloat(b.top), bottom: parseFloat(b.bottom), h: parseFloat(b.height), vh: innerHeight,
         atop: parseFloat(a.top), abottom: parseFloat(a.bottom),
-        root: getComputedStyle(document.documentElement).backgroundColor, paper }; }""")
+        root: getComputedStyle(document.documentElement).backgroundColor, paper,
+        band: (()=>{ const p2=document.createElement('div'); p2.style.background='var(--band, var(--paper))'; document.body.appendChild(p2); const c=getComputedStyle(p2).backgroundColor; p2.remove(); return c; })() }; }""")
     check("D. the page is in browser mode", r["browser"], r)
     check("D. the glow layer reaches 100px+ above and below the viewport", r["top"] <= -100 and r["bottom"] <= -100 and r["h"] >= r["vh"] + 200, r)
     check("D. the stars layer too", r["atop"] <= -100 and r["abottom"] <= -100, r)
-    check("D. the root's colour is the paper", r["root"] == r["paper"], r)
+    # SUPERSEDED IN 338: "the root's colour (what Safari fills its status-bar band with) is --band, set by refreshEdgeTints: the sky's top
+    # colour averaged across the width, mixed with its bottom colour - (33,29,33) on the default theme"
+    check("D. (338) the root's colour is the sky's band colour (--band)", r["root"] == r["band"], r)
     ctx.close()
 
 

@@ -74,7 +74,8 @@ def check_surfaces(br):
         check("%s: the search field and the chat button are the bar's glass tint" % label,
               all(tint(r[k]) for k in ("search", "chat")), {k: r[k]["bg"] for k in ("search", "chat", "bar")})
         check("%s: the search field and the chat button share the bar's frost saturation (%s)" % (label, bar["bf"]),
-              r["search"]["bf"] == r["chat"]["bf"] and "saturate(1.25)" in r["search"]["bf"] and "saturate(1.25)" in bar["bf"],
+              # (380) the bar's own frost, whatever it is (377 made it 7px / 1.5), not a written-out value
+              r["search"]["bf"] == r["chat"]["bf"] == bar["bf"],
               [r[k]["bf"] for k in ("search", "chat", "bar")])
         check("%s: the search field, the chat button and the bar share one rim colour" % label,
               r["search"]["border"] == r["chat"]["border"] == bar["border"], [r[k]["border"] for k in ("search", "chat", "bar")])

@@ -165,12 +165,16 @@ with sync_playwright() as p:
         pg.add_init_script("try{localStorage.setItem('class26e.intro.seen','99')}catch(e){}")
         pg.clock.install(time=datetime.datetime.fromisoformat(when)); pg.goto(url); pg.wait_for_timeout(2000)
         return ctx, pg
+    # (380) the test day hands over at the app's own hour (TEST_DAY_HANDOVER_HOUR - 8 PM since 380, 9 PM before): a minute before it
     ctx, pg = at("2026-10-26T20:59:00-05:00")
     pre = pg.evaluate("() => ({ has: unitHasTestVersion('Penal Code'), n: unitVersionCount('Penal Code', 'test') })")
+    hh = pg.evaluate("() => TEST_DAY_HANDOVER_HOUR")
+    ctx.close()
+    ctx, pg = at("2026-10-26T%02d:59:00-05:00" % (hh - 1))
     pg.evaluate("() => showSetup()"); pg.wait_for_timeout(1200)
     marks0 = pg.evaluate("() => { const u = nextTestUnits(); return { u: u ? [...u.units] : null, cards: document.querySelectorAll('.picks .pick .pick-nexttest, .picks .pick [class*=nexttest]').length }; }")
     ctx.close()
-    check("before 9 PM Monday only today's test is next (Penal Code)", marks0["u"] == ["Penal Code"], marks0)
+    check("before the handover (%d:00) on Monday only today's test is next (Penal Code)" % hh, marks0["u"] == ["Penal Code"], marks0)
     ctx, pg = at("2026-10-26T21:00:30-05:00")
     post = pg.evaluate("""() => { const i = QUESTIONS.findIndex(q => q.topic === 'Penal Code');
       return { has: unitHasTestVersion('Penal Code'), whole: unitVersionCount('Penal Code', null),
@@ -182,7 +186,7 @@ with sync_playwright() as p:
     check("the Penal Code card no longer mentions a slides version", tag is not None and "Slides" not in tag and "version" not in tag.lower(), tag)
     nt = pg.evaluate("() => { const t = testTopicsFor('2026-11-02'); const u = nextTestUnits(); return { t: t && t.topics, u: u ? [...u.units] : null, d: u && u.date }; }")
     marks1 = pg.evaluate("() => [...document.querySelectorAll('.picks > label.pick')].filter(r => /next test/i.test(r.textContent)).map(r => r.querySelector('input').value)")
-    check("from 9 PM only Nov 2's units carry the next-test mark", sorted(marks1) == sorted(["Code of Criminal Procedure and Bill of Rights", "Arrest, Search, and Seizure"]), marks1)
+    check("from the handover only Nov 2's units carry the next-test mark", sorted(marks1) == sorted(["Code of Criminal Procedure and Bill of Rights", "Arrest, Search, and Seizure"]), marks1)
     check("Nov 2's test is CCP and Arrest, Search, and Seizure, and both units carry the next-test mark",
           nt["t"] == ["CCP and Bill of Rights", "Arrest, Search, and Seizure"] and sorted(nt["u"] or []) == sorted(["Code of Criminal Procedure and Bill of Rights", "Arrest, Search, and Seizure"]), nt)
     shown = pg.evaluate("() => { const r = [...document.querySelectorAll('.picks > label.pick')].find(r => r.querySelector('input').value === 'Code of Criminal Procedure and Bill of Rights'); return r && r.querySelector('.pname').textContent; }")

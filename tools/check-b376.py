@@ -35,9 +35,10 @@ with sync_playwright() as pw:
         n, k = pg.evaluate(PROBE)
         if k >= n - 1: break
     pg.evaluate("()=>{ window.scrollTo(0, 260); }"); pg.wait_for_timeout(1500)
-    # (1) a slide on the board
+    # (1) a slide on the board. A loop is read where its WINDOW is (380: the sheet inside moves by left/top, so its own box wanders into and
+    # out of the bar's band while what is seen stays put), and a row the page has marked off screen is left out (its loop is paused by CSS)
     r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const st=document.getElementById('stage'), bar=document.querySelector('.bottomtabs');
-      const br=bar.getBoundingClientRect(); const where=a=>{ const t=a.effect&&a.effect.target; if(!t||!t.getBoundingClientRect) return null; const r=t.getBoundingClientRect(); if(!r.width) return null; return (r.bottom>br.top-24 && r.top<br.bottom+8) ? 'under' : (r.bottom < br.top-60 ? 'above' : null); };
+      const br=bar.getBoundingClientRect(); const where=a=>{ const t=a.effect&&a.effect.target; if(!t||!t.getBoundingClientRect) return null; if(t.closest&&t.closest('.is-offscreen')) return null; const r=((t.closest&&t.closest('.rk-frame, .char-flip-play'))||t).getBoundingClientRect(); if(!r.width) return null; return (r.bottom>br.top-24 && r.top<br.bottom+8) ? 'under' : (r.bottom < br.top-60 ? 'above' : null); };
       const count=()=>{ const o={underRun:0, underPaused:0, aboveRun:0, abovePaused:0}; st.getAnimations({subtree:true}).forEach(a=>{ const w=where(a); if(!w) return; o[w+(a.playState==='running'?'Run':'Paused')]++; }); return o; };
       const before=count();
       const nav=document.querySelector('.bottomtabs-navrow'), tab=document.getElementById('bottomtab-rewards'); const b=tab.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
