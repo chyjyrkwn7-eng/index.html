@@ -30245,3 +30245,11 @@ list back into its button, (29) one-piece trophy, (30) lit Silver's rim cool (bl
 layers - all six fail on 379; 31 of 31 pass on 380 (rankUpHolds is set aside for 30: a rank just reached waits for its scene).
 Also run: check-b344, check-savetest, check-behaviour b297/b313_pause/b310/b313_flares, check-b349, b342, b328-classes, sweep-layout
 --quick 14/14; check-ink-centre's 12 failures are the same before this round; check-fixes' one (an SE landscape grey bar) is on 379 too.
+- TEST #8 (Madison, with the instructor's email "Test #8 on 11-9-26": "Test #8 will cover the Health and Safety Code & Controlled
+  Substances Act, Multiculturalism, Racial Profiling, and Professionalism and Ethics"; "if you click next Monday you see it but the next
+  stuff won't be shown or updated till Monday at 8pm"): TEST_TOPICS["2026-11-09"] (title Test #8; Multiculturalism as its unit's full
+  name so its card is marked; the Health and Safety Code line matches its unit by the name it starts with). Tapping Mon Nov 9 in the
+  Calendar shows the four now. TEST_DAY_HANDOVER_HOUR 21 -> 20: until 8 PM on Monday Nov 2 the next test (the unit cards' mark, Home,
+  Nova, the countdown) is today's Test #7, from 8 PM it is Test #8 (CST: DST ended Nov 1). Nothing from the email but the test went in
+  (the repo is public: no names or addresses). check-b328-level1 328g reads the handover hour off the page; check-b380 (32) holds
+  7:59 PM / 8:00 PM on Nov 2 - fails on 379 (no Nov 9 topics, 9 PM handover). 32 of 32 pass.

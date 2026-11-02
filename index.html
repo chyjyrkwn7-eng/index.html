@@ -64257,7 +64257,11 @@ const TEST_TOPICS = {
   /* build 328, the instructor's email of Oct 26: "Your next test will cover the CCP
      and Arrest, Search, and Seizure ... on Monday, November 2, 2026. You need to
      study ahead because Arrest, Search, and Seizure doesn't end until October 30" */
-  "2026-11-02": { topics: ["CCP and Bill of Rights", "Arrest, Search, and Seizure"], postedAt: "2026-10-26" }
+  "2026-11-02": { topics: ["CCP and Bill of Rights", "Arrest, Search, and Seizure"], postedAt: "2026-10-26" },
+  /* build 380, the instructor's email for Test #8 on 11-9-26: "Test #8 will cover the Health and Safety Code & Controlled
+     Substances Act, Multiculturalism, Racial Profiling, and Professionalism and Ethics." (Multiculturalism is the unit's full
+     name, so its card carries the mark; the Health and Safety Code line matches its unit by the name it starts with.) */
+  "2026-11-09": { title: "Test #8", topics: ["Health and Safety Code & Controlled Substances Act", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"], postedAt: "2026-11-02" }
 };
 /* the Fire Code class has no test calendar yet: none of the academy's tests are its "next test" */
 if(window.NOVA_CLASS === "ifc") Object.keys(TEST_TOPICS).forEach(k => { delete TEST_TOPICS[k]; });
@@ -64333,7 +64337,8 @@ function appendPickTick(box){
    test is the next one; from 9 PM the one after it is - one test at a time,
    everywhere nextTestEntry() is asked (the unit cards' mark, Home, Nova, the
    Calendar's countdown). */
-const TEST_DAY_HANDOVER_HOUR = 21;
+/* 8 PM since build 380: "the next stuff won't be shown or updated till Monday at 8pm" */
+const TEST_DAY_HANDOVER_HOUR = 20;
 function nextTestEntry(){
   const k = todayCalendarKey();
   const late = new Date().getHours() >= TEST_DAY_HANDOVER_HOUR;

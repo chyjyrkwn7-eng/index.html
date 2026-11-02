@@ -438,4 +438,19 @@ with sync_playwright() as pw:
       return { syncs: n, marks: document.querySelectorAll('.screen-rankings .rank-mark > .cosmic-rank-anim').length }; }""")
     chk("a board's flares are put on the loop clock once each (%s syncs for %s flares)" % (sy["syncs"], sy["marks"]), sy["marks"] >= 8 and sy["syncs"] <= 2 * sy["marks"], sy)
     br.close()
+    # (32) Test #8 (Nov 9) is posted, and the next test hands over at 8 PM on Monday Nov 2 (Chicago, CST after Nov 1)
+    import datetime
+    br = pw.chromium.launch(executable_path=g["g"]["CHROME"])
+    def at(when):
+        c = br.new_context(viewport={"width": 393, "height": 852}, timezone_id="America/Chicago"); p2 = c.new_page()
+        p2.add_init_script("try{localStorage.setItem('class26e.intro.seen','99')}catch(e){}")
+        p2.clock.install(time=datetime.datetime.fromisoformat(when)); p2.goto(g["url"]); p2.wait_for_timeout(2500)
+        return c, p2
+    NT = "() => { try{ const u = nextTestUnits(); const t = testTopicsFor('2026-11-09'); return { d: u && u.date, u: u ? [...u.units].sort() : null, t: t && t.topics }; }catch(e){ return { err: String(e).slice(0, 80) }; } }"
+    c1, p1 = at("2026-11-02T19:59:00-06:00"); before = p1.evaluate(NT); c1.close()
+    c2, p2 = at("2026-11-02T20:00:30-06:00"); after = p2.evaluate(NT); c2.close()
+    br.close()
+    want = sorted(["Health and Safety Code", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"])
+    chk("Test #8 on Nov 9 is posted (%s topics); at 7:59 PM Monday the next test is still today's (%s), from 8 PM it is Nov 9's four units (%s)" % (len((after or {}).get("t") or []), before and before.get("d"), after and after.get("d")),
+        before and before.get("d") == "2026-11-02" and after and after.get("d") == "2026-11-09" and after.get("u") == want and len(after.get("t") or []) == 4, [before, after])
 sys.exit(0 if g["ok"] else 1)
