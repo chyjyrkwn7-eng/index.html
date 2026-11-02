@@ -30598,3 +30598,21 @@ Madison: "The leaderboard is still very glitchy when opening it up" / "it could 
   (tools section 8f alone, 3+3 runs, push timed): the restored account always goes up correctly (17,585 / 13) on BOTH builds, 4.8-7.6s
   after launch under load (381: 7.6/5.6/4.9s; 382: 5.3/4.8/6.1s) - the gate's fixed 4.2s wait was the flake, not the app. 8f now waits
   for the push (up to 12s) and checks the same values.
+
+## PLAN (decided 2026-11-02, after build 382 ships, NOT built yet): username + password accounts replace the sync code
+Madison, after weighing Google sign-in and email: "Yeah just a username and password may be the safest choice. If someone forgets
+their username or password. They would need to let me know or there would be a notify admin, I'd be notified and then I could ask you
+to give them the reset option.. would be best." Decisions:
+- Firebase Authentication email/password provider used for USERNAME + password only - no real emails collected (a synthetic
+  address derived from the username, never shown); passwords held by Firebase only. Google sign-in and email resets were considered
+  and dropped (personal data + Home Screen redirect issues); an optional reset email may be added later if resets get frequent.
+- "Forgot your username or password?" on sign-in sends an ADMIN REQUEST (like bug reports: a document the admin tools list) -
+  nothing resets automatically. The owner asks a session to reset; the session uses the admin key (environment only, never in the
+  app or repo) via tools/firestore-admin.py to set a one-time temporary password (or read back the username); the app forces a new
+  password on first sign-in with it.
+- Firestore security rules locked per user (uid): own account/progress read+write only; leaderboard readable by signed-in users,
+  writable only on one's own row; requests write-only. The owner pastes the rules and enables the provider in the Firebase console
+  (step-by-step instructions to be given).
+- Migration: an existing account signs in once with its sync code, picks a username + password, progress carries over; sync codes
+  kept only as a fallback during the switch. Fire Code currently has no cloud - accounts there are a separate decision.
+- Test against a separate Firebase test project / on his phone first (the sandbox cannot reach Firebase).
