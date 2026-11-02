@@ -14488,8 +14488,12 @@
      dims what is INSIDE the bubble now (the emblem and its motion), and
      the glass itself stays opaque, so a flare under it is only ever seen
      through the blur. */
-  .tier-cutscene .rank-before .rank-orbit-slot > .cosmic-icon-badge > :is(svg, .cosmic-rank-anim){ transition:opacity 1s ease; }
-  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)) > .cosmic-icon-badge > :is(svg, .cosmic-rank-anim){ opacity:.35; }
+  .tier-cutscene .rank-before .rank-orbit-slot > .cosmic-icon-badge > :is(svg, .cosmic-rank-anim){ transition:opacity 1s ease; opacity:var(--cib-dim, 1); }
+  /* (build 382) the :has() rule names the bubble, not "svg": every element a :has() rule
+     reaches past its anchor joins one invalidation set Chromium re-applies under <body> on
+     each :has() re-check, and a bare "svg" there restyled every badge on the units screen
+     (and its tick) on every tap. The bubble passes the dim down. */
+  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)) > .cosmic-icon-badge{ --cib-dim:.35; }
   .rank-after{ position:absolute; inset:0; opacity:0; pointer-events:none; }
   .tier-cutscene.is-swapped .rank-before{ opacity:0; transition:opacity .2s ease; }
   .tier-cutscene.is-swapped .rank-after{ opacity:1; transition:opacity .35s ease; }
@@ -21717,7 +21721,7 @@
      cell, on the first pass). A card that carries it holds no lines for its
      name: "Penal Code" plus the line is about the height of three lines. */
   .picks > label.pick > .pick-version{ grid-area:ver; align-self:start; margin-top:.55rem; margin-bottom:.2rem; }
-  .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
+  .picks > label.pick.has-version > .pname{ min-height:0; }
   .picks > label.pick > .pcount{
     grid-area:count; margin:.55rem 0 0;
     font-size:.72rem; font-weight:700; letter-spacing:.02em; color:var(--soft);
@@ -21740,7 +21744,7 @@
      to the bottom border, all devices". A mastered unit has no bar, so its
      count takes the bar's row as well and sits on the card's floor, beside
      the badge. */
-  .picks > label.pick:not(:has(.pick-barrow)) > .pcount{ grid-row:4 / 6; align-self:end; margin-bottom:0; }
+  .picks > label.pick.pick-mastered > .pcount{ grid-row:4 / 6; align-self:end; margin-bottom:0; }
   .picks > label.pick .pick-bar-track{ height:4px; background:rgba(255,255,255,.12); }
   .picks > label.pick .pick-bar-count{ font-size:.68rem; color:var(--soft); }
   /* a 375px phone's column is 117px of text: "Professionalism" in the
@@ -21880,7 +21884,7 @@
     [data-layout="modern"] .picks > label.pick{ padding:1.05rem 1.15rem 1rem 1.15rem; grid-template-rows:auto auto minmax(0,1fr) auto 1.15rem; border-radius:20px; }
     .picks > label.pick > .box{ width:26px; height:26px; }
     .picks > label.pick > .pname{ margin-top:.75rem; font-size:1.12rem; line-height:1.25; min-height:calc(2 * 1.25em); }
-    .picks > label.pick:has(> .pick-version) > .pname{ min-height:0; }
+    .picks > label.pick.has-version > .pname{ min-height:0; }
     .picks > label.pick > .pcount{ font-size:.8rem; margin-top:.7rem; }
     /* the badge as far from the top edge as from the right (round 31: "aren't perfectly centered to the corner") - .7rem each */
     .picks > label.pick .pick-badge{ width:3.3rem; height:3.3rem; margin:0 -.45rem -.3rem .75rem; }   /* .7rem from the bottom and the right */
@@ -34699,8 +34703,10 @@ html.is-browser{ --fade-paper: transparent; }
        the circle has an outline over the card and over the page alike. */
     box-shadow:0 0 0 2px var(--paper, #0E1014), 0 0 0 3.25px color-mix(in srgb, var(--accent) 70%, transparent), 0 4px 10px rgba(0,0,0,.45) !important;
   }
-  html[data-layout] .picks > label.pick.pick-checked > .box,
-  html[data-layout] .picks > label.pick:has(input:checked) > .box{ opacity:1; transform:scale(1); }
+  /* (build 382) the class only - a :has(input:checked) here put every card's .box in the
+     page-wide :has() invalidation set (see .cosmic-icon-badge's --cib-dim); .pick-checked is
+     kept by every path that ticks a card */
+  html[data-layout] .picks > label.pick.pick-checked > .box{ opacity:1; transform:scale(1); }
   html[data-layout] .picks > label.pick > .pcount{ white-space:nowrap; }
   @media (max-width:359px){
     html[data-layout] .picks > label.pick > .pcount{ font-size:.66rem; }
@@ -35220,6 +35226,113 @@ html.is-browser{ --fade-paper: transparent; }
       radial-gradient(ellipse 54% 28% at 52% 88%, color-mix(in srgb, var(--fc) 40%, #fff) 0 24%, transparent 100%),
       radial-gradient(circle at 46% 46%, #FFFFFF 0 14%, color-mix(in srgb, var(--fc) 42%, #fff) 30%, var(--fc) 56%, color-mix(in srgb, var(--fc) 55%, #000) 86%, color-mix(in srgb, var(--fc) 30%, #000) 100%);
     box-shadow:inset 0 0 0 .7px color-mix(in srgb, var(--fc) 35%, #fff), 0 0 0 .5px color-mix(in srgb, var(--fc) 50%, transparent), 0 0 8px var(--fc), 0 1.5px 3px rgba(0,0,0,.45);
+  }
+  /* ---- THE UNITS SCREEN, SETTINGS' CLEAN LOOK (build 382) ----
+     "the unit selection screens interface.. I'm not a fan. I like the layout but I think the interface/look isn't it ... that entire
+     page needs a nicer look" and, with the new Settings: "we need to ensure that the rest of the app has that nice new look, where it's
+     clearly easy to see and use ... The unit selection screen needs it ... We are going for that clean clean clean CLEAN IOS apple look".
+     Same layout and order (the way back, the mode, the levels, Select all, the line, the grid, search and Start in the bar), in
+     Settings' language:
+     - THE HEADER is a Settings sub-page's: a round back button on the left and the title centred (.settings-nav, showSetup).
+     - THE LEVELS are an iOS segmented control: a flat rounded track, the chosen level a lighter raised segment; every segment 44px.
+     - SELECT ALL and Review's STARRED are clean flat pills, one look (check-b380 21 holds them equal), 44px, no frost.
+     - A UNIT CARD is a flat grouped tile: the --surface-1 body, a hairline edge, no glass, glow, sheen or wide shadow (twenty-odd boxes
+       on one screen read as noise with any of those, and a phone pays for every one on each scroll); the name in 600, the count a
+       small grey line, the badge small in the corner with nothing round it. PICKED is the accent: a tinted fill, an accent edge drawn
+       inside (box-shadow, nothing moves), and an accent check circle inside the top-right corner - the name's first line keeps clear
+       of it (a float in .pname), so it never covers a word.
+     No backdrop-filter or filter on anything here; only transform and opacity animate. */
+  html[data-layout] .screen-setup .setup-nav{ margin:.2rem 0 .9rem; }
+  html[data-layout][data-theme] .picks{ gap:.65rem; }
+  html[data-layout][data-theme] .picks > label.pick{
+    border-radius:18px;
+    border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
+    background:var(--surface-1);
+    box-shadow:none;
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+    transition:transform .42s cubic-bezier(.2,.8,.2,1), border-color .2s ease, background-color .2s ease;
+  }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked{
+    border-color:var(--accent) !important;
+    background:linear-gradient(color-mix(in srgb, var(--accent) 12%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)), var(--surface-1) !important;
+    box-shadow:inset 0 0 0 1px var(--accent) !important;
+  }
+  html[data-layout][data-theme] .picks > label.pick.is-pressing{ box-shadow:none !important; background:var(--surface-lift), var(--surface-1); }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked.is-pressing{ box-shadow:inset 0 0 0 1px var(--accent) !important; }
+  html[data-layout][data-theme] .picks > label.pick > .pname{
+    font-size:.92rem; font-weight:600; line-height:1.25; letter-spacing:-.005em; color:var(--ink);
+  }
+  /* the first line of the name stops short of the check circle */
+  html[data-layout][data-theme] .picks > label.pick > .pname::before{ content:""; float:right; width:1.35rem; height:1em; }
+  html[data-layout][data-theme] .picks > label.pick > .pcount{
+    font-size:.74rem; font-weight:500; letter-spacing:0; color:var(--soft); font-variant-numeric:tabular-nums;
+  }
+  /* the check: an accent circle inside the corner, the tick in the accent's ink, a thin light rim so it reads on any accent */
+  html[data-layout][data-theme] .picks > label.pick > .box{
+    top:.65rem !important; right:.65rem !important; width:1.4rem !important; height:1.4rem !important;
+    border:0 !important; background:var(--accent) !important;
+    box-shadow:0 0 0 1.5px color-mix(in srgb, var(--ink) 85%, transparent) !important;
+  }
+  html[data-layout][data-theme] .picks > label.pick > .box > .pick-tick path{ stroke-width:3.2; }
+  /* the badge: small and plain - no glow round it, no filter on it */
+  html[data-layout][data-theme] .picks > label.pick .pick-badge.earned::before{ display:none; }
+  html[data-layout][data-theme] .picks > label.pick .pick-badge.earned svg{ filter:none; }
+  .pick-badge > .pick-badge-img{ width:100%; height:100%; display:block; position:relative; z-index:1; pointer-events:none; -webkit-user-drag:none; user-select:none; }
+  .pick-badge:not(.earned) > .pick-badge-img{ opacity:.78; }
+  html[data-layout][data-theme] .picks > label.pick .pick-badge:not(.earned) :is(svg, .pick-badge-img){ opacity:.45; }
+  html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:2.3rem; height:2.3rem; }
+  /* the hundo bar (iPads and computers): a hairline track, the accent filling it */
+  html[data-layout][data-theme] .picks > label.pick .pick-bar-track{ height:3px; border-radius:999px; background:color-mix(in srgb, var(--ink) 12%, transparent); }
+  html[data-layout][data-theme] .picks > label.pick .pick-bar-fill{ border-radius:999px; background:var(--accent); }
+  html[data-layout][data-theme] .picks > label.pick .pick-bar-count{ font-weight:500; font-variant-numeric:tabular-nums; }
+  /* the levels: an iOS segmented control - a flat track, the chosen segment raised, every segment 44px */
+  html[data-layout][data-theme] .screen-setup .setup-levels{
+    display:flex; width:100%; margin:1rem 0 .9rem; padding:3px; box-sizing:border-box; border-radius:13px;
+    background:var(--surface-1) !important; border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent) !important;
+    box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
+  }
+  html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn{
+    flex:1 1 0; min-height:44px; padding:0 .6rem; border-radius:10px; font-size:.88rem; font-weight:600;
+    color:color-mix(in srgb, var(--ink) 62%, transparent);
+  }
+  html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn.active{ color:var(--ink); }
+  html[data-layout][data-theme] .screen-setup .setup-levels .seg-slider{
+    border-radius:10px !important; background:color-mix(in srgb, var(--ink) 17%, transparent) !important;
+    box-shadow:0 1px 3px rgba(0,0,0,.35) !important;
+  }
+  /* Select all (and Review's Starred) - one flat pill, centred under the levels */
+  html[data-layout][data-theme] .screen-setup .picks-tools{ display:flex; justify-content:center; align-items:center; gap:.6rem; flex-wrap:wrap; margin:0 0 .55rem; }
+  html[data-layout][data-theme] .screen-setup :is(.selall-btn, .starred-pill){
+    min-height:44px; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
+    padding:0 1.1rem 0 .95rem; margin:0; border-radius:999px; font-size:.88rem; font-weight:600; color:var(--ink);
+    background:var(--surface-1) !important; background-image:none !important;
+    border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent) !important;
+    box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-layout][data-theme] .screen-setup :is(.selall-btn, .starred-pill):active{ background:var(--surface-lift) !important; }
+  html[data-layout][data-theme] .screen-setup .sect > .selall-btn{ display:flex; width:fit-content; margin:0 auto .55rem; }
+  /* a class with one level (Fire Code) has no tabs: Select all keeps the tabs' 1rem from the mode */
+  html[data-layout][data-theme] .screen-setup .setup-levels[hidden] ~ :is(.selall-btn, .picks-tools){ margin-top:1rem; }
+  html[data-layout][data-theme] .screen-setup .picks-holdhint{ text-align:center; margin:.2rem auto .9rem; max-width:24rem; font-size:.78rem; line-height:1.45; color:var(--soft); text-wrap:balance; }
+  @media (min-width:40rem){
+    html[data-layout][data-theme] .picks{ gap:.85rem; }
+    html[data-layout][data-theme] .picks > label.pick{ border-radius:20px; }
+    html[data-layout][data-theme] .picks > label.pick > .pname{ font-size:1.1rem; }
+    html[data-layout][data-theme] .picks > label.pick > .pcount{ font-size:.82rem; }
+    html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:3rem; height:3rem; }
+    html[data-layout][data-theme] .screen-setup .setup-levels{ max-width:30rem; margin-left:auto; margin-right:auto; }
+  }
+  /* a narrow phone's card has no room beside the circle for a long word ("Professionalism"): there the circle
+     sits on the card's corner, half outside (build 328's place), and the name takes the card's full width */
+  @media (max-width:399px){
+    html[data-layout][data-theme] .picks > label.pick > .pname::before{ display:none; }
+    html[data-layout][data-theme] .picks > label.pick > .box{ top:-.45rem !important; right:-.45rem !important;
+      box-shadow:0 0 0 2px var(--paper, #0E1014), 0 0 0 3.25px color-mix(in srgb, var(--ink) 85%, transparent) !important; }
+  }
+  @media (max-width:359px){
+    html[data-layout][data-theme] .picks > label.pick > .pname{ font-size:.84rem; }
+    html[data-layout][data-theme] .picks > label.pick > .pcount{ font-size:.66rem; }
+    html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:2rem; height:2rem; }
   }
   /* ---- build 382: THE LEADERBOARD, ONE FAMILY WITH THE GLASS ----
      "I feel like the leaderboard looks good but I think it could look better." Same layout and the same information; the rows are
@@ -65745,6 +65858,7 @@ function appendUnitVersionTag(row, name){
   if(!tv || !tv.tag) return;
   const t = document.createElement("span");
   t.className = "pick-version";
+  row.classList.add("has-version");   /* (build 382) for CSS, instead of a :has(> .pick-version) */
   tv.tag.split(/(\d+\u2013\d+)/).forEach((part, i) => {
     if(!part) return;
     if(i % 2){ const r = document.createElement("span"); r.style.whiteSpace = "nowrap"; r.textContent = part; t.appendChild(r); }
@@ -66165,7 +66279,16 @@ function testTopicsFor(iso){
    Code \u2014 slides 256\u2013578" names Penal Code). A test with
    nothing posted marks nothing - never a guess off the class day's
    text, which says what is TAUGHT that day, not what is tested. */
+/* asked once per card (24 a screen): the answer is kept for a second (build 382) */
+let nextTestUnitsMemo = null;
 function nextTestUnits(){
+  const now = Date.now();
+  if(nextTestUnitsMemo && now - nextTestUnitsMemo.at < 1000) return nextTestUnitsMemo.v;
+  const v = nextTestUnitsNow();
+  nextTestUnitsMemo = { at: now, v };
+  return v;
+}
+function nextTestUnitsNow(){
   let e = null;
   try{ e = nextTestEntry(); }catch(err){ e = null; }
   if(!e) return null;
@@ -79134,19 +79257,31 @@ const NovaSound = (function(){
      becomes a native switch over the tick circle alone (44px), where a
      finger picks a unit; the rest of the card scrolls as before. */
   const HSW_OPT = ".opt > input[type=checkbox], .picks > label.pick > input[type=checkbox]";
-  function hswOptAttach(inp){
-    if(!inp || inp.classList.contains("hsw-opt") || inp.disabled) return;
+  /* READ, THEN WRITE (build 382). Each input used to be measured and then written in
+     turn, so every measure after the first laid the screen out again: on the units
+     screen that was 24 cards and the sheet's rows, ~90ms at a phone's speed as the
+     screen came up. hswOptMeasure reads (nothing written), hswOptAttach writes. */
+  function hswOptMeasure(inp){
+    if(!inp || inp.classList.contains("hsw-opt") || inp.disabled) return null;
     const row = inp.parentElement, box = row && row.querySelector(":scope > .box");
-    if(!box || row.closest("[data-no-hsw]")) return;
+    if(!box || row.closest("[data-no-hsw]")) return null;
+    const m = { row };
+    try{
+      if(row.classList.contains("pick")){ m.x = box.offsetLeft + box.offsetWidth / 2; m.y = box.offsetTop + box.offsetHeight / 2; }
+      else m.r = Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8);
+    }catch(e){}
+    return m;
+  }
+  function hswOptAttach(inp, m){
+    if(m === undefined) m = hswOptMeasure(inp);
+    if(!m || inp.classList.contains("hsw-opt")) return;
     inp.setAttribute("switch", "");
     inp.classList.add("hsw-opt");
     try{
-      if(row.classList.contains("pick")){
-        inp.style.setProperty("--hsw-x", (box.offsetLeft + box.offsetWidth / 2) + "px");
-        inp.style.setProperty("--hsw-y", (box.offsetTop + box.offsetHeight / 2) + "px");
-      } else inp.style.setProperty("--hsw-r", Math.max(0, (parseFloat(getComputedStyle(row).paddingRight) || 0) - 8) + "px");
+      if(typeof m.x === "number"){ inp.style.setProperty("--hsw-x", m.x + "px"); inp.style.setProperty("--hsw-y", m.y + "px"); }
+      else if(typeof m.r === "number") inp.style.setProperty("--hsw-r", m.r + "px");
     }catch(e){}
-    row.setAttribute("data-hsw", "");
+    m.row.setAttribute("data-hsw", "");
   }
   function hswOptDetach(inp){
     inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y"].forEach(v => inp.style.removeProperty(v));
@@ -79213,8 +79348,9 @@ const NovaSound = (function(){
       n.querySelectorAll(HSW_OPT).forEach(x => opts.push(x));
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
+    const optM = opts.map(hswOptMeasure);   /* every read before any write (build 382) */
     todo.forEach(hswAttach);
-    opts.forEach(hswOptAttach);
+    opts.forEach((inp, i) => hswOptAttach(inp, optM[i]));
     if(hswQueue.size) hswSchedule();
   }
   /* a control that was hidden (another tab's pane) had no size when it was
@@ -80442,6 +80578,14 @@ function centerBackWord(t, tries){
   try{
     const btn = t.parentNode;
     if(!t.isConnected){ if(tries < 20) requestAnimationFrame(() => centerBackWord(t, tries + 1)); return; }
+    /* MEASURED ONCE A WIDTH, NOT ONCE A SCREEN (build 382). Every Back pill is the same
+       font at the same size, so the shift found for the first one is the shift for the
+       next; measuring it again laid each new screen out an extra time (twice: the read,
+       then the probe) - ~60ms of the units screen's opening at a phone's speed. Fonts
+       settling (tries 99) measures afresh. */
+    const ck = innerWidth + "|" + (window.devicePixelRatio || 1) + "|" + (document.fonts ? document.fonts.status : "") + "|" + btn.className + "|" + (btn.closest && btn.closest("#stage") ? "s" : "o");
+    const known = centerBackWord.known || (centerBackWord.known = {});
+    if(tries !== 99 && typeof known[ck] === "string"){ t.style.transform = known[ck]; return; }
     const br = btn.getBoundingClientRect();
     if(!(br.height > 0)) return;
     t.style.transform = "";
@@ -80459,7 +80603,9 @@ function centerBackWord(t, tries){
     }
     if(!(cap > 0)) return;
     const shift = (r.bottom - cap / 2) - (br.top + br.height / 2);
-    if(Math.abs(shift) > 0.05 && Math.abs(shift) < 8) t.style.transform = "translateY(" + (-shift).toFixed(2) + "px)";
+    const tf = (Math.abs(shift) > 0.05 && Math.abs(shift) < 8) ? "translateY(" + (-shift).toFixed(2) + "px)" : "";
+    t.style.transform = tf;
+    known[ck] = tf;
     if(!centerBackWord.fontsHooked && document.fonts && document.fonts.ready){
       centerBackWord.fontsHooked = true;
       document.fonts.ready.then(() => document.querySelectorAll(".back-word").forEach(w => centerBackWord(w, 99)));
@@ -100551,10 +100697,63 @@ function showModeSelect(){
    a level chip for weeks after it was taken off everywhere else,
    because the fix went into decorateAvatar() and the boards never
    called it. Same mistake, same cure: one function, both call sites. */
+/* A CARD'S BADGE IS ONE PICTURE, NOT ~35 ELEMENTS (build 382). "I think the unit
+   selection screen has some lag." The 24 cards' badges, drawn as live SVG, were 848 of
+   the screen's ~1,200 elements: every style pass and layout of the screen - opening it,
+   each tick, each card coming into view - went through all of them, and drawing them
+   node by node was most of the screen's own script. A card's badge is the same drawing
+   (buildUnitBadgeSVG, untouched), made once per unit and look, serialised and shown as
+   an <img> from a blob: one element to style, decoded and kept by the image cache, so
+   the next visit's cards cost nothing to draw. Keyed by everything the drawing depends
+   on (found, dirt stage, size, pixel ratio, and the token render it carries), so a badge
+   that changes - found, dirtier, cleaned, its finished render arriving - is made again.
+   Anywhere this cannot work (no Blob URLs) the card takes the live SVG as before. */
+const CARD_BADGE_IMG = new Map();
+function cardBadgeSVG(name, earned){
+  let dirt = 0;
+  if(earned === true){ try{ dirt = badgeDirtStage(name) | 0; }catch(e){} }
+  let key = null;
+  try{
+    key = name + "|" + String(earned) + "|" + dirt + "|" + badgeDpr() + "|" + Math.round(badgeDefaultPx());
+    /* which token render a found badge would carry right now (a draft until its finish exists) */
+    if(earned === true){
+      const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
+      const e = badgeStrikeEntry(name, false, W, true, dirt);
+      key += "|" + (e ? (e.draft ? "d" : "f") + e.W : "x");
+    }
+  }catch(e){ key = null; }
+  const url = key && CARD_BADGE_IMG.get(key);
+  if(url){
+    const img = document.createElement("img");
+    img.className = "pick-badge-img"; img.alt = ""; img.setAttribute("aria-hidden", "true"); img.draggable = false;
+    img.src = url;
+    return img;
+  }
+  const svg = buildUnitBadgeSVG(name, earned);
+  /* not re-struck to the card's own size: the case-size token (warmBadgeStrikes has them
+     all ready soon after launch) is shown a little smaller, which scales down cleanly */
+  try{ svg.querySelectorAll("image.badge-raster").forEach(im => BADGE_STRIKE_WATCH.delete(im)); }catch(e){}
+  if(!key || typeof Blob !== "function" || !window.URL || !URL.createObjectURL) return svg;
+  try{
+    const im = svg.querySelector("image.badge-raster");
+    /* a draft is shown live (its finish swaps in), and only a finished one is kept */
+    if(im && im.__strike && im.__strike.draft) return svg;
+    const xml = new XMLSerializer().serializeToString(svg);
+    const u = URL.createObjectURL(new Blob([xml], { type: "image/svg+xml" }));
+    if(CARD_BADGE_IMG.size > 80){ CARD_BADGE_IMG.forEach(v => { try{ URL.revokeObjectURL(v); }catch(e){} }); CARD_BADGE_IMG.clear(); }
+    CARD_BADGE_IMG.set(key, u);
+    const img = document.createElement("img");
+    img.className = "pick-badge-img"; img.alt = ""; img.setAttribute("aria-hidden", "true"); img.draggable = false;
+    img.src = u;
+    return img;
+  }catch(e){ return svg; }
+}
 function appendUnitProgress(row, name){
   const starsWrap = document.createElement("span");
   starsWrap.className = "pick-stars";
   const earned = unitDrillStarEarned(name);
+  /* (build 382) a mastered card has no bar - a class for CSS, not :not(:has(.pick-barrow)) */
+  row.classList.toggle("pick-mastered", !!earned);
   const badgeMark = document.createElement("span");
   badgeMark.className = "pick-badge" + (earned ? " earned" : "");
   /* The glow is the BADGE'S colour (build 232): "let's make sure the
@@ -100562,7 +100761,7 @@ function appendUnitProgress(row, name){
      theme's triad, so every earned badge on the screen gave off the same
      gold light whatever it was made of. */
   try{ badgeMark.style.setProperty("--badge-glow", badgeThemeFor(name).p); }catch(e){}
-  badgeMark.appendChild(buildUnitBadgeSVG(name, earned));
+  badgeMark.appendChild(cardBadgeSVG(name, earned));
   badgeMark.title = earned ? badgeTitle(name) + " found" : badgeTitle(name) + " not found yet";
   /* Blank, and kept only because the grid reserves a cell for it - the
      count rides on the bar instead ("the way it shows 0/35 is bad ...
@@ -102107,13 +102306,29 @@ function showSetup(){
 
   const all = unitsInTeachingOrder();
   startReadyQuietUntil = performance.now() + 700;
-  countEl.textContent = "Choose your units";
+  /* the title is the page's own, centred over it (below) */
+  countEl.textContent = "";
   setTimeout(() => maybeShowPenalVersionNote(0), 900);
 
   const panel = document.createElement("section");
   panel.className = "panel screen-setup";
 
-  panel.appendChild(buildBackLink("Back", showModeSelect));
+  /* SETTINGS' HEADER (build 382): "We are going for that clean clean clean CLEAN IOS apple
+     look". A Settings sub-page's head - the round back button on the left, the title centred
+     (settingsSubPage's .settings-nav) - in place of the Back pill and the corner title. */
+  {
+    const nav = document.createElement("div");
+    nav.className = "settings-nav setup-nav";
+    const back = document.createElement("button");
+    back.type = "button"; back.className = "settings-nav-back setup-nav-back";
+    back.setAttribute("aria-label", "Back");
+    back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>';
+    back.addEventListener("click", () => { try{ back.blur(); }catch(e){} showModeSelect(); });
+    const h = document.createElement("h1");
+    h.className = "settings-nav-title setup-nav-title"; h.textContent = "Choose your units";
+    nav.append(back, h);
+    panel.appendChild(nav);
+  }
 
   /* THE RESULTS SCREEN'S MODE CHIP, not a grey pill of its own (build
      232). "Where it says the mode you are in on the unit selection
@@ -102292,6 +102507,9 @@ function showSetup(){
     tools.append(selAll, box);
   }
 
+  /* every unit's question count in one pass over the bank (build 382), not one pass a card */
+  const unitQCount = {}, unitAllCount = {};
+  QUESTIONS.forEach(x => { const t = (x.topic || "").trim(); unitAllCount[t] = (unitAllCount[t] || 0) + 1; if(inWholeUnit(x)) unitQCount[t] = (unitQCount[t] || 0) + 1; });
   all.forEach(name => {
     const row = document.createElement("label");
     row.className = "pick";
@@ -102320,7 +102538,7 @@ function showSetup(){
     appendUnitVersionTag(row, name);
     const count = document.createElement("span");
     count.className = "pcount";
-    count.textContent = QUESTIONS.filter(x => (x.topic || "").trim() === name && inWholeUnit(x)).length + " questions";
+    count.textContent = (unitQCount[name] || 0) + " questions";
     row.appendChild(count);
     appendUnitProgress(row, name);
     /* No "Best: 4:12" on the card any more (build 235) - "the best time
@@ -103311,7 +103529,9 @@ function showSetup(){
     if(cfg.source === "recent") cfg.source = "all";   /* no Most missed bank since build 284 */
     if((cfg.source === "recent" && unitRecentCount === 0 && cfg.units.length) ||
        (cfg.source === "flagged" && unitFlaggedCount === 0 && cfg.units.length)) cfg.source = "all";
-    srcSect.update({ all: QUESTIONS.filter((q, i) => inUnits(i)).length, recent: unitRecentCount, flagged: unitFlaggedCount });
+    /* (build 382) `all` is the pool's size: the whole-bank pass that counted it (~30ms a tick on
+       this machine, ~120ms at a phone's 4x) fed a field update() never reads */
+    srcSect.update({ all: pool.length, recent: unitRecentCount, flagged: unitFlaggedCount });
     srcSect.paint();
     /* ---- EXAM CHOOSES ITS OWN LENGTH ----
        "In the mode exam it doesn't let you select how many questions."
@@ -103321,7 +103541,9 @@ function showSetup(){
        runs until the lives are gone. An exam is a fixed-length paper,
        which is the whole point of sitting one. */
     sizeSect.hidden = reviewAllMode;
-    const wholeUnits = QUESTIONS.filter(q => cfg.units.indexOf((q.topic || "").trim()) >= 0).length;
+    /* every question of the picked units, from the counts made once as the screen opened (build
+       382) - it was a pass over the whole bank on every tick */
+    const wholeUnits = cfg.units.reduce((a, u) => a + (unitAllCount[u] || 0), 0);
     /* Cut by Length or by the bank - measured against the pool, which is
        the whole of every unit unless a shorter version was picked. */
     const partial = !reviewAllMode && cfg.units.length > 0 && wholeUnits > 0
@@ -103517,19 +103739,11 @@ function showSetup(){
      scrolling, rather than everything just sitting there static \u2014
      one-shot per card (unobserve once revealed) so it doesn't
      re-trigger annoyingly if someone scrolls back up past it. */
-  if(!theme.reduceMotion && window.IntersectionObserver){
-    const cardObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if(entry.isIntersecting){
-          entry.target.classList.add("pick-revealed");
-          cardObserver.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.15 });
-    list.querySelectorAll(".pick").forEach(card => cardObserver.observe(card));
-  } else {
-    list.querySelectorAll(".pick").forEach(card => card.classList.add("pick-revealed"));
-  }
+  /* BORN REVEALED (build 382). An observer added .pick-revealed to each card as it
+     scrolled in - a class whose opacity 1 / no transform is what a card already has, so
+     nothing could be seen, but every card that came into view was a class change (a
+     style pass) in the middle of the scroll. */
+  list.querySelectorAll(".pick").forEach(card => card.classList.add("pick-revealed"));
   toTop();
   if(!store.seenUnitSelectTour){
     store.seenUnitSelectTour = true;
@@ -142975,7 +143189,11 @@ function tabPerfText(){
     if(!ts) return;
     if(!ts.screen.isConnected || bar.hidden || (bar.classList.contains("has-start-tab") && !ts.withStart)) tsUnregister();
   }).observe(stage, { childList: true });
-  new MutationObserver(() => { if(ts && (bar.hidden || (bar.classList.contains("has-start-tab") && !ts.withStart))) tsUnregister(); else if(ts) tsPlace(); })
+  /* placed once a frame, not inside the change (build 382): every tick on the units screen
+     touches the bar's classes, and measuring the bar here laid the page out mid-handler */
+  let tsPlaceRaf = 0;
+  const tsPlaceSoon = () => { if(tsPlaceRaf) return; tsPlaceRaf = requestAnimationFrame(() => { tsPlaceRaf = 0; if(ts) tsPlace(); }); };
+  new MutationObserver(() => { if(ts && (bar.hidden || (bar.classList.contains("has-start-tab") && !ts.withStart))) tsUnregister(); else if(ts) tsPlaceSoon(); })
     .observe(bar, { attributes: true, attributeFilter: ["hidden", "class"] });
   window.addEventListener("resize", () => { if(ts){ if(tsOpen){ const r = bar.getBoundingClientRect(); tsHome = tsHome && { left: tsHome.left, right: Math.min(window.innerWidth - 8, tsHome.right), bottom: r.bottom }; } tsPlace(); } });
   function refreshGlass(){ if(!bar.hidden) applyGlassRefraction(bar); }
