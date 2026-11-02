@@ -13082,6 +13082,10 @@
      an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
      comes back if the question springs back. !important: its rise is an animation, which beats a plain declaration. */
   html.q-sliding .foot > .floatbtn.qnext{ opacity:0 !important; transition:opacity .1s ease !important; pointer-events:none; }
+  /* build 382: no room under the content - the pill is in the page under it, not pinned over it (qnextPlace) */
+  [data-layout="modern"] .foot > .floatbtn.qnext.qnext-flow,
+  .foot > .floatbtn.qnext.qnext-flow{ position:relative; top:auto; bottom:auto; display:block; margin:var(--qnext-flow-mt, 0px) 0 0; }
+  .foot:has(> .floatbtn.qnext.qnext-flow){ display:block; }
   /* A COPY IS A PICTURE OF WHAT WAS ALREADY THERE (build 314). The slide's
      copies are fresh elements, so the answer's colour fade
      (@starting-style) and the Next pill's rise played again inside the
@@ -29942,6 +29946,8 @@
   /* The run's buttons: Retake across the top when there is one, Re-run
      and Main menu side by side under it. */
   .actions.rs-final{ flex-wrap:wrap; }
+  /* build 382: a way-on row that has not risen and settled takes no touch at all - its buttons' haptic switches included (see rsArmIn) */
+  .rs-unarmed, .rs-unarmed *{ pointer-events:none !important; }
   .actions.rs-final .rs-wide{ flex:1 1 100%; }
   /* ROOM BETWEEN THEM (build 304). "The continue to review, re run, and
      main button are kinda spaced a little close together ... less of a
@@ -34113,10 +34119,27 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-vz-pages{ width:100%; box-sizing:border-box; padding:.5rem; display:flex; flex-direction:column; gap:.5rem; }
   .ifc-vz-pages canvas{ display:block; width:100% !important; max-width:none !important; height:auto !important; border-radius:.4rem; background:#fff; flex:none; }
   .ifc-vz-busy{ margin:2rem 0; text-align:center; font-size:.9rem; color:var(--soft); }
-  .ifc-vz-hint{ flex:none; margin:0; padding:.4rem .9rem calc(.4rem + 2px); text-align:center; font-size:.74rem; line-height:1.35; color:var(--soft); border-top:1px solid rgba(255,255,255,.06); }
-  .ifc-vz.is-zoomed .ifc-vz-hint{ opacity:.0; }
+  /* build 382: a small pill over the foot of the page that fades (ifcOpenViewer), not a bar under it */
+  .ifc-vz-hint{ position:absolute; left:50%; bottom:.8rem; z-index:2; width:max-content; max-width:calc(100% - 2rem); box-sizing:border-box;
+    margin:0; padding:.42rem .85rem; border-radius:999px; text-align:center; font-size:.74rem; line-height:1.35; color:rgba(255,255,255,.86);
+    background:rgba(10,11,17,.78); border:1px solid rgba(255,255,255,.1); box-shadow:0 4px 14px rgba(0,0,0,.35); pointer-events:none;
+    opacity:0; transform:translate(-50%, 6px); transition:opacity .35s ease, transform .35s ease; }
+  .ifc-vz-hint.is-up{ opacity:1; transform:translate(-50%, 0); }
+  .ifc-vz-hint.is-gone, .ifc-vz.is-zoomed .ifc-vz-hint{ opacity:0; transform:translate(-50%, 6px); }
   @media (prefers-reduced-motion:reduce){ .ifc-vz-dim, .ifc-vz-card{ transition:none; } }
   .ifc-links{ display:flex; flex-wrap:wrap; gap:.35rem 1rem; margin:.45rem 0 0; }
+  /* build 382: the two ways on are pills side by side that share the card's width between them (each grows from its own words, so
+     the row is filled edge to edge and neither is cut off; one alone fills it); on a card too narrow for both on one line they stack,
+     full width */
+  .ifc-links:has(> .ifc-link-pill){ display:flex; flex-wrap:wrap; gap:.55rem; margin:.75rem 0 0; }
+  .ifc-links > .ifc-link.ifc-link-pill{ flex:1 1 auto; }
+  .ifc-link.ifc-link-pill{ display:inline-flex; align-items:center; justify-content:center; gap:.45rem; min-width:0; min-height:44px;
+    padding:0 .9rem; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+    font-size:.88rem; font-weight:650; line-height:1.2; color:#FFB35C; text-decoration:none; text-align:center; white-space:nowrap;
+    -webkit-tap-highlight-color:transparent; user-select:none; transition:background-color .12s ease, transform .12s ease; }
+  .ifc-link.ifc-link-pill > span{ overflow:hidden; text-overflow:ellipsis; }
+  .ifc-link.ifc-link-pill svg{ width:17px; height:17px; flex:none; }
+  .ifc-link.ifc-link-pill:active{ background:rgba(255,255,255,.12); transform:scale(.98); }
   .ifc-link{ min-height:44px; padding:0; border:0; background:none; font:inherit; font-size:.86rem; font-weight:650; color:#FFB35C; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
   .ifc-link:disabled{ opacity:.5; }
   .ifc-locked{ display:flex; gap:.75rem; align-items:flex-start; padding:.85rem .9rem; border-radius:.85rem; border:1px dashed rgba(255,255,255,.22); background:rgba(0,0,0,.18); }
@@ -76562,6 +76585,8 @@ const NovaSound = (function(){
     hswQueue.add(n);
     hswSchedule();
   }
+  /* build 382: a container that refused its switches while it was not ready (the results' way-on buttons, see rsArm) asks for them */
+  window.hswRescan = n => { try{ if(hswObs) hswQueueAdd(n); }catch(e){} };
   function hswStart(){
     if(hswObs || typeof MutationObserver === "undefined" || !document.documentElement) return;
     hswObs = new MutationObserver(recs => {
@@ -95285,14 +95310,45 @@ function placeDockBesidePause(inTest, paused){
     if(!paused) dockBesidePause = null;
     return;
   }
-  const p = pause.getBoundingClientRect();
-  const b = btn.getBoundingClientRect();
-  if(!p.width || !b.width){ btn.style.top = ""; btn.style.right = ""; return; }
+  /* build 382: WHERE PAUSE IS LAID OUT, NOT WHERE IT IS SEEN THIS FRAME. "The chat button randomly moves sometimes in the test when
+     you get the code pulled up" (his screenshot: the button ~29px up, Pause where it always is). This runs on every stage mutation -
+     the code card fills in its pictures a moment after it opens, while the finger is usually scrolling to it - and it read Pause's
+     getBoundingClientRect(). On an iPhone that box is read against the visual viewport, which a rubber-band at the end of the page (or
+     a momentum scroll) moves away from the layout viewport the fixed button is placed in, so one read mid-bounce put the button that
+     far off until the next screen change. Pause is fixed (pinned in the test header, or itself on a tablet), so its place is its
+     offsets up to that fixed box: no scroll, bounce or animation in them. Its own nudge (translateY) is added from its transform. */
+  const fixedBox = el => {
+    let x = 0, y = 0, n = el;
+    while(n){
+      x += n.offsetLeft; y += n.offsetTop;
+      if(getComputedStyle(n).position === "fixed") return { x, y };
+      n = n.offsetParent;
+    }
+    return null;
+  };
+  const fb = fixedBox(pause);
+  const pw = pause.offsetWidth, ph = pause.offsetHeight, bh = btn.offsetHeight;
+  if(!pw || !btn.offsetWidth){ btn.style.top = ""; btn.style.right = ""; return; }
+  if(!fb){
+    /* not fixed (no question pinned yet): keep a place already found for this screen size rather than read a moving box */
+    if(dockBesidePause && dockBesidePause.vw === window.innerWidth && dockBesidePause.vh === window.innerHeight){
+      btn.style.top = dockBesidePause.top; btn.style.right = dockBesidePause.right; return;
+    }
+    const p = pause.getBoundingClientRect();
+    btn.style.top = Math.max(0, Math.round(p.top + (p.height - bh) / 2)) + "px";
+    btn.style.right = Math.round(window.innerWidth - p.left + 10) + "px";
+    return;
+  }
+  let nx = 0, ny = 0;
+  try{ const m = new DOMMatrixReadOnly(getComputedStyle(pause).transform); if(!m.isIdentity){ nx = m.m41; ny = m.m42; } }catch(e){}
+  const pTop = fb.y + ny, pLeft = fb.x + nx;
   /* Centred on Pause's own line, and one gap to its left. */
-  btn.style.top = Math.max(0, Math.round(p.top + (p.height - b.height) / 2)) + "px";
-  btn.style.right = Math.round(window.innerWidth - p.left + 10) + "px";
-  dockBesidePause = { top: btn.style.top, right: btn.style.right,
-                      pausedRight: Math.max(0, Math.round(window.innerWidth - p.right)) + "px", vw: window.innerWidth };
+  const top = Math.max(0, Math.round(pTop + (ph - bh) / 2)) + "px";
+  const right = Math.round(window.innerWidth - pLeft + 10) + "px";
+  if(btn.style.top !== top) btn.style.top = top;
+  if(btn.style.right !== right) btn.style.right = right;
+  dockBesidePause = { top, right, pausedRight: Math.max(0, Math.round(window.innerWidth - (pLeft + pw))) + "px",
+                      vw: window.innerWidth, vh: window.innerHeight };
 }
 __bm("L89131");
 window.addEventListener("resize", () => {
@@ -101170,7 +101226,7 @@ function ifcMarkedLine(text, hl){
   if(i >= 0){ p.append(text.slice(0, i), ifcEl("mark", null, hl), text.slice(i + hl.length)); } else p.textContent = text;
   return p;
 }
-/* the county's stored text: the fallback, and "Show as text" */
+/* the county's stored text: the fallback when the page picture cannot be drawn ("Show as text" removed, build 382) */
 function ifcCountyText(c){
   const box = ifcEl("div", "ifc-county-text");
   (c.excerpt || "").split("\n").forEach(line => box.appendChild(ifcMarkedLine(line, c.highlight || "")));
@@ -101230,7 +101286,11 @@ async function ifcOpenViewer(opts){
   const pages = ifcEl("div", "ifc-vz-pages");
   pages.appendChild(ifcEl("p", "ifc-vz-busy", "Opening the page…"));
   scroll.appendChild(pages);
+  /* THE HINT IS A WORD, NOT A BAR (build 382): his screenshot of Enlarge circled the strip at the foot ("Pinch or double-tap to
+     zoom") under a small excerpt and a screen of nothing. It is a small pill over the foot of the page now that fades out on its
+     own (or at the first touch), and the page has the whole card. */
   const hint = ifcEl("p", "ifc-vz-hint", "Pinch or double-tap to zoom");
+  hint.setAttribute("aria-live", "polite");
   card.append(bar, scroll, hint);
   root.append(dim, card);
   const v = { root, still, obs: null, onKey: e => { if(e.key === "Escape"){ e.stopPropagation(); ifcCloseViewer(); } } };
@@ -101254,7 +101314,8 @@ async function ifcOpenViewer(opts){
   const clampT = () => {
     const cw = scroll.clientWidth, ch = scroll.clientHeight, w = pages.offsetWidth * z, h = pages.offsetHeight * z;
     tx = w <= cw ? (cw - w) / 2 : Math.min(0, Math.max(cw - w, tx));
-    ty = h <= ch ? 0 : Math.min(0, Math.max(ch - h, ty));
+    /* build 382: shorter than the view (an excerpt fitted to the width) sits on its middle, not stuck to the top */
+    ty = h <= ch ? (ch - h) / 2 : Math.min(0, Math.max(ch - h, ty));
   };
   const apply = () => {
     clampT(); pages.style.transform = "translate3d(" + tx + "px," + ty + "px,0) scale(" + z + ")";
@@ -101273,7 +101334,10 @@ async function ifcOpenViewer(opts){
   const ptr = new Map(); let lastD = 0, lastTap = 0, tapX = 0, tapY = 0, moved = 0, vx = 0, vy = 0, lastT = 0, glide = 0, downAt = 0;
   const rect = () => scroll.getBoundingClientRect();
   const stopGlide = () => { if(glide){ cancelAnimationFrame(glide); glide = 0; } };
+  let hintT = 0;
+  const hintOff = () => { clearTimeout(hintT); hintT = 0; hint.classList.add("is-gone"); };
   scroll.addEventListener("pointerdown", e => {
+    hintOff();
     stopGlide(); pages.style.transition = "";
     try{ scroll.setPointerCapture(e.pointerId); }catch(_){}
     ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); lastD = 0; vx = vy = 0; lastT = e.timeStamp;
@@ -101334,9 +101398,22 @@ async function ifcOpenViewer(opts){
     if(ifcViewerEl !== v) return;
     pages.replaceChildren(...holder.childNodes);
     if(opts.note){ hint.textContent = opts.note + " · pinch or double-tap to zoom"; }
+    /* on its own, a moment after the page is up: longer when it carries a note to read */
+    hint.classList.add("is-up");
+    hintT = setTimeout(hintOff, opts.note ? 5200 : 2600);
   }catch(e){
     if(ifcViewerEl === v){ pages.replaceChildren(ifcEl("p", "ifc-vz-busy", "Could not open this page: " + ((e && e.message) || e))); }
   }
+}
+/* One of the code card's ways on (Enlarge, the whole page): a pill with its mark, the card's own summary pill's glass. */
+function ifcLinkBtn(label, mark){
+  const b = ifcEl("button", "ifc-link ifc-link-pill"); b.type = "button";
+  const ic = mark === "zoom"
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5M10.5 8v5M8 10.5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M14 3v5h5M10 13h6M10 17h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  b.innerHTML = ic;
+  b.appendChild(ifcEl("span", null, label));
+  return b;
 }
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
@@ -101355,21 +101432,18 @@ async function ifcFillCode(item, body, foot){
        crop scrolls sideways (or Enlarge); the exact text is one tap away. */
     const wide = ifcFitPictures(holder, body.clientWidth || 300, 1.7);
     text.hidden = true;
+    /* TWO WAYS ON (build 382): "The show as text option, let's remove that option for the code ... ensure you update the placements
+       of the other two options". "Show as text" (and the "Show the page picture" it swapped with) are gone; Enlarge and Show the
+       whole page are two equal pills side by side (ifcLinkBtn). */
     const links = ifcEl("div", "ifc-links");
-    const pic = ifcEl("button", "ifc-link", "Show the page picture"); pic.type = "button";
-    pic.addEventListener("click", () => { holder.hidden = false; text.hidden = true; pic.hidden = true; asText.hidden = false; });
-    const whole = ifcEl("button", "ifc-link", "Show the whole page"); whole.type = "button";
+    const whole = ifcLinkBtn("Show the whole page", "page");
     const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
       note: wholePage ? "The whole page of the HC Amendments. The highlighted lines are the code this question cites." : "",
       render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip }) : V.paint(doc, clip, box, { scale: 2.6 }) });
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
-    const big = ifcEl("button", "ifc-link", "Enlarge"); big.type = "button"; big.addEventListener("click", () => viewOf(false));
-    const asText = ifcEl("button", "ifc-link", "Show as text"); asText.type = "button";
-    asText.addEventListener("click", () => { text.hidden = false; holder.hidden = true; asText.hidden = true; pic.hidden = false; foot.textContent = ""; });
-    asText.hidden = false;
-    pic.hidden = true;
-    links.append(big, pic, whole, asText); body.appendChild(links);
+    const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
+    links.append(big, whole); body.appendChild(links);
     return;
   }
   const book = await ifcEnsureBook();
@@ -101411,7 +101485,7 @@ async function ifcFillCode(item, body, foot){
   ifcFitPictures(holder, body.clientWidth || 300, shown ? 1.7 : 1.4);
   {
     const links = ifcEl("div", "ifc-links");
-    const whole = ifcEl("button", "ifc-link", "Show the whole book page"); whole.type = "button";
+    const whole = ifcLinkBtn("Show the whole book page", "page");
     const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
       note: wholePage ? "The section the question cites is washed pale yellow; the sentence that decides the answer is the stronger gold." : "",
       render: box => {
@@ -101421,7 +101495,7 @@ async function ifcFillCode(item, body, foot){
       } });
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
-    const big = ifcEl("button", "ifc-link", "Enlarge"); big.type = "button"; big.addEventListener("click", () => viewOf(false));
+    const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
     links.append(big);
     if(shown) links.appendChild(whole);
     body.appendChild(links);
@@ -102020,28 +102094,66 @@ function render(){
    last of them now when there is room, and never lower than it was: a long question that fills the screen still has it at the
    bottom. Measured once as the question is drawn (before the rise, which waits .78s) and again on a resize; it rises the same way. */
 /* (var, not let/const: a test resumed at launch draws a question before this part of the script has run) */
-var qnextNow = null;
+/* build 382: NEVER OVER THE CODE. "the next question button keeps going over the code too, can we fix that?" With no room under a
+   long question (a Fire Code answer with its code card open is taller than any phone) the pill stayed pinned to the bottom of the
+   screen, over the card's excerpt and links at every scroll but the very end. Where there is no room now it sits IN THE PAGE, the
+   same 3.25rem under the content (.qnext-flow: in the foot's flow, so the page grows to hold it and it scrolls with the content -
+   nothing scrolls under it). Where there is room it is pinned 3.25rem under the content as in 382. Measured in page coordinates
+   (an answer given while the page was scrolled down no longer puts it where the content returns to), and again whenever the
+   question's panel changes size - the code card opening, its pictures arriving - not only on a resize. */
+var qnextNow = null, qnextRO = null;
 function qnextPlace(btn, panel){
   /* build 382: "Next question button, it's now a little bit too high, lower it some" - 2rem under the answers (380) -> 3.25rem */
   const QNEXT_GAP_REM = 3.25;
-  qnextNow = { btn, panel };
+  if(!qnextNow || qnextNow.btn !== btn || qnextNow.panel !== panel){
+    qnextNow = { btn, panel };
+    try{
+      if(qnextRO) qnextRO.disconnect();
+      if(typeof ResizeObserver === "function"){
+        let raf = 0;
+        qnextRO = new ResizeObserver(() => {
+          if(raf) return;
+          raf = requestAnimationFrame(() => {
+            raf = 0;
+            const q = qnextNow;
+            if(!q || !q.btn.isConnected || q.btn.hidden || !q.panel.isConnected){ if(qnextRO) qnextRO.disconnect(); qnextRO = null; return; }
+            qnextPlace(q.btn, q.panel);
+          });
+        });
+        qnextRO.observe(panel);
+      }
+    }catch(e){}
+  }
   try{
+    const foot = btn.parentElement;
+    btn.classList.remove("qnext-flow"); btn.style.removeProperty("--qnext-flow-mt");
     btn.style.setProperty("--qnext-raise", "0px");
-    let low = 0;
-    /* the keys line under the stage (#hint: computers and iPads only) is part of what it goes under */
-    const keys = document.getElementById("hint");
-    [...panel.children, ...(keys ? [keys] : [])].forEach(k => {
-      if(!k.offsetHeight) return;
-      const pos = getComputedStyle(k).position;
-      if(pos === "fixed" || pos === "absolute") return;
-      const b = k.getBoundingClientRect().bottom;
-      if(b > low) low = b;
-    });
+    const lowOf = withKeys => {
+      let low = 0;
+      /* the keys line under the stage (#hint: computers and iPads only) is part of what it goes under */
+      const keys = withKeys ? document.getElementById("hint") : null;
+      [...panel.children, ...(keys ? [keys] : [])].forEach(k => {
+        if(!k.offsetHeight) return;
+        const pos = getComputedStyle(k).position;
+        if(pos === "fixed" || pos === "absolute") return;
+        const b = k.getBoundingClientRect().bottom;
+        if(b > low) low = b;
+      });
+      return low;
+    };
+    const low = lowOf(true);
     if(!low) return;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const gap = QNEXT_GAP_REM * rem;
     const top0 = innerHeight - (parseFloat(getComputedStyle(btn).bottom) || 0) - btn.offsetHeight;
-    const raise = Math.max(0, Math.round(top0 - (low + QNEXT_GAP_REM * rem)));
-    btn.style.setProperty("--qnext-raise", raise + "px");
+    const want = low + (window.scrollY || 0) + gap;   /* where it goes with the page at its top */
+    if(want <= top0){ btn.style.setProperty("--qnext-raise", Math.round(top0 - want) + "px"); return; }
+    /* no room: in the page, under the content (the keys line, after the stage, goes under it) */
+    btn.classList.add("qnext-flow");
+    if(!foot) return;
+    const lowP = lowOf(false) || low;
+    const natural = foot.getBoundingClientRect().top + (btn.offsetTop - foot.offsetTop);
+    btn.style.setProperty("--qnext-flow-mt", Math.round(lowP + gap - natural) + "px");
   }catch(e){}
 }
 addEventListener("resize", () => {
@@ -111226,11 +111338,70 @@ function rsTapAt(e){
   if(rsBeatOn && rsBeatAt && now - rsBeatAt > 120) t = Math.min(t, rsBeatAt + 17);
   return Date.now() - (now - t);
 }
+/* build 382: THE WAY-ON BUTTONS ARE NOT THERE UNTIL THEY ARE THERE. "at the test results screen, I touch the screen where the re run
+   button is before it's there, the result screen or retake will stop and the test will just start loading, same with the main menu ...
+   (I've mentioned this multiple times already..)". 305 took pointer events off a row that had not landed and 328/380 timed the
+   buttons' own click - but on an iPhone every button carries a native haptic switch (.nova-hsw) whose own pointer-events:auto beats
+   its row's none (the class button's bug, 381), so a finger where Main menu WOULD be took the hidden switch, and the switch's click
+   (or the 379 rescue's, 140ms after a touch that ticked) pressed it. Now a row passed to rsRise is inert - no pointer events on it or
+   anything in it, and no switches (data-no-hsw, any already there taken off) - until its last button has risen and RS_SETTLE_MS more
+   has gone by; and even then a click only counts when the touch it came from STARTED after that moment (a finger already down when
+   the buttons arrived lifts onto nothing). A refused click starts the wait again. Keyboard and programmatic clicks with no touch
+   behind them only wait for the row to be ready. */
+var RS_SETTLE_MS = 500;   /* var: safe to read before this part of the script has run */
+var rsDownAt = -1e9, rsUpAt = -1e9;
+function rsDisarm(el){
+  if(!el) return;
+  el.classList.add("rs-armable", "rs-unarmed");
+  el.setAttribute("data-no-hsw", "");
+  el.querySelectorAll(".nova-hsw").forEach(sw => { const h = sw.parentNode; if(h){ h.removeAttribute("data-hsw"); h.__hsw = null; } sw.remove(); });
+  el.__armAt = Infinity;
+  clearTimeout(el.__armT);
+}
+function rsArmIn(el, ms){
+  if(!el) return;
+  rsDisarm(el);
+  el.__armAt = performance.now() + Math.max(0, ms || 0) + RS_SETTLE_MS;
+  const tick = () => {
+    const left = el.__armAt - performance.now();
+    if(left > 1){ el.__armT = setTimeout(tick, left); return; }
+    el.classList.remove("rs-unarmed"); el.removeAttribute("data-no-hsw");
+    try{ if(window.hswRescan) window.hswRescan(el); }catch(e){}
+  };
+  el.__armT = setTimeout(tick, el.__armAt - performance.now());
+}
+(function rsArmWatch(){
+  const evAt = e => { const n = performance.now(); return (e && e.timeStamp > 0 && e.timeStamp <= n) ? e.timeStamp : n; };
+  ["pointerdown", "touchstart"].forEach(t => window.addEventListener(t, e => {
+    /* a touch's pointerdown comes with its touchstart: the earlier of the two is when the finger landed */
+    const at = evAt(e);
+    rsDownAt = (rsUpAt < rsDownAt && at - rsDownAt < 60) ? Math.min(rsDownAt, at) : at;
+  }, { capture: true, passive: true }));
+  ["pointerup", "pointercancel", "touchend", "touchcancel"].forEach(t => window.addEventListener(t, () => { rsUpAt = performance.now(); }, { capture: true, passive: true }));
+  window.addEventListener("click", e => {
+    const t = e.target, c = t && t.closest ? t.closest(".rs-armable") : null;
+    if(!c) return;
+    const b = t.closest("button, [role='button']");
+    if(!b || !c.contains(b)) return;
+    const now = performance.now();
+    /* the click belongs to a touch when one is down or was lifted a moment ago */
+    const fromTouch = rsDownAt > -1e8 && (rsUpAt < rsDownAt || now - rsUpAt < 1000);
+    if(!c.classList.contains("rs-unarmed") && now >= c.__armAt && !(fromTouch && rsDownAt < c.__armAt)) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    rsArmIn(c, 0);
+  }, true);
+})();
 function rsRise(el, o){
   o = o || {};
   if(!el) return 0;
   rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 600);
   try{ rsBeatStart(); }catch(e){}
+  rsDisarm(el);
+  const total = rsRiseRun(el, o);
+  rsArmIn(el, total);
+  return total;
+}
+function rsRiseRun(el, o){
   el.classList.remove("rs-in"); el.classList.add("rs-in-now");
   if(o.instant || resultsMotionOff()) return 0;
   const btns = [...el.children].filter(b => b.matches("button, .next") && !b.hidden);
@@ -114289,6 +114460,7 @@ function summarize(){
     where = where || { where: "results" };
     const actions = document.createElement("div");
     actions.className = "actions actions-results rs-final";
+    rsDisarm(actions);   /* build 382: inert until rsRise has brought it up and it has settled */
     const mk = (label, cls, fn, id) => {
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = cls; if(id) btn.id = id;
