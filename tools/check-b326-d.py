@@ -257,8 +257,10 @@ def check_story(br):
             # one locked look
             crew = next((p for p in props if p.get("kind") == "crew"), {}).get("crew") or []
             lost = [c for c in crew if c["lost"]]
-            same = lost and all(c["look"] == "char-sil-challenge" and c["hatched"] and (c["rim"] or "").replace(" ", "") in ("rgb(127,163,214)", "#7fa3d6") and not c["grey"] for c in lost)
-            check("%s %s: every character not yet yours is the one striped, steel-blue-edged cut-out (%d of them); the rest in colour" % (dev, who, truth["locked"]),
+            # SUPERSEDED IN BUILD 382: "that would be removed during the intro and stuff too, just make it on
+            # the intro like greyed out" - every missing crewman is his own drawing, greyed (no cut-out)
+            same = lost and all(not c["look"] and c["grey"] for c in lost)
+            check("%s %s: every character not yet yours is his own drawing, greyed (%d of them, build 382); the rest in colour" % (dev, who, truth["locked"]),
                   same and len(lost) == truth["locked"] and len(crew) - len(lost) == truth["owned"]
                   and all(not c["look"] for c in crew if not c["lost"]),
                   {"looks": sorted(set((c["look"], c["rim"], c["hatched"]) for c in lost)), "lost": len(lost), "want": truth["locked"]})

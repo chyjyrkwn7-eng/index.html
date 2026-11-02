@@ -337,7 +337,7 @@ def check_broadcast(br):
 
 
 def check_locked_looks(br):
-    print("\nd5. locked characters: challenge, secret and ultimate each blacked out in their own look; ranks as before")
+    print("\nd5. locked characters (build 382): none blacked out - every one its own drawing")
     for (w, h, dev) in DEVS:
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -363,65 +363,27 @@ def check_locked_looks(br):
             document.querySelectorAll('.invite-overlay, .unlock-card').forEach(e => e.remove()); }
           return out; }""")
         rows = r.get("rows") or []
-        wrong = [x["id"] for x in rows if x["locked"] and x["cat"] in ("challenge", "secret", "ultimate") and not (x["sil"] and x["look"] == "char-sil-" + x["cat"])]
-        rankwrong = [x["id"] for x in rows if x["locked"] and x["cat"] == "rank" and x["sil"]]
-        rims = {c: sorted(set(x["rim"] for x in rows if x["cat"] == c and x["sil"])) for c in ("challenge", "secret", "ultimate")}
-        shared = all(len(v) == 1 for v in rims.values()) and len(set(v[0] for v in rims.values() if v)) == 3
-        ult = [x for x in rows if x["cat"] == "ultimate" and x["sil"]]
-        check("%s Customize: every locked challenge, secret and ultimate character is a cut-out in its category's look; a rank's is not" % dev,
-              rows and not wrong and not rankwrong and any(x["cat"] == "challenge" and x["sil"] for x in rows),
-              {"wrong": wrong, "rank": rankwrong, "n": len(rows)})
-        check("%s ...one shared look per category (one edge colour each, three different), and the ultimates glow" % dev,
-              shared and ult and all(x["halo"] >= 1 for x in ult), {"rims": rims, "ultHalo": [x["halo"] for x in ult]})
-        check("%s ...and a locked challenge character's card shows its cut-out, not the character" % dev, r.get("card") is True, r.get("card"))
+        # SUPERSEDED IN BUILD 382: "we made the character unlocks hidden, we can remove that ... they are
+        # gonna be viewable again." No locked character is a cut-out now: each is its own drawing, greyed
+        # (check-b382-unhide holds the greying), and its card shows the character.
+        cut = [x["id"] for x in rows if x["sil"] or x["look"]]
+        plain = [x["id"] for x in rows if x["locked"] and not x["colour"]]
+        check("%s Customize: no locked character is a cut-out - challenge, secret, ultimate and rank are all their own drawings (build 382)" % dev,
+              rows and not cut and not plain and any(x["locked"] and x["cat"] == "challenge" for x in rows), {"cut": cut, "noDrawing": plain, "n": len(rows)})
+        check("%s ...and a locked challenge character's card shows the character, not a cut-out" % dev, r.get("card") is False, r.get("card"))
         ctx.close()
 
 
 def check_cutout_tops(br):
-    print("\nd5b. the new cut-outs are not cut off: nothing of a challenge or ultimate cut-out in the top 6% of its tile")
-    import io
-    from PIL import Image
-    for (w, h, dev), dpr in zip(DEVS, (3, 2)):
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
+    # SUPERSEDED IN BUILD 382: Customize draws no cut-outs any more, so there is no cut-out top to hold
+    # clear; what is left to hold is that none is drawn.
+    print("\nd5b. (build 382) Customize draws no challenge or ultimate cut-out")
+    for (w, h, dev) in DEVS:
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT)
         pg.evaluate("async () => { showCustomize('character'); }")
         pg.wait_for_timeout(1200)
-        tops = {}
-        for look in ("challenge", "ultimate"):
-            sel = ".avatarchar-option.is-sil-" + look
-            if not pg.evaluate("(s) => !!document.querySelector(s)", sel):
-                tops[look] = None
-                continue
-            pg.evaluate("(s) => document.querySelector(s).scrollIntoView({ block: 'center', behavior: 'instant' })", sel)
-            for _ in range(80):
-                n = pg.evaluate("""(s) => [...document.querySelectorAll(s)].filter(o => { const b = o.getBoundingClientRect(); return b.top > 0 && b.bottom < innerHeight; })
-                  .map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))""", sel)
-                if n and all(n):
-                    break
-                pg.wait_for_timeout(400)
-            pg.wait_for_timeout(500)
-            tiles = pg.evaluate("""(s) => [...document.querySelectorAll(s)].map(o => { const b = o.getBoundingClientRect();
-              return { id: o.title, box: [b.left, b.top, b.width, b.height] }; }).filter(t => t.box[1] > 0 && t.box[1] + t.box[3] < innerHeight)""", sel)
-            shot = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-            for t in tiles:
-                x, y, tw, th = t["box"]
-                crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
-                W, H = crop.size
-                px = crop.load()
-                top = None
-                for yy in range(0, int(H * .5)):
-                    # a lit RUN wider than the sky's stars (about 1.5 CSS px), not a star
-                    run = best = 0
-                    for xx in range(int(W * .1), int(W * .9)):
-                        run = run + 1 if sum(px[xx, yy]) / 3 >= 110 else 0
-                        best = max(best, run)
-                    if best >= 2 * dpr + 1:
-                        top = yy / H
-                        break
-                tops[t["id"]] = round(top, 3) if top is not None else None
-        bad = {k: v for k, v in tops.items() if v is not None and v < 0.06}
-        seen = [k for k, v in tops.items() if v is not None]
-        check("%s every challenge and ultimate cut-out in view clears the top 6%% of its tile" % dev,
-              len(seen) >= 8 and not bad and tops.get("challenge", 1) is not None, tops)
+        n = pg.evaluate("() => document.querySelectorAll('.avatarchar-option.is-sil-challenge, .avatarchar-option.is-sil-ultimate, .avatarchar-option .char-sil').length")
+        check("%s no cut-out tile on Customize" % dev, n == 0, n)
         ctx.close()
 
 

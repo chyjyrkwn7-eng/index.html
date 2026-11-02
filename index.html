@@ -1980,6 +1980,15 @@
     .nt-ask-char{ width:min(36rem, 96%); }
     .nt-ask .nt-ask-grid .avatarchar-option{ flex-basis:calc((100% - 2.4rem) / 5); }
   }
+  /* build 382: the crew still to find, greyed, under the starters - one slow pan, pictures not buttons */
+  .nt-ask-later{ width:100%; display:flex; flex-direction:column; align-items:center; gap:.35rem; }
+  .nt-ask-later-h{ margin:0; font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--soft); }
+  .nt-ask-later .nt-crewpar .nt-slot{ width:2.6rem; height:2.6rem; }
+  @media (min-width:40rem){ .nt-ask-later .nt-crewpar .nt-slot{ width:3.4rem; height:3.4rem; } }
+  /* build 382: a character not yours yet, drawn on its own (a banner's face, the flare hint's ghost) - greyed like Customize's */
+  svg.char-locked-grey{ filter:saturate(.3) contrast(.4) brightness(1.34); }
+  /* build 382: sign-up's greyed "Still to find" grid - smaller tiles, still 44px at least */
+  .charselect-later-h{ text-align:center; }
   .nt-picked{ display:block; width:min(9rem, 40vw); aspect-ratio:1; }
   .nt-picked svg{ width:100%; height:100%; display:block; }
   .nt-codebox{ margin:0; padding:1.1rem 1.6rem; }
@@ -3056,6 +3065,13 @@
   @media (min-width:40rem){
     .panel.home.charselect-panel .avatarchar-grid{ column-gap:1.4rem; }
     .panel.home.charselect-panel .avatarchar-grid .avatarchar-option{ flex-basis:6.6rem; width:6.6rem; }
+  }
+  /* build 382: the greyed "Still to find" grid under the starters - smaller tiles (44px at least), more a row */
+  .panel.home.charselect-panel .avatarchar-grid.charselect-later{ column-gap:.5rem; row-gap:.5rem; max-width:26rem; margin-left:auto; margin-right:auto; }
+  .panel.home.charselect-panel .avatarchar-grid.charselect-later .avatarchar-option{ flex:0 0 3.2rem; width:3.2rem; min-width:44px; min-height:44px; max-width:none; }
+  @media (min-width:40rem){
+    .panel.home.charselect-panel .avatarchar-grid.charselect-later{ max-width:34rem; }
+    .panel.home.charselect-panel .avatarchar-grid.charselect-later .avatarchar-option{ flex-basis:3.8rem; width:3.8rem; }
   }
   /* The name field is sized for the widest screen it appears on and was
      reported as wider than it needs to be on a phone - "a good size for
@@ -23061,6 +23077,8 @@
   .banner-opt-art > .bnr{ border-radius:inherit; clip-path:inset(0 round 11px); }
   .banner-opt:active .banner-opt-art{ transform:scale(.98); }
   .banner-opt.locked .banner-opt-art > .bnr{ filter:grayscale(.85) brightness(.45); }
+  /* build 382: a once-veiled banner while locked - one still picture of it (lockedBannerStill) */
+  .bnr-lockedstill > img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
   /* A SECRET FLARE BANNER YOU DO NOT HOLD IS FROSTED GLASS (build 314).
      It was a black cut-out with a "?" (build 313): "umbra, horizon, and
      genesis, when scrolling through the banners, just making them dark
@@ -53146,10 +53164,15 @@ __bm("L47152");
 const CHAR_SIL_LOOKS = ["secret", "challenge", "ultimate"];
 /* the look a not-yet-yours character is drawn in, or null when it is yours
    (or locked behind a rank, which keeps the greyed preview) */
+/* NOTHING IS HIDDEN ANY MORE (build 382). "we made the character unlocks
+   hidden, we can remove that ... just make it on the intro like greyed out
+   ... they are gonna be viewable again." Every character you do not hold -
+   a challenge's, a secret, an ultimate - is the greyed still preview a
+   rank's always was: its real drawing, greyed, a padlock, not pickable.
+   So no character is drawn in a cut-out look; charSilhouetteSVG stays for
+   a caller that asks for one by name (none does today). */
 function charLockLook(id){
-  const k = charCategory(id);
-  if(CHAR_SIL_LOOKS.indexOf(k) < 0) return null;
-  return isLockedCharacter(id) ? k : null;
+  return null;
 }
 function isCharSilhouette(id){ return !!charLockLook(id); }
 /* the light a silhouette's tile and card give off, in its look's colour */
@@ -53157,7 +53180,11 @@ const CHAR_SIL_GLOW = { secret: "#A7AAAF", challenge: "#7FA3D6", ultimate: "#FFD
 /* A character as it should be drawn for THIS account: yours in colour, a
    cut-out in its look, or (a rank's) the plain drawing the caller greys. */
 function buildCharArtFor(id){
-  return isCharSilhouette(id) ? buildCharSilhouette(id) : buildAvatarCharSVGSafe(id);
+  if(isCharSilhouette(id)) return buildCharSilhouette(id);
+  const svg = buildAvatarCharSVGSafe(id);
+  /* build 382: not yours yet - its own drawing, greyed (.char-locked-grey) */
+  try{ if(isLockedCharacter(id)) svg.classList.add("char-locked-grey"); }catch(e){}
+  return svg;
 }
 /* NO COLOUR, AND ONE DRAWING (build 314). "Umbra and horizon characters
    are cutoff when looking at them, also, remove the colors from their
@@ -86088,6 +86115,28 @@ function showWelcomeCharacterPrompt(){
     avatarGrid.appendChild(opt);
   });
   panel.appendChild(avatarGrid);
+  /* EVERYONE ELSE, GREYED (build 382): "they are gonna be viewable again".
+     The starters stay the only ones you can pick; under them, every
+     character still to earn, greyed and still with its padlock - a tap
+     says what it takes. */
+  const laterGrid = document.createElement("div");
+  laterGrid.className = "avatarchar-grid charselect-later";
+  AVATAR_CHARACTERS.forEach(charDef => {
+    if(charDef.retired || charDef.legacy || !isLockedCharacter(charDef.id)) return;
+    const opt = document.createElement("button");
+    opt.type = "button";
+    opt.className = "avatarchar-option locked";
+    opt.setAttribute("aria-label", (AVATAR_DISPLAY_NAME[charDef.id] || charDef.id) + ", locked");
+    opt.appendChild(buildAvatarCharSVG(charDef.id));
+    const lockMark = document.createElement("span");
+    lockMark.className = "avatarchar-lockmark";
+    lockMark.setAttribute("aria-hidden", "true");
+    lockMark.appendChild(buildLockIcon());
+    opt.appendChild(lockMark);
+    opt.addEventListener("click", () => showToast(characterLockMessage(charDef.id)));
+    laterGrid.appendChild(opt);
+  });
+  /* (placed under Continue, below, so the button stays next to the pick) */
 
   const continueBtn = document.createElement("button");
   continueBtn.type = "button"; continueBtn.className = "next playbtn";
@@ -86100,6 +86149,14 @@ function showWelcomeCharacterPrompt(){
     finishWelcomeStartFresh();
   });
   panel.appendChild(continueBtn);
+  if(laterGrid.children.length){
+    const lh = document.createElement("p");
+    lh.className = "avatarchar-group-title charselect-later-h";
+    lh.style.cssText = "position:relative;z-index:1;";
+    lh.textContent = "Still to find";
+    laterGrid.style.cssText = "position:relative;z-index:1;margin:.6rem 0 1.2rem;justify-content:center;";
+    panel.append(lh, laterGrid);
+  }
 
   stage.replaceChildren(panel);
   toTop();
@@ -86265,7 +86322,20 @@ function novaAskCharacter(ctx, answered){
     novaSignupCreate();
     answered();
   });
-  card.append(grid, go);
+  /* THE REST OF THE CREW, GREYED (build 382): "just make it on the intro
+     like greyed out". Under the starters, every character still to find,
+     in his greyed still look, on one slow pan - shown, not pickable (they
+     are pictures, not buttons). */
+  const rest = novaCrewShown().filter(c => isLockedCharacter(c.id));
+  if(rest.length){
+    const later = document.createElement("div"); later.className = "nt-ask-later";
+    const lab = document.createElement("p"); lab.className = "nt-ask-later-h"; lab.textContent = "Still to find";
+    const order = NOVA_CREW_KINDS.map(x => x.k).concat(["kept"]);
+    const tiles = rest.slice().sort((a, b) => order.indexOf(charCategory(a.id)) - order.indexOf(charCategory(b.id))).map(c => {
+      const t = novaCrewArt(c.id); t.setAttribute("aria-label", (AVATAR_DISPLAY_NAME[c.id] || c.id) + ", locked"); t.setAttribute("role", "img"); return t; });
+    later.append(lab, novaParade(tiles, 1, "nt-crewpar nt-laterpar"));
+    card.append(grid, go, later);
+  } else card.append(grid, go);
   novaProp(ctx, card);
 }
 /* The new account's code, on his stage */
@@ -87496,11 +87566,15 @@ const NOVA_CREW_KINDS = [
 ];
 /* the one look every missing crewman takes in his slides */
 const NOVA_LOST_LOOK = "challenge";
+/* BUILD 382: "that would be removed during the intro and stuff too, just
+   make it on the intro like greyed out". A crewman still missing is his
+   real drawing, greyed and still (.is-ranklocked, the preview Customize
+   uses), not the striped cut-out (NOVA_LOST_LOOK is kept for reference). */
 function novaCrewArt(id){
   const s = document.createElement("span"); s.className = "nt-slot nt-crewman";
   if(isLockedCharacter(id)){
-    s.classList.add("is-lost", "is-sil-" + NOVA_LOST_LOOK);
-    try{ s.appendChild(buildCharSilhouette(id, NOVA_LOST_LOOK)); }catch(e){}
+    s.classList.add("is-lost", "is-ranklocked");
+    try{ s.appendChild(buildAvatarCharSVGSafe(id)); }catch(e){}
   } else {
     try{ s.appendChild(buildAvatarCharSVGSafe(id)); }catch(e){}
   }
@@ -111866,7 +111940,8 @@ function flareHintItem(ch){
       /* The flare, sitting where it will be worn, in front of a ghost of
          the character it hands over - there, but not yet yours. */
       const f = document.createDocumentFragment();
-      const ghost = document.createElement("span"); ghost.className = "rs-hint-ghost char-live";
+      /* build 382: the character greyed and still (buildCharArtFor), so no loop runs under its grey */
+      const ghost = document.createElement("span"); ghost.className = "rs-hint-ghost" + (isLockedCharacter(ch) ? "" : " char-live");
       /* not yet yours, so its silhouette (build 313) */
       try{ ghost.appendChild(buildCharArtFor(ch)); }catch(e){}
       const orb = document.createElement("span"); orb.className = "rs-hint-orb";
@@ -127010,7 +127085,8 @@ function characterDetail(id){
     return o;
   }
   if(def.unlock) return Object.assign(o, rankDetail(def.unlock));
-  if(def.secretHint && !def.secretHint.shown()){ o.desc = def.secretHint.text; o.hideArt = true; return o; }
+  /* (build 382: the art is shown even then - nothing is hidden) */
+  if(def.secretHint && !def.secretHint.shown()){ o.desc = def.secretHint.text; return o; }
   if(def.feat){
     const locked = characterLockMessage(id);
     /* Void's two flares name the one before them rather than themselves -
@@ -127024,7 +127100,8 @@ function characterDetail(id){
     /* "Ensure this reads well in the descriptions" (build 313): a secret
        flare character is shown as a silhouette until it is yours, and its
        card says so before it says how. */
-    const secretLead = def.secret && locked ? "A secret flare character, hidden until it is yours. " : "";
+    /* build 382: shown greyed now, not hidden - the card no longer says hidden */
+    const secretLead = def.secret && locked ? "A secret flare character. " : "";
     if(def.secret && /^Unlock /.test(locked)){ o.desc = secretLead + locked; return o; }
     const f = CHARACTER_FEATS[def.feat];
     if(f){ o.desc = secretLead + f.label + "."; o.have = Math.min(f.have(), f.need); o.need = f.need; if(f.note) o.note = f.note; }
@@ -127054,7 +127131,7 @@ function bannerDetail(id){
   if(def.flareChar){
     o.kicker = "Secret banner";
     o.desc = def.label + ".";
-    if(!bannerEarned(id)) o.note = "Find the character's flare and both are yours. Until then it stays in the dark.";
+    if(!bannerEarned(id)) o.note = "Find the character's flare and both are yours.";
     return o;
   }
   if(def.ultimate) o.kicker = "Ultimate banner";
@@ -127650,7 +127727,7 @@ function customizeTally(key){
   }
   if(key === "banner"){
     /* "Default" is a tile of its own, and always yours */
-    const shown = BANNERS.filter(d => !(d.secret && !bannerEarned(d.id)));
+    const shown = BANNERS;
     return { have: 1 + shown.filter(d => bannerEarned(d.id)).length, total: 1 + shown.length, fresh: newCountOf(["banners"]) };
   }
   if(key === "theme") return { have: ACCENTS.filter(a => !isLockedAccent(a)).length, total: ACCENTS.length, fresh: newCountOf(["themes"]) };
@@ -128043,6 +128120,7 @@ function buildCustomizeBannerSect(){
     art.className = "banner-opt-art";
     /* a veiled secret is never drawn live under its glass (veilBanner) */
     if(locked && isVeiledBanner(id)) veilBanner(art, id);
+    else if(locked && isStillLockedBanner(id)) bannerArtQueue.push({ art, id, still: true });
     else if(id) bannerArtQueue.push({ art, id }); else art.appendChild(buildThemeBannerArt(theme.accent));
     if(locked){
       const lk = document.createElement("span");
@@ -128081,8 +128159,8 @@ function buildCustomizeBannerSect(){
      banner needs to say default banner similarity to the default theme"
      (build 243). It takes the colours of whichever theme you run. */
   bannerOpt("", "Default", "", false);
+  /* every banner, held or not (build 382: none left out) */
   BANNERS.forEach(def => {
-    if(def.secret && !bannerEarned(def.id)) return;
     bannerOpt(def.id, def.name, def.label, !bannerEarned(def.id));
   });
   bannerSect.appendChild(bannerGrid);
@@ -128337,13 +128415,38 @@ function isVeiledBanner(id){
   /* the three ultimate banners too (build 327z13): "Astral, celestial, and
      zenith banners, these should be hidden like the secret flare banners"
      - in the dark, "Unlock to see", until they are yours */
+  /* build 382: "all the banners will be viewable some of them you can't
+     see till they are unlocked.. remove that." None is veiled now: a
+     locked one is its real art, greyed, with the padlock, like every other
+     locked banner. (Customize draws these seven as a still picture -
+     lockedBannerStill - rather than the live scene.) */
+  return false;
+}
+/* the banners that were veiled until build 382 - the four secret flare
+   banners and the three ultimates - are drawn, while locked, as ONE still
+   picture of their layers at rest (bannerStaticSVG, the same picture the
+   veil was blurred from), not seven more live scenes on Customize */
+function isStillLockedBanner(id){
+  const d = id && bannerDef(id);
   return !!(d && (d.flareChar || d.ultimate) && !bannerEarned(id));
+}
+function lockedBannerStill(id){
+  const svg = bannerStaticSVG(id);
+  if(!svg) return buildBannerArt(id);
+  const el = document.createElement("div");
+  el.className = "bnr bnr-" + id + " is-still bnr-lockedstill";
+  el.setAttribute("aria-hidden", "true");
+  const im = new Image();
+  im.alt = ""; im.decoding = "async";
+  im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  el.appendChild(im);
+  return el;
 }
 function fillDeferredBannerArt(queue){
   if(!queue || !queue.length) return;
   const fill = q => {
     q.done = true;
-    try{ q.art.insertBefore(buildBannerArt(q.id), q.art.firstChild); }catch(e){}
+    try{ q.art.insertBefore(q.still ? lockedBannerStill(q.id) : buildBannerArt(q.id), q.art.firstChild); }catch(e){}
   };
   const step = () => {
     const live = queue.filter(q => !q.done && q.art.isConnected);
