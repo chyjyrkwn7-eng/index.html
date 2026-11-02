@@ -7430,10 +7430,11 @@ def check_b297(br):
             const s = st && st.getBoundingClientRect();
             const bs = [...document.querySelectorAll('.pausepanel .actions button')].map(b => b.getBoundingClientRect());
             out.pause = s ? { off: Math.round(Math.abs((s.top + s.height / 2) - innerHeight / 2)),
-              /* two buttons, or three since build 319 (Save and exit) */
-              stacked: bs.length >= 2 && bs.every((b, i) => i === 0 || b.top > bs[i - 1].bottom - 1),
-              sameWidth: bs.length >= 2 && bs.every(b => Math.abs(b.width - bs[0].width) < 1),
-              centred: bs.every(b => Math.abs((b.left + b.width / 2) - innerWidth / 2) < 2) } : null;
+              /* (380) ONE CARD: the first button across it, the rest under it - side by side when two, the second across it when
+                 one; the card and its first button on the screen's centre line */
+              stacked: bs.length >= 2 && bs.slice(1).every(b => b.top > bs[0].bottom - 1) && (bs.length < 3 || Math.abs(bs[1].top - bs[2].top) < 1),
+              sameWidth: bs.length >= 2 && (bs.length === 2 ? Math.abs(bs[1].width - bs[0].width) < 1 : Math.abs(bs[1].width - bs[2].width) < 1 && Math.abs(bs[0].width - (bs[2].right - bs[1].left)) < 1),
+              centred: Math.abs((s.left + s.width / 2) - innerWidth / 2) < 2 && Math.abs((bs[0].left + bs[0].width / 2) - innerWidth / 2) < 2 } : null;
             /* the exit confirmation puts its buttons exactly where Pause's were */
             /* UNROUNDED, within half a pixel (build 308). Both screens centre
                their stack, so the buttons land on fractional pixels; a
@@ -7448,17 +7449,18 @@ def check_b297(br):
             /* the confirmation's buttons on Pause's first ones (it has two, Pause
                has three where Save and exit is offered) */
             out.confirm = { title: (document.querySelector('.pausepanel .qnum') || {}).textContent, before, conf,
-              same: conf.length >= 2 && conf.every((p, i) => before[i] && p.every((v, j) => Math.abs(v - before[i][j]) < 0.5)) };
+              /* (380) Keep going exactly where Resume was */
+              same: conf.length >= 2 && conf[0].every((v, j) => Math.abs(v - before[0][j]) < 0.5) };
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         if r.get("threw"):
             print("   threw:", r["threw"][:300])
         check("%dx%d: the test's flag is the shared one" % (w, h), r.get("testFlag") is True, r.get("testFlag"))
         pz = r.get("pause") or {}
-        check("%dx%d: pause buttons stacked, one width, centred, the group on the screen's middle" % (w, h),
+        check("%dx%d: Pause is one card on the screen's middle: Resume across it, the others under it, one width (380)" % (w, h),
               pz.get("stacked") and pz.get("sameWidth") and pz.get("centred") and pz.get("off", 99) <= 6, pz)
         cf = r.get("confirm") or {}
-        check("%dx%d: the exit confirmation's buttons sit exactly where Pause's do" % (w, h),
+        check("%dx%d: the exit confirmation's first button sits exactly where Resume does" % (w, h),
               cf.get("same") is True and str(cf.get("title")).endswith("?"), cf)
         ctx.close()
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)

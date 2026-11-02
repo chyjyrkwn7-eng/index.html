@@ -19916,13 +19916,8 @@
      Save and exit is the same matte button in a neutral grey: opaque fill,
      a lighter lip along the top, a shade inside the bottom edge, Quit's own
      contact/mid/wide shadows, no border (Quit's height, so nothing moves). */
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-save{
-    color:#fff; border:none; background-image:none; background-color:#4A4E55;
-    backdrop-filter:none; -webkit-backdrop-filter:none;
-    box-shadow:0 1px 1px rgba(255,255,255,.28) inset, 0 -2px 2px rgba(0,0,0,.4) inset,
-      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
-  }
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-save:active{ background-color:#383B41; opacity:1; }
+  /* (build 380: Save and exit is no longer grey - it is Quit test's own black button, beside it on the Pause card; see the end
+     of the main <style>) */
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -34701,8 +34696,8 @@ html.is-browser{ --fade-paper: transparent; }
   /* BUILD 349: "the color of the default isn't a good color, + it looks the same as the bronze": the default theme's
      orbs took its warm gold, which sat between Bronze and Veteran. They are Nova's own rose now (the brand's magenta,
      lifted for a dark screen) and every rank keeps its own colour, a little stronger than before. */
-  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:first-child{ stop-color:color-mix(in srgb, var(--orb-tint) 24%, #FFFFFF); }
-  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:not(:first-child){ stop-color:color-mix(in srgb, var(--orb-tint) 52%, #BFC4CC); }
+  /* (build 380: the class marks keep their own colours again - "Maybe the icons colors for the class should be there after all so
+     the fire should be orange" - the silver stops are gone) */
   html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble){
     border-color:color-mix(in srgb, var(--orb-tint) 34%, rgba(255,255,255,.26));
     box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
@@ -34777,6 +34772,116 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid rgba(255,255,255,.16) !important;
     backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
     box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
+  /* BUILD 380: THE PAUSE MENU IS ONE CARD. "The test pause menu, I don't like the look of the three buttons of different colors stacked
+     on top of each like how it is. Can we try a different approach?" Three full-width pills in three fills (white, grey, black) down
+     the middle of an empty screen. Now one card - the app's own surface, as a unit card or Settings is - with a pause mark, what is
+     paused and where, then Resume as the one white button across it and Save and exit and Quit test as a matching pair of black
+     buttons side by side, each with its mark. The buttons stay solid ("They should NOT be glass ... like other buttons, white and
+     black", 327 round 12): two materials, and the three choices read as one and two. Every screen mountPausePanel draws (Pause, the
+     Quit confirmation, a results pause, a room's leave) is the same card, so Keep going still lands where Resume was. */
+  html[data-layout] .pausepanel .pause-stack{
+    width:min(22rem, 100%); margin-left:auto; margin-right:auto; box-sizing:border-box;
+    padding:1.5rem 1.2rem 1.2rem; border-radius:28px;
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    -webkit-backdrop-filter:var(--surface-blur); backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow);
+  }
+  html[data-layout] .pausepanel .pause-stack .qnum{ margin-top:0; }
+  html[data-layout] .pausepanel .pause-stack .qtext{ margin-bottom:0; font-size:.98rem; }
+  html[data-layout] .pausepanel .pause-info{ margin:0 0 .55rem; }
+  .pause-mark{
+    display:flex; align-items:center; justify-content:center; gap:.3rem; width:3rem; height:3rem; margin:0 auto 1rem; border-radius:50%;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); box-shadow:inset 0 1px 1px rgba(255,255,255,.08);
+  }
+  .pause-mark::before, .pause-mark::after{ content:""; width:.36rem; height:1.15rem; border-radius:3px; background:var(--ink, #F3F5F7); }
+  html[data-layout] .pausepanel .actions{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; width:100%; margin-top:1.25rem; }
+  html[data-layout] .pausepanel .actions > .next{ width:100%; margin:0; min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
+    padding-left:.75rem; padding-right:.75rem; white-space:nowrap; }
+  html[data-layout] .pausepanel .actions > .next:first-child,
+  html[data-layout] .pausepanel .actions > .next:nth-child(2):last-child{ grid-column:1 / -1; }
+  .pausepanel .pause-ic{ width:1.05rem; height:1.05rem; flex:none; }
+  @media (max-width:359.98px){ html[data-layout] .pausepanel .actions{ grid-template-columns:1fr; } }
+  /* BUILD 380: THE CORNER BUTTONS ARE HOME'S OWN BUBBLES. "The daily question and class button on home aren't it, shouldn't they be
+     a little Liquid Glass? ... give it the same feel as the Home Screen" / "they just stand out when they shouldn't". They were their
+     own glass (344: a dark-tinted body, a pool of light at the top-left, a brighter specular lip, the theme's colour in the rim).
+     They are now exactly the glass the rank bubbles on the rings are made of (an unreached one: its pale clear body, the light
+     caught along the top, its .24 rim, its small 6px frost and its shadow), so the corners read as two more bubbles. The class button's
+     mark is in its own colours again with a breath of that colour inside (as each flare lights its bubble); the daily question
+     keeps its rank-colour wash when a question is ready, on the same glass. */
+  html[data-theme][data-layout] body:not(.x380) :is(.class-bubble, .csi-bubble, .daily-question-fab),
+  html[data-theme][data-layout] body:not(.x380) .daily-question-fab.is-done:not(.is-charging),
+  html[data-theme][data-layout] body:not(.x380) .daily-question-fab.is-done{
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
+      radial-gradient(66% 66% at 50% 56%, var(--cc, transparent), transparent 72%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(255,255,255,.06)),
+      rgba(255,255,255,.09) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.24) !important;
+    box-shadow:0 1px 4px rgba(255,255,255,.1) inset, 0 -1px 3px rgba(255,255,255,.06) inset, 3px 7px 12px -2px rgba(0,0,0,.42) !important;
+    -webkit-backdrop-filter:blur(6px) saturate(1.4) !important; backdrop-filter:blur(6px) saturate(1.4) !important;
+  }
+  html[data-theme][data-layout] body:not(.x380) .daily-question-fab.is-ready:not(.is-done),
+  html[data-theme][data-layout] body:not(.x380):has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
+      radial-gradient(110% 80% at 50% 118%, color-mix(in srgb, var(--dq-c) 40%, transparent), color-mix(in srgb, var(--dq-c) 10%, transparent) 62%, transparent 80%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(255,255,255,.06)),
+      rgba(255,255,255,.09) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid color-mix(in srgb, var(--dq-c) 34%, rgba(255,255,255,.24)) !important;
+    box-shadow:0 1px 4px rgba(255,255,255,.1) inset, 0 -1px 3px rgba(255,255,255,.06) inset, 3px 7px 12px -2px rgba(0,0,0,.42),
+               0 0 12px -4px color-mix(in srgb, var(--dq-c) 36%, transparent) !important;
+    -webkit-backdrop-filter:blur(6px) saturate(1.4) !important; backdrop-filter:blur(6px) saturate(1.4) !important;
+  }
+  /* each class's breath of colour, softer than its old glow */
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cc:rgba(170,160,255,.2); }
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cc:rgba(255,140,70,.22); }
+  /* THE LIST GOES BACK INTO THE BUTTON (build 380): "When you have the drop down up and it goes away, it should retract towards the
+     bubble you have set as well." Closing faded each bubble where it stood; now each one slides back into the class button and
+     shrinks into it, the farthest first, and opening brings them out of it the same way, nearest first. Transform and opacity. */
+  html[data-layout] .class-bubble-wrap .class-stack-item{
+    transform-origin:calc(var(--cb) / 2) 50%;
+    transform:translateY(calc((var(--k) + 1) * (var(--cb) + var(--cg)) * -1)) scale(.4);
+    transition:transform .3s cubic-bezier(.55, 0, .7, .4) calc((var(--n) - 1 - var(--k)) * 40ms), opacity .16s ease calc((var(--n) - 1 - var(--k)) * 40ms + .12s);
+  }
+  html[data-layout] .class-bubble-wrap.is-open .class-stack-item{
+    transform:none;
+    transition:opacity .16s ease calc(var(--k) * 55ms), transform .38s cubic-bezier(.2, 1.15, .4, 1) calc(var(--k) * 55ms);
+  }
+  @media (max-width:39.99rem) and (orientation:portrait){
+    html[data-layout] .class-bubble-wrap .class-stack-item{ transform:translateY(calc((var(--k) + 1) * (var(--cb) + var(--cg)))) scale(.4); }
+    html[data-layout] .class-bubble-wrap.is-open .class-stack-item{ transform:none; }
+  }
+  [data-reduce-motion="true"] .class-bubble-wrap .class-stack-item{ transform:none !important; }
+  /* BUILD 380: SILVER LOOKS LIKE SILVER WHEN IT IS LIT. "The silver tank flare when unlocked, it looks almost identical to the non
+     unlocked flares, how do we make the silver flare better?" Lit, it was a grey tint (#8F9297) round a white emblem - and a rank not
+     reached yet is exactly that, a grey bubble round a white emblem, only dimmer. Silver is cool now: polished metal catching blue
+     light: the shared lit recipe (309: "ensure all these flares when lit up have the same look") tinted a real silver-blue
+     (#A9C4EC - 309 meant a deeper silver-blue, the value had become a grey), so its rim, wash and glow are cool, and the emblem
+     itself cooled to the same steel-blue silver. Grey stays what "not yet" looks like. */
+  .cosmic-icon-badge.cosmic-badge-rank[data-rank-tier="ranger"]{ --flare-tint:#A9C4EC; }
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"] svg.cosmic-rank-emblem{ filter:sepia(.32) hue-rotate(178deg) saturate(2.3) brightness(1.32); }
+  /* BUILD 380: THE SECRET FLARES, MORE OF A SPHERE. "the secret flares on the main menu, (and whenever you see them) could they look
+     better? I feel like they don't look very 3D or good or cool?" At ~16px a marble is read from four things: one crisp glint high
+     on the left, the far edge darker than the middle, the light that came through pooled inside the lower edge, and a thin bright
+     rim. A secret flare not found yet now has all four in grey glass; a found one is its own light inside the same glass - the glint
+     and the rim over a white-hot core and its colour, deepening to the edge. Backgrounds and shadows only, on the same small box. */
+  .cosmic-flare-dot .cof-body{
+    background:
+      radial-gradient(ellipse 22% 16% at 34% 27%, rgba(255,255,255,1) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 36% 31%, rgba(255,255,255,.45) 0 12%, rgba(255,255,255,0) 30%),
+      radial-gradient(ellipse 56% 30% at 52% 86%, rgba(222,232,250,.55) 0 30%, rgba(222,232,250,0) 100%),
+      radial-gradient(circle at 42% 38%, rgba(196,206,224,.5) 0%, rgba(118,130,156,.55) 48%, rgba(46,52,70,.9) 82%, rgba(20,23,34,.96) 100%);
+    box-shadow:inset 0 0 0 .7px rgba(255,255,255,.45), inset 0 -1px 1.5px rgba(255,255,255,.25), 0 1.5px 3px rgba(0,0,0,.6), 0 0 6px rgba(255,255,255,.12);
+  }
+  .cosmic-flare-dot.is-found .cof-body{
+    background:
+      radial-gradient(ellipse 20% 14% at 34% 26%, rgba(255,255,255,1) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(ellipse 54% 28% at 52% 88%, color-mix(in srgb, var(--fc) 40%, #fff) 0 24%, transparent 100%),
+      radial-gradient(circle at 46% 46%, #FFFFFF 0 14%, color-mix(in srgb, var(--fc) 42%, #fff) 30%, var(--fc) 56%, color-mix(in srgb, var(--fc) 55%, #000) 86%, color-mix(in srgb, var(--fc) 30%, #000) 100%);
+    box-shadow:inset 0 0 0 .7px color-mix(in srgb, var(--fc) 35%, #fff), 0 0 0 .5px color-mix(in srgb, var(--fc) 50%, transparent), 0 0 8px var(--fc), 0 1.5px 3px rgba(0,0,0,.45);
   }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
@@ -79663,6 +79768,8 @@ function renderPausedScreen(){
   resumeBtn.type = "button"; resumeBtn.className = "next"; resumeBtn.id = "resumebtn";
   resumeBtn.textContent = "Resume";
   resumeBtn.addEventListener("click", resumeRun);
+  /* build 380: the card's marks (see .pause-mark, .pause-ic) */
+  const pauseIc = d => '<svg class="pause-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
   /* "Start over" removed from Pause entirely, per explicit request \u2014
      it's no longer an option here at all, not just relabeled or
      tucked away. Resume and Exit test are the only two ways out of
@@ -79677,6 +79784,7 @@ function renderPausedScreen(){
   /* QUIT, NOT EXIT (build 319): with Save and exit beside it, "exit" no
      longer says which one throws the run away. */
   menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Quit test";
+  menuBtn.insertAdjacentHTML("afterbegin", pauseIc("M6.5 6.5l11 11M17.5 6.5l-11 11"));
   menuBtn.id = "pause-quit";
   menuBtn.addEventListener("click", confirmExitTest);
   /* SAVE AND EXIT (build 319) - "when you pause a test, it could just say
@@ -79687,6 +79795,7 @@ function renderPausedScreen(){
     const saveBtn = document.createElement("button");
     saveBtn.type = "button"; saveBtn.className = "next ghost"; saveBtn.id = "pause-save";
     saveBtn.textContent = "Save and exit";
+    saveBtn.insertAdjacentHTML("afterbegin", pauseIc("M7 3.8h10a1 1 0 0 1 1 1v15.4l-6-4.2-6 4.2V4.8a1 1 0 0 1 1-1z"));
     saveBtn.addEventListener("click", saveAndExitTest);
     actions.append(resumeBtn, saveBtn, menuBtn);
     panel.classList.add("has-save");
@@ -79695,7 +79804,9 @@ function renderPausedScreen(){
   }
   /* build 327 round 11: no "Paused" heading - the header row above already shows the
      mode and the count, the clock is amber, and the units are right here. */
-  mountPausePanel(panel, [info, p, actions], resumeBtn);
+  const mark = document.createElement("span");
+  mark.className = "pause-mark"; mark.setAttribute("aria-hidden", "true");
+  mountPausePanel(panel, [mark, info, p, actions], resumeBtn);
 }
 
 /* PAUSE AND ITS CONFIRMATIONS SHARE ONE PLACE (build 297): "ensure the
@@ -79755,6 +79866,8 @@ function mountPausePanel(panel, children, focusBtn){
    Pause that leaves the whole group within a few px of centre. Never up
    into the panel's top edge; again on a rotate; measured twice because
    #stage can still be easing in. */
+/* (var, not let: set by whichever pause screen comes up first, at any point after launch) */
+var pauseLine = null;
 function centerPauseStack(panel, stack){
   const actions = stack.querySelector(".actions");
   const place = () => {
@@ -79762,24 +79875,23 @@ function centerPauseStack(panel, stack){
     stack.style.transform = "";
     const r = stack.getBoundingClientRect(), pr = panel.getBoundingClientRect();
     const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    /* build 327 round 11: the "Paused" heading is gone, so the group is ~30px
-       shorter above the buttons; the line comes up .9rem to keep it centred */
-    let line = vh / 2 + 0.85 * rem;
-    /* A THIRD BUTTON (build 319: Save and exit) makes the group a button
-       taller, so the line rises by half a button for the Pause panel AND
-       for its Quit confirmation (both carry .has-save): the group stays on
-       the middle and Keep going still lands exactly on Resume. */
-    if(actions && panel.classList.contains("has-save")){
-      const bs = actions.querySelectorAll("button");
-      if(bs.length > 1) line -= (bs[1].getBoundingClientRect().top - bs[0].getBoundingClientRect().top) / 2;
-    }
-    /* On a device pixel, and the SAME device pixel on every screen that
-       shares the line: rounding the move instead left the buttons up to a
-       pixel apart between Pause and its confirmation. */
     const dpr = window.devicePixelRatio || 1;
-    line = Math.round(line * dpr) / dpr;
-    let dy = actions ? line - actions.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
+    const first = actions && actions.querySelector("button");
+    /* BUILD 380: THE CARD ON THE SCREEN'S MIDDLE. Pause (the screen with Resume) centres its card and keeps the line its first button
+       starts on; a screen reached from it - Quit's confirmation, and what Keep going brings back - puts its first button on that same
+       line, so Keep going lands exactly where Resume was. A screen with no Pause line for this viewport centres its own card. (It was
+       the buttons placed on a fixed line below the middle, the words stacking up above them - 297 to 327.) */
+    const anchor = !!stack.querySelector("#resumebtn");
+    const same = pauseLine && pauseLine.vh === vh && pauseLine.w === window.innerWidth;
+    let line = null;
+    if(first){
+      if(anchor || !same) line = vh / 2 - r.height / 2 + (first.getBoundingClientRect().top - r.top);
+      else line = pauseLine.line;
+      /* on a device pixel, and the SAME device pixel on every screen that shares the line */
+      line = Math.round(line * dpr) / dpr;
+      if(anchor) pauseLine = { vh, w: window.innerWidth, line };
+    }
+    let dy = first ? line - first.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
     dy = Math.max(dy, pr.top + 8 - r.top);
     stack.style.transform = Math.abs(dy) >= 0.01 ? "translateY(" + dy.toFixed(2) + "px)" : "";
   };
@@ -137389,11 +137501,20 @@ function tabPerfText(){
       [[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,2],[1,2],[2,2]].map(([c, r]) =>
         '<rect class="tg-day" x="' + (5.65 + c * 2.85).toFixed(2) + '" y="' + (10.2 + r * 2.85).toFixed(2) + '" width="1.85" height="1.85" rx=".45"/>').join("") +
       '</g>',
+    /* build 380: "could the leaderboard icon look a little better on the bottom tabs? I don't love it" - one solid trophy, as the
+       planet and the calendar are solid: the cup with a star cut out of it, handles as thick as the planet's ring and joined to
+       the cup, a short stem and a rounded foot */
     rewards:
-      '<path class="tg-cup" fill="currentColor" d="M6.8 3h10.4v5.6a5.2 5.2 0 0 1-10.4 0z"/>' +
-      '<path class="tg-handles" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.8 4.9H4.4a2.5 2.5 0 0 0 2.7 4.9M17.2 4.9h2.4a2.5 2.5 0 0 1-2.7 4.9"/>' +
-      '<path class="tg-stem" fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2z"/>' +
-      '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
+      /* ONE path, nonzero fill (380): the glyph's colour is a little see-through, and separate pieces painted their overlaps twice
+         (bright dots where the handles met the cup). The cup, both handles, the stem and the foot run clockwise and unite; the
+         star runs the other way and is cut out. */
+      '<path class="tg-cup" fill="currentColor" fill-rule="nonzero" d="' +
+        'M6.9 2.8h10.2c.4 0 .7.3.7.7v5.3a5.8 5.8 0 0 1-11.6 0V3.5c0-.4.3-.7.7-.7z' +
+        'M12 5.15L11.37 6.83L9.57 6.91L10.97 8.03L10.5 9.76L12 8.78L13.5 9.76L13.03 8.03L14.43 6.91L12.63 6.83z' +
+        'M7.6 3.3V5.3H4.6A.75 .75 0 0 0 3.85 6.15C4.05 7.75 5.25 8.95 6.95 9.35L6.55 11.3C3.85 10.75 2.15 8.85 1.86 6.32A2.75 2.75 0 0 1 4.6 3.3z' +
+        'M16.4 3.3H19.4A2.75 2.75 0 0 1 22.14 6.32C21.85 8.85 20.15 10.75 17.45 11.3L17.05 9.35C18.75 8.95 19.95 7.75 20.15 6.15A.75 .75 0 0 0 19.4 5.3H16.4z' +
+        'M10.75 14h2.5v3.4h-2.5z' +
+        'M8.3 17.2h7.4c.7 0 1.25.55 1.25 1.25v1.5c0 .7-.55 1.25-1.25 1.25H8.3c-.7 0-1.25-.55-1.25-1.25v-1.5c0-.7.55-1.25 1.25-1.25z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
      glide (LENS.glide, build 327z13) is ~94% of the way at 290ms, so the

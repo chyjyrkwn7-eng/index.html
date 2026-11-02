@@ -30207,3 +30207,41 @@ Gate: check-b380 (24) on a test the chat button and Pause are the bar's glass, (
 answers (as on a phone, no keys line) and unchanged from the bottom when the question fills the screen - both fail on 379 (25 of 25
 pass on 380, twice). Also run: sweep-layout --quick 14/14, check-behaviour b303 + b318f_seeresults, check-chat, check-savetest,
 check-results; check-chatroom's two "stale classmate" failures and check-b327-d's others are the same on 379.
+
+### 380, a third round: the Pause card, Home's corner buttons as Home's bubbles, the class list goes back into its button, the trophy, Silver, the secret flares; the flare shake looked for
+
+Madison: "The test pause menu, I don't like the look of the three buttons of different colors stacked on top of each like how it is.
+Can we try a different approach?"; "The daily question and class button on home aren't it, shouldn't they be a little Liquid Glass? ...
+Maybe the icons colors for the class should be there after all so the fire should be orange ... give it the same feel as the Home
+Screen ... When you have the drop down up and it goes away, it should retract towards the bubble you have set"; "The flares in the
+tank flare bubbles, they are slightly shaking"; "could the leaderboard icon look a little better on the bottom tabs?"; "the secret flares
+... could they look better? ... they don't look very 3D or good or cool"; "the silver tank flare when unlocked, it looks almost identical
+to the non unlocked flares".
+- PAUSE IS ONE CARD (every mountPausePanel screen): the surface tokens' card, a pause mark (.pause-mark), the units and the place, then
+  Resume across the card and Save and exit / Quit test side by side, each with a mark (.pause-ic). The buttons stay solid (327 round 12:
+  "They should NOT be glass ... white and black"): Save and exit's grey override is gone, it is Quit test's black - two materials.
+  centerPauseStack: the screen with #resumebtn centres its CARD and keeps the line its first button starts on (pauseLine, a var); a
+  screen reached from it puts its first button on that line (Keep going lands on Resume). check-savetest and check-behaviour b297
+  rewritten to the card (one card on the middle, Resume across it, the pair side by side and one width, Keep going on Resume).
+- HOME'S CORNER BUTTONS are now exactly an unreached rank bubble's glass (rgba(255,255,255,.09), the top light, .24 rim, blur(6px)
+  saturate(1.4), its shadows; a rule at the end of the main <style>, body:not(.x380) only for weight); the class marks keep their own
+  colours (345's silver stops removed) with a breath of the class's colour inside (--cc); the daily question keeps its ready wash on
+  the same glass. check-b344 follows (no-blur -> the bubbles' frost; silver mark -> its own colours; ready's wash is the 118% one).
+- THE LIST RETRACTS: closed, each .class-stack-item sits in the button (translateY((k+1)*(cb+cg)) scale(.4), origin the bubble's
+  centre; upward on a tablet), so closing slides them back in, the farthest first, and opening brings them out, nearest first.
+- THE TROPHY (TAB_GLYPHS.rewards): one path, nonzero - the cup, handles as thick as the planet's ring, stem and foot clockwise, a star
+  counter-clockwise (cut out). Separate pieces painted their overlaps twice (the glyph colour is a little see-through).
+- SILVER: --flare-tint #A9C4EC (it had become #8F9297, grey: 309 meant "a deeper silver-blue" and asked that every lit flare keep the
+  one recipe, so only the tint and the emblem change) and the lit Silver emblem cooled (sepia/hue-rotate/saturate/brightness).
+- SECRET FLARES: .cof-body is a marble - a crisp glint top-left, a soft second light, the light pooled at the foot, a body darkening to
+  its edge, an inset rim; found, the same glint, foot light and rim over the white-hot core and its colour.
+- THE SHAKE, LOOKED FOR (not reproduced): the recorded frames move smoothly (centroid steps <=0.2px), Home's flares are put on their
+  clock once (no re-syncs), frame steps are whole device pixels (build 300's geometry holds). Stepping the animations by hand showed a
+  1px sawtooth between the flare and its bubble's rim - but that is Chromium re-rastering a moved layer and snapping the <img>; the
+  live compositor does not do that, and live sampling is swamped by the drawing's own motion. 380 already changes how every flare is
+  drawn (window-sized layers, fewer syncs on the board, no still-first board). Needs his phone: a recording of where it shakes.
+Gate: check-b380 (26) the Pause card, (27) the corner buttons = an unreached rank bubble's glass + the class mark's colours, (28) the
+list back into its button, (29) one-piece trophy, (30) lit Silver's rim cool (blue over red 48; locked 0), (31) the secret flares'
+layers - all six fail on 379; 31 of 31 pass on 380 (rankUpHolds is set aside for 30: a rank just reached waits for its scene).
+Also run: check-b344, check-savetest, check-behaviour b297/b313_pause/b310/b313_flares, check-b349, b342, b328-classes, sweep-layout
+--quick 14/14; check-ink-centre's 12 failures are the same before this round; check-fixes' one (an SE landscape grey bar) is on 379 too.

@@ -30,6 +30,11 @@ nothing starred, a tap on it says so at the top (a banner), not in a toast at th
 here 150ms later), and a tap whose flip never comes glides back;
 (24) on a test, the chat button and Pause are the tab bar's own glass (body, rim, blur, shadow); (25) Next question comes up 2rem under
 the answers when they leave room (as on a phone, no keys line), and at the bottom, where it was, when the question fills the screen;
+(26) Pause is one card on the screen's middle with Resume across it and Save and exit and Quit test side by side in one black, and
+Keep going lands where Resume was; (27) Home's daily question and class button are the rank bubbles' glass (their body and rim,
+no blur) and the class mark is in its own colours; (28) closing the class list sends each bubble back into the class button;
+(29) the Leaderboard tab's trophy is one piece; (30) a lit Silver flare is not the grey a locked flare is; (31) a secret flare has
+a glint, the light pooled at its foot and a rim;
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -322,6 +327,50 @@ with sync_playwright() as pw:
     pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(800)
     chk("Next question comes up %s rem under a short question's answers, and where it always was when the question fills the screen (%s px from the bottom, was %s)" % (short and short["gapRem"], tall and tall["fromBottom"], tall0 and tall0["fromBottom"]),
         short and 1.6 <= short["gapRem"] <= 2.6 and tall and tall0 and tall["scrolls"] and tall["fromBottom"] == tall0["fromBottom"], [short, tall, tall0])
+    # (26) the Pause card
+    pc = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const u=topicsIn(QUESTIONS)[5]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u && inWholeUnit(QUESTIONS[i]));
+      cfg.source='all'; cfg.mode='drill'; cfg.units=[u]; beginRun(idx); for(let t=0;t<60 && !document.querySelector('.qpanel .choice');t++) await wait(100); await wait(400); pauseRun(); await wait(900);
+      const st=document.querySelector('.pause-stack'), s=st.getBoundingClientRect(), cs=getComputedStyle(st); const bs=[...document.querySelectorAll('.pausepanel .actions button')]; const rs=bs.map(b=>b.getBoundingClientRect());
+      const bg=b=>getComputedStyle(b).backgroundColor; const before=rs[0];
+      const out={ card: cs.borderTopLeftRadius!=='0px' && cs.backgroundColor!=='rgba(0, 0, 0, 0)', off: Math.round(Math.abs(s.top+s.height/2-innerHeight/2)), n: bs.length,
+        row: bs.length===3 && Math.abs(rs[1].top-rs[2].top)<1 && rs[1].top>rs[0].bottom-1 && Math.abs(rs[1].width-rs[2].width)<1, twoLooks: bs.length===3 && bg(bs[1])===bg(bs[2]) && bg(bs[0])!==bg(bs[1]) };
+      document.getElementById('pause-quit').click(); await wait(800); const k=document.querySelector('.pausepanel .actions button').getBoundingClientRect();
+      out.keep = Math.abs(k.top-before.top)<0.6 && Math.abs(k.left-before.left)<0.6; document.querySelector('.pausepanel .actions button').click(); await wait(500); try{ resumeRun(); }catch(e){} await wait(300); try{ stopQuestionTimer(); }catch(e){} showHome(); return out; }""")
+    chk("Pause is one card on the screen's middle (%s px off), Resume across it, Save and exit and Quit test side by side in one look (%s), and Keep going lands where Resume was (%s)" % (pc["off"], pc["twoLooks"], pc["keep"]),
+        pc["card"] and pc["off"] <= 8 and pc["row"] and pc["twoLooks"] and pc["keep"], pc)
+    pg.wait_for_timeout(1200)
+    # (27)/(28) Home's corner buttons and the class list
+    pg.evaluate("()=>{ window.NOVA_CLASS_OWNER = (store && store.publicId) || 'me'; if(store && !store.publicId) store.publicId='me'; try{ localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); }catch(e){} showHome(); }")
+    pg.wait_for_timeout(3000)
+    cb = pg.evaluate("""async()=>{ const c=s=>document.querySelector(s); const b=c('.class-bubble'), q=c('.daily-question-fab'), rk=c('#stage .cosmic-badge-rank:not(.cosmic-badge-lit)'); if(!b||!q||!rk) return null;
+      const g=e=>{ const s=getComputedStyle(e); return { body: s.backgroundColor, rim: s.borderTopColor, blur: s.backdropFilter||s.webkitBackdropFilter||'none' }; };
+      const stops=[...b.querySelectorAll('svg stop')].map(s=>getComputedStyle(s).stopColor); const rgb=x=>(x.match(/[\d.]+/g)||[]).slice(0,3).map(Number); const spread=Math.max(0,...stops.map(x=>{ const v=rgb(x); return Math.max(...v)-Math.min(...v); }));
+      const it=[...document.querySelectorAll('.class-stack-item .csi-bubble')]; b.click(); await new Promise(r=>setTimeout(r,800)); const open=it.map(e=>e.getBoundingClientRect().top);
+      b.click(); await new Promise(r=>setTimeout(r,700)); const br=b.getBoundingClientRect(); const shut=it.map(e=>{ const r=e.getBoundingClientRect(); return Math.abs((r.top+r.height/2)-(br.top+br.height/2)); });
+      return { b: g(b), q: g(q), rk: g(rk), spread, open, shut: shut.map(Math.round) }; }""")
+    same = cb and cb["b"]["body"] == cb["rk"]["body"] == cb["q"]["body"] and cb["b"]["rim"] == cb["rk"]["rim"] and cb["b"]["blur"] == cb["rk"]["blur"] == cb["q"]["blur"]
+    chk("Home's daily question and class button are the rank bubbles' glass (body, rim, frost: %s) and the class mark is in its own colours (spread %s)" % (bool(same), cb and cb["spread"]),
+        same and cb["spread"] > 40, cb)
+    chk("closing the class list sends each bubble back into the class button (%s px from its centre)" % (cb and cb["shut"],), cb and cb["shut"] and max(cb["shut"]) <= 4, cb)
+    # (29) the trophy, (30) Silver, (31) a secret flare
+    tr = pg.evaluate("()=>{ const s=document.querySelector('#bottomtab-rewards svg'); return s ? s.querySelectorAll('path').length : null; }")
+    chk("the Leaderboard tab's trophy is one piece (%s path)" % tr, tr == 1, tr)
+    for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+    pg.evaluate("()=>{ window.rankUpHolds = () => false; store.rankFloor = 2; store.rankMapSeen = 1; store.mysteryColorsFound = { red:true, orange:false, yellow:false, violet:false, white:false, core:false }; homeUnlocksOwed=()=>false; showHome(); }")
+    pg.wait_for_timeout(2500)
+    pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+    sv = pg.evaluate("""()=>{ const lit=document.querySelector('#stage .cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"]'), off=document.querySelector('#stage .cosmic-badge-rank:not(.cosmic-badge-lit)'); if(!lit||!off) return { why: [rankOf(store), !!document.querySelector('.screen-home-actual'), [...document.querySelectorAll('#stage .cosmic-badge-rank')].map(b=>b.dataset.rankTier+(b.classList.contains('cosmic-badge-lit')?'*':'')).join(','), [...document.body.children].filter(e=>/cut|scene|journey|rs-spot/.test(e.id+' '+e.className)).map(e=>e.id||e.className).join('|')] };
+      const rgb=x=>{ const v=(x.match(/[0-9.]+/g)||[]).map(Number); return /^color\(/.test(x) ? v.slice(0,3).map(n=>n*255) : v.slice(0,3); };
+      const L=getComputedStyle(lit), O=getComputedStyle(off); const rim=rgb(L.borderTopColor), offRim=rgb(O.borderTopColor);
+      return { rim: rim.map(Math.round), offRim: offRim.map(Math.round), cool: Math.round(rim[2]-rim[0]), offCool: Math.round(offRim[2]-offRim[0]) }; }""")
+    if sv and "why" in sv: print("   silver not on Home:", sv["why"]); sv = None
+    chk("a lit Silver flare is not a locked flare's grey: its rim is cool silver-blue (blue over red by %s, a locked one's by %s)" % (sv and sv["cool"], sv and sv["offCool"]),
+        sv and sv["cool"] >= 20 and abs(sv["offCool"]) < 8, sv)
+    fd = pg.evaluate("""()=>{ const d=document.querySelector('#stage .cosmic-flare-dot:not(.is-found) .cof-body'), f=document.querySelector('#stage .cosmic-flare-dot.is-found .cof-body'); if(!d) return null; const c=e=>getComputedStyle(e);
+      return { unfound: (c(d).backgroundImage.match(/gradient/g)||[]).length, rim: /inset/.test(c(d).boxShadow), found: f ? (c(f).backgroundImage.match(/gradient/g)||[]).length : null }; }""")
+    chk("a secret flare has a glint, the light pooled at its foot, its body and a rim (%s layers not found, %s found, rim %s)" % (fd and fd["unfound"], fd and fd["found"], fd and fd["rim"]),
+        fd and fd["unfound"] >= 4 and fd["rim"] and (fd["found"] is None or fd["found"] >= 3), fd)
+    pg.evaluate("()=>{ store.rankFloor = 0; showHome(); }"); pg.wait_for_timeout(800)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);
