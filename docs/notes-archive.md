@@ -30594,3 +30594,7 @@ Madison: "The leaderboard is still very glitchy when opening it up" / "it could 
   Warm-board timing (recorded loops) unmeasurable at load 23-36 - phone check.
 - CHECK-SYNC on the merged build (Fire Code + Settings + slide + test + ...): "the restored account is what goes up, to the account
   and the floor" FAILED (pushed None) - being compared against 381 before shipping.
+- CHECK-SYNC 8f "the restored account is what goes up" (382): failed on the merged 382 in full runs, passed on 381 once. Isolated
+  (tools section 8f alone, 3+3 runs, push timed): the restored account always goes up correctly (17,585 / 13) on BOTH builds, 4.8-7.6s
+  after launch under load (381: 7.6/5.6/4.9s; 382: 5.3/4.8/6.1s) - the gate's fixed 4.2s wait was the flake, not the app. 8f now waits
+  for the push (up to 12s) and checks the same values.
