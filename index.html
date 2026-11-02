@@ -34905,6 +34905,88 @@ html.is-browser{ --fade-paper: transparent; }
       radial-gradient(circle at 46% 46%, #FFFFFF 0 14%, color-mix(in srgb, var(--fc) 42%, #fff) 30%, var(--fc) 56%, color-mix(in srgb, var(--fc) 55%, #000) 86%, color-mix(in srgb, var(--fc) 30%, #000) 100%);
     box-shadow:inset 0 0 0 .7px color-mix(in srgb, var(--fc) 35%, #fff), 0 0 0 .5px color-mix(in srgb, var(--fc) 50%, transparent), 0 0 8px var(--fc), 0 1.5px 3px rgba(0,0,0,.45);
   }
+  /* ---- build 382: THE LEADERBOARD, ONE FAMILY WITH THE GLASS ----
+     "I feel like the leaderboard looks good but I think it could look better." Same layout and the same information; the rows are
+     one height (--lb-row-h, which the placeholders take too, so the rows that replace them land where they stood), a little rounder,
+     on the surface tokens with a fine catch-light on top; the place is a centred number with a quiet "#", the medals are true
+     circles; gold, silver and bronze each catch their own light in the corner; your row is the accent's ring over a wash of it;
+     the column labels are small spaced capitals. No blur on any row, nothing animated but opacity and transform. */
+  .screen-rankings{ --lb-row-h:3.75rem; --lb-place-w:2.3rem; --lb-medal:1.85rem; --lb-row-r:18px; }
+  @media (max-width:29rem){ .screen-rankings{ --lb-place-w:1.8rem; --lb-medal:1.65rem; } }
+  @media (min-width:40rem){ .screen-rankings{ --lb-row-h:4.125rem; --lb-place-w:2.6rem; --lb-medal:2rem; --lb-row-r:20px; } }
+  html[data-layout] body .screen-rankings .rank-row:not(.rank-row-head){
+    min-height:var(--lb-row-h); box-sizing:border-box; border-radius:var(--lb-row-r); margin-bottom:.45rem;
+  }
+  html[data-theme="dark"][data-layout] body .screen-rankings .rank-row:not(.rank-row-head):not(.rank-podium-1):not(.rank-podium-2):not(.rank-podium-3):not(.lb-row-me){
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:inset 0 1px 0 var(--surface-lift), 0 6px 16px -10px var(--surface-inset);
+  }
+  html[data-layout] body .screen-rankings .rank-row.is-tappable{ transition:transform .14s ease; }
+  html[data-layout] body .screen-rankings .rank-row.is-tappable:active{ transform:scale(.985); }
+  /* the place: a centred number, the "#" a step quieter */
+  html[data-layout] body .screen-rankings .rank-row .rank-place{
+    width:var(--lb-place-w); flex:0 0 var(--lb-place-w); text-align:center;
+    font-family:var(--sans); font-variant-numeric:tabular-nums; font-size:.95rem; font-weight:700; letter-spacing:-.01em;
+  }
+  html[data-layout] body .screen-rankings .rank-row .rank-place:not(.lb-rank-medal){ color:var(--soft); }
+  .screen-rankings .rank-place .rank-hash{ font-size:.78em; font-weight:600; opacity:.55; margin-right:.04em; }
+  /* the medals, round (they were the place column's width by the text's height - ovals) */
+  html[data-layout] body .screen-rankings .rank-row .rank-place.lb-rank-medal{
+    width:var(--lb-medal); height:var(--lb-medal); flex:0 0 var(--lb-medal);
+    margin-left:calc((var(--lb-place-w) - var(--lb-medal)) / 2); margin-right:calc((var(--lb-place-w) - var(--lb-medal)) / 2);
+    font-size:.85rem; font-weight:800; letter-spacing:0;
+  }
+  /* each metal catches its own light in its corner (first place had it alone) */
+  [data-layout="modern"] .screen-rankings .rank-row.rank-podium-2{
+    background:radial-gradient(90% 160% at 0% 0%, rgba(236,238,242,.16), rgba(236,238,242,0) 58%),
+      linear-gradient(180deg, rgba(220,222,225,.15), rgba(200,202,205,.05) 55%, rgba(220,222,225,.07));
+  }
+  [data-layout="modern"] .screen-rankings .rank-row.rank-podium-3{
+    background:radial-gradient(90% 160% at 0% 0%, rgba(232,160,98,.18), rgba(232,160,98,0) 58%),
+      linear-gradient(180deg, rgba(186,120,66,.15), rgba(186,120,66,.04));
+  }
+  .screen-rankings .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3) .rank-name{ font-weight:800; }
+  /* your row: the accent's ring over a wash of it, on the podium too */
+  html[data-layout] body .screen-rankings .rank-row.lb-row-me{
+    border:1.5px solid var(--accent);
+    background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--accent) 6%, transparent) 72%), var(--surface-1);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 6px 18px -8px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  /* on the light page the wash sits on the light rows' own pane, not the dark token */
+  html[data-theme="light"][data-layout] body .screen-rankings .rank-row.lb-row-me{
+    background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--accent) 5%, transparent) 72%), rgba(255,255,255,.62);
+  }
+  html[data-layout] body .screen-rankings .rank-row.lb-row-me .rank-place:not(.lb-rank-medal){ color:var(--ink); }
+  /* the names and the line under them */
+  html[data-layout] body .screen-rankings .rank-name{ font-size:1rem; letter-spacing:-.005em; }
+  @media (max-width:29rem){ html[data-layout] body .screen-rankings .rank-name{ font-size:.97rem; } }
+  .screen-rankings .rank-stat{ margin-top:.08rem; }
+  /* the column labels: small spaced capitals, over their columns */
+  html[data-layout] body .screen-rankings .rank-row.rank-row-head{ margin-bottom:.6rem; }
+  html[data-layout] body .screen-rankings .rank-col-head{ letter-spacing:.1em; font-weight:700; opacity:.8; }
+  html[data-layout] body .screen-rankings .rank-col-head.rank-col-lvl, html[data-layout] body .screen-rankings .rank-col-head.rank-col-bdg{ opacity:.85; }
+  @media (max-width:29rem){ html[data-layout] body .screen-rankings .rank-col-head{ letter-spacing:.06em; } }
+  .screen-rankings .rank-blurb{ font-size:.8rem; opacity:.9; }
+  /* the placeholders: the rows' own box and height, bars in the token's lift */
+  html[data-layout] body .screen-rankings .rank-row.rank-row-skel{ height:var(--lb-row-h); }
+  .screen-rankings .rank-skel-avwrap{ display:block; }
+  .screen-rankings .rank-skel-avwrap .rank-skel-av{ width:100%; height:100%; background:var(--surface-lift); }
+  .screen-rankings .rank-row-skel .rank-skel-line{ background:var(--surface-lift); }
+  .screen-rankings .rank-row-skel .rank-skel-line.is-short{ opacity:.6; }
+  .screen-rankings .rank-row-skel .rank-cols{ justify-items:center; }
+  .screen-rankings .rank-skel-num{ display:block; width:1.5rem; height:.6rem; border-radius:99px; background:var(--surface-lift); }
+  .screen-rankings .rank-head-skel{ opacity:.6; }
+  /* rows arriving over the placeholders come up in their places, softly (opacity only) */
+  @keyframes lb-rows-in{ from{ opacity:.35; } to{ opacity:1; } }
+  .screen-rankings .rank-rows.lb-from-skel > *{ animation:lb-rows-in .26s ease-out both; }
+  /* ART THAT COMES IN AFTER THE BOARD IS UP COMES IN TOGETHER (build 382): a row filled from the queue holds its art hidden over its
+     disc until the rows being filled with it are done, and they fade in as one - never a row at a time */
+  .screen-rankings .rank-row.lb-art-new .rank-avatar > *, .screen-rankings .rank-row.lb-art-new .rank-col-flare > *{ opacity:0 !important; }
+  .screen-rankings .rank-row.lb-art-new .rank-avatar{
+    background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--char-glow, #8a8f9a) 60%, #23262e) 0%, #16181e 80%); border-radius:50%;
+  }
+  @keyframes lb-art-in{ from{ opacity:0; } to{ opacity:1; } }
+  .screen-rankings .rank-row.lb-art-in .rank-avatar > *, .screen-rankings .rank-row.lb-art-in .rank-col-flare > *{ animation:lb-art-in .24s ease-out both; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -124928,7 +125010,10 @@ function renderRankMarker(el, place){
     el.classList.add("lb-rank-medal", "lb-rank-" + place);
     el.textContent = String(place);
   } else {
-    el.textContent = "#" + place;
+    /* build 382: the "#" a step quieter than the number (the text is still "#N") */
+    el.textContent = "";
+    const h = document.createElement("span"); h.className = "rank-hash"; h.textContent = "#";
+    el.append(h, String(place));
   }
 }
 
@@ -126173,6 +126258,21 @@ function renderRankingRows(rows, entries, board, opts){
      person's character is now carried over to their new row, and its
      loop runs on a shared clock (charFlipResync), so a rebuilt row picks
      up exactly where it was. */
+  /* build 382: THE SAME BOARD IS NOT BUILT TWICE. Opening the board paints the rows in memory, and the listener's first answer (the
+     cache's, then the server's) a moment later painted the same rows again - every row, its character and flare re-inserted, the
+     list laid out anew, while the tab was still landing. Nothing on screen changed, so nothing is done: the rows' own text, order,
+     numbers, trend and the podium are the board's signature, and the same signature over a finished board is a no-op. */
+  const lbSort = board.sort || ((a, b) => (val(b) - val(a)) || String(a.firstName || "").localeCompare(String(b.firstName || "")));
+  const trend = ranked.length ? lbTrendFor(board, sorted, lbSort) : {};
+  let lwTop = null;
+  if(board.key === "week"){ rememberWeekTop(entries); lwTop = lastWeekTop3(entries); }
+  const lbSig = (() => { try{
+    return JSON.stringify([board.key, query, lwTop && lwTop.map(t => [t.pub, t.name, t.avatar, t.pts, t.label]), store.publicId || "",
+      shown.map(({ entry: e, place }) => { let rk = null; try{ rk = rankOfEntry(e); }catch(x){}
+        return [place, e.pub, e.firstName, e.avatarChar, val(e), Number(e.level) || 0, Number(e.badges) || 0, Number(e.weekPoints) || 0, Number(e.hundos) || 0, rk, trend[e.pub] || 0]; })]);
+  }catch(e){ return null; } })();
+  if(lbSig && rows._lbSig === lbSig && rows.isConnected && rows.querySelector(":scope > .rank-row[data-pub]") && !rows.querySelector(":scope > .rank-row-skel")) return;
+  rows._lbSig = lbSig;
   /* build 379: still first, unless a speed test look says otherwise (html.lb-nostill: as 378; lb-paint: painted for good) */
   const lbStill = !document.documentElement.classList.contains("lb-nostill") && !lbLoopAlt();
   rows.classList.toggle("lb-still", lbStill);
@@ -126187,14 +126287,17 @@ function renderRankingRows(rows, entries, board, opts){
   /* each person's rank flare too (build 324), with its flip-book on it */
   const keptMarks = new Map();
   rows.querySelectorAll(".rank-row .rank-col-flare[data-mark]").forEach(m => keptMarks.set(m.dataset.mark, m));
+  /* build 382: last week's podium is three live drawings - kept when it is the same three, not drawn again on every snapshot */
+  const keptPodium = rows.querySelector(":scope > .lw-podium");
   rows.replaceChildren();
   /* LAST WEEK'S TOP THREE, on the This Week board - "make it show last
      week's top 3 there somehow". A small podium above this week's rows:
      second, first, third, in gold, silver and bronze. */
   if(board.key === "week"){
-    rememberWeekTop(entries);
-    const top = lastWeekTop3(entries);
-    if(top.length) rows.appendChild(buildLastWeekPodium(top, entries));
+    const top = lwTop || [];
+    const pk = JSON.stringify(top.map(t => [t.pub, t.name, t.avatar, t.pts, t.label]));
+    if(keptPodium && keptPodium._lwKey === pk) rows.appendChild(keptPodium);
+    else if(top.length){ const pod = buildLastWeekPodium(top, entries); pod._lwKey = pk; rows.appendChild(pod); }
   }
   if(ranked.length === 0){
     const empty = document.createElement("p");
@@ -126213,8 +126316,6 @@ function renderRankingRows(rows, entries, board, opts){
 
   const third = LB_THIRD_COL[board.key] || null;
   if(board.key === "overall" || third) rows.appendChild(buildOverallHead(third));
-  const trend = lbTrendFor(board, sorted, board.sort || ((a, b) => (val(b) - val(a)) ||
-                    String(a.firstName || "").localeCompare(String(b.firstName || ""))));
 
   /* BUILD 348: "switching tabs in the leaderboard ... lags". Every switch rebuilt all the rows at once - forty-odd
      characters of about 250 parts each, re-inserted and restyled in one go (about 11,000 parts: 100ms or more of
@@ -126650,14 +126751,11 @@ function lbStillGo(rows, token){
   const t0 = performance.now();
   const go = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
-    let n = 0;
-    for(const r of rows.querySelectorAll(":scope > .rank-row:not(.lb-go)")){
-      if(n >= 1) break;
-      r.classList.add("lb-go");
-      if(!r.classList.contains("is-offscreen") && r.querySelector(".char-flip-play img, .rk-frame img")) n++;
-    }
-    if(rows.querySelector(":scope > .rank-row:not(.lb-go)")) requestAnimationFrame(go);
-    else rows.classList.remove("lb-still");
+    /* build 382: EVERY ROW IN ONE FRAME. A row a frame was the board waking up a row at a time - each loop jumping from the frame it was
+       held on to the clock's frame, down the screen, ~12 frames long (seen in the sandbox with the watchdog's layers on). All the loops
+       now take the clock in the same frame, so the board starts moving as one. */
+    rows.querySelectorAll(":scope > .rank-row:not(.lb-go)").forEach(r => r.classList.add("lb-go"));
+    rows.classList.remove("lb-still");
   };
   const wait = () => {
     if(rows._lbFill !== token || !rows.isConnected) return;
@@ -126761,11 +126859,25 @@ function lbArtQueue(rows, list){
        lens has landed and the page has been drawn by then), and a step is 5ms (one row at least), as before 362. */
     const t0 = performance.now();
     const budget = 5;
-    while(q.length && (did < 1 || performance.now() - t0 < budget)){ lbFillArt(q.shift(), rows, true); did++; }
+    while(q.length && (did < 1 || performance.now() - t0 < budget)){ const r = q.shift(); if(r && r.dataset && r.dataset.lazyArt){ r.classList.add("lb-art-new"); if(!rows._lbNewAt) rows._lbNewAt = performance.now(); } lbFillArt(r, rows, true); did++; }
     if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
+    /* build 382: the art filled so far comes in together - once no row left in the queue is on the screen (the rest are below it), or
+       after 1.5s on a queue that long (never a row a frame) */
+    if(rows._lbNewAt){
+      const vh = window.innerHeight || 800;
+      const onLeft = q.some(r => { const b = r.getBoundingClientRect(); return b.bottom > 0 && b.top < vh; });
+      if(!onLeft || performance.now() - rows._lbNewAt > 1500) lbArtReveal(rows);
+    }
     if(q.length) requestAnimationFrame(step); else rows._lbPump = false;
   };
   requestAnimationFrame(step);
+}
+function lbArtReveal(rows){
+  rows._lbNewAt = 0;
+  const list = [...rows.querySelectorAll(":scope > .rank-row.lb-art-new")];
+  if(!list.length) return;
+  list.forEach(r => { r.classList.remove("lb-art-new"); if(!r.classList.contains("is-offscreen")) r.classList.add("lb-art-in"); });
+  setTimeout(() => list.forEach(r => r.classList.remove("lb-art-in")), 360);
 }
 function lbWatchOffscreen(rows, more){
   if(!rows || typeof IntersectionObserver !== "function") return;
@@ -132411,7 +132523,10 @@ function showRankings(defaultBoard){
        have made the feat depend on which tab somebody happens to like. */
     observeWeeklyRank(list);
     rows.removeAttribute("aria-busy");
+    /* build 382: rows that replace the placeholders stand where they stood (same header, same row height) and come up softly */
+    const fromSkel = !!rows.querySelector(":scope > .rank-row-skel");
     renderRankingRows(rows, list, board, { query: search.value });
+    if(fromSkel){ rows.classList.add("lb-from-skel"); setTimeout(() => rows.classList.remove("lb-from-skel"), 420); }
   }
 
   function selectBoard(key){
@@ -132505,13 +132620,19 @@ function showRankings(defaultBoard){
     label.className = "sr-only";
     label.textContent = "Loading the rankings\u2026";
     rows.appendChild(label);
-    for(let i = 0; i < 7; i++){
+    /* build 382: the placeholders are the board's own shape - its column header, and rows the real rows' height (--lb-row-h) with the
+       place, the character's disc and the columns where they will be - so the rows that replace them land where they stood */
+    try{ const third0 = LB_THIRD_COL[rankingsBoardKey] || null; const hd = buildOverallHead(third0); hd.classList.add("rank-head-skel"); rows.appendChild(hd); }catch(e){}
+    for(let i = 0; i < 9; i++){
       const sk = document.createElement("div");
-      sk.className = "rank-row rank-row-skel";
+      sk.className = "rank-row rank-row-skel has-cols";
       sk.setAttribute("aria-hidden", "true");
       sk.style.setProperty("--skel-i", i);
-      sk.innerHTML = "<span class=\"rank-place\"></span><span class=\"rank-skel-av\"></span>"
-        + "<span class=\"rank-name-wrap\"><span class=\"rank-skel-line\"></span><span class=\"rank-skel-line is-short\"></span></span>";
+      sk.innerHTML = "<span class=\"rank-place\"></span><span class=\"rank-avatar-wrap rank-skel-avwrap\"><span class=\"rank-skel-av\"></span></span>"
+        + "<span class=\"rank-name-wrap\"><span class=\"rank-skel-line\"></span><span class=\"rank-skel-line is-short\"></span></span>"
+        + "<span class=\"rank-cols" + (LB_THIRD_COL[rankingsBoardKey] ? " rank-cols-one" : "") + "\">"
+        + (LB_THIRD_COL[rankingsBoardKey] ? "<span class=\"rank-col rank-skel-num\"></span>" : "<span class=\"rank-col rank-skel-num\"></span><span class=\"rank-col rank-skel-num\"></span><span class=\"rank-col rank-skel-num\"></span>")
+        + "</span>";
       rows.appendChild(sk);
     }
     /* Offline, or a server that never answers: after a beat show what
