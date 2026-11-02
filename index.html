@@ -32335,6 +32335,71 @@
   .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ white-space:nowrap; font-size:.94rem; }
   @media (max-width:380px){ .screen-settings .cal-profile-row.settings-pair > .cal-profile-btn{ font-size:.84rem; } }
 
+  /* ---- SETTINGS ROWS (build 382) ----
+     "I really dislike this part of settings, please get all these buttons
+     and things looking better." Sync's status, Share & install, Help and
+     Advanced are list cards of rows (settingsRow()): icon tile, label and
+     an optional second line, chevron, a hairline between rows that starts
+     at the label the way iOS insets it. The card is the same glass card as
+     the switch groups above; the rows run edge to edge inside it so a
+     press lights the whole row. */
+  [data-layout="modern"] .screen-settings .settings-card.settings-list{ padding:0; }
+  .settings-row{
+    position:relative; display:flex; align-items:center; gap:.85rem;
+    width:100%; min-height:3.25rem; margin:0; padding:.7rem 1rem;
+    font:inherit; color:var(--ink); text-align:left;
+    background:transparent; border:0; border-radius:0; box-shadow:none; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+    transition:background-color .15s ease;
+  }
+  .settings-row-static{ cursor:default; align-items:flex-start; }
+  .settings-row + .settings-row::before,
+  .settings-adv-card > .more-body.open::before{
+    content:""; position:absolute; top:0; left:calc(1rem + 30px + .85rem); right:0; height:1px;
+    background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
+  }
+  .settings-list > .settings-row:first-child{ border-top-left-radius:15px; border-top-right-radius:15px; }
+  .settings-list > .settings-row:last-child,
+  .settings-adv-card > .settings-row.adv-toggle:not(.open){ border-bottom-left-radius:15px; border-bottom-right-radius:15px; }
+  button.settings-row:active{ background:var(--surface-lift); }
+  @media (hover:hover){ button.settings-row:hover{ background:var(--surface-lift); } }
+  button.settings-row:disabled{ cursor:default; }
+  button.settings-row:disabled .settings-row-chev{ opacity:.35; }
+  .settings-row-icon{
+    flex:0 0 30px; width:30px; height:30px; border-radius:8px;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:color-mix(in srgb, var(--accent) 18%, transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent);
+    color:color-mix(in srgb, var(--accent) 70%, var(--ink));
+  }
+  .settings-row-icon svg{ width:18px; height:18px; display:block; }
+  .settings-row-icon.is-accent{
+    background:var(--accent); box-shadow:none; color:var(--accent-ink);
+  }
+  .settings-row-icon.is-muted{
+    background:var(--surface-lift); box-shadow:inset 0 0 0 1px var(--surface-border); color:var(--soft);
+  }
+  .settings-row-static .settings-row-icon{ margin-top:.1rem; }
+  .settings-row-text{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:.15rem; }
+  .settings-row-label{ font-size:.95rem; font-weight:600; line-height:1.3; letter-spacing:0; text-transform:none; }
+  .settings-row-sub{ font-size:.82rem; font-weight:500; line-height:1.4; color:var(--soft); }
+  /* .settings-buildline's older margins/padding were for a loose line above two pills */
+  .screen-settings .settings-row-sub.settings-buildline{ margin:0; padding:0; }
+  .settings-row-chev{
+    flex:0 0 auto; width:16px; height:16px; color:var(--soft); opacity:.75;
+    display:inline-flex; transition:transform .25s ease;
+  }
+  .settings-row-chev svg{ width:16px; height:16px; display:block; }
+  .settings-row.adv-toggle.open .settings-row-chev{ transform:rotate(90deg); }
+  [data-reduce-motion="true"] .settings-row-chev{ transition:none; }
+  /* what Advanced opens, inside its card under a hairline */
+  .settings-adv-card > .more-body{ position:relative; }
+  .settings-adv-card > .more-body.open{ margin-top:0; }
+  .settings-adv-card > .more-body > .more-body-inner{ padding:0 1rem; }
+  .settings-adv-card > .more-body.open > .more-body-inner{ padding:.35rem 1rem 1rem; }
+  .settings-adv-card .startbar{ margin-top:.6rem; }
+  .settings-adv-card .startbar:first-child{ margin-top:.2rem; }
+
   /* ---- THE CASE'S CORNERS, ROUND 10 ----
      "some of the edges corners and everything look bad". At 3x the case's
      four outer corners were sharp squares and each corner guard carried a
@@ -116305,32 +116370,13 @@ function showBugReport(){
     + "and device attached so the problem can be tracked down and fixed.";
   form.appendChild(sub);
 
-  /* build 349: a one-tap measurement of the bottom tabs on this device, sent to the admin with no typing */
-  const lagBtn = document.createElement("button");
-  lagBtn.type = "button"; lagBtn.className = "next bugreport-send";
-  lagBtn.textContent = "Test tab speed";
-  lagBtn.addEventListener("click", () => { if(!lagTestRunning) runLagTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The tab speed test was sent to the Nova admin." : "The tab speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
-  form.appendChild(lagBtn);
-  const useBtn = document.createElement("button");
-  useBtn.type = "button"; useBtn.className = "next bugreport-send";
-  useBtn.textContent = "Send tab timings";
-  useBtn.addEventListener("click", () => { useBtn.disabled = true; sendTabTimings(ok => { try{ useBtn.disabled = false; const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = ok ? "The tab timings from your recent use were sent to the Nova admin." : "The tab timings could not be sent. Check your connection and try again."; }catch(e){} }); });
-  form.appendChild(useBtn);
-  const boardBtn = document.createElement("button");
-  boardBtn.type = "button"; boardBtn.className = "next bugreport-send";
-  boardBtn.textContent = "Test Leaderboard speed";
-  boardBtn.addEventListener("click", () => { if(!boardTestRunning && !lagTestRunning) runBoardTest(r => { try{ showBugReport(); const p = document.querySelector(".bugreport-sub"); if(p) p.textContent = r && r.sent ? "The Leaderboard speed test was sent to the Nova admin." : "The Leaderboard speed test finished but could not be sent. Check your connection and run it again."; }catch(e){} }); });
-  form.appendChild(boardBtn);
-  /* build 367: DRAG TEST, FOR A SCREEN RECORDING. His 366 speed test showed the drag drawn at 60fps by the page's own clock in every variant, while
-     his screen recording shows the glass updating only 20-40 times a second as he drags - the cost is in the graphics, which a script cannot see.
-     Start the screen recording, tap this, and slide a finger back and forth across the bar the whole time: six looks of the bar, 7s each (the
-     banner names the one on), A being the bar as it is. The recording is then read frame by frame, look by look. */
-  const dragBtn = document.createElement("button");
-  dragBtn.type = "button"; dragBtn.className = "next bugreport-send";
-  dragBtn.textContent = "Drag test (screen-record it)";
-  dragBtn.addEventListener("click", () => { if(!dragTestRunning) runDragTest(); });
-  form.appendChild(dragBtn);
-
+  /* BUILD 382: "Ensure to remove the stuff from report a bug so it's not
+     there anymore." Test tab speed, Send tab timings, Test Leaderboard
+     speed and the Drag test (builds 349-378) are gone from this screen; it
+     is the report and nothing else. runLagTest/runBoardTest/runDragTest/
+     sendTabTimings stay defined (gates call them directly) but nothing a
+     person can reach starts them. The report still carries the tab
+     timings (perf) silently, as it always has. */
   const boxId = "bugreport-text";
   const lab = document.createElement("label");
   lab.className = "slab bugreport-label"; lab.htmlFor = boxId;
@@ -116491,6 +116537,57 @@ function moreBodyMoving(body){
    lands on Profile > Settings with Profile lit. showProfile then calls it
    back with `opts.into`, the tab's own container, and this fills it: one
    builder, never a second copy of Settings. */
+/* ---- SETTINGS ROWS (build 382) ----
+   "I really dislike this part of settings, please get all these buttons
+   and things looking better." The lower half of Settings was giant black
+   pills stacked in cards. It is lists of rows now, the way iOS Settings
+   does it: an icon in a small tile, the label (and a second line where
+   there is something to say), a chevron, hairlines between rows, every
+   row at least 52px. Function declarations, not consts: Settings can be
+   built during boot (TDZ). Tones: "" (accent-tinted), "accent" (filled
+   with the accent - Add to Home Screen) and "muted" (Advanced, sync). */
+function settingsRowIcon(kind, tone){
+  const paths = {
+    share: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M6 11v7.5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V11"/>',
+    install: '<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M12 8.5v7M8.5 12h7"/>',
+    update: '<path d="M19.5 11A7.5 7.5 0 0 0 6.2 6.6L4.5 8.3"/><path d="M4.5 4.5v3.8h3.8"/><path d="M4.5 13a7.5 7.5 0 0 0 13.3 4.4l1.7-1.7"/><path d="M19.5 19.5v-3.8h-3.8"/>',
+    bug: '<rect x="8" y="7.5" width="8" height="12" rx="4"/><path d="M12 11.5v8M9.5 7.6 8 5.5M14.5 7.6 16 5.5M8 11.5H4.5M8 15.5H5M16 11.5h3.5M16 15.5h3"/>',
+    history: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4.5v4.1h4.1"/><path d="M12 8v4.4l2.9 1.8"/>',
+    advanced: '<path d="M4 7.5h9M17.5 7.5H20M4 16.5h2.5M11 16.5h9"/><circle cx="15.2" cy="7.5" r="2.2"/><circle cx="8.8" cy="16.5" r="2.2"/>',
+    cloudoff: '<path d="M8.2 18.5H17a3.8 3.8 0 0 0 1.2-7.4A6 6 0 0 0 7.4 8.6 4.6 4.6 0 0 0 8.2 18.5z"/><path d="M4.5 4.5l15 15"/>'
+  };
+  const tile = document.createElement("span");
+  tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
+  tile.setAttribute("aria-hidden", "true");
+  tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+    + (paths[kind] || "") + "</svg>";
+  return tile;
+}
+function settingsRowSub(text){
+  const sub = document.createElement("span");
+  sub.className = "settings-row-sub";
+  sub.textContent = text;
+  return sub;
+}
+function settingsRow(kind, label, sub, tone){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "settings-row";
+  b.dataset.row = kind;
+  const txt = document.createElement("span");
+  txt.className = "settings-row-text";
+  const lab = document.createElement("span");
+  lab.className = "settings-row-label";
+  lab.textContent = label;
+  txt.appendChild(lab);
+  if(sub) txt.appendChild(settingsRowSub(sub));
+  const chev = document.createElement("span");
+  chev.className = "settings-row-chev";
+  chev.setAttribute("aria-hidden", "true");
+  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+  b.append(settingsRowIcon(kind, tone), txt, chev);
+  return b;
+}
 function showAppearance(opts){
   const into = opts && opts.into && opts.into.nodeType === 1 ? opts.into : null;
   if(!into){
@@ -116536,30 +116633,19 @@ function showAppearance(opts){
      symptom of the build they are still on. This is the escape hatch:
      it says which build is running and updates on demand, whatever
      screen they came from. */
-  const updSect = document.createElement("div");
-  updSect.className = "sect settings-help-first";
-  /* No label of its own any more: "This app" above it is the header,
-     and a second "App version" underneath it was a header for a header. */
-  const updLab = document.createElement("span");
-  updLab.hidden = true;
-  const updNow = document.createElement("p");
-  updNow.className = "friend-hint settings-buildline";
-  updNow.textContent = "Build " + APP_BUILD;
-  /* ONE SHAPE FOR EVERY ROW IN THIS SECTION. Reported as looking bad
-     and being too many buttons, and looked at, the problem was not the
-     count - it was that four controls sitting together were four
-     DIFFERENT controls: a ghost pill, a full-width slab, a bare text
-     link and a red block, in that order. Check for update and Report a
-     bug do the same kind of thing (go somewhere, come back), so they
-     are the same row now, and Reset keeps its red because it is the
-     only one that destroys anything. */
-  const updRow = document.createElement("div");
-  updRow.className = "cal-profile-row";
-  const updBtn = document.createElement("button");
-  updBtn.type = "button"; updBtn.className = "cal-profile-btn";
-  updBtn.textContent = "Check for update";
+  /* BUILD 382: A ROW, NOT A PILL. "I really dislike this part of settings,
+     please get all these buttons and things looking better." Help, Share
+     & install and Advanced are lists of rows now (settingsRow()), the way
+     iOS Settings lists things you tap to go somewhere. The build line is
+     this row's own second line (still .settings-buildline, still where
+     "up to date" / "couldn't reach the server" is written), and the label
+     is what reads "Checking..." while it looks. */
+  const updBtn = settingsRow("update", "Check for update", "Build " + APP_BUILD);
+  const updLabel = updBtn.querySelector(".settings-row-label");
+  const updNow = updBtn.querySelector(".settings-row-sub");
+  updNow.classList.add("settings-buildline");
   updBtn.addEventListener("click", () => {
-    updBtn.disabled = true; updBtn.textContent = "Checking\u2026";
+    updBtn.disabled = true; updLabel.textContent = "Checking\u2026";
     /* Straight past every gate - this IS somebody asking for it. */
     fetch("version.json", { cache: "reload" })
       .then(r => r.json())
@@ -116569,17 +116655,15 @@ function showAppearance(opts){
           showPushingUpdate();
           setTimeout(applyUpdate, 900);
         } else {
-          updBtn.disabled = false; updBtn.textContent = "Check for update";
+          updBtn.disabled = false; updLabel.textContent = "Check for update";
           updNow.textContent = "Build " + APP_BUILD + " \u2014 up to date.";
         }
       })
       .catch(() => {
-        updBtn.disabled = false; updBtn.textContent = "Check for update";
+        updBtn.disabled = false; updLabel.textContent = "Check for update";
         updNow.textContent = "Build " + APP_BUILD + " \u2014 couldn\u2019t reach the server.";
       });
   });
-  updRow.appendChild(updBtn);
-  updSect.append(updLab, updNow, updRow);
 
   const studyDetails = document.createElement("div");
   studyDetails.className = "motion-details";
@@ -116896,10 +116980,26 @@ function showAppearance(opts){
     while(syncSect.children.length > 1) syncSect.removeChild(syncSect.lastChild);
 
     if(!fbDb){
-      const note = document.createElement("p");
-      note.className = "info-note sync-note-plain";
-      note.textContent = "Sync isn't reachable right now \u2014 check your connection and reopen Settings. Everything still saves normally on this device either way.";
-      syncSect.appendChild(note);
+      /* BUILD 382: a status row in a card like every other group - an
+         icon, what is wrong, and what to do - instead of a paragraph in a
+         box. Same words, split where the sentence already split. */
+      const card = document.createElement("div");
+      card.className = "settings-card settings-list sync-status-card";
+      const row = document.createElement("div");
+      row.className = "settings-row settings-row-static sync-status-row";
+      row.setAttribute("role", "status");
+      row.append(settingsRowIcon("cloudoff", "muted"));
+      const txt = document.createElement("span");
+      txt.className = "settings-row-text";
+      const t1 = document.createElement("span");
+      t1.className = "settings-row-label"; t1.textContent = "Sync isn't reachable right now";
+      const t2 = document.createElement("span");
+      t2.className = "settings-row-sub";
+      t2.textContent = "Check your connection and reopen Settings. Everything still saves normally on this device either way.";
+      txt.append(t1, t2);
+      row.append(txt);
+      card.appendChild(row);
+      syncSect.appendChild(card);
       return;
     }
 
@@ -117110,9 +117210,8 @@ function showAppearance(opts){
      days remaining/View class calendar, per explicit request that
      these look the same way. Button creation and click handlers below
      are unchanged from before, only the wrapping markup and classes. */
-  const shareBtn = document.createElement("button");
-  shareBtn.type = "button"; shareBtn.className = "cal-profile-btn";
-  shareBtn.textContent = "Share this app";
+  /* Build 382: rows in a list card (settingsRow), not two pills. */
+  const shareBtn = settingsRow("share", "Share this app");
   shareBtn.addEventListener("click", async () => {
     /* The explicit, canonical published URL — window.location.href
        could resolve to something else depending on exactly how the
@@ -117179,30 +117278,17 @@ function showAppearance(opts){
   // native browser install prompt available, which is always true
   // once standalone, so tapping this from inside the installed app
   // is harmless - it just re-shows the same instructions.
-  const installBtn = document.createElement("button");
-  installBtn.type = "button"; installBtn.className = "cal-profile-btn";
-  installBtn.textContent = "Add to Home Screen";
+  /* ---- THE ONE ROW DOWN HERE THAT SHOULD BE INVITING ----
+     Add to Home Screen is the single action on this screen that makes
+     the app better for the person pressing it - it is how Nova stops
+     being a browser tab - so since build 382 its icon is the one filled
+     with the app's accent (it was the one accent-tinted pill before). */
+  const installBtn = settingsRow("install", "Add to Home Screen", null, "accent");
   installBtn.addEventListener("click", handleInstallTap);
 
-  /* Quiet, because these two are offers rather than actions on your
-     account - see the note where the sections are assembled. */
-  shareBtn.classList.add("cal-profile-btn-quiet");
-  /* ---- THE ONE BUTTON DOWN HERE THAT SHOULD BE INVITING ----
-     "Change the colour of the buttons in a way that makes sense,
-     specifically for the ones that need it, the others can stay
-     black." Add to Home Screen is the single action on this screen
-     that makes the app better for the person pressing it - it is how
-     Nova stops being a browser tab - and as a grey outline beside
-     Share it read as the lesser of two afterthoughts. It carries the
-     app's own accent now. Share stays quiet (it acts on somebody
-     else), Report a bug stays quiet, Reset stays red. */
-  installBtn.classList.add("cal-profile-btn-accent");
-  const shareInstallRow = document.createElement("div");
-  shareInstallRow.className = "cal-profile-row settings-actions settings-pair";
-  shareInstallRow.append(shareBtn, installBtn);
-
   const dataSect = document.createElement("div");
-  dataSect.className = "sect";
+  /* build 382: the Advanced card - its row, and under it what it opens */
+  dataSect.className = "settings-card settings-list settings-adv-card";
 
   /* This entire section used to be hidden outright whenever every
      one of stats/flagged/testStats/studyLog was empty \u2014 the actual
@@ -117225,27 +117311,13 @@ function showAppearance(opts){
        same toggle mechanism (and matching visual treatment) as the
        Options sheet's own "Timer & options" section, so it reads as
        an established app pattern rather than a one-off. */
-    const advToggle = document.createElement("button");
-    advToggle.type = "button";
-    /* adv-toggle, not bare .more-toggle: that class is shared with
-       another collapsible elsewhere in the app, and only this one is
-       meant to be solid white. */
-    advToggle.className = "more-toggle adv-toggle";
+    /* BUILD 382: a row in its own list card (settingsRow), not the big
+       black bar - the chevron turns down when it is open, and what it
+       opens appears in the same card under a hairline. Still .adv-toggle,
+       and its body is still its next sibling. */
+    const advToggle = settingsRow("advanced", "Advanced settings", null, "muted");
+    advToggle.classList.add("adv-toggle");
     advToggle.setAttribute("aria-expanded", "false");
-    const advToggleText = document.createElement("span");
-    /* Was "Advanced" here too \u2014 sitting directly under a header that
-       already says "Advanced", the one visible word duplicated itself
-       right on top of itself. Renamed to describe what's actually
-       inside instead of repeating the section's own name: every item
-       in this dropdown (below) is a reset/clear action. */
-    /* "Advanced settings" rather than "Reset options": this dropdown is
-       now the only thing in the section (its own "Advanced" header is
-       gone), so its label has to carry the section's meaning too. */
-    advToggleText.textContent = "Advanced settings";
-    const advToggleIcon = document.createElement("span");
-    advToggleIcon.className = "more-toggle-icon";
-    advToggleIcon.setAttribute("aria-hidden", "true");
-    advToggle.append(advToggleText, advToggleIcon);
     const advBody = document.createElement("div");
     advBody.className = "more-body";
     const advBodyInner = document.createElement("div");
@@ -117428,13 +117500,11 @@ function showAppearance(opts){
      what is under it. */
   shareLab.textContent = "Share & install";
   panel.appendChild(shareLab);
-  const shareHint = document.createElement("p");
-  /* settings-lead, not the bare note class: .sync-note-plain has
-     margin-bottom:0, so this line sat directly on the buttons it
-     introduces - reported as "the spacing of those buttons, the
-     description above it is bad too, it's too too tight". */
-  shareHint.className = "sync-note-plain settings-lead";
-  shareHint.textContent = "Send it to a friend, or put it on your own Home Screen so it opens like an app.";
+  /* Build 382: the line that sat above the two pills ("Send it to a
+     friend, or put it on your own Home Screen so it opens like an app.")
+     is split between the two rows it described, as their second lines. */
+  shareBtn.querySelector(".settings-row-text").appendChild(settingsRowSub("Send it to a friend."));
+  installBtn.querySelector(".settings-row-text").appendChild(settingsRowSub("So it opens like an app."));
   /* BUILD 324: "the spacing of the stuff under the sync code section and
      beyond is pretty tight, could this be updated and better?" Every
      section above Sync is a header over a card; these two were a header
@@ -117443,18 +117513,17 @@ function showAppearance(opts){
      the line and its buttons in a .settings-card, which also brings the
      cards' own spacing below them. */
   const shareCard = document.createElement("div");
-  shareCard.className = "settings-card settings-group-card";
-  shareCard.append(shareHint, shareInstallRow);
+  shareCard.className = "settings-card settings-list";
+  shareCard.append(shareBtn, installBtn);
   panel.appendChild(shareCard);
 
   const helpLab = document.createElement("p");
   helpLab.className = "slab section-divider motion-summary";
   helpLab.textContent = "Help";
   panel.appendChild(helpLab);
-  /* In a card like Share & install above it (build 324). */
+  /* In a card like Share & install above it (build 324); rows since 382. */
   const helpCard = document.createElement("div");
-  helpCard.className = "settings-card settings-group-card";
-  helpCard.appendChild(updSect);
+  helpCard.className = "settings-card settings-list";
   panel.appendChild(helpCard);
 
   /* REPORT A BUG, and the awkward part is where a report LANDS.
@@ -117473,30 +117542,15 @@ function showAppearance(opts){
      `vrooms` is world-readable. The publicId is the anonymous one that
      already sits on every rankings row, so it identifies the reporter
      to whoever maintains the app without exposing anything new. */
-  const bugSect = document.createElement("div");
-  bugSect.className = "sect";
-  const bugBar = document.createElement("div");
-  bugBar.className = "cal-profile-row";
-  const bugBtn = document.createElement("button");
-  bugBtn.type = "button"; bugBtn.className = "cal-profile-btn";
-  bugBtn.textContent = "Report a bug";
-  bugBtn.classList.add("cal-profile-btn-quiet");
+  const bugBtn = settingsRow("bug", "Report a bug");
   bugBtn.addEventListener("click", () => showBugReport());
-  /* SIDE BY SIDE with Check for update, not stacked under it - "the
-     share and install and the help section buttons ... let's make them
-     side by side instead, it would make it less cluttered". */
-  updRow.appendChild(bugBtn);
-  updRow.classList.add("settings-pair");
   /* BUILD 346: "Put version history button in settings (we are gonna overhaul settings this weekend but put it
      there for now)." The Release History Home's version tag opens, from Settings too, with Settings as its way back. */
-  const verRow = document.createElement("div");
-  verRow.className = "cal-profile-row settings-actions";
-  const verBtn = document.createElement("button");
-  verBtn.type = "button"; verBtn.className = "cal-profile-btn"; verBtn.id = "settings-version-history";
-  verBtn.textContent = "Version history";
+  const verBtn = settingsRow("history", "Version history");
+  verBtn.id = "settings-version-history";
   verBtn.addEventListener("click", () => showReleaseHistory("settings"));
-  verRow.appendChild(verBtn);
-  updSect.appendChild(verRow);
+  /* build 382: one list - Check for update (the build on its second line), Report a bug, Version history */
+  helpCard.append(updBtn, bugBtn, verBtn);
 
   /* Advanced is its own heading because everything under it is a
      one-way door - it is the only group on this screen that can lose

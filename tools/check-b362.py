@@ -52,6 +52,7 @@ with sync_playwright() as pw:
     chk("real taps keep l/p (%s)" % (txt[-160:],), len(re.findall(r"l\d+/p\d+", txt)) >= 3, txt)
     pg.evaluate("()=>showBugReport()"); pg.wait_for_timeout(500)
     btns = pg.evaluate("()=>[...document.querySelectorAll('.screen-bugreport button')].map(b=>b.textContent.trim())")
-    chk("Report a bug has a Send tab timings button (%s)" % (btns,), "Send tab timings" in btns and "Test tab speed" in btns, btns)
+    # build 382: the diagnostics buttons are gone from Report a bug (the timings still ride every report as perf)
+    chk("Report a bug carries no Send tab timings / Test tab speed buttons since build 382 (%s)" % (btns,), "Send tab timings" not in btns and "Test tab speed" not in btns and "Send report" in btns, btns)
     br.close()
 sys.exit(0 if g["ok"] else 1)
