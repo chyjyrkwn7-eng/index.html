@@ -23,7 +23,8 @@ with sync_playwright() as pw:
     page.evaluate("document.getElementById('splashscreen')?.remove()")
     r = page.evaluate(READ, "ifc")
     g["chk"]("this device is in the Fire Code class with no cloud", r["cls"] == "ifc" and r["fb"] is False, r)
-    g["chk"]("the leaderboard says it is for the Police Academy class, not that it needs a connection",
-             "Police Academy" in r["lb"] and "connection" not in r["lb"], r["lb"])
+    # build 382: Fire Code has no leaderboard at all - showRankings() opens Stats there, never a "needs a connection" note
+    g["chk"]("the leaderboard is never asked for a connection in Fire Code (it opens Stats: %s)" % r["scr"],
+             "screen-stats" in (r["scr"] or "") and "connection" not in r["lb"], r)
     ctx.close(); br.close()
 sys.exit(0 if g["ok"] else 1)

@@ -33822,6 +33822,20 @@ html.is-browser{ --fade-paper: transparent; }
   /* the week switch: the box is the chip's height and its letters sit in its middle */
   .stx-dots-switch > button{ display:inline-flex; align-items:center; justify-content:center; height:2rem; min-height:0; padding-block:0; line-height:1; }
   .stx-allbtn.stx-allpill > span > svg{ position:absolute; right:.45rem; top:50%; translate:0 -50%; }
+  /* ---- STATS' PILLS, FULL SIZE (build 382) ----
+     "the 'all 50 tests' ... button is so tiny on my iPhone, ensure that button is good to go app wide. Same goes for the
+     'this week/last week' buttons under study time." The pill you could see was 22px tall with 13px words, and the week
+     switch's chips 32px with 11px words - 44px to the finger only through invisible padding. Now each is a button you can
+     see at full size: 44px tall boxes (px, not rem, so a larger text setting cannot shrink them below it), the words at
+     .84rem bold - Profile's own tabs and Customize - and the test history's mode filters (the screen this pill opens) the
+     same. */
+  .stx-allbtn.stx-allpill{ min-height:44px; margin-top:-.2rem; margin-bottom:-.2rem; font-size:.84rem; }
+  .stx-allbtn.stx-allpill > span{ min-height:40px; box-sizing:border-box; padding-top:0; padding-bottom:0; padding-left:1.95rem; padding-right:1.95rem; }
+  .stx-allbtn.stx-allpill > span > svg{ right:.6rem; width:1rem; height:1rem; }
+  .stx-dots-switch{ padding:3px; }
+  .stx-dots-switch > button{ height:44px; font-size:.84rem; padding-left:.95rem; padding-right:.95rem; }
+  .stx-dots-switch button::before{ inset:-3px -1px; }
+  .thx-filter-btn{ min-height:44px; font-size:.84rem; padding-left:1rem; padding-right:1rem; }
   @supports (text-box: trim-both cap alphabetic){
     .profile-edit-btn:not(.profile-hero .profile-edit-btn){ text-box:trim-both cap alphabetic; padding-block:calc(.4rem + (1lh - 1cap)/2); }
     .rank-me-btn, .stx-allbtn.stx-allpill > span > b,
@@ -33831,6 +33845,9 @@ html.is-browser{ --fade-paper: transparent; }
        Screen" 1px high) */
     .pf-goal .pf-goal-foot > .pf-goal-foot-word, .pf-case-closed .pf-case-count > .pf-case-num{ display:block; text-box:trim-both cap alphabetic; }
     .screen-settings .cal-profile-btn{ text-box:trim-both cap alphabetic; }
+    /* build 382: the week switch's words, centred by their capitals in its 44px chips (a flex box cannot be trimmed) */
+    .stx-dots-switch > button{ display:inline-block; height:auto; line-height:1.2; text-box:trim-both cap alphabetic;
+      padding-top:calc((45px - 1cap) / 2); padding-bottom:calc((45px - 1cap) / 2); }
   }
 
   /* ---- FRIENDS, AT THE TOP OF THE CHAT'S FRIENDS TAB (round 2) ---- */
@@ -35454,6 +35471,10 @@ html.is-browser{ --fade-paper: transparent; }
       <button type="button" class="bottomtab" id="bottomtab-rewards" data-dest="rewards">
         <span class="bottomtab-icon"></span>
         <span class="bottomtab-label">Leaderboard</span>
+      </button>
+      <button type="button" class="bottomtab" id="bottomtab-stats" data-dest="stats" hidden>
+        <span class="bottomtab-icon"></span>
+        <span class="bottomtab-label">Stats</span>
       </button>
       <button type="button" class="bottomtab" id="bottomtab-calendar" data-dest="calendar">
         <span class="bottomtab-icon"></span>
@@ -50442,6 +50463,100 @@ const IFC_QUESTIONS = (function(){
 })();
 if(window.NOVA_CLASS === "ifc"){ QUESTIONS.length = 0; Array.prototype.push.apply(QUESTIONS, IFC_QUESTIONS); }
 
+/* ---- FIRE CODE SAYS "CHAPTER", NEVER "UNIT" (build 382) ----
+   "in the fire code side, we aren't gonna refer to the units as units at all, anywhere, they are gonna be referred to as
+   chapters." The word is in some 400 strings across the app (screen titles, the search box, the hold card, badges, rank
+   challenges, tours, Nova, results, notices, aria-labels), most of them shared with the academy. Rather than fork each one,
+   ONE helper does it for the class, on what is SHOWN: every text node and every aria-label / placeholder / title / alt
+   that reaches the page (a MutationObserver from boot), and the browser's own alert/confirm/prompt boxes. unit -> chapter,
+   units -> chapters, Unit -> Chapter, UNITS -> CHAPTERS.
+   NOTHING STORED OR KEYED CHANGES: ids, store fields, localStorage keys, topics and question identity are untouched, and
+   so is the BOOK - 63 Fire Code questions say "dwelling unit", "sleeping unit" and the like, and the code's own words are
+   never rewritten. A text that is (part of) one of those questions' strings - its question, choices, explanation,
+   reference or citation - is left exactly as written (questionTextHas). classNoun() is the same word for code that builds
+   a string itself. The academy is untouched: the observer is never started there. */
+function classNoun(plural, cap){
+  const w = (window.NOVA_CLASS === "ifc" ? "chapter" : "unit") + (plural ? "s" : "");
+  return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+}
+const CHAPTER_RX = /\bunit(s?)\b/gi;
+function chapterWords(t){
+  return String(t).replace(CHAPTER_RX, (m, pl) => {
+    const w = "chapter" + (pl ? "s" : "");
+    if(m === m.toUpperCase()) return w.toUpperCase();
+    if(m.charAt(0) === "U") return "C" + w.slice(1);
+    return w;
+  });
+}
+var chapterBookText = null;
+function questionTextHas(t){
+  if(!chapterBookText){
+    chapterBookText = [];
+    const add = v => {
+      if(typeof v === "string"){ if(/\bunits?\b/i.test(v)) chapterBookText.push(v); }
+      else if(Array.isArray(v)) v.forEach(add);
+      else if(v && typeof v === "object") Object.keys(v).forEach(k => add(v[k]));
+    };
+    try{ IFC_QUESTIONS.forEach(q => add([q.q, q.choices, q.explanation, q.ref, q.ifc])); }catch(e){}
+  }
+  const s = String(t).trim();
+  if(!s) return false;
+  return chapterBookText.some(b => b === s || (s.length >= 12 && b.indexOf(s) >= 0));
+}
+function chapterFix(t){
+  if(t == null) return t;
+  CHAPTER_RX.lastIndex = 0;
+  if(!CHAPTER_RX.test(t)) return t;
+  CHAPTER_RX.lastIndex = 0;
+  if(questionTextHas(t)) return t;
+  return chapterWords(t);
+}
+(function(){
+  if(window.NOVA_CLASS !== "ifc") return;
+  const ATTRS = ["aria-label", "placeholder", "title", "alt"];
+  const SKIP = "script, style, textarea, input, [contenteditable], .ifc-clip, [data-keep-words]";
+  const fixText = n => {
+    const p = n.parentElement;
+    if(!p || (p.closest && p.closest(SKIP))) return;
+    const v = n.nodeValue, w = chapterFix(v);
+    if(w !== v) n.nodeValue = w;
+  };
+  const fixAttr = (el, a) => {
+    const v = el.getAttribute(a);
+    if(v == null) return;
+    const w = chapterFix(v);
+    if(w !== v) el.setAttribute(a, w);
+  };
+  const fixTree = root => {
+    if(!root) return;
+    if(root.nodeType === 3){ fixText(root); return; }
+    if(root.nodeType !== 1 && root.nodeType !== 11) return;
+    if(root.nodeType === 1){ if(root.closest(SKIP) && root.tagName !== "INPUT" && root.tagName !== "TEXTAREA") return; ATTRS.forEach(a => fixAttr(root, a)); }
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    let n;
+    while((n = tw.nextNode())){
+      if(n.nodeType === 3) fixText(n);
+      else ATTRS.forEach(a => { if(n.hasAttribute(a)) fixAttr(n, a); });
+    }
+  };
+  try{
+    const mo = new MutationObserver(list => {
+      for(const m of list){
+        if(m.type === "characterData") fixText(m.target);
+        else if(m.type === "attributes") fixAttr(m.target, m.attributeName);
+        else m.addedNodes.forEach(fixTree);
+      }
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+    fixTree(document.body || document.documentElement);
+    document.title = chapterFix(document.title);
+    ["alert", "confirm", "prompt"].forEach(k => {
+      const orig = window[k];
+      if(typeof orig === "function") window[k] = function(msg){ const a = Array.prototype.slice.call(arguments); a[0] = chapterFix(msg); return orig.apply(window, a); };
+    });
+  }catch(e){}
+})();
+
 /* ==========================================================================
    Everything below runs the drill. You should not need to edit it.
    ========================================================================== */
@@ -64652,6 +64767,49 @@ const TIER_UNLOCKS = {
    seven of these, rather than repeating the same seven-item array at
    each call site. */
 const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"];
+/* ---- FIRE CODE'S LADDER, SIZED TO ITS OWN CHAPTERS (build 382) ----
+   "the rank ladder needs to be updated and good to go. Needs to be updated for the amount of units." The badge counts above
+   are the academy's, spread over its sixteen units and ending two short of every badge there is (see BADGE COUNTS RE-SPREAD
+   OVER SIXTEEN UNITS). Fire Code has 58 chapters and a badge is one 100% there, so the same shape is laid over ITS count:
+   each rank asks round(academy badges / 14 * (chapters - 2)) - Supernova two short of every chapter, as in the academy.
+   Levels are unchanged (they are the XP curve's, not the bank's). Read off the bank, never typed: a chapter added moves it.
+   The academy copy is kept (TIER_UNLOCKS_ACADEMY) for the one-time rank floor (ifcLadderFloorOnce). */
+const TIER_UNLOCKS_ACADEMY = {};
+Object.keys(TIER_UNLOCKS).forEach(k => { TIER_UNLOCKS_ACADEMY[k] = Object.assign({}, TIER_UNLOCKS[k]); });
+if(window.NOVA_CLASS === "ifc"){
+  try{
+    const seen = {}; QUESTIONS.forEach(q => { const t = q && (q.topic || "").trim(); if(t) seen[t] = 1; });
+    const n = Object.keys(seen).length, top = TIER_UNLOCKS_ACADEMY.titan.badges;
+    if(n > 2) TIER_ORDER_FULL.forEach(k => {
+      const r = TIER_UNLOCKS[k]; if(!r) return;
+      r.badges = Math.max(1, Math.round(TIER_UNLOCKS_ACADEMY[k].badges / top * (n - 2)));
+      r.label = "Reach level " + r.level + " and " + r.badges + (r.badges === 1 ? " badge" : " badges");
+    });
+  }catch(e){}
+}
+/* NOBODY DROPS A RANK ON THE NEW LADDER (build 382, Fire Code only). The rank this account held on the ladder before - the
+   academy's counts and badge bands - becomes its rank floor, once (class26e.ifcladder382, kept in the class's own storage).
+   A floor only ever raises (rankOf, mergeSameAccount max), and with it the level wall cannot fall below what was shown. */
+function ifcLadderFloorOnce(){
+  if(window.NOVA_CLASS !== "ifc") return false;
+  const K = "class26e.ifcladder382";
+  try{ if(localStorage.getItem(K)) return false; localStorage.setItem(K, "1"); }catch(e){ return false; }
+  try{
+    const perf = store.unitPerfects || {};
+    const oldThreshold = u => {
+      const q = unitQuestionCount(u);
+      if(!q) return BADGE_THRESHOLD;
+      for(let i = 0; i < BADGE_THRESHOLD_BANDS.length; i++) if(q <= BADGE_THRESHOLD_BANDS[i].max) return BADGE_THRESHOLD_BANDS[i].hundos;
+      return BADGE_THRESHOLD;
+    };
+    const b = topicsIn(QUESTIONS).filter(u => (perf[u] || 0) >= oldThreshold(u)).length;
+    const lvl = levelFromPoints(store.lifetime ? Number(store.lifetime.points) || 0 : 0);
+    let held = 0;
+    TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_ACADEMY[k]; if(r && lvl >= (r.level || 0) && b >= (r.badges || 0)) held = i + 1; });
+    if(held > (Number(store.rankFloor) || 0)){ store.rankFloor = held; saveStore(); return true; }
+  }catch(e){}
+  return false;
+}
 
 
 /* ---------- Rankings: the three ranked metrics ----------
@@ -65528,6 +65686,10 @@ function badgeRangeText(){
   }catch(e){ return "a few hundos"; }
 }
 function badgeThresholdFor(name){
+  /* FIRE CODE: ONE 100% EARNS THE BADGE (build 382). "you only need to get a 100 once in a unit to earn the badge." A badge is
+     still unitPerfects >= this, so every chapter already finished at 100% counts as earned the moment this runs - nothing is
+     written and no count moves. The academy keeps its bands. */
+  if(window.NOVA_CLASS === "ifc") return 1;
   const n = unitQuestionCount(name);
   if(!n) return BADGE_THRESHOLD;
   for(let i = 0; i < BADGE_THRESHOLD_BANDS.length; i++){
@@ -88455,9 +88617,13 @@ function mainMenuTourSteps(returning){
     /* (round 37) in the bar's own order: Home, Profile, Leaderboard, Calendar */
     { target: "#bottomtab-profile", align: "left", vplacement: "above",
       text: isIOSDevice() && !isStandaloneApp()
-        ? "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs, and Settings has a guide for adding this app to your Home Screen."
-        : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs." },
-    { target: "#bottomtab-rewards", align: "left", vplacement: "above",
+         ? (window.NOVA_CLASS === "ifc" ? "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks." : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs, and Settings has a guide for adding this app to your Home Screen.")
+        : (window.NOVA_CLASS === "ifc" ? "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks." : "Profile is you: your rank, your level, the badges you\u2019ve found and the road map of ranks. Stats and Settings are its other two tabs.") },
+    /* Fire Code has Stats in the Leaderboard's place (build 382) */
+    window.NOVA_CLASS === "ifc"
+      ? { target: "#bottomtab-stats", align: "left", vplacement: "above",
+          text: "Stats is your study time, your testing stats and your test history." }
+      : { target: "#bottomtab-rewards", align: "left", vplacement: "above",
       text: "The Leaderboard is the whole class: this week, overall and hundos, updating live. Search for anyone, or tap Find me." },
     /* Calendar took Settings' place on the bar (build 323) */
     window.NOVA_CLASS === "ifc"
@@ -91995,10 +92161,19 @@ const NOVA_KEEP_N = 60;
    is its own moment: it uses up the day too, and does not play on a day
    he has already messaged you (Tuesday is the recap's: lower-priority
    messages wait on a Tuesday while it is owed). */
-const NOVA_TIP_GAP_MS = 7 * 24 * 3600 * 1000;   /* a tip a week at most (327z15) */
+/* ---- QUIETER (build 382) ----
+   "I feel like nova messages me a lot, way too much. He should only be inviting me to a challenge like maybe once a week."
+   - a challenge at most once in any seven days (NOVA_CHALLENGE_GAP_MS), on top of the two-weeks-in-five draw: a Saturday
+     invite and the next Monday's could both land before, two days apart;
+   - three days between any two of his own messages, not 44 hours;
+   - a tip every two weeks at most, not every week.
+   The last invite is read off store.novaHeard's "wk:<week>" stamps (already there, max-merged, carried by the next save),
+   so nothing new is stored and nothing is written to Firestore for it. */
+const NOVA_TIP_GAP_MS = 14 * 24 * 3600 * 1000;   /* a tip a fortnight at most (382; a week since 327z15) */
+const NOVA_CHALLENGE_GAP_MS = 7 * 24 * 3600 * 1000;
 /* (327z15: "I also don't want the nova chat to just become spam") two days
-   between his messages, not one */
-const NOVA_QUIET_MS = 44 * 3600 * 1000;
+   between his messages, not one; three since 382 */
+const NOVA_QUIET_MS = 72 * 3600 * 1000;
 const NOVA_GAP_MS = NOVA_QUIET_MS;
 const NOVA_TIP_SETTLE_MS = 2 * 24 * 3600 * 1000;
 const NOVA_SETTLE_MS = 90 * 1000;
@@ -92576,7 +92751,7 @@ function novaPending(heard, now){
      challenge nova whenever you want." Not every week: a week of this
      account's is a challenge week or not, and on which day, by a hash of the
      account and the week - so every device agrees and nothing is stored. */
-  if(NOVA_VR_READY && !heard["wk:" + wk] && novaChallengeDue(wk, now)) out.weekly = wk;
+  if(NOVA_VR_READY && !heard["wk:" + wk] && novaChallengeDue(wk, now) && novaChallengeGapOk(heard, now)) out.weekly = wk;
   /* progress */
   const f = novaFoundNow();
   const pend = (s.pend && typeof s.pend === "object") ? s.pend : {};
@@ -92606,6 +92781,16 @@ function novaPending(heard, now){
   if(now - (s.since || 0) >= NOVA_TIP_SETTLE_MS && now - lastTip >= NOVA_TIP_GAP_MS && novaUsedToday())
     out.tip = (Number(s.tipIdx) || 0) % NOVA_TIPS.length;
   return out;
+}
+/* The last challenge he sent, on any device of this account: the newest "wk:" stamp (build 382). */
+function novaLastChallengeAt(heard){
+  let last = 0;
+  Object.keys(heard || {}).forEach(k => { if(k.indexOf("wk:") === 0){ const t = Number(heard[k]) || 0; if(t > last) last = t; } });
+  return last;
+}
+function novaChallengeGapOk(heard, now){
+  const last = novaLastChallengeAt(heard);
+  return !last || (now || Date.now()) - last >= NOVA_CHALLENGE_GAP_MS;
 }
 function novaChallengeDue(wk, now){
   let h = 2166136261;
@@ -92769,6 +92954,9 @@ function novaChallengeNow(){
 function novaMsgAction(m){
   if(!m || m.kind !== "challenge" || !m.wk) return null;
   const live = novaChallengeLive(m.wk);
+  /* build 382: "when the challenge is over I see there's a button but it says ended, remove that." An ended challenge keeps
+     its message and has no button at all. */
+  if(!live) return null;
   const row = document.createElement("div");
   row.className = "nova-msg-act";
   const b = document.createElement("button");
@@ -92837,7 +93025,8 @@ function novaReplyFor(raw){
   if(has(/ (friends?|friend code|add) /))
     return "Add friends from the chat › Friends with their friend code, or tap someone on the Leaderboard. Friends can chat and race you in a Virtual Room.";
   if(has(/ (leaderboard|board|rankings|top|first place|1st) /))
-    return "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
+    return window.NOVA_CLASS === "ifc" ? "This class has no leaderboard. Your own numbers are on the Stats tab."
+      : "The Leaderboard tab ranks the class. Tap anyone on it to see their card.";
   if(has(/ (who are you|your name|about you|are you real|ai|bot|robot|human|chatgpt) /))
     return "I’m Nova, a space explorer and your instructor here. I’m no robot, but I can’t really chat either: I answer what I can about the app and pass on news.";
   if(has(/ (thanks|thank you|thx|ty|cheers|appreciate) /))
@@ -95044,16 +95233,10 @@ function renderFriendChatList(){
     || String(a.firstName || "").localeCompare(String(b.firstName || "")));
   const wrap = document.createElement("div");
   wrap.className = "chatdock-chatlist is-friends";
-  /* his place in the order: unread first, then whoever is on (he is "on"
-     while available), then by name */
-  let novaAt = -1;
-  if(nova){
-    const nu = novaUnread() ? 1 : 0, non = novaAway() ? 0 : 1;
-    novaAt = people.findIndex(e => (nu - unread(e.pub)) > 0
-      || (nu === unread(e.pub) && (non - (isOnline(e) ? 1 : 0)) > 0)
-      || (nu === unread(e.pub) && non === (isOnline(e) ? 1 : 0) && "Nova".localeCompare(String(e.firstName || "")) < 0));
-    if(novaAt < 0) novaAt = people.length;
-  }
+  /* THE INSTRUCTOR FIRST, ALWAYS (build 382): "In the friends list the instructor is at the bottom, put him to the top." He
+     was placed by the friends' own order (unread, on, name), which put him last whenever he was away. Your friends keep
+     their order under him. */
+  const novaAt = nova ? 0 : -1;
   people.forEach((e, i) => {
     if(i === novaAt) wrap.appendChild(buildNovaChatRow());
     const code = friendChatCode(e.pub);
@@ -97762,7 +97945,16 @@ function appendUnitProgress(row, name){
      sits beside the track rather than inside it - nothing legible
      fits inside 3px - and both go in the BADGE's row, because the
      badge is what the bar is filling towards. */
-  if(!earned){
+  if(!earned && unitThreshold === 1){
+    /* one 100% earns it (Fire Code, build 382): no bar to fill, a line saying what it takes */
+    const once = document.createElement("span");
+    once.className = "pick-barrow is-once";
+    const t = document.createElement("span");
+    t.className = "pick-bar-count pick-once";
+    t.textContent = "Badge: get 100% once";
+    once.appendChild(t);
+    starsWrap.appendChild(once);
+  } else if(!earned){
     const barRow = document.createElement("span");
     barRow.className = "pick-barrow";
     const barTrack = document.createElement("span");
@@ -98185,13 +98377,17 @@ function openUnitDetail(row, name, mode){
   cnt.className = "pcount"; cnt.textContent = unitQuestionCount(name) + " questions";
   head.append(nm, cnt);
   appendUnitProgress(head, name);
+  /* Fire Code (build 382): the card's own line says it, so the card's line under the name is not repeated */
+  if(badgeThresholdFor(name) === 1) head.querySelectorAll(".pick-barrow.is-once").forEach(n => n.remove());
   /* round 10: "let's ensure that pop is perfect and makes sense". The bar
      under the name had no words: say what it counts. */
   {
     const need = badgeThresholdFor(name), have = Math.min(unitPerfectCount(name), need);
     const cap = document.createElement("p");
     cap.className = "unitdetail-badgecap";
-    cap.textContent = have >= need ? "Badge earned" : "Hundos toward this unit's badge";
+    cap.textContent = have >= need ? "Badge earned"
+      : need === 1 ? "Get 100% on the whole unit once to earn its badge" : "Hundos toward this unit's badge";
+    if(need === 1) cap.classList.add(have >= need ? "is-earned" : "is-once");
     head.appendChild(cap);
   }
 
@@ -115459,7 +115655,8 @@ function showAppearance(opts){
   lbCard.className = "settings-card";
   lbCard.appendChild(lbRow);
   lbSect.appendChild(lbCard);
-  panel.appendChild(lbSect);
+  /* no leaderboard in Fire Code (build 382), so no switch for one */
+  if(window.NOVA_CLASS !== "ifc") panel.appendChild(lbSect);
 
   const syncSect = document.createElement("div");
   syncSect.className = "sect";
@@ -116166,8 +116363,8 @@ function showAppearance(opts){
         text: "How the app moves: Reduce motion turns off the shimmer, pulse and other animated effects." },
       { target: "#settings-study", align: "left", vplacement: "below",
         text: "How tests behave: swiping or moving on by itself to the next question, starring questions you keep missing, and skipping celebrations." },
-      { target: "#settings-rankings", align: "left", vplacement: "below",
-        text: "Turn this off to come off the class leaderboards. Your XP, badges and hundos all still count \u2014 nobody else sees them." },
+      ...(window.NOVA_CLASS === "ifc" ? [] : [{ target: "#settings-rankings", align: "left", vplacement: "below",
+        text: "Turn this off to come off the class leaderboards. Your XP, badges and hundos all still count \u2014 nobody else sees them." }]),
       { target: "#settings-sync", align: "left", vplacement: "below",
         text: "Your sync code is your account. Use it to add a second device, and keep it somewhere safe \u2014 it is the only way back in." }
     ]);
@@ -116714,7 +116911,7 @@ function showTestReviewList(){
   const panel = document.createElement("section");
   panel.className = "panel screen-testreview screen-testhistory";
 
-  const back = buildBackLink("Back to Profile", () => showProfile("stats"));
+  const back = buildBackLink(window.NOVA_CLASS === "ifc" ? "Back to Stats" : "Back to Profile", () => showProfile("stats"));
   panel.appendChild(back);
 
   /* (b327s) No second "Test history" under the header saying it. */
@@ -128781,11 +128978,9 @@ function showFriends(){
   list.appendChild(lh);
   const ids = friendPublicIds();
   const known = ids.map(id => rows[id]).filter(Boolean);
-  /* Nova's row (b324n2): placed by the same order as everybody's below -
-     on first, then by name - or on his own when there is nobody else.
+  /* Nova's row (b324n2): first, always, since build 382 - or on his own when there is nobody else.
      No Remove: "the option to remove him won't be there". */
   const nova = novaIsFriend();
-  const novaOn = nova && !novaAway();
   if(!store.leaderboardOptIn){
     if(nova) list.appendChild(novaManageRow());
     const off = document.createElement("p");
@@ -128812,14 +129007,9 @@ function showFriends(){
        Inviting belongs to the Virtual Room, where the lobby you are
        inviting somebody INTO already exists. This screen is who you
        have and how to add more. */
-    let novaPlaced = !nova;
+    /* the instructor heads the list, always (build 382), as on the chat's Friends tab */
+    if(nova) list.appendChild(novaManageRow());
     known.forEach(e => {
-      if(!novaPlaced){
-        const eOn = isOnline(e) ? 1 : 0, nOn = novaOn ? 1 : 0;
-        if(nOn > eOn || (nOn === eOn && "Nova".localeCompare(e.firstName || "") < 0)){
-          list.appendChild(novaManageRow()); novaPlaced = true;
-        }
-      }
       list.appendChild(personRow(e, [
         actBtn("Remove", "ghost", () => {
           if(!window.confirm("Remove " + (e.firstName || "this friend") + "?")) return;
@@ -128829,7 +129019,6 @@ function showFriends(){
         })
       ]));
     });
-    if(!novaPlaced) list.appendChild(novaManageRow());
     /* Somebody on your list whose row has not loaded - they have not
        opened the app since, or turned sharing off. Named rather than
        silently dropped, so a friends list of four does not quietly
@@ -131191,6 +131380,10 @@ function showProfile(defaultTab, opts){
   /* The calendar is a bottom tab of its own (build 323). */
   if(asked === "calendar") return showCalendarTab();
   const initialTab = PROFILE_TABS.indexOf(asked) !== -1 ? asked : "profile";
+  /* FIRE CODE: STATS IS A BAR TAB, NOT ONE OF PROFILE'S (build 382). Asked for Stats, this builds the Stats screen alone
+     (no Profile tabs over it, the bar's Stats lit); asked for anything else, Profile has no Stats tab. */
+  const ifcStats = window.NOVA_CLASS === "ifc";
+  const statsAlone = ifcStats && initialTab === "stats";
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
      to the cutscene no matter which tab was actually tapped from
@@ -131202,13 +131395,13 @@ function showProfile(defaultTab, opts){
   flushStudyTime();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
-  setActiveNav("profile");
-  countEl.textContent = "Profile";
+  setActiveNav(statsAlone ? "stats" : "profile");
+  countEl.textContent = statsAlone ? "Stats" : "Profile";
   /* A rank-up not yet shown: built as it was before it (317, 319). */
   armRankUpProfileScene(initialTab);
 
   const panel = document.createElement("section");
-  panel.className = "panel screen-profile";
+  panel.className = "panel screen-profile" + (statsAlone ? " screen-stats" : "");
 
   /* Same .navsegment.profiletabs / .iconbtn / hidden-panel shape
      showRewards() already established, rather than a second way of doing
@@ -131252,7 +131445,7 @@ function showProfile(defaultTab, opts){
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "settings", label: "Settings", node: settingsTab, cls: " profile-settings-tab-btn" }
-  ];
+  ].filter(t => !ifcStats || (statsAlone ? t.key === "stats" : t.key !== "stats"));
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
     const btn = document.createElement("button");
@@ -131264,11 +131457,13 @@ function showProfile(defaultTab, opts){
     profileTabSeg.appendChild(btn);
     t.node.hidden = initialTab !== t.key;
   });
-  panel.appendChild(profileTabSeg);
-  attachSegSlider(profileTabSeg, ".iconbtn.active");
+  if(!statsAlone){
+    panel.appendChild(profileTabSeg);
+    attachSegSlider(profileTabSeg, ".iconbtn.active");
+  }
   panel.append(...profileTabDefs.map(t => t.node));
 
-  const profileTabOrder = PROFILE_TABS;
+  const profileTabOrder = profileTabDefs.map(t => t.key);
   let profileTabKey = initialTab;
   /* Built once it is on screen and visible: showAppearance's own scroll
      to a section (opts.focus) and its tour both measure what they point
@@ -131301,7 +131496,7 @@ function showProfile(defaultTab, opts){
      Profile tab. */
   /* Settings' volume slider is dragged sideways; a drag on it is the
      slider's, never a tab change. */
-  attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
+  if(!statsAlone) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
 
   /* ---------- identity header ----------------------------------------
      One card: the character you chose, your name, the day streak, and
@@ -131914,7 +132109,10 @@ function showProfile(defaultTab, opts){
         text: "Friends are in the chat. Its Friends tab shows who is on, with Manage friends at the top for swapping codes with a friend." },
       /* Stats and Settings in one step (327z15: "not a crazy amount");
          Settings has a tour of its own the first time it opens. */
-      { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
+      window.NOVA_CLASS === "ifc"
+        ? { target: ".profile-settings-tab-btn", align: "left", vplacement: "below",
+            text: "Settings has the rest of the options. Your study time, testing stats and test history are on the Stats tab at the bottom." }
+        : { target: ".profile-stats-tab-btn", align: "left", vplacement: "below",
         text: "Stats has your study time, your testing stats and your test history. Settings, beside it, has the rest of the options and your sync code." }
       /* Badges and the rank climb moved to their own Ranks tab in the
          bottom bar in build 219, and the main menu tour points at it. */
@@ -132246,7 +132444,10 @@ document.addEventListener("visibilitychange", () => {
   if(!f.rows.isConnected){ rankingsOnVisible = null; return; }
   if(!document.hidden) f.paint();
 });
+/* Fire Code's bar has Stats where the Leaderboard is (build 382): the class has no board, so its tab, Stats. */
+function showStatsScreen(){ return showProfile("stats"); }
 function showRankings(defaultBoard){
+  if(window.NOVA_CLASS === "ifc") return showStatsScreen();
   setActiveNav(null);
   countEl.textContent = "Leaderboard";
   /* a string or nothing: handed straight to a listener it is a MouseEvent */
@@ -137613,6 +137814,18 @@ function tabPerfText(){
         'M16.4 3.3H19.4A2.75 2.75 0 0 1 22.14 6.32C21.85 8.85 20.15 10.75 17.45 11.3L17.05 9.35C18.75 8.95 19.95 7.75 20.15 6.15A.75 .75 0 0 0 19.4 5.3H16.4z' +
         'M10.75 14h2.5v3.4h-2.5z' +
         'M8.3 17.2h7.4c.7 0 1.25.55 1.25 1.25v1.5c0 .7-.55 1.25-1.25 1.25H8.3c-.7 0-1.25-.55-1.25-1.25v-1.5c0-.7.55-1.25 1.25-1.25z"/>'
+,
+    /* build 382, Fire Code's Settings tab: "make it look more like this one" - his reference is a gear with many short teeth round
+       a ring and a three-spoke hub inside it, like a steering wheel. ONE path, nonzero (the trophy's rule, 380): the toothed ring
+       runs clockwise and the three openings between the spokes and the hole in the hub run the other way, so nothing overlaps
+       and nothing is painted twice. 18 teeth, the hub's spokes at 0/120/240 degrees, 20 units of ink like its neighbours.
+       Generated (tooth tip r10.1, root r8.7, ring inside r6.95, hub r2.5 with a r1.2 hole, spokes 1.4 wide). */
+    settings:
+      '<path class="tg-gear" fill="currentColor" fill-rule="nonzero" d="M11.09 3.35L11.33 1.92A10.1 10.1 0 0 1 12.67 1.92L12.91 3.35A8.7 8.7 0 0 1 14.1 3.56L14.82 2.3A10.1 10.1 0 0 1 16.08 2.76L15.81 4.18A8.7 8.7 0 0 1 16.86 4.79L17.97 3.85A10.1 10.1 0 0 1 18.99 4.71L18.26 5.96A8.7 8.7 0 0 1 19.04 6.89L20.39 6.38A10.1 10.1 0 0 1 21.06 7.54L19.95 8.46A8.7 8.7 0 0 1 20.36 9.6L21.81 9.59A10.1 10.1 0 0 1 22.04 10.91L20.68 11.39A8.7 8.7 0 0 1 20.68 12.61L22.04 13.09A10.1 10.1 0 0 1 21.81 14.41L20.36 14.4A8.7 8.7 0 0 1 19.95 15.54L21.06 16.46A10.1 10.1 0 0 1 20.39 17.62L19.04 17.11A8.7 8.7 0 0 1 18.26 18.04L18.99 19.29A10.1 10.1 0 0 1 17.97 20.15L16.86 19.21A8.7 8.7 0 0 1 15.81 19.82L16.08 21.24A10.1 10.1 0 0 1 14.82 21.7L14.1 20.44A8.7 8.7 0 0 1 12.91 20.65L12.67 22.08A10.1 10.1 0 0 1 11.33 22.08L11.09 20.65A8.7 8.7 0 0 1 9.9 20.44L9.18 21.7A10.1 10.1 0 0 1 7.92 21.24L8.19 19.82A8.7 8.7 0 0 1 7.14 19.21L6.03 20.15A10.1 10.1 0 0 1 5.01 19.29L5.74 18.04A8.7 8.7 0 0 1 4.96 17.11L3.61 17.62A10.1 10.1 0 0 1 2.94 16.46L4.05 15.54A8.7 8.7 0 0 1 3.64 14.4L2.19 14.41A10.1 10.1 0 0 1 1.96 13.09L3.32 12.61A8.7 8.7 0 0 1 3.32 11.39L1.96 10.91A10.1 10.1 0 0 1 2.19 9.59L3.64 9.6A8.7 8.7 0 0 1 4.05 8.46L2.94 7.54A10.1 10.1 0 0 1 3.61 6.38L4.96 6.89A8.7 8.7 0 0 1 5.74 5.96L5.01 4.71A10.1 10.1 0 0 1 6.03 3.85L7.14 4.79A8.7 8.7 0 0 1 8.19 4.18L7.92 2.76A10.1 10.1 0 0 1 9.18 2.3L9.9 3.56A8.7 8.7 0 0 1 11.09 3.35ZM9.15 18.34A6.95 6.95 0 0 0 18.91 12.7L14.4 12.7A2.5 2.5 0 0 1 11.41 14.43ZM7.94 6.36A6.95 6.95 0 0 0 7.94 17.64L10.19 13.73A2.5 2.5 0 0 1 10.19 10.27ZM18.91 11.3A6.95 6.95 0 0 0 9.15 5.66L11.41 9.57A2.5 2.5 0 0 1 14.4 11.3ZM13.2 12A1.2 1.2 0 0 0 10.8 12A1.2 1.2 0 0 0 13.2 12Z"/>',
+    /* build 382, Fire Code's Stats tab (the Leaderboard's place on that class's bar): three solid bars, rising, rounded like the
+       calendar's page - separate pieces that never touch */
+    stats:
+      '<path class="tg-bars" fill="currentColor" fill-rule="nonzero" d="M3.9 12.6h1.8c0.715 0 1.3 0.585 1.3 1.3v5.8c0 0.715-0.585 1.3-1.3 1.3H3.9c-0.715 0-1.3-0.585-1.3-1.3V13.9c0-0.715 0.585-1.3 1.3-1.3zM11.1 7.4h1.8c0.715 0 1.3 0.585 1.3 1.3v11c0 0.715-0.585 1.3-1.3 1.3H11.1c-0.715 0-1.3-0.585-1.3-1.3V8.7c0-0.715 0.585-1.3 1.3-1.3zM18.3 2.8h1.8c0.715 0 1.3 0.585 1.3 1.3v15.6c0 0.715-0.585 1.3-1.3 1.3H18.3c-0.715 0-1.3-0.585-1.3-1.3V4.1c0-0.715 0.585-1.3 1.3-1.3z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
      glide (LENS.glide, build 327z13) is ~94% of the way at 290ms, so the
@@ -137632,6 +137845,12 @@ function tabPerfText(){
   if(window.NOVA_CLASS === "ifc"){
     const calTab = bar.querySelector("#bottomtab-calendar"), setTab = bar.querySelector("#bottomtab-settings");
     if(calTab && setTab){ calTab.hidden = true; setTab.hidden = false; }
+    /* BUILD 382: NO LEADERBOARD IN FIRE CODE - STATS TAKES ITS PLACE. "we are gonna remove the leaderboard completely. That
+       will now just be stats, so stats from profile will be moved to the bottom tab for the fire code side." The class has
+       no cloud (build 328), so its board could never fill anyway. Home, Profile, Stats, Settings; showRankings() sends any
+       route still pointed at the board (back links, banners, old links) to Stats in this class. */
+    const lbTab = bar.querySelector("#bottomtab-rewards"), stTab = bar.querySelector("#bottomtab-stats");
+    if(lbTab && stTab){ lbTab.hidden = true; stTab.hidden = false; }
   }
   bar.querySelectorAll(".bottomtab").forEach(tab => {
     const dest = tab.dataset.dest;
@@ -137823,6 +138042,7 @@ function tabPerfText(){
         confirmMainMenu();
       }
       else if(dest === "rewards") showRankings();
+      else if(dest === "stats") showStatsScreen();
       else if(dest === "profile") showProfile();
       else if(dest === "calendar") openCalendarTab();
       else if(dest === "settings") showAppearance();
@@ -137929,7 +138149,7 @@ function tabPerfText(){
        its own unmistakable marker class on the panel itself \u2014 far more
        reliable than sniffing for a "Stats" tab label that no longer
        exists on either screen post-split. */
-    const onProfile = !!document.querySelector(".screen-profile");
+    const onProfile = !!document.querySelector(".screen-profile:not(.screen-stats)");
     /* .screen-rankings is the tab's own screen now; .screen-rewards is
        kept in the test so the highlight is still right if anything
        reaches the old screen while it is being dismantled. The element
@@ -137953,7 +138173,7 @@ function tabPerfText(){
     /* Friends is opened from the chat over any tab since build 327z12
        round 2, and keeps THAT tab lit (its data-from) */
     const frFrom = (document.querySelector("#stage .screen-friends") || { dataset: {} }).dataset.from || "";
-    const onProfileSub = !!document.querySelector(".screen-customize, .screen-testreview") || frFrom === "profile";
+    const onProfileSub = !!document.querySelector(window.NOVA_CLASS === "ifc" ? ".screen-customize" : ".screen-customize, .screen-testreview") || frFrom === "profile";
     const onSettingsSub = !!document.querySelector(".screen-bugreport");
     /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
        Calendar, not Profile - wherever it is drawn, as its own screen or
@@ -137971,6 +138191,9 @@ function tabPerfText(){
     const settingsShown = !!settingsBtn && !settingsBtn.hidden;
     lit("#bottomtab-profile", !calShown && (((onProfile && !(settingsShown && onSettingsAny))) || onRanks || onProfileSub || (onSettingsAny && !settingsShown)));
     lit("#bottomtab-rewards", (onRewards || frFrom === "rewards") && !calShown);
+    /* Fire Code's Stats tab (build 382): its own screen, and the test history it opens */
+    const onStats = !!document.querySelector("#stage .screen-stats") || (window.NOVA_CLASS === "ifc" && !!document.querySelector("#stage .screen-testreview")) || frFrom === "stats";
+    lit("#bottomtab-stats", onStats && !calShown);
     lit("#bottomtab-calendar", calShown);
     lit("#bottomtab-settings", onSettingsAny && !calShown);
     lit("#bottomtab-home", (onHome || frFrom === "home") && !calShown);
@@ -138119,7 +138342,7 @@ function tabPerfText(){
      the bar as laid out - whatever the labels, widths or merged Start
      pill. Only re-measured when the row or a tab changes size. */
   const pfTab = document.getElementById("bottomtab-profile");
-  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById("bottomtab-rewards")];
+  const pfNeighbours = [document.getElementById("bottomtab-home"), document.getElementById(window.NOVA_CLASS === "ifc" ? "bottomtab-stats" : "bottomtab-rewards")];
   function centreProfileTab(){
     if(!pfTab || !pfNeighbours[0] || !pfNeighbours[1]) return;
     const mid = el => { const r = el.getBoundingClientRect(); return r.width ? r.left + r.width / 2 : null; };
@@ -138193,7 +138416,7 @@ function tabPerfText(){
   let tabDragPointerId = null;
   const tabDests = { "bottomtab-home": () => confirmMainMenu(), "bottomtab-rewards": () => showRankings(),
     "bottomtab-profile": () => showProfile(), "bottomtab-calendar": () => openCalendarTab(),
-    "bottomtab-settings": () => showAppearance() };
+    "bottomtab-settings": () => showAppearance(), "bottomtab-stats": () => showStatsScreen() };
   function tabAtPoint(clientX){
     const tabs = [...navrow.querySelectorAll(".bottomtab")];
     let closest = null, closestDist = Infinity;
@@ -139899,6 +140122,8 @@ if(store.onboardingComplete && !syncCode && !syncOff){
 /* Hold everybody at the level they already had - see
    preserveLegacyLevel(). Silent: it is not an award, it is the curve
    change declining to cost somebody something they earned. */
+/* Fire Code's new ladder keeps every rank held (build 382), before anything below asks for a rank */
+if(store.onboardingComplete) try{ ifcLadderFloorOnce(); }catch(e){}
 if(store.onboardingComplete) preserveLegacyLevel();
 /* Existing accounts only. A fresh device has nothing to hand out, and
    writing a store before the account exists would get in the way of the

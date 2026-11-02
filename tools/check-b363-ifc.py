@@ -1,5 +1,6 @@
 """Build 363, Fire Code: tapping Profile lights Profile (not Settings), tapping Settings lights Settings. Profile builds its own
 Settings panel hidden, which the bar used to count as "on Settings".
+Build 382: Fire Code has Stats where the Leaderboard was, so its run taps Stats.
 Run:  python3 tools/check-b363-ifc.py   (add --against old.html: copy it over index.html first, as the other checks do)"""
 import os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); H = ROOT + "/tools"
@@ -26,7 +27,7 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(1500)
         lit = lambda: pg.evaluate("()=>[...document.querySelectorAll('#bottomtabs .bottomtab.active')].map(b=>b.id).join(',')")
         got = []
-        for d in (["profile", "settings", "profile", "rewards", "profile"] if ifc else ["profile", "rewards", "profile"]):
+        for d in (["profile", "settings", "profile", "stats", "profile"] if ifc else ["profile", "rewards", "profile"]):
             pg.evaluate(TAP, d); pg.wait_for_timeout(1800); got.append((d, lit()))
         if ifc:
             chk(tag + ": each tap lights its own tab and only it (%s)" % (got,), all(l == "bottomtab-" + d for d, l in got), got)

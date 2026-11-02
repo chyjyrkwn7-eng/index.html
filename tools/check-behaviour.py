@@ -27997,7 +27997,7 @@ def check_b324n2_friends(br):
     check("away, he is not counted online (2 online)", (aw.get("info") or "").startswith("6 friends") and "2 online" in (aw.get("info") or ""), aw)
     check("Manage friends lists Nova with his rank and no Remove (no button at all), the others keep theirs",
           mg.get("has") and mg.get("buttons") == 0 and "Supernova" in (mg.get("text") or "") and "Available" in (mg.get("text") or "")
-          and mg.get("removes") == 5 and (mg.get("order") or [])[:3] == ["Ann", "Nova", "Zed"], mg)
+          and mg.get("removes") == 5 and (mg.get("order") or [])[:3] == ["Nova", "Ann", "Zed"], mg)  # build 382: the instructor first, always
     check("...counts him online while he is available, and a tap opens his card", "3 online" in (mg.get("head") or "") and mg.get("card"), mg.get("head"))
     check("display only: not in friendPublicIds(), not counted for Koi Pond", "nova" not in (r.get("ids") or []) and len(r.get("ids") or []) == 5
           and r.get("koi") == r.get("koi0") and r.get("koi", 9) <= 5, {k: r.get(k) for k in ("ids", "koi0", "koi")})
