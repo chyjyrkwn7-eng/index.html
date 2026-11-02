@@ -35231,6 +35231,232 @@ html.is-browser{ --fade-paper: transparent; }
   }
   @keyframes lb-art-in{ from{ opacity:0; } to{ opacity:1; } }
   .screen-rankings .rank-row.lb-art-in .rank-avatar > *, .screen-rankings .rank-row.lb-art-in .rank-col-flare > *{ animation:lb-art-in .24s ease-out both; }
+
+  /* ===================== THE LEADERBOARD AND THE CALENDAR IN SETTINGS' LANGUAGE (build 382, iOS) =====================
+     Madison: "we need to ensure that the rest of the app has that nice new look ... leaderboard could have such a nice look ...
+     calendar could be a smidge better. We are going for that clean clean clean CLEAN IOS apple look". The new Settings is the
+     reference: flat cards on the surface tokens (no frost on content), grouped lists with hairlines inset to the words, grey
+     sentence-case headings, a big bold page title, the accent kept for what is picked or pressed. Data, order, the build
+     signature, the art reveal, the placeholders and the still hand-over are untouched - this is paint and geometry only. */
+  /* THE PAGE TITLE: the header's own word (#count), big and bold on these two tab roots, where the small grey kicker was */
+  html[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab)) > #count:not(:empty){
+    font-size:2rem; font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--ink); margin-bottom:1.25rem;
+  }
+  @media (min-width:40rem){
+    html[data-layout] body .wrap:has(> #stage > :is(.screen-rankings, .screen-calendar-tab)) > #count:not(:empty){ font-size:2.25rem; }
+  }
+
+  /* ---- THE LEADERBOARD ---- */
+  .screen-rankings{
+    --lb-pad:.9rem; --lb-gap:.65rem; --lb-av:2.5rem; --lb-group-r:18px;
+    --lb-cell:linear-gradient(var(--surface-lift), var(--surface-lift)), linear-gradient(var(--surface-1), var(--surface-1)), var(--surface-1);
+    --lb-hair:color-mix(in srgb, var(--surface-border) 60%, transparent);
+    --lb-hair-l:calc(var(--lb-pad) + var(--lb-place-w) + var(--lb-gap) + var(--lb-av) + var(--lb-gap));
+  }
+  @media (max-width:29rem){ .screen-rankings{ --lb-pad:.75rem; --lb-gap:.5rem; --lb-av:2.25rem; } }
+  @media (max-width:24rem){ .screen-rankings{ --lb-hair-l:calc(var(--lb-pad) + var(--lb-place-w) + var(--lb-gap)); } }
+  @media (min-width:40rem){ .screen-rankings{ --lb-pad:1.1rem; --lb-gap:.85rem; --lb-av:2.75rem; --lb-group-r:20px; } }
+  /* the switch: an iOS segmented control across the page - a quiet track, the picked segment a raised lighter pill */
+  html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs{
+    display:flex !important; width:100%; max-width:100%; margin:0 0 .7rem; padding:3px; gap:0; flex-wrap:nowrap;
+    border-radius:12px; border:0 !important;
+    background:linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
+    box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
+  }
+  html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs > .iconbtn{
+    flex:1 1 0; min-width:0; min-height:44px; border-radius:9px; --tab-py:calc((44px - 1lh) / 2);
+    padding:var(--tab-py) .4rem; font-size:.92rem; font-weight:600; letter-spacing:-.005em; color:var(--soft);
+  }
+  html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs > .iconbtn.active{
+    color:var(--ink); background:color-mix(in srgb, var(--ink) 17%, transparent); box-shadow:0 1px 3px var(--surface-inset);
+  }
+  html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs > .seg-slider{
+    background:color-mix(in srgb, var(--ink) 17%, transparent) !important; background-image:none !important;
+    border:0 !important; border-radius:9px !important; box-shadow:0 1px 3px var(--surface-inset), 0 0 0 .5px var(--surface-lift) !important;
+  }
+  /* the board's line, a footnote under the switch */
+  html[data-layout] body .screen-rankings > .rank-blurb{
+    max-width:40rem; margin:0 auto 1rem; padding:0 .5rem; text-align:center;
+    font-size:.84rem; line-height:1.4; color:var(--soft); opacity:1;
+  }
+  /* search and Find me: a filled, rounded search field and a tinted action beside it */
+  html[data-layout] body .screen-rankings > .rank-tools{ gap:.6rem; margin-bottom:1.25rem; align-items:stretch; }
+  html[data-theme][data-layout] body .screen-rankings .rank-search-wrap > .rank-search{
+    min-height:44px; height:44px; border-radius:12px !important; border:0 !important; box-shadow:none !important;
+    background:linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    font-size:1rem; text-align:left; padding-right:2.6rem;
+  }
+  html[data-layout] body .screen-rankings .rank-search-wrap > .rank-search:placeholder-shown{ text-align:left; padding-right:1rem; }
+  html[data-layout] body .screen-rankings .rank-search-wrap > .searchicon{ color:var(--soft); opacity:.85; }
+  html[data-theme][data-layout] body .screen-rankings .rank-tools > .rank-me-btn{
+    min-height:44px; padding:0 1.05rem; border-radius:12px; border:0 !important;
+    background:color-mix(in srgb, var(--accent) 16%, transparent) !important; background-image:none !important;
+    box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    color:var(--accent); font-size:.95rem; font-weight:600; letter-spacing:0;
+  }
+  html[data-layout] body .screen-rankings .rank-tools > .rank-me-btn:active{ opacity:.7; }
+  /* every row: one geometry (the hairline's inset is worked out from it), never a frost */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){
+    padding:.45rem var(--lb-pad) !important; gap:var(--lb-gap) !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row.has-cols .rank-avatar-wrap{ width:var(--lb-av); height:var(--lb-av); }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row-head{
+    padding-left:var(--lb-pad) !important; padding-right:var(--lb-pad) !important; gap:var(--lb-gap) !important; margin-bottom:.45rem !important;
+  }
+  /* the column captions: small grey words in sentence case over their columns (the 382 spaced capitals, retired) */
+  html[data-layout] body .screen-rankings .rank-col-head{
+    text-transform:none; letter-spacing:0 !important; font-size:.78rem; font-weight:600; opacity:1 !important; color:var(--soft);
+  }
+  /* THE LIST: everyone from fourth down is one grouped card - rows edge to edge, a hairline between them that starts at the name */
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium){
+    position:relative; margin:0 !important; border-radius:0 !important;
+    background:var(--lb-cell) !important; border:solid var(--surface-border) !important; border-width:0 1px !important;
+    box-shadow:none !important;
+  }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium):first-child,
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > :is(:not(.rank-row), .rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium) + .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium){
+    border-top-width:1px !important; border-top-left-radius:var(--lb-group-r) !important; border-top-right-radius:var(--lb-group-r) !important;
+  }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium):last-child{
+    border-bottom-width:1px !important; border-bottom-left-radius:var(--lb-group-r) !important; border-bottom-right-radius:var(--lb-group-r) !important;
+  }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium):not(:last-child)::after{
+    content:""; position:absolute; left:var(--lb-hair-l); right:0; bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+  }
+  /* a press lights the row, as a Settings row does (no shrink inside a grouped card) */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row.is-tappable:not(.rank-podium-1, .rank-podium-2, .rank-podium-3):active{ transform:none; }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.is-tappable:not(.rank-podium-1, .rank-podium-2, .rank-podium-3, .lb-row-me):active{
+    background:linear-gradient(var(--surface-lift), var(--surface-lift)), var(--lb-cell) !important;
+  }
+  /* YOUR ROW in the list: a wash of the accent and your place in it - no ring breaking the card */
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me:not(.rank-podium-1, .rank-podium-2, .rank-podium-3){
+    background:linear-gradient(color-mix(in srgb, var(--accent) 17%, transparent), color-mix(in srgb, var(--accent) 17%, transparent)), var(--lb-cell) !important;
+  }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me .rank-place:not(.lb-rank-medal){ color:var(--accent); }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me .rank-name{ font-weight:700; }
+  /* THE TOP THREE: a card each, the list's own surface, the metal kept to a fine ring, a faint light at the medal and the medal */
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium){
+    margin:0 0 .5rem !important; border-radius:var(--lb-group-r) !important;
+    background:var(--lb-cell) !important; border:1px solid var(--surface-border) !important; box-shadow:none !important;
+  }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:is(.rank-podium-3, .rank-skel-podium-3){ margin-bottom:1rem !important; }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3):not(.lb-row-me){ border-color:transparent !important; }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.rank-podium-1:not(.lb-row-me){
+    background:radial-gradient(70% 140% at 0% 50%, color-mix(in srgb, #E9B949 14%, transparent), transparent 70%), var(--lb-cell) !important;
+  }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.rank-podium-2:not(.lb-row-me){
+    background:radial-gradient(70% 140% at 0% 50%, color-mix(in srgb, #C9CCD0 11%, transparent), transparent 70%), var(--lb-cell) !important;
+  }
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.rank-podium-3:not(.lb-row-me){
+    background:radial-gradient(70% 140% at 0% 50%, color-mix(in srgb, #C98448 13%, transparent), transparent 70%), var(--lb-cell) !important;
+  }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3):not(.lb-row-me)::before{
+    inset:-1px; padding:1px; opacity:.62;
+  }
+  /* on the podium your card keeps the accent's ring over its wash */
+  html[data-theme][data-layout] body .screen-rankings .rank-rows > .rank-row.lb-row-me:is(.rank-podium-1, .rank-podium-2, .rank-podium-3){
+    border:1.5px solid var(--accent) !important;
+    background:linear-gradient(color-mix(in srgb, var(--accent) 15%, transparent), color-mix(in srgb, var(--accent) 15%, transparent)), var(--lb-cell) !important;
+  }
+  /* the medals: struck circles, without the glow under them */
+  html[data-layout] body .screen-rankings .rank-row .lb-rank-1{ box-shadow:inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.5), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body .screen-rankings .rank-row .lb-rank-2{ box-shadow:inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.45), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body .screen-rankings .rank-row .lb-rank-3{ box-shadow:inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.4), 0 1px 2px var(--surface-inset); }
+  /* the words: the name in the page's ink (the podium's are no longer gold/silver/bronze text), the line under it grey */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-name{ color:var(--ink) !important; font-weight:600; }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3) .rank-name{ font-weight:700; }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-stat{ color:var(--soft) !important; font-size:.8rem; }
+  /* the movement: a small coloured arrow and number, nothing louder */
+  html[data-layout] body .screen-rankings .rank-trend{ margin-left:0; font-size:.72rem; font-weight:700; gap:.15rem; }
+  html[data-layout] body .screen-rankings .rank-trend-arrow{ font-size:.5rem; }
+  /* the numbers on the right: tabular, a step lighter than before */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-col-num{ font-weight:650; letter-spacing:-.01em; }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-col-rankname{ font-weight:700; letter-spacing:0; }
+  /* the placeholders breathe their bars only, so the grouped card under them stays still */
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row-skel{ animation:none !important; }
+  html[data-layout] body .screen-rankings .rank-rows > .rank-row-skel > *{ animation:rank-skel 1.5s ease-in-out infinite; animation-delay:calc(var(--skel-i, 0) * 90ms); }
+  /* last week's podium (This Week, Mondays): the list's card surface, no frost */
+  html[data-theme][data-layout] body .screen-rankings .lw-podium{
+    border-radius:var(--lb-group-r); border:1px solid var(--surface-border); box-shadow:none;
+    background:var(--lb-cell); backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  html[data-layout] body .screen-rankings .lw-podium-head{ text-transform:none; letter-spacing:0; font-size:.9rem; font-weight:600; color:var(--soft); }
+
+  /* ---- THE CALENDAR, A SMIDGE BETTER ---- */
+  .screen-calendar-tab{ --cal-cell-bg:linear-gradient(var(--surface-lift), var(--surface-lift)), linear-gradient(var(--surface-1), var(--surface-1)), var(--surface-1); }
+  /* whose calendar: a plain grey line under the title, not spaced capitals */
+  html[data-layout] body .screen-calendar-tab > .cal-classhead{
+    text-align:left; margin:0 .25rem 1rem; font-size:.95rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--soft);
+  }
+  html[data-layout] body .screen-calendar-tab > .cal-classhead > b{ font-weight:600; color:var(--ink); }
+  /* the cards: flat, rounder, the Settings card's surface - no frost on what you read */
+  html[data-theme][data-layout] body .screen-calendar.screen-calendar-tab :is(.cal-card.points-progress-sect, .cal-card, .cal-monthview.cal-monthview){
+    border-radius:20px !important; background:var(--cal-cell-bg) !important; border:1px solid var(--surface-border) !important;
+    box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
+  }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-monthview .cal-daycard{ border-radius:0 0 19px 19px !important; }
+  /* the cards' headings: grey sentence case (Settings' headings), the aside beside them grey */
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-card .cal-card-head .slab,
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-card .cal-count-kick,
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-topics-lab{
+    text-transform:none !important; letter-spacing:0 !important; font-size:.9rem !important; font-weight:600 !important;
+    color:var(--soft) !important; background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important;
+  }
+  html[data-layout] body .screen-calendar-tab .cal-card-aside{ font-size:.88rem; font-weight:500; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-today-next .profile-classday-label{
+    text-transform:none !important; letter-spacing:0 !important; font-size:.9rem !important; font-weight:600 !important; color:var(--soft) !important;
+  }
+  /* the countdown box beside the next test: a plain rounded tile, no glass */
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-nt-count{
+    border:0 !important; box-shadow:none !important; border-radius:14px !important;
+    background:linear-gradient(var(--surface-lift), var(--surface-lift)) !important;
+  }
+  /* WHAT'S ON THE TEST: list rows with hairlines, the test's amber kept as a small dot at the start */
+  html[data-layout] body .screen-calendar-tab .cal-topics-list{ list-style:none; padding:0; margin:.35rem 0 0; }
+  html[data-layout] body .screen-calendar-tab .cal-topics-list > li{
+    position:relative; display:flex; align-items:center; gap:.7rem; min-height:2.75rem; padding:.55rem 0; line-height:1.35;
+  }
+  html[data-layout] body .screen-calendar-tab .cal-topics-list > li::before{
+    content:""; flex:0 0 .5rem; width:.5rem; height:.5rem; border-radius:50%; background:#F5B54D;
+  }
+  html[data-layout] body .screen-calendar-tab .cal-topics-list > li + li::after{
+    content:""; position:absolute; left:1.2rem; right:0; top:0; height:1px; background:color-mix(in srgb, var(--surface-border) 60%, transparent);
+  }
+  /* the month: weekday letters small and grey, the header's controls as clean round buttons and an accent pill */
+  html[data-layout] body .screen-calendar-tab .cal-grid-dow{ letter-spacing:0 !important; font-size:.72rem; font-weight:600; color:var(--soft); }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid-arrow{ color:var(--accent); background:none !important; border:0 !important; box-shadow:none !important; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid-arrow:active:not(:disabled){ background:var(--surface-lift) !important; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid-arrow:disabled{ color:var(--soft); opacity:.35; }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-today-pill{
+    min-height:44px; height:auto; padding:0 1rem; border-radius:999px; border:0 !important; box-shadow:none !important;
+    background:color-mix(in srgb, var(--accent) 16%, transparent) !important; color:var(--accent); font-weight:600;
+  }
+  html[data-layout] body .screen-calendar-tab .cal-grid-legend{ color:var(--soft); }
+  html[data-layout] body .screen-calendar-tab .cal-today-badge{
+    background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent); font-weight:700; letter-spacing:0;
+  }
+  /* TODAY IS THE ACCENT'S CIRCLE (iOS): filled when it is the picked day, a ring of the accent when another day is picked;
+     a picked day that is not today is a soft grey fill */
+  @media (max-width:39.99rem){
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid .cal-cell.cal-cell-today .cal-cell-num{
+    background:transparent; color:var(--accent); box-shadow:inset 0 0 0 1.5px var(--accent); font-weight:800;
+  }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid .cal-cell.cal-cell-today.cal-cell-sel .cal-cell-num{
+    background:var(--accent); color:var(--accent-ink); box-shadow:none;
+  }
+  html[data-theme][data-layout] body .screen-calendar-tab .cal-grid .cal-cell.cal-cell-sel:not(.cal-cell-today):not(.cal-cell-last) .cal-cell-num{
+    background:color-mix(in srgb, var(--ink) 20%, transparent); color:var(--ink); box-shadow:none;
+  }
+  }
+  /* from a tablet up a day is a box with its words: today's number alone takes the accent's circle, at the box's corner */
+  @media (min-width:40rem){
+    html[data-theme][data-layout] body .screen-calendar-tab .cal-grid .cal-cell.cal-cell-today .cal-cell-num{
+      display:inline-grid; place-items:center; align-self:flex-start; width:2rem; height:2rem; margin:-.3rem 0 0 -.4rem; border-radius:50%;
+      background:var(--accent); color:var(--accent-ink); box-shadow:none; font-weight:800;
+    }
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -134713,7 +134939,8 @@ function showRankings(defaultBoard){
     try{ const third0 = LB_THIRD_COL[rankingsBoardKey] || null; const hd = buildOverallHead(third0); hd.classList.add("rank-head-skel"); rows.appendChild(hd); }catch(e){}
     for(let i = 0; i < 9; i++){
       const sk = document.createElement("div");
-      sk.className = "rank-row rank-row-skel has-cols";
+      /* the first three stand where the podium's cards will (build 382, iOS look): their own cards, the rest the grouped list */
+      sk.className = "rank-row rank-row-skel has-cols" + (i < 3 ? " rank-skel-podium rank-skel-podium-" + (i + 1) : "");
       sk.setAttribute("aria-hidden", "true");
       sk.style.setProperty("--skel-i", i);
       sk.innerHTML = "<span class=\"rank-place\"></span><span class=\"rank-avatar-wrap rank-skel-avwrap\"><span class=\"rank-skel-av\"></span></span>"
