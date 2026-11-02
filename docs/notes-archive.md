@@ -30765,3 +30765,5 @@ Madison: "Not sure why ours has numbers ... Cam helped with virtual room ... Dar
 
 **Gate**
 - check-b382-credits: 13 fail on e3aa7a8.
+
+- Logan Preston, confirmed by Madison 2026-11-02: "Logan helped with the question bank and test format and stuff." Role "Questions"; rows "Question bank", "Test format".
