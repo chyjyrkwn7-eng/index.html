@@ -30182,3 +30182,28 @@ clears the unlock pop-ups the gate's runs leave waiting for "Got it" - a notice 
 "frames advancing" now reads left/top as well as transform (loops-paint); its other two failures are the same on 379.
 Also run: check-b329, b325-e (its iPad card-proportion failure is the same on 379), b327z15 W, check-behaviour b324g_toggles, b304, b321g
 (same failures as before), check-chat, check-sound, sweep-layout --quick 14/14.
+
+### 380, two more: the chat button and Pause in the tab bar's glass; Next question under the answers
+
+Madison (a Drill screenshot, the space under the answers circled): "The chat and pause button need that same look as the bottom tabs see
+through look so it's all the same." / "when the next question button pops up, can it be a little bitter higher up? Wouldn't it look
+better if it higher up and more practical for the user so they don't have to reach so far down?"
+- THE GLASS: 327 round 8 gave the floating controls the bar's recipe as it was (a .62 body under blur(30px) saturate(1.25)); 377 made the
+  bar see-through (.26 body, blur(7px) saturate(1.5), shadow 0 8px 32px .5) and they kept the old one. The chat button (and a room's
+  chat button), Pause, and the two pills that sit beside the bar - the search field and Find me - take the bar's own values now (a rule
+  at the end of the main <style>; the chat line carries :not(.is-open-x) only to match the old lists' weight - their :is() counts
+  .daily-question-fab:not(.is-done), two classes - so, coming after them, it wins). check-b327-d "the search field and the chat button
+  are the bar's glass tint / share the bar's frost" now passes; its frost check compared against a written-out saturate(1.25) and
+  now compares with the bar's own value. Select all, Starred, the level tabs, back to top and the daily button keep the heavier glass.
+- NEXT QUESTION: it was pinned to the bottom (bottom: var(--vv-lift) + var(--tabs-bottom)) whatever the question. qnextPlace() runs as
+  the question is drawn (before the .78s rise) and on a resize: the lowest of the panel's children - and the keys line #hint, which
+  shows on computers and iPads only - plus 2rem is where it goes (--qnext-raise), never lower than it was. A Pro Max short question:
+  ~2rem under D (raised 130-145px); a long one, and every question on an SE: where it always was; iPad: under the keys line. qnextNow is
+  a var (a test resumed at launch draws a question before that part of the script has run).
+- check-b380 (12) once pressed Main menu late in a full run: the in-page taps can fire 700ms+ apart when the gate's own load stalls the
+  page and a frame runs before the late timer (the frame beat then reads fresh). That is a pause - a press by design - so such a run is
+  inconclusive and is run again (up to 3 tries); a press less than 700ms after the tap before it still fails (379: left after 451ms).
+Gate: check-b380 (24) on a test the chat button and Pause are the bar's glass, (25) Next question 1.6-2.6rem under a short question's
+answers (as on a phone, no keys line) and unchanged from the bottom when the question fills the screen - both fail on 379 (25 of 25
+pass on 380, twice). Also run: sweep-layout --quick 14/14, check-behaviour b303 + b318f_seeresults, check-chat, check-savetest,
+check-results; check-chatroom's two "stale classmate" failures and check-b327-d's others are the same on 379.

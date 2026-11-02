@@ -4285,7 +4285,8 @@
   [data-layout="modern"] .foot > .floatbtn.qnext,
   .foot > .floatbtn.qnext{
     left:50%; right:auto; width:min(23rem, calc(100% - 2.5rem));
-    bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom));
+    /* build 380: --qnext-raise lifts it to just under the answers when there is room (qnextPlace) */
+    bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom) + var(--qnext-raise, 0px));
     padding:1.02rem 1.6rem; border:none; border-radius:999px;
     transform:translateX(-50%);
     font-size:1.08rem; font-weight:800; letter-spacing:-.005em;
@@ -34761,6 +34762,22 @@ html.is-browser{ --fade-paper: transparent; }
      both do this; the estimate is the 60px every row is). The tab's character is its own layer, so the bar's swell
      and slide move a picture instead of repainting 230 svg parts. */
   #bottomtab-profile .bottomtab-icon-avatar{ will-change:transform; transform:translateZ(0); }
+  /* BUILD 380: THE CHAT BUTTON AND PAUSE ARE THE TAB BAR'S GLASS. "The chat and pause button need that same look as the bottom tabs see
+     through look so it's all the same." Build 327 round 8 gave them the bar's recipe as it was then (a .62 body under a 30px blur);
+     377 made the bar see-through (7px over a .26 body) and they kept the old one, so beside it they read as solid. They take the
+     bar's own values now - body, faint white lift, the one .16 rim, blur, shadow - in a room as on every other screen. The search
+     field and Find me, the pills that sit beside the bar, come too (check-b327-d: "the search field and the chat button are the
+     bar's glass"). */
+  /* (:not(.is-open-x) only lifts the chat line to the old lists' weight - their :is() counts .daily-question-fab:not(.is-done), two
+     classes - so that, coming after them, it wins) */
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .searchbox, .rank-me-btn):not(.is-open-x),
+  [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -101755,8 +101772,45 @@ function render(){
 
   stage.replaceChildren(...(dailyTitleBlock ? [dailyTitleBlock, panel, foot] : [panel, foot]));
   if(!next.hidden) focusQuietly(next);
+  if(!next.hidden) qnextPlace(next, panel);
   if(isDaily) panel.classList.add("is-dailyq");
 }
+
+/* NEXT QUESTION, UNDER THE ANSWERS (build 380): "when the next question button pops up, can it be a little bit higher up? Wouldn't it
+   look better if it higher up and more practical for the user so they don't have to reach so far down?" It was pinned to the bottom
+   of the screen whatever the question, so after a short one it came up a long way below the answers. It sits QNEXT_GAP_REM under the
+   last of them now when there is room, and never lower than it was: a long question that fills the screen still has it at the
+   bottom. Measured once as the question is drawn (before the rise, which waits .78s) and again on a resize; it rises the same way. */
+/* (var, not let/const: a test resumed at launch draws a question before this part of the script has run) */
+var qnextNow = null;
+function qnextPlace(btn, panel){
+  const QNEXT_GAP_REM = 2;
+  qnextNow = { btn, panel };
+  try{
+    btn.style.setProperty("--qnext-raise", "0px");
+    let low = 0;
+    /* the keys line under the stage (#hint: computers and iPads only) is part of what it goes under */
+    const keys = document.getElementById("hint");
+    [...panel.children, ...(keys ? [keys] : [])].forEach(k => {
+      if(!k.offsetHeight) return;
+      const pos = getComputedStyle(k).position;
+      if(pos === "fixed" || pos === "absolute") return;
+      const b = k.getBoundingClientRect().bottom;
+      if(b > low) low = b;
+    });
+    if(!low) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const top0 = innerHeight - (parseFloat(getComputedStyle(btn).bottom) || 0) - btn.offsetHeight;
+    const raise = Math.max(0, Math.round(top0 - (low + QNEXT_GAP_REM * rem)));
+    btn.style.setProperty("--qnext-raise", raise + "px");
+  }catch(e){}
+}
+addEventListener("resize", () => {
+  const q = qnextNow;
+  if(!q) return;
+  if(!q.btn.isConnected || q.btn.hidden){ qnextNow = null; return; }
+  qnextPlace(q.btn, q.panel);
+}, { passive: true });
 
 function scheduleAutoAdvance(qi){
   /* Shared by all three modes now, per explicit request ("it can be

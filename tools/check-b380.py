@@ -28,6 +28,8 @@ second render once measured);
 nothing starred, a tap on it says so at the top (a banner), not in a toast at the bottom;
 (23) a switch tapped sets off as the finger lifts, not when the flip arrives (on an iPhone the native switch's change comes later -
 here 150ms later), and a tap whose flip never comes glides back;
+(24) on a test, the chat button and Pause are the tab bar's own glass (body, rim, blur, shadow); (25) Next question comes up 2rem under
+the answers when they leave room (as on a phone, no keys line), and at the bottom, where it was, when the question fills the screen;
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -130,23 +132,30 @@ with sync_playwright() as pw:
       return { before: before.slice(0,12), after: after.slice(0,12), xpIn }; }""")
     chk("a tap finishes the grade box at once (%s -> %s) and the XP box comes in by itself (%s)" % (g13["before"], g13["after"], g13["xpIn"]),
         g13["before"] != g13["after"] and "100%" in g13["after"] and g13["xpIn"], g13)
-    # keep tapping where the buttons rise (a run with misses: no pop-ups to hold it); then pause and tap a button
-    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
-    pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 3])
-    # the taps are timed in the page (450ms apart), so the gate's own timing never makes a pause
-    LOG = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const LOG=[];
-      for(let k=0;k<30;k++){ const p=document.querySelector('.rs-screen'); if(!p){ LOG.push('left:' + ((document.querySelector('#stage > *')||{}).className||'').slice(0,30)); }
-        else { const b=[...p.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); const t=(b && getComputedStyle(b).pointerEvents!=='none') ? b : p;
-          t.dispatchEvent(new MouseEvent('click',{bubbles:true})); LOG.push(t===p ? 'panel' : 'button'); }
-        await wait(450); }
-      return LOG; }""")
-    on_results = pg.evaluate("()=>!!document.querySelector('.rs-screen')")
+    # keep tapping where the buttons rise (a run with misses: no pop-ups to hold it); then pause and tap a button.
+    # The taps are timed in the page, 450ms apart. A tap the page itself ran late (a busy page - here the gate's own load after
+    # the parts above) can come 700ms+ after the last one, and that is a pause: a press, by design. Such a run says nothing and is
+    # run again (up to 3 tries); a button pressed less than 700ms after the tap before it fails.
+    TAPS = """async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const LOG=[]; let prev=null, leftGap=null;
+      for(let k=0;k<30;k++){ const p=document.querySelector('.rs-screen'); if(!p){ LOG.push('left'); break; }
+        const b=[...p.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); const t=(b && getComputedStyle(b).pointerEvents!=='none') ? b : p;
+        const now=performance.now(); const gap = prev==null ? null : Math.round(now-prev); prev=now;
+        t.dispatchEvent(new MouseEvent('click',{bubbles:true})); LOG.push(t===p ? 'panel' : 'button');
+        await wait(450); if(!document.querySelector('.rs-screen') && leftGap==null) leftGap = gap; }
+      return { LOG, leftGap, still: !!document.querySelector('.rs-screen') }; }"""
+    tries = []
+    for attempt in range(3):
+        pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+        pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 3])
+        tr = pg.evaluate(TAPS); tries.append(tr)
+        if tr["still"] or (tr["leftGap"] is not None and tr["leftGap"] < 700): break
+    LOG = tries[-1]["LOG"]; on_results = tries[-1]["still"]
     pg.wait_for_timeout(900)
     pg.evaluate("()=>{ const b=[...document.querySelectorAll('.rs-final button')].find(x=>/Main menu/.test(x.textContent)); b && b.click(); }")
     pg.wait_for_timeout(600)
     went = pg.evaluate("()=>!!document.querySelector('.screen-home-actual')")
-    chk("taps that keep coming never press a results button (%s button taps of 30, still on the results: %s); a tap after a pause does (home: %s)" % (LOG.count("button"), on_results, went),
-        LOG.count("button") >= 5 and on_results and went, LOG)
+    chk("taps that keep coming never press a results button (%s button taps of 30, still on the results: %s, tries %s); a tap after a pause does (home: %s)" % (LOG.count("button"), on_results, [(x["still"], x["leftGap"]) for x in tries], went),
+        LOG.count("button") >= 5 and on_results and went, tries)
     # (19) a tap held back by a busy page
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
     pg.evaluate(RUN0, ["Victims of Crime", "all", 0, 3])
@@ -284,6 +293,35 @@ with sync_playwright() as pw:
     chk("a switch tapped sets off %sms after the finger lifts, with its flip 150ms later (flipped: %s); a tap whose flip never comes goes %spx and back (%s -> %s)" % (tap and tap["startsAfterUp"], tap and tap["flipped"], none and none["far"], none and none["start"], none and none["last"]),
         tap and tap["flipped"] and tap["startsAfterUp"] is not None and tap["startsAfterUp"] < 60 and none and not none["flipped"] and abs((none["last"] or 0) - (none["start"] or 0)) < 1.5, [tap, none])
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
+    # (24) the chat button and Pause in the bar's glass
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500)
+    LOOK = "(sel)=>{ const e=document.querySelector(sel); if(!e) return null; const c=getComputedStyle(e); return [c.backgroundImage, c.backgroundColor, c.borderTopColor, c.backdropFilter||c.webkitBackdropFilter, c.boxShadow].join(' | '); }"
+    bar = pg.evaluate(LOOK, ".bottomtabs")
+    QRUN = """async([ui, right])=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const u=topicsIn(QUESTIONS)[ui]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u && inWholeUnit(QUESTIONS[i]));
+      theme.autoAdvance=false; cfg.source='all'; cfg.mode='drill'; cfg.units=[u]; beginRun(idx); for(let t=0;t<60 && !document.querySelector('.qpanel .choice');t++) await wait(100); await wait(400);
+      if(!right) return true; const qi=order[pos]; const ch=[...document.querySelectorAll('.qpanel .choice')]; ch[optionOrder(qi).indexOf(QUESTIONS[qi].answer)].click(); await wait(1700); return true; }"""
+    pg.evaluate(QRUN, [5, False])
+    pause = pg.evaluate(LOOK, ".top #pausebtn"); chat = pg.evaluate(LOOK, ".chatdock-btn")
+    chk("on a test, the chat button and Pause are the tab bar's own glass (chat: %s, Pause: %s)" % (chat == bar, pause == bar), bar and chat == bar and pause == bar, [bar, chat, pause])
+    pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); }"); pg.wait_for_timeout(800)
+    # (25) Next question under the answers
+    pg.evaluate("()=>{ const s=document.createElement('style'); s.id='gate-phone-keys'; s.textContent='#hint{display:none !important}'; document.head.appendChild(s); }")
+    NB = """()=>{ const b=document.getElementById('nextbtn'), ch=[...document.querySelectorAll('.qpanel .choice')]; if(!b||b.hidden||!ch.length) return null; const r=b.getBoundingClientRect(), l=ch[ch.length-1].getBoundingClientRect();
+      const rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16; return { gapRem: +((r.top-l.bottom)/rem).toFixed(2), fromBottom: Math.round(innerHeight-r.bottom), scrolls: document.documentElement.scrollHeight>innerHeight+1 }; }"""
+    pg.evaluate(QRUN, [5, True]); short = pg.evaluate(NB)
+    pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); }"); pg.wait_for_timeout(800)
+    # a question that fills the screen: the longest stem and choices of a unit
+    pg.set_viewport_size({"width": 440, "height": 600}); pg.wait_for_timeout(500)
+    pg.evaluate(QRUN, [7, True]); tall = pg.evaluate(NB)
+    pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(800)
+    pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(600)
+    pg.evaluate("()=>{ const s=document.createElement('style'); s.id='gate-phone-keys'; s.textContent='.foot > .floatbtn.qnext{ --qnext-raise:0px !important; }'; document.head.appendChild(s); }")
+    pg.set_viewport_size({"width": 440, "height": 600}); pg.wait_for_timeout(500)
+    pg.evaluate(QRUN, [7, True]); tall0 = pg.evaluate(NB)
+    pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(600)
+    pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(800)
+    chk("Next question comes up %s rem under a short question's answers, and where it always was when the question fills the screen (%s px from the bottom, was %s)" % (short and short["gapRem"], tall and tall["fromBottom"], tall0 and tall0["fromBottom"]),
+        short and 1.6 <= short["gapRem"] <= 2.6 and tall and tall0 and tall["scrolls"] and tall["fromBottom"] == tall0["fromBottom"], [short, tall, tall0])
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);
