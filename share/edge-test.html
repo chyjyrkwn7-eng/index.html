@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Edge test</title>
+<!-- Build 381: one screenshot from an iPhone in a Safari tab shows what Safari draws under its status bar and its
+     toolbar - the page's root background (stripes), its fixed layers (dots), or only its own fill (flat). Not part of
+     the app; nothing links here. -->
+<style>
+  html {
+    /* the ROOT background (the canvas): diagonal stripes, red and green */
+    background: repeating-linear-gradient(45deg, #b3261e 0 18px, #1e7d32 18px 36px);
+    min-height: 100%;
+  }
+  body { margin: 0; font: 17px -apple-system, system-ui, sans-serif; color: #fff; }
+  /* a FIXED layer, past every edge: blue dots */
+  .fixed {
+    position: fixed; inset: -200px 0; pointer-events: none;
+    background-image: radial-gradient(circle, #4ea3ff 0 5px, transparent 6px);
+    background-size: 28px 28px;
+  }
+  main {
+    position: relative; margin: 30vh 16px; padding: 18px; border-radius: 16px;
+    background: rgba(0, 0, 0, .78); line-height: 1.45;
+  }
+  b { color: #ffd37a; }
+  .tall { height: 120vh; }
+</style>
+</head>
+<body>
+<div class="fixed"></div>
+<main>
+  <b>Nova edge test.</b> Take a screenshot here, then scroll down a little and take another.<br><br>
+  At the very top and around Safari's bar at the bottom:<br>
+  <b>Stripes</b> = Safari shows the page's background there.<br>
+  <b>Blue dots</b> = Safari shows fixed layers there.<br>
+  <b>One flat colour</b> = Safari covers it with its own colour.
+</main>
+<div class="tall"></div>
+</body>
+</html>
