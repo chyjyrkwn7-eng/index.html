@@ -30846,3 +30846,40 @@ Madison: "We don't wear police styled hats. We wear cowboy hats" / "white Chevy 
 **Gate:** check-b382-ifcart holds the R2 hashes as "before". 14 fail there, 39 pass after.
 
 **MERGE HAZARD seen here:** the art branch's commit was made over an older tree. A plain merge deleted check-b382-ios/units and reverted the Leaderboard, Contributors and units work. It was caught before pushing, reset, and applied as a patch from the branch's real base (e3aa7a8). Always read a merge's --stat for deletions before pushing.
+
+## 382: SAVE THE CODE WHEN IT IS GIVEN; NOBODY SIGNED OUT; "I'M NEW HERE" ASKS FIRST (merged 2026-11-02)
+Madison: "ensure it's apparent that the user needs to remember the code and write it down ... absolutely sure people can't be randomly logged out", and "people keep creating new accounts again and again".
+
+**The save-code card: `showSaveCodeCard()`**
+- Shows the code large and monospace, with: "This is your sync code. Write it down or save it somewhere safe. It is the only way to get your progress back on a new phone or if this app is deleted."
+- Controls: **Save it** (`saveSyncCodeVia`) and the tick box "I've written it down or saved it". Continue stays off until the box is ticked or Save worked.
+- Nova's sign-up line "This is your sync code." asks it (`novaAskSaveCode`).
+- Existing accounts with no `savedCodeSaved` get it once on Home:
+  - after `cloudConfirmedFor`;
+  - after Nova, tours and cutscenes;
+  - never over a test.
+- It REPLACES the amber banner. The old `class26e.savecode.asked` is deliberately ignored, so accounts that dismissed the banner are asked once more.
+- Done means `savedCodeSaved` (now OR-merged across devices) plus `class26e.savecode.card` on the device.
+- Signing in with a code marks the device done and adds one line: "Keep your sync code written down somewhere safe...".
+- A freshly issued code (sign-up, Start syncing, or the boot self-heal minting one) counts as unsaved again (`codeIssuedFresh`).
+
+**Settings > Sync**
+- "Your sync code" plus a **Save it** row (`buildSettingsSaveCodeRow`).
+- The code is shown even when sync is unreachable. It used to vanish offline.
+
+**Sign-out audit fixes**
+- `handleRemoteReset` now re-reads the account and its `__floor` from the server: once at 2.5s, then 8s more for the floor. It wipes only if both are gone (`applyRemoteReset`). A failed read keeps the account.
+- Signing in or linking marks the device onboarded. An old cloud copy without `onboardingComplete` had been putting every following launch on Welcome, which reads as signed out.
+- `navigator.storage.persist()` was already requested at boot.
+
+**"I'm new here" on a device that has held an account**
+- Such a device is one with `class26e.hadaccount` (`{at,name}`, no code), any of the save-code keys, `syncoff`, or a mirror code or public id.
+- It opens `showNewAccountConfirm`: "This device was already signed in to Nova. Starting over makes a brand-new account with no progress. To keep your progress, sign in with your sync code."
+- Primary **Sign in with my code**; secondary **Start a new account**.
+- Welcome already led with Sign in; its markup is unchanged.
+
+**Gates**
+- New: `tools/check-b382-savecode.py`. 26 fail on the previous build.
+- `check-save-code` sections 2–3 now assert the card.
+- `check-sync` 4d allows 3 buttons.
+- ALL gate fixtures that set `class26e.savecode.asked` now also set `class26e.savecode.card`. A new fixture for an onboarded account needs one of them (or `savedCodeSaved:true`), or the card lands over what it measures.
