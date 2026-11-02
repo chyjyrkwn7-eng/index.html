@@ -1533,10 +1533,16 @@ def check_b218(br):
     # Settings: two buttons to a row, and the sync code in a card.
     pg.evaluate("()=>{ showAppearance(); }")
     pg.wait_for_timeout(500)
-    rows = pg.evaluate("""()=>{ const top=t=>{ const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()===t); return b?Math.round(b.getBoundingClientRect().top):null; };
-      return { upd: top('Check for update'), bug: top('Report a bug'), share: top('Share this app'), install: top('Add to Home Screen') }; }""")
-    check("Help's two buttons sit side by side", rows["upd"] is not None and rows["upd"] == rows["bug"], rows)
-    check("so do Share and Add to Home Screen", rows["share"] is not None and rows["share"] == rows["install"], rows)
+    # BUILD 382 (the new decision): no pills side by side any more - Help and
+    # Share & install are each ONE list card of full-width rows, stacked, 44px+.
+    rows = pg.evaluate("""()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
+      const o = { upd: row('Check for update'), bug: row('Report a bug'), share: row('Share this app'), install: row('Add to Home Screen') };
+      const same = (a,b)=>!!(o[a]&&o[b]) && o[a].card===o[b].card;
+      const out = { helpOneCard: same('upd','bug'), shareOneCard: same('share','install') };
+      for(const k in o){ out[k] = o[k] && { top:o[k].top, h:o[k].h, full:o[k].full }; } return out; }""")
+    ok_row = lambda k: bool(rows[k]) and rows[k]["h"] >= 44 and rows[k]["full"]
+    check("Help's actions are full-width rows in one card, stacked", rows["helpOneCard"] and ok_row("upd") and ok_row("bug") and rows["bug"]["top"] > rows["upd"]["top"], rows)
+    check("so are Share and Add to Home Screen", rows["shareOneCard"] and ok_row("share") and ok_row("install") and rows["install"]["top"] > rows["share"]["top"], rows)
     # Find me wears the search field's glass, at its height.
     pg.evaluate("()=>{ showRankings(); }")
     pg.wait_for_timeout(600)
