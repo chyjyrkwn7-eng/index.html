@@ -118753,8 +118753,8 @@ function creditsPeople(){
   /* Build 382, round 3: "Cam helped with virtual room so go on that. Darjean
      helped with the chat. I created and designed it." Each person's role is
      the thing they helped with; a row that is a feature in the app opens it
-     (`open`), the way the app opens it everywhere else. Logan Preston's line
-     is general until Madison says what he did. Creator first, then by
+     (`open`), the way the app opens it everywhere else. Logan Preston: "Logan
+     helped with the question bank and test format and stuff." Creator first, then by
      surname. */
   const ifc = window.NOVA_CLASS === "ifc";
   const chatOpen = (typeof chatDock !== "undefined" && chatDock && !ifc) ? () => openChatDock() : null;
@@ -118762,7 +118762,7 @@ function creditsPeople(){
   return [
     { name: "Madison Davis", role: "Creator", did: [{ t: "Created and designed Nova" }, { t: "Questions, ranks and characters" }] },
     { name: "Bryan Darjean", role: "Chat", did: [{ t: "Chat", open: chatOpen }] },
-    { name: "Logan Preston", role: "Feedback", did: [{ t: "Testing and feedback" }] },
+    { name: "Logan Preston", role: "Questions", did: [{ t: "Question bank" }, { t: "Test format" }] },
     { name: "Alexis Sauceda", role: "Testing", did: [{ t: "Question testing" }] },
     { name: "Cameron Wharton", role: "Virtual Room", did: [{ t: "Virtual Room", open: roomOpen }] }
   ];
