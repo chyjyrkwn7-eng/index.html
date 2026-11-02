@@ -22854,10 +22854,11 @@ def check_b320g_inspect(br):
       - an account updating in starts every found badge clean, and a copy
         without the field does not wipe this device's; the merge keeps each
         badge's newest time;
-      - rubbing cleans one stage per BINSPECT.rubPerStage strokes, with a
-        sparkle, saved; the hint says to rub it, then that it is clean; it
-        does not turn the badge;
-      - a fling and a wide wiggle never clean;
+      - (CHANGED IN 382: "no more rubbing badges to clean them") badgeDirtStage
+        is the one look for every badge, whatever its clean time; short
+        strokes over a six-week-old badge never clean it (no stage change,
+        no sparkle, the stored time untouched, no hint), and a fling and a
+        wide wiggle still turn it;
       - Reduce motion: no swing, a fade."""
     print("\n320g. the Badges screen: the new-badge dot, a badge in your hand, spin, dirt and cleaning")
     SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
@@ -23012,7 +23013,7 @@ def check_b320g_inspect(br):
         pg.mouse.up()
         spin["grab"] = [g1["omega"], round(g1["theta"], 2), round(g2["theta"], 2)]
         spin["restAfter"] = rest()["theta"]
-        spin["cleaned"] = pg.evaluate(STATE)["rubStrokes"]
+        spin["cleaned"] = pg.evaluate(STATE).get("rubStrokes")
     check("the spin follows the drag: a fast drag spins it over 2.5x a slow one, the same way",
           has and spin["slow"] > 0 and spin["fast"] > 2.5 * spin["slow"], spin)
     check("a press mid-spin stops it dead (no speed, no turn while held), and let go it comes to rest facing you or showing its back",
@@ -23074,8 +23075,10 @@ def check_b320g_inspect(br):
       out.p97 = L; out.hue = H;
       }catch(e){ out.threw = String(e); } return out; }""")
     ctx.close()
-    check("the stage is the whole weeks since the badge was cleaned: 0, 1, 2, 3, then 4 from four weeks on",
-          data.get("stages") == [0, 1, 2, 3, 4, 4] and data.get("live") == 2, data.get("stages", data))
+    # CHANGED IN 382: badgeDirtAt still reads the weeks, but nothing draws from it -
+    # badgeDirtStage is the one look (0) for a badge cleaned two weeks ago too
+    check("badgeDirtAt still counts whole weeks (0, 1, 2, 3, 4+), but a badge cleaned two weeks ago is drawn at the one look (382)",
+          data.get("stages") == [0, 1, 2, 3, 4, 4] and data.get("live") == 0, [data.get("stages", data), data.get("live")])
     check("an account updating in starts every found badge clean (now), and a copy without the field keeps this device's",
           data.get("seeded") is True and set(data.get("seededStage") or [1]) == {0} and data.get("notFound") is False and data.get("kept") is True,
           {k: data.get(k) for k in ("seeded", "seededStage", "notFound", "kept", "threw")})
@@ -23086,19 +23089,21 @@ def check_b320g_inspect(br):
           len(p97) == 5 and all(p97[i] > p97[i + 1] for i in range(4)) and p97[0] - p97[4] >= 25
           and max(min(abs(x - hue[0]), 360 - abs(x - hue[0])) for x in hue) <= 12, [p97, hue])
 
-    # ---- 5. rubbing cleans; a spin never does ----
+    # ---- 5. (CHANGED IN 382) no rubbing: nothing cleans a badge; a fling still turns it ----
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, {"dirt": 6})
     pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
     clk = _StepperS(pg)
     open_at(pg, clk, 0)
     rub = {"ok": pg.evaluate(STATE) is not None}
+    SAVED = "() => [store.badgeCleanedAt[badgeInspectNow.unit], (() => { try{ return JSON.parse(localStorage.getItem('class26e.drill.v1')).badgeCleanedAt[badgeInspectNow.unit]; }catch(e){ return null; } })()]"
     if rub["ok"]:
         x, y, wd = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
-        per = pg.evaluate("() => BINSPECT.rubPerStage")
         rub["start"] = pg.evaluate(STATE)["stage"]
+        rub["live"] = pg.evaluate("() => unitsInTeachingOrder().filter(unitBadgeEarned).map(u => badgeDirtStage(u))")
+        rub["saved0"] = pg.evaluate(SAVED)
         rub["hint0"] = pg.evaluate(VIEW)["dirt"]
-        # a fling, and a wiggle wider than a rub
+        # a fling, and a wide wiggle
         pg.mouse.move(x - wd * .3, y); pg.mouse.down()
         for k in range(4):
             pg.mouse.move(x - wd * .3 + (k + 1) * wd * .16, y); clk.step(1 / 30)
@@ -23112,55 +23117,37 @@ def check_b320g_inspect(br):
         for _ in range(150):
             clk.step(1 / 30)
         sp = pg.evaluate(STATE)
-        rub["afterSpin"] = [sp["stage"], sp["rubStrokes"], round(sp["theta"])]
-        # a rub: short strokes back and forth over the badge's middle
+        rub["afterSpin"] = [sp["stage"], round(sp["theta"])]
+        # what was a rub: short strokes back and forth over the badge's middle
         pg.mouse.move(x, y); pg.mouse.down()
         seen, thetas, sparks = [], [], 0
-        pos = 0
-        for k in range(per * 5 * 3 + 6):
+        for k in range(16 * 3 + 6):
             pos = (k % 6) if (k % 6) < 3 else 6 - (k % 6)
             pg.mouse.move(x - wd * .08 + pos * wd * .055, y + (k % 2))
             clk.step(1 / 60)
             s = pg.evaluate(STATE)
-            if seen and s["stage"] != seen[-1]:
-                rub.setdefault("at", []).append([s["stage"], s["rubStrokes"]])
             seen.append(s["stage"]); thetas.append(s["theta"])
             sparks = max(sparks, pg.evaluate("() => document.querySelectorAll('.binspect-spark').length"))
-            if k == per * 3 + 2:
-                rub["mid"] = [s["stage"], s["rubStrokes"], pg.evaluate("(u) => Math.round((Date.now() - store.badgeCleanedAt[u]) / BADGE_DIRT_WEEK_MS * 100) / 100", pg.evaluate("() => badgeInspectNow.unit")),
-                              pg.evaluate("() => { try{ return JSON.parse(localStorage.getItem('class26e.drill.v1')).badgeCleanedAt[badgeInspectNow.unit]; }catch(e){ return null; } }") == pg.evaluate("() => store.badgeCleanedAt[badgeInspectNow.unit]")]
         pg.mouse.up()
         for _ in range(40):
             clk.step(1 / 30)
-        end = pg.evaluate(STATE)
-        rub["seen"] = sorted(set(seen), reverse=True)
-        rub["steps"] = [i for i in range(1, len(seen)) if seen[i] != seen[i - 1]]
-        # turned only towards its front (the nearest whole turn), never past it
-        ref = round(thetas[-1] / 360) * 360
-        lo, hi = min(thetas[0], ref) - 10, max(thetas[0], ref) + 10
-        rub["maxTurn"] = round(max(max(lo - t, t - hi, 0) for t in thetas), 1)
-        rub["endFront"] = abs(thetas[-1] - ref) < 1
+        rub["seen"] = sorted(set(seen))
+        rub["maxTurn"] = round(max(abs(t - thetas[0]) for t in thetas), 1)
         rub["sparks"] = sparks
-        rub["end"] = [end["stage"], end["rubStrokes"]]
+        rub["end"] = pg.evaluate(STATE)["stage"]
+        rub["saved1"] = pg.evaluate(SAVED)
         rub["hint1"] = pg.evaluate(VIEW)["dirt"]
-        rub["perStage"] = per
         pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) && badgeInspectNow.close()")
         for _ in range(30):
             clk.step(1 / 30)
         rub["tile"] = pg.evaluate("() => [...document.querySelectorAll('.badges-tab .ncase-cell')][0].querySelector('.badge-tile-art').dataset.dirt")
-        rub["stored"] = pg.evaluate("() => badgeDirtStage(unitsInTeachingOrder()[0])")
-    check("a fling and a wide wiggle never clean: still the dirtiest, no rub strokes counted, and it did turn",
-          rub["ok"] and rub["start"] == 4 and rub["afterSpin"][0] == 4 and rub["afterSpin"][1] == 0 and abs(rub["afterSpin"][2]) >= 90, rub.get("afterSpin"))
-    check("rubbing goes through every stage, one at a time, one stage per BINSPECT.rubPerStage strokes, with a sparkle, and is saved",
-          rub["ok"] and rub["seen"] == [4, 3, 2, 1, 0] and rub["end"][0] == 0
-          and rub.get("at") == [[3, rub["perStage"]], [2, 2 * rub["perStage"]], [1, 3 * rub["perStage"]], [0, 4 * rub["perStage"]]]
-          and abs(rub["mid"][2] - rub["mid"][0]) < .05 and rub["mid"][3] is True and rub["sparks"] >= 4 and rub["stored"] == 0 and rub["tile"] == "0", rub)
-    check("a rub never spins the badge: it only comes round to show its front (no further than that, give or take 10 degrees)",
-          rub["ok"] and rub["maxTurn"] <= 0 and rub.get("endFront") is True, [rub.get("maxTurn"), rub.get("endFront")])
-    # MOVED IN 321 (b321d): "If the badge is clean then it will not say that it's clean."
-    check("the hint: 'Rub to clean it.' while it is dirty, and nothing at all once it is clean (321)",
-          rub["ok"] and rub["hint0"] == "Rub to clean it." and not (rub["hint1"] or "").strip(),
-          [rub.get("hint0"), rub.get("hint1")])
+    check("a badge cleaned six weeks ago is drawn at the one look, the same stage as every other found badge (382)",
+          rub["ok"] and len(set(rub["live"])) == 1 and rub["start"] == rub["live"][0] and rub.get("tile") == str(rub["start"]), {k: rub.get(k) for k in ("start", "live", "tile")})
+    check("a fling and a wide wiggle still turn it, and leave its stage alone",
+          rub["ok"] and rub["afterSpin"][0] == rub["start"] and abs(rub["afterSpin"][1]) >= 90, rub.get("afterSpin"))
+    check("short strokes back and forth never clean it (382): the stage never changes, no sparkle, the stored clean time untouched, no hint, no turn inside the slack",
+          rub["ok"] and rub["seen"] == [rub["start"]] and rub["end"] == rub["start"] and rub["sparks"] == 0 and rub["saved0"] == rub["saved1"]
+          and rub["saved0"][0] is not None and not (rub["hint0"] or "").strip() and not (rub["hint1"] or "").strip() and rub["maxTurn"] <= 1, rub)
     ctx.close()
 
     # ---- 6. Reduce motion: a fade, no swing ----
@@ -23210,9 +23197,9 @@ def check_b321d_badges(br):
         99th >= 95, every one >= 88; 6a387e2's printed letters 60-84), and
         the back wears the badge's dirt (a stage 4 back is not a stage 0
         one);
-      - the badge in your hand says only its name, "Rub to clean it." while
-        it is dirty and nothing about cleanliness once clean, a quiet tip and
-        Close: no Mastered, no requirement, no bar, no count, no care line.
+      - the badge in your hand says only its name, a quiet tip and Close:
+        no Mastered, no requirement, no bar, no count, no care line (382:
+        and no "Rub to clean it." - a badge left six weeks is the same).
         A badge not found: its name and one line of progress."""
     print("\n321d. badge tokens: the grain as the clean look, a dirtier dirtiest, the bevel, an engraved back, a simple badge in your hand")
     ctx, pg = booted(br, 400, 400, seed=USED_ACCOUNT, dpr=1)
@@ -23361,12 +23348,15 @@ def check_b321d_badges(br):
         check(f"{dev}: a clean badge in your hand: its name, a quiet 'Swipe to spin it.' and Close - no Mastered, no requirement, no bar, no count, nothing about being clean",
               len(c0["texts"]) == 3 and c0["texts"][0].endswith(" Badge") and "spin" in c0["texts"][1].lower() and c0["texts"][2] == "Close"
               and not c0.get("bar") and not crowd(c0["texts"]) and not [x for x in c0["texts"] if "clean" in x.lower()], c0)
-        check(f"{dev}: a dirty one adds one short hint, 'Rub to clean it.', and nothing else",
-              c4["texts"][:2] == [c0["texts"][0], "Rub to clean it."] and len(c4["texts"]) == 4 and not c4.get("bar") and c4.get("stage") == 4, c4)
+        # CHANGED IN 382: "no more rubbing badges to clean them" - no hint, one look
+        check(f"{dev}: a badge cleaned six weeks ago is the same in your hand as a new one: the same words (no 'Rub to clean it.'), stage and glow (382)",
+              c4["texts"] == c0["texts"] and not c4.get("bar") and c4.get("stage") == c0.get("stage") and c4.get("glow") == c0.get("glow"), [c0, c4])
         check(f"{dev}: a badge not found: its name and one line of progress, no bar",
               len(em["texts"]) == 3 and em["texts"][0].endswith(" Badge") and re.match(r"^\d+ of \d+ hundos?$", em["texts"][1]) and em["texts"][2] == "Close" and not em.get("bar"), em)
-        check(f"{dev}: the dirtiest has a noticeably weaker glow (<= .2 of clean) and light across its face (<= .2)",
-              c0.get("glow") == 1 and c4.get("glow") is not None and c4["glow"] <= .2 and res["shineK"] <= .2, [c0.get("glow"), c4.get("glow"), res["shineK"]])
+        # (382) the in-hand glow is the one look's (BADGE_DIRT.glow[0], a touch under 1); the
+        # scale's dirtiest step is kept in the table, drawn by nothing
+        check(f"{dev}: the glow in your hand is the one look's, a touch under full, and the scale's dirtiest light is still <= .2 (382)",
+              c0.get("glow") is not None and .5 <= c0["glow"] < 1 and res["shineK"] <= .2, [c0.get("glow"), c4.get("glow"), res["shineK"]])
 
 
 

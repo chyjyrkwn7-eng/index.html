@@ -485,7 +485,7 @@ def section_q(br):
 
 
 def section_r(br):
-    print("\nR. Badges: a tip on a dull badge, only then")
+    print("\nR. Badges: no tip about cleaning, ever (382: badges no longer lose their shine)")
     label, w, h, dpr = z5b.PHONE
     ctx, pg = z5b.boot(br, w, h, dpr)
     r = pg.evaluate("""async () => { const units = topicsIn(QUESTIONS); window.unitBadgeEarned = u => units.indexOf(u) < 4;
@@ -496,10 +496,12 @@ def section_r(br):
       clean(); store.badgeCleanedAt[units[1]] = Date.now() - 3 * BADGE_DIRT_WEEK_MS - 1000;
       showRanksScreen('badges'); await new Promise(r => setTimeout(r, 900));
       const tips = [...document.querySelectorAll('#stage .badge-clean-tip')];
-      return { blurb, tipClean, tipDirty: tips.length, onDirty: tips.length ? !!tips[0].closest('.badge-tile[data-dirt]') : null }; }""")
+      const said = [...document.querySelectorAll('#stage .badges-tab *')].filter(e => !e.children.length && /shine|clean|rub/i.test(e.textContent || '')).length;
+      return { blurb, tipClean, tipDirty: tips.length, said }; }""")
     check("R. the blurb does not tell you to clean (%r)" % r["blurb"][:60], not any(w in r["blurb"].lower() for w in ("rub", "clean")), r)
     check("R. no tip while every badge shines", r["tipClean"] == 0, r)
-    check("R. one tip, on the dull badge, once one is dull", r["tipDirty"] == 1 and r["onDirty"], r)
+    # CHANGED IN 382: "let's get rid of the 'lost its shine' thing for badges" - no tip on a badge cleaned weeks ago either
+    check("R. no tip on a badge left three weeks either, and nothing on the screen about shine or cleaning (382)", r["tipDirty"] == 0 and r["said"] == 0, r)
     ctx.close()
 
 
