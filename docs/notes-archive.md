@@ -30767,3 +30767,46 @@ Madison: "Not sure why ours has numbers ... Cam helped with virtual room ... Dar
 - check-b382-credits: 13 fail on e3aa7a8.
 
 - Logan Preston, confirmed by Madison 2026-11-02: "Logan helped with the question bank and test format and stuff." Role "Questions"; rows "Question bank", "Test format".
+
+### 382: Units screen, faster and in Settings' look (merged 2026-11-02)
+
+**Cause of the lag: the `:has()` invalidation set**
+- Three card rules made every `:has()` re-check under `<body>` restyle every card, about 680 elements a tick:
+  - `:has(input:checked) > .box`
+  - `:has(> .pick-version) > .pname`
+  - `:not(:has(.pick-barrow)) > .pcount`
+- A bare `svg` in a cutscene rule did the same.
+- These are now classes: `.pick-checked`, `.has-version`, `.pick-mastered`, and `--cib-dim` for the cutscene.
+- RULE: never put a common element (svg, `.pname`, `.box`) to the right of a `:has()`.
+
+**Other speed fixes**
+- Card badges are one cached `<img>` each (`cardBadgeSVG`). A badge stays live SVG only while its token render is a draft.
+- Haptic switches read every size before writing anything (`hswOptMeasure`).
+- Back-word centring is cached per width.
+- Counts are made once when the screen opens.
+- The next-test lookup is cached for a second.
+
+**Measured** (CPU ×4, base → 382)
+- Open: 374 → 243ms main thread.
+- Elements restyled per tick: 682 → 217.
+- Elements restyled per scroll: 74 → 4.
+
+**Look**
+- Settings' header: round back button, centred "Choose your units".
+- Levels are an iOS segmented control.
+- Select all and Starred are flat 44px pills.
+- Cards are flat tiles. A picked card gets an accent check inside its corner, or on the corner below 400px wide.
+
+**Changed outside the screen**
+- the cutscene rule
+- `centerBackWord()`
+- `hswOptMeasure` / `hswOptAttach`
+- the tab-search placement observer
+
+**Gate:** check-b382-units. It fails 9 of 13 on the base.
+
+**Open (other areas)**
+- Badge warm-up uses about 60% of the main thread 5–15s after launch.
+- The first-tap sound prewarm is a 170–400ms task.
+- check-b380's switch-timing check finds no switch (probably the Settings menu); recheck in the final run.
+- check-positions flags `showWelcomeCharacterPrompt` scrolling on 3 laptop sizes; recheck against the base.
