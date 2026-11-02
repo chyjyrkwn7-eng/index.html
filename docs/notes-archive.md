@@ -30485,3 +30485,18 @@ as well. Fix this too." / "the Liquid Glass gets picked and put down just a smid
 - THE KNOB: NSW_T pop 260->210ms, shrink 360->290ms (~19% each), same curves; the glide and the tap/haptic logic as they were.
 - Gate: check-b382-toggles (iPhone UA, real touches; fails on 381). Also run: check-behaviour b324g_toggles, b234, b235b,
   b323s_summary; check-b380 switch part 23; b327z15 W; sweep-layout --quick 14/14. On-device smoothness unconfirmed.
+
+## Build 382 - Report a bug is just the report; the bottom of Settings is rows
+Madison: "Ensure to remove the stuff from report a bug so it's not there anymore." / "I really dislike this part of settings, please
+get all these buttons and things looking better".
+- Report a bug: Test tab speed, Send tab timings, Test Leaderboard speed and the Drag test are off the screen.
+  runLagTest/runBoardTest/runDragTest/sendTabTimings stay (gates call them); every report still carries perf (tabPerfText) silently
+  with build, publicId, name, UA, viewport, standalone.
+- Sync (unreachable), Share & install, Help and Advanced are .settings-card.settings-list cards of settingsRow() buttons: icon tile
+  (accent-tinted; Add to Home Screen filled with the accent; Advanced/sync muted), label, optional .settings-row-sub, chevron, inset
+  hairlines, 52px+. Check for update's second line is the build (.settings-buildline, still where "up to date" lands).
+- Advanced: the row is .adv-toggle (no more black .more-toggle bar), chevron turns 90deg when open, its .more-body opens inside the
+  same card (.settings-adv-card); open/close/scroll logic unchanged.
+- Stacked rows are list rows to the haptic-switch rule (hswListRow), so they carry no .nova-hsw; Advanced keeps its.
+- Gate: tools/check-b382-settings.py (16 fail on 381). check-behaviour s10, check-bugreport, check-fixes, check-b362/367/378
+  updated. Under load: 3 check-sync boot checks and b362 "real taps keep l/p" failed unverified against 381 - re-run quiet.
