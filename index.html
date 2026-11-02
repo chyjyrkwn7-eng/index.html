@@ -99697,7 +99697,7 @@ function openUnitDetail(row, name, mode){
     const sw = document.createElement("div");
     sw.className = "unitdetail-search";
     const si = document.createElement("input");
-    si.type = "search"; si.placeholder = kind === "flagged" ? "Search starred" : "Search most missed";
+    si.type = "search"; si.placeholder = "Search"; si.setAttribute("aria-label", kind === "flagged" ? "Search starred" : "Search most missed");
     si.setAttribute("aria-label", si.placeholder);
     const sx = document.createElement("button");
     sx.type = "button"; sx.className = "unitdetail-searchclear"; sx.textContent = "Clear"; sx.hidden = true;
@@ -100695,7 +100695,7 @@ function showSetup(){
   const searchInput = document.createElement("input");
   searchInput.type = "search";
   searchInput.className = "searchbox";
-  searchInput.placeholder = "Search units";
+  searchInput.placeholder = "Search";   /* build 382: "have it only say search instead" - the label keeps the words */
   searchInput.setAttribute("aria-label", "Search units");
   searchInput.addEventListener("input", () => {
     const q = searchInput.value.trim().toLowerCase();
@@ -118942,7 +118942,7 @@ function showVirtualRoomSetup(editRoom){
   searchWrap.appendChild(searchMagnifier());
   const searchInput = document.createElement("input");
   searchInput.type = "text"; searchInput.className = "searchbox";
-  searchInput.placeholder = "Search units";
+  searchInput.placeholder = "Search";   /* build 382: "have it only say search instead" - the label keeps the words */
   searchInput.setAttribute("aria-label", "Search units");
   searchWrap.appendChild(searchInput);
   addSearchClear(searchWrap, searchInput);
@@ -131366,7 +131366,7 @@ function showAnswerReview(units, source, versions, opts){
   searchIcon.setAttribute("class", "searchicon");
   const searchInput = document.createElement("input");
   searchInput.type = "search"; searchInput.className = "searchbox";
-  searchInput.placeholder = "Search questions";
+  searchInput.placeholder = "Search";
   searchInput.setAttribute("aria-label", "Search questions");
   searchWrap.append(searchIcon, searchInput);
   panel.appendChild(searchWrap);
@@ -133824,7 +133824,7 @@ function showRankings(defaultBoard){
   searchWrap.className = "rank-search-wrap";
   const search = document.createElement("input");
   search.type = "search"; search.className = "searchbox rank-search";
-  search.placeholder = "Search names";
+  search.placeholder = "Search";
   search.setAttribute("aria-label", "Search the rankings by username");
   const clearBtn = document.createElement("button");
   clearBtn.type = "button"; clearBtn.className = "rank-search-clear";
@@ -140439,7 +140439,7 @@ function tabPerfText(){
     tsAnim();
     document.body.classList.add("tabsearch-open");
     tsEl.classList.add("is-open");
-    tsInput.placeholder = ts.placeholder || "Search";
+    tsInput.placeholder = "Search";   /* build 382: every search field just says "Search"; what it searches is its label */
     tsInput.setAttribute("aria-label", ts.placeholder || "Search");
     try{ playSound("ui.tab.bottom"); }catch(e){}
     tsPlace();

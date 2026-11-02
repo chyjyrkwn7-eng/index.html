@@ -30500,3 +30500,7 @@ get all these buttons and things looking better".
 - Stacked rows are list rows to the haptic-switch rule (hswListRow), so they carry no .nova-hsw; Advanced keeps its.
 - Gate: tools/check-b382-settings.py (16 fail on 381). check-behaviour s10, check-bugreport, check-fixes, check-b362/367/378
   updated. Under load: 3 check-sync boot checks and b362 "real taps keep l/p" failed unverified against 381 - re-run quiet.
+- SEARCH FIELDS SAY "Search" (382, same build): "In search bars like how it says search names and stuff, have it only say search
+  instead". The units search, its tab-bar circle (tsInput), the board's, Review's question search and the starred/most-missed
+  search all show "Search"; their aria-labels keep what they search ("Search units", "Search the rankings by username", ...).
+  check-b382-input checks the three reachable ones (fails on the code before).

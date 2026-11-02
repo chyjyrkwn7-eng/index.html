@@ -76,6 +76,17 @@ with sync_playwright() as pw:
     chk("Next question sits about 3.25rem under a short question's answers (%s)" % (r,), isinstance(r, dict) and 2.85 <= r.get("gapRem", 0) <= 3.65, r)
     chk("and while a question is dragged or slid it is gone, back when it springs back (%s)" % (r,), isinstance(r, dict) and r.get("before", 0) > .9 and r.get("during", 1) < .05 and r.get("after", 0) > .9, r)
     ctx.close()
+    # every search field just says "Search" (owner: "have it only say search instead"); its label still says what it searches
+    ctx, pg = units(br, 440, 956, (62, 0, 34, 0))
+    r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
+      const u=document.querySelector('#stage input[type=search]'); out.units=u?[u.placeholder,u.getAttribute('aria-label')]:null;
+      const btn=document.querySelector('.tabsearch-btn'); if(btn){ btn.click(); await wait(200); const t=document.querySelector('.tabsearch input'); out.tab=t?[t.placeholder,t.getAttribute('aria-label')]:null; }
+      showRankings(); await wait(1500); const b=document.querySelector('.rank-search'); out.board=b?[b.placeholder,b.getAttribute('aria-label')]:null;
+      return out; }""")
+    vals = [v for v in r.values() if v]
+    chk("every search field's words are just \"Search\", its label still says what it searches (%s)" % (r,),
+        len(vals) >= 2 and all(v[0] == "Search" and v[1] and v[1] != "Search" for v in vals), r)
+    ctx.close()
     for how in ("touchend", "navigate"):
         ctx, pg = units(br, 440, 956, (62, 0, 34, 0))
         r = pg.evaluate(DRAG, how)
