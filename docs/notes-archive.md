@@ -30810,3 +30810,39 @@ Madison: "Not sure why ours has numbers ... Cam helped with virtual room ... Dar
 - The first-tap sound prewarm is a 170–400ms task.
 - check-b380's switch-timing check finds no switch (probably the Settings menu); recheck in the final run.
 - check-positions flags `showWelcomeCharacterPrompt` scrolling on 3 laptop sizes; recheck against the base.
+
+## Build 382 round 3 - Fire Code: the agency's own look (merged 2026-11-02)
+Madison: "We don't wear police styled hats. We wear cowboy hats" / "white Chevy pickups, think of game wardens" / "I don't like the police lights one.. or fire alarm one".
+
+**Characters** (same ids)
+- Inspector: back toward round 1, in a silverbelly hat and khaki shirt, with the glasses and clipboard.
+- Chief: western. White hat, sport coat, bolo, gold star.
+- Investigator: the agency's blue with a dark felt hat.
+- clown -> "Strobe": a sleek red machine with a flashing visor.
+- Plans Examiner and Public Educator replace K9 Officer and Logistics.
+- Dispatcher: back toward round 1.
+- Drone Pilot: FPV goggles and a racing drone.
+- Sprinkler Head: chrome.
+- Hazmat: round 1's drawing, with the placard whole.
+  - The placard is classed `fc-placard`, not `cx-`, because `[class*="cx-"]` gets `transform-box:fill-box`, which moves a transform attribute.
+- Whiteout (the winter concept) and a new Flashbang.
+- Ultimates, one space-fire set: Nebula Marshal, Star Ranger, Solar Flare (fcOrbit, cx-fx-fccorona).
+- Kept: Breacher, Recon and Smoke Diver.
+- Hats are fcCowboy (cx-fc-hat-<kind>). fcCap is removed.
+
+**Banners**
+- fbPickup replaces fbSUV (Headquarters, Code 3).
+- Exit replaces Fire Watch (hundos100).
+- Code Book is redone without the badge or clipboard.
+- Nebula, Star Ranger and Solar Flare banners for the ultimates.
+- All other banners are as round 2 left them.
+
+**Hundo effects**
+- fireworks -> Emergency Lights (ifxEmergency).
+- ufo -> Fire Alarm, rebuilt: a wall strobe at 1 Hz, a bloom, the panel, and a NORMAL reset.
+- Both have their own tiles, stills and SND_IFX sounds.
+- A WAAPI easing on a multi-keyframe animation warps the whole timeline, so keep those linear.
+
+**Gate:** check-b382-ifcart holds the R2 hashes as "before". 14 fail there, 39 pass after.
+
+**MERGE HAZARD seen here:** the art branch's commit was made over an older tree. A plain merge deleted check-b382-ios/units and reverted the Leaderboard, Contributors and units work. It was caught before pushing, reset, and applied as a patch from the branch's real base (e3aa7a8). Always read a merge's --stat for deletions before pushing.
