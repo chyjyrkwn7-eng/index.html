@@ -72456,6 +72456,9 @@ function charSpecialWake(){
 }
 function charSpecialTick(){
   charSpecialTimer = null;
+  /* build 382: not while a finger is on the tab bar or the glass is landing - this reads every prominent character's box (a layout) and
+     may start a special; it looks again a little later */
+  if(document.documentElement.classList.contains("tab-held") || (typeof settleUntil === "number" && Date.now() < settleUntil)){ charSpecialTimer = setTimeout(charSpecialTick, 400); return; }
   const now = Date.now();
   const els = Array.from(document.querySelectorAll(CHAR_SPECIAL_PROMINENT)).filter(el => {
     if(!el.isConnected || el.classList.contains("char-sleep") || !el.getClientRects().length) return false;
@@ -76974,6 +76977,9 @@ const NovaSound = (function(){
     const next = () => {
       if(i >= steps.length){ prewarm.done = true; return; }
       if(!on()) return;
+      /* build 382: each step is a long piece of arithmetic (a reverb's impulse, the ambience's render) - never while a finger is on the
+         tab bar or the glass is landing (Safari has no idle callback: this is a plain 600ms timer, and one landed mid-slide) */
+      if(document.documentElement.classList.contains("tab-held") || (typeof settleUntil === "number" && Date.now() < settleUntil)){ later(next); return; }
       try{ steps[i++](); }catch(e){}
       later(next);
     };
@@ -83106,7 +83112,16 @@ function sessionMark(state){
     localStorage.setItem(SESSION_KEY, JSON.stringify({ state, t: Date.now(), screen: scr, build: typeof APP_BUILD === "string" ? APP_BUILD : "", fp }));
   }catch(e){}
 }
-setInterval(() => { if(!document.hidden){ testTrimSheets(); sessionMark("visible"); } }, 6000);
+/* (build 382: never under a finger on the tab bar or a glass landing - it counts every element, image and canvas on the page) */
+setInterval(() => { if(!document.hidden) whenTabBarQuiet(() => { testTrimSheets(); sessionMark("visible"); }); }, 6000);
+/* build 382: run fn once nothing is moving on the tab bar - no finger on it (html.tab-held), no glass landing (the settle window) -
+   looking again every 250ms; for periodic chores that must not land in a slide */
+function whenTabBarQuiet(fn){
+  try{
+    if(document.documentElement.classList.contains("tab-held") || (typeof settleUntil === "number" && Date.now() < settleUntil)){ setTimeout(() => whenTabBarQuiet(fn), 250); return; }
+  }catch(e){}
+  fn();
+}
 /* build 378: A TEST HOLDS NO DECODED SHEETS. The ready loops keep their decoded pictures while the app is up (build 377, so a board's first
    frame does not decode them); on a test nothing shows them, so they are let go while one is on the screen and decoded again after it. */
 var testTrimmed = false;
@@ -137711,6 +137726,8 @@ function tabPerfText(){
       if(dest === "home" && !testInProgress && stage.querySelector(".screen-home-actual")){
         /* back to the screen that never left: light it again */
         if(pend){ syncActive(); slideBubbleToActiveTab(true); }
+        /* build 382: a slide's glass held for a screen (lensHoldFor) has nothing to wait for */
+        if(bar._lensScreenIn) bar._lensScreenIn();
         return;
       }
       /* THE TAB YOU ARE ON GOES TO THE TOP, IT IS NOT BUILT AGAIN (327z15):
@@ -137722,6 +137739,7 @@ function tabPerfText(){
       const ROOT_OF = { profile: ".screen-profile .profile-identity-tab:not([hidden])", rewards: ".screen-rankings", calendar: ".screen-calendar-tab" };
       if(!testInProgress && ROOT_OF[dest] && stage.querySelector(ROOT_OF[dest])){
         if(pend){ syncActive(); slideBubbleToActiveTab(true); }
+        if(bar._lensScreenIn) bar._lensScreenIn();
         try{ window.scrollTo({ top: 0, behavior: lensCalm() ? "auto" : "smooth" }); }catch(e){ window.scrollTo(0, 0); }
         return;
       }
@@ -138162,22 +138180,42 @@ function tabPerfText(){
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
   let barUnderPaused = [], barUnderAt = 0;
+  /* build 382: HOME'S PLANET HOLDS STILL WHILE A FINGER SLIDES, AND UNTIL THE GLASS HAS LANDED. His 381 recording: every stretch of dropped
+     frames had Home in it (leaving it, arriving at it, the glass over it); the other three tabs slid at a steady 60. Home's hero is the
+     heaviest thing on any screen - the orbit layers (~475px a side, spinning), three smoke layers and the plasma drifting, the glow
+     breathing, the rank bubbles' loops - every one a moving layer the phone composites again on every frame, with the bar's blur on top.
+     They are all slow (the orbit turns once in 52s and 120s, the smoke drifts over 47-83s, the glow breathes over 4.5s), so a second's
+     pause under a slide is not seen; they go on from where they were once the glass has handed over to the platter (lensFinish). The
+     rest of the page keeps moving (375: "the screen you are on stops moving" when everything paused). */
+  let slideHeldPaused = [];
+  const SLIDE_HOLD_SEL = ".cosmic-hero-wrap";
+  /* each animation is judged once a slide (a repeat look only measures what is new), and the band is measured once a slide */
+  let barUnderSeen = new WeakSet(), barUnderBand = null;
   function barUnderPause(again){
     barUnderAt = performance.now();
     if(!again){
       barUnderResume();
+      barUnderSeen = new WeakSet(); barUnderBand = null;
       /* once more on the next frame: an animation that started in the press (a loop just put on) exists only from the next style pass */
       requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(true); });
     }
     try{
-      const st = document.getElementById("stage"), br = bar.getBoundingClientRect();
-      if(!st || !br.height) return;
-      /* wider than the bar as it is now: at a slide's start its swell (1.043 tall) is still growing */
-      const top = br.top - 40, bottom = br.bottom + 14;
+      const st = document.getElementById("stage");
+      if(!st) return;
+      if(!barUnderBand){
+        const br = bar.getBoundingClientRect();
+        if(!br.height) return;
+        /* wider than the bar as it is now: at a slide's start its swell (1.043 tall) is still growing */
+        barUnderBand = { top: br.top - 40, bottom: br.bottom + 14 };
+      }
+      const top = barUnderBand.top, bottom = barUnderBand.bottom;
       st.getAnimations({ subtree: true }).forEach(a => {
-        if(a.playState !== "running") return;
+        if(a.playState !== "running" || barUnderSeen.has(a)) return;
+        barUnderSeen.add(a);
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
+        /* build 382: Home's hero, wherever it is on the screen */
+        if(t.closest && t.closest(SLIDE_HOLD_SEL)){ try{ a.pause(); slideHeldPaused.push(a); }catch(e){} return; }
         /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
            in and out of the bar's band while what is seen stays put */
         const r = ((t.closest && t.closest(".rk-frame, .char-flip-play")) || t).getBoundingClientRect();
@@ -138187,6 +138225,10 @@ function tabPerfText(){
   }
   function barUnderResume(){
     const list = barUnderPaused; barUnderPaused = [];
+    list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
+  }
+  function slideHeldResume(){
+    const list = slideHeldPaused; slideHeldPaused = [];
     list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
   }
   let tabDragMoved = false;
@@ -138257,8 +138299,10 @@ function tabPerfText(){
     }
     tabDragMoved = true;
     /* build 380: and again every 100ms of the slide (~0.5ms at 4x CPU) - something that comes on under the bar mid-slide (a row's loop
-       running again as it comes into view, which is where rows come in) holds still too; check-b376 once saw one running */
-    if(performance.now() - barUnderAt > 100) barUnderPause(true);
+       running again as it comes into view, which is where rows come in) holds still too; check-b376 once saw one running.
+       (382: every 250ms, and each look measures only animations it has not judged yet, against the band measured at the slide's start:
+       the look was ~40% of a slide's own script on the Leaderboard, its hundreds of animations listed ten times a second) */
+    if(performance.now() - barUnderAt > 250) barUnderPause(true);
     /* The lens follows the finger (build 323, 325); the platter waits,
        hidden, and is put in place once, on release. Reduce motion has no
        lens: the platter itself steps from tab to tab. */
@@ -138284,7 +138328,12 @@ function tabPerfText(){
       lensRelease(over && over === tabDragStartTab ? over : null);
       return;
     }
-    else lensRelease(lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
+    else {
+      const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
+      /* build 382: a slide let go over another tab holds its glass up until that tab's screen has been drawn (lensHoldFor) */
+      if(lensG && tabDragMoved && !window.__dragTestOn && over && !over.classList.contains("active") && over._navigate && bar.dataset.navigating !== "1") lensHoldFor(over);
+      else lensRelease(over);
+    }
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
     if(e.type === "pointercancel" || window.__dragTestOn){ slideBubbleToActiveTab(true); return; }   /* build 369: the Drag test stays on its screen */
     /* preventDefault on the pointerup stops the click a release would
@@ -138427,7 +138476,9 @@ function tabPerfText(){
      between keyframes, which on a 120Hz iPhone made every other frame a
      small change of speed. */
   const LENS = { tall: 1.19, wide: 1.03, aspect: 1.2, mag: 0, stretch: .00026, stretchMax: .28, give: 22, minUp: 240, linger: 110,
-    pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42] };
+    pop: [2000, .72], glide: [260, .95], settle: [380, .7], follow: [1700, .8], st: [520, .42],
+    /* build 382: a slide's glass leads the finger by its speed times this (ms), at most leadMax px (see lensMove) */
+    lead: 12, leadMax: 8 };
   const LENS_DT = 1000 / 120;
   let lensG = null;           /* this touch's geometry (null: no lens) */
   let lensS = null, lensV = { cx: 0, W: 0, H: 0, st: 0 };   /* the lens now, and how fast it is changing */
@@ -138476,10 +138527,24 @@ function tabPerfText(){
   const lensInfo = el => lensG && lensG.tabs.find(t => t.el === el);
   /* the client x of a finger, in the row's coordinates (the bar may be
      part-way through its swell) */
-  function lensLocal(clientX){
+  /* build 382: THE ROW IS MEASURED ONCE A TOUCH, NOT ONCE A FINGER MOVE. Every move used to read the row's box and its computed width
+     (twice: lensMove and lensTabAt) - each a forced style pass, and a layout too wherever the screen behind had something stepping (the
+     loops step by left/top). The row only changes on screen while the bar's swell is playing; then it is read at most once a frame. */
+  let lensGeo = null;
+  function lensRowGeo(){
+    const sw = bar._swell, now = performance.now();
+    const moving = !!(sw && sw.playState === "running");
+    /* (a reading taken while it was swelling is taken again once it has stopped) */
+    if(lensGeo && (moving ? now - lensGeo.t < 6 : !lensGeo.sw)) return lensGeo;
     const rr = navrow.getBoundingClientRect();
     const k = rr.width / (parseFloat(getComputedStyle(navrow).width) || rr.width || 1);
-    return (clientX - rr.left) / k;
+    lensGeo = { left: rr.left, k: k || 1, t: now, sw: moving };
+    return lensGeo;
+  }
+  window.addEventListener("resize", () => { lensGeo = null; });
+  function lensLocal(clientX){
+    const r = lensRowGeo();
+    return (clientX - r.left) / r.k;
   }
   function lensTabAt(clientX){
     if(!lensG) return tabAtPoint(clientX);
@@ -138647,6 +138712,7 @@ function tabPerfText(){
     const caught = lens.classList.contains("is-up") && lensG && lensS;
     const now = caught ? lensNow() : null;
     lensStopFollow();
+    lensGeo = null;
     const g = lensMeasure();
     if(!g){ lensG = null; return; }
     lensG = g; lensSize(g);
@@ -138703,13 +138769,12 @@ function tabPerfText(){
     if(!lensFollow) return;
     cancelAnimationFrame(lensFollow.raf);
     lensFollow = null;
-    /* build 381: the in-between frames stop with the finger; the landing (a prepared animation) starts from where the lens is */
-    LENS_ELS.forEach(el => { el.style.transition = ""; });
+    /* (build 381 gave the lens a one-frame transition while it followed; 382 took it out - nothing is left to clear) */
   }
   function lensMove(clientX){
     if(!lensG) return;
-    const x = lensLocal(clientX);
     if(!lensFollow){
+      const x = lensLocal(clientX);
       lensStopTrack();
       if(!lensS) return;
       lensS = Object.assign({ st: 0 }, lensS); lensV = Object.assign({ cx: 0, W: 0, H: 0, st: 0 }, lensV);
@@ -138720,31 +138785,30 @@ function tabPerfText(){
          was and where the finger first moved, which closes in ~70ms so
          nothing jumps. Its size still springs, and it still stretches with
          the finger's speed. */
-      lensFollow = { x, last: performance.now(), raf: 0, off: lensS.cx - x, px: x, vf: 0, fi: 0, txMs: 0 };
+      lensFollow = { x, cX: clientX, last: performance.now(), raf: 0, off: lensS.cx - x, px: x, vf: 0 };
       const P = { cx: LENS.follow, W: LENS.pop, H: LENS.pop, st: LENS.st };
       const tick = () => {
         const f = lensFollow;
         if(!f || !lensG) return;
         const t = performance.now(), dt = Math.min(.034, Math.max(.001, (t - f.last) / 1000));
         f.last = t;
-        /* ---- THE SLIDE AT THE SCREEN'S OWN RATE (build 381) ----
-           Madison: "The tapping of the bottom tab is really really good now, however the sliding is now the problem, it's okay but
-           not perfect like the tapping." A tap's glide is a prepared animation, which Safari plays at the screen's rate - 120Hz on
-           his Pro Max. A slide was written here once a frame, and Safari runs these frames at 60Hz: half the steps of the tap. Each
-           position now goes in as a transition one of these frames long, so the animation engine draws the frame in between on its
-           own (at 60Hz it changes nothing but the half-frame each step takes to land). */
-        const fms = dt * 1000;
-        f.fi = f.fi ? f.fi + (fms - f.fi) * .2 : fms;
-        const want = Math.round(Math.max(8, Math.min(20, f.fi)));
-        if(Math.abs(want - f.txMs) >= 2){ f.txMs = want; LENS_ELS.forEach(el => { el.style.transition = "transform " + want + "ms linear"; }); }
+        /* ---- THE SLIDE, BUILD 382: NOTHING BETWEEN THE FINGER AND THE GLASS ----
+           Madison (381): "the swiping/sliding is not good to go at all". Build 381 put each position in as a transition one frame long
+           (to fill a 120Hz screen between 60Hz frames) - which also put the glass one frame BEHIND every position it was given: his
+           recording, the slides steady but "behind the finger". Taken out. Each frame the glass is written exactly where the finger is,
+           plus a little of where it is going: the finger's own (smoothed) speed times LENS.lead ms, at most LENS.leadMax px - what the
+           frame takes to reach the screen. A finger that slows to a stop brings the lead down to nothing with it. The finger's x is
+           taken in here, once a frame, from the row measured at the touch (lensRowGeo): no layout is read while it slides. */
         const g = lensG;
+        f.x = lensLocal(f.cX);
         f.off *= Math.exp(-dt / .07);
         /* the finger's speed, smoothed a little, is what stretches it */
         const vi = (f.x - f.px) / dt; f.px = f.x;
         f.vf += (vi - f.vf) * Math.min(1, dt / .05);
+        const lead = Math.max(-LENS.leadMax, Math.min(LENS.leadMax, f.vf * LENS.lead / 1000));
         /* the finger can go past the end tabs; the lens follows a little way
            out of the bar (the reference's runs 16pt past it) */
-        let tx = f.x + f.off;
+        let tx = f.x + f.off + lead;
         if(tx < g.lo){ const o = g.lo - tx; tx = g.lo - LENS.give * o / (o + 50); }
         else if(tx > g.hi){ const o = tx - g.hi; tx = g.hi + LENS.give * o / (o + 50); }
         const sub = 4, h = dt / sub;
@@ -138753,13 +138817,16 @@ function tabPerfText(){
         lensS.cx = tx;
         lensS.st += (lensStretchFor(f.vf) - lensS.st) * Math.min(1, dt / .06);
         lensWrite(lensS);
-        lensMagnify(lensS.cx, lensLift(g, lensS.H), 0, 0);
+        /* the tab under the finger, from the measured centres (no reads) */
+        let best = null, bd = Infinity;
+        for(let i = 0; i < g.tabs.length; i++){ const k = Math.abs(f.x - g.tabs[i].c); if(k < bd){ bd = k; best = g.tabs[i].el; } }
+        if(best) lensAt = best;
+        if(LENS.mag) lensMagnify(lensS.cx, lensLift(g, lensS.H), 0, 0);
         f.raf = requestAnimationFrame(tick);
       };
       lensFollow.raf = requestAnimationFrame(tick);
     }
-    lensFollow.x = x;
-    lensAt = lensTabAt(clientX);
+    lensFollow.cX = clientX;
   }
   function lensRelease(tab, landing){
     if(!lensG){ lensHide(true); return; }
@@ -138852,6 +138919,32 @@ function tabPerfText(){
      wait sooner: while a screen is being drawn the page runs nothing.) LENS_AWAIT_ON brings the wait back if it is ever wanted. */
   const LENS_AWAIT_ON = false;
   const LENS_AWAIT_MAX = 650;
+  /* build 382: A SLIDE'S GLASS LANDS AS ITS SCREEN ARRIVES. His 381 recording: let go of a slide over the Leaderboard and the glass shrank
+     into the platter while Profile was still up - the Leaderboard came ~130ms (8 frames) after the glass had landed. A slide's screen is
+     built the moment the finger lifts, and on his phone a screen takes longer than the landing (~110ms held, ~200ms shrinking). So after a
+     slide (not a tap - 380's rule for taps stands) the glass stays up, still and clear on its tab, until the screen has been drawn, and
+     lands then: the screen changes under the glass and the glass shrinks into the platter over it. A screen drawn inside the 110ms the
+     glass lingers anyway changes nothing; one that is slow lands at SLIDE_AWAIT_MAX at the latest, whatever it is doing. */
+  const SLIDE_AWAIT_MAX = 280;
+  /* The glass is clear and up already (a slide is long past its 70ms clearing) and the bar is swollen, so holding it is ONE prepared
+     track to the tab's held size and nothing else - no landing planned first and thrown away, and nothing read off the page (a read
+     here, after the navigation has lit the new tab, was a whole style pass on the release). */
+  function lensHoldFor(tab){
+    const hi = lensInfo(tab), g = lensG;
+    if(!hi || !g){ lensRelease(tab); return; }
+    clearTimeout(lensT1); lensT1 = null;
+    lensAwaitClear();
+    lensStopFollow();
+    const now = lensNow();
+    lensStopTrack();
+    if(!now.s){ lensRelease(tab); return; }
+    lensAt = tab;
+    lensPlay(lensSpring(now.s, now.v, () => ({ cx: hi.c, W: hi.lw, H: g.lensH }), () => ({ cx: LENS.glide, W: LENS.pop, H: LENS.pop, st: LENS.st })));
+    const upFor = performance.now() - lensPressT;
+    lensAwait = { tab, earliest: performance.now() + Math.max(LENS.linger, LENS.minUp - upFor), timer: setTimeout(lensLandNow, SLIDE_AWAIT_MAX) };
+    /* what a screen puts off until the glass has landed keeps waiting while it is held (lensRelease sets the landing's own) */
+    try{ settleUntil = Math.max(settleUntil, Date.now() + SLIDE_AWAIT_MAX + 400); }catch(e){}
+  }
   let lensAwait = null;
   function lensAwaitClear(){ if(lensAwait){ clearTimeout(lensAwait.timer); lensAwait = null; } }
   bar._lensAwaitScreen = () => {
@@ -138905,7 +138998,7 @@ function tabPerfText(){
   }
   function lensFinish(){
     lensT1 = null;
-    barUnderResume(); tabSwitchesBack();
+    barUnderResume(); slideHeldResume(); tabSwitchesBack();
     document.documentElement.classList.remove("tab-held", "tab-dragging");
     lens.classList.remove("is-up");
     bar.classList.remove("lens-up", "is-pressing");
@@ -138920,7 +139013,7 @@ function tabPerfText(){
   }
   function lensHide(now){
     clearTimeout(lensT1); lensT1 = null;
-    barUnderResume(); tabSwitchesBack();
+    barUnderResume(); slideHeldResume(); tabSwitchesBack();
     lensAwaitClear();
     document.documentElement.classList.remove("tab-held", "tab-dragging");
     lensStopFollow();

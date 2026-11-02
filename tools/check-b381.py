@@ -78,8 +78,10 @@ with sync_playwright() as pw:
     landed = pg.evaluate("()=>[!!document.querySelector('.screen-calendar-tab'), (document.querySelector('#bottomtabs .bottomtab.active')||{}).id]")
     import re
     ms = [int(m) for lst in during for t in lst for m in re.findall(r"transform (\d+)ms linear", t)]
-    chk("while a finger slides, the lens's moving parts go to each position over one frame (%s)" % (during,),
-        len(ms) >= 5 and all(8 <= m <= 20 for m in ms), during)
+    # REVERSED ON PURPOSE IN BUILD 382: the one-frame transition put the glass a frame behind every position ("behind the finger");
+    # the lens is written exactly where the finger is (plus a small lead) and carries no transition while it follows (check-b382-slide)
+    chk("while a finger slides, the lens's moving parts carry no transition - each position is drawn as written (%s)" % (during,),
+        len(during) == 2 and not ms and not any("transform" in t for lst in during for t in lst), during)
     chk("and once it is let go they carry none (%s), and the slide landed on the tab let go over (%s)" % (after, landed),
         not any("linear" in t for t in after) and landed[0] and landed[1] == "bottomtab-calendar", [after, landed])
     ctx.close()
