@@ -35782,6 +35782,167 @@ html.is-browser{ --fade-paper: transparent; }
       background:var(--accent); color:var(--accent-ink); box-shadow:none; font-weight:800;
     }
   }
+  /* ---- THE iOS LOOK, APP-WIDE (build 382) ----
+     Madison: "clean clean clean CLEAN iOS Apple look" across the app, with the new Settings as the
+     reference. Profile, Stats, Customize, Friends, the rank ladder and the badge case take Settings'
+     family: the round back button and the centred title on a pushed screen (iosNavBar), grey
+     sentence-case headings that sit ABOVE their card, cards at Settings' 16px inset-group radius on
+     the surface tokens, rows that run edge to edge in one group with hairlines inset to the words, and
+     one rhythm of spacing. Only these screens are scoped here; the art (characters, banners, swatches,
+     effects, the case, the road map, the hero) is untouched, and so is every id, key and handler.
+     After the modern block on purpose: these override it. */
+  :root{ --ios-group-r:16px; --ios-head-gap:.45rem; --ios-sect-gap:1.5rem; }
+  /* the heading, word for word Settings' (.screen-settings-sub .slab.motion-summary) */
+  html[data-layout] body #stage :is(.screen-customize .slab.motion-summary, .screen-ranks .ranks-tab > .slab.motion-summary,
+    .screen-friends .friend-sect > .sect-label, .profile-stats-tab > .points-progress-sect .slab){
+    background:none !important; box-shadow:none !important; border:none !important; border-radius:0 !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
+    min-height:0; padding:0 1rem !important;
+    font-family:var(--sans); font-size:.9rem !important; font-weight:600 !important; line-height:1.35;
+    letter-spacing:0 !important; text-transform:none !important;
+    color:color-mix(in srgb, var(--ink) 56%, transparent) !important;
+  }
+  html[data-layout] body #stage :is(.screen-customize .slab.motion-summary, .screen-ranks .ranks-tab > .slab.motion-summary){
+    margin:var(--ios-sect-gap) 0 var(--ios-head-gap) !important;
+  }
+  html[data-layout] body #stage .screen-customize .settings-nav + .cz-bar{ margin-top:.4rem !important; }
+
+  /* ---- the nav bar on a pushed screen: Back is the round button Settings' pages have ---- */
+  html[data-layout] body #stage .ios-nav{ margin:.2rem 0 1.1rem; }
+  /* the bar's centred title names the screen, so the header's small word above it goes, as on Settings' pages (where
+     it is empty, .count:empty): the word stays in the document - the screen's name for anything that reads it - at no
+     size, and the header keeps its padding (the safe-area room), so the bar sits exactly where Settings' does */
+  html[data-layout] body .wrap:has(> #stage > .panel > .ios-nav) > #count{
+    font-size:0 !important; line-height:0 !important; margin:0 !important; overflow:hidden;
+  }
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back{
+    position:absolute !important; left:0; top:calc(50% - 22px); margin:0 !important;
+    width:44px; height:44px; min-height:44px !important; padding:0 !important; gap:0;
+    display:flex; align-items:center; justify-content:center; border-radius:50%;
+    background:var(--surface-sheen), var(--surface-1); background-color:var(--surface-1);
+    border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
+    color:var(--ink); overflow:visible; font-size:1rem !important;
+  }
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back:active{ background:var(--surface-lift); }
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ width:20px; height:20px; margin:0; }
+  /* the word stays the button's name for a screen reader (and for anything that reads it), out of sight */
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-word{
+    position:absolute !important; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+    clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; transform:none !important;
+  }
+
+  /* ---- Customize ---- */
+  html[data-layout] body #stage .screen-customize .cz-intro{ margin:0 1rem 0; font-size:.86rem; line-height:1.45; color:var(--soft); }
+  html[data-layout] body #stage .screen-customize .cz-page-note{ margin:0 1rem 1.1rem; font-size:.86rem; line-height:1.45; color:var(--soft); }
+  html[data-layout] body #stage .screen-customize > .sect{ margin-top:0; margin-bottom:0; }
+  html[data-layout] body #stage .screen-customize .cz-bar{ display:flex; align-items:baseline; }
+  html[data-layout] body #stage .screen-customize .cz-bar-count{ font-size:.86rem; font-weight:500; letter-spacing:0; color:var(--soft); }
+  /* the name: one row of a group, the name on the left and Change on the right */
+  html[data-layout] body #stage .screen-customize .customize-namerow,
+  html[data-layout] body #stage .screen-customize .customize-nameedit{
+    box-sizing:border-box; max-width:none; margin:0;
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    border-radius:var(--ios-group-r); box-shadow:var(--surface-shadow);
+  }
+  html[data-layout] body #stage .screen-customize .customize-namerow{
+    justify-content:space-between; flex-wrap:nowrap; min-height:3.4rem; padding:.5rem .6rem .5rem 1rem;
+  }
+  html[data-layout] body #stage .screen-customize .customize-namerow[hidden],
+  html[data-layout] body #stage .screen-customize .customize-nameedit[hidden]{ display:none; }
+  html[data-layout] body #stage .screen-customize .customize-namerow .profile-name-display{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-family:var(--sans); font-size:1.02rem; font-weight:600; letter-spacing:0; line-height:1.3;
+  }
+  html[data-layout] body #stage .screen-customize .customize-namerow .profile-edit-btn{ flex:0 0 auto; }
+  html[data-layout] body #stage .screen-customize .customize-nameedit{ padding:1rem; }
+  /* Your look: the four rows are one inset group - edge to edge, a hairline between, the corners on the group */
+  html[data-layout] body #stage .screen-customize .cz-list{ gap:0; }
+  html[data-layout] body #stage .screen-customize .cz-list > .cz-bar{ margin-bottom:var(--ios-head-gap) !important; }
+  html[data-layout] body #stage .screen-customize .cz-row{
+    --cz-inset:7.8rem; position:relative;
+    border-radius:0; border-width:0 1px; box-shadow:none; min-height:5.4rem;
+  }
+  html[data-layout] body #stage .screen-customize .cz-bar + .cz-row{
+    border-top-width:1px; border-top-left-radius:var(--ios-group-r); border-top-right-radius:var(--ios-group-r);
+  }
+  html[data-layout] body #stage .screen-customize .cz-row:last-child{
+    border-bottom-width:1px; border-bottom-left-radius:var(--ios-group-r); border-bottom-right-radius:var(--ios-group-r);
+  }
+  html[data-layout] body #stage .screen-customize .cz-row + .cz-row::before{
+    content:""; position:absolute; top:0; left:var(--cz-inset); right:0; height:1px;
+    background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
+  }
+  html[data-layout] body #stage .screen-customize .cz-row:active{ background:var(--surface-lift); }
+  /* the words, the way a Settings row reads: what it is, then what you have on in grey */
+  html[data-layout] body #stage .screen-customize .cz-label{
+    font-size:1rem; font-weight:600; letter-spacing:0; text-transform:none; color:var(--ink); line-height:1.3;
+  }
+  html[data-layout] body #stage .screen-customize .cz-value{ font-size:.9rem; font-weight:500; line-height:1.3; color:var(--soft); }
+  html[data-layout] body #stage .screen-customize .cz-count{ font-size:.82rem; font-weight:500; color:var(--soft); }
+  html[data-layout] body #stage .screen-customize .cz-chev{ color:var(--soft); opacity:.75; }
+  @media (max-width:23.99rem){ html[data-layout] body #stage .screen-customize .cz-row{ --cz-inset:6.25rem; } }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .screen-customize .cz-row{ --cz-inset:9.3rem; min-height:6.8rem; }
+    html[data-layout] body #stage .screen-customize .cz-value{ font-size:.95rem; }
+  }
+
+  /* ---- Friends: each card's heading above it, the cards Settings' ---- */
+  html[data-layout] body #stage .screen-friends > .friend-sect{
+    position:relative; margin:calc(var(--ios-sect-gap) + 1.2rem + var(--ios-head-gap)) 0 0;
+    padding:.85rem 1rem; border-radius:var(--ios-group-r);
+  }
+  html[data-layout] body #stage .screen-friends > .settings-nav + .friend-sect{ margin-top:calc(1rem + 1.2rem + var(--ios-head-gap)); }
+  html[data-layout] body #stage .screen-friends > .friend-sect > .sect-label{
+    position:absolute; left:0; right:0; bottom:100%; margin:0 0 var(--ios-head-gap) !important;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  html[data-layout] body #stage .screen-friends > .friend-sect-pending > .sect-label{ color:var(--accent) !important; }
+  html[data-layout] body #stage .screen-friends .friend-sect .friend-row:first-of-type{ padding-top:.55rem; }
+  html[data-layout] body #stage .screen-friends .friend-sect > .friend-row:first-child{ padding-top:0; }
+  html[data-layout] body #stage .screen-friends .friend-sect .friend-row{
+    min-height:44px; border-bottom-color:color-mix(in srgb, var(--surface-border) 55%, transparent);
+  }
+  html[data-layout] body #stage .screen-friends .friend-hint{ color:var(--soft); }
+
+  /* ---- Stats: the heading over each card, Settings' radius ---- */
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect{
+    position:relative; border-radius:var(--ios-group-r);
+    margin:calc(var(--ios-sect-gap) + 1.2rem + var(--ios-head-gap)) 0 0;
+  }
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect:first-child{ margin-top:calc(1rem + 1.2rem + var(--ios-head-gap)); }
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect > .slab{
+    position:absolute; left:0; right:0; bottom:100%; margin:0 0 var(--ios-head-gap) !important;
+  }
+  /* Recent tests: its heading and Test history ride above the card together */
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect.stx-recent{ margin-top:calc(var(--ios-sect-gap) + 44px + .35rem); }
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect.stx-recent:first-child{ margin-top:calc(.5rem + 44px + .35rem); }
+  html[data-layout] body #stage .profile-stats-tab > .stx-recent > .stx-recent-top{
+    position:absolute; left:0; right:0; bottom:100%; margin:0 0 .35rem; min-height:44px;
+  }
+  html[data-layout] body #stage .profile-stats-tab > .stx-recent > .stx-recent-top > .slab{ margin:0 !important; }
+  html[data-layout] body #stage .profile-stats-tab > .stx-recent > .stx-recent-top + *{ margin-top:0; }
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect > .slab + *{ margin-top:0; }
+
+  /* ---- the page title on Profile's three segments: the header's own word (#count), big and bold, as the
+     Leaderboard and the Calendar have it - it follows the picked segment (selectProfileTab) ---- */
+  html[data-layout] body .wrap:has(> #stage > .screen-profile) > #count:not(:empty){
+    font-size:2rem; font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--ink); margin-bottom:1.25rem;
+  }
+  @media (min-width:40rem){
+    html[data-layout] body .wrap:has(> #stage > .screen-profile) > #count:not(:empty){ font-size:2.25rem; }
+  }
+  /* ---- Profile: the in-card labels in Settings' quiet sentence case. Its three blocks keep their 22px: the badge
+     case under them is art drawn to that corner, and the blocks match it (check-behaviour b321f) ---- */
+  html[data-layout] body #stage .profile-identity-tab .pf-goal > :is(.pf-tasks-kick, .pf-rewards-kick){
+    font-size:.9rem; font-weight:600; letter-spacing:0; text-transform:none;
+    color:color-mix(in srgb, var(--ink) 56%, transparent);
+  }
+
+  /* ---- the rank ladder and the badge case: Settings' radius, the note a footnote ---- */
+  html[data-layout] body #stage .screen-ranks :is(.rankhero, .badges-head){ border-radius:var(--ios-group-r); }
+  html[data-layout] body #stage .screen-ranks .ios-nav + .ranks-tab > .rankhero:first-child,
+  html[data-layout] body #stage .screen-ranks .ios-nav + .badges-tab > .badges-head:first-child{ margin-top:0; }
+  html[data-layout] body #stage .screen-ranks .ranks-tab > .ranks-note{ margin:0 1rem 1rem; font-size:.82rem; line-height:1.45; color:var(--soft); }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -119137,6 +119298,28 @@ function settingsSubPage(title, cls){
   panel.appendChild(nav);
   return panel;
 }
+/* ---- THE SAME NAV BAR ON PROFILE'S PUSHED SCREENS (build 382, iOS look) ----
+   "clean clean clean CLEAN iOS Apple look" app-wide, Settings the reference.
+   Customize, Friends, the rank ladder and the badge case open from Profile
+   the way Advanced opens from Settings, so they get Settings' nav bar: the
+   round back button at the top left, the screen's name centred and bold.
+   `back` is the screen's own back button (buildBackLink's .back-link, or
+   one built by hand), kept as it was - its class, its word and its handler
+   - so everything that finds or taps a screen's Back still does; the word
+   is only hidden from sight (it stays its accessible name) and the pill is
+   drawn round by the .ios-nav rules in THE iOS LOOK block. */
+function iosNavBar(title, back){
+  const nav = document.createElement("div");
+  nav.className = "settings-nav ios-nav";
+  back.classList.add("ios-nav-back");
+  const word = back.querySelector(".back-word");
+  const said = (word ? word.textContent : back.textContent || "").trim();
+  if(said) back.setAttribute("aria-label", /^back\b/i.test(said) ? said : "Back to " + said);
+  const h = document.createElement("h1");
+  h.className = "settings-nav-title ios-nav-title"; h.textContent = title;
+  nav.append(back, h);
+  return nav;
+}
 /* ---- CONTRIBUTORS (build 382) ----
    "I also really like credits section where it has the contributors.
    Contributors will be me, (Madison Davis) Cameron Wharton, Alexis
@@ -132182,15 +132365,14 @@ function showCustomize(section){
 
   const panel = document.createElement("section");
   panel.className = "panel screen-customize" + (only ? " cz-page cz-page-" + only : " cz-summary");
-  panel.appendChild(only ? buildBackLink("Back to Customize", () => showCustomize())
-                         : buildBackLink("Back to Profile", () => showProfile()));
+  /* build 382 iOS look: Settings' nav bar (round back, the name centred) in place of the Back pill and the title under it */
+  panel.appendChild(iosNavBar(only ? CUSTOMIZE_PAGES[only].title : "Customize",
+    only ? buildBackLink("Back to Customize", () => showCustomize())
+         : buildBackLink("Back to Profile", () => showProfile())));
   let after = null;
   if(!only){
-    const title = document.createElement("h1");
-    title.className = "cal-title"; title.textContent = "Customize";
-    panel.appendChild(title);
     const sub = document.createElement("p");
-    sub.className = "cal-sub";
+    sub.className = "cal-sub cz-intro";
     sub.textContent = "Your name, and what you wear across the app. Press and hold anything to see how it's earned.";
     panel.appendChild(sub);
     panel.appendChild(buildCustomizeNameSect());
@@ -132997,12 +133179,9 @@ function showFriends(){
   back.type = "button"; back.className = "back-link";
   const backTo = friendsBack || { label: "Profile", go: () => showProfile("profile") };
   fillBackLabel(back, backTo.label);
-  back.addEventListener("click", () => { friendsBack = null; backTo.go(); });
-  panel.appendChild(back);
-
-  const title = document.createElement("p");
-  title.className = "cal-title"; title.textContent = "Friends";
-  panel.appendChild(title);
+  back.addEventListener("click", () => { try{ back.blur(); }catch(e){} friendsBack = null; backTo.go(); });
+  /* build 382 iOS look: Settings' nav bar - the round back button and "Friends" centred beside it */
+  panel.appendChild(iosNavBar("Friends", back));
 
   const rows = rowsByPublicId();
 
@@ -134964,7 +135143,8 @@ function showRanksScreen(defaultTab){
      progress tab and put them within profile where it directly goes to
      it". The rank row on the card opens the climb and the badges row the
      case - as they already did - and this is the way back. */
-  panel.appendChild(buildBackLink("Profile", () => showProfile()));
+  /* build 382 iOS look: Settings' nav bar, the open screen's name centred */
+  panel.appendChild(iosNavBar(initialTab === "badges" ? "Badges" : "Rank", buildBackLink("Profile", () => showProfile())));
   /* opened with a rank-up still owed and no scene running (Profile was
      opened on another tab): the rank-up starts here, at the road map */
   if(initialTab === "ranks" && !rankUpScene) armRankUpMapScene();
@@ -135721,6 +135901,8 @@ function showProfile(defaultTab, opts){
     attachSegSlider(profileTabSeg, ".iconbtn.active");
   }
   panel.append(...profileTabDefs.map(t => t.node));
+  /* build 382 iOS look: the page title is the open segment's name - Profile, Stats or Settings - never a second heading */
+  { const d = profileTabDefs.find(t => t.key === initialTab); if(d) countEl.textContent = d.label; }
 
   const profileTabOrder = profileTabDefs.map(t => t.key);
   let profileTabKey = initialTab;
@@ -135734,6 +135916,8 @@ function showProfile(defaultTab, opts){
   }
   function selectProfileTab(which){
     profileTabKey = which;
+    /* build 382 iOS look: the big page title (#count, as the Leaderboard's) names the picked segment */
+    if(panel.isConnected){ const d = profileTabDefs.find(t => t.key === which); if(d) countEl.textContent = d.label; }
     beginSettle(320);
     profileTabDefs.forEach(t => {
       t.node.hidden = t.key !== which;
