@@ -35182,6 +35182,91 @@ html.is-browser{ --fade-paper: transparent; }
                0 0 12px -4px color-mix(in srgb, var(--dq-c) 36%, transparent) !important;
     -webkit-backdrop-filter:blur(6px) saturate(1.4) !important; backdrop-filter:blur(6px) saturate(1.4) !important;
   }
+  /* BUILD 382: THE CORNER BUTTONS ARE THE TAB BAR'S GLASS. "The Home Screen is perfect, just make the daily question button and
+     the class button match the feel and look." Beside the tab bar and the chat button (377/380: a see-through .26 body under a
+     faint white lift, one .16 rim, blur(7px) saturate(1.5), the soft 32px shadow) the rank bubble's paler, frostier glass (380)
+     read as a fourth material. The daily question (every state), the class button and its list's buttons now wear the bar's own
+     values, so Home's controls are one family; the class mark keeps its colours with no wash behind it, and a waiting question
+     says so only with the rank's colour in the rim (and its ring) - no wash, no glow. */
+  html[data-theme][data-layout] body:not(.x382c) :is(.class-bubble, .csi-bubble, .daily-question-fab),
+  html[data-theme][data-layout] body:not(.x382c) .daily-question-fab.is-done:not(.is-charging),
+  html[data-theme][data-layout] body:not(.x382c) .daily-question-fab.is-done,
+  html[data-theme][data-layout] body:not(.x382c) .daily-question-fab.is-ready:not(.is-done),
+  html[data-theme][data-layout] body:not(.x382c):has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    -webkit-backdrop-filter:blur(7px) saturate(1.5) !important; backdrop-filter:blur(7px) saturate(1.5) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
+  html[data-theme][data-layout] body:not(.x382c) .daily-question-fab.is-ready:not(.is-done),
+  html[data-theme][data-layout] body:not(.x382c):has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+    border-color:color-mix(in srgb, var(--dq-c, #FFD27A) 46%, rgba(255,255,255,.16)) !important;
+  }
+  /* the list moves, so its buttons keep the body and rim without a frost of their own; its words are the same glass, opaque
+     (a moon gliding behind them showed through on a tablet, 329) */
+  html[data-theme][data-layout] body:not(.x382c) .csi-bubble{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(18,19,27,.9) !important; box-shadow:0 6px 20px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.05) !important; }
+  html[data-layout] .csi-label{ background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgb(18,19,27); border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 6px 20px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.05); }
+  html[data-layout] .class-dock{ background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02) 55%), rgba(12,13,19,.62); box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.1); }
+  /* on a tablet the class button stands opposite the chat button in the top corners: the chat button's size (place()) */
+  @media (min-width:40rem){ html[data-layout] .class-bubble > svg{ width:calc(var(--cb) * .5); height:calc(var(--cb) * .5); } }
+  /* BUILD 382: THE SIGN-UP STEPS IN THE SETTINGS LOOK. "Ensure the sign up process and start up screen are all good to go." Sign in
+     with a code, New to Nova?, Select your classes (and the older username / code steps) kept the 309 look: a black "Back" pill 30px
+     tall (under the 44px floor), a serif title in spaced capitals, an italic serif line, a narrow pill field and a Continue narrower
+     than Welcome's two buttons. Now as Settings' pushed pages (382): a round 44px back button, a plain bold title, the line in the
+     soft grey, an iOS field (a filled rounded rectangle, the full width), and every button one width - Welcome's. Same words, same
+     order; Home's own title and line are not touched (.screen-home-actual is not one of these). */
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link{
+    width:44px !important; height:44px !important; min-height:44px !important; padding:0 !important; border-radius:50% !important;
+    display:inline-flex !important; align-items:center; justify-content:center; gap:0 !important; flex:none;
+    background:var(--surface-sheen), var(--surface-1) !important; border:1px solid var(--surface-border) !important;
+    box-shadow:var(--surface-shadow) !important; color:var(--ink) !important;
+  }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link .back-word{
+    position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; margin:0; padding:0;
+  }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link .back-chevron{ width:20px; height:20px; margin:0 1.5px 0 0; }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .synccode-entry-panel, .onboarding-shortform-panel) > .hometitle,
+  html[data-layout] body #stage > :is(.classselect-panel, .welcomeintro-panel) > .welcomeintro-title{
+    font-family:inherit !important; font-size:clamp(1.55rem, 6.4vw, 2rem) !important; font-weight:700 !important; font-style:normal;
+    letter-spacing:-.01em !important; text-transform:none !important; line-height:1.15; color:var(--ink); text-shadow:none;
+  }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .synccode-entry-panel, .onboarding-shortform-panel) > .hometagline,
+  html[data-layout] body #stage > .classselect-panel > .classselect-sub{
+    font-family:inherit !important; font-style:normal !important; font-size:1rem !important; line-height:1.45 !important; letter-spacing:0 !important;
+    color:var(--soft) !important; text-align:center; text-wrap:balance; max-width:26rem; margin-left:auto; margin-right:auto;
+  }
+  html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel) .onboarding-input-wrap{ width:min(100%, 22rem); max-width:none; margin-left:auto !important; margin-right:auto !important; }
+  html[data-layout] body #stage > .synccode-entry-panel > .synccode-confirm{ width:min(100%, 22rem); box-sizing:border-box; margin-left:auto; margin-right:auto; border-radius:20px; }
+  html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel) .onboarding-input-wrap > input.searchbox,
+  html[data-layout] body .nova-talk input.nt-ask-input{
+    width:100% !important; box-sizing:border-box; height:52px !important; min-height:52px; border-radius:14px !important; font-size:17px !important;
+    background:rgba(118,118,128,.24) !important; border:1px solid rgba(255,255,255,.08) !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel) .onboarding-input-wrap > input.searchbox:focus,
+  html[data-layout] body .nova-talk input.nt-ask-input:focus{ border-color:rgba(255,255,255,.28) !important; outline:none; }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .next,
+  html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel) .synccode-confirm .next{
+    width:min(100%, 22rem) !important; min-height:52px; box-sizing:border-box; margin-left:auto; margin-right:auto;
+    display:flex; align-items:center; justify-content:center;
+  }
+  /* a first-gen SE (568 tall): the 44px back button and the 52px buttons took 5px more than the class step had - the gaps give it back */
+  @media (max-height:600px){
+    html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link{ margin-bottom:.35rem !important; }
+    html[data-layout] body #stage > :is(.classselect-panel, .welcomeintro-panel) > .welcomeintro-title{ font-size:1.45rem !important; }
+  }
+  /* the class step's two cards (the class and "More classes") in the middle on a tablet, not in two of three columns on the left */
+  @media (min-width:40rem){
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ grid-template-columns:repeat(2, minmax(0, 16rem)) !important; justify-content:center; }
+  }
+  /* Nova's progress dots stay on one line however long his talk is (the sign-up talk has 30: they wrapped, and the lit one dropped
+     to a second row on its last lines) - each dot gives up a little width instead */
+  .nova-talk .nt-progress{ flex-wrap:nowrap; gap:clamp(2px, .9vw, 5px); min-width:0; }
+  .nova-talk .nt-progress i{ flex:0 1 6px; min-width:3px; transition:flex-basis .3s ease, background .3s ease; }
+  .nova-talk .nt-progress i.is-now{ flex:0 0 18px; }
   /* each class's breath of colour, softer than its old glow */
   .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cc:rgba(170,160,255,.2); }
   .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cc:rgba(255,140,70,.22); }
@@ -52500,8 +52585,13 @@ function mountClassBubble(){
     /* the bubble is the daily question's size, whatever the screen makes that */
     const dq = document.querySelector(".daily-question-fab");
     const dw = dq ? Math.round(dq.getBoundingClientRect().width) : 0;
-    if(dw >= 36 && dw <= 90) wrap.style.setProperty("--cb", dw + "px");
-    if(window.matchMedia && matchMedia("(min-width:40rem)").matches){ wrap.style.top = ""; return; }   /* top-left corner on a tablet or laptop */
+    /* (382) on a tablet or laptop it is the chat button's opposite in the top corners, so it is the chat button's size */
+    const wide = !!(window.matchMedia && matchMedia("(min-width:40rem)").matches);
+    const ch = wide ? document.getElementById("chatdock-btn") : null;
+    const cw = ch ? Math.round(ch.getBoundingClientRect().width) : 0;
+    const size = cw >= 44 && cw <= 90 ? cw : dw;
+    if(size >= 36 && size <= 90) wrap.style.setProperty("--cb", size + "px");
+    if(wide){ wrap.style.top = ""; return; }   /* top-left corner on a tablet or laptop */
     if(window.matchMedia && matchMedia("(max-width:39.99rem) and (orientation:portrait)").matches){ wrap.style.top = ""; return; }   /* the daily question's mirror on a phone (CSS) */
     const hero = document.querySelector("#stage .panel.home > .cosmic-hero-wrap");
     if(!hero) return;
@@ -88415,7 +88505,7 @@ function showSignUpCheck(){
   const title = document.createElement("p");
   title.className = "hometitle";
   title.style.cssText = "position:relative;z-index:1;font-size:1.7rem;";
-  title.textContent = "NEW TO NOVA?";
+  title.textContent = "New to Nova?";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
@@ -88831,7 +88921,7 @@ function showWelcomeNamePrompt(){
   const title = document.createElement("p");
   title.className = "hometitle";
   title.style.cssText = "position:relative;z-index:1;font-size:1.7rem;";
-  title.textContent = "ENTER A USERNAME";
+  title.textContent = "Enter a username";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
@@ -89395,7 +89485,7 @@ function showWelcomeCodeReveal(){
   const title = document.createElement("p");
   title.className = "hometitle";
   title.style.cssText = "position:relative;z-index:1;font-size:1.5rem;";
-  title.textContent = "YOU'RE ALL SET";
+  title.textContent = "You’re all set";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
@@ -89438,7 +89528,7 @@ function showWelcomeCodeEntry(){
   const title = document.createElement("p");
   title.className = "hometitle";
   title.style.cssText = "position:relative;z-index:1;font-size:1.7rem;";
-  title.textContent = "ENTER YOUR CODE";
+  title.textContent = "Enter your code";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
