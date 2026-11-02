@@ -30470,3 +30470,18 @@ viewable again" / "all the banners will be viewable ... remove that."
 - Gate: check-b382-unhide (academy + Fire Code; 12 fail on 381). b313_flares/b314_chars/b314_unlocks/b317, b325-d, b326-d,
   b327z13 Y updated from "hidden" to "shown greyed". Merged with the Fire Code art: unhide, ifcart and badges gates all pass
   together (unhide's Fire Code road-map check failed once under 9 agents' load, passed on re-run).
+
+### 382, the start sheet's switches: the words at the bottom, and the glass knob a smidge faster
+Madison (a screen recording of Drill's start sheet): "When toggling stuff, the words coming up at the bottom come in a little laggy
+as well. Fix this too." / "the Liquid Glass gets picked and put down just a smidge too slow ... a smidge faster".
+- THE WORDS: the switched-on line in the box above Begin folded by a grid-template-rows/margin-top transition (.22s): every frame
+  re-laid the sheet out and moved the whole sheet (it grows up from the bottom). His recording: the rows stepped 6 times in 200ms
+  (gaps 17-83ms) with a jump at the end, while the knob beside it ran at 60fps. A text-only change was never late.
+  Now the layout changes ONCE, in the tap's task, and foldSummaryOpts() glides it with transforms and opacity only (FLIP, 220ms,
+  same curve): the sheet from its old top with Begin and the box held still, the box's top half, a stand-in for the box's body
+  scaled from its foot (.sheet-summary-foldbg; the box is .is-folding meanwhile), the new words faded in, the leaving words faded
+  out where they were (.sheet-summary-foldghost); no backdrop blur on the opaque sheet while it moves (.is-folding-opaque).
+  Reduce motion / short screen / closed sheet: instant.
+- THE KNOB: NSW_T pop 260->210ms, shrink 360->290ms (~19% each), same curves; the glide and the tap/haptic logic as they were.
+- Gate: check-b382-toggles (iPhone UA, real touches; fails on 381). Also run: check-behaviour b324g_toggles, b234, b235b,
+  b323s_summary; check-b380 switch part 23; b327z15 W; sweep-layout --quick 14/14. On-device smoothness unconfirmed.
