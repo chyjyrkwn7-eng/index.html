@@ -30292,3 +30292,21 @@ this as well. All larger devices should be just as smooth."*
   With loopsWatch.busy held during the load only, 35/35. Python Playwright: pip install playwright==1.63.0 and alias
   /opt/pw-browsers/chromium-1194 -> chromium-1243, chrome-linux -> chrome-linux64.
 - Only a real iPad confirms the feel (Chromium has no 60/120Hz difference); Send tab timings does not time this slide.
+
+### 380, one more: coming back to a paused test does nothing heavy behind the Pause menu
+Madison: *"when on the iPad, when leaving the app and coming back mid test, the app laps for some reason like it stutters and the
+pause menu lags to open, fix this as well"*.
+- PROFILED (CDP sampling, iPad 11 at 4x CPU, hidden -> visible on a test): the 130-640ms tasks after coming back were almost all
+  warmBadgeStrikes (badgeStrikeGeometry / badgeSignedDistance / renderBadgeStrike / badgeBoxBlur) - the launch warm-up that has the
+  Badges tab ready, running behind the Pause menu. Safari has no requestIdleCallback, so quietIdle's slices are its 60ms timer, never
+  a wait for idle; iOS ends pages in the background often (the crash notes), and an iPad's badges are bigger to draw.
+- FIX: recordingShouldWait() returns 1500 while `testInProgress && order.length` - every quietIdle warm-up (badge renders and
+  finishes, the reverb impulse) and the rank/character recorders (orbitAnimYield etc.) wait during a question or the Pause menu and
+  go on after. Simulated return (no requestIdleCallback): 586ms of long tasks behind the Pause menu -> 0.
+- Gate: tools/check-b380-resume.py - leaving mid-test pauses, a warm-up started behind the Pause menu draws no badges for 5s (14-15
+  drawings on the code before, iPad and phone), and once the test is over it carries on (36).
+- NOT FOUND HERE: "the iPads main menu, the rank flares, the stuff within them aren't moving". In Chromium the bubbles' sheets play
+  on iPad mini / 11" / landscape on 379 and 380 alike; recording takes the same time as on a phone (7 bubbles in ~3.5 min at 4x);
+  the bubbles' recording size on an upright iPad is steady (92px, 114 on its side - steadier than a phone's 78/84). Reduce Motion
+  (OS or the app's own) stops the sheets and nearly everything else on Home. Needs his iPad's report (Send tab timings: "loops",
+  "sh" = sheets held) or a recording; the admin read of reports was not allowed in this session.

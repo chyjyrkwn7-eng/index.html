@@ -82634,6 +82634,13 @@ function recordingShouldWait(){
      lagging after the tap. */
   if(now - recUserAt < 2000) return 2000 - (now - recUserAt);
   try{ if(now - stageMountedAt < 1600) return 1600 - (now - stageMountedAt); }catch(e){}
+  /* NOTHING WHILE A TEST IS UP (build 380). Madison: "on the iPad, when leaving the app and coming back mid test, the app laps ... it
+     stutters and the pause menu lags to open". Profiled coming back to a paused test: 2s+ of 130-640ms tasks at 4x CPU, nearly all
+     warmBadgeStrikes (badge geometry, blur, signed distance) - a launch warm-up for the Badges tab. iOS ends a page in the background
+     often (the crash notes), so coming back is a launch straight into the restored test, with every warm-up on top of the Pause menu;
+     Safari has no requestIdleCallback, so quietIdle's slices are a 60ms timer, never a wait for idle; and an iPad's badges are bigger to
+     draw. None of these warm-ups is for a screen a test shows: during a question or the Pause menu they wait, and go on after. */
+  try{ if(testInProgress && order.length) return 1500; }catch(e){}
   const s = (typeof settleUntil === "number") ? settleUntil - Date.now() : 0;
   return s > 0 ? s : 0;
 }
