@@ -30883,3 +30883,29 @@ Madison: "ensure it's apparent that the user needs to remember the code and writ
 - `check-save-code` sections 2–3 now assert the card.
 - `check-sync` 4d allows 3 buttons.
 - ALL gate fixtures that set `class26e.savecode.asked` now also set `class26e.savecode.card`. A new fixture for an onboarded account needs one of them (or `savedCodeSaved:true`), or the card lands over what it measures.
+
+### 382: Home's corner buttons in the tab bar's glass; the sign-up steps in the Settings look (merged 2026-11-02)
+Madison: "The Home Screen is perfect, just make the daily question button and the class button match the feel and look. Ensure the sign up process and start up screen are all good to go."
+
+**Home corner buttons**
+- They were 380's unreached rank bubble's glass (.09 white body, .24 rim, blur 6px): a fourth material beside the tab bar and the chat button.
+- Now the daily question (every state), the class button and its list wear the bar's values:
+  - body .26, the lift, .16 rim;
+  - blur 7px, saturate 1.5;
+  - 0 8px 32px shadow;
+  - rule `body:not(.x382c)`, placed after 380's.
+- The class mark keeps its own colours with no wash. A waiting question shows the rank colour in its rim only.
+- On a tablet, `place()` sizes the class button to the chat button opposite it (52px, was 74px).
+- The 381 haptic-switch rule is untouched.
+
+**Sign-up steps**
+- Round 44px back button (was a 30px pill).
+- Bold sentence-case titles, a soft grey line under them, iOS fields, one button width.
+- Nova's dots stay on one line (about 30 had wrapped).
+- The class cards are centred on iPad.
+- SE gaps tightened under 600px tall.
+
+**Gates**
+- New: tools/check-b382-firstrun.py. 41 fail before. It includes the owner-only class button guard: a non-owner has no class button or banner, and `activeclass=ifc` without the owner's publicId stays academy.
+- check-b329, b344 and b380 (27) were updated to follow.
+- The job's report of check-sync "the restored account is what goes up" failing: ALL PASS on the merged claude/b382 here (8f polls since c91cc0d). Recheck in the final run.
