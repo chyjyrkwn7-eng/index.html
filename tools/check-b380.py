@@ -29,7 +29,8 @@ nothing starred, a tap on it says so at the top (a banner), not in a toast at th
 (23) a switch tapped sets off as the finger lifts, not when the flip arrives (on an iPhone the native switch's change comes later -
 here 150ms later), and a tap whose flip never comes glides back;
 (24) on a test, the chat button and Pause are the tab bar's own glass (body, rim, blur, shadow); (25) Next question comes up 2rem under
-the answers when they leave room (as on a phone, no keys line), and at the bottom, where it was, when the question fills the screen;
+the answers when they leave room (as on a phone, no keys line), and - since 382 ("the next question button keeps going over the
+code") - in the page under the content, the same gap, when the question fills the screen (it was pinned at the bottom, over it);
 (26) Pause is one card on the screen's middle with Resume across it and Save and exit and Quit test side by side in one black, and
 Keep going lands where Resume was; (27) Home's daily question and class button are the rank bubbles' glass (their body and rim,
 no blur) and the class mark is in its own colours; (28) closing the class list sends each bubble back into the class button;
@@ -315,21 +316,17 @@ with sync_playwright() as pw:
     # (25) Next question under the answers
     pg.evaluate("()=>{ const s=document.createElement('style'); s.id='gate-phone-keys'; s.textContent='#hint{display:none !important}'; document.head.appendChild(s); }")
     NB = """()=>{ const b=document.getElementById('nextbtn'), ch=[...document.querySelectorAll('.qpanel .choice')]; if(!b||b.hidden||!ch.length) return null; const r=b.getBoundingClientRect(), l=ch[ch.length-1].getBoundingClientRect();
-      const rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16; return { gapRem: +((r.top-l.bottom)/rem).toFixed(2), fromBottom: Math.round(innerHeight-r.bottom), scrolls: document.documentElement.scrollHeight>innerHeight+1 }; }"""
+      const rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16; let low=0; [...document.querySelector('.qpanel').children].forEach(k=>{ if(!k.offsetHeight) return; const ps=getComputedStyle(k).position; if(ps==='fixed'||ps==='absolute') return; low=Math.max(low, k.getBoundingClientRect().bottom); });
+      return { gapRem: +((r.top-l.bottom)/rem).toFixed(2), lowGapRem: +((r.top-low)/rem).toFixed(2), inPage: getComputedStyle(b).position!=='fixed', fromBottom: Math.round(innerHeight-r.bottom), scrolls: document.documentElement.scrollHeight>innerHeight+1 }; }"""
     pg.evaluate(QRUN, [5, True]); short = pg.evaluate(NB)
     pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); }"); pg.wait_for_timeout(800)
     # a question that fills the screen: the longest stem and choices of a unit
     pg.set_viewport_size({"width": 440, "height": 600}); pg.wait_for_timeout(500)
     pg.evaluate(QRUN, [7, True]); tall = pg.evaluate(NB)
     pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(800)
-    pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(600)
-    pg.evaluate("()=>{ const s=document.createElement('style'); s.id='gate-phone-keys'; s.textContent='.foot > .floatbtn.qnext{ --qnext-raise:0px !important; }'; document.head.appendChild(s); }")
-    pg.set_viewport_size({"width": 440, "height": 600}); pg.wait_for_timeout(500)
-    pg.evaluate(QRUN, [7, True]); tall0 = pg.evaluate(NB)
-    pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(600)
     pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(800)
-    chk("Next question comes up %s rem under a short question's answers, and where it always was when the question fills the screen (%s px from the bottom, was %s)" % (short and short["gapRem"], tall and tall["fromBottom"], tall0 and tall0["fromBottom"]),
-        short and 2.85 <= short["gapRem"] <= 3.65 and tall and tall0 and tall["scrolls"] and tall["fromBottom"] == tall0["fromBottom"], [short, tall, tall0])
+    chk("Next question comes up %s rem under a short question's answers, and in the page %s rem under the content when the question fills the screen (in the page: %s)" % (short and short["gapRem"], tall and tall["lowGapRem"], tall and tall["inPage"]),
+        short and 2.85 <= short["gapRem"] <= 3.65 and tall and tall["scrolls"] and tall["inPage"] and 2.85 <= tall["lowGapRem"] <= 3.65, [short, tall])
     # (26) the Pause card
     pc = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const u=topicsIn(QUESTIONS)[5]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u && inWholeUnit(QUESTIONS[i]));
       cfg.source='all'; cfg.mode='drill'; cfg.units=[u]; beginRun(idx); for(let t=0;t<60 && !document.querySelector('.qpanel .choice');t++) await wait(100); await wait(400); pauseRun(); await wait(900);
