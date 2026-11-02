@@ -18897,7 +18897,10 @@
   .unitoptions-modal{ position:fixed; inset:0; z-index:210; }
   .unitoptions-modal-scrim{
     position:absolute; inset:0; background:rgba(18,22,27,.5); z-index:1;
+    /* (build 382) the dim arrives with the sheet's slide, not before it */
+    animation:unitoptions-scrim-in .25s ease-out;
   }
+  @keyframes unitoptions-scrim-in{ from{ opacity:0; } to{ opacity:1; } }
   .unitoptions-modal-sheet{
     position:absolute; left:0; right:0; bottom:0; max-height:80vh; z-index:2;
     background:var(--paper); border-radius:20px 20px 0 0;
@@ -21946,6 +21949,12 @@
   .unitdetail.is-open .unitdetail-main.is-away{ transform:translateX(-30%); opacity:0; transition-delay:0s; }
   .unitdetail-list{ transform:translateX(100%); opacity:0; }
   .unitdetail-list.is-in{ transform:none; opacity:1; }
+  /* (build 382) each pane its own layer while the card is up, so the
+     card's shell changing size never repaints the list or the stats; and
+     back from a list the stats return with the list's slide, not .16s
+     after it (the delay is the card's first open only). */
+  .unitdetail.is-open .unitdetail-main, .unitdetail-list{ will-change:transform, opacity; }
+  .unitdetail.is-open.was-listing .unitdetail-main{ transition-delay:0s; }
   .unitdetail-stats{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:.5rem; }
   .unitdetail-stat:last-child:nth-child(odd){ grid-column:1 / -1; }
   .unitdetail-stat{ padding:.65rem .75rem; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); }
@@ -100293,16 +100302,46 @@ function openUnitDetail(row, name, mode){
     si.addEventListener("input", render);
     sx.addEventListener("click", () => { si.value = ""; render(); si.focus(); });
     render();
+    /* THE CARD MOVES WITH THE LIST, AND NOTHING INSIDE IT IS RE-LAID
+       (build 382). "This also looks a little laggy" - a recording of
+       Starred and Back: Back slid the list away, left a tall empty card
+       for 350ms (the shrink waited for a 320ms timer) and then shrank it
+       with a jump, and both ways every frame of the card's grow re-laid
+       and repainted the whole list, because the list and the stats were
+       inset:0 in a box whose height was moving (4x CPU: 50-100ms
+       frames). Now the shrink starts on the tap, with the list's slide,
+       and the two panes keep a fixed height of their own for the move
+       (the card only clips them), each on its own layer - only the card's
+       empty shell changes size. */
     back.addEventListener("click", () => {
       pane.classList.remove("is-in");
       main.classList.remove("is-away");
       card.classList.remove("is-listing");
       refreshDoors();
-      setTimeout(() => { pane.remove(); fitHeight(); }, 320);
+      const rest = target(false);
+      pinPane(main, rest.height);
+      fitHeight();
+      clearTimeout(main._unpin);
+      main._unpin = setTimeout(() => {
+        pane.remove();
+        if(!card.classList.contains("is-listing")) unpinPane(main);
+      }, 480);
     });
+    views.querySelectorAll(":scope > .unitdetail-list").forEach(p => p.remove());
     views.appendChild(pane);
+    card.classList.add("was-listing");
+    clearTimeout(main._unpin);
+    pinPane(main, null);
+    pinPane(pane, target(true).height);
     requestAnimationFrame(() => { main.classList.add("is-away"); pane.classList.add("is-in"); fitHeight(true); });
   }
+  /* A pane's own height for the card's move: the card's height less its
+     head and border, read now (one layout), or the views' current one. */
+  function pinPane(el, cardH){
+    const h = cardH == null ? views.offsetHeight : Math.max(0, cardH - (card.offsetHeight - views.offsetHeight));
+    el.style.bottom = "auto"; el.style.height = h + "px";
+  }
+  function unpinPane(el){ el.style.bottom = ""; el.style.height = ""; }
 
   document.body.append(scrim, card);
   unitDetailOpen = { card, scrim };
@@ -129680,9 +129719,22 @@ function attachHoldDetail(el, detail){
    .is-dragging only drops the blur (both sheets that use this are opaque,
    so the blur behind them shows nowhere) - the look does not change. It
    springs back, or slides all the way out and only then closes. */
+/* THE DIM GOES WITH THE SHEET (build 382). "The background goes from dark
+   to light too late ... when you put the start menu away it happens." A
+   recording: the swiped sheet was off the screen ~130ms before the page
+   behind it brightened, and then it brightened in one frame - the scrim
+   stayed at full dim until onDismiss() hid the whole modal, 30ms after the
+   slide's own end. The scrim (the sheet's sibling) now follows the finger
+   (lighter as the sheet comes down), fades out over the slide's own time
+   and curve from the moment the slide starts, and comes back with the
+   spring if the sheet is let go. Opacity only. */
 const SHEET_SWIPE_SLOP = 12;
 function attachSheetSwipe(sheet, onDismiss){
-  let y0 = null, x0 = 0, s0 = 0, scroller = null, mode = null, dy = 0, raf = 0, want = null, lastY = 0, lastT = 0, vel = 0, gen = 0;
+  let y0 = null, x0 = 0, s0 = 0, scroller = null, mode = null, dy = 0, raf = 0, want = null, lastY = 0, lastT = 0, vel = 0, gen = 0, sh = 0;
+  const scrimOf = () => {
+    const p = sheet.parentElement;
+    return p ? p.querySelector(":scope > .unitoptions-modal-scrim") : null;
+  };
   const skip = t => !!(t && t.closest && t.closest('input:not(.nova-hsw), textarea, select, [role="slider"], .sliderwrap'));
   /* the nearest thing between the finger and the sheet that scrolls up and down */
   const scrollerOf = t => {
@@ -129697,6 +129749,7 @@ function attachSheetSwipe(sheet, onDismiss){
     if(!want) return;
     const w = want; want = null;
     if(w.t != null) sheet.style.transform = w.t;
+    if(w.o != null){ const sc = scrimOf(); if(sc) sc.style.opacity = w.o; }
     if(w.s != null && scroller && scroller.scrollTop !== w.s) scroller.scrollTop = w.s;
   };
   const queue = w => { want = w; if(!raf) raf = requestAnimationFrame(flush); };
@@ -129729,15 +129782,17 @@ function attachSheetSwipe(sheet, onDismiss){
       y0 += d > 0 ? SHEET_SWIPE_SLOP : -SHEET_SWIPE_SLOP;
       gen++;
       sheet.style.transition = "none";
+      sh = sheet.offsetHeight || innerHeight;
+      const sc = scrimOf(); if(sc){ sc.style.transition = "none"; }
     }
     const dd = y - y0;
     if(dd > 0){
       dy = dd;
       if(!sheet.classList.contains("is-dragging")) sheet.classList.add("is-dragging");
-      queue({ t: "translate3d(0," + dd + "px,0)", s: 0 });
+      queue({ t: "translate3d(0," + dd + "px,0)", o: String(Math.max(0, 1 - dd / sh).toFixed(3)), s: 0 });
     } else {
       dy = 0;
-      queue({ t: sheet.classList.contains("is-dragging") ? "translate3d(0,0,0)" : null, s: Math.max(0, -dd) });
+      queue({ t: sheet.classList.contains("is-dragging") ? "translate3d(0,0,0)" : null, o: "1", s: Math.max(0, -dd) });
     }
   }, { passive: false });
   const end = () => {
@@ -129746,7 +129801,11 @@ function attachSheetSwipe(sheet, onDismiss){
     const was = mode; mode = null;
     if(was !== "drag") return;
     if(raf){ cancelAnimationFrame(raf); flush(); }
-    if(!sheet.classList.contains("is-dragging")){ sheet.style.transition = ""; sheet.style.transform = ""; return; }
+    if(!sheet.classList.contains("is-dragging")){
+      sheet.style.transition = ""; sheet.style.transform = "";
+      const sc = scrimOf(); if(sc){ sc.style.transition = ""; sc.style.opacity = ""; }
+      return;
+    }
     const g = ++gen;
     const h = sheet.getBoundingClientRect().height || innerHeight;
     /* THE QUESTION SWIPE'S RULE (build 327z8): "it goes away even if you
@@ -129763,18 +129822,25 @@ function attachSheetSwipe(sheet, onDismiss){
       const ms = Math.round(Math.max(180, Math.min(300, (h - dy) / Math.max(1.6, vel || 0))));
       sheet.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
       sheet.style.transform = "translate3d(0," + Math.ceil(h + 24) + "px,0)";
+      /* the dim lifts over the same time, on the same curve, from now */
+      const sc = scrimOf();
+      if(sc){ sc.style.transition = "opacity " + ms + "ms cubic-bezier(.3,.6,.4,1)"; sc.style.opacity = "0"; }
       setTimeout(() => {
         if(g !== gen) return;
         onDismiss();
         sheet.style.transition = "none"; sheet.style.transform = ""; sheet.classList.remove("is-dragging");
+        if(sc){ sc.style.transition = ""; sc.style.opacity = ""; }
         requestAnimationFrame(() => { if(g === gen) sheet.style.transition = ""; });
       }, ms + 30);
     } else {
       sheet.style.transition = "transform .32s cubic-bezier(.2,.9,.25,1)";
       sheet.style.transform = "translate3d(0,0,0)";
+      const sc = scrimOf();
+      if(sc){ sc.style.transition = "opacity .32s cubic-bezier(.2,.9,.25,1)"; sc.style.opacity = "1"; }
       setTimeout(() => {
         if(g !== gen || y0 !== null) return;
         sheet.classList.remove("is-dragging"); sheet.style.transition = ""; sheet.style.transform = "";
+        if(sc){ sc.style.transition = ""; sc.style.opacity = ""; }
       }, 360);
     }
   };
@@ -139327,28 +139393,76 @@ if(backToTopBtn){
   /* NEVER ON TOP OF THE LAST CONTROL. At the foot of a long screen the
      button used to sit over the right end of whatever came last - Stats'
      "Recent test review", Calendar's "Go to today", the last test row -
-     so a tap on that corner went back to the top instead. Near the end
-     of the page it now steps aside whenever something tappable on the
-     screen is under it; anywhere else, and wherever nothing is under
-     it (the Customize grid, the road map), it stays as it was. Measured
-     rather than padded, because extra room at the bottom would make
-     every screen that fits exactly start to scroll. */
-  const BACKTOTOP_END_ZONE = 260;
+     so a tap on that corner went back to the top instead. */
+  /* ROOM UNDER THE LAST ROW, NOT A BUTTON THAT LEAVES (build 382). "The
+     scroll back to top button randomly disappears when you are at the
+     bottom." It stepped aside whenever a control was under it in the last
+     260px - on Topics that is the last unit card, every time, and on other
+     screens it depended on where a row happened to land, so it came and
+     went. It now stays whenever the page is scrolled down, and the screen
+     gets just enough room at its foot (padding-bottom on #stage, measured)
+     that, scrolled to the very end, the last control sits clear above it.
+     Only a screen long enough to show the button gets any, so a screen
+     that fits exactly still does not scroll. Worked out when the screen
+     or the window changes (not on every scroll), from the last controls
+     on it; anything fixed (the Start pill) is not part of the scroll. */
   /* `.dailyq-outro` is not tappable but is the same case (build 317
      touch-up): the answered daily scrolls its result card up to sit just
      over the pill, which on an SE or a 320 phone is past 320px - so the
-     button came up over the card's corner (22x30px). The card is the
-     answer; the button steps aside for it. */
+     button came up over the card's corner (22x30px). */
   const TAPPABLE = 'button, a[href], [role="button"], input, select, textarea, label, summary, .is-tappable, [tabindex]:not([tabindex="-1"]), .dailyq-outro';
-  const backToTopBlocked = () => {
-    const left = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
-    if(left > BACKTOTOP_END_ZONE) return false;
-    const b = backToTopBtn.getBoundingClientRect();
-    if(!b.width) return false;
-    return [...stage.querySelectorAll(TAPPABLE)].some(el => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && r.left < b.right + 4 && r.right > b.left - 4 && r.top < b.bottom + 4 && r.bottom > b.top - 4;
-    });
+  let bttRoom = 0, bttRoomOwner = null;
+  const setBttRoom = px => {
+    if(px === bttRoom) return;
+    bttRoom = px;
+    stage.style.paddingBottom = px ? px + "px" : "";
+  };
+  /* in the page's scroll: its offsetParent chain reaches <body> (a fixed
+     element, or anything inside one, ends at null) */
+  const inScroll = el => {
+    let p = el;
+    while(p && p !== document.body) p = p.offsetParent;
+    return !!p;
+  };
+  const backToTopRoom = () => {
+    const owner = stage.firstElementChild;
+    if(owner !== bttRoomOwner){ bttRoomOwner = owner; setBttRoom(0); }
+    if(!owner) return;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    /* never shown on this screen without the room: none */
+    if(maxScroll - bttRoom <= 320){ setBttRoom(0); return; }
+    const w = backToTopBtn.offsetWidth, h = backToTopBtn.offsetHeight;
+    if(!w) return;
+    /* its place when shown (hidden, it is scaled down about its middle) */
+    const br = backToTopBtn.getBoundingClientRect();
+    const cx = br.left + br.width / 2, cy = br.top + br.height / 2;
+    const b = { left: cx - w / 2, right: cx + w / 2, top: cy - h / 2, bottom: cy + h / 2 };
+    const toEnd = maxScroll - (window.scrollY || 0);
+    const all = stage.querySelectorAll(TAPPABLE);
+    let need = 0;
+    for(let i = all.length - 1, n = 0; i >= 0 && n < 40; i--, n++){
+      const el = all[i], r = el.getBoundingClientRect();
+      if(!(r.width > 0 && r.height > 0) || r.left >= b.right + 4 || r.right <= b.left - 4) continue;
+      /* where it will be with the page scrolled to its end */
+      const top = r.top - toEnd, bottom = r.bottom - toEnd;
+      if(top >= b.bottom + 4 || bottom <= b.top - 4 || !inScroll(el)) continue;
+      need = Math.max(need, Math.ceil(bottom + 8 - b.top));
+    }
+    if(need > 0) setBttRoom(bttRoom + need);
+  };
+  /* The one place it still steps aside: the answered daily's result card,
+     which the app itself scrolls to sit just over the Exit pill - not the
+     end of a list, so room at the foot cannot clear it (build 317). One
+     element, measured only on that screen. */
+  const outroUnderBackToTop = () => {
+    const o = stage.querySelector(".dailyq-outro");
+    if(!o) return false;
+    const b = backToTopBtn.getBoundingClientRect(), r = o.getBoundingClientRect();
+    return !!b.width && r.left < b.right + 4 && r.right > b.left - 4 && r.top < b.bottom + 4 && r.bottom > b.top - 4;
+  };
+  let bttRoomRaf = 0;
+  const queueBackToTopRoom = () => {
+    if(!bttRoomRaf) bttRoomRaf = requestAnimationFrame(() => { bttRoomRaf = 0; backToTopRoom(); queueBackToTop(); });
   };
   let backToTopRaf = 0;
   /* NO FLICKER ON THE WAY UP (build 308): "the scroll to the top button
@@ -139364,7 +139478,7 @@ if(backToTopBtn){
     backToTopRaf = 0;
     const y = window.scrollY || 0;
     let want = backToTopShown ? y > 180 : y > 320;
-    if(want && backToTopBlocked()) want = false;
+    if(want && outroUnderBackToTop()) want = false;
     if(want === backToTopShown) return;
     const now = performance.now();
     if(now - backToTopFlipAt < 220){
@@ -139377,7 +139491,7 @@ if(backToTopBtn){
   };
   const queueBackToTop = () => { if(!backToTopRaf) backToTopRaf = requestAnimationFrame(syncBackToTop); };
   window.addEventListener("scroll", queueBackToTop, { passive: true });
-  window.addEventListener("resize", queueBackToTop);
+  window.addEventListener("resize", queueBackToTopRoom);
   /* A screen's content can grow under a resting scroll position (a list
      arriving, a section opening), which is no scroll event at all. */
   /* (build 326) not for what a hundo effect or the results character
@@ -139385,7 +139499,7 @@ if(backToTopBtn){
      own layer, the breath's bubbles: none of it is tappable, and each one
      queued a measure of every tappable thing on the screen */
   const BTT_QUIET = ".hfx-box, .results-level-avatar, svg";
-  try{ new MutationObserver(ms => { if(ms.some(m => !(m.target && m.target.closest && m.target.closest(BTT_QUIET)))) queueBackToTop(); })
+  try{ new MutationObserver(ms => { if(ms.some(m => !(m.target && m.target.closest && m.target.closest(BTT_QUIET)))) queueBackToTopRoom(); })
     .observe(stage, { childList: true, subtree: true }); }catch(e){}
   /* Wrapped, not passed directly. addEventListener hands the listener
      the click event, so "toTop" received a PointerEvent as its "instant"
