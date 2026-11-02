@@ -30396,3 +30396,11 @@ the status bar's height easing into the sky with no seam (341 working); the bott
 - Gate: tools/check-b382.py (iPhone UA, touch): the root carries the two tiles on Home (0 on 381) on the fixed layer's grid (same
   bright pixels; 0 shared on 381), none on a test, none installed. check-b338 and check-b341 still pass.
 - share/edge-test.html stays (not linked) for the next question about Safari's edges.
+- "SEARCH NAMES" HEIGHT (382, same build): "Fix the placement of the word search names" (his iPhone screenshot on 381, centred
+  across now). Measured at 3x: the field's rims at rows 581/702 (middle 642), the magnifier 626-655 (640, centred), the words'
+  capitals from 631, lowercase from 640, baseline 663 - their middle 647-651, i.e. 2-3.5 CSS px LOW. Build 328 dropped every search
+  bar's words 2px after measuring them HIGH in Chromium; iOS's system font already sits low in a field, so on iOS (`@supports
+  (-webkit-touch-callout: none)`, which Chromium does not match) input.searchbox is now padding-top .7rem - .5px / bottom .7rem +
+  .5px: 2.5px up from 328's, the field the same height. Laptops and Chromium keep 328's. check-b382 asserts the iOS rule (CSSOM);
+  only an iPhone shows the result.
+- LESSON: vertical text placement measured in Chromium is not iOS's - read it off his screenshot.

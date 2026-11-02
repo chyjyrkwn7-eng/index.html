@@ -34335,6 +34335,14 @@ html.is-browser{ --fade-paper: transparent; }
      bar's words come down 2px, and Find me takes the field's size and a regular
      weight, white. */
   html[data-layout] body input.searchbox{ padding-top:calc(.7rem + 2px) !important; padding-bottom:calc(.7rem - 2px) !important; }
+  /* build 382: "Fix the placement of the word search names". Measured off his iPhone screenshot (Leaderboard, 3x): the field's rims at
+     rows 581 and 702 (middle 642), the magnifier 626-655 (middle 640, centred), the words' capitals 631 and baseline 663 with the
+     lowercase from 640 - their middle 647-651, 2-3.5px (CSS) below the field's and the magnifier's. The 2px drop above was measured
+     in Chromium; iOS's own font already sits low in a field, so on an iPhone or iPad (the touch-callout test) the words go back up
+     2.5px - half a pixel above the line box's middle, where words with no descenders look centred. The field keeps its height. */
+  @supports (-webkit-touch-callout: none){
+    html[data-layout] body input.searchbox{ padding-top:calc(.7rem - .5px) !important; padding-bottom:calc(.7rem + .5px) !important; }
+  }
   html[data-theme][data-layout] body .rank-tools .iconbtn.rank-me-btn{ font-size:1.0625rem; font-weight:500; letter-spacing:0; color:#F3F5F7 !important; }
   /* (build 328) "the back button isn't perfectly centered either": the chevron's own
      viewBox has 5px of air on its left, so the ink sat 1.5px right of centre. Measured

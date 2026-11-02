@@ -54,6 +54,22 @@ with sync_playwright() as pw:
       cfg.source='all'; cfg.mode='drill'; cfg.units=[unit]; beginRun(idx); for(let t=0;t<80&&!document.querySelector('.qpanel .choice');t++) await wait(100); await wait(800); }""")
     r = pg.evaluate("()=>({calm: document.body.classList.contains('sky-calm'), urls: getComputedStyle(document.documentElement).backgroundImage.split('url(').length-1})")
     chk("on a test (no stars) the root carries none either (%s)" % (r,), r["calm"] and r["urls"] == 0, r)
+    # "Search names" on an iPhone: an iOS-only rule (touch-callout) raises the field's words 2.5px from build 328's, same height
+    r = pg.evaluate("""()=>{ const out=[]; for(const sh of document.styleSheets){ let rules; try{ rules=sh.cssRules; }catch(e){ continue; }
+        for(const ru of rules){ if(ru instanceof CSSSupportsRule && /touch-callout/.test(ru.conditionText)){
+          for(const inner of ru.cssRules){ if(/input\.searchbox/.test(inner.selectorText||'')) out.push([inner.style.getPropertyValue('padding-top'), inner.style.getPropertyValue('padding-bottom')]); } } } }
+        const i=document.querySelector('input.searchbox'); const cs=i&&getComputedStyle(i);
+        return {ios: out, here: cs ? [cs.paddingTop, cs.paddingBottom] : null}; }""")
+    import re as _re
+    def px(v):   # "calc(-0.5px + 0.7rem)" or "calc(.7rem - .5px)" -> px at a 16px rem
+        v = v.replace(" ", "")
+        rem = _re.search(r"([\d.]+)rem", v); p = _re.search(r"([+-]?)\(?([\d.]+)px", v.replace("calc(", "+") )
+        if not rem or not p: return None
+        sign = -1 if (p.group(1) == "-" or _re.search(r"-[\d.]*\.?[\d]+px", v)) else 1
+        return float(rem.group(1)) * 16 + sign * float(p.group(2))
+    ios = r["ios"][0] if r["ios"] else None
+    chk("on an iPhone the field's words sit 2.5px higher than build 328 put them, the field the same height (%s)" % (r,),
+        ios and px(ios[0]) is not None and abs((px(ios[1]) - px(ios[0])) - 1.0) < .01 and abs(px(ios[0]) + px(ios[1]) - 22.4) < .01, r)
     ctx.close()
     ctx, pg = page(br, True)
     r = pg.evaluate(ROOT)
