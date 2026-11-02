@@ -1,4 +1,4 @@
-"""Build 375: (1) THE GLASS LANDS AFTER THE NEW SCREEN HAS BEEN DRAWN. A tap whose screen takes a long time to draw (a 350ms build,
+"""Build 375: (1) [REVERSED in 380: the landing is planned at the release again] THE GLASS LANDS AFTER THE NEW SCREEN HAS BEEN DRAWN. A tap whose screen takes a long time to draw (a 350ms build,
 as on the phone) keeps its lens up, at full height, until the frame after the one that drew the screen, and only then shrinks into
 the platter - it never shrinks while the screen is being drawn. A tap on the tab already showing lands as before.
 (3) a slide across the bar does not stop the page's animations; (4) a slide let go over the tab already lit leaves a scrolled screen where it
@@ -43,8 +43,10 @@ with sync_playwright() as pw:
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(2500)
     r = pg.evaluate(TAP)
-    chk("a slow screen (built %sms after the tap, drawn by %sms): the glass starts to shrink only after that (%sms)" % (r["builtAt"], r["frameAfterBuild"], r["shrinkAt"]),
-        r["onProfile"] and r["shrinkAt"] is not None and r["frameAfterBuild"] > 0 and r["shrinkAt"] > r["frameAfterBuild"] and r["lensGone"], r)
+    # (1) REVERSED in build 380: the glass no longer waits for the screen (its landing is planned at the release - check-b380 (6)); here only
+    # that a slow screen's tap still lands and the glass goes
+    chk("(build 380) a slow screen (built %sms after the tap): the glass lands on its own (shrink at %sms) and goes" % (r["builtAt"], r["shrinkAt"]),
+        r["onProfile"] and r["shrinkAt"] is not None and r["lensGone"], r)
     # (2) the board
     pg.evaluate(FILL); pg.wait_for_timeout(500)
     pg.evaluate("()=>showRankings()")

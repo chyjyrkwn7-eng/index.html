@@ -215,9 +215,10 @@ def check_pause_menu(br):
           out.labels = bs.map(b => b.textContent.trim());
           const rs = bs.map(b => b.getBoundingClientRect());
           const st = document.querySelector('.pause-stack').getBoundingClientRect();
-          out.stacked = rs.every((r, i) => i === 0 || r.top >= rs[i - 1].bottom - 1);
-          out.sameWidth = rs.every(r => Math.abs(r.width - rs[0].width) < 1);
-          out.centred = rs.every(r => Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2);
+          /* (380) ONE CARD: Resume across it, Save and exit and Quit test side by side under it, one width, the card centred */
+          out.stacked = rs.length === 3 && rs[1].top >= rs[0].bottom - 1 && Math.abs(rs[1].top - rs[2].top) < 1 && rs[2].left >= rs[1].right - 1;
+          out.sameWidth = rs.length === 3 && Math.abs(rs[1].width - rs[2].width) < 1 && Math.abs(rs[0].width - (rs[2].right - rs[1].left)) < 1;
+          out.centred = Math.abs(st.left + st.width / 2 - innerWidth / 2) < 2 && Math.abs(rs[0].left + rs[0].width / 2 - innerWidth / 2) < 2;
           out.off = Math.round(Math.abs(st.top + st.height / 2 - innerHeight / 2));
           out.inView = rs.every(r => r.top >= 0 && r.bottom <= innerHeight);
           const at = () => [...document.querySelectorAll('.pausepanel .actions button')].map(b => { const q = b.getBoundingClientRect(); return [+q.left.toFixed(1), +q.top.toFixed(1), +q.width.toFixed(1)]; });
@@ -227,7 +228,8 @@ def check_pause_menu(br):
           out.confTitle = (document.querySelector('.pausepanel .qnum') || {}).textContent;
           out.confText = (document.querySelector('.pausepanel .qtext') || {}).textContent;
           out.confLabels = [...document.querySelectorAll('.pausepanel .actions button')].map(b => b.textContent.trim());
-          out.confSame = conf.length === 2 && conf.every((p, i) => p.every((v, j) => Math.abs(v - before[i][j]) < 0.6));
+          /* (380) Keep going lands exactly where Resume was */
+          out.confSame = conf.length === 2 && conf[0].every((v, j) => Math.abs(v - before[0][j]) < 0.6);
           out.conf = conf; out.before = before;
           /* Keep going puts Pause back with its three */
           document.querySelector('.pausepanel .actions button').click(); await wait(600);
@@ -239,10 +241,10 @@ def check_pause_menu(br):
         """)
         check("%s: Pause reads Resume / Save and exit / Quit test, in that order" % dev,
               r.get("labels") == ["Resume", "Save and exit", "Quit test"], r.get("labels"))
-        check("%s: one column, one width, centred, the group on the screen's middle (<= 8px), all on screen" % dev,
+        check("%s: one card on the screen's middle (<= 8px): Resume across it, Save and exit and Quit test side by side under it, all on screen" % dev,
               r.get("stacked") and r.get("sameWidth") and r.get("centred") and r.get("off", 99) <= 8 and r.get("inView"),
               {k: r.get(k) for k in ("stacked", "sameWidth", "centred", "off", "inView")})
-        check("%s: Quit asks first, says progress will be lost, and its buttons sit where Pause's first two are" % dev,
+        check("%s: Quit asks first, says progress will be lost, and Keep going sits where Resume was" % dev,
               "?" in str(r.get("confTitle")) and "lost" in str(r.get("confText")).lower() and r.get("confSame") is True,
               (r.get("confTitle"), r.get("confText"), r.get("confLabels"), r.get("before"), r.get("conf")))
         check("%s: Keep going returns to the three buttons" % dev,

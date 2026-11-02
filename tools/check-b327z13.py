@@ -169,9 +169,12 @@ def build_after(br):
         # tab, there is lag ... when opening different screens". The page goes in just
         # past a quick tap's release, while the glass is still crossing (a transform the
         # compositor carries), not after it lands - 150ms+, with the glide well under way.
-        check("%s: U. %s's screen goes in %.0fms after the press (150+), the glide %.0f%% of the way (75%%+), on its tab"
+        # SUPERSEDED IN 359 ("tab taps answer sooner"): TAB_SCREEN_AFTER 120 -> 30 (now 40) - the glass is a compositor track, so the
+        # wait only delayed the page; the screen now goes in just after the glass's first frame, with the glide under way, not 75% done.
+        # (In 380 the landing is planned at the release, so the build under it cannot hold the glass.)
+        check("%s: U. %s's screen goes in %.0fms after the press (soon: 40-200), the glide under way (%.0f%%, 40%%+), on its tab"
               % (label, tid.split("-")[1], r.get("mount") or -1, 100 * (r.get("prog") or 0)),
-              (r.get("prog") or 0) >= .75 and (r.get("mount") or 0) >= 150 and r.get("lit") == tid, r)
+              (r.get("prog") or 0) >= .4 and 40 <= (r.get("mount") or 0) <= 200 and r.get("lit") == tid, r)
     ctx.close()
 
 

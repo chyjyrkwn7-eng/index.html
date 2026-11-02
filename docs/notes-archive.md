@@ -29981,3 +29981,290 @@ swallowed, so a scroll that starts on a choice never picks it) and ended with NO
 (host.click()); a trusted click that arrives late on the same switch within 700ms of that is the same tap and is swallowed. Each rescue
 is counted in class26e.hswrescue and shows in "Send tab timings" as "taps rescued N" - so the next report says how often the phone
 dropped one. Gate: check-b379 (7) - real tap picks once, touch with no click still picks, slide picks nothing (fails against 378).
+
+## Build 2026-11-01-380 - every loop a window-sized layer; the glass no longer waits for the screen
+
+Madison (11:37 and 11:40 recordings, 379): "App crashed, the tapping is getting better I think but idk, it still has some lag, when on
+home I can tell it lags when clicking leaderboard, big thing I see I like the bubble takes a minute to shrink down to the one you
+clicked, there is still lag and stuff when swiping dragging ... This is getting kinda ridiculous. We need this fixed."
+
+Read:
+- 11:37 at 41-44s: on the Leaderboard, switching Leaderboard <-> Profile; a Live Activity banner from another app (a fantasy-league
+  score) dropped in at the top, then black, grey, the splash ("connecting to cloud sync") and Home - iOS ended the page. His 17:36
+  report predates it (its ended log stops at b377), so the next report's ended log will carry it (with the 378 footprint).
+- 11:40 at 30fps, the bar: Profile -> Home, the glass over Home ~100ms after the press and held up ~170ms more until Home was drawn
+  (~230ms); Home -> Leaderboard, the board in ~170ms (379's still board) and the glass held for it the same way; Leaderboard ->
+  Calendar, Calendar at once and the glass down at ~230ms. "Takes a minute to shrink" is the 375 wait for the screen.
+- Sandbox at his scale (3x), the layers loops make: a Leaderboard's 36 loops each their WHOLE sheet as a layer, ~158MB of layers (if
+  backed whole, as WebKit backs a non-tiled layer); Home's 5 flare sheets ~57MB; Profile none. Made anew on every visit.
+
+Why one fix answers four complaints: the landing is planned at the release as a compositor track (lensRelease), and 375 found it
+standing still on the phone while a screen was drawn - the compositor taking in a screen's worth of whole-sheet layers. That intake
+is also the Leaderboard's first draw (his 378 test: 448ms with loops, 218 without) and the likeliest thing iOS ends the page over.
+
+380:
+- html.loops-paint (set at start, before anything is built; LOOP_MODE_KEY can turn it off for this build): every loop in the app -
+  board characters and flares, Home's flares, the tab bar's character - steps its sheet by left/top (lbPaintKF's rk-pos twin of the
+  transform keyframes; --pk set where each loop starts: attachOrbitSheet, charFlipAttach, lbFlipKnown) with the sheet img NOT a layer
+  and its window (.char-flip-play / .rk-frame) the layer - ~100px a side at 3x. Sandbox: 0 sheet layers anywhere (board 36 -> 0, Home
+  5 -> 0), and every loop on screen shows the same frame as the old way at the same time (left/top = the old transform offset).
+  The held twin (rk-hold) is now made only for its look (a keyframes rule added is a style pass).
+- loopsWatch: every 7s on a screen with 4+ loops moving in view and nothing else going on (no glass, no slide, settled, no touch), 1.5s
+  of frames are counted; two counts in a row with over 35% of frames over 25ms put the loops back on whole-sheet layers and note
+  "layers|<counts>|<build>" for this build on this device. "Send tab timings" says "loops paint|layers <counts>" (and the fallback).
+- THE GLASS NO LONGER WAITS (LENS_AWAIT_ON = false): the landing is planned at the release again, on its own clock - every tab the
+  same. (No timer could have ended the wait early: while a screen is drawn the page runs nothing.)
+- The 379 still-first board is off while loops-paint is on (nothing heavy to hold off); the speed test's looks are base, layers
+  (html without loops-paint = 379), noloops, norows.
+
+Gate: tools/check-b380.py (6 parts). Reversed on purpose: check-b375 (1) (the glass waited for a slow screen). check-b378 and
+check-b379 take loops-paint off before measuring the old layers.
+
+### 380, second pass: the tab bar checked top to bottom with the iPhone layer on
+
+Madison's goal: "please get the bottom tab acting perfectly smooth, flawless, no lag jumps/spikes ... tapping ... sliding ... no
+crashes ... Do an entire check on the bottom tab top to bottom". Every gate so far ran WITHOUT the iPhone-only layer: hswSync attaches
+the native haptic switches only where canTaptic() (an iPhone UA, no vibrate), so the sandbox never had them. The audit now runs with an
+iPhone user agent (init script: Navigator.prototype.userAgent, vibrate deleted) + CDP touch, at 4x CPU, CPU profile per tap/slide.
+Found, only with that layer on (each also confirmed absent/failing on 379 by check-b380 7-9):
+1. EVERY TAB TAP WAS TAKEN FOR TYPING. A tap leaves the tab's switch (an <input type=checkbox switch>) focused; the three keyboard fixes
+   (pointerdown blur, focusin's lastTextFocusAt, the #stage MutationObserver's unwind) tested /^(INPUT|TEXTAREA)$/ - so the next press
+   blurred it and every screen mount blurred it again and ran the unwind's passes. ~285ms of blur self-time over 8 taps at 4x. Now
+   isTextEntry(): a TEXTAREA or an INPUT that is not checkbox/radio/button/submit/reset/range/color/file/image/hidden.
+2. THE SWITCHES WENT IN DURING THE GLASS'S LANDING. Safari has no requestIdleCallback, so hswSchedule was a plain 90ms timer - on 379,
+   36 of 43 switches went in inside the settle window. Now it waits out settleUntil and a slide (first switch ~600ms after the tap, none
+   inside). And hswFlush judges every queued node's hosts first (size reads) and only then attaches (writes): judging and attaching one
+   node at a time laid the screen out again per node (a board's rows each arrive as a node).
+3. THE BOARD'S FLARES WERE RE-SYNCED OVER AND OVER: startRankMarks synced every mark on every art-queue step, and the row observer's
+   first report re-synced every row on screen - 62 syncLoopClock (getAnimations: a style pass each) for 18 flares. Now a mark is synced
+   when it is new to its row (a._syncRow) and the observer only syncs a row coming back from off screen (wasOff): 29 for 18.
+Measured with the iPhone layer, sum of per-tab medians over 12 taps at 4x: style 1058 -> 777ms, script 3004 -> 2245ms, worst frames
+700 -> 550ms (379 -> 380; layout/paint up a little - the loops now step on the page). Slides: median and p95 frame 17ms on Board,
+Home and Profile; the only long frames are the first 1-5 of a slide (the lift), mostly rendering (layerize/commit/paint), not script.
+Not changed (checked): the sound room's impulse is already made in quiet time (quietIdle); syncBackToTop and the segment slider's place()
+read layout inside rAF (the layout the frame does anyway).
+- AT MOST 14 DECODED CHARACTER SHEETS (charPreKeep / CHAR_PRE_MAX): 377 kept every ready sheet decoded while up (~2.5MB each) and
+  Customize alone makes ~30 ready (his 377 report: 37 sheets held at a hide). The 14 used most lately keep theirs (lbFlipKnown touches
+  a sheet as it puts it on); the return from the background and the end of a test decode only those again. check-b380 (10).
+- Tried and taken back: the tab buttons as layers all the time (to stop four layers being made and dropped per press) - at rest it moved
+  the inactive tabs' words and icons by a fraction of a pixel (2,300 px of the bar off at 2x); not worth a changed look tonight.
+- Memory soak with the iPhone layer: 60 tab taps, the JS heap 6.4 -> 7.2MB, elements and images flat - no leak.
+- THE OLD TAB-BAR GATE FAILURES, EACH LOOKED AT (they had been failing since before 375 and been called "pre-existing"):
+  * check-b327z13 U ("screen goes in 150ms+ after the press, the glide 75%+ there") was written for TAB_SCREEN_AFTER 170; build 359 cut
+    it to 30 (now 40) on purpose ("tab taps answer sooner"). U now asserts 359's rule: in 40-200ms, the glide under way (40%+), on its tab.
+  * check-b327z10 F ("the tab's character plays its special") was undone on purpose in 349 ("the Profile tab's character is a still
+    picture ... Madison: it can stop animating if that helps"). F now asserts it is still.
+  * check-b327z z9 ("no switch hidden") counted the closed chat dock's five switches - hidden because their buttons are. It now judges a
+    switch with its control; every tab's switch is real, native and visible.
+  Still failing, and not the tab bar: z10 B (the chat sheet's slide-off curve), z12 Q (the person card's glass), z14 D (the root's colour).
+- And the three that were not the tab bar, looked at too:
+  * check-b327z10 B (the chat sheet's slide off, "over 58% at a quarter is a leap"): REAL - closeChatDock() ran in the release's own task,
+    so the CSS transition started a frame late and the first frame the sheet was seen in was already 63-83% down. The close's work now
+    runs a frame later (rAF + timeout, and only if the dock was not opened again meanwhile: chatDockOpenSeq). Now 53-59% (the curve
+    itself is ~51% at a quarter; the gate's frames are 60Hz, so it sits on its 58% line - 6 of 8 runs pass). check-chat passes.
+  * check-b327z12 Q ("the top card is the person card's glass") was replaced in 327z ("THE THREE PROFILE CARDS, ONE FAMILY ... the
+    person card's surface (linear #14171C -> #0B0D11)"): Q now asserts that surface.
+  * check-b327z14 D ("the root's colour is the paper") was replaced in 338 (the root's colour is --band, the sky's top colour, for
+    Safari's status-bar band): D now asserts --band.
+
+### 380, third pass: his four asks (results taps, tap-through, slide from the lit tab, board characters)
+
+Madison: "at the end of a test, when I finish the retake and I click the screen, the tests goes away and takes me to the main menu ...
+(I thought we fixed this already because I've mentioned it before)"; "if you tap it while it loads it would finish instantly and then go to
+the xp box and do it normally, if you tap it again that would finish and so on" (pop-ups for unlocks and the hundo stay unskippable);
+"if I use the swipe way instead of the tap, it lets me swipe even if I don't initiate the swipe from the current tab, that shouldn't ever
+happen"; and "Should we make it so that the leaderboard characters don't animate when looking at the entire leaderboard? Would that fix
+the lag?"
+- THE MAIN MENU BUG (reproduced: a retake's results, a tap every 440ms where "Main menu" rises - home on the 8th): build 328's guard
+  (rsTapGuardUntil: 700ms after a tap on the results, 600ms after the buttons rise) had a hole - a tap ON a risen button that the guard
+  refused did not restart it (only the panel's own click handler did, and it returns early for a button), so the next tap was past it.
+  Now a refused button tap restarts the guard: while taps keep coming the buttons stay quiet; a tap after a 700ms pause is a press.
+- TAP-THROUGH, BOX BY BOX: build 305's tap ran ONE step of the timeline (the grade box is four: head, card, a beat, the count), so a tap
+  often seemed to do nothing. makeRevealSequence steps now carry their box (`group`: "grade", "xp"); seq.nextBox() runs the rest of the
+  box that is coming in at once (each step told instant: the count lands on its number, the bar on its fill) and brings the next box in
+  after a 260ms beat, playing normally. Between boxes a tap brings the next one now. A `wait` step (an unlock's pop-up, a scene, the badge
+  case) is never run early; the hundo effect is its own step and plays. Sandbox: 6-7s with a tap every 0.7s (20s+ untouched).
+- THE SLIDE STARTS ON THE LIT TAB: pointerdown notes the tab under the finger (tabDragStartTab) and whether it is lit; a press on another
+  tab never becomes a slide (pointermove ignores it) - let go on it and its own click opens it, let go off it and the glass goes back to
+  the lit tab (lensRelease(null)), nothing opens.
+- THE BOARD'S CHARACTERS: not taken out. His 378 test put their cost at ~230ms of the board's first draw (448 -> 218 without loops) -
+  that was the whole-sheet layers; 380 makes each a window-sized layer (sheet layers 36 -> 0). If the phone still shows the board slow
+  after 380, a still board (the 379 lb-still look, kept) is the next step, not a guess before the numbers.
+Gate: check-b380 (11) slide from another tab, (12) the guard under taps that keep coming, (13) one tap finishes the grade box - all three
+fail on 379.
+- THE RESULTS, touched up (his 1:37 screenshot of a retake's card; "when the grade loads in, it's at 99 for too long"):
+  * The count shows floor(count); RS_GRADE_LAST_EASE 3.6 reached the number before the grade ~72% of the way in and held it there - on a
+    100, 99 showed ~1.2s (measured on 379: 1216ms; 79 before an 80: 1000ms). Now 1.9 (still slowing into the finish) and the last unit's
+    f^3 term 1400 -> 700 (a 100 counts 3.8s, not 4.5): 99 shows ~0.48s, 79 ~0.45s. check-b380 (14).
+  * A retake's card: "Retake of missed questions" over "All 3 answered correctly" ("Answered correctly" for one), or "2 of 3 answered
+    correctly" with "1 still to review" under it (.rs-retake-sub, its own line - one line with a dot wrapped onto the dot). check-b380 (15).
+  * The hundo's dim (HFX_DIM .5, his own ask in 325) is NOT changed: he asked whether to take it out; recommended, waiting on his word
+    (HFX_DIM.a = 0 is the whole change; check-b325-a / check-b326-a / check-behaviour assert the dim and would move with it).
+
+### 380, badges: the unlock coin, the lift out of the case, the put back; the results guard counts a held-back tap
+
+Madison: "The badge unlock cutscene is good but when the badge comes up it lags like it not shiny for a second or something and then is?
+... When at the badge case and you select a badge to view, it does the same thing, as it pulls up (zooms in to get bigger) it lags and it
+doesn't have a consistent look the entire way through ... When you click close to get off the badge, when it goes back to the case it lags
+as it gets put in the case".
+- THE UNLOCK COIN: buildBadgeCoin is ~22 <img>s on data: URLs (face, silhouette mask, the edge layers, the back). warmBadgeCoinFaces made
+  the URLs ahead but nothing decoded them, so the coin came up with its pictures arriving over the first frames (the shine and edges a beat
+  behind the face). bcPredecode(url) keeps a decoded Image per URL (BC_DECODED, at most BC_DECODE_MAX 64, oldest dropped) and the warm-up
+  decodes every picture the coin will use. Sandbox: 22 of 22 complete the moment the coin is built (379: 0 at once, 2 by the first frame).
+- THE LIFT: the big face (ensureFace) was rendered when the tap landed - a few hundred ms on a phone - so the badge lifted out on its small
+  slot picture and the big face took its place part way up. binspectWarmSoon(), called at the end of buildBadgesTab, renders each found
+  badge's big face, back and edges at the size .binspect-float shows (binspectW) in the quiet once the tab is up - one job per 150ms, never
+  under a settle, a touch (recUserAt 900ms), an open badge or a hidden page, and only while #stage .ncase is up. A finger coming down on a
+  found tile decodes those pictures (binspectPredecode). Sandbox at 4x CPU: pointerdown 345ms -> 26ms, one face through the whole lift.
+- THE PUT BACK: putBack built the badge for the slot at the DEFAULT size (152px) as a draft, then badgeStrikeWatch measured the slot (88px
+  at 2x) and rendered again, then the finish replaced it - three pictures and two renders in the frames it landed. The slot is now drawn at
+  the slot's own measured size (slotOpts { px: slotRect.width }), and cleanOne renders that picture for the new stage 700ms after a stage
+  comes off, so the put back finds it finished. (The empty slot a lifted badge leaves is a vector hole - no picture - and was never part of
+  it.)
+- THE RESULTS GUARD, AGAIN: one gate run of the 30-tap test pressed "Main menu". The taps were 450ms apart in the gate's own clock and one
+  gap reached ~700ms - a tap reaching the page late is the same thing a phone does when the page is busy (the save at a test's end). The
+  button now judges a tap by when it happened: rsTapAt(e) takes the event's own time (when given) and, while a results screen is up, a
+  frame beat (rsBeatStart from rsRise; no frame for 120ms = the page was busy and the tap came in during it, counted from the last frame).
+  The 30-tap test now taps from inside the page.
+Gate: check-b380 (16) a found badge: finger cost and one face, (17) the coin complete when built, (18) the put back one finished picture,
+(19) a tap held 900ms behind a busy page 120ms after a tap does not press Main menu - all four fail on 379 (19 also fails on 380 before this
+pass). All 19 parts fail on 379 (run against origin/main: the local `main` ref in this sandbox is stale at 327t - use origin/main).
+Also run: check-results, check-b328-fixes, check-b336, check-sound all pass. check-b325-b's "name's letters at least 9.2px" fails on the
+Phonetic Alphabet badge (8.8px) on 379 too - older than this build, not touched. check-behaviour's badge sections fail the same 10 checks on
+379 and 380 (sections for case designs later builds replaced).
+- Re-run one at a time on the final 380 (the /tmp lane logs that showed b376/b377/z13 failing were gates run side by side - timing):
+  check-b377 ALL PASS; check-b327z, z12, z13, z14 ALL PASS; check-b376 passes 4 of 5 runs (once, 1 animation under the bar was running
+  mid-slide - not reproduced in 4 more runs with the list printed; at worst an animation started during the slide runs for it);
+  check-b327z10 B (the chat sheet's swipe-down close, not the tab bar) 59% vs its 58% line (379: 65%) - the same frames as 379, the
+  first visible frame already ~33ms in; left as is. check-b325-b's Phonetic Alphabet back letters (8.8px vs 9.2) since 327z15 added the
+  unit: the five-word name on the hourglass auto-fits smaller; changing it moves three badges' backs - for Madison to see first.
+- THE SLIDE FROZE CHARACTERS ABOVE THE BAR (since 376, found chasing check-b376's 1-in-5): barUnderPause judged "behind the bar" by
+  the animated element's own box - for a loop that is the SHEET, many frames tall, which reaches down into the bar's band from a
+  window well above it (and with 380's left/top stepping it wanders in and out from frame to frame). So a slide on the board paused
+  4-7 characters that are seen ABOVE the bar, and now and then missed one. It now reads a loop where its window is
+  (closest .rk-frame / .char-flip-play): 4 paused (the ones really under the bar), none above; and again every 100ms of the slide
+  (~0.5ms at 4x) for a loop that comes on under the bar mid-slide. check-b376 (1) reads the same way (window; rows marked
+  .is-offscreen are left out - CSS pauses those) - 6 of 6 pass; against 380 as it was it fails (abovePaused 4 and 7). Slides at 4x:
+  median/p95 17ms, 0-1 frames over 34ms in ~175, Home and board.
+- THE CHAT SHEET'S SWIPE-DOWN: closeChatDock (body.chatdock-open off = a restyle of the page) now runs two frames after the release,
+  not one - it was taking the slide's second frame. First visible frame 15% of the way (was 31%); check-b327z10 B 55-57% in 4 of 4
+  (was 59%, 379 65%). check-chat and check-behaviour b314h chat/sheet/chat2/tabs pass.
+- Re-run after: check-b380, b377, b375, b378, b379, b327z, b327z13 - no failures.
+
+### 380, four more for this merge: the daily XP pop-up, Review's Starred pill and its notice, the switches' tap
+
+Madison (with a screenshot of Review's unit screen, the Starred pill circled): "the xp you get from the daily question is not the same
+look as the other pop ups, it's not that same nice Liquid Glass the home page stuff gets like messages and stuff, fix that"; "When you
+are in review and click stars but don't have any, shouldn't that pop up be at the top?"; "I don't like how the border is yellow and stuff
+could we improve this? I also think the star doesn't look like the color of the star when you do have one selected"; "Toggle switches,
+when swiping them they move super nice, but when tapping them they move a little worse, fix that as well".
+- THE DAILY QUESTION'S XP: showPointsFlyEffect(title, sub) builds Home's own banner - .daily-alert.app-banner.app-banner-xp, kind xp
+  (BANNER_KINDS.xp: "XP EARNED", #4B9BFF, a spark), placeTopBanner, clearBannerOnScreenChange - the same frosted glass, rim, 3px bar,
+  corners, width and place as a friend request (measured equal), "+200 XP" over "Daily question". 329 had made it a solid pill with
+  no blur because the WHOLE banner flew to Profile and a moving blur stutters; now the banner stays and fades where it is, and the number
+  leaves it as .wb-chip (solid body, no backdrop filter, transform/opacity, .8s) for the Profile tab, which pulses as before. On show
+  1100ms (two lines), dailyXpFlyEndsAt follows. The welcome bonus is "+100 XP" / "For creating an account". The old #welcomebonus-banner
+  pill rules are gone. check-b329 xp rewritten to the new shape (banner = a friend banner's glass; nothing blurred moves; .8s).
+- REVIEW'S STARRED PILL: .starred-pill joins Select all's glass lists (the same body, rim .16, blur, shadow - measured equal), its own
+  gold rim is gone, the count chip is plain (white .12 under ink), and the filled star is the starred question's star: one flat #E8C770
+  with its rim the same and .flagbtn.on's soft glow (the lit ramp and highlight hidden on the pill only).
+- NOTHING STARRED, AT THE TOP: showStarredNotice() -> showDailyAlert kind "starred" (STARRED, #E8C770, a star), "Nothing starred yet"
+  over "Tap the star on any question to save it here." - the pill's tap and the Starred row in a test's set-up (title "Nothing starred
+  in these units yet"). The unit details card's own line stays a toast (it is inside that card's overlay).
+- THE SWITCHES' TAP: a swipe's knob is under the finger the whole way; a tap's glide waited for the click - on an iPhone for the native
+  switch under the finger to flip and send its change - and then started in the same task as the row's own work. It sets off now at the
+  release for the other end (a.predicted); nswFlipped leaves it alone when the flip agrees, and when no flip comes (a lock) the pending
+  timeout sends it back. Sandbox with the flip held 150ms (as the phone does): first move 17-19ms after the finger lifts (379: 173ms).
+Gate: check-b380 (20) the XP pop-up is a friend banner's glass and the mover has no blur, (21) the pill is Select all's glass with a
+plain count and the starred gold, (22) nothing starred -> a banner in the top third, not a toast, (23) a tapped switch sets off <60ms
+after the release with a late flip, and a tap with no flip glides back - all four fail on 379 (23 of 23 pass on 380; part 22 first
+clears the unlock pop-ups the gate's runs leave waiting for "Got it" - a notice rightly waits behind one). check-behaviour b324l_board
+"frames advancing" now reads left/top as well as transform (loops-paint); its other two failures are the same on 379.
+Also run: check-b329, b325-e (its iPad card-proportion failure is the same on 379), b327z15 W, check-behaviour b324g_toggles, b304, b321g
+(same failures as before), check-chat, check-sound, sweep-layout --quick 14/14.
+
+### 380, two more: the chat button and Pause in the tab bar's glass; Next question under the answers
+
+Madison (a Drill screenshot, the space under the answers circled): "The chat and pause button need that same look as the bottom tabs see
+through look so it's all the same." / "when the next question button pops up, can it be a little bitter higher up? Wouldn't it look
+better if it higher up and more practical for the user so they don't have to reach so far down?"
+- THE GLASS: 327 round 8 gave the floating controls the bar's recipe as it was (a .62 body under blur(30px) saturate(1.25)); 377 made the
+  bar see-through (.26 body, blur(7px) saturate(1.5), shadow 0 8px 32px .5) and they kept the old one. The chat button (and a room's
+  chat button), Pause, and the two pills that sit beside the bar - the search field and Find me - take the bar's own values now (a rule
+  at the end of the main <style>; the chat line carries :not(.is-open-x) only to match the old lists' weight - their :is() counts
+  .daily-question-fab:not(.is-done), two classes - so, coming after them, it wins). check-b327-d "the search field and the chat button
+  are the bar's glass tint / share the bar's frost" now passes; its frost check compared against a written-out saturate(1.25) and
+  now compares with the bar's own value. Select all, Starred, the level tabs, back to top and the daily button keep the heavier glass.
+- NEXT QUESTION: it was pinned to the bottom (bottom: var(--vv-lift) + var(--tabs-bottom)) whatever the question. qnextPlace() runs as
+  the question is drawn (before the .78s rise) and on a resize: the lowest of the panel's children - and the keys line #hint, which
+  shows on computers and iPads only - plus 2rem is where it goes (--qnext-raise), never lower than it was. A Pro Max short question:
+  ~2rem under D (raised 130-145px); a long one, and every question on an SE: where it always was; iPad: under the keys line. qnextNow is
+  a var (a test resumed at launch draws a question before that part of the script has run).
+- check-b380 (12) once pressed Main menu late in a full run: the in-page taps can fire 700ms+ apart when the gate's own load stalls the
+  page and a frame runs before the late timer (the frame beat then reads fresh). That is a pause - a press by design - so such a run is
+  inconclusive and is run again (up to 3 tries); a press less than 700ms after the tap before it still fails (379: left after 451ms).
+Gate: check-b380 (24) on a test the chat button and Pause are the bar's glass, (25) Next question 1.6-2.6rem under a short question's
+answers (as on a phone, no keys line) and unchanged from the bottom when the question fills the screen - both fail on 379 (25 of 25
+pass on 380, twice). Also run: sweep-layout --quick 14/14, check-behaviour b303 + b318f_seeresults, check-chat, check-savetest,
+check-results; check-chatroom's two "stale classmate" failures and check-b327-d's others are the same on 379.
+
+### 380, a third round: the Pause card, Home's corner buttons as Home's bubbles, the class list goes back into its button, the trophy, Silver, the secret flares; the flare shake looked for
+
+Madison: "The test pause menu, I don't like the look of the three buttons of different colors stacked on top of each like how it is.
+Can we try a different approach?"; "The daily question and class button on home aren't it, shouldn't they be a little Liquid Glass? ...
+Maybe the icons colors for the class should be there after all so the fire should be orange ... give it the same feel as the Home
+Screen ... When you have the drop down up and it goes away, it should retract towards the bubble you have set"; "The flares in the
+tank flare bubbles, they are slightly shaking"; "could the leaderboard icon look a little better on the bottom tabs?"; "the secret flares
+... could they look better? ... they don't look very 3D or good or cool"; "the silver tank flare when unlocked, it looks almost identical
+to the non unlocked flares".
+- PAUSE IS ONE CARD (every mountPausePanel screen): the surface tokens' card, a pause mark (.pause-mark), the units and the place, then
+  Resume across the card and Save and exit / Quit test side by side, each with a mark (.pause-ic). The buttons stay solid (327 round 12:
+  "They should NOT be glass ... white and black"): Save and exit's grey override is gone, it is Quit test's black - two materials.
+  centerPauseStack: the screen with #resumebtn centres its CARD and keeps the line its first button starts on (pauseLine, a var); a
+  screen reached from it puts its first button on that line (Keep going lands on Resume). check-savetest and check-behaviour b297
+  rewritten to the card (one card on the middle, Resume across it, the pair side by side and one width, Keep going on Resume).
+- HOME'S CORNER BUTTONS are now exactly an unreached rank bubble's glass (rgba(255,255,255,.09), the top light, .24 rim, blur(6px)
+  saturate(1.4), its shadows; a rule at the end of the main <style>, body:not(.x380) only for weight); the class marks keep their own
+  colours (345's silver stops removed) with a breath of the class's colour inside (--cc); the daily question keeps its ready wash on
+  the same glass. check-b344 follows (no-blur -> the bubbles' frost; silver mark -> its own colours; ready's wash is the 118% one).
+- THE LIST RETRACTS: closed, each .class-stack-item sits in the button (translateY((k+1)*(cb+cg)) scale(.4), origin the bubble's
+  centre; upward on a tablet), so closing slides them back in, the farthest first, and opening brings them out, nearest first.
+- THE TROPHY (TAB_GLYPHS.rewards): one path, nonzero - the cup, handles as thick as the planet's ring, stem and foot clockwise, a star
+  counter-clockwise (cut out). Separate pieces painted their overlaps twice (the glyph colour is a little see-through).
+- SILVER: --flare-tint #A9C4EC (it had become #8F9297, grey: 309 meant "a deeper silver-blue" and asked that every lit flare keep the
+  one recipe, so only the tint and the emblem change) and the lit Silver emblem cooled (sepia/hue-rotate/saturate/brightness).
+- SECRET FLARES: .cof-body is a marble - a crisp glint top-left, a soft second light, the light pooled at the foot, a body darkening to
+  its edge, an inset rim; found, the same glint, foot light and rim over the white-hot core and its colour.
+- THE SHAKE, LOOKED FOR (not reproduced): the recorded frames move smoothly (centroid steps <=0.2px), Home's flares are put on their
+  clock once (no re-syncs), frame steps are whole device pixels (build 300's geometry holds). Stepping the animations by hand showed a
+  1px sawtooth between the flare and its bubble's rim - but that is Chromium re-rastering a moved layer and snapping the <img>; the
+  live compositor does not do that, and live sampling is swamped by the drawing's own motion. 380 already changes how every flare is
+  drawn (window-sized layers, fewer syncs on the board, no still-first board). Needs his phone: a recording of where it shakes.
+Gate: check-b380 (26) the Pause card, (27) the corner buttons = an unreached rank bubble's glass + the class mark's colours, (28) the
+list back into its button, (29) one-piece trophy, (30) lit Silver's rim cool (blue over red 48; locked 0), (31) the secret flares'
+layers - all six fail on 379; 31 of 31 pass on 380 (rankUpHolds is set aside for 30: a rank just reached waits for its scene).
+Also run: check-b344, check-savetest, check-behaviour b297/b313_pause/b310/b313_flares, check-b349, b342, b328-classes, sweep-layout
+--quick 14/14; check-ink-centre's 12 failures are the same before this round; check-fixes' one (an SE landscape grey bar) is on 379 too.
+- TEST #8 (Madison, with the instructor's email "Test #8 on 11-9-26": "Test #8 will cover the Health and Safety Code & Controlled
+  Substances Act, Multiculturalism, Racial Profiling, and Professionalism and Ethics"; "if you click next Monday you see it but the next
+  stuff won't be shown or updated till Monday at 8pm"): TEST_TOPICS["2026-11-09"] (title Test #8; Multiculturalism as its unit's full
+  name so its card is marked; the Health and Safety Code line matches its unit by the name it starts with). Tapping Mon Nov 9 in the
+  Calendar shows the four now. TEST_DAY_HANDOVER_HOUR 21 -> 20: until 8 PM on Monday Nov 2 the next test (the unit cards' mark, Home,
+  Nova, the countdown) is today's Test #7, from 8 PM it is Test #8 (CST: DST ended Nov 1). Nothing from the email but the test went in
+  (the repo is public: no names or addresses). check-b328-level1 328g reads the handover hour off the page; check-b380 (32) holds
+  7:59 PM / 8:00 PM on Nov 2 - fails on 379 (no Nov 9 topics, 9 PM handover). 32 of 32 pass.
+- THE TIME LIMIT (Madison: "it stood at 90 and begins at 5, have it begin at 1 and end at 120 minutes instead. Ensure it's good to go"):
+  plainSlider("Minutes", 1, 120, 5) - still pulled towards fives (sliderMagnet), every whole minute reachable, Max sets 120, a saved
+  90 stays 90 (Max lit as available). check-behaviour b313_sheet2 reads the top off the slider (mins == its max).
+- ALL / MAX LET GO SMOOTHLY (his video, ScreenRecording 14:14: "The max and all button when unselected by moving the bar away, the
+  transitioning is not smooth"): frame by frame the fill grew from the centre behind the word, white on white, so the word vanished for
+  ~8 frames and came back dark. The fill (.just-ready::after) now carries content:attr(data-label) in #0B1220 over the white word
+  (syncTopButton sets data-label), covers the border (inset -1.5px, the size the settled pill is - no 1.5px pop at the hand-over), and
+  the tick goes at once. check-b380 (33) the 1-120 range, (34) the fill's word - both fail on 379; 34 of 34 pass on 380.
+  Also run: check-savetest, check-studyflow, check-behaviour b313_sheet2 + b308_timer (its "No hundo red" failure is the same before).
+- THE TICK CIRCLE'S OUTLINE (Madison, a screenshot of the unit screen: "The outline around the white circle, it's hard to see against
+  the background"): a picked card's tick (html[data-layout] .picks > label.pick > .box, on the card's top-right corner) was ringed
+  only by 2px of --paper - the gap cut in the card's edge, which on the dark page is invisible, so the circle's edge was lost there.
+  The gap stays and a 1.25px ring of the card's selected colour (--accent at 70%) goes round it: an outline over the card and the page
+  alike, joining the card's own edge. check-b380 (35) - fails on 379 (one dark ring); 35 of 35 pass on 380. check-b327-d / z5-d fail
+  only as before (plum, the calendar card - the same on 379).

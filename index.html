@@ -2738,40 +2738,8 @@
      round three: Home's taps answer in one caption under the planet system,
      homeCaptionShow. Nothing else used them.) */
 
-  #welcomebonus-banner{
-    /* Same inset as every other fixed top element. It also sits a banner's
-       height lower than they do, so an XP award and a rank-up arriving
-       together read as two things rather than one on top of another. */
-    position:fixed; top:calc(env(safe-area-inset-top, 0px) + 4.6rem);
-    left:50%; transform:translateX(-50%) translateY(-10px);
-    background:rgba(255,255,255,.55); color:#B8860B; font-weight:800; font-size:.9rem;
-    border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
-    padding:.7rem 1.2rem; border-radius:999px; z-index:500;
-    box-shadow:0 8px 24px rgba(18,26,32,.12), inset 0 1px 0 rgba(255,255,255,.5);
-    opacity:0; transition:opacity .3s ease, transform .3s ease;
-    white-space:nowrap; font-family:var(--sans);
-  }
-  /* --theme-c1 rather than a fixed gold: "ensure the xp earned animation
-     thing matches the theme that is set". c1 is the WARM end of every
-     accent's triad, so it stays legible on this glass at every theme and
-     the default (#FFD37A) lands within a couple of levels of the gold
-     that was hardcoded here, which is why the default looks unchanged. */
-  [data-theme="dark"] #welcomebonus-banner{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:var(--theme-c1);
-    border-color:color-mix(in srgb, var(--theme-c1) 22%, rgba(255,255,255,.09));
-    box-shadow:0 8px 24px rgba(0,0,0,.3),
-               0 0 18px color-mix(in srgb, var(--theme-c1) 22%, transparent),
-               inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-  }
-  #welcomebonus-banner.welcomebonus-show{
-    opacity:1; transform:translateX(-50%) translateY(0);
-  }
-  #welcomebonus-banner.welcomebonus-fly{
-    transition:transform .55s cubic-bezier(.4,0,.2,1), opacity .55s cubic-bezier(.4,0,.2,1);
-    transform:translateX(calc(-50% + var(--flyx, 0px))) translateY(var(--flyy, 0px)) scale(.3);
-    opacity:0;
-  }
+  /* (the XP pop-up's own pill, its dark variant and its fly are gone: build 380 shows it on the app banner's glass - .app-banner-xp -
+     and flies a small chip, .wb-chip, at the end of the main <style>) */
   /* The ring alone (box-shadow only, no transform) was never actually
      an "enlarge" \u2014 per explicit request for the tab to literally grow
      momentarily, this now genuinely scales the tab up and back down,
@@ -4317,7 +4285,8 @@
   [data-layout="modern"] .foot > .floatbtn.qnext,
   .foot > .floatbtn.qnext{
     left:50%; right:auto; width:min(23rem, calc(100% - 2.5rem));
-    bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom));
+    /* build 380: --qnext-raise lifts it to just under the answers when there is room (qnextPlace) */
+    bottom:calc(var(--vv-lift, 0px) + var(--tabs-bottom) + var(--qnext-raise, 0px));
     padding:1.02rem 1.6rem; border:none; border-radius:999px;
     transform:translateX(-50%);
     font-size:1.08rem; font-weight:800; letter-spacing:-.005em;
@@ -15154,6 +15123,16 @@
   /* build 379: painted, each loop's window on a small layer of its own - a step repaints only that window, not the row under it (his
      378 test: painted loops drew the board 140ms sooner but its idle frames fell from 90 to 50 in 1.5s) */
   html.lb-paint.lb-win .rank-rows .char-flip-play, html.lb-paint.lb-win .rank-rows .rk-frame{ will-change:transform; }
+  /* build 380: EVERY LOOP IN THE APP, A WINDOW-SIZED LAYER. A loop was its whole recorded sheet (every frame) on a layer of its own,
+     moved by a stepped transform - measured here at the phone's scale, ~158MB of layers on a Leaderboard and ~57MB on Home, made anew on
+     each visit: the iPhone's compositor took that in while the glass was landing (the glass freezing, waiting) and it is the likeliest
+     thing iOS ends the page over (his crash at 11:37, switching Leaderboard and Profile). Now the window (the one frame you see, ~100px
+     a side at 3x) is the layer, and the sheet steps through it by left/top - the same frames on the same clock (lbPaintKF's twin of the
+     transform keyframes). On by default (html.loops-paint, set at start); loopsWatch puts the old way back on a phone where it is not
+     smooth. */
+  html.loops-paint .char-flip-play img, html.loops-paint .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; }
+  html.loops-paint .rk-frame img{ position:relative; }
+  html.loops-paint .char-flip-play, html.loops-paint .rk-frame{ will-change:transform; }
   /* build 379: THE BOARD COMES UP STILL, THEN MOVES (lbStillGo). Each loop is first a painted frame - its left/top twin, paused: no layer,
      nothing repainted - and a row at a time, once the glass has landed, it takes its moving loop back (.lb-go). */
   .rank-rows.lb-still > .rank-row:not(.lb-go) .char-flip-play img, .rank-rows.lb-still > .rank-row:not(.lb-go) .rk-frame img{ will-change:auto !important; backface-visibility:visible !important; animation-name:var(--pk, none) !important; animation-play-state:paused !important; }
@@ -19937,13 +19916,8 @@
      Save and exit is the same matte button in a neutral grey: opaque fill,
      a lighter lip along the top, a shade inside the bottom edge, Quit's own
      contact/mid/wide shadows, no border (Quit's height, so nothing moves). */
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-save{
-    color:#fff; border:none; background-image:none; background-color:#4A4E55;
-    backdrop-filter:none; -webkit-backdrop-filter:none;
-    box-shadow:0 1px 1px rgba(255,255,255,.28) inset, 0 -2px 2px rgba(0,0,0,.4) inset,
-      0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4), 0 8px 22px -6px rgba(0,0,0,.55);
-  }
-  html[data-theme="dark"][data-layout="modern"] .pausepanel .actions #pause-save:active{ background-color:#383B41; opacity:1; }
+  /* (build 380: Save and exit is no longer grey - it is Quit test's own black button, beside it on the Pause card; see the end
+     of the main <style>) */
   /* Back links were plain text with no button treatment at all \u2014 the
      same black-glass pill as the ghost button, just smaller, so it
      reads as a real tappable control instead of a caption. */
@@ -22324,12 +22298,20 @@
     background:rgba(255,255,255,.05) !important; color:rgba(255,255,255,.82) !important;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important; transition:none;
   }
+  /* BUILD 380: THE WORD STAYS. "The max and all button when unselected by moving the bar away, the transitioning is not smooth."
+     The fill grew from the centre behind the word - and the word was white on that white, so for the fill's ~8 frames it vanished
+     and came back dark. The fill now carries its own dark copy of the word (data-label), laid exactly over the white one: outside
+     the circle the word is white on the glass, inside it dark on the white, so it reads the whole way through; the tick goes at
+     once instead of shrinking under it. */
   .unitoptions-modal-sheet .slider-allbtn.just-ready::after{
-    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+    content:attr(data-label); position:absolute; inset:-1.5px; border-radius:inherit; pointer-events:none; z-index:1;
+    display:flex; align-items:center; justify-content:center; color:#0B1220;
+    font:inherit; letter-spacing:inherit; text-transform:inherit;
     background:linear-gradient(180deg, #FFFFFF, #E6EAF0);
     clip-path:circle(0% at 50% 50%);
     animation:start-fill-in .3s cubic-bezier(.3,.8,.3,1) forwards;
   }
+  .unitoptions-modal-sheet .slider-allbtn.just-ready::before{ transition:none; }
   .unitoptions-modal-sheet .slider-allbtn.ready-settle{ transition:none; }
   /* Start's beat, same timing (build 314). */
   /* On the release, at once (build 314): no delay, the punch rides the fill. */
@@ -29866,6 +29848,8 @@
      padding (build 315), and a sentence that breaks evenly on a narrow
      phone rather than leaving "over" on a line of its own. */
   .rs-retake-line{ margin:0; font-size:1.05rem; font-weight:800; line-height:1.3; letter-spacing:-.01em; color:var(--ink); text-wrap:balance; }
+  /* build 380: what is left to review, under the count, on a line of its own */
+  .rs-retake-sub{ margin:.3rem 0 0; font-size:.9rem; font-weight:600; line-height:1.3; color:var(--soft); }
   .rs-screen .rs-card.rs-grade.is-retake-clear{
     border-color:rgba(92,214,146,.24);
     background:linear-gradient(180deg, rgba(46,170,106,.13), var(--rs-card) 60%);
@@ -30163,7 +30147,7 @@
      --surface-2, --surface-shadow): the sheen's bright top repeated under
      the see-through bottom border, and the recipe's 0-blur inset lip. Both
      go the way the circles' did; cards keep their edge. */
-  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .selall-btn, .cal-action-btn, .cal-grid-arrow,
+  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .selall-btn, .starred-pill, .cal-action-btn, .cal-grid-arrow,
     .roomchat-fab, .chip, .more-toggle){
     background-repeat:no-repeat !important; background-origin:border-box !important;
     box-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03),
@@ -30185,7 +30169,7 @@
      hairline lip). */
   /* build 327 round 10: "the background to top button is the old color, fix
      it. And anywhere else." Back to top and the plain toast join the list. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .backtotop),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .starred-pill, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -30276,26 +30260,25 @@
   @media (prefers-reduced-motion:reduce){ .dailyq-outro-xp, .dailyq-outro-next{ animation:none; } }
   @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.7rem; } .dailyq-outro-next{ font-size:1.12rem; } }
 
-  /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
-  /* Build 329: "the +100 XP animation ... a smidge rugged ... can that pop up look more like the other
-     Liquid Glass pop up". The account banner's own glass (a 3px bar, a tag, one line) - and, because
-     it moves, no backdrop blur at all: the body is the glass colour itself, so only transform and
-     opacity change in flight (the blur was what made it stutter). */
-  #welcomebonus-banner, [data-theme="dark"] #welcomebonus-banner{
-    display:flex; align-items:center; gap:.7rem; padding:.85rem 1.2rem .85rem 1rem; border-radius:16px; color:var(--ink);
+  /* ---- XP IS BLUE WHEREVER IT FLIES ----
+     Build 329 put the pop-up on the account banner's colours with no blur, because the whole banner flew and a blur that moves
+     stutters. Build 380: the banner is Home's own frosted banner (.app-banner-xp) and stays where it is; what flies is this chip -
+     the number on a solid body, transform and opacity only. */
+  .wb-chip{
+    position:fixed; z-index:501; pointer-events:none; white-space:nowrap;
+    transform:translate(-50%, -50%); padding:.42rem .85rem; border-radius:999px;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(24,29,38,.94);
-    border:1px solid rgba(255,255,255,.11); border-left:3px solid #4B9BFF;
+    border:1px solid color-mix(in srgb, #4B9BFF 45%, rgba(255,255,255,.12));
+    box-shadow:0 6px 18px rgba(0,0,0,.34), 0 0 14px rgba(61,139,255,.35), inset 0 1px 0 rgba(255,255,255,.14);
+    font-family:var(--sans); font-size:.94rem; font-weight:800; letter-spacing:-.01em; color:#8FC1FF; line-height:1.2;
     -webkit-backdrop-filter:none; backdrop-filter:none; will-change:transform, opacity;
-    box-shadow:0 8px 24px rgba(0,0,0,.34), inset 0 3px 5px -2px rgba(255,255,255,.12);
-    font-weight:650; font-size:.88rem; transform-origin:50% 50%;
   }
-  #welcomebonus-banner .wb-tag{ font-size:.6rem; font-weight:800; letter-spacing:.12em; color:#8FC1FF; }
-  #welcomebonus-banner .wb-text{ line-height:1.3; }
-  #welcomebonus-banner.welcomebonus-fly{
+  .wb-chip.welcomebonus-fly{
     transition:transform .8s cubic-bezier(.5,.02,.25,1), opacity .35s ease .45s;
-    transform:translateX(calc(-50% + var(--flyx, 0px))) translateY(var(--flyy, 0px)) scale(.28);
+    transform:translate(calc(-50% + var(--flyx, 0px)), calc(-50% + var(--flyy, 0px))) scale(.45);
     opacity:0;
   }
+  @media (prefers-reduced-motion:reduce){ .wb-chip.welcomebonus-fly{ transition:opacity .3s ease; transform:translate(-50%, -50%); } }
 
   /* ---- THE BADGE CASE (build 317, badge round: a case in 3D whose lid
      stays open, and a token with an edge) ---- see playBadgeCaseScene.
@@ -32449,7 +32432,7 @@
      the back buttons, not every button" - and the chat box itself (below).
      Back links, the calendar's arrows, and every action button keep their
      own look. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .backtotop),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .starred-pill, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -33423,7 +33406,8 @@ html.is-browser{ --fade-paper: transparent; }
     padding:.4rem .55rem .4rem .7rem; border-radius:999px; font:inherit; cursor:pointer; color:var(--ink);
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62);
     background-repeat:no-repeat; background-origin:border-box;
-    border:1px solid color-mix(in srgb, #F5C21B 42%, rgba(255,255,255,.14));
+    /* build 380: Select all's own rim ("I don't like how the border is yellow"), and its glass from the same lists */
+    border:1px solid rgba(255,255,255,.16);
     backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
     box-shadow:0 6px 22px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.05);
     transition:transform .14s ease;
@@ -33435,7 +33419,12 @@ html.is-browser{ --fade-paper: transparent; }
   .starred-pill .pick-flagged-text{ flex-direction:row; align-items:center; gap:.45rem; flex:none; }
   .starred-pill .pname{ font-size:.84rem; font-weight:700; margin:0; padding:0; min-height:0; color:inherit; }
   .starred-pill .pcount{ font-size:.74rem; font-weight:800; margin:0; padding:.12rem .5rem; min-height:0; border-radius:999px;
-    background:rgba(245,194,27,.18); color:#F5D46A; font-variant-numeric:tabular-nums; }
+    background:rgba(255,255,255,.12); color:var(--ink, #F2F4F7); font-variant-numeric:tabular-nums; }
+  /* build 380: "the star doesn't look like the color of the star when you do have one selected" - the pill's star is the starred
+     question's star: one flat #E8C770, its rim the same, its soft glow (.flagbtn.on .flagicon), no lit ramp or highlight */
+  .starred-pill .starred-card-star.is-filled > path:first-of-type{ fill:#E8C770; stroke:#E8C770; }
+  .starred-pill .starred-card-star.is-filled > path:nth-of-type(2){ display:none; }
+  .starred-pill .pick-flagged-icon .starred-card-star.is-filled{ filter:drop-shadow(0 0 3px rgba(232,199,112,.35)); }
   .starred-pill .pcount:empty{ display:none; }
   .starred-pill.is-empty{ border-color:rgba(255,255,255,.12); }
   .starred-pill.is-empty .pname{ color:var(--soft); }
@@ -34383,7 +34372,11 @@ html.is-browser{ --fade-paper: transparent; }
     width:1.6rem !important; height:1.6rem !important; min-width:0 !important; border-radius:50% !important;
     opacity:0; transform:scale(.4); pointer-events:none;
     transition:transform .34s cubic-bezier(.3,1.7,.5,1), opacity .16s ease !important;
-    box-shadow:0 0 0 2px var(--paper, #0E1014), 0 4px 10px rgba(0,0,0,.45) !important;
+    /* build 380: "The outline around the white circle, it's hard to see against the background". The 2px ring was the page's own
+       colour - a gap cut in the card's edge, and against the dark page it was nothing, so the circle's edge was lost there. The gap
+       stays (it still parts the circle from the card's edge) and a thin ring of the card's own selected colour goes round it, so
+       the circle has an outline over the card and over the page alike. */
+    box-shadow:0 0 0 2px var(--paper, #0E1014), 0 0 0 3.25px color-mix(in srgb, var(--accent) 70%, transparent), 0 4px 10px rgba(0,0,0,.45) !important;
   }
   html[data-layout] .picks > label.pick.pick-checked > .box,
   html[data-layout] .picks > label.pick:has(input:checked) > .box{ opacity:1; transform:scale(1); }
@@ -34715,8 +34708,8 @@ html.is-browser{ --fade-paper: transparent; }
   /* BUILD 349: "the color of the default isn't a good color, + it looks the same as the bronze": the default theme's
      orbs took its warm gold, which sat between Bronze and Veteran. They are Nova's own rose now (the brand's magenta,
      lifted for a dark screen) and every rank keeps its own colour, a little stronger than before. */
-  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:first-child{ stop-color:color-mix(in srgb, var(--orb-tint) 24%, #FFFFFF); }
-  html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble) svg stop:not(:first-child){ stop-color:color-mix(in srgb, var(--orb-tint) 52%, #BFC4CC); }
+  /* (build 380: the class marks keep their own colours again - "Maybe the icons colors for the class should be there after all so
+     the fire should be orange" - the silver stops are gone) */
   html[data-theme][data-layout] body :is(.class-bubble, .csi-bubble){
     border-color:color-mix(in srgb, var(--orb-tint) 34%, rgba(255,255,255,.26));
     box-shadow:0 8px 20px -6px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.28),
@@ -34776,6 +34769,132 @@ html.is-browser{ --fade-paper: transparent; }
      both do this; the estimate is the 60px every row is). The tab's character is its own layer, so the bar's swell
      and slide move a picture instead of repainting 230 svg parts. */
   #bottomtab-profile .bottomtab-icon-avatar{ will-change:transform; transform:translateZ(0); }
+  /* BUILD 380: THE CHAT BUTTON AND PAUSE ARE THE TAB BAR'S GLASS. "The chat and pause button need that same look as the bottom tabs see
+     through look so it's all the same." Build 327 round 8 gave them the bar's recipe as it was then (a .62 body under a 30px blur);
+     377 made the bar see-through (7px over a .26 body) and they kept the old one, so beside it they read as solid. They take the
+     bar's own values now - body, faint white lift, the one .16 rim, blur, shadow - in a room as on every other screen. The search
+     field and Find me, the pills that sit beside the bar, come too (check-b327-d: "the search field and the chat button are the
+     bar's glass"). */
+  /* (:not(.is-open-x) only lifts the chat line to the old lists' weight - their :is() counts .daily-question-fab:not(.is-done), two
+     classes - so that, coming after them, it wins) */
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .searchbox, .rank-me-btn):not(.is-open-x),
+  [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
+  /* BUILD 380: THE PAUSE MENU IS ONE CARD. "The test pause menu, I don't like the look of the three buttons of different colors stacked
+     on top of each like how it is. Can we try a different approach?" Three full-width pills in three fills (white, grey, black) down
+     the middle of an empty screen. Now one card - the app's own surface, as a unit card or Settings is - with a pause mark, what is
+     paused and where, then Resume as the one white button across it and Save and exit and Quit test as a matching pair of black
+     buttons side by side, each with its mark. The buttons stay solid ("They should NOT be glass ... like other buttons, white and
+     black", 327 round 12): two materials, and the three choices read as one and two. Every screen mountPausePanel draws (Pause, the
+     Quit confirmation, a results pause, a room's leave) is the same card, so Keep going still lands where Resume was. */
+  html[data-layout] .pausepanel .pause-stack{
+    width:min(22rem, 100%); margin-left:auto; margin-right:auto; box-sizing:border-box;
+    padding:1.5rem 1.2rem 1.2rem; border-radius:28px;
+    background:var(--surface-sheen), var(--surface-2); border:1px solid var(--surface-border);
+    -webkit-backdrop-filter:var(--surface-blur); backdrop-filter:var(--surface-blur);
+    box-shadow:var(--surface-shadow);
+  }
+  html[data-layout] .pausepanel .pause-stack .qnum{ margin-top:0; }
+  html[data-layout] .pausepanel .pause-stack .qtext{ margin-bottom:0; font-size:.98rem; }
+  html[data-layout] .pausepanel .pause-info{ margin:0 0 .55rem; }
+  .pause-mark{
+    display:flex; align-items:center; justify-content:center; gap:.3rem; width:3rem; height:3rem; margin:0 auto 1rem; border-radius:50%;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); box-shadow:inset 0 1px 1px rgba(255,255,255,.08);
+  }
+  .pause-mark::before, .pause-mark::after{ content:""; width:.36rem; height:1.15rem; border-radius:3px; background:var(--ink, #F3F5F7); }
+  html[data-layout] .pausepanel .actions{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; width:100%; margin-top:1.25rem; }
+  html[data-layout] .pausepanel .actions > .next{ width:100%; margin:0; min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
+    padding-left:.75rem; padding-right:.75rem; white-space:nowrap; }
+  html[data-layout] .pausepanel .actions > .next:first-child,
+  html[data-layout] .pausepanel .actions > .next:nth-child(2):last-child{ grid-column:1 / -1; }
+  .pausepanel .pause-ic{ width:1.05rem; height:1.05rem; flex:none; }
+  @media (max-width:359.98px){ html[data-layout] .pausepanel .actions{ grid-template-columns:1fr; } }
+  /* BUILD 380: THE CORNER BUTTONS ARE HOME'S OWN BUBBLES. "The daily question and class button on home aren't it, shouldn't they be
+     a little Liquid Glass? ... give it the same feel as the Home Screen" / "they just stand out when they shouldn't". They were their
+     own glass (344: a dark-tinted body, a pool of light at the top-left, a brighter specular lip, the theme's colour in the rim).
+     They are now exactly the glass the rank bubbles on the rings are made of (an unreached one: its pale clear body, the light
+     caught along the top, its .24 rim, its small 6px frost and its shadow), so the corners read as two more bubbles. The class button's
+     mark is in its own colours again with a breath of that colour inside (as each flare lights its bubble); the daily question
+     keeps its rank-colour wash when a question is ready, on the same glass. */
+  html[data-theme][data-layout] body:not(.x380) :is(.class-bubble, .csi-bubble, .daily-question-fab),
+  html[data-theme][data-layout] body:not(.x380) .daily-question-fab.is-done:not(.is-charging),
+  html[data-theme][data-layout] body:not(.x380) .daily-question-fab.is-done{
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
+      radial-gradient(66% 66% at 50% 56%, var(--cc, transparent), transparent 72%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(255,255,255,.06)),
+      rgba(255,255,255,.09) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.24) !important;
+    box-shadow:0 1px 4px rgba(255,255,255,.1) inset, 0 -1px 3px rgba(255,255,255,.06) inset, 3px 7px 12px -2px rgba(0,0,0,.42) !important;
+    -webkit-backdrop-filter:blur(6px) saturate(1.4) !important; backdrop-filter:blur(6px) saturate(1.4) !important;
+  }
+  html[data-theme][data-layout] body:not(.x380) .daily-question-fab.is-ready:not(.is-done),
+  html[data-theme][data-layout] body:not(.x380):has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
+    background:
+      radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
+      radial-gradient(110% 80% at 50% 118%, color-mix(in srgb, var(--dq-c) 40%, transparent), color-mix(in srgb, var(--dq-c) 10%, transparent) 62%, transparent 80%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(255,255,255,.06)),
+      rgba(255,255,255,.09) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid color-mix(in srgb, var(--dq-c) 34%, rgba(255,255,255,.24)) !important;
+    box-shadow:0 1px 4px rgba(255,255,255,.1) inset, 0 -1px 3px rgba(255,255,255,.06) inset, 3px 7px 12px -2px rgba(0,0,0,.42),
+               0 0 12px -4px color-mix(in srgb, var(--dq-c) 36%, transparent) !important;
+    -webkit-backdrop-filter:blur(6px) saturate(1.4) !important; backdrop-filter:blur(6px) saturate(1.4) !important;
+  }
+  /* each class's breath of colour, softer than its old glow */
+  .class-bubble.is-academy, .class-stack-item.is-academy .csi-bubble{ --cc:rgba(170,160,255,.2); }
+  .class-bubble.is-ifc, .class-stack-item.is-ifc .csi-bubble{ --cc:rgba(255,140,70,.22); }
+  /* THE LIST GOES BACK INTO THE BUTTON (build 380): "When you have the drop down up and it goes away, it should retract towards the
+     bubble you have set as well." Closing faded each bubble where it stood; now each one slides back into the class button and
+     shrinks into it, the farthest first, and opening brings them out of it the same way, nearest first. Transform and opacity. */
+  html[data-layout] .class-bubble-wrap .class-stack-item{
+    transform-origin:calc(var(--cb) / 2) 50%;
+    transform:translateY(calc((var(--k) + 1) * (var(--cb) + var(--cg)) * -1)) scale(.4);
+    transition:transform .3s cubic-bezier(.55, 0, .7, .4) calc((var(--n) - 1 - var(--k)) * 40ms), opacity .16s ease calc((var(--n) - 1 - var(--k)) * 40ms + .12s);
+  }
+  html[data-layout] .class-bubble-wrap.is-open .class-stack-item{
+    transform:none;
+    transition:opacity .16s ease calc(var(--k) * 55ms), transform .38s cubic-bezier(.2, 1.15, .4, 1) calc(var(--k) * 55ms);
+  }
+  @media (max-width:39.99rem) and (orientation:portrait){
+    html[data-layout] .class-bubble-wrap .class-stack-item{ transform:translateY(calc((var(--k) + 1) * (var(--cb) + var(--cg)))) scale(.4); }
+    html[data-layout] .class-bubble-wrap.is-open .class-stack-item{ transform:none; }
+  }
+  [data-reduce-motion="true"] .class-bubble-wrap .class-stack-item{ transform:none !important; }
+  /* BUILD 380: SILVER LOOKS LIKE SILVER WHEN IT IS LIT. "The silver tank flare when unlocked, it looks almost identical to the non
+     unlocked flares, how do we make the silver flare better?" Lit, it was a grey tint (#8F9297) round a white emblem - and a rank not
+     reached yet is exactly that, a grey bubble round a white emblem, only dimmer. Silver is cool now: polished metal catching blue
+     light: the shared lit recipe (309: "ensure all these flares when lit up have the same look") tinted a real silver-blue
+     (#A9C4EC - 309 meant a deeper silver-blue, the value had become a grey), so its rim, wash and glow are cool, and the emblem
+     itself cooled to the same steel-blue silver. Grey stays what "not yet" looks like. */
+  .cosmic-icon-badge.cosmic-badge-rank[data-rank-tier="ranger"]{ --flare-tint:#A9C4EC; }
+  .cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit[data-rank-tier="ranger"] svg.cosmic-rank-emblem{ filter:sepia(.32) hue-rotate(178deg) saturate(2.3) brightness(1.32); }
+  /* BUILD 380: THE SECRET FLARES, MORE OF A SPHERE. "the secret flares on the main menu, (and whenever you see them) could they look
+     better? I feel like they don't look very 3D or good or cool?" At ~16px a marble is read from four things: one crisp glint high
+     on the left, the far edge darker than the middle, the light that came through pooled inside the lower edge, and a thin bright
+     rim. A secret flare not found yet now has all four in grey glass; a found one is its own light inside the same glass - the glint
+     and the rim over a white-hot core and its colour, deepening to the edge. Backgrounds and shadows only, on the same small box. */
+  .cosmic-flare-dot .cof-body{
+    background:
+      radial-gradient(ellipse 22% 16% at 34% 27%, rgba(255,255,255,1) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 36% 31%, rgba(255,255,255,.45) 0 12%, rgba(255,255,255,0) 30%),
+      radial-gradient(ellipse 56% 30% at 52% 86%, rgba(222,232,250,.55) 0 30%, rgba(222,232,250,0) 100%),
+      radial-gradient(circle at 42% 38%, rgba(196,206,224,.5) 0%, rgba(118,130,156,.55) 48%, rgba(46,52,70,.9) 82%, rgba(20,23,34,.96) 100%);
+    box-shadow:inset 0 0 0 .7px rgba(255,255,255,.45), inset 0 -1px 1.5px rgba(255,255,255,.25), 0 1.5px 3px rgba(0,0,0,.6), 0 0 6px rgba(255,255,255,.12);
+  }
+  .cosmic-flare-dot.is-found .cof-body{
+    background:
+      radial-gradient(ellipse 20% 14% at 34% 26%, rgba(255,255,255,1) 0 40%, rgba(255,255,255,0) 100%),
+      radial-gradient(ellipse 54% 28% at 52% 88%, color-mix(in srgb, var(--fc) 40%, #fff) 0 24%, transparent 100%),
+      radial-gradient(circle at 46% 46%, #FFFFFF 0 14%, color-mix(in srgb, var(--fc) 42%, #fff) 30%, var(--fc) 56%, color-mix(in srgb, var(--fc) 55%, #000) 86%, color-mix(in srgb, var(--fc) 30%, #000) 100%);
+    box-shadow:inset 0 0 0 .7px color-mix(in srgb, var(--fc) 35%, #fff), 0 0 0 .5px color-mix(in srgb, var(--fc) 50%, transparent), 0 0 8px var(--fc), 0 1.5px 3px rgba(0,0,0,.45);
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -50363,9 +50482,14 @@ new MutationObserver(() => {
    the scroll on its own, the way it does everywhere else in the OS.
    Capture phase, because a handler on the button itself would run after
    the browser had already decided what to do with focus. */
+/* build 380: A FIELD YOU TYPE IN, not any input. On an iPhone every tappable control carries a native switch (an <input type=checkbox
+   switch>, the haptic layer) and a tap leaves it focused - so to these three keyboard fixes every tab tap looked like typing: the next
+   press blurred it (a style pass in the press), and every screen mount blurred it again and ran the keyboard unwind's four passes.
+   Traced with the iPhone layer on, at 4x CPU: ~35ms of every tab tap. */
+const isTextEntry = el => !!el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|reset|range|color|file|image|hidden)$/i.test(el.type || "")));
 document.addEventListener("pointerdown", (e) => {
   const a = document.activeElement;
-  if(!a || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+  if(!isTextEntry(a)) return;
   /* Not when the tap is on the field itself, or inside it - moving the
      caret must not dismiss the keyboard. */
   if(a === e.target || (a.contains && a.contains(e.target))) return;
@@ -50397,11 +50521,11 @@ new MutationObserver((muts) => {
    to be displaced, so that is the only time it runs. */
 var lastTextFocusAt = 0;
 ["focusin", "focusout"].forEach(t => document.addEventListener(t, (e) => {
-  if(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) lastTextFocusAt = Date.now();
+  if(isTextEntry(e.target)) lastTextFocusAt = Date.now();
 }, true));
 new MutationObserver(() => {
   const focused = document.activeElement;
-  const typing = focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName);
+  const typing = isTextEntry(focused);
   if(!typing && Date.now() - lastTextFocusAt > 4000) return;
   if(typing){
     focused.blur();
@@ -64145,7 +64269,11 @@ const TEST_TOPICS = {
   /* build 328, the instructor's email of Oct 26: "Your next test will cover the CCP
      and Arrest, Search, and Seizure ... on Monday, November 2, 2026. You need to
      study ahead because Arrest, Search, and Seizure doesn't end until October 30" */
-  "2026-11-02": { topics: ["CCP and Bill of Rights", "Arrest, Search, and Seizure"], postedAt: "2026-10-26" }
+  "2026-11-02": { topics: ["CCP and Bill of Rights", "Arrest, Search, and Seizure"], postedAt: "2026-10-26" },
+  /* build 380, the instructor's email for Test #8 on 11-9-26: "Test #8 will cover the Health and Safety Code & Controlled
+     Substances Act, Multiculturalism, Racial Profiling, and Professionalism and Ethics." (Multiculturalism is the unit's full
+     name, so its card carries the mark; the Health and Safety Code line matches its unit by the name it starts with.) */
+  "2026-11-09": { title: "Test #8", topics: ["Health and Safety Code & Controlled Substances Act", "Multiculturalism and Human Relations", "Racial Profiling", "Professionalism and Ethics"], postedAt: "2026-11-02" }
 };
 /* the Fire Code class has no test calendar yet: none of the academy's tests are its "next test" */
 if(window.NOVA_CLASS === "ifc") Object.keys(TEST_TOPICS).forEach(k => { delete TEST_TOPICS[k]; });
@@ -64221,7 +64349,8 @@ function appendPickTick(box){
    test is the next one; from 9 PM the one after it is - one test at a time,
    everywhere nextTestEntry() is asked (the unit cards' mark, Home, Nova, the
    Calendar's countdown). */
-const TEST_DAY_HANDOVER_HOUR = 21;
+/* 8 PM since build 380: "the next stuff won't be shown or updated till Monday at 8pm" */
+const TEST_DAY_HANDOVER_HOUR = 20;
 function nextTestEntry(){
   const k = todayCalendarKey();
   const late = new Date().getHours() >= TEST_DAY_HANDOVER_HOUR;
@@ -76342,6 +76471,9 @@ const NovaSound = (function(){
     hswTimer = 0;
     if(!hswObs) { hswQueue.clear(); return; }
     const t0 = hswNow();
+    /* build 380: every size read first, then every switch put in. Judging one added node and attaching its switches before judging the
+       next made each node's first size read lay the whole screen out again (a board's rows arrive as one node each). */
+    const todo = [], opts = [];
     while(hswQueue.size){
       const n = hswQueue.values().next().value;
       hswQueue.delete(n);
@@ -76349,12 +76481,13 @@ const NovaSound = (function(){
       const hosts = [];
       if(n.matches(HSW_HOSTS)) hosts.push(n);
       n.querySelectorAll(HSW_HOSTS).forEach(x => hosts.push(x));
-      const todo = hosts.filter(h => !(h.__hsw && h.__hsw.parentNode === h) && hswOk(h));
-      todo.forEach(hswAttach);
-      if(n.matches(HSW_OPT)) hswOptAttach(n);
-      n.querySelectorAll(HSW_OPT).forEach(hswOptAttach);
+      hosts.forEach(h => { if(!(h.__hsw && h.__hsw.parentNode === h) && todo.indexOf(h) < 0 && hswOk(h)) todo.push(h); });
+      if(n.matches(HSW_OPT)) opts.push(n);
+      n.querySelectorAll(HSW_OPT).forEach(x => opts.push(x));
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
+    todo.forEach(hswAttach);
+    opts.forEach(hswOptAttach);
     if(hswQueue.size) hswSchedule();
   }
   /* a control that was hidden (another tab's pane) had no size when it was
@@ -76377,11 +76510,16 @@ const NovaSound = (function(){
     if(hswTimer || !hswObs) return;
     /* a beat after a screen is mounted, never inside its first frames: a
        control with no switch yet still works, it only waits to tick */
+    /* build 380: AND NOT WHILE THE GLASS IS LANDING. Safari has no idle callback, so this was a plain 90ms timer - inside the landing of
+       every tab tap, on the frames the glass needed (the screen it attaches to arrives then). It waits out the settle window (the landing's
+       hand-over, see lensRelease) and a slide. */
+    const wait = Math.max(90, (typeof settleUntil === "number" ? settleUntil - Date.now() : 0));
     hswTimer = setTimeout(() => {
       hswTimer = 0;
+      if((typeof settleUntil === "number" && Date.now() < settleUntil) || document.documentElement.classList.contains("tab-dragging")){ hswSchedule(); return; }
       if(typeof requestIdleCallback === "function") requestIdleCallback(hswFlush, { timeout: 300 });
       else hswFlush();
-    }, 90);
+    }, wait);
   }
   function hswQueueAdd(n){
     if(!n || n.nodeType !== 1 || hswIs(n)) return;
@@ -77377,8 +77515,15 @@ function nswRelease(e){
      change that comes with it settles the lens - or, if nothing comes,
      this does */
   nswPending = a;
+  /* BUILD 380: A TAP GLIDES FROM THE RELEASE. "Toggle switches, when swiping them they move super nice, but when tapping them they
+     move a little worse." A swipe's knob is under the finger the whole way; a tap's waited for the click - and on an iPhone for the
+     native switch under the finger to flip and send its change - before it set off, and then set off in the same task as the
+     row's own work (its save, its sound, a restyle). It sets off now, as the finger lifts, for the other end; the flip, when it
+     comes, finds it already on its way (nswFlipped), and a lock that says no sends it back. */
+  a.predicted = !a.on0;
+  nswSettle(run, a.predicted);
   clearTimeout(run.t);
-  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; nswSettle(run, a.host.on()); } }, 350);
+  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; if(a.host.on() !== a.predicted) nswSettle(run, a.host.on()); } }, 350);
 }
 let nswHold = null;
 ["change", "click"].forEach(ev => document.addEventListener(ev, e => {
@@ -77418,7 +77563,8 @@ function nswFlipped(track, before, on){
   const run = nswRuns.get(track);
   if(nswPending && nswPending.track === track){
     const a = nswPending; nswPending = null;
-    if(run && run.lens.isConnected) nswSettle(run, on);
+    /* (380) already gliding there from the release: leave it be */
+    if(run && run.lens.isConnected && a.predicted !== on) nswSettle(run, on);
     return;
   }
   if(nswActive && nswActive.track === track) return;
@@ -79639,6 +79785,8 @@ function renderPausedScreen(){
   resumeBtn.type = "button"; resumeBtn.className = "next"; resumeBtn.id = "resumebtn";
   resumeBtn.textContent = "Resume";
   resumeBtn.addEventListener("click", resumeRun);
+  /* build 380: the card's marks (see .pause-mark, .pause-ic) */
+  const pauseIc = d => '<svg class="pause-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
   /* "Start over" removed from Pause entirely, per explicit request \u2014
      it's no longer an option here at all, not just relabeled or
      tucked away. Resume and Exit test are the only two ways out of
@@ -79653,6 +79801,7 @@ function renderPausedScreen(){
   /* QUIT, NOT EXIT (build 319): with Save and exit beside it, "exit" no
      longer says which one throws the run away. */
   menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Quit test";
+  menuBtn.insertAdjacentHTML("afterbegin", pauseIc("M6.5 6.5l11 11M17.5 6.5l-11 11"));
   menuBtn.id = "pause-quit";
   menuBtn.addEventListener("click", confirmExitTest);
   /* SAVE AND EXIT (build 319) - "when you pause a test, it could just say
@@ -79663,6 +79812,7 @@ function renderPausedScreen(){
     const saveBtn = document.createElement("button");
     saveBtn.type = "button"; saveBtn.className = "next ghost"; saveBtn.id = "pause-save";
     saveBtn.textContent = "Save and exit";
+    saveBtn.insertAdjacentHTML("afterbegin", pauseIc("M7 3.8h10a1 1 0 0 1 1 1v15.4l-6-4.2-6 4.2V4.8a1 1 0 0 1 1-1z"));
     saveBtn.addEventListener("click", saveAndExitTest);
     actions.append(resumeBtn, saveBtn, menuBtn);
     panel.classList.add("has-save");
@@ -79671,7 +79821,9 @@ function renderPausedScreen(){
   }
   /* build 327 round 11: no "Paused" heading - the header row above already shows the
      mode and the count, the clock is amber, and the units are right here. */
-  mountPausePanel(panel, [info, p, actions], resumeBtn);
+  const mark = document.createElement("span");
+  mark.className = "pause-mark"; mark.setAttribute("aria-hidden", "true");
+  mountPausePanel(panel, [mark, info, p, actions], resumeBtn);
 }
 
 /* PAUSE AND ITS CONFIRMATIONS SHARE ONE PLACE (build 297): "ensure the
@@ -79731,6 +79883,8 @@ function mountPausePanel(panel, children, focusBtn){
    Pause that leaves the whole group within a few px of centre. Never up
    into the panel's top edge; again on a rotate; measured twice because
    #stage can still be easing in. */
+/* (var, not let: set by whichever pause screen comes up first, at any point after launch) */
+var pauseLine = null;
 function centerPauseStack(panel, stack){
   const actions = stack.querySelector(".actions");
   const place = () => {
@@ -79738,24 +79892,23 @@ function centerPauseStack(panel, stack){
     stack.style.transform = "";
     const r = stack.getBoundingClientRect(), pr = panel.getBoundingClientRect();
     const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    /* build 327 round 11: the "Paused" heading is gone, so the group is ~30px
-       shorter above the buttons; the line comes up .9rem to keep it centred */
-    let line = vh / 2 + 0.85 * rem;
-    /* A THIRD BUTTON (build 319: Save and exit) makes the group a button
-       taller, so the line rises by half a button for the Pause panel AND
-       for its Quit confirmation (both carry .has-save): the group stays on
-       the middle and Keep going still lands exactly on Resume. */
-    if(actions && panel.classList.contains("has-save")){
-      const bs = actions.querySelectorAll("button");
-      if(bs.length > 1) line -= (bs[1].getBoundingClientRect().top - bs[0].getBoundingClientRect().top) / 2;
-    }
-    /* On a device pixel, and the SAME device pixel on every screen that
-       shares the line: rounding the move instead left the buttons up to a
-       pixel apart between Pause and its confirmation. */
     const dpr = window.devicePixelRatio || 1;
-    line = Math.round(line * dpr) / dpr;
-    let dy = actions ? line - actions.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
+    const first = actions && actions.querySelector("button");
+    /* BUILD 380: THE CARD ON THE SCREEN'S MIDDLE. Pause (the screen with Resume) centres its card and keeps the line its first button
+       starts on; a screen reached from it - Quit's confirmation, and what Keep going brings back - puts its first button on that same
+       line, so Keep going lands exactly where Resume was. A screen with no Pause line for this viewport centres its own card. (It was
+       the buttons placed on a fixed line below the middle, the words stacking up above them - 297 to 327.) */
+    const anchor = !!stack.querySelector("#resumebtn");
+    const same = pauseLine && pauseLine.vh === vh && pauseLine.w === window.innerWidth;
+    let line = null;
+    if(first){
+      if(anchor || !same) line = vh / 2 - r.height / 2 + (first.getBoundingClientRect().top - r.top);
+      else line = pauseLine.line;
+      /* on a device pixel, and the SAME device pixel on every screen that shares the line */
+      line = Math.round(line * dpr) / dpr;
+      if(anchor) pauseLine = { vh, w: window.innerWidth, line };
+    }
+    let dy = first ? line - first.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
     dy = Math.max(dy, pr.top + 8 - r.top);
     stack.style.transform = Math.abs(dy) >= 0.01 ? "translateY(" + dy.toFixed(2) + "px)" : "";
   };
@@ -82884,7 +83037,7 @@ function trimForBackground(){
 }
 function restoreAfterBackground(){
   /* build 377: the decoded sheets let go on the way out come back, in the quiet, so the next board's rows are not decoded in its first frame */
-  try{ setTimeout(() => { charAnimReady.forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden) sp.pre = im; }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
+  try{ setTimeout(() => { charPreList.slice().forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden){ sp.pre = im; charPreKeep(sp); } }, () => {}); }catch(e){} } }); }, 1200); }catch(e){}
   try{
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
@@ -82936,7 +83089,7 @@ function testTrimSheets(){
     if(onTest){ testTrimmed = true; charAnimReady.forEach(sp => { if(sp) sp.pre = null; }); }
     else if(!onTest && testTrimmed){
       testTrimmed = false;
-      charAnimReady.forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden && !testTrimmed) sp.pre = im; }, () => {}); }catch(e){} } });
+      charPreList.slice().forEach(sp => { if(sp && !sp.pre && sp.url){ try{ const im = new Image(); im.src = sp.url; im.decode().then(() => { if(!document.hidden && !testTrimmed){ sp.pre = im; charPreKeep(sp); } }, () => {}); }catch(e){} } });
     }
   }catch(e){}
 }
@@ -83073,6 +83226,7 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   img.style.width = (sp.cols * g.cellCss) + "px";
   img.style.height = (sp.rows * g.cellCss) + "px";
   img.style.animation = orbitAnimKeyframes(g.cellCss, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
+  lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
   frame.appendChild(img);
   wrap.appendChild(frame);
   if(immediate){ attachOrbitSheetNow(badge, svg, wrap, g, fade); return; }
@@ -83240,6 +83394,19 @@ async function charAnimCachePut(id, px, blob){
     await c.put(charAnimCacheKey(id, px), new Response(blob, { headers: { "Content-Type": "image/png" } }));
   }catch(e){}
 }
+/* build 380: AT MOST 14 DECODED SHEETS KEPT. Build 377 kept every ready character sheet decoded while the app is up (~2.5MB each), and
+   Customize alone makes ~30 ready - his 377 report held 37 sheets at one hide. The 14 used most lately keep theirs (a board's screenful
+   and the tab bar's); the rest decode when they are shown, as before 377. */
+var charPreList = [];
+const CHAR_PRE_MAX = 14;
+function charPreKeep(sp){
+  try{
+    if(!sp || !sp.pre) return;
+    const i = charPreList.indexOf(sp); if(i >= 0) charPreList.splice(i, 1);
+    charPreList.push(sp);
+    while(charPreList.length > CHAR_PRE_MAX){ const old = charPreList.shift(); if(old) old.pre = null; }
+  }catch(e){}
+}
 async function charAnimSheetFromBlob(blob, px){
   const url = URL.createObjectURL(blob);
   const pre = new Image(); pre.src = url;
@@ -83248,7 +83415,9 @@ async function charAnimSheetFromBlob(blob, px){
   if(pre.naturalWidth !== cols * px || pre.naturalHeight !== rows * px){ URL.revokeObjectURL(url); return null; }
   /* build 377: the decoded picture is kept with the sheet while the app is up, so a board row that puts it on before its first frame does
      not decode it in that frame (each a ~800px PNG; a screenful of them was the Leaderboard's glass waiting longer than the others) */
-  return { url, px, n: CHAR_ANIM_FRAMES, cols, rows, pre: testTrimmed ? null : pre };
+  const sp = { url, px, n: CHAR_ANIM_FRAMES, cols, rows, pre: testTrimmed ? null : pre };
+  charPreKeep(sp);
+  return sp;
 }
 /* Everything an idle loop moves. `rotate`, `scale` and `translate` are
    separate properties from `transform` and several loops layer them, so
@@ -83799,6 +83968,7 @@ function charFlipThen(ref, waitT, scale, layoutW, ownScale, wide){
          into the page carries on rather than jumping (charFlipResync) */
       if(el.dataset.flipPhase == null) el.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
       img.style.animation = orbitAnimKeyframes(cellCss, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(el) + "ms infinite";
+      lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
       play.appendChild(img);
       if(getComputedStyle(svg.parentNode).position === "static") svg.parentNode.style.position = "relative";
       svg.after(play);
@@ -88335,7 +88505,7 @@ function startNovaReturnTour(onDone){
    banner near the header that flies into the avatar, landing with a small
    pulse, so earning points always feels like it's "going somewhere"
    instead of just appearing silently in a stat block. */
-function showPointsFlyEffect(message){
+function showPointsFlyEffect(message, sub){
   /* Back to Profile, per explicit request. It was moved to Rewards on
      my own judgment - Rewards holds the Points and Stars boxes, so that
      seemed to be where an earned thing belongs - and seen on a device
@@ -88343,49 +88513,77 @@ function showPointsFlyEffect(message){
      expect to open and find yourself in. Judgment call reversed; the
      ask is the answer. */
   const avatarBtn = document.getElementById("bottomtab-profile");
+  /* BUILD 380: HOME'S OWN BANNER. "The xp you get from the daily question is not the same look as the other pop ups, it's not that
+     same nice Liquid Glass the home page stuff gets like messages and stuff." It was a small solid pill (329 took its blur off
+     because the whole banner flew, and a blur that moves stutters). Now it IS an app banner - the same frosted glass, width, place,
+     icon, tag and two lines as a message or a friend request - and it does not move: it fades where it is, and what flies to
+     Profile is a small solid chip of the number (no blur on anything that moves). */
+  const m = /^\s*(\+[\d,]+\s*XP)\b[\s!.]*(.*)$/.exec(String(message));
+  const title = m ? m[1] : String(message);
+  let line = sub || (m && m[2] ? m[2].replace(/[!.]+$/, "") : "");
+  if(line) line = line.charAt(0).toUpperCase() + line.slice(1);
+  const def = BANNER_KINDS.xp;
   const banner = document.createElement("div");
   banner.id = "welcomebonus-banner";
-  /* Build 329: on the account banner's glass - the blue bar, a small tag, one line */
-  const bTag = document.createElement("span"); bTag.className = "wb-tag"; bTag.textContent = "XP";
-  const bText = document.createElement("span"); bText.className = "wb-text"; bText.textContent = message;
-  banner.append(bTag, bText);
+  banner.className = "daily-alert app-banner app-banner-xp";
+  banner.style.setProperty("--banner-color", def.color);
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("class", "app-banner-icon"); icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = def.svg;
+  const body = document.createElement("span"); body.className = "app-banner-body";
+  const tag = document.createElement("span"); tag.className = "app-banner-tag wb-tag"; tag.textContent = def.tag;
+  const text = document.createElement("span"); text.className = "app-banner-text wb-text";
+  const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = title;
+  text.appendChild(ttl);
+  if(line){ const sb = document.createElement("span"); sb.className = "app-banner-sub"; sb.textContent = line; text.append(document.createTextNode(" "), sb); }
+  body.append(tag, text);
+  banner.append(icon, body);
   document.body.appendChild(banner);
-
+  try{ placeTopBanner(banner); }catch(e){}
+  const watch = clearBannerOnScreenChange(banner);
+  const pulse = () => {
+    if(avatarBtn){
+      avatarBtn.classList.add("avatar-pulse");
+      /* 800, matching .avatar-pulse's own .8s. It was 500, left behind
+         when the animation was lengthened from .5s to .8s to stop it
+         being missed - so the class came off at 62% of the way
+         through, while the icon was still scaled to ~1.05, and it
+         snapped back to size instead of settling. */
+      setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
+    }
+    if(statsPopoverOpen) renderStatsPopoverContent();
+  };
   requestAnimationFrame(() => {
-    banner.classList.add("welcomebonus-show");
+    banner.classList.add("show");
     setTimeout(() => {
-      if(avatarBtn){
-        const avatarRect = avatarBtn.getBoundingClientRect();
-        const bannerRect = banner.getBoundingClientRect();
-        const dx = (avatarRect.left + avatarRect.width / 2) - (bannerRect.left + bannerRect.width / 2);
-        const dy = (avatarRect.top + avatarRect.height / 2) - (bannerRect.top + bannerRect.height / 2);
-        banner.style.setProperty("--flyx", dx + "px");
-        banner.style.setProperty("--flyy", dy + "px");
-      }
-      banner.classList.add("welcomebonus-fly");
-      setTimeout(() => {
-        banner.remove();
+      if(!banner.isConnected){ pulse(); return; }
+      /* the number leaves the banner for Profile */
+      const from = ttl.getBoundingClientRect();
+      const chip = document.createElement("div");
+      chip.className = "wb-chip"; chip.textContent = title;
+      chip.style.left = Math.round(from.left + from.width / 2) + "px";
+      chip.style.top = Math.round(from.top + from.height / 2) + "px";
+      document.body.appendChild(chip);
+      ttl.style.visibility = "hidden";
+      banner.classList.remove("show");
+      setTimeout(() => { try{ watch && watch.disconnect(); }catch(e){} banner.remove(); }, 560);
+      requestAnimationFrame(() => {
         if(avatarBtn){
-          avatarBtn.classList.add("avatar-pulse");
-          /* 800, matching .avatar-pulse's own .8s. It was 500, left behind
-             when the animation was lengthened from .5s to .8s to stop it
-             being missed - so the class came off at 62% of the way
-             through, while the icon was still scaled to ~1.05, and it
-             snapped back to size instead of settling. Measured: the ring
-             had already faded to transparent by then, so the visible cost
-             was purely that snap. */
-          setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
+          const a = avatarBtn.getBoundingClientRect(), c = chip.getBoundingClientRect();
+          chip.style.setProperty("--flyx", Math.round((a.left + a.width / 2) - (c.left + c.width / 2)) + "px");
+          chip.style.setProperty("--flyy", Math.round((a.top + a.height / 2) - (c.top + c.height / 2)) + "px");
         }
-        if(statsPopoverOpen) renderStatsPopoverContent();
-      }, 820);
-    }, 900);
+        requestAnimationFrame(() => chip.classList.add("welcomebonus-fly"));
+      });
+      setTimeout(() => { chip.remove(); pulse(); }, 860);
+    }, 1100);
   });
 }
 
 function awardWelcomeBonus(){
   awardXp(100);
   saveStore();
-  showPointsFlyEffect("+100 XP for creating an account!");
+  showPointsFlyEffect("+100 XP", "For creating an account");
 }
 
 /* The Supernova cutscene \u2014 plays once, the very first time the
@@ -90649,6 +90847,12 @@ function showSavedTestBanner(){
     showDailyAlert("Your test is saved \u2014 tap Start Studying to pick it up.",
       { kind: "savedtest", id: "savedtest-banner", stay: 6000 });
   }, 600);
+}
+
+/* NOTHING STARRED, AT THE TOP (build 380): "When you are in review and click stars but don't have any, shouldn't that pop up be at
+   the top?" It was the plain toast, at the bottom over the tab bar; every other notice is a banner at the top. */
+function showStarredNotice(msg, title){
+  return showDailyAlert(msg, { kind: "starred", id: "starred-notice", title: title || "Nothing starred yet", stay: 4200 });
 }
 
 /* ---- THE RECHARGE, THEN THE BANNER OUT OF THE BUTTON (build 245) ----
@@ -93958,6 +94162,7 @@ function incomingChatInvites(){
    change anyway. */
 let chatDock = null;
 let chatDockOpen = false;
+let chatDockOpenSeq = 0;   /* build 380: counts openings, so a close put off by a frame knows the dock was not opened again meanwhile */
 let chatDockTab = "friends";
 let chatTabBody = null;
 let notifTabBody = null;
@@ -94310,7 +94515,11 @@ function startChatDock(){
       const ms = Math.round(Math.max(180, Math.min(300, (ph - dragDy) / Math.max(1.6, dragVel || 0))));
       panel.style.transition = "transform " + ms + "ms cubic-bezier(.3,.6,.4,1)";
       panel.style.transform = "translate3d(0,102%,0)";
-      closeChatDock();
+      /* build 380: the close's own work (state, sound, the dock's classes) two frames later, so the slide's first frames are its own - run
+         in the same task it held the transition's start back, and the sheet's first visible frame was already half way down; a frame
+         later, its restyle of the whole page (body.chatdock-open) still took the slide's second frame */
+      const seq = chatDockOpenSeq;
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => { if(chatDockOpen && seq === chatDockOpenSeq) closeChatDock(); }, 0)));
       clearTimeout(endDrag._t);
       endDrag._t = setTimeout(() => {
         panel.classList.remove("is-settling");
@@ -94505,7 +94714,7 @@ var chatDockPageAt = null;
 function toggleChatDock(){ chatDockOpen ? closeChatDock() : openChatDock(); }
 function openChatDock(){
   if(!chatDock) return;
-  chatDockOpen = true;
+  chatDockOpen = true; chatDockOpenSeq++;
   /* where the page stood (build 327): see closeChatDock */
   chatDockPageAt = { y: window.scrollY, screen: stage.firstElementChild };
   try{ if(chatDockKbSync) chatDockKbSync(); }catch(e){}
@@ -96852,10 +97061,10 @@ function showHome(){
      summarize() and cleared by every other run. */
   if(pendingXpFly > 0 && pendingXpFlyDaily){
     const n = pendingXpFly;
-    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP"), 450);
-    /* 450 to start, 900 on show, 500 in flight, 800 of the tab's pulse:
+    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP", "Daily question"), 450);
+    /* 450 to start, 1100 on show (380: two lines on the banner), 860 in flight, 800 of the tab's pulse:
        the XP is in Profile by then, and the unlock cards wait for it. */
-    dailyXpFlyEndsAt = Date.now() + 450 + 900 + 500 + 800;
+    dailyXpFlyEndsAt = Date.now() + 450 + 1100 + 860 + 800;
   }
   pendingXpFly = 0;
   pendingXpFlyDaily = false;
@@ -98696,6 +98905,8 @@ function syncTopButton(btn, atTop){
      activates right when I stop touching it"). Back at the top before
      the release, it goes quiet again and nothing pops. */
   const wasOn = btn.classList.contains("on");
+  /* the word the fill carries in (build 380, .just-ready::after) */
+  if(!btn.dataset.label) btn.dataset.label = (btn.textContent || "").trim();
   btn.classList.toggle("on", atTop);
   btn.setAttribute("aria-pressed", atTop ? "true" : "false");
   const punch = () => {
@@ -99087,7 +99298,7 @@ function showSetup(){
     box._paint();
     box.addEventListener("click", () => {
       const fl = flaggedIndexes();
-      if(!fl.length){ showToast("Nothing starred yet. Tap the star on any question to save it here."); return; }
+      if(!fl.length){ showStarredNotice("Tap the star on any question to save it here."); return; }
       const fUnits = starredUnits(fl);
       showStudyLoading("LOADING REVIEW", () => showAnswerReview(fUnits, "flagged", {}, { allFlagged: true }));
     });
@@ -99395,7 +99606,7 @@ function showSetup(){
   starRow.addEventListener("click", e => {
     if(!starCb.disabled) return;
     e.preventDefault();
-    showToast("Nothing starred in these units yet. Tap the star on any question to save it.");
+    showStarredNotice("Tap the star on any question to save it.", "Nothing starred in these units yet");
   });
   srcSect.paint = () => {
     starCb.checked = cfg.source === "flagged";
@@ -99651,7 +99862,9 @@ function showSetup(){
     watchRow.hidden = false;
   };
   moreBodyInner.appendChild(timerSect);
-  const minutesSect = plainSlider("Minutes", 5, 90, 5,
+  /* 1 to 120 minutes (build 380: "For the allowed time limit, it stood at 90 and begins at 5, have it begin at 1 and end at 120
+     minutes instead"); still pulled towards fives (sliderMagnet), every whole minute reachable, Max takes it to 120 */
+  const minutesSect = plainSlider("Minutes", 1, 120, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min", refresh, "Max");
   minutesSect.topNote = () => ({ title: "Max time set", sub: cfg.timerMinutes + " minutes" });
@@ -101692,8 +101905,45 @@ function render(){
 
   stage.replaceChildren(...(dailyTitleBlock ? [dailyTitleBlock, panel, foot] : [panel, foot]));
   if(!next.hidden) focusQuietly(next);
+  if(!next.hidden) qnextPlace(next, panel);
   if(isDaily) panel.classList.add("is-dailyq");
 }
+
+/* NEXT QUESTION, UNDER THE ANSWERS (build 380): "when the next question button pops up, can it be a little bit higher up? Wouldn't it
+   look better if it higher up and more practical for the user so they don't have to reach so far down?" It was pinned to the bottom
+   of the screen whatever the question, so after a short one it came up a long way below the answers. It sits QNEXT_GAP_REM under the
+   last of them now when there is room, and never lower than it was: a long question that fills the screen still has it at the
+   bottom. Measured once as the question is drawn (before the rise, which waits .78s) and again on a resize; it rises the same way. */
+/* (var, not let/const: a test resumed at launch draws a question before this part of the script has run) */
+var qnextNow = null;
+function qnextPlace(btn, panel){
+  const QNEXT_GAP_REM = 2;
+  qnextNow = { btn, panel };
+  try{
+    btn.style.setProperty("--qnext-raise", "0px");
+    let low = 0;
+    /* the keys line under the stage (#hint: computers and iPads only) is part of what it goes under */
+    const keys = document.getElementById("hint");
+    [...panel.children, ...(keys ? [keys] : [])].forEach(k => {
+      if(!k.offsetHeight) return;
+      const pos = getComputedStyle(k).position;
+      if(pos === "fixed" || pos === "absolute") return;
+      const b = k.getBoundingClientRect().bottom;
+      if(b > low) low = b;
+    });
+    if(!low) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const top0 = innerHeight - (parseFloat(getComputedStyle(btn).bottom) || 0) - btn.offsetHeight;
+    const raise = Math.max(0, Math.round(top0 - (low + QNEXT_GAP_REM * rem)));
+    btn.style.setProperty("--qnext-raise", raise + "px");
+  }catch(e){}
+}
+addEventListener("resize", () => {
+  const q = qnextNow;
+  if(!q) return;
+  if(!q.btn.isConnected || q.btn.hidden){ qnextNow = null; return; }
+  qnextPlace(q.btn, q.panel);
+}, { passive: true });
 
 function scheduleAutoAdvance(qi){
   /* Shared by all three modes now, per explicit request ("it can be
@@ -103425,7 +103675,12 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-379";
+const APP_BUILD = "2026-11-01-380";
+/* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
+   them on this device (loopsWatch) */
+const LOOP_MODE_KEY = "class26e.loopmode";
+try{ const lm = localStorage.getItem(LOOP_MODE_KEY) || ""; if(!(lm.indexOf("layers|") === 0 && lm.indexOf("|" + APP_BUILD) > 0)) document.documentElement.classList.add("loops-paint"); }
+catch(e){ document.documentElement.classList.add("loops-paint"); }
 __bm("L96693");
 const FRAME_OK_KEY = "class26e.frame.ok";
 /* TEN SECONDS, NOT FIFTEEN MINUTES (build 301). "Why aren't the updates
@@ -108624,14 +108879,32 @@ function badgeCoinBackPx(){
   const css = wide ? Math.min(innerWidth * .36, 15.5 * rem, innerHeight * .34) : Math.min(innerWidth * .52, 14 * rem, innerHeight * .34);
   return Math.min(864, badgeStrikeSize(css * badgeDpr()));
 }
+/* build 380: THE PICTURES ARE DECODED BEFORE THE BADGE COMES UP. "The badge unlock cutscene is good but when the badge comes up it lags
+   like it not shiny for a second or something and then is." The coin is ~22 images (its faces, its side's slices) and its shine is drawn
+   through a mask (the silhouette, an SVG) - all data: URLs, which the browser decodes after they are put in the page, so the coin's first
+   frames could be without some of them, the shine's mask among them. Each is decoded here first, while the results run, and held (a few
+   at a time: BC_DECODE_MAX), so the coin is complete on its first frame. */
+var BC_DECODED = new Map();
+var BC_DECODE_MAX = 64;
+function bcPredecode(url){
+  try{
+    if(!url) return;
+    const m = /^url\("(.*)"\)$/.exec(url); if(m) url = m[1];
+    if(BC_DECODED.has(url)){ const im0 = BC_DECODED.get(url); BC_DECODED.delete(url); BC_DECODED.set(url, im0); return; }
+    const im = new Image(); im.decoding = "async"; im.src = url;
+    BC_DECODED.set(url, im);
+    if(im.decode) im.decode().catch(() => {});
+    while(BC_DECODED.size > BC_DECODE_MAX) BC_DECODED.delete(BC_DECODED.keys().next().value);
+  }catch(e){}
+}
 function warmBadgeCoinFaces(units){
   try{
     const ric = f => (typeof window.requestIdleCallback === "function") ? window.requestIdleCallback(f, { timeout: 1500 }) : setTimeout(f, 200);
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeCoinFaceURL(u); }catch(e){} }));
-    /* ...and its side's five tones (build 326: each a small lit image) */
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); }catch(e){} }));
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ bcPredecode(badgeCoinFaceURL(u)); bcPredecode(badgeSilhouetteURL(u)); }catch(e){} }));
+    /* ...and its side's five tones (build 326: each a small lit image) - and the very slices buildBadgeCoin puts on, decoded */
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ for(let t = 0; t <= 4; t++) badgeEdgeURL(u, t / 4, 0); for(let i = 0; i < BC_EDGE_LAYERS; i++) bcPredecode(badgeEdgeURL(u, Math.sin(Math.PI * i / (BC_EDGE_LAYERS - 1)), 0)); }catch(e){} }));
     /* ...and its back (build 321: rendered like the front, about as dear) */
-    (units || []).slice(0, 4).forEach(u => ric(() => { try{ badgeBackFaceURL(u, badgeCoinBackPx(), 0); }catch(e){} }));
+    (units || []).slice(0, 4).forEach(u => ric(() => { try{ bcPredecode(badgeBackFaceURL(u, badgeCoinBackPx(), 0)); }catch(e){} }));
     const W = badgeStrikeSize(badgeCaseSlotPx() * badgeDpr());
     unitsInTeachingOrder().filter(u => unitBadgeEarned(u)).forEach(u => ric(() => { try{ badgeStrikeURL(u, false, W, badgeDirtStage(u)); }catch(e){} }));
   }catch(e){}
@@ -110639,7 +110912,7 @@ function makeRevealSequence(alive){
   let i = 0, timer = null, due = 0, left = 0;
   let paused = false, fast = false, finished = false, holder = null;
   const seq = {
-    add(delay, fn, wait){ steps.push({ delay: delay, fn: fn, wait: !!wait }); return seq; },
+    add(delay, fn, wait, group){ steps.push({ delay: delay, fn: fn, wait: !!wait, group: group || null }); return seq; },
     start(){ advance(); return seq; },
     isRunning(){ return !finished; },
     pause(){
@@ -110667,6 +110940,28 @@ function makeRevealSequence(alive){
       if(finished || paused || holder) return false;
       if(timer){ clearTimeout(timer); timer = null; fire(); return true; }
       return false;
+    },
+    /* THE WHOLE BOX, NOT ONE STEP (build 380): "if you tap it while it loads it would finish instantly and then go to the xp box and do it
+       normally, if you tap it again that would finish and so on". Steps carry the box they belong to (`group`); a tap while a box is
+       still coming in runs the rest of that box at once (each step told it is instant: a count lands on its number, a bar on its fill)
+       and the next box comes in after a short beat and plays as it always does. Between two boxes it brings the next one now, as
+       next() does. A banner, a scene or a pop-up (a `wait` step) is never run early - they keep their own tap. */
+    nextBox(){
+      if(finished || paused || holder || !timer) return false;
+      const cur = i > 0 ? steps[i - 1].group : (steps[0] && steps[0].group);   /* a tap before the first box is on its way finishes that box */
+      clearTimeout(timer); timer = null;
+      if(cur && steps[i] && !steps[i].wait && steps[i].group === cur){
+        while(i < steps.length && !steps[i].wait && steps[i].group === cur){
+          if(alive && !alive()){ seq.stop(); return true; }
+          const st = steps[i++];
+          try{ st.fn(true); }catch(e){ console.error(e); }
+        }
+        if(i >= steps.length){ finished = true; return true; }
+        wait(steps[i].wait ? steps[i].delay : Math.min(steps[i].delay, 260));
+        return true;
+      }
+      fire();
+      return true;
     },
     isHeld(){ return !!holder; },
     stop(){
@@ -110787,10 +111082,29 @@ const RS_RISE_MS = 620, RS_RISE_ROW_MS = 90;
    (or the click that follows a tap) landed on "Main menu". For 700ms after any tap on the
    results, and for 600ms after the buttons arrive, a button there does not answer. */
 let rsTapGuardUntil = 0;
+/* build 380: WHEN THE TAP HAPPENED, not when the page got to it. A tap the phone holds while the page is busy (the save at a test's end,
+   a scene being built) reaches the page late, so one tap of a run of taps could arrive past the guard and press "Main menu". The event's
+   own time (when the finger did it, where the browser gives that) and a frame beat while the results are up (no frame for 120ms: the page
+   was busy and the tap came in during it - counted from the last frame) put it back where it was. */
+let rsBeatAt = 0, rsBeatOn = false;
+function rsBeatStart(){
+  if(rsBeatOn) return;
+  rsBeatOn = true;
+  const beat = () => { rsBeatAt = performance.now(); if(document.querySelector("#stage .rs-screen")) requestAnimationFrame(beat); else rsBeatOn = false; };
+  requestAnimationFrame(beat);
+}
+function rsTapAt(e){
+  const now = performance.now();
+  let t = now;
+  if(e && typeof e.timeStamp === "number" && e.timeStamp > 0 && e.timeStamp < now) t = e.timeStamp;
+  if(rsBeatOn && rsBeatAt && now - rsBeatAt > 120) t = Math.min(t, rsBeatAt + 17);
+  return Date.now() - (now - t);
+}
 function rsRise(el, o){
   o = o || {};
   if(!el) return 0;
   rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 600);
+  try{ rsBeatStart(); }catch(e){}
   el.classList.remove("rs-in"); el.classList.add("rs-in-now");
   if(o.instant || resultsMotionOff()) return 0;
   const btns = [...el.children].filter(b => b.matches("button, .next") && !b.hidden);
@@ -112085,7 +112399,10 @@ function rsOklchMix(a, b, k, alpha, bare, boost){
 
 /* The last unit bar's ease-out power: its slow finish is the suspense
    (build 321: 3.6, was 3.2 - "slow down a little more at the back end"). */
-const RS_GRADE_LAST_EASE = 3.6;
+/* build 380: 1.9, not 3.6 - "when the grade loads in, it's at 99 for too long". The number is the count floored, and with an ease that
+   steep the last whole number before the grade (99 on a 100) was reached ~72% of the way in and held the last ~28% - ~1.3s on a 100,
+   plus the beat before it lands. At 1.9 it still slows into its finish, and the last number before the grade holds ~0.3s. */
+const RS_GRADE_LAST_EASE = 1.9;
 /* How long each unit's bar takes. A bar runs longer the further it goes,
    the last one longest - its slow finish is the suspense - and several
    units share a budget so a long run is never tedious. Nothing right is
@@ -112096,7 +112413,8 @@ function rsGradeCountPlan(units, good){
   const ms = units.map((u, i) => {
     const f = fr(u);
     /* (build 321: longer at its end - was 1200 + 1700f + 900f^3) */
-    if(i === n - 1) return Math.round(1300 + 1800 * f + 1400 * f * f * f);
+    /* (build 380: 700f^3, not 1400 - a 100 counts 3.8s, not 4.5) */
+    if(i === n - 1) return Math.round(1300 + 1800 * f + 700 * f * f * f);
     return Math.round(500 + 1100 * f);
   });
   if(n > 1){
@@ -112361,14 +112679,24 @@ function showRunRewards(run, hooks, opts){
        show a score, just the xp and stuff". What it does have is whether
        anything is still left to go over, so that is all this card says. */
     grade.classList.add("rs-retake-note");
+    /* build 380: SAYS WHAT WAS RETAKEN AND HOW IT WENT. "The retake side of things ... the wording is confusing" ("Retake / Every
+       question you missed, answered right"). The kicker names it - a retake of the missed questions - and the line is the count, as the
+       grade card's own "12 / 15" is: all of them right, or how many of how many and what is left to review. */
+    const n = run.total || 0, ok = run.good || 0;
     const gk = document.createElement("p");
-    gk.className = "rs-kicker"; gk.textContent = "Retake";
+    gk.className = "rs-kicker"; gk.textContent = "Retake of missed questions";
     const t = document.createElement("p");
     t.className = "rs-retake-line";
     t.textContent = run.missed.length
-      ? rsNum(run.missed.length) + (run.missed.length === 1 ? " question" : " questions") + " still to go over"
-      : "Every question you missed, answered right";
+      ? rsNum(ok) + " of " + rsNum(n) + " answered correctly"
+      : (n === 1 ? "Answered correctly" : "All " + rsNum(n) + " answered correctly");
     grade.append(gk, t);
+    if(run.missed.length){
+      const sub = document.createElement("p");
+      sub.className = "rs-retake-sub";
+      sub.textContent = rsNum(run.missed.length) + " still to review";
+      grade.appendChild(sub);
+    }
   } else {
     const gk = document.createElement("p");
     gk.className = "rs-kicker"; gk.textContent = run.retake ? "This pass" : "Grade";
@@ -112883,23 +113211,23 @@ function showRunRewards(run, hooks, opts){
   /* What a tap finishes besides the panel's own animations: the grade's
      count, the XP bar's fill and its number (build 320). */
   let moving = null;
-  seq.add(120, instant => rsLand(head, instant));
+  seq.add(120, instant => rsLand(head, instant), false, "grade");
   if(countIt){
-    seq.add(380, instant => rsLand(grade, instant));
+    seq.add(380, instant => rsLand(grade, instant), false, "grade");
     /* a beat on the empty card, then the bars */
-    seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } });
-    seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); });
+    seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } }, false, "grade");
+    seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); }, false, "grade");
   } else {
-    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); });
+    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); }, false, "grade");
   }
   /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in ---- */
   const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
   /* how long a 100's effect has the screen before anything else may come:
      its tail (HUNDO_FX_TAIL_AT, where its last pieces start fading) */
   const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
-  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant));
-  lineEls.forEach(l => seq.add(380, instant => { rsLand(l, instant); if(!instant) sndXpLine(l); }));
-  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); });
+  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant), false, "xp");
+  lineEls.forEach(l => seq.add(380, instant => { rsLand(l, instant); if(!instant) sndXpLine(l); }, false, "xp"));
+  seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); }, false, "xp");
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
      goes to the xp bar is too fast and could be more suspenseful ... when
      the number goes up it needs to be after that bar effect". The block
@@ -112912,8 +113240,8 @@ function showRunRewards(run, hooks, opts){
     xp.classList.add("is-charging");
     moving = () => { if(levelBlock.setFinal) levelBlock.setFinal(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); };
     levelBlock.runFill();
-  });
-  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); });
+  }, false, "xp");
+  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); }, false, "xp");
   /* ---- A 100's HUNDO EFFECT, ONCE BOTH BARS HAVE RUN (build 320) ----
      "the loading bar is going while the Hundo effect happens. Let the bar
      run and then the effect." The grade's bars are home and its number
@@ -113000,7 +113328,7 @@ function showRunRewards(run, hooks, opts){
     if(resultsSeq !== seq || seq.isHeld()) return;
     if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
     rsFinishMoving(panel);
-    seq.next();
+    seq.nextBox();
   });
   seq.start();
 }
@@ -113839,7 +114167,11 @@ function summarize(){
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = cls; if(id) btn.id = id;
       btn.textContent = label;
-      btn.addEventListener("click", () => { if(Date.now() < rsTapGuardUntil) return; endResultsReveal(); fn(); });
+      /* build 380: a tap the guard refuses is still a tap on the screen, and restarts it - "at the end of a test, when I finish the retake
+         and I click the screen, the test goes away and takes me to the main menu". Tapping the results along, once the buttons had risen
+         under the finger each refused tap left the guard where it was, so the next tap, 440ms later, was past it and went home. Now while
+         taps keep coming the buttons stay quiet; a tap after a pause of 700ms is a press. */
+      btn.addEventListener("click", e => { if(rsTapAt(e) < rsTapGuardUntil){ rsTapGuardUntil = Date.now() + 700; return; } endResultsReveal(); fn(); });
       return btn;
     };
     /* THE REVIEW: only what to do about the misses - retake them (Drill),
@@ -114285,7 +114617,8 @@ async function sendTabTimings(onDone){
 /* build 378: THE LEADERBOARD SPEED TEST. "The leaderboard still takes a minute can you tell?" - his 377 timings: the Leaderboard's screen is
    built in 5-18ms but first drawn 265-370ms after the tap (Profile ~110, Calendar ~50), so it is the drawing, which only the phone can
    measure. Taps Leaderboard then Profile, three rounds of the looks taken in turn: [b:base] as it is; [b:paint] the loops painted
-   (html.lb-paint) instead of each sheet a layer; (build 379: [b:base] is now the board coming up still and moving a row a frame after
+   (html.lb-paint) instead of each sheet a layer; (build 380: the looks are [b:base] - every loop a window-sized layer, html.loops-paint -
+   [b:layers] each loop its whole sheet on a layer as 379 had it, [b:noloops], [b:norows]) (build 379: [b:base] is now the board coming up still and moving a row a frame after
    the glass lands, [b:nostill] the board as 378 had it, loops moving from the first frame) [b:paintwin] (build 379) painted, each loop's window a small layer of its own
    (html.lb-paint.lb-win); [b:noloops] no loops at all; [b:norows] no rows (the floor). His 378 run dropped [b:hold] (975ms, idle
    frames 266ms), [b:nofx] and [b:noglass] (no different from base). Per look: the median and each of the Leaderboard's tap-to-second-
@@ -114295,12 +114628,13 @@ let boardTestRunning = false;
 const BOARD_TEST_NOLOOPS = ".rank-rows .char-flip-play,.rank-rows .cosmic-rank-anim{display:none !important}";
 const BOARD_TEST_NOFX = ".rank-rows .char-flip-play{-webkit-mask-image:none !important;mask-image:none !important}.rank-rows .cosmic-rank-anim,.rank-rows svg.cosmic-rank-emblem{mix-blend-mode:normal !important;filter:none !important}";
 const BOARD_TEST_LOOKS = [
-  ["base", "", ""], ["nostill", "", "lb-nostill"], ["paintwin", "", "lb-paint lb-win"], ["noloops", BOARD_TEST_NOLOOPS, ""],
+  ["base", "", ""], ["layers", "", "-loops-paint"], ["noloops", BOARD_TEST_NOLOOPS, ""],
   ["norows", ".screen-rankings .rank-rows{display:none !important}", ""]];
 async function runBoardTest(onDone){
   if(boardTestRunning || lagTestRunning) return;
   boardTestRunning = true;
-  const root = document.documentElement, modesWas = ["lb-paint", "lb-hold", "lb-win", "lb-nostill"].filter(c => root.classList.contains(c));
+  const TEST_CLASSES = ["lb-paint", "lb-hold", "lb-win", "lb-nostill", "loops-paint"];
+  const root = document.documentElement, modesWas = TEST_CLASSES.filter(c => root.classList.contains(c));
   const note = document.createElement("div");
   note.setAttribute("aria-hidden", "true");
   note.style.cssText = "position:fixed;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:999px;background:rgba(20,22,30,.92);color:#fff;font:600 15px/1.2 system-ui;pointer-events:none;white-space:nowrap";
@@ -114342,7 +114676,9 @@ async function runBoardTest(onDone){
     for(let round = 0; round < 3; round++){
       for(const [name, css, mode] of BOARD_TEST_LOOKS){
         note.textContent = "Testing Leaderboard speed (" + (round + 1) + "/3 " + name + ")… don't touch the screen";
-        st.textContent = css; root.classList.remove("lb-paint", "lb-hold", "lb-win", "lb-nostill"); if(mode) mode.split(" ").forEach(c => root.classList.add(c));
+        /* build 380: a look starts from the app as it is; "-x" takes a class away */
+        st.textContent = css; TEST_CLASSES.forEach(c => root.classList.toggle(c, modesWas.indexOf(c) >= 0));
+        if(mode) mode.split(" ").forEach(c => { if(c[0] === "-") root.classList.remove(c.slice(1)); else root.classList.add(c); });
         await wait(250);
         const g = got[name];
         g.p.push(await visit("rewards"));
@@ -114358,7 +114694,7 @@ async function runBoardTest(onDone){
   }catch(e){ rows.push("error " + ((e && e.message) || e)); }
   on = false;
   try{ st.remove(); note.remove(); }catch(e){}
-  root.classList.remove("lb-paint", "lb-hold", "lb-win", "lb-nostill"); modesWas.forEach(c => root.classList.add(c));
+  TEST_CLASSES.forEach(c => root.classList.toggle(c, modesWas.indexOf(c) >= 0));
   boardTestRunning = false;
   const text = rows.join(" | ");
   let sent = false;
@@ -117654,6 +117990,13 @@ const BANNER_KINDS = {
   /* A test saved with Save and exit (build 327z5): "Maybe when you save a
      test and go back to main menu you'd get one for that?" A bookmark,
      in the XP card's blue: something the app is keeping for you. */
+  /* Nothing starred yet (build 380: "When you are in review and click stars but don't have any, shouldn't that pop up be at the
+     top?"): the starred star's own gold, the star */
+  starred: { tag: "STARRED", color: "#E8C770",
+    svg: '<path fill="currentColor" d="M12 3.3l2.63 5.55 6.08.77-4.46 4.17 1.17 6L12 16.85l-5.42 2.94 1.17-6-4.46-4.17 6.08-.77z"/>' },
+  /* XP earned (build 380: the daily question's XP on Home's banner glass): the XP blue, a spark */
+  xp: { tag: "XP EARNED", color: "#4B9BFF",
+    svg: '<path fill="currentColor" d="M12 2.9l2.35 6.15 6.15 2.35-6.15 2.35L12 19.9l-2.35-6.15-6.15-2.35 6.15-2.35z"/><path fill="currentColor" opacity=".7" d="M19 15.6l.85 2.15 2.15.85-2.15.85L19 21.6l-.85-2.15-2.15-.85 2.15-.85z"/>' },
   savedtest: { tag: "SAVED TEST", color: "#7CB8FF",
     svg: '<path d="M7.2 3.6h9.6a1.2 1.2 0 0 1 1.2 1.2v15.5l-6-4.3-6 4.3V4.8a1.2 1.2 0 0 1 1.2-1.2z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>' },
   /* The passive lines on the same glass (build 327z3, showDailyAlert's
@@ -126141,6 +126484,7 @@ function lbFlipKnown(aw, charId){
     const sp = d && charAnimReady.get(d.id + "|" + f.px);
     const av = aw.querySelector(".rank-avatar");
     if(!sp || !av) return false;
+    if(sp.pre) charPreKeep(sp);
     const play = document.createElement("span");
     play.className = "char-flip-play";
     play.setAttribute("aria-hidden", "true");
@@ -126152,6 +126496,7 @@ function lbFlipKnown(aw, charId){
     img.style.height = (sp.rows * f.cell) + "px";
     if(aw.dataset.flipPhase == null) aw.dataset.flipPhase = String(Math.floor(Math.random() * CHAR_ANIM_LOOP_MS));
     img.style.animation = orbitAnimKeyframes(f.cell, sp.cols, sp.n) + " " + CHAR_ANIM_LOOP_MS + "ms step-end " + charFlipDelay(aw) + "ms infinite";
+    lbPaintKF(img);   /* build 380 */
     play.appendChild(img);
     if(f.rel) av.style.position = "relative";
     av.appendChild(play);
@@ -126185,7 +126530,7 @@ function lbMarkKnown(rk){
 }
 /* build 378: the left/top twin of a loop's stepped transform (orbitAnimKeyframes), for html.lb-paint: the same frames on the same clock,
    moved by layout instead of by the compositor, so no layer holds the whole sheet */
-const lbPaintKFMade = new Set();
+var lbPaintKFMade = new Set();
 function lbPaintKF(img){
   try{
     const m = /rk-sheet-(\d+)-(\d+)-([\d_]+)/.exec(img.style.animationName || "");
@@ -126203,6 +126548,8 @@ function lbPaintKF(img){
     }
     if(img.style.getPropertyValue("--pk") !== name) img.style.setProperty("--pk", name);
     const hname = "rk-hold-" + m[1] + "-" + m[2] + "-" + m[3];
+    /* build 380: the held twin only for its speed-test look (every loop now makes its painted twin, and a keyframes rule added is a style pass) */
+    if(!document.documentElement.classList.contains("lb-hold")) return;
     if(!lbPaintKFMade.has(hname)){
       const cols = +m[1], n = +m[2], cell = parseFloat(m[3].replace("_", "."));
       const at = k => "translate3d(" + (-(k % cols) * cell) + "px," + (-Math.floor(k / cols) * cell) + "px,0)";
@@ -126242,7 +126589,7 @@ function lbStillGo(rows, token){
   };
   requestAnimationFrame(() => requestAnimationFrame(wait));
 }
-function lbLoopAlt(){ const c = document.documentElement.classList; return c.contains("lb-paint") || c.contains("lb-hold"); }
+function lbLoopAlt(){ const c = document.documentElement.classList; return c.contains("lb-paint") || c.contains("lb-hold") || c.contains("loops-paint"); }
 function lbPaintAll(root, force){
   if(!root || !(force || lbLoopAlt())) return;
   root.querySelectorAll(".char-flip-play img, .rk-frame img").forEach(lbPaintKF);
@@ -126353,10 +126700,12 @@ function lbWatchOffscreen(rows, more){
       /* the row's own height is its place while its contents are skipped (content-visibility; the size given is the
          content box, so the padding and border come off), so the list does not change length under a scroll */
       if(!e.isIntersecting && e.target.classList.contains("rank-row")){ const cs = getComputedStyle(e.target), h = e.boundingClientRect.height - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderTopWidth) || 0) - (parseFloat(cs.borderBottomWidth) || 0); if(h > 1) e.target.style.containIntrinsicHeight = (Math.round(h * 10) / 10) + "px"; }
+      const wasOff = e.target.classList.contains("is-offscreen");
       e.target.classList.toggle("is-offscreen", !e.isIntersecting);
       /* a rank flare paused off screen comes back on the shared clock
-         (build 324), level with every other flare of its rank */
-      if(e.isIntersecting) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
+         (build 324), level with every other flare of its rank - (build 380) only one that WAS off screen: the observer's first report on
+         every row on screen re-synced flares put on the clock a moment before (a style pass each) */
+      if(e.isIntersecting && wasOff) e.target.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { try{ syncLoopClock(a); }catch(x){} });
     });
   }, { rootMargin: "240px 0px" });
   rows._lbIo = io;
@@ -130176,7 +130525,9 @@ function buildRankMark(key, cls){
    where it was instead of starting its loop again. */
 function startRankMarks(root){
   if(!root) return;
-  try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => syncLoopClock(a)); }catch(e){}
+  /* build 380: only a mark new to its row (built, or carried into a rebuilt row) is put on the loop clock - every art-queue step re-synced
+     every mark on the board, a getAnimations (a style pass) each (traced on the iPhone layer: ~30ms a tap at 4x) */
+  try{ root.querySelectorAll(".rank-mark > .cosmic-rank-anim").forEach(a => { const row = a.closest(".rank-row") || root; if(a._syncRow === row) return; a._syncRow = row; syncLoopClock(a); }); }catch(e){}
   if(root._rankMarkRaf) return;
   /* build 377: and not inside a screen's settle (a slide, the glass landing): a flare taking its loop crossfades, which is new motion */
   const go = () => {
@@ -132488,6 +132839,8 @@ function buildBadgesTab(opts){
     /* build 320 (b320g): the badge in your hand, not the unlock card */
     if(has) tile.addEventListener("pointerdown", () => badgeInspectPrewarm(unit), { passive: true });
     tile.addEventListener("click", () => { clearNew(); tile.querySelector(".badge-clean-tip")?.remove(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
+    /* build 380: the finger is down ~100ms before the click - its big faces start decoding then */
+    tile.addEventListener("pointerdown", () => { try{ binspectPredecode(unit); }catch(e){} }, { passive: true });
     return tile;
   });
   tab.appendChild(kase);
@@ -132530,6 +132883,8 @@ function buildBadgesTab(opts){
       openBadgeCaseLid(kase, Math.max(0, Math.min(600, wait)));
     }
   };
+  /* build 380: the found badges' big faces, made in the quiet once the tab is up (binspectWarmSoon) */
+  try{ binspectWarmSoon(); }catch(e){}
   return tab;
 }
 
@@ -133364,6 +133719,47 @@ function badgeInspectPrewarm(unit){
 }
 /* What is open now, for the gates and the recorder. */
 let badgeInspectNow = null;
+/* build 380: "When at the badge case and you select a badge to view ... as it pulls up (zooms in to get bigger) it lags and it doesn't
+   have a consistent look the entire way through." It lifted out showing its slot's small picture and the big face, rendered a moment
+   later (ensureFace - a few hundred ms on a phone), took its place mid-way. So the Badges tab renders each found badge's big face, back
+   and side for the badge in your hand (binspectW: the size .binspect-float is shown at) in the quiet once it is up - one at a time, never
+   under a finger or a settle - and the lift starts on the finished face. Only the renders are kept (as data: URLs, in their caches);
+   the pictures are decoded when a finger comes down on the badge (binspectPredecode). */
+function binspectW(){
+  const ov = document.createElement("div"); ov.className = "binspect"; ov.style.visibility = "hidden"; ov.style.pointerEvents = "none";
+  const st = document.createElement("div"); st.className = "binspect-stage"; const fl = document.createElement("div"); fl.className = "binspect-float";
+  st.appendChild(fl); ov.appendChild(st); document.body.appendChild(ov);
+  const size = Math.max(60, fl.getBoundingClientRect().width || 280); ov.remove();
+  return Math.min(864, badgeStrikeSize(size * badgeDpr()));
+}
+var binspectWarmT = 0, binspectWarmJobs = [];
+function binspectWarmSoon(){
+  clearTimeout(binspectWarmT); binspectWarmJobs = [];
+  binspectWarmT = setTimeout(() => {
+    let W = 0; try{ W = binspectW(); }catch(e){ return; }
+    let units = []; try{ units = unitsInTeachingOrder().filter(u => unitBadgeEarned(u)); }catch(e){}
+    units.forEach(u => {
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeStrikeEntry(u, false, W, false, d); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); badgeBackEntry(u, W, d, false); });
+      binspectWarmJobs.push(() => { const d = badgeDirtStage(u); for(let i = 0; i < BINSPECT.edges; i++) badgeEdgeURL(u, Math.sin(Math.PI * i / (BINSPECT.edges - 1)), d); });
+    });
+    const step = () => {
+      binspectWarmT = 0;
+      if(!binspectWarmJobs.length || !document.querySelector("#stage .ncase")) return;
+      if(document.hidden || badgeInspectNow || (typeof settleUntil === "number" && Date.now() < settleUntil) || performance.now() - recUserAt < 900){ binspectWarmT = setTimeout(step, 400); return; }
+      try{ binspectWarmJobs.shift()(); }catch(e){}
+      binspectWarmT = setTimeout(step, 150);
+    };
+    step();
+  }, 1200);
+}
+function binspectPredecode(unit){
+  if(!unitBadgeEarned(unit)) return;
+  const W = binspectW(), d = badgeDirtStage(unit);
+  (BADGE_STRIKE_CACHE[String(unit) + "|c" + (d ? "|d" + d : "")] || []).forEach(e => { if(e && e.W >= W * .9 && !e.draft) bcPredecode(e.url); });
+  const b = BADGE_BACK_CACHE[unit + "|" + W + "|" + d]; if(b) bcPredecode(b.url);
+  try{ bcPredecode(badgeSilhouetteURL(unit)); }catch(e){}
+}
 function openBadgeInspect(unit, tile){
   if(badgeInspectNow) return badgeInspectNow;
   const B = BINSPECT;
@@ -133613,6 +134009,9 @@ function openBadgeInspect(unit, tile){
     playSound("badge.squeak", { clean: 1 - dirt / BADGE_DIRT_MAX });
     if(dirt === 0) setTimeout(() => playSound("badge.sparkle"), 120);
     try{ setBadgeDirtStage(unit, dirt); }catch(e){}
+    /* build 380: the slot's picture at this stage, made now and not as the badge is put back ("when it goes back to the case it lags
+       as it gets put in the case": putBack drew the slot again at the new stage in the frame it landed in) */
+    { const d = dirt; setTimeout(() => { if(closed || dirt !== d) return; try{ badgeStrikeURL(unit, false, badgeStrikeSize((slotOpts ? slotOpts.px : badgeCaseSlotPx()) * badgeDpr()), d); }catch(e){} }, 700); }
     const url = ready[dirt] || ensureFace(dirt);
     if(url) swapFace(url, dirt, 380);
     ov.style.setProperty("--glow-k", String(BADGE_DIRT.glow[dirt]));
@@ -133755,6 +134154,10 @@ function openBadgeInspect(unit, tile){
   const art = tile && tile.querySelector(".badge-tile-art");
   const slotSvg = art && art.querySelector("svg.badge-art");
   const slotRect = (slotSvg || tile || float).getBoundingClientRect();
+  /* build 380: a badge put back a stage cleaner is drawn at the slot's own size (what the case's tiles end up at once measured).
+     Built at the default size it was a draft at 152px, then a second render at the slot's 88 once measured, then the finish - three
+     pictures and two renders in the frames it landed in ("it lags as it gets put in the case"). cleanOne renders this one ahead. */
+  const slotOpts = slotSvg && slotRect.width > 8 ? { px: slotRect.width } : undefined;
   const scroll0 = window.scrollY || 0;
   let emptySlot = null;
   const lift = () => {
@@ -133764,7 +134167,7 @@ function openBadgeInspect(unit, tile){
   const putBack = () => {
     if(!emptySlot || !emptySlot.parentNode) return;
     let svg = slotSvg;
-    if(dirt !== dirt0){ try{ svg = buildUnitBadgeSVG(unit, true); }catch(e){} }
+    if(dirt !== dirt0){ try{ svg = buildUnitBadgeSVG(unit, true, slotOpts); }catch(e){} }
     try{ art.replaceChild(svg, emptySlot); }catch(e){}
     art.dataset.dirt = String(dirt);
     tile.classList.remove("is-lifted");
@@ -136988,6 +137391,46 @@ const LAST_TAB_KEY = "class26e.lastTab";
    are kept in this device's storage and ride along with a bug report ("perf"), so the real numbers can be read with
    `firestore-admin.py bugs`. Nothing runs between taps and nothing is sent anywhere by itself. */
 const TAB_PERF_KEY = "class26e.tabperf";
+/* build 380: IS A PAINTED LOOP SMOOTH HERE? Every 7s, on a screen with four or more loops moving in view and nothing else going on (no
+   glass up, no slide, settled, no touch during it), the frames are counted for 1.5s. Two counts in a row with over 35% of frames longer
+   than 25ms put the loops back as they were (each its whole sheet on a layer) for the rest of this build on this device, and say so in
+   "Send tab timings" (loops: paint/layers and the last counts). His 378 test: painted into the rows' own layer, an idle board drew 50
+   frames in 1.5s (base 90) - the look this build ships puts each window on its own layer to not do that; this is the check that it
+   does not, on the phone. */
+const loopsWatch = { strikes: 0, last: [], busy: false, touchAt: -1e9 };
+try{ window.addEventListener("touchstart", () => { loopsWatch.touchAt = performance.now(); }, { capture: true, passive: true }); }catch(e){}
+function loopsInView(){
+  let n = 0; const vh = window.innerHeight || 800;
+  try{ document.querySelectorAll("#stage .char-flip-play img, #stage .rk-frame img").forEach(i => { if(n >= 4) return; const w = i.parentElement; const b = w && w.getBoundingClientRect(); if(b && b.width && b.bottom > 0 && b.top < vh && getComputedStyle(i).animationName.indexOf("rk-pos") === 0) n++; }); }catch(e){}
+  return n;
+}
+function loopsWatchTick(force){
+  try{
+    const root = document.documentElement;
+    if(force) loopsWatch.touchAt = -1e9;
+    if(document.hidden || loopsWatch.busy || !root.classList.contains("loops-paint") || lagTestRunning || boardTestRunning) return;
+    if(document.querySelector("#bottomtabs-lens.is-up") || root.classList.contains("tab-dragging") || (!force && Date.now() < settleUntil)) return;
+    if(performance.now() - loopsWatch.touchAt < 1500 || loopsInView() < (force ? 1 : 4)) return;
+    loopsWatch.busy = true;
+    const iv = [], t0 = performance.now(); let last = t0;
+    const tick = t => {
+      iv.push(t - last); last = t;
+      if(t - t0 < 1500 && !document.hidden) { requestAnimationFrame(tick); return; }
+      loopsWatch.busy = false;
+      if(document.hidden || performance.now() - loopsWatch.touchAt < 1600 || iv.length < 10) return;
+      const slow = iv.filter(v => v > 25).length;
+      loopsWatch.last.push("n" + iv.length + "/s" + slow); if(loopsWatch.last.length > 6) loopsWatch.last.shift();
+      if(slow / iv.length > .35){
+        if(++loopsWatch.strikes >= 2){
+          root.classList.remove("loops-paint");
+          try{ localStorage.setItem(LOOP_MODE_KEY, "layers|" + loopsWatch.last.join(",") + "|" + APP_BUILD); }catch(e){}
+        }
+      } else loopsWatch.strikes = 0;
+    };
+    requestAnimationFrame(tick);
+  }catch(e){ loopsWatch.busy = false; }
+}
+setInterval(loopsWatchTick, 7000);
 let tabPerfActive = null;
 function tabPerfStart(dest){
   try{
@@ -137019,7 +137462,8 @@ function tabPerfText(){
     let rl = ""; try{ rl = (JSON.parse(localStorage.getItem(LOOP_RESUME_KEY) || "[]") || []).join("; "); }catch(e){}
     let ended = ""; try{ ended = (JSON.parse(localStorage.getItem(CRASH_KEY) || "[]") || []).join("; "); }catch(e){}
     let hr = ""; try{ hr = localStorage.getItem("class26e.hswrescue") || ""; }catch(e){}
-    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + (hr ? " | taps rescued " + hr : "") + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
+    let lm = ""; try{ lm = " | loops " + (document.documentElement.classList.contains("loops-paint") ? "paint" : "layers") + (loopsWatch.last.length ? " " + loopsWatch.last.join(",") : "") + ((localStorage.getItem(LOOP_MODE_KEY) || "").indexOf("layers|") === 0 ? " (fell back: " + localStorage.getItem(LOOP_MODE_KEY) + ")" : ""); }catch(e){}
+    return ("cores " + (navigator.hardwareConcurrency || "?") + " dpr " + dpr + lm + (hr ? " | taps rescued " + hr : "") + (rl ? " | resume: " + rl : "") + (ended ? " | ended: " + ended : "") + " | " + list.map(r =>
       r.seq + " f" + r.f + " worst" + r.g + " >34:" + r.n34 + " >50:" + r.n50 + " >100:" + r.n100 + " build" + r.b + "x" + r.bn + (r.p ? " l" + (r.l || 0) + "/p" + r.p : "")).join(" | ")).slice(0, 3200);
   }catch(e){ return ""; }
 }
@@ -137078,11 +137522,20 @@ function tabPerfText(){
       [[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,2],[1,2],[2,2]].map(([c, r]) =>
         '<rect class="tg-day" x="' + (5.65 + c * 2.85).toFixed(2) + '" y="' + (10.2 + r * 2.85).toFixed(2) + '" width="1.85" height="1.85" rx=".45"/>').join("") +
       '</g>',
+    /* build 380: "could the leaderboard icon look a little better on the bottom tabs? I don't love it" - one solid trophy, as the
+       planet and the calendar are solid: the cup with a star cut out of it, handles as thick as the planet's ring and joined to
+       the cup, a short stem and a rounded foot */
     rewards:
-      '<path class="tg-cup" fill="currentColor" d="M6.8 3h10.4v5.6a5.2 5.2 0 0 1-10.4 0z"/>' +
-      '<path class="tg-handles" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6.8 4.9H4.4a2.5 2.5 0 0 0 2.7 4.9M17.2 4.9h2.4a2.5 2.5 0 0 1-2.7 4.9"/>' +
-      '<path class="tg-stem" fill="currentColor" d="M10.9 13.4h2.2v3.7h-2.2z"/>' +
-      '<path class="tg-base" fill="currentColor" d="M8.6 16.6h6.8a1 1 0 0 1 1 .8l.5 2.6a.8.8 0 0 1-.8 1H7.9a.8.8 0 0 1-.8-1l.5-2.6a1 1 0 0 1 1-.8z"/>'
+      /* ONE path, nonzero fill (380): the glyph's colour is a little see-through, and separate pieces painted their overlaps twice
+         (bright dots where the handles met the cup). The cup, both handles, the stem and the foot run clockwise and unite; the
+         star runs the other way and is cut out. */
+      '<path class="tg-cup" fill="currentColor" fill-rule="nonzero" d="' +
+        'M6.9 2.8h10.2c.4 0 .7.3.7.7v5.3a5.8 5.8 0 0 1-11.6 0V3.5c0-.4.3-.7.7-.7z' +
+        'M12 5.15L11.37 6.83L9.57 6.91L10.97 8.03L10.5 9.76L12 8.78L13.5 9.76L13.03 8.03L14.43 6.91L12.63 6.83z' +
+        'M7.6 3.3V5.3H4.6A.75 .75 0 0 0 3.85 6.15C4.05 7.75 5.25 8.95 6.95 9.35L6.55 11.3C3.85 10.75 2.15 8.85 1.86 6.32A2.75 2.75 0 0 1 4.6 3.3z' +
+        'M16.4 3.3H19.4A2.75 2.75 0 0 1 22.14 6.32C21.85 8.85 20.15 10.75 17.45 11.3L17.05 9.35C18.75 8.95 19.95 7.75 20.15 6.15A.75 .75 0 0 0 19.4 5.3H16.4z' +
+        'M10.75 14h2.5v3.4h-2.5z' +
+        'M8.3 17.2h7.4c.7 0 1.25.55 1.25 1.25v1.5c0 .7-.55 1.25-1.25 1.25H8.3c-.7 0-1.25-.55-1.25-1.25v-1.5c0-.7.55-1.25 1.25-1.25z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
      glide (LENS.glide, build 327z13) is ~94% of the way at 290ms, so the
@@ -137610,6 +138063,11 @@ function tabPerfText(){
      whichever tab it's over when you lift, the way iOS's own Liquid
      Glass tab bars behave. */
   let tabDragActive = false;
+  /* build 380: A SLIDE STARTS ON THE TAB THAT IS LIT. "If I use the swipe way instead of the tap, it lets me swipe even if I don't
+     initiate the swipe from the current tab, that shouldn't ever happen." A press on another tab is a tap on it: moving the finger does
+     not slide the glass; let go on that tab and it opens (its own click), let go off it and nothing opens - the glass goes back to the
+     lit tab. */
+  let tabDragFromActive = true, tabDragStartTab = null;
   /* build 376: WHAT IS BEHIND THE BAR HOLDS STILL WHILE A FINGER SLIDES. "The swipe/drag function works really well for calendar but lags
      for all the other three tabs." Calendar has nothing moving behind the bar; the Leaderboard has rows' characters and flares, Profile
      and Home their moving pieces there - and the bar is glass: every frame anything moves behind it, the blur of what is behind it is
@@ -137626,8 +138084,9 @@ function tabPerfText(){
     const list = tabSwitchesAway; tabSwitchesAway = [];
     list.forEach(([sw, host]) => { try{ sw.checked = false; if(host && host.isConnected && !host.querySelector(":scope > .nova-hsw")) host.appendChild(sw); }catch(e){} });
   }
-  let barUnderPaused = [];
+  let barUnderPaused = [], barUnderAt = 0;
   function barUnderPause(again){
+    barUnderAt = performance.now();
     if(!again){
       barUnderResume();
       /* once more on the next frame: an animation that started in the press (a loop just put on) exists only from the next style pass */
@@ -137642,7 +138101,9 @@ function tabPerfText(){
         if(a.playState !== "running") return;
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
-        const r = t.getBoundingClientRect();
+        /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
+           in and out of the bar's band while what is seen stays put */
+        const r = ((t.closest && t.closest(".rk-frame, .char-flip-play")) || t).getBoundingClientRect();
         if(r.width > 0 && r.bottom > top && r.top < bottom){ try{ a.pause(); barUnderPaused.push(a); }catch(e){} }
       });
     }catch(e){}
@@ -137686,6 +138147,8 @@ function tabPerfText(){
   navrow.addEventListener("pointerdown", (e) => {
     if(bar.hidden) return;
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
+    tabDragStartTab = (e.target && e.target.closest && e.target.closest(".bottomtab")) || tabAtPoint(e.clientX);
+    tabDragFromActive = !!(tabDragStartTab && tabDragStartTab.classList.contains("active"));
     /* the lens lifts out of the platter under the finger at once (build 323, 325) */
     if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
     /* a screen still waiting to be built waits for this press too (327z15) */
@@ -137693,6 +138156,8 @@ function tabPerfText(){
   });
   navrow.addEventListener("pointermove", (e) => {
     if(!tabDragActive || e.pointerId !== tabDragPointerId) return;
+    /* build 380: a press that began on another tab never becomes a slide */
+    if(!tabDragFromActive) return;
     /* the lens is under the finger from the first pixel (build 327z5); only
        turning the touch into a drag waits for the slop */
     if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP){ if(lensG && Math.abs(e.clientX - tabDragX0) > 1.5) lensMove(e.clientX); return; }
@@ -137714,6 +138179,9 @@ function tabPerfText(){
       try{ settleUntil = Math.max(settleUntil, Date.now() + 8000); slideHeldSettle = true; }catch(err){}
     }
     tabDragMoved = true;
+    /* build 380: and again every 100ms of the slide (~0.5ms at 4x CPU) - something that comes on under the bar mid-slide (a row's loop
+       running again as it comes into view, which is where rows come in) holds still too; check-b376 once saw one running */
+    if(performance.now() - barUnderAt > 100) barUnderPause(true);
     /* The lens follows the finger (build 323, 325); the platter waits,
        hidden, and is put in place once, on release. Reduce motion has no
        lens: the platter itself steps from tab to tab. */
@@ -137733,6 +138201,12 @@ function tabPerfText(){
     /* the lens settles on the tab it was let go over and becomes the
        platter there; a cancelled touch takes it home */
     if(e.type === "pointercancel" || (window.__dragTestOn && tabDragMoved)) lensRelease(null);
+    else if(!tabDragFromActive){
+      /* build 380: a press on another tab - it lands there if the finger is still on that tab (its click opens it), home if not */
+      const over = lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX);
+      lensRelease(over && over === tabDragStartTab ? over : null);
+      return;
+    }
     else lensRelease(lensG ? lensTabAt(e.clientX) : tabAtPoint(e.clientX));
     if(!tabDragMoved){ return; } // a plain tap: let the tab's own click handler do its normal thing
     if(e.type === "pointercancel" || window.__dragTestOn){ slideBubbleToActiveTab(true); return; }   /* build 369: the Drag test stays on its screen */
@@ -138242,7 +138716,9 @@ function tabPerfText(){
     /* build 377: THE LANDING HAS ITS FRAMES TO ITSELF. Everything a new screen puts off "until it has settled" (characters going live,
        emblems waking, the first-paint queue, recordings) waits until the glass has handed over to the platter - his recording showed the
        Leaderboard's after-mount work freezing the shrink for ~250ms */
-    try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 80); }catch(e){}
+    /* build 380: +160, not +80 - the landing is planned at the release again (no wait for the screen), and the screen's own build lands
+       inside it, so the hand-over's frame can come late */
+    try{ settleUntil = Math.max(settleUntil, Date.now() + handAt + 160); }catch(e){}
     bar.classList.remove("is-pressing");
     /* the bar stays swollen while the lens is up, and goes back as it lands */
     const sw = getComputedStyle(bar).scale;
@@ -138278,10 +138754,19 @@ function tabPerfText(){
      shrinks into the platter on its own clock: it stays up as clear glass on its tab (a still lens cannot stutter) until the screen
      has been drawn - two frames after it was built - and lands then; LENS_AWAIT_MAX is the most it will wait. A release with no
      screen to wait for lands as before. */
+  /* build 380: THE GLASS NO LONGER WAITS FOR THE SCREEN. "The bubble takes a minute to shrink down to the one you clicked." His 11:40
+     recording at 30fps: Profile -> Home, the glass over Home 100ms after the press and still up 170ms after that, until Home was drawn.
+     The wait (375) was there because the landing, planned at the release as one compositor track, stood still on the phone while a new
+     screen was drawn - and what the phone's compositor was busy with then was the new screen's loops, each its whole sheet on a layer
+     (~158MB on a Leaderboard, ~57MB on Home). 380 makes every loop a window-sized layer (html.loops-paint), so the landing goes back to
+     its own clock, planned at the release: every tab lands the same, however long its screen takes. (A timer could never have ended the
+     wait sooner: while a screen is being drawn the page runs nothing.) LENS_AWAIT_ON brings the wait back if it is ever wanted. */
+  const LENS_AWAIT_ON = false;
   const LENS_AWAIT_MAX = 650;
   let lensAwait = null;
   function lensAwaitClear(){ if(lensAwait){ clearTimeout(lensAwait.timer); lensAwait = null; } }
   bar._lensAwaitScreen = () => {
+    if(!LENS_AWAIT_ON) return;
     if(lensAwait || !lensG || !lensAt || lensFollow || tabDragActive || !lens.classList.contains("is-up")) return;
     const tab = lensAt, hi = lensInfo(tab), g = lensG;
     if(!hi) return;
