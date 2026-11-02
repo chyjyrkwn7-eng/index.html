@@ -30909,3 +30909,30 @@ Madison: "The Home Screen is perfect, just make the daily question button and th
 - New: tools/check-b382-firstrun.py. 41 fail before. It includes the owner-only class button guard: a non-owner has no class button or banner, and `activeclass=ifc` without the owner's publicId stays academy.
 - check-b329, b344 and b380 (27) were updated to follow.
 - The job's report of check-sync "the restored account is what goes up" failing: ALL PASS on the merged claude/b382 here (8f polls since c91cc0d). Recheck in the final run.
+
+### 382: the iOS look on Profile, Stats, Customize, Friends, the rank ladder and the badge case (merged 2026-11-02)
+Madison: "clean clean clean CLEAN iOS Apple look" app-wide, with the new Settings as the reference.
+
+**Nav bar on pushed screens**
+- Pushed screens use `iosNavBar(title, back)`: Settings' round back button and a centred title.
+- The screen's own `.back-link` is kept and drawn round: same class, the word kept as accessible name and textContent, same handler.
+- #count is zero size there but keeps its text ("Rank" / "Badges" for check-behaviour b299) and the header's safe-area padding, so the bar sits where Settings' does.
+
+**Headings and cards**
+- Headings are Settings' grey sentence case.
+- On Friends and Stats they sit above the card (`position:absolute; bottom:100%`). The DOM is unchanged, so `.friend-sect .sect-label` still matches.
+- Cards use `--ios-group-r` (16px) on `--surface-1`.
+- Customize's four `.cz-row`s form one inset group:
+  - no gap between rows;
+  - corners on the first and last row only;
+  - a hairline starting at `--cz-inset`.
+- Each Customize row keeps its token fill, so check-b326-f still finds the boxes.
+
+**Profile**
+- Profile keeps its 22px corners. b321f requires the case strip to match the Next rank card, and the case is art.
+- Its in-card labels are sentence case.
+- The Profile segments get the Leaderboard's big #count title. `selectProfileTab` keeps it equal to the picked segment: Profile, Stats or Settings.
+
+**Gate:** tools/check-b382-ioslook.py. 112 pass after; 64 fail on the build before.
+
+**Phone check owed:** the round button under the Dynamic Island, and the card density without blur.
