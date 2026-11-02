@@ -30347,3 +30347,20 @@ however the sliding is now the problem, it's okay but not perfect like the tappi
   middle on phone / 85% / iPad (fails on 380) and whole on an SE, the lens's one-frame transition during a real touch slide (none on
   380) and none after, landing on the tab let go over.
 - check-b380's watchdog check expects the note to end "|2026-11-01-380" - build-specific; it reads "-381" from this build on.
+- THE SHARED LINK (381, same build): Madison sent an iMessage thread - the link bubble showed "Nova" and the domain, no picture and a
+  compass for the icon: "Sharing the link doesn't give it the nova look and the description needs to be updated, I already said this.
+  Why isn't the picture there? Also when bookmarking the app the old icon is there". The tags (342) were right and their files deployed;
+  the bubble had only the title the Share button itself hands over (shareData.title), which is what iOS shows when it never reads the
+  page - the app is one 8.4MB file. Build 342's fix of the same report ("shows no icon") never reached the bubble for the same reason.
+  NOW: tools/gen-share-card.py also writes share/index.html - a 2.3KB page with the same og/twitter/description block (og:url its own),
+  the touch icon and favicon, and an instant forward to ../ (location.replace keeping ?query#hash; a meta refresh and an "Open Nova"
+  link behind it). SHARE_URL (the Share button) is .../index.html/share/. DESC everywhere: "Study app for police academy cadets: drills,
+  practice tests, a daily question, ranks and badges, and a class leaderboard." The card's lines: "Drills, practice tests, ranks / and
+  a class leaderboard." The Share button's text: "Nova: a study app for police academy cadets. Drills, practice tests, ranks and badges,
+  and a class leaderboard." --check verifies the page (size, tags, versioned icon, forward), SHARE_URL and the description.
+- THE OLD ICON ON A BOOKMARK: every icon copy is the current pixel V (gen-app-icon --check); Safari keeps a site's touch icon cached. The
+  apple-touch-icon href is now ...apple-touch-icon.png?v=381 (ICON_REV in gen-share-card.py; bump it with any icon change) so it is a
+  new address and is fetched again. Unverifiable here (no Messages, no Safari icon cache, and the live site is blocked in the sandbox).
+- Gate: tools/check-b381-share.py - SHARE_URL is the share page, the page is small and names the card and the app's description, both
+  touch icons are versioned and the same, and opening /share/?from=link#x lands in the booted app at /?from=link#x. All 5 fail on 380.
+- A link pasted by hand as .../index.html/ still points iOS at the big page; the share page is the one to send.
