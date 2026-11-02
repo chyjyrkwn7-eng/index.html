@@ -30521,3 +30521,23 @@ to go at all."
 - Sound prewarm steps, charSpecialTick and the 6s sessionMark (whenTabBarQuiet) wait while html.tab-held or the settle window is on.
 - Gate tools/check-b382-slide.py fails all 5 on 381. check-b381's transition check reversed on purpose. Merged: (3) Home's
   lens-vs-finger read 7.3-8.9px behind (limit 6) twice at load ~20 - re-run on a quiet machine before shipping.
+
+## Build 382 - the test screen: chat button, results taps, Next over the code, Show as text, the viewer
+- THE CHAT BUTTON: "The chat button randomly moves sometimes in the test when you get the code pulled up." placeDockBesidePause read
+  Pause's getBoundingClientRect on every stage change; the code card fills in while the finger scrolls, and an iPhone's box read
+  mid-bounce comes back moved (his screenshot: button ~29px up, Pause in place). It now uses Pause's offsets up to its fixed header
+  plus its translateY (fixedBox), keeps a found place when Pause isn't fixed, writes nothing when unchanged. Inferred, not reproduced.
+- RESULTS TAPS: "I touch the screen where the re run button is before it's there..." The hidden row's pointer-events:none lost to each
+  button's .nova-hsw (the 381 class-button lesson), and the panel's tap guard ignored taps landing on a button. rsRise rows (built
+  with rsDisarm) are inert, with no switches, until rise + RS_SETTLE_MS (500); a window-level click check refuses not-ready rows and
+  touches that started before ready; a refusal restarts the wait; window.hswRescan attaches the switches after. Buttons answer ~0.5-0.8s
+  later than before. Gates that clicked invisible buttons wait for `.rs-final:not(.rs-unarmed)` (check-results, check-b330).
+- NEXT OVER THE CODE: qnextPlace places in page coordinates: room -> pinned 3.25rem under the content; no room -> .qnext-flow (in the
+  foot's flow, --qnext-flow-mt), same gap, scrolling with the content; re-placed on panel resize (ResizeObserver). Never over the card
+  at any scroll on 440/518/375/iPad. check-b380 (25) updated.
+- SHOW AS TEXT GONE: it and "Show the page picture" are removed (the county text is only a fallback). Enlarge and Show the whole page
+  are ifcLinkBtn pills (summary-pill glass, 44px, icon), side by side filling the row, stacked when narrow.
+- THE VIEWER: clampT centres content shorter than the view; .ifc-vz-hint is a pill over the bottom that fades (2.6s, 5.2s with a note,
+  or at the first touch). +/Done/pinch/double-tap unchanged.
+- Gate: tools/check-b382-test.py (needs PDFJS_DIR, an unpacked pdfjs-dist 5.4.149; 37 of 40 fail on the code before). Merged with the
+  slide and input work: check-b382-test and check-b382-input ALL PASS.
