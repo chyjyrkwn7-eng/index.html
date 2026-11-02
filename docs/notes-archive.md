@@ -30268,3 +30268,27 @@ Also run: check-b344, check-savetest, check-behaviour b297/b313_pause/b310/b313_
   The gap stays and a 1.25px ring of the card's selected colour (--accent at 70%) goes round it: an outline over the card and the page
   alike, joining the card's own edge. check-b380 (35) - fails on 379 (one dark ring); 35 of 35 pass on 380. check-b327-d / z5-d fail
   only as before (plum, the calendar card - the same on 379).
+
+### 380, one more: Next question on an iPad moves no faster than on a phone
+Madison: *"on my iPad, when going to next question, there is lag/its not smooth. On the phone it's super nice and smooth, fix
+this as well. All larger devices should be just as smooth."*
+- MEASURED, NOT GUESSED: the slide's frames cost the same on a phone and an iPad (no filter or backdrop-filter in the moving
+  panel; only Pause and the chat button are glass over it, 44-53px; no long task). The move was not the same move: the push
+  crosses the panel's whole width in a fixed 280ms - 428px on a 440 phone, 814px on an 11" iPad, 876px on an iPad on its side -
+  so a wide question travelled up to ~1.7x the px per frame (keyframes sampled at 60Hz: peak step 102px on a Pro Max at 85%,
+  145/163/176px on iPad mini / 11" / landscape), on physically larger px, and most iPads are 60Hz against the phone's 120Hz.
+- FIX (advanceWithSlide + qCommitMs + qCommitFromPreview): a push longer than the widest upright phone's (Q_PUSH_PHONE 506 =
+  478 + SLIDE_GAP; panels measured: SE1 280, 440 phone 400, Pro Max @85% 478, iPad mini 696, 11" 786, landscape 848) takes
+  qSlideMsFor(push) = 280ms x push/506, capped at 1.4x (392ms), on qEaseSlideWide = bezier(.35,.45,.25,1) (a gentler ease-out:
+  lower peak, first frame about half the old one's). Peaks now 82/93/100px - at or under the phone's. Phones: 280ms and
+  qEaseSlide exactly as before.
+- TRIED FIRST AND DROPPED: capping the push at a phone's distance and fading the panels. It broke build 311's decision (the two
+  questions side by side, never drawn over each other - check-behaviour check_slide failed on iPad Pro 11"), so the push stays.
+- Gate: tools/check-b380-slide.py - the push still crosses the whole width everywhere, phones keep the phone's time, every
+  iPad's peak step is at or under the widest phone's. The peak checks fail on the code before (145/163/176 vs 102).
+  Also run: check-behaviour check_swipe/check_slide/check_b313_qmotion, check-sound, sweep-layout --quick - all pass.
+- Sandbox: check-b380's first three checks (loops as window layers) fail here on a normal run because loopsWatch measures this
+  software-rendered sandbox as slow (n42/s30) during the board's 2-minute load and falls back to layers - the fallback working.
+  With loopsWatch.busy held during the load only, 35/35. Python Playwright: pip install playwright==1.63.0 and alias
+  /opt/pw-browsers/chromium-1194 -> chromium-1243, chrome-linux -> chrome-linux64.
+- Only a real iPad confirms the feel (Chromium has no 60/120Hz difference); Send tab timings does not time this slide.

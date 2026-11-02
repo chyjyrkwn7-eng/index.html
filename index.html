@@ -102293,6 +102293,25 @@ function blurPair(panel, rect){
 __bm("L95319");
 const SLIDE_MS = 280;
 const SLIDE_GAP = 28;
+/* ---- A WIDE QUESTION MOVES NO FASTER THAN A PHONE'S (build 380) ----
+   Madison: "on my iPad, when going to next question, there is lag/its not
+   smooth. On the phone it's super nice and smooth ... All larger devices
+   should be just as smooth". Every frame was cheap on both; the move was
+   not the same move. The push crosses the panel's whole width (the two
+   questions side by side, build 311) in the same 280ms - 428px on a
+   phone, 814px on an 11" iPad - so the question travelled about twice as
+   many px per frame, on larger px, mostly at 60Hz against the phone's
+   120Hz: steps of 160-176px at the curve's peak, which read as judder
+   with no frame dropped. A push longer than the widest upright phone's
+   (506px: 478 + the gap, a Pro Max at 85%) now takes proportionally
+   longer, up to 1.4x (392ms), on a gentler ease-out (qEaseSlideWide,
+   whose peak is lower and whose first frame is about half the old one's):
+   every iPad's biggest step is at or under that phone's
+   (tools/check-b380-slide.py). Same push; phones keep 280ms and the
+   same curve exactly. */
+const Q_PUSH_PHONE = 506;
+function qSlideMsFor(push){ return Math.round(SLIDE_MS * Math.max(1, Math.min(1.4, push / Q_PUSH_PHONE))); }
+function qEaseFor(push){ return push > Q_PUSH_PHONE ? qEaseSlideWide : qEaseSlide; }
 const SLIDE_EASE = "cubic-bezier(.3,.7,.2,1)";
 let slideTransitionInFlight = false;
 /* ---- A LINE TO CROSS, AND A BLUR THAT BELONGS TO A PLACE (build 314) ----
@@ -102368,6 +102387,7 @@ function qBezier(x1, y1, x2, y2){
   };
 }
 const qEaseSlide = qBezier(.3, .7, .2, 1);
+const qEaseSlideWide = qBezier(.35, .45, .25, 1);
 const qEaseReturn = qBezier(.22, 1, .36, 1);
 function qSmoothstep(a, b, x){ const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 /* The blurred copy's strength while it is dragged in: dimmer while it is
@@ -102413,7 +102433,7 @@ function qSync(anims, ref){
    the release speed where that is quicker. */
 function qCommitMs(p0, push, v){
   const rest = Math.max(0, 1 - p0) * push;
-  const most = Math.round(180 + (SLIDE_MS - 180) * Math.max(0, 1 - p0));
+  const most = Math.round((180 + (SLIDE_MS - 180) * Math.max(0, 1 - p0)) * qSlideMsFor(push) / SLIDE_MS);
   if(!(v > 0)) return most;
   return Math.max(150, Math.min(most, Math.round(2.33 * rest / v)));
 }
@@ -102593,7 +102613,7 @@ function advanceWithSlide(fromDx, opts){
   const p0 = live ? Math.max(0, Math.min(1, s.p)) : 0;
   const rect = live ? s.rect : outgoing.getBoundingClientRect();
   const push = live ? s.push : Math.round(rect.width + SLIDE_GAP);
-  const dur = p0 > 0 ? qCommitMs(p0, push, opts.v) : SLIDE_MS;
+  const dur = p0 > 0 ? qCommitMs(p0, push, opts.v) : qSlideMsFor(push);
   /* A fixed copy of the outgoing question, carried off on the clock.
      Ids stripped: two id="nextbtn" in the document for the length of a
      slide picked the dead copy more than once. animation:none because a
@@ -102622,8 +102642,8 @@ function advanceWithSlide(fromDx, opts){
   incoming.style.animation = "none";
   incoming.style.willChange = "opacity, transform";
   const anims = [
-    qRun(clone, p => qOutFrame(p, push), p0, 1, dur, qEaseSlide),
-    qRun(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: (.85 + .15 * p).toFixed(4) }), p0, 1, dur, qEaseSlide)
+    qRun(clone, p => qOutFrame(p, push), p0, 1, dur, qEaseFor(push)),
+    qRun(incoming, p => ({ transform: qInFrame(p, push).transform, opacity: (.85 + .15 * p).toFixed(4) }), p0, 1, dur, qEaseFor(push))
   ];
   if(live) qClearPanel(s.panel);
   setTimeout(() => qSlideDone(clone, null, incoming, anims), dur + 30);
@@ -102635,7 +102655,7 @@ function qCommitFromPreview(s, p0, dur, makeClone){
   const pSharp = p0 + (1 - p0) * .8;
   const sharpAt = p => qSmoothstep(p0, pSharp, p);
   const softAt = p => (1 - sharpAt(p)) * qSoftAlpha(p);
-  const run = (el, frame) => qRun(el, frame, p0, 1, dur, qEaseSlide);
+  const run = (el, frame) => qRun(el, frame, p0, 1, dur, qEaseFor(push));
   const aOut = run(outgoing, p => qOutFrame(p, push));
   const pre = [run(pair.wrap, p => qInFrame(p, push)),
     run(pair.sharp, p => ({ opacity: sharpAt(p).toFixed(4) })),
