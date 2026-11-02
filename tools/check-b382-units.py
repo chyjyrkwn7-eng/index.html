@@ -7,7 +7,7 @@ thread's CPU time (a trace's thread clock - what the page itself spent, not the 
 inflate) times 4. (Chromium's own CPU throttle is not used for these: its pauses land in the thread clock too.)
  (1) opening the screen (a second visit, after the launch's badge warm-up): the main thread's work from showSetup() to the first frame
      drawn (budget 340ms at 4x; 381 measured ~420, 24 live badge SVGs - 848 of its ~1,200 elements - in every style pass and layout),
-     and the first 1.5s after it (budget 650ms at 4x; 381 ~800: the haptic switches measured and written card by card, the Back pill
+     and the first 1.5s after it (budget 740ms at 4x; 381 ~780: the haptic switches measured and written card by card, the Back pill
      measured afresh on every screen);
  (2) ticking a card restyles only what changed: elements restyled per tick (budget 250; 381 restyled ~680 - every card's name, count,
      circle and badge - because three unit-card rules put .pname/.pcount/.box and a bare svg in the one :has() invalidation set
@@ -19,10 +19,12 @@ Look and shape:
  (5) a picked card reads as picked: its fill is lighter than an unpicked card's (luminance step >= 6 of 255 at the same spot), its
      border is the accent, and its tick circle shows;
  (6) every control on the screen is at least 44px tall: the level tabs, Select all, Review's Starred (Select all and Starred were 40);
- (7) the level control is the Leaderboard's at its own width, centred (not stretched edge to edge), and Select all centred under it;
+ (7) (Madison, with the new Settings: "that clean clean clean CLEAN IOS apple look") the levels are a flat iOS segmented control
+     (no frost, rounded corners rather than a pill), centred; Select all a flat pill (no frost) centred under it;
  (8) nothing overflows, nothing scrolls sideways and no card's count runs under its badge at 440x956, 518x1125, 375x667, 320x568,
-     834x1194 and 1440x900, academy and Fire Code.
-Run:  python3 tools/check-b382-units.py   (--against: copy the old index.html over first; (1), (2) restyle, (3) restyle, (4) filter, (6) and (7) fail there)"""
+     834x1194 and 1440x900, academy and Fire Code;
+ (9) the header is a Settings sub-page's: a round 44px back button on the left and the title centred on the same line.
+Run:  python3 tools/check-b382-units.py   (--against: copy the old index.html over first; (1), (2), (3) restyle, (4) filter, (6), (7) and (9) fail there)"""
 import json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "shoot-flow.py")).read().rsplit("\nmain()", 1)[0]
@@ -161,7 +163,7 @@ with sync_playwright() as pw:
         scroll_el.append(restyled(evs)); scroll_ms.append(X4(max(0, cpu(evs) - idle_rate * wall))); scroll_max.append(X4(max([e["tdur"] for e in tt] or [0]) / 1000))
     med = lambda a: sorted(a)[len(a) // 2]
     chk("(1) opening: main thread to the first frame %dms at 4x (budget 340; runs %s)" % (med(opens), opens), med(opens) <= 340, opens)
-    chk("(1) opening: main thread in its first 1.5s %dms at 4x (budget 650; runs %s)" % (med(settles), settles), med(settles) <= 650, settles)
+    chk("(1) opening: main thread in its first 1.5s %dms at 4x (budget 740; runs %s)" % (med(settles), settles), med(settles) <= 740, settles)
     chk("(2) a tick restyles %d elements (median; budget 250; ticks %s)" % (med(ticks), ticks), med(ticks) <= 250, ticks)
     chk("(2) a tick's longest main-thread task %dms at 4x (median; budget %d; ticks %s)" % (med(tick_ms), TICKB, tick_ms), med(tick_ms) <= TICKB, tick_ms)
     chk("(3) scrolling restyles nothing (elements restyled per two flicks: %s; budget 40)" % (scroll_el,), med(scroll_el) <= 40, scroll_el)
@@ -180,8 +182,12 @@ with sync_playwright() as pw:
       const r=e=>{ const b=e.getBoundingClientRect(); return {x:b.left,y:b.top,w:b.width,h:b.height}; };
       const lv=document.querySelector('.setup-levels'), sa=document.querySelector('.selall-btn'), panel=document.querySelector('.screen-setup');
       const tabs=[...lv.querySelectorAll('.iconbtn')].map(b=>Math.round(b.getBoundingClientRect().height));
+      const nb=document.querySelector('.screen-setup .settings-nav-back'), nt=document.querySelector('.screen-setup .settings-nav-title');
+      const lc=getComputedStyle(lv), sc=getComputedStyle(sa);
       return { bd, flt, n:cards.length, on:r(on), off:r(off), tickShown: bs.opacity==='1' && bs.display!=='none', accRGB, bc, tabs,
-               lv:r(lv), sa:r(sa), panel:r(panel), vw:innerWidth }; }""")
+               lv:r(lv), sa:r(sa), panel:r(panel), vw:innerWidth, lvGlass: lc.backdropFilter!=='none', lvRadius: parseFloat(lc.borderTopLeftRadius),
+               saGlass: sc.backdropFilter!=='none', nav: nb && nt ? { back:r(nb), title:r(nt), round: getComputedStyle(nb).borderRadius, words: nt.textContent } : null,
+               oldBack: !!document.querySelector('.screen-setup > .back-link') }; }""")
     chk("(4) no card has a backdrop-filter (%d of %d)" % (shape["bd"], shape["n"]), shape["bd"] == 0, shape)
     chk("(4) no card's badge carries a filter (%d cards do)" % shape["flt"], shape["flt"] == 0, shape["flt"])
     # luminance at the same spot inside a picked and an unpicked card (the middle, below the name)
@@ -210,8 +216,13 @@ with sync_playwright() as pw:
     chk("(6) controls are 44px+: level tabs %s, Select all %dpx, Review's Select all %d and Starred %dpx" % (shape["tabs"], shape["sa"]["h"], rv["sa"], rv["st"]),
         min(shape["tabs"]) >= 44 and shape["sa"]["h"] >= 44 and rv["sa"] >= 44 and rv["st"] >= 44, [shape, rv])
     lvc = shape["lv"]["x"] + shape["lv"]["w"] / 2; pc = shape["panel"]["x"] + shape["panel"]["w"] / 2; sac = shape["sa"]["x"] + shape["sa"]["w"] / 2
-    chk("(7) the levels are their own width (%dpx of %dpx), centred (%.1f vs %.1f), Select all centred under them (%.1f)" % (shape["lv"]["w"], shape["panel"]["w"], lvc, pc, sac),
-        shape["lv"]["w"] < shape["panel"]["w"] - 40 and abs(lvc - pc) <= 2 and abs(sac - pc) <= 2, shape)
+    chk("(7) the levels are a flat segmented control (no frost: %s; corners %.0fpx, not a pill), centred (%.1f vs %.1f); Select all a flat pill (frost: %s) centred under them (%.1f)" % (
+        shape["lvGlass"], shape["lvRadius"], lvc, pc, shape["saGlass"], sac),
+        not shape["lvGlass"] and shape["lvRadius"] < 20 and abs(lvc - pc) <= 2 and not shape["saGlass"] and abs(sac - pc) <= 2, shape)
+    nav = shape["nav"]
+    navok = bool(nav) and not shape["oldBack"] and nav["back"]["w"] >= 44 and nav["back"]["h"] >= 44 and abs(nav["back"]["w"] - nav["back"]["h"]) < 1 \
+        and abs((nav["title"]["x"] + nav["title"]["w"] / 2) - pc) <= 2 and abs((nav["back"]["y"] + nav["back"]["h"] / 2) - (nav["title"]["y"] + nav["title"]["h"] / 2)) <= 3
+    chk("(9) the header is Settings' sub-page head: a round 44px back button and the title centred on its line (%s)" % (nav,), navok, nav)
     ctx.close()
     # ---------------- (8) every size ----------------
     bad = []

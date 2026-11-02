@@ -35155,122 +35155,112 @@ html.is-browser{ --fade-paper: transparent; }
       radial-gradient(circle at 46% 46%, #FFFFFF 0 14%, color-mix(in srgb, var(--fc) 42%, #fff) 30%, var(--fc) 56%, color-mix(in srgb, var(--fc) 55%, #000) 86%, color-mix(in srgb, var(--fc) 30%, #000) 100%);
     box-shadow:inset 0 0 0 .7px color-mix(in srgb, var(--fc) 35%, #fff), 0 0 0 .5px color-mix(in srgb, var(--fc) 50%, transparent), 0 0 8px var(--fc), 0 1.5px 3px rgba(0,0,0,.45);
   }
-  /* ---- THE UNITS SCREEN, ONE FINISH (build 382) ----
-     "the unit selection screens interface.. I'm not a fan. I like the layout but I think the interface/look isn't it ... I'm not sure if
-     the unit boxes should avoid the Liquid Glass look or what, but that entire page needs a nicer look ... ensure it's cohesive with the
-     app". Same layout, same order (Back, the mode, the levels, Select all, the line, the grid, search and Start in the bar).
-     - THE CARDS ARE A SOLID, LIT SURFACE, NOT GLASS. Twenty-odd boxes on one screen, each with its own frost, is what the eye reads as
-       noise (and what a phone pays for on every scroll), so a card is Settings' card material - the --surface-1 body under the sheen,
-       never a backdrop-filter - with a light along its top edge and one soft, short shadow under it instead of a wide dark cloud.
-       Corners 20px (Settings 16, the bar's pills round). The name a touch larger and 650, the count a quiet 600 caption.
-     - PICKED IS THE ACCENT: the card fills with a tint of it and takes an accent rim drawn inside its edge (box-shadow, so nothing
-       moves), and the tick sits on its corner as before (build 328: "half outside, so it covers no word").
-     - THE BADGE sits on a soft contact shadow and its own colour's glow, both gradients: the two drop-shadow filters it had are gone
-       (no SVG filters on anything that animates - the card scales when pressed).
-     - THE LEVELS are the Leaderboard's and Profile's segmented control at its own width, centred, rather than stretched edge to edge;
-       Select all (and Review's Starred) is centred under it, 44px tall, with the hold line centred under that.
-     Scoped by [data-layout][data-theme] and placed last, so it wins over the earlier unit-card rules without new !important fights
-     beyond the ones those rules already use. */
-  html[data-layout][data-theme] .picks{ gap:.7rem; }
+  /* ---- THE UNITS SCREEN, SETTINGS' CLEAN LOOK (build 382) ----
+     "the unit selection screens interface.. I'm not a fan. I like the layout but I think the interface/look isn't it ... that entire
+     page needs a nicer look" and, with the new Settings: "we need to ensure that the rest of the app has that nice new look, where it's
+     clearly easy to see and use ... The unit selection screen needs it ... We are going for that clean clean clean CLEAN IOS apple look".
+     Same layout and order (the way back, the mode, the levels, Select all, the line, the grid, search and Start in the bar), in
+     Settings' language:
+     - THE HEADER is a Settings sub-page's: a round back button on the left and the title centred (.settings-nav, showSetup).
+     - THE LEVELS are an iOS segmented control: a flat rounded track, the chosen level a lighter raised segment; every segment 44px.
+     - SELECT ALL and Review's STARRED are clean flat pills, one look (check-b380 21 holds them equal), 44px, no frost.
+     - A UNIT CARD is a flat grouped tile: the --surface-1 body, a hairline edge, no glass, glow, sheen or wide shadow (twenty-odd boxes
+       on one screen read as noise with any of those, and a phone pays for every one on each scroll); the name in 600, the count a
+       small grey line, the badge small in the corner with nothing round it. PICKED is the accent: a tinted fill, an accent edge drawn
+       inside (box-shadow, nothing moves), and an accent check circle inside the top-right corner - the name's first line keeps clear
+       of it (a float in .pname), so it never covers a word.
+     No backdrop-filter or filter on anything here; only transform and opacity animate. */
+  html[data-layout] .screen-setup .setup-nav{ margin:.2rem 0 .9rem; }
+  html[data-layout][data-theme] .picks{ gap:.65rem; }
   html[data-layout][data-theme] .picks > label.pick{
-    border-radius:20px;
-    border:1px solid color-mix(in srgb, var(--surface-border) 62%, transparent);
-    background:var(--surface-sheen), var(--surface-1);
-    background-repeat:no-repeat; background-origin:border-box;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.075), 0 1px 2px rgba(0,0,0,.3), 0 12px 22px -16px rgba(0,0,0,.85);
+    border-radius:18px;
+    border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
+    background:var(--surface-1);
+    box-shadow:none;
     -webkit-backdrop-filter:none; backdrop-filter:none;
-    transition:transform .42s cubic-bezier(.2,.8,.2,1), border-color .2s ease, box-shadow .25s ease;
-  }
-  /* the light along the top edge: a hairline that fades out before the corners (no layer, no filter) */
-  html[data-layout][data-theme] .picks > label.pick::after{
-    content:""; position:absolute; top:0; left:18px; right:18px; height:1px; pointer-events:none; border-radius:1px;
-    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.2) 30%, rgba(255,255,255,.2) 70%, rgba(255,255,255,0));
-  }
-  html[data-layout][data-theme] .picks > label.pick.pick-checked::after{
-    background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, transparent) 30%, color-mix(in srgb, var(--accent) 55%, transparent) 70%, transparent);
-  }
-  /* a found badge lights its own corner: the faintest pool of the badge's colour under it */
-  html[data-layout][data-theme] .picks > label.pick.pick-mastered{
-    background:radial-gradient(70% 60% at 100% 100%, color-mix(in srgb, var(--unit-tint, transparent) 16%, transparent), transparent 70%),
-      var(--surface-sheen), var(--surface-1);
-    background-repeat:no-repeat; background-origin:border-box;
+    transition:transform .42s cubic-bezier(.2,.8,.2,1), border-color .2s ease, background-color .2s ease;
   }
   html[data-layout][data-theme] .picks > label.pick.pick-checked{
-    border-color:color-mix(in srgb, var(--accent) 70%, transparent) !important;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 17%, transparent), color-mix(in srgb, var(--accent) 6%, transparent) 72%),
-      var(--surface-sheen), var(--surface-1) !important;
-    background-repeat:no-repeat !important; background-origin:border-box !important;
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), inset 0 1px 0 rgba(255,255,255,.12),
-      0 1px 2px rgba(0,0,0,.3), 0 14px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent) !important;
+    border-color:var(--accent) !important;
+    background:linear-gradient(color-mix(in srgb, var(--accent) 12%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)), var(--surface-1) !important;
+    box-shadow:inset 0 0 0 1px var(--accent) !important;
   }
-  html[data-layout][data-theme] .picks > label.pick.is-pressing{
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14), inset 0 1px 0 rgba(255,255,255,.1), 0 1px 2px rgba(0,0,0,.3) !important;
-  }
-  html[data-layout][data-theme] .picks > label.pick.pick-checked.is-pressing{
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent), inset 0 1px 0 rgba(255,255,255,.12), 0 1px 2px rgba(0,0,0,.3) !important;
-  }
+  html[data-layout][data-theme] .picks > label.pick.is-pressing{ box-shadow:none !important; background:var(--surface-lift), var(--surface-1); }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked.is-pressing{ box-shadow:inset 0 0 0 1px var(--accent) !important; }
   html[data-layout][data-theme] .picks > label.pick > .pname{
-    font-size:.9rem; font-weight:650; line-height:1.24; letter-spacing:-.005em; color:var(--ink);
+    font-size:.92rem; font-weight:600; line-height:1.25; letter-spacing:-.005em; color:var(--ink);
   }
+  /* the first line of the name stops short of the check circle */
+  html[data-layout][data-theme] .picks > label.pick > .pname::before{ content:""; float:right; width:1.35rem; height:1em; }
   html[data-layout][data-theme] .picks > label.pick > .pcount{
-    font-size:.72rem; font-weight:600; letter-spacing:.01em; color:var(--soft); font-variant-numeric:tabular-nums;
+    font-size:.74rem; font-weight:500; letter-spacing:0; color:var(--soft); font-variant-numeric:tabular-nums;
   }
-  /* the tick on the corner: the accent disc with a crisp ring of the page round it and a hairline of the accent outside that */
+  /* the check: an accent circle inside the corner, the tick in the accent's ink, a thin light rim so it reads on any accent */
   html[data-layout][data-theme] .picks > label.pick > .box{
-    width:1.55rem !important; height:1.55rem !important;
-    box-shadow:0 0 0 2px var(--paper, #0E1014), 0 0 0 3px color-mix(in srgb, var(--accent) 75%, transparent), 0 3px 8px rgba(0,0,0,.45) !important;
+    top:.65rem !important; right:.65rem !important; width:1.4rem !important; height:1.4rem !important;
+    border:0 !important; background:var(--accent) !important;
+    box-shadow:0 0 0 1.5px color-mix(in srgb, var(--ink) 85%, transparent) !important;
   }
-  /* the badge: no filters - a contact shadow and its own colour's glow, both gradients */
-  /* a card's badge is one picture now (cardBadgeSVG): sized and stacked as its SVG was */
+  html[data-layout][data-theme] .picks > label.pick > .box > .pick-tick path{ stroke-width:3.2; }
+  /* the badge: small and plain - no glow round it, no filter on it */
+  html[data-layout][data-theme] .picks > label.pick .pick-badge.earned::before{ display:none; }
+  html[data-layout][data-theme] .picks > label.pick .pick-badge.earned svg{ filter:none; }
   .pick-badge > .pick-badge-img{ width:100%; height:100%; display:block; position:relative; z-index:1; pointer-events:none; -webkit-user-drag:none; user-select:none; }
   .pick-badge:not(.earned) > .pick-badge-img{ opacity:.78; }
-  html[data-layout][data-theme] .picks > label.pick .pick-badge.earned svg{ filter:none; }
-  html[data-layout][data-theme] .picks > label.pick .pick-badge::after{
-    content:""; position:absolute; left:14%; right:14%; bottom:-4%; height:24%; border-radius:50%; pointer-events:none; z-index:0;
-    background:radial-gradient(closest-side, rgba(0,0,0,.5), rgba(0,0,0,0));
-  }
-  html[data-layout][data-theme] .picks > label.pick .pick-badge.earned::before{
-    inset:-14%;
-    background:radial-gradient(circle,
-      color-mix(in srgb, var(--badge-glow, var(--theme-c1)) 30%, transparent) 0%,
-      color-mix(in srgb, var(--badge-glow, var(--theme-c2)) 10%, transparent) 42%,
-      transparent 66%);
-  }
-  html[data-layout][data-theme] .picks > label.pick .pick-badge:not(.earned) :is(svg, .pick-badge-img){ opacity:.5; }
+  html[data-layout][data-theme] .picks > label.pick .pick-badge:not(.earned) :is(svg, .pick-badge-img){ opacity:.45; }
+  html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:2.3rem; height:2.3rem; }
   /* the hundo bar (iPads and computers): a hairline track, the accent filling it */
-  html[data-layout][data-theme] .picks > label.pick .pick-bar-track{ height:3px; border-radius:999px; background:rgba(255,255,255,.1); }
-  html[data-layout][data-theme] .picks > label.pick .pick-bar-fill{
-    border-radius:999px; background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--accent));
-  }
-  html[data-layout][data-theme] .picks > label.pick .pick-bar-count{ font-weight:600; font-variant-numeric:tabular-nums; }
-  /* the levels: the Leaderboard's control, its own width, centred; every tab at least 44px tall */
+  html[data-layout][data-theme] .picks > label.pick .pick-bar-track{ height:3px; border-radius:999px; background:color-mix(in srgb, var(--ink) 12%, transparent); }
+  html[data-layout][data-theme] .picks > label.pick .pick-bar-fill{ border-radius:999px; background:var(--accent); }
+  html[data-layout][data-theme] .picks > label.pick .pick-bar-count{ font-weight:500; font-variant-numeric:tabular-nums; }
+  /* the levels: an iOS segmented control - a flat track, the chosen segment raised, every segment 44px */
   html[data-layout][data-theme] .screen-setup .setup-levels{
-    display:flex; width:fit-content; max-width:100%; margin:1rem auto .9rem; padding:3px; box-sizing:border-box;
+    display:flex; width:100%; margin:1rem 0 .9rem; padding:3px; box-sizing:border-box; border-radius:13px;
+    background:var(--surface-1) !important; border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent) !important;
+    box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
   }
   html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn{
-    flex:0 0 auto; min-width:5.6rem; min-height:44px; padding:0 1rem; font-size:.84rem; font-weight:600;
+    flex:1 1 0; min-height:44px; padding:0 .6rem; border-radius:10px; font-size:.88rem; font-weight:600;
+    color:color-mix(in srgb, var(--ink) 62%, transparent);
   }
-  /* Select all (and Review's Starred) centred under the levels, 44px tall; the line under them centred too */
+  html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn.active{ color:var(--ink); }
+  html[data-layout][data-theme] .screen-setup .setup-levels .seg-slider{
+    border-radius:10px !important; background:color-mix(in srgb, var(--ink) 17%, transparent) !important;
+    box-shadow:0 1px 3px rgba(0,0,0,.35) !important;
+  }
+  /* Select all (and Review's Starred) - one flat pill, centred under the levels */
   html[data-layout][data-theme] .screen-setup .picks-tools{ display:flex; justify-content:center; align-items:center; gap:.6rem; flex-wrap:wrap; margin:0 0 .55rem; }
-  html[data-layout][data-theme] .screen-setup .selall-btn{
+  html[data-layout][data-theme] .screen-setup :is(.selall-btn, .starred-pill){
     min-height:44px; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
-    padding:0 1.15rem 0 .95rem; font-size:.84rem; font-weight:650; margin:0;
+    padding:0 1.1rem 0 .95rem; margin:0; border-radius:999px; font-size:.88rem; font-weight:600; color:var(--ink);
+    background:var(--surface-1) !important; background-image:none !important;
+    border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent) !important;
+    box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
   }
+  html[data-layout][data-theme] .screen-setup :is(.selall-btn, .starred-pill):active{ background:var(--surface-lift) !important; }
   html[data-layout][data-theme] .screen-setup .sect > .selall-btn{ display:flex; width:fit-content; margin:0 auto .55rem; }
   /* a class with one level (Fire Code) has no tabs: Select all keeps the tabs' 1rem from the mode */
   html[data-layout][data-theme] .screen-setup .setup-levels[hidden] ~ :is(.selall-btn, .picks-tools){ margin-top:1rem; }
-  html[data-layout][data-theme] .screen-setup .starred-pill{ min-height:44px; padding:0 .7rem 0 .85rem; }
-  html[data-layout][data-theme] .screen-setup .picks-holdhint{ text-align:center; margin:.15rem auto .85rem; max-width:24rem; font-size:.76rem; line-height:1.45; text-wrap:balance; }
+  html[data-layout][data-theme] .screen-setup .picks-holdhint{ text-align:center; margin:.2rem auto .9rem; max-width:24rem; font-size:.78rem; line-height:1.45; color:var(--soft); text-wrap:balance; }
   @media (min-width:40rem){
     html[data-layout][data-theme] .picks{ gap:.85rem; }
-    html[data-layout][data-theme] .picks > label.pick{ border-radius:22px; }
+    html[data-layout][data-theme] .picks > label.pick{ border-radius:20px; }
     html[data-layout][data-theme] .picks > label.pick > .pname{ font-size:1.1rem; }
-    html[data-layout][data-theme] .picks > label.pick > .pcount{ font-size:.8rem; }
+    html[data-layout][data-theme] .picks > label.pick > .pcount{ font-size:.82rem; }
+    html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:3rem; height:3rem; }
+    html[data-layout][data-theme] .screen-setup .setup-levels{ max-width:30rem; margin-left:auto; margin-right:auto; }
+  }
+  /* a narrow phone's card has no room beside the circle for a long word ("Professionalism"): there the circle
+     sits on the card's corner, half outside (build 328's place), and the name takes the card's full width */
+  @media (max-width:399px){
+    html[data-layout][data-theme] .picks > label.pick > .pname::before{ display:none; }
+    html[data-layout][data-theme] .picks > label.pick > .box{ top:-.45rem !important; right:-.45rem !important;
+      box-shadow:0 0 0 2px var(--paper, #0E1014), 0 0 0 3.25px color-mix(in srgb, var(--ink) 85%, transparent) !important; }
   }
   @media (max-width:359px){
     html[data-layout][data-theme] .picks > label.pick > .pname{ font-size:.84rem; }
     html[data-layout][data-theme] .picks > label.pick > .pcount{ font-size:.66rem; }
-    html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn{ min-width:4.6rem; padding:0 .7rem; }
+    html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:2rem; height:2rem; }
   }
   /* ---- build 382: THE LEADERBOARD, ONE FAMILY WITH THE GLASS ----
      "I feel like the leaderboard looks good but I think it could look better." Same layout and the same information; the rows are
@@ -99756,7 +99746,6 @@ function appendUnitProgress(row, name){
   const earned = unitDrillStarEarned(name);
   /* (build 382) a mastered card has no bar - a class for CSS, not :not(:has(.pick-barrow)) */
   row.classList.toggle("pick-mastered", !!earned);
-  if(earned){ try{ row.style.setProperty("--unit-tint", badgeThemeFor(name).p); }catch(e){} }
   const badgeMark = document.createElement("span");
   badgeMark.className = "pick-badge" + (earned ? " earned" : "");
   /* The glow is the BADGE'S colour (build 232): "let's make sure the
@@ -101279,13 +101268,29 @@ function showSetup(){
 
   const all = unitsInTeachingOrder();
   startReadyQuietUntil = performance.now() + 700;
-  countEl.textContent = "Choose your units";
+  /* the title is the page's own, centred over it (below) */
+  countEl.textContent = "";
   setTimeout(() => maybeShowPenalVersionNote(0), 900);
 
   const panel = document.createElement("section");
   panel.className = "panel screen-setup";
 
-  panel.appendChild(buildBackLink("Back", showModeSelect));
+  /* SETTINGS' HEADER (build 382): "We are going for that clean clean clean CLEAN IOS apple
+     look". A Settings sub-page's head - the round back button on the left, the title centred
+     (settingsSubPage's .settings-nav) - in place of the Back pill and the corner title. */
+  {
+    const nav = document.createElement("div");
+    nav.className = "settings-nav setup-nav";
+    const back = document.createElement("button");
+    back.type = "button"; back.className = "settings-nav-back setup-nav-back";
+    back.setAttribute("aria-label", "Back");
+    back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>';
+    back.addEventListener("click", () => { try{ back.blur(); }catch(e){} showModeSelect(); });
+    const h = document.createElement("h1");
+    h.className = "settings-nav-title setup-nav-title"; h.textContent = "Choose your units";
+    nav.append(back, h);
+    panel.appendChild(nav);
+  }
 
   /* THE RESULTS SCREEN'S MODE CHIP, not a grey pill of its own (build
      232). "Where it says the mode you are in on the unit selection
