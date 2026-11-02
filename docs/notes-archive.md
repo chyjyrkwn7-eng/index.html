@@ -30326,3 +30326,51 @@ Madison: *"the iPads main menu, the rank flares, the stuff within them aren't mo
   size is in memory.
 - Gate: tools/check-b380-flares.py (iPad 11): same size - own sheets, no stand-ins; turned while away - 7 of 7 moving 4s after
   (0 of 7 before), own sheets take over within 60s, one sheet a bubble; turned then a new Home - 7 of 7 moving 4.5s in (0 before).
+
+## BUILD 381 - the trophy without its star, "Search names" centred, the slide at the screen's rate
+
+Madison (a Leaderboard screenshot from his phone, the search field circled): "I don't like the leaderboards icon with the star in the
+middle." / "The word search names is not centered for leaderboard search." / "The tapping of the bottom tab is really really good now,
+however the sliding is now the problem, it's okay but not perfect like the tapping."
+- THE TROPHY (TAB_GLYPHS.rewards): the star's sub-path is gone; still one path, nonzero (cup, handles, stem, foot).
+- SEARCH NAMES: `.rank-search-wrap > .rank-search:placeholder-shown{ text-align:center; padding-right:clamp(1.1rem, calc(100% - 2.6rem
+  - 7em), 2.6rem) }` after the magnifier rule - the right padding matches the magnifier's where the words (~6.8em at 17px, 115px)
+  fit, and gives way on a narrow field. Measured: phone 0px off the field's middle (was -24), Pro Max at 85% 0 (was -63), iPad 11 0
+  (was -217); an SE (375) fits whole, 9px right of the middle; the first-gen SE (320) was 3px too narrow for the words before and still
+  is. Typed text starts at the left as before.
+- THE SLIDE: a tap's glide is a prepared animation (lensRun, WAAPI), which Safari plays at the display's rate (120Hz on his Pro Max);
+  a slide's lens is written by lensMove's rAF tick, and Safari runs rAF at 60Hz - half the steps. While the finger follows, LENS_ELS
+  (body, clips, caps) carry `transition: transform <one rAF frame>ms linear` (the frame measured and smoothed, 8-20ms), so each
+  written position is drawn over the frame and the engine fills the one in between; lensStopFollow clears it before the landing.
+  Unverified on a device (Chromium has no 60/120 split) - his phone is the test. The tab labels' magnify still steps per rAF.
+- Gate: tools/check-b381.py - the trophy's middle filled (isPointInFill at the old star, 0 of 4 on 380), the placeholder on the field's
+  middle on phone / 85% / iPad (fails on 380) and whole on an SE, the lens's one-frame transition during a real touch slide (none on
+  380) and none after, landing on the tab let go over.
+- check-b380's watchdog check expects the note to end "|2026-11-01-380" - build-specific; it reads "-381" from this build on.
+- THE SHARED LINK (381, same build): Madison sent an iMessage thread - the link bubble showed "Nova" and the domain, no picture and a
+  compass for the icon: "Sharing the link doesn't give it the nova look and the description needs to be updated, I already said this.
+  Why isn't the picture there? Also when bookmarking the app the old icon is there". The tags (342) were right and their files deployed;
+  the bubble had only the title the Share button itself hands over (shareData.title), which is what iOS shows when it never reads the
+  page - the app is one 8.4MB file. Build 342's fix of the same report ("shows no icon") never reached the bubble for the same reason.
+  NOW: tools/gen-share-card.py also writes share/index.html - a 2.3KB page with the same og/twitter/description block (og:url its own),
+  the touch icon and favicon, and an instant forward to ../ (location.replace keeping ?query#hash; a meta refresh and an "Open Nova"
+  link behind it). SHARE_URL (the Share button) is .../index.html/share/. DESC everywhere: "Study app for police academy cadets: drills,
+  practice tests, a daily question, ranks and badges, and a class leaderboard." The card's lines: "Drills, practice tests, ranks / and
+  a class leaderboard." The Share button's text: "Nova: a study app for police academy cadets. Drills, practice tests, ranks and badges,
+  and a class leaderboard." --check verifies the page (size, tags, versioned icon, forward), SHARE_URL and the description.
+- THE OLD ICON ON A BOOKMARK: every icon copy is the current pixel V (gen-app-icon --check); Safari keeps a site's touch icon cached. The
+  apple-touch-icon href is now ...apple-touch-icon.png?v=381 (ICON_REV in gen-share-card.py; bump it with any icon change) so it is a
+  new address and is fetched again. Unverifiable here (no Messages, no Safari icon cache, and the live site is blocked in the sandbox).
+- Gate: tools/check-b381-share.py - SHARE_URL is the share page, the page is small and names the card and the app's description, both
+  touch icons are versioned and the same, and opening /share/?from=link#x lands in the booted app at /?from=link#x. All 5 fail on 380.
+- A link pasted by hand as .../index.html/ still points iOS at the big page; the share page is the one to send.
+- THE CLASS BUTTON (381, same build): "the class button, when I click it, it doesn't open the drop down, it just takes me to the class
+  sign up thing, so right now I can't even switch classes". Reproduced with an iPhone UA and real touch events (installed and Safari
+  tab): the finger landed on a .nova-hsw - the haptic switch of the list's "+" item. Since 380 the closed list sits INSIDE the class
+  button (each item translateY'd into it, scale .4), and .nova-hsw's own `pointer-events:auto` beat .class-stack's closed `none`, so the
+  hidden "+" took the tap and opened the class list. A mouse (and every non-iPhone) has no switches, which is why gates missed it.
+  FIX: `.class-bubble-wrap:not(.is-open) .class-stack .nova-hsw{ pointer-events:none }`. Gate: tools/check-b381-class.py (iPhone UA,
+  CDP touch): the tap opens the list (installed phone, Safari tab, Pro Max at 85%), Fire Code in it switches class (read before the
+  380ms reload), the "+" opens the class list. On 380 every tap opened the class list.
+- LESSON: anything moved over or tucked under another control must also turn off its .nova-hsw - the switch takes touches whatever its
+  ancestors say, and only an iPhone (canTaptic) has them.
