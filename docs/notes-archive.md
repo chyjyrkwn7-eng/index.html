@@ -30310,3 +30310,19 @@ pause menu lags to open, fix this as well"*.
   the bubbles' recording size on an upright iPad is steady (92px, 114 on its side - steadier than a phone's 78/84). Reduce Motion
   (OS or the app's own) stops the sheets and nearly everything else on Home. Needs his iPad's report (Send tab timings: "loops",
   "sh" = sheets held) or a recording; the admin read of reports was not allowed in this session.
+
+### 380, one more: Home's rank bubbles keep moving on an iPad that comes back at another size
+Madison: *"the iPads main menu, the rank flares, the stuff within them aren't moving… fix this"*.
+- FOUND (reproduced on an 11" iPad viewport): trimForBackground() takes Home's bubble sheets off while the app is away (build 357,
+  memory), and restoreAfterBackground() put back only those startOrbitEmblemAnimsKnown() knows - geometry keyed by orbitGeomKey
+  (innerWidth x innerHeight). A phone comes back the size it left; an iPad often does not (turned while away, Split View, Stage
+  Manager), and then NO bubble got its sheet back: 7 of 7 on their still drawings, still 0 after 30s, until Home was built again.
+  Likewise a Home built at a size with no recorded sheets (an iPad turned) stood still for the minutes the recordings take.
+- FIX: restoreAfterBackground() also runs orbitStandIns() and startOrbitEmblemAnims() (the rest go the way a new Home's do);
+  orbitStandIns() puts the same drawing's sheet at a size this device has (orbitAnimReady) on any bubble with none, scaled to the
+  bubble (the cell is the bubble's own, so each step is whole device px), class .is-standin, on the loop clock; the real sheet
+  replaces it when made (attachOrbitSheetNow removes the stand-in, no fade). orbitHasSheet() (a stand-in does not count) in
+  startOrbitEmblemAnims and attachOrbitSheet's put(). Home's 1600ms pass runs orbitStandIns() first; never for a bubble whose own
+  size is in memory.
+- Gate: tools/check-b380-flares.py (iPad 11): same size - own sheets, no stand-ins; turned while away - 7 of 7 moving 4s after
+  (0 of 7 before), own sheets take over within 60s, one sheet a bubble; turned then a new Home - 7 of 7 moving 4.5s in (0 before).

@@ -83049,7 +83049,16 @@ function restoreAfterBackground(){
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
     const hero = document.querySelector(".cosmic-hero-wrap");
-    if(hero) startOrbitEmblemAnimsKnown(hero.parentElement || hero);
+    if(hero){
+      startOrbitEmblemAnimsKnown(hero.parentElement || hero);
+      /* build 380: AND EVERY BUBBLE STILL WITHOUT ITS SHEET GETS ONE. Madison: "the iPads main menu, the rank flares, the stuff within
+         them aren't moving". The sheets come off on the way out (trimForBackground) and only those whose geometry is known for THIS
+         window size (orbitGeomKey: innerWidth x innerHeight) went back on - a phone always comes back the size it left, an iPad often
+         does not (turned while away, Split View, Stage Manager), and then no bubble got its sheet back: all seven stood on their still
+         drawings until Home was built again. The rest now go the way a new Home's do (the saved sheet for that size, else recorded). */
+      orbitStandIns(hero.parentElement || hero);
+      startOrbitEmblemAnims(hero.parentElement || hero);
+    }
   }catch(e){}
 }
 /* and a note of how the last run ended, so that a page that was ended in the background shows up in the report */
@@ -83216,9 +83225,37 @@ function orbitGeomKey(badge, tier){ return tier + "|" + (badge.classList.contain
    breath) - a one-frame pop in each bubble on the first Home of a
    session, which is one of the flashes reported. A sheet put on before
    the first paint (startOrbitEmblemAnimsKnown) has nothing to fade from. */
+/* build 380: a bubble showing its real sheet (a stand-in - another size's sheet, scaled - does not count) */
+function orbitHasSheet(badge){ return !!badge.querySelector(":scope > .cosmic-rank-anim:not(.is-standin)"); }
+/* build 380: BACK AT ANOTHER SIZE, THE SHEET IT HAS, AT ONCE. An iPad turned while the app was away comes back with bubbles of another
+   size, whose sheets are not made yet (recorded in the quiet, one at a time - minutes for all of them). Until each is, the same drawing's
+   sheet at the size it does have is put on, scaled to the bubble (each step still whole device pixels: the cell is the bubble's own),
+   and the real one takes its place when it is made. */
+function orbitStandIns(root){
+  if(!root || !orbitAnimAllowed()) return;
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  root.querySelectorAll(".cosmic-badge-rank").forEach(badge => {
+    try{
+      const svg = badge.querySelector("svg.cosmic-rank-emblem"), tier = badge.dataset.rankTier;
+      if(!svg || !tier || badge.querySelector(".cosmic-rank-anim") || badge.dataset.sheetPending) return;
+      const id = orbitAnimDrawing(tier).id + "|";
+      let sp = null;
+      orbitAnimReady.forEach((v, k) => { if(!sp && v && k.indexOf(id) === 0) sp = v; });
+      if(!sp) return;
+      const layoutW = parseFloat(getComputedStyle(badge).width) || 0;
+      const shownW = badge.getBoundingClientRect().width;
+      const S = layoutW > 0 && shownW > 0 ? shownW / layoutW : 1;
+      let px = Math.round(shownW * scale); px -= px % 2;
+      if(px < 12 || orbitAnimReady.has(id + px)) return;   /* its own sheet is here: that one goes on */
+      const cs = getComputedStyle(svg);
+      attachOrbitSheet(badge, svg, sp, { px, cellCss: px / scale / S, filter: cs.filter, opacity: cs.opacity, standin: true }, false, true);
+    }catch(e){}
+  });
+  try{ syncLoopClock(root); }catch(e){}
+}
 function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   const wrap = document.createElement("div");
-  wrap.className = "cosmic-rank-anim";
+  wrap.className = "cosmic-rank-anim" + (g.standin ? " is-standin" : "");
   wrap.setAttribute("aria-hidden", "true");
   wrap.style.filter = g.filter; wrap.style.opacity = g.opacity;
   const frame = document.createElement("div");
@@ -83240,8 +83277,8 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   badge.dataset.sheetPending = "1";
   const put = () => {
     delete badge.dataset.sheetPending;
-    if(document.hidden || !badge.isConnected || !svg.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) return;
-    attachOrbitSheetNow(badge, svg, wrap, g, true);
+    if(document.hidden || !badge.isConnected || !svg.isConnected || orbitHasSheet(badge) || !orbitAnimAllowed()) return;
+    attachOrbitSheetNow(badge, svg, wrap, g, !badge.querySelector(":scope > .cosmic-rank-anim.is-standin"));
     try{ syncLoopClock(wrap); }catch(e){}
   };
   let decoded = false;
@@ -83249,6 +83286,8 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   try{ img.decode().then(once, once); setTimeout(once, 1500); }catch(e){ once(); }
 }
 function attachOrbitSheetNow(badge, svg, wrap, g, fade){
+  const standin = badge.querySelector(":scope > .cosmic-rank-anim.is-standin");
+  if(standin && standin !== wrap){ standin.remove(); fade = false; }
   svg.after(wrap);
   if(fade && !ringMotionOff()){
     try{
@@ -83290,7 +83329,7 @@ function startOrbitEmblemAnims(root, readyOnly){
       if(!badge) continue;
       let svg = badge.querySelector("svg.cosmic-rank-emblem");
       const tier = badge.dataset.rankTier;
-      if(!svg || !tier || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || badge.dataset.sheetPending) continue;
+      if(!svg || !tier || !badge.isConnected || orbitHasSheet(badge) || badge.dataset.sheetPending) continue;
       /* The hero sits inside a scaled wrapper (0.94), so whole CSS pixels
          are not whole SCREEN pixels. Size the cell from what is on screen
          and divide that scale back out: each frame step is then exactly
@@ -83310,7 +83349,7 @@ function startOrbitEmblemAnims(root, readyOnly){
       const sp = await pending;
       badge = ref.deref();
       svg = badge && badge.querySelector("svg.cosmic-rank-emblem");
-      if(!sp || !badge || !svg || !badge.isConnected || badge.querySelector(".cosmic-rank-anim") || !orbitAnimAllowed()) continue;
+      if(!sp || !badge || !svg || !badge.isConnected || orbitHasSheet(badge) || !orbitAnimAllowed()) continue;
       const cs = getComputedStyle(svg);
       const g = { px, cellCss: sp.px / scale / S, filter: cs.filter, opacity: cs.opacity };
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
@@ -97055,7 +97094,8 @@ function showHome(){
   heroSettleSkip(panel);
   /* the Supernova streak with every fourth pulse (b321h) */
   try{ homeStreakArm(heroWrap); }catch(e){}
-  setTimeout(() => { if(panel.isConnected) startOrbitEmblemAnims(panel); }, 1600);
+  /* build 380: a size with no sheets yet (an iPad turned) moves at once on another size's, until its own are made (orbitStandIns) */
+  setTimeout(() => { if(panel.isConnected){ orbitStandIns(panel); startOrbitEmblemAnims(panel); } }, 1600);
   /* THE XP FLIES IN AFTER THE DAILY QUESTION ONLY (build 304). It used
      to fly after every run, from back when the results screen did not
      show XP. A test's results screen does now - buildResultsLevelBlock,
