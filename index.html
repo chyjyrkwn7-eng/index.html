@@ -31666,20 +31666,7 @@
     filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 45%, transparent))
            drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 20%, transparent)); }
   .nova-case.ncase .ncase-cell.is-earned .badge-tile-art::after{ opacity:.55; }
-  /* ---- DIRT ON THE CASE (build 320, b320g) ---- a badge's glow fades with
-     its shine: clean, light, dull, grimy, dirtiest. The colour stays. */
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="1"] svg{
-    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 36%, transparent))
-           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 15%, transparent)); }
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="2"] svg{
-    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 26%, transparent))
-           drop-shadow(0 0 6px color-mix(in srgb, var(--badge-glow, #fff) 10%, transparent)); }
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="3"] svg{
-    filter:drop-shadow(0 0 1.5px color-mix(in srgb, var(--badge-glow, #fff) 16%, transparent)); }
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="4"] svg{ filter:none; }
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="2"]::after{ opacity:.35; }
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="3"]::after{ opacity:.2; }
-  .nova-case.ncase .ncase-cell.is-earned .badge-tile-art[data-dirt="4"]::after{ opacity:0; }
+  /* (build 382) the case's dirt stages (build 320) went: one look */
   /* A TAP LANDS ON THE SLOT IT IS OVER (build 320, b320g). A seated badge's
      seat shade is a 260-unit rect under a mask (build 319), and a masked
      shape is hit-tested by its geometry, not its mask: with the svg's
@@ -31749,20 +31736,12 @@
     background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 28%, rgba(255,255,255,.58) 50%, rgba(255,255,255,.16) 72%, rgba(255,255,255,0) 100%); }
   .binspect-hit{ position:absolute; inset:-4%; z-index:3; border-radius:50%; touch-action:none; cursor:grab; }
   .binspect-hit.is-grabbed{ cursor:grabbing; }
-  .binspect-sparks{ position:absolute; inset:0; z-index:4; pointer-events:none; }
-  .binspect-spark{
-    position:absolute; width:13%; height:13%; margin:-6.5% 0 0 -6.5%; opacity:0;
-    clip-path:polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
-    background:radial-gradient(circle, #FFFFFF 0 22%, #FFF2C2 46%, rgba(255,226,140,.0) 74%);
-  }
   .binspect-slot{ position:absolute; inset:0; }
   .binspect-slot svg{ width:100%; height:100%; display:block; overflow:visible; }
   .binspect-words{ position:relative; width:min(22rem, 100%); text-align:center; }
-  /* build 321: the name, one hint while it is dirty, a quiet tip, Close */
+  /* build 321: the name, a quiet tip, Close (build 382: no dirt hint) */
   .binspect-words .unlock-card-name{ margin:0 0 .2rem; text-wrap:balance; }
   .binspect-count{ margin:.35rem 0 0; font-size:.9rem; font-weight:700; color:rgba(243,245,247,.62); }
-  .binspect-dirt{ margin:.5rem auto 0; font-size:.92rem; font-weight:700; line-height:1.35; color:#F3DE9A; }
-  .binspect-dirt[hidden]{ display:none; }
   .binspect-tip{ margin:.4rem auto 0; font-size:.76rem; font-weight:600; line-height:1.4; letter-spacing:.02em; color:rgba(243,245,247,.42); }
   .binspect-close{ margin-top:1.2rem; }
   /* build 327: no keyboard ring on Close (the viewer had focus on it) */
@@ -33681,13 +33660,6 @@ html.is-browser{ --fade-paper: transparent; }
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #fff) 20%, #1C212B), #11141B 72%) !important;
     box-shadow:0 0 0 4px #12151A, 0 0 0 5.5px color-mix(in srgb, var(--char-glow, #fff) 55%, transparent), 0 12px 26px rgba(0,0,0,.45) !important;
   }
-  /* the clean tip over a dull badge (327z15) */
-  .badge-tile.has-clean-tip{ position:relative; overflow:visible; z-index:2; }
-  .badge-clean-tip{ position:absolute; left:50%; bottom:calc(100% + 6px); translate:-50% 0; white-space:nowrap; pointer-events:none;
-    padding:.32rem .6rem; border-radius:999px; font-size:.7rem; font-weight:800; color:#0B0D10; background:#F3E3B5;
-    box-shadow:0 6px 16px rgba(0,0,0,.45); }
-  .badge-clean-tip::after{ content:""; position:absolute; left:50%; top:100%; translate:-50% 0; border:6px solid transparent; border-top-color:#F3E3B5; border-bottom:0; }
-  @media (prefers-reduced-motion:no-preference){ .badge-clean-tip{ animation:pf-float 2.6s ease-in-out infinite; } }
   /* ONE FAMILY OF TILES (327z15): "The challenge box could look better ...
      all the boxes don't go together good enough." The challenge rows and
      the unlock tiles take the Progress tiles' surface exactly (the person
@@ -66165,29 +66137,38 @@ const BADGE_DIRT_NAMES = ["Clean", "Light", "Dull", "Grimy", "Dirtiest"];
    reflection flat and warm, a film over everything, dust in it, and the
    glow round it almost out. Never another colour: the enamel only loses
    its clear coat and some of its light (the gate holds the hue within 12
-   degrees). Every array is indexed by stage. */
+   degrees). Every array is indexed by stage.
+   ONE LOOK, A SMIDGE DIRTIER (build 382). Madison: "let's get rid of the
+   'lost its shine' thing for badges, no more rubbing badges to clean them
+   ... the badges could look better by when they are the full shine, give
+   them a smidge more of a dirty look ... less shine more dirty but not a
+   lot." Badges no longer get dirtier with time and are not cleaned:
+   badgeDirtStage is 0 for every badge, always, and stage 0 - the one look
+   every badge now wears - is half way from build 321's clean to its
+   stage 1 (each [0] below). Stages 1-4 are kept, drawn by nothing in the
+   app, only so the scale stays whole if the feature ever comes back. */
 const BADGE_DIRT = {
-  gloss:  [.2, .4, .6, .78, .92],      /* the metal's specular taken off */
+  gloss:  [.3, .4, .6, .78, .92],      /* the metal's specular taken off */
   glossSm: .1,                          /* ...more under a smudge */
-  flat:   [.08, .2, .34, .5, .66],      /* its reflection flattened towards a dull grey (linear) */
+  flat:   [.14, .2, .34, .5, .66],      /* its reflection flattened towards a dull grey (linear) */
   flatTo: .045,
-  tarnish: [.1, .3, .52, .76, 1],       /* how far towards the warm tarnish tint */
+  tarnish: [.2, .3, .52, .76, 1],       /* how far towards the warm tarnish tint */
   tint: [1, .94, .84],
-  coat:   [.16, .4, .6, .78, .92],      /* the enamel's clear coat dulled */
+  coat:   [.28, .4, .6, .78, .92],      /* the enamel's clear coat dulled */
   coatSm: .1,
-  dim:    [.02, .06, .11, .17, .25],    /* the enamel darker */
-  grime:  [.3, .46, .62, .8, .94],      /* grime settled at the foot of every wall, metal side */
-  grimeE: [.24, .36, .48, .62, .76],    /* ...and colour side */
+  dim:    [.04, .06, .11, .17, .25],    /* the enamel darker */
+  grime:  [.38, .46, .62, .8, .94],      /* grime settled at the foot of every wall, metal side */
+  grimeE: [.3, .36, .48, .62, .76],    /* ...and colour side */
   recM: 1.3, recE: 1.5,                 /* how far it reaches up the wall and into the colour, token units */
   gc: [.012, .009, .006],               /* its colour, linear: a dark brown-grey */
-  film:   [.15, .24, .34, .46, .58],    /* a smudge: a film that greys what is under it (metal) */
-  filmE:  [.1, .15, .21, .29, .38],    /* ...on the colour */
+  film:   [.195, .24, .34, .46, .58],    /* a smudge: a film that greys what is under it (metal) */
+  filmE:  [.125, .15, .21, .29, .38],    /* ...on the colour */
   fc: [.075, .064, .05],                /* the film's colour, linear */
-  grain:  [.085, .09, .1, .11, .12],    /* the metal's fine grain, a share of its light either way */
-  grainE: [.05, .055, .065, .075, .085],/* ...and the enamel's */
-  dust:   [0, .06, .16, .3, .46],       /* dust: fine dark flecks, soft-edged */
-  glow:   [1, .76, .54, .34, .14],      /* the glow round the badge in your hand */
-  shine:  [1, .74, .5, .3, .12]         /* the light that crosses its face as it turns */
+  grain:  [.0875, .09, .1, .11, .12],    /* the metal's fine grain, a share of its light either way */
+  grainE: [.0525, .055, .065, .075, .085],/* ...and the enamel's */
+  dust:   [.03, .06, .16, .3, .46],       /* dust: fine dark flecks, soft-edged */
+  glow:   [.88, .76, .54, .34, .14],      /* the glow round the badge in your hand */
+  shine:  [.87, .74, .5, .3, .12]         /* the light that crosses its face as it turns */
 };
 function badgeHash2(seed, a, b){
   let n = (Math.imul(a, 374761393) + Math.imul(b, 668265263) + Math.imul(seed, -2048144777)) | 0;
@@ -66256,20 +66237,12 @@ function badgeDirtAt(cleanedAt, now){
   const w = Math.floor(((typeof now === "number" ? now : Date.now()) - cleanedAt) / BADGE_DIRT_WEEK_MS);
   return w <= 0 ? 0 : w >= BADGE_DIRT_MAX ? BADGE_DIRT_MAX : w;
 }
+/* build 382: every badge wears the one look (stage 0, see BADGE_DIRT),
+   however long ago it was found or last cleaned. store.badgeCleanedAt is
+   still kept, merged and synced (badgeCleanMap, mergeSameAccount) but
+   nothing is drawn from it, and nothing cleans a badge any more. */
 function badgeDirtStage(unit, now){
-  if(!unitBadgeEarned(unit)) return 0;
-  const m = store.badgeCleanedAt;
-  let t = m && typeof m === "object" ? m[unit] : undefined;
-  if(typeof t !== "number") t = ensureBadgeCleanedAt(true)[unit];
-  return badgeDirtAt(t, now);
-}
-/* Cleaned to `stage` just now: the clean time goes back by that many
-   weeks, so the badge reads that stage for the week to come. Saved and
-   synced; the merge keeps each badge's newest time. */
-function setBadgeDirtStage(unit, stage){
-  const m = ensureBadgeCleanedAt(false);
-  m[unit] = Date.now() - Math.max(0, Math.min(BADGE_DIRT_MAX, stage | 0)) * BADGE_DIRT_WEEK_MS;
-  saveStore();
+  return 0;
 }
 
 __bm("L59966");
@@ -88170,7 +88143,7 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
     text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or See rank ladder for every rank and what each one unlocks." },
   { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
-    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over. Badges get dirty over the weeks, so rub them clean." }
+    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -132950,10 +132923,9 @@ function buildBadgesTab(opts){
       const bt = badgeThemeFor(unit);
       if(bt && bt.p) art.style.setProperty("--badge-glow", has ? bt.p : "#8E9196");
     } catch(e){}
-    /* how dirty it is (build 320, b320g): its glow fades with its shine */
+    /* the one look (build 382): badges no longer lose their shine */
     const dirt = has ? badgeDirtStage(unit) : 0;
     if(has) art.dataset.dirt = String(dirt);
-    if(has && dirt > 0) tile.dataset.dirt = String(dirt);
     art.appendChild(buildUnitBadgeSVG(unit, has, has ? { dirt } : undefined));
     tile.appendChild(art);
     const name = document.createElement("span");
@@ -132964,27 +132936,13 @@ function buildBadgesTab(opts){
     const clearNew = has ? attachNewDot(art, "badges", unit) : () => {};
     /* build 320 (b320g): the badge in your hand, not the unlock card */
     if(has) tile.addEventListener("pointerdown", () => badgeInspectPrewarm(unit), { passive: true });
-    tile.addEventListener("click", () => { clearNew(); tile.querySelector(".badge-clean-tip")?.remove(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
+    tile.addEventListener("click", () => { clearNew(); finishBadgeCaseOpen(kase); openBadgeInspect(unit, tile); });
     /* build 380: the finger is down ~100ms before the click - its big faces start decoding then */
     tile.addEventListener("pointerdown", () => { try{ binspectPredecode(unit); }catch(e){} }, { passive: true });
     return tile;
   });
   tab.appendChild(kase);
-  /* ONE TIP, ON THE BADGE THAT NEEDS IT (327z15): the dullest badge you
-     hold gets a small pill pointing at it - only while one has lost its
-     shine. Tapping the badge picks it up, where it is rubbed clean. */
-  {
-    let worst = null;
-    kase.querySelectorAll(".badge-tile[data-dirt]").forEach(t => { if(!worst || +t.dataset.dirt > +worst.dataset.dirt) worst = t; });
-    if(worst){
-      const tip = document.createElement("span");
-      tip.className = "badge-clean-tip";
-      tip.setAttribute("aria-hidden", "true");
-      tip.textContent = "Lost its shine \u2014 tap to clean";
-      worst.appendChild(tip);
-      worst.classList.add("has-clean-tip");
-    }
-  }
+  /* (build 382) the "Lost its shine" tip (327z15) went with the dirt */
   /* Shut at first paint, opened by runFill once the screen is up - unless
      motion is off, or this is the same screen built again (opts.still):
      only a new opening of the screen opens the case. */
@@ -133217,18 +133175,11 @@ function finishBadgeCaseOpen(kase){
    any shape is, its letters not. Spun with requestAnimationFrame, writing
    transforms and opacities only: rotateY on the spinner, the floor
    shadow's width, the light crossing each face.
-   SPIN OR RUB - the rule. Every drag on the badge turns it with the
+   THE SPIN - the rule. Every drag on the badge turns it with the
    finger, once it is past a little slack (BINSPECT.slack of the badge's
-   width, so a rub's first short strokes do not rock it; a badge's width
-   of drag is BINSPECT.degPerW degrees) until it
-   shows it is a rub: two turn-backs, each stroke between rubMin px and
-   rubMax of the badge's width and done within rubStrokeMs, all of it
-   inside the badge (rubReach of its width from the middle). From then on
-   the drag no longer turns it - it eases round to show its front, where
-   the dirt is - and every
-   stroke counts; every rubPerStage strokes clean it one stage. Anything
-   else is a spin: one long stroke, or strokes longer than rubMax, can
-   never clean, and a rub never flings. Letting go spins it at the
+   width, so a short wobble does not rock it; a badge's width of drag is
+   BINSPECT.degPerW degrees). (Build 382: there is no rub any more -
+   badges are not cleaned - so every drag is a spin.) Letting go spins it at the
    finger's speed over the last 90ms (none if the finger had stopped),
    slowing with time constant tau, then easing round to face you or show
    its back, whichever is nearer where it would have stopped. A press
@@ -133237,7 +133188,6 @@ const BINSPECT = {
   open: 900, close: 640, fade: 200,
   tilt: 58, drop: .93, persp: 900, sink: .9,
   degPerW: 200, slack: .15, maxSpin: 2400, tau: .85, settleAt: 70, springK: 60, springC: 12.4,
-  rubMax: .75, rubMin: 8, rubTurn: 8, rubStrokeMs: 450, rubReach: .62, rubPerStage: 4,
   edges: 16
 };
 __bm("L124635");
@@ -133906,12 +133856,12 @@ function openBadgeInspect(unit, tile){
   const shadow = mk("binspect-shadow");
   const persp = mk("binspect-persp");
   float.append(glow, shadow, persp);
-  let dirt = found ? badgeDirtStage(unit) : 0;
-  const dirt0 = dirt;
+  /* the one look (build 382): a badge is no longer cleaned in your hand */
+  const dirt = found ? badgeDirtStage(unit) : 0;
   /* the front face at each stage: its url, and whether it is the finish */
   const ready = {}, isFinal = {};
   const dpr = badgeDpr();
-  let spin = null, frontA = null, frontB = null, frontSpec = null, backSpec = null, hit = null, sparks = null;
+  let spin = null, frontA = null, frontB = null, frontSpec = null, backSpec = null, hit = null;
   let backImg = null, backAt = -1, backFinal = false, addEdges = () => {};
   /* sized by CSS (--bi); measured once it is in the document */
   document.body.appendChild(ov);
@@ -133980,10 +133930,9 @@ function openBadgeInspect(unit, tile){
     }catch(e){}
     coin.appendChild(spin);
     persp.appendChild(coin);
-    sparks = mk("binspect-sparks");
     hit = mk("binspect-hit");
     hit.setAttribute("aria-hidden", "true");
-    float.append(sparks, hit);
+    float.append(hit);
   } else {
     const slot = mk("binspect-slot");
     try{ slot.appendChild(buildUnitBadgeSVG(unit, false)); }catch(e){}
@@ -133994,9 +133943,8 @@ function openBadgeInspect(unit, tile){
      going on here. It's not simple ... The word mastered does not need to
      be on this screen ... The progress bar and the numbers saying how many
      you needed can go away too. Just makes the screen crowded and takes
-     away from the badge." So: its name; "Rub to clean it." only while it is
-     dirty (nothing at all once it is clean - not even that it is); a quiet
-     "Swipe to spin it."; Close. A badge not found: its name and how far
+     away from the badge." So: its name; a quiet "Swipe to spin it."; Close
+     (build 382: the "Rub to clean it." line went with the dirt). A badge not found: its name and how far
      along it is, in one short line. */
   const words = mk("binspect-words");
   const nm = mk("unlock-card-name binspect-name", "h2"); nm.textContent = det.name;
@@ -134006,11 +133954,7 @@ function openBadgeInspect(unit, tile){
     count.textContent = det.have.toLocaleString() + " of " + det.need.toLocaleString() + " hundo" + (det.need === 1 ? "" : "s");
     words.appendChild(count);
   }
-  let hint = null;
   if(found){
-    hint = mk("binspect-dirt", "p");
-    hint.setAttribute("aria-live", "polite");
-    words.appendChild(hint);
     const tip = mk("binspect-tip", "p");
     tip.textContent = "Swipe to spin it.";
     words.appendChild(tip);
@@ -134019,13 +133963,7 @@ function openBadgeInspect(unit, tile){
   closeBtn.type = "button"; closeBtn.textContent = "Close";
   words.appendChild(closeBtn);
   stageEl.appendChild(words);
-  const setHint = () => {
-    ov.dataset.dirt = String(dirt);
-    if(!hint) return;
-    hint.hidden = dirt === 0;
-    hint.textContent = dirt === 0 ? "" : "Rub to clean it.";
-  };
-  setHint();
+  ov.dataset.dirt = String(dirt);
   /* ---- the light, the shadow, the glow: all from the angle ---- */
   let th = 0, om = 0, mode = "idle", target = 0, raf = 0, lastT = 0;
   const wrap = a => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
@@ -134060,9 +133998,8 @@ function openBadgeInspect(unit, tile){
   const kick = () => { if(!raf){ lastT = performance.now(); raf = requestAnimationFrame(tick); } };
   /* ---- the faces, rendered while it is still ----
      The face showing (a draft at once, ensureFace), then its finish, then
-     each cleaner stage's draft and finish - one at a time, only after
-     half a second with nothing touched or turning, so a render never
-     lands in a spin or a rub. */
+     its back - one at a time, only after half a second with nothing
+     touched or turning, so a render never lands in a spin. */
   let idleTimer = 0;
   /* Two images take turns: the new face comes up over the old one, so
      there is never a frame with nothing decoded in it. */
@@ -134106,70 +134043,14 @@ function openBadgeInspect(unit, tile){
       if(!isFinal[dirt]) job = () => { const e = faceEntry(dirt, false); if(e){ ready[dirt] = e.url; isFinal[dirt] = true; showFace(dirt); } };
       /* the back at this stage, its finish (build 321) */
       if(!job && backImg && (backAt !== dirt || !backFinal)) job = () => ensureBack(false);
-      for(let s = dirt - 1; s >= 0 && !job; s--){
-        if(!ready[s]) job = () => ensureFace(s);
-        else if(!isFinal[s]) job = () => { const e = faceEntry(s, false); if(e){ ready[s] = e.url; isFinal[s] = true; showFace(s); } };
-      }
       if(!job) return;
       try{ job(); }catch(e){}
       idleWork();
     }, 500);
   };
-  /* ---- spin or rub (see the note above BINSPECT) ---- */
-  let gest = null, rubStrokes = 0, opening = !still, closed = false;
+  /* ---- the spin (see the note above BINSPECT) ---- */
+  let gest = null, opening = !still, closed = false;
   const pt = e => ({ x: e.clientX, y: e.clientY });
-  const cleanStroke = () => {
-    if(dirt <= 0) return;
-    playSound("badge.rub", { clean: 1 - dirt / BADGE_DIRT_MAX });
-    rubStrokes++;
-    polish();
-    if(rubStrokes % B.rubPerStage === 0) cleanOne();
-  };
-  const polish = () => {
-    if(!frontSpec) return;
-    try{ frontSpec.animate([{ opacity: 1 }, { opacity: 1.35, offset: .3 }, { opacity: 1 }], { duration: 240 }); }catch(e){}
-  };
-  const cleanOne = () => {
-    dirt = Math.max(0, dirt - 1);
-    /* a stage comes off: the squeak of bare metal, and the shine once clean */
-    playSound("badge.squeak", { clean: 1 - dirt / BADGE_DIRT_MAX });
-    if(dirt === 0) setTimeout(() => playSound("badge.sparkle"), 120);
-    try{ setBadgeDirtStage(unit, dirt); }catch(e){}
-    /* build 380: the slot's picture at this stage, made now and not as the badge is put back ("when it goes back to the case it lags
-       as it gets put in the case": putBack drew the slot again at the new stage in the frame it landed in) */
-    { const d = dirt; setTimeout(() => { if(closed || dirt !== d) return; try{ badgeStrikeURL(unit, false, badgeStrikeSize((slotOpts ? slotOpts.px : badgeCaseSlotPx()) * badgeDpr()), d); }catch(e){} }, 700); }
-    const url = ready[dirt] || ensureFace(dirt);
-    if(url) swapFace(url, dirt, 380);
-    ov.style.setProperty("--glow-k", String(BADGE_DIRT.glow[dirt]));
-    sparkle();
-    setHint();
-    idleWork();
-  };
-  const sparkle = () => {
-    if(!sparks) return;
-    const n = 8;
-    for(let i = 0; i < n; i++){
-      const s = mk("binspect-spark", "i");
-      const a = (i / n) * Math.PI * 2 + (i % 2 ? .4 : 0), r = (i % 2 ? .22 : .34);
-      s.style.left = (50 + Math.cos(a) * r * 100).toFixed(1) + "%";
-      s.style.top = (50 + Math.sin(a) * r * 100).toFixed(1) + "%";
-      sparks.appendChild(s);
-      try{
-        const an = s.animate([
-          { opacity: 0, transform: "scale(.2) rotate(0deg)" },
-          { opacity: 1, transform: "scale(1) rotate(45deg)", offset: .35 },
-          { opacity: 0, transform: "scale(.3) rotate(90deg)" }
-        ], { duration: 640, delay: i * 45, easing: "cubic-bezier(.2,.7,.3,1)", fill: "backwards" });
-        an.finished.then(() => s.remove()).catch(() => s.remove());
-      }catch(e){ s.remove(); }
-    }
-    /* and the light runs once across the face */
-    try{
-      const fi = frontSpec.firstChild;
-      fi.animate([{ opacity: 0, transform: "translateX(-190%) rotate(16deg)" }, { opacity: .9, offset: .4 }, { opacity: 0, transform: "translateX(190%) rotate(16deg)" }],
-        { duration: 700, easing: "cubic-bezier(.3,0,.2,1)" });
-    }catch(e){}
-  };
   if(hit){
     /* the side's slices: a beat after the lift, or at once on a press */
     const edgeTimer = setTimeout(() => { if(!closed) addEdges(); }, still ? 0 : 450);
@@ -134182,73 +134063,37 @@ function openBadgeInspect(unit, tile){
       /* a grab stops it dead */
       om = 0; if(raf){ cancelAnimationFrame(raf); raf = 0; }
       mode = "drag";
-      gest = { id: e.pointerId, kind: "pending", lx: p.x, x0: p.x, turning: false, t0: now, samples: [{ t: now, x: p.x }], lastMove: now,
-               cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, inside: true,
-               anchor: p, ext: p, extT: now, strokes: [] };
+      gest = { id: e.pointerId, lx: p.x, x0: p.x, turning: false, samples: [{ t: now, x: p.x }], lastMove: now, w: r.width };
       hit.classList.add("is-grabbed");
     });
     hit.addEventListener("pointermove", e => {
       const g = gest;
       if(!g || e.pointerId !== g.id) return;
       const p = pt(e), now = performance.now();
-      if(Math.hypot(p.x - g.cx, p.y - g.cy) > B.rubReach * g.w) g.inside = false;
-      /* the rub tracker: a stroke ends where the finger turns back */
-      const ax = g.ext.x - g.anchor.x, ay = g.ext.y - g.anchor.y, al = Math.hypot(ax, ay);
-      if(al < B.rubMin){ g.ext = p; g.extT = now; }
-      else {
-        const along = ((p.x - g.anchor.x) * ax + (p.y - g.anchor.y) * ay) / al;
-        if(along >= al){ g.ext = p; g.extT = now; }
-        else if(al - along >= B.rubTurn){
-          g.strokes.push({ len: al, ms: g.extT - (g.strokeT0 || g.t0) });
-          g.strokeT0 = g.extT;
-          g.anchor = g.ext; g.ext = p; g.extT = now;
-          if(g.kind === "rub") cleanStroke();
-        }
-      }
-      if(g.kind !== "rub"){
-        const lenOK = s => s.len <= B.rubMax * g.w && s.ms <= B.rubStrokeMs;
-        if(g.kind === "pending" && (g.strokes.some(s => !lenOK(s)) || al > B.rubMax * g.w)) g.kind = "spin";
-        if(g.kind === "pending" && g.inside && g.strokes.length >= 2 && g.strokes.every(lenOK)){
-          /* it is a rub: it stops turning and comes round to show its FACE
-             (the dirt is on the front; rubbing its back turns it over) */
-          g.kind = "rub";
-          hit.classList.add("is-rubbing");
-          mode = "settle"; target = Math.round(th / 360) * 360; kick();
-          g.strokes.forEach(() => cleanStroke());
-        } else {
-          /* a little slack before it turns, so the short strokes a rub
-             starts with do not rock it; past it, it follows the finger */
-          const dx0 = p.x - g.x0, slack = B.slack * g.w;
-          if(!g.turning && Math.abs(dx0) > slack){ g.turning = true; g.lx = g.x0 + (dx0 > 0 ? slack : -slack); }
-          if(g.turning) th += (p.x - g.lx) * B.degPerW / g.w;
-          g.samples.push({ t: now, x: p.x });
-          while(g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
-          g.lastMove = now;
-          /* THE DRAW FRAME STARTS THE SPIN IF THE FINGER HAS ALREADY GONE
-             (build 324). A flick's last move and its release can land in
-             the same frame; release() then found this frame pending,
-             kick() did nothing, and the frame only drew - the badge sat
-             frozen mid-coast at whatever angle it had reached. Found on a
-             recording that delivered move and release together, as a fast
-             flick on a phone can. */
-          if(!raf){ raf = requestAnimationFrame(t => { raf = 0; apply(); if(mode === "coast" || mode === "settle") kick(); }); }
-        }
-      }
+      /* a little slack before it turns, so a small wobble does not rock
+         it; past it, it follows the finger */
+      const dx0 = p.x - g.x0, slack = B.slack * g.w;
+      if(!g.turning && Math.abs(dx0) > slack){ g.turning = true; g.lx = g.x0 + (dx0 > 0 ? slack : -slack); }
+      if(g.turning) th += (p.x - g.lx) * B.degPerW / g.w;
+      g.samples.push({ t: now, x: p.x });
+      while(g.samples.length > 2 && now - g.samples[0].t > 90) g.samples.shift();
+      g.lastMove = now;
+      /* THE DRAW FRAME STARTS THE SPIN IF THE FINGER HAS ALREADY GONE
+         (build 324). A flick's last move and its release can land in
+         the same frame; release() then found this frame pending,
+         kick() did nothing, and the frame only drew - the badge sat
+         frozen mid-coast at whatever angle it had reached. Found on a
+         recording that delivered move and release together, as a fast
+         flick on a phone can. */
+      if(!raf){ raf = requestAnimationFrame(t => { raf = 0; apply(); if(mode === "coast" || mode === "settle") kick(); }); }
       g.lx = p.x;
     });
     const release = e => {
       const g = gest;
       if(!g || e.pointerId !== g.id) return;
       gest = null;
-      hit.classList.remove("is-grabbed", "is-rubbing");
+      hit.classList.remove("is-grabbed");
       const now = performance.now();
-      if(g.kind === "rub"){
-        const al = Math.hypot(g.ext.x - g.anchor.x, g.ext.y - g.anchor.y);
-        if(al >= B.rubMin * 1.5) cleanStroke();
-        if(mode !== "settle"){ mode = "settle"; target = Math.round(th / 360) * 360; }
-        kick();
-        return;
-      }
       let v = 0;
       const s = g.samples;
       if(s.length >= 2 && now - g.lastMove < 80){
@@ -134280,10 +134125,6 @@ function openBadgeInspect(unit, tile){
   const art = tile && tile.querySelector(".badge-tile-art");
   const slotSvg = art && art.querySelector("svg.badge-art");
   const slotRect = (slotSvg || tile || float).getBoundingClientRect();
-  /* build 380: a badge put back a stage cleaner is drawn at the slot's own size (what the case's tiles end up at once measured).
-     Built at the default size it was a draft at 152px, then a second render at the slot's 88 once measured, then the finish - three
-     pictures and two renders in the frames it landed in ("it lags as it gets put in the case"). cleanOne renders this one ahead. */
-  const slotOpts = slotSvg && slotRect.width > 8 ? { px: slotRect.width } : undefined;
   const scroll0 = window.scrollY || 0;
   let emptySlot = null;
   const lift = () => {
@@ -134292,10 +134133,8 @@ function openBadgeInspect(unit, tile){
   };
   const putBack = () => {
     if(!emptySlot || !emptySlot.parentNode) return;
-    let svg = slotSvg;
-    if(dirt !== dirt0){ try{ svg = buildUnitBadgeSVG(unit, true, slotOpts); }catch(e){} }
-    try{ art.replaceChild(svg, emptySlot); }catch(e){}
-    art.dataset.dirt = String(dirt);
+    /* the very picture it lifted out with (build 382: it cannot come back cleaner) */
+    try{ art.replaceChild(slotSvg, emptySlot); }catch(e){}
     tile.classList.remove("is-lifted");
     emptySlot = null;
   };
@@ -134398,7 +134237,7 @@ function openBadgeInspect(unit, tile){
   try{ if(stageNode) obs.observe(stageNode, { childList: true }); }catch(e){}
   const ctl = {
     unit, found, el: ov, close, teardown,
-    state: () => ({ theta: th, omega: om, mode, stage: dirt, rubStrokes, gesture: gest ? gest.kind : null, closing, closed }),
+    state: () => ({ theta: th, omega: om, mode, stage: dirt, gesture: gest ? "spin" : null, closing, closed }),
     size: () => float.getBoundingClientRect().width
   };
   badgeInspectNow = ctl;

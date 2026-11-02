@@ -21,8 +21,8 @@ the same; (15) a retake's card says what it was and how it went ("Retake of miss
 answered correctly" with "2 still to review" under it);
 (16) the badge case: once the Badges tab has been up a few seconds, a finger on a found badge costs next to nothing (its big face is already
 made) and the lift shows one face from its first frame to its last; (17) the badge-unlock coin: once warmed, every one of its pictures is
-decoded the moment it is built (none come in after it is up); (18) the badge put back after a rub is one finished picture from its first frame in the slot (no draft, no
-second render once measured);
+decoded the moment it is built (none come in after it is up); (18) the badge put back is one finished picture from its first frame in the slot (no draft, no
+second render once measured; since 382 there is no rub, and the stage it went out at is the stage it comes back at);
 (20) the daily question's XP pop-up is Home's banner glass, as a message or friend request is, and what flies to Profile has no blur;
 (21) Review's Starred pill has Select all's glass and rim, a plain count, and its star is the starred question's own gold; (22) with
 nothing starred, a tap on it says so at the top (a banner), not in a toast at the bottom;
@@ -220,7 +220,7 @@ with sync_playwright() as pw:
       return { imgs: imgs.length, ready }; }""")
     chk("the badge-unlock coin is complete the moment it is built (%s of %s pictures decoded)" % (cr["ready"], cr["imgs"]), cr["imgs"] >= 20 and cr["ready"] == cr["imgs"], cr)
     # (18) the slot left and the badge put back
-    pg.evaluate("()=>{ showHome(); unitsInTeachingOrder().filter(u=>unitBadgeEarned(u)).forEach(u=>setBadgeDirtStage(u,4)); }"); pg.wait_for_timeout(600)
+    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(600)   # (382) no dirt stages to set: every badge wears one look
     pg.evaluate("()=>{ showProfile('badges'); }"); pg.wait_for_timeout(9000)
     ci = pg.evaluate("()=>{ const c=[...document.querySelectorAll('.ncase-cell')]; const t=c.find(x=>x.classList.contains('is-earned')); t.scrollIntoView({block:'center',behavior:'instant'}); return c.indexOf(t); }")
     WATCH = """(i)=>{ const cell=document.querySelectorAll('.ncase-cell')[i]; window.__slotLooks=[]; window.__slotOn=true;
@@ -231,7 +231,7 @@ with sync_playwright() as pw:
     pg.mouse.click(tb[0], tb[1]); pg.wait_for_timeout(1600)
     s0 = pg.evaluate("()=>badgeInspectNow && badgeInspectNow.state().stage")
     fx, fy, fw = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
-    per = pg.evaluate("() => BINSPECT.rubPerStage")
+    per = 4   # (382) what was BINSPECT.rubPerStage: the short strokes that used to clean it
     pg.mouse.move(fx, fy); pg.mouse.down()
     for k in range(per * 3 + 6):
         pos = (k % 6) if (k % 6) < 3 else 6 - (k % 6)
@@ -242,8 +242,8 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1500)
     pg.evaluate(WATCH, ci); pg.evaluate("()=>badgeInspectNow.close()"); pg.wait_for_timeout(2500)
     back = pg.evaluate(LOOKS)
-    chk("a badge put back a stage cleaner (%s -> %s) shows one finished picture in its slot (%s)" % (s0, s1, back),
-        s1 is not None and s0 is not None and s1 < s0 and len(back) == 1 and back[0].startswith("final:found"), back)
+    chk("a badge put back after short strokes over it (stage %s -> %s: never cleaned, 382) shows one finished picture in its slot (%s)" % (s0, s1, back),
+        s1 is not None and s0 is not None and s1 == s0 and len(back) == 1 and back[0].startswith("final:found"), back)
     # (20) the daily question's XP on Home's banner glass
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500)
     GLASS = "(sel)=>{ const b=document.querySelector(sel); if(!b) return null; const cs=getComputedStyle(b), r=b.getBoundingClientRect(); return {bg:cs.backgroundImage+cs.backgroundColor, bf:cs.backdropFilter||cs.webkitBackdropFilter, rad:cs.borderTopLeftRadius, bar:cs.borderLeftWidth, rim:cs.borderTopColor, w:Math.round(r.width), l:Math.round(r.left), parts:['.app-banner-icon','.app-banner-tag','.app-banner-title'].filter(s=>b.querySelector(s)).length} }"
