@@ -30644,3 +30644,32 @@ Gate: `tools/check-b382-screens.py`. 65/65 on 382; fails 31 checks on 381.
 Madison, after weighing admin resets, recovery keys and recovery emails: "I think the sync code option may just be best at the moment. We just have to ensure it's apparent that the user needs to remember the code and write it down or something when they receive it and we have to absolutely sure people can't be randomly logged out. So nvm, no username and password yet. I don't like the idea of being responsible for someone's username and email and stuff cause I'd be afraid something would happen and I'd be held liable."
 - The "PLAN (decided 2026-11-02 ...)" entry above is withdrawn. Do not build Firebase Auth, passwords or recovery emails unless he asks again.
 - 382 instead: make saving the code unmistakable when it is first given, and re-audit every path that could sign someone out.
+
+## Build 382 round 2 - Fire Code art for a prevention agency (merged 2026-11-02)
+Madison on round 1: "This is fire code. We are fire prevention agency." No fire helmets, engines, ladders, crews or dogs.
+
+**IFC_CHAR_LOOK**
+- Inspector: uniform, shield, mic, tablet; the glasses kept.
+- Chief: dress blues and a peaked cap.
+- Investigator, K9 Officer (the handler only), Logistics, Horn Strobe, Sprinkler Head, Drone Pilot, Dispatcher.
+- Flares: Breacher, Recon, Thermal, Flashbang.
+- Ultimates: Cyber Marshal, Grand Marshal, Commander.
+- Smoke Diver is kept. The Hazmat placard is rebuilt: shared corners, mitred edges.
+- Characters seat at -0.4 so chest gear stays in the circle. The Drone Pilot art is drawn at 0.86 scale.
+- New motions: cx-fx-fcbeam, fcwave, fcflash, fcspray, fchover, fcrotor, fcradar, fcholo.
+- HFX_FACE_FIX is dropped for these ids in Fire Code.
+
+**IFC_BANNER_ART**
+- New banners: Headquarters, Spill Response, Field Kit, Alarm Panel, Hazmat, Code 3, Grand Marshal.
+- Air Tanker is redrawn. The Code Book banner has no helmet.
+- Fire Watch and Dispatch are now layered.
+- Every non-rank Fire Code banner moves (fbSUV, fbDrum, fbPlacard, fbSuit).
+
+**IFX_DEF / IFX_BUILD (hundo effects)**
+- In Fire Code, fireworks, underwater, bubbles and ufo play Sirens, Sprinklers, Hazmat and Fire Alarm.
+- Ids, counts and picks are unchanged.
+- Each has its own tile, still, totals, tint and SND_IFX sound. The reaction is the same as confetti's.
+- Confetti is untouched.
+
+Gate: check-b382-ifcart is extended, with round 1 hashes from 9ab1bc6. It fails 10 checks there.
+Pending Madison's look: the sheets in the scratchpad, ifc-art-sheet-2.png and ifc-hundo-sheet.png.
