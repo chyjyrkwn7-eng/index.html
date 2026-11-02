@@ -103,7 +103,7 @@ def main():
             ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.drill.v1', '%s');"
                                 "localStorage.setItem('class26e.synccode','MADI-0001');localStorage.setItem('class26e.frame.ok','go-live-1');"
                                 "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-                                "localStorage.setItem('class26e.daily.seen','x');localStorage.setItem('class26e.savecode.asked','1');}catch(e){}" % SEED)
+                                "localStorage.setItem('class26e.daily.seen','x');localStorage.setItem('class26e.savecode.asked','class26e.savecode.card','1');localStorage.setItem('class26e.savecode.card','1');}catch(e){}" % SEED)
             ctx.route("**/version.json", lambda r, req: r.fulfill(status=200, content_type="application/json",
                       body='{"build":"%s"}' % (re.search(r'APP_BUILD\s*=\s*"([^"]+)"', open(SRC, encoding="utf-8").read()) or [0, ""])[1]))
             pg = ctx.new_page()

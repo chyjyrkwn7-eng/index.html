@@ -11901,7 +11901,7 @@ def check_b313_flares(br):
 
     # Real taps, at each flare's live position, and the tooltip following it.
     # (The sync-code notice sits along the top, where the red flare can be.)
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','class26e.savecode.card','1');localStorage.setItem('class26e.savecode.card','1');}catch(e){}")
     pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
       store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: true };
       try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}
@@ -12041,7 +12041,7 @@ def check_b313_flares_glass(br):
     flare in the clear says nothing about which flare it is."""
     print("\n93. build 313: the secret flares pass under the Liquid Glass bubbles (centred on their rings); taps stay right")
     for label, w, h in DEVICES:
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','class26e.savecode.card','1');localStorage.setItem('class26e.savecode.card','1');}catch(e){}")
         pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
           store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: false };
           try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}

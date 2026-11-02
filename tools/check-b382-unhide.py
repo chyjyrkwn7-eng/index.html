@@ -26,7 +26,7 @@ from playwright.sync_api import sync_playwright
 SHOTS = os.environ.get("SHOTS", "")
 srv, url = g["serve"]()
 OWNER = "xph5b57jbp5a"
-KEYS = ['class26e.freshstart', 'class26e.intro.seen', 'class26e.unithold.tip', 'class26e.daily.seen', 'class26e.savecode.asked',
+KEYS = ['class26e.freshstart', 'class26e.intro.seen', 'class26e.unithold.tip', 'class26e.daily.seen', 'class26e.savecode.asked','class26e.savecode.card',
         'class26e.getstarted', 'class26e.weekrecap.v1', 'class26e.penal55124.seen', 'class26e.penal124256.seen', 'class26e.penal256578.seen']
 INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0382');

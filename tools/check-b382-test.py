@@ -27,7 +27,7 @@ OWNER = "xph5b57jbp5a"   # the Fire Code class is the owner's (window.NOVA_CLASS
 INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.ifc.drill.v1', localStorage.getItem('class26e.drill.v1'));
  localStorage.setItem('class26e.synccode','TEST-0382'); localStorage.setItem('class26e.ifc.synccode','TEST-0382');
- ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.getstarted',
+ ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted',
   'class26e.ifc.intro.seen','class26e.ifc.unithold.tip','class26e.ifc.daily.seen','class26e.ifc.savecode.asked','class26e.ifc.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); localStorage.setItem('class26e.greet.ifc','done'); localStorage.setItem('class26e.activeclass','ifc');
  localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
