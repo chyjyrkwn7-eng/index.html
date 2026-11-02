@@ -135,7 +135,7 @@ with sync_playwright() as pw:
         ctx.close()
     # (4) the knob's swell and settle
     ctx, pg, cdp = page(br, 440, 956)
-    pg.evaluate("()=>{ theme.reduceMotion=false; try{ applyTheme(); }catch(e){} showAppearance(); }"); pg.wait_for_timeout(2500)
+    pg.evaluate("()=>{ theme.reduceMotion=false; try{ applyTheme(); }catch(e){} showAppearance({ page: 'study' }); }"); pg.wait_for_timeout(2500)
     K = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
       const box=[...document.querySelectorAll('#stage .opt > .box')].find(b=>!/Reduce motion/i.test(b.closest('.opt').textContent)); if(!box) return null;
       box.scrollIntoView({block:'center'}); await wait(400);

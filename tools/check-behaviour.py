@@ -1535,13 +1535,17 @@ def check_b218(br):
     pg.wait_for_timeout(500)
     # BUILD 382 (the new decision): no pills side by side any more - Help and
     # Share & install are each ONE list card of full-width rows, stacked, 44px+.
-    rows = pg.evaluate("""()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
-      const o = { upd: row('Check for update'), bug: row('Report a bug'), share: row('Share this app'), install: row('Add to Home Screen') };
+    # build 382 (Settings is a menu): Check for update and Share & Install are rows of one menu card;
+    # Share this app and Add to Home Screen are the Share & Install page's card.
+    rows = pg.evaluate("""async ()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
+      const o = { upd: row('Check for update'), bug: row('Share & Install') };
+      showAppearance({ page: 'share' }); await new Promise(r=>setTimeout(r,500));
+      o.share = row('Share this app'); o.install = row('Add to Home Screen');
       const same = (a,b)=>!!(o[a]&&o[b]) && o[a].card===o[b].card;
       const out = { helpOneCard: same('upd','bug'), shareOneCard: same('share','install') };
       for(const k in o){ out[k] = o[k] && { top:o[k].top, h:o[k].h, full:o[k].full }; } return out; }""")
     ok_row = lambda k: bool(rows[k]) and rows[k]["h"] >= 44 and rows[k]["full"]
-    check("Help's actions are full-width rows in one card, stacked", rows["helpOneCard"] and ok_row("upd") and ok_row("bug") and rows["bug"]["top"] > rows["upd"]["top"], rows)
+    check("Check for update and Share & Install are full-width rows in one menu card", rows["helpOneCard"] and ok_row("upd") and ok_row("bug"), rows)
     check("so are Share and Add to Home Screen", rows["shareOneCard"] and ok_row("share") and ok_row("install") and rows["install"]["top"] > rows["share"]["top"], rows)
     # Find me wears the search field's glass, at its height.
     pg.evaluate("()=>{ showRankings(); }")
@@ -26304,9 +26308,11 @@ def check_b324g_toggles(br):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=_ROOM_FAKE, touch=True)
         pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms(); store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.seenSettingsTour = true; }")
         found = []
-        pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1400)
-        pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
-        found += pg.evaluate(B324G_SWITCHES)
+        # build 382: Settings is a menu; its switches are on its category pages
+        for _pg in ("sound", "study", "motion", "rankings"):
+            pg.evaluate("(k) => showAppearance({ page: k })", _pg); pg.wait_for_timeout(900)
+            pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+            found += pg.evaluate(B324G_SWITCHES)
         pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
           cfg.mode='drill'; cfg.units=[]; showSetup(); await wait(800);
           const p=document.querySelector('.screen-setup .pick'); p && p.click(); await wait(500);
@@ -26336,8 +26342,8 @@ def check_b324g_toggles(br):
           return { before, after: b.getAttribute('aria-checked'), open: vroomIsOpen }; }""")
         check("%s: Open to class turns on with a tap (327: the switch again; 326 an option of two)" % label,
               lob.get("before") == "false" and lob.get("after") == "true" and lob.get("open") is True, lob)
-        # ---- press, drag, release on Settings ----
-        pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
+        # ---- press, drag, release on Settings (its Study page since build 382) ----
+        pg.evaluate("() => showAppearance({ page: 'study' })"); pg.wait_for_timeout(1300)
         pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
         idx = pg.evaluate("() => [...document.querySelectorAll('.settings-card .opt')].findIndex(o => /auto-advance/i.test(o.textContent))")
         pg.evaluate("(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i]; window.scrollBy({ top: t.getBoundingClientRect().top - 300, behavior: 'instant' }); }", idx)
@@ -26405,6 +26411,9 @@ def check_b324g_toggles(br):
         check("%s: through the lens - it swelled past the track - and settled back to the resting knob" % label,
               lh > (t3[3] - t3[1]) + 6 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
         # ---- an upright drag scrolls and flips nothing ----
+        # (382: the switches are on a short category page now - room below it so the page has somewhere to scroll)
+        pg.evaluate("() => { const p = document.querySelector('#stage .screen-settings-page'); if(p) p.style.paddingBottom = '120vh'; }")
+        pg.wait_for_timeout(200)
         y0 = pg.evaluate("() => scrollY")
         x = (t3[0] + t3[2]) / 2; yy = (t3[1] + t3[3]) / 2
         T("touchStart", [(x, yy)])
@@ -26439,9 +26448,13 @@ def check_b324g_toggles(br):
           trackIn: !tb || (tb.left >= r.left - .5 && tb.right <= r.right + .5), tw: tb ? tb.width : null,
           text: (row.textContent || '').trim().slice(0, 30) }); });
       return { rows: out, hs: document.documentElement.scrollWidth - innerWidth }; }"""
-    pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
-    pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
-    f1 = pg.evaluate(FIT, ".settings-card > label.opt")
+    # build 382: Settings' switches are on its category pages
+    f1 = {"rows": [], "hs": 0}
+    for _pg in ("sound", "study", "motion", "rankings"):
+        pg.evaluate("(k) => showAppearance({ page: k })", _pg); pg.wait_for_timeout(900)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+        _f = pg.evaluate(FIT, ".settings-card > label.opt")
+        f1["rows"] += _f["rows"]; f1["hs"] = max(f1["hs"], _f["hs"])
     pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [6, "race"])
     pg.wait_for_timeout(1200)
     f2 = pg.evaluate(FIT, ".vroom-roster-tools")
