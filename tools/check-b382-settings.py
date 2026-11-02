@@ -4,7 +4,9 @@ of settings, please get all these buttons and things looking better".
 (1) Report a bug carries no diagnostics controls (tab speed / tab timings / Leaderboard speed / drag test): the
     form's only button is the send.
 (2) Share this app, Add to Home Screen, Check for update, Report a bug, Version history and Advanced settings are
-    each a full-width row of its card, 44px+, with an icon and a label (shape read off the page, not a style).
+    each a full-width row of its card, 44px+, with a label; all but Support's two word rows (Report a bug, Version
+    history) with an icon. Since Settings became a menu (382), Share this app and Add to Home Screen are on the Share &
+    Install page; the rest are on the menu.
 (3) Every one still does what it did (spied): share, the install walkthrough, the version check, the report screen,
     the release history, Advanced opening (its own page since the colour redesign).
 (4) No horizontal overflow, and no row past the screen edge, on iPhone 440x956, Pro Max at 85% 518x1125, SE 375x667,
@@ -52,20 +54,30 @@ def page(br, w, h, ins, installed, cls="academy"):
     return ctx, pg
 
 LABELS = ["Share this app", "Add to Home Screen", "Check for update", "Report a bug", "Version history", "Advanced settings"]
+WHERE = {"Share this app": "share", "Add to Home Screen": "share", "Check for update": "", "Report a bug": "",
+         "Version history": "", "Advanced settings": ""}
+WORDS = ("Report a bug", "Version history")   # Support's word rows: no icon by design
+def open_for(pg, label):
+    pg.evaluate("(k)=>{ k ? showAppearance({ page: k }) : showAppearance(); }", WHERE[label]); pg.wait_for_timeout(900)
+def rows_ok(sh, t):
+    v = sh.get(t)
+    # and on the screen it belongs to: its category page, or the menu (382)
+    return bool(v) and v["h"] >= 44 and v["full"] and v["label"] and (v["icon"] or t in WORDS) and v["onPage"] == bool(WHERE[t])
 SHAPE = """(labels)=>{ const out={};
-  const all=[...document.querySelectorAll('.screen-settings button')].filter(b=>b.offsetParent);
+  const all=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].filter(b=>b.offsetParent);
   for(const t of labels){
     const b=all.find(x=>(x.textContent||'').trim().startsWith(t));
     if(!b){ out[t]=null; continue; }
     const r=b.getBoundingClientRect(), p=b.parentElement.getBoundingClientRect();
     const icon=b.querySelector('svg'); const ir=icon?icon.getBoundingClientRect():null;
-    const col=b.closest('.screen-settings').getBoundingClientRect();
+    const col=b.closest('.screen-settings, .screen-settings-sub').getBoundingClientRect();
     out[t]={ h:Math.round(r.height), full: r.width >= p.width - 2 && p.width >= col.width*0.85,
-      icon: !!ir && ir.width>=12 && ir.right <= r.left + r.width*0.25, label: (b.textContent||'').trim().length>0 };
+      icon: !!ir && ir.width>=12 && ir.right <= r.left + r.width*0.25, label: (b.textContent||'').trim().length>0,
+      onPage: !!b.closest('.screen-settings-page') };
   }
   return out; }"""
 GEOM = """()=>{ const de=document.documentElement;
-  const rows=[...document.querySelectorAll('.screen-settings button')].filter(b=>b.offsetParent).map(b=>b.getBoundingClientRect());
+  const rows=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].filter(b=>b.offsetParent).map(b=>b.getBoundingClientRect());
   return { hscroll: de.scrollWidth - innerWidth, past: rows.filter(r=>r.right > innerWidth + 1 || r.left < -1).length }; }"""
 
 with sync_playwright() as pw:
@@ -81,28 +93,27 @@ with sync_playwright() as pw:
     chk("its form is the text field and one send button", rb and rb["box"] and len(rb["buttons"]) == 1, rb)
 
     # (2) rows
-    pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(1500)
-    sh = pg.evaluate(SHAPE, LABELS)
     for t in LABELS:
-        s = sh.get(t)
-        chk("%s is a full-width row, 44px+, with an icon and a label (%s)" % (t, s), s and s["h"] >= 44 and s["full"] and s["icon"] and s["label"], s)
+        open_for(pg, t)
+        sh = pg.evaluate(SHAPE, [t])
+        chk("%s is a full-width row, 44px+, with a label%s (%s)" % (t, "" if t in WORDS else " and an icon", sh.get(t)), rows_ok(sh, t), sh.get(t))
 
     # (3) every action still does what it did
-    def fresh(spies):
-        pg.evaluate("(src)=>{ window.__hit=[]; " + "(new Function(src))(); showAppearance(); }", spies); pg.wait_for_timeout(900)
+    def fresh(spies, label=""):
+        pg.evaluate("(a)=>{ window.__hit=[]; (new Function(a[0]))(); a[1] ? showAppearance({ page: a[1] }) : showAppearance(); }", [spies, WHERE.get(label, "")]); pg.wait_for_timeout(900)
     def tap(label):
-        pg.evaluate("(t)=>{ const b=[...document.querySelectorAll('.screen-settings button')].find(x=>x.offsetParent&&(x.textContent||'').trim().startsWith(t)); b && b.click(); }", label)
+        pg.evaluate("(t)=>{ const b=[...document.querySelectorAll('#stage .screen-settings button, #stage .screen-settings-sub button')].find(x=>x.offsetParent&&(x.textContent||'').trim().startsWith(t)); b && b.click(); }", label)
     fresh("""window.__realShare = window.__realShare || navigator.share;
-      Object.defineProperty(navigator, 'share', { configurable:true, value: d => { __hit.push('share:' + (d && d.url ? 'url' : '')); return Promise.resolve(); } });""")
+      Object.defineProperty(navigator, 'share', { configurable:true, value: d => { __hit.push('share:' + (d && d.url ? 'url' : '')); return Promise.resolve(); } });""", "Share this app")
     tap("Share this app"); pg.wait_for_timeout(1200)
     chk("Share this app opens the share sheet with the link", "share:url" in pg.evaluate("__hit"), pg.evaluate("__hit"))
-    fresh("window.__realInstall = window.__realInstall || handleInstallTap; window.handleInstallTap = () => __hit.push('install');")
+    fresh("window.__realInstall = window.__realInstall || handleInstallTap; window.handleInstallTap = () => __hit.push('install');", "Add to Home Screen")
     tap("Add to Home Screen"); pg.wait_for_timeout(400)
     chk("Add to Home Screen runs the install walkthrough", "install" in pg.evaluate("__hit"), pg.evaluate("__hit"))
     pg.evaluate("()=>{ window.handleInstallTap = window.__realInstall; }")
     fresh("""window.__realFetch = window.__realFetch || window.fetch; window.fetch = function(u){ __hit.push('fetch:' + String(u)); return window.__realFetch.apply(this, arguments); };""")
     tap("Check for update"); pg.wait_for_timeout(1500)
-    up = pg.evaluate("""()=>({ hit: __hit, line: [...document.querySelectorAll('.screen-settings .settings-buildline')].map(e=>e.textContent).join('|') })""")
+    up = pg.evaluate("""()=>({ hit: __hit, line: [...document.querySelectorAll('#stage .settings-buildline')].map(e=>e.textContent).join('|') })""")
     chk("Check for update asks for version.json and says the result on the build line (%s)" % (up,),
         any(h.startswith("fetch:version.json") for h in up["hit"]) and "up to date" in up["line"], up)
     pg.evaluate("()=>{ window.fetch = window.__realFetch; }")
@@ -131,12 +142,15 @@ with sync_playwright() as pw:
                                           ("iPad 834", (834, 1194, (24, 0, 20, 0), True), "academy"),
                                           ("laptop", (1512, 852, (0, 0, 0, 0), False), "academy")):
         ctx, pg = page(br, w, h, ins, inst, cls)
-        pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(1300)
-        geo = pg.evaluate(GEOM); cl = pg.evaluate("window.NOVA_CLASS")
-        sh = pg.evaluate(SHAPE, LABELS)
-        rows_ok = all(sh.get(t) and sh[t]["h"] >= 44 and sh[t]["full"] and sh[t]["icon"] for t in LABELS)
-        chk("%s (%s): no sideways scroll, nothing past the edge, every action a row (%s)" % (label, cl, geo),
-            geo["hscroll"] <= 0 and geo["past"] == 0 and rows_ok and cl == cls, {"geo": geo, "rows": sh})
+        geos, shs = {}, {}
+        for key in ("", "share"):
+            pg.evaluate("(k)=>{ k ? showAppearance({ page: k }) : showAppearance(); }", key); pg.wait_for_timeout(1100)
+            geos[key or "menu"] = pg.evaluate(GEOM)
+            shs.update({k: v for k, v in pg.evaluate(SHAPE, LABELS).items() if v})
+        cl = pg.evaluate("window.NOVA_CLASS")
+        all_rows = all(rows_ok(shs, t) for t in LABELS)
+        chk("%s (%s): no sideways scroll, nothing past the edge, every action a row (%s)" % (label, cl, geos),
+            all(g_["hscroll"] <= 0 and g_["past"] == 0 for g_ in geos.values()) and all_rows and cl == cls, {"geo": geos, "rows": shs})
         ctx.close()
     br.close()
 print("ALL PASS" if ok else "FAILURES")
