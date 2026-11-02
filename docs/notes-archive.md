@@ -30439,3 +30439,18 @@ defaulted/merged/synced but nothing draws from it; stages 1-4 and the badge.rub/
 tools/check-b382-badges.py (11 of 13 fail on 381). check-behaviour 320g/321d, check-b380 (18), check-b327z15 R rewritten to the new
 decision; 320g's "a tap anywhere on a slot lands on that slot" and 321d's "every one of the sixteen sits on the middle" fail the
 same way on the code before.
+
+## Build 382 - Fire Code gets its own banners and characters; Zeus out of Fire Code
+Madison: "for the fire code side, all the banners need to be updated (excluding the rank ones) ... update the looks of all
+the characters ... that aren't the starters. The Zeus character on the fire code side can be removed".
+- Only when NOVA_CLASS is "ifc": IFC_CHAR_LOOK gives the 18 non-starter, non-rank ids a new kind, name and glow;
+  IFC_CHAR_DRAW draws each one from shared pieces (fcFace/fcEyes/fcHelmet/fcCoat) with headGrad surfaces; IFC_BACKDROP holds
+  their scenes. Their academy fits (AVATAR_CENTRE_DY etc.) are dropped, CHAR_SPECIAL_DRAW gets ifcSpecial (embers gather into
+  a Maltese cross), and reactCharacter gives them the generic reaction. Same ids, so saved avatars keep working.
+- IFC_BANNER_ART replaces the 20 non-rank BANNER_ART entries (layered where the banner moved before, still where it was
+  still), and IFC_BANNER_LOOK sets their names and BANNER_TINT. Rank banners are untouched. Fire Code names changed with the art
+  (e.g. Koi Pond -> The Crew, Detective -> Inspector) - not asked for; revert names only if Madison prefers the old ones.
+- Zeus is spliced out of AVATAR_CHARACTERS in Fire Code; RETIRED_CHARACTER_TO.zeus is the first starter; ifcRetireZeus()
+  (from applyLoadedData) takes it off a saved avatar and out of pendingCharUnlocks. Nothing is deleted from the store.
+- Gate: tools/check-b382-ifcart.py (drawing hashes per class, every drawing builds, Zeus gone, saved Zeus falls back; 5 fail on
+  381). check-b328-classes crashes on the class-switch reload identically on 381; check-unlocks' daily-question failures too.
