@@ -30326,3 +30326,24 @@ Madison: *"the iPads main menu, the rank flares, the stuff within them aren't mo
   size is in memory.
 - Gate: tools/check-b380-flares.py (iPad 11): same size - own sheets, no stand-ins; turned while away - 7 of 7 moving 4s after
   (0 of 7 before), own sheets take over within 60s, one sheet a bubble; turned then a new Home - 7 of 7 moving 4.5s in (0 before).
+
+## BUILD 381 - the trophy without its star, "Search names" centred, the slide at the screen's rate
+
+Madison (a Leaderboard screenshot from his phone, the search field circled): "I don't like the leaderboards icon with the star in the
+middle." / "The word search names is not centered for leaderboard search." / "The tapping of the bottom tab is really really good now,
+however the sliding is now the problem, it's okay but not perfect like the tapping."
+- THE TROPHY (TAB_GLYPHS.rewards): the star's sub-path is gone; still one path, nonzero (cup, handles, stem, foot).
+- SEARCH NAMES: `.rank-search-wrap > .rank-search:placeholder-shown{ text-align:center; padding-right:clamp(1.1rem, calc(100% - 2.6rem
+  - 7em), 2.6rem) }` after the magnifier rule - the right padding matches the magnifier's where the words (~6.8em at 17px, 115px)
+  fit, and gives way on a narrow field. Measured: phone 0px off the field's middle (was -24), Pro Max at 85% 0 (was -63), iPad 11 0
+  (was -217); an SE (375) fits whole, 9px right of the middle; the first-gen SE (320) was 3px too narrow for the words before and still
+  is. Typed text starts at the left as before.
+- THE SLIDE: a tap's glide is a prepared animation (lensRun, WAAPI), which Safari plays at the display's rate (120Hz on his Pro Max);
+  a slide's lens is written by lensMove's rAF tick, and Safari runs rAF at 60Hz - half the steps. While the finger follows, LENS_ELS
+  (body, clips, caps) carry `transition: transform <one rAF frame>ms linear` (the frame measured and smoothed, 8-20ms), so each
+  written position is drawn over the frame and the engine fills the one in between; lensStopFollow clears it before the landing.
+  Unverified on a device (Chromium has no 60/120 split) - his phone is the test. The tab labels' magnify still steps per rAF.
+- Gate: tools/check-b381.py - the trophy's middle filled (isPointInFill at the old star, 0 of 4 on 380), the placeholder on the field's
+  middle on phone / 85% / iPad (fails on 380) and whole on an SE, the lens's one-frame transition during a real touch slide (none on
+  380) and none after, landing on the tab let go over.
+- check-b380's watchdog check expects the note to end "|2026-11-01-380" - build-specific; it reads "-381" from this build on.

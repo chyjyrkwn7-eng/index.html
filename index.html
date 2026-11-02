@@ -33484,6 +33484,11 @@ html.is-browser{ --fade-paper: transparent; }
      field has the unit search's magnifier at its start too */
   .rank-search-wrap > .searchicon{ left:.95rem; }
   .rank-search-wrap > .rank-search{ padding-left:2.6rem; }
+  /* build 381: "The word search names is not centered for leaderboard search" - the placeholder sat after the magnifier, 63px left of
+     the field's middle on his phone. Centred on the field now: the right padding matches the magnifier's (2.6rem) wherever "Search
+     names" (~6.8em) still fits whole, and gives way down to 1.1rem on a narrow field (the SEs) so the words are never cut. What is
+     typed starts at the left as before. */
+  .rank-search-wrap > .rank-search:placeholder-shown{ text-align:center; padding-right:clamp(1.1rem, calc(100% - 2.6rem - 7em), 2.6rem); }
   .tabsearch-input{
     flex:1 1 auto; min-width:0; height:100%; border:0; outline:none; background:none; padding:0;
     font:inherit; font-size:17px; color:var(--ink); -webkit-appearance:none; appearance:none;
@@ -103742,7 +103747,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-01-380";
+const APP_BUILD = "2026-11-02-381";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -137594,11 +137599,10 @@ function tabPerfText(){
        the cup, a short stem and a rounded foot */
     rewards:
       /* ONE path, nonzero fill (380): the glyph's colour is a little see-through, and separate pieces painted their overlaps twice
-         (bright dots where the handles met the cup). The cup, both handles, the stem and the foot run clockwise and unite; the
-         star runs the other way and is cut out. */
+         (bright dots where the handles met the cup). The cup, both handles, the stem and the foot run clockwise and unite.
+         Build 381: no star - Madison, of the Leaderboard tab: "I don't like the leaderboards icon with the star in the middle". */
       '<path class="tg-cup" fill="currentColor" fill-rule="nonzero" d="' +
         'M6.9 2.8h10.2c.4 0 .7.3.7.7v5.3a5.8 5.8 0 0 1-11.6 0V3.5c0-.4.3-.7.7-.7z' +
-        'M12 5.15L11.37 6.83L9.57 6.91L10.97 8.03L10.5 9.76L12 8.78L13.5 9.76L13.03 8.03L14.43 6.91L12.63 6.83z' +
         'M7.6 3.3V5.3H4.6A.75 .75 0 0 0 3.85 6.15C4.05 7.75 5.25 8.95 6.95 9.35L6.55 11.3C3.85 10.75 2.15 8.85 1.86 6.32A2.75 2.75 0 0 1 4.6 3.3z' +
         'M16.4 3.3H19.4A2.75 2.75 0 0 1 22.14 6.32C21.85 8.85 20.15 10.75 17.45 11.3L17.05 9.35C18.75 8.95 19.95 7.75 20.15 6.15A.75 .75 0 0 0 19.4 5.3H16.4z' +
         'M10.75 14h2.5v3.4h-2.5z' +
@@ -138693,6 +138697,8 @@ function tabPerfText(){
     if(!lensFollow) return;
     cancelAnimationFrame(lensFollow.raf);
     lensFollow = null;
+    /* build 381: the in-between frames stop with the finger; the landing (a prepared animation) starts from where the lens is */
+    LENS_ELS.forEach(el => { el.style.transition = ""; });
   }
   function lensMove(clientX){
     if(!lensG) return;
@@ -138708,13 +138714,23 @@ function tabPerfText(){
          was and where the finger first moved, which closes in ~70ms so
          nothing jumps. Its size still springs, and it still stretches with
          the finger's speed. */
-      lensFollow = { x, last: performance.now(), raf: 0, off: lensS.cx - x, px: x, vf: 0 };
+      lensFollow = { x, last: performance.now(), raf: 0, off: lensS.cx - x, px: x, vf: 0, fi: 0, txMs: 0 };
       const P = { cx: LENS.follow, W: LENS.pop, H: LENS.pop, st: LENS.st };
       const tick = () => {
         const f = lensFollow;
         if(!f || !lensG) return;
         const t = performance.now(), dt = Math.min(.034, Math.max(.001, (t - f.last) / 1000));
         f.last = t;
+        /* ---- THE SLIDE AT THE SCREEN'S OWN RATE (build 381) ----
+           Madison: "The tapping of the bottom tab is really really good now, however the sliding is now the problem, it's okay but
+           not perfect like the tapping." A tap's glide is a prepared animation, which Safari plays at the screen's rate - 120Hz on
+           his Pro Max. A slide was written here once a frame, and Safari runs these frames at 60Hz: half the steps of the tap. Each
+           position now goes in as a transition one of these frames long, so the animation engine draws the frame in between on its
+           own (at 60Hz it changes nothing but the half-frame each step takes to land). */
+        const fms = dt * 1000;
+        f.fi = f.fi ? f.fi + (fms - f.fi) * .2 : fms;
+        const want = Math.round(Math.max(8, Math.min(20, f.fi)));
+        if(Math.abs(want - f.txMs) >= 2){ f.txMs = want; LENS_ELS.forEach(el => { el.style.transition = "transform " + want + "ms linear"; }); }
         const g = lensG;
         f.off *= Math.exp(-dt / .07);
         /* the finger's speed, smoothed a little, is what stretches it */
