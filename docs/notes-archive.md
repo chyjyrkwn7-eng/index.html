@@ -30374,3 +30374,25 @@ however the sliding is now the problem, it's okay but not perfect like the tappi
   380ms reload), the "+" opens the class list. On 380 every tap opened the class list.
 - LESSON: anything moved over or tucked under another control must also turn off its .nova-hsw - the switch takes touches whatever its
   ancestors say, and only an iPhone (canTaptic) has them.
+
+## BUILD 382 - the stars run on under Safari's toolbar
+
+Madison (a Safari tab on his iPhone, the top and the bottom circled): "Safari version is still messed up, the bottom and top of the
+safari version is cut off, this absolutely needs to be fixed". After 15+ rounds tuned in Chromium, a test page settled what Safari 26
+does: share/edge-test.html (merged alone, #48) puts red/green stripes on the root's background and blue dots on a fixed layer. His two
+screenshots: no dots under either bar - FIXED LAYERS STOP AT SAFARI'S BARS; stripes under the toolbar - THE ROOT'S BACKGROUND RUNS ON
+UNDER IT; the status-bar strip flat white at the page's top (no root colour on that page), stripes there only once scrolled - at rest
+THE STATUS STRIP IS SAFARI'S OWN FILL (the root's colour). Measured off his Nova screenshot: the top strip flat (31,33,38) for exactly
+the status bar's height easing into the sky with no seam (341 working); the bottom strip around the toolbar flat (28,31,33), no stars.
+- FIX: in a phone/tablet Safari tab the root's background (both theme rules, html.is-browser[data-layout="modern"]) leads with the two
+  star tiles (--root-sky-b, --root-sky-a), repeating, sized --sky-b-size/--sky-a-size, at `left 0 top calc(100dvh - 100lvh)` - the
+  fixed layer's (body::after) own grid - so the stars run on under the toolbar where the fixed layer stops. Set only by
+  `html.is-browser.sky-ready:has(> body:not(.sky-calm))` inside the coarse-pointer block: none on a test, none before the sky is drawn,
+  none on a laptop or in the installed app. Measured: the root's stars and the fixed layer's are the same 255 bright pixels (Chromium,
+  Home, each shown alone). Under the toolbar they show at full strength on every screen (the fixed layer is .6 off Home) - under
+  Safari's glass.
+- THE TOP STRIP: at rest it is Safari's fill in the root's colour; a page cannot draw there in a tab. --band (338) matched to the sky's
+  top with the 341 fade is the most a Safari tab allows; only the Home Screen app runs edge to edge.
+- Gate: tools/check-b382.py (iPhone UA, touch): the root carries the two tiles on Home (0 on 381) on the fixed layer's grid (same
+  bright pixels; 0 shared on 381), none on a test, none installed. check-b338 and check-b341 still pass.
+- share/edge-test.html stays (not linked) for the next question about Safari's edges.

@@ -32953,17 +32953,20 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-questio
    body::before's fades have - and every glow layer is kept as it was. */
 html.is-browser[data-layout="modern"]{
   background:
+    var(--root-sky-b, none), var(--root-sky-a, none),   /* build 382: the stars, where Safari shows the page past its fixed layers */
     linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))), transparent var(--fade-top, 6rem)),
     linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 6%, transparent), transparent var(--bg-glow-r1)),
     radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 6%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
     var(--band, var(--paper));   /* the root's colour in a tab is the sky's own top colour - Safari fills its status-bar band with it (--band, set from JS) */
-  background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
-  background-repeat:no-repeat;
+  background-size:var(--sky-b-size, auto), var(--sky-a-size, auto), 100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 100%;
+  background-position:left 0 top calc(100dvh - 100lvh), left 0 top calc(100dvh - 100lvh), 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat:repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 html.is-browser[data-theme="dark"][data-layout="modern"]{
   background:
+    var(--root-sky-b, none), var(--root-sky-a, none),   /* build 382: the stars, where Safari shows the page past its fixed layers */
     linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))), transparent var(--fade-top, 6rem)),
     linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
     radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
@@ -32973,9 +32976,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
     var(--band, var(--paper));   /* the root's colour in a tab is the sky's own top colour - Safari fills its status-bar band with it (--band, set from JS) */
-  background-size:100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%, auto;
-  background-position:0 0, 0 0, 0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0, 0 0;
-  background-repeat:no-repeat;
+  background-size:var(--sky-b-size, auto), var(--sky-a-size, auto), 100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%;
+  background-position:left 0 top calc(100dvh - 100lvh), left 0 top calc(100dvh - 100lvh), 0 0, 0 0, 0 0, 0 0, 0 0, 0 100lvh, 0 100lvh, 0 0;
+  background-repeat:repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 /* NO FADES ON A LAPTOP (327z15 round 32): "the top and bottoms edges have
    the dark black fading thing ... it looks off ... so close to the planet
@@ -33002,6 +33005,15 @@ html.is-browser{ --fade-paper: transparent; }
    continues without a step (measured). A gradient image layer, never a background colour (see 338). */
 @media (hover:none), (pointer:coarse){
   html.is-browser{ --fade-paper-top: var(--band, transparent); }
+  /* BUILD 382: THE STARS UNDER SAFARI'S TOOLBAR. Madison: "Safari version is still messed up, the bottom and top of the safari
+     version is cut off, this absolutely needs to be fixed". His screenshot of a test page (share/edge-test.html: stripes on the
+     root's background, dots on a fixed layer) settled what Safari 26 draws where: fixed layers stop at its bars (no dots under
+     them); the root's background runs on under the toolbar (stripes there); the status-bar strip is Safari's own flat fill while
+     the page is at its top (white on a page with no colour). The sky's stars are a fixed layer, so under the toolbar there was
+     only the root's flat colour. The root now carries the same two star tiles, repeating, on the fixed layer's grid (top at
+     100dvh - 100lvh, as body::after's), so the stars run on under the toolbar. Not while a test is up (body.sky-calm has none)
+     and only once the sky is drawn. The top strip stays Safari's: --band is the colour it uses (338, 341). */
+  html.is-browser.sky-ready:has(> body:not(.sky-calm)){ --root-sky-a: var(--sky-a, none); --root-sky-b: var(--sky-b, none); }
 }
 /* NOTHING SCROLLS ON HOME OR WELCOME IN A SAFARI TAB (327z15). "The app is
    cut off at the top and bottom STILL and the page is scrolling? Like legit
@@ -103753,7 +103765,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-02-381";
+const APP_BUILD = "2026-11-02-382";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
