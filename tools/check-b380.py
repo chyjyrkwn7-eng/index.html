@@ -37,6 +37,7 @@ no blur) and the class mark is in its own colours; (28) closing the class list s
 a glint, the light pooled at its foot and a rim;
 (33) the time limit runs 1 to 120 minutes and Max sets 120; (34) letting go of All or Max, the fill that lights the button carries
 the word in dark, so the word reads the whole way through;
+(35) a picked unit card's tick circle has an outline that shows on the dark page (a light ring outside its gap);
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -390,6 +391,16 @@ with sync_playwright() as pw:
     okw = fw and all(x and x["lit"] and x["content"].strip('"').lower() == x["word"].lower() and x["color"] != x["base"] for x in fw)
     chk("letting go of All or Max, the fill carries the word in dark over the white one (%s)" % ([x and (x["content"], x["color"]) for x in (fw or [])],), okw, fw)
     pg.evaluate("()=>{ document.getElementById('unitoptions-modal') && (document.getElementById('unitoptions-modal').hidden = true); showHome(); }"); pg.wait_for_timeout(800)
+    # (35) the tick circle's outline
+    pg.evaluate("()=>{ store.seenUnitSelectTour=true; store.seenUnitHoldTip=true; cfg.mode='drill'; const all=topicsIn(QUESTIONS); cfg.units=[all[3]]; showSetup(); }")
+    pg.wait_for_timeout(1500)
+    tk = pg.evaluate("""()=>{ const b=document.querySelector('.picks > label.pick input:checked ~ .box'); if(!b) return null; const sh=getComputedStyle(b).boxShadow;
+      /* the colours of the spread rings (0 0 0 Npx), in order */
+      const rings=[...sh.matchAll(/((?:rgba?|color)\([^)]*\))\s+0px 0px 0px ([0-9.]+)px/g)].map(m=>{ const v=(m[1].match(/[0-9.]+/g)||[]).map(Number); const rgb=/^color\(/.test(m[1]) ? v.slice(0,3).map(n=>n*255) : v.slice(0,3); return { lum: Math.round((rgb[0]+rgb[1]+rgb[2])/3), px: Number(m[2]) }; });
+      return { rings }; }""")
+    lit = tk and any(r["lum"] > 150 for r in tk["rings"])
+    chk("a picked unit card's tick circle has an outline that shows on the dark page (rings %s)" % (tk and tk["rings"],), lit, tk)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);

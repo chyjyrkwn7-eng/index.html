@@ -30262,3 +30262,9 @@ Also run: check-b344, check-savetest, check-behaviour b297/b313_pause/b310/b313_
   (syncTopButton sets data-label), covers the border (inset -1.5px, the size the settled pill is - no 1.5px pop at the hand-over), and
   the tick goes at once. check-b380 (33) the 1-120 range, (34) the fill's word - both fail on 379; 34 of 34 pass on 380.
   Also run: check-savetest, check-studyflow, check-behaviour b313_sheet2 + b308_timer (its "No hundo red" failure is the same before).
+- THE TICK CIRCLE'S OUTLINE (Madison, a screenshot of the unit screen: "The outline around the white circle, it's hard to see against
+  the background"): a picked card's tick (html[data-layout] .picks > label.pick > .box, on the card's top-right corner) was ringed
+  only by 2px of --paper - the gap cut in the card's edge, which on the dark page is invisible, so the circle's edge was lost there.
+  The gap stays and a 1.25px ring of the card's selected colour (--accent at 70%) goes round it: an outline over the card and the page
+  alike, joining the card's own edge. check-b380 (35) - fails on 379 (one dark ring); 35 of 35 pass on 380. check-b327-d / z5-d fail
+  only as before (plum, the calendar card - the same on 379).
