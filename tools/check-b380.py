@@ -342,14 +342,15 @@ with sync_playwright() as pw:
     # (27)/(28) Home's corner buttons and the class list
     pg.evaluate("()=>{ window.NOVA_CLASS_OWNER = (store && store.publicId) || 'me'; if(store && !store.publicId) store.publicId='me'; try{ localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); }catch(e){} showHome(); }")
     pg.wait_for_timeout(3000)
-    cb = pg.evaluate("""async()=>{ const c=s=>document.querySelector(s); const b=c('.class-bubble'), q=c('.daily-question-fab'), rk=c('#stage .cosmic-badge-rank:not(.cosmic-badge-lit)'); if(!b||!q||!rk) return null;
+    # (382) the corner buttons moved from the rank bubble's glass to the tab bar's ("match the feel and look"): measured against the bar now
+    cb = pg.evaluate("""async()=>{ const c=s=>document.querySelector(s); const b=c('.class-bubble'), q=c('.daily-question-fab'), rk=c('.bottomtabs'); if(!b||!q||!rk) return null;
       const g=e=>{ const s=getComputedStyle(e); return { body: s.backgroundColor, rim: s.borderTopColor, blur: s.backdropFilter||s.webkitBackdropFilter||'none' }; };
       const stops=[...b.querySelectorAll('svg stop')].map(s=>getComputedStyle(s).stopColor); const rgb=x=>(x.match(/[\d.]+/g)||[]).slice(0,3).map(Number); const spread=Math.max(0,...stops.map(x=>{ const v=rgb(x); return Math.max(...v)-Math.min(...v); }));
       const it=[...document.querySelectorAll('.class-stack-item .csi-bubble')]; b.click(); await new Promise(r=>setTimeout(r,800)); const open=it.map(e=>e.getBoundingClientRect().top);
       b.click(); await new Promise(r=>setTimeout(r,700)); const br=b.getBoundingClientRect(); const shut=it.map(e=>{ const r=e.getBoundingClientRect(); return Math.abs((r.top+r.height/2)-(br.top+br.height/2)); });
       return { b: g(b), q: g(q), rk: g(rk), spread, open, shut: shut.map(Math.round) }; }""")
     same = cb and cb["b"]["body"] == cb["rk"]["body"] == cb["q"]["body"] and cb["b"]["rim"] == cb["rk"]["rim"] and cb["b"]["blur"] == cb["rk"]["blur"] == cb["q"]["blur"]
-    chk("Home's daily question and class button are the rank bubbles' glass (body, rim, frost: %s) and the class mark is in its own colours (spread %s)" % (bool(same), cb and cb["spread"]),
+    chk("Home's daily question and class button are the tab bar's glass (body, rim, frost: %s) and the class mark is in its own colours (spread %s)" % (bool(same), cb and cb["spread"]),
         same and cb["spread"] > 40, cb)
     chk("closing the class list sends each bubble back into the class button (%s px from its centre)" % (cb and cb["shut"],), cb and cb["shut"] and max(cb["shut"]) <= 4, cb)
     # (29) the trophy, (30) Silver, (31) a secret flare
