@@ -2738,40 +2738,8 @@
      round three: Home's taps answer in one caption under the planet system,
      homeCaptionShow. Nothing else used them.) */
 
-  #welcomebonus-banner{
-    /* Same inset as every other fixed top element. It also sits a banner's
-       height lower than they do, so an XP award and a rank-up arriving
-       together read as two things rather than one on top of another. */
-    position:fixed; top:calc(env(safe-area-inset-top, 0px) + 4.6rem);
-    left:50%; transform:translateX(-50%) translateY(-10px);
-    background:rgba(255,255,255,.55); color:#B8860B; font-weight:800; font-size:.9rem;
-    border:1px solid rgba(255,255,255,.5);
-    will-change:backdrop-filter; backdrop-filter:blur(9px) saturate(1.9) brightness(1.06); -webkit-backdrop-filter:blur(9px) saturate(1.9) brightness(1.06);
-    padding:.7rem 1.2rem; border-radius:999px; z-index:500;
-    box-shadow:0 8px 24px rgba(18,26,32,.12), inset 0 1px 0 rgba(255,255,255,.5);
-    opacity:0; transition:opacity .3s ease, transform .3s ease;
-    white-space:nowrap; font-family:var(--sans);
-  }
-  /* --theme-c1 rather than a fixed gold: "ensure the xp earned animation
-     thing matches the theme that is set". c1 is the WARM end of every
-     accent's triad, so it stays legible on this glass at every theme and
-     the default (#FFD37A) lands within a couple of levels of the gold
-     that was hardcoded here, which is why the default looks unchanged. */
-  [data-theme="dark"] #welcomebonus-banner{
-    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(26,31,38,.4); color:var(--theme-c1);
-    border-color:color-mix(in srgb, var(--theme-c1) 22%, rgba(255,255,255,.09));
-    box-shadow:0 8px 24px rgba(0,0,0,.3),
-               0 0 18px color-mix(in srgb, var(--theme-c1) 22%, transparent),
-               inset 0 1px 0 rgba(255,255,255,.15), inset 0 -1px 0 rgba(0,0,0,.22);
-  }
-  #welcomebonus-banner.welcomebonus-show{
-    opacity:1; transform:translateX(-50%) translateY(0);
-  }
-  #welcomebonus-banner.welcomebonus-fly{
-    transition:transform .55s cubic-bezier(.4,0,.2,1), opacity .55s cubic-bezier(.4,0,.2,1);
-    transform:translateX(calc(-50% + var(--flyx, 0px))) translateY(var(--flyy, 0px)) scale(.3);
-    opacity:0;
-  }
+  /* (the XP pop-up's own pill, its dark variant and its fly are gone: build 380 shows it on the app banner's glass - .app-banner-xp -
+     and flies a small chip, .wb-chip, at the end of the main <style>) */
   /* The ring alone (box-shadow only, no transform) was never actually
      an "enlarge" \u2014 per explicit request for the tab to literally grow
      momentarily, this now genuinely scales the tab up and back down,
@@ -30175,7 +30143,7 @@
      --surface-2, --surface-shadow): the sheen's bright top repeated under
      the see-through bottom border, and the recipe's 0-blur inset lip. Both
      go the way the circles' did; cards keep their edge. */
-  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .selall-btn, .cal-action-btn, .cal-grid-arrow,
+  [data-theme="dark"][data-layout="modern"] :is(.searchbox, .iconbtn.rank-me-btn, .rank-me-btn, .selall-btn, .starred-pill, .cal-action-btn, .cal-grid-arrow,
     .roomchat-fab, .chip, .more-toggle){
     background-repeat:no-repeat !important; background-origin:border-box !important;
     box-shadow:0 4px 18px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.03),
@@ -30197,7 +30165,7 @@
      hairline lip). */
   /* build 327 round 10: "the background to top button is the old color, fix
      it. And anywhere else." Back to top and the plain toast join the list. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .backtotop),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .starred-pill, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -30288,26 +30256,25 @@
   @media (prefers-reduced-motion:reduce){ .dailyq-outro-xp, .dailyq-outro-next{ animation:none; } }
   @media (min-width:40rem){ .dailyq-outro-head{ font-size:2.7rem; } .dailyq-outro-next{ font-size:1.12rem; } }
 
-  /* ---- XP IS BLUE WHEREVER IT FLIES ---- */
-  /* Build 329: "the +100 XP animation ... a smidge rugged ... can that pop up look more like the other
-     Liquid Glass pop up". The account banner's own glass (a 3px bar, a tag, one line) - and, because
-     it moves, no backdrop blur at all: the body is the glass colour itself, so only transform and
-     opacity change in flight (the blur was what made it stutter). */
-  #welcomebonus-banner, [data-theme="dark"] #welcomebonus-banner{
-    display:flex; align-items:center; gap:.7rem; padding:.85rem 1.2rem .85rem 1rem; border-radius:16px; color:var(--ink);
+  /* ---- XP IS BLUE WHEREVER IT FLIES ----
+     Build 329 put the pop-up on the account banner's colours with no blur, because the whole banner flew and a blur that moves
+     stutters. Build 380: the banner is Home's own frosted banner (.app-banner-xp) and stays where it is; what flies is this chip -
+     the number on a solid body, transform and opacity only. */
+  .wb-chip{
+    position:fixed; z-index:501; pointer-events:none; white-space:nowrap;
+    transform:translate(-50%, -50%); padding:.42rem .85rem; border-radius:999px;
     background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 45%, rgba(0,0,0,.14)), rgba(24,29,38,.94);
-    border:1px solid rgba(255,255,255,.11); border-left:3px solid #4B9BFF;
+    border:1px solid color-mix(in srgb, #4B9BFF 45%, rgba(255,255,255,.12));
+    box-shadow:0 6px 18px rgba(0,0,0,.34), 0 0 14px rgba(61,139,255,.35), inset 0 1px 0 rgba(255,255,255,.14);
+    font-family:var(--sans); font-size:.94rem; font-weight:800; letter-spacing:-.01em; color:#8FC1FF; line-height:1.2;
     -webkit-backdrop-filter:none; backdrop-filter:none; will-change:transform, opacity;
-    box-shadow:0 8px 24px rgba(0,0,0,.34), inset 0 3px 5px -2px rgba(255,255,255,.12);
-    font-weight:650; font-size:.88rem; transform-origin:50% 50%;
   }
-  #welcomebonus-banner .wb-tag{ font-size:.6rem; font-weight:800; letter-spacing:.12em; color:#8FC1FF; }
-  #welcomebonus-banner .wb-text{ line-height:1.3; }
-  #welcomebonus-banner.welcomebonus-fly{
+  .wb-chip.welcomebonus-fly{
     transition:transform .8s cubic-bezier(.5,.02,.25,1), opacity .35s ease .45s;
-    transform:translateX(calc(-50% + var(--flyx, 0px))) translateY(var(--flyy, 0px)) scale(.28);
+    transform:translate(calc(-50% + var(--flyx, 0px)), calc(-50% + var(--flyy, 0px))) scale(.45);
     opacity:0;
   }
+  @media (prefers-reduced-motion:reduce){ .wb-chip.welcomebonus-fly{ transition:opacity .3s ease; transform:translate(-50%, -50%); } }
 
   /* ---- THE BADGE CASE (build 317, badge round: a case in 3D whose lid
      stays open, and a token with an edge) ---- see playBadgeCaseScene.
@@ -32461,7 +32428,7 @@
      the back buttons, not every button" - and the chat box itself (below).
      Back links, the calendar's arrows, and every action button keep their
      own look. */
-  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .backtotop),
+  [data-theme="dark"][data-layout="modern"] :is(.chatdock-btn, .roomchat-fab, .daily-question-fab:not(.is-done), .navsegment, .searchbox, .rank-me-btn, .selall-btn, .starred-pill, .backtotop),
   [data-theme="dark"][data-layout="modern"] .top #pausebtn:not([hidden]){
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
@@ -33435,7 +33402,8 @@ html.is-browser{ --fade-paper: transparent; }
     padding:.4rem .55rem .4rem .7rem; border-radius:999px; font:inherit; cursor:pointer; color:var(--ink);
     background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.62);
     background-repeat:no-repeat; background-origin:border-box;
-    border:1px solid color-mix(in srgb, #F5C21B 42%, rgba(255,255,255,.14));
+    /* build 380: Select all's own rim ("I don't like how the border is yellow"), and its glass from the same lists */
+    border:1px solid rgba(255,255,255,.16);
     backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
     box-shadow:0 6px 22px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,255,255,.05);
     transition:transform .14s ease;
@@ -33447,7 +33415,12 @@ html.is-browser{ --fade-paper: transparent; }
   .starred-pill .pick-flagged-text{ flex-direction:row; align-items:center; gap:.45rem; flex:none; }
   .starred-pill .pname{ font-size:.84rem; font-weight:700; margin:0; padding:0; min-height:0; color:inherit; }
   .starred-pill .pcount{ font-size:.74rem; font-weight:800; margin:0; padding:.12rem .5rem; min-height:0; border-radius:999px;
-    background:rgba(245,194,27,.18); color:#F5D46A; font-variant-numeric:tabular-nums; }
+    background:rgba(255,255,255,.12); color:var(--ink, #F2F4F7); font-variant-numeric:tabular-nums; }
+  /* build 380: "the star doesn't look like the color of the star when you do have one selected" - the pill's star is the starred
+     question's star: one flat #E8C770, its rim the same, its soft glow (.flagbtn.on .flagicon), no lit ramp or highlight */
+  .starred-pill .starred-card-star.is-filled > path:first-of-type{ fill:#E8C770; stroke:#E8C770; }
+  .starred-pill .starred-card-star.is-filled > path:nth-of-type(2){ display:none; }
+  .starred-pill .pick-flagged-icon .starred-card-star.is-filled{ filter:drop-shadow(0 0 3px rgba(232,199,112,.35)); }
   .starred-pill .pcount:empty{ display:none; }
   .starred-pill.is-empty{ border-color:rgba(255,255,255,.12); }
   .starred-pill.is-empty .pname{ color:var(--soft); }
@@ -77403,8 +77376,15 @@ function nswRelease(e){
      change that comes with it settles the lens - or, if nothing comes,
      this does */
   nswPending = a;
+  /* BUILD 380: A TAP GLIDES FROM THE RELEASE. "Toggle switches, when swiping them they move super nice, but when tapping them they
+     move a little worse." A swipe's knob is under the finger the whole way; a tap's waited for the click - and on an iPhone for the
+     native switch under the finger to flip and send its change - before it set off, and then set off in the same task as the
+     row's own work (its save, its sound, a restyle). It sets off now, as the finger lifts, for the other end; the flip, when it
+     comes, finds it already on its way (nswFlipped), and a lock that says no sends it back. */
+  a.predicted = !a.on0;
+  nswSettle(run, a.predicted);
   clearTimeout(run.t);
-  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; nswSettle(run, a.host.on()); } }, 350);
+  run.t = setTimeout(() => { if(nswPending === a){ nswPending = null; if(a.host.on() !== a.predicted) nswSettle(run, a.host.on()); } }, 350);
 }
 let nswHold = null;
 ["change", "click"].forEach(ev => document.addEventListener(ev, e => {
@@ -77444,7 +77424,8 @@ function nswFlipped(track, before, on){
   const run = nswRuns.get(track);
   if(nswPending && nswPending.track === track){
     const a = nswPending; nswPending = null;
-    if(run && run.lens.isConnected) nswSettle(run, on);
+    /* (380) already gliding there from the release: leave it be */
+    if(run && run.lens.isConnected && a.predicted !== on) nswSettle(run, on);
     return;
   }
   if(nswActive && nswActive.track === track) return;
@@ -88378,7 +88359,7 @@ function startNovaReturnTour(onDone){
    banner near the header that flies into the avatar, landing with a small
    pulse, so earning points always feels like it's "going somewhere"
    instead of just appearing silently in a stat block. */
-function showPointsFlyEffect(message){
+function showPointsFlyEffect(message, sub){
   /* Back to Profile, per explicit request. It was moved to Rewards on
      my own judgment - Rewards holds the Points and Stars boxes, so that
      seemed to be where an earned thing belongs - and seen on a device
@@ -88386,49 +88367,77 @@ function showPointsFlyEffect(message){
      expect to open and find yourself in. Judgment call reversed; the
      ask is the answer. */
   const avatarBtn = document.getElementById("bottomtab-profile");
+  /* BUILD 380: HOME'S OWN BANNER. "The xp you get from the daily question is not the same look as the other pop ups, it's not that
+     same nice Liquid Glass the home page stuff gets like messages and stuff." It was a small solid pill (329 took its blur off
+     because the whole banner flew, and a blur that moves stutters). Now it IS an app banner - the same frosted glass, width, place,
+     icon, tag and two lines as a message or a friend request - and it does not move: it fades where it is, and what flies to
+     Profile is a small solid chip of the number (no blur on anything that moves). */
+  const m = /^\s*(\+[\d,]+\s*XP)\b[\s!.]*(.*)$/.exec(String(message));
+  const title = m ? m[1] : String(message);
+  let line = sub || (m && m[2] ? m[2].replace(/[!.]+$/, "") : "");
+  if(line) line = line.charAt(0).toUpperCase() + line.slice(1);
+  const def = BANNER_KINDS.xp;
   const banner = document.createElement("div");
   banner.id = "welcomebonus-banner";
-  /* Build 329: on the account banner's glass - the blue bar, a small tag, one line */
-  const bTag = document.createElement("span"); bTag.className = "wb-tag"; bTag.textContent = "XP";
-  const bText = document.createElement("span"); bText.className = "wb-text"; bText.textContent = message;
-  banner.append(bTag, bText);
+  banner.className = "daily-alert app-banner app-banner-xp";
+  banner.style.setProperty("--banner-color", def.color);
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("class", "app-banner-icon"); icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = def.svg;
+  const body = document.createElement("span"); body.className = "app-banner-body";
+  const tag = document.createElement("span"); tag.className = "app-banner-tag wb-tag"; tag.textContent = def.tag;
+  const text = document.createElement("span"); text.className = "app-banner-text wb-text";
+  const ttl = document.createElement("span"); ttl.className = "app-banner-title"; ttl.textContent = title;
+  text.appendChild(ttl);
+  if(line){ const sb = document.createElement("span"); sb.className = "app-banner-sub"; sb.textContent = line; text.append(document.createTextNode(" "), sb); }
+  body.append(tag, text);
+  banner.append(icon, body);
   document.body.appendChild(banner);
-
+  try{ placeTopBanner(banner); }catch(e){}
+  const watch = clearBannerOnScreenChange(banner);
+  const pulse = () => {
+    if(avatarBtn){
+      avatarBtn.classList.add("avatar-pulse");
+      /* 800, matching .avatar-pulse's own .8s. It was 500, left behind
+         when the animation was lengthened from .5s to .8s to stop it
+         being missed - so the class came off at 62% of the way
+         through, while the icon was still scaled to ~1.05, and it
+         snapped back to size instead of settling. */
+      setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
+    }
+    if(statsPopoverOpen) renderStatsPopoverContent();
+  };
   requestAnimationFrame(() => {
-    banner.classList.add("welcomebonus-show");
+    banner.classList.add("show");
     setTimeout(() => {
-      if(avatarBtn){
-        const avatarRect = avatarBtn.getBoundingClientRect();
-        const bannerRect = banner.getBoundingClientRect();
-        const dx = (avatarRect.left + avatarRect.width / 2) - (bannerRect.left + bannerRect.width / 2);
-        const dy = (avatarRect.top + avatarRect.height / 2) - (bannerRect.top + bannerRect.height / 2);
-        banner.style.setProperty("--flyx", dx + "px");
-        banner.style.setProperty("--flyy", dy + "px");
-      }
-      banner.classList.add("welcomebonus-fly");
-      setTimeout(() => {
-        banner.remove();
+      if(!banner.isConnected){ pulse(); return; }
+      /* the number leaves the banner for Profile */
+      const from = ttl.getBoundingClientRect();
+      const chip = document.createElement("div");
+      chip.className = "wb-chip"; chip.textContent = title;
+      chip.style.left = Math.round(from.left + from.width / 2) + "px";
+      chip.style.top = Math.round(from.top + from.height / 2) + "px";
+      document.body.appendChild(chip);
+      ttl.style.visibility = "hidden";
+      banner.classList.remove("show");
+      setTimeout(() => { try{ watch && watch.disconnect(); }catch(e){} banner.remove(); }, 560);
+      requestAnimationFrame(() => {
         if(avatarBtn){
-          avatarBtn.classList.add("avatar-pulse");
-          /* 800, matching .avatar-pulse's own .8s. It was 500, left behind
-             when the animation was lengthened from .5s to .8s to stop it
-             being missed - so the class came off at 62% of the way
-             through, while the icon was still scaled to ~1.05, and it
-             snapped back to size instead of settling. Measured: the ring
-             had already faded to transparent by then, so the visible cost
-             was purely that snap. */
-          setTimeout(() => avatarBtn.classList.remove("avatar-pulse"), 800);
+          const a = avatarBtn.getBoundingClientRect(), c = chip.getBoundingClientRect();
+          chip.style.setProperty("--flyx", Math.round((a.left + a.width / 2) - (c.left + c.width / 2)) + "px");
+          chip.style.setProperty("--flyy", Math.round((a.top + a.height / 2) - (c.top + c.height / 2)) + "px");
         }
-        if(statsPopoverOpen) renderStatsPopoverContent();
-      }, 820);
-    }, 900);
+        requestAnimationFrame(() => chip.classList.add("welcomebonus-fly"));
+      });
+      setTimeout(() => { chip.remove(); pulse(); }, 860);
+    }, 1100);
   });
 }
 
 function awardWelcomeBonus(){
   awardXp(100);
   saveStore();
-  showPointsFlyEffect("+100 XP for creating an account!");
+  showPointsFlyEffect("+100 XP", "For creating an account");
 }
 
 /* The Supernova cutscene \u2014 plays once, the very first time the
@@ -90692,6 +90701,12 @@ function showSavedTestBanner(){
     showDailyAlert("Your test is saved \u2014 tap Start Studying to pick it up.",
       { kind: "savedtest", id: "savedtest-banner", stay: 6000 });
   }, 600);
+}
+
+/* NOTHING STARRED, AT THE TOP (build 380): "When you are in review and click stars but don't have any, shouldn't that pop up be at
+   the top?" It was the plain toast, at the bottom over the tab bar; every other notice is a banner at the top. */
+function showStarredNotice(msg, title){
+  return showDailyAlert(msg, { kind: "starred", id: "starred-notice", title: title || "Nothing starred yet", stay: 4200 });
 }
 
 /* ---- THE RECHARGE, THEN THE BANNER OUT OF THE BUTTON (build 245) ----
@@ -96900,10 +96915,10 @@ function showHome(){
      summarize() and cleared by every other run. */
   if(pendingXpFly > 0 && pendingXpFlyDaily){
     const n = pendingXpFly;
-    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP"), 450);
-    /* 450 to start, 900 on show, 500 in flight, 800 of the tab's pulse:
+    setTimeout(() => showPointsFlyEffect("+" + n.toLocaleString() + " XP", "Daily question"), 450);
+    /* 450 to start, 1100 on show (380: two lines on the banner), 860 in flight, 800 of the tab's pulse:
        the XP is in Profile by then, and the unlock cards wait for it. */
-    dailyXpFlyEndsAt = Date.now() + 450 + 900 + 500 + 800;
+    dailyXpFlyEndsAt = Date.now() + 450 + 1100 + 860 + 800;
   }
   pendingXpFly = 0;
   pendingXpFlyDaily = false;
@@ -99135,7 +99150,7 @@ function showSetup(){
     box._paint();
     box.addEventListener("click", () => {
       const fl = flaggedIndexes();
-      if(!fl.length){ showToast("Nothing starred yet. Tap the star on any question to save it here."); return; }
+      if(!fl.length){ showStarredNotice("Tap the star on any question to save it here."); return; }
       const fUnits = starredUnits(fl);
       showStudyLoading("LOADING REVIEW", () => showAnswerReview(fUnits, "flagged", {}, { allFlagged: true }));
     });
@@ -99443,7 +99458,7 @@ function showSetup(){
   starRow.addEventListener("click", e => {
     if(!starCb.disabled) return;
     e.preventDefault();
-    showToast("Nothing starred in these units yet. Tap the star on any question to save it.");
+    showStarredNotice("Tap the star on any question to save it.", "Nothing starred in these units yet");
   });
   srcSect.paint = () => {
     starCb.checked = cfg.source === "flagged";
@@ -117788,6 +117803,13 @@ const BANNER_KINDS = {
   /* A test saved with Save and exit (build 327z5): "Maybe when you save a
      test and go back to main menu you'd get one for that?" A bookmark,
      in the XP card's blue: something the app is keeping for you. */
+  /* Nothing starred yet (build 380: "When you are in review and click stars but don't have any, shouldn't that pop up be at the
+     top?"): the starred star's own gold, the star */
+  starred: { tag: "STARRED", color: "#E8C770",
+    svg: '<path fill="currentColor" d="M12 3.3l2.63 5.55 6.08.77-4.46 4.17 1.17 6L12 16.85l-5.42 2.94 1.17-6-4.46-4.17 6.08-.77z"/>' },
+  /* XP earned (build 380: the daily question's XP on Home's banner glass): the XP blue, a spark */
+  xp: { tag: "XP EARNED", color: "#4B9BFF",
+    svg: '<path fill="currentColor" d="M12 2.9l2.35 6.15 6.15 2.35-6.15 2.35L12 19.9l-2.35-6.15-6.15-2.35 6.15-2.35z"/><path fill="currentColor" opacity=".7" d="M19 15.6l.85 2.15 2.15.85-2.15.85L19 21.6l-.85-2.15-2.15-.85 2.15-.85z"/>' },
   savedtest: { tag: "SAVED TEST", color: "#7CB8FF",
     svg: '<path d="M7.2 3.6h9.6a1.2 1.2 0 0 1 1.2 1.2v15.5l-6-4.3-6 4.3V4.8a1.2 1.2 0 0 1 1.2-1.2z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>' },
   /* The passive lines on the same glass (build 327z3, showDailyAlert's

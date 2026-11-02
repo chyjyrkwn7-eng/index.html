@@ -26225,7 +26225,8 @@ def check_b324l_board(br):
       out.bare = document.querySelectorAll('.screen-rankings .rank-col-emblem').length;
       const imgs = [...document.querySelectorAll('.screen-rankings .rank-row:not(.is-offscreen) .rank-col-flare .cosmic-rank-anim img')];
       out.playing = imgs.filter(i => i.getAnimations().some(a => a.playState === 'running')).length;
-      const tf = () => imgs.map(i => getComputedStyle(i).transform).join('|');
+      /* (380) a loop steps by left/top inside its window (html.loops-paint), or by transform (the old whole-sheet layers) */
+      const tf = () => imgs.map(i => { const c = getComputedStyle(i); return c.transform + ' ' + c.left + ' ' + c.top; }).join('|');
       const a = tf(); await wait(1200); out.moved = a !== tf();
       out.board = sig(document.querySelector('.screen-rankings .rank-col-flare'));
       /* a snapshot rebuilds the rows: the flare (and its flip-book) is the same node after */

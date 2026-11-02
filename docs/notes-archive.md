@@ -30150,3 +30150,35 @@ Phonetic Alphabet badge (8.8px) on 379 too - older than this build, not touched.
   not one - it was taking the slide's second frame. First visible frame 15% of the way (was 31%); check-b327z10 B 55-57% in 4 of 4
   (was 59%, 379 65%). check-chat and check-behaviour b314h chat/sheet/chat2/tabs pass.
 - Re-run after: check-b380, b377, b375, b378, b379, b327z, b327z13 - no failures.
+
+### 380, four more for this merge: the daily XP pop-up, Review's Starred pill and its notice, the switches' tap
+
+Madison (with a screenshot of Review's unit screen, the Starred pill circled): "the xp you get from the daily question is not the same
+look as the other pop ups, it's not that same nice Liquid Glass the home page stuff gets like messages and stuff, fix that"; "When you
+are in review and click stars but don't have any, shouldn't that pop up be at the top?"; "I don't like how the border is yellow and stuff
+could we improve this? I also think the star doesn't look like the color of the star when you do have one selected"; "Toggle switches,
+when swiping them they move super nice, but when tapping them they move a little worse, fix that as well".
+- THE DAILY QUESTION'S XP: showPointsFlyEffect(title, sub) builds Home's own banner - .daily-alert.app-banner.app-banner-xp, kind xp
+  (BANNER_KINDS.xp: "XP EARNED", #4B9BFF, a spark), placeTopBanner, clearBannerOnScreenChange - the same frosted glass, rim, 3px bar,
+  corners, width and place as a friend request (measured equal), "+200 XP" over "Daily question". 329 had made it a solid pill with
+  no blur because the WHOLE banner flew to Profile and a moving blur stutters; now the banner stays and fades where it is, and the number
+  leaves it as .wb-chip (solid body, no backdrop filter, transform/opacity, .8s) for the Profile tab, which pulses as before. On show
+  1100ms (two lines), dailyXpFlyEndsAt follows. The welcome bonus is "+100 XP" / "For creating an account". The old #welcomebonus-banner
+  pill rules are gone. check-b329 xp rewritten to the new shape (banner = a friend banner's glass; nothing blurred moves; .8s).
+- REVIEW'S STARRED PILL: .starred-pill joins Select all's glass lists (the same body, rim .16, blur, shadow - measured equal), its own
+  gold rim is gone, the count chip is plain (white .12 under ink), and the filled star is the starred question's star: one flat #E8C770
+  with its rim the same and .flagbtn.on's soft glow (the lit ramp and highlight hidden on the pill only).
+- NOTHING STARRED, AT THE TOP: showStarredNotice() -> showDailyAlert kind "starred" (STARRED, #E8C770, a star), "Nothing starred yet"
+  over "Tap the star on any question to save it here." - the pill's tap and the Starred row in a test's set-up (title "Nothing starred
+  in these units yet"). The unit details card's own line stays a toast (it is inside that card's overlay).
+- THE SWITCHES' TAP: a swipe's knob is under the finger the whole way; a tap's glide waited for the click - on an iPhone for the native
+  switch under the finger to flip and send its change - and then started in the same task as the row's own work. It sets off now at the
+  release for the other end (a.predicted); nswFlipped leaves it alone when the flip agrees, and when no flip comes (a lock) the pending
+  timeout sends it back. Sandbox with the flip held 150ms (as the phone does): first move 17-19ms after the finger lifts (379: 173ms).
+Gate: check-b380 (20) the XP pop-up is a friend banner's glass and the mover has no blur, (21) the pill is Select all's glass with a
+plain count and the starred gold, (22) nothing starred -> a banner in the top third, not a toast, (23) a tapped switch sets off <60ms
+after the release with a late flip, and a tap with no flip glides back - all four fail on 379 (23 of 23 pass on 380; part 22 first
+clears the unlock pop-ups the gate's runs leave waiting for "Got it" - a notice rightly waits behind one). check-behaviour b324l_board
+"frames advancing" now reads left/top as well as transform (loops-paint); its other two failures are the same on 379.
+Also run: check-b329, b325-e (its iPad card-proportion failure is the same on 379), b327z15 W, check-behaviour b324g_toggles, b304, b321g
+(same failures as before), check-chat, check-sound, sweep-layout --quick 14/14.

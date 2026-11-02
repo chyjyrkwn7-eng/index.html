@@ -23,6 +23,11 @@ answered correctly" with "2 still to review" under it);
 made) and the lift shows one face from its first frame to its last; (17) the badge-unlock coin: once warmed, every one of its pictures is
 decoded the moment it is built (none come in after it is up); (18) the badge put back after a rub is one finished picture from its first frame in the slot (no draft, no
 second render once measured);
+(20) the daily question's XP pop-up is Home's banner glass, as a message or friend request is, and what flies to Profile has no blur;
+(21) Review's Starred pill has Select all's glass and rim, a plain count, and its star is the starred question's own gold; (22) with
+nothing starred, a tap on it says so at the top (a banner), not in a toast at the bottom;
+(23) a switch tapped sets off as the finger lifts, not when the flip arrives (on an iPhone the native switch's change comes later -
+here 150ms later), and a tap whose flip never comes glides back;
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -222,6 +227,63 @@ with sync_playwright() as pw:
     back = pg.evaluate(LOOKS)
     chk("a badge put back a stage cleaner (%s -> %s) shows one finished picture in its slot (%s)" % (s0, s1, back),
         s1 is not None and s0 is not None and s1 < s0 and len(back) == 1 and back[0].startswith("final:found"), back)
+    # (20) the daily question's XP on Home's banner glass
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500)
+    GLASS = "(sel)=>{ const b=document.querySelector(sel); if(!b) return null; const cs=getComputedStyle(b), r=b.getBoundingClientRect(); return {bg:cs.backgroundImage+cs.backgroundColor, bf:cs.backdropFilter||cs.webkitBackdropFilter, rad:cs.borderTopLeftRadius, bar:cs.borderLeftWidth, rim:cs.borderTopColor, w:Math.round(r.width), l:Math.round(r.left), parts:['.app-banner-icon','.app-banner-tag','.app-banner-title'].filter(s=>b.querySelector(s)).length} }"
+    pg.evaluate("()=>{ const b=buildAppBanner('gate-friend','friend','Cadet7\\nWants to be your friend.','View',()=>{},()=>{}); document.body.appendChild(b); placeTopBanner(b); b.classList.add('show'); }"); pg.wait_for_timeout(400)
+    ref = pg.evaluate(GLASS, "#gate-friend"); pg.evaluate("()=>document.getElementById('gate-friend').remove()")
+    pg.evaluate("()=>showPointsFlyEffect('+200 XP', 'Daily question')"); pg.wait_for_timeout(800)
+    xb = pg.evaluate(GLASS, "#welcomebonus-banner")
+    pg.wait_for_timeout(700)
+    mover = pg.evaluate("()=>{ const m=document.querySelector('.wb-chip.welcomebonus-fly, #welcomebonus-banner.welcomebonus-fly'); return m ? (getComputedStyle(m).backdropFilter||'none') : null; }")
+    pg.wait_for_timeout(1500)
+    diff = [k for k in ("bg", "bf", "rad", "bar", "rim", "w", "l") if not xb or xb[k] != ref[k]]
+    chk("the daily question's XP pop-up is Home's banner glass, as a friend request's (differs in: %s; icon, tag, title: %s of 3), and what flies to Profile is not blurred (%s)" % (diff or "nothing", xb and xb["parts"], mover),
+        xb and not diff and xb["parts"] == 3 and mover in ("none", ""), [xb, ref, mover])
+    # (21)/(22) Review's Starred pill (first the unlock pop-ups the runs above left waiting for "Got it": a notice waits behind a pop-up)
+    for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
+    pg.evaluate("()=>{ store.seenUnitSelectTour = true; store.seenUnitOptionsTour = true; store.flagged = {}; store.unflagged = {}; const all=topicsIn(QUESTIONS); toggleFlag(QUESTIONS.findIndex(q=>(q.topic||'').trim()===all[1])); cfg.mode='review'; cfg.units=[]; cfg.source='all'; showSetup(); }")
+    pg.wait_for_timeout(1500)
+    sp = pg.evaluate("""()=>{ const look=e=>{ const c=getComputedStyle(e); return [c.backgroundImage, c.backgroundColor, c.borderTopColor, c.borderLeftColor, c.backdropFilter, c.boxShadow].join(' | '); };
+      const p=document.querySelector('.screen-setup .starred-pill'), s=document.querySelector('.screen-setup .selall-btn'); if(!p||!s) return null;
+      const st=p.querySelector('.starred-card-star.is-filled > path'); const cnt=p.querySelector('.pcount');
+      const probe=document.createElement('span'); probe.style.color='#E8C770'; document.body.appendChild(probe); const gold=getComputedStyle(probe).color; probe.remove();
+      const rgb=c=>(c.match(/[0-9.]+/g)||[]).slice(0,3).map(Number); const warm=c=>{ const v=rgb(c); return v.length===3 && v[0]-v[2]>40; };
+      return { same: look(p)===look(s), rim: getComputedStyle(p).borderTopColor, star: st ? getComputedStyle(st).fill : null, gold, countWarm: warm(getComputedStyle(cnt).color) || warm(getComputedStyle(cnt).backgroundColor) }; }""")
+    chk("Review's Starred pill has Select all's glass and rim (%s), a plain count (gold: %s), and its star is the starred question's gold (%s, %s)" % (sp and sp["same"], sp and sp["countWarm"], sp and sp["star"], sp and sp["gold"]),
+        sp and sp["same"] and not sp["countWarm"] and sp["star"] == sp["gold"], sp)
+    pg.evaluate("()=>{ store.flagged = {}; store.unflagged = {}; showSetup(); }"); pg.wait_for_timeout(1200)
+    pg.evaluate("()=>{ document.getElementById('toast')?.remove(); document.querySelector('.screen-setup .starred-pill').click(); }"); pg.wait_for_timeout(700)
+    nt = pg.evaluate("""()=>{ const t=document.getElementById('toast'); const b=[...document.querySelectorAll('.daily-alert.app-banner')].find(x=>/starred/i.test(x.textContent));
+      const r=(b||t) ? (b||t).getBoundingClientRect() : null; return { banner: !!b, toast: !!t, top: r ? Math.round(r.top) : null, vh: innerHeight,
+        focus: typeof cutsceneFocusActive === 'function' ? cutsceneFocusActive() : null, held: (typeof cutsceneHeld !== 'undefined' ? cutsceneHeld.map(h=>h.key).slice(0,4) : null), screen: ((document.querySelector('#stage > *')||{}).className||'').slice(0,40), starred: flaggedIndexes().length,
+        scenes: [...document.body.querySelectorAll(':scope > :is(' + CUTSCENE_SCENE_SEL + ')')].map(e=>(e.id||'')+'.'+String(e.className).slice(0,40)), depth: cutsceneFocusDepth }; }""")
+    chk("with nothing starred, a tap on it says so at the top (banner %s, toast %s, top %s of %s)" % (nt["banner"], nt["toast"], nt["top"], nt["vh"]),
+        nt["banner"] and not nt["toast"] and nt["top"] is not None and nt["top"] < nt["vh"] / 3, nt)
+    pg.evaluate("()=>{ document.querySelectorAll('.daily-alert').forEach(n=>n.remove()); showHome(); }"); pg.wait_for_timeout(800)
+    # (23) a tapped switch sets off at the release
+    pg.evaluate("()=>{ theme.reduceMotion=false; try{ applyTheme(); }catch(e){} showAppearance(); }"); pg.wait_for_timeout(2500)
+    SW = """async([late, flip])=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+      const box=[...document.querySelectorAll('#stage .opt > .box')].find(b=>!/Reduce motion/i.test(b.closest('.opt').textContent)); if(!box) return null;
+      box.scrollIntoView({block:'center'}); await wait(400);
+      const b=box.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2, cb=box.parentNode.querySelector(':scope > input[type=checkbox]'), on0=cb.checked;
+      const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:57,isPrimary:true,clientX:x,clientY:y});
+      const fr=[]; let on=true; const T0=performance.now();
+      const f=t=>{ const L=box.querySelector('.nsw-lens'); let c=null; if(L){ try{ c=new DOMMatrixReadOnly(getComputedStyle(L).transform).m41; }catch(e){} } fr.push([t-T0, c]); if(on) requestAnimationFrame(f); }; requestAnimationFrame(f);
+      box.dispatchEvent(mk('pointerdown')); await wait(90); const up=performance.now()-T0; box.dispatchEvent(mk('pointerup'));
+      if(flip){ await wait(late); box.parentNode.click(); }
+      await wait(1100); on=false;
+      const seen=fr.filter(v=>v[1]!=null); const start=seen.length?seen[0][1]:null;
+      const moved=seen.find(v=>v[0]>up && Math.abs(v[1]-start)>.6);
+      return { flipped: cb.checked!==on0, startsAfterUp: moved ? Math.round(moved[0]-up) : null, last: seen.length ? Math.round(seen[seen.length-1][1]*10)/10 : null, start: start==null?null:Math.round(start*10)/10,
+               far: seen.length ? Math.round(Math.max(...seen.map(v=>Math.abs(v[1]-start)))) : 0, restore: ()=>{} }; }"""
+    tap = pg.evaluate(SW, [150, True])
+    pg.wait_for_timeout(500)
+    none = pg.evaluate(SW, [0, False])
+    pg.wait_for_timeout(500)
+    chk("a switch tapped sets off %sms after the finger lifts, with its flip 150ms later (flipped: %s); a tap whose flip never comes goes %spx and back (%s -> %s)" % (tap and tap["startsAfterUp"], tap and tap["flipped"], none and none["far"], none and none["start"], none and none["last"]),
+        tap and tap["flipped"] and tap["startsAfterUp"] is not None and tap["startsAfterUp"] < 60 and none and not none["flipped"] and abs((none["last"] or 0) - (none["start"] or 0)) < 1.5, [tap, none])
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(800)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);
