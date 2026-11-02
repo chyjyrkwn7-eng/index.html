@@ -30558,3 +30558,39 @@ CLAUDE.md's "never put his name in anything the app shows" for the Contributors 
 - Next for this look (owner: "If our app needs to take on this kinda interface app wide ... do it"), after the units/board/tab merges:
   Report a bug & Version history headers; Customize & Friends grouped rows; badge case & road map; Calendar lists; unit detail sheet's
   Reset; Virtual Room lobby settings; the start sheet's options; Welcome "Enter a code".
+
+### 382 (Fire Code, 8 parts): gear, Stats pills, Nova quieter, instructor first, Stats tab, ladder, one 100%, "chapter"
+- GEAR: TAB_GLYPHS.settings is one nonzero path - 18 teeth (tip r10.1, root r8.7), ring inside r6.95, hub r2.5 with an r1.2 hole,
+  spokes 1.4 wide at 0/120/240deg. Only Fire Code shows #bottomtab-settings.
+- STATS PILLS: the tests pill 22px visible -> 40px in a 51px button; This week / Last week 32px chips (11.2px text) -> ~45px (.84rem,
+  text-box trim); Test history filters 44px. Same on 440/518/375/834. Profile's top tabs (a navigation segment) left alone.
+- NOVA QUIETER: NOVA_CHALLENGE_GAP_MS 7 days (last invite = newest novaHeard["wk:*"], nothing new stored); NOVA_QUIET_MS 44h -> 72h;
+  NOVA_TIP_GAP_MS 7 -> 14 days; novaMsgAction returns null for an ended challenge (message stays, no "Ended" button).
+- INSTRUCTOR FIRST: Nova heads the chat's Friends tab and Manage friends, always (still display-only, never in friendPublicIds()).
+- FIRE CODE STATS TAB: #bottomtab-stats replaces #bottomtab-rewards (Home, Profile, Stats, Settings); showProfile("stats") builds Stats
+  alone (.screen-stats); Profile drops its Stats tab; showRankings() sends every route to Stats; the Leaderboard switch is hidden.
+  Fire Code has no cloud (initFirebase stands down), so it never published rows.
+- LADDER: badges per rank = round(academy / 14 x (chapters - 2)): 1/3/5/7/9/12/14 -> 4/12/20/28/36/48/56 of 58; levels unchanged;
+  TIER_UNLOCKS_ACADEMY keeps the old counts; ifcLadderFloorOnce() (flag class26e.ifcladder382) raises rankFloor to the old rank held.
+- ONE 100%: badgeThresholdFor() is 1 in Fire Code (existing hundos count at once, no writes, nothing lowered); chapter cards "Badge:
+  get 100% once"; the hold card "Get 100% on the whole chapter once to earn its badge" / "Badge earned", no bar.
+- "CHAPTER": one MutationObserver (Fire Code only) rewrites shown text and aria-label/placeholder/title/alt (unit->chapter); alert/
+  confirm/prompt wrapped; classNoun() for built strings; question text ("dwelling unit", 63 questions) left alone (questionTextHas).
+- Gate: tools/check-b382-ifc.py (41 fail before). check-b363-ifc, b342, b332, b326-e, check-behaviour b324n2 updated. Merge conflict
+  with the Settings sub-pages in the lit-tab code: both kept (Fire Code's profile-sub rule + .screen-settings-sub).
+
+### 382: the Leaderboard opens clean; the board, refined
+Madison: "The leaderboard is still very glitchy when opening it up" / "it could look better".
+- THE SAME BOARD BUILT TWICE: the listener's answer (same rows) rebuilt every row while the tab landed (31 rows replaced, +96ms).
+  renderRankingRows keeps a signature of what it shows (rows, numbers, trend, podium) and does nothing over the same one; last week's
+  podium is kept (_lwKey).
+- ROW-BY-ROW ART: queue-filled rows hold their art hidden over the disc (.lb-art-new) and fade in together (lbArtReveal) once no queued
+  row is on screen (8 steps -> 1-2).
+- PLACEHOLDERS: the board's real header + rows of the real height (--lb-row-h 3.75rem / 4.125rem iPad); rows land where they stood
+  (26px -> 0) and fade up. Limit: This Week's podium can still push late rows.
+- lbStillGo hands every row the clock in one frame. check-b379 (5) changed to match.
+- LOOK: one row height, 18/20px corners, surface tokens + catch-light; centred place with a quiet "#"; round medals; silver/bronze
+  corner light; your row = accent ring + wash; spaced-capital headers. Gate: tools/check-b382-board.py (6 of 7 fail on 381).
+  Warm-board timing (recorded loops) unmeasurable at load 23-36 - phone check.
+- CHECK-SYNC on the merged build (Fire Code + Settings + slide + test + ...): "the restored account is what goes up, to the account
+  and the floor" FAILED (pushed None) - being compared against 381 before shipping.
