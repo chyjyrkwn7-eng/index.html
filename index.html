@@ -32496,24 +32496,78 @@
     margin:0; padding:0 52px; font-size:1.15rem; font-weight:700; line-height:1.25;
     letter-spacing:0; text-align:center; color:var(--ink);
   }
-  /* Contributors */
-  .credits-intro{ margin:0 1rem 1.25rem; font-size:.9rem; line-height:1.5; color:var(--soft); }
+  /* Contributors (build 382): the inspiration's page - an intro, then a card
+     per person: the name, a count badge, the role in grey; what they did as rows */
+  .credits-intro{ margin:0 1rem 1.3rem; font-size:.9rem; line-height:1.5; color:var(--soft); }
+  .credits-intro > p{ margin:0 0 .7rem; }
+  .credits-heart{ display:inline-block; width:1.05em; height:1.05em; vertical-align:-.16em; color:#FF5C8A; }
+  .credits-heart svg{ width:100%; height:100%; display:block; }
+  .credits-stats{ display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.2rem; }
+  .credits-stat{
+    display:inline-flex; align-items:baseline; gap:.1rem; padding:.3rem .7rem; border-radius:999px;
+    font-size:.8rem; font-weight:600; color:var(--soft);
+    background:var(--surface-lift); border:1px solid var(--surface-border);
+  }
+  .credits-stat > b{
+    font-size:.95rem; font-weight:800; margin-right:.15rem;
+    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2) 60%, var(--theme-c3));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
   [data-layout="modern"] .screen-credits .settings-card.credits-card{ margin:0 0 1rem; }
   .credits-card > .settings-row-static{ align-items:center; cursor:default; }
-  .credits-name-row{ justify-content:space-between; gap:.75rem; }
+  .credits-name-row{ gap:.55rem; }
   .credits-name{ min-width:0; font-size:1.02rem; font-weight:700; }
-  .credits-item{ font-size:.95rem; font-weight:500; }
-  /* the names at the foot of Settings */
-  .settings-credits-footer{
-    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem .75rem;
-    max-width:24rem; margin:2.1rem auto .4rem; text-align:center;
+  .credits-count{
+    flex:0 0 auto; min-width:1.45rem; height:1.45rem; padding:0 .4rem; border-radius:999px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:.74rem; font-weight:800; color:#1A0F14; line-height:1;
+    background:linear-gradient(135deg, var(--theme-c1), var(--theme-c2) 55%, var(--theme-c3));
+    box-shadow:0 1px 6px color-mix(in srgb, var(--theme-c2) 40%, transparent);
   }
-  @media (min-width:40rem){ .settings-credits-footer{ grid-template-columns:repeat(4, minmax(0, 1fr)); max-width:40rem; } }
+  .credits-name-row > .credits-role{ margin-left:auto; }
+  .credits-item{ font-size:.95rem; font-weight:500; }
+  /* the menu: category rows, then Credits' word rows, then Support's links */
+  [data-layout="modern"] .screen-settings .settings-card.settings-menu-first{ margin-top:.5rem; }
+  .settings-row.settings-plainrow{ justify-content:space-between; }
+  .settings-row.settings-plainrow .settings-row-label{ flex:1 1 auto; }
+  .settings-row.settings-linkrow{ font-size:.95rem; font-weight:600; color:var(--theme-c1); }
+  .settings-list > .settings-plainrow + .settings-row::before,
+  .settings-list > .settings-linkrow + .settings-row::before{ left:1rem; }
+  /* Legal, Terms of Use, Privacy: words in a card */
+  [data-layout="modern"] .screen-settings-sub .settings-card.settings-prose{ padding:.9rem 1rem; }
+  .settings-prose > p{ margin:0; font-size:.86rem; line-height:1.55; color:color-mix(in srgb, var(--ink) 78%, transparent); }
+  .settings-prose > p + p{ margin-top:.75rem; }
+  /* a category page's first heading sits close under the title */
+  [data-layout="modern"] .screen-settings-sub .settings-nav + * > .slab.motion-summary:first-child{ margin-top:.4rem; }
+  /* the foot of Settings: who made it, then the name */
+  .settings-foot{ margin:2.2rem 0 .6rem; text-align:center; }
+  .settings-credits-footer{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:1rem .5rem;
+    max-width:24rem; margin:0 auto; text-align:center;
+  }
+  .settings-credits-cell{ flex:0 0 calc(50% - .5rem); min-width:0; }
+  @media (min-width:40rem){
+    .settings-credits-footer{ max-width:44rem; }
+    .settings-credits-cell{ flex:0 0 calc(20% - .5rem); }
+  }
   .settings-credits-role{
-    display:block; font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    display:block; font-size:.66rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
     color:var(--soft);
   }
-  .settings-credits-name{ display:block; margin-top:.2rem; font-size:.88rem; font-weight:700; color:#6FC2FF; }
+  .settings-credits-name{ display:block; margin-top:.2rem; font-size:.86rem; font-weight:700; color:var(--theme-c1); }
+  .settings-madeby{ margin:1.9rem 0 .1rem; font-size:1rem; font-weight:700; color:var(--theme-c1); }
+  .settings-wordmark{ margin:0; line-height:1; }
+  .settings-wordmark-text{
+    display:inline-block; font-family:var(--serif); font-size:2.3rem; font-weight:800; letter-spacing:.16em;
+    margin-right:-.16em; padding:.1rem 0 .2rem;
+    background-image:linear-gradient(100deg, var(--theme-c1) 0%, var(--theme-c2) 30%, var(--theme-c3) 50%, var(--theme-c2) 70%, var(--theme-c1) 100%);
+    background-size:250% 100%; background-position:0% 50%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:settings-wordmark-sheen 6s ease-in-out infinite alternate;
+  }
+  @keyframes settings-wordmark-sheen{ from{ background-position:0% 50%; } to{ background-position:100% 50%; } }
+  [data-reduce-motion="true"] .settings-wordmark-text{ animation:none; }
+  @media (prefers-reduced-motion:reduce){ .settings-wordmark-text{ animation:none; } }
   .settings-adv-card .startbar:first-child{ margin-top:.2rem; }
 
   /* ---- THE CASE'S CORNERS, ROUND 10 ----
@@ -61517,6 +61571,8 @@ function firebaseBecameReady(){
   /* Settings is a Profile tab now (build 323): redrawn the same way when
      it is the tab on screen. */
   else if(document.querySelector("#stage .screen-profile .profile-settings-tab[data-built='1']:not([hidden])")) showAppearance();
+  /* ...and a Settings category page (build 382) redraws as itself */
+  else { const sp = document.querySelector("#stage .screen-settings-page[data-page]"); if(sp) showAppearance({ page: sp.dataset.page }); }
   const pending = fbReadyCallbacks.splice(0);
   pending.forEach(cb => { try { cb(); } catch(e){} });
   /* Once per account: count the Virtual Room matches and wins from
@@ -74575,7 +74631,14 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
                  account starts with it done. */
               soundOn: true, soundVolume: .7, vibrate: false, soundOn327: true,
               /* iPhone haptics (build 327): on by default; Android keeps vibrate */
-              haptics: true };
+              haptics: true,
+              /* Settings > Sound & Haptics (build 382): the clicks for buttons,
+                 tabs and switches (every "ui." sound) can be turned off on their
+                 own; answers, results and scenes still sound. */
+              tapSounds: true,
+              /* Settings > Study (build 382): auto-advance waits about a second
+                 instead of AUTO_ADVANCE_MS, to read the answer first. */
+              autoAdvanceLong: false };
 
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
@@ -74607,6 +74670,8 @@ function loadTheme(){
     if(typeof store.theme.soundVolume === "number" && isFinite(store.theme.soundVolume)) theme.soundVolume = Math.max(0, Math.min(1, store.theme.soundVolume));
     if(typeof store.theme.vibrate === "boolean") theme.vibrate = store.theme.vibrate;
     if(typeof store.theme.haptics === "boolean") theme.haptics = store.theme.haptics;
+    if(typeof store.theme.tapSounds === "boolean") theme.tapSounds = store.theme.tapSounds;
+    if(typeof store.theme.autoAdvanceLong === "boolean") theme.autoAdvanceLong = store.theme.autoAdvanceLong;
     theme.soundOn327 = store.theme.soundOn327 === true;
   }
   /* SOUND ON FOR EVERYONE ONCE (build 327), the swipe's pattern below:
@@ -74864,7 +74929,8 @@ function saveTheme(){
                   autoFlagMissed: theme.autoFlagMissed,
                   showClassDaysLeft: theme.showClassDaysLeft,
                   soundOn: theme.soundOn, soundVolume: theme.soundVolume, vibrate: theme.vibrate, haptics: theme.haptics !== false,
-                  soundOn327: theme.soundOn327 !== false };
+                  soundOn327: theme.soundOn327 !== false,
+                  tapSounds: theme.tapSounds !== false, autoAdvanceLong: theme.autoAdvanceLong === true };
   saveStore();
 }
 
@@ -78496,7 +78562,8 @@ const NovaSound = (function(){
   function play(id, opts){
     const e = SOUND_CATALOGUE[id];
     if(!e) return null;
-    const wantSound = on(), wantBuzz = hapticsWanted() && !!e.hap;
+    /* Tap sounds off (build 382): the "ui." sounds stay quiet; their haptics do not */
+    const wantSound = on() && !(theme.tapSounds === false && id.indexOf("ui.") === 0), wantBuzz = hapticsWanted() && !!e.hap;
     if(!wantSound && !wantBuzz) return null;
     const nowMs = (typeof performance !== "undefined" ? performance.now() : Date.now());
     if(st.last[id] && nowMs - st.last[id] < (e.cd || 0)) return null;
@@ -78946,7 +79013,17 @@ function buildSoundSettings(){
     showToast(on ? "Sound effects on." : "Sound effects off.");
   });
   sndRow.classList.add("settings-sound-row");
-  if(!tabNoSound) card.append(sndRow, vol);
+  /* TAP SOUNDS (build 382): the button, tab and switch clicks on their own.
+     Shown, like the volume, only while sound is on. */
+  const tapRow = mkRow("Tap sounds", "Clicks for buttons, tabs and switches. Answers, results and scenes still play.", theme.tapSounds !== false, on => {
+    theme.tapSounds = on;
+    saveTheme();
+    showToast(on ? "Tap sounds on." : "Tap sounds off.");
+  });
+  tapRow.classList.add("settings-tapsound-row");
+  tapRow.hidden = !theme.soundOn;
+  sndRow.addEventListener("change", () => { tapRow.hidden = !theme.soundOn; });
+  if(!tabNoSound) card.append(sndRow, vol, tapRow);
   if(NovaSound.canVibrate()){
     const vibRow = mkRow("Vibration", "Short vibrations for taps, answers and results.", theme.vibrate, on => {
       theme.vibrate = on;
@@ -104070,10 +104147,12 @@ function scheduleAutoAdvance(qi){
        still a clear beat and takes 40% off the wait. Anyone who wants
        none of it can turn auto-advance off in Settings, which is the
        default. */
-  }, AUTO_ADVANCE_MS);
+  }, theme.autoAdvanceLong ? AUTO_ADVANCE_LONG_MS : AUTO_ADVANCE_MS);
 }
 __bm("L95043");
 const AUTO_ADVANCE_MS = 550;
+/* "Longer pause before moving on" (Settings > Study, build 382) */
+const AUTO_ADVANCE_LONG_MS = 1100;
 
 function choose(slot){
   const qi = order[pos];
@@ -117139,7 +117218,9 @@ function settingsTileColor(kind){
     trophy: "#FF9F0A", key: "#0A84FF", cloudup: "#0A84FF", entercode: "#30B0C7",
     share: "#0A84FF", install: "#30D158",
     update: "#32ADE6", bug: "#FF453A", history: "#5E5CE6",
-    advanced: "#6E7F9E", credits: "#FF375F", cloudoff: "#8E8E93"
+    advanced: "#6E7F9E", credits: "#FF375F", cloudoff: "#8E8E93",
+    /* the menu's categories and the two switches added with it (build 382) */
+    study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A"
   };
   return C[kind] || "#8E8E93";
 }
@@ -117163,7 +117244,11 @@ function settingsRowIcon(kind, tone){
     key: '<circle cx="8" cy="12" r="3.6"/><path d="M11.6 12H20M17 12v3M20 12v2.6"/>',
     cloudup: '<path d="M7.5 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.7 3.7 0 0 1-.8 7.4"/><path d="M12 19.5v-7M9.2 15.3 12 12.5l2.8 2.8"/>',
     entercode: '<rect x="3.5" y="7" width="17" height="10" rx="2.6"/><path d="M7.5 12h.01M10.5 12h.01M13.5 12h.01M16.5 12h.01"/>',
-    credits: '<path d="M12 19.5s-7.2-4.4-7.2-9.6A4 4 0 0 1 12 7.6a4 4 0 0 1 7.2 2.3c0 5.2-7.2 9.6-7.2 9.6z" fill="currentColor"/>'
+    credits: '<path d="M12 19.5s-7.2-4.4-7.2-9.6A4 4 0 0 1 12 7.6a4 4 0 0 1 7.2 2.3c0 5.2-7.2 9.6-7.2 9.6z" fill="currentColor"/>',
+    study: '<path d="M12 6.5C10.4 5.2 8 4.6 4.5 4.8v12.7c3.5-.2 5.9.4 7.5 1.7 1.6-1.3 4-1.9 7.5-1.7V4.8c-3.5-.2-5.9.4-7.5 1.7z"/><path d="M12 6.5v12.7"/>',
+    sync: '<path d="M7.5 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.7 3.7 0 0 1-.8 7.4z"/><path d="M9.3 13.6l1.9 1.9 3.6-3.7"/>',
+    tap: '<path d="M10 11V5.8a1.6 1.6 0 0 1 3.2 0V11"/><path d="M13.2 10.2a1.6 1.6 0 0 1 3.2 0v1.2a1.6 1.6 0 0 1 3.1.5v2.6a6 6 0 0 1-6 6h-.8a5.6 5.6 0 0 1-4.5-2.3l-2.7-3.7a1.5 1.5 0 0 1 2.3-1.9L10 14.6"/>',
+    pause: '<circle cx="12" cy="12.5" r="7.5"/><path d="M12 8.5v4.2l2.6 1.6"/><path d="M9.5 2.8h5"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
@@ -117216,6 +117301,28 @@ function settingsTextRow(label, tone){
   b.textContent = label;
   return b;
 }
+/* Credits' rows: words and a chevron, no tile (the inspiration's Contributors / Software Licenses). */
+function settingsPlainRow(label){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "settings-row settings-plainrow";
+  const lab = document.createElement("span");
+  lab.className = "settings-row-label"; lab.textContent = label;
+  const chev = document.createElement("span");
+  chev.className = "settings-row-chev";
+  chev.setAttribute("aria-hidden", "true");
+  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
+  b.append(lab, chev);
+  return b;
+}
+/* Support's rows: only words, in the theme's warm brand colour (the inspiration's purple links). */
+function settingsLinkRow(label){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "settings-row settings-linkrow";
+  b.textContent = label;
+  return b;
+}
 function settingsFootnote(text){
   const p = document.createElement("p");
   p.className = "settings-footnote";
@@ -117264,29 +117371,60 @@ function settingsSubPage(title, cls){
    name row bold with the role on the right, then what they did as rows.
    No links or handles. The creator first, then the rest by surname. */
 function creditsPeople(){
+  /* Logan Preston added at Madison's ask ("You can add Logan Preston in the
+     contributors"); what he did was not said, so his credit is general -
+     Madison to confirm. */
   return [
-    { name: "Madison Davis", role: "Creator", did: ["Design and development", "The study experience", "Ranks, badges and characters"] },
+    { name: "Madison Davis", role: "Creator", did: ["Design and development", "The study experience", "Building the question banks", "Ranks, badges and characters"] },
     { name: "Bryan Darjean", role: "Layout", did: ["Screen layout feedback", "Look and feel suggestions"] },
+    { name: "Logan Preston", role: "Feedback", did: ["Early testing", "Feedback and suggestions"] },
     { name: "Alexis Sauceda", role: "Testing", did: ["Question testing", "Answer checks", "Testing and feedback"] },
     { name: "Cameron Wharton", role: "Ideas", did: ["Inspiration", "Game-based ideas", "Challenges and rewards ideas"] }
   ];
 }
+/* "Give the total for what they helped with something cool": each name row
+   carries a small count badge, and the intro ends with the totals. */
 function showCredits(){
   const panel = settingsSubPage("Contributors", "screen-credits");
-  const intro = document.createElement("p");
+  const people = creditsPeople();
+  const total = people.reduce((n, p) => n + p.did.length, 0);
+  const intro = document.createElement("div");
   intro.className = "credits-intro";
-  intro.textContent = "Nova is built by and for its class. Thank you to the people who helped shape it.";
+  const p1 = document.createElement("p");
+  p1.textContent = "These people helped build Nova for the class.";
+  const p2 = document.createElement("p");
+  p2.append(document.createTextNode("Thank you to everyone who contributed, your help is much appreciated. "));
+  const heart = document.createElement("span");
+  heart.className = "credits-heart"; heart.setAttribute("aria-hidden", "true");
+  heart.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 20.2s-7.6-4.6-7.6-10.1A4.2 4.2 0 0 1 12 7.7a4.2 4.2 0 0 1 7.6 2.4c0 5.5-7.6 10.1-7.6 10.1z" fill="currentColor"/></svg>';
+  p2.appendChild(heart);
+  intro.append(p1, p2);
+  const stats = document.createElement("div");
+  stats.className = "credits-stats";
+  [[people.length, "contributors"], [total, "contributions"]].forEach(([n, w]) => {
+    const c = document.createElement("span");
+    c.className = "credits-stat";
+    const num = document.createElement("b"); num.textContent = String(n);
+    c.append(num, document.createTextNode(" " + w));
+    stats.appendChild(c);
+  });
+  intro.appendChild(stats);
   panel.appendChild(intro);
-  creditsPeople().forEach(p => {
+  people.forEach(p => {
     const card = document.createElement("div");
     card.className = "settings-card settings-list credits-card";
     const head = document.createElement("div");
     head.className = "settings-row settings-row-static credits-name-row";
     const nm = document.createElement("span");
     nm.className = "credits-name"; nm.textContent = p.name;
+    const count = document.createElement("span");
+    count.className = "credits-count";
+    count.textContent = String(p.did.length);
+    count.setAttribute("aria-label", p.did.length + (p.did.length === 1 ? " contribution" : " contributions"));
+    count.title = count.getAttribute("aria-label");
     const role = document.createElement("span");
     role.className = "settings-row-value credits-role"; role.textContent = p.role;
-    head.append(nm, role);
+    head.append(nm, count, role);
     card.appendChild(head);
     p.did.forEach(t => {
       const r = document.createElement("div");
@@ -117299,9 +117437,15 @@ function showCredits(){
   stage.replaceChildren(panel);
   toTop(true);
 }
-/* The names under Settings, small and centred (the inspiration's
-   DEVELOPER / OPERATIONS / DESIGNER line). Words only, nothing to tap. */
+/* ---- THE FOOT OF SETTINGS (build 382) ----
+   The inspiration's DEVELOPER / OPERATIONS / DESIGNER line (role in small
+   caps, the name in the brand colour), then "Made by M. Davis" and the NOVA
+   wordmark with a slow sheen to end on ("made by M. Davis and then the word
+   nova in a nice cool way under it"). No legal text here: it is on Legal,
+   Terms of Use and Privacy. */
 function buildCreditsFooter(){
+  const wrap = document.createElement("div");
+  wrap.className = "settings-foot";
   const box = document.createElement("div");
   box.className = "settings-credits-footer";
   creditsPeople().forEach(p => {
@@ -117314,15 +117458,67 @@ function buildCreditsFooter(){
     cell.append(r, n);
     box.appendChild(cell);
   });
-  return box;
+  const made = document.createElement("p");
+  made.className = "settings-madeby"; made.textContent = "Made by M. Davis";
+  const mark = document.createElement("p");
+  mark.className = "settings-wordmark"; mark.setAttribute("aria-label", "Nova");
+  const word = document.createElement("span");
+  word.className = "settings-wordmark-text"; word.textContent = "NOVA";
+  word.dataset.text = "NOVA";
+  mark.appendChild(word);
+  wrap.append(box, made, mark);
+  return wrap;
+}
+/* ---- LEGAL, TERMS OF USE, PRIVACY (build 382) ----
+   "All the copyright stuff ... should be in another thing towards the
+   bottom similar to the screenshot how it has a support section". Legal
+   is every line Settings' foot carried (buildLegalNote("settings"), word
+   for word). Terms of Use is the part of it that sets the terms; Privacy
+   is what the app already says, elsewhere, about what leaves the device -
+   gathered here, claiming nothing new. */
+function showSettingsText(kind){
+  const titles = { legal: "Legal", terms: "Terms of Use", privacy: "Privacy" };
+  const panel = settingsSubPage(titles[kind] || "Legal", "screen-settings-text settings-text-" + (titles[kind] ? kind : "legal"));
+  const lines = [...buildLegalNote("settings").querySelectorAll("p")].map(p => p.textContent);
+  const block = (head, paras) => {
+    if(head) panel.appendChild(settingsHeader(head));
+    const c = document.createElement("div");
+    c.className = "settings-card settings-prose";
+    paras.forEach(t => { const p = document.createElement("p"); p.textContent = t; c.appendChild(p); });
+    panel.appendChild(c);
+  };
+  if(kind === "terms"){
+    block("Not affiliated", [lines[1]]);
+    block("Study use only", [lines[2]]);
+    block("Trademarks", [lines[3]]);
+  } else if(kind === "privacy"){
+    block("Your progress", ["Turns on automatically so your progress saves to the cloud as you go. To add a second device, enter this device's code there once — from then on both devices share the same progress automatically, updating live, no need to enter it again."]);
+    block("Your sync code", ["Your sync code is your account. Use it to add a second device, and keep it somewhere safe — it is the only way back in.",
+      "Keep this somewhere off this phone. If this device ever loses its data, the code is what puts you back on your account."]);
+    if(window.NOVA_CLASS !== "ifc") block("Leaderboard", ["Show me in the rankings shares only your username, avatar and your ranking numbers. With it off, you can't see the rankings either."]);
+    block("Bug reports", ["Your report goes to the Nova admin, with your first name, app version and device attached so the problem can be tracked down and fixed."]);
+  } else {
+    block("", lines);
+  }
+  stage.replaceChildren(panel);
+  toTop(true);
 }
 function showAppearance(opts){
   const into = opts && opts.into && opts.into.nodeType === 1 ? opts.into : null;
-  if(!into){
+  /* ---- A MENU OF CATEGORIES, EACH ITS OWN PAGE (build 382) ----
+     "they all are there own tab where you click and get more information".
+     Settings (Profile's tab, or the Fire Code bar's) is a menu of category
+     rows; `opts.page` opens one category as a page pushed from it. Every
+     control is still built here, exactly as before, into a holder that is
+     never shown; the menu or the page then takes its part. */
+  const page = opts && typeof opts === "object" && typeof opts.page === "string" ? opts.page : "";
+  if(!into && !page){
+    /* the save-your-code banner lands on the Sync page itself */
+    if(opts && opts.focus === "sync") return showAppearance({ page: "sync", focus: "sync" });
     const plain = (opts && typeof opts === "object" && !(typeof Event !== "undefined" && opts instanceof Event)) ? opts : undefined;
     return showProfile("settings", plain);
   }
-  const panel = into;
+  const panel = document.createElement("div");
 
 
 
@@ -117545,6 +117741,30 @@ function showAppearance(opts){
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
   studyDetails.appendChild(autoFlagRow);
 
+  /* LONGER PAUSE BEFORE MOVING ON (build 382): with Auto-advance on, the
+     right answer stays up about a second (AUTO_ADVANCE_LONG_MS) instead of
+     about half a second. Nothing else about Auto-advance changes. */
+  const longRow = document.createElement("label");
+  longRow.className = "opt";
+  const longCb = document.createElement("input");
+  longCb.type = "checkbox"; longCb.checked = theme.autoAdvanceLong === true;
+  longCb.addEventListener("change", () => {
+    theme.autoAdvanceLong = longCb.checked;
+    saveTheme();
+    showToast(theme.autoAdvanceLong ? "Auto-advance waits a little longer." : "Auto-advance pause back to normal.");
+  });
+  const longBox = document.createElement("span");
+  longBox.className = "box"; longBox.setAttribute("aria-hidden", "true"); longBox.textContent = "\u2713";
+  const longWrap = document.createElement("span");
+  longWrap.className = "otext";
+  longWrap.appendChild(document.createTextNode("Longer pause before moving on"));
+  const longHint = document.createElement("span");
+  longHint.className = "ohint";
+  longHint.textContent = "With Auto-advance on, waits about a second instead of half a second, so there's time to read the answer.";
+  longWrap.appendChild(longHint);
+  longRow.append(longCb, longBox, longWrap);
+  studyDetails.appendChild(longRow);
+
   /* ---- TWO GROUPS THAT SAY WHAT THEY ARE, IN ONE VOICE ----
      "The descriptions for the switches for the top two sections could be
      organized better and look cohesive." Two things were wrong. Some
@@ -117591,10 +117811,11 @@ function showAppearance(opts){
       "Auto-star questions you keep missing": "Stars the questions you keep getting wrong, so they're ready to review.",
       "Skip celebrations and pop-ups":  "No rank-up, badge or unlock scenes, streak banners or message pop-ups. Everything you earn still counts."
     };
+    /* build 382: celebrations belong with motion and effects now */
     const GROUPS = [
-      [motionDetails, ["Reduce motion"]],
-      [studyDetails,  ["Swipe to next question", "Auto-advance",
-                       "Auto-star questions you keep missing", "Skip celebrations and pop-ups"]]
+      [motionDetails, ["Reduce motion", "Skip celebrations and pop-ups"]],
+      [studyDetails,  ["Swipe to next question", "Auto-advance", "Longer pause before moving on",
+                       "Auto-star questions you keep missing"]]
     ];
     GROUPS.forEach(([host, titles]) => {
       const card = document.createElement("div");
@@ -117607,11 +117828,12 @@ function showAppearance(opts){
       host.appendChild(card);
     });
     const lab = motionDetails.querySelector(".motion-summary");
-    if(lab) lab.textContent = "Display & motion";
+    if(lab) lab.textContent = "On screen";   /* build 382: under the page title "Motion & Effects" */
   })();
 
   extraSect.appendChild(motionDetails);
-  extraSect.appendChild(buildSoundSettings());
+  const soundHost = buildSoundSettings();
+  extraSect.appendChild(soundHost);
   extraSect.appendChild(studyDetails);
   /* updSect used to be appended here, which put a build number and an
      update button on the end of a run of behaviour switches - reported
@@ -117635,7 +117857,7 @@ function showAppearance(opts){
      shadow) Motion & interaction's own header already has above it,
      instead of the plain uppercase label every other section uses. */
   lbLab.className = "slab section-divider motion-summary"; lbLab.id = "settings-rankings";
-  lbLab.textContent = "Leaderboard";
+  lbLab.textContent = "Rankings";   /* build 382: under the page title "Leaderboard & Privacy" */
   lbSect.appendChild(lbLab);
   const lbRow = document.createElement("label");
   lbRow.className = "opt";
@@ -117701,7 +117923,7 @@ function showAppearance(opts){
   syncSect.id = "settings-sync-sect";
   const syncLab = document.createElement("p");
   syncLab.className = "slab section-divider motion-summary"; syncLab.id = "settings-sync";
-  syncLab.textContent = "Sync";
+  syncLab.textContent = "This device";   /* build 382: under the page title "Sync" */
   syncLab.appendChild(buildInfoIcon("Turns on automatically so your progress saves to the cloud as you go. To add a second device, enter this device's code there once \u2014 from then on both devices share the same progress automatically, updating live, no need to enter it again."));
   syncSect.appendChild(syncLab);
 
@@ -118061,85 +118283,27 @@ function showAppearance(opts){
      actions on your account, and giving them the same weight as Reset
      was the other half of why this read as a pile. The matte black is
      kept for the things that change something. */
-  const shareLab = document.createElement("p");
-  shareLab.className = "slab section-divider motion-summary";
-  /* NOT "Share Nova": the section holds two buttons and only one of
-     them shares anything - the other puts the app on your own Home
-     Screen, which is the opposite direction. A header has to cover
-     what is under it. */
-  shareLab.textContent = "Share & install";
-  panel.appendChild(shareLab);
-  /* Build 382: the line that sat above the two pills ("Send it to a
-     friend, or put it on your own Home Screen so it opens like an app.")
-     is split between the two rows it described, as their second lines. */
+  /* Share & install: its two rows, their second lines (build 382) */
   shareBtn.querySelector(".settings-row-text").appendChild(settingsRowSub("Send it to a friend."));
   installBtn.querySelector(".settings-row-text").appendChild(settingsRowSub("So it opens like an app."));
-  /* BUILD 324: "the spacing of the stuff under the sync code section and
-     beyond is pretty tight, could this be updated and better?" Every
-     section above Sync is a header over a card; these two were a header
-     over loose text and buttons, 16px from the next header where the
-     cards above sit 22px from theirs. One shape for every section now:
-     the line and its buttons in a .settings-card, which also brings the
-     cards' own spacing below them. */
   const shareCard = document.createElement("div");
   shareCard.className = "settings-card settings-list";
   shareCard.append(shareBtn, installBtn);
-  panel.appendChild(shareCard);
-
-  const helpLab = document.createElement("p");
-  helpLab.className = "slab section-divider motion-summary";
-  helpLab.textContent = "Help";
-  panel.appendChild(helpLab);
-  /* In a card like Share & install above it (build 324); rows since 382. */
-  const helpCard = document.createElement("div");
-  helpCard.className = "settings-card settings-list";
-  panel.appendChild(helpCard);
 
   /* REPORT A BUG, and the awkward part is where a report LANDS.
      A `bugs` collection is the obvious home and it is unreadable:
      these rules whitelist `leaderboard` and `vrooms` for listing and
      refuse everything else, so a report written to `bugs` would be
-     write-only and nobody would ever see it. Measured, not assumed -
-     a list on it comes back PERMISSION_DENIED.
-     So a report is a document in `vrooms` with a `bug-` id. It is not
-     a lobby and nothing in the app reads it as one; anything that ever
-     enumerates rooms has to skip ids starting `bug-`, which is the one
-     string this decision costs. Changing the rules to open a proper
-     collection is a one-line edit in the Firebase console and this
-     moves the moment it happens.
-     WHAT IT MAY NOT CONTAIN: the sync code. That is the account, and
-     `vrooms` is world-readable. The publicId is the anonymous one that
-     already sits on every rankings row, so it identifies the reporter
-     to whoever maintains the app without exposing anything new. */
-  const bugBtn = settingsRow("bug", "Report a bug");
+     write-only and nobody would ever see it. So a report is a document
+     in `vrooms` with a `bug-` id (see showBugReport). It may not contain
+     the sync code. */
+  /* Build 382: Report a bug and Version history are Support's link rows. */
+  const bugBtn = settingsLinkRow("Report a bug");
   bugBtn.addEventListener("click", () => showBugReport());
-  /* BUILD 346: "Put version history button in settings (we are gonna overhaul settings this weekend but put it
-     there for now)." The Release History Home's version tag opens, from Settings too, with Settings as its way back. */
-  const verBtn = settingsRow("history", "Version history");
+  /* BUILD 346: the Release History, from Settings, with Settings as its way back. */
+  const verBtn = settingsLinkRow("Version history");
   verBtn.id = "settings-version-history";
   verBtn.addEventListener("click", () => showReleaseHistory("settings"));
-  /* build 382: one list - Check for update (the build on its second line), Report a bug, Version history */
-  helpCard.append(updBtn, bugBtn, verBtn);
-
-  /* Advanced is its own heading because everything under it is a
-     one-way door - it is the only group on this screen that can lose
-     somebody their progress, and it should not share a label with
-     "Share Nova". */
-  /* build 382: no "Advanced" heading over its one row - the card stands
-     on its own, like the inspiration's Advanced card */
-  dataSect.classList.add("settings-card-solo");
-  panel.appendChild(dataSect);
-
-  /* CREDITS (build 382): "I also really like credits section where it has
-     the contributors." A group of its own, its row opening Contributors. */
-  panel.appendChild(settingsHeader("Credits", "settings-credits"));
-  const creditsCard = document.createElement("div");
-  creditsCard.className = "settings-card settings-list settings-credits-card";
-  const creditsBtn = settingsRow("credits", "Contributors");
-  creditsBtn.id = "settings-contributors";
-  creditsBtn.addEventListener("click", () => showCredits());
-  creditsCard.appendChild(creditsBtn);
-  panel.appendChild(creditsCard);
 
   /* Every switch row gets its tile (build 382). Rows are found by their
      class (Sound & vibration's) or their title, the way regroupSwitches
@@ -118148,13 +118312,15 @@ function showAppearance(opts){
   (function tileSwitchRows(){
     const BY_TITLE = {
       "Reduce motion": "motion", "Swipe to next question": "swipe", "Auto-advance": "forward",
+      "Longer pause before moving on": "pause",
       "Auto-star questions you keep missing": "star", "Skip celebrations and pop-ups": "party",
-      "Show me in the rankings": "trophy", "Sound effects": "sound", "Vibration": "haptics", "Haptics": "haptics"
+      "Show me in the rankings": "trophy", "Sound effects": "sound", "Tap sounds": "tap", "Vibration": "haptics", "Haptics": "haptics"
     };
     panel.querySelectorAll(".settings-card > label.opt").forEach(r => {
       const t = r.querySelector(".otext");
       const title = t && t.firstChild ? String(t.firstChild.textContent).trim() : "";
       const kind = r.classList.contains("settings-sound-row") ? "sound"
+        : r.classList.contains("settings-tapsound-row") ? "tap"
         : (r.classList.contains("settings-vibrate-row") || r.classList.contains("settings-haptics-row")) ? "haptics"
         : BY_TITLE[title];
       if(!kind || r.querySelector(":scope > .settings-row-icon")) return;
@@ -118163,18 +118329,76 @@ function showAppearance(opts){
     });
   })();
 
-  /* No Done button. This screen is a bottom-tab destination, and the
-     Home tab in the bar below already does exactly what Done did - a
-     second, differently-shaped way out of the same screen is one more
-     thing to read and decide about, for no additional ability. Removed
-     rather than hidden. The sub-screens that are NOT tab destinations
-     (Leaderboard, Answer Review, the end-of-test summary) keep theirs,
-     since those genuinely have no tab of their own to return from. */
+  const noBoard = window.NOVA_CLASS === "ifc";   /* no leaderboard in Fire Code */
+  let host = into;
+  if(page){
+    /* ---- ONE CATEGORY, ITS OWN PAGE ---- */
+    const PAGES = {
+      sound:  ["Sound & Haptics", [soundHost]],
+      study:  ["Study", [studyDetails]],
+      motion: ["Motion & Effects", [motionDetails]],
+      sync:   ["Sync", [syncSect]],
+      share:  ["Share & Install", [shareCard]]
+    };
+    if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
+    const def = PAGES[page];
+    if(!def) return showAppearance();
+    host = settingsSubPage(def[0], "screen-settings-page settings-page-" + page);
+    host.dataset.page = page;
+    def[1].forEach(n => host.appendChild(n));
+    stage.replaceChildren(host);
+    toTop(true);
+  } else {
+    /* ---- THE MENU ---- the inspiration's grammar: grouped cards of
+       category rows (tile, name, a grey value where there is one to say,
+       chevron), then Credits and Support, then who made it. */
+    const cat = (key, kind, label, value) => {
+      const b = settingsRow(kind, label, null, null, value || null);
+      b.id = "settings-row-" + key; b.dataset.page = key;
+      b.classList.add("settings-cat");
+      b.addEventListener("click", () => showAppearance({ page: key }));
+      return b;
+    };
+    const card = (cls, rows) => {
+      const c = document.createElement("div");
+      c.className = "settings-card settings-list settings-menu-card" + (cls ? " " + cls : "");
+      rows.forEach(r => r && c.appendChild(r));
+      return c;
+    };
+    const tabNoSound = !!(NovaSound.tabOff && NovaSound.tabOff());
+    const vol = Math.round((typeof theme.soundVolume === "number" ? theme.soundVolume : SOUND_DEFAULT_VOLUME) * 100);
+    host.appendChild(card("settings-menu-first", [
+      cat("sound", "sound", "Sound & Haptics", (theme.soundOn && !tabNoSound) ? vol + "%" : "Off"),
+      cat("study", "study", "Study", theme.autoAdvance ? "Auto-advance" : null),
+      cat("motion", "motion", "Motion & Effects", theme.reduceMotion ? "Reduced" : null)
+    ]));
+    host.appendChild(card("", [
+      cat("sync", "sync", "Sync", !fbDb ? "Unreachable" : (syncCode ? "On" : "Off")),
+      noBoard ? null : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
+    ]));
+    dataSect.classList.add("settings-menu-card");
+    dataSect.replaceChildren(cat("share", "share", "Share & Install"), updBtn, ...dataSect.children);
+    host.appendChild(dataSect);
 
-  /* ABOUT (build 330): "Not affiliated or endorsed by HCC or TCOLE. That's good but we need more to
-     CYA ... Mention here it was made by M. Davis." The credit is here only (his call). */
-  panel.appendChild(buildCreditsFooter());
-  panel.appendChild(buildLegalNote("settings"));
+    host.appendChild(settingsHeader("Credits", "settings-credits"));
+    const creditsBtn = settingsPlainRow("Contributors");
+    creditsBtn.id = "settings-contributors";
+    creditsBtn.addEventListener("click", () => showCredits());
+    const legalBtn = settingsPlainRow("Legal");
+    legalBtn.id = "settings-legal";
+    legalBtn.addEventListener("click", () => showSettingsText("legal"));
+    host.appendChild(card("settings-credits-card", [creditsBtn, legalBtn]));
+
+    host.appendChild(settingsHeader("Support", "settings-support"));
+    const termsBtn = settingsLinkRow("Terms of Use");
+    termsBtn.addEventListener("click", () => showSettingsText("terms"));
+    const privBtn = settingsLinkRow("Privacy");
+    privBtn.addEventListener("click", () => showSettingsText("privacy"));
+    host.appendChild(card("settings-support-card", [bugBtn, verBtn, termsBtn, privBtn]));
+
+    /* who made it, and the name, to end on (build 382) */
+    host.appendChild(buildCreditsFooter());
+  }
 
   /* (mounted by showProfile, inside its Settings tab - build 323) */
   /* INSTANT WHEN WE ARE ABOUT TO SCROLL SOMEWHERE ELSE. A plain toTop()
@@ -118230,7 +118454,7 @@ function showAppearance(opts){
      whole screen buries the control that was just pointed at - and the
      tour's own scrolling fights the scroll that put it in view.
      Unclaimed, so an ordinary visit to Settings still gets it. */
-  if(!store.seenSettingsTour && !(opts && opts.focus)){
+  if(!page && !store.seenSettingsTour && !(opts && opts.focus)){
     store.seenSettingsTour = true;
     saveStore();
     /* One step per section, pointed at that section by id. All five
@@ -118240,13 +118464,13 @@ function showAppearance(opts){
        which moved under Miscellaneous, and saying nothing at all about
        Rankings or about what the sync code actually is. */
     startSimpleTour([
-      { target: "#settings-motion", align: "left", vplacement: "below",
+      { target: "#settings-row-motion", align: "left", vplacement: "below",
         text: "How the app moves: Reduce motion turns off the shimmer, pulse and other animated effects." },
-      { target: "#settings-study", align: "left", vplacement: "below",
+      { target: "#settings-row-study", align: "left", vplacement: "below",
         text: "How tests behave: swiping or moving on by itself to the next question, starring questions you keep missing, and skipping celebrations." },
-      ...(window.NOVA_CLASS === "ifc" ? [] : [{ target: "#settings-rankings", align: "left", vplacement: "below",
+      ...(window.NOVA_CLASS === "ifc" ? [] : [{ target: "#settings-row-rankings", align: "left", vplacement: "below",
         text: "Turn this off to come off the class leaderboards. Your XP, badges and hundos all still count \u2014 nobody else sees them." }]),
-      { target: "#settings-sync", align: "left", vplacement: "below",
+      { target: "#settings-row-sync", align: "left", vplacement: "below",
         text: "Your sync code is your account. Use it to add a second device, and keep it somewhere safe \u2014 it is the only way back in." }
     ]);
   }
