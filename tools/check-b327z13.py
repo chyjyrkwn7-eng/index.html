@@ -295,7 +295,8 @@ def small(br):
     check("Y. Stats has no Your units box", r["units"] is False, r["units"])
     check("Y. Find me has no icon", r["icon"] is False, r["icon"])
     check("Y. the UFO takes 200 hundos, Bubbles 150", r["ufo"] == 200 and r["bubbles"] == 150, [r["ufo"], r["bubbles"]])
-    check("Y. Astral, Celestial and Zenith are veiled until earned", all(r["veiled"]), r["veiled"])
+    # SUPERSEDED IN BUILD 382 ("all the banners will be viewable ... remove that"): none is veiled now
+    check("Y. (build 382) Astral, Celestial and Zenith are not veiled - shown greyed until earned", not any(r["veiled"]), r["veiled"])
     check("Y. the Sheriff's note is one plain sentence - no speeds, no modes", r["sheriff"].count(".") == 1 and not __import__("re").search(r"seconds|Battle|Tug|Race", r["sheriff"]), r["sheriff"])
     check("Y. a locked card's requirement is set apart: bigger, bold, in a tray, under 'To unlock'", r["apart"], r["apart"])
     ctx.close()

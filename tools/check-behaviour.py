@@ -3277,7 +3277,8 @@ def check_b242(br):
       applyLoadedData(saved); out.queenBecomes = store.avatarChar;
       out.dragonDrawnAs = buildAvatarCharSVG('dragon').querySelector('.cx-k-wizard') ? 'wizard' : 'other';
       showWelcomeCharacterPrompt(); await wait(500);
-      out.starters = [...document.querySelectorAll('.charselect-panel .avatarchar-option')].filter(o => o.offsetParent).length;
+      /* build 382: the greyed "Still to find" grid under the starters is not counted */
+      out.starters = [...document.querySelectorAll('.charselect-panel .avatarchar-grid:not(.charselect-later) .avatarchar-option')].filter(o => o.offsetParent).length;
       out.starterCols = getComputedStyle(document.querySelector('.charselect-panel .avatarchar-grid')).gridTemplateColumns.split(' ').length;
       /* 10. Customize: colours before banners, and big enough to sit beside them.
          Build 315: each is its own page off a summary, so the order is the
@@ -11377,19 +11378,19 @@ def check_b314_chars(br):
           /* the SECRET's (build 325: challenge and ultimate characters are
              cut-outs too, each in its category's own colour - see check-b325-d;
              "no colour" is the secret flare cut-out's rule) */
-          const sil = opts.find(o => o.classList.contains('is-sil-secret')) || opts.find(o => o.classList.contains('is-silhouette'));
-          sil.scrollIntoView({ block: 'center', behavior: 'instant' });
-          for(let t = 0; t < 400; t++){ if(sil.querySelector('.char-flip-play img')) break; await wait(250); }
+          /* BUILD 382: nothing is a cut-out any more ("they are gonna be
+             viewable again") - a locked secret is the greyed still preview
+             every locked character is, so it no longer plays */
+          const sil = opts.find(o => o.title === (AVATAR_DISPLAY_NAME.umbra || 'umbra'));
+          sil.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1500);
           out.silPlaying = playing(sil);
-          const sb = sil.getBoundingClientRect(); out.silBox = [sb.left, sb.top, sb.width, sb.height];
-          out.silGlow = getComputedStyle(sil).getPropertyValue('--char-glow').trim();
+          out.silCut = sil.classList.contains('is-silhouette') || !!sil.querySelector('.char-sil');
+          out.silLocked = sil.classList.contains('locked');
           return out; }""")
         check("%s: every held character on Customize is set to play" % label, r["held"] > 0 and r["heldFlip"] == r["held"], (r["heldFlip"], r["held"]))
         check("%s: every held character on screen is playing its loop" % label, r["nearHeld"] > 0 and r["nearPlaying"] == r["nearHeld"], (r["nearPlaying"], r["nearHeld"]))
         check("%s: a locked (non-secret) character stays still" % label, r["locked"] > 0 and r["lockedMoving"] == 0, (r["lockedMoving"], r["locked"]))
-        check("%s: a locked secret's silhouette plays as well" % label, r["silPlaying"] is True)
-        g = r["silGlow"]
-        check("%s: and its tile's glow is no colour" % label, bool(_re.match(r"#([0-9A-F]{2})\1\1|#A7AAAF", g, _re.I)) or g.upper() == "#A7AAAF", g)
+        check("%s: a locked secret is no cut-out, greyed and still like any locked character (build 382)" % label, r["silLocked"] and not r["silCut"] and r["silPlaying"] is False, r)
         ctx.close()
 
     # which one is selected (build 314: "it's hard to tell which character
@@ -11734,7 +11735,7 @@ def check_b314_sizes(br):
       out.customize = one([...document.querySelectorAll('.screen-customize .avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg.avatarchar-svg') || o.querySelector('svg'))]));
       /* the sign-up picker */
       try{ showWelcomeCharacterPrompt(); await wait(700);
-        out.signup = one([...document.querySelectorAll('.avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg'))])); }catch(e){ out.signup = { n: 0, err: String(e) }; }
+        out.signup = one([...document.querySelectorAll('.charselect-panel .avatarchar-grid:not(.charselect-later) .avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg'))])); }catch(e){ out.signup = { n: 0, err: String(e) }; }
       /* the Profile card, each character in turn */
       const prof = [];
       for(const id of ids){ store.avatarChar = id; showProfile(); await wait(120);
@@ -11831,18 +11832,20 @@ def check_b313_flares(br):
           /* 6. silhouettes: with only Void held, the other three are black cut-outs in Customize */
           store.mysteryColorsFound = JSON.parse(F.void); showCustomize('character'); await wait(900);
           const opt = id => [...document.querySelectorAll('.avatarchar-option')].find(o => o.title === (AVATAR_DISPLAY_NAME[id] || id));
+          /* BUILD 382: no cut-outs - the other three are their own drawings, greyed and padlocked */
           out.sil = ['umbra', 'singularity', 'genesis'].map(id => { const o = opt(id); if(!o) return 'missing';
-            const p = o.querySelector('.char-sil-body .cx-head :is(path, circle, ellipse):not([fill="none"])');
-            return o.classList.contains('is-silhouette') && p ? getComputedStyle(p).fill : 'not-silhouette'; });
+            const sv = o.querySelector('svg.avatarchar-svg');
+            return !o.classList.contains('is-silhouette') && !o.querySelector('.char-sil') && o.classList.contains('locked') && sv && /saturate/.test(getComputedStyle(sv).filter) ? 'greyed' : 'not-greyed'; });
           out.voidShown = (() => { const o = opt('voidwalker'); return !!o && !o.classList.contains('is-silhouette'); })();
           /* build 314: the silhouette is a flip-book on its tile (char-flip),
              or live if its sheet cannot be made */
-          out.silLive = !!document.querySelector('.avatarchar-option.is-silhouette:is(.char-flip, .char-live), .avatarchar-option.is-silhouette .char-sil.char-live');
+          out.silLive = !document.querySelector('.avatarchar-option.is-silhouette');
           /* 7. banners: one per secret character, held with it */
           out.banners = ['flare_void', 'flare_umbra', 'flare_horizon', 'flare_genesis'].map(id => !!bannerDef(id) && typeof BANNER_ART[id] === 'function');
           out.bannerHeld = [bannerEarned('flare_void'), bannerEarned('flare_umbra')];
           showCustomize('banner'); await wait(900);   /* the banners' own page since build 315 */
-          out.secretLocked = !!document.querySelector('.banner-opt.locked.is-secret[data-banner="flare_umbra"]');
+          /* build 382: locked and greyed, its art shown - no longer veiled */
+          { const t = document.querySelector('.banner-opt.locked[data-banner="flare_umbra"]:not(.is-secret)'); out.secretLocked = !!t && !t.querySelector('.is-veiled, .bnr-veil'); }
           /* an account already holding Void is handed its banner on Home */
           shownNow(); store.unlocksShown.banners = store.unlocksShown.banners.filter(x => x !== 'flare_void');
           showHome(); await wait(4200);
@@ -11876,9 +11879,9 @@ def check_b313_flares(br):
         check(f"{label}: it hands over Genesis", r.get("genesisLockedBefore") is True and r.get("genesisHeld") is True)
         check(f"{label}: the results name the flare, then the character, then its banner",
               (r.get("items") or [])[-3:] == ["flare:core:Worldheart", "character:genesis:Genesis", "banner:flare_genesis:Genesis"], r.get("items"))
-        check(f"{label}: a locked secret character is a black cut-out in Customize, the held one is not",
-              r.get("sil") == ["rgb(5, 6, 10)"] * 3 and r.get("voidShown") is True and r.get("silLive") is True, [r.get("sil"), r.get("voidShown"), r.get("silLive")])
-        check(f"{label}: a banner for each secret character, held with it, dark until then",
+        check(f"{label}: a locked secret character is its own drawing, greyed, in Customize (build 382), the held one is not locked",
+              r.get("sil") == ["greyed"] * 3 and r.get("voidShown") is True and r.get("silLive") is True, [r.get("sil"), r.get("voidShown"), r.get("silLive")])
+        check(f"{label}: a banner for each secret character, held with it, greyed (not veiled) until then",
               r.get("banners") == [True] * 4 and r.get("bannerHeld") == [True, False] and r.get("secretLocked") is True, [r.get("banners"), r.get("bannerHeld"), r.get("secretLocked")])
         check(f"{label}: an account already holding Void is handed its banner on Home",
               "Void" in (r.get("homeBanner") or "") and "Banner" in (r.get("homeBanner") or ""), r.get("homeBanner"))
@@ -13399,37 +13402,34 @@ def check_b314_unlocks(br):
     check("a locked one opens its card and picks nothing, as a locked character or banner does", r.get("lockedCard") == 1 and r.get("lockedPick") == r.get("firstPick"), r)
     ctx.close()
 
-    # --- a secret flare banner nobody holds: frosted glass, still moving, "Unlock to see"
+    # --- a secret flare banner nobody holds. Build 314-381: frosted glass, "Unlock to see".
+    # BUILD 382 ("all the banners will be viewable ... remove that"): no veil - its own picture, greyed,
+    # with the padlock (one still picture of its layers, lockedBannerStill, not a live scene); the card a
+    # tap opens shows the banner itself; a held one is the live banner
     for w, h in ((440, 956), (834, 1194)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=1)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
           showCustomize('banner'); await wait(400);
           const t = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
-          t.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1800);
-          const art = t.querySelector('.banner-opt-art'), still = art.querySelector('.bnr-veil-still');
-          out.veiled = art.classList.contains('is-veiled');
-          out.label = ((art.querySelector('.bnr-veil') || {}).textContent || '').trim();
-          /* a pre-blurred picture of the banner (40 x 15, softened, scaled up), never the live banner under glass */
-          out.still = !!still && still.classList.contains('is-ready') && /^url\("data:image\/png/.test(getComputedStyle(still).backgroundImage);
-          out.live = art.querySelectorAll('.bnr').length;
-          out.moving = [...art.querySelectorAll('.bnr-veil-still, .bnr-veil-glow')].reduce((n, e) => n + e.getAnimations().filter(a => a.playState === 'running').length, 0);
-          out.qmark = getComputedStyle(art, '::after').content;
-          const rc = art.getBoundingClientRect(); out.rect = [rc.left, rc.top, rc.width, rc.height];
-          /* the tap card */
+          t.scrollIntoView({ block: 'center', behavior: 'instant' }); for(let i = 0; i < 60 && !t.querySelector('.banner-opt-art > .bnr img'); i++) await wait(250); await wait(400);
+          const art = t.querySelector('.banner-opt-art'), b = art.querySelector(':scope > .bnr'), im = b && b.querySelector('img');
+          out.veiled = art.classList.contains('is-veiled') || !!art.querySelector('.bnr-veil') || t.classList.contains('is-secret');
+          out.still = !!im && im.complete && im.naturalWidth > 0;
+          out.grey = !!b && /grayscale/.test(getComputedStyle(b).filter);
+          const lk = t.querySelector('.banner-opt-lock'); out.lock = !!lk && getComputedStyle(lk).display !== 'none';
           t.click(); await wait(700);
-          const ca = document.querySelector('.unlock-card-banner .unlock-card-art'), cb = ca && ca.querySelector('.bnr');
-          out.cardVeiled = !!ca && ca.classList.contains('is-veiled') && !cb && !!ca.querySelector('.bnr-veil-still') && /unlock to see/i.test(ca.textContent);
+          const ca = document.querySelector('.unlock-card-banner .unlock-card-art');
+          out.cardShown = !!ca && !ca.classList.contains('is-veiled') && !!ca.querySelector('.bnr svg') && !/unlock to see/i.test(ca.textContent);
           document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
-          /* a held one is not veiled */
-          window.isLockedCharacter = id => false; showCustomize('banner'); await wait(300);
+          window.isLockedCharacter = id => false; showCustomize('banner'); for(let i = 0; i < 60; i++){ const x = document.querySelector('.banner-opt[data-banner="flare_umbra"]'); if(x && x.querySelector('.banner-opt-art > .bnr svg')) break; if(x) x.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(250); }
           const t2 = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
-          out.heldVeiled = !!t2 && t2.querySelector('.banner-opt-art').classList.contains('is-veiled');
+          out.heldLive = !!t2 && !t2.classList.contains('locked') && !!t2.querySelector('.banner-opt-art > .bnr svg');
           return out; }""")
         tag = "%dx%d" % (w, h)
-        check("secret flare banner, locked, %s: frosted glass over a blurred picture of it (no live banner under the glass), moving gently, labelled \"Unlock to see\", no \"?\"" % tag,
-              r.get("veiled") and r.get("still") and r.get("live") == 0 and r.get("moving", 0) >= 2 and r.get("label", "").lower() == "unlock to see" and r.get("qmark") in ("none", "normal", ""), r)
-        check("secret flare banner, locked, %s: the card a tap opens shows it the same way" % tag, r.get("cardVeiled"), r.get("cardVeiled"))
-        check("secret flare banner, held, %s: no veil" % tag, r.get("heldVeiled") is False, r.get("heldVeiled"))
+        check("secret flare banner, locked, %s: no veil - its own picture, greyed, padlocked (build 382)" % tag,
+              not r.get("veiled") and r.get("still") and r.get("grey") and r.get("lock"), r)
+        check("secret flare banner, locked, %s: the card a tap opens shows the banner itself" % tag, r.get("cardShown"), r)
+        check("secret flare banner, held, %s: the live banner" % tag, r.get("heldLive") is True, r)
         ctx.close()
 
     # --- reduce motion: the UFO plays nothing and still leaves the box in its colours; a pop-up is there at once
@@ -14238,49 +14238,18 @@ def check_b317_silhouettes(br):
     check("every secret's head is the set's size: within 12%% of the four's median height (%.1f units)" % med, not off,
           {c: round(v["h"], 1) for c, v in heads.items() if v})
 
-    # As drawn in Customize, nothing found: no outline in the top 9% of a tile.
+    # As drawn in Customize, nothing found. Build 317-381: four silhouettes, none cut off at the top.
+    # BUILD 382 ("they are gonna be viewable again"): no cut-out is drawn in Customize - the four secrets
+    # are their own drawings, greyed and padlocked (check-b382-unhide holds every character). The
+    # cut-out geometry above still holds for charSilhouetteSVG, which is kept.
     for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
-        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-          store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
-          showCustomize('character'); await wait(800);
-          document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
-          /* build 325: challenge and ultimate characters are cut-outs too,
-             each in its own look (check-b325-d holds those); this is the
-             four SECRETS' rule */
-          const s = document.querySelector('.avatarchar-option.is-sil-secret') || document.querySelector('.avatarchar-option.is-silhouette');
-          if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
-        for _ in range(60):
-            n = pg.evaluate("() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
-            if n and all(n):
-                break
-            pg.wait_for_timeout(500)
-        pg.wait_for_timeout(400)
-        tiles = pg.evaluate("""() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => {
-          const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
-            flip: !!o.querySelector('.char-flip-play img') }; })""")
-        shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.mysteryColorsFound = {}; showCustomize('character'); await wait(800);
+          return ['voidwalker', 'umbra', 'singularity', 'genesis'].map(id => { const o = [...document.querySelectorAll('.avatarchar-option')].find(e => e.title === (AVATAR_DISPLAY_NAME[id] || id));
+            return !!o && o.classList.contains('locked') && !o.classList.contains('is-silhouette') && !o.querySelector('.char-sil') && !!o.querySelector('svg.avatarchar-svg'); }); }""")
+        check(f"{dev}: Customize shows the four secrets as their own drawings, locked, no cut-outs (build 382)", r == [True] * 4, r)
         ctx.close()
-        tops = {}
-        for t in tiles:
-            x, y, tw, th = t["box"]
-            crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
-            W, H = crop.size
-            px = crop.load()
-            top = None
-            for yy in range(0, int(H * .5)):
-                for xx in range(int(W * .08), int(W * .92)):
-                    r_, g_, b_ = px[xx, yy]
-                    if (r_ + g_ + b_) / 3 >= 110 and max(r_, g_, b_) - min(r_, g_, b_) <= 24:
-                        top = yy / H
-                        break
-                if top is not None:
-                    break
-            tops[t["id"]] = round(top, 3) if top is not None else None
-        bad = {k: v for k, v in tops.items() if v is None or v < 0.09}
-        check(f"{dev}: Customize shows the four secrets as silhouettes", len(tiles) == 4, [t["id"] for t in tiles])
-        check(f"{dev}: no silhouette's outline is in the top 9% of its tile (cut off at the top)", len(tiles) == 4 and not bad, tops)
-
 
 CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
   document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
