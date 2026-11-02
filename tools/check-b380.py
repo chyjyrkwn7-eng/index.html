@@ -21,15 +21,16 @@ the same; (15) a retake's card says what it was and how it went ("Retake of miss
 answered correctly" with "2 still to review" under it);
 (16) the badge case: once the Badges tab has been up a few seconds, a finger on a found badge costs next to nothing (its big face is already
 made) and the lift shows one face from its first frame to its last; (17) the badge-unlock coin: once warmed, every one of its pictures is
-decoded the moment it is built (none come in after it is up); (18) the badge put back after a rub is one finished picture from its first frame in the slot (no draft, no
-second render once measured);
+decoded the moment it is built (none come in after it is up); (18) the badge put back is one finished picture from its first frame in the slot (no draft, no
+second render once measured; since 382 there is no rub, and the stage it went out at is the stage it comes back at);
 (20) the daily question's XP pop-up is Home's banner glass, as a message or friend request is, and what flies to Profile has no blur;
 (21) Review's Starred pill has Select all's glass and rim, a plain count, and its star is the starred question's own gold; (22) with
 nothing starred, a tap on it says so at the top (a banner), not in a toast at the bottom;
 (23) a switch tapped sets off as the finger lifts, not when the flip arrives (on an iPhone the native switch's change comes later -
 here 150ms later), and a tap whose flip never comes glides back;
 (24) on a test, the chat button and Pause are the tab bar's own glass (body, rim, blur, shadow); (25) Next question comes up 2rem under
-the answers when they leave room (as on a phone, no keys line), and at the bottom, where it was, when the question fills the screen;
+the answers when they leave room (as on a phone, no keys line), and - since 382 ("the next question button keeps going over the
+code") - in the page under the content, the same gap, when the question fills the screen (it was pinned at the bottom, over it);
 (26) Pause is one card on the screen's middle with Resume across it and Save and exit and Quit test side by side in one black, and
 Keep going lands where Resume was; (27) Home's daily question and class button are the rank bubbles' glass (their body and rim,
 no blur) and the class mark is in its own colours; (28) closing the class list sends each bubble back into the class button;
@@ -220,7 +221,7 @@ with sync_playwright() as pw:
       return { imgs: imgs.length, ready }; }""")
     chk("the badge-unlock coin is complete the moment it is built (%s of %s pictures decoded)" % (cr["ready"], cr["imgs"]), cr["imgs"] >= 20 and cr["ready"] == cr["imgs"], cr)
     # (18) the slot left and the badge put back
-    pg.evaluate("()=>{ showHome(); unitsInTeachingOrder().filter(u=>unitBadgeEarned(u)).forEach(u=>setBadgeDirtStage(u,4)); }"); pg.wait_for_timeout(600)
+    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(600)   # (382) no dirt stages to set: every badge wears one look
     pg.evaluate("()=>{ showProfile('badges'); }"); pg.wait_for_timeout(9000)
     ci = pg.evaluate("()=>{ const c=[...document.querySelectorAll('.ncase-cell')]; const t=c.find(x=>x.classList.contains('is-earned')); t.scrollIntoView({block:'center',behavior:'instant'}); return c.indexOf(t); }")
     WATCH = """(i)=>{ const cell=document.querySelectorAll('.ncase-cell')[i]; window.__slotLooks=[]; window.__slotOn=true;
@@ -231,7 +232,7 @@ with sync_playwright() as pw:
     pg.mouse.click(tb[0], tb[1]); pg.wait_for_timeout(1600)
     s0 = pg.evaluate("()=>badgeInspectNow && badgeInspectNow.state().stage")
     fx, fy, fw = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
-    per = pg.evaluate("() => BINSPECT.rubPerStage")
+    per = 4   # (382) what was BINSPECT.rubPerStage: the short strokes that used to clean it
     pg.mouse.move(fx, fy); pg.mouse.down()
     for k in range(per * 3 + 6):
         pos = (k % 6) if (k % 6) < 3 else 6 - (k % 6)
@@ -242,8 +243,8 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1500)
     pg.evaluate(WATCH, ci); pg.evaluate("()=>badgeInspectNow.close()"); pg.wait_for_timeout(2500)
     back = pg.evaluate(LOOKS)
-    chk("a badge put back a stage cleaner (%s -> %s) shows one finished picture in its slot (%s)" % (s0, s1, back),
-        s1 is not None and s0 is not None and s1 < s0 and len(back) == 1 and back[0].startswith("final:found"), back)
+    chk("a badge put back after short strokes over it (stage %s -> %s: never cleaned, 382) shows one finished picture in its slot (%s)" % (s0, s1, back),
+        s1 is not None and s0 is not None and s1 == s0 and len(back) == 1 and back[0].startswith("final:found"), back)
     # (20) the daily question's XP on Home's banner glass
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500)
     GLASS = "(sel)=>{ const b=document.querySelector(sel); if(!b) return null; const cs=getComputedStyle(b), r=b.getBoundingClientRect(); return {bg:cs.backgroundImage+cs.backgroundColor, bf:cs.backdropFilter||cs.webkitBackdropFilter, rad:cs.borderTopLeftRadius, bar:cs.borderLeftWidth, rim:cs.borderTopColor, w:Math.round(r.width), l:Math.round(r.left), parts:['.app-banner-icon','.app-banner-tag','.app-banner-title'].filter(s=>b.querySelector(s)).length} }"
@@ -315,21 +316,17 @@ with sync_playwright() as pw:
     # (25) Next question under the answers
     pg.evaluate("()=>{ const s=document.createElement('style'); s.id='gate-phone-keys'; s.textContent='#hint{display:none !important}'; document.head.appendChild(s); }")
     NB = """()=>{ const b=document.getElementById('nextbtn'), ch=[...document.querySelectorAll('.qpanel .choice')]; if(!b||b.hidden||!ch.length) return null; const r=b.getBoundingClientRect(), l=ch[ch.length-1].getBoundingClientRect();
-      const rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16; return { gapRem: +((r.top-l.bottom)/rem).toFixed(2), fromBottom: Math.round(innerHeight-r.bottom), scrolls: document.documentElement.scrollHeight>innerHeight+1 }; }"""
+      const rem=parseFloat(getComputedStyle(document.documentElement).fontSize)||16; let low=0; [...document.querySelector('.qpanel').children].forEach(k=>{ if(!k.offsetHeight) return; const ps=getComputedStyle(k).position; if(ps==='fixed'||ps==='absolute') return; low=Math.max(low, k.getBoundingClientRect().bottom); });
+      return { gapRem: +((r.top-l.bottom)/rem).toFixed(2), lowGapRem: +((r.top-low)/rem).toFixed(2), inPage: getComputedStyle(b).position!=='fixed', fromBottom: Math.round(innerHeight-r.bottom), scrolls: document.documentElement.scrollHeight>innerHeight+1 }; }"""
     pg.evaluate(QRUN, [5, True]); short = pg.evaluate(NB)
     pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); }"); pg.wait_for_timeout(800)
     # a question that fills the screen: the longest stem and choices of a unit
     pg.set_viewport_size({"width": 440, "height": 600}); pg.wait_for_timeout(500)
     pg.evaluate(QRUN, [7, True]); tall = pg.evaluate(NB)
     pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(800)
-    pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(600)
-    pg.evaluate("()=>{ const s=document.createElement('style'); s.id='gate-phone-keys'; s.textContent='.foot > .floatbtn.qnext{ --qnext-raise:0px !important; }'; document.head.appendChild(s); }")
-    pg.set_viewport_size({"width": 440, "height": 600}); pg.wait_for_timeout(500)
-    pg.evaluate(QRUN, [7, True]); tall0 = pg.evaluate(NB)
-    pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(600)
     pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(800)
-    chk("Next question comes up %s rem under a short question's answers, and where it always was when the question fills the screen (%s px from the bottom, was %s)" % (short and short["gapRem"], tall and tall["fromBottom"], tall0 and tall0["fromBottom"]),
-        short and 1.6 <= short["gapRem"] <= 2.6 and tall and tall0 and tall["scrolls"] and tall["fromBottom"] == tall0["fromBottom"], [short, tall, tall0])
+    chk("Next question comes up %s rem under a short question's answers, and in the page %s rem under the content when the question fills the screen (in the page: %s)" % (short and short["gapRem"], tall and tall["lowGapRem"], tall and tall["inPage"]),
+        short and 2.85 <= short["gapRem"] <= 3.65 and tall and tall["scrolls"] and tall["inPage"] and 2.85 <= tall["lowGapRem"] <= 3.65, [short, tall])
     # (26) the Pause card
     pc = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const u=topicsIn(QUESTIONS)[5]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u && inWholeUnit(QUESTIONS[i]));
       cfg.source='all'; cfg.mode='drill'; cfg.units=[u]; beginRun(idx); for(let t=0;t<60 && !document.querySelector('.qpanel .choice');t++) await wait(100); await wait(400); pauseRun(); await wait(900);

@@ -15,7 +15,8 @@ with sync_playwright() as pw:
     for _ in range(3): pg.evaluate(CLEAR); pg.wait_for_timeout(300)
     pg.evaluate("()=>showBugReport()"); pg.wait_for_timeout(500)
     btns = pg.evaluate("()=>[...document.querySelectorAll('.screen-bugreport button')].map(b=>b.textContent.trim())")
-    chk("Report a bug has the Drag test button (%s)" % (btns,), any(b.startswith("Drag test") for b in btns), btns)
+    # build 382: the Drag test is no longer on Report a bug; runDragTest() itself is still exercised below
+    chk("Report a bug carries no Drag test button since build 382 (%s)" % (btns,), not any(b.startswith("Drag test") for b in btns) and "Send report" in btns, btns)
     r = pg.evaluate("""async()=>{ window.__dragTick=25; const seen=[]; const p=runDragTest(); let last='';
       const iv=setInterval(()=>{ const n=[...document.body.children].find(e=>e.tagName==='DIV'&&/^(Look |Slide across)/.test(e.textContent||'')); const t=n?n.textContent:''; if(t!==last){ last=t; const st=document.getElementById('drag-look'); seen.push([t.slice(0,18), st?st.textContent.length:-1]); } },5);
       await p; clearInterval(iv); return { seen, left: !!document.getElementById('drag-look'), banner: [...document.body.children].some(e=>e.tagName==='DIV'&&/^Look /.test(e.textContent||'')) }; }""")

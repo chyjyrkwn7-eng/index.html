@@ -3,7 +3,7 @@ with their loops in the mounting task - not 16; (2) the rows past them get their
 under them), with none of the first 16 left bare; (3) html.lb-paint.lb-win: painted loops, each window a small layer - the board looks the
 same frame for frame and the loops move; (4) the Leaderboard speed test's looks are base, nostill, paintwin, noloops, norows;
 (5) a board opened from the tab comes up with every loop still (painted, paused - none moving on a layer) while the glass is up, and once it
-has landed the rows take their moving loops back a row a frame (never more than one row's two loops a frame) until every loop moves and the
+has landed the rows take their moving loops back - build 382: all in the same frame (it was a row a frame) - until every loop moves and the
 board is no longer still;
 (6) Arrest, Search, and Seizure #31 and #55 (the same question twice in the 8-28-26 guide, with different answers) each count the guide's
 own answer - #31 "Revoked by the person granting consent", #55 "Is a mere acquiescence to authority claimed by the officer" - and each
@@ -70,7 +70,7 @@ with sync_playwright() as pw:
     looks = pg.evaluate("()=>typeof BOARD_TEST_LOOKS!=='undefined' ? BOARD_TEST_LOOKS.map(l=>l[0]+':'+l[2]) : null")
     chk("the speed test's looks are base, nostill, paintwin, noloops, norows (%s)" % (looks,),
         looks in (["base:", "nostill:lb-nostill", "paintwin:lb-paint lb-win", "noloops:", "norows:"], ["base:", "layers:-loops-paint", "noloops:", "norows:"]), looks)
-    # (5) still first, then a row a frame
+    # (5) still first, then (build 382) every row in the same frame
     pg.evaluate("()=>showProfile()"); pg.wait_for_timeout(1500)
     L = pg.evaluate("""async()=>{ const el=document.getElementById('bottomtab-rewards'); const b=el.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
       const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:41,isPrimary:true,clientX:x,clientY:y});
@@ -87,9 +87,9 @@ with sync_playwright() as pw:
     end = L[-1] if L else {}
     first_move = next((f["t"] for f in L if f["moving"] > 0), None)
     landed = next((f["t"] for f in L if not f["up"]), None)
-    chk("a board opened from the tab is still while the glass is up (%s frames up, all still: %s), moves a row a frame once it has landed (landed %sms, first loop moving %sms, most loops on screen started in one frame %s) until all %s move (%s, board still: %s)"
-        % (len(upf), still_up, landed, first_move, max(steps) if steps else None, end.get("n"), end.get("moving"), end.get("still")),
-        still_up and first_move is not None and landed is not None and first_move >= landed and max(steps) <= 2 and end.get("moving") == end.get("n") and end.get("still") is False,
+    chk("a board opened from the tab is still while the glass is up (%s frames up, all still: %s), moves once it has landed, every row in one frame (build 382; was a row a frame) (landed %sms, first loop moving %sms, loops on screen started per frame, most %s, frames with a start %s) until all %s move (%s, board still: %s)"
+        % (len(upf), still_up, landed, first_move, max(steps) if steps else None, len([x for x in steps if x > 0]), end.get("n"), end.get("moving"), end.get("still")),
+        still_up and first_move is not None and landed is not None and first_move >= landed and len([x for x in steps if x > 0]) <= 1 and end.get("moving") == end.get("n") and end.get("still") is False,
         [L[:3], L[-3:]])
     # (6) the twins keep the guide's answers
     tw = pg.evaluate("""()=>{ const f=s=>QUESTIONS.find(q=>q.topic==='Arrest, Search, and Seizure' && q.src===s); const nt=q=>{ const n=buildBankNote(q); return n ? n.textContent : ''; };

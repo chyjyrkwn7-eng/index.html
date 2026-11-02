@@ -482,7 +482,7 @@ def main():
 
                         # 4. Advanced settings: dark, and a real tap target
                         adv = pg.evaluate("""()=>{showAppearance();
-                          const b=document.querySelector('.more-toggle.adv-toggle');
+                          const b=document.querySelector('.adv-toggle');
                           if(!b) return null; const cs=getComputedStyle(b);
                           return {bg:cs.backgroundColor, h:Math.round(b.getBoundingClientRect().height)};}""")
                         if not adv: fails.append(f"{tag}: Advanced settings button missing")
