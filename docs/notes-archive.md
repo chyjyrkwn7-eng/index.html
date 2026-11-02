@@ -30421,3 +30421,10 @@ the status bar's height easing into the sky with no seam (341 working); the bott
   steps): before, the field ended 148-168px behind the keyboard; now 10px above it.
 - Gate: tools/check-b382-input.py (both; all 4 fail on the code before). check-behaviour check_b314_dragselect fails the same 3 ways
   on the code before these fixes (cards never tick in its drag) - pre-existing, not from this.
+- NEXT QUESTION (382, same build): his screenshot ("it's now a little bit too high, lower it some") and a recording ("when swiping or
+  auto swipe is on ensure the button doesn't leak over on the next page"). QNEXT_GAP_REM 2 -> 3.25 (measured 2.02 -> 3.27rem under
+  what qnextPlace goes under). The leak: the button is .foot's (outside the question panel), so a swipe moved the question away under
+  it while it stayed put over the one coming in, and an auto-advance dropped it in one frame (recording, 1.18s). While html.q-sliding
+  (drag or slide) `.foot > .floatbtn.qnext` is opacity 0 !important (its rise is an animation), a .1s fade, pointer-events none, and
+  comes back on a spring-back. check-b380 (25) now expects 2.85-3.65rem; check-b382-input gains both checks (fail on the code before).
+  check-behaviour check_swipe failed once under load (7 agents' browsers) and passed on re-runs before and after.

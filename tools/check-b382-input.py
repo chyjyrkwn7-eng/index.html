@@ -56,6 +56,26 @@ with sync_playwright() as pw:
         r = pg.evaluate(RUN)
         chk("%s: as the keyboard rises in steps, the units search ends 10px above it (%s)" % (name, r), isinstance(r, dict) and r["focused"] and 8 <= r["gapAboveKeyboard"] <= 12, r)
         ctx.close()
+    # Next question: 3.25rem under a short question's answers, and gone the moment a question is dragged or slid
+    ctx, pg = units(br, 440, 956, (62, 0, 34, 0))
+    r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const unit=QUESTIONS[0].topic.trim();
+      const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit && inWholeUnit(QUESTIONS[i]));
+      cfg.source='all'; cfg.mode='drill'; cfg.units=[unit]; beginRun(idx); for(let t=0;t<80&&!document.querySelector('.qpanel .choice');t++) await wait(100); await wait(600);
+      const qi=order[pos]; const k=optionOrder(qi).indexOf(QUESTIONS[qi].answer); [...document.querySelectorAll('.qpanel .choice')][k].click(); await wait(2600);
+      const b=document.querySelector('.foot > .floatbtn.qnext'); if(!b || b.hidden) return {err:'no button'};
+      const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+      /* what it goes under, as qnextPlace reads it: the panel's own (in-flow) children and the keys line */
+      const panel=document.querySelector('#stage .panel'); const keys=document.getElementById('hint');
+      const low=Math.max(...[...panel.children, ...(keys?[keys]:[])].filter(k=>k.offsetHeight && !/fixed|absolute/.test(getComputedStyle(k).position)).map(k=>k.getBoundingClientRect().bottom));
+      for(let t=0;t<30 && b.getAnimations().some(a=>a.playState==='running');t++) await wait(100);
+      const gap=(b.getBoundingClientRect().top-low)/rem;
+      const before=+getComputedStyle(b).opacity;
+      document.documentElement.classList.add('q-sliding'); await wait(250); const during=+getComputedStyle(b).opacity;
+      document.documentElement.classList.remove('q-sliding'); await wait(400); const after=+getComputedStyle(b).opacity;
+      return {gapRem: Math.round(gap*100)/100, before, during, after}; }""")
+    chk("Next question sits about 3.25rem under a short question's answers (%s)" % (r,), isinstance(r, dict) and 2.85 <= r.get("gapRem", 0) <= 3.65, r)
+    chk("and while a question is dragged or slid it is gone, back when it springs back (%s)" % (r,), isinstance(r, dict) and r.get("before", 0) > .9 and r.get("during", 1) < .05 and r.get("after", 0) > .9, r)
+    ctx.close()
     for how in ("touchend", "navigate"):
         ctx, pg = units(br, 440, 956, (62, 0, 34, 0))
         r = pg.evaluate(DRAG, how)

@@ -329,7 +329,7 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ try{ stopQuestionTimer(); }catch(e){} showHome(); document.getElementById('gate-phone-keys')?.remove(); }"); pg.wait_for_timeout(600)
     pg.set_viewport_size({"width": 440, "height": 956}); pg.wait_for_timeout(800)
     chk("Next question comes up %s rem under a short question's answers, and where it always was when the question fills the screen (%s px from the bottom, was %s)" % (short and short["gapRem"], tall and tall["fromBottom"], tall0 and tall0["fromBottom"]),
-        short and 1.6 <= short["gapRem"] <= 2.6 and tall and tall0 and tall["scrolls"] and tall["fromBottom"] == tall0["fromBottom"], [short, tall, tall0])
+        short and 2.85 <= short["gapRem"] <= 3.65 and tall and tall0 and tall["scrolls"] and tall["fromBottom"] == tall0["fromBottom"], [short, tall, tall0])
     # (26) the Pause card
     pc = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const u=topicsIn(QUESTIONS)[5]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===u && inWholeUnit(QUESTIONS[i]));
       cfg.source='all'; cfg.mode='drill'; cfg.units=[u]; beginRun(idx); for(let t=0;t<60 && !document.querySelector('.qpanel .choice');t++) await wait(100); await wait(400); pauseRun(); await wait(900);

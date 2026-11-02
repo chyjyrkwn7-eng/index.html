@@ -13077,6 +13077,11 @@
   /* A question pushing in from the right must not scroll the page
      sideways for the moment it is off-screen (build 311, advanceWithSlide). */
   html.q-sliding, html.q-sliding body{ overflow-x:clip; }
+  /* build 382: "when swiping or auto swipe is on ensure the button doesn't leak over on the next page". Next question lives in the
+     .foot, outside the question panel: a swipe moved the question away under it while it stayed put, over the one coming in, and
+     an auto-advance dropped it in one frame. While a question is being dragged or slid (html.q-sliding) it fades out at once, and
+     comes back if the question springs back. !important: its rise is an animation, which beats a plain declaration. */
+  html.q-sliding .foot > .floatbtn.qnext{ opacity:0 !important; transition:opacity .1s ease !important; pointer-events:none; }
   /* A COPY IS A PICTURE OF WHAT WAS ALREADY THERE (build 314). The slide's
      copies are fresh elements, so the answer's colour fade
      (@starting-style) and the Next pill's rise played again inside the
@@ -102017,7 +102022,8 @@ function render(){
 /* (var, not let/const: a test resumed at launch draws a question before this part of the script has run) */
 var qnextNow = null;
 function qnextPlace(btn, panel){
-  const QNEXT_GAP_REM = 2;
+  /* build 382: "Next question button, it's now a little bit too high, lower it some" - 2rem under the answers (380) -> 3.25rem */
+  const QNEXT_GAP_REM = 3.25;
   qnextNow = { btn, panel };
   try{
     btn.style.setProperty("--qnext-raise", "0px");
