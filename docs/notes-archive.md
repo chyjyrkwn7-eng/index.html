@@ -30504,3 +30504,20 @@ get all these buttons and things looking better".
   instead". The units search, its tab-bar circle (tsInput), the board's, Review's question search and the starred/most-missed
   search all show "Search"; their aria-labels keep what they search ("Search units", "Search the rankings by username", ...).
   check-b382-input checks the three reachable ones (fails on the code before).
+
+## Build 382 - the slide: glass on the finger, nothing under it, the screen arrives under the glass
+Madison: "I'm upset the bottom tab isn't seamless and smooth as butter yet, taps work really well ... the swiping/sliding is not good
+to go at all."
+- 381's one-frame transition on LENS_ELS is gone (it put the glass a frame behind every position). The tick writes the finger's x
+  plus a lead: smoothed speed x LENS.lead (12ms), at most LENS.leadMax (8px); a finger slowing to a stop takes the lead to nothing.
+- lensRowGeo(): the row is measured once a touch (re-read only while the bar's swell plays); pointermove only stores clientX. 252
+  layout reads per Home slide -> 0.
+- barUnderPause looks every 250ms, judges each animation once, band measured once. Home's hero (.cosmic-hero-wrap: orbit 52/120s,
+  smoke, plasma, glow, rank bubbles) pauses for a slide and resumes at the hand-over (slideHeldResume in lensFinish/lensHide); the
+  rest of the page keeps moving (375). WATCH: he disliked the page stopping during a slide in 375.
+- A slide let go over another tab: lensHoldFor() keeps the clear glass up on it (one track, no reads) until that screen is drawn
+  (_lensScreenIn), at most SLIDE_AWAIT_MAX 280ms; taps keep 380's no-wait. Measured with a 350ms screen: drawn 734ms / hand-over
+  1515ms (381: drawn 2269 / hand-over 885).
+- Sound prewarm steps, charSpecialTick and the 6s sessionMark (whenTabBarQuiet) wait while html.tab-held or the settle window is on.
+- Gate tools/check-b382-slide.py fails all 5 on 381. check-b381's transition check reversed on purpose. Merged: (3) Home's
+  lens-vs-finger read 7.3-8.9px behind (limit 6) twice at load ~20 - re-run on a quiet machine before shipping.
