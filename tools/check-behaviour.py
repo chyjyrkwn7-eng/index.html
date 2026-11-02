@@ -1474,7 +1474,7 @@ def check_b313_sheet2(br):
       const mb=sheet.querySelector('.minutes-sect .slider-maxbtn');
       out.max0 = mb ? { on: mb.classList.contains('on'), text: mb.textContent } : null;
       if(mb){ mb.click(); await wait(500); out.max1 = { on: mb.classList.contains('on'), mins: cfg.timerMinutes,
-        val: (sheet.querySelector('.minutes-sect input.slider')||{}).value }; }
+        val: (sheet.querySelector('.minutes-sect input.slider')||{}).value, top: Number((sheet.querySelector('.minutes-sect input.slider')||{}).max) }; }
       const ms=sheet.querySelector('.minutes-sect input.slider');
       const mid = b => { const r=b.getBoundingClientRect(), t=document.createRange(); t.selectNodeContents(b); const tr=[...t.getClientRects()].pop();
         return tr ? Math.round((tr.left+tr.right)/2 - (r.left+r.right)/2) : 99; };
@@ -1509,7 +1509,8 @@ def check_b313_sheet2(br):
     check("the time limit has a Max button, lit while the limit is below the top",
           m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)
     check("Max takes the limit to the top and goes quiet; dragging back lights it up again",
-          m1.get("on") is True and m1.get("mins") == 90 and m2.get("on") is False and m2.get("lit") is True, [m1, m2])
+          # (380) the top is read off the slider (120 since 380, 90 before)
+          m1.get("on") is True and m1.get("mins") == m1.get("top") and m2.get("on") is False and m2.get("lit") is True, [m1, m2])
 
 
 def check_b218(br):

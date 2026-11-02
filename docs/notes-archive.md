@@ -30253,3 +30253,12 @@ Also run: check-b344, check-savetest, check-behaviour b297/b313_pause/b310/b313_
   Nova, the countdown) is today's Test #7, from 8 PM it is Test #8 (CST: DST ended Nov 1). Nothing from the email but the test went in
   (the repo is public: no names or addresses). check-b328-level1 328g reads the handover hour off the page; check-b380 (32) holds
   7:59 PM / 8:00 PM on Nov 2 - fails on 379 (no Nov 9 topics, 9 PM handover). 32 of 32 pass.
+- THE TIME LIMIT (Madison: "it stood at 90 and begins at 5, have it begin at 1 and end at 120 minutes instead. Ensure it's good to go"):
+  plainSlider("Minutes", 1, 120, 5) - still pulled towards fives (sliderMagnet), every whole minute reachable, Max sets 120, a saved
+  90 stays 90 (Max lit as available). check-behaviour b313_sheet2 reads the top off the slider (mins == its max).
+- ALL / MAX LET GO SMOOTHLY (his video, ScreenRecording 14:14: "The max and all button when unselected by moving the bar away, the
+  transitioning is not smooth"): frame by frame the fill grew from the centre behind the word, white on white, so the word vanished for
+  ~8 frames and came back dark. The fill (.just-ready::after) now carries content:attr(data-label) in #0B1220 over the white word
+  (syncTopButton sets data-label), covers the border (inset -1.5px, the size the settled pill is - no 1.5px pop at the hand-over), and
+  the tick goes at once. check-b380 (33) the 1-120 range, (34) the fill's word - both fail on 379; 34 of 34 pass on 380.
+  Also run: check-savetest, check-studyflow, check-behaviour b313_sheet2 + b308_timer (its "No hundo red" failure is the same before).

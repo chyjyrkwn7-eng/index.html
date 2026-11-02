@@ -35,6 +35,8 @@ Keep going lands where Resume was; (27) Home's daily question and class button a
 no blur) and the class mark is in its own colours; (28) closing the class list sends each bubble back into the class button;
 (29) the Leaderboard tab's trophy is one piece; (30) a lit Silver flare is not the grey a locked flare is; (31) a secret flare has
 a glint, the light pooled at its foot and a rim;
+(33) the time limit runs 1 to 120 minutes and Max sets 120; (34) letting go of All or Max, the fill that lights the button carries
+the word in dark, so the word reads the whole way through;
 (10) at most 14 character sheets keep their decoded picture (the 14 used most lately), however many are ready;
 (9) a board's flares are put on the loop clock about once each (a flare replaced when its row's art comes in counts again), not again at
 every art-queue step or at the row observer's first report.
@@ -371,6 +373,23 @@ with sync_playwright() as pw:
     chk("a secret flare has a glint, the light pooled at its foot, its body and a rim (%s layers not found, %s found, rim %s)" % (fd and fd["unfound"], fd and fd["found"], fd and fd["rim"]),
         fd and fd["unfound"] >= 4 and fd["rim"] and (fd["found"] is None or fd["found"] >= 3), fd)
     pg.evaluate("()=>{ store.rankFloor = 0; showHome(); }"); pg.wait_for_timeout(800)
+    # (33)/(34) the start sheet's sliders
+    pg.evaluate("()=>{ store.seenUnitSelectTour=true; store.seenUnitOptionsTour=true; cfg.mode='drill'; cfg.units=[topicsIn(QUESTIONS)[5]]; cfg.timer='down'; cfg.timerMinutes=30; showSetup(); }")
+    pg.wait_for_timeout(1500)
+    pg.evaluate("()=>{ const m=document.getElementById('unitoptions-modal'); if(m) m.hidden=false; }"); pg.wait_for_timeout(900)
+    tl = pg.evaluate("""async()=>{ const s=document.querySelector('.minutes-sect input.slider'), mb=document.querySelector('.minutes-sect .slider-maxbtn'); if(!s||!mb) return null;
+      const at=v=>{ s.value=v; s.dispatchEvent(new Event('input',{bubbles:true})); return cfg.timerMinutes; };
+      const low=at(0); mb.click(); await new Promise(r=>setTimeout(r,500)); return { min: Number(s.min), max: Number(s.max), low, top: cfg.timerMinutes }; }""")
+    chk("the time limit runs 1 to 120 minutes and Max sets 120 (%s)" % (tl,), tl and tl["min"] == 1 and tl["max"] == 120 and tl["low"] == 1 and tl["top"] == 120, tl)
+    fw = pg.evaluate("""async()=>{ const out=[]; for(const sel of ['.unitoptions-modal-sheet .slider-allbtn:not(.slider-maxbtn)', '.minutes-sect .slider-maxbtn']){
+        const b=document.querySelector(sel); if(!b) { out.push(null); continue; } const s=b.closest('.sliderwrap').querySelector('input.slider');
+        if(!b.classList.contains('on')){ b.click(); await new Promise(r=>setTimeout(r,500)); }
+        s.value=Number(s.max)-3; s.dispatchEvent(new Event('input',{bubbles:true}));
+        const a=getComputedStyle(b,'::after'); out.push({ lit: b.classList.contains('just-ready'), word: (b.textContent||'').trim(), content: a.content, color: a.color, base: getComputedStyle(b).color });
+        await new Promise(r=>setTimeout(r,900)); } return out; }""")
+    okw = fw and all(x and x["lit"] and x["content"].strip('"').lower() == x["word"].lower() and x["color"] != x["base"] for x in fw)
+    chk("letting go of All or Max, the fill carries the word in dark over the white one (%s)" % ([x and (x["content"], x["color"]) for x in (fw or [])],), okw, fw)
+    pg.evaluate("()=>{ document.getElementById('unitoptions-modal') && (document.getElementById('unitoptions-modal').hidden = true); showHome(); }"); pg.wait_for_timeout(800)
     # (10) the decoded-sheet cap
     cap = pg.evaluate("""()=>{ if(typeof charPreKeep!=='function') return null; const made=[]; for(let i=0;i<20;i++){ const sp={ url:'x'+i, pre:{ i } }; made.push(sp); charPreKeep(sp); }
       charPreKeep(made[6]); const extra={ url:'y', pre:{} }; made.push(extra); charPreKeep(extra);

@@ -22298,12 +22298,20 @@
     background:rgba(255,255,255,.05) !important; color:rgba(255,255,255,.82) !important;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important; transition:none;
   }
+  /* BUILD 380: THE WORD STAYS. "The max and all button when unselected by moving the bar away, the transitioning is not smooth."
+     The fill grew from the centre behind the word - and the word was white on that white, so for the fill's ~8 frames it vanished
+     and came back dark. The fill now carries its own dark copy of the word (data-label), laid exactly over the white one: outside
+     the circle the word is white on the glass, inside it dark on the white, so it reads the whole way through; the tick goes at
+     once instead of shrinking under it. */
   .unitoptions-modal-sheet .slider-allbtn.just-ready::after{
-    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+    content:attr(data-label); position:absolute; inset:-1.5px; border-radius:inherit; pointer-events:none; z-index:1;
+    display:flex; align-items:center; justify-content:center; color:#0B1220;
+    font:inherit; letter-spacing:inherit; text-transform:inherit;
     background:linear-gradient(180deg, #FFFFFF, #E6EAF0);
     clip-path:circle(0% at 50% 50%);
     animation:start-fill-in .3s cubic-bezier(.3,.8,.3,1) forwards;
   }
+  .unitoptions-modal-sheet .slider-allbtn.just-ready::before{ transition:none; }
   .unitoptions-modal-sheet .slider-allbtn.ready-settle{ transition:none; }
   /* Start's beat, same timing (build 314). */
   /* On the release, at once (build 314): no delay, the punch rides the fill. */
@@ -98893,6 +98901,8 @@ function syncTopButton(btn, atTop){
      activates right when I stop touching it"). Back at the top before
      the release, it goes quiet again and nothing pops. */
   const wasOn = btn.classList.contains("on");
+  /* the word the fill carries in (build 380, .just-ready::after) */
+  if(!btn.dataset.label) btn.dataset.label = (btn.textContent || "").trim();
   btn.classList.toggle("on", atTop);
   btn.setAttribute("aria-pressed", atTop ? "true" : "false");
   const punch = () => {
@@ -99848,7 +99858,9 @@ function showSetup(){
     watchRow.hidden = false;
   };
   moreBodyInner.appendChild(timerSect);
-  const minutesSect = plainSlider("Minutes", 5, 90, 5,
+  /* 1 to 120 minutes (build 380: "For the allowed time limit, it stood at 90 and begins at 5, have it begin at 1 and end at 120
+     minutes instead"); still pulled towards fives (sliderMagnet), every whole minute reachable, Max takes it to 120 */
+  const minutesSect = plainSlider("Minutes", 1, 120, 5,
     () => cfg.timerMinutes, v => { cfg.timerMinutes = v; },
     v => v + " min", refresh, "Max");
   minutesSect.topNote = () => ({ title: "Max time set", sub: cfg.timerMinutes + " minutes" });
