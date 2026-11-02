@@ -30639,3 +30639,8 @@ to give them the reset option.. would be best." Decisions:
 - Open: in Chromium, any element inserted into `<body>` re-styles the whole page (~200 elements) because of three `:has()` rules: `.wrap:has(> #stage > .screen-home-actual)`, `.pick:has(input:checked) > .box`, and the tier-cutscene `:not(:has(> .cosmic-badge-lit))`. Not checked in Safari.
 
 Gate: `tools/check-b382-screens.py`. 65/65 on 382; fails 31 checks on 381.
+
+## PLAN REVERSED (2026-11-02): NO USERNAME + PASSWORD ACCOUNTS. THE SYNC CODE STAYS.
+Madison, after weighing admin resets, recovery keys and recovery emails: "I think the sync code option may just be best at the moment. We just have to ensure it's apparent that the user needs to remember the code and write it down or something when they receive it and we have to absolutely sure people can't be randomly logged out. So nvm, no username and password yet. I don't like the idea of being responsible for someone's username and email and stuff cause I'd be afraid something would happen and I'd be held liable."
+- The "PLAN (decided 2026-11-02 ...)" entry above is withdrawn. Do not build Firebase Auth, passwords or recovery emails unless he asks again.
+- 382 instead: make saving the code unmistakable when it is first given, and re-audit every path that could sign someone out.
