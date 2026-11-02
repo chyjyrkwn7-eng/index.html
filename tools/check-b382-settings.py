@@ -6,7 +6,7 @@ of settings, please get all these buttons and things looking better".
 (2) Share this app, Add to Home Screen, Check for update, Report a bug, Version history and Advanced settings are
     each a full-width row of its card, 44px+, with an icon and a label (shape read off the page, not a style).
 (3) Every one still does what it did (spied): share, the install walkthrough, the version check, the report screen,
-    the release history, Advanced opening in place.
+    the release history, Advanced opening (its own page since the colour redesign).
 (4) No horizontal overflow, and no row past the screen edge, on iPhone 440x956, Pro Max at 85% 518x1125, SE 375x667,
     iPad 834x1194 and a laptop, in the academy and in Fire Code.
 Run:  python3 tools/check-b382-settings.py   (--against: copy the old index.html over first)"""
@@ -116,9 +116,10 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{ window.showReleaseHistory = window.__realRel; }")
     fresh("")
     tap("Advanced settings"); pg.wait_for_timeout(1200)
-    adv = pg.evaluate("""()=>{ const t=document.querySelector('.adv-toggle'); const b=t&&t.nextElementSibling;
-      return { exp: t && t.getAttribute('aria-expanded'), open: !!b && b.classList.contains('open'), reset: !!document.getElementById('resetbtn') && document.getElementById('resetbtn').getBoundingClientRect().height > 0 }; }""")
-    chk("Advanced settings opens in place, Reset inside (%s)" % (adv,), adv["exp"] == "true" and adv["open"] and adv["reset"], adv)
+    # since the colour redesign (382) Advanced is a page of its own (check-b382-credits covers it in full)
+    adv = pg.evaluate("""()=>{ const p=document.querySelector('#stage .screen-advsettings');
+      return { page: !!p, reset: !!p && !!document.getElementById('resetbtn') && document.getElementById('resetbtn').getBoundingClientRect().height > 0 }; }""")
+    chk("Advanced settings opens its page, Reset on it (%s)" % (adv,), adv["page"] and adv["reset"], adv)
     ctx.close()
 
     # (4) no overflow anywhere
@@ -131,7 +132,6 @@ with sync_playwright() as pw:
                                           ("laptop", (1512, 852, (0, 0, 0, 0), False), "academy")):
         ctx, pg = page(br, w, h, ins, inst, cls)
         pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(1300)
-        pg.evaluate("()=>document.querySelector('.adv-toggle')?.click()"); pg.wait_for_timeout(900)
         geo = pg.evaluate(GEOM); cl = pg.evaluate("window.NOVA_CLASS")
         sh = pg.evaluate(SHAPE, LABELS)
         rows_ok = all(sh.get(t) and sh[t]["h"] >= 44 and sh[t]["full"] and sh[t]["icon"] for t in LABELS)
