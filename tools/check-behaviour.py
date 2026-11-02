@@ -4985,8 +4985,10 @@ def check_b246(br):
       const tg = document.querySelector('.adv-toggle');
       tg.scrollIntoView({ block: 'end', behavior: 'instant' }); scrollBy(0, 40); await wait(300);
       tg.click(); await wait(1700);
-      const body = tg.nextElementSibling.getBoundingClientRect(), bar = document.getElementById('bottomtabs').getBoundingClientRect();
-      out.adv = { bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top), toggleTop: Math.round(tg.getBoundingClientRect().top) };
+      /* build 382 (colour redesign): Advanced is a page of its own - its last row clears the bar */
+      const rb = document.getElementById('resetbtn'), body = rb ? rb.getBoundingClientRect() : { bottom: 1e9 }, bar = document.getElementById('bottomtabs').getBoundingClientRect();
+      const nav = document.querySelector('#stage .screen-advsettings .settings-nav');
+      out.adv = { bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top), toggleTop: nav ? Math.round(nav.getBoundingClientRect().top) : -1 };
       return out; }""")
     # Build 314: back to "To reach <Rank>" after "<Rank> challenges" was
     # tried and Madison preferred the original.
@@ -4996,7 +4998,7 @@ def check_b246(br):
     # Build 248: "the next rank thing is redundant and shows it twice".
     check("the next rank is named once in the hero - by the rings' head, with no Next pill as well",
           not k["nextPill"], k)
-    check("opening Advanced settings brings it clear of the tab bar, toggle still on screen",
+    check("opening Advanced settings shows its page, Reset clear of the tab bar, its header on screen",
           k["adv"]["bodyBottom"] <= k["adv"]["barTop"] and k["adv"]["toggleTop"] >= 0, k["adv"])
     ctx.close()
 

@@ -32398,6 +32398,116 @@
   .settings-adv-card > .more-body > .more-body-inner{ padding:0 1rem; }
   .settings-adv-card > .more-body.open > .more-body-inner{ padding:.35rem 1rem 1rem; }
   .settings-adv-card .startbar{ margin-top:.6rem; }
+
+  /* ---- SETTINGS IN COLOUR (build 382) ----
+     "I love how they have color. I love the colors they chose and icons
+     they have for things." Every row's tile is a solid colour of its own
+     (--tile, set per row by settingsTileColor) with a white glyph and a
+     faint top sheen; the cards stay the dark glass above. Section headings
+     are plain grey words in sentence case, inset to the rows' text, the way
+     the inspiration labels its groups. Pages pushed from Settings (Advanced,
+     Contributors) are .screen-settings-sub and share all of this. */
+  .settings-row-icon,
+  .settings-row-icon.is-accent,
+  .settings-row-icon.is-muted{
+    flex:0 0 30px; width:30px; height:30px; border-radius:8px;
+    background-color:var(--tile, #8E8E93);
+    background-image:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 62%);
+    box-shadow:inset 0 0 0 .5px rgba(255,255,255,.2), 0 1px 2px rgba(0,0,0,.28);
+    color:#fff;
+  }
+  .settings-row-icon svg{ width:20px; height:20px; }
+  .settings-row-label{ font-weight:500; }
+  .settings-row-value{
+    flex:0 0 auto; margin-left:.25rem; font-size:.92rem; font-weight:500; color:var(--soft);
+    white-space:nowrap;
+  }
+  /* the headings */
+  [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary,
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .slab.motion-summary{
+    background:none !important; box-shadow:none !important; border:none !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
+    margin:1.5rem 0 .45rem; padding:0 1rem; border-radius:0;
+    font-size:.9rem; font-weight:600; letter-spacing:0; text-transform:none;
+    color:color-mix(in srgb, var(--ink) 56%, transparent);
+  }
+  [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary:first-child,
+  [data-layout="modern"] .screen-settings-sub .settings-nav + .slab.motion-summary{ margin-top:.4rem; }
+  /* the switch rows: tile, words, switch; the hairline starts at the words */
+  [data-layout="modern"] .settings-card > label.opt.has-tile{ position:relative; gap:.85rem; }
+  .settings-card > label.opt.has-tile > .settings-row-icon{ order:0; align-self:flex-start; margin-top:.05rem; }
+  [data-layout="modern"] .settings-card > label.opt.has-tile + label.opt,
+  [data-layout="modern"] .settings-card > .settings-volume + label.opt.has-tile{ border-top:0; }
+  .settings-card > label.opt.has-tile + label.opt::before,
+  .settings-card > .settings-volume + label.opt.has-tile::before{
+    content:""; position:absolute; top:0; left:calc(30px + .85rem); right:-1rem; height:1px;
+    background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
+  }
+  /* the volume lines up with the words of the switch above it */
+  [data-layout="modern"] .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(30px + .85rem); gap:.75rem; }
+  .settings-card > .settings-sound-row.has-tile + .settings-volume .slider{ min-width:0; }
+  /* the sync code: its tile beside the label, the well under both */
+  .sync-code-head{ display:flex; align-items:center; gap:.85rem; min-width:0; }
+  .sync-code-head > .otext{ flex:1 1 auto; min-width:0; }
+  /* the Advanced card stands alone, without a heading */
+  [data-layout="modern"] .screen-settings .settings-card.settings-card-solo{ margin-top:1.6rem; }
+  /* rows that are only words (red: a one-way action) */
+  .settings-row.settings-textrow{ font-size:.95rem; font-weight:500; line-height:1.3; }
+  .settings-row.settings-textrow.is-danger{ color:#FF6B63; }
+  .settings-row.settings-textrow.is-off{ color:color-mix(in srgb, #FF6B63 45%, transparent); }
+  .settings-list > .settings-textrow + .settings-row::before,
+  .credits-card > .settings-row + .settings-row::before{ left:1rem; }
+  .settings-footnotes{ margin:0; }
+  .settings-footnote{
+    margin:.5rem 1rem 0; font-size:.78rem; line-height:1.45; color:var(--soft);
+  }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-card:has(+ .settings-footnote, + .settings-footnotes){ margin-bottom:0; }
+  .settings-card + .confirm-ask{ margin:.5rem 1rem 0; }
+  /* the pages pushed from Settings: the same glass cards */
+  [data-layout="modern"] .screen-settings-sub .settings-card.settings-list{ padding:0; }
+  [data-theme="dark"][data-layout="modern"] .screen-settings-sub .settings-card{
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.8) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:none; -webkit-backdrop-filter:none; will-change:auto;
+    box-shadow:0 6px 22px rgba(0,0,0,.4), inset 0 2px 4px -1px rgba(255,255,255,.06) !important;
+  }
+  .settings-nav{
+    position:relative; display:flex; align-items:center; justify-content:center;
+    min-height:48px; margin:.2rem 0 1.1rem;
+  }
+  .settings-nav-back{
+    position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:44px; height:44px; padding:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
+    box-shadow:var(--surface-shadow); color:var(--ink); cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .settings-nav-back:active{ background:var(--surface-lift); }
+  .settings-nav-back svg{ width:20px; height:20px; display:block; }
+  html[data-layout] .settings-nav-title{
+    margin:0; padding:0 52px; font-size:1.15rem; font-weight:700; line-height:1.25;
+    letter-spacing:0; text-align:center; color:var(--ink);
+  }
+  /* Contributors */
+  .credits-intro{ margin:0 1rem 1.25rem; font-size:.9rem; line-height:1.5; color:var(--soft); }
+  [data-layout="modern"] .screen-credits .settings-card.credits-card{ margin:0 0 1rem; }
+  .credits-card > .settings-row-static{ align-items:center; cursor:default; }
+  .credits-name-row{ justify-content:space-between; gap:.75rem; }
+  .credits-name{ min-width:0; font-size:1.02rem; font-weight:700; }
+  .credits-item{ font-size:.95rem; font-weight:500; }
+  /* the names at the foot of Settings */
+  .settings-credits-footer{
+    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1rem .75rem;
+    max-width:24rem; margin:2.1rem auto .4rem; text-align:center;
+  }
+  @media (min-width:40rem){ .settings-credits-footer{ grid-template-columns:repeat(4, minmax(0, 1fr)); max-width:40rem; } }
+  .settings-credits-role{
+    display:block; font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--soft);
+  }
+  .settings-credits-name{ display:block; margin-top:.2rem; font-size:.88rem; font-weight:700; color:#6FC2FF; }
   .settings-adv-card .startbar:first-child{ margin-top:.2rem; }
 
   /* ---- THE CASE'S CORNERS, ROUND 10 ----
@@ -78429,7 +78539,7 @@ function sndForTap(t){
   if(t.closest(".modecard:not(.locked), .vroom-host-mode")) return "ui.tap.primary";
   if(t.closest(".bottomtabs .bottomtab")) return "ui.tab.bottom";
   if(t.closest(".navsegment .iconbtn, [role='tab'], .chatdock-tab")) return "ui.tab.top";
-  if(t.closest(".back-link")) return "ui.back";
+  if(t.closest(".back-link, .settings-nav-back")) return "ui.back";
   const b = t.closest("button, [role='button'], a[href]");
   if(!b || b.disabled || b.getAttribute("aria-disabled") === "true") return null;
   const primary = b.matches(".next:not(.ghost), .playbtn");
@@ -116546,6 +116656,28 @@ function moreBodyMoving(body){
    row at least 52px. Function declarations, not consts: Settings can be
    built during boot (TDZ). Tones: "" (accent-tinted), "accent" (filled
    with the accent - Add to Home Screen) and "muted" (Advanced, sync). */
+/* ---- COLOUR, LIKE iOS SETTINGS (build 382) ----
+   "Here are two great inspirations for the settings menu, I love how they
+   have color. I love the colors they chose and icons they have for things."
+   Every row of Settings carries a small rounded-square tile in a colour of
+   its own with a white glyph, the way iOS Settings does; the cards stay the
+   app's dark glass, so only the tiles bring the colour. The colour belongs
+   to the row (settingsTileColor), not to the theme's accent, so a row is the
+   same colour on every theme and in both classes. Glyphs are all drawn on
+   one 24-unit grid at one stroke weight; a few are filled where an outline
+   would read thin at 18px (star, heart, sparkle). `tone` "muted" is the one
+   grey tile, kept for the sync-unreachable status (a status, not a row). */
+function settingsTileColor(kind){
+  const C = {
+    motion: "#5E5CE6", sound: "#FF375F", haptics: "#FF9F0A",
+    swipe: "#30D158", forward: "#32ADE6", star: "#F5B400", party: "#BF5AF2",
+    trophy: "#FF9F0A", key: "#0A84FF", cloudup: "#0A84FF", entercode: "#30B0C7",
+    share: "#0A84FF", install: "#30D158",
+    update: "#32ADE6", bug: "#FF453A", history: "#5E5CE6",
+    advanced: "#6E7F9E", credits: "#FF375F", cloudoff: "#8E8E93"
+  };
+  return C[kind] || "#8E8E93";
+}
 function settingsRowIcon(kind, tone){
   const paths = {
     share: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M6 11v7.5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V11"/>',
@@ -116554,12 +116686,26 @@ function settingsRowIcon(kind, tone){
     bug: '<rect x="8" y="7.5" width="8" height="12" rx="4"/><path d="M12 11.5v8M9.5 7.6 8 5.5M14.5 7.6 16 5.5M8 11.5H4.5M8 15.5H5M16 11.5h3.5M16 15.5h3"/>',
     history: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4.5v4.1h4.1"/><path d="M12 8v4.4l2.9 1.8"/>',
     advanced: '<path d="M4 7.5h9M17.5 7.5H20M4 16.5h2.5M11 16.5h9"/><circle cx="15.2" cy="7.5" r="2.2"/><circle cx="8.8" cy="16.5" r="2.2"/>',
-    cloudoff: '<path d="M8.2 18.5H17a3.8 3.8 0 0 0 1.2-7.4A6 6 0 0 0 7.4 8.6 4.6 4.6 0 0 0 8.2 18.5z"/><path d="M4.5 4.5l15 15"/>'
+    cloudoff: '<path d="M8.2 18.5H17a3.8 3.8 0 0 0 1.2-7.4A6 6 0 0 0 7.4 8.6 4.6 4.6 0 0 0 8.2 18.5z"/><path d="M4.5 4.5l15 15"/>',
+    motion: '<circle cx="14.5" cy="12" r="5"/><path d="M3.5 8.5h4.5M2.5 12h4.5M3.5 15.5h4.5"/>',
+    sound: '<path d="M4.5 9.5h3l4.5-4v13l-4.5-4h-3z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.5a7.8 7.8 0 0 1 0 11"/>',
+    haptics: '<rect x="8" y="4" width="8" height="16" rx="2.4"/><path d="M4.5 9v6M19.5 9v6"/>',
+    swipe: '<path d="M19.5 12H7"/><path d="M11.5 7.5 7 12l4.5 4.5"/><path d="M4 6.5v11"/>',
+    forward: '<path d="M5 6.5 10.5 12 5 17.5"/><path d="M12.5 6.5 18 12l-5.5 5.5"/>',
+    star: '<path d="M12 4l2.45 5 5.45.8-3.95 3.85.93 5.43L12 16.5l-4.88 2.58.93-5.43L4.1 9.8l5.45-.8z" fill="currentColor"/>',
+    party: '<path d="M10.5 3.5l1.55 4.45L16.5 9.5l-4.45 1.55L10.5 15.5l-1.55-4.45L4.5 9.5l4.45-1.55z" fill="currentColor"/><path d="M17.5 14v6M14.5 17h6"/>',
+    trophy: '<path d="M8 4.5h8V10a4 4 0 0 1-8 0z"/><path d="M8 6.5H5.2a2.8 2.8 0 0 0 3.1 3.6M16 6.5h2.8a2.8 2.8 0 0 1-3.1 3.6"/><path d="M12 14v3.5M8.5 19.5h7"/>',
+    key: '<circle cx="8" cy="12" r="3.6"/><path d="M11.6 12H20M17 12v3M20 12v2.6"/>',
+    cloudup: '<path d="M7.5 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.4 1.6 3.7 3.7 0 0 1-.8 7.4"/><path d="M12 19.5v-7M9.2 15.3 12 12.5l2.8 2.8"/>',
+    entercode: '<rect x="3.5" y="7" width="17" height="10" rx="2.6"/><path d="M7.5 12h.01M10.5 12h.01M13.5 12h.01M16.5 12h.01"/>',
+    credits: '<path d="M12 19.5s-7.2-4.4-7.2-9.6A4 4 0 0 1 12 7.6a4 4 0 0 1 7.2 2.3c0 5.2-7.2 9.6-7.2 9.6z" fill="currentColor"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
+  tile.dataset.tile = kind;
+  tile.style.setProperty("--tile", settingsTileColor(kind));
   tile.setAttribute("aria-hidden", "true");
-  tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
+  tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
     + (paths[kind] || "") + "</svg>";
   return tile;
 }
@@ -116569,7 +116715,8 @@ function settingsRowSub(text){
   sub.textContent = text;
   return sub;
 }
-function settingsRow(kind, label, sub, tone){
+/* `value`: a grey value on the right, before the chevron (iOS "WFC Server  Wiimmfi >"). */
+function settingsRow(kind, label, sub, tone, value){
   const b = document.createElement("button");
   b.type = "button";
   b.className = "settings-row";
@@ -116585,8 +116732,124 @@ function settingsRow(kind, label, sub, tone){
   chev.className = "settings-row-chev";
   chev.setAttribute("aria-hidden", "true");
   chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>';
-  b.append(settingsRowIcon(kind, tone), txt, chev);
+  b.append(settingsRowIcon(kind, tone), txt);
+  if(value){
+    const v = document.createElement("span");
+    v.className = "settings-row-value"; v.textContent = value;
+    b.appendChild(v);
+  }
+  b.appendChild(chev);
   return b;
+}
+/* A row that is only words: red for a one-way action (iOS "Reset Online
+   Settings"). Its text is the button's own text node, so armConfirm() can
+   relabel it ("Tap again to clear") the way it always has. */
+function settingsTextRow(label, tone){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "settings-row settings-textrow" + (tone ? " is-" + tone : "");
+  b.textContent = label;
+  return b;
+}
+function settingsFootnote(text){
+  const p = document.createElement("p");
+  p.className = "settings-footnote";
+  p.textContent = text;
+  return p;
+}
+function settingsHeader(text, id){
+  const p = document.createElement("p");
+  p.className = "slab section-divider motion-summary";
+  if(id) p.id = id;
+  p.textContent = text;
+  return p;
+}
+/* ---- A PAGE PUSHED FROM SETTINGS (build 382) ----
+   The inspiration's sub-pages: a round back button at the top left, the
+   page's name centred and bold beside it, then grouped cards. Settings'
+   own screen still owns the tab bar (setActiveNav("settings") and
+   .screen-settings-sub light Profile, or the Fire Code bar's Settings tab,
+   the way the bug report does); the back button returns to Settings. The
+   panel is mounted with stage.replaceChildren, so leaving by any tab
+   clears it like every other screen. */
+function settingsSubPage(title, cls){
+  setActiveNav("settings");
+  countEl.textContent = "";
+  updateHeaderTitle();
+  const panel = document.createElement("section");
+  panel.className = "panel screen-settings-sub " + cls;
+  const nav = document.createElement("div");
+  nav.className = "settings-nav";
+  const back = document.createElement("button");
+  back.type = "button"; back.className = "settings-nav-back";
+  back.setAttribute("aria-label", "Back to Settings");
+  back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>';
+  back.addEventListener("click", () => { try{ back.blur(); }catch(e){} showAppearance(); });
+  const h = document.createElement("h1");
+  h.className = "settings-nav-title"; h.textContent = title;
+  nav.append(back, h);
+  panel.appendChild(nav);
+  return panel;
+}
+/* ---- CONTRIBUTORS (build 382) ----
+   "I also really like credits section where it has the contributors.
+   Contributors will be me, (Madison Davis) Cameron Wharton, Alexis
+   Sauceda, Bryan Darjean." Madison asked for his own name here; it is the
+   one place in the app that shows it in full. One card per person, the
+   name row bold with the role on the right, then what they did as rows.
+   No links or handles. The creator first, then the rest by surname. */
+function creditsPeople(){
+  return [
+    { name: "Madison Davis", role: "Creator", did: ["Design and development", "The study experience", "Ranks, badges and characters"] },
+    { name: "Bryan Darjean", role: "Layout", did: ["Screen layout feedback", "Look and feel suggestions"] },
+    { name: "Alexis Sauceda", role: "Testing", did: ["Question testing", "Answer checks", "Testing and feedback"] },
+    { name: "Cameron Wharton", role: "Ideas", did: ["Inspiration", "Game-based ideas", "Challenges and rewards ideas"] }
+  ];
+}
+function showCredits(){
+  const panel = settingsSubPage("Contributors", "screen-credits");
+  const intro = document.createElement("p");
+  intro.className = "credits-intro";
+  intro.textContent = "Nova is built by and for its class. Thank you to the people who helped shape it.";
+  panel.appendChild(intro);
+  creditsPeople().forEach(p => {
+    const card = document.createElement("div");
+    card.className = "settings-card settings-list credits-card";
+    const head = document.createElement("div");
+    head.className = "settings-row settings-row-static credits-name-row";
+    const nm = document.createElement("span");
+    nm.className = "credits-name"; nm.textContent = p.name;
+    const role = document.createElement("span");
+    role.className = "settings-row-value credits-role"; role.textContent = p.role;
+    head.append(nm, role);
+    card.appendChild(head);
+    p.did.forEach(t => {
+      const r = document.createElement("div");
+      r.className = "settings-row settings-row-static credits-item";
+      r.textContent = t;
+      card.appendChild(r);
+    });
+    panel.appendChild(card);
+  });
+  stage.replaceChildren(panel);
+  toTop(true);
+}
+/* The names under Settings, small and centred (the inspiration's
+   DEVELOPER / OPERATIONS / DESIGNER line). Words only, nothing to tap. */
+function buildCreditsFooter(){
+  const box = document.createElement("div");
+  box.className = "settings-credits-footer";
+  creditsPeople().forEach(p => {
+    const cell = document.createElement("div");
+    cell.className = "settings-credits-cell";
+    const r = document.createElement("span");
+    r.className = "settings-credits-role"; r.textContent = p.role;
+    const n = document.createElement("span");
+    n.className = "settings-credits-name"; n.textContent = p.name;
+    cell.append(r, n);
+    box.appendChild(cell);
+  });
+  return box;
 }
 function showAppearance(opts){
   const into = opts && opts.into && opts.into.nodeType === 1 ? opts.into : null;
@@ -117034,7 +117297,11 @@ function showAppearance(opts){
         codeWell.classList.toggle("is-revealed", revealed);
         hint.textContent = (revealed ? "Tap to hide" : "Tap to show") + ". Use it to link another device.";
       });
-      row.append(label, codeWell);
+      /* build 382: the key tile beside "Sync code", the well under both */
+      const codeHead = document.createElement("span");
+      codeHead.className = "sync-code-head";
+      codeHead.append(settingsRowIcon("key"), label);
+      row.append(codeHead, codeWell);
 
       /* ONE CARD FOR THE CODE, not four treatments stacked. Reported as
          the section needing to be better organised, and looked at, it
@@ -117117,20 +117384,17 @@ function showAppearance(opts){
          calls them, and class26e.syncoff is still what holds boot's
          re-issue off. Only the button is gone. */
     } else {
+      /* build 382: rows in a list card like the rest of Settings */
       const bar = document.createElement("div");
-      bar.className = "startbar";
-      const startBtn = document.createElement("button");
-      startBtn.type = "button"; startBtn.className = "next ghost";
-      startBtn.textContent = "Start syncing";
+      bar.className = "settings-card settings-list sync-start-card";
+      const startBtn = settingsRow("cloudup", "Start syncing");
       startBtn.addEventListener("click", () => {
         setSyncCode(generateSyncCode());
         onFirebaseReady(() => { pushToCloud(); attachLiveListener(syncCode); });
         renderSyncBody();
         showToast("Sync is on \u2014 your code is ready to view above.");
       });
-      const enterBtn = document.createElement("button");
-      enterBtn.type = "button"; enterBtn.className = "next ghost";
-      enterBtn.textContent = "Enter a code";
+      const enterBtn = settingsRow("entercode", "Enter a code");
       enterBtn.addEventListener("click", () => renderEnterCodeForm());
       bar.append(startBtn, enterBtn);
       syncSect.appendChild(bar);
@@ -117286,179 +117550,18 @@ function showAppearance(opts){
   const installBtn = settingsRow("install", "Add to Home Screen", null, "accent");
   installBtn.addEventListener("click", handleInstallTap);
 
+  /* ---- ADVANCED IS A PAGE OF ITS OWN (build 382) ----
+     It opened in place under its row (builds 247-382). The inspiration's
+     sub-pages - a back button, the page's name, a card, the one-way
+     action in red words - read cleaner, and they keep the three resets
+     off the main screen altogether. What it held, and every handler, is
+     on showAdvancedSettings(). Still .adv-toggle, still its own card. */
   const dataSect = document.createElement("div");
-  /* build 382: the Advanced card - its row, and under it what it opens */
   dataSect.className = "settings-card settings-list settings-adv-card";
-
-  /* This entire section used to be hidden outright whenever every
-     one of stats/flagged/testStats/studyLog was empty \u2014 the actual
-     bug behind "the history stuff disappeared": anyone starting fresh,
-     or who'd just cleared their own data, would see the whole section
-     vanish rather than the individual buttons simply going disabled
-     the way "Reset flagged questions" already correctly did on its
-     own. Always shown now, each button disabled on its own specific
-     condition instead. */
-  {
-    /* No section header. It sat directly above a dropdown button that
-       now reads "Advanced settings", so the one word was duplicated on
-       consecutive lines. The button is the header. */
-    /* Reset missed-question history, flagged questions, and analytics
-       all moved into a collapsed "Advanced" dropdown, per explicit
-       repeated request \u2014 these sat directly above the Done button
-       before, which put three destructive, rarely-used actions right
-       next to the one button almost everyone actually taps on their
-       way out of Settings. Collapsed by default now, using the exact
-       same toggle mechanism (and matching visual treatment) as the
-       Options sheet's own "Timer & options" section, so it reads as
-       an established app pattern rather than a one-off. */
-    /* BUILD 382: a row in its own list card (settingsRow), not the big
-       black bar - the chevron turns down when it is open, and what it
-       opens appears in the same card under a hairline. Still .adv-toggle,
-       and its body is still its next sibling. */
-    const advToggle = settingsRow("advanced", "Advanced settings", null, "muted");
-    advToggle.classList.add("adv-toggle");
-    advToggle.setAttribute("aria-expanded", "false");
-    const advBody = document.createElement("div");
-    advBody.className = "more-body";
-    const advBodyInner = document.createElement("div");
-    advBodyInner.className = "more-body-inner";
-    advBody.appendChild(advBodyInner);
-    /* .more-body-inner has to keep overflow:hidden for the 0fr -> 1fr
-       grid collapse to clip its contents while animating, but leaving it
-       hidden once the section is open clips whatever sits at the edge of
-       that box - here the Reset button's own drop shadow, which got cut
-       into a hard-edged rectangle around the pill instead of fading out.
-       Confirmed by rendering with the clip removed: the shadow becomes a
-       soft rounded halo and the rectangle disappears entirely.
-       Restored to hidden the instant a close starts, so the collapse
-       still clips properly, and released only after the expand has
-       finished. A timer rather than transitionend because a missed or
-       unfired event would silently leave the clip in place, which is
-       exactly the bug being fixed; the worst a stale timer can do is
-       nothing, and it is cleared on every toggle either way. */
-    /* OPENS AT ONCE, SCROLLS AT ONCE (build 308): "When hitting advanced
-       setting dropdown, the lag is real, the bottom tab takes too long to
-       move out of the way and it's just not smooth." Two causes. The
-       height animated through grid-template-rows, which re-lays-out the
-       whole Settings page on every frame while the tab bar's 30px blur
-       re-samples it; and the scroll that brings it out from behind the
-       bar waited 560ms for that to finish. Now the body takes its full
-       height in one layout, its rows fade and rise in (transform and
-       opacity only, which the compositor does on its own), and the page
-       scrolls in the same frame - so the content comes up from behind
-       the bar as it appears. */
-    advBody.classList.add("is-instant", "is-reveal");
-    let advCloseT = 0;
-    advToggle.addEventListener("click", () => {
-      const closing = advBody.classList.contains("is-closing");
-      const willOpen = !advBody.classList.contains("open") || closing;
-      clearTimeout(advCloseT);
-      advToggle.classList.toggle("open", willOpen);
-      advToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
-      if(!willOpen){
-        /* closes shut, smoothly (build 314 - see .is-reveal) */
-        const quick = dailyMotionOff();
-        const h = advBody.offsetHeight + (parseFloat(getComputedStyle(advBody).marginTop) || 0);
-        const newMax = Math.max(0, document.documentElement.scrollHeight - innerHeight - h);
-        advBody.classList.add("is-closing");
-        if(!quick && window.scrollY > newMax) glideScrollTo(newMax, 400);
-        advCloseT = setTimeout(() => {
-          advBody.classList.remove("open", "is-closing");
-          advBodyInner.style.overflow = "";
-        }, quick ? 0 : 440);
-        return;
-      }
-      advBody.classList.remove("is-closing");
-      advBody.classList.add("open");
-      advBodyInner.style.overflow = "visible";
-      if(willOpen){
-        /* OPENING IT BRINGS IT INTO VIEW (build 247): it is the last
-           thing on Settings, so it opens downward behind the tab bar.
-           Scroll just far enough that its bottom clears the bar - never
-           so far that the toggle itself goes off the top. */
-        const bar = document.getElementById("bottomtabs");
-        const floor = (bar && !bar.hidden && bar.offsetHeight) ? bar.getBoundingClientRect().top - 14 : innerHeight - 14;
-        const r = advBody.getBoundingClientRect();
-        const toggleTop = advToggle.getBoundingClientRect().top;
-        const by = Math.min(r.bottom - floor, toggleTop - 90);
-        if(by > 0) window.scrollBy({ top: by, behavior: dailyMotionOff() ? "auto" : "smooth" });
-      }
-      advToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
-    });
-    dataSect.append(advToggle, advBody);
-    const resetBar = document.createElement("div");
-    resetBar.className = "startbar";
-    /* "Reset missed-question history" was here until build 284: it went
-       with Most missed, and wiping every question's stats is something
-       two-device sync would only bring straight back. */
-    {
-      const flaggedCount = Object.keys(store.flagged).length;
-      const resetFlaggedBtn = document.createElement("button");
-      resetFlaggedBtn.type = "button"; resetFlaggedBtn.className = "restart";
-      resetFlaggedBtn.textContent = "Reset starred questions";
-      /* A TAP ON NOTHING TO CLEAR ANSWERS (build 308): "ensure you get a
-         tiny popup there underneath it that explains why it can't if you
-         don't have any starred questions yet." A disabled button swallows
-         the tap and says nothing, so it is drawn off instead and the tap
-         explains itself. */
-      if(flaggedCount === 0){
-        markOffButton(resetFlaggedBtn, "Nothing to reset yet — star a question during a test and it can be cleared here.");
-      } else {
-        armConfirm(resetFlaggedBtn, "Tap again to clear", () => {
-          unflagAll();
-          saveStore();
-          showAppearance();
-        });
-      }
-      const resetFlaggedWrap = document.createElement("span");
-      resetFlaggedWrap.style.cssText = "display:inline-flex; align-items:center;";
-      resetFlaggedWrap.appendChild(resetFlaggedBtn);
-      resetFlaggedWrap.appendChild(buildInfoIcon(flaggedCount === 0 ? "Nothing starred yet \u2014 this becomes available once you star a question during a run." : "Un-flags every question you've marked to revisit later. Nothing else about your progress is affected."));
-      resetBar.appendChild(resetFlaggedWrap);
-    }
-    {
-      const hasAnalytics = Object.keys(store.testStats).length || store.testHistory.length || Object.keys(store.studyLog).length;
-      const clearBtn = document.createElement("button");
-      clearBtn.type = "button"; clearBtn.className = "restart";
-      clearBtn.textContent = "Clear analytics";
-      if(!hasAnalytics){
-        markOffButton(clearBtn, "Nothing recorded yet — finish a test and your results and study time can be cleared here.");
-      } else {
-        armConfirm(clearBtn, "Tap again to clear", () => {
-          store.testStats = {};
-          store.testHistory = [];
-          store.studyLog = {};
-          saveStore();
-          showAppearance();
-        });
-      }
-      const clearWrap = document.createElement("span");
-      clearWrap.style.cssText = "display:inline-flex; align-items:center;";
-      clearWrap.appendChild(clearBtn);
-      clearWrap.appendChild(buildInfoIcon(hasAnalytics ? "Clears your recorded study time and past test results. Your unit progress, stars, and XP are untouched." : "Nothing recorded yet \u2014 this becomes available once you've completed at least one test."));
-      resetBar.appendChild(clearWrap);
-    }
-    advBodyInner.appendChild(resetBar);
-    /* The full Reset button moved in here too, per explicit follow-up
-       request — it used to sit just below in its own always-visible
-       section, directly above Done, which is exactly the "destructive
-       action right next to the button everyone actually taps" problem
-       the Advanced dropdown above was built to solve in the first
-       place; Reset itself was simply missed when that move happened.
-       It keeps its own distinct danger-button look (not folded into
-       the plain text-link style of the three rows above it) since
-       it's a full account wipe, not a narrow, scoped clear — the
-       startbar's own margin-top gives it a clean break from that row
-       without needing a repeated "Reset" label right above it. */
-    const dangerBar = document.createElement("div");
-    dangerBar.className = "startbar";
-    const dangerBtn = document.createElement("button");
-    dangerBtn.type = "button"; dangerBtn.className = "next danger"; dangerBtn.id = "resetbtn";
-    dangerBtn.textContent = "Reset";
-    dangerBtn.addEventListener("click", showResetWarning);
-    dangerBar.appendChild(dangerBtn);
-    advBodyInner.appendChild(dangerBar);
-  }
+  const advToggle = settingsRow("advanced", "Advanced settings");
+  advToggle.classList.add("adv-toggle");
+  advToggle.addEventListener("click", () => showAdvancedSettings());
+  dataSect.appendChild(advToggle);
 
   /* Share/Install first, then Advanced. Advanced is the one section
      nobody needs in normal use and the only one holding destructive
@@ -117556,11 +117659,43 @@ function showAppearance(opts){
      one-way door - it is the only group on this screen that can lose
      somebody their progress, and it should not share a label with
      "Share Nova". */
-  const advLab = document.createElement("p");
-  advLab.className = "slab section-divider motion-summary";
-  advLab.textContent = "Advanced";
-  panel.appendChild(advLab);
+  /* build 382: no "Advanced" heading over its one row - the card stands
+     on its own, like the inspiration's Advanced card */
+  dataSect.classList.add("settings-card-solo");
   panel.appendChild(dataSect);
+
+  /* CREDITS (build 382): "I also really like credits section where it has
+     the contributors." A group of its own, its row opening Contributors. */
+  panel.appendChild(settingsHeader("Credits", "settings-credits"));
+  const creditsCard = document.createElement("div");
+  creditsCard.className = "settings-card settings-list settings-credits-card";
+  const creditsBtn = settingsRow("credits", "Contributors");
+  creditsBtn.id = "settings-contributors";
+  creditsBtn.addEventListener("click", () => showCredits());
+  creditsCard.appendChild(creditsBtn);
+  panel.appendChild(creditsCard);
+
+  /* Every switch row gets its tile (build 382). Rows are found by their
+     class (Sound & vibration's) or their title, the way regroupSwitches
+     finds them; the tile sits beside .otext, never in it, so the title is
+     still .otext's first text node. */
+  (function tileSwitchRows(){
+    const BY_TITLE = {
+      "Reduce motion": "motion", "Swipe to next question": "swipe", "Auto-advance": "forward",
+      "Auto-star questions you keep missing": "star", "Skip celebrations and pop-ups": "party",
+      "Show me in the rankings": "trophy", "Sound effects": "sound", "Vibration": "haptics", "Haptics": "haptics"
+    };
+    panel.querySelectorAll(".settings-card > label.opt").forEach(r => {
+      const t = r.querySelector(".otext");
+      const title = t && t.firstChild ? String(t.firstChild.textContent).trim() : "";
+      const kind = r.classList.contains("settings-sound-row") ? "sound"
+        : (r.classList.contains("settings-vibrate-row") || r.classList.contains("settings-haptics-row")) ? "haptics"
+        : BY_TITLE[title];
+      if(!kind || r.querySelector(":scope > .settings-row-icon")) return;
+      r.classList.add("has-tile");
+      r.insertBefore(settingsRowIcon(kind), t);
+    });
+  })();
 
   /* No Done button. This screen is a bottom-tab destination, and the
      Home tab in the bar below already does exactly what Done did - a
@@ -117572,6 +117707,7 @@ function showAppearance(opts){
 
   /* ABOUT (build 330): "Not affiliated or endorsed by HCC or TCOLE. That's good but we need more to
      CYA ... Mention here it was made by M. Davis." The credit is here only (his call). */
+  panel.appendChild(buildCreditsFooter());
   panel.appendChild(buildLegalNote("settings"));
 
   /* (mounted by showProfile, inside its Settings tab - build 323) */
@@ -117648,6 +117784,66 @@ function showAppearance(opts){
         text: "Your sync code is your account. Use it to add a second device, and keep it somewhere safe \u2014 it is the only way back in." }
     ]);
   }
+}
+/* ---- ADVANCED SETTINGS, ITS OWN PAGE (build 382) ----
+   What the Advanced dropdown held, the handlers as they were: Reset starred
+   questions and Clear analytics (drawn off with markOffButton when there is
+   nothing to clear, armed with armConfirm otherwise) and Reset (the full
+   warning screen). They are red word rows now, the iOS way of saying "this
+   one is a one-way door", and what each info icon said is the line under
+   its card. After a clear the page is redrawn, as Settings was. */
+function showAdvancedSettings(){
+  const panel = settingsSubPage("Advanced", "screen-advsettings");
+  panel.appendChild(settingsHeader("Your data"));
+  const card = document.createElement("div");
+  card.className = "settings-card settings-list settings-adv-data";
+  const notes = document.createElement("div");
+  notes.className = "settings-footnotes";
+  {
+    const flaggedCount = Object.keys(store.flagged).length;
+    const resetFlaggedBtn = settingsTextRow("Reset starred questions", "danger");
+    if(flaggedCount === 0){
+      markOffButton(resetFlaggedBtn, "Nothing to reset yet \u2014 star a question during a test and it can be cleared here.");
+    } else {
+      armConfirm(resetFlaggedBtn, "Tap again to clear", () => {
+        unflagAll();
+        saveStore();
+        showAdvancedSettings();
+      });
+    }
+    card.appendChild(resetFlaggedBtn);
+    notes.appendChild(settingsFootnote(flaggedCount === 0 ? "Nothing starred yet \u2014 Reset starred questions becomes available once you star a question during a run." : "Reset starred questions un-flags every question you've marked to revisit later. Nothing else about your progress is affected."));
+  }
+  {
+    const hasAnalytics = Object.keys(store.testStats).length || store.testHistory.length || Object.keys(store.studyLog).length;
+    const clearBtn = settingsTextRow("Clear analytics", "danger");
+    if(!hasAnalytics){
+      markOffButton(clearBtn, "Nothing recorded yet \u2014 finish a test and your results and study time can be cleared here.");
+    } else {
+      armConfirm(clearBtn, "Tap again to clear", () => {
+        store.testStats = {};
+        store.testHistory = [];
+        store.studyLog = {};
+        saveStore();
+        showAdvancedSettings();
+      });
+    }
+    card.appendChild(clearBtn);
+    notes.appendChild(settingsFootnote(hasAnalytics ? "Clear analytics clears your recorded study time and past test results. Your unit progress, stars, and XP are untouched." : "Nothing recorded yet \u2014 Clear analytics becomes available once you've completed at least one test."));
+  }
+  panel.append(card, notes);
+
+  panel.appendChild(settingsHeader("Reset"));
+  const dcard = document.createElement("div");
+  dcard.className = "settings-card settings-list settings-adv-reset";
+  const dangerBtn = settingsTextRow("Reset", "danger");
+  dangerBtn.id = "resetbtn";
+  dangerBtn.addEventListener("click", showResetWarning);
+  dcard.appendChild(dangerBtn);
+  panel.append(dcard, settingsFootnote("Clears your progress, XP and settings on every synced device. You'll be asked to confirm first."));
+
+  stage.replaceChildren(panel);
+  toTop(true);
 }
 
 /* ---------- profile / analytics screen ----------------------------------- */
@@ -139324,7 +139520,7 @@ function tabPerfText(){
        round 2, and keeps THAT tab lit (its data-from) */
     const frFrom = (document.querySelector("#stage .screen-friends") || { dataset: {} }).dataset.from || "";
     const onProfileSub = !!document.querySelector(".screen-customize, .screen-testreview") || frFrom === "profile";
-    const onSettingsSub = !!document.querySelector(".screen-bugreport");
+    const onSettingsSub = !!document.querySelector(".screen-bugreport, .screen-settings-sub");
     /* THE CALENDAR IS A BAR TAB (build 323), so the calendar lights
        Calendar, not Profile - wherever it is drawn, as its own screen or
        as a pane: a .screen-calendar that is actually showing (not inside
