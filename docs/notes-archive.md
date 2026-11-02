@@ -30616,3 +30616,26 @@ to give them the reset option.. would be best." Decisions:
 - Migration: an existing account signs in once with its sync code, picks a username + password, progress carries over; sync codes
   kept only as a fallback during the switch. Fire Code currently has no cloud - accounts there are a separate decision.
 - Test against a separate Firebase test project / on his phone first (the sandbox cannot reach Firebase).
+
+## 382: BACK TO TOP, THE START SHEET'S DIM, UNIT DETAILS (merged 2026-11-02)
+
+**(a) Back to top stays at the bottom.** Madison: "The scroll back to top button randomly disappears when you are at the bottom."
+- `backToTopBlocked()` hid the button whenever anything tappable sat under it in the last 260px of a page. On Topics that was always true (the last unit card); elsewhere it was chance.
+- NOW the button shows on scroll position alone (on past 320, off under 180).
+- `backToTopRoom()` gives `#stage` just enough padding-bottom that, at the very end, the last control sits 8px above the button. It measures the last 40 tappable items and skips fixed elements. It runs when the screen or window changes, resets per screen, and adds 0 on screens that can't scroll past 320.
+- The one exception is `.dailyq-outro`: the app scrolls it over the Exit pill, so the button still steps aside there.
+- Measured padding: Topics +70px (Pro Max, iPhone 15), +36px (SE), 0 on iPad.
+
+**(b) The Start sheet's dim leaves with it.** Madison: "the background goes from dark to light too late."
+- The scrim stayed fully dim until `onDismiss()` hid the modal, then vanished in one frame about 500ms after the close began.
+- NOW `attachSheetSwipe` changes only opacity. The scrim (the sheet's sibling) fades with the pull (1 − pull/height), fades out over the slide's own time and curve, and springs back with the sheet. `unitoptions-scrim-in` (.25s) fades it in.
+- Tap-to-close still hides the sheet and the dim together in one frame.
+
+**(c) Unit details: Starred and Back without the wait.**
+- Back now resizes the card on the tap. The old code waited for a 320ms `setTimeout`.
+- `pinPane()` pins both panes to a fixed px height while the card moves.
+- `.was-listing` drops the .16s stats delay.
+- Stale list panes are removed first, which also fixes a 520px card under an open list.
+- Open: in Chromium, any element inserted into `<body>` re-styles the whole page (~200 elements) because of three `:has()` rules: `.wrap:has(> #stage > .screen-home-actual)`, `.pick:has(input:checked) > .box`, and the tier-cutscene `:not(:has(> .cosmic-badge-lit))`. Not checked in Safari.
+
+Gate: `tools/check-b382-screens.py`. 65/65 on 382; fails 31 checks on 381.
