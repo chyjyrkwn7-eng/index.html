@@ -97982,6 +97982,8 @@ function attachDragSelect(list, onChange){
   };
   const autoScroll = () => {
     cancelAnimationFrame(scrollRaf); scrollRaf = 0;
+    /* build 382: never past its own list - see the window listeners below */
+    if(st && (!list.isConnected || document.hidden)){ end(); return; }
     if(!st || st.mode !== "select") return;
     const top = 90, bottom = window.innerHeight - 150;
     let v = 0;
@@ -98032,6 +98034,26 @@ function attachDragSelect(list, onChange){
     if(!scrollRaf) autoScroll();
   });
   ["pointerup", "pointercancel"].forEach(t => list.addEventListener(t, e => { if(st && e.pointerId === st.id) end(); }));
+  /* ---- A SELECTING FINGER ENDS WHEREVER IT LIFTS (build 382) ----
+     Madison (a recording): "the screens are automatically scrolling down". Measured off it: the page went down a steady 24 device px
+     a frame, on the units screen and then on Profile - this autoScroll loop, still running. It stopped only on a pointerup the LIST
+     heard; the scroll runs while the finger is near the bottom, so the finger was often lifted over the tab bar (or the screen
+     changed first), the list never heard it, and window.scrollBy went on every frame, on every screen after. The end is now heard
+     on the window, the loop stops once its list has left the page or the app is hidden. */
+  const endAnywhere = e => {
+    if(!list.isConnected){ ["pointerup", "pointercancel"].forEach(t => window.removeEventListener(t, endAnywhere, true)); ["touchend", "touchcancel"].forEach(t => window.removeEventListener(t, endTouch, true)); document.removeEventListener("visibilitychange", endHidden); return; }
+    if(st && e.pointerId === st.id && !list.contains(e.target)) end();
+  };
+  const endHidden = () => { if(!list.isConnected){ document.removeEventListener("visibilitychange", endHidden); return; } if(document.hidden && st) end(); };
+  /* and on the touch's own end: a native control under the finger (a card's haptic switch, .hsw-opt) can take the touch, and then
+     Safari sends no pointerup at all - but touchend/touchcancel still come, with no fingers left on the screen */
+  const endTouch = e => {
+    if(!list.isConnected){ ["touchend", "touchcancel"].forEach(t => window.removeEventListener(t, endTouch, true)); return; }
+    if(st && (!e.touches || e.touches.length === 0)) end();
+  };
+  ["pointerup", "pointercancel"].forEach(t => window.addEventListener(t, endAnywhere, true));
+  ["touchend", "touchcancel"].forEach(t => window.addEventListener(t, endTouch, { capture: true, passive: true }));
+  document.addEventListener("visibilitychange", endHidden);
   /* the page must not take a selecting finger for a scroll */
   list.addEventListener("touchmove", e => {
     if(st && (st.mode === "select" || st.fromCircle) && e.cancelable) e.preventDefault();
@@ -139051,7 +139073,16 @@ function tabPerfText(){
     let kb = 0;
     if(v && tsOpen && document.activeElement === tsInput && !(v.scale > 1.01)) kb = Math.round(window.innerHeight - (v.offsetTop + v.height));
     let lift = 0;
-    if(kb > 120){ const r = tsEl.getBoundingClientRect(); lift = Math.max(0, (r.bottom - (tsLift || 0)) - (window.innerHeight - kb - 10)); }
+    /* build 382: "Tapping the search button while looking at units, the search bar isn't properly pulling up". The field's lift is a
+       .25s transition, and while the keyboard rises the viewport reports a new size about every frame: each time the field was
+       measured MID-transition and the lift already asked for (tsLift) taken off it, as if it were there - so the next lift came out
+       far too small and sent the field back down, often behind the keyboard (his recording: it rose with the keyboard, then sank under
+       its bar). The field's resting bottom is its box less the lift it actually has now (the computed translate, mid-transition too). */
+    if(kb > 120){
+      const r = tsEl.getBoundingClientRect();
+      let now = 0; try{ now = parseFloat(String(getComputedStyle(tsEl).translate || "").split(/\s+/)[1]) || 0; }catch(e){}
+      lift = Math.max(0, Math.round((r.bottom - now) - (window.innerHeight - kb - 10)));
+    }
     if(lift === tsLift) return;
     tsLift = lift;
     tsEl.style.translate = lift ? "0 " + (-lift) + "px" : "";

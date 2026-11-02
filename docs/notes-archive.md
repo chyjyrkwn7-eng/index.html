@@ -30404,3 +30404,20 @@ the status bar's height easing into the sky with no seam (341 working); the bott
   .5px: 2.5px up from 328's, the field the same height. Laptops and Chromium keep 328's. check-b382 asserts the iOS rule (CSSOM);
   only an iPhone shows the result.
 - LESSON: vertical text placement measured in Chromium is not iOS's - read it off his screenshot.
+- THE SCREENS SCROLLED BY THEMSELVES (382, same build): "Another new problem, the screens are automatically scrolling down.. fix this"
+  (a recording). Measured off it: the page went down a steady 24 device px (~9 CSS px) every frame drawn, on the units screen and then
+  on Profile. That is the units list's drag-select autoScroll (window.scrollBy each rAF while the finger is near the bottom, up to
+  14px), still running: it ended only on a pointerup/pointercancel the LIST heard. On an iPhone a card's native haptic switch
+  (.hsw-opt) can take the touch, and then Safari sends no pointerup at all; and the loop never checked that its list was still in
+  the page, so it went on scrolling every screen after. NOW: the end is also heard on the window (pointerup/pointercancel off the
+  list, touchend/touchcancel with no fingers left), the loop ends itself once its list has left the page or the app is hidden, and the
+  window listeners take themselves off with the list. Repro (synthetic pointer events, no pointerup): before, units 250 -> 778 in
+  0.8s after a touchend, Profile 165 -> 319 after leaving; now nothing moves.
+- THE UNITS SEARCH SANK UNDER THE KEYBOARD (382, same build): "Tapping the search button while looking at units, the search bar isn't
+  properly pulling up" (a recording: the field rose with the keyboard, then sank behind its accessory bar). tsKb measured the field's
+  box MID its .25s translate transition and took off the lift it had asked for (tsLift) as if it were already there; with a viewport
+  resize nearly every frame of the keyboard's rise, the next lift came out far too small. It now takes off the lift the field
+  actually has (getComputedStyle(tsEl).translate, mid-transition included). Repro (a fake visualViewport shrinking 336px over 18
+  steps): before, the field ended 148-168px behind the keyboard; now 10px above it.
+- Gate: tools/check-b382-input.py (both; all 4 fail on the code before). check-behaviour check_b314_dragselect fails the same 3 ways
+  on the code before these fixes (cards never tick in its drag) - pre-existing, not from this.
