@@ -151,7 +151,10 @@ with sync_playwright() as pw:
     sh = K and K["down"] and K["down"][-1]["dur"]
     chk("the knob is picked up in %sms (was %s) and put down in %sms (was %s): a smidge faster, %s / %s of before, lens gone %sms after the release" % (
         pop, OLD_POP, sh, OLD_SHRINK, pop and round(pop / OLD_POP, 2), sh and round(sh / OLD_SHRINK, 2), K and K["gone"]),
-        pop and sh and .65 <= pop / OLD_POP <= .85 and .65 <= sh / OLD_SHRINK <= .85 and K["up"][-1]["ease"] == "cubic-bezier(0.3, 1.25, 0.5, 1)" and K["down"][-1]["ease"] == "cubic-bezier(0.3, 1.04, 0.4, 1)", K)
+        # REVISED IN 383 ("a smidge better and smoother", beside iOS's own switch): the settle is shorter again (290 -> 230ms,
+        # .64 of 381's) and the solid knob comes back at its start - check-b383-toggles measures that; here, faster than 381
+        # but not a snap (.55-.85 of before), same curves
+        pop and sh and .55 <= pop / OLD_POP <= .85 and .55 <= sh / OLD_SHRINK <= .85 and K["up"][-1]["ease"] == "cubic-bezier(0.3, 1.25, 0.5, 1)" and K["down"][-1]["ease"] == "cubic-bezier(0.3, 1.04, 0.4, 1)", K)
     ctx.close()
     br.close()
 print("ALL PASS" if ok else "FAILURES")

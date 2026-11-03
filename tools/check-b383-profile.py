@@ -14,6 +14,9 @@ Checks (measured on the page, phone 440x956):
   3. The secret flare in a test: a second ring rippling out of it, and - until the account has found a flare - a
      "Tap" tag beside it that is part of the button (tapping it finds the flare), clear of the question number, the
      flag and the choices; an account that has found one gets no tag.
+  5. (383: "the see rank ladder button and 4 of 24 badges button ... improve those buttons so they seem more clickable, ensure the
+     wording of those two buttons are centered") each is Customize's kind of button - wide, 44px+, 4.5:1 on its card - with an
+     icon on the left balancing the chevron on the right and its words within 1px of the button's middle.
   4. (383, from a Calendar screenshot: "I notice the test one is glowing. Ensure they are all the same cohesive look")
      the calendar's key and grid dots carry no glow, phone and iPad.
 Run:  python3 tools/check-b383-profile.py   (--against OLD/index.html must FAIL)"""
@@ -111,6 +114,35 @@ with sync_playwright() as pw:
     pg.evaluate(SHOW, .5); pg.wait_for_timeout(200)
     m1 = pg.evaluate(MEASURE) or {}
     ck("3. an account that has found a flare: no tag (it knows), the rings still", m1.get("tag") is False and m1.get("ring") is True, m1)
+    ck("no page errors", not errs, errs[:2])
+    ctx.close()
+
+    print("\n5. See rank ladder and the badge count: Customize's kind of button, words in the middle")
+    errs = []
+    ctx, pg = g["open_page"](br, g["init_account"]("", g["store"]()), errs=errs)
+    pg.evaluate("()=>{ showProfile('profile'); }"); pg.wait_for_timeout(1600)
+    r5 = pg.evaluate("""()=>{ """ + LUM + """
+      return ['.pf-goal .pf-goal-foot', '.pf-case-closed .pf-case-count'].map(sel => { const b = document.querySelector('#stage .profile-identity-tab ' + sel); if(!b) return { sel, missing: true };
+        const r = b.getBoundingClientRect(); const w = b.querySelector('.pf-goal-foot-word, .pf-case-num');
+        const rg = document.createRange(); rg.selectNodeContents(w); const t = rg.getBoundingClientRect();
+        const card = b.closest('.pf-goal, .pf-case'); const cr = card.getBoundingClientRect();
+        const be = getComputedStyle(b, '::before'), af = getComputedStyle(b, '::after');
+        const icon = be.content !== 'none' && be.content !== 'normal' && parseFloat(be.width) > 10;
+        /* the middles of the icon and the chevron, each from its own edge of the button */
+        const iconL = icon ? Math.round((parseFloat(be.left) + parseFloat(be.width) / 2) * 10) / 10 : null,
+              chevR = af.content !== 'none' ? Math.round((parseFloat(af.right) + parseFloat(af.width) / 2) * 10) / 10 : null;
+        const fill = getComputedStyle(b).backgroundColor, under = solid(card);
+        const a = lum(fill), c = lum(under); const ratio = a != null && c != null ? (Math.max(a, c) + .05) / (Math.min(a, c) + .05) : 0;
+        return { sel: sel.split(' ').pop(), words: w.textContent, dx: Math.round(((t.left + t.width / 2) - (r.left + r.width / 2)) * 10) / 10,
+          widthPct: Math.round(100 * r.width / cr.width), h: Math.round(r.height), icon, iconL, chevR, ratio: Math.round(ratio * 10) / 10 }; }); }""")
+    for b in r5:
+        ck("5. %s: its words in the middle of the button (%spx off)" % (b.get("sel"), b.get("dx")), not b.get("missing") and abs(b.get("dx", 99)) <= 1, b)
+        ck("5. %s: an icon on the left balancing the chevron on the right (their middles %s / %spx in)" % (b.get("sel"), b.get("iconL"), b.get("chevR")),
+           b.get("icon") and b.get("iconL") is not None and b.get("chevR") is not None and abs(b["iconL"] - b["chevR"]) <= 2, b)
+        ck("5. %s: wide (%s%% of its card), a full tap target (%spx) and standing out from the card (%s:1)" % (b.get("sel"), b.get("widthPct"), b.get("h"), b.get("ratio")),
+           b.get("widthPct", 0) >= 60 and b.get("h", 0) >= 44 and b.get("ratio", 0) >= 4.5, b)
+    pg.evaluate("()=>document.querySelector('#stage .pf-goal .pf-goal-foot').click()"); pg.wait_for_timeout(1200)
+    ck("5. See rank ladder still opens the rank ladder", pg.evaluate("()=>!!document.querySelector('#stage .screen-ranks')"))
     ck("no page errors", not errs, errs[:2])
     ctx.close()
 

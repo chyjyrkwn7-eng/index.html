@@ -35496,7 +35496,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools:has(> .picks-tools) > .searchwrap{ flex-basis:100%; }
   html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools > .picks-tools{ flex:1 1 100%; margin:0; }
   html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools > .picks-tools > :is(.selall-btn, .starred-pill){
-    border-radius:12px; border:0 !important; background:color-mix(in srgb, var(--accent) 16%, transparent) !important; color:var(--accent);
+    border-radius:12px; border:0 !important; border-color:transparent !important; background:color-mix(in srgb, var(--accent) 16%, transparent) !important; color:var(--accent);
   }
   html[data-layout][data-theme] .screen-setup .picks-holdhint{ text-align:center; margin:.2rem auto .9rem; max-width:24rem; font-size:.78rem; line-height:1.45; color:var(--soft); text-wrap:balance; }
   @media (min-width:40rem){
@@ -36032,6 +36032,46 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .profile-hero .profile-customize-btn .pcz-label{ font-size:1.0625rem; font-weight:700; }
   html[data-layout] body #stage .profile-hero .profile-customize-btn .pcz-sub{ font-size:.8rem; font-weight:500; opacity:.62; margin-top:.1rem; }
   html[data-layout] body #stage .profile-hero .profile-customize-btn:active{ transform:scale(.98); }
+  /* (383) PROFILE'S TWO OTHER BUTTONS, CUSTOMIZE'S KIND: "Similar to the customize button, the see rank ladder button and 4 of
+     24 badges button or whatever, we need to improve those buttons so they seem more clickable, ensure the wording of those
+     two buttons are centered too because they currently arent". They were dark glass pills the width of their words with a
+     chevron disc on the right and nothing on the left - the words WERE in the pill's middle (0px, measured) but read left of
+     it beside the disc. Now: Customize's light pill (dark on the light theme), the card's width (to 30rem), 50px, an icon on
+     the left that balances the chevron on the right, the words in the middle of the button. The chevron disc keeps the
+     rank's / the case's colour. */
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pf-case-closed .pf-ccase-mid{ align-self:stretch; width:100%; }
+  html[data-theme][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count){
+    position:relative; display:flex; align-items:center; justify-content:center; gap:.4rem;
+    width:100%; max-width:30rem; min-height:3.15rem; margin-left:auto; margin-right:auto; box-sizing:border-box;
+    padding:.55rem 3.3rem !important; border:0 !important; border-radius:999px !important;
+    background:#F4F6F9 !important; color:#0B0D12 !important;
+    box-shadow:0 8px 22px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.95) !important;
+    font-size:1.0625rem !important; font-weight:700 !important; letter-spacing:0; text-transform:none;
+  }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pf-case-closed .pf-case-count{ margin-top:.75rem; }
+  html[data-theme="light"][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count){
+    background:#121A20 !important; color:#FFFFFF !important; box-shadow:0 8px 20px rgba(18,26,32,.28) !important;
+  }
+  html[data-theme][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count) > :is(.pf-goal-foot-word, .pf-case-num){ color:inherit; }
+  /* the icon on the left: a ladder for the ranks, a briefcase for the case - drawn in the button's ink */
+  html[data-theme][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count)::before{
+    content:""; position:absolute; left:.9rem; top:50%; width:1.4rem; height:1.4rem; translate:0 -50%;   /* its middle as far in as the chevron's */
+    background:#0B0D12; -webkit-mask:var(--pfb-icon) center/contain no-repeat; mask:var(--pfb-icon) center/contain no-repeat;
+  }
+  html[data-theme="light"][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count)::before{ background:#FFFFFF; }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pf-goal .pf-goal-foot{
+    --pfb-icon:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 3v18M17 3v18M7 7.5h10M7 12h10M7 16.5h10'/></svg>");
+  }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pf-case-closed .pf-case-count{
+    --pfb-icon:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='7' width='18' height='13' rx='2.5'/><path d='M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 12.5h18M10.5 12.5v2h3v-2'/></svg>");
+  }
+  /* the chevron on the right, in its disc of the rank's / the case's colour, darkened enough for its white mark */
+  html[data-theme][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count)::after{
+    position:absolute; right:.8rem; top:50%; translate:0 -50%; width:1.6rem; height:1.6rem; background-size:.72rem;
+    background-color:color-mix(in srgb, var(--pill-c) 72%, #1A1D24) !important;
+  }
+  html[data-theme][data-layout] body #stage .profile-identity-tab :is(.pf-goal .pf-goal-foot, .pf-case-closed .pf-case-count):active{ transform:scale(.98); }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pf-case-closed .pf-case-count .pf-case-new{ margin-left:.35rem; }
   /* (383) Enroll: the heading in the app's own type, not the old serif display face */
   html[data-layout] body #stage > .panel.class-enroll .ce-title{ font-family:var(--sans); font-size:clamp(1.7rem, 7vw, 2.1rem); font-weight:800; letter-spacing:-.02em; }
   /* (383) the Virtual Room lobby's two boxes on the shared card */
@@ -80858,7 +80898,12 @@ __bm("L70613");
 /* BUILD 382: "the Liquid Glass gets picked and put down just a smidge too slow ... a smidge faster". The swell (pop) and the
    settle (shrink) are about a fifth shorter - 260 -> 210ms and 360 -> 290ms - on the same curves; the glide along the track and the
    tap/haptic logic are as they were. */
-const NSW_T = { pop: 210, shrink: 290, LX: 1.44, LY: 1.4, MAG: .82,
+/* BUILD 383: "I feel like our toggle switches look really good but they could behave a smidge better and smoother" (his
+   recording beside iOS's own Settings switch). Frame by frame at 120fps: iOS's knob lands and is solid again almost at once;
+   ours glided ~360ms, waited ~200ms, then shrank for 290ms with its white coming back only in the second half - so for ~200ms
+   it sat at the end as a hollow dark ring. Now the glide is 150-270ms, the settle 230ms starting half-way through the glide,
+   and the solid knob comes back over the FIRST ~45% of the settle (the glass goes as it shrinks, not after). Swell 190ms. */
+const NSW_T = { pop: 190, shrink: 230, LX: 1.44, LY: 1.4, MAG: .82,
   POP: "cubic-bezier(.3,1.25,.5,1)", GLIDE: "cubic-bezier(.32,1.06,.42,1)", SETTLE: "cubic-bezier(.3,1.04,.4,1)" };
 const nswRuns = new WeakMap();
 let nswActive = null, nswPending = null, nswCommitting = false, nswSuppressUntil = 0;
@@ -80965,7 +81010,7 @@ function nswMorph(run, up, delay){
   /* the white goes early on the swell and comes back late on the settle,
      so the glass is what you see while it is big */
   const fo = up ? { duration: d * .55, delay: delay || 0, easing: "ease-out", fill }
-               : { duration: d * .5, delay: (delay || 0) + d * .45, easing: "ease-in", fill };
+               : { duration: d * .45, delay: delay || 0, easing: "ease-out", fill };   /* 383: solid again as it shrinks, never a hollow ring */
   run.anims.push(run.solid.animate([{ opacity: cur[1] }, { opacity: to[1] }], fo));
   run.anims.push(run.glass.animate([{ opacity: cur[2] }, { opacity: to[2] }], fo));
   run.up = up;
@@ -80984,10 +81029,10 @@ function nswSettle(run, on){
   clearTimeout(run.t);
   const g = run.g, c = on ? g.onC : g.offC;
   const span = Math.max(1, g.onC - g.offC), dist = Math.abs(c - run.c);
-  const glide = dist < .5 ? 0 : Math.round(200 + 160 * Math.min(1, dist / span));
+  const glide = dist < .5 ? 0 : Math.round(150 + 120 * Math.min(1, dist / span));   /* 383: was 200 + 160 */
   nswPlace(run, c, glide, NSW_T.GLIDE);
   const now = performance.now();
-  const delay = Math.round(Math.max(0, run.popEnds - now, glide * .55));
+  const delay = Math.round(Math.max(0, run.popEnds - now, glide * .5));
   nswMorph(run, false, delay);
   /* gone when the settle has played out - on its own clock, not a timer */
   const mine = run.anims.slice();
@@ -103660,6 +103705,13 @@ function showSetup(){
       sheetSummary.appendChild(g); extra.push(g);
       run(g, [{ opacity: 1 }, { opacity: 0, offset: .2 }, { opacity: 0 }], { duration: D, easing: "linear", fill: "forwards" });
     }
+    /* BUILD 383: FROM ITS FIRST FRAME, WHATEVER THE TAP COSTS. His 120fps recording of Review's Flashcards switch: the sheet's
+       first frame after the tap was already 73% of the way (44 of 60px), then crept the rest - read as a jump. Safari's clock
+       for an animation can start before the frame that shows it, and the tap's task (the row's refresh, the haptic switch)
+       ate ~70ms of a curve that front-loads its motion. Held at its first keyframe until the next frame, then played: the
+       first thing drawn is where everything was. */
+    anims.forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
+    requestAnimationFrame(() => anims.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} }));
     const me = { bg, end(){
       if(optsFold !== me) return; optsFold = null;
       anims.forEach(a => { try{ a.cancel(); }catch(e){} });

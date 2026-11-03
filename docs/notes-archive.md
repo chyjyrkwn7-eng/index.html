@@ -31271,3 +31271,37 @@ told apart by colour as the other three always were. The unit cards' "Next test"
 amber dot with the same glow, is flat too. check-b383-profile (4): key and grid, phone and iPad, no glow - FAILS on the previous
 commit (phone key; iPad key and 4 of 25 grid dots). check-behaviour b324c_calendar: the same 13 failures as live 382 (it still
 expects the week strip), none new.
+
+### Build 383 - See rank ladder and the badge count as Customize's kind of button; the switches smoother
+Madison, 383: "Similar to the customize button, the see rank ladder button and 4 of 24 badges button or whatever, we need to
+improve those buttons so they seem more clickable, ensure the wording of those two buttons are centered too because they
+currently arent" / two screen recordings, ours (Review's start sheet, the Flashcards switch) and iOS's Settings (VPN): "I feel
+like our toggle switches look really good but they could behave a smidge better and smoother."
+- THE TWO BUTTONS (.pf-goal-foot, .pf-case-closed .pf-case-count): Customize's light pill (#F4F6F9, dark text; dark with white on
+  the light theme), the card's width to 30rem (rank card 90%, inside the case between its latches 72%), 50px, 1.0625rem 700.
+  The words measured 0px off the pill's middle before as well - they READ left of it because the left was empty and a chevron
+  disc sat on the right. Now an icon on the left (a ladder; a briefcase - masks in #0B0D12, not currentColor, so
+  check-ink-centre's transparent-text pass still finds only the words) whose middle is as far in as the chevron's (25.6px
+  each). The chevron disc keeps the rank's / the case's colour, darkened (72% with #1A1D24) for its white mark. The case's
+  NEW tag still follows the count.
+- THE SWITCHES, read off his 120fps recording frame by frame:
+  (a) THE SHEET JUMPED: the start sheet grows/shrinks when the line of switched-on words in the box above Begin appears/goes,
+      and 382's FLIP glide ran - but its first drawn frame was already 73% of the way (44 of 60px), then crept the rest.
+      Safari can start an animation's clock before the frame that shows it, and the tap's task ate ~70ms of a front-loaded
+      curve. foldSummaryOpts now pauses every piece at its first keyframe and plays them on the next animation frame.
+  (b) THE KNOB SAT HOLLOW: glide 200+160ms, settle delayed ~200ms then 290ms, the solid knob fading back only in the settle's
+      second half - ~200ms of a small dark ring at the end. iOS's lands solid. NSW_T pop 210->190, shrink 290->230; glide
+      150+120ms; the settle starts at half the glide; the solid comes back (and the glass goes) over the settle's FIRST 45%.
+      Release to done ~350ms (was ~500).
+- Gates: check-b383-profile (5) the two buttons - words within 1px of the middle, icon and chevron middles within 2px, >=60% of
+  the card, >=44px, >=4.5:1 - fails on the previous commit (46%/45%, 40px, 1.2:1, no icon); tools/check-b383-toggles.py (iPhone
+  UA, CDP touches, Review's Flashcards switch, Safari's clock emulated: an animation's start time = when it is made, and the
+  tap's task runs on 80ms) - first frame after the tap <=20% of the way, home <=450ms, no hollow frame, lens gone <=450ms after
+  the release - fails on the previous commit (37% first frame; 7-8 hollow frames; ~500ms). check-b382-toggles' bounds .65-.85
+  -> .55-.85 of 381 (230/360 = .64). check-b327z10 H9 no longer asks for the old pill's 1px rim. check-b380 (21): Review's
+  Starred pill and Select all differed only in the colour of a 0px border (Select all's text colour since the 383 units
+  restyle) - both transparent now; passes (it passed on 382, failed on 383 before this).
+- Phone only: whether the sheet's first frame is home-from-where-it-was on a real iPhone (Chromium can't run Safari's clock;
+  the gate emulates it), and how the knob feels under a finger.
+- ASKED, NOT BUILT: how many use Mock. Answered in chat from the live database, totals only (nothing about anyone here - the
+  repo is public).
