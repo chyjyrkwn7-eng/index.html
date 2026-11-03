@@ -32554,8 +32554,9 @@
   .credits-card > .settings-row:last-child{ border-bottom-left-radius:19px; border-bottom-right-radius:19px; }
   .settings-list.credits-card > .settings-row + .settings-row::before{ left:18px; right:18px; }
   .credits-name{ flex:1 1 auto; min-width:0; font-size:1.06rem; font-weight:700; color:var(--ink); }
-  .credits-card > .credits-name-row{ align-items:baseline; }
-  .credits-name-row > .credits-role{ margin-left:auto; font-size:1rem; font-weight:500; }
+  /* (383) the role under the name, a contact card's grey line - the longer titles no longer share the name's line */
+  .credits-card > .credits-name-row{ flex-direction:column; align-items:flex-start; justify-content:center; gap:.12rem; padding-top:.7rem; padding-bottom:.7rem; }
+  .credits-name-row > .credits-role{ margin-left:0; font-size:.88rem; font-weight:500; color:var(--soft); text-align:left; white-space:normal; }
   .credits-item{ font-size:1.02rem; font-weight:500; color:var(--ink); }
   .credits-item.credits-link{ justify-content:space-between; }
   .credits-item.credits-link .settings-row-label{ flex:1 1 auto; font-size:1.02rem; font-weight:500; }
@@ -120004,11 +120005,28 @@ function creditsPeople(){
   const chatOpen = (typeof chatDock !== "undefined" && chatDock && !ifc) ? () => openChatDock() : null;
   const roomOpen = !ifc ? () => { cfg.mode = "vroom"; showVirtualRoomChoice(); } : null;
   return [
-    { name: "Madison Davis", role: "Creator", did: [{ t: "Created and designed Nova" }, { t: "Questions, ranks and characters" }] },
-    { name: "Bryan Darjean", role: "Chat", did: [{ t: "Chat", open: chatOpen }] },
-    { name: "Logan Preston", role: "Questions", did: [{ t: "Question bank" }, { t: "Test format" }] },
-    { name: "Alexis Sauceda", role: "Testing", did: [{ t: "Question testing" }] },
-    { name: "Cameron Wharton", role: "Virtual Room", did: [{ t: "Virtual Room", open: roomOpen }] }
+    /* build 383: "Make these things sound like a little more fancy and technical. Maybe add a few things for each person." */
+    { name: "Madison Davis", role: "Founder & Lead Designer", did: [
+      { t: "Product vision and interface design" },
+      { t: "App architecture and cloud sync" },
+      { t: "Rank progression and character system" },
+      { t: "Question bank curation" } ] },
+    { name: "Bryan Darjean", role: "Real-time Chat", did: [
+      { t: "Real-time messaging", open: chatOpen },
+      { t: "Direct and group conversations" },
+      { t: "Live presence and typing indicators" } ] },
+    { name: "Logan Preston", role: "Question Engineering", did: [
+      { t: "Question bank development" },
+      { t: "Exam structure and test format" },
+      { t: "Study guide alignment" } ] },
+    { name: "Alexis Sauceda", role: "Quality Assurance", did: [
+      { t: "Question accuracy review" },
+      { t: "Answer key verification" },
+      { t: "Pre-release testing" } ] },
+    { name: "Cameron Wharton", role: "Multiplayer Systems", did: [
+      { t: "Virtual Room design", open: roomOpen },
+      { t: "Live multiplayer test sessions" },
+      { t: "Race, Tug of War and Battle modes" } ] }
   ];
 }
 /* "It should look more like this. Not sure why ours has numbers for how many

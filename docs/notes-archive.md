@@ -31150,3 +31150,13 @@ academy untouched. Everything still DOM + sprites drawn once, moved by transform
   filter, no screen play over 170 pieces (that guard alone passes on 383 too - it is joined to the redraw leg). On the build
   before: 4 fail; on this one ALL PASS.
 - Phone check owed: real-device smoothness of the sprinklers (the heaviest, ~142 pieces) and the extinguisher's big billows.
+
+### 383: Contributors in fuller, more technical words
+Madison (screenshot of Contributors): "Make these things sound like a little more fancy and technical. Maybe add a few things for each
+person." creditsPeople(): Madison Davis - Founder & Lead Designer (product vision and interface design; app architecture and cloud
+sync; rank progression and character system; question bank curation). Bryan Darjean - Real-time Chat (real-time messaging, opens the
+chat; direct and group conversations; live presence and typing indicators). Logan Preston - Question Engineering (question bank
+development; exam structure and test format; study guide alignment). Alexis Sauceda - Quality Assurance (question accuracy review;
+answer key verification; pre-release testing). Cameron Wharton - Multiplayer Systems (Virtual Room design, opens it; live multiplayer
+test sessions; Race, Tug of War and Battle modes). The longer roles crowded the name (two lines, and on a 320px SE overlapping it), so
+the role is now a grey line under the name (.credits-name-row a column). Wording is Madison's to adjust.
