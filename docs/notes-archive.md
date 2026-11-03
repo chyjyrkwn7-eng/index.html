@@ -31111,3 +31111,42 @@ isn't reachable". Now:
   Profile's switch (now the board's .92rem).
 - Firestore rules: progress/<anything> is what merge/move/credit/floor documents already use; the sandbox cannot reach Firebase, so
   the first real write is on his phone.
+### 383: Fire Code hundo effects, round 4 (all four redone; NOT on main, waiting for Madison)
+Madison: "Hundo effects, they all need to be better. The sprinklers is my favorite one but it could be better, the sprinkler
+water could look better, the fire could look better. The hazmat one could be so much cooler... I don't necessarily like the
+emergency lights one change that one. And the fire alarm one, again, also not a big fan. Try that one again."
+Ids, counts, picks and the ladder are unchanged (fireworks 50, underwater 100, bubbles 150, ufo 200); Confetti untouched;
+academy untouched. Everything still DOM + sprites drawn once, moved by transform/opacity (WAAPI via ifxA/ifxAt), no svg filters.
+- **Extinguisher** (fireworks; replaces Emergency Lights, `ifxExtinguisher`, name in IFX_DEF): P.A.S.S. An ABC extinguisher
+  swings up bottom-left, the pin is pulled and spins away, the nozzle (its own element, rotating about the hose's ferrule) aims at
+  the box, the lever squeezes, and a dry-chem stream (a child of the nozzle, so it turns with it) sweeps side to side while ~40
+  billows leave the mouth along the aim of the moment, slow and swell; a haze over the screen; in the box a whitening that lifts
+  off a glint and the lit 100%. Tint: white number to red (#FF5A4F rim).
+- **Sprinklers** (redone, `ifxSprinklers`): fire in three depths (`ifxSpr.flame`: soft red-orange body, yellow heart, white root,
+  each flickering on its own scale/skew loop) over a fire bed, born from one spot and spreading; embers; smoke; heat glow. Heads:
+  pendent with toothed deflector, bulb bursts (glass shards + pop), an umbrella of droplet streams (`ifxSpr.spray`, parabolic arcs
+  in dashes) with two copies scaling outward from the plate on a loop (reads as droplets flying out), rain streak clusters,
+  floor splashes, room mist, wet sheen. Flames are knocked down nearest a head first, each into a steam puff. Capped at 4 heads.
+- **Hazmat** (redone, `ifxHazmat`): amber edge pulses (2), hazard bands in from opposite sides, green vapour on the floor; an
+  NFPA 704 diamond flies together from its four quarters and slams (shockwave ring, glow, flash) - it reads 1-0-0 (health 1,
+  fire 0, instability 0, special blank), the hundo; a scan line sweeps down revealing a hex mesh (window/contents counter-
+  translated, no clip-path); lime brackets lock onto the box + a CONTAINED tag; a responder in a yellow Level A suit (backlit, dark face shield,
+  air pack under the suit) steps in bottom-right and decons it (mist cone + puffs sweeping); all clear (lime edge, box washes lime).
+- **Fire Alarm** (redone, `ifxAlarm`): close-up of a pull station; the handle is pulled (anticipation, snap, jolt, ring); the
+  system goes with one white burst and the view pulls back (station shrinks to the bottom, bell and horn-strobe come in from
+  beyond the top corners). The bell shakes at ~14/s with its striker hammering and sound arcs off both sides; the horn sounds
+  temporal-3 (blasts .8/1.3/1.8, 3.3/3.8/4.3) with arcs and a room jolt; the strobe flashes 4 times (1.5..4.4, 1/s, under 3/s);
+  red edges pulse with the horn; it stops, the bell rings down, the handle is reset.
+- Tiles/stills (ifxPosterBody / ifxStillBody) redrawn to match; SND_IFX rescored on the new beats (extinguisher roar with its pan
+  swinging on `orbit`, the sprinkler fire/bulbs/spray, hazmat beeps/clanks/scan/lock/decon, the bell buzz at 17/s + horn + strobe
+  cracks); all four render in the Fire Code class with peaks .17-.34. hfxWarm takes the sprite list from `ifxWarmList(id)`.
+- Timing: IFX_DEF totals 5800/6800/6600/7000, tails 4700/5500/5300/5800. Screen pieces on a phone: 49 / ~142 / 37 / 21.
+- Tools: `tools/record-hundo.py --ifc` records in the Fire Code class (owner publicId, class26e.activeclass=ifc, a Fire Code
+  chapter) and starts each clip at the effect (the grade and XP box take ~20s of fake time first).
+- Gate: check-b382-ifcart. Changed: "...they are an extinguisher, sprinklers, hazmat and a fire alarm" (was Emergency Lights);
+  the round-3 check now asserts only that the 50 and the 200 differ from round 2 (its "Sprinklers and Hazmat as round 2" and
+  "the 50 is Emergency Lights" legs were round 3's state). New round-4 section (R3 hashes from claude/b383): all four differ
+  from round 3; the 50 is the Extinguisher (ifxExtinguisher); and each moves only transform/opacity, no ifx sprite has an svg
+  filter, no screen play over 170 pieces (that guard alone passes on 383 too - it is joined to the redraw leg). On the build
+  before: 4 fail; on this one ALL PASS.
+- Phone check owed: real-device smoothness of the sprinklers (the heaviest, ~142 pieces) and the extinguisher's big billows.
