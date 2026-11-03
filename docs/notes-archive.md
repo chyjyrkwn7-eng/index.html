@@ -31060,3 +31060,17 @@ you update it".
   - only his phone can say it is smooth. check-b382-slide (3) Home reads 8.6-8.9px behind on BOTH 382 and 383 under this load.
 - Mode selection's cards take the units screen's card: Settings' sheen and the board row's --surface-lift over --surface-1, the full
   --surface-border rim, 18px (20 on a tablet).
+
+### 383: one look across the app (the units screen's pieces everywhere they apply)
+Madison: "some said we needed a better easier to see/use interface look of the unit selection screen. We need to ensure the app has a
+cohesive look across. So ensure that change is applied where else needed and ensure all pieces line up with their look ya know."
+Audit: 23 secondary screens shot on 383 (scratchpad audit/). Still on the old look (Back pill, the header's corner word, a serif or
+spaced-capital title) and now on iosNavBar (round 44px back, centred title; the corner word is sized away by the .ios-nav rule):
+Report a bug, Version history (was "Release History" in capitals), Review's question list / Starred ("Back to Options"), Open rooms,
+Test history and a test's detail, Virtual Room (Host / Join), the Virtual Room's Pick the units / Match settings.
+- The Virtual Room's unit picker takes the units screen's .setup-tools row (field + Select all beside it); those rules are now
+  :is(.screen-setup, .screen-vroom-setup). Its Host / Join cards are mode selection's cards (lifted surface, rim, body face).
+- Profile's Profile / Stats / Settings switch is the Leaderboard's switch (the four rules are :is(.screen-rankings, .screen-profile)).
+- Report a bug's "What happened" label: grey sentence case, as Settings' group headings.
+- Already in the look (left): Settings and its pages, Advanced, Contributors, Customize and its pages, Friends, Calendar, Stats,
+  ranks, badges, the start sheet. The test, flashcards and results screens keep their own (in-run) design.
