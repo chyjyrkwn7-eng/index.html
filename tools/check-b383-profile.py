@@ -17,6 +17,9 @@ Checks (measured on the page, phone 440x956):
   5. (383: "the see rank ladder button and 4 of 24 badges button ... improve those buttons so they seem more clickable, ensure the
      wording of those two buttons are centered") each is Customize's kind of button - wide, 44px+, 4.5:1 on its card - with an
      icon on the left balancing the chevron on the right and its words within 1px of the button's middle.
+  6. (383: "Why does the bottom right corner side of the badges within the unit selection cards look kinda off? There's like a
+     gap thing on them?") a found badge on a unit card is the token alone - no slot (the case's dark wall and lit lip) round it;
+     one not yet found is still drawn as its empty slot.
   4. (383, from a Calendar screenshot: "I notice the test one is glowing. Ensure they are all the same cohesive look")
      the calendar's key and grid dots carry no glow, phone and iPad.
 Run:  python3 tools/check-b383-profile.py   (--against OLD/index.html must FAIL)"""
@@ -143,6 +146,28 @@ with sync_playwright() as pw:
            b.get("widthPct", 0) >= 60 and b.get("h", 0) >= 44 and b.get("ratio", 0) >= 4.5, b)
     pg.evaluate("()=>document.querySelector('#stage .pf-goal .pf-goal-foot').click()"); pg.wait_for_timeout(1200)
     ck("5. See rank ladder still opens the rank ladder", pg.evaluate("()=>!!document.querySelector('#stage .screen-ranks')"))
+    ck("no page errors", not errs, errs[:2])
+    ctx.close()
+
+    print("\n6. a found badge on a unit card: the token alone, not the case's slot round it")
+    errs = []
+    ctx, pg = g["open_page"](br, g["init_account"]("", g["store"]()), errs=errs)
+    pg.evaluate("""()=>{ const all = topicsIn(QUESTIONS);
+      store.unitPerfects = Object.fromEntries(all.slice(0, 6).map(u => [u, badgeThresholdFor(u)]));
+      try{ warmBadgeStrikes(); }catch(e){} }""")
+    pg.wait_for_timeout(5000)
+    pg.evaluate("()=>{ cfg.mode='drill'; cfg.units=[]; cfg.source='all'; showSetup(); }"); pg.wait_for_timeout(2500)
+    r6 = pg.evaluate("""async()=>{ const read = async b => { const im = b.querySelector('img.pick-badge-img'), sv = b.querySelector('svg');
+        const xml = im ? await (await fetch(im.src)).text() : sv ? new XMLSerializer().serializeToString(sv) : '';
+        return { slot: /-lip"|badge-seat-shade/.test(xml), wall: /-wall"/.test(xml) }; };
+      const cards = [...document.querySelectorAll('#stage .picks > label.pick')];
+      const found = [], open = [];
+      for(const c of cards){ const b = c.querySelector('.pick-badge'); if(!b) continue;
+        if(b.classList.contains('earned')){ if(found.length < 4) found.push(await read(b)); } else if(open.length < 2) open.push(await read(b)); }
+      return { found, open }; }""")
+    ck("6. found badges on the cards: no dark wall or light lip round them (%d read)" % len(r6["found"]),
+       len(r6["found"]) >= 3 and not any(x["slot"] or x["wall"] for x in r6["found"]), r6)
+    ck("6. a badge not yet found is still its empty slot (build 314: seen, not shown)", r6["open"] and all(x["wall"] for x in r6["open"]), r6)
     ck("no page errors", not errs, errs[:2])
     ctx.close()
 

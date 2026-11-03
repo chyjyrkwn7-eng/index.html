@@ -31305,3 +31305,17 @@ like our toggle switches look really good but they could behave a smidge better 
   the gate emulates it), and how the knob feels under a finger.
 - ASKED, NOT BUILT: how many use Mock. Answered in chat from the live database, totals only (nothing about anyone here - the
   repo is public).
+
+### Build 383 - a found badge on a unit card is the token, not its slot
+Madison, 383, a photo of two unit cards' badges: "Why does the bottom right corner side of the badges within the unit selection
+cards look kinda off? There's like a gap thing on them? Idk what's going on there."
+- WHAT IT WAS: buildUnitBadgeSVG draws a badge seated in the case's lining by default - the slot round the token: the wall (a
+  dark ring, lit along the bottom-right as a hole is) and the lining's lip catching the light on the far side (#D2E2F6 at .46
+  toward the bottom-right), the token's shadow in the hole and the seat's shades on it. In the case it reads as a badge set into
+  the lid; on a unit card, with no case round it, it reads as a dark gap and a stray light line along the bottom-right edge
+  (plainer on a phone's screen than in Chromium).
+- NOW: cardBadgeSVG draws a FOUND badge with { slot: false } - the token alone, as the inspect view and the found cutscene
+  already do - so its silver edge meets the card. Its image cache key gains "|noslot". A badge not yet found is still its empty
+  slot (build 314: "seen, not shown"). The badge case, Ranks' badges tab, the inspect and the cutscenes are unchanged.
+- Gate: check-b383-profile (6) reads each card badge's picture (the blob behind the img): found ones carry no -lip / -wall /
+  badge-seat-shade, an unfound one still has its wall - FAILS on the previous commit (all four found badges had the slot).

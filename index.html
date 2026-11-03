@@ -101504,7 +101504,7 @@ function cardBadgeSVG(name, earned){
   if(earned === true){ try{ dirt = badgeDirtStage(name) | 0; }catch(e){} }
   let key = null;
   try{
-    key = name + "|" + String(earned) + "|" + dirt + "|" + badgeDpr() + "|" + Math.round(badgeDefaultPx());
+    key = name + "|" + String(earned) + "|" + dirt + "|" + badgeDpr() + "|" + Math.round(badgeDefaultPx()) + "|noslot";
     /* which token render a found badge would carry right now (a draft until its finish exists) */
     if(earned === true){
       const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
@@ -101519,7 +101519,13 @@ function cardBadgeSVG(name, earned){
     img.src = url;
     return img;
   }
-  const svg = buildUnitBadgeSVG(name, earned);
+  /* A FOUND BADGE WITHOUT ITS SLOT (383): "Why does the bottom right corner side of the badges within the unit selection
+     cards look kinda off? There's like a gap thing on them?" The drawing carried the slot it sits in on the case's lining - a
+     dark wall round the token and the lining's lip catching the light along the bottom-right - which reads as a hole in a
+     case and, on a card with no case round it, as a gap and a stray line. A found badge on a card is the token alone
+     (slot:false, as the inspect and the cutscene draw it); one not yet found is still its empty slot (build 314: seen, not
+     shown). */
+  const svg = buildUnitBadgeSVG(name, earned, earned === true ? { slot: false } : undefined);
   /* not re-struck to the card's own size: the case-size token (warmBadgeStrikes has them
      all ready soon after launch) is shown a little smaller, which scales down cleanly */
   try{ svg.querySelectorAll("image.badge-raster").forEach(im => BADGE_STRIKE_WATCH.delete(im)); }catch(e){}
