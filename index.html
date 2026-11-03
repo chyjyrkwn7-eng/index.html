@@ -3067,6 +3067,10 @@
     .panel.home.charselect-panel .avatarchar-grid .avatarchar-option{ flex-basis:6.6rem; width:6.6rem; }
   }
   /* build 382: the greyed "Still to find" grid under the starters - smaller tiles (44px at least), more a row */
+  /* clip, not hidden: hidden makes the panel a scroll box, and Continue's
+     sticky would pin to the panel instead of the screen */
+  .panel.home.charselect-panel{ overflow:clip; }
+  .panel.home.charselect-panel > .next.playbtn.charselect-continue{ position:sticky; z-index:2; }
   .panel.home.charselect-panel .avatarchar-grid.charselect-later{ column-gap:.5rem; row-gap:.5rem; max-width:26rem; margin-left:auto; margin-right:auto; }
   .panel.home.charselect-panel .avatarchar-grid.charselect-later .avatarchar-option{ flex:0 0 3.2rem; width:3.2rem; min-width:44px; min-height:44px; max-width:none; }
   @media (min-width:40rem){
@@ -35218,22 +35222,24 @@ html.is-browser{ --fade-paper: transparent; }
      than Welcome's two buttons. Now as Settings' pushed pages (382): a round 44px back button, a plain bold title, the line in the
      soft grey, an iOS field (a filled rounded rectangle, the full width), and every button one width - Welcome's. Same words, same
      order; Home's own title and line are not touched (.screen-home-actual is not one of these). */
-  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link{
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link{
     width:44px !important; height:44px !important; min-height:44px !important; padding:0 !important; border-radius:50% !important;
     display:inline-flex !important; align-items:center; justify-content:center; gap:0 !important; flex:none;
     background:var(--surface-sheen), var(--surface-1) !important; border:1px solid var(--surface-border) !important;
     box-shadow:var(--surface-shadow) !important; color:var(--ink) !important;
   }
-  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link .back-word{
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-word{
     position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; margin:0; padding:0;
   }
-  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link .back-chevron{ width:20px; height:20px; margin:0 1.5px 0 0; }
-  html[data-layout] body #stage > :is(.signupcheck-panel, .synccode-entry-panel, .onboarding-shortform-panel) > .hometitle,
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-chevron{ width:20px; height:20px; margin:0 1.5px 0 0; }
+  /* the name step's Back at the column's top-left like every other step (it alone sat centred) */
+  html[data-layout] body #stage > .onboarding-shortform-panel > .back-link{ align-self:flex-start !important; margin-left:.8rem !important; }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .synccode-entry-panel, .onboarding-shortform-panel, .charselect-panel) > .hometitle,
   html[data-layout] body #stage > :is(.classselect-panel, .welcomeintro-panel) > .welcomeintro-title{
     font-family:inherit !important; font-size:clamp(1.55rem, 6.4vw, 2rem) !important; font-weight:700 !important; font-style:normal;
     letter-spacing:-.01em !important; text-transform:none !important; line-height:1.15; color:var(--ink); text-shadow:none;
   }
-  html[data-layout] body #stage > :is(.signupcheck-panel, .synccode-entry-panel, .onboarding-shortform-panel) > .hometagline,
+  html[data-layout] body #stage > :is(.signupcheck-panel, .synccode-entry-panel, .onboarding-shortform-panel, .charselect-panel) > .hometagline,
   html[data-layout] body #stage > .classselect-panel > .classselect-sub{
     font-family:inherit !important; font-style:normal !important; font-size:1rem !important; line-height:1.45 !important; letter-spacing:0 !important;
     color:var(--soft) !important; text-align:center; text-wrap:balance; max-width:26rem; margin-left:auto; margin-right:auto;
@@ -35248,15 +35254,26 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel) .onboarding-input-wrap > input.searchbox:focus,
   html[data-layout] body .nova-talk input.nt-ask-input:focus{ border-color:rgba(255,255,255,.28) !important; outline:none; }
-  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .next,
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .next,
   html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel) .synccode-confirm .next{
     width:min(100%, 22rem) !important; min-height:52px; box-sizing:border-box; margin-left:auto; margin-right:auto;
     display:flex; align-items:center; justify-content:center;
   }
   /* a first-gen SE (568 tall): the 44px back button and the 52px buttons took 5px more than the class step had - the gaps give it back */
   @media (max-height:600px){
-    html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel) > .back-link{ margin-bottom:.35rem !important; }
+    html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link{ margin-bottom:.35rem !important; }
     html[data-layout] body #stage > :is(.classselect-panel, .welcomeintro-panel) > .welcomeintro-title{ font-size:1.45rem !important; }
+  }
+  /* the class step on short screens: its two cards and the 52px button ran 12px past the floor on a first-gen SE (Continue
+     lower than on every other step) and scrolled 6px on a 1366x638 laptop - the gap above the button gives it back */
+  @media (min-height:601px) and (max-height:660px){
+    html[data-layout] body #stage > .classselect-panel > .next.playbtn{ margin-top:1.2rem !important; }
+  }
+  @media (max-height:600px){
+    html[data-layout] body #stage > .classselect-panel > .next.playbtn{ margin-top:auto !important; }
+    html[data-layout] body #stage > .classselect-panel > .classselect-sub{ line-height:1.3 !important; margin-bottom:2px !important; }
+    html[data-layout] body #stage > .classselect-panel > .affiliation-note{ margin-top:0 !important; }
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards > .class-card{ padding-top:8px !important; padding-bottom:8px !important; }
   }
   /* the class step's two cards (the class and "More classes") in the middle on a tablet, not in two of three columns on the left */
   @media (min-width:40rem){
@@ -89242,7 +89259,7 @@ function showWelcomeCharacterPrompt(){
   const title = document.createElement("p");
   title.className = "hometitle";
   title.style.cssText = "position:relative;z-index:1;font-size:1.7rem;";
-  title.textContent = "CHOOSE A CHARACTER";
+  title.textContent = "Choose a character";
   panel.appendChild(title);
 
   const sub = document.createElement("p");
@@ -89340,7 +89357,9 @@ function showWelcomeCharacterPrompt(){
     opt.addEventListener("click", () => showToast(characterLockMessage(charDef.id)));
     laterGrid.appendChild(opt);
   });
-  /* (placed under Continue, below, so the button stays next to the pick) */
+  /* Between the starters and Continue: Continue keeps the floor spot every
+     sign-up step gives it (check-positions' spread), and where the greyed
+     grid does not fit it pins there while the grid scrolls under it. */
 
   const continueBtn = document.createElement("button");
   continueBtn.type = "button"; continueBtn.className = "next playbtn";
@@ -89352,18 +89371,41 @@ function showWelcomeCharacterPrompt(){
     updateHeaderTitle();
     finishWelcomeStartFresh();
   });
-  panel.appendChild(continueBtn);
+  let laterBits = [];
   if(laterGrid.children.length){
     const lh = document.createElement("p");
     lh.className = "avatarchar-group-title charselect-later-h";
     lh.style.cssText = "position:relative;z-index:1;";
     lh.textContent = "Still to find";
     laterGrid.style.cssText = "position:relative;z-index:1;margin:.6rem 0 1.2rem;justify-content:center;";
+    laterBits = [lh, laterGrid];
     panel.append(lh, laterGrid);
   }
+  continueBtn.classList.add("charselect-continue");
+  panel.appendChild(continueBtn);
 
   stage.replaceChildren(panel);
+  /* The floor's distance from the screen's bottom is several paddings that
+     differ by device, so it is read off the page (the panel without the
+     greyed grid sits at its min-height) rather than restated in CSS. */
+  const pinContinue = () => {
+    if(!panel.isConnected){ removeEventListener("resize", pinContinue); return; }
+    laterBits.forEach(el => { el.style.display = "none"; });
+    /* offsetTop, not getBoundingClientRect: the screen's slide-in
+       transform is still running when this first reads it */
+    let y = 0; for(let el = panel; el; el = el.offsetParent) y += el.offsetTop;
+    const pb = parseFloat(getComputedStyle(panel).paddingBottom) || 0;
+    const gap = innerHeight - (y + panel.offsetHeight) + pb;
+    laterBits.forEach(el => { el.style.display = ""; });
+    continueBtn.style.bottom = Math.max(0, Math.round(gap)) + "px";
+  };
   toTop();
+  pinContinue();
+  /* and again once the screen has settled (the onboarding header and the
+     tab bar's reserve land a frame or two after the mount) */
+  requestAnimationFrame(() => requestAnimationFrame(pinContinue));
+  setTimeout(pinContinue, 450);
+  addEventListener("resize", pinContinue);
 }
 
 function finishWelcomeStartFresh(then){

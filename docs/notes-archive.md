@@ -30936,3 +30936,19 @@ Madison: "clean clean clean CLEAN iOS Apple look" app-wide, with the new Setting
 **Gate:** tools/check-b382-ioslook.py. 112 pass after; 64 fail on the build before.
 
 **Phone check owed:** the round button under the Dynamic Island, and the card density without blur.
+
+### 382: the character step in the sign-up look; Continue on the same floor on every step
+Found by check-positions in the final run (no flags on 381, eight on 382).
+- The greyed "Still to find" grid on Choose a character had been placed UNDER Continue, so Continue sat 265px higher than on every
+  other step and the page scrolled. Now: starters, Still to find, then Continue on the shared floor. Where the grid does not fit,
+  Continue is `position:sticky` at that floor (the gap read off the page by `pinContinue()`: offsetTop, not the rect, because the
+  slide-in transform is still running; re-read after two frames and at 450ms, and on resize). The panel is `overflow:clip`, not
+  hidden (hidden made it the sticky's scroll box). Measured: Continue's bottom equals 381's on all 20 sizes, always on screen.
+- The 382 sign-up restyle had missed this step: it joins the round 44px Back, the bold sentence-case title ("Choose a character",
+  was serif caps), the grey subtitle and the one button. The name step's Back was the only one centred; it now sits top-left at
+  the same 40px as the rest.
+- The class step on short screens: on a first-gen SE it ran 12px past the floor (the restyle's 52px button and 44px Back), and on
+  a 1366x638 laptop it scrolled 6px. max-height:600 trims the subtitle's line-height, the cards' padding and two margins;
+  601-660 trims the gap above the button.
+- check-positions: the character step may scroll only while its Continue stays on screen; it is read after 500ms (the re-pin).
+  Result: no flags (381: no flags).

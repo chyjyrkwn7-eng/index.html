@@ -156,6 +156,8 @@ def main():
                 tops, scrolls = [], []
                 for fn in ONBOARDING:
                     run(page, fn)
+                    # 382: the character step re-reads its floor once settled (450ms)
+                    if fn == "showWelcomeCharacterPrompt": page.wait_for_timeout(500)
                     # ---- MEASURE WHEN IT HAS STOPPED MOVING, NOT AFTER A
                     # FIXED WAIT. A flat 230ms read this 3-4px off on
                     # whichever devices happened to be slow that run: the
@@ -186,7 +188,11 @@ def main():
                       }
                       return prev;}""")
                     tops.append(m["top"])
-                    if m["sh"] > m["vh"] + 1: scrolls.append((fn, m["sh"] - m["vh"]))
+                    # 382: the character step lists the greyed characters still to find,
+                    # which may run past the floor; that is fine only while its Continue
+                    # stays on screen (pinned to the same floor as every other step).
+                    ok_scroll = fn == "showWelcomeCharacterPrompt" and m["bottom"] <= m["vh"]
+                    if m["sh"] > m["vh"] + 1 and not ok_scroll: scrolls.append((fn, m["sh"] - m["vh"]))
                 spread = max(tops) - min(tops)
 
                 # 2. Welcome: where the hint lands
