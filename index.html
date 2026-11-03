@@ -35939,6 +35939,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard{ border-radius:var(--ios-group-r); }
   .screen-rankings{ --lb-cell:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1); --lb-group-r:var(--ios-group-r); }
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){ border-color:transparent !important; }
+  /* Profile's switch has no line under it (the board's has its blurb): a little more room above the card */
+  html[data-theme][data-layout] body #stage .screen-profile > .navsegment.profiletabs{ margin-bottom:1.1rem; }
   /* the words: iOS's body size in a Settings row, a larger grey heading over each group */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-row-label{ font-size:1.0625rem; font-weight:400; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card > label.opt > .otext{ font-size:1.0625rem; }
