@@ -17,8 +17,16 @@ checked for frozen-between-moving frames and jumps, and the count printed.
 Also writes box-<fx>-WxH.png, the settled grade box, box-<fx>-WxH-first.png
 (the first frame the box is half shown) and box-<fx>-WxH-mid.png (MID[fx]
 seconds into the effect), cropped out of the clip's own frames, and
-f-<fx>-NN.jpg, one frame a second. Needs ffmpeg from imageio_ffmpeg."""
+f-<fx>-NN.jpg, one frame a second. Needs ffmpeg from imageio_ffmpeg.
+
+  --ifc   records in the Fire Code class (build 383): the owner's account
+          (only it can be in another class) with class26e.activeclass=ifc,
+          a Fire Code chapter for the run, and each clip as long as that
+          class's effect (IFX_DEF) plus the reveal. The fx start frame is
+          printed so frames can be cut at times into the effect."""
 import importlib.util, sys, os, json
+IFC = "--ifc" in sys.argv
+if IFC: sys.argv.remove("--ifc")
 OUT = os.path.abspath(sys.argv[1])
 FXS = (sys.argv[2] if len(sys.argv) > 2 else "confetti,fireworks,underwater,bubbles,ufo").split(",")
 W = int(sys.argv[3]) if len(sys.argv) > 3 else 440; H = int(sys.argv[4]) if len(sys.argv) > 4 else 956
@@ -115,8 +123,16 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=cb.CHROME, args=["--force-device-scale-factor=2"])
     for fx in FXS:
         ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=2)
+        acct = cb.USED_ACCOUNT
+        if IFC:
+            # the owner's account: the only one the class switch lets into Fire Code
+            a = json.loads(acct); a["publicId"] = "xph5b57jbp5a"; a["novaMet"] = 99; acct = json.dumps(a)
+            ctx.add_init_script("try{localStorage.setItem('class26e.activeclass','ifc');localStorage.setItem('class26e.enrolled',JSON.stringify(['ifc']));localStorage.setItem('class26e.greet.ifc','done');"
+                                "localStorage.setItem('class26e.weekrecap.v1','9999-12-31');localStorage.setItem('class26e.savecode.card','1');"
+                                "['intro.seen','unithold.tip','daily.seen','weekrecap.v1','savecode.card'].forEach(k=>localStorage.setItem('class26e.ifc.'+k, k==='weekrecap.v1'?'9999-12-31':'9'));"
+                                "if(!localStorage.getItem('class26e.ifc.drill.v1')) localStorage.setItem('class26e.ifc.drill.v1', %s);}catch(e){}" % json.dumps(acct))
         ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
-                            "localStorage.setItem('class26e.drill.v1', '%s');}catch(e){}" % cb.USED_ACCOUNT)
+                            "localStorage.setItem('class26e.drill.v1', %s);}catch(e){}" % json.dumps(acct))
         pg = cb.open_page(ctx); errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
         pg.goto(cb.URL); pg.wait_for_timeout(2600)
@@ -130,9 +146,18 @@ with sync_playwright() as pw:
         pg.wait_for_timeout(1800)
         pg.evaluate(CLOCK)
         cdp = ctx.new_cdp_session(pg)
-        pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
+        if IFC:
+            info = pg.evaluate("() => ({ cls: window.NOVA_CLASS, total: (typeof IFX_DEF !== 'undefined' && IFX_DEF[%s]) ? IFX_DEF[%s].total : 0, unit: topicsIn(QUESTIONS)[0] })" % (json.dumps(fx), json.dumps(fx)))
+            if info["cls"] != "ifc": print("NOT IN FIRE CODE:", info); sys.exit(1)
+            if info["total"]: LEN[fx] = info["total"] / 1000 + 1.6
+            pg.evaluate("(u) => __run(u, 0, 'drill', false)", info["unit"])
+        else:
+            pg.evaluate("() => __run('Identity Crimes', 0, 'drill', false)")
         k = 0
-        while k < 30 * FPS and not pg.evaluate("() => !!document.querySelector('.rs-grade.rs-in, .rs-grade.rs-in-now')"):
+        # Fire Code: the clip starts just before the effect (the grade counts in and the XP box fills
+        # first, ~10s), so a clip is the effect itself
+        ready = "() => window.__fxAt > 0" if IFC else "() => !!document.querySelector('.rs-grade.rs-in, .rs-grade.rs-in-now')"
+        while k < 40 * FPS and not pg.evaluate(ready):
             pg.evaluate("() => __clk.advance(1000 / 30)"); k += 1
         path = OUT + "/hundo-%s-%dx%d.mp4" % (fx, W, H)
         p = subprocess.Popen([FF, "-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", str(FPS), "-c:v", "mjpeg", "-i", "-",
@@ -159,7 +184,10 @@ with sync_playwright() as pw:
             if n % 30 == 0: open(OUT + "/f-%s-%02d.jpg" % (fx, n // 30), "wb").write(fr)
         p.stdin.close(); p.wait()
         for _ in range(int(1.5 * FPS)): pg.evaluate("async () => { await __clk.advance(1000 / 30); }")
-        pg.locator(".rs-grade").screenshot(path=OUT + "/box-%s-%dx%d.png" % (fx, W, H))
+        # (Fire Code: the next scene is up over the card by then; the first and mid crops are kept)
+        if not IFC:
+            try: pg.locator(".rs-grade").screenshot(path=OUT + "/box-%s-%dx%d.png" % (fx, W, H), timeout=8000)
+            except Exception as e: print(fx, "settled box not captured:", str(e).split("\n")[0])
         gaps = [round(b - a, 2) for a, b in zip(ts, ts[1:])]
         sm = smoothness(path)
         print(fx, "frozen-between-moving", sm[0], "jumps", sm[1], ";", "reveal", round(k / FPS, 1), "s; fx at frame", t0, ";", n, "frames; clock steps", min(gaps), "-", max(gaps), "ms;", "ERR" if errs else "", errs[:3], flush=True)

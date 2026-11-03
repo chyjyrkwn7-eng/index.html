@@ -16,7 +16,11 @@ those three are round 2's own; the Hazmat's placard is whole under the chin and 
 carries round 2's police-cap peaks, every hat is cowboy/beanie/helmet/hood/space helmet, the inspector, chief,
 investigator and star ranger wear cowboy hats; the clown's character is Strobe; headquarters, code 3, exit,
 code book and the ultimates' banners are new and the rest are round 2's; no SUV is left (white pickups); the
-academy is untouched; the 50 is Emergency Lights and the Fire Alarm is rebuilt, Sprinklers and Hazmat kept.
+academy is untouched; the 50 and the Fire Alarm were rebuilt in round 3 (both differ from round 2).
+Round 4 (383, "Hundo effects, they all need to be better"): all four Fire Code effects differ from round 3's
+(R3, hashes taken on claude/b383 before this round with --dump); the 50 is now the Extinguisher (ifxExtinguisher,
+in Emergency Lights' place); and every animation they start moves only transform and opacity, no sprite of
+theirs carries an svg filter, and no screen play puts up more than 170 elements.
 Run:  python3 tools/check-b382-ifcart.py   (add --against old.html: copy it over index.html first, as the other checks do)"""
 import os, sys, json
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); H = ROOT + "/tools"
@@ -89,6 +93,9 @@ SNAP = """()=>{
         out.screen = h && h.screen ? h.screen.querySelectorAll('*').length : 0;
         out.box = h && h.box ? h.box.querySelectorAll('*').length : 0;
         out.anims = document.getAnimations().length;
+        /* what this effect's own Web Animations move (its layer's and its box's), and how many pieces it puts up */
+        const mine = document.getAnimations().filter(a => a.constructor === Animation && a.effect && a.effect.target && ((h && h.screen && h.screen.contains(a.effect.target)) || (h && h.box && h.box.contains(a.effect.target))));
+        out.props = [...new Set(mine.flatMap(a => a.effect.getKeyframes().flatMap(k => Object.keys(k))))].filter(p => ['offset', 'computedOffset', 'easing', 'composite'].indexOf(p) < 0).sort();
         if(h) h.stop();
         const st = buildHundoFxStage(d.id, {}); const h2 = playHundoFx(d.id, { box: st, pct: st.querySelector('.hfx-stage-pct'), boxOnly: true, mini: true });
         out.boxOnly = h2 && h2.box ? h2.box.querySelectorAll('*').length : 0; if(h2) h2.stop();
@@ -96,7 +103,8 @@ SNAP = """()=>{
         out.still = (buildHundoFxStill(d.id) || { innerHTML: '' }).innerHTML.length;
         card.remove();
       }catch(e){ out.err = String(e); }
-      return out; }) };
+      return out; }),
+    sprFilter: (typeof hfxSprites === 'undefined') ? [] : Object.keys(hfxSprites).filter(k => /^ifx-/.test(k) && /<filter|filter=/.test(hfxSprites[k].text || '')) };
 }"""
 res = {}
 with sync_playwright() as pw:
@@ -163,7 +171,7 @@ chk("the hundo ladder keeps its ids and counts in Fire Code (%s)" % F["fx"], [(r
 chk("Confetti, the default, is the same in both classes", afx["confetti"] == ffx["confetti"] and F["fxBuild"]["confetti"] == "celebrate")
 newfx = [i for i in ffx if i != "confetti" and (ffx[i][1] == afx[i][1] or F["fxBuild"][i] == A["fxBuild"][i])]
 chk("every other Fire Code hundo effect is new - its own name and its own build (same as academy: %s; %s)" % (newfx, F["fxBuild"]), not newfx, newfx)
-chk("...and they are emergency lights, sprinklers, hazmat and a fire alarm", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Emergency Lights", "Fire Alarm", "Hazmat", "Sprinklers"], [ffx[i][1] for i in ffx])
+chk("...and they are an extinguisher, sprinklers, hazmat and a fire alarm", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Extinguisher", "Fire Alarm", "Hazmat", "Sprinklers"], [ffx[i][1] for i in ffx])
 acfx = [i for i in afx if A["fxBuild"][i] != {"confetti": "celebrate", "fireworks": "hfxFireworks", "underwater": "hfxUnderwater", "bubbles": "hfxBubbles", "ufo": "hfxUfo"}.get(i)]
 chk("the academy plays its own effects (%s)" % A["fxBuild"], not acfx, acfx)
 bad = [p for p in F["fxPlay"] if not F["fxBuild"].get(p["id"], "").startswith("ifx") or p.get("err") or p["screen"] < 8 or p["box"] < 2 or p["boxOnly"] < 6 or p["tile"] < 200 or p["still"] < 100]
@@ -196,6 +204,15 @@ chk("the office's vehicles are white pickups: no SUV left, headquarters and code
 acad3 = [i for i in A["chars"] if A["chars"][i] != R2["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R2["academy"]["banners"].get(i)]
 chk("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
 fxn = [i for i in ("fireworks", "ufo") if F["fxSrc"].get(i) == R2["ifc"]["fxSrc"].get(i)]
-fxk = [i for i in ("underwater", "bubbles") if F["fxSrc"].get(i) != R2["ifc"]["fxSrc"].get(i)]
-chk("the 50 is Emergency Lights and the Fire Alarm is rebuilt; Sprinklers and Hazmat as they were (same: %s, changed: %s, %s)" % (fxn, fxk, F["fxBuild"]), not fxn and not fxk and F["fxBuild"]["fireworks"] == "ifxEmergency" and ffx["fireworks"][1] == "Emergency Lights")
+chk("the 50 and the Fire Alarm were rebuilt in round 3 (unchanged since round 2: %s)" % fxn, not fxn)
+# ---- round 4 (383): "Hundo effects, they all need to be better" ----
+# the four as round 3 left them (claude/b383 before this round): --dump on that code
+R3 = {"ifc": {"fxSrc": {"confetti": "", "fireworks": "bca3f472", "underwater": "9b316c94", "bubbles": "ecdfba36", "ufo": "51d48374"}}}
+same4 = [i for i in ("fireworks", "underwater", "bubbles", "ufo") if F["fxSrc"].get(i) == R3["ifc"]["fxSrc"].get(i)]
+chk("round 4 redraws all four Fire Code effects (unchanged since round 3: %s)" % same4, not same4, same4)
+chk("the 50 is the Extinguisher, its own build (%s, %s)" % (ffx["fireworks"][1], F["fxBuild"]["fireworks"]), ffx["fireworks"][1] == "Extinguisher" and F["fxBuild"]["fireworks"] == "ifxExtinguisher")
+moves = [(p["id"], p.get("props")) for p in F["fxPlay"] if not p.get("props") or any(x not in ("opacity", "transform") for x in p["props"])]
+heavy = [(p["id"], p.get("screen")) for p in F["fxPlay"] if (p.get("screen") or 0) > 170]
+chk("...and each moves only transform and opacity, no sprite has an svg filter, none puts up more than 170 pieces (%s; filters %s; %s)" % (moves, F.get("sprFilter"), [(p["id"], p.get("screen")) for p in F["fxPlay"]]),
+    not same4 and not moves and not F.get("sprFilter") and not heavy, (moves, F.get("sprFilter"), heavy))
 sys.exit(0 if ok else 1)

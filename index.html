@@ -79423,51 +79423,86 @@ const SND_HUNDO = {
     } }
 };
 Object.keys(SND_HUNDO).forEach(id => { const c = SOUND_CATALOGUE[id]; if(c){ c.fn = SND_HUNDO[id].fn; c.desc = SND_HUNDO[id].desc; c.vol = SND_HUNDO[id].vol; } });
-/* THE FIRE CODE CLASS'S HUNDO EFFECTS, SCORED (382, round 2 - see IFX_DEF): the same four keys,
-   so every setting, the mixer and the sound gates treat them as before; only what they play
-   changes, and only in the Fire Code class. */
+/* THE FIRE CODE CLASS'S HUNDO EFFECTS, SCORED (382, round 2; 383, round 4 - see IFX_DEF): the same
+   four keys, so every setting, the mixer and the sound gates treat them as before; only what they
+   play changes, and only in the Fire Code class. Each is timed to its effect's own beats. */
 const SND_IFX = {
-  "hundo.fireworks": { desc: "Emergency Lights (Fire Code): the power cutting out - a falling hum and a heavy thunk into silence - then the emergency lights clicking on one after the other with a buzz, the exit signs humming up, and the power coming back with a rising tone and a soft chime.",
+  /* 383: the Extinguisher, on IFX's beats (ifxExtinguisher: in .46, pin .52, squeeze .9, blast .98-3.25, out 3.75) */
+  "hundo.fireworks": { desc: "Extinguisher (Fire Code): the extinguisher swung up and set down with a metal clunk, the pin pulled with a scrape and a ping, the lever squeezed, then a pressurised roar of dry chem swept side to side across your ears, sputtering out as it empties, the cloud settling and a bright two-note chime as the 100% shows through.",
     fn: K => {
-      K.tone({ t: 0, f: 120, f2: 40, gl: .3, type: "sawtooth", lp: 600, a: .01, hold: .1, d: .25, g: .05 });
-      K.thump({ t: .18, f: 90, f2: 30, gl: .3, d: .6, g: .26 });
-      K.noise({ t: .18, color: "b", lp: 400, a: .002, d: .3, g: .08 });
-      [1.0, 1.12].forEach((t, i) => { K.click({ t, bp: 3000, q: 3, d: .02, g: .12, pan: i ? .6 : -.6 }); K.tone({ t, f: 120, type: "square", lp: 900, a: .01, hold: .06, d: .1, g: .015, pan: i ? .6 : -.6 }); });
-      K.tone({ t: 1.35, f: 60, type: "sawtooth", lp: 320, a: .15, hold: 2.3, d: .5, g: .03 });
-      K.tone({ t: 1.35, f: 120, type: "triangle", lp: 700, a: .2, hold: 2.3, d: .5, g: .012 });
-      [1.35, 1.5, 1.65].forEach((t, i) => K.click({ t, bp: 2200, q: 4, d: .015, g: .06, pan: [0, -.5, .5][i] }));
-      K.tone({ t: 3.9, f: 80, f2: 360, gl: .5, type: "sawtooth", lp: 1200, a: .1, hold: .2, d: .3, g: .03 });
-      ["D5", "A5"].forEach((n, i) => K.chime({ t: 4.3 + i * .12, f: n, d: 1.2, g: .025 }));
+      sndWhoosh(K, { t: 0, f: 300, f2: 1100, dur: .4, peak: .8, g: .1, pan: -.6, pan2: -.4, tone: false });
+      sndHit(K, { t: .44, f: 120, f2: 60, d: .3, bp: 1800, g: .45, pan: -.5 });
+      K.fm({ t: .44, f: 620, ratio: 2.71, idx: 2.2, idx2: .2, a: .001, d: .35, g: .05, pan: -.5 });
+      K.noise({ t: .52, bp: 5200, ff2: 2600, fgl: .14, q: 6, a: .005, hold: .08, d: .05, g: .07, pan: -.5, pan2: -.7, pd: .14 });
+      K.click({ t: .55, bp: 4200, q: 4, d: .012, g: .1, pan: -.6 });
+      K.fm({ t: .64, f: 2350, ratio: 1.41, idx: 1.4, idx2: .1, a: .001, d: .5, g: .03, pan: -.8, rev: .3 });
+      K.noise({ t: .7, color: "p", bp: 900, q: 1, a: .05, d: .14, g: .05, pan: -.4 });
+      K.click({ t: .9, bp: 1600, q: 3, d: .02, g: .12, pan: -.4 }); K.thump({ t: .9, f: 180, f2: 90, gl: .05, d: .08, g: .12 });
+      /* the discharge: a chuff, then the roar - its pan swinging with the sweep - and a sputter as it runs out */
+      sndHit(K, { t: .98, f: 110, f2: 45, d: .5, bp: 2200, g: .6 });
+      K.noise({ t: .98, color: "w", bp: 2600, q: .55, a: .04, hold: 2.1, d: .25, g: .2, orbit: [.8, .55], rev: .2 });
+      K.noise({ t: .98, color: "p", bp: 700, q: .7, a: .06, hold: 2.1, d: .3, g: .16, orbit: [.8, .35] });
+      K.noise({ t: .98, color: "w", hp: 6500, a: .03, hold: 2.1, d: .2, g: .05, orbit: [.8, .6] });
+      K.noise({ t: 3.02, color: "w", bp: 2200, q: .8, am: [11, .95, 16], a: .02, hold: .2, d: .12, g: .14 });
+      /* the cloud hangs and settles; the box comes clear */
+      K.noise({ t: 3.3, color: "p", bp: 1400, ff2: 500, fgl: 1.2, q: .6, a: .2, d: 1.1, g: .05, rev: .4 });
+      K.sparkle({ t: 3.62, t2: 4.1, n: 7, f1: 2400, f2: 5200, rise: true, g: .02 });
+      ["A4", "D5"].forEach((n, i) => K.chime({ t: 3.6 + i * .14, f: n, d: 1.3, g: .03 }));
     } },
-  "hundo.underwater": { desc: "Sprinklers (Fire Code): fire crackling up, the glass bulbs popping one after another, the heads opening in a rush of spray that hisses down over everything, the fire dying in a long steam sizzle, the last drips.",
+  /* 383: the Sprinklers redone - fire from .05, bulbs 1.15/1.24/1.33, spray to 4.0, knock-down 1.9-2.8 */
+  "hundo.underwater": { desc: "Sprinklers (Fire Code): fire catching and roaring up with crackles all through it, the glass bulbs bursting one after another, the heads opening in a rush of spray that hisses over everything, the fire dying under it in a long steam sizzle, rain pattering on, then the last drips.",
     fn: K => {
-      K.noise({ t: .1, color: "b", lp: 700, a: .6, hold: 2.4, d: .6, g: .06 });
-      for(let i = 0; i < 40; i++) K.click({ t: .15 + K.R() * 3.1, bp: K.r(1200, 4200), q: 3, d: .012, g: K.r(.015, .04), pan: K.r(-.8, .8) });
-      [1.25, 1.33, 1.41, 1.49].forEach((t, i) => { K.click({ t, bp: 5200, q: 6, d: .02, g: .09, pan: -.6 + i * .4 }); K.tone({ t, f: 3200, f2: 1800, gl: .05, a: .001, d: .05, g: .02, pan: -.6 + i * .4 }); });
-      K.noise({ t: 1.3, color: "w", bp: 4200, q: .7, a: .15, hold: 2.6, d: 1.2, g: .12, pan: -.5, pan2: .5, pd: 3, rev: .3 });
-      K.noise({ t: 1.4, color: "p", bp: 1500, q: .6, a: .3, hold: 2.4, d: 1.0, g: .06, rev: .3 });
-      K.noise({ t: 2.9, color: "w", hp: 3000, ff2: 1200, fgl: 1.6, a: .2, hold: .8, d: 1.2, g: .06, rev: .3 });
-      for(let i = 0; i < 8; i++) sndPlop(K, { t: 4.4 + i * .18 + K.R() * .1, f: K.r(700, 1300), k: 1.8, d: .05, g: .03, pan: K.r(-.7, .7) });
-      K.chime({ t: 4.6, f: "D5", d: 1.4, g: .025 });
+      K.noise({ t: .05, color: "b", lp: 600, a: .7, hold: 1.4, d: 1.0, g: .07 });
+      K.noise({ t: .05, color: "p", bp: 900, q: .7, am: [5, .4, 9], a: .6, hold: 1.3, d: .9, g: .03 });
+      for(let i = 0; i < 44; i++) K.click({ t: .15 + K.R() * 2.6, bp: K.r(1200, 4200), q: 3, d: .012, g: K.r(.015, .04), pan: K.r(-.8, .8) });
+      [1.15, 1.24, 1.33].forEach((t, i) => { K.click({ t, bp: 5200, q: 6, d: .02, g: .09, pan: -.6 + i * .6 }); K.tone({ t, f: 3200, f2: 1800, gl: .05, a: .001, d: .05, g: .02, pan: -.6 + i * .6 });
+        K.fm({ t: t + .01, f: 2900, ratio: 1.73, idx: 1.2, idx2: .1, a: .001, d: .2, g: .015, pan: -.6 + i * .6 }); });
+      K.noise({ t: 1.18, color: "w", bp: 4200, q: .7, a: .15, hold: 2.5, d: 1.0, g: .12, pan: -.5, pan2: .5, pd: 3, rev: .3 });
+      K.noise({ t: 1.25, color: "p", bp: 1500, q: .6, a: .3, hold: 2.3, d: .9, g: .06, rev: .3 });
+      for(let i = 0; i < 26; i++) K.click({ t: 1.6 + K.R() * 2.4, bp: K.r(2600, 5600), q: 5, d: .01, g: K.r(.01, .025), pan: K.r(-.9, .9) });
+      K.noise({ t: 1.95, color: "w", hp: 3000, ff2: 1200, fgl: 1.6, a: .2, hold: .9, d: 1.1, g: .07, rev: .3 });
+      for(let i = 0; i < 8; i++) sndPlop(K, { t: 4.25 + i * .17 + K.R() * .1, f: K.r(700, 1300), k: 1.8, d: .05, g: .03, pan: K.r(-.7, .7) });
+      K.chime({ t: 4.45, f: "D5", d: 1.4, g: .025 });
     } },
-  "hundo.bubbles": { desc: "Hazmat (Fire Code): a warning beep three times as the tape runs in, a deep gloop as the green comes up, thick bubbles popping through it, then the foam blanket hissing over it all and the drain gurgling away.",
+  /* 383: the Hazmat redone - alert .1/.56, bands .42/.5, quarters in to 1.1, scan 1.4-2.4, lock 2.25, decon 2.95-4.1, clear 4.1 */
+  "hundo.bubbles": { desc: "Hazmat (Fire Code): a two-tone warning as the hazard bands slam in, a low hiss of vapour, the four quarters of the placard whooshing in and clanking shut with a boom, a scanner sweeping up the scale, the lock chirping CONTAINED, the decon spray hissing across, and a clean all-clear chime.",
     fn: K => {
-      [.1, .35, .6].forEach(t => K.tone({ t, f: 1760, type: "square", lp: 3000, a: .005, hold: .12, d: .03, g: .02 }));
-      K.tone({ t: .7, f: 70, f2: 150, gl: 1.4, type: "sawtooth", lp: 380, a: .5, hold: 1, d: .4, g: .05 });
-      for(let i = 0; i < 26; i++) sndPlop(K, { t: 1.0 + K.R() * 2, f: K.r(160, 420), k: K.r(1.8, 2.4), gl: .05, d: .1, g: .05, pan: K.r(-.8, .8) });
-      K.noise({ t: 2.9, color: "w", bp: 2600, q: .6, a: .3, hold: 1, d: .6, g: .09, pan: -.7, pan2: .7, pd: 1.4, rev: .2 });
-      K.noise({ t: 4.1, color: "p", bp: 1600, ff2: 300, fgl: 1.1, q: 1, a: .15, hold: .5, d: .5, g: .12 });
-      K.tone({ t: 4.2, f: 300, f2: 100, gl: 1, type: "triangle", lp: 800, a: .1, hold: .5, d: .3, g: .04, vib: [12, 60] });
-      K.chime({ t: 4.9, f: "D5", d: 1.2, g: .025 });
+      [[.1, 1320, 990], [.56, 1320, 990]].forEach(([t, a, b]) => { K.tone({ t, f: a, type: "square", lp: 3000, a: .005, hold: .1, d: .03, g: .018 }); K.tone({ t: t + .14, f: b, type: "square", lp: 3000, a: .005, hold: .1, d: .03, g: .018 }); });
+      [.42, .5].forEach((t, i) => { K.thump({ t, f: 140, f2: 60, d: .12, g: .16, pan: i ? .5 : -.5 }); K.noise({ t, color: "p", bp: 1800, q: 1, a: .002, d: .06, g: .06, pan: i ? .5 : -.5 }); });
+      K.noise({ t: .3, color: "p", bp: 500, ff2: 900, fgl: 1.2, q: .8, a: .6, hold: 1.4, d: 1.2, g: .05 });
+      [0, 1, 2, 3].forEach(q => { const t = .36 + q * .07, at = 1.1 - (3 - q) * .07, pn = [0, .7, 0, -.7][q];
+        sndWhoosh(K, { t, f: 400, f2: 1600, dur: at - t, peak: .85, g: .05, pan: pn * 1.2, pan2: pn * .3, tone: false });
+        K.fm({ t: at, f: 330 + q * 40, ratio: 1.41, idx: 2.5, idx2: .2, a: .001, d: .25, g: .04, pan: pn * .4 }); K.click({ t: at, bp: 2200, q: 2, d: .015, g: .08, pan: pn * .4 }); });
+      sndHit(K, { t: 1.12, f: 100, f2: 40, d: .8, bp: 900, g: .8 });
+      K.fm({ t: 1.12, f: 220, ratio: 2.01, idx: 2, idx2: .2, a: .001, d: .9, g: .04, rev: .4 });
+      K.tone({ t: 1.4, f: 300, f2: 1200, gl: 1.0, type: "square", lp: 1800, a: .05, hold: .9, d: .1, g: .012 });
+      K.noise({ t: 1.4, bp: 600, ff2: 3200, fgl: 1.0, q: 6, am: [24, .7], a: .05, hold: .9, d: .12, g: .05 });
+      [2.0, 2.06, 2.12, 2.18].forEach((t, i) => K.click({ t: t + .07, bp: 3200, q: 4, d: .012, g: .09, pan: [-.6, .6, .6, -.6][i] }));
+      [[2.27, "A5"], [2.37, "D6"]].forEach(([t, n]) => K.tone({ t, f: n, type: "square", lp: 3600, a: .004, hold: .06, d: .06, g: .016 }));
+      [2.62, 2.84].forEach(t => K.thump({ t, f: 90, f2: 50, d: .12, g: .1, pan: .6 }));
+      K.noise({ t: 2.95, color: "w", bp: 3400, q: .6, a: .15, hold: .95, d: .3, g: .1, pan: .5, pan2: -.5, pd: 1.2, orbit: [1, .25], rev: .2 });
+      K.noise({ t: 2.95, color: "p", bp: 1200, q: .7, a: .2, hold: .9, d: .3, g: .04, pan: .3 });
+      ["D5", "F#5", "A5"].forEach((n, i) => K.chime({ t: 4.12 + i * .12, f: n, d: 1.2, g: .024 }));
     } },
-  "hundo.ufo": { desc: "Fire Alarm (Fire Code): the horn in the three-beat pattern - three blasts, a rest, three more - with a sharp strobe crack on each flash, then the reset: the horn stops, a relay clicks and a calm two-note chime.",
+  /* 383: the Fire Alarm redone - the pull .62, the system goes .74, horn [.8 1.3 1.8, 3.3 3.8 4.3], strobe [1.5 2.5 3.5 4.4], stop 4.7, reset 4.95 */
+  "hundo.ufo": { desc: "Fire Alarm (Fire Code): a pull station's handle yanked down with a hard clack, a jolt as the system goes, then a fire bell ringing flat out under the horn's three-beat pattern - three blasts, a rest, three more - with a crack on every strobe flash; then it stops, the bell rings down, the handle snaps back and a calm two-note chime.",
     fn: K => {
-      [0, 1].forEach(r => [0, 1, 2].forEach(i => { const t = 1.0 + r * 2.0 + i * .55;
-        K.tone({ t, f: 520, type: "square", lp: 2600, a: .01, hold: .4, d: .05, g: .032 });
-        K.tone({ t, f: 1040, type: "sawtooth", lp: 3200, a: .01, hold: .4, d: .05, g: .011 }); }));
-      [.9, 1.9, 2.9, 3.9, 4.9].forEach(t => { K.click({ t, bp: 6500, q: 4, d: .015, g: .07 }); K.noise({ t, color: "w", hp: 5000, a: .001, d: .05, g: .03 }); });
-      K.click({ t: 5.5, bp: 1800, q: 3, d: .02, g: .1 });
-      ["A4", "D5"].forEach((n, i) => K.chime({ t: 5.65 + i * .18, f: n, d: 1.3, g: .028 }));
+      K.noise({ t: .5, color: "p", bp: 1200, q: 1, a: .1, d: .05, g: .03 });
+      K.click({ t: .6, bp: 1400, q: 2, d: .02, g: .14 }); K.thump({ t: .62, f: 200, f2: 80, gl: .05, d: .12, g: .2 }); K.click({ t: .65, bp: 3200, q: 3, d: .015, g: .1 });
+      sndHit(K, { t: .74, f: 120, f2: 45, d: .6, bp: 1600, g: .7 });
+      /* the bell: a struck gong buzzing at 17 a second, with its ring under it */
+      K.bell({ t: .76, f: 1170, d: .9, g: .06 });
+      K.noise({ t: .76, bp: 2340, q: 14, q2: 8, am: [17, .95], a: .02, hold: 3.9, d: .5, g: .16, pan: -.5, rev: .15 });
+      K.noise({ t: .76, bp: 3650, q: 18, am: [17, .9], a: .02, hold: 3.9, d: .6, g: .07, pan: -.5 });
+      K.fm({ t: .76, f: 1170, ratio: 2.76, idx: 1.0, idx2: .7, a: .02, hold: 3.9, d: .2, g: .018, vib: [17, 25], pan: -.5 });
+      K.bell({ t: 4.72, f: 1170, d: 1.8, g: .05, pan: -.5 });
+      /* the horn, three and three */
+      [.8, 1.3, 1.8, 3.3, 3.8, 4.3].forEach(t => {
+        K.tone({ t, f: 520, type: "square", lp: 2600, a: .01, hold: .36, d: .05, g: .03, pan: .5 });
+        K.tone({ t, f: 1040, type: "sawtooth", lp: 3200, a: .01, hold: .36, d: .05, g: .01, pan: .5 }); });
+      [1.5, 2.5, 3.5, 4.4].forEach(t => { K.click({ t, bp: 6500, q: 4, d: .015, g: .08, pan: .5 }); K.noise({ t, color: "w", hp: 5000, a: .001, d: .05, g: .03, pan: .5 }); });
+      K.click({ t: 4.95, bp: 1800, q: 3, d: .02, g: .12 }); K.thump({ t: 4.97, f: 160, f2: 90, gl: .05, d: .08, g: .1 });
+      ["A4", "D5"].forEach((n, i) => K.chime({ t: 5.15 + i * .18, f: n, d: 1.3, g: .028 }));
     } }
 };
 if(IFC_ART_ON) Object.keys(SND_IFX).forEach(id => { const c = SOUND_CATALOGUE[id]; if(c){ c.fn = SND_IFX[id].fn; c.desc = SND_IFX[id].desc; } });
@@ -109047,8 +109082,7 @@ function hfxWarm(id){
   const urls = [];
   try{
     /* the Fire Code effects' sprites (IFX_DEF) */
-    if(IFC_ART_ON && IFX_DEF[hundoFxId(id)]) urls.push(ifxSpr.glow("#FFFFFF"), ifxSpr.glow("#FF3B30"), ifxSpr.glow("#3F7BFF"), ifxSpr.beam("#FF3B30"), ifxSpr.beam("#3F7BFF"), ifxSpr.econe(), ifxSpr.eunit(), ifxSpr.exitR(), ifxSpr.exitG(), ifxSpr.strobe(), ifxSpr.panelA(), ifxSpr.panelN(), ifxSpr.flame(0), ifxSpr.flame(1), ifxSpr.head(), ifxSpr.drop(),
-      ifxSpr.puff("#DFF6FF"), ifxSpr.puff("#E8EEF2"), ifxSpr.ooze(), ifxSpr.bubble(), ifxSpr.foam(), ifxSpr.tape(), ifxSpr.placard(), ifxSpr.glow("#FF5A4A"), ifxSpr.glow("#9AF03A"), ifxSpr.glow("#4FC3FF"), ifxSpr.glow("#FF8A3D"), ifxSpr.glow("#FF4A3D"));
+    if(IFC_ART_ON && IFX_DEF[hundoFxId(id)]) urls.push(...ifxWarmList(hundoFxId(id)));
     else
     if(id === "bubbles"){ [190, 280, 320, 150, 45, 230].forEach(h => { urls.push(hfxBubbleURL(h), hfxFilmURL(h), hfxFilmURL(h + 150)); }); urls.push(hfxHeroShellURL(), hfxRingURL()); }
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
@@ -111710,33 +111744,41 @@ function hfxConfettiBox(bx, c){
 const HUNDO_FX_BUILD = { fireworks: hfxFireworks, blackhole: hfxBlackHole, underwater: hfxUnderwater,
   worldtree: hfxWorldTree, bubbles: hfxBubbles, ufo: hfxUfo };
 
-/* ---- THE FIRE CODE CLASS'S HUNDO EFFECTS (build 382, round 2) ----
+/* ---- THE FIRE CODE CLASS'S HUNDO EFFECTS (build 382, round 2; build 383, round 4) ----
    "The hundo effects, we need new ones. Except the default one. The rest though, fire inspired,
    like a fire being put out by sprinklers? A hazmat spill? A fire alarm activation? Police
    sirens? ... maybe them super cool." In the Fire Code class the four rungs keep their ids, their
    hundo counts, their saved picks and their place in every list (fireworks, underwater, bubbles,
-   ufo), and play these instead - Confetti, the default, is untouched:
-     Emergency Lights   (round 3, in the Sirens' place) the power goes, the screen drops dark with
-     (50)               one flicker, the emergency lights snap on - warm cones, red EXIT and green
-                        running-man signs - their red and green on the box, then the power is back
-     Sprinklers (100)   fire climbs the bottom of the screen, the heads along the top pop their
-                        bulbs and open up, the water comes down in cones and the fire goes out
-                        in steam
-     Hazmat (150)       caution tape runs in top and bottom, a placard drops, green comes up the
-                        screen bubbling and glowing, then a foam blanket rolls over it and the
-                        lot drains away
-     Fire Alarm (200)   (round 3, redone) a sleek horn strobe on the wall fires once a second -
-                        a bloom of white over the room, its edges catching it - the panel shows the
-                        zone, then the system resets to a green NORMAL
+   ufo), and play these instead - Confetti, the default, is untouched.
+   Round 4 (383): "Hundo effects, they all need to be better. The sprinklers is my favorite one but
+   it could be better, the sprinkler water could look better, the fire could look better. The
+   hazmat one could be so much cooler... I don't necessarily like the emergency lights one change
+   that one. And the fire alarm one, again, also not a big fan. Try that one again."
+     Extinguisher (50)  (383, in Emergency Lights' place) an ABC extinguisher swings up into the
+                        corner, the pin is pulled, the lever squeezed, and a blast of dry chem
+                        sweeps across the screen side to side (Pull, Aim, Squeeze, Sweep) - the
+                        cloud billows over the box and clears off a gleaming 100%
+     Sprinklers (100)   (383, redone) a real fire takes the floor - three depths of flickering
+                        flame, embers, a heat glow - the bulbs burst, the deflectors throw an
+                        umbrella of spray, rain falls and splashes on the floor, and the fire is
+                        knocked down flame by flame into steam
+     Hazmat (150)       (383, redone) warning light and hazard bands, a green vapour rolls in,
+                        an NFPA 704 diamond slams together out of its four colours (it reads
+                        1-0-0), a containment scan sweeps the screen and locks on the box, a
+                        suited responder decons the lot and it is all clear
+     Fire Alarm (200)   (383, redone) a close-up of a pull station - the handle is pulled - and
+                        the view pulls back as the system goes: a bell rings itself silly, the
+                        horn sounds three beats and the strobe fires, then it resets
    Same rules as every effect (see playHundoFx): DOM, sprites drawn once (hfxSprite), moved only
    by transform and opacity through the Web Animations API (hfxAnim, so a stop cancels them), no
    svg filters, one-shot, a soft tail, gone by HUNDO_FX_TOTAL. Each plays across the screen (scr)
-   and inside the box (bx), or in the box alone for a tile or the unlock card. */
+   and inside the box (bx), or in the box alone for a tile or the unlock card. Flashes stay under
+   three a second. */
 const IFX_DEF = {
-  fireworks:  { name: "Emergency Lights", total: 5600, box: 4200, tail: 4700, tint: { b: "#2ECC71", g1: "#F0FFF4", g2: "#2ECC71", g3: "#FF3B30" } },
-  underwater: { name: "Sprinklers", total: 6600, box: 4600, tail: 5300, tint: { b: "#4FC3FF", g1: "#E6F8FF", g2: "#4FC3FF", g3: "#FFB03A" } },
-  bubbles:    { name: "Hazmat",     total: 6400, box: 4600, tail: 5100, tint: { b: "#9AF03A", g1: "#F2FFE0", g2: "#9AF03A", g3: "#F2C21E" } },
-  ufo:        { name: "Fire Alarm", total: 7400, box: 5400, tail: 6300, tint: { b: "#FF4A3D", g1: "#FFFFFF", g2: "#FF4A3D", g3: "#FFC8C0" } }
+  fireworks:  { name: "Extinguisher", total: 5800, box: 4400, tail: 4700, tint: { b: "#FF5A4F", g1: "#FFFFFF", g2: "#FFD5D0", g3: "#FF453A" } },
+  underwater: { name: "Sprinklers", total: 6800, box: 4800, tail: 5500, tint: { b: "#4FC3FF", g1: "#E6F8FF", g2: "#4FC3FF", g3: "#FFB03A" } },
+  bubbles:    { name: "Hazmat",     total: 6600, box: 4800, tail: 5300, tint: { b: "#B4F03A", g1: "#F6FFE0", g2: "#B4F03A", g3: "#F5C518" } },
+  ufo:        { name: "Fire Alarm", total: 7000, box: 5200, tail: 5800, tint: { b: "#FF3B30", g1: "#FFFFFF", g2: "#FF6A5E", g3: "#FFC8C0" } }
 };
 function ifxEl(parent, css){
   const d = document.createElement("i");
@@ -111751,43 +111793,250 @@ function ifxImg(parent, url, x, y, w, h, css){
 function ifxA(c, el, kf, dur, dl, ease, o){
   return hfxAnim(c, el, kf, Object.assign({ duration: Math.round(dur * 1000), delay: Math.round((dl || 0) * 1000), easing: ease || "linear", fill: "both" }, o || {}));
 }
+/* Keyframes on the effect's own clock: [[seconds, {props}], ...] over a run of `tot` seconds,
+   the first and last held to the ends. A keyframe's `easing` shapes the stretch after it (never
+   an easing on the whole run: that warps every offset - see round 3). */
+function ifxKf(tot, pts){
+  const out = pts.map(([t, p]) => Object.assign({}, p, { offset: Math.max(0, Math.min(1, t / tot)) }));
+  for(let i = 1; i < out.length; i++) if(out[i].offset < out[i - 1].offset) out[i].offset = out[i - 1].offset;
+  if(out[0].offset > 0){ const f = Object.assign({}, out[0], { offset: 0 }); delete f.easing; out.unshift(f); }
+  if(out[out.length - 1].offset < 1){ const l = Object.assign({}, out[out.length - 1], { offset: 1 }); delete l.easing; out.push(l); }
+  return out;
+}
+function ifxAt(c, el, tot, pts, dl){ return ifxA(c, el, ifxKf(tot, pts), tot, dl || 0); }
+const IFX_OUT = "cubic-bezier(.16,.84,.3,1)", IFX_IN = "cubic-bezier(.55,0,.85,.4)", IFX_BACK = "cubic-bezier(.3,1.45,.55,1)";
+/* a tongue of flame, fuller than fcFlamePath: wide at the root, a waist, a leaning tip */
+function ifxFlameD(cx, b, w, h, ln){
+  const P = (x, y) => bnF(x) + " " + bnF(y);
+  return "M" + P(cx - w, b) +
+    " C" + P(cx - w * 1.2, b - h * .3) + " " + P(cx - w * .7 + ln * .3, b - h * .55) + " " + P(cx - w * .3 + ln * .6, b - h * .74) +
+    " C" + P(cx - w * .08 + ln * .85, b - h * .86) + " " + P(cx + ln * .9, b - h * .93) + " " + P(cx + ln, b - h) +
+    " C" + P(cx + ln * .7 + w * .22, b - h * .84) + " " + P(cx + w * .55 + ln * .4, b - h * .66) + " " + P(cx + w * .72 + ln * .2, b - h * .46) +
+    " C" + P(cx + w * 1.05, b - h * .26) + " " + P(cx + w * 1.12, b - h * .1) + " " + P(cx + w, b) +
+    " Q" + P(cx, b + h * .05) + " " + P(cx - w, b) + " Z";
+}
+/* a radial gradient stretched tall (flames, glows) - id, centre, radius, vertical stretch, stops */
+function ifxRad(id, cx, cy, r, sy, stops){
+  return '<radialGradient id="' + id + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '" gradientUnits="userSpaceOnUse" gradientTransform="translate(' + cx + ' ' + cy + ') scale(1 ' + sy + ') translate(' + (-cx) + ' ' + (-cy) + ')">' +
+    stops.map(s => '<stop offset="' + s[0] + '" stop-color="' + s[1] + '" stop-opacity="' + (s[2] == null ? 1 : s[2]) + '"/>').join("") + '</radialGradient>';
+}
+function ifxLin(id, x2, y2, stops){
+  return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + x2 + '" y2="' + y2 + '">' +
+    stops.map(s => '<stop offset="' + s[0] + '" stop-color="' + s[1] + '" stop-opacity="' + (s[2] == null ? 1 : s[2]) + '"/>').join("") + '</linearGradient>';
+}
 /* ---- the sprites ---- */
+const IFX_CHROME = [[0, "#6E7680"], [.22, "#F6F8FA"], [.45, "#B5BDC6"], [.7, "#E4E8EC"], [1, "#565E68"]];
+const IFX_BRASS = [[0, "#6A4608"], [.3, "#FFE7A0"], [.55, "#D9A23A"], [.8, "#B07A1A"], [1, "#5A3C06"]];
+const IFX_RED = [[0, "#6A060C"], [.2, "#B8141C"], [.38, "#FF5E52"], [.5, "#E5262C"], [.8, "#A80F17"], [1, "#58040A"]];
 const ifxSpr = {
-  beam: col => hfxSprite("ifx-beam" + col, () => 'viewBox="0 0 100 400"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + col + '" stop-opacity=".75"/><stop offset=".5" stop-color="' + col + '" stop-opacity=".25"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></linearGradient></defs><path d="M46 0 L54 0 L100 400 L0 400 Z" fill="url(#g)"/></svg>', 320),
   glow: col => hfxSprite("ifx-glow" + col, () => 'viewBox="0 0 100 100"><defs><radialGradient id="g"><stop offset="0" stop-color="' + col + '" stop-opacity=".9"/><stop offset=".4" stop-color="' + col + '" stop-opacity=".35"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>', 200),
-  flame: k => hfxSprite("ifx-flame" + k, () => 'viewBox="0 0 40 80"><defs><linearGradient id="g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF4A1A"/><stop offset=".5" stop-color="#FF9A2E"/><stop offset="1" stop-color="#FFE08A"/></linearGradient></defs><path d="' + fcFlamePath(20, 80, 17, 78, k ? 3 : -3) + '" fill="url(#g)"/><path d="' + fcFlamePath(20, 80, 8, 44, k ? -1 : 1) + '" fill="#FFF3C8" opacity=".85"/></svg>', 160),
-  head: () => hfxSprite("ifx-head", () => 'viewBox="0 0 40 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFF0B8"/><stop offset=".5" stop-color="#D9A23A"/><stop offset="1" stop-color="#7A5410"/></linearGradient></defs>' +
-    '<rect x="14" y="0" width="12" height="9" fill="#C9CED6"/><ellipse cx="20" cy="9" rx="13" ry="3" fill="#E8ECEF"/><path d="M14 10 L26 10 L24 15 L16 15 Z" fill="url(#g)"/><path d="M15 15 Q12 24 18 31 M25 15 Q28 24 22 31" fill="none" stroke="url(#g)" stroke-width="2.6"/>' +
-    '<ellipse cx="20" cy="22" rx="2.2" ry="5.4" fill="#E5332A"/><path d="M19.2 18.6 L19.2 24" stroke="#FFFFFF" stroke-width=".8" opacity=".8"/>' +
-    '<path d="M8 32 L32 32 L30 35 L10 35 Z" fill="url(#g)"/>' + [10, 14, 18, 22, 26, 30].map(x => '<path d="M' + x + ' 35 L' + x + ' 37" stroke="#9A6A10" stroke-width="1.6"/>').join("") + '</svg>', 160),
-  drop: () => hfxSprite("ifx-drop", () => 'viewBox="0 0 8 30"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DFF6FF" stop-opacity="0"/><stop offset="1" stop-color="#DFF6FF" stop-opacity=".95"/></linearGradient></defs><path d="M4 0 Q7 22 7 25 A3 3 0 0 1 1 25 Q1 22 4 0 Z" fill="url(#g)"/></svg>', 64),
   puff: col => hfxSprite("ifx-puff" + col, () => 'viewBox="0 0 100 100"><defs><radialGradient id="g"><stop offset="0" stop-color="' + col + '" stop-opacity=".8"/><stop offset=".6" stop-color="' + col + '" stop-opacity=".35"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>', 160),
-  ooze: () => hfxSprite("ifx-ooze", () => {
-    let top = "M0 30"; for(let x = 0; x <= 400; x += 20) top += " Q" + (x + 10) + " " + (x % 40 ? 18 : 40) + " " + (x + 20) + " 30";
-    let drips = ""; [40, 130, 210, 300, 370].forEach((x, i) => { drips += '<path d="M' + (x - 8) + ' 30 Q' + x + ' ' + (60 + i * 9) + ' ' + (x + 8) + ' 30 Z" fill="url(#g)"/>'; });
-    return 'viewBox="0 0 400 400" preserveAspectRatio="none"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D8FF6A"/><stop offset=".1" stop-color="#7AF03A"/><stop offset=".45" stop-color="#2AA83A"/><stop offset="1" stop-color="#0A3A14"/></linearGradient></defs>' +
-      '<path d="' + top + ' L400 400 L0 400 Z" fill="url(#g)"/><path d="' + top + '" fill="none" stroke="#F2FFC8" stroke-width="5" opacity=".8"/>' + drips + '</svg>'; }, 512),
-  bubble: () => hfxSprite("ifx-bubble", () => 'viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#C8FF4A" fill-opacity=".18" stroke="#E8FFB0" stroke-width="2.4"/><ellipse cx="13" cy="13" rx="5" ry="3" fill="#FFFFFF" opacity=".8" transform="rotate(-35 13 13)"/></svg>', 80),
-  foam: () => hfxSprite("ifx-foam", () => { const r = bnRand(77); let s = ""; for(let i = 0; i < 26; i++){ s += '<circle cx="' + bnF(14 + r() * 172) + '" cy="' + bnF(26 + r() * 50) + '" r="' + bnF(12 + r() * 16) + '" fill="#F4FFF6"/>'; }
-    return 'viewBox="0 0 200 100">' + s + '<path d="M20 70 Q100 90 180 70" fill="none" stroke="#C8E8D0" stroke-width="6" opacity=".5"/></svg>'; }, 400),
-  tape: () => hfxSprite("ifx-tape", () => { let s = ""; for(let x = -24; x < 480; x += 24) s += '<path d="M' + x + ' 0 L' + (x + 12) + ' 0 L' + (x + 24) + ' 24 L' + (x + 12) + ' 24 Z" fill="#14161C"/>';
-    return 'viewBox="0 0 480 24" preserveAspectRatio="none"><rect width="480" height="24" fill="#F2C21E"/>' + s + '<rect y="0" width="480" height="2" fill="#000" opacity=".3"/><rect y="22" width="480" height="2" fill="#000" opacity=".3"/></svg>'; }, 960),
-  placard: () => hfxSprite("ifx-placard", () => 'viewBox="0 0 100 100">' + fbPlacard(50, 50, 48, "#FFFFFF", "cross") + '</svg>', 200),
-  econe: () => hfxSprite("ifx-econe", () => 'viewBox="0 0 100 160" preserveAspectRatio="none"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3D0" stop-opacity=".6"/><stop offset=".6" stop-color="#FFF3D0" stop-opacity=".18"/><stop offset="1" stop-color="#FFF3D0" stop-opacity="0"/></linearGradient></defs><path d="M38 0 L0 160 L48 160 Z M62 0 L52 160 L100 160 Z" fill="url(#g)"/></svg>', 256),
-  eunit: () => hfxSprite("ifx-eunit", () => 'viewBox="0 0 40 20">' + fbEmergencyUnit(20, 2, 2, true).replace(/cy="16"/g, 'cy="14"') + '</svg>', 200),
-  exitR: () => hfxSprite("ifx-exitR", () => 'viewBox="-2 -2 64 30">' + fbExitSign(30, 0, 60, false) + '</svg>', 320),
-  exitG: () => hfxSprite("ifx-exitG", () => 'viewBox="-2 -2 64 30">' + fbExitSign(30, 0, 60, true) + '</svg>', 320),
-  strobe: () => hfxSprite("ifx-strobe", () => 'viewBox="0 0 100 82"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9CED6"/></linearGradient><linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5A4A"/><stop offset="1" stop-color="#A8121A"/></linearGradient><linearGradient id="l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D8E8F4"/></linearGradient></defs>' +
-    '<rect x="4" y="4" width="92" height="74" rx="16" fill="url(#g)" stroke="#9AA2AE" stroke-width="1.5"/><rect x="12" y="12" width="76" height="34" rx="12" fill="url(#l)" stroke="#B8C4CC" stroke-width="1.5"/><path d="M22 29 L78 29" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/><path d="M22 29 L78 29" stroke="#C9D6E0" stroke-width="2" stroke-linecap="round"/>' +
-    '<rect x="12" y="52" width="76" height="20" rx="8" fill="url(#r)"/><path d="M26 58 L26 66 M26 58 L32 58 M26 62 L31 62 M37 58 L37 66 M42 66 L42 58 L47 58 Q50 58 50 60.4 Q50 62.6 47 62.6 L42 62.6 M47 62.6 L50 66 M61 58 L55 58 L55 66 L61 66 M55 62 L60 62" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-    [68, 73, 78].map(x => '<rect x="' + x + '" y="56" width="2.4" height="12" rx="1.2" fill="#7A0A10"/>').join("") + '</svg>', 300),
-  panelA: () => hfxSprite("ifx-panelA", () => 'viewBox="0 0 300 72"><rect x="1" y="1" width="298" height="70" rx="10" fill="#16181E" stroke="#3A3E48" stroke-width="2"/><rect x="12" y="12" width="230" height="48" rx="5" fill="#2A0A0A"/>' +
-    '<text x="24" y="33" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="17" fill="#FF6A5A" letter-spacing="2">FIRE ALARM</text><text x="24" y="52" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="13" fill="#FFB0A8" letter-spacing="1.5">ZONE 3 - FLOOR 2</text>' +
-    '<circle cx="264" cy="36" r="11" fill="#5A0E0E" stroke="#2A0606" stroke-width="2"/></svg>', 600),
-  panelN: () => hfxSprite("ifx-panelN", () => 'viewBox="0 0 300 72"><rect x="1" y="1" width="298" height="70" rx="10" fill="#16181E" stroke="#3A3E48" stroke-width="2"/><rect x="12" y="12" width="230" height="48" rx="5" fill="#0A2A16"/>' +
-    '<text x="24" y="33" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="17" fill="#6AF0A0" letter-spacing="2">SYSTEM NORMAL</text><text x="24" y="52" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="13" fill="#B0F8CC" letter-spacing="1.5">RESET - ALL ZONES CLEAR</text>' +
-    '<circle cx="264" cy="36" r="11" fill="#2ECC71" stroke="#0A3A1A" stroke-width="2"/></svg>', 600),
-  edge: col => "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, " + col + " 100%)"
+  drop: () => hfxSprite("ifx-drop", () => 'viewBox="0 0 8 30"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DFF6FF" stop-opacity="0"/><stop offset="1" stop-color="#DFF6FF" stop-opacity=".95"/></linearGradient></defs><path d="M4 0 Q7 22 7 25 A3 3 0 0 1 1 25 Q1 22 4 0 Z" fill="url(#g)"/></svg>', 64),
+  edge: col => "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 45%, " + col + " 100%)",
+  /* SPRINKLERS: a flame in three skins (soft red-orange body, yellow heart, white root) */
+  flame: k => hfxSprite("ifx-fl4-" + k, () => {
+    const V = [[-5, 1, .92], [6, -1, 1], [-1, 1, .86], [3, -1, .96]][k % 4], ln = V[0], sd = V[1], wk = V[2];
+    return 'viewBox="0 0 60 120"><defs>' +
+      ifxRad("o", 30, 110, 30, 3.2, [[0, "#FFC15A"], [.32, "#FF7A1F", .96], [.66, "#E2361A", .62], [1, "#A3170C", 0]]) +
+      ifxRad("m", 30, 112, 18, 3.1, [[0, "#FFF4C0"], [.4, "#FFC93F", .95], [.78, "#FF8A1F", .5], [1, "#FF6A1F", 0]]) +
+      ifxRad("c", 30, 114, 10, 2.8, [[0, "#FFFFFF"], [.5, "#FFF6D2", .9], [1, "#FFE08A", 0]]) + '</defs>' +
+      '<path d="' + ifxFlameD(30, 117, 24 * wk, 110, ln) + '" fill="url(#o)"/>' +
+      '<path d="' + ifxFlameD(30 + sd * 12, 113, 9, 74, ln + sd * 7) + '" fill="url(#o)" opacity=".85"/>' +
+      '<path d="' + ifxFlameD(30, 117, 15 * wk, 80, ln * .7) + '" fill="url(#m)"/>' +
+      '<path d="' + ifxFlameD(30, 117, 8, 42, ln * .4) + '" fill="url(#c)"/></svg>';
+  }, 320),
+  /* a pendent head: the escutcheon at the ceiling, a brass frame, the toothed deflector */
+  head: () => hfxSprite("ifx-head2", () => 'viewBox="0 0 60 60"><defs>' + ifxLin("ch", 1, 0, IFX_CHROME) + ifxLin("br", 1, 0, IFX_BRASS) + '</defs>' +
+    '<path d="M7 0 L53 0 L47 6.5 Q30 9.5 13 6.5 Z" fill="url(#ch)"/><path d="M13 6.5 Q30 9.5 47 6.5" fill="none" stroke="#3E454E" stroke-width=".8" opacity=".6"/>' +
+    '<path d="M21 7 L39 7 L38 15.5 L22 15.5 Z" fill="url(#br)"/>' + [9.5, 12, 14.5].map(y => '<path d="M21.6 ' + y + ' L38.4 ' + y + '" stroke="#5A3C08" stroke-width=".7" opacity=".55"/>').join("") +
+    '<path d="M24 15.5 L36 15.5 L34.4 19.5 L25.6 19.5 Z" fill="url(#br)"/>' +
+    '<path d="M23.4 16.5 Q17.5 30 27 44 M36.6 16.5 Q42.5 30 33 44" fill="none" stroke="url(#br)" stroke-width="3.4" stroke-linecap="round"/>' +
+    '<path d="M25.6 42.6 L34.4 42.6 L32.8 47 L27.2 47 Z" fill="url(#br)"/>' +
+    '<path d="M8 47.4 Q30 44.6 52 47.4 L52 49.8 Q30 47.4 8 49.8 Z" fill="url(#br)"/>' +
+    [10, 14, 18, 22, 26, 34, 38, 42, 46, 50].map(x => '<path d="M' + x + ' 49.2 L' + x + ' 52.6" stroke="#9A6A10" stroke-width="1.7" stroke-linecap="round"/>').join("") + '</svg>', 200),
+  /* its glass bulb (the same frame of reference, so it lies exactly in the head) */
+  bulb: () => hfxSprite("ifx-bulb", () => 'viewBox="0 0 60 60"><defs>' + ifxLin("r", 1, 0, [[0, "#7A060C"], [.45, "#FF4A3A"], [1, "#6A040A"]]) + '</defs>' +
+    '<rect x="27.3" y="19.4" width="5.4" height="23.6" rx="2.7" fill="url(#r)"/><rect x="27.3" y="19.4" width="5.4" height="23.6" rx="2.7" fill="none" stroke="#FFD8D0" stroke-width=".7" opacity=".75"/>' +
+    '<ellipse cx="30" cy="22.4" rx="1.5" ry="1.3" fill="#FFB8A8"/><path d="M28.7 25 L28.7 40" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".75"/></svg>', 120),
+  /* the bulb's glass, thrown out */
+  shards: () => hfxSprite("ifx-shards", () => { const r = bnRand(31); let s = "";
+    for(let i = 0; i < 13; i++){ const a = i / 13 * Math.PI * 2 + r() * .4, d = 9 + r() * 17, x = 30 + Math.cos(a) * d, y = 30 + Math.sin(a) * d * .8, z = 1.1 + r() * 1.7;
+      s += '<path d="M' + bnF(x) + ' ' + bnF(y - z) + ' L' + bnF(x + z) + ' ' + bnF(y + z * .6) + ' L' + bnF(x - z * .8) + ' ' + bnF(y + z * .4) + ' Z" fill="' + (i % 3 ? "#FF6A5A" : "#FFFFFF") + '" opacity="' + bnF(.65 + r() * .35) + '"/>'; }
+    return 'viewBox="0 0 60 60">' + s + '</svg>'; }, 120),
+  /* the umbrella a deflector throws: streams of droplets on their arcs, from the plate (200, 4) */
+  spray: k => hfxSprite("ifx-spray" + k, () => {
+    const r = bnRand(70 + k * 13), g = 150, n = 28; let s = "", dots = "";
+    const at = (vx, vy, t) => [200 + vx * t, 4 + vy * t + g * t * t];
+    for(let i = 0; i < n; i++){
+      const u = (i + .5) / n * 2 - 1, ang = u * 1.3 + (r() - .5) * .06, sp = 200 + r() * 34;
+      const vx = Math.sin(ang) * sp, vy = Math.cos(ang) * 60 + 10;
+      const a = .02 + r() * .03, b = .9 + r() * .12, P0 = at(vx, vy, a), P1 = at(vx, vy, b), m = (b - a) / 2;
+      const C = [P0[0] + vx * m, P0[1] + (vy + 2 * g * a) * m];
+      const dash = [[3, 8], [2, 10], [4, 7], [2.5, 9]][(i + k) % 4];
+      s += '<path d="M' + bnF(P0[0]) + ' ' + bnF(P0[1]) + ' Q' + bnF(C[0]) + ' ' + bnF(C[1]) + ' ' + bnF(P1[0]) + ' ' + bnF(P1[1]) + '" stroke-dasharray="' + dash[0] + ' ' + dash[1] + '" stroke-dashoffset="' + bnF(r() * 12 + k * 6) + '" stroke-width="' + bnF(1.5 + r() * 1.5) + '"/>';
+    }
+    for(let i = 0; i < 46; i++){ const ang = (r() * 2 - 1) * 1.3, t = .2 + r() * .75, sp = 200 + r() * 34, P = at(Math.sin(ang) * sp, Math.cos(ang) * 60 + 10, t);
+      dots += '<circle cx="' + bnF(P[0]) + '" cy="' + bnF(P[1]) + '" r="' + bnF(1.1 + r() * 1.7) + '"/>'; }
+    return 'viewBox="0 0 400 260"><defs><radialGradient id="f" cx="200" cy="0" r="270" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".35" stop-color="#E8F7FF" stop-opacity=".9"/><stop offset=".75" stop-color="#BFE6FF" stop-opacity=".42"/><stop offset="1" stop-color="#BFE6FF" stop-opacity="0"/></radialGradient></defs>' +
+      '<ellipse cx="200" cy="7" rx="64" ry="7" fill="url(#f)" opacity=".6"/><ellipse cx="200" cy="5" rx="26" ry="3" fill="#FFFFFF" opacity=".7"/>' +
+      '<g fill="none" stroke="url(#f)" stroke-linecap="round">' + s + '</g><g fill="url(#f)">' + dots + '</g></svg>';
+  }, 640),
+  /* a clutch of falling streaks */
+  rain: k => hfxSprite("ifx-rain" + k, () => { const r = bnRand(90 + k * 7); let s = "";
+    for(let i = 0; i < 7; i++){ const x = 3 + r() * 34, l = 22 + r() * 24, y = r() * (118 - l); s += '<rect x="' + bnF(x) + '" y="' + bnF(y) + '" width="' + bnF(1.5 + r() * 1.1) + '" height="' + bnF(l) + '" rx="1"/>'; }
+    return 'viewBox="0 0 40 120"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DFF4FF" stop-opacity="0"/><stop offset=".5" stop-color="#E8F7FF" stop-opacity=".55"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".95"/></linearGradient></defs><g fill="url(#g)">' + s + '</g></svg>'; }, 120),
+  /* a crown of water on the floor */
+  splash: () => hfxSprite("ifx-splash", () => { let s = "";
+    [[-1, 0], [-.62, 1], [-.26, 2], [.26, 2], [.62, 1], [1, 0]].forEach(([u, k]) => { const x = 30 + u * 21, y = 14 - k * 4;
+      s += '<path d="M' + bnF(30 + u * 6) + ' 26 Q' + bnF(30 + u * 12) + ' ' + bnF(y - 5) + ' ' + bnF(x) + ' ' + bnF(y + 3) + '" fill="none" stroke="#E8F7FF" stroke-width="1.4" stroke-linecap="round" opacity=".75"/><circle cx="' + bnF(x) + '" cy="' + bnF(y + 4) + '" r="1.7" fill="#F4FBFF"/>'; });
+    return 'viewBox="0 0 60 32"><ellipse cx="30" cy="27" rx="23" ry="4" fill="none" stroke="#CFEFFF" stroke-width="1.4" opacity=".7"/><ellipse cx="30" cy="27" rx="12" ry="2.2" fill="#E8F7FF" opacity=".5"/>' + s + '</svg>'; }, 120),
+  /* EXTINGUISHER: the cylinder, valve, gauge, carry handle and a short hose up to the nozzle's
+     ferrule (200 x 440; the hose ends at 160, 34) */
+  ext: () => hfxSprite("ifx-ext", () => 'viewBox="0 0 200 440"><defs>' + ifxLin("rd", 1, 0, IFX_RED) + ifxLin("ch", 1, 0, IFX_CHROME) + ifxLin("ch2", 0, 1, [[0, "#F2F4F6"], [.5, "#A9B1BA"], [1, "#5E6670"]]) +
+    ifxLin("hl", 0, 1, [[0, "#FFFFFF", .6], [.5, "#FFFFFF", .22], [1, "#FFFFFF", 0]]) + ifxLin("hs", 1, 1, [[0, "#3A3E46"], [1, "#0E1014"]]) + ifxLin("lb", 0, 1, [[0, "#FFFDF6"], [1, "#E9E2D2"]]) + '</defs>' +
+    /* the hose, behind: out of the valve and up in a gooseneck to the ferrule */
+    '<path d="M104 78 C134 80 150 70 156 52 L160 36" fill="none" stroke="#14161A" stroke-width="11" stroke-linecap="round"/>' +
+    '<path d="M104 75 C132 77 147 67 153 50 L157 36" fill="none" stroke="#5A606A" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>' +
+    '<rect x="153" y="26" width="14" height="17" rx="3" fill="url(#ch)" transform="rotate(-68 160 34)"/>' +
+    /* the cylinder */
+    '<path d="M32 440 L32 152 C32 118 56 102 84 102 C112 102 136 118 136 152 L136 440 Z" fill="url(#rd)"/>' +
+    '<path d="M50 440 L50 150 C50 128 62 116 74 112" fill="none" stroke="url(#hl)" stroke-width="9" stroke-linecap="round"/>' +
+    '<path d="M124 440 L124 156" stroke="#FFFFFF" stroke-width="2.4" opacity=".16"/>' +
+    '<path d="M36 146 Q84 162 132 146" fill="none" stroke="#5A040A" stroke-width="2" opacity=".5"/>' +
+    /* the label: the band, ABC, the class marks, the lines of the instructions */
+    '<rect x="42" y="214" width="84" height="138" rx="6" fill="url(#lb)"/><path d="M42 220 Q42 214 48 214 L120 214 Q126 214 126 220 L126 240 L42 240 Z" fill="#C8141C"/>' +
+    '<text x="84" y="231" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="7.6" fill="#FFFFFF" letter-spacing=".6">FIRE EXTINGUISHER</text>' +
+    '<text x="84" y="280" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="34" fill="#16181C" letter-spacing="1">ABC</text>' +
+    '<path d="M58 312 L66 298 L74 312 Z" fill="#1FA85A"/><rect x="78" y="298" width="13" height="13" rx="1.5" fill="#D7262E"/><circle cx="103" cy="304.5" r="7" fill="#1F6FD1"/>' +
+    [322, 329, 336, 343].map((y, i) => '<rect x="52" y="' + y + '" width="' + (64 - i * 9) + '" height="2.6" rx="1.3" fill="#8A8478" opacity=".7"/>').join("") +
+    /* the neck, the valve body, the gauge and the carry handle */
+    '<rect x="70" y="86" width="28" height="20" rx="3" fill="url(#ch)"/><rect x="62" y="56" width="50" height="34" rx="7" fill="url(#ch)"/><rect x="62" y="56" width="50" height="9" rx="4" fill="#FFFFFF" opacity=".35"/>' +
+    '<path d="M98 84 L160 88 Q170 90 166 99 L100 96 Z" fill="url(#hs)"/><path d="M100 86 L160 90" stroke="#6A707A" stroke-width="1.6" opacity=".8"/>' +
+    '<circle cx="56" cy="74" r="16" fill="url(#ch2)"/><circle cx="56" cy="74" r="12.4" fill="#FBFBF8"/>' +
+    '<path d="M46.2 79 A10.6 10.6 0 0 1 48.6 66.8" fill="none" stroke="#D7262E" stroke-width="3"/><path d="M48.6 66.8 A10.6 10.6 0 0 1 63.4 66.8" fill="none" stroke="#1FA85A" stroke-width="3"/><path d="M63.4 66.8 A10.6 10.6 0 0 1 65.8 79" fill="none" stroke="#D7262E" stroke-width="3"/>' +
+    '<path d="M56 74 L60.6 65.4" stroke="#16181C" stroke-width="1.6" stroke-linecap="round"/><circle cx="56" cy="74" r="1.8" fill="#16181C"/><ellipse cx="51" cy="68" rx="5" ry="2.6" fill="#FFFFFF" opacity=".55" transform="rotate(-30 51 68)"/></svg>', 960),
+  /* the squeeze lever above the handle (drawn on 84,40 - 174,70; it pivots at 92, 60) */
+  lever: () => hfxSprite("ifx-lever", () => 'viewBox="84 40 90 30"><defs>' + ifxLin("hs", 1, 1, [[0, "#454A53"], [1, "#101216"]]) + '</defs>' +
+    '<path d="M86 54 L162 44 Q173 43 170 53 L94 66 Z" fill="url(#hs)"/><path d="M90 55 L162 46" stroke="#8A909A" stroke-width="1.6" opacity=".8"/><circle cx="92" cy="60" r="4" fill="#C9CED6"/></svg>', 360),
+  /* the pull pin: its yellow ring, the rod through the valve, the green tamper seal (58,54 - 116,78) */
+  pin: () => hfxSprite("ifx-pin", () => 'viewBox="58 54 58 24"><defs>' + ifxLin("ch", 0, 1, [[0, "#FFFFFF"], [1, "#8A929C"]]) + '</defs>' +
+    '<rect x="76" y="68" width="36" height="4" rx="2" fill="url(#ch)"/><circle cx="70" cy="70" r="8.5" fill="none" stroke="#F2C21E" stroke-width="3.4"/><circle cx="70" cy="70" r="8.5" fill="none" stroke="#FFF3B0" stroke-width="1" opacity=".7"/>' +
+    '<path d="M76 66 Q84 58 92 58" fill="none" stroke="#1FA85A" stroke-width="1.8" stroke-linecap="round"/></svg>', 240),
+  /* the nozzle, pointing right from its root (0, 12) to the horn's mouth (60, 12) */
+  nozzle: () => hfxSprite("ifx-nozzle", () => 'viewBox="0 0 64 24"><defs>' + ifxLin("n", 0, 1, [[0, "#4A4F58"], [.4, "#1C1F24"], [1, "#08090B"]]) + '</defs>' +
+    '<path d="M0 8.5 L40 7.4 L62 2 L62 22 L40 16.6 L0 15.5 Z" fill="url(#n)"/><path d="M2 9.5 L40 8.6 L60 4" fill="none" stroke="#8A909A" stroke-width="1.2" opacity=".6"/><rect x="60" y="2" width="3.4" height="20" rx="1.4" fill="#2A2E35"/></svg>', 240),
+  /* the dry chem stream, from the mouth (0, 50) out to the right: soft nested cones, a dense
+     white throat, powder grit through it */
+  jet: () => hfxSprite("ifx-jet", () => { const r = bnRand(55); let gr = "";
+    for(let i = 0; i < 110; i++){ const x = 6 + Math.pow(r(), 1.35) * 380, w = 3 + x * .1; gr += '<circle cx="' + bnF(x) + '" cy="' + bnF(50 + (r() - .5) * w * 2) + '" r="' + bnF(.7 + r() * 1.4) + '" opacity="' + bnF(.35 + r() * .6) + '"/>'; }
+    const cone = (a, o) => '<path d="M0 ' + (50 - a * .1) + ' C120 ' + (50 - a * .55) + ' 260 ' + (50 - a) + ' 400 ' + (50 - a) + ' L400 ' + (50 + a) + ' C260 ' + (50 + a) + ' 120 ' + (50 + a * .55) + ' 0 ' + (50 + a * .1) + ' Z" fill="url(#f)" opacity="' + o + '"/>';
+    return 'viewBox="0 0 400 100" preserveAspectRatio="none"><defs>' + ifxLin("f", 1, 0, [[0, "#FFFFFF", 1], [.18, "#FFFDF8", .92], [.55, "#F6F1E6", .5], [1, "#F2EDE2", 0]]) +
+      ifxLin("t", 1, 0, [[0, "#FFFFFF", 1], [.35, "#FFFFFF", .6], [.7, "#FFFFFF", 0]]) + '</defs>' +
+      cone(50, .16) + cone(40, .2) + cone(29, .28) + cone(19, .4) + cone(10, .55) + '<path d="M0 49 C80 47 160 44 280 42 L280 58 C160 56 80 53 0 51 Z" fill="url(#t)" opacity=".85"/>' +
+      '<g fill="#FFFFFF">' + gr + '</g></svg>'; }, 640),
+  /* a billow of powder: soft lumps, lit from above, greyer underneath */
+  cloud: k => hfxSprite("ifx-cloud" + k, () => { const r = bnRand(120 + k * 17); let s = "";
+    for(let i = 0; i < 15; i++){ const a = r() * Math.PI * 2, d = Math.sqrt(r()) * 26, x = 60 + Math.cos(a) * d * 1.25, y = 54 + Math.sin(a) * d * .8, rr = 14 + r() * 14;
+      s += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(rr) + '" fill="url(#' + (y > 60 ? "b" : "a") + ')"/>'; }
+    return 'viewBox="0 0 120 104"><defs><radialGradient id="a" cx=".45" cy=".4" r=".6"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".4" stop-color="#FAF7F0" stop-opacity=".62"/><stop offset=".75" stop-color="#EDE8DE" stop-opacity=".22"/><stop offset="1" stop-color="#E0DACE" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="b" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#ECE7DD" stop-opacity=".8"/><stop offset=".45" stop-color="#DCD6CA" stop-opacity=".5"/><stop offset=".8" stop-color="#CFC8BB" stop-opacity=".16"/><stop offset="1" stop-color="#C6BFB2" stop-opacity="0"/></radialGradient></defs>' + s + '</svg>'; }, 320),
+  /* HAZMAT: a run of hazard stripes that repeats every 40 x 40 */
+  stripe: () => hfxSprite("ifx-stripe", () => { let s = ""; for(let x = -40; x < 160; x += 40) s += '<path d="M' + x + ' 40 L' + (x + 20) + ' 40 L' + (x + 40) + ' 0 L' + (x + 20) + ' 0 Z" fill="#15171C"/>';
+    return 'viewBox="0 0 160 40"><rect width="160" height="40" fill="#F5C518"/>' + s + '<rect y="0" width="160" height="3" fill="#000" opacity=".35"/><rect y="3" width="160" height="1.4" fill="#FFF6C8" opacity=".55"/><rect y="37" width="160" height="3" fill="#000" opacity=".4"/></svg>'; }, 320),
+  /* one of the NFPA 704 diamond's four: 0 top red (fire), 1 right yellow (instability), 2 bottom
+     white (special), 3 left blue (health). It reads 1-0-0 across. */
+  quad: k => hfxSprite("ifx-quad" + k, () => {
+    const col = ["#E3262E", "#F5C518", "#F4F4F2", "#1F6FD1"][k], hi = ["#FF6A5E", "#FFE27A", "#FFFFFF", "#5AA0FF"][k], num = ["0", "0", "", "1"][k];
+    return 'viewBox="-50 -50 100 100"><defs>' + ifxLin("q", 0, 1, [[0, hi], [.55, col], [1, col]]) + '</defs>' +
+      '<path d="M0 -47 L47 0 L0 47 L-47 0 Z" fill="#101216"/><path d="M0 -41 L41 0 L0 41 L-41 0 Z" fill="url(#q)"/><path d="M0 -41 L41 0 L36 0 L0 -36 L-36 0 L-41 0 Z" fill="#FFFFFF" opacity=".25"/>' +
+      (num ? '<text x="0" y="16" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="44" fill="#101216">' + num + '</text>' : "") + '</svg>';
+  }, 420),
+  /* a ring of light */
+  ring: col => hfxSprite("ifx-ring" + col, () => 'viewBox="0 0 100 100"><defs><radialGradient id="g"><stop offset=".72" stop-color="' + col + '" stop-opacity="0"/><stop offset=".88" stop-color="' + col + '" stop-opacity=".9"/><stop offset=".94" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>', 300),
+  /* the containment field: a hexagon mesh, tiled */
+  hex: () => hfxSprite("ifx-hex", () => { const R = 10, w = R * Math.sqrt(3); let s = "";
+    for(let row = -1; row < 5; row++) for(let col = -1; col < 4; col++){ const cx = col * w + (row % 2 ? w / 2 : 0), cy = row * R * 1.5;
+      let d = ""; for(let i = 0; i < 6; i++){ const a = Math.PI / 6 + i * Math.PI / 3; d += (i ? " L" : "M") + bnF(cx + Math.cos(a) * R) + " " + bnF(cy + Math.sin(a) * R); } s += '<path d="' + d + ' Z"/>'; }
+    return 'viewBox="0 0 ' + bnF(w * 2) + ' 30"><g fill="none" stroke="#C8FF5A" stroke-width=".7" opacity=".9">' + s + '</g></svg>'; }, 128),
+  /* the scan's light: a hard bright line at the foot, a soft trail above it */
+  scan: () => hfxSprite("ifx-scan", () => 'viewBox="0 0 400 100" preserveAspectRatio="none"><defs>' + ifxLin("t", 0, 1, [[0, "#B4F03A", 0], [.75, "#B4F03A", .22], [.94, "#D8FF8A", .55], [1, "#FFFFFF", .9]]) + '</defs>' +
+    '<rect width="400" height="100" fill="url(#t)"/><rect y="96" width="400" height="4" fill="#FFFFFF"/></svg>', 256),
+  /* a corner of the lock - an L, lime with a white edge */
+  bracket: () => hfxSprite("ifx-bracket", () => 'viewBox="0 0 40 40"><path d="M4 36 L4 4 L36 4" fill="none" stroke="#B4F03A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/><path d="M4 30 L4 4 L30 4" fill="none" stroke="#D8FF8A" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 22 L4 4 L22 4" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity=".8"/></svg>', 96),
+  /* the tag the lock puts up */
+  tag: () => hfxSprite("ifx-tag", () => 'viewBox="0 0 200 40"><rect x="1.5" y="1.5" width="197" height="37" rx="18.5" fill="#0E1A0A" fill-opacity=".86" stroke="#B4F03A" stroke-width="2"/><circle cx="24" cy="20" r="6" fill="#B4F03A"/><circle cx="24" cy="20" r="10" fill="none" stroke="#B4F03A" stroke-width="1.4" opacity=".5"/>' +
+    '<text x="110" y="26.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="17" fill="#E8FFC0" letter-spacing="3">CONTAINED</text></svg>', 400),
+  /* a responder in an encapsulating (Level A) suit, three-quarters to the left and backlit: the
+     big hood with its face shield, the air pack's hump under the suit, baggy legs and boots, both
+     gloves on the decon wand held out to the left (its mouth at 8, 197 of 200 x 360) */
+  suit: () => hfxSprite("ifx-suit", () => {
+    const hood = "M84 72 Q78 30 112 16 Q144 8 158 36 Q168 60 160 88 Q150 102 124 104 Q96 102 84 72 Z";
+    const torso = "M88 96 Q74 122 78 162 Q80 198 92 220 L162 220 Q176 196 178 160 Q180 118 166 96 Q146 84 120 86 Q100 88 88 96 Z";
+    const pack = "M150 96 Q184 108 186 150 Q188 194 166 208 L156 200 Q170 160 156 110 Z";
+    const legA = "M92 214 Q84 258 88 300 L84 336 Q82 352 94 352 L120 352 Q126 346 118 338 L114 300 Q118 260 124 216 Z";
+    const legB = "M128 214 Q140 260 136 300 L138 338 Q134 352 146 352 L168 352 Q174 344 164 336 L160 298 Q166 258 162 214 Z";
+    const armFar = "M114 112 Q100 138 88 160 Q80 172 68 180 L62 192 L76 192 Q94 180 106 162 Q116 142 122 122 Z";
+    const armNear = "M98 104 Q76 118 72 148 Q70 166 62 178 L52 186 Q48 196 58 197 L72 193 Q86 178 92 158 Q98 136 112 120 Z";
+    return 'viewBox="0 0 200 360"><defs>' + ifxLin("s", 1, 0, [[0, "#4A3C04"], [.5, "#8A740C"], [1, "#D2B424"]]) + ifxLin("d", 1, 0, [[0, "#342A03"], [1, "#5E4E07"]]) +
+      ifxLin("v", 1, 1, [[0, "#E4F6FF", .92], [.28, "#8FB4C4", .6], [.52, "#16242C", .94], [1, "#05090C", .97]]) + ifxLin("w", 1, 0, [[0, "#C9CED6"], [1, "#4A505A"]]) + '</defs>' +
+      '<path d="M66 190 Q96 240 150 226" fill="none" stroke="#0A0E0B" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="' + legB + '" fill="url(#d)"/><path d="' + armFar + '" fill="url(#d)"/><path d="' + pack + '" fill="url(#s)"/><path d="' + torso + '" fill="url(#s)"/><path d="' + legA + '" fill="url(#s)"/>' +
+      '<path d="M84 332 L120 332 L118 352 L86 352 Z M138 332 L166 332 L168 352 L136 352 Z" fill="#101215"/>' +
+      '<path d="M92 214 L162 214" stroke="#0A120D" stroke-width="3" opacity=".7"/><path d="M104 120 Q112 168 108 214" fill="none" stroke="#0A120D" stroke-width="2" opacity=".6"/>' +
+      '<path d="' + hood + '" fill="url(#s)"/>' +
+      '<path d="M86 52 Q90 32 116 28 Q134 28 140 44 Q143 66 131 83 Q110 93 94 85 Q84 72 86 52 Z" fill="#1A1C20"/>' +
+      '<path d="M89 53 Q93 35 116 31 Q131 31 136 45 Q139 65 128 80 Q110 89 96 82 Q87 71 89 53 Z" fill="url(#v)"/>' +
+      '<path d="M95 50 Q101 38 116 35" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" opacity=".8"/><path d="M122 36 L104 80" stroke="#FFFFFF" stroke-width="5" opacity=".12"/>' +
+      '<path d="M100 104 Q112 150 108 214" fill="none" stroke="#2A2204" stroke-width="2.2" opacity=".7"/><rect x="114" y="132" width="22" height="14" rx="2" fill="#F4F4F2" opacity=".85"/><path d="M118 139 L132 139" stroke="#C8141C" stroke-width="2.4"/>' +
+      '<path d="M18 194 L62 186 L64 192 L20 202 Z" fill="url(#w)"/><rect x="4" y="192" width="14" height="11" rx="3" fill="#E4E8EC"/><path d="M40 196 L44 206 L50 205 L47 194 Z" fill="#2A2E35"/>' +
+      '<path d="' + armNear + '" fill="url(#s)"/><circle cx="58" cy="190" r="8.5" fill="#121417"/><circle cx="70" cy="186" r="7.5" fill="#16181C"/>' +
+      /* the rim: the light behind catching the hood, the pack, the back of the legs */
+      '<g fill="none" stroke="#FFF3B0" stroke-linecap="round"><path d="M142 14 Q162 32 162 62 Q162 80 158 90" stroke-width="2.6" opacity=".85"/><path d="M162 102 Q184 116 186 150 Q188 192 168 208" stroke-width="2.8" opacity=".9"/>' +
+      '<path d="M162 218 Q166 258 160 298 L166 336" stroke-width="2.4" opacity=".8"/><path d="M122 218 Q118 260 114 300" stroke-width="1.4" opacity=".35"/><path d="M110 120 Q98 136 92 158" stroke-width="1.4" opacity=".4"/></g></svg>';
+  }, 1000),
+  /* decon spray: a fine cone of mist out to the right from (0, 50) */
+  mist: () => hfxSprite("ifx-mist", () => { const r = bnRand(66); let d = "";
+    for(let i = 0; i < 120; i++){ const x = 6 + r() * 380, w = 3 + x * .12; d += '<circle cx="' + bnF(x) + '" cy="' + bnF(50 + (r() - .5) * w * 2) + '" r="' + bnF(.8 + r() * 1.5) + '"/>'; }
+    return 'viewBox="0 0 400 100" preserveAspectRatio="none"><defs>' + ifxLin("f", 1, 0, [[0, "#F2FFF0", .95], [.4, "#DFF8EA", .45], [1, "#CFF2E0", 0]]) + '</defs>' +
+      '<path d="M0 46 C120 30 260 4 400 2 L400 98 C260 96 120 70 0 54 Z" fill="url(#f)" opacity=".3"/><path d="M0 47 C120 38 260 24 400 22 L400 78 C260 76 120 62 0 53 Z" fill="url(#f)" opacity=".38"/><path d="M0 48.5 C140 44 260 40 400 38 L400 62 C260 60 140 56 0 51.5 Z" fill="url(#f)" opacity=".45"/><g fill="#FFFFFF" opacity=".9">' + d + '</g></svg>'; }, 640),
+  /* the spill's vapour: soft green banks */
+  vapor: () => hfxSprite("ifx-vapor", () => { const r = bnRand(44); let s = "";
+    for(let i = 0; i < 14; i++){ const x = 20 + r() * 360, y = 60 + r() * 30, rr = 30 + r() * 30; s += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(rr * 1.6) + '" ry="' + bnF(rr) + '" fill="url(#g)"/>'; }
+    return 'viewBox="0 0 400 120" preserveAspectRatio="none"><defs><radialGradient id="g"><stop offset="0" stop-color="#B4F03A" stop-opacity=".55"/><stop offset=".6" stop-color="#6AD83A" stop-opacity=".25"/><stop offset="1" stop-color="#3A9A2A" stop-opacity="0"/></radialGradient></defs>' + s + '</svg>'; }, 420),
+  /* FIRE ALARM: a pull station (160 x 200): FIRE across the top, the handle's slot, PULL DOWN */
+  pull: () => hfxSprite("ifx-pull", () => 'viewBox="0 0 160 200"><defs>' + ifxLin("b", 0, 1, [[0, "#FF5245"], [.45, "#D81E26"], [1, "#8A0C12"]]) + ifxLin("e", 1, 0, [[0, "#000000", .3], [.12, "#000000", 0], [.88, "#000000", 0], [1, "#000000", .35]]) + ifxLin("s", 0, 1, [[0, "#3A0306"], [1, "#6A060C"]]) + '</defs>' +
+    '<rect x="2" y="2" width="156" height="196" rx="18" fill="url(#b)"/><rect x="2" y="2" width="156" height="196" rx="18" fill="url(#e)"/>' +
+    '<path d="M16 4 L144 4 Q156 4 156 16 L156 30 Q80 40 4 30 L4 16 Q4 4 16 4 Z" fill="#FFFFFF" opacity=".2"/>' +
+    '<text x="80" y="46" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="30" fill="#FFFFFF" letter-spacing="5">FIRE</text>' +
+    '<rect x="26" y="66" width="108" height="76" rx="10" fill="url(#s)"/><rect x="26" y="66" width="108" height="76" rx="10" fill="none" stroke="#FF8A80" stroke-width="1.2" opacity=".35"/>' +
+    '<rect x="46" y="74" width="68" height="62" rx="6" fill="#1A0204"/><rect x="46" y="74" width="68" height="8" rx="4" fill="#000000" opacity=".5"/>' +
+    '<text x="80" y="170" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="15" fill="#FFFFFF" letter-spacing="2.5">PULL DOWN</text>' +
+    [[14, 14], [146, 14], [14, 186], [146, 186]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="3.2" fill="#B8121A"/><path d="M' + (x - 2) + ' ' + y + ' L' + (x + 2) + ' ' + y + '" stroke="#5A040A" stroke-width="1"/>').join("") + '</svg>', 720),
+  /* its handle (same frame): a chunky white bar across the slot, PULL on it */
+  pullH: () => hfxSprite("ifx-pullH", () => 'viewBox="0 0 160 200"><defs>' + ifxLin("h", 0, 1, [[0, "#FFFFFF"], [.55, "#ECEEF1"], [1, "#B4BBC4"]]) + '</defs>' +
+    '<rect x="36" y="86" width="88" height="26" rx="10" fill="#000000" opacity=".35"/><rect x="36" y="82" width="88" height="26" rx="10" fill="url(#h)"/><rect x="36" y="82" width="88" height="26" rx="10" fill="none" stroke="#8A929C" stroke-width="1.2"/>' +
+    '<path d="M46 85.5 L114 85.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>' +
+    '<text x="80" y="100.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="12" fill="#C8141C" letter-spacing="3">PULL</text></svg>', 720),
+  /* a fire bell, face on: the red gong, its shine, the striker at the foot */
+  bell: () => hfxSprite("ifx-bell", () => 'viewBox="0 0 100 100"><defs><radialGradient id="g" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FF8A7A"/><stop offset=".3" stop-color="#F0302A"/><stop offset=".8" stop-color="#A80E16"/><stop offset="1" stop-color="#5A040A"/></radialGradient>' +
+    '<radialGradient id="h"><stop offset="0" stop-color="#E8ECF0"/><stop offset="1" stop-color="#6A727C"/></radialGradient></defs>' +
+    '<circle cx="50" cy="48" r="44" fill="url(#g)"/><circle cx="50" cy="48" r="44" fill="none" stroke="#5A040A" stroke-width="2"/><circle cx="50" cy="48" r="34" fill="none" stroke="#FFFFFF" stroke-width="1.2" opacity=".18"/>' +
+    '<ellipse cx="36" cy="28" rx="15" ry="7" fill="#FFFFFF" opacity=".42" transform="rotate(-32 36 28)"/><circle cx="50" cy="48" r="8" fill="url(#h)"/><circle cx="50" cy="48" r="3" fill="#2A2E35"/></svg>', 360),
+  clapper: () => hfxSprite("ifx-clapper", () => 'viewBox="0 0 30 30"><defs>' + ifxLin("c", 1, 0, IFX_CHROME) + '</defs><rect x="12.5" y="0" width="5" height="18" rx="2" fill="#2A2E35"/><rect x="6" y="16" width="18" height="11" rx="4.5" fill="url(#c)"/></svg>', 80),
+  /* a horn-strobe on the wall: red, a grille, FIRE, the clear lens on top */
+  horn: () => hfxSprite("ifx-horn", () => 'viewBox="0 0 100 120"><defs>' + ifxLin("b", 0, 1, [[0, "#FF5245"], [.5, "#D81E26"], [1, "#8A0C12"]]) + ifxLin("l", 0, 1, [[0, "#FFFFFF"], [.5, "#EEF4FA"], [1, "#B8C6D2"]]) + '</defs>' +
+    '<rect x="4" y="4" width="92" height="112" rx="14" fill="url(#b)"/><path d="M14 6 L86 6 Q94 6 94 14 L94 24 Q50 30 6 24 L6 14 Q6 6 14 6 Z" fill="#FFFFFF" opacity=".2"/>' +
+    '<rect x="20" y="12" width="60" height="30" rx="9" fill="url(#l)"/><path d="M28 27 L72 27" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/><path d="M28 27 L72 27" stroke="#C9D6E0" stroke-width="1.6" stroke-linecap="round"/>' +
+    [56, 64, 72, 80].map(y => '<rect x="22" y="' + y + '" width="56" height="3.6" rx="1.8" fill="#6A060C"/>').join("") +
+    '<text x="50" y="106" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="15" fill="#FFFFFF" letter-spacing="3">FIRE</text></svg>', 360),
+  /* a strobe's flash: a white-hot core and its rays */
+  flare: () => hfxSprite("ifx-flare", () => 'viewBox="0 0 200 200"><defs><radialGradient id="g"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".12" stop-color="#FFFFFF" stop-opacity=".95"/><stop offset=".35" stop-color="#EAF2FF" stop-opacity=".35"/><stop offset="1" stop-color="#EAF2FF" stop-opacity="0"/></radialGradient>' +
+    ifxLin("h", 1, 0, [[0, "#FFFFFF", 0], [.5, "#FFFFFF", .95], [1, "#FFFFFF", 0]]) + ifxLin("v", 0, 1, [[0, "#FFFFFF", 0], [.5, "#FFFFFF", .95], [1, "#FFFFFF", 0]]) + '</defs>' +
+    '<circle cx="100" cy="100" r="100" fill="url(#g)"/><rect x="0" y="98" width="200" height="4" fill="url(#h)"/><rect x="98" y="20" width="4" height="160" fill="url(#v)"/>' +
+    '<rect x="30" y="99" width="140" height="2" fill="url(#h)" transform="rotate(45 100 100)"/><rect x="30" y="99" width="140" height="2" fill="url(#h)" transform="rotate(-45 100 100)"/></svg>', 360),
+  /* sound going out: three arcs facing right from (0, 50) */
+  wave: col => hfxSprite("ifx-wave" + col, () => 'viewBox="0 0 100 100"><g fill="none" stroke="' + col + '" stroke-linecap="round">' +
+    [[30, 4, .95], [55, 3.4, .6], [80, 2.8, .35]].map(([r, w, o]) => '<path d="M' + bnF(Math.cos(-.85) * r) + ' ' + bnF(50 + Math.sin(-.85) * r) + ' A' + r + ' ' + r + ' 0 0 1 ' + bnF(Math.cos(.85) * r) + ' ' + bnF(50 + Math.sin(.85) * r) + '" stroke-width="' + w + '" opacity="' + o + '"/>').join("") + '</g></svg>', 200)
 };
 function ifxLit(bx, c, color, glow, dl, dur){ if(bx && c.pct) hfxLitText(bx, c, { mode: "flash", color, glow, dl, dur }); }
 /* the box's own light, washed over it (a card-sized glow) */
@@ -111797,300 +112046,533 @@ function ifxBoxWash(bx, c, col, frames, dur, dl){
   ifxA(c, w, frames, dur, dl);
   return w;
 }
+/* the sprites an effect needs, for hfxWarm */
+function ifxWarmList(id){
+  const S = ifxSpr;
+  if(id === "fireworks") return [S.ext(), S.lever(), S.pin(), S.nozzle(), S.jet(), S.cloud(0), S.cloud(1), S.cloud(2), S.glow("#FFFFFF"), S.glow("#FF5A4F")];
+  if(id === "underwater") return [S.flame(0), S.flame(1), S.flame(2), S.flame(3), S.head(), S.bulb(), S.shards(), S.spray(0), S.spray(1), S.rain(0), S.rain(1), S.rain(2), S.splash(), S.drop(),
+    S.puff("#DFF6FF"), S.puff("#E8EEF2"), S.puff("#3A3330"), S.glow("#FFB347"), S.glow("#FF5A4A"), S.glow("#FF8A3D"), S.glow("#4FC3FF")];
+  if(id === "bubbles") return [S.stripe(), S.quad(0), S.quad(1), S.quad(2), S.quad(3), S.ring("#F5C518"), S.ring("#B4F03A"), S.hex(), S.scan(), S.bracket(), S.tag(), S.suit(), S.mist(), S.vapor(),
+    S.puff("#E8FFF0"), S.glow("#F5C518"), S.glow("#B4F03A"), S.glow("#FFFFFF")];
+  if(id === "ufo") return [S.pull(), S.pullH(), S.bell(), S.clapper(), S.horn(), S.flare(), S.wave("#FFFFFF"), S.wave("#FF6A5E"), S.glow("#FFFFFF"), S.glow("#FF3B30"), S.ring("#FFFFFF")];
+  return [];
+}
 
-/* ============ EMERGENCY LIGHTS (round 3, in the Sirens' place) ============
-   "Maybe add another one for emergency lights coming on in the room but make them like green and
-   red with the words exit". The power goes - the screen drops to near black with one quick
-   flicker - then the emergency lighting kicks in: twin-head units on the walls snap on and throw
-   warm cones, the red EXIT sign and the green running-man signs come up with a little hum
-   flicker, their red and green spill onto the box's edge, and then the power comes back and it all
-   fades. Every flicker is brief (under 3 a second); glow is layered gradients and opacity. */
-function ifxEmergency(scr, bx, c){
-  const play = (host, W, H, small, boxEdge) => {
-    const T = small ? { off: .1, units: .7, signs: 1.0, back: 2.9, end: 3.6 } : { off: .15, units: 1.0, signs: 1.35, back: 3.9, end: 4.9 };
-    const tot = T.end, tl = t => Math.max(0, Math.min(1, t / tot));
-    /* the dark: on with one flicker, held, lifted as the power returns */
-    const dark = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:#020306;opacity:0;");
-    ifxA(c, dark, [{ opacity: 0 }, { opacity: 0, offset: tl(T.off) }, { opacity: .82, offset: tl(T.off + .06) }, { opacity: .35, offset: tl(T.off + .16) }, { opacity: .9, offset: tl(T.off + .3) },
-      { opacity: .9, offset: tl(T.back) }, { opacity: 0, offset: tl(T.back + .7) }, { opacity: 0 }], tot, 0);
-    /* the twin-head units and their cones */
-    const us = small ? Math.min(W * .16, 46) : Math.min(W * .22, 110), uh = us * .5;
-    const units = small ? [[W * .12, H * .06]] : [[W * .2, H * .1], [W * .8, H * .1]];
-    units.forEach(([x, y], i) => {
-      const cone = ifxImg(host, ifxSpr.econe(), x - us * 1.3, y + uh * .35, us * 2.6, small ? H * 1.1 : H * .62, "transform-origin:50% 0;");
-      const on = [{ opacity: 0 }, { opacity: 0, offset: tl(T.units + i * .12) }, { opacity: 1, offset: tl(T.units + i * .12 + .04) }, { opacity: .55, offset: tl(T.units + i * .12 + .14) }, { opacity: 1, offset: tl(T.units + i * .12 + .24) },
-        { opacity: .95, offset: tl(T.back) }, { opacity: 0, offset: tl(T.back + .7) }, { opacity: 0 }];
-      ifxA(c, cone, on, tot, 0);
-      const u = ifxImg(host, ifxSpr.eunit(), x - us / 2, y, us, uh);
-      ifxA(c, u, [{ opacity: 0 }, { opacity: 1, offset: tl(T.off + .3) }, { opacity: 1, offset: tl(T.back + .5) }, { opacity: 0, offset: tl(T.back + .9) }, { opacity: 0 }], tot, 0);
-      const lit = ifxImg(host, ifxSpr.glow("#FFF3D0"), x - us * .8, y - us * .5, us * 1.6, us * 1.4);
-      ifxA(c, lit, on, tot, 0);
-    });
-    /* the signs: a red EXIT high in the middle, green running men low on both sides */
-    const sw = small ? Math.min(W * .26, 70) : Math.min(W * .36, 170), sh = sw * .42;
-    const signs = small ? [["R", W * .8, H * .08, sw]] : [["R", W * .5, H * .055, sw], ["G", W * .17, H * .74, sw * .62], ["G", W * .83, H * .74, sw * .62]];
-    signs.forEach(([k, x, y, w], i) => {
-      const h = w * .42, col = k === "R" ? "#FF3B30" : "#2ECC71";
-      const halo = ifxImg(host, ifxSpr.glow(col), x - w * 1.1, y + h / 2 - w * .8, w * 2.2, w * 1.6);
-      const sg = ifxImg(host, k === "R" ? ifxSpr.exitR() : ifxSpr.exitG(), x - w / 2, y, w, h + w * .08);
-      const t0 = T.signs + i * .15;
-      const on = [{ opacity: 0 }, { opacity: 0, offset: tl(t0) }, { opacity: 1, offset: tl(t0 + .05) }, { opacity: .3, offset: tl(t0 + .14) }, { opacity: 1, offset: tl(t0 + .26) },
-        { opacity: .85, offset: tl((t0 + T.back) / 2) }, { opacity: 1, offset: tl(T.back) }, { opacity: 0, offset: tl(T.back + .8) }, { opacity: 0 }];
-      ifxA(c, sg, on, tot, 0); ifxA(c, halo, on, tot, 0);
-    });
-    /* their light on the box's edge, red above and green below */
-    if(boxEdge){
-      const br = boxEdge;
-      const e = ifxEl(host, "left:" + (br.left - 10) + "px;top:" + (br.top - 10) + "px;width:" + (br.width + 20) + "px;height:" + (br.height + 20) + "px;border-radius:28px;box-shadow:0 -10px 26px -6px rgba(255,59,48,.85), 0 12px 28px -6px rgba(46,204,113,.85), 0 0 0 1.5px rgba(255,255,255,.12);opacity:0;");
-      ifxA(c, e, [{ opacity: 0 }, { opacity: 0, offset: tl(T.signs) }, { opacity: 1, offset: tl(T.signs + .3) }, { opacity: 1, offset: tl(T.back) }, { opacity: 0, offset: tl(T.back + .8) }, { opacity: 0 }], tot, 0);
+/* ============ EXTINGUISHER (383, in Emergency Lights' place) ============
+   "I don't necessarily like the emergency lights one change that one." P.A.S.S.: an ABC
+   extinguisher swings up into the bottom corner; the pin is pulled and spins away; the nozzle
+   comes round to aim at the box; the lever is squeezed and a stream of dry chem blasts out,
+   swept side to side, billowing into a cloud that rolls over the box - which shows through it
+   whitened, then clears off a gleaming 100% - and the extinguisher drops away. */
+function ifxExtinguisher(scr, bx, c){
+  const play = (host, W, H, small, aim) => {
+    const tot = small ? 4.2 : 5.4;
+    const T = small ? { pull: .36, aim: .5, sq: .68, on: .74, off: 2.5, out: 2.9 } : { pull: .52, aim: .68, sq: .9, on: .98, off: 3.25, out: 3.75 };
+    const eh = small ? H * 1.15 : Math.min(H * .4, W * .9, 430), k = eh / 440, ew = 200 * k;
+    const ex = small ? -ew * .1 : Math.max(4, W * .025), ey = H - eh * (small ? .74 : .9);
+    const hx = ex + 160 * k, hy = ey + 34 * k, nl = 64 * k * 1.5, nh = nl * 24 / 64, mouth = nl * 62 / 64;
+    const tg = aim || { x: W * .66, y: H * .24 };
+    const a0 = Math.atan2(tg.y - hy, tg.x - hx), rest = -68 * Math.PI / 180, sw = small ? .15 : .26;
+    const ang = t => t <= T.on ? a0 : a0 + sw * Math.sin((t - T.on) / .62 * Math.PI) * Math.min(1, .3 + (t - T.on) * .9);
+    const deg = a => (a * 180 / Math.PI).toFixed(2) + "deg";
+    /* the extinguisher: a stand, and a shake inside it while it discharges */
+    const ext = ifxEl(host, "left:" + bnF(ex) + "px;top:" + bnF(ey) + "px;width:" + bnF(ew) + "px;height:" + bnF(eh) + "px;transform-origin:40% 100%;opacity:0;");
+    ifxAt(c, ext, tot, [[0, { opacity: 0, transform: "translate(0px," + bnF(eh * .55) + "px) rotate(9deg)", easing: IFX_BACK }], [small ? .32 : .46, { opacity: 1, transform: "translate(0px,0px) rotate(0deg)" }],
+      [T.out, { opacity: 1, transform: "translate(0px,0px) rotate(0deg)", easing: IFX_IN }], [T.out + .55, { opacity: 0, transform: "translate(0px," + bnF(eh * .6) + "px) rotate(5deg)" }]]);
+    const jit = ifxEl(ext, "left:0;top:0;width:100%;height:100%;");
+    const jk = [[0, { transform: "translate(0px,0px)" }], [T.on - .02, { transform: "translate(0px,0px)" }], [T.on + .05, { transform: "translate(" + bnF(-3 * k) + "px," + bnF(3 * k) + "px)" }]];
+    for(let t = T.on + .1, i = 0; t < T.off; t += .055, i++) jk.push([t, { transform: "translate(" + bnF((i % 2 ? 1.6 : -1.4) * k) + "px," + bnF((i % 3 - 1) * 1.4 * k) + "px)" }]);
+    jk.push([T.off + .08, { transform: "translate(0px,0px)" }]);
+    ifxAt(c, jit, tot, jk);
+    const nz = ifxImg(jit, ifxSpr.nozzle(), 160 * k, 34 * k - nh / 2, nl, nh, "opacity:1;transform-origin:0 50%;");
+    ifxImg(jit, ifxSpr.ext(), 0, 0, ew, eh, "opacity:1;");
+    const lv = ifxImg(jit, ifxSpr.lever(), 84 * k, 40 * k, 90 * k, 30 * k, "opacity:1;transform-origin:" + bnF(8 * k) + "px " + bnF(20 * k) + "px;");
+    const pin = ifxImg(jit, ifxSpr.pin(), 58 * k, 54 * k, 58 * k, 24 * k, "opacity:1;transform-origin:" + bnF(12 * k) + "px " + bnF(16 * k) + "px;");
+    /* PULL: out of the valve, then spinning away */
+    ifxAt(c, pin, tot, [[T.pull, { opacity: 1, transform: "translate(0px,0px) rotate(0deg)", easing: IFX_IN }], [T.pull + .1, { opacity: 1, transform: "translate(" + bnF(-16 * k) + "px,0px) rotate(-8deg)", easing: IFX_OUT }],
+      [T.pull + .36, { opacity: 1, transform: "translate(" + bnF(-70 * k) + "px," + bnF(-58 * k) + "px) rotate(-190deg)", easing: IFX_IN }], [T.pull + 1.0, { opacity: 0, transform: "translate(" + bnF(-120 * k) + "px," + bnF(300 * k) + "px) rotate(-470deg)" }]]);
+    /* AIM: the nozzle comes round to the box */
+    const nk = [[0, { transform: "rotate(" + deg(rest) + ")" }], [T.aim, { transform: "rotate(" + deg(rest) + ")", easing: IFX_OUT }], [T.on, { transform: "rotate(" + deg(a0) + ")" }]];
+    for(let i = 1; i <= 22; i++){ const t = T.on + (T.off - T.on) * i / 22; nk.push([t, { transform: "rotate(" + deg(ang(t)) + ")" }]); }
+    nk.push([T.off + .3, { transform: "rotate(" + deg(ang(T.off)) + ")", easing: IFX_OUT }], [T.out, { transform: "rotate(" + deg(rest) + ")" }]);
+    ifxAt(c, nz, tot, nk);
+    /* SQUEEZE */
+    ifxAt(c, lv, tot, [[T.sq, { transform: "rotate(0deg)", easing: IFX_IN }], [T.sq + .08, { transform: "rotate(8deg)" }], [T.off, { transform: "rotate(8deg)", easing: IFX_OUT }], [T.off + .15, { transform: "rotate(0deg)" }]]);
+    /* SWEEP: the stream out of the nozzle (a child of it, so it turns with it) */
+    const jl = small ? W * 1.15 : Math.hypot(W, H) * .44, jh = jl * .34;
+    const jet = ifxImg(nz, ifxSpr.jet(), mouth, nh / 2 - jh / 2, jl, jh, "transform-origin:0 50%;");
+    const jf = [[T.on, { opacity: 0, transform: "translateX(0px) scale(.03,.5)", easing: IFX_OUT }], [T.on + .16, { opacity: 1, transform: "translateX(0px) scale(1,1)" }]];
+    for(let t = T.on + .26, i = 0; t < T.off - .05; t += .09, i++) jf.push([t, { opacity: i % 2 ? .92 : 1, transform: "translateX(0px) scale(" + (i % 3 ? "1.02," : ".97,") + (i % 2 ? "1.08" : ".93") + ")" }]);
+    jf.push([T.off, { opacity: 1, transform: "translateX(0px) scale(1,1)", easing: IFX_OUT }], [T.off + .32, { opacity: 0, transform: "translateX(" + bnF(jl * .3) + "px) scale(.85,1.3)" }]);
+    ifxAt(c, jet, tot, jf);
+    /* the cloud it throws: billows leaving the mouth along the aim of the moment, slowing and
+       swelling, drifting up as they hang */
+    const N = small ? 14 : 40, s0 = small ? H * .5 : Math.min(W, H) * .22;
+    /* the first burst out of the horn */
+    const mb = ifxImg(host, ifxSpr.cloud(0), hx + Math.cos(a0) * nl - s0 * .6, hy + Math.sin(a0) * nl - s0 * .52, s0 * 1.2, s0 * 1.04);
+    ifxAt(c, mb, tot, [[T.on, { opacity: 0, transform: "scale(.2)", easing: IFX_OUT }], [T.on + .1, { opacity: 1, transform: "scale(1.3)" }], [T.on + .8, { opacity: 0, transform: "scale(2.4)" }]]);
+    for(let i = 0; i < N; i++){
+      const te = T.on + .04 + (i / N) * (T.off - T.on - .12) + Math.random() * .04, a = ang(te) + (Math.random() - .5) * .14;
+      const mx = hx + Math.cos(a) * (nl * .97), my = hy + Math.sin(a) * (nl * .97);
+      const D = jl * (.25 + (i % 4) * .28 + Math.random() * .2), dx = Math.cos(a) * D, dy = Math.sin(a) * D, rise = (small ? H * .25 : H * .07) * (.5 + Math.random());
+      const s = s0 * (.8 + Math.random() * .5), rot = (Math.random() * 60 - 30).toFixed(1);
+      const p = ifxImg(host, ifxSpr.cloud(i % 3), mx - s / 2, my - s * .43, s, s * .87);
+      const tr = (x, y, sc) => "translate(" + bnF(x) + "px," + bnF(y) + "px) rotate(" + rot + "deg) scale(" + sc + ")";
+      ifxAt(c, p, tot, [[te, { opacity: 0, transform: tr(0, 0, .14), easing: "cubic-bezier(.12,.7,.3,1)" }], [te + .55, { opacity: .95, transform: tr(dx * .78, dy * .78, 1.35) }],
+        [te + 1.4, { opacity: .7, transform: tr(dx, dy - rise, 2.1) }], [Math.min(tot - .05, te + 2.3), { opacity: 0, transform: tr(dx * 1.05, dy - rise * 1.9, 2.7) }]]);
     }
+    /* the haze it leaves over everything, then settling away */
+    const hz = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at " + bnF(tg.x / W * 100) + "% " + bnF(tg.y / H * 100) + "%, rgba(252,250,245,.9), rgba(244,240,232,.62) 45%, rgba(236,232,224,.3));opacity:0;");
+    ifxAt(c, hz, tot, [[T.on + .3, { opacity: 0 }], [T.on + 1.2, { opacity: .5 }], [T.off, { opacity: small ? .5 : .62 }], [T.off + .9, { opacity: .28 }], [Math.min(tot - .1, T.out + 1.1), { opacity: 0 }]]);
+    return T;
   };
-  if(scr) play(scr, c.vw, c.vh, false, c.box ? c.br : null);
+  let T = null;
+  if(scr) T = play(scr, c.vw, c.vh, false, c.box ? { x: c.br.left + c.br.width * .8, y: c.br.top + c.br.height * .5 } : null);
   if(bx){
-    if(c.boxOnly) play(bx, c.bw, c.bh, true, null);
+    if(c.boxOnly) T = play(bx, c.bw, c.bh, true, { x: c.p.x + c.p.w * .5, y: c.p.y + c.p.h * .5 });
     else {
-      /* in the box on a results screen: the dark, then red from above and green from below */
-      const d = ifxEl(bx, "left:0;top:0;width:" + c.bw + "px;height:" + c.bh + "px;background:#020306;opacity:0;");
-      ifxA(c, d, [{ opacity: 0 }, { opacity: .55, offset: .04 }, { opacity: .25, offset: .07 }, { opacity: .55, offset: .1 }, { opacity: .55, offset: .78 }, { opacity: 0, offset: .92 }, { opacity: 0 }], 4.9, 0);
-      ifxBoxWash(bx, c, "#FF3B30", [{ opacity: 0 }, { opacity: 0, offset: .27 }, { opacity: .7, offset: .33 }, { opacity: .6, offset: .78 }, { opacity: 0, offset: .94 }, { opacity: 0 }], 4.9, 0);
+      /* in the box: the cloud rolls over it (a whitening that comes up and lifts), then a glint */
+      const o = T || { on: .98, off: 3.25 };
+      const wh = ifxEl(bx, "left:0;top:0;width:" + c.bw + "px;height:" + c.bh + "px;background:radial-gradient(ellipse at 30% 60%, rgba(255,253,248,.95), rgba(244,240,232,.8));opacity:0;");
+      ifxAt(c, wh, 5.4, [[o.on + .35, { opacity: 0 }], [o.on + .9, { opacity: .55 }], [o.on + 1.5, { opacity: .82 }], [o.off - .1, { opacity: .78 }], [o.off + .55, { opacity: 0 }]]);
+      const gl = ifxEl(bx, "left:" + bnF(-c.bw * .4) + "px;top:0;width:" + bnF(c.bw * .4) + "px;height:" + c.bh + "px;background:linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.5) 50%, rgba(255,255,255,0));opacity:0;");
+      ifxAt(c, gl, 5.4, [[o.off + .35, { opacity: 0, transform: "translateX(0px)" }], [o.off + .45, { opacity: 1, transform: "translateX(" + bnF(c.bw * .2) + "px)" }], [o.off + 1.05, { opacity: 0, transform: "translateX(" + bnF(c.bw * 1.6) + "px)" }]]);
+      ifxBoxWash(bx, c, "#FF5A4F", [{ opacity: 0 }, { opacity: 0, offset: (o.off + .3) / 5.4 }, { opacity: .55, offset: (o.off + .55) / 5.4 }, { opacity: 0, offset: (o.off + 1.6) / 5.4 }, { opacity: 0 }], 5.4, 0);
     }
-    ifxLit(bx, c, "#F2FFF6", "#2ECC71", c.boxOnly ? 1.1 : 1.5, 2.4);
+    ifxLit(bx, c, "#FFFFFF", "#FF5A4F", (T ? T.off : 3.25) + (c.boxOnly ? .1 : .3), 2.2);
   }
 }
 
-/* ============ SPRINKLERS ============ */
+/* ============ SPRINKLERS (383, redone) ============
+   "The sprinklers is my favorite one but it could be better, the sprinkler water could look
+   better, the fire could look better." The fire: three depths of flame (a soft red-orange body,
+   a yellow heart, a white root), each flickering on its own beat, born from one spot and
+   spreading, embers rising out of it, smoke over it, the heat glowing on the room. The heads: the
+   bulbs burst in a spray of glass, the deflectors throw an umbrella of droplets that keeps
+   flying outward, rain falls in streaks and splashes on the floor, mist fills the room - and
+   the fire under each head is knocked down first, flame by flame, into steam. */
 function ifxSprinklers(scr, bx, c){
   const play = (host, W, H, small) => {
-    const t0 = small ? .1 : .15, open = small ? .9 : 1.25, out = small ? 2.4 : 3.3, end = small ? 3.6 : 5.0;
-    const nF = small ? 7 : Math.max(9, Math.round(W / 42)), fh = small ? H * .55 : Math.min(H * .26, 220);
-    /* the glow of the fire on everything, then gone */
-    const glow = ifxEl(host, "left:0;top:" + (H * .35) + "px;width:" + W + "px;height:" + (H * .65) + "px;background:linear-gradient(to top, rgba(255,110,30,.55), rgba(255,110,30,0));opacity:0;");
-    ifxA(c, glow, [{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: (out - t0) / (end - t0) * .7 }, { opacity: 0, offset: (out + .4 - t0) / (end - t0) }, { opacity: 0 }], end - t0, t0);
-    /* the flames, along the bottom: climbing, licking, then put out */
-    for(let i = 0; i < nF; i++){
-      const w = fh * (.45 + Math.random() * .25), h = fh * (.75 + Math.random() * .35), x = (i + .5) / nF * W - w / 2 + (Math.random() - .5) * 10;
-      const f = ifxImg(host, ifxSpr.flame(i % 2), x, H - h * .92, w, h, "transform-origin:50% 100%;");
-      const d0 = t0 + Math.random() * .25, life = out + Math.random() * .4 - d0;
-      ifxA(c, f, [{ opacity: 0, transform: "scale(.4, .1)" }, { opacity: 1, transform: "scale(1, 1)", offset: .14 }, { transform: "scale(.92, 1.12)", offset: .3 }, { transform: "scale(1.06, .9)", offset: .46 }, { transform: "scale(.95, 1.06)", offset: .62 }, { opacity: 1, transform: "scale(.9, .7)", offset: .78 }, { opacity: 0, transform: "scale(.5, .05)" }], life, d0, "ease-in-out");
+    const tot = small ? 4.6 : 6.3;
+    const S = small ? { pop: .8, knock: 1.4, off: 3.0 } : { pop: 1.15, knock: 1.9, off: 4.0 };
+    const fh = small ? H * .66 : Math.min(H * .27, W * .62, 280), floor = H + fh * .04;
+    const nH = small ? 2 : Math.max(3, Math.min(4, Math.round(W / 150))), hs = small ? Math.min(H * .3, 30) : Math.min(64, W * .15), gap = W / nH;
+    const headX = i => (i + .5) * gap;
+    const knockAt = (x, extra) => { const d = Math.min(...Array.from({ length: nH }, (_, i) => Math.abs(x - headX(i)))); return S.knock + d / (gap / 2) * (small ? .4 : .6) + Math.random() * .15 + (extra || 0); };
+    /* the heat on the room, flickering, then cooled to blue */
+    const heat = ifxEl(host, "left:0;top:" + bnF(H * .25) + "px;width:" + W + "px;height:" + bnF(H * .75) + "px;background:linear-gradient(to top, rgba(255,120,30,.66), rgba(255,90,20,.24) 42%, rgba(255,90,20,0));opacity:0;");
+    const hk = [[.05, { opacity: 0 }], [.6, { opacity: .85 }]];
+    for(let t = .78, i = 0; t < S.knock + .3; t += .17, i++) hk.push([t, { opacity: i % 2 ? .95 : .74 }]);
+    hk.push([S.knock + 1.2, { opacity: .14 }], [S.off, { opacity: 0 }]);
+    ifxAt(c, heat, tot, hk);
+    const cool = ifxEl(host, "left:0;top:" + bnF(H * .3) + "px;width:" + W + "px;height:" + bnF(H * .7) + "px;background:linear-gradient(to top, rgba(79,195,255,.32), rgba(79,195,255,0));opacity:0;");
+    ifxAt(c, cool, tot, [[S.knock + .2, { opacity: 0 }], [S.knock + 1.2, { opacity: 1 }], [S.off + .5, { opacity: .7 }], [tot - .2, { opacity: 0 }]]);
+    /* smoke over the fire, before the water */
+    for(let i = 0; i < (small ? 2 : 5); i++){
+      const s = fh * (small ? .9 : 1.1), x = (i + .5) / (small ? 2 : 5) * W - s / 2;
+      const p = ifxImg(host, ifxSpr.puff("#3A3330"), x, floor - fh * 1.25, s, s);
+      const d0 = .45 + i * .22;
+      ifxAt(c, p, tot, [[d0, { opacity: 0, transform: "translate(0px,0px) scale(.6)" }], [d0 + .8, { opacity: .5, transform: "translate(0px," + bnF(-fh * .4) + "px) scale(1.1)" }], [Math.min(S.knock + .9, d0 + 2.4), { opacity: 0, transform: "translate(" + bnF((Math.random() - .5) * 40) + "px," + bnF(-fh * 1.1) + "px) scale(1.7)" }]]);
     }
-    /* the heads along the top */
-    const nH = small ? 3 : Math.max(3, Math.min(5, Math.round(W / 110))), hs = small ? Math.min(28, H * .34) : Math.min(72, W * .16);
-    /* the red main they hang from */
-    const pipe = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + bnF(hs * .2) + "px;background:linear-gradient(#FF7A6A,#C0262A 60%,#7A0E12);box-shadow:0 2px 6px rgba(0,0,0,.4);opacity:0;");
-    ifxA(c, pipe, [{ opacity: 0, transform: "translateY(-100%)" }, { opacity: 1, transform: "none", offset: .1 }, { opacity: 1, offset: .9 }, { opacity: 0, transform: "translateY(-100%)" }], end - t0, t0, "ease-out");
+    /* the flames: back, middle and front rows */
+    const x0 = W * (.3 + Math.random() * .4);
+    const rows = small ? [[5, .95, .7, .3], [5, .76, 1, 0], [3, .5, 1, -.1]] : [[Math.min(9, Math.max(6, Math.round(W / 70))), 1, .72, .3], [Math.min(11, Math.max(7, Math.round(W / 56))), .8, 1, 0], [Math.min(6, Math.max(4, Math.round(W / 96))), .5, 1, -.1]];
+    const steamAt = [];
+    /* the bed of it along the floor, tying the flames together */
+    const bed = ifxEl(host, "left:0;top:" + bnF(floor - fh * .34) + "px;width:" + W + "px;height:" + bnF(fh * .34) + "px;background:linear-gradient(to top, rgba(255,236,170,.95), rgba(255,170,60,.88) 24%, rgba(255,96,28,.5) 60%, rgba(255,80,20,0));transform-origin:50% 100%;opacity:0;");
+    const bk = [[.05, { opacity: 0, transform: "scaleY(.1)", easing: IFX_OUT }], [.75, { opacity: 1, transform: "scaleY(1)" }]];
+    for(let t = .95, i = 0; t < S.knock + .3; t += .21, i++) bk.push([t, { opacity: 1, transform: "scaleY(" + (i % 2 ? 1.08 : .92) + ")" }]);
+    bk.push([S.knock + 1.2, { opacity: 0, transform: "scaleY(.15)" }]);
+    ifxAt(c, bed, tot, bk);
+    rows.forEach(([n, sf, op, late], r) => {
+      for(let i = 0; i < n; i++){
+        const h = fh * sf * (r === 2 ? .62 + Math.random() * .6 : .82 + Math.random() * .32), w = h * (.48 + Math.random() * .1), x = (i + .5 + (Math.random() - .5) * (r === 2 ? .8 : .5)) / n * W;
+        const born = .05 + Math.abs(x - x0) / W * .75 + Math.random() * .12, kn = knockAt(x, late * .5);
+        const wr = ifxEl(host, "left:" + bnF(x - w / 2) + "px;top:" + bnF(floor - h) + "px;width:" + bnF(w) + "px;height:" + bnF(h) + "px;transform-origin:50% 100%;opacity:0;");
+        const f = ifxImg(wr, ifxSpr.flame((i + r) % 4), 0, 0, w, h, "opacity:1;transform-origin:50% 100%;");
+        ifxAt(c, wr, tot, [[born, { opacity: 0, transform: "scale(.4,.06)", easing: IFX_OUT }], [born + .55, { opacity: op, transform: "scale(1,1)" }],
+          [kn - .14, { opacity: op, transform: "scale(1.06,1.14)", easing: IFX_IN }], [kn + .28, { opacity: op * .75, transform: "scale(.78,.42)" }], [kn + .72, { opacity: 0, transform: "scale(.45,.04)" }]]);
+        const per = .42 + Math.random() * .34, sk = () => ((Math.random() - .5) * 9).toFixed(1);
+        ifxA(c, f, [{ transform: "scale(1,1) skewX(0deg)" }, { transform: "scale(.93,1.1) skewX(" + sk() + "deg)", offset: .27 }, { transform: "scale(1.05,.93) skewX(" + sk() + "deg)", offset: .55 },
+          { transform: "scale(.97,1.05) skewX(" + sk() + "deg)", offset: .8 }, { transform: "scale(1,1) skewX(0deg)" }], per, born + Math.random() * per, "ease-in-out", { iterations: Math.max(1, Math.ceil((kn + .8 - born) / per)) });
+        if(r === 1 && i % (small ? 1 : 1) === 0) steamAt.push([x, kn]);
+      }
+    });
+    /* embers rising out of it */
+    for(let i = 0; i < (small ? 5 : 12); i++){
+      const s = (small ? 3 : 5) + Math.random() * (small ? 3 : 5), x = Math.random() * W, y = floor - fh * (.45 + Math.random() * .4);
+      const e = ifxImg(host, ifxSpr.glow("#FFB347"), x - s / 2, y - s / 2, s, s);
+      const d = 1.1 + Math.random() * .7, dl = .35 + Math.random() * 1.0, dx = (Math.random() - .5) * fh * .5, dy = -fh * (.8 + Math.random() * .9);
+      ifxA(c, e, [{ opacity: 0, transform: "translate(0px,0px)" }, { opacity: 1, offset: .15 }, { opacity: .9, transform: "translate(" + bnF(dx * .5) + "px," + bnF(dy * .55) + "px)", offset: .55 }, { opacity: 0, transform: "translate(" + bnF(dx) + "px," + bnF(dy) + "px)" }],
+        d, dl, "linear", { iterations: Math.max(1, Math.floor((S.knock + .5 - dl) / d)) });
+    }
+    /* the main along the ceiling */
+    const pipe = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + bnF(hs * .2) + "px;background:linear-gradient(#FF8A7A,#C8262A 55%,#6A0A0E);box-shadow:0 2px 6px rgba(0,0,0,.45);opacity:0;");
+    ifxAt(c, pipe, tot, [[.1, { opacity: 0, transform: "translateY(-100%)", easing: IFX_OUT }], [.5, { opacity: 1, transform: "translateY(0%)" }], [tot - .7, { opacity: 1, transform: "translateY(0%)" }], [tot - .1, { opacity: 0, transform: "translateY(-100%)" }]]);
+    /* the heads: burst, spray, rain, mist */
+    const sw = small ? W * .62 : Math.min(gap * 1.9, 470), sh = sw * .65, defl = hs * .86;
     for(let i = 0; i < nH; i++){
-      const x = (i + .5) / nH * W, dl = open + i * .08;
-      const hd = ifxImg(host, ifxSpr.head(), x - hs / 2, -hs * .1, hs, hs);
-      ifxA(c, hd, [{ opacity: 0, transform: "translateY(" + (-hs) + "px)" }, { opacity: 1, transform: "none", offset: .12 }, { opacity: 1, offset: .9 }, { opacity: 0, transform: "translateY(" + (-hs) + "px)" }], end - t0, t0 + .1, "ease-out");
-      /* the bulb going: a pop of red glass */
-      const pop = ifxImg(host, ifxSpr.glow("#FF5A4A"), x - hs * .5, hs * .2, hs, hs);
-      ifxA(c, pop, [{ opacity: 0, transform: "scale(.2)" }, { opacity: 1, transform: "scale(1.2)", offset: .3 }, { opacity: 0, transform: "scale(1.6)" }], .45, dl, "ease-out");
-      /* the water: drops in a cone, falling in waves */
-      /* the cone of it, a soft body of water under each head */
-      const cone = ifxImg(host, ifxSpr.beam("#BFE6FF"), x - H * .3, hs * .7, H * .6, H * 1.05, "transform-origin:50% 0;");
-      ifxA(c, cone, [{ opacity: 0, transform: "scale(.2, .1)" }, { opacity: .75, transform: "scale(1, 1)", offset: .12 }, { opacity: .6, offset: .8 }, { opacity: 0 }], out + 1 - dl, dl + .05, "ease-out");
-      const nD = small ? 10 : 34, dropH = small ? 12 : 40, dropW = dropH * .22;
-      for(let j = 0; j < nD; j++){
-        const ang = (-.6 + 1.2 * (j % 13) / 12) + (Math.random() - .5) * .08, dist = H * (.9 + Math.random() * .3);
-        const dx = Math.sin(ang) * dist, dy = Math.cos(ang) * dist;
-        const dr = ifxImg(host, ifxSpr.drop(), x - dropW / 2, hs * .75, dropW, dropH, "transform-origin:50% 0;");
-        const rep = small ? 2 : 3, period = small ? .55 : .7;
-        ifxA(c, dr, [{ opacity: 0, transform: "translate(0,0) rotate(" + (-ang * 57.3) + "deg)" }, { opacity: .95, offset: .12 }, { opacity: .9, offset: .7 }, { opacity: 0, transform: "translate(" + bnF(dx) + "px," + bnF(dy) + "px) rotate(" + (-ang * 57.3) + "deg)" }],
-          period, dl + .05 + (j / nD) * period, "cubic-bezier(.4,.1,.8,.6)", { iterations: rep + (out + .6 - dl) / period | 0 });
+      const x = headX(i), pop = S.pop + i * .09;
+      const hd = ifxImg(host, ifxSpr.head(), x - hs / 2, -hs * .04, hs, hs);
+      const bl = ifxImg(host, ifxSpr.bulb(), x - hs / 2, -hs * .04, hs, hs);
+      const inK = [[.15 + i * .04, { opacity: 0, transform: "translateY(" + bnF(-hs) + "px)", easing: IFX_OUT }], [.55 + i * .04, { opacity: 1, transform: "translateY(0px)" }], [tot - .7, { opacity: 1, transform: "translateY(0px)" }], [tot - .1, { opacity: 0, transform: "translateY(" + bnF(-hs) + "px)" }]];
+      ifxAt(c, hd, tot, inK);
+      ifxAt(c, bl, tot, inK.slice(0, 2).concat([[pop, { opacity: 1, transform: "translateY(0px)" }], [pop + .03, { opacity: 0, transform: "translateY(0px)" }]]));
+      const sd = hs * 1.6, sk = ifxImg(host, ifxSpr.shards(), x - sd / 2, hs * .48 - sd / 2, sd, sd);
+      ifxAt(c, sk, tot, [[pop, { opacity: 0, transform: "translateY(0px) scale(.3)" }], [pop + .03, { opacity: 1, transform: "translateY(0px) scale(.6)", easing: IFX_OUT }], [pop + .5, { opacity: 0, transform: "translateY(" + bnF(hs * .5) + "px) scale(1.6)" }]]);
+      const pg = ifxImg(host, ifxSpr.glow("#FF5A4A"), x - hs * .7, hs * .48 - hs * .7, hs * 1.4, hs * 1.4);
+      ifxAt(c, pg, tot, [[pop, { opacity: 0, transform: "scale(.3)" }], [pop + .06, { opacity: 1, transform: "scale(1)" }], [pop + .45, { opacity: 0, transform: "scale(1.5)" }]]);
+      /* the umbrella: a steady body, and two copies flying outward from the plate on a loop */
+      const sy = defl - sh * 4 / 260;
+      const base = ifxImg(host, ifxSpr.spray(i % 2), x - sw / 2, sy, sw, sh, "transform-origin:50% 0;");
+      ifxAt(c, base, tot, [[pop + .02, { opacity: 0, transform: "scale(.15,.1)", easing: IFX_OUT }], [pop + .26, { opacity: .6, transform: "scale(1,1)" }], [S.off, { opacity: .55, transform: "scale(1,1)" }], [S.off + .5, { opacity: 0, transform: "scale(.9,.8)" }]]);
+      const per = small ? .44 : .52;
+      for(let j = 0; j < 2; j++){
+        const pl = ifxImg(host, ifxSpr.spray((i + j + 1) % 2), x - sw / 2, sy, sw, sh, "transform-origin:50% 0;");
+        const dl = pop + .08 + j * per / 2;
+        ifxA(c, pl, [{ opacity: 0, transform: "scale(.5)" }, { opacity: .95, transform: "scale(.8)", offset: .3 }, { opacity: 0, transform: "scale(1.16)" }], per, dl, "linear", { iterations: Math.max(1, Math.floor((S.off - dl) / per)) });
       }
-      /* a mist of it round each head */
-      const mist = ifxImg(host, ifxSpr.puff("#DFF6FF"), x - hs * 1.6, hs * .2, hs * 3.2, hs * 2.4);
-      ifxA(c, mist, [{ opacity: 0 }, { opacity: .7, offset: .15 }, { opacity: .6, offset: .75 }, { opacity: 0 }], out + 1 - dl, dl);
+      /* rain out of it, in streaks, spreading as it falls */
+      const nR = small ? 4 : Math.round(36 / nH), rw = small ? 16 : 30;
+      for(let j = 0; j < nR; j++){
+        const u = (j + .5) / nR * 2 - 1 + (Math.random() - .5) * .2, rx = x + u * sw * .4, ry = defl + sh * (.22 + (1 - u * u) * .2);
+        const fall = H - ry + rw * 3, d = (small ? .4 : .58) + Math.random() * .16, dl = pop + .12 + Math.random() * .45;
+        const rn = ifxImg(host, ifxSpr.rain((i + j) % 3), rx - rw / 2, ry - rw * 3, rw, rw * 3);
+        const tilt = (u * 7).toFixed(1);
+        ifxA(c, rn, [{ opacity: 0, transform: "translate(0px,0px) rotate(" + tilt + "deg)" }, { opacity: .95, offset: .12 }, { opacity: .9, offset: .85 }, { opacity: 0, transform: "translate(" + bnF(-u * fall * .12) + "px," + bnF(fall) + "px) rotate(" + tilt + "deg)" }],
+          d, dl, "cubic-bezier(.45,.1,.85,.7)", { iterations: Math.max(1, Math.floor((S.off + .25 - dl) / d)) });
+      }
+      /* mist round the head and down */
+      const mi = ifxImg(host, ifxSpr.puff("#DFF6FF"), x - sw * .45, defl - sw * .12, sw * .9, sw * .75);
+      ifxAt(c, mi, tot, [[pop + .1, { opacity: 0, transform: "scale(.4)" }], [pop + .9, { opacity: .5, transform: "scale(1)" }], [S.off, { opacity: .4, transform: "scale(1.1)" }], [S.off + 1, { opacity: 0, transform: "scale(1.35)" }]]);
+      /* and the last drips off the head */
+      for(let j = 0; j < 1; j++){
+        const dh = small ? 10 : 22, dr = ifxImg(host, ifxSpr.drop(), x - dh * .14 + (j - .5) * hs * .3, defl, dh * .27, dh);
+        const t0 = S.off + .25 + j * .35 + i * .1;
+        ifxAt(c, dr, tot, [[t0, { opacity: 0, transform: "translateY(0px)", easing: "cubic-bezier(.5,0,.9,.5)" }], [t0 + .06, { opacity: .95, transform: "translateY(2px)" }], [t0 + .7, { opacity: 0, transform: "translateY(" + bnF(H * .55) + "px)" }]]);
+      }
     }
-    /* steam where the fire was */
-    const nS = small ? 5 : Math.max(6, Math.round(W / 70));
-    for(let i = 0; i < nS; i++){
-      const s = small ? H * .5 : Math.min(H * .22, 180), x = (i + .5) / nS * W - s / 2;
-      const p = ifxImg(host, ifxSpr.puff("#E8EEF2"), x, H - s * .8, s, s);
-      ifxA(c, p, [{ opacity: 0, transform: "translateY(0) scale(.5)" }, { opacity: .85, offset: .2 }, { opacity: 0, transform: "translateY(" + (-H * (small ? .5 : .35)) + "px) scale(1.6)" }], small ? 1.6 : 2.2, out - .5 + Math.random() * .6, "ease-out");
+    /* the room hazed with spray, a wet sheen on the floor, splashes */
+    const room = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:rgba(214,236,250,.16);opacity:0;");
+    ifxAt(c, room, tot, [[S.pop + .3, { opacity: 0 }], [S.pop + 1.2, { opacity: 1 }], [S.off + .6, { opacity: .6 }], [tot - .2, { opacity: 0 }]]);
+    const sheen = ifxEl(host, "left:0;top:" + bnF(H - fh * .16) + "px;width:" + W + "px;height:" + bnF(fh * .16) + "px;background:linear-gradient(to top, rgba(205,238,255,.4), rgba(205,238,255,0));opacity:0;");
+    ifxAt(c, sheen, tot, [[S.pop + .5, { opacity: 0 }], [S.knock + 1.1, { opacity: 1 }], [tot - .3, { opacity: 0 }]]);
+    for(let i = 0; i < (small ? 4 : 10); i++){
+      const sp = (small ? 20 : 46) * (.8 + Math.random() * .4), x = Math.random() * W, y = H - sp * .5 - Math.random() * fh * .14;
+      const s = ifxImg(host, ifxSpr.splash(), x - sp / 2, y - sp * .45, sp, sp * 32 / 60, "transform-origin:50% 85%;");
+      const d = .4 + Math.random() * .16, dl = S.pop + .5 + Math.random() * .5;
+      ifxA(c, s, [{ opacity: 0, transform: "scale(.3)" }, { opacity: .95, transform: "scale(.8)", offset: .25 }, { opacity: 0, transform: "scale(1.15)" }], d, dl, "ease-out", { iterations: Math.max(1, Math.floor((S.off + .3 - dl) / d)) });
     }
+    /* steam where each flame went out */
+    steamAt.forEach(([x, kn]) => {
+      const s = fh * (small ? .8 : .75), p = ifxImg(host, ifxSpr.puff("#E8EEF2"), x - s / 2, floor - fh * .55 - s / 2, s, s);
+      ifxAt(c, p, tot, [[kn, { opacity: 0, transform: "translate(0px,0px) scale(.5)", easing: IFX_OUT }], [kn + .4, { opacity: .8, transform: "translate(0px," + bnF(-fh * .3) + "px) scale(1.05)" }],
+        [Math.min(tot - .05, kn + 2.0), { opacity: 0, transform: "translate(" + bnF((Math.random() - .5) * fh * .4) + "px," + bnF(-fh * 1.3) + "px) scale(1.9)" }]]);
+    });
+    return S;
   };
-  if(scr) play(scr, c.vw, c.vh, false);
+  let S = null;
+  if(scr) S = play(scr, c.vw, c.vh, false);
   if(bx){
-    if(c.boxOnly) play(bx, c.bw, c.bh, true);
+    if(c.boxOnly) S = play(bx, c.bw, c.bh, true);
     else {
-      /* on the box: the water running down it and its fire-glow going blue */
-      ifxBoxWash(bx, c, "#FF8A3D", [{ opacity: 0 }, { opacity: .6, offset: .1 }, { opacity: .5, offset: .3 }, { opacity: 0, offset: .45 }, { opacity: 0 }], 4.6, .1);
-      ifxBoxWash(bx, c, "#4FC3FF", [{ opacity: 0 }, { opacity: 0, offset: .24 }, { opacity: .55, offset: .4 }, { opacity: .4, offset: .8 }, { opacity: 0 }], 4.6, .1);
+      /* on the box: the fire's glow, then the water running down it and the blue */
+      const o = S || { pop: 1.15, knock: 1.9, off: 4.0 }, D = 6.3, f = t => Math.max(0, Math.min(1, t / D));
+      ifxBoxWash(bx, c, "#FF8A3D", [{ opacity: 0 }, { opacity: .55, offset: f(.6) }, { opacity: .45, offset: f(o.knock) }, { opacity: 0, offset: f(o.knock + 1) }, { opacity: 0 }], D, 0);
+      ifxBoxWash(bx, c, "#4FC3FF", [{ opacity: 0 }, { opacity: 0, offset: f(o.knock) }, { opacity: .55, offset: f(o.knock + 1) }, { opacity: .4, offset: f(o.off + .5) }, { opacity: 0 }], D, 0);
       for(let j = 0; j < 14; j++){
-        const x = Math.random() * c.bw, h = 10 + Math.random() * 12;
+        const x = Math.random() * c.bw, h = 12 + Math.random() * 14;
         const d = ifxImg(bx, ifxSpr.drop(), x, -h, h * .27, h);
-        ifxA(c, d, [{ opacity: 0, transform: "translateY(0)" }, { opacity: .9, offset: .15 }, { opacity: 0, transform: "translateY(" + (c.bh + h * 2) + "px)" }], .7 + Math.random() * .4, 1.3 + Math.random() * 2.2, "ease-in");
+        ifxA(c, d, [{ opacity: 0, transform: "translateY(0px)" }, { opacity: .9, offset: .15 }, { opacity: 0, transform: "translateY(" + bnF(c.bh + h * 2) + "px)" }], .65 + Math.random() * .4, o.pop + .4 + Math.random() * (o.off - o.pop - .6), "ease-in");
       }
     }
-    ifxLit(bx, c, "#F2FCFF", "#4FC3FF", c.boxOnly ? 1.0 : 1.4, 2.4);
+    ifxLit(bx, c, "#F2FCFF", "#4FC3FF", c.boxOnly ? 1.4 : ((S ? S.knock : 1.9) + .5), 2.4);
   }
 }
 
-/* ============ HAZMAT ============ */
+/* ============ HAZMAT (383, redone) ============
+   "The hazmat one could be so much cooler." A spill, handled: the room's edges pulse amber,
+   hazard bands slam in top and bottom, a green vapour rolls along the floor; an NFPA 704 diamond
+   flies together out of its four colours and slams shut with a shockwave (it reads 1-0-0, the
+   hundo); a containment scan sweeps the screen, leaving a mesh behind it, and brackets lock onto
+   the box - CONTAINED; a responder in an encapsulating suit steps in and decons it all, and it
+   is clear. */
 function ifxHazmat(scr, bx, c){
-  const play = (host, W, H, small) => {
-    const up = small ? .5 : .7, upD = small ? 1.1 : 1.5, foam = small ? 2.1 : 2.9, drain = small ? 3.0 : 4.1, drainD = small ? .9 : 1.2;
-    const total = drain + drainD + .2;
-    /* caution tape, top and bottom, sliding */
-    const th = small ? Math.max(8, H * .12) : Math.min(30, H * .035);
-    [0, 1].forEach(k => {
-      const t = ifxImg(host, ifxSpr.tape(), 0, k ? H - th : 0, W * 2, th);
-      ifxA(c, t, [{ opacity: 0, transform: "translateX(" + (k ? -W : 0) + "px)" }, { opacity: 1, offset: .08 }, { opacity: 1, offset: .9 }, { opacity: 0, transform: "translateX(" + (k ? 0 : -W) + "px)" }], total, .05);
+  const play = (host, W, H, small, lock) => {
+    const tot = small ? 4.6 : 6.0;
+    const T = small ? { quads: .2, slam: .72, scan: .95, scanD: .75, lock: 1.6, dOut: 1.9, suit: 1.6, decon: 1.9, clear: 3.0, out: 3.35 } : { quads: .36, slam: 1.1, scan: 1.4, scanD: 1.0, lock: 2.25, dOut: 2.55, suit: 2.6, decon: 2.95, clear: 4.1, out: 4.5 };
+    /* the alert: amber at the edges, twice, then a glow held */
+    const al = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.edge("rgba(245,197,24,.6)") + ";opacity:0;");
+    ifxAt(c, al, tot, [[0, { opacity: 0 }], [.1, { opacity: .95 }], [.36, { opacity: .25 }], [.56, { opacity: .9 }], [.9, { opacity: .3 }], [T.clear, { opacity: .2 }], [T.clear + .5, { opacity: 0 }]]);
+    /* the bands: in from opposite sides, creeping, out the other way */
+    const bh = small ? Math.max(8, H * .12) : Math.min(34, H * .036), tile = bh * 4;
+    [0, 1].forEach(b => {
+      const el = ifxEl(host, "left:" + bnF(-tile * 2) + "px;top:" + bnF(b ? H - bh : 0) + "px;width:" + bnF(W + tile * 4) + "px;height:" + bnF(bh) + "px;background:" + ifxSpr.stripe() + " 0 0/" + bnF(tile) + "px " + bnF(bh) + "px repeat-x;box-shadow:0 " + (b ? -2 : 2) + "px 10px rgba(0,0,0,.45);opacity:0;");
+      const s = b ? 1 : -1;
+      ifxAt(c, el, tot, [[.05 + b * .08, { opacity: 1, transform: "translateX(" + bnF(s * (W + tile * 2)) + "px)", easing: IFX_OUT }], [.42 + b * .08, { opacity: 1, transform: "translateX(0px)" }],
+        [T.clear + .1, { opacity: 1, transform: "translateX(" + bnF(-s * tile * 1.2) + "px)", easing: IFX_IN }], [T.out, { opacity: 1, transform: "translateX(" + bnF(-s * (W + tile * 2)) + "px)" }], [T.out + .01, { opacity: 0, transform: "translateX(" + bnF(-s * (W + tile * 2)) + "px)" }]]);
     });
-    /* the placard drops, turns to its diamond and hangs */
-    const ps = small ? H * .5 : Math.min(W * .36, 170);
-    const pl = ifxImg(host, ifxSpr.placard(), W * (small ? .82 : .5) - ps / 2, small ? H * .2 : H * .1, ps, ps);
-    ifxA(c, pl, [{ opacity: 0, transform: "translateY(-60%) rotate(-90deg) scale(.6)" }, { opacity: 1, transform: "translateY(4%) rotate(8deg) scale(1)", offset: .12 }, { transform: "translateY(0) rotate(0)", offset: .18 }, { opacity: 1, offset: .72 }, { opacity: 0, transform: "translateY(-10%) scale(.9)", offset: .85 }, { opacity: 0 }], total, .1, "ease-out");
-    /* the green coming up */
-    const lvl = small ? H * .3 : H * .42;
-    const oz = ifxImg(host, ifxSpr.ooze(), -W * .05, H - lvl, W * 1.1, lvl * 1.4, "opacity:1;");
-    ifxA(c, oz, [{ transform: "translateY(" + (lvl * 1.1) + "px)" }, { transform: "translateY(0)", offset: (upD / (total - up)) }, { transform: "translateY(" + (lvl * .06) + "px)", offset: ((drain - up) / (total - up)) }, { transform: "translateY(" + (lvl * 1.2) + "px)" }], total - up, up, "ease-in-out");
-    const gl = ifxEl(host, "left:0;top:" + (H * .3) + "px;width:" + W + "px;height:" + (H * .7) + "px;background:linear-gradient(to top, rgba(120,240,60,.5), rgba(120,240,60,0));opacity:0;");
-    ifxA(c, gl, [{ opacity: 0 }, { opacity: 1, offset: .3 }, { opacity: .6, offset: .45 }, { opacity: 1, offset: .6 }, { opacity: 0 }], total - up, up);
-    /* bubbles rising in it and popping at its top */
-    const nB = small ? 8 : Math.max(14, Math.round(W / 26));
-    for(let i = 0; i < nB; i++){
-      const s = (small ? 6 : 12) + Math.random() * (small ? 8 : 18), x = Math.random() * W;
-      const b = ifxImg(host, ifxSpr.bubble(), x, H, s, s);
-      const dl = up + upD * .4 + Math.random() * (foam - up - upD * .4);
-      ifxA(c, b, [{ opacity: 0, transform: "translate(0,0)" }, { opacity: 1, offset: .15 }, { opacity: 1, transform: "translate(" + bnF((Math.random() - .5) * 20) + "px," + bnF(-lvl * (.75 + Math.random() * .25)) + "px) scale(1)", offset: .9 }, { opacity: 0, transform: "translate(0," + bnF(-lvl * .95) + "px) scale(1.5)" }], .9 + Math.random() * .6, dl, "ease-in");
-    }
-    /* the foam blanket rolling over it from both sides */
-    const fhh = small ? H * .3 : W * .31, fw = fhh * 2;
-    [0, 1].forEach(k => {
-      for(let r = 0; r < 2; r++){
-        const f = ifxImg(host, ifxSpr.foam(), k ? W - fw * .9 : -fw * .1, H - lvl - fhh * .35 + r * fhh * .5, fw, fhh);
-        ifxA(c, f, [{ opacity: 0, transform: "translateX(" + (k ? fw : -fw) + "px) scale(.6)" }, { opacity: 1, transform: "translateX(0) scale(1)", offset: .35 }, { opacity: 1, transform: "translateX(0) scale(1.05)", offset: .6 }, { opacity: 0, transform: "translateY(" + (lvl * 1.1) + "px) scale(1)" }], drain + drainD - foam, foam + r * .15, "ease-out");
+    /* the vapour along the floor */
+    const vh = small ? H * .7 : Math.min(H * .24, 260);
+    [0, 1].forEach(v => {
+      const el = ifxImg(host, ifxSpr.vapor(), -W * .15, H - vh * .9, W * 1.3, vh);
+      const s = v ? 1 : -1, fl = v ? " scaleX(-1)" : "";
+      ifxAt(c, el, tot, [[.15 + v * .15, { opacity: 0, transform: "translateX(" + bnF(-s * W * .35) + "px)" + fl, easing: IFX_OUT }], [1.3 + v * .2, { opacity: .62, transform: "translateX(0px)" + fl }],
+        [T.decon + .3, { opacity: .58, transform: "translateX(" + bnF(s * W * .04) + "px)" + fl, easing: "ease-in" }], [T.clear, { opacity: 0, transform: "translateX(" + bnF(s * W * .25) + "px)" + fl }]]);
+    });
+    /* the diamond: four quarters fly in and slam together */
+    const R = small ? H * .44 : Math.min(W * .3, H * .15, 150), dcx = small ? W * .84 : W / 2, dcy = small ? H * .5 : Math.min(H * .62, (lock ? lock.bottom : H * .4) + R * 1.55);
+    const gw = ifxImg(host, ifxSpr.glow("#F5C518"), dcx - R * 1.7, dcy - R * 1.7, R * 3.4, R * 3.4);
+    ifxAt(c, gw, tot, [[T.slam, { opacity: 0, transform: "scale(.5)" }], [T.slam + .1, { opacity: .95, transform: "scale(1.05)" }], [T.slam + .9, { opacity: .38, transform: "scale(1)" }], [T.dOut + .4, { opacity: 0, transform: "scale(.8)" }]]);
+    const rg = ifxImg(host, ifxSpr.ring("#F5C518"), dcx - R * 1.2, dcy - R * 1.2, R * 2.4, R * 2.4);
+    ifxAt(c, rg, tot, [[T.slam, { opacity: 0, transform: "scale(.45)" }], [T.slam + .05, { opacity: 1, transform: "scale(.6)", easing: IFX_OUT }], [T.slam + .65, { opacity: 0, transform: "scale(2)" }]]);
+    const dia = ifxEl(host, "left:" + bnF(dcx - R) + "px;top:" + bnF(dcy - R) + "px;width:" + bnF(R * 2) + "px;height:" + bnF(R * 2) + "px;transform-origin:50% 50%;");
+    ifxAt(c, dia, tot, [[T.slam - .01, { opacity: 1, transform: "scale(1) rotate(0deg)" }], [T.slam + .05, { opacity: 1, transform: "scale(1.08) rotate(0deg)", easing: IFX_OUT }], [T.slam + .35, { opacity: 1, transform: "scale(1) rotate(0deg)" }],
+      [T.dOut, { opacity: 1, transform: "scale(1) rotate(0deg)", easing: IFX_IN }], [T.dOut + .4, { opacity: 0, transform: "scale(.6) rotate(-25deg)" }]]);
+    [[0, -1], [1, 0], [0, 1], [-1, 0]].forEach(([ox, oy], q) => {
+      const el = ifxImg(dia, ifxSpr.quad(q), R + ox * R / 2 - R / 2, R + oy * R / 2 - R / 2, R, R);
+      const far = Math.max(W, H) * .65, at = T.slam - (3 - q) * .07, rot = q % 2 ? 120 : -120;
+      ifxAt(c, el, tot, [[T.quads + q * .07, { opacity: 0, transform: "translate(" + bnF(ox * far) + "px," + bnF(oy * far) + "px) rotate(" + rot + "deg) scale(1.5)", easing: "cubic-bezier(.2,.8,.3,1)" }],
+        [T.quads + q * .07 + .08, { opacity: 1, transform: "translate(" + bnF(ox * far * .7) + "px," + bnF(oy * far * .7) + "px) rotate(" + (rot * .7) + "deg) scale(1.35)" }], [at, { opacity: 1, transform: "translate(0px,0px) rotate(0deg) scale(1)" }]]);
+    });
+    const fl = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at " + bnF(dcx / W * 100) + "% " + bnF(dcy / H * 100) + "%, rgba(255,246,210,.55), rgba(255,246,210,.08) 70%);opacity:0;");
+    ifxAt(c, fl, tot, [[T.slam, { opacity: 0 }], [T.slam + .04, { opacity: 1 }], [T.slam + .4, { opacity: 0 }]]);
+    /* the scan: a line of light down the screen, the mesh revealed behind it */
+    const sh = small ? H * .35 : H * .13;
+    const win = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;overflow:hidden;");
+    const mesh = ifxEl(win, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.hex() + " 0 0/" + bnF(small ? 17 : 34.6) + "px " + bnF(small ? 15 : 30) + "px repeat;opacity:.3;");
+    ifxAt(c, win, tot, [[T.scan, { transform: "translateY(" + bnF(-H) + "px)" }], [T.scan + T.scanD, { transform: "translateY(0px)" }]]);
+    ifxAt(c, mesh, tot, [[T.scan, { opacity: .32, transform: "translateY(" + bnF(H) + "px)" }], [T.scan + T.scanD, { opacity: .32, transform: "translateY(0px)" }], [T.decon + .2, { opacity: .25, transform: "translateY(0px)" }], [T.clear, { opacity: 0, transform: "translateY(0px)" }]]);
+    const beam = ifxImg(host, ifxSpr.scan(), 0, -sh, W, sh);
+    ifxAt(c, beam, tot, [[T.scan, { opacity: 1, transform: "translateY(0px)" }], [T.scan + T.scanD, { opacity: 1, transform: "translateY(" + bnF(H) + "px)" }], [T.scan + T.scanD + .2, { opacity: 0, transform: "translateY(" + bnF(H + sh) + "px)" }]]);
+    /* the lock on the box */
+    if(lock){
+      const bs = small ? 12 : 30, pad = small ? 2 : 8, L = lock.left - pad, Tp = lock.top - pad, Rt = lock.right + pad, B = lock.bottom + pad;
+      [[L, Tp, 0, -1, -1], [Rt - bs, Tp, 90, 1, -1], [Rt - bs, B - bs, 180, 1, 1], [L, B - bs, 270, -1, 1]].forEach(([x, y, rr, sx, sy], i) => {
+        const el = ifxImg(host, ifxSpr.bracket(), x, y, bs, bs);
+        const tr = (d, s) => "translate(" + bnF(sx * d) + "px," + bnF(sy * d) + "px) rotate(" + rr + "deg) scale(" + s + ")";
+        ifxAt(c, el, tot, [[T.lock - .32 + i * .03, { opacity: 0, transform: tr(46, 1.5), easing: IFX_BACK }], [T.lock + i * .03, { opacity: 1, transform: tr(0, 1) }], [T.lock + .12, { opacity: 1, transform: tr(-3, 1.08) }], [T.lock + .3, { opacity: 1, transform: tr(0, 1) }],
+          [T.clear - .1, { opacity: 1, transform: tr(0, 1), easing: IFX_IN }], [T.clear + .3, { opacity: 0, transform: tr(30, 1.2) }]]);
+      });
+      if(!small){
+        const tw = Math.min(W * .5, 210), th = tw * .2, tag = ifxImg(host, ifxSpr.tag(), (L + Rt) / 2 - tw / 2, B + 10, tw, th, "transform-origin:50% 0;");
+        ifxAt(c, tag, tot, [[T.lock + .1, { opacity: 0, transform: "translateY(-8px) scale(.85)", easing: IFX_BACK }], [T.lock + .38, { opacity: 1, transform: "translateY(0px) scale(1)" }], [T.clear, { opacity: 1, transform: "translateY(0px) scale(1)" }], [T.clear + .35, { opacity: 0, transform: "translateY(-6px) scale(.95)" }]]);
       }
-    });
+    }
+    /* decon: the responder steps in (not in a small box) and sprays it all down */
+    const suitH = small ? 0 : Math.min(H * .4, W * .92, 420), suitW = suitH * 200 / 360;
+    const mx0 = small ? W * 1.02 : W - suitW * .97 + 14 / 200 * suitW, my0 = small ? H * .5 : H - suitH * .97 + 225 / 360 * suitH;
+    if(!small){
+      const st = ifxImg(host, ifxSpr.suit(), W - suitW * .97, H - suitH * .97, suitW, suitH);
+      ifxAt(c, st, tot, [[T.suit, { opacity: 0, transform: "translateX(" + bnF(suitW * .5) + "px)", easing: IFX_OUT }], [T.suit + .55, { opacity: 1, transform: "translateX(0px)" }],
+        [T.clear + .15, { opacity: 1, transform: "translateX(0px)", easing: IFX_IN }], [T.out + .3, { opacity: 0, transform: "translateX(" + bnF(suitW * .6) + "px)" }]]);
+      const gs = suitW * .5, gx = W - suitW * .97 + 112 / 200 * suitW, gy = H - suitH * .97 + 60 / 360 * suitH;
+      const gl = ifxImg(host, ifxSpr.glow("#FFFFFF"), gx - gs / 2, gy - gs / 2, gs, gs);
+      ifxAt(c, gl, tot, [[T.suit + .5, { opacity: 0, transform: "scale(.4)" }], [T.suit + .62, { opacity: .9, transform: "scale(1)" }], [T.suit + 1.0, { opacity: 0, transform: "scale(.7)" }]]);
+    }
+    const ml = small ? W * .95 : W * 1.1, mh = ml * .42, dir = t => 186 + Math.sin((t - T.decon) / .55 * Math.PI) * (small ? 6 : 10);
+    const ms = ifxImg(host, ifxSpr.mist(), mx0, my0 - mh / 2, ml, mh, "transform-origin:0 50%;");
+    const mk = [[T.decon, { opacity: 0, transform: "rotate(186deg) scale(.05,.5)", easing: IFX_OUT }], [T.decon + .25, { opacity: .95, transform: "rotate(" + dir(T.decon + .25).toFixed(1) + "deg) scale(1,1)" }]];
+    for(let t = T.decon + .4; t < T.clear - .05; t += .12) mk.push([t, { opacity: .95, transform: "rotate(" + dir(t).toFixed(1) + "deg) scale(1,1)" }]);
+    mk.push([T.clear, { opacity: .9, transform: "rotate(" + dir(T.clear).toFixed(1) + "deg) scale(1,1)" }], [T.clear + .3, { opacity: 0, transform: "rotate(" + dir(T.clear).toFixed(1) + "deg) scale(1.15,1.3)" }]);
+    ifxAt(c, ms, tot, mk);
+    for(let i = 0; i < (small ? 5 : 12); i++){
+      const te = T.decon + .15 + (i / (small ? 5 : 12)) * (T.clear - T.decon - .3), a = dir(te) * Math.PI / 180, D = ml * (.4 + Math.random() * .55);
+      const s = (small ? H * .5 : Math.min(W, H) * .3) * (.8 + Math.random() * .5);
+      const p = ifxImg(host, ifxSpr.puff("#E8FFF0"), mx0 - s / 2, my0 - s / 2, s, s);
+      ifxAt(c, p, tot, [[te, { opacity: 0, transform: "translate(0px,0px) scale(.2)", easing: "cubic-bezier(.15,.7,.3,1)" }], [te + .5, { opacity: .66, transform: "translate(" + bnF(Math.cos(a) * D * .8) + "px," + bnF(Math.sin(a) * D * .8) + "px) scale(1.2)" }],
+        [Math.min(tot - .05, te + 1.5), { opacity: 0, transform: "translate(" + bnF(Math.cos(a) * D) + "px," + bnF(Math.sin(a) * D - H * .05) + "px) scale(2)" }]]);
+    }
+    /* all clear */
+    const ok = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.edge("rgba(180,240,58,.55)") + ";opacity:0;");
+    ifxAt(c, ok, tot, [[T.clear, { opacity: 0 }], [T.clear + .18, { opacity: .9 }], [T.clear + 1.0, { opacity: 0 }]]);
+    return T;
   };
-  if(scr) play(scr, c.vw, c.vh, false);
+  let T = null;
+  if(scr) T = play(scr, c.vw, c.vh, false, c.box ? c.br : null);
   if(bx){
-    if(c.boxOnly) play(bx, c.bw, c.bh, true);
+    if(c.boxOnly) T = play(bx, c.bw, c.bh, true, { left: c.p.x - c.p.w * .12, top: c.p.y + c.p.h * .05, right: c.p.x + c.p.w * 1.12, bottom: c.p.y + c.p.h * .95 });
     else {
-      ifxBoxWash(bx, c, "#9AF03A", [{ opacity: 0 }, { opacity: 0, offset: .12 }, { opacity: .6, offset: .3 }, { opacity: .45, offset: .7 }, { opacity: 0 }], 5, .1);
-      for(let i = 0; i < 7; i++){
-        const x = c.bw * (.08 + i * .14), h = 8 + Math.random() * 14;
-        const d = ifxEl(bx, "left:" + bnF(x) + "px;top:0;width:" + bnF(h * .5) + "px;height:" + bnF(h) + "px;border-radius:0 0 50% 50%;background:linear-gradient(#C8FF4A,#5AD83A);transform-origin:50% 0;opacity:0;");
-        ifxA(c, d, [{ opacity: 0, transform: "scaleY(0)" }, { opacity: .95, transform: "scaleY(1)", offset: .4 }, { opacity: .9, transform: "scaleY(1.6)", offset: .8 }, { opacity: 0, transform: "scaleY(1.6) translateY(30%)" }], 2.2, 1.0 + i * .12, "ease-in");
-      }
+      const o = T || { slam: 1.1, lock: 2.25, clear: 4.0 }, D = 6.0, f = t => Math.max(0, Math.min(1, t / D));
+      ifxBoxWash(bx, c, "#F5C518", [{ opacity: 0 }, { opacity: .5, offset: f(.12) }, { opacity: .15, offset: f(.38) }, { opacity: .45, offset: f(.58) }, { opacity: .2, offset: f(o.lock - .1) }, { opacity: 0, offset: f(o.lock + .2) }, { opacity: 0 }], D, 0);
+      ifxBoxWash(bx, c, "#B4F03A", [{ opacity: 0 }, { opacity: 0, offset: f(o.lock) }, { opacity: .6, offset: f(o.lock + .1) }, { opacity: .3, offset: f(o.lock + .8) }, { opacity: .5, offset: f(o.clear + .15) }, { opacity: 0, offset: f(o.clear + 1.1) }, { opacity: 0 }], D, 0);
     }
-    ifxLit(bx, c, "#F6FFE8", "#9AF03A", c.boxOnly ? 1.2 : 1.6, 2.4);
+    ifxLit(bx, c, "#F6FFE8", "#B4F03A", (T ? T.lock : 2.25) + (c.boxOnly ? 0 : .02), 2.4);
   }
 }
 
-/* ============ FIRE ALARM (round 3, redone) ============
-   "I can already tell I don't like ... fire alarm one. Make those better." No device swinging
-   in: a sleek horn strobe is on the wall, and it fires - a bright white pulse once a second that
-   lights the whole room in a soft bloom, the room's edges catching each one, a red wash between
-   them; the panel at the foot shows the zone in alarm; then the system resets - the light settles
-   and the panel goes to a green NORMAL. Flashes are 1 a second (a real strobe's rate). */
+/* ============ FIRE ALARM (383, redone) ============
+   "And the fire alarm one, again, also not a big fan. Try that one again." An event, not a
+   blinking light: close on a pull station - the handle is pulled - and on the click the view
+   pulls back as the system goes. A fire bell rings itself silly (shaking, its striker hammering,
+   sound rolling off it), the horn sounds its three beats, the strobe fires once a second -
+   a white burst that lights the room - and red pulses at the edges with the horn; then it
+   stops, the bell rings down and the handle is reset. */
 function ifxAlarm(scr, bx, c){
   const play = (host, W, H, small) => {
-    const tot = small ? 5.0 : 6.6, tl = t => Math.max(0, Math.min(1, t / tot));
-    const flashes = small ? [.8, 1.8, 2.8, 3.8] : [.9, 1.9, 2.9, 3.9, 4.9];
-    const reset = small ? 4.3 : 5.5;
-    const s = small ? Math.min(H * .5, 56) : Math.min(W * .2, 100), hx = small ? W * .86 - s / 2 : W * .5 - s / 2, hy = small ? H * .1 : Math.max(16, H * .06);
-    const lx = hx + s / 2, ly = hy + s * .28;
-    /* the red of an alarm between the flashes, low */
-    const red = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.edge("rgba(255,40,30,.55)") + ";opacity:0;");
-    ifxA(c, red, [{ opacity: 0 }, { opacity: .8, offset: tl(.7) }, { opacity: .55, offset: tl(reset - .6) }, { opacity: 0, offset: tl(reset + .3) }, { opacity: 0 }], tot, 0);
-    /* the device, on the wall from the first frame */
-    const dv = ifxImg(host, ifxSpr.strobe(), hx, hy, s, s * .82);
-    ifxA(c, dv, [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)", offset: tl(.45) }, { opacity: 1, offset: tl(tot - .9) }, { opacity: 0 }], tot, 0);
-    /* each flash: the lens, a bloom over the room, the edges catching it */
-    const lens = ifxImg(host, ifxSpr.glow("#FFFFFF"), lx - s * .9, ly - s * .9, s * 1.8, s * 1.8);
-    const bloom = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at " + bnF(lx / W * 100) + "% " + bnF(ly / H * 100) + "%, rgba(255,255,255,.75), rgba(240,246,255,.28) 38%, rgba(240,246,255,.06) 75%);opacity:0;");
-    const edges = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;box-shadow:inset 0 0 " + bnF(Math.min(W, H) * .12) + "px rgba(255,255,255,.55);opacity:0;");
-    const f = [{ opacity: 0 }];
-    flashes.forEach(t => f.push({ opacity: 0, offset: tl(t) }, { opacity: 1, offset: tl(t + .05) }, { opacity: .25, offset: tl(t + .2) }, { opacity: 0, offset: tl(t + .45) }));
-    f.push({ opacity: 0 });
-    ifxA(c, lens, f, tot, 0); ifxA(c, bloom, f, tot, 0); ifxA(c, edges, f, tot, 0);
-    /* the panel: the zone in alarm, then NORMAL */
-    const pw = small ? Math.min(W * .5, 150) : Math.min(W * .78, 330), ph = pw * .24, px = small ? W * .04 : (W - pw) / 2, py = small ? H - ph - 6 : H - ph - 22;
-    const pa = ifxImg(host, ifxSpr.panelA(), px, py, pw, ph);
-    const pn = ifxImg(host, ifxSpr.panelN(), px, py, pw, ph);
-    ifxA(c, pa, [{ opacity: 0, transform: "translateY(12px)" }, { opacity: 0, transform: "translateY(12px)", offset: tl(.5) }, { opacity: 1, transform: "none", offset: tl(.9) }, { opacity: 1, offset: tl(reset) }, { opacity: 0, offset: tl(reset + .25) }, { opacity: 0 }], tot, 0);
-    ifxA(c, pn, [{ opacity: 0 }, { opacity: 0, offset: tl(reset) }, { opacity: 1, offset: tl(reset + .25) }, { opacity: 1, offset: tl(tot - .7) }, { opacity: 0 }], tot, 0);
-    /* the panel's alarm light blinking in step with the strobe */
-    const led = ifxImg(host, ifxSpr.glow("#FF3B30"), px + pw * .88 - ph * .5, py + ph * .5 - ph * .5, ph, ph);
-    const lf = [{ opacity: 0 }];
-    flashes.forEach(t => lf.push({ opacity: 0, offset: tl(t) }, { opacity: 1, offset: tl(t + .05) }, { opacity: 1, offset: tl(t + .45) }, { opacity: 0, offset: tl(t + .5) }));
-    lf.push({ opacity: 0 });
-    ifxA(c, led, lf, tot, 0);
-    const ok = ifxImg(host, ifxSpr.glow("#2ECC71"), px + pw * .88 - ph * .5, py, ph, ph);
-    ifxA(c, ok, [{ opacity: 0 }, { opacity: 0, offset: tl(reset + .1) }, { opacity: 1, offset: tl(reset + .3) }, { opacity: 1, offset: tl(tot - .7) }, { opacity: 0 }], tot, 0);
-  };
-  if(scr) play(scr, c.vw, c.vh, false);
-  if(bx){
-    if(c.boxOnly) play(bx, c.bw, c.bh, true);
-    else {
-      const f = [{ opacity: 0 }];
-      [.9, 1.9, 2.9, 3.9, 4.9].forEach(t => { f.push({ opacity: 0, offset: t / 6.6 }, { opacity: .9, offset: (t + .05) / 6.6 }, { opacity: 0, offset: (t + .4) / 6.6 }); });
-      f.push({ opacity: 0 });
-      ifxBoxWash(bx, c, "#FFFFFF", f, 6.6, 0);
-      ifxBoxWash(bx, c, "#FF4A3D", [{ opacity: 0 }, { opacity: .45, offset: .12 }, { opacity: .35, offset: .7 }, { opacity: 0, offset: .86 }, { opacity: 0 }], 6.6, 0);
-      ifxBoxWash(bx, c, "#2ECC71", [{ opacity: 0 }, { opacity: 0, offset: .84 }, { opacity: .4, offset: .9 }, { opacity: 0 }], 6.6, 0);
+    const tot = small ? 4.8 : 6.6;
+    const T = small ? { pull: .4, go: .5, back: .5, flashes: [.52, 1.32, 2.12, 2.92], blasts: [.55, .95, 1.35, 2.25, 2.65, 3.05], stop: 3.4, reset: 3.7 }
+                    : { pull: .62, go: .74, back: .8, flashes: [1.5, 2.5, 3.5, 4.4], blasts: [.8, 1.3, 1.8, 3.3, 3.8, 4.3], stop: 4.7, reset: 4.95 };
+    const tl = t => Math.max(0, Math.min(1, t / tot));
+    /* the room's red, up with the alarm and pulsing with the horn */
+    const red = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.edge("rgba(255,40,30,.66)") + ";opacity:0;");
+    const rk = [[T.go, { opacity: 0 }], [T.go + .1, { opacity: .45 }]];
+    T.blasts.forEach(b => rk.push([b, { opacity: .45 }], [b + .06, { opacity: .95 }], [b + .36, { opacity: .5 }]));
+    rk.push([T.stop, { opacity: .45 }], [T.stop + .6, { opacity: 0 }]);
+    ifxAt(c, red, tot, rk);
+    /* everything on the walls jolts with each blast of the horn */
+    const room = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;");
+    const jk = [[0, { transform: "translate(0px,0px)" }]], j = small ? 1 : 2.4;
+    T.blasts.forEach(b => jk.push([b, { transform: "translate(0px,0px)" }], [b + .03, { transform: "translate(" + bnF(j) + "px," + bnF(-j) + "px)" }], [b + .07, { transform: "translate(" + bnF(-j) + "px," + bnF(j * .6) + "px)" }], [b + .12, { transform: "translate(0px,0px)" }]));
+    ifxAt(c, room, tot, jk);
+    /* the station: close up, pulled, then the view pulls back to it on the wall */
+    const pw = small ? 0 : Math.min(W * .34, 160), ph = pw * 1.25, px = W / 2 - pw / 2, py = H * .83 - ph / 2;
+    if(!small){
+      const z = Math.min(W * .6 / pw, H * .4 / ph, 2.1), dy = H * .55 - H * .83;
+      const st = ifxEl(room, "left:" + bnF(px) + "px;top:" + bnF(py) + "px;width:" + bnF(pw) + "px;height:" + bnF(ph) + "px;transform-origin:50% 50%;opacity:0;");
+      const tr = (y, s) => "translate(0px," + bnF(y) + "px) scale(" + s + ")";
+      ifxAt(c, st, tot, [[0, { opacity: 0, transform: tr(dy + 26, z * .9), easing: IFX_OUT }], [.34, { opacity: 1, transform: tr(dy, z) }], [T.pull + .02, { opacity: 1, transform: tr(dy, z), easing: IFX_OUT }], [T.pull + .08, { opacity: 1, transform: tr(dy + 7, z * .98) }],
+        [T.back, { opacity: 1, transform: tr(dy, z), easing: "cubic-bezier(.6,0,.2,1)" }], [T.back + .65, { opacity: 1, transform: tr(0, 1) }], [tot - .7, { opacity: 1, transform: tr(0, 1), easing: IFX_IN }], [tot - .1, { opacity: 0, transform: tr(16, .96) }]]);
+      ifxImg(st, ifxSpr.pull(), 0, 0, pw, ph, "opacity:1;");
+      const hn = ifxImg(st, ifxSpr.pullH(), 0, 0, pw, ph, "opacity:1;");
+      const u = ph / 200;
+      ifxAt(c, hn, tot, [[T.pull - .12, { transform: "translateY(0px)", easing: "ease-out" }], [T.pull - .05, { transform: "translateY(" + bnF(-3 * u) + "px)", easing: IFX_IN }], [T.pull + .03, { transform: "translateY(" + bnF(24 * u) + "px)" }], [T.pull + .09, { transform: "translateY(" + bnF(20 * u) + "px)" }],
+        [T.reset, { transform: "translateY(" + bnF(20 * u) + "px)", easing: IFX_BACK }], [T.reset + .25, { transform: "translateY(0px)" }]]);
+      const ck = ifxImg(st, ifxSpr.glow("#FFFFFF"), pw * .1, ph * .3, pw * .8, ph * .5);
+      ifxAt(c, ck, tot, [[T.pull + .02, { opacity: 0, transform: "scale(.4)" }], [T.pull + .06, { opacity: 1, transform: "scale(1)" }], [T.pull + .4, { opacity: 0, transform: "scale(1.4)" }]]);
+      const rr = ifxImg(host, ifxSpr.ring("#FFFFFF"), W / 2 - pw * z, H * .55 - pw * z, pw * z * 2, pw * z * 2);
+      ifxAt(c, rr, tot, [[T.pull + .03, { opacity: 0, transform: "scale(.3)" }], [T.pull + .08, { opacity: .9, transform: "scale(.5)", easing: IFX_OUT }], [T.pull + .7, { opacity: 0, transform: "scale(1.6)" }]]);
+      /* and the system goes: one white burst out of the station over the whole room */
+      const go = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at 50% 55%, rgba(255,255,255,.8), rgba(255,236,232,.35) 45%, rgba(255,220,214,.08) 85%);opacity:0;");
+      ifxAt(c, go, tot, [[T.go, { opacity: 0 }], [T.go + .05, { opacity: 1 }], [T.go + .45, { opacity: 0 }]]);
     }
-    ifxLit(bx, c, "#FFFFFF", "#FF4A3D", c.boxOnly ? .85 : .95, 2.6);
+    /* the bell and the horn-strobe, high on the walls, coming into view as it pulls back */
+    const bs = small ? Math.min(H * .62, W * .26) : Math.min(W * .25, 118), bxc = small ? W * .14 : W * .2, byc = small ? H * .5 : Math.max(bs * .62, H * .1);
+    const hw = small ? Math.min(H * .5, W * .2) : Math.min(W * .21, 100), hh = hw * 1.2, hxc = small ? W * .86 : W * .8, hyc = small ? H * .5 : byc;
+    const enter = (el, ox, oy) => ifxAt(c, el, tot, [[T.back, { opacity: 0, transform: "translate(" + bnF(ox) + "px," + bnF(oy) + "px) scale(1.5)", easing: "cubic-bezier(.6,0,.2,1)" }], [T.back + (small ? .3 : .6), { opacity: 1, transform: "translate(0px,0px) scale(1)" }],
+      [tot - .7, { opacity: 1, transform: "translate(0px,0px) scale(1)", easing: IFX_IN }], [tot - .1, { opacity: 0, transform: "translate(0px,0px) scale(.94)" }]]);
+    const bell = ifxEl(room, "left:" + bnF(bxc - bs / 2) + "px;top:" + bnF(byc - bs / 2) + "px;width:" + bnF(bs) + "px;height:" + bnF(bs) + "px;opacity:0;");
+    enter(bell, small ? 0 : -bs * .9, small ? 0 : -bs * .7);
+    const shake = ifxEl(bell, "left:0;top:0;width:100%;height:100%;transform-origin:50% 48%;");
+    const ringFor = T.stop - T.go;
+    ifxA(c, shake, [{ transform: "translate(0px,0px) rotate(0deg)" }, { transform: "translate(" + bnF(-bs * .015) + "px,0px) rotate(-4deg)", offset: .25 }, { transform: "translate(0px," + bnF(bs * .01) + "px) rotate(0deg)", offset: .5 },
+      { transform: "translate(" + bnF(bs * .015) + "px,0px) rotate(4deg)", offset: .75 }, { transform: "translate(0px,0px) rotate(0deg)" }], .07, T.go, "linear", { iterations: Math.round(ringFor / .07) });
+    ifxImg(shake, ifxSpr.bell(), 0, 0, bs, bs, "opacity:1;");
+    const cs = bs * .3, cl = ifxImg(shake, ifxSpr.clapper(), bs / 2 - cs / 2, bs * .84 - cs * .2, cs, cs, "opacity:1;");
+    ifxA(c, cl, [{ transform: "translateX(0px)" }, { transform: "translateX(" + bnF(-cs * .2) + "px)", offset: .3 }, { transform: "translateX(" + bnF(cs * .2) + "px)", offset: .7 }, { transform: "translateX(0px)" }], .06, T.go, "linear", { iterations: Math.round(ringFor / .06) });
+    /* the sound rolling off the bell, both ways */
+    const ws = bs * (small ? .9 : 1.15);
+    for(let s = 0; s < 2; s++) for(let j = 0; j < 2; j++){
+      const w = ifxImg(room, ifxSpr.wave("#FFFFFF"), bxc + (s ? -1 : 1) * bs * .44, byc - ws / 2, ws, ws, "transform-origin:0 50%;");
+      const rot = s ? "rotate(180deg) " : "rotate(0deg) ", per = .5, dl = T.go + j * per / 2;
+      ifxA(c, w, [{ opacity: 0, transform: rot + "scale(.5)" }, { opacity: .85, transform: rot + "scale(.75)", offset: .2 }, { opacity: 0, transform: rot + "scale(1.6)" }], per, dl, "linear", { iterations: Math.max(1, Math.floor((T.stop - dl) / per)) });
+    }
+    /* the horn-strobe, its horn on the three beats */
+    const hn = ifxImg(room, ifxSpr.horn(), hxc - hw / 2, hyc - hh / 2, hw, hh);
+    enter(hn, small ? 0 : hw * .9, small ? 0 : -hw * .7);
+    for(let s = 0; s < 2; s++){
+      const hws = hw * 1.3, w = ifxImg(room, ifxSpr.wave("#FF6A5E"), hxc + (s ? -1 : 1) * hw * .5, hyc + hh * .1 - hws / 2, hws, hws, "transform-origin:0 50%;");
+      const rot = s ? "rotate(180deg) " : "rotate(0deg) ", k = [[0, { opacity: 0, transform: rot + "scale(.5)" }]];
+      T.blasts.forEach(b => k.push([b, { opacity: 0, transform: rot + "scale(.5)" }], [b + .05, { opacity: .95, transform: rot + "scale(.7)" }], [b + .42, { opacity: 0, transform: rot + "scale(1.7)" }]));
+      ifxAt(c, w, tot, k);
+    }
+    /* the strobe: a burst at the lens and the room lit by it, once a second */
+    const lx = hxc, ly = hyc - hh / 2 + hh * 27 / 120, fs = small ? H * 1.6 : Math.min(W, H) * .95;
+    const flare = ifxImg(host, ifxSpr.flare(), lx - fs / 2, ly - fs / 2, fs, fs);
+    const lit = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at " + bnF(lx / W * 100) + "% " + bnF(ly / H * 100) + "%, rgba(255,255,255,.78), rgba(236,242,255,.3) 40%, rgba(236,242,255,.06) 80%);opacity:0;");
+    const fk = [[0, { opacity: 0, transform: "scale(.3)" }]], wk = [[0, { opacity: 0 }]];
+    T.flashes.forEach((f, i) => { fk.push([f, { opacity: 0, transform: "scale(.3)" }], [f + .04, { opacity: 1, transform: "scale(1.1)" }], [f + .3, { opacity: 0, transform: "scale(1.3)" }]);
+      wk.push([f, { opacity: 0 }], [f + .04, { opacity: i ? .8 : 1 }], [f + .34, { opacity: 0 }]); });
+    ifxAt(c, flare, tot, fk); ifxAt(c, lit, tot, wk);
+    return T;
+  };
+  let T = null;
+  if(scr) T = play(scr, c.vw, c.vh, false);
+  if(bx){
+    if(c.boxOnly) T = play(bx, c.bw, c.bh, true);
+    else {
+      const o = T || { go: .74, flashes: [1.5, 2.5, 3.5, 4.4], blasts: [.8, 1.3, 1.8, 3.3, 3.8, 4.3], stop: 4.7 }, D = 6.6, f = t => Math.max(0, Math.min(1, t / D));
+      const w = [{ opacity: 0 }]; [o.go].concat(o.flashes).forEach(t => w.push({ opacity: 0, offset: f(t) }, { opacity: .85, offset: f(t + .04) }, { opacity: 0, offset: f(t + .34) })); w.push({ opacity: 0 });
+      ifxBoxWash(bx, c, "#FFFFFF", w, D, 0);
+      const r = [{ opacity: 0 }]; o.blasts.forEach(t => r.push({ opacity: .2, offset: f(t) }, { opacity: .55, offset: f(t + .06) }, { opacity: .25, offset: f(t + .36) })); r.push({ opacity: 0, offset: f(o.stop + .5) }, { opacity: 0 });
+      ifxBoxWash(bx, c, "#FF3B30", r, D, 0);
+    }
+    ifxLit(bx, c, "#FFFFFF", "#FF3B30", (T ? T.go : .74) + .04, 2.6);
   }
 }
-const IFX_BUILD = { fireworks: ifxEmergency, underwater: ifxSprinklers, bubbles: ifxHazmat, ufo: ifxAlarm };
-/* their tiles: a still of each at its best moment (hundoFxPosterSVG's 160 x 60 frame) */
+const IFX_BUILD = { fireworks: ifxExtinguisher, underwater: ifxSprinklers, bubbles: ifxHazmat, ufo: ifxAlarm };
+/* their tiles: a still of each at its best moment (hundoFxPosterSVG's 160 x 60 frame; the 100%
+   sits in the middle, so the art frames it) */
 function ifxPosterBody(id, g, rnd){
   const F = bnF;
   let defs = "", body = "";
   if(id === "fireworks"){
-    /* a dark room, the red EXIT sign up top, green running men low, warm cones from the lights */
-    defs += '<linearGradient id="' + g + 'cn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3D0" stop-opacity=".5"/><stop offset="1" stop-color="#FFF3D0" stop-opacity="0"/></linearGradient>' +
-      '<radialGradient id="' + g + 'r"><stop offset="0" stop-color="#FF3B30" stop-opacity=".6"/><stop offset="1" stop-color="#FF3B30" stop-opacity="0"/></radialGradient><radialGradient id="' + g + 'gr"><stop offset="0" stop-color="#2ECC71" stop-opacity=".6"/><stop offset="1" stop-color="#2ECC71" stop-opacity="0"/></radialGradient>';
-    body += '<rect width="160" height="60" fill="#04050A" opacity=".75"/>' +
-      '<path d="M18 6 L2 60 L22 60 Z M24 6 L22 60 L40 60 Z M136 6 L120 60 L138 60 Z M142 6 L140 60 L158 60 Z" fill="url(#' + g + 'cn)"/>' +
-      fbEmergencyUnit(21, 2, .45, true) + fbEmergencyUnit(139, 2, .45, true) +
-      '<ellipse cx="80" cy="6" rx="30" ry="12" fill="url(#' + g + 'r)"/>' + '<g transform="translate(68 1) scale(.4)">' + fbExitSign(30, 0, 60, false) + '</g>' +
-      '<ellipse cx="22" cy="48" rx="22" ry="12" fill="url(#' + g + 'gr)"/><ellipse cx="138" cy="48" rx="22" ry="12" fill="url(#' + g + 'gr)"/>' +
-      '<g transform="translate(13 44) scale(.3)">' + fbExitSign(30, 0, 60, true) + '</g><g transform="translate(129 44) scale(.3)">' + fbExitSign(30, 0, 60, true) + '</g>';
+    /* the extinguisher low at the left, its stream and the cloud rolling across */
+    defs += ifxLin(g + "rd", 1, 0, IFX_RED) + ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .95], [.6, "#F6F1E6", .5], [1, "#F2EDE2", 0]]) +
+      '<radialGradient id="' + g + 'cl" cx=".45" cy=".4" r=".6"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".85"/><stop offset=".45" stop-color="#F6F2EA" stop-opacity=".5"/><stop offset=".8" stop-color="#E6E0D5" stop-opacity=".16"/><stop offset="1" stop-color="#DCD6CB" stop-opacity="0"/></radialGradient>';
+    body += '<rect width="160" height="60" fill="#0A0C12" opacity=".55"/>';
+    body += '<path d="M27 26 L150 0 L160 0 L160 30 Z" fill="url(#' + g + 'jt)" opacity=".55"/>';
+    for(let i = 0; i < 34; i++){ const t = rnd(), x = 40 + t * 122 + (rnd() - .5) * 10, y = 18 - t * 12 + (rnd() - .5) * (12 + t * 30) + (i % 5 === 0 ? 30 : 0);
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(6 + rnd() * 7 + t * 4) + '" fill="url(#' + g + 'cl)"/>'; }
+    body += '<path d="M6 60 L6 36 Q6 30 12 30 Q18 30 18 36 L18 60 Z" fill="url(#' + g + 'rd)"/><rect x="8" y="42" width="8" height="10" rx="1" fill="#F6F2E8"/><rect x="9.5" y="25" width="5" height="6" rx="1" fill="#C9CED6"/>' +
+      '<path d="M15 27 C22 27 24 36 22 40 C21 44 24 40 26 30" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><path d="M25 31 L31 21" stroke="#3A3F48" stroke-width="2.8" stroke-linecap="round"/><path d="M25 31 L31 21" stroke="#8A909A" stroke-width=".7" stroke-linecap="round"/>' +
+      '<circle cx="7.5" cy="28" r="2.6" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".7"/>';
   } else if(id === "underwater"){
-    defs += '<linearGradient id="' + g + 'f" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF6A2E" stop-opacity=".55"/><stop offset="1" stop-color="#FF6A2E" stop-opacity="0"/></linearGradient>';
-    body += '<rect x="0" y="30" width="160" height="30" fill="url(#' + g + 'f)"/>';
-    [30, 80, 130].forEach(x => {
-      body += '<rect x="' + (x - 2) + '" y="0" width="4" height="3" fill="#C9CED6"/><path d="M' + (x - 4) + ' 3 L' + (x + 4) + ' 3 L' + (x + 3) + ' 5 L' + (x - 3) + ' 5 Z" fill="#D9A23A"/><ellipse cx="' + x + '" cy="7" rx=".9" ry="2" fill="#E5332A"/><path d="M' + (x - 6) + ' 10 L' + (x + 6) + ' 10" stroke="#D9A23A" stroke-width="1.2"/>';
-      for(let j = 0; j < 9; j++){ const a = -.6 + j * .15, r0 = 6 + (j % 3) * 9; body += '<path d="M' + F(x + Math.sin(a) * r0) + ' ' + F(11 + Math.cos(a) * r0) + ' l' + F(Math.sin(a) * 4) + ' ' + F(Math.cos(a) * 4) + '" stroke="#DFF6FF" stroke-width=".8" stroke-linecap="round" opacity=".85"/>'; }
+    /* the main, three heads throwing their umbrellas, rain, the fire going down in steam */
+    defs += '<linearGradient id="' + g + 'f" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF6A2E" stop-opacity=".6"/><stop offset="1" stop-color="#FF6A2E" stop-opacity="0"/></linearGradient>' +
+      ifxRad(g + "o", 0, 60, 6, 3, [[0, "#FFC15A"], [.4, "#FF7A1F", .95], [.75, "#E2361A", .55], [1, "#A3170C", 0]]) + ifxLin(g + "br", 1, 0, IFX_BRASS);
+    body += '<rect x="0" y="28" width="160" height="32" fill="url(#' + g + 'f)"/><rect x="0" y="0" width="160" height="2.2" fill="#C8262A"/>';
+    [[10, 60, 6, 15], [28, 60, 7, 19], [46, 60, 5, 12], [118, 60, 6, 14], [136, 60, 7, 18], [152, 60, 5, 12]].forEach(([x, y, w, h], i) => {
+      body += '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, y, w, h, i % 2 ? 2 : -2) + '" fill="url(#' + g + 'o)"/><path d="' + ifxFlameD(0, y, w * .5, h * .55, 0) + '" fill="#FFE7A0" opacity=".8"/></g>'; });
+    [30, 80, 130].forEach((x, i) => {
+      body += '<rect x="' + (x - 3) + '" y="1.5" width="6" height="2" fill="#D9DEE4"/><path d="M' + (x - 2) + ' 3.5 L' + (x + 2) + ' 3.5 L' + (x + 1.4) + ' 6 L' + (x - 1.4) + ' 6 Z" fill="url(#' + g + 'br)"/><path d="M' + (x - 6) + ' 8.4 L' + (x + 6) + ' 8.4" stroke="#D9A23A" stroke-width="1.1"/>';
+      for(let j = 0; j < 11; j++){ const a = -1.2 + j * .24, t = .5 + (j % 3) * .25, ex = x + Math.sin(a) * 26 * t, ey = 9 + Math.cos(a) * 7 * t + 16 * t * t;
+        body += '<path d="M' + F(x + Math.sin(a) * 3) + ' ' + F(9 + Math.cos(a)) + ' Q' + F(x + Math.sin(a) * 16 * t) + ' ' + F(9 + Math.cos(a) * 4 * t) + ' ' + F(ex) + ' ' + F(ey) + '" fill="none" stroke="#DFF6FF" stroke-width=".7" stroke-dasharray="1.4 2.2" stroke-linecap="round" opacity=".85"/>'; }
+      for(let j = 0; j < 5; j++){ const rx = x - 16 + j * 8 + rnd() * 3, ry = 26 + rnd() * 18; body += '<path d="M' + F(rx) + ' ' + F(ry) + ' l' + F((rx - x) * .04) + ' 5" stroke="#E8F7FF" stroke-width=".8" stroke-linecap="round" opacity=".7"/>'; }
     });
-    [[18, 60], [62, 60], [104, 60], [146, 60]].forEach(([x, y], i) => { body += '<path d="' + fcFlamePath(x, y, 5, 10 + (i % 2) * 4, 0) + '" fill="#FF9A2E" opacity=".75"/>'; });
-    [[40, 48, 9], [96, 50, 10], [140, 47, 8]].forEach(([x, y, r]) => { body += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#E8EEF2" opacity=".35"/>'; });
+    [[64, 48, 10], [96, 50, 11], [150, 44, 8], [12, 44, 8]].forEach(([x, y, r]) => { body += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#E8EEF2" opacity=".32"/>'; });
   } else if(id === "bubbles"){
-    defs += '<linearGradient id="' + g + 'o" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FF4A"/><stop offset=".3" stop-color="#6AE83A"/><stop offset="1" stop-color="#0E4A1A"/></linearGradient>';
-    let top = "M0 44"; for(let x = 0; x <= 160; x += 10) top += " Q" + (x + 5) + " " + (x % 20 ? 40 : 48) + " " + (x + 10) + " 44";
-    body += '<path d="' + top + ' L160 60 L0 60 Z" fill="url(#' + g + 'o)" opacity=".85"/>';
-    for(let x = -6; x < 160; x += 8) body += '<path d="M' + x + ' 0 L' + (x + 4) + ' 0 L' + (x + 8) + ' 4 L' + (x + 4) + ' 4 Z" fill="#14161C"/>';
-    body = '<rect x="0" y="0" width="160" height="4" fill="#F2C21E"/>' + body;
-    [[22, 36, 3], [44, 30, 2.2], [120, 34, 3.4], [140, 28, 2], [70, 40, 1.8]].forEach(([x, y, r]) => { body += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#C8FF4A" fill-opacity=".2" stroke="#E8FFB0" stroke-width=".6"/>'; });
-    body += fbPlacard(146, 14, 9, "#FFFFFF", "cross");
+    /* bands top and bottom, the vapour, the scan line, brackets on the 100% and the 1-0-0 diamond */
+    defs += '<linearGradient id="' + g + 'v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4F03A" stop-opacity="0"/><stop offset="1" stop-color="#6AD83A" stop-opacity=".55"/></linearGradient>' +
+      '<linearGradient id="' + g + 's" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4F03A" stop-opacity="0"/><stop offset="1" stop-color="#D8FF8A" stop-opacity=".6"/></linearGradient>';
+    body += '<rect x="0" y="34" width="160" height="26" fill="url(#' + g + 'v)"/><rect x="0" y="30" width="160" height="7" fill="url(#' + g + 's)"/><rect x="0" y="36.6" width="160" height=".7" fill="#FFFFFF" opacity=".8"/>';
+    [0, 56].forEach(y => { body += '<rect x="0" y="' + y + '" width="160" height="4" fill="#F5C518"/>'; for(let x = -6; x < 160; x += 8) body += '<path d="M' + x + ' ' + (y + 4) + ' L' + (x + 4) + ' ' + (y + 4) + ' L' + (x + 8) + ' ' + y + ' L' + (x + 4) + ' ' + y + ' Z" fill="#15171C"/>'; });
+    [[52, 16, 1, 1], [108, 16, -1, 1], [108, 44, -1, -1], [52, 44, 1, -1]].forEach(([x, y, sx, sy]) => { body += '<path d="M' + x + ' ' + (y + sy * 5) + ' L' + x + ' ' + y + ' L' + (x + sx * 5) + ' ' + y + '" fill="none" stroke="#D8FF8A" stroke-width="1.4" stroke-linecap="round"/>'; });
+    const q = (cx, cy, col, n) => '<path d="M' + cx + ' ' + (cy - 5.6) + ' L' + (cx + 5.6) + ' ' + cy + ' L' + cx + ' ' + (cy + 5.6) + ' L' + (cx - 5.6) + ' ' + cy + ' Z" fill="' + col + '" stroke="#101216" stroke-width=".8"/>' +
+      (n ? '<text x="' + cx + '" y="' + (cy + 2.2) + '" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="6" fill="#101216">' + n + '</text>' : "");
+    body += q(140, 18, "#E3262E", "0") + q(146, 24, "#F5C518", "0") + q(140, 30, "#F4F4F2", "") + q(134, 24, "#1F6FD1", "1");
   } else if(id === "ufo"){
-    /* the strobe on the wall at the moment it fires: the room in its bloom, the panel in alarm */
-    defs += '<radialGradient id="' + g + 'b" cx="50%" cy="10%" r="90%"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".75"/><stop offset=".45" stop-color="#F0F6FF" stop-opacity=".2"/><stop offset="1" stop-color="#F0F6FF" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="' + g + 'e" cx="50%" cy="50%" r="70%"><stop offset=".55" stop-color="#FF2A1E" stop-opacity="0"/><stop offset="1" stop-color="#FF2A1E" stop-opacity=".5"/></radialGradient>';
-    body += '<rect width="160" height="60" fill="url(#' + g + 'e)"/><rect width="160" height="60" fill="url(#' + g + 'b)"/>' +
-      '<rect x="70" y="1" width="20" height="16" rx="3.4" fill="#F4F6F8" stroke="#9AA2AE" stroke-width=".4"/><rect x="72" y="2.6" width="16" height="6.4" rx="2.4" fill="#FFFFFF"/><rect x="72" y="10.6" width="16" height="4.6" rx="1.8" fill="#C0161E"/>' +
-      '<path d="M74.4 11.6 v2.6 M74.4 11.6 h1.4 M74.4 12.9 h1.1 M77 11.6 v2.6 M78.4 14.2 v-2.6 h1 q.8 0 .8 .65 q0 .65 -.8 .65 h-1 M79.3 12.9 l.8 1.3 M82.6 11.6 h-1.4 v2.6 h1.4 M81.2 12.9 h1.1" stroke="#FFFFFF" stroke-width=".45" fill="none"/>' +
-      '<rect x="56" y="50" width="48" height="9" rx="2" fill="#16181E"/><rect x="58" y="51.6" width="36" height="5.8" rx="1" fill="#2A0A0A"/><rect x="60" y="53.4" width="20" height="2" fill="#FF6A5A"/><circle cx="99" cy="54.5" r="2" fill="#FF3B30"/>';
+    /* the bell ringing at the left, the strobe firing at the right, the room in red */
+    defs += '<radialGradient id="' + g + 'e" cx="50%" cy="50%" r="70%"><stop offset=".5" stop-color="#FF2A1E" stop-opacity="0"/><stop offset="1" stop-color="#FF2A1E" stop-opacity=".55"/></radialGradient>' +
+      '<radialGradient id="' + g + 'w" cx="86%" cy="18%" r="70%"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".7"/><stop offset=".4" stop-color="#EAF2FF" stop-opacity=".18"/><stop offset="1" stop-color="#EAF2FF" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="' + g + 'b" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FF8A7A"/><stop offset=".35" stop-color="#F0302A"/><stop offset="1" stop-color="#7A0810"/></radialGradient>' +
+      '<radialGradient id="' + g + 'f"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".2" stop-color="#FFFFFF" stop-opacity=".8"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>';
+    body += '<rect width="160" height="60" fill="url(#' + g + 'e)"/><rect width="160" height="60" fill="url(#' + g + 'w)"/>' +
+      '<circle cx="20" cy="18" r="11" fill="url(#' + g + 'b)" stroke="#5A040A" stroke-width=".6"/><ellipse cx="16.5" cy="13" rx="4" ry="2" fill="#FFFFFF" opacity=".4" transform="rotate(-30 16.5 13)"/><circle cx="20" cy="18" r="2" fill="#C9CED6"/><rect x="18" y="27.4" width="4" height="3" rx="1.2" fill="#C9CED6"/>' +
+      [[34, 18, 1], [6, 18, -1]].map(([x, y, s]) => [6, 11].map((r, i) => '<path d="M' + x + ' ' + (y - r * .7) + ' Q' + (x + s * r * .8) + ' ' + y + ' ' + x + ' ' + (y + r * .7) + '" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="' + (.85 - i * .35) + '"/>').join("")).join("") +
+      '<rect x="131" y="8" width="14" height="17" rx="2.6" fill="#D81E26"/><rect x="133.5" y="9.6" width="9" height="4.6" rx="1.6" fill="#FFFFFF"/>' + [17, 19.4, 21.8].map(y => '<rect x="133.5" y="' + y + '" width="9" height="1" rx=".5" fill="#6A060C"/>').join("") +
+      '<circle cx="138" cy="11.9" r="13" fill="url(#' + g + 'f)"/><path d="M118 11.9 L158 11.9 M138 0 L138 26" stroke="#FFFFFF" stroke-width=".7" opacity=".8"/>' +
+      '<rect x="74" y="49" width="12" height="11" rx="2" fill="#D81E26"/><rect x="76.4" y="53" width="7.2" height="2.6" rx="1" fill="#FFFFFF"/>';
   }
   return { defs, body };
 }
 function ifxStillBody(id, g){
-  if(id === "fireworks") return '<defs><radialGradient id="' + g + 'r"><stop offset="0" stop-color="#FF3B30" stop-opacity=".7"/><stop offset="1" stop-color="#FF3B30" stop-opacity="0"/></radialGradient><radialGradient id="' + g + 'gr"><stop offset="0" stop-color="#2ECC71" stop-opacity=".7"/><stop offset="1" stop-color="#2ECC71" stop-opacity="0"/></radialGradient></defs>' +
-    '<rect x="2" y="2" width="44" height="44" rx="8" fill="#04050A"/><ellipse cx="24" cy="12" rx="18" ry="10" fill="url(#' + g + 'r)"/><ellipse cx="24" cy="36" rx="18" ry="10" fill="url(#' + g + 'gr)"/>' +
-    '<g transform="translate(9 7) scale(.5)">' + fbExitSign(30, 0, 60, false) + '</g><g transform="translate(13 30) scale(.36)">' + fbExitSign(30, 0, 60, true) + '</g>';
-  if(id === "underwater") return '<rect x="21" y="4" width="6" height="5" fill="#C9CED6"/><path d="M18 9 L30 9 L28 13 L20 13 Z" fill="#D9A23A"/><ellipse cx="24" cy="17" rx="2" ry="4" fill="#E5332A"/><path d="M14 22 L34 22" stroke="#D9A23A" stroke-width="2"/>' +
-    [-.6, -.3, 0, .3, .6].map((a, i) => '<path d="M' + (24 + Math.sin(a) * 8).toFixed(1) + ' ' + (24 + Math.cos(a) * 8).toFixed(1) + ' l' + (Math.sin(a) * 7).toFixed(1) + ' ' + (Math.cos(a) * 7).toFixed(1) + '" stroke="#9FDCFF" stroke-width="1.6" stroke-linecap="round"/>').join("") +
-    '<path d="' + fcFlamePath(14, 46, 4, 9, 0) + fcFlamePath(34, 46, 4, 8, 0) + '" fill="#FF9A2E" opacity=".6"/>';
-  if(id === "bubbles") return '<path d="M2 30 Q8 26 14 30 T26 30 T38 30 T46 30 L46 42 Q46 46 42 46 L6 46 Q2 46 2 42 Z" fill="#6AE83A"/><path d="M2 30 Q8 26 14 30 T26 30 T38 30 T46 30" fill="none" stroke="#E8FFB0" stroke-width="1.4"/>' +
-    '<circle cx="14" cy="22" r="3" fill="none" stroke="#C8FF4A" stroke-width="1"/><circle cx="34" cy="18" r="2" fill="none" stroke="#C8FF4A" stroke-width="1"/>' + fbPlacard(24, 14, 10, "#FFFFFF", "cross");
-  return '<defs><radialGradient id="' + g + 'b" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient></defs><circle cx="24" cy="18" r="22" fill="url(#' + g + 'b)"/>' +
-    '<rect x="12" y="8" width="24" height="20" rx="4.4" fill="#F4F6F8" stroke="#9AA2AE" stroke-width=".6"/><rect x="14.4" y="10" width="19.2" height="8" rx="3" fill="#FFFFFF"/><rect x="14.4" y="20.4" width="19.2" height="5.4" rx="2" fill="#C0161E"/>' +
-    '<rect x="11" y="36" width="26" height="7" rx="1.6" fill="#16181E"/><rect x="12.6" y="37.4" width="18" height="4.2" rx=".8" fill="#2A0A0A"/><rect x="14" y="38.6" width="10" height="1.6" fill="#FF6A5A"/><circle cx="34" cy="39.5" r="1.6" fill="#FF3B30"/>';
+  if(id === "fireworks") return '<defs>' + ifxLin(g + "rd", 1, 0, IFX_RED) + '<radialGradient id="' + g + 'c" cx=".42" cy=".36" r=".62"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"/><stop offset=".6" stop-color="#F3EFE6" stop-opacity=".7"/><stop offset="1" stop-color="#DCD6CB" stop-opacity="0"/></radialGradient></defs>' +
+    [[34, 12, 9], [41, 8, 6], [40, 18, 6], [28, 6, 5]].map(([x, y, r]) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#' + g + 'c)"/>').join("") +
+    '<path d="M11 46 L11 22 Q11 15 18 15 Q25 15 25 22 L25 46 Z" fill="url(#' + g + 'rd)"/><rect x="13.5" y="27" width="9" height="11" rx="1" fill="#F6F2E8"/><rect x="15" y="9" width="6" height="7" rx="1.2" fill="#C9CED6"/>' +
+    '<path d="M21 11.5 L29 10" stroke="#14161A" stroke-width="2.4" stroke-linecap="round"/><path d="M20 12 C28 13 29 24 26 27 C24 30 26 20 28 17 L31 14" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".8"/>';
+  if(id === "underwater") return '<defs>' + ifxLin(g + "br", 1, 0, IFX_BRASS) + ifxRad(g + "o", 0, 46, 7, 2.6, [[0, "#FFC15A"], [.4, "#FF7A1F", .95], [1, "#A3170C", 0]]) + '</defs>' +
+    '<rect x="17" y="3" width="14" height="3" rx="1" fill="#D9DEE4"/><path d="M20 6 L28 6 L27 10 L21 10 Z" fill="url(#' + g + 'br)"/><rect x="22.8" y="9.6" width="2.4" height="6" rx="1.2" fill="#E5332A"/><path d="M13 17 L35 17" stroke="#D9A23A" stroke-width="1.8" stroke-linecap="round"/>' +
+    [-1.1, -.6, -.15, .3, .75, 1.15].map(a => '<path d="M' + (24 + Math.sin(a) * 5).toFixed(1) + ' 18.5 Q' + (24 + Math.sin(a) * 13).toFixed(1) + ' ' + (19 + Math.cos(a) * 3).toFixed(1) + ' ' + (24 + Math.sin(a) * 18).toFixed(1) + ' ' + (25 + Math.cos(a) * 6).toFixed(1) + '" fill="none" stroke="#9FDCFF" stroke-width="1.5" stroke-dasharray="2 2.4" stroke-linecap="round"/>').join("") +
+    '<g transform="translate(14 0)"><path d="' + ifxFlameD(0, 46, 5, 13, -1) + '" fill="url(#' + g + 'o)"/></g><g transform="translate(34 0)"><path d="' + ifxFlameD(0, 46, 5, 11, 1) + '" fill="url(#' + g + 'o)"/></g>';
+  if(id === "bubbles"){
+    const q = (cx, cy, col, n) => '<path d="M' + cx + ' ' + (cy - 10.5) + ' L' + (cx + 10.5) + ' ' + cy + ' L' + cx + ' ' + (cy + 10.5) + ' L' + (cx - 10.5) + ' ' + cy + ' Z" fill="' + col + '" stroke="#101216" stroke-width="1.4" stroke-linejoin="miter"/>' +
+      (n ? '<text x="' + cx + '" y="' + (cy + 3.6) + '" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="10" fill="#101216">' + n + '</text>' : "");
+    return q(24, 12.5, "#E3262E", "0") + q(35.5, 24, "#F5C518", "0") + q(24, 35.5, "#F4F4F2", "") + q(12.5, 24, "#1F6FD1", "1");
+  }
+  return '<defs>' + ifxLin(g + "b", 0, 1, [[0, "#FF5245"], [.5, "#D81E26"], [1, "#8A0C12"]]) + '</defs>' +
+    '<rect x="9" y="4" width="30" height="40" rx="5" fill="url(#' + g + 'b)"/><text x="24" y="13.4" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="7.4" fill="#FFFFFF" letter-spacing="1">FIRE</text>' +
+    '<rect x="14" y="17" width="20" height="15" rx="2.4" fill="#5A060C"/><rect x="15.5" y="22" width="17" height="5.4" rx="2" fill="#F4F6F8"/><rect x="13" y="36" width="22" height="2.4" rx="1.2" fill="#FFFFFF" opacity=".85"/>';
 }
 if(IFC_ART_ON){
   Object.keys(IFX_DEF).forEach(id => {
