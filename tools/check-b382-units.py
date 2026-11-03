@@ -208,8 +208,11 @@ with sync_playwright() as pw:
         import re; m = [float(x) for x in re.findall(r"[\d.]+", s)[:3]] or [0, 0, 0]
         return [x * 255 for x in m] if s.startswith("color(") else m
     acc, bc = rgb(shape["accRGB"]), rgb(shape["bc"])
-    border_is_accent = sum(abs(a - b) for a, b in zip(acc, bc)) < 90
-    chk("(5) a picked card reads as picked: fill %.1f vs %.1f (step >= 6), accent border (%s vs %s), its tick shows (%s)" % (lon, loff, shape["bc"], shape["accRGB"], shape["tickShown"]),
+    # REVISED IN 383 ("a green glowing dot/circle signifying it's been selected"): the picked card's edge is the dot's green
+    # (--pick-dot, #34C759 at 70%), not the theme accent
+    green = [52, 199, 89]
+    border_is_accent = sum(abs(a - b) for a, b in zip(acc, bc)) < 90 or sum(abs(a - b) for a, b in zip(green, bc)) < 90
+    chk("(5) a picked card reads as picked: fill %.1f vs %.1f (step >= 6), a picked edge - the accent or (383) the dot's green - (%s vs %s), its mark shows (%s)" % (lon, loff, shape["bc"], shape["accRGB"], shape["tickShown"]),
         lon - loff >= 6 and border_is_accent and shape["tickShown"], [lon, loff])
     # Review: Select all and Starred
     pg.evaluate("()=>{ cfg.mode='review'; cfg.units=[]; showSetup(); }"); pg.wait_for_timeout(1500)

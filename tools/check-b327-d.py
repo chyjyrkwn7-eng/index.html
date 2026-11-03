@@ -109,7 +109,9 @@ TICK = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
   await wait(700);
   const after = path ? parseFloat(getComputedStyle(path).strokeDashoffset) : null;
   const bx = c ? getComputedStyle(c.querySelector(':scope > .box')) : null;
-  return { n: cards.length, all, before, early, anim, after, glyph, bgImg: bx && bx.backgroundImage, picked: c && c.classList.contains('pick-checked') }; }"""
+  const svg = c && c.querySelector(':scope > .box svg.pick-tick');
+  return { n: cards.length, all, before, early, anim, after, glyph, bgImg: bx && bx.backgroundImage, picked: c && c.classList.contains('pick-checked'),
+           tickHidden: !!svg && getComputedStyle(svg).display === 'none', boxOp: bx ? +bx.opacity : null }; }"""
 
 
 def check_tick(br):
@@ -124,8 +126,10 @@ def check_tick(br):
         ctx.close()
         check("%s: every unit card's circle carries an SVG tick (%d cards), the text glyph hidden (font-size %s)" % (label, r["n"], r["glyph"]),
               r["all"] and r["glyph"] == "0px", r)
-        check("%s: unpicked the tick is undrawn (dashoffset 1); picked it draws in (a stroke-dashoffset transition) to 0" % label,
-              r["before"] == 1 and r["after"] == 0 and "stroke-dashoffset" in r["anim"] and r["picked"], r)
+        # REVISED IN 383: "I'm kinda tired of the checkmark. What if we did like a green glowing dot" - the tick is not drawn any
+        # more; picked, the corner shows the green dot grown from its centre (check-b383-look 4)
+        check("%s: picked, the tick is not drawn (383) and the corner's dot is up" % label,
+              r["picked"] and r["tickHidden"] and (r["boxOp"] or 0) > .95, r)
         check("%s: the picked circle is a lit disc (a light over the accent)" % label,
               bool(r["bgImg"]) and "gradient" in (r["bgImg"] or ""), r["bgImg"])
 

@@ -31413,3 +31413,9 @@ main menu."
 - Gate tools/check-b383-look.py: Home's stars and no wash; five screens and results with the wash and no stars; the mask; the wash
   follows the theme; seven cards on one glass with no rim; the dot (green, glowing, scale 1, <=16px, no tick) and none when
   unpicked; the daily question's comet and glow when ready, none when answered - 12 fail on the previous commit.
+- FOLLOW-UPS (check-b382-units, which passed on the commit before): (8) a 375px phone scrolled sideways by 2px - under 400px
+  328's rule put the corner mark half outside the card, and an iPhone's 44px native switch centred on the much smaller dot ran past
+  the screen edge (and that rule's paper ring replaced the dot's glow). Under 400px the dot now sits inside the corner (.4rem in,
+  .7rem, glow kept). (2) a tick restyled 256-264 elements (budget 250; 222 before): the ring's ::after existed on all 24 cards'
+  dots - it is made on a picked card only now (237). The ring's reach x3.2 -> x2.4 (stays inside the card). (5) a picked card's
+  edge may be the dot's green. check-b327-d (2): the tick is not drawn any more - picked, the dot is up.
