@@ -31228,6 +31228,38 @@
     animation:mystery-halo 2.4s ease-out infinite;
   }
   @keyframes mystery-halo{ 0%{ opacity:.7; transform:scale(.5); } 100%{ opacity:0; transform:scale(1.5); } }
+  /* ---- "CLICK ME" (383) - see buildMysterySpark. Transforms and opacity only. ---- */
+  .mystery-spark:not(.shades-spark)::before{ animation:mystery-ping 2.4s ease-out infinite; }
+  .mystery-spark .mystery-ring{
+    position:absolute; inset:2px; border-radius:50%; pointer-events:none;
+    border:2px solid var(--flare-color, #F97316); opacity:0;
+    animation:mystery-ping 2.4s ease-out 1.2s infinite;
+  }
+  @keyframes mystery-ping{ 0%{ opacity:.85; transform:scale(.45); } 100%{ opacity:0; transform:scale(1.95); } }
+  .mystery-spark:not(.shades-spark) svg{ width:2.45rem; height:2.45rem; animation:mystery-beckon 2.4s ease-in-out infinite; }
+  @keyframes mystery-beckon{
+    0%       { opacity:.9; transform:translateY(0) scale(1); }
+    7%       { opacity:1;  transform:translateY(-4px) scale(1.28); }
+    14%      { transform:translateY(0) scale(.96); }
+    20%      { transform:translateY(-2px) scale(1.1); }
+    27%, 100%{ opacity:.92; transform:translateY(0) scale(1); }
+  }
+  .mystery-spark .mystery-tap{
+    position:absolute; left:calc(100% - 1px); top:50%; transform:translate(0, -50%);
+    padding:.3rem .62rem .32rem; border-radius:999px; white-space:nowrap;
+    font:700 .82rem/1 var(--sans); letter-spacing:.02em; color:#FFFFFF;
+    background:color-mix(in srgb, var(--flare-color, #F97316) 30%, rgba(12,13,19,.9));
+    border:1px solid color-mix(in srgb, var(--flare-color, #F97316) 72%, transparent);
+    box-shadow:0 0 14px color-mix(in srgb, var(--flare-color, #F97316) 40%, transparent);
+    animation:mystery-tap-nudge 1.2s ease-in-out infinite;
+  }
+  .mystery-spark .mystery-tap::before{
+    content:""; position:absolute; left:-4.5px; top:50%; width:7px; height:7px; margin-top:-3.5px;
+    background:inherit; border-left:inherit; border-bottom:inherit; transform:rotate(45deg); border-radius:0 0 0 2px;
+  }
+  @keyframes mystery-tap-nudge{ 0%, 100%{ transform:translate(0, -50%); } 50%{ transform:translate(-4px, -50%); } }
+  .mystery-spark-found .mystery-tap, .mystery-spark-found .mystery-ring, .mystery-spark-found::before{ opacity:0 !important; animation:none !important; transition:opacity .15s ease; }
+  [data-reduce-motion="true"] .mystery-spark .mystery-tap{ animation:none; }
 
   /* ---- VIRTUAL ROOM: WAITING, AT THE TOP OF THE RESULTS ---- */
   .rs-screen .rs-card.vroom-waitcard{
@@ -35973,6 +36005,31 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .class-catalog .class-card.is-here,
   html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 55%, transparent) !important; }
   html[data-theme][data-layout] body #stage :is(.class-catalog, .classselect-panel) .class-card.is-soon{ border-radius:var(--ios-group-r) !important; }
+  /* (383) PROFILE'S CUSTOMIZE: the person card's one action, its own row under the XP bar, the card's width; light on the
+     dark themes and dark on the light one, so no banner hides it (see showProfile) */
+  html[data-layout] body #stage .profile-hero > .profile-customize-row{ position:relative; z-index:3; display:flex; margin:1.05rem 0 0; }
+  html[data-layout] body #stage .profile-hero > .profile-customize-row > .new-dot-anchor{ display:flex; flex:1 1 auto; min-width:0; }
+  /* something new in Customize: the dot inside the button's right end, not off its rounded corner */
+  html[data-layout] body #stage .profile-hero > .profile-customize-row > .new-dot-anchor > .new-dot{
+    top:50%; right:1.25rem; width:12px; height:12px; margin-top:-6px; z-index:4; box-shadow:0 0 9px var(--new-dot-glow);
+  }
+  html[data-theme][data-layout] body #stage .profile-hero .profile-edit-btn.profile-customize-btn{
+    flex:1 1 auto; min-width:0; width:100%; min-height:3.4rem; margin:0;
+    display:flex; align-items:center; justify-content:center; gap:.7rem;
+    padding:.6rem 1.1rem !important; text-box:normal; border:0 !important; border-radius:999px !important;
+    background:#F4F6F9 !important; background-image:none !important; color:#0B0D12 !important;
+    box-shadow:0 8px 22px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.95) !important;
+    font-size:1rem; font-weight:700; letter-spacing:0; text-transform:none; text-shadow:none;
+  }
+  html[data-theme="light"][data-layout] body #stage .profile-hero .profile-edit-btn.profile-customize-btn{
+    background:#121A20 !important; color:#FFFFFF !important; box-shadow:0 8px 20px rgba(18,26,32,.28) !important;
+  }
+  html[data-layout] body #stage .profile-hero .profile-customize-btn::before{ display:none !important; }
+  html[data-layout] body #stage .profile-hero .profile-customize-btn .pcz-icon{ flex:0 0 auto; width:1.55rem; height:1.55rem; }
+  html[data-layout] body #stage .profile-hero .profile-customize-btn .pcz-words{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15; text-align:left; }
+  html[data-layout] body #stage .profile-hero .profile-customize-btn .pcz-label{ font-size:1.0625rem; font-weight:700; }
+  html[data-layout] body #stage .profile-hero .profile-customize-btn .pcz-sub{ font-size:.8rem; font-weight:500; opacity:.62; margin-top:.1rem; }
+  html[data-layout] body #stage .profile-hero .profile-customize-btn:active{ transform:scale(.98); }
   /* (383) Enroll: the heading in the app's own type, not the old serif display face */
   html[data-layout] body #stage > .panel.class-enroll .ce-title{ font-family:var(--sans); font-size:clamp(1.7rem, 7vw, 2.1rem); font-weight:800; letter-spacing:-.02em; }
   /* (383) the Virtual Room lobby's two boxes on the shared card */
@@ -84636,6 +84693,23 @@ function buildMysterySpark(){
      the eye at the edge of vision in a way a flat glyph does not. The
      tap target around it is unchanged at 44px. */
   btn.appendChild(buildFlareOrb(MYSTERY_COLOR[mysteryColorThisRun], "sp"));
+  /* "CLICK ME" (383): "I've seen people ask about the secret flares popping up in the middle of their test, they haven't
+     clicked it because they didn't know they should. How do we make those secret flares ... seem more like 'click me'".
+     A light that drifts reads as decoration. Now it beckons: two rings ripple out of it in turn (::before and this span),
+     the orb hops every couple of seconds, and until the account has found its first flare a small "Tap" tag sits beside
+     it, nudging toward it. The tag is part of the button (tapping it finds the flare) and placeMysterySpark keeps it
+     clear of the number and the flag; the 44px button itself is unchanged. */
+  const ring2 = document.createElement("span");
+  ring2.className = "mystery-ring"; ring2.setAttribute("aria-hidden", "true");
+  btn.appendChild(ring2);
+  try{
+    if(!Object.values(store.mysteryColorsFound || {}).some(Boolean)){
+      const tag = document.createElement("span");
+      tag.className = "mystery-tap"; tag.setAttribute("aria-hidden", "true"); tag.textContent = "Tap";
+      btn.appendChild(tag);
+      btn.classList.add("has-tap");
+    }
+  }catch(e){}
   btn.addEventListener("click", ev => {
     ev.stopPropagation();
     foundMysteryFlare(btn);
@@ -84656,6 +84730,9 @@ function placeMysterySpark(btn, frac){
     if(!row || !row.isConnected) return;
     const rowR = row.getBoundingClientRect();
     const w = btn.getBoundingClientRect().width || 44;
+    /* the "Tap" tag (383) hangs off the button's right side: room for it too */
+    const tagEl = btn.querySelector(".mystery-tap");
+    const extra = tagEl ? Math.max(0, tagEl.getBoundingClientRect().right - btn.getBoundingClientRect().right) + 4 : 0;
     const num = row.querySelector(".qnum");
     const flag = row.querySelector(".flagbtn");
     /* The gap between the question number and the flag, in the row's own
@@ -84665,7 +84742,7 @@ function placeMysterySpark(btn, frac){
        flare anyway. */
     const lo = (num ? num.getBoundingClientRect().right + 6 : rowR.left) - rowR.left;
     const hi = (flag ? flag.getBoundingClientRect().left - 6 : rowR.right) - rowR.left;
-    const span = Math.max(0, (hi - lo) - w);
+    const span = Math.max(0, (hi - lo) - w - extra);
     btn.style.left = Math.round(lo + w / 2 + span * frac) + "px";
   });
 }
@@ -91734,14 +91811,14 @@ const TOUR_REV = 3;
 /* Build 289. Shared by the Profile tour and the re-armed three-step one
    so the two can never say different things. */
 const PROFILE_TIPS_289 = [
-  { target: ".profile-edit-btn", align: "right", vplacement: "below",
+  { target: ".profile-edit-btn", align: "left", vplacement: "below",
     text: "Customize changes your character, your banner and the app\u2019s colour (your name is in Settings). More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further." },
-  { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
-    text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or See rank ladder for every rank and what each one unlocks." },
   { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
-    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over." }
+    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over." },
+  { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
+    text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or See rank ladder for every rank and what each one unlocks." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -136884,12 +136961,38 @@ function showProfile(defaultTab, opts){
   nameDisplayText.className = "profile-name-display";
   nameDisplayText.textContent = store.firstName || "No name set";
   const nameEditBtn = document.createElement("button");
-  nameEditBtn.type = "button"; nameEditBtn.className = "next ghost profile-edit-btn";
+  nameEditBtn.type = "button"; nameEditBtn.className = "next ghost profile-edit-btn profile-customize-btn";
   /* Not "Edit" any more: it no longer edits the field beside it, it
      opens the screen that holds the name, the character and the theme.
      "The button on profile won't say edit anymore, it could say
      customize or something." */
-  nameEditBtn.textContent = "Customize";
+  /* ITS OWN ROW, LIGHT, WITH ITS ICON (383): "the customize button is kinda hidden because the background can be dark.
+     Let's figure out a better way to show the customize button in profile.. there's so much behind that button so we
+     need to get this right." It was a small dark pill beside the name, on a banner that is often dark too. Now it is the
+     person card's one action, the width of the card under the XP bar, a light button (dark on the light theme) - the
+     same on every banner - with a palette and the three things it holds named under the word. */
+  {
+    const NS = "http://www.w3.org/2000/svg";
+    const ic = document.createElementNS(NS, "svg");
+    ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.setAttribute("class", "pcz-icon");
+    ic.setAttribute("fill", "none"); ic.setAttribute("stroke", "currentColor"); ic.setAttribute("stroke-width", "2");
+    ic.setAttribute("stroke-linecap", "round"); ic.setAttribute("stroke-linejoin", "round");
+    const pal = document.createElementNS(NS, "path");
+    pal.setAttribute("d", "M12 3.2a8.8 8.8 0 1 0 0 17.6c1.05 0 1.75-.75 1.75-1.65 0-.46-.18-.86-.47-1.17-.28-.3-.46-.7-.46-1.15 0-.96.78-1.63 1.74-1.63h2.03a4.2 4.2 0 0 0 4.2-4.2C20.8 6.9 16.85 3.2 12 3.2z");
+    ic.appendChild(pal);
+    [[7.6, 11.2], [9.6, 7.3], [14.2, 7], [17, 10.4]].forEach(([cx, cy]) => {
+      const d = document.createElementNS(NS, "circle");
+      d.setAttribute("cx", cx); d.setAttribute("cy", cy); d.setAttribute("r", "1.15");
+      d.setAttribute("fill", "currentColor"); d.setAttribute("stroke", "none");
+      ic.appendChild(d);
+    });
+    const words = document.createElement("span"); words.className = "pcz-words";
+    const w1 = document.createElement("span"); w1.className = "pcz-label"; w1.textContent = "Customize";
+    const w2 = document.createElement("span"); w2.className = "pcz-sub"; w2.textContent = "Character \u00b7 Banner \u00b7 Theme";
+    words.append(w1, w2);
+    nameEditBtn.append(ic, words);
+    nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme");
+  }
   /* something new waiting in Customize (build 299) */
   /* The button clips its own contents (its glass sheen needs
      overflow:hidden), so the dot sits on a wrapper around it. */
@@ -136897,13 +137000,16 @@ function showProfile(defaultTab, opts){
   try{
     if(customizeNewCount() > 0){
       nameEditBtn.classList.add("has-new");
-      nameEditBtn.setAttribute("aria-label", "Customize - something new");
+      nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme - something new");
       nameEditSlot = document.createElement("span");
       nameEditSlot.className = "new-dot-anchor";
       nameEditSlot.append(nameEditBtn, buildNewDot());
     }
   }catch(e){}
-  nameDisplayRow.append(nameDisplayText, nameEditSlot);
+  nameDisplayRow.append(nameDisplayText);
+  const customizeRow = document.createElement("div");
+  customizeRow.className = "profile-customize-row";
+  customizeRow.appendChild(nameEditSlot);
 
   const nameInput = document.createElement("input");
   nameInput.type = "text"; nameInput.className = "searchbox searchbox-plain";
@@ -137048,6 +137154,7 @@ function showProfile(defaultTab, opts){
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
+  heroSect.appendChild(customizeRow);
   /* (round 26: "Why does the profile box have those 4 new things ... Remove
      those." The person card's Progress tiles came off; the person card
      keeps its own grid.) */
@@ -137064,10 +137171,13 @@ function showProfile(defaultTab, opts){
      level - in the person card's glass and fade; the next rank and the
      badge case are cards of their own under it, not boxes inside it.
      Friends moved to the chat (see the dock's Friends tab). */
+  /* UNDER THE PERSON CARD AGAIN (383): "Should the badge case be between the challenges and the top box instead? I feel
+     like it's easy to miss at the bottom the way it is." (317's top was INSIDE the one card, above Next rank; this is its
+     own shut-case strip between the cards, in sight without scrolling.) Person card, badge case, next rank. */
   identityTab.classList.add("profile-identity-tab");
   identityTab.appendChild(heroSect);
-  identityTab.appendChild(buildProfileGoal(prog));
   identityTab.appendChild(buildProfileCase(badgeCount, totalUnitsForBadges));
+  identityTab.appendChild(buildProfileGoal(prog));
   /* The Class 26E box is not on this tab any more: it heads the
      Calendar tab, right above the calendar it describes (build 319,
      builder h - buildClassCard). */

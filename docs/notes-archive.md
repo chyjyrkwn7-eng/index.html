@@ -31235,3 +31235,29 @@ didn't get the new back button and stuff."
   check-b328-classes: with the recap on the first Home, enrolling in Fire Code put "Weekly recap · Fire Code" - a week of zeros -
   over the new class's first Home. check-b383-classes (6) measures it (FAILS on the previous commit: the recap came up); its
   recap_store gives (5) a played last week; check-b326-e's day's-moment leg likewise.
+
+### Build 383 - Profile: the badge case under the person card, a Customize button you can see; secret flares that say "tap"
+Madison, 383: "Should the badge case be between the challenges and the top box instead? I feel like it's easy to miss at the
+bottom the way it is.." / "the customize button is kinda hidden because the background can be dark. Let's figure out a better
+way to show the customize button in profile.. there's so much behind that button so we need to get this right." / "I've seen
+people ask about the secret flares popping up in the middle of their test, they haven't clicked it because they didn't know they
+should. How do we make those secret flares that up seem more like 'click me' ya know?"
+- BADGE CASE: the Profile tab is person card, badge case, next rank (was person card, next rank, case). 317's "at the top is not
+  the move" was the case INSIDE the one card above Next rank; this is the shut-case strip as its own card between them, on screen
+  without scrolling on a phone (bottom 760 of a 956 screen, tab bar at 855). The Profile tour still opens on Customize, then the
+  standing line, the case, the next rank (screen order after Customize; check-behaviour b289 "starting with Customize").
+- CUSTOMIZE: off the name row onto its own row at the bottom of the person card, under the XP bar - the card's width (88% of the
+  hero on a phone), 55px tall, a light pill (#F4F6F9, dark text; #121A20 with white text on the light theme), a palette icon,
+  "Customize" over "Character · Banner · Theme". The old dark pill measured 1.2:1 against the card; this is 15.4:1. The
+  "something new" dot sits inside its right end. .profile-customize-btn / .profile-customize-row; aria-label names all three.
+- SECRET FLARE IN A TEST (buildMysterySpark): two rings ripple out of it in turn (::before and .mystery-ring, scale .45 to 1.95,
+  2.4s, offset 1.2s), the orb (2.45rem) hops every 2.4s (mystery-beckon) instead of the slow drift, and until the account has
+  found any flare a "Tap" tag sits to its right with a caret toward it, nudging (mystery-tap-nudge). The tag is a child of the
+  button (tapping it finds the flare); placeMysterySpark leaves room for it so it never reaches the flag; the 44px button is
+  unchanged (check-unlocks' overlap sweep still passes). Found: tag and rings go. Transforms/opacity only.
+- Gate tools/check-b383-profile.py: (1) order, on screen, tour; (2) own row, >=80% width, >=44px, contrast >=4.5:1, opens
+  Customize; (3) ring, tag for a never-found account, clear of number/flag/choices at frac 0/.5/1, tapping the tag finds it, no
+  tag once one is found. FAILS on the previous commit (9 checks). check-behaviour: b315_customize "Your look" is now the one
+  header bar (the name went to Settings > Account earlier in 383); b321f's case clearance is measured from the card above the case.
+- Still failing, not this build's: check-behaviour b321f "the rank word is the level's and the badges' computed colour" (also on
+  live 382); check-tours mainmenu/modeselect/profile (same counts on the previous commit).

@@ -13687,8 +13687,10 @@ def check_b315_customize(br):
         check(f"{dev}: Profile's button opens the summary - four rows in order, no grid on it, Back to Profile",
               r.get("rows") == ["character", "banner", "theme", "fx"] and r.get("grids") == 0 and "Back to Profile" in r.get("back", ""), r)
         # "The title of all those tabs needs a header thing"
-        check(f"{dev}: \"Your look\" wears the Name's own header bar",
-              [b.lower() for b in r.get("bars") or []] == ["name", "your look"] and r.get("sameBar"), (r.get("bars"), r.get("sameBar")))
+        # REVISED IN 383: the name moved to Settings > Account ("The change your name option in customize, that needs to be
+        # in settings somewhere"), so the summary has one header bar - the look's - and no Name bar to match
+        check(f"{dev}: \"Your look\" is Customize's one header bar (383: the name is in Settings > Account)",
+              [b.lower() for b in r.get("bars") or []] == ["your look"], (r.get("bars"), r.get("sameBar")))
         ch, bn, th, fx = r.get("char") or {}, r.get("banner") or {}, r.get("theme") or {}, r.get("fx") or {}
         cb = ch.get("box") or {"w": 0, "h": 0}
         # "The character preview of what you have set is cool but it's small"
@@ -25042,7 +25044,9 @@ def check_b321f_profile(br):
         svg: st ? st.querySelectorAll('.pf-idline svg, .pf-idline .pf-emb').length : -1,
         rankCol: col(Q('.pf-standing .pf-rankname')), levelCol: col(Q('.pf-standing .pf-level')), badgeCol: col(Q('.pf-standing .pf-badgecount')),
         totalCol: col(Q('.pf-standing .pf-xp-total')), totalShown: !!(Q('.pf-standing .pf-xp-total') && Q('.pf-standing .pf-xp-total').getClientRects().length),
-        gap: g && cs ? cs.getBoundingClientRect().top - g.getBoundingClientRect().bottom : null,
+        /* REVISED IN 383: the case moved up under the person card ("Should the badge case be between the challenges and
+           the top box instead?") - the clearance is for the case's handle, so it is measured from whichever card is above it */
+        gap: cs && cs.previousElementSibling ? cs.getBoundingClientRect().top - cs.previousElementSibling.getBoundingClientRect().bottom : null,
         rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
         kick: g ? ((g.querySelector('.pf-goal-head .pf-kick') || {}).textContent || '') : '',
         goalName: g ? ((g.querySelector('.pf-goal-name') || {}).textContent || '') : '',
@@ -25076,7 +25080,7 @@ def check_b321f_profile(br):
         # this check is that every figure on Stats is one colour.
         check(f"{dev}: on Stats, every figure is one colour (no Total XP card since 325)",
               not stats["statTot"] and stats["statOthers"] and len(set(stats["statOthers"])) == 1, [stats["statTot"], stats["statOthers"]])
-        check(f"{dev}: the Next rank box clears the case strip by at least 1.15rem (was .8rem)",
+        check(f"{dev}: the card above the case clears its handle by at least 1.15rem (was .8rem; the case is under the person card since 383)",
               mid["gap"] is not None and mid["gap"] >= 1.15 * mid["rem"] - .5 and wall["gap"] >= 1.15 * wall["rem"] - .5, [mid["gap"], wall["gap"], mid["rem"]])
         lm = next((r for r in mid["rows"] if r["k"] == "level"), {}); bm = next((r for r in mid["rows"] if r["k"] == "badges"), {})
         lw = next((r for r in wall["rows"] if r["k"] == "level"), {}); bw = next((r for r in wall["rows"] if r["k"] == "badges"), {})
