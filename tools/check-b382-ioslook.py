@@ -81,8 +81,9 @@ NAV = """()=>{ const P=__io.panel(); if(!P) return null;
 
 # per screen: headings, cards, a single group of rows, rows to measure, heading-over-card pairs
 SPEC = {
-  "customize": dict(heads=".screen-customize .slab.motion-summary", cards=".screen-customize .customize-namerow", group=".screen-customize .cz-row",
-                    rows=".screen-customize .cz-row, .screen-customize .customize-namerow"),
+  # (383) the name row moved to Settings > Account > Name; Customize is the one group of rows
+  "customize": dict(heads=".screen-customize .slab.motion-summary", group=".screen-customize .cz-row",
+                    rows=".screen-customize .cz-row"),
   "czpage":    dict(heads=".screen-customize .slab.motion-summary", rows=".screen-customize .settings-nav .back-link"),
   "friends":   dict(heads=".screen-friends .friend-sect > .sect-label", cards=".screen-friends > .friend-sect", rows=".screen-friends .friend-row, .screen-friends .friend-act, .screen-friends .friend-add-input, .screen-friends .settings-nav .back-link",
                     over=(".screen-friends > .friend-sect", ".sect-label")),

@@ -121,7 +121,8 @@ def red(c):
 PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "study": ["Swipe to next question", "Auto-advance", "Longer pause before moving on", "Auto-star questions you keep missing"],
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
-         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"]}
+         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
+         "name": []}   # (383) your name: Settings > Account > Name, its own editor (no switches)
 PEOPLE = ["Madison Davis", "Bryan Darjean", "Logan Preston", "Alexis Sauceda", "Cameron Wharton"]
 # the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
 FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]

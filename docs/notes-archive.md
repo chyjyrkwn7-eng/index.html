@@ -31012,3 +31012,12 @@ not reset..?"
   week's. The class earned a lot on Monday and Tuesday morning; his screenshot was the all-time Hundos board.
 - Gate: check-b383-feedback section 4 (placeholder at the left beside the icon; field and track 12+ levels over the sky, with a
   rim; 6 fail on 382).
+
+### 383: your name moved from Customize to Settings > Account > Name
+Madison: "The change your name option in customize, that needs to be in settings somewhere, in advanced or customize or something
+instead." It is the first row of Settings' Account group (a purple person tile, the name as its grey value), opening a "Name"
+page that holds Customize's own editor (buildCustomizeNameSect - Change, Save/Cancel, one name per person on the board).
+Customize's summary drops the name row (intro: "What you wear across the app..."). The editor's styles are shared via
+:is(.screen-customize, .settings-page-name); its field keeps Customize's padding on the Settings page. The Profile tour's
+Customize line now says the name is in Settings. Gates: check-b382-credits PAGES gains "name"; check-b382-ioslook's Customize
+spec drops the name row; check-behaviour b314_chars opens the editor from Settings.

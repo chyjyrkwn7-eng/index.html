@@ -23647,7 +23647,7 @@
   .customize-namerow[hidden], .customize-nameedit[hidden]{ display:none; }
   .customize-nameedit{ display:flex; flex-direction:column; gap:.7rem; margin-top:.4rem; padding:0 .1rem; max-width:28rem; }
   .customize-namelabel{ font-size:.78rem; font-weight:700; letter-spacing:.04em; color:var(--soft); padding-left:.25rem; }
-  .screen-customize .customize-nameedit .searchbox{ padding:.95rem 1.15rem; min-height:3.3rem; font-size:max(17px, 1.05rem); }
+  :is(.screen-customize, .settings-page-name) .customize-nameedit .searchbox{ padding:.95rem 1.15rem; min-height:3.3rem; font-size:max(17px, 1.05rem); }
   .customize-namebtns{ display:flex; gap:.65rem; margin-top:.25rem; }
   .customize-namebtns .next{ flex:1 1 0; min-width:0; margin:0; min-height:48px; }
   /* ---- CUSTOMIZE: THE SUMMARY ROWS AND THE PAGE BARS (build 315) ----
@@ -35898,23 +35898,25 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .screen-customize .cz-bar{ display:flex; align-items:baseline; }
   html[data-layout] body #stage .screen-customize .cz-bar-count{ font-size:.86rem; font-weight:500; letter-spacing:0; color:var(--soft); }
   /* the name: one row of a group, the name on the left and Change on the right */
-  html[data-layout] body #stage .screen-customize .customize-namerow,
-  html[data-layout] body #stage .screen-customize .customize-nameedit{
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow,
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-nameedit{
     box-sizing:border-box; max-width:none; margin:0;
     background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
     border-radius:var(--ios-group-r); box-shadow:var(--surface-shadow);
   }
-  html[data-layout] body #stage .screen-customize .customize-namerow{
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow{
     justify-content:space-between; flex-wrap:nowrap; min-height:3.4rem; padding:.5rem .6rem .5rem 1rem;
   }
-  html[data-layout] body #stage .screen-customize .customize-namerow[hidden],
-  html[data-layout] body #stage .screen-customize .customize-nameedit[hidden]{ display:none; }
-  html[data-layout] body #stage .screen-customize .customize-namerow .profile-name-display{
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow[hidden],
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-nameedit[hidden]{ display:none; }
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow .profile-name-display{
     min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:var(--sans); font-size:1.02rem; font-weight:600; letter-spacing:0; line-height:1.3;
   }
-  html[data-layout] body #stage .screen-customize .customize-namerow .profile-edit-btn{ flex:0 0 auto; }
-  html[data-layout] body #stage .screen-customize .customize-nameedit{ padding:1rem; }
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow .profile-edit-btn{ flex:0 0 auto; }
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-nameedit{ padding:1rem; }
+  /* (383) on its Settings page the field keeps Customize's room inside it (Settings' own inputs are tighter) */
+  html[data-layout] body #stage .settings-page-name .customize-nameedit input.searchbox{ padding-top:.95rem !important; padding-bottom:.95rem !important; padding-left:1.15rem !important; padding-right:1.15rem !important; }
   /* Your look: the four rows are one inset group - edge to edge, a hairline between, the corners on the group */
   html[data-layout] body #stage .screen-customize .cz-list{ gap:0; }
   html[data-layout] body #stage .screen-customize .cz-list > .cz-bar{ margin-bottom:var(--ios-head-gap) !important; }
@@ -91505,7 +91507,7 @@ const TOUR_REV = 3;
    so the two can never say different things. */
 const PROFILE_TIPS_289 = [
   { target: ".profile-edit-btn", align: "right", vplacement: "below",
-    text: "Customize changes your name, your character, your banner and the app\u2019s colour. More of each unlock as you climb the ranks and finish challenges." },
+    text: "Customize changes your character, your banner and the app\u2019s colour (your name is in Settings). More of each unlock as you climb the ranks and finish challenges." },
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further." },
   { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
@@ -119234,7 +119236,7 @@ function settingsTileColor(kind){
     share: "#0A84FF", install: "#30D158",
     update: "#34C759", bug: "#FF453A", history: "#5E5CE6",
     advanced: "#7C8696", credits: "#FF375F", cloudoff: "#8E8E93",
-    study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A"
+    study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A", person: "#BF5AF2"
   };
   return C[kind] || "#8E8E93";
 }
@@ -119269,7 +119271,8 @@ function settingsRowIcon(kind, tone){
     entercode: '<rect x="3.6" y="7" width="16.8" height="10" rx="2.6"/><path d="M7.6 12h.01M10.6 12h.01M13.6 12h.01M16.6 12h.01"/>',
     credits: '<path d="M12 19.6s-7.4-4.4-7.4-9.8A4.1 4.1 0 0 1 12 7.4a4.1 4.1 0 0 1 7.4 2.4c0 5.4-7.4 9.8-7.4 9.8z"/>',
     tap: '<path d="M10 11V5.8a1.6 1.6 0 0 1 3.2 0V11"/><path d="M13.2 10.2a1.6 1.6 0 0 1 3.2 0v1.2a1.6 1.6 0 0 1 3.1.5v2.6a6 6 0 0 1-6 6h-.8a5.6 5.6 0 0 1-4.5-2.3l-2.7-3.7a1.5 1.5 0 0 1 2.3-1.9L10 14.6"/>',
-    pause: '<circle cx="12" cy="12.8" r="7.4"/><path d="M12 8.8v4.2l2.6 1.6"/><path d="M9.6 3h4.8"/>'
+    pause: '<circle cx="12" cy="12.8" r="7.4"/><path d="M12 8.8v4.2l2.6 1.6"/><path d="M9.6 3h4.8"/>',
+    person: '<circle cx="12" cy="8.4" r="3.7"/><path d="M4.8 19.8c.9-3.7 3.7-5.7 7.2-5.7s6.3 2 7.2 5.7"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
@@ -120394,6 +120397,9 @@ function showAppearance(opts){
       share:  ["Share & Install", [settingsHeader("This app"), shareCard]]
     };
     if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
+    /* YOUR NAME (build 383): Madison, "The change your name option in customize, that needs to be in settings somewhere".
+       Customize's own editor (the one-name-per-person rule and all), built only when this page is opened. */
+    if(page === "name") PAGES.name = ["Name", [buildCustomizeNameSect()]];
     const def = PAGES[page];
     if(!def) return showAppearance();
     host = settingsSubPage(def[0], "screen-settings-page settings-page-" + page);
@@ -120429,6 +120435,7 @@ function showAppearance(opts){
     ]));
     host.appendChild(settingsHeader("Account", "settings-group-account"));
     host.appendChild(card("", [
+      cat("name", "person", "Name", store.firstName || "Not set"),
       cat("sync", "sync", "Sync", !fbDb ? "Unreachable" : (syncCode ? "On" : "Off")),
       noBoard ? null : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
@@ -132469,9 +132476,9 @@ function showCustomize(section){
   if(!only){
     const sub = document.createElement("p");
     sub.className = "cal-sub cz-intro";
-    sub.textContent = "Your name, and what you wear across the app. Press and hold anything to see how it's earned.";
+    sub.textContent = "What you wear across the app. Press and hold anything to see how it's earned.";
     panel.appendChild(sub);
-    panel.appendChild(buildCustomizeNameSect());
+    /* (build 383) your name lives in Settings > Account > Name now */
     panel.appendChild(buildCustomizeSummary());
   } else {
     const t = customizeTally(only);
