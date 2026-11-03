@@ -279,15 +279,19 @@ with sync_playwright() as pw:
     ev(pg, "()=>stopAmbience()")
 
     print("\n  3. Settings")
+    # build 382: Settings is a menu of categories; the sound group is the
+    # Sound & Haptics page, its row on the menu beside Motion and Study
     ev(pg, "()=>{ store.seenSettingsTour = true; showAppearance(); }"); pg.wait_for_timeout(400)
+    order = ev(pg, """()=>{ const row = document.getElementById('settings-row-sound'); if(!row) return null;
+      return [...row.parentElement.querySelectorAll('.settings-cat')].map(b => b.dataset.page); }""")
+    ev(pg, "()=>{ showAppearance({ page: 'sound' }); }"); pg.wait_for_timeout(400)
     r = ev(pg, """()=>{ const g = document.getElementById('settings-sound'), row = document.querySelector('.settings-sound-row');
       const cb = row && row.querySelector('input'), vol = document.querySelector('.settings-volume');
       const title = row && row.querySelector('.otext') ? row.querySelector('.otext').firstChild.textContent : null;
-      const order = [...document.querySelectorAll('.slab.motion-summary')].map(x => x.id);
       return { group: g ? g.textContent : null, title, checked: cb ? cb.checked : null, volHidden: vol ? vol.hidden : null,
-               vib: !!document.querySelector('.settings-vibrate-row'), order }; }""")
+               vib: !!document.querySelector('.settings-vibrate-row') }; }""")
     ck("a 'Sound & vibration' group with a 'Sound effects' switch, off", r.get("group") == "Sound & vibration" and r.get("title") == "Sound effects" and r.get("checked") is False, r)
-    ck("the group sits after Display & motion, before Studying & tests", (r.get("order") or [])[:3] == ["settings-motion", "settings-sound", "settings-study"], r.get("order"))
+    ck("the group sits with Display & motion and Studying & tests (one card of the menu)", isinstance(order, list) and {"motion", "sound", "study"} <= set(order), order)
     ck("the volume is hidden while sound is off", r.get("volHidden") is True, r)
     ck("no Vibration switch where vibration cannot work (not Android)", r.get("vib") is False, r)
     try: pg.click(".settings-sound-row .otext", timeout=4000, no_wait_after=True)
@@ -301,7 +305,7 @@ with sync_playwright() as pw:
       return { vol: theme.soundVolume, saved: store.theme.soundVolume, master: NovaSound.state().master, label: document.querySelector('.settings-volume .sliderval').textContent }; }""")
     ck("the volume slider sets the volume and saves it", abs((r.get("vol") or 0) - .35) < 1e-6 and abs((r.get("saved") or 0) - .35) < 1e-6 and r.get("label") == "35%", r)
     pg.reload(); pg.wait_for_timeout(2200); ev(pg, "()=>document.getElementById('splashscreen')?.remove()")
-    ev(pg, "()=>{ store.seenSettingsTour = true; showAppearance(); }"); pg.wait_for_timeout(300)
+    ev(pg, "()=>{ store.seenSettingsTour = true; showAppearance({ page: 'sound' }); }"); pg.wait_for_timeout(300)
     r = ev(pg, """()=>({ on: theme.soundOn, vol: theme.soundVolume, made: window.__acMade, checked: document.querySelector('.settings-sound-row input').checked,
       volHidden: document.querySelector('.settings-volume').hidden, slider: document.querySelector('.settings-volume input').value })""")
     ck("after a reload: still on, volume 35, the switch checked and the slider showing it", r.get("on") is True and abs((r.get("vol") or 0) - .35) < 1e-6 and r.get("checked") is True and r.get("volHidden") is False and r.get("slider") == "35", r)
@@ -354,7 +358,7 @@ with sync_playwright() as pw:
     print("\n  5. vibration (Android)")
     ctx, pg, errs = new_page(br, ua="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36")
     boot(pg)
-    ev(pg, SEED.rstrip("}") + "; theme.soundOn = false; saveTheme(); store.seenSettingsTour = true; showAppearance(); }"); pg.wait_for_timeout(400)
+    ev(pg, SEED.rstrip("}") + "; theme.soundOn = false; saveTheme(); store.seenSettingsTour = true; showAppearance({ page: 'sound' }); }"); pg.wait_for_timeout(400)
     r = ev(pg, "()=>{ const v = document.querySelector('.settings-vibrate-row'); return { row: !!v, checked: v ? v.querySelector('input').checked : null, vibOn: theme.vibrate }; }")
     ck("Android: a Vibration switch, off", r.get("row") is True and r.get("checked") is False and r.get("vibOn") is False, r)
     r = ev(pg, "()=>{ window.__vibes = []; playSound('test.correct'); return window.__vibes.length; }", default=-1)
@@ -459,6 +463,10 @@ with sync_playwright() as pw:
     got = played()
     ck("the bottom tab bar slides", "ui.tab.bottom" in got, got)
     try: pg.click(".profile-settings-tab-btn", timeout=3000, no_wait_after=True)
+    except Exception: pass
+    pg.wait_for_timeout(500)
+    # build 382: Reduce motion is on Settings' Motion & Effects page
+    try: pg.click("#settings-row-motion", timeout=3000, no_wait_after=True)
     except Exception: pass
     pg.wait_for_timeout(500)
     played()

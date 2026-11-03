@@ -105,7 +105,9 @@ with sync_playwright() as pw:
         ctx.close()
     if "legal" in want:
         ctx, page = page_for(br, "promax")
-        r = page.evaluate("""async ()=>{ showAppearance(); await new Promise(r => setTimeout(r, 700)); const n = document.querySelector('.affiliation-note.legal-settings');
+        r = page.evaluate("""async ()=>{ /* build 382: Settings > Legal is its own page, the same note word for word */
+          showAppearance(); await new Promise(r => setTimeout(r, 700)); document.getElementById('settings-legal').click(); await new Promise(r => setTimeout(r, 700));
+          const n = document.querySelector('.screen-settings-text.settings-text-legal');
           const settings = n ? n.textContent : ''; showClassSelection(); await new Promise(r => setTimeout(r, 500));
           const c = document.querySelector('.classselect-panel .affiliation-note'); return { settings, classes: c ? c.textContent : '' }; }""")
         chk("Settings: made by M. Davis, the copyright, and not affiliated with HCC, TCOLE or the ICC",

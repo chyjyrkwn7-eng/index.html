@@ -163,9 +163,18 @@ def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
         # recap from Nova (build 324), or any check that fixtures last week's
         # rows would have him talking over Home. check_b324w_recap clears it.
         ctx.add_init_script("try{localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}")
+        # ...and has answered build 382's one-time "Save your sync code" card,
+        # or it lands over whatever is being measured (an open chat, a page).
+        ctx.add_init_script("try{localStorage.setItem('class26e.savecode.card','1');}catch(e){}")
     pg = open_page(ctx)
     pg.goto(URL)
     pg.wait_for_timeout(2600)
+    if seed:
+        # A seed without a sync code has one minted at boot, and a freshly
+        # issued code clears the card's answer (codeIssuedFresh), so it is
+        # answered again here, after boot and before the stub confirms the
+        # cloud copy (which is what lets the card show).
+        pg.evaluate("()=>{ try{ store.savedCodeSaved = true; localStorage.setItem('class26e.savecode.card','1'); }catch(e){} }")
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
     return ctx, pg
 
@@ -2207,7 +2216,7 @@ def check_b232(br):
       showCustomize('character');
       T('fade', () => { const svg = document.querySelector('.avatarchar-option .avatarchar-svg');
         const cs = svg && getComputedStyle(svg); return cs ? (cs.maskImage || cs.webkitMaskImage || '') : null; });
-      showAppearance();
+      showAppearance({ page: 'sync' });   /* build 382: the code is on Settings > Sync */
       T('sync', () => { const l = document.querySelector('.sync-code-row .sync-code-label'); return l ? getComputedStyle(l).color : null; });
       return out; }""")
     # Build 244: the first rank is Bronze (it was Iron).
@@ -6613,8 +6622,10 @@ def check_b284(br):
       loadTheme(); applyTheme(); await wait(200);
       out.scroll = document.documentElement.style.scrollBehavior;
       out.wake = window.__wake;
-      showAppearance(); await wait(800);
-      out.rows = [...document.querySelectorAll('.otext')].map(e => (e.firstChild && e.firstChild.textContent || '').trim());
+      /* build 382: Settings is a menu; its switch rows are on the category pages */
+      out.rows = [];
+      for(const k of ['sound', 'study', 'motion', 'sync', 'rankings']){ showAppearance({ page: k }); await wait(400);
+        out.rows.push(...[...document.querySelectorAll('.otext')].map(e => (e.firstChild && e.firstChild.textContent || '').trim())); }
       /* 2. the bar and the Profile card */
       out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
       showProfile(); await wait(900);
@@ -6649,6 +6660,9 @@ def check_b284(br):
       /* 6. no Most missed: the bank, the unit door, the Settings reset, a saved bank */
       showAppearance(); await wait(700);
       out.resetMissed = [...document.querySelectorAll('button')].some(b => /missed-question history/i.test(b.textContent || ''));
+      /* build 382: the resets are on Advanced settings' own page */
+      if(typeof showAdvancedSettings === 'function'){ showAdvancedSettings(); await wait(500); }
+      out.resetMissed = out.resetMissed || [...document.querySelectorAll('button')].some(b => /missed-question history/i.test(b.textContent || ''));
       store.opts = Object.assign({}, store.opts || {}, { source: 'recent', mode: 'drill' }); applySaved();
       out.savedBank = cfg.source;
       const unit = topicsIn(QUESTIONS)[0];
@@ -9901,12 +9915,29 @@ def check_b314h_settings_calendar(br):
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       showAppearance(); await wait(500);
       const tog = [...document.querySelectorAll('.more-toggle')].find(b => /Advanced settings/.test(b.textContent));
+      if(tog){
       const body = tog.nextElementSibling, inner = body.querySelector('.more-body-inner');
       const sample = async ms => { const s = []; const t0 = performance.now();
         while(performance.now() - t0 < ms){ await new Promise(r => requestAnimationFrame(r)); s.push({ t: Math.round(performance.now() - t0), h: Math.round(body.getBoundingClientRect().height), clip: getComputedStyle(inner).clipPath }); } return s; };
       tog.click(); out.open = await sample(700);
       tog.click(); out.close = await sample(800);
       out.closedAfter = !body.classList.contains('open');
+      } else {
+        /* BUILD 382: Advanced settings is a page of its own, not a section
+           that sweeps open in place - there is no accordion left to sweep.
+           What is held instead: its row on the Settings menu opens that page,
+           with its back button and the three resets on it, and Back returns
+           to the menu. */
+        const row = document.querySelector('#stage .adv-toggle');
+        out.page = { row: !!row };
+        if(row){ row.click(); await wait(700);
+          const pg = document.querySelector('#stage .screen-advsettings');
+          out.page.open = !!pg;
+          out.page.back = !!(pg && pg.querySelector('.settings-nav-back'));
+          out.page.resets = pg ? [...pg.querySelectorAll('button')].filter(b => /Reset|Clear analytics/i.test(b.textContent)).length : 0;
+          if(pg && pg.querySelector('.settings-nav-back')){ pg.querySelector('.settings-nav-back').click(); await wait(700); }
+          out.page.backOnMenu = !!document.querySelector('#stage .adv-toggle'); }
+      }
       /* the calendar, on a coloured theme */
       theme.accent = 'adept'; applyTheme(); showCalendar(); await wait(400);
       const t = document.querySelector('.cal-grid .cal-cell-today'); let c = getComputedStyle(t);
@@ -9918,13 +9949,19 @@ def check_b314h_settings_calendar(br):
         shadow: rimFrom === 'ring' ? (/inset/.test(c.boxShadow) && / 0px 0px 0px /.test(c.boxShadow) ? 'none' : c.boxShadow) : c.boxShadow,
         border: rimFrom === 'ring' ? (c.boxShadow.match(/rgba?\([^)]*\)/) || [''])[0] : c.borderTopColor, bg: c.backgroundColor, rimFrom };
       return out; }""")
-    op = r["open"]; cl = r["close"]
-    mid_open = [s for s in op if s["clip"] not in (op[-1]["clip"], op[0]["clip"])]
-    check("opening sweeps the clip open over several frames, at its full height from the first",
-          len(mid_open) >= 3 and op[0]["h"] > 40, {"frames": len(op), "between": len(mid_open), "h0": op[0]["h"]})
-    held = [s for s in cl if s["h"] > 40 and s["t"] >= 150]
-    check("closing is not instant: it keeps its height for 150ms+ while the clip sweeps shut, then gives it back",
-          len(held) >= 3 and cl[-1]["h"] < 5 and r["closedAfter"], {"held": len(held), "end": cl[-1]})
+    if "page" not in r:
+        op = r["open"]; cl = r["close"]
+        mid_open = [s for s in op if s["clip"] not in (op[-1]["clip"], op[0]["clip"])]
+        check("opening sweeps the clip open over several frames, at its full height from the first",
+              len(mid_open) >= 3 and op[0]["h"] > 40, {"frames": len(op), "between": len(mid_open), "h0": op[0]["h"]})
+        held = [s for s in cl if s["h"] > 40 and s["t"] >= 150]
+        check("closing is not instant: it keeps its height for 150ms+ while the clip sweeps shut, then gives it back",
+              len(held) >= 3 and cl[-1]["h"] < 5 and r["closedAfter"], {"held": len(held), "end": cl[-1]})
+    else:
+        a = r["page"]
+        check("(382) Advanced settings' row on the Settings menu opens its own page, with a back button and its resets",
+              a.get("row") and a.get("open") and a.get("back") and (a.get("resets") or 0) >= 2, a)
+        check("(382) ...and Back returns to the Settings menu", a.get("backOnMenu") is True, a)
     t = r["today"]
     import re as _re
     nums = [int(x) for x in _re.findall(r"\d+", t["border"])[:3]]
@@ -10953,7 +10990,7 @@ def check_b313_lead(br):
     print("\n90. build 313 (lead): Auto-star, short blurbs, badge text, Phoenix 10, rank bars, the no-hundo note, the board that only showed you")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-      showAppearance(); await wait(500);
+      showAppearance({ page: 'study' }); await wait(500);   /* build 382: Auto-star is on Settings > Study */
       out.autoStar = [...document.querySelectorAll('#stage *')].some(e => e.childElementCount === 0 && /Auto-star questions you keep missing/.test(e.textContent || ''))
         || /Auto-star questions you keep missing/.test(document.getElementById('stage').textContent);
       out.autoFlag = /Auto-flag/i.test(document.getElementById('stage').textContent);

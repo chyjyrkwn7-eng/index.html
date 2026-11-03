@@ -97,7 +97,7 @@ def silent_exit(br):
 def tab_haptics(br):
     print("\nB. an iPhone Safari tab with sound switched off keeps haptics")
     ctx, pg = tab_ctx(br, "try{localStorage.setItem('class26e.safarisound','0');}catch(e){}")
-    r = pg.evaluate("""()=>{ theme.soundOn=true; theme.haptics=true; NovaSound.sync(); showAppearance();
+    r = pg.evaluate("""()=>{ theme.soundOn=true; theme.haptics=true; NovaSound.sync(); showAppearance({ page: "sound" });   /* build 382: its own page */
       return { tab: NovaSound.iosTab, off: NovaSound.tabOff(),
         sound: !!document.querySelector('#stage .settings-sound-row'),
         haptics: !!document.querySelector('#stage .settings-haptics-row'),

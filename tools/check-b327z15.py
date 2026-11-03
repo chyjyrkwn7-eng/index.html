@@ -626,7 +626,8 @@ def section_w(br):
     pg.wait_for_timeout(2600)
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
     pg.wait_for_timeout(2500)
-    pg.evaluate("() => { showAppearance(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
+    # build 382: Settings is a menu; its switches are on the category pages (Study's first)
+    pg.evaluate("() => { showAppearance({ page: 'study' }); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }")
     pg.wait_for_timeout(1200)
     ROW = "() => [...document.querySelectorAll('#stage .opt')].filter(r => r.querySelector(':scope > .box') && r.offsetHeight && !/Reduce motion/.test(r.textContent))[0]"
     info = pg.evaluate("() => { const row = (" + ROW + ")(); row.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = row.querySelector(':scope > .box').getBoundingClientRect(); const cb = row.querySelector(':scope > input'); return { x0: b.left + b.height / 2, x1: b.right - b.height / 2, y: b.top + b.height / 2, native: cb.classList.contains('hsw-opt') }; }")

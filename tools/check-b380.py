@@ -280,7 +280,8 @@ with sync_playwright() as pw:
         nt["banner"] and not nt["toast"] and nt["top"] is not None and nt["top"] < nt["vh"] / 3, nt)
     pg.evaluate("()=>{ document.querySelectorAll('.daily-alert').forEach(n=>n.remove()); showHome(); }"); pg.wait_for_timeout(800)
     # (23) a tapped switch sets off at the release
-    pg.evaluate("()=>{ theme.reduceMotion=false; try{ applyTheme(); }catch(e){} showAppearance(); }"); pg.wait_for_timeout(2500)
+    # (382) Settings is a menu; its switch rows are on the category pages (Study's)
+    pg.evaluate("()=>{ theme.reduceMotion=false; try{ applyTheme(); }catch(e){} showAppearance({ page: 'study' }); }"); pg.wait_for_timeout(2500)
     SW = """async([late, flip])=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
       const box=[...document.querySelectorAll('#stage .opt > .box')].find(b=>!/Reduce motion/i.test(b.closest('.opt').textContent)); if(!box) return null;
       box.scrollIntoView({block:'center'}); await wait(400);
