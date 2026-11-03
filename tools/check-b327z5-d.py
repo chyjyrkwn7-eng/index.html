@@ -57,7 +57,8 @@ def sec_a(br):
 
 CAL = """() => {
   const probe = document.createElement('div');
-  probe.style.cssText = 'position:fixed;left:0;top:0;width:10px;height:10px;background:var(--surface-sheen), var(--surface-1);border:1px solid var(--surface-border);backdrop-filter:var(--surface-blur);-webkit-backdrop-filter:var(--surface-blur)';
+  /* REVISED IN 383: the app's card is the shared one (382/383's Delta card: --ios-card-fill over --surface-1, no rim, no frost) */
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:10px;height:10px;background:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1);border:1px solid transparent;backdrop-filter:none;-webkit-backdrop-filter:none';
   document.body.appendChild(probe);
   const P = getComputedStyle(probe), want = { bg: P.backgroundImage, bc: P.borderTopColor, bf: P.backdropFilter || P.webkitBackdropFilter };
   probe.remove();
