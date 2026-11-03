@@ -31082,3 +31082,32 @@ loadTheme and saveTheme (a saved field is never dropped) and is read by nothing;
 asserts the switch is absent on Study (academy and Fire Code).
 - Behaviour sections for the screens given the iOS head this build (17 sections): the only failures are check_b321g_nova's 11, which
   fail identically on 382 (they expect "Version 9" and the old Nova intro wording) - stale, not this build's.
+
+### 383: Fire Code syncs (its own account document under the academy code)
+Madison: "The police class has sync code working. The fire code side says sync code isn't reachable. Fix that as well."
+Built 328 as a sandbox with no cloud at all (initFirebase stood down, setSyncCode a no-op, fbDb null), so its Settings said "Sync
+isn't reachable". Now:
+- The head script reads the academy's code (class26e.synccode) before it redirects storage: window.NOVA_ACADEMY_CODE.
+- In Fire Code syncCode = <academy code> + IFC_ACCOUNT_SUFFIX ("__ifc"): its own document, progress/<code>__ifc (backup
+  <code>__ifc__floor), beside the academy's and never in it. Every device signed in to the academy account syncs its Fire Code
+  with no second code. shownSyncCode() strips the suffix wherever a code is shown or shared (Sync page reveal, Save it).
+- ONLY the account reaches the cloud: initFirebase in Fire Code opens ifcAcctDb (FIREBASE_CONFIG shared) and calls
+  ifcAccountReady() (attachLiveListener + pushToCloud, then redraws an open Sync page) - fbDb stays null, so the leaderboard,
+  Virtual Room, chat, friends, invites and presence stay off exactly as before. acctDb() = fbDb || ifcAcctDb is used by the account's
+  own functions only: every collection("progress"), and the guards of handleRemoteReset, ensureCloudConfirmed, writeAccount,
+  pullFromCloud, attachLiveListener, checkAccountMove, pushToCloud, scheduleCloudPush, markCloudConfirmed, deleteAccountFloor,
+  resetEverything (its leaderboard delete still needs fbDb). Leaderboard / rooms functions are untouched.
+- A brand-new Fire Code document is the fresh-account path (the listener's hasSeenExist guard; never-seen -> markCloudConfirmed(false)
+  -> push), so first contact cannot read as a remote reset.
+- Fire Code's Sync page: the academy code, "The same code as your Police Academy account. Fire Code saves to the cloud under it, on
+  every device signed in to that account." No Start syncing / Enter a code there (it follows the academy account); without an
+  academy code it says to turn sync on in the Police Academy class.
+- tools/firestore-admin.py find labels <code>__ifc "(Fire Code class of <code> - not a second account)" and its __floor.
+- Gate tools/check-b383-ifcsync.py (in-memory Firestore): device 1 writes progress/TEST-3830__ifc and nothing else (no academy doc,
+  no leaderboard, no rooms); Sync reads On and shows TEST-3830; fbDb null; device 2 (same academy code, first Fire Code visit) gets
+  device 1's 4321 points / 777 correct; the academy still writes progress/TEST-3830. 4 fail on 382.
+- check-b328-classes' "no cloud, no sync code" now asserts the new arrangement. check-sync, check-b382-savecode, -credits, -firstrun
+  ALL PASS. check-b382-ifc's Stats pills (.stx-allpill, .stx-dots-switch, .thx-filter-btn) went to .92rem to stay no smaller than
+  Profile's switch (now the board's .92rem).
+- Firestore rules: progress/<anything> is what merge/move/credit/floor documents already use; the sandbox cannot reach Firebase, so
+  the first real write is on his phone.

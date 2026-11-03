@@ -82,6 +82,9 @@
     if(!owner){ try{ localStorage.removeItem(ACTIVE); }catch(e){} return; }
     window.NOVA_CLASS = "ifc";
     window.NOVA_ACADEMY_RAW = academyRaw;
+    /* build 383: Fire Code syncs under the academy account's code (its own document beside it, never the academy's): read here,
+       before the redirect below, the only moment this page can see the academy's key */
+    try{ window.NOVA_ACADEMY_CODE = localStorage.getItem("class26e.synccode") || null; }catch(e){ window.NOVA_ACADEMY_CODE = null; }
     /* its question bank, a file of its own (1.4 MB) that only this class loads: written in
        here so it runs, in order, before the app's script reads it (window.IFC_BANK) */
     document.write('<script src="ifc/bank.js"><\/script>');
@@ -34114,13 +34117,13 @@ html.is-browser{ --fade-paper: transparent; }
      see at full size: 44px tall boxes (px, not rem, so a larger text setting cannot shrink them below it), the words at
      .84rem bold - Profile's own tabs and Customize - and the test history's mode filters (the screen this pill opens) the
      same. */
-  .stx-allbtn.stx-allpill{ min-height:44px; margin-top:-.2rem; margin-bottom:-.2rem; font-size:.84rem; }
+  .stx-allbtn.stx-allpill{ min-height:44px; margin-top:-.2rem; margin-bottom:-.2rem; font-size:.92rem; }   /* 383: Profile's switch is .92rem now */
   .stx-allbtn.stx-allpill > span{ min-height:40px; box-sizing:border-box; padding-top:0; padding-bottom:0; padding-left:1.95rem; padding-right:1.95rem; }
   .stx-allbtn.stx-allpill > span > svg{ right:.6rem; width:1rem; height:1rem; }
   .stx-dots-switch{ padding:3px; }
-  .stx-dots-switch > button{ height:44px; font-size:.84rem; padding-left:.95rem; padding-right:.95rem; }
+  .stx-dots-switch > button{ height:44px; font-size:.92rem; padding-left:.95rem; padding-right:.95rem; }
   .stx-dots-switch button::before{ inset:-3px -1px; }
-  .thx-filter-btn{ min-height:44px; font-size:.84rem; padding-left:1rem; padding-right:1rem; }
+  .thx-filter-btn{ min-height:44px; font-size:.92rem; padding-left:1rem; padding-right:1rem; }
   @supports (text-box: trim-both cap alphabetic){
     .profile-edit-btn:not(.profile-hero .profile-edit-btn){ text-box:trim-both cap alphabetic; padding-block:calc(.4rem + (1lh - 1cap)/2); }
     .rank-me-btn, .stx-allbtn.stx-allpill > span > b,
@@ -61990,6 +61993,18 @@ let mirroredCode = null;
 const SYNC_CODE_KEY = "class26e.synccode";
 let syncCode = null;
 try { syncCode = window.localStorage.getItem(SYNC_CODE_KEY) || null; } catch(e){ syncCode = null; }
+/* FIRE CODE SYNCS (build 383). Madison: "The police class has sync code working. The fire code side says sync code isn't
+   reachable. Fix that as well." Fire Code (built 328 as a sandbox with no cloud at all) keeps its own account document, at
+   progress/<academy code>__ifc - beside the academy's, never in it - so every device signed in to the academy account syncs its
+   Fire Code too, with no second code to keep. Only the ACCOUNT goes to the cloud here: fbDb stays null in Fire Code, so the
+   leaderboard, the Virtual Room, chat, friends and invites stay off exactly as before; the account's own functions use acctDb().
+   The code shown and shared in Fire Code is the academy's (shownSyncCode). */
+const IFC_ACCOUNT_SUFFIX = "__ifc";
+if(window.NOVA_CLASS === "ifc"){
+  const ac = window.NOVA_ACADEMY_CODE;
+  syncCode = (typeof ac === "string" && ac && ac.indexOf("__") < 0) ? ac + IFC_ACCOUNT_SUFFIX : null;
+}
+function shownSyncCode(){ return syncCode ? String(syncCode).replace(/__ifc$/, "") : syncCode; }
 let cloudPushTimer = null;
 /* NOTHING GOES UP UNTIL THE SERVER'S COPY HAS COME DOWN (build 296).
    pushToCloud() REPLACES the whole progress document with this device's
@@ -62652,25 +62667,50 @@ function persistLocally(){
    replacement for it. */
 
 let fbDb = null;
+/* the ACCOUNT's handle (build 383): fbDb in the academy; in Fire Code, a Firestore of its own that only the account's functions
+   use (var, not let: initFirebase reads it at the top level) */
+var ifcAcctDb = null;
+function acctDb(){ return fbDb || ifcAcctDb; }
 /* In another class (NOVA_CLASS "ifc") there is no cloud on purpose: the words say so (build 332)
    instead of asking for a connection that would never come. */
 function academyOnly(what, fallback){
   return (window.NOVA_CLASS && window.NOVA_CLASS !== "academy") ? what + " is only for the Police Academy class." : fallback;
 }
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBneNkybD3uHBijZKOGIIK6Htnl2dEgrjo",
+  authDomain: "class-26e-study-drill.firebaseapp.com",
+  projectId: "class-26e-study-drill",
+  storageBucket: "class-26e-study-drill.firebasestorage.app",
+  messagingSenderId: "81727412637",
+  appId: "1:81727412637:web:2f850810a2880496853774"
+};
+/* Fire Code's account comes up (build 383): what firebaseBecameReady does for the account, and nothing else of it */
+let ifcAccountUp = false;
+function ifcAccountReady(){
+  if(ifcAccountUp || !ifcAcctDb || !syncCode) return;
+  ifcAccountUp = true;
+  attachLiveListener(syncCode);
+  pushToCloud();
+  try{ const sp = document.querySelector("#stage .screen-settings-page[data-page='sync']"); if(sp) showAppearance({ page: "sync" }); }catch(e){}
+}
 function initFirebase(){
   /* another class (NOVA_CLASS, top of the document) never reaches the cloud */
-  if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy") return false;
+  if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy"){
+    /* Fire Code (build 383): the account only - fbDb stays null, so nothing else in the app reaches the cloud */
+    if(window.NOVA_CLASS === "ifc" && !ifcAcctDb && syncCode){
+      try{
+        if(window.firebase){
+          if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+          ifcAcctDb = firebase.firestore();
+          setTimeout(() => { try{ ifcAccountReady(); }catch(e){} }, 0);
+        }
+      }catch(e){ ifcAcctDb = null; }
+    }
+    return false;
+  }
   try {
     if(window.firebase && !fbDb){
-      const firebaseConfig = {
-        apiKey: "AIzaSyBneNkybD3uHBijZKOGIIK6Htnl2dEgrjo",
-        authDomain: "class-26e-study-drill.firebaseapp.com",
-        projectId: "class-26e-study-drill",
-        storageBucket: "class-26e-study-drill.firebasestorage.app",
-        messagingSenderId: "81727412637",
-        appId: "1:81727412637:web:2f850810a2880496853774"
-      };
-      if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       fbDb = firebase.firestore();
       return true;
     }
@@ -64123,8 +64163,8 @@ function resetEverything(){
      still watching this code live picks up the deletion and mirrors the
      reset on its own (see attachLiveListener), so this one call is what
      actually resets every synced device, not just the one that tapped it. */
-  if(fbDb && syncCode){
-    try { fbDb.collection("progress").doc(syncCode).delete().catch(() => {}); } catch(e){}
+  if(acctDb() && syncCode){
+    try { acctDb().collection("progress").doc(syncCode).delete().catch(() => {}); } catch(e){}
     deleteAccountFloor(syncCode);   /* build 298: or it would bring the account back */
     /* The leaderboard entry is a SEPARATE document and was not being
        deleted here, so a reset account stayed on the board forever with
@@ -64132,7 +64172,7 @@ function resetEverything(){
        with several dead test accounts still listed. Deleting the
        progress doc alone was never enough. Same best-effort, not
        awaited, so a slow connection cannot block the local reset. */
-    try { if(store.publicId) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
+    try { if(store.publicId && fbDb) fbDb.collection("leaderboard").doc(store.publicId).delete().catch(() => {}); } catch(e){}
     forgetLeaderboardRowCache();
   }
   detachLiveListener();
@@ -64164,14 +64204,14 @@ var remoteResetCheckingFor = "";
 var REMOTE_RESET_CONFIRM_MS = 2500, REMOTE_RESET_FLOOR_WAIT_MS = 8000;
 function handleRemoteReset(){
   const code = syncCode;
-  if(!code || !fbDb || remoteResetCheckingFor === code) return;
+  if(!code || !acctDb() || remoteResetCheckingFor === code) return;
   remoteResetCheckingFor = code;
   const done = () => { if(remoteResetCheckingFor === code) remoteResetCheckingFor = ""; };
   const gone = ref => ref.get({ source: "server" }).then(s => !!s && !s.exists && !(s.metadata && s.metadata.fromCache));
   setTimeout(() => {
-    if(code !== syncCode || !fbDb){ done(); return; }
+    if(code !== syncCode || !acctDb()){ done(); return; }
     let accountRef, floorRef;
-    try{ accountRef = fbDb.collection("progress").doc(code); floorRef = floorRefFor(code); }catch(e){ done(); return; }
+    try{ accountRef = acctDb().collection("progress").doc(code); floorRef = floorRefFor(code); }catch(e){ done(); return; }
     gone(accountRef).then(accountGone => {
       if(!accountGone || code !== syncCode){ done(); return; }
       return gone(floorRef)
@@ -64221,7 +64261,7 @@ let lastCloudPushAt = 0, lastFloorPushAt = 0, lastPushCode = "";
    code (a sign-up, a link) pushes that one at once */
 function sincePush(at){ return lastPushCode === syncCode ? Date.now() - at : Infinity; }
 function scheduleCloudPush(){
-  if(!fbDb || !syncCode) return;
+  if(!acctDb() || !syncCode) return;
   if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; ensureCloudConfirmed(); return; }
   clearTimeout(cloudPushTimer);
   const wait = Math.max(2500, CLOUD_PUSH_MIN_GAP_MS - sincePush(lastCloudPushAt));
@@ -64594,9 +64634,9 @@ const ACCOUNT_FLOOR_SUFFIX = "__floor";
 const FLOOR_READ_WAIT_MS = 4000;
 let floorMergedFor = "";
 let floorReadingFor = "";
-function floorRefFor(code){ return fbDb.collection("progress").doc(code + ACCOUNT_FLOOR_SUFFIX); }
+function floorRefFor(code){ return acctDb().collection("progress").doc(code + ACCOUNT_FLOOR_SUFFIX); }
 function deleteAccountFloor(code){
-  if(!fbDb || !code) return;
+  if(!acctDb() || !code) return;
   try { floorRefFor(code).delete().catch(() => {}); } catch(e){}
 }
 /* ---- A DEVICE THAT CANNOT CONFIRM KEEPS ASKING (build 313) ----
@@ -64611,17 +64651,17 @@ function deleteAccountFloor(code){
    server-sourced "not there" before it has seen the account exist.
    Backs off (4s, 8s ... 60s) and stops the moment anything confirms. */
 function ensureCloudConfirmed(){
-  if(!fbDb || !syncCode || cloudConfirmedFor === syncCode || confirmRetryTimer) return;
+  if(!acctDb() || !syncCode || cloudConfirmedFor === syncCode || confirmRetryTimer) return;
   const code = syncCode;
   confirmRetryTimer = setTimeout(() => {
     confirmRetryTimer = null;
-    if(code !== syncCode || cloudConfirmedFor === code || !fbDb) return;
+    if(code !== syncCode || cloudConfirmedFor === code || !acctDb()) return;
     const again = () => { confirmRetryMs = Math.min(CONFIRM_RETRY_MAX_MS, confirmRetryMs * 2); ensureCloudConfirmed(); };
     /* a hidden page is suspended on iOS anyway; it is asked again on
        the way back (visibilitychange below) */
     if(document.visibilityState === "hidden") return;
     try{
-      fbDb.collection("progress").doc(code).get({ source: "server" }).then(snap => {
+      acctDb().collection("progress").doc(code).get({ source: "server" }).then(snap => {
         if(code !== syncCode || cloudConfirmedFor === code) return;
         if(snap && snap.metadata && snap.metadata.fromCache){ again(); return; }
         if(snap && snap.exists){
@@ -64659,7 +64699,7 @@ function markCloudConfirmed(docExists){
     if(cloudPushPending){ cloudPushPending = false; rowAwaitingConfirm = false; scheduleCloudPush(); }
     else if(rowAwaitingConfirm){ rowAwaitingConfirm = false; try{ if(store.leaderboardOptIn) pushLeaderboardRow(); }catch(e){} }
   };
-  if(docExists === false || !fbDb){
+  if(docExists === false || !acctDb()){
     /* nothing to restore into: the next push writes the floor fresh */
     floorMergedFor = code;
     confirm();
@@ -64695,7 +64735,7 @@ function markCloudConfirmed(docExists){
   } catch(e){ settle(null); }
 }
 function pushToCloud(leaving){
-  if(!fbDb || !syncCode) return;
+  if(!acctDb() || !syncCode) return;
   if(cloudConfirmedFor !== syncCode){ cloudPushPending = true; ensureCloudConfirmed(); return; }
   clearTimeout(cloudPushTimer); cloudPushTimer = null;
   if(lastPushCode !== syncCode){ lastPushCode = syncCode; lastFloorPushAt = 0; }
@@ -64762,7 +64802,7 @@ function accountAhead(a, b){
   return ((a && a.testHistory) || []).some(h => h && !had.has(key(h)));
 }
 function writeAccount(code, withMain, withFloor, leaving){
-  if(!fbDb || !code || (!withMain && !withFloor)) return;
+  if(!acctDb() || !code || (!withMain && !withFloor)) return;
   /* one at a time: a second transaction from this device would only
      contend with its own first. What was asked for in the meantime goes
      the moment the first lands. A write that never settles stops holding
@@ -64785,11 +64825,11 @@ function writeAccount(code, withMain, withFloor, leaving){
      left behind must never bring a reset one back (markCloudConfirmed
      skips it for the same reason) - so it is written over unread. */
   let ref = null, fref = null;
-  try{ ref = fbDb.collection("progress").doc(code); fref = withFloor ? floorRefFor(code) : null; }catch(e){}
+  try{ ref = acctDb().collection("progress").doc(code); fref = withFloor ? floorRefFor(code) : null; }catch(e){}
   /* A stand-in with no way to read at all (the friends and chat gates,
      which measure the row) gets the plain write it always had. The real
      SDK always has transactions. */
-  if(ref && typeof fbDb.runTransaction !== "function" && typeof ref.get !== "function"){
+  if(ref && typeof acctDb().runTransaction !== "function" && typeof ref.get !== "function"){
     const put = r => { try{ const p = r.set(JSON.parse(JSON.stringify(store))); if(p && p.catch) p.catch(() => {}); }catch(e){} };
     if(withMain) put(ref);
     if(fref) put(fref);
@@ -64822,8 +64862,8 @@ function writeAccount(code, withMain, withFloor, leaving){
   };
   let run;
   try{
-    if(typeof fbDb.runTransaction === "function"){
-      run = fbDb.runTransaction(tx => readBoth(r => tx.get(r)).then(([snap, fsnap]) => {
+    if(typeof acctDb().runTransaction === "function"){
+      run = acctDb().runTransaction(tx => readBoth(r => tx.get(r)).then(([snap, fsnap]) => {
         const b = build(snap, fsnap);
         if(withMain) tx.set(ref, b.doc);
         if(fref) tx.set(fref, b.doc);
@@ -64929,9 +64969,9 @@ function adoptFromCloud(code, onDone){
    account - setSyncCode retires that row, not the adopted one (build 322). */
 var adoptedOverPublic = null;
 function pullFromCloud(code, onDone, adopt){
-  if(!fbDb){ onDone && onDone(false, "no-connection"); return; }
+  if(!acctDb()){ onDone && onDone(false, "no-connection"); return; }
   try {
-    fbDb.collection("progress").doc(code).get().then(docSnap => {
+    acctDb().collection("progress").doc(code).get().then(docSnap => {
       /* A MERGE IS ONLY EVER OF THE SAME ACCOUNT (build 322). The mirror's
          recovery pulls a code before this device holds one; if a sign-up
          or a sign-in gave it a different code while the read was out,
@@ -64970,7 +65010,7 @@ function pullFromCloud(code, onDone, adopt){
    re-save its own data in a loop. */
 function attachLiveListener(code){
   detachLiveListener();
-  if(!fbDb || !code) return;
+  if(!acctDb() || !code) return;
   /* This closure variable is the actual fix for the "reset from
      another device" false-alarm bug: docSnap.exists is false both
      when a document was genuinely deleted (a real reset on another
@@ -64989,7 +65029,7 @@ function attachLiveListener(code){
   checkAccountMove(code);
   ensureCloudConfirmed();
   try {
-    liveUnsubscribe = onSnapshotResilient(fbDb.collection("progress").doc(code), docSnap => {
+    liveUnsubscribe = onSnapshotResilient(acctDb().collection("progress").doc(code), docSnap => {
       if(code !== syncCode) return; // stale callback from a code we've since moved on from
       if(!docSnap.exists){
         /* NEVER ACT ON A MISSING DOCUMENT THAT CAME FROM THE LOCAL CACHE.
@@ -65062,7 +65102,7 @@ function attachLiveListener(code){
    inside the top-level script, and reading them here was the sixth `let`
    below its caller (check-chat caught it). */
 function checkAccountMove(code){
-  if(!fbDb || !code || accountMoveChecked === code) return;
+  if(!acctDb() || !code || accountMoveChecked === code) return;
   accountMoveChecked = code;
   try{ checkAccountCredit(code); }catch(e){}
   try{
@@ -65075,16 +65115,16 @@ function checkAccountMove(code){
       return true;
     };
     /* the merge note first; a plain move only when there is none */
-    fbDb.collection("progress").doc(code + ACCOUNT_MERGE_SUFFIX).get()
+    acctDb().collection("progress").doc(code + ACCOUNT_MERGE_SUFFIX).get()
       .then(snap => follow(snap, true))
       .catch(() => false)
       .then(done => { if(done) return;
-        return fbDb.collection("progress").doc(code + ACCOUNT_MOVE_SUFFIX).get().then(snap => { follow(snap, false); }); })
+        return acctDb().collection("progress").doc(code + ACCOUNT_MOVE_SUFFIX).get().then(snap => { follow(snap, false); }); })
       .catch(() => {});
   }catch(e){}
 }
 function checkAccountCredit(code){
-  fbDb.collection("progress").doc(code + ACCOUNT_CREDIT_SUFFIX).get().then(snap => {
+  acctDb().collection("progress").doc(code + ACCOUNT_CREDIT_SUFFIX).get().then(snap => {
     if(!snap || !snap.exists || code !== syncCode) return;
     if(applyAccountCredit(snap.data() || {})){
       try{ snap.ref.set({ done: Date.now() }, { merge: true }).catch(() => {}); }catch(e){}
@@ -65163,7 +65203,7 @@ function progressSinceBase(src, base){
   return out;
 }
 function followAccountMove(from, to, noteRef, note){
-  fbDb.collection("progress").doc(to).get().then(target => {
+  acctDb().collection("progress").doc(to).get().then(target => {
     if(!target.exists || from !== syncCode) return;
     const cloud = target.data();
     /* A MERGE NOTE BRINGS THIS DEVICE'S PROGRESS ALONG (build 279). Taken
@@ -89943,7 +89983,7 @@ function showWelcomeCodeEntry(){
       showStatus("Couldn't reach sync right now \u2014 try again in a moment.", "bad", true);
       return;
     }
-    fbDb.collection("progress").doc(code).get().then(docSnap => {
+    acctDb().collection("progress").doc(code).get().then(docSnap => {
       linkBtn.disabled = false; linkBtn.textContent = "Continue";
       if(!docSnap.exists){
         showStatus("No progress found under that code yet.", "bad", true);
@@ -120008,7 +120048,7 @@ function showAppearance(opts){
   function renderSyncBody(){
     while(syncSect.children.length > 1) syncSect.removeChild(syncSect.lastChild);
 
-    if(!fbDb){
+    if(!acctDb()){
       /* BUILD 382: a status row in a card like every other group - an
          icon, what is wrong, and what to do - instead of a paragraph in a
          box. Same words, split where the sentence already split. */
@@ -120063,7 +120103,7 @@ function showAppearance(opts){
       let revealed = false;
       row.addEventListener("click", () => {
         revealed = !revealed;
-        codeSpan.textContent = revealed ? syncCode : "\u2022\u2022\u2022\u2022-\u2022\u2022\u2022\u2022";
+        codeSpan.textContent = revealed ? shownSyncCode() : "\u2022\u2022\u2022\u2022-\u2022\u2022\u2022\u2022";
         codeWell.classList.toggle("is-revealed", revealed);
         hint.textContent = (revealed ? "Tap to hide" : "Tap to show") + ". Use it to link another device.";
       });
@@ -120139,7 +120179,9 @@ function showAppearance(opts){
 
       const saveNote = document.createElement("p");
       saveNote.className = "sync-note-plain";
-      saveNote.textContent = "Keep this somewhere off this phone. If this device ever loses its "
+      saveNote.textContent = window.NOVA_CLASS === "ifc"
+        ? "The same code as your Police Academy account. Fire Code saves to the cloud under it, on every device signed in to that account."
+        : "Keep this somewhere off this phone. If this device ever loses its "
         + "data, the code is what puts you back on your account.";
       card.appendChild(saveNote);
       /* SAVE IT IS BACK (build 382), as the one row under the code. It came
@@ -120158,6 +120200,12 @@ function showAppearance(opts){
          clearSyncCode()/retireLeaderboardEntry() stay - reset still
          calls them, and class26e.syncoff is still what holds boot's
          re-issue off. Only the button is gone. */
+    } else if(window.NOVA_CLASS === "ifc"){
+      /* Fire Code has no code of its own: it follows the academy account's (build 383) */
+      const note = document.createElement("p");
+      note.className = "sync-note-plain";
+      note.textContent = "Fire Code syncs under your Police Academy account's code. Turn sync on in the Police Academy class, then come back.";
+      syncSect.appendChild(note);
     } else {
       /* build 382: rows in a list card like the rest of Settings */
       const bar = document.createElement("div");
@@ -120469,7 +120517,7 @@ function showAppearance(opts){
     host.appendChild(settingsHeader("Account", "settings-group-account"));
     host.appendChild(card("", [
       cat("name", "person", "Name", store.firstName || "Not set"),
-      cat("sync", "sync", "Sync", !fbDb ? "Unreachable" : (syncCode ? "On" : "Off")),
+      cat("sync", "sync", "Sync", !acctDb() ? "Unreachable" : (syncCode ? "On" : "Off")),
       noBoard ? null : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
     dataSect.classList.add("settings-menu-card");
@@ -122716,7 +122764,7 @@ function checkFriendRequests(){
    precisely nothing - the same rule the clipboard path already had. */
 async function saveSyncCodeVia(anchorEl){
   if(!syncCode) return false;
-  const text = "Nova sign-in code: " + syncCode
+  const text = "Nova sign-in code: " + shownSyncCode()
     + "\nKeep this. It is the only way back into your account if this phone loses the app's data.";
   if(navigator.share){
     try{

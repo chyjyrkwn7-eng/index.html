@@ -53,7 +53,9 @@ with sync_playwright() as pw:
         chk("in Fire Code: class is ifc", st["cls"]=="ifc", st)
         chk("Fire Code starts at zero (points/answered)", st["pts"]==0 and st["ans"]==0, st)
         chk("same person: name + publicId, onboarding done", st["name"]=="Maddog" and st["pid"]=="xph5b57jbp5a" and st["onb"] is True, st)
-        chk("off the leaderboard, no cloud, no sync code", st["lb"] is False and st["fb"] is None and st["code"] is None, st)
+        # build 383 ("The fire code side says sync code isn't reachable. Fix that"): Fire Code's ACCOUNT syncs, at its own document beside
+        # the academy's (<academy code>__ifc) - and nothing else reaches the cloud: no leaderboard, fbDb still null
+        chk("off the leaderboard and the shared cloud (fbDb null); its account's code is the academy's + __ifc", st["lb"] is False and st["fb"] is None and isinstance(st["code"], str) and st["code"].endswith("__ifc") and "__" not in st["code"][:-5], st)
         chk("Home shows with the flame bubble", st["home"] and "is-ifc" in (st["icon"] or ""), st)
         chk("Fire Code's own bank is loaded: 1,779 questions (kit 5.4.1)", st["q"] == 1779, st["q"])
         # the academy's copy, untouched (read raw, past the shim)
