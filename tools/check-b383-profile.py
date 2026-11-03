@@ -14,6 +14,8 @@ Checks (measured on the page, phone 440x956):
   3. The secret flare in a test: a second ring rippling out of it, and - until the account has found a flare - a
      "Tap" tag beside it that is part of the button (tapping it finds the flare), clear of the question number, the
      flag and the choices; an account that has found one gets no tag.
+  4. (383, from a Calendar screenshot: "I notice the test one is glowing. Ensure they are all the same cohesive look")
+     the calendar's key and grid dots carry no glow, phone and iPad.
 Run:  python3 tools/check-b383-profile.py   (--against OLD/index.html must FAIL)"""
 import os, sys, json
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -111,6 +113,21 @@ with sync_playwright() as pw:
     ck("3. an account that has found a flare: no tag (it knows), the rings still", m1.get("tag") is False and m1.get("ring") is True, m1)
     ck("no page errors", not errs, errs[:2])
     ctx.close()
+
+    print("\n4. the calendar's dots: one flat look (383: \"I notice the test one is glowing\")")
+    for (w, h, dev) in ((440, 956, "phone"), (834, 1194, "iPad")):
+        errs = []
+        ctx, pg = g["open_page"](br, g["init_account"]("", g["store"]()), w=w, h=h, errs=errs)
+        pg.evaluate("()=>{ showCalendarTab(); }"); pg.wait_for_timeout(1500)
+        r = pg.evaluate("""()=>{ const sh = e => getComputedStyle(e).boxShadow;
+          const key = [...document.querySelectorAll('#stage .cal-grid-legend .cal-legend-dot')].map(d => ({ cls: d.className, sh: sh(d) }));
+          const grid = [...document.querySelectorAll('#stage .cal-grid .cal-cell-dot')].map(d => sh(d));
+          return { key, keyGlow: key.filter(k => k.sh !== 'none').map(k => k.cls), gridDots: grid.length, gridGlow: grid.filter(x => x !== 'none').length,
+                   testInKey: key.some(k => /cal-cell-dot-test/.test(k.cls)), testInGrid: !!document.querySelector('#stage .cal-grid .cal-cell-dot-test') }; }""")
+        ck("4. %s: the key's four marks, none glowing (%s)" % (dev, r["keyGlow"]), len(r["key"]) >= 4 and r["testInKey"] and not r["keyGlow"], r)
+        ck("4. %s: the grid's dots, none glowing (%d of %d)" % (dev, r["gridGlow"], r["gridDots"]), r["gridDots"] > 0 and r["testInGrid"] and r["gridGlow"] == 0, r)
+        ck("no page errors", not errs, errs[:2])
+        ctx.close()
     br.close()
 
 print("\nALL PASS" if not fails else "\nFAILED: %d" % len(fails))

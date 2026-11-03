@@ -21843,7 +21843,7 @@
     pointer-events:none;
   }
   .pick-nexttest-what{ display:inline-flex; align-items:center; gap:.3rem; white-space:nowrap; text-transform:uppercase; }
-  .pick-nexttest-what::before{ content:""; width:.42rem; height:.42rem; border-radius:50%; background:#F5B54D; box-shadow:0 0 6px rgba(245,181,77,.7); flex:none; }
+  .pick-nexttest-what::before{ content:""; width:.42rem; height:.42rem; border-radius:50%; background:#F5B54D; box-shadow:none; flex:none; }   /* (383) flat, as the calendar's test dot */
   .pick-nexttest-when{ white-space:nowrap; font-weight:700; color:rgba(255,226,170,.82); letter-spacing:.01em; }
   @media (min-width:40rem){ .picks > label.pick > .pick-nexttest{ font-size:.72rem; margin-top:.55rem; } }
   /* THE NEXT TEST SITS BESIDE THE CIRCLE (build 327z8). "Where it says next
@@ -21874,7 +21874,7 @@
     font-size:.6rem; line-height:1.1; letter-spacing:.06em; min-width:0;
   }
   .picks > label.pick > .pick-nexttest .pick-nexttest-what{ grid-column:1 / -1; color:#F5B54D; font-weight:800; gap:.28rem; }
-  .picks > label.pick > .pick-nexttest .pick-nexttest-what::before{ width:.36rem; height:.36rem; box-shadow:0 0 5px rgba(245,181,77,.75); }
+  .picks > label.pick > .pick-nexttest .pick-nexttest-what::before{ width:.36rem; height:.36rem; box-shadow:none; }
   .picks > label.pick > .pick-nexttest .pick-nexttest-when{ grid-column:1 / -1; padding-left:.64rem; color:rgba(255,255,255,.88); font-weight:700; font-size:1.12em; letter-spacing:.01em; }
   @media (min-width:40rem){ .picks > label.pick > .pick-nexttest{ font-size:.68rem; margin-left:.7rem; margin-top:0; } }
   @media (max-width:26.5rem){
@@ -32392,7 +32392,9 @@
      days' white (build 327e: "when selecting days you can't see the day") */
   .screen-calendar-tab .cal-cell-class.cal-cell-sel:not(.cal-cell-today) .cal-cell-num{ color:var(--accent-ink); }
   .screen-calendar-tab .cal-cell:not(.cal-cell-class):not(.cal-cell-blank){ color:rgba(236,239,245,.62); }
-  .screen-calendar-tab .cal-cell-dot-test{ box-shadow:0 0 6px rgba(245,181,77,.6); }
+  /* (383) no glow: "I notice the test one is glowing. Ensure they are all the same cohesive look" - the key's dots and the
+     grid's (on an iPad the grid's test days glowed too) are flat colour, told apart by colour alone like the others */
+  .screen-calendar-tab :is(.cal-cell-dot, .cal-week-dot, .cal-legend-dot){ box-shadow:none !important; }
   .unitdetail-badgecap{ margin:.35rem 0 0; font-size:.74rem; font-weight:600; color:rgba(236,239,245,.62); font-variant-numeric:tabular-nums; }
 
   /* ---- SETTINGS, ROUND 10 ----

@@ -31261,3 +31261,13 @@ should. How do we make those secret flares that up seem more like 'click me' ya 
   header bar (the name went to Settings > Account earlier in 383); b321f's case clearance is measured from the card above the case.
 - Still failing, not this build's: check-behaviour b321f "the rank word is the level's and the badges' computed colour" (also on
   live 382); check-tours mainmenu/modeselect/profile (same counts on the previous commit).
+
+### Build 383 - the calendar's dots: one flat look
+Madison, 383, on a Calendar screenshot (the key circled): "I notice the test one is glowing. Ensure they are all the same cohesive
+look." `.screen-calendar-tab .cal-cell-dot-test` carried box-shadow 0 0 6px amber: on a phone it showed on the key's Test mark only
+(the 382 phone block already flattened the grid's), on an iPad on the key AND the grid's test days. Now every dot on the Calendar
+tab - key, grid, week marks - is flat colour (`:is(.cal-cell-dot, .cal-week-dot, .cal-legend-dot){ box-shadow:none !important }`),
+told apart by colour as the other three always were. The unit cards' "Next test" marker (.pick-nexttest-what::before), the same
+amber dot with the same glow, is flat too. check-b383-profile (4): key and grid, phone and iPad, no glow - FAILS on the previous
+commit (phone key; iPad key and 4 of 25 grid dots). check-behaviour b324c_calendar: the same 13 failures as live 382 (it still
+expects the week strip), none new.
