@@ -78,6 +78,8 @@ SEEN = ("localStorage.setItem('class26e.freshstart','1');localStorage.setItem('c
 def store(**extra):
     d = {"firstName": "Gate Tester", "avatarChar": "ninja", "onboardingComplete": True, "leaderboardOptIn": False,
          "tourRev": 999, "novaMet": 99, "lastModified": 1790400000000,
+         # every week's recap counted as heard: on a recap day Nova talks first and the card rightly waits
+         "novaHeard": {"@recap": 99991231},
          "lifetime": {"points": 420, "correct": 88}, "testStats": {"Penal Code": {"plays": 1}}}
     d.update(extra)
     return d

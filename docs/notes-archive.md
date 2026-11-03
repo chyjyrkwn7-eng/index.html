@@ -30952,3 +30952,13 @@ Found by check-positions in the final run (no flags on 381, eight on 382).
   601-660 trims the gap above the button.
 - check-positions: the character step may scroll only while its Continue stays on screen; it is read after 500ms (the re-pin).
   Result: no flags (381: no flags).
+
+### 382 final run: "Search names" centred again; the save-code gate on a recap day
+- check-b381 caught the iOS look's Leaderboard search setting the placeholder back to text-align:left (35632), undoing 381's
+  "The word search names is not centered for leaderboard search". The override now restates 381's centring (padding-right
+  clamp(1rem, 100% - 2.6rem - 7em, 2.6rem)); what is typed still starts at the left. check-b381 ALL PASS.
+- check-b382-savecode "existing" failed on Tuesday 3 Nov only: the weekly recap is due, Nova talks first and the card waits
+  (by design). Measured: close the recap and the card follows ~6s later (popupGapUntil). Fixture: novaHeard {"@recap": 99991231}.
+- check-b382-credits: the Sync page's row is "Your sync code" since the save-code card work (deliberate).
+- Pre-existing on 381 too: check-save-code part 1 (a fresh launch opens Get started, not Welcome), check-b380 loops fallback,
+  check-b377 hand-over timing. check-sync "Find me" failed under load only (passes alone).

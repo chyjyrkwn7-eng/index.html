@@ -35629,7 +35629,9 @@ html.is-browser{ --fade-paper: transparent; }
     backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
     font-size:1rem; text-align:left; padding-right:2.6rem;
   }
-  html[data-layout] body .screen-rankings .rank-search-wrap > .rank-search:placeholder-shown{ text-align:left; padding-right:1rem; }
+  /* the placeholder stays in the field's middle (381, Madison: "The word search names is not centered for leaderboard search"):
+     381's padding-right that balances the magnifier, re-stated after the rule above; what is typed starts at the left */
+  html[data-layout] body .screen-rankings .rank-search-wrap > .rank-search:placeholder-shown{ text-align:center; padding-right:clamp(1rem, calc(100% - 2.6rem - 7em), 2.6rem); }
   html[data-layout] body .screen-rankings .rank-search-wrap > .searchicon{ color:var(--soft); opacity:.85; }
   html[data-theme][data-layout] body .screen-rankings .rank-tools > .rank-me-btn{
     min-height:44px; padding:0 1.05rem; border-radius:12px; border:0 !important;
