@@ -7,7 +7,7 @@ can add Logan Preston" / "made by M. Davis and then the word nova in a nice cool
     Code -, Share & Install), each with a solid, non-grey tile, a chevron, 44px+, colours differing in a card; no switch,
     slider or legal paragraph on it; Credits = Contributors and Legal (words and a chevron, no tile); Support = Report a
     bug, Version history, Terms of Use, Privacy (coloured words, no tile, no chevron); no names at the foot (that is
-    Contributors' job), only "Made by Davis" (the name in gradient text) and a NOVA wordmark in
+    Contributors' job), only "Made by Davis" (383: the name plain, small capitals like "Made by") and a NOVA wordmark in
     gradient text, last on the screen.
 (2) Every category opens its own page (round back button, title) holding its settings, each switch row with a coloured
     tile; a page lights the tab Settings lights; back is the menu.
@@ -92,8 +92,12 @@ MENU = """()=>{ const S=document.querySelector('#stage .screen-settings'); if(!S
     footNames: foot ? [...foot.querySelectorAll('.settings-credits-name, .settings-credits-cell')].length : -1,
     footText: foot ? foot.textContent.replace(/\\s+/g, ' ').trim() : '',
     madeBy: (S.querySelector('.settings-madeby')||{}).textContent||'',
-    madeByGrad: (()=>{ const e=S.querySelector('.settings-madeby-name'); if(!e) return false; const c=getComputedStyle(e);
-      return /gradient/.test(c.backgroundImage) && /text/.test((c.webkitBackgroundClip||'') + (c.backgroundClip||'')); })(),
+    /* 383: "Don't make Davis look like that" - the name is plain: no gradient, no serif italic, the same small capitals as
+       "Made by", a step heavier */
+    madeByPlain: (()=>{ const e=S.querySelector('.settings-madeby-name'), b=S.querySelector('.settings-madeby-by'); if(!e || !b) return false;
+      const c=getComputedStyle(e), d=getComputedStyle(b);
+      return !/gradient/.test(c.backgroundImage) && c.fontStyle === 'normal' && c.textTransform === d.textTransform && c.fontSize === d.fontSize
+        && c.fontFamily === d.fontFamily && parseInt(c.fontWeight) > parseInt(d.fontWeight); })(),
     /* every card group on the menu has a grey label straight above it */
     unlabelled: [...S.querySelectorAll(':scope > .settings-card')].filter(c=>{ const p=c.previousElementSibling; return !(p && p.classList.contains('slab') && p.textContent.trim()); }).length,
     cards: S.querySelectorAll(':scope > .settings-card').length,
@@ -160,8 +164,8 @@ with sync_playwright() as pw:
             m.get("cards", 0) >= 5 and m.get("unlabelled") == 0, m)
         chk("%s the foot has no names grid, no contributors' names (%s)" % (tag, m.get("footText")),
             m.get("footNames") == 0 and not any(n.split()[1] in m.get("footText", "") for n in PEOPLE[1:]), m)
-        chk("%s it ends on 'Made by Davis' (the name in gradient text) and a NOVA wordmark" % tag,
-            m.get("madeBy").replace(" ", "").lower() == "madebydavis" and m.get("madeByGrad") and m.get("word") == "NOVA" and m.get("wordGrad") and m.get("footLast"), m)
+        chk("%s it ends on 'Made by Davis' (383: the name plain, in the signature's own capitals) and a NOVA wordmark" % tag,
+            m.get("madeBy").replace(" ", "").lower() == "madebydavis" and m.get("madeByPlain") and m.get("word") == "NOVA" and m.get("wordGrad") and m.get("footLast"), m)
 
         # (2) each category is a page
         for k in want:
