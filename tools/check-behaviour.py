@@ -1563,8 +1563,11 @@ def check_b218(br):
       if(!a||!b) return null; const ca=getComputedStyle(a), cb=getComputedStyle(b);
       return { h:[Math.round(a.getBoundingClientRect().height), Math.round(b.getBoundingClientRect().height)],
                bg:[ca.backgroundColor, cb.backgroundColor], blur:cb.backdropFilter }; }""")
-    check("Find me matches the search field beside it",
-          bool(fm) and fm["h"][0] == fm["h"][1] and fm["bg"][0] == fm["bg"][1] and "blur" in (fm["blur"] or ""), fm)
+    # Build 382's iOS look: the field is a solid fill and Find me an accent-tinted button beside it
+    # (iOS's tinted style), neither frosted - same height, no blur on either.
+    fm2 = pg.evaluate("()=>getComputedStyle(document.querySelector('.rank-search')).backdropFilter")
+    check("Find me matches the search field beside it (height, and neither is frosted)",
+          bool(fm) and fm["h"][0] == fm["h"][1] and (fm["blur"] or "none") == "none" and (fm2 or "none") == "none", [fm, fm2])
     # The person card: no rank coin on the character, and "Correct answers".
     pc = pg.evaluate("""()=>{ openPersonSheet({ pub:'bo-pub', firstName:'Bo', level:40, badges:6, hundos:40, xp:50000, correct:900, avatarChar:'robot' });
       const card=document.querySelector('.person-card'); if(!card) return null;
@@ -6627,7 +6630,7 @@ def check_b284(br):
       for(const k of ['sound', 'study', 'motion', 'sync', 'rankings']){ showAppearance({ page: k }); await wait(400);
         out.rows.push(...[...document.querySelectorAll('.otext')].map(e => (e.firstChild && e.firstChild.textContent || '').trim())); }
       /* 2. the bar and the Profile card */
-      out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
+      out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start):not(#bottomtab-stats[hidden])')].map(t => t.dataset.dest);
       showProfile(); await wait(900);
       /* build 315: the rank row is the standing block */
       /* MOVED IN 327z15 round 5: "Why ... when I click my xp the rank road map pops up?" -
@@ -9143,6 +9146,10 @@ def check_b305_resultstap(br):
           let last = null, still = 0;
           for(let k = 0; k < 60 && still < 4; k++){ await new Promise(r => setTimeout(r, 100));
             const y = Math.round(b.getBoundingClientRect().top) + '|' + Math.round(scrollY); still = y === last ? still + 1 : 0; last = y; }
+          /* build 382: the row takes no touch until its buttons have risen and RS_SETTLE_MS more has passed (Madison: a tap
+             where Re-run would be, before it is there, started the retake) - a tap inside that wait is refused on purpose */
+          for(let k = 0; k < 50 && b.closest('.rs-unarmed'); k++) await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 60));
           const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
         pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(1200)
         r2 = pg.evaluate("()=>!!document.querySelector('[data-screen=\"home\"]')")
