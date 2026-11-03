@@ -35351,15 +35351,18 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout][data-theme] .picks{ gap:.65rem; }
   html[data-layout][data-theme] .picks > label.pick{
     border-radius:18px;
-    border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
-    background:var(--surface-1);
+    /* (383) "The unit cards just look super dark" (measured on 382: darker than the sky round them) - the Leaderboard
+       row's lift over the surface, Settings' sheen on top, the full rim */
+    border:1px solid var(--surface-border);
+    background:var(--surface-sheen), linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1);
     box-shadow:none;
     -webkit-backdrop-filter:none; backdrop-filter:none;
     transition:transform .42s cubic-bezier(.2,.8,.2,1), border-color .2s ease, background-color .2s ease;
   }
   html[data-layout][data-theme] .picks > label.pick.pick-checked{
     border-color:var(--accent) !important;
-    background:linear-gradient(color-mix(in srgb, var(--accent) 12%, transparent), color-mix(in srgb, var(--accent) 12%, transparent)), var(--surface-1) !important;
+    /* (383) a clear step over the lifted card it is next to */
+    background:linear-gradient(color-mix(in srgb, var(--accent) 20%, transparent), color-mix(in srgb, var(--accent) 20%, transparent)), linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
     box-shadow:inset 0 0 0 1px var(--accent) !important;
   }
   html[data-layout][data-theme] .picks > label.pick.is-pressing{ box-shadow:none !important; background:var(--surface-lift), var(--surface-1); }
@@ -35393,7 +35396,9 @@ html.is-browser{ --fade-paper: transparent; }
   /* the levels: an iOS segmented control - a flat track, the chosen segment raised, every segment 44px */
   html[data-layout][data-theme] .screen-setup .setup-levels{
     display:flex; width:100%; margin:1rem 0 .9rem; padding:3px; box-sizing:border-box; border-radius:13px;
-    background:var(--surface-1) !important; border:1px solid color-mix(in srgb, var(--surface-border) 60%, transparent) !important;
+    /* (383) the Leaderboard's switch exactly: iOS's fill over the surface, the full rim */
+    background:linear-gradient(color-mix(in srgb, var(--ink) 14%, transparent), color-mix(in srgb, var(--ink) 14%, transparent)), var(--surface-1) !important;
+    border:1px solid var(--surface-border) !important; border-radius:12px;
     box-shadow:none !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; will-change:auto !important;
   }
   html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn{
@@ -35402,8 +35407,8 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout][data-theme] .screen-setup .setup-levels .iconbtn.active{ color:var(--ink); }
   html[data-layout][data-theme] .screen-setup .setup-levels .seg-slider{
-    border-radius:10px !important; background:color-mix(in srgb, var(--ink) 17%, transparent) !important;
-    box-shadow:0 1px 3px rgba(0,0,0,.35) !important;
+    border-radius:9px !important; background:color-mix(in srgb, var(--ink) 22%, transparent) !important;
+    box-shadow:0 1px 3px var(--surface-inset), 0 0 0 .5px var(--surface-lift) !important;
   }
   /* Select all (and Review's Starred) - one flat pill, centred under the levels */
   html[data-layout][data-theme] .screen-setup .picks-tools{ display:flex; justify-content:center; align-items:center; gap:.6rem; flex-wrap:wrap; margin:0 0 .55rem; }
@@ -35417,7 +35422,29 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout][data-theme] .screen-setup :is(.selall-btn, .starred-pill):active{ background:var(--surface-lift) !important; }
   html[data-layout][data-theme] .screen-setup .sect > .selall-btn{ display:flex; width:fit-content; margin:0 auto .55rem; }
   /* a class with one level (Fire Code) has no tabs: Select all keeps the tabs' 1rem from the mode */
-  html[data-layout][data-theme] .screen-setup .setup-levels[hidden] ~ :is(.selall-btn, .picks-tools){ margin-top:1rem; }
+  html[data-layout][data-theme] .screen-setup .setup-levels[hidden] ~ :is(.selall-btn, .picks-tools, .setup-tools){ margin-top:1rem; }
+  /* (383) THE LEADERBOARD'S ROW: the filled search field, Select all beside it as the board's tinted Find me */
+  html[data-layout][data-theme] .screen-setup .setup-tools{ display:flex; align-items:stretch; gap:.6rem; margin:0 0 .7rem; }
+  html[data-layout][data-theme] .screen-setup .setup-tools > .searchwrap{ flex:1 1 0; min-width:0; margin:0; }
+  html[data-layout][data-theme] .screen-setup .setup-tools > .searchwrap > .searchicon{ left:.95rem; color:var(--soft); opacity:.85; }
+  html[data-layout][data-theme] .screen-setup .setup-tools > .searchwrap > .searchbox{
+    width:100%; box-sizing:border-box; min-height:44px; height:44px; margin:0; border-radius:12px !important;
+    padding-left:2.6rem; padding-right:2.4rem; text-align:left; font-size:max(16px, 1rem);
+    border:1px solid var(--surface-border) !important; box-shadow:none !important;
+    background:linear-gradient(color-mix(in srgb, var(--ink) 14%, transparent), color-mix(in srgb, var(--ink) 14%, transparent)), var(--surface-1) !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+  }
+  html[data-layout][data-theme] .screen-setup .setup-tools > .selall-btn{
+    flex:0 0 auto; margin:0; border-radius:12px; padding:0 1rem 0 .85rem; border:0 !important;
+    background:color-mix(in srgb, var(--accent) 16%, transparent) !important; color:var(--accent);
+  }
+  /* Review's row has Starred beside Select all as well: the field takes a line of its own over them */
+  html[data-layout][data-theme] .screen-setup .setup-tools:has(> .picks-tools){ flex-wrap:wrap; }
+  html[data-layout][data-theme] .screen-setup .setup-tools:has(> .picks-tools) > .searchwrap{ flex-basis:100%; }
+  html[data-layout][data-theme] .screen-setup .setup-tools > .picks-tools{ flex:1 1 100%; margin:0; }
+  html[data-layout][data-theme] .screen-setup .setup-tools > .picks-tools > :is(.selall-btn, .starred-pill){
+    border-radius:12px; border:0 !important; background:color-mix(in srgb, var(--accent) 16%, transparent) !important; color:var(--accent);
+  }
   html[data-layout][data-theme] .screen-setup .picks-holdhint{ text-align:center; margin:.2rem auto .9rem; max-width:24rem; font-size:.78rem; line-height:1.45; color:var(--soft); text-wrap:balance; }
   @media (min-width:40rem){
     html[data-layout][data-theme] .picks{ gap:.85rem; }
@@ -102855,11 +102882,17 @@ function showSetup(){
   });
   searchWrap.appendChild(searchInput);
   addSearchClear(searchWrap, searchInput);
-  unitSect.appendChild(searchWrap);
 
   const selAll = document.createElement("button");
   selAll.type = "button"; selAll.className = "selall-btn";
-  unitSect.appendChild(selAll);
+  /* THE LEADERBOARD'S ROW (build 383): Madison, "the app needs a cohesive look and this screen looks so much different
+     than every other screen" and "The search button stands out" - after "I like the look of the new top tab and search
+     bar" on the Leaderboard. So the search is the board's filled field, with Select all beside it where Find me sits,
+     and the glass circle over the tab bar (build 328) is not raised on this screen. */
+  const tools = document.createElement("div");
+  tools.className = "setup-tools";
+  tools.append(searchWrap, selAll);
+  unitSect.appendChild(tools);
 
   /* How anybody finds out the cards can be held. */
   const holdHint = document.createElement("p");
@@ -103058,12 +103091,7 @@ function showSetup(){
      the bottom tab, similar to the review mode? That maybe be a great idea." The glass circle
      stands over the bar's left end (Start is at its right) and opens into a field just above
      the bar; it drives this screen's own filter, so the field up here goes. */
-  requestAnimationFrame(() => {
-    if(!panel.isConnected || typeof registerTabSearch !== "function") return;
-    if(registerTabSearch(panel, { placeholder: "Search units", withStart: true,
-        onQuery: v => { searchInput.value = v; searchInput.dispatchEvent(new Event("input", { bubbles: true })); } }))
-      searchWrap.hidden = true;
-  });
+  /* (build 383: not raised here any more - the field is in the page, as on the Leaderboard; see .setup-tools) */
 
   unitSect.appendChild(list);
 

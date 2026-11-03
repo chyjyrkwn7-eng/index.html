@@ -123,6 +123,33 @@ with sync_playwright() as pw:
         ck("%s: the search field is lighter than the sky behind it by 12+ levels, with a rim (%d vs %d, rim %s)" % (dev, fi, fo, r["fb"]), fi - fo >= 12 and r["fb"] >= 1, [fi, fo])
         ck("%s: so is the switch's track (%d vs %d, rim %s)" % (dev, ti, to, r["tb"]), ti - to >= 12 and r["tb"] >= 1, [ti, to])
         ctx.close()
+    print("\n5. the units screen in the board's look (\"this screen looks so much different than every other screen\")")
+    for (w, h, dev) in [(440, 956, "phone"), (834, 1194, "iPad")]:
+        st = g["store"]()
+        ctx, pg = g["open_page"](br, g["init_account"]("TEST-3835", st), w=w, h=h)
+        g["connect"](pg, "TEST-3835", st)
+        pg.evaluate("()=>{ cfg.mode='drill'; showSetup(); }"); pg.wait_for_timeout(1800)
+        r = pg.evaluate("""()=>{ const R=e=>{ const b=e.getBoundingClientRect(); return [b.left,b.top,b.width,b.height]; };
+          const f=document.querySelector('.screen-setup .searchbox'), sa=document.querySelector('.screen-setup .selall-btn'),
+                lv=document.querySelector('.screen-setup .setup-levels'), card=document.querySelector('.screen-setup label.pick');
+          const ts=document.querySelector('.tabsearch'); const tsUp = !!ts && !ts.hidden && getComputedStyle(ts).display !== 'none' && ts.getBoundingClientRect().width > 0;
+          return { field: f && f.offsetParent ? R(f) : null, sa: sa ? R(sa) : null, lv: lv ? R(lv) : null, card: card ? R(card) : null,
+                   cardRim: card ? parseFloat(getComputedStyle(card).borderTopWidth) : 0, tsUp }; }""")
+        ck("%s: no search circle over the tab bar on this screen" % dev, r["tsUp"] is False, r)
+        ok_row = r["field"] and r["sa"] and r["sa"][0] > r["field"][0] + r["field"][2] and abs(r["sa"][1] - r["field"][1]) <= 1
+        ck("%s: the search field in the page, Select all beside it as Find me is (%s)" % (dev, r), bool(ok_row), r)
+        img = Image.open(io.BytesIO(pg.screenshot())).convert("L")
+        lum = lambda x, y: img.getpixel((int(x), int(y)))
+        if r["lv"]:
+            lv = r["lv"]; li, lo = lum(lv[0] + 6, lv[1] + lv[3] / 2), lum(lv[0] + 6, lv[1] - 5)
+            ck("%s: the level switch stands out from the sky (%d vs %d)" % (dev, li, lo), li - lo >= 12, [li, lo])
+        if r["field"]:
+            fd = r["field"]; fi, fo = lum(fd[0] + fd[2] - 8, fd[1] + fd[3] / 2), lum(fd[0] + fd[2] - 8, fd[1] - 5)
+            ck("%s: so does the search field (%d vs %d)" % (dev, fi, fo), fi - fo >= 12, [fi, fo])
+        if r["card"]:
+            cd = r["card"]; ci, co = lum(cd[0] + cd[2] / 2, cd[1] + cd[3] * .55), lum(cd[0] + cd[2] / 2, cd[1] - 4)
+            ck("%s: a unit card is lighter than the sky round it, with a rim - not near-black (%d vs %d, rim %s)" % (dev, ci, co, r["cardRim"]), ci - co >= 6 and r["cardRim"] >= 1, [ci, co])
+        ctx.close()
     br.close()
 print("\n%s  (%d failure(s))" % ("ALL PASS" if not fails else "FAILED: " + ", ".join(fails[:6]), len(fails)))
 sys.exit(1 if fails else 0)

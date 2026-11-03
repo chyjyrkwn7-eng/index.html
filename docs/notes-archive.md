@@ -31021,3 +31021,20 @@ Customize's summary drops the name row (intro: "What you wear across the app..."
 :is(.screen-customize, .settings-page-name); its field keeps Customize's padding on the Settings page. The Profile tour's
 Customize line now says the name is in Settings. Gates: check-b382-credits PAGES gains "name"; check-b382-ioslook's Customize
 spec drops the name row; check-behaviour b314_chars opens the editor from Settings.
+
+### 383: the units screen in the Leaderboard's look
+Madison (iPhone screenshot of 382's Choose your units): "This looks okay but it could look a lot better. The search button
+stands out. The unit cards just look super dark? ... the app needs a cohesive look and this screen looks so much different than
+every other screen". (Earlier, of the board: "I like the look of the new top tab and search bar".)
+- Measured on 382: the unit cards were DARKER than the sky round them (15 vs 27 grey on a phone). Now Settings' sheen and the
+  board row's --surface-lift over --surface-1 with the full --surface-border rim: 42 vs 27. A picked card's accent wash is 20%
+  over the same lift (check-b382-units (5) asks a step of 6+ between picked and not).
+- The level switch is the board's switch exactly (14% ink fill, rim, 22% picked segment).
+- Search: the board's filled field in the page, Select all beside it where Find me sits (.setup-tools; a tinted button). The
+  glass circle over the tab bar (build 328's registerTabSearch) is no longer raised on this screen; Review's question list
+  (showAnswerReview) keeps it. In Review the field takes its own line, Select all and Starred (tinted too) under it.
+- Gates: check-b383-feedback section 5 (no circle; field and Select all in one row; switch, field and card each lighter than the
+  sky; 6 fail on 382). check-b382-units (7) now asks for Select all beside the field (or under it in Review), read in the same
+  mode; check-b382-input's keyboard-ride check moved to Review's question list.
+- Also: check-behaviour b314_chars's "one selection ring" and "ghost above y 4.35" fail on 382 as well (the 382 picker draws the
+  tick only) - left; its name-field room check now passes from Settings.
