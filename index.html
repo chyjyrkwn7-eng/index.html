@@ -35904,6 +35904,14 @@ html.is-browser{ --fade-paper: transparent; }
     clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; transform:none !important;
   }
 
+  /* ---- a slide on the tab bar (build 383): the heavy, slow art holds still until the glass has landed (html.slide-hold, set at the
+     slide's start and taken off with the hero's own hold in slideHeldResume). Home's planet, Profile's card (its SVG character's moving
+     parts and the XP bar), Profile's rank challenges and the Leaderboard's row characters - every one a loop of seconds, so a second's
+     hold is not seen, and each carries on from where it stopped. ---- */
+  html.slide-hold #stage :is(.cosmic-hero-wrap, .profile-hero, .pf-goal, .rank-row) *,
+  html.slide-hold #stage :is(.cosmic-hero-wrap, .profile-hero, .pf-goal, .rank-row) *::before,
+  html.slide-hold #stage :is(.cosmic-hero-wrap, .profile-hero, .pf-goal, .rank-row) *::after{ animation-play-state:paused !important; }
+
   /* ---- Choose your mode (build 383): the units screen's head, a grey question, the cards' titles in the system face ---- */
   html[data-layout] body #stage > .panel.modeselect{ padding-top:24px; }   /* the bar where Settings, Units and Friends have it */
   html[data-layout] body #stage > .panel.modeselect > .ios-nav{ position:relative; z-index:1; }
@@ -35912,7 +35920,18 @@ html.is-browser{ --fade-paper: transparent; }
     font-family:inherit; font-size:1rem; line-height:1.45; color:var(--soft); text-wrap:balance;
   }
   html[data-layout] body #stage > .panel.modeselect .modecards{ margin-top:1.1rem; }
-  html[data-layout] body #stage > .panel.modeselect .modecard{ text-align:left; border-radius:var(--ios-group-r, 16px); }
+  /* the cards: the units screen's card next door (Settings' sheen and the board row's lift over the surface, the full rim) -
+     "the app needs a cohesive look" (383) */
+  html[data-theme][data-layout] body #stage > .panel.modeselect .modecard{
+    text-align:left; border-radius:18px;
+    background:var(--surface-sheen), linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
+    border:1px solid var(--surface-border) !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme][data-layout] body #stage > .panel.modeselect .modecard:active{
+    background:var(--surface-sheen), linear-gradient(color-mix(in srgb, var(--ink) 12%, transparent), color-mix(in srgb, var(--ink) 12%, transparent)), var(--surface-1) !important;
+  }
+  @media (min-width:40rem){ html[data-theme][data-layout] body #stage > .panel.modeselect .modecard{ border-radius:20px; } }
   html[data-layout] body #stage > .panel.modeselect .modecardtitle{
     font-family:inherit; font-size:1.18rem; font-weight:700; letter-spacing:-.01em; line-height:1.2;
   }
@@ -142936,6 +142955,7 @@ function tabPerfText(){
     list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
   }
   function slideHeldResume(){
+    document.documentElement.classList.remove("slide-hold");
     const list = slideHeldPaused; slideHeldPaused = [];
     list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
   }
@@ -142994,8 +143014,14 @@ function tabPerfText(){
     if(!tabDragMoved){
       slider.classList.add("dragging"); try{ navrow.setPointerCapture(e.pointerId); }catch(err){}
       document.documentElement.classList.add("tab-dragging");
-      /* build 376: only what is BEHIND THE BAR holds still while the finger slides */
-      barUnderPause();
+      /* build 383: THE HEAVY ART HOLDS STILL BY ONE CLASS (html.slide-hold, CSS below), not by listing animations. His 382 recording,
+         the glass read frame by frame: frozen on 25% of a slide's frames from Profile, 14% from the Leaderboard, 11% Home, 9% Calendar -
+         Profile's card is an SVG character whose parts move (sway, falling bits, blink, tails), repainted whole every frame on the
+         thread that moves the glass. */
+      document.documentElement.classList.add("slide-hold");
+      /* build 376: only what is BEHIND THE BAR holds still while the finger slides - looked for once, a frame after the slide starts
+         (the frame it starts in already carries the capture and the classes) */
+      requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(); });
       /* build 377: NO TICKS ON THE WAY. "The bottom tab swipe Haptic Touch ... does it even when you swipe over, pass other tabs on the
          way to the one you select." Each tab carries a real native switch for its tap's tick (NovaSound, "A REAL SWITCH UNDER THE FINGER");
          a finger that slides drags the switch it landed on, and every time it flips across its middle iOS plays a tick. The switches leave
@@ -143010,7 +143036,8 @@ function tabPerfText(){
        running again as it comes into view, which is where rows come in) holds still too; check-b376 once saw one running.
        (382: every 250ms, and each look measures only animations it has not judged yet, against the band measured at the slide's start:
        the look was ~40% of a slide's own script on the Leaderboard, its hundreds of animations listed ten times a second) */
-    if(performance.now() - barUnderAt > 250) barUnderPause(true);
+    /* (383: no look every 250ms - what came on under the bar mid-slide was a Leaderboard row's loop coming into view, and the rows'
+       loops are held by html.slide-hold now; each look was a frame's style pass on the thread that moves the glass) */
     /* The lens follows the finger (build 323, 325); the platter waits,
        hidden, and is put in place once, on release. Reduce motion has no
        lens: the platter itself steps from tab to tab. */

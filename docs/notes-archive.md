@@ -31038,3 +31038,25 @@ every other screen". (Earlier, of the board: "I like the look of the new top tab
   mode; check-b382-input's keyboard-ride check moved to Review's question list.
 - Also: check-behaviour b314_chars's "one selection ring" and "ghost above y 4.35" fail on 382 as well (the 382 picker draws the
   tick only) - left; its name-field room check now passes from Settings.
+
+### 383: the slide from Profile and the Leaderboard; mode selection's cards
+Madison (a 36s iPhone recording of 382, sliding across all four tabs): "Sliding on the bottom tab is still laggy, it's still not
+fixed. I think calendar is good but not the rest. Tapping seems to be working really well." Also: "Mode selection screen, ensure
+you update it".
+- The recording runs at a steady 60fps (the sky twinkles), so lag is not dropped frames: the glass's place was read off every frame
+  (a strip of the bar above the icons) and each slide's moving frames counted where it did not move. Frozen: 25% of the frames of a
+  slide that started on Profile, 14% Leaderboard, 11% Home, 9% Calendar. Profile's pattern was every other frame (68 0 35 0 78 58 0
+  0 px): the page drew at half rate while the glass moved.
+- Profile's card is an SVG character whose parts move (cx-cl2-sway, cx-bg-fall, cx-blink, cx-flutter a/b) plus the XP bar
+  (xp-glide, xp-pump); its rank challenges carry 18 more. Nothing held the card (382 held Home's hero only); a WebKit SVG's moving
+  parts repaint the drawing every frame, on the thread that moves the glass.
+- Now html.slide-hold, put on where the slide starts (with tab-dragging) and taken off in slideHeldResume (the glass's landing):
+  CSS pauses every animation in .cosmic-hero-wrap, .profile-hero, .pf-goal and .rank-row (and their ::before/::after). All slow
+  loops; they go on from where they stopped. The under-bar scan (barUnderPause, getAnimations of the stage) runs once, a frame after
+  the start, not in the start's frame, and no longer every 250ms.
+- Gate tools/check-b383-slide.py (real touch, 4x CPU, check-b382-slide's harness): held mid-slide and running after, on Profile
+  (25 animations) and the Leaderboard (5); no app getAnimations while the finger moves beyond the one look (2 counted, 14 on 382);
+  glass on the finger. 4 fail on 382. The glass-on-finger read passes on both: Chromium does not repaint SVG the way the phone does
+  - only his phone can say it is smooth. check-b382-slide (3) Home reads 8.6-8.9px behind on BOTH 382 and 383 under this load.
+- Mode selection's cards take the units screen's card: Settings' sheen and the board row's --surface-lift over --surface-1, the full
+  --surface-border rim, 18px (20 on a tablet).
