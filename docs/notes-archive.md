@@ -31351,3 +31351,28 @@ when I'm just trying to view them and use the drop down or whatever on some of i
   check-behaviour b303/b305_flashcards/b306_fcmotion/b306_marks/b318f_flashswipe: ALL PASS.
 - Phone only: Enlarge / "Show the whole book page" with his real IFC PDF loaded (the sandbox has no book; the same rule covers
   every button in the box).
+
+### Build 383 - Review's list is left from Pause; every mode's way out is Home
+Madison, 383 (an iPhone screenshot of Fire Code's Review list): "In the review mode, there's a button that says back to options.
+It needs the pause button that follows you as you scroll down so you can leave whenever instead. Fix this. This is very much
+needed." / "in drill mode when you quit the test, it takes you to the main menu/Home Screen which is great. When leaving every
+other mode it needs to do the same and take you back to the Home Screen, cause right it just goes back to the unit selection
+screen so fix that pathway/navigation."
+- THE LIST (showAnswerReview): no back link (it was Back to Options / Back to units, in 383's iOS bar; on live 382 the pill).
+  The run's own top row instead, as Flashcards has: the mode's name on the left (testmodelabel: Review, or Starred) and Pause
+  in the corner; the row is pinned with its fade like a test's (syncTestPin's want takes .screen-answerreview; the label's
+  and the sticky row's :has() rules too), so Pause is on screen the whole way down. The tab bar stays - the list is browsed
+  and its search circle (382) lives on the bar.
+- PAUSE (pauseRun -> answerReviewUp() -> pauseAnswerReview(), checked before Flashcards): the pause screen in Flashcards' look
+  (is-fcpause, + is-arpause): Paused, the units (or Starred questions / most missed), the count, Resume / Exit review. Resume
+  puts the SAME list node back (its search, opened codes) and scrolls to where it was. Exit review -> Home.
+  answerReviewRun (var - pauseRun can run before its line) holds the list's units/source/count; answerReviewLeave() clears it
+  and hides Pause; a stage observer does the same when the list is left any other way (a tab, a profile from the chat).
+- HOME FROM EVERY MODE: Drill, Mock, the daily question and the Virtual Room's leaves (Quit test, Save and exit, leave while
+  waiting, a team match) already landed on Home. Changed: Flashcards' Exit flashcards (was the units screen's sheet) and the
+  list's Finished (was the units screen) -> Home. The flashcards' end-of-deck "Main menu" already went Home.
+- Gate tools/check-b383-review.py (phone): no back link + Pause + Review label; Pause in the same place 2,500px down; the pause
+  screen's Resume / Exit review; Resume at the same scroll; Exit review, Finished, Exit flashcards -> Home; left by a tab, Pause
+  goes; a Drill's Quit test still Home - 7 fail on the previous commit. check-behaviour b13114 (starred box) now takes 382's plain
+  count ("1"), not "1 question" (it failed on the previous commit too). check-b382-input, check-b327z10, check-studyflow,
+  check-savetest, behaviour b297/b303/b314_study/review_reach/update_and_cards, sweep-layout --quick 14/14: pass.

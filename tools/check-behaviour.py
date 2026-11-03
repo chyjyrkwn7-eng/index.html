@@ -13112,7 +13112,8 @@ def check_b314_study(br):
         check("%s with nothing starred, the box's star is the white outline" % label,
               r["empty"]["filled"] is False, r["empty"])
         check("%s starred in a unit's details, the box fills its star and counts it when they close" % label,
-              r["after"]["filled"] is True and not r["after"]["empty"] and r["after"]["sub"].startswith("1 question"), r["after"])
+              # REVISED (382's Starred pill, check-b380 21): its count is the plain number, not "1 question"
+              r["after"]["filled"] is True and not r["after"]["empty"] and __import__("re").match(r"^1(\b| question)", r["after"]["sub"] or ""), r["after"])
         check("%s the filled star is the in-test star's soft gold (#E8C770), not 308's #FFD233" % label,
               "#E8C770" in r["stops"] and "#FFD233" not in r["stops"], r["stops"])
         # MOVED IN 324 (b324m): Review is the Briefing on screen ("exam mode

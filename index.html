@@ -12691,7 +12691,7 @@
      Pause, so it does not drift with the length of the mode's name. */
   .test-modelabel{ display:none; }
   .wrap:has(.fc-screen) .test-modelabel:not(:empty),
-  .wrap:has(.qnumrow, .pausepanel) .test-modelabel:not(:empty){
+  .wrap:has(.qnumrow, .pausepanel, .screen-answerreview) .test-modelabel:not(:empty){
     display:block; margin:0; flex-shrink:0;
     font-size:.85rem; font-weight:700; color:var(--soft); letter-spacing:.02em;
   }
@@ -12701,7 +12701,7 @@
      scrolls away with the page instead. */
   .wrap:has(.fc-screen) .top{ position:relative; top:0; }
   .wrap:has(.fc-screen) .top .test-qcounter{ display:block; font-family:var(--sans); font-weight:700; color:var(--soft); letter-spacing:.02em; font-variant-numeric:tabular-nums; margin:0; }
-  .wrap:has(.qnumrow, .pausepanel) .top{ position:sticky; }
+  .wrap:has(.qnumrow, .pausepanel, .screen-answerreview) .top{ position:sticky; }
   /* ---- THE TEST HEADER IS PINNED, NOT STICKY (build 308) ----
      "When scrolling down, the amount of questions mode type don't stay
      put, they should in a test." The row was sticky, and on iOS a sticky
@@ -52254,7 +52254,8 @@ function syncTestPin(force){
   const wrap = document.querySelector(".wrap");
   const top = wrap && wrap.querySelector(":scope > .top");
   if(!top) return;
-  const want = !!stage.querySelector(".qnumrow") && !stage.querySelector(".pausepanel") && !stage.querySelector(".fc-screen");
+  /* (383) and Review's question list, which is left from Pause like a test: its row pinned, the questions under its fade */
+  const want = !!stage.querySelector(".qnumrow, .screen-answerreview") && !stage.querySelector(".pausepanel") && !stage.querySelector(".fc-screen");
   const has = wrap.classList.contains("test-pinned");
   /* THE LIVE RACE LINE IS PINNED WITH THE HEADER (build 327, round 6).
      "the room chat and the other chat button are on top of the virtual
@@ -83342,6 +83343,7 @@ function pauseRun(){
      populated there and this would otherwise draw "the question and
      timer are on hold" over a screen with no question on it. */
   if(vroomAwaitingOthers){ confirmLeaveWhileWaiting(); return; }
+  if(answerReviewUp()){ pauseAnswerReview(); return; }
   if(fc){ pauseFlashcards(); return; }
   /* A Tug of War or a Battle cannot be held - the rope and the health
      bars are everybody's - so Pause there is the way out (build 246). */
@@ -135470,9 +135472,18 @@ function showAnswerReview(units, source, versions, opts){
 
   const panel = document.createElement("section");
   panel.className = "panel screen-answerreview";
-  /* The starred list is opened from the units screen, not the sheet. */
-  /* (383: "the app needs a cohesive look across" - the round back button and the centred title every pushed screen has) */
-  panel.appendChild(iosNavBar(source === "flagged" ? "Starred" : modeTitleOf("review"), buildBackLink(allFlagged ? "Back to units" : "Back to Options", allFlagged ? showSetup : showSetupWithSheet)));
+  /* ---- A MODE, LEFT FROM PAUSE (383) ----
+     "In the review mode, there's a button that says back to options. It needs the pause button that follows you as you
+     scroll down so you can leave whenever instead. Fix this. This is very much needed." The list wore a back link at its
+     top (Back to Options / Back to units), gone once you scrolled. It now has the run's own top row, as Flashcards does:
+     the mode's name, and Pause pinned in the corner the whole way down. Pause is Resume / Exit review, and leaving lands
+     on Home like every other mode ("When leaving every other mode it needs to ... take you back to the Home Screen").
+     The tab bar stays: the list is browsed, and its search circle (build 382) lives on the bar. */
+  answerReviewRun = { units: units.slice(), source, versions, opts: opts || null, label: source === "flagged" ? "Starred" : modeTitleOf("review") };
+  restartEl.hidden = true; hintEl.hidden = true; timerlineEl.hidden = true; meterEl.hidden = true;
+  testModeLabelEl.textContent = answerReviewRun.label; testQCounterEl.textContent = "";
+  countEl.textContent = "";
+  pauseBtn.hidden = false;
 
   /* ---- A HEADER CARD, NOT A SERIF TITLE (build 311) ----
      "I don't like how it says starred questions at the top like it does
@@ -135723,12 +135734,64 @@ function showAnswerReview(units, source, versions, opts){
   const doneBtn = document.createElement("button");
   doneBtn.type = "button"; doneBtn.className = "next settings-done-btn"; doneBtn.id = "nextbtn";
   doneBtn.textContent = "Finished";
-  doneBtn.addEventListener("click", showSetup);
+  /* (383) leaving the mode lands on Home, as Exit review and every other mode's way out do */
+  doneBtn.addEventListener("click", () => { answerReviewLeave(); showHome(); });
   doneBar.appendChild(doneBtn);
   panel.appendChild(doneBar);
 
   stage.replaceChildren(panel);
   toTop();
+  answerReviewRun.count = howMany; answerReviewRun.unitN = unitN;
+  if(typeof syncChatDock === "function") syncChatDock();
+}
+/* The list's Pause (383). `var`: pauseRun reads it, and pauseRun can run before this line on a slow boot. */
+var answerReviewRun = null;
+function answerReviewUp(){ return !!(answerReviewRun && stage.querySelector(".screen-answerreview")); }
+function answerReviewLeave(){
+  answerReviewRun = null;
+  pauseBtn.hidden = true; testModeLabelEl.textContent = ""; testQCounterEl.textContent = "";
+}
+/* left some other way (a tab, a profile opened from the chat, a banner's link): the list's Pause goes with it */
+try{
+  new MutationObserver(() => {
+    if(!answerReviewRun || stage.querySelector(".screen-answerreview, .pausepanel.is-arpause")) return;
+    answerReviewLeave();
+  }).observe(stage, { childList: true });
+}catch(e){}
+function pauseAnswerReview(){
+  const run = answerReviewRun;
+  const list = stage.querySelector(".screen-answerreview");
+  if(!run || !list) return;
+  playSound("test.pause");
+  const y = window.scrollY || document.documentElement.scrollTop || 0;
+  pauseBtn.hidden = true;
+  const panel = document.createElement("section");
+  panel.className = "panel pausepanel is-pause is-fcpause is-arpause";
+  const h = document.createElement("p"); h.className = "qnum"; h.textContent = "Paused";
+  const info = document.createElement("div"); info.className = "pause-info";
+  const unitsEl = document.createElement("p"); unitsEl.className = "pause-units";
+  unitsEl.textContent = run.opts && run.opts.allFlagged ? "Starred questions" : run.units.join(" \u00b7 ") + (run.source === "flagged" ? " (starred questions)" : run.source === "recent" ? " (most missed)" : "");
+  const where = document.createElement("p"); where.className = "pause-where";
+  where.textContent = (run.count || 0) + (run.count === 1 ? " question" : " questions");
+  info.append(unitsEl, where);
+  const actions = document.createElement("div"); actions.className = "actions";
+  const resumeBtn = document.createElement("button"); resumeBtn.type = "button"; resumeBtn.className = "next"; resumeBtn.id = "resumebtn";
+  resumeBtn.textContent = "Resume";
+  /* the same list back, where it was - its search, its opened codes and all */
+  resumeBtn.addEventListener("click", () => {
+    if(answerReviewRun !== run) return;
+    playSound("test.resume");
+    pauseBtn.hidden = false;
+    stage.replaceChildren(list);
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    if(typeof syncChatDock === "function") syncChatDock();
+  });
+  const leaveBtn = document.createElement("button"); leaveBtn.type = "button"; leaveBtn.className = "next ghost"; leaveBtn.id = "pause-quit";
+  leaveBtn.textContent = "Exit review";
+  leaveBtn.addEventListener("click", () => { answerReviewLeave(); showHome(); });
+  actions.append(resumeBtn, leaveBtn);
+  mountPausePanel(panel, [h, info, actions], resumeBtn);
+  if(typeof syncChatDock === "function") syncChatDock();
 }
 
 /* ---- FLASHCARDS (build 303) ----------------------------------------------
@@ -136110,7 +136173,9 @@ function pauseFlashcards(){
   });
   const leaveBtn = document.createElement("button"); leaveBtn.type = "button"; leaveBtn.className = "next ghost";
   leaveBtn.textContent = "Exit flashcards";
-  leaveBtn.addEventListener("click", () => { fcLeave(); showSetupWithSheet(); });
+  /* (383) "in drill mode when you quit the test, it takes you to the main menu/Home Screen which is great. When leaving every
+     other mode it needs to do the same" - it went back to the unit selection screen and its sheet */
+  leaveBtn.addEventListener("click", () => { fcLeave(); showHome(); });
   actions.append(resumeBtn, leaveBtn);
   mountPausePanel(panel, [h, info, actions], resumeBtn);
 }
