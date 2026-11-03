@@ -121,7 +121,7 @@ def red(c):
 PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "study": ["Swipe to next question", "Auto-advance", "Longer pause before moving on", "Auto-star questions you keep missing"],
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
-         "sync": ["Sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"]}
+         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"]}
 PEOPLE = ["Madison Davis", "Bryan Darjean", "Logan Preston", "Alexis Sauceda", "Cameron Wharton"]
 # the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
 FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]
@@ -178,7 +178,7 @@ with sync_playwright() as pw:
             titles = [r["title"] for r in prow]
             if k == "sync" and cls == "ifc":
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
-                titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Sync code'] : []")]
+                titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Your sync code'] : []")]
             chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], PAGES[k]),
                 opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in PAGES[k])
                 and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in PAGES[k]), {"page": pr, "titles": titles})
