@@ -31177,3 +31177,36 @@ appears like." Measured: our cards sat 40px in while the big title sat ~17px (De
 - Width: on a phone (max-width 39.99rem) the grouped screens' panels drop their 20px side padding (cards at ~20px from the edge, under
   the big title); tablets keep their centred column.
 - The rules are one block, "DELTA'S SETTINGS, EVERYWHERE", at the end of the iOS look.
+
+### 383: two classes, kept apart - Fire Code's Settings tab alone, Account + Sign out, the week's recap per class at launch
+Madison: "In fire code, why is settings still within profile? It should just be in on the bottom tab" / "We need a profile thing
+in settings, change your username and logout and whatever else in it ... The function to log out for sure" / the weekly recap
+"needs to be specified the class it's for at the top ... it could populate on the Home Screen, but you'd be on that class already
+when getting in the app, or switching over to that class, it would show the main menu for a second and then that would pop up" /
+"We are trying to make this app very viable for two different classes ... We can't afford to let anything leak from one class to
+the other."
+- FIRE CODE'S BAR TABS: showProfile in Fire Code builds one tab only - Profile, Stats or Settings, as asked - with no switch over it
+  (the switch is appended only for 2+ tabs; the tab swipe likewise); settingsAlone lights the bar's Settings and titles "Settings".
+- ACCOUNT: Settings' Account group opens with the account row (the person tile, the name, "Name and sign out") -> Settings >
+  Account: the name editor (buildCustomizeNameSect) and Sign out (buildSignOutSect). page "name" opens Account.
+- SIGN OUT: offered only with sync on (otherwise the note says turn sync on first - that progress would exist only here). The sheet
+  (newacct-confirm's look) shows the code (shownSyncCode) with Save my code / Sign out / Cancel. Sign out pushes (pushToCloud(true))
+  and waits up to 9s for signOutReady(): confirmed, nothing in flight, queued, pending or failed, a push made - else it refuses
+  ("Your latest progress hasn't reached the cloud yet, so this device stays signed in..."). finishSignOut sets class26e.signout
+  (a SHARED key, so Fire Code can set it), drops class26e.activeclass and reloads. The HEAD SCRIPT, first thing, sees the marker and
+  removes every class26e.* key but the device's own (statusbar, safarisound, soundon, swipeon, shuffleon, device, frame.ok,
+  intro.seen, freshstart, unithold.tip, penal*.seen, hadaccount, update.dismissed, forced.*, boot*, diag) - so both classes' stores,
+  codes, enrolment and seen marks - and deletes both IndexedDB backups (class26e-drill-backup and ifc:...). Nothing is written to
+  the cloud and the leaderboard row is left (wipeLocalProgressAndSettings, which retires it, is NOT used). Welcome / Get started
+  follows; hadaccount stays, so "I'm new here" asks first.
+- THE WEEK'S RECAP: on the first Home of a launch (opening the app, or a class switch - a reload into the class), WEEK_RECAP_HOME_MS
+  (1.4s) after the menu; not again on later Homes that launch (weekRecapHomeTried); the Leaderboard still offers it if unseen. It
+  is headed "Weekly recap · <class>" (NOVA_CLASSES' name: Police Academy / Fire Code). Each class has its own: its own store and
+  seen marks (Fire Code's keys are redirected), and Fire Code's recap is the personal one (no board, fbDb null).
+- THE CLASSES APART (audit): device storage - every class26e.* key redirected to class26e.ifc.* in Fire Code except the device's own
+  settings and the class switch; IndexedDB names prefixed "ifc:"; the cloud - Fire Code reaches only progress/<code>__ifc (fbDb null:
+  no leaderboard, rooms, chat, friends, invites, presence); its recap reads no classmates; sign out clears both on purpose.
+- Gate tools/check-b383-classes.py: (1) Fire Code's tabs alone; (2) Account; (3) sign out clears both classes, keeps device settings
+  and hadaccount, opens Welcome, backup empty; (4) refuses with the cloud not answering; (5) the recap on the first Home, "Police
+  Academy" / "Fire Code" at its top. check-b383-feedback 2 and check-b382-credits (PAGES account), -ioslook (Fire Code's Profile has
+  no switch; Profile's two headings at Settings' 16px) updated.

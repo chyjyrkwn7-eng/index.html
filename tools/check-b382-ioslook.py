@@ -203,7 +203,8 @@ with sync_playwright() as pw:
               return { word, seg: a ? a.textContent.trim() : null, fs: parseFloat(cs.fontSize), fw: cs.fontWeight, shown: __io.shown(c), dup }; }""", i)
             chk("%s Profile segment %d: the big title is the picked segment's name (%s / %s), %.1fpx like the Leaderboard's (%s), no second heading"
                 % (tag, i + 1, t["word"], t["seg"], t["fs"], TITLE_FS[0]),
-                t["shown"] and t["word"] and t["word"] == t["seg"] and TITLE_FS[0] and near(t["fs"], TITLE_FS[0], .6) and int(t["fw"]) >= 700 and t["dup"] == 0, t)
+                # 383: Fire Code's Profile has no switch ("Settings ... should just be in on the bottom tab"): its title is "Profile"
+                t["shown"] and t["word"] and t["word"] == (t["seg"] if segs else "Profile") and TITLE_FS[0] and near(t["fs"], TITLE_FS[0], .6) and int(t["fw"]) >= 700 and t["dup"] == 0, t)
         if cls == "ifc":
             go(pg, "showProfile('stats')", 1600)
             t = pg.evaluate("()=>{ const c=document.getElementById('count'); return { word: c.textContent.trim(), fs: parseFloat(getComputedStyle(c).fontSize), lit: (document.querySelector('.bottomtab.active')||{}).textContent }; }")

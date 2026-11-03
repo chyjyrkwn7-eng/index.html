@@ -34,7 +34,7 @@ with sync_playwright() as pw:
     ck("no page errors", not errs, errs[:2])
     ctx.close()
 
-    print("\n2. the week's recap: on the Leaderboard, not Home")
+    print("\n2. the week's recap: the first Home of a launch (383, second ask), not forced again later")
     errs = []
     st = g["store"](leaderboardOptIn=True); st.pop("novaHeard", None)   # last week's recap NOT yet heard
     ctx, pg = g["open_page"](br, g["init_account"]("TEST-3832", st), errs=errs)
@@ -53,19 +53,14 @@ with sync_playwright() as pw:
     while t < 9000:
         if recap_up(pg): home_recap = True; break
         pg.wait_for_timeout(300); t += 300
-    ck("Home: nothing plays by itself (9s)", not home_recap)
-    if home_recap: pg.evaluate("()=>document.getElementById('nova-intro').__nova.close()"); pg.wait_for_timeout(600)
-    pg.evaluate("()=>{ document.getElementById('bottomtab-rewards')?.click(); }")
-    t = 0; board_recap = False
-    while t < 9000:
-        if recap_up(pg): board_recap = True; break
-        pg.wait_for_timeout(300); t += 300
-    ck("the Leaderboard tab: the week's recap plays (within %.1fs)" % (t / 1000), board_recap and not home_recap)
-    if board_recap:
-        pg.evaluate("()=>document.getElementById('nova-intro').__nova.close()"); pg.wait_for_timeout(800)
+    # 383, second ask: "it could populate on the Home Screen ... when getting in the app, or switching over to that class"
+    ck("the first Home of the launch: the week's recap plays", home_recap)
+    if home_recap: pg.evaluate("()=>document.getElementById('nova-intro').__nova.close()"); pg.wait_for_timeout(800)
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(900)
     pg.evaluate("()=>{ document.getElementById('bottomtab-rewards')?.click(); }"); pg.wait_for_timeout(5000)
-    ck("opening the Leaderboard again that week: it does not play again", not recap_up(pg))
+    ck("once seen, opening the Leaderboard that week does not play it again", not recap_up(pg))
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(4000)
+    ck("nor does coming back to Home later in the launch", not recap_up(pg))
     ck("no page errors", not errs, errs[:2])
     ctx.close()
 

@@ -73,6 +73,21 @@
      its sync code, the cloud account, the leaderboard or any classmate. Switching is a
      reload (switchClass()). This runs before every other script, so they all see it. */
   (function(){
+    /* SIGNED OUT (build 383). Settings > Account > Sign out leaves "class26e.signout" and reloads; here, before any other script
+       reads storage, this device forgets the account in BOTH classes - their saved copies, codes and backups (class26e.* and the
+       IndexedDB backups, the academy's and Fire Code's) - and keeps only the device's own settings and the note that it once held
+       an account (so "I'm new here" still asks first). Nothing is written to the cloud: the account and its progress stay there,
+       and the sync code brings them back. */
+    try{
+      if(localStorage.getItem("class26e.signout")){
+        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag)$/;
+        var del = [];
+        for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
+        for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
+        try{ indexedDB.deleteDatabase("class26e-drill-backup"); indexedDB.deleteDatabase("ifc:class26e-drill-backup"); }catch(e){}
+        window.NOVA_SIGNED_OUT = true;
+      }
+    }catch(e){}
     var CLASS_OWNER = "xph5b57jbp5a", ACTIVE = "class26e.activeclass";
     window.NOVA_CLASS = "academy"; window.NOVA_CLASS_OWNER = CLASS_OWNER;
     var want = null, owner = false, academyRaw = null;
@@ -88,7 +103,7 @@
     /* its question bank, a file of its own (1.4 MB) that only this class loads: written in
        here so it runs, in order, before the app's script reads it (window.IFC_BANK) */
     document.write('<script src="ifc/bank.js"><\/script>');
-    var SHARED = /^class26e\.(activeclass|enrolled|classseen|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -35941,6 +35956,14 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){ border-color:transparent !important; }
   /* Profile's switch has no line under it (the board's has its blurb): a little more room above the card */
   html[data-theme][data-layout] body #stage .screen-profile > .navsegment.profiletabs{ margin-bottom:1.1rem; }
+  /* (383) Account > Sign out: iOS's destructive red, centred, a row of its own; dimmed when it is not offered */
+  html[data-layout] body #stage .signout-card > .signout-row{ justify-content:center; min-height:52px; }
+  html[data-layout] body #stage .signout-card > .signout-row .settings-row-label{ color:#FF453A; font-weight:500; text-align:center; flex:0 1 auto !important; }
+  html[data-layout] body #stage .signout-card > .signout-row.is-off{ opacity:.45; }
+  html[data-layout] body #stage .signout-sect > .signout-note{ margin:.5rem 1rem 0; font-size:.86rem; line-height:1.45; color:var(--soft); }
+  html[data-layout] body #stage .settings-page-account > .sect + .sect{ margin-top:1.4rem; }
+  .signout-confirm .savecode-value{ margin:.4rem 0 1rem; }
+  .signout-confirm .signout-msg{ min-height:1.2em; color:#FF8A80; }
   /* the words: iOS's body size in a Settings row, a larger grey heading over each group */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-row-label{ font-size:1.0625rem; font-weight:400; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card > label.opt > .otext{ font-size:1.0625rem; }
@@ -35948,6 +35971,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page, .screen-customize, .screen-ranks .ranks-tab, .screen-friends .friend-sect, .profile-stats-tab > .points-progress-sect) :is(.slab.motion-summary, .sect-label, .slab){
     font-size:1rem !important; font-weight:600 !important;
   }
+  /* and Profile's ("Rank challenges", "<rank> unlocks") */
+  html[data-layout] body #stage .profile-identity-tab .pf-goal > :is(.pf-tasks-kick, .pf-rewards-kick){ font-size:1rem !important; font-weight:600 !important; }
   /* the tiles' glyphs: heavier strokes, a touch larger in the tile */
   .settings-row-icon svg{ width:20px; height:20px; }
   .settings-row-icon svg [stroke], .settings-row-icon svg{ stroke-width:2.1; }
@@ -100854,7 +100879,12 @@ function showHome(){
          pause a results screen leaves before its unlocks (build 320) */
       : Math.max(HOME_UNLOCK_DELAY_MS, dailyXpFlyEndsAt - Date.now() + RS_UNLOCK_GAP_MS));
     try{ scheduleResumeOffer(); }catch(e){}
-    /* (build 383) Nova's weekly recap no longer starts here - it plays when the Leaderboard is opened; see showRankings */
+    /* NOVA'S WEEKLY RECAP, ON THE FIRST HOME OF A LAUNCH (383, second ask): "it could populate on the Home Screen, but you'd be
+       on that class already when getting in the app, or switching over to that class, it would show the main menu for a second
+       and then that would pop up". Opening the app or switching class (a reload into it) is a launch: its first Home schedules
+       this class's recap a moment after the menu is up; coming back to Home later in the launch does not. The Leaderboard still
+       offers it (showRankings) if it has not been seen; each class keeps its own (its own store, its own seen mark). */
+    if(!weekRecapHomeTried){ try{ scheduleWeekRecap(WEEK_RECAP_HOME_MS); weekRecapHomeTried = true; }catch(e){} }
   }
 }
 
@@ -121034,7 +121064,9 @@ function showAppearance(opts){
     if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
     /* YOUR NAME (build 383): Madison, "The change your name option in customize, that needs to be in settings somewhere".
        Customize's own editor (the one-name-per-person rule and all), built only when this page is opened. */
-    if(page === "name") PAGES.name = ["Name", [buildCustomizeNameSect()]];
+    /* (383) the Account page: the name, and signing out - "name" (its first home, earlier in 383) opens it too */
+    if(page === "name") page = "account";
+    if(page === "account") PAGES.account = ["Account", [buildCustomizeNameSect(), buildSignOutSect()]];
     const def = PAGES[page];
     if(!def) return showAppearance();
     host = settingsSubPage(def[0], "screen-settings-page settings-page-" + page);
@@ -121070,7 +121102,13 @@ function showAppearance(opts){
     ]));
     host.appendChild(settingsHeader("Account", "settings-group-account"));
     host.appendChild(card("", [
-      cat("name", "person", "Name", store.firstName || "Not set"),
+      (() => {   /* (383) "We need a profile thing in settings, change your username and logout" - the account, iOS's card at the top */
+        const b = settingsRow("person", store.firstName || "Your account", "Name and sign out", null, null);
+        b.id = "settings-row-account"; b.dataset.page = "account";
+        b.classList.add("settings-cat", "settings-account-row");
+        b.addEventListener("click", () => showAppearance({ page: "account" }));
+        return b;
+      })(),
       cat("sync", "sync", "Sync", !acctDb() ? "Unreachable" : (syncCode ? "On" : "Off")),
       noBoard ? null : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
@@ -123618,6 +123656,100 @@ function showNewAccountConfirm(){
   requestAnimationFrame(() => el.classList.add("show"));
   setTimeout(() => { try{ signIn.focus({ preventScroll: true }); }catch(e){} }, 80);
   return el;
+}
+
+/* ---- SIGN OUT (build 383) ----
+   Madison: "We need a profile thing in settings, change your username and logout ... The function to log out for sure." With
+   sync codes there is no password: signing out makes this device forget the account (both classes), and the code signs it back
+   in. Three guards keep it from ever costing progress: it is not offered without sync (that progress would exist only here); it
+   waits until this device's latest progress has reached the cloud (a fresh push, nothing in flight, queued or failed) and refuses
+   if it cannot confirm that; and the forgetting happens at the next launch, in the head script, before anything can load or write
+   - nothing empty is ever pushed over the account, and the account's leaderboard row is left as it is. */
+function signOutReady(){
+  return !!(acctDb() && syncCode && cloudConfirmedFor === syncCode && !accountWriteAt && !accountWriteNext && !cloudPushPending
+    && !cloudPushTimer && !accountWriteFails && lastCloudPushAt > 0);
+}
+function buildSignOutSect(){
+  const sect = document.createElement("div");
+  sect.className = "sect signout-sect";
+  const lab = document.createElement("p");
+  lab.className = "slab motion-summary"; lab.textContent = "Sign out";
+  sect.appendChild(lab);
+  const card = document.createElement("div");
+  card.className = "settings-card settings-list signout-card";
+  const canSign = !!(syncCode && !syncOff);
+  const row = document.createElement("button");
+  row.type = "button"; row.className = "settings-row settings-plainrow signout-row";
+  const t = document.createElement("span"); t.className = "settings-row-label"; t.textContent = "Sign out of Nova";
+  row.appendChild(t);
+  if(!canSign){ row.disabled = true; row.classList.add("is-off"); }
+  row.addEventListener("click", () => { if(canSign) showSignOutConfirm(); });
+  card.appendChild(row);
+  sect.appendChild(card);
+  const note = document.createElement("p");
+  note.className = "sync-note-plain signout-note";
+  note.textContent = canSign
+    ? "Signs this device out of both classes. Your progress stays in your account, and your sync code signs you back in."
+    : "Sync is off on this device, so its progress exists only here. Turn sync on before signing out.";
+  sect.appendChild(note);
+  return sect;
+}
+function showSignOutConfirm(){
+  const old = document.getElementById("signout-confirm");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "signout-confirm";
+  el.className = "savecode-card newacct-confirm signout-confirm";
+  el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "signout-title");
+  const sheet = document.createElement("div");
+  sheet.className = "savecode-sheet";
+  const title = document.createElement("h2");
+  title.className = "savecode-title"; title.id = "signout-title"; title.textContent = "Sign out of Nova?";
+  const body = document.createElement("p");
+  body.className = "savecode-body";
+  body.textContent = "Your progress stays in your account. To sign back in on this device you'll need your sync code:";
+  const code = document.createElement("p");
+  code.className = "savecode-value"; code.textContent = shownSyncCode() || "";
+  const save = document.createElement("button");
+  save.type = "button"; save.className = "next ghost savecode-continue signout-save"; save.textContent = "Save my code";
+  const go = document.createElement("button");
+  go.type = "button"; go.className = "next savecode-save signout-go"; go.textContent = "Sign out";
+  const cancel = document.createElement("button");
+  cancel.type = "button"; cancel.className = "next ghost savecode-continue signout-cancel"; cancel.textContent = "Cancel";
+  const msg = document.createElement("p");
+  msg.className = "savecode-foot signout-msg"; msg.setAttribute("role", "status");
+  sheet.append(title, body, code, save, go, cancel, msg);
+  el.appendChild(sheet);
+  let busy = false;
+  const close = () => { if(busy) return; el.classList.remove("show"); setTimeout(() => el.remove(), 220); };
+  save.addEventListener("click", () => { try{ saveSyncCodeVia(save); }catch(e){} });
+  cancel.addEventListener("click", close);
+  el.addEventListener("click", e => { if(e.target === el) close(); });
+  go.addEventListener("click", () => {
+    if(busy) return;
+    busy = true; go.disabled = true; cancel.disabled = true; go.textContent = "Saving\u2026"; msg.textContent = "";
+    /* the latest progress goes up now, and the sign-out waits until it has landed */
+    try{ pushToCloud(true); }catch(e){}
+    const t0 = Date.now();
+    (function wait(){
+      if(signOutReady()) return finishSignOut();
+      if(Date.now() - t0 > 9000){
+        busy = false; go.disabled = false; cancel.disabled = false; go.textContent = "Sign out";
+        msg.textContent = "Your latest progress hasn't reached the cloud yet, so this device stays signed in. Check your connection and try again.";
+        return;
+      }
+      setTimeout(wait, 250);
+    })();
+  });
+  document.body.appendChild(el);
+  clearBannerOnScreenChange(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  return el;
+}
+function finishSignOut(){
+  try{ detachLiveListener(); }catch(e){}
+  try{ localStorage.setItem("class26e.signout", String(Date.now())); localStorage.removeItem("class26e.activeclass"); }catch(e){}
+  location.reload();
 }
 
 function checkSaveCodeReminder(){
@@ -130529,6 +130661,7 @@ function buildLastWeekPodium(top, entries){
 const WEEK_RECAP_KEY = "class26e.weekrecap.v1";
 const WEEK_RECAP_DELAY_MS = 2600;
 const WEEK_RECAP_BOARD_DELAY_MS = 900;   /* build 383: after the board has drawn */
+var WEEK_RECAP_HOME_MS = 1400;         /* build 383: "show the main menu for a second and then that would pop up" */
 function weekLabelOf(wk){
   const p = String(wk || "").split("-").map(Number);
   if(p.length !== 3 || p.some(isNaN)) return "Last week";
@@ -131011,7 +131144,9 @@ function buildWeekRecapStage(r){
   const el = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
   const root = el("div", "wr");
   const head = el("div", "wr-head");
-  head.append(el("p", "wr-eyebrow", "Weekly recap"), el("h2", "wr-title", weekLabelOf(r.week)));
+  /* (383) "That weekly thing needs to be specified the class it's for at the top" - two classes, one recap each */
+  const recapClass = (typeof NOVA_CLASSES !== "undefined" && NOVA_CLASSES.find(c => c.key === (window.NOVA_CLASS || "academy"))) || null;
+  head.append(el("p", "wr-eyebrow", "Weekly recap" + (recapClass ? " \u00b7 " + recapClass.name : "")), el("h2", "wr-title", weekLabelOf(r.week)));
   const pagesBox = el("div", "wr-pages");
   const pages = [], cols = [], mcards = [], acards = [];
   if(!r.optedOut){
@@ -131292,6 +131427,7 @@ function weekRecapLines(r){
 }
 __bm("L118195");
 let weekRecapTimer = null, weekRecapOn = false;
+var weekRecapHomeTried = false;   /* var: showHome reads it, and Home can be shown before this line on a slow boot */
 function weekRecapOnBoard(){
   return !!(stage && stage.firstElementChild && !stage.querySelector('[data-screen="home"]') && countEl && countEl.textContent === "Leaderboard");
 }
@@ -131319,7 +131455,7 @@ function maybeShowWeekRecap(tries){
   /* ON THE LEADERBOARD, NOT HOME (build 383): Madison, "the weekly news popup. I don't like how it pops up forced like
      that ... that only pops up if you select leaderboard that week". showRankings schedules it; it plays only while the
      Leaderboard is the screen (its header word is the board's name), once a week as before. */
-  if(!weekRecapOnBoard()) return;
+  if(!weekRecapOnBoard() && !stage.querySelector('[data-screen="home"]')) return;
   if(!weekRecapDayOk()) return;
   const lw = lastWeekKey();
   if(weekRecapSeen(lw)) return;
@@ -136556,6 +136692,7 @@ function showProfile(defaultTab, opts){
      (no Profile tabs over it, the bar's Stats lit); asked for anything else, Profile has no Stats tab. */
   const ifcStats = window.NOVA_CLASS === "ifc";
   const statsAlone = ifcStats && initialTab === "stats";
+  const settingsAlone = ifcStats && initialTab === "settings";   /* (383) Settings is Fire Code's bar tab, alone */
   captureSetupReturn();
   /* Same interception as showHome — reaching a new tier redirects
      to the cutscene no matter which tab was actually tapped from
@@ -136567,8 +136704,8 @@ function showProfile(defaultTab, opts){
   flushStudyTime();
   meterEl.hidden = true; hintEl.hidden = true; restartEl.hidden = true;
   timerlineEl.hidden = true;
-  setActiveNav(statsAlone ? "stats" : "profile");
-  countEl.textContent = statsAlone ? "Stats" : "Profile";
+  setActiveNav(statsAlone ? "stats" : settingsAlone ? "settings" : "profile");
+  countEl.textContent = statsAlone ? "Stats" : settingsAlone ? "Settings" : "Profile";
   /* A rank-up not yet shown: built as it was before it (317, 319). */
   armRankUpProfileScene(initialTab);
 
@@ -136617,7 +136754,9 @@ function showProfile(defaultTab, opts){
        points at it. See the tour at the end of this function. */
     { key: "stats",   label: "Stats",   node: statsTab,    cls: " profile-stats-tab-btn" },
     { key: "settings", label: "Settings", node: settingsTab, cls: " profile-settings-tab-btn" }
-  ].filter(t => !ifcStats || (statsAlone ? t.key === "stats" : t.key !== "stats"));
+  /* (383) Fire Code: "why is settings still within profile? It should just be in on the bottom tab" - each of its bar tabs is a
+     screen of its own: Profile alone, Stats alone, Settings alone, no switch over any of them */
+  ].filter(t => !ifcStats || t.key === (initialTab === "stats" || initialTab === "settings" ? initialTab : "profile"));
   const profileTabBtns = {};
   profileTabDefs.forEach(t => {
     const btn = document.createElement("button");
@@ -136629,7 +136768,7 @@ function showProfile(defaultTab, opts){
     profileTabSeg.appendChild(btn);
     t.node.hidden = initialTab !== t.key;
   });
-  if(!statsAlone){
+  if(profileTabDefs.length > 1){
     panel.appendChild(profileTabSeg);
     attachSegSlider(profileTabSeg, ".iconbtn.active");
   }
@@ -136672,7 +136811,7 @@ function showProfile(defaultTab, opts){
      Profile tab. */
   /* Settings' volume slider is dragged sideways; a drag on it is the
      slider's, never a tab change. */
-  if(!statsAlone) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
+  if(profileTabOrder.length > 1) attachTabSwipe(panel, profileTabOrder, () => profileTabKey, selectProfileTab, { skip: ".sliderwrap, input[type=range]" });
 
   /* ---------- identity header ----------------------------------------
      One card: the character you chose, your name, the day streak, and

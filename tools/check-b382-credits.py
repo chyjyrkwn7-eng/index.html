@@ -126,7 +126,7 @@ PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "study": ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"],   # (383: the longer pause is gone)
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
          "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
-         "name": []}   # (383) your name: Settings > Account > Name, its own editor (no switches)
+         "account": []}   # (383) Settings > Account: the name editor and Sign out (no switches)
 PEOPLE = ["Madison Davis", "Bryan Darjean", "Logan Preston", "Alexis Sauceda", "Cameron Wharton"]
 # the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
 FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]
