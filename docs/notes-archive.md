@@ -30962,3 +30962,17 @@ Found by check-positions in the final run (no flags on 381, eight on 382).
 - check-b382-credits: the Sync page's row is "Your sync code" since the save-code card work (deliberate).
 - Pre-existing on 381 too: check-save-code part 1 (a fresh launch opens Get started, not Welcome), check-b380 loops fallback,
   check-b377 hand-over timing. check-sync "Find me" failed under load only (passes alone).
+
+### 382 LIVE (merged 2026-11-03, squash a330ee8). Build 383: "Choose your mode" in the iOS look
+Madison, on 382's final screenshots: "Do the one thing you noticed. Go ahead and merge though." 382 went live as shown;
+mode selection is 383.
+- showModeSelect: `iosNavBar("Choose your mode", buildBackLink("Home", showHome))` in place of the Back pill and the serif
+  "How do you want to study?"; that question is now `.modeselect-sub`, grey, in the body's face; countEl empty (the corner title
+  went, as on Units). CSS in THE iOS LOOK block: panel padding-top 24px so the bar sits at Units/Settings/Friends' 88px; the
+  cards' titles in the body's face (was --serif), 16px radius, left-aligned. The four `.modecard[data-mode]` the tour targets stay.
+- Gate: tools/check-b383-modeselect.py (15 fail on 382; routes version.json to the old build so --against does not reload).
+- Also run: sweep --quick 14/14, check-b382-ioslook, check-b382-screens ALL PASS; check-tours unchanged from 382 (mainmenu,
+  modeselect, profile tours already failing on 381).
+- Left from 382's behaviour run (sections after 83, partial, on 382 code), to classify next: Home's next-flare colour, the
+  board's Rank/Level/Badges header gap (7px) on phone/tablet/SE, Calendar's "today" no longer matte/neutral - likely the iOS
+  look's deliberate restyle; check against Madison's screenshots before changing either.
