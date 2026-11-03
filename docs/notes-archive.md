@@ -31074,3 +31074,11 @@ Test history and a test's detail, Virtual Room (Host / Join), the Virtual Room's
 - Report a bug's "What happened" label: grey sentence case, as Settings' group headings.
 - Already in the look (left): Settings and its pages, Advanced, Contributors, Customize and its pages, Friends, Calendar, Stats,
   ranks, badges, the start sheet. The test, flashcards and results screens keep their own (in-run) design.
+
+### 383: Study's "Longer pause before moving on" removed
+Madison (screenshot of Settings > Study): "The longer pause setting, we don't need that." The row is gone from Study; Auto-advance
+uses AUTO_ADVANCE_MS alone (so anyone who had it on is back to the normal wait). theme.autoAdvanceLong stays in the theme's default,
+loadTheme and saveTheme (a saved field is never dropped) and is read by nothing; AUTO_ADVANCE_LONG_MS is unused. check-b382-credits
+asserts the switch is absent on Study (academy and Fire Code).
+- Behaviour sections for the screens given the iOS head this build (17 sections): the only failures are check_b321g_nova's 11, which
+  fail identically on 382 (they expect "Version 9" and the old Nova intro wording) - stale, not this build's.

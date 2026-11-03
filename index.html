@@ -105813,7 +105813,7 @@ function scheduleAutoAdvance(qi){
        still a clear beat and takes 40% off the wait. Anyone who wants
        none of it can turn auto-advance off in Settings, which is the
        default. */
-  }, theme.autoAdvanceLong ? AUTO_ADVANCE_LONG_MS : AUTO_ADVANCE_MS);
+  }, AUTO_ADVANCE_MS);   /* (383: the longer pause setting is gone) */
 }
 __bm("L95043");
 const AUTO_ADVANCE_MS = 550;
@@ -119841,29 +119841,8 @@ function showAppearance(opts){
   autoFlagRow.append(autoFlagCb, autoFlagBox, autoFlagWrap);
   studyDetails.appendChild(autoFlagRow);
 
-  /* LONGER PAUSE BEFORE MOVING ON (build 382): with Auto-advance on, the
-     right answer stays up about a second (AUTO_ADVANCE_LONG_MS) instead of
-     about half a second. Nothing else about Auto-advance changes. */
-  const longRow = document.createElement("label");
-  longRow.className = "opt";
-  const longCb = document.createElement("input");
-  longCb.type = "checkbox"; longCb.checked = theme.autoAdvanceLong === true;
-  longCb.addEventListener("change", () => {
-    theme.autoAdvanceLong = longCb.checked;
-    saveTheme();
-    showToast(theme.autoAdvanceLong ? "Auto-advance waits a little longer." : "Auto-advance pause back to normal.");
-  });
-  const longBox = document.createElement("span");
-  longBox.className = "box"; longBox.setAttribute("aria-hidden", "true"); longBox.textContent = "\u2713";
-  const longWrap = document.createElement("span");
-  longWrap.className = "otext";
-  longWrap.appendChild(document.createTextNode("Longer pause before moving on"));
-  const longHint = document.createElement("span");
-  longHint.className = "ohint";
-  longHint.textContent = "With Auto-advance on, waits about a second instead of half a second, so there's time to read the answer.";
-  longWrap.appendChild(longHint);
-  longRow.append(longCb, longBox, longWrap);
-  studyDetails.appendChild(longRow);
+  /* (LONGER PAUSE BEFORE MOVING ON, build 382, is gone - build 383, Madison: "The longer pause setting, we don't need that."
+     Auto-advance keeps its one wait, AUTO_ADVANCE_MS; theme.autoAdvanceLong stays in the saved theme and is ignored.) */
 
   /* ---- TWO GROUPS THAT SAY WHAT THEY ARE, IN ONE VOICE ----
      "The descriptions for the switches for the top two sections could be
@@ -119914,8 +119893,7 @@ function showAppearance(opts){
     /* build 382: celebrations belong with motion and effects now */
     const GROUPS = [
       [motionDetails, ["Reduce motion", "Skip celebrations and pop-ups"]],
-      [studyDetails,  ["Swipe to next question", "Auto-advance", "Longer pause before moving on",
-                       "Auto-star questions you keep missing"]]
+      [studyDetails,  ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"]]
     ];
     GROUPS.forEach(([host, titles]) => {
       const card = document.createElement("div");

@@ -12,7 +12,7 @@ can add Logan Preston" / "made by M. Davis and then the word nova in a nice cool
 (2) Every category opens its own page (round back button, title) holding its settings, each switch row with a coloured
     tile; a page lights the tab Settings lights; back is the menu.
 (3) Every handler still fires (spied): share, install walkthrough, version check, report screen, release history, a
-    switch, the sync code reveal; the two new switches (Tap sounds, Longer pause) save to the theme.
+    switch, the sync code reveal; the new switch (Tap sounds) saves to the theme; (383) Study has no Longer pause switch.
 (4) Advanced settings opens its page: red word rows, Reset opens the warning.
 (5) Legal holds every line of the old foot word for word; Terms of Use and Privacy open.
 (6) Contributors (round 3, "Not sure why ours has numbers"): five people, Madison Davis first, Logan Preston there;
@@ -119,7 +119,7 @@ def red(c):
     v = chans(c)
     return len(v) == 3 and v[0] > 180 and v[1] < 140 and v[2] < 140
 PAGES = {"sound": ["Sound effects", "Tap sounds"],
-         "study": ["Swipe to next question", "Auto-advance", "Longer pause before moving on", "Auto-star questions you keep missing"],
+         "study": ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"],   # (383: the longer pause is gone)
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
          "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
          "name": []}   # (383) your name: Settings > Account > Name, its own editor (no switches)
@@ -213,7 +213,11 @@ with sync_playwright() as pw:
         tap(pg, "Version history"); pg.wait_for_timeout(400)
         chk("%s Version history opens the release history from Settings" % tag, "rel:settings" in pg.evaluate("__hit"), pg.evaluate("__hit"))
         pg.evaluate("()=>{ window.showReleaseHistory = window.__realRel; }")
-        for pk, title, field in (("motion", "Reduce motion", "reduceMotion"), ("sound", "Tap sounds", "tapSounds"), ("study", "Longer pause before moving on", "autoAdvanceLong")):
+        # (383: "The longer pause setting, we don't need that" - gone from Study; asserted absent below)
+        pg.evaluate("()=>showAppearance({ page: 'study' })"); pg.wait_for_timeout(900)
+        gone = pg.evaluate("()=>![...document.querySelectorAll('#stage label.opt .otext')].some(t=>/Longer pause/.test(t.textContent))")
+        chk("%s Study has no Longer pause switch any more" % tag, gone, gone)
+        for pk, title, field in (("motion", "Reduce motion", "reduceMotion"), ("sound", "Tap sounds", "tapSounds")):
             pg.evaluate("(k)=>showAppearance({ page: k })", pk); pg.wait_for_timeout(900)
             r = pg.evaluate("""async (a)=>{ const row=[...document.querySelectorAll('#stage label.opt')].find(r=>((r.querySelector('.otext')||r).textContent||'').trim().startsWith(a[0]));
               if(!row) return null; const was=theme[a[1]]; row.querySelector('.otext').click(); await new Promise(r=>setTimeout(r,500));
