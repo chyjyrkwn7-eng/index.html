@@ -73,7 +73,9 @@ START = """() => { cfg.mode = 'drill';
 
 
 def open_settings(pg):
-    pg.evaluate("() => showAppearance()")
+    # build 382: Settings is a menu; the Haptics / Vibration switches are on
+    # its Sound & Haptics page
+    pg.evaluate("() => showAppearance({ page: 'sound' })")
     pg.wait_for_timeout(900)
 
 
@@ -469,11 +471,19 @@ def z10(br):
         locked = pg.evaluate("() => [...document.querySelectorAll('.choice.locked')].filter(c => c.querySelector('.nova-hsw')).length")
         check("z10 a locked choice has no switch", locked == 0, str(locked))
         # no switch in the controls that are not 'a button'
-        pg.evaluate("() => showAppearance()")
-        pg.wait_for_timeout(1400)
-        bad = pg.evaluate("""() => ({ inInput: document.querySelectorAll('input .nova-hsw, select .nova-hsw, textarea .nova-hsw, label .nova-hsw, .nsw .nova-hsw, .opt .nova-hsw').length,
-          onHost: [...document.querySelectorAll('.nova-hsw')].filter(e => e.parentElement.querySelector('button:not(.nova-hsw), a, select, textarea, input:not(.nova-hsw)')).length })""")
-        check("z10 none inside a native control, a label, a Settings switch, or a card holding other controls", bad["inInput"] == 0 and bad["onHost"] == 0, str(bad))
+        # build 382: Settings is a menu of rows; its switches are on the
+        # category pages, so the menu and every page of switches are read
+        bad = {"inInput": 0, "onHost": 0, "opts": 0}
+        for js in ("() => showAppearance()", "() => showAppearance({ page: 'sound' })", "() => showAppearance({ page: 'study' })",
+                   "() => showAppearance({ page: 'motion' })", "() => showAppearance({ page: 'rankings' })"):
+            pg.evaluate(js)
+            pg.wait_for_timeout(1400)
+            one = pg.evaluate("""() => ({ inInput: document.querySelectorAll('input .nova-hsw, select .nova-hsw, textarea .nova-hsw, label .nova-hsw, .nsw .nova-hsw, .opt .nova-hsw').length,
+              onHost: [...document.querySelectorAll('.nova-hsw')].filter(e => e.parentElement.querySelector('button:not(.nova-hsw), a, select, textarea, input:not(.nova-hsw)')).length,
+              opts: document.querySelectorAll('#stage .opt').length })""")
+            for k in bad:
+                bad[k] += one[k]
+        check("z10 none inside a native control, a label, a Settings switch, or a card holding other controls", bad["opts"] >= 4 and bad["inInput"] == 0 and bad["onHost"] == 0, str(bad))
         # a scroll that starts on a button (its switch) still scrolls the page, and does not tap it
         done = False
         for name, js in (("Profile", "() => showProfile()"), ("Stats", "() => showProfile('stats')"), ("Leaderboard", "() => showRankings()")):
@@ -527,7 +537,8 @@ def z11(br):
             if same >= 3: return
             pg.wait_for_timeout(300)
     screens = [("Home", "() => showHome()"), ("Profile", "() => showProfile()"), ("Stats", "() => showProfile('stats')"),
-               ("Settings", "() => showAppearance()"), ("Leaderboard", "() => showRankings()"),
+               ("Settings", "() => showAppearance()"), ("Settings > Study", "() => showAppearance({ page: 'study' })"),
+               ("Leaderboard", "() => showRankings()"),
                ("Calendar", "() => showCalendarTab ? showCalendarTab() : showCalendar()"),
                ("Units", "() => { cfg.mode = 'drill'; showSetup(); }"), ("Modes", "() => showModeSelect()"),
                ("Friends", "() => showFriends()"), ("Badges", "() => showRanksScreen('badges')"), ("Rank", "() => showRanksScreen('ranks')"),

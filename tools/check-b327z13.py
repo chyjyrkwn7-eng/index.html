@@ -199,10 +199,15 @@ def lists(br):
       arrows: [...document.querySelectorAll('#stage .cal-grid-arrow')].map(b => !!b.querySelector(':scope > .nova-hsw')) })""")
     check("V. the calendar's Final exams rows carry no switch (%d rows), its arrows keep theirs" % len(r["rows"]),
           len(r["rows"]) >= 3 and not any(r["rows"]) and r["arrows"] and all(r["arrows"]), r)
-    pg.evaluate("() => showAppearance()")
+    # Build 382: Advanced settings is one row of the Settings menu's App list
+    # now (a list row, so no switch by the rule above); the lone wide button
+    # of Settings is Advanced's own Reset, alone in its card.
+    pg.evaluate("() => showAdvancedSettings()")
     pg.wait_for_timeout(2500)
-    a = pg.evaluate("() => { const b = document.querySelector('#stage .adv-toggle'); return b ? !!b.querySelector(':scope > .nova-hsw') : null; }")
-    check("V. a lone wide button (Advanced settings) still carries its switch", a is True, a)
+    a = pg.evaluate("""() => { const b = [...document.querySelectorAll('#stage .settings-row')].find(x => x.textContent.trim() === 'Reset');
+      if(!b) return null; const c = b.classList[0]; const lone = [...b.parentElement.children].filter(s => s.classList.contains(c)).length === 1;
+      return lone ? !!b.querySelector(':scope > .nova-hsw') : 'not alone'; }""")
+    check("V. a lone wide button (Advanced's Reset) still carries its switch", a is True, a)
     ctx.close()
 
 

@@ -65,7 +65,8 @@ def check_settings_and_soundtest(br):
     for label, w, h in (PHONE,):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate(CLEAN)
-        pg.evaluate("() => showProfile('settings')"); pg.wait_for_timeout(1200)
+        # build 382: Settings is a menu; the auto-advance switch is on its Study page
+        pg.evaluate("() => showAppearance({ page: 'study' })"); pg.wait_for_timeout(1200)
         row = pg.evaluate("""() => {
           /* the row whose switch IS theme.autoAdvance: flip it and see */
           for(const r of document.querySelectorAll('label.opt')){
@@ -80,6 +81,8 @@ def check_settings_and_soundtest(br):
         check("%s: the auto-advance row's title and line name no mode, and the title is short" % label,
               bool(row) and not words(row["title"]) and not words(row["hint"]) and 0 < len(row["title"]) <= 24
               and len(row["hint"]) > 20, row)
+        # (the build line is on the Settings menu itself, Check for update's second line)
+        pg.evaluate("() => showProfile('settings')"); pg.wait_for_timeout(1200)
         st = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
           const out = { fn: typeof window.showSoundTest, css: 0 };
           for(const sh of document.styleSheets){ try{ for(const r of sh.cssRules){ if(/soundtest|\\.snd-row/.test(r.cssText)) out.css++; } }catch(e){} }

@@ -266,8 +266,12 @@ def round2(br):
     check("%s: H7. sliding off the top: the button changes under the finger (fill, no punch) and punches on the release" % label,
           bool(r7) and not r7["held"]["on"] and r7["held"]["fill"] and not r7["held"]["pop"] and r7["rel"]["pop"], r7)
     # H8 Settings' cards carry no blur under their switches
-    r8 = pg.evaluate("""async () => { document.querySelectorAll('.unitoptions-modal').forEach(m => m.remove()); showAppearance(); await new Promise(r => setTimeout(r, 900));
-      return [...document.querySelectorAll('#stage .settings-card')].map(c => getComputedStyle(c).backdropFilter); }""")
+    # (build 382: Settings is a menu; the switch rows' cards are on its pages, so the menu and every page are read)
+    r8 = pg.evaluate("""async () => { document.querySelectorAll('.unitoptions-modal').forEach(m => m.remove()); const out = [];
+      for(const pgName of [null, 'sound', 'study', 'motion', 'sync', 'rankings', 'share']){
+        showAppearance(pgName ? { page: pgName } : undefined); await new Promise(r => setTimeout(r, 900));
+        document.querySelectorAll('#stage .settings-card').forEach(c => out.push(getComputedStyle(c).backdropFilter)); }
+      return out; }""")
     check("%s: H8. no Settings card blurs what is behind it (a switch's lens slides inside them)" % label, r8 and all(v in ("none", "") for v in r8), r8)
     # H9 the "open me" pill on the rank box and the case
     r9 = pg.evaluate("""async () => { showProfile(); await new Promise(r => setTimeout(r, 900));
@@ -281,28 +285,44 @@ def round2(br):
     ctx2.add_init_script(IPHONE_INIT + "try{Object.defineProperty(navigator,'standalone',{get:()=>true});}catch(e){}")
     ctx2.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.drill.v1', '%s');localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}" % cb.USED_ACCOUNT)
     pg2 = cb.open_page(ctx2); pg2.goto(cb.URL); pg2.wait_for_timeout(3000)
-    pg2.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub(); showAppearance();}")
-    pg2.wait_for_timeout(2500)
-    r10 = pg2.evaluate("""() => { const rows = [...document.querySelectorAll('#stage label.opt')].filter(r => r.querySelector(':scope > .box'));
-      const ok = rows.filter(r => { const i = r.querySelector(':scope > input[type=checkbox]'); if(!i || !i.hasAttribute('switch')) return false;
-        r.scrollIntoView({ block: 'center', behavior: 'instant' });
-        const b = r.querySelector(':scope > .box').getBoundingClientRect(); return document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) === i; });
-      return { rows: rows.length, ok: ok.length }; }""")
+    pg2.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
+    # (build 382: Settings is a menu; its switch rows are on the category pages, each read in turn)
+    r10 = {"rows": 0, "ok": 0}
+    for pgName in ("sound", "study", "motion", "rankings"):
+        pg2.evaluate("(p)=>showAppearance({ page: p })", pgName)
+        pg2.wait_for_timeout(2500)
+        one = pg2.evaluate("""() => { const rows = [...document.querySelectorAll('#stage label.opt')].filter(r => r.querySelector(':scope > .box'));
+          const ok = rows.filter(r => { const i = r.querySelector(':scope > input[type=checkbox]'); if(!i || !i.hasAttribute('switch')) return false;
+            r.scrollIntoView({ block: 'center', behavior: 'instant' });
+            const b = r.querySelector(':scope > .box').getBoundingClientRect(); return document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) === i; });
+          return { rows: rows.length, ok: ok.length }; }""")
+        r10["rows"] += one["rows"]; r10["ok"] += one["ok"]
     check("%s: H10. on an iPhone every switch row's own input is a native switch over its track (%d of %d)" % (label, r10["ok"], r10["rows"]),
           r10["rows"] >= 4 and r10["ok"] == r10["rows"], r10)
+    # A wide button keeps its switch only when it stands alone (327z13,
+    # hswListRow): one beside two or more siblings sharing its first class is
+    # a list row and carries none. Since build 382 every row on the Settings
+    # menu is a list row, so the lone wide buttons are read where they are
+    # (Advanced's Reset), and the list rows are held to carrying none.
+    WIDE = """() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
+      .map(b => { const c = b.classList[0], par = b.parentElement; let n = 0; if(c && par) for(const s of par.children) if(s.classList && s.classList.contains(c)) n++;
+        return { t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw'), list: n >= 2 }; })"""
     pg2.evaluate("()=>showFriends()"); pg2.wait_for_timeout(2500)
-    r11 = pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
-      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
+    r11 = pg2.evaluate(WIDE)
     # MOVED IN 327z12 round 2: Profile's wide button was the Friends box's,
     # which moved to the chat - Settings' wide buttons are read as well
     pg2.evaluate("()=>showAppearance()"); pg2.wait_for_timeout(2500)
-    r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
-      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
+    r11 += pg2.evaluate(WIDE)
+    pg2.evaluate("()=>{ if(typeof showAdvancedSettings === 'function') showAdvancedSettings(); }"); pg2.wait_for_timeout(2500)
+    r11 += pg2.evaluate(WIDE)
     pg2.evaluate("()=>showProfile()"); pg2.wait_for_timeout(2500)
-    r11 += pg2.evaluate("""() => [...document.querySelectorAll('#stage button')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 260 && r.height <= 60 && r.height > 20; })
-      .map(b => ({ t: b.textContent.trim().slice(0, 20), w: Math.round(b.getBoundingClientRect().width), hsw: !!b.querySelector(':scope > .nova-hsw') }))""")
-    check("%s: H11. on an iPhone a wide button of a button's height carries its switch (%d of %d)" % (label, sum(1 for x in r11 if x["hsw"]), len(r11)),
-          len(r11) >= 1 and all(x["hsw"] for x in r11), r11)
+    r11 += pg2.evaluate(WIDE)
+    lone = [x for x in r11 if not x["list"]]
+    rows = [x for x in r11 if x["list"]]
+    check("%s: H11. on an iPhone a wide button of a button's height carries its switch (%d of %d)" % (label, sum(1 for x in lone if x["hsw"]), len(lone)),
+          len(lone) >= 1 and all(x["hsw"] for x in lone), lone)
+    check("%s: H11. ...and a row of a list of them carries none (%d of %d)" % (label, sum(1 for x in rows if x["hsw"]), len(rows)),
+          not any(x["hsw"] for x in rows), rows)
     ctx2.close()
 
 
