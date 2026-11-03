@@ -23665,7 +23665,7 @@
   .customize-namerow[hidden], .customize-nameedit[hidden]{ display:none; }
   .customize-nameedit{ display:flex; flex-direction:column; gap:.7rem; margin-top:.4rem; padding:0 .1rem; max-width:28rem; }
   .customize-namelabel{ font-size:.78rem; font-weight:700; letter-spacing:.04em; color:var(--soft); padding-left:.25rem; }
-  :is(.screen-customize, .settings-page-name) .customize-nameedit .searchbox{ padding:.95rem 1.15rem; min-height:3.3rem; font-size:max(17px, 1.05rem); }
+  :is(.screen-customize, .settings-page-account) .customize-nameedit .searchbox{ padding:.95rem 1.15rem; min-height:3.3rem; font-size:max(17px, 1.05rem); }
   .customize-namebtns{ display:flex; gap:.65rem; margin-top:.25rem; }
   .customize-namebtns .next{ flex:1 1 0; min-width:0; margin:0; min-height:48px; }
   /* ---- CUSTOMIZE: THE SUMMARY ROWS AND THE PAGE BARS (build 315) ----
@@ -35935,7 +35935,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage :is(
       :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card,
       .screen-friends > .friend-sect, .profile-stats-tab > .points-progress-sect,
-      :is(.screen-customize, .settings-page-name) :is(.customize-namerow, .customize-nameedit)){
+      :is(.screen-customize, .settings-page-account) :is(.customize-namerow, .customize-nameedit)){
     background-color:var(--surface-1) !important;
     background-image:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important;
     border-color:transparent !important; box-shadow:none !important;
@@ -36037,25 +36037,25 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .screen-customize .cz-bar{ display:flex; align-items:baseline; }
   html[data-layout] body #stage .screen-customize .cz-bar-count{ font-size:.86rem; font-weight:500; letter-spacing:0; color:var(--soft); }
   /* the name: one row of a group, the name on the left and Change on the right */
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow,
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-nameedit{
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-namerow,
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-nameedit{
     box-sizing:border-box; max-width:none; margin:0;
     background:var(--surface-sheen), var(--surface-1); border:1px solid var(--surface-border);
     border-radius:var(--ios-group-r); box-shadow:var(--surface-shadow);
   }
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow{
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-namerow{
     justify-content:space-between; flex-wrap:nowrap; min-height:3.4rem; padding:.5rem .6rem .5rem 1rem;
   }
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow[hidden],
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-nameedit[hidden]{ display:none; }
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow .profile-name-display{
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-namerow[hidden],
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-nameedit[hidden]{ display:none; }
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-namerow .profile-name-display{
     min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:var(--sans); font-size:1.02rem; font-weight:600; letter-spacing:0; line-height:1.3;
   }
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-namerow .profile-edit-btn{ flex:0 0 auto; }
-  html[data-layout] body #stage :is(.screen-customize, .settings-page-name) .customize-nameedit{ padding:1rem; }
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-namerow .profile-edit-btn{ flex:0 0 auto; }
+  html[data-layout] body #stage :is(.screen-customize, .settings-page-account) .customize-nameedit{ padding:1rem; }
   /* (383) on its Settings page the field keeps Customize's room inside it (Settings' own inputs are tighter) */
-  html[data-layout] body #stage .settings-page-name .customize-nameedit input.searchbox{ padding-top:.95rem !important; padding-bottom:.95rem !important; padding-left:1.15rem !important; padding-right:1.15rem !important; }
+  html[data-layout] body #stage .settings-page-account .customize-nameedit input.searchbox{ padding-top:.95rem !important; padding-bottom:.95rem !important; padding-left:1.15rem !important; padding-right:1.15rem !important; }
   /* Your look: the four rows are one inset group - edge to edge, a hairline between, the corners on the group */
   html[data-layout] body #stage .screen-customize .cz-list{ gap:0; }
   html[data-layout] body #stage .screen-customize .cz-list > .cz-bar{ margin-bottom:var(--ios-head-gap) !important; }

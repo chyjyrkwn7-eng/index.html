@@ -11466,10 +11466,10 @@ def check_b314_chars(br):
           const aura = held && [...held.querySelectorAll('svg.avatarchar-svg circle')].find(c => /url\\(#(aura|halo)-/.test(c.getAttribute('fill') || ''));
           out.halo = aura ? parseFloat(aura.getAttribute('opacity') || '1') : null;
           /* the name editor - in Settings > Account > Name since build 383 (was Customize's summary page) */
-          showAppearance({ page: 'name' }); await wait(500);
+          showAppearance({ page: 'account' }); await wait(500);
           document.querySelector('.customize-namerow .profile-edit-btn').click(); await wait(300);
-          const row = document.querySelector('.customize-namerow'), inp = document.querySelector('.settings-page-name input.searchbox');
-          const save = [...document.querySelectorAll('.settings-page-name button')].find(b => b.textContent.trim() === 'Save');
+          const row = document.querySelector('.customize-namerow'), inp = document.querySelector('.settings-page-account input.searchbox');
+          const save = [...document.querySelectorAll('.settings-page-account button')].find(b => b.textContent.trim() === 'Save');
           const ir = inp.getBoundingClientRect(), sr = save.getBoundingClientRect(), ics = getComputedStyle(inp);
           out.rowGone = getComputedStyle(row).display === 'none';
           out.padIn = Math.min(parseFloat(ics.paddingLeft), parseFloat(ics.paddingTop));
