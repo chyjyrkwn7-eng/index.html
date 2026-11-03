@@ -31160,3 +31160,7 @@ development; exam structure and test format; study guide alignment). Alexis Sauc
 answer key verification; pre-release testing). Cameron Wharton - Multiplayer Systems (Virtual Room design, opens it; live multiplayer
 test sessions; Race, Tug of War and Battle modes). The longer roles crowded the name (two lines, and on a 320px SE overlapping it), so
 the role is now a grey line under the name (.credits-name-row a column). Wording is Madison's to adjust.
+- Then: "Like Cameron helped think of characters and stuff" - Cameron Wharton is "Multiplayer Systems & Characters" with a fourth row,
+  "Character concepts and ideas". And "Where it says made by Davis at the bottom. Don't make Davis look like that" - the name is no
+  longer the serif italic in the brand gradient: the signature's own small tracked capitals ("MADE BY DAVIS"), the name at 800 and a
+  step brighter than "Made by". The NOVA wordmark under it is unchanged.

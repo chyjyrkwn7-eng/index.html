@@ -32577,17 +32577,17 @@
   /* the foot of Settings: the signature, then the name */
   .settings-foot{ margin:2.6rem 0 .8rem; text-align:center; }
   .settings-madeby{
-    margin:0 0 .35rem; display:flex; align-items:baseline; justify-content:center; gap:.55rem; line-height:1.2;
+    margin:0 0 .5rem; display:flex; align-items:baseline; justify-content:center; gap:.45em; line-height:1.2;
   }
   .settings-madeby-by{
     font-size:.68rem; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
     color:color-mix(in srgb, var(--ink) 52%, transparent);
   }
+  /* (383) "Don't make Davis look like that" - no serif italic, no gradient: the signature's own small tracked capitals, the name
+     just brighter and heavier than "Made by" */
   .settings-madeby-name{
-    font-family:var(--serif); font-style:italic; font-size:1.3rem; font-weight:700; letter-spacing:.01em;
-    padding:0 .08em;
-    background-image:linear-gradient(90deg, var(--theme-c1), var(--theme-c2) 55%, var(--theme-c3));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-family:inherit; font-style:normal; font-size:.68rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase;
+    color:color-mix(in srgb, var(--ink) 88%, transparent);
   }
   .settings-wordmark{ margin:0; line-height:1; }
   .settings-wordmark-text{
@@ -120023,10 +120023,12 @@ function creditsPeople(){
       { t: "Question accuracy review" },
       { t: "Answer key verification" },
       { t: "Pre-release testing" } ] },
-    { name: "Cameron Wharton", role: "Multiplayer Systems", did: [
+    /* (383) "Cam helped think of characters and stuff" */
+    { name: "Cameron Wharton", role: "Multiplayer Systems & Characters", did: [
       { t: "Virtual Room design", open: roomOpen },
       { t: "Live multiplayer test sessions" },
-      { t: "Race, Tug of War and Battle modes" } ] }
+      { t: "Race, Tug of War and Battle modes" },
+      { t: "Character concepts and ideas" } ] }
   ];
 }
 /* "It should look more like this. Not sure why ours has numbers for how many
@@ -120100,7 +120102,7 @@ function buildCreditsFooter(){
   by.className = "settings-madeby-by"; by.textContent = "Made by";
   const who = document.createElement("span");
   who.className = "settings-madeby-name"; who.textContent = "Davis";
-  made.append(by, who);
+  made.append(by, who);   /* (383) both in the signature's small capitals - the name a step brighter */
   const mark = document.createElement("p");
   mark.className = "settings-wordmark"; mark.setAttribute("aria-label", "Nova");
   const word = document.createElement("span");
