@@ -31327,3 +31327,27 @@ cards look kinda off? There's like a gap thing on them? Idk what's going on ther
      search button stands out") - the check asks for the two to match and sit on the field, not for white;
   N (the live drawing's loops within 80ms): flaky on both - 382 201/106ms, 383 92/79ms in back-to-back runs.
   The rest (tab-bar sequences, BB edges, DD tips, the welcome-new click, GG save-code banner, HH, section ^) fail on 382 too.
+
+### Build 383 - Fire Code's flash cards: a control on the card is not a tap on the card
+Madison, 383, a screen recording of Fire Code's Review flash cards: "Tapping certain stuff in the flash cards makes them flip
+when I'm just trying to view them and use the drop down or whatever on some of it. Ensure this good to go."
+- WHAT IT WAS: the card's click flipped it for every tap but the star's. A Fire Code card's answer side carries the reference
+  box (buildBankNote -> buildIfcRef): "Show the code" (a <details>), and in the opened code Enlarge, "Show the whole book page",
+  the code's own picture (opens the viewer), "Load my IFC PDF". Each tap did its thing AND turned the card over - in his
+  recording "Show the code" opened the code on a card that flipped to its question, and "Show the whole book page" opened the
+  viewer over a card that was on its question when he pressed Done. Enter on a focused summary flipped it too (the card's
+  keydown called card.click() and prevented the toggle).
+- NOW: the click ignores a tap whose target is inside a control on the card (button, a, summary, details, input, select,
+  textarea, label, role=button/switch - not the card itself, which is role=button) or anywhere in .ifc-ref / .ifc-pre. The
+  card's keydown acts only when the card itself has focus.
+- AND THE CARD HOLDS THE OPENED CODE: fcFitCard (build 305: the card is as tall as its taller face; the page scrolls) ran
+  once, when the card was dealt, so the opened code spilled out over the arrows (an 800px answer side in a 566px card). A
+  ResizeObserver on each face's children refits it (one rAF) - it grows when the code opens or arrives and shrinks when it is
+  hidden; disconnects once the card has left the page.
+- The other places the box is shown (a test's question, the results' review, Answer review) have no row-level tap.
+- Gate tools/check-b383-flashcards.py (Fire Code, a book card and an amendments card, touch taps): flip, Show the code (stays on
+  the answer, opens), the code box's button (Load my IFC PDF - no book in the sandbox), the card holds the open code with the
+  arrows below it, Hide the code (stays, shrinks), Enter on the summary, a choice still flips - 11 fail on the previous commit.
+  check-behaviour b303/b305_flashcards/b306_fcmotion/b306_marks/b318f_flashswipe: ALL PASS.
+- Phone only: Enlarge / "Show the whole book page" with his real IFC PDF loaded (the sandbox has no book; the same rule covers
+  every button in the box).

@@ -135890,8 +135890,17 @@ function renderFlashcard(dir){
     fc.flipped = !fc.flipped;
     card.classList.toggle("is-flipped", fc.flipped);
   };
-  card.addEventListener("click", () => {
+  /* A CONTROL ON THE CARD IS NOT A TAP ON THE CARD (383): "Tapping certain stuff in the flash cards makes them flip when
+     I'm just trying to view them and use the drop down or whatever on some of it." (Fire Code.) Every tap on the card
+     flipped it but the star's: a Fire Code card's back carries the reference box - "Show the code", Enlarge, "Show the
+     whole book page", the code's own picture, the book's buttons - and each of those taps opened its thing AND turned the
+     card over under it. A tap on any control on the card, or anywhere in the reference box, now does only its own thing;
+     the rest of the card flips as before. */
+  const FC_OWN_TAP = "button, a, summary, details, input, select, textarea, label, [role=\"button\"], [role=\"switch\"], .ifc-ref, .ifc-pre";
+  const fcOwnTap = t => { const hit = t && t.closest ? t.closest(FC_OWN_TAP) : null; return !!(hit && hit !== card && card.contains(hit)); };
+  card.addEventListener("click", e => {
     if(card.dataset.swiped) return;
+    if(fcOwnTap(e.target)) return;
     flip();
     playSound("fc.flip");
     if(!resultsMotionOff()){
@@ -135899,7 +135908,8 @@ function renderFlashcard(dir){
       clearTimeout(card._flipT); card._flipT = setTimeout(() => card.classList.remove("is-flipping"), 760);
     }
   });
-  card.addEventListener("keydown", e => { if(e.key === " " || e.key === "Enter"){ e.preventDefault(); card.click(); } });
+  /* the card's own keys only when the card itself has focus - Enter on "Show the code" opens the code, it does not flip */
+  card.addEventListener("keydown", e => { if(e.target !== card) return; if(e.key === " " || e.key === "Enter"){ e.preventDefault(); card.click(); } });
   const mover = document.createElement("div"); mover.className = "fc-mover";
   const under = document.createElement("div"); under.className = "fc-under"; under.setAttribute("aria-hidden", "true");
   mover.appendChild(card);
@@ -135927,6 +135937,20 @@ function renderFlashcard(dir){
   screen.append(scene, nav);
   stage.replaceChildren(screen);
   fcFitCard(card);
+  /* (383) AND AGAIN WHENEVER A FACE'S CONTENTS CHANGE SIZE: a Fire Code card's "Show the code" opens the code under the
+     answer (and its picture or text arrives a moment later), and the card, sized once when it was dealt, let it spill out
+     over the arrows below. The card grows with it and the page scrolls, as for any tall card (build 305); hiding the code
+     shrinks it back. */
+  try{
+    if(typeof ResizeObserver === "function"){
+      let fitRaf = 0;
+      const ro = new ResizeObserver(() => {
+        cancelAnimationFrame(fitRaf);
+        fitRaf = requestAnimationFrame(() => { if(!card.isConnected){ ro.disconnect(); return; } fcFitCard(card); });
+      });
+      card.querySelectorAll(".fc-face > *").forEach(el => ro.observe(el));
+    }
+  }catch(e){}
   jumpToTop();
 }
 /* The card grows to whichever face needs more room (build 305). With
