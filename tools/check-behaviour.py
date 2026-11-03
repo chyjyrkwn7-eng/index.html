@@ -27331,7 +27331,8 @@ def check_b324w_recap(br):
           and r.get("loadDefault") is True, [r.get("rolled"), r.get("loadDefault")])
     ctx.close()
 
-    # The flow on Home: not under a tour, not on another screen, once a week.
+    # The flow - on the LEADERBOARD since build 383 ("that only pops up if you select leaderboard that week"):
+    # not under a tour, not on another screen, once a week.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
@@ -27350,14 +27351,14 @@ def check_b324w_recap(br):
       out.onProfile = !!up();
       /* Home under a tour: it waits */
       const tour = document.createElement('div'); tour.id = 'tour-overlay'; document.body.appendChild(tour);
-      showHome(); await wait(4200);
+      showRankings('week'); await wait(4200);
       out.underTour = !!up();
       tour.remove();
       for(let i = 0; i < 40 && !up(); i++) await wait(150);
       const el = up();
       out.shown = !!el;
       if(el){
-        out.onHome = !!stage.querySelector('[data-screen="home"]');
+        out.onHome = weekRecapOnBoard();   /* (383) the Leaderboard is the screen */
         out.marked = (localStorage.getItem('class26e.weekrecap.v1') || '').indexOf(lastWeekKey()) >= 0;
         const said = [];
         for(let k = 0; k < 40; k++){
@@ -27379,8 +27380,17 @@ def check_b324w_recap(br):
       }
       out.gone = !up();
       /* not twice */
-      showHome(); await wait(4200);
+      showHome(); await wait(300); showRankings('week'); await wait(4200);
       out.again = !!up();
+      /* (383) and never on Home - with the week NOT marked seen anywhere (this device or the account) */
+      const heard0 = store.novaHeard ? Object.assign({}, store.novaHeard) : null;
+      try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
+      try{ if(store.novaHeard){ delete store.novaHeard['@recap']; delete store.novaHeard['@last']; } }catch(e){}
+      out.unseenForHome = !weekRecapSeen(lastWeekKey());
+      showHome(); await wait(4200);
+      out.homeNever = !!up();
+      if(heard0) store.novaHeard = heard0;
+      try{ localStorage.setItem('class26e.weekrecap.v1', JSON.stringify({ wk: lastWeekKey() })); }catch(e){}
       /* the Leaderboard never congratulates any more */
       try{ localStorage.removeItem('class26e.weekcongrats.v1'); }catch(e){}
       showRankings('week'); await wait(1800);
@@ -27394,9 +27404,9 @@ def check_b324w_recap(br):
          waits for a day he has not spoken on), so the first recap above
          rightly holds back a second one today. This leg is another week's
          recap for a viewer who hides, so it is another day too. */
-      try{ if(store.novaHeard) delete store.novaHeard['@last']; }catch(e){}
+      try{ if(store.novaHeard){ delete store.novaHeard['@last']; delete store.novaHeard['@recap']; } }catch(e){}
       store.leaderboardOptIn = false;
-      showHome();
+      showRankings('week');
       for(let i = 0; i < 40 && !up(); i++) await wait(150);
       const oo = up();
       out.optShown = !!oo;
@@ -27412,7 +27422,8 @@ def check_b324w_recap(br):
     r = r if isinstance(r, dict) else {}
     check("b324w not on another screen", r.get("onProfile") is False, r.get("err") or r.get("onProfile"))
     check("b324w not under a tour", r.get("underTour") is False, r.get("underTour"))
-    check("b324w on Home once the tour has gone, marked seen", r.get("shown") is True and r.get("onHome") is True and r.get("marked") is True,
+    check("b324w (383: on the Leaderboard, not Home) never on Home by itself, with the week unseen", r.get("unseenForHome") is True and r.get("homeNever") is False, [r.get("unseenForHome"), r.get("homeNever")])
+    check("b324w on the Leaderboard once the tour has gone, marked seen", r.get("shown") is True and r.get("onHome") is True and r.get("marked") is True,
           [r.get("shown"), r.get("onHome"), r.get("marked")])
     said = [s for s in (r.get("said") or []) if s]
     check("b324w the podium rose third, second, first, and the mentions came in as cards",

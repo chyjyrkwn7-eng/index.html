@@ -205,7 +205,8 @@ with sync_playwright() as pw:
         ctx, pg = open_page(br, init_account("TEST-2222", st), errs=errs)
         connect(pg, "TEST-2222", st)
         up = wait_card(pg, 9000)
-        ck("sees the card once the server copy is read", up)
+        # build 383: Madison, "The save your sync code pop up, don't do that for the existing accounts" - it never shows
+        ck("(383) never sees the card on Home, even once the server copy is read", not up)
         ck("the old banner is gone", pg.evaluate("()=>!document.getElementById('save-code')"))
         if up:
             v = pg.evaluate("()=>document.querySelector('#savecode-card .savecode-value').textContent")

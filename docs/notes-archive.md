@@ -30976,3 +30976,25 @@ mode selection is 383.
 - Left from 382's behaviour run (sections after 83, partial, on 382 code), to classify next: Home's next-flare colour, the
   board's Rank/Level/Badges header gap (7px) on phone/tablet/SE, Calendar's "today" no longer matte/neutral - likely the iOS
   look's deliberate restyle; check against Madison's screenshots before changing either.
+
+### 383: no save-code card for existing accounts; the week's recap on the Leaderboard; the top three joined to the list
+Madison, after 382 went live: "The save your sync code pop up, don't do that for the existing accounts. Secondly, the weekly
+news popup. I don't like how it pops up forced like that all forced. Instead, that only pops up if you select leaderboard that
+week. The leaderboard, why is the top 3 disconnected from the rest, fix that as well".
+- checkSaveCodeReminder() returns at once (body kept for later). The sign-up card ("signup" mode) and Settings > Sync's
+  Save it row are unchanged.
+- The weekly recap: showHome no longer schedules it; showRankings calls scheduleWeekRecap(WEEK_RECAP_BOARD_DELAY_MS = 900)
+  and maybeShowWeekRecap plays only while weekRecapOnBoard() (countEl reads "Leaderboard", not Home). Still once a week
+  (local mark + the account's novaHeard @recap), still Tuesday on (weekRecapDayOk), still waits for the server's rows and
+  for anything weekRecapBlocked lists. The one-moment-a-day rule (novaSaidToday) no longer applies to it: opening the board
+  is asking. A hidden-from-rankings viewer gets the opted-out recap over the "rankings are hidden" card.
+- Leaderboard: the podium cards and the list are one grouped card (rules under "ONE LIST FROM FIRST PLACE DOWN", #stage-
+  prefixed to outrank the per-card ones): rows edge to edge, hairline under each, top corners on first place only, the
+  metal ring ::before hidden (it broke the card), the medal and the faint metal light kept; your row on the podium takes the
+  list's accent wash.
+- Gates: tools/check-b383-feedback.py (8 fail on 382). check-b382-savecode "existing" flipped to never; check-b382-ios (3)
+  and (4) to the joined list, (5) to the centred placeholder (381's ask); check-behaviour b324w now on the Leaderboard, with a
+  "never on Home" leg that clears the account's @recap first. The old per-build recap gates (b325-c/g/i, b326-c/e/g,
+  b327-a/c/j, b327r) still play it on Home and are superseded by these.
+- Run: check-sync ALL PASS (Find me flaked once under load, passes alone), sweep --quick 14/14, check-b381, check-b383-*
+  ALL PASS. check-b382-board's CLS 0.0514 is the same number on 382.
