@@ -35950,7 +35950,11 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid var(--surface-border); box-shadow:var(--surface-shadow);
     color:var(--ink); overflow:visible; font-size:1rem !important;
   }
-  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back:active{ background:var(--surface-lift); }
+  /* (383) held, it keeps its colour and only gives a little - 327z15's rule for every back button ("Back buttons no longer
+     change colour when pressed"); the round one carried a lighter fill on press since 382 */
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back{ transition:transform .12s ease; }
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:scale(.92); }
+  [data-reduce-motion="true"] body #stage .ios-nav > .back-link.ios-nav-back:active{ transform:none; }
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ width:20px; height:20px; margin:0; }
   /* the word stays the button's name for a screen reader (and for anything that reads it), out of sight */
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-word{

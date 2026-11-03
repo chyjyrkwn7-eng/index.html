@@ -1024,8 +1024,9 @@ def section_gg(br):
       const icon = document.querySelector('#stage .searchwrap .searchicon, #stage .searchicon');
       const ic = icon ? { col: getComputedStyle(icon).color, z: getComputedStyle(icon).zIndex } : null;
       showRankings(); await wait(1000);
-      const rs = !!document.querySelector('#stage .rank-search-wrap .searchicon');
-      return { foot, ins, ic, rs }; }""")
+      const rsI = document.querySelector('#stage .rank-search-wrap .searchicon');
+      const rs = !!rsI, rsc = rsI ? getComputedStyle(rsI).color : null;
+      return { foot, ins, ic, rs, rsc }; }""")
     # MOVED IN round 32: an earned card (no bar) has its count on the floor, a card with a bar
     # has it over the bar - so the distance is one of two, each the same on every card of its kind
     check("GG. unit cards: the count is at the same distance from every card's foot (one per kind)", 1 <= len(set(r["foot"])) <= 2, r)
@@ -1037,8 +1038,10 @@ def section_gg(br):
     c2.close()
     check("GG. laptop unit cards: the count sits at the foot (within 40px of it) on every card", lf and max(lf) <= 40 and len(set(lf)) <= 2, lf)
     check("GG. unit cards: the badge in the bottom-right, as far from the bottom as from the right (within 1px)", r["ins"] and max(r["ins"]) <= 1, r)
-    check("GG. the magnifier is white and on the field; the board's search has one",
-          r["ic"] and r["ic"]["col"].startswith("rgba(243, 245, 247") and r["ic"]["z"] not in ("auto", "0") and r["rs"], r)
+    # REVISED IN 383 (the units screen's and the board's search fields, iOS's): the magnifier is the field's grey (--soft), not
+    # white - "The search button stands out" - and the same on both; still on the field, and the board's search has one
+    check("GG. the magnifier is on the field and the same as the board's search's (%s / %s)" % (r["ic"] and r["ic"]["col"], r.get("rsc")),
+          r["ic"] and r["ic"]["z"] not in ("auto", "0") and r["rs"] and r["ic"]["col"] == r.get("rsc") and r["ic"]["col"] not in ("rgba(0, 0, 0, 0)", None), r)
     ctx.close()
 
     ctx, pg = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)

@@ -31319,3 +31319,11 @@ cards look kinda off? There's like a gap thing on them? Idk what's going on ther
   slot (build 314: "seen, not shown"). The badge case, Ranks' badges tab, the inspect and the cutscenes are unchanged.
 - Gate: check-b383-profile (6) reads each card badge's picture (the blob behind the img): found ones carry no -lip / -wall /
   badge-seat-shade, an unfound one still has its wall - FAILS on the previous commit (all four found badges had the slot).
+- ALSO (check-b327z15 run against 382 in a scratch copy, 8 failures there, 11 here; the three new):
+  J: the round back button (.ios-nav-back, every pushed screen since 383) took a lighter fill while held - 327z15's rule is
+     "Back buttons no longer change colour when pressed" - it keeps its colour now and gives (scale .92, .12s; none under
+     Reduce motion);
+  GG: the magnifier on the units screen and the board is the field's grey (--soft, iOS's) since 383's search fields ("The
+     search button stands out") - the check asks for the two to match and sit on the field, not for white;
+  N (the live drawing's loops within 80ms): flaky on both - 382 201/106ms, 383 92/79ms in back-to-back runs.
+  The rest (tab-bar sequences, BB edges, DD tips, the welcome-new click, GG save-code banner, HH, section ^) fail on 382 too.
