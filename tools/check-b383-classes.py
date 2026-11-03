@@ -11,6 +11,7 @@ With check-b383-ifcsync's in-memory Firestore and owner account (TEST-3830, a fa
      device holds neither class's account (stores, code, active class, backups) while its device settings and the
      "had an account" note stay - and the cloud account is still there, untouched;
  (4) Sign out with the cloud not answering: it refuses, says so, and the device stays signed in;
+ (6) a week with nothing done has no recap (a class just enrolled in).
  (5) the week's recap plays on the first Home of a launch, a moment after the menu, headed with its class - "Police Academy"
      in the academy and "Fire Code" in Fire Code;
  (Fire Code's activity never reaching the academy's saved copy or cloud account is check-b383-ifcsync's (1)/(4) and
@@ -26,9 +27,16 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else ("  -> " + str(info)[:300]), flush=True)
 CODE = G["CODE"]
-def recap_store(store):
+def monday(off=0):
+    import datetime
+    d = datetime.date.today(); d -= datetime.timedelta(days=d.weekday()); d += datetime.timedelta(days=7 * off)
+    return d.isoformat()
+def recap_store(store, played=True):
+    """last week played (points earned) or not at all - a recap is of something (383: an empty week has none)"""
     st = json.loads(json.dumps(store)); st.pop("novaHeard", None); st["leaderboardOptIn"] = False
     st["weekStats"] = None; st["prevWeekStats"] = None
+    st["weekKey"] = monday(0); st["weekPoints"] = 0
+    st["prevWeekKey"] = monday(-1); st["prevWeekPoints"] = 140 if played else 0
     return st
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G["g"]["CHROME"])
@@ -115,6 +123,21 @@ with sync_playwright() as pw:
         want = "Fire Code" if cls == "ifc" else "Police Academy"
         chk("(5) %s: the week's recap plays on the first Home of the launch, headed with its class (%s)" % (cls, got), got and got["home"] and want in (got["eyebrow"] or ""), got)
         ctx.close()
+    # (6) a class with nothing done last week - Fire Code just enrolled in - has nothing to recap: no recap of zeros over Home
+    G["ifc"] = recap_store(G["ifc"], played=False)
+    ctx, pg, errs = G["page"](br, G["init"](G["ifc"], active="ifc"))
+    pg.evaluate("()=>{ window.weekRecapDayOk = () => true; window.homeUnlocksOwed = () => false; window.rankUpSceneOwed = () => false; store.pendingBadgeUnlocks = []; document.querySelectorAll('#tour-overlay,#tour-tooltip').forEach(n=>n.remove()); }")
+    for _ in range(12):
+        if pg.evaluate("()=>{ const n=document.getElementById('intro-pop'); if(n){ const b=n.querySelector('button'); if(b) b.click(); else n.remove(); return true; } return false; }"): pg.wait_for_timeout(700)
+        else: break
+    pg.evaluate("()=>{ try{ window.whatsNewHolds = () => false; }catch(e){} }")
+    seen = False
+    for _ in range(14):
+        seen = seen or pg.evaluate("()=>!!document.querySelector('#nova-intro.is-weekrecap')")
+        pg.wait_for_timeout(500)
+    home = pg.evaluate("()=>!!document.querySelector('#stage [data-screen=\"home\"]')")
+    chk("(6) Fire Code with nothing done last week: no recap over Home (home %s, recap %s)" % (home, seen), home and not seen, {"home": home, "recap": seen})
+    ctx.close()
     br.close()
 print("ALL PASS" if ok else "FAILURES")
 sys.exit(0 if ok else 1)

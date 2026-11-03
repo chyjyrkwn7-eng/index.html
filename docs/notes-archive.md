@@ -31210,3 +31210,28 @@ the other."
   and hadaccount, opens Welcome, backup empty; (4) refuses with the cloud not answering; (5) the recap on the first Home, "Police
   Academy" / "Fire Code" at its top. check-b383-feedback 2 and check-b382-credits (PAGES account), -ioslook (Fire Code's Profile has
   no switch; Profile's two headings at Settings' 16px) updated.
+
+### Build 383 - the iOS bar on the last old screens (Classes, Enroll, Lobby)
+Madison, 383: "The back button hasn't been updated and the iOS look has not been applied app wide. Seems like the add class thing
+didn't get the new back button and stuff."
+- CLASSES (showClassCatalog): iosNavBar("Classes", Back to Home) - the round back button and centred title - in place of the Back
+  pill and the serif "Classes" h1 (.class-catalog-title is gone from the markup; its CSS rule is shared with .ce-title). The
+  subtitle stays as a centred grey line. The class cards sit on the shared card (--ios-card-fill over --surface-1, radius
+  --ios-group-r, no rim); the class you are in keeps a thin ink ring (.is-here). "More classes" (.is-soon) keeps its dashed outline
+  at the new radius. The sign-up step's cards (.classselect-panel, .is-picked) get the same.
+- ENROLL (showIfcEnroll): iosNavBar("Fire Code", back to Classes). The "Enroll in Fire Code" heading is in the app's sans (800,
+  -0.02em) instead of the serif display face.
+- LOBBY (showVirtualRoomLobby): iosNavBar("Lobby", back to Virtual Room - still leaveVirtualRoom() first); the duplicate h1 is
+  gone. Room setup's summary and "In this room" are on the shared card.
+- The three panels join the phone list whose side padding is 0, as every grouped screen does.
+- AUDIT: every pushed screen now has the round back button and centred title (sign-up steps, Settings pages, Customize, Ranks,
+  Friends, Bug report, Version history, Test history, Room browser, Virtual Room choice/setup/lobby, Classes, Enroll). The tab roots
+  (Home, Profile/Stats, Leaderboard, Calendar) keep their large left title, like iOS. The game screens (Flashcards, the Tug/Battle
+  waiting and results screens) keep their own headers.
+- check-vroom reads Match settings' title from .ios-nav-title (it has been in the bar since the setup screen got it).
+- AN EMPTY WEEK HAS NO RECAP: buildWeekRecapOptedOut (the personal recap - every Fire Code recap, it has no board, and anyone
+  hidden from the rankings) returns null when last week has no points, no tests and no hundos, the way buildWeekRecap is null for a
+  week nobody in the class earned anything in; maybeShowWeekRecap plays nothing and leaves the week unmarked. Found by
+  check-b328-classes: with the recap on the first Home, enrolling in Fire Code put "Weekly recap · Fire Code" - a week of zeros -
+  over the new class's first Home. check-b383-classes (6) measures it (FAILS on the previous commit: the recap came up); its
+  recap_store gives (5) a played last week; check-b326-e's day's-moment leg likewise.

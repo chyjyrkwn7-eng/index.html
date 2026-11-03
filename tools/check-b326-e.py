@@ -489,6 +489,8 @@ def check_rules(br):
       /* (327z15) since 327z the recap waits for this launch's server copy (cloudConfirmedFor);
          this account has a code and no cloud here, so it is marked read */
       if(syncCode) cloudConfirmedFor = syncCode;
+      /* (383) a recap is of a week something was done in - an empty week has none - so last week has points */
+      store.prevWeekKey = lastWeekKey(); store.prevWeekPoints = 140;
       novaHeardMap()['@last'] = Date.now() - 4 * D; novaSessionAt = 0;
       await home(); try{ clearTimeout(weekRecapTimer); }catch(e){}
       maybeShowWeekRecap(0); await wait(600);

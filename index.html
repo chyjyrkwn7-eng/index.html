@@ -35964,6 +35964,22 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .settings-page-account > .sect + .sect{ margin-top:1.4rem; }
   .signout-confirm .savecode-value{ margin:.4rem 0 1rem; }
   .signout-confirm .signout-msg{ min-height:1.2em; color:#FF8A80; }
+  /* (383) Classes: the grey line under the bar, the class cards on the shared card (the class you are in keeps its ring) */
+  html[data-layout] body #stage > .panel.class-catalog > .class-catalog-sub{ margin:-.2rem 1rem 1.1rem; text-align:center; font-size:.95rem; color:var(--soft); }
+  html[data-theme][data-layout] body #stage :is(.class-catalog, .classselect-panel) .class-card:not(.is-soon){
+    background-color:var(--surface-1) !important; background-image:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important;
+    border-color:transparent !important; border-radius:var(--ios-group-r) !important; box-shadow:none !important;
+  }
+  html[data-theme][data-layout] body #stage .class-catalog .class-card.is-here,
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 55%, transparent) !important; }
+  html[data-theme][data-layout] body #stage :is(.class-catalog, .classselect-panel) .class-card.is-soon{ border-radius:var(--ios-group-r) !important; }
+  /* (383) Enroll: the heading in the app's own type, not the old serif display face */
+  html[data-layout] body #stage > .panel.class-enroll .ce-title{ font-family:var(--sans); font-size:clamp(1.7rem, 7vw, 2.1rem); font-weight:800; letter-spacing:-.02em; }
+  /* (383) the Virtual Room lobby's two boxes on the shared card */
+  html[data-theme][data-layout] body #stage > .panel.screen-vroom-lobby :is(.vroom-test-summary, .vroom-roster){
+    background-color:var(--surface-1) !important; background-image:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important;
+    border-color:transparent !important; border-radius:var(--ios-group-r) !important; box-shadow:none !important;
+  }
   /* the words: iOS's body size in a Settings row, a larger grey heading over each group */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-row-label{ font-size:1.0625rem; font-weight:400; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card > label.opt > .otext{ font-size:1.0625rem; }
@@ -35981,7 +35997,8 @@ html.is-browser{ --fade-paper: transparent; }
   @media (max-width:39.99rem){
     html[data-layout] body #stage > .panel:is(.screen-profile, .screen-settings-sub, .screen-settings-page, .screen-rankings, .screen-calendar-tab,
       .screen-setup, .modeselect, .screen-customize, .screen-friends, .screen-ranks, .screen-credits, .screen-bugreport, .screen-releasehistory,
-      .screen-answerreview, .screen-rooms, .screen-testreview, .screen-vroom-choice, .screen-vroom-setup, .screen-advsettings, .screen-settings-text){
+      .screen-answerreview, .screen-rooms, .screen-testreview, .screen-vroom-choice, .screen-vroom-setup, .screen-advsettings, .screen-settings-text,
+      .class-catalog, .class-enroll, .screen-vroom-lobby){
       padding-left:0 !important; padding-right:0 !important;
     }
   }
@@ -53024,10 +53041,10 @@ function showClassCatalog(){
   markClassesSeen();
   const panel = document.createElement("section");
   panel.className = "panel class-catalog";
-  panel.appendChild(buildBackLink("Back", showHome));
-  const title = document.createElement("h1"); title.className = "class-catalog-title"; title.textContent = "Classes";
+  /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
+  panel.appendChild(iosNavBar("Classes", buildBackLink("Back", showHome)));
   const sub = document.createElement("p"); sub.className = "class-catalog-sub"; sub.textContent = "Each class keeps its own rank, level and progress.";
-  panel.append(title, sub);
+  panel.append(sub);
   const list = document.createElement("div"); list.className = "class-cards";
   const mine = enrolledClasses();
   NOVA_CLASSES.forEach((c, k) => {
@@ -53083,7 +53100,8 @@ function showIfcEnroll(){
   const c = NOVA_CLASSES.find(x => x.key === "ifc");
   const panel = document.createElement("section");
   panel.className = "panel class-enroll is-ifc";
-  panel.appendChild(buildBackLink("Back", showClassCatalog));
+  /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
+  panel.appendChild(iosNavBar("Fire Code", buildBackLink("Classes", showClassCatalog)));
   panel.insertAdjacentHTML("beforeend", '<div class="ce-emblem">' + c.icon + '</div>');
   const h = document.createElement("h1"); h.className = "ce-title"; h.textContent = "Enroll in Fire Code";
   const k = document.createElement("p"); k.className = "ce-kicker"; k.textContent = "IFC 2021 and HC Amendments";
@@ -126862,11 +126880,8 @@ function showVirtualRoomLobby(){
      lobby where it just goes back, so the button should also say
      virtual room." Leaving still leaves the room; it now lands where the
      open-rooms list's back link does, with the same label. */
-  panel.appendChild(buildBackLink("Virtual Room", () => { leaveVirtualRoom(); showVirtualRoomChoice(); }));
-
-  const title = document.createElement("h1");
-  title.className = "welcomeintro-title"; title.textContent = "Lobby";
-  panel.appendChild(title);
+  /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
+  panel.appendChild(iosNavBar("Lobby", buildBackLink("Virtual Room", () => { leaveVirtualRoom(); showVirtualRoomChoice(); })));
   /* Where the phone's Chat button lands - see buildVroomChatPanel. Empty
      and invisible above 40rem, where the panel itself is already on
      screen and a button to open it would do nothing. */
@@ -131120,9 +131135,12 @@ function buildWeekRecap(rowsIn){
 function buildWeekRecapOptedOut(){
   const lw = lastWeekKey();
   const ws = [store.prevWeekStats, store.weekStats].find(x => x && x.k === lw) || null;
+  const pts = storePointsForWeek(lw) || 0, t = ws && typeof ws.t === "number" ? ws.t : 0, h = ws && typeof ws.h === "number" ? ws.h : 0;
+  /* (383) A WEEK YOU DID NOTHING IN: nothing to recap - a class enrolled in this week (Fire Code's recap is always this
+     personal one; it has no board), a week off. The class recap's rule (buildWeekRecap's null), left unmarked the same way. */
+  if(!pts && !t && !h) return null;
   return { week: lw, optedOut: true, top: [], story: { kind: "none" }, mentions: [],
-    viewer: { pts: storePointsForWeek(lw) || 0, t: ws && typeof ws.t === "number" ? ws.t : 0, h: ws && typeof ws.h === "number" ? ws.h : 0,
-              place: 0, inTop: -1, mention: false } };
+    viewer: { pts, t, h, place: 0, inTop: -1, mention: false } };
 }
 function recapIcon(glyph){
   const NS = "http://www.w3.org/2000/svg";
