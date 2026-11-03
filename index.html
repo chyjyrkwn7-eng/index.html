@@ -35909,6 +35909,56 @@ html.is-browser{ --fade-paper: transparent; }
     clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; transform:none !important;
   }
 
+  /* ==== DELTA'S SETTINGS, EVERYWHERE (build 383) ====
+     Madison, beside a screenshot of Delta's Settings: "I still feel like the example looks better, the icons look better and the
+     sections are bigger it appears like." Measured against it: our cards sat 40px in while the big title sat at ~17 (Delta's
+     cards line up with its title, ~20pt), row text was 15px (iOS's body is 17), headings 14px, the cards a see-through dark with
+     a rim (Delta's: a solid lighter grey, no rim, rounder), and the tiles' glyphs thin. One card for every grouped surface - Settings
+     and its pages, Friends, Stats, Customize, the Leaderboard, the units, mode selection, Contributors - so they stay one family:
+     the surface token with one fill over it, no rim, --ios-group-r 22px. */
+  :root{ --ios-group-r:22px; --ios-card-fill:color-mix(in srgb, var(--ink) 10%, transparent); }
+  html[data-theme][data-layout] body #stage :is(
+      :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card,
+      .screen-friends > .friend-sect, .profile-stats-tab > .points-progress-sect,
+      :is(.screen-customize, .settings-page-name) :is(.customize-namerow, .customize-nameedit)){
+    background-color:var(--surface-1) !important;
+    background-image:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important;
+    border-color:transparent !important; box-shadow:none !important;
+    border-radius:var(--ios-group-r) !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme][data-layout] body #stage .screen-customize .cz-row{
+    background-color:var(--surface-1) !important; background-image:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important;
+    border-color:transparent !important;
+  }
+  html[data-theme][data-layout] body #stage .screen-customize .cz-row:active{ background-image:linear-gradient(var(--surface-lift), var(--surface-lift)), linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important; }
+  html[data-theme][data-layout] body #stage :is(.picks > label.pick, .panel.modeselect .modecard, .panel.screen-vroom-choice .modecard):not(.pick-checked){
+    background:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1) !important; border-color:transparent !important;
+  }
+  html[data-theme][data-layout] body #stage .picks > label.pick{ border-radius:var(--ios-group-r); }
+  html[data-theme][data-layout] body #stage :is(.panel.modeselect, .panel.screen-vroom-choice) .modecard{ border-radius:var(--ios-group-r); }
+  .screen-rankings{ --lb-cell:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1); --lb-group-r:var(--ios-group-r); }
+  html[data-theme][data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head){ border-color:transparent !important; }
+  /* the words: iOS's body size in a Settings row, a larger grey heading over each group */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-row-label{ font-size:1.0625rem; font-weight:400; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card > label.opt > .otext{ font-size:1.0625rem; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-row-value{ font-size:1.0625rem; font-weight:400; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page, .screen-customize, .screen-ranks .ranks-tab, .screen-friends .friend-sect, .profile-stats-tab > .points-progress-sect) :is(.slab.motion-summary, .sect-label, .slab){
+    font-size:1rem !important; font-weight:600 !important;
+  }
+  /* the tiles' glyphs: heavier strokes, a touch larger in the tile */
+  .settings-row-icon svg{ width:20px; height:20px; }
+  .settings-row-icon svg [stroke], .settings-row-icon svg{ stroke-width:2.1; }
+  /* the width: on a phone the grouped screens drop the panel's own 20px each side, so a card lines up with the big title (~20pt
+     from the edge, as Delta's do); a tablet keeps its centred column */
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage > .panel:is(.screen-profile, .screen-settings-sub, .screen-settings-page, .screen-rankings, .screen-calendar-tab,
+      .screen-setup, .modeselect, .screen-customize, .screen-friends, .screen-ranks, .screen-credits, .screen-bugreport, .screen-releasehistory,
+      .screen-answerreview, .screen-rooms, .screen-testreview, .screen-vroom-choice, .screen-vroom-setup, .screen-advsettings, .screen-settings-text){
+      padding-left:0 !important; padding-right:0 !important;
+    }
+  }
+
   /* ---- a slide on the tab bar (build 383): the heavy, slow art holds still until the glass has landed (html.slide-hold, set at the
      slide's start and taken off with the hero's own hold in slideHeldResume). Home's planet, Profile's card (its SVG character's moving
      parts and the XP bar), Profile's rank challenges and the Leaderboard's row characters - every one a loop of seconds, so a second's

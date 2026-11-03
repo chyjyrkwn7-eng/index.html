@@ -31164,3 +31164,16 @@ the role is now a grey line under the name (.credits-name-row a column). Wording
   "Character concepts and ideas". And "Where it says made by Davis at the bottom. Don't make Davis look like that" - the name is no
   longer the serif italic in the brand gradient: the signature's own small tracked capitals ("MADE BY DAVIS"), the name at 800 and a
   step brighter than "Made by". The NOVA wordmark under it is unchanged.
+
+### 383: Delta's Settings, everywhere (one card for every grouped surface)
+Madison, beside Delta's Settings: "I still feel like the example looks better, the icons look better and the sections are bigger it
+appears like." Measured: our cards sat 40px in while the big title sat ~17px (Delta's line up with its title, ~20pt); row text 15px
+(iOS body 17); headings 14px; cards a see-through dark with a rim (Delta: a solid lighter grey, no rim, rounder); tile glyphs thin.
+- One card: --ios-group-r 22px (was 16), --ios-card-fill color-mix(--ink 10%) over --surface-1 (the token stays the background-color,
+  which check-b382-ioslook compares), no rim, no blur - on Settings and its pages, Friends' sections, Stats' sections, Customize's
+  name and its rows, the units' cards, mode selection's and the Virtual Room's cards, and the Leaderboard (--lb-cell, --lb-group-r).
+- Settings rows' words 1.0625rem (17px) at 400, values the same; group headings 1rem/600 on Settings, Customize, ranks, Friends, Stats.
+- Tile glyphs stroke 2.1 (was 1.6), 20px.
+- Width: on a phone (max-width 39.99rem) the grouped screens' panels drop their 20px side padding (cards at ~20px from the edge, under
+  the big title); tablets keep their centred column.
+- The rules are one block, "DELTA'S SETTINGS, EVERYWHERE", at the end of the iOS look.
