@@ -757,7 +757,7 @@ def main():
           store.leaderboardOptIn = true;
           flushLeaderboardRow();
           const before = writes;
-          showAppearance();
+          showAppearance({ page: 'rankings' });   /* build 382: the switch is on Leaderboard & Privacy */
           const box = [...document.querySelectorAll('input[type=checkbox]')]
             .find(b => b.checked && b.closest('label,div,section'));
           return new Promise(r => setTimeout(() => {

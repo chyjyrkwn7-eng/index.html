@@ -26,15 +26,16 @@ with sync_playwright() as pw:
     r = pg.evaluate("""()=>{ const q=document.querySelector('.daily-question-fab'), b=document.querySelector('.class-bubble'), l=document.querySelector('.csi-bubble');
       const cs = e => getComputedStyle(e);
       const hi = bg => (bg.match(/radial-gradient\\([^)]*\\)\\s*,?/)||[''])[0];
-      return { qClass:q.className, qBg:cs(q).backgroundImage, bBg:cs(b).backgroundImage, qBorder:cs(q).borderTopColor, bBorder:cs(b).borderTopColor, lBg: l ? cs(l).backgroundImage : '', qBlur: cs(q).backdropFilter, bBlur: cs(b).backdropFilter, qWill: cs(q).willChange, bWill: cs(b).willChange,
+      return { qClass:q.className, qBg:cs(q).backgroundImage, bBg:cs(b).backgroundImage, qBorder:cs(q).borderTopColor, bBorder:cs(b).borderTopColor, lBg: l ? cs(l).backgroundImage : '', qBlur: cs(q).backdropFilter, bBlur: cs(b).backdropFilter, tBlur: cs(document.querySelector('.bottomtabs')).backdropFilter, qWill: cs(q).willChange, bWill: cs(b).willChange,
         qSvg: (q.querySelector('svg')||q).innerHTML.slice(0,80), bSvg: b.querySelector('svg').innerHTML.slice(0,80), lSvg: l ? l.querySelector('svg').innerHTML.slice(0,80) : '' }; }""")
     chk("the daily question is ready in this check", "is-ready" in r["qClass"], r["qClass"])
-    chk("the daily question and the class button share the glass's top light (the same first gradient)", r["qBg"].split("radial-gradient")[1][:60] == r["bBg"].split("radial-gradient")[1][:60], (r["qBg"][:140], r["bBg"][:140]))
-    # (380) the class button carries a breath of its class's colour in the middle now; ready's wash is the one that rises from the foot
-    chk("ready adds the rank's colour wash rising from the foot (a gradient at 118% the class button does not have)", "118%" in r["qBg"] and "118%" not in r["bBg"], (r["qBg"][:200], r["bBg"][:200]))
-    chk("the class button's list buttons wear the glass too (a highlight gradient in their body)", "radial-gradient" in r["lBg"], r["lBg"][:140])
-    # (380) "give it the same feel as the Home Screen": the rank bubbles' glass, which has no blur
-    chk("the glass is Home's bubbles' (no blur, as theirs) and holds no will-change layer of its own", r["qBlur"] in ("none", "") and r["bBlur"] in ("none", "") and r["qWill"] in ("auto", "") and r["bWill"] in ("auto", ""), r)
+    # (382) "match the feel and look": both wear the tab bar's glass - its one faint white lift, no pooled light or wash of their own
+    chk("the daily question and the class button wear the same glass (the same lift, no radial light)", r["qBg"] == r["bBg"] and "radial-gradient" not in r["qBg"], (r["qBg"][:140], r["bBg"][:140]))
+    # (382) a waiting question says so in its rim (and its ring) only
+    chk("ready carries the rank's colour in its rim, not a wash (its rim differs from the class button's)", r["qBorder"] != r["bBorder"] and "118%" not in r["qBg"], (r["qBorder"], r["bBorder"]))
+    chk("the class button's list buttons wear the glass too (the lift in their body)", "linear-gradient" in r["lBg"], r["lBg"][:140])
+    # (382) the tab bar's frost on both, and no will-change layer of their own
+    chk("the glass has the tab bar's frost and holds no will-change layer of its own", r["qBlur"] == r["bBlur"] == r["tBlur"] and r["qWill"] in ("auto", "") and r["bWill"] in ("auto", ""), r)
     chk("the same glass, a different thing in the middle (their icons differ)", r["qSvg"] != r["bSvg"] and r["bSvg"] != r["lSvg"], (r["qSvg"], r["bSvg"], r["lSvg"]))
     # the tab bar's record of what a tap did
     tabs = {t[0]: t for t in pg.evaluate("()=>[...document.querySelectorAll('.bottomtabs-navrow .bottomtab')].map(t=>{const r=t.getBoundingClientRect(); return [t.id, r.left+r.width/2, r.top+r.height/2]})")}

@@ -41,6 +41,8 @@ check-behaviour's badge routes do, so it is fast and deterministic.
 """
 import functools, http.server, os, re, socket, sys, threading
 from playwright.sync_api import sync_playwright
+# build 382: a results row (Continue / Re-run / Main menu, the review's two) takes no press until it has risen and settled
+RS_READY = "()=>[...document.querySelectorAll('#stage .rs-final')].every(a=>!a.classList.contains('rs-unarmed'))"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 _VR = open(os.path.join(ROOT, "tools", "check-vroom.py"), encoding="utf-8").read()
@@ -262,6 +264,7 @@ with sync_playwright() as pw:
     ck("and Re-run and Main menu beside it, on the results",
        res_btns == ["Continue to review (3 missed)", "Re-run", "Main menu"], res_btns)
     pg.wait_for_timeout(900)   # 328: a tap in the 0.7s after the results settle is ignored (the review-tap bug), so a real one waits
+    pg.wait_for_function(RS_READY, timeout=8000)   # 382: and the row takes nothing until it has risen and settled (rsArmIn)
     pg.evaluate("()=>document.querySelector('#stage .rs-continue') && document.querySelector('#stage .rs-continue').click()")
     pg.wait_for_timeout(400)
     rev = pg.evaluate("""()=>({
@@ -280,6 +283,7 @@ with sync_playwright() as pw:
     ck("so no Re-run and no Main menu while reviewing",
        not any(b in ("Re-run", "Main menu") for b in rev["btns"]), rev)
     pg.wait_for_timeout(700)   # 329: the review's buttons rise too, and ignore a tap for 0.6s after they arrive
+    pg.wait_for_function(RS_READY, timeout=8000)   # 382: ...and until 0.5s after the last is up
     pg.evaluate("()=>[...document.querySelectorAll('#stage .actions button')].find(b=>/Back to results/.test(b.textContent)).click()")
     pg.wait_for_timeout(300)
     back = pg.evaluate("()=>({ done: !!document.querySelector('.rs-rewards.rs-done'),"
@@ -601,6 +605,7 @@ with sync_playwright() as pw:
     p9.evaluate("([u])=>{ store.unitPerfects = {}; store.unitPerfects[u] = 3; saveStore(); __run9([u], 2, 'drill'); }", [UNIT])
     wait_done(p9, 60000); p9.wait_for_timeout(600)
     audit(p9, "#stage .rs-screen", "a drill with two missed")
+    p9.wait_for_function(RS_READY, timeout=8000)
     p9.evaluate("()=>document.querySelector('#stage .rs-continue').click()"); p9.wait_for_timeout(500)
     audit(p9, "#stage .rs-screen", "its review", shape=False)
     p9.evaluate("()=>{ theme.reduceMotion = true; }")

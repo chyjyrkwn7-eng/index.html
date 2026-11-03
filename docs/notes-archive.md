@@ -30374,3 +30374,591 @@ however the sliding is now the problem, it's okay but not perfect like the tappi
   380ms reload), the "+" opens the class list. On 380 every tap opened the class list.
 - LESSON: anything moved over or tucked under another control must also turn off its .nova-hsw - the switch takes touches whatever its
   ancestors say, and only an iPhone (canTaptic) has them.
+
+## BUILD 382 - the stars run on under Safari's toolbar
+
+Madison (a Safari tab on his iPhone, the top and the bottom circled): "Safari version is still messed up, the bottom and top of the
+safari version is cut off, this absolutely needs to be fixed". After 15+ rounds tuned in Chromium, a test page settled what Safari 26
+does: share/edge-test.html (merged alone, #48) puts red/green stripes on the root's background and blue dots on a fixed layer. His two
+screenshots: no dots under either bar - FIXED LAYERS STOP AT SAFARI'S BARS; stripes under the toolbar - THE ROOT'S BACKGROUND RUNS ON
+UNDER IT; the status-bar strip flat white at the page's top (no root colour on that page), stripes there only once scrolled - at rest
+THE STATUS STRIP IS SAFARI'S OWN FILL (the root's colour). Measured off his Nova screenshot: the top strip flat (31,33,38) for exactly
+the status bar's height easing into the sky with no seam (341 working); the bottom strip around the toolbar flat (28,31,33), no stars.
+- FIX: in a phone/tablet Safari tab the root's background (both theme rules, html.is-browser[data-layout="modern"]) leads with the two
+  star tiles (--root-sky-b, --root-sky-a), repeating, sized --sky-b-size/--sky-a-size, at `left 0 top calc(100dvh - 100lvh)` - the
+  fixed layer's (body::after) own grid - so the stars run on under the toolbar where the fixed layer stops. Set only by
+  `html.is-browser.sky-ready:has(> body:not(.sky-calm))` inside the coarse-pointer block: none on a test, none before the sky is drawn,
+  none on a laptop or in the installed app. Measured: the root's stars and the fixed layer's are the same 255 bright pixels (Chromium,
+  Home, each shown alone). Under the toolbar they show at full strength on every screen (the fixed layer is .6 off Home) - under
+  Safari's glass.
+- THE TOP STRIP: at rest it is Safari's fill in the root's colour; a page cannot draw there in a tab. --band (338) matched to the sky's
+  top with the 341 fade is the most a Safari tab allows; only the Home Screen app runs edge to edge.
+- Gate: tools/check-b382.py (iPhone UA, touch): the root carries the two tiles on Home (0 on 381) on the fixed layer's grid (same
+  bright pixels; 0 shared on 381), none on a test, none installed. check-b338 and check-b341 still pass.
+- share/edge-test.html stays (not linked) for the next question about Safari's edges.
+- "SEARCH NAMES" HEIGHT (382, same build): "Fix the placement of the word search names" (his iPhone screenshot on 381, centred
+  across now). Measured at 3x: the field's rims at rows 581/702 (middle 642), the magnifier 626-655 (640, centred), the words'
+  capitals from 631, lowercase from 640, baseline 663 - their middle 647-651, i.e. 2-3.5 CSS px LOW. Build 328 dropped every search
+  bar's words 2px after measuring them HIGH in Chromium; iOS's system font already sits low in a field, so on iOS (`@supports
+  (-webkit-touch-callout: none)`, which Chromium does not match) input.searchbox is now padding-top .7rem - .5px / bottom .7rem +
+  .5px: 2.5px up from 328's, the field the same height. Laptops and Chromium keep 328's. check-b382 asserts the iOS rule (CSSOM);
+  only an iPhone shows the result.
+- LESSON: vertical text placement measured in Chromium is not iOS's - read it off his screenshot.
+- THE SCREENS SCROLLED BY THEMSELVES (382, same build): "Another new problem, the screens are automatically scrolling down.. fix this"
+  (a recording). Measured off it: the page went down a steady 24 device px (~9 CSS px) every frame drawn, on the units screen and then
+  on Profile. That is the units list's drag-select autoScroll (window.scrollBy each rAF while the finger is near the bottom, up to
+  14px), still running: it ended only on a pointerup/pointercancel the LIST heard. On an iPhone a card's native haptic switch
+  (.hsw-opt) can take the touch, and then Safari sends no pointerup at all; and the loop never checked that its list was still in
+  the page, so it went on scrolling every screen after. NOW: the end is also heard on the window (pointerup/pointercancel off the
+  list, touchend/touchcancel with no fingers left), the loop ends itself once its list has left the page or the app is hidden, and the
+  window listeners take themselves off with the list. Repro (synthetic pointer events, no pointerup): before, units 250 -> 778 in
+  0.8s after a touchend, Profile 165 -> 319 after leaving; now nothing moves.
+- THE UNITS SEARCH SANK UNDER THE KEYBOARD (382, same build): "Tapping the search button while looking at units, the search bar isn't
+  properly pulling up" (a recording: the field rose with the keyboard, then sank behind its accessory bar). tsKb measured the field's
+  box MID its .25s translate transition and took off the lift it had asked for (tsLift) as if it were already there; with a viewport
+  resize nearly every frame of the keyboard's rise, the next lift came out far too small. It now takes off the lift the field
+  actually has (getComputedStyle(tsEl).translate, mid-transition included). Repro (a fake visualViewport shrinking 336px over 18
+  steps): before, the field ended 148-168px behind the keyboard; now 10px above it.
+- Gate: tools/check-b382-input.py (both; all 4 fail on the code before). check-behaviour check_b314_dragselect fails the same 3 ways
+  on the code before these fixes (cards never tick in its drag) - pre-existing, not from this.
+- NEXT QUESTION (382, same build): his screenshot ("it's now a little bit too high, lower it some") and a recording ("when swiping or
+  auto swipe is on ensure the button doesn't leak over on the next page"). QNEXT_GAP_REM 2 -> 3.25 (measured 2.02 -> 3.27rem under
+  what qnextPlace goes under). The leak: the button is .foot's (outside the question panel), so a swipe moved the question away under
+  it while it stayed put over the one coming in, and an auto-advance dropped it in one frame (recording, 1.18s). While html.q-sliding
+  (drag or slide) `.foot > .floatbtn.qnext` is opacity 0 !important (its rise is an animation), a .1s fade, pointer-events none, and
+  comes back on a spring-back. check-b380 (25) now expects 2.85-3.65rem; check-b382-input gains both checks (fail on the code before).
+  check-behaviour check_swipe failed once under load (7 agents' browsers) and passed on re-runs before and after.
+
+### 382 (badges): no more lost shine, no rubbing; one look, a smidge dirtier
+Madison: "let's get rid of the 'lost its shine' thing for badges, no more rubbing badges to clean them. You can still pull the
+badges up though ... give them a smidge more of a dirty look ... less shine more dirty but not a lot." badgeDirtStage() is now 0
+for every badge whatever its clean time; stage 0 of BADGE_DIRT (each [0]) moved half way to build 321's stage 1 (glow .88, shine .87
+in the hand). Gone: the case's "Lost its shine - tap to clean" pill, "Rub to clean it.", the rub gesture (every drag is a spin), its
+sparkle, setBadgeDirtStage, the case's per-stage glow CSS, the tour's "rub them clean". store.badgeCleanedAt is still
+defaulted/merged/synced but nothing draws from it; stages 1-4 and the badge.rub/squeak/sparkle sounds are kept, unused. Gate:
+tools/check-b382-badges.py (11 of 13 fail on 381). check-behaviour 320g/321d, check-b380 (18), check-b327z15 R rewritten to the new
+decision; 320g's "a tap anywhere on a slot lands on that slot" and 321d's "every one of the sixteen sits on the middle" fail the
+same way on the code before.
+
+## Build 382 - Fire Code gets its own banners and characters; Zeus out of Fire Code
+Madison: "for the fire code side, all the banners need to be updated (excluding the rank ones) ... update the looks of all
+the characters ... that aren't the starters. The Zeus character on the fire code side can be removed".
+- Only when NOVA_CLASS is "ifc": IFC_CHAR_LOOK gives the 18 non-starter, non-rank ids a new kind, name and glow;
+  IFC_CHAR_DRAW draws each one from shared pieces (fcFace/fcEyes/fcHelmet/fcCoat) with headGrad surfaces; IFC_BACKDROP holds
+  their scenes. Their academy fits (AVATAR_CENTRE_DY etc.) are dropped, CHAR_SPECIAL_DRAW gets ifcSpecial (embers gather into
+  a Maltese cross), and reactCharacter gives them the generic reaction. Same ids, so saved avatars keep working.
+- IFC_BANNER_ART replaces the 20 non-rank BANNER_ART entries (layered where the banner moved before, still where it was
+  still), and IFC_BANNER_LOOK sets their names and BANNER_TINT. Rank banners are untouched. Fire Code names changed with the art
+  (e.g. Koi Pond -> The Crew, Detective -> Inspector) - not asked for; revert names only if Madison prefers the old ones.
+- Zeus is spliced out of AVATAR_CHARACTERS in Fire Code; RETIRED_CHARACTER_TO.zeus is the first starter; ifcRetireZeus()
+  (from applyLoadedData) takes it off a saved avatar and out of pendingCharUnlocks. Nothing is deleted from the store.
+- Gate: tools/check-b382-ifcart.py (drawing hashes per class, every drawing builds, Zeus gone, saved Zeus falls back; 5 fail on
+  381). check-b328-classes crashes on the class-switch reload identically on 381; check-unlocks' daily-question failures too.
+
+### Build 382 - every character and banner viewable again, locked ones greyed
+"we made the character unlocks hidden, we can remove that ... just make it on the intro like greyed out ... they are gonna be
+viewable again" / "all the banners will be viewable ... remove that."
+- `charLockLook()` returns null: no cut-out anywhere (Customize, unlock card, flare hint ghost, the Detective's banner). Every
+  locked character is the rank's greyed STILL preview (cheaper: the seven secret/ultimate flip-books Customize recorded are gone).
+  charSilhouetteSVG kept, unused. The secret-flare-found scene still reveals from a silhouette (a moment, not a list).
+- Nova's crew slide: a missing crewman is his drawing, `.is-ranklocked` (NOVA_LOST_LOOK unused). His character question adds
+  "Still to find" (one novaParade of greyed tiles, not buttons); showWelcomeCharacterPrompt adds a greyed, padlocked grid under
+  Continue (tap = lock message).
+- `isVeiledBanner()` returns false. The four flare banners and three ultimates, while locked, are ONE still picture
+  (`lockedBannerStill` from bannerStaticSVG, in the deferred banner pass), greyed, padlock showing; their card shows the live
+  banner. Customize lists every banner (no secret filter). Copy: "A secret flare character." (no "hidden until it is yours").
+- Gate: check-b382-unhide (academy + Fire Code; 12 fail on 381). b313_flares/b314_chars/b314_unlocks/b317, b325-d, b326-d,
+  b327z13 Y updated from "hidden" to "shown greyed". Merged with the Fire Code art: unhide, ifcart and badges gates all pass
+  together (unhide's Fire Code road-map check failed once under 9 agents' load, passed on re-run).
+
+### 382, the start sheet's switches: the words at the bottom, and the glass knob a smidge faster
+Madison (a screen recording of Drill's start sheet): "When toggling stuff, the words coming up at the bottom come in a little laggy
+as well. Fix this too." / "the Liquid Glass gets picked and put down just a smidge too slow ... a smidge faster".
+- THE WORDS: the switched-on line in the box above Begin folded by a grid-template-rows/margin-top transition (.22s): every frame
+  re-laid the sheet out and moved the whole sheet (it grows up from the bottom). His recording: the rows stepped 6 times in 200ms
+  (gaps 17-83ms) with a jump at the end, while the knob beside it ran at 60fps. A text-only change was never late.
+  Now the layout changes ONCE, in the tap's task, and foldSummaryOpts() glides it with transforms and opacity only (FLIP, 220ms,
+  same curve): the sheet from its old top with Begin and the box held still, the box's top half, a stand-in for the box's body
+  scaled from its foot (.sheet-summary-foldbg; the box is .is-folding meanwhile), the new words faded in, the leaving words faded
+  out where they were (.sheet-summary-foldghost); no backdrop blur on the opaque sheet while it moves (.is-folding-opaque).
+  Reduce motion / short screen / closed sheet: instant.
+- THE KNOB: NSW_T pop 260->210ms, shrink 360->290ms (~19% each), same curves; the glide and the tap/haptic logic as they were.
+- Gate: check-b382-toggles (iPhone UA, real touches; fails on 381). Also run: check-behaviour b324g_toggles, b234, b235b,
+  b323s_summary; check-b380 switch part 23; b327z15 W; sweep-layout --quick 14/14. On-device smoothness unconfirmed.
+
+## Build 382 - Report a bug is just the report; the bottom of Settings is rows
+Madison: "Ensure to remove the stuff from report a bug so it's not there anymore." / "I really dislike this part of settings, please
+get all these buttons and things looking better".
+- Report a bug: Test tab speed, Send tab timings, Test Leaderboard speed and the Drag test are off the screen.
+  runLagTest/runBoardTest/runDragTest/sendTabTimings stay (gates call them); every report still carries perf (tabPerfText) silently
+  with build, publicId, name, UA, viewport, standalone.
+- Sync (unreachable), Share & install, Help and Advanced are .settings-card.settings-list cards of settingsRow() buttons: icon tile
+  (accent-tinted; Add to Home Screen filled with the accent; Advanced/sync muted), label, optional .settings-row-sub, chevron, inset
+  hairlines, 52px+. Check for update's second line is the build (.settings-buildline, still where "up to date" lands).
+- Advanced: the row is .adv-toggle (no more black .more-toggle bar), chevron turns 90deg when open, its .more-body opens inside the
+  same card (.settings-adv-card); open/close/scroll logic unchanged.
+- Stacked rows are list rows to the haptic-switch rule (hswListRow), so they carry no .nova-hsw; Advanced keeps its.
+- Gate: tools/check-b382-settings.py (16 fail on 381). check-behaviour s10, check-bugreport, check-fixes, check-b362/367/378
+  updated. Under load: 3 check-sync boot checks and b362 "real taps keep l/p" failed unverified against 381 - re-run quiet.
+- SEARCH FIELDS SAY "Search" (382, same build): "In search bars like how it says search names and stuff, have it only say search
+  instead". The units search, its tab-bar circle (tsInput), the board's, Review's question search and the starred/most-missed
+  search all show "Search"; their aria-labels keep what they search ("Search units", "Search the rankings by username", ...).
+  check-b382-input checks the three reachable ones (fails on the code before).
+
+## Build 382 - the slide: glass on the finger, nothing under it, the screen arrives under the glass
+Madison: "I'm upset the bottom tab isn't seamless and smooth as butter yet, taps work really well ... the swiping/sliding is not good
+to go at all."
+- 381's one-frame transition on LENS_ELS is gone (it put the glass a frame behind every position). The tick writes the finger's x
+  plus a lead: smoothed speed x LENS.lead (12ms), at most LENS.leadMax (8px); a finger slowing to a stop takes the lead to nothing.
+- lensRowGeo(): the row is measured once a touch (re-read only while the bar's swell plays); pointermove only stores clientX. 252
+  layout reads per Home slide -> 0.
+- barUnderPause looks every 250ms, judges each animation once, band measured once. Home's hero (.cosmic-hero-wrap: orbit 52/120s,
+  smoke, plasma, glow, rank bubbles) pauses for a slide and resumes at the hand-over (slideHeldResume in lensFinish/lensHide); the
+  rest of the page keeps moving (375). WATCH: he disliked the page stopping during a slide in 375.
+- A slide let go over another tab: lensHoldFor() keeps the clear glass up on it (one track, no reads) until that screen is drawn
+  (_lensScreenIn), at most SLIDE_AWAIT_MAX 280ms; taps keep 380's no-wait. Measured with a 350ms screen: drawn 734ms / hand-over
+  1515ms (381: drawn 2269 / hand-over 885).
+- Sound prewarm steps, charSpecialTick and the 6s sessionMark (whenTabBarQuiet) wait while html.tab-held or the settle window is on.
+- Gate tools/check-b382-slide.py fails all 5 on 381. check-b381's transition check reversed on purpose. Merged: (3) Home's
+  lens-vs-finger read 7.3-8.9px behind (limit 6) twice at load ~20 - re-run on a quiet machine before shipping.
+
+## Build 382 - the test screen: chat button, results taps, Next over the code, Show as text, the viewer
+- THE CHAT BUTTON: "The chat button randomly moves sometimes in the test when you get the code pulled up." placeDockBesidePause read
+  Pause's getBoundingClientRect on every stage change; the code card fills in while the finger scrolls, and an iPhone's box read
+  mid-bounce comes back moved (his screenshot: button ~29px up, Pause in place). It now uses Pause's offsets up to its fixed header
+  plus its translateY (fixedBox), keeps a found place when Pause isn't fixed, writes nothing when unchanged. Inferred, not reproduced.
+- RESULTS TAPS: "I touch the screen where the re run button is before it's there..." The hidden row's pointer-events:none lost to each
+  button's .nova-hsw (the 381 class-button lesson), and the panel's tap guard ignored taps landing on a button. rsRise rows (built
+  with rsDisarm) are inert, with no switches, until rise + RS_SETTLE_MS (500); a window-level click check refuses not-ready rows and
+  touches that started before ready; a refusal restarts the wait; window.hswRescan attaches the switches after. Buttons answer ~0.5-0.8s
+  later than before. Gates that clicked invisible buttons wait for `.rs-final:not(.rs-unarmed)` (check-results, check-b330).
+- NEXT OVER THE CODE: qnextPlace places in page coordinates: room -> pinned 3.25rem under the content; no room -> .qnext-flow (in the
+  foot's flow, --qnext-flow-mt), same gap, scrolling with the content; re-placed on panel resize (ResizeObserver). Never over the card
+  at any scroll on 440/518/375/iPad. check-b380 (25) updated.
+- SHOW AS TEXT GONE: it and "Show the page picture" are removed (the county text is only a fallback). Enlarge and Show the whole page
+  are ifcLinkBtn pills (summary-pill glass, 44px, icon), side by side filling the row, stacked when narrow.
+- THE VIEWER: clampT centres content shorter than the view; .ifc-vz-hint is a pill over the bottom that fades (2.6s, 5.2s with a note,
+  or at the first touch). +/Done/pinch/double-tap unchanged.
+- Gate: tools/check-b382-test.py (needs PDFJS_DIR, an unpacked pdfjs-dist 5.4.149; 37 of 40 fail on the code before). Merged with the
+  slide and input work: check-b382-test and check-b382-input ALL PASS.
+
+### 382, Settings in colour; Advanced is a page; Contributors
+Madison (two inspirations, then two more screenshots): "I love how they have color ... I also really like credits section where it has
+the contributors." Contributors: "me, (Madison Davis) Cameron Wharton, Alexis Sauceda, Bryan Darjean" - HIS OWN REQUEST overrides
+CLAUDE.md's "never put his name in anything the app shows" for the Contributors page and the Settings footer ONLY.
+- Every Settings row has a solid tile (settingsTileColor per row, not the accent) with a white glyph; cards stay the dark glass. Switch
+  rows get theirs in tileSwitchRows (beside .otext, never in it). Headings grey sentence case, inset to the text; hairlines at the words.
+- Advanced settings is showAdvancedSettings(): settingsSubPage() (round back button, centred title, .screen-settings-sub lights what
+  Settings lights). Resets are red settingsTextRow()s (armConfirm still relabels them); info-icon text is now footnotes; a clear
+  redraws the page.
+- Credits group: Contributors row -> showCredits() (creditsPeople(): Madison Davis first, then by surname; no links or handles).
+  buildCreditsFooter() (CREATOR / LAYOUT / TESTING / IDEAS) above the legal note.
+- Gate: tools/check-b382-credits.py (25 fail before). check-b382-settings and check-behaviour b246 updated for the Advanced page;
+  check-behaviour b314h_settings_calendar still looks for .more-toggle (stale since the 382 rows) - rewrite or retire.
+- Next for this look (owner: "If our app needs to take on this kinda interface app wide ... do it"), after the units/board/tab merges:
+  Report a bug & Version history headers; Customize & Friends grouped rows; badge case & road map; Calendar lists; unit detail sheet's
+  Reset; Virtual Room lobby settings; the start sheet's options; Welcome "Enter a code".
+
+### 382 (Fire Code, 8 parts): gear, Stats pills, Nova quieter, instructor first, Stats tab, ladder, one 100%, "chapter"
+- GEAR: TAB_GLYPHS.settings is one nonzero path - 18 teeth (tip r10.1, root r8.7), ring inside r6.95, hub r2.5 with an r1.2 hole,
+  spokes 1.4 wide at 0/120/240deg. Only Fire Code shows #bottomtab-settings.
+- STATS PILLS: the tests pill 22px visible -> 40px in a 51px button; This week / Last week 32px chips (11.2px text) -> ~45px (.84rem,
+  text-box trim); Test history filters 44px. Same on 440/518/375/834. Profile's top tabs (a navigation segment) left alone.
+- NOVA QUIETER: NOVA_CHALLENGE_GAP_MS 7 days (last invite = newest novaHeard["wk:*"], nothing new stored); NOVA_QUIET_MS 44h -> 72h;
+  NOVA_TIP_GAP_MS 7 -> 14 days; novaMsgAction returns null for an ended challenge (message stays, no "Ended" button).
+- INSTRUCTOR FIRST: Nova heads the chat's Friends tab and Manage friends, always (still display-only, never in friendPublicIds()).
+- FIRE CODE STATS TAB: #bottomtab-stats replaces #bottomtab-rewards (Home, Profile, Stats, Settings); showProfile("stats") builds Stats
+  alone (.screen-stats); Profile drops its Stats tab; showRankings() sends every route to Stats; the Leaderboard switch is hidden.
+  Fire Code has no cloud (initFirebase stands down), so it never published rows.
+- LADDER: badges per rank = round(academy / 14 x (chapters - 2)): 1/3/5/7/9/12/14 -> 4/12/20/28/36/48/56 of 58; levels unchanged;
+  TIER_UNLOCKS_ACADEMY keeps the old counts; ifcLadderFloorOnce() (flag class26e.ifcladder382) raises rankFloor to the old rank held.
+- ONE 100%: badgeThresholdFor() is 1 in Fire Code (existing hundos count at once, no writes, nothing lowered); chapter cards "Badge:
+  get 100% once"; the hold card "Get 100% on the whole chapter once to earn its badge" / "Badge earned", no bar.
+- "CHAPTER": one MutationObserver (Fire Code only) rewrites shown text and aria-label/placeholder/title/alt (unit->chapter); alert/
+  confirm/prompt wrapped; classNoun() for built strings; question text ("dwelling unit", 63 questions) left alone (questionTextHas).
+- Gate: tools/check-b382-ifc.py (41 fail before). check-b363-ifc, b342, b332, b326-e, check-behaviour b324n2 updated. Merge conflict
+  with the Settings sub-pages in the lit-tab code: both kept (Fire Code's profile-sub rule + .screen-settings-sub).
+
+### 382: the Leaderboard opens clean; the board, refined
+Madison: "The leaderboard is still very glitchy when opening it up" / "it could look better".
+- THE SAME BOARD BUILT TWICE: the listener's answer (same rows) rebuilt every row while the tab landed (31 rows replaced, +96ms).
+  renderRankingRows keeps a signature of what it shows (rows, numbers, trend, podium) and does nothing over the same one; last week's
+  podium is kept (_lwKey).
+- ROW-BY-ROW ART: queue-filled rows hold their art hidden over the disc (.lb-art-new) and fade in together (lbArtReveal) once no queued
+  row is on screen (8 steps -> 1-2).
+- PLACEHOLDERS: the board's real header + rows of the real height (--lb-row-h 3.75rem / 4.125rem iPad); rows land where they stood
+  (26px -> 0) and fade up. Limit: This Week's podium can still push late rows.
+- lbStillGo hands every row the clock in one frame. check-b379 (5) changed to match.
+- LOOK: one row height, 18/20px corners, surface tokens + catch-light; centred place with a quiet "#"; round medals; silver/bronze
+  corner light; your row = accent ring + wash; spaced-capital headers. Gate: tools/check-b382-board.py (6 of 7 fail on 381).
+  Warm-board timing (recorded loops) unmeasurable at load 23-36 - phone check.
+- CHECK-SYNC on the merged build (Fire Code + Settings + slide + test + ...): "the restored account is what goes up, to the account
+  and the floor" FAILED (pushed None) - being compared against 381 before shipping.
+- CHECK-SYNC 8f "the restored account is what goes up" (382): failed on the merged 382 in full runs, passed on 381 once. Isolated
+  (tools section 8f alone, 3+3 runs, push timed): the restored account always goes up correctly (17,585 / 13) on BOTH builds, 4.8-7.6s
+  after launch under load (381: 7.6/5.6/4.9s; 382: 5.3/4.8/6.1s) - the gate's fixed 4.2s wait was the flake, not the app. 8f now waits
+  for the push (up to 12s) and checks the same values.
+
+## PLAN (decided 2026-11-02, after build 382 ships, NOT built yet): username + password accounts replace the sync code
+Madison, after weighing Google sign-in and email: "Yeah just a username and password may be the safest choice. If someone forgets
+their username or password. They would need to let me know or there would be a notify admin, I'd be notified and then I could ask you
+to give them the reset option.. would be best." Decisions:
+- Firebase Authentication email/password provider used for USERNAME + password only - no real emails collected (a synthetic
+  address derived from the username, never shown); passwords held by Firebase only. Google sign-in and email resets were considered
+  and dropped (personal data + Home Screen redirect issues); an optional reset email may be added later if resets get frequent.
+- "Forgot your username or password?" on sign-in sends an ADMIN REQUEST (like bug reports: a document the admin tools list) -
+  nothing resets automatically. The owner asks a session to reset; the session uses the admin key (environment only, never in the
+  app or repo) via tools/firestore-admin.py to set a one-time temporary password (or read back the username); the app forces a new
+  password on first sign-in with it.
+- Firestore security rules locked per user (uid): own account/progress read+write only; leaderboard readable by signed-in users,
+  writable only on one's own row; requests write-only. The owner pastes the rules and enables the provider in the Firebase console
+  (step-by-step instructions to be given).
+- Migration: an existing account signs in once with its sync code, picks a username + password, progress carries over; sync codes
+  kept only as a fallback during the switch. Fire Code currently has no cloud - accounts there are a separate decision.
+- Test against a separate Firebase test project / on his phone first (the sandbox cannot reach Firebase).
+
+## 382: BACK TO TOP, THE START SHEET'S DIM, UNIT DETAILS (merged 2026-11-02)
+
+**(a) Back to top stays at the bottom.** Madison: "The scroll back to top button randomly disappears when you are at the bottom."
+- `backToTopBlocked()` hid the button whenever anything tappable sat under it in the last 260px of a page. On Topics that was always true (the last unit card); elsewhere it was chance.
+- NOW the button shows on scroll position alone (on past 320, off under 180).
+- `backToTopRoom()` gives `#stage` just enough padding-bottom that, at the very end, the last control sits 8px above the button. It measures the last 40 tappable items and skips fixed elements. It runs when the screen or window changes, resets per screen, and adds 0 on screens that can't scroll past 320.
+- The one exception is `.dailyq-outro`: the app scrolls it over the Exit pill, so the button still steps aside there.
+- Measured padding: Topics +70px (Pro Max, iPhone 15), +36px (SE), 0 on iPad.
+
+**(b) The Start sheet's dim leaves with it.** Madison: "the background goes from dark to light too late."
+- The scrim stayed fully dim until `onDismiss()` hid the modal, then vanished in one frame about 500ms after the close began.
+- NOW `attachSheetSwipe` changes only opacity. The scrim (the sheet's sibling) fades with the pull (1 − pull/height), fades out over the slide's own time and curve, and springs back with the sheet. `unitoptions-scrim-in` (.25s) fades it in.
+- Tap-to-close still hides the sheet and the dim together in one frame.
+
+**(c) Unit details: Starred and Back without the wait.**
+- Back now resizes the card on the tap. The old code waited for a 320ms `setTimeout`.
+- `pinPane()` pins both panes to a fixed px height while the card moves.
+- `.was-listing` drops the .16s stats delay.
+- Stale list panes are removed first, which also fixes a 520px card under an open list.
+- Open: in Chromium, any element inserted into `<body>` re-styles the whole page (~200 elements) because of three `:has()` rules: `.wrap:has(> #stage > .screen-home-actual)`, `.pick:has(input:checked) > .box`, and the tier-cutscene `:not(:has(> .cosmic-badge-lit))`. Not checked in Safari.
+
+Gate: `tools/check-b382-screens.py`. 65/65 on 382; fails 31 checks on 381.
+
+## PLAN REVERSED (2026-11-02): NO USERNAME + PASSWORD ACCOUNTS. THE SYNC CODE STAYS.
+Madison, after weighing admin resets, recovery keys and recovery emails: "I think the sync code option may just be best at the moment. We just have to ensure it's apparent that the user needs to remember the code and write it down or something when they receive it and we have to absolutely sure people can't be randomly logged out. So nvm, no username and password yet. I don't like the idea of being responsible for someone's username and email and stuff cause I'd be afraid something would happen and I'd be held liable."
+- The "PLAN (decided 2026-11-02 ...)" entry above is withdrawn. Do not build Firebase Auth, passwords or recovery emails unless he asks again.
+- 382 instead: make saving the code unmistakable when it is first given, and re-audit every path that could sign someone out.
+
+## Build 382 round 2 - Fire Code art for a prevention agency (merged 2026-11-02)
+Madison on round 1: "This is fire code. We are fire prevention agency." No fire helmets, engines, ladders, crews or dogs.
+
+**IFC_CHAR_LOOK**
+- Inspector: uniform, shield, mic, tablet; the glasses kept.
+- Chief: dress blues and a peaked cap.
+- Investigator, K9 Officer (the handler only), Logistics, Horn Strobe, Sprinkler Head, Drone Pilot, Dispatcher.
+- Flares: Breacher, Recon, Thermal, Flashbang.
+- Ultimates: Cyber Marshal, Grand Marshal, Commander.
+- Smoke Diver is kept. The Hazmat placard is rebuilt: shared corners, mitred edges.
+- Characters seat at -0.4 so chest gear stays in the circle. The Drone Pilot art is drawn at 0.86 scale.
+- New motions: cx-fx-fcbeam, fcwave, fcflash, fcspray, fchover, fcrotor, fcradar, fcholo.
+- HFX_FACE_FIX is dropped for these ids in Fire Code.
+
+**IFC_BANNER_ART**
+- New banners: Headquarters, Spill Response, Field Kit, Alarm Panel, Hazmat, Code 3, Grand Marshal.
+- Air Tanker is redrawn. The Code Book banner has no helmet.
+- Fire Watch and Dispatch are now layered.
+- Every non-rank Fire Code banner moves (fbSUV, fbDrum, fbPlacard, fbSuit).
+
+**IFX_DEF / IFX_BUILD (hundo effects)**
+- In Fire Code, fireworks, underwater, bubbles and ufo play Sirens, Sprinklers, Hazmat and Fire Alarm.
+- Ids, counts and picks are unchanged.
+- Each has its own tile, still, totals, tint and SND_IFX sound. The reaction is the same as confetti's.
+- Confetti is untouched.
+
+Gate: check-b382-ifcart is extended, with round 1 hashes from 9ab1bc6. It fails 10 checks there.
+Pending Madison's look: the sheets in the scratchpad, ifc-art-sheet-2.png and ifc-hundo-sheet.png.
+
+### 382: Settings is a menu (his inspirations, round 2; merged 2026-11-02)
+Madison: "they all are there own tab where you click and get more information? ... All the copyright stuff ... should be in another thing towards the bottom"
+
+**How the menu is built**
+- `showAppearance` builds every control as before, into a holder.
+- The menu (`into`) shows category rows: `settingsRow` plus a grey value.
+- `showAppearance({page})` mounts one category as a `settingsSubPage`. The pages are sound, study, motion, sync, rankings (not in Fire Code) and share.
+- Back, the bug report and version history return to the menu.
+- The save-code banner opens the Sync page.
+- When Firebase arrives, an open page is redrawn in place.
+
+**Credits and Support**
+- Credits: Contributors and Legal (`settingsPlainRow`).
+- Support: Report a bug, Version history, Terms of Use and Privacy (`settingsLinkRow`, coloured `--theme-c1`).
+- `showSettingsText(legal|terms|privacy)`:
+  - Legal is `buildLegalNote("settings")` word for word.
+  - Privacy only repeats what the app already says.
+
+**Foot**
+- The roles (`creditsPeople`) come first. There are now 5 people, including Logan Preston, whose credit is general until Madison confirms what he did.
+- Then "Made by M. Davis" and the NOVA serif gradient wordmark with a sheen. The sheen is off with Reduce motion.
+- There is no legal text on the menu.
+
+**New theme switches**
+- `tapSounds` silences "ui." sounds in `NovaSound.play`. Haptics are kept.
+- `autoAdvanceLong` uses `AUTO_ADVANCE_LONG_MS` (1100).
+- Skip celebrations moved to Motion & Effects.
+
+**Gates**
+- check-b382-credits was rewritten. Its Fire Code seed needs the owner's publicId.
+- check-b382-settings was updated. Both fail on the code before.
+- toggles, behaviour b218/b324g and sync were updated to open the pages.
+- About 20 older gates still call `showAppearance()` expecting switches on the menu. They are to be pointed at the pages before the final run.
+
+### 382: the Leaderboard and the Calendar in Settings' language (clean iOS; merged 2026-11-02)
+Madison: "the rest of the app has that nice new look ... leaderboard could have such a nice look ... calendar could be a smidge better ... clean clean clean CLEAN IOS".
+
+**Title**
+- #count is the page's big bold title on .screen-rankings and .screen-calendar-tab (2rem; 2.25rem on tablet).
+- There is no second heading in the panel.
+
+**Board**
+- The switch is an iOS segmented control: 44px segments, the slider restyled, full column width.
+- The search field is filled, with the placeholder on the left. Find me is tinted with the accent.
+- The top three are each their own card: a 1px metal ring at .62, a faint corner light, medals without the glow, names in ink.
+- 4th place down is ONE grouped card:
+  - The rows touch and only the ends are rounded.
+  - The ::after hairline starts at --lb-hair-l, the name's x.
+  - Row padding is .45rem, so every row is exactly --lb-row-h.
+- Your row gets an accent wash and your place in the accent. It has a ring only on the podium.
+- Placeholders 1-3 carry .rank-skel-podium(-N), so the podium cards land exactly where the placeholders stood (0px shift).
+- Skeletons pulse their bars, not the row.
+
+**Calendar**
+- Cards are flat, 20px corners, no frost. This rule beats the (0,5,0) `.screen-calendar :is(...).points-progress-sect` rule.
+- Headings are grey sentence case.
+- Topics are rows with hairlines between them.
+- Today is the accent's circle: filled when it is the picked day, a ring otherwise. On tablet, only today's number gets the circle.
+- Any other picked day gets a grey fill.
+
+**Gates**
+- tools/check-b382-ios.py: 40 fail on the build before.
+- check-b382-board's look checks were updated for the new your-row and the sentence-case captions.
+
+### 382: Contributors like Delta's, every group labelled, the tiles redrawn (merged 2026-11-02)
+Madison: "Not sure why ours has numbers ... Cam helped with virtual room ... Darjean helped with the chat. I created and designed it" / "Don't put the contributions there ... just say made by Davis but make it look nice. Ensure each [group] of stuff is labeled" / "Look at how nice those icons look".
+
+**Contributors**
+- `creditsPeople` rows are {t, open}.
+- Chat opens `openChatDock()`.
+- Virtual Room opens `showVirtualRoomChoice()`. It is academy only and plain text in Fire Code.
+- No counts and no totals.
+- Cards have 20px corners and sit 28px apart. Rows are 52px. Hairlines are inset 18px at both ends.
+- Logan's line is a placeholder until Madison says what he helped with.
+
+**Footer**
+- "MADE BY", then "Davis" in an italic serif with the brand gradient, then NOVA.
+- No names grid.
+
+**Labels**
+- The menu groups are General, Account, App, Credits and Support.
+- The Share page's group is labelled "This app"; Legal's is labelled "Notices".
+
+**Tiles**
+- One line-icon family: 1.6 stroke, none filled.
+- 30px squircles with 7px corners, each with its own-hue vertical gradient and a half-pixel rim.
+- 14px gap to the label.
+- Check for update is green.
+
+**Gate**
+- check-b382-credits: 13 fail on e3aa7a8.
+
+- Logan Preston, confirmed by Madison 2026-11-02: "Logan helped with the question bank and test format and stuff." Role "Questions"; rows "Question bank", "Test format".
+
+### 382: Units screen, faster and in Settings' look (merged 2026-11-02)
+
+**Cause of the lag: the `:has()` invalidation set**
+- Three card rules made every `:has()` re-check under `<body>` restyle every card, about 680 elements a tick:
+  - `:has(input:checked) > .box`
+  - `:has(> .pick-version) > .pname`
+  - `:not(:has(.pick-barrow)) > .pcount`
+- A bare `svg` in a cutscene rule did the same.
+- These are now classes: `.pick-checked`, `.has-version`, `.pick-mastered`, and `--cib-dim` for the cutscene.
+- RULE: never put a common element (svg, `.pname`, `.box`) to the right of a `:has()`.
+
+**Other speed fixes**
+- Card badges are one cached `<img>` each (`cardBadgeSVG`). A badge stays live SVG only while its token render is a draft.
+- Haptic switches read every size before writing anything (`hswOptMeasure`).
+- Back-word centring is cached per width.
+- Counts are made once when the screen opens.
+- The next-test lookup is cached for a second.
+
+**Measured** (CPU ×4, base → 382)
+- Open: 374 → 243ms main thread.
+- Elements restyled per tick: 682 → 217.
+- Elements restyled per scroll: 74 → 4.
+
+**Look**
+- Settings' header: round back button, centred "Choose your units".
+- Levels are an iOS segmented control.
+- Select all and Starred are flat 44px pills.
+- Cards are flat tiles. A picked card gets an accent check inside its corner, or on the corner below 400px wide.
+
+**Changed outside the screen**
+- the cutscene rule
+- `centerBackWord()`
+- `hswOptMeasure` / `hswOptAttach`
+- the tab-search placement observer
+
+**Gate:** check-b382-units. It fails 9 of 13 on the base.
+
+**Open (other areas)**
+- Badge warm-up uses about 60% of the main thread 5–15s after launch.
+- The first-tap sound prewarm is a 170–400ms task.
+- check-b380's switch-timing check finds no switch (probably the Settings menu); recheck in the final run.
+- check-positions flags `showWelcomeCharacterPrompt` scrolling on 3 laptop sizes; recheck against the base.
+
+## Build 382 round 3 - Fire Code: the agency's own look (merged 2026-11-02)
+Madison: "We don't wear police styled hats. We wear cowboy hats" / "white Chevy pickups, think of game wardens" / "I don't like the police lights one.. or fire alarm one".
+
+**Characters** (same ids)
+- Inspector: back toward round 1, in a silverbelly hat and khaki shirt, with the glasses and clipboard.
+- Chief: western. White hat, sport coat, bolo, gold star.
+- Investigator: the agency's blue with a dark felt hat.
+- clown -> "Strobe": a sleek red machine with a flashing visor.
+- Plans Examiner and Public Educator replace K9 Officer and Logistics.
+- Dispatcher: back toward round 1.
+- Drone Pilot: FPV goggles and a racing drone.
+- Sprinkler Head: chrome.
+- Hazmat: round 1's drawing, with the placard whole.
+  - The placard is classed `fc-placard`, not `cx-`, because `[class*="cx-"]` gets `transform-box:fill-box`, which moves a transform attribute.
+- Whiteout (the winter concept) and a new Flashbang.
+- Ultimates, one space-fire set: Nebula Marshal, Star Ranger, Solar Flare (fcOrbit, cx-fx-fccorona).
+- Kept: Breacher, Recon and Smoke Diver.
+- Hats are fcCowboy (cx-fc-hat-<kind>). fcCap is removed.
+
+**Banners**
+- fbPickup replaces fbSUV (Headquarters, Code 3).
+- Exit replaces Fire Watch (hundos100).
+- Code Book is redone without the badge or clipboard.
+- Nebula, Star Ranger and Solar Flare banners for the ultimates.
+- All other banners are as round 2 left them.
+
+**Hundo effects**
+- fireworks -> Emergency Lights (ifxEmergency).
+- ufo -> Fire Alarm, rebuilt: a wall strobe at 1 Hz, a bloom, the panel, and a NORMAL reset.
+- Both have their own tiles, stills and SND_IFX sounds.
+- A WAAPI easing on a multi-keyframe animation warps the whole timeline, so keep those linear.
+
+**Gate:** check-b382-ifcart holds the R2 hashes as "before". 14 fail there, 39 pass after.
+
+**MERGE HAZARD seen here:** the art branch's commit was made over an older tree. A plain merge deleted check-b382-ios/units and reverted the Leaderboard, Contributors and units work. It was caught before pushing, reset, and applied as a patch from the branch's real base (e3aa7a8). Always read a merge's --stat for deletions before pushing.
+
+## 382: SAVE THE CODE WHEN IT IS GIVEN; NOBODY SIGNED OUT; "I'M NEW HERE" ASKS FIRST (merged 2026-11-02)
+Madison: "ensure it's apparent that the user needs to remember the code and write it down ... absolutely sure people can't be randomly logged out", and "people keep creating new accounts again and again".
+
+**The save-code card: `showSaveCodeCard()`**
+- Shows the code large and monospace, with: "This is your sync code. Write it down or save it somewhere safe. It is the only way to get your progress back on a new phone or if this app is deleted."
+- Controls: **Save it** (`saveSyncCodeVia`) and the tick box "I've written it down or saved it". Continue stays off until the box is ticked or Save worked.
+- Nova's sign-up line "This is your sync code." asks it (`novaAskSaveCode`).
+- Existing accounts with no `savedCodeSaved` get it once on Home:
+  - after `cloudConfirmedFor`;
+  - after Nova, tours and cutscenes;
+  - never over a test.
+- It REPLACES the amber banner. The old `class26e.savecode.asked` is deliberately ignored, so accounts that dismissed the banner are asked once more.
+- Done means `savedCodeSaved` (now OR-merged across devices) plus `class26e.savecode.card` on the device.
+- Signing in with a code marks the device done and adds one line: "Keep your sync code written down somewhere safe...".
+- A freshly issued code (sign-up, Start syncing, or the boot self-heal minting one) counts as unsaved again (`codeIssuedFresh`).
+
+**Settings > Sync**
+- "Your sync code" plus a **Save it** row (`buildSettingsSaveCodeRow`).
+- The code is shown even when sync is unreachable. It used to vanish offline.
+
+**Sign-out audit fixes**
+- `handleRemoteReset` now re-reads the account and its `__floor` from the server: once at 2.5s, then 8s more for the floor. It wipes only if both are gone (`applyRemoteReset`). A failed read keeps the account.
+- Signing in or linking marks the device onboarded. An old cloud copy without `onboardingComplete` had been putting every following launch on Welcome, which reads as signed out.
+- `navigator.storage.persist()` was already requested at boot.
+
+**"I'm new here" on a device that has held an account**
+- Such a device is one with `class26e.hadaccount` (`{at,name}`, no code), any of the save-code keys, `syncoff`, or a mirror code or public id.
+- It opens `showNewAccountConfirm`: "This device was already signed in to Nova. Starting over makes a brand-new account with no progress. To keep your progress, sign in with your sync code."
+- Primary **Sign in with my code**; secondary **Start a new account**.
+- Welcome already led with Sign in; its markup is unchanged.
+
+**Gates**
+- New: `tools/check-b382-savecode.py`. 26 fail on the previous build.
+- `check-save-code` sections 2–3 now assert the card.
+- `check-sync` 4d allows 3 buttons.
+- ALL gate fixtures that set `class26e.savecode.asked` now also set `class26e.savecode.card`. A new fixture for an onboarded account needs one of them (or `savedCodeSaved:true`), or the card lands over what it measures.
+
+### 382: Home's corner buttons in the tab bar's glass; the sign-up steps in the Settings look (merged 2026-11-02)
+Madison: "The Home Screen is perfect, just make the daily question button and the class button match the feel and look. Ensure the sign up process and start up screen are all good to go."
+
+**Home corner buttons**
+- They were 380's unreached rank bubble's glass (.09 white body, .24 rim, blur 6px): a fourth material beside the tab bar and the chat button.
+- Now the daily question (every state), the class button and its list wear the bar's values:
+  - body .26, the lift, .16 rim;
+  - blur 7px, saturate 1.5;
+  - 0 8px 32px shadow;
+  - rule `body:not(.x382c)`, placed after 380's.
+- The class mark keeps its own colours with no wash. A waiting question shows the rank colour in its rim only.
+- On a tablet, `place()` sizes the class button to the chat button opposite it (52px, was 74px).
+- The 381 haptic-switch rule is untouched.
+
+**Sign-up steps**
+- Round 44px back button (was a 30px pill).
+- Bold sentence-case titles, a soft grey line under them, iOS fields, one button width.
+- Nova's dots stay on one line (about 30 had wrapped).
+- The class cards are centred on iPad.
+- SE gaps tightened under 600px tall.
+
+**Gates**
+- New: tools/check-b382-firstrun.py. 41 fail before. It includes the owner-only class button guard: a non-owner has no class button or banner, and `activeclass=ifc` without the owner's publicId stays academy.
+- check-b329, b344 and b380 (27) were updated to follow.
+- The job's report of check-sync "the restored account is what goes up" failing: ALL PASS on the merged claude/b382 here (8f polls since c91cc0d). Recheck in the final run.
+
+### 382: the iOS look on Profile, Stats, Customize, Friends, the rank ladder and the badge case (merged 2026-11-02)
+Madison: "clean clean clean CLEAN iOS Apple look" app-wide, with the new Settings as the reference.
+
+**Nav bar on pushed screens**
+- Pushed screens use `iosNavBar(title, back)`: Settings' round back button and a centred title.
+- The screen's own `.back-link` is kept and drawn round: same class, the word kept as accessible name and textContent, same handler.
+- #count is zero size there but keeps its text ("Rank" / "Badges" for check-behaviour b299) and the header's safe-area padding, so the bar sits where Settings' does.
+
+**Headings and cards**
+- Headings are Settings' grey sentence case.
+- On Friends and Stats they sit above the card (`position:absolute; bottom:100%`). The DOM is unchanged, so `.friend-sect .sect-label` still matches.
+- Cards use `--ios-group-r` (16px) on `--surface-1`.
+- Customize's four `.cz-row`s form one inset group:
+  - no gap between rows;
+  - corners on the first and last row only;
+  - a hairline starting at `--cz-inset`.
+- Each Customize row keeps its token fill, so check-b326-f still finds the boxes.
+
+**Profile**
+- Profile keeps its 22px corners. b321f requires the case strip to match the Next rank card, and the case is art.
+- Its in-card labels are sentence case.
+- The Profile segments get the Leaderboard's big #count title. `selectProfileTab` keeps it equal to the picked segment: Profile, Stats or Settings.
+
+**Gate:** tools/check-b382-ioslook.py. 112 pass after; 64 fail on the build before.
+
+**Phone check owed:** the round button under the Dynamic Island, and the card density without blur.
+
+### 382: the character step in the sign-up look; Continue on the same floor on every step
+Found by check-positions in the final run (no flags on 381, eight on 382).
+- The greyed "Still to find" grid on Choose a character had been placed UNDER Continue, so Continue sat 265px higher than on every
+  other step and the page scrolled. Now: starters, Still to find, then Continue on the shared floor. Where the grid does not fit,
+  Continue is `position:sticky` at that floor (the gap read off the page by `pinContinue()`: offsetTop, not the rect, because the
+  slide-in transform is still running; re-read after two frames and at 450ms, and on resize). The panel is `overflow:clip`, not
+  hidden (hidden made it the sticky's scroll box). Measured: Continue's bottom equals 381's on all 20 sizes, always on screen.
+- The 382 sign-up restyle had missed this step: it joins the round 44px Back, the bold sentence-case title ("Choose a character",
+  was serif caps), the grey subtitle and the one button. The name step's Back was the only one centred; it now sits top-left at
+  the same 40px as the rest.
+- The class step on short screens: on a first-gen SE it ran 12px past the floor (the restyle's 52px button and 44px Back), and on
+  a 1366x638 laptop it scrolled 6px. max-height:600 trims the subtitle's line-height, the cards' padding and two margins;
+  601-660 trims the gap above the button.
+- check-positions: the character step may scroll only while its Continue stays on screen; it is read after 500ms (the re-pin).
+  Result: no flags (381: no flags).
+
+### 382 final run: "Search names" centred again; the save-code gate on a recap day
+- check-b381 caught the iOS look's Leaderboard search setting the placeholder back to text-align:left (35632), undoing 381's
+  "The word search names is not centered for leaderboard search". The override now restates 381's centring (padding-right
+  clamp(1rem, 100% - 2.6rem - 7em, 2.6rem)); what is typed still starts at the left. check-b381 ALL PASS.
+- check-b382-savecode "existing" failed on Tuesday 3 Nov only: the weekly recap is due, Nova talks first and the card waits
+  (by design). Measured: close the recap and the card follows ~6s later (popupGapUntil). Fixture: novaHeard {"@recap": 99991231}.
+- check-b382-credits: the Sync page's row is "Your sync code" since the save-code card work (deliberate).
+- Pre-existing on 381 too: check-save-code part 1 (a fresh launch opens Get started, not Welcome), check-b380 loops fallback,
+  check-b377 hand-over timing. check-sync "Find me" failed under load only (passes alone).

@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 srv, url = g["serve"]()
 INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0381');
- ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
+ ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
 d = json.loads(g["SEED"].replace("__WEEK__", g["week_key_now"]())); d["publicId"] = "pubtest0381"; d["firstName"] = "Casey"; d["novaMet"] = 99
 ok = True
@@ -78,8 +78,10 @@ with sync_playwright() as pw:
     landed = pg.evaluate("()=>[!!document.querySelector('.screen-calendar-tab'), (document.querySelector('#bottomtabs .bottomtab.active')||{}).id]")
     import re
     ms = [int(m) for lst in during for t in lst for m in re.findall(r"transform (\d+)ms linear", t)]
-    chk("while a finger slides, the lens's moving parts go to each position over one frame (%s)" % (during,),
-        len(ms) >= 5 and all(8 <= m <= 20 for m in ms), during)
+    # REVERSED ON PURPOSE IN BUILD 382: the one-frame transition put the glass a frame behind every position ("behind the finger");
+    # the lens is written exactly where the finger is (plus a small lead) and carries no transition while it follows (check-b382-slide)
+    chk("while a finger slides, the lens's moving parts carry no transition - each position is drawn as written (%s)" % (during,),
+        len(during) == 2 and not ms and not any("transform" in t for lst in during for t in lst), during)
     chk("and once it is let go they carry none (%s), and the slide landed on the tab let go over (%s)" % (after, landed),
         not any("linear" in t for t in after) and landed[0] and landed[1] == "bottomtab-calendar", [after, landed])
     ctx.close()

@@ -13,7 +13,7 @@ def seed(pid="pubtest00330"):
     return json.dumps(d)
 INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0330');
- ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
+ ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
 ok = True
 def chk(name, cond, info=""):
@@ -44,7 +44,14 @@ RUN = """async ([unit, source, starOnly, wrong])=>{
 RETAKE = """async (wrongAgain)=>{
   const wait = ms => new Promise(r => setTimeout(r, ms));
   for(let t = 0; t < 60 && !document.querySelector('.rs-continue'); t++) await wait(100);
-  await wait(900); document.querySelector('.rs-continue') && document.querySelector('.rs-continue').click(); await wait(900);
+  /* build 382: a results row takes no press until it has risen and settled (rsArmIn) */
+  /* (this fixture's results can sit at the XP card - they did before 382 too, and the old clicks pressed buttons nobody could see -
+     so, past a few taps, the row is brought up as the end of the reveal does; then the 0.7s tap guard is let pass) */
+  const ready = async () => { for(let t = 0; t < 40 && document.querySelector('#stage .rs-final.rs-unarmed'); t++){
+      if(t < 8){ const p = document.querySelector('#stage .rs-screen'); p && p.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+      else if(t === 8) document.querySelectorAll('#stage .rs-final.rs-unarmed').forEach(a => rsRise(a, { instant: true }));
+      await wait(300); } await wait(800); };
+  await wait(900); await ready(); document.querySelector('.rs-continue') && document.querySelector('.rs-continue').click(); await wait(900); await ready();
   const b = [...document.querySelectorAll('#stage .actions button')].find(x => /Retake missed/.test(x.textContent));
   if(!b) return { err: 'no retake button', btns: [...document.querySelectorAll('#stage button')].map(x => x.textContent).slice(0, 8) };
   b.click(); for(let t = 0; t < 80 && !document.querySelector('.qpanel .choice'); t++) await wait(100);
@@ -98,7 +105,9 @@ with sync_playwright() as pw:
         ctx.close()
     if "legal" in want:
         ctx, page = page_for(br, "promax")
-        r = page.evaluate("""async ()=>{ showAppearance(); await new Promise(r => setTimeout(r, 700)); const n = document.querySelector('.affiliation-note.legal-settings');
+        r = page.evaluate("""async ()=>{ /* build 382: Settings > Legal is its own page, the same note word for word */
+          showAppearance(); await new Promise(r => setTimeout(r, 700)); document.getElementById('settings-legal').click(); await new Promise(r => setTimeout(r, 700));
+          const n = document.querySelector('.screen-settings-text.settings-text-legal');
           const settings = n ? n.textContent : ''; showClassSelection(); await new Promise(r => setTimeout(r, 500));
           const c = document.querySelector('.classselect-panel .affiliation-note'); return { settings, classes: c ? c.textContent : '' }; }""")
         chk("Settings: made by M. Davis, the copyright, and not affiliated with HCC, TCOLE or the ICC",

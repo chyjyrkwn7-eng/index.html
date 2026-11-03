@@ -103,7 +103,7 @@ def main():
             ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.drill.v1', '%s');"
                                 "localStorage.setItem('class26e.synccode','MADI-0001');localStorage.setItem('class26e.frame.ok','go-live-1');"
                                 "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
-                                "localStorage.setItem('class26e.daily.seen','x');localStorage.setItem('class26e.savecode.asked','1');}catch(e){}" % SEED)
+                                "localStorage.setItem('class26e.daily.seen','x');localStorage.setItem('class26e.savecode.asked','class26e.savecode.card','1');localStorage.setItem('class26e.savecode.card','1');}catch(e){}" % SEED)
             ctx.route("**/version.json", lambda r, req: r.fulfill(status=200, content_type="application/json",
                       body='{"build":"%s"}' % (re.search(r'APP_BUILD\s*=\s*"([^"]+)"', open(SRC, encoding="utf-8").read()) or [0, ""])[1]))
             pg = ctx.new_page()
@@ -118,7 +118,12 @@ def main():
             # and the Calendar are on the list.
             for tag, js in [("home", "showHome()"), ("mode", "showModeSelect()"), ("profile", "showProfile()"), ("leaderboard", "showRankings()"),
                             ("settings", "showAppearance()"), ("stats", "showProfile('stats')"), ("friends", "showFriends()"),
-                            ("customize", "showCustomize()"), ("calendar", "showCalendarTab()")]:
+                            ("customize", "showCustomize()"), ("calendar", "showCalendarTab()"),
+                            # build 382: Settings is a menu; what was on its one screen is on its pages now
+                            ("settings-sound", "showAppearance({page:'sound'})"), ("settings-study", "showAppearance({page:'study'})"),
+                            ("settings-motion", "showAppearance({page:'motion'})"), ("settings-sync", "showAppearance({page:'sync'})"),
+                            ("settings-rankings", "showAppearance({page:'rankings'})"), ("settings-share", "showAppearance({page:'share'})"),
+                            ("settings-advanced", "(typeof showAdvancedSettings === 'function' && showAdvancedSettings())")]:
                 pg.evaluate("()=>" + js); pg.wait_for_timeout(1200); audit(pg, name + " " + tag, rows)
                 pg.evaluate("()=>{ document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n=>n.remove()); window.scrollTo(0, 99999); }")
                 pg.wait_for_timeout(700); audit(pg, name + " " + tag + "/foot", rows)
@@ -175,7 +180,11 @@ def main():
     for r in sorted(rows, key=lambda r: -abs(r[4])):
         if abs(r[4]) > TOL: fails.append(r); print("  FAIL %-24s %-16s %-34s h=%-5s letters %+.2fpx %s" % (r[0], r[1], r[2], r[3], r[4], "high" if r[4] < 0 else "low"))
     # and across: a pill whose label (with its icon) sits left or right of the middle
+    # (build 382: a Settings list row - icon tile, label, value, chevron - is laid
+    # out from its leading edge like an iOS table row, not centred, so it is
+    # measured up-down only)
     for r in sorted(rows, key=lambda r: -abs(r[5])):
+        if r[2].split(" ")[0] == "settings-row": continue
         if abs(r[5]) > HTOL: fails.append(r); print("  FAIL %-24s %-16s %-34s w-offset %+.2fpx %s" % (r[0], r[1], r[2], r[5], "left" if r[5] < 0 else "right"))
     print("\nALL PASS" if not fails else "\nFAILED: %d" % len(fails))
     sys.exit(1 if fails else 0)

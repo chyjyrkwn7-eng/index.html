@@ -399,8 +399,12 @@ def main():
                         #
                         # This one is verified against a build that actually has
                         # the bug: 23 levels there, 4 here.
+                        # Build 382: a Safari tab carries the stars on the root too (so they run
+                        # on under Safari's toolbar); they scroll with the page while body::before
+                        # is fixed, so a root star read as a 7-level "seam". The root's star
+                        # tiles are switched off here - what is measured is the colour fallback.
                         pg.evaluate("""()=>{const s=document.createElement('style'); s.id='__hc';
-                          s.textContent='body>*{visibility:hidden!important}';
+                          s.textContent='body>*{visibility:hidden!important} html{--root-sky-a:none!important;--root-sky-b:none!important}';
                           document.head.appendChild(s);
                           window.scrollTo(0, document.documentElement.scrollHeight);}""")
                         pg.wait_for_timeout(260)
@@ -482,7 +486,7 @@ def main():
 
                         # 4. Advanced settings: dark, and a real tap target
                         adv = pg.evaluate("""()=>{showAppearance();
-                          const b=document.querySelector('.more-toggle.adv-toggle');
+                          const b=document.querySelector('.adv-toggle');
                           if(!b) return null; const cs=getComputedStyle(b);
                           return {bg:cs.backgroundColor, h:Math.round(b.getBoundingClientRect().height)};}""")
                         if not adv: fails.append(f"{tag}: Advanced settings button missing")

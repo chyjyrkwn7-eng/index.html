@@ -60,9 +60,9 @@ with sync_playwright() as pw:
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __fake();}")
     pg.wait_for_timeout(600)
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(800)
-    pg.evaluate("()=>[...document.querySelectorAll('.cal-profile-btn')].find(b=>/Report a bug/.test(b.textContent))?.scrollIntoView({block:'center',behavior:'instant'})")
+    pg.evaluate("()=>[...document.querySelectorAll('.settings-row')].find(b=>/Report a bug/.test(b.textContent))?.scrollIntoView({block:'center',behavior:'instant'})")
     pg.wait_for_timeout(300)
-    btn=[b for b in pg.query_selector_all(".cal-profile-btn") if "Report a bug" in (b.text_content() or "")]
+    btn=[b for b in pg.query_selector_all(".settings-row") if "Report a bug" in (b.text_content() or "")]
     ck("the Settings button exists", len(btn)==1, len(btn))
     btn[0].click(); pg.wait_for_timeout(700)
     ck("it opens the report screen", pg.evaluate("()=>!!document.querySelector('.screen-bugreport')"))

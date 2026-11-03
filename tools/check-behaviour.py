@@ -163,9 +163,18 @@ def booted(br, w, h, seed=None, init=None, touch=False, dpr=1):
         # recap from Nova (build 324), or any check that fixtures last week's
         # rows would have him talking over Home. check_b324w_recap clears it.
         ctx.add_init_script("try{localStorage.setItem('class26e.weekrecap.v1','9999-12-31');}catch(e){}")
+        # ...and has answered build 382's one-time "Save your sync code" card,
+        # or it lands over whatever is being measured (an open chat, a page).
+        ctx.add_init_script("try{localStorage.setItem('class26e.savecode.card','1');}catch(e){}")
     pg = open_page(ctx)
     pg.goto(URL)
     pg.wait_for_timeout(2600)
+    if seed:
+        # A seed without a sync code has one minted at boot, and a freshly
+        # issued code clears the card's answer (codeIssuedFresh), so it is
+        # answered again here, after boot and before the stub confirms the
+        # cloud copy (which is what lets the card show).
+        pg.evaluate("()=>{ try{ store.savedCodeSaved = true; localStorage.setItem('class26e.savecode.card','1'); }catch(e){} }")
     pg.evaluate("()=>{document.getElementById('splashscreen')?.remove(); __stub();}")
     return ctx, pg
 
@@ -1533,10 +1542,20 @@ def check_b218(br):
     # Settings: two buttons to a row, and the sync code in a card.
     pg.evaluate("()=>{ showAppearance(); }")
     pg.wait_for_timeout(500)
-    rows = pg.evaluate("""()=>{ const top=t=>{ const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()===t); return b?Math.round(b.getBoundingClientRect().top):null; };
-      return { upd: top('Check for update'), bug: top('Report a bug'), share: top('Share this app'), install: top('Add to Home Screen') }; }""")
-    check("Help's two buttons sit side by side", rows["upd"] is not None and rows["upd"] == rows["bug"], rows)
-    check("so do Share and Add to Home Screen", rows["share"] is not None and rows["share"] == rows["install"], rows)
+    # BUILD 382 (the new decision): no pills side by side any more - Help and
+    # Share & install are each ONE list card of full-width rows, stacked, 44px+.
+    # build 382 (Settings is a menu): Check for update and Share & Install are rows of one menu card;
+    # Share this app and Add to Home Screen are the Share & Install page's card.
+    rows = pg.evaluate("""async ()=>{ const row=t=>{ const b=[...document.querySelectorAll('button.settings-row')].find(x=>x.textContent.trim().startsWith(t)); if(!b) return null; const r=b.getBoundingClientRect(), c=b.parentElement.getBoundingClientRect(); return { top:Math.round(r.top), h:Math.round(r.height), full: Math.abs(r.width-c.width)<=2, card:b.parentElement }; };
+      const o = { upd: row('Check for update'), bug: row('Share & Install') };
+      showAppearance({ page: 'share' }); await new Promise(r=>setTimeout(r,500));
+      o.share = row('Share this app'); o.install = row('Add to Home Screen');
+      const same = (a,b)=>!!(o[a]&&o[b]) && o[a].card===o[b].card;
+      const out = { helpOneCard: same('upd','bug'), shareOneCard: same('share','install') };
+      for(const k in o){ out[k] = o[k] && { top:o[k].top, h:o[k].h, full:o[k].full }; } return out; }""")
+    ok_row = lambda k: bool(rows[k]) and rows[k]["h"] >= 44 and rows[k]["full"]
+    check("Check for update and Share & Install are full-width rows in one menu card", rows["helpOneCard"] and ok_row("upd") and ok_row("bug"), rows)
+    check("so are Share and Add to Home Screen", rows["shareOneCard"] and ok_row("share") and ok_row("install") and rows["install"]["top"] > rows["share"]["top"], rows)
     # Find me wears the search field's glass, at its height.
     pg.evaluate("()=>{ showRankings(); }")
     pg.wait_for_timeout(600)
@@ -1544,8 +1563,11 @@ def check_b218(br):
       if(!a||!b) return null; const ca=getComputedStyle(a), cb=getComputedStyle(b);
       return { h:[Math.round(a.getBoundingClientRect().height), Math.round(b.getBoundingClientRect().height)],
                bg:[ca.backgroundColor, cb.backgroundColor], blur:cb.backdropFilter }; }""")
-    check("Find me matches the search field beside it",
-          bool(fm) and fm["h"][0] == fm["h"][1] and fm["bg"][0] == fm["bg"][1] and "blur" in (fm["blur"] or ""), fm)
+    # Build 382's iOS look: the field is a solid fill and Find me an accent-tinted button beside it
+    # (iOS's tinted style), neither frosted - same height, no blur on either.
+    fm2 = pg.evaluate("()=>getComputedStyle(document.querySelector('.rank-search')).backdropFilter")
+    check("Find me matches the search field beside it (height, and neither is frosted)",
+          bool(fm) and fm["h"][0] == fm["h"][1] and (fm["blur"] or "none") == "none" and (fm2 or "none") == "none", [fm, fm2])
     # The person card: no rank coin on the character, and "Correct answers".
     pc = pg.evaluate("""()=>{ openPersonSheet({ pub:'bo-pub', firstName:'Bo', level:40, badges:6, hundos:40, xp:50000, correct:900, avatarChar:'robot' });
       const card=document.querySelector('.person-card'); if(!card) return null;
@@ -2197,7 +2219,7 @@ def check_b232(br):
       showCustomize('character');
       T('fade', () => { const svg = document.querySelector('.avatarchar-option .avatarchar-svg');
         const cs = svg && getComputedStyle(svg); return cs ? (cs.maskImage || cs.webkitMaskImage || '') : null; });
-      showAppearance();
+      showAppearance({ page: 'sync' });   /* build 382: the code is on Settings > Sync */
       T('sync', () => { const l = document.querySelector('.sync-code-row .sync-code-label'); return l ? getComputedStyle(l).color : null; });
       return out; }""")
     # Build 244: the first rank is Bronze (it was Iron).
@@ -3277,7 +3299,8 @@ def check_b242(br):
       applyLoadedData(saved); out.queenBecomes = store.avatarChar;
       out.dragonDrawnAs = buildAvatarCharSVG('dragon').querySelector('.cx-k-wizard') ? 'wizard' : 'other';
       showWelcomeCharacterPrompt(); await wait(500);
-      out.starters = [...document.querySelectorAll('.charselect-panel .avatarchar-option')].filter(o => o.offsetParent).length;
+      /* build 382: the greyed "Still to find" grid under the starters is not counted */
+      out.starters = [...document.querySelectorAll('.charselect-panel .avatarchar-grid:not(.charselect-later) .avatarchar-option')].filter(o => o.offsetParent).length;
       out.starterCols = getComputedStyle(document.querySelector('.charselect-panel .avatarchar-grid')).gridTemplateColumns.split(' ').length;
       /* 10. Customize: colours before banners, and big enough to sit beside them.
          Build 315: each is its own page off a summary, so the order is the
@@ -4978,8 +5001,10 @@ def check_b246(br):
       const tg = document.querySelector('.adv-toggle');
       tg.scrollIntoView({ block: 'end', behavior: 'instant' }); scrollBy(0, 40); await wait(300);
       tg.click(); await wait(1700);
-      const body = tg.nextElementSibling.getBoundingClientRect(), bar = document.getElementById('bottomtabs').getBoundingClientRect();
-      out.adv = { bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top), toggleTop: Math.round(tg.getBoundingClientRect().top) };
+      /* build 382 (colour redesign): Advanced is a page of its own - its last row clears the bar */
+      const rb = document.getElementById('resetbtn'), body = rb ? rb.getBoundingClientRect() : { bottom: 1e9 }, bar = document.getElementById('bottomtabs').getBoundingClientRect();
+      const nav = document.querySelector('#stage .screen-advsettings .settings-nav');
+      out.adv = { bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top), toggleTop: nav ? Math.round(nav.getBoundingClientRect().top) : -1 };
       return out; }""")
     # Build 314: back to "To reach <Rank>" after "<Rank> challenges" was
     # tried and Madison preferred the original.
@@ -4989,7 +5014,7 @@ def check_b246(br):
     # Build 248: "the next rank thing is redundant and shows it twice".
     check("the next rank is named once in the hero - by the rings' head, with no Next pill as well",
           not k["nextPill"], k)
-    check("opening Advanced settings brings it clear of the tab bar, toggle still on screen",
+    check("opening Advanced settings shows its page, Reset clear of the tab bar, its header on screen",
           k["adv"]["bodyBottom"] <= k["adv"]["barTop"] and k["adv"]["toggleTop"] >= 0, k["adv"])
     ctx.close()
 
@@ -6600,10 +6625,12 @@ def check_b284(br):
       loadTheme(); applyTheme(); await wait(200);
       out.scroll = document.documentElement.style.scrollBehavior;
       out.wake = window.__wake;
-      showAppearance(); await wait(800);
-      out.rows = [...document.querySelectorAll('.otext')].map(e => (e.firstChild && e.firstChild.textContent || '').trim());
+      /* build 382: Settings is a menu; its switch rows are on the category pages */
+      out.rows = [];
+      for(const k of ['sound', 'study', 'motion', 'sync', 'rankings']){ showAppearance({ page: k }); await wait(400);
+        out.rows.push(...[...document.querySelectorAll('.otext')].map(e => (e.firstChild && e.firstChild.textContent || '').trim())); }
       /* 2. the bar and the Profile card */
-      out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start)')].map(t => t.dataset.dest);
+      out.tabs = [...document.querySelectorAll('#bottomtabs .bottomtab:not(.bottomtab-start):not(#bottomtab-stats[hidden])')].map(t => t.dataset.dest);
       showProfile(); await wait(900);
       /* build 315: the rank row is the standing block */
       /* MOVED IN 327z15 round 5: "Why ... when I click my xp the rank road map pops up?" -
@@ -6636,6 +6663,9 @@ def check_b284(br):
       /* 6. no Most missed: the bank, the unit door, the Settings reset, a saved bank */
       showAppearance(); await wait(700);
       out.resetMissed = [...document.querySelectorAll('button')].some(b => /missed-question history/i.test(b.textContent || ''));
+      /* build 382: the resets are on Advanced settings' own page */
+      if(typeof showAdvancedSettings === 'function'){ showAdvancedSettings(); await wait(500); }
+      out.resetMissed = out.resetMissed || [...document.querySelectorAll('button')].some(b => /missed-question history/i.test(b.textContent || ''));
       store.opts = Object.assign({}, store.opts || {}, { source: 'recent', mode: 'drill' }); applySaved();
       out.savedBank = cfg.source;
       const unit = topicsIn(QUESTIONS)[0];
@@ -9116,6 +9146,10 @@ def check_b305_resultstap(br):
           let last = null, still = 0;
           for(let k = 0; k < 60 && still < 4; k++){ await new Promise(r => setTimeout(r, 100));
             const y = Math.round(b.getBoundingClientRect().top) + '|' + Math.round(scrollY); still = y === last ? still + 1 : 0; last = y; }
+          /* build 382: the row takes no touch until its buttons have risen and RS_SETTLE_MS more has passed (Madison: a tap
+             where Re-run would be, before it is there, started the retake) - a tap inside that wait is refused on purpose */
+          for(let k = 0; k < 50 && b.closest('.rs-unarmed'); k++) await new Promise(r => setTimeout(r, 100));
+          await new Promise(r => setTimeout(r, 60));
           const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }""")
         pg.touchscreen.tap(where[0], where[1]); pg.wait_for_timeout(1200)
         r2 = pg.evaluate("()=>!!document.querySelector('[data-screen=\"home\"]')")
@@ -9888,12 +9922,29 @@ def check_b314h_settings_calendar(br):
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       showAppearance(); await wait(500);
       const tog = [...document.querySelectorAll('.more-toggle')].find(b => /Advanced settings/.test(b.textContent));
+      if(tog){
       const body = tog.nextElementSibling, inner = body.querySelector('.more-body-inner');
       const sample = async ms => { const s = []; const t0 = performance.now();
         while(performance.now() - t0 < ms){ await new Promise(r => requestAnimationFrame(r)); s.push({ t: Math.round(performance.now() - t0), h: Math.round(body.getBoundingClientRect().height), clip: getComputedStyle(inner).clipPath }); } return s; };
       tog.click(); out.open = await sample(700);
       tog.click(); out.close = await sample(800);
       out.closedAfter = !body.classList.contains('open');
+      } else {
+        /* BUILD 382: Advanced settings is a page of its own, not a section
+           that sweeps open in place - there is no accordion left to sweep.
+           What is held instead: its row on the Settings menu opens that page,
+           with its back button and the three resets on it, and Back returns
+           to the menu. */
+        const row = document.querySelector('#stage .adv-toggle');
+        out.page = { row: !!row };
+        if(row){ row.click(); await wait(700);
+          const pg = document.querySelector('#stage .screen-advsettings');
+          out.page.open = !!pg;
+          out.page.back = !!(pg && pg.querySelector('.settings-nav-back'));
+          out.page.resets = pg ? [...pg.querySelectorAll('button')].filter(b => /Reset|Clear analytics/i.test(b.textContent)).length : 0;
+          if(pg && pg.querySelector('.settings-nav-back')){ pg.querySelector('.settings-nav-back').click(); await wait(700); }
+          out.page.backOnMenu = !!document.querySelector('#stage .adv-toggle'); }
+      }
       /* the calendar, on a coloured theme */
       theme.accent = 'adept'; applyTheme(); showCalendar(); await wait(400);
       const t = document.querySelector('.cal-grid .cal-cell-today'); let c = getComputedStyle(t);
@@ -9905,13 +9956,19 @@ def check_b314h_settings_calendar(br):
         shadow: rimFrom === 'ring' ? (/inset/.test(c.boxShadow) && / 0px 0px 0px /.test(c.boxShadow) ? 'none' : c.boxShadow) : c.boxShadow,
         border: rimFrom === 'ring' ? (c.boxShadow.match(/rgba?\([^)]*\)/) || [''])[0] : c.borderTopColor, bg: c.backgroundColor, rimFrom };
       return out; }""")
-    op = r["open"]; cl = r["close"]
-    mid_open = [s for s in op if s["clip"] not in (op[-1]["clip"], op[0]["clip"])]
-    check("opening sweeps the clip open over several frames, at its full height from the first",
-          len(mid_open) >= 3 and op[0]["h"] > 40, {"frames": len(op), "between": len(mid_open), "h0": op[0]["h"]})
-    held = [s for s in cl if s["h"] > 40 and s["t"] >= 150]
-    check("closing is not instant: it keeps its height for 150ms+ while the clip sweeps shut, then gives it back",
-          len(held) >= 3 and cl[-1]["h"] < 5 and r["closedAfter"], {"held": len(held), "end": cl[-1]})
+    if "page" not in r:
+        op = r["open"]; cl = r["close"]
+        mid_open = [s for s in op if s["clip"] not in (op[-1]["clip"], op[0]["clip"])]
+        check("opening sweeps the clip open over several frames, at its full height from the first",
+              len(mid_open) >= 3 and op[0]["h"] > 40, {"frames": len(op), "between": len(mid_open), "h0": op[0]["h"]})
+        held = [s for s in cl if s["h"] > 40 and s["t"] >= 150]
+        check("closing is not instant: it keeps its height for 150ms+ while the clip sweeps shut, then gives it back",
+              len(held) >= 3 and cl[-1]["h"] < 5 and r["closedAfter"], {"held": len(held), "end": cl[-1]})
+    else:
+        a = r["page"]
+        check("(382) Advanced settings' row on the Settings menu opens its own page, with a back button and its resets",
+              a.get("row") and a.get("open") and a.get("back") and (a.get("resets") or 0) >= 2, a)
+        check("(382) ...and Back returns to the Settings menu", a.get("backOnMenu") is True, a)
     t = r["today"]
     import re as _re
     nums = [int(x) for x in _re.findall(r"\d+", t["border"])[:3]]
@@ -10940,7 +10997,7 @@ def check_b313_lead(br):
     print("\n90. build 313 (lead): Auto-star, short blurbs, badge text, Phoenix 10, rank bars, the no-hundo note, the board that only showed you")
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
-      showAppearance(); await wait(500);
+      showAppearance({ page: 'study' }); await wait(500);   /* build 382: Auto-star is on Settings > Study */
       out.autoStar = [...document.querySelectorAll('#stage *')].some(e => e.childElementCount === 0 && /Auto-star questions you keep missing/.test(e.textContent || ''))
         || /Auto-star questions you keep missing/.test(document.getElementById('stage').textContent);
       out.autoFlag = /Auto-flag/i.test(document.getElementById('stage').textContent);
@@ -11377,19 +11434,19 @@ def check_b314_chars(br):
           /* the SECRET's (build 325: challenge and ultimate characters are
              cut-outs too, each in its category's own colour - see check-b325-d;
              "no colour" is the secret flare cut-out's rule) */
-          const sil = opts.find(o => o.classList.contains('is-sil-secret')) || opts.find(o => o.classList.contains('is-silhouette'));
-          sil.scrollIntoView({ block: 'center', behavior: 'instant' });
-          for(let t = 0; t < 400; t++){ if(sil.querySelector('.char-flip-play img')) break; await wait(250); }
+          /* BUILD 382: nothing is a cut-out any more ("they are gonna be
+             viewable again") - a locked secret is the greyed still preview
+             every locked character is, so it no longer plays */
+          const sil = opts.find(o => o.title === (AVATAR_DISPLAY_NAME.umbra || 'umbra'));
+          sil.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1500);
           out.silPlaying = playing(sil);
-          const sb = sil.getBoundingClientRect(); out.silBox = [sb.left, sb.top, sb.width, sb.height];
-          out.silGlow = getComputedStyle(sil).getPropertyValue('--char-glow').trim();
+          out.silCut = sil.classList.contains('is-silhouette') || !!sil.querySelector('.char-sil');
+          out.silLocked = sil.classList.contains('locked');
           return out; }""")
         check("%s: every held character on Customize is set to play" % label, r["held"] > 0 and r["heldFlip"] == r["held"], (r["heldFlip"], r["held"]))
         check("%s: every held character on screen is playing its loop" % label, r["nearHeld"] > 0 and r["nearPlaying"] == r["nearHeld"], (r["nearPlaying"], r["nearHeld"]))
         check("%s: a locked (non-secret) character stays still" % label, r["locked"] > 0 and r["lockedMoving"] == 0, (r["lockedMoving"], r["locked"]))
-        check("%s: a locked secret's silhouette plays as well" % label, r["silPlaying"] is True)
-        g = r["silGlow"]
-        check("%s: and its tile's glow is no colour" % label, bool(_re.match(r"#([0-9A-F]{2})\1\1|#A7AAAF", g, _re.I)) or g.upper() == "#A7AAAF", g)
+        check("%s: a locked secret is no cut-out, greyed and still like any locked character (build 382)" % label, r["silLocked"] and not r["silCut"] and r["silPlaying"] is False, r)
         ctx.close()
 
     # which one is selected (build 314: "it's hard to tell which character
@@ -11734,7 +11791,7 @@ def check_b314_sizes(br):
       out.customize = one([...document.querySelectorAll('.screen-customize .avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg.avatarchar-svg') || o.querySelector('svg'))]));
       /* the sign-up picker */
       try{ showWelcomeCharacterPrompt(); await wait(700);
-        out.signup = one([...document.querySelectorAll('.avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg'))])); }catch(e){ out.signup = { n: 0, err: String(e) }; }
+        out.signup = one([...document.querySelectorAll('.charselect-panel .avatarchar-grid:not(.charselect-later) .avatarchar-option')].map(o => [o.dataset.char || '', sz(o.querySelector('svg'))])); }catch(e){ out.signup = { n: 0, err: String(e) }; }
       /* the Profile card, each character in turn */
       const prof = [];
       for(const id of ids){ store.avatarChar = id; showProfile(); await wait(120);
@@ -11831,18 +11888,20 @@ def check_b313_flares(br):
           /* 6. silhouettes: with only Void held, the other three are black cut-outs in Customize */
           store.mysteryColorsFound = JSON.parse(F.void); showCustomize('character'); await wait(900);
           const opt = id => [...document.querySelectorAll('.avatarchar-option')].find(o => o.title === (AVATAR_DISPLAY_NAME[id] || id));
+          /* BUILD 382: no cut-outs - the other three are their own drawings, greyed and padlocked */
           out.sil = ['umbra', 'singularity', 'genesis'].map(id => { const o = opt(id); if(!o) return 'missing';
-            const p = o.querySelector('.char-sil-body .cx-head :is(path, circle, ellipse):not([fill="none"])');
-            return o.classList.contains('is-silhouette') && p ? getComputedStyle(p).fill : 'not-silhouette'; });
+            const sv = o.querySelector('svg.avatarchar-svg');
+            return !o.classList.contains('is-silhouette') && !o.querySelector('.char-sil') && o.classList.contains('locked') && sv && /saturate/.test(getComputedStyle(sv).filter) ? 'greyed' : 'not-greyed'; });
           out.voidShown = (() => { const o = opt('voidwalker'); return !!o && !o.classList.contains('is-silhouette'); })();
           /* build 314: the silhouette is a flip-book on its tile (char-flip),
              or live if its sheet cannot be made */
-          out.silLive = !!document.querySelector('.avatarchar-option.is-silhouette:is(.char-flip, .char-live), .avatarchar-option.is-silhouette .char-sil.char-live');
+          out.silLive = !document.querySelector('.avatarchar-option.is-silhouette');
           /* 7. banners: one per secret character, held with it */
           out.banners = ['flare_void', 'flare_umbra', 'flare_horizon', 'flare_genesis'].map(id => !!bannerDef(id) && typeof BANNER_ART[id] === 'function');
           out.bannerHeld = [bannerEarned('flare_void'), bannerEarned('flare_umbra')];
           showCustomize('banner'); await wait(900);   /* the banners' own page since build 315 */
-          out.secretLocked = !!document.querySelector('.banner-opt.locked.is-secret[data-banner="flare_umbra"]');
+          /* build 382: locked and greyed, its art shown - no longer veiled */
+          { const t = document.querySelector('.banner-opt.locked[data-banner="flare_umbra"]:not(.is-secret)'); out.secretLocked = !!t && !t.querySelector('.is-veiled, .bnr-veil'); }
           /* an account already holding Void is handed its banner on Home */
           shownNow(); store.unlocksShown.banners = store.unlocksShown.banners.filter(x => x !== 'flare_void');
           showHome(); await wait(4200);
@@ -11876,9 +11935,9 @@ def check_b313_flares(br):
         check(f"{label}: it hands over Genesis", r.get("genesisLockedBefore") is True and r.get("genesisHeld") is True)
         check(f"{label}: the results name the flare, then the character, then its banner",
               (r.get("items") or [])[-3:] == ["flare:core:Worldheart", "character:genesis:Genesis", "banner:flare_genesis:Genesis"], r.get("items"))
-        check(f"{label}: a locked secret character is a black cut-out in Customize, the held one is not",
-              r.get("sil") == ["rgb(5, 6, 10)"] * 3 and r.get("voidShown") is True and r.get("silLive") is True, [r.get("sil"), r.get("voidShown"), r.get("silLive")])
-        check(f"{label}: a banner for each secret character, held with it, dark until then",
+        check(f"{label}: a locked secret character is its own drawing, greyed, in Customize (build 382), the held one is not locked",
+              r.get("sil") == ["greyed"] * 3 and r.get("voidShown") is True and r.get("silLive") is True, [r.get("sil"), r.get("voidShown"), r.get("silLive")])
+        check(f"{label}: a banner for each secret character, held with it, greyed (not veiled) until then",
               r.get("banners") == [True] * 4 and r.get("bannerHeld") == [True, False] and r.get("secretLocked") is True, [r.get("banners"), r.get("bannerHeld"), r.get("secretLocked")])
         check(f"{label}: an account already holding Void is handed its banner on Home",
               "Void" in (r.get("homeBanner") or "") and "Banner" in (r.get("homeBanner") or ""), r.get("homeBanner"))
@@ -11886,7 +11945,7 @@ def check_b313_flares(br):
 
     # Real taps, at each flare's live position, and the tooltip following it.
     # (The sync-code notice sits along the top, where the red flare can be.)
-    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
+    ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','class26e.savecode.card','1');localStorage.setItem('class26e.savecode.card','1');}catch(e){}")
     pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
       store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: true };
       try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}
@@ -12026,7 +12085,7 @@ def check_b313_flares_glass(br):
     flare in the clear says nothing about which flare it is."""
     print("\n93. build 313: the secret flares pass under the Liquid Glass bubbles (centred on their rings); taps stay right")
     for label, w, h in DEVICES:
-        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','1');}catch(e){}")
+        ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init="try{localStorage.setItem('class26e.savecode.asked','class26e.savecode.card','1');localStorage.setItem('class26e.savecode.card','1');}catch(e){}")
         pg.evaluate("""()=>{ document.querySelectorAll('.app-banner, #save-code').forEach(e => e.remove());
           store.mysteryColorsFound = { red: true, orange: true, yellow: true, violet: true, white: false };
           try{ ensureUnlocksShown(); markUnlocksShown(announceableHeldCharacters(), BANNERS.filter(b => bannerEarned(b.id)).map(b => b.id)); }catch(e){}
@@ -13399,37 +13458,34 @@ def check_b314_unlocks(br):
     check("a locked one opens its card and picks nothing, as a locked character or banner does", r.get("lockedCard") == 1 and r.get("lockedPick") == r.get("firstPick"), r)
     ctx.close()
 
-    # --- a secret flare banner nobody holds: frosted glass, still moving, "Unlock to see"
+    # --- a secret flare banner nobody holds. Build 314-381: frosted glass, "Unlock to see".
+    # BUILD 382 ("all the banners will be viewable ... remove that"): no veil - its own picture, greyed,
+    # with the padlock (one still picture of its layers, lockedBannerStill, not a live scene); the card a
+    # tap opens shows the banner itself; a held one is the live banner
     for w, h in ((440, 956), (834, 1194)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=1)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
           showCustomize('banner'); await wait(400);
           const t = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
-          t.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(1800);
-          const art = t.querySelector('.banner-opt-art'), still = art.querySelector('.bnr-veil-still');
-          out.veiled = art.classList.contains('is-veiled');
-          out.label = ((art.querySelector('.bnr-veil') || {}).textContent || '').trim();
-          /* a pre-blurred picture of the banner (40 x 15, softened, scaled up), never the live banner under glass */
-          out.still = !!still && still.classList.contains('is-ready') && /^url\("data:image\/png/.test(getComputedStyle(still).backgroundImage);
-          out.live = art.querySelectorAll('.bnr').length;
-          out.moving = [...art.querySelectorAll('.bnr-veil-still, .bnr-veil-glow')].reduce((n, e) => n + e.getAnimations().filter(a => a.playState === 'running').length, 0);
-          out.qmark = getComputedStyle(art, '::after').content;
-          const rc = art.getBoundingClientRect(); out.rect = [rc.left, rc.top, rc.width, rc.height];
-          /* the tap card */
+          t.scrollIntoView({ block: 'center', behavior: 'instant' }); for(let i = 0; i < 60 && !t.querySelector('.banner-opt-art > .bnr img'); i++) await wait(250); await wait(400);
+          const art = t.querySelector('.banner-opt-art'), b = art.querySelector(':scope > .bnr'), im = b && b.querySelector('img');
+          out.veiled = art.classList.contains('is-veiled') || !!art.querySelector('.bnr-veil') || t.classList.contains('is-secret');
+          out.still = !!im && im.complete && im.naturalWidth > 0;
+          out.grey = !!b && /grayscale/.test(getComputedStyle(b).filter);
+          const lk = t.querySelector('.banner-opt-lock'); out.lock = !!lk && getComputedStyle(lk).display !== 'none';
           t.click(); await wait(700);
-          const ca = document.querySelector('.unlock-card-banner .unlock-card-art'), cb = ca && ca.querySelector('.bnr');
-          out.cardVeiled = !!ca && ca.classList.contains('is-veiled') && !cb && !!ca.querySelector('.bnr-veil-still') && /unlock to see/i.test(ca.textContent);
+          const ca = document.querySelector('.unlock-card-banner .unlock-card-art');
+          out.cardShown = !!ca && !ca.classList.contains('is-veiled') && !!ca.querySelector('.bnr svg') && !/unlock to see/i.test(ca.textContent);
           document.querySelectorAll('.invite-overlay').forEach(o => o.remove());
-          /* a held one is not veiled */
-          window.isLockedCharacter = id => false; showCustomize('banner'); await wait(300);
+          window.isLockedCharacter = id => false; showCustomize('banner'); for(let i = 0; i < 60; i++){ const x = document.querySelector('.banner-opt[data-banner="flare_umbra"]'); if(x && x.querySelector('.banner-opt-art > .bnr svg')) break; if(x) x.scrollIntoView({ block: 'center', behavior: 'instant' }); await wait(250); }
           const t2 = document.querySelector('.banner-opt[data-banner="flare_umbra"]');
-          out.heldVeiled = !!t2 && t2.querySelector('.banner-opt-art').classList.contains('is-veiled');
+          out.heldLive = !!t2 && !t2.classList.contains('locked') && !!t2.querySelector('.banner-opt-art > .bnr svg');
           return out; }""")
         tag = "%dx%d" % (w, h)
-        check("secret flare banner, locked, %s: frosted glass over a blurred picture of it (no live banner under the glass), moving gently, labelled \"Unlock to see\", no \"?\"" % tag,
-              r.get("veiled") and r.get("still") and r.get("live") == 0 and r.get("moving", 0) >= 2 and r.get("label", "").lower() == "unlock to see" and r.get("qmark") in ("none", "normal", ""), r)
-        check("secret flare banner, locked, %s: the card a tap opens shows it the same way" % tag, r.get("cardVeiled"), r.get("cardVeiled"))
-        check("secret flare banner, held, %s: no veil" % tag, r.get("heldVeiled") is False, r.get("heldVeiled"))
+        check("secret flare banner, locked, %s: no veil - its own picture, greyed, padlocked (build 382)" % tag,
+              not r.get("veiled") and r.get("still") and r.get("grey") and r.get("lock"), r)
+        check("secret flare banner, locked, %s: the card a tap opens shows the banner itself" % tag, r.get("cardShown"), r)
+        check("secret flare banner, held, %s: the live banner" % tag, r.get("heldLive") is True, r)
         ctx.close()
 
     # --- reduce motion: the UFO plays nothing and still leaves the box in its colours; a pop-up is there at once
@@ -14238,49 +14294,18 @@ def check_b317_silhouettes(br):
     check("every secret's head is the set's size: within 12%% of the four's median height (%.1f units)" % med, not off,
           {c: round(v["h"], 1) for c, v in heads.items() if v})
 
-    # As drawn in Customize, nothing found: no outline in the top 9% of a tile.
+    # As drawn in Customize, nothing found. Build 317-381: four silhouettes, none cut off at the top.
+    # BUILD 382 ("they are gonna be viewable again"): no cut-out is drawn in Customize - the four secrets
+    # are their own drawings, greyed and padlocked (check-b382-unhide holds every character). The
+    # cut-out geometry above still holds for charSilhouetteSVG, which is kept.
     for (w, h, dev, dpr) in ((440, 956, "17 Pro Max", 3), (834, 1194, "iPad Pro 11", 2)):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, dpr=dpr)
-        pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
-          store.mysteryColorsFound = {}; document.querySelectorAll('.app-banner, #pushing-update, #intro-pop, .daily-alert').forEach(n => n.remove());
-          showCustomize('character'); await wait(800);
-          document.querySelectorAll('#tour-overlay, #tour-tooltip, #tour-line, #tour-line-dot').forEach(x => x.remove());
-          /* build 325: challenge and ultimate characters are cut-outs too,
-             each in its own look (check-b325-d holds those); this is the
-             four SECRETS' rule */
-          const s = document.querySelector('.avatarchar-option.is-sil-secret') || document.querySelector('.avatarchar-option.is-silhouette');
-          if(s) s.scrollIntoView({ block: 'center', behavior: 'instant' }); }""")
-        for _ in range(60):
-            n = pg.evaluate("() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => !!o.querySelector('.char-flip-play img') || !o.classList.contains('char-flip'))")
-            if n and all(n):
-                break
-            pg.wait_for_timeout(500)
-        pg.wait_for_timeout(400)
-        tiles = pg.evaluate("""() => [...document.querySelectorAll(document.querySelector('.is-sil-secret') ? '.avatarchar-option.is-sil-secret' : '.avatarchar-option.is-silhouette')].map(o => {
-          const b = o.getBoundingClientRect(); return { id: (o.title || ''), box: [b.left, b.top, b.width, b.height],
-            flip: !!o.querySelector('.char-flip-play img') }; })""")
-        shot = _Im.open(_io.BytesIO(pg.screenshot())).convert("RGB")
+        r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
+          store.mysteryColorsFound = {}; showCustomize('character'); await wait(800);
+          return ['voidwalker', 'umbra', 'singularity', 'genesis'].map(id => { const o = [...document.querySelectorAll('.avatarchar-option')].find(e => e.title === (AVATAR_DISPLAY_NAME[id] || id));
+            return !!o && o.classList.contains('locked') && !o.classList.contains('is-silhouette') && !o.querySelector('.char-sil') && !!o.querySelector('svg.avatarchar-svg'); }); }""")
+        check(f"{dev}: Customize shows the four secrets as their own drawings, locked, no cut-outs (build 382)", r == [True] * 4, r)
         ctx.close()
-        tops = {}
-        for t in tiles:
-            x, y, tw, th = t["box"]
-            crop = shot.crop((int(x * dpr), int(y * dpr), int((x + tw) * dpr), int((y + th) * dpr)))
-            W, H = crop.size
-            px = crop.load()
-            top = None
-            for yy in range(0, int(H * .5)):
-                for xx in range(int(W * .08), int(W * .92)):
-                    r_, g_, b_ = px[xx, yy]
-                    if (r_ + g_ + b_) / 3 >= 110 and max(r_, g_, b_) - min(r_, g_, b_) <= 24:
-                        top = yy / H
-                        break
-                if top is not None:
-                    break
-            tops[t["id"]] = round(top, 3) if top is not None else None
-        bad = {k: v for k, v in tops.items() if v is None or v < 0.09}
-        check(f"{dev}: Customize shows the four secrets as silhouettes", len(tiles) == 4, [t["id"] for t in tiles])
-        check(f"{dev}: no silhouette's outline is in the top 9% of its tile (cut off at the top)", len(tiles) == 4 and not bad, tops)
-
 
 CUTSPIN_RUN = """async (tier) => { const wait = ms => new Promise(r => setTimeout(r, ms));
   document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove());
@@ -22854,10 +22879,11 @@ def check_b320g_inspect(br):
       - an account updating in starts every found badge clean, and a copy
         without the field does not wipe this device's; the merge keeps each
         badge's newest time;
-      - rubbing cleans one stage per BINSPECT.rubPerStage strokes, with a
-        sparkle, saved; the hint says to rub it, then that it is clean; it
-        does not turn the badge;
-      - a fling and a wide wiggle never clean;
+      - (CHANGED IN 382: "no more rubbing badges to clean them") badgeDirtStage
+        is the one look for every badge, whatever its clean time; short
+        strokes over a six-week-old badge never clean it (no stage change,
+        no sparkle, the stored time untouched, no hint), and a fling and a
+        wide wiggle still turn it;
       - Reduce motion: no swing, a fade."""
     print("\n320g. the Badges screen: the new-badge dot, a badge in your hand, spin, dirt and cleaning")
     SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
@@ -23012,7 +23038,7 @@ def check_b320g_inspect(br):
         pg.mouse.up()
         spin["grab"] = [g1["omega"], round(g1["theta"], 2), round(g2["theta"], 2)]
         spin["restAfter"] = rest()["theta"]
-        spin["cleaned"] = pg.evaluate(STATE)["rubStrokes"]
+        spin["cleaned"] = pg.evaluate(STATE).get("rubStrokes")
     check("the spin follows the drag: a fast drag spins it over 2.5x a slow one, the same way",
           has and spin["slow"] > 0 and spin["fast"] > 2.5 * spin["slow"], spin)
     check("a press mid-spin stops it dead (no speed, no turn while held), and let go it comes to rest facing you or showing its back",
@@ -23074,8 +23100,10 @@ def check_b320g_inspect(br):
       out.p97 = L; out.hue = H;
       }catch(e){ out.threw = String(e); } return out; }""")
     ctx.close()
-    check("the stage is the whole weeks since the badge was cleaned: 0, 1, 2, 3, then 4 from four weeks on",
-          data.get("stages") == [0, 1, 2, 3, 4, 4] and data.get("live") == 2, data.get("stages", data))
+    # CHANGED IN 382: badgeDirtAt still reads the weeks, but nothing draws from it -
+    # badgeDirtStage is the one look (0) for a badge cleaned two weeks ago too
+    check("badgeDirtAt still counts whole weeks (0, 1, 2, 3, 4+), but a badge cleaned two weeks ago is drawn at the one look (382)",
+          data.get("stages") == [0, 1, 2, 3, 4, 4] and data.get("live") == 0, [data.get("stages", data), data.get("live")])
     check("an account updating in starts every found badge clean (now), and a copy without the field keeps this device's",
           data.get("seeded") is True and set(data.get("seededStage") or [1]) == {0} and data.get("notFound") is False and data.get("kept") is True,
           {k: data.get(k) for k in ("seeded", "seededStage", "notFound", "kept", "threw")})
@@ -23086,19 +23114,21 @@ def check_b320g_inspect(br):
           len(p97) == 5 and all(p97[i] > p97[i + 1] for i in range(4)) and p97[0] - p97[4] >= 25
           and max(min(abs(x - hue[0]), 360 - abs(x - hue[0])) for x in hue) <= 12, [p97, hue])
 
-    # ---- 5. rubbing cleans; a spin never does ----
+    # ---- 5. (CHANGED IN 382) no rubbing: nothing cleans a badge; a fling still turns it ----
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     pg.evaluate(SEED, {"dirt": 6})
     pg.evaluate("() => showRanksScreen('badges')"); pg.wait_for_timeout(1800); pg.evaluate("() => { try{ finishBadgeCaseOpen(document.querySelector('.badges-tab .ncase')); }catch(e){} }")  # (325) the case's opening is ~0.4s longer (its latches let go first): finished before the fake clock
     clk = _StepperS(pg)
     open_at(pg, clk, 0)
     rub = {"ok": pg.evaluate(STATE) is not None}
+    SAVED = "() => [store.badgeCleanedAt[badgeInspectNow.unit], (() => { try{ return JSON.parse(localStorage.getItem('class26e.drill.v1')).badgeCleanedAt[badgeInspectNow.unit]; }catch(e){ return null; } })()]"
     if rub["ok"]:
         x, y, wd = pg.evaluate("() => { const r = document.querySelector('.binspect-float').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }")
-        per = pg.evaluate("() => BINSPECT.rubPerStage")
         rub["start"] = pg.evaluate(STATE)["stage"]
+        rub["live"] = pg.evaluate("() => unitsInTeachingOrder().filter(unitBadgeEarned).map(u => badgeDirtStage(u))")
+        rub["saved0"] = pg.evaluate(SAVED)
         rub["hint0"] = pg.evaluate(VIEW)["dirt"]
-        # a fling, and a wiggle wider than a rub
+        # a fling, and a wide wiggle
         pg.mouse.move(x - wd * .3, y); pg.mouse.down()
         for k in range(4):
             pg.mouse.move(x - wd * .3 + (k + 1) * wd * .16, y); clk.step(1 / 30)
@@ -23112,55 +23142,37 @@ def check_b320g_inspect(br):
         for _ in range(150):
             clk.step(1 / 30)
         sp = pg.evaluate(STATE)
-        rub["afterSpin"] = [sp["stage"], sp["rubStrokes"], round(sp["theta"])]
-        # a rub: short strokes back and forth over the badge's middle
+        rub["afterSpin"] = [sp["stage"], round(sp["theta"])]
+        # what was a rub: short strokes back and forth over the badge's middle
         pg.mouse.move(x, y); pg.mouse.down()
         seen, thetas, sparks = [], [], 0
-        pos = 0
-        for k in range(per * 5 * 3 + 6):
+        for k in range(16 * 3 + 6):
             pos = (k % 6) if (k % 6) < 3 else 6 - (k % 6)
             pg.mouse.move(x - wd * .08 + pos * wd * .055, y + (k % 2))
             clk.step(1 / 60)
             s = pg.evaluate(STATE)
-            if seen and s["stage"] != seen[-1]:
-                rub.setdefault("at", []).append([s["stage"], s["rubStrokes"]])
             seen.append(s["stage"]); thetas.append(s["theta"])
             sparks = max(sparks, pg.evaluate("() => document.querySelectorAll('.binspect-spark').length"))
-            if k == per * 3 + 2:
-                rub["mid"] = [s["stage"], s["rubStrokes"], pg.evaluate("(u) => Math.round((Date.now() - store.badgeCleanedAt[u]) / BADGE_DIRT_WEEK_MS * 100) / 100", pg.evaluate("() => badgeInspectNow.unit")),
-                              pg.evaluate("() => { try{ return JSON.parse(localStorage.getItem('class26e.drill.v1')).badgeCleanedAt[badgeInspectNow.unit]; }catch(e){ return null; } }") == pg.evaluate("() => store.badgeCleanedAt[badgeInspectNow.unit]")]
         pg.mouse.up()
         for _ in range(40):
             clk.step(1 / 30)
-        end = pg.evaluate(STATE)
-        rub["seen"] = sorted(set(seen), reverse=True)
-        rub["steps"] = [i for i in range(1, len(seen)) if seen[i] != seen[i - 1]]
-        # turned only towards its front (the nearest whole turn), never past it
-        ref = round(thetas[-1] / 360) * 360
-        lo, hi = min(thetas[0], ref) - 10, max(thetas[0], ref) + 10
-        rub["maxTurn"] = round(max(max(lo - t, t - hi, 0) for t in thetas), 1)
-        rub["endFront"] = abs(thetas[-1] - ref) < 1
+        rub["seen"] = sorted(set(seen))
+        rub["maxTurn"] = round(max(abs(t - thetas[0]) for t in thetas), 1)
         rub["sparks"] = sparks
-        rub["end"] = [end["stage"], end["rubStrokes"]]
+        rub["end"] = pg.evaluate(STATE)["stage"]
+        rub["saved1"] = pg.evaluate(SAVED)
         rub["hint1"] = pg.evaluate(VIEW)["dirt"]
-        rub["perStage"] = per
         pg.evaluate("() => (typeof badgeInspectNow !== 'undefined' && badgeInspectNow) && badgeInspectNow.close()")
         for _ in range(30):
             clk.step(1 / 30)
         rub["tile"] = pg.evaluate("() => [...document.querySelectorAll('.badges-tab .ncase-cell')][0].querySelector('.badge-tile-art').dataset.dirt")
-        rub["stored"] = pg.evaluate("() => badgeDirtStage(unitsInTeachingOrder()[0])")
-    check("a fling and a wide wiggle never clean: still the dirtiest, no rub strokes counted, and it did turn",
-          rub["ok"] and rub["start"] == 4 and rub["afterSpin"][0] == 4 and rub["afterSpin"][1] == 0 and abs(rub["afterSpin"][2]) >= 90, rub.get("afterSpin"))
-    check("rubbing goes through every stage, one at a time, one stage per BINSPECT.rubPerStage strokes, with a sparkle, and is saved",
-          rub["ok"] and rub["seen"] == [4, 3, 2, 1, 0] and rub["end"][0] == 0
-          and rub.get("at") == [[3, rub["perStage"]], [2, 2 * rub["perStage"]], [1, 3 * rub["perStage"]], [0, 4 * rub["perStage"]]]
-          and abs(rub["mid"][2] - rub["mid"][0]) < .05 and rub["mid"][3] is True and rub["sparks"] >= 4 and rub["stored"] == 0 and rub["tile"] == "0", rub)
-    check("a rub never spins the badge: it only comes round to show its front (no further than that, give or take 10 degrees)",
-          rub["ok"] and rub["maxTurn"] <= 0 and rub.get("endFront") is True, [rub.get("maxTurn"), rub.get("endFront")])
-    # MOVED IN 321 (b321d): "If the badge is clean then it will not say that it's clean."
-    check("the hint: 'Rub to clean it.' while it is dirty, and nothing at all once it is clean (321)",
-          rub["ok"] and rub["hint0"] == "Rub to clean it." and not (rub["hint1"] or "").strip(),
-          [rub.get("hint0"), rub.get("hint1")])
+    check("a badge cleaned six weeks ago is drawn at the one look, the same stage as every other found badge (382)",
+          rub["ok"] and len(set(rub["live"])) == 1 and rub["start"] == rub["live"][0] and rub.get("tile") == str(rub["start"]), {k: rub.get(k) for k in ("start", "live", "tile")})
+    check("a fling and a wide wiggle still turn it, and leave its stage alone",
+          rub["ok"] and rub["afterSpin"][0] == rub["start"] and abs(rub["afterSpin"][1]) >= 90, rub.get("afterSpin"))
+    check("short strokes back and forth never clean it (382): the stage never changes, no sparkle, the stored clean time untouched, no hint, no turn inside the slack",
+          rub["ok"] and rub["seen"] == [rub["start"]] and rub["end"] == rub["start"] and rub["sparks"] == 0 and rub["saved0"] == rub["saved1"]
+          and rub["saved0"][0] is not None and not (rub["hint0"] or "").strip() and not (rub["hint1"] or "").strip() and rub["maxTurn"] <= 1, rub)
     ctx.close()
 
     # ---- 6. Reduce motion: a fade, no swing ----
@@ -23210,9 +23222,9 @@ def check_b321d_badges(br):
         99th >= 95, every one >= 88; 6a387e2's printed letters 60-84), and
         the back wears the badge's dirt (a stage 4 back is not a stage 0
         one);
-      - the badge in your hand says only its name, "Rub to clean it." while
-        it is dirty and nothing about cleanliness once clean, a quiet tip and
-        Close: no Mastered, no requirement, no bar, no count, no care line.
+      - the badge in your hand says only its name, a quiet tip and Close:
+        no Mastered, no requirement, no bar, no count, no care line (382:
+        and no "Rub to clean it." - a badge left six weeks is the same).
         A badge not found: its name and one line of progress."""
     print("\n321d. badge tokens: the grain as the clean look, a dirtier dirtiest, the bevel, an engraved back, a simple badge in your hand")
     ctx, pg = booted(br, 400, 400, seed=USED_ACCOUNT, dpr=1)
@@ -23361,12 +23373,15 @@ def check_b321d_badges(br):
         check(f"{dev}: a clean badge in your hand: its name, a quiet 'Swipe to spin it.' and Close - no Mastered, no requirement, no bar, no count, nothing about being clean",
               len(c0["texts"]) == 3 and c0["texts"][0].endswith(" Badge") and "spin" in c0["texts"][1].lower() and c0["texts"][2] == "Close"
               and not c0.get("bar") and not crowd(c0["texts"]) and not [x for x in c0["texts"] if "clean" in x.lower()], c0)
-        check(f"{dev}: a dirty one adds one short hint, 'Rub to clean it.', and nothing else",
-              c4["texts"][:2] == [c0["texts"][0], "Rub to clean it."] and len(c4["texts"]) == 4 and not c4.get("bar") and c4.get("stage") == 4, c4)
+        # CHANGED IN 382: "no more rubbing badges to clean them" - no hint, one look
+        check(f"{dev}: a badge cleaned six weeks ago is the same in your hand as a new one: the same words (no 'Rub to clean it.'), stage and glow (382)",
+              c4["texts"] == c0["texts"] and not c4.get("bar") and c4.get("stage") == c0.get("stage") and c4.get("glow") == c0.get("glow"), [c0, c4])
         check(f"{dev}: a badge not found: its name and one line of progress, no bar",
               len(em["texts"]) == 3 and em["texts"][0].endswith(" Badge") and re.match(r"^\d+ of \d+ hundos?$", em["texts"][1]) and em["texts"][2] == "Close" and not em.get("bar"), em)
-        check(f"{dev}: the dirtiest has a noticeably weaker glow (<= .2 of clean) and light across its face (<= .2)",
-              c0.get("glow") == 1 and c4.get("glow") is not None and c4["glow"] <= .2 and res["shineK"] <= .2, [c0.get("glow"), c4.get("glow"), res["shineK"]])
+        # (382) the in-hand glow is the one look's (BADGE_DIRT.glow[0], a touch under 1); the
+        # scale's dirtiest step is kept in the table, drawn by nothing
+        check(f"{dev}: the glow in your hand is the one look's, a touch under full, and the scale's dirtiest light is still <= .2 (382)",
+              c0.get("glow") is not None and .5 <= c0["glow"] < 1 and res["shineK"] <= .2, [c0.get("glow"), c4.get("glow"), res["shineK"]])
 
 
 
@@ -26337,9 +26352,11 @@ def check_b324g_toggles(br):
         ctx, pg = booted(br, w, h, seed=USED_ACCOUNT, init=_ROOM_FAKE, touch=True)
         pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop').forEach(n=>n.remove()); __useRooms(); store.seenUnitSelectTour = true; store.seenUnitHoldTip = true; store.seenSettingsTour = true; }")
         found = []
-        pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1400)
-        pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
-        found += pg.evaluate(B324G_SWITCHES)
+        # build 382: Settings is a menu; its switches are on its category pages
+        for _pg in ("sound", "study", "motion", "rankings"):
+            pg.evaluate("(k) => showAppearance({ page: k })", _pg); pg.wait_for_timeout(900)
+            pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+            found += pg.evaluate(B324G_SWITCHES)
         pg.evaluate("""async ()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms));
           cfg.mode='drill'; cfg.units=[]; showSetup(); await wait(800);
           const p=document.querySelector('.screen-setup .pick'); p && p.click(); await wait(500);
@@ -26369,8 +26386,8 @@ def check_b324g_toggles(br):
           return { before, after: b.getAttribute('aria-checked'), open: vroomIsOpen }; }""")
         check("%s: Open to class turns on with a tap (327: the switch again; 326 an option of two)" % label,
               lob.get("before") == "false" and lob.get("after") == "true" and lob.get("open") is True, lob)
-        # ---- press, drag, release on Settings ----
-        pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
+        # ---- press, drag, release on Settings (its Study page since build 382) ----
+        pg.evaluate("() => showAppearance({ page: 'study' })"); pg.wait_for_timeout(1300)
         pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
         idx = pg.evaluate("() => [...document.querySelectorAll('.settings-card .opt')].findIndex(o => /auto-advance/i.test(o.textContent))")
         pg.evaluate("(i) => { const t=[...document.querySelectorAll('.settings-card .opt > .box')][i]; window.scrollBy({ top: t.getBoundingClientRect().top - 300, behavior: 'instant' }); }", idx)
@@ -26438,6 +26455,9 @@ def check_b324g_toggles(br):
         check("%s: through the lens - it swelled past the track - and settled back to the resting knob" % label,
               lh > (t3[3] - t3[1]) + 6 and not r1["lens"] and r1["knobOp"] > .99 and abs(r1["kw"] - r0["kw"]) < .5, {"maxLensH": lh, "after": r1})
         # ---- an upright drag scrolls and flips nothing ----
+        # (382: the switches are on a short category page now - room below it so the page has somewhere to scroll)
+        pg.evaluate("() => { const p = document.querySelector('#stage .screen-settings-page'); if(p) p.style.paddingBottom = '120vh'; }")
+        pg.wait_for_timeout(200)
         y0 = pg.evaluate("() => scrollY")
         x = (t3[0] + t3[2]) / 2; yy = (t3[1] + t3[3]) / 2
         T("touchStart", [(x, yy)])
@@ -26472,9 +26492,13 @@ def check_b324g_toggles(br):
           trackIn: !tb || (tb.left >= r.left - .5 && tb.right <= r.right + .5), tw: tb ? tb.width : null,
           text: (row.textContent || '').trim().slice(0, 30) }); });
       return { rows: out, hs: document.documentElement.scrollWidth - innerWidth }; }"""
-    pg.evaluate("() => showAppearance()"); pg.wait_for_timeout(1300)
-    pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
-    f1 = pg.evaluate(FIT, ".settings-card > label.opt")
+    # build 382: Settings' switches are on its category pages
+    f1 = {"rows": [], "hs": 0}
+    for _pg in ("sound", "study", "motion", "rankings"):
+        pg.evaluate("(k) => showAppearance({ page: k })", _pg); pg.wait_for_timeout(900)
+        pg.evaluate("() => document.querySelectorAll('#tour-overlay,.tour-tip').forEach(n=>n.remove())")
+        _f = pg.evaluate(FIT, ".settings-card > label.opt")
+        f1["rows"] += _f["rows"]; f1["hs"] = max(f1["hs"], _f["hs"])
     pg.evaluate("(a) => (%s)(a[0], a[1])" % _B323V_ROOM, [6, "race"])
     pg.wait_for_timeout(1200)
     f2 = pg.evaluate(FIT, ".vroom-roster-tools")
@@ -27997,7 +28021,7 @@ def check_b324n2_friends(br):
     check("away, he is not counted online (2 online)", (aw.get("info") or "").startswith("6 friends") and "2 online" in (aw.get("info") or ""), aw)
     check("Manage friends lists Nova with his rank and no Remove (no button at all), the others keep theirs",
           mg.get("has") and mg.get("buttons") == 0 and "Supernova" in (mg.get("text") or "") and "Available" in (mg.get("text") or "")
-          and mg.get("removes") == 5 and (mg.get("order") or [])[:3] == ["Ann", "Nova", "Zed"], mg)
+          and mg.get("removes") == 5 and (mg.get("order") or [])[:3] == ["Nova", "Ann", "Zed"], mg)  # build 382: the instructor first, always
     check("...counts him online while he is available, and a tap opens his card", "3 online" in (mg.get("head") or "") and mg.get("card"), mg.get("head"))
     check("display only: not in friendPublicIds(), not counted for Koi Pond", "nova" not in (r.get("ids") or []) and len(r.get("ids") or []) == 5
           and r.get("koi") == r.get("koi0") and r.get("koi", 9) <= 5, {k: r.get(k) for k in ("ids", "koi0", "koi")})

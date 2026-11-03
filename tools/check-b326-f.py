@@ -329,6 +329,10 @@ SURF = """(sels) => {
 # the boxes on each screen that must be ONE family of surfaces
 SURF_SCREENS = [
     ("Settings", "() => showProfile('settings')", [".settings-card", ".slab.motion-summary"]),
+    # build 382: Settings is a menu; the cards of switches are on its pages
+    ("Settings > Study", "() => showAppearance({ page: 'study' })", [".settings-card", ".slab.motion-summary"]),
+    ("Settings > Sound & Haptics", "() => showAppearance({ page: 'sound' })", [".settings-card", ".slab.motion-summary"]),
+    ("Settings > Sync", "() => showAppearance({ page: 'sync' })", [".settings-card", ".slab.motion-summary"]),
     ("the Virtual Room lobby", "LOBBY", [".vroom-test-summary", ".vroom-roster"]),
     ("the start sheet", "() => { cfg.mode = 'exam'; cfg.units = ['Penal Code', 'Identity Crimes']; showSetupWithSheet(); }",
      [".unitoptions-modal-sheet .optionsmodal-body > .sect", ".unitoptions-modal-sheet .bank-rows", ".unitoptions-modal-sheet .timer-sect", ".unitoptions-modal-sheet .sheet-summary"]),
@@ -406,6 +410,9 @@ def check_surfaces(br):
 
 CONTRAST_SCREENS = [
     ("settings", "() => showProfile('settings')"),
+    ("settings-study", "() => showAppearance({ page: 'study' })"),   # build 382: the switches are on its pages
+    ("settings-sound", "() => showAppearance({ page: 'sound' })"),
+    ("settings-sync", "() => showAppearance({ page: 'sync' })"),
     ("lobby", "LOBBY"),
     ("sheet", "() => { cfg.mode = 'exam'; cfg.units = ['Penal Code', 'Identity Crimes']; showSetupWithSheet(); }"),
     ("modes", "() => showModeSelect()"),

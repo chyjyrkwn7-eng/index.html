@@ -77,12 +77,12 @@ PRE = r"""
   const home = async () => { showHome(); await wait(500); clearTop(); try{ clearTimeout(homeUnlockTimer); homeUnlockTimer = null; }catch(e){}
     store.pendingBadgeUnlocks = []; };
   /* an account friends with him for ten days, everything it has heard,
-     his last message two days ago - and a new session */
+     his last message four days ago (build 382: three days between his messages) - and a new session */
   const settled = () => {
     localStorage.removeItem('class26e.nova'); novaAwayForce = false;
     store.novaHeard = {}; novaBefriend({ quiet: true });
     const s = novaState(); s.since = Date.now() - 10 * D; s.spontAt = Date.now() - 10 * D; novaSave(s);
-    const h = novaHeardMap(); novaSeed(h, Date.now() - 10 * D); h['@last'] = Date.now() - 2 * D;
+    const h = novaHeardMap(); novaSeed(h, Date.now() - 10 * D); h['@last'] = Date.now() - 4 * D;
     h['wk:' + weekKeyNow()] = Date.now() - 2 * D;
     novaSessionAt = 0;
     store.studyLog = Object.assign({}, store.studyLog);
@@ -252,8 +252,8 @@ def check_day(br):
         check("%s: ...announced with the chat's own banner, and nothing more that day (even in a new session)" % dev,
               r.get("banner") and r.get("again") == 1, {"banner": r.get("banner"), "again": r.get("again")})
         # the next day, the next one: the week's challenge
-        # (327z15) his gap is 44h, not 20h (NOVA_QUIET_MS, two days between messages): 'the next' is two days on
-        at(pg, WED + datetime.timedelta(days=2))
+        # (327z15) his gap is 44h, not 20h; (382) 72h, three days between messages: 'the next' is three days on
+        at(pg, WED + datetime.timedelta(days=3, hours=1))
         r2 = pg.evaluate("async () => {" + PRE + """
           await home(); novaSessionAt = 0; await ticks(6);
           const m = own();
@@ -269,7 +269,7 @@ def check_day(br):
               r2.get("kinds") == ["rank", "challenge"] and r2.get("banner") and r2.get("act") == "Accept" and r2.get("face")
               and r2.get("rect") and r2["rect"][0] >= 0 and r2["rect"][2] <= r2.get("vw", 0) + 1, r2)
         # the badge and crew were said with the rank-up: they never come again
-        at(pg, WED + datetime.timedelta(days=3))
+        at(pg, WED + datetime.timedelta(days=4))
         r3 = pg.evaluate("async () => {" + PRE + """
           novaSessionAt = 0; store.studyLog = {}; store.testHistory = []; await home(); await ticks(6);
           return { kinds: own().map(x => x.kind) }; }""")
@@ -304,8 +304,8 @@ def check_devices(br):
         ctx.close()
         return
     check("device A says the rank-up; device B, synced, says nothing that day", r.get("a") == ["rank"] and r.get("b") == [], r)
-    # (327z15) his gap is 44h, not 20h (NOVA_QUIET_MS, two days between messages): 'the next' is two days on
-    at(pg, WED + datetime.timedelta(days=2))
+    # (327z15) his gap is 44h, not 20h; (382) 72h, three days between messages: 'the next' is three days on
+    at(pg, WED + datetime.timedelta(days=3, hours=1))
     r2 = pg.evaluate("async () => {" + PRE + """
       novaSessionAt = 0; await home(); await ticks(6);
       const b = own().map(x => x.kind);
@@ -348,7 +348,7 @@ def check_quiet(br):
     check("...the next day, at most one message, and never old news (no rank-up or progress it already had)",
           len(r2.get("kinds") or []) <= 1 and not any(k in ("rank", "progress") for k in r2.get("kinds") or []), r2)
     # a brand-new account
-    at(pg, WED + datetime.timedelta(days=3))
+    at(pg, WED + datetime.timedelta(days=3, hours=1))
     r3 = pg.evaluate("async () => {" + PRE + """
       localStorage.removeItem('class26e.nova'); store.novaHeard = {}; novaSessionAt = 0;
       novaBefriend({ intro: true, quiet: true });
@@ -361,8 +361,8 @@ def check_quiet(br):
       novaSessionAt = 0; await ticks(6);
       return { day1: own().map(x => x.kind), u }; }""")
     check("a new account's first day stays quiet beyond his introduction, with a badge and a character found", r3.get("day1") == [], r3)
-    # (327z15) his gap is 44h, not 20h (NOVA_QUIET_MS, two days between messages): 'the next' is two days on
-    at(pg, WED + datetime.timedelta(days=5, hours=2))
+    # (327z15) his gap is 44h, not 20h; (382) 72h: 'the next' is three days on, past the Tuesday the recap owns
+    at(pg, WED + datetime.timedelta(days=7, hours=2))
     r4 = pg.evaluate("async () => {" + PRE + """
       novaSessionAt = 0; await home(); await ticks(6);
       return { kinds: own().map(x => x.kind) }; }""")
@@ -400,7 +400,7 @@ def check_week(br):
         r3 = pg.evaluate("async () => {" + PRE + """
           novaSessionAt = 0; store.studyLog = {}; store.testHistory = []; await home(); await ticks(6);
           const m = own().filter(x => x.kind === 'challenge');
-          /* his chat: last week's Accept has ended, this week's is live */
+          /* his chat: last week's challenge has ended - no button at all since 382 - and this week's Accept is live */
           clearTop(); openNovaChat(); await wait(900);
           await wait(600);
           const acts = [...document.querySelectorAll('#chatdock .nova-msg-accept')].map(b => ({ t: b.textContent, d: b.disabled,
@@ -410,9 +410,10 @@ def check_week(br):
         if SHOTS:
             pg.screenshot(path=os.path.join(SHOTS, "e-challenge-chat-%s.png" % w))
         acts = r3.get("acts") or []
-        check("%s: the next week, a new one; in his chat last week's Accept has ended and this week's is live, 44px, on screen" % dev,
-              r3.get("n") == 2 and len(set(r3.get("wks") or [])) == 2 and [a["t"] for a in acts] == ["Ended", "Accept"]
-              and acts[0]["d"] and not acts[1]["d"] and acts[1]["r"][2] >= 44 and acts[1]["r"][0] >= 0 and acts[1]["r"][1] <= r3.get("vw", 0), r3)
+        # build 382: "when the challenge is over I see there's a button but it says ended, remove that"
+        check("%s: the next week, a new one (seven days on); in his chat last week's has no button and this week's Accept is live, 44px, on screen" % dev,
+              r3.get("n") == 2 and len(set(r3.get("wks") or [])) == 2 and [a["t"] for a in acts] == ["Accept"]
+              and not acts[0]["d"] and acts[0]["r"][2] >= 44 and acts[0]["r"][0] >= 0 and acts[0]["r"][1] <= r3.get("vw", 0), r3)
         r4 = pg.evaluate("async () => {" + PRE + """
           const b = [...document.querySelectorAll('#chatdock .nova-msg-accept')].find(x => !x.disabled);
           if(!b) return { tapped: false };
@@ -488,7 +489,7 @@ def check_rules(br):
       /* (327z15) since 327z the recap waits for this launch's server copy (cloudConfirmedFor);
          this account has a code and no cloud here, so it is marked read */
       if(syncCode) cloudConfirmedFor = syncCode;
-      novaHeardMap()['@last'] = Date.now() - 2 * D; novaSessionAt = 0;
+      novaHeardMap()['@last'] = Date.now() - 4 * D; novaSessionAt = 0;
       await home(); try{ clearTimeout(weekRecapTimer); }catch(e){}
       maybeShowWeekRecap(0); await wait(600);
       const recap = !!document.querySelector('.nova-talk.is-weekrecap');

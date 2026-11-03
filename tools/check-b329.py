@@ -14,7 +14,7 @@ def seed(pid="xph5b57jbp5a"):
 INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0001'); localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc']));
  %s
- ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked'].forEach(k=>localStorage.setItem(k,'1'));
+ ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
 ok = True
 def chk(name, cond, info=""):
@@ -34,8 +34,10 @@ with sync_playwright() as pw:
     if "bubble" in want:
         for dev in ("se1", "se3", "15", "promax", "ipad11", "mac"):
             ctx, page = page_for(br, dev)
-            r = page.evaluate("()=>{ const f=%s; return {dq:f('.daily-question-fab'), cb:f('.class-bubble')} }" % R)
-            chk(dev + ": the class bubble is the daily question's size", r["dq"] and r["cb"] and abs(r["dq"]["w"] - r["cb"]["w"]) <= 1 and r["cb"]["w"] == r["cb"]["h"], r)
+            r = page.evaluate("()=>{ const f=%s; return {dq:f('.daily-question-fab'), cb:f('.class-bubble'), ch:f('#chatdock-btn')} }" % R)
+            # (382) on a phone the daily question's mirror; on a tablet or laptop it stands opposite the chat button, so it is that one's size
+            ref = r["dq"] if dev in ("se1", "se3", "15", "promax") else r["ch"]
+            chk(dev + ": the class bubble is the daily question's size (phone) / the chat button's (tablet, laptop)", ref and r["cb"] and abs(ref["w"] - r["cb"]["w"]) <= 1 and r["cb"]["w"] == r["cb"]["h"], r)
             ctx.close()
     if "new" in want:
         ctx, page = page_for(br, "15")

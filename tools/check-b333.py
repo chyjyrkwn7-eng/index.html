@@ -48,7 +48,7 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1500)
     pic = pg.evaluate("""()=>{ const h = document.querySelector('.ifc-code-body .ifc-clips'), t = document.querySelector('.ifc-code-body .ifc-county-text');
       return { clips: !!h && !h.hidden && !!h.querySelector('canvas'), textHidden: !!t && t.hidden }; }""")
-    chk("an HC Amendments reference opens on the cropped picture, the text one tap away", pic["clips"] and pic["textHidden"], pic)
+    chk("an HC Amendments reference opens on the cropped picture (its stored text only a fallback since 382: no Show as text)", pic["clips"] and pic["textHidden"], pic)
     g_ = pg.evaluate("()=>ifcGreetingLines().map(l => l.text).join(' | ')")
     chk("Nova's welcome to the class names the 2021 IFC and the HC amendments", "2021 IFC" in g_ and "amendments" in g_, g_)
     pg.evaluate("()=>[...document.querySelectorAll('.ifc-code .ifc-link')].find(x => /whole page/.test(x.textContent)).click()")
