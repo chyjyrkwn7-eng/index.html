@@ -96,6 +96,33 @@ with sync_playwright() as pw:
                b[0]["tl"] > 4 and all(x["bl"] < 1 for x in b[:5]) and all(x["tl"] < 1 for x in b[1:6]), b)
         ck("%s: no page errors" % dev, not errs, errs[:2])
         ctx.close()
+    print("\n4. the switch and the search field stand out; Search sits at the left, beside the magnifier")
+    from PIL import Image
+    import io
+    for (w, h, dev) in [(440, 956, "phone"), (834, 1194, "iPad")]:
+        st = g["store"](leaderboardOptIn=True, publicId="pub00")
+        ctx, pg = g["open_page"](br, g["init_account"]("TEST-3834", st), w=w, h=h)
+        g["connect"](pg, "TEST-3834", st)
+        pg.evaluate("()=>{ weekRecapDayOk = () => false; showRankings('hundos'); }"); pg.wait_for_timeout(1800)
+        r = pg.evaluate("""()=>{ const f=document.querySelector('.rank-search'), i=document.querySelector('.rank-search-wrap > .searchicon'), t=document.querySelector('.screen-rankings > .navsegment');
+          const fr=f.getBoundingClientRect(), ir=i.getBoundingClientRect(), tr=t.getBoundingClientRect(), cs=getComputedStyle(f);
+          const pad=parseFloat(cs.paddingLeft);
+          return { align: cs.textAlign, textStart: Math.round(fr.left + pad), iconRight: Math.round(ir.right), fieldLeft: Math.round(fr.left),
+            field:[fr.left, fr.top, fr.width, fr.height], track:[tr.left, tr.top, tr.width, tr.height],
+            fb: parseFloat(cs.borderTopWidth), tb: parseFloat(getComputedStyle(t).borderTopWidth) }; }""")
+        ck("%s: the placeholder starts at the left, just right of the magnifier (%s)" % (dev, r),
+           r["align"] in ("left", "start") and 0 <= r["textStart"] - r["iconRight"] <= 16, r)
+        img = Image.open(io.BytesIO(pg.screenshot())).convert("L")
+        def lum(x, y): return img.getpixel((int(x), int(y)))
+        def inside(box):   # the fill, away from the words: just inside the right end of the box, at its middle
+            return lum(box[0] + box[2] - 6, box[1] + box[3] / 2)
+        def outside(box):  # the sky just above the box
+            return lum(box[0] + box[2] - 6, box[1] - 5)
+        tbx = r["track"]   # the track at its LEFT end - the picked segment (Hundos) is at the right
+        fi, fo, ti, to = inside(r["field"]), outside(r["field"]), lum(tbx[0] + 6, tbx[1] + tbx[3] / 2), lum(tbx[0] + 6, tbx[1] - 5)
+        ck("%s: the search field is lighter than the sky behind it by 12+ levels, with a rim (%d vs %d, rim %s)" % (dev, fi, fo, r["fb"]), fi - fo >= 12 and r["fb"] >= 1, [fi, fo])
+        ck("%s: so is the switch's track (%d vs %d, rim %s)" % (dev, ti, to, r["tb"]), ti - to >= 12 and r["tb"] >= 1, [ti, to])
+        ctx.close()
     br.close()
 print("\n%s  (%d failure(s))" % ("ALL PASS" if not fails else "FAILED: " + ", ".join(fails[:6]), len(fails)))
 sys.exit(1 if fails else 0)

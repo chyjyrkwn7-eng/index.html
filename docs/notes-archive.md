@@ -30998,3 +30998,17 @@ week. The leaderboard, why is the top 3 disconnected from the rest, fix that as 
   b327-a/c/j, b327r) still play it on Home and are superseded by these.
 - Run: check-sync ALL PASS (Find me flaked once under load, passes alone), sweep --quick 14/14, check-b381, check-b383-*
   ALL PASS. check-b382-board's CLS 0.0514 is the same number on 382.
+
+### 383: the board's switch and search field visible; "Search" at the left; the weekly board did reset
+Madison (iPhone screenshot of the live 382 Hundos board): "ensure you can actually see them though. The word search shouldn't be
+centered, it should be centered left (it would be just to the right of the magnifying glass).. why did this weeks leaderboard
+not reset..?"
+- Measured on 382: the search field and the switch's track were 1-3 grey levels off the sky behind them, no rim. Now both take
+  color-mix(--ink 14%) over --surface-1 and a 1px --surface-border rim: 14-17 levels lighter.
+- The placeholder: text-align left, starting just right of the magnifier. This replaces 381's centring (the newer ask wins);
+  check-b381's centring check is superseded, check-b382-ios (5) now asks for left.
+- The week did reset (Monday 00:00 local, weekKeyNow). Checked against the live leaderboard rows' week / weekPoints /
+  prevWeekPoints fields (no ids or names recorded here): the active rows are on the new week with points separate from last
+  week's. The class earned a lot on Monday and Tuesday morning; his screenshot was the all-time Hundos board.
+- Gate: check-b383-feedback section 4 (placeholder at the left beside the icon; field and track 12+ levels over the sky, with a
+  rim; 6 fail on 382).

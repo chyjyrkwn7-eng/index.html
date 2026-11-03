@@ -35601,8 +35601,9 @@ html.is-browser{ --fade-paper: transparent; }
   /* the switch: an iOS segmented control across the page - a quiet track, the picked segment a raised lighter pill */
   html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs{
     display:flex !important; width:100%; max-width:100%; margin:0 0 .7rem; padding:3px; gap:0; flex-wrap:nowrap;
-    border-radius:12px; border:0 !important;
-    background:linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
+    border-radius:12px; border:1px solid var(--surface-border) !important;
+    /* (383) "ensure you can actually see them": iOS's fill over the card colour, a step lighter than the sky behind it */
+    background:linear-gradient(color-mix(in srgb, var(--ink) 14%, transparent), color-mix(in srgb, var(--ink) 14%, transparent)), var(--surface-1) !important;
     box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
   }
   html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs > .iconbtn{
@@ -35610,10 +35611,10 @@ html.is-browser{ --fade-paper: transparent; }
     padding:var(--tab-py) .4rem; font-size:.92rem; font-weight:600; letter-spacing:-.005em; color:var(--soft);
   }
   html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs > .iconbtn.active{
-    color:var(--ink); background:color-mix(in srgb, var(--ink) 17%, transparent); box-shadow:0 1px 3px var(--surface-inset);
+    color:var(--ink); background:color-mix(in srgb, var(--ink) 22%, transparent); box-shadow:0 1px 3px var(--surface-inset);
   }
   html[data-theme][data-layout] body .screen-rankings > .navsegment.profiletabs > .seg-slider{
-    background:color-mix(in srgb, var(--ink) 17%, transparent) !important; background-image:none !important;
+    background:color-mix(in srgb, var(--ink) 22%, transparent) !important; background-image:none !important;
     border:0 !important; border-radius:9px !important; box-shadow:0 1px 3px var(--surface-inset), 0 0 0 .5px var(--surface-lift) !important;
   }
   /* the board's line, a footnote under the switch */
@@ -35624,14 +35625,14 @@ html.is-browser{ --fade-paper: transparent; }
   /* search and Find me: a filled, rounded search field and a tinted action beside it */
   html[data-layout] body .screen-rankings > .rank-tools{ gap:.6rem; margin-bottom:1.25rem; align-items:stretch; }
   html[data-theme][data-layout] body .screen-rankings .rank-search-wrap > .rank-search{
-    min-height:44px; height:44px; border-radius:12px !important; border:0 !important; box-shadow:none !important;
-    background:linear-gradient(var(--surface-lift), var(--surface-lift)), var(--surface-1) !important;
+    min-height:44px; height:44px; border-radius:12px !important; border:1px solid var(--surface-border) !important; box-shadow:none !important;
+    background:linear-gradient(color-mix(in srgb, var(--ink) 14%, transparent), color-mix(in srgb, var(--ink) 14%, transparent)), var(--surface-1) !important;
     backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
     font-size:1rem; text-align:left; padding-right:2.6rem;
   }
-  /* the placeholder stays in the field's middle (381, Madison: "The word search names is not centered for leaderboard search"):
-     381's padding-right that balances the magnifier, re-stated after the rule above; what is typed starts at the left */
-  html[data-layout] body .screen-rankings .rank-search-wrap > .rank-search:placeholder-shown{ text-align:center; padding-right:clamp(1rem, calc(100% - 2.6rem - 7em), 2.6rem); }
+  /* (383) the placeholder at the LEFT, just right of the magnifier - Madison: "The word search shouldn't be centered, it
+     should be centered left (it would be just to the right of the magnifying glass)". This replaces 381's centring. */
+  html[data-layout] body .screen-rankings .rank-search-wrap > .rank-search:placeholder-shown{ text-align:left; padding-right:1rem; }
   html[data-layout] body .screen-rankings .rank-search-wrap > .searchicon{ color:var(--soft); opacity:.85; }
   html[data-theme][data-layout] body .screen-rankings .rank-tools > .rank-me-btn{
     min-height:44px; padding:0 1.05rem; border-radius:12px; border:0 !important;

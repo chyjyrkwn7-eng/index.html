@@ -8,8 +8,8 @@ laptop (1440x900):
     corners and only its last bottom corners, a hairline (::after, 1px) under every row but the last, starting right of the row's
     left edge (inset to the name), every row >= 44px, and no row carries a backdrop-filter;
 (4) (383) the top three are the list's first rows: no gap under them, no bottom corners;
-(5) the search field and Find me are each >= 44px tall, the placeholder in the field's middle (381, Madison: "The word search
-    names is not centered for leaderboard search" - restored after 382's look had set it left);
+(5) the search field and Find me are each >= 44px tall, the placeholder at the left beside the magnifier (383, Madison: "The
+    word search shouldn't be centered, it should be centered left" - replacing 381's centring);
 (6) the calendar: today's number is a circle in the accent (filled when picked), the cards carry no backdrop-filter and are rounded
     >= 18px, the cards' headings are not spaced capitals, the test's topics are rows with a hairline between them;
 (7) no horizontal overflow on either screen at any size.
@@ -85,8 +85,8 @@ with sync_playwright() as pw:
             b["gaps"] and max(abs(x) for x in b["gaps"]) <= 0.6 and corner_ok and hair_ok and b["hmin"] >= 44 and b["blur"] == 0, b)
         chk("%s board: the top three are the list's first rows - no gap under them, no bottom corners %s" % (dev, b["pod"]),
             all(p and p["bl"] < 1 and abs(p["gap"] or 0) <= 0.6 for p in b["pod"]), b["pod"])
-        chk("%s board: search %s and Find me %spx are >= 44px, the placeholder centred" % (dev, b["search"], b["me"]),
-            b["search"] and b["search"]["h"] >= 44 and b["me"] >= 44 and b["search"]["align"] == "center", b)
+        chk("%s board: search %s and Find me %spx are >= 44px, the placeholder at the left (383)" % (dev, b["search"], b["me"]),
+            b["search"] and b["search"]["h"] >= 44 and b["me"] >= 44 and b["search"]["align"] in ("left", "start"), b)
         chk("%s board: no sideways scroll (%dpx)" % (dev, b["over"]), b["over"] <= 0, b)
         pg.evaluate("()=>showCalendar()"); pg.wait_for_timeout(1500); pg.evaluate(CLEAR)
         t = pg.evaluate(TITLE); c = pg.evaluate(CAL)
