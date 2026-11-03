@@ -31376,3 +31376,40 @@ screen so fix that pathway/navigation."
   goes; a Drill's Quit test still Home - 7 fail on the previous commit. check-behaviour b13114 (starred box) now takes 382's plain
   count ("1"), not "1 question" (it failed on the previous commit too). check-b382-input, check-b327z10, check-studyflow,
   check-savetest, behaviour b297/b303/b314_study/review_reach/update_and_cards, sweep-layout --quick 14/14: pass.
+
+### Build 383 - one look beyond Home: the theme's colours washed, one glass for every card; a green dot for a picked unit; the daily question asks to be tapped
+Madison, 383: "the unit selection darker look is a step in the right direction [but] that darkness doesn't go with the screen ...
+the look of the unit cards, that look needs to be cohesive with the app, like for the mode selection screen for example. The entire
+app is gonna need this. If that means we need to change the background the app beyond the main menu ... like the same color theme
+but kinda how the background used to be where it just some colors but it would be kinda washed out so it's not distracting? Almost
+like the result screen ... The main menu background is perfect, it's the rest though ... I love the pop frosted look and bottom tab
+... Maybe beyond the main menu the background is just your themes color but a little blurry/darker it's not distracting?" / "I
+don't like the checkmark fills up from top to bottom ... What if we did like a green glowing dot/circle" / "The daily question
+button, when it's ready ... doesn't look very cool or like 'click me' feel. Fix that, make it better but make it still match the
+main menu."
+- THE BACKGROUND: Home is unchanged (body.sky-home: the stars at 1). Every other screen: NO stars (body::after 0; was .6) and
+  #nova-wash instead - a real element (index.html, just before .wrap) between body::before (the paper + its glow, which the
+  status-bar strip and html's fallback are matched to - untouched) and body::after: three wide soft radial pools of the theme's
+  own triad over the paper - --bg-c2 30% top-left, --bg-c3 26% right, --bg-c1 20% along the foot - no edges, no motion. Masked
+  clear over the top inset exactly as the stars are (so the status-bar strip is what it was). .45 while a question is up (the
+  "settle down" rule the glow and stars follow); results at 1. Opacity is the only thing that changes (.6s). Dark theme only;
+  party keeps its own sky (its stars restored to .6 off Home). Reduce motion: no transition.
+- ONE GLASS: beyond Home the card material is thinner so the wash comes through - --surface-1 rgba(12,13,19,.4) (was .62 at the
+  root and .7 forced on the cards by 382's "no stars through the cards" block; that block is overridden for body:not(.sky-home),
+  there being no stars there now). Every card in the shared Delta rule (mode, unit, Settings, Friends, Stats, Customize, the board's
+  cells, class cards) follows. The Calendar's cards take the shared fill (--ios-card-fill) and lose their rim; Profile's person
+  card, next rank and case lose the opaque #14171C-#0B0D11 slab, rim and 44px shadow for the same glass, each keeping its colour
+  pool. An unfound badge's slot on a unit card .45 -> .28 (a dark hole on the lighter glass).
+- THE GREEN DOT: .picks > label.pick > .box is a .8rem bead (radial: #D9FBE2 top light, #5FE07F, #34C759, #1E9E45), a 1px light
+  hairline and a two-step green glow, centred where the tick's disc was (.95rem in); unpicked opacity 0 + scale(0), picked scale(1)
+  on a .42s spring - it grows from its centre - and one ring goes out (::after, scale .6 -> 3.2, .7s, once). The tick (.pick-tick)
+  is hidden. A picked card: a thin green edge (border 70% + 1px inset) over a breath of green (10% -> 4%). --pick-dot.
+- THE DAILY QUESTION, READY: same glass (Home's family). While a question waits (.is-ready:not(.is-done):not(.is-charging)) the
+  ring element - hidden while ready since 382 - is shown with its circles hidden, and its ::before is a comet: a conic gradient
+  (transparent -> the rank colour -> white) masked to a 3px band on the rim, rotating every 2.6s; its ::after a glow of the rank
+  colour from below, breathing .5 <-> 1 on the same 2.6s; the "?" is lit warm (rank colour 32% into white) and lifts 1.5px / x1.07
+  in time. The ring that goes out (::after on the button, 3.6s) is unchanged. Answered or recharging: none of it. Reduce motion:
+  still.
+- Gate tools/check-b383-look.py: Home's stars and no wash; five screens and results with the wash and no stars; the mask; the wash
+  follows the theme; seven cards on one glass with no rim; the dot (green, glowing, scale 1, <=16px, no tick) and none when
+  unpicked; the daily question's comet and glow when ready, none when answered - 12 fail on the previous commit.

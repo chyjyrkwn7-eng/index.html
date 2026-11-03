@@ -1328,9 +1328,41 @@
     opacity:0;
     transition:opacity .6s ease;
   }
-  html.sky-ready[data-layout="modern"] body::after{ opacity:.6; }
+  html.sky-ready[data-layout="modern"] body::after{ opacity:0; }   /* (383) stars are Home's alone - see #nova-wash below */
   html.sky-ready[data-layout="modern"] body.sky-home::after{ opacity:1; }
   html.sky-ready[data-layout="modern"] body.sky-calm::after{ opacity:0; }
+  /* ---- ONE LOOK BEYOND HOME: THE THEME'S COLOURS, WASHED (build 383) ----
+     Madison: "the app needs a cohesive look ... if the rest of the app didn't have the starry space background but instead like
+     the same color theme but kinda how the background used to be where it just some colors but it would be kinda washed out so
+     it's not distracting? Almost like the result screen ... The main menu background is perfect, it's the rest though ... Maybe
+     beyond the main menu the background is just your themes color but a little blurry/darker it's not distracting?"
+     Home keeps its sky (the stars, body::after, at full). Every other screen has no stars and this instead: the theme's own
+     three background colours (--bg-c1/2/3, the triad Home's glow and planet use) as three wide, soft pools over the dark paper -
+     a wash, not a picture: nothing has an edge, nothing moves. It is a real element between body::before (the paper and its glow)
+     and body::after (the stars), so body::before - which the status-bar strip and html's fallback are matched to - is untouched,
+     and the strip itself stays clear: the same mask the stars use, so the top inset is exactly what it was. A question on screen
+     settles it (.45), as the glow and the stars always have; results take it at full, like every other screen. The cards over it
+     are see-through glass (--surface-1, below), so each picks the wash up - the tab bar's frosted look, without a blur per card.
+     Opacity is the only thing that ever changes (Home <-> the rest), and the compositor does it. */
+  #nova-wash{
+    position:fixed; left:0; right:0; bottom:0; height:100lvh; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(ellipse 95% 60% at 8% 4%, color-mix(in srgb, var(--bg-c2) 30%, transparent), transparent 72%),
+      radial-gradient(ellipse 85% 55% at 100% 42%, color-mix(in srgb, var(--bg-c3) 26%, transparent), transparent 72%),
+      radial-gradient(ellipse 120% 55% at 30% 104%, color-mix(in srgb, var(--bg-c1) 20%, transparent), transparent 72%);
+    -webkit-mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem));
+    mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem));
+    opacity:0; transition:opacity .6s ease;
+  }
+  html.sky-ready[data-theme="dark"][data-layout="modern"] body:not(.sky-home) > #nova-wash{ opacity:1; }
+  html.sky-ready[data-theme="dark"][data-layout="modern"] body.has-active-question:not(.sky-home) > #nova-wash{ opacity:.45; }
+  /* (party has its own sky: its stars stay where they were, and no wash) */
+  html.sky-ready[data-theme="party"][data-layout="modern"] body::after{ opacity:.6; }
+  html.sky-ready[data-theme="party"][data-layout="modern"] body.sky-home::after{ opacity:1; }
+  html.sky-ready[data-theme="party"][data-layout="modern"] body.sky-calm::after{ opacity:0; }
+  [data-reduce-motion="true"] #nova-wash{ transition:none !important; }
+  /* the cards over it: the same glass, thinner, so the wash comes through (Home's own pieces are as they were) */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home){ --surface-1:rgba(12,13,19,.4); --surface-2:rgba(18,20,28,.45); }
   /* `[data-reduce-motion] *` reaches elements, not pseudo-elements. */
   [data-reduce-motion="true"] body::after{ transition:none !important; }
   /* A structural guarantee, not just a stacking one: as long as
@@ -34089,6 +34121,28 @@ html.is-browser{ --fade-paper: transparent; }
     box-shadow:0 18px 44px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07);
   }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase::before{ opacity:.12; }
+  /* (383) ONE LOOK: Profile's three cards on every other card's glass - each keeps its own pool of colour at the top (the banner's,
+     the next rank's, the case's silver); the opaque #14171C-#0B0D11 slab, its rim and its 44px drop shadow are the card material
+     the rest of the app no longer has */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .profile-hero.has-cover.has-tint{
+    background:
+      radial-gradient(120% 30% at 18% 0%, color-mix(in srgb, var(--hero-t1) 26%, transparent), transparent 100%),
+      radial-gradient(120% 30% at 82% 4%, color-mix(in srgb, var(--hero-t2) 22%, transparent), transparent 100%),
+      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), rgba(12,13,19,.4) !important;
+    border-color:transparent !important; box-shadow:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .pf-goal{
+    background:
+      radial-gradient(70% 34% at 50% 0%, color-mix(in srgb, var(--nx) 20%, transparent), transparent 100%),
+      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), rgba(12,13,19,.4);
+    border-color:transparent; box-shadow:none;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase{
+    background:
+      radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--case-tint) 12%, transparent), transparent 100%),
+      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), rgba(12,13,19,.4);
+    border-color:transparent; box-shadow:none;
+  }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-lid{ border-bottom-color:rgba(255,255,255,.06); background:none; }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-front{ padding-top:.9rem; padding-bottom:1.1rem; }
   /* YOU: the rank is the headline under the name, in its colour and
@@ -34221,6 +34275,13 @@ html.is-browser{ --fade-paper: transparent; }
     backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
     /* the pane a shade denser, so the sky's stars do not show through where the frost hid them */
     --surface-1:rgba(12,13,19,.7); --surface-2:rgba(18,20,28,.7);
+  }
+  /* (383) BEYOND HOME THERE ARE NO STARS TO HIDE - every card is the same thinner glass over the wash (see #nova-wash) */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) :is(.motion-summary, .cal-month-head, .cal-action-btn, .cal-row, .cal-grid-arrow,
+    .cal-daycard, .lb-row, .vroom-roster, .rank-row, .vroom-test-summary, .welcomeintro-row, .speedopt, .chip, .info-note, .codereveal-box,
+    .results-review, .points-progress-sect, .points-stat-box, .pbbanner, .stat-card, .modecard, .pick, .more-toggle,
+    .unlock-row, .cz-row, .friend-sect, .settings-card, .cal-monthview, .profile-hero, .pf-goal){
+    --surface-1:rgba(12,13,19,.4); --surface-2:rgba(18,20,28,.45);
   }
   /* Welcome's two buttons are 44px on a phone too (they were 37-38: under the tap minimum) */
   html[data-layout] body .cosmic-welcome .cosmic-welcome-btn{ min-height:44px; }
@@ -35260,6 +35321,40 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body:not(.x382c):has(.screen-home-actual) .daily-question-fab.is-ready:not(.is-done){
     border-color:color-mix(in srgb, var(--dq-c, #FFD27A) 46%, rgba(255,255,255,.16)) !important;
   }
+  /* ---- THE DAILY QUESTION, READY: IT ASKS TO BE TAPPED (383) ----
+     Madison: "The daily question button, when it's ready right now it doesn't look very cool or like 'click me' feel. Fix that,
+     make it better but make it still match the main menu." Ready, it was the corner buttons' glass with the rank's colour in the
+     rim and a faint ring going out every 3.6s - a button at rest. It keeps that glass (Home's family: the tab bar's values), and
+     while a question is waiting: a light runs round its rim in the rank's colour (a comet on a 2.6s turn), the rank's colour
+     glows inside it from below and breathes, and the "?" is lit warm and lifts a little in time with it. The ring that goes out
+     stays. All of it is transform and opacity on its own layers (.dq-ring's ::before / ::after) - no filter, nothing re-laid out;
+     answered (.is-done) or recharging, none of it runs; Reduce motion keeps the light and the glow, still. */
+  .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring::before{
+    content:""; position:absolute; inset:-1.5px; border-radius:50%; pointer-events:none;
+    background:conic-gradient(from 0deg, transparent 0 58%, color-mix(in srgb, var(--dq-c) 25%, transparent) 76%,
+      color-mix(in srgb, var(--dq-c) 85%, #FFFFFF) 95%, #FFFFFF 98%, transparent 100%);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+    animation:dq-comet 2.6s linear infinite;
+  }
+  .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring::after{
+    content:""; position:absolute; inset:3px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(85% 70% at 50% 100%, color-mix(in srgb, var(--dq-c) 48%, transparent), transparent 72%);
+    animation:dq-glow 2.6s ease-in-out infinite;
+  }
+  /* the ring itself is hidden while ready (382: the rank's colour is in the rim) - its two layers show, its circles do not */
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring{ opacity:1 !important; }
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring > svg{ visibility:hidden; }
+  @keyframes dq-comet{ to{ transform:rotate(360deg); } }
+  @keyframes dq-glow{ 0%, 100%{ opacity:.5; } 50%{ opacity:1; } }
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-glyph{
+    position:relative; z-index:1; color:color-mix(in srgb, var(--dq-c) 32%, #FFFFFF);
+    animation:dq-lift 2.6s ease-in-out infinite;
+  }
+  @keyframes dq-lift{ 0%, 100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-1.5px) scale(1.07); } }
+  [data-reduce-motion="true"] .daily-question-fab .dq-ring::before,
+  [data-reduce-motion="true"] .daily-question-fab .dq-ring::after,
+  [data-reduce-motion="true"] .daily-question-fab .dq-glyph{ animation:none !important; }
   /* the list moves, so its buttons keep the body and rim without a frost of their own; its words are the same glass, opaque
      (a moon gliding behind them showed through on a tablet, 329) */
   html[data-theme][data-layout] body:not(.x382c) .csi-bubble{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
@@ -35435,12 +35530,47 @@ html.is-browser{ --fade-paper: transparent; }
     box-shadow:0 0 0 1.5px color-mix(in srgb, var(--ink) 85%, transparent) !important;
   }
   html[data-layout][data-theme] .picks > label.pick > .box > .pick-tick path{ stroke-width:3.2; }
+  /* ---- PICKED: A GREEN DOT THAT GLOWS, NOT A TICK (383) ----
+     Madison: "When selecting the units by the way, I don't like the checkmark fills up from top to bottom. I'd rather the
+     checkmark circle like fill from the center or something. And I'm kinda tired of the checkmark. What if we did like a green
+     glowing dot/circle signifying it's been selected? Could that be better?" The tick drew itself in (stroke-dashoffset, top
+     to bottom) inside a white disc. Now a picked card has a small green bead in that corner - iOS's green with a top light,
+     a soft glow round it - that grows out from its own centre (scale 0 -> 1 on a spring) and sends one ring out as it lands;
+     the card takes a thin green edge and a breath of green. Unpicked: nothing in the corner, as before. The checkbox, the
+     .pick-checked mirror and every path that ticks a card are unchanged - this is only how "picked" is drawn. */
+  html[data-layout][data-theme] .picks > label.pick{ --pick-dot:#34C759; }
+  html[data-layout][data-theme] .picks > label.pick > .box{
+    top:.95rem !important; right:.95rem !important; width:.8rem !important; height:.8rem !important; border-radius:50% !important;
+    border:0 !important; overflow:visible !important;
+    background:radial-gradient(circle at 34% 30%, #D9FBE2 0 14%, #5FE07F 42%, var(--pick-dot) 66%, #1E9E45 100%) !important;
+    box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 0 8px 1px color-mix(in srgb, var(--pick-dot) 75%, transparent), 0 0 18px 4px color-mix(in srgb, var(--pick-dot) 32%, transparent) !important;
+    opacity:0; transform:scale(0) !important;
+    transition:transform .42s cubic-bezier(.3,1.65,.45,1), opacity .12s ease !important;
+  }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked > .box{ opacity:1; transform:scale(1) !important; }
+  html[data-layout][data-theme] .picks > label.pick > .box > .pick-tick{ display:none; }
+  html[data-layout][data-theme] .picks > label.pick > .box::after{
+    content:""; position:absolute; inset:-2px; border-radius:50%; pointer-events:none;
+    border:2px solid var(--pick-dot); opacity:0;
+  }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked > .box::after{ animation:pick-dot-ring .7s ease-out .12s 1; }
+  @keyframes pick-dot-ring{ 0%{ opacity:.85; transform:scale(.6); } 100%{ opacity:0; transform:scale(3.2); } }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked{
+    border-color:color-mix(in srgb, var(--pick-dot) 70%, transparent) !important;
+    background:linear-gradient(color-mix(in srgb, var(--pick-dot) 10%, transparent), color-mix(in srgb, var(--pick-dot) 4%, transparent)),
+      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1) !important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--pick-dot) 70%, transparent) !important;
+  }
+  html[data-layout][data-theme] .picks > label.pick.pick-checked.is-pressing{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--pick-dot) 70%, transparent) !important; }
+  [data-reduce-motion="true"] .picks > label.pick > .box::after{ animation:none !important; }
   /* the badge: small and plain - no glow round it, no filter on it */
   html[data-layout][data-theme] .picks > label.pick .pick-badge.earned::before{ display:none; }
   html[data-layout][data-theme] .picks > label.pick .pick-badge.earned svg{ filter:none; }
   .pick-badge > .pick-badge-img{ width:100%; height:100%; display:block; position:relative; z-index:1; pointer-events:none; -webkit-user-drag:none; user-select:none; }
   .pick-badge:not(.earned) > .pick-badge-img{ opacity:.78; }
   html[data-layout][data-theme] .picks > label.pick .pick-badge:not(.earned) :is(svg, .pick-badge-img){ opacity:.45; }
+  /* (383) on the lighter glass a slot still to fill reads as a dark hole at .45 - quieter */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .picks > label.pick .pick-badge:not(.earned) :is(svg, .pick-badge-img){ opacity:.28; }
   html[data-layout][data-theme] .picks > label.pick .pick-badge{ width:2.3rem; height:2.3rem; }
   /* the hundo bar (iPads and computers): a hairline track, the accent filling it */
   html[data-layout][data-theme] .picks > label.pick .pick-bar-track{ height:3px; border-radius:999px; background:color-mix(in srgb, var(--ink) 12%, transparent); }
@@ -35838,6 +35968,8 @@ html.is-browser{ --fade-paper: transparent; }
 
   /* ---- THE CALENDAR, A SMIDGE BETTER ---- */
   .screen-calendar-tab{ --cal-cell-bg:linear-gradient(var(--surface-lift), var(--surface-lift)), linear-gradient(var(--surface-1), var(--surface-1)), var(--surface-1); }
+  /* (383) the calendar's cards are every other screen's card: the same fill over the same glass, no rim */
+  html[data-theme="dark"][data-layout="modern"] .screen-calendar-tab{ --cal-cell-bg:linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), var(--surface-1); }
   /* whose calendar: a plain grey line under the title, not spaced capitals */
   html[data-layout] body .screen-calendar-tab > .cal-classhead{
     text-align:left; margin:0 .25rem 1rem; font-size:.95rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--soft);
@@ -35845,7 +35977,7 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body .screen-calendar-tab > .cal-classhead > b{ font-weight:600; color:var(--ink); }
   /* the cards: flat, rounder, the Settings card's surface - no frost on what you read */
   html[data-theme][data-layout] body .screen-calendar.screen-calendar-tab :is(.cal-card.points-progress-sect, .cal-card, .cal-monthview.cal-monthview){
-    border-radius:20px !important; background:var(--cal-cell-bg) !important; border:1px solid var(--surface-border) !important;
+    border-radius:20px !important; background:var(--cal-cell-bg) !important; border:1px solid transparent !important;
     box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; will-change:auto;
   }
   html[data-theme][data-layout] body .screen-calendar-tab .cal-monthview .cal-daycard{ border-radius:0 0 19px 19px !important; }
@@ -36648,6 +36780,8 @@ html.is-browser{ --fade-paper: transparent; }
   })();
 </script>
 
+<!-- (383) the wash behind every screen but Home - see #nova-wash in the stylesheet -->
+<div id="nova-wash" aria-hidden="true"></div>
 <div class="wrap">
   <div class="top">
     <div class="banktitle-group">
