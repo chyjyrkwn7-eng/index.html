@@ -31676,3 +31676,32 @@ manage friends or something, when I leave that, it goes back to the main menu in
 - check-b383-flashcards (3) waits for the lock card's button (drawn after ifcEnsureBook looks for a book - later under load) before
   tapping it; it failed twice under load with nothing to tap.
 - APP_BUILD / version.json = 2026-11-04-384.
+
+### Build 384 - Contributors: Cameron Wharton second; the flare's "Tap" after a miss, a burst on a tap, the bubble's point
+- Madison: "Cameron Wharton started the idea of this entire app. He made the beta and I took it from there. He should be second on
+  the list under me (Madison Davis) update his stuff." creditsPeople(): Madison Davis, then Cameron Wharton - role "Co-Founder &
+  Original Beta"; rows: the original idea for the app, the first beta build, Virtual Room design (opens it), live multiplayer
+  test sessions, Race / Tug of War / Battle modes, character concepts and ideas - then the rest by surname. check-b382-credits'
+  PEOPLE order updated (both classes pass).
+- Madison: "Secret flare 'tap' button, only appear when they miss it the first time, don't show that the first time a flare comes
+  up, for each color even. But if they miss it, then next time it's there it should say tap."
+  store.flareMissed {colour: true} (NEW persisted field: default {} in applyLoadedData - the six colours written out, not
+  MYSTERY_ORDER, a const further down while applyLoadedData runs at boot; OR-merged in mergeSameAccount and mergeLeavingAccount).
+  noteFlareMissIfPassed(atEnd): in render() (the flare's question gone by, pos > mysteryAppearsAtPos) and summarize() (the run
+  ended at or after it), untapped and that colour not found -> missed, saveStore(). buildMysterySpark adds the tag only for a
+  colour this account has missed (383 showed it until the first flare of any colour was found).
+- "Ensure when you tap it, it does a cool animation": .mystery-pop - ten sparks (each its own angle, 30-51px, a 0-60ms stagger)
+  and two shockwave rings (its colour, then white) out of the orb, the tag popping up and away; transforms and opacity only; off
+  under Reduce motion. FOUND ON THE WAY: since 383 the orb's own burst never played - 383's beckon
+  (.mystery-spark:not(.shades-spark) svg, 0-2-1) out-ranked .mystery-spark-found svg (0-1-1); a 0-4-1 rule plays it again.
+- "ensure the pointy part lines up in the tap bubble box thing cause it looked off": the bubble was see-through (.9 alpha) with a
+  1px outline, the point drawn over it 1px left of and 1px above the body's edge/middle - the outline showed through the point and
+  stepped where a straight side met the round end. Tried: an opaque fill (the step stayed), the point behind the outlined body (a
+  separate triangle). Now one solid shape with no outline: the body is ::after, the point ::before (a 9px square turned 45deg, its
+  centre on the body's left edge and middle), the same fill (the flare's colour 46% into #101117) and the glow; padding +1px for
+  the border that went.
+- Gate tools/check-b384-flare.py: (1) first appearance no Tap; (2) past it untapped -> missed; (3) next time Tap; (4) another
+  colour no Tap; (5) one solid shape, the point's centre on the edge and middle (+-1px), 45deg; (6) a tap: 10 sparks, 2 rings, the
+  orb's mystery-burst; (7) on the last question, finished without it -> missed; (8) saved and read back through applyLoadedData,
+  another device's miss merged; (9) no page errors. On 383: 7 fail ((1) Tap on a first appearance; the point at -1 / 11.5 of 25;
+  no burst, the orb still on its beckon). This build ALL PASS.
