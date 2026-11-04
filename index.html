@@ -36790,6 +36790,20 @@ html.is-browser{ --fade-paper: transparent; }
       content:""; top:10px; bottom:10px; right:-7.5px; width:1px;
     }
   }
+  /* (384) THE BACK BUTTON AND THE CHAT BUTTON MEET IN THE MIDDLE. Madison, on Choose your mode: "The chat button should be slightly
+     relocated so it's brought down a little, so it lines up with the new back button, cause it seems out of place now? Or maybe
+     they could both kinda meet each other in the middle so the change isn't noticeable but still improved? ... move the back button
+     slightly up and the chat button slightly down". On a pushed screen (Settings' pages, Customize, Friends, the modes, Rank,
+     Badges ...) the round back button's middle sat 1.2rem below the chat button's (115 / 96px on a Pro Max). Each moves half of
+     that, .6rem: the nav row (the back button and the title with it, and the page under it) up, the chat button down - so the
+     two share one line. Only where there is a back button: on Home and the tab screens the chat button keeps its place beside the
+     big page title. */
+  html[data-layout] body #stage .settings-nav.settings-nav{ margin-top:calc(.2rem - .6rem); }
+  html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem + var(--vv-shift, 0px)); }
+  /* a tablet's chat button is 52px against the back button's 44: its top 4px higher puts the two middles on one line */
+  @media (min-width:40rem){
+    html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
+  }
   html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back{ transition:transform .12s ease; }
   html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back:active{ transform:translateY(-50%) scale(.92); }
   [data-reduce-motion="true"] body #stage .settings-nav-back:active{ transform:translateY(-50%) !important; }

@@ -32226,3 +32226,17 @@ lowered. Like increments of 25, 50, 75, 150?"
 - Fire Code's counts: fireworks 25, underwater 50, bubbles 75, ufo 150 - set on the HUNDO_FX rows right after the list, before
   anything reads them (window.NOVA_CLASS, not IFC_ART_ON: that var is assigned later). The academy keeps 50 / 100 / 150 / 200.
 - Fire Code is: 25 Extinguisher, 50 Sprinklers, 75 (the Fire Alarm's replacement), 150 Hazmat.
+- (384) "The chat button should be slightly relocated so it's brought down a little, so it lines up with the new back button ...
+  maybe they could both kinda meet each other in the middle so the change isn't noticeable but still improved? ... move the back
+  button slightly up and the chat button slightly down". On every pushed screen (.settings-nav: Settings' pages, and .ios-nav,
+  which carries the same class: the modes, Customize, Friends, Rank, Badges ...) the back button's middle was 1.2rem below the chat
+  button's (115.2 / 96 on a Pro Max installed; 77.2 / 62 on an iPad). Each moves half, .6rem: the nav row's margin-top
+  .2rem -> calc(.2rem - .6rem) (the title and the page move with it), and the chat button's top + .6rem while
+  `body:has(#stage .settings-nav)` (not in a test). A tablet's chat button is 52px against the back button's 44, so there its top
+  is 4px higher again and the middles meet (67.6 / 67.6). Home and the tab screens keep the chat button at the inset + .75rem,
+  beside their big titles. check-b384-navmeet (waits out a seeded account's opening cutscene, which parks the chat button off
+  the top); fails 4 on the previous commit.
+- THE MERGED 384, ALL GATES (after the slide / haptics / friends merges), one at a time: every check-b384-* ALL PASS (haptics,
+  slide, friends, stats, settings, home, flare, chatback, ifccurve), check-b383-profile/look/ifcsync/tabslide/flashcards/signup,
+  check-b382-settings/slide, check-friends, check-sound, check-sync ALL PASS, sweep-layout --quick 14/14. check-chat's one
+  failure ("the peek scenario never had an unread count to clear") fails identically on 383.
