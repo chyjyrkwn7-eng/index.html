@@ -33667,3 +33667,54 @@ interpretation of Feb 4, 2025. 1,779 -> 1,812 questions, 58 units.
   (location.replace("../" + search + hash)). The page names nobody (check-b384-browsers' share check).
 - gen-share-card --check passes; check-b384-browsers share ALL PASS; check-b381-share's "SHARE_URL is the share page" and "names
   the card picture" fail identically without this change (384's ?v=384 links).
+### Build 384 - last week's podium back, nicer; Fire Code's hint button (NOT on main, waiting for Madison)
+Madison: "Last weeks top 3 should not look like the list, I liked the podium style, it just needed a nicer look to it that's
+all.." (his earlier ask: "The top three on the leaderboard (last weeks top 3) ensure that's updated to the new iOS theme"), and
+"The hint button in ifc, fix that layout/wording. Cause all the words are layed out weird? Idk."
+- LAST WEEK'S TOP 3 IS A PODIUM AGAIN (buildLastWeekPodium; CSS "LAST WEEK'S TOP 3 (This Week), build 384 round 2" in the board's
+  iOS section, where the list's rules were - those are gone). 2nd, 1st, 3rd stand on steps, as in 383, in the board's language:
+  * the grey sentence-case caption "Last week's top 3" over one card on the list's surface (--lb-cell, --lb-group-r), no frost,
+    no gold rim, no glow, no gold capitals;
+  * each place: the character in the board's own disc (the rows' radial fill and stills/flip-book path, a size up: 1st
+    --lb-av x 1.5, the others x 1.2) ringed 2px in its metal with a 2px gap (an outline on .lw-podium-avwrap - the disc itself
+    is clip-pathed); the name in ink (700 for 1st, the accent if it is you), one line, ellipsis; last week's XP in grey, tabular;
+  * the step: a soft tint of its metal (--lw-gold #E9C35A / --lw-silver #C9CCD1 / --lw-bronze #CF8C57, the middles of the board's
+    medals) fading to the card's floor, a 1px catch-light on top, 12px top corners, the board's own medal (renderRankMarker,
+    --lb-medal, the struck circles) on it; heights --lb-medal + 2.3 / 1.45 / .9rem (63 / 50 / 41px on a phone), 1st tallest;
+  * the steps stand on the card's bottom edge; the stage's side padding is max(--lb-pad, 18px) so the outer steps clear the
+    card's 22px rounded corners; on 40rem+ the podium keeps a podium's width (max 31rem) in the middle of the card.
+  * DOM order is 1st, 2nd, 3rd (screen reader and keyboard); grid-column puts them 2-1-3. Tapping, role=button, tabIndex,
+    aria-label, Enter/Space, the off-screen observer (.lw-podium-spot) and the kept-podium key (_lwKey) are as before. Pressed:
+    opacity .55 (nothing moves - the step stays on the floor). With 2 places the 3rd column is left empty (1st stays centred).
+- THE HINT (ifcPreAnswer, CSS ".ifc-hint-btn" in the Fire Code references block): it read "Hint: show the code, answer hidden",
+  a yellow pill whose words wrapped onto two centred lines on a 375 phone (and on a 440 phone at a larger text size). Now it is
+  the twin of the "Show the code" pill the answer brings (.ifc-code > summary: same neutral fill and rim, 44px, .92rem 650, the
+  same arrow turning when open), with a yellow tag holding the bulb and "HINT" where that one has AMENDMENTS / IFC: one line,
+  left-aligned, white-space nowrap (an ellipsis inside the pill before it could ever wrap). Words: "Show the code" / "Hide the
+  code"; aria-label "Hint: show the code, answer hidden" / "Hint: hide the code"; aria-expanded added. What it does is
+  unchanged (the code drawn with the answer hidden; the same tap puts it away); a failed draw now also puts the words back.
+  228px wide on a phone (was 311, 295 wrapped on an SE). The academy's own hint ("Show me the correct answer" after three misses)
+  is untouched - NOTE: it is a ~33px-tall text link on this build and the one before, under the 44px rule; not changed here.
+- GATE tools/check-b384-podium-hint.py [--against REV|FILE] [--only a,b]; PDFJS_DIR for the real pdf.js path (without it the
+  viewer's drawing calls are stood in for and it says so): (a1) a podium, 2-1-3, disc/name/XP/step each, one floor, 1st's step
+  tallest and disc highest, 1st centred; (a2) nothing clipped or overlapping, inside the card and the screen, XP whole, a long
+  name ("Bartholomew-Montgomery") one line with an ellipsis - both at 440x956, 375x667, 834x1194 and a 1536x864 laptop; (a3)
+  GUARD tappable buttons in 1-2-3 order, 44px+, a tap on a disc opens that person's card; (b1) the hint's words on one line (or
+  two from one left edge), none cut short, 44px+, inside the panel, shut and shown, at 375 and 440 (and 440 at 125% text);
+  (b2) GUARD a tap draws the code with the answer hidden, still unanswered, another puts it away; (b3) GUARD the academy's hint
+  still comes after three misses on one line and marks the right answer; (c) no page errors. On 1dca98e it FAILS (a1)(a2) at
+  all four sizes and (b1) at 375 and 440@125%; the guards pass on both by design.
+- check-b384-board2 (4): its "a line between its rows" check (the list) is replaced by "a podium: 2nd, 1st, 3rd on steps that
+  rise from the card's floor, 1st's the tallest, the outer steps clear of its rounded corners" (fails on 1dca98e); its surface,
+  caption and medal checks are kept and pass.
+- GATES RUN (one at a time; load 12-15 from other sessions): check-js 10 blocks ALL PASS; check-b384-podium-hint ALL PASS with
+  the real pdf.js and with the stand-in, --against 1dca98e FAILS as above; check-b384-board2 ALL PASS (all six), --only 4
+  --against 1dca98e fails the podium check only; check-b384-hairlines ALL PASS; check-b383-look ALL PASS on two reruns (the first
+  run reported 1 failure under load, not captured); sweep-layout --quick 20/20 clean; check-b382-test (PDFJS_DIR) ALL PASS;
+  check-behaviour check_b229/b289/b299: every podium check passes (tappable, you included, the popup's podium a picture, last
+  week's numbers); its other failures (the yellow dot x2, the Profile card's order x2) fail on 1dca98e too, and "the right
+  answer never lands where it was last time" is random (passed on two reruns); the page console in both classes: no page
+  errors, only the blocked Firebase / pdf.js CDN.
+- ONLY HIS PHONE CAN CONFIRM: the metal tints on the real glass at 3x (the gold step reads warm-khaki in Chromium); the outline
+  ring's gap on WebKit (Safari 16.4+ follows border-radius); SF Pro's widths (the pill and the names were measured with
+  Chromium's font).

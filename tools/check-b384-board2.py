@@ -20,8 +20,9 @@ Installed, an iPhone's user agent, 440x956 at 3x, real touches (CDP), the CPU sl
     that row's numbers (levels over the badge wall, rank floors and secret flares among them).
 (4) LAST WEEK'S TOP 3 (This Week): no backdrop-filter anywhere in it; its card is the list's surface (the same computed background
     as a list row); the caption is grey sentence case (no capitals, no letter-spacing); the three places carry the board's medals
-    (round, the board's size); a 1px line between rows from the name to the row's content edge (within 1.5px), 8px+ clear of the
-    card's sides.
+    (round, the board's size); and (384 round 2, the podium back - this replaced the list's "a 1px line between rows" check) it
+    is a podium: 2nd, 1st, 3rd left to right on steps that rise from the card's floor, 1st's the tallest, the outer steps clear
+    of the card's rounded corners. (tools/check-b384-podium-hint.py checks the podium at four sizes.)
 (5) THE NEW DOT (seen-unlocks cleared, a rank not yet shown): on the Profile tab, Profile (Customize, the badge case, the rank) and
     Customize's character / banner / theme / hundo pages, every dot is one style - a solid fill (no gradient, no glow: every shadow
     unblurred), round, 8-10px, the same fill and size everywhere - and sits on its icon's corner on the 45-degree line (as far in
@@ -293,15 +294,14 @@ with sync_playwright() as pw:
               const listRow=document.querySelector('.screen-rankings .rank-rows > .rank-row[data-pub]:not(.rank-podium-1):not(.rank-podium-2):not(.rank-podium-3):not(.lb-row-me)');
               const bgOf=e=>e?cs(e).backgroundImage+'|'+cs(e).backgroundColor:null;
               const soft=(()=>{ const t=document.createElement('span'); t.style.color='var(--soft)'; pod.appendChild(t); const c=cs(t).color; t.remove(); return c; })();
-              const rows=card?[...card.children]:[]; const cb=card?card.getBoundingClientRect():null;
-              const alpha=c=>{ let m=/rgba\\([^)]*,\\s*([\\d.]+)\\)/.exec(c); if(m) return +m[1]; m=/color\\([^)]*\\/\\s*([\\d.]+)\\)/.exec(c); if(m) return +m[1]; return /^(rgb|color)\\(/.test(c) ? 1 : 0; };
-              const lines=rows.map((r,i)=>{ const a=getComputedStyle(r,'::after'); const on=a.content!=='none'&&a.content!=='normal'&&a.display!=='none'&&px(a.height)>0&&px(a.height)<=1.6&&alpha(a.backgroundColor)>0.03; if(!on) return { i, on:false, bg:a.backgroundColor };
-                const b=r.getBoundingClientRect(); const x0=b.left+px(a.left), x1=x0+px(a.width); const edge=b.right-px(cs(r).paddingRight)-px(cs(r).borderRightWidth);
-                return { i, on:true, end:Math.round((edge-x1)*10)/10, clearR:Math.round((cb.right-x1)*10)/10, clearL:Math.round((x0-cb.left)*10)/10 }; });
+              const cb=card?card.getBoundingClientRect():null;
+              /* (384 round 2) the podium: each place's step, where it stands (left to right) and how tall */
+              const steps=[...pod.querySelectorAll('.lw-podium-spot')].map(s=>{ const m=/lw-place-(\\d)/.exec(s.className); const st=s.querySelector('.lw-podium-block'); const b=st?st.getBoundingClientRect():null;
+                return { place: m?+m[1]:0, l: b?b.left:null, r: b?b.right:null, b: b?b.bottom:null, h: b?b.height:0 }; });
               const meds=[...pod.querySelectorAll('.lb-rank-medal')].map(m=>{ const b=m.getBoundingClientRect(); return [Math.round(b.width*10)/10, Math.round(b.height*10)/10]; });
               const bm=document.querySelector('.screen-rankings .rank-rows > .rank-row .lb-rank-medal'); const bmb=bm?bm.getBoundingClientRect():null;
               return { blur, cardBg: bgOf(card), rowBg: bgOf(listRow), head: head?{ tt:cs(head).textTransform, ls:cs(head).letterSpacing, col:cs(head).color, text:head.textContent }:null, soft,
-                rows: rows.length, lines, meds, boardMed: bmb?[Math.round(bmb.width*10)/10, Math.round(bmb.height*10)/10]:null }; }""")
+                steps, card: cb?{ l:cb.left, r:cb.right, b:cb.bottom, rad:px(cs(card).borderBottomLeftRadius) }:null, meds, boardMed: bmb?[Math.round(bmb.width*10)/10, Math.round(bmb.height*10)/10]:null }; }""")
             if MEDIA: pg.screenshot(path=os.path.join(MEDIA, "last-week-top3-%s.png" % ("before" if AGAINST else "after")))
             chk("(4) last week's top 3 is up on This Week (%s)" % (bool(lw),), bool(lw), lw)
             if lw:
@@ -310,9 +310,20 @@ with sync_playwright() as pw:
                 chk("(4) ...the caption grey sentence case (%s)" % (hd,), hd and hd["tt"] == "none" and hd["ls"] in ("normal", "0px") and hd["col"] == lw["soft"] and not hd["text"].isupper(), [hd, lw["soft"]])
                 chk("(4) ...the board's medals, round, the board's size (%s vs %s)" % (lw["meds"], lw["boardMed"]),
                     len(lw["meds"]) == 3 and lw["boardMed"] and all(abs(w - h) <= .5 and abs(w - lw["boardMed"][0]) <= .5 for w, h in lw["meds"]), lw["meds"])
-                L = [l for l in lw["lines"] if l["on"]]
-                chk("(4) ...a line between its rows, from the words to the row's content edge, clear of the card's sides (%s)" % (lw["lines"],),
-                    lw["rows"] == 3 and len(L) == 2 and all(abs(l["end"]) <= 1.5 and l["clearR"] >= 8 and l["clearL"] >= 8 for l in L), lw["lines"])
+                # (384 round 2: the podium is back - Madison: "Last weeks top 3 should not look like the list, I liked the podium style".
+                # This replaced the list's "a line between its rows" check.)
+                S = {s["place"]: s for s in lw["steps"] if s["l"] is not None}; C = lw["card"]
+                pod_ok = set(S) == {1, 2, 3} and C is not None
+                if pod_ok:
+                    mid = lambda s: (s["l"] + s["r"]) / 2
+                    floors = [S[k]["b"] for k in (1, 2, 3)]
+                    # an outer step meeting the floor stays clear of the card's rounded corner (cut by under 1px)
+                    def corner_cut(clear, r): return 0 if clear >= r else r - (r * r - (r - clear) ** 2) ** .5
+                    cuts = [round(corner_cut(S[2]["l"] - C["l"], C["rad"]), 2), round(corner_cut(C["r"] - S[3]["r"], C["rad"]), 2)]
+                    pod_ok = (mid(S[2]) < mid(S[1]) < mid(S[3]) and S[1]["h"] > S[2]["h"] > S[3]["h"] > 0
+                              and max(floors) - min(floors) <= 1 and abs(max(floors) - C["b"]) <= 2.5 and max(cuts) < 1)
+                chk("(4) ...a podium: 2nd, 1st, 3rd on steps that rise from the card's floor, 1st's the tallest, the outer steps clear of its rounded corners (%s)"
+                    % ([(s["place"], round(s["h"], 1)) for s in lw["steps"]],), pod_ok, [lw["steps"], C])
         ALLERRS += errs; ctx.close()
     # ---------------------------------------------------------------- (5) the new dot
     if want(5):
