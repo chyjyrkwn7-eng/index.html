@@ -80601,25 +80601,47 @@ const SND_IFX = {
       K.noise({ t: 2.95, color: "p", bp: 1200, q: .7, a: .2, hold: .9, d: .3, g: .04, pan: .3 });
       ["D5", "F#5", "A5"].forEach((n, i) => K.chime({ t: 4.12 + i * .12, f: n, d: 1.2, g: .024 }));
     } },
-  /* 383: the Fire Alarm redone - the pull .62, the system goes .74, horn [.8 1.3 1.8, 3.3 3.8 4.3], strobe [1.5 2.5 3.5 4.4], stop 4.7, reset 4.95 */
-  "hundo.bubbles": { desc: "Fire Alarm (Fire Code): a pull station's handle yanked down with a hard clack, a jolt as the system goes, then a fire bell ringing flat out under the horn's three-beat pattern - three blasts, a rest, three more - with a crack on every strobe flash; then it stops, the bell rings down, the handle snaps back and a calm two-note chime.",
+  /* 384: the Thermal Camera, in the Fire Alarm's place, on its beats (IFX_TIC.full): power-up 0-.6, the reticle .5 and a
+     refresh every .12, the XP total 1.05, the character 1.84, the swing 2.2-2.5, lock 2.75, white-hot and MAX 3.35, down 4.25 */
+  "hundo.bubbles": { desc: "Thermal Camera (Fire Code): a thermal camera's shutter clicking and its whine rising as it powers up and the picture builds, a low sensor hum and quiet readout ticks as the reticle hunts, a warm blip on the XP total and a softer one on the character, a whoosh as it swings onto the score, a two-tone lock, the readout racing up through a building rush of heat to a bright MAX and a deep whump, the heat breathing and ticking, then the camera powering down and a chime rising through B flat and C to D as the 100% is left glowing.",
     fn: K => {
-      K.noise({ t: .5, color: "p", bp: 1200, q: 1, a: .1, d: .05, g: .03 });
-      K.click({ t: .6, bp: 1400, q: 2, d: .02, g: .14 }); K.thump({ t: .62, f: 200, f2: 80, gl: .05, d: .12, g: .2 }); K.click({ t: .65, bp: 3200, q: 3, d: .015, g: .1 });
-      sndHit(K, { t: .74, f: 120, f2: 45, d: .6, bp: 1600, g: .7 });
-      /* the bell: a struck gong buzzing at 17 a second, with its ring under it */
-      K.bell({ t: .76, f: 1170, d: .9, g: .06 });
-      K.noise({ t: .76, bp: 2340, q: 14, q2: 8, am: [17, .95], a: .02, hold: 3.9, d: .5, g: .16, pan: -.5, rev: .15 });
-      K.noise({ t: .76, bp: 3650, q: 18, am: [17, .9], a: .02, hold: 3.9, d: .6, g: .07, pan: -.5 });
-      K.fm({ t: .76, f: 1170, ratio: 2.76, idx: 1.0, idx2: .7, a: .02, hold: 3.9, d: .2, g: .018, vib: [17, 25], pan: -.5 });
-      K.bell({ t: 4.72, f: 1170, d: 1.8, g: .05, pan: -.5 });
-      /* the horn, three and three */
-      [.8, 1.3, 1.8, 3.3, 3.8, 4.3].forEach(t => {
-        K.tone({ t, f: 520, type: "square", lp: 2600, a: .01, hold: .36, d: .05, g: .03, pan: .5 });
-        K.tone({ t, f: 1040, type: "sawtooth", lp: 3200, a: .01, hold: .36, d: .05, g: .01, pan: .5 }); });
-      [1.5, 2.5, 3.5, 4.4].forEach(t => { K.click({ t, bp: 6500, q: 4, d: .015, g: .08, pan: .5 }); K.noise({ t, color: "w", hp: 5000, a: .001, d: .05, g: .03, pan: .5 }); });
-      K.click({ t: 4.95, bp: 1800, q: 3, d: .02, g: .12 }); K.thump({ t: 4.97, f: 160, f2: 90, gl: .05, d: .08, g: .1 });
-      ["A4", "D5"].forEach((n, i) => K.chime({ t: 5.15 + i * .18, f: n, d: 1.3, g: .028 }));
+      /* power-up: the shutter, the whine rising, the picture building down the screen, the ready chirp */
+      K.click({ t: 0, bp: 2600, q: 3, d: .02, g: .12 }); K.thump({ t: .01, f: 260, f2: 120, gl: .04, d: .06, g: .08 });
+      K.click({ t: .08, bp: 3400, q: 4, d: .015, g: .07 });
+      K.tone({ t: .02, f: 300, f2: 2600, gl: .5, a: .22, hold: .18, d: .2, g: .012 });
+      K.noise({ t: .04, color: "p", bp: 700, ff2: 4200, fgl: .58, q: 1.2, a: .32, hold: .12, d: .2, g: .045 });
+      [[.46, "A5"], [.56, "D6"]].forEach(([t, n]) => K.tone({ t, f: n, type: "square", lp: 3400, a: .004, hold: .05, d: .05, g: .012 }));
+      /* the hunt: the sensor's hum, a tick on each refresh, a blip on each warm thing it crosses */
+      K.noise({ t: .5, color: "b", lp: 380, a: .3, hold: 1.95, d: .4, g: .03 });
+      K.tone({ t: .5, f: 62, type: "triangle", lp: 300, a: .3, hold: 2.0, d: .3, g: .02 });
+      for(let t = .55; t < 2.74; t += .12) K.click({ t, bp: 5200, q: 6, d: .006, g: .018 });
+      sndWhoosh(K, { t: .55, f: 400, f2: 900, dur: .45, peak: .5, g: .022, pan: 0, pan2: .5, tone: false });
+      K.fm({ t: 1.07, f: "D5", ratio: 2, idx: .8, idx2: .1, a: .004, d: .18, g: .03, pan: .45 }); K.fm({ t: 1.19, f: "F5", ratio: 2, idx: .8, idx2: .1, a: .004, d: .2, g: .026, pan: .45 });
+      sndWhoosh(K, { t: 1.4, f: 500, f2: 900, dur: .42, peak: .5, g: .022, pan: .4, pan2: -.4, tone: false });
+      K.fm({ t: 1.86, f: "A4", ratio: 2, idx: .6, idx2: .1, a: .004, d: .18, g: .026, pan: -.4 });
+      /* the swing past the box, and back onto it */
+      sndWhoosh(K, { t: 2.16, f: 300, f2: 1500, dur: .34, peak: .75, g: .05, pan: -.3, pan2: .3, tone: false });
+      sndWhoosh(K, { t: 2.5, f: 1100, f2: 500, dur: .24, peak: .4, g: .03, pan: .3, pan2: 0, tone: false });
+      /* the lock */
+      K.click({ t: 2.75, bp: 2400, q: 3, d: .02, g: .1 }); K.thump({ t: 2.75, f: 200, f2: 90, gl: .05, d: .09, g: .1 });
+      [[2.77, "A5"], [2.87, "D6"]].forEach(([t, n]) => K.tone({ t, f: n, type: "square", lp: 3600, a: .004, hold: .06, d: .06, g: .016 }));
+      /* the climb: the readout racing (its ticks closing up), a tone rising, the heat building into a rush */
+      for(let i = 0; i < 12; i++) K.click({ t: 2.78 + .56 * (1 - Math.pow(1 - i / 12, 1.6)), bp: 3800 + i * 160, q: 5, d: .006, g: .018 + i * .002 });
+      K.tone({ t: 2.78, f: "D4", f2: "D6", gl: .57, type: "sawtooth", lp: 900, ff2: 4200, fgl: .57, a: .4, hold: .1, d: .1, g: .022 });
+      K.noise({ t: 2.7, color: "p", bp: 380, ff2: 1600, fgl: .65, q: .8, a: .6, hold: .05, d: .25, g: .09 });
+      /* white-hot: MAX, a deep whump of heat, a bright bell; then it breathes and ticks while it holds */
+      sndHit(K, { t: 3.35, f: 80, f2: 34, d: .9, bp: 700, g: .55, lp: 700 });
+      K.bell({ t: 3.36, f: "D6", d: 1.4, g: .03, rev: .4 });
+      K.tone({ t: 3.36, f: "A6", type: "square", lp: 4200, a: .003, hold: .07, d: .06, g: .012 });
+      K.noise({ t: 3.36, color: "p", bp: 520, q: .7, am: [2.2, .5], a: .2, hold: .55, d: .45, g: .06 });
+      K.noise({ t: 3.36, color: "w", hp: 4200, a: .1, hold: .6, d: .3, g: .012 });
+      for(let i = 0; i < 18; i++) K.click({ t: 3.4 + K.R() * .85, bp: K.r(1800, 5200), q: 3, d: .01, g: K.r(.012, .03), pan: K.r(-.6, .6) });
+      /* the camera comes down: its whine falling, the shutter, the heat ringing out; a chime up through B flat and C to D */
+      K.tone({ t: 4.18, f: 2400, f2: 260, gl: .4, a: .02, hold: .1, d: .3, g: .011 });
+      K.click({ t: 4.26, bp: 2200, q: 3, d: .02, g: .08 });
+      sndWhoosh(K, { t: 4.25, f: 1400, f2: 300, dur: .7, peak: .2, g: .06, rev: .4, tone: false });
+      [[4.32, "Bb4"], [4.46, "C5"], [4.6, "D5"], [4.6, "F#5"], [4.6, "A5"]].forEach(([t, n], i) => K.chime({ t, f: n, d: i < 2 ? .7 : 1.4, g: i < 2 ? .022 : .02 }));
+      K.sparkle({ t: 4.62, t2: 5.1, n: 6, f1: 2600, f2: 5400, rise: true, g: .016 });
     } }
 };
 if(IFC_ART_ON) Object.keys(SND_IFX).forEach(id => { const c = SOUND_CATALOGUE[id]; if(c){ c.fn = SND_IFX[id].fn; c.desc = SND_IFX[id].desc; } });
@@ -113208,7 +113230,8 @@ const HUNDO_FX_BUILD = { fireworks: hfxFireworks, blackhole: hfxBlackHole, under
 const IFX_DEF = {
   fireworks:  { name: "Extinguisher", total: 5800, box: 4400, tail: 4700, tint: { b: "#FF5A4F", g1: "#FFFFFF", g2: "#FFD5D0", g3: "#FF453A" } },
   underwater: { name: "Sprinklers", total: 6800, box: 4800, tail: 5500, tint: { b: "#4FC3FF", g1: "#E6F8FF", g2: "#4FC3FF", g3: "#FFB03A" } },
-  bubbles:    { name: "Fire Alarm", total: 7000, box: 5200, tail: 5800, tint: { b: "#FF3B30", g1: "#FFFFFF", g2: "#FF6A5E", g3: "#FFC8C0" } },
+  /* (384) the THERMAL CAMERA in the Fire Alarm's place ("The fire alarm one, absolutely not the move"): the 100% white-hot, cooling to orange */
+  bubbles:    { name: "Thermal Camera", total: 6400, box: 4400, tail: 5300, tint: { b: "#FF8A2A", g1: "#FFFFFF", g2: "#FFE08A", g3: "#FF7A1F" } },
   /* (384) HAZMAT IS THE TOP RUNG: "The hazmat one should probably be the 200 hundos one, it's my favorite/coolest/has the best
      potential." Its build, sound, tile and still moved from bubbles to ufo, the last rung in both classes. */
   ufo:        { name: "Hazmat",     total: 6600, box: 4800, tail: 5300, tint: { b: "#B4F03A", g1: "#F6FFE0", g2: "#B4F03A", g3: "#F5C518" } }
@@ -113436,40 +113459,48 @@ const ifxSpr = {
   vapor: () => hfxSprite("ifx-vapor", () => { const r = bnRand(44); let s = "";
     for(let i = 0; i < 14; i++){ const x = 20 + r() * 360, y = 60 + r() * 30, rr = 30 + r() * 30; s += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(rr * 1.6) + '" ry="' + bnF(rr) + '" fill="url(#g)"/>'; }
     return 'viewBox="0 0 400 120" preserveAspectRatio="none"><defs><radialGradient id="g"><stop offset="0" stop-color="#B4F03A" stop-opacity=".55"/><stop offset=".6" stop-color="#6AD83A" stop-opacity=".25"/><stop offset="1" stop-color="#3A9A2A" stop-opacity="0"/></radialGradient></defs>' + s + '</svg>'; }, 420),
-  /* FIRE ALARM: a pull station (160 x 200): FIRE across the top, the handle's slot, PULL DOWN */
-  pull: () => hfxSprite("ifx-pull", () => 'viewBox="0 0 160 200"><defs>' + ifxLin("b", 0, 1, [[0, "#FF5245"], [.45, "#D81E26"], [1, "#8A0C12"]]) + ifxLin("e", 1, 0, [[0, "#000000", .3], [.12, "#000000", 0], [.88, "#000000", 0], [1, "#000000", .35]]) + ifxLin("s", 0, 1, [[0, "#3A0306"], [1, "#6A060C"]]) + '</defs>' +
-    '<rect x="2" y="2" width="156" height="196" rx="18" fill="url(#b)"/><rect x="2" y="2" width="156" height="196" rx="18" fill="url(#e)"/>' +
-    '<path d="M16 4 L144 4 Q156 4 156 16 L156 30 Q80 40 4 30 L4 16 Q4 4 16 4 Z" fill="#FFFFFF" opacity=".2"/>' +
-    '<text x="80" y="46" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="30" fill="#FFFFFF" letter-spacing="5">FIRE</text>' +
-    '<rect x="26" y="66" width="108" height="76" rx="10" fill="url(#s)"/><rect x="26" y="66" width="108" height="76" rx="10" fill="none" stroke="#FF8A80" stroke-width="1.2" opacity=".35"/>' +
-    '<rect x="46" y="74" width="68" height="62" rx="6" fill="#1A0204"/><rect x="46" y="74" width="68" height="8" rx="4" fill="#000000" opacity=".5"/>' +
-    '<text x="80" y="170" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="15" fill="#FFFFFF" letter-spacing="2.5">PULL DOWN</text>' +
-    [[14, 14], [146, 14], [14, 186], [146, 186]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="3.2" fill="#B8121A"/><path d="M' + (x - 2) + ' ' + y + ' L' + (x + 2) + ' ' + y + '" stroke="#5A040A" stroke-width="1"/>').join("") + '</svg>', 720),
-  /* its handle (same frame): a chunky white bar across the slot, PULL on it */
-  pullH: () => hfxSprite("ifx-pullH", () => 'viewBox="0 0 160 200"><defs>' + ifxLin("h", 0, 1, [[0, "#FFFFFF"], [.55, "#ECEEF1"], [1, "#B4BBC4"]]) + '</defs>' +
-    '<rect x="36" y="86" width="88" height="26" rx="10" fill="#000000" opacity=".35"/><rect x="36" y="82" width="88" height="26" rx="10" fill="url(#h)"/><rect x="36" y="82" width="88" height="26" rx="10" fill="none" stroke="#8A929C" stroke-width="1.2"/>' +
-    '<path d="M46 85.5 L114 85.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>' +
-    '<text x="80" y="100.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="12" fill="#C8141C" letter-spacing="3">PULL</text></svg>', 720),
-  /* a fire bell, face on: the red gong, its shine, the striker at the foot */
-  bell: () => hfxSprite("ifx-bell", () => 'viewBox="0 0 100 100"><defs><radialGradient id="g" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FF8A7A"/><stop offset=".3" stop-color="#F0302A"/><stop offset=".8" stop-color="#A80E16"/><stop offset="1" stop-color="#5A040A"/></radialGradient>' +
-    '<radialGradient id="h"><stop offset="0" stop-color="#E8ECF0"/><stop offset="1" stop-color="#6A727C"/></radialGradient></defs>' +
-    '<circle cx="50" cy="48" r="44" fill="url(#g)"/><circle cx="50" cy="48" r="44" fill="none" stroke="#5A040A" stroke-width="2"/><circle cx="50" cy="48" r="34" fill="none" stroke="#FFFFFF" stroke-width="1.2" opacity=".18"/>' +
-    '<ellipse cx="36" cy="28" rx="15" ry="7" fill="#FFFFFF" opacity=".42" transform="rotate(-32 36 28)"/><circle cx="50" cy="48" r="8" fill="url(#h)"/><circle cx="50" cy="48" r="3" fill="#2A2E35"/></svg>', 360),
-  clapper: () => hfxSprite("ifx-clapper", () => 'viewBox="0 0 30 30"><defs>' + ifxLin("c", 1, 0, IFX_CHROME) + '</defs><rect x="12.5" y="0" width="5" height="18" rx="2" fill="#2A2E35"/><rect x="6" y="16" width="18" height="11" rx="4.5" fill="url(#c)"/></svg>', 80),
-  /* a horn-strobe on the wall: red, a grille, FIRE, the clear lens on top */
-  horn: () => hfxSprite("ifx-horn", () => 'viewBox="0 0 100 120"><defs>' + ifxLin("b", 0, 1, [[0, "#FF5245"], [.5, "#D81E26"], [1, "#8A0C12"]]) + ifxLin("l", 0, 1, [[0, "#FFFFFF"], [.5, "#EEF4FA"], [1, "#B8C6D2"]]) + '</defs>' +
-    '<rect x="4" y="4" width="92" height="112" rx="14" fill="url(#b)"/><path d="M14 6 L86 6 Q94 6 94 14 L94 24 Q50 30 6 24 L6 14 Q6 6 14 6 Z" fill="#FFFFFF" opacity=".2"/>' +
-    '<rect x="20" y="12" width="60" height="30" rx="9" fill="url(#l)"/><path d="M28 27 L72 27" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/><path d="M28 27 L72 27" stroke="#C9D6E0" stroke-width="1.6" stroke-linecap="round"/>' +
-    [56, 64, 72, 80].map(y => '<rect x="22" y="' + y + '" width="56" height="3.6" rx="1.8" fill="#6A060C"/>').join("") +
-    '<text x="50" y="106" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="15" fill="#FFFFFF" letter-spacing="3">FIRE</text></svg>', 360),
-  /* a strobe's flash: a white-hot core and its rays */
-  flare: () => hfxSprite("ifx-flare", () => 'viewBox="0 0 200 200"><defs><radialGradient id="g"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".12" stop-color="#FFFFFF" stop-opacity=".95"/><stop offset=".35" stop-color="#EAF2FF" stop-opacity=".35"/><stop offset="1" stop-color="#EAF2FF" stop-opacity="0"/></radialGradient>' +
-    ifxLin("h", 1, 0, [[0, "#FFFFFF", 0], [.5, "#FFFFFF", .95], [1, "#FFFFFF", 0]]) + ifxLin("v", 0, 1, [[0, "#FFFFFF", 0], [.5, "#FFFFFF", .95], [1, "#FFFFFF", 0]]) + '</defs>' +
-    '<circle cx="100" cy="100" r="100" fill="url(#g)"/><rect x="0" y="98" width="200" height="4" fill="url(#h)"/><rect x="98" y="20" width="4" height="160" fill="url(#v)"/>' +
-    '<rect x="30" y="99" width="140" height="2" fill="url(#h)" transform="rotate(45 100 100)"/><rect x="30" y="99" width="140" height="2" fill="url(#h)" transform="rotate(-45 100 100)"/></svg>', 360),
-  /* sound going out: three arcs facing right from (0, 50) */
-  wave: col => hfxSprite("ifx-wave" + col, () => 'viewBox="0 0 100 100"><g fill="none" stroke="' + col + '" stroke-linecap="round">' +
-    [[30, 4, .95], [55, 3.4, .6], [80, 2.8, .35]].map(([r, w, o]) => '<path d="M' + bnF(Math.cos(-.85) * r) + ' ' + bnF(50 + Math.sin(-.85) * r) + ' A' + r + ' ' + r + ' 0 0 1 ' + bnF(Math.cos(.85) * r) + ' ' + bnF(50 + Math.sin(.85) * r) + '" stroke-width="' + w + '" opacity="' + o + '"/>').join("") + '</g></svg>', 200)
+  /* THERMAL CAMERA (384): heat in the iron palette - a white core through yellow, orange, red and
+     magenta into the cold (0), or a warm body with no white in it (1) */
+  ticHeat: k => hfxSprite("ifx-ticheat" + k, () => 'viewBox="0 0 100 100"><defs><radialGradient id="g">' + (k ?
+      [[0, "#FF9A2A", .85], [.28, "#F0462A", .7], [.56, "#B81E78", .42], [.82, "#5A1490", .16], [1, "#2A0B5E", 0]] :
+      [[0, "#FFFFF0", 1], [.14, "#FFE27A", .95], [.32, "#FF9A1F", .85], [.52, "#E8402A", .62], [.74, "#A81C7E", .3], [1, "#3A0E6A", 0]])
+    .map(s => '<stop offset="' + s[0] + '" stop-color="' + s[1] + '" stop-opacity="' + s[2] + '"/>').join("") + '</radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>', 256),
+  /* hot air rising off it, as a thermal camera sees it: a plume, hottest at its foot (60 x 160) */
+  ticPlume: () => hfxSprite("ifx-ticplume", () => 'viewBox="0 0 60 160"><defs>' +
+    ifxRad("p", 30, 150, 30, 4.6, [[0, "#FFB23A", .8], [.24, "#F06A28", .62], [.52, "#C8286A", .36], [.8, "#6A168C", .12], [1, "#3A0E6A", 0]]) +
+    ifxRad("q", 30, 152, 12, 4, [[0, "#FFE8A0", .6], [1, "#FFB23A", 0]]) + '</defs>' +
+    '<path d="M30 160 C4 150 2 112 14 84 C24 60 14 34 26 2 C40 30 52 54 46 86 C42 112 58 148 30 160 Z" fill="url(#p)"/><ellipse cx="30" cy="146" rx="9" ry="16" fill="url(#q)"/></svg>', 256),
+  /* the display's marks: a corner (its point at the frame's origin, arms along x and y) ... */
+  ticL: () => hfxSprite("ifx-ticl", () => 'viewBox="-6 -6 46 46"><path d="M0 30 L0 0 L30 0" fill="none" stroke="#06030F" stroke-opacity=".5" stroke-width="7" stroke-linejoin="miter"/>' +
+    '<path d="M0 30 L0 0 L30 0" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linejoin="miter"/></svg>', 160),
+  /* ... the centre spot's cross ... */
+  ticCross: () => hfxSprite("ifx-ticcross", () => 'viewBox="-20 -20 40 40"><g fill="none" stroke-linecap="round"><path d="M-15 0 L-6 0 M6 0 L15 0 M0 -15 L0 -6 M0 6 L0 15" stroke="#06030F" stroke-opacity=".5" stroke-width="5"/>' +
+    '<path d="M-15 0 L-6 0 M6 0 L15 0 M0 -15 L0 -6 M0 6 L0 15" stroke="#FFFFFF" stroke-width="2.2"/></g><circle cx="0" cy="0" r="1.8" fill="#FFFFFF"/></svg>', 128),
+  /* ... the readout's digits, a strip 0-9 and a blank (20 x 28 a cell) ... */
+  ticDig: () => hfxSprite("ifx-ticdig", () => 'viewBox="0 0 20 308"><g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="25" fill="#FFFFFF" text-anchor="middle">' +
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(d => '<text x="10" y="' + (d * 28 + 23) + '">' + d + '</text>').join("") + '</g></svg>', 720),
+  ticUnit: () => hfxSprite("ifx-ticunit", () => 'viewBox="0 0 26 28"><text x="1" y="23" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="18" fill="#FFFFFF" fill-opacity=".86">°F</text></svg>', 120),
+  /* ... MAX, white-hot, when it pegs ... */
+  ticMax: () => hfxSprite("ifx-ticmax", () => 'viewBox="0 0 54 24"><defs>' + ifxLin("m", 1, 0, [[0, "#FFFFFF"], [.6, "#FFF2C0"], [1, "#FFD25A"]]) + '</defs>' +
+    '<rect x="1" y="1" width="52" height="22" rx="6" fill="url(#m)"/><text x="27" y="17" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="14" letter-spacing="1.6" fill="#8A0E2A">MAX</text></svg>', 200),
+  /* ... the temperature scale: 0 to 1000 in the iron palette, its marks and figures (44 x 240,
+     the bar from y 10 to 230, x 26.5 to 37.5; drawn on -8..44) ... */
+  ticScale: () => hfxSprite("ifx-ticscale", () => 'viewBox="-8 0 52 240"><defs>' + ifxLin("i", 0, 1, [[0, "#FFFFF4"], [.1, "#FFE27A"], [.26, "#FF9A1F"], [.44, "#E8402A"], [.62, "#B81E78"], [.8, "#5A1490"], [1, "#160830"]]) + '</defs>' +
+    '<rect x="25" y="9" width="14" height="222" rx="3.5" fill="#06030F" fill-opacity=".55"/><rect x="26.5" y="10.5" width="11" height="219" rx="2.5" fill="url(#i)"/>' +
+    '<rect x="26.5" y="10.5" width="11" height="219" rx="2.5" fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="1"/>' +
+    [0, .25, .5, .75, 1].map(k => '<path d="M' + (k % .5 ? 21 : 18.5) + ' ' + bnF(10.5 + k * 219) + ' L24 ' + bnF(10.5 + k * 219) + '" stroke="#FFFFFF" stroke-opacity=".75" stroke-width="1.2"/>').join("") +
+    '<g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="9.5" fill="#FFFFFF" fill-opacity=".85" text-anchor="end">' +
+    [["1000", 14], ["500", 124], ["0", 233.5]].map(([s, y]) => '<text x="17" y="' + y + '">' + s + '</text>').join("") + '</g></svg>', 720),
+  /* ... its pointer ... */
+  ticMark: () => hfxSprite("ifx-ticmark", () => 'viewBox="-2 -2 16 16"><path d="M0 6 L11 0 L11 12 Z" fill="#FFFFFF" stroke="#06030F" stroke-opacity=".5" stroke-width="1.4" stroke-linejoin="round"/></svg>', 64),
+  /* ... the mode at the top of the display (a thermometer and THERMAL) and its battery */
+  ticMode: () => hfxSprite("ifx-ticmode", () => 'viewBox="0 0 124 24"><rect x="5" y="2" width="6" height="14" rx="3" fill="none" stroke="#FFFFFF" stroke-width="1.6"/><circle cx="8" cy="18" r="4.4" fill="#FF6A2A" stroke="#FFFFFF" stroke-width="1.6"/>' +
+    '<rect x="6.9" y="8" width="2.2" height="9" rx="1.1" fill="#FF6A2A"/><text x="20" y="17.5" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="14" letter-spacing="2.4" fill="#FFFFFF" fill-opacity=".92">THERMAL</text></svg>', 420),
+  /* a ring of heat going out (the camera coming down) */
+  ticWave: () => hfxSprite("ifx-ticwave", () => 'viewBox="0 0 100 100"><defs><radialGradient id="g">' + [[0, "#E8402A", 0], [.58, "#E8402A", 0], [.72, "#FF7A24", .42], [.82, "#FFC24A", .8], [.88, "#FFF6D8", .92],
+    [.93, "#FF9A2A", .5], [1, "#B81E78", 0]].map(s => '<stop offset="' + s[0] + '" stop-color="' + s[1] + '" stop-opacity="' + s[2] + '"/>').join("") + '</radialGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/></svg>', 360),
+  ticBatt: () => hfxSprite("ifx-ticbatt", () => 'viewBox="0 0 36 18"><rect x="1" y="2" width="29" height="14" rx="3" fill="none" stroke="#FFFFFF" stroke-opacity=".9" stroke-width="1.6"/><rect x="31" y="6" width="3.4" height="6" rx="1.2" fill="#FFFFFF" fill-opacity=".9"/>' +
+    [0, 1, 2, 3].map(i => '<rect x="' + (4 + i * 6.4) + '" y="5" width="4.8" height="8" rx="1" fill="#FFFFFF" fill-opacity=".9"/>').join("") + '</svg>', 128)
 };
 function ifxLit(bx, c, color, glow, dl, dur){ if(bx && c.pct) hfxLitText(bx, c, { mode: "flash", color, glow, dl, dur }); }
 /* the box's own light, washed over it (a card-sized glow) */
@@ -113487,7 +113518,8 @@ function ifxWarmList(id){
     S.puff("#DFF6FF"), S.puff("#E8EEF2"), S.puff("#3A3330"), S.glow("#FFB347"), S.glow("#FF5A4A"), S.glow("#FF8A3D"), S.glow("#4FC3FF")];
   if(id === "ufo") return [S.stripe(), S.quad(0), S.quad(1), S.quad(2), S.quad(3), S.ring("#F5C518"), S.ring("#B4F03A"), S.hex(), S.scan(), S.bracket(), S.tag(), S.suit(), S.mist(), S.vapor(),
     S.puff("#E8FFF0"), S.glow("#F5C518"), S.glow("#B4F03A"), S.glow("#FFFFFF")];
-  if(id === "bubbles") return [S.pull(), S.pullH(), S.bell(), S.clapper(), S.horn(), S.flare(), S.wave("#FFFFFF"), S.wave("#FF6A5E"), S.glow("#FFFFFF"), S.glow("#FF3B30"), S.ring("#FFFFFF")];
+  if(id === "bubbles") return [S.ticHeat(0), S.ticHeat(1), S.ticPlume(), S.ticL(), S.ticCross(), S.ticDig(), S.ticUnit(), S.ticMax(), S.ticScale(), S.ticMark(), S.ticMode(), S.ticBatt(), S.ticWave(),
+    S.glow("#FF5A2A"), S.glow("#FFF2C0"), S.glow("#FF9A3D"), S.glow("#FF8A2A")];
   return [];
 }
 
@@ -113834,106 +113866,245 @@ function ifxHazmat(scr, bx, c){
   }
 }
 
-/* ============ FIRE ALARM (383, redone) ============
-   "And the fire alarm one, again, also not a big fan. Try that one again." An event, not a
-   blinking light: close on a pull station - the handle is pulled - and on the click the view
-   pulls back as the system goes. A fire bell rings itself silly (shaking, its striker hammering,
-   sound rolling off it), the horn sounds its three beats, the strobe fires once a second -
-   a white burst that lights the room - and red pulses at the edges with the horn; then it
-   stops, the bell rings down and the handle is reset. */
-function ifxAlarm(scr, bx, c){
-  const play = (host, W, H, small) => {
-    const tot = small ? 4.8 : 6.6;
-    const T = small ? { pull: .4, go: .5, back: .5, flashes: [.52, 1.32, 2.12, 2.92], blasts: [.55, .95, 1.35, 2.25, 2.65, 3.05], stop: 3.4, reset: 3.7 }
-                    : { pull: .62, go: .74, back: .8, flashes: [1.5, 2.5, 3.5, 4.4], blasts: [.8, 1.3, 1.8, 3.3, 3.8, 4.3], stop: 4.7, reset: 4.95 };
-    const tl = t => Math.max(0, Math.min(1, t / tot));
-    /* the room's red, up with the alarm and pulsing with the horn */
-    const red = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.edge("rgba(255,40,30,.66)") + ";opacity:0;");
-    const rk = [[T.go, { opacity: 0 }], [T.go + .1, { opacity: .45 }]];
-    T.blasts.forEach(b => rk.push([b, { opacity: .45 }], [b + .06, { opacity: .95 }], [b + .36, { opacity: .5 }]));
-    rk.push([T.stop, { opacity: .45 }], [T.stop + .6, { opacity: 0 }]);
-    ifxAt(c, red, tot, rk);
-    /* everything on the walls jolts with each blast of the horn */
-    const room = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;");
-    const jk = [[0, { transform: "translate(0px,0px)" }]], j = small ? 1 : 2.4;
-    T.blasts.forEach(b => jk.push([b, { transform: "translate(0px,0px)" }], [b + .03, { transform: "translate(" + bnF(j) + "px," + bnF(-j) + "px)" }], [b + .07, { transform: "translate(" + bnF(-j) + "px," + bnF(j * .6) + "px)" }], [b + .12, { transform: "translate(0px,0px)" }]));
-    ifxAt(c, room, tot, jk);
-    /* the station: close up, pulled, then the view pulls back to it on the wall */
-    const pw = small ? 0 : Math.min(W * .34, 160), ph = pw * 1.25, px = W / 2 - pw / 2, py = H * .83 - ph / 2;
+/* ============ THERMAL CAMERA (384, in the Fire Alarm's place) ============
+   "The fire alarm one, absolutely not the move. That thing is terrible. Make that one something
+   else, get creative match the theme of them all." (And of a character in round 3: "Thermal is
+   cool".) The screen becomes a thermal imaging camera's display. It powers up - the image builds
+   down the screen, everything cold in indigo, the results screen's own cards a faint warmth - and
+   the display's frame, its mode, its temperature scale and the reticle with its readout come up.
+   The reticle hunts: the XP total reads warm, the character reads body heat; then it swings past
+   the box, comes back and locks, its corners opening round the 100%, which heats through the iron
+   palette - magenta, red, orange, yellow - to white-hot while the readout races to 1000 and pegs
+   MAX and heat rolls up off it. Then the camera comes down: the display falls away past you, a
+   ring of heat goes out of the number and the real 100% is left gleaming white-hot. */
+const IFX_IRON = [[0, "#FFFFF4"], [.1, "#FFE27A"], [.26, "#FF9A1F"], [.44, "#E8402A"], [.62, "#B81E78"], [.8, "#5A1490"], [1, "#160830"]];
+/* its beats (seconds), on the screen and in a box alone - the score (SND_IFX) is timed to these */
+const IFX_TIC = { full: { ret: .5, lock: 2.75, hot: 3.35, off: 4.25, tot: 6.3 }, small: { ret: .3, lock: 1.25, hot: 1.8, off: 2.65, tot: 4.3 } };
+/* A copy of the 100% to light, in its own figures. The number is set tabular and lining (.rs-pct.pct's
+   font-variant-numeric and font-feature-settings): a copy without them is 7px narrower at the results
+   screen's size, so its 1 and 0s sit off the real ones - a double image as one hands over to the other. */
+function ifxNumCopy(host, c, x, y, css){
+  const cs = getComputedStyle(c.pct);
+  const t = ifxEl(host, "left:" + bnF(x) + "px;top:" + bnF(y) + "px;width:" + bnF(c.p.w) + "px;height:" + bnF(c.p.h) + "px;white-space:nowrap;font-style:normal;" +
+    "font-family:" + cs.fontFamily + ";font-size:" + cs.fontSize + ";font-weight:" + cs.fontWeight + ";letter-spacing:" + cs.letterSpacing + ";line-height:" + cs.lineHeight + ";" +
+    "font-variant-numeric:" + cs.fontVariantNumeric + ";font-feature-settings:" + cs.fontFeatureSettings + ";font-stretch:" + cs.fontStretch + ";" + (css || ""));
+  hfxCloneNum(t, c.pct);
+  return t;
+}
+function ifxThermal(scr, bx, c){
+  const play = (host, W, H, small, L) => {
+    const T = small ? IFX_TIC.small : IFX_TIC.full, tot = T.tot, S = ifxSpr;
+    const m = Math.min(W, H), u = small ? Math.max(.45, Math.min(1, H / 180)) : Math.max(.72, Math.min(1.3, m / 440));
+    const tx = L.tx, ty = L.ty, nw = L.nw, nh = L.nh, tiny = small && (c.mini || H < 110);
+    const fadeOut = T.off + (small ? .5 : .7);
+    /* ---- the camera's image: cold, scan-lined, darker to its edges; built down the screen ---- */
+    const view = ifxEl(host, "left:0;top:0;width:" + bnF(W) + "px;height:" + bnF(H) + "px;transform-origin:" + bnF(tx) + "px " + bnF(ty) + "px;");
+    ifxAt(c, view, tot, [[T.off - .05, { opacity: 1, transform: "scale(1)", easing: "cubic-bezier(.3,0,.7,1)" }], [fadeOut, { opacity: 0, transform: "scale(1.05)" }]]);
+    const cold = ifxEl(view, "left:0;top:0;width:100%;height:100%;opacity:0;background:radial-gradient(ellipse 95% 70% at 50% 40%, rgba(46,18,100,.82), rgba(22,8,56,.9) 62%, rgba(7,3,20,.95));");
+    ifxAt(c, cold, tot, [[0, { opacity: 0 }], [small ? .22 : .3, { opacity: 1 }]]);
+    const lines = ifxEl(view, "left:0;top:0;width:100%;height:100%;opacity:0;background:repeating-linear-gradient(to bottom, rgba(200,170,255,.055) 0 1px, rgba(0,0,0,0) 1px 3px);");
+    ifxAt(c, lines, tot, [[.08, { opacity: 0 }], [.5, { opacity: 1 }]]);
+    const vig = ifxEl(view, "left:0;top:0;width:100%;height:100%;opacity:0;background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 52%, rgba(2,0,8,.62) 100%);");
+    ifxAt(c, vig, tot, [[0, { opacity: 0 }], [.35, { opacity: 1 }]]);
+    /* the first frame building down the display: a band of light, and each thing lit as it passes */
+    const bh = H * (small ? .3 : .16), sweep = small ? .42 : .58;
+    const built = y => .04 + Math.max(0, Math.min(1, (y + bh) / (H + bh))) * sweep;
+    const band = ifxEl(view, "left:0;top:" + bnF(-bh) + "px;width:100%;height:" + bnF(bh) + "px;opacity:0;background:linear-gradient(to bottom, rgba(255,190,255,0), rgba(255,200,250,.14) 70%, rgba(255,236,255,.4) 96%, rgba(255,255,255,0));");
+    ifxAt(c, band, tot, [[.04, { opacity: 1, transform: "translateY(0px)" }], [.04 + sweep, { opacity: 1, transform: "translateY(" + bnF(H + bh) + "px)" }], [.06 + sweep, { opacity: 0, transform: "translateY(" + bnF(H + bh) + "px)" }]]);
+    /* ---- what the camera sees: the cards a faint warmth, the box warm and heating, two warm spots ---- */
+    const card = (r, css) => ifxEl(view, "left:" + bnF(r.left) + "px;top:" + bnF(r.top) + "px;width:" + bnF(r.width) + "px;height:" + bnF(r.height) + "px;border-radius:" + bnF(L.r) + "px;opacity:0;" + css);
+    if(L.xp){
+      const e = card(L.xp, "background:linear-gradient(to bottom, rgba(120,32,146,.24), rgba(74,18,124,.12));border:1px solid rgba(196,86,206,.34);");
+      ifxAt(c, e, tot, [[built(L.xp.top), { opacity: 0 }], [built(L.xp.top) + .25, { opacity: 1 }]]);
+    }
+    if(L.box){
+      const t0 = built(L.box.top);
+      const wm = card(L.box, "background:radial-gradient(ellipse 70% 80% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(196,40,124,.36), rgba(116,24,134,.22) 60%, rgba(70,16,120,.14));border:1.5px solid rgba(220,80,170,.5);box-shadow:0 0 18px rgba(176,40,150,.32);");
+      ifxAt(c, wm, tot, [[t0, { opacity: 0 }], [t0 + .25, { opacity: 1 }]]);
+      const ht = card(L.box, "background:radial-gradient(ellipse 62% 78% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(255,128,40,.5), rgba(232,64,42,.34) 42%, rgba(168,30,118,.26) 78%, rgba(110,24,134,.2));border:2px solid rgba(255,176,70,.9);box-shadow:0 0 26px rgba(255,120,40,.5), inset 0 0 22px rgba(255,120,40,.3);");
+      ifxAt(c, ht, tot, [[2.3, { opacity: 0 }], [T.hot, { opacity: 1 }]]);
+    }
+    (L.spots || []).forEach(sp => {
+      const e = ifxImg(view, S.ticHeat(sp.k), sp.x - sp.w / 2, sp.y - sp.h / 2, sp.w, sp.h);
+      const t0 = built(sp.y);
+      ifxAt(c, e, tot, [[t0, { opacity: 0, transform: "scale(.7)" }], [t0 + .3, { opacity: sp.o, transform: "scale(1)" }]]);
+    });
+    /* ---- the 100%, as the camera sees it: warm from the first frame, then heating through the
+       palette to white-hot (a copy of the number per colour, each one's glow wider the cooler it is,
+       so they stack into the palette's halo) ---- */
+    const num = ifxEl(host, "left:" + bnF(tx - nw / 2) + "px;top:" + bnF(ty - nh / 2) + "px;width:" + bnF(nw) + "px;height:" + bnF(nh) + "px;transform-origin:50% 55%;");
+    const halo = ifxImg(num, S.glow("#FF5A2A"), -nw * .55, -nh * .85, nw * 2.1, nh * 2.7);
+    ifxAt(c, halo, tot, [[T.lock - .5, { opacity: 0, transform: "scale(.7)" }], [T.hot, { opacity: .7, transform: "scale(1)" }], [T.hot + .5, { opacity: .85, transform: "scale(1.08)" }],
+      [T.off, { opacity: .7, transform: "scale(1.02)" }], [T.off + .6, { opacity: 0, transform: "scale(1.25)" }]]);
+    if(c.pct){
+      const g = small ? .6 : 1;
+      const px = v => bnF(v * g) + "px";
+      const steps = [["#B8287E", "0 0 " + px(30) + " rgba(150,28,140,.9)"], ["#EE4A2C", "0 0 " + px(22) + " rgba(220,50,48,.85)"], ["#FF9524", "0 0 " + px(15) + " rgba(255,112,24,.9)"],
+        ["#FFE07A", "0 0 " + px(9) + " rgba(255,180,50,.95)"], ["#FFFFFF", "0 0 " + px(4) + " #FFF6D8, 0 0 " + px(12) + " rgba(255,236,170,.9)"]];
+      /* when each comes up: the first warm already, then up the palette as the reticle closes in */
+      const at = small ? [.25, .7, .95, 1.2, 1.5] : [built(ty), 2.15, 2.45, 2.75, 3.05];
+      steps.forEach(([col, glow], i) => {
+        const e = ifxNumCopy(num, c, 0, 0, "opacity:0;color:" + col + ";text-shadow:" + glow + ";"), on = at[i], rise = i ? .3 : .35;
+        const k = i ? [[on, { opacity: 0 }], [on + rise, { opacity: 1 }]] : [[on, { opacity: 0 }], [on + .3, { opacity: .55 }], [small ? .6 : 1.9, { opacity: .55 }], [small ? .8 : 2.2, { opacity: 1 }]];
+        k.push(i === 4 ? [T.off + .1, { opacity: 1 }] : [T.off, { opacity: 1 }], i === 4 ? [T.off + (small ? .6 : .8), { opacity: 0 }] : [T.off + .4, { opacity: 0 }]);
+        ifxAt(c, e, tot, k);
+      });
+    }
+    /* it flares as it goes white */
+    ifxAt(c, num, tot, [[T.hot - .12, { transform: "scale(1)", easing: IFX_OUT }], [T.hot + .12, { transform: "scale(1.045)" }], [T.hot + .7, { transform: "scale(1)" }]]);
+    /* hot air rolling up off it */
+    const nP = tiny ? 1 : small ? 2 : 5;
+    for(let i = 0; i < nP; i++){
+      const pw = nw * (small ? .56 : .6), ph = pw * 2.2, x = tx + (nP > 1 ? (i / (nP - 1) - .5) * nw * .7 : 0) + (i % 2 ? 1 : -1) * nw * .04, y = ty - nh * .1;
+      const t0 = T.lock + .1 + i * (small ? .4 : .27), d = small ? 1.1 : 1.25;
+      const p = ifxImg(host, S.ticPlume(), x - pw / 2, y - ph, pw, ph, "transform-origin:50% 100%;");
+      const sx = (i % 2 ? -1 : 1) * nw * .06;
+      ifxAt(c, p, tot, [[t0, { opacity: 0, transform: "translate(0px,0px) scale(.6,.4)" }], [t0 + d * .3, { opacity: .6, transform: "translate(" + bnF(sx) + "px," + bnF(-ph * .2) + "px) scale(1,1)" }],
+        [Math.min(T.off + .45, t0 + d), { opacity: 0, transform: "translate(" + bnF(-sx) + "px," + bnF(-ph * .75) + "px) scale(1.25,1.2)" }]]);
+    }
+    /* ---- the display: its frame, its mode and battery, the temperature scale ---- */
+    const hud = ifxEl(host, "left:0;top:0;width:" + bnF(W) + "px;height:" + bnF(H) + "px;transform-origin:" + bnF(tx) + "px " + bnF(ty) + "px;");
+    ifxAt(c, hud, tot, [[T.off - .15, { opacity: 1, transform: "scale(1)", easing: IFX_IN }], [T.off + .3, { opacity: 0, transform: "scale(1.14)" }]]);
+    const fL = small ? Math.max(8, Math.min(20, H * .14)) : 40 * u, ix = small ? Math.max(4, H * .05) : Math.max(10, Math.min(30, W * .045));
+    const iyT = small ? ix : Math.max(24, Math.min(88, H * .075)), iyB = small ? ix : Math.max(14, Math.min(56, H * .05));
+    const corner = (parent, size, x, y, rot) => ifxImg(parent, S.ticL(), x - size * 6 / 46, y - size * 6 / 46, size, size, "transform-origin:" + bnF(size * 6 / 46) + "px " + bnF(size * 6 / 46) + "px;");
+    [[ix, iyT, 0, -1, -1], [W - ix, iyT, 90, 1, -1], [W - ix, H - iyB, 180, 1, 1], [ix, H - iyB, 270, -1, 1]].forEach(([x, y, rot, sx, sy], i) => {
+      const e = corner(hud, fL, x, y, rot), o = fL * .5;
+      ifxAt(c, e, tot, [[.16 + i * .04, { opacity: 0, transform: "translate(" + bnF(sx * o) + "px," + bnF(sy * o) + "px) rotate(" + rot + "deg)", easing: IFX_OUT }], [.46 + i * .04, { opacity: 1, transform: "translate(0px,0px) rotate(" + rot + "deg)" }]]);
+    });
     if(!small){
-      const z = Math.min(W * .6 / pw, H * .4 / ph, 2.1), dy = H * .55 - H * .83;
-      const st = ifxEl(room, "left:" + bnF(px) + "px;top:" + bnF(py) + "px;width:" + bnF(pw) + "px;height:" + bnF(ph) + "px;transform-origin:50% 50%;opacity:0;");
-      const tr = (y, s) => "translate(0px," + bnF(y) + "px) scale(" + s + ")";
-      ifxAt(c, st, tot, [[0, { opacity: 0, transform: tr(dy + 26, z * .9), easing: IFX_OUT }], [.34, { opacity: 1, transform: tr(dy, z) }], [T.pull + .02, { opacity: 1, transform: tr(dy, z), easing: IFX_OUT }], [T.pull + .08, { opacity: 1, transform: tr(dy + 7, z * .98) }],
-        [T.back, { opacity: 1, transform: tr(dy, z), easing: "cubic-bezier(.6,0,.2,1)" }], [T.back + .65, { opacity: 1, transform: tr(0, 1) }], [tot - .7, { opacity: 1, transform: tr(0, 1), easing: IFX_IN }], [tot - .1, { opacity: 0, transform: tr(16, .96) }]]);
-      ifxImg(st, ifxSpr.pull(), 0, 0, pw, ph, "opacity:1;");
-      const hn = ifxImg(st, ifxSpr.pullH(), 0, 0, pw, ph, "opacity:1;");
-      const u = ph / 200;
-      ifxAt(c, hn, tot, [[T.pull - .12, { transform: "translateY(0px)", easing: "ease-out" }], [T.pull - .05, { transform: "translateY(" + bnF(-3 * u) + "px)", easing: IFX_IN }], [T.pull + .03, { transform: "translateY(" + bnF(24 * u) + "px)" }], [T.pull + .09, { transform: "translateY(" + bnF(20 * u) + "px)" }],
-        [T.reset, { transform: "translateY(" + bnF(20 * u) + "px)", easing: IFX_BACK }], [T.reset + .25, { transform: "translateY(0px)" }]]);
-      const ck = ifxImg(st, ifxSpr.glow("#FFFFFF"), pw * .1, ph * .3, pw * .8, ph * .5);
-      ifxAt(c, ck, tot, [[T.pull + .02, { opacity: 0, transform: "scale(.4)" }], [T.pull + .06, { opacity: 1, transform: "scale(1)" }], [T.pull + .4, { opacity: 0, transform: "scale(1.4)" }]]);
-      const rr = ifxImg(host, ifxSpr.ring("#FFFFFF"), W / 2 - pw * z, H * .55 - pw * z, pw * z * 2, pw * z * 2);
-      ifxAt(c, rr, tot, [[T.pull + .03, { opacity: 0, transform: "scale(.3)" }], [T.pull + .08, { opacity: .9, transform: "scale(.5)", easing: IFX_OUT }], [T.pull + .7, { opacity: 0, transform: "scale(1.6)" }]]);
-      /* and the system goes: one white burst out of the station over the whole room */
-      const go = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at 50% 55%, rgba(255,255,255,.8), rgba(255,236,232,.35) 45%, rgba(255,220,214,.08) 85%);opacity:0;");
-      ifxAt(c, go, tot, [[T.go, { opacity: 0 }], [T.go + .05, { opacity: 1 }], [T.go + .45, { opacity: 0 }]]);
+      const mh = 20 * u, mw = mh * 124 / 24, bh2 = 15 * u, bw2 = bh2 * 36 / 18, my = iyT + fL * .32;
+      const mode = ifxImg(hud, S.ticMode(), ix + fL * .32, my, mw, mh);
+      ifxAt(c, mode, tot, [[.32, { opacity: 0, transform: "translateX(-8px)", easing: IFX_OUT }], [.6, { opacity: 1, transform: "translateX(0px)" }]]);
+      const bat = ifxImg(hud, S.ticBatt(), W - ix - fL * .32 - bw2, my + (mh - bh2) / 2, bw2, bh2);
+      ifxAt(c, bat, tot, [[.36, { opacity: 0, transform: "translateX(8px)", easing: IFX_OUT }], [.64, { opacity: 1, transform: "translateX(0px)" }]]);
     }
-    /* the bell and the horn-strobe, high on the walls, coming into view as it pulls back */
-    const bs = small ? Math.min(H * .62, W * .26) : Math.min(W * .25, 118), bxc = small ? W * .14 : W * .2, byc = small ? H * .5 : Math.max(bs * .62, H * .1);
-    const hw = small ? Math.min(H * .5, W * .2) : Math.min(W * .21, 100), hh = hw * 1.2, hxc = small ? W * .86 : W * .8, hyc = small ? H * .5 : byc;
-    const enter = (el, ox, oy) => ifxAt(c, el, tot, [[T.back, { opacity: 0, transform: "translate(" + bnF(ox) + "px," + bnF(oy) + "px) scale(1.5)", easing: "cubic-bezier(.6,0,.2,1)" }], [T.back + (small ? .3 : .6), { opacity: 1, transform: "translate(0px,0px) scale(1)" }],
-      [tot - .7, { opacity: 1, transform: "translate(0px,0px) scale(1)", easing: IFX_IN }], [tot - .1, { opacity: 0, transform: "translate(0px,0px) scale(.94)" }]]);
-    const bell = ifxEl(room, "left:" + bnF(bxc - bs / 2) + "px;top:" + bnF(byc - bs / 2) + "px;width:" + bnF(bs) + "px;height:" + bnF(bs) + "px;opacity:0;");
-    enter(bell, small ? 0 : -bs * .9, small ? 0 : -bs * .7);
-    const shake = ifxEl(bell, "left:0;top:0;width:100%;height:100%;transform-origin:50% 48%;");
-    const ringFor = T.stop - T.go;
-    ifxA(c, shake, [{ transform: "translate(0px,0px) rotate(0deg)" }, { transform: "translate(" + bnF(-bs * .015) + "px,0px) rotate(-4deg)", offset: .25 }, { transform: "translate(0px," + bnF(bs * .01) + "px) rotate(0deg)", offset: .5 },
-      { transform: "translate(" + bnF(bs * .015) + "px,0px) rotate(4deg)", offset: .75 }, { transform: "translate(0px,0px) rotate(0deg)" }], .07, T.go, "linear", { iterations: Math.round(ringFor / .07) });
-    ifxImg(shake, ifxSpr.bell(), 0, 0, bs, bs, "opacity:1;");
-    const cs = bs * .3, cl = ifxImg(shake, ifxSpr.clapper(), bs / 2 - cs / 2, bs * .84 - cs * .2, cs, cs, "opacity:1;");
-    ifxA(c, cl, [{ transform: "translateX(0px)" }, { transform: "translateX(" + bnF(-cs * .2) + "px)", offset: .3 }, { transform: "translateX(" + bnF(cs * .2) + "px)", offset: .7 }, { transform: "translateX(0px)" }], .06, T.go, "linear", { iterations: Math.round(ringFor / .06) });
-    /* the sound rolling off the bell, both ways */
-    const ws = bs * (small ? .9 : 1.15);
-    for(let s = 0; s < 2; s++) for(let j = 0; j < 2; j++){
-      const w = ifxImg(room, ifxSpr.wave("#FFFFFF"), bxc + (s ? -1 : 1) * bs * .44, byc - ws / 2, ws, ws, "transform-origin:0 50%;");
-      const rot = s ? "rotate(180deg) " : "rotate(0deg) ", per = .5, dl = T.go + j * per / 2;
-      ifxA(c, w, [{ opacity: 0, transform: rot + "scale(.5)" }, { opacity: .85, transform: rot + "scale(.75)", offset: .2 }, { opacity: 0, transform: rot + "scale(1.6)" }], per, dl, "linear", { iterations: Math.max(1, Math.floor((T.stop - dl) / per)) });
+    let mark = null, sTop = 0, sH = 0;
+    if(!small || W >= 230){
+      sH = small ? H * .62 : Math.max(90, Math.min(300, H * .26)); const sW = sH * 52 / 240, sx0 = W - ix - (small ? 4 : fL * .3) - sW - sH * 12 / 240, bR = sx0 + sW * 45.5 / 52;
+      /* on the right, below the box where there is room */
+      sTop = small ? (H - sH) / 2 : Math.min(H - iyB - fL - sH, Math.max(iyT + fL + 30 * u, H * .36, L.box ? L.box.top + L.box.height + 26 * u : 0));
+      const sc = ifxImg(hud, S.ticScale(), sx0, sTop, sW, sH, "transform-origin:50% 100%;");
+      ifxAt(c, sc, tot, [[.3, { opacity: 0, transform: "scaleY(.05)", easing: IFX_OUT }], [.72, { opacity: 1, transform: "scaleY(1)" }]]);
+      const mk = sH * 14 / 240;
+      mark = ifxImg(hud, S.ticMark(), bR + 1, sTop - mk / 2, mk, mk);
+      /* the top of the scale lights when it pegs */
+      const gs = sH * 30 / 240, tg = ifxImg(hud, S.glow("#FFF2C0"), sx0 + sW * 40 / 52 - gs, sTop + sH * 10 / 240 - gs, gs * 2, gs * 2);
+      ifxAt(c, tg, tot, [[T.hot - .05, { opacity: 0, transform: "scale(.4)" }], [T.hot + .08, { opacity: 1, transform: "scale(1.2)" }], [T.hot + .6, { opacity: .6, transform: "scale(1)" }]]);
     }
-    /* the horn-strobe, its horn on the three beats */
-    const hn = ifxImg(room, ifxSpr.horn(), hxc - hw / 2, hyc - hh / 2, hw, hh);
-    enter(hn, small ? 0 : hw * .9, small ? 0 : -hw * .7);
-    for(let s = 0; s < 2; s++){
-      const hws = hw * 1.3, w = ifxImg(room, ifxSpr.wave("#FF6A5E"), hxc + (s ? -1 : 1) * hw * .5, hyc + hh * .1 - hws / 2, hws, hws, "transform-origin:0 50%;");
-      const rot = s ? "rotate(180deg) " : "rotate(0deg) ", k = [[0, { opacity: 0, transform: rot + "scale(.5)" }]];
-      T.blasts.forEach(b => k.push([b, { opacity: 0, transform: rot + "scale(.5)" }], [b + .05, { opacity: .95, transform: rot + "scale(.7)" }], [b + .42, { opacity: 0, transform: rot + "scale(1.7)" }]));
-      ifxAt(c, w, tot, k);
+    /* ---- the reticle: its path, the heat under it, the readout ---- */
+    const s = small ? Math.max(18, Math.min(52, H * .34)) : 70 * u, cs2 = s * .32, pad = small ? 3 : 9 * u;
+    const way = L.path, last = way[way.length - 1];
+    /* [time, [x, y], bend]: each move eases out of one point and into the next along a slight arc
+       (bend, a fraction of its length to the side) */
+    const pos = t => {
+      if(t <= way[0][0]) return way[0][1];
+      if(t >= last[0]) return last[1];
+      let i = 0; while(way[i + 1][0] < t) i++;
+      const a = way[i][1], b = way[i + 1][1], bend = way[i + 1][2] || 0;
+      let q = (t - way[i][0]) / (way[i + 1][0] - way[i][0]); q = q * q * q * (q * (q * 6 - 15) + 10);
+      const k = [(a[0] + b[0]) / 2 - (b[1] - a[1]) * bend, (a[1] + b[1]) / 2 + (b[0] - a[0]) * bend];
+      return [0, 1].map(j => (1 - q) * (1 - q) * a[j] + 2 * (1 - q) * q * k[j] + q * q * b[j]);
+    };
+    /* a hand holds it: a slight drift that settles as it locks */
+    const hand = t => { const a = Math.max(0, Math.min(1, (T.lock - t) / .4)) * (small ? .6 : 1.3) * u; return [a * (Math.sin(t * 11.3) + .6 * Math.sin(t * 17.9 + 1)), a * (Math.sin(t * 9.1 + 2) + .6 * Math.sin(t * 15.7))]; };
+    const ret = ifxEl(host, "left:0;top:0;width:0;height:0;");
+    const rk = [];
+    for(let t = 0; t <= T.lock + .001; t += 1 / 30){
+      const tt = Math.max(t, way[0][0]), p = pos(tt), h = hand(tt);
+      if(t >= way[0][0] - 1 / 30 || !rk.length) rk.push([t, { transform: "translate(" + bnF(p[0] + h[0]) + "px," + bnF(p[1] + h[1]) + "px)" }]);
     }
-    /* the strobe: a burst at the lens and the room lit by it, once a second */
-    const lx = hxc, ly = hyc - hh / 2 + hh * 27 / 120, fs = small ? H * 1.6 : Math.min(W, H) * .95;
-    const flare = ifxImg(host, ifxSpr.flare(), lx - fs / 2, ly - fs / 2, fs, fs);
-    const lit = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:radial-gradient(ellipse at " + bnF(lx / W * 100) + "% " + bnF(ly / H * 100) + "%, rgba(255,255,255,.78), rgba(236,242,255,.3) 40%, rgba(236,242,255,.06) 80%);opacity:0;");
-    const fk = [[0, { opacity: 0, transform: "scale(.3)" }]], wk = [[0, { opacity: 0 }]];
-    T.flashes.forEach((f, i) => { fk.push([f, { opacity: 0, transform: "scale(.3)" }], [f + .04, { opacity: 1, transform: "scale(1.1)" }], [f + .3, { opacity: 0, transform: "scale(1.3)" }]);
-      wk.push([f, { opacity: 0 }], [f + .04, { opacity: i ? .8 : 1 }], [f + .34, { opacity: 0 }]); });
-    ifxAt(c, flare, tot, fk); ifxAt(c, lit, tot, wk);
+    rk.push([T.lock, { transform: "translate(" + bnF(tx) + "px," + bnF(ty) + "px)" }]);
+    ifxAt(c, ret, tot, rk);
+    const rWrap = ifxEl(ret, "left:0;top:0;width:0;height:0;");
+    ifxAt(c, rWrap, tot, [[T.ret, { opacity: 0, transform: "scale(1.5)", easing: IFX_OUT }], [T.ret + .28, { opacity: 1, transform: "scale(1)" }],
+      [T.off - .15, { opacity: 1, transform: "scale(1)", easing: IFX_IN }], [T.off + .3, { opacity: 0, transform: "scale(1.2)" }]]);
+    const fw = nw / 2 + pad, fh = nh / 2 + pad;
+    [[0, -1, -1], [90, 1, -1], [180, 1, 1], [270, -1, 1]].forEach(([rot, sx, sy]) => {
+      const e = corner(rWrap, cs2, 0, 0, rot), h = s / 2;
+      const tr = (x, y) => "translate(" + bnF(x) + "px," + bnF(y) + "px) rotate(" + rot + "deg)";
+      ifxAt(c, e, tot, [[0, { opacity: 1, transform: tr(sx * h, sy * h) }], [T.lock - .02, { opacity: 1, transform: tr(sx * h, sy * h), easing: "cubic-bezier(.3,0,.3,1)" }],
+        [T.lock + .18, { opacity: 1, transform: tr(sx * fw * 1.08, sy * fh * 1.12) }], [T.lock + .34, { opacity: 1, transform: tr(sx * fw, sy * fh) }]]);
+    });
+    const cx = ifxImg(rWrap, S.ticCross(), -s * .3, -s * .3, s * .6, s * .6, "opacity:1;");
+    ifxAt(c, cx, tot, [[T.lock - .05, { opacity: 1, transform: "scale(1)" }], [T.lock + .14, { opacity: 0, transform: "scale(.5)" }]]);
+    /* the readout: what the spot under it reads, refreshed as a camera's is, then racing to 1000 */
+    const heat = (x, y) => (L.hot || []).reduce((v, h) => v + h.a * Math.exp(-((x - h.x) * (x - h.x) + (y - h.y) * (y - h.y)) / (2 * h.s * h.s)), 68);
+    const ticks = [];
+    for(let t = T.ret + .05; t < T.lock - .01; t += small ? .1 : .12){ const p = pos(t); ticks.push([t, Math.round(heat(p[0], p[1]) + Math.sin(t * 37) * 1.5)]); }
+    const v0 = ticks.length ? ticks[ticks.length - 1][1] : 300;
+    for(let t = T.lock; t < T.hot - .01; t += .05){ const q = (t - T.lock) / (T.hot - T.lock); ticks.push([t, Math.round(v0 + (1000 - v0) * q * q * (1.6 - .6 * q))]); }
+    ticks.push([T.hot, 1000]);
+    if(mark){
+      const my = v => sH * (10 + (1 - Math.max(0, Math.min(1000, v)) / 1000) * 220) / 240;
+      ifxAt(c, mark, tot, [[0, { opacity: 0, transform: "translateY(" + bnF(my(68)) + "px)" }], [.62, { opacity: 0, transform: "translateY(" + bnF(my(68)) + "px)" }], [.8, { opacity: 1, transform: "translateY(" + bnF(my(68)) + "px)" }]]
+        .concat(ticks.filter(k => k[0] > .8).map(([t, v]) => [t, { opacity: 1, transform: "translateY(" + bnF(my(v)) + "px)" }])));
+    }
+    if(!tiny && (!small || W >= 230)){
+      const dw = small ? 9 : 12.5 * u, dh = dw * 1.4, uw = dh * 26 / 28, tp = dw * .55, tw = dw * 4 + uw + tp * 2, th = dh + tp * 1.1;
+      const tag = ifxEl(rWrap, "left:" + bnF(-tw / 2) + "px;top:0;width:" + bnF(tw) + "px;height:" + bnF(th) + "px;border-radius:" + bnF(th * .28) + "px;background:rgba(8,4,22,.66);border:1px solid rgba(255,255,255,.5);box-sizing:border-box;");
+      ifxAt(c, tag, tot, [[T.lock - .02, { transform: "translate(0px," + bnF(s / 2 + 6) + "px)", easing: "cubic-bezier(.3,0,.3,1)" }], [T.lock + .3, { transform: "translate(0px," + bnF(fh + 7) + "px)" }]]);
+      const digit = (v, k) => (k && v < Math.pow(10, k)) ? 10 : Math.floor(v / Math.pow(10, k)) % 10;
+      for(let k = 3; k >= 0; k--){
+        const win = ifxEl(tag, "left:" + bnF(tp + (3 - k) * dw - 1) + "px;top:" + bnF((th - dh) / 2 - 1) + "px;width:" + bnF(dw) + "px;height:" + bnF(dh) + "px;overflow:hidden;");
+        const st = ifxImg(win, S.ticDig(), 0, 0, dw, dh * 11, "opacity:1;");
+        const ty2 = d => "translateY(" + bnF(-d * dh) + "px)";
+        const kf = [[0, { transform: ty2(digit(ticks[0][1], k)) }]];
+        let prev = digit(ticks[0][1], k);
+        ticks.forEach(([t, v]) => { const d = digit(v, k); if(d !== prev){ kf.push([t - .001, { transform: ty2(prev) }], [t, { transform: ty2(d) }]); prev = d; } });
+        ifxAt(c, st, tot, kf);
+      }
+      ifxImg(tag, S.ticUnit(), tp + dw * 4 - 1, (th - dh) / 2 - 1, uw, dh, "opacity:1;");
+      const mxh = th * .82, mxw = mxh * 54 / 24, mx = ifxImg(tag, S.ticMax(), tw + 5, (th - mxh) / 2 - 1, mxw, mxh, "transform-origin:0 50%;");
+      ifxAt(c, mx, tot, [[T.hot, { opacity: 0, transform: "scale(.4)", easing: IFX_BACK }], [T.hot + .22, { opacity: 1, transform: "scale(1)" }]]);
+    }
+    /* ---- the camera comes down: a ring of heat out of the number ---- */
+    const hs = Math.max(nw, nh) * 1.4, hr = ifxImg(host, S.ticWave(), tx - hs / 2, ty - hs / 2, hs, hs);
+    ifxAt(c, hr, tot, [[T.off, { opacity: 0, transform: "scale(.8)" }], [T.off + .08, { opacity: .85, transform: "scale(.95)", easing: IFX_OUT }], [T.off + .85, { opacity: 0, transform: "scale(" + (small ? 2.4 : bnF(Math.max(2.6, m * .9 / hs))) + ")" }]]);
+    /* and the heat still coming off the real one for a moment */
+    if(!small) for(let i = 0; i < 2; i++){
+      const pw = nw * .5, ph = pw * 2, x = tx + (i ? .18 : -.2) * nw, y = ty - nh * .25;
+      const p = ifxImg(host, S.glow("#FF9A3D"), x - pw / 2, y - ph, pw, ph, "transform-origin:50% 100%;");
+      const t0 = T.off + .25 + i * .35;
+      ifxAt(c, p, tot, [[t0, { opacity: 0, transform: "translateY(0px) scale(.7,.6)" }], [t0 + .45, { opacity: .32, transform: "translateY(" + bnF(-ph * .25) + "px) scale(1,1)" }], [Math.min(tot - .15, t0 + 1.4), { opacity: 0, transform: "translateY(" + bnF(-ph * .7) + "px) scale(1.2,1.25)" }]]);
+    }
     return T;
   };
-  let T = null;
-  if(scr) T = play(scr, c.vw, c.vh, false);
+  const rad = c.box ? (parseFloat(getComputedStyle(c.box).borderTopLeftRadius) || 18) : 18;
+  if(scr){
+    const W = c.vw, H = c.vh, sc = c.scene, u = Math.max(.72, Math.min(1.3, Math.min(W, H) / 440));
+    const L = { tx: c.pc.x, ty: c.pc.y, nw: c.p.w, nh: c.p.h, r: rad, box: c.box ? c.br : null, xp: sc && sc.xp, spots: [], hot: [] };
+    const centre = el => { const r = el && sc ? sc.at(el) : null; return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height } : null; };
+    const xp = L.xp, panel = sc && sc.panel;
+    const xt = centre(panel && panel.querySelector(".rs-xptotal-val, .hfx-mk-line.is-total b")) || (xp ? { x: xp.left + xp.width * .78, y: xp.top + xp.height * .66, w: 80 * u, h: 30 * u } : { x: W * .7, y: H * .64, w: 80 * u, h: 30 * u });
+    const av = centre(panel && panel.querySelector(".results-level-avatar")) || (xp ? { x: xp.left + xp.width * .22, y: xp.top + xp.height * .4, w: 50 * u, h: 50 * u } : { x: W * .28, y: H * .8, w: 50 * u, h: 50 * u });
+    L.spots.push({ k: 1, x: xt.x, y: xt.y, w: xt.w * 1.5, h: xt.h * 2.4, o: .75 }, { k: 1, x: av.x, y: av.y, w: av.w * 1.5, h: av.h * 1.6, o: .8 }, { k: 0, x: av.x, y: av.y - av.h * .05, w: av.w * .7, h: av.h * .85, o: .55 });
+    L.hot.push({ x: xt.x, y: xt.y, s: 34 * u, a: 146 }, { x: av.x, y: av.y, s: 26 * u, a: 30.6 }, { x: L.tx, y: L.ty, s: Math.max(L.nw, L.nh) * .55, a: 300 });
+    const T = IFX_TIC.full;
+    L.path = [[T.ret, [W * .5, H * .52]], [1.05, [xt.x, xt.y], .12], [1.36, [xt.x - 7 * u, xt.y + 3 * u]], [1.84, [av.x, av.y], -.1], [2.1, [av.x + 6 * u, av.y - 4 * u]],
+      [2.5, [L.tx + L.nw * .62 + 26 * u, L.ty - L.nh * .45], .14], [T.lock, [L.tx, L.ty]]];
+    play(scr, W, H, false, L);
+  }
   if(bx){
-    if(c.boxOnly) T = play(bx, c.bw, c.bh, true);
-    else {
-      const o = T || { go: .74, flashes: [1.5, 2.5, 3.5, 4.4], blasts: [.8, 1.3, 1.8, 3.3, 3.8, 4.3], stop: 4.7 }, D = 6.6, f = t => Math.max(0, Math.min(1, t / D));
-      const w = [{ opacity: 0 }]; [o.go].concat(o.flashes).forEach(t => w.push({ opacity: 0, offset: f(t) }, { opacity: .85, offset: f(t + .04) }, { opacity: 0, offset: f(t + .34) })); w.push({ opacity: 0 });
-      ifxBoxWash(bx, c, "#FFFFFF", w, D, 0);
-      const r = [{ opacity: 0 }]; o.blasts.forEach(t => r.push({ opacity: .2, offset: f(t) }, { opacity: .55, offset: f(t + .06) }, { opacity: .25, offset: f(t + .36) })); r.push({ opacity: 0, offset: f(o.stop + .5) }, { opacity: 0 });
-      ifxBoxWash(bx, c, "#FF3B30", r, D, 0);
+    const T = IFX_TIC[c.boxOnly ? "small" : "full"], D2 = T.tot;
+    if(c.boxOnly){
+      const W = c.bw, H = c.bh, L = { tx: c.p.x + c.p.w / 2, ty: c.p.y + c.p.h / 2, nw: c.p.w, nh: c.p.h, r: rad, hot: [] };
+      L.hot.push({ x: L.tx, y: L.ty, s: Math.max(L.nw, L.nh) * .5, a: 320 });
+      L.path = [[T.ret, [W * .8, H * .62]], [.72, [W * .6, H * .34], .1], [1.02, [L.tx + L.nw * .5, L.ty - L.nh * .1], -.08], [T.lock, [L.tx, L.ty]]];
+      play(bx, W, H, true, L);
+    } else {
+      /* the box, once the camera is down: still glowing with it */
+      const D = T.tot, f = t => Math.max(0, Math.min(1, t / D));
+      ifxBoxWash(bx, c, "#FF8A2A", [{ opacity: 0 }, { opacity: 0, offset: f(T.off) }, { opacity: .6, offset: f(T.off + .3) }, { opacity: .25, offset: f(T.off + 1.1) }, { opacity: 0, offset: f(T.off + 1.8) }, { opacity: 0 }], D, 0);
     }
-    ifxLit(bx, c, "#FFFFFF", "#FF3B30", (T ? T.go : .74) + .04, 2.6);
+    if(c.pct){
+      const dl = T.off + (c.boxOnly ? .05 : .02), d = c.boxOnly ? 1.5 : 1.95, gl = c.boxOnly && c.mini ? .5 : 1;
+      const lit = ifxNumCopy(bx, c, c.p.x, c.p.y, "opacity:0;color:#FFFFFF;text-shadow:0 0 " + bnF(10 * gl) + "px rgba(255,138,42,.95), 0 0 " + bnF(24 * gl) + "px rgba(255,138,42,.7);");
+      ifxAt(c, lit, D2, [[dl, { opacity: 0 }], [dl + d * .08, { opacity: 1 }], [dl + d * .35, { opacity: .8 }], [dl + d, { opacity: 0 }]]);
+    }
   }
 }
-const IFX_BUILD = { fireworks: ifxExtinguisher, underwater: ifxSprinklers, bubbles: ifxAlarm, ufo: ifxHazmat };   /* (384) Hazmat on top */
+const IFX_BUILD = { fireworks: ifxExtinguisher, underwater: ifxSprinklers, bubbles: ifxThermal, ufo: ifxHazmat };   /* (384) Hazmat on top; the Thermal Camera in the Fire Alarm's place */
 /* their tiles: a still of each at its best moment (hundoFxPosterSVG's 160 x 60 frame; the 100%
    sits in the middle, so the art frames it) */
 function ifxPosterBody(id, g, rnd){
@@ -113975,17 +114146,24 @@ function ifxPosterBody(id, g, rnd){
       (n ? '<text x="' + cx + '" y="' + (cy + 2.2) + '" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="6" fill="#101216">' + n + '</text>' : "");
     body += q(140, 18, "#E3262E", "0") + q(146, 24, "#F5C518", "0") + q(140, 30, "#F4F4F2", "") + q(134, 24, "#1F6FD1", "1");
   } else if(id === "bubbles"){
-    /* the bell ringing at the left, the strobe firing at the right, the room in red */
-    defs += '<radialGradient id="' + g + 'e" cx="50%" cy="50%" r="70%"><stop offset=".5" stop-color="#FF2A1E" stop-opacity="0"/><stop offset="1" stop-color="#FF2A1E" stop-opacity=".55"/></radialGradient>' +
-      '<radialGradient id="' + g + 'w" cx="86%" cy="18%" r="70%"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".7"/><stop offset=".4" stop-color="#EAF2FF" stop-opacity=".18"/><stop offset="1" stop-color="#EAF2FF" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="' + g + 'b" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FF8A7A"/><stop offset=".35" stop-color="#F0302A"/><stop offset="1" stop-color="#7A0810"/></radialGradient>' +
-      '<radialGradient id="' + g + 'f"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".2" stop-color="#FFFFFF" stop-opacity=".8"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>';
-    body += '<rect width="160" height="60" fill="url(#' + g + 'e)"/><rect width="160" height="60" fill="url(#' + g + 'w)"/>' +
-      '<circle cx="20" cy="18" r="11" fill="url(#' + g + 'b)" stroke="#5A040A" stroke-width=".6"/><ellipse cx="16.5" cy="13" rx="4" ry="2" fill="#FFFFFF" opacity=".4" transform="rotate(-30 16.5 13)"/><circle cx="20" cy="18" r="2" fill="#C9CED6"/><rect x="18" y="27.4" width="4" height="3" rx="1.2" fill="#C9CED6"/>' +
-      [[34, 18, 1], [6, 18, -1]].map(([x, y, s]) => [6, 11].map((r, i) => '<path d="M' + x + ' ' + (y - r * .7) + ' Q' + (x + s * r * .8) + ' ' + y + ' ' + x + ' ' + (y + r * .7) + '" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" opacity="' + (.85 - i * .35) + '"/>').join("")).join("") +
-      '<rect x="131" y="8" width="14" height="17" rx="2.6" fill="#D81E26"/><rect x="133.5" y="9.6" width="9" height="4.6" rx="1.6" fill="#FFFFFF"/>' + [17, 19.4, 21.8].map(y => '<rect x="133.5" y="' + y + '" width="9" height="1" rx=".5" fill="#6A060C"/>').join("") +
-      '<circle cx="138" cy="11.9" r="13" fill="url(#' + g + 'f)"/><path d="M118 11.9 L158 11.9 M138 0 L138 26" stroke="#FFFFFF" stroke-width=".7" opacity=".8"/>' +
-      '<rect x="74" y="49" width="12" height="11" rx="2" fill="#D81E26"/><rect x="76.4" y="53" width="7.2" height="2.6" rx="1" fill="#FFFFFF"/>';
+    /* (384) the Thermal Camera's display at its peak: cold indigo and scan lines, the reticle's
+       corners locked round the 100% in the middle in the palette's halo, heat rolling up off it,
+       the scale pegged and the readout at 1000 */
+    defs += '<radialGradient id="' + g + 'c" cx="50%" cy="42%" r="78%"><stop offset="0" stop-color="#2E1264"/><stop offset=".62" stop-color="#170838"/><stop offset="1" stop-color="#070314"/></radialGradient>' +
+      ifxRad(g + "h", 80, 31, 50, .46, [[0, "#F0562A", .62], [.32, "#C8286A", .46], [.62, "#7A1890", .26], [1, "#3A0E6A", 0]]) +
+      ifxRad(g + "p", 0, 20, 7, 2.4, [[0, "#FFB23A", .62], [.45, "#D8306A", .34], [1, "#7A1890", 0]]) + ifxLin(g + "i", 0, 1, IFX_IRON);
+    body += '<rect width="160" height="60" fill="url(#' + g + 'c)"/>';
+    for(let y = 1; y < 60; y += 2.6) body += '<rect x="0" y="' + bnF(y) + '" width="160" height=".5" fill="#C8AAFF" opacity=".07"/>';
+    body += '<rect width="160" height="60" fill="url(#' + g + 'h)"/>';
+    [[64, 1], [96, -1], [80, 0]].forEach(([x, s], i) => { body += '<g transform="translate(' + x + ' ' + (i === 2 ? -2 : 0) + ')"><path d="M0 22 C-6 18 -5 10 -2 4 C0 0 -3 -4 0 -8 C4 -2 6 4 3 10 C1 15 5 18 0 22 Z" fill="url(#' + g + 'p)" opacity="' + (i === 2 ? .8 : .6) + '" transform="scale(' + (s || 1) + ' 1)"/></g>'; });
+    const L = (x, y, sx, sy, a, w) => '<path d="M' + x + ' ' + (y + sy * a) + ' L' + x + ' ' + y + ' L' + (x + sx * a) + ' ' + y + '" fill="none" stroke="#FFFFFF" stroke-width="' + w + '" stroke-linecap="square"/>';
+    body += '<g opacity=".95">' + L(46, 13, 1, 1, 6, 1.4) + L(114, 13, -1, 1, 6, 1.4) + L(114, 47, -1, -1, 6, 1.4) + L(46, 47, 1, -1, 6, 1.4) + '</g>' +
+      '<g opacity=".75">' + L(4, 4, 1, 1, 7, 1) + L(156, 4, -1, 1, 7, 1) + L(156, 56, -1, -1, 7, 1) + L(4, 56, 1, -1, 7, 1) + '</g>' +
+      '<rect x="146.5" y="12" width="4" height="36" rx="1.2" fill="url(#' + g + 'i)" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".5"/><path d="M152.2 12.4 L155.4 10.4 L155.4 14.4 Z" fill="#FFFFFF"/>' +
+      '<text x="9" y="13" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="5" letter-spacing=".9" fill="#FFFFFF" opacity=".85">THERMAL</text>' +
+      '<rect x="8" y="45.5" width="27" height="9" rx="2" fill="#080416" fill-opacity=".7" stroke="#FFFFFF" stroke-opacity=".5" stroke-width=".4"/>' +
+      '<text x="21.5" y="52.6" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="6.4" fill="#FFFFFF">1000°F</text>' +
+      '<rect x="37" y="46.6" width="14" height="6.8" rx="1.8" fill="#FFF2C0"/><text x="44" y="51.8" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="4.6" letter-spacing=".4" fill="#8A0E2A">MAX</text>';
   }
   return { defs, body };
 }
@@ -114003,9 +114181,19 @@ function ifxStillBody(id, g){
       (n ? '<text x="' + cx + '" y="' + (cy + 3.6) + '" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="10" fill="#101216">' + n + '</text>' : "");
     return q(24, 12.5, "#E3262E", "0") + q(35.5, 24, "#F5C518", "0") + q(24, 35.5, "#F4F4F2", "") + q(12.5, 24, "#1F6FD1", "1");
   }
-  return '<defs>' + ifxLin(g + "b", 0, 1, [[0, "#FF5245"], [.5, "#D81E26"], [1, "#8A0C12"]]) + '</defs>' +
-    '<rect x="9" y="4" width="30" height="40" rx="5" fill="url(#' + g + 'b)"/><text x="24" y="13.4" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="7.4" fill="#FFFFFF" letter-spacing="1">FIRE</text>' +
-    '<rect x="14" y="17" width="20" height="15" rx="2.4" fill="#5A060C"/><rect x="15.5" y="22" width="17" height="5.4" rx="2" fill="#F4F6F8"/><rect x="13" y="36" width="22" height="2.4" rx="1.2" fill="#FFFFFF" opacity=".85"/>';
+  /* (384) the Thermal Camera: the handheld camera, its yellow bumper and carry handle, its display
+     showing a white-hot spot locked in the reticle and the scale beside it */
+  const L = (x, y, sx, sy) => '<path d="M' + x + ' ' + (y + sy * 3.2) + ' L' + x + ' ' + y + ' L' + (x + sx * 3.2) + ' ' + y + '" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="square"/>';
+  return '<defs>' + ifxLin(g + "i", 0, 1, IFX_IRON) + ifxLin(g + "y", 0, 1, [[0, "#FFD050"], [1, "#E08A10"]]) +
+    '<radialGradient id="' + g + 'c" cx="50%" cy="45%" r="72%"><stop offset="0" stop-color="#2E1264"/><stop offset="1" stop-color="#0A0420"/></radialGradient>' +
+    ifxRad(g + "h", 21, 24, 10.5, 1.1, [[0, "#FFFFF0"], [.16, "#FFE27A"], [.36, "#FF9A1F"], [.58, "#E8402A", .9], [.8, "#A81C7E", .5], [1, "#3A0E6A", 0]]) + '</defs>' +
+    '<path d="M13 9 L13 5.4 Q13 3 15.4 3 L32.6 3 Q35 3 35 5.4 L35 9" fill="none" stroke="#5A606C" stroke-width="3.4"/><path d="M14.4 8.6 L14.4 5.6 Q14.4 4.2 15.8 4.2 L32.2 4.2" fill="none" stroke="#A9B1BA" stroke-width=".8" stroke-linecap="round"/>' +
+    '<rect x="4.5" y="8" width="39" height="35" rx="6.5" fill="url(#' + g + 'y)"/><path d="M9 9.2 L39 9.2" stroke="#FFF3C0" stroke-width="1" stroke-linecap="round" opacity=".7"/><rect x="7.4" y="10.8" width="33.2" height="29.4" rx="4" fill="#16181E"/>' +
+    '<rect x="9.4" y="12.8" width="29.2" height="22.6" rx="2" fill="url(#' + g + 'c)"/>' +
+    '<rect x="9.4" y="12.8" width="29.2" height="22.6" rx="2" fill="url(#' + g + 'h)"/>' +
+    L(15, 18.4, 1, 1) + L(27, 18.4, -1, 1) + L(27, 29.6, -1, -1) + L(15, 29.6, 1, -1) +
+    '<rect x="34.2" y="15" width="2.4" height="18.2" rx=".8" fill="url(#' + g + 'i)"/>' +
+    '<rect x="18" y="37.3" width="12" height="1.6" rx=".8" fill="#3A3E48"/>';
 }
 if(IFC_ART_ON){
   Object.keys(IFX_DEF).forEach(id => {
