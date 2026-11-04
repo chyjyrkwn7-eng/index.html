@@ -4196,7 +4196,7 @@
   .screen-answerreview .review-question{ content-visibility:auto; contain-intrinsic-size:auto 340px; }
   /* (384) ...and once the list has opened, every question is laid out ahead of the scroll (reviewRenderAhead): a question that
      comes into view is already there, never filled in as it arrives */
-  .screen-answerreview .review-question.rq-on{ content-visibility:visible; }
+  .screen-answerreview .review-question.rq-on{ content-visibility:visible; contain:layout style paint; }   /* the containment a laid-out auto question keeps: the same layout to the pixel */
   .screen-answerreview :is(.review-question, .cal-month-sect, .info-note)[hidden]{ display:none; }
   .screen-answerreview .review-question .choices{ gap:.42rem; margin-bottom:.75rem; }
   .screen-answerreview .review-question .choice:not(.is-right){ opacity:.62; }

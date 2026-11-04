@@ -33573,3 +33573,93 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   read was refused by the sandbox's production-read rule; waiting on Madison to let one read through. Stored hashed, no
   names or ids in the repo. Also raised: sign-up cannot enroll in Fire Code (the class screen offers the academy and "More
   classes"); proposed both cards, the PDF step for Fire Code, a Fire Code-only account never shown the academy unless added.
+
+### Build 384 - Safari and laptops, a performance pass (NOT on main, waiting for Madison)
+Madison, about tomorrow's release: "Ensure safari and laptop runs well. THIS A HUGE One." Then: "The review section, while scrolling
+down the questions are populating as you scroll and you can see it happening real time. Fix that, they should already be loaded as you
+scroll so it's super smooth."
+
+HOW IT WAS MEASURED. Chromium only (WebKit cannot be downloaded here); the sandbox's load average ran 7-24 from other sessions the
+whole time, so frame times and wall-clock durations are noise - every number below is a COUNT (long tasks over 50ms under a fixed
+CDP CPU throttle, style passes and how many elements each restyled, layers, running animations, slices) or thread CPU time (trace
+tdur, which the throttle and the load do not inflate). A laptop is 1536x864 at 1.25x with a mouse moving and a Windows Edge user
+agent in a browser tab (also 1366x768 and 1920x1080 for layout); an iPhone is 440x956 at 3x, touch, Safari's user agent, installed,
+with requestIdleCallback removed so the app's Safari stand-in (327v) runs. Both classes. The scratch harness (scen/work/bigrecalc/
+review/audit, scratchpad perf/) is not in the repo; the gate is.
+
+WHAT THE STARTING BUILD (1dca98e) DOES, laptop, academy, 4x CPU (counts of long tasks over 50ms; "style" = style passes):
+- cold boot to Home: Home at 6.4s; 39 long tasks, the longest 2.6s (the main script's evaluation - known since 327x, the splash bar
+  is a compositor animation and keeps moving).
+- Home, its first 30s (the warm-ups: flip-book recorders and badge strikes, in idle slices): 112 long tasks, 398 idle callbacks
+  (3.3s of them). Home steady after that: 2 long tasks in 20s, no rAF, no idle callbacks, 13.5 style passes a second (the painted
+  loops, 380's window-sized layers - by design), 33-35 running animations, none on an element off screen.
+- every tab twice (8 taps): 157 long tasks, worst 732ms; style 7.2s against script 3.2s. Settings and its pages: 21, worst 462.
+- the Leaderboard: open 29 (worst 594), scroll 48 (worst 169), 10s idle 66 - the live drawings of characters still waiting for
+  their flip-books (48 SVG-part animations, main thread in both engines; 327z13's "characters aren't really moving") and the
+  warm-ups recording them. Profile + Customize: 75 (worst 701). A 10-question drill: 34 (worst 491). Results with a hundo and an
+  unlock card: 61 (worst 1.3s). Hidden 3s: none; coming back: 6 (worst 140). Class switch: the other class's boot (worst 2.1s).
+  Get Started idle 6s: 10 (the one-time Intl init and the badge warm-up); the sign-up walk to Nova: 23 (worst 302).
+- memory over 12 tab switches (after GC): 19.2k -> 24.2k nodes, heap 6.7 -> 7.7MB, listeners 266 -> 315 - no runaway.
+- the stylesheet: 11,031 rules, 1,598 @keyframes, 2.7MB; styling one plain element costs ~18us here against ~1.8us on a blank page
+  (no single rule family: without the 55 universal-ending rules 13.7us, without :has() no change). That is why every screen build is
+  style-bound (e.g. Home's rebuild ~1,500 elements). NOT CHANGED - it would mean restructuring the CSS; the fixes below cut how many
+  times the whole page is restyled instead.
+- Safari correctness, read from the code: no syntax newer than Safari 16.0 (an acorn pass over the 10 script blocks: no regex
+  lookbehind, no class static blocks, no v flag, no duplicate named groups); none of Object.groupBy, Promise.withResolvers, Set
+  methods, scheduler.*, checkVisibility, scrollend, freeze/resume, ResizeObserver device-pixel boxes; navigator.vibrate and WeakRef
+  are guarded; all 14 requestIdleCallback uses are guarded AND the 327v stand-in is installed before any of them; nothing waits on
+  an event Safari never fires (the transitionend/animationend waits that gate flow have timers - openCollapsible's 420ms belt etc.).
+  Hover with a mouse restyles nothing big (0 whole-page passes while moving over Home).
+
+WHAT CHANGED (worst first; nothing looks different - screenshots of the touched screens pixel-compared, below):
+1. REVIEW IS LAID OUT AHEAD OF THE SCROLL (reviewRenderAhead, before showAnswerReview; CSS .review-question.rq-on). Every question
+   of an open unit was already BUILT when the unit opened (round 35), but off screen it was skipped (content-visibility:auto,
+   held at 340px) and only laid out when the browser saw it coming - Chromium about one screen ahead, Safari as it arrives - so a
+   flick met questions being laid out and painted (and changing height) as they came up. Now, after the open's first frame (never in
+   the tap - the open costs what it did): a pass lays the unit's questions out in slices of ~6ms (timed, adaptive, on a timer so it
+   goes on while a finger scrolls - Safari's idle stand-in waits for the finger to lift), nearest first, then the ones above (in a
+   browser without scroll anchoring - Safari - one above the screen moves the page by what it grew, so nothing on screen moves);
+   meanwhile an IntersectionObserver lays out any question within two screens of the view at once. A unit opened by its header
+   (after its slide), a search, and Resume from Pause start it again; it stops when the list leaves the page. A laid-out question
+   is content-visibility:visible WITH contain:layout style paint - the containment a laid-out `auto` element keeps; without it the
+   first try moved the text inside every card by 1px (margins collapse differently), caught by the pixel comparison below.
+   Numbers (Penal Code 340 questions; Fire Code's longest chapter 145), scrolled at 3,000px/s from 300ms after opening at 4x CPU:
+   frames with a question ON SCREEN still unlaid-out 3 (laptop academy) / 1 (laptop Fire Code) -> 0 everywhere; frames with one
+   within 1.5 screens below 21-32 -> 0 in all four (class x device); frames drawn in those 4s 23 -> 47 (laptop academy).
+   Opened and left alone: questions still unlaid-out after 25s 334 of 340 / 141 of 145 -> 0 (all laid out in 1.2-1.6s on the
+   phone profile, 8-16s on the laptop profile at load ~14, where native idle work competes); slices at most 64 questions.
+   Open time to the second frame (full CPU, wall clock, load 13-24, three each): before 1.0-3.5s, after 0.25-1.7s - the same work
+   (the pass starts after the frame), within the noise.
+2. NO WHOLE-PAGE STYLE PASS IN A TAB TAP FOR THE STATUS-BAR COLOUR (syncStatusBarColorSoon). syncSky asked for theme-color's
+   colour inside the tap whenever Home's sky went on or off; the probe forced a style pass over the whole page (1,231-1,650
+   elements) before the new screen's first frame, and the frame styled most of it again. 384's cache (CSS_COLOR_HEX_CACHE) missed in
+   taps because its key held <html>'s class list, which carries html.tab-held while a finger is on the bar. Now the read runs once
+   the new screen's frame is out (one rAF + a timer; at once if the page is hidden), and the key ignores tab-held/tab-dragging.
+   Traced Home -> Profile -> Home twice by real taps: passes forced by the colour read 2 -> 0 (phone and laptop). Whole-page restyle
+   across Home -> Profile -> Leaderboard -> Home, elements: phone 9,458 -> 6,275, laptop 10,892 -> 9,150 (that one includes a
+   genuine bar-width change after visiting Start). theme-color still lands on the sky's colour (#2e2025 back on Home).
+3. --tabbar-half ONLY WHILE SOMETHING READS IT (syncBarHalf). A custom property on <html> (every element inherits it) whose two
+   readers are Home's (the version line, the daily card); on a laptop the bar's width changes as Home's Start joins it, so every
+   switch to or from Home rewrote it and restyled the whole page. Written now when one of its readers is on the page (or the first
+   time); coming back to Home the kept value is already right. Laptop, two Home -> Profile -> Home trips: writes 4 -> 0.
+4. NO BACKDROP BLUR ON THE FOLDED TOP SWITCHER. The old top .navsegment is folded away in the modern look (0x0, opacity 0) but wore
+   the glass rule's 30px backdrop blur !important on every screen - in WebKit a backdrop filter is a layer of its own that reads
+   back what is under it. `[data-theme][data-layout="modern"] .topctrls > .navsegment:not(.profiletabs){ backdrop-filter:none }`.
+   Elements with a backdrop filter that cannot be seen, every main screen, both classes: 1 -> 0.
+LOOKS: Home, Profile, the board, Settings, Review at its top and 2,400px down, before and after, every animation frozen at its
+start and Math.random seeded: iPhone academy - all six identical (max difference 0 of 255); laptop Fire Code - no pixel over 5
+levels (antialiasing). (Scratch pairs in the scratchpad, perf/shots/.)
+NOT CHANGED, AND WHY (each measured): the painted loops (380, for iPhone memory); the live drawings while board characters wait
+(327z13, his request) and the Profile hero's live character under the avatarDepth SVG filter and the Profile emblem under its
+drop-shadow (flip-books stop at 80 CSS px for memory - on WebKit these re-run their filters every frame; only a phone can say how much);
+Home's seven flare bubbles' backdrop blur over the moving planet (the look); the warm-ups (already yield to touch, scroll, tests);
+the results screen's celebration (bounded, ~40% of a core for its 20s at 1x here); the --band write for Safari's bars (laptop and
+Safari tab: still one whole-page pass per trip to or from Home, now after the frame - making it non-inherited would break the
+hundo effect's own --band and check-b327z14's probe).
+
+GATE tools/check-b384-perf.py [--against REV] [--only 1,2,3]: (1) Review, four class x device: (a) no question on screen or within
+1.5 screens below unlaid-out while scrolling at 3,000px/s from 300ms after opening at 4x; (b) all laid out when left alone (25s);
+(c) in more than one slice, none over 64 questions; (2) phone and laptop: Home -> Profile -> Home twice by real taps, each landing,
+no whole-page style pass forced by the colour read; laptop: no --tabbar-half write; (3) no backdrop filter on an unseen element on
+Home, Profile, the board/Stats, Settings, the Calendar - phone academy and laptop Fire Code; (4) no page errors. Against 1dca98e:
+(1a)(1b)(1c) fail in all four, (2) fails three times (2 forced passes each, 4 writes), (3) fails both; (4) passes on both.
