@@ -33584,3 +33584,23 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
 - Madison: "Add Durrell Kennedy as a contributor as well. He helped with creation of the question bank". Role "Question
   Bank", one row "Helped create the question bank" (nothing claimed beyond what he said), by surname after Darjean.
   check-b382-credits: seven PEOPLE.
+
+### Build 384 - What's New, Version 10 (existing accounts only)
+- Madison: "for EXISTING accounts only, there is gonna be a 'what's new' pop up for this update as well. We are gonna be onto
+  version 10. Just a semi quick one, mentioning the updating interface, updated settings layout, updated layout, and of course
+  the biggest piece of the update, the new class ... This will talk about the ifc the option to switch between classes and
+  stuff. Make it great. I love how the what's new pop up has been looking, don't change that look." And: don't merge the Fire
+  Code class or the What's New until he says so.
+- INTRO_REV 6 -> 7. A new account marks it seen as it is made (markIntroSeen in novaSignupCreate; the mark is shared by both
+  classes), so only existing accounts get it, once. The card (showIntroPopup, intro-card-compact) is unchanged; its rows are
+  WHATS_NEW_V10 (WHATS_NEW_320, the name the card and its gates read, now points at it; 9.2's rows kept as WHATS_NEW_92):
+  A new class: Fire Code / Switch between classes / A new look / Settings, rebuilt / Hundo effects, redrawn / Smoother
+  everywhere. RELEASE_NOTES gains Version 10 (New In: Fire Code, The Class Button, Fire Code's Own Effects, A Virtual Room
+  In Every Class, Add To Home Screen; Better In: A New Look, Settings Rebuilt, Profile And Stats, The Leaderboard, Hundo
+  Effects Redrawn, Smoother Everywhere, Finishing Touches) - the eyebrow reads "New in version 10".
+- What's New still waits for the academy (the cutscene audit's guard): every existing account is an academy account.
+- check-b384-whatsnew10: existing account sees it once, first row Fire Code, covers switching / look / Settings; Got it and
+  a relaunch - gone; a fresh sign-up (Get Started to the last tip) never sees it, its mark at INTRO_REV; inside the screen on
+  SE / Pro Max / iPad with nothing scrolling; history leads with 10. Against 1dca98e: (1), (4), (5) FAIL ((3) is a guard).
+- Old content gates that assert 9.2's or Version 9's rows (check-b325-d, check-b326-d, check-b327-m's titles) describe the
+  card of their own build; they now read Version 10's.

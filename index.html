@@ -88034,6 +88034,28 @@ const RELEASE_NOTES = [
   /* Release history, edited for tone and repeats in build 327z15: each feature
      is announced once, later versions read as improvements of earlier ones.
      The newest entry also feeds Welcome's What's New, so its items keep an icon. */
+  /* VERSION 10 (build 384): the Fire Code class and moving between classes, the new look, Settings rebuilt. */
+  {
+    version: "10",
+    groups: [
+      { label: "New In Version 10", items: [
+        { icon: buildFireIcon, color: "#FF9648", title: "Fire Code", body: "A second class for the 2021 International Fire Code and the county's amendments. Every question shows the section it comes from, and Show the code opens that page in your own copy of the book, which stays on your device." },
+        { icon: buildRetryIcon, color: "#93B5FF", title: "The Class Button", body: "The button under the planet on Home moves you between your classes and lets you join a new one. Each class keeps its own rank, level, badges, hundos and progress." },
+        { icon: buildSparkleIcon, color: "#FF9648", title: "Fire Code's Own Effects", body: "Fire Code has four hundo effects of its own: the Extinguisher, Sprinklers, the Thermal Camera and Hazmat, at 25, 50, 75 and 150 hundos." },
+        { icon: buildPlanetIcon, color: "#A694FF", title: "A Virtual Room In Every Class", body: "A room plays the questions of the class it was made in." },
+        { icon: buildPhoneAddIcon, color: "#7CC8FF", title: "Add To Home Screen", body: "A short walkthrough shows how to add Nova to your Home Screen, with a video for iPhone." }
+      ]},
+      { label: "Better In Version 10", items: [
+        { icon: buildGlassPanesIcon, color: "#C9D3DE", title: "A New Look", body: "Cleaner lists, buttons and cards across the app, with Home, Profile, Stats and the Leaderboard laid out again." },
+        { icon: buildToggleIcon, color: "#7CC8FF", title: "Settings, Rebuilt", body: "Settings and every page in it are larger and clearer, grouped the way you would look for them." },
+        { icon: buildPersonIcon, color: "#5CA8FF", title: "Profile And Stats", body: "Customize, the badge case and the rank ladder open from Profile's list. Stats' ring follows the question bank, and Test history is one tap away." },
+        { icon: buildDualBoardIcon, color: "#F5C518", title: "The Leaderboard", body: "Every character and flare is there as soon as the board opens." },
+        { icon: buildSparkleIcon, color: "#FFD27A", title: "Hundo Effects, Redrawn", body: "Every hundo effect is reworked to fit the new results screen." },
+        { icon: buildSmoothCurveIcon, color: "#C583FF", title: "Smoother Everywhere", body: "Faster on laptops and in Safari, and coming back to the app picks up right where you were." },
+        { icon: buildRetryIcon, color: "#4DD0E1", title: "Finishing Touches", body: "A new startup screen, clearer sign-up, and many smaller fixes." }
+      ]}
+    ]
+  },
   /* VERSION 9.2 (build 327z15): "This is gonna be version 9.2". What this build adds to the
      live Version 9; Version 9 below says only what shipped with it. */
   {
@@ -102702,7 +102724,9 @@ const INTRO_MAX_TRIES = 20;
    "7.8" became Version 8, never launched) and 4 never went out, but a device that saw 320's What's New is shown this
    one. The meeting with Nova an existing account gets with it is gated on
    the ACCOUNT (store.novaMet), so it plays once however many devices. */
-const INTRO_REV = 6;   /* 6: Version 9.2 (build 327z15) */
+/* 7 = Version 10 (build 384): existing accounts only - a new account marks it seen as it is made (markIntroSeen in
+   novaSignupCreate), and the mark is shared by both classes (the head script's SHARED list). */
+const INTRO_REV = 7;   /* 7: Version 10 (build 384); 6: Version 9.2 (build 327z15) */
 function introSeen(){
   try{ return (Number(localStorage.getItem(INTRO_KEY)) || 0) >= INTRO_REV; }
   catch(e){ return true; }
@@ -102791,7 +102815,14 @@ function levelGateNoteText(s){
    they are back because the storyline makes them his badges and his
    flares, said in his voice. One short line each.
    Builds 319 and 320 ship together, so this is both of their news. */
-const WHATS_NEW_320 = [
+const WHATS_NEW_92 = [
+  /* VERSION 10 (build 384), for existing accounts: "there is gonna be a 'what's new' pop up for this update as well. We are
+     gonna be onto version 10. Just a semi quick one, mentioning the updating interface, updated settings layout, updated
+     layout, and of course the biggest piece of the update, the new class ... This will talk about the ifc the option to
+     switch between classes and stuff. Make it great. I love how the what's new pop up has been looking, don't change that
+     look." Six rows, the new class first; INTRO_REV 7 shows it once. Version 9.2's card follows in the source (kept for its
+     notes, as WHATS_NEW_92) but the card is Version 10's alone: WHATS_NEW_V10 below. WHATS_NEW_320 - the name the card and
+     its gates have always read - is that list. */
   /* VERSION 9.2 (327z15): "Existing users give them the 9.2 card. Not much
      should change on the card. You can add that the device layout has been
      updated or something? Bug fixes and improvements can be one as well."
@@ -102852,6 +102883,24 @@ const WHATS_NEW_320 = [
   /* BUILD 326: "Remove the weekly recap and badge case from what's new."
      Both are still in RELEASE_NOTES (Version 9's history). */
 ];
+/* VERSION 10's card (build 384). Each row one sentence; the full list is in RELEASE_NOTES (Settings > Version history). */
+const WHATS_NEW_V10 = [
+  { key: "ifc10", color: "#FF9648", title: "A new class: Fire Code", icon: buildFireIcon,
+    body: "The 2021 International Fire Code and the county\u2019s amendments, with the code behind every answer. Join from the class button on Home." },
+  { key: "classes10", color: "#93B5FF", title: "Switch between classes",
+    glyph: "M7 6.2h10.6l-2.6-2.6L16.4 2.2 21.4 7.2l-5 5-1.4-1.4 2.6-2.6H7V6.2Zm10 11.6H6.4l2.6 2.6-1.4 1.4-5-5 5-5L9 13.2l-2.6 2.6H17v2Z",
+    body: "The class button moves you between your classes. Each one keeps its own rank, level, badges and progress." },
+  { key: "look10", color: "#C9D3DE", title: "A new look", icon: buildGlassPanesIcon,
+    body: "Home, Profile, Stats and the Leaderboard are laid out again in a cleaner design." },
+  { key: "settings10", color: "#7CC8FF", title: "Settings, rebuilt", icon: buildToggleIcon,
+    body: "Settings and every page in it are larger, clearer and easier to find your way around." },
+  { key: "fx10", color: "#FFD27A", title: "Hundo effects, redrawn", icon: buildSparkleIcon,
+    body: "Every effect is reworked for the new results screen, and Fire Code has four of its own." },
+  { key: "fixes10", color: "#4ADE80", title: "Smoother everywhere",
+    glyph: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 13.6-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7Z",
+    body: "Faster on laptops and in Safari, the Virtual Room in every class, and many smaller fixes." }
+];
+const WHATS_NEW_320 = WHATS_NEW_V10;
 function whatsNewState(){
   const st = { name: novaName(), rank: null, level: 0, badges: 0, units: 16, note: null,
                chars: novaCrewTally(), flares: 0, flareTotal: 3 };
@@ -102903,7 +102952,7 @@ function showIntroPopup(o){
     card.appendChild(n);
   }
   const rows = document.createElement("div"); rows.className = "intro-rows";
-  WHATS_NEW_320.forEach(it => {
+  WHATS_NEW_V10.forEach(it => {
     const row = introRow(it.icon || it.glyph, it.color, it.title, it.body);
     row.dataset.key = it.key;
     rows.appendChild(row);
