@@ -32205,3 +32205,7 @@ on the bottom right ... if they could be just a smidge bigger too".
   badge"), and the Profile tour's badge case step. They read window.NOVA_CLASS === "ifc" (badgeThresholdFor's own test): the tour
   copy is built at load, where badgeThresholdFor would fill the academy's unit-size cache early. The academy's words are unchanged.
   Release-history entries about badge counts are history and stay. check-b384-case (7); fails on the previous commit.
+- (384) Home, a rank flare not yet lit: "Each rank has a 'lights a bronze rank' thing. Get rid of that. The secret flares just
+  say not found yet ... The rank flares should just say not lit yet centered under the other stuff." homeTapCopyRank's locked
+  line is "Not lit yet." (was "Not lit yet. It lights at <rank> rank."); the name line above it still names the flare. Centred
+  under "GOLD FLARE · LOCKED" (measured: middles within 1px).

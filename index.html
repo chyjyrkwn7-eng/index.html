@@ -108098,8 +108098,11 @@ function homeTapCopyRank(tier){
      It's kinda confusing with that description on what you need." No
      levels, badges or counts here - the rank it waits on, nothing more
      (the Rank screen has the numbers). */
+  /* JUST "NOT LIT YET" (384): "Each rank has a 'lights a bronze rank' thing. Get rid of that. The secret flares just say not
+     found yet, which is super simple and clean. The rank flares should just say not lit yet". The name line above already
+     names the rank's flare. */
   return { kind: "locked", name: flare + " flare", state: "Locked", color: flareColorOf(tier),
-    parts: ["Not lit yet. It lights at " + rank + " rank."] };
+    parts: ["Not lit yet."] };
 }
 /* A secret flare: found, its name and a line about it; not found, only
    that - no name, no colour - except the one you are hunting. */
