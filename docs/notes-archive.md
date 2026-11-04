@@ -32363,3 +32363,55 @@ nothing water, dry chem or hazmat.
   (the 25/50/75/150 counts).
 - Phone check owed: smoothness on a real iPhone (58 pieces, five text-shadowed copies of the number, the full-screen view's
   opacity fade), the scan lines' look at 3x, and the sound through the phone speaker (the hunt is quiet by design).
+
+### Build 384 - the laptop round: hover is not a finger, the share page, Fire Code's missing-book card, the viewer's swipes, Nova's recap (NOT on main, waiting for Madison)
+
+Madison, after testing on his Windows laptop: "the app is extremely extremely laggy and delayed on my laptop.. it's almost
+unusable. Like the bottom tab on the laptop is extremely bad. The lag when opening up screens on the laptop is bad." / "when it
+opened up on my laptop, from a share link, there's a yellow word that says open nova that's small, then it went straight to the
+novas introduction, there was no start up screen" / "The introduction for a brand new account needs to be updated. Why is it
+telling me I have 0 badges?" / "Using zoom in page function, swiping on it will swipe to the next question accidentally" /
+"You shouldn't be able to enroll into the CLASS AT ALL unless you upload the pdf. So the unlock thing under the question isn't
+gonna be a thing".
+
+- LAPTOP LAG, the cause found: recUserAt (the "a finger is down, wait" clock behind recordingShouldWait) was set by every
+  pointermove. A finger sends pointermove only while down; a mouse sends it whenever it is over the page. So on a laptop every
+  warm-up that waits for a quiet moment - quietIdle (badge strikes and coin faces, the Badges/Profile art) and orbitAnimYield
+  (the flare and character flip-books) - never ran while the mouse moved: measured 1536x864 at 1.25x, 18s on Home, mouse
+  still 212-324 idle runs and 1-4 flip-books made, mouse moving 2 runs and none. Every screen then drew its art at the moment it
+  opened, and the planet's flares stayed live drawings (style + layout + paint per frame) instead of flip-books. Fix: a mouse
+  pointermove with no button held does not count (a drag, a pen and a finger still do). After: 298 idle runs and 2 flip-books
+  with the mouse moving, same as still.
+- What was ruled out (sandbox Chromium, load average ~11 from the helpers, so frame timing is noise; counts are not): the tab
+  bar's SVG refraction is not live (computed backdrop-filter blur(7px) saturate(1.5)); layer count/area at laptop size (66
+  layers, 8.7 Mpx) is no worse than the phone's (64, 21.5 Mpx); the turbulence texture and grey emblem filters made no
+  measurable difference here. Windows' own GPU path (backdrop-filter, SVG filters on its driver) cannot be measured in this
+  sandbox - it can only be confirmed on the laptop. Every bug report carries the tab timings (perf); a report sent from the
+  laptop after this build would show the real numbers (reading them needs the admin tool, which this session was not allowed).
+- Also seen while profiling (not changed): for ~20s after Home first opens on a fresh device (and once per new emblem size),
+  recording the flip-books takes over half the main thread in idle slices (p50 16ms, p90 39ms, worst 185ms per slice); each
+  frame is one data:-URL SVG image (~5ms to parse here). It steps aside for input, and is cached (Cache Storage) after.
+- SHARE PAGE (tools/gen-share-card.py SHARE_HTML, share/index.html regenerated): was a small yellow "Open Nova" link on #121016,
+  which on a laptop stays up while the app downloads. Now the splash's #0A0A0A, the app icon (96px, the share icon), "Opening
+  Nova..." in soft ink, and the Open Nova link as a quiet outlined pill that only fades in after 4s (if the redirect has not
+  happened). Same meta, same redirect (location.replace("../" + search + hash)).
+- "No start up screen": a FIRST visit skips the splash by design (build 330: Get Started is the first thing seen). His laptop
+  browser most likely already held an old onboarded account from an earlier visit (so no Get Started) with novaMet < 1, so the
+  existing-account Nova meeting played, recap and all. The recap fix below covers what it said; the routing is unchanged.
+- NOVA'S RECAP: novaRecapLines says only what you have - a badges line only when badges > 0, a flares line only when a flare is
+  relit or a secret flare found, a crew line only when one has come home. And playNovaMeeting passes existing:
+  novaHasHistory() (any answer, any XP, or a test in history) - an account with nothing at all meets him as a new player does.
+- FIRE CODE ENROLLMENT: already one way in only - the catalog's Fire Code card -> showIfcEnroll -> "Choose my IFC PDF" ->
+  runIfcAnalysis -> setEnrolled("ifc") only in finish(), after the book is verified (class26e.enrolled is written nowhere
+  else). So the card under a question is only ever seen when the browser has since let the stored copy go (cleared site data,
+  or "This browser would not keep a copy, so it is open for this visit only"). Its words now say that: "Your IFC PDF isn't on
+  this device right now." / "This browser let the saved copy go. Load it again and the code shows here. Until then, the
+  section and page above find it in your book." The padlock is a page icon (evenodd page with a folded corner and two lines);
+  class names unchanged (.ifc-locked, .ifc-lock-ic - check-b383-ifcbook and check-b384-codeopen read them).
+- VIEWER SWIPES: while the page viewer (.ifc-vz, ifcOpenViewer) is up, no touch is a question swipe (swipeGestureAllowed ->
+  swipeOverlayUp) and no tab swipe either (attachTabSwipe's onStart). SWIPE_BLOCKING_TARGET also has .ifc-clips.is-scroll (a
+  code picture wide enough to scroll sideways owns its drag) and .ifc-vz.
+- Gate: tools/check-b384-laptop.py - (1) a Fire Code drill question answered, the viewer up, two real touch swipes across it:
+  the question stays; (2) closed, the same swipe moves on; (3) nothing found -> no recap lines about badges/flares/crew, some
+  found -> one each with its count; (4) never answered -> playNovaIntro without existing, with answers -> existing; (5) no page
+  errors; (6) laptop 1536x864, mouse moving over Home: at least half as many idle runs as with the mouse still.

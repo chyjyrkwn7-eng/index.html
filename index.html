@@ -34743,8 +34743,8 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-locked strong{ display:block; font-size:.9rem; color:var(--ink); margin-bottom:.2rem; }
   .ifc-locked span:not(.ifc-lock-ic){ display:block; font-size:.82rem; line-height:1.4; color:var(--soft); }
   .ifc-lock-ic{ flex:none; width:22px; height:22px; margin-top:1px; background:#FFB35C;
-    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z'/%3E%3C/svg%3E") center/contain no-repeat;
-            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10V7a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V7a3 3 0 0 0-6 0z'/%3E%3C/svg%3E") center/contain no-repeat; }
+    -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M6 2h8l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm7 1.5V8h4.5zM8 12v1.6h8V12zm0 3.6v1.6h8v-1.6z'/%3E%3C/svg%3E") center/contain no-repeat;
+            mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M6 2h8l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zm7 1.5V8h4.5zM8 12v1.6h8V12zm0 3.6v1.6h8v-1.6z'/%3E%3C/svg%3E") center/contain no-repeat; }
   .ifc-county-text p{ margin:0 0 .35rem; font-size:.9rem; line-height:1.45; color:var(--ink); }
   .ifc-county-text mark{ background:rgba(255,214,90,.32); color:inherit; border-radius:3px; padding:0 .1em; }
   .ifc-exc{ margin:.5rem 0 0; padding:.55rem .7rem; border-left:3px solid #FF9A3C; background:rgba(255,154,60,.08); border-radius:.4rem; }
@@ -87407,7 +87407,16 @@ let recUserAt = -1e9;
 /* a drag, a scroll and a flick count as a finger too (build 327z3): only
    the touch that started one did, so a slide along the tab bar or down a
    list that lasted past a second ran recordings under the finger */
-try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, () => { recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
+/* (384) A MOUSE THAT IS ONLY HOVERING IS NOT A FINGER. Madison, on his Windows laptop: "the app is extremely extremely laggy and
+   delayed on my laptop.. it's almost unusable ... The lag when opening up screens on the laptop is bad." A mouse sends pointermove
+   whenever it is over the page, buttons up - a finger only while it is down - so on a laptop every warm-up behind this wait
+   (quietIdle: badge art, coin faces; orbitAnimYield: the flare and character flip-books) waited for ever. Measured at laptop
+   size, 18s on Home: the mouse still, 212-324 idle runs and 1-4 flip-books made; the mouse moving about, 2 runs and none - so
+   every screen drew its art at the moment it was opened, and the planet's flares stayed live drawings. A move counts only
+   while a button is held (a drag) or for a pen or a finger. */
+try{ ["pointerdown", "touchstart", "keydown", "pointermove", "touchmove", "wheel", "scroll"].forEach(t => window.addEventListener(t, (e) => {
+  if(t === "pointermove" && e && e.pointerType === "mouse" && !e.buttons) return;
+  recUserAt = performance.now(); orbitAnimSliceEnd = 0; }, { capture: true, passive: true })); }catch(e){}
 function recordingShouldWait(){
   const now = performance.now();
   /* 2s after a touch and 1.6s after a screen goes in (build 327z8, was
@@ -92776,16 +92785,18 @@ function novaRecapLines(st, name){
   const b = st.badges, f = st.flares, lit = st.rankIdx + 1;
   const many = (n, one, more) => n === 1 ? one : n + " " + more;
   const crewHave = novaCrewTally().have;
-  lines.push({ gesture: "raise",
-    text: b > 0 ? "You’ve found " + many(b, "one of my badges", "of my badges") + (b >= 4 ? ", and that’s no small thing." : ".")
-                : "You haven’t found any of my badges yet. They’re waiting in your units.",
+  /* (384) ONLY WHAT YOU HAVE. Madison: "Why is it telling me I have 0 badges? Like of course I would." A line is said only for
+     something found; nothing found is not news (and an account with nothing at all hears the new player's introduction -
+     playNovaMeeting). */
+  if(b > 0) lines.push({ gesture: "raise",
+    text: "You’ve found " + many(b, "one of my badges", "of my badges") + (b >= 4 ? ", and that’s no small thing." : "."),
     enter: ctx => novaProp(ctx, novaStack(novaFoundRow(1), novaCap("What you’ve found"))) });
-  lines.push({ text: (lit > 0 ? "You’ve relit " + many(lit, "one of my flares", "of my flares") : "You haven’t relit any of my flares yet") +
-      (f > 0 ? ", and found " + many(f, "one of my secret flares", "of my secret flares") + "." : ", and none of my secret flares yet. There are more of them out there than I can count."),
+  if(lit > 0 || f > 0) lines.push({ text: (lit > 0 ? "You’ve relit " + many(lit, "one of my flares", "of my flares") + (f > 0 ? ", and found " + many(f, "one of my secret flares", "of my secret flares") : "")
+      : "You’ve found " + many(f, "one of my secret flares", "of my secret flares")) + ".",
     enter: ctx => novaProp(ctx, novaStack(novaFoundRow(2), novaCap("What you’ve found"))) });
   /* no number (build 326: "talks about how many characters you have found as
      if that's an achievement?") - the faces on the stage say who */
-  lines.push({ text: crewHave > 1 ? "And some of my crew have come home to you. Thank you." : crewHave === 1 ? "And one of my crew has come home to you. Thank you." : "None of my crew has come home to you yet. I’ll be here when they do.",
+  if(crewHave > 0) lines.push({ text: crewHave > 1 ? "And some of my crew have come home to you. Thank you." : "And one of my crew has come home to you. Thank you.",
     enter: ctx => novaProp(ctx, novaStack(novaFoundRow(3), novaCap("What you’ve found"))) });
   return lines;
 }
@@ -93000,6 +93011,9 @@ function markNovaMet(){
   saveStore();
 }
 function onNovaHome(){ return !!stage.querySelector('[data-screen="home"]'); }
+function novaHasHistory(){
+  try{ const l = store.lifetime || {}; return (Number(l.answered) || 0) > 0 || (Number(l.points) || 0) > 0 || (Array.isArray(store.testHistory) && store.testHistory.length > 0); }catch(e){ return true; }
+}
 function playNovaMeeting(){
   if(novaMeetOn) return;
   novaMeetOn = true; introPending = true;
@@ -93012,7 +93026,8 @@ function playNovaMeeting(){
       if(reason === "nav" || !onNovaHome()){ endNovaMeeting(); return; }
       startNovaReturnTour(() => endNovaMeeting());
     } });
-  }, { existing: true });
+  /* (384) an account with nothing yet (not one answer, no XP) has nothing to recap: it meets him as a new player does */
+  }, { existing: novaHasHistory() });
 }
 /* novaGoodbye() is gone (build 327, b327m): his goodbye is the last line of
    his introduction, so nothing of his comes up again after the tips. */
@@ -106632,7 +106647,11 @@ async function ifcFillCode(item, body, foot){
     const lock = ifcEl("div", "ifc-locked");
     lock.appendChild(ifcEl("span", "ifc-lock-ic"));
     const t = ifcEl("div");
-    t.append(ifcEl("strong", null, "The code text unlocks with your own IFC."), ifcEl("span", null, "Look it up in your book with the section and page above, or load your PDF and it appears here."));
+    /* (384) NOT A LOCK. Madison: "You shouldn't be able to enroll into the CLASS AT ALL unless you upload the pdf. So the unlock
+       thing under the question isn't gonna be a thing". It isn't: the one way into Fire Code (showIfcEnroll) ends only on a
+       verified PDF. This card is only ever seen when the browser has since let the stored copy go (cleared site data, or a
+       browser that would not keep it - "open for this visit only"), so it says that, with no lock and no "unlocks". */
+    t.append(ifcEl("strong", null, "Your IFC PDF isn\u2019t on this device right now."), ifcEl("span", null, "This browser let the saved copy go. Load it again and the code shows here. Until then, the section and page above find it in your book."));
     lock.appendChild(t);
     body.appendChild(lock);
     if(typeof ifcPickBook === "function"){
@@ -139527,7 +139546,8 @@ function attachTabSwipe(panel, order, getCurrent, select, opts){
   const onStart = (e) => {
     const t = e.touches[0];
     const tg = e.target;
-    if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))){
+    if(!onSurface(tg) || (opts.zone && !(tg && opts.zone.contains(tg))) || (opts.skip && tg && tg.closest && tg.closest(opts.skip))
+       || (typeof swipeOverlayUp === "function" && swipeOverlayUp())){   /* (384) never under the page viewer */
       startX = null; startY = null; locked = false; return;
     }
     /* build 368: NOT A TOUCH ON THE TAB BAR'S OWN SPACE. A slide across the bar that began in its margin (the gap round the pill, which is the
@@ -147060,8 +147080,14 @@ const SWIPE_SURFACE = document;
    just applied earlier so the drag is never claimed in the first
    place), and the touch must not have STARTED on something that owns
    its own drag - a slider, a text field, a scrollable box. */
-const SWIPE_BLOCKING_TARGET = "input:not(.nova-hsw), textarea, select, [contenteditable]";
+/* (384) and a code picture wide enough to scroll sideways (.ifc-clips.is-scroll) owns its drag too */
+const SWIPE_BLOCKING_TARGET = "input:not(.nova-hsw), textarea, select, [contenteditable], .ifc-clips.is-scroll, .ifc-vz";
+/* (384) NOT UNDER THE PAGE VIEWER. Madison: "Using zoom in page function, swiping on it will swipe to the next question
+   accidentally ... when looking at the full page, and moving it, I'm touching what's behind the page". The viewer (.ifc-vz,
+   ifcOpenViewer) lies over the question; while it is up, no touch anywhere is a swipe to the next question. */
+function swipeOverlayUp(){ return !!document.querySelector(".ifc-vz"); }
 function swipeGestureAllowed(target){
+  if(swipeOverlayUp()) return false;
   if(!document.querySelector(".choices")) return false;
   /* the daily question has nothing to swipe to, and a thumb that drifts a few
      pixels on Submit answer was being read as a swipe, which cancelled the
