@@ -84485,10 +84485,15 @@ function showInstallGuide(platform){
    back on its own. The enrolled banner and Nova's good-luck message wait for it (a2hsHolds).
    Settings > Share & Install > Add to Home Screen opens the same sheet (handleInstallTap).
    THE DEVICE is asked, guessed from the browser (a2hsDeviceGuess): iPhone or iPad / Android or Samsung / Computer.
-   APPLE: landing/a2hs-iphone.mp4, his own screen recording (iOS 26 Safari): tone-mapped from its HDR, cut from
-   21.6s to 14.7s, and the share sheet's row of people (his friends' photos and names) and the Messages back-link
-   under the clock blurred in every frame they are in, the row tracked frame by frame as the sheet rises and
-   grows. The pointers are drawn over it here (A2HS_POINTERS), on the clip's own clock, as fractions of its frame;
+   APPLE: landing/a2hs-iphone.mp4, his second screen recording (iOS 26 Safari, build 384): Welcome in a Safari
+   tab, •••, Share, View More, Add to Home Screen in the list, the Add page, Add, his Home Screen with the new
+   icon, and Nova opening from it. Tone-mapped from its HDR, cut from 29s to 18.2s; in every frame they are in,
+   the share sheet's row of people (his friends' photos and names; tracked frame by frame, and kept out from
+   behind the header's glass once the list scrolls), the status bar (the time, the recording light, the Dynamic
+   Island, signal, battery) and every app on his Home Screen but Nova are blurred. Madison: "blur our stuff, like
+   the people you see in the share thing ... The Home Screen, blur all my apps out. Blur out some of the stuff at
+   the top of the phone as like the red recording light". The pointers are drawn over it here (A2HS_POINTERS),
+   on the clip's own clock, as fractions of its frame;
    the step the clip is on is lit in the list. While the walkthrough is up the address carries the code
    (installCodeInUrl), because on iPhone the icon keeps its own data, apart from Safari's: an icon added now
    opens signed in to this account and its progress comes from the cloud. Played only while it is the choice.
@@ -84499,25 +84504,31 @@ var A2HS_KEY = "class26e.a2hs";
 var a2hsPending = false, a2hsTimer = 0, a2hsClosedAt = 0;
 var A2HS_CLIP = { src: "landing/a2hs-iphone.mp4", poster: "landing/a2hs-iphone.jpg" };
 var A2HS_ADDRESS = "chyjyrkwn7-eng.github.io/index.html";
-/* Read off the clip frame by frame: in it ••• is pressed at 2.03s, Share at 3.83s, View More at 6.67s, Add to
-   Home Screen at 9.83s, and the Add page is up from 10.4s to the end (14.73s). from/to in seconds; x/y the
-   button's centre as a fraction of the frame; step = the line of A2HS_STEPS_APPLE it belongs to. */
+/* Read off the clip frame by frame: in it ••• is pressed at 1.73s, Share at 3.6s, View More at 5.83s; the list
+   scrolls at 6.6s and Add to Home Screen (a row in the list, under the icons) is pressed at 8.3s; the Add page is
+   up from 9.5s, Add is pressed at 12.1s; the Home Screen is up from 12.8s, the Nova icon is pressed at 14.57s and
+   Nova is open from 15.67s to the end (18.17s). from/to in seconds; x/y the button's centre as a fraction of the
+   frame; step = the line of A2HS_STEPS_APPLE it belongs to; kind = what it points at (the gate reads the clip's
+   own pixels under some of them). */
 var A2HS_POINTERS = [
-  { from: .3, to: 2.2, x: .869, y: .938, side: "above", step: 0, label: "Tap •••" },
-  { from: 2.45, to: 3.95, x: .454, y: .665, side: "above", step: 0, label: "Tap Share" },
-  { from: 4.85, to: 6.75, x: .831, y: .9, side: "above", step: 1, label: "Tap View More" },
-  { from: 7.4, to: 9.95, x: .156, y: .541, side: "above", step: 2, label: "Tap Add to Home Screen" },
-  { from: 10.45, to: 12.6, x: .881, y: .335, side: "below", step: 3, label: "Make sure this is on" },
-  { from: 12.6, to: 15, x: .88, y: .119, side: "below", step: 4, label: "Tap Add" }
+  { kind: "dots", from: .3, to: 1.8, x: .867, y: .939, side: "above", step: 0, label: "Tap •••" },
+  { kind: "share", from: 2.35, to: 3.7, x: .451, y: .666, side: "above", step: 0, label: "Tap Share" },
+  { kind: "viewmore", from: 4.5, to: 5.87, x: .831, y: .9, side: "above", step: 1, label: "Tap View More" },
+  { kind: "a2hs", from: 6.8, to: 8.4, x: .125, y: .73, side: "above", step: 2, label: "Tap Add to Home Screen" },
+  { kind: "switch", from: 9.55, to: 10.8, x: .883, y: .335, side: "below", step: 3, label: "Make sure this is on" },
+  { kind: "add", from: 10.8, to: 12.25, x: .883, y: .119, side: "below", step: 4, label: "Tap Add" },
+  { kind: "icon", from: 12.85, to: 14.65, x: .841, y: .248, side: "above", step: 5, label: "Tap Nova to open it" }
 ];
 var A2HS_STEPS_APPLE = [
   { parts: [{ text: "In Safari, tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: ", then Share." }],
     note: [{ text: "If the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share button is in the toolbar, tap it instead." }] },
   { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " View More." }],
     note: [{ text: "If Add to Home Screen is already showing, skip this." }] },
-  { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " Add to Home Screen." }] },
+  { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " Add to Home Screen." }],
+    note: [{ text: "It is in the list under the icons, or on some iPhones with the icons. Scroll down if it is not showing." }] },
   { parts: [{ text: "Make sure " }, { icon: buildToggleIcon, style: "plain" }, { text: " Open as Web App is on." }] },
-  { parts: [{ text: "Tap Add." }] }
+  { parts: [{ text: "Tap Add." }] },
+  { parts: [{ text: "Open Nova from your Home Screen." }] }
 ];
 var A2HS_STEPS_CHROME = [
   { parts: [{ text: "Tap " }, { icon: buildVerticalDotsIcon, style: "grey-circle" }, { text: " at the top right." }] },
@@ -84715,7 +84726,7 @@ function showHomeScreenSheet(opts){
   const pts = A2HS_POINTERS.map(p => {
     const d = mk("div", "a2hs-pt");
     d.style.left = (p.x * 100) + "%"; d.style.top = (p.y * 100) + "%";
-    d.dataset.from = String(p.from); d.dataset.to = String(p.to); d.dataset.step = String(p.step);
+    d.dataset.from = String(p.from); d.dataset.to = String(p.to); d.dataset.step = String(p.step); d.dataset.kind = p.kind || "";
     d.dataset.side = p.side; d.dataset.align = p.x > .66 ? "end" : (p.x < .34 ? "start" : "mid");
     d.setAttribute("aria-hidden", "true");
     d.append(mk("span", "a2hs-pt-ping"), mk("span", "a2hs-pt-ring"), mk("span", "a2hs-pt-label", p.label));

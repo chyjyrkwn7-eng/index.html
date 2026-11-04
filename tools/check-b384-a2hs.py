@@ -4,6 +4,11 @@
 Madison: "let's ensure that the sign up process gives a thing for the adding app to your iPhone/samsung homescreen as
 a popup ... then let it do the walkthrough. For when people select Apple. Have it show them this video ... blur that
 out ... Maybe add some pointers like the add button. A pointer for "open as web app" ensuring it's on."
+The second recording (build 384): "the add to homescreen screen button was at the top and not grouped with the view more
+stuff, put that pointer in there too ... the very top of my phone, it has the recording thing, and my stuff, blurr that
+out ... this one includes me actually selecting add, and then clicking it to see the functionality." Then: "blur our
+stuff, like the people you see in the share thing ... The Home Screen, blur all my apps out. Blur out some of the stuff
+at the top of the phone as like the red recording light".
 
 Walked as a person would, in a BROWSER TAB (not installed), with an in-memory Firestore (the CDN is blocked here):
 Get Started -> Welcome -> I'm new here -> the class -> GENERATING PROFILE -> Nova (name, partner, the save-code card)
@@ -12,11 +17,14 @@ Get Started -> Welcome -> I'm new here -> the class -> GENERATING PROFILE -> Nov
   iphone     - iPhone 17 Pro Max (440x956, an iOS Safari user agent): the sheet comes up on Home only after the last tip
                (never over Nova, the save-code card or a tip), once the +100 XP has gone, with the iPhone choice
                already picked; one choice of three; 44px+ buttons, nothing wider than the screen, the sheet inside it.
-               The clip: a poster that loads, a source that plays (its clock moves); each pointer comes on inside its
-               own window on the clip's clock and is the only one on, its ring inside the clip's box at the place
-               it declares, its label inside the box, the step it belongs to lit; none before the first; the ring
-               over Open as Web App sits on the switch's green and the one over Add on the button's blue (pixels read
-               off the clip at those times). While the walkthrough is up the address carries the account's code
+               The clip: a poster that loads, a source that plays (its clock moves); the pointers, in the recording's
+               order on its clock: •••, Share, View More, Add to Home Screen (a row in the list), Open as Web App,
+               Add, the Nova icon on the Home Screen; each comes on inside its own window and is the only one on, its
+               ring inside the clip's box at the place it declares, its label inside the box, the step it belongs to
+               lit and said under the clip (its words clear of the pinned Not now); none before the first. Read off the clip's own pixels under the ring at
+               its time: Open as Web App on the switch's green, Add on the button's blue, Add to Home Screen on the
+               row's white glyph on the list's grey, the Nova icon sharp on its dark tile with the warm wallpaper round
+               it (none of which is there at the clip's start). While the walkthrough is up the address carries the account's code
                (the icon opens signed in), and Not now takes it off again. Not now closes it; the enrolled banner
                waited for it; a reload (the next launch) does not bring it back.
   samsung    - Galaxy S24 (412x915, Samsung Internet's user agent): Android preselected, Samsung Internet's card first and
@@ -28,8 +36,13 @@ Get Started -> Welcome -> I'm new here -> the class -> GENERATING PROFILE -> Nov
                mark the sign-up's showing.
   clip       - the shipped file: H.264, yuv420p, no sound, ~30fps, 440-660px wide, under 2.5MB, its index at the front
                (faststart), a poster of the same size; in every frame the share sheet's row of people is in, that band
-               holds a fraction of the detail of the row of apps right under it (a blur, not the photos and names),
-               and the Messages back-link under the clock likewise against the clock beside it.
+               holds a fraction of the detail of the row of apps right under it (a blur, not the photos and names);
+               once the list has scrolled the row under the header's glass, the header there is the header from
+               before the scroll (no ghost of the row through it); in every frame the status bar strip (the time,
+               the recording light, the Dynamic Island, signal, battery) has no sharp edge in it (its steepest
+               edges a fraction of its own range of light); on the Home Screen every app but Nova (the two rows,
+               their names, the dock) holds a fraction of the Nova icon's detail.
+               A2_CLIP=/path/to/an/unblurred/cut.mp4 runs the clip checks on another file (an unblurred cut fails).
 
   python3 tools/check-b384-a2hs.py
   python3 tools/check-b384-a2hs.py --against /path/to/old-index.html
@@ -335,11 +348,22 @@ with sync_playwright() as pw:
             box = pg.evaluate("()=>{ const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect(); return [f.left,f.top,f.width,f.height]; }")
             chk("iphone the clip's frame has the clip's own shape (%.3f against %.3f)" % (box[2] / box[3], v["w"] / max(1, v["h"])), abs(box[2] / box[3] - v["w"] / max(1, v["h"])) < .01, (box, v))
             # each pointer, inside its own window on the clip's clock
-            pts = pg.evaluate("()=>[...document.querySelectorAll('#a2hs-sheet .a2hs-pt')].map(p=>({from:+p.dataset.from, to:+p.dataset.to, step:+p.dataset.step, x:parseFloat(p.style.left)/100, y:parseFloat(p.style.top)/100}))")
+            pts = pg.evaluate("()=>[...document.querySelectorAll('#a2hs-sheet .a2hs-pt')].map(p=>({kind:p.dataset.kind||'', from:+p.dataset.from, to:+p.dataset.to, step:+p.dataset.step, x:parseFloat(p.style.left)/100, y:parseFloat(p.style.top)/100}))")
             chk("iphone there are pointers over the clip (%d), in order on its clock" % len(pts), len(pts) >= 5 and all(pts[i]["from"] < pts[i]["to"] <= pts[i + 1]["from"] + 1e-6 for i in range(len(pts) - 1)), pts)
+            # the second recording, in its own order: Add to Home Screen is a row in the list (not with View More), and
+            # it goes on past Add to the Home Screen and opens Nova from the new icon
+            ORDER = ["dots", "share", "viewmore", "a2hs", "switch", "add", "icon"]
+            kinds = [p["kind"] for p in pts]
+            steps_n = pg.evaluate("()=>document.querySelectorAll('#a2hs-sheet .a2hs-apple .a2hs-step').length")
+            chk("iphone the pointers are the recording's, in its order: %s" % " > ".join(k or "?" for k in kinds),
+                kinds == ORDER, kinds)
+            chk("iphone ...the steps follow them: one step a pointer's step, in order, the last one the Nova icon's (%d steps)" % steps_n,
+                kinds == ORDER and [p["step"] for p in pts] == sorted(p["step"] for p in pts) and pts[-1]["step"] == steps_n - 1
+                and len(set(p["step"] for p in pts)) == steps_n, ([(p["kind"], p["step"]) for p in pts], steps_n))
             pg.evaluate("()=>document.querySelector('#a2hs-sheet video').pause()")
             SEEK = """async t=>{ const v=document.querySelector('#a2hs-sheet video'); v.pause();
                 await new Promise(r=>{ const f=()=>{ v.removeEventListener('seeked', f); r(); }; v.addEventListener('seeked', f); v.currentTime=t; setTimeout(r, 1500); });
+                await new Promise(r=>{ const t0=performance.now(); const w=()=>{ if(v.readyState>=2 || performance.now()-t0>3000) r(); else setTimeout(w, 50); }; w(); });
                 await new Promise(r=>setTimeout(r, 450)); return v.currentTime; }"""
             STATE = """()=>{ const o=document.getElementById('a2hs-sheet'); const f=o.querySelector('.a2hs-phone').getBoundingClientRect();
                 const on=[...o.querySelectorAll('.a2hs-pt')].map((p,i)=>({i, on:p.classList.contains('is-on'), op:+getComputedStyle(p).opacity}));
@@ -349,7 +373,7 @@ with sync_playwright() as pw:
                     labelIn: l.left>=f.left-1 && l.right<=f.right+1 && l.top>=f.top-1 && l.bottom<=f.bottom+1 }; });
                 const nw=o.querySelector('.a2hs-now'); let cap=null;
                 if(nw){ const r=nw.getBoundingClientRect(), litEl=o.querySelector('.a2hs-apple .a2hs-step.is-now .a2hs-step-main');
-                  cap={ shown:getComputedStyle(nw).display!=='none' && r.height>0, gap:r.top-f.bottom, inView:r.bottom<=innerHeight && r.top>=0,
+                  cap={ shown:getComputedStyle(nw).display!=='none' && r.height>0, gap:r.top-f.bottom, inView:r.bottom<=innerHeight && r.top>=0, clearOfFoot:(nw.querySelector('.a2hs-now-t')||nw).getBoundingClientRect().bottom<=o.querySelector('.a2hs-foot').getBoundingClientRect().top+1,
                     head:(nw.querySelector('.a2hs-now-n')||{}).textContent||'', text:nw.textContent.replace((nw.querySelector('.a2hs-now-n')||{}).textContent||'','').trim(),
                     litText: litEl ? litEl.textContent.trim() : null }; }
                 return { on, lit, ring, cap, steps:o.querySelectorAll('.a2hs-apple .a2hs-step').length }; }"""
@@ -380,18 +404,58 @@ with sync_playwright() as pw:
                 # build 384: on a phone the list is below the fold, so the step is said right under the clip as well
                 cp = st.get("cap") or {}
                 head = re.findall(r"\d+", cp.get("head", ""))
-                chk("iphone ...and right under the clip, in view, the same step said: '%s %s'" % (cp.get("head"), cp.get("text")),
-                    cp.get("shown") and 0 <= cp.get("gap", -1) <= 24 and cp.get("inView") and head == [str(p["step"] + 1), str(st["steps"])] and cp.get("text") == cp.get("litText"), cp)
-            # the ring on the switch sits on its green, the one on Add on its blue: read off the clip
-            sw = [i for i, p in enumerate(pts) if p["step"] == 3]
-            ad = [i for i, p in enumerate(pts) if p["step"] == 4]
+                chk("iphone ...and right under the clip, in view and clear of the pinned Not now, the same step said: '%s %s'" % (cp.get("head"), cp.get("text")),
+                    cp.get("shown") and 0 <= cp.get("gap", -1) <= 24 and cp.get("inView") and cp.get("clearOfFoot") and head == [str(p["step"] + 1), str(st["steps"])] and cp.get("text") == cp.get("litText"), cp)
+            # the ring on the switch sits on its green, the one on Add on its blue: read off the clip (by kind; a build
+            # without kinds by step, as 384's first clip had them)
+            def of_kind(kind, step):
+                return [i for i, p in enumerate(pts) if p["kind"] == kind] or [i for i, p in enumerate(pts) if not p["kind"] and p["step"] == step]
+            sw, ad = of_kind("switch", 3), of_kind("add", 4)
             if sw and ad:
                 p = pts[sw[0]]; pg.evaluate(SEEK, (p["from"] + p["to"]) / 2); c = pg.evaluate(GREEN, [p["x"], p["y"]])
                 pg.evaluate(SEEK, 0.05); c0 = pg.evaluate(GREEN, [p["x"], p["y"]])
                 chk("iphone the Open as Web App pointer sits on the switch, on: %.0f%% of the line across its ring is the switch's green (%.0f%% there at the clip's start)" % (c * 100, c0 * 100),
                     c > .15 and c0 < .02, (c, c0))
-                p = pts[ad[0]]; pg.evaluate(SEEK, min(p["to"], p["from"] + 1.5)); c = pg.evaluate(PIX, [p["x"], p["y"]])
+                p = pts[ad[0]]; pg.evaluate(SEEK, (p["from"] + p["to"]) / 2); c = pg.evaluate(PIX, [p["x"], p["y"]])
                 chk("iphone the Add pointer sits on the Add button: blue under it (%s)" % [round(x) for x in c], c[2] > c[0] + 60 and c[2] > c[1] + 20, c)
+            # the clip's pixels under the ring (its width on the clip): a 9x9 box at its centre, the line across it, and a
+            # circle just outside it
+            UNDER = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const f=document.querySelector('#a2hs-sheet .a2hs-phone').getBoundingClientRect();
+                const ring=document.querySelector('#a2hs-sheet .a2hs-pt-ring').offsetWidth; const half=Math.round(ring/2*v.videoWidth/f.width);
+                const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; const g=c.getContext('2d'); g.drawImage(v,0,0);
+                const cx=Math.round(x*c.width), cy=Math.round(y*c.height), L=(d,i)=>.299*d[i]+.587*d[i+1]+.114*d[i+2];
+                const ctr=g.getImageData(cx-4, cy-4, 9, 9).data; let cmax=0; for(let i=0;i<ctr.length;i+=4) cmax=Math.max(cmax, L(ctr,i));
+                const ln=g.getImageData(cx-half, cy-2, half*2, 5).data; const lums=[], sats=[];
+                for(let i=0;i<ln.length;i+=4){ lums.push(L(ln,i)); sats.push(Math.max(ln[i],ln[i+1],ln[i+2])-Math.min(ln[i],ln[i+1],ln[i+2])); }
+                const med=a=>a.slice().sort((p,q)=>p-q)[a.length>>1];
+                const out=[]; for(let k=0;k<48;k++){ const a=k/48*2*Math.PI, px=Math.round(cx+(half+6)*Math.cos(a)), py=Math.round(cy+(half+6)*Math.sin(a));
+                  if(px<0||py<0||px>=c.width||py>=c.height) continue; const d=g.getImageData(px,py,1,1).data; out.push([d[0],d[1],d[2]]); }
+                const om=[0,1,2].map(j=>med(out.map(o=>o[j])));
+                return { glyph:cmax, lineLum:med(lums), lineSat:med(sats), out:om }; }"""
+            def on_glyph(u):    # a white glyph at the centre, the list's neutral grey across the ring
+                return u["glyph"] >= 200 and u["lineSat"] <= 10 and 60 <= u["lineLum"] <= 130
+            def on_icon(u):     # the icon sharp (its V bright at the centre), its dark tile across the ring, warmer round it (the wallpaper)
+                return u["glyph"] >= 150 and u["lineLum"] < 75 and u["out"][0] > u["out"][2] + 25 and u["out"][0] > u["lineLum"] + 50
+            def under_at(t, p):
+                """read under the ring at time t; a read that is one flat grey all over (no frame drawn yet, as happens
+                when the machine is loaded) is taken again"""
+                u = None
+                for _ in range(4):
+                    pg.evaluate(SEEK, t); u = pg.evaluate(UNDER, [p["x"], p["y"]])
+                    if not (u["glyph"] == u["lineLum"] and u["lineSat"] == 0 and len(set(u["out"])) == 1): break
+                    pg.wait_for_timeout(800)
+                return u
+            a2i, ic = of_kind("a2hs", -1), of_kind("icon", -1)
+            u = u0 = None
+            if a2i:
+                p = pts[a2i[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
+            chk("iphone the Add to Home Screen pointer sits on its row in the list: the row's white glyph under the ring's centre, the list's grey across it (%s), not so at the clip's start (%s)" % (u, u0),
+                bool(a2i) and on_glyph(u) and not on_glyph(u0), (u, u0))
+            u = u0 = None
+            if ic:
+                p = pts[ic[0]]; u = under_at((p["from"] + p["to"]) / 2, p); u0 = under_at(0.05, p)
+            chk("iphone the last pointer sits on the Nova icon on the Home Screen: its V sharp at the ring's centre, its dark tile across the ring, the warm wallpaper round it (%s), not so at the clip's start (%s)" % (u, u0),
+                bool(ic) and on_icon(u) and not on_icon(u0), (u, u0))
             pg.evaluate("()=>document.querySelector('#a2hs-sheet video').play()")
             pg.wait_for_timeout(300)
             enrolled_before = pg.evaluate("()=>!!document.getElementById('enrolled-banner')")
@@ -487,7 +551,8 @@ with sync_playwright() as pw:
                 "localStorage.setItem('class26e.frame.ok','go-live-1');")
         ctx, pg = open_page(br, "iphone", init=seen, seed={"progress": {CODE: acct}})
         # Welcome > Sign in > the code > Continue > Sync This Device > Home
-        pg.click(".welcome-signin"); pg.wait_for_timeout(500)
+        # a device with no account opens on Get Started since 384 (6ddf9ce): its own Sign in goes straight to the code
+        pg.click(".gs-signin" if screen(pg) == "getstarted" else ".welcome-signin"); pg.wait_for_timeout(500)
         pg.fill(".synccode-entry-panel input:not([type=checkbox])", CODE)
         pg.click(".synccode-entry-panel #nextbtn"); pg.wait_for_timeout(800)
         pg.click(".synccode-confirm .next.playbtn")
@@ -532,12 +597,17 @@ if want("clip"):
         from PIL import Image
         pw_, ph_ = Image.open(POSTER).size
         chk("the poster is the clip's size (%dx%d)" % (pw_, ph_), (pw_, ph_) == (v.get("width"), v.get("height")), (pw_, ph_))
-        # the blur: per frame, the band the row of people is in (frame ranges -> its top and bottom), as cut
-        BANDS = ("132-132:770:920;133-133:730:900;134-134:690:860;135-135:650:840;136-136:658:828;137-139:656:826;140-141:658:828;142-204:660:830;"
-                 "205-205:622:792;206-206:532:702;207-207:446:616;208-208:378:548;209-209:330:500;210-210:296:466;211-211:280:450;212-212:260:430;"
-                 "213-213:256:426;214-214:248:418;215-215:244:414;216-216:242:412;217-303:240:410")
+        # The second recording, as cut (545 frames at 30fps). Per frame, the band the row of people is in while the
+        # sheet sits, opens and starts to scroll (frame ranges -> its top and bottom); the frames where the list has
+        # scrolled it under the header's glass, and the frame just before the scroll they are measured against; the
+        # frames of the settled Home Screen.
+        ROWS = ("127-127:706:876;128-129:666:847;130-130:652:833;131-133:650:831;134-134:652:833;135-174:654:835;175-175:598:779;"
+                "176-176:532:713;177-177:444:625;178-178:372:553;179-180:296:477;181-181:266:447;182-182:248:429;183-184:240:421;"
+                "185-185:238:419;186-186:236:417;187-188:234:415;193-196:234:415")
+        HEADER, HEADER_REF = range(201, 254), 196
+        HOME = list(range(384, 409)) + list(range(413, 442))
         want_n = {}
-        for part in BANDS.split(";"):
+        for part in ROWS.split(";"):
             rng, y0, y1 = part.split(":"); a, b = rng.split("-")
             for n in range(int(a), int(b) + 1): want_n[n] = (int(y0), int(y1))
         import numpy as np
@@ -548,27 +618,53 @@ if want("clip"):
             a = a.astype(np.float32)
             lo = (a[:-2, 1:-1] + a[2:, 1:-1] + a[1:-1, :-2] + a[1:-1, 2:]) / 4.0
             return float(np.abs(a[1:-1, 1:-1] - lo).mean())
-        worst_row, worst_msg, n, rows_seen = 0.0, 0.0, 0, 0
-        worst_at = None
+        def sharpness(a):
+            """the steepest edges (99.5th percentile of the step to a neighbour) against the strip's own range of light:
+            a figure or a letter steps its whole contrast in a pixel or two, a blur spreads it over many"""
+            a = a.astype(np.float32)
+            g = np.maximum(np.abs(np.diff(a, axis=1))[:-1, :], np.abs(np.diff(a, axis=0))[:, :-1])
+            return float(np.percentile(g, 99.5)) / max(8.0, float(np.percentile(a, 99.5) - np.percentile(a, 0.5)))
+        frames = []
         while True:
             buf = proc.stdout.read(W * H)
             if len(buf) < W * H: break
-            f = np.frombuffer(buf, np.uint8).reshape(H, W)
-            # the Messages back-link under the clock, against the clock beside it (every frame)
-            msg = detail(f[46:66, 8:100]); clock = detail(f[16:42, 30:110])
-            worst_msg = max(worst_msg, msg / max(clock, 1e-3))
-            if n in want_n:
-                y0, y1 = want_n[n]
-                band = detail(f[y0 + 8:y1 - 8, 4:W - 4])
-                ref = detail(f[min(H - 2, y1 + 6):min(H, y1 + 130), 4:W - 4])
-                rows_seen += 1
-                ratio = band / max(ref, 1e-3)
-                if ratio > worst_row: worst_row, worst_at = ratio, n
-            n += 1
+            frames.append(np.frombuffer(buf, np.uint8).reshape(H, W))
         proc.wait()
+        n = len(frames)
+        worst_row, worst_at, rows_seen = 0.0, None, 0
+        for i, (y0, y1) in sorted(want_n.items()):
+            if i >= n: continue
+            f = frames[i]
+            ratio = detail(f[y0 + 8:y1 - 8, 4:W - 4]) / max(detail(f[min(H - 2, y1 + 6):min(H, y1 + 130), 4:W - 4]), 1e-3)
+            rows_seen += 1
+            if ratio > worst_row: worst_row, worst_at = ratio, i
         chk("the share sheet's row of people is blurred in all %d frames it is in: at most %.2f of the detail of the apps row under it (frame %s)"
             % (rows_seen, worst_row, worst_at), rows_seen == len(want_n) and worst_row < .25, (rows_seen, len(want_n), worst_row, worst_at))
-        chk("the Messages back-link under the clock is blurred in all %d frames: at most %.2f of the clock's detail" % (n, worst_msg), n > 300 and worst_msg < .3, worst_msg)
+        # behind the header's glass: the right-hand part, clear of the header's own title, address and X (a ghost of the
+        # row through the glass differs from the header before the scroll by ~7 grey levels on an unblurred cut)
+        worst_h, worst_h_at = 0.0, None
+        if HEADER_REF < n and HEADER[-1] < n:
+            ref = frames[HEADER_REF][84:200, 346:454].astype(np.float32)
+            for i in HEADER:
+                d = float(np.abs(frames[i][84:200, 346:454].astype(np.float32) - ref).mean())
+                if d > worst_h: worst_h, worst_h_at = d, i
+        chk("once the list scrolls the row under the header, nothing of it shows through the header's glass in all %d frames: the header differs from itself before the scroll by at most %.2f of 255 (frame %s)"
+            % (len(HEADER), worst_h, worst_h_at), HEADER[-1] < n and worst_h_at is not None and worst_h < 1.0, (worst_h, worst_h_at, n))
+        # the status bar strip (the time, the recording light, the Dynamic Island, signal, battery), every frame
+        sh = [sharpness(f[4:62, 4:W - 4]) for f in frames]
+        worst_s = max(sh) if sh else 9
+        chk("the status bar is blurred in all %d frames: its steepest edges at most %.2f of its own range of light (a sharp status bar measures 0.4-0.7) (frame %s)"
+            % (n, worst_s, sh.index(worst_s) if sh else None), n >= 500 and worst_s < .2, worst_s)
+        # the Home Screen: every app but Nova (the two rows of icons and their names, the dock) against the Nova icon
+        worst_o, worst_o_at = 0.0, None
+        for i in HOME:
+            if i >= n: continue
+            f = frames[i]
+            other = np.mean([detail(f[95:232, 40:500]), detail(f[248:365, 40:372]), detail(f[1035:1125, 40:500])])
+            ratio = other / max(detail(f[250:362, 413:495]), 1e-3)
+            if ratio > worst_o: worst_o, worst_o_at = ratio, i
+        chk("on the Home Screen every app but Nova is blurred in all %d frames: at most %.2f of the Nova icon's detail (frame %s)"
+            % (len(HOME), worst_o, worst_o_at), HOME[-1] < n and worst_o_at is not None and worst_o < .3, (worst_o, worst_o_at, n))
 
 print("\n%d failed" % len(fails) if fails else "\nALL PASS")
 for f in fails: print("  FAILED: " + f)
