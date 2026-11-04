@@ -32240,3 +32240,19 @@ lowered. Like increments of 25, 50, 75, 150?"
   slide, friends, stats, settings, home, flare, chatback, ifccurve), check-b383-profile/look/ifcsync/tabslide/flashcards/signup,
   check-b382-settings/slide, check-friends, check-sound, check-sync ALL PASS, sweep-layout --quick 14/14. check-chat's one
   failure ("the peek scenario never had an unread count to clear") fails identically on 383.
+- (384) Choose your mode: "there's so much empty space on the bottom here and it feels super off.. should these 3 options be
+  centered, and for the police one you'd centered the 4 a little better? The wording within the boxes is a little too short. Could
+  we add a smidge more?" Measured on a Pro Max: Fire Code's three cards ended 142px above the tab bar with nothing under them; the
+  academy's four ran 40px under it (the page scrolled); every card was a 166px min-height box holding ~76px of words.
+  - Each description says the second beat build 287 asked for, its "best for": Drill "... Best for learning the material.", Mock
+    "... Best for checking you are ready.", Review "... Best for going over a unit before you test yourself." (a chapter in Fire
+    Code - the word swap), Virtual Room "... Best for studying together."
+  - Cards are sized to their words (min-height 0, 20px 22px padding, 12px between; 24px 26px and 16px on a tablet), so the
+    academy's four fit a Pro Max's screen.
+  - centerModeGroup(panel): the question stays under the title as the screen's heading; where there is room, the cards sit in the
+    middle of the space between it and 16px above the tab bar (Fire Code Pro Max 107 / 107, academy 28 / 28, iPad ~260 / 260). A
+    padding-top (--ms-shift) on .modecards - a margin there collapsed with the question's and moved them short. Read from layout
+    positions (offsetTop), run at the mount, again at 450ms and on resize while the screen is on the stage. No room (an SE): no
+    shift, the page scrolls as before.
+  - check-b384-modes; fails 5 on the previous commit. check-b383-modeselect, check-b383-look, check-b384-haptics pass;
+    check-b342's one failure (the preview image's live address) fails the same on 383 - the sandbox can't reach the site.
