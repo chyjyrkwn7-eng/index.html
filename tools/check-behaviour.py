@@ -12719,8 +12719,14 @@ def check_b313_fx(br):
                   # near the top and the sky above it is short - "most of the
                   # screen above it" is the sky reaching the top of the screen
                   # (within 300px of the box was the old, low box's measure).
+                  # MOVED IN 384: "within 40px of the top" was met by bursts
+                  # running OFF the top of the screen (they were sized for the
+                  # old, low box); they open whole inside the sky now, so at
+                  # this moment (3.9s, the finale half open) the light reaches
+                  # into the top third of the sky over the box - 60px on a
+                  # phone - and check-b384-policefx B holds that none is cut.
                   la.get("n", 0) > 400 and la["x1"] - la["x0"] >= 440 * .7
-                  and la["y0"] < max(0, (r.get("boxLate") or {}).get("t", 0) - 300) + 40, {"lit": la, "box": r.get("boxLate")})
+                  and la["y0"] < max(0, (r.get("boxLate") or {}).get("t", 0) - 300) + max(40, min(300, (r.get("boxLate") or {}).get("t", 0)) * .35), {"lit": la, "box": r.get("boxLate")})
             check("fireworks: the screen dims a little behind the sky - and only a little", r.get("dimMid") is not None and .3 <= r["dimMid"] <= .6, r.get("dimMid"))
             st = r.get("still") or []
             # BUILD 320: the XP card comes down at the effect's tail (it is
