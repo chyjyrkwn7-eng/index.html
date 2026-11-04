@@ -509,6 +509,9 @@ def cmd_bugs(limit):
         print("  %s  %s%s" % (f.get("viewport") or "?",
                               (f.get("ua") or "")[:70],
                               " [installed]" if f.get("standalone") else ""))
+        if f.get("edges"):
+            # build 384: where the browser's bars are on that device (safariBarsReading in index.html)
+            print("  edges: %s" % f.get("edges"))
         if f.get("perf"):
             print("  tab perf: %s" % f.get("perf"))
         for line in (f.get("text") or "").splitlines() or [""]:

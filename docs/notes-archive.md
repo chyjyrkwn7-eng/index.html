@@ -33380,3 +33380,159 @@ chrome link to 1243's binary was put back so the tools' CHROME path works. check
 - Phone checks owed: the long chapter names under the case and beside it with real insets and text size; the Thermal Camera's
   card tapped away mid-showcase (nothing at the corner); Nova's greeting typing speed (the sandbox ran slow) and the enrolled
   banner after it; sound through the speaker for the Fire Code greeting and cards (unchanged sounds); haptics.
+### Build 384 - Safari in a tab, every device and browser (NOT on main, waiting for Madison)
+
+Madison: "It doesn't seem like the safari version of the app got fixed by the way (I attached more videos) please get this right,
+I've been asking you for a week to fix it. The bottom of the screen is missing and so is the top." His videos did not come
+through; one frame of his phone in a Safari tab did (Welcome, build 383, iPhone 17 Pro Max, iOS 26, the floating toolbar).
+Also asked: a full check on every device and browser (and Internet Explorer if possible), the new icon as the bookmark's
+icon, a bookmarked page that keeps its account, and one shared link that works for five people at once.
+
+WHAT SAFARI ACTUALLY DOES (MEASURED OFF HIS FRAME, NOT GUESSED):
+- His frame is 660x1434 = 440x956pt at 1.5x. The Sign in button is 37.7pt tall = 44.4 CSS px at 85%: his Safari tab is at
+  85% page zoom too (the aA menu), like the installed app (build 199), so the page is 518 CSS px wide.
+- Rendered in Chromium at 518 wide and fitted: the build line, "Welcome to Nova", Sign in and I'm new here all land within
+  2px of a 518x938 CSS viewport that STARTS 62pt DOWN (just under the status bar) with no safe-area insets. 938 CSS = 797pt,
+  so Safari keeps 62pt at the top and 97pt at the bottom (the floating toolbar's pill is 873-922pt). The page runs BETWEEN
+  Safari's bars at rest - which is also what 382's edge test showed (fixed layers stop at the bars) and what the Apple
+  forums report for Safari 26 (fixed content is clipped at the controls, not drawn under them). A model with the page under
+  the status bar and env(top) = 62 does not fit (Sign in would be 113 CSS px lower).
+- So in the state his frame shows, the tab bar is 12px above the page's bottom = above the toolbar, and nothing is hidden.
+  Rendered at 518x938 (and 440x797) with Safari's bars drawn in (scratchpad browsers384/promax-tab85-before-after.png): Home,
+  Profile, Settings, the Leaderboard and a question all sit between the bars, before and after this build alike.
+- What a frame at rest cannot show: the toolbar minimised by a scroll (the page's viewport changes), the keyboard coming and
+  going (Safari 26.0 left fixed bars misplaced after it; Apple lists "a bottom gap on layouts with viewport-sized fixed
+  containers" as fixed in 26.1), the iPad's top bar, the other Tabs layouts (Settings > Apps > Safari > Tabs: with "Top", a
+  fixed header is reported hidden under the address bar). In any state where Safari lets the page run UNDER its bars the
+  layout viewport is the whole screen and the insets come back non-zero, but no inset covers Safari's own toolbar - so a
+  tab bar placed on the home-indicator inset (as the installed app's is) sits behind the toolbar. That is the state this
+  build fixes.
+- WHICH STATE HIS PHONE IS IN WHEN THINGS GO MISSING IS NOT KNOWN. Report a bug now carries `edges` (below): one report from
+  his Safari tab, sent while the bottom is missing, says exactly which.
+- A SUSPECT LEFT IN PLACE, ON PURPOSE: html{min-height:100lvh}. In Safari 100lvh is the viewport with the toolbar minimised,
+  taller than the page's viewport at rest, so every screen that "fits" (Home, the Leaderboard, Welcome) is really ~47pt
+  scrollable in a tab - a swipe moves its top up under the status bar while the toolbar shrinks. Chromium has lvh = dvh and
+  cannot show it (327z15 round 13's "nothing scrolls in a tab" was measured there). NOT changed: the html box carries the
+  sky's fallback layers sized 100% of it, which 338/341/382 tuned against his screenshots under Safari's bars, and shortening
+  it would move what shows under the toolbar. `edges` reports scrollY, the document's height and 100lvh, so his report says
+  whether this is it; the change would be html.is-browser{ min-height:100dvh } plus moving those 100% layers to lvh sizes.
+
+THE FIX: SAFARI'S BARS OVER THE PAGE (index.html, safariBarsReading / syncSafariBars beside syncBottomInsetClass; the CSS right
+after html.is-browser's edge tints):
+- An iPhone or iPad (iPadOS's Mac user agent with touch points) browser tab whose layout viewport is the screen's full height
+  (within 12pt, through the page zoom: innerWidth / the screen's width) and has a safe-area inset is a page Safari's bars are
+  drawn over. Then html.safari-bars-over and --sb-top / --sb-bottom (CSS px), from a MODEL of the bars: iPhone upright - the
+  status bar (62pt Dynamic Island, 50 notch, 20 Home button) and the toolbar from its top edge, 83pt (measured: 873 of 956),
+  60 with a Home button; iPhone on its side - 60 (48); iPad - 74pt at the top, nothing at the bottom past its inset.
+  Re-read on resize, rotation, pageshow and the visual viewport's resize.
+- --tabs-bottom (phone and tablet) becomes max(its old value, --sb-bottom + 8px): the bar and everything written against it
+  (the Start pill, Next, the daily question, back to top, the vroom bar) sit above the toolbar, and --tabs-drop /
+  --panel-reserve / .wrap's padding with the bar grow by the same amount, so the last row still scrolls clear of it.
+- A screen without the bar gets .wrap margin-bottom: --sb-bottom (its last control scrolls above the toolbar). .wrap
+  margin-top and the controls pinned to the top (the chat button and panel, the room chat, Pause, the banners and alerts,
+  toasts, the class bubble, the build line, the vroom race bar) take margin-top: --sb-top-x = what the inset does not already
+  cover (on an iPhone nothing - Safari reports the status bar; on an iPad, Safari's bar); a test's pinned header and the
+  tablet's sticky .top add it to their own top. Toasts and the vroom prep note sit --sb-bottom-x + 8px higher. Welcome ends
+  that much higher instead of scrolling (its --pad-inset-bottom and padding take --sb-bottom-x, no margin), so Sign in and I'm
+  new here are above the toolbar with nothing scrolled; Get Started's button (.gs-bar) rises by it too.
+- Nothing changes in the state measured off his frame, in the installed app, on a laptop or on Android: every rule is behind
+  html.safari-bars-over, which needs all of: an Apple touch device, is-browser, the full-height viewport, an inset.
+- Report a bug: the report gets `edges` - the screen, the layout viewport, the zoom, how many points of the screen are outside
+  the viewport, the safe-area insets, the visual viewport and its offset, whether the overlay is on, scrollY - and
+  `python3 tools/firestore-admin.py bugs` prints it. It rides on the existing report write; no new writes.
+
+THE SWEEP (tools/sweep-layout.py): every context is its device's own browser now - Safari's user agent on an iPhone, iPadOS
+Safari (a Mac user agent with five touch points) on an iPad, Chrome or Samsung Internet on Android, Chrome or Safari on a
+laptop - with touch and the device's screen. An iPhone's Safari-tab chrome is the measured model (status bar + 97pt, 72 with
+a Home button; 60 on its side; an iPad 74), replacing 110/60 and 90/90. iPhones and iPads get a third launch mode, "bars
+over" (the page full screen, its real insets, Safari's bars as the audit's insets, the tab bar given no allowance under the
+toolbar; not for a Home-button iPhone on its side, which has no inset for the app to read and where Safari hides its bars).
+New devices: iPhone 16 Pro / 17 (402x874), iPhone Air (420x912), Galaxy S24/S25 on Samsung Internet (384x832, its
+chrome 112/100), S24+/S25 Ultra on Chrome (412x915), Galaxy Z Fold cover (344x882) and inner (673x841, and the Fold7's
+884x1104), a Windows laptop at 1536x864, and the rumoured iPhone Fold as a foldable (cover 474x696, inner 640x904, MODELLED
+from leaked 2088x1422 / 2713x1920 panels at 3x - not an announced device). Screens added: Get Started, and a drill's
+question with its header and Next.
+
+INTERNET EXPLORER: the first script in the page (ES3 - var, function, no arrow, no let/const, no trailing commas; acorn
+ecmaVersion 3 parses it) checks document.documentMode / MSIE / Trident and, in IE only, stops the page (execCommand("Stop");
+window.stop where it exists, which is what a browser pretending to be IE does) and puts up one plain page: "Nova needs a
+current browser", "Internet Explorer cannot run Nova. Open this page in Microsoft Edge, which is already on this computer.",
+a button whose address is microsoft-edge: + this page, "Or use a current version of Chrome, Edge, Safari or Firefox." and the
+address. Every other browser leaves at its first line. IE 11 itself was not available to run here (an IE user agent in
+Chromium was).
+
+THE BOOKMARK ICON: the icon was already the shipped one everywhere (the "pixel" V; gen-app-icon --check: 6 assets, one art).
+What a bookmark lacked was a FETCHABLE file at the sizes bookmark services ask for: tools/gen-app-icon.py now also writes
+share/favicon-16.png, share/favicon-32.png and share/icon-192.png and their <link rel="icon" sizes> after the embedded one
+(FAVICON_FILES, ?v=384), and --check covers them and share/icon-512.png (10 assets, one art). Its default --variant is now the
+shipped "pixel" (it was "brand": running it plain to add a size would have swapped every icon). Safari's bookmarks, Favorites
+and Home Screen take share/apple-touch-icon.png (180, a real file since 342); Chrome, Edge, Firefox and Samsung Internet take
+the sized favicons; the manifest (data: URI) carries 180/192/512 and a maskable 512. theme-color agrees (#271E23 both). No
+mask-icon: Safari 12+ uses the favicon for pinned tabs.
+
+KEEPING THE ACCOUNT ON A BOOKMARKED PAGE: the device keeps class26e.drill.v1, class26e.synccode and the IndexedDB mirror (names
+unchanged). navigator.storage.persist() is now asked for only once the device holds an account (askToKeepStorage(): at boot
+with a code, and in setSyncCode) - it was asked on every boot including a first visit, where Firefox shows a permission
+question to somebody who has not signed up. What keeps and what does not (each browser's own clear options):
+- KEEPS: a refresh; closing the tab and opening the bookmark; restarting the phone or the browser; clearing ONLY history in
+  Chrome / Edge ("Browsing history" is its own box, apart from "Cookies and other site data"), Firefox ("History" apart from
+  "Cookies and site data") and Samsung Internet ("Browsing history" apart from "Cookies and site data").
+- NEEDS SIGN IN (the account is in the cloud; the device only forgets which one it was): Safari on an iPhone/iPad - "Clear
+  History and Website Data" (Settings > Apps > Safari) and Safari's own Clear History take cookies and website data with the
+  history; Safari on a Mac - History > Clear History does too; "Remove All Website Data"; any browser's "cookies and site
+  data"; a private/incognito tab when it closes; Safari's tracking prevention removing a site's storage after 7 days of
+  Safari use without a visit (the Home Screen app is exempt). persist() protects against the browser clearing storage for
+  space, never against the person clearing it.
+- Welcome's Sign in ("Have an account? Sign in with your sync code.") is the way back, measured on screen at 44px+.
+
+ONE SHARED LINK, FIVE PEOPLE: SHARE_URL is one fixed address (share/?v=384); the Share button hands over exactly that (no code,
+no id, no #k=); share/index.html (from gen-share-card.py) is static and reads nothing per person; it forwards to ../ with
+location.replace and a meta refresh (no script needed). Opened in five fresh browsers (iPhone Safari, Android Chrome, Samsung
+Internet, a Windows laptop, iPadOS Safari): each reaches the app (the share page gone from the address) at its first run, with
+no sync code and no account id of its own or anybody's. gen-share-card --check passes.
+
+GATE: tools/check-b384-browsers.py (sections safari ie icons keep share; --root DIR runs it against a copy of another build).
+347 checks ALL PASS. --root 91a1d96 (safari ie keep icons): 78 FAIL - Safari's bars over the page on all seven device models
+(69: the app does not see them, the tab bar and its tabs under the toolbar, the iPad's chat button, back buttons, Pause and the
+page name under its bar), IE (9: no guard, the app loads), keep (1: persist() asked on a first visit), icons (1: no sized
+favicons). The TAB model (the measured state) passes on both: it guards the state his phone was measured in. share passes on
+both (the link was already right; it is checked so it stays right).
+OTHER GATES, one at a time, all on Chromium 153: check-js ALL PASS; the page's console on a first visit and an account, desktop
+and iPhone: nothing but the blocked Firebase CDN; check-b382-ios ALL PASS (55); check-b384-navmeet ALL PASS; check-b384-laptop
+ALL PASS; check-bugreport ALL PASS; check-b382 ALL PASS; check-b338 and check-b341 (the sky under Safari's bars) PASS;
+check-b384-haptics ALL PASS (Safari tab included); check-sync ALL PASS (120); gen-app-icon --check and gen-share-card --check
+pass.
+SCREENSHOTS (scratchpad browsers384/): promax-tab85-before-after.png and promax-tab100-before-after.png (the measured state:
+the same before and after - nothing hidden), promax-over-before-after.png (bars over the page: the tab bar under the toolbar
+before, above it after), each Home / Profile / Settings / Leaderboard / a question with Safari's status bar and toolbar drawn in.
+ONLY HIS PHONE CAN CONFIRM: which state the page is in when he sees the top and bottom missing (a bug report from the Safari
+tab while it is happening: `edges`); that Safari 26 really reports the insets this model expects when it runs the page under
+its bars; the modelled depths (62/83pt on his phone, the iPad's 74); Safari's own bars, glass and scroll edge; the keyboard
+case on 26.0; the IE page in real IE and the microsoft-edge: hand-off on Windows; which favicon each browser's bookmark keeps;
+Safari's 7-day storage rule and what persist() is granted.
+
+THE FULL SWEEP (sweep-layout.py, no --quick, 32 devices, 144 combinations): every one clean in the end. What it found on the way
+and what changed for it: the iPads on their side with Safari's bar over the page had the page's name (#count, absolute in the
+wide-landscape layout) under the bar - .wrap's margin does not move an absolute box, so it takes the margin itself, only in
+that layout's query (a first try without the query pushed an iPad's upright Home down 41px behind the tab bar; the sweep caught
+it); the rumoured iPhone Fold's short cover with a home indicator was read as a Home-button phone (the toolbar modelled 23pt
+short) - a home indicator's inset now says Face ID; and a Home-button iPhone on its side is not modelled with bars over it (no
+inset to read). Android (Chrome and Samsung Internet, phones, Folds, a tablet) and every laptop and desktop were clean on the
+first run. Chromium for every run after 12:59 is 153 (see the environment note).
+ENVIRONMENT NOTE (384): `python3 -m playwright install webkit` (trying to get Safari's engine; the download is blocked here)
+made Playwright delete /opt/pw-browsers/chromium-1194, the Chromium every tool names. Put back within a minute as a link to
+chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browsers/chromium-1194/chrome-linux/chrome. Never run
+`playwright install` here. Firefox and WebKit are not installed and cannot be downloaded in this sandbox.
+
+### Build 384 - Safari/devices merged; Get Started gets a Sign in from its first frame
+- Merged the Safari / every device / IE / icons / keep / share helper (15604e2). Its commit also added a line to CLAUDE.md
+  ("never run `playwright install`" - the install deleted chromium-1194, now a link to 1243's chrome). That line was NOT
+  merged: CLAUDE.md is Madison's; it is offered to him instead.
+- With Get Started now opening on every device with no account (6ddf9ce), a device whose site data was cleared opens there,
+  not on Welcome - and as a first visit its Let's get started waits for the end of the page, so the owner of an account
+  would scroll the whole tour to reach Sign in. Added `.gs-signin`: a "Sign in" pill at the top right of Get Started
+  (44px, on screen from the first frame, below Safari's bar when html.safari-bars-over), straight to showWelcomeCodeEntry
+  (its Back goes to Welcome). It fades with the page on Let's get started (gsLeave). Get Started's own rgba palette, as the
+  rest of the page.
+- check-b384-browsers keep: after site data is cleared, Get Started's Sign in is on screen and 44px+, one tap reaches the
+  code entry; then Welcome's Sign in as before.
