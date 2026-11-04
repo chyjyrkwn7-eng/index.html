@@ -44,7 +44,7 @@ with sync_playwright() as pw:
     for cls in ("ifc", "academy"):
         r = out[(cls, 440)]
         chk("(1) %s, Pro Max: the cards in the middle under the question (%s), all above the tab bar" % (cls, fmt(r)),
-            abs(r["above"] - r["below"]) <= 2 and r["last"] <= r["tab"] - 8 and r["above"] > 20, r)
+            abs(r["above"] - r["below"]) <= 2 and r["last"] <= r["tab"] - 8 and r["above"] >= 12, r)
         chk("(2) %s, Pro Max: the question still under the title (top %.0f)" % (cls, r["qTop"]), r["qTop"] < 160, r)
         r = out[(cls, 834)]
         chk("(3) %s, iPad: the cards in the middle (%s)" % (cls, fmt(r)), abs(r["above"] - r["below"]) <= 2 and r["above"] > 30, r)

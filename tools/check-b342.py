@@ -51,7 +51,9 @@ with sync_playwright() as pw:
         pg.evaluate("()=>{ showModeSelect(); }"); pg.wait_for_timeout(900)
         modes = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>c.dataset.mode)")
         hs = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>Math.round(c.getBoundingClientRect().height))")
-        chk(tag + ": the mode cards are big (10.4rem, 166px, or more; got %s)" % hs, hs and min(hs) >= 160, hs)
+        # (384) still big - 343's ask against 334's 138px - but the academy's four are 154px on a phone so they fit and centre
+        # between the question and the tab bar (Madison: "for the police one you'd centered the 4 a little better")
+        chk(tag + ": the mode cards are big (150px or more; got %s)" % hs, hs and min(hs) >= 150, hs)
         if ifc: chk(tag + ": no Mock card (" + ",".join(modes) + ")", "exam" not in modes and "drill" in modes, modes)
         else: chk(tag + ": Mock is still a card", "exam" in modes, modes)
         ctx.close()

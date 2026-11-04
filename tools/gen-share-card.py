@@ -47,8 +47,15 @@ INK = (244, 240, 236)
 SOFT = (166, 158, 168)
 
 TITLE = "Nova"
-TAGLINE = "Police academy study app"
-DESC = "Study app for police academy cadets: drills, practice tests, a daily question, ranks and badges, and a class leaderboard."
+# BUILD 384: "When sharing the app, the description still hasn't been updated. In the actual link it's referred to as the police
+# academy study app, it's a study app rank up game where studying is fun, has tcole material, and 2021 ifc and Harris county
+# amendments drills and multiplayer and unlocks?" The card, the description and the Share sheet's words now say what Nova is
+# across both classes. CARD_REV versions the card's and the share page's addresses: iMessage keeps a link's preview by its
+# address, so the new words only show on a new one.
+TAGLINE = "Studying, made a rank-up game"
+DESC = "Nova turns studying into a rank-up game. TCOLE material and the 2021 IFC with the Harris County amendments: drills, practice tests, live multiplayer, ranks, badges and unlocks."
+CARD_LINES = ["TCOLE and the 2021 IFC. Drills,", "multiplayer, ranks and unlocks."]
+CARD_REV = "384"
 SITE = "https://chyjyrkwn7-eng.github.io/index.html/"
 # BUILD 381: bumped whenever the icon changes, so a phone that has the old one
 # cached (Safari keeps a site's touch icon for a long time) fetches it again.
@@ -181,7 +188,7 @@ def build_card(icon):
     # Measured and wrapped rather than trusted: the second line ran off the
     # right edge of the card at this size, which is the one thing a preview
     # image cannot get away with.
-    lines = [TAGLINE, "Drills, practice tests, ranks", "and a class leaderboard."]
+    lines = [TAGLINE] + CARD_LINES
     y = 372
     for i, line in enumerate(lines):
         col = SOFT if i == 0 else (120, 114, 124)
@@ -198,7 +205,7 @@ META = """{begin}
 <meta property="og:url" content="{site}">
 <meta property="og:title" content="Nova">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="{site}share/og-card.png">
+<meta property="og:image" content="{site}share/og-card.png?v={card}">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="{w}">
 <meta property="og:image:height" content="{h}">
@@ -206,9 +213,9 @@ META = """{begin}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Nova">
 <meta name="twitter:description" content="{desc}">
-<meta name="twitter:image" content="{site}share/og-card.png">
+<meta name="twitter:image" content="{site}share/og-card.png?v={card}">
 <meta name="description" content="{desc}">
-<link rel="image_src" href="{site}share/og-card.png">
+<link rel="image_src" href="{site}share/og-card.png?v={card}">
 {end}"""
 
 
@@ -237,7 +244,7 @@ SHARE_HTML = """<!doctype html>
 
 
 def write_share_page():
-    meta = META.format(begin=BEGIN, end=END, desc=DESC, site=SITE, w=CARD_W, h=CARD_H)
+    meta = META.format(begin=BEGIN, end=END, desc=DESC, site=SITE, w=CARD_W, h=CARD_H, card=CARD_REV)
     meta = meta.replace('<meta property="og:url" content="%s">' % SITE,
                         '<meta property="og:url" content="%sshare/">' % SITE)
     io.open(SHARE_PAGE, "w", encoding="utf-8").write(SHARE_HTML.format(meta=meta, site=SITE, rev=ICON_REV))
@@ -246,7 +253,7 @@ def write_share_page():
 def write_meta():
     src = io.open(INDEX, encoding="utf-8").read()
     block = META.format(begin=BEGIN, end=END, desc=DESC, site=SITE,
-                        w=CARD_W, h=CARD_H)
+                        w=CARD_W, h=CARD_H, card=CARD_REV)
     if BEGIN in src and END in src:
         head = src.index(BEGIN)
         tail = src.index(END) + len(END)
@@ -270,8 +277,8 @@ def check():
             if im.size != size:
                 problems.append("share/%s is %s, expected %s" % (name, im.size, size))
     src = io.open(INDEX, encoding="utf-8").read()
-    for needed in ['property="og:image" content="%sshare/og-card.png"' % SITE,
-                   'name="twitter:image" content="%sshare/og-card.png"' % SITE,
+    for needed in ['property="og:image" content="%sshare/og-card.png?v=%s"' % (SITE, CARD_REV),
+                   'name="twitter:image" content="%sshare/og-card.png?v=%s"' % (SITE, CARD_REV),
                    'property="og:title"', 'name="description"']:
         if needed not in src:
             problems.append("index.html is missing %s" % needed)
@@ -281,11 +288,11 @@ def check():
         page = io.open(SHARE_PAGE, encoding="utf-8").read()
         if len(page.encode("utf-8")) > 8000:
             problems.append("share/index.html is over 8KB - it exists to be small")
-        for needed in ['property="og:image" content="%sshare/og-card.png"' % SITE, 'content="%s"' % DESC,
+        for needed in ['property="og:image" content="%sshare/og-card.png?v=%s"' % (SITE, CARD_REV), 'content="%s"' % DESC,
                        'share/apple-touch-icon.png?v=%s' % ICON_REV, 'location.replace("../"']:
             if needed not in page:
                 problems.append("share/index.html is missing %s" % needed)
-    if ('const SHARE_URL = "%sshare/"' % SITE) not in src:
+    if ('const SHARE_URL = "%sshare/?v=%s"' % (SITE, CARD_REV)) not in src:
         problems.append("the Share button does not send the share page (SHARE_URL)")
     if ('share/apple-touch-icon.png?v=%s' % ICON_REV) not in src:
         problems.append("index.html's apple-touch-icon is not at ?v=%s" % ICON_REV)

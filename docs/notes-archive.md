@@ -32287,3 +32287,22 @@ lowered. Like increments of 25, 50, 75, 150?"
 - check-b384-smooth: (1) back button press paints nothing, (2) search / Pause / chat = the bar's glass, (3) the Start pill's
   words start at the unlit colour and ease, its fill is transform/opacity only and ends at the lit pill. Fails 3 on the previous
   commit. check-b383-tabslide, check-b384-slide, check-b382-units pass.
+
+### Build 384 - the shared link says what Nova is; the mode cards big again
+
+- "When sharing the app, the description still hasn't been updated. In the actual link it's referred to as the police academy
+  study app, it's a study app rank up game where studying is fun, has tcole material, and 2021 ifc and Harris county amendments
+  drills and multiplayer and unlocks?" tools/gen-share-card.py: TAGLINE "Studying, made a rank-up game", CARD_LINES "TCOLE and the
+  2021 IFC. Drills, / multiplayer, ranks and unlocks.", DESC "Nova turns studying into a rank-up game. TCOLE material and the 2021
+  IFC with the Harris County amendments: drills, practice tests, live multiplayer, ranks, badges and unlocks." Rerun: share/
+  og-card.png redrawn, the meta block in index.html and share/index.html rewritten. iMessage keeps a link's preview BY ITS
+  ADDRESS, so the new words need new addresses: CARD_REV "384" - og:image / twitter:image / image_src are og-card.png?v=384 and
+  SHARE_URL is share/?v=384 (the --check reads both). The Share sheet's own text (shareData.text): "Nova: studying, made a
+  rank-up game. TCOLE material and the 2021 IFC with the Harris County amendments, with drills, live multiplayer, ranks and
+  unlocks." Still names no class (26E). check-b342's "absolute addresses of real files" fetches the live site - fails the same on
+  383 from the sandbox.
+- THE MODE CARDS STAY BIG. Earlier today's centring had cards sized to their words (146px) - check-b342 caught it: 343's ask was
+  "The buttons for mode selection still look small and not big like before" (334's 138px). Back to a 160px floor (154px for the
+  academy's four on a phone, so they fit a Pro Max's room), 10px apart, and centerModeGroup now SETS the gap above the cards
+  (--ms-gap, half the room the cards leave; at least 12px, else the usual 1.1rem and the page scrolls) rather than only adding
+  to it - the academy's four sit 14 / 15 on a Pro Max, Fire Code's three 87 / 88. check-b342's floor reads 150px now, with why.
