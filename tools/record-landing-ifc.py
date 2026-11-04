@@ -1,79 +1,126 @@
-"""python3 tools/record-landing-ifc.py [test|ifc]   (PDFJS_DIR=<unpacked pdfjs-dist package>)
-Build 330: Fire Code clips for the Get Started page: landing/test (a Fire Code drill, a wrong try opens the code)
-and landing/ifc (the green analysis of an IFC PDF). Owner account in the Fire Code class; pdf.js from npm."""
-import os, sys, json, mimetypes
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# pdf.js 5.4.149 unpacked from npm (npm pack pdfjs-dist@5.4.149), folder "package": the sandbox cannot reach jsDelivr
-PDFJS = os.environ.get("PDFJS_DIR", "") + "/"
-H = ROOT + "/tools"
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
-rl_main = open(H + "/record-landing.py").read()
-exec(rl_main[rl_main.index("def encode("):rl_main.index("\ndef main(") if "\ndef main(" in rl_main else None], g)
+"""The Fire Code clips on the Get Started page:
+  landing/test - Fire Code questions played in a Drill, the code under each answer cut from the owner's own book
+                 ("Show the code" on a right answer; a miss opens it by itself);
+  landing/ifc  - loading the book: the Enroll in Fire Code screen, "Choose my IFC PDF", the Analyzing screen to Verified.
+
+  PDFJS_DIR=<unpacked pdfjs-dist 5.4.149 package> IFC_BOOK=<the owner's 2021 IFC PDF> python3 tools/record-landing-ifc.py [test|ifc]
+
+Build 330 made both; build 384 (round 2) re-recorded them with record-landing.py's capture (780x1690, the page in slow
+motion, a true 30 fps clock, each clip from its beginning and looping on itself, its poster its first frame) - see there.
+"Ensure the videos show a lot of the test example with the ifc fire code stuff": the test clip is two Fire Code questions
+with their code open, read in place (a small cut of the section, never a whole page). The ifc clip used to open on the
+Analyzing screen already running - "start at weird spots and skip around like the upload pdf one"; it now starts on the
+enroll screen and runs the screen at its own pace (its 12-second floor), to Verified.
+THE BOOK IS THE OWNER'S LICENSED PDF AND NEVER GOES INTO THE REPO (the repo is public): its path is given when this runs, and
+only the small cut the app draws under a question appears in the clip. The account is a fixture ("Alex"); its publicId is
+the class owner's, because only that account can open the Fire Code class (that id is not shown anywhere on screen)."""
+import importlib.util, json, mimetypes, os, sys, tempfile
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("record_landing", os.path.join(HERE, "record-landing.py"))
+rl = importlib.util.module_from_spec(spec); spec.loader.exec_module(rl)
 from playwright.sync_api import sync_playwright
-rc = g["g"]
-seed = dict(rc["SEED"]); seed["publicId"] = "xph5b57jbp5a"; seed["firstName"] = "Maddog"; seed["novaMet"] = 99
+
+PDFJS = os.environ.get("PDFJS_DIR", "").rstrip("/") + "/"
+BOOK = os.environ.get("IFC_BOOK", "")
+OWNER = "xph5b57jbp5a"
+SEED = dict(rl.SEED, publicId=OWNER)
+IFC_SEED = dict(SEED, unitPerfects={})
+IN_IFC = ("localStorage.setItem('class26e.activeclass','ifc'); localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc']));"
+          "localStorage.setItem('class26e.greet.ifc','done');"
+          "['freshstart','intro.seen','daily.seen','savecode.asked','savecode.card','getstarted','unithold.tip'].forEach(k=>localStorage.setItem('class26e.ifc.'+k,'1'));"
+          "localStorage.setItem('class26e.ifc.drill.v1', %s);" % json.dumps(json.dumps(IFC_SEED)))
+# 307.4.2 (a recreational fire's distance from a structure), 907.4.2.2 (a manual fire alarm box's height): short text
+# sections, each a small cut of one page
+TEST_QS = [int(x) for x in os.environ.get("IFC_QS", "200,593").split(",")]
+
+
 def route_pdfjs(ctx):
     def h(route, req):
         rel = req.url.split("pdfjs-dist@5.4.149/", 1)[1].split("?")[0]
         p = PDFJS + rel
         if not os.path.exists(p): return route.fulfill(status=404, body="")
-        route.fulfill(status=200, body=open(p, "rb").read(), content_type=mimetypes.guess_type(p)[0] or "text/javascript",
-                      headers={"access-control-allow-origin": "*"})
+        ct = "application/wasm" if p.endswith(".wasm") else ("text/javascript" if p.endswith((".mjs", ".js")) else (mimetypes.guess_type(p)[0] or "application/octet-stream"))
+        route.fulfill(status=200, body=open(p, "rb").read(), content_type=ct, headers={"access-control-allow-origin": "*"})
     ctx.route("**/pdfjs-dist@5.4.149/**", h)
-srv, port = rc["serve"]()
-only = sys.argv[1:] or ["test", "ifc"]
-with sync_playwright() as pw:
-    br = pw.chromium.launch(executable_path=rc["CHROME"])
-    for name in only:
-        ctx, pg = rc["new_page"](br, port, 360, 780, seed)
-        route_pdfjs(ctx)
-        pg.evaluate("()=>{ localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); localStorage.setItem('class26e.greet.ifc','done'); localStorage.setItem('class26e.activeclass','ifc'); }")
-        pg.reload(); pg.wait_for_timeout(3200)
-        pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed=()=>false; }catch(e){} store.novaMet=99; ['class26e.ifc.intro.seen','class26e.ifc.unithold.tip','class26e.ifc.daily.seen'].forEach(k=>localStorage.setItem(k,'9')); }")
-        print(name, pg.evaluate("()=>({cls: window.NOVA_CLASS, n: QUESTIONS.length, u: topicsIn(QUESTIONS)[0]})"))
-        rec = rc["Recorder"](pg)
-        if name == "test":
-            pg.evaluate("()=>{ document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro').forEach(n=>n.remove()); showHome(); }"); pg.wait_for_timeout(500)
-            u = pg.evaluate("()=>topicsIn(QUESTIONS)[0]")
-            rc["start_unit_run"](pg, u)
-            pg.wait_for_selector(".choice", timeout=25000); pg.wait_for_timeout(700)
-            rec.start(); pg.wait_for_timeout(600)
-            for k in range(2):
-                pg.evaluate("""()=>{const r=correctSlot(order[pos]); document.querySelector('.choice[data-index="'+r+'"]').click();}""")
-                pg.wait_for_timeout(1300); p = pg.evaluate("()=>pos")
-                pg.evaluate("()=>document.getElementById('nextbtn')?.click()")
-                for _ in range(30):
-                    pg.wait_for_timeout(120)
-                    if pg.evaluate("()=>pos") != p: break
-                pg.wait_for_timeout(500)
-            # a wrong first try: the code opens by itself
-            pg.evaluate("""()=>{const r=correctSlot(order[pos]); const all=[...document.querySelectorAll('.choice')]; const w=all.find(c=>c.dataset.index!=String(r)); w && w.click();}""")
-            pg.wait_for_timeout(1500)
-            pg.evaluate("""()=>{const r=correctSlot(order[pos]); document.querySelector('.choice[data-index="'+r+'"]').click();}""")
-            pg.wait_for_timeout(1200)
-            for _ in range(40):
-                if pg.evaluate("()=>!!document.querySelector('.ifc-code[open] .ifc-code-body canvas, .ifc-code[open] .ifc-code-body img')"): break
-                pg.wait_for_timeout(250)
-            pg.evaluate("()=>{ const c=document.querySelector('.ifc-code'); c && c.scrollIntoView({block:'center', behavior:'smooth'}); }")
-            pg.wait_for_timeout(2600)
-            pg.evaluate("()=>{ const b=[...document.querySelectorAll('.ifc-code .ifc-link')].find(x=>/page picture/.test(x.textContent)); b && b.click(); }")
-            for _ in range(40):
-                if pg.evaluate("()=>!!document.querySelector('.ifc-code canvas, .ifc-code img')"): break
-                pg.wait_for_timeout(250)
-            pg.wait_for_timeout(600)
-            pg.evaluate("()=>{ const c=document.querySelector('.ifc-code canvas, .ifc-code img'); c && c.scrollIntoView({block:'center', behavior:'smooth'}); }")
-            pg.wait_for_timeout(3800)
-        else:
-            pg.evaluate("()=>{ document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro').forEach(n=>n.remove()); showHome(); }"); pg.wait_for_timeout(600)
-            rec.start(); pg.wait_for_timeout(500)
-            pg.evaluate("""()=>{ const W = ms => new Promise(r => setTimeout(r, ms));
-              ifcAnalyzeBook = async (file, step) => { for(let i = 0; i <= 10; i++){ step('open', i / 10); await W(60); }
-                for(let i = 0; i <= 40; i++){ step('index', i / 40); await W(110); }
-                for(let i = 0; i <= 20; i++){ step('verify', i / 20); await W(120); } return { level: 'exact', kept: true }; };
-              runIfcAnalysis({ name: 'International Fire Code 2021.pdf' }, { enroll: false }); }""")
-            pg.wait_for_timeout(14500)
-        frames = rec.stop()
-        g["encode"](frames, name)
-        ctx.close()
-    br.close()
+
+
+def poll(pg, js, ms):
+    t = 0
+    while t < ms:
+        if pg.evaluate(js): return True
+        pg.wait_for_timeout(200); t += 200
+    return bool(pg.evaluate(js))
+
+
+def open_code(pg):
+    """'Show the code' (unless a miss has opened it already), then wait for its picture"""
+    pg.evaluate("()=>{ const d = [...document.querySelectorAll('.qpanel .ifc-code')].filter(x => x.getBoundingClientRect().height > 0).pop(); if(d && !d.open) d.querySelector('summary').click(); }")
+    got = poll(pg, "()=>{ const d = [...document.querySelectorAll('.qpanel .ifc-code[open]')].filter(x => x.getBoundingClientRect().height > 0).pop(); const c = d && d.querySelector('.ifc-code-body canvas'); return !!c && c.width > 0; }", 40000)
+    if not got: print("  !! the code picture was not drawn", flush=True)
+
+
+def scene_test(br, port):
+    if not os.path.exists(PDFJS + "build/pdf.min.mjs") or not os.path.isfile(BOOK):
+        raise SystemExit("test: set PDFJS_DIR (pdfjs-dist 5.4.149, unpacked) and IFC_BOOK (the owner's 2021 IFC PDF)")
+    ctx, pg = rl.new_page(br, port, SEED, IN_IFC, route=route_pdfjs)
+    print("  test: class %s, %d questions; loading the book (the reader's own path, a minute or two here)..." % tuple(
+        pg.evaluate("()=>[window.NOVA_CLASS, QUESTIONS.length]")), flush=True)
+    pg.evaluate("()=>{ ifcPickBook(); }"); pg.wait_for_timeout(400)
+    pg.set_input_files("#ifc-book-input", BOOK)
+    if not poll(pg, "()=>!!document.querySelector('.ifc-analyze.is-ok, .ifc-analyze.is-bad')", 300000) or \
+       not pg.evaluate("()=>!!document.querySelector('.ifc-analyze.is-ok')"):
+        raise SystemExit("test: the book was not accepted")
+    pg.evaluate("()=>{ document.querySelector('.ifc-analyze .ia-actions button')?.click(); document.querySelector('.ifc-analyze')?.remove(); }")
+    pg.wait_for_timeout(800); rl.settle(pg)
+    unit = pg.evaluate("(i)=>(QUESTIONS[i].topic||'').trim()", TEST_QS[0])
+    print("  test: " + " | ".join(pg.evaluate("(ix)=>ix.map(i=>QUESTIONS[i].ifc.citation.label)", TEST_QS)), flush=True)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(600)
+    rl.start_unit_run(pg, unit, TEST_QS)
+    rec = rl.Recorder(pg); rec.start()
+    rl.wait(pg, 1100)
+    # a right answer, then the code under it
+    rl.answer(pg, True, 1200)
+    open_code(pg); rl.wait(pg, 250)
+    print("  glide", rl.glide_to(pg, ".qpanel .ifc-code", "center", 900), flush=True); rl.wait(pg, 2600)
+    rl.next_q(pg, 900)
+    # a miss: the code opens by itself once it is answered
+    rl.answer(pg, False, 1300); rl.answer(pg, True, 1100)
+    open_code(pg); rl.wait(pg, 250)
+    print("  glide", rl.glide_to(pg, ".qpanel .ifc-code", "center", 900), flush=True); rl.wait(pg, 2800)
+    frames = rec.stop(); ctx.close()
+    rl.encode(frames, "test")
+
+
+def scene_ifc(br, port):
+    ctx, pg = rl.new_page(br, port, SEED)
+    pg.evaluate("()=>showIfcEnroll()"); pg.wait_for_timeout(1500)
+    # the analysis itself stands in (the screen and its 12-second floor are the app's own): a file name, no file read
+    pg.evaluate("""()=>{ ifcAnalyzeBook = async (file, step) => { const W = ms => new Promise(r => setTimeout(r, ms));
+        for(let i = 0; i <= 10; i++){ step('open', i / 10); await W(70); }
+        for(let i = 0; i <= 40; i++){ step('index', i / 40); await W(150); }
+        for(let i = 0; i <= 20; i++){ step('verify', i / 20); await W(170); }
+        return { level: 'exact', kept: true }; }; }""")
+    d = tempfile.mkdtemp(prefix="ifcpick-")
+    f = os.path.join(d, "2021 International Fire Code.pdf")
+    open(f, "wb").write(b"%PDF-1.4\n%stand-in\n")
+    rec = rl.Recorder(pg); rec.start()
+    rl.wait(pg, 1600)
+    with pg.expect_file_chooser() as fc:
+        pg.evaluate("()=>document.querySelector('.class-enroll .ce-go').click()")
+    fc.value.set_files(f)
+    poll(pg, "()=>!!document.querySelector('.ifc-analyze.is-ok')", 240000)
+    rl.wait(pg, 2600)
+    frames = rec.stop(); ctx.close()
+    rl.encode(frames, "ifc")
+
+
+SCENES = {"test": scene_test, "ifc": scene_ifc}
+
+if __name__ == "__main__":
+    srv, port = rl.serve()
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(executable_path=rl.CHROME)
+        for name in (sys.argv[1:] or list(SCENES)):
+            SCENES[name](br, port)
+        br.close()
+    srv.shutdown()

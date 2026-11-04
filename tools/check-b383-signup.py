@@ -133,6 +133,10 @@ def open_page(br, dev="phone", init="", seed=None, suffix="", firebase=True, wai
     pg.goto(URL + suffix); pg.wait_for_timeout(wait)
     pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
     pg.errs = errs; pg.dev = dev
+    # (384, round 2) Get Started opens on every launch with no account now; a device that has seen it (SEEN's mark) has its
+    # button up at once, and a person taps it to reach Welcome - so does this (a first visit still meets the page: sec_fresh)
+    if pg.evaluate("()=>!!document.querySelector('.gs-page .gs-bar.is-ready .gs-go')"):
+        pg.click(".gs-go"); pg.wait_for_timeout(1100)
     return ctx, pg
 
 def relaunch(pg, suffix="", wait=3200):
@@ -411,7 +415,10 @@ with sync_playwright() as pw:
         with pg.expect_navigation(timeout=15000):
             pg.click("#signout-confirm .signout-go")
         pg.wait_for_timeout(3600); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(600)
-        chk("[fix] after Sign out: Welcome, where Sign in is - not the first-visit Get Started page (%s)" % screen(pg), screen(pg) == "welcome", screen(pg))
+        # (384, round 2) "Ensure it shows up everywhere when you aren't signed [in]": signed out is Get Started again - with its
+        # button up from the start (383's point: Sign in is one tap away, not a whole trailer away). Was: Welcome.
+        chk("[fix] after Sign out: Get Started, its Let's get started up at once - Sign in one tap away (%s)" % screen(pg),
+            screen(pg) == "getstarted" and pg.evaluate("()=>!!document.querySelector('.gs-bar.is-ready')"), screen(pg))
         r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', pts: (store.lifetime||{}).points || 0, keys: Object.keys(localStorage).filter(k=>/^class26e\\.(drill\\.v1|synccode|ifc\\.drill\\.v1|activeclass)$/.test(k)), enrolled: localStorage.getItem('class26e.enrolled') })")
         chk("[guard] nothing of the account is left on the device (%s)" % r, not r["code"] and not r["name"] and not r["pts"] and not r["keys"], r)
         chk("[fix2] Fire Code's enrolment, a device setting, is kept through the sign out (%s)" % r["enrolled"], "ifc" in (r["enrolled"] or ""), r)
@@ -464,10 +471,11 @@ with sync_playwright() as pw:
             pg.click("#signout-confirm .signout-go")
         pg.wait_for_timeout(5000); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(800)
         r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', href: location.href })")
-        chk("[fix] Sign out sticks: the reload does not sign the icon's code back in (%s, %s)" % (screen(pg), r), not r["code"] and not r["name"] and screen(pg) == "welcome", r)
+        # (384, round 2) signed out, the device opens on Get Started (was Welcome) - either way, not signed back in
+        chk("[fix] Sign out sticks: the reload does not sign the icon's code back in (%s, %s)" % (screen(pg), r), not r["code"] and not r["name"] and screen(pg) == "getstarted", r)
         relaunch(pg, "#k=" + CODE, wait=5000)
         r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', hash: location.hash })")
-        chk("[fix] ... nor the next launch from that icon (%s, %s)" % (screen(pg), r), not r["code"] and not r["name"] and screen(pg) == "welcome" and not r["hash"], r)
+        chk("[fix] ... nor the next launch from that icon (%s, %s)" % (screen(pg), r), not r["code"] and not r["name"] and screen(pg) == "getstarted" and not r["hash"], r)
         signed = sign_in(pg, CODE)
         chk("[guard] the code signs it back in", screen(pg) == "home" and pg.evaluate("()=>syncCode") == CODE, (signed, screen(pg)))
         relaunch(pg, "#k=" + CODE)

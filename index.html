@@ -34927,6 +34927,72 @@ html.is-browser{ --fade-paper: transparent; }
   }
   @media (prefers-reduced-motion:reduce){ .gs-warp{ display:none; } .gs-stars i, .gs-scrollcue{ animation:none; } .gs-scene, .gs-end, .gs-hero-copy{ transition:none; opacity:1; transform:none; } }
   [data-reduce-motion="true"] .gs-warp{ display:none; }
+  /* ---- GET STARTED, ROUND 2 (build 384) ---- */
+  /* "The let's get started button looks small btw? It should be nice and big hush like the start studying button." Home's
+     Start Studying, measured: on a phone its one rule (words 4.4vw, 49vw wide, 12.8vw tall - a Pro Max 216x56 in 19.2px);
+     on an upright iPad 272x56 in 19.5px, which a laptop takes too (Home's own is in the tab bar there). The SE's slim
+     38px Home pill is Home's room problem, not this page's: here the phone rule holds to 44px. */
+  .gs-bar .gs-go{ width:auto; min-width:clamp(146px, 49vw, 216px); min-height:clamp(44px, 12.8vw, 60px);
+    font-size:clamp(.88rem, 4.4vw, 1.2rem); padding:.72em 1.1em; letter-spacing:.03em; }
+  @supports (text-box:trim-both cap alphabetic){ .gs-bar .gs-go{ padding-block:calc((44px - 1cap)/2); text-indent:.03em; } }
+  @media (min-width:40rem){ .gs-bar .gs-go{ min-width:17rem; min-height:56px; font-size:1.22rem; } }
+  /* Welcome's two buttons (Sign in / I'm new here, or Continue / Use a different account): "The sign in and sign up
+     buttons look small too". The same size class - full-width pills, Start Studying's words, 52px and up on a phone */
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ min-height:clamp(52px, 12.8vw, 60px); font-size:clamp(1rem, 4.4vw, 1.2rem); }
+  @media (min-width:40rem){ html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ min-height:56px; font-size:1.2rem; } }
+  /* the two taller buttons (+24px) come out of an upright tablet's planet, which is sized to the screen's height there
+     (Home's rule, calc(100dvh - 31rem)): without this an iPad Pro 11" Welcome scrolled 16px */
+  @media (min-width:40rem) and (orientation:portrait){
+    html[data-layout][data-theme] body.on-welcome .cosmic-welcome > .cosmic-hero-wrap{ max-width:min(52rem, 60vh, 84vw, calc(100dvh - 32.6rem)) !important; }
+  }
+  /* THE SHOWCASE: real badges, then every rank's flare lit in a row, each rising in turn as its row arrives. Transform and
+     opacity only; the flares are Home's lit glass without its backdrop blur (the stars drift behind them here). */
+  .gs-show{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:2.1rem; padding:3.4rem 1.4rem 2rem;
+    max-width:62rem; margin:0 auto; box-sizing:border-box; text-align:center;
+    opacity:0; transform:translateY(28px); transition:opacity .8s ease, transform .9s cubic-bezier(.2,.9,.3,1); }
+  .gs-show.is-in{ opacity:1; transform:none; }
+  .gs-show > .gs-copy{ text-align:center; max-width:min(100%, 38rem); }
+  .gs-badges, .gs-flares{ display:flex; justify-content:center; align-items:center; flex-wrap:nowrap; }
+  .gs-badges{ gap:clamp(.3rem, 2vw, 1.2rem); }
+  .gs-badge-btn{ --gs-bw:clamp(44px, calc((100vw - 4rem) / 5.6), 6.2rem); position:relative; flex:none; width:var(--gs-bw); height:var(--gs-bw);
+    appearance:none; -webkit-appearance:none; background:none; border:0; padding:0; margin:0; cursor:pointer; color:inherit;
+    opacity:0; transform:translateY(34px) scale(.7) rotate(-10deg);
+    transition:opacity .6s ease calc(var(--i) * 110ms + 120ms), transform .95s cubic-bezier(.2,1.3,.4,1) calc(var(--i) * 110ms + 120ms); }
+  .gs-badges.is-in .gs-badge-btn{ opacity:1; transform:none; }
+  .gs-badge{ display:block; width:100%; height:100%; }
+  .gs-badge > svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .gs-badge-btn.is-turn .gs-badge{ animation:gs-turn .85s cubic-bezier(.3,.7,.3,1); }
+  @keyframes gs-turn{ from{ transform:perspective(420px) rotateY(0deg) scale(1); } 50%{ transform:perspective(420px) rotateY(180deg) scale(1.12); } to{ transform:perspective(420px) rotateY(360deg) scale(1); } }
+  .gs-flares{ gap:clamp(4px, 1.6vw, 1.1rem); padding:.5rem 0; }
+  .gs-flare-btn{ --gs-fw:clamp(36px, calc((100vw - 5rem) / 7.6), 4.2rem); position:relative; flex:none; width:var(--gs-fw); height:var(--gs-fw);
+    appearance:none; -webkit-appearance:none; background:none; border:0; padding:0; margin:0; cursor:pointer;
+    opacity:0; transform:translateY(24px) scale(.35);
+    transition:opacity .45s ease calc(var(--i) * 120ms + 160ms), transform .75s cubic-bezier(.2,1.45,.4,1) calc(var(--i) * 120ms + 160ms); }
+  .gs-flare-btn::after{ content:""; position:absolute; inset:-4px; border-radius:50%; }   /* 44px to touch at the smallest */
+  .gs-flares.is-in .gs-flare-btn{ opacity:1; transform:none; }
+  .gs-flare-btn > .cosmic-icon-badge.cosmic-badge-rank{ position:relative; left:auto; top:auto; width:100%; height:100%; box-sizing:border-box;
+    -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .gs-flare-btn > :is(.gs-flare-ring, .gs-flare-tap){ position:absolute; inset:0; border-radius:50%; pointer-events:none; opacity:0;
+    border:2px solid color-mix(in srgb, var(--rank-color) 70%, #fff); }
+  .gs-flares.is-in .gs-flare-ring{ animation:gs-ring 1.15s cubic-bezier(.2,.7,.3,1) calc(var(--i) * 120ms + 420ms) 1 both; }
+  .gs-flare-btn.is-tapped .gs-flare-tap{ animation:gs-ring .75s cubic-bezier(.2,.7,.3,1) both; }
+  .gs-flare-btn.is-tapped > .cosmic-icon-badge{ animation:gs-press .4s cubic-bezier(.3,1.5,.5,1); }
+  @keyframes gs-ring{ 0%{ opacity:0; transform:scale(.75); } 22%{ opacity:.95; } 100%{ opacity:0; transform:scale(2.1); } }
+  @keyframes gs-press{ 0%{ transform:scale(1); } 35%{ transform:scale(.86); } 100%{ transform:scale(1); } }
+  .gs-show-cap{ margin:-.6rem 0 0; min-height:1.5em; font-size:.92rem; line-height:1.5; color:rgba(220,228,255,.7); }
+  @media (max-width:22rem){ .gs-show{ padding-left:1rem; padding-right:1rem; } }
+  /* LET'S GET STARTED -> WELCOME: the word NOVA, flying at the viewer (gsLeave) */
+  .gs-zoom{ position:fixed; inset:0; z-index:62; display:flex; align-items:center; justify-content:center; pointer-events:none; overflow:hidden; }
+  .gs-cover{ position:fixed; inset:0; z-index:61; background:#05060D; opacity:0; }   /* takes the taps while it is up */
+  .gs-zoom-word{ display:block; font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif; font-size:clamp(4rem, 17vw, 8rem); font-weight:700;
+    letter-spacing:.12em; line-height:1; text-indent:.12em; white-space:nowrap; opacity:0; will-change:transform, opacity;
+    background:linear-gradient(180deg, #fff 20%, #aab8ff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+  @media (prefers-reduced-motion:reduce){
+    .gs-show, .gs-badge-btn, .gs-flare-btn{ transition:none; opacity:1; transform:none; }
+    .gs-flare-ring, .gs-flare-tap, .gs-flare-btn > .cosmic-icon-badge, .gs-badge{ animation:none !important; }
+  }
+  [data-reduce-motion="true"] :is(.gs-show, .gs-badge-btn, .gs-flare-btn){ transition:none; opacity:1; transform:none; }
+  [data-reduce-motion="true"] :is(.gs-flare-ring, .gs-flare-tap, .gs-flare-btn > .cosmic-icon-badge, .gs-badge){ animation:none !important; }
   /* ---- THE CLASS'S LEVELS ON THE UNIT SCREEN (build 328) ----
      The Leaderboard's segmented control, a level's picked count beside its name. */
   html[data-layout] .screen-setup .setup-levels{ margin:1rem 0 .85rem; width:100%; }
@@ -37119,8 +37185,17 @@ html.is-browser{ --fade-paper: transparent; }
        does the loading thing first before the start up, don't do that." Nothing on this device - no code,
        no progress, Get Started never seen - so there is nothing to load: the splash steps aside at once and
        the Get Started page's own warp-in is the first thing seen. */
+    /* (384) EVERY LAUNCH WITH NO ACCOUNT, NOT ONLY THE FIRST: "The start up screen wasn't showing for me on my laptop but it's
+       been showing for me on iPhone. Ensure it shows up everywhere when you aren't signed [in] or don't have an account." Get
+       Started now opens on any launch where this device holds no account - no sync code, and a saved copy (if any) that never
+       finished sign-up and carries no name (showWelcomeFirst decides the same way) - so the splash steps aside for it every
+       time, not just the first: a seen-once mark or the empty copy an earlier visit left behind no longer means "returning". */
     var firstVisit = false;
-    try { firstVisit = !isReturningUser && !isUpdating && !window.localStorage.getItem("class26e.getstarted") && !window.localStorage.getItem("class26e.drill.v1"); } catch(e){}
+    try {
+      var noAcct = !window.localStorage.getItem("class26e.synccode") && !window.localStorage.getItem("class26e.activeclass");
+      if(noAcct){ var sv = JSON.parse(window.localStorage.getItem("class26e.drill.v1") || "null"); if(sv && (sv.onboardingComplete || String(sv.firstName || "").trim())) noAcct = false; }
+      firstVisit = noAcct && !isUpdating;
+    } catch(e){}
     if(firstVisit){ duration = 60; splash.classList.add("splash-first"); }
     /* ---- INSTALLING UPDATE (build 327 round 7) ----
        "Let's make this 'pushing update' screen like 10 seconds longer and
@@ -90560,16 +90635,27 @@ function whenBoardKnown(ms, cb){
    scroll down ... nova themed, spacey ... a Let's get started button that leads to the Welcome to
    Nova screen." Shown once per device, before Welcome, on a first visit (class26e.getstarted);
    it replaces the "What This Actually Is" step of sign-up. It opens with a short warp-in, then
-   scrolls through four short clips (landing/*.mp4, muted, looping, played only while on screen). */
+   scrolls through four short clips (landing/*.mp4, muted, looping, played only while on screen).
+   (384, round 2) Shown on EVERY launch with no account on the device, not once (showWelcomeFirst); the
+   seen mark (class26e.getstarted) now only means the button is up at once rather than at the end. */
 const GS_SCENES = [
-  { key: "test", kicker: "Study", title: "Questions that feel like play", body: "Drill, Mock and Review turn your class material into quick questions you will actually want to answer." },
+  /* (384) "Ensure the videos show a lot of the test example with the ifc fire code stuff and some police academy
+     questions in there": a Police Academy drill first, then Fire Code's (its code cut from the owner's own book),
+     then loading the book. Every clip is recorded by tools/record-landing.py / record-landing-ifc.py. */
+  { key: "academy", kicker: "Police Academy", title: "Questions that feel like play", body: "Drill, Mock and Review turn your class material into quick questions you will actually want to answer." },
   /* (330) "make the test stuff shown related to fire code, show another box with the ifc cropped stuff and
      loading pdf thing" - the test clip is a Fire Code drill opening its code, and this is the analysis */
-  { key: "ifc", kicker: "Fire Code", title: "The code behind every answer", body: "Load your own copy of the 2021 IFC once, and every answer shows the exact section it comes from." },
+  { key: "test", kicker: "Fire Code", title: "The code behind every answer", body: "Load your own copy of the 2021 IFC once, and every answer shows the exact section it comes from." },
+  { key: "ifc", kicker: "Your PDF", title: "Load it once", body: "Choose your PDF of the 2021 IFC. Nova checks it is the edition the questions were written from and keeps it on this device." },
   { key: "hundo", kicker: "Score", title: "Go for the hundo", body: "Get every question right and the whole screen celebrates, with a new effect to unlock each time." },
   { key: "rank", kicker: "Rank up", title: "Every win lights a flare", body: "Levels climb a ladder of ranks. Reach a new one and a flare lights up around your planet." },
   { key: "customize", kicker: "Customize", title: "Make Nova yours", body: "Collect characters, banners and effects as you go, then pick the ones that are you." }
 ];
+/* (384) THE SHOWCASE: "maybe include an interactive thing with some example badges and then rank flares but have all the
+   flares lit up in a row ... and you see them nicely as you scroll". Real badges (buildUnitBadgeSVG, clean) and the seven
+   rank flares as Home draws a lit one (homeRankEmblem in Home's glass), each rising in turn as its row arrives. A tap
+   names it. */
+const GS_BADGES = ["TCOLE Rules", "Identity Crimes", "Professionalism and Ethics", "Victims of Crime", "De-Escalation"];
 function gsSeen(){ try{ return localStorage.getItem("class26e.getstarted") === "1"; }catch(e){ return false; } }
 function gsMarkSeen(){ try{ localStorage.setItem("class26e.getstarted", "1"); }catch(e){} }
 /* THE SMALL PRINT (build 330), in one place: Settings carries all of it and the credit; the sign-up
@@ -90605,11 +90691,16 @@ function showGetStarted(){
   const stars = document.createElement("div"); stars.className = "gs-stars"; stars.setAttribute("aria-hidden", "true");
   stars.innerHTML = '<i class="gs-s1"></i><i class="gs-s2"></i><i class="gs-s3"></i>';
   const scroll = document.createElement("div"); scroll.className = "gs-scroll";
+  /* (384) "some seem weird and start at weird spots and skip around like the upload pdf one". Each clip is now recorded from
+     its own beginning at 2x and loops on itself (record-landing.py), its still IS its first frame, and here: nothing is
+     fetched until the clip is a screen away (preload none, then auto), it plays only while on screen, and when it leaves
+     the screen it goes back to its first frame - so every time it is seen it starts at its beginning, never mid-way. */
   const vid = key => {
     const f = document.createElement("div"); f.className = "gs-phone";
     const v = document.createElement("video");
-    v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = "metadata";
+    v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true; v.preload = "none";
     v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
+    v.setAttribute("disablepictureinpicture", ""); v.setAttribute("disableremoteplayback", "");
     v.poster = "landing/" + key + ".jpg"; v.src = "landing/" + key + ".mp4"; v.dataset.gs = key;
     f.appendChild(v);
     return f;
@@ -90631,6 +90722,8 @@ function showGetStarted(){
     row.append(copy, vid(sc.key));
     scroll.appendChild(row);
   });
+  const show = gsBuildShowcase();
+  scroll.appendChild(show.el);
   const end = document.createElement("section"); end.className = "gs-end";
   end.innerHTML = '<h2 class="gs-title">Ready when you are</h2><p class="gs-body">Your adventure starts with one tap.</p>';
   /* (330) the small print and the copyright, at the very foot */
@@ -90638,7 +90731,9 @@ function showGetStarted(){
   scroll.appendChild(end);
   const bar = document.createElement("div"); bar.className = "gs-bar";
   const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn gs-go"; go.textContent = "Let’s get started";
-  go.addEventListener("click", () => { gsMarkSeen(); showWelcome(); });
+  /* (384) "When you hit let's get started, ensure the transition to sign up/sign in screen is nice, like maybe the word nova
+     zooms in really fast and then the transition happens" - gsLeave */
+  go.addEventListener("click", () => { if(page.__gsLeaving) return; gsMarkSeen(); gsLeave(page); });
   bar.appendChild(go);
   page.append(stars, scroll, bar);
   stage.replaceChildren(page);
@@ -90648,30 +90743,170 @@ function showGetStarted(){
   const reveal = new IntersectionObserver(es => es.forEach(e => {
     if(e.isIntersecting) e.target.classList.add("is-in");
   }), { root: scroll, threshold: .2 });
-  scroll.querySelectorAll(".gs-scene, .gs-end, .gs-hero-copy").forEach(n => reveal.observe(n));
+  scroll.querySelectorAll(".gs-scene, .gs-end, .gs-hero-copy, .gs-show, .gs-badges, .gs-flares").forEach(n => reveal.observe(n));
   /* THE BUTTON WAITS FOR THE END (build 330): "shouldn't the get started button not appear till you
-     scroll through it and get to the bottom?" It rises in once the last section is on screen. */
+     scroll through it and get to the bottom?" It rises in once the last section is on screen.
+     (384) That is the first time. Now that the page opens on every launch with no account - signed out, or come back
+     after a first look - a device that has seen it before (or has just signed out, where Sign in is one tap past it)
+     has the button from the start. */
   const atEnd = new IntersectionObserver(es => es.forEach(e => {
     if(e.isIntersecting){ bar.classList.add("is-ready"); atEnd.disconnect(); }
   }), { root: scroll, threshold: .25 });
   atEnd.observe(end);
+  const quick = gsSeen() || signedOutHere();
+  if(quick) setTimeout(() => { if(page.isConnected) bar.classList.add("is-ready"); }, 700);
+  /* a clip is fetched when it is a screen away, plays while on screen, and goes back to its start when it leaves */
+  const near = new IntersectionObserver(es => es.forEach(e => {
+    if(!e.isIntersecting) return;
+    const v = e.target.querySelector("video");
+    if(v && v.preload !== "auto"){ v.preload = "auto"; try{ v.load(); }catch(err){} }
+    near.unobserve(e.target);
+  }), { root: scroll, rootMargin: "100% 0px" });
   const play = new IntersectionObserver(es => es.forEach(e => {
     const v = e.target.querySelector("video"); if(!v) return;
-    if(e.isIntersecting){ const p = v.play(); if(p && p.catch) p.catch(() => {}); } else v.pause();
+    if(e.isIntersecting){
+      if(v.preload !== "auto"){ v.preload = "auto"; }
+      const p = v.play(); if(p && p.catch) p.catch(() => {});
+    } else {
+      v.pause();
+      try{ if(v.currentTime > 0) v.currentTime = 0; }catch(err){}
+    }
   }), { root: scroll, threshold: .35 });
-  page.querySelectorAll(".gs-phone").forEach(n => play.observe(n));
-  const stop = new MutationObserver(() => { if(!page.isConnected){ reveal.disconnect(); play.disconnect(); atEnd.disconnect(); stop.disconnect(); vids.forEach(v => { try{ v.pause(); v.removeAttribute("src"); v.load(); }catch(e){} }); } });
+  page.querySelectorAll(".gs-phone").forEach(n => { near.observe(n); play.observe(n); });
+  let torn = false;
+  const teardown = () => {
+    if(torn) return; torn = true;
+    reveal.disconnect(); near.disconnect(); play.disconnect(); atEnd.disconnect(); stop.disconnect(); show.stop();
+    vids.forEach(v => { try{ v.pause(); v.removeAttribute("src"); v.load(); }catch(e){} });
+  };
+  page.__gsTeardown = teardown;
+  const stop = new MutationObserver(() => { if(!page.isConnected) teardown(); });
   stop.observe(stage, { childList: true });
   setTimeout(() => hc.classList.add("is-in"), 1500);
+  show.warm();
+}
+/* ---- THE SHOWCASE (build 384): example badges and every rank's flare, lit ---- */
+function gsBuildShowcase(){
+  const el = document.createElement("section"); el.className = "gs-show";
+  const copy = document.createElement("div"); copy.className = "gs-copy";
+  copy.innerHTML = '<p class="gs-kicker">Collect</p><h2 class="gs-title">Badges and flares</h2><p class="gs-body"></p>';
+  copy.querySelector(".gs-body").textContent = "Ace a unit enough times and its badge goes in your case. Every rank you reach lights its flare, Bronze to Supernova.";
+  const badges = document.createElement("div"); badges.className = "gs-badges";
+  const flares = document.createElement("div"); flares.className = "gs-flares";
+  const cap = document.createElement("p"); cap.className = "gs-show-cap"; cap.setAttribute("aria-live", "polite");
+  const capIdle = "Tap one to see its name.";
+  cap.textContent = capIdle;
+  let capTimer = 0;
+  const say = t => { cap.textContent = t; clearTimeout(capTimer); capTimer = setTimeout(() => { cap.textContent = capIdle; }, 3200); };
+  /* a tap: the piece answers (transform only - a badge turns once, a flare presses and lets a ring of its colour go) */
+  const tapAnim = (btn, cls, ms) => { btn.classList.remove(cls); void btn.offsetWidth; btn.classList.add(cls); clearTimeout(btn.__gsT); btn.__gsT = setTimeout(() => btn.classList.remove(cls), ms); };
+  const slots = GS_BADGES.map((u, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "gs-badge-btn"; b.style.setProperty("--i", i);
+    b.setAttribute("aria-label", u + " badge");
+    const art = document.createElement("span"); art.className = "gs-badge"; art.setAttribute("aria-hidden", "true");
+    b.appendChild(art);
+    b.addEventListener("click", () => { tapAnim(b, "is-turn", 900); say(u + " badge"); });
+    badges.appendChild(b);
+    return { u, art };
+  });
+  TIER_ORDER_FULL.forEach((t, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "gs-flare-btn"; b.style.setProperty("--i", i);
+    const name = (typeof RANK_DISPLAY_NAME !== "undefined" && RANK_DISPLAY_NAME[t]) || t;
+    b.setAttribute("aria-label", name + " flare");
+    /* Home's own lit flare: the rank's emblem in its glass, in the rank's colour */
+    const bub = document.createElement("span");
+    bub.className = "cosmic-icon-badge cosmic-badge-rank cosmic-badge-lit gs-flare";
+    bub.dataset.rankTier = t;
+    bub.style.setProperty("--rank-color", RANK_COLOR[t]);
+    bub.style.setProperty("--tier-glow", flareColorOf(t));
+    bub.appendChild(homeRankEmblem(t));
+    /* two rings of its colour: one as it lights, one for a tap */
+    const ring = document.createElement("span"); ring.className = "gs-flare-ring"; ring.setAttribute("aria-hidden", "true");
+    const tap = document.createElement("span"); tap.className = "gs-flare-tap"; tap.setAttribute("aria-hidden", "true");
+    b.style.setProperty("--rank-color", RANK_COLOR[t]);
+    b.append(ring, tap, bub);
+    b.addEventListener("click", () => { tapAnim(b, "is-tapped", 760); say(name + " flare · rank " + (i + 1) + " of " + TIER_ORDER_FULL.length); try{ playSound(SOUND_CATALOGUE["home.flare." + t] ? "home.flare." + t : "home.flare.veteran"); }catch(e){} });
+    flares.appendChild(b);
+  });
+  el.append(copy, badges, flares, cap);
+  /* The badges are drawn one per idle moment (each is a real strike, ~0.1s to draw), starting once the warp-in is over,
+     so they are ready long before the row is reached and never cost a frame of the opening. */
+  let timer = 0, stopped = false, k = 0;
+  const next = () => {
+    if(stopped || k >= slots.length) return;
+    const s = slots[k++];
+    try{ s.art.appendChild(buildUnitBadgeSVG(s.u, true, { px: 88, dirt: 0, slot: false })); }catch(e){}
+    timer = setTimeout(next, 90);
+  };
+  return {
+    el,
+    warm(){ timer = setTimeout(next, 2200); },
+    stop(){ stopped = true; clearTimeout(timer); clearTimeout(capTimer); }
+  };
+}
+/* ---- LET'S GET STARTED -> WELCOME (build 384) ----
+   "When you hit let's get started, ensure the transition to sign up/sign in screen is nice, like maybe the word nova zooms
+   in really fast and then the transition happens." NOVA comes up in the middle and flies at the viewer, fast; the page's
+   words go; the sky darkens behind the word (a cover in the page's own dark), Welcome is put up under it, and the cover
+   clears to Welcome as the word flies past. Transform and opacity only, 620ms. Nothing heavy happens in the tap: two small
+   elements and four animations are made, so from the next frame all of the move runs on the compositor, and Welcome is
+   built 200ms later under the dark - its build (the planet) cannot hold the word up. (Moving the whole page out of the
+   stage instead, or building Welcome at once, each held the word still for most of a second on a busy laptop here.)
+   Reduce motion: the dark comes up at once over the page and clears to Welcome. The cover and the word are in <body> and
+   remove themselves when the move ends (timers behind it, counted from its start); the page goes with the stage. */
+function gsLeave(page){
+  page.__gsLeaving = true;
+  const calm = document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)
+    || typeof Element.prototype.animate !== "function";
+  page.querySelectorAll("video").forEach(v => { try{ v.pause(); }catch(e){} });
+  const cover = document.createElement("div"); cover.className = "gs-cover"; cover.setAttribute("aria-hidden", "true");
+  const zoom = document.createElement("div"); zoom.className = "gs-zoom"; zoom.setAttribute("aria-hidden", "true");
+  zoom.innerHTML = '<span class="gs-zoom-word">NOVA</span>';
+  let finished = false, welcomed = false;
+  const welcome = () => { if(welcomed) return; welcomed = true; try{ showWelcome(); }catch(e){} };
+  const finish = () => {
+    if(finished) return; finished = true;
+    welcome();
+    cover.remove(); zoom.remove();
+    if(page.isConnected){ try{ page.__gsTeardown && page.__gsTeardown(); }catch(e){} page.remove(); }
+  };
+  if(calm){
+    cover.style.opacity = "1";
+    document.body.appendChild(cover);
+    welcome();
+    cover.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: "ease", fill: "forwards" }).onfinish = finish;
+    setTimeout(finish, 700);
+    return;
+  }
+  document.body.append(cover, zoom);
+  /* the page's words and button go first, NOVA comes up where they were */
+  page.querySelectorAll(".gs-scroll, .gs-bar").forEach(n => n.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.96)" }],
+    { duration: 200, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" }));
+  /* an ease-out arrival, a short swell, then gathering speed toward the viewer as it fades */
+  const zoomA = zoom.firstChild.animate([
+    { transform: "scale(.72)", opacity: 0, offset: 0, easing: "cubic-bezier(.2,.8,.3,1)" },
+    { transform: "scale(1)", opacity: 1, offset: .3, easing: "cubic-bezier(.45,0,.9,.5)" },
+    { transform: "scale(1.35)", opacity: 1, offset: .5, easing: "cubic-bezier(.6,0,1,.6)" },
+    { transform: "scale(16)", opacity: 0, offset: 1 }
+  ], { duration: 620, easing: "linear", fill: "forwards" });
+  /* dark by 200ms (Welcome goes in under it then), held, and clear by 600ms */
+  cover.animate([{ opacity: 0 }, { opacity: 1, offset: .33 }, { opacity: 1, offset: .5 }, { opacity: 0 }], { duration: 600, easing: "ease-in-out", fill: "forwards" });
+  zoomA.onfinish = finish;
+  let began = false;
+  const begin = () => { if(began) return; began = true; setTimeout(welcome, 200); setTimeout(finish, 900); };
+  zoomA.ready.then(begin, begin);
+  setTimeout(begin, 400);   /* where frames do not come (a hidden tab) */
 }
 /* Get Started is for a device with no account on it. A device that still
    has one (its code, a name in the store, or the mirror's copy) goes to
    Welcome, which offers that account first - the recovery paths live
-   there - and the page is marked seen so it never shows on it later. */
+   there - and the page is marked seen.
+   (384) EVERY LAUNCH WITH NO ACCOUNT: "Ensure it shows up everywhere when you aren't signed [in] or don't have an
+   account." The seen mark no longer sends a device to Welcome (a laptop that had looked once never saw it again), and
+   neither does a sign-out: signed out is not signed in. Both have the button up at once (showGetStarted), so Sign in
+   is still one tap away. */
 function showWelcomeFirst(){
-  /* (383 audit) a device that has just signed out goes to Welcome, where Sign in is: it was landing on this first-visit page,
-     whose button only rises once the whole page has been scrolled through */
-  if(gsSeen() || accountTraceNow() || String(store.firstName || "").trim() || signedOutHere()){ gsMarkSeen(); showWelcome(); return; }
+  if(accountTraceNow() || String(store.firstName || "").trim()){ gsMarkSeen(); showWelcome(); return; }
   showGetStarted();
   findAccountTrace().then(t => {
     if(!t || !stage.querySelector('[data-screen="getstarted"]')) return;
