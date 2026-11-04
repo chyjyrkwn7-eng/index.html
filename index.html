@@ -70133,6 +70133,80 @@ const UNIT_BADGE_THEME = {
   "Traumatic Brain Injury":                        ["pink"],
   "Phonetic Alphabet and Military Time":           ["terracotta"]
 };
+/* FIRE CODE'S CHAPTERS, A COLOUR EACH (build 384). Madison: "IFC badges, there's multiple duplicates badges ... there's
+   multiple of the exact same style/shape in the case." No chapter was in either table, so all 58 fell back: a shape by a
+   hash into the academy's 24 (20 outlines for 58 badges: seven burst plates, six triangles, five each of the drop, the twin
+   discs and the trefoil) and a colour dealt from the families every sixteen chapters - five pairs came out identical
+   (Chapters 1 and 34, 5 and 21, 9 and 12, 26 and 40, 35 and 59) and more alike (an amber and an orange six-point star side
+   by side). Each chapter has its own outline now
+   (IFC_BADGE_SHAPE, no two alike) and a colour that nods at it the way the academy's do: red and crimson for fire, orange for
+   emergencies, heat and hot work, amber and gold for hazmat and an oxidizer's yellow placard, blue for water and the sky
+   (Chapter 67's "dangerous when wet" label is blue, Chapter 20 is aviation), green for egress and crops, brown for wood
+   and stored stock, steel for the building code and tires. 58 chapters and 21 families, so a colour is used two to four
+   times - never by two badges beside each other in the case (six across, diagonals too) or in its scene (eight across),
+   and near colours side by side in a row only twice (Chapters 1 and 2, indigo and royal; 58 and 59, orange and terracotta
+   - flammable gases beside flammable solids). Keyed by the chapter's own title, which no academy unit shares, so the
+   academy's badges are as they were. */
+const IFC_BADGE_THEME = {
+  "Chapter 1: Scope and Administration":                             ["indigo"],
+  "Chapter 2: Definitions":                                          ["royal"],
+  "Chapter 3: General Requirements":                                 ["steel"],
+  "Chapter 4: Emergency Planning and Preparedness":                  ["orange"],
+  "Chapter 5: Fire Service Features":                                ["crimson"],
+  "Chapter 6: Building Services and Systems":                        ["cyan"],
+  "Chapter 7: Fire and Smoke Protection Features":                   ["crimson"],
+  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": ["mauve"],
+  "Chapter 9: Fire Protection and Life Safety Systems":              ["sky"],
+  "Chapter 10: Means of Egress":                                     ["emerald"],
+  "Chapter 11: Construction Requirements for Existing Buildings":    ["brown"],
+  "Chapter 12: Energy Systems":                                      ["gold"],
+  "Chapter 20: Aviation Facilities":                                 ["royal"],
+  "Chapter 21: Dry Cleaning":                                        ["teal"],
+  "Chapter 22: Combustible Dust-Producing Operations":               ["olive"],
+  "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages": ["red"],
+  "Chapter 24: Flammable Finishes":                                  ["magenta"],
+  "Chapter 25: Fruit and Crop Ripening":                             ["grass"],
+  "Chapter 26: Fumigation and Insecticidal Fogging":                 ["purple"],
+  "Chapter 27: Semiconductor Fabrication Facilities":                ["cyan"],
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": ["brown"],
+  "Chapter 29: Manufacture of Organic Coatings":                     ["pink"],
+  "Chapter 30: Industrial Ovens":                                    ["terracotta"],
+  "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": ["pink"],
+  "Chapter 32: High-Piled Combustible Storage":                      ["brown"],
+  "Chapter 33: Fire Safety During Construction and Demolition":      ["amber"],
+  "Chapter 34: Tire Rebuilding and Tire Storage":                    ["steel"],
+  "Chapter 35: Welding and Other Hot Work":                          ["orange"],
+  "Chapter 36: Marinas":                                             ["royal"],
+  "Chapter 37: Combustible Fibers":                                  ["grass"],
+  "Chapter 38: Higher Education Laboratories":                       ["indigo"],
+  "Chapter 39: Processing and Extraction Facilities":                ["emerald"],
+  "Chapter 40: Storage of Distilled Spirits and Wines":              ["mauve"],
+  "Chapter 50: Hazardous Materials\u2014General Provisions":         ["gold"],
+  "Chapter 51: Aerosols":                                            ["pink"],
+  "Chapter 53: Compressed Gases":                                    ["teal"],
+  "Chapter 54: Corrosive Materials":                                 ["violet"],
+  "Chapter 55: Cryogenic Fluids":                                    ["cyan"],
+  "Chapter 56: Explosives and Fireworks":                            ["magenta"],
+  "Chapter 57: Flammable and Combustible Liquids":                   ["red"],
+  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":      ["orange"],
+  "Chapter 59: Flammable Solids":                                    ["terracotta"],
+  "Chapter 60: Highly Toxic and Toxic Materials":                    ["purple"],
+  "Chapter 61: Liquefied Petroleum Gases":                           ["orange"],
+  "Chapter 62: Organic Peroxides":                                   ["olive"],
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": ["amber"],
+  "Chapter 64: Pyrophoric Materials":                                ["crimson"],
+  "Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics":              ["mauve"],
+  "Chapter 66: Unstable (Reactive) Materials":                       ["olive"],
+  "Chapter 67: Water-Reactive Solids and Liquids":                   ["sky"],
+  "Chapter 80: Referenced Standards":                                ["indigo"],
+  "Appendix B: Fire-Flow Requirements for Buildings":                ["sky"],
+  "Appendix C: Fire Hydrant Locations and Distribution":             ["gold"],
+  "Appendix D: Fire Apparatus Access Roads":                         ["terracotta"],
+  "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": ["amber"],
+  "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": ["red"],
+  "Exhibit B: Amendments to the International Building Code":        ["steel"],
+  "Chapter and Section Finder":                                      ["violet"]
+};
 /* A unit the table does not know still has to draw something - the
    leaderboard lost three classmates to a builder returning null for an
    id it did not know, and that lesson is not unit-specific. Dealt from
@@ -70141,7 +70215,7 @@ const UNIT_BADGE_THEME = {
 let badgeThemeFallback = null;
 function badgeThemeFor(unitName){
   const name = String(unitName || "");
-  let pair = UNIT_BADGE_THEME[name];
+  let pair = UNIT_BADGE_THEME[name] || IFC_BADGE_THEME[name];
   if(!pair){
     if(!badgeThemeFallback){
       badgeThemeFallback = {};
@@ -70300,11 +70374,158 @@ const UNIT_BADGE_SHAPE = {
   "Traumatic Brain Injury":                        "bilobe",
   "Phonetic Alphabet and Military Time":           "hourglass"
 };
+/* Fire Code's 58 (build 384): the academy's 24 outlines and 34 more in the same hand (BADGE_SHAPE, after
+   BADGE_SHAPE_KEYS), one each - no outline twice. Which chapter has which was chosen for its back: every back carries its
+   title and FIRE CODE, and the longest titles have the roomiest outlines (Appendix H the castle, Chapters 28 and 31 the
+   octagon and the coin), the shortest the narrow ones (the dart, the bolt, the C-ring), so no back's words come out smaller
+   than the academy's smallest (the C-ring's, 0.0368 of the badge; Fire Code's smallest is 0.0363). Then no two outlines
+   that read alike (the gear and the seal, the gem and the kite, the three-, four- and five-lobed ones) sit side by side
+   in the case or its scene. The Maltese cross, the fire service's own, is Chapter 5's - Fire Service Features. */
+const IFC_BADGE_SHAPE = {
+  "Chapter 1: Scope and Administration":                             "crown",
+  "Chapter 2: Definitions":                                          "dart",
+  "Chapter 3: General Requirements":                                 "nameplate",
+  "Chapter 4: Emergency Planning and Preparedness":                  "shield",
+  "Chapter 5: Fire Service Features":                                "maltese",
+  "Chapter 6: Building Services and Systems":                        "gear",
+  "Chapter 7: Fire and Smoke Protection Features":                   "gem",
+  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": "hex",
+  "Chapter 9: Fire Protection and Life Safety Systems":              "cinquefoil",
+  "Chapter 10: Means of Egress":                                     "bolt",
+  "Chapter 11: Construction Requirements for Existing Buildings":    "wave",
+  "Chapter 12: Energy Systems":                                      "bilobe",
+  "Chapter 20: Aviation Facilities":                                 "star5",
+  "Chapter 21: Dry Cleaning":                                        "hourglass",
+  "Chapter 22: Combustible Dust-Producing Operations":               "fan",
+  "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages": "disc",
+  "Chapter 24: Flammable Finishes":                                  "kite",
+  "Chapter 25: Fruit and Crop Ripening":                             "cross",
+  "Chapter 26: Fumigation and Insecticidal Fogging":                 "seal",
+  "Chapter 27: Semiconductor Fabrication Facilities":                "ticket",
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": "octagon",
+  "Chapter 29: Manufacture of Organic Coatings":                     "bucket",
+  "Chapter 30: Industrial Ovens":                                    "slant",
+  "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": "coin",
+  "Chapter 32: High-Piled Combustible Storage":                      "burstplate",
+  "Chapter 33: Fire Safety During Construction and Demolition":      "saddle",
+  "Chapter 34: Tire Rebuilding and Tire Storage":                    "halfdisc",
+  "Chapter 35: Welding and Other Hot Work":                          "notchplate",
+  "Chapter 36: Marinas":                                             "tau",
+  "Chapter 37: Combustible Fibers":                                  "medal",
+  "Chapter 38: Higher Education Laboratories":                       "chevron",
+  "Chapter 39: Processing and Extraction Facilities":                "keystone",
+  "Chapter 40: Storage of Distilled Spirits and Wines":              "quarterdome",
+  "Chapter 50: Hazardous Materials\u2014General Provisions":         "roundel",
+  "Chapter 51: Aerosols":                                            "wedge",
+  "Chapter 53: Compressed Gases":                                    "star4",
+  "Chapter 54: Corrosive Materials":                                 "ribbon",
+  "Chapter 55: Cryogenic Fluids":                                    "peaks",
+  "Chapter 56: Explosives and Fireworks":                            "gonfalon",
+  "Chapter 57: Flammable and Combustible Liquids":                   "pennon",
+  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":      "plaque",
+  "Chapter 59: Flammable Solids":                                    "cring",
+  "Chapter 60: Highly Toxic and Toxic Materials":                    "spire",
+  "Chapter 61: Liquefied Petroleum Gases":                           "oval",
+  "Chapter 62: Organic Peroxides":                                   "hexstar",
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": "tag",
+  "Chapter 64: Pyrophoric Materials":                                "diamond",
+  "Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics":              "ziggurat",
+  "Chapter 66: Unstable (Reactive) Materials":                       "card",
+  "Chapter 67: Water-Reactive Solids and Liquids":                   "arches",
+  "Chapter 80: Referenced Standards":                                "drop",
+  "Appendix B: Fire-Flow Requirements for Buildings":                "tile",
+  "Appendix C: Fire Hydrant Locations and Distribution":             "gate",
+  "Appendix D: Fire Apparatus Access Roads":                         "trefoil",
+  "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": "castle",
+  "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": "quatre",
+  "Exhibit B: Amendments to the International Building Code":        "lens",
+  "Chapter and Section Finder":                                      "crystal"
+};
 __bm("L59652");
 const BADGE_SHAPE_KEYS = Object.keys(BADGE_SHAPE);
+/* THIRTY-FOUR MORE, FOR FIRE CODE (build 384) - after BADGE_SHAPE_KEYS, so the hash a unit no table knows falls back on is
+   the academy's 24 as before. Drawn the way the 24 were: rounded corners (a Q through each vertex), arcs where a side is
+   round, one or two channels (none on the gear and the four-point star - their plates are already parted by the shape),
+   nothing that draws a chapter's subject. Every one was set beside the 24 at the case's 52px and in the hand, and the
+   ones that read as another outline turned round or stretched were left out (a lozenge beside the diamond, a compass
+   beside the diamond, a gable beside the spire, a round-bottomed shield beside the shield, a Gothic arch beside the
+   disc), as were those whose backs could not hold a title and FIRE CODE at the academy's size (a crescent, a caret, a
+   three-armed bar, two diamonds side by side, a slimmer Maltese cross). A ring channel on the cinquefoil leaves a boss of
+   metal in its middle; the slanted channels (the tile, the slant, the Maltese cross, the half disc's rays) are drawn the
+   same way as the straight ones. */
+Object.assign(BADGE_SHAPE, {
+  coin:       { c: [50, 50], cuts: ["M50 -10V110"],
+    d: "M50 7 A43 43 0 1 1 50 93 A43 43 0 1 1 50 7 Z" },
+  oval:       { c: [50, 50], cuts: ["M-10 50H110"],
+    d: "M50 6 A32 44 0 1 1 50 94 A32 44 0 1 1 50 6 Z" },
+  gear:       { c: [50, 50], cuts: [],
+    d: "M42.4 12.2L42.9 8.7Q43.3 5.5 46.5 5.5L53.5 5.5Q56.7 5.5 57.1 8.7L57.6 12.2Q58 15.4 60.9 16.6L65.9 18.7Q68.8 19.9 71.4 18L74.2 15.8Q76.8 13.8 79 16.1L83.9 21Q86.2 23.2 84.2 25.8L82 28.6Q80.1 31.2 81.3 34.1L83.4 39.1Q84.6 42 87.8 42.4L91.3 42.9Q94.5 43.3 94.5 46.5L94.5 53.5Q94.5 56.7 91.3 57.1L87.8 57.6Q84.6 58 83.4 60.9L81.3 65.9Q80.1 68.8 82 71.4L84.2 74.2Q86.2 76.8 83.9 79L79 83.9Q76.8 86.2 74.2 84.2L71.4 82Q68.8 80.1 65.9 81.3L60.9 83.4Q58 84.6 57.6 87.8L57.1 91.3Q56.7 94.5 53.5 94.5L46.5 94.5Q43.3 94.5 42.9 91.3L42.4 87.8Q42 84.6 39.1 83.4L34.1 81.3Q31.2 80.1 28.6 82L25.8 84.2Q23.2 86.2 21 83.9L16.1 79Q13.8 76.8 15.8 74.2L18 71.4Q19.9 68.8 18.7 65.9L16.6 60.9Q15.4 58 12.2 57.6L8.7 57.1Q5.5 56.7 5.5 53.5L5.5 46.5Q5.5 43.3 8.7 42.9L12.2 42.4Q15.4 42 16.6 39.1L18.7 34.1Q19.9 31.2 18 28.6L15.8 25.8Q13.8 23.2 16.1 21L21 16.1Q23.2 13.8 25.8 15.8L28.6 18Q31.2 19.9 34.1 18.7L39.1 16.6Q42 15.4 42.4 12.2Z" },
+  cinquefoil: { c: [50, 49.1], cuts: ["M50 45A7 7 0 1 1 49.9 45"],
+    d: "M30.4 25A20 20 0 1 1 69.6 25A20 20 0 1 1 81.7 62.3A20 20 0 1 1 50 85.3A20 20 0 1 1 18.3 62.3A20 20 0 1 1 30.4 25Z" },
+  medal:      { c: [50, 49.2], cuts: ["M-10 66H110"],
+    d: "M33.4 61.9A30 30 0 1 1 66.6 61.9L69 88Q69.4 93 65 91L50 83L35 91Q30.6 93 31 88Z" },
+  roundel:    { c: [50, 50], cuts: ["M-10 36H110", "M-10 64H110"],
+    d: "M16.9 37A36 36 0 0 1 83.1 37L89 37Q94 37 94 42L94 58Q94 63 89 63L83.1 63A36 36 0 0 1 16.9 63L11 63Q6 63 6 58L6 42Q6 37 11 37Z" },
+  tile:       { c: [50, 50], cuts: ["M-10 110L110 -10"],
+    d: "M27 12L73 12Q88 12 88 27L88 73Q88 88 73 88L27 88Q12 88 12 73L12 27Q12 12 27 12Z" },
+  plaque:     { c: [50, 50], cuts: ["M34 -10V110", "M66 -10V110"],
+    d: "M16 22L84 22Q94 22 94 32L94 68Q94 78 84 78L16 78Q6 78 6 68L6 32Q6 22 16 22Z" },
+  ribbon:     { c: [50, 50], cuts: ["M27 -10V110", "M73 -10V110"],
+    d: "M12 24L88 24Q92 24 90.3 27.6L81.3 47.3Q80 50 81.3 52.7L90.3 72.4Q92 76 88 76L12 76Q8 76 9.7 72.4L18.7 52.7Q20 50 18.7 47.3L9.7 27.6Q8 24 12 24Z" },
+  gonfalon:   { c: [50, 49.4], cuts: ["M-10 34H110"],
+    d: "M21 8L79 8Q84 8 84 13L84 88Q84 92 80.4 90.3L53.6 77.7Q50 76 46.4 77.7L19.6 90.3Q16 92 16 88L16 13Q16 8 21 8Z" },
+  ticket:     { c: [50, 50], cuts: ["M68 -10V110"],
+    d: "M24 16L76 16A15 15 0 0 0 91 31L91 69A15 15 0 0 0 76 84L24 84A15 15 0 0 0 9 69L9 31A15 15 0 0 0 24 16Z" },
+  slant:      { c: [50, 50], cuts: ["M69.4 -10L30.6 110"],
+    d: "M36 16L88 16Q94 16 92 21.7L72 78.3Q70 84 64 84L12 84Q6 84 8 78.3L28 21.7Q30 16 36 16Z" },
+  castle:     { c: [50, 51], cuts: ["M-10 42H110"],
+    d: "M12 12L26 12Q30 12 30 16L30 24Q30 27 33 27L37 27Q40 27 40 24L40 16Q40 12 44 12L56 12Q60 12 60 16L60 24Q60 27 63 27L67 27Q70 27 70 24L70 16Q70 12 74 12L88 12Q92 12 92 16L92 85Q92 90 87 90L13 90Q8 90 8 85L8 16Q8 12 12 12Z" },
+  ziggurat:   { c: [50, 50], cuts: ["M-10 61H110"],
+    d: "M38 10L62 10Q66 10 66 14L66 31Q66 34 69 34L75 34Q79 34 79 38L79 55Q79 58 82 58L88 58Q92 58 92 62L92 85Q92 90 87 90L13 90Q8 90 8 85L8 62Q8 58 12 58L18 58Q21 58 21 55L21 38Q21 34 25 34L31 34Q34 34 34 31L34 14Q34 10 38 10Z" },
+  tau:        { c: [50, 51], cuts: [],
+    d: "M13 12L87 12Q92 12 92 17L92 35Q92 40 87 40L68 40Q64 40 64 44L64 85Q64 90 59 90L41 90Q36 90 36 85L36 44Q36 40 32 40L13 40Q8 40 8 35L8 17Q8 12 13 12Z" },
+  saddle:     { c: [50, 52], cuts: ["M-10 56H110"],
+    d: "M14 16L35 16A15 15 0 0 0 65 16L86 16Q92 16 92 22L92 82Q92 88 86 88L14 88Q8 88 8 82L8 22Q8 16 14 16Z" },
+  wave:       { c: [50, 50], cuts: ["M-10 50H110"],
+    d: "M8 30Q8 24 13 24Q20 15 29 21T50 21T71 21T87 24Q92 24 92 30L92 70Q92 76 87 76Q80 85 71 79T50 79T29 79T13 76Q8 76 8 70Z" },
+  nameplate:  { c: [50, 50], cuts: ["M39 -10V110", "M61 -10V110"],
+    d: "M30 24L70 24Q75 24 78 28L91 46Q94 50 91 54L78 72Q75 76 70 76L30 76Q25 76 22 72L9 54Q6 50 9 46L22 28Q25 24 30 24Z" },
+  pennon:     { c: [50.2, 50], cuts: ["M30 -10V110"],
+    d: "M14 18L63 18Q68 18 71.2 21.9L90.8 46.1Q94 50 90.8 53.9L71.2 78.1Q68 82 63 82L14 82Q8 82 8 76L8 24Q8 18 14 18Z" },
+  notchplate: { c: [50, 50], cuts: ["M50 -10V110"],
+    d: "M12.8 15.4L45.2 24.6Q50 26 54.8 24.6L87.2 15.4Q92 14 92 19L92 81Q92 86 87.2 84.6L54.8 75.4Q50 74 45.2 75.4L12.8 84.6Q8 86 8 81L8 19Q8 14 12.8 15.4Z" },
+  star4:      { c: [50, 50], cuts: [],
+    d: "M52.4 8.4L63.9 29.3Q66.3 33.7 70.7 36.1L91.6 47.6Q96 50 91.6 52.4L70.7 63.9Q66.3 66.3 63.9 70.7L52.4 91.6Q50 96 47.6 91.6L36.1 70.7Q33.7 66.3 29.3 63.9L8.4 52.4Q4 50 8.4 47.6L29.3 36.1Q33.7 33.7 36.1 29.3L47.6 8.4Q50 4 52.4 8.4Z" },
+  maltese:    { c: [50, 50], cuts: ["M-10 -10L110 110", "M110 -10L-10 110"],
+    d: "M33.4 31.1L28.6 7.9Q28 5 30.8 6L47.2 12Q50 13 52.8 12L69.2 6Q72 5 71.4 7.9L66.6 31.1Q66 34 68.9 33.4L92.1 28.6Q95 28 94 30.8L88 47.2Q87 50 88 52.8L94 69.2Q95 72 92.1 71.4L68.9 66.6Q66 66 66.6 68.9L71.4 92.1Q72 95 69.2 94L52.8 88Q50 87 47.2 88L30.8 94Q28 95 28.6 92.1L33.4 68.9Q34 66 31.1 66.6L7.9 71.4Q5 72 6 69.2L12 52.8Q13 50 12 47.2L6 30.8Q5 28 7.9 28.6L31.1 33.4Q34 34 33.4 31.1Z" },
+  dart:       { c: [50, 47.4], cuts: ["M50 -10V110"],
+    d: "M52.2 10.5L88.8 83.5Q91 88 86.4 86L54.6 72Q50 70 45.4 72L13.6 86Q9 88 11.2 83.5L47.8 10.5Q50 6 52.2 10.5Z" },
+  bucket:     { c: [50, 51], cuts: ["M-10 40H110"],
+    d: "M14 14L86 14Q92 14 90.7 19.9L77.3 82.1Q76 88 70 88L30 88Q24 88 22.7 82.1L9.3 19.9Q8 14 14 14Z" },
+  gem:        { c: [50, 51], cuts: ["M-10 36H110"],
+    d: "M33 12L67 12Q72 12 75.2 15.8L88.8 32.2Q92 36 89 40L53 88Q50 92 47 88L11 40Q8 36 11.2 32.2L24.8 15.8Q28 12 33 12Z" },
+  crystal:    { c: [50, 50], cuts: ["M-10 50H110"],
+    d: "M54 7L72 21Q76 24 76 29L76 71Q76 76 72 79L54 93Q50 96 46 93L28 79Q24 76 24 71L24 29Q24 24 28 21L46 7Q50 4 54 7Z" },
+  halfdisc:   { c: [50, 54], cuts: ["M50 84L18 -10", "M50 84L82 -10"],
+    d: "M6 72A44 44 0 0 1 94 72L94 76Q94 80 90 80L10 80Q6 80 6 76Z" },
+  card:       { c: [50, 50], cuts: ["M-10 36H110", "M-10 64H110"],
+    d: "M31 6L69 6Q80 6 80 17L80 83Q80 94 69 94L31 94Q20 94 20 83L20 17Q20 6 31 6Z" },
+  tag:        { c: [50, 52], cuts: ["M-10 52H110"],
+    d: "M36 28A14 14 0 0 1 64 28L84 28Q90 28 90 34L90 84Q90 90 84 90L16 90Q10 90 10 84L10 34Q10 28 16 28Z" },
+  crown:      { c: [50, 50.1], cuts: ["M-10 66H110"],
+    d: "M10 82L10 21Q10 16 13.2 19.8L27.4 36.9Q30 40 32.2 36.7L47.2 14.2Q50 10 52.8 14.2L67.8 36.7Q70 40 72.6 36.9L86.8 19.8Q90 16 90 21L90 82Q90 88 84 88L16 88Q10 88 10 82Z" },
+  arches:     { c: [50, 57], cuts: ["M-10 64H110"],
+    d: "M8 84L8 45A21 21 0 0 1 50 45A21 21 0 0 1 92 45L92 84Q92 90 86 90L14 90Q8 90 8 84Z" },
+  seal:       { c: [50, 50], cuts: ["M-10 50H110"],
+    d: "M50 10A12.8 12.8 0 0 1 67.4 14A12.8 12.8 0 0 1 81.3 25.1A12.8 12.8 0 0 1 89 41.1A12.8 12.8 0 0 1 89 58.9A12.8 12.8 0 0 1 81.3 74.9A12.8 12.8 0 0 1 67.4 86A12.8 12.8 0 0 1 50 90A12.8 12.8 0 0 1 32.6 86A12.8 12.8 0 0 1 18.7 74.9A12.8 12.8 0 0 1 11 58.9A12.8 12.8 0 0 1 11 41.1A12.8 12.8 0 0 1 18.7 25.1A12.8 12.8 0 0 1 32.6 14A12.8 12.8 0 0 1 50 10Z" },
+  kite:       { c: [50, 49.9], cuts: ["M-10 32H110"],
+    d: "M53.8 7.3L77.5 28Q82 32 79.3 37.4L51.8 92.4Q50 96 48.2 92.4L20.7 37.4Q18 32 22.5 28L46.2 7.3Q50 4 53.8 7.3Z" },
+  quarterdome: { c: [50, 50], cuts: ["M-10 58H110"],
+    d: "M14 10L48 10A42 42 0 0 1 90 52L90 85Q90 90 85 90L15 90Q10 90 10 85L10 15Q10 10 14 10Z" }
+});
 function badgeShapeFor(unitName){
   const name = String(unitName || "");
-  const key = UNIT_BADGE_SHAPE[name];
+  const key = UNIT_BADGE_SHAPE[name] || IFC_BADGE_SHAPE[name];
   if(key && BADGE_SHAPE[key]) return BADGE_SHAPE[key];
   const i = (parseInt(hashOf(name), 36) >>> 0) % BADGE_SHAPE_KEYS.length;
   return BADGE_SHAPE[BADGE_SHAPE_KEYS[i]];
@@ -70401,6 +70622,8 @@ Object.keys(BADGE_SHAPE).forEach(k => { BADGE_CENTRE_OF[BADGE_SHAPE[k].d] = BADG
    table: no layout, ever. Re-measure with badgeMeasure() if a shape in
    BADGE_SHAPE is redrawn - a key missing here is simply measured. */
 const BADGE_BBOX_PRESET = {"gate":[12,9.1,76,80.9],"diamond":[8.45,8.45,83.1,83.1],"disc":[6,6,88,78],"trefoil":[3.188,-0.0367,93.6239,88.0527],"peaks":[8,16.1747,84,71.8253],"wedge":[9.9091,16,80.1818,75.35],"hex":[9,6.7,82,86.6],"cross":[8,8,84,84],"spire":[13.1691,7.3,73.6618,86.7],"fan":[11.2886,12.35,77.4228,69.65],"burstplate":[6.8,6.8,86.4,86.4],"cring":[26,5.9816,69.272,88],"bolt":[16.1905,10,66.1284,80.3879],"star5":[8.719,6.65,82.562,78.7453],"keystone":[10,8,80,84],"quatre":[1.9576,1.9576,96.0848,96.0848]};
+/* (384) Fire Code's 34, measured the same way */
+Object.assign(BADGE_BBOX_PRESET, {"coin":[7,7,86,86],"oval":[18,6,64,88],"gear":[5.5,5.5,89,89],"cinquefoil":[0.5961,1.0201,98.8079,96.0705],"medal":[20,6.9112,60,84.6602],"roundel":[6,15.1559,88,69.6882],"tile":[12,12,76,76],"plaque":[6,22,88,56],"ribbon":[9.193,24,81.614,52],"gonfalon":[16,8,68,82.807],"ticket":[9,16,82,68],"slant":[7.5,16,85,68],"castle":[8,12,84,78],"ziggurat":[8,10,84,80],"tau":[8,12,84,78],"saddle":[8,16,84,72],"wave":[8,18,84,64],"nameplate":[7.5,24,85,52],"pennon":[8,18,84.4,64],"notchplate":[8,15.0938,84,69.8125],"star4":[6.2,6.2,87.6,87.6],"maltese":[5.7436,5.7436,88.5128,88.5128],"dart":[10.4882,8.25,79.0235,78.3654],"bucket":[9.0685,14,81.863,74],"gem":[9.5484,12,80.9032,78],"crystal":[24,5.5,52,89],"halfdisc":[6,28,88,52],"card":[20,6,60,88],"tag":[10,14,80,76],"crown":[10,12.1,80,75.9],"arches":[8,24,84,66],"seal":[7.3995,8.1401,85.2011,83.7197],"kite":[19.6875,5.65,60.625,88.55],"quarterdome":[10,10,80,80]});
 Object.keys(BADGE_BBOX_PRESET).forEach(k => {
   const b = BADGE_BBOX_PRESET[k], sh = BADGE_SHAPE[k];
   if(sh && b) BADGE_BBOX_CACHE[sh.d] = { x: b[0], y: b[1], w: b[2], h: b[3] };
@@ -70874,10 +71097,15 @@ function badgeBoxBlur(a, W, r){
 /* GEOMETRY, ONCE PER SHAPE: distance fields at a fixed resolution - to
    the outline, and to the enamel as opened - with their gradients, so a
    render at any size gets smooth normals by the chain rule. */
+/* (384) AT MOST 24 KEPT. A shape's fields are six 288x288 float arrays, 2MB, and they were all kept: the academy's 24
+   are 48MB. Fire Code's 58 chapters now have 58 outlines - 116MB if every one stayed - so the least recently used goes
+   when a 25th comes in (recomputed if it is wanted again, ~20-40ms in idle time). The academy has 24: nothing goes. */
 const BADGE_STRIKE_GEOM = {};
+const BADGE_STRIKE_GEOM_MAX = 24;
 function badgeStrikeGeometry(shape){
   const d = shape.d;
-  if(BADGE_STRIKE_GEOM[d]) return BADGE_STRIKE_GEOM[d];
+  const hit = BADGE_STRIKE_GEOM[d];
+  if(hit){ delete BADGE_STRIKE_GEOM[d]; BADGE_STRIKE_GEOM[d] = hit; return hit; }   /* the newest last */
   const P = BADGE_STRIKE, G = BADGE_GEOM, S = G.scale, cx = shape.c[0], cy = shape.c[1];
   const vb = badgeViewBoxFor(d).split(/\s+/).map(Number);
   const vx = vb[0], vy = vb[1], vw = vb[2];
@@ -70917,6 +71145,8 @@ function badgeStrikeGeometry(shape){
      followed the field's own sub-pixel ripple, and on the coin - its
      render ~4.6x finer than these fields - that ripple was a wavy dark
      line round every plate. */
+  const kept = Object.keys(BADGE_STRIKE_GEOM);
+  if(kept.length >= BADGE_STRIKE_GEOM_MAX) delete BADGE_STRIKE_GEOM[kept[0]];
   return (BADGE_STRIKE_GEOM[d] = { O: Os, E: Es, Ox, Oy, Ex, Ey, vx, vy, vw, cx, cy, S, W });
 }
 /* The profile and its slope, as tables. */
@@ -71343,11 +71573,14 @@ function warmBadgeStrikes(){
     const units = unitsInTeachingOrder();
     const W = badgeStrikeSize(badgeDefaultPx() * badgeDpr());
     const jobs = [];
-    units.forEach(u => jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u))));
-    units.forEach(u => jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W, badgeDirtStage(u))));
-    /* where the words go on each found badge's back (build 325), so the
-       back's first render in your hand does not pay for it */
-    units.forEach(u => { if(unitBadgeEarned(u)) jobs.push(() => badgeBackPlan(u)); });
+    /* a unit's geometry, its render and - a found badge's - where the words go on its back (build 325, so the back's first
+       render in your hand does not pay for it), one after another (384: so a geometry the cache has let go of - Fire Code
+       has 58 - is never made twice in one warm-up) */
+    units.forEach(u => {
+      jobs.push(() => badgeStrikeGeometry(badgeShapeFor(u)));
+      jobs.push(() => badgeStrikeURL(u, !unitBadgeEarned(u), W, badgeDirtStage(u)));
+      if(unitBadgeEarned(u)) jobs.push(() => badgeBackPlan(u));
+    });
     const ric = f => quietIdle(f, 3000);
     const step = dl => {
       /* NOT WHILE NOVA IS TALKING (build 326). His sky never goes idle, so
@@ -71560,14 +71793,20 @@ function buildUnitBadgeSVG(unitName, earned, opts){
   shape.cuts.forEach((c, i) => {
     const n = (c.match(/-?\d+(\.\d+)?/g) || []).map(Number);
     const vert = /V/.test(c);
-    const at = vert ? n[0] : n[1];
-    const bar = ramp(uid + "-ch" + i, grey ? BADGE_BAR_GREY : BADGE_BAR,
-      vert ? at - 4.5 : 0, vert ? 0 : at - 4.5, vert ? at + 4.5 : 0, vert ? 0 : at + 4.5);
+    /* (384) Fire Code's outlines add slanted channels (M..L..) and round ones (an arc - a boss): a slanted bar's ramp runs
+       across it along its normal (turned to face the top-left), a round one's across its top, as an H bar's does */
+    let ax = vert ? n[0] : 0, ay = vert ? 0 : n[1], nx = vert ? 1 : 0, ny = vert ? 0 : 1;
+    if(/L/.test(c) && n.length >= 4){
+      const dx = n[2] - n[0], dy = n[3] - n[1], L = Math.hypot(dx, dy) || 1;
+      nx = -dy / L; ny = dx / L; if(nx + ny < 0){ nx = -nx; ny = -ny; }
+      ax = (n[0] + n[2]) / 2; ay = (n[1] + n[3]) / 2;
+    }
+    const bar = ramp(uid + "-ch" + i, grey ? BADGE_BAR_GREY : BADGE_BAR, ax - 4.5 * nx, ay - 4.5 * ny, ax + 4.5 * nx, ay + 4.5 * ny);
     add(c, { fill: "none", stroke: "#000000", "stroke-width": "12", opacity: ".32", transform: "translate(1.1 1.4)" }, plate);
     add(c, { fill: "none", stroke: "#14171C", "stroke-width": "13" }, plate);
     add(c, { fill: "none", stroke: bar, "stroke-width": "9" }, plate);
     add(c, { fill: "none", stroke: "#FFFFFF", "stroke-width": "1.3", opacity: ".6",
-             transform: vert ? "translate(-2.2 0)" : "translate(0 -2.2)" }, plate);
+             transform: vert ? "translate(-2.2 0)" : /L/.test(c) ? "translate(" + (-2.2 * nx).toFixed(2) + " " + (-2.2 * ny).toFixed(2) + ")" : "translate(0 -2.2)" }, plate);
   });
   /* The silver: inside the outline (clipped), then outside it over the
      seam, from one ramp in one space, so the two halves are one piece. */
@@ -143479,18 +143718,30 @@ function badgeBackPlan(unitName){
     setFont(fs, 0); const a = c2.measureText("H").actualBoundingBoxAscent || fs * .72, d = c2.measureText(",").actualBoundingBoxDescent || fs * .16;
     v = [a, Math.max(d, fs * .05)]; VC.set(fs, v); return v; };
   const pad = Math.max(1, R.wallU * u * .5) + .5;
-  const words = String(unitName).toUpperCase().split(/\s+/).filter(Boolean);
+  /* (384) a row may break after an em dash ("HAZARDOUS MATERIALS\u2014" / "GENERAL PROVISIONS"): Fire Code's chapter titles
+     have them, the academy's have none. The dash keeps its place; only the break is new. */
+  const words = String(unitName).toUpperCase().replace(/\u2014(?=\S)/g, "\u2014 ").split(/\s+/).filter(Boolean);
+  /* ...and never between "CHAPTER" and its number ("CHAPTER 63:", "APPENDIX H:", "EXHIBIT B:" stay on one row) */
+  for(let i = words.length - 2; i >= 0; i--) if(/^(CHAPTER|APPENDIX|EXHIBIT)$/.test(words[i]) && /^[0-9A-Z]{1,3}:$/.test(words[i + 1])) words.splice(i, 2, words[i] + " " + words[i + 1]);
+  const wj = a => a.join(" ").replace(/\u2014 /g, "\u2014");
   const CLASS = BADGE_CASE_CLASS.toUpperCase();   /* (384) "FIRE CODE" in Fire Code */
+  /* the smallest size tried: the relief's, unless nothing fits at it (see the plan's last resort below) */
+  let fsFloor = R.fsMin;
   /* rows: every way of breaking the words into k rows, in order */
   const splits = k => { const out = []; const rec = (i, left, acc) => {
-    if(left === 1){ out.push(acc.concat([words.slice(i).join(" ")])); return; }
-    for(let j = i + 1; j <= words.length - left + 1; j++) rec(j, left - 1, acc.concat([words.slice(i, j).join(" ")])); };
+    if(left === 1){ out.push(acc.concat([wj(words.slice(i))])); return; }
+    for(let j = i + 1; j <= words.length - left + 1; j++) rec(j, left - 1, acc.concat([wj(words.slice(i, j))])); };
     if(k <= words.length) rec(0, k, []); return out; };
-  const allSplits = [1, 2, 3, 4].map(splits);
+  /* (384) A NAME OVER 60 LETTERS MAY TAKE FIVE OR SIX ROWS. Fire Code's longest chapter titles (Appendix H runs to 118)
+     came out a third of the academy's size in four rows. The academy's longest is 45 letters, so its backs are as they
+     were. Past four rows only breaks whose longest row is within 1.35 of the rows' average width are tried: the few that
+     can win, not the thousands that cannot (Appendix H's plan is ~40ms here, as an academy back's is). */
+  const longName = String(unitName).length > 60;
+  const allSplits = (longName ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4]).map(splits);
   /* the field's widest row, for throwing out a break whose longest row
      could never fit anywhere at a size */
-  let fieldW = 0;
-  for(let y = 0; y < WR; y++){ let run = 0; for(let x = 0; x < WR; x++){ if(D[y * WR + x] <= thr){ run++; if(run > fieldW) fieldW = run; } else run = 0; } }
+  let fieldW = 0, fieldY0 = -1, fieldY1 = -1;
+  for(let y = 0; y < WR; y++){ let run = 0; for(let x = 0; x < WR; x++){ if(D[y * WR + x] <= thr){ run++; if(run > fieldW) fieldW = run; if(fieldY0 < 0) fieldY0 = y; fieldY1 = y; } else run = 0; } }
   /* a column of "bad" counts, summed down, so any band's rows are one lookup */
   const PS = new Int32Array((WR + 1) * WR);
   for(let y = 0; y < WR; y++) for(let x = 0; x < WR; x++) PS[(y + 1) * WR + x] = PS[y * WR + x] + (D[y * WR + x] > thr ? 1 : 0);
@@ -143535,6 +143786,8 @@ function badgeBackPlan(unitName){
       bands.push({ s: CLASS, fs: small, ls, base: sb, top: ruleY - pad, bot: sb + sd + pad, w: cw, rule: [fs * 2.4, ruleY, ruleH] });
     }
     const top0 = bands[0].top, bot1 = bands[bands.length - 1].bot;
+    /* taller than the field from its first row to its last: it fits at no offset (384: a quick no, the same answer) */
+    if(bot1 - top0 > fieldY1 - fieldY0 + 1) return null;
     let best = null;
     /* nearest the middle first: the first offset that fits is the one */
     const tIdeal = Math.round(my - (top0 + bot1) / 2), tLo = Math.ceil(-top0), tHi = Math.floor(WR - bot1 - 1);
@@ -143570,13 +143823,14 @@ function badgeBackPlan(unitName){
       if(best && rows.length > best.rows) return;
       if(strict && rows.some(r => LONE.test(r))) return;
       if(rows.some(r => width(r, fs, 0) + 2 > fieldW)) return;
+      if(rows.length > 4){ let tot = 0, mx = 0; rows.forEach(r => { const w = width(r, fs, 0); tot += w; if(w > mx) mx = w; }); if(mx > 1.35 * tot / rows.length) return; }
       const p = block(rows, fs, withClass, above); if(p && (!best || p.rows < best.rows || (p.rows === best.rows && p.slack > best.slack))) best = p; }));
     return best;
   };
   /* the largest size that fits, by halving (a plan is made once per unit,
      off the tap: ~12 sizes tried, not ~40) */
   const bestRows = withClass => {
-    let lo = R.fsMin * WR, hi = R.fsMax * WR, top = bestAt(hi, withClass);
+    let lo = fsFloor * WR, hi = R.fsMax * WR, top = bestAt(hi, withClass);
     if(top) return top;
     let got = bestAt(lo, withClass);
     if(!got) return null;
@@ -143625,7 +143879,7 @@ function badgeBackPlan(unitName){
       const small = Math.max(R.classMin * WR, fs * .5);
       /* the name up and over, CLASS 26E along the bottom (build 326: the
          same three things as every other back) */
-      cands.push([words.join(" "), CLASS, small, small * .16]);
+      cands.push([wj(words), CLASS, small, small * .16]);
       let best = null;
       for(const [up, low, lfs, lls] of cands){
         if(strict && TAIL.test(up)) continue;
@@ -143654,7 +143908,7 @@ function badgeBackPlan(unitName){
       }
       return best;
     };
-    let fLo = R.fsMin * WR, fHi = R.fsMax * WR, got = arcAt(fHi);
+    let fLo = fsFloor * WR, fHi = R.fsMax * WR, got = arcAt(fHi);
     if(got) return got;
     got = arcAt(fLo);
     if(!got) return null;
@@ -143676,13 +143930,23 @@ function badgeBackPlan(unitName){
     /* the line goes UNDER the name on every back that has the room for it
        there; over it only where under would cost the name more than
        aboveKeep of its size (the bolt, whose room is all at the top) */
-    const arc = tidy(bestArc);
-    let a = arc ? null : tidy(() => bestRows(true));
-    if(!arc){ above = true; const a2 = tidy(() => bestRows(true)); above = false; if(a2 && (!a || a.fs < a2.fs * R.aboveKeep)) a = a2; }
-    const n = (arc || a) ? null : tidy(() => bestRows(false));
-    plan = arc || a || n;
+    const attempt = () => {
+      const arc = tidy(bestArc);
+      let a = arc ? null : tidy(() => bestRows(true));
+      /* (384) a long name with its line under it is not tried with the line over it: five or six rows have the room
+         under, and the second pass is most of a long plan's time */
+      if(!arc && !(longName && a)){ above = true; const a2 = tidy(() => bestRows(true)); above = false; if(a2 && (!a || a.fs < a2.fs * R.aboveKeep)) a = a2; }
+      const n = (arc || a) ? null : tidy(() => bestRows(false));
+      return arc || a || n;
+    };
+    plan = attempt();
+    /* NOTHING CUT OFF THE FIELD (384). A name too long for its shape at the smallest size came out as one row at that
+       size laid over the middle - across the rim and off both sides, with no class line (Fire Code's Chapter 31 on the
+       drop). It is planned again with the floor halved, so it is set inside the field like every other back; the single
+       row below is only for a plan that throws. Every academy back and every Fire Code back fits at the floor. */
+    if(!plan){ fsFloor = R.fsMin / 2; plan = attempt(); }
   }catch(e){ plan = null; }
-  if(!plan) plan = { items: [{ s: words.join(" "), x: mx, y: my, rot: 0, fs: R.fsMin * WR, ls: 0 }], fs: R.fsMin * WR, small: 0, rows: 1, cls: false, mode: "rows" };
+  if(!plan) plan = { items: [{ s: wj(words), x: mx, y: my, rot: 0, fs: R.fsMin * WR, ls: 0 }], fs: R.fsMin * WR, small: 0, rows: 1, cls: false, mode: "rows" };
   plan.W = WR; plan.u = u;
   return (BADGE_BACK_PLAN[key] = plan);
 }
