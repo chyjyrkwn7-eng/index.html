@@ -1,7 +1,7 @@
 """Build 383: Fire Code syncs. Madison: "The police class has sync code working. The fire code side says sync code isn't
 reachable. Fix that as well."
 Fire Code's account lives at progress/<academy code>__ifc (beside the academy's, never in it); only the account reaches the
-cloud there - fbDb stays null, so the leaderboard and the Virtual Room stay off (since 384 the friends, chat and presence reach
+cloud there - fbDb stays null, so the leaderboard stays off (since 384 the friends, chat, presence and the Virtual Room reach
 the academy account's own `vrooms` documents through their own handle - check-b384-friends). With an in-memory Firestore stand-in
 (the CDN is blocked here) and the owner's account (TEST-3830, a fake code):
  (1) device 1 in Fire Code writes its Fire Code progress to progress/TEST-3830__ifc - and nothing to progress/TEST-3830, the
@@ -94,7 +94,7 @@ with sync_playwright() as pw:
     chk("(1) in Fire Code, device 1's Fire Code progress is saved to its own account (progress/%s__ifc, %s points)" % (CODE, pts), r["cls"] == "ifc" and pts == 4321, r)
     bad = [w for w in r["writes"] if not w.startswith(("progress/" + CODE + "__ifc",) + FRIENDS_DOCS)]
     chk("(1) and nothing else is written - not the academy's account, not the leaderboard, no room but the friends' own (%s)" % bad, not r["academyDoc"] and not bad, r["writes"])
-    chk("(2) fbDb stays null in Fire Code (the leaderboard and the Virtual Room stay off)", r["fb"] is None, r["fb"])
+    chk("(2) fbDb stays null in Fire Code (the leaderboard stays off; rooms go through the friends' handle)", r["fb"] is None, r["fb"])
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(900)
     row = pg.evaluate("()=>{ const b=document.getElementById('settings-row-sync'); return b ? b.textContent.replace(/\\s+/g,' ').trim() : null; }")
     chk("(2) Settings' Sync row reads On, not Unreachable (%r)" % row, bool(row) and "On" in row and "Unreachable" not in row, row)
