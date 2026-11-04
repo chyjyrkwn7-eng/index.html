@@ -347,7 +347,12 @@ with sync_playwright() as pw:
                 const ring=[...o.querySelectorAll('.a2hs-pt')].map(p=>{ const r=p.querySelector('.a2hs-pt-ring').getBoundingClientRect(), l=p.querySelector('.a2hs-pt-label').getBoundingClientRect();
                   return { cx:(r.left+r.width/2-f.left)/f.width, cy:(r.top+r.height/2-f.top)/f.height, inF: r.left+r.width/2>=f.left && r.left+r.width/2<=f.right && r.top+r.height/2>=f.top && r.top+r.height/2<=f.bottom,
                     labelIn: l.left>=f.left-1 && l.right<=f.right+1 && l.top>=f.top-1 && l.bottom<=f.bottom+1 }; });
-                return { on, lit, ring }; }"""
+                const nw=o.querySelector('.a2hs-now'); let cap=null;
+                if(nw){ const r=nw.getBoundingClientRect(), litEl=o.querySelector('.a2hs-apple .a2hs-step.is-now .a2hs-step-main');
+                  cap={ shown:getComputedStyle(nw).display!=='none' && r.height>0, gap:r.top-f.bottom, inView:r.bottom<=innerHeight && r.top>=0,
+                    head:(nw.querySelector('.a2hs-now-n')||{}).textContent||'', text:nw.textContent.replace((nw.querySelector('.a2hs-now-n')||{}).textContent||'','').trim(),
+                    litText: litEl ? litEl.textContent.trim() : null }; }
+                return { on, lit, ring, cap, steps:o.querySelectorAll('.a2hs-apple .a2hs-step').length }; }"""
             PIX = """([x,y])=>{ const v=document.querySelector('#a2hs-sheet video'); const c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
                 const g=c.getContext('2d'); g.drawImage(v,0,0); const d=g.getImageData(Math.round(x*c.width)-3, Math.round(y*c.height)-3, 7, 7).data;
                 let r=0,gg=0,b=0,n=0; for(let i=0;i<d.length;i+=4){ r+=d[i]; gg+=d[i+1]; b+=d[i+2]; n++; } return [r/n, gg/n, b/n]; }"""
@@ -372,6 +377,11 @@ with sync_playwright() as pw:
                 chk("iphone pointer %d at %.2fs: it alone is on and showing, its ring inside the clip at the place it declares (%.3f,%.3f), its label inside, step %d lit"
                     % (i + 1, mid, rg["cx"], rg["cy"], p["step"] + 1),
                     onlist == [i] and st["on"][i]["op"] > .9 and rg["inF"] and abs(rg["cx"] - p["x"]) < .01 and abs(rg["cy"] - p["y"]) < .01 and rg["labelIn"] and st["lit"] == [p["step"]], (st, p))
+                # build 384: on a phone the list is below the fold, so the step is said right under the clip as well
+                cp = st.get("cap") or {}
+                head = re.findall(r"\d+", cp.get("head", ""))
+                chk("iphone ...and right under the clip, in view, the same step said: '%s %s'" % (cp.get("head"), cp.get("text")),
+                    cp.get("shown") and 0 <= cp.get("gap", -1) <= 24 and cp.get("inView") and head == [str(p["step"] + 1), str(st["steps"])] and cp.get("text") == cp.get("litText"), cp)
             # the ring on the switch sits on its green, the one on Add on its blue: read off the clip
             sw = [i for i, p in enumerate(pts) if p["step"] == 3]
             ad = [i for i, p in enumerate(pts) if p["step"] == 4]
@@ -441,6 +451,8 @@ with sync_playwright() as pw:
             pg.click("#a2hs-sheet .a2hs-seg-apple"); pg.wait_for_timeout(1200)
             v = pg.evaluate("()=>{ const v=document.querySelector('#a2hs-sheet video'); return { t:v.currentTime, rs:v.readyState, shown: !v.closest('[hidden]') }; }")
             chk("desktop choosing iPhone shows the clip, and it plays", v["shown"] and v["rs"] >= 2 and v["t"] > 0.2, v)
+            cap = pg.evaluate("()=>{ const n=document.querySelector('#a2hs-sheet .a2hs-now'); return n ? getComputedStyle(n).display : 'none'; }")
+            chk("desktop the steps sit beside the clip, so no step is repeated under it (%s)" % cap, cap == "none", cap)
             sheet_layout(pg, "sheet, iPhone chosen")
             pg.click("#a2hs-sheet .a2hs-seg-computer"); pg.wait_for_timeout(300)
             chk("desktop choosing Computer again pauses the clip", pg.evaluate("()=>document.querySelector('#a2hs-sheet video').paused"), "playing")

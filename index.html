@@ -36119,6 +36119,9 @@ html.is-browser{ --fade-paper: transparent; }
   .a2hs-yours{ padding:.1rem .45rem; border-radius:999px; font-size:.7rem; font-weight:800; letter-spacing:.04em; color:#1B1405; background:#FFC24A; }
   .a2hs-browser .a2hs-steps{ margin-top:.35rem; }
   .a2hs-browser .a2hs-step{ padding:.3rem 0; font-size:.92rem; }
+  .a2hs-now{ display:flex; flex-direction:column; align-items:center; gap:.2rem; box-sizing:border-box; max-width:21rem; min-height:3.6rem; margin:.8rem auto 0; padding:0 .5rem; text-align:center; }
+  .a2hs-now-n{ font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#FFC24A; font-variant-numeric:tabular-nums; }
+  .a2hs-now-t{ font-size:.98rem; font-weight:600; line-height:1.38; color:#F3F5F7; }
   .a2hs-address{ display:inline-block; margin-top:.25rem; padding:.15rem .45rem; border-radius:8px; font-family:var(--mono); font-size:.84rem; color:#F3F5F7; background:var(--surface-inset); overflow-wrap:anywhere; }
   @media (min-width:40rem){
     .a2hs-sheet{ max-width:40rem; }
@@ -36126,6 +36129,7 @@ html.is-browser{ --fade-paper: transparent; }
     .a2hs-foot{ padding:.75rem 1.6rem 1.15rem; }
     .a2hs-row{ display:flex; gap:1.5rem; align-items:flex-start; }
     .a2hs-row .a2hs-phone{ margin:0; }
+    .a2hs-row .a2hs-now{ display:none; }
     .a2hs-row .a2hs-steps{ flex:1 1 auto; margin-top:0; }
     .a2hs-browsers{ display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
     .a2hs-browsers .a2hs-browser{ margin:0; }
@@ -84029,7 +84033,21 @@ function showHomeScreenSheet(opts){
   playBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.2v13.6L18.6 12z" fill="currentColor"/></svg>';
   frame.appendChild(playBtn);
   const appleSteps = steps(A2HS_STEPS_APPLE);
-  row.append(frame, appleSteps.ol);
+  /* a phone: the list sits under the clip, mostly below the fold, so the step the clip is on is said right under it
+     (build 384; on an iPad or a computer the list is beside the clip and this is hidden) */
+  const now = mk("div", "a2hs-now"); now.setAttribute("aria-hidden", "true");
+  const nowN = mk("span", "a2hs-now-n"), nowT = mk("span", "a2hs-now-t");
+  now.append(nowN, nowT);
+  let nowAt = -1;
+  const showNow = i => {
+    if(i === nowAt) return; nowAt = i;
+    nowN.textContent = "Step " + (i + 1) + " of " + appleSteps.items.length;
+    const m = appleSteps.items[i].querySelector(".a2hs-step-main");
+    nowT.replaceChildren(m ? m.cloneNode(true) : document.createTextNode(""));
+    try{ if(now.isConnected && now.offsetParent) now.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 220, easing: "ease-out" }); }catch(e){}
+  };
+  showNow(0);
+  row.append(frame, now, appleSteps.ol);
   const hasCode = !!(syncCode && !syncOff && store && store.onboardingComplete);
   apple.append(row, mk("p", "a2hs-note",
     standalone ? "These steps are for adding Nova on another iPhone or iPad."
@@ -84100,6 +84118,9 @@ function showHomeScreenSheet(opts){
       if(on) step = p.step;
     });
     appleSteps.items.forEach((li, i) => { const on = i === step; if(li.classList.contains("is-now") !== on) li.classList.toggle("is-now", on); });
+    /* the caption keeps the step the clip is on between pointers too (the last one begun), step 1 before the first */
+    let capStep = 0; A2HS_POINTERS.forEach(p => { if(t >= p.from) capStep = p.step; });
+    showNow(capStep);
     if(!video.paused && !video.ended) raf = requestAnimationFrame(tick);
   };
   const kick = () => { if(!raf && !closed) raf = requestAnimationFrame(tick); };

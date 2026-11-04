@@ -32868,3 +32868,16 @@ button. A pointer for "open as web app" ensuring it's on."
 - LEFT FOR MADISON: the copy and the moment (after the tips, not inside Nova's talk); whether EXISTING accounts that still use
   Nova in a Safari tab should be offered it once too (not done: he asked for sign-up); the clip is iOS 26's share sheet -
   older iOS lists Add to Home Screen lower (step 2's note covers it).
+
+### Build 384 - Add to Home Screen merged; the step said under the clip on a phone
+- Merged the helper's Add to Home Screen pop-up (b46b17f). Its gate's sign-up walk now taps the "Enroll in ...?" confirm
+  (showClassEnrollConfirm) after Continue; builds without it go straight on.
+- Looking at the recording: on a phone the five written steps sit under the clip, and only step 1 is above the fold, so the
+  lit step (is-now) could not be seen while the clip moved on to Share, Add to Home Screen and Add. Added `.a2hs-now` under
+  the clip: "Step N of 5" (amber, like the pointers) and that step's words (a clone of its `.a2hs-step-main`, icons and all),
+  following the clip's clock - between pointers it keeps the last step begun, step 1 before the first. Fixed min-height so
+  nothing jumps; it fades in on a change (opacity/transform). aria-hidden (the list is the readable version). Hidden at
+  min-width:40rem, where the list sits beside the clip.
+- check-b384-a2hs: at each pointer's time the caption is shown, 0-24px under the clip, in view, says the pointer's step of
+  the list's count, and its words are the lit step's; on the laptop it is display:none. Against b46b17f the six caption
+  checks FAIL.
