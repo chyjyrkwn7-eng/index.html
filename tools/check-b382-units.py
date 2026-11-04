@@ -17,7 +17,7 @@ inflate) times 4. (Chromium's own CPU throttle is not used for these: its pauses
 Look and shape:
  (4) no card has a backdrop-filter, and no card's badge has a filter (the old badge carried two drop-shadows inside a card that scales);
  (5) a picked card reads as picked: its fill is lighter than an unpicked card's (luminance step >= 6 of 255 at the same spot), its
-     border is the accent, and its tick circle shows;
+     mark (383: the green dot) shows, and its border is the accent / the dot's green - or, in 383's clean look, no border at all;
  (6) every control on the screen is at least 44px tall: the level tabs, Select all, Review's Starred (Select all and Starred were 40);
  (7) (Madison, with the new Settings: "that clean clean clean CLEAN IOS apple look") the levels are a flat iOS segmented control
      (no frost, rounded corners rather than a pill), centred; (383: "this screen looks so much different than every other screen")
@@ -212,8 +212,11 @@ with sync_playwright() as pw:
     # (--pick-dot, #34C759 at 70%), not the theme accent
     green = [52, 199, 89]
     border_is_accent = sum(abs(a - b) for a, b in zip(acc, bc)) < 90 or sum(abs(a - b) for a, b in zip(green, bc)) < 90
-    chk("(5) a picked card reads as picked: fill %.1f vs %.1f (step >= 6), a picked edge - the accent or (383) the dot's green - (%s vs %s), its mark shows (%s)" % (lon, loff, shape["bc"], shape["accRGB"], shape["tickShown"]),
-        lon - loff >= 6 and border_is_accent and shape["tickShown"], [lon, loff])
+    # REVISED AGAIN IN 383 round 2 (the clean look: "We want simplicity and nothing overly distracting outside the main menu"):
+    # a picked card is a step lighter and carries the green dot, with no edge at all - the edge is no longer asked for there
+    clean = bc.count(0) == 3 and "rgba(0, 0, 0, 0)" in shape["bc"]
+    chk("(5) a picked card reads as picked: fill %.1f vs %.1f (step >= 6), its mark shows (%s), and an edge only where the look has one - the accent or the dot's green (%s vs %s; none in 383's clean look)" % (lon, loff, shape["tickShown"], shape["bc"], shape["accRGB"]),
+        lon - loff >= 6 and (border_is_accent or clean) and shape["tickShown"], [lon, loff])
     # Review: Select all and Starred
     pg.evaluate("()=>{ cfg.mode='review'; cfg.units=[]; showSetup(); }"); pg.wait_for_timeout(1500)
     rv = pg.evaluate("()=>({ sa: Math.round(document.querySelector('.selall-btn').getBoundingClientRect().height), st: Math.round((document.querySelector('.starred-pill')||{getBoundingClientRect:()=>({height:0})}).getBoundingClientRect().height) })")
