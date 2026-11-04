@@ -31624,3 +31624,29 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   it asked for four and failed the same on 382).
 - Seen, not changed: in a book crop the pale wash starts ~55px left of the text on some definitions (the kit's viewer, byte-identical
   to the kit; the kit's own acceptance run passed at 330).
+
+### Build 383, round 3 (cont.) - the full gate run, and the media pack for Madison
+- GATES on 1c6188e (index.html unchanged since), one at a time: check-b383-look, -signup, -ifcbook (PDFJS_DIR + IFC_BOOK), check-b333
+  (PDFJS_DIR), -flashcards, -ifcsync, check-sync, check-b382-ioslook, -profile, -classes, -modeselect, -review, -toggles, -tabslide,
+  -slide, check-b382, -screens, -settings, -badges, -firstrun, -ios, -toggles, check-b327z5-d, -z10, check-curve, check-results
+  ALL PASS; sweep-layout --quick 14/14. Gates REVISED for the clean look (they asked for the glass Madison had removed):
+  check-b382-units (5) (no edge asked where the look has none; the step lighter and the green dot still are), check-b327-d
+  surfaces (beyond Home the card, the search field and the chat button solid, no frost, the field the card's colour; the tab bar
+  keeps its frost), check-b327z15 T (a color(srgb) value read 0-1, not 0-255 - the clean card read as black; Find me the field's
+  own colour) and EE (Profile's three cards one fill and one rim, or the old slab). All four pass after.
+  The same on earlier builds, not this round: check-fixes' SE (1st gen) 568x260 grey bar (7 levels); check-b327t D1 (3.04);
+  check-b327-d's Oct 27 next test and Home line icons; check-b327z15 F / G (66 of 153, 12 of 18 - ec40930 74 / 14), BB (Welcome's
+  bottom edge in a Safari tab off by 11), DD (its walk never answers the save-your-code card, so the tips never start in it - the
+  card and the tips are checked by check-b383-signup and seen in the videos) and FF (waits for Welcome's I'm new here where 382
+  does not show it): BB, DD and FF fail identically on 382 (a330ee8, origin/main).
+- MEDIA (scratchpad only, made-up names - "Alex Rivera", made-up classmates - never the repo): screenshots of every screen on the
+  iPhone 17 Pro Max (62), a MacBook-sized laptop (62) and the iPad Pro 11" (48), an account with test history, study time and
+  badges; Customize's pickers as earned and with everything unlocked (the lock functions overridden in the page, for the pictures
+  only). Sign-up videos with the app's own sound, from the link opened to Home: iPhone Safari tab (3m12s) and laptop (3m11s),
+  each with a still per step. The five hundo effects and Home's unlock cards (record-sound; its seeded name swapped to the made-up
+  one for that clip). Audio raised 9-14 dB with a limiter (the engine's own mix peaks at -11 to -18 dBFS). In a Safari tab the
+  Home ambience never plays (check-b327z15 II, by design) - the installed app has it.
+- NEW TOOL tools/record-signup.py: record-sound's machinery with its page clock as an INIT script, so the recording starts before
+  the app's first line - the splash, Welcome to NOVA (scrolled section by section), every step, Nova (name, partner, the
+  save-your-code card), the tips, Home - on the video's clock, with the app's own sound. --device phone (an iPhone Safari tab,
+  440x838) | laptop (1440x820).
