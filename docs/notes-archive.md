@@ -33718,3 +33718,20 @@ all.." (his earlier ask: "The top three on the leaderboard (last weeks top 3) en
 - ONLY HIS PHONE CAN CONFIRM: the metal tints on the real glass at 3x (the gold step reads warm-khaki in Chromium); the outline
   ring's gap on WebKit (Safari 16.4+ follows border-radius); SF Pro's widths (the pill and the names were measured with
   Chromium's font).
+
+### The retired Nova-Test site now loads the live app (November 4)
+- A classmate's phone had been stuck on build 97 since Sep 22: its Home Screen icon was added from the retired test site
+  (chyjyrkwn7-eng.github.io/Nova-Test/), which GitHub Pages still served, and build 97's update check reads version.json from
+  that same site - frozen at 97 - so it never updated, never followed the merge note waiting on its old account (Oct 2), and
+  kept publishing its sync code as a code-keyed rankings row. (The server side of the merge was already right.)
+- Fix (Madison unarchived Nova-Test and allowed the push; commit 400a3b8 on Nova-Test's main): its index.html is now a loader -
+  it fetches /index.html/index.html and runs it at that address with <base href="/index.html/">, so such an icon opens the
+  CURRENT live app with its own saved account (same keys; FRESH_START is 0, so nothing is wiped); every file and the update
+  check come from the live site, and an update's reload goes back through the loader; if the fetch fails it goes to
+  /index.html/ keeping search and hash. Its version.json names a new build ("2026-11-04-moved", frameId "") so a running build
+  97 offers its own Update banner. A README says what the site is and not to archive it without the loader.
+- Tested here with the live 383 and the 384 branch served as Pages serves them (the loader at /Nova-Test/, the app at
+  /index.html/): a build-97 device's account comes up on Home signed in, no page errors, version.json from /index.html/, the
+  same after an update reload, and the fallback. The merge-note follow is the app's own (check-behaviour b279, check-sync 8d).
+- AFTER THE PHONE FOLLOWS (the note marked done, the old account no longer written): delete the code-keyed rankings row and
+  retire the old account, so the exposed code opens nothing. KEEP Nova-Test unarchived with the loader in place.
