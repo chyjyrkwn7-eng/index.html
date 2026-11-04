@@ -9,7 +9,10 @@ installed). Shapes and counts, never frame times:
        screen, or within a screen and a half below it, still unlaid-out (content-visibility skipped);
     b. opened and left alone (CPU at full speed): every question of the unit is laid out within 25s;
     c. that pass works in slices (its own log, window.__rqLog): more than one, none laying out more than 64 questions - never the
-       whole unit in one task; the slowest slice's time is printed as INFO.
+       whole unit in one task; the slowest slice's time is printed as INFO;
+    d. Safari's way (no scroll anchoring, emulated: overflow-anchor off and CSS.supports saying so), the iPhone, academy: opened and
+       at once jumped 30,000px down - the question in the middle of the screen moves no more than 2px over 12s while every question
+       above and below it is laid out.
 (2) A TRIP TO PROFILE AND BACK TO HOME (real taps on the bar): no whole-page style pass forced by the status-bar colour read
     (a style recalc over more than half the page whose stack is cssColorHexNow) - on the installed iPhone and the laptop; and on the
     laptop no write of --tabbar-half on <html> (a custom property every element inherits) while Home's width for the bar is unchanged.
@@ -86,9 +89,10 @@ def init_js(cls):
         for k in SEEN: s += "localStorage.setItem('class26e.ifc.%s','1');" % k
         s += "localStorage.setItem('class26e.ifc.drill.v1', %s);" % json.dumps(json.dumps(ifc))
     return s + " }catch(e){} })()"
-def open_page(br, dev, cls):
+def open_page(br, dev, cls, extra=()):
     ctx = br.new_context(**DEV[dev])
     if dev == "phone": ctx.add_init_script(NO_RIC); ctx.add_init_script(STANDALONE)
+    for e in extra: ctx.add_init_script(e)
     ctx.add_init_script(FAKE); ctx.add_init_script(init_js(cls))
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
@@ -194,6 +198,25 @@ with sync_playwright() as pw:
                 pg.evaluate("()=>showHome()"); pg.wait_for_timeout(1500); t_open.append(pg.evaluate(OPEN, unit))
             info("(1) %s %s: Review open to its second frame (full CPU) %s ms" % (cls, dev, t_open))
             ALLERR.extend(errs); ctx.close()
+        # d: Safari's way - no scroll anchoring. Jumped far down right after opening, the question in the middle of the screen
+        # stays where it is while everything above it is laid out (the page moves by what they grew, at once)
+        NOANCHOR = """(()=>{ const s = CSS.supports.bind(CSS); CSS.supports = function(a){ if(String(a).indexOf('overflow-anchor') >= 0) return false; return s.apply(CSS, arguments); };
+          addEventListener('DOMContentLoaded', () => { const st = document.createElement('style'); st.textContent = 'html, body, *{ overflow-anchor:none !important; }'; document.head.appendChild(st); }); })()"""
+        ctx, pg, cdp, errs = open_page(br, "phone", "academy", extra=(NOANCHOR,))
+        pg.wait_for_timeout(5000)
+        unit, n = pg.evaluate(BIGGEST)
+        pg.evaluate(REVIEW_PROBE)
+        pg.evaluate("(u)=>{ window.scrollTo(0,0); showAnswerReview([u], 'all', null); }", unit); pg.wait_for_timeout(60)
+        pg.evaluate("()=>window.scrollTo({ top: 30000, behavior: 'instant' })"); pg.wait_for_timeout(200)
+        pg.evaluate("""()=>{ const mid = innerHeight / 2; window.__mark = __rvRows().find(q => { const b = q.getBoundingClientRect(); return b.top < mid && b.bottom > mid; });
+          window.__tops = []; const t0 = performance.now();
+          const f = () => { if(window.__mark) window.__tops.push(window.__mark.getBoundingClientRect().top); if(performance.now() - t0 < 12000) requestAnimationFrame(f); }; requestAnimationFrame(f); }""")
+        pg.wait_for_timeout(12500)
+        tops = pg.evaluate("()=>window.__tops"); left = pg.evaluate("()=>__rvRows().filter(__rvSkipped).length")
+        moved = (max(tops) - min(tops)) if tops else -1
+        chk("(1d) no scroll anchoring (Safari), jumped to 30,000px just after opening: the question mid-screen moves %.1fpx while the %d above and below are laid out (%d still not)" % (moved, n, left),
+            tops and moved <= 2 and left == 0, [moved, left, tops[:3], tops[-3:]])
+        ALLERR.extend(errs); ctx.close()
     # ---------------------------------------------------------------- (2) a trip to Profile and back to Home
     if want(2):
         for dev in ("phone", "laptop"):

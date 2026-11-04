@@ -139884,7 +139884,7 @@ function buildCalendarPane(panel){
    - a pass lays out the questions in small slices (about 6ms each, timed; on a timer, so it goes on while a finger scrolls - Safari's
      idle stand-in waits for the finger to lift), from the screen down, then the ones above; a question laid out above the screen
      in a browser with no scroll anchoring (Safari) moves the page by what it grew, so nothing on screen moves;
-   - meanwhile any question within two screens of the view is laid out at once (an IntersectionObserver), so a fast scroll straight
+   - meanwhile any question within three screens of the view is laid out at once (an IntersectionObserver), so a fast scroll straight
      after opening never meets one either;
    - a unit opened later, or a search that reaches one, starts it again once that unit's slide has settled.
    A laid-out question keeps content-visibility:visible (.rq-on) for as long as the list lives. */
@@ -139903,7 +139903,7 @@ function reviewRenderAhead(list){
       if(!list.isConnected){ stop(); return; }
       /* only those at or below the top of the screen: one above it is the pass's (it keeps the page still) */
       es.forEach(e => { if(e.isIntersecting && e.boundingClientRect.top >= 0 && ready(e.target)) turnOn(e.target); });
-    }, { rootMargin: "200% 0px 200% 0px" });
+    }, { rootMargin: "300% 0px 300% 0px" });
     list.querySelectorAll(".review-question:not(.rq-on)").forEach(r => st.io.observe(r));
   };
   const stop = () => { clearTimeout(st.timer); st.timer = 0; if(st.io){ try{ st.io.disconnect(); }catch(e){} st.io = null; } };
@@ -139927,7 +139927,16 @@ function reviewRenderAhead(list){
     batch.forEach(turnOn);
     /* lay this slice out now, inside its own slice of time, and see what it cost */
     void batch[batch.length - 1].offsetHeight;
-    if(above.length){ let grew = 0; above.forEach((r, i) => { grew += r.getBoundingClientRect().height - was[i]; }); if(Math.abs(grew) >= .5) window.scrollBy(0, grew); }
+    if(above.length){
+      let grew = 0; above.forEach((r, i) => { grew += r.getBoundingClientRect().height - was[i]; });
+      /* at once, never the root's smooth glide (scroll-behavior:smooth since 284 - a glide here was cut short by the next one) */
+      if(Math.abs(grew) >= .5){
+        const de = document.documentElement, prev = de.style.scrollBehavior;
+        de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior;
+        try{ window.scrollBy(0, grew); }catch(e){}
+        de.style.scrollBehavior = prev;
+      }
+    }
     const dt = performance.now() - t0;
     if(window.__rqLog) window.__rqLog.push([batch.length, Math.round(dt * 10) / 10]);
     st.per = dt < 3 ? Math.min(64, st.per * 2) : dt > 9 ? Math.max(1, Math.floor(st.per / 2)) : st.per;

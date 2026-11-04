@@ -33621,7 +33621,7 @@ WHAT CHANGED (worst first; nothing looks different - screenshots of the touched 
    before any above it; those above wait until the page has not scrolled for 250ms (reviewScrollAt), and in a browser without scroll
    anchoring - Safari - the page then moves by what they grew, so nothing on screen moves (a programmatic scroll during a fling
    would end an iPhone's fling, hence the wait; in the normal top-down read they were laid out on the way down anyway);
-   meanwhile an IntersectionObserver lays out any question within two screens of the view at once. A unit opened by its header
+   meanwhile an IntersectionObserver lays out any question within three screens of the view at once. A unit opened by its header
    (after its slide), a search, and Resume from Pause start it again; it stops when the list leaves the page. A laid-out question
    is content-visibility:visible WITH contain:layout style paint - the containment a laid-out `auto` element keeps; without it the
    first try moved the text inside every card by 1px (margins collapse differently), caught by the pixel comparison below.
