@@ -167,11 +167,18 @@ boff = [n for n in ["Station 26", "Ladder 26", "The Crew", "Tower Ladder", "Nigh
 chk("no firehouse, engine, ladder, crew, helmet or round-2 ultimate banner is left (%s)" % boff, not boff, boff)
 chk("a headquarters, two hazmat banners, an alarm panel and an exit banner are there", all(n in F["bnames"].values() for n in ["Headquarters", "Spill Response", "Hazmat", "Alarm Panel", "Exit"]), sorted(F["bnames"].values()))
 afx, ffx = dict((r[0], r) for r in A["fx"]), dict((r[0], r) for r in F["fx"])
-chk("the hundo ladder keeps its ids and counts in Fire Code (%s)" % F["fx"], [(r[0], r[2]) for r in A["fx"]] == [(r[0], r[2]) for r in F["fx"]])
+# (384) Fire Code's own counts: "the amount of hundos needed to get the stuff could be lowered. Like increments of 25, 50, 75, 150?"
+# Same rungs in the same order; its counts climb, none above the academy's, and the rungs past Confetti are lower (read off the page)
+ladA, ladF = [(r[0], r[2]) for r in A["fx"]], [(r[0], r[2]) for r in F["fx"]]
+cntF = [n for _, n in ladF]
+chk("the hundo ladder keeps its ids in Fire Code, with its own lower counts (%s against %s)" % (ladF, ladA),
+    [i for i, _ in ladA] == [i for i, _ in ladF] and cntF == sorted(cntF) and len(set(cntF)) == len(cntF)
+    and all(f <= a for (_, f), (_, a) in zip(ladF, ladA)) and all(f < a for (i, f), (_, a) in zip(ladF, ladA) if i != "confetti"), (ladF, ladA))
 chk("Confetti, the default, is the same in both classes", afx["confetti"] == ffx["confetti"] and F["fxBuild"]["confetti"] == "celebrate")
 newfx = [i for i in ffx if i != "confetti" and (ffx[i][1] == afx[i][1] or F["fxBuild"][i] == A["fxBuild"][i])]
 chk("every other Fire Code hundo effect is new - its own name and its own build (same as academy: %s; %s)" % (newfx, F["fxBuild"]), not newfx, newfx)
-chk("...and they are an extinguisher, sprinklers, hazmat and a fire alarm", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Extinguisher", "Fire Alarm", "Hazmat", "Sprinklers"], [ffx[i][1] for i in ffx])
+chk("...and they are an extinguisher, sprinklers, a thermal camera and hazmat (384: the Fire Alarm is gone)", sorted(ffx[i][1] for i in ffx if i != "confetti") == ["Extinguisher", "Hazmat", "Sprinklers", "Thermal Camera"], [ffx[i][1] for i in ffx])
+chk("...in that order up the ladder, Hazmat on top (%s)" % [ffx[r[0]][1] for r in F["fx"]], [r[1] for r in F["fx"] if r[0] != "confetti"] == ["Extinguisher", "Sprinklers", "Thermal Camera", "Hazmat"], F["fx"])
 acfx = [i for i in afx if A["fxBuild"][i] != {"confetti": "celebrate", "fireworks": "hfxFireworks", "underwater": "hfxUnderwater", "bubbles": "hfxBubbles", "ufo": "hfxUfo"}.get(i)]
 chk("the academy plays its own effects (%s)" % A["fxBuild"], not acfx, acfx)
 bad = [p for p in F["fxPlay"] if not F["fxBuild"].get(p["id"], "").startswith("ifx") or p.get("err") or p["screen"] < 8 or p["box"] < 2 or p["boxOnly"] < 6 or p["tile"] < 200 or p["still"] < 100]
@@ -210,9 +217,16 @@ chk("the 50 and the Fire Alarm were rebuilt in round 3 (unchanged since round 2:
 R3 = {"ifc": {"fxSrc": {"confetti": "", "fireworks": "bca3f472", "underwater": "9b316c94", "bubbles": "ecdfba36", "ufo": "51d48374"}}}
 same4 = [i for i in ("fireworks", "underwater", "bubbles", "ufo") if F["fxSrc"].get(i) == R3["ifc"]["fxSrc"].get(i)]
 chk("round 4 redraws all four Fire Code effects (unchanged since round 3: %s)" % same4, not same4, same4)
-chk("the 50 is the Extinguisher, its own build (%s, %s)" % (ffx["fireworks"][1], F["fxBuild"]["fireworks"]), ffx["fireworks"][1] == "Extinguisher" and F["fxBuild"]["fireworks"] == "ifxExtinguisher")
+chk("the first rung is the Extinguisher, its own build (%s, %s)" % (ffx["fireworks"][1], F["fxBuild"]["fireworks"]), ffx["fireworks"][1] == "Extinguisher" and F["fxBuild"]["fireworks"] == "ifxExtinguisher")
 moves = [(p["id"], p.get("props")) for p in F["fxPlay"] if not p.get("props") or any(x not in ("opacity", "transform") for x in p["props"])]
 heavy = [(p["id"], p.get("screen")) for p in F["fxPlay"] if (p.get("screen") or 0) > 170]
 chk("...and each moves only transform and opacity, no sprite has an svg filter, none puts up more than 170 pieces (%s; filters %s; %s)" % (moves, F.get("sprFilter"), [(p["id"], p.get("screen")) for p in F["fxPlay"]]),
     not same4 and not moves and not F.get("sprFilter") and not heavy, (moves, F.get("sprFilter"), heavy))
+# ---- round 5 (384): "Tighten up all of them where you can to ensure they perfect" ----
+# the four as round 4 left them (42bbffa, build 383, live): --dump on that code
+R4 = {"ifc": {"fxSrc": {"confetti": "", "fireworks": "ff0bb357", "underwater": "8e314e0", "bubbles": "6ecbf181", "ufo": "66edfbbf"}}}
+same5 = [i for i in ("fireworks", "underwater", "bubbles", "ufo") if F["fxSrc"].get(i) == R4["ifc"]["fxSrc"].get(i)]
+chk("round 5 rebuilds all four Fire Code effects (unchanged since 383: %s)" % same5, not same5, same5)
+chk("...the 75 is the Thermal Camera and the 150 Hazmat, each its own build (%s, %s)" % (F["fxBuild"].get("bubbles"), F["fxBuild"].get("ufo")),
+    F["fxBuild"].get("bubbles") == "ifxThermal" and F["fxBuild"].get("ufo") == "ifxHazmat")
 sys.exit(0 if ok else 1)

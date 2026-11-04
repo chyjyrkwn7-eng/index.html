@@ -32589,3 +32589,15 @@ runs straight into the toss and the aim starts as the pin flies), and the blast 
 Clips (phone and iPad, with the app's own sound, and before | after side by side on a phone) are in the session's scratchpad
 fx384/extspr/. Only a phone can confirm: smoothness at 120 Hz with the bigger rasters (sprites decoded once; flame 400x800,
 spray 900x585, ext 582x1280), that the three-spurt sputter reads as a sputter and not a flicker, and the score on the speaker.
+
+### Build 384 - round 5 merged: check-b382-ifcart re-pinned (NOT on main, waiting for Madison)
+
+- Merged on claude/b384: the Thermal Camera (75), Hazmat (150, 4f3d9c3), the Extinguisher and Sprinklers tightened (6b92d18).
+  Conflicts were the shared IFX_DEF / ifxSpr / ifxWarmList lines only: each effect keeps its own lines; the Fire Alarm's
+  sprites and Hazmat's unused vapour stay gone; jetFlow and steam join the set. check-b384-ifxnew 9/9, check-b384-hazmat
+  36/36, check-b384-extspr 18/18 on the merge.
+- check-b382-ifcart for round 5: "the hundo ladder keeps its ids and counts" became "keeps its ids, with its own lower counts"
+  (same rungs and order; Fire Code's counts climb, none above the academy's, every rung past Confetti lower - read off the page:
+  25/50/75/150 against 50/100/150/200); the four are Extinguisher, Sprinklers, Thermal Camera, Hazmat in that order up the
+  ladder; R4 = the four sources' hashes on 42bbffa (383, live, --dump there): all four differ now; bubbles plays ifxThermal and
+  ufo ifxHazmat. 45/45 here.
