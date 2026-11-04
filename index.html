@@ -87505,16 +87505,31 @@ function attachOrbitSheet(badge, svg, sp, g, fade, immediate){
   wrap.style.filter = g.filter; wrap.style.opacity = g.opacity;
   const frame = document.createElement("div");
   frame.className = "rk-frame";
-  frame.style.width = frame.style.height = g.cellCss + "px";
-  frame.style.marginLeft = frame.style.marginTop = (-g.cellCss / 2) + "px";
+  /* build 384: THE FLARES DO NOT SHAKE. "the stuff with the rank flares, if you can tell, they are shaking very very slightly but just
+     a noticeable amount." His 383 recording (Fire Code Home, 60 frames a second), each bubble tracked to a hundredth of a pixel: the
+     bubbles themselves float smoothly (0.02px off their path), the orbiting dots too; what moves is the emblem INSIDE each bubble,
+     at every step of its sheet (30 a second) - the whole drawing shifted by 0.1-0.5px, in a pattern that repeats every row of the sheet
+     (12 steps), so it shivered in place. Home's hero is drawn at 0.94 (a transform on .cosmic-hero-wrap), and the cell was sized so a
+     step is whole device pixels ON THE SCREEN (44.68 CSS px x 0.94 x 3 = 126) - but Safari paints a layer in its own coordinates at
+     the device's scale, whatever transforms are above it: there a step was 44.68 x 3 = 134.04 device pixels, and every column of the
+     sheet landed on a different fraction of a pixel. Now, under a scaled hero, the window is laid out in screen units (the cell 42 CSS
+     px, the bubble's own screen size) and scaled back by the inverse of the ancestors' scale: a step is 126 pixels in the window's own
+     paint as well as on the screen, every frame drawn on the same pixel grid. The same box on the screen as before. */
+  const dprS = Math.min(window.devicePixelRatio || 1, 2);
+  const unit = g.px > 0 && !g.plain ? g.px / dprS : g.cellCss;
+  const kInv = g.cellCss / unit;
+  const cell = Math.abs(kInv - 1) > .002 ? unit : g.cellCss;
+  frame.style.width = frame.style.height = cell + "px";
+  frame.style.marginLeft = frame.style.marginTop = (-cell / 2) + "px";
+  if(cell !== g.cellCss) frame.style.transform = "scale(" + kInv.toFixed(6) + ")";
   const img = document.createElement("img");
   /* build 357: DECODED OFF THE SCREEN CHANGE. A sheet is ~1000x1260px; four of them were decoded synchronously in the
      frame a Home arrived in (and on the main thread, in WebKit). The still emblem is already there to look at, so the
      sheet is decoded first and only then put on, crossfaded in as a late sheet always has been. */
   img.alt = ""; img.decoding = immediate ? "sync" : "async"; img.src = sp.url;
-  img.style.width = (sp.cols * g.cellCss) + "px";
-  img.style.height = (sp.rows * g.cellCss) + "px";
-  img.style.animation = orbitAnimKeyframes(g.cellCss, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
+  img.style.width = (sp.cols * cell) + "px";
+  img.style.height = (sp.rows * cell) + "px";
+  img.style.animation = orbitAnimKeyframes(cell, sp.cols, sp.n) + " " + ORBIT_ANIM_LOOP_MS + "ms step-end infinite";
   lbPaintKF(img);   /* build 380: its painted twin, for html.loops-paint */
   frame.appendChild(img);
   wrap.appendChild(frame);
@@ -93724,7 +93739,7 @@ function rankSceneEmblemAnims(hero){
       const put = (sp, fade) => {
         if(!sp || !badge.isConnected || badge.querySelector(".cosmic-rank-anim")) return;
         const op = getComputedStyle(svg).opacity;
-        attachOrbitSheet(badge, svg, sp, { px: sp.px, cellCss: W, filter: "", opacity: op }, fade, true);
+        attachOrbitSheet(badge, svg, sp, { px: sp.px, cellCss: W, filter: "", opacity: op, plain: true }, fade, true);
         const w = badge.querySelector(".cosmic-rank-anim");
         if(w){ w.style.opacity = ""; w.classList.add("is-scene"); syncLoopClock(w); }
       };
@@ -144211,6 +144226,8 @@ function tabPerfText(){
          is ever built. */
       /* Home locked to the Profile tab after a rank-up (build 317) */
       if(rankUpLockRefuses(dest)) return;
+      /* build 384: called from a slide's release (endTabDrag), not a tap's click */
+      const slideNav = !!bar._slideNav;
       /* build 356: A TAP SOON AFTER ANOTHER IS A RUN OF TAPS. Each one used to start its screen's build ~170ms after its
          press, so tapping through the tabs quickly built a screen under nearly every tap - each a long task that froze
          the glass and the page (his spam recording). A tap within half a second of the last one now waits a little
@@ -144260,7 +144277,13 @@ function tabPerfText(){
          highlight back if the navigation was refused (a confirm declined,
          a cutscene owed). */
       bar.querySelectorAll(".bottomtab").forEach(t => t.classList.toggle("active", t === tab));
-      slideBubbleToActiveTab();
+      /* build 384: A SLIDE'S RELEASE MEASURES NOTHING. Let go of a slide over this tab and the glass is held up over it (lensHoldFor) with
+         the platter hidden under it; the landing (lensRelease) puts the platter on this tab itself. Measuring it here read the bar's
+         boxes straight after the classes changed - a whole-page style pass and layout inside the release (the largest piece of the
+         release at 4x CPU on Home). The platter is only marked as this tab's, so syncActive after the build does not measure either. */
+      const slideHeld = slideNav && bar._lensHeld && bar._lensHeld() === tab;
+      if(slideHeld){ bubbleAt = tab; slider.classList.add("ready"); }
+      else slideBubbleToActiveTab();
       beginSettle();
       const perfRec = tabPerfStart(dest);
       /* The settle window restarts once the new screen is in (build 302):
@@ -144324,9 +144347,28 @@ function tabPerfText(){
            going it waits; the release then lands it (or replaces it with the tab let go on). Never more than 2s: the screen always
            follows (314). */
         const held0 = performance.now();
-        const run = () => { if(tabDragActive && tabDragMoved && performance.now() - held0 < 2000){ me.timers.push(setTimeout(run, 40)); return; } navRun(); };
+        const run = () => { if(navRan) return; if(tabDragActive && tabDragMoved && performance.now() - held0 < 2000){ me.timers.push(setTimeout(run, 40)); return; } navRun(); };
+        /* build 384: A SLIDE'S SCREEN IS BUILT AFTER THE FRAME THAT LETS GO. His 383 recording (Fire Code, 120fps, the glass read off
+           every frame): let go of a slide over Profile, Stats or Settings and the glass stood frozen where the finger left it for 3-6
+           frames (10 over Home), then the tab lit, the screen changed and the glass jumped, all in one frame. The release's frame -
+           the tab lit and the glass's hold track (lensHoldFor) - was never drawn before the build: the build was a 0ms timer, and
+           Safari runs a timer that is due before its next frame, so the whole build (Home ~170ms on his phone) went first and the
+           glass's track only reached the compositor after it. Now a slide's build waits for the next frame and runs straight after
+           it (a timer set inside requestAnimationFrame fires once that frame has been committed): the tab lights at once and the
+           glass glides onto it on the compositor while the screen is built. A frame held back (Low Power Mode, a page in the
+           background) never holds the build more than 50ms. Taps keep TAB_SCREEN_AFTER (their glide has been on the compositor
+           since the press). */
+        if(afterFrame){
+          afterFrame = false;
+          let went = false;
+          const afterIt = () => { if(went) return; went = true; me.timers.push(setTimeout(run, rapidRun)); };
+          requestAnimationFrame(afterIt);
+          me.timers.push(setTimeout(afterIt, 50));
+          return;
+        }
         me.timers.push(setTimeout(run, wait));
       };
+      let afterFrame = slideNav;
       me.cancel = () => { navRan = true; me.timers.forEach(clearTimeout); };
       bar._navPend = me;
       me.schedule();
@@ -144888,7 +144930,8 @@ function tabPerfText(){
     /* build 375: let go over the tab that is already lit, a slide changes nothing - it used to go through the tab's own tap, which
        scrolls a screen that is up back to its top ("if you swipe but don't end up swiping to another, the page scrolls back to the top") */
     if(tab && tab.classList.contains("active")){ slideBubbleToActiveTab(true); return; }
-    if(tab && tab._navigate && bar.dataset.navigating !== "1") tab._navigate();
+    /* build 384: _navigate knows it is a slide's release (its screen is built after the frame that lets go, and it measures nothing) */
+    if(tab && tab._navigate && bar.dataset.navigating !== "1"){ bar._slideNav = true; try{ tab._navigate(); } finally{ bar._slideNav = false; } }
     else if(tab && tabDests[tab.id] && bar.dataset.navigating !== "1"){
       bar.dataset.navigating = "1";
       setTimeout(() => { bar.dataset.navigating = "0"; }, 130);
@@ -145219,6 +145262,14 @@ function tabPerfText(){
     return sx.toFixed(4) + " 1.043";
   }
   function lensBarSwell(pts){
+    /* build 384: THE GLASS UNDER THE FINGER, NOT 10PX BEHIND IT ON HOME. The row is measured once a touch (lensRowGeo, 382) - and the
+       press measured it BEFORE this swell began (lensDown finds the pressed tab first). A finger that rested longer than the swell
+       (160ms) before it slid found no swell running and that reading still marked "taken at rest", so the whole slide mapped the
+       finger through the unswollen bar: measured with a finger held still, the glass 10.0px LEFT of it at Home's centre, 6.3 a tab
+       on, 0 mid-bar and 2.4 right of it on the Leaderboard - behind the finger sliding out of Home, a little behind out of Profile,
+       ahead on the far side ("a delay when sliding on home, maybe slightly sliding on profile"); check-b382-slide (3) had read it on
+       Home since 382 (8.6-9.1px behind) and put it down to load. The swell changes the row's box, so a new swell drops the reading. */
+    lensGeo = null;
     if(bar._swell){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
     if(!canAnim || !pts || window.__noSwell) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
@@ -145516,6 +145567,8 @@ function tabPerfText(){
   }
   let lensAwait = null;
   function lensAwaitClear(){ if(lensAwait){ clearTimeout(lensAwait.timer); lensAwait = null; } }
+  /* build 384: the tab the glass is held up over for its screen, if any (navigateTab leaves the platter to the landing then) */
+  bar._lensHeld = () => (lensAwait && lens.classList.contains("is-up") ? lensAwait.tab : null);
   bar._lensAwaitScreen = () => {
     if(!LENS_AWAIT_ON) return;
     if(lensAwait || !lensG || !lensAt || lensFollow || tabDragActive || !lens.classList.contains("is-up")) return;
