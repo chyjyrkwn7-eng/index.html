@@ -17,6 +17,70 @@
     font-size:var(--field-floor, 19px) !important;
   }
 </style>
+<script>
+  /* INTERNET EXPLORER (build 384). Nova cannot run in it (custom properties, color-mix(), modern script throughout), and
+     Microsoft has retired it: on Windows 10 and 11 it hands pages to Edge. In IE only (document.documentMode, or MSIE /
+     Trident in the user agent) this stops the page loading and puts up one plain message with a button that opens this same
+     address in Microsoft Edge (the microsoft-edge: scheme), and a line naming the browsers that work. Written as ES3 - var,
+     function, no arrow, no let/const, no trailing commas - so IE parses it; the first script in the page, so it runs before
+     anything IE would fail on. Every other browser leaves at the first line. */
+  (function(){
+    var ua = navigator.userAgent || "";
+    if(!(document.documentMode || /MSIE |Trident\//.test(ua))) return;
+    window.NOVA_OLD_BROWSER = true;
+    try{ document.execCommand("Stop"); }catch(e){}   /* IE's own way to stop loading the rest of this 9MB page */
+    try{ if(window.stop) window.stop(); }catch(e){}  /* (not in IE; what a browser pretending to be IE does instead) */
+    var here = String(location.href).split("#")[0];
+    var shown = false;
+    function el(tag, text, css){
+      var n = document.createElement(tag);
+      if(text) n.appendChild(document.createTextNode(text));
+      if(css) n.style.cssText = css;
+      return n;
+    }
+    function render(){
+      if(shown) return;
+      var root = document.documentElement, body = document.body;
+      if(!root) return;
+      if(!body){ body = document.createElement("body"); root.appendChild(body); }
+      shown = true;
+      try{ document.title = "Nova"; }catch(e){}
+      root.style.cssText = "background:#0A0A0A;";
+      body.style.cssText = "margin:0;background:#0A0A0A;color:#F4F0EC;font-family:'Segoe UI',Arial,sans-serif;";
+      while(body.firstChild) body.removeChild(body.firstChild);
+      var box = el("div", "", "max-width:34em;margin:12% auto 0;padding:0 24px;text-align:center;line-height:1.5;");
+      box.id = "nova-old-browser";
+      box.appendChild(el("p", "NOVA", "margin:0 0 18px;font-size:14px;letter-spacing:6px;color:#C9A86A;"));
+      box.appendChild(el("h1", "Nova needs a current browser", "margin:0 0 14px;font-size:26px;font-weight:600;"));
+      box.appendChild(el("p", "Internet Explorer cannot run Nova. Open this page in Microsoft Edge, which is already on this computer.", "margin:0 0 26px;font-size:16px;color:#C8C2BC;"));
+      var a = el("a", "Open in Microsoft Edge", "display:inline-block;padding:14px 28px;border-radius:999px;background:#F4F0EC;color:#111111;font-size:16px;font-weight:600;text-decoration:none;");
+      a.id = "nova-open-edge";
+      a.setAttribute("href", "microsoft-edge:" + here);
+      box.appendChild(a);
+      box.appendChild(el("p", "Or use a current version of Chrome, Edge, Safari or Firefox.", "margin:26px 0 8px;font-size:15px;color:#C8C2BC;"));
+      box.appendChild(el("p", here, "margin:0;font-size:13px;color:#8F8983;word-wrap:break-word;"));
+      body.appendChild(box);
+    }
+    /* and if IE goes on parsing what it has already downloaded, nothing of the app shows beside the message */
+    try{
+      var st = document.createElement("style"), rule = "body > *{display:none !important;} body > #nova-old-browser{display:block !important;}";
+      st.setAttribute("type", "text/css");
+      if(st.styleSheet){ document.getElementsByTagName("head")[0].appendChild(st); st.styleSheet.cssText = rule; }
+      else { st.appendChild(document.createTextNode(rule)); document.getElementsByTagName("head")[0].appendChild(st); }
+    }catch(e){}
+    render();
+    if(!shown){
+      var tries = 0;
+      var timer = setInterval(function(){ tries++; render(); if(shown || tries > 100) clearInterval(timer); }, 30);
+    }
+    function settle(){
+      var box = document.getElementById("nova-old-browser");
+      if(!box){ shown = false; render(); }
+    }
+    if(window.attachEvent) window.attachEvent("onload", settle);
+    else if(window.addEventListener) window.addEventListener("load", settle, false);
+  })();
+</script>
 <!-- Two separate mechanisms, both aimed at the same symptom: a brief
      white flash on launch, reported as landing right before the splash
      appears.
@@ -214,6 +278,9 @@
 <!-- /share-card -->
 <link rel="apple-touch-icon" sizes="180x180" href="https://chyjyrkwn7-eng.github.io/index.html/share/apple-touch-icon.png?v=381">
 <link rel="icon" href="data:image/png;base64,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">
+<link rel="icon" type="image/png" sizes="16x16" href="share/favicon-16.png?v=384">
+<link rel="icon" type="image/png" sizes="32x32" href="share/favicon-32.png?v=384">
+<link rel="icon" type="image/png" sizes="192x192" href="share/icon-192.png?v=384">
 <!-- The manifest carries its own theme_color, and it must stay in step
      with the meta tag above: iOS 16.4+ reads the manifest for an installed
      app and can prefer this value, so a stale one here reinstates the grey
@@ -33150,6 +33217,49 @@ html.is-browser .edge-tint{
 }
 html.is-browser #edge-tint-top{ top:0; }
 html.is-browser #edge-tint-bottom{ bottom:0; }
+/* SAFARI'S BARS OVER THE PAGE (build 384) - see safariBarsReading(). Only when an iPhone or iPad tab's page runs under Safari's
+   bars (html.safari-bars-over, --sb-top / --sb-bottom: the bars' modelled depth from each edge, CSS px). Nothing here applies
+   in the state measured off Madison's own Safari frame (bars outside the page), in the installed app, on a laptop or Android.
+   - The tab bar's lift is the toolbar's depth + 8px; everything placed against the bar (the Start pill, Next, the daily
+     question, back to top) is written as --tabs-bottom + its own offset, so it rises with it, and the page's reservation for
+     the bar (--tabs-drop, --panel-reserve, .wrap's padding with the bar) grows by the same amount: the last row still scrolls
+     clear of the bar.
+   - A screen without the bar keeps the toolbar's depth free at its end (.wrap's bottom margin), so its last control scrolls
+     above the toolbar.
+   - At the top, what the safe-area inset does not already cover (the iPad's Safari bar; an iPhone's status bar when Safari
+     gives no inset) moves the page and the controls pinned to the top down by that much. */
+html.is-browser.safari-bars-over{
+  --sb-top-x: max(0px, calc(var(--sb-top, 0px) - env(safe-area-inset-top, 0px)));
+  --sb-bottom-x: max(0px, calc(var(--sb-bottom, 0px) - env(safe-area-inset-bottom, 0px)));
+  --tabs-bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) - 12px), calc(env(safe-area-inset-bottom, 0px) * .6), calc(var(--sb-bottom, 0px) + 8px));
+}
+@media (min-width:40rem){
+  html.is-browser.safari-bars-over{ --tabs-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) - 4px), calc(var(--sb-bottom, 0px) + 8px)); }
+}
+html.is-browser.safari-bars-over .wrap{ margin-top:var(--sb-top-x); }
+html.is-browser.safari-bars-over body:not(.has-bottomtabs) .wrap{ margin-bottom:var(--sb-bottom, 0px); }
+/* the controls and notices pinned to the top: a margin moves a fixed box down from its top without touching its own
+   transforms (the chat button's keyboard shift, the banners' drop-ins); the test's sticky bar sticks that much lower */
+html.is-browser.safari-bars-over :is(.chatdock-btn, .chatdock-panel, .roomchat-fab, .vroom-chat-alert, .update-banner, .daily-alert,
+  .tierup-banner, .battle-alert, .streak-pop, .welcome-build, .class-bubble-wrap, .homeversion, .toast, .toast-flag, #pausebtn,
+  .wrap.race-pinned > #vroomracebar){ margin-top:var(--sb-top-x); }
+@media (min-width:40rem){
+  html.is-browser.safari-bars-over[data-layout="modern"] .top{ top:calc(.6rem + var(--sb-top-x)); }
+}
+/* the page's name in the top-left corner on a wide screen (absolute from the page's top, so .wrap's margin does not move it;
+   the same query as that layout - elsewhere it is in the page and moves with .wrap) */
+@media (min-width:64rem) and (min-aspect-ratio:5/4){
+  html.is-browser.safari-bars-over.safari-bars-over[data-layout] body .wrap:not(:has(> .meter:not([hidden]))) > #count{ margin-top:var(--sb-top-x); }
+}
+/* a test's header, pinned where it rests (syncTestPin measures .wrap's padding, not the margin above it) */
+html.is-browser.safari-bars-over[data-layout="modern"] .wrap.test-pinned > .top{ top:calc(var(--test-top-y, 1.25rem) + var(--sb-top-x)); }
+/* and the notices pinned to the bottom sit above the toolbar */
+html.is-browser.safari-bars-over :is(.toast, .vroom-prep){ margin-bottom:calc(var(--sb-bottom-x) + 8px); }
+/* Welcome is measured to end just over the home indicator (its hint, --pad-inset-bottom): it ends that much over the toolbar
+   instead, with no scroll added; Get Started's button rises over it too */
+html.is-browser.safari-bars-over body.on-welcome{ --pad-inset-bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 1.3rem + var(--sb-bottom-x))); }
+html.is-browser.safari-bars-over body.on-welcome .wrap{ padding-bottom:max(1.6rem, calc(env(safe-area-inset-bottom, 0px) + .3rem + var(--sb-bottom-x))); margin-bottom:0; }
+html.is-browser.safari-bars-over :is(.gs-bar, .cosmic-welcome > .cosmic-welcome-actions){ margin-bottom:var(--sb-bottom-x); }
 /* HOME ON A LAPTOP (327z15). "a lot of people will share this on laptops
    ... that will be the first place they see it ... the planet system should
    be even bigger" - then, from three options: "What if the start studying
@@ -62705,6 +62815,88 @@ function syncBottomInsetClass(){
     document.documentElement.classList.toggle("has-bottom-inset", probe.getBoundingClientRect().height >= 20);
   }catch(e){}
 }
+/* SAFARI'S BARS OVER THE PAGE (build 384). "The bottom of the screen is missing and so is the top ... I've been asking you for a
+   week to fix it." What his own Safari tab does was read off a frame of it (Welcome, iPhone 17 Pro Max, iOS 26, page zoom 85%):
+   four things on that screen - the build line, "Welcome to Nova", Sign in and I'm new here - land within 2px of a 518 x 938 CSS
+   viewport that starts 62pt down (under the status bar) and ends 97pt above the bottom (over Safari's floating toolbar). At rest,
+   then, Safari keeps the page BETWEEN its bars, and anything fixed to the page's edges is clear of both (and the Apple forums
+   report that Safari 26 clips fixed content at its controls rather than drawing it under them).
+   What a page cannot see from a frame at rest is every other state: the toolbar minimised by a scroll, the keyboard coming and
+   going (Safari 26.0 left fixed bars misplaced after it, fixed in 26.1), the iPad's top bar, other Tabs layouts. In any state
+   where Safari lets the page run under its bars, the layout viewport is the whole screen and the safe-area insets come back
+   non-zero (the page reaches the status bar and the home indicator) - but Safari's own toolbar is in no inset. So this
+   measures that case and only that case: an iPhone or iPad browser tab whose layout viewport is the screen's full height
+   (within 12pt, after the page zoom), with a safe-area inset. Then the bars Safari draws over the page are taken as modelled:
+     iPhone, upright: the status bar (62pt on a Dynamic Island phone, 50 on a notched one, 20 with a Home button) and the
+       floating toolbar from its top edge down, 83pt (measured off his frame: the toolbar's top at 873 of 956pt) - 60 with a
+       Home button, which has no indicator under it;
+     iPhone on its side: no status bar; the compact bar, 60pt (48 with a Home button);
+     iPad: the status bar and Safari's top bar, 74pt; nothing at the bottom past the home indicator's inset.
+   html.safari-bars-over carries them as --sb-top / --sb-bottom (CSS px): the tab bar and everything stacked on it sit above
+   the toolbar (--tabs-bottom), the page's last content can scroll clear of it, and the pinned controls at the top move below
+   the bar (the CSS beside html.is-browser). Nowhere else: the installed app, a laptop and Android are never touched, and a
+   Safari tab in the state his frame shows (bars outside the page) is left exactly as it was. The figures are a MODEL; the
+   numbers his phone reports with a bug report (`edges`, below) are what would correct them. */
+function safariBarsReading(){
+  const out = { apple: false, inner: [0, 0], screen: [0, 0], zoom: 1, missing: null, env: [0, 0, 0, 0], over: false, top: 0, bottom: 0 };
+  try{
+    const root = document.documentElement, ua = navigator.userAgent || "";
+    out.apple = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+    const iw = window.innerWidth, ih = window.innerHeight;
+    const sShort = Math.min(screen.width, screen.height), sLong = Math.max(screen.width, screen.height);
+    out.inner = [iw, ih]; out.screen = [screen.width, screen.height];
+    let probe = document.getElementById("sb-probe");
+    if(!probe && document.body){
+      probe = document.createElement("div"); probe.id = "sb-probe"; probe.setAttribute("aria-hidden", "true");
+      probe.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;" +
+        "padding:env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px)";
+      document.body.appendChild(probe);
+    }
+    if(probe){ const cs = getComputedStyle(probe); out.env = [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map(v => Math.round(parseFloat(v) || 0)); }
+    if(!out.apple || !root.classList.contains("is-browser") || !(iw > 0 && ih > 0 && sShort > 0)) return out;
+    const land = iw > ih, scrW = land ? sLong : sShort, scrH = land ? sShort : sLong;
+    const r = iw / scrW;   /* CSS px per point: the page zoom (518 / 440 at 85%) */
+    if(!(r > .5 && r < 2.2)) return out;
+    out.zoom = Math.round(r * 1000) / 1000;
+    out.missing = Math.round(scrH - ih / r);   /* points of the screen outside the layout viewport */
+    const inset = out.env[0] > 0 || out.env[2] > 0;
+    if(!(Math.abs(out.missing) <= 12 && inset)) return out;
+    /* a home indicator's inset says Face ID too (a shorter screen than 812pt with one, e.g. a foldable's cover) */
+    const phone = sShort < 600, faceId = sLong >= 812 || out.env[2] > 0;
+    const dynamicIsland = /^(393x852|430x932|402x874|440x956|420x912)$/.test(sShort + "x" + sLong);
+    let t, b;
+    if(!phone){ t = 74; b = 0; }
+    else if(land){ t = 0; b = faceId ? 60 : 48; }
+    else { t = !faceId ? 20 : (dynamicIsland || sLong >= 874) ? 62 : 50; b = faceId ? 83 : 60; }
+    out.over = true; out.top = Math.round(t * r); out.bottom = Math.round(b * r);
+  }catch(e){}
+  return out;
+}
+/* (for `edges`) what 100lvh is on this device, and where the tab bar's bottom edge sits above the viewport's */
+function lvhPx(){
+  try{ const p = document.createElement("div"); p.style.cssText = "position:absolute;visibility:hidden;height:100lvh;width:0"; document.body.appendChild(p);
+    const h = p.getBoundingClientRect().height; p.remove(); return h; }catch(e){ return 0; }
+}
+function tabsBottomPx(){
+  try{ const t = document.querySelector(".bottomtabs"); if(!t || !t.getBoundingClientRect().height) return "-";
+    return Math.round(window.innerHeight - t.getBoundingClientRect().bottom); }catch(e){ return "?"; }
+}
+function syncSafariBars(){
+  try{
+    const root = document.documentElement, s = safariBarsReading();
+    const sig = s.over + "|" + s.top + "|" + s.bottom;
+    if(root.dataset.sbSig === sig) return;
+    root.dataset.sbSig = sig;
+    root.classList.toggle("safari-bars-over", s.over);
+    if(s.over){ root.style.setProperty("--sb-top", s.top + "px"); root.style.setProperty("--sb-bottom", s.bottom + "px"); }
+    else { root.style.removeProperty("--sb-top"); root.style.removeProperty("--sb-bottom"); }
+  }catch(e){}
+}
+syncSafariBars();
+window.addEventListener("resize", syncSafariBars);
+window.addEventListener("orientationchange", () => setTimeout(syncSafariBars, 300));
+window.addEventListener("pageshow", syncSafariBars);
+try{ if(window.visualViewport) window.visualViewport.addEventListener("resize", syncSafariBars); }catch(e){}
 function syncBottomTabAvatar(){
   const tabIcon = document.querySelector("#bottomtab-profile .bottomtab-icon");
   if(!tabIcon) return;
@@ -65025,6 +65217,28 @@ function setSyncCode(code){
   try { window.localStorage.removeItem("class26e.signedout"); } catch(e){}
   idbSaveCode(code);
   try{ browserLinkCode = null; syncBrowserCodeUrl(); }catch(e){}
+  /* (384) the device holds an account now: ask the browser to keep this site's storage (see askToKeepStorage) */
+  askToKeepStorage();
+}
+/* KEEP THIS DEVICE'S COPY (build 384). "when people bookmark the page to come back, they won't lose their stuff ... even if they
+   refresh the page or delete the browser history, it will remember the device". The account lives in the cloud under its sync
+   code; what a device keeps is its copy and the code (localStorage class26e.drill.v1 / class26e.synccode, and the IndexedDB
+   mirror). navigator.storage.persist() asks the browser not to clear them to free space (Chrome and Edge grant it on their own
+   for a bookmarked or often-used site, Firefox may ask the person, Safari 17+ decides by itself). Asked once an account exists -
+   at boot when the device already holds a code, and the moment one is issued or signed in - never on a first visit, where
+   Firefox would have put a permission question in front of somebody who has not signed up. Nothing a page does survives
+   "clear cookies and website data"; that is what Sign in with the code is for. */
+var storageAskedThisLaunch = false;   /* var, not let: setSyncCode can run before this line during boot (no TDZ) */
+function askToKeepStorage(){
+  if(storageAskedThisLaunch) return;
+  try{
+    if(!(navigator.storage && navigator.storage.persist)) return;
+    let held = null;
+    try{ held = window.localStorage.getItem(SYNC_CODE_KEY) || window.NOVA_ACADEMY_CODE || null; }catch(e){}
+    if(!held) return;   /* (one origin, one grant: Fire Code's copy is kept by the academy account's) */
+    storageAskedThisLaunch = true;
+    navigator.storage.persist().catch(() => {});
+  }catch(e){}
 }
 
 /* ================= RECOVERY THROUGH THE LAUNCH URL =================
@@ -122375,6 +122589,13 @@ function showBugReport(){
         ua: (navigator.userAgent || "").slice(0, 200),
         viewport: vw + "x" + vh,
         standalone: !!(typeof isStandaloneApp === "function" && isStandaloneApp()),
+        /* (384) where the browser's bars are, from this device: the screen, the layout viewport, the page zoom, the
+           safe-area insets, the visual viewport and whether html.safari-bars-over is on - what corrects the Safari model */
+        edges: (() => { try{ const s = safariBarsReading(), v = window.visualViewport;
+          return ("screen " + s.screen.join("x") + " inner " + s.inner.join("x") + " zoom " + s.zoom + " missing " + s.missing +
+            "pt env " + s.env.join(",") + " vv " + (v ? Math.round(v.width) + "x" + Math.round(v.height) + "+" + Math.round(v.offsetTop) : "-") +
+            " over " + (s.over ? s.top + "/" + s.bottom : "no") + " scrollY " + Math.round(window.scrollY) +
+            " doc " + Math.round(document.documentElement.scrollHeight) + " lvh " + Math.round(lvhPx()) + " tabs " + tabsBottomPx()).slice(0, 300); }catch(e){ return ""; } })(),
         perf: (typeof tabPerfText === "function") ? tabPerfText() : "",
         at: Date.now()
       }).then(() => {
@@ -148329,10 +148550,9 @@ __bm("loadTheme");loadTheme();
 __bm("applyTheme");applyTheme();
 
 /* Ask the browser not to evict this origin's storage under space pressure.
-   Best-effort: silently ignored where unsupported. */
-if(navigator.storage && navigator.storage.persist){
-  navigator.storage.persist().catch(() => {});
-}
+   Best-effort: silently ignored where unsupported. (384) Only once this device
+   holds an account - askToKeepStorage(), beside setSyncCode. */
+askToKeepStorage();
 
 const problems = checkBank();
 if(problems.length) showBankProblems(problems);
