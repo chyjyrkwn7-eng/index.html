@@ -37526,6 +37526,95 @@ html.is-browser{ --fade-paper: transparent; }
   .class-bubble-wrap{ --nd-ring-c:#1A1B21; }
   /* (the class button's pulsing ring for a class not yet seen, 329, stays: it is the button's, not the dot's) */
   .pf-case-new-word{ text-transform:none !important; letter-spacing:0 !important; font-size:.8rem !important; font-weight:600 !important; color:var(--soft) !important; }
+
+  /* ==== BUILD 384: CENTRING, MEASURED BY THE INK (tools/check-centering.py) ===========================================
+     Madison: "ensure the still here is also centered cause I can tell it's slightly off. You need to do a full check on the
+     entire app to ensure there's nothing else like this whatsoever." Every pill, button, chip, tag, badge, round icon button,
+     disc and segmented item on every screen was rendered in both classes and its INK (the pixels its words and icons change)
+     measured against its shape. These are the ones off by more than half a pixel (a pixel over 120px wide), and what puts
+     each in the middle. Three causes, three cures:
+       1. LETTERS SIT HIGH IN THEIR LINE (a font's capitals are not in the middle of its line box). Cure: text-box:
+          trim-both cap alphabetic, so the box is the capitals' own height, with the padding giving back what the trim takes
+          (the size is unchanged). Only where the browser has it (Safari 18.2+, Chrome 133+); elsewhere nothing changes.
+       2. AN ICON'S AIR, LETTER-SPACING AFTER THE LAST LETTER, OR UNEVEN PADDING push the ink to one side of a box that is
+          itself centred. Cure: padding moved from one side to the other (the width unchanged), the spacing given back on
+          the left (text-indent), or the pieces moved (translate - no layout).
+       3. AN ICON DRAWN OFF THE MIDDLE OF ITS OWN VIEWBOX (its strokes' reach, not the viewBox, is what is seen). Cure: the
+          icon moved by exactly that much (translate).
+     Run `python3 tools/check-centering.py --quick` after any change to a screen: it fails on anything off again. */
+  @supports (text-box: trim-both cap alphabetic){
+    /* number discs and count badges: a block the disc's size, the digits' capitals in its middle */
+    html[data-layout] .chatdock-tabcount:not([hidden]){
+      display:block; box-sizing:border-box; height:1.05rem; line-height:1; text-align:center;
+      padding-block:calc((1.05rem - 1cap) / 2); text-box:trim-both cap alphabetic;
+    }
+    html[data-layout] .a2hs-num{
+      display:block; box-sizing:border-box; line-height:1; text-align:center;
+      padding-block:calc((1.55rem - 1cap) / 2); text-box:trim-both cap alphabetic;
+    }
+    /* small word pills: their own padding plus what the trim took from the line */
+    html[data-layout] .cal-today-badge{ padding-block:calc(.15rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] .a2hs-pt-label{ padding-block:calc(.22rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] .chatdock-chatrow-kind{ padding-block:calc(.12rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* the class list's labels: trimmed already (329); the extra .65px nudge put the capitals high, so it is even now */
+    html[data-layout] .csi-label{ padding-block:calc((34px - 1cap) / 2); }
+    /* the sync code (its card and the re-add notice), Get Started's Sign in, the test's Pause, the chat's Manage friends */
+    html[data-layout] .savecode-value{ padding-block:calc(.85rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] .frame-code{ padding-block:calc(.4rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] .gs-signin{ padding-block:calc((42px - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] #pausebtn:not([hidden]){ text-box:trim-both cap alphabetic; padding-block:calc(.35rem + (1lh - 1cap) / 2); }
+    html[data-layout] .chatdock-friendsbar-btn{ padding-block:calc((44px - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* the Calendar's days-to-go: the number and its words each on their own capitals, the pair in the middle */
+    html[data-layout] .cal-nt-count > :is(.cal-nt-num, .cal-nt-unit){ display:block; padding-block:calc((1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* the Virtual Room's game chips and the units' mode chip: the word beside its icon, on its capitals */
+    html[data-layout] .vrc-game > span, html[data-layout] .setup-modechip .rs-mode > span{ display:block; padding-block:calc((1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* Enroll / Select: no rim, so its 30px holds (30px - the capitals) of padding, even; 329's 1.2px nudge down stood in
+       for the missing 2px and put the capitals half a pixel low */
+    html[data-layout] .cc-status.is-enroll{ padding-top:calc((30px - 1cap) / 2); padding-bottom:calc((30px - 1cap) / 2); }
+    /* Enrolled / Selected: its tick and word sat half a pixel right */
+    html[data-layout] .cc-status.is-enrolled{ padding-left:calc(.8rem - .5px); padding-right:calc(.8rem + .5px); }
+    /* Settings > Sync's (i): a letter in a 1.15rem ring, on its capitals */
+    html[data-layout] .infoicon{ display:inline-block; box-sizing:border-box; line-height:1; text-align:center;
+      padding-block:calc((1.15rem - 3px - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* a banner's View / Join / Save it: trimmed since 327z15, but a .next pill is a flex box whose word the trim never
+       reaches - a plain block, its padding making the 44px */
+    html[data-layout] .app-banner .app-banner-act{ display:inline-block; min-height:0; padding-block:calc((44px - 1cap) / 2); white-space:nowrap; }
+  }
+  /* icon + word pills whose ink sat off the middle (an icon's own air, letter-spacing after the last letter, uneven
+     padding): the content moved by what was measured, the box unchanged */
+  html[data-layout] .setup-modechip .rs-mode{ padding-left:.704rem; padding-right:.746rem; }   /* Drill, Mock, Review 1.6-1.9px left */
+  html[data-layout] .setup-modechip .rs-mode-game > *{ translate:.6px 0; }                     /* Game, 2.3px left */
+  html[data-layout] .rs-head .rs-mode{ padding-left:.62rem; padding-right:.65rem; }            /* the results' Drill, 1.2px left */
+  html[data-layout] .vrc-game-race > *{ translate:.66px 0; }
+  html[data-layout] .vrc-game-tug > *{ translate:2px 0; }
+  html[data-layout] .vrc-game-battle > *{ translate:-.55px 0; }
+  html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools > .selall-btn{ padding-left:calc(.85rem + 1.12px); padding-right:calc(1rem - 1.12px); }
+  html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools > .picks-tools > .selall-btn{ padding-left:calc(.95rem + 1.15px); padding-right:calc(1.1rem - 1.15px); }
+  html[data-layout] .pausepanel .actions > :is(#pause-quit, #pause-save){ padding-left:calc(.75rem - 1.7px); padding-right:calc(.75rem + 1.7px); }
+  /* Next question's swipe chevrons end 5.2px short of their 16px box: that air is not the button's to centre */
+  html[data-layout] .foot > .floatbtn.qnext .swipehint{ margin-right:-.325rem; }
+  html[data-theme][data-layout] #stage > .vroom-setup-bar > .vroom-setup-go > :is(.vroom-bar-label, .vroom-bar-icon){ translate:1.1px 0; }
+  html[data-layout] #bottomtab-start > :is(.bottomtab-icon, .bottomtab-label){ translate:-2.04px 0; }
+  /* Profile's reward tiles (Theme, Flare, a character): the picture's box has air above its drawing and the word its
+     descent below, so the pair sat low; the padding moved up by what was measured */
+  html[data-layout] .pf-rw{ padding-top:calc(.65rem - 1.2px); padding-bottom:calc(.55rem + 1.2px); }
+  /* icons drawn off their own middle */
+  html[data-layout] .stx-vr-empty-ico > svg{ translate:1.38px -.54px; }
+  html[data-layout] .settings-row-icon[data-tile="motion"] > svg{ translate:.61px 0; }
+  html[data-layout] .settings-row-icon[data-tile="study"] > svg{ translate:0 -.5px; }
+  html[data-layout] .flagbtn.qflag .flagicon{ translate:0 .6px; }
+  html[data-layout] #chatdock-btn > svg{ translate:0 -.3px; }        /* the speech bubble's tail reaches lower than its top */
+  /* letter-spacing after the last letter pushes spaced words left by half of it: given back on the left */
+  html[data-layout] .savecode-value{ text-indent:.12em; }
+  html[data-layout] .frame-code{ padding-left:calc(.7rem + .07em); padding-right:calc(.7rem - .07em); }
+  /* the round back buttons' chevrons: their stroke sits left of their viewBox's middle (by .75 of 24 at 20px, and .2 of 16) */
+  html[data-layout] body #stage .settings-nav-back svg{ translate:.625px 0; }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-chevron{
+    margin:0; translate:.25px 0;
+  }
+  /* a card holding only its one line (the rooms list's "Couldn't load") has no line above to keep a gap from */
+  html[data-layout] .rooms-list > .friend-hint:only-child{ margin-top:0; }
+  /* ==== end of build 384's centring ==== */
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
