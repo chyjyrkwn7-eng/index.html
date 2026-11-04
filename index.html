@@ -34968,6 +34968,37 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-tag.is-hint{ flex:none; gap:.3rem; padding-left:.55rem; background:rgba(255,214,90,.18); color:#FFD877; }
   .ifc-tag.is-hint svg{ width:13px; height:13px; flex:none; }
   .ifc-hintpic:not(:empty){ margin:.6rem 0 0; }
+  /* ==== (384, round 3) THE CODE PICTURE, ITS TAG PILLS AND ITS TWO BUTTONS - ONE BLOCK ====================================
+     Kept to these three things so an app-wide pass elsewhere does not collide with it: the framed picture (ifcFrameClips), the
+     IFC / AMENDMENTS / HINT tag pills (buildIfcRef, ifcPreAnswer) and Enlarge / "Show the whole (book) page" (ifcLinkBtn). */
+  /* THE PICTURE. Madison: "The 307 looks a lot better because it's nicely centered in the crop ... all the cropped stuff needs to
+     look that good." Each piece of a clipping is cut to its ink and sits in a frame of the paper's own colour: the same padding on
+     every side, the print centred (margin auto), the frame the width of the card. The canvas's width is set where it is made: a
+     column's size for anything a column wide or less, fitted to the width beyond. */
+  :root{ --ifc-pic-pad:12px; }
+  .ifc-clips .ifc-frame{ position:relative; box-sizing:border-box; width:100%; padding:var(--ifc-pic-pad); border-radius:.6rem; overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .ifc-clips .ifc-frame > canvas{ display:block; margin:0 auto; height:auto !important; border-radius:0; box-shadow:none; background:none; flex:none; }
+  /* in the page viewer the frame is the page: the picture fills it (zooming is there for the rest) */
+  .ifc-vz-pages .ifc-frame{ box-sizing:border-box; width:100%; flex:none; padding:8px; border-radius:.4rem; }
+  .ifc-vz-pages .ifc-frame > canvas{ display:block; margin:0 auto; border-radius:0; background:none; }
+  /* THE TAG PILLS (IFC, AMENDMENTS, and HINT with its bulb): "the word amendments, ifc aren't centered perfectly in the little
+     bubble". A capital word set with letter-spacing carries the last letter's spacing after it (the ink sits left), and a line box
+     is taller than capitals (the ink sits high or low). The word is its own box now (.ifc-tag-w): trimmed to cap height and
+     baseline where the browser can (text-box), its trailing spacing taken back, so the pill's even padding and centring centre the
+     ink itself. The bulb's box is cut to its ink the same way (its viewBox), so all three follow one rule: even padding, centred. */
+  .ifc-tag{ padding:0 .7rem; gap:.3rem; }
+  .ifc-tag-w{ display:block; flex:none; line-height:1; margin-right:-.08em; white-space:nowrap; }
+  @supports (text-box:trim-both cap alphabetic){ .ifc-tag-w{ text-box:trim-both cap alphabetic; } }
+  .ifc-tag.is-hint{ padding-left:.7rem; }
+  .ifc-tag.is-hint svg{ width:calc(12px * 14.2 / 20.2); height:12px; margin:0; }   /* its viewBox is its ink: 12px tall, (28 - 12) / 2 = 8px above and below */
+  /* ENLARGE AND THE WHOLE PAGE: "The word enlarge and magnifying glass could look better, the 'view entire page' looks amazing,
+     it's perfect. Ensure the enlarge one is just as great". One family: the same pill, height, padding, type and colour, mark and
+     word centred together. Side by side they are two equal halves; where the longer one would not fit in half the card they
+     stack, each the card's full width - never one small beside one large. */
+  .ifc-links:has(> .ifc-link-pill){ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 15.75rem), 1fr)); gap:.55rem; }
+  .ifc-links > .ifc-link.ifc-link-pill{ width:100%; box-sizing:border-box; }
+  /* ==== end of the code picture's block ==================================================================================== */
   /* ---- THE CLASS BUBBLE AND ITS LIST (build 328, mountClassBubble) ----
      A glass bubble under the planet at the left edge, a soft glow in the class's colour (no
      flashing). It drops a glass capsule that stays joined to it: the other classes, then "+".
@@ -108408,12 +108439,117 @@ function ifcCountyText(c){
 function ifcFitPictures(holder, room, scale){
   let wide = false;
   const dpr = window.devicePixelRatio || 1;
-  holder.querySelectorAll("canvas").forEach(cv => {
+  /* (384) only a whole page is left to this; a cut picture is framed and fitted by ifcFrameClips */
+  holder.querySelectorAll("canvas.ifc-page").forEach(cv => {
     const nat = cv.width / ((scale || 1.7) * dpr);          /* the clip's width at book size, in CSS px */
     if(nat * 0.8 > room){ cv.style.maxWidth = "none"; cv.style.width = Math.round(nat) + "px"; wide = true; }
   });
   holder.classList.toggle("is-scroll", wide);
   return wide;
+}
+/* (384) EVERY CODE PICTURE FRAMED LIKE 307.4.2. Madison: "The 307 looks a lot better because it's nicely centered in the crop
+   and just looks much nicer ... all the cropped stuff needs to look that good" / "a lot of that crop stuff isn't even rightly
+   placed ... The titles and stuff" / "some of the cropped stuff if its code runs border to border". The kit cuts a column (or the
+   text's width) and paints it where it lies on the page, so the print sat wherever the page had it: hard against one side of a
+   right-hand column, a county line 4pt from both edges, a chapter title off the middle and its last line on the bottom edge
+   (and, on a 2x screen, a picture wider than the phone scrolled sideways with its title cut at the right).
+   Now, once the kit has painted, the picture's ink is measured - every pixel that is not the paper: print, rules, highlight and
+   blur alike - and the picture is cut down to it and set in a frame of the paper's own colour (.ifc-frame), the same padding on
+   every side, centred, fitted to the width, never scrolled. Only bare paper is trimmed: WHAT is cut and WHAT is marked stay the
+   kit's, and a hidden word stays hidden (the blur is painted before the trim). A change bar in the margin (the book's thick
+   vertical bar beside changed lines) stays where it was printed; the text is what is centred, with the same room on the other side.
+   One rule for every picture: one no wider than a book column (IFC_PIC_COL pt) is shown at the size a column is shown at - the
+   print the same size in every one, centred - and never past the size it was drawn at (IFC_PIC_MAXK); a wider one (a chapter
+   title, a full-width table, a county line) is fitted to the width. */
+const IFC_PIC_COL = 250, IFC_PIC_MAXK = 1.7;
+/* the ink of a painted picture, in its pixels: { x0, x1, y0, y1 (inclusive), paper, inked(pixel index) }. One read of the pixels;
+   a pixel that is exactly the paper (nearly all of them) is passed over on one comparison of its 32 bits. */
+function ifcInkBox(cv){
+  const W = cv.width, H = cv.height;
+  if(W < 4 || H < 4) return null;
+  let D;
+  try{ D = cv.getContext("2d").getImageData(0, 0, W, H).data; }catch(e){ return null; }
+  const U = new Uint32Array(D.buffer, D.byteOffset, W * H);
+  /* the paper: the colour most of the edge samples share (the wash, or white under a blur) */
+  const samples = [0, W - 1, (H - 1) * W, H * W - 1, W >> 1, (H - 1) * W + (W >> 1), (H >> 1) * W, (H >> 1) * W + W - 1];
+  const votes = new Map(); let P = U[0], best = 0;
+  for(const i of samples){ const n = (votes.get(U[i]) || 0) + 1; votes.set(U[i], n); if(n > best){ best = n; P = U[i]; } }
+  const pi = samples.find(i => U[i] === P), pr = D[pi * 4], pg = D[pi * 4 + 1], pb = D[pi * 4 + 2];
+  const inked = i => U[i] !== P && Math.abs(D[i * 4] - pr) + Math.abs(D[i * 4 + 1] - pg) + Math.abs(D[i * 4 + 2] - pb) > 40;
+  let y0 = -1, y1 = -1, x0 = W, x1 = -1;
+  top: for(let y = 0; y < H; y++){ const o = y * W; for(let x = 0; x < W; x++) if(inked(o + x)){ y0 = y; break top; } }
+  if(y0 < 0) return null;
+  bottom: for(let y = H - 1; y >= y0; y--){ const o = y * W; for(let x = 0; x < W; x++) if(inked(o + x)){ y1 = y; break bottom; } }
+  for(let y = y0; y <= y1; y++){
+    const o = y * W;
+    for(let x = 0; x < x0; x++) if(inked(o + x)){ x0 = x; break; }
+    for(let x = W - 1; x > x1; x--) if(inked(o + x)){ x1 = x; break; }
+  }
+  return { x0, x1, y0, y1, paper: [pr, pg, pb], W, H, inked };
+}
+/* A change bar: a solid upright bar alone at one side of the ink (1.5 to 6.5pt wide, at least 6pt tall, 3.5pt or more clear of
+   the text - beside one table row it is no taller than the row, and one can stand well out in the margin). Returns the text's
+   own left/right edge with it set aside, or the ink's edge when there is none. */
+function ifcBarSide(k, s, side){
+  const { W, inked, y0, y1 } = k, edge = side < 0 ? k.x0 : k.x1, step = side < 0 ? 1 : -1;
+  const colInked = x => { for(let y = y0; y <= y1; y++) if(inked(y * W + x)) return true; return false; };
+  let x = edge, w = 0;
+  while(x >= 0 && x < W && colInked(x)){ w++; x += step; if(w > 6.5 * s) return edge; }
+  if(w < 1.5 * s) return edge;
+  let gap = 0;
+  while(x >= 0 && x < W && !colInked(x)){ gap++; x += step; }
+  if(gap < 3.5 * s || x < 0 || x >= W) return edge;
+  const a = Math.min(edge, edge + step * (w - 1)), b = Math.max(edge, edge + step * (w - 1));
+  let rows = 0, solid = 0;
+  for(let y = y0; y <= y1; y++){
+    let c = 0; for(let xx = a; xx <= b; xx++) if(inked(y * W + xx)) c++;
+    if(c){ rows++; if(c >= w * .8) solid++; }
+  }
+  return rows >= 6 * s && solid >= rows * .9 ? x : edge;
+}
+/* clip: the kit's clipping the canvases were painted from (one canvas per segment, in order). Pieces cut from the same window of
+   the same page - a table's caption, rows and notes; a referenced standard's lines - share one window here too, so they line up
+   as printed (the notes under the table's left edge) and the group's print is what is centred. */
+function ifcFrameClips(holder, scale, fill, clip){
+  const s = (scale || 1.7) * Math.min(window.devicePixelRatio || 1, 2);   /* the kit's own: picture pixels per pdf point */
+  const cvs = [...holder.querySelectorAll("canvas")];
+  const segs = clip && clip.segments && clip.segments.length === cvs.length ? clip.segments : null;
+  const groups = new Map();
+  cvs.forEach((cv, i) => {
+    if(cv.classList.contains("ifc-page") || (cv.parentNode && cv.parentNode.classList && cv.parentNode.classList.contains("ifc-frame"))) return;
+    const k = ifcInkBox(cv);
+    if(!k) return;
+    k.cv = cv; k.tx0 = ifcBarSide(k, s, -1); k.tx1 = ifcBarSide(k, s, 1);
+    const sg = segs && segs[i], key = sg && !sg.whole ? sg.page + ":" + sg.x0 + ":" + sg.x1 + ":" + cv.width : "c" + i;
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(k);
+  });
+  for(const ks of groups.values()){
+    /* the text's middle is the picture's middle: as much room each side as the farther ink (a margin bar) needs */
+    const x0 = Math.min(...ks.map(k => k.x0)), x1 = Math.max(...ks.map(k => k.x1));
+    const tx0 = Math.min(...ks.map(k => k.tx0)), tx1 = Math.max(...ks.map(k => k.tx1));
+    const hair = Math.max(1, Math.round(s * .5)), mid = (tx0 + tx1 + 1) / 2;
+    const half = Math.max(mid - x0, x1 + 1 - mid) + hair;
+    const ox = Math.round(mid - half), w = Math.round(2 * half), wPt = w / s;
+    const width = fill ? "100%" : "min(" + (wPt * Math.min(IFC_PIC_MAXK, scale || 1.7)).toFixed(1) + "px, " + (100 * Math.min(1, wPt / IFC_PIC_COL)).toFixed(3) + "%)";
+    for(const k of ks){
+      const cv = k.cv;
+      const oy = Math.max(0, k.y0 - hair), h = Math.min(cv.height, k.y1 + 1 + hair) - oy;
+      const out = document.createElement("canvas");
+      out.width = w; out.height = h; out.className = cv.className;
+      const g = out.getContext("2d");
+      g.fillStyle = "rgb(" + k.paper.join(",") + ")"; g.fillRect(0, 0, w, h);
+      const sx = Math.max(0, ox), sw = Math.min(cv.width, ox + w) - sx;
+      g.drawImage(cv, sx, oy, sw, h, sx - ox, 0, sw, h);
+      out.style.width = width; out.style.maxWidth = "100%"; out.style.height = "auto";
+      const frame = ifcEl("div", "ifc-frame");
+      frame.style.backgroundColor = "rgb(" + k.paper.join(",") + ")";
+      frame.appendChild(out);
+      cv.replaceWith(frame);
+      cv.width = 0; cv.height = 0;
+    }
+  }
+  holder.classList.remove("is-scroll");
 }
 /* THE PAGE VIEWER (build 333): "it's a little difficult to see the cropped photo ... hard to see the
    full page ... maybe when you hit full page it goes full page, you can still see the app around all
@@ -108572,7 +108708,8 @@ async function ifcOpenViewer(opts){
 function ifcLinkBtn(label, mark){
   const b = ifcEl("button", "ifc-link ifc-link-pill"); b.type = "button";
   const ic = mark === "zoom"
-    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5M10.5 8v5M8 10.5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+    /* (384) the magnifier in the page mark's own line weight (1.9), its ink centred in its box (3.3 to 20.7 of 24 each way) */
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.25" cy="10.25" r="6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M14.75 14.75l5 5M10.25 7.75v5M7.75 10.25h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
     : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M14 3v5h5M10 13h6M10 17h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
   b.innerHTML = ic;
   b.appendChild(ifcEl("span", null, label));
@@ -108629,10 +108766,11 @@ async function ifcFillCode(item, body, foot){
     if(!clip.ok) return;
     const holder = ifcEl("div", "ifc-clips");
     await V.paint(doc, clip, holder, { scale: 1.7 });
+    /* (384) framed and fitted like every code picture (ifcFrameClips): whole, centred, never scrolled sideways */
+    ifcFrameClips(holder, 1.7, false, clip);
     body.prepend(holder);
-    /* THE PICTURE FIRST (build 333): "why is the amendments not showing the cropped photo? It should be". A wide
-       crop scrolls sideways (or Enlarge); the exact text is one tap away. */
-    const wide = ifcFitPictures(holder, ifcRoomOf(body), 1.7);
+    /* THE PICTURE FIRST (build 333): "why is the amendments not showing the cropped photo? It should be". Enlarge opens
+       it big; the exact text is one tap away. */
     text.hidden = true;
     /* TWO WAYS ON (build 382): "The show as text option, let's remove that option for the code ... ensure you update the placements
        of the other two options". "Show as text" (and the "Show the page picture" it swapped with) are gone; Enlarge and Show the
@@ -108641,7 +108779,7 @@ async function ifcFillCode(item, body, foot){
     const whole = ifcLinkBtn("Show the whole page", "page");
     const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
       note: wholePage ? "The whole page of the HC Amendments. The highlighted lines are the code this question cites." : "",
-      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip }) : V.paint(doc, clip, box, { scale: 2.6 }) });
+      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip }) : V.paint(doc, clip, box, { scale: 2.6 }).then(() => ifcFrameClips(box, 2.6, true, clip)) });
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
     const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
@@ -108687,15 +108825,17 @@ async function ifcFillCode(item, body, foot){
     await V.paintPages(book.doc, V.wholePages(book.index, c, 2), holder, { scale: 1.4, ...book.opts });
     foot.textContent = "The whole page from your book.";
   }
+  /* (384) a cut picture is framed and fitted (ifcFrameClips); a whole page (the fallback) keeps its old fit */
+  if(shown) ifcFrameClips(holder, 1.7, false, theClip);
   body.appendChild(holder);
-  ifcFitPictures(holder, ifcRoomOf(body), shown ? 1.7 : 1.4);
+  if(!shown) ifcFitPictures(holder, ifcRoomOf(body), 1.4);
   {
     const links = ifcEl("div", "ifc-links");
     const whole = ifcLinkBtn("Show the whole book page", "page");
     const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
       note: wholePage ? "The section the question cites is washed pale yellow; the sentence that decides the answer is the stronger gold." : "",
       render: box => {
-        if(!wholePage && theClip) return V.paint(book.doc, theClip, box, { scale: 2.6 });
+        if(!wholePage && theClip) return V.paint(book.doc, theClip, box, { scale: 2.6 }).then(() => ifcFrameClips(box, 2.6, true, theClip));
         const pages = theClip && theClip.pages.length ? theClip.pages : V.wholePages(book.index, c, shown ? 3 : 2);
         return V.paintPages(book.doc, pages, box, { scale: 2.2, ...book.opts, clip: theClip });
       } });
@@ -108774,7 +108914,10 @@ function buildIfcRef(item){
   if(!item.ref) box.appendChild(ifcEl("p", "ifc-label", "Ref. " + ifcRefLabel(c.label)));
   const det = ifcEl("details", "ifc-code");
   const sum = ifcEl("summary", "ifc-code-sum");
-  sum.append(ifcEl("span", "ifc-tag " + (c.source === "amendment" ? "is-county" : "is-ifc"), c.source === "amendment" ? "Amendments" : "IFC"), ifcEl("span", "ifc-sum-text", "Show the code"));
+  /* (384) the tag's word in its own box (.ifc-tag-w), trimmed to its capitals, so the pill can centre the ink itself */
+  const tag = ifcEl("span", "ifc-tag " + (c.source === "amendment" ? "is-county" : "is-ifc"));
+  tag.appendChild(ifcEl("span", "ifc-tag-w", c.source === "amendment" ? "Amendments" : "IFC"));
+  sum.append(tag, ifcEl("span", "ifc-sum-text", "Show the code"));
   const head = ifcEl("div", "ifc-code-head");
   head.append(ifcEl("p", "ifc-ptr", ifcPointerLine(c)), ifcEl("p", "ifc-pages", ifcPageLine(c)));
   const body = ifcEl("div", "ifc-code-body"), foot = ifcEl("p", "ifc-foot");
@@ -108819,6 +108962,7 @@ function ifcPreAnswer(item, qtext, panel){
           if(clip && clip.ok && clip.hide && clip.hide.length && clip.segments.length && !clip.segments.some(sg => sg.whole)){
             const pic = ifcEl("div", "ifc-blurpic ifc-clips");
             await V.paint(book.doc, clip, pic, { scale: 1.5, ...book.opts, blur: true });
+            ifcFrameClips(pic, 1.5, false, clip);
             pre.appendChild(pic);
             pre.dataset.stem = q.blurStem;
             const t = document.querySelector(".qpanel .qtext");
@@ -108849,8 +108993,9 @@ function ifcPreAnswer(item, qtext, panel){
       b.setAttribute("aria-expanded", "false");
       b.setAttribute("aria-label", "Hint: show the code, answer hidden");
       const tag = ifcEl("span", "ifc-tag is-hint");
-      tag.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      tag.appendChild(document.createTextNode("Hint"));
+      /* (384) the bulb's box is its ink (viewBox cut to the stroke's outer edge), so the pill centres the bulb itself */
+      tag.innerHTML = '<svg viewBox="4.9 1.9 14.2 20.2" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      tag.appendChild(ifcEl("span", "ifc-tag-w", "Hint"));
       const word = ifcEl("span", "ifc-hint-text", "Show the code");
       b.append(tag, word);
       const holder = ifcEl("div", "ifc-clips ifc-hintpic");
@@ -108861,7 +109006,13 @@ function ifcPreAnswer(item, qtext, panel){
         if(shown){ holder.textContent = ""; put(false); return; }
         put(true);
         if(typeof hinted !== "undefined") { /* the Hint does not count as a miss: the answer stays hidden */ }
-        try{ await V.paint(doc, { ...clip, hide: h.hide, hiddenText: h.hiddenText }, holder, { scale: 1.5, ...opts, blur: true }); }
+        try{
+          /* (384) painted off the page and framed before it is shown, like every code picture */
+          const tmp = ifcEl("div");
+          await V.paint(doc, { ...clip, hide: h.hide, hiddenText: h.hiddenText }, tmp, { scale: 1.5, ...opts, blur: true });
+          ifcFrameClips(tmp, 1.5, false, clip);
+          if(shown) holder.replaceChildren(...tmp.childNodes);
+        }
         catch(e){ holder.textContent = ""; put(false); }
       });
       pre.append(b, holder);
