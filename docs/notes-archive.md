@@ -31727,3 +31727,37 @@ manage friends or something, when I leave that, it goes back to the main menu in
   chapters reaches it; even the cheapest reach half); (4) the flares 13-15 levels apart from ~13 (drawn 14, 26, 39, 53, 65, 79),
   the academy's first still 20; (5) no page errors. On 383: (1)-(4) fail (ratio 1.0; 53,510 vs 217,910; flares 20, 35, 48 ...).
   check-curve (the academy's) ALL PASS unchanged.
+
+### Build 384 - Home's class icons and daily question; the chat sheet; Nova's tag; Manage friends' copy icon and field
+- CLASS ICONS (NOVA_CLASSES): "The fire in the ifc class, it's not centered, nearly but it's not." / "I like the fire and police
+  icon but I don't think I love them." The flame's tip curled to one side (its halves 9.2 levels apart mirrored about the button's
+  middle; ink 1.8px low), the shield an outline with a 22% fill. Redrawn SOLID and SYMMETRIC: Fire Code a teardrop flame
+  (#FFE08A -> #FF9447 -> #EE4B3F) with a pale core; the academy a filled shield (#FFB3A6 -> #B9A4FF -> #7FA6FF) with a white
+  star and a soft lit half. Same 24 box; every place they appear follows (the button, its list, the catalog, sign-up class cards).
+- THE DAILY QUESTION: "The ready version is it just spinning and that's distracting, the loading version is kinda lame and it's
+  not much." READY: 383's comet (dq-comet, a 2.6s turn) is gone; the ring is drawn whole and lit (.dq-ring svg visible, its
+  stroke the rank's colour toward white, a soft glow round it), the colour inside breathes slowly (dq-glow 4.2s), the "?" lit -
+  the ring that goes out every 3.6s (the button's ::after) is the only outward motion. WAITING (answered): the middle says the
+  time to the next 5pm (dailyLeftText: "10h", "40m"; setDailyLeft on build and on dailyRingTick's minute; the aria-label says
+  it), the "?" hidden, the arc's track a shade brighter and a lit head at the arc's end (.dq-ring-head + -halo, circles at
+  (97.5, 50) turned by --dq-p about the centre; `.dq-ring circle` is fill:none at 0-1-1, so they are 0-2-1). The recharge
+  (is-charging) is unchanged and shows the "?" as before.
+- THE CHAT SHEET: "the background behind the chat is see through and then you see it change to blurry" (again). Since 327z12 it
+  rose on a near-opaque fill and turned to a 30px glass 300ms later; an iPhone builds a backdrop blur a few frames after it is
+  asked for, so the sheet was the .82 tint over a sharp page for those frames. The dark sheet is now that fill (.95, its sheen
+  and rim) always - no backdrop-filter to arrive late (the light theme keeps its own).
+- NOVA'S TAG: "the spot that says instructor on the right, center that" - on his row the tag is absolutely placed on the row's
+  middle at its right edge (it sat on the name's line, 8.3px above the middle); name and "Say hi" keep 6.4rem clear.
+- MANAGE FRIENDS: "remove the copy button and just put that copy button you see. The word copy don't need to be there. Make it
+  look good." - a round 44px matte button (Send's black) with the two-squares copy glyph; a tap copies, the glyph turns to a
+  green tick with a pop and a green ring for 1.4s, the toast as before; aria-label "Copy your friend code". "The 'enter a
+  friends code' doesn't come off as a text box ... give it a more 'type here' vibe?" - the same field in a label
+  (.friend-add-field): a soft inner edge (brighter, in the accent, when tapped), a brighter hint nudged right, and a cursor
+  blinking at the start while it is empty and untapped (::before, steps(1) 1.1s; still under Reduce motion). The clean look's
+  field rule (#stage ... input.searchbox, !important, 1-4-3) is out-ranked at 1-6-3.
+- Gate tools/check-b384-home.py: (1) both class icons solid (fill opacity >= .9) and mirror-symmetric (< 6 levels), centred
+  across within 1px; (2) ready: no running rotation, the ring whole and lit; (3) answered: the time left as the app's 5pm makes
+  it, no "?", the head at the arc's end (within 3 deg); (4) the chat sheet with no backdrop blur at 0/120/320/700ms, alpha >= .9;
+  (5) Nova's tag on his row's middle (1.5px), at its right edge; (6) the copy control an icon button (no word, svg, 44px+) that
+  turns to a tick; the field's inner edge, its cursor blinking until tapped; (7) no page errors. On 383: 8 fail (icons 0.22 /
+  0.28 fill, the flame 9.19 asymmetric; dq-comet turning; no time left; blur from 320ms; the tag 8.3px high; "Copy" a word).

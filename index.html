@@ -8265,6 +8265,11 @@
   .friend-row-art.is-nova{ border-radius:50%; box-shadow:0 0 0 1.5px rgba(255,210,122,.55); }
   .friend-row-away{ color:var(--soft); font-weight:700; }
   .chatdock-chatrow-kind.is-nova{ color:#FFD27A; background:rgba(255,210,122,.12); border-color:rgba(255,210,122,.4); }
+  /* (384) "the spot that says instructor on the right, center that. More in the middle on the right, it's like in the top right
+     corner there": on his row the tag leaves the name's line and sits on the row's right edge, on its middle (the row button is
+     position:relative); his name and "Say hi" keep clear of it. */
+  .chatdock-chatrow.is-nova .chatdock-chatrow-kind.is-nova{ position:absolute; right:1.375rem; top:50%; transform:translateY(-50%); margin:0; }
+  .chatdock-chatrow.is-nova .chatdock-chatrow-top, .chatdock-chatrow.is-nova .chatdock-chatrow-sub{ padding-right:6.4rem; }
   button.chatdock-friendhead.nova-head{ background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
     text-align:left; cursor:pointer; min-height:44px; -webkit-tap-highlight-color:transparent; border-radius:12px; }
   button.chatdock-friendhead.nova-head:active{ opacity:.8; }
@@ -25860,6 +25865,39 @@
     box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset,
       0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4);
   }
+  /* (384) the copy icon button - see showFriends */
+  .friend-copy-btn{
+    position:relative; flex:0 0 auto; width:2.9rem; height:2.9rem; min-width:44px; min-height:44px; padding:0; border:0;
+    border-radius:50%; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:#FFFFFF;
+    background:#0A0A0C; -webkit-tap-highlight-color:transparent;
+    box-shadow:0 1px 1px rgba(70,74,80,.7) inset, 0 -2px 2px rgba(0,0,0,.5) inset, 0 1px 3px rgba(0,0,0,.4), 0 4px 10px rgba(0,0,0,.4);
+    transition:transform .14s ease;
+  }
+  .friend-copy-btn:active{ transform:scale(.92); }
+  .friend-copy-btn svg{ position:absolute; width:1.3rem; height:1.3rem; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .friend-copy-btn .friend-copy-tick{ stroke:#4ADE80; stroke-width:2.6; opacity:0; transform:scale(.4); }
+  .friend-copy-btn.is-copied .friend-copy-ic{ animation:friend-copy-out .26s ease forwards; }
+  .friend-copy-btn.is-copied .friend-copy-tick{ animation:friend-copy-in .34s cubic-bezier(.3,1.5,.5,1) .06s forwards; }
+  .friend-copy-btn.is-copied{ box-shadow:0 0 0 1.5px rgba(74,222,128,.55), 0 1px 3px rgba(0,0,0,.4), 0 4px 14px rgba(74,222,128,.22); }
+  @keyframes friend-copy-out{ to{ opacity:0; transform:scale(.6); } }
+  @keyframes friend-copy-in{ 0%{ opacity:0; transform:scale(.4); } 100%{ opacity:1; transform:scale(1); } }
+  /* (384) the field's "type here": the wrapper takes the field's place in the row, the field fills it */
+  .friend-add-field{ position:relative; flex:1 1 auto; min-width:0; display:flex; align-items:center; cursor:text; }
+  .friend-add-field > .friend-add-input{ flex:1 1 auto; width:100%; }
+  /* (#stage and the extra classes: the clean look's field rule - #stage ... input.searchbox, !important - is 1-4-3) */
+  html[data-theme][data-layout] body #stage .friend-sect .friend-add-field > input.friend-add-input.searchbox{
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.11) !important; transition:box-shadow .18s ease;
+  }
+  html[data-theme][data-layout] body #stage .friend-sect .friend-add-field > input.friend-add-input.searchbox:focus{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent, #9FB4FF) 70%, transparent) !important; }
+  .friend-add-field > .friend-add-input::placeholder{ color:var(--soft); opacity:1; }
+  .friend-add-field > .friend-add-input:placeholder-shown:not(:focus){ text-indent:.55rem; }
+  .friend-add-field::before{
+    content:""; position:absolute; left:.95rem; top:50%; width:2px; height:1.15em; margin-top:-.575em; border-radius:1px;
+    background:var(--accent, #9FB4FF); opacity:0; pointer-events:none; z-index:1;
+  }
+  .friend-add-field:has(> .friend-add-input:placeholder-shown:not(:focus))::before{ animation:friend-caret 1.1s steps(1, end) infinite; }
+  @keyframes friend-caret{ 0%{ opacity:.95; } 50%{ opacity:0; } }
+  [data-reduce-motion="true"] .friend-add-field::before{ animation:none !important; opacity:.8 !important; }
   .profile-classline.has-pending{
     box-shadow:0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
                0 0 14px -3px var(--accent);
@@ -32844,11 +32882,17 @@
      surface on an older glass (a blue-grey body at a 12px blur). It takes
      the bar's body, blur and rim; a little more opaque than the bar, because
      it holds text read over the page. */
+  /* (384) NO GLASS ON THE CHAT SHEET. Madison, again: "When you hit the chat button and it pulls up, (I've mentioned this before)
+     the background behind the chat is see through and then you see it change to blurry." Since 327z12 the sheet rose on the
+     near-opaque fill and turned to this 30px glass 300ms after - and an iPhone builds a backdrop blur a few frames after it is
+     asked for, so for those frames the sheet was the .82 tint with the page sharp behind it, then the blur arrived. However the
+     handoff is timed that gap is WebKit's. So the sheet IS the fill it already rises on (the same tone, .95, its sheen and rim)
+     and never changes as it opens, moves or settles - and with the clean look ("too much Liquid Glass") the tab bar is the glass. */
   [data-theme="dark"][data-layout="modern"] .chatdock-panel{
-    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.82) !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.045) 55%), rgba(12,13,19,.95) !important;
     background-repeat:no-repeat !important; background-origin:border-box !important;
     border-color:rgba(255,255,255,.16) !important;
-    backdrop-filter:blur(30px) saturate(1.25) !important; -webkit-backdrop-filter:blur(30px) saturate(1.25) !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
   }
   /* ...AND WHILE IT MOVES, NO BLUR (build 327z10). The !important glass
      above out-ranked .is-flat / .is-settling, so on a phone the 30px blur
@@ -35343,29 +35387,45 @@ html.is-browser{ --fade-paper: transparent; }
      glows inside it from below and breathes, and the "?" is lit warm and lifts a little in time with it. The ring that goes out
      stays. All of it is transform and opacity on its own layers (.dq-ring's ::before / ::after) - no filter, nothing re-laid out;
      answered (.is-done) or recharging, none of it runs; Reduce motion keeps the light and the glow, still. */
+  /* (384) READY, WITHOUT THE SPIN. Madison: "The daily question button, when it's loading and when it's ready still isn't my favorite.
+     The ready version is it just spinning and that's distracting, the loading version is kinda lame and it's not much." The 383
+     comet ran round the rim every 2.6s. Ready is now STILL and LIT: the whole ring in the rank's colour on the rim with its own soft
+     glow, the colour rising inside from below and breathing slowly (4.2s), the "?" lit in it. The ring that goes out (::after on
+     the button, every 3.6s) is the one thing that moves outward. Transform and opacity only; Reduce motion keeps it lit and still. */
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring{ opacity:1 !important; }
+  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring > svg{ visibility:visible; }
+  .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring-prog{ stroke:color-mix(in srgb, var(--dq-c) 85%, #FFFFFF); }
   .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring::before{
-    content:""; position:absolute; inset:-1.5px; border-radius:50%; pointer-events:none;
-    background:conic-gradient(from 0deg, transparent 0 58%, color-mix(in srgb, var(--dq-c) 25%, transparent) 76%,
-      color-mix(in srgb, var(--dq-c) 85%, #FFFFFF) 95%, #FFFFFF 98%, transparent 100%);
-    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
-    mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
-    animation:dq-comet 2.6s linear infinite;
+    content:""; position:absolute; inset:-1px; border-radius:50%; pointer-events:none;
+    box-shadow:0 0 10px 1px color-mix(in srgb, var(--dq-c) 55%, transparent), inset 0 0 8px color-mix(in srgb, var(--dq-c) 30%, transparent);
   }
   .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring::after{
     content:""; position:absolute; inset:3px; border-radius:50%; pointer-events:none;
-    background:radial-gradient(85% 70% at 50% 100%, color-mix(in srgb, var(--dq-c) 48%, transparent), transparent 72%);
-    animation:dq-glow 2.6s ease-in-out infinite;
+    background:radial-gradient(85% 70% at 50% 100%, color-mix(in srgb, var(--dq-c) 50%, transparent), transparent 72%);
+    animation:dq-glow 4.2s ease-in-out infinite;
   }
-  /* the ring itself is hidden while ready (382: the rank's colour is in the rim) - its two layers show, its circles do not */
-  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring{ opacity:1 !important; }
-  html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-ring > svg{ visibility:hidden; }
-  @keyframes dq-comet{ to{ transform:rotate(360deg); } }
-  @keyframes dq-glow{ 0%, 100%{ opacity:.5; } 50%{ opacity:1; } }
+  @keyframes dq-glow{ 0%, 100%{ opacity:.45; } 50%{ opacity:1; } }
   html[data-theme][data-layout] .daily-question-fab.is-ready:not(.is-done):not(.is-charging) .dq-glyph{
     position:relative; z-index:1; color:color-mix(in srgb, var(--dq-c) 32%, #FFFFFF);
-    animation:dq-lift 2.6s ease-in-out infinite;
   }
-  @keyframes dq-lift{ 0%, 100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-1.5px) scale(1.07); } }
+  /* (384) WAITING, A COUNTDOWN. Answered, the button said little: a dim "?" and a thin arc. Now the middle says how long until the
+     next one ("5h", "40m" - dailyLeftText, on the ring's minute tick), the arc is the rank's colour with a lit head at its tip
+     travelling round it (.dq-ring-head, turned to the arc's end by --dq-p), and the track under it is a shade brighter. */
+  .daily-question-fab .dq-left{ display:none; }
+  .daily-question-fab.is-done:not(.is-charging) .dq-glyph{ display:none; }
+  .daily-question-fab.is-done:not(.is-charging) .dq-left{
+    display:block; position:relative; z-index:1; font:800 .8rem/1 var(--sans); letter-spacing:-.01em;
+    color:color-mix(in srgb, var(--dq-c) 40%, #FFFFFF); font-variant-numeric:tabular-nums;
+  }
+  .daily-question-fab.is-done .dq-ring-track{ stroke:color-mix(in srgb, var(--dq-c) 22%, rgba(255,255,255,.1)); }
+  .dq-ring-head, .dq-ring-halo{ opacity:0; transform-box:view-box; transform-origin:50px 50px;
+    transform:rotate(calc(var(--dq-p) * 360deg - 90deg)); transition:transform .9s cubic-bezier(.3,.7,.3,1); }
+  /* (.dq-ring circle - fill:none - is 0-1-1) */
+  .dq-ring circle.dq-ring-head{ fill:color-mix(in srgb, var(--dq-c) 45%, #FFFFFF); stroke:none; }
+  .dq-ring circle.dq-ring-halo{ fill:var(--dq-c); stroke:none; }
+  .daily-question-fab.is-done:not(.is-charging) .dq-ring:not(.is-empty):not(.is-full) .dq-ring-head{ opacity:1; }
+  .daily-question-fab.is-done:not(.is-charging) .dq-ring:not(.is-empty):not(.is-full) .dq-ring-halo{ opacity:.32; }
+  [data-reduce-motion="true"] .dq-ring-head, [data-reduce-motion="true"] .dq-ring-halo{ transition:none; }
   [data-reduce-motion="true"] .daily-question-fab .dq-ring::before,
   [data-reduce-motion="true"] .daily-question-fab .dq-ring::after,
   [data-reduce-motion="true"] .daily-question-fab .dq-glyph{ animation:none !important; }
@@ -53249,10 +53309,16 @@ function startStudying(){
 const NOVA_CLASSES = [
   /* the two marks share Nova's own vocabulary - a soft gradient and the four-point spark that
      sits in his name */
+  /* (384) THE TWO ICONS, REDRAWN. Madison: "The fire in the ifc class, it's not centered, nearly but it's not." / "The class button,
+     I like the fire and police icon but I don't think I love them." The flame's tip curled off to one side (its ink sat 1.8px low
+     and leaned), the shield was an outline with a 22% fill. Now both are SOLID and SYMMETRIC, centred on their weight: Fire Code a
+     teardrop flame (yellow to orange to red) with a pale core, the academy a filled shield (the same peach-violet-blue) with a
+     white star and a soft lit half. Same box (24), same sizes everywhere they appear (the class button, its list, the catalog,
+     the sign-up class cards). */
   { key: "academy", name: "Police Academy", sub: "Class 26E",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgp" x1="3" y1="2" x2="21" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB0A3"/><stop offset=".55" stop-color="#C7B3FF"/><stop offset="1" stop-color="#8FB4FF"/></linearGradient></defs><path d="M12 2.4 4.2 5.2v6.1c0 4.7 3.1 8.2 7.8 10.3 4.7-2.1 7.8-5.6 7.8-10.3V5.2z" fill="url(#cgp)" fill-opacity=".22" stroke="url(#cgp)" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 7.2l1.3 3.5 3.5 1.3-3.5 1.3L12 16.8l-1.3-3.5L7.2 12l3.5-1.3z" fill="url(#cgp)"/></svg>' },
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgp3" x1="5" y1="3" x2="19" y2="21.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB3A6"/><stop offset=".5" stop-color="#B9A4FF"/><stop offset="1" stop-color="#7FA6FF"/></linearGradient></defs><path d="M12 2.9 19.2 5.6V11.3C19.2 15.8 16.3 19.2 12 21.1 7.7 19.2 4.8 15.8 4.8 11.3V5.6Z" fill="url(#cgp3)"/><path d="M12 2.9 19.2 5.6V11.3C19.2 15.8 16.3 19.2 12 21.1Z" fill="#FFFFFF" fill-opacity=".1"/><path d="M12.00 7.50 L13.03 10.18 L15.90 10.33 L13.66 12.14 L14.41 14.92 L12.00 13.35 L9.59 14.92 L10.34 12.14 L8.10 10.33 L10.97 10.18Z" fill="#FFFFFF" fill-opacity=".95" stroke="#FFFFFF" stroke-opacity=".95" stroke-width=".6" stroke-linejoin="round"/></svg>' },
   { key: "ifc", name: "Fire Code", sub: "IFC",
-    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFD98A"/><stop offset=".5" stop-color="#FF9A4A"/><stop offset="1" stop-color="#F0594A"/></linearGradient></defs><path d="M12.2 2.4c.7 3.3-1.7 5-3.3 7.1-1.4 1.8-2.7 3.7-2.7 6.2a6 6 0 0 0 6 6 6 6 0 0 0 6-6c0-2.7-1.2-4.5-2.7-6-.3 1.4-1 2.5-2.1 3 .5-3.9-.6-7.4-1.2-10.3z" fill="url(#cgf)" fill-opacity=".28" stroke="url(#cgf)" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 11.3l1.1 2.9 2.9 1.1-2.9 1.1L12 19.3l-1.1-2.9L8 15.3l2.9-1.1z" fill="url(#cgf)"/></svg>' }
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
 function classSwitchAllowed(){
   return !!window.NOVA_CLASS_OWNER && (window.NOVA_CLASS !== "academy" || (store && store.publicId === window.NOVA_CLASS_OWNER));
@@ -95041,6 +95107,23 @@ function dailyRingFraction(now){
   const span = next.getTime() - last.getTime();
   return span > 0 ? Math.max(0, Math.min(1, (t - last.getTime()) / span)) : 0;
 }
+/* (384) how long until the next question, short: "5h", "40m" (whole hours from an hour out, minutes inside it) */
+function dailyLeftText(now){
+  const t = now == null ? Date.now() : now;
+  const next = new Date(t); next.setHours(17, 0, 0, 0);
+  if(next.getTime() <= t) next.setDate(next.getDate() + 1);
+  const mins = Math.max(1, Math.ceil((next.getTime() - t) / 60000));
+  return mins >= 60 ? Math.floor(mins / 60) + "h" : mins + "m";
+}
+function setDailyLeft(btn){
+  const el = btn && btn.querySelector(".dq-left");
+  if(!el) return;
+  let rolled = false;
+  try{ rolled = store.dailyQuestionDate !== dailyPeriodKey(); }catch(e){}
+  const txt = rolled ? "" : dailyLeftText();
+  el.textContent = txt;
+  btn.setAttribute("aria-label", txt && btn.classList.contains("is-done") ? "Daily question, the next one in " + txt.replace("h", " hours").replace("m", " minutes") : "Daily question");
+}
 function buildDailyRing(){
   const ring = document.createElement("span");
   ring.className = "dq-ring";
@@ -95048,7 +95131,9 @@ function buildDailyRing(){
   ring.innerHTML = '<svg viewBox="0 0 100 100" focusable="false">' +
     '<circle class="dq-ring-track" cx="50" cy="50" r="47.5"></circle>' +
     '<circle class="dq-ring-prog" cx="50" cy="50" r="47.5" transform="rotate(-90 50 50)"></circle>' +
-    '<circle class="dq-ring-flash" cx="50" cy="50" r="47.5"></circle></svg>';
+    '<circle class="dq-ring-flash" cx="50" cy="50" r="47.5"></circle>' +
+    /* (384) the lit head at the arc's tip, waiting (see .dq-ring-head) */
+    '<circle class="dq-ring-halo" cx="97.5" cy="50" r="7.5"></circle><circle class="dq-ring-head" cx="97.5" cy="50" r="3.9"></circle></svg>';
   return ring;
 }
 /* Puts the ring at `p` (0-1, never past 1). Whole is drawn undashed. */
@@ -95079,6 +95164,7 @@ function dailyRingTick(){
      waiting ring stays at whole rather than dropping to the new period's
      empty - the announcement fills it from there */
   if(btn.classList.contains("is-done") && !btn.classList.contains("is-charging")){
+    try{ setDailyLeft(btn); }catch(e){}
     let rolled = false;
     try{ rolled = store.dailyQuestionDate !== dailyPeriodKey(); }catch(e){}
     setDailyRing(btn, rolled ? Math.max(Number((btn.querySelector(".dq-ring") || {}).dataset && btn.querySelector(".dq-ring").dataset.p) || 0, .9999) : dailyRingFraction());
@@ -101087,6 +101173,11 @@ function showHome(){
   dailyGlyph.innerHTML = '<svg class="dq-mark dq-mark-q" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.9 8.6a3.1 3.1 0 1 1 4.4 2.8c-.8.36-1.3 1.1-1.3 1.95v.85" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17.5" r="1.55" fill="currentColor"/></svg>';
   dailyBtn.setAttribute("aria-label", "Daily question");
   dailyBtn.appendChild(dailyGlyph);
+  /* (384) answered: the time to the next one, in the middle (see .dq-left) */
+  const dailyLeft = document.createElement("span");
+  dailyLeft.className = "dq-left"; dailyLeft.setAttribute("aria-hidden", "true");
+  dailyBtn.appendChild(dailyLeft);
+  if(doneToday) try{ setDailyLeft(dailyBtn); }catch(e){}
   /* the ring: whole while the question waits, the time to the next one
      once it is answered (build 320, .dq-ring) */
   dailyBtn.insertBefore(buildDailyRing(), dailyGlyph);
@@ -134837,11 +134928,26 @@ function showFriends(){
      shape for the one thing you press on this card. `friend-send` is
      the matte black pill Send already uses, so the two fields on this
      screen now carry the same button. */
-  const copyBtn = actBtn("Copy", "friend-send", () => {
-    try {
-      navigator.clipboard.writeText(friendCodeOf());
+  /* (384) THE COPY ICON, NOT THE WORD. Madison: "where it has your code and the copy button, remove the copy button and just put
+     that copy button you see. The word copy don't need to be there. Make it look good." with a picture of the two-squares copy
+     glyph. A round 44px matte button (the same black as Send) with the glyph; a tap copies, the glyph turns to a green tick with a
+     small pop for a moment, and the toast says so - the button's name is its aria-label. */
+  const COPY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-ic"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.7"/>' +
+    '<path d="M15.4 8.6V6.7A2.7 2.7 0 0 0 12.7 4H6.7A2.7 2.7 0 0 0 4 6.7v6a2.7 2.7 0 0 0 2.7 2.7h1.9"/></svg>';
+  const TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-tick"><path d="M5.2 12.6l4.4 4.4L18.8 7.6"/></svg>';
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button"; copyBtn.className = "friend-copy-btn";
+  copyBtn.setAttribute("aria-label", "Copy your friend code");
+  copyBtn.innerHTML = COPY_SVG + TICK_SVG;
+  copyBtn.addEventListener("click", () => {
+    let ok = false;
+    try { navigator.clipboard.writeText(friendCodeOf()); ok = true; } catch(e){}
+    try { playSound("ui.tap.primary"); }catch(e){}
+    if(ok){
+      copyBtn.classList.remove("is-copied"); void copyBtn.offsetWidth; copyBtn.classList.add("is-copied");
+      clearTimeout(copyBtn._t); copyBtn._t = setTimeout(() => copyBtn.classList.remove("is-copied"), 1400);
       showToast("Friend code copied.");
-    } catch(e){ showToast("Your code is " + friendCodeOf()); }
+    } else showToast("Your code is " + friendCodeOf());
   });
   codeWrap.append(codeEl, copyBtn);
   const mhint = document.createElement("p");
@@ -134887,7 +134993,13 @@ function showFriends(){
     showFriends();
   });
   input.addEventListener("keydown", ev => { if(ev.key === "Enter") send.click(); });
-  addRow.append(input, send);
+  /* (384) "The 'enter a friends code' doesn't come off as a text box but I like how it looks? Could we still keep it how it is but
+     give it a more 'type here' vibe?" The same field, with what a field says: a soft inner edge, a brighter hint, and a cursor
+     blinking where your typing will start - only while it is empty and not yet tapped (the real one takes over then). */
+  const field = document.createElement("label");
+  field.className = "friend-add-field";
+  field.appendChild(input);
+  addRow.append(field, send);
   add.append(ah, addRow);
 
   /* ---- the people you have ---- */
