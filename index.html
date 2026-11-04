@@ -11,11 +11,17 @@
   /* The on-glass floor. Only ever set on a page-zoomed touch device -
      see syncFieldFloor(). !important because it must beat every
      per-field size in this file, each of which is right in CSS pixels
-     and wrong on a zoomed phone. */
-  html.page-zoomed input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=color]):not([type=file]),
-  html.page-zoomed textarea,
-  html.page-zoomed select,
-  html.page-zoomed [contenteditable="true"]{
+     and wrong on a zoomed phone.
+     (384) AND IT HAS TO OUT-RANK THEM, NOT ONLY OUT-SHOUT THEM. Two !important rules are settled by specificity, and since
+     build 382 the sign-in code field and the username field carry their own `font-size:17px !important` in a rule with
+     #stage in it (1-4-3) - which beat this one (0-8-2). So on the owner's phone (85% page zoom, 518 CSS px wide) both fields
+     computed 17px = 14.4px on the glass, under iOS's 16, and iOS zoomed the page in as soon as the code field was tapped:
+     "when I first logged into nova signing in, the screen was zoomed in". The three :not(#id)s are three ids' worth of
+     specificity and match everything; the floor now wins over any field rule with fewer than three ids in it. */
+  html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=color]):not([type=file]),
+  html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) textarea,
+  html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) select,
+  html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) [contenteditable="true"]{
     font-size:var(--field-floor, 19px) !important;
   }
 </style>
@@ -17321,6 +17327,21 @@
   @media (min-width:40rem){
     .sync-code-well{ min-height:4.2rem; }
     .sync-code-well .sync-code-value{ font-size:2rem; }
+  }
+  /* (384) THE COPY BUTTON BESIDE THE WELL (buildCopyIconButton, Manage friends' own). It stands at the row's right, centred on
+     the well - the well's height (3.7rem, 4.2rem from 40rem) less the button's, halved, above the row's bottom padding - and
+     the well gives up the button's width and a gap. On a 320px phone the code steps down a size so it still fits on a line. */
+  .sync-code-block{ position:relative; --sync-cb:max(2.9rem, 44px); --sync-row-pb:.2rem; }   /* (.sync-plain .sync-code-row's padding) */
+  .sync-code-block > .sync-code-row .sync-code-well{ margin-right:calc(var(--sync-cb) + .7rem); }
+  .sync-code-block > .sync-copy-btn{
+    position:absolute; right:0; width:var(--sync-cb); height:var(--sync-cb);
+    bottom:calc(var(--sync-row-pb, 0px) + (3.7rem - var(--sync-cb)) / 2);
+  }
+  @media (min-width:40rem){
+    .sync-code-block > .sync-copy-btn{ bottom:calc(var(--sync-row-pb, 0px) + (4.2rem - var(--sync-cb)) / 2); }
+  }
+  @media (max-width:22rem){
+    .sync-code-block .sync-code-well .sync-code-value{ font-size:1.4rem; }
   }
   /* Share & install and Help, each in a card like every section above
      them (build 324: "the spacing of the stuff under the sync code
@@ -35782,7 +35803,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .pausepanel .actions > .next:first-child,
   html[data-layout] .pausepanel .actions > .next:nth-child(2):last-child{ grid-column:1 / -1; }
   .pausepanel .pause-ic{ width:1.05rem; height:1.05rem; flex:none; }
-  @media (max-width:359.98px){ html[data-layout] .pausepanel .actions{ grid-template-columns:1fr; } }
+  /* (384) one column below 400px, not 360: on an iPhone SE (375) the card is ~295px wide and "Save and exit" with its mark needs
+     136px in a 123px half - it was cut to "Save and exi" (the full-app check, check-b384-walk) */
+  @media (max-width:399.98px){ html[data-layout] .pausepanel .actions{ grid-template-columns:1fr; } }
   /* BUILD 380: THE CORNER BUTTONS ARE HOME'S OWN BUBBLES. "The daily question and class button on home aren't it, shouldn't they be
      a little Liquid Glass? ... give it the same feel as the Home Screen" / "they just stand out when they shouldn't". They were their
      own glass (344: a dark-tinted body, a pool of light at the top-left, a brighter specular lip, the theme's colour in the rim).
@@ -36882,6 +36905,13 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .settings-page-account > .sect + .sect{ margin-top:1.4rem; }
   .signout-confirm .savecode-value{ margin:.4rem 0 1rem; }
   .signout-confirm .signout-msg{ min-height:1.2em; color:#FF8A80; }
+  /* (384) "When you sign out the buttons overlap" - Save my code and Sign out had no gap at all (the pop-up's .next is margin:0
+     and only the ghost buttons took .6rem), so the white Sign out sat flush on Save my code at every size and its shadow ran
+     over it. Two buttons next to each other in a pop-up always have the gap the others have, and a label that wraps grows its
+     button rather than running out of it. */
+  html[data-layout] body .savecode-card .savecode-sheet > .next + .next{ margin-top:.6rem; }
+  html[data-layout] body .savecode-card .savecode-sheet > .next{ white-space:normal; overflow-wrap:anywhere; height:auto; }
+  .signout-confirm .signout-msg.is-good{ color:#5FD38A; }
   /* (383) Classes: the grey line under the bar, the class cards on the shared card (the class you are in keeps its ring) */
   html[data-layout] body #stage > .panel.class-catalog > .class-catalog-sub{ margin:-.2rem 1rem 1.1rem; text-align:center; font-size:.95rem; color:var(--soft); }
   html[data-theme][data-layout] body #stage :is(.class-catalog, .classselect-panel) .class-card:not(.is-soon){
@@ -53382,21 +53412,76 @@ new MutationObserver(() => {
 
    Only when there IS a stuck scale, so on every device where none of
    this ever happens it does nothing at all. */
+/* (384) NEVER UNDER A LIVE FIELD, AND NEVER LEFT CLAMPED. Two calls inside two frames of each other (the focusout's, the
+   keyboard's, and now a screen change's) used to read the CLAMPED content as "the original" and put it back last - the
+   viewport left at maximum-scale=1 for good, which is pinch-zoom taken away. The authored content is what is restored now,
+   always, and the clamp is held until the scale has actually come back (or 400ms, whichever is first) rather than two
+   frames, which is not always long enough for Safari to apply it. Returns true when it asked. */
+var zoomClampTimer = 0, zoomClampHeld = false;
 function resetStuckZoom(){
   const vv = window.visualViewport;
-  if(!vv || !(vv.scale > 1.01)) return;
+  if(!vv || !(vv.scale > 1.01)) return false;
+  /* a field being typed in is iOS's to hold: its zoom and pan are the keyboard's */
+  try{ if(isTextEntry(document.activeElement)) return false; }catch(e){}
+  /* one clamp at a time: a second ask while one is held would only restart it */
+  if(zoomClampHeld) return true;
   const meta = document.getElementById("viewportmeta");
-  if(!meta) return;
-  const original = meta.getAttribute("content");
+  if(!meta) return false;
+  const original = String(meta.getAttribute("content") || "").replace(/\s*,\s*maximum-scale\s*=\s*[^,]*/gi, "");
+  let done = false;
+  const restore = () => {
+    if(done) return; done = true; zoomClampHeld = false; clearTimeout(zoomClampTimer);
+    try{ meta.setAttribute("content", original); }catch(e){}
+  };
   try{
+    zoomClampHeld = true;
     meta.setAttribute("content", original + ", maximum-scale=1");
-    /* Two frames: one for Safari to apply the clamp, one to lift it. */
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      try{ meta.setAttribute("content", original); }catch(e){}
-    }));
-    setTimeout(() => { try{ meta.setAttribute("content", original); }catch(e){} }, 400);
-  }catch(e){ try{ meta.setAttribute("content", original); }catch(e2){} }
+    const t0 = Date.now();
+    const lift = () => {
+      if(done) return;
+      if(vv.scale > 1.01 && Date.now() - t0 < 400){ zoomClampTimer = setTimeout(lift, 50); return; }
+      restore();
+    };
+    /* at least two frames: one for Safari to apply the clamp, one to lift it; a hidden page runs no frames, so a timer
+       lifts it there */
+    requestAnimationFrame(() => requestAnimationFrame(lift));
+    setTimeout(restore, 460);
+  }catch(e){ restore(); }
+  return true;
 }
+/* ---- A HELD ZOOM IS UNWOUND AT EVERY WAY BACK IN (384) ----
+   Madison, on build 383: "when I first logged into nova signing in, the screen was zoomed in" - and then "The bottom tab is
+   glitching right now, it's showing up in the middle of the screen of review and the unit selection screen ... when paused
+   the box is glitched and is showing at the top". One cause: the sign-in code field was under 16px on the glass at his 85%
+   page zoom (see the floor's note at the top of the stylesheet), so iOS zoomed in on it, and NOTHING EVER ZOOMED BACK OUT:
+   - Sync This Device swaps the screen out from under the focused field, which fires no focusout (a removed element is not
+     blurred), so the focusout unwind below never ran;
+   - the keyboard's own unwind asks "has the keyboard gone?" as visualViewport.height >= innerHeight - 40 - and under a
+     held zoom the visual viewport is SMALLER BY THE ZOOM, so the answer was "no" for as long as the zoom lasted;
+   - a reload (Sign out, a class switch) can bring a scale back with the page, and nothing looked at boot.
+   With the page held magnified, everything placed against the screen is placed against a viewport that is not the one
+   on the glass: a fixed bar lands part way up (or off) the screen, and Pause centred its card on the visual viewport's
+   height in the layout's coordinates - the top of what was showing.
+   So a held scale with no field focused is unwound at boot, on pageshow (a reload or a page brought back from the
+   cache), on coming back to the app, and on every screen change - each a conditional resetStuckZoom(), which does nothing
+   at scale 1 and nothing while a field is focused. Pinch-zoom is never taken away: the clamp is lifted as soon as the
+   scale is back, and a zoom somebody pinches on a screen stays until they leave that screen. */
+function unwindHeldZoom(){
+  const vv = window.visualViewport;
+  if(!vv || !(vv.scale > 1.01)) return false;
+  return resetStuckZoom();
+}
+(function(){
+  if(!window.visualViewport) return;
+  /* more than once each time: Safari can restore a scale a beat after the page is shown, and a keyboard still going
+     away holds its own for ~250ms */
+  const soon = () => { unwindHeldZoom(); requestAnimationFrame(unwindHeldZoom); setTimeout(unwindHeldZoom, 350); setTimeout(unwindHeldZoom, 900); };
+  try{ soon(); }catch(e){}
+  window.addEventListener("load", soon);
+  window.addEventListener("pageshow", soon);
+  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") soon(); });
+  try{ new MutationObserver(soon).observe(document.getElementById("stage"), { childList: true }); }catch(e){}
+})();
 
 /* ---- AND THE FLOOR HAS TO BE 16px ON THE SCREEN, NOT IN THE CSS ----
    The zoom-on-typing was reported yet again against a build where every
@@ -53461,7 +53546,10 @@ function resetStuckZoom(){
 
 if(window.visualViewport){
   const vv = window.visualViewport;
-  const keyboardGone = () => vv.height >= window.innerHeight - 40;
+  /* (384) in the layout's pixels: under a held zoom the visual viewport is smaller by the zoom itself, and comparing its
+     raw height read "the keyboard is still up" for as long as the zoom lasted - so this unwind never ran when it was
+     needed most */
+  const keyboardGone = () => vv.height * (vv.scale > 0 ? vv.scale : 1) >= window.innerHeight - 40;
   const unwind = () => {
     if(Date.now() < toTopHoldUntil) return;
     /* Only once the keyboard has actually gone, and only while nothing
@@ -86340,10 +86428,15 @@ var pauseLine = null;
 function centerPauseStack(panel, stack){
   const actions = stack.querySelector(".actions");
   const place = () => {
-    if(!stack.isConnected){ window.removeEventListener("resize", place); return; }
+    if(!stack.isConnected){ window.removeEventListener("resize", place); try{ window.visualViewport.removeEventListener("resize", place); }catch(e){} return; }
     stack.style.transform = "";
     const r = stack.getBoundingClientRect(), pr = panel.getBoundingClientRect();
     const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    /* (384) THE MIDDLE OF WHAT IS SHOWING, in the coordinates the boxes are read in. Box tops are the layout viewport's;
+       the visual viewport starts offsetTop below its top. At scale 1 that is 0 and nothing changes; under a held zoom the
+       card was centred on the visual viewport's height measured from the LAYOUT's top - "when paused the box is glitched
+       and is showing at the top". The lines below are worked out from the visible band's top and moved down by it. */
+    const bandTop = (window.visualViewport && window.visualViewport.offsetTop > 0) ? window.visualViewport.offsetTop : 0;
     const dpr = window.devicePixelRatio || 1;
     const first = actions && actions.querySelector("button");
     /* BUILD 380: THE CARD ON THE SCREEN'S MIDDLE. Pause (the screen with Resume) centres its card and keeps the line its first button
@@ -86360,13 +86453,16 @@ function centerPauseStack(panel, stack){
       line = Math.round(line * dpr) / dpr;
       if(anchor) pauseLine = { vh, w: window.innerWidth, line };
     }
-    let dy = first ? line - first.getBoundingClientRect().top : vh / 2 - (r.top + r.height / 2);
+    /* (the line is kept from the visible band's top; it is placed from where that band is now) */
+    let dy = first ? bandTop + line - first.getBoundingClientRect().top : bandTop + vh / 2 - (r.top + r.height / 2);
     dy = Math.max(dy, pr.top + 8 - r.top);
     stack.style.transform = Math.abs(dy) >= 0.01 ? "translateY(" + dy.toFixed(2) + "px)" : "";
   };
   requestAnimationFrame(place);
   setTimeout(place, 450);
   window.addEventListener("resize", place);
+  /* (384) and when the visible band changes under it - a held zoom being given back */
+  try{ window.visualViewport.addEventListener("resize", place); }catch(e){}
 }
 
 /* A custom, in-page confirmation for leaving mid-test — deliberately NOT
@@ -125556,7 +125652,15 @@ function showAppearance(opts){
          without one is the odd one out. The advice line goes inside too. */
       const card = document.createElement("div");
       card.className = "sync-plain settings-card sync-card";
-      card.appendChild(row);
+      /* (384) THE FRIEND CODE'S COPY BUTTON, BESIDE THE CODE. Madison: "The copy button to how the friend button has, the sync
+         code needs that same kinda button as well." The same button (buildCopyIconButton), beside the code's well. It copies
+         the code whether it is showing or not, and never shows or hides it - it is the row's neighbour, not part of it. */
+      const codeBlock = document.createElement("div");
+      codeBlock.className = "sync-code-block";
+      const copyCode = buildCopyIconButton("Copy your sync code", () => shownSyncCode(), "Sync code copied.", t => "Your sync code is " + t);
+      copyCode.classList.add("sync-copy-btn");
+      codeBlock.append(row, copyCode);
+      card.appendChild(codeBlock);
       const cardRule = document.createElement("div");
       cardRule.className = "sync-plain-rule";
       card.appendChild(cardRule);
@@ -128240,10 +128344,39 @@ function checkFriendRequests(){
    share and a refused clipboard both return false, because marking the
    prompt satisfied when nothing was saved silences it having achieved
    precisely nothing - the same rule the clipboard path already had. */
+/* ---- ON A COMPUTER, SAVE IT COPIES (384) ----
+   Madison: "Why did my laptop do a weird thing when I selected save code by the way? Look into this and fix it." Save it
+   called navigator.share wherever it exists, and Chrome and Edge on Windows have it: it opens the Windows share dialog
+   (nearby sharing, apps, a contact list) over the app - a phone's share sheet on a computer, where nobody saves a code
+   that way. On a computer (a2hsDeviceGuess: not an iPhone, iPad or Android device) Save it now copies the code and the
+   screen says so; a phone or tablet keeps its share sheet. The copy is the code as shown (Fire Code's included: never the
+   account's internal "__ifc" name, which the old clipboard path copied). */
+function saveCodeShares(){ return !!navigator.share && a2hsDeviceGuess() !== "computer"; }
+function saveCodeCopiedLine(){ return "Copied your sync code. Paste it into a note or an email to yourself to keep it."; }
+/* The clipboard, with the old way as a fallback (a browser without the async clipboard, or one that refuses it). */
+async function copyTextQuietly(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try{ await navigator.clipboard.writeText(text); return true; }catch(e){}
+  }
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", ""); ta.setAttribute("aria-hidden", "true");
+    ta.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;font-size:16px;";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand && document.execCommand("copy");
+    ta.remove();
+    return !!ok;
+  }catch(e){ return false; }
+}
+/* how the last Save it went: "share" (a share sheet took it) or "copy" (the clipboard did) - what the screen then says */
+var lastCodeSaveWay = "";
 async function saveSyncCodeVia(anchorEl){
   if(!syncCode) return false;
   const text = "Nova sign-in code: " + shownSyncCode()
     + "\nKeep this. It is the only way back into your account if this phone loses the app's data.";
+  lastCodeSaveWay = "copy";
+  if(!saveCodeShares()) return copyTextQuietly(shownSyncCode());
   if(navigator.share){
     try{
       if(anchorEl && anchorEl.scrollIntoView){
@@ -128251,6 +128384,7 @@ async function saveSyncCodeVia(anchorEl){
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
       }
       await navigator.share({ title: "Nova sign-in code", text: text });
+      lastCodeSaveWay = "share";
       return true;
     }catch(e){
       /* Backed out on purpose - not a failure, and not a save either. */
@@ -128258,11 +128392,7 @@ async function saveSyncCodeVia(anchorEl){
       /* Anything else falls through to the clipboard. */
     }
   }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    try{ await navigator.clipboard.writeText(syncCode); return true; }
-    catch(e){}
-  }
-  return false;
+  return copyTextQuietly(shownSyncCode());
 }
 
 /* ---- ONCE, AND IT MEANS ONCE ----
@@ -128352,8 +128482,8 @@ function showSaveCodeCard(opts){
   title.className = "savecode-title"; title.id = "savecode-title";
   title.textContent = "Save your sync code";
   const code = document.createElement("p");
-  code.className = "savecode-value"; code.textContent = syncCode;
-  code.setAttribute("aria-label", "Sync code " + syncCode.split("").join(" "));
+  code.className = "savecode-value"; code.textContent = shownSyncCode();
+  code.setAttribute("aria-label", "Sync code " + String(shownSyncCode()).split("").join(" "));
   const body = document.createElement("p");
   body.className = "savecode-body";
   body.textContent = "This is your sync code. Write it down or save it somewhere safe. It is the only way to get your progress back on a new phone or if this app is deleted.";
@@ -128390,7 +128520,6 @@ function showSaveCodeCard(opts){
   save.addEventListener("click", async () => {
     if(save.disabled) return;
     save.disabled = true;
-    const viaShare = !!navigator.share;
     let ok = false;
     /* no anchor: the card does not scroll, and awaiting frames first would
        step outside the tap iOS requires for share() */
@@ -128398,7 +128527,8 @@ function showSaveCodeCard(opts){
     save.disabled = false;
     if(ok){
       saved = true;
-      status.textContent = viaShare ? "Saved." : "Copied. Paste it into Notes or a message to yourself.";
+      /* (384) what actually happened: a share sheet took it, or it was copied (always, on a computer) */
+      status.textContent = lastCodeSaveWay === "share" ? "Saved." : saveCodeCopiedLine();
       status.className = "savecode-status is-good";
     } else {
       status.textContent = "Not saved. Write the code down instead, then tick the box below.";
@@ -128430,12 +128560,12 @@ function showSaveCodeCard(opts){
 }
 /* Settings > Sync: Save it, under the code (a settingsRow, 44px+). */
 function buildSettingsSaveCodeRow(){
-  const row = settingsRow("share", "Save it", "Send it to Notes or a message to yourself");
+  /* (384) on a computer it copies, and says so before it is tapped */
+  const row = settingsRow("share", "Save it", saveCodeShares() ? "Send it to Notes or a message to yourself" : "Copy it, to paste into a note or an email");
   row.classList.add("sync-save-code-row");
   row.addEventListener("click", async () => {
     if(row.disabled) return;
     row.disabled = true;
-    const viaShare = !!navigator.share;
     let ok = false;
     try{ ok = await saveSyncCodeVia(null); }catch(e){ ok = false; }
     row.disabled = false;
@@ -128443,7 +128573,7 @@ function buildSettingsSaveCodeRow(){
       store.savedCodeSaved = true;
       try{ localStorage.setItem("class26e.savecode.card", String(Date.now())); }catch(e){}
       saveStore();
-      showToast(viaShare ? "Saved." : "Copied. Paste it into Notes or a message to yourself.");
+      showToast(lastCodeSaveWay === "share" ? "Saved." : saveCodeCopiedLine());
     } else showToast("Not saved. Write the code down instead.");
   });
   return row;
@@ -128608,12 +128738,19 @@ function showSignOutConfirm(){
   el.appendChild(sheet);
   let busy = false;
   const close = () => { if(busy) return; el.classList.remove("show"); setTimeout(() => el.remove(), 220); };
-  save.addEventListener("click", () => { try{ saveSyncCodeVia(save); }catch(e){} });
+  /* (384) and it says what it did: copied (a computer, or no share sheet), or nothing at all when a share sheet took it */
+  save.addEventListener("click", async () => {
+    let ok = false;
+    try{ ok = await saveSyncCodeVia(save); }catch(e){ ok = false; }
+    if(busy) return;
+    if(ok && lastCodeSaveWay === "copy"){ msg.textContent = saveCodeCopiedLine(); msg.classList.add("is-good"); }
+    else if(!ok && !saveCodeShares()){ msg.textContent = "Couldn't copy it. Write the code down instead."; msg.classList.remove("is-good"); }
+  });
   cancel.addEventListener("click", close);
   el.addEventListener("click", e => { if(e.target === el) close(); });
   go.addEventListener("click", () => {
     if(busy) return;
-    busy = true; go.disabled = true; cancel.disabled = true; go.textContent = "Saving\u2026"; msg.textContent = "";
+    busy = true; go.disabled = true; cancel.disabled = true; go.textContent = "Saving\u2026"; msg.textContent = ""; msg.classList.remove("is-good");
     /* the latest progress goes up now, and the sign-out waits until it has landed */
     try{ pushToCloud(true); }catch(e){}
     const t0 = Date.now();
@@ -136634,7 +136771,9 @@ function renderRankingRows(rows, entries, board, opts){
       row.classList.add("lb-row-me"); row.dataset.me = "1";
       const since = Date.now() - lbFindMeAt;
       if(since < 3300){ row.classList.add("rank-flash"); row.style.animationDelay = (-since) + "ms";
-        row.addEventListener("animationend", () => { row.classList.remove("rank-flash"); row.style.animationDelay = ""; }, { once: true }); }
+        /* (384) the row's own end, not a picture inside it finishing its fade (animationend bubbles) - see Find me */
+        const end = e => { if(e.target !== row || e.animationName !== "rank-flash-anim") return; row.removeEventListener("animationend", end); row.classList.remove("rank-flash"); row.style.animationDelay = ""; };
+        row.addEventListener("animationend", end); }
     }
 
     const rank = document.createElement("span");
@@ -139152,6 +139291,31 @@ function openFriendsFromChat(){
   showFriends();
 }
 let friendsBackFresh = false;
+/* ---- THE COPY ICON BUTTON (384) ----
+   Manage friends' copy control (see showFriends: "remove the copy button and just put that copy button you see"), made once
+   so the sync code can wear the very same one - Madison: "The copy button to how the friend button has, the sync code needs
+   that same kinda button as well." A round 44px+ matte button with the two-squares glyph; a tap copies, the glyph turns to
+   a green tick with a small pop for 1.4s and the toast says what was copied. Its name is its aria-label. */
+function buildCopyIconButton(label, getText, copiedToast, failToast){
+  const COPY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-ic"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.7"/>' +
+    '<path d="M15.4 8.6V6.7A2.7 2.7 0 0 0 12.7 4H6.7A2.7 2.7 0 0 0 4 6.7v6a2.7 2.7 0 0 0 2.7 2.7h1.9"/></svg>';
+  const TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-tick"><path d="M5.2 12.6l4.4 4.4L18.8 7.6"/></svg>';
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "friend-copy-btn";
+  btn.setAttribute("aria-label", label);
+  btn.innerHTML = COPY_SVG + TICK_SVG;
+  btn.addEventListener("click", async () => {
+    const text = String(getText() || "");
+    try { playSound("ui.tap.primary"); }catch(err){}
+    const ok = !!text && await copyTextQuietly(text);
+    if(ok){
+      btn.classList.remove("is-copied"); void btn.offsetWidth; btn.classList.add("is-copied");
+      clearTimeout(btn._t); btn._t = setTimeout(() => btn.classList.remove("is-copied"), 1400);
+      showToast(copiedToast);
+    } else if(text) showToast(failToast(text));
+  });
+  return btn;
+}
 function showFriends(){
   /* a repaint of this screen keeps where it goes back to; arriving any
      other way (a notification, an older link) goes back to Profile */
@@ -139372,23 +139536,8 @@ function showFriends(){
      that copy button you see. The word copy don't need to be there. Make it look good." with a picture of the two-squares copy
      glyph. A round 44px matte button (the same black as Send) with the glyph; a tap copies, the glyph turns to a green tick with a
      small pop for a moment, and the toast says so - the button's name is its aria-label. */
-  const COPY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-ic"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.7"/>' +
-    '<path d="M15.4 8.6V6.7A2.7 2.7 0 0 0 12.7 4H6.7A2.7 2.7 0 0 0 4 6.7v6a2.7 2.7 0 0 0 2.7 2.7h1.9"/></svg>';
-  const TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-tick"><path d="M5.2 12.6l4.4 4.4L18.8 7.6"/></svg>';
-  const copyBtn = document.createElement("button");
-  copyBtn.type = "button"; copyBtn.className = "friend-copy-btn";
-  copyBtn.setAttribute("aria-label", "Copy your friend code");
-  copyBtn.innerHTML = COPY_SVG + TICK_SVG;
-  copyBtn.addEventListener("click", () => {
-    let ok = false;
-    try { navigator.clipboard.writeText(friendCodeOf()); ok = true; } catch(e){}
-    try { playSound("ui.tap.primary"); }catch(e){}
-    if(ok){
-      copyBtn.classList.remove("is-copied"); void copyBtn.offsetWidth; copyBtn.classList.add("is-copied");
-      clearTimeout(copyBtn._t); copyBtn._t = setTimeout(() => copyBtn.classList.remove("is-copied"), 1400);
-      showToast("Friend code copied.");
-    } else showToast("Your code is " + friendCodeOf());
-  });
+  /* (384: built by buildCopyIconButton, which the sync code's copy in Settings > Sync shares) */
+  const copyBtn = buildCopyIconButton("Copy your friend code", () => friendCodeOf(), "Friend code copied.", t => "Your code is " + t);
   codeWrap.append(codeEl, copyBtn);
   const mhint = document.createElement("p");
   mhint.className = "friend-hint";
@@ -143387,7 +143536,10 @@ function showRankings(defaultBoard){
     mine.classList.remove("rank-flash");
     void mine.offsetWidth;
     mine.classList.add("rank-flash");
-    mine.addEventListener("animationend", () => mine.classList.remove("rank-flash"), { once: true });
+    /* (384) ONLY THE FLASH'S OWN END TAKES IT OFF. animationend bubbles: a character or flare in the row finishing its .24s fade-in
+       (lb-art-in, as the board's pictures arrive) took the flash off the row a moment after Find me - check-sync caught it */
+    const end = e => { if(e.target !== mine || e.animationName !== "rank-flash-anim") return; mine.removeEventListener("animationend", end); mine.classList.remove("rank-flash"); };
+    mine.addEventListener("animationend", end);
   });
 
   /* Only over NOTHING. The listener retries by itself, and a dropped
