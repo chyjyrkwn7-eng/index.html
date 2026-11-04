@@ -33573,3 +33573,14 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   read was refused by the sandbox's production-read rule; waiting on Madison to let one read through. Stored hashed, no
   names or ids in the repo. Also raised: sign-up cannot enroll in Fire Code (the class screen offers the academy and "More
   classes"); proposed both cards, the PDF step for Fire Code, a Fire Code-only account never shown the academy unless added.
+
+### Build 384 - the two consent questions settled; Durrell Kennedy in Contributors
+- Madison: "Arrest search and seizure duplicate questions, the answer is revoked, remove the warning ... make the answer for
+  both woukd be the 'revoked by the person granting consent'". Arrest, Search, and Seizure #31 (already D) and #55 (was C,
+  "Is a mere acquiescence ...") both count "Revoked by the person granting consent"; both verifyNote lines removed (they were
+  the only two in the bank - the note's renderer stays for any future one). The answer is not part of a question's key
+  (topic|src|text-hash), so their keys - and everyone's history on them - are unchanged; 1,119 questions, every other answer
+  unchanged. check-b384-consent (set OLD_HTML to the build before for the key comparison); against 1dca98e (1), (2), (4) FAIL.
+- Madison: "Add Durrell Kennedy as a contributor as well. He helped with creation of the question bank". Role "Question
+  Bank", one row "Helped create the question bank" (nothing claimed beyond what he said), by surname after Darjean.
+  check-b382-credits: seven PEOPLE.
