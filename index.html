@@ -102626,11 +102626,10 @@ function showModeSelect(){
   panel.className = "panel modeselect";
 
   panel.appendChild(iosNavBar("Choose your mode", buildBackLink("Home", showHome)));
-
-  const glow = document.createElement("div");
-  glow.className = "homeglow";
-  glow.setAttribute("aria-hidden", "true");
-  panel.appendChild(glow);
+  /* (384) NO GLOW. Madison: "is there like a glow on this screen and it moves with the scroll but it's not on some of the other
+     screens? Is it meant to be there?" It was not: the .homeglow (a 600x416 radial of the accent, absolute in the panel, so it
+     scrolled with it) was left here from the sign-up look; every other screen past Home lost its glow with the clean look.
+     The sky behind (body::before, fixed) is the only light here now, as on the units screen next door. */
 
   const head = document.createElement("p");
   head.className = "modeselect-sub";

@@ -32498,3 +32498,15 @@ on the box, the suited responder, the decon and the all clear.
   predates 25/50/75/150); check-behaviour check_b313_fx + check_b317_hundobox: only "Confetti ... leaves the box and its bar
   gold" and the three "confetti: then gold" hand-off legs fail, the same on 3b6f4ad (academy; untouched here). A "bubbles:
   spreads out" fail under load passed on its own re-run.
+
+### Build 384 - Choose your mode: the glow that scrolled is gone (NOT on main, waiting for Madison)
+
+Madison (a 383 screenshot of Fire Code's Choose your mode): "Am I crazy or is there like a glow on this screen and it moves
+with the scroll but it's not on some of the other screens? Is it meant to be there?"
+- It was real and not meant: showModeSelect still appended a .homeglow - the sign-up screens' 600x416 radial of the accent
+  (opacity .12 in dark), position:absolute inside the panel, so it scrolled with the page. Every other screen past Home lost
+  its glow with the clean look (builds 37x); this one was missed. Found by listing every element and pseudo-element over the
+  title (elementsFromPoint missed it: pointer-events:none).
+- Removed from showModeSelect only. The sign-up screens (sign-up check, class, name, character, code reveal/entry) keep theirs.
+- Gate: check-b384-modes (7) - no radial gradient on the panel or anything in it (before/after included), both classes, phone,
+  iPad and SE. Fails on 4f3d9c3 (homeglow, all six); passes here with (1)-(6).
