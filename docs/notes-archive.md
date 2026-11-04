@@ -32069,3 +32069,84 @@ GATES (one at a time):
 - Scratch (scratchpad only): a walker printing every tappable thing's middle/edge hits per screen, a sign-up walk (Welcome to the
   class step) and pop-ups (challenge card, badge case, rank ladder, daily question): no regressions (nothing that had a switch
   lost it), 84 surfaces gained one.
+### Build 384 - friends in every class (NOT on main, waiting for Madison)
+Madison: "your friends will be shown no matter what class type you are in. So for example while I'm in the ifc, I should be able
+to see any friend I have in the chat and friends list and stuff. Vice Versa, any class."
+- WHAT: in Fire Code the friends are the academy account's - one publicId, one friend code, the same friends and threads: the
+  chat (Friends tab with each friend's DM and online dot, Groups, Inbox), Manage friends (your code, Add a friend, requests, your
+  friends with who is online), the friend-request banner, a new friend's card, presence. Anything changed in one class is the
+  same in the other. Leaderboard and Virtual Room stay academy-only: no VR invite banner in Fire Code (checkLobbyInvites); an
+  Inbox VR invite still lists, and Join says "Virtual Room is only for the Police Academy class." (academyOnly, 332). NOVA STAYS
+  PER CLASS on purpose: his thread is local (class26e.nova, redirected), he talks about the class you are in (its greeting, its
+  recap); his row heads both classes' friends lists once he is befriended there.
+- HOW IT REACHES THE CLOUD: socialDb() = fbDb || ifcSocialDb. fbDb stays null in Fire Code, so everything keyed on fbDb (the
+  leaderboard row writes and screens, the Virtual Room, bug reports, the weekly settle) is untouched. initFirebase's Fire Code
+  branch makes two handles from one firebase.firestore(), each wrapped by scopedFirestore(db, may): ifcAcctDb (383's, NOW
+  SCOPED: writes only progress/<academy code>__ifc and progress/<academy code>__ifc__*, reads progress) and ifcSocialDb (reads
+  `leaderboard` and `vrooms`, writes `vrooms` only). A refused write rejects (in a transaction or batch it throws, so nothing is
+  written); a refused read comes back empty. So Fire Code cannot write progress/<code>, its __floor or the leaderboard whatever
+  calls it. VR documents live in `vrooms` too; they stay out of reach because every VR function still asks for fbDb.
+  Switched from fbDb to socialDb(): presence (sendHeartbeat, shareActivity, attachPresence, sendOffline), the mailbox
+  (inboxDocFor, sendToInbox, sendToInboxSlot, attachInbox, clearInbox, clearReadPings, pruneStalePings), the board reads for
+  friends (fetchBoardForInvites, attachFriendsBoardListener), the chat (refreshChatList, openFriendChat, CHAT_CTX.participantsOf,
+  chatMayStamp, startChatPresence, createChatRoom, joinChatRoom, leaveChatRoom, leaveChatByCode, openDirectChatWith,
+  peekChatInvite, the chat half of the pagehide/visibilitychange away marks) and buildVroomChatPanel's writes and listener (send,
+  sendKind, photo, reaction, poll, typing, trim, attachChat). onSocialReady(cb): onFirebaseReady in the academy; in Fire Code its
+  own queue, drained by ifcSocialReady (which also beats if Home already started the heartbeat, and starts watchOtherClassSocial).
+  The academy's behaviour is byte-for-byte the old path (socialDb() IS fbDb there).
+- IDENTITY: socialMe() / socialCard() / socialOptIn(). Academy: the store, as before. Fire Code: the academy copy
+  (NOVA_ACADEMY_RAW at launch, then each newer cloud copy, noteAcademyCopy): publicId, firstName, avatarChar, leaderboardOptIn
+  (class sharing gates the heartbeat/activity/offline marks and showFriends' note, which in Fire Code points at the Police Academy
+  class's Settings), and level/badges/mystery from the academy's own board row (rawLevel when fixBoardLevel capped it; left out
+  until the board is read) - never Fire Code's numbers. Used by mailbox messages, chat roster entries and presence patches,
+  lastJoin/lastLeave and message names. publicIdOf() in Fire Code takes the academy's id and never mints one; boot sets it if
+  Fire Code's copy lost it. Fire Code's own store.leaderboardOptIn stays false (it has no board).
+- THE FRIENDS BLOCK: SOCIAL_FIELDS = friendCode, friendsIn, friendsOut, friendsDeclined, chats, chatInvitesOut - on each class's
+  own store, saved to each class's own account document (Fire Code's to progress/<code>__ifc). New store field `socialAt`
+  (default 0 in the store object and applyLoadedData): saveStore dates it when the block differs from socialSigBase (set by
+  applyLoadedData, persistLocally and socialTakeInto; a `var` with no initialiser, declared with SOCIAL_FIELDS above `store`), so
+  only a change made HERE is dated - a block that arrived is the base. foldSocialFrom(src, fromAcademy): takes the other class's
+  block when its socialAt is newer (a tie goes to the academy - a pre-384 Fire Code copy may hold a friend code it minted on its
+  own), only for the same publicId (a reset copy has none). Sources: at launch (Fire Code: NOVA_ACADEMY_RAW; the academy, owner
+  only: localStorage class26e.ifc.drill.v1 read raw) and live (watchOtherClassSocial: Fire Code listens to progress/<academy
+  code>, read only; the academy, owner only, to progress/<code>__ifc). mergeSameAccount takes the block by socialAt (a friend
+  added on one device is not undone by a copy that merely saved something else later; neither side dated: as before), and
+  accountAhead counts a newer socialAt so writeAccount never writes an older list over a newer one. wipeLocalProgressAndSettings
+  leaves socialAt 0 and the base set (an emptied list never wins).
+- THE ROW: fcode/freq/facc are still published by the academy alone. From Fire Code a request by code also goes to their
+  mailbox (sendFriendRequest, Fire Code only - as sendFriendRequestTo always did), an accept mails friendacc as always; the row
+  catches up the next time the academy runs on any device (it folds Fire Code's block and pushes its own row).
+- SHARED device keys (head script SHARED): chatseen, chatmuted, chatleft, chatroom, chatlistcache, chatheight, friendmoment,
+  friendreq.seen, invite.seen, notifhandled - one copy for both classes (read marks, mutes, the open chat, a friend's moment once).
+  Sign out still clears them (not in its keep list).
+- Fire Code only, so rows read for friends never leak into the class: settleWeeklyWin returns false, lbArtPreloadSoon does
+  nothing, the week's recap is always the personal one (buildWeekRecapOptedOut), the new-friend card names only the chat;
+  chatUnreachable() ("Chat needs sync. Turn it on in the Police Academy class." without an academy code) replaces the four
+  academyOnly("Chat") toasts. A friends-count banner (Koi Pond, five friends) can now be earned in Fire Code: its friends are real.
+- BUDGET: classmates - nothing new (socialAt rides account writes they already make; the other-class listener is the owner's
+  only; no new periodic work). The owner in Fire Code - what he spends in the academy for friends, on that device instead of the
+  academy (heartbeat 1 write / 4 min while visible, presence and mailbox listeners, the board on Home ~40 reads then deltas every
+  15 min, chat documents), plus one listener on the academy's account doc (a read per academy write elsewhere). In the academy -
+  one listener on progress/<code>__ifc (a read per Fire Code write elsewhere).
+- Gate tools/check-b384-friends.py (in-memory Firestore with dotted updates, FieldValue/FieldPath, transactions, batches,
+  document and collection listeners; owner account, TEST-3846, made-up classmates): (A) Fire Code: fbDb null, socialDb up; the
+  academy's id and friend code; the Friends tab lists the academy's friend online and counts a waiting request; Manage friends
+  shows code, friend (online) and request; accepting mails friendacc as the academy; adding by code mails friendreq at the row's
+  level (not Fire Code's); a DM lands in the academy's DM document; presence written; both handles refuse progress/<code> (set,
+  update, transaction, batch) and the board; Fire Code writes only progress/<code>__ifc and vrooms; no code in rooms/board; its own
+  account carries the block, dated. (B) the same device back in the academy: the accept and request are there, the Friends tab
+  has both, the DM sent in Fire Code is in the thread, the academy saves them to its account; a request sent there is saved.
+  (C) a second device in Fire Code with an older academy copy gets the academy's and Fire Code's changes (Lee, accepted from the
+  academy, on its Friends tab; the same DM thread) and writes nothing foreign. On the previous commit 19 fail; the six invariant
+  checks (no code in rooms/board, the academy step's own save, (C) writes nothing foreign, no page errors x3) hold on both.
+- check-b383-ifcsync updated to the new arrangement: Fire Code may now write the friends' own vrooms documents (presence-v1,
+  inbox-, DM-); still nothing to progress/<code> or the leaderboard, fbDb still null.
+- Gates, one at a time: check-js, check-b384-friends, check-friends, check-groupchat, check-b383-ifcsync, check-b332,
+  check-b383-signup, check-b383-classes, check-b384-chatback, check-b382-firstrun, check-behaviour (b301_chat, b314h_chat,
+  b314h_chat2, b318_one_chat, b324n2_friends) ALL PASS; sweep-layout --quick 14/14 clean. The same on the previous commit:
+  check-chat's peek ("never had an unread count to clear"), check-chatroom's 2 stale-classmate checks, check-b328-classes'
+  "academy's saved copy byte-for-byte unchanged". check-sync: 119 pass; "Find me finds your row" is a race that fails on the
+  previous commit too (3 of 5 runs of that section there; the flash is gone 300ms after the tap).
+- ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the compat SDK through scopedFirestore's Proxy (transactions, FieldPath
+  updates, listeners - the stand-in has all of them, the SDK is blocked here), the rules taking Fire Code's writes (the same
+  vrooms documents the academy writes), and the timing of a friend change reaching the other class on another device.
