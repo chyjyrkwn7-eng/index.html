@@ -135896,7 +135896,12 @@ function buildCustomizePick(key){
     art.style.setProperty("--pick-glow", a === "ink" ? "rgba(255,255,255,.5)" : (ACCENT_SWATCH[a] || "#FFFFFF"));
     art.appendChild(buildThemeDot(a));
   } else {
-    art.appendChild(buildHundoFxTile(hundoFxInUse()));
+    /* (384) IT PLAYS. Madison, on Customize's Your look: "The Hundo effect box here, it doesn't animate but everything else
+       does, fix that." The character breathes, the banner moves, the theme glows; the hundo row was the still poster the
+       effects PAGE uses (build 314: a grid of them all playing "seems like a lot"). One row is one effect, so it plays as its
+       card's preview does: the effect's own small-box version in the 100% box, again after a pause, only while on screen
+       (buildHundoFxStage live: off screen it waits, gone when the screen goes). Reduce motion: its still. */
+    art.appendChild(buildHundoFxStage(hundoFxInUse(), { live: true, delay: 500 }));
   }
   return art;
 }

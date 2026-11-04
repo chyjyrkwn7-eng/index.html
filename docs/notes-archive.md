@@ -32757,3 +32757,14 @@ select a class and hit continue, have it ask to confirm and stuff."
   and Go back, nothing started; (3) Go back keeps the pick; (4) Continue + Enroll starts the sign-up; (5) no page errors. 5/5
   here; fails (1)-(4) on 91a1d96. The gates that walk sign-up now tap Enroll after Continue: check-b382-firstrun,
   check-b383-signup (its double-tap test is on Enroll now), check-b329, check-b327z15, check-b382-unhide, record-signup.py.
+
+### Build 384 - Customize's Hundo effect row plays (NOT on main, waiting for Madison)
+
+Madison (Customize, Your look): "The Hundo effect box here, it doesn't animate but everything else does, fix that."
+- buildCustomizePick("fx") was buildHundoFxTile - the effects PAGE's still poster (build 314: the grid of every effect playing at
+  once "seems like a lot"). The Your look row is one effect, so it is now buildHundoFxStage(worn, { live: true, delay: 500 }) -
+  the effect's own small-box build in the 100% box, again after its box total + .9s, waiting while off screen, ended when the
+  screen goes (isConnected), its still under Reduce motion. The effects page's grid is unchanged (still).
+- Gate: tools/check-b384-czfx.py - academy (Fireworks) and Fire Code (Extinguisher): the row runs animations (11 / 33 at the
+  busiest) and none once the screen has gone; the grid's 5 tiles run none; Reduce motion shows a still and runs nothing; no page
+  errors. Fails (1) in both classes on 91a1d96.
