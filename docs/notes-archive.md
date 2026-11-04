@@ -31953,3 +31953,119 @@ Phone only: whether the glass now glides onto the tab during the build (WebKit p
 committed - the taps' glides already do in his recording), how Safari actually orders the release, the build and the frame (the
 video says build first), and that the emblems now sit still inside their bubbles (Chromium rasterised them on the screen's grid
 all along). The finger-mapping fix (3) is plain arithmetic and holds in any engine.
+## Build 384 - haptics everywhere (NOT on main; waiting for Madison)
+
+Madison: "Haptic Touch is inconsistent right now. Haptic Touch isn't working on the planet system, and it's not working in other
+places randomly. Ensure haptic touch is good to go."
+
+WHAT AN IPHONE CAN TICK FOR (read off WebKit's own source this time, not reported second-hand - CheckboxInputType.cpp,
+HTMLLabelElement.cpp, Element::dispatchSimulatedClick, RenderThemeIOS.h, trunk, Nov 2026):
+- A native `<input type=checkbox switch>` plays its tick in willDispatchClick -> performSwitchVisuallyOnAnimation, only for a
+  TRUSTED click inside a user gesture (`state.trusted` and `UserGestureIndicator::processingUserGesture()`); iOS says yes to the
+  tick for a click and for a thumb drag (hasSwitchHapticFeedback -> true). The tick is played BEFORE the page's handlers run, so a
+  later preventDefault does not take it back.
+- A touch that STARTS on a native switch is the switch's own (handleTouchEvent: setDefaultHandled on touchstart - the page does not
+  scroll; dispatchSimulatedClick on touchend - even a drag clicks it). That is the "you can't scroll / it clicks stuff" of builds
+  327, 327z12, 327z13 and 381, and why big cards, list rows and the calendar's month never carried a switch.
+- A tap on a `<label>` clicks its control through dispatchSimulatedClick(&tap): source UserAgent (trusted) when the tap was
+  trusted, Bindings (untrusted) when it was a script's label.click(). That last part is the iOS 26.5 change that silenced
+  taptic(): a scripted tick can never play on 26.5+, inside a gesture or not.
+=> A real finger on a LABEL whose control is a native switch ticks, and a label - unlike the switch - is a plain element a finger
+   scrolls the page by. That is the new tool here.
+
+AUDIT (tools/check-b384-haptics.py and a scratch walker; iPhone UA, touch, installed and Safari tab, elementFromPoint at each
+surface's middle and 6px in from each edge):
+| surface | before (383) | after (384) |
+|---|---|---|
+| Home: planet, 7 rank bubbles, 6 secret flares | switch only ~0.5s after Home is drawn (more on a phone) - Home is drawn again on every return to it, so a finger that went straight for the planet system found none | switch goes in with the hero (homeTapBind -> NovaSound.hswHostNow), same task; a tap flips it and still answers |
+| Home: Start Studying, daily question, chat button, tab bar | switch | switch (unchanged) |
+| Mode cards | switch over the head only; the click prune (hswPrune) took it off 450ms after any tap on that screen and the observer put a new one in a beat later (churn: none for a moment, and a switch swapped under a finger drops the tap on iOS); the rest of the card nothing | head switch never pruned; the rest of the card a label |
+| Unit cards, every switch row (.opt: Settings toggles, start sheet) | a label round its own native switch (hsw-opt): by WebKit's source a tap anywhere on the row ticks through the label, not only on the track | same; such a tap now also counts as the switch's (hswLabelTap), so a scripted tick never runs on top |
+| Start sheet / Sound volume sliders | none (a native range has no tick; script cannot make one) | none - cannot |
+| Answer choices, Pause button, Next | switch | switch |
+| Pause: Resume | none (a wide row among its kind) | label |
+| Results: Continue to review | none (wide row) | label |
+| Profile: the character (99px), challenge rows, unlock tiles | none (too big / rows) | label |
+| Profile: Customize, See rank ladder, badge count, tabs | switch | switch |
+| Stats: stat cards, day columns | none (too tall) | label |
+| Calendar: the month's days | none (data-no-hsw, 327z12) | label (data-hsw-soft) |
+| Calendar: exam rows, countdown pages | none | label (the countdown page made position:relative - all:unset had made it static and its label covered the card) |
+| Calendar: Next / Previous month | the hidden Back to top button's switch lay over Next month and took the tap (scrolled to top) | the arrow's own switch |
+| Leaderboard rows, Friends rows, Stats' test-history rows | none (list rows / too tall) | label |
+| Settings rows (incl. Advanced, Contributors) | none (list rows, 381/382) | label |
+| Customize rows | none (too tall) | label |
+| Customize pickers' tiles | switch | switch |
+| Flash cards: the card | none (holds the star) | a label in each face, under the star and the Fire Code box |
+| Flash cards: star, arrows | switch | switch |
+| Chat dock | switch | switch |
+| Sign-up: Sign in / I'm new here, Sign in instead / I'm new, continue, the class cards | none (two wide buttons of a kind = list rows; cards too tall) | label |
+| Sheets and pop-ups (start sheet, the challenge card, badge case, daily question) | switch on their buttons | switch (unchanged) |
+| Hidden controls (Back to top until you scroll, the tab bar behind the chat, the search's hidden tabs, a closed class list, a disabled button) | their switch (pointer-events:auto) took any tap that landed there | `.nova-hsw` pointer-events:inherit - a control the page hides from taps hides its switch too |
+
+WHAT CHANGED (all in NovaSound "A REAL SWITCH UNDER THE FINGER" unless said):
+- hswMode() replaces the yes/no hswOk: 0 nothing, 1 a switch, 2 a LABEL (.nova-hlb), 3 both (a mode card). A control that would
+  have had nothing because it is too big (hswTooBig) or a row among its kind (hswListRow, the 381 rule - unchanged: still no
+  switch) gets the label, unless something inside it answers taps (HLB_INNER) or it submits a form. `[data-hsw-soft]` (the
+  calendar's month) means labels only. HLB_HOSTS (.fc-face) get one too.
+- hlbAttach: `<label class="nova-hlb" aria-hidden><input type=checkbox switch class="nova-hlb-sw" tabindex=-1></label>` as the
+  last child; the label covers the control (z-index 2; 1 on a mode card, under the head's switch, and in a flash card face, under
+  .fc-face-top / .ifc-ref / .ifc-pre raised to 2); the switch inside is 1px, opacity 0, pointer-events:none - no finger lands on it.
+- The label's own click is stopped at the window (capture); its activation still clicks the switch (the tick), and THAT click
+  bubbles to the control - one click, after the tick. If the switch's click does not come, the control is clicked a task later.
+  The switch's change/input/focus/blur never leave it (as .nova-hsw's).
+- hswLabelTap: a finger on any label whose control is a native switch counts as a switch tap (hswDownAt), so haptic() does not
+  run taptic() on top.
+- Nothing changes under a finger (hswTouching: a touch down, or lifted <80ms ago; a touch that never reports its end stops
+  counting after 1.2s): iOS checks the element a tap belongs to as it lifts against the one it landed on (commitPotentialTap) and
+  drops the tap when they differ - a switch put in ~0.5-1s after a screen arrived, under a quick finger, made that tap nothing.
+  hswFlush and hswPrune wait.
+- hswFlush reads every new switch/label's box against its control's once, after writing them all (one extra layout per flush): one
+  that does not fit (a control held at position:static by more than :where() can undo) comes off and the control is left alone
+  (__hswNo).
+- hswPrune: exempts mode cards; a control pruned for size gets the label instead.
+- hswHostNow (exported) + homeTapBind: the planet system's switches go in as the hero is built (iPhone, Haptics on; never capped).
+- CSS: `.nova-hsw{pointer-events:inherit}` (was auto); `.nova-hlb` rules; `:disabled > .nova-hsw/.nova-hlb{pointer-events:none}`;
+  `button.cal-count-page{position:relative}`; the tablet calendar's `.cal-count-page > *{zoom}` skips them.
+- hswStop removes the labels too (Haptics off).
+- Flash card: fcOwnTap treats the face's label as the card.
+- Tab bar: untouched in JS (lensMove/tabDrag/slide timing not touched). The only effect there is the CSS inherit: a hidden tab
+  (search open, the chat open) no longer takes a tap through its switch.
+
+JS HAPTICS (NovaSound.haptic) ON AN IPHONE: only a tick riding a finger's tap on a switch or label can play. taptic() (a
+display:none switch clicked from script) cannot on iOS 26.5+ - kept for 17.4-26.4. So these do nothing on a current iPhone, by
+WebKit's rule, not a bug of ours: anything on a timer (the grade landing, cutscenes, the XP count, nova.arrive), a slide's landing
+(376's haptic("tap", true); by WebKit's source the switch of the tab the slide started on is clicked by iOS on the release, and that click - swallowed by the drag rule - may still tick), a question swipe,
+slider steps, drag-select, the second and third ticks of success/error/boom/celebrate, and taps on cutscene areas (SND_SCENE_TAP)
+that carry no switch. Settings > Sound & Haptics > Haptics: off removes every switch, label and row switch (hswStop) and haptic()
+returns at once (hapticsWanted); on puts them back. Android keeps theme.vibrate.
+
+ONLY A REAL IPHONE CAN SAY: whether the ticks are felt (Chromium has no Taptic Engine - the gate holds the wiring: a native switch
+or a label of a native switch under the finger, the click reaching the control once, the switch flipped); that the label ticks on
+his iOS version (trunk WebKit says yes; if Settings rows still do not tick, the label route does not hold on his iOS and the rest is
+unaffected); and why the planet system was silent beyond the late switches - the wiring was right in Chromium on a settled Home.
+
+GATES (one at a time):
+- NEW tools/check-b384-haptics.py (iPhone UA + touch + no vibrate; installed, and a Safari tab for Home / Settings / the month):
+  every primary surface on Home, Mode select, Units, the start sheet, a question, Pause, results, Profile (and scrolled), Stats
+  (and scrolled), Calendar (and the month), Leaderboard (and scrolled), Settings, Sound & Haptics, Customize and a picker,
+  Friends, flash cards and the chat dock has its own native switch, or a label of its own around one, under a finger at its
+  middle (elementFromPoint; surfaces found by kind, no words); plus (1)-(5) in its docstring. ALL PASS. Against 383 (the
+  pre-change index.html): 22 FAIL - (1) planet system 0 of 14 switches when Home is built; Mode select, Pause, Results, Profile,
+  Profile scrolled, Stats, Stats scrolled, Calendar (Next month taken by the hidden Back to top), the month (30 days),
+  Leaderboard x2, Settings, Customize, Friends, flash cards; (2) 4 mode-card switches pruned; (3) clicks without a flipped switch
+  and a scripted tick; (4) a switch put in under a held finger; Safari tab Settings and month. Passing on both (guards, by
+  design): (1)'s real tap on a settled Home, Units, the start sheet, a question, the chat dock, a switch row's words, (5) the
+  Haptics toggle.
+- check-js ALL PASS; check-sound ALL PASS; check-b383-toggles ALL PASS; check-b382-toggles ALL PASS; check-b383-tabslide ALL PASS;
+  check-b381-class ALL PASS; check-friends ALL PASS; check-b383-look ALL PASS; check-b383-flashcards ALL PASS; check-b379 ALL PASS;
+  sweep-layout --quick 14/14.
+- check-b382-units: (3) "no task over 60ms while scrolling" failed once (92ms), then ALL PASS on a re-run (12/11/7ms); a CPU profile
+  of the same flicks on both builds puts the long tasks in the sound engine's first-gesture start (ensure, 60-76ms), none in the
+  haptic layer. Load, not this build.
+- check-b327z13: U (a tab's screen in 40-200ms after the press) 211ms - fails the same on 383 (309 and 218ms). Timing.
+- check-b380: 3 FAIL - (9) two slow counts put loops back on layers, (25) the chat button not the tab bar's glass on a test, (35) the
+  unit card's tick ring - all three fail the same on 383 (which also failed (40) once). A first run here also failed (7)/(8) (loops
+  on layers after an early fallback) and passed them on the re-run.
+- Scratch (scratchpad only): a walker printing every tappable thing's middle/edge hits per screen, a sign-up walk (Welcome to the
+  class step) and pop-ups (challenge card, badge case, rank ladder, daily question): no regressions (nothing that had a switch
+  lost it), 84 surfaces gained one.
