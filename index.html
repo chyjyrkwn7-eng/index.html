@@ -5533,7 +5533,8 @@
   .cal-count-page{ flex:0 0 100%; box-sizing:border-box; scroll-snap-align:center; scroll-snap-stop:always; padding:.2rem 1.1rem .1rem;
     min-height:7.4rem; display:flex; flex-direction:column; justify-content:center; text-align:left; }
   button.cal-count-page{ all:unset; box-sizing:border-box; flex:0 0 100%; scroll-snap-align:center; scroll-snap-stop:always; padding:.2rem 1.1rem .1rem;
-    min-height:7.4rem; display:flex; flex-direction:column; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    min-height:7.4rem; display:flex; flex-direction:column; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    position:relative; /* (384) all:unset took it back to static: its haptic label then covered the whole card, arrows and all */ }
   .cal-count-kick{ margin:0 0 .55rem; font-size:.68rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#8A93A0; }
   .cal-count-page.is-course .cal-course-hero{ margin:0; }
   .cal-count-exam{ display:flex; align-items:center; gap:1rem; }
@@ -32859,8 +32860,20 @@
    Invisible, the size of the control it sits in, and still a native iOS
    switch: no appearance:none, no display:none, no visibility:hidden. */
 :where([data-hsw]){position:relative}
+/* pointer-events: what its control has (build 384; it was auto). A control a page hides with pointer-events:none
+   (Back to top until you scroll, a tab bar behind the chat, a closed list, a button not armed yet) took every tap
+   that landed on its switch anyway: on an iPhone the hidden Back to top button sat over the calendar's Next month
+   arrow and took it. The 381 class-list rule below stays; this makes it the rule everywhere. */
 .nova-hsw{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;
-  pointer-events:auto;z-index:2;touch-action:pan-x pan-y;-webkit-tap-highlight-color:transparent;cursor:pointer}
+  pointer-events:inherit;z-index:2;touch-action:pan-x pan-y;-webkit-tap-highlight-color:transparent;cursor:pointer}
+/* the label over a control too big or too repeated for a switch (build 384, see NovaSound HLB): a plain label - a
+   finger on it scrolls the page - whose 1px native switch no finger can land on; a tap on the label clicks it */
+.nova-hlb{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;display:block;
+  pointer-events:inherit;z-index:2;border-radius:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;background:none}
+.nova-hlb > .nova-hlb-sw{position:absolute;left:0;top:0;width:1px;height:1px;margin:0;padding:0;border:0;opacity:0;pointer-events:none;outline:none}
+/* a control switched off keeps its tap to itself (no tick, no click through its switch) */
+:disabled > .nova-hsw, :disabled > .nova-hlb, [aria-disabled="true"] > .nova-hsw, [aria-disabled="true"] > .nova-hlb{pointer-events:none}
 .cosmic-flare-dot > .nova-hsw{left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;clip-path:circle(50%)}
 .cosmic-icon-badge > .nova-hsw,.cosmic-sphere-hsw > .nova-hsw{clip-path:circle(50%)}
 .cosmic-sphere-hsw{position:absolute;left:50%;top:47.368%;width:28.889%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
@@ -33235,7 +33248,7 @@ html.is-browser #edge-tint-bottom{ bottom:0; }
      bigger/better to fit it best" - each page's contents a third larger and
      centred in the card's width, the kicker over them */
   html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page{ display:flex; flex-direction:column; justify-content:center; align-items:center; }
-  html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page > *{ zoom:1.35; }
+  html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page > :not(.nova-hsw, .nova-hlb){ zoom:1.35; }
   html[data-layout] body .screen-calendar-tab > .cal-count-card .cal-count-page > .cal-count-kick{ zoom:1.15; align-self:center; margin-bottom:.6rem; }
   /* (round 26) "perfect the spacing of the boxes": the month card's top
      lines up with Today's (a later theme rule gave it a 1.2rem top margin),
@@ -33757,6 +33770,13 @@ html.is-browser{ --fade-paper: transparent; }
   }
   /* a mode card's: its head, the icon and the name (327z13) */
   .modecard > .nova-hsw{ width:62%; height:64px; }
+  /* and the rest of the card a label, under the head's switch (build 384) */
+  .modecard > .nova-hlb{ z-index:1; }
+  /* a flash card's face is tapped as a whole but holds the star (and on a Fire Code card the code's box): its label
+     lies over the words, under those (build 384) */
+  .fc-face > .nova-hlb{ z-index:1; }
+  .fc-face:has(> .nova-hlb) > .fc-face-top, .fc-face:has(> .nova-hlb) .ifc-ref, .fc-face:has(> .nova-hlb) .ifc-pre{ position:relative; z-index:2; }
+  .fc-face:has(> .nova-hlb)::after{ z-index:3; }
   /* a unit card's: 44px over its tick circle (327z13) */
   .picks > label.pick > input.hsw-opt{
     position:absolute; z-index:2; margin:0; opacity:0;
@@ -80192,7 +80212,7 @@ const NovaSound = (function(){
      gate holds the wiring (the switch is there, real, native, inside,
      clickable, and the click reaches the control), not the buzz. */
   const HSW_HOSTS = "button, [role='button'], .avatarchar-option, .swatch, .banner-opt, .hfx-opt, .cosmic-flare-dot, .cosmic-icon-badge, .cosmic-sphere-hsw";
-  const HSW_INNER = "a, button, input:not(.nova-hsw), select, textarea, label, [role='button'], [role='switch'], [role='slider']";
+  const HSW_INNER = "a, button, input:not(.nova-hsw):not(.nova-hlb-sw), select, textarea, label:not(.nova-hlb), [role='button'], [role='switch'], [role='slider']";
   const HSW_MAX_H = 70, HSW_MAX_W = 260;  /* bigger than this is something you scroll by */
   const HSW_TAP_MS = 600;            /* how long after a finger lands on a switch a tick counts as that tap's */
   const HSW_BUDGET_MS = 5;           /* per slice: attaching is never a long task */
@@ -80200,6 +80220,44 @@ const NovaSound = (function(){
   let hswQueue = new Set(), hswTimer = 0, hswObs = null;
   const hswNow = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
   const hswIs = t => !!(t && t.classList && t.classList.contains("nova-hsw"));
+  /* ---- A LABEL WHERE A SWITCH WOULD TAKE THE SCROLL (build 384) ----
+     Madison: "Haptic Touch is inconsistent right now. Haptic Touch isn't working on the planet system, and it's not
+     working in other places randomly. Ensure haptic touch is good to go."
+     Read off WebKit's own source (CheckboxInputType.cpp, HTMLLabelElement.cpp, Element::dispatchSimulatedClick):
+     - a native switch plays its tick in willDispatchClick, for a TRUSTED click inside a user gesture
+       (performSwitchVisuallyOnAnimation: state.trusted && UserGestureIndicator::processingUserGesture()); iOS's
+       RenderTheme says yes to the tick for a click and for a drag;
+     - a touch that starts ON a native switch belongs to the switch (handleTouchEvent: setDefaultHandled on the
+       touchstart, so the page does not scroll; dispatchSimulatedClick on the touchend, so even a drag clicks it) -
+       which is why big cards, list rows and the calendar's month never carried one (builds 327, 327z12, 327z13, 381);
+     - a tap on a <label> clicks its control through dispatchSimulatedClick(&tap), and that click is trusted when
+       the tap was (a script's label.click() is not - the iOS 26.5 change that silenced taptic()).
+     So a control too big, or too repeated, for a switch gets a LABEL laid over it instead (.nova-hlb), whose control
+     is a 1px native switch no finger can land on (.nova-hlb-sw, pointer-events:none). A finger on the label scrolls
+     the page as on any element; a tap on it clicks the switch - the tick - and that click carries on up to the
+     control (the label's own click is stopped at the window, below, so the control hears one click, not two). */
+  const HLB_INNER = HSW_INNER + ", summary, details, video, audio, iframe, [contenteditable], [tabindex]:not([tabindex='-1']), [role='link'], [role='tab'], [role='checkbox'], [role='radio'], [role='option'], [role='menuitem']";
+  /* surfaces that hold their own controls but are tapped as a whole: the label goes in, under those controls */
+  const HLB_HOSTS = ".fc-face";
+  const HLB_MAX = 240;
+  /* never sized out: the planet system, an answer, a tab */
+  const HSW_ALWAYS = ".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab";
+  const hlbIs = t => !!(t && t.classList && t.classList.contains("nova-hlb"));
+  const hlbSwIs = t => !!(t && t.classList && t.classList.contains("nova-hlb-sw"));
+  const hswHas = h => !!(h.__hsw && h.__hsw.parentNode === h);
+  const hlbHas = h => !!(h.__hlb && h.__hlb.parentNode === h);
+  /* a finger on a label whose control is a native switch (ours, a Settings row, a unit card) ticks through it */
+  const hswLabelTap = t => { const l = t && t.closest ? t.closest("label") : null; const c = l && l.control; return !!(c && c.type === "checkbox" && c.hasAttribute("switch")); };
+  /* NOTHING CHANGES UNDER A FINGER (build 384). iOS decides which element a tap belongs to as the finger lands and
+     checks it again as it lifts (WebPage::commitPotentialTap: the node then must be the node before, or the tap is
+     dropped - no click at all). A switch or label put in, or taken off, under a finger that is already down turned that
+     tap into nothing: the screens' switches arrive ~0.5-1s after a screen does, which is when a quick finger taps. While
+     a finger is down they wait; a touch that never reports its end stops counting after 1.2s. */
+  let hswTouchN = 0, hswTouchAt = -1e9, hswTouchUp = -1e9;
+  window.addEventListener("touchstart", e => { hswTouchN = e.touches ? e.touches.length : 1; hswTouchAt = hswNow(); }, { capture: true, passive: true });
+  window.addEventListener("touchmove", () => { hswTouchAt = hswNow(); }, { capture: true, passive: true });
+  ["touchend", "touchcancel"].forEach(ev => window.addEventListener(ev, e => { hswTouchN = e.touches ? e.touches.length : 0; if(!hswTouchN) hswTouchUp = hswNow(); }, { capture: true, passive: true }));
+  const hswTouching = () => (hswTouchN > 0 && hswNow() - hswTouchAt < 1200) || hswNow() - hswTouchUp < 80;
   /* WIDE IS NOT BIG (build 327z10): "Some of the haptic feedback isn't
      there. A lot of the buttons aren't registering it." The width cap
      took every full-width button with it - Add friends, Begin, the
@@ -80269,6 +80327,25 @@ const NovaSound = (function(){
     inp.removeAttribute("switch"); inp.classList.remove("hsw-opt"); ["--hsw-r", "--hsw-x", "--hsw-y"].forEach(v => inp.style.removeProperty(v));
     const row = inp.parentElement; if(row && !row.querySelector(":scope > .nova-hsw")) row.removeAttribute("data-hsw");
   }
+  /* What a control gets: 0 nothing, 1 a native switch over it, 2 a label over it (build 384), 3 both - a mode card,
+     its head a switch (327z13) and the rest of it the label. */
+  function hswMode(h){
+    if(!h || h.nodeType !== 1 || h.namespaceURI !== "http://www.w3.org/1999/xhtml") return 0;
+    if(h.tagName === "INPUT" || h.tagName === "SELECT" || h.tagName === "TEXTAREA" || h.tagName === "LABEL") return 0;
+    /* nothing to tick for: off, answered, or a control that is only a part of another */
+    if(h.disabled || h.matches(".choice.locked, [data-no-hsw]")) return 0;
+    if(h.closest(".nsw, .opt, label, .ru-blocker, [data-no-hsw]")) return 0;
+    if(h.querySelector(HSW_INNER)) return 0;
+    if(h.matches(".modecard")) return h.querySelector(HLB_INNER) ? 1 : 3;
+    if(h.matches(HSW_ALWAYS)) return 1;
+    /* a grid of small controls a page is scrolled by (the calendar's month): labels, never switches */
+    const soft = !!h.closest("[data-hsw-soft]");
+    if(!soft && hswOk(h)) return 1;
+    /* too big or too many for a switch: a label - unless something inside it answers taps of its own (the label
+       would cover it), or it submits a form (a label's click is not a button's) */
+    if(h.querySelector(HLB_INNER) || h.closest("form") || h.matches("[type='submit']")) return 0;
+    return 2;
+  }
   function hswOk(h){
     if(!h || h.nodeType !== 1 || h.namespaceURI !== "http://www.w3.org/1999/xhtml") return false;
     if(h.tagName === "INPUT" || h.tagName === "SELECT" || h.tagName === "TEXTAREA" || h.tagName === "LABEL") return false;
@@ -80288,12 +80365,12 @@ const NovaSound = (function(){
        head - the icon and the name, where a finger picks a mode - and the
        description under it scrolls the page (.modecard > .nova-hsw) */
     if(h.matches(".modecard")) return true;
-    if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)) return false;
+    if(!h.matches(HSW_ALWAYS) && hswTooBig(h)) return false;
     return true;
   }
-  function hswAttach(h){
-    /* never more than a few hundred native switches alive (build 327n) */
-    if(document.getElementsByClassName("nova-hsw").length >= 160) return;
+  function hswAttach(h, always){
+    /* never more than a few hundred native switches alive (build 327n) - but the planet system's few are always there */
+    if(!always && document.getElementsByClassName("nova-hsw").length >= 160) return;
     const sw = document.createElement("input");
     sw.type = "checkbox";
     sw.setAttribute("switch", "");
@@ -80311,13 +80388,42 @@ const NovaSound = (function(){
     h.__hsw = sw;
     h.appendChild(sw);
   }
+  /* the label (build 384, see HLB_INNER): the last child, over the control; its switch 1px, out of a finger's reach */
+  function hlbAttach(h){
+    if(document.getElementsByClassName("nova-hlb").length >= HLB_MAX) return;
+    const lb = document.createElement("label");
+    lb.className = "nova-hlb";
+    lb.setAttribute("aria-hidden", "true");
+    const sw = document.createElement("input");
+    sw.type = "checkbox";
+    sw.setAttribute("switch", "");
+    sw.className = "nova-hlb-sw";
+    sw.tabIndex = -1;
+    sw.setAttribute("aria-hidden", "true");
+    lb.appendChild(sw);
+    h.setAttribute("data-hsw", "");
+    h.__hlb = lb;
+    h.appendChild(lb);
+  }
+  const hswFits = (h, x) => {
+    const b = h.getBoundingClientRect(), a = x.getBoundingClientRect();
+    if(!b.width || !b.height) return !(a.width && a.height);
+    return !(a.left < b.left - 2 || a.top < b.top - 2 || a.right > b.right + 2 || a.bottom > b.bottom + 2);
+  };
+  function hswUnfit(h, x){
+    if(x === h.__hsw) h.__hsw = null; else h.__hlb = null;
+    x.remove();
+    if(!hswHas(h) && !hlbHas(h)){ h.removeAttribute("data-hsw"); h.__hswNo = 1; }
+  }
   function hswFlush(){
     hswTimer = 0;
     if(!hswObs) { hswQueue.clear(); return; }
+    /* build 384: never under a finger (see hswTouching) */
+    if(hswTouching()){ hswSchedule(); return; }
     const t0 = hswNow();
     /* build 380: every size read first, then every switch put in. Judging one added node and attaching its switches before judging the
        next made each node's first size read lay the whole screen out again (a board's rows arrive as one node each). */
-    const todo = [], opts = [];
+    const todo = [], seen = new Set(), opts = [], faces = [];
     while(hswQueue.size){
       const n = hswQueue.values().next().value;
       hswQueue.delete(n);
@@ -80325,32 +80431,54 @@ const NovaSound = (function(){
       const hosts = [];
       if(n.matches(HSW_HOSTS)) hosts.push(n);
       n.querySelectorAll(HSW_HOSTS).forEach(x => hosts.push(x));
-      hosts.forEach(h => { if(!(h.__hsw && h.__hsw.parentNode === h) && todo.indexOf(h) < 0 && hswOk(h)) todo.push(h); });
+      hosts.forEach(h => {
+        if(seen.has(h) || hswHas(h) || hlbHas(h) || h.__hswNo) return;
+        seen.add(h);
+        const m = hswMode(h);
+        if(m) todo.push([h, m]);
+      });
       if(n.matches(HSW_OPT)) opts.push(n);
       n.querySelectorAll(HSW_OPT).forEach(x => opts.push(x));
+      if(n.matches(HLB_HOSTS)) faces.push(n);
+      n.querySelectorAll(HLB_HOSTS).forEach(x => faces.push(x));
       if(hswNow() - t0 > HSW_BUDGET_MS) break;
     }
     const optM = opts.map(hswOptMeasure);   /* every read before any write (build 382) */
-    todo.forEach(hswAttach);
+    todo.forEach(([h, m]) => { if(m & 1) hswAttach(h); if(m & 2) hlbAttach(h); });
     opts.forEach((inp, i) => hswOptAttach(inp, optM[i]));
+    faces.forEach(f => { if(!hlbHas(f) && !f.closest("[data-no-hsw]")) hlbAttach(f); });
+    /* build 384: ONE more read, for all of them: a switch or label is the size of its control. A control the page
+       holds at position:static with more than :where() can undo (the calendar's countdown pages are all:unset) is
+       no box for it, and it covered the nearest positioned box instead - the whole card, other buttons and all.
+       Such a one comes off again. (The planet system's switches are bigger than their dots on purpose.) */
+    const out = [];
+    todo.forEach(([h]) => [h.__hsw, h.__hlb].forEach(x => { if(x && x.parentNode === h && !h.matches(HSW_ALWAYS)) out.push([h, x]); }));
+    faces.forEach(f => { if(f.__hlb && f.__hlb.parentNode === f) out.push([f, f.__hlb]); });
+    out.filter(([h, x]) => !hswFits(h, x)).forEach(([h, x]) => hswUnfit(h, x));
     if(hswQueue.size) hswSchedule();
   }
   /* a control that was hidden (another tab's pane) had no size when it was
      judged: once it is shown and turns out big, its switch comes off */
+  /* build 384: and it gets the label instead (it had nothing); a mode card keeps its head's switch - pruning it took
+     the mode cards' tick away after the first tap anywhere on that screen */
   function hswPrune(){
+    if(hswTouching()){ hswPruneLater(); return; }
     document.querySelectorAll(".nova-hsw").forEach(sw => {
       const h = sw.parentNode;
       if(!h || !h.offsetWidth) return;
-      if(!h.matches(".choice, .cosmic-sphere-hsw, .cosmic-icon-badge, .cosmic-flare-dot, .bottomtab") && hswTooBig(h)){
-        h.removeAttribute("data-hsw"); h.__hsw = null; sw.remove();
+      if(!h.matches(HSW_ALWAYS) && !h.matches(".modecard") && hswTooBig(h)){
+        h.__hsw = null; sw.remove();
+        if(!hlbHas(h) && (hswMode(h) & 2)){ hlbAttach(h); if(hlbHas(h) && !hswFits(h, h.__hlb)) hswUnfit(h, h.__hlb); }
+        if(!hlbHas(h)) h.removeAttribute("data-hsw");
       }
     });
   }
   let hswPruneT = 0;
-  window.addEventListener("click", () => {
+  function hswPruneLater(){
     if(!hswObs || hswPruneT) return;
     hswPruneT = setTimeout(() => { hswPruneT = 0; hswPrune(); }, 450);
-  }, { capture: true, passive: true });
+  }
+  window.addEventListener("click", hswPruneLater, { capture: true, passive: true });
   function hswSchedule(){
     if(hswTimer || !hswObs) return;
     /* a beat after a screen is mounted, never inside its first frames: a
@@ -80367,7 +80495,7 @@ const NovaSound = (function(){
     }, wait);
   }
   function hswQueueAdd(n){
-    if(!n || n.nodeType !== 1 || hswIs(n)) return;
+    if(!n || n.nodeType !== 1 || hswIs(n) || hlbIs(n)) return;
     hswQueue.add(n);
     hswSchedule();
   }
@@ -80379,8 +80507,8 @@ const NovaSound = (function(){
       for(const m of recs){
         m.addedNodes.forEach(hswQueueAdd);
         /* a control whose contents were replaced lost its switch with them */
-        if(m.removedNodes.length && m.target && m.target.nodeType === 1 && !hswIs(m.target)){
-          for(const r of m.removedNodes){ if(hswIs(r)){ hswQueueAdd(m.target); break; } }
+        if(m.removedNodes.length && m.target && m.target.nodeType === 1 && !hswIs(m.target) && !hlbIs(m.target)){
+          for(const r of m.removedNodes){ if(hswIs(r) || hlbIs(r)){ hswQueueAdd(m.target); break; } }
         }
       }
     });
@@ -80397,6 +80525,22 @@ const NovaSound = (function(){
       if(h){ h.removeAttribute("data-hsw"); h.__hsw = null; }
       sw.remove();
     });
+    document.querySelectorAll(".nova-hlb").forEach(lb => {
+      const h = lb.parentNode;
+      if(h){ h.removeAttribute("data-hsw"); h.__hlb = null; }
+      lb.remove();
+    });
+  }
+  /* THE PLANET SYSTEM'S SWITCHES GO IN WITH IT (build 384). Every other control's switch waits for the screen to settle
+     (hswSchedule, build 380), ~0.5s after Home is drawn on a fast machine and more on a phone - and Home is drawn again on
+     every return to it, so a finger that went straight for the planet or a rank bubble found no switch there and felt
+     nothing. homeTapBind hands each one here as it is built (before it is on the page, so nothing is laid out again):
+     iPhone and Haptics on only, and only the planet system's few. */
+  function hswHostNow(h){
+    try{
+      if(!h || !canTaptic() || !hapticsWanted() || hswHas(h) || !h.matches(HSW_ALWAYS)) return;
+      hswAttach(h, true);
+    }catch(e){}
   }
   /* Haptics on (and an iPhone): the switches are there; off or anywhere else:
      the page is exactly as it was without them, children and all */
@@ -80412,6 +80556,10 @@ const NovaSound = (function(){
       const pt = e.touches ? e.touches[0] : e;
       hswDownAt = hswNow(); hswMoved = false;
       hswY0 = pt ? pt.clientY : 0; hswX0 = pt ? pt.clientX : 0;
+    } else if(hswLabelTap(e.target)){
+      /* build 384: a tap on a label whose control is a native switch (ours, a Settings row's words, a unit card) ticks
+         through that switch - taptic() must not tick it again where it still works (iOS 17.4-26.4) */
+      hswDownAt = hswNow();
     } else if(ev === "pointerdown"){ hswDownAt = -1e9; }
   }, { capture: true, passive: true }));
   window.addEventListener("pointermove", e => {
@@ -80424,8 +80572,26 @@ const NovaSound = (function(){
   }, { capture: true, passive: true }));
   /* the switch's own change/focus never reaches the app; its click does */
   ["change", "input", "focus", "focusin", "blur", "focusout"].forEach(ev => window.addEventListener(ev, e => {
-    if(hswIs(e.target)) e.stopImmediatePropagation();
+    if(hswIs(e.target) || hlbSwIs(e.target)) e.stopImmediatePropagation();
   }, true));
+  /* THE LABEL'S CLICK, THEN ITS SWITCH'S (build 384). A tap on a .nova-hlb is two clicks: the label's own (target the
+     label), then - as the label's activation - one on its switch (the tick), which bubbles back up through the label
+     to the control. The control must hear one: the label's is stopped here at the window (stopping it does not stop
+     its activation), and the switch's goes on, so the control's handlers run after the tick has played. Should the
+     switch's click not come (it was taken off in the meantime), the control is clicked here, a task later. */
+  let hlbWait = null;
+  window.addEventListener("click", e => {
+    const t = e.target;
+    if(hlbSwIs(t)){ if(hlbWait && hlbWait.sw === t) hlbWait = null; return; }
+    if(!hlbIs(t)) return;
+    e.stopImmediatePropagation();
+    const me = hlbWait = { sw: t.querySelector(":scope > .nova-hlb-sw"), host: t.parentElement };
+    setTimeout(() => {
+      if(hlbWait !== me) return;
+      hlbWait = null;
+      try{ if(me.host && me.host.isConnected && !me.host.disabled) me.host.click(); }catch(err){}
+    }, 0);
+  }, true);
   /* a drag that began on a switch must never become a tap on its control:
      the click that follows it is swallowed */
   let hswDragXY = null, hswDragged = false;
@@ -80839,6 +81005,7 @@ const NovaSound = (function(){
 
   return {
     iosTab, tabOff, play, startAmbience, stopAmbience, sync, render, renderAmbience, haptic, canVibrate, canTaptic, hswCount: () => document.querySelectorAll('.nova-hsw').length,
+    hlbCount: () => document.querySelectorAll('.nova-hlb').length, hswHostNow,
     catalogue: SOUND_CATALOGUE, ambience: SOUND_AMBIENCE,
     /* for tools and the test page */
     state: () => ({ on: on(), hasContext: !!st.ctx, ctxState: st.ctx ? st.ctx.state : null, voices: st.voices.length,
@@ -107535,6 +107702,8 @@ try{ window.addEventListener("resize", () => {
    a click with no touch before it (a keyboard, a script) still answers. */
 function homeTapBind(el, run){
   let downAt = -1e9;
+  /* build 384: on an iPhone its haptic switch goes in now, with it - not ~0.5-1s after Home is drawn (hswHostNow) */
+  try{ NovaSound.hswHostNow(el); }catch(e){}
   el.addEventListener("pointerdown", (e) => {
     if(e.isPrimary === false || (e.pointerType === "mouse" && e.button !== 0)) return;
     downAt = performance.now();
@@ -134931,7 +135100,9 @@ function buildCalendarPane(panel){
      iOS lets a finger that lands on a native switch drag the switch
      instead of the page - a grid of 35 of them was a wall. The grid's
      days carry none (see hswOk); a tap still picks the day. */
-  grid.setAttribute("data-no-hsw", "");
+  /* build 384: and each day a label instead (data-hsw-soft, see NovaSound HLB) - a finger on a label scrolls the page,
+     a tap on one ticks */
+  grid.setAttribute("data-hsw-soft", "");
   monthWrap.appendChild(grid);
 
   /* ---- THE KEY, UNDER THE GRID IT EXPLAINS, ON EVERY DEVICE (build 325) ----
@@ -136240,7 +136411,8 @@ function renderFlashcard(dir){
      card over under it. A tap on any control on the card, or anywhere in the reference box, now does only its own thing;
      the rest of the card flips as before. */
   const FC_OWN_TAP = "button, a, summary, details, input, select, textarea, label, [role=\"button\"], [role=\"switch\"], .ifc-ref, .ifc-pre";
-  const fcOwnTap = t => { const hit = t && t.closest ? t.closest(FC_OWN_TAP) : null; return !!(hit && hit !== card && card.contains(hit)); };
+  /* (384) the face's haptic label (and its switch, whose click it is) is the card itself */
+  const fcOwnTap = t => { if(t && t.closest && t.closest(".nova-hlb")) return false; const hit = t && t.closest ? t.closest(FC_OWN_TAP) : null; return !!(hit && hit !== card && card.contains(hit)); };
   card.addEventListener("click", e => {
     if(card.dataset.swiped) return;
     if(fcOwnTap(e.target)) return;
