@@ -32176,3 +32176,18 @@ THE RULE (the one Customize already has - a locked tile dim in its grid, held: s
 - Gate: tools/check-b384-ranks.py - fails 5 on the previous commit. Moved to the rule: check-b327z15 S (the locked emblem in
   colour with a padlock; the locked flare chip lit) and check-behaviour check_b311_rank (a locked card in colour with a padlock,
   story still held back).
+
+### Build 384 - Fire Code's badge case: no open corner, the academy's badge size
+
+Madison: "The badge case for the ifc. Is there a better layout? If you are looking at the entire case, there's an entire open spot
+on the bottom right ... if they could be just a smidge bigger too".
+- Fire Code's case holds 58 (its chapters). 58 has no rectangle within badgeCaseGrid's reach, so it fell back to eight by eight:
+  64 slots, the last row 2 badges and 6 empty to its right; 37px badges on a phone.
+- The Badges page's tray (buildSleekBadgeCase) now lays a case past 30 out six across - the academy case's six by four, so a
+  badge is the same 52px in both classes - for as many rows as it needs (58: nine rows of six, then four), and a short last row is
+  centred: each of its cells is moved by half the missing slots (`.is-lastrow`, `left: --row-shift * (100% + 1.8cqw)`, the
+  well's gap). The academy's 24 is unchanged (six by four, full).
+- badgeCaseGrid itself is untouched: the 3D badge scene stands its case upright and a deep case swings off the top of a phone
+  (328), so the scene keeps eight by eight for Fire Code.
+- Gate: tools/check-b384-case.py (rows full but the last, the last centred within 1px, the academy's badge size, the academy's
+  case unchanged, the scene's grid unchanged). Fails 2 on the previous commit. check-b382-badges passes.

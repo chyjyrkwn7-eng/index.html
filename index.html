@@ -32925,6 +32925,8 @@
     width:auto; min-width:0; aspect-ratio:1; margin:0; padding:0; background:none; border:0; border-radius:0;
     font:inherit; color:inherit; -webkit-tap-highlight-color:transparent; }
   .bcs .ncase-cell .badge-tile-art{ width:100%; height:100%; max-width:none; aspect-ratio:auto; background:none; }
+  /* (384) a short last row sits in the middle: moved by half its missing slots (a slot is its own width and the 1.8cqw gap) */
+  .bcs .ncase-cell.is-lastrow{ left:calc(var(--row-shift, 0) * (100% + 1.8cqw)); }
   .bcs .ncase-cell .badge-tile-art::before{ content:none; }
   .bcs .ncase-cell svg{ width:100%; height:100%; display:block; position:relative; overflow:visible; }
   .badges-tab .bcs .bcs-front{ position:relative; inset:auto; display:flex; align-items:center; justify-content:space-between; gap:3cqw; padding:3.2cqw 2.4cqw 3.6cqw; pointer-events:none; }
@@ -139799,8 +139801,19 @@ function buildSleekBadgeCase(cellFor){
   const shell = mk("bcs-shell", "div");
   const well = mk("badge-case-lining bcs-well");
   const held = badgeCaseUnits(BADGE_CASES[0]);
-  applyBadgeCaseGrid(root, held.length);
-  held.forEach(u => { const c = cellFor(u); if(c){ setBadgeSlotShift(c, u); well.appendChild(c); } });
+  /* THE TRAY'S OWN GRID (384). Madison, of Fire Code's case: "Is there a better layout? If you are looking at the entire case,
+     there's an entire open spot on the bottom right ... if they could be just a smidge bigger too". Its 58 badges have no
+     rectangle, so badgeCaseGrid fell back to eight by eight - 64 slots, six empty at the foot's right, badges 37px on a phone.
+     The tray is a flat drawing on a page that scrolls, so a case past 30 keeps the academy case's six across (its badges the
+     academy's size, 52px on a phone) for as many rows as it needs, and the last row, short, is centred. badgeCaseGrid itself is
+     unchanged: the 3D cutscene stands its case upright, and a deep one swings off the top of a phone (328). */
+  const g = held.length > 30 ? { cols: 6, rows: Math.ceil(held.length / 6) } : badgeCaseGrid(held.length);
+  root.style.setProperty("--case-cols", String(g.cols));
+  root.style.setProperty("--case-rows", String(g.rows));
+  const shortRow = held.length % g.cols, lastFrom = held.length - shortRow;
+  held.forEach((u, i) => { const c = cellFor(u); if(!c) return; setBadgeSlotShift(c, u);
+    if(shortRow && i >= lastFrom){ c.classList.add("is-lastrow"); c.style.setProperty("--row-shift", String((g.cols - shortRow) / 2)); }
+    well.appendChild(c); });
   shell.appendChild(well);
   const front = mk("badge-case-front bcs-front");
   front.setAttribute("aria-hidden", "true");
