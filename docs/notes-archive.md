@@ -31650,3 +31650,89 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   the app's first line - the splash, Welcome to NOVA (scrolled section by section), every step, Nova (name, partner, the
   save-your-code card), the tips, Home - on the video's clock, with the app's own sound. --device phone (an iPhone Safari tab,
   440x838) | laptop (1440x820).
+
+## Build 384 - the tab bar slide, the last 10-15%; Home's rank flares that shook
+
+Madison (383, Fire Code): "The sliding and tapping features look 100x better. I think there's a delay when sliding on home, maybe
+slightly sliding on profile though in ifc. It's about the same for ifc and police versions ... It's so much better but it's at about
+85-90 percent perfect capacity. We need 10-15 percent better." And: "the stuff with the rank flares, if you can tell, they are
+shaking very very slightly but just a noticeable amount. Fix that."
+
+### Read off his recordings (frame by frame)
+- SLIDE VIDEO (23:14, 14.3s, Fire Code, 1320x2868): 837 frames at a steady 60 a second (34 gaps of 25ms, 3 of 33ms). The glass's
+  centre was read from its top rim above the bar on every frame; the screen behind by template; the lit tab by its label. The
+  first half is mostly taps (their glide matches LENS.glide to the pixel: 15% at the first frame seen, 57% four frames on); the
+  second half is 11 slides.
+- THE END OF EVERY SLIDE FROZE: let go over Profile, Stats or Settings and the glass stood still where the finger left it for 3-6
+  frames (Profile 5, 5, 6; Stats 3, 5; Settings 3, 4, 4), over Home 10 (Settings -> Home) - then the tab lit, the screen changed and
+  the glass jumped, all in ONE frame (Home -> Profile: 6 frames at the same spot 85px short of Profile, then Profile lit, Profile up
+  and the glass at 572 on its way to 553, together). The tab lighting in the same frame as the screen means the release's own frame
+  was never drawn: the build ran first. Two Profile -> Home slides were the exception (Home lit one frame after the release, the
+  glass glided on while Home took ~10 frames) - luck of where in the frame the release fell.
+- Mid-slide: 0-1 frames standing still per slide on every screen (one Profile slide stood still every other frame, 4 of 12);
+  a few slides were first seen already moving (the press's frame came late).
+- FLARES VIDEO (23:16, 8.8s, Fire Code Home, untouched): six rank bubbles tracked to a hundredth of a pixel (whole-bubble
+  template, sub-pixel peak): each floats smoothly (0.15-0.28px a frame, 0.02-0.03px rms off its path); the orbiting dots too
+  (0.42px a frame, 0.08-0.18 rms). What moves is the emblem INSIDE each bubble: its sheet steps at 30 a second (by design,
+  ORBIT_ANIM_FRAMES 180 in 6s; between steps the inside is exactly still), and at each step the whole drawing - lines and stars
+  that do not animate - shifts 0.1-0.5px, in a pattern that repeats every row of the sheet (12 steps, 0.4s): it shivers in place.
+
+### What was wrong, and what changed
+1. THE RELEASE'S FRAME BEFORE THE BUILD (navigateTab's me.schedule). A slide's release built its screen from a 0ms timer; Safari
+   runs a timer that is due before its next frame, so the whole build (Home ~170ms on his phone, Profile ~90) ran before the frame
+   that lights the tab and hands the glass its hold track (lensHoldFor) - the glass stood frozen at the finger's last place. Now
+   endTabDrag marks the navigation as a slide's (bar._slideNav) and its build waits for the next frame and runs straight after it
+   (rAF, then a timer, which fires once that frame is committed; a frame held back never holds it past 50ms). Taps keep
+   TAB_SCREEN_AFTER (their glide has been on the compositor since the press). Chromium draws first after input on its own, so in
+   the sandbox Safari's order is emulated (a 0-4ms timer set during the release runs before the page can draw): previous build,
+   release -> first frame 129-371ms at 4x (the build inside it); now 19-56ms, and the build after it.
+2. THE RELEASE MEASURES NOTHING (navigateTab). With the glass held over the tab (bar._lensHeld()), slideBubbleToActiveTab()'s
+   measure of the platter - a whole-page style pass and layout right after the classes changed, the largest piece of the release
+   on Home - is skipped: the platter is only marked as that tab's (bubbleAt, .ready) and the landing (lensRelease) places it as it
+   always did. Reads in the release 23-34 -> 0; the release's handler at 4x ~29ms -> ~12ms (median).
+3. THE GLASS UNDER THE FINGER (lensBarSwell). lensRowGeo (382) measures the row once a touch - and lensDown measured it BEFORE the
+   swell began, marked "at rest". A finger that rested past the swell (160ms) before sliding found no swell running, so the whole
+   slide mapped the finger through the UNSWOLLEN bar. Held still after a slide's first moves: the glass 10.0px left of the finger at
+   Home's centre, 6.3 a tab on, 2.4 right of it on the Leaderboard, 10.0 right of it at the Calendar / Settings end. Sliding out of
+   Home the glass trailed by up to 10px, out of Profile ~4-6, and ran ahead on the far side - his "delay when sliding on home,
+   maybe slightly sliding on profile". check-b382-slide (3) had read it on Home since 382 (8.6-9.1px behind) and it was put down to
+   load. Now a new swell drops the reading (lensGeo = null), so it is taken again while the swell runs and once after. Held: 0.00px
+   everywhere; check-b382-slide's Home slide: never behind (-0.1 to -0.4), median 1.3-1.6 ahead (was 8.4-9.3 behind).
+4. THE FLARES (attachOrbitSheet). Home's hero is drawn at 0.94 (a transform on .cosmic-hero-wrap) and the cell was sized so a step
+   is whole device pixels on the SCREEN (44.68 CSS px x 0.94 x 3 = 126). Safari paints a layer in its own coordinates at the
+   device's scale, whatever transforms are above it (why a scaled-up layer looks soft in Safari): there a step was 44.68 x 3 =
+   134.04 pixels, every column of the sheet on a different fraction of a pixel - the 12-step pattern in the video. Now, where the
+   ancestors are scaled, the window is laid out in screen units (the cell 42 CSS px, px / min(dpr, 2)) and scaled back by their
+   inverse (scale(1.06383) on .rk-frame): 126 pixels a step in its own paint and on the screen; the same box (126 device px,
+   centred within 0.007px), the same frame on the same clock. The board's flares (not scaled) and the cutscenes (g.plain) are as
+   they were. Chromium rasterises at the screen scale, so it never showed the shake.
+
+### Looked at, not changed
+- The haptics: a slide's landing clicks the native switch twice (playSound -> haptic -> taptic in endTabDrag, and the touchend
+  listener's NovaSound.haptic) - ~25 samples each of the release at 4x. Another worker owns the haptic switches; reported, not
+  touched.
+- The press (lensDown's measures, 13-30ms at 4x): taps share it and he says taps are good.
+- The builds themselves: Home ~120-190ms at 4x, Profile ~60-95 - a third of each is the first style pass of the new screen forced
+  inside the build (syncLoopClock's getAnimations on Home, syncSky's colour probe on leaving Home) that the next frame would
+  otherwise do; it now runs while the glass glides on the compositor.
+- The hero pausing for a slide (SLIDE_HOLD_SEL) and the 30-a-second emblem sheets: kept.
+
+### Gate: tools/check-b384-slide.py (iPhone UA, CDP touch, 440x956 at 3x)
+(1) Safari's timer order emulated, Home -> Profile, Profile -> Home, Calendar -> Home at 4x: a frame between the release and the
+build, no layout read in the release, the first frame within 90ms, and it lands; (3) a finger held still mid-slide has the glass
+within 1px (Home x2, Leaderboard, Calendar; Fire Code Home and Settings), and check-b382-slide's Home slide (the finger resting 400ms
+first) is never over 3px behind; (2) Fire Code Home's rank flares: a cell x dpr whole in the window's own paint, whole-cell steps,
+the bubble's screen box, the clock's frame. This build ALL PASS; previous commit 13 FAIL (frame after the release 243-436ms with the
+build first, 25-34 reads, glass -9.97/-6.28/+2.43/+9.97 held and 9.1 behind sliding, Fire Code -9.97/+9.97, cell 134.04).
+
+Also run, one at a time: check-b383-tabslide ALL PASS; check-b383-slide ALL PASS (Profile/Leaderboard -0.2/-0.3 behind at worst);
+check-b380-slide ALL PASS; check-b382-slide ALL PASS (its (3) Home now passes); check-b327z15 FGW: F 68 of 153, G 13 of 18 (previous
+commit 64 / 12, the same failures), W passes; check-behaviour b323t_tabbar 3 fails, all on the previous commit too (which fails a 4th
+- "the lens follows the finger within 3px", 4px off there, now 0); b314h_tabs passes; check-b380 3 fails, all on the previous commit
+too (watchdog under load, the chat button's glass, the unit card's tick ring; the previous commit fails a 4th, the board's flare
+clock, flaky); check-loops 5 seams, the same on the previous commit; check-js; sweep-layout --quick 14/14.
+
+Phone only: whether the glass now glides onto the tab during the build (WebKit plays the hold track on the compositor once it is
+committed - the taps' glides already do in his recording), how Safari actually orders the release, the build and the frame (the
+video says build first), and that the emblems now sit still inside their bubbles (Chromium rasterised them on the screen's grid
+all along). The finger-mapping fix (3) is plain arithmetic and holds in any engine.

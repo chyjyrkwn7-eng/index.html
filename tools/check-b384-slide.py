@@ -213,6 +213,19 @@ with sync_playwright() as pw:
     chk("(2) each window is the bubble's cell on the screen (%s device px, centred within %s CSS px)" % (sorted(set(x["winDev"] for x in geo)), max([x["dc"] for x in geo] or [0])), geo and not off, off)
     late = [x for x in geo if x["clock"] is None or min(abs(x["frame"] - x["clock"]), 180 - abs(x["frame"] - x["clock"])) > 1]
     chk("(2) each shows the clock's frame (%s)" % [(x["frame"], x["clock"]) for x in geo], geo and not late, late)
+    # (3) again in his class: Home and Settings at the two ends of the Fire Code bar
+    cdp = ctx.new_cdp_session(pg)
+    held = []
+    for scr, tab, dx in (("showHome()", "bottomtab-home", 16), ("showAppearance()", "bottomtab-settings", -16)):
+        pg.evaluate("()=>" + scr); pg.wait_for_timeout(2500)
+        tabs = g2["tabs_of"](pg); x0, y = tabs[tab]
+        touch(cdp, "touchStart", x0, y); time.sleep(0.25)
+        for k in range(1, 5): touch(cdp, "touchMove", x0 + dx * k / 4, y); time.sleep(0.016)
+        pg.wait_for_timeout(450)
+        lc = pg.evaluate(r"""()=>{ const H=window.__H; const b=H.getBoundingClientRect.call(document.querySelector('#bottomtabs-lens .tab-lens-body')); return b.left+b.width/2; }""")
+        touch(cdp, "touchEnd"); pg.wait_for_timeout(1500)
+        held.append((tab[10:], dx, round(lc - (x0 + dx), 2)))
+    chk("(3) Fire Code: a finger held still mid-slide has the glass on it at both ends of the bar (within 1px: %s)" % held, all(abs(h[2]) <= 1 for h in held), held)
     if errs: chk("(2) no page errors", False, errs[:4])
     br.close()
 print("ALL PASS" if ok else "FAILURES")
