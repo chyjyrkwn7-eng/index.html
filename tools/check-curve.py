@@ -674,7 +674,9 @@ def main():
                  touch-up put it back at the bottom ("The badge case being
                  at the top is not the move, revert that location at the
                  bottom") */
-              const order = ['.pf-standing', '.pf-goal', '.pf-case'].map(sel => document.querySelector('.profile-identity-tab ' + sel));
+              /* 383: under the person card again, as its own strip ("Should the badge case be between the challenges and
+                 the top box instead? I feel like it's easy to miss at the bottom") - standing, case, next rank */
+              const order = ['.pf-standing', '.pf-case', '.pf-goal'].map(sel => document.querySelector('.profile-identity-tab ' + sel));
               return {
                 blocks: order.map(n => !!n),
                 inOrder: order.every(Boolean) && !!(order[0].compareDocumentPosition(order[1]) & 4) && !!(order[1].compareDocumentPosition(order[2]) & 4),
@@ -797,7 +799,7 @@ def main():
             # top is not the move, revert that location at the bottom."
             # MOVED IN 327z15: the ladder and the case open only from their own pills
             # ("See rank ladder", "N of 16 badges") - those are the only buttons in them
-            check("Profile's card is three blocks in order: where you stand, the next rank, the badge case - nothing tappable nested in them but their pills, no Study button",
+            check("Profile's card is three blocks in order: where you stand, the badge case, the next rank (383) - nothing tappable nested in them but their pills, no Study button",
                   pf["blocks"] == [True, True, True] and pf["inOrder"] and pf["nested"] >= 1 and pf.get("nestedOther") == [] and not pf["study"], pf)
             # "How do we still get that nice xp stuff where it shows how much
             # over you are, how much till the next level ... we wouldn't need

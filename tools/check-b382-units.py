@@ -17,10 +17,11 @@ inflate) times 4. (Chromium's own CPU throttle is not used for these: its pauses
 Look and shape:
  (4) no card has a backdrop-filter, and no card's badge has a filter (the old badge carried two drop-shadows inside a card that scales);
  (5) a picked card reads as picked: its fill is lighter than an unpicked card's (luminance step >= 6 of 255 at the same spot), its
-     border is the accent, and its tick circle shows;
+     mark (383: the green dot) shows, and its border is the accent / the dot's green - or, in 383's clean look, no border at all;
  (6) every control on the screen is at least 44px tall: the level tabs, Select all, Review's Starred (Select all and Starred were 40);
  (7) (Madison, with the new Settings: "that clean clean clean CLEAN IOS apple look") the levels are a flat iOS segmented control
-     (no frost, rounded corners rather than a pill), centred; Select all a flat pill (no frost) centred under it;
+     (no frost, rounded corners rather than a pill), centred; (383: "this screen looks so much different than every other screen")
+     Select all sits at the right end of the search field's row, as Find me does on the Leaderboard, its top level with the field's;
  (8) nothing overflows, nothing scrolls sideways and no card's count runs under its badge at 440x956, 518x1125, 375x667, 320x568,
      834x1194 and 1440x900, academy and Fire Code;
  (9) the header is a Settings sub-page's: a round 44px back button on the left and the title centred on the same line.
@@ -185,7 +186,7 @@ with sync_playwright() as pw:
       const nb=document.querySelector('.screen-setup .settings-nav-back'), nt=document.querySelector('.screen-setup .settings-nav-title');
       const lc=getComputedStyle(lv), sc=getComputedStyle(sa);
       return { bd, flt, n:cards.length, on:r(on), off:r(off), tickShown: bs.opacity==='1' && bs.display!=='none', accRGB, bc, tabs,
-               lv:r(lv), sa:r(sa), panel:r(panel), vw:innerWidth, lvGlass: lc.backdropFilter!=='none', lvRadius: parseFloat(lc.borderTopLeftRadius),
+               lv:r(lv), sa:r(sa), panel:r(panel), fld:(()=>{ const f=document.querySelector('.screen-setup .setup-tools .searchbox'); return f ? r(f) : null; })(), vw:innerWidth, lvGlass: lc.backdropFilter!=='none', lvRadius: parseFloat(lc.borderTopLeftRadius),
                saGlass: sc.backdropFilter!=='none', nav: nb && nt ? { back:r(nb), title:r(nt), round: getComputedStyle(nb).borderRadius, words: nt.textContent } : null,
                oldBack: !!document.querySelector('.screen-setup > .back-link') }; }""")
     chk("(4) no card has a backdrop-filter (%d of %d)" % (shape["bd"], shape["n"]), shape["bd"] == 0, shape)
@@ -207,18 +208,27 @@ with sync_playwright() as pw:
         import re; m = [float(x) for x in re.findall(r"[\d.]+", s)[:3]] or [0, 0, 0]
         return [x * 255 for x in m] if s.startswith("color(") else m
     acc, bc = rgb(shape["accRGB"]), rgb(shape["bc"])
-    border_is_accent = sum(abs(a - b) for a, b in zip(acc, bc)) < 90
-    chk("(5) a picked card reads as picked: fill %.1f vs %.1f (step >= 6), accent border (%s vs %s), its tick shows (%s)" % (lon, loff, shape["bc"], shape["accRGB"], shape["tickShown"]),
-        lon - loff >= 6 and border_is_accent and shape["tickShown"], [lon, loff])
+    # REVISED IN 383 ("a green glowing dot/circle signifying it's been selected"): the picked card's edge is the dot's green
+    # (--pick-dot, #34C759 at 70%), not the theme accent
+    green = [52, 199, 89]
+    border_is_accent = sum(abs(a - b) for a, b in zip(acc, bc)) < 90 or sum(abs(a - b) for a, b in zip(green, bc)) < 90
+    # REVISED AGAIN IN 383 round 2 (the clean look: "We want simplicity and nothing overly distracting outside the main menu"):
+    # a picked card is a step lighter and carries the green dot, with no edge at all - the edge is no longer asked for there
+    clean = bc.count(0) == 3 and "rgba(0, 0, 0, 0)" in shape["bc"]
+    chk("(5) a picked card reads as picked: fill %.1f vs %.1f (step >= 6), its mark shows (%s), and an edge only where the look has one - the accent or the dot's green (%s vs %s; none in 383's clean look)" % (lon, loff, shape["tickShown"], shape["bc"], shape["accRGB"]),
+        lon - loff >= 6 and (border_is_accent or clean) and shape["tickShown"], [lon, loff])
     # Review: Select all and Starred
     pg.evaluate("()=>{ cfg.mode='review'; cfg.units=[]; showSetup(); }"); pg.wait_for_timeout(1500)
     rv = pg.evaluate("()=>({ sa: Math.round(document.querySelector('.selall-btn').getBoundingClientRect().height), st: Math.round((document.querySelector('.starred-pill')||{getBoundingClientRect:()=>({height:0})}).getBoundingClientRect().height) })")
     chk("(6) controls are 44px+: level tabs %s, Select all %dpx, Review's Select all %d and Starred %dpx" % (shape["tabs"], shape["sa"]["h"], rv["sa"], rv["st"]),
         min(shape["tabs"]) >= 44 and shape["sa"]["h"] >= 44 and rv["sa"] >= 44 and rv["st"] >= 44, [shape, rv])
     lvc = shape["lv"]["x"] + shape["lv"]["w"] / 2; pc = shape["panel"]["x"] + shape["panel"]["w"] / 2; sac = shape["sa"]["x"] + shape["sa"]["w"] / 2
-    chk("(7) the levels are a flat segmented control (no frost: %s; corners %.0fpx, not a pill), centred (%.1f vs %.1f); Select all a flat pill (frost: %s) centred under them (%.1f)" % (
-        shape["lvGlass"], shape["lvRadius"], lvc, pc, shape["saGlass"], sac),
-        not shape["lvGlass"] and shape["lvRadius"] < 20 and abs(lvc - pc) <= 2 and not shape["saGlass"] and abs(sac - pc) <= 2, shape)
+    fld = shape.get("fld")   # read with Select all, in the same mode
+    chk("(7) the levels are a flat segmented control (no frost: %s; corners %.0fpx, not a pill), centred (%.1f vs %.1f); Select all flat (frost: %s) at the right of the search field's row (%s / %s)" % (
+        shape["lvGlass"], shape["lvRadius"], lvc, pc, shape["saGlass"], shape["sa"], fld),
+        not shape["lvGlass"] and shape["lvRadius"] < 20 and abs(lvc - pc) <= 2 and not shape["saGlass"] and fld is not None
+        and ((shape["sa"]["x"] > fld["x"] + fld["w"] and abs(shape["sa"]["y"] - fld["y"]) <= 1)       # beside the field (Drill, Mock)
+             or shape["sa"]["y"] >= fld["y"] + fld["h"]), [shape, fld])                                 # Review: under it, beside Starred
     nav = shape["nav"]
     navok = bool(nav) and not shape["oldBack"] and nav["back"]["w"] >= 44 and nav["back"]["h"] >= 44 and abs(nav["back"]["w"] - nav["back"]["h"]) < 1 \
         and abs((nav["title"]["x"] + nav["title"]["w"] / 2) - pc) <= 2 and abs((nav["back"]["y"] + nav["back"]["h"] / 2) - (nav["title"]["y"] + nav["title"]["h"] / 2)) <= 3

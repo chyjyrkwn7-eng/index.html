@@ -4,11 +4,12 @@ laptop (1440x900):
 (1) the page title is big and bold: the header's word (Leaderboard / Calendar) is at least 1.6x the body text and bold (>= 700);
 (2) the board switch is a segmented control: one track, its segments side by side in one row, each >= 44px tall, the track spans
     most of the column (>= 80% of the rows' width), no frost on it;
-(3) the list is grouped: from fourth place down the rows touch (no gap between neighbours), only the group's first row has top
+(3) the list is grouped (383: from FIRST place down - "why is the top 3 disconnected from the rest"): the rows touch (no gap between neighbours), only the group's first row has top
     corners and only its last bottom corners, a hairline (::after, 1px) under every row but the last, starting right of the row's
     left edge (inset to the name), every row >= 44px, and no row carries a backdrop-filter;
-(4) the top three are cards of their own (rounded all round, a gap under each);
-(5) the search field and Find me are each >= 44px tall, the field's placeholder starts at the left;
+(4) (383) the top three are the list's first rows: no gap under them, no bottom corners;
+(5) the search field and Find me are each >= 44px tall, the placeholder at the left beside the magnifier (383, Madison: "The
+    word search shouldn't be centered, it should be centered left" - replacing 381's centring);
 (6) the calendar: today's number is a circle in the accent (filled when picked), the cards carry no backdrop-filter and are rounded
     >= 18px, the cards' headings are not spaced capitals, the test's topics are rows with a hairline between them;
 (7) no horizontal overflow on either screen at any size.
@@ -30,7 +31,8 @@ BOARD = """()=>{ const scr=document.querySelector('.screen-rankings'); const cs=
   const sb=seg ? seg.getBoundingClientRect() : null;
   const segInfo = seg ? { tops: btns.map(b=>Math.round(b.getBoundingClientRect().top)), hs: btns.map(b=>Math.round(b.getBoundingClientRect().height*10)/10),
     span: Math.round(sb.width/rw*100)/100, blur: (cs(seg).backdropFilter||'none') } : null;
-  const list=rows.filter(r=>!/rank-podium-[123]/.test(r.className));
+  /* build 383: "why is the top 3 disconnected from the rest" - the group runs from first place down */
+  const list=rows;
   const R=r=>r.getBoundingClientRect(); const rad=(r,k)=>parseFloat(cs(r)[k])||0;
   const gaps=list.slice(0,10).map((r,i,a)=>i ? Math.round((R(r).top-R(a[i-1]).bottom)*10)/10 : 0).slice(1);
   const vis=list.slice(0,10);
@@ -81,9 +83,9 @@ with sync_playwright() as pw:
         corner_ok = len(b["corners"]) > 2 and b["corners"][0][0] >= 12 and all(c[0] == 0 for c in b["corners"][1:]) and all(c[1] == 0 for c in b["corners"][:-1])
         chk("%s board: the list is grouped - gaps between rows %s, corners %s, hairlines %s, rows >= 44px (%s), blurred rows %d" % (dev, b["gaps"][:6], b["corners"][:4], b["hair"][:3], round(b["hmin"], 1), b["blur"]),
             b["gaps"] and max(abs(x) for x in b["gaps"]) <= 0.6 and corner_ok and hair_ok and b["hmin"] >= 44 and b["blur"] == 0, b)
-        chk("%s board: the top three are cards of their own %s" % (dev, b["pod"]),
-            all(p and p["tl"] >= 12 and p["bl"] >= 12 and (p["gap"] or 0) >= 4 for p in b["pod"]), b["pod"])
-        chk("%s board: search %s and Find me %spx are >= 44px, the field starts at the left" % (dev, b["search"], b["me"]),
+        chk("%s board: the top three are the list's first rows - no gap under them, no bottom corners %s" % (dev, b["pod"]),
+            all(p and p["bl"] < 1 and abs(p["gap"] or 0) <= 0.6 for p in b["pod"]), b["pod"])
+        chk("%s board: search %s and Find me %spx are >= 44px, the placeholder at the left (383)" % (dev, b["search"], b["me"]),
             b["search"] and b["search"]["h"] >= 44 and b["me"] >= 44 and b["search"]["align"] in ("left", "start"), b)
         chk("%s board: no sideways scroll (%dpx)" % (dev, b["over"]), b["over"] <= 0, b)
         pg.evaluate("()=>showCalendar()"); pg.wait_for_timeout(1500); pg.evaluate(CLEAR)

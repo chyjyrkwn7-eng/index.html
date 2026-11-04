@@ -7,12 +7,12 @@ can add Logan Preston" / "made by M. Davis and then the word nova in a nice cool
     Code -, Share & Install), each with a solid, non-grey tile, a chevron, 44px+, colours differing in a card; no switch,
     slider or legal paragraph on it; Credits = Contributors and Legal (words and a chevron, no tile); Support = Report a
     bug, Version history, Terms of Use, Privacy (coloured words, no tile, no chevron); no names at the foot (that is
-    Contributors' job), only "Made by Davis" (the name in gradient text) and a NOVA wordmark in
+    Contributors' job), only "Made by Davis" (383: the name plain, small capitals like "Made by") and a NOVA wordmark in
     gradient text, last on the screen.
 (2) Every category opens its own page (round back button, title) holding its settings, each switch row with a coloured
     tile; a page lights the tab Settings lights; back is the menu.
 (3) Every handler still fires (spied): share, install walkthrough, version check, report screen, release history, a
-    switch, the sync code reveal; the two new switches (Tap sounds, Longer pause) save to the theme.
+    switch, the sync code reveal; the new switch (Tap sounds) saves to the theme; (383) Study has no Longer pause switch.
 (4) Advanced settings opens its page: red word rows, Reset opens the warning.
 (5) Legal holds every line of the old foot word for word; Terms of Use and Privacy open.
 (6) Contributors (round 3, "Not sure why ours has numbers"): five people, Madison Davis first, Logan Preston there;
@@ -92,8 +92,12 @@ MENU = """()=>{ const S=document.querySelector('#stage .screen-settings'); if(!S
     footNames: foot ? [...foot.querySelectorAll('.settings-credits-name, .settings-credits-cell')].length : -1,
     footText: foot ? foot.textContent.replace(/\\s+/g, ' ').trim() : '',
     madeBy: (S.querySelector('.settings-madeby')||{}).textContent||'',
-    madeByGrad: (()=>{ const e=S.querySelector('.settings-madeby-name'); if(!e) return false; const c=getComputedStyle(e);
-      return /gradient/.test(c.backgroundImage) && /text/.test((c.webkitBackgroundClip||'') + (c.backgroundClip||'')); })(),
+    /* 383: "Don't make Davis look like that" - the name is plain: no gradient, no serif italic, the same small capitals as
+       "Made by", a step heavier */
+    madeByPlain: (()=>{ const e=S.querySelector('.settings-madeby-name'), b=S.querySelector('.settings-madeby-by'); if(!e || !b) return false;
+      const c=getComputedStyle(e), d=getComputedStyle(b);
+      return !/gradient/.test(c.backgroundImage) && c.fontStyle === 'normal' && c.textTransform === d.textTransform && c.fontSize === d.fontSize
+        && c.fontFamily === d.fontFamily && parseInt(c.fontWeight) > parseInt(d.fontWeight); })(),
     /* every card group on the menu has a grey label straight above it */
     unlabelled: [...S.querySelectorAll(':scope > .settings-card')].filter(c=>{ const p=c.previousElementSibling; return !(p && p.classList.contains('slab') && p.textContent.trim()); }).length,
     cards: S.querySelectorAll(':scope > .settings-card').length,
@@ -119,9 +123,10 @@ def red(c):
     v = chans(c)
     return len(v) == 3 and v[0] > 180 and v[1] < 140 and v[2] < 140
 PAGES = {"sound": ["Sound effects", "Tap sounds"],
-         "study": ["Swipe to next question", "Auto-advance", "Longer pause before moving on", "Auto-star questions you keep missing"],
+         "study": ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"],   # (383: the longer pause is gone)
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
-         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"]}
+         "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
+         "account": []}   # (383) Settings > Account: the name editor and Sign out (no switches)
 PEOPLE = ["Madison Davis", "Bryan Darjean", "Logan Preston", "Alexis Sauceda", "Cameron Wharton"]
 # the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
 FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]
@@ -159,8 +164,8 @@ with sync_playwright() as pw:
             m.get("cards", 0) >= 5 and m.get("unlabelled") == 0, m)
         chk("%s the foot has no names grid, no contributors' names (%s)" % (tag, m.get("footText")),
             m.get("footNames") == 0 and not any(n.split()[1] in m.get("footText", "") for n in PEOPLE[1:]), m)
-        chk("%s it ends on 'Made by Davis' (the name in gradient text) and a NOVA wordmark" % tag,
-            m.get("madeBy").replace(" ", "").lower() == "madebydavis" and m.get("madeByGrad") and m.get("word") == "NOVA" and m.get("wordGrad") and m.get("footLast"), m)
+        chk("%s it ends on 'Made by Davis' (383: the name plain, in the signature's own capitals) and a NOVA wordmark" % tag,
+            m.get("madeBy").replace(" ", "").lower() == "madebydavis" and m.get("madeByPlain") and m.get("word") == "NOVA" and m.get("wordGrad") and m.get("footLast"), m)
 
         # (2) each category is a page
         for k in want:
@@ -212,7 +217,11 @@ with sync_playwright() as pw:
         tap(pg, "Version history"); pg.wait_for_timeout(400)
         chk("%s Version history opens the release history from Settings" % tag, "rel:settings" in pg.evaluate("__hit"), pg.evaluate("__hit"))
         pg.evaluate("()=>{ window.showReleaseHistory = window.__realRel; }")
-        for pk, title, field in (("motion", "Reduce motion", "reduceMotion"), ("sound", "Tap sounds", "tapSounds"), ("study", "Longer pause before moving on", "autoAdvanceLong")):
+        # (383: "The longer pause setting, we don't need that" - gone from Study; asserted absent below)
+        pg.evaluate("()=>showAppearance({ page: 'study' })"); pg.wait_for_timeout(900)
+        gone = pg.evaluate("()=>![...document.querySelectorAll('#stage label.opt .otext')].some(t=>/Longer pause/.test(t.textContent))")
+        chk("%s Study has no Longer pause switch any more" % tag, gone, gone)
+        for pk, title, field in (("motion", "Reduce motion", "reduceMotion"), ("sound", "Tap sounds", "tapSounds")):
             pg.evaluate("(k)=>showAppearance({ page: k })", pk); pg.wait_for_timeout(900)
             r = pg.evaluate("""async (a)=>{ const row=[...document.querySelectorAll('#stage label.opt')].find(r=>((r.querySelector('.otext')||r).textContent||'').trim().startsWith(a[0]));
               if(!row) return null; const was=theme[a[1]]; row.querySelector('.otext').click(); await new Promise(r=>setTimeout(r,500));

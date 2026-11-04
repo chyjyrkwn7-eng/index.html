@@ -1,0 +1,150 @@
+"""Build 383, Madison after 382 went live:
+  1. "The save your sync code pop up, don't do that for the existing accounts."
+  2. "the weekly news popup. I don't like how it pops up forced like that ... that only pops up if you
+     select leaderboard that week"
+  3. "The leaderboard, why is the top 3 disconnected from the rest, fix that"
+Checks: an existing account that never saved its code sees no card on Home (the sign-up card is
+check-b382-savecode's "signup"); the week's recap does not play on Home, does play once the Leaderboard
+is opened, and not a second time that week; the top three and the rest are one grouped card (no gap,
+no corners between rows, one card's left and right edges).
+Run:  python3 tools/check-b383-feedback.py   (--against OLD/index.html must FAIL)"""
+import os, sys, json
+HERE = os.path.dirname(os.path.abspath(__file__))
+src = open(os.path.join(HERE, "check-b382-savecode.py")).read().split("\nwith sync_playwright() as pw:")[0]
+g = {"__file__": os.path.join(HERE, "check-b382-savecode.py"), "__name__": "b383"}
+exec(src, g)
+from playwright.sync_api import sync_playwright
+fails = g["fails"] = []
+ck = g["ck"]
+def recap_up(pg): return pg.evaluate("()=>!!document.querySelector('#nova-intro.is-weekrecap')")
+with sync_playwright() as pw:
+    br = pw.chromium.launch(executable_path=g["CHROME"])
+
+    print("\n1. an existing account that never saved its code")
+    errs = []
+    st = g["store"]()
+    ctx, pg = g["open_page"](br, g["init_account"]("TEST-3831", st), errs=errs)
+    g["connect"](pg, "TEST-3831", st)
+    ck("no save-your-code card on Home after the server copy is read (9s)", not g["wait_card"](pg, 9000))
+    pg.evaluate("()=>{ showHome(); setTimeout(checkSaveCodeReminder, 50); }"); pg.wait_for_timeout(2500)
+    ck("nor when Home is shown again", not g["card_up"](pg))
+    pg.evaluate("()=>showAppearance({page:'sync'})"); pg.wait_for_timeout(900)
+    ck("Settings > Sync still has the code and Save it", pg.evaluate("""()=>!!document.querySelector('#stage .sync-code-row') &&
+        [...document.querySelectorAll('#stage .settings-row')].some(r=>/Save it/.test(r.textContent))"""))
+    ck("no page errors", not errs, errs[:2])
+    ctx.close()
+
+    print("\n2. the week's recap: the first Home of a launch (383, second ask), not forced again later")
+    errs = []
+    st = g["store"](leaderboardOptIn=True); st.pop("novaHeard", None)   # last week's recap NOT yet heard
+    ctx, pg = g["open_page"](br, g["init_account"]("TEST-3832", st), errs=errs)
+    pg.evaluate("()=>{ weekRecapDayOk = () => true; }")   # any day of the week this runs on
+    g["connect"](pg, "TEST-3832", st)
+    # a class that earned points last week (a real board always has rows; an empty one never recaps)
+    pg.evaluate("""()=>{ const lw=lastWeekKey(), wk=weekKeyNow();
+      const rows=['Lee','Pat','Alex','Jose'].map((n,i)=>({ id:'pub'+(i+20), d:{ firstName:n, avatarChar:'ghost', level:40-i, badges:5, hundos:9, correct:900,
+        week:wk, weekPoints:50, prevWeek:lw, prevWeekPoints:900-i*150 } }));
+      const real = onSnapshotResilient;
+      onSnapshotResilient = function(ref, onNext){ if(ref && ref.where === undefined && !ref.get) return real(ref, onNext);
+        setTimeout(()=>{ try{ onNext({ metadata:{fromCache:false}, forEach(cb){ rows.forEach(r=>cb({ id:r.id, data:()=>r.d })); }, docs:[] }); }catch(e){} }, 30); return function(){}; };
+      fetchBoardForInvites = function(){ leaderboardRows = rows.map(r=>Object.assign({pub:r.id}, r.d)); leaderboardRowsFromServer = true; }; }""")
+    pg.evaluate("()=>{ try{ showHome(); }catch(e){} }")
+    t = 0; home_recap = False
+    while t < 9000:
+        if recap_up(pg): home_recap = True; break
+        pg.wait_for_timeout(300); t += 300
+    # 383, second ask: "it could populate on the Home Screen ... when getting in the app, or switching over to that class"
+    ck("the first Home of the launch: the week's recap plays", home_recap)
+    if home_recap: pg.evaluate("()=>document.getElementById('nova-intro').__nova.close()"); pg.wait_for_timeout(800)
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(900)
+    pg.evaluate("()=>{ document.getElementById('bottomtab-rewards')?.click(); }"); pg.wait_for_timeout(5000)
+    ck("once seen, opening the Leaderboard that week does not play it again", not recap_up(pg))
+    pg.evaluate("()=>showHome()"); pg.wait_for_timeout(4000)
+    ck("nor does coming back to Home later in the launch", not recap_up(pg))
+    ck("no page errors", not errs, errs[:2])
+    ctx.close()
+
+    print("\n3. the top three and the rest: one grouped card")
+    for (w, h, dev) in [(440, 956, "phone"), (834, 1194, "iPad")]:
+        errs = []
+        st = g["store"](leaderboardOptIn=True, publicId="pub00")
+        ctx, pg = g["open_page"](br, g["init_account"]("TEST-3833", st), w=w, h=h, errs=errs)
+        g["connect"](pg, "TEST-3833", st)
+        pg.evaluate("""()=>{ weekRecapDayOk = () => false;
+          const names=['Lee','Pat','Alex','Jose','Devonte','Brooke','Tara','Kim','Ray'];
+          const rows = names.map((n,i)=>({ id:'pub'+(i+10), d:{ firstName:n, avatarChar:'ghost', level:70-i*6, badges:15-i, hundos:90-i*8, correct:3000-i*200, xp:90000-i*8000 } }));
+          onSnapshotResilient = function(ref, onNext){ setTimeout(()=>{ try{ onNext({ metadata:{fromCache:false}, forEach(cb){ rows.forEach(r=>cb({ id:r.id, data:()=>r.d })); }, docs:[] }); }catch(e){} }, 30); return function(){}; };
+          showRankings('overall'); }""")
+        pg.wait_for_timeout(2500)
+        r = pg.evaluate("""()=>{ const rows=[...document.querySelectorAll('#stage .rank-rows > .rank-row:not(.rank-row-head)')];
+          const b=rows.slice(0,6).map(e=>{ const q=e.getBoundingClientRect(), c=getComputedStyle(e);
+            return {top:Math.round(q.top), bot:Math.round(q.bottom), l:Math.round(q.left), r:Math.round(q.right),
+                    tl:parseFloat(c.borderTopLeftRadius), bl:parseFloat(c.borderBottomLeftRadius), pod:/rank-podium-/.test(e.className)}; });
+          return {n:rows.length, b}; }""")
+        b = r["b"]
+        ck("%s: the board has its podium and more under it (%d rows)" % (dev, r["n"]), r["n"] >= 6 and b[0]["pod"] and b[2]["pod"] and not b[3]["pod"], r)
+        if r["n"] >= 6:
+            gaps = [b[i + 1]["top"] - b[i]["bot"] for i in range(5)]
+            ck("%s: no gap between any two rows, first place to sixth (%s)" % (dev, gaps), all(abs(x) <= 1 for x in gaps), gaps)
+            ck("%s: one card's edges - every row the same left and right" % dev, len({x["l"] for x in b}) == 1 and len({x["r"] for x in b}) == 1, b)
+            ck("%s: rounded at the top of first place only - no corners at 1st/2nd/3rd's bottoms or 4th's top" % dev,
+               b[0]["tl"] > 4 and all(x["bl"] < 1 for x in b[:5]) and all(x["tl"] < 1 for x in b[1:6]), b)
+        ck("%s: no page errors" % dev, not errs, errs[:2])
+        ctx.close()
+    print("\n4. the switch and the search field stand out; Search sits at the left, beside the magnifier")
+    from PIL import Image
+    import io
+    for (w, h, dev) in [(440, 956, "phone"), (834, 1194, "iPad")]:
+        st = g["store"](leaderboardOptIn=True, publicId="pub00")
+        ctx, pg = g["open_page"](br, g["init_account"]("TEST-3834", st), w=w, h=h)
+        g["connect"](pg, "TEST-3834", st)
+        pg.evaluate("()=>{ weekRecapDayOk = () => false; showRankings('hundos'); }"); pg.wait_for_timeout(1800)
+        r = pg.evaluate("""()=>{ const f=document.querySelector('.rank-search'), i=document.querySelector('.rank-search-wrap > .searchicon'), t=document.querySelector('.screen-rankings > .navsegment');
+          const fr=f.getBoundingClientRect(), ir=i.getBoundingClientRect(), tr=t.getBoundingClientRect(), cs=getComputedStyle(f);
+          const pad=parseFloat(cs.paddingLeft);
+          return { align: cs.textAlign, textStart: Math.round(fr.left + pad), iconRight: Math.round(ir.right), fieldLeft: Math.round(fr.left),
+            field:[fr.left, fr.top, fr.width, fr.height], track:[tr.left, tr.top, tr.width, tr.height],
+            fb: parseFloat(cs.borderTopWidth), tb: parseFloat(getComputedStyle(t).borderTopWidth) }; }""")
+        ck("%s: the placeholder starts at the left, just right of the magnifier (%s)" % (dev, r),
+           r["align"] in ("left", "start") and 0 <= r["textStart"] - r["iconRight"] <= 16, r)
+        img = Image.open(io.BytesIO(pg.screenshot())).convert("L")
+        def lum(x, y): return img.getpixel((int(x), int(y)))
+        def inside(box):   # the fill, away from the words: just inside the right end of the box, at its middle
+            return lum(box[0] + box[2] - 6, box[1] + box[3] / 2)
+        def outside(box):  # the sky just above the box
+            return lum(box[0] + box[2] - 6, box[1] - 5)
+        tbx = r["track"]   # the track at its LEFT end - the picked segment (Hundos) is at the right
+        fi, fo, ti, to = inside(r["field"]), outside(r["field"]), lum(tbx[0] + 6, tbx[1] + tbx[3] / 2), lum(tbx[0] + 6, tbx[1] - 5)
+        ck("%s: the search field is lighter than the sky behind it by 12+ levels, with a rim (%d vs %d, rim %s)" % (dev, fi, fo, r["fb"]), fi - fo >= 12 and r["fb"] >= 1, [fi, fo])
+        ck("%s: so is the switch's track (%d vs %d, rim %s)" % (dev, ti, to, r["tb"]), ti - to >= 12 and r["tb"] >= 1, [ti, to])
+        ctx.close()
+    print("\n5. the units screen in the board's look (\"this screen looks so much different than every other screen\")")
+    for (w, h, dev) in [(440, 956, "phone"), (834, 1194, "iPad")]:
+        st = g["store"]()
+        ctx, pg = g["open_page"](br, g["init_account"]("TEST-3835", st), w=w, h=h)
+        g["connect"](pg, "TEST-3835", st)
+        pg.evaluate("()=>{ cfg.mode='drill'; showSetup(); }"); pg.wait_for_timeout(1800)
+        r = pg.evaluate("""()=>{ const R=e=>{ const b=e.getBoundingClientRect(); return [b.left,b.top,b.width,b.height]; };
+          const f=document.querySelector('.screen-setup .searchbox'), sa=document.querySelector('.screen-setup .selall-btn'),
+                lv=document.querySelector('.screen-setup .setup-levels'), card=document.querySelector('.screen-setup label.pick');
+          const ts=document.querySelector('.tabsearch'); const tsUp = !!ts && !ts.hidden && getComputedStyle(ts).display !== 'none' && ts.getBoundingClientRect().width > 0;
+          return { field: f && f.offsetParent ? R(f) : null, sa: sa ? R(sa) : null, lv: lv ? R(lv) : null, card: card ? R(card) : null,
+                   cardRim: card ? parseFloat(getComputedStyle(card).borderTopWidth) : 0, tsUp }; }""")
+        ck("%s: no search circle over the tab bar on this screen" % dev, r["tsUp"] is False, r)
+        ok_row = r["field"] and r["sa"] and r["sa"][0] > r["field"][0] + r["field"][2] and abs(r["sa"][1] - r["field"][1]) <= 1
+        ck("%s: the search field in the page, Select all beside it as Find me is (%s)" % (dev, r), bool(ok_row), r)
+        img = Image.open(io.BytesIO(pg.screenshot())).convert("L")
+        lum = lambda x, y: img.getpixel((int(x), int(y)))
+        if r["lv"]:
+            lv = r["lv"]; li, lo = lum(lv[0] + 6, lv[1] + lv[3] / 2), lum(lv[0] + 6, lv[1] - 5)
+            ck("%s: the level switch stands out from the sky (%d vs %d)" % (dev, li, lo), li - lo >= 12, [li, lo])
+        if r["field"]:
+            fd = r["field"]; fi, fo = lum(fd[0] + fd[2] - 8, fd[1] + fd[3] / 2), lum(fd[0] + fd[2] - 8, fd[1] - 5)
+            ck("%s: so does the search field (%d vs %d)" % (dev, fi, fo), fi - fo >= 12, [fi, fo])
+        if r["card"]:
+            cd = r["card"]; ci, co = lum(cd[0] + cd[2] / 2, cd[1] + cd[3] * .55), lum(cd[0] + cd[2] / 2, cd[1] - 4)
+            ck("%s: a unit card is lighter than the sky round it, with a rim - not near-black (%d vs %d, rim %s)" % (dev, ci, co, r["cardRim"]), ci - co >= 6 and r["cardRim"] >= 1, [ci, co])
+        ctx.close()
+    br.close()
+print("\n%s  (%d failure(s))" % ("ALL PASS" if not fails else "FAILED: " + ", ".join(fails[:6]), len(fails)))
+sys.exit(1 if fails else 0)

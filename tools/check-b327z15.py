@@ -550,11 +550,14 @@ def section_t(br):
     check("%s: T. the hundo count is This Week's colour (%s / %s)" % (label, r["hc"], r["wc"]), r["hc"] and r["hc"] == r["wc"], r)
     import re as _re
     m = _re.findall(r"[\d.]+", r["bg"] or "")
-    lum = sum(float(x) for x in m[:3]) / 3 if len(m) >= 3 else 255
+    # (383) a color(srgb r g b) value is 0-1 a channel (the clean look's color-mix() computes to one): on 0-255 like rgb()
+    sc = 255 if (r["bg"] or "").startswith("color(") else 1
+    lum = sum(float(x) * sc for x in m[:3]) / 3 if len(m) >= 3 else 255
     alpha = float(m[3]) if len(m) >= 4 else 1
     # MOVED IN round 31: "The black 'find me' button is not the move, revert
     # that" - it is the search field's glass again, not a solid black
-    check("%s: T. Find me is the field's glass again, not solid black (%s)" % (label, r["bg"]), not (lum < 30 and alpha > .9), r)
+    # (383, the clean look: it is the search field's solid card colour beside it - still not black)
+    check("%s: T. Find me is the field's own look again, not solid black (%s)" % (label, r["bg"]), not (lum < 30 and alpha > .9) and (r["bg"] == r["sbg"] or alpha < .9), r)
     ctx.close()
 
 
@@ -895,11 +898,13 @@ def section_ee(br):
     r = pg.evaluate("""async () => { showProfile('profile'); await new Promise(r => setTimeout(r, 900));
       const tab = document.querySelector('#stage .profile-identity-tab');
       const cards = [tab.querySelector(':scope > .profile-hero'), tab.querySelector(':scope > .pf-goal'), tab.querySelector(':scope > .pf-case .pf-ccase')];
-      const look = cards.map(e => e ? { rim: getComputedStyle(e).borderTopColor, img: getComputedStyle(e).backgroundImage.indexOf('rgb(20, 23, 28)') >= 0 } : null);
+      /* (383) the person card's surface was the #14171C slab (rgb(20, 23, 28) in its image); 383 made the three one card - since
+         round 2 the clean look's solid --clean-card - so "on the person card's surface" is now: one fill, one rim, for all three */
+      const look = cards.map(e => e ? { rim: getComputedStyle(e).borderTopColor, bg: getComputedStyle(e).backgroundColor, img: getComputedStyle(e).backgroundImage.indexOf('rgb(20, 23, 28)') >= 0 } : null);
       const nm = document.querySelector('#stage .pf-standing .pf-rankname'), lv = document.querySelector('#stage .pf-standing .pf-level');
       const stacked = !nm || (nm.getBoundingClientRect().bottom <= lv.getBoundingClientRect().top + 2 && getComputedStyle(nm).textTransform === 'uppercase');
       return { tiles: document.querySelectorAll('#stage .profile-hero .person-card-cell').length, look, stacked }; }""")
-    same = all(r["look"]) and len({x["rim"] for x in r["look"]}) == 1 and all(x["img"] for x in r["look"])
+    same = all(r["look"]) and len({x["rim"] for x in r["look"]}) == 1 and (all(x["img"] for x in r["look"]) or len({x["bg"] for x in r["look"]}) == 1)
     check("EE. Profile: no tiles, the three cards on the person card's surface, the rank a headline over the level", r["tiles"] == 0 and same and r["stacked"], r)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showCalendarTab(); await wait(900);
       const card = document.querySelector('#stage .cal-count-card'); if(!card) return { card: false };
@@ -1024,8 +1029,9 @@ def section_gg(br):
       const icon = document.querySelector('#stage .searchwrap .searchicon, #stage .searchicon');
       const ic = icon ? { col: getComputedStyle(icon).color, z: getComputedStyle(icon).zIndex } : null;
       showRankings(); await wait(1000);
-      const rs = !!document.querySelector('#stage .rank-search-wrap .searchicon');
-      return { foot, ins, ic, rs }; }""")
+      const rsI = document.querySelector('#stage .rank-search-wrap .searchicon');
+      const rs = !!rsI, rsc = rsI ? getComputedStyle(rsI).color : null;
+      return { foot, ins, ic, rs, rsc }; }""")
     # MOVED IN round 32: an earned card (no bar) has its count on the floor, a card with a bar
     # has it over the bar - so the distance is one of two, each the same on every card of its kind
     check("GG. unit cards: the count is at the same distance from every card's foot (one per kind)", 1 <= len(set(r["foot"])) <= 2, r)
@@ -1037,8 +1043,10 @@ def section_gg(br):
     c2.close()
     check("GG. laptop unit cards: the count sits at the foot (within 40px of it) on every card", lf and max(lf) <= 40 and len(set(lf)) <= 2, lf)
     check("GG. unit cards: the badge in the bottom-right, as far from the bottom as from the right (within 1px)", r["ins"] and max(r["ins"]) <= 1, r)
-    check("GG. the magnifier is white and on the field; the board's search has one",
-          r["ic"] and r["ic"]["col"].startswith("rgba(243, 245, 247") and r["ic"]["z"] not in ("auto", "0") and r["rs"], r)
+    # REVISED IN 383 (the units screen's and the board's search fields, iOS's): the magnifier is the field's grey (--soft), not
+    # white - "The search button stands out" - and the same on both; still on the field, and the board's search has one
+    check("GG. the magnifier is on the field and the same as the board's search's (%s / %s)" % (r["ic"] and r["ic"]["col"], r.get("rsc")),
+          r["ic"] and r["ic"]["z"] not in ("auto", "0") and r["rs"] and r["ic"]["col"] == r.get("rsc") and r["ic"]["col"] not in ("rgba(0, 0, 0, 0)", None), r)
     ctx.close()
 
     ctx, pg = cb.booted(br, 1440, 820, seed=cb.USED_ACCOUNT)

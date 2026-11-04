@@ -11465,11 +11465,11 @@ def check_b314_chars(br):
           const held = opts.find(o => !o.classList.contains('locked') && !o.classList.contains('selected'));
           const aura = held && [...held.querySelectorAll('svg.avatarchar-svg circle')].find(c => /url\\(#(aura|halo)-/.test(c.getAttribute('fill') || ''));
           out.halo = aura ? parseFloat(aura.getAttribute('opacity') || '1') : null;
-          /* the name editor - on the summary page since build 315 */
-          showCustomize(); await wait(500);
+          /* the name editor - in Settings > Account > Name since build 383 (was Customize's summary page) */
+          showAppearance({ page: 'account' }); await wait(500);
           document.querySelector('.customize-namerow .profile-edit-btn').click(); await wait(300);
-          const row = document.querySelector('.customize-namerow'), inp = document.querySelector('.screen-customize input.searchbox');
-          const save = [...document.querySelectorAll('.screen-customize button')].find(b => b.textContent.trim() === 'Save');
+          const row = document.querySelector('.customize-namerow'), inp = document.querySelector('.settings-page-account input.searchbox');
+          const save = [...document.querySelectorAll('.settings-page-account button')].find(b => b.textContent.trim() === 'Save');
           const ir = inp.getBoundingClientRect(), sr = save.getBoundingClientRect(), ics = getComputedStyle(inp);
           out.rowGone = getComputedStyle(row).display === 'none';
           out.padIn = Math.min(parseFloat(ics.paddingLeft), parseFloat(ics.paddingTop));
@@ -13112,7 +13112,8 @@ def check_b314_study(br):
         check("%s with nothing starred, the box's star is the white outline" % label,
               r["empty"]["filled"] is False, r["empty"])
         check("%s starred in a unit's details, the box fills its star and counts it when they close" % label,
-              r["after"]["filled"] is True and not r["after"]["empty"] and r["after"]["sub"].startswith("1 question"), r["after"])
+              # REVISED (382's Starred pill, check-b380 21): its count is the plain number, not "1 question"
+              r["after"]["filled"] is True and not r["after"]["empty"] and __import__("re").match(r"^1(\b| question)", r["after"]["sub"] or ""), r["after"])
         check("%s the filled star is the in-test star's soft gold (#E8C770), not 308's #FFD233" % label,
               "#E8C770" in r["stops"] and "#FFD233" not in r["stops"], r["stops"])
         # MOVED IN 324 (b324m): Review is the Briefing on screen ("exam mode
@@ -13687,8 +13688,10 @@ def check_b315_customize(br):
         check(f"{dev}: Profile's button opens the summary - four rows in order, no grid on it, Back to Profile",
               r.get("rows") == ["character", "banner", "theme", "fx"] and r.get("grids") == 0 and "Back to Profile" in r.get("back", ""), r)
         # "The title of all those tabs needs a header thing"
-        check(f"{dev}: \"Your look\" wears the Name's own header bar",
-              [b.lower() for b in r.get("bars") or []] == ["name", "your look"] and r.get("sameBar"), (r.get("bars"), r.get("sameBar")))
+        # REVISED IN 383: the name moved to Settings > Account ("The change your name option in customize, that needs to be
+        # in settings somewhere"), so the summary has one header bar - the look's - and no Name bar to match
+        check(f"{dev}: \"Your look\" is Customize's one header bar (383: the name is in Settings > Account)",
+              [b.lower() for b in r.get("bars") or []] == ["your look"], (r.get("bars"), r.get("sameBar")))
         ch, bn, th, fx = r.get("char") or {}, r.get("banner") or {}, r.get("theme") or {}, r.get("fx") or {}
         cb = ch.get("box") or {"w": 0, "h": 0}
         # "The character preview of what you have set is cool but it's small"
@@ -25042,7 +25045,9 @@ def check_b321f_profile(br):
         svg: st ? st.querySelectorAll('.pf-idline svg, .pf-idline .pf-emb').length : -1,
         rankCol: col(Q('.pf-standing .pf-rankname')), levelCol: col(Q('.pf-standing .pf-level')), badgeCol: col(Q('.pf-standing .pf-badgecount')),
         totalCol: col(Q('.pf-standing .pf-xp-total')), totalShown: !!(Q('.pf-standing .pf-xp-total') && Q('.pf-standing .pf-xp-total').getClientRects().length),
-        gap: g && cs ? cs.getBoundingClientRect().top - g.getBoundingClientRect().bottom : null,
+        /* REVISED IN 383: the case moved up under the person card ("Should the badge case be between the challenges and
+           the top box instead?") - the clearance is for the case's handle, so it is measured from whichever card is above it */
+        gap: cs && cs.previousElementSibling ? cs.getBoundingClientRect().top - cs.previousElementSibling.getBoundingClientRect().bottom : null,
         rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
         kick: g ? ((g.querySelector('.pf-goal-head .pf-kick') || {}).textContent || '') : '',
         goalName: g ? ((g.querySelector('.pf-goal-name') || {}).textContent || '') : '',
@@ -25076,7 +25081,7 @@ def check_b321f_profile(br):
         # this check is that every figure on Stats is one colour.
         check(f"{dev}: on Stats, every figure is one colour (no Total XP card since 325)",
               not stats["statTot"] and stats["statOthers"] and len(set(stats["statOthers"])) == 1, [stats["statTot"], stats["statOthers"]])
-        check(f"{dev}: the Next rank box clears the case strip by at least 1.15rem (was .8rem)",
+        check(f"{dev}: the card above the case clears its handle by at least 1.15rem (was .8rem; the case is under the person card since 383)",
               mid["gap"] is not None and mid["gap"] >= 1.15 * mid["rem"] - .5 and wall["gap"] >= 1.15 * wall["rem"] - .5, [mid["gap"], wall["gap"], mid["rem"]])
         lm = next((r for r in mid["rows"] if r["k"] == "level"), {}); bm = next((r for r in mid["rows"] if r["k"] == "badges"), {})
         lw = next((r for r in wall["rows"] if r["k"] == "level"), {}); bw = next((r for r in wall["rows"] if r["k"] == "badges"), {})
@@ -27331,7 +27336,8 @@ def check_b324w_recap(br):
           and r.get("loadDefault") is True, [r.get("rolled"), r.get("loadDefault")])
     ctx.close()
 
-    # The flow on Home: not under a tour, not on another screen, once a week.
+    # The flow - on the LEADERBOARD since build 383 ("that only pops up if you select leaderboard that week"):
+    # not under a tour, not on another screen, once a week.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
     r = pg.evaluate("""async ()=>{ const wait = ms => new Promise(r => setTimeout(r, ms)); const out = {};
       try{
@@ -27350,14 +27356,14 @@ def check_b324w_recap(br):
       out.onProfile = !!up();
       /* Home under a tour: it waits */
       const tour = document.createElement('div'); tour.id = 'tour-overlay'; document.body.appendChild(tour);
-      showHome(); await wait(4200);
+      showRankings('week'); await wait(4200);
       out.underTour = !!up();
       tour.remove();
       for(let i = 0; i < 40 && !up(); i++) await wait(150);
       const el = up();
       out.shown = !!el;
       if(el){
-        out.onHome = !!stage.querySelector('[data-screen="home"]');
+        out.onHome = weekRecapOnBoard();   /* (383) the Leaderboard is the screen */
         out.marked = (localStorage.getItem('class26e.weekrecap.v1') || '').indexOf(lastWeekKey()) >= 0;
         const said = [];
         for(let k = 0; k < 40; k++){
@@ -27379,8 +27385,17 @@ def check_b324w_recap(br):
       }
       out.gone = !up();
       /* not twice */
-      showHome(); await wait(4200);
+      showHome(); await wait(300); showRankings('week'); await wait(4200);
       out.again = !!up();
+      /* (383) and never on Home - with the week NOT marked seen anywhere (this device or the account) */
+      const heard0 = store.novaHeard ? Object.assign({}, store.novaHeard) : null;
+      try{ localStorage.removeItem('class26e.weekrecap.v1'); }catch(e){}
+      try{ if(store.novaHeard){ delete store.novaHeard['@recap']; delete store.novaHeard['@last']; } }catch(e){}
+      out.unseenForHome = !weekRecapSeen(lastWeekKey());
+      showHome(); await wait(4200);
+      out.homeNever = !!up();
+      if(heard0) store.novaHeard = heard0;
+      try{ localStorage.setItem('class26e.weekrecap.v1', JSON.stringify({ wk: lastWeekKey() })); }catch(e){}
       /* the Leaderboard never congratulates any more */
       try{ localStorage.removeItem('class26e.weekcongrats.v1'); }catch(e){}
       showRankings('week'); await wait(1800);
@@ -27394,9 +27409,9 @@ def check_b324w_recap(br):
          waits for a day he has not spoken on), so the first recap above
          rightly holds back a second one today. This leg is another week's
          recap for a viewer who hides, so it is another day too. */
-      try{ if(store.novaHeard) delete store.novaHeard['@last']; }catch(e){}
+      try{ if(store.novaHeard){ delete store.novaHeard['@last']; delete store.novaHeard['@recap']; } }catch(e){}
       store.leaderboardOptIn = false;
-      showHome();
+      showRankings('week');
       for(let i = 0; i < 40 && !up(); i++) await wait(150);
       const oo = up();
       out.optShown = !!oo;
@@ -27412,7 +27427,8 @@ def check_b324w_recap(br):
     r = r if isinstance(r, dict) else {}
     check("b324w not on another screen", r.get("onProfile") is False, r.get("err") or r.get("onProfile"))
     check("b324w not under a tour", r.get("underTour") is False, r.get("underTour"))
-    check("b324w on Home once the tour has gone, marked seen", r.get("shown") is True and r.get("onHome") is True and r.get("marked") is True,
+    check("b324w (383: on the Leaderboard, not Home) never on Home by itself, with the week unseen", r.get("unseenForHome") is True and r.get("homeNever") is False, [r.get("unseenForHome"), r.get("homeNever")])
+    check("b324w on the Leaderboard once the tour has gone, marked seen", r.get("shown") is True and r.get("onHome") is True and r.get("marked") is True,
           [r.get("shown"), r.get("onHome"), r.get("marked")])
     said = [s for s in (r.get("said") or []) if s]
     check("b324w the podium rose third, second, first, and the mentions came in as cards",

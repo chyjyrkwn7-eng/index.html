@@ -57,7 +57,7 @@ def check_surfaces(br):
     search bar, the chat button ... It's not cohesive." On 326 the unit card
     was a near-black blue rgba(13,16,21), the chat button a third recipe
     (an 8px saturating blur), and only the tab bar had the bright top rim."""
-    print("\n1. the unit card, the search field, the chat button and the tab bar are one glass")
+    print("\n1. (383) beyond Home the unit card, the search field and the chat button are solid; the tab bar keeps its glass")
     for label, w, h in (PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate(UNITS)
@@ -66,21 +66,20 @@ def check_surfaces(br):
         ctx.close()
         if not all(r.values()):
             check("%s: all four surfaces are on the unit screen" % label, False, {k: bool(v) for k, v in r.items()}); continue
-        # REVISED (round 7/8 decisions): the bar became clear near-black glass with one
-        # .16 rim and no catch-light, and every FLOATING control took its recipe;
-        # "cards and rows are surfaces, not floating glass, and keep theirs".
-        bar = r["bar"]
-        tint = lambda x: all(abs(x["bg"][k] - bar["bg"][k]) <= 4 for k in "rgb") and abs(x["bg"]["a"] - bar["bg"]["a"]) < .05
-        check("%s: the search field and the chat button are the bar's glass tint" % label,
-              all(tint(r[k]) for k in ("search", "chat")), {k: r[k]["bg"] for k in ("search", "chat", "bar")})
-        check("%s: the search field and the chat button share the bar's frost saturation (%s)" % (label, bar["bf"]),
-              # (380) the bar's own frost, whatever it is (377 made it 7px / 1.5), not a written-out value
-              r["search"]["bf"] == r["chat"]["bf"] == bar["bf"],
-              [r[k]["bf"] for k in ("search", "chat", "bar")])
-        check("%s: the search field, the chat button and the bar share one rim colour" % label,
-              r["search"]["border"] == r["chat"]["border"] == bar["border"], [r[k]["border"] for k in ("search", "chat", "bar")])
-        check("%s: the unit card stays a surface (no catch-light lip needed, still frosted)" % label,
-              "blur" in r["card"]["bf"], r["card"]["bf"])
+        # REVISED AGAIN IN 383 (round 2, the clean look): "I feel like the app may have too much Liquid Glass ... We want simplicity
+        # and nothing overly distracting outside the main menu" - beyond Home the card, the search field and the chat button are
+        # solid (one card colour, the chat button a step lighter), no frost; the tab bar keeps its frosted glass ("I love the pop
+        # frosted look and bottom tab"). Before 383 they were one see-through glass with the bar's tint, frost and rim.
+        bar, card = r["bar"], r["card"]
+        solid = lambda x: x["bg"]["a"] > .98
+        frosted = lambda x: "blur" in (x["bf"] or "")
+        same = lambda a, b: all(abs(a["bg"][k] - b["bg"][k]) <= .02 * max(1, abs(b["bg"][k])) for k in "rgb")
+        check("%s: (383) the unit card is a solid surface, not frosted glass (%s, %s)" % (label, card["bg"], card["bf"]),
+              solid(card) and not frosted(card), card)
+        check("%s: (383) the search field is the unit card's own solid colour, no frost" % label,
+              solid(r["search"]) and same(r["search"], card) and not frosted(r["search"]), {k: r[k]["bg"] for k in ("search", "card")})
+        check("%s: (383) the chat button is solid, no frost" % label, solid(r["chat"]) and not frosted(r["chat"]), r["chat"])
+        check("%s: the tab bar keeps its frosted glass (%s)" % (label, bar["bf"]), frosted(bar), bar["bf"])
     # app-wide: the same card on other screens
     ctx, pg = booted(br, *PHONE[1:], seed=USED)
     pg.evaluate("() => { document.querySelectorAll('#pushing-update,#intro-pop,.nova-talk').forEach(n => n.remove()); showModeSelect(); }")
@@ -109,7 +108,9 @@ TICK = """async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
   await wait(700);
   const after = path ? parseFloat(getComputedStyle(path).strokeDashoffset) : null;
   const bx = c ? getComputedStyle(c.querySelector(':scope > .box')) : null;
-  return { n: cards.length, all, before, early, anim, after, glyph, bgImg: bx && bx.backgroundImage, picked: c && c.classList.contains('pick-checked') }; }"""
+  const svg = c && c.querySelector(':scope > .box svg.pick-tick');
+  return { n: cards.length, all, before, early, anim, after, glyph, bgImg: bx && bx.backgroundImage, picked: c && c.classList.contains('pick-checked'),
+           tickHidden: !!svg && getComputedStyle(svg).display === 'none', boxOp: bx ? +bx.opacity : null }; }"""
 
 
 def check_tick(br):
@@ -124,8 +125,10 @@ def check_tick(br):
         ctx.close()
         check("%s: every unit card's circle carries an SVG tick (%d cards), the text glyph hidden (font-size %s)" % (label, r["n"], r["glyph"]),
               r["all"] and r["glyph"] == "0px", r)
-        check("%s: unpicked the tick is undrawn (dashoffset 1); picked it draws in (a stroke-dashoffset transition) to 0" % label,
-              r["before"] == 1 and r["after"] == 0 and "stroke-dashoffset" in r["anim"] and r["picked"], r)
+        # REVISED IN 383: "I'm kinda tired of the checkmark. What if we did like a green glowing dot" - the tick is not drawn any
+        # more; picked, the corner shows the green dot grown from its centre (check-b383-look 4)
+        check("%s: picked, the tick is not drawn (383) and the corner's dot is up" % label,
+              r["picked"] and r["tickHidden"] and (r["boxOp"] or 0) > .95, r)
         check("%s: the picked circle is a lit disc (a light over the accent)" % label,
               bool(r["bgImg"]) and "gradient" in (r["bgImg"] or ""), r["bgImg"])
 

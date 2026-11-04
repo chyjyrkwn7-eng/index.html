@@ -30962,3 +30962,691 @@ Found by check-positions in the final run (no flags on 381, eight on 382).
 - check-b382-credits: the Sync page's row is "Your sync code" since the save-code card work (deliberate).
 - Pre-existing on 381 too: check-save-code part 1 (a fresh launch opens Get started, not Welcome), check-b380 loops fallback,
   check-b377 hand-over timing. check-sync "Find me" failed under load only (passes alone).
+
+### 382 LIVE (merged 2026-11-03, squash a330ee8). Build 383: "Choose your mode" in the iOS look
+Madison, on 382's final screenshots: "Do the one thing you noticed. Go ahead and merge though." 382 went live as shown;
+mode selection is 383.
+- showModeSelect: `iosNavBar("Choose your mode", buildBackLink("Home", showHome))` in place of the Back pill and the serif
+  "How do you want to study?"; that question is now `.modeselect-sub`, grey, in the body's face; countEl empty (the corner title
+  went, as on Units). CSS in THE iOS LOOK block: panel padding-top 24px so the bar sits at Units/Settings/Friends' 88px; the
+  cards' titles in the body's face (was --serif), 16px radius, left-aligned. The four `.modecard[data-mode]` the tour targets stay.
+- Gate: tools/check-b383-modeselect.py (15 fail on 382; routes version.json to the old build so --against does not reload).
+- Also run: sweep --quick 14/14, check-b382-ioslook, check-b382-screens ALL PASS; check-tours unchanged from 382 (mainmenu,
+  modeselect, profile tours already failing on 381).
+- Left from 382's behaviour run (sections after 83, partial, on 382 code), to classify next: Home's next-flare colour, the
+  board's Rank/Level/Badges header gap (7px) on phone/tablet/SE, Calendar's "today" no longer matte/neutral - likely the iOS
+  look's deliberate restyle; check against Madison's screenshots before changing either.
+
+### 383: no save-code card for existing accounts; the week's recap on the Leaderboard; the top three joined to the list
+Madison, after 382 went live: "The save your sync code pop up, don't do that for the existing accounts. Secondly, the weekly
+news popup. I don't like how it pops up forced like that all forced. Instead, that only pops up if you select leaderboard that
+week. The leaderboard, why is the top 3 disconnected from the rest, fix that as well".
+- checkSaveCodeReminder() returns at once (body kept for later). The sign-up card ("signup" mode) and Settings > Sync's
+  Save it row are unchanged.
+- The weekly recap: showHome no longer schedules it; showRankings calls scheduleWeekRecap(WEEK_RECAP_BOARD_DELAY_MS = 900)
+  and maybeShowWeekRecap plays only while weekRecapOnBoard() (countEl reads "Leaderboard", not Home). Still once a week
+  (local mark + the account's novaHeard @recap), still Tuesday on (weekRecapDayOk), still waits for the server's rows and
+  for anything weekRecapBlocked lists. The one-moment-a-day rule (novaSaidToday) no longer applies to it: opening the board
+  is asking. A hidden-from-rankings viewer gets the opted-out recap over the "rankings are hidden" card.
+- Leaderboard: the podium cards and the list are one grouped card (rules under "ONE LIST FROM FIRST PLACE DOWN", #stage-
+  prefixed to outrank the per-card ones): rows edge to edge, hairline under each, top corners on first place only, the
+  metal ring ::before hidden (it broke the card), the medal and the faint metal light kept; your row on the podium takes the
+  list's accent wash.
+- Gates: tools/check-b383-feedback.py (8 fail on 382). check-b382-savecode "existing" flipped to never; check-b382-ios (3)
+  and (4) to the joined list, (5) to the centred placeholder (381's ask); check-behaviour b324w now on the Leaderboard, with a
+  "never on Home" leg that clears the account's @recap first. The old per-build recap gates (b325-c/g/i, b326-c/e/g,
+  b327-a/c/j, b327r) still play it on Home and are superseded by these.
+- Run: check-sync ALL PASS (Find me flaked once under load, passes alone), sweep --quick 14/14, check-b381, check-b383-*
+  ALL PASS. check-b382-board's CLS 0.0514 is the same number on 382.
+
+### 383: the board's switch and search field visible; "Search" at the left; the weekly board did reset
+Madison (iPhone screenshot of the live 382 Hundos board): "ensure you can actually see them though. The word search shouldn't be
+centered, it should be centered left (it would be just to the right of the magnifying glass).. why did this weeks leaderboard
+not reset..?"
+- Measured on 382: the search field and the switch's track were 1-3 grey levels off the sky behind them, no rim. Now both take
+  color-mix(--ink 14%) over --surface-1 and a 1px --surface-border rim: 14-17 levels lighter.
+- The placeholder: text-align left, starting just right of the magnifier. This replaces 381's centring (the newer ask wins);
+  check-b381's centring check is superseded, check-b382-ios (5) now asks for left.
+- The week did reset (Monday 00:00 local, weekKeyNow). Checked against the live leaderboard rows' week / weekPoints /
+  prevWeekPoints fields (no ids or names recorded here): the active rows are on the new week with points separate from last
+  week's. The class earned a lot on Monday and Tuesday morning; his screenshot was the all-time Hundos board.
+- Gate: check-b383-feedback section 4 (placeholder at the left beside the icon; field and track 12+ levels over the sky, with a
+  rim; 6 fail on 382).
+
+### 383: your name moved from Customize to Settings > Account > Name
+Madison: "The change your name option in customize, that needs to be in settings somewhere, in advanced or customize or something
+instead." It is the first row of Settings' Account group (a purple person tile, the name as its grey value), opening a "Name"
+page that holds Customize's own editor (buildCustomizeNameSect - Change, Save/Cancel, one name per person on the board).
+Customize's summary drops the name row (intro: "What you wear across the app..."). The editor's styles are shared via
+:is(.screen-customize, .settings-page-name); its field keeps Customize's padding on the Settings page. The Profile tour's
+Customize line now says the name is in Settings. Gates: check-b382-credits PAGES gains "name"; check-b382-ioslook's Customize
+spec drops the name row; check-behaviour b314_chars opens the editor from Settings.
+
+### 383: the units screen in the Leaderboard's look
+Madison (iPhone screenshot of 382's Choose your units): "This looks okay but it could look a lot better. The search button
+stands out. The unit cards just look super dark? ... the app needs a cohesive look and this screen looks so much different than
+every other screen". (Earlier, of the board: "I like the look of the new top tab and search bar".)
+- Measured on 382: the unit cards were DARKER than the sky round them (15 vs 27 grey on a phone). Now Settings' sheen and the
+  board row's --surface-lift over --surface-1 with the full --surface-border rim: 42 vs 27. A picked card's accent wash is 20%
+  over the same lift (check-b382-units (5) asks a step of 6+ between picked and not).
+- The level switch is the board's switch exactly (14% ink fill, rim, 22% picked segment).
+- Search: the board's filled field in the page, Select all beside it where Find me sits (.setup-tools; a tinted button). The
+  glass circle over the tab bar (build 328's registerTabSearch) is no longer raised on this screen; Review's question list
+  (showAnswerReview) keeps it. In Review the field takes its own line, Select all and Starred (tinted too) under it.
+- Gates: check-b383-feedback section 5 (no circle; field and Select all in one row; switch, field and card each lighter than the
+  sky; 6 fail on 382). check-b382-units (7) now asks for Select all beside the field (or under it in Review), read in the same
+  mode; check-b382-input's keyboard-ride check moved to Review's question list.
+- Also: check-behaviour b314_chars's "one selection ring" and "ghost above y 4.35" fail on 382 as well (the 382 picker draws the
+  tick only) - left; its name-field room check now passes from Settings.
+
+### 383: the slide from Profile and the Leaderboard; mode selection's cards
+Madison (a 36s iPhone recording of 382, sliding across all four tabs): "Sliding on the bottom tab is still laggy, it's still not
+fixed. I think calendar is good but not the rest. Tapping seems to be working really well." Also: "Mode selection screen, ensure
+you update it".
+- The recording runs at a steady 60fps (the sky twinkles), so lag is not dropped frames: the glass's place was read off every frame
+  (a strip of the bar above the icons) and each slide's moving frames counted where it did not move. Frozen: 25% of the frames of a
+  slide that started on Profile, 14% Leaderboard, 11% Home, 9% Calendar. Profile's pattern was every other frame (68 0 35 0 78 58 0
+  0 px): the page drew at half rate while the glass moved.
+- Profile's card is an SVG character whose parts move (cx-cl2-sway, cx-bg-fall, cx-blink, cx-flutter a/b) plus the XP bar
+  (xp-glide, xp-pump); its rank challenges carry 18 more. Nothing held the card (382 held Home's hero only); a WebKit SVG's moving
+  parts repaint the drawing every frame, on the thread that moves the glass.
+- Now html.slide-hold, put on where the slide starts (with tab-dragging) and taken off in slideHeldResume (the glass's landing):
+  CSS pauses every animation in .cosmic-hero-wrap, .profile-hero, .pf-goal and .rank-row (and their ::before/::after). All slow
+  loops; they go on from where they stopped. The under-bar scan (barUnderPause, getAnimations of the stage) runs once, a frame after
+  the start, not in the start's frame, and no longer every 250ms.
+- Gate tools/check-b383-slide.py (real touch, 4x CPU, check-b382-slide's harness): held mid-slide and running after, on Profile
+  (25 animations) and the Leaderboard (5); no app getAnimations while the finger moves beyond the one look (2 counted, 14 on 382);
+  glass on the finger. 4 fail on 382. The glass-on-finger read passes on both: Chromium does not repaint SVG the way the phone does
+  - only his phone can say it is smooth. check-b382-slide (3) Home reads 8.6-8.9px behind on BOTH 382 and 383 under this load.
+- Mode selection's cards take the units screen's card: Settings' sheen and the board row's --surface-lift over --surface-1, the full
+  --surface-border rim, 18px (20 on a tablet).
+
+### 383: one look across the app (the units screen's pieces everywhere they apply)
+Madison: "some said we needed a better easier to see/use interface look of the unit selection screen. We need to ensure the app has a
+cohesive look across. So ensure that change is applied where else needed and ensure all pieces line up with their look ya know."
+Audit: 23 secondary screens shot on 383 (scratchpad audit/). Still on the old look (Back pill, the header's corner word, a serif or
+spaced-capital title) and now on iosNavBar (round 44px back, centred title; the corner word is sized away by the .ios-nav rule):
+Report a bug, Version history (was "Release History" in capitals), Review's question list / Starred ("Back to Options"), Open rooms,
+Test history and a test's detail, Virtual Room (Host / Join), the Virtual Room's Pick the units / Match settings.
+- The Virtual Room's unit picker takes the units screen's .setup-tools row (field + Select all beside it); those rules are now
+  :is(.screen-setup, .screen-vroom-setup). Its Host / Join cards are mode selection's cards (lifted surface, rim, body face).
+- Profile's Profile / Stats / Settings switch is the Leaderboard's switch (the four rules are :is(.screen-rankings, .screen-profile)).
+- Report a bug's "What happened" label: grey sentence case, as Settings' group headings.
+- Already in the look (left): Settings and its pages, Advanced, Contributors, Customize and its pages, Friends, Calendar, Stats,
+  ranks, badges, the start sheet. The test, flashcards and results screens keep their own (in-run) design.
+
+### 383: Study's "Longer pause before moving on" removed
+Madison (screenshot of Settings > Study): "The longer pause setting, we don't need that." The row is gone from Study; Auto-advance
+uses AUTO_ADVANCE_MS alone (so anyone who had it on is back to the normal wait). theme.autoAdvanceLong stays in the theme's default,
+loadTheme and saveTheme (a saved field is never dropped) and is read by nothing; AUTO_ADVANCE_LONG_MS is unused. check-b382-credits
+asserts the switch is absent on Study (academy and Fire Code).
+- Behaviour sections for the screens given the iOS head this build (17 sections): the only failures are check_b321g_nova's 11, which
+  fail identically on 382 (they expect "Version 9" and the old Nova intro wording) - stale, not this build's.
+
+### 383: Fire Code syncs (its own account document under the academy code)
+Madison: "The police class has sync code working. The fire code side says sync code isn't reachable. Fix that as well."
+Built 328 as a sandbox with no cloud at all (initFirebase stood down, setSyncCode a no-op, fbDb null), so its Settings said "Sync
+isn't reachable". Now:
+- The head script reads the academy's code (class26e.synccode) before it redirects storage: window.NOVA_ACADEMY_CODE.
+- In Fire Code syncCode = <academy code> + IFC_ACCOUNT_SUFFIX ("__ifc"): its own document, progress/<code>__ifc (backup
+  <code>__ifc__floor), beside the academy's and never in it. Every device signed in to the academy account syncs its Fire Code
+  with no second code. shownSyncCode() strips the suffix wherever a code is shown or shared (Sync page reveal, Save it).
+- ONLY the account reaches the cloud: initFirebase in Fire Code opens ifcAcctDb (FIREBASE_CONFIG shared) and calls
+  ifcAccountReady() (attachLiveListener + pushToCloud, then redraws an open Sync page) - fbDb stays null, so the leaderboard,
+  Virtual Room, chat, friends, invites and presence stay off exactly as before. acctDb() = fbDb || ifcAcctDb is used by the account's
+  own functions only: every collection("progress"), and the guards of handleRemoteReset, ensureCloudConfirmed, writeAccount,
+  pullFromCloud, attachLiveListener, checkAccountMove, pushToCloud, scheduleCloudPush, markCloudConfirmed, deleteAccountFloor,
+  resetEverything (its leaderboard delete still needs fbDb). Leaderboard / rooms functions are untouched.
+- A brand-new Fire Code document is the fresh-account path (the listener's hasSeenExist guard; never-seen -> markCloudConfirmed(false)
+  -> push), so first contact cannot read as a remote reset.
+- Fire Code's Sync page: the academy code, "The same code as your Police Academy account. Fire Code saves to the cloud under it, on
+  every device signed in to that account." No Start syncing / Enter a code there (it follows the academy account); without an
+  academy code it says to turn sync on in the Police Academy class.
+- tools/firestore-admin.py find labels <code>__ifc "(Fire Code class of <code> - not a second account)" and its __floor.
+- Gate tools/check-b383-ifcsync.py (in-memory Firestore): device 1 writes progress/TEST-3830__ifc and nothing else (no academy doc,
+  no leaderboard, no rooms); Sync reads On and shows TEST-3830; fbDb null; device 2 (same academy code, first Fire Code visit) gets
+  device 1's 4321 points / 777 correct; the academy still writes progress/TEST-3830. 4 fail on 382.
+- check-b328-classes' "no cloud, no sync code" now asserts the new arrangement. check-sync, check-b382-savecode, -credits, -firstrun
+  ALL PASS. check-b382-ifc's Stats pills (.stx-allpill, .stx-dots-switch, .thx-filter-btn) went to .92rem to stay no smaller than
+  Profile's switch (now the board's .92rem).
+- Firestore rules: progress/<anything> is what merge/move/credit/floor documents already use; the sandbox cannot reach Firebase, so
+  the first real write is on his phone.
+### 383: Fire Code hundo effects, round 4 (all four redone; NOT on main, waiting for Madison)
+Madison: "Hundo effects, they all need to be better. The sprinklers is my favorite one but it could be better, the sprinkler
+water could look better, the fire could look better. The hazmat one could be so much cooler... I don't necessarily like the
+emergency lights one change that one. And the fire alarm one, again, also not a big fan. Try that one again."
+Ids, counts, picks and the ladder are unchanged (fireworks 50, underwater 100, bubbles 150, ufo 200); Confetti untouched;
+academy untouched. Everything still DOM + sprites drawn once, moved by transform/opacity (WAAPI via ifxA/ifxAt), no svg filters.
+- **Extinguisher** (fireworks; replaces Emergency Lights, `ifxExtinguisher`, name in IFX_DEF): P.A.S.S. An ABC extinguisher
+  swings up bottom-left, the pin is pulled and spins away, the nozzle (its own element, rotating about the hose's ferrule) aims at
+  the box, the lever squeezes, and a dry-chem stream (a child of the nozzle, so it turns with it) sweeps side to side while ~40
+  billows leave the mouth along the aim of the moment, slow and swell; a haze over the screen; in the box a whitening that lifts
+  off a glint and the lit 100%. Tint: white number to red (#FF5A4F rim).
+- **Sprinklers** (redone, `ifxSprinklers`): fire in three depths (`ifxSpr.flame`: soft red-orange body, yellow heart, white root,
+  each flickering on its own scale/skew loop) over a fire bed, born from one spot and spreading; embers; smoke; heat glow. Heads:
+  pendent with toothed deflector, bulb bursts (glass shards + pop), an umbrella of droplet streams (`ifxSpr.spray`, parabolic arcs
+  in dashes) with two copies scaling outward from the plate on a loop (reads as droplets flying out), rain streak clusters,
+  floor splashes, room mist, wet sheen. Flames are knocked down nearest a head first, each into a steam puff. Capped at 4 heads.
+- **Hazmat** (redone, `ifxHazmat`): amber edge pulses (2), hazard bands in from opposite sides, green vapour on the floor; an
+  NFPA 704 diamond flies together from its four quarters and slams (shockwave ring, glow, flash) - it reads 1-0-0 (health 1,
+  fire 0, instability 0, special blank), the hundo; a scan line sweeps down revealing a hex mesh (window/contents counter-
+  translated, no clip-path); lime brackets lock onto the box + a CONTAINED tag; a responder in a yellow Level A suit (backlit, dark face shield,
+  air pack under the suit) steps in bottom-right and decons it (mist cone + puffs sweeping); all clear (lime edge, box washes lime).
+- **Fire Alarm** (redone, `ifxAlarm`): close-up of a pull station; the handle is pulled (anticipation, snap, jolt, ring); the
+  system goes with one white burst and the view pulls back (station shrinks to the bottom, bell and horn-strobe come in from
+  beyond the top corners). The bell shakes at ~14/s with its striker hammering and sound arcs off both sides; the horn sounds
+  temporal-3 (blasts .8/1.3/1.8, 3.3/3.8/4.3) with arcs and a room jolt; the strobe flashes 4 times (1.5..4.4, 1/s, under 3/s);
+  red edges pulse with the horn; it stops, the bell rings down, the handle is reset.
+- Tiles/stills (ifxPosterBody / ifxStillBody) redrawn to match; SND_IFX rescored on the new beats (extinguisher roar with its pan
+  swinging on `orbit`, the sprinkler fire/bulbs/spray, hazmat beeps/clanks/scan/lock/decon, the bell buzz at 17/s + horn + strobe
+  cracks); all four render in the Fire Code class with peaks .17-.34. hfxWarm takes the sprite list from `ifxWarmList(id)`.
+- Timing: IFX_DEF totals 5800/6800/6600/7000, tails 4700/5500/5300/5800. Screen pieces on a phone: 49 / ~142 / 37 / 21.
+- Tools: `tools/record-hundo.py --ifc` records in the Fire Code class (owner publicId, class26e.activeclass=ifc, a Fire Code
+  chapter) and starts each clip at the effect (the grade and XP box take ~20s of fake time first).
+- Gate: check-b382-ifcart. Changed: "...they are an extinguisher, sprinklers, hazmat and a fire alarm" (was Emergency Lights);
+  the round-3 check now asserts only that the 50 and the 200 differ from round 2 (its "Sprinklers and Hazmat as round 2" and
+  "the 50 is Emergency Lights" legs were round 3's state). New round-4 section (R3 hashes from claude/b383): all four differ
+  from round 3; the 50 is the Extinguisher (ifxExtinguisher); and each moves only transform/opacity, no ifx sprite has an svg
+  filter, no screen play over 170 pieces (that guard alone passes on 383 too - it is joined to the redraw leg). On the build
+  before: 4 fail; on this one ALL PASS.
+- Phone check owed: real-device smoothness of the sprinklers (the heaviest, ~142 pieces) and the extinguisher's big billows.
+
+### 383: Contributors in fuller, more technical words
+Madison (screenshot of Contributors): "Make these things sound like a little more fancy and technical. Maybe add a few things for each
+person." creditsPeople(): Madison Davis - Founder & Lead Designer (product vision and interface design; app architecture and cloud
+sync; rank progression and character system; question bank curation). Bryan Darjean - Real-time Chat (real-time messaging, opens the
+chat; direct and group conversations; live presence and typing indicators). Logan Preston - Question Engineering (question bank
+development; exam structure and test format; study guide alignment). Alexis Sauceda - Quality Assurance (question accuracy review;
+answer key verification; pre-release testing). Cameron Wharton - Multiplayer Systems (Virtual Room design, opens it; live multiplayer
+test sessions; Race, Tug of War and Battle modes). The longer roles crowded the name (two lines, and on a 320px SE overlapping it), so
+the role is now a grey line under the name (.credits-name-row a column). Wording is Madison's to adjust.
+- Then: "Like Cameron helped think of characters and stuff" - Cameron Wharton is "Multiplayer Systems & Characters" with a fourth row,
+  "Character concepts and ideas". And "Where it says made by Davis at the bottom. Don't make Davis look like that" - the name is no
+  longer the serif italic in the brand gradient: the signature's own small tracked capitals ("MADE BY DAVIS"), the name at 800 and a
+  step brighter than "Made by". The NOVA wordmark under it is unchanged.
+
+### 383: Delta's Settings, everywhere (one card for every grouped surface)
+Madison, beside Delta's Settings: "I still feel like the example looks better, the icons look better and the sections are bigger it
+appears like." Measured: our cards sat 40px in while the big title sat ~17px (Delta's line up with its title, ~20pt); row text 15px
+(iOS body 17); headings 14px; cards a see-through dark with a rim (Delta: a solid lighter grey, no rim, rounder); tile glyphs thin.
+- One card: --ios-group-r 22px (was 16), --ios-card-fill color-mix(--ink 10%) over --surface-1 (the token stays the background-color,
+  which check-b382-ioslook compares), no rim, no blur - on Settings and its pages, Friends' sections, Stats' sections, Customize's
+  name and its rows, the units' cards, mode selection's and the Virtual Room's cards, and the Leaderboard (--lb-cell, --lb-group-r).
+- Settings rows' words 1.0625rem (17px) at 400, values the same; group headings 1rem/600 on Settings, Customize, ranks, Friends, Stats.
+- Tile glyphs stroke 2.1 (was 1.6), 20px.
+- Width: on a phone (max-width 39.99rem) the grouped screens' panels drop their 20px side padding (cards at ~20px from the edge, under
+  the big title); tablets keep their centred column.
+- The rules are one block, "DELTA'S SETTINGS, EVERYWHERE", at the end of the iOS look.
+
+### 383: two classes, kept apart - Fire Code's Settings tab alone, Account + Sign out, the week's recap per class at launch
+Madison: "In fire code, why is settings still within profile? It should just be in on the bottom tab" / "We need a profile thing
+in settings, change your username and logout and whatever else in it ... The function to log out for sure" / the weekly recap
+"needs to be specified the class it's for at the top ... it could populate on the Home Screen, but you'd be on that class already
+when getting in the app, or switching over to that class, it would show the main menu for a second and then that would pop up" /
+"We are trying to make this app very viable for two different classes ... We can't afford to let anything leak from one class to
+the other."
+- FIRE CODE'S BAR TABS: showProfile in Fire Code builds one tab only - Profile, Stats or Settings, as asked - with no switch over it
+  (the switch is appended only for 2+ tabs; the tab swipe likewise); settingsAlone lights the bar's Settings and titles "Settings".
+- ACCOUNT: Settings' Account group opens with the account row (the person tile, the name, "Name and sign out") -> Settings >
+  Account: the name editor (buildCustomizeNameSect) and Sign out (buildSignOutSect). page "name" opens Account.
+- SIGN OUT: offered only with sync on (otherwise the note says turn sync on first - that progress would exist only here). The sheet
+  (newacct-confirm's look) shows the code (shownSyncCode) with Save my code / Sign out / Cancel. Sign out pushes (pushToCloud(true))
+  and waits up to 9s for signOutReady(): confirmed, nothing in flight, queued, pending or failed, a push made - else it refuses
+  ("Your latest progress hasn't reached the cloud yet, so this device stays signed in..."). finishSignOut sets class26e.signout
+  (a SHARED key, so Fire Code can set it), drops class26e.activeclass and reloads. The HEAD SCRIPT, first thing, sees the marker and
+  removes every class26e.* key but the device's own (statusbar, safarisound, soundon, swipeon, shuffleon, device, frame.ok,
+  intro.seen, freshstart, unithold.tip, penal*.seen, hadaccount, update.dismissed, forced.*, boot*, diag) - so both classes' stores,
+  codes, enrolment and seen marks - and deletes both IndexedDB backups (class26e-drill-backup and ifc:...). Nothing is written to
+  the cloud and the leaderboard row is left (wipeLocalProgressAndSettings, which retires it, is NOT used). Welcome / Get started
+  follows; hadaccount stays, so "I'm new here" asks first.
+- THE WEEK'S RECAP: on the first Home of a launch (opening the app, or a class switch - a reload into the class), WEEK_RECAP_HOME_MS
+  (1.4s) after the menu; not again on later Homes that launch (weekRecapHomeTried); the Leaderboard still offers it if unseen. It
+  is headed "Weekly recap · <class>" (NOVA_CLASSES' name: Police Academy / Fire Code). Each class has its own: its own store and
+  seen marks (Fire Code's keys are redirected), and Fire Code's recap is the personal one (no board, fbDb null).
+- THE CLASSES APART (audit): device storage - every class26e.* key redirected to class26e.ifc.* in Fire Code except the device's own
+  settings and the class switch; IndexedDB names prefixed "ifc:"; the cloud - Fire Code reaches only progress/<code>__ifc (fbDb null:
+  no leaderboard, rooms, chat, friends, invites, presence); its recap reads no classmates; sign out clears both on purpose.
+- Gate tools/check-b383-classes.py: (1) Fire Code's tabs alone; (2) Account; (3) sign out clears both classes, keeps device settings
+  and hadaccount, opens Welcome, backup empty; (4) refuses with the cloud not answering; (5) the recap on the first Home, "Police
+  Academy" / "Fire Code" at its top. check-b383-feedback 2 and check-b382-credits (PAGES account), -ioslook (Fire Code's Profile has
+  no switch; Profile's two headings at Settings' 16px) updated.
+
+### Build 383 - the iOS bar on the last old screens (Classes, Enroll, Lobby)
+Madison, 383: "The back button hasn't been updated and the iOS look has not been applied app wide. Seems like the add class thing
+didn't get the new back button and stuff."
+- CLASSES (showClassCatalog): iosNavBar("Classes", Back to Home) - the round back button and centred title - in place of the Back
+  pill and the serif "Classes" h1 (.class-catalog-title is gone from the markup; its CSS rule is shared with .ce-title). The
+  subtitle stays as a centred grey line. The class cards sit on the shared card (--ios-card-fill over --surface-1, radius
+  --ios-group-r, no rim); the class you are in keeps a thin ink ring (.is-here). "More classes" (.is-soon) keeps its dashed outline
+  at the new radius. The sign-up step's cards (.classselect-panel, .is-picked) get the same.
+- ENROLL (showIfcEnroll): iosNavBar("Fire Code", back to Classes). The "Enroll in Fire Code" heading is in the app's sans (800,
+  -0.02em) instead of the serif display face.
+- LOBBY (showVirtualRoomLobby): iosNavBar("Lobby", back to Virtual Room - still leaveVirtualRoom() first); the duplicate h1 is
+  gone. Room setup's summary and "In this room" are on the shared card.
+- The three panels join the phone list whose side padding is 0, as every grouped screen does.
+- AUDIT: every pushed screen now has the round back button and centred title (sign-up steps, Settings pages, Customize, Ranks,
+  Friends, Bug report, Version history, Test history, Room browser, Virtual Room choice/setup/lobby, Classes, Enroll). The tab roots
+  (Home, Profile/Stats, Leaderboard, Calendar) keep their large left title, like iOS. The game screens (Flashcards, the Tug/Battle
+  waiting and results screens) keep their own headers.
+- check-vroom reads Match settings' title from .ios-nav-title (it has been in the bar since the setup screen got it).
+- AN EMPTY WEEK HAS NO RECAP: buildWeekRecapOptedOut (the personal recap - every Fire Code recap, it has no board, and anyone
+  hidden from the rankings) returns null when last week has no points, no tests and no hundos, the way buildWeekRecap is null for a
+  week nobody in the class earned anything in; maybeShowWeekRecap plays nothing and leaves the week unmarked. Found by
+  check-b328-classes: with the recap on the first Home, enrolling in Fire Code put "Weekly recap · Fire Code" - a week of zeros -
+  over the new class's first Home. check-b383-classes (6) measures it (FAILS on the previous commit: the recap came up); its
+  recap_store gives (5) a played last week; check-b326-e's day's-moment leg likewise.
+
+### Build 383 - Profile: the badge case under the person card, a Customize button you can see; secret flares that say "tap"
+Madison, 383: "Should the badge case be between the challenges and the top box instead? I feel like it's easy to miss at the
+bottom the way it is.." / "the customize button is kinda hidden because the background can be dark. Let's figure out a better
+way to show the customize button in profile.. there's so much behind that button so we need to get this right." / "I've seen
+people ask about the secret flares popping up in the middle of their test, they haven't clicked it because they didn't know they
+should. How do we make those secret flares that up seem more like 'click me' ya know?"
+- BADGE CASE: the Profile tab is person card, badge case, next rank (was person card, next rank, case). 317's "at the top is not
+  the move" was the case INSIDE the one card above Next rank; this is the shut-case strip as its own card between them, on screen
+  without scrolling on a phone (bottom 760 of a 956 screen, tab bar at 855). The Profile tour still opens on Customize, then the
+  standing line, the case, the next rank (screen order after Customize; check-behaviour b289 "starting with Customize").
+- CUSTOMIZE: off the name row onto its own row at the bottom of the person card, under the XP bar - the card's width (88% of the
+  hero on a phone), 55px tall, a light pill (#F4F6F9, dark text; #121A20 with white text on the light theme), a palette icon,
+  "Customize" over "Character · Banner · Theme". The old dark pill measured 1.2:1 against the card; this is 15.4:1. The
+  "something new" dot sits inside its right end. .profile-customize-btn / .profile-customize-row; aria-label names all three.
+- SECRET FLARE IN A TEST (buildMysterySpark): two rings ripple out of it in turn (::before and .mystery-ring, scale .45 to 1.95,
+  2.4s, offset 1.2s), the orb (2.45rem) hops every 2.4s (mystery-beckon) instead of the slow drift, and until the account has
+  found any flare a "Tap" tag sits to its right with a caret toward it, nudging (mystery-tap-nudge). The tag is a child of the
+  button (tapping it finds the flare); placeMysterySpark leaves room for it so it never reaches the flag; the 44px button is
+  unchanged (check-unlocks' overlap sweep still passes). Found: tag and rings go. Transforms/opacity only.
+- Gate tools/check-b383-profile.py: (1) order, on screen, tour; (2) own row, >=80% width, >=44px, contrast >=4.5:1, opens
+  Customize; (3) ring, tag for a never-found account, clear of number/flag/choices at frac 0/.5/1, tapping the tag finds it, no
+  tag once one is found. FAILS on the previous commit (9 checks). check-behaviour: b315_customize "Your look" is now the one
+  header bar (the name went to Settings > Account earlier in 383); b321f's case clearance is measured from the card above the case.
+- Still failing, not this build's: check-behaviour b321f "the rank word is the level's and the badges' computed colour" (also on
+  live 382); check-tours mainmenu/modeselect/profile (same counts on the previous commit).
+
+### Build 383 - the calendar's dots: one flat look
+Madison, 383, on a Calendar screenshot (the key circled): "I notice the test one is glowing. Ensure they are all the same cohesive
+look." `.screen-calendar-tab .cal-cell-dot-test` carried box-shadow 0 0 6px amber: on a phone it showed on the key's Test mark only
+(the 382 phone block already flattened the grid's), on an iPad on the key AND the grid's test days. Now every dot on the Calendar
+tab - key, grid, week marks - is flat colour (`:is(.cal-cell-dot, .cal-week-dot, .cal-legend-dot){ box-shadow:none !important }`),
+told apart by colour as the other three always were. The unit cards' "Next test" marker (.pick-nexttest-what::before), the same
+amber dot with the same glow, is flat too. check-b383-profile (4): key and grid, phone and iPad, no glow - FAILS on the previous
+commit (phone key; iPad key and 4 of 25 grid dots). check-behaviour b324c_calendar: the same 13 failures as live 382 (it still
+expects the week strip), none new.
+
+### Build 383 - See rank ladder and the badge count as Customize's kind of button; the switches smoother
+Madison, 383: "Similar to the customize button, the see rank ladder button and 4 of 24 badges button or whatever, we need to
+improve those buttons so they seem more clickable, ensure the wording of those two buttons are centered too because they
+currently arent" / two screen recordings, ours (Review's start sheet, the Flashcards switch) and iOS's Settings (VPN): "I feel
+like our toggle switches look really good but they could behave a smidge better and smoother."
+- THE TWO BUTTONS (.pf-goal-foot, .pf-case-closed .pf-case-count): Customize's light pill (#F4F6F9, dark text; dark with white on
+  the light theme), the card's width to 30rem (rank card 90%, inside the case between its latches 72%), 50px, 1.0625rem 700.
+  The words measured 0px off the pill's middle before as well - they READ left of it because the left was empty and a chevron
+  disc sat on the right. Now an icon on the left (a ladder; a briefcase - masks in #0B0D12, not currentColor, so
+  check-ink-centre's transparent-text pass still finds only the words) whose middle is as far in as the chevron's (25.6px
+  each). The chevron disc keeps the rank's / the case's colour, darkened (72% with #1A1D24) for its white mark. The case's
+  NEW tag still follows the count.
+- THE SWITCHES, read off his 120fps recording frame by frame:
+  (a) THE SHEET JUMPED: the start sheet grows/shrinks when the line of switched-on words in the box above Begin appears/goes,
+      and 382's FLIP glide ran - but its first drawn frame was already 73% of the way (44 of 60px), then crept the rest.
+      Safari can start an animation's clock before the frame that shows it, and the tap's task ate ~70ms of a front-loaded
+      curve. foldSummaryOpts now pauses every piece at its first keyframe and plays them on the next animation frame.
+  (b) THE KNOB SAT HOLLOW: glide 200+160ms, settle delayed ~200ms then 290ms, the solid knob fading back only in the settle's
+      second half - ~200ms of a small dark ring at the end. iOS's lands solid. NSW_T pop 210->190, shrink 290->230; glide
+      150+120ms; the settle starts at half the glide; the solid comes back (and the glass goes) over the settle's FIRST 45%.
+      Release to done ~350ms (was ~500).
+- Gates: check-b383-profile (5) the two buttons - words within 1px of the middle, icon and chevron middles within 2px, >=60% of
+  the card, >=44px, >=4.5:1 - fails on the previous commit (46%/45%, 40px, 1.2:1, no icon); tools/check-b383-toggles.py (iPhone
+  UA, CDP touches, Review's Flashcards switch, Safari's clock emulated: an animation's start time = when it is made, and the
+  tap's task runs on 80ms) - first frame after the tap <=20% of the way, home <=450ms, no hollow frame, lens gone <=450ms after
+  the release - fails on the previous commit (37% first frame; 7-8 hollow frames; ~500ms). check-b382-toggles' bounds .65-.85
+  -> .55-.85 of 381 (230/360 = .64). check-b327z10 H9 no longer asks for the old pill's 1px rim. check-b380 (21): Review's
+  Starred pill and Select all differed only in the colour of a 0px border (Select all's text colour since the 383 units
+  restyle) - both transparent now; passes (it passed on 382, failed on 383 before this).
+- Phone only: whether the sheet's first frame is home-from-where-it-was on a real iPhone (Chromium can't run Safari's clock;
+  the gate emulates it), and how the knob feels under a finger.
+- ASKED, NOT BUILT: how many use Mock. Answered in chat from the live database, totals only (nothing about anyone here - the
+  repo is public).
+
+### Build 383 - a found badge on a unit card is the token, not its slot
+Madison, 383, a photo of two unit cards' badges: "Why does the bottom right corner side of the badges within the unit selection
+cards look kinda off? There's like a gap thing on them? Idk what's going on there."
+- WHAT IT WAS: buildUnitBadgeSVG draws a badge seated in the case's lining by default - the slot round the token: the wall (a
+  dark ring, lit along the bottom-right as a hole is) and the lining's lip catching the light on the far side (#D2E2F6 at .46
+  toward the bottom-right), the token's shadow in the hole and the seat's shades on it. In the case it reads as a badge set into
+  the lid; on a unit card, with no case round it, it reads as a dark gap and a stray light line along the bottom-right edge
+  (plainer on a phone's screen than in Chromium).
+- NOW: cardBadgeSVG draws a FOUND badge with { slot: false } - the token alone, as the inspect view and the found cutscene
+  already do - so its silver edge meets the card. Its image cache key gains "|noslot". A badge not yet found is still its empty
+  slot (build 314: "seen, not shown"). The badge case, Ranks' badges tab, the inspect and the cutscenes are unchanged.
+- Gate: check-b383-profile (6) reads each card badge's picture (the blob behind the img): found ones carry no -lip / -wall /
+  badge-seat-shade, an unfound one still has its wall - FAILS on the previous commit (all four found badges had the slot).
+- ALSO (check-b327z15 run against 382 in a scratch copy, 8 failures there, 11 here; the three new):
+  J: the round back button (.ios-nav-back, every pushed screen since 383) took a lighter fill while held - 327z15's rule is
+     "Back buttons no longer change colour when pressed" - it keeps its colour now and gives (scale .92, .12s; none under
+     Reduce motion);
+  GG: the magnifier on the units screen and the board is the field's grey (--soft, iOS's) since 383's search fields ("The
+     search button stands out") - the check asks for the two to match and sit on the field, not for white;
+  N (the live drawing's loops within 80ms): flaky on both - 382 201/106ms, 383 92/79ms in back-to-back runs.
+  The rest (tab-bar sequences, BB edges, DD tips, the welcome-new click, GG save-code banner, HH, section ^) fail on 382 too.
+
+### Build 383 - Fire Code's flash cards: a control on the card is not a tap on the card
+Madison, 383, a screen recording of Fire Code's Review flash cards: "Tapping certain stuff in the flash cards makes them flip
+when I'm just trying to view them and use the drop down or whatever on some of it. Ensure this good to go."
+- WHAT IT WAS: the card's click flipped it for every tap but the star's. A Fire Code card's answer side carries the reference
+  box (buildBankNote -> buildIfcRef): "Show the code" (a <details>), and in the opened code Enlarge, "Show the whole book page",
+  the code's own picture (opens the viewer), "Load my IFC PDF". Each tap did its thing AND turned the card over - in his
+  recording "Show the code" opened the code on a card that flipped to its question, and "Show the whole book page" opened the
+  viewer over a card that was on its question when he pressed Done. Enter on a focused summary flipped it too (the card's
+  keydown called card.click() and prevented the toggle).
+- NOW: the click ignores a tap whose target is inside a control on the card (button, a, summary, details, input, select,
+  textarea, label, role=button/switch - not the card itself, which is role=button) or anywhere in .ifc-ref / .ifc-pre. The
+  card's keydown acts only when the card itself has focus.
+- AND THE CARD HOLDS THE OPENED CODE: fcFitCard (build 305: the card is as tall as its taller face; the page scrolls) ran
+  once, when the card was dealt, so the opened code spilled out over the arrows (an 800px answer side in a 566px card). A
+  ResizeObserver on each face's children refits it (one rAF) - it grows when the code opens or arrives and shrinks when it is
+  hidden; disconnects once the card has left the page.
+- The other places the box is shown (a test's question, the results' review, Answer review) have no row-level tap.
+- Gate tools/check-b383-flashcards.py (Fire Code, a book card and an amendments card, touch taps): flip, Show the code (stays on
+  the answer, opens), the code box's button (Load my IFC PDF - no book in the sandbox), the card holds the open code with the
+  arrows below it, Hide the code (stays, shrinks), Enter on the summary, a choice still flips - 11 fail on the previous commit.
+  check-behaviour b303/b305_flashcards/b306_fcmotion/b306_marks/b318f_flashswipe: ALL PASS.
+- Phone only: Enlarge / "Show the whole book page" with his real IFC PDF loaded (the sandbox has no book; the same rule covers
+  every button in the box).
+
+### Build 383 - Review's list is left from Pause; every mode's way out is Home
+Madison, 383 (an iPhone screenshot of Fire Code's Review list): "In the review mode, there's a button that says back to options.
+It needs the pause button that follows you as you scroll down so you can leave whenever instead. Fix this. This is very much
+needed." / "in drill mode when you quit the test, it takes you to the main menu/Home Screen which is great. When leaving every
+other mode it needs to do the same and take you back to the Home Screen, cause right it just goes back to the unit selection
+screen so fix that pathway/navigation."
+- THE LIST (showAnswerReview): no back link (it was Back to Options / Back to units, in 383's iOS bar; on live 382 the pill).
+  The run's own top row instead, as Flashcards has: the mode's name on the left (testmodelabel: Review, or Starred) and Pause
+  in the corner; the row is pinned with its fade like a test's (syncTestPin's want takes .screen-answerreview; the label's
+  and the sticky row's :has() rules too), so Pause is on screen the whole way down. The tab bar stays - the list is browsed
+  and its search circle (382) lives on the bar.
+- PAUSE (pauseRun -> answerReviewUp() -> pauseAnswerReview(), checked before Flashcards): the pause screen in Flashcards' look
+  (is-fcpause, + is-arpause): Paused, the units (or Starred questions / most missed), the count, Resume / Exit review. Resume
+  puts the SAME list node back (its search, opened codes) and scrolls to where it was. Exit review -> Home.
+  answerReviewRun (var - pauseRun can run before its line) holds the list's units/source/count; answerReviewLeave() clears it
+  and hides Pause; a stage observer does the same when the list is left any other way (a tab, a profile from the chat).
+- HOME FROM EVERY MODE: Drill, Mock, the daily question and the Virtual Room's leaves (Quit test, Save and exit, leave while
+  waiting, a team match) already landed on Home. Changed: Flashcards' Exit flashcards (was the units screen's sheet) and the
+  list's Finished (was the units screen) -> Home. The flashcards' end-of-deck "Main menu" already went Home.
+- Gate tools/check-b383-review.py (phone): no back link + Pause + Review label; Pause in the same place 2,500px down; the pause
+  screen's Resume / Exit review; Resume at the same scroll; Exit review, Finished, Exit flashcards -> Home; left by a tab, Pause
+  goes; a Drill's Quit test still Home - 7 fail on the previous commit. check-behaviour b13114 (starred box) now takes 382's plain
+  count ("1"), not "1 question" (it failed on the previous commit too). check-b382-input, check-b327z10, check-studyflow,
+  check-savetest, behaviour b297/b303/b314_study/review_reach/update_and_cards, sweep-layout --quick 14/14: pass.
+
+### Build 383 - one look beyond Home: the theme's colours washed, one glass for every card; a green dot for a picked unit; the daily question asks to be tapped
+Madison, 383: "the unit selection darker look is a step in the right direction [but] that darkness doesn't go with the screen ...
+the look of the unit cards, that look needs to be cohesive with the app, like for the mode selection screen for example. The entire
+app is gonna need this. If that means we need to change the background the app beyond the main menu ... like the same color theme
+but kinda how the background used to be where it just some colors but it would be kinda washed out so it's not distracting? Almost
+like the result screen ... The main menu background is perfect, it's the rest though ... I love the pop frosted look and bottom tab
+... Maybe beyond the main menu the background is just your themes color but a little blurry/darker it's not distracting?" / "I
+don't like the checkmark fills up from top to bottom ... What if we did like a green glowing dot/circle" / "The daily question
+button, when it's ready ... doesn't look very cool or like 'click me' feel. Fix that, make it better but make it still match the
+main menu."
+- THE BACKGROUND: Home is unchanged (body.sky-home: the stars at 1). Every other screen: NO stars (body::after 0; was .6) and
+  #nova-wash instead - a real element (index.html, just before .wrap) between body::before (the paper + its glow, which the
+  status-bar strip and html's fallback are matched to - untouched) and body::after: three wide soft radial pools of the theme's
+  own triad over the paper - --bg-c2 30% top-left, --bg-c3 26% right, --bg-c1 20% along the foot - no edges, no motion. Masked
+  clear over the top inset exactly as the stars are (so the status-bar strip is what it was). .45 while a question is up (the
+  "settle down" rule the glow and stars follow); results at 1. Opacity is the only thing that changes (.6s). Dark theme only;
+  party keeps its own sky (its stars restored to .6 off Home). Reduce motion: no transition.
+- ONE GLASS: beyond Home the card material is thinner so the wash comes through - --surface-1 rgba(12,13,19,.4) (was .62 at the
+  root and .7 forced on the cards by 382's "no stars through the cards" block; that block is overridden for body:not(.sky-home),
+  there being no stars there now). Every card in the shared Delta rule (mode, unit, Settings, Friends, Stats, Customize, the board's
+  cells, class cards) follows. The Calendar's cards take the shared fill (--ios-card-fill) and lose their rim; Profile's person
+  card, next rank and case lose the opaque #14171C-#0B0D11 slab, rim and 44px shadow for the same glass, each keeping its colour
+  pool. An unfound badge's slot on a unit card .45 -> .28 (a dark hole on the lighter glass).
+- THE GREEN DOT: .picks > label.pick > .box is a .8rem bead (radial: #D9FBE2 top light, #5FE07F, #34C759, #1E9E45), a 1px light
+  hairline and a two-step green glow, centred where the tick's disc was (.95rem in); unpicked opacity 0 + scale(0), picked scale(1)
+  on a .42s spring - it grows from its centre - and one ring goes out (::after, scale .6 -> 3.2, .7s, once). The tick (.pick-tick)
+  is hidden. A picked card: a thin green edge (border 70% + 1px inset) over a breath of green (10% -> 4%). --pick-dot.
+- THE DAILY QUESTION, READY: same glass (Home's family). While a question waits (.is-ready:not(.is-done):not(.is-charging)) the
+  ring element - hidden while ready since 382 - is shown with its circles hidden, and its ::before is a comet: a conic gradient
+  (transparent -> the rank colour -> white) masked to a 3px band on the rim, rotating every 2.6s; its ::after a glow of the rank
+  colour from below, breathing .5 <-> 1 on the same 2.6s; the "?" is lit warm (rank colour 32% into white) and lifts 1.5px / x1.07
+  in time. The ring that goes out (::after on the button, 3.6s) is unchanged. Answered or recharging: none of it. Reduce motion:
+  still.
+- Gate tools/check-b383-look.py: Home's stars and no wash; five screens and results with the wash and no stars; the mask; the wash
+  follows the theme; seven cards on one glass with no rim; the dot (green, glowing, scale 1, <=16px, no tick) and none when
+  unpicked; the daily question's comet and glow when ready, none when answered - 12 fail on the previous commit.
+- FOLLOW-UPS (check-b382-units, which passed on the commit before): (8) a 375px phone scrolled sideways by 2px - under 400px
+  328's rule put the corner mark half outside the card, and an iPhone's 44px native switch centred on the much smaller dot ran past
+  the screen edge (and that rule's paper ring replaced the dot's glow). Under 400px the dot now sits inside the corner (.4rem in,
+  .7rem, glow kept). (2) a tick restyled 256-264 elements (budget 250; 222 before): the ring's ::after existed on all 24 cards'
+  dots - it is made on a picked card only now (237). The ring's reach x3.2 -> x2.4 (stays inside the card). (5) a picked card's
+  edge may be the dot's green. check-b327-d (2): the tick is not drawn any more - picked, the dot is up.
+### Build 383 - sign-up and sign-in audit
+Madison: "Ensure the sign up login process is perfect and good to go." Walked as a person would (Playwright, installed app,
+iPhone 17 Pro Max 440x956 and iPad Pro 11 834x1194, an in-memory Firestore that keeps its documents across reloads): a fresh
+install through Get Started, Welcome, New to Nova?, the class step, GENERATING PROFILE, Nova's name and partner questions, the
+save-your-code card, his talk and the tips to Home; Sign in with a code (empty, wrong, lower case/spaces, pasted, offline, no
+Firebase, a pre-fresh-start code, the right one); "I'm new here" on a device that held an account; Sign out and back in (the
+owner, both classes); an icon whose launch address carries the code (#k=).
+FIXED (each FAILS on the previous commit in tools/check-b383-signup.py):
+- SIGN OUT DID NOT STICK ON AN ICON MADE WITH THE CODE IN ITS ADDRESS (installCodeInUrl's #k=). The live address still held
+  the code (it is only stripped after a launch ADOPTS it), so the reload after Sign out adopted it straight back - the device
+  sat on Get Started with the account restored behind it - and every later launch from that icon did the same. Now:
+  finishSignOut strips the code from the address before reloading; the head script, after its wipe, sets
+  class26e.signedout; boot does not adopt a launch code while signedOutHere() (and strips it); setSyncCode clears the mark
+  (sign-in, sign-up, link, self-heal). Storage iOS evicts takes the mark with it, so the icon's recovery still works there.
+- SIGN OUT LANDED ON THE FIRST-VISIT GET STARTED PAGE (its button only rises after scrolling the whole trailer), not
+  Welcome: the wipe takes class26e.getstarted. showWelcomeFirst goes to Welcome while signedOutHere().
+- A WIPED DEVICE OPENED FROM SUCH AN ICON was left on Get Started over its restored account (the launch-code adopt only put
+  Welcome right). It takes [data-screen="getstarted"] too, marks it seen, and opens Home.
+- THE CODE FIELD'S maxLength 9 CUT A PASTE BEFORE IT WAS TIDIED: the message Save it shares ("Nova sign-in code: ABCD-EFGH
+  ...", copied whole from Notes/Messages) became NOVA-SIGN; " ABCD-EFGH" lost its last letter. syncCodeFieldSetup /
+  syncCodeFieldText (Welcome's Sign in and Settings > Sync > Enter a code): no maxLength; a code written out in a long paste
+  is taken (no check after it - a text field drops the paste's line break, joining it to "Keep this"); otherwise the first
+  eight letters/digits as before; autocorrect, spellcheck and autocomplete off.
+- A CODE FROM BEFORE THE FRESH START (FRESH_START_CUTOFF) said "Code verified" and named its account, then Sync This Device
+  said "No progress found". The lookup now applies the same cutoff.
+- A DOUBLE TAP (or Enter twice) ON THE CLASS STEP'S CONTINUE started the sign-up twice: two GENERATING overlays stacked, Home
+  built twice under Nova. Continue disables itself on the first tap.
+CHECKED AND FINE: every step's Back (Sign in, New to Nova?, the class step -> where they came from); Continue waits for a
+class; Enter answers Nova's name and checks a typed code; one account and one document however often the partner is chosen;
+the save-code card's Continue is off until ticked; the tips follow Nova; a reload after sign-up and after sign-in stays on
+Home; sign-in restores the progress with no Nova, tips or card and does not lower the cloud copy; the cloud not answering
+leaves Continue on "Checking..." with Back working; no Firebase says so; the had-account sheet's three answers; fields 17px;
+every sign-up button 44px+; no overlaps; no owner's name on any screen; no page or console errors.
+LEFT FOR MADISON (judgement, not changed): GENERATING PROFILE is 10.6s of nothing to wait for (SYNCING DEVICES 3.2s); Fire Code
+enrolment is a device setting Sign out clears, and signing back in does not restore it (re-enrolling needs the PDF again; the
+progress returns from progress/<code>__ifc); a new account whose app closes between the partner pick and the code line never
+sees the save-code card (383 turned the Home card off) or the tips (tourRev is set at creation); Settings > Account's Change
+pill is 74x28 (under 44px; shared with Customize's name editor); "No progress found under that code yet." for a wrong code
+(the "yet"); on a laptop Enter on New to Nova? is "I'm new, continue"; Sign in tapped before the deferred SDK has loaded says
+"Couldn't reach sync" at once rather than waiting; "Start a new account" on the had-account sheet skips New to Nova? (its Back
+then shows it); the old username/character/code-reveal screens are unreachable (Nova asks), kept for the older gates.
+PHONE ONLY: the soft keyboard over the code screen (return checks the code), autocorrect/autofill staying off, a paste from
+Notes/Messages in Safari, the #k= icon after Sign out, the real SDK's offline answer (~10s) on the code check.
+Gates: tools/check-b383-signup.py (fresh, signin, had, signout, icon, settings; 95 pass; on the previous commit the 10 [fix]
+checks and the stacked-overlay layout checks, phone and iPad, fail). check-sync, check-b382-firstrun, check-b382-savecode, check-b383-classes,
+check-b383-ifcsync, check-js ALL PASS; sweep-layout --quick 14/14; check-tours (mainmenu/modeselect/profile) and check-save-code
+(part 1 Get Started; part 2, the existing-account card 383 turned off) fail identically on the previous commit.
+### Build 383 - the tab bar slide: from any tab where none is lit; no whole-page restyle as it starts; the glass where the finger is now
+Madison, 383: "Again like I said, the tab sliding/swiping function needs to be fixed and smooth with no delay/lag because it's still
+not fixed. While in the unit selection screen and using the bottom tab, you can only tab the bottom tab stuff, ensure you can still
+slide your finger across it to swipe/select similar to how you can on the main menu and stuff." (Earlier in 383, of his 382 video:
+"I think calendar is good but not the rest. Tapping seems to be working really well.")
+Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces and CPU profiles at 4x CPU.
+- THE UNITS SCREEN: no tab is lit there (it belongs to no tab - syncActive lights nothing; the same on mode selection and the Virtual
+  Room's screens), and 380's rule "a slide starts on the lit tab" (tabDragFromActive) made every press there a press on "another
+  tab": 40 touch moves Home -> Leaderboard, the glass never left Home, and let go over the Leaderboard nothing opened
+  (lensRelease(null)). Now the navrow's pointerdown sets tabDragFromActive = no lit tab, or the press is on the lit one: where none is
+  lit any tab slides, and the tab let go on opens (its _navigate; the bar losing its Start pill is carried by _lensRelayout as a tap's
+  is). Where a tab IS lit, 380's rule stands.
+- THE SLIDE'S FIRST FRAME (the lag, and why the Calendar was the good one): 383's first pass held Profile's card, its challenges and
+  the board's rows with html.slide-hold and `html.slide-hold #stage :is(...) *` - a class on <html> with a rule reaching every element
+  under it. Putting it on (the slide's start) and taking it off (the landing) restyled the WHOLE page; barUnderPause's getAnimations,
+  a frame later, forced that restyle inside a frame that moves the glass. Traced at 4x CPU: Home 1637 elements / 152ms (that frame
+  201ms; 382's first slide frame on Home was 43ms), Profile 1327 / 89ms, Leaderboard 1075 / 70ms, Calendar 951 / 42ms - the order of
+  his "calendar is good but not the rest" - and the same again at every landing. The class and its rule are gone. SLIDE_HOLD_SEL
+  (".cosmic-hero-wrap, .profile-hero *, .pf-goal *, .rank-row *") pauses the same animations in barUnderPause's one listing (382's way
+  for Home's hero); a paused animation restyles only its own element. check-b383-slide's holds (25 on Profile, 5 on the board) read the
+  same. After: no style pass in a slide over ~125 elements, and the app's own worst task in a slide at 4x is Home 24-38ms, Profile
+  13-19, Leaderboard 8-14, Calendar 7-11 (load-dependent).
+- THE GLASS WHERE THE FINGER IS NOW (lensMove's tick): the glass was written at the finger's last move, and touches do not come one per
+  frame (two or three between Safari's 60Hz frames on a 120Hz phone, sometimes none at 60Hz) - so it stepped one move, then three, and
+  on a frame with no move the lead (382) shrank and it stepped BACK. The finger's speed is now taken from the moves' own times
+  (e.timeStamp; the arrival time when that is not on performance.now()'s clock), and each frame the glass goes where that speed has
+  carried the finger since its last move came in, for as long as the next move is normally due (1.3x the longest recent gap between
+  moves, 12-40ms), plus 382's lead, the two together never past LENS.leadMax. A move later than that and what is ahead of the finger
+  fades in ~15ms: a finger that stops has the glass on it (check-behaviour b323t's drag reads 1px off the previous commit's). Moves
+  6/6/22ms apart on the Calendar at 1x: the glass stood still or stepped back on 45-60% of a slide's frames before, 0-3% now.
+- A SCREEN BUILD NEVER RUNS UNDER A SLIDE: a tap's waiting build (TAB_SCREEN_AFTER after its press) ran on its timer even if a finger
+  was by then sliding; it now waits while tabDragActive && tabDragMoved (2s at most - the screen always follows, 314), and the release
+  lands it or replaces it.
+- Looked at, not changed: the press (pointerdown 50-110ms at 4x - lensDown's measures force a style pass and layout; taps share it and
+  he says taps are good); the release's onGesture (~55ms at 4x) is the sound context made on a session's first touch only; the screen
+  built after a release is the screen's own (the glass holds over it, 382). Mid-glide the app's script is ~1-2ms a frame at 4x; the
+  rest of a Chromium frame is its own compositing (Layerize/Commit), heaviest on Home (more layers), which WebKit does differently.
+- Gate tools/check-b383-tabslide.py (real touches): (1) units screen, Home -> Leaderboard and Calendar -> Profile: the glass follows,
+  the tab let go on is lit with its screen up; (2) Home, Profile, Leaderboard, Calendar at 4x, traced, a slide to the far tab: lands,
+  no style pass over 300 elements, no task over 50ms of the app's script/style/layout; (3) uneven touches: still or back frames <=20%;
+  (4) a build due mid-slide (the Leaderboard tab clicked from the page during a slide, its screen made 300ms) waits for the release.
+  On the previous commit: (1) 4 of 4 fail; (2) restyles 1427 / 1327 / 532 / 715 elements fail on all four screens, Home 105ms and
+  Profile 163ms fail the 50ms; (3) 45%; (4) built 1.4s before the release. On this build: ALL PASS (twice, load 3-6).
+- Also run: check-b383-slide ALL PASS (glass on the finger 3.0 / 2.2px behind at worst); check-b380-slide ALL PASS; check-b382-slide
+  all but (3) Home, 8.7-9.1px behind - 9.0 on the previous commit under the same load (noted at 383's first pass too);
+  check-b327z15 F (68 of 153) and G (12 of 18) fail the same on the previous commit (65 / 12) - their "nothing extra built" predates
+  365's 40ms build - W passes; check-behaviour b323t_tabbar's 4 fails are all on the previous commit too (two read the hidden Stats
+  and Settings tabs, Settings lit with Profile, the drag 6px vs 3 - 5px before); b314h_tabs, b282, b268, b245_start_pill, b312_looks,
+  b323v_vroom pass; check-js; sweep-layout --quick 14/14.
+- Phone only: whether the slide now feels smooth on his 17 Pro Max (Chromium neither repaints SVG nor composites as iOS WebKit does),
+  and how its touches really arrive against Safari's frames.
+- (the look, closing) The wash also clears over the page's last 4rem (a browser's bounce shows html's own background). check-fixes'
+  one failure - iPhone SE (1st gen) 568x260 in a browser, GREY BAR 7 levels at (284, 221) - is the same on the commit before the
+  look (run SE-only on both), not this change. Merged into 383 this round: the sign-up audit (b383-signup) and the tab bar slide
+  (b383-tabslide); on the merged build check-b383-tabslide, -slide, check-b380-slide, check-b383-look, check-b382-units, -signup,
+  -review, -profile, -flashcards (its taps now wait for the target to stand still - one run tapped mid-scroll), -toggles and
+  sweep-layout --quick 14/14 pass. check-sync's "Find me" fails only under load (passes alone; 382 the same).
+
+### Build 383, round 2 - the clean look beyond Home (less Liquid Glass)
+- Madison, with screenshots of Orbit's planet home, Orbit's Settings and Delta's Settings: "I feel like the app may have too much
+  Liquid Glass ... the Netflix YouTube spots, they aren't Liquid Glass just a nice look. Same for both settings backgrounds, they
+  are clean ... profile and stuff within profile, the stats, the settings, the customize, the calendar, the unit selection screen,
+  review mode. HOWEVER, I love the way the flashcards look ... The mode selection screen, ensure the back buttons go with the app
+  ... The result screen, same kinda thing ... the badge screen, that top box, the rank up screen top box and the boxes that contain
+  the rank information ... The sign up screen and everything and start would have to be updated." Home ("won't affect ... main
+  menu") and the tab bar stay as they are.
+- Measured off his screenshots: Orbit's Settings is flat (8,6,17) with solid (26,22,36) cards, Delta's flat #1C1C1E with #2C2C2E
+  cards: +16-18 levels, no rim, no glass, no gradient. So beyond Home (body:not(.sky-home)) the dark modern look is:
+  - BACKGROUND: the paper with its glow barely there (body::before's pools at 4% / 4.7%, the status-bar mixes 2.2% / 2.35% to
+    match); body::after (the stars) 0. The round-1 wash (#nova-wash, three pools of the theme's colours) is REMOVED - element and
+    CSS; its header comment is marked SUPERSEDED. Party keeps its own stars (.6, Home 1, calm 0).
+  - ONE CARD: --clean-card = color-mix(#FFF 7%, var(--paper)); --clean-card-2 (13%) for picked/pressed; --clean-line
+    (white .08) for hairlines. The surface tokens are set to them beyond Home (--surface-1/-2 clean-card, sheen a transparent
+    gradient, border transparent, shadow none, blur none, --ios-card-fill transparent, --pop-bg-card clean-card), so everything
+    drawn from them follows; 382's element-level --surface-1 on the card list and the Profile three cards are pointed at it too.
+  - Flattened by name where a screen paints its own: the Profile / Stats / Settings switch (track clean-card, pill clean-card-2),
+    the search fields, Select all, Starred, Find me, the mode chip on the units screen, a picked unit (clean-card-2, no green edge,
+    the dot's glow smaller), the chat button and the round back button (clean-card-2, solid), the Rank tab's hero and ladder cards
+    and Badges' top box (gauge rgba(255,255,255,.05)), the results' cards (the grade's tone frame hidden), Review's head.
+  - Profile's name and the Rank tab's names in the app's sans (700), not the serif. The answer choices' reading face and the
+    Settings "NOVA" wordmark are unchanged.
+  - Sign-up: syncSky's pre-account sky (Home's) is now only Welcome and Get started (the planet); every other sign-up step is clean.
+  - Kept: Home, the tab bar, the flash cards (their face's gradient and rim), the daily question's comet, the green dot.
+- Gate tools/check-b383-look.py rewritten for this (phone 440x956, dark): (1) Home's stars at full; mode selection, the units,
+  Profile, Stats, Settings, Customize, the Calendar, Review's list, the Rank tab, Badges, a results screen and "New to Nova?" have
+  no stars and no wash; Welcome keeps Home's sky; (2) 28 cards on those screens opaque, no painting gradient, rim, shadow or blur,
+  and one colour; (3) the switch flat with a lighter pill, the search field the card's colour, the back and chat buttons solid;
+  (4) no serif title (17px+) on Profile, Stats, Ranks, Badges; results' cards solid with the tone hidden; (5) a picked unit a step
+  lighter with the green dot, no edge; (6) the daily question's comet when ready, none answered; (7) the flash cards' face keeps its
+  gradient and rim. On the previous commit (ec40930): 21 fail (the wash on every screen, 0 of 28 cards solid, three colours, glass
+  buttons, serif names, the tone frame, stars on the sign-up step); (6) and (7) pass on both, as they should. This build: ALL PASS.
+
+### Build 383, round 3 - the sky beyond Home: Home's own, turned down, eased
+- Madison (screenshots of Settings, Name, Customize from an earlier 383 - the round-1 wash, stars still showing): "these
+  backgrounds look good but what if they were more 'blurry' but not blurry just like more dull and less distracting so it's like
+  leaving the main menu isn't such a major screen change the transition is still easy on the eyes but maybe it'd be darker but
+  still little bit of the color from the theme, but the main menu will be the only screen with the stars for sure (of course the
+  sign up and startup will differ slightly)."
+- ONE SKY, ONE DIAL. Every dark glow layer is now (its Home strength) x a registered number: --sky-k for the two top glows
+  (13.5% / 14.5% of --bg-c2 / --bg-c3) and --sky-kb for the gold at the foot (11% of --bg-c1), in all five places the dark sky is
+  written - body::before (installed), html's fallback (installed), body::before in a browser tab (both copies, 32908 and 33267, with
+  the fades), html's fallback in a tab. Home = 1 (exact pixels as before), beyond Home .55, a question .3 with no gold. Measured off
+  his screenshot: Home's warm corner is +26 levels over the paper; at .55 it is +14 - darker and duller, the colour still there.
+- @property --sky-k / --sky-kb: <number>, inherits:false, initial 1, set on body::before (state rules) and on html via
+  `html:has(> body:not(.sky-home))` / `:has(> body.has-active-question)` for the fallback. body::before transitions them over
+  .6s ease (the stars' fade is .6s too): leaving Home the glow eases down while the stars go, and back up on the way home; into
+  and out of a question it fades too. inherits:false so an animating value restyles one layer, not the page (an inherited
+  property on html would restyle every element each frame). Reduce motion: no transition. No @property: it switches.
+- Dark's separate question skies (the 4% / 4.7% rules, installed and in a tab) are REMOVED - a question is the same sky at .3. The
+  light/party question rules are scoped off dark with :where() (same specificity as before, so nothing changes there). The
+  question's pixels measure the same as before (17,21,27 / 23,28,34 at the same spots).
+- The status-bar strip: beyond Home --statusbar-mix2/3 = 4.07% / 3.99% (Home's 7.4 / 7.25 x .55); a question keeps 2.2 / 2.35.
+  syncSky now calls syncStatusBarColor() when sky-home actually flips (the meta theme-color and the tab's --band were never
+  re-read on Home <-> elsewhere before; only a question flip did).
+- FIXED ON THE WAY: round 2's beyond-Home body::before override had the same specificity as the browser tab's and came later, so
+  in a browser tab every screen beyond Home lost the sky's top and bottom fades (2 layers instead of 6). The override is gone.
+- Unchanged: Welcome and Get started keep Home's sky (the planet, stars at full); the sign-up steps after them take the sky beyond
+  Home. Light and party themes untouched.
+- Gate tools/check-b383-look.py section (8): at the left margin under the top glow, the glow's lift over the paper beyond Home is
+  between a quarter and four fifths of Home's, same hue; 160ms after leaving Home --sky-k is between Home's and the final value;
+  the meta theme-color differs Home vs Settings; html's --sky-k equals body::before's; in a browser tab as many sky layers beyond
+  Home as on Home; a question's value lower still; and it eases back up going Home. On the previous commit (41310d3) all 7 fail
+  (lift 7 of 29, no dial, the meta unchanged, 2 layers vs 6); this build ALL PASS.
+
+### Build 383, round 3 (cont.) - Fire Code stays enrolled through a sign out; the Change pill's 44px; a steadier flash card gate
+- Madison: "After signing out, you should NOT have to enroll into fire code again." The head script's sign-out wipe kept only
+  the device's settings, and class26e.enrolled (with classseen and greet.<class>) was not on its list, so signing back in left
+  only the academy and Fire Code had to be enrolled again (the PDF picked again). They are on the keep list now (keepRe): device
+  settings, like the IFC book itself, which was always kept (its own IndexedDB, "ifc:class26e-ifc-book", never deleted by the
+  wipe). Signing back in, the class button offers Fire Code; tapping it opens Fire Code's Home with its progress from its own
+  cloud document (progress/<code>__ifc). Only the owner's account can open another class (classSwitchAllowed), so another
+  account signing in on that device sees none of it. Fire Code's local copy (class26e.ifc.*) is still wiped - it is account data.
+- THE CHANGE PILL (Settings > Account > Name, Customize's name row) measured 74x28; its 44px target is the app's invisible
+  ::after ("SMALL TO LOOK AT, 44px TO HIT"), but a .next has overflow:hidden, which clipped that ::after back to the pill -
+  taps 16px above or below its middle hit the row. `.customize-namerow .profile-edit-btn{ overflow:visible }`. Every other
+  control on that list measured (11 screens, 3 sign-up steps): none clipped (the chat's x reads only while the chat is shut).
+- check-b383-flashcards: its tap waits for three still readings in a row, the page's scroll included (one run under load tapped
+  "Load my IFC PDF" mid-glide, which on a phone as here only stops the glide). 4 of 4 pass alone.
+- Gates: check-b383-signup [fix2] - signout: the enrolment kept through the sign out, the class button offering Fire Code after
+  signing back in, and Fire Code's Home with its 1234 points (no enrolling, no book picking); settings: the Change pill takes a
+  tap anywhere in 44px round its middle. On 18815df: the first two signout checks fail (the third does not run - no Fire Code
+  to tap) and the Change pill fails (above/below false); this build ALL PASS (signout, settings).
+
+### Build 383, round 3 (cont.) - Fire Code checked with the owner's own IFC
+- Madison sent class26e-ifc-handoff-v5.4.zip again ("I think the book is in this file"): LOCAL-TEST-ONLY_owners_own_2021_IFC.pdf,
+  kept in the session's scratchpad only - never in the repo (public), never in a commit. pdf.js 5.4.149 from npm, unpacked there too.
+- NEW GATE tools/check-b383-ifcbook.py (PDFJS_DIR + IFC_BOOK, else SKIP): the book through the reader's own path (Load my IFC
+  PDF's file input -> the Analyzing screen -> Verified, kept), pdf.js routed before the app loads (a failed import is cached for
+  the visit). Then Fire Code's flash cards, a book card (IFC 2021 202, Small buildings and tenant spaces) and a county card (HC
+  104.9 / 101.2.1): (1) a tap turns the card; (2) Show the code opens, the card stays, the picture is DRAWN (a canvas, cut from his
+  PDF / the county booklet); (3) the card holds the drawn picture, arrows below; (4) a tap on the picture opens the page viewer and
+  draws it, the card does not turn, Done closes it; (5) Enlarge the same; (6) Hide the code shrinks it back; (7) no page errors.
+  This build: ALL PASS. On 382 (origin/main): 12 fail - Show the code turns the card, the answer side hangs 184-228px out of it,
+  the picture and Enlarge taps do not open the viewer - his flash card report, reproduced with the real book.
+- check-b333 (the page viewer; PDFJS_DIR): ALL PASS once its mode-card check counts Fire Code's three cards (no Mock since 342;
+  it asked for four and failed the same on 382).
+- Seen, not changed: in a book crop the pale wash starts ~55px left of the text on some definitions (the kit's viewer, byte-identical
+  to the kit; the kit's own acceptance run passed at 330).
+
+### Build 383, round 3 (cont.) - the full gate run, and the media pack for Madison
+- GATES on 1c6188e (index.html unchanged since), one at a time: check-b383-look, -signup, -ifcbook (PDFJS_DIR + IFC_BOOK), check-b333
+  (PDFJS_DIR), -flashcards, -ifcsync, check-sync, check-b382-ioslook, -profile, -classes, -modeselect, -review, -toggles, -tabslide,
+  -slide, check-b382, -screens, -settings, -badges, -firstrun, -ios, -toggles, check-b327z5-d, -z10, check-curve, check-results
+  ALL PASS; sweep-layout --quick 14/14. Gates REVISED for the clean look (they asked for the glass Madison had removed):
+  check-b382-units (5) (no edge asked where the look has none; the step lighter and the green dot still are), check-b327-d
+  surfaces (beyond Home the card, the search field and the chat button solid, no frost, the field the card's colour; the tab bar
+  keeps its frost), check-b327z15 T (a color(srgb) value read 0-1, not 0-255 - the clean card read as black; Find me the field's
+  own colour) and EE (Profile's three cards one fill and one rim, or the old slab). All four pass after.
+  The same on earlier builds, not this round: check-fixes' SE (1st gen) 568x260 grey bar (7 levels); check-b327t D1 (3.04);
+  check-b327-d's Oct 27 next test and Home line icons; check-b327z15 F / G (66 of 153, 12 of 18 - ec40930 74 / 14), BB (Welcome's
+  bottom edge in a Safari tab off by 11), DD (its walk never answers the save-your-code card, so the tips never start in it - the
+  card and the tips are checked by check-b383-signup and seen in the videos) and FF (waits for Welcome's I'm new here where 382
+  does not show it): BB, DD and FF fail identically on 382 (a330ee8, origin/main).
+- MEDIA (scratchpad only, made-up names - "Alex Rivera", made-up classmates - never the repo): screenshots of every screen on the
+  iPhone 17 Pro Max (62), a MacBook-sized laptop (62) and the iPad Pro 11" (48), an account with test history, study time and
+  badges; Customize's pickers as earned and with everything unlocked (the lock functions overridden in the page, for the pictures
+  only). Sign-up videos with the app's own sound, from the link opened to Home: iPhone Safari tab (3m12s) and laptop (3m11s),
+  each with a still per step. The five hundo effects and Home's unlock cards (record-sound; its seeded name swapped to the made-up
+  one for that clip). Audio raised 9-14 dB with a limiter (the engine's own mix peaks at -11 to -18 dBFS). In a Safari tab the
+  Home ambience never plays (check-b327z15 II, by design) - the installed app has it.
+- NEW TOOL tools/record-signup.py: record-sound's machinery with its page clock as an INIT script, so the recording starts before
+  the app's first line - the splash, Welcome to NOVA (scrolled section by section), every step, Nova (name, partner, the
+  save-your-code card), the tips, Home - on the video's clock, with the app's own sound. --device phone (an iPhone Safari tab,
+  440x838) | laptop (1440x820).

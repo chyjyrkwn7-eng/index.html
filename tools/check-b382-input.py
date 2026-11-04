@@ -53,8 +53,11 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
     for name, (w, h, ins) in {"phone": (440, 956, (62, 0, 34, 0)), "Pro Max at 85%": (518, 1125, (73, 0, 40, 0))}.items():
         ctx, pg = units(br, w, h, ins)
+        # build 383: the units screen's search is in the page (the Leaderboard's row); the tab-bar search circle is
+        # Review's question list's now, so the keyboard ride is measured there
+        pg.evaluate("()=>{ cfg.mode='review'; showAnswerReview([QUESTIONS[0].topic.trim()], 'all'); }"); pg.wait_for_timeout(1800)
         r = pg.evaluate(RUN)
-        chk("%s: as the keyboard rises in steps, the units search ends 10px above it (%s)" % (name, r), isinstance(r, dict) and r["focused"] and 8 <= r["gapAboveKeyboard"] <= 12, r)
+        chk("%s: as the keyboard rises in steps, the tab-bar search ends 10px above it (%s)" % (name, r), isinstance(r, dict) and r["focused"] and 8 <= r["gapAboveKeyboard"] <= 12, r)
         ctx.close()
     # Next question: 3.25rem under a short question's answers, and gone the moment a question is dragged or slid
     ctx, pg = units(br, 440, 956, (62, 0, 34, 0))
@@ -80,7 +83,7 @@ with sync_playwright() as pw:
     ctx, pg = units(br, 440, 956, (62, 0, 34, 0))
     r = pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); const out={};
       const u=document.querySelector('#stage input[type=search]'); out.units=u?[u.placeholder,u.getAttribute('aria-label')]:null;
-      const btn=document.querySelector('.tabsearch-btn'); if(btn){ btn.click(); await wait(200); const t=document.querySelector('.tabsearch input'); out.tab=t?[t.placeholder,t.getAttribute('aria-label')]:null; }
+      const btn=document.querySelector('.tabsearch:not([hidden]) .tabsearch-btn'); if(btn){ btn.click(); await wait(200); const t=document.querySelector('.tabsearch input'); out.tab=t?[t.placeholder,t.getAttribute('aria-label')]:null; }
       showRankings(); await wait(1500); const b=document.querySelector('.rank-search'); out.board=b?[b.placeholder,b.getAttribute('aria-label')]:null;
       return out; }""")
     vals = [v for v in r.values() if v]

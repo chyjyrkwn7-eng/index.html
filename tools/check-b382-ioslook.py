@@ -81,8 +81,9 @@ NAV = """()=>{ const P=__io.panel(); if(!P) return null;
 
 # per screen: headings, cards, a single group of rows, rows to measure, heading-over-card pairs
 SPEC = {
-  "customize": dict(heads=".screen-customize .slab.motion-summary", cards=".screen-customize .customize-namerow", group=".screen-customize .cz-row",
-                    rows=".screen-customize .cz-row, .screen-customize .customize-namerow"),
+  # (383) the name row moved to Settings > Account > Name; Customize is the one group of rows
+  "customize": dict(heads=".screen-customize .slab.motion-summary", group=".screen-customize .cz-row",
+                    rows=".screen-customize .cz-row"),
   "czpage":    dict(heads=".screen-customize .slab.motion-summary", rows=".screen-customize .settings-nav .back-link"),
   "friends":   dict(heads=".screen-friends .friend-sect > .sect-label", cards=".screen-friends > .friend-sect", rows=".screen-friends .friend-row, .screen-friends .friend-act, .screen-friends .friend-add-input, .screen-friends .settings-nav .back-link",
                     over=(".screen-friends > .friend-sect", ".sect-label")),
@@ -202,7 +203,8 @@ with sync_playwright() as pw:
               return { word, seg: a ? a.textContent.trim() : null, fs: parseFloat(cs.fontSize), fw: cs.fontWeight, shown: __io.shown(c), dup }; }""", i)
             chk("%s Profile segment %d: the big title is the picked segment's name (%s / %s), %.1fpx like the Leaderboard's (%s), no second heading"
                 % (tag, i + 1, t["word"], t["seg"], t["fs"], TITLE_FS[0]),
-                t["shown"] and t["word"] and t["word"] == t["seg"] and TITLE_FS[0] and near(t["fs"], TITLE_FS[0], .6) and int(t["fw"]) >= 700 and t["dup"] == 0, t)
+                # 383: Fire Code's Profile has no switch ("Settings ... should just be in on the bottom tab"): its title is "Profile"
+                t["shown"] and t["word"] and t["word"] == (t["seg"] if segs else "Profile") and TITLE_FS[0] and near(t["fs"], TITLE_FS[0], .6) and int(t["fw"]) >= 700 and t["dup"] == 0, t)
         if cls == "ifc":
             go(pg, "showProfile('stats')", 1600)
             t = pg.evaluate("()=>{ const c=document.getElementById('count'); return { word: c.textContent.trim(), fs: parseFloat(getComputedStyle(c).fontSize), lit: (document.querySelector('.bottomtab.active')||{}).textContent }; }")

@@ -278,7 +278,9 @@ def round2(br):
       return [...document.querySelectorAll('#stage .pf-goal-foot, #stage .pf-case-closed .pf-case-count')].map(e => { const cs = getComputedStyle(e), rr = e.getBoundingClientRect();
         return { h: rr.height, radius: parseFloat(cs.borderTopLeftRadius), border: parseFloat(cs.borderTopWidth), chevron: getComputedStyle(e, '::after').content !== 'none' }; }); }""")
     check("%s: H9. the rank box and the case each end in a pill with a chevron, 40px high or more" % label,
-          len(r9) == 2 and all(x["h"] >= 39.5 and x["radius"] >= 15 and x["border"] >= 1 and x["chevron"] for x in r9), r9)
+          # REVISED IN 383: Customize's kind of button now (a solid light pill, check-b383-profile 5) - its edge is its fill and
+          # shadow, not a 1px rim, so the rim is no longer asked for
+          len(r9) == 2 and all(x["h"] >= 39.5 and x["radius"] >= 15 and x["chevron"] for x in r9), r9)
     ctx.close()
     # H10 an iPhone: wide short buttons and the switch rows carry a real switch
     ctx2 = br.new_context(viewport={"width": w, "height": h}, has_touch=True, is_mobile=True, device_scale_factor=2)

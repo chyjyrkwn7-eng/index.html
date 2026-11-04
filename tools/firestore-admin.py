@@ -428,10 +428,16 @@ def cmd_find(query):
                 life = {}
             # The two numbers somebody can actually check against what
             # they tell you. The whole lifetime map is noise in a list.
-            print("  %-16s %-11s  %6s pts  %5s correct  %s"
+            # build 383: Fire Code keeps its own document beside the academy's (<code>__ifc, and its
+            # backup <code>__ifc__floor) - the same person's other class, not a second account
+            note = ""
+            if code.endswith("__ifc__floor"): note = "  (Fire Code class backup of %s)" % code[:-len("__ifc__floor")]
+            elif code.endswith("__ifc"): note = "  (Fire Code class of %s - not a second account)" % code[:-len("__ifc")]
+            elif code.endswith("__floor"): note = "  (backup of %s)" % code[:-len("__floor")]
+            print("  %-16s %-11s  %6s pts  %5s correct  %s%s"
                   % (fields.get("firstName", "?"), code,
-                     life.get("points", "?"), life.get("correct", "?"), stamp))
-        if len(hits) > 1:
+                     life.get("points", "?"), life.get("correct", "?"), stamp, note))
+        if len({c.split("__")[0] for c, _ in hits}) > 1:
             print("\nMore than one account under that name. Usernames are not")
             print("unique, AND a device that lost its code used to mint a new")
             print("one (fixed in build 158) - which leaves the same person with")

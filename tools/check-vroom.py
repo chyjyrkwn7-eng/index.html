@@ -1697,7 +1697,7 @@ def main():
             tabsGone: !tabs || tabs.hidden || tabs.getBoundingClientRect().height === 0,
             pill: !!document.querySelector('#stage > .vroom-setup-bar > .vroom-setup-go'),
             back: back ? back.textContent : null,
-            title: (document.querySelector('.welcomeintro-title')||{}).textContent,
+            title: (document.querySelector('.ios-nav-title, .welcomeintro-title')||{}).textContent,
             over: document.documentElement.scrollWidth - window.innerWidth
           };}""")
         check("every unit is offered", got["units"] == got["allUnits"],
