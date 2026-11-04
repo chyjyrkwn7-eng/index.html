@@ -36022,6 +36022,114 @@ html.is-browser{ --fade-paper: transparent; }
     .savecode-sheet{ max-width:28rem; padding:1.6rem 1.6rem 1.25rem; }
     .savecode-value{ font-size:2.3rem; }
   }
+  /* ---- ADD TO HOME SCREEN, AT THE END OF SIGN-UP (build 384) ----
+     showHomeScreenSheet. The save-code card's pop-up: a centred card over a plain dim, the pop-up glass, light
+     words on it in every theme; its body scrolls and Not now stays at its foot. The iPhone clip sits in a
+     phone-shaped frame as Get Started's clips do, and its pointers (.a2hs-pt) are drawn over it, placed as
+     fractions of the frame (left/top %), so they land on the same button at any size. Only opacity and transform
+     move; the clip's frame has no filter. */
+  .invite-overlay.a2hs-overlay{
+    z-index:420; align-items:center; justify-content:center; background:rgba(4,6,10,.66);
+    padding-top:calc(env(safe-area-inset-top, 0px) + 12px); padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding-left:calc(env(safe-area-inset-left, 0px) + 12px); padding-right:calc(env(safe-area-inset-right, 0px) + 12px);
+  }
+  .a2hs-sheet{
+    display:flex; flex-direction:column; width:100%; max-width:27rem; max-height:100%; box-sizing:border-box; overflow:hidden;
+    border-radius:22px; color:#F3F5F7; text-align:left;
+    background:var(--pop-bg-card); border:var(--pop-border); box-shadow:var(--pop-shadow-card);
+    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
+    transform:translateY(14px); transition:transform .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .invite-overlay-show > .a2hs-sheet{ transform:none; }
+  .a2hs-body{ flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:1.3rem 1.15rem .7rem; }
+  .a2hs-foot{ flex:none; padding:.65rem 1.15rem 1rem; border-top:1px solid rgba(255,255,255,.08); }
+  html[data-layout] body .a2hs-sheet .next{ display:block; width:100%; min-height:48px; margin:0; animation:none; }
+  .a2hs-tag{ margin:0 0 .35rem; font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#F5B54D; text-align:center; }
+  .a2hs-title{ margin:0 0 .6rem; font-size:1.35rem; font-weight:800; letter-spacing:-.01em; line-height:1.2; color:#F3F5F7; text-align:center; }
+  .a2hs-intro{ margin:0; font-size:.98rem; line-height:1.45; color:rgba(243,245,247,.86); }
+  .a2hs-already{ margin:.7rem 0 0; font-size:.9rem; line-height:1.4; color:#5FD38A; }
+  /* the device: one choice of three, iOS's segmented control */
+  .a2hs-seg{ display:flex; gap:4px; margin:1rem 0 1.1rem; padding:4px; border-radius:14px; background:var(--surface-inset); }
+  .a2hs-seg button{
+    flex:1 1 0; min-width:0; min-height:44px; margin:0; padding:.3rem .35rem; border:0; border-radius:10px;
+    font:inherit; font-size:.84rem; font-weight:700; line-height:1.15; color:rgba(243,245,247,.72); background:transparent;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .a2hs-seg button.is-on{ color:#FFFFFF; background:rgba(255,255,255,.16); box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .a2hs-panel[hidden]{ display:none; }
+  /* the clip: a phone's shape, the size of the screen's height on a short phone */
+  .a2hs-phone{
+    position:relative; flex:none; margin:0 auto; box-sizing:border-box;
+    width:clamp(9.5rem, calc((100vh - 27rem) * .46), 12.5rem); width:clamp(9.5rem, calc((100dvh - 27rem) * .46), 12.5rem);
+    aspect-ratio:540 / 1174; border-radius:26px; overflow:hidden; background:#0A0B14; cursor:pointer;
+    border:1px solid rgba(255,255,255,.2); box-shadow:0 18px 44px rgba(0,0,0,.5);
+  }
+  .a2hs-phone video{ position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; background:#0A0B14; }
+  .a2hs-play{
+    position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; padding:0; border:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:#fff; background:rgba(0,0,0,.55); cursor:pointer;
+    opacity:0; transform:scale(.85); transition:opacity .2s ease, transform .2s ease; pointer-events:none;
+  }
+  .a2hs-play svg{ width:26px; height:26px; margin-left:3px; }
+  .a2hs-phone.is-paused .a2hs-play{ opacity:1; transform:none; pointer-events:auto; }
+  /* a pointer: a ring on the button, a ping off it, and what to do */
+  .a2hs-pt{ position:absolute; width:0; height:0; z-index:2; pointer-events:none; opacity:0; transition:opacity .18s ease; }
+  .a2hs-pt.is-on{ opacity:1; }
+  .a2hs-pt-ring, .a2hs-pt-ping{ position:absolute; left:-14px; top:-14px; width:28px; height:28px; box-sizing:border-box; border-radius:50%; }
+  .a2hs-pt-ring{ border:3px solid #FFC24A; box-shadow:0 0 0 1.5px rgba(0,0,0,.45), inset 0 0 0 1.5px rgba(0,0,0,.25); transform:scale(.5); transition:transform .3s cubic-bezier(.2,1.5,.4,1); }
+  .a2hs-pt.is-on .a2hs-pt-ring{ transform:none; }
+  .a2hs-pt-ping{ background:rgba(255,194,74,.5); opacity:0; }
+  .a2hs-pt.is-on .a2hs-pt-ping{ animation:a2hs-ping 1.3s cubic-bezier(.2,.6,.3,1) .15s infinite; }
+  @keyframes a2hs-ping{ from{ transform:scale(.8); opacity:.9; } to{ transform:scale(2.2); opacity:0; } }
+  .a2hs-pt-label{
+    position:absolute; white-space:nowrap; padding:.22rem .5rem; border-radius:999px;
+    font-size:.72rem; font-weight:800; line-height:1.2; color:#1B1405; background:#FFC24A; box-shadow:0 2px 8px rgba(0,0,0,.45);
+  }
+  .a2hs-pt[data-side="above"] .a2hs-pt-label{ bottom:19px; }
+  .a2hs-pt[data-side="below"] .a2hs-pt-label{ top:19px; }
+  .a2hs-pt[data-align="mid"] .a2hs-pt-label{ left:0; transform:translateX(-50%); }
+  .a2hs-pt[data-align="end"] .a2hs-pt-label{ right:-16px; }
+  .a2hs-pt[data-align="start"] .a2hs-pt-label{ left:-16px; }
+  [data-reduce-motion="true"] .a2hs-pt.is-on .a2hs-pt-ping{ animation:none; }
+  @media (prefers-reduced-motion:reduce){ .a2hs-pt.is-on .a2hs-pt-ping{ animation:none; } }
+  /* the steps in words; the one the clip is on is lit */
+  .a2hs-steps{ list-style:none; margin:1rem 0 0; padding:0; display:flex; flex-direction:column; gap:.2rem; }
+  .a2hs-step{ position:relative; display:flex; align-items:flex-start; gap:.7rem; padding:.5rem .55rem; border-radius:12px; font-size:.95rem; line-height:1.4; }
+  .a2hs-step::before{ content:""; position:absolute; inset:0; border-radius:inherit; background:var(--surface-lift); opacity:0; transition:opacity .2s ease; }
+  .a2hs-step.is-now::before{ opacity:1; }
+  .a2hs-num{
+    position:relative; flex:none; display:inline-flex; align-items:center; justify-content:center; width:1.55rem; height:1.55rem; margin-top:.02rem;
+    border-radius:50%; font-size:.8rem; font-weight:800; color:var(--accent-ink, #fff); background:var(--accent);
+  }
+  .a2hs-step-text{ position:relative; display:flex; flex-direction:column; gap:.2rem; min-width:0; }
+  .a2hs-step-note{ font-size:.84rem; line-height:1.35; color:rgba(243,245,247,.64); }
+  .a2hs-sheet .installguide-inline-icon{ width:1.45rem; height:1.45rem; }
+  .a2hs-sheet .installguide-style-plain, .a2hs-sheet .installguide-style-plain .installguide-glyph{ color:inherit; }
+  .a2hs-sheet .installguide-style-grey-circle{ background:rgba(255,255,255,.18); color:#F3F5F7; }
+  .a2hs-note{ margin:1rem 0 0; font-size:.9rem; line-height:1.45; color:rgba(243,245,247,.78); }
+  .a2hs-lead{ margin:0 0 .2rem; font-size:.95rem; line-height:1.45; color:rgba(243,245,247,.86); }
+  .a2hs-install{ margin:0 0 1rem; }
+  .a2hs-install[hidden]{ display:none; }
+  .a2hs-status{ min-height:1.2rem; margin:.45rem 0 0; font-size:.88rem; line-height:1.35; color:#5FD38A; }
+  /* Android: one card a browser, a small drawing of where its menu is */
+  .a2hs-browser{ display:flex; gap:.85rem; align-items:flex-start; margin:0 0 .7rem; padding:.85rem .8rem; border-radius:16px; background:var(--surface-lift); }
+  .a2hs-browser-art{ flex:none; width:3.4rem; color:rgba(243,245,247,.75); }
+  .a2hs-browser-art svg{ display:block; width:100%; height:auto; }
+  .a2hs-browser-name{ display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; margin:0; font-size:1rem; font-weight:800; color:#F3F5F7; }
+  .a2hs-yours{ padding:.1rem .45rem; border-radius:999px; font-size:.7rem; font-weight:800; letter-spacing:.04em; color:#1B1405; background:#FFC24A; }
+  .a2hs-browser .a2hs-steps{ margin-top:.35rem; }
+  .a2hs-browser .a2hs-step{ padding:.3rem 0; font-size:.92rem; }
+  .a2hs-address{ display:inline-block; margin-top:.25rem; padding:.15rem .45rem; border-radius:8px; font-family:var(--mono); font-size:.84rem; color:#F3F5F7; background:var(--surface-inset); overflow-wrap:anywhere; }
+  @media (min-width:40rem){
+    .a2hs-sheet{ max-width:40rem; }
+    .a2hs-body{ padding:1.6rem 1.6rem .8rem; }
+    .a2hs-foot{ padding:.75rem 1.6rem 1.15rem; }
+    .a2hs-row{ display:flex; gap:1.5rem; align-items:flex-start; }
+    .a2hs-row .a2hs-phone{ margin:0; }
+    .a2hs-row .a2hs-steps{ flex:1 1 auto; margin-top:0; }
+    .a2hs-browsers{ display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+    .a2hs-browsers .a2hs-browser{ margin:0; }
+  }
   /* ===================== THE LEADERBOARD AND THE CALENDAR IN SETTINGS' LANGUAGE (build 382, iOS) =====================
      Madison: "we need to ensure that the rest of the app has that nice new look ... leaderboard could have such a nice look ...
      calendar could be a smidge better. We are going for that clean clean clean CLEAN IOS apple look". The new Settings is the
@@ -53856,11 +53964,15 @@ function showEnrolledBanner(key){
   const c = NOVA_CLASSES.find(x => x.key === key); if(!c) return;
   const info = NOVA_CLASS_INFO[key] || {};
   const wrap = document.createElement("span"); wrap.innerHTML = c.icon;
-  setTimeout(() => {
+  let waits = 0;
+  const show = () => {
+    /* (384) after a sign-up's Add to Home Screen sheet, not under it */
+    try{ if(a2hsHolds() && ++waits < 600){ setTimeout(show, 700); return; } }catch(e){}
     if(!onNovaHome()) return;
     showDailyAlert(info.kicker || "", { kind: "enrolled", tag: "ENROLLED", title: "You’re enrolled in " + (info.title || c.name),
       color: key === "ifc" ? "#FF9648" : "#93B5FF", iconEl: wrap.firstElementChild, id: "enrolled-banner", stay: 6000 });
-  }, 700);
+  };
+  setTimeout(show, 700);
 }
 function showIfcEnroll(){
   const c = NOVA_CLASSES.find(x => x.key === "ifc");
@@ -83513,14 +83625,14 @@ function isIOSDevice(){
    such API at all, and any Android browser that never offered the
    prompt — gets asked which platform they're on, then a clear visual
    walkthrough of that platform's manual steps, rather than being left to
-   discover "Add to Home Screen" on their own or guessing from a toast. */
+   discover "Add to Home Screen" on their own or guessing from a toast.
+   BUILD 384: Settings' Add to Home Screen opens the sign-up's sheet
+   (showHomeScreenSheet): the device asked, the iPhone walkthrough's clip,
+   and the browser's own Install inside it wherever the browser offered one.
+   showInstallPlatformPicker / showInstallGuide below are no longer reached
+   from the app; check-b339 and the layout sweep still mount them by name. */
 function handleInstallTap(){
-  if(window.__deferredInstallPrompt){
-    window.__deferredInstallPrompt.prompt();
-    window.__deferredInstallPrompt.userChoice.then(() => { window.__deferredInstallPrompt = null; });
-    return;
-  }
-  showInstallPlatformPicker();
+  showHomeScreenSheet({ from: "settings" });
 }
 
 /* Each step's wording is a sequence of text and small inline icons, so an
@@ -83673,6 +83785,392 @@ function showInstallGuide(platform){
   overlay.addEventListener("click", (e) => { if(e.target === overlay) closeGuide(); });
   mountSheetOverlay(overlay);
   if(platform !== "android") installCodeInUrl(true);
+}
+
+/* ---- ADD TO HOME SCREEN, AT THE END OF SIGN-UP (build 384) ----
+   Madison: "let's ensure that the sign up process gives a thing for the adding app to your iPhone/samsung
+   homescreen as a popup. Have it mention that the app has been designed as an app for the phone but is also
+   capable of being used as a website on computers and then let it do the walkthrough. For when people select
+   Apple. Have it show them this video ... Similar to how the video is there for the hundo example ... you can
+   see my friends and stuff in the share recommendation, blur that out ... Maybe add some pointers like the add
+   button. A pointer for "open as web app" ensuring it's on."
+   WHEN: once, as a new account's main-menu tips end (startMainMenuTour's onDone) - the account exists, its code
+   has been saved, Nova and the tips are done, so leaving for the icon now skips nothing of the sign-up (the
+   icon's own copy starts past all of it) - on Home, once the +100 XP has landed and nothing else is up
+   (a2hsBusy). Never in the installed app (isStandaloneApp). class26e.a2hs is "owed" from the end of the tips
+   until it shows (an app closed in between shows it on its next Home), then the time it showed: it never comes
+   back on its own. The enrolled banner and Nova's good-luck message wait for it (a2hsHolds).
+   Settings > Share & Install > Add to Home Screen opens the same sheet (handleInstallTap).
+   THE DEVICE is asked, guessed from the browser (a2hsDeviceGuess): iPhone or iPad / Android or Samsung / Computer.
+   APPLE: landing/a2hs-iphone.mp4, his own screen recording (iOS 26 Safari): tone-mapped from its HDR, cut from
+   21.6s to 14.7s, and the share sheet's row of people (his friends' photos and names) and the Messages back-link
+   under the clock blurred in every frame they are in, the row tracked frame by frame as the sheet rises and
+   grows. The pointers are drawn over it here (A2HS_POINTERS), on the clip's own clock, as fractions of its frame;
+   the step the clip is on is lit in the list. While the walkthrough is up the address carries the code
+   (installCodeInUrl), because on iPhone the icon keeps its own data, apart from Safari's: an icon added now
+   opens signed in to this account and its progress comes from the cloud. Played only while it is the choice.
+   ANDROID: Chrome's and Samsung Internet's menus, in words and a small drawing each (this browser first and
+   marked); the browser's own Install when it offered one (beforeinstallprompt). There the icon shares the
+   browser's storage. COMPUTER: it works here as a website - a bookmark, or Chrome/Edge's install. */
+var A2HS_KEY = "class26e.a2hs";
+var a2hsPending = false, a2hsTimer = 0, a2hsClosedAt = 0;
+var A2HS_CLIP = { src: "landing/a2hs-iphone.mp4", poster: "landing/a2hs-iphone.jpg" };
+var A2HS_ADDRESS = "chyjyrkwn7-eng.github.io/index.html";
+/* Read off the clip frame by frame: in it ••• is pressed at 2.03s, Share at 3.83s, View More at 6.67s, Add to
+   Home Screen at 9.83s, and the Add page is up from 10.4s to the end (14.73s). from/to in seconds; x/y the
+   button's centre as a fraction of the frame; step = the line of A2HS_STEPS_APPLE it belongs to. */
+var A2HS_POINTERS = [
+  { from: .3, to: 2.2, x: .869, y: .938, side: "above", step: 0, label: "Tap •••" },
+  { from: 2.45, to: 3.95, x: .454, y: .665, side: "above", step: 0, label: "Tap Share" },
+  { from: 4.85, to: 6.75, x: .831, y: .9, side: "above", step: 1, label: "Tap View More" },
+  { from: 7.4, to: 9.95, x: .156, y: .541, side: "above", step: 2, label: "Tap Add to Home Screen" },
+  { from: 10.45, to: 12.6, x: .881, y: .335, side: "below", step: 3, label: "Make sure this is on" },
+  { from: 12.6, to: 15, x: .88, y: .119, side: "below", step: 4, label: "Tap Add" }
+];
+var A2HS_STEPS_APPLE = [
+  { parts: [{ text: "In Safari, tap " }, { icon: buildDotsIcon, style: "grey-circle" }, { text: ", then Share." }],
+    note: [{ text: "If the " }, { icon: buildShareIcon, style: "plain" }, { text: " Share button is in the toolbar, tap it instead." }] },
+  { parts: [{ text: "Tap " }, { icon: buildViewMoreIcon, style: "plain" }, { text: " View More." }],
+    note: [{ text: "If Add to Home Screen is already showing, skip this." }] },
+  { parts: [{ text: "Tap " }, { icon: buildAddSquareIcon, style: "plain" }, { text: " Add to Home Screen." }] },
+  { parts: [{ text: "Make sure " }, { icon: buildToggleIcon, style: "plain" }, { text: " Open as Web App is on." }] },
+  { parts: [{ text: "Tap Add." }] }
+];
+var A2HS_STEPS_CHROME = [
+  { parts: [{ text: "Tap " }, { icon: buildVerticalDotsIcon, style: "grey-circle" }, { text: " at the top right." }] },
+  { parts: [{ text: "Tap Add to Home screen, or Install app." }] },
+  { parts: [{ text: "Tap Install, or Add." }] }
+];
+var A2HS_STEPS_SAMSUNG = [
+  { parts: [{ text: "Tap " }, { icon: buildMenuLinesIcon, style: "grey-circle" }, { text: " at the bottom right." }] },
+  { parts: [{ text: "Tap Add page to." }] },
+  { parts: [{ text: "Tap Home screen, then Add." }] }
+];
+/* where each browser keeps its menu: a phone, its address bar, the button ringed in the pointers' amber */
+var A2HS_ART_CHROME = '<svg viewBox="0 0 60 104" aria-hidden="true">' +
+  '<rect x="2" y="2" width="56" height="100" rx="11" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="2"/>' +
+  '<rect x="8" y="10" width="33" height="9" rx="4.5" fill="currentColor" fill-opacity=".25"/>' +
+  '<g fill="currentColor"><circle cx="50" cy="10.8" r="1.5"/><circle cx="50" cy="14.5" r="1.5"/><circle cx="50" cy="18.2" r="1.5"/></g>' +
+  '<circle cx="50" cy="14.5" r="7.2" fill="none" stroke="#FFC24A" stroke-width="2.2"/>' +
+  '<g fill="currentColor" fill-opacity=".14"><rect x="8" y="27" width="44" height="22" rx="4"/><rect x="8" y="54" width="44" height="5" rx="2.5"/><rect x="8" y="63" width="32" height="5" rx="2.5"/></g>' +
+  '</svg>';
+var A2HS_ART_SAMSUNG = '<svg viewBox="0 0 60 104" aria-hidden="true">' +
+  '<rect x="2" y="2" width="56" height="100" rx="11" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="2"/>' +
+  '<rect x="8" y="10" width="44" height="9" rx="4.5" fill="currentColor" fill-opacity=".25"/>' +
+  '<g fill="currentColor" fill-opacity=".14"><rect x="8" y="27" width="44" height="22" rx="4"/><rect x="8" y="54" width="44" height="5" rx="2.5"/><rect x="8" y="63" width="32" height="5" rx="2.5"/></g>' +
+  '<path d="M4 84h52" stroke="currentColor" stroke-opacity=".3" stroke-width="1"/>' +
+  '<g fill="currentColor" fill-opacity=".45"><circle cx="10" cy="92" r="1.8"/><circle cx="19" cy="92" r="1.8"/><circle cx="28" cy="92" r="1.8"/><circle cx="37" cy="92" r="1.8"/></g>' +
+  '<path d="M45.5 89h7M45.5 92h7M45.5 95h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+  '<circle cx="49" cy="92" r="7.2" fill="none" stroke="#FFC24A" stroke-width="2.2"/>' +
+  '</svg>';
+/* Samsung Internet's menu button (three lines) */
+function buildMenuLinesIcon(){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "installguide-glyph");
+  svg.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS(svgNS, "path");
+  p.setAttribute("d", "M5 7h14M5 12h14M5 17h14");
+  p.setAttribute("fill", "none"); p.setAttribute("stroke", "currentColor"); p.setAttribute("stroke-width", "2"); p.setAttribute("stroke-linecap", "round");
+  svg.appendChild(p);
+  return svg;
+}
+function a2hsDeviceGuess(){
+  const ua = navigator.userAgent || "";
+  /* an iPad asks for the desktop site and says "Macintosh"; it has a touch screen */
+  if(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1)) return "apple";
+  if(/Android/i.test(ua)) return "android";
+  return "computer";
+}
+function a2hsState(){ try{ return localStorage.getItem(A2HS_KEY) || ""; }catch(e){ return ""; } }
+function a2hsShownBefore(){ return /^\d+$/.test(a2hsState()); }
+function a2hsHolds(){ return a2hsPending || !!document.getElementById("a2hs-sheet"); }
+function noteHomeScreenSheetOwed(){
+  if(isStandaloneApp() || a2hsShownBefore()) return;
+  try{ localStorage.setItem(A2HS_KEY, "owed"); }catch(e){}
+}
+/* anything else on Home goes first: the tips, the +100 XP, a cutscene, a card, a sheet, the chat */
+function a2hsBusy(){
+  if(!stage.querySelector('[data-screen="home"]')) return true;
+  if(document.querySelector("#welcomebonus-banner, .wb-chip, #savecode-card, #newacct-confirm, .installguide-overlay, #tour-tooltip")) return true;
+  try{ if(typeof weekRecapOn !== "undefined" && weekRecapOn) return true; }catch(e){}
+  try{ return weekRecapBlocked(); }catch(e){ return true; }
+}
+function scheduleHomeScreenSheet(firstDelay){
+  if(a2hsPending || document.getElementById("a2hs-sheet")) return;
+  if(isStandaloneApp()){ try{ if(a2hsState() === "owed") localStorage.removeItem(A2HS_KEY); }catch(e){} return; }
+  if(a2hsShownBefore()) return;
+  a2hsPending = true;
+  let tries = 0, calm = 0;
+  const attempt = () => {
+    a2hsTimer = 0;
+    if(a2hsShownBefore() || isStandaloneApp() || !store || !store.onboardingComplete){ a2hsPending = false; return; }
+    if(a2hsBusy()){
+      calm = 0;
+      /* given up after ~5 minutes away from Home; still owed, so the next Home asks again */
+      if(++tries > 400){ a2hsPending = false; return; }
+      a2hsTimer = setTimeout(attempt, 700); return;
+    }
+    /* a beat after whatever it waited for, never straight on its heels */
+    if(++calm < 2){ a2hsTimer = setTimeout(attempt, 700); return; }
+    a2hsPending = false;
+    showHomeScreenSheet({ from: "signup" });
+  };
+  a2hsTimer = setTimeout(attempt, firstDelay == null ? 1800 : firstDelay);
+}
+function showHomeScreenSheet(opts){
+  opts = opts || {};
+  const signup = opts.from === "signup";
+  const old = document.getElementById("a2hs-sheet");
+  if(old) old.remove();
+  if(signup){ try{ localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){} }
+  const mk = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
+  const ua = navigator.userAgent || "";
+  const standalone = isStandaloneApp();
+  const overlay = mk("div", "invite-overlay a2hs-overlay");
+  overlay.id = "a2hs-sheet";
+  overlay.dataset.from = signup ? "signup" : "settings";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "a2hs-title");
+  const sheet = mk("div", "a2hs-sheet");
+  const body = mk("div", "a2hs-body");
+  const title = mk("h2", "a2hs-title", "Add Nova to your Home Screen");
+  title.id = "a2hs-title";
+  body.append(mk("p", "a2hs-tag", "Home Screen"), title,
+    mk("p", "a2hs-intro", "Nova is designed as an app for your phone. Added to your Home Screen, it opens full screen like any other app. It also works as a website on a computer."));
+  if(standalone) body.appendChild(mk("p", "a2hs-already", "Nova is already open from the Home Screen on this device."));
+
+  /* the device: one of three */
+  const seg = mk("div", "a2hs-seg");
+  seg.setAttribute("role", "radiogroup");
+  seg.setAttribute("aria-label", "Your device");
+  const segBtns = [["apple", "iPhone or iPad"], ["android", "Android or Samsung"], ["computer", "Computer"]].map(([key, label]) => {
+    const b = mk("button", "a2hs-seg-" + key, label);
+    b.type = "button"; b.dataset.dev = key; b.setAttribute("role", "radio");
+    b.addEventListener("click", () => select(key));
+    seg.appendChild(b);
+    return b;
+  });
+  seg.addEventListener("keydown", e => {
+    const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : (e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0);
+    if(!d) return;
+    e.preventDefault();
+    const i = segBtns.findIndex(b => b.dataset.dev === cur);
+    const n = segBtns[(i + d + segBtns.length) % segBtns.length];
+    select(n.dataset.dev); try{ n.focus(); }catch(err){}
+  });
+  body.appendChild(seg);
+
+  const steps = list => {
+    const ol = mk("ol", "a2hs-steps");
+    const items = list.map((s, i) => {
+      const li = mk("li", "a2hs-step");
+      const num = mk("span", "a2hs-num", String(i + 1)); num.setAttribute("aria-hidden", "true");
+      const tx = mk("span", "a2hs-step-text");
+      const main = mk("span", "a2hs-step-main"); renderInlineParts(s.parts, main); tx.appendChild(main);
+      if(s.note){ const nt = mk("span", "a2hs-step-note"); renderInlineParts(s.note, nt); tx.appendChild(nt); }
+      li.append(num, tx);
+      ol.appendChild(li);
+      return li;
+    });
+    return { ol, items };
+  };
+
+  /* the browser's own Install, where it offered one */
+  const installs = [];
+  const installBox = () => {
+    const box = mk("div", "a2hs-install");
+    const b = mk("button", "next playbtn a2hs-install-btn", "Install Nova"); b.type = "button";
+    const st = mk("p", "a2hs-status"); st.setAttribute("role", "status");
+    box.append(b, st);
+    b.addEventListener("click", () => {
+      const p = window.__deferredInstallPrompt;
+      if(!p || b.disabled) return;
+      b.disabled = true;
+      try{
+        p.prompt();
+        Promise.resolve(p.userChoice).then(c => {
+          window.__deferredInstallPrompt = null;
+          st.textContent = c && c.outcome === "accepted" ? "Nova is being added to this device." : "Not installed. You can still add it from the browser’s menu.";
+          refreshInstall();
+        }).catch(() => { b.disabled = false; });
+      }catch(e){ b.disabled = false; }
+    });
+    installs.push({ box, b, st });
+    return box;
+  };
+
+  /* iPhone and iPad: the clip with its pointers, and the steps */
+  const apple = mk("div", "a2hs-panel a2hs-apple"); apple.dataset.dev = "apple";
+  const row = mk("div", "a2hs-row");
+  /* the play button shows only once it is paused (or never started: reduced motion, autoplay refused), not
+     while the clip loads */
+  const frame = mk("div", "a2hs-phone");
+  const video = document.createElement("video");
+  video.muted = true; video.defaultMuted = true; video.loop = true; video.playsInline = true; video.preload = "none";
+  video.setAttribute("muted", ""); video.setAttribute("playsinline", ""); video.setAttribute("webkit-playsinline", "");
+  video.setAttribute("disablepictureinpicture", ""); video.setAttribute("disableremoteplayback", "");
+  video.poster = A2HS_CLIP.poster;
+  video.setAttribute("aria-label", "Video: adding Nova to the Home Screen from Safari on an iPhone");
+  frame.appendChild(video);
+  const pts = A2HS_POINTERS.map(p => {
+    const d = mk("div", "a2hs-pt");
+    d.style.left = (p.x * 100) + "%"; d.style.top = (p.y * 100) + "%";
+    d.dataset.from = String(p.from); d.dataset.to = String(p.to); d.dataset.step = String(p.step);
+    d.dataset.side = p.side; d.dataset.align = p.x > .66 ? "end" : (p.x < .34 ? "start" : "mid");
+    d.setAttribute("aria-hidden", "true");
+    d.append(mk("span", "a2hs-pt-ping"), mk("span", "a2hs-pt-ring"), mk("span", "a2hs-pt-label", p.label));
+    frame.appendChild(d);
+    return d;
+  });
+  const playBtn = mk("button", "a2hs-play"); playBtn.type = "button"; playBtn.setAttribute("aria-label", "Play the video");
+  playBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.2v13.6L18.6 12z" fill="currentColor"/></svg>';
+  frame.appendChild(playBtn);
+  const appleSteps = steps(A2HS_STEPS_APPLE);
+  row.append(frame, appleSteps.ol);
+  const hasCode = !!(syncCode && !syncOff && store && store.onboardingComplete);
+  apple.append(row, mk("p", "a2hs-note",
+    standalone ? "These steps are for adding Nova on another iPhone or iPad."
+    : hasCode ? "Add it while this page is open and the icon opens signed in to your account, with your progress. From then on, open Nova from the icon instead of Safari."
+    : "On iPhone and iPad the Home Screen icon keeps its own data, apart from Safari. Open it and sign in with your sync code to bring your progress."));
+
+  /* Android: Chrome and Samsung Internet, this browser first */
+  const android = mk("div", "a2hs-panel a2hs-android"); android.dataset.dev = "android";
+  const samsungUA = /SamsungBrowser/i.test(ua);
+  const chromeUA = /Android/i.test(ua) && /Chrome\//.test(ua) && !samsungUA && !/EdgA|OPR|Firefox|YaBrowser/i.test(ua);
+  const card = (name, art, list, yours) => {
+    const c = mk("section", "a2hs-browser");
+    const a = mk("div", "a2hs-browser-art"); a.innerHTML = art;
+    const t = mk("div", "a2hs-browser-text");
+    const h = mk("h3", "a2hs-browser-name", name);
+    if(yours) h.appendChild(mk("span", "a2hs-yours", "This browser"));
+    t.append(h, steps(list).ol);
+    c.append(a, t);
+    return c;
+  };
+  const browsers = mk("div", "a2hs-browsers");
+  const cChrome = card("Chrome", A2HS_ART_CHROME, A2HS_STEPS_CHROME, chromeUA);
+  const cSamsung = card("Samsung Internet", A2HS_ART_SAMSUNG, A2HS_STEPS_SAMSUNG, samsungUA);
+  if(samsungUA) browsers.append(cSamsung, cChrome); else browsers.append(cChrome, cSamsung);
+  const leadA = mk("p", "a2hs-lead", "Or add it from the browser’s menu:");
+  android.append(installBox(), leadA, browsers,
+    mk("p", "a2hs-note", standalone ? "These steps are for adding Nova on another phone." : "The icon uses this browser’s sign-in, so it opens on your account."));
+
+  /* a computer: it is a website there */
+  const computer = mk("div", "a2hs-panel a2hs-computer"); computer.dataset.dev = "computer";
+  const mac = /Mac/i.test(navigator.platform || ua) && !((navigator.maxTouchPoints || 0) > 1);
+  const compSteps = steps([
+    { parts: [{ text: "Bookmark this page: press " + (mac ? "⌘ Command + D." : "Ctrl + D.") }] },
+    { parts: [{ text: "In Chrome or Edge, you can also install it as an app: click the install icon at the right of the address bar, then Install." }] },
+    { parts: [{ text: "On your phone, open the same address and add Nova to your Home Screen. Sign in there with your sync code." }] }
+  ]);
+  compSteps.items[2].querySelector(".a2hs-step-text").appendChild(mk("span", "a2hs-address", A2HS_ADDRESS));
+  computer.append(mk("p", "a2hs-lead", "Nova works here as a website. There is nothing to install."), installBox(), compSteps.ol);
+
+  body.append(apple, android, computer);
+  const foot = mk("div", "a2hs-foot");
+  const done = mk("button", "next ghost a2hs-close", signup ? "Not now" : "Done"); done.type = "button";
+  foot.appendChild(done);
+  sheet.append(body, foot);
+  overlay.appendChild(sheet);
+
+  let cur = "", raf = 0, armTimer = 0, closed = false;
+  const refreshInstall = () => {
+    const has = !!window.__deferredInstallPrompt && !standalone;
+    installs.forEach(x => { x.b.hidden = !has; x.b.disabled = false; x.box.hidden = !has && !x.st.textContent; });
+    leadA.hidden = !has;
+  };
+  const onPrompt = () => setTimeout(refreshInstall, 0);
+  const onInstalled = () => { installs.forEach(x => { x.st.textContent = "Nova has been added to this device."; }); refreshInstall(); };
+  window.addEventListener("beforeinstallprompt", onPrompt);
+  window.addEventListener("appinstalled", onInstalled);
+
+  /* the clip's clock moves the pointers and lights its step */
+  const tick = () => {
+    raf = 0;
+    if(closed) return;
+    const t = video.currentTime || 0;
+    let step = -1;
+    pts.forEach((d, i) => {
+      const p = A2HS_POINTERS[i];
+      const on = t >= p.from && t < p.to;
+      if(d.classList.contains("is-on") !== on) d.classList.toggle("is-on", on);
+      if(on) step = p.step;
+    });
+    appleSteps.items.forEach((li, i) => { const on = i === step; if(li.classList.contains("is-now") !== on) li.classList.toggle("is-now", on); });
+    if(!video.paused && !video.ended) raf = requestAnimationFrame(tick);
+  };
+  const kick = () => { if(!raf && !closed) raf = requestAnimationFrame(tick); };
+  video.addEventListener("play", () => { frame.classList.remove("is-paused"); kick(); });
+  video.addEventListener("playing", kick);
+  video.addEventListener("pause", () => { frame.classList.add("is-paused"); tick(); });
+  /* rAF is held back in a background tab or Low Power Mode; the clip's own events still come */
+  video.addEventListener("timeupdate", () => { if(!raf) tick(); });
+  video.addEventListener("seeked", tick);
+  const calmMotion = () => { try{ return !!(theme && theme.reduceMotion) || window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } };
+  const playClip = () => {
+    if(!video.getAttribute("src")){ video.preload = "auto"; video.src = A2HS_CLIP.src; }
+    try{ const pr = video.play(); if(pr && pr.catch) pr.catch(() => frame.classList.add("is-paused")); }catch(e){ frame.classList.add("is-paused"); }
+  };
+  frame.addEventListener("click", e => { e.stopPropagation(); if(video.paused) playClip(); else video.pause(); });
+  const startApple = () => {
+    if(!video.getAttribute("src")){ video.preload = calmMotion() ? "metadata" : "auto"; video.src = A2HS_CLIP.src; }
+    if(!calmMotion()) playClip(); else if(video.paused) frame.classList.add("is-paused");
+    try{ installCodeInUrl(true); }catch(e){}
+    clearInterval(armTimer);
+    /* installCodeInUrl takes the code off again after three minutes; kept on while the walkthrough is up */
+    armTimer = setInterval(() => { try{ if(!closed && cur === "apple") installCodeInUrl(true); }catch(e){} }, 60000);
+  };
+  const stopApple = () => {
+    try{ video.pause(); }catch(e){}
+    clearInterval(armTimer); armTimer = 0;
+    try{ installCodeInUrl(false); }catch(e){}
+  };
+  const select = key => {
+    if(key === cur || closed) return;
+    const was = cur; cur = key;
+    segBtns.forEach(b => {
+      const on = b.dataset.dev === key;
+      b.classList.toggle("is-on", on); b.setAttribute("aria-checked", on ? "true" : "false"); b.tabIndex = on ? 0 : -1;
+    });
+    [apple, android, computer].forEach(p => { p.hidden = p.dataset.dev !== key; });
+    overlay.dataset.dev = key;
+    if(key === "apple") startApple(); else if(was === "apple") stopApple();
+  };
+  const cleanup = () => {
+    if(closed) return;
+    closed = true;
+    cancelAnimationFrame(raf); raf = 0;
+    a2hsClosedAt = Date.now();
+    stopApple();
+    try{ video.removeAttribute("src"); video.load(); }catch(e){}
+    document.removeEventListener("keydown", onKey, true);
+    window.removeEventListener("beforeinstallprompt", onPrompt);
+    window.removeEventListener("appinstalled", onInstalled);
+  };
+  const close = () => {
+    if(closed) return;
+    cleanup();
+    overlay.classList.remove("invite-overlay-show");
+    setTimeout(() => overlay.remove(), 220);
+  };
+  const onKey = e => { if(e.key === "Escape"){ e.preventDefault(); close(); } };
+  done.addEventListener("click", close);
+  overlay.addEventListener("click", e => { if(e.target === overlay) close(); });
+  document.addEventListener("keydown", onKey, true);
+
+  mountSheetOverlay(overlay);
+  /* taken off by a screen change (mountSheetOverlay): the clip stops and the address is cleaned too */
+  try{
+    const gone = new MutationObserver(() => { if(!overlay.isConnected){ gone.disconnect(); cleanup(); } });
+    gone.observe(document.body, { childList: true });
+  }catch(e){}
+  refreshInstall();
+  select(opts.device || a2hsDeviceGuess());
+  setTimeout(() => { try{ const on = segBtns.find(b => b.dataset.dev === cur); on && on.focus({ preventScroll: true }); }catch(e){} }, 80);
+  return overlay;
 }
 
 function buildPauseIcon(){
@@ -93659,7 +94157,11 @@ function startMainMenuTour(){
      tooltip rendering above the top of the viewport) while the
      newer one had already been fixed. One shared implementation
      means a future fix here benefits every tour, not just one. */
-  startSimpleTour(mainMenuTourSteps(false), () => { awardWelcomeBonus(); scheduleNovaGoodLuck(); showEnrolledBanner("academy"); });
+  /* (384) and, as the sign-up's last step, Add to Home Screen (showHomeScreenSheet), once the +100 XP has landed */
+  startSimpleTour(mainMenuTourSteps(false), () => {
+    awardWelcomeBonus(); scheduleNovaGoodLuck(); showEnrolledBanner("academy");
+    try{ noteHomeScreenSheetOwed(); scheduleHomeScreenSheet(); }catch(e){}
+  });
 }
 /* HIS SEND-OFF IN THE CHAT (327z15 round 31): "When the tool tips are over
    ... like 10 seconds after all the tool tips, you should get a message
@@ -93669,7 +94171,8 @@ function startMainMenuTour(){
    test it waits until they are back, so it never lands over a question. */
 function scheduleNovaGoodLuck(){
   const send = () => {
-    if(!stage.querySelector(".screen-home-actual") || document.getElementById("tour-overlay") || document.querySelector(".rs-spot, .bc-scene")){
+    /* (384) nor while Add to Home Screen is coming or up, nor on the heels of it (the enrolled banner has that moment) */
+    if(!stage.querySelector(".screen-home-actual") || document.getElementById("tour-overlay") || document.querySelector(".rs-spot, .bc-scene") || a2hsHolds() || Date.now() - a2hsClosedAt < 7000){
       setTimeout(send, 5000); return;
     }
     const nm = (store.firstName || "").trim();
@@ -102502,6 +103005,8 @@ function showHome(){
        this class's recap a moment after the menu is up; coming back to Home later in the launch does not. The Leaderboard still
        offers it (showRankings) if it has not been seen; each class keeps its own (its own store, its own seen mark). */
     if(!weekRecapHomeTried){ try{ scheduleWeekRecap(WEEK_RECAP_HOME_MS); weekRecapHomeTried = true; }catch(e){} }
+    /* (384) a sign-up's Add to Home Screen that the app closed before it could show */
+    try{ if(a2hsState() === "owed") scheduleHomeScreenSheet(2600); }catch(e){}
   }
 }
 
