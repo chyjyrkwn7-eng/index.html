@@ -27,15 +27,13 @@ with sync_playwright() as pw:
         os.makedirs(SHOTS, exist_ok=True)
         pg.evaluate("()=>document.getElementById('settings-version-history')?.scrollIntoView({block:'center'})"); pg.wait_for_timeout(500); pg.screenshot(path=SHOTS + "/settings-version.png")
     pg.evaluate("()=>document.getElementById('settings-version-history')?.click()"); pg.wait_for_timeout(1200)
-    h = pg.evaluate("()=>({ title: [...document.querySelectorAll('.slab')].map(e=>e.textContent).join('|'), back: (document.querySelector('.back-link')||{}).textContent })")
-    chk("it opens the release history, with Settings as the way back", "Release History" in h["title"] and "Settings" in (h["back"] or ""), h)
+    # (384) the history wears the iOS nav bar every pushed screen has, its title "Version history" - so the screen is found by
+    # its class and the bar's title read off the page, not a label string
+    h = pg.evaluate("()=>{ const p=document.querySelector('.screen-releasehistory'); return { screen: !!p, versions: p ? p.querySelectorAll('.releasehistory-version').length : 0, title: p ? ((p.querySelector('.ios-navbar-title,.ios-nav-title,h1,h2')||{}).textContent||'') : '', back: (document.querySelector('.back-link')||{}).textContent }; }")
+    chk("it opens the release history, with Settings as the way back", h["screen"] and h["title"].strip() and h["versions"] >= 2 and "Settings" in (h["back"] or ""), h)
     pg.evaluate("()=>document.querySelector('.back-link')?.click()"); pg.wait_for_timeout(1200)
     s = pg.evaluate("()=>!!document.querySelector('.screen-settings') || /Settings/.test(document.body.innerText) && !!document.getElementById('settings-version-history')")
     chk("Back returns to Settings", s)
-    # Home's version tag still goes back to Home
-    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(1500)
-    pg.evaluate("()=>document.querySelector('.homeversion-btn')?.click()"); pg.wait_for_timeout(1200)
-    b = pg.evaluate("()=>(document.querySelector('.back-link')||{}).textContent")
-    chk("opened from Home's version tag, its way back is still Home", "Home" in (b or ""), b)
+    # (383/384) Home's version tag is a plain label now - Settings' Version history is the one way in - so the Home check is gone
     ctx.close(); br.close()
 sys.exit(0 if ok else 1)

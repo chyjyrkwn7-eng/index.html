@@ -70,6 +70,7 @@ with sync_playwright() as pw:
       img: document.querySelector('meta[property="og:image"]').content, touch: document.querySelector('link[rel="apple-touch-icon"]').href, share: typeof SHARE_URL === 'string' ? SHARE_URL : '' })""")
     chk("the page's title, which names the Home Screen app, is exactly Nova", m["title"] == "Nova", m["title"])
     chk("the link preview names no class", not any("26E" in x for x in m["ogs"]), m["ogs"])
-    chk("the preview image and the touch icon are absolute addresses of real files", m["img"].startswith("https://") and m["touch"].startswith("https://") and m["touch"].endswith("share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/og-card.png"), m)
+    # (381+) both carry a ?v= cache-buster, so the file is the address without its query
+    chk("the preview image and the touch icon are absolute addresses of real files", m["img"].startswith("https://") and m["touch"].startswith("https://") and m["touch"].split("?")[0].endswith("share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/og-card.png"), m)
     ctx.close(); br.close()
 sys.exit(0 if ok else 1)
