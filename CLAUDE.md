@@ -28,7 +28,8 @@ file short - only rules every session must know go here.
   not on `main`, say so in the same message (name the build). Keep working
   on the branch while waiting.
 - Chromium: `/opt/pw-browsers/` (Playwright is configured). Firebase CDN is
-  blocked in the sandbox.
+  blocked in the sandbox. Never run `playwright install`: it deletes the
+  chromium-1194 the tools launch (384; it is now a link to 1243's chrome).
 
 ## Shipping a change
 
