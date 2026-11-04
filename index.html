@@ -108095,7 +108095,7 @@ function showToast(msg, tone){
    NOT compared against anything in this file, only against what each
    device has already acknowledged, so bumping it alone is correct, and is
    what re-prompts a whole class after an icon or name change. */
-const APP_BUILD = "2026-11-03-383";
+const APP_BUILD = "2026-11-04-384";
 /* build 380: loops are window-sized layers (html.loops-paint, see the CSS) unless this build has already been seen not to be smooth with
    them on this device (loopsWatch) */
 const LOOP_MODE_KEY = "class26e.loopmode";
@@ -134419,6 +134419,32 @@ let refreshPresenceViews = function(){};
    to the screen it was opened over rather than always to Profile. Set by
    openFriendsFromChat; the screen's own repaints keep it. */
 let friendsBack = null;
+/* (384) a run on screen that Friends would leave behind: a question up (not its results, a review list, flash cards, a team match
+   that cannot be held, or a room still waiting), not already paused */
+function friendsOverRun(){
+  try{
+    return !!testInProgress && order.length > 0 && !paused && !resultsScreenUp() && !fc && !answerReviewUp()
+      && !vroomTeamMatchUp() && !vroomAwaitingOthers && !!stage.querySelector(".qpanel");
+  }catch(e){ return false; }
+}
+/* Pause's hold without its screen (pauseRun): the clock and the question timer stop, the time away is taken off them on resume
+   (cancelPauseTiming, inside resumeRun), and the session is saved, so a phone that closes the app on Friends finds the test
+   waiting under Continue your test */
+function holdRunForFriends(){
+  paused = true;
+  pauseStartedAt = Date.now();
+  stopTimer();
+  stopQuestionTimer();
+  pauseBtn.hidden = true;
+  timerlineEl.classList.add("is-paused");
+  hintEl.hidden = true;
+  saveRunSession();
+  /* the test's own strip (its progress dots and its clock) lives outside the stage: put away while Friends is up, back with the
+     test (the clock through resumeRun's startTimer, the dots here) */
+  const held = { meter: meterEl.hidden, clock: timerlineEl.hidden };
+  meterEl.hidden = true; timerlineEl.hidden = true;
+  return held;
+}
 function openFriendsFromChat(){
   const s = stage.firstElementChild;
   let back = null;
@@ -134433,11 +134459,50 @@ function openFriendsFromChat(){
      back it all goes away". Opened from the chat, Friends goes back to
      the chat: the screen that was under it, with the chat open again on
      its Friends tab. The tab bar still lights the tab underneath. */
+  const reopenChat = () => { chatDockTab = "friends"; if(chatRoomCode) closeChatRoom(); openChatDock(); };
   if(back){
     const under = back.go;
-    back = { label: "Chat", nav: back.nav, go: () => { under(); chatDockTab = "friends"; if(chatRoomCode) closeChatRoom(); openChatDock(); } };
+    back = { label: "Chat", nav: back.nav, go: () => { under(); reopenChat(); } };
+  } else if(friendsOverRun()){
+    /* (384) Madison: "if I am in a test and I hit like manage friends or something, when I leave that, it goes back to the main
+       menu instead". Over a test it went Home - the test left behind. Now the test is HELD exactly as Pause holds it (the clocks
+       stopped and shifted by the time away, the session saved), Friends has no tab bar (as the test has none - Back is the way
+       out), and Back is the test again: resumed on the question you were on, the chat open over it as you left it. */
+    const held = holdRunForFriends();
+    back = { label: "Chat", nav: null, hold: true, go: () => {
+      meterEl.hidden = held.meter; timerlineEl.hidden = held.clock;
+      if(paused && testInProgress) resumeRun();
+      reopenChat(); } };
+  } else if(answerReviewUp()){
+    /* (384) Review's list: its run is let go when the list leaves the stage (a tab, a banner), so Back brings the run back with the
+       very list - its search, its opened codes, where you were - as Pause's Resume does */
+    const run = answerReviewRun, list = stage.querySelector(".screen-answerreview"), y = window.scrollY || document.documentElement.scrollTop || 0;
+    const mode = testModeLabelEl.textContent, count = testQCounterEl.textContent;
+    back = { label: "Chat", nav: null, hold: true, go: () => {
+      answerReviewRun = run; stage.replaceChildren(list); pauseBtn.hidden = false; testModeLabelEl.textContent = mode; testQCounterEl.textContent = count;
+      requestAnimationFrame(() => window.scrollTo(0, y)); reopenChat(); } };
+  } else if(typeof fc !== "undefined" && fc){
+    /* (384) flash cards: the deck is closed on the way out (setActiveNav), so Back deals the same deck again - its order, the card
+       you were on, its side */
+    const was = { deck: fc.deck.slice(), pos: fc.pos, flipped: !!fc.flipped, units: fc.units.slice(), source: fc.source, versions: fc.versions };
+    back = { label: "Chat", nav: null, hold: true, go: () => {
+      showFlashcards(was.units, was.source, was.versions);
+      if(fc){
+        fc.deck = was.deck; fc.pos = Math.min(was.pos, was.deck.length - 1);
+        meterEl.replaceChildren(...was.deck.map(() => { const t = document.createElement("span"); t.className = "tick"; return t; }));
+        renderFlashcard(fc.pos);
+        if(was.flipped){ const c = stage.querySelector(".fc-card"); if(c && !c.classList.contains("is-flipped")) c.click(); }
+      }
+      reopenChat(); } };
+  } else if(s){
+    /* (384) any other screen it was opened over - the units you were ticking, a results screen, Settings - comes back as it was,
+       the same screen at the same scroll, not Home */
+    const nodes = Array.from(stage.children), y = window.scrollY || document.documentElement.scrollTop || 0;
+    const nav = document.querySelector(".bottomtabs .iconbtn.active, .bottomtabs [aria-current='page']");
+    back = { label: "Chat", nav: (nav && nav.dataset && nav.dataset.nav) || null, go: () => {
+      stage.replaceChildren(...nodes); requestAnimationFrame(() => window.scrollTo(0, y)); reopenChat(); } };
   } else {
-    back = { label: "Chat", nav: "home", go: () => { showHome(); chatDockTab = "friends"; if(chatRoomCode) closeChatRoom(); openChatDock(); } };
+    back = { label: "Chat", nav: "home", go: () => { showHome(); reopenChat(); } };
   }
   closeChatDock();
   friendsBack = back;
@@ -134474,6 +134539,9 @@ function showFriends(){
   window.forceHideBottomTabs = false;
   /* the tab it was opened over stays lit (round 2) */
   setActiveNav(friendsBack ? friendsBack.nav : "profile");
+  /* (384) over a held test (or Review's list, or flash cards) there is no tab bar, as there is none there: Back is the way out,
+     and it is where you were. After setActiveNav, which clears it. */
+  if(friendsBack && friendsBack.hold) window.forceHideBottomTabs = true;
   countEl.textContent = "Friends";
   updateHeaderTitle();
   if(!leaderboardRows || !leaderboardRows.length) attachFriendsBoardListener();

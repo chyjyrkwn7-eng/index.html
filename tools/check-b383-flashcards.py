@@ -72,6 +72,10 @@ with sync_playwright() as pw:
             % (kind, s2["faceH"], s2["cardH"], s2["cardBottom"], s2["navTop"]),
             s2["faceH"] <= s2["cardH"] + 2 and s2["navTop"] is not None and s2["navTop"] >= s2["cardBottom"] - 1, s2)
         if kind == "book":
+            # the lock card and its button are drawn once the app has looked for a book (ifcEnsureBook) - under load that is later
+            # than the wait above: tap the button once it is there
+            try: pg.wait_for_selector(".fc-card .fc-back .ifc-code button", state="visible", timeout=15000)
+            except Exception: pass
             hit = tap(pg, ".fc-card .fc-back .ifc-code button"); pg.wait_for_timeout(900)
             s3 = pg.evaluate(STATE); picked = pg.evaluate("()=>window.__picked || 0")
             chk("(3) book: the code box's own button does its thing (%s) and the card stays on its answer" % picked, hit and picked >= 1 and s3["flipped"] is True, s3)

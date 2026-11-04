@@ -31650,3 +31650,29 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   the app's first line - the splash, Welcome to NOVA (scrolled section by section), every step, Nova (name, partner, the
   save-your-code card), the tips, Home - on the video's clock, with the app's own sound. --device phone (an iPhone Safari tab,
   440x838) | laptop (1440x820).
+
+## Build 384 - Friends from the chat goes back to where you were (a test above all)
+Madison (383 live): "Chat button while in a test takes you back to main menu. What I mean is, if I am in a test and I hit like
+manage friends or something, when I leave that, it goes back to the main menu instead? Fix that."
+- CAUSE: openFriendsFromChat (327z12/z15) knew four screens to go back to (Home, Calendar, Leaderboard, Profile); from anything
+  else its Back was Home with the chat open - a test left behind (the stage replaced, the clock running on, then Home).
+- A TEST (friendsOverRun: a question up, not results / Review's list / flash cards / a team match / a room still waiting, not
+  paused) is HELD as Pause holds it (holdRunForFriends: paused, pauseStartedAt, both clocks stopped, the session saved - a phone
+  that closes the app on Friends finds it under Continue your test) and its strip (the progress dots, the clock - outside the
+  stage) put away. Friends over it has NO TAB BAR (friendsBack.hold -> forceHideBottomTabs, set after setActiveNav, which clears
+  it) - the test has none, Back is the way out. Back: the strip back, resumeRun() (the time away taken off the clock by
+  cancelPauseTiming, the question redrawn - the same question, its answers in the same order), the chat open on Friends.
+- REVIEW'S LIST: its run is let go when the list leaves the stage (383's observer), so Back puts back the run, the same list node
+  (its search, its opened codes), its header labels, its scroll, Pause.
+- FLASH CARDS: setActiveNav closes the deck (fcLeave), so Back deals the same deck again - its order, the card, its side.
+- ANY OTHER SCREEN (the units being ticked, a results screen, Settings, Customize): Back puts back the same stage nodes at the same
+  scroll, the tab that was lit kept. Home, Calendar, Leaderboard and Profile are rebuilt as before (fresh presence/data).
+- Gate tools/check-b384-chatback.py (iPhone, real chat Friends tab, Manage friends, Friends' Back): (1) a Mock with a 10-minute
+  countdown: held on Friends (paused, clock still over 3s), no tab bar, no test strip; Back: the same question, answers in the same
+  order, resumed (Pause, dots, the clock moving), the time on Friends not counted (within 3s - the chat open before and the moment
+  after Back), the chat on Friends; (2) Review's list scrolled to 900: same list, same scroll, run alive, its Pause pauses it;
+  (3) flash cards, third card, answer side: same card, same side; (4) the units with two ticked: the same two; (5) Home: Home + the
+  chat (unchanged); (6) no page errors. On 383 (origin/main): 8 fail - Back is Home, the test gone, the clock ran on Friends.
+- check-b383-flashcards (3) waits for the lock card's button (drawn after ifcEnsureBook looks for a book - later under load) before
+  tapping it; it failed twice under load with nothing to tap.
+- APP_BUILD / version.json = 2026-11-04-384.
