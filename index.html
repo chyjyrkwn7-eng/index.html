@@ -32755,6 +32755,52 @@
   @media (prefers-reduced-motion:reduce){ .settings-wordmark-text{ animation:none; } }
   .settings-adv-card .startbar:first-child{ margin-top:.2rem; }
 
+  /* ---- SETTINGS, DELTA'S PROPORTIONS; THE THEME'S COLOUR AT THE FOOT (build 384) ----
+     Madison, with Delta's Settings beside ours: "Our sections for the tabs a little smaller than the delta inspection, so our icons
+     are smaller too, our icons don't look as nice/hd/crispy either. It's also missing the lines in between each one like delta has
+     it. Even our words are smaller." Measured off his two screenshots at the same scale: Delta's rows ~14% taller, its tiles ~8%
+     bigger, its words larger. So: rows 60px, tiles 32px (8px corners) with a 21px glyph on one firm 2.15 line (some parts were
+     2.1 and the rest the svg's 1.6 - one weight, heavier, reads crisper on a 3x screen), labels 18px, values and second lines a
+     step up; and the hairlines are BACK - they were there all
+     along in the colour of --surface-border, which the clean look set to transparent beyond Home: now white at 10%, inset to the
+     text as iOS insets them. */
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row{ min-height:60px; padding:10px 18px; gap:15px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon, .settings-row-icon.is-accent, .settings-row-icon.is-muted){
+    flex:0 0 32px; width:32px; height:32px; border-radius:8px;
+  }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon svg{ width:21px; height:21px; shape-rendering:geometricPrecision; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:2.15; }
+  /* (out-ranking the 383 iOS-body rule - html[data-layout] body #stage :is(...) .settings-row-label, 17px) */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label{ font-size:18px; line-height:1.25; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-value{ font-size:17px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-sub{ font-size:14px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-linkrow,
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-plainrow .settings-row-label{ font-size:18px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev,
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev svg{ width:17px; height:17px; }
+  html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row::before{
+    left:calc(18px + 32px + 15px); right:0; background:rgba(255,255,255,.1);
+  }
+  html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > :is(.settings-plainrow, .settings-linkrow, .settings-textrow) + .settings-row::before,
+  html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row:not(:has(.settings-row-icon)) + .settings-row:not(:has(.settings-row-icon))::before{ left:18px; }
+  html[data-theme="light"][data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row::before{ background:rgba(0,0,0,.1); }
+  /* THE THEME'S OWN COLOUR. "You see how ours has the gold text and the word nova in the default color? That needs to match your
+     theme too.. would be a nice touch. The word nova 'Davis' is like white and bold. Make that entire 'made by Davis' cohesive."
+     The gold was --theme-c1 - the planet's pale highlight, near-gold in EVERY theme (#FFD37A, #FFE3A3, #FFE66B ...) - so it never
+     read as yours. --theme-sig is the theme's signature: a rank theme's own --rank-accent (Amethyst's violet, Supernova's red ...),
+     and for Default its coral-rose (its orange and rose, mixed). The Support links take it; the wordmark runs from a pale tint of
+     it through it and into the theme's deep colour; "MADE BY" and "DAVIS" are one line in it - the same small tracked capitals, the
+     name in the full colour and heavier, "made by" softer. */
+  html{ --theme-sig:var(--rank-accent, color-mix(in srgb, var(--theme-c2) 50%, var(--theme-c3))); }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-linkrow{ color:color-mix(in srgb, var(--theme-sig) 82%, #FFFFFF); }
+  html[data-theme="light"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-linkrow{ color:var(--theme-sig); }
+  .settings-wordmark-text{
+    background-image:linear-gradient(100deg, color-mix(in srgb, var(--theme-sig) 40%, #FFFFFF) 0%, var(--theme-sig) 32%,
+      color-mix(in srgb, var(--theme-sig) 55%, var(--theme-c3)) 52%, var(--theme-sig) 72%, color-mix(in srgb, var(--theme-sig) 40%, #FFFFFF) 100%);
+  }
+  .settings-madeby-by{ color:color-mix(in srgb, var(--theme-sig) 55%, rgba(231,237,241,.55)); }
+  .settings-madeby-name{ color:color-mix(in srgb, var(--theme-sig) 85%, #FFFFFF); }
+
   /* ---- THE CASE'S CORNERS, ROUND 10 ----
      "some of the edges corners and everything look bad". At 3x the case's
      four outer corners were sharp squares and each corner guard carried a

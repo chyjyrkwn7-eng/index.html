@@ -31775,3 +31775,24 @@ manage friends or something, when I leave that, it goes back to the main menu in
   button wears it; (6) ready is lit and still (384's daily question); check-b327-d surfaces: the chat button is the bar's glass,
   the bar's frost. check-b384-home (8): the chat button and the round back buttons on Settings, Account, Mode select, Customize
   and Profile computed identical to Home's chat button - 0 differ; on 383, 8 differ. All pass.
+
+### Build 384 - Settings in Delta's proportions; the theme's colour at the foot
+
+Madison, with Delta's Settings beside ours: our rows, icons and words were smaller, the icons less crisp, there were no lines
+between rows, and the Support links / NOVA wordmark / "MADE BY DAVIS" were gold-and-white whatever the theme.
+
+- One block after `.settings-adv-card .startbar:first-child` (Settings and its sub-pages, modern layout):
+  rows `min-height:60px; padding:10px 18px; gap:15px` (were ~52px), tiles 32px (were 30) at radius 8px, glyphs 21px with
+  `shape-rendering:geometricPrecision` and one stroke weight 2.15 on the svg and its stroked parts; labels 18px, values 17px,
+  subs 14px, chevrons 17px. The label/value rules carry `html[data-layout] body #stage ... .settings-card` because a later
+  `html[data-layout] body #stage` rule set 1.0625rem and won.
+- Hairlines: the clean look sets `--surface-border` to transparent beyond Home, which is why the existing `::before`
+  separators had vanished. They now paint their own colour: `rgba(255,255,255,.1)` dark / `rgba(0,0,0,.1)` light, starting at
+  the label (`18px + 32px + 15px`) for icon rows and at 18px for plain/link/text rows, running to the card's right edge.
+- `html{ --theme-sig: var(--rank-accent, color-mix(in srgb, var(--theme-c2) 50%, var(--theme-c3))) }` - the theme's signature.
+  The Support links (`.settings-linkrow`), the NOVA wordmark gradient, "MADE BY" and "DAVIS" are all mixed from it, so the whole
+  foot is one hue per theme (coral-rose in Default, violet in Amethyst, ...). Light mode uses the signature straight.
+- Gate: `tools/check-b384-settings.py` (rows/tiles/glyphs/labels, a visible hairline from label to edge, the foot violet in
+  Amethyst and not gold in Default, MADE BY and DAVIS one hue). Fails 3 on 383. check-b382-settings, check-b382-credits,
+  check-b383-look, sweep --quick all green.
+- Note: in light mode Settings' cards render dark on a light page on 383 as well - not changed here.
