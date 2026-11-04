@@ -32722,3 +32722,13 @@ should be for all the versions!"
   rules list a room's fields, that field must be allowed), the compat SDK's listeners and dotted updates through
   scopedFirestore's Proxy for a whole match, the start instant and the 45-second clocks across two real phones, and how long
   ifc/bank.js takes to load on a classmate's phone before the lobby opens (a toast says so if it fails).
+
+### Build 384 - the picked unit's dot in the theme's colour (NOT on main, waiting for Madison)
+
+Madison: "The green dot signifying you selected a unit is super cool. I wanna give something a shot though, what if the color
+of that was matched to your theme? ... If I don't like it we'll just change back to this green color we got going on for it."
+- --pick-dot (the dot, its landing ring, the picked card's wash) = var(--theme-c2, #34C759): each theme's vivid colour (the
+  default's orange #F5804D, Bronze, Silver, Gold, Teal, Blue, Purple, Red). The dot's light and shade are mixed from it
+  (color-mix with white 22% / 72% and black 62%) instead of fixed greens. TO GO BACK: --pick-dot:#34C759 on that one line.
+- check-b383-look (5) now reads --theme-c2 off the page and wants the dot's gradient to carry it, then flips data-accent to
+  another theme and wants the dot to follow. Both fail on 91a1d96 (green); all pass here.

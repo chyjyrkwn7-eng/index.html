@@ -35762,11 +35762,17 @@ html.is-browser{ --fade-paper: transparent; }
      a soft glow round it - that grows out from its own centre (scale 0 -> 1 on a spring) and sends one ring out as it lands;
      the card takes a thin green edge and a breath of green. Unpicked: nothing in the corner, as before. The checkbox, the
      .pick-checked mirror and every path that ticks a card are unchanged - this is only how "picked" is drawn. */
-  html[data-layout][data-theme] .picks > label.pick{ --pick-dot:#34C759; }
+  /* (384) THE DOT IN YOUR THEME'S COLOUR. Madison: "The green dot signifying you selected a unit is super cool. I wanna give
+     something a shot though, what if the color of that was matched to your theme? ... If I don't like it we'll just change back
+     to this green color we got going on for it." The dot, its ring and the picked card's edge and wash are all --pick-dot: now
+     the theme's vivid colour (--theme-c2 - the default's orange, Bronze, Silver, Gold, Teal, Blue, Purple, Red), its light and
+     shade mixed from it rather than fixed greens. TO GO BACK TO GREEN: --pick-dot:#34C759 on this one line. */
+  html[data-layout][data-theme] .picks > label.pick{ --pick-dot:var(--theme-c2, #34C759); }
   html[data-layout][data-theme] .picks > label.pick > .box{
     top:.95rem !important; right:.95rem !important; width:.8rem !important; height:.8rem !important; border-radius:50% !important;
     border:0 !important; overflow:visible !important;
-    background:radial-gradient(circle at 34% 30%, #D9FBE2 0 14%, #5FE07F 42%, var(--pick-dot) 66%, #1E9E45 100%) !important;
+    background:radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--pick-dot) 22%, #FFFFFF) 0 14%, color-mix(in srgb, var(--pick-dot) 72%, #FFFFFF) 42%,
+      var(--pick-dot) 66%, color-mix(in srgb, var(--pick-dot) 62%, #000000) 100%) !important;
     box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 0 8px 1px color-mix(in srgb, var(--pick-dot) 75%, transparent), 0 0 18px 4px color-mix(in srgb, var(--pick-dot) 32%, transparent) !important;
     opacity:0; transform:scale(0) !important;
     transition:transform .42s cubic-bezier(.3,1.65,.45,1), opacity .12s ease !important;

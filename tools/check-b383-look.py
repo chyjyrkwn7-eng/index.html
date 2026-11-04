@@ -153,20 +153,28 @@ with sync_playwright() as pw:
     tone = pg.evaluate("()=>[...document.querySelectorAll('#stage .rs-grade-tone')].map(t=>getComputedStyle(t).display)")
     rbad = [c for c in rc if c["alpha"] < .99 or c["grads"] or c["rim"] or c["shadow"]]
     ck("(2) the results' cards are the solid card, the grade's coloured frame gone (%d cards, tone %s)" % (len(rc), tone), rc and not rbad and all(t == "none" for t in tone), rbad[:3] or tone)
-    # (5) the green dot
+    # (5) the picked dot - (384) in the theme's colour: "what if the color of that was matched to your theme?" (it was iOS green, 383)
     settle(pg, "showHome(); cfg.mode='drill'; cfg.units=[]; showSetup();", 1500)
     pg.evaluate("()=>{ const c=document.querySelectorAll('.picks > label.pick')[1]; c.querySelector('input').click(); }"); pg.wait_for_timeout(900)
-    dot = pg.evaluate("""()=>{ const cs=[...document.querySelectorAll('.picks > label.pick')]; const on=cs[1], off=cs[0];
+    DOT = """()=>{ const cs=[...document.querySelectorAll('.picks > label.pick')]; const on=cs[1], off=cs[0];
       const b=on.querySelector(':scope > .box'), s=getComputedStyle(b), o=getComputedStyle(off.querySelector(':scope > .box'));
       const t=b.querySelector('.pick-tick'); const m=new DOMMatrixReadOnly(s.transform);
-      const green = (s.backgroundImage.match(/rgb\\((\\d+), (\\d+), (\\d+)\\)/g) || []).some(c => { const n=c.match(/\\d+/g).map(Number); return n[1] > n[0] + 60 && n[1] > n[2] + 40; });
+      const probe=document.createElement('span'); probe.style.color='var(--theme-c2)'; on.appendChild(probe); const theme=getComputedStyle(probe).color; probe.remove();
+      const num=c=>{ const n=(c.match(/[\d.]+/g)||[]).map(Number); return /^color\(/.test(c) ? n.slice(0,3).map(x=>x*255) : n.slice(0,3); };
+      const stops=(s.backgroundImage.match(/(rgba?\([^)]*\)|color\(srgb[^)]*\))/g)||[]).map(num), th=num(theme);
+      const near=stops.some(c=>c.length===3 && c.every((v,i)=>Math.abs(v-th[i])<=6));
       const co=getComputedStyle(on), cf=getComputedStyle(off);
-      return { picked: on.classList.contains('pick-checked'), op: +s.opacity, scale: Math.round(Math.hypot(m.a, m.b) * 100) / 100, green,
+      return { picked: on.classList.contains('pick-checked'), op: +s.opacity, scale: Math.round(Math.hypot(m.a, m.b) * 100) / 100, theme, near,
                tickShown: !!t && getComputedStyle(t).display !== 'none', offOp: +o.opacity, w: Math.round(b.getBoundingClientRect().width),
-               onBg: co.backgroundColor, offBg: cf.backgroundColor, onRim: co.borderTopColor, onShadow: co.boxShadow }; }""")
-    ck("(5) a picked unit: a step lighter, the green dot at full, no tick, no green edge (%s)" % dot,
-       dot["picked"] and dot["op"] > .95 and abs(dot["scale"] - 1) < .02 and dot["green"] and not dot["tickShown"] and dot["w"] <= 16
+               onBg: co.backgroundColor, offBg: cf.backgroundColor, onRim: co.borderTopColor, onShadow: co.boxShadow }; }"""
+    dot = pg.evaluate(DOT)
+    ck("(5) a picked unit: a step lighter, the dot at full in the theme's colour (%s), no tick, no edge (%s)" % (dot["theme"], dot),
+       dot["picked"] and dot["op"] > .95 and abs(dot["scale"] - 1) < .02 and dot["near"] and not dot["tickShown"] and dot["w"] <= 16
        and dot["onBg"] != dot["offBg"] and dot["onShadow"] == "none" and (re.search(r",\s*0\)$", dot["onRim"]) or "/ 0)" in dot["onRim"] or dot["onRim"] == "rgba(0, 0, 0, 0)"), dot)
+    th0 = dot["theme"]
+    pg.evaluate("()=>{ document.documentElement.setAttribute('data-accent', document.documentElement.getAttribute('data-accent') === 'vanguard' ? 'veteran' : 'vanguard'); }"); pg.wait_for_timeout(300)
+    dot2 = pg.evaluate(DOT)
+    ck("(5) ...and another theme's dot is that theme's colour (%s -> %s)" % (th0, dot2["theme"]), dot2["near"] and dot2["theme"] != th0, dot2)
     ck("(5) an unpicked card: nothing in the corner", dot["offOp"] < .05, dot)
     # (7) the flash cards keep theirs
     settle(pg, "showFlashcards([topicsIn(QUESTIONS)[6]], 'all');", 1500)
