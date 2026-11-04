@@ -83890,6 +83890,17 @@ function a2hsDeviceGuess(){
 function a2hsState(){ try{ return localStorage.getItem(A2HS_KEY) || ""; }catch(e){ return ""; } }
 function a2hsShownBefore(){ return /^\d+$/.test(a2hsState()); }
 function a2hsHolds(){ return a2hsPending || !!document.getElementById("a2hs-sheet"); }
+/* AN ACCOUNT THAT WAS HERE BEFORE THIS (build 384, Madison: "Existing accounts, they can get the pop up too on how to add
+   to Home Screen. But for existing accounts have it say like quick tip or something."): once, the same sheet headed
+   "Quick tip", on a phone or tablet in a browser tab (a computer has no Home Screen to speak of; Settings still has it).
+   Existing = finished sign-up and has answered something: a sign-up under way has answered nothing, and its own
+   showing is "owed" at the end of its tips, so the two never meet. A computer is left out; the key is the same one, so
+   whichever shows first is the only one. */
+function a2hsTipEligible(){
+  if(isStandaloneApp() || a2hsState() !== "" || !store || !store.onboardingComplete || !syncCode) return false;
+  if(!((store.lifetime && store.lifetime.answered) > 0)) return false;
+  return a2hsDeviceGuess() !== "computer";
+}
 function noteHomeScreenSheetOwed(){
   if(isStandaloneApp() || a2hsShownBefore()) return;
   try{ localStorage.setItem(A2HS_KEY, "owed"); }catch(e){}
@@ -83901,7 +83912,8 @@ function a2hsBusy(){
   try{ if(typeof weekRecapOn !== "undefined" && weekRecapOn) return true; }catch(e){}
   try{ return weekRecapBlocked(); }catch(e){ return true; }
 }
-function scheduleHomeScreenSheet(firstDelay){
+function scheduleHomeScreenSheet(firstDelay, kind){
+  const tip = kind === "tip";
   if(a2hsPending || document.getElementById("a2hs-sheet")) return;
   if(isStandaloneApp()){ try{ if(a2hsState() === "owed") localStorage.removeItem(A2HS_KEY); }catch(e){} return; }
   if(a2hsShownBefore()) return;
@@ -83909,7 +83921,7 @@ function scheduleHomeScreenSheet(firstDelay){
   let tries = 0, calm = 0;
   const attempt = () => {
     a2hsTimer = 0;
-    if(a2hsShownBefore() || isStandaloneApp() || !store || !store.onboardingComplete){ a2hsPending = false; return; }
+    if(a2hsShownBefore() || isStandaloneApp() || !store || !store.onboardingComplete || (tip && !a2hsTipEligible())){ a2hsPending = false; return; }
     if(a2hsBusy()){
       calm = 0;
       /* given up after ~5 minutes away from Home; still owed, so the next Home asks again */
@@ -83917,24 +83929,25 @@ function scheduleHomeScreenSheet(firstDelay){
       a2hsTimer = setTimeout(attempt, 700); return;
     }
     /* a beat after whatever it waited for, never straight on its heels */
-    if(++calm < 2){ a2hsTimer = setTimeout(attempt, 700); return; }
+    /* a tip waits for a longer quiet: it is the least of what a launch has to say */
+    if(++calm < (tip ? 4 : 2)){ a2hsTimer = setTimeout(attempt, 700); return; }
     a2hsPending = false;
-    showHomeScreenSheet({ from: "signup" });
+    showHomeScreenSheet({ from: tip ? "tip" : "signup" });
   };
   a2hsTimer = setTimeout(attempt, firstDelay == null ? 1800 : firstDelay);
 }
 function showHomeScreenSheet(opts){
   opts = opts || {};
-  const signup = opts.from === "signup";
+  const signup = opts.from === "signup", tip = opts.from === "tip";
   const old = document.getElementById("a2hs-sheet");
   if(old) old.remove();
-  if(signup){ try{ localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){} }
+  if(signup || tip){ try{ localStorage.setItem(A2HS_KEY, String(Date.now())); }catch(e){} }
   const mk = (tag, cls, text) => { const n = document.createElement(tag); if(cls) n.className = cls; if(text != null) n.textContent = text; return n; };
   const ua = navigator.userAgent || "";
   const standalone = isStandaloneApp();
   const overlay = mk("div", "invite-overlay a2hs-overlay");
   overlay.id = "a2hs-sheet";
-  overlay.dataset.from = signup ? "signup" : "settings";
+  overlay.dataset.from = signup ? "signup" : tip ? "tip" : "settings";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", "a2hs-title");
@@ -83942,8 +83955,9 @@ function showHomeScreenSheet(opts){
   const body = mk("div", "a2hs-body");
   const title = mk("h2", "a2hs-title", "Add Nova to your Home Screen");
   title.id = "a2hs-title";
-  body.append(mk("p", "a2hs-tag", "Home Screen"), title,
-    mk("p", "a2hs-intro", "Nova is designed as an app for your phone. Added to your Home Screen, it opens full screen like any other app. It also works as a website on a computer."));
+  body.append(mk("p", "a2hs-tag", tip ? "Quick tip" : "Home Screen"), title,
+    mk("p", "a2hs-intro", tip ? "Nova is designed as an app for your phone, and right now it is open in a browser tab. Added to your Home Screen, it opens full screen like any other app."
+      : "Nova is designed as an app for your phone. Added to your Home Screen, it opens full screen like any other app. It also works as a website on a computer."));
   if(standalone) body.appendChild(mk("p", "a2hs-already", "Nova is already open from the Home Screen on this device."));
 
   /* the device: one of three */
@@ -84089,7 +84103,7 @@ function showHomeScreenSheet(opts){
 
   body.append(apple, android, computer);
   const foot = mk("div", "a2hs-foot");
-  const done = mk("button", "next ghost a2hs-close", signup ? "Not now" : "Done"); done.type = "button";
+  const done = mk("button", "next ghost a2hs-close", signup || tip ? "Not now" : "Done"); done.type = "button";
   foot.appendChild(done);
   sheet.append(body, foot);
   overlay.appendChild(sheet);
@@ -103027,7 +103041,7 @@ function showHome(){
        offers it (showRankings) if it has not been seen; each class keeps its own (its own store, its own seen mark). */
     if(!weekRecapHomeTried){ try{ scheduleWeekRecap(WEEK_RECAP_HOME_MS); weekRecapHomeTried = true; }catch(e){} }
     /* (384) a sign-up's Add to Home Screen that the app closed before it could show */
-    try{ if(a2hsState() === "owed") scheduleHomeScreenSheet(2600); }catch(e){}
+    try{ if(a2hsState() === "owed") scheduleHomeScreenSheet(2600); else if(a2hsTipEligible()) scheduleHomeScreenSheet(6000, "tip"); }catch(e){}
   }
 }
 

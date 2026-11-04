@@ -32881,3 +32881,20 @@ button. A pointer for "open as web app" ensuring it's on."
 - check-b384-a2hs: at each pointer's time the caption is shown, 0-24px under the clip, in view, says the pointer's step of
   the list's count, and its words are the lit step's; on the laptop it is display:none. Against b46b17f the six caption
   checks FAIL.
+
+### Build 384 - Add to Home Screen for existing accounts, as a "Quick tip"
+- Madison: "Existing accounts, they can get the pop up too on how to add to Home Screen. But for existing accounts have it
+  say like quick tip or something."
+- `a2hsTipEligible()`: not the installed app, class26e.a2hs never set (neither "owed" nor a time), onboarding done, a sync
+  code, `store.lifetime.answered > 0` (a sign-up under way has answered nothing, and gets its own showing at the end of its
+  tips), and a phone or tablet (a2hsDeviceGuess not "computer" - a laptop has no Home Screen to speak of; Settings > Share &
+  Install still opens it there). Home's hook: "owed" first, else the tip, `scheduleHomeScreenSheet(6000, "tip")`.
+- The tip waits for a longer quiet (4 calm ticks of 700ms, not 2) behind everything a2hsBusy knows - What's new (#intro-pop),
+  cutscenes, unlock cards, the resume offer, the chat, the weekly recap. Shown, it sets the same key to the time: once only,
+  and whichever of the sign-up's showing or the tip comes first is the only one.
+- The sheet: `from: "tip"` - its tag reads "Quick tip" (the sign-up's reads "Home Screen"), the intro says Nova is open in a
+  browser tab now (no "works as a website on a computer" line on a phone), "Not now" to close. Everything else is the same sheet.
+- check-b384-a2hstip: iPhone and Samsung tabs get it headed Quick tip with their device picked; it waits while an unlock card
+  is up; once only; never installed / computer / nothing answered / shown before; the sign-up's keeps "Home Screen". Against
+  b46b17f, (1), (2) and (4) FAIL. Gate fixtures for an existing account need class26e.intro.seen at INTRO_REV (6) or more -
+  '1' puts What's new up and the tip (rightly) waits behind it.
