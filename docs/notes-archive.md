@@ -33604,3 +33604,47 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   SE / Pro Max / iPad with nothing scrolling; history leads with 10. Against 1dca98e: (1), (4), (5) FAIL ((3) is a guard).
 - Old content gates that assert 9.2's or Version 9's rows (check-b325-d, check-b326-d, check-b327-m's titles) describe the
   card of their own build; they now read Version 10's.
+
+## Fire Code kit 5.4.2 (build 384)
+Madison sent class26e-ifc-update-5.4.2.zip: "Fix these questions ... Ensure this is done properly. This needs to be CHECKED
+PERFECTLY. We can't mess up questions." Its UPDATE-INSTRUCTIONS: (1) 43 rewordings - the county booklet is "the Harris County
+Fire Code Amendments", IFC facts are "the 2021 IFC" (42 questions, 3 explanations: ch1-040's explanation only, ch1-008 and
+one other both); (2) 36 Finder questions (every IFC chapter, adopted appendix B/C/D/H/I and Exhibit B; the Finder 102 -> 138);
+(3) 3 removed - ch12-008, ch12-071 (county 1203.2.21) and ch4-040 (county Table 405.3, Group I-1) - for the Fire Marshal's
+interpretation of Feb 4, 2025. 1,779 -> 1,812 questions, 58 units.
+- VERIFIED BEFORE ANYTHING CHANGED (field by field, the 5.4.1 bank against 5.4.2): exactly 3 ids gone, exactly 36 new, exactly
+  the 43 listed changed and only in `question`/`explanation` (40 question, 2 question+explanation, 1 explanation); no option,
+  answer, citation, highlight or unit (other than the three questionCounts) changed; meta differs only in questionCount. The
+  36 new questions sit at the Finder's end (positions 103-138); the removed ones were Chapter 4 #19 and Chapter 12 #9, #10.
+- THE KIT'S ACCEPTANCE TEST (check-my-copy.mjs, pdf.js 5.4.149 installed in the scratchpad, the owner's IFC PDF from the 5.4
+  kit, the county booklet beside it - both byte-identical to the app's ifc/ files; the viewer identical to ifc/ifc-viewer.js):
+  "same-book check: EXACT", 1,371 of 1,371 sections; County 421 of 421 cut, 406 of 406 deciding words marked; IFC 1,391 of
+  1,391 cut, 0 whole pages, 0 not found; "RESULT: this copy behaves like the reference copy." - exactly the instructions'
+  expected numbers. (5.4.1 for comparison: county 422, IFC 1,357 - the deltas are the 3 removed and 36 added.)
+- IDENTITY - the part that could have cost progress. Fire Code's key is unit | position in unit | hash(wording + choices)
+  (bankKeysOf over ifcQuestionsFrom's src = position). Applied as it comes, the update moves 42 keys (wording) and every
+  question after a removed one in Chapters 4 and 12 (position). So, beside ifcQuestionsFrom: IFC_KEY_TEXT (42 old wordings
+  as keyText, generated from the 5.4.1 bank, never typed), IFC_SRC_GAPS {"4":[19],"12":[9,10]} (the removed questions'
+  positions stay taken), IFC_RETIRED_KEYS (their three keys). Measured in the app before and after: all 1,776 kept
+  questions' keys identical (0 moved), the 36 new keys unique and clashing with none, every key unique; every question,
+  explanation and keyed answer shown is the 5.4.2 file's word for word; no answer changed.
+- REMOVED QUESTIONS IN SAVED DATA: per-question data is keyed by KEYS (stats, testStats, flagged/unflagged; test history holds
+  units and scores, no question text; a saved test finds its questions by KEYS and is dropped with its notice if one is gone).
+  A star on a removed question comes off once in Fire Code with unflagAll (the tombstone Reset starred questions leaves, so
+  other devices follow). Their answer counts stay where they are: nothing may lower progress, the merges would only bring
+  them back, and every count walks the bank's KEYS so nothing reads them.
+- Wording on the app's own screens: none called the booklet "Harris County Fire Code"; the class card now reads "The 2021
+  IFC with the Harris County Fire Code Amendments. 1,812 questions." and the analysis step "Matching it to the 1,812
+  questions" - both from ifcQuestionCountText() (the loaded bank's meta.questionCount; 1,812 where it is not loaded).
+  citation.excerpt/highlight untouched (the booklet's own words).
+- ifc/bank.js regenerated with tools/gen-ifc-bank.py from 5.4.2's ifc_question_bank.json (its asserts pass).
+- In the app with the owner's book (check-b383-ifcbook ALL PASS - Verified; check-b384-ifc542 (6)): the book is accepted
+  against 5.4.2, and all 36 new Finder questions draw their code - 34 from the book (the chapter or appendix title, highlighted,
+  on its page: Chapter 5 p.112, Chapter 65 p.564, Appendix H p.610 ...), 2 from the county booklet (102.7, Exhibit B).
+- check-b384-ifc542: (1) 1,812, unit sizes from the bank; (2) keys against BASE=1982cbf's app and bank (git); (3) wording;
+  (4) removed + the star tombstone; (5) the class card; (6) with PDFJS_DIR and IFC_BOOK, every new Finder question's code.
+  Against 1982cbf + its bank: (1)-(5) FAIL.
+- Also: check-b328-classes reads the count off the bank (was a hard 1,779); its "academy's saved copy byte-for-byte" check
+  fails as it did before (noted at build 384's friends round). check-b382-ifc loads record-cutscenes.py itself (Get Started
+  round 2 made record-landing.py self-contained, which broke it); its "Profile has no Stats tab" fails as before.
+  check-b383-ifcsync, check-b384-ifccurve, check-b384-vrifc ALL PASS.

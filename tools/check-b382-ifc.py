@@ -22,9 +22,11 @@ def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else str(info)[:600])
 
 # ---- the cutscene harness (real index.html from the repo; Fire Code by activeclass + reload, as check-b363-ifc)
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
-rc = g["g"]
+# (384) record-landing.py no longer loads the cutscene harness (Get Started round 2 made it self-contained), so the harness
+# it used to hand over - record-cutscenes.py's, at 1.5x - is loaded here the way it loaded it
+src = open(H + "/record-cutscenes.py").read().split("\nSCENES = [")[0]
+src = src.replace("device_scale_factor=1)", "device_scale_factor=1.5)")
+rc = {"__file__": H + "/record-cutscenes.py", "__name__": "rc"}; exec(src, rc)
 # ---- the layout harness (patched page, fake Firebase), for the four devices
 sfsrc = open(os.path.join(H, "shoot-flow.py")).read().rsplit("\nmain()", 1)[0]
 sf = {"__file__": os.path.join(H, "shoot-flow.py"), "__name__": "sf"}; exec(sfsrc, sf)

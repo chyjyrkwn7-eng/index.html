@@ -52887,6 +52887,74 @@ function ifcUnitTopic(u){
   if(u.kind === "finder") return u.title;
   return u.title.indexOf(u.label) === 0 ? u.title : u.label + ": " + u.title;
 }
+/* ---- THE 5.4.2 BANK (build 384): EVERY QUESTION KEEPS THE IDENTITY IT HAD ----
+   Madison sent class26e-ifc-update-5.4.2 ("Fix these questions ... This needs to be CHECKED PERFECTLY. We can't mess up
+   questions."): 43 questions reworded (the county booklet is the "Harris County Fire Code Amendments"; IFC facts are "the
+   2021 IFC") - 42 questions and 3 explanations; 36 Finder questions added (one for every IFC chapter and adopted appendix,
+   and Exhibit B: the Finder goes 102 -> 138, at its end); 3 removed (ch12-008, ch12-071, ch4-040: the Fire Marshal's
+   interpretation of Feb 4, 2025). Nothing else in the bank changed - no option, answer, reference, citation or highlight.
+   A question's identity here is unit | position in the unit | its wording and choices (bankKeysOf), so without these pins
+   the update would have cost progress: every reworded question (its wording) and every question after a removed one in
+   Chapters 4 and 12 (its position). So:
+   - IFC_KEY_TEXT: a reworded question keeps the wording it was first stored under as keyText (identity only - the
+     question shows the new wording). Generated from the 5.4.1 bank, not typed.
+   - IFC_SRC_GAPS: the positions the removed questions held are skipped, so the questions after them keep theirs.
+   - IFC_RETIRED_KEYS: the removed questions' keys, un-starred once in this class (unflagAll - the same tombstone a Reset
+     starred questions leaves, so other devices follow). Their answer counts are left where they are (nothing may lower
+     progress; the merge would only bring them back) and nothing reads them: every count walks this bank's KEYS.
+   check-b384-ifc542 holds all of it against the 5.4.1 bank's keys. */
+const IFC_KEY_TEXT = {
+  "ch1-008": "When a substantial improvement is made, _____ must be brought into compliance with the new construction requirements of the Harris County Fire Code.",
+  "ch1-303": "Under Harris County's code, a fire code official acting in good faith and without malice is relieved from _____ for damage resulting from official duties.",
+  "ch1-311": "How must maintenance and testing of fire protection systems be reported to the Harris County fire code official?",
+  "ch56-009": "A fireworks retail structure is moved into the county's fire code jurisdiction. For permit purposes, it is treated as what?",
+  "nav-NAVA-001": "What is the title of Chapter 1 of the Harris County Fire Code?",
+  "nav-NAVA-004": "Chapter 4 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-011": "Chapter 11 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-017": "Chapter 24 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-024": "What is the title of Chapter 31 of the Harris County Fire Code?",
+  "nav-NAVA-025": "Chapter 32 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-028": "Chapter 35 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-036": "Chapter 53 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-039": "What is the title of Chapter 56 of the Harris County Fire Code?",
+  "nav-NAVA-040": "Chapter 57 of the Harris County Fire Code is titled _____.",
+  "nav-NAVA-054": "Which chapter of the Harris County Fire Code is titled \"General Requirements\"?",
+  "nav-NAVA-060": "Which chapter of the Harris County Fire Code is titled \"Fire Protection and Life Safety Systems\"?",
+  "nav-NAVA-095": "Which chapter of the Harris County Fire Code is titled \"Liquefied Petroleum Gases\"?",
+  "nav-NAVA-104": "The Harris County Fire Code adopts IFC Appendices _____.",
+  "nav-NAVB-002": "Which section of Chapter 1 of the Harris County Fire Code is titled \"Applicability\"?",
+  "nav-NAVB-004": "The section of Chapter 1 of the Harris County Fire Code titled \"General Authority and Responsibilities\" is Section _____.",
+  "nav-NAVB-005": "Which section of Chapter 1 of the Harris County Fire Code is titled \"Permits\"?",
+  "nav-NAVB-006": "Which section of Chapter 1 of the Harris County Fire Code is titled \"Construction Documents\"?",
+  "nav-NAVB-008": "Which section of Chapter 1 of the Harris County Fire Code is titled \"Inspections\"?",
+  "nav-NAVB-011": "Section _____ of the Harris County Fire Code is titled \"Violations\".",
+  "nav-NAVB-012": "Which section of Chapter 1 of the Harris County Fire Code is titled \"Stop Work Order\"?",
+  "nav-NAVB-016": "What is the title of Section 103 in Chapter 1 of the Harris County Fire Code?",
+  "nav-NAVB-023": "What is the title of Section 111 in Chapter 1 of the Harris County Fire Code?",
+  "nav-NAVB-046": "The section titled \"Premises Identification\" in the Harris County Fire Code is Section _____.",
+  "nav-NAVB-069": "The section titled \"Portable Fire Extinguishers\" in the Harris County Fire Code is Section _____.",
+  "nav-NAVB-080": "The section titled \"Alternative Automatic Fire-Extinguishing Systems\" in the Harris County Fire Code is Section _____.",
+  "nav-NAVB-085": "The section titled \"Occupant Load\" in the Harris County Fire Code is Section _____.",
+  "nav-NAVB-214": "Which chapter of the Harris County Fire Code contains the requirements for fire command centers?",
+  "nav-NAVB-218": "Which chapter of the Harris County Fire Code contains the requirements for fire alarm and detection systems?",
+  "nav-NAVB-223": "Which chapter of the Harris County Fire Code contains the requirements for clothes dryer exhaust systems?",
+  "nav-NAVB-230": "Which chapter of the Harris County Fire Code contains the requirements for restricting smoking?",
+  "nav-NAVB-235": "Which chapter of the Harris County Fire Code contains the requirements for vehicle impact protection, such as guard posts?",
+  "nav-NAVB-244": "Which chapter of the Harris County Fire Code contains the requirements for upholstered furniture and mattresses?",
+  "nav-NAVB-249": "Which chapter of the Harris County Fire Code contains the requirements for electrical energy storage systems?",
+  "nav-NAVB-258": "Which chapter of the Harris County Fire Code contains the requirements for repair garages and motor fuel-dispensing facilities?",
+  "nav-NAVB-284": "Which chapter of the Harris County Fire Code contains the requirements for explosive materials and blasting?",
+  "nav-NAVB-301": "Which chapter of the Harris County Fire Code contains the construction requirements for existing buildings?",
+  "nav-NAVB-319": "Which appendix of the Harris County Fire Code contains the minimum fire-flow requirements for buildings?"
+};
+const IFC_SRC_GAPS = { "4": [19], "12": [9, 10] };
+const IFC_RETIRED_KEYS = ["Chapter 4: Emergency Planning and Preparedness|19|xru9cj", "Chapter 12: Energy Systems|9|nqc6bx", "Chapter 12: Energy Systems|10|1i4004j"];
+/* The bank's own count ("1,812"), read from it where it is loaded; the 5.4.2 count where it is not (the academy's class list) */
+function ifcQuestionCountText(){
+  let n = 0;
+  try{ n = Number(window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount) || 0; }catch(e){}
+  return (n || 1812).toLocaleString("en-US");
+}
 /* (384) a function of the bank, so the academy can build the same list when a Fire Code room is joined (classBankReady) */
 function ifcQuestionsFrom(B){
   if(!B || !Array.isArray(B.questions)) return [];
@@ -52897,10 +52965,15 @@ function ifcQuestionsFrom(B){
   B.questions.slice().sort((a, b) => (order[a.unit] - order[b.unit])).forEach(q => {
     const u = byId[q.unit];
     seen[q.unit] = (seen[q.unit] || 0) + 1;
+    /* (384, 5.4.2) a removed question's position stays taken */
+    const gaps = IFC_SRC_GAPS[q.unit];
+    if(gaps) while(gaps.indexOf(seen[q.unit]) >= 0) seen[q.unit]++;
     const letters = ["A", "B", "C", "D"];
     const it = { topic: ifcUnitTopic(u), src: seen[q.unit], q: q.question,
                choices: letters.map(k => q.options[k]), answer: letters.indexOf(q.answer),
                explanation: q.explanation, ifc: q };
+    /* (384, 5.4.2) a reworded question keeps its identity */
+    if(Object.prototype.hasOwnProperty.call(IFC_KEY_TEXT, q.id)) it.keyText = IFC_KEY_TEXT[q.id];
     /* THE REFERENCE UNDER THE QUESTION, as the Penal Code has it (build 333): "none of them have
        their reference showing under the question". Not where the label would give the answer
        away - the chapter finder (the label IS the chapter) and a question whose answer is in the
@@ -54335,7 +54408,8 @@ const NOVA_CLASS_INFO = {
   academy: { title: "Police Academy", kicker: "Class 26E",
     desc: "Every unit, the class calendar and the leaderboard." },
   ifc: { title: "Fire Code", kicker: "IFC 2021 + HC",
-    desc: "The 2021 IFC with the Harris County amendments. 1,779 questions.",
+    /* (384, 5.4.2) the county booklet by its name, and the count from the bank where it is loaded (1,812 in 5.4.2) */
+    desc: "The 2021 IFC with the Harris County Fire Code Amendments. " + ifcQuestionCountText() + " questions.",
     needs: "Needs your own IFC PDF" }
 };
 /* "Don't put them beneath each other ... unless it's a bigger screen device. Also ensure each box is
@@ -54462,7 +54536,7 @@ function runIfcAnalysis(file, opts){
   const STEPS = [
     { key: "open",   text: "Opening the document" },
     { key: "index",  text: "Reading every page and finding each section" },
-    { key: "verify", text: "Matching it to the 1,779 questions" },
+    { key: "verify", text: "Matching it to the " + ifcQuestionCountText() + " questions" },
     { key: "labels", text: "Checking page labels, words and numbers" },
     { key: "save",   text: "Keeping it on this device" }
   ];
@@ -150101,6 +150175,14 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k)) seed[k] = a[k]; });
     seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
     if(applyLoadedData(seed)){ storageHadData = true; persistLocally(); }
+  }catch(e){}
+}
+/* (384, the 5.4.2 bank) the three removed Fire Code questions come off the starred list - once, with the tombstone a
+   Reset starred questions leaves, so the account's other devices follow (see IFC_RETIRED_KEYS) */
+if(window.NOVA_CLASS === "ifc"){
+  try{
+    const hit = IFC_RETIRED_KEYS.filter(k => store.flagged && store.flagged[k]);
+    if(hit.length){ unflagAll(hit); saveStore(); }
   }catch(e){}
 }
 /* FRIENDS IN EVERY CLASS (build 384 - see socialDb()): the other class's friends block, from its copy on this device, when
