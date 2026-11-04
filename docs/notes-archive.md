@@ -33648,3 +33648,9 @@ interpretation of Feb 4, 2025. 1,779 -> 1,812 questions, 58 units.
   fails as it did before (noted at build 384's friends round). check-b382-ifc loads record-cutscenes.py itself (Get Started
   round 2 made record-landing.py self-contained, which broke it); its "Profile has no Stats tab" fails as before.
   check-b383-ifcsync, check-b384-ifccurve, check-b384-vrifc ALL PASS.
+
+### Build 384 - What's New, Version 10: Fire Code's second row
+- Madison: "what's up with the hundo effects redrawn? That's not really a new thing, that just came along with the new class.
+  The new class one for ifc can have a second." The card's "Hundo effects, redrawn" row is gone (and "Hundo Effects, Redrawn"
+  from Version 10's history); Fire Code has a second row, "Fire Code, made its own": "A badge for every chapter, and its own
+  characters, flares and hundo effects." Six rows; check-b384-whatsnew10 passes (fits on the SE, Pro Max, iPad).
