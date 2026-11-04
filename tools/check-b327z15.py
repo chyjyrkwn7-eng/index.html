@@ -550,11 +550,14 @@ def section_t(br):
     check("%s: T. the hundo count is This Week's colour (%s / %s)" % (label, r["hc"], r["wc"]), r["hc"] and r["hc"] == r["wc"], r)
     import re as _re
     m = _re.findall(r"[\d.]+", r["bg"] or "")
-    lum = sum(float(x) for x in m[:3]) / 3 if len(m) >= 3 else 255
+    # (383) a color(srgb r g b) value is 0-1 a channel (the clean look's color-mix() computes to one): on 0-255 like rgb()
+    sc = 255 if (r["bg"] or "").startswith("color(") else 1
+    lum = sum(float(x) * sc for x in m[:3]) / 3 if len(m) >= 3 else 255
     alpha = float(m[3]) if len(m) >= 4 else 1
     # MOVED IN round 31: "The black 'find me' button is not the move, revert
     # that" - it is the search field's glass again, not a solid black
-    check("%s: T. Find me is the field's glass again, not solid black (%s)" % (label, r["bg"]), not (lum < 30 and alpha > .9), r)
+    # (383, the clean look: it is the search field's solid card colour beside it - still not black)
+    check("%s: T. Find me is the field's own look again, not solid black (%s)" % (label, r["bg"]), not (lum < 30 and alpha > .9) and (r["bg"] == r["sbg"] or alpha < .9), r)
     ctx.close()
 
 
@@ -895,11 +898,13 @@ def section_ee(br):
     r = pg.evaluate("""async () => { showProfile('profile'); await new Promise(r => setTimeout(r, 900));
       const tab = document.querySelector('#stage .profile-identity-tab');
       const cards = [tab.querySelector(':scope > .profile-hero'), tab.querySelector(':scope > .pf-goal'), tab.querySelector(':scope > .pf-case .pf-ccase')];
-      const look = cards.map(e => e ? { rim: getComputedStyle(e).borderTopColor, img: getComputedStyle(e).backgroundImage.indexOf('rgb(20, 23, 28)') >= 0 } : null);
+      /* (383) the person card's surface was the #14171C slab (rgb(20, 23, 28) in its image); 383 made the three one card - since
+         round 2 the clean look's solid --clean-card - so "on the person card's surface" is now: one fill, one rim, for all three */
+      const look = cards.map(e => e ? { rim: getComputedStyle(e).borderTopColor, bg: getComputedStyle(e).backgroundColor, img: getComputedStyle(e).backgroundImage.indexOf('rgb(20, 23, 28)') >= 0 } : null);
       const nm = document.querySelector('#stage .pf-standing .pf-rankname'), lv = document.querySelector('#stage .pf-standing .pf-level');
       const stacked = !nm || (nm.getBoundingClientRect().bottom <= lv.getBoundingClientRect().top + 2 && getComputedStyle(nm).textTransform === 'uppercase');
       return { tiles: document.querySelectorAll('#stage .profile-hero .person-card-cell').length, look, stacked }; }""")
-    same = all(r["look"]) and len({x["rim"] for x in r["look"]}) == 1 and all(x["img"] for x in r["look"])
+    same = all(r["look"]) and len({x["rim"] for x in r["look"]}) == 1 and (all(x["img"] for x in r["look"]) or len({x["bg"] for x in r["look"]}) == 1)
     check("EE. Profile: no tiles, the three cards on the person card's surface, the rank a headline over the level", r["tiles"] == 0 and same and r["stacked"], r)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showCalendarTab(); await wait(900);
       const card = document.querySelector('#stage .cal-count-card'); if(!card) return { card: false };
