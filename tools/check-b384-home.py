@@ -15,7 +15,10 @@ iPhone 17 Pro Max (440x956), dark:
 (5) Nova's "Instructor" tag on the chat's Friends tab is on his row's middle (within 1.5px) and at its right edge;
 (6) Manage friends: the code's copy control is an icon button - no word, an svg, 44px+ - and a tap turns it to a tick; the
     friend-code field has an inner edge, and a cursor blinking in it while it is empty and untapped, gone once tapped;
-(7) no page errors.
+(7) no page errors;
+(8) (Madison: "the chat button on home looks amazing, revert the chat button it looks like that everywhere ... the new back button
+    needs to match it as well") the chat button and the round back buttons on Settings, Account, Mode select, Customize and Profile
+    are Home's chat button - the same body, gradient, rim, frost and shadow.
 Run:  python3 tools/check-b384-home.py   (--against OLD/index.html must FAIL)"""
 import os, sys, io, re, math, json
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -118,6 +121,19 @@ with sync_playwright() as pw:
             "inset" in (f1["edge"] or "") and f1["caret"] and not f2["caret"], [f1, f2])
         errs_all += errs
         ctx.close()
+    # (8) the chat button and the round back buttons on every screen are Home's chat button
+    ctx, pg, errs = G["page"](br, G["init"](G["academy"], active="academy"))
+    ST = """(sel)=>{ const e=document.querySelector(sel); if(!e) return null; const c=getComputedStyle(e); return [c.backgroundColor, c.backgroundImage, c.borderTopColor, c.backdropFilter || c.webkitBackdropFilter, c.boxShadow].join(' | '); }"""
+    pg.evaluate("()=>{ %s showHome(); }" % CLEAN); pg.wait_for_timeout(1200)
+    home = pg.evaluate(ST, "#chatdock-btn")
+    diff = []
+    for name, js in (("Settings", "showAppearance()"), ("Account", "showAppearance({ page: 'account' })"), ("Mode select", "showModeSelect()"), ("Customize", "showCustomize()"), ("Profile", "showProfile('profile')")):
+        pg.evaluate("()=>{ %s %s; }" % (CLEAN, js)); pg.wait_for_timeout(1100)
+        for what, sel in (("chat", "#chatdock-btn"), ("back", "#stage .ios-nav > .back-link.ios-nav-back, #stage .settings-nav-back")):
+            v = pg.evaluate(ST, sel)
+            if v is not None and v != home: diff.append((name, what, v[:90]))
+    chk("(8) the chat button and the round back buttons on every screen are Home's chat button (%d differ)" % len(diff), not diff and home and "blur" in home, [home[:90] if home else None] + diff[:4])
+    errs_all += errs; ctx.close()
     chk("(7) no page errors", not errs_all, errs_all[:3])
     br.close()
 print("\nALL PASS" if ok else "\nFAILURES")

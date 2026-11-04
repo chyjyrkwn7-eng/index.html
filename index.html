@@ -36562,14 +36562,24 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .picks > label.pick > .box{
     box-shadow:0 0 6px 1px color-mix(in srgb, var(--pick-dot) 60%, transparent) !important;
   }
-  /* the chat button beyond Home: a solid round button, like the back button - not glass */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #chatdock-btn{
-    background:var(--clean-card-2) !important; background-image:none !important; border-color:rgba(255,255,255,.06) !important;
-    box-shadow:0 4px 14px rgba(0,0,0,.35) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  /* (384) THE CHAT BUTTON IS HOME'S EVERYWHERE, AND THE ROUND BACK BUTTONS MATCH IT. Madison: "The Home Screen, the chat button
+     looks good, it looks how it should look, but the chat button changed on like every other screen.. the chat button on home looks
+     amazing, revert the chat button it looks like that everywhere still. I think the new back button needs to match it as well."
+     383's clean look had made the chat button beyond Home (and the round back button) a flat solid disc. The override is gone, so
+     the chat button is build 380's tab-bar glass on every screen, as on Home; and both round back buttons - a pushed screen's
+     (.ios-nav-back) and Settings' pages' (.settings-nav-back) - wear exactly that glass: the .26 body with its faint white lift, the
+     one .16 rim, blur(7px) saturate(1.5), the soft 32px shadow. Held, they give a little (scale) as before. */
+  html[data-theme="dark"][data-layout="modern"] body #stage .ios-nav > .back-link.ios-nav-back,
+  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back{
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
   }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .ios-nav > .back-link.ios-nav-back{
-    background:var(--clean-card-2) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
-  }
+  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back{ transition:transform .12s ease; }
+  html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back:active{ transform:translateY(-50%) scale(.92); }
+  [data-reduce-motion="true"] body #stage .settings-nav-back:active{ transform:translateY(-50%) !important; }
   /* the Rank tab: its top box and the climb's cards are the solid card; what sits inside them is a step lighter, no rims */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.rankhero, .rankmap-card, .badges-head){
     background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;

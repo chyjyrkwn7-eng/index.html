@@ -31761,3 +31761,17 @@ manage friends or something, when I leave that, it goes back to the main menu in
   (5) Nova's tag on his row's middle (1.5px), at its right edge; (6) the copy control an icon button (no word, svg, 44px+) that
   turns to a tick; the field's inner edge, its cursor blinking until tapped; (7) no page errors. On 383: 8 fail (icons 0.22 /
   0.28 fill, the flame 9.19 asymmetric; dq-comet turning; no time left; blur from 320ms; the tag 8.3px high; "Copy" a word).
+
+### Build 384 - the chat button is Home's everywhere; the round back buttons match it
+- Madison: "The Home Screen, the chat button looks good, it looks how it should look, but the chat button changed on like every
+  other screen.. the chat button on home looks amazing, revert the chat button it looks like that everywhere still. I think the
+  new back button needs to match it as well.."
+- 383's clean look overrode the chat button beyond Home (body:not(.sky-home) #chatdock-btn) and the round back button with a flat
+  --clean-card-2 disc. The chat override is GONE: build 380's tab-bar glass (the .26 body with its faint white lift, the one .16
+  rim, blur(7px) saturate(1.5), 0 8px 32px shadow) is on every screen. Both round back buttons - a pushed screen's .ios-nav-back
+  and Settings' pages' .settings-nav-back (also the units screen's setup-nav-back) - wear exactly that glass in dark modern; held
+  they scale to .92 (Settings' keeps its translateY(-50%)).
+- Gates revised (they asked for the flat look): check-b383-look (3) the chat button beyond Home is Home's glass, the round back
+  button wears it; (6) ready is lit and still (384's daily question); check-b327-d surfaces: the chat button is the bar's glass,
+  the bar's frost. check-b384-home (8): the chat button and the round back buttons on Settings, Account, Mode select, Customize
+  and Profile computed identical to Home's chat button - 0 differ; on 383, 8 differ. All pass.
