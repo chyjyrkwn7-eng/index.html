@@ -32722,3 +32722,104 @@ should be for all the versions!"
   rules list a room's fields, that field must be allowed), the compat SDK's listeners and dotted updates through
   scopedFirestore's Proxy for a whole match, the start instant and the 45-second clocks across two real phones, and how long
   ifc/bank.js takes to load on a classmate's phone before the lobby opens (a toast says so if it fails).
+
+### Build 384 - Add to Home Screen in sign-up (NOT on main, waiting for Madison)
+Madison: "let's ensure that the sign up process gives a thing for the adding app to your iPhone/samsung homescreen as a
+popup. Have it mention that the app has been designed as an app for the phone but is also capable of being used as a website
+on computers and then let it do the walkthrough. For when people select Apple. Have it show them this video I'm gonna
+attach. Similar to how the video is there for the hundo example ... you can see my friends and stuff in the share
+recommendation, blur that out. Blur out anything that shouldn't be there. But show this. Maybe add some pointers like the add
+button. A pointer for "open as web app" ensuring it's on."
+- WHERE: showHomeScreenSheet (beside showInstallGuide). Once, as a NEW account's main-menu tips end (startMainMenuTour's
+  onDone - only a sign-up calls it), on Home, after the +100 XP has flown (a2hsBusy: Home, no tip, no XP banner, nothing
+  weekRecapBlocked() counts; ~3s after the last tip). Not earlier on purpose: the account and its code exist from the partner
+  pick, but tourRev/novaMet are set there too, so an icon added mid-Nova opens on Home with the rest of his talk and the tips
+  never seen (the 383 audit's "closes between the partner pick and the code line" case). NEVER in the installed app
+  (isStandaloneApp when it is owed, scheduled and shown).
+- ONCE: class26e.a2hs = "owed" from the end of the tips until it shows (an app closed in between shows it on its next Home:
+  showHome's ordinary branch reschedules an owed one), then the time it showed. It never comes back on its own; Not now, a
+  scrim tap, Escape or a screen change all end it. Settings > Share & Install > Add to Home Screen (handleInstallTap) opens
+  the same sheet with Done and never touches the key. The enrolled banner (showEnrolledBanner) and Nova's good-luck message
+  wait while it is coming or up (a2hsHolds); the message 7s more after it closes (a2hsClosedAt) so the two banners do not
+  land together. The overlay carries .invite-overlay, so everything that waits for a sheet waits for it.
+- THE SHEET: the save-code card's pop-up (centred, the pop-up glass, light words in every theme, the body scrolls, Not now
+  pinned at the foot, z 420). A "Home Screen" tag, the title, the intro (designed as an app for your phone; opens full screen;
+  also works as a website on a computer), then the device as an iOS segmented control (role=radio, 44px): iPhone or iPad /
+  Android or Samsung / Computer, preselected from the user agent (a2hsDeviceGuess; an iPad asking for the desktop site says
+  Macintosh and has touch points).
+  - iPhone or iPad: the clip in a phone-shaped frame (Get Started's look; aspect 540/1174 exactly, so the pointers' fractions
+    land), muted, inline, looping, played only while it is the choice (src set on first choice: Android and computer users
+    never download it), tap to pause, a play button only when paused (reduced motion: not autoplayed). The five steps in
+    words with the old guide's inline icons (Safari's ••• then Share, or the toolbar's Share; View More - skip it if Add to
+    Home Screen already shows; Add to Home Screen; Open as Web App on; Add); the step the clip is on is lit. The note follows
+    the iOS storage notes (1681, 29215): Safari and the icon are separate storage jars, so while this choice is up the
+    address carries the code (installCodeInUrl(true), re-armed every 60s past its 3-minute limit, stripped on close or on
+    another choice) and an icon added now opens signed in, its progress pulled from the cloud. It says: "Add it while this
+    page is open and the icon opens signed in to your account, with your progress. From then on, open Nova from the icon
+    instead of Safari." (no code on the device: sign in there with your sync code; in the installed app: the steps are for
+    another iPhone or iPad).
+  - Android or Samsung: a card per browser, this browser first and marked "This browser" (SamsungBrowser / Android Chrome),
+    a small drawing of a phone with its menu button ringed in the pointers' amber, three steps (Chrome: ⋮ top right, Add to
+    Home screen or Install app, Install or Add; Samsung Internet: ≡ bottom right, Add page to, Home screen then Add). When the
+    browser fired beforeinstallprompt (window.__deferredInstallPrompt, caught in <head>) a one-tap Install Nova runs it.
+    Note: the icon uses this browser's sign-in (an Android home-screen app shares its browser's storage).
+  - Computer: works here as a website; bookmark (Ctrl + D, ⌘ Command + D on a Mac); Chrome/Edge's install icon; on your
+    phone open the same address (shown) and sign in with your sync code; Install Nova when the browser offered it.
+- THE CLIP (landing/a2hs-iphone.mp4 566,474 bytes + a2hs-iphone.jpg poster 40,903 bytes; 540x1174, H.264 High, yuv420p, 30fps,
+  14.73s, no audio, faststart): his screen recording (1320x2868 HEVC 10-bit HDR PQ, 120fps, 21.6s), tone-mapped to SDR bt709
+  (zscale + tonemap=mobius, npl 100: a plain conversion is grey and dim), cut to four spans with 4-frame cross-fades (source
+  1.5-4.13s Welcome and •••; 4.5-7.27s the menu and Share; 8.6-11.2s the sheet and View More; 13.4-18.83s the expanded sheet,
+  Add to Home Screen and its page - his drag at 19.2s and the keyboard are cut), the last frame held 0.8s. In the clip •••
+  is pressed at 2.03s, Share 3.83s, View More 6.67s, Add to Home Screen 9.83s; the Add page is up from 10.4s.
+  BLURRED: the share sheet's row of people (his friends' photos and names, the group, the fifth avatar peeking at the edge),
+  full width between the row's hairlines, TRACKED frame by frame by normalised cross-correlation against the row itself
+  (half resolution, FFT): y 660-830 (of 1174) while the sheet sits, rising with it as it expands (622 -> 240 over 12 frames),
+  240-410 expanded, plus four hand-measured boxes for the frames where the sheet grows out of the ••• button (scaled,
+  650-920); two Gaussian passes, radius 18. The Messages back-link under the clock (4-104 x 43-68), every frame, radius 7.
+  Checked independently on the shipped file: every frame decoded and searched (high-passed NCC, two templates x four scales)
+  for the unblurred row - best match anywhere 0.17, where the same search finds it in the untouched source at 0.57-1.00 in
+  every state (rising, collapsed, expanding, expanded, behind the Add page). The Add page's URL is the plain address (he was
+  on Welcome; no code in it). Left as is: his app row (AirDrop, Messages, Mail, Notes), the time, the battery, the site's
+  own preview. The scripts (tone map, tracker, boxes, cutter/encoder, verifier) live in the session scratchpad, not the repo,
+  and so does the raw recording (user upload data).
+- POINTERS (A2HS_POINTERS): crisp HTML over the clip, not burned in, on the clip's own clock (rAF while it plays; timeupdate
+  when rAF is held back), placed as fractions of its frame read off the clip: ••• (.869,.938) 0.3-2.2s; Share in the menu
+  (.454,.665) 2.45-3.95; View More (.831,.9) 4.85-6.75; Add to Home Screen (.156,.541) 7.4-9.95; Open as Web App's switch
+  (.881,.335) "Make sure this is on" 10.45-12.6; Add (.88,.119) 12.6 to the end. An amber ring that pops in (transform), a
+  ping (transform + opacity; off with reduced motion), a short label above or below, anchored to the side that keeps it
+  inside the frame.
+- GATE tools/check-b384-a2hs.py (its static server answers byte ranges, as GitHub Pages does - a <video> seeks only where it
+  can; this Chromium decodes H.264 now, canPlayType "probably", so the 22500 note is out of date): iphone (a full sign-up in
+  an iPhone Safari tab: the sheet only after the last tip, never over Nova, the card or a tip, after the XP; Apple preselected;
+  layout; the clip plays and has a poster; each pointer alone on in its window, at its fraction, label inside, its step lit;
+  the switch pointer over the switch's green and the Add pointer over the button's blue, read off the clip; the code in the
+  address while up and gone after; the enrolled banner held then shown; Not now; not back after a reload), samsung (Android
+  preselected, Samsung's card first and marked, the clip not downloaded, Install appears and runs the prompt on a
+  beforeinstallprompt), desktop (Computer preselected; the clip plays on choosing iPhone and pauses on leaving it), installed
+  (no sheet, nothing owed, the enrolled banner still comes), settings (the row opens it with Done; the key untouched), clip
+  (codec, size, faststart, poster; in all 172 frames the row is in, its band holds at most 0.13 of the detail of the apps row
+  under it; the back-link at most 0.02 of the clock's). ALL PASS. --against 91a1d96: 7 FAIL (no sheet on any of the three
+  devices; the Settings row opens the old picker). The clip section measures something: on an unblurred cut of the same
+  recording it FAILS (2.24 and 1.50). Its sign-up walker taps through Nova's typing: the machine was at load 15-22 from other
+  sessions, and at full typing speed a 120s walk budget runs out.
+- OTHER GATES, one at a time: check-js ALL PASS; sweep-layout --quick 14/14 (it now also mounts the sheet on each of its three
+  choices); check-b382-firstrun ALL PASS (123); check-b383-signup 84 pass, its 10 fresh-walk [guard]s failed on the 120s walk
+  budget under that load (Nova reached the name only) - the same file with a 480s budget, ONLY=fresh: 51/51 PASS (that walk is
+  the installed app, where the sheet never shows); check-b382-savecode, check-b382-settings (its stub of handleInstallTap
+  still binds), check-b382-credits, check-b329 ALL PASS; check-behaviour check_b218 (Share & Install's card) ALL PASS;
+  check-b339 all but "the Share link is the real site, a plain address" (SHARE_URL is 384's share page with ?v=384, untouched
+  here; fails on 91a1d96 too) - its Add to Home Screen code-in-address checks pass (showInstallGuide and the picker are kept,
+  unreached from the app, for it and the sweep); check-sync 1 failure, "Find me finds your row" (the known race; on 91a1d96 the
+  same run failed two other known races instead).
+- RECORDINGS for Madison (session scratchpad a2hs384/): a2hs-iphone.mp4 (iPhone 17 Pro Max size, a Safari tab: the last tip,
+  the XP, the sheet, one full turn of the clip with its pointers, the steps, Not now, the enrolled banner) and a2hs-samsung.mp4
+  (Galaxy S24 size, Samsung Internet: Android preselected, its cards, iPhone chosen and back, Not now). CDP screencasts at 2x,
+  about 13 frames a second because the sandbox was loaded; the clip itself is 30fps.
+- ONLY A PHONE CAN CONFIRM: that an icon added from Safari while the sheet is up opens signed in (the #k= launch address) and
+  pulls its progress; muted inline autoplay in Safari (Low Power Mode refuses it: the play button shows then); that the foot
+  clears Safari 26's floating toolbar in a tab (a centred card inside the safe areas rather than a bottom sheet, for that
+  reason); the blur on a Retina screen; Samsung Internet's and Chrome's menus, and whether Chrome offers Install for this
+  manifest (a data: URI) - the Install button only appears if it does.
+- LEFT FOR MADISON: the copy and the moment (after the tips, not inside Nova's talk); whether EXISTING accounts that still use
+  Nova in a Safari tab should be offered it once too (not done: he asked for sign-up); the clip is iOS 26's share sheet -
+  older iOS lists Add to Home Screen lower (step 2's note covers it).

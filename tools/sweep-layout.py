@@ -129,6 +129,10 @@ SCREENS = [
     # the rest
     "showInstallGuide", "showInstallPlatformPicker", "showResetWarning",
     "showReleaseHistory",   # (showWhatsNew left sign-up and the app in build 327)
+    # build 384: the end of sign-up's Add to Home Screen sheet, each of its three choices (over the screen before;
+    # each call replaces the last, and the next screen takes it away)
+    "showHomeScreenSheet({from:'settings',device:'apple'})", "showHomeScreenSheet({from:'settings',device:'android'})",
+    "showHomeScreenSheet({from:'settings',device:'computer'})",
     # (showSoundTest, the hidden sound test page, came out in build 325)
     "showVirtualRoomChoice", "showVirtualRoomSetup",
     # The end of a run (build 315). It needs a run behind it, which is why
