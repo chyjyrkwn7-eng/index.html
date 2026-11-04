@@ -33735,3 +33735,81 @@ all.." (his earlier ask: "The top three on the leaderboard (last weeks top 3) en
   same after an update reload, and the fallback. The merge-note follow is the app's own (check-behaviour b279, check-sync 8d).
 - AFTER THE PHONE FOLLOWS (the note marked done, the old account no longer written): delete the code-keyed rankings row and
   retire the old account, so the exposed code opens nothing. KEEP Nova-Test unarchived with the loader in place.
+
+### Build 384 - every code picture framed like 307.4.2; the tag pill; Enlarge (NOT on main, waiting for Madison)
+Madison (phone screenshots, Fire Code): "Look at the cropped photo. The 307 looks a lot better because it's nicely centered in the
+crop and just looks much nicer. A very careful change so please ensure this done right but all the cropped stuff needs to look that
+good." / "a lot of that crop stuff isn't even rightly placed? That needs to be fixed. The titles and stuff. Everything needs to be
+cohesive too, because some of the cropped stuff if its code runs border to border." / "the word amendments, ifc aren't centered
+perfectly in the little bubble. Please correct this." / "The word enlarge and magnifying glass could look better, the 'view entire
+page' looks amazing, it's perfect. Ensure the enlarge one is just as great, ensure it's centered and edge to edge or whatever just
+make it cohesive and nice." (Coordinator, same round: the Hint's yellow HINT tag is the same kind of pill - one rule for all three.)
+- WHAT IT WAS. The kit cuts a rectangle of the page - a column (28 to the gutter + 4, or the gutter - 4 to 584), a full-width
+  "mixed" stretch (28-584, every chapter/appendix title), a county line's own width + 4pt - and paint() draws it as it lies on the
+  page. The app showed that canvas as it came. Measured over all 1,812 (the kit's paint, before): IFC column clips had their print
+  7.6-57pt from the cut's left and 7.6-33.5pt from its right (307.4.2 happened to be near even, 907.4.2.2 not); chapter and appendix
+  titles are centred on the book's text block, not on the 28-584 cut, so they sat right of the middle with the highlight on the top
+  edge and the last line of the user note on the bottom edge; county pictures had 4pt (about 3px) of paper each side - "border to
+  border". And ifcFitPictures sized with devicePixelRatio while the kit draws at min(dpr, 2): on his 3x phone nothing scrolled, but
+  on every 2x screen (iPad, SE, laptops) a picture over 0.8x the card scrolled sideways - every title and county line cut at the right.
+- THE PICTURE (ifcFrameClips, presentation only; ifc/ifc-viewer.js untouched). After each paint of a cut picture - the answer's
+  code (book and county), the page viewer's Enlarge, the definition shown blurred before the answer, the Hint - the canvas's ink is
+  read off its pixels (ifcInkBox: everything that is not the paper - print, rules, highlight, blur - one getImageData, paper pixels
+  skipped on one 32-bit compare), and the picture is cut to it (a hair of paper kept) and set in .ifc-frame, a box of the paper's
+  own colour with 12px (--ifc-pic-pad) on every side, the canvas centred (margin auto), the box the card's width, never scrolled.
+  * One size rule: a picture no wider than a column (IFC_PIC_COL 250pt) shows at a column's size - the same print size in every
+    column picture, centred with even margins (in a 440 phone's answer card 307.4.2's text is ~24px in from each side, its print the size it was);
+    a wider one (a title with its user note, a full-width table, a county line, a referenced standard) is fitted to the width; never
+    past the size it was drawn at (1.7, the Hint 1.5). In the viewer the picture fills the frame (8px), zoom does the rest.
+  * Change bars (the book's thick bars beside changed lines, sometimes well out in the margin or beside one table row) are kept
+    where they were printed; the TEXT is centred and the same room is left on the other side (ifcBarSide: an upright solid bar
+    1.5-6.5pt wide, 6pt+ tall, 3.5pt+ clear of the text, alone at one side).
+  * Pieces cut from the same window of the same page (the clip's segments, passed in) share one window: a table's caption, rows
+    and notes line up as printed (45 references: 25 table rows, 20 Chapter 80 entries); the group's print is what is centred.
+  * Nothing inked is dropped: the gate checks every reference's shown pixels against the kit's own paint (same count, same colour
+    sum); the highlight stays on the same words; the blurred term and the Hint's hidden number are painted before the trim.
+  * .ifc-page canvases (a whole page: the fallback or a sideways page) keep the old fit (ifcFitPictures now handles only those).
+- THE TAG PILLS: the word is its own block (.ifc-tag-w) trimmed to cap height/baseline (text-box: Safari 18.2+, Chromium 133+;
+  an older Safari keeps line-height 1, where by SF's own metrics the capitals sit within about a hundredth of an em of the middle -
+  unmeasured here), its trailing letter-spacing taken back (margin-right -.08em), even .7rem padding. The Hint's bulb has its
+  viewBox cut to its ink (4.9 1.9 14.2 20.2) at 12px, so the same rule centres it. Measured in the answer card (glyph pixels, dpr 3,
+  mean of six sub-pixel placements): before up to 0.74px high at 375 and 1.13px at 125% text, HINT 0.56px left (1.03px at 125%);
+  now every one within 0.41px, every single placement within 0.51px.
+- ENLARGE: .ifc-links is a grid, repeat(auto-fit, minmax(min(100%, 15.75rem), 1fr)) - two equal halves where the longer label fits
+  half the card (iPad 352/352, laptop 383/383), else both stacked the card's full width (440 phone 326/326, SE 261/261); before,
+  Enlarge was the small one beside a large one on a phone. Same pill, height, padding, type and colour as the page button (which
+  is untouched); the magnifier redrawn in the page mark's 1.9 line with its ink centred in its box.
+- NUMBERS (the gate, every reference, the answer card on a 440 and a 375 phone at dpr 3 - on his 3x phone nothing scrolled before,
+  so these are what he saw): BEFORE 1,409 of the pictures off centre by more than 1px (median 8.1px, worst 142.7px - the Chapter 80
+  entries; the column pictures 20-40px), 366 pieces with ink on or past an edge, 2,003 with a margin under 10px (county 2-3px),
+  top/bottom 0-26.5px. AFTER worst 0.02px, every margin 12px or more, top/bottom 12.0-12.7px in every picture, nothing on an edge;
+  1,795 carry the kit's highlight, every one's pixels identical to the kit's paint.
+- PERFORMANCE: the framing step is one getImageData plus a scan and a copy: median 19.9ms, worst 31.6ms a picture here (Chromium,
+  sandbox load ~20 on 4 cores) against a median draw of 112-152ms; the draw from open to shown measured median 112ms with it and
+  103ms on the build before (same sweep, same machine - within the noise of the load). Most pictures are drawn ahead, in idle time,
+  before "Show the code" is tapped (ifcDrawAhead), so the open itself is not slower.
+- GATE tools/check-b384-ifccrop.py (PDFJS_DIR + IFC_BOOK; SKIPs without them; book through Load my IFC PDF; dpr 3; --sample N,
+  --ids, --only, OUT_JSON): (1) every reference at the answer card's width on a 440 and a 375 phone: (1a) no ink on/past an edge,
+  (1b) print centred within 1px (bar set aside, same-window pieces as one), (1c) margins 10px+, top/bottom 10-16px everywhere,
+  (1d) the box the card's width, (1e) GUARD the kit's pixels exactly; (2) GUARD the 42 blurred definitions and 8 Drill Hints hold the
+  kit's blurred pixels exactly, framed; (3) a flash card and Enlarge show it framed; (4) the three pills within 0.5px; (5) Enlarge
+  and the page button one family; (6) the framing's cost; (7) no page errors.
+- GATES RUN (one at a time, load ~16-25 from other sessions): check-b384-ifccrop with PDFJS_DIR + IFC_BOOK, every reference
+  (1,812), ALL PASS; --against 39d5b0c (the start): (1a) 366 pieces with ink on or past an edge at 440, 434 at 375; (1b) 1,409
+  pictures off centre at 440, 1,408 at 375; (1c) 2,003 pieces with a margin under 10px at each width; (1d) 7 county Finder
+  pictures narrower than the card; (2) both, (3) both, (4) (375: 0.74px high; 125%: 1.13px; HINT 0.56-1.03px left) and (5) (iPad
+  285/418, laptop 316/449) FAIL; (0), (1), (1e), (7) pass on both (guards). check-js ALL PASS; check-b383-ifcbook
+  (book) ALL PASS; check-b384-ifc542 (book) ALL PASS; check-b384-podium-hint (pdf.js) ALL PASS; sweep-layout --quick 20/20 clean;
+  check-b382-test (pdf.js; Enlarge fitted 0.92, the two pills) ALL PASS; check-b384-codeopen (book; drawn ahead, no task over
+  50ms after the tap) ALL PASS; the console in both classes: no page errors, only the blocked Firebase CDN.
+  Not mine, the same on 39d5b0c: check-b383-flashcards fails 9 (its first tap on the card does not turn it, the rest follow one
+  step late) - identical on the start build; check-b383-ifcbook runs the same flows with the book and passes. check-b333 stops
+  in its harness (KeyError 'g', before the app loads). ifc/ifc-viewer.js is byte-identical (md5 36419cb2...), so the kit's
+  acceptance test was not re-run.
+- CONTACT SHEETS (book pages: scratchpad only, never the repo): .../scratchpad/ifccrop384/contact-sheet-before-after.png and
+  pair-<id>.png (307.4.2, 907.4.2.2, Chapter 5, Chapter 65, Appendix H, county 102.7, Table 1004.5, Table 907.5.2.3.2, two
+  definitions, 314.4 with change bars, a long section, a Chapter 80 entry, the Hint), 440 wide at deviceScaleFactor 2.
+- ONLY HIS PHONE CAN CONFIRM: no seam where the canvas meets its frame (the frame's colour is the canvas's own paper, both sRGB -
+  Display P3 handling is the phone's); text-box on Safari (18.2+) and SF Pro's own bearings in the pills (measured with Inter);
+  getImageData's cost on the phone's GPU-backed canvas (the framing measured 20-32ms here under heavy load); the smaller print of
+  the fitted wide pictures on a 2x screen (they used to scroll there) - Enlarge is beside each.
