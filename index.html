@@ -36252,13 +36252,8 @@ html.is-browser{ --fade-paper: transparent; }
     }
   }
 
-  /* ---- a slide on the tab bar (build 383): the heavy, slow art holds still until the glass has landed (html.slide-hold, set at the
-     slide's start and taken off with the hero's own hold in slideHeldResume). Home's planet, Profile's card (its SVG character's moving
-     parts and the XP bar), Profile's rank challenges and the Leaderboard's row characters - every one a loop of seconds, so a second's
-     hold is not seen, and each carries on from where it stopped. ---- */
-  html.slide-hold #stage :is(.cosmic-hero-wrap, .profile-hero, .pf-goal, .rank-row) *,
-  html.slide-hold #stage :is(.cosmic-hero-wrap, .profile-hero, .pf-goal, .rank-row) *::before,
-  html.slide-hold #stage :is(.cosmic-hero-wrap, .profile-hero, .pf-goal, .rank-row) *::after{ animation-play-state:paused !important; }
+  /* (build 383's html.slide-hold rule is gone: a class on <html> with a rule reaching every element under it restyled the whole page in a
+     slide's first frame and again at its landing - the slide's own barUnderPause look holds the same art now, see SLIDE_HOLD_SEL) */
 
   /* ---- Choose your mode (build 383): the units screen's head, a grey question, the cards' titles in the system face ---- */
   html[data-layout] body #stage > .panel.modeselect{ padding-top:24px; }   /* the bar where Settings, Units and Friends have it */
@@ -143723,7 +143718,13 @@ function tabPerfText(){
         /* build 360: the build runs from the timer itself. It used to wait for a frame as well (rAF, then another
            timer), and on a screen that is busy - the Leaderboard's frames are long - that was one more frame's wait
            (about 65ms at 4x CPU, more on a phone) between the glass landing and the page changing. */
-        me.timers.push(setTimeout(navRun, wait));
+        /* build 383: and never under a slide. A press pushed a waiting build on by TAB_SCREEN_AFTER only, so a tap followed at once by a
+           slide had its screen built under the finger, mid-glide (a long task on the thread that moves the glass). While a slide is
+           going it waits; the release then lands it (or replaces it with the tab let go on). Never more than 2s: the screen always
+           follows (314). */
+        const held0 = performance.now();
+        const run = () => { if(tabDragActive && tabDragMoved && performance.now() - held0 < 2000){ me.timers.push(setTimeout(run, 40)); return; } navRun(); };
+        me.timers.push(setTimeout(run, wait));
       };
       me.cancel = () => { navRan = true; me.timers.forEach(clearTimeout); };
       bar._navPend = me;
@@ -144101,7 +144102,15 @@ function tabPerfText(){
      pause under a slide is not seen; they go on from where they were once the glass has handed over to the platter (lensFinish). The
      rest of the page keeps moving (375: "the screen you are on stops moving" when everything paused). */
   let slideHeldPaused = [];
-  const SLIDE_HOLD_SEL = ".cosmic-hero-wrap";
+  /* build 383 (second pass): AND PROFILE'S CARD, ITS RANK CHALLENGES AND THE BOARD'S ROW CHARACTERS, BY THE SAME ONE LOOK. The first 383
+     pass held them with a class on <html> (html.slide-hold) and a rule that reached every element under it: putting the class on, and
+     taking it off at the landing, restyled the whole page in the slide's first frame - measured at 4x CPU, 1637 elements / 152ms on Home,
+     1327 / 89ms on Profile, 1075 / 70ms on the Leaderboard, 951 / 42ms on the Calendar (382's first slide frame on Home: 43ms in all).
+     That frame is the glass leaving the finger as the slide starts, and the order matches his "calendar is good but not the rest". Now
+     the slide's one listing of the stage's animations (below, a frame after the start) pauses these as it pauses Home's hero: each
+     paused animation restyles its own element, nothing else. Descendants only (`X *`), as the rule had it: a row's own entrance is not
+     stopped half-way. */
+  const SLIDE_HOLD_SEL = ".cosmic-hero-wrap, .profile-hero *, .pf-goal *, .rank-row *";
   /* each animation is judged once a slide (a repeat look only measures what is new), and the band is measured once a slide */
   let barUnderSeen = new WeakSet(), barUnderBand = null;
   function barUnderPause(again){
@@ -144127,7 +144136,7 @@ function tabPerfText(){
         barUnderSeen.add(a);
         const t = a.effect && a.effect.target;
         if(!t || !t.getBoundingClientRect) return;
-        /* build 382: Home's hero, wherever it is on the screen */
+        /* build 382: Home's hero, wherever it is on the screen (383: and Profile's card and challenges, the board's rows) */
         if(t.closest && t.closest(SLIDE_HOLD_SEL)){ try{ a.pause(); slideHeldPaused.push(a); }catch(e){} return; }
         /* build 380: a loop is where its window is - the sheet inside it moves by left/top from frame to frame, so its own box wanders
            in and out of the bar's band while what is seen stays put */
@@ -144141,7 +144150,6 @@ function tabPerfText(){
     list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
   }
   function slideHeldResume(){
-    document.documentElement.classList.remove("slide-hold");
     const list = slideHeldPaused; slideHeldPaused = [];
     list.forEach(a => { try{ if(a.playState === "paused") a.play(); }catch(e){} });
   }
@@ -144181,7 +144189,14 @@ function tabPerfText(){
     if(bar.hidden) return;
     tabDragActive = true; tabDragMoved = false; tabDragPointerId = e.pointerId; tabDragX0 = e.clientX;
     tabDragStartTab = (e.target && e.target.closest && e.target.closest(".bottomtab")) || tabAtPoint(e.clientX);
-    tabDragFromActive = !!(tabDragStartTab && tabDragStartTab.classList.contains("active"));
+    /* build 383: A SCREEN WITH NO TAB LIT SLIDES FROM ANY TAB. "While in the unit selection screen and using the bottom tab, you can only
+       tab the bottom tab stuff, ensure you can still slide your finger across it". The units screen (and mode selection, a test's own
+       screens) belongs to no tab, so no tab is lit, and 380's rule - a slide starts on the lit tab - turned every press there into a press
+       on "another tab": the finger moved and nothing followed it, and let go anywhere but where it began nothing opened (measured: 40 real
+       touch moves Home -> Leaderboard on the units screen, the glass never followed and the screen stayed). With no tab lit there is no
+       other tab to start from: a press on any tab slides, as on Home, and the tab it is let go on opens. */
+    const litTab = navrow.querySelector(".bottomtab.active:not([hidden])");
+    tabDragFromActive = !litTab || !!(tabDragStartTab && tabDragStartTab === litTab);
     /* the lens lifts out of the platter under the finger at once (build 323, 325) */
     if(e.isPrimary !== false && (e.button === 0 || e.button === undefined || e.pointerType !== "mouse")) lensDown(e.clientX);
     /* a screen still waiting to be built waits for this press too (327z15) */
@@ -144193,18 +144208,17 @@ function tabPerfText(){
     if(!tabDragFromActive) return;
     /* the lens is under the finger from the first pixel (build 327z5); only
        turning the touch into a drag waits for the slop */
-    if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP){ if(lensG && Math.abs(e.clientX - tabDragX0) > 1.5) lensMove(e.clientX); return; }
+    if(!tabDragMoved && Math.abs(e.clientX - tabDragX0) < TAB_DRAG_SLOP){ if(lensG && Math.abs(e.clientX - tabDragX0) > 1.5) lensMove(e.clientX, e.timeStamp); return; }
     /* Pointer capture only once a drag is actually confirmed (a plain
        tap's click must still reach its own button), so a finger that
        wanders off the bar mid-drag keeps delivering moves and the up. */
     if(!tabDragMoved){
       slider.classList.add("dragging"); try{ navrow.setPointerCapture(e.pointerId); }catch(err){}
       document.documentElement.classList.add("tab-dragging");
-      /* build 383: THE HEAVY ART HOLDS STILL BY ONE CLASS (html.slide-hold, CSS below), not by listing animations. His 382 recording,
-         the glass read frame by frame: frozen on 25% of a slide's frames from Profile, 14% from the Leaderboard, 11% Home, 9% Calendar -
-         Profile's card is an SVG character whose parts move (sway, falling bits, blink, tails), repainted whole every frame on the
-         thread that moves the glass. */
-      document.documentElement.classList.add("slide-hold");
+      /* build 383: THE HEAVY ART HOLDS STILL. His 382 recording, the glass read frame by frame: frozen on 25% of a slide's frames from
+         Profile, 14% from the Leaderboard, 11% Home, 9% Calendar - Profile's card is an SVG character whose parts move (sway, falling
+         bits, blink, tails), repainted whole every frame on the thread that moves the glass. Held by barUnderPause's one look below
+         (SLIDE_HOLD_SEL), not by a class on <html>, which restyled the whole page as the slide started (see SLIDE_HOLD_SEL). */
       /* build 376: only what is BEHIND THE BAR holds still while the finger slides - looked for once, a frame after the slide starts
          (the frame it starts in already carries the capture and the classes) */
       requestAnimationFrame(() => { if(tabDragActive && tabDragMoved) barUnderPause(); });
@@ -144222,12 +144236,13 @@ function tabPerfText(){
        running again as it comes into view, which is where rows come in) holds still too; check-b376 once saw one running.
        (382: every 250ms, and each look measures only animations it has not judged yet, against the band measured at the slide's start:
        the look was ~40% of a slide's own script on the Leaderboard, its hundreds of animations listed ten times a second) */
-    /* (383: no look every 250ms - what came on under the bar mid-slide was a Leaderboard row's loop coming into view, and the rows'
-       loops are held by html.slide-hold now; each look was a frame's style pass on the thread that moves the glass) */
+    /* (383: no look every 250ms - what came on under the bar mid-slide was a Leaderboard row's loop coming into view; a row's loop is
+       given back only once no slide is going (.lb-go waits for tab-dragging and the settle window), and the rows that have theirs are
+       held by the slide's first look (SLIDE_HOLD_SEL); each later look was a frame's style pass on the thread that moves the glass) */
     /* The lens follows the finger (build 323, 325); the platter waits,
        hidden, and is put in place once, on release. Reduce motion has no
        lens: the platter itself steps from tab to tab. */
-    if(lensG){ lensMove(e.clientX); return; }
+    if(lensG){ lensMove(e.clientX, e.timeStamp); return; }
     const tab = tabAtPoint(e.clientX);
     if(tab) slideBubbleToTab(tab);
   });
@@ -144692,8 +144707,11 @@ function tabPerfText(){
     lensFollow = null;
     /* (build 381 gave the lens a one-frame transition while it followed; 382 took it out - nothing is left to clear) */
   }
-  function lensMove(clientX){
+  function lensMove(clientX, evT){
     if(!lensG) return;
+    /* the move's own time (the touch's, where the browser gives one on this clock), for the finger's speed below; and when it came in */
+    const pNow = performance.now();
+    const tEv = (typeof evT === "number" && evT > 0 && Math.abs(pNow - evT) < 500) ? evT : pNow;
     if(!lensFollow){
       const x = lensLocal(clientX);
       lensStopTrack();
@@ -144706,7 +144724,7 @@ function tabPerfText(){
          was and where the finger first moved, which closes in ~70ms so
          nothing jumps. Its size still springs, and it still stretches with
          the finger's speed. */
-      lensFollow = { x, cX: clientX, last: performance.now(), raf: 0, off: lensS.cx - x, px: x, vf: 0 };
+      lensFollow = { x, cX: clientX, last: performance.now(), raf: 0, off: lensS.cx - x, vf: 0, aT: pNow, ve: 0, gap: 17 };
       const P = { cx: LENS.follow, W: LENS.pop, H: LENS.pop, st: LENS.st };
       const tick = () => {
         const f = lensFollow;
@@ -144721,12 +144739,29 @@ function tabPerfText(){
            frame takes to reach the screen. A finger that slows to a stop brings the lead down to nothing with it. The finger's x is
            taken in here, once a frame, from the row measured at the touch (lensRowGeo): no layout is read while it slides. */
         const g = lensG;
-        f.x = lensLocal(f.cX);
+        /* ---- BUILD 383: WHERE THE FINGER IS NOW, EVERY FRAME ----
+           "the tab sliding/swiping function needs to be fixed and smooth with no delay/lag". The glass was written at the finger's last
+           move. A phone's touches do not come one per frame: on a 120Hz iPhone two or three arrive between two of Safari's 60Hz frames,
+           at a 60Hz one a frame can get none - so from frame to frame the glass stepped by one move, then three, or stood still a frame,
+           and on a frame with no move the lead shrank and it stepped BACK (in the sandbox, moves 6/6/22ms apart: 45-60% of a slide's
+           frames; likely some of the 9% still frames his 382 recording showed on the Calendar, where nothing else was going on). Now the
+           finger's speed is taken from the moves' own times (lensMove), and each frame the glass goes where that speed has carried the
+           finger since its last move came in - for as long as the next move is normally due (the longest recent gap between moves, a
+           little over) - plus 382's lead, the two together never more than LENS.leadMax. A move later than that and the finger has
+           stopped or slowed: what is ahead of it fades in ~15ms, so a finger that stops has the glass on it (0-3% of frames now).
+           The row is still measured once a touch (lensRowGeo). */
+        const r = lensRowGeo();
+        /* how long since the last move came in (its arrival, not the touch's own time: that runs a steady 10-40ms behind, which the
+           lead is for), and how long a move is normally waited for */
+        const age = Math.max(0, (t - f.aT) / 1000);
+        const due = Math.min(.04, Math.max(.012, f.gap * 1.3 / 1000));
+        const keep = age <= due ? 1 : Math.exp(-(age - due) / .015);
+        const vLoc = f.ve / r.k * keep;
+        f.x = (f.cX - r.left) / r.k;
         f.off *= Math.exp(-dt / .07);
         /* the finger's speed, smoothed a little, is what stretches it */
-        const vi = (f.x - f.px) / dt; f.px = f.x;
-        f.vf += (vi - f.vf) * Math.min(1, dt / .05);
-        const lead = Math.max(-LENS.leadMax, Math.min(LENS.leadMax, f.vf * LENS.lead / 1000));
+        f.vf += (vLoc - f.vf) * Math.min(1, dt / .05);
+        const lead = Math.max(-LENS.leadMax, Math.min(LENS.leadMax, vLoc * (Math.min(age, due) + LENS.lead / 1000)));
         /* the finger can go past the end tabs; the lens follows a little way
            out of the bar (the reference's runs 16pt past it) */
         let tx = f.x + f.off + lead;
@@ -144747,7 +144782,19 @@ function tabPerfText(){
       };
       lensFollow.raf = requestAnimationFrame(tick);
     }
-    lensFollow.cX = clientX;
+    const f = lensFollow;
+    /* the finger's speed, client px a second, from move to move by the moves' own times (smoothed over ~30ms of moves); two moves
+       under 2ms apart are one sample */
+    if(f.vT == null || tEv < f.vT){ f.vT = tEv; f.vX = clientX; }
+    const dte = (tEv - f.vT) / 1000;
+    if(dte > .002){
+      f.ve += ((clientX - f.vX) / dte - f.ve) * Math.min(1, dte / .03);
+      f.vT = tEv; f.vX = clientX;
+    }
+    /* the longest recent wait between moves: up at once, down slowly (8-30ms: 120Hz to a busy 30) */
+    const gap = pNow - f.aT;
+    if(gap > 1) f.gap = Math.max(8, Math.min(30, gap > f.gap ? gap : f.gap + (gap - f.gap) * .1));
+    f.cX = clientX; f.aT = pNow;
   }
   function lensRelease(tab, landing){
     if(!lensG){ lensHide(true); return; }
