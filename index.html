@@ -18098,18 +18098,14 @@
   .ranklore-art svg{ width:100%; height:100%; display:block; border-radius:50%; }
   @keyframes ranklore-in{ 0%{ transform:scale(.55); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
   [data-reduce-motion="true"] .ranklore-art{ animation:none; }
-  .ranklore-card.is-locked .ranklore-art{ border-color:rgba(255,255,255,.22); box-shadow:inset 0 0 14px rgba(0,0,0,.6);
-    background:radial-gradient(circle at 50% 40%, #1A1E24, #0A0C10 75%); }
+  /* (384) a rank not reached is no longer darkened on its own card - see buildRankGifts' ONE RULE FOR COLOUR. Its padlock sits
+     on the circle's rim (.ranklore-lock) and its tag says Locked / Up next. */
   /* DARK, NOT GREYED BY A FILTER (327z15): "When clicking on ranks you
      haven't reached yet, the flares color isn't darkened or hidden" - and
      the emblem moves now (it is on the list above), and a filter on a
      moving drawing is the thing this file does not do. It is faded and a
      shade of night lies over it: a shape you can make out, not its colour. */
-  .ranklore-card.is-locked .ranklore-art svg{ opacity:.38; }
-  .ranklore-card.is-locked .ranklore-art::after{ content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none;
-    background:radial-gradient(circle at 50% 45%, rgba(10,12,16,.35), rgba(10,12,16,.75) 75%); }
   .ranklore-name{ margin-bottom:.35rem; color:color-mix(in srgb, var(--rank-color) 55%, #fff); }
-  .ranklore-card.is-locked .ranklore-name{ color:rgba(255,255,255,.7); }
   .ranklore-state{ display:inline-block; padding:.2rem .6rem; border-radius:999px; font-size:.62rem; font-weight:800;
     letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.7); background:rgba(255,255,255,.07); }
   .ranklore-card.is-reached .ranklore-state{ color:#0B0D10; background:color-mix(in srgb, var(--rank-color) 80%, #fff); }
@@ -18144,18 +18140,28 @@
      not reached they are dark (the flare unlit, the swatch dimmed), still
      moving. No filters: they move. */
   .ranklore-card .rankmap-giftico{ position:relative; }
-  .ranklore-card .rankmap-giftbubble .flare-solo{ animation:pf-float 4.6s ease-in-out infinite; }
+  /* (384) "The flare shouldn't be moving up and down": the chip's flare stays put; its emblem still moves inside it */
   .ranklore-card .rankmap-dot, .ranklore-card .rankmap-swatch .dot{ position:relative; overflow:hidden; }
   .ranklore-card .rankmap-dot::after, .ranklore-card .rankmap-swatch .dot::after{ content:""; position:absolute; top:-30%; bottom:-30%; left:-90%; width:50%;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); transform:skewX(-18deg); animation:ranklore-sweep 3.2s ease-in-out infinite; }
   @keyframes ranklore-sweep{ 0%,55%{ translate:0 0; } 85%,100%{ translate:420% 0; } }
-  .ranklore-card.is-locked .rankmap-dot{ opacity:.4; box-shadow:none; }
   [data-reduce-motion="true"] .ranklore-card .rankmap-giftbubble .flare-solo,
   [data-reduce-motion="true"] .ranklore-card .rankmap-dot::after,
   [data-reduce-motion="true"] .ranklore-card .rankmap-swatch .dot::after{ animation:none !important; }
-  .ranklore-card.is-locked .rankmap-giftav:not(.rankmap-giftbubble) svg{ opacity:.45; }
-  .ranklore-card.is-locked .rankmap-giftbanner .bnr{ filter:grayscale(1) brightness(.75); }
   .ranklore-card .person-sheet-close{ margin-top:1rem; }
+  /* (384) what isn't yours yet: Profile's padlock, at the chip's end; and one on the big circle's rim */
+  .rankmap-giftlock{ flex:none; margin-left:auto; width:.72rem; height:.72rem; opacity:.55; color:#fff; }
+  .rankmap-giftlock svg{ display:block; width:100%; height:100%; }
+  .ranklore-lock{ position:absolute; right:2%; bottom:2%; width:1.9rem; height:1.9rem; border-radius:50%; display:grid; place-items:center;
+    background:#15181D; border:1.5px solid color-mix(in srgb, var(--rank-color) 60%, #fff); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.5); }
+  .ranklore-lock svg{ width:.85rem; height:.85rem; display:block; }
+  @media (max-height:46rem){ .ranklore-lock{ width:1.5rem; height:1.5rem; } .ranklore-lock svg{ width:.7rem; height:.7rem; } }
+  /* the road map's theme is its swatch now (384): dim past the rank you are working towards, coloured when it is yours or next,
+     and coloured in front of you when you reach it - the rules the flat dot had */
+  .rankmap-swatch .dot{ transition:filter .7s ease, opacity .7s ease; }
+  .rankmap-stop:not(.is-reached) .rankmap-swatch .dot,
+  .rankmap-stop.is-celebrate-pending .rankmap-swatch .dot{ filter:grayscale(1); opacity:.32; }
+  .rankmap-stop.is-next:not(.is-celebrate-pending) .rankmap-gift .rankmap-swatch .dot{ filter:none; opacity:1; }
   @media (max-height:46rem){
     .ranklore-art{ width:5.2rem; height:5.2rem; margin-bottom:.5rem; }
     .ranklore-text{ margin:.6rem auto .65rem; font-size:.86rem; line-height:1.38; }
@@ -24797,7 +24803,8 @@
      about its own centre instead, the same slow six seconds and a
      smaller swing, so on average it sits exactly on their line. */
   @media (prefers-reduced-motion:no-preference){
-    .pf-rw .flare-solo.cosmic-icon-badge-0{ animation:pf-float 6s ease-in-out infinite; }
+    /* (384) no float: "The flare shouldn't be moving up and down" - its emblem still moves inside the bubble */
+    .pf-rw .flare-solo.cosmic-icon-badge-0{ animation:none; }
   }
   @keyframes pf-float{ 0%, 100%{ transform:translateY(2.5px); } 50%{ transform:translateY(-2.5px); } }
   /* the character that is waiting to be unlocked: it leans in and taps
@@ -29612,7 +29619,8 @@
   .rs-reward-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:3.1rem; height:3.1rem; }
   .rs-unlock-art .flare-solo.cosmic-icon-badge.cosmic-badge-rank{ width:2.3rem; height:2.3rem; }
   @media (prefers-reduced-motion:no-preference){
-    .rs-reward-art .flare-solo.cosmic-icon-badge-0{ animation:pf-float 6s ease-in-out infinite; }
+    /* (384) no float (see .pf-rw) */
+    .rs-reward-art .flare-solo.cosmic-icon-badge-0{ animation:none; }
   }
   .rs-unlock-art .flare-solo.cosmic-icon-badge-0{ animation:none; }
   /* The theme as its moving swatch (build 317, themeUnlockItem): the
@@ -34247,7 +34255,6 @@ html.is-browser{ --fade-paper: transparent; }
     background:radial-gradient(circle, color-mix(in srgb, var(--nx, #fff) 34%, transparent) 0%, transparent 68%); opacity:.6; }
   .screen-profile .pf-goal .pf-goal-emb > svg{ position:relative; }
   @media (prefers-reduced-motion:no-preference){
-    .screen-profile .pf-goal .pf-goal-emb > svg{ animation:pf-float 5s ease-in-out infinite; }
     .screen-profile .pf-goal .pf-goal-emb::before{ animation:pf-emb-breathe 3.4s ease-in-out infinite; }
   }
   @keyframes pf-emb-breathe{ 0%,100%{ opacity:.45; transform:scale(.88); } 50%{ opacity:.9; transform:scale(1.08); } }
@@ -141424,6 +141431,12 @@ function buildRankGifts(key, lore){
     const t = document.createElement("span");
     t.className = "rankmap-giftlabel"; t.textContent = label;
     g.append(ico, t);
+    /* (384) on a rank's own card, what isn't yours yet carries Profile's padlock (.pf-rw-lock's) - in its colour */
+    if(lore && !reachedNow){
+      const lk = document.createElement("span"); lk.className = "rankmap-giftlock"; lk.setAttribute("aria-hidden", "true");
+      try{ lk.appendChild(buildLockIcon()); }catch(e){}
+      g.appendChild(lk);
+    }
     gifts.appendChild(g);
   };
   /* THE FLARE IN ITS BUBBLE, THE THEME AS ITS SWATCH (build 315): "the
@@ -141435,15 +141448,21 @@ function buildRankGifts(key, lore){
      animates (startOrbitEmblemAnims) but does not float - "it will not
      bounce in the road map". */
   const reachedNow = (() => { try{ return tierColorUnlocked(key); }catch(e){ return false; } })();
-  let dot;
-  if(reachedNow){ dot = buildThemeDot(key); dot.classList.remove("pf-swatch"); dot.classList.add("rankmap-swatch"); }
-  else { dot = document.createElement("span"); dot.className = "rankmap-dot"; dot.style.background = ACCENT_SWATCH[key]; }
+  /* ONE RULE FOR COLOUR (384). Madison, on Gold's card while unranked: "The theme unlock looks bad (that's all of them). Why
+     can't I see the color of the flare in the unlocks, why is the big flare so dark without its color ... I'm not sure if we
+     should make it where when you click any of the ranks you can see the colors of stuff, or just the ones you have unlocked
+     and your next rank? Idk make it the best and make it consistent and make it make sense." The rule, the way Customize
+     already works (a locked tile dim in the grid, held: shown as it really is): in the road map's list, the ranks you have
+     and the one you are working towards are in colour and the ones past it are dim (234, 321 - and the list still colours a
+     rank in front of you when you reach it); OPEN any rank and its card shows it as it really is - its flare lit, its theme,
+     its character, its banner - with a padlock on each thing that isn't yours yet and its Locked / Up next tag. The theme is
+     its real swatch everywhere now (Customize's and Profile's, the swirl and the sheen), never the flat dot it was. */
+  const dot = buildThemeDot(key); dot.classList.remove("pf-swatch"); dot.classList.add("rankmap-swatch");
   gift("is-theme", dot, "Theme");
   const fl = document.createElement("span");
   fl.className = "rankmap-giftav rankmap-giftbubble";
-  /* on the rank's own card a flare not yet yours is unlit glass (327z15);
-     the road map keeps it lit and frosts it, for its celebration */
-  fl.appendChild(buildFlareBubble(key, { lit: !lore || reachedNow }));
+  /* lit everywhere: the road map frosts one not yet yours (CSS), the rank's card shows it lit (384) */
+  fl.appendChild(buildFlareBubble(key, { lit: true }));
   gift("is-flare", fl, "Flare");
   const charForRank = AVATAR_CHARACTERS.find(c => c.unlock === key && !c.retired);
   if(charForRank){
@@ -141484,6 +141503,9 @@ function showRankLore(key, warm){
   const art = document.createElement("div");
   art.className = "ranklore-art";
   try{ art.appendChild(fitRankEmblem(buildRankEmblemSVG(key), key, true)); }catch(e){}
+  /* (384) shown as it really is, so a rank not yet yours says so on the circle itself */
+  if(!reached){ const lk = document.createElement("span"); lk.className = "ranklore-lock"; lk.setAttribute("aria-hidden", "true");
+    try{ lk.appendChild(buildLockIcon()); }catch(e){} art.appendChild(lk); }
   sheet.appendChild(art);
   const kick = document.createElement("p");
   kick.className = "unlock-card-kicker";

@@ -32150,3 +32150,29 @@ to see any friend I have in the chat and friends list and stuff. Vice Versa, any
 - ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the compat SDK through scopedFirestore's Proxy (transactions, FieldPath
   updates, listeners - the stand-in has all of them, the SDK is blocked here), the rules taking Fire Code's writes (the same
   vrooms documents the academy writes), and the timing of a friend change reaching the other class on another device.
+
+### Build 384 - the rank ladder's colours, one rule; no flare bobs
+
+Madison (Fire Code, unranked, Gold's card open): "The flare shouldn't be moving up and down. The theme unlock looks bad (that's all
+of them). Why can't I see the color of the flare in the unlocks, why is the big flare so dark without its color. ... I'm not sure if
+we should make it where when you click any of the ranks you can see the colors of stuff, or just the ones you have unlocked and your
+next rank? Idk make it the best and make it consistent and make it make sense."
+
+THE RULE (the one Customize already has - a locked tile dim in its grid, held: shown as it really is):
+- The road map's LIST colours the ranks you hold and the one you are working towards; every stop past that is dim (234's and
+  321's asks, unchanged), and a stop still colours in in front of you when you reach it (is-celebrate-pending).
+- OPENING any rank (showRankLore) shows it as it really is: the big emblem in colour (327z15's .38 opacity and the "shade of night"
+  ::after are gone, and the grey circle), the flare chip lit, the theme its real swatch, the character and banner in colour - and a
+  padlock on each thing not yours yet (.rankmap-giftlock, Profile's .pf-rw-lock look) and one on the circle's rim (.ranklore-lock),
+  with the Locked / Up next tag. A reached rank's card has no padlocks.
+- That made the next rank's card agree with the list at last: before, the list showed "Up next" in colour (321) while its own card
+  was as dark as any locked rank's.
+- The theme is its swatch everywhere (buildThemeDot - Customize's and Profile's swirl and sheen), never the flat .rankmap-dot. In
+  the list the swatch takes the dot's state rules (dim .32 + grayscale past the next; colour for next / reached / once celebrated).
+- No bob: the rank card's flare chip (pf-float 4.6s), Profile's reward-tile flare (pf-float, which once removed let Home's
+  .cosmic-icon-badge-0 lift through - now animation:none), Profile's To-reach emblem (pf-float 5s) and the results' reward flare
+  stand still; the emblems still move inside their bubbles. Home's planet system keeps its float.
+- The rank names on these cards are white for every rank (a later rule), reached or not - left as is.
+- Gate: tools/check-b384-ranks.py - fails 5 on the previous commit. Moved to the rule: check-b327z15 S (the locked emblem in
+  colour with a padlock; the locked flare chip lit) and check-behaviour check_b311_rank (a locked card in colour with a padlock,
+  story still held back).

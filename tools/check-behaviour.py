@@ -10640,7 +10640,8 @@ def check_b311_rank(br):
                          grey: getComputedStyle(c.querySelector('.ranklore-art svg')).filter,
                          /* 327z15: dark, not filtered - the emblem moves now; faded under a shade of night */
                          dim: +getComputedStyle(c.querySelector('.ranklore-art svg')).opacity,
-                         shade: getComputedStyle(c.querySelector('.ranklore-art'), '::after').backgroundImage } : null;
+                         shade: getComputedStyle(c.querySelector('.ranklore-art'), '::after').backgroundImage,
+                         lock: !!c.querySelector('.ranklore-art .ranklore-lock') } : null;
       document.querySelector('.invite-overlay')?.remove();
       }catch(e){ out.threw = String(e); }
       return out; }""")
@@ -10659,9 +10660,10 @@ def check_b311_rank(br):
     check("a reached rank's card tells its story, with both requirements and its unlocks",
           r.get("reached") and "is-reached" in r["reached"]["cls"] and len(r["reached"]["lore"]) > 60 and "story" not in r["reached"]["lore"]
           and r["reached"]["reqs"] == 2 and r["reached"]["gifts"] >= 2, r.get("reached"))
-    check("a locked rank's card is grey and keeps its story back",
-          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and ("grayscale" in r["locked"]["grey"]
-          or (r["locked"].get("dim", 1) <= .5 and "gradient" in (r["locked"].get("shade") or ""))), r.get("locked"))
+    # (384) a rank's card shows it as it really is, its padlock saying it isn't yours (was: grey / dark, 234 and 327z15)
+    check("a locked rank's card shows the rank in its colour with a padlock, and keeps its story back",
+          r.get("locked") and "is-locked" in r["locked"]["cls"] and "read its story" in r["locked"]["lore"] and r["locked"]["grey"] == "none"
+          and r["locked"].get("dim", 0) >= .99 and r["locked"].get("lock") is True, r.get("locked"))
     ctx.close()
 
 

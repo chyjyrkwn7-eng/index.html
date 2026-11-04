@@ -524,12 +524,15 @@ def section_s(br):
       const fill = document.querySelector('.ranklore-reqfill');
       const chip = document.querySelector('.ranklore-card .rankmap-giftbubble .flare-solo');
       return { fast, running, locked: card && card.classList.contains('is-locked'), filter: svg ? getComputedStyle(svg).filter : null,
+               op: svg ? +getComputedStyle(svg).opacity : 0, lock: !!document.querySelector('.ranklore-art .ranklore-lock'),
                fillDur: fill ? parseFloat(getComputedStyle(fill).transitionDuration) : 0, chipLit: chip ? chip.classList.contains('cosmic-badge-lit') : null }; }""")
     check("%s: S. the card is up 40ms after the tap" % label, r["fast"], r)
     check("%s: S. its big emblem moves (%d)" % (label, r["running"]), r["running"] >= 1, r)
-    check("%s: S. a locked rank's emblem is darkened without a filter" % label, r["locked"] and r["filter"] == "none", r)
+    # (384) "why is the big flare so dark without its color ... make it consistent and make it make sense": a rank's card shows it
+    # as it really is - no filter, not faded - and a padlock on the circle says it isn't yours yet
+    check("%s: S. a locked rank's emblem in its colour (no filter, not faded) with a padlock" % label, r["locked"] and r["filter"] == "none" and r["op"] >= .99 and r["lock"], r)
     check("%s: S. its bars fill (a transition)" % label, r["fillDur"] >= .3, r)
-    check("%s: S. a locked rank's flare chip is unlit" % label, r["chipLit"] is False, r)
+    check("%s: S. a locked rank's flare chip is lit (384: \"Why can't I see the color of the flare in the unlocks\")" % label, r["chipLit"] is True, r)
     ctx.close()
 
 
