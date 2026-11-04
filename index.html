@@ -4194,6 +4194,9 @@
   /* off screen, a question is not laid out (round 35): the list, its search and the drop-down's
      slide only pay for what can be seen */
   .screen-answerreview .review-question{ content-visibility:auto; contain-intrinsic-size:auto 340px; }
+  /* (384) ...and once the list has opened, every question is laid out ahead of the scroll (reviewRenderAhead): a question that
+     comes into view is already there, never filled in as it arrives */
+  .screen-answerreview .review-question.rq-on{ content-visibility:visible; contain:layout style paint; }   /* the containment a laid-out auto question keeps: the same layout to the pixel */
   .screen-answerreview :is(.review-question, .cal-month-sect, .info-note)[hidden]{ display:none; }
   .screen-answerreview .review-question .choices{ gap:.42rem; margin-bottom:.75rem; }
   .screen-answerreview .review-question .choice:not(.is-right){ opacity:.62; }
@@ -33148,6 +33151,10 @@
     box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 1px 1px rgba(255,255,255,.05) !important;
     color:var(--ink);
   }
+  /* (384, the Safari and laptop pass) the top bar's old switcher is folded away in this look (".navsegment:not(.profiletabs)":
+     width and height 0, opacity 0) but still wore the rule above's 30px backdrop blur on every screen - in WebKit a backdrop filter
+     is a layer of its own that reads back what is under it, here for a box nobody can see */
+  [data-theme][data-layout="modern"] .topctrls > .navsegment:not(.profiletabs){ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
   /* THE CHAT BOX (round 10): "the chat box should now be that same Liquid
      Glass". The panel that opens from the chat button was the last floating
      surface on an older glass (a blue-grey body at a 12px blur). It takes
@@ -53638,6 +53645,20 @@ function buildSkyTiles(){
   }).catch(() => {});
 }
 try{ buildSkyTiles(); }catch(e){}
+/* (384, the Safari and laptop pass) THE STATUS-BAR COLOUR IS READ AFTER THE NEW SCREEN'S FIRST FRAME, NOT IN THE TAP. Going to or
+   from Home, syncSky asked syncStatusBarColor for the colour straight away: a probe read in the tap's own task, while the new screen
+   and body.sky-home were still unstyled - a style pass over the whole page (1,200-1,650 elements, traced on every first trip each
+   way), and then the frame styled most of it again. It now runs once the frame that shows the new screen is out (one rAF and a
+   timer), when the page is already styled and the read costs only the probe; the strip's colour (theme-color, and Safari's band,
+   --band) follows a frame later, while the sky's own .6s fade is still under way. `var`: syncSky can run before this line. */
+var statusBarSoonId = 0;
+function syncStatusBarColorSoon(){
+  if(statusBarSoonId) return;
+  const run = () => { statusBarSoonId = 0; try{ syncStatusBarColor(); }catch(e){} };
+  try{ statusBarSoonId = requestAnimationFrame(() => setTimeout(run, 0)); }catch(e){ run(); }
+  /* a hidden page draws no frame: it is put right when it is shown again */
+  if(document.hidden){ try{ cancelAnimationFrame(statusBarSoonId); }catch(e){} statusBarSoonId = 0; run(); }
+}
 /* Where the sky is full, quieter or off - see the body::after rule. */
 function syncSky(isQuestion){
   const b = document.body;
@@ -53653,7 +53674,7 @@ function syncSky(isQuestion){
   b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]') || preAccount);
   /* 383 round 3: beyond Home the sky is turned down, so the status-bar strip (--statusbar-mix2/3) follows it, as it follows
      a question - only when Home's sky actually goes on or off (screen changes, not every mutation) */
-  if(wasHome !== b.classList.contains("sky-home")){ try{ syncStatusBarColor(); }catch(e){} }
+  if(wasHome !== b.classList.contains("sky-home")) syncStatusBarColorSoon();
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the
      question; only a question or a flashcard on screen is now. */
@@ -78539,7 +78560,9 @@ function cssColorHex(expr){
   let key = null;
   try{
     const de = document.documentElement, b = document.body;
-    key = expr + "|" + (de.dataset.theme || "") + "|" + (de.dataset.layout || "") + "|" + (de.dataset.accent || "") + "|" + de.className + "|" +
+    /* (384 perf) not the finger's own classes (html.tab-held / tab-dragging come and go with every tap on the bar and change no
+       colour): with them in the key every tap missed the colours kept from before it */
+    key = expr + "|" + (de.dataset.theme || "") + "|" + (de.dataset.layout || "") + "|" + (de.dataset.accent || "") + "|" + de.className.replace(/(^|\s)tab-(held|dragging)(?=\s|$)/g, "") + "|" +
       (b ? ["sky-home", "sky-calm", "has-active-question"].map(c => b.classList.contains(c) ? 1 : 0).join("") : "-") + "|" +
       (window.matchMedia && matchMedia("(min-width:40rem)").matches ? 1 : 0);
     if(CSS_COLOR_HEX_CACHE.has(key)) return CSS_COLOR_HEX_CACHE.get(key);
@@ -140302,6 +140325,85 @@ function buildCalendarPane(panel){
    Drill-only, reached from the Options sheet's now-unlocked toggle. */
 /* `versions` is the unit-selection screen's cfg.versions: reviewing the
    Penal Code's slides 124-256 shows those 116 and nothing else. */
+/* (384) REVIEW'S LIST IS LAID OUT AHEAD OF THE SCROLL. Madison: "The review section, while scrolling down the questions are
+   populating as you scroll and you can see it happening real time. Fix that, they should already be loaded as you scroll so it's
+   super smooth." Every question of an open unit is built when the unit opens (round 35), but off screen it was skipped
+   (content-visibility:auto) and only laid out once the browser saw it coming - in Chromium about one screen ahead, in Safari as it
+   arrives - so a flick ran into questions being laid out and painted as they came up, each also changing from the 340px it was
+   held at to its own height. Now, once the list is up (never in the tap that opens it - the open costs what it did):
+   - a pass lays out the questions in small slices (about 6ms each, timed; on a timer, so it goes on while a finger scrolls - Safari's
+     idle stand-in waits for the finger to lift), from the screen down, then the ones above; a question laid out above the screen
+     in a browser with no scroll anchoring (Safari) moves the page by what it grew, so nothing on screen moves;
+   - meanwhile any question within three screens of the view is laid out at once (an IntersectionObserver), so a fast scroll straight
+     after opening never meets one either;
+   - a unit opened later, or a search that reaches one, starts it again once that unit's slide has settled.
+   A laid-out question keeps content-visibility:visible (.rq-on) for as long as the list lives. */
+/* when the page last scrolled (reviewRenderAhead leaves what is above the screen until it has stopped); `var`, before any use */
+var reviewScrollAt = 0;
+try{ window.addEventListener("scroll", () => { reviewScrollAt = performance.now(); }, { passive: true }); }catch(e){}
+function reviewRenderAhead(list){
+  const st = { io: null, timer: 0, per: 6, done: false };
+  const anchors = (() => { try{ return !!(window.CSS && CSS.supports && CSS.supports("overflow-anchor", "auto")); }catch(e){ return false; } })();
+  const ready = r => !r.hidden && !!r.parentElement && r.parentElement.classList.contains("is-settled") && !(r.closest(".cal-month-sect") || r).hidden;
+  const pending = () => [...list.querySelectorAll(".cal-month-body.is-settled > .review-question:not(.rq-on):not([hidden])")];
+  const turnOn = r => { r.classList.add("rq-on"); if(st.io) try{ st.io.unobserve(r); }catch(e){} };
+  const ensureIO = () => {
+    if(st.io || typeof IntersectionObserver !== "function") return;
+    st.io = new IntersectionObserver(es => {
+      if(!list.isConnected){ stop(); return; }
+      /* only those at or below the top of the screen: one above it is the pass's (it keeps the page still) */
+      es.forEach(e => { if(e.isIntersecting && e.boundingClientRect.top >= 0 && ready(e.target)) turnOn(e.target); });
+    }, { rootMargin: "300% 0px 300% 0px" });
+    list.querySelectorAll(".review-question:not(.rq-on)").forEach(r => st.io.observe(r));
+  };
+  const stop = () => { clearTimeout(st.timer); st.timer = 0; if(st.io){ try{ st.io.disconnect(); }catch(e){} st.io = null; } };
+  const slice = () => {
+    st.timer = 0;
+    if(!list.isConnected){ stop(); return; }
+    const rows = pending();
+    if(!rows.length){ st.done = true; return; }
+    /* nearest first: from the screen down, then upwards from the screen - those above only once the page has stopped scrolling
+       (keeping the page still moves it by what they grew, and a programmatic scroll ends an iPhone's fling) */
+    let first = rows.findIndex(r => r.getBoundingClientRect().bottom > 0);
+    if(first < 0) first = rows.length;
+    if(first === rows.length && performance.now() - reviewScrollAt < 250){ st.timer = setTimeout(slice, 250); return; }
+    const order = rows.slice(first).concat(rows.slice(0, first).reverse());
+    const t0 = performance.now();
+    /* never a mix: questions below the screen first, every one; then the ones above */
+    const below = rows.length - first;
+    const batch = order.slice(0, below > 0 ? Math.min(st.per, below) : st.per);
+    const above = anchors ? [] : batch.filter(r => r.getBoundingClientRect().bottom <= 0);
+    const was = above.map(r => r.getBoundingClientRect().height);
+    batch.forEach(turnOn);
+    /* lay this slice out now, inside its own slice of time, and see what it cost */
+    void batch[batch.length - 1].offsetHeight;
+    if(above.length){
+      let grew = 0; above.forEach((r, i) => { grew += r.getBoundingClientRect().height - was[i]; });
+      /* at once, never the root's smooth glide (scroll-behavior:smooth since 284 - a glide here was cut short by the next one) */
+      if(Math.abs(grew) >= .5){
+        const de = document.documentElement, prev = de.style.scrollBehavior;
+        de.style.scrollBehavior = "auto"; void getComputedStyle(de).scrollBehavior;
+        try{ window.scrollBy(0, grew); }catch(e){}
+        de.style.scrollBehavior = prev;
+      }
+    }
+    const dt = performance.now() - t0;
+    if(window.__rqLog) window.__rqLog.push([batch.length, Math.round(dt * 10) / 10]);
+    st.per = dt < 3 ? Math.min(64, st.per * 2) : dt > 9 ? Math.max(1, Math.floor(st.per / 2)) : st.per;
+    if(order.length > batch.length) st.timer = setTimeout(slice, dt > 9 ? 50 : 24); else st.done = true;
+  };
+  const kick = (delay) => {
+    if(!list.isConnected) return;
+    ensureIO();
+    if(st.io) list.querySelectorAll(".review-question:not(.rq-on)").forEach(r => { try{ st.io.observe(r); }catch(e){} });
+    st.done = false;
+    clearTimeout(st.timer);
+    /* after the frame that shows the list (or the unit's slide, ~420ms), never inside the tap */
+    st.timer = setTimeout(slice, typeof delay === "number" ? delay : 120);
+  };
+  list._rqKick = kick;
+  return kick;
+}
 function showAnswerReview(units, source, versions, opts){
   const allFlagged = !!(opts && opts.allFlagged);
   setActiveNav(null);
@@ -140480,6 +140582,8 @@ function showAnswerReview(units, source, versions, opts){
     const frag = document.createDocumentFragment();
     sec.items.forEach(it => frag.appendChild(qNode(it)));
     sec.body.appendChild(frag);
+    /* (384) laid out ahead once its slide has settled (reviewRenderAhead) */
+    if(list._rqKick) list._rqKick(450);
   }
   let searching = false;
   unitKeys.forEach(unitKey => {
@@ -140514,6 +140618,7 @@ function showAnswerReview(units, source, versions, opts){
         head.setAttribute("aria-expanded", nowOpen ? "true" : "false");
         if(nowOpen) fill(sec);
         openCollapsible(body, nowOpen);
+        if(nowOpen && list._rqKick) list._rqKick(450);
       });
       section.appendChild(head);
       sec.head = head;
@@ -140555,6 +140660,7 @@ function showAnswerReview(units, source, versions, opts){
       setOpen(sec, true);
     });
     empty.hidden = anyShown;
+    if(list._rqKick && list.isConnected) list._rqKick(150);
   }
 
   render("");
@@ -140582,6 +140688,8 @@ function showAnswerReview(units, source, versions, opts){
 
   stage.replaceChildren(panel);
   toTop();
+  /* (384) the questions laid out ahead of the scroll, starting after the frame that shows the list */
+  reviewRenderAhead(list)();
   answerReviewRun.count = howMany; answerReviewRun.unitN = unitN;
   if(typeof syncChatDock === "function") syncChatDock();
 }
@@ -140625,6 +140733,8 @@ function pauseAnswerReview(){
     pauseBtn.hidden = false;
     stage.replaceChildren(list);
     requestAnimationFrame(() => window.scrollTo(0, y));
+    /* (384) its render-ahead stopped while the list was off the page: on again */
+    try{ const cl = list.querySelector(".cal-list"); if(cl && cl._rqKick) cl._rqKick(300); }catch(e){}
     if(typeof syncChatDock === "function") syncChatDock();
   });
   const leaveBtn = document.createElement("button"); leaveBtn.type = "button"; leaveBtn.className = "next ghost"; leaveBtn.id = "pause-quit";
@@ -150197,8 +150307,16 @@ function tabPerfText(){
   try{ new ResizeObserver(() => hsPlace()).observe(bar); }catch(e){}
   window.addEventListener("resize", () => { try{ hsPlace(); }catch(e){} });
   /* the bar's measured half-width, for what sits beside it (327z15) */
+  /* (384, the Safari and laptop pass) only while something reads it. --tabbar-half is a custom property on <html>, so every element
+     inherits it and a new value restyles the whole page; its two readers (the version line and the daily question's card) are
+     Home's, and on a laptop the bar changes width every time Home's Start joins it or leaves - a whole-page style pass on every
+     switch to or from Home, for nothing on the other screens. It is written when one of them is on the page (or the first time);
+     coming back to Home the bar is the width it was kept at, so nothing is written at all. */
   const syncBarHalf = () => { try{ const w = bar.hidden ? 0 : bar.getBoundingClientRect().width;
-    if(w > 0) document.documentElement.style.setProperty("--tabbar-half", (w / 2).toFixed(1) + "px"); }catch(e){} };
+    if(!(w > 0)) return;
+    const de = document.documentElement, v = (w / 2).toFixed(1) + "px", cur = de.style.getPropertyValue("--tabbar-half");
+    if(cur === v || (cur && !document.querySelector(".homeversion-btn, #stage > .dq-card"))) return;
+    de.style.setProperty("--tabbar-half", v); }catch(e){} };
   try{ new ResizeObserver(syncBarHalf).observe(bar); }catch(e){}
   new MutationObserver(syncStartAction).observe(bar, { attributes: true, attributeFilter: ["hidden"] });
   syncStartAction();
