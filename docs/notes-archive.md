@@ -31608,3 +31608,19 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   signing back in, and Fire Code's Home with its 1234 points (no enrolling, no book picking); settings: the Change pill takes a
   tap anywhere in 44px round its middle. On 18815df: the first two signout checks fail (the third does not run - no Fire Code
   to tap) and the Change pill fails (above/below false); this build ALL PASS (signout, settings).
+
+### Build 383, round 3 (cont.) - Fire Code checked with the owner's own IFC
+- Madison sent class26e-ifc-handoff-v5.4.zip again ("I think the book is in this file"): LOCAL-TEST-ONLY_owners_own_2021_IFC.pdf,
+  kept in the session's scratchpad only - never in the repo (public), never in a commit. pdf.js 5.4.149 from npm, unpacked there too.
+- NEW GATE tools/check-b383-ifcbook.py (PDFJS_DIR + IFC_BOOK, else SKIP): the book through the reader's own path (Load my IFC
+  PDF's file input -> the Analyzing screen -> Verified, kept), pdf.js routed before the app loads (a failed import is cached for
+  the visit). Then Fire Code's flash cards, a book card (IFC 2021 202, Small buildings and tenant spaces) and a county card (HC
+  104.9 / 101.2.1): (1) a tap turns the card; (2) Show the code opens, the card stays, the picture is DRAWN (a canvas, cut from his
+  PDF / the county booklet); (3) the card holds the drawn picture, arrows below; (4) a tap on the picture opens the page viewer and
+  draws it, the card does not turn, Done closes it; (5) Enlarge the same; (6) Hide the code shrinks it back; (7) no page errors.
+  This build: ALL PASS. On 382 (origin/main): 12 fail - Show the code turns the card, the answer side hangs 184-228px out of it,
+  the picture and Enlarge taps do not open the viewer - his flash card report, reproduced with the real book.
+- check-b333 (the page viewer; PDFJS_DIR): ALL PASS once its mode-card check counts Fire Code's three cards (no Mock since 342;
+  it asked for four and failed the same on 382).
+- Seen, not changed: in a book crop the pale wash starts ~55px left of the text on some definitions (the kit's viewer, byte-identical
+  to the kit; the kit's own acceptance run passed at 330).

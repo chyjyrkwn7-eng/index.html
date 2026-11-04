@@ -95,8 +95,9 @@ with sync_playwright() as pw:
     chk("Start Studying on a Pro Max-sized phone is at least 210 x 54 (it had shrunk to 202 x 50)", sb["w"] >= 210 and sb["h"] >= 54, sb)
     pg.evaluate("()=>{ cfg.mode = 'drill'; showModeSelect(); }"); pg.wait_for_timeout(900)
     mc = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c => ({ h: Math.round(c.getBoundingClientRect().height), d: (c.querySelector('.modecarddesc') || {}).textContent || '' }))")
-    chk("the four mode cards are at least 130px tall, their descriptions 60-130 characters and none says classmates",
-        len(mc) == 4 and all(m["h"] >= 130 and 60 <= len(m["d"]) <= 130 and "classmate" not in m["d"].lower() for m in mc), mc)
+    # (this page is the Fire Code class: three cards since 342 - "no Mock in Fire Code" - the academy keeps four)
+    chk("Fire Code's three mode cards (no Mock, 342) are at least 130px tall, their descriptions 60-130 characters and none says classmates",
+        len(mc) == 3 and all(m["h"] >= 130 and 60 <= len(m["d"]) <= 130 and "classmate" not in m["d"].lower() for m in mc), mc)
     pg.evaluate("()=>{ localStorage.removeItem('class26e.synccode'); }")
     pg.reload(); pg.wait_for_timeout(4800)
     sp = pg.evaluate("()=>{ const s = document.getElementById('splashscreen'); return !s || s.hidden || getComputedStyle(s).display === 'none' || getComputedStyle(s).visibility === 'hidden' || parseFloat(getComputedStyle(s).opacity) === 0; }")
