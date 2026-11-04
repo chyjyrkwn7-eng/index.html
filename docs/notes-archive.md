@@ -32198,3 +32198,10 @@ on the bottom right ... if they could be just a smidge bigger too".
   .badges-head and .bcs alike: the panel's width on any phone at any text size, 34rem on a tablet. check-b384-case (6) measures it
   at 13.6px and 19px roots and on an iPad; fails on the previous commit. Other `min(100%, Nrem)` widths in the file are lone
   centred pieces (results cards, sign-up fields), not a pair that must agree.
+- (384) "In the challenge thing for ifc, it says I need to score a 100 enough times for a badge but the ifc is just a single one
+  hundred for the badge". Fire Code's badge is one 100% (badgeThresholdFor returns 1 there since 382) but four texts still told
+  the academy's rule. Each now says Fire Code's: the rank challenge card (rankChallengeDetail - "Score 100% on a whole unit once
+  and its badge is yours", shown as "chapter"), Nova's intro line, Nova's answer about badges ("one hundo in a unit earns its
+  badge"), and the Profile tour's badge case step. They read window.NOVA_CLASS === "ifc" (badgeThresholdFor's own test): the tour
+  copy is built at load, where badgeThresholdFor would fill the academy's unit-size cache early. The academy's words are unchanged.
+  Release-history entries about badge counts are history and stay. check-b384-case (7); fails on the previous commit.

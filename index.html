@@ -92764,7 +92764,7 @@ function novaIntroLines(o){
        scoring enough hundreds" - the next line says how */
     lines.push({ text: "Every unit has one of my badges to win.",
       ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap("Every unit has its own badge"))) });
-    lines.push({ text: "Score 100% on a unit enough times, and its badge is yours." });
+    lines.push({ text: window.NOVA_CLASS === "ifc" ? "Score 100% on a unit once, and its badge is yours." : "Score 100% on a unit enough times, and its badge is yours." });   /* (384) Fire Code: one */
     lines.push({ gesture: "raise", text: "My crew are waiting in their pods.",
       ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(o.signup ? "My crew" : crew.have + " of " + crew.total + " characters found"))) });
     if(o.signup){
@@ -92956,7 +92956,9 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-hero .pf-standing", align: "left", vplacement: "below",
     text: "Your rank, your level and how many of my badges you\u2019ve found. XP fills the bar. Your level goes as high as your next rank\u2019s level, and that rank\u2019s badges take it further." },
   { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
-    text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over." },
+    /* (384) Fire Code's badge is one 100% */
+    text: window.NOVA_CLASS === "ifc" ? "Your badge case, a slot for every unit. Score 100% on a whole unit once to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over."
+      : "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over." },
   { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
     text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or Rank ladder for every rank and what each one unlocks." }
 ];
@@ -97677,7 +97679,7 @@ function novaReplyFor(raw){
       + (next ? "; Profile shows what " + next + " needs." : ", at the very top. Well done.");
   if(has(/ (badges?|hundos?|100%|100|master\w*) /))
     /* no total (build 325): there will be more units */
-    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; a few hundos in one unit earns its badge: that unit, mastered. Every rank asks for badges. You’ve found " + badges + " so far.";
+    return "There’s a badge for every unit. Score 100% on a whole unit and that’s a hundo; " + (window.NOVA_CLASS === "ifc" ? "one hundo in a unit earns its badge" : "a few hundos in one unit earns its badge") + ": that unit, mastered. Every rank asks for badges. You’ve found " + badges + " so far.";   /* (384) Fire Code: one */
   if(has(/ (xp|levels?|level up) /))
     return "Every right answer earns XP, and XP raises your level. Your level waits at your next rank\u2019s level until you have its badges, so mastering units matters as much as answering a lot.";
   if(has(/ (drill|exam|quiz|quizzes|mock|review|flashcards?|learn|modes?|study|studying|practice|starred|flag\w*) /))
@@ -138012,7 +138014,11 @@ function rankChallengeDetail(c, color, rankName){
     /* ONE PAIR, SAID ALIKE (327z15): "The how description for the badge
        challenge is bad ... ensure [level's] is on the same par as badge" */
     desc: isLevel ? "Earn XP by finishing tests. Right answers, hundos and answer streaks add the most."
-      : "Score 100% on a whole unit enough times and its badge is yours. Every unit has one.",
+      /* (384) Fire Code's badge is ONE 100% (badgeThresholdFor returns 1 there) - "it says I need to score a 100 enough times for a
+         badge but the ifc is just a single one hundred for the badge". The class is read directly: the tour's copy is built at
+         load, and badgeThresholdFor would fill the academy's unit-size cache that early. */
+      : (window.NOVA_CLASS === "ifc" ? "Score 100% on a whole unit once and its badge is yours. Every unit has one."
+        : "Score 100% on a whole unit enough times and its badge is yours. Every unit has one."),
     have: now, need: Number(c.need) || 0, unlocked: !!c.met };
 }
 /* a tap that opens its own card, on a part of the Next rank card */

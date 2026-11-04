@@ -10,6 +10,9 @@ iPhone 17 Pro Max (440x956), the Badges page, read off the page:
 (6) "The badge one isn't the same size, ensure it's the same size": the Badges box over the case is the case's width, edge for
     edge (within 1px), at a smaller and a larger text size (the root at 13.6px and 19px - the box's old rem cap followed the
     phone's text size, the case doesn't) and on an iPad;
+(7) "it says I need to score a 100 enough times for a badge but the ifc is just a single one hundred": where a badge's rule is
+    told - the rank challenge's card, Nova's intro line, the Profile tour's badge case step - Fire Code (one 100% a badge, read
+    off badgeThresholdFor) never asks for more than one (no "enough times", no "a few hundos"), and the academy still does;
 (5) no page errors.
 Run:  python3 tools/check-b384-case.py   (--against OLD/index.html must FAIL)"""
 import json, os, sys
@@ -69,6 +72,21 @@ with sync_playwright() as pw:
     same = all(s and s["head"] and s["kase"] and abs(s["head"][0] - s["kase"][0]) <= 1 and abs(s["head"][1] - s["kase"][1]) <= 1 for _, _, s in sizes)
     chk("(6) the Badges box is the case's width at every text size and on an iPad: %s" % [(vw, px, s and s["head"] and [round(x) for x in s["head"]], s and s["kase"] and [round(x) for x in s["kase"]]) for vw, px, s in sizes],
         same, sizes)
+    RULES = """()=>{ const d = rankChallengeDetail({ kind: 'badges', need: 4, now: 0, met: false, label: 'Earn 4 badges' }, '#fff', 'Bronze').desc;
+      const tip = (PROFILE_TIPS_289.find(s => /pf-case/.test(s.target)) || {}).text || '';
+      return { one: badgeThresholdFor(topicsIn(QUESTIONS)[0]), texts: [d, tip] }; }"""
+    words = {}
+    for cls in ("ifc", "academy"):
+        ctx, pg, errs = G["page"](br, G["init"](G["ifc"] if cls == "ifc" else G["academy"], **({} if cls == "ifc" else {"active": "academy"})))
+        try:
+            words[cls] = pg.evaluate(RULES)
+        except Exception as e:
+            words[cls] = {"err": str(e)[:200]}
+        allerrs += errs; ctx.close()
+    many = lambda s: bool(__import__("re").search(r"enough times|enough hundos|a few hundos", s or ""))
+    wi, wa = words.get("ifc", {}), words.get("academy", {})
+    chk("(7) Fire Code (%s hundo a badge) never asks for more than one: %s; the academy (%s) still does" % (wi.get("one"), [many(x) for x in wi.get("texts", [])], wa.get("one")),
+        wi.get("one") == 1 and wi.get("texts") and not any(many(x) for x in wi["texts"]) and wa.get("texts") and all(many(x) for x in wa["texts"]), words)
     chk("(5) no page errors", not allerrs, allerrs[:3])
     br.close()
 print("\nALL PASS" if ok else "\nFAILURES")
