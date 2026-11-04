@@ -139888,6 +139888,9 @@ function buildCalendarPane(panel){
      after opening never meets one either;
    - a unit opened later, or a search that reaches one, starts it again once that unit's slide has settled.
    A laid-out question keeps content-visibility:visible (.rq-on) for as long as the list lives. */
+/* when the page last scrolled (reviewRenderAhead leaves what is above the screen until it has stopped); `var`, before any use */
+var reviewScrollAt = 0;
+try{ window.addEventListener("scroll", () => { reviewScrollAt = performance.now(); }, { passive: true }); }catch(e){}
 function reviewRenderAhead(list){
   const st = { io: null, timer: 0, per: 6, done: false };
   const anchors = (() => { try{ return !!(window.CSS && CSS.supports && CSS.supports("overflow-anchor", "auto")); }catch(e){ return false; } })();
@@ -139909,12 +139912,16 @@ function reviewRenderAhead(list){
     if(!list.isConnected){ stop(); return; }
     const rows = pending();
     if(!rows.length){ st.done = true; return; }
-    /* nearest first: from the screen down, then upwards from the screen */
+    /* nearest first: from the screen down, then upwards from the screen - those above only once the page has stopped scrolling
+       (keeping the page still moves it by what they grew, and a programmatic scroll ends an iPhone's fling) */
     let first = rows.findIndex(r => r.getBoundingClientRect().bottom > 0);
     if(first < 0) first = rows.length;
+    if(first === rows.length && performance.now() - reviewScrollAt < 250){ st.timer = setTimeout(slice, 250); return; }
     const order = rows.slice(first).concat(rows.slice(0, first).reverse());
     const t0 = performance.now();
-    const batch = order.slice(0, st.per);
+    /* never a mix: questions below the screen first, every one; then the ones above */
+    const below = rows.length - first;
+    const batch = order.slice(0, below > 0 ? Math.min(st.per, below) : st.per);
     const above = anchors ? [] : batch.filter(r => r.getBoundingClientRect().bottom <= 0);
     const was = above.map(r => r.getBoundingClientRect().height);
     batch.forEach(turnOn);

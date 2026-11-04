@@ -33617,8 +33617,10 @@ WHAT CHANGED (worst first; nothing looks different - screenshots of the touched 
    held at 340px) and only laid out when the browser saw it coming - Chromium about one screen ahead, Safari as it arrives - so a
    flick met questions being laid out and painted (and changing height) as they came up. Now, after the open's first frame (never in
    the tap - the open costs what it did): a pass lays the unit's questions out in slices of ~6ms (timed, adaptive, on a timer so it
-   goes on while a finger scrolls - Safari's idle stand-in waits for the finger to lift), nearest first, then the ones above (in a
-   browser without scroll anchoring - Safari - one above the screen moves the page by what it grew, so nothing on screen moves);
+   goes on while a finger scrolls - Safari's idle stand-in waits for the finger to lift), nearest first, every one below the screen
+   before any above it; those above wait until the page has not scrolled for 250ms (reviewScrollAt), and in a browser without scroll
+   anchoring - Safari - the page then moves by what they grew, so nothing on screen moves (a programmatic scroll during a fling
+   would end an iPhone's fling, hence the wait; in the normal top-down read they were laid out on the way down anyway);
    meanwhile an IntersectionObserver lays out any question within two screens of the view at once. A unit opened by its header
    (after its slide), a search, and Resume from Pause start it again; it stops when the list leaves the page. A laid-out question
    is content-visibility:visible WITH contain:layout style paint - the containment a laid-out `auto` element keeps; without it the
