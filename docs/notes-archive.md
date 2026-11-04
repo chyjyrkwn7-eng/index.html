@@ -34256,3 +34256,140 @@ for the zoom back as the screen changes and Chromium gives it; 3 Settings > Sync
 button; 4 Sign out's sheet on a Pro Max, an SE and a laptop; 5 Save it on a laptop (with navigator.share present): copied, 0
 share calls. (Headless Chromium has no navigator.share, so its phone shots read Save it's "Copy it" line; an iPhone reads "Send
 it to Notes or a message to yourself".)
+
+
+### Build 384 - Fire Code open to everyone, and at sign-up (NOT on main, waiting for Madison)
+
+Madison: "everyone is gonna get the button" / "almost every single new account will be signing up and enrolling into fire
+code from the beginning" / "Don't get confused, everyone is gonna get the button, but only these people will get banner that
+it's available ... new accounts won't get the banner" / "a fire code only person can enroll into the police academy class if
+they wanted to for whatever reason. No reason to stop them." / "Ensure that it has two types, new accounts, and existing
+enrolling into an additional class. That would go for any class." / "at the end of it, it didn't let me hit continue, I had to
+hit skip to get past it." / "After verified shouldn't it say success ... Like it could say enroll and get started" / "Ensure
+the class button gets a tool tip as well." / switching classes: the other class's theme and character showing, a minute on a
+black screen, the colours to change on the loader, a welcome-back banner.
+
+THE ACCOUNT'S CLASSES (accountClassesOf / enrolledClasses / setEnrolled)
+- New persisted field `classes` on the academy's copy (the account's identity lives there; Fire Code reads it from
+  NOVA_ACADEMY_RAW and each newer cloud copy - pickAcademyCopy - and never writes it). null (applyLoadedData's default and the
+  store literal) = an account from before 384 = the academy's. The owner (CLASS_OWNER) also counts as in Fire Code, as before
+  (his enrolment was the device's). mergeSameAccount unions two said lists (null adds nothing); accountAhead counts a class one
+  copy has and the other lacks; mergeLeavingAccount unions; wipeLocalProgressAndSettings resets to null.
+- class26e.enrolled is only a mirror now (setEnrolled writes it; the sign-out keep list still keeps it).
+- The head script: Fire Code only for an account whose copy says it is in Fire Code; an account in Fire Code ALONE opens in
+  Fire Code whatever activeclass says (activeclass is set), unless the page arrives from the class button into the academy
+  (NOVA_CLASS_ARRIVE.to === "academy": a join, or a device whose copy has not heard of a join elsewhere). The academy page
+  records the class on arrival (setEnrolled) - and a join sets greet.academy pending.
+- classSwitchAllowed: every account that has signed up (academy) / every page in Fire Code. switchClass refuses a class the
+  account is not in (but takes opts.join into the academy). watchOtherClassSocial and the boot fold of Fire Code's friends
+  block: every account in Fire Code, not the owner's alone (foldSocialFrom still takes only the same publicId's copy).
+- The academy's board: pushLeaderboardRow / flushLeaderboardRow / writeLeaderboardRow write nothing for an account not in the
+  academy (academyMember). A Fire Code-only account that joins the academy gets its row from then on.
+- academyHomeBarred / enterAccountClass: whatever brings an account in Fire Code alone to the academy's Home (sign-in with its
+  code, the #k= launch address, Settings' Link this device) opens Fire Code instead, welcomed back there (the switch's note).
+- Fire Code's Sync page: an account not in the academy is told what everybody is ("Keep this somewhere off this phone...")
+  instead of "The same code as your Police Academy account".
+
+SIGN-UP (showClassSelection, showIfcEnroll({signup}), startIfcSignupHere, novaSignupCreate, ifcSignupOwed)
+- The class step offers both classes as cards (each picked/unpicked by a tap, Continue while one is picked) and More classes.
+  Picks are remembered (class26e.signuppick) so the class step comes back with them, this launch and the next.
+- Continue asks to confirm, naming the picks ("Enroll in Fire Code?" / "Enroll in Police Academy and Fire Code?"); with Fire
+  Code picked the book comes next: Fire Code's enrol screen (Back = the class step), Choose my IFC PDF, the same check. All of
+  it before anything of the account exists - leaving costs nothing, strands nobody.
+- Fire Code ALONE: GENERATING PROFILE, then Nova's first half in this page over an empty stage (never the academy's Home):
+  hello, the name, a partner (the starters, the same in both classes; no academy crew under them), the code and its card,
+  "Now let's open Fire Code" (Open Fire Code). The account is made on the partner's pick with classes ["ifc"], greet.ifc done,
+  class26e.signupnext {pid} set (a SHARED key). The app opens Fire Code; its first visit seeds from the academy copy; Nova's
+  second half plays there (Welcome to Fire Code, the code with every question, his story, Fire Code's flares, chapters'
+  badges, Fire Code's crew, three ways to train - no Mock - the friend line); the marker is cleared as he ends (a relaunch
+  before then plays it again). Then the tips on Fire Code's Home, +100 XP (Fire Code's store), Add to Home Screen, "You're
+  enrolled in Fire Code", his good-luck message in Fire Code's chat. The What's New mark is set at INTRO_REV as the account is
+  made (markIntroSeen), so neither class shows the card.
+- BOTH: lands in Police Academy (the full sign-up as it is; then "You're enrolled in Police Academy and Fire Code" / "Switch
+  classes with the class button"), greet.ifc pending: Fire Code greets them the first time they open it. Why the academy: each
+  class then gets its welcome; landing in Fire Code would have left the academy with none.
+- An existing account joining the other class gets Nova's SHORT greeting (no introduction, no name/partner asked): Fire Code's
+  (ifcGreetingLines) and now the academy's (academyGreetingLines - for a Fire Code account joining it). Both say the class keeps
+  its own rank, level, badges and progress, what differs, and that the class button switches.
+
+THE BOOK'S SUCCESS (runIfcAnalysis finish): "Success", "Your IFC PDF is referenced. It is the 2021 International Fire Code ...
+It is kept on this device." Buttons: Enroll and get started (the class list: enrols on the tap, then opens Fire Code),
+Continue (sign-up), Done (the book loaded again inside the class). Enrolling is the tap now, not the check.
+
+LAST LINE ALWAYS ENDS (novaTalk): the live bug - Fire Code's greeting's last line was not marked final, so its Let's begin
+never showed and a tap had no next line; only Skip closed it. novaTalk now treats the last line as final whatever it says
+(and the greetings mark theirs).
+
+THE NEW CLASS BANNER (NEW_CLASS_INVITES): first 16 hex of SHA-256(publicId), six hashes (the owner and five classmates; the
+owner's checked against CLASS_OWNER). crypto.subtle; fail closed. Only in the academy, for a listed account NOT in Fire Code
+(so the owner, being in Fire Code, never sees it), once per device (class26e.newclass.ifc, kept through a sign out), on Home
+when nothing else is up (polled, like Add to Home Screen's sheet); the class button pulses with it (has-new) until the class
+list is opened. Tapping it opens the class list (showDailyAlert's passive banners take onTap now: .is-tap). New accounts mint
+ids that are on no list.
+
+THE CLASS BUTTON'S TIP: (a) a new account's tips have a step on it ("Your classes. Tap here to switch between your classes or
+join another one.") - classButtonTipStep, above it on an upright phone, below elsewhere; (b) an account from before it gets one
+tip on its own (maybeClassButtonTip): TOUR_REV 4 re-arms it (seenClassTip false; the Profile tips only below 3), new persisted
+field seenClassTip (default: seen when onboarded, like the other tours; set at sign-up; OR-merged in mergeSameAccount and
+mergeLeavingAccount), in the academy, after What's New has closed and when nothing else is up (not under a banner), set as it
+shows. Gate fixtures with tourRev 99/999 never see it.
+
+EACH CLASS ITS OWN LOOK
+- Theme: Fire Code's first visit no longer copies the academy's colour (the settings still come across). themeAccentFor: a
+  colour this class has not unlocked (isLockedAccent - rank colours are per class) is shown as the default and HELD (saveTheme
+  writes the pick back; a rank read low before the cloud merge never costs a colour); Fire Code's copy of the academy's colour
+  (equal to it) is not held. applyTheme keeps the shown colour per class (class26e.accentshown): the splash reads it first, and
+  the class switch's loader reads the target's. class26e.statusbar.v1 is per class now (out of SHARED).
+- Behaviour settings (sound, haptics, swipe, auto-advance, reduce motion, banners) stay as they were: each class's own copy of
+  store.theme, seeded once from the academy at Fire Code's first visit; the device keys (soundon.327, swipeon.288, safarisound,
+  shuffleon) stay device-wide.
+- Character: the first visit takes the academy's only if Fire Code has it unlocked (else Fire Code's first starter,
+  classDefaultCharacter). ifcLookCheck: in Fire Code a locked character goes to the first starter - at launch only when it is
+  the academy's own character (the leak), and any locked one once the cloud copy is merged (markCloudConfirmed; build 246's
+  rule: a feat read late never costs a character). The academy is untouched.
+
+SWITCHING
+- The loader starts in the class left's colours and turns to the class opened's (--csw-c1..3, registered colours, CSW_TINT_MS
+  1400 from the tap; "ink" set as such); the head script's arrival picture and the splash carry the change on (class-arrive-tint,
+  a negative delay). Its bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s ... 96% at a minute) instead of holding at 68%;
+  the arrival picture and the splash continue the same curve (csw-finish fills from there). NOVA_CLASS_ARRIVE lasts two
+  minutes (a slow reload). The loader gives the screen back after a minute, not 8s.
+- THE MINUTE ON BLACK, found: measured with a disk cache as a phone has (a persistent profile; an in-memory context will not
+  cache the 9.4MB page), 4x CPU, slow 3G (500 kbps, 2s round trips): the reload's page is a 304, but Fire Code's question bank
+  (ifc/bank.js, 1.4MB, loaded only by Fire Code) downloaded whole on the first switch into it - 25s of a 33s switch, under the
+  splash. warmIfcBank: an account in Fire Code fetches it in the academy, once a launch, 6s after Home (idle), and at once when
+  the class button is opened. After: the same switch 7.5-9.4s, nothing over 50KB fetched. Cold cache (the page itself evicted
+  or a new build): 9.4MB at 500 kbps is ~2.5 minutes, at 9 Mbps ~8s - only the loader (now never still) can cover that.
+- Nothing on the new Home moves after it shows (0px over 5s, both ways, measured).
+- "Welcome back to Fire Code" / "Welcome back to the Police Academy" (maybeSwitchWelcome): an arrival by the class button, not a
+  first enrolment, join, sign-in or sign-up; once; on Home when settled and nothing else is up.
+
+GATE tools/check-b384-classes-open.py (sections ifconly, newdevice, join, both, existing, banner, tip, switch, finals; ONLY=):
+- This build: ALL PASS (54 checks, the full run on the rebased build). Against 5d9798a: 50 FAIL; the four that pass on both are the
+  "no page errors" guards (11b, 16d, 18d, 17b). The switch section against 5d9798a with the owner's id (so 383's rule lets it switch):
+  Fire Code in Silver and wearing Void, no colour change on the loader, ifc/bank.js downloaded whole (1.46MB: 35.0s to Fire Code
+  against 10.2s here; the academy 18.3s against 9.2s - slow 3G, 4x CPU, the sandbox at load 13-21), the bar held at 68%, no
+  welcome-back banner: (19)-(23) FAIL; (22c) "nothing moves after Home shows" and (23b) hold on both (guards).
+- Measured, same setup, unthrottled network: 7.5-11.4s each way at 4x CPU under this load (the 2.5s splash floor plus the 9MB
+  page's parse); at 1x 3.9-6.2s. Nothing on the new Home moves after it shows (0px over 5s), layout shift 0-0.001.
+OTHER GATES, one at a time: check-js ALL PASS; check-b381-class ALL PASS (its Safari case had found Add to Home Screen's Quick tip
+coming up over the open class list - a2hsBusy now waits while the list is open or a class is opening); check-b383-classes 14 pass,
+(5) ifc's recap fails identically on 5d9798a; check-b383-ifcsync ALL PASS; check-b382-ifc 56 pass + "Profile has no Stats tab"
+(known, fails identically since 383); check-b384-signupclass ALL PASS; check-b384-a2hs iphone/samsung/desktop/installed/clip ALL
+PASS (68) - its settings section waits for Welcome where Get Started now opens and fails identically on 5d9798a; check-b383-signup
+signin/had/signout/icon/settings ALL PASS (50), fresh ALL PASS (50) with a 480s walk budget (the 120s budget runs out under this
+load, as noted in 384's Add to Home Screen round); check-b382-firstrun ALL PASS (123); check-sync 119 pass, "Find me finds your
+row" (the known race); check-b384-cutscenes ALL PASS (73); check-b384-whatsnew10 ALL PASS; check-b384-a2hstip ALL PASS;
+check-behaviour check_b289 ALL PASS; check-b384-board2 (1) ALL PASS (no blank frame across a switch); check-b384-friends ALL PASS;
+check-b328-classes 13 pass + "academy's saved copy byte-for-byte unchanged" (fails identically on 5d9798a); sweep-layout --quick
+20/20 clean; the page console in both classes (fresh, academy, both, Fire Code alone): no page errors, only the blocked Firebase
+CDN.
+OLD GATES CHANGED FOR MADISON'S NEW RULE: check-b382-firstrun F and check-b328-classes' classmate (another account has the class
+button now; Fire Code still refused to it by the device setting alone); check-behaviour's "tourRev 3 arms the Profile tips"
+reads TOUR_REV >= 3 (it is 4).
+MEDIA (scratchpad classes384/, made-up names and codes): fireonly-signup-440x956.mp4 (Get Started to Fire Code's Home, 3.5 min),
+newclass-banner-440x956.mp4, switch-to-firecode-440x956.mp4, switch-to-academy-440x956.mp4.
+
+PHONE ONLY: the colour change and the bar on a real reload (iOS keeps the old page's last frame until the new one paints);
+the real network for the bank's warm-up and a 304; crypto.subtle on the live https page; the file picker for the book at
+sign-up; Safari's @property support (16.4+; older steps the colours).

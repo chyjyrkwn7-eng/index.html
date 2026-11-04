@@ -136,9 +136,13 @@
      show for that class ... I can't earn xp in one class and the leaderboard for police
      academy class 26 go up ... AGAIN THIS ONLY APPLIES TO MY ACCOUNT NO ONE ELSE."
 
-     Only the account whose publicId is CLASS_OWNER can be in another class, and only on a
-     device where that account is the one signed in (read here, read-only, from the
-     academy's own saved copy). The other class runs as a separate copy of the app on this
+     (384, Madison: "everyone is gonna get the button".) Any account ENROLLED in another class can
+     be in it - the classes it is in are the account's own (`classes` on the academy's saved copy,
+     synced with the account; see accountClassesOf), read here, read-only, from the academy's copy
+     on this device. Before 384 only the owner's account (CLASS_OWNER) could be, and it still counts
+     as enrolled in Fire Code. An account enrolled in Fire Code alone (it signed up for Fire Code
+     only) always opens in Fire Code: it never sees the academy unless it joins it from the class
+     list. The other class runs as a separate copy of the app on this
      device: every class26e.* key this page reads or writes is redirected to class26e.ifc.*
      (device settings excepted), IndexedDB names get an "ifc:" prefix, and initFirebase()
      stands down - so nothing it does can reach the academy's saved progress, its backup,
@@ -151,32 +155,58 @@
   (function(){ /* its own scope: nothing here may become a global the app's script declares again */
   try{
     var csw = JSON.parse(sessionStorage.getItem("class26e.classswitch") || "null");
-    if(csw && typeof csw.at === "number" && Date.now() - csw.at >= 0 && Date.now() - csw.at < 10000){
+    /* (384) up to two minutes: a reload over a slow connection (the page fetched again) still arrives as the switch it is */
+    if(csw && typeof csw.at === "number" && Date.now() - csw.at >= 0 && Date.now() - csw.at < 120000){
       document.documentElement.classList.add("class-arrive"); window.NOVA_CLASS_ARRIVE = csw;
       /* the loader's own picture on the page's root, from its first frame: the head is long (the stylesheet) and a browser that
          will not keep the old page's last frame until the splash is parsed draws this page before it - that frame is the
          loader too (its words and bar where they were, the bar running on), not the bare background. The splash covers it the
-         moment it is in the page, and its script takes it away (class-arrive-pre). */
+         moment it is in the page, and its script takes it away (class-arrive-pre).
+         (384) Its colours CHANGE from the class left to the class arrived in (Madison: "The loading screen while switching
+         should transition the colors"): --csw-c1..3, registered colours, run from the old class's theme (P.f) to the new one's
+         (P.c) over P.tint ms from the tap, carried on here where the loader was (a negative delay) and on into the splash; and
+         its bar never stops while the page is still coming: the loader's creep (csw-creep, CSW_CREEP_MS), the same here. */
       var P = csw.pic, q = function(v){ return String(v).replace(/[^#0-9a-zA-Z.,%()\s"'-]/g, ""); };
       if(P && P.w && P.s && P.t && P.c){
-        var el = Math.max(0, Math.min((csw.dur || 2500) - 400, Date.now() - csw.at)), c1 = q(P.c[0]), c2 = q(P.c[1]), c3 = q(P.c[2]);
+        var now = Date.now() - csw.at;
+        var c = [q(P.c[0]), q(P.c[1]), q(P.c[2])];
+        var f = (P.f && P.f.length === 3) ? [q(P.f[0]), q(P.f[1]), q(P.f[2])] : c;
+        var tint = Math.max(1, Number(P.tint) || 1400), te = Math.min(now, tint);
+        var CREEP = 60000, ce = Math.min(now, CREEP - 1);
+        var v1 = "var(--csw-c1)", v2 = "var(--csw-c2)", v3 = "var(--csw-c3)";
         /* (never "top": a global var of that name is the window's own, read-only) */
         var pTop = Math.min(P.s[1], P.t[1]), pLeft = Math.min(P.s[0], P.t[0]), pWid = Math.max(P.s[2], P.t[2]);
-        var dur = csw.dur || 2500, cap = Math.max(.1, (dur - 800) / dur);
-        var css = "html.class-arrive-pre{background:radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, " + c2 + " 17%, transparent), transparent 72%)," +
-          "radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, " + c3 + " 13%, transparent), transparent 70%)," +
-          "radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, " + c1 + " 10%, transparent), transparent 70%), #0A0A0A !important;}" +
+        var W = P.t[2], H = P.t[3];
+        var bs = function(p){ return "background-size:" + (W * p).toFixed(2) + "px " + H + "px, " + W + "px " + H + "px;"; };
+        var glow = function(a, b, d){ return "radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, " + b + " 17%, transparent), transparent 72%)," +
+          "radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, " + d + " 13%, transparent), transparent 70%)," +
+          "radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, " + a + " 10%, transparent), transparent 70%)"; };
+        /* the colours (kept while the splash is up: its own style element) */
+        var tcss = "";
+        for(var i = 0; i < 3; i++) tcss += "@property --csw-c" + (i + 1) + "{syntax:'<color>';inherits:true;initial-value:" + c[i] + ";}";
+        tcss += "@keyframes csw-tint{from{--csw-c1:" + f[0] + ";--csw-c2:" + f[1] + ";--csw-c3:" + f[2] + ";}to{--csw-c1:" + c[0] + ";--csw-c2:" + c[1] + ";--csw-c3:" + c[2] + ";}}" +
+          "html.class-arrive{--csw-c1:" + c[0] + ";--csw-c2:" + c[1] + ";--csw-c3:" + c[2] + ";animation:csw-tint " + tint + "ms ease-in-out -" + te + "ms both;}" +
+          /* and the splash, once it is in, in the same colours as they change */
+          "html.class-arrive #splash-wordmark{background-image:linear-gradient(90deg, " + v1 + ", " + v2 + ", " + v3 + ") !important;}" +
+          "html.class-arrive #splash-status{color:" + v1 + " !important;}" +
+          "html.class-arrive #splash-fill{background:linear-gradient(90deg, " + v1 + ", " + v2 + ", " + v3 + ") !important;}" +
+          "html.class-arrive #splashscreen::before{background:" + glow(v1, v2, v3) + " !important;}";
+        var ts = document.createElement("style"); ts.id = "class-arrive-tint"; ts.textContent = tcss;
+        (document.head || document.documentElement).appendChild(ts);
+        /* the picture itself (taken away by the splash's script once the splash is in) */
+        var css = "html.class-arrive-pre{background:" + glow(v1, v2, v3) + ", #0A0A0A !important;}" +
           "html.class-arrive-pre::before{content:'NOVA';position:fixed;z-index:1;pointer-events:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;white-space:nowrap;" +
           "left:" + P.w[0] + "px;top:" + P.w[1] + "px;width:" + P.w[2] + "px;height:" + P.w[3] + "px;" +
           "font-weight:" + q(P.wf[0]) + ";font-size:" + q(P.wf[1]) + ";font-family:" + q(P.wf[2]) + ";letter-spacing:" + q(P.wf[3]) + ";line-height:" + q(P.wf[4]) + ";" +
-          "background:linear-gradient(90deg, " + c1 + ", " + c2 + ", " + c3 + ");-webkit-background-clip:text;background-clip:text;color:transparent;}" +
+          "background:linear-gradient(90deg, " + v1 + ", " + v2 + ", " + v3 + ");-webkit-background-clip:text;background-clip:text;color:transparent;}" +
           "html.class-arrive-pre::after{content:" + JSON.stringify(String(csw.line || "")) + ";position:fixed;z-index:1;pointer-events:none;box-sizing:border-box;white-space:nowrap;text-align:center;" +
-          "left:" + pLeft + "px;top:" + pTop + "px;width:" + pWid + "px;height:" + (P.t[1] + P.t[3] - pTop) + "px;color:" + c1 + ";" +
+          "left:" + pLeft + "px;top:" + pTop + "px;width:" + pWid + "px;height:" + (P.t[1] + P.t[3] - pTop) + "px;color:" + v1 + ";" +
           "font-weight:" + q(P.sf[0]) + ";font-size:" + q(P.sf[1]) + ";font-family:" + q(P.sf[2]) + ";letter-spacing:" + q(P.sf[3]) + ";line-height:" + P.s[3] + "px;" +
-          "background:linear-gradient(90deg, " + c1 + ", " + c2 + ", " + c3 + ") no-repeat, linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12)) no-repeat;" +
-          "background-position:" + (P.t[0] - pLeft) + "px 100%, " + (P.t[0] - pLeft) + "px 100%;background-size:0 " + P.t[3] + "px, " + P.t[2] + "px " + P.t[3] + "px;" +
-          "animation:csl-pre " + dur + "ms linear -" + Math.min(el, dur - 800) + "ms " + cap.toFixed(4) + " forwards;}" +
-          "@keyframes csl-pre{from{background-size:0 " + P.t[3] + "px, " + P.t[2] + "px " + P.t[3] + "px;}to{background-size:" + P.t[2] + "px " + P.t[3] + "px, " + P.t[2] + "px " + P.t[3] + "px;}}";
+          "background:linear-gradient(90deg, " + v1 + ", " + v2 + ", " + v3 + ") no-repeat, linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12)) no-repeat;" +
+          "background-position:" + (P.t[0] - pLeft) + "px 100%, " + (P.t[0] - pLeft) + "px 100%;" + bs(0) +
+          "animation:csl-pre " + CREEP + "ms linear -" + ce + "ms forwards;}" +
+          /* the creep: CSW_CREEP's stops (1.7s to 68%, then slower and slower, never quite full) */
+          "@keyframes csl-pre{0%{" + bs(0) + "}2.8333%{" + bs(.68) + "}6.6667%{" + bs(.78) + "}16.6667%{" + bs(.86) + "}50%{" + bs(.93) + "}100%{" + bs(.96) + "}}";
         var st = document.createElement("style"); st.id = "class-arrive-pre"; st.textContent = css;
         (document.head || document.documentElement).appendChild(st);
         document.documentElement.classList.add("class-arrive-pre");
@@ -193,11 +223,11 @@
        (383, Madison: "After signing out, you should NOT have to enroll into fire code again.") The classes this device is
        enrolled in, the classes it has been shown and their greetings are the device's too, so they stay - as the IFC book
        itself always did (its own IndexedDB, never deleted here): sign back in and Fire Code is in the class button, its
-       progress coming back from its own cloud document. Only the owner's account can open another class (classSwitchAllowed),
-       so a different account signing in on this device sees none of it. */
+       progress coming back from its own cloud document. (384) What an account may open is the account's own list (`classes`),
+       so a different account signing in on this device sees none of it; class26e.enrolled is only a mirror of it now. */
     try{
       if(localStorage.getItem("class26e.signout")){
-        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+)$/;
+        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+|newclass\.[a-z]+)$/;
         var del = [];
         for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
         for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
@@ -211,11 +241,26 @@
     }catch(e){}
     var CLASS_OWNER = "xph5b57jbp5a", ACTIVE = "class26e.activeclass";
     window.NOVA_CLASS = "academy"; window.NOVA_CLASS_OWNER = CLASS_OWNER;
-    var want = null, owner = false, academyRaw = null;
+    var want = null, academyRaw = null, a = null;
     try{ want = localStorage.getItem(ACTIVE); }catch(e){}
-    try{ academyRaw = localStorage.getItem("class26e.drill.v1"); var a = JSON.parse(academyRaw || "null"); owner = !!a && a.publicId === CLASS_OWNER; }catch(e){}
+    try{ academyRaw = localStorage.getItem("class26e.drill.v1"); a = JSON.parse(academyRaw || "null"); }catch(e){ a = null; }
+    /* (384) THE CLASSES THIS ACCOUNT IS IN (the app's accountClassesOf, written out here: this runs before it exists).
+       No list recorded = an account from before 384, which is the academy's; the owner's is in Fire Code as well. */
+    var acct = !!a && typeof a === "object" && typeof a.publicId === "string" && !!a.publicId;
+    var cls = [];
+    if(acct && Object.prototype.toString.call(a.classes) === "[object Array]"){
+      for(var ci = 0; ci < a.classes.length; ci++){ var ck = a.classes[ci]; if((ck === "academy" || ck === "ifc") && cls.indexOf(ck) < 0) cls.push(ck); }
+    }
+    if(!cls.length) cls = ["academy"];
+    if(acct && a.publicId === CLASS_OWNER && cls.indexOf("ifc") < 0) cls.push("ifc");
+    var inIfc = acct && cls.indexOf("ifc") >= 0, inAcademy = cls.indexOf("academy") >= 0;
+    /* an account in Fire Code alone opens there, wherever the device last was - unless the page is arriving from the class
+       button's way into the academy (switchClass, this tab only, seconds old): joining it, or a device whose copy has not heard
+       yet that it joined on another device. The academy page then records the class on the account (enrolledClasses). */
+    var arrive = window.NOVA_CLASS_ARRIVE, toAcademy = !!arrive && arrive.to === "academy";
+    if(want !== "ifc" && inIfc && !inAcademy && !toAcademy){ want = "ifc"; try{ localStorage.setItem(ACTIVE, "ifc"); }catch(e){} }
     if(want !== "ifc") return;
-    if(!owner){ try{ localStorage.removeItem(ACTIVE); }catch(e){} return; }
+    if(!inIfc){ try{ localStorage.removeItem(ACTIVE); }catch(e){} return; }
     window.NOVA_CLASS = "ifc";
     window.NOVA_ACADEMY_RAW = academyRaw;
     /* build 383: Fire Code syncs under the academy account's code (its own document beside it, never the academy's): read here,
@@ -230,7 +275,8 @@
     /* (384) FRIENDS IN EVERY CLASS: the chat's own marks are the academy account's, kept once for both classes - what is read
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
+    /* (384) the status bar's colour is the class's own (its theme's), as the theme is: not shared */
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|signupnext|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -1682,13 +1728,24 @@
     background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .16s ease; pointer-events:auto; touch-action:none;
   }
   #class-switch-loader.is-on{ opacity:1; }
+  /* (384) its colours turn from the class left to the class it opens (switchClass animates these from one to the other) */
+  @property --csw-c1{ syntax:"<color>"; inherits:true; initial-value:#FFD37A; }
+  @property --csw-c2{ syntax:"<color>"; inherits:true; initial-value:#F5804D; }
+  @property --csw-c3{ syntax:"<color>"; inherits:true; initial-value:#C23B7A; }
+  #class-switch-loader{ --csw-c1:var(--theme-c1); --csw-c2:var(--theme-c2); --csw-c3:var(--theme-c3); }
   #class-switch-loader::before{
     content:""; position:absolute; inset:0; pointer-events:none;
     background:
-      radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, var(--theme-c2) 17%, transparent), transparent 72%),
-      radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, var(--theme-c3) 13%, transparent), transparent 70%),
-      radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, var(--theme-c1) 10%, transparent), transparent 70%);
+      radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, var(--csw-c2) 17%, transparent), transparent 72%),
+      radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, var(--csw-c3) 13%, transparent), transparent 70%),
+      radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, var(--csw-c1) 10%, transparent), transparent 70%);
   }
+  #class-switch-loader #csl-wordmark{ background-image:linear-gradient(90deg, var(--csw-c1), var(--csw-c2), var(--csw-c3)); }
+  #class-switch-loader #csl-status{ color:var(--csw-c1); }
+  #class-switch-loader #csl-fill{ background:linear-gradient(90deg, var(--csw-c1), var(--csw-c2), var(--csw-c3)); }
+  /* (384) the bar while the next page comes: never still (CSW_CREEP_MS; the arrival picture's csl-pre has the same stops) */
+  @keyframes csw-creep{ 0%{ transform:scaleX(0); } 2.8333%{ transform:scaleX(.68); } 6.6667%{ transform:scaleX(.78); }
+    16.6667%{ transform:scaleX(.86); } 50%{ transform:scaleX(.93); } 100%{ transform:scaleX(.96); } }
   #csl-group{ display:flex; flex-direction:column; align-items:center; gap:.7rem; position:fixed; left:50%; top:50%; transform:translate(-50%, -50%); }
   /* Matches the startup splash screen's own structure exactly now \u2014
      wordmark, one status line, one thin progress bar \u2014 rather than a
@@ -25967,6 +26024,8 @@
   .app-banner.is-passive{ pointer-events:none; }
   .app-banner.is-passive > *{ pointer-events:none; }
   .app-banner.is-passive > .app-banner-x{ pointer-events:auto; }
+  /* (384) a passive line that is also a way in (the new class banner): the banner takes the tap */
+  .app-banner.is-passive.is-tap{ pointer-events:auto; cursor:pointer; }
   .app-banner-icon.app-banner-face{ width:1.9rem; height:1.9rem; border-radius:50%; display:grid; place-items:center; overflow:hidden; }
   .app-banner-icon.app-banner-face svg{ width:100%; height:100%; display:block; }
   @media (max-width:26.5rem){
@@ -37633,11 +37692,20 @@ html.is-browser{ --fade-paper: transparent; }
     document.documentElement.dataset.layout = "modern";
 
     try {
-      var raw = window.localStorage.getItem("class26e.drill.v1");
-      if(raw){
-        var parsed = JSON.parse(raw);
-        if(parsed && parsed.theme && parsed.theme.accent){
-          document.documentElement.dataset.accent = parsed.theme.accent;
+      /* (384) the colour this class was last shown in (applyTheme keeps it: a pick this class has not unlocked is shown as its
+         default), else its saved pick */
+      var shownAcc = window.localStorage.getItem("class26e.accentshown");
+      if(shownAcc && /^[a-z0-9-]+$/.test(shownAcc)){
+        if(shownAcc !== "ink") document.documentElement.dataset.accent = shownAcc;
+      } else {
+        var raw = window.localStorage.getItem("class26e.drill.v1");
+        if(raw){
+          var parsed = JSON.parse(raw);
+          var leakAcc = null;   /* Fire Code's copy of the academy's colour, from before 384, is not its own */
+          try{ if(window.NOVA_CLASS === "ifc") leakAcc = (JSON.parse(window.NOVA_ACADEMY_RAW || "null") || {}).theme.accent; }catch(e){}
+          if(parsed && parsed.theme && parsed.theme.accent && parsed.theme.accent !== leakAcc){
+            document.documentElement.dataset.accent = parsed.theme.accent;
+          }
         }
       }
     } catch(e){}
@@ -37815,6 +37883,19 @@ html.is-browser{ --fade-paper: transparent; }
     /* important: a loading bar is information, not decoration, and the
        reduce-motion rule would otherwise leave it empty. */
     fill.style.setProperty("animation", "loadbar-fill " + duration + "ms linear " + (arriveAt ? -arriveAt : 0) + "ms forwards", "important");
+    /* (384) from a class switch the bar carries on from where the loader's creep is now (CSW_CREEP_MS: a reload over a slow
+       connection can take far longer than the 1.7s the bar ran to before), and fills from there over what is left */
+    if(arrive){
+      try{
+        var since = Math.max(0, Date.now() - arrive.at);
+        var CS = [[0, 0], [1700, .68], [4000, .78], [10000, .86], [30000, .93], [60000, .96]], p0 = .96;
+        for(var ci = 1; ci < CS.length; ci++){ if(since <= CS[ci][0]){ p0 = CS[ci - 1][1] + (CS[ci][1] - CS[ci - 1][1]) * (since - CS[ci - 1][0]) / (CS[ci][0] - CS[ci - 1][0]); break; } }
+        var fk = document.createElement("style");
+        fk.textContent = "@keyframes csw-finish{from{transform:scaleX(" + p0.toFixed(4) + ");}to{transform:scaleX(1);}}";
+        document.head.appendChild(fk);
+        fill.style.setProperty("animation", "csw-finish " + Math.max(400, duration - arriveAt) + "ms linear 0ms forwards", "important");
+      }catch(e){}
+    }
     /* the loader has already run arriveAt of the bar: the splash lasts what is left of it */
     if(arriveAt){ duration -= arriveAt; msgInterval = duration / messages.length; clearInterval(msgTimer);
       msgTimer = setInterval(function(){ msgIndex++; if(msgIndex < messages.length) statusEl.textContent = messages[msgIndex]; }, msgInterval); }
@@ -54368,9 +54449,10 @@ function startStudying(){
 /* ---- THE CLASS BUBBLE (build 328, NOVA_CLASS - see the top of the document) ----
    "a button on the left side that's a bubble, but it's a drop down ... shaped like the daily
    question ... The icon of the bubble can be for the class you are in ... a fire symbol ...
-   the police one can be like police lights". Home's top-left corner, the chat button's twin;
-   only the class owner's account ever gets it. It opens a short list of the classes; picking
-   another saves, records the choice on this device and reloads into it. */
+   the police one can be like police lights". Home's top-left corner, the chat button's twin.
+   (384, Madison: "everyone is gonna get the button".) Every account has it: it opens a short
+   list of the classes the account is in, and "+" for the class list; picking another class
+   saves, records the choice on this device and reloads into it. */
 const NOVA_CLASSES = [
   /* the two marks share Nova's own vocabulary - a soft gradient and the four-point spark that
      sits in his name */
@@ -54386,52 +54468,141 @@ const NOVA_CLASSES = [
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="cgf4" x1="12" y1="2.6" x2="12" y2="21" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFE08A"/><stop offset=".42" stop-color="#FF9447"/><stop offset="1" stop-color="#EE4B3F"/></linearGradient><linearGradient id="cgf4c" x1="12" y1="10.4" x2="12" y2="19" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF7DA"/><stop offset="1" stop-color="#FFC266"/></linearGradient></defs><path d="M12 2.7C13.1 5.9 18.2 8.8 18.2 14.6A6.2 6.2 0 0 1 5.8 14.6C5.8 8.8 10.9 5.9 12 2.7Z" fill="url(#cgf4)"/><path d="M12 10.3C12.7 12.2 15.2 13.7 15.2 16.3A3.2 3.2 0 0 1 8.8 16.3C8.8 13.7 11.3 12.2 12 10.3Z" fill="url(#cgf4c)"/></svg>' }
 ];
 function classSwitchAllowed(){
-  return !!window.NOVA_CLASS_OWNER && (window.NOVA_CLASS !== "academy" || (store && store.publicId === window.NOVA_CLASS_OWNER));
+  /* (384) every account: the head script lets a page into a class only for an account enrolled in it, and in the academy any
+     account that has finished signing up has the button (before 384, the owner's alone) */
+  if(window.NOVA_CLASS !== "academy") return true;
+  return !!(store && store.onboardingComplete);
 }
-/* The classes this device's owner is enrolled in: the academy always, the others once enrolled
-   (class26e.enrolled, a device setting the head script shares between the classes). */
+/* ---- THE CLASSES AN ACCOUNT IS IN (build 384) ----
+   Madison: "everyone is gonna get the button" / "almost every single new account will be signing up and enrolling into fire
+   code from the beginning". Which classes an account is in is the ACCOUNT's, not the device's: `classes` on the academy's
+   copy (the account's identity lives there), synced with it, so a phone signed in with the code opens the right class with
+   the right list. Absent (null) on every account from before 384 - those are the academy's - and the owner's (CLASS_OWNER)
+   was in Fire Code before there was a list, so it still is. A Fire Code-only account is ["ifc"]: it opens in Fire Code (the
+   head script) and never sees the academy until it joins it from the class list. The same rule is written out in the head
+   script, which runs before this. class26e.enrolled (the device setting 328-383 used) is only a mirror of it now.
+   Fire Code reads the academy's copy (academyCopyNow: NOVA_ACADEMY_RAW, then each newer cloud copy) and never writes it. */
+function cleanClassList(v){
+  if(!Array.isArray(v)) return null;
+  const out = [];
+  v.forEach(k => { if((k === "academy" || k === "ifc") && out.indexOf(k) < 0) out.push(k); });
+  return out.length ? out.sort((x, y) => (x === "academy" ? 0 : 1) - (y === "academy" ? 0 : 1)) : null;
+}
+function accountClassesOf(a){
+  const has = !!a && typeof a === "object";
+  let list = (has && cleanClassList(a.classes)) || ["academy"];
+  if(has && a.publicId && a.publicId === window.NOVA_CLASS_OWNER && list.indexOf("ifc") < 0) list = list.concat("ifc");
+  return list;
+}
+/* The classes this account is in, in the class list's order. */
 function enrolledClasses(){
-  let list = [];
-  try{ list = JSON.parse(localStorage.getItem("class26e.enrolled") || "[]"); }catch(e){}
-  if(!Array.isArray(list)) list = [];
-  return ["academy"].concat(list.filter(k => k !== "academy" && NOVA_CLASSES.some(c => c.key === k)));
+  let src = store;
+  try{ if(window.NOVA_CLASS === "ifc") src = academyCopyNow(); }catch(e){}
+  const list = accountClassesOf(src);
+  return ["academy", "ifc"].filter(k => list.indexOf(k) >= 0);
 }
+/* in the academy (the account's own copy): its Home, its board and its row are for a member only */
+function academyMember(){ return enrolledClasses().indexOf("academy") >= 0; }
+/* Records a class on the account - the academy's copy, which Fire Code never writes (joining the academy from Fire Code
+   arrives here first: switchClass's join, then the academy's boot). */
 function setEnrolled(key, on){
-  const list = enrolledClasses().filter(k => k !== "academy" && k !== key);
+  if(window.NOVA_CLASS !== "academy" || (key !== "academy" && key !== "ifc")) return false;
+  let list = accountClassesOf(store).filter(k => k !== key);
   if(on) list.push(key);
-  try{ localStorage.setItem("class26e.enrolled", JSON.stringify(list)); }catch(e){}
+  list = cleanClassList(list);
+  if(!list) return false;
+  store.classes = list;
+  try{ localStorage.setItem("class26e.enrolled", JSON.stringify(list.filter(k => k !== "academy"))); }catch(e){}
+  saveStore();
+  return true;
 }
 /* "Put the drop down bubble thing on the left side below the planet system": it stands just
    under the planet at the screen's left edge, and opens downward into a stack of bubbles -
    each other class you are in, then "+" for the class list ("Since I'm not in any besides
    mine I will see just the +"). */
-/* ---- A CLASS THAT IS NEW TO YOU (build 329) ----
-   "When new classes get added, make the class bubble pulse so people know to look, and maybe a
-   pop-up." class26e.classseen is the classes this device has been shown in the list; with
-   nothing stored it is the two that exist today, so a class added later is new to everybody.
-   The bubble pulses softly and one banner says so; opening the classes list marks them seen. */
-function unseenClasses(){
-  let seen = ["academy", "ifc"];
-  try{ const v = JSON.parse(localStorage.getItem("class26e.classseen") || "null"); if(Array.isArray(v)) seen = v; }catch(e){}
-  return NOVA_CLASSES.filter(c => seen.indexOf(c.key) < 0);
+/* ---- "FIRE CODE IS OPEN TO JOIN" (build 329, re-aimed in 384) ----
+   329 built a banner and the bubble's pulse for "a class added later"; with nothing stored every class counted as seen, so
+   nobody got them. (384) Madison: "Don't get confused, everyone is gonna get the button, but only these people will get
+   banner that it's available ... new accounts won't get the banner because almost every single new account will be signing
+   up and enrolling into fire code from the beginning." So the banner and the pulse are for the accounts on NEW_CLASS_INVITES
+   alone, and only while they are not in Fire Code: once per device (class26e.newclass.ifc, kept through a sign out), on
+   Home, when nothing else is up. Tapping it opens the class list.
+   The list holds no names and no ids (the repo is public): the first 16 hex characters of SHA-256 of each account's
+   publicId. Where the browser cannot hash (crypto.subtle needs https), nobody gets it. */
+const NEW_CLASS_INVITES = [
+  /* the owner and five classmates, 384 */
+  "556360b3360110d8",
+  "619e3353aabe4cda",
+  "67abbb0b0b7b76d5",
+  "27e0eb6a9220f335",
+  "192f275afcd2b885",
+  "8abea1ad2da6b9a1"
+];
+const NEW_CLASS_SEEN_KEY = "class26e.newclass.ifc";
+let newClassInvite = null;   /* { id, p }: the answer for this account, asked once */
+function publicIdHash16(id){
+  try{
+    if(!(window.crypto && crypto.subtle && typeof crypto.subtle.digest === "function" && typeof TextEncoder === "function")) return Promise.resolve(null);
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(id)))
+      .then(buf => Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, "0")).join(""))
+      .catch(() => null);
+  }catch(e){ return Promise.resolve(null); }
 }
+function newClassInvited(){
+  const id = store && store.publicId;
+  if(!id) return Promise.resolve(false);
+  if(!newClassInvite || newClassInvite.id !== id){
+    newClassInvite = { id, p: publicIdHash16(id).then(h => !!h && NEW_CLASS_INVITES.indexOf(h) >= 0) };
+  }
+  return newClassInvite.p;
+}
+function newClassShownHere(){ try{ return !!localStorage.getItem(NEW_CLASS_SEEN_KEY); }catch(e){ return true; } }
+/* owed here: the academy, an account that has signed up, on the list, not in Fire Code, and not shown on this device */
+function newClassBannerDue(){
+  if(window.NOVA_CLASS !== "academy" || !store || !store.onboardingComplete || !store.publicId) return Promise.resolve(false);
+  if(enrolledClasses().indexOf("ifc") >= 0 || newClassShownHere()) return Promise.resolve(false);
+  return newClassInvited();
+}
+/* opening the class list ends the pulse (329) */
 function markClassesSeen(){
   try{ localStorage.setItem("class26e.classseen", JSON.stringify(NOVA_CLASSES.map(c => c.key))); }catch(e){}
+  newClassPulseOn = false;
   const w = document.querySelector(".class-bubble-wrap"); if(w) w.classList.remove("has-new");
 }
+/* the pulse comes with the banner and goes when the class list is opened (and never comes back: the banner's key is set) */
+let newClassTimer = 0, newClassPulseOn = false;
 function maybeNewClassBanner(){
-  const fresh = unseenClasses(); if(!fresh.length) return;
-  let said = null; try{ said = sessionStorage.getItem("class26e.newclass.said"); }catch(e){}
-  if(said === fresh.map(c => c.key).join()) return;
-  setTimeout(() => {
-    if(!onNovaHome() || document.getElementById("nova-intro") || document.getElementById("nova-class-greet")) return;
-    try{ sessionStorage.setItem("class26e.newclass.said", fresh.map(c => c.key).join()); }catch(e){}
-    const c = fresh[0], info = NOVA_CLASS_INFO[c.key] || {};
-    const ic = document.createElement("span"); ic.innerHTML = c.icon;
-    showDailyAlert("Tap the class button to look", { kind: "enrolled", tag: "NEW CLASS", title: (info.title || c.name) + " is open to join",
-      color: "#FF9648", iconEl: ic.firstElementChild, id: "newclass-banner", stay: 7000,
-      onTap: () => { const b = document.querySelector(".class-bubble"); if(b) b.click(); } });
-  }, 2400);
+  if(newClassTimer || window.NOVA_CLASS !== "academy") return;
+  newClassBannerDue().then(due => {
+    if(!due || newClassTimer) return;
+    let tries = 0, calm = 0;
+    const attempt = () => {
+      newClassTimer = 0;
+      if(newClassShownHere() || enrolledClasses().indexOf("ifc") >= 0) return;
+      /* Home and its class button, and nothing else up: the tips, Nova, a cutscene or card, a sheet, the chat, the week's
+         recap, another banner */
+      let busy = !onNovaHome() || !document.querySelector(".class-bubble-wrap");
+      try{ busy = busy || a2hsBusy() || a2hsHolds(); }catch(e){}
+      busy = busy || !!document.querySelector("#nova-intro, #nova-class-greet, #nova-rank, .nova-talk, .daily-alert, #genprofile-overlay, #class-switch-loader");
+      try{ busy = busy || novaIntroOn || pendingMainMenuTour || signupInNova; }catch(e){}
+      if(busy){
+        calm = 0;
+        /* left for the next Home after a few minutes away from this one */
+        if(++tries > 300) return;
+        newClassTimer = setTimeout(attempt, 700); return;
+      }
+      if(++calm < 2){ newClassTimer = setTimeout(attempt, 700); return; }
+      try{ localStorage.setItem(NEW_CLASS_SEEN_KEY, String(Date.now())); }catch(e){}
+      const c = NOVA_CLASSES.find(x => x.key === "ifc"), info = NOVA_CLASS_INFO.ifc || {};
+      newClassPulseOn = true;
+      const w = document.querySelector(".class-bubble-wrap"); if(w) w.classList.add("has-new");
+      const ic = document.createElement("span"); ic.innerHTML = c.icon;
+      showDailyAlert("Tap to see the class list", { kind: "enrolled", tag: "NEW CLASS", title: (info.title || c.name) + " is open to join",
+        color: "#FF9648", iconEl: ic.firstElementChild, id: "newclass-banner", stay: 7000,
+        onTap: () => { try{ showClassCatalog(); }catch(e){} } });
+    };
+    newClassTimer = setTimeout(attempt, 2400);
+  });
 }
 function mountClassBubble(){
   if(!classSwitchAllowed()) return;
@@ -54461,6 +54632,7 @@ function mountClassBubble(){
   });
   const outside = (e) => { if(!wrap.contains(e.target)) closeStack(); };
   function openStack(){
+    try{ warmIfcBank(); }catch(e){}   /* (384) a head start on Fire Code's questions, before a switch is tapped */
     wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
     stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = 0; });
     try{ playSound("ui.popup.open"); }catch(e){}
@@ -54473,7 +54645,7 @@ function mountClassBubble(){
   }
   btn.addEventListener("click", () => { markClassesSeen(); if(wrap.classList.contains("is-open")) closeStack(); else openStack(); });
   wrap.append(dock, btn, stack);
-  if(unseenClasses().length) wrap.classList.add("has-new");
+  if(newClassPulseOn) wrap.classList.add("has-new");
   stage.appendChild(wrap);
   /* under the planet, near the left edge: placed from the planet's own box, again whenever the screen changes size */
   const place = () => {
@@ -54496,10 +54668,37 @@ function mountClassBubble(){
   place(); requestAnimationFrame(place); setTimeout(place, 400); setTimeout(place, 1200);
   window.addEventListener("resize", place, { passive: true });
 }
-function switchClass(key, row){
+/* (384) FIRE CODE'S QUESTIONS, IN THE CACHE BEFORE THEY ARE NEEDED. Madison: "when i switched classes ... the screen was stuck
+   on black for like an entire minute". Measured (a phone's disk cache, 4x CPU, slow 3G): a switch reloads the page, which the
+   cache answers with a 304 - but Fire Code's question bank (ifc/bank.js, 1.4 MB) is loaded only by Fire Code, so the first
+   switch into it on a device (or after the cache let it go) downloaded it whole, holding the page under its splash: 25s of a
+   33s switch on slow 3G. An account in Fire Code fetches it in the academy, quietly, once a launch: a moment after Home has
+   settled, and at once when the class button is opened - so the switch finds it in the cache (a 304, or not asked for at
+   all). A same-origin GET: the script tag that loads it reads the same cache entry. */
+let ifcBankWarmed = false;
+function warmIfcBank(){
+  if(ifcBankWarmed || window.NOVA_CLASS !== "academy" || window.IFC_BANK) return;
+  try{ if(enrolledClasses().indexOf("ifc") < 0) return; }catch(e){ return; }
+  ifcBankWarmed = true;
+  try{ fetch("ifc/bank.js", { credentials: "same-origin" }).then(r => r && r.arrayBuffer && r.arrayBuffer()).catch(() => { ifcBankWarmed = false; }); }catch(e){ ifcBankWarmed = false; }
+}
+function warmIfcBankSoon(){
+  if(ifcBankWarmed || window.NOVA_CLASS !== "academy") return;
+  const go = () => { try{ warmIfcBank(); }catch(e){} };
+  setTimeout(() => { try{ if(window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 }); else go(); }catch(e){ go(); } }, 6000);
+}
+/* (384) the class switch's loader: its colours turn from this class's to the next one's over CSW_TINT_MS from the tap, and its
+   bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s, 86% at 10s, 93% at 30s, 96% at a minute) - the head script's arrival
+   picture and the splash carry both on from the same numbers */
+const CSW_TINT_MS = 1400, CSW_CREEP_MS = 60000;
+function switchClass(key, row, opts){
+  opts = opts || {};
   if(!classSwitchAllowed() || !NOVA_CLASSES.some(c => c.key === key)) return;
+  /* (384) only into a class the account is in - or, from Fire Code, into the academy to join it (opts.join): the academy
+     page records it on the account as it opens (the head script lets a switch into the academy through) */
+  if(enrolledClasses().indexOf(key) < 0 && !(opts.join && key === "academy")) return;
   if(document.getElementById("class-switch-loader")) return;
-  try{ persistLocally(); }catch(e){}
+  /* (384) the loader first, from the tap; this page's copy is written while it fades in, before the reload */
   try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){ return; }
   if(row) row.classList.add("is-going");
   document.documentElement.classList.add("class-switching");
@@ -54512,52 +54711,93 @@ function switchClass(key, row){
   try{
     const L = document.createElement("div");
     L.id = "class-switch-loader"; L.setAttribute("role", "status"); L.setAttribute("aria-label", "Opening " + String(info.title || cls.name || "your class"));
-    /* the class it is going to wears its own theme's colours here, as its splash will */
+    /* (384) THE COLOURS GO FROM THIS CLASS'S TO THE NEXT ONE'S. Madison: "if I'm in say the police class and my theme is silver,
+       when I switch to say the ifc and that theme is default for example. The loading screen while switching should transition
+       the colors." It comes up in the colours on the screen now (this class's theme) and turns to the class it is going to -
+       ITS theme, the one it is shown in (class26e.accentshown, which applyTheme keeps: a colour that class has not unlocked is
+       its default), else its saved pick, else the default - over CSW_TINT_MS from the tap; the new page carries the same
+       change on in its first frames and its splash (the head script's class-arrive picture). Registered colours (--csw-c1..3)
+       animated: colour only. "ink" is set as such: an unset accent would take this page's. */
+    const from = ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+    let toAcc = "ink";
     try{
-      const raw = key === "academy" ? localStorage["class26e.drill.v1"] : localStorage["class26e." + key + ".drill.v1"];
-      const acc = raw && JSON.parse(raw) && JSON.parse(raw).theme && JSON.parse(raw).theme.accent;
-      if(acc && /^[a-z0-9-]+$/.test(acc)) L.dataset.accent = acc;
+      const raw = k => { try{ return localStorage[k]; }catch(e){ return null; } };   /* (a property read: Fire Code's own key-mapping is for getItem) */
+      const shown = raw(key === "academy" ? "class26e.accentshown" : "class26e." + key + ".accentshown");
+      if(shown && ACCENTS.indexOf(shown) >= 0) toAcc = shown;
+      else {
+        const sv = JSON.parse(raw(key === "academy" ? "class26e.drill.v1" : "class26e." + key + ".drill.v1") || "null");
+        const acc = sv && sv.theme && sv.theme.accent;
+        /* (not Fire Code's copy of the academy's colour, from before 384: never its own) */
+        let leak = null; try{ if(key === "ifc") leak = (JSON.parse(raw("class26e.drill.v1") || "null") || {}).theme.accent; }catch(e){}
+        if(acc && ACCENTS.indexOf(acc) >= 0 && acc !== leak) toAcc = acc;
+      }
     }catch(e){}
+    L.dataset.accent = toAcc;
     L.innerHTML = '<div id="csl-group"><p id="csl-wordmark">NOVA</p><p id="csl-status"></p><div id="csl-track"><div id="csl-fill"></div></div></div>';
     L.querySelector("#csl-status").textContent = line;
     /* centred on the visible screen in pixels, as the splash's group is */
     const g = L.querySelector("#csl-group"), vv = window.visualViewport;
     const w = vv && vv.width > 0 ? vv.width : innerWidth, h = vv && vv.height > 0 ? vv.height : innerHeight;
     g.style.left = Math.round((vv ? vv.offsetLeft : 0) + w / 2) + "px"; g.style.top = Math.round((vv ? vv.offsetTop : 0) + h / 2) + "px";
-    /* it runs as the splash's would, to where the splash carries on from at most (arriveAt), and holds there if the page is slow */
-    L.querySelector("#csl-fill").style.setProperty("animation", "loadbar-fill " + DUR + "ms linear 0ms " + ((DUR - 800) / DUR).toFixed(4) + " forwards", "important");
+    /* (384) its bar never stops while the next page is still coming: 1.7s to where the splash carries on from, then on, slower
+       and slower, never quite full (csw-creep, CSW_CREEP_MS) - a reload over a slow connection fetches the page again, and a
+       bar that holds still for that long reads as frozen. The new page's picture and splash carry on from the same curve. */
+    L.querySelector("#csl-fill").style.setProperty("animation", "csw-creep " + CSW_CREEP_MS + "ms linear 0ms forwards", "important");
     document.body.appendChild(L);
     const at = Date.now();
+    const to = ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => getComputedStyle(L).getPropertyValue(v).trim());
+    const okc = c => /^#[0-9a-f]{3,8}$|^rgba?\([0-9., ]+\)$/i.test(c);
+    const tintOk = from.every(okc) && to.every(okc);
+    if(tintOk){
+      const ks = document.createElement("style"); ks.id = "csw-tint-keys";
+      ks.textContent = "@keyframes csw-tint-l{from{--csw-c1:" + from[0] + ";--csw-c2:" + from[1] + ";--csw-c3:" + from[2] + ";}to{--csw-c1:" + to[0] + ";--csw-c2:" + to[1] + ";--csw-c3:" + to[2] + ";}}";
+      document.head.appendChild(ks);
+      L.style.animation = "csw-tint-l " + CSW_TINT_MS + "ms ease-in-out 0ms both";
+    }
     /* where its words and bar are and how they look, so the new page can draw the same picture before its own splash is in it */
     let pic = null;
     try{
       const box = id => { const b = L.querySelector(id).getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(v => Math.round(v * 100) / 100); };
-      const csw = getComputedStyle(L.querySelector("#csl-wordmark")), css = getComputedStyle(L.querySelector("#csl-status")), csL = getComputedStyle(L);
+      const csw = getComputedStyle(L.querySelector("#csl-wordmark")), css = getComputedStyle(L.querySelector("#csl-status"));
       pic = { w: box("#csl-wordmark"), s: box("#csl-status"), t: box("#csl-track"),
         wf: [csw.fontWeight, csw.fontSize, csw.fontFamily, csw.letterSpacing, csw.lineHeight], sf: [css.fontWeight, css.fontSize, css.fontFamily, css.letterSpacing, css.lineHeight],
-        c: ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => csL.getPropertyValue(v).trim()) };
-      if(!pic.c.every(c => /^#[0-9a-f]{3,8}$|^rgb/i.test(c))) pic = null;
+        c: to, f: tintOk ? from : to, tint: CSW_TINT_MS, acc: toAcc };
+      if(!pic.c.every(okc)) pic = null;
     }catch(e){ pic = null; }
-    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, dur: DUR, line, to: key, pic })); }catch(e){}
+    /* (384) join: joining the academy from Fire Code; note: what the class says as it opens (a sign-in, a sign-up going on) */
+    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, dur: DUR, line, to: key, pic, join: opts.join ? 1 : 0, note: opts.note || "" })); }catch(e){}
     void L.offsetWidth;
     L.classList.add("is-on");
     /* covered once its fade is done and a frame has shown it whole */
     reloadIn = 230;
-    /* a reload that never happens (blocked) gives the screen back */
-    setTimeout(() => { if(L.isConnected){ L.remove(); document.documentElement.classList.remove("class-switching"); } }, 8000);
+    /* a reload that never happens (blocked) gives the screen back - (384) after a minute, not 8s: a reload over a slow connection
+       is still under way at 8s (iOS has no event to say so), and giving the old screen back then left it there, stale, until
+       the new page landed on top of it */
+    setTimeout(() => { if(L.isConnected){ L.remove(); document.documentElement.classList.remove("class-switching"); } }, 60000);
   }catch(e){}
-  setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => location.reload())), reloadIn);
+  setTimeout(() => { try{ persistLocally(); }catch(e){} requestAnimationFrame(() => requestAnimationFrame(() => location.reload())); }, reloadIn);
 }
 /* ---- NOVA GREETS A NEW CLASS (build 328) ----
    "When signing up the new class, ensure you get greeted by nova for signing up, he will talk
    about the differences (which we will update later) but for now just do something."
    Once, on the first Home inside a class you have just enrolled in (class26e.greet.<class>,
-   set to "pending" when enrolling, shared between the classes). The lines below are
-   placeholders for how the class differs; they are one thought a box like the rest of his talk. */
+   set to "pending" when enrolling, shared between the classes). One thought a box, like the
+   rest of his talk.
+   (384) TWO KINDS, FOR EVERY CLASS. Madison: "Ensure that it has two types, new accounts, and existing enrolling into an
+   additional class. That would go for any class." A NEW account meets him in his introduction as it signs up (playNovaIntro
+   with signup - in two halves for Fire Code alone, see startIfcSignupHere); an account that already has a class and joins
+   another gets THIS: no introduction of himself, no name or partner asked - what this class is, that it keeps its own rank,
+   level, badges and progress, what is different here, and that the class button switches between them. Fire Code's
+   (ifcGreetingLines) when enrolling from the class list, or the first time a sign-up for both opens it; the academy's
+   (academyGreetingLines) when an account from Fire Code joins it. Each ends on a line marked final (and novaTalk now treats
+   the last line as final whatever it says: the greeting's lack of one is what left Continue dead on the live build). */
+function classGreetHello(cap){
+  return ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
+    novaProp(ctx, novaStack(t, novaCap(cap))); };
+}
 function ifcGreetingLines(){
   const name = novaName();
-  const hello = ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
-    novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
+  const hello = classGreetHello("Fire Code · Instructor");
   /* (384, going live) THE DIFFERENCES, SAID: the placeholders ("A few things work differently ... I'll point them out as we
      go") promised a tour nothing gave, and one line named the academy. Now he says what is different, from the class's own
      numbers (a chapter's badge is one 100%; the hundo effects' counts off HUNDO_FX). No "unit" in a line: the chapter
@@ -54574,20 +54814,40 @@ function ifcGreetingLines(){
     { gesture: "nod", text: "Answer one, and I’ll show you the page." },
     { gesture: "raise", text: "Every chapter has a badge. Score 100% on it once, and it’s yours." },
     { text: "Hundo effects come sooner here: at " + counts + " hundos." },
-    { gesture: "wave", text: "That’s what’s different. Ready?" }
+    { gesture: "nod", text: "Switch classes any time with the class button on Home." },
+    { gesture: "wave", final: true, text: "That’s what’s different. Ready?" }
+  ];
+}
+/* (384) the academy's, for an account that comes to it from Fire Code */
+function academyGreetingLines(){
+  const name = novaName();
+  return [
+    { gesture: "wave", text: "Welcome to Police Academy, " + name + "!", enter: classGreetHello("Police Academy · Instructor") },
+    { text: "This class is Class 26E’s police academy, unit by unit." },
+    { text: "Same me, a brand new class." },
+    { gesture: "raise", text: "Your rank and level start fresh here." },
+    { text: "Nothing you earn here changes your other class." },
+    { gesture: "raise", text: "Every unit has a badge. Score 100% on it enough times, and it’s yours." },
+    { text: "There’s a Mock test here, graded at the end." },
+    { gesture: "nod", text: "The Leaderboard has the whole class, and the Calendar has its schedule." },
+    { gesture: "nod", text: "Switch classes any time with the class button on Home." },
+    { gesture: "wave", final: true, text: "That’s what’s different. Ready?" }
   ];
 }
 function maybeClassGreeting(){
-  if(window.NOVA_CLASS !== "ifc") return;
-  let st = null; try{ st = localStorage.getItem("class26e.greet.ifc"); }catch(e){}
+  const key = window.NOVA_CLASS === "ifc" ? "ifc" : "academy";
+  let st = null; try{ st = localStorage.getItem("class26e.greet." + key); }catch(e){}
   if(st !== "pending") return;
   setTimeout(() => {
     if(document.getElementById("nova-intro") || document.getElementById("nova-class-greet") || !onNovaHome()) return;
     if(typeof novaIntroOn !== "undefined" && novaIntroOn) return;
-    try{ localStorage.setItem("class26e.greet.ifc", "done"); }catch(e){}
+    try{ if(signupInNova || pendingMainMenuTour) return; }catch(e){}
+    try{ localStorage.setItem("class26e.greet." + key, "done"); }catch(e){}
     try{ novaWarmProps(); }catch(e){}
-    novaTalk({ id: "nova-class-greet", label: "Nova welcomes you to Fire Code", lines: ifcGreetingLines(), finalLabel: "Let’s begin", noSkip: false,
-      onClose: () => { try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){} setTimeout(() => showEnrolledBanner("ifc"), 450); } });
+    const title = (NOVA_CLASS_INFO[key] || {}).title || key;
+    novaTalk({ id: "nova-class-greet", label: "Nova welcomes you to " + title, lines: key === "ifc" ? ifcGreetingLines() : academyGreetingLines(),
+      finalLabel: "Let’s begin", noSkip: false,
+      onClose: () => { try{ novaBefriend({ intro: true, quiet: true }); novaFriendMomentEnd(); }catch(e){} setTimeout(() => showEnrolledBanner(key), 450); } });
   }, 1100);
 }
 /* ---- THE CLASS LIST (the "+" in the class bubble) ----
@@ -54639,6 +54899,9 @@ function showClassCatalog(){
     card.addEventListener("click", () => {
       if(enrolled) return;
       if(c.key === "ifc") showIfcEnroll();
+      /* (384) Madison: "a fire code only person can enroll into the police academy class if they wanted to for whatever reason.
+         No reason to stop them." No book: asked once, then the academy opens and records it on the account */
+      else if(c.key === "academy") confirmJoinAcademy();
     });
     list.appendChild(card);
   });
@@ -54653,28 +54916,43 @@ function showClassCatalog(){
   try{ window.scrollTo(0, 0); }catch(e){}
   try{ playSound("ui.sheet.open"); }catch(e){}
 }
+/* (384) joining the academy from the class list (an account in Fire Code alone): no book, one question, then the academy
+   opens and records the class on the account as it does (it starts at zero, like any class) */
+function confirmJoinAcademy(){
+  const info = NOVA_CLASS_INFO.academy || {};
+  showClassEnrollConfirm(info.title || "Police Academy", info.kicker || "Class 26E", () => switchClass("academy", null, { join: true }), {
+    body: "Police Academy keeps its own rank, level and progress, starting from zero. Your Fire Code progress stays as it is. Switch between the two with the class button on Home." });
+}
 /* The notice after a class is joined (and after signing up, for the class you start in): the
-   account banner's glass, on Home once Nova has gone. */
+   account banner's glass, on Home once Nova has gone. (384) A sign-up into both classes names both. */
 function showEnrolledBanner(key){
-  const c = NOVA_CLASSES.find(x => x.key === key); if(!c) return;
-  const info = NOVA_CLASS_INFO[key] || {};
+  const keys = (Array.isArray(key) ? key : [key]).filter(k => NOVA_CLASSES.some(x => x.key === k));
+  if(!keys.length) return;
+  const c = NOVA_CLASSES.find(x => x.key === keys[0]);
+  const info = NOVA_CLASS_INFO[keys[0]] || {};
+  const names = keys.map(k => (NOVA_CLASS_INFO[k] || {}).title || NOVA_CLASSES.find(x => x.key === k).name);
   const wrap = document.createElement("span"); wrap.innerHTML = c.icon;
   let waits = 0;
   const show = () => {
     /* (384) after a sign-up's Add to Home Screen sheet, not under it */
     try{ if(a2hsHolds() && ++waits < 600){ setTimeout(show, 700); return; } }catch(e){}
     if(!onNovaHome()) return;
-    showDailyAlert(info.kicker || "", { kind: "enrolled", tag: "ENROLLED", title: "You’re enrolled in " + (info.title || c.name),
-      color: key === "ifc" ? "#FF9648" : "#93B5FF", iconEl: wrap.firstElementChild, id: "enrolled-banner", stay: 6000 });
+    showDailyAlert(keys.length > 1 ? "Switch classes with the class button" : (info.kicker || ""), { kind: "enrolled", tag: "ENROLLED",
+      title: "You’re enrolled in " + names.join(" and "),
+      color: keys[0] === "ifc" ? "#FF9648" : "#93B5FF", iconEl: wrap.firstElementChild, id: "enrolled-banner", stay: keys.length > 1 ? 7000 : 6000 });
   };
   setTimeout(show, 700);
 }
-function showIfcEnroll(){
+/* Fire Code's enrolment screen: from the class list, and (384) at sign-up for an account that picked Fire Code
+   (opts.signup: its Back is the class step, and the book's check goes on into the sign-up) */
+function showIfcEnroll(opts){
+  opts = opts || {};
+  if(opts.signup){ try{ setOnboardingHeader(); }catch(e){} }
   const c = NOVA_CLASSES.find(x => x.key === "ifc");
   const panel = document.createElement("section");
-  panel.className = "panel class-enroll is-ifc";
+  panel.className = "panel class-enroll is-ifc" + (opts.signup ? " is-signup" : "");
   /* (383: "the add class thing didn't get the new back button and stuff" - the round back button and centred title every pushed screen has) */
-  panel.appendChild(iosNavBar("Fire Code", buildBackLink("Classes", showClassCatalog)));
+  panel.appendChild(iosNavBar("Fire Code", opts.signup ? buildBackLink("Back", showClassSelection) : buildBackLink("Classes", showClassCatalog)));
   panel.insertAdjacentHTML("beforeend", '<div class="ce-emblem">' + c.icon + '</div>');
   const h = document.createElement("h1"); h.className = "ce-title"; h.textContent = "Enroll in Fire Code";
   const k = document.createElement("p"); k.className = "ce-kicker"; k.textContent = "IFC 2021 and HC Amendments";
@@ -54684,7 +54962,7 @@ function showIfcEnroll(){
   ["Choose your PDF of the 2021 International Fire Code.", "Nova reads it and checks it is the edition the questions were written from.", "You're enrolled. Your copy stays on this device and is never uploaded."]
     .forEach(t => { const li = document.createElement("li"); li.textContent = t; steps.appendChild(li); });
   const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn ce-go"; go.textContent = "Choose my IFC PDF";
-  go.addEventListener("click", () => ifcPickBook({ enroll: true }));
+  go.addEventListener("click", () => ifcPickBook({ enroll: true, signup: !!opts.signup }));
   panel.append(h, k, p1, steps, go);
   stage.replaceChildren(panel);
   try{ window.scrollTo(0, 0); }catch(e){}
@@ -54749,17 +55027,29 @@ function runIfcAnalysis(file, opts){
   };
   const finish = () => {
     ov.classList.add("is-ok");
-    ov.querySelector(".ia-title").textContent = "Verified";
+    /* (384) Madison: "After verified shouldn't it say success, IFC PDF SUCCESSFULLY REFERENCED? ... And then the button makes
+       more sense? Like it could say enroll and get started or just enroll?" A success, said as one; what it means under it;
+       and the button is the next step: Enroll and get started (the class list), Continue (sign-up, which goes on to make the
+       account), Done (the book loaded again inside the class). Enrolling is the button now, not the check: a book checked
+       and then left is kept on the device, and the class is joined when the person says so. */
+    ov.querySelector(".ia-title").textContent = "Success";
     const res = ov.querySelector(".ia-result"); res.hidden = false;
-    res.textContent = (result.level === "close" ? "This is the 2021 IFC, with a few pages that differ from the reference copy; those references stay locked. " : "This is the 2021 International Fire Code the questions were written from. ") +
+    res.textContent = "Your IFC PDF is referenced. " + (result.level === "close" ? "It is the 2021 IFC, with a few pages that differ from the reference copy; those references stay locked. " : "It is the 2021 International Fire Code the questions were written from. ") +
       (result.kept ? "It is kept on this device." : "This browser would not keep a copy, so it is open for this visit only.");
     const acts = ov.querySelector(".ia-actions"); acts.hidden = false;
-    const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn";
-    if(opts.enroll){
-      setEnrolled("ifc", true);
-      try{ localStorage.setItem("class26e.greet.ifc", "pending"); }catch(e){}
-      go.textContent = "Go to Fire Code";
-      go.addEventListener("click", () => switchClass("ifc"));
+    const go = document.createElement("button"); go.type = "button"; go.className = "next playbtn ia-go";
+    if(opts.enroll && opts.signup){
+      go.textContent = "Continue";
+      go.addEventListener("click", () => { if(go.disabled) return; go.disabled = true; signupBookOk = true; ov.remove(); startSignupWithNova(); });
+    } else if(opts.enroll){
+      go.textContent = "Enroll and get started";
+      go.addEventListener("click", () => {
+        if(go.disabled) return;
+        if(!setEnrolled("ifc", true)) return;
+        go.disabled = true;
+        try{ localStorage.setItem("class26e.greet.ifc", "pending"); }catch(e){}
+        switchClass("ifc");
+      });
     } else {
       go.textContent = "Done";
       go.addEventListener("click", () => { ov.remove(); try{ if(document.querySelector(".qpanel")) render(); }catch(e){} });
@@ -55909,6 +56199,33 @@ function isLockedCharacter(id){
    could read as locked for a moment on boot, and must never cost
    anybody their character. Returns whether anything changed; the next
    save carries the new character to the rankings. */
+/* (384) a class's default character: its first starter (free in every class) */
+function classDefaultCharacter(){
+  const free = AVATAR_CHARACTERS.find(c => !c.retired && !c.legacy && !c.feat && !c.unlock);
+  return free ? free.id : null;
+}
+/* (384) EACH CLASS WEARS ONLY WHAT IT HAS UNLOCKED. Madison: "in the police class I have void selected, when I switch to IFC,
+   it selects the void character for me but it's the ifc version even though one that shouldn't happen and 2, I don't even
+   have it unlocked." Fire Code's first visit copied the academy's character (and its theme colour) before 384. Here a
+   character Fire Code has not unlocked goes back to its first starter, quietly - nothing earned is taken: it was never
+   earned in this class. At launch only when it is the academy's own character (the copy that leaked: nothing read late
+   explains that), and for any locked one once this class's cloud copy has been merged (build 246: a feat read from data
+   that arrives later can read as locked for a moment, and must never cost anybody their character). The academy keeps
+   246's rule. The theme's colour is checked where it is shown (themeAccentShown). */
+function ifcLookCheck(confirmed){
+  if(window.NOVA_CLASS !== "ifc" || !store || !store.avatarChar) return false;
+  let locked = false;
+  try{ locked = isLockedCharacter(store.avatarChar); }catch(e){ return false; }
+  if(!locked) return false;
+  if(!confirmed){
+    let a = null; try{ a = academyCopyNow(); }catch(e){}
+    if(!a || !a.avatarChar || a.avatarChar !== store.avatarChar) return false;
+  }
+  store.avatarChar = classDefaultCharacter();
+  try{ saveStore(); }catch(e){}
+  try{ updateHeaderTitle(); }catch(e){}
+  return true;
+}
 const RAISED_BAR_CHARACTERS = ["marksman", "hacker"];
 function revokeRaisedCharacters(){
   let changed = false;
@@ -63833,6 +64150,10 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               chats: [],
               /* when the friends block above last changed (build 384) - see foldSocialFrom */
               socialAt: 0,
+              /* the classes this account is in (build 384) - see accountClassesOf; null until a sign-up or an enrolment says */
+              classes: null,
+              /* the class button's tip has been shown to this account (build 384) - see maybeClassButtonTip */
+              seenClassTip: false,
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -63991,6 +64312,13 @@ function applyLoadedData(got){
     ? got.chats.filter(c => c && c.code).slice(0, 30) : [];
   /* (384) when the friends block last changed: 0 for a copy that has never said (an older build), which never beats a dated one */
   store.socialAt = typeof got.socialAt === "number" && isFinite(got.socialAt) ? got.socialAt : 0;
+  /* (384) the classes the account is in (accountClassesOf): null for a copy that has never said - every account from before
+     384, which is the academy's - so a copy from an older build adds nothing to a merge (mergeSameAccount unions lists).
+     cleanClassList written out: its declaration is far below, and this runs during boot. */
+  store.classes = Array.isArray(got.classes)
+    ? (got.classes.filter((k, i, a) => (k === "academy" || k === "ifc") && a.indexOf(k) === i).sort((x, y) => (x === "academy" ? 0 : 1) - (y === "academy" ? 0 : 1)))
+    : null;
+  if(store.classes && !store.classes.length) store.classes = null;
   /* THE ONE PLACE THE "DEFAULT TO ALREADY-SEEN" RULE IS DELIBERATELY
      INVERTED. Every other flag here defaults so an existing account is
      not ambushed by something new; this one has to reach exactly those
@@ -64334,6 +64662,10 @@ function applyLoadedData(got){
   store.seenRewardsTour = typeof got.seenRewardsTour === "boolean" ? got.seenRewardsTour : store.onboardingComplete;
   store.seenUnitOptionsTour = typeof got.seenUnitOptionsTour === "boolean" ? got.seenUnitOptionsTour : store.onboardingComplete;
   store.seenFirstResultsTour = typeof got.seenFirstResultsTour === "boolean" ? got.seenFirstResultsTour : store.onboardingComplete;
+  /* (384) the class button's tip (maybeClassButtonTip): as the tours above, a copy that has never said is taken as seen when
+     the account is onboarded - the tour re-arm at boot (TOUR_REV 4) is what owes it, once, to every account from before it;
+     a new account has it among its first tips (set at sign-up). OR-merged (mergeSameAccount): shown on one device is shown. */
+  store.seenClassTip = typeof got.seenClassTip === "boolean" ? got.seenClassTip : !!store.onboardingComplete;
   /* Build 243. The sunglasses hunt: found or not, and the lifetime test
      number it turns up on (null until the first run of 243 picks one in
      the next 40). And the characters kept from before - computed ONCE,
@@ -64975,10 +65307,12 @@ var academyCopy = null;
 function pickAcademyCopy(a){
   a = (a && typeof a === "object") ? a : {};
   return { publicId: typeof a.publicId === "string" && a.publicId ? a.publicId : null, firstName: a.firstName || "",
-           avatarChar: a.avatarChar || null, leaderboardOptIn: a.leaderboardOptIn, lastModified: Number(a.lastModified) || 0 };
+           avatarChar: a.avatarChar || null, leaderboardOptIn: a.leaderboardOptIn, lastModified: Number(a.lastModified) || 0,
+           /* (384) the classes the account is in (accountClassesOf) - Fire Code's class button lists them */
+           classes: cleanClassList(a.classes) };
 }
 function academyCopyNow(){
-  if(academyCopy === null){
+  if(!academyCopy){   /* (384) and before its line has run (a var: undefined), should anything ask that early */
     let a = null;
     try{ a = JSON.parse(window.NOVA_ACADEMY_RAW || "null"); }catch(e){ a = null; }
     academyCopy = pickAcademyCopy(a);
@@ -65050,7 +65384,7 @@ function socialShown(){
   }catch(e){}
 }
 /* The other class's account document, read only, while this one is open: in Fire Code the academy's (whose devices change
-   the friends too); in the academy, for the one account that has another class, its Fire Code document. Reads only when
+   the friends too); in the academy, for an account in Fire Code too (384: any, not the owner's alone), its Fire Code document. Reads only when
    that document is written - and only that one person's. */
 var otherClassSocialUnsub = null;
 function watchOtherClassSocial(){
@@ -65062,7 +65396,8 @@ function watchOtherClassSocial(){
       if(!ac || syncCode !== ac + IFC_ACCOUNT_SUFFIX) return;
       ref = acctDb().collection("progress").doc(ac); fromAcademy = true;
     } else {
-      if(String(syncCode).indexOf("__") >= 0 || !store.publicId || store.publicId !== window.NOVA_CLASS_OWNER) return;
+      /* (384) any account in Fire Code (before 384 that was the owner's alone): one listener, on its own Fire Code document */
+      if(String(syncCode).indexOf("__") >= 0 || !store.publicId || enrolledClasses().indexOf("ifc") < 0) return;
       ref = acctDb().collection("progress").doc(syncCode + IFC_ACCOUNT_SUFFIX);
     }
   }catch(e){ ref = null; }
@@ -66055,7 +66390,9 @@ function installCodeInUrl(on){
     if(!on){ stripBrowserCodeUrl(); return; }
     if(!syncCode || syncOff || !store || !store.onboardingComplete) return;
     const search = location.search.replace(/([?&])k=[^&]*&?/, "$1").replace(/[?&]$/, "");
-    history.replaceState(history.state, "", location.pathname + search + "#" + RECOVERY_PARAM + "=" + syncCode);
+    /* (384) the account's code, as shown - in Fire Code syncCode carries its document's suffix (shownSyncCode), which a
+       launch address would not take (SYNC_CODE_RE): an icon added from Fire Code's sheet opens signed in as well */
+    history.replaceState(history.state, "", location.pathname + search + "#" + RECOVERY_PARAM + "=" + shownSyncCode());
     installCodeTimer = setTimeout(() => { installCodeTimer = 0; stripBrowserCodeUrl(); }, 180000);
   }catch(e){}
 }
@@ -66166,6 +66503,9 @@ function wipeLocalProgressAndSettings(){
   /* (384) an emptied list is not a newer one: undated, so it never replaces the other class's (and the id is gone anyway) */
   store.socialAt = 0;
   socialSigBase = socialSig(store);
+  /* (384) a new person is in no class until a sign-up says, and has been shown nothing */
+  store.classes = null;
+  store.seenClassTip = false;
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -66519,6 +66859,8 @@ function rowSignature(row, urgentOnly){
    been confirmed, so the board never runs ahead of what is saved; the
    held one goes the moment it is (see markCloudConfirmed). */
 function writeLeaderboardRow(row){
+  /* (384) the one door every row goes through: never one for an account that is not in the academy */
+  if(!academyMember()) return;
   if(cloudConfirmedFor !== syncCode){
     rowAwaitingConfirm = true;
     clearTimeout(rowPushTimer); rowPushTimer = null;
@@ -66638,6 +66980,8 @@ document.addEventListener("visibilitychange", () => {
 
 function pushLeaderboardRow(){
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
+  /* (384) an account in Fire Code alone has no row on the academy's board - until it joins the academy (academyMember) */
+  if(!academyMember()) return;
   let row;
   try{ row = buildLeaderboardRow(); }catch(e){ return; }
   const sig = rowSignature(row, false);
@@ -66668,6 +67012,7 @@ function pushLeaderboardRow(){
    the app going away with a write still pending. */
 function flushLeaderboardRow(){
   if(!fbDb || !syncCode || !store.leaderboardOptIn) return;
+  if(!academyMember()) return;   /* (384) see pushLeaderboardRow */
   clearTimeout(rowPushTimer); rowPushTimer = null;
   try{ writeLeaderboardRow(buildLeaderboardRow()); }catch(e){}
 }
@@ -66753,6 +67098,8 @@ function markCloudConfirmed(docExists){
     if(code !== syncCode || cloudConfirmedFor === code) return;
     cloudConfirmedFor = code;
     clearTimeout(confirmRetryTimer); confirmRetryTimer = null; confirmRetryMs = CONFIRM_RETRY_FIRST_MS;
+    /* (384) Fire Code wears only what Fire Code has unlocked, judged on the merged copy */
+    try{ ifcLookCheck(true); }catch(e){}
     /* build 382: the save-your-code card waits for this */
     setTimeout(() => { try{ checkSaveCodeReminder(); }catch(e){} }, 900);
     /* a held save carries the held row with it - pushToCloud publishes
@@ -66862,6 +67209,8 @@ function accountAhead(a, b){
   const key = h => h ? String(h.playedAt || h.ts || "") + "|" + String(h.label || "") + "|" + String(h.pct) : "";
   const had = new Set(((b && b.testHistory) || []).map(key));
   if(((a && a.testHistory) || []).some(h => h && !had.has(key(h)))) return true;
+  /* (384) a class one copy is in and the other is not (mergeSameAccount unions them): never written over by a copy without it */
+  try{ const ca = cleanClassList(a && a.classes) || [], cb = cleanClassList(b && b.classes) || []; if(ca.some(k => cb.indexOf(k) < 0)) return true; }catch(e){}
   /* (384) a newer friends list (mergeSameAccount takes it by socialAt): the server's is not written over by an older one */
   return n(a && a.socialAt) > n(b && b.socialAt);
 }
@@ -67362,6 +67711,9 @@ function mergeLeavingAccount(src, note){
   sumMap("studyLog"); sumMap("unitPerfects");
   normalizeStudyLog(store.studyLog);
   orMap("unitBlackStar"); orMap("flagged");
+  /* (384) the classes: both accounts' (a class either was in stays) - only lists that were said (accountClassesOf) */
+  try{ const ca = cleanClassList(store.classes), cb = cleanClassList(src.classes); if(cb) store.classes = cleanClassList((ca || ["academy"]).concat(cb)); }catch(e){}
+  if(src.seenClassTip === true) store.seenClassTip = true;
   /* the grandfather floor (build 314): whichever account held the higher
      level keeps it - neither side loses one by being merged */
   store.levelFloor = Math.max(num(store.levelFloor), num(src.levelFloor));
@@ -67871,7 +68223,9 @@ function mergeSameAccount(dst, src){
      badge by badge - cleaned on either device is cleaned */
   if(dst.badgeCleanedAt || src.badgeCleanedAt) maxMap("badgeCleanedAt");
   ["practiceExamPerfect", "practiceTestPassed", "bigTestPassed", "bigTest450Passed", "bigTest500Passed", "supernovaAchieved", "novaBeaten", "sheriffMoved324",
-   "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved"].forEach(k => orInto(dst, k, src[k]));
+   "starfallKept", "onboardingComplete", "fullTestsSeeded", "koiRevoked295", "savedCodeSaved",
+   /* (384) the class button's tip, once per account */
+   "seenClassTip"].forEach(k => orInto(dst, k, src[k]));
   if(src.mysteryColorsFound && typeof src.mysteryColorsFound === "object") orMap("mysteryColorsFound");
   /* (384) a miss seen on any device is a miss */
   if(src.flareMissed && typeof src.flareMissed === "object") orMap("flareMissed");
@@ -67898,6 +68252,16 @@ function mergeSameAccount(dst, src){
     if(sa > da){ socialTakeInto(dst, src); res.gained = true; }
     else if(da > sa) res.otherHadLess = true;
   }catch(e){}
+  /* THE CLASSES ARE BOTH SIDES' (build 384): a class joined on one device is joined (nobody leaves a class); a copy that has
+     never said (null, an older build's) adds nothing */
+  try{
+    const ca = cleanClassList(dst.classes), cb = cleanClassList(src.classes);
+    if(cb){
+      const u = cleanClassList((ca || []).concat(cb));
+      if(!ca || u.length > ca.length){ dst.classes = u; res.gained = true; }
+    }
+    if(ca && (!cb || ca.some(k => cb.indexOf(k) < 0))) res.otherHadLess = true;
+  }catch(e){}
   return res;
 }
 
@@ -67914,8 +68278,10 @@ function themeFollowStore(){
     const t = store.theme;
     if(!t || ACCENTS.indexOf(t.accent) < 0) return;
     const at = Number(t.accentAt) || 0;
-    if(theme.accent === t.accent && (Number(theme.accentAt) || 0) === at) return;
-    theme.accent = t.accent; theme.accentAt = at;
+    /* (384) only what this class has unlocked is shown (themeAccentFor) */
+    const shown = themeAccentFor(t.accent, at);
+    if(theme.accent === shown && (Number(theme.accentAt) || 0) === at) return;
+    theme.accent = shown; theme.accentAt = at;
     applyTheme();
   }catch(e){}
 }
@@ -78549,6 +78915,24 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
                  instead of AUTO_ADVANCE_MS, to read the answer first. */
               autoAdvanceLong: false };
 
+/* (384) A CLASS SHOWS ONLY A THEME IT HAS UNLOCKED. Madison: "When switching classes, the theme from the other class is being
+   used on the class you switched to, this is not it. Also, that shouldn't even be possible cause I don't have it unlocked."
+   Each class keeps its own pick (store.theme is each class's own copy; Fire Code's first visit no longer copies the academy's
+   colour). A pick this class has not unlocked (the rank colours are earned per class) is shown as the class's default, and
+   held: the pick itself stays on the account (themeAccentHeld, written back by saveTheme), so a rank read low for a moment -
+   a copy not yet merged with the cloud - never costs anybody their colour; it shows again when it reads unlocked. Fire
+   Code's copy of the academy's colour (the leak before 384) is not held: it was never picked in Fire Code. */
+var themeAccentHeld = null;   /* { accent, at }: the pick this class has not unlocked, kept for saveTheme */
+function themeAccentFor(acc, at){
+  if(ACCENTS.indexOf(acc) < 0 || acc === "ink") return "ink";
+  let locked = false;
+  try{ locked = isLockedAccent(acc); }catch(e){ locked = false; }
+  if(!locked){ themeAccentHeld = null; return acc; }
+  let leaked = false;
+  try{ leaked = window.NOVA_CLASS === "ifc" && JSON.parse(window.NOVA_ACADEMY_RAW || "null").theme.accent === acc; }catch(e){}
+  themeAccentHeld = leaked ? null : { accent: acc, at: Number(at) || 0 };
+  return "ink";
+}
 /* Pulls the saved theme (if any) into the in-memory `theme` object.
    Call this once at boot, before the first applyTheme(). */
 function loadTheme(){
@@ -78560,8 +78944,9 @@ function loadTheme(){
        separate, Supernova-gated unlock) and still honored normally. */
     if(store.theme.mode === "dark" || store.theme.mode === "party") theme.mode = store.theme.mode;
     if(ACCENTS.indexOf(store.theme.accent) !== -1){
-      theme.accent = store.theme.accent;
       theme.accentAt = Number(store.theme.accentAt) || 0;
+      /* (384) only a colour this class has unlocked is shown (themeAccentFor) */
+      theme.accent = themeAccentFor(store.theme.accent, theme.accentAt);
     }
     /* Classic layout has been fully retired \u2014 Modern is the only
        option now, so any previously-stored "classic" preference is
@@ -78630,6 +79015,9 @@ function applyTheme(){
   document.documentElement.dataset.theme = effectiveMode;
   if(theme.accent === "ink") delete document.documentElement.dataset.accent;
   else document.documentElement.dataset.accent = theme.accent;
+  /* (384) the colour this class is shown in, for the next launch's splash and a class switch's loader to wear before the app
+     can work it out (each class its own key: the head script redirects it in Fire Code) */
+  try{ if(localStorage.getItem("class26e.accentshown") !== theme.accent) localStorage.setItem("class26e.accentshown", theme.accent); }catch(e){}
   document.documentElement.dataset.layout = theme.layout;
   document.documentElement.style.scrollBehavior = "smooth";   /* always, since build 284 */
   document.documentElement.dataset.reduceMotion = theme.reduceMotion ? "true" : "false";
@@ -78853,7 +79241,11 @@ function syncStatusBarColor(){
 }
 
 function saveTheme(){
-  store.theme = { mode: theme.mode, accent: theme.accent, accentAt: Number(theme.accentAt) || 0, layout: theme.layout,
+  /* (384) a pick shown as the default because this class has not unlocked it stays the pick (themeAccentFor) - until a colour
+     is picked here (a new accentAt) */
+  const held = themeAccentHeld && theme.accent === "ink" && (Number(theme.accentAt) || 0) === themeAccentHeld.at ? themeAccentHeld.accent : null;
+  if(!held) themeAccentHeld = null;
+  store.theme = { mode: theme.mode, accent: held || theme.accent, accentAt: Number(theme.accentAt) || 0, layout: theme.layout,
                   smoothScroll: theme.smoothScroll, swipeAdvance: theme.swipeAdvance, autoAdvance: theme.autoAdvance,
                   reduceMotion: theme.reduceMotion,
                   muteBanners: theme.muteBanners,
@@ -84979,7 +85371,8 @@ function noteHomeScreenSheetOwed(){
 /* anything else on Home goes first: the tips, the +100 XP, a cutscene, a card, a sheet, the chat */
 function a2hsBusy(){
   if(!stage.querySelector('[data-screen="home"]')) return true;
-  if(document.querySelector("#welcomebonus-banner, .wb-chip, #savecode-card, #newacct-confirm, .installguide-overlay, #tour-tooltip")) return true;
+  /* (384) and not while the class button's list is open or a class is opening (every account has the button now) */
+  if(document.querySelector("#welcomebonus-banner, .wb-chip, #savecode-card, #newacct-confirm, .installguide-overlay, #tour-tooltip, .class-bubble-wrap.is-open, #class-switch-loader")) return true;
   try{ if(typeof weekRecapOn !== "undefined" && weekRecapOn) return true; }catch(e){}
   try{ return weekRecapBlocked(); }catch(e){ return true; }
 }
@@ -92584,17 +92977,45 @@ function showWelcomeIntro(){
   toTop();
 }
 
-/* A real, if currently one-option, choice \u2014 per explicit request:
-   Class 26E (this app's only actual audience right now) plus a
-   second, disabled card making clear more classes are coming rather
-   than just omitting the whole idea of a choice. Reuses the same
-   .modecard visual language as mode selection, since both are
-   fundamentally the same UI idea (a small set of cards, pick one). */
+/* ---- THE CLASS STEP OF SIGN-UP ----
+   (384) BOTH CLASSES, AS CARDS. Madison: "almost every single new account will be signing up and enrolling into fire code
+   from the beginning." Police Academy (Class 26E) and Fire Code (IFC 2021) side by side, the Classes screen's cards, each
+   picked and unpicked with a tap (329's "More classes, Coming soon" box beside them). Continue (shown while one or both are
+   picked) asks to confirm, naming what was picked. Fire Code then asks for the book - the same check as enrolling from the
+   class list (showIfcEnroll at sign-up, runIfcAnalysis) - BEFORE anything of the account exists: leaving it (Back, a file
+   refused, the app closed) costs nothing and strands nobody, and the class step keeps the picks to come back to (this
+   launch and the next: class26e.signuppick). The account is made by Nova as before (novaSignupCreate) with the classes on
+   it (store.classes, see accountClassesOf):
+   - Police Academy: as before.
+   - Fire Code alone: Nova asks the name and the partner and gives the code here, then the app opens Fire Code (it is the
+     class this account is in) and he says the rest there, over Fire Code's own badges, crew and modes; the tips, the +100 XP,
+     Add to Home Screen, "You're enrolled in Fire Code" and his good-luck message all follow on Fire Code's Home
+     (class26e.signupnext). It never sees the academy.
+   - Both: lands in Police Academy - the full sign-up as it is, then "You're enrolled in Police Academy and Fire Code";
+     Fire Code greets them with its own welcome (greet.ifc) the first time they open it from the class button. So each class
+     gets its welcome; landing in Fire Code would have left the academy with none. */
+var signupPicks = null;   /* the classes picked at this sign-up, in order; null = none yet (var: read by boot-time code) */
+let signupBookOk = false;  /* the book was checked at this sign-up (Continue on its success) */
+const SIGNUP_PICK_KEY = "class26e.signuppick";
+function signupPicked(){
+  if(Array.isArray(signupPicks)) return signupPicks.slice();
+  try{ const v = cleanClassList(JSON.parse(localStorage.getItem(SIGNUP_PICK_KEY) || "null")); if(v) return v; }catch(e){}
+  return [];
+}
+function rememberSignupPicks(list){
+  signupPicks = list.slice();
+  try{ if(list.length) localStorage.setItem(SIGNUP_PICK_KEY, JSON.stringify(list)); else localStorage.removeItem(SIGNUP_PICK_KEY); }catch(e){}
+}
+/* the class a sign-up goes on in: Fire Code for an account in Fire Code alone, otherwise the academy */
+function signupLandsIn(){
+  const p = signupPicked();
+  return (p.length === 1 && p[0] === "ifc") ? "ifc" : "academy";
+}
 function showClassSelection(){
   setOnboardingHeader();
   const panel = document.createElement("section");
   panel.className = "panel home classselect-panel";
-  /* Genuinely missing before \u2014 confirmed directly, no buildBackLink
+  /* Genuinely missing before — confirmed directly, no buildBackLink
      call existed anywhere in this function either. */
   panel.appendChild(buildBackLink("Back", showSignUpCheck));
 
@@ -92611,26 +93032,35 @@ function showClassSelection(){
      this line up without having to out-specify an inline declaration. */
   sub.className = "cal-sub classselect-sub";
   /* (330) shorter: the More classes card already says more are coming, and the small print needs the room */
-  sub.textContent = "Pick what you\u2019re studying for. You can add more classes later.";
+  /* (384) one or both */
+  sub.textContent = "Pick one or both. You can add a class later.";
   panel.appendChild(sub);
 
   /* Build 329: the same cards as the Classes screen (the class button's "Add a class"): an emblem,
      the class's name and a line about it, and a chip - here "Select" - with a "More classes,
-     Coming soon" box beside it. Fire Code is not offered at sign-up. */
+     Coming soon" box beside it. (384) Both classes are offered. */
   const cards = document.createElement("div");
   cards.className = "class-cards classselect-cards";
-  const academy = NOVA_CLASSES.find(c => c.key === "academy"), ainfo = NOVA_CLASS_INFO.academy || {};
-  const classCard = document.createElement("button");
-  classCard.type = "button"; classCard.className = "class-card is-academy";
-  classCard.innerHTML = '<span class="cc-glow" aria-hidden="true"></span><span class="cc-emblem">' + academy.icon + '</span>' +
-    '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span></span>' +
-    '<span class="cc-foot"><span class="cc-status is-enroll">Select</span></span>';
-  classCard.querySelector(".cc-kicker").textContent = ainfo.kicker || academy.sub;
-  classCard.querySelector(".cc-title").textContent = ainfo.title || academy.name;
-  classCard.querySelector(".cc-desc").textContent = ainfo.desc || "";
-  cards.appendChild(classCard);
+  const picked = new Set(signupPicked());
+  const cardFor = {};
+  NOVA_CLASSES.forEach((c, k) => {
+    const info = NOVA_CLASS_INFO[c.key] || {};
+    const card = document.createElement("button");
+    card.type = "button"; card.className = "class-card is-" + c.key;
+    card.style.setProperty("--k", k);
+    card.innerHTML = '<span class="cc-glow" aria-hidden="true"></span><span class="cc-emblem">' + c.icon + '</span>' +
+      '<span class="cc-text"><span class="cc-kicker"></span><span class="cc-title"></span><span class="cc-desc"></span></span>' +
+      '<span class="cc-foot"><span class="cc-status is-enroll">Select</span></span>';
+    card.querySelector(".cc-kicker").textContent = info.kicker || c.sub;
+    card.querySelector(".cc-title").textContent = info.title || c.name;
+    card.querySelector(".cc-desc").textContent = info.desc || "";
+    if(info.needs){ const n = document.createElement("span"); n.className = "cc-needs"; n.textContent = info.needs; card.querySelector(".cc-foot").prepend(n); }
+    cardFor[c.key] = card;
+    cards.appendChild(card);
+  });
   const soonCard = document.createElement("div");
   soonCard.className = "class-card is-soon";
+  soonCard.style.setProperty("--k", NOVA_CLASSES.length);
   soonCard.innerHTML = '<span class="cc-emblem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v6l3.6 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>' +
     '<span class="cc-text"><span class="cc-kicker">Soon</span><span class="cc-title">More classes</span><span class="cc-desc">New classes will be added here.</span></span>' +
     '<span class="cc-foot"><span class="cc-status is-soon">Coming soon</span></span>';
@@ -92638,40 +93068,40 @@ function showClassSelection(){
   panel.appendChild(cards);
 
   /* A real Continue step now, rather than the card itself navigating
-     forward the instant it's tapped \u2014 per explicit request to
+     forward the instant it's tapped — per explicit request to
      prevent an accidental misclick from immediately committing to
-     this account setup with no chance to back out first. Tapping the
-     card only selects it (the same scale-up "this one's picked"
-     treatment the avatar picker already uses, .avatarchar-option's
-     own class="avatarchar-option selected" pattern reused here
-     directly rather than inventing a new one). The .startbar wrapper
-     this used at first is removed \u2014 confirmed directly that it left
-     Continue sitting right after the cards, nowhere near the bottom
-     position every other Continue button (the code-entry screen's
-     own included) actually uses. A bare .playbtn directly in this
-     same .panel.home flex column is what genuinely matches: that
-     screen's own Continue, and Home's "Start Studying," both get
-     their real bottom position from .panel.home .playbtn{
-     margin-top:auto }, not from any wrapper bar. */
+     this account setup with no chance to back out first. Tapping a
+     card only selects it. A bare .playbtn directly in this same
+     .panel.home flex column gets its bottom position from .panel.home
+     .playbtn{ margin-top:auto }, as every other sign-up step's does. */
   const continueBtn = document.createElement("button");
   continueBtn.type = "button"; continueBtn.className = "next playbtn"; continueBtn.id = "nextbtn";
   continueBtn.textContent = "Continue";
   continueBtn.hidden = true;
+  const pickedNow = () => NOVA_CLASSES.map(c => c.key).filter(k => cardFor[k].classList.contains("is-picked"));
   /* (327z15) the username and the character are asked by Nova now, in his
      introduction - "maybe that's where you pick your starting character,
      and your username? Could be a better tie in" */
   /* (383 sign-in audit) once: a double tap, or Enter pressed twice, started the sign-up twice - two loading screens over
      each other and Home built twice under Nova */
   /* (384) CONFIRM FIRST. Madison: "After you select a class and hit continue, have it ask to confirm and stuff." Continue opens
-     a confirm sheet (the sign-up's own savecode-card look); Enroll starts the sign-up, Go back (or a tap outside) closes it
-     with the class still picked. */
+     a confirm sheet naming what was picked (the sign-up's own savecode-card look); Enroll goes on - to the book when Fire Code
+     is picked, otherwise straight into the sign-up; Go back (or a tap outside) closes it with the picks kept. */
   continueBtn.addEventListener("click", () => {
-    if(continueBtn.disabled || !classCard.classList.contains("is-picked")) return;
-    showClassEnrollConfirm(ainfo.title || academy.name, academy.sub, () => {
+    const list = pickedNow();
+    if(continueBtn.disabled || !list.length) return;
+    rememberSignupPicks(list);
+    const names = list.map(k => (NOVA_CLASS_INFO[k] || {}).title || NOVA_CLASSES.find(c => c.key === k).name);
+    const subs = list.map(k => k === "ifc" ? "IFC 2021" : ((NOVA_CLASS_INFO[k] || {}).kicker || NOVA_CLASSES.find(c => c.key === k).sub));
+    const ifc = list.indexOf("ifc") >= 0;
+    const what = list.map((k, i) => names[i] + " (" + subs[i] + ")").join(" and ");
+    showClassEnrollConfirm(names.join(" and "), "", () => {
       if(continueBtn.disabled) return;
+      if(ifc && !signupBookOk){ showIfcEnroll({ signup: true }); return; }
       continueBtn.disabled = true;
       startSignupWithNova();
-    });
+    }, { body: "You’re signing up for " + what + "." + (ifc ? " Fire Code asks for your PDF of the 2021 IFC next." : "") +
+      " You can add a class later from the class button on Home." });
   });
   /* (330) "something at the bottom saying something about the classes to CYA" - under the cards, above the
      pinned Continue, so the button stays where every other sign-up step has its own */
@@ -92679,25 +93109,36 @@ function showClassSelection(){
   panel.appendChild(continueBtn);
 
   /* (384) A SECOND TAP UNPICKS. Madison: "When signing up, when you select a class to enroll, there's no way to unselect it. Ensure
-     that if you tap it again after you click it, you'd unenroll." The card toggles: picked -> "Selected" and Continue; tapped
-     again -> back to "Select" and Continue goes away. */
-  classCard.setAttribute("aria-pressed", "false");
-  classCard.addEventListener("click", () => {
-    const on = !classCard.classList.contains("is-picked");
-    classCard.classList.toggle("selected", on); classCard.classList.toggle("is-picked", on);
-    classCard.setAttribute("aria-pressed", on ? "true" : "false");
-    const chip = classCard.querySelector(".cc-status");
+     that if you tap it again after you click it, you'd unenroll." Each card toggles: picked -> "Selected"; tapped again -> back to
+     "Select". Continue is there while one or both are picked. */
+  const paint = (card, on) => {
+    card.classList.toggle("selected", on); card.classList.toggle("is-picked", on);
+    card.setAttribute("aria-pressed", on ? "true" : "false");
+    const chip = card.querySelector(".cc-status");
     chip.className = "cc-status " + (on ? "is-enrolled" : "is-enroll"); chip.textContent = on ? "Selected" : "Select";
-    continueBtn.hidden = !on;
-    try{ playSound(on ? "ui.toggle.on" : "ui.toggle.off"); }catch(e){}
+  };
+  NOVA_CLASSES.forEach(c => {
+    const card = cardFor[c.key];
+    paint(card, picked.has(c.key));
+    card.addEventListener("click", () => {
+      const on = !card.classList.contains("is-picked");
+      paint(card, on);
+      const list = pickedNow();
+      continueBtn.hidden = !list.length;
+      rememberSignupPicks(list);
+      try{ playSound(on ? "ui.toggle.on" : "ui.toggle.off"); }catch(e){}
+    });
   });
+  continueBtn.hidden = !pickedNow().length;
 
   stage.replaceChildren(panel);
   toTop();
 }
 
-/* (384) the class confirm at sign-up: the savecode-card sheet, as "Already have an account?" uses it */
-function showClassEnrollConfirm(name, sub, onEnroll){
+/* (384) the class confirm at sign-up: the savecode-card sheet, as "Already have an account?" uses it; o.body says what is
+   being joined (a sign-up names its picks; joining the academy from Fire Code says what that means) */
+function showClassEnrollConfirm(name, sub, onEnroll, o){
+  o = o || {};
   const old = document.getElementById("classenroll-confirm");
   if(old) old.remove();
   const el = document.createElement("div");
@@ -92711,7 +93152,7 @@ function showClassEnrollConfirm(name, sub, onEnroll){
   title.textContent = "Enroll in " + name + "?";
   const body = document.createElement("p");
   body.className = "savecode-body";
-  body.textContent = "You\u2019re signing up for " + name + (sub && sub !== name ? " (" + sub + ")" : "") + ". You can add more classes later from the class button on Home.";
+  body.textContent = o.body || ("You’re signing up for " + name + (sub && sub !== name ? " (" + sub + ")" : "") + ". You can add more classes later from the class button on Home.");
   const yes = document.createElement("button");
   yes.type = "button"; yes.className = "next savecode-save classenroll-yes"; yes.textContent = "Enroll";
   const back = document.createElement("button");
@@ -93122,22 +93563,58 @@ function startNewAccount(){
    same completion marks showHome made for a sign-up. Closed before that, no
    account exists and the next launch is Welcome again. */
 let signupInNova = false;
+/* (384) which half of a sign-up that goes on in Fire Code this page is playing: 1 here (the account), 2 in Fire Code (the rest) */
+var signupPart = 0;
 function startSignupWithNova(){
   finishWelcomeStartFresh(() => {
     store.firstName = ""; store.avatarChar = null;
     signupInNova = true;
     pendingMainMenuTour = true;
-    showGeneratingProfile();
+    /* (384) Fire Code alone: Nova's first half here over no class at all (never the academy's Home), then Fire Code */
+    if(signupLandsIn() === "ifc") showGeneratingProfile(startIfcSignupHere);
+    else showGeneratingProfile();
   });
+}
+/* (384) THE FIRST HALF OF A FIRE CODE SIGN-UP, in this page because the account is made here (its code, its id, its name -
+   the identity lives on the academy's copy, which Fire Code never writes): Nova asks the name and the partner, the account is
+   made with Fire Code alone on it, he gives the code (the save-your-code card), and the app opens Fire Code, where he says the
+   rest (class26e.signupnext). Nothing of the academy is on the screen: the stage is empty under his sky. */
+function startIfcSignupHere(){
+  stage.replaceChildren();
+  pendingMainMenuTour = false;
+  signupPart = 1;
+  try{ localStorage.removeItem("class26e.nova"); }catch(e){}
+  playNovaIntro(reason => {
+    signupInNova = false; signupPart = 0;
+    if(reason === "signin") return;
+    if(!syncCode){ showWelcomeFirst(); return; }
+    switchClass("ifc", null, { note: "signup" });
+  }, { signup: true, part: 1 });
 }
 function novaSignupCreate(){
   if(syncCode) return;
+  /* (384) the classes picked at the class step are the account's (accountClassesOf), on it before its first write - an
+     account in Fire Code alone never writes a row on the academy's board (academyMember) */
+  const picks = signupPicked();
+  store.classes = cleanClassList(picks.length ? picks : ["academy"]) || ["academy"];
   setSyncCode(generateSyncCode());
   codeIssuedFresh();   /* build 382 */
+  if(store.classes.indexOf("ifc") >= 0){
+    try{ localStorage.setItem("class26e.enrolled", JSON.stringify(["ifc"])); }catch(e){}
+    /* both: Fire Code greets them the first time they open it; Fire Code alone: he says it all as the sign-up goes on there */
+    try{ localStorage.setItem("class26e.greet.ifc", store.classes.indexOf("academy") >= 0 ? "pending" : "done"); }catch(e){}
+  }
+  if(signupLandsIn() === "ifc"){
+    /* the rest of the sign-up is owed in Fire Code - read there on its first Home (ifcSignupOwed), even after a relaunch */
+    try{ localStorage.setItem("class26e.signupnext", JSON.stringify({ pid: publicIdOf(), at: Date.now() })); }catch(e){}
+  }
+  try{ localStorage.removeItem(SIGNUP_PICK_KEY); }catch(e){}
   store.onboardingComplete = true;
   store.tourRev = TOUR_REV;
   store.novaMet = NOVA_MEET_REV;
   store.badgeBandsVersion = BADGE_BANDS_VERSION;
+  /* (384) the class button is among a new account's first tips (mainMenuTourSteps), not shown again on its own */
+  store.seenClassTip = true;
   try{ markIntroSeen(); }catch(e){}
   saveStore();
   updateHeaderTitle();
@@ -93223,7 +93700,9 @@ function novaAskCharacter(ctx, answered){
      like greyed out". Under the starters, every character still to find,
      in his greyed still look, on one slow pan - shown, not pickable (they
      are pictures, not buttons). */
-  const rest = novaCrewShown().filter(c => isLockedCharacter(c.id));
+  /* (384) not in the first half of a Fire Code sign-up: this page draws the academy's crew, and Fire Code's own are shown
+     when he goes on there (the starters are the same in both classes) */
+  const rest = signupPart === 1 ? [] : novaCrewShown().filter(c => isLockedCharacter(c.id));
   if(rest.length){
     const later = document.createElement("div"); later.className = "nt-ask-later";
     const lab = document.createElement("p"); lab.className = "nt-ask-later-h"; lab.textContent = "Still to find";
@@ -93249,7 +93728,8 @@ function novaCodeProp(){
    "waiting" on has already finished by the time this runs), but gives
    creating a profile the sense of weight it deserves instead of an
    instant, anticlimactic jump cut. */
-function showGeneratingProfile(){
+function showGeneratingProfile(then){
+  /* (384) `then`: where it goes after (Home, or a Fire Code sign-up's first half); never an event (a handler's argument) */
   buildGeneratingOverlay("GENERATING PROFILE", [
     "> encrypting local storage...",
     "> generating unique sync key...",
@@ -93258,7 +93738,7 @@ function showGeneratingProfile(){
     "> calibrating XP system...",
     "> indexing unit database...",
     "> finalizing profile..."
-  ], 10000, showHome);
+  ], 10000, typeof then === "function" ? then : showHome);
 }
 /* Shared by showGeneratingProfile above and the new post-sync screen
    below \u2014 showGeneratingProfile itself is used directly as a bare
@@ -93565,6 +94045,8 @@ function showWelcomeCodeEntry(){
              (the same once-only key the banner itself sets). */
           try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
           noteCodeTypedIn();   /* build 382 */
+          /* (384) an account in Fire Code alone goes on in Fire Code, and is welcomed back there */
+          if(academyHomeBarred()){ enterAccountClass("signin"); return; }
           showHome();
           /* The same pause the create-account path gets, and for the same
              reason. That one is covered by holdNoticesAfterTour() firing
@@ -93939,10 +94421,15 @@ function novaTalk(o){
     /* the next line's slide, made ahead (build 326 - novaPrepProp) */
     const nx = lines[i + 1];
     if(nx && nx.prep && !entered.has(i + 1)) setTimeout(() => { if(!closed && idx === i) try{ nx.prep(ctx); }catch(e){} }, still ? 0 : 240);
-    bubble.classList.toggle("is-final", !!line.final);
+    /* (384) THE LAST LINE IS ALWAYS THE LAST. Madison, enrolling in Fire Code on the live build: "at the end of it, it didn't let
+       me hit continue, I had to hit skip to get past it." The class greeting's last line was not marked `final`, so its button
+       (Let's begin) never showed and a tap there had no next line to go to - only Skip closed it. Whatever a talk's lines say,
+       the last one carries the button that ends it. */
+    const last = !!line.final || i === lines.length - 1;
+    bubble.classList.toggle("is-final", last);
     bubble.classList.remove("is-done");
     hint.classList.remove("is-on");
-    hint.classList.toggle("is-gone", !!line.final);
+    hint.classList.toggle("is-gone", last);
     if(!still){ bubble.classList.remove("bump"); void bubble.offsetWidth; bubble.classList.add("bump"); }
     novaGesture(fig, line.gesture);
     if(typer) typer.cancel();
@@ -93964,7 +94451,7 @@ function novaTalk(o){
             if(i < lines.length - 1) show(i + 1); }); }catch(e){ asking = false; }
           return;
         }
-        if(!line.final) hint.classList.add("is-on");
+        if(!last) hint.classList.add("is-on");
         else setTimeout(() => { try{ go.focus({ preventScroll: true }); }catch(e){} }, 60);
       }
     });
@@ -94406,7 +94893,8 @@ const NOVA_MODE_LINES = {
 };
 function novaModeRow(){
   const row = document.createElement("div"); row.className = "nt-modes";
-  ["drill", "exam", "review", "vroom"].forEach((k, i) => {
+  /* (384) the modes this class has: Fire Code has no Mock (342) */
+  ["drill", "exam", "review", "vroom"].filter(k => !(window.NOVA_CLASS === "ifc" && k === "exam")).forEach((k, i) => {
     const m = document.createElement("div"); m.className = "nt-mode is-" + k; m.style.setProperty("--i", i);
     const ic = document.createElement("span"); ic.className = "nt-mode-ic";
     try{ ic.appendChild(modeIcon(k)); }catch(e){}
@@ -94910,10 +95398,31 @@ function novaIntroLines(o){
   const lines = [];
   const hello = ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
     novaProp(ctx, novaStack(t, novaCap("Explorer · Instructor"))); };
+  /* (384) A SIGN-UP FOR FIRE CODE ALONE is said in two halves (see startIfcSignupHere): o.part 1, in the page that makes the
+     account - the name, the partner and the code, nothing that is one class's - and o.part 2 in Fire Code, over its own
+     badges, crew and modes. Everything a class has its own of is that class's here (ifcNow). */
+  const ifcNow = window.NOVA_CLASS === "ifc";
+  const part = o.signup ? (o.part || 0) : 0;
+  const picked = { gesture: "nod", text: () => novaCrewName(store.avatarChar) + " it is! You can switch any time in Customize.",
+    enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
+      try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
+      novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } };
+  const codeLines = [
+    { gesture: "raise", text: "This is your sync code.", enter: ctx => novaProp(ctx, novaStack(novaCodeProp())), ask: novaAskSaveCode /* build 382: the save-your-code card */ },
+    { text: "It signs you in on other devices. Find it any time in Settings." }
+  ];
   if(existing){
     lines.push({ gesture: "wave", text: "There you are, " + name + "!", enter: hello });
     lines.push({ text: "I’m Nova. Explorer, and instructor." });
     lines.push({ gesture: "raise", text: "My ship’s been out of range since the storm." });
+  } else if(part === 2){
+    const ifcHello = ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
+      novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
+    lines.push({ gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: ifcHello });
+    lines.push({ text: "This class has the 2021 IFC and the Harris County (HC) amendments." });
+    lines.push({ text: "Every question comes with the code it’s from." });
+    lines.push({ gesture: "nod", text: "Answer one, and I’ll show you the page." });
+    lines.push({ gesture: "raise", text: "Now, a little about me." });
   } else if(o.signup){
     /* (327z15) a sign-up: he asks the name himself */
     lines.push({ gesture: "wave", text: "Hello there!", enter: hello });
@@ -94921,6 +95430,14 @@ function novaIntroLines(o){
     lines.push({ text: "I’m an explorer, and I’ll be your instructor." });
     lines.push({ gesture: "raise", text: "First, what should I call you?", ask: novaAskName });
     lines.push({ gesture: "wave", text: () => "So you’re " + novaName() + "! Great to meet you.", enter: hello });
+    if(part === 1){
+      /* the account is made on the partner's pick, as ever; the crew he points to are shown in Fire Code */
+      lines.push({ gesture: "raise", text: "A few of my crew are aboard with me. Who do you want as your partner?", ask: novaAskCharacter });
+      lines.push(picked);
+      codeLines.forEach(l => lines.push(l));
+      lines.push({ gesture: "wave", final: true, text: "Now let’s open Fire Code. I’ll tell you the rest there.", enter: ctx => novaProp(ctx, null) });
+      return lines;
+    }
   } else {
     lines.push({ gesture: "wave", text: "Hello there, " + name + "!", enter: hello });
     lines.push({ text: "Welcome aboard. My name is Nova." });
@@ -94945,32 +95462,38 @@ function novaIntroLines(o){
       enter: ctx => novaProp(ctx, novaStack(novaRankRow(), novaCap("A flare for every rank"))) });
     /* (330) "says hidden ... but should say something simple but more inline with finding them by
        scoring enough hundreds" - the next line says how */
-    lines.push({ text: "Every unit has one of my badges to win.",
-      ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap("Every unit has its own badge"))) });
-    lines.push({ text: window.NOVA_CLASS === "ifc" ? "Score 100% on a unit once, and its badge is yours." : "Score 100% on a unit enough times, and its badge is yours." });   /* (384) Fire Code: one */
+    /* (384) Fire Code's are chapters, each badge won with one 100%, and it has no Mock (342) */
+    lines.push({ text: ifcNow ? "Every chapter has one of my badges to win." : "Every unit has one of my badges to win.",
+      ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(ifcNow ? "Every chapter has its own badge" : "Every unit has its own badge"))) });
+    lines.push({ text: ifcNow ? "Score 100% on a chapter once, and its badge is yours." : "Score 100% on a unit enough times, and its badge is yours." });   /* (384) Fire Code: one */
     lines.push({ gesture: "raise", text: "My crew are waiting in their pods.",
       ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(o.signup ? "My crew" : crew.have + " of " + crew.total + " characters found"))) });
-    if(o.signup){
+    if(part === 2){
+      /* the partner was picked in the first half */
+      lines.push({ text: "Your partner is already with you. Find the rest, and they’ll join you too." });
+    } else if(o.signup){
       /* (327z15) you pick who comes home first, and the account is made */
       /* (round 26) the starters are all yours from day one - "you get all
          the freebies at the beginning" - so he offers a partner from the
          ones who stayed aboard, not a rescue */
       lines.push({ gesture: "raise", text: "A few of them stayed aboard with me. Who do you want as your partner?", ask: novaAskCharacter });
-      lines.push({ gesture: "nod", text: () => novaCrewName(store.avatarChar) + " it is! You can switch any time in Customize.",
-        enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
-          try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
-          novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } });
+      lines.push(picked);
       lines.push({ text: "The rest of my crew are still out there. Find them, and they’ll join you too." });
-      lines.push({ gesture: "raise", text: "This is your sync code.",
-        enter: ctx => novaProp(ctx, novaStack(novaCodeProp())), ask: novaAskSaveCode /* build 382: the save-your-code card */ });
-      lines.push({ text: "It signs you in on other devices. Find it any time in Settings." });
+      codeLines.forEach(l => lines.push(l));
     } else {
       lines.push({ text: "Every one you find joins your team." });
     }
-    lines.push({ text: "There are four ways to train: Drill, Mock, Review and the Virtual Room.",
-      ...novaSlide("modes", () => novaModeRow()) });
-    lines.push({ text: "Drill is practice, with answers as you go. Mock is graded at the end." });
-    lines.push({ text: "Review goes over every answer. In a Virtual Room, you test live with friends." });
+    if(ifcNow){
+      lines.push({ text: "There are three ways to train: Drill, Review and the Virtual Room.",
+        ...novaSlide("modes", () => novaModeRow()) });
+      lines.push({ text: "Drill is practice, with answers as you go. Review goes over every answer." });
+      lines.push({ text: "In a Virtual Room, you test live with friends." });
+    } else {
+      lines.push({ text: "There are four ways to train: Drill, Mock, Review and the Virtual Room.",
+        ...novaSlide("modes", () => novaModeRow()) });
+      lines.push({ text: "Drill is practice, with answers as you go. Mock is graded at the end." });
+      lines.push({ text: "Review goes over every answer. In a Virtual Room, you test live with friends." });
+    }
   }
   /* he becomes your friend partway through (build 324) */
   const friendLine = { gesture: "raise", friend: true,
@@ -95052,7 +95575,7 @@ function playNovaIntro(then, o){
   /* (327z15: no wreck in the story any more, so no crack art to warm) */
   /* and the parades of characters and badges (build 325) */
   novaWarmProps();
-  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "Goodbye" : "Let’s go",
+  novaTalk({ id: "nova-intro", label: "Nova introduces himself", lines, finalLabel: o.existing ? "Goodbye" : (o.part === 1 ? "Open Fire Code" : "Let’s go"),
     skipTo: recapAt > 0 ? recapAt : null, noSkip: true,
     /* an existing account is found by him (build 325) */
     signal: o.existing ? "Nova, explorer" : null,
@@ -95134,7 +95657,7 @@ const TOUR_OVERLAY_WAIT_MS = 14000;
    who already saw it has been shown something no longer true. Only the
    tours named in the re-arm block at the end of this file are replayed;
    bumping this on its own does nothing. */
-const TOUR_REV = 3;
+const TOUR_REV = 4;   /* 4 (build 384): the class button's tip (maybeClassButtonTip); 3: the Profile tips (289) */
 /* Build 289. Shared by the Profile tour and the re-armed three-step one
    so the two can never say different things. */
 const PROFILE_TIPS_289 = [
@@ -95478,6 +96001,9 @@ function mainMenuTourSteps(returning){
        screen the person is already looking at. */
     { target: ".daily-question-fab", align: "right", vplacement: "above",
       text: "Your daily question: one a day, one try. After you answer, its ring fills until the next one. No retakes, so take your time." },
+    /* (384) Madison: "Ensure the class button gets a tool tip as well." A new account's tips name it (an existing account is
+       shown it once on its own: maybeClassButtonTip) */
+    ...(returning ? [] : [classButtonTipStep("Your classes. Tap here to switch between your classes or join another one.")]),
     { target: ".cosmic-icon-badge", align: "left", vplacement: "below",
       text: returning ? "These are my flares, one for each rank. Every rank you reach lights one up. Tap one for a closer look."
         : "These are my flares, one for each rank, still dark. Reach a rank and its flare lights up. Tap one for a closer look." },
@@ -95486,6 +96012,41 @@ function mainMenuTourSteps(returning){
       text: returning ? "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later."
         : "Tap here when you\u2019re ready to study. Need to stop partway? Pause the test and save it for later. Rank up, find my badges, and I\u2019ll pop up with tips like these as you explore." }
   ];
+}
+/* (384) THE CLASS BUTTON'S TIP. Its place: the bottom-left corner on a phone held upright (the daily question's mirror), so
+   the tip sits above it; the top-left corner on a tablet or laptop and under the planet on a phone held sideways, so below. */
+function classButtonTipStep(text){
+  let upright = false;
+  try{ upright = window.matchMedia("(max-width:39.99rem) and (orientation:portrait)").matches; }catch(e){}
+  return { target: ".class-bubble", align: "left", vplacement: upright ? "above" : "below", text };
+}
+/* An account from before the class button is shown it once, on its own, on its first Home of this build - in the academy (where
+   every such account is), after What's New has closed and when nothing else is up (the tips, a sheet, a banner - the new class
+   banner first, if it is owed - the week's recap, a cutscene or card). Once per ACCOUNT (store.seenClassTip, synced and
+   OR-merged; set as it shows). A new account has it among its first tips instead (seenClassTip is set at sign-up). */
+let classTipTimer = 0;
+function maybeClassButtonTip(){
+  if(classTipTimer || window.NOVA_CLASS !== "academy" || !store || !store.onboardingComplete || store.seenClassTip) return;
+  let tries = 0, calm = 0;
+  const attempt = () => {
+    classTipTimer = 0;
+    if(!store.onboardingComplete || store.seenClassTip) return;
+    let busy = !onNovaHome() || !document.querySelector(".class-bubble-wrap .class-bubble");
+    try{ busy = busy || whatsNewHolds() || a2hsBusy() || a2hsHolds(); }catch(e){ busy = true; }
+    busy = busy || !!document.querySelector("#tour-overlay, #tour-tooltip, .daily-alert, .nova-talk, #nova-class-greet, #class-switch-loader, .class-bubble-wrap.is-open");
+    try{ busy = busy || newClassTimer || pendingMainMenuTour || signupInNova || novaIntroOn || testInProgress; }catch(e){}
+    if(busy){
+      calm = 0;
+      if(++tries > 400) return;   /* left for the next Home */
+      classTipTimer = setTimeout(attempt, 700); return;
+    }
+    if(++calm < 3){ classTipTimer = setTimeout(attempt, 700); return; }
+    store.seenClassTip = true;
+    saveStore();
+    const inIfc = enrolledClasses().indexOf("ifc") >= 0;
+    startSimpleTour([classButtonTipStep("This is the class button. Tap it to switch between your classes or join another one" + (inIfc ? "." : ", like Fire Code."))]);
+  };
+  classTipTimer = setTimeout(attempt, 3000);
 }
 function startMainMenuTour(){
   /* Delegates entirely to startSimpleTour() now, rather than keeping
@@ -95497,8 +96058,10 @@ function startMainMenuTour(){
      newer one had already been fixed. One shared implementation
      means a future fix here benefits every tour, not just one. */
   /* (384) and, as the sign-up's last step, Add to Home Screen (showHomeScreenSheet), once the +100 XP has landed */
+  /* (384) the class the sign-up is in: Fire Code's own (a sign-up for Fire Code alone ends there), or the academy - with Fire
+     Code beside it when both were picked */
   startSimpleTour(mainMenuTourSteps(false), () => {
-    awardWelcomeBonus(); scheduleNovaGoodLuck(); showEnrolledBanner("academy");
+    awardWelcomeBonus(); scheduleNovaGoodLuck(); showEnrolledBanner(window.NOVA_CLASS === "ifc" ? "ifc" : enrolledClasses());
     try{ noteHomeScreenSheetOwed(); scheduleHomeScreenSheet(); }catch(e){}
   });
 }
@@ -97866,6 +98429,18 @@ function showDailyAlert(msg, opts){
     shut.innerHTML = BANNER_X_SVG;
     shut.addEventListener("click", () => { el.classList.remove("show"); setTimeout(() => el.remove(), 220); });
     el.append(icon, body, shut);
+    /* (384) one that does what it says when tapped ("Fire Code is open to join" opens the class list): the whole banner takes
+       the tap, the x still only closes it */
+    if(typeof o.onTap === "function"){
+      el.classList.add("is-tap"); el.setAttribute("role", "button"); el.tabIndex = 0;
+      const take = e => {
+        if(e && e.target && e.target.closest && e.target.closest(".app-banner-x")) return;
+        el.remove();
+        try{ o.onTap(); }catch(x){}
+      };
+      el.addEventListener("click", take);
+      el.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); take(e); } });
+    }
   } else {
     el.textContent = msg;
   }
@@ -103899,7 +104474,66 @@ function openPersonSheet(entry){
   startRankMarks(sheet);
 }
 
+/* (384) AN ACCOUNT IN FIRE CODE ALONE HAS NO HOME IN THE ACADEMY. The head script opens Fire Code for it at launch; within a
+   launch, whatever brings it to the academy's Home (a sign-in with its code, a code in the launch address, Settings' Link this
+   device) opens Fire Code instead (enterAccountClass) - never the academy's Home, board or tips. Not while a sign-up is still
+   in Nova's first half here (startIfcSignupHere). */
+function academyHomeBarred(){
+  try{
+    return window.NOVA_CLASS === "academy" && !!store && !!store.onboardingComplete && !!store.publicId && !signupInNova
+      && !academyMember() && enrolledClasses().indexOf("ifc") >= 0;
+  }catch(e){ return false; }
+}
+let accountClassEntering = false;
+function enterAccountClass(note){
+  if(accountClassEntering) return true;
+  accountClassEntering = true;
+  try{ persistLocally(); }catch(e){}
+  try{ stage.replaceChildren(); }catch(e){}
+  switchClass("ifc", null, { note: note || "" });
+  return true;
+}
+/* (384) WELCOME BACK, SAID ON ARRIVAL. Madison: "When you switch classes ensure a banner pops up that says welcome back to blah
+   blah the class you got back into." A page opened by the class button (switchClass's arrival, NOVA_CLASS_ARRIVE) - not a
+   first enrolment, which has Nova's greeting and "You're enrolled" (greet.<class> pending), nor a join, a sign-in or a
+   sign-up going on (they say their own) - says "Welcome back to Fire Code" / "Welcome back to the Police Academy" once, the
+   app's banner, on Home once it has settled and nothing else is up. */
+let switchWelcomeDone = false, switchWelcomeTimer = 0;
+function maybeSwitchWelcome(){
+  if(switchWelcomeDone || switchWelcomeTimer) return;
+  const arr = window.NOVA_CLASS_ARRIVE, key = window.NOVA_CLASS === "ifc" ? "ifc" : "academy";
+  if(!arr || arr.to !== key || arr.join || arr.note){ switchWelcomeDone = true; return; }
+  let pending = null; try{ pending = localStorage.getItem("class26e.greet." + key); }catch(e){}
+  if(pending === "pending"){ switchWelcomeDone = true; return; }
+  let tries = 0, calm = 0;
+  const attempt = () => {
+    switchWelcomeTimer = 0;
+    if(switchWelcomeDone) return;
+    let busy = !onNovaHome() || document.getElementById("splashscreen");
+    try{ busy = busy || whatsNewHolds() || a2hsBusy() || a2hsHolds(); }catch(e){ busy = true; }
+    busy = busy || !!document.querySelector("#tour-overlay, #tour-tooltip, .daily-alert, .nova-talk, .class-bubble-wrap.is-open");
+    try{ busy = busy || pendingMainMenuTour || signupInNova || novaIntroOn; }catch(e){}
+    if(busy){ calm = 0; if(++tries > 60){ switchWelcomeDone = true; return; } switchWelcomeTimer = setTimeout(attempt, 500); return; }
+    if(++calm < 2){ switchWelcomeTimer = setTimeout(attempt, 400); return; }
+    switchWelcomeDone = true;
+    const c = NOVA_CLASSES.find(x => x.key === key), info = NOVA_CLASS_INFO[key] || {};
+    const ic = document.createElement("span"); ic.innerHTML = c.icon;
+    showDailyAlert(info.kicker || "", { kind: "enrolled", tag: "YOUR CLASS", title: "Welcome back to " + (key === "ifc" ? "Fire Code" : "the Police Academy"),
+      color: key === "ifc" ? "#FF9648" : "#93B5FF", iconEl: ic.firstElementChild, id: "classback-banner", stay: 4500 });
+  };
+  switchWelcomeTimer = setTimeout(attempt, 600);
+}
+/* What Fire Code says as it opens after one of those (switchClass's note) */
+function sayClassArrival(){
+  const arr = window.NOVA_CLASS_ARRIVE;
+  if(!arr || !arr.note || sayClassArrival.done) return;
+  sayClassArrival.done = true;
+  const said = { signin: "Welcome back — your progress is here.", restored: "Signed back in — your progress was restored.",
+                 linked: "Linked — this device is now synced." }[arr.note];
+  if(said){ try{ holdNoticesAfterTour(); }catch(e){} showWelcomeBackBanner(said); }
+}
 function showHome(){
+  if(academyHomeBarred()){ enterAccountClass(); return; }
   /* a browser tab keeps its sign-in in its own address (build 327z) */
   try{ syncBrowserCodeUrl(); }catch(e){}
   /* Settle what counts as already seen before anything can be earned
@@ -104294,6 +104928,9 @@ function showHome(){
   versionTag.hidden = true; versionTag.tabIndex = -1; versionTag.setAttribute("aria-hidden", "true");
   stage.appendChild(versionTag);
   try{ mountClassBubble(); maybeClassGreeting(); if(classSwitchAllowed()) maybeNewClassBanner(); }catch(e){}
+  /* (384) a page opened by a sign-in elsewhere welcomes them back; one opened by the class button welcomes them to the class;
+     and an account in Fire Code has its questions in the cache before it switches (warmIfcBank) */
+  try{ sayClassArrival(); maybeSwitchWelcome(); warmIfcBankSoon(); }catch(e){}
 
   toTop();
   /* a rank-up not yet shown locks Home to the Profile tab (build 317) */
@@ -104307,15 +104944,18 @@ function showHome(){
        and the character, and the main-menu tips run. */
     pendingMainMenuTour = false;
     try{ localStorage.removeItem("class26e.nova"); }catch(e){}
+    /* (384) in Fire Code, the second half of a sign-up for Fire Code alone (ifcSignupOwed): the account was made in the first */
+    const part = signupPart;
     setTimeout(() => {
       if(document.querySelector(".homeversion-btn")) playNovaIntro(reason => {
-        signupInNova = false;
+        signupInNova = false; signupPart = 0;
         if(reason === "signin" || !syncCode) return;
+        if(part === 2){ try{ localStorage.removeItem("class26e.signupnext"); }catch(e){} }
         showHome();
         /* (round 37) "The tool tips show up almost instantly, wait like 2-3 seconds": Home has
            its moment first */
         setTimeout(() => { if(document.querySelector(".homeversion-btn") && !document.getElementById("tour-overlay")) startMainMenuTour(); }, 2500);
-      }, { signup: true });
+      }, { signup: true, part });
     }, 400);
   } else if(pendingMainMenuTour){
     pendingMainMenuTour = false;
@@ -104325,6 +104965,7 @@ function showHome(){
        still resumes onboarding next launch instead of skipping to
        Home with the tour already missed. */
     store.onboardingComplete = true;
+    store.seenClassTip = true;   /* (384) the class button is among its first tips */
     /* A brand-new account is current by definition: it is about to see
        every tour for the first time. Without this it would finish
        onboarding on tourRev 0 and be re-armed on its NEXT launch, which
@@ -104381,6 +105022,8 @@ function showHome(){
     if(!weekRecapHomeTried){ try{ scheduleWeekRecap(WEEK_RECAP_HOME_MS); weekRecapHomeTried = true; }catch(e){} }
     /* (384) a sign-up's Add to Home Screen that the app closed before it could show */
     try{ if(a2hsState() === "owed") scheduleHomeScreenSheet(2600); else if(a2hsTipEligible()) scheduleHomeScreenSheet(6000, "tip"); }catch(e){}
+    /* (384) an existing account is shown the class button once */
+    try{ maybeClassButtonTip(); }catch(e){}
   }
 }
 
@@ -125702,7 +126345,8 @@ function showAppearance(opts){
 
       const saveNote = document.createElement("p");
       saveNote.className = "sync-note-plain";
-      saveNote.textContent = window.NOVA_CLASS === "ifc"
+      /* (384) an account in Fire Code alone has no Police Academy to name: it is told what everybody else is */
+      saveNote.textContent = (window.NOVA_CLASS === "ifc" && academyMember())
         ? "The same code as your Police Academy account. Fire Code saves to the cloud under it, on every device signed in to that account."
         : "Keep this somewhere off this phone. If this device ever loses its "
         + "data, the code is what puts you back on your account.";
@@ -125783,6 +126427,7 @@ function showAppearance(opts){
           /* typed in by hand: no "save your sync code" after it (round 27) */
           try{ localStorage.setItem(SAVE_CODE_ASKED_KEY, String(Date.now())); }catch(e){}
           noteCodeTypedIn();   /* build 382 */
+          if(academyHomeBarred()){ enterAccountClass("linked"); return; }   /* (384) */
           showHome();
           showWelcomeBackBanner("Linked \u2014 this device is now synced.");
         } else {
@@ -150942,7 +151587,17 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
      "levelWallRule", "challengeSeed289", "koiRevoked295", "sheriffMoved324", "lateHundosSeed312", "fullTestsSeeded"].forEach(k => { if(a[k] !== undefined) seed[k] = a[k]; });
     Object.keys(a).forEach(k => { if(/^seen[A-Z]/.test(k)) seed[k] = a[k]; });
     seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
-    if(applyLoadedData(seed)){ storageHadData = true; persistLocally(); }
+    /* (384) THE LOOK IS THE CLASS'S OWN. Madison: "When switching classes, the theme from the other class is being used on the
+       class you switched to ... I don't have it unlocked" / "in the police class I have void selected, when I switch to IFC, it
+       selects the void character for me". The settings come across (sound, haptics, swipe and the rest - the person's), the
+       theme's colour does not: Fire Code starts on its default and is picked in Fire Code from what is unlocked there; the
+       character comes across only if it is unlocked here (a partner from the starters is), else Fire Code's first starter. */
+    if(seed.theme && typeof seed.theme === "object"){ seed.theme = Object.assign({}, seed.theme); delete seed.theme.accent; delete seed.theme.accentAt; }
+    if(applyLoadedData(seed)){
+      storageHadData = true;
+      try{ if(store.avatarChar && isLockedCharacter(store.avatarChar)) store.avatarChar = classDefaultCharacter(); }catch(e){}
+      persistLocally();
+    }
   }catch(e){}
 }
 /* (384, the 5.4.2 bank) the three removed Fire Code questions come off the starred list - once, with the tombstone a
@@ -150963,9 +151618,37 @@ if(window.NOVA_CLASS === "ifc"){
     if(ac.publicId && !store.publicId){ store.publicId = ac.publicId; persistLocally(); }
     foldSocialFrom(JSON.parse(window.NOVA_ACADEMY_RAW || "null"), true);
   }catch(e){}
-} else if(store.publicId && store.publicId === window.NOVA_CLASS_OWNER){
+} else if(store.publicId && enrolledClasses().indexOf("ifc") >= 0){
+  /* (384) every account in Fire Code, not the owner's alone (foldSocialFrom takes only this account's own copy) */
   try{ foldSocialFrom(JSON.parse(localStorage.getItem("class26e.ifc.drill.v1") || "null"), false); }catch(e){}
   onFirebaseReady(() => { try{ watchOtherClassSocial(); }catch(e){} });
+}
+/* (384) THE CLASSES AS A PAGE OPENS. In Fire Code: the second half of a sign-up for Fire Code alone, owed since its account was
+   made (class26e.signupnext, the same account): Nova goes on over Fire Code's Home, then the tips and the rest of a sign-up.
+   In the academy, arriving from the class button: the account is in the academy from now on (joining it from Fire Code, or a
+   device whose copy had not yet heard it joined elsewhere) - recorded on the account (setEnrolled); a join is greeted. */
+function ifcSignupOwed(){
+  if(window.NOVA_CLASS !== "ifc") return false;
+  let m = null; try{ m = JSON.parse(localStorage.getItem("class26e.signupnext") || "null"); }catch(e){ m = null; }
+  if(!m) return false;
+  if(!m.pid || !store.publicId || m.pid !== store.publicId || !store.onboardingComplete){
+    try{ localStorage.removeItem("class26e.signupnext"); }catch(e){}
+    return false;
+  }
+  signupInNova = true; pendingMainMenuTour = true; signupPart = 2;
+  return true;
+}
+try{ ifcSignupOwed(); }catch(e){}
+/* (384) Fire Code wears only its own look: the academy's character, copied before 384, goes (ifcLookCheck) */
+try{ ifcLookCheck(false); }catch(e){}
+if(window.NOVA_CLASS === "academy"){
+  try{
+    const arr = window.NOVA_CLASS_ARRIVE;
+    if(arr && arr.to === "academy" && store.onboardingComplete && store.publicId && !academyMember()){
+      /* a join: Nova greets them in the academy (an account joining another class - maybeClassGreeting), then "enrolled" */
+      if(setEnrolled("academy", true) && arr.join){ try{ localStorage.setItem("class26e.greet.academy", "pending"); }catch(e){} }
+    }
+  }catch(e){}
 }
 
 /* ---------- THE ONE-TIME FRESH START ----------
@@ -151127,6 +151810,7 @@ if(launchCode && !isStandaloneApp()){
            and was left on that page over the restored account */
         if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"], [data-screen="getstarted"]')){
           gsMarkSeen();
+          if(academyHomeBarred()){ enterAccountClass("restored"); return; }   /* (384) */
           showHome();
           showWelcomeBackBanner("Signed back in \u2014 your progress was restored.");
         }
@@ -151223,9 +151907,15 @@ if(store.onboardingComplete && (store.tourRev || 0) < TOUR_REV){
   /* Rev 3 (build 289): the rank box, badge box and Customize tips on
      Profile. Somebody re-armed for the whole Profile tour above gets
      them inside it; everybody else gets the three on their own. */
-  store.profileTips289 = true;
+  if((store.tourRev || 0) < 3) store.profileTips289 = true;
+  /* Rev 4 (build 384): the class button, which every account has now - its tip, once, on Home (maybeClassButtonTip).
+     Madison: "Ensure the class button gets a tool tip as well." A new account has it among its first tips instead. */
+  const classTipOwed = (store.tourRev || 0) < 4;
+  if(classTipOwed) store.seenClassTip = false;
   store.tourRev = TOUR_REV;
   saveStore();
+  /* the first Home was drawn above, before this: it waits there for its moment */
+  if(classTipOwed){ try{ maybeClassButtonTip(); }catch(e){} }
 }
 
 /* `!adoptedLaunchCode` because the recovery above already owns this

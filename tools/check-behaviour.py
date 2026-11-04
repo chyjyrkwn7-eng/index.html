@@ -7034,7 +7034,7 @@ def check_b289(br):
           r.get("congrats") >= 3 and r.get("congratsCard") is False and r.get("congratsAgain") is False,
           [r.get("congrats"), r.get("congratsCard"), r.get("congratsAgain")])
     check("tourRev 3 arms the three Profile tips, starting with Customize",
-          r.get("tourRev") == 3 and "Customize" in str(r.get("tip")), r.get("tip"))
+          (r.get("tourRev") or 0) >= 3 and "Customize" in str(r.get("tip")), r.get("tip"))   # (384) TOUR_REV is 4 now (the class button), 3 still arms these
     check("the rank line is no box; the next rank and the badge case are one family: same width, no glow, no watermark - and the case strip takes the Next rank box's corner (319h)",
           isinstance(r.get("box"), dict) and all(r["box"].values()), r.get("box"))
     check("Customize is a little bigger", r.get("edit", 0) > 13, r.get("edit"))
