@@ -31589,3 +31589,22 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   the meta theme-color differs Home vs Settings; html's --sky-k equals body::before's; in a browser tab as many sky layers beyond
   Home as on Home; a question's value lower still; and it eases back up going Home. On the previous commit (41310d3) all 7 fail
   (lift 7 of 29, no dial, the meta unchanged, 2 layers vs 6); this build ALL PASS.
+
+### Build 383, round 3 (cont.) - Fire Code stays enrolled through a sign out; the Change pill's 44px; a steadier flash card gate
+- Madison: "After signing out, you should NOT have to enroll into fire code again." The head script's sign-out wipe kept only
+  the device's settings, and class26e.enrolled (with classseen and greet.<class>) was not on its list, so signing back in left
+  only the academy and Fire Code had to be enrolled again (the PDF picked again). They are on the keep list now (keepRe): device
+  settings, like the IFC book itself, which was always kept (its own IndexedDB, "ifc:class26e-ifc-book", never deleted by the
+  wipe). Signing back in, the class button offers Fire Code; tapping it opens Fire Code's Home with its progress from its own
+  cloud document (progress/<code>__ifc). Only the owner's account can open another class (classSwitchAllowed), so another
+  account signing in on that device sees none of it. Fire Code's local copy (class26e.ifc.*) is still wiped - it is account data.
+- THE CHANGE PILL (Settings > Account > Name, Customize's name row) measured 74x28; its 44px target is the app's invisible
+  ::after ("SMALL TO LOOK AT, 44px TO HIT"), but a .next has overflow:hidden, which clipped that ::after back to the pill -
+  taps 16px above or below its middle hit the row. `.customize-namerow .profile-edit-btn{ overflow:visible }`. Every other
+  control on that list measured (11 screens, 3 sign-up steps): none clipped (the chat's x reads only while the chat is shut).
+- check-b383-flashcards: its tap waits for three still readings in a row, the page's scroll included (one run under load tapped
+  "Load my IFC PDF" mid-glide, which on a phone as here only stops the glide). 4 of 4 pass alone.
+- Gates: check-b383-signup [fix2] - signout: the enrolment kept through the sign out, the class button offering Fire Code after
+  signing back in, and Fire Code's Home with its 1234 points (no enrolling, no book picking); settings: the Change pill takes a
+  tap anywhere in 44px round its middle. On 18815df: the first two signout checks fail (the third does not run - no Fire Code
+  to tap) and the Change pill fails (above/below false); this build ALL PASS (signout, settings).

@@ -21,14 +21,17 @@ text fields 16px+, no two pieces of a sign-up screen on top of each other, no ow
   had      - a device that held an account: I'm new here asks first (Sign in primary), both answers go where they say.
   signout  - the owner, in both classes: Settings > Account > Sign out -> Welcome, not the first-visit page [fix]; nothing
              of the account left; I'm new here asks first; the code signs it back in with everything; Fire Code's cloud
-             document untouched (its enrolment, a device setting, is printed - see the notes).
+             document untouched; Fire Code's enrolment (a device setting) kept through the sign out [fix2]: after signing
+             back in the class button offers Fire Code, and tapping it opens Fire Code's Home - no enrolling, no book to
+             pick - with its progress back from its cloud document [fix2].
   icon     - an installed app opened from an icon whose address carries the code (#k=, Add to Home Screen walkthrough):
              Sign out stays signed out on the reload and on the next launch from that icon [fix]; the code signs it back
              in and the icon then opens Home; a wiped device opened from that icon lands on Home, not Get Started [fix].
-  settings - Settings > Sync > Enter a code (a device with sync off) takes the pasted message's code [fix].
+  settings - Settings > Sync > Enter a code (a device with sync off) takes the pasted message's code [fix]; Settings >
+             Account > Name's Change pill takes a tap anywhere in 44px round its middle [fix2].
 
   python3 tools/check-b383-signup.py
-  python3 tools/check-b383-signup.py --against /path/to/old-index.html     (the [fix] checks FAIL there)
+  python3 tools/check-b383-signup.py --against /path/to/old-index.html     (the [fix] checks FAIL there; [fix2] on 18815df)
   ONLY=fresh,signin python3 tools/check-b383-signup.py
   SU_SHOTS=/some/folder python3 tools/check-b383-signup.py                 (a picture of every step)
 """
@@ -409,8 +412,9 @@ with sync_playwright() as pw:
             pg.click("#signout-confirm .signout-go")
         pg.wait_for_timeout(3600); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()"); pg.wait_for_timeout(600)
         chk("[fix] after Sign out: Welcome, where Sign in is - not the first-visit Get Started page (%s)" % screen(pg), screen(pg) == "welcome", screen(pg))
-        r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', pts: (store.lifetime||{}).points || 0, keys: Object.keys(localStorage).filter(k=>/^class26e\\.(drill\\.v1|synccode|ifc\\.drill\\.v1|activeclass|enrolled)$/.test(k)) })")
+        r = pg.evaluate("()=>({ code: syncCode, name: store.firstName || '', pts: (store.lifetime||{}).points || 0, keys: Object.keys(localStorage).filter(k=>/^class26e\\.(drill\\.v1|synccode|ifc\\.drill\\.v1|activeclass)$/.test(k)), enrolled: localStorage.getItem('class26e.enrolled') })")
         chk("[guard] nothing of the account is left on the device (%s)" % r, not r["code"] and not r["name"] and not r["pts"] and not r["keys"], r)
+        chk("[fix2] Fire Code's enrolment, a device setting, is kept through the sign out (%s)" % r["enrolled"], "ifc" in (r["enrolled"] or ""), r)
         to_welcome(pg)
         step(pg, "Welcome after sign out")
         pg.click(".welcome-new"); pg.wait_for_timeout(700)
@@ -426,8 +430,23 @@ with sync_playwright() as pw:
         chk("[guard] signed in again: no longer marked signed out", not r["marker"], r["marker"])
         fc = pg.evaluate("(c)=>(__cloud.progress[c + '__ifc'] || {}).lifetime || null", CODE)
         chk("[guard] Fire Code's cloud document is untouched by the sign out and back in (%s)" % fc, fc and fc["points"] == 1234 and fc["correct"] == 222, fc)
-        print("  INFO Fire Code enrolment after signing back in: %s (a device setting Sign out clears; enrolling again brings its progress back from the cloud)" % (r["enrolled"] or "not enrolled"))
+        offer = pg.evaluate("()=>[...document.querySelectorAll('.class-stack-item')].map(b=>b.className)")
+        chk("[fix2] signed back in: the class button offers Fire Code (%s; enrolled %s)" % (offer, r["enrolled"]), any("is-ifc" in c for c in offer), offer)
         errs_ok(pg, "sign out and back in")
+        if any("is-ifc" in c for c in offer):
+            pg.click(".class-bubble"); pg.wait_for_timeout(700)
+            with pg.expect_navigation(timeout=15000):
+                pg.click(".class-stack-item.is-ifc")
+            pg.wait_for_timeout(4200); pg.evaluate("()=>document.getElementById('splashscreen')?.remove()")
+            for _ in range(40):
+                f = pg.evaluate("""()=>({ cls: window.NOVA_CLASS, screen: document.querySelector('#stage [data-screen]')?.dataset.screen || null,
+                    pick: !!document.querySelector('#stage .ifc-enroll, #stage [data-screen="ifcenroll"], .ifc-analyze, #ifc-book-input'),
+                    pts: ((typeof store !== 'undefined' && store || {}).lifetime || {}).points || 0, name: (typeof store !== 'undefined' && store || {}).firstName || '' })""")
+                if f["screen"] == "home" and f["pts"] == 1234: break
+                pg.wait_for_timeout(250)
+            chk("[fix2] and tapping it opens Fire Code's Home - no enrolling, no book to pick - with its progress from the cloud (%s)" % f,
+                f["cls"] == "ifc" and f["screen"] == "home" and not f["pick"] and f["pts"] == 1234 and f["name"] == "Gate Owner", f)
+            errs_ok(pg, "Fire Code after signing back in")
         ctx.close()
 
     # ------------------------------------------------------------------ icon
@@ -478,6 +497,14 @@ with sync_playwright() as pw:
         fs = pg.evaluate("(s)=>parseFloat(getComputedStyle(document.querySelector(s)).fontSize)", F2)
         chk("[guard] the field is 16px+ (%s)" % fs, fs >= 15.95, fs)
         errs_ok(pg, "Settings > Sync")
+        # Settings > Account > Name: the Change pill is small to look at, 44px to hit (its ::after) - a .next's overflow clipped that
+        pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(900)
+        hb = pg.evaluate("""()=>{ const b=document.querySelector('#stage .customize-namerow .profile-edit-btn'); if(!b) return null; const r=b.getBoundingClientRect();
+            const cx=r.left+r.width/2, cy=r.top+r.height/2, half=Math.max(r.height, 44)/2 - 1;
+            const hit=(x,y)=>{ const e=document.elementFromPoint(x,y); return !!e && (e===b || b.contains(e)); };
+            return { box: [Math.round(r.width), Math.round(r.height)], above: hit(cx, cy - half), below: hit(cx, cy + half), wide: r.width >= 44 || (hit(cx - half, cy) && hit(cx + half, cy)) }; }""")
+        chk("[fix2] Settings > Account > Name: the Change pill (%s) takes a tap anywhere in 44px round its middle (%s)" % (hb and hb["box"], hb),
+            hb and hb["above"] and hb["below"] and hb["wide"], hb)
         ctx.close()
 
     for name in ("fresh", "signin", "had", "signout", "icon", "settings"):

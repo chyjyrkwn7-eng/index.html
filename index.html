@@ -77,10 +77,15 @@
        reads storage, this device forgets the account in BOTH classes - their saved copies, codes and backups (class26e.* and the
        IndexedDB backups, the academy's and Fire Code's) - and keeps only the device's own settings and the note that it once held
        an account (so "I'm new here" still asks first). Nothing is written to the cloud: the account and its progress stay there,
-       and the sync code brings them back. */
+       and the sync code brings them back.
+       (383, Madison: "After signing out, you should NOT have to enroll into fire code again.") The classes this device is
+       enrolled in, the classes it has been shown and their greetings are the device's too, so they stay - as the IFC book
+       itself always did (its own IndexedDB, never deleted here): sign back in and Fire Code is in the class button, its
+       progress coming back from its own cloud document. Only the owner's account can open another class (classSwitchAllowed),
+       so a different account signing in on this device sees none of it. */
     try{
       if(localStorage.getItem("class26e.signout")){
-        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag)$/;
+        var keepRe = /^class26e\.(statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|hadaccount|update\.dismissed|forced\.v1|forced\.log|bootmark|booterr|bootcb|diag|enrolled|classseen|greet\.[a-z]+)$/;
         var del = [];
         for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
         for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
@@ -23330,6 +23335,10 @@
     content:""; position:absolute; left:50%; top:50%;
     width:max(100%, 44px); height:max(100%, 44px); transform:translate(-50%,-50%);
   }
+  /* (383) ...but a .next clips what overflows it (overflow:hidden), and that cut the Change pill's target back to its own
+     74x28 in Settings > Account > Name and Customize's name row: taps 16px above or below its middle hit the row. The pill
+     has nothing that needs clipping. */
+  .customize-namerow .profile-edit-btn{ overflow:visible; }
   /* The card is the whole top of this tab now that the character grid
      and the colour swatches have moved to their own screen - "by
      removing the theme and character stuff underneath that profile box,
