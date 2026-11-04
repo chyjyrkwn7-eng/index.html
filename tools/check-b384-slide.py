@@ -14,6 +14,11 @@ As an iPhone (its user agent, real CDP touches, 440x956 at 3x), check-b382-slide
      release and the new screen's build; the release reads no layout (no box, offset or computed style read in its handler: a forced
      style pass and layout of the whole page); the frame after the release comes within 90ms at 4x CPU; and the slide still lands
      (that tab lit, its screen up, the glass gone).
+ (3) THE GLASS UNDER THE FINGER. The row was measured before the bar's swell began and, for a finger that rested past the swell
+     (160ms) before sliding, never again: the slide mapped the finger through the unswollen bar (the glass 10px left of a finger held
+     still at Home's centre, 6px a tab on, 2.4px right of it on the Leaderboard). A finger held still after a slide's first moves has
+     the glass within 1px of it on Home (twice), the Leaderboard and the Calendar; and on check-b382-slide's Home slide at 4x CPU the
+     glass is never more than 3px behind the finger (8.4-9.3 before - (3) there failed on Home since 382).
  (2) THE FLARES' STEPS ARE WHOLE PIXELS IN THEIR OWN PAINT. On Home (the Fire Code class, his): every rank bubble's sheet window is a
      whole number of device pixels a cell in its own coordinates (its CSS cell x devicePixelRatio), each step of the sheet (left/top)
      a whole number of cells, the window the same box on the screen as the bubble's cell (126 device px at 3x, centred on the bubble),
@@ -139,6 +144,38 @@ with sync_playwright() as pw:
         chk("(1) %s -> %s: the release reads no layout (%s reads: %s)" % (frm, to, m["reads"], m["readsBy"]), m["reads"] == 0, m)
         chk("(1) %s -> %s: the frame after the release comes within 90ms at 4x CPU (%sms)" % (frm, to, m["upToFrame"]), m["upToFrame"] is not None and m["upToFrame"] <= 90, m)
         chk("(1) %s -> %s: it lands - %s lit, its screen up, the glass down (%s)" % (frm, to, to, m), m["lit"] == ["bottomtab-" + to] and m["up"] and not m["lensUp"], m)
+    # ---- (3) the glass under the finger (the row read through the swell) ----
+    PROBE = r"""()=>{ const H=window.__H; const b=H.getBoundingClientRect.call(document.querySelector('#bottomtabs-lens .tab-lens-body')); return b.left+b.width/2; }"""
+    held = []
+    for scr, tab, dx in (("home", "bottomtab-home", 16), ("home", "bottomtab-home", 60), ("rewards", "bottomtab-rewards", -16), ("calendar", "bottomtab-calendar", -16)):
+        pg.evaluate("()=>" + SHOW[scr]); pg.wait_for_timeout(2500)
+        tabs = g2["tabs_of"](pg); x0, y = tabs[tab]
+        touch(cdp, "touchStart", x0, y); time.sleep(0.25)
+        for k in range(1, 5): touch(cdp, "touchMove", x0 + dx * k / 4, y); time.sleep(0.016)
+        pg.wait_for_timeout(450)
+        lc = pg.evaluate(PROBE)
+        touch(cdp, "touchEnd"); pg.wait_for_timeout(1500)
+        held.append((scr, dx, round(lc - (x0 + dx), 2)))
+    print("  glass - finger, finger held still after a slide's first moves:", held, flush=True)
+    chk("(3) a finger held still mid-slide has the glass on it, everywhere on the bar (within 1px: %s)" % held, all(abs(h[2]) <= 1 for h in held), held)
+    # and while it slides: check-b382-slide's Home slide (out to the Leaderboard and back) at 4x, the glass read after every frame - with
+    # the finger resting 400ms (not 200) before its first move, so the swell has always finished by then (the case that went wrong)
+    class _Rest:
+        def __getattr__(self, n): return getattr(time, n)
+        def sleep(self, s): time.sleep(0.4 if s == 0.2 else s)
+    g2["time"] = _Rest()
+    best = None
+    for attempt in range(2):
+        pg.evaluate("()=>showHome()"); pg.wait_for_timeout(3000)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4}); pg.wait_for_timeout(600)
+        m = g2["slide"](pg, cdp, "bottomtab-home", "bottomtab-rewards", back=True)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+        L = g2["lag"](m)
+        if L.get("n", 0) >= 3 and (best is None or L["behindMax"] < best["behindMax"]): best = L
+        pg.wait_for_timeout(1500)
+    print("  Home slide at 4x, glass against the finger each frame:", best, flush=True)
+    chk("(3) sliding on Home the glass is never more than 3px behind the finger (%s at worst; median %s ahead)" % (best and best["behindMax"], best and best["med"]),
+        best and best["behindMax"] <= 3, best)
     if errs: chk("(1) no page errors", False, errs[:4])
     br.close()
 

@@ -144763,6 +144763,14 @@ function tabPerfText(){
     return sx.toFixed(4) + " 1.043";
   }
   function lensBarSwell(pts){
+    /* build 384: THE GLASS UNDER THE FINGER, NOT 10PX BEHIND IT ON HOME. The row is measured once a touch (lensRowGeo, 382) - and the
+       press measured it BEFORE this swell began (lensDown finds the pressed tab first). A finger that rested longer than the swell
+       (160ms) before it slid found no swell running and that reading still marked "taken at rest", so the whole slide mapped the
+       finger through the unswollen bar: measured with a finger held still, the glass 10.0px LEFT of it at Home's centre, 6.3 a tab
+       on, 0 mid-bar and 2.4 right of it on the Leaderboard - behind the finger sliding out of Home, a little behind out of Profile,
+       ahead on the far side ("a delay when sliding on home, maybe slightly sliding on profile"); check-b382-slide (3) had read it on
+       Home since 382 (8.6-9.1px behind) and put it down to load. The swell changes the row's box, so a new swell drops the reading. */
+    lensGeo = null;
     if(bar._swell){ try{ bar._swell.cancel(); }catch(e){} bar._swell = null; }
     if(!canAnim || !pts || window.__noSwell) return;
     const D = Math.max(1, pts[pts.length - 1][0]);
