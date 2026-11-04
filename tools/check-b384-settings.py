@@ -9,6 +9,11 @@ iPhone 17 Pro Max (440x956), dark, Settings:
 (3) the theme's colour at the foot: the Support links, the NOVA wordmark's middle and both halves of "MADE BY DAVIS" are in the
     theme's signature - not the near-gold planet highlight they were; in Amethyst they are violet, in Default its coral-rose, and the
     two themes differ; "MADE BY" and "DAVIS" are the same hue;
+(5) and the pages Settings opens ("When clicking the tabs and getting in them too, ensure that stuff within them is updated too"):
+    on Sound & Haptics, Study, Motion & Effects and Leaderboard & Privacy every switch row is 58px+, its tile 32px+, its title 18px+
+    and its description 14px+, and between two switch rows a hairline shows (white, 8%+) from the title to the card's edge; Account's
+    name row and Sign out are 58px+ at 18px; Advanced's red rows 18px; every Contributors row 18px; Legal / Terms / Privacy text 16px;
+    the sync code's label 18px and still blue;
 (4) no page errors.
 Run:  python3 tools/check-b384-settings.py   (--against OLD/index.html must FAIL)"""
 import os, sys, re, colorsys
@@ -60,6 +65,45 @@ with sync_playwright() as pw:
     ck("(3) the foot in the theme's colour: Amethyst violet %s, Default not the gold %s (%s), the two differ, MADE BY and DAVIS one hue" % (el, gold, ink),
        all(violet(el[k]) for k in ("link", "wmMid", "by", "name")) and all(ink[k] and hdist(ink[k][0], gold[0]) > 15 for k in ("link", "wmMid", "name"))
        and hdist(ink["link"][0], el["link"][0]) > 40 and cohesive, [out, hues])
+    pg.evaluate("()=>{ theme.accent='ink'; applyTheme(); }")
+    SW = """()=>{ const rows=[...document.querySelectorAll('#stage .screen-settings-sub .settings-card > label.opt')].filter(r=>r.getBoundingClientRect().height>0);
+      return rows.map((r,i)=>{ const t=r.querySelector('.otext'), h=r.querySelector('.ohint'), ic=r.querySelector('.settings-row-icon'), card=r.parentElement.getBoundingClientRect();
+        const prev=r.previousElementSibling, sep=getComputedStyle(r,'::before'), rr=r.getBoundingClientRect(), tr=t.getBoundingClientRect();
+        const between = !!(prev && prev.matches('label.opt, .settings-volume'));
+        return { h: Math.round(rr.height), title: parseFloat(getComputedStyle(t).fontSize), hint: h ? parseFloat(getComputedStyle(h).fontSize) : 99, tile: ic ? Math.round(ic.getBoundingClientRect().width) : 99,
+                 between, sep: between ? sep.backgroundColor : null, sepL: between ? Math.round(rr.left + parseFloat(sep.left)) : null, titleL: Math.round(tr.left),
+                 sepR: between ? Math.round(rr.right - parseFloat(sep.right)) : null, cardR: Math.round(card.right) }; }); }"""
+    def alpha_of(c):
+        a = re.findall(r"[\d.]+", c or ""); return float(a[3]) if len(a) > 3 else (1 if a else 0)
+    bad = []
+    for page in ("sound", "study", "motion", "rankings"):
+        pg.evaluate("(p)=>showAppearance({ page: p })", page); pg.wait_for_timeout(800)
+        for r in pg.evaluate(SW):
+            okr = r["h"] >= 58 and r["title"] >= 18 and r["hint"] >= 14 and r["tile"] >= 32
+            if r["between"]: okr = okr and alpha_of(r["sep"]) >= .08 and abs(r["sepL"] - r["titleL"]) <= 2 and abs(r["sepR"] - r["cardR"]) <= 2
+            if not okr: bad.append((page, r))
+    pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(800)
+    acc = pg.evaluate("""()=>{ const n=document.querySelector('#stage .customize-namerow'), d=n && n.querySelector('.profile-name-display'), so=document.querySelector('#stage .signout-row');
+      return { nameH: n ? Math.round(n.getBoundingClientRect().height) : 0, name: d ? parseFloat(getComputedStyle(d).fontSize) : 0,
+               outH: so ? Math.round(so.getBoundingClientRect().height) : 0, out: so ? parseFloat(getComputedStyle(so.querySelector('.settings-row-label')).fontSize) : 0 }; }""")
+    if not (acc["nameH"] >= 58 and acc["name"] >= 18 and acc["outH"] >= 58 and acc["out"] >= 18): bad.append(("account", acc))
+    pg.evaluate("()=>showAppearance({ page: 'sync' })"); pg.wait_for_timeout(800)
+    sy = pg.evaluate("()=>{ const l=document.querySelector('#stage .sync-code-label'); return l ? { size: parseFloat(getComputedStyle(l).fontSize), color: getComputedStyle(l).color } : null; }")
+    sh = hue(rgb(sy and sy["color"]))
+    if not (sy and sy["size"] >= 18 and sh and 195 <= sh[0] <= 215): bad.append(("sync", sy, sh))
+    pg.evaluate("()=>showAdvancedSettings()"); pg.wait_for_timeout(800)
+    adv = pg.evaluate("()=>[...document.querySelectorAll('#stage .settings-textrow')].map(r=>parseFloat(getComputedStyle(r).fontSize))")
+    if not adv or min(adv) < 18: bad.append(("advanced", adv))
+    pg.evaluate("()=>showCredits()"); pg.wait_for_timeout(800)
+    cr = pg.evaluate("""()=>[...document.querySelectorAll('#stage .credits-card > .credits-item')].map(r=>{ const l=r.querySelector('.settings-row-label') || r; return parseFloat(getComputedStyle(l).fontSize); })
+      .concat([...document.querySelectorAll('#stage .credits-name')].map(n=>parseFloat(getComputedStyle(n).fontSize)))""")
+    if not cr or min(cr) < 18: bad.append(("credits", sorted(set(cr))))
+    for kind in ("legal", "terms", "privacy"):
+        pg.evaluate("(k)=>showSettingsText(k)", kind); pg.wait_for_timeout(700)
+        pr = pg.evaluate("()=>[...document.querySelectorAll('#stage .settings-prose > p')].map(p=>parseFloat(getComputedStyle(p).fontSize))")
+        if not pr or min(pr) < 16: bad.append((kind, sorted(set(pr))))
+    ck("(5) the pages Settings opens: switch rows, Account, the sync code, Advanced, Contributors and Legal/Terms/Privacy at the menu's size, hairlines between switch rows",
+       not bad, bad[:4])
     ck("(4) no page errors", not errs, errs[:3])
     br.close()
 print("\nALL PASS" if not fails else "\nFAILED: %d" % len(fails))

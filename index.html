@@ -32800,6 +32800,45 @@
   }
   .settings-madeby-by{ color:color-mix(in srgb, var(--theme-sig) 55%, rgba(231,237,241,.55)); }
   .settings-madeby-name{ color:color-mix(in srgb, var(--theme-sig) 85%, #FFFFFF); }
+  /* THE PAGES SETTINGS OPENS, THE SAME PROPORTIONS (384). "When clicking the tabs and getting in them too, ensure that stuff within
+     them is updated too for all this". Sound & Haptics, Study, Motion, Leaderboard & Privacy are switch rows (label.opt in a padded
+     card, not .settings-row): the card's edge 18px like the menu's rows, the tile and the words 15px apart, the title 18px and its
+     description 14px, 60px at the least, and the hairline (it had the same transparent --surface-border) from the words to the card's
+     edge. Account's two rows, the sync code's label and its Save row, Advanced's red rows, Contributors' rows and the Legal / Terms /
+     Privacy text go up the same step. The sync code and the volume stay their fixed blue ("the 'sync code' words in settings should
+     still be blue"). The prefix out-ranks the 383 rules in THE iOS LOOK block (html[data-layout] body #stage :is(...) ...). */
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card:has(> label.opt){ padding-left:18px; padding-right:18px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.opt{ min-height:60px; padding-top:13px; padding-bottom:13px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile{ gap:15px; }
+  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt > .otext{ font-size:18px; line-height:1.25; }
+  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt .ohint{ font-size:14px; line-height:1.4; margin-top:3px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{
+    left:calc(32px + 15px); right:-18px; background:rgba(255,255,255,.1);
+  }
+  html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
+  html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{ background:rgba(0,0,0,.1); }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(32px + 15px); }
+  html[data-layout] body #stage .screen-settings-sub .settings-volume :is(.settings-volume-label, .sliderval){ font-size:16px; }
+  /* Account: the name row and Sign out */
+  html[data-layout] body #stage .settings-page-account .customize-namerow.customize-namerow{ min-height:60px; padding-left:18px; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display{ font-size:18px; }
+  html[data-layout] body #stage .screen-settings-sub .signout-card > .signout-row.signout-row{ min-height:60px; }
+  /* Sync: the code's label at the rows' size; Save lines up with the code's tile */
+  html[data-layout] body #stage .screen-settings-sub .sync-code-row .sync-code-label{ font-size:18px; font-weight:600; }
+  html[data-layout] body #stage .screen-settings-sub .sync-code-row .ohint{ font-size:14px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .sync-card > .sync-save-code-row{ padding-left:0; padding-right:0; }
+  /* Advanced's red rows, Contributors' rows */
+  html[data-layout] body #stage .screen-settings-sub .settings-row.settings-textrow{ font-size:18px; font-weight:400; }
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-item,
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-item.credits-link .settings-row-label{ font-size:18px; font-weight:400; }
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-name-row > .credits-name{ font-size:18px; }
+  html[data-layout] body #stage .screen-settings-sub .credits-intro{ font-size:16px; }
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-name-row > .credits-role.credits-role{ font-size:16px; }
+  /* the words under a card, and the Legal / Terms / Privacy text */
+  html[data-layout] body #stage .screen-settings-sub :is(.settings-footnote, .sync-note-plain){ font-size:14px; line-height:1.45; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card.settings-prose{ padding:16px 18px; }
+  html[data-layout] body #stage .screen-settings-sub .settings-prose > p{ font-size:16px; line-height:1.5; }
 
   /* ---- THE CASE'S CORNERS, ROUND 10 ----
      "some of the edges corners and everything look bad". At 3x the case's

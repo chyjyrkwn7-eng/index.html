@@ -31795,4 +31795,30 @@ between rows, and the Support links / NOVA wordmark / "MADE BY DAVIS" were gold-
 - Gate: `tools/check-b384-settings.py` (rows/tiles/glyphs/labels, a visible hairline from label to edge, the foot violet in
   Amethyst and not gold in Default, MADE BY and DAVIS one hue). Fails 3 on 383. check-b382-settings, check-b382-credits,
   check-b383-look, sweep --quick all green.
-- Note: in light mode Settings' cards render dark on a light page on 383 as well - not changed here.
+- (Light mode is retired - loadTheme() ignores a stored "light" - so the dark-on-light cards seen by forcing theme.mode='light'
+  in a harness are not a real state. The light-theme hairline/link rules are harmless leftovers.)
+
+#### 384 - the pages Settings opens, the same proportions
+
+Madison: "When clicking the tabs and getting in them too, ensure that stuff within them is updated too for all this" (his "tabs"
+are Settings' rows). Every page was measured (tools: a scratch measure over sound/study/motion/account/sync/rankings/share/
+advanced/credits/legal): Share & Install already took the menu's rules (.settings-row in .screen-settings-sub); the rest did not.
+- Switch rows (label.opt in a padded .settings-card - Sound & Haptics, Study, Motion & Effects, Leaderboard & Privacy): the card
+  18px in at each side (`:has(> label.opt)`), rows 60px+ with 13px top/bottom, tile-to-words 15px, title 18px, description 14px
+  (was 17 / 13.1). Their hairline (`label.opt.has-tile + label.opt::before`, and after the volume) was the same transparent
+  --surface-border: now white 10%, from the words (32 + 15) to the card's edge (right:-18px). The volume row's words line up.
+- Account: the name row 60px, name 18px (was 16.3); Sign out 60px (was 52).
+- Sync: "Your sync code" 18px/600 (was 15.2/700), still the fixed #6FC2FF blue Madison asked to keep; Save it's row lines up with
+  the code's tile (it carried the menu rows' 18px side padding inside an already padded card).
+- Advanced's red text rows 18px/400 (were 15.2/500). Contributors: every item 18px/400 (were 16.3/500; the link rows were already
+  18), names 18px, roles 16px, the intro 16px. Card footnotes 14px. Legal / Terms / Privacy text 16px (was 13.8), card 16px 18px.
+- Left alone: the volume slider's blue (the XP bar's blue by design), green switches, Version history and Report a bug (not
+  Settings pages - a document and a form).
+- Rules are in the 384 Settings block, prefixed `html[data-layout] body #stage .screen-settings-sub` to out-rank THE iOS LOOK
+  block's `html[data-layout] body #stage :is(...)` rules.
+- Gate: check-b384-settings (5) - every switch row on the four pages, Account, the sync label (18px and still blue), Advanced,
+  Contributors and Legal/Terms/Privacy. Fails on 383 (4 failures in all).
+- check-b327z10 H5 measured Copy and Send as two worded `.friend-send` buttons; Copy has been an icon (`.friend-copy-btn`) since
+  the 384 Manage friends change, so H5 now reads the icon's glyph (currentColor) on its fill as well. Its B (a sheet's drag-dismiss
+  slide timing) swung 145ms/80% -> 94ms/30% between two runs while three agents were also driving Chromium - load, to re-run quiet.
+- check-b325-e (Save and exit / iPad unit cards) and check-b327-i (Welcome lines, the T.Sale name editor) fail identically on 383.

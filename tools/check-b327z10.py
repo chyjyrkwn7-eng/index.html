@@ -243,9 +243,11 @@ def round2(br):
       const rule = css.find(r => r.selectorText && /rank-row[^,]*\.rank-avatar[^,]*> \.char-flip-play|\.rank-row,\s*\.friend-row-art\) \.rank-avatar/.test(r.selectorText));
       return { mask: rule ? (rule.style.maskImage || rule.style.webkitMaskImage) : '' }; }""")
     check("%s: H4. a board row's flip-book clips itself round (a mask WebKit applies to the layer)" % label, "radial-gradient" in (r4["mask"] or ""), r4)
-    # H5 Copy and Send: readable words on their own fill
+    # H5 Copy and Send: readable on their own fill. (384) Copy is an icon now - Madison: "remove the copy button and just put that
+    # copy button you see. The word copy don't need to be there" - so its glyph (currentColor) is read on its fill, the same 4.5.
     r5 = pg.evaluate("""async () => { showFriends(); await new Promise(r => setTimeout(r, 900));
-      return [...document.querySelectorAll('#stage .friend-send')].map(b => { const cs = getComputedStyle(b); return [b.textContent.trim(), cs.backgroundColor, cs.color]; }); }""")
+      return [...document.querySelectorAll('#stage .friend-send, #stage .friend-copy-btn')].map(b => { const cs = getComputedStyle(b);
+        return [b.textContent.trim() || b.getAttribute('aria-label') || 'icon', cs.backgroundColor, cs.color]; }); }""")
     def lum(c):
         v = [float(x) for x in c[c.index("(") + 1:c.index(")")].split(",")[:3]]
         f = lambda u: (u / 255 / 12.92) if u / 255 <= .03928 else ((u / 255 + .055) / 1.055) ** 2.4
