@@ -32226,3 +32226,60 @@ lowered. Like increments of 25, 50, 75, 150?"
 - Fire Code's counts: fireworks 25, underwater 50, bubbles 75, ufo 150 - set on the HUNDO_FX rows right after the list, before
   anything reads them (window.NOVA_CLASS, not IFC_ART_ON: that var is assigned later). The academy keeps 50 / 100 / 150 / 200.
 - Fire Code is: 25 Extinguisher, 50 Sprinklers, 75 (the Fire Alarm's replacement), 150 Hazmat.
+
+### Build 384 - Fire Code's 75: Thermal Camera (NOT on main, waiting for Madison)
+Madison: "The fire alarm one, absolutely not the move. That thing is terrible. Make that one something else, get creative match
+the theme of them all. Give me the best you can make." (Rejected twice; Emergency Lights also rejected in 383 - so no alarm, bell,
+strobe or siren.) Round 3 of the characters had his "Thermal is cool". The bubbles rung (75 hundos in Fire Code) is now the
+**Thermal Camera** (`ifxThermal`, IFX_DEF.bubbles: total 6400, box 4400, tail 5300; tint b #FF8A2A, the 100% white -> pale yellow
+-> orange, white-hot cooling). Fire service and fire prevention kit (inspectors and investigators carry TICs for hot wiring),
+nothing water, dry chem or hazmat.
+- The screen becomes a thermal imaging camera's display, in the iron palette (IFX_IRON: white, yellow, orange, red, magenta,
+  indigo). Beats are IFX_TIC.full (the score is timed to them):
+  - 0-.6 power-up: a cold indigo view fades over everything (scan lines, vignette), a band of light builds the picture down the
+    screen and each thing lights as it passes - the grade box and the XP card as faint warm outlines, the XP total and the
+    character as warm spots, the 100% already a warm magenta. The display's frame (four corners), THERMAL + thermometer, battery
+    and a 0-1000 F scale (right, below the box) come up.
+  - .5 the reticle (four corners + a cross) appears with a readout tag under it (digit strips, refreshed every .12s, reading the
+    heat under it from a sum of gaussians): ~70 F in the open, ~215 F on the XP total (1.05), 99 F on the character (body heat,
+    1.84). A hand holds it (a slight drift that settles at the lock). Moves are arcs eased in and out (quadratic, smootherstep):
+    a Catmull-Rom threw the short dwell moves into loops.
+  - 2.2-2.75 it swings past the box (top right of the number) and comes back; 2.75 LOCK - the corners open round the 100%, the
+    cross goes, the readout races up (ticks every .05s) while the number heats through the palette: magenta -> red (2.45) ->
+    orange (2.75) -> yellow (3.05) -> white (3.35). Five copies of the number, each colour's glow wider the cooler it is, so they
+    stack into the palette's halo; the box's outline goes orange.
+  - 3.35 white-hot: the readout pegs 1000 F and a MAX pill pops, the scale's top lights, the number flares (scale 1.045), a halo
+    breathes, five plumes of hot air roll up off it (2.85-4.7).
+  - 4.25 the camera comes down: the HUD and reticle zoom past (scale 1.14) and fade, the view fades (4.2-4.95), a ring of heat
+    (`ticWave`) goes out of the number, the real 100% is lit white with an orange glow (its own copy in the box, 1.95s) and the
+    box washes orange; two faint heat wisps rise; all gone by 6.3s.
+- Box alone (tiles' live preview, unlock card; IFX_TIC.small, 4.3s): the same in the box - cold view, corners, reticle in from
+  the right, lock, heat-up, MAX (readout and scale only where there is room: not in a mini stage), heat ring, lit 100%.
+- Sprites added at the end of ifxSpr: ticHeat(0|1), ticPlume, ticL, ticCross, ticDig, ticUnit, ticMax, ticScale, ticMark,
+  ticMode, ticBatt, ticWave. ifxAlarm and its sprites (pull, pullH, bell, clapper, horn, flare, wave) are deleted.
+- `ifxNumCopy`: a copy of the 100% in its own figures. .rs-pct.pct is tabular + lining (font-variant-numeric and
+  font-feature-settings "lnum" "tnum"); a copy without them is ~7px narrower at the results screen's size, so its 1 and 0s sat
+  off the real ones - a visible double image as one handed over to the other. Measured: real 120.7px, copy 113.3px; with
+  ifxNumCopy 120.7 / 120.7. **hfxLitText (ifxLit, every effect's lit 100%, academy too) has the same mismatch** - not changed
+  here (shared helper, other agents in flight); the Thermal Camera lights its own copy instead.
+- Phone landscape (956x440): by the time the effect starts the results page has scrolled down to the XP card, so the box (and
+  the lock) is above the screen; the hunt's warm spots fall back to cold spots on the display (never off it). The Extinguisher
+  and Hazmat aim at the box too. iPad portrait and landscape and phone portrait are right.
+- Tile: the display at its peak (cold, scan lines, corners locked round the 100%, plumes, THERMAL, 1000 F + MAX, the scale pegged,
+  kept clear of the new dot). Still: a handheld TIC (yellow bumper, carry handle) showing a white-hot spot in the reticle.
+- SND_IFX["hundo.bubbles"]: shutter click and a rising whine, the picture-build sweep, a ready chirp (A5-D6); the hunt under a
+  sensor hum and a dark D/A pad, a tick per refresh, blips on the total (D5-F5) and the character (A4), pan whooshes; the swing
+  whoosh; the lock (click, thump, A5-D6 square chirp); the climb (ticks closing up, a saw rising D4-D6, a rush of heat); 3.35 a
+  deep whump, a D6 bell and an A6 blip (the loudest moment); breathing and crackle; then the whine falling, a shutter click, the
+  heat ring's whoosh and a chime up Bb4, C5 to D/F#/A (the palette's bright D major). Renders peak .26 (the other three .19-.34).
+- Gate: tools/check-b384-ifxnew.py (9): the rung plays ifxThermal (alarm and its sprites gone, academy still hfxBubbles); screen
+  and box, transform/opacity only, no filters, <= 170 pieces (58); ends by its total with a soft tail, its layers gone for real
+  (only what that play put up is counted: the page's own unlock card can be showing an effect); the reticle's corners frame the
+  100% after the lock; the copies sit on the number within .5px; the readout reads 1000 at white-hot; tile and still draw and are
+  not the Fire Alarm's; the sound is installed, unclipped, loudest on the white-hot beat, the lock a hit. 9/9 here; on 3b6f4ad 7
+  fail (the Fire Alarm also ends by its total and has no page errors).
+- check-b382-ifcart: "...and they are an extinguisher, sprinklers, hazmat and a fire alarm" now FAILS (the 75 is the Thermal
+  Camera) and its fxSrc hashes move - needs re-pinning. "the hundo ladder keeps its ids and counts" already failed on 3b6f4ad
+  (the 25/50/75/150 counts).
+- Phone check owed: smoothness on a real iPhone (58 pieces, five text-shadowed copies of the number, the full-screen view's
+  opacity fade), the scan lines' look at 3x, and the sound through the phone speaker (the hunt is quiet by design).

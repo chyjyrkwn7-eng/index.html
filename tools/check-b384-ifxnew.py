@@ -8,7 +8,7 @@ page:
     puts up no more than 170 pieces;
 (3) it ends by its total with a soft tail: every animation it starts is over by HUNDO_FX_TOTAL (the box alone by
     HUNDO_FX_BOX_TOTAL); seeked to the tail's start something is still fading, 60ms before the total nothing shows; and played
-    for real, once the total has passed its layers are gone and the page has no node more than it had before;
+    for real, once the total has passed its screen layer and box layer are gone and no screen layer or dim is left on the page;
 (4) the reticle locks round the 100%: once it has locked (.42s on) its four corners frame the number (it sits inside them, and
     they are no more than 2.4 times its area);
 (5) the copies of the 100% it heats are the number itself - each sits on the real one within half a pixel, in its own tabular
@@ -134,13 +134,18 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(900)
     # for real: the whole of it, then the page as it was
     pg.evaluate(CARD)
-    n0 = pg.evaluate("() => document.querySelectorAll('body *').length")
+    # (the page's own unlock card can be up with a showcase of an effect in it: only what this play put up counts)
+    n0 = pg.evaluate("() => { window.__pre = new Set(document.querySelectorAll('.hfx-layer, .hfx-dim')); return window.__pre.size; }")
     pg.evaluate("() => { window.__h = playHundoFx('bubbles', { box: window.__card, pct: window.__pct, preview: true }); }")
-    pg.wait_for_timeout(S["total"] + 500)
-    gone = pg.evaluate("() => ({ screen: !!(window.__h.screen && window.__h.screen.isConnected), box: !!(window.__h.box && window.__h.box.isConnected), n: document.querySelectorAll('body *').length, done: window.__h.done })")
+    pg.wait_for_timeout(S["total"] + 300)
+    for _ in range(30):
+        if pg.evaluate("() => window.__h.done"): break
+        pg.wait_for_timeout(100)
+    pg.wait_for_timeout(200)
+    gone = pg.evaluate("() => ({ screen: !!(window.__h.screen && window.__h.screen.isConnected), box: !!(window.__h.box && window.__h.box.isConnected), done: window.__h.done, n: [...document.querySelectorAll('.hfx-layer, .hfx-dim')].filter(e => !window.__pre.has(e) && !e.closest('.rs-spot')).length })")
     chk("(3) it ends by its total (%sms): its animations end by %sms (the box alone by %s of %s); at the tail (%sms) a piece still shows (%s), 60ms before the total none (%s); "
-        "played for real its layers are gone (%s) and the page has %s nodes again (%s before)" % (S["total"], P["end"], B["end"], S["boxTotal"], S["tail"], tail, last, gone, gone["n"], n0),
-        P["end"] <= S["total"] and B["end"] <= S["boxTotal"] and B["box"] >= 10 and tail > .05 and last < .03 and not gone["screen"] and not gone["box"] and gone["done"] and gone["n"] <= n0, [P["end"], B, tail, last, gone, n0])
+        "played for real its layers are gone (%s): %s screen layers or dims left (%s before)" % (S["total"], P["end"], B["end"], S["boxTotal"], S["tail"], tail, last, gone, gone["n"], n0),
+        P["end"] <= S["total"] and B["end"] <= S["boxTotal"] and B["box"] >= 10 and tail > .05 and last < .03 and not gone["screen"] and not gone["box"] and gone["done"] and gone["n"] == 0, [P["end"], B, tail, last, gone, n0])
     real, fr = look_lock["real"], look_lock["fr"]
     inside = fr and fr[0] <= real[0] + 1 and fr[1] <= real[1] + 1 and fr[2] >= real[2] - 1 and fr[3] >= real[3] - 1
     ratio = fr and ((fr[2] - fr[0]) * (fr[3] - fr[1])) / max(1, (real[2] - real[0]) * (real[3] - real[1]))

@@ -113220,9 +113220,9 @@ const HUNDO_FX_BUILD = { fireworks: hfxFireworks, blackhole: hfxBlackHole, under
                         an NFPA 704 diamond slams together out of its four colours (it reads
                         1-0-0), a containment scan sweeps the screen and locks on the box, a
                         suited responder decons the lot and it is all clear
-     Fire Alarm (200)   (383, redone) a close-up of a pull station - the handle is pulled - and
-                        the view pulls back as the system goes: a bell rings itself silly, the
-                        horn sounds three beats and the strobe fires, then it resets
+     Thermal Camera     (384, in the Fire Alarm's place, the 75) the screen becomes a thermal
+                        camera's display; the reticle hunts, locks on the 100% and it heats through
+                        the iron palette to white-hot, the readout pegged at 1000 - see ifxThermal
    Same rules as every effect (see playHundoFx): DOM, sprites drawn once (hfxSprite), moved only
    by transform and opacity through the Web Animations API (hfxAnim, so a stop cancels them), no
    svg filters, one-shot, a soft tail, gone by HUNDO_FX_TOTAL. Each plays across the screen (scr)
@@ -114077,10 +114077,17 @@ function ifxThermal(scr, bx, c){
     const L = { tx: c.pc.x, ty: c.pc.y, nw: c.p.w, nh: c.p.h, r: rad, box: c.box ? c.br : null, xp: sc && sc.xp, spots: [], hot: [] };
     const centre = el => { const r = el && sc ? sc.at(el) : null; return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height } : null; };
     const xp = L.xp, panel = sc && sc.panel;
-    const xt = centre(panel && panel.querySelector(".rs-xptotal-val, .hfx-mk-line.is-total b")) || (xp ? { x: xp.left + xp.width * .78, y: xp.top + xp.height * .66, w: 80 * u, h: 30 * u } : { x: W * .7, y: H * .64, w: 80 * u, h: 30 * u });
-    const av = centre(panel && panel.querySelector(".results-level-avatar")) || (xp ? { x: xp.left + xp.width * .22, y: xp.top + xp.height * .4, w: 50 * u, h: 50 * u } : { x: W * .28, y: H * .8, w: 50 * u, h: 50 * u });
-    L.spots.push({ k: 1, x: xt.x, y: xt.y, w: xt.w * 1.5, h: xt.h * 2.4, o: .75 }, { k: 1, x: av.x, y: av.y, w: av.w * 1.5, h: av.h * 1.6, o: .8 }, { k: 0, x: av.x, y: av.y - av.h * .05, w: av.w * .7, h: av.h * .85, o: .55 });
-    L.hot.push({ x: xt.x, y: xt.y, s: 34 * u, a: 146 }, { x: av.x, y: av.y, s: 26 * u, a: 30.6 }, { x: L.tx, y: L.ty, s: Math.max(L.nw, L.nh) * .55, a: 300 });
+    /* the two warm things it finds, where they are on the screen - or, when one is below the fold (a
+       phone on its side), a cold spot to look at instead, so the reticle never leaves the display */
+    const seen = p => p && p.x > 30 * u && p.x < W - 30 * u && p.y > Math.min(H * .3, 120 * u) && p.y < H - 90 * u;
+    const lo = (fx, fy) => ({ x: W * fx, y: Math.max(H * .3, Math.min(H * fy, H - 100 * u)), w: 0, h: 0, cold: true });
+    let xt = centre(panel && panel.querySelector(".rs-xptotal-val, .hfx-mk-line.is-total b")) || (xp ? { x: xp.left + xp.width * .78, y: xp.top + xp.height * .66, w: 80 * u, h: 30 * u } : { x: W * .7, y: H * .64, w: 80 * u, h: 30 * u });
+    let av = centre(panel && panel.querySelector(".results-level-avatar")) || (xp ? { x: xp.left + xp.width * .22, y: xp.top + xp.height * .4, w: 50 * u, h: 50 * u } : { x: W * .28, y: H * .8, w: 50 * u, h: 50 * u });
+    if(!seen(xt)) xt = lo(.72, .62);
+    if(!seen(av)) av = lo(.28, .74);
+    if(!xt.cold){ L.spots.push({ k: 1, x: xt.x, y: xt.y, w: xt.w * 1.5, h: xt.h * 2.4, o: .75 }); L.hot.push({ x: xt.x, y: xt.y, s: 34 * u, a: 146 }); }
+    if(!av.cold){ L.spots.push({ k: 1, x: av.x, y: av.y, w: av.w * 1.5, h: av.h * 1.6, o: .8 }, { k: 0, x: av.x, y: av.y - av.h * .05, w: av.w * .7, h: av.h * .85, o: .55 }); L.hot.push({ x: av.x, y: av.y, s: 26 * u, a: 30.6 }); }
+    L.hot.push({ x: L.tx, y: L.ty, s: Math.max(L.nw, L.nh) * .55, a: 300 });
     const T = IFX_TIC.full;
     L.path = [[T.ret, [W * .5, H * .52]], [1.05, [xt.x, xt.y], .12], [1.36, [xt.x - 7 * u, xt.y + 3 * u]], [1.84, [av.x, av.y], -.1], [2.1, [av.x + 6 * u, av.y - 4 * u]],
       [2.5, [L.tx + L.nw * .62 + 26 * u, L.ty - L.nh * .45], .14], [T.lock, [L.tx, L.ty]]];
