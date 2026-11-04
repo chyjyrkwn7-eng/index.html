@@ -33559,3 +33559,17 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   the number and its header ("XP") flush right. The three-column boards (Rank / Level / Badges) stay a centred table.
 - check-b384-hairlines (6): on This Week every row's number ends at the row's content edge within 1px. Against d84caf5: FAIL
   (off by 12.3 / 19.1 / 25.1). check-b384-board2 passes.
+
+### Build 384 - signing out goes to Welcome again (Madison's call)
+- Madison, on the Get Started round's judgement call: "Signing out, signing out will just bring them to the welcome screen."
+  showWelcomeFirst: a device signed out here (class26e.signedout - set by Sign out's head-script wipe, cleared by signing in
+  or up) opens on Welcome, as in 383. The splash's fast path for Get Started (noAcct in the head) also leaves a signed-out
+  device out, so its splash runs as before. Get Started stays for a device with nothing on it (and one whose site data was
+  cleared, which loses the signed-out mark with everything else - it has Get Started's top-right Sign in).
+- Gates back to Welcome after a sign-out: check-b383-signup ("after Sign out", "Sign out sticks" x2), check-b384-getstarted
+  route (signedout -> Welcome on all five devices).
+- ASKED, NOT BUILT YET (Madison): the "NEW CLASS - Fire Code is open to join" banner for five existing accounts only (four
+  classmates and the owner), never for new accounts; everyone gets the class button. Needs their publicIds - the leaderboard
+  read was refused by the sandbox's production-read rule; waiting on Madison to let one read through. Stored hashed, no
+  names or ids in the repo. Also raised: sign-up cannot enroll in Fire Code (the class screen offers the academy and "More
+  classes"); proposed both cards, the PDF step for Fire Code, a Fire Code-only account never shown the academy unless added.

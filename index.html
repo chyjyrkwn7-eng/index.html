@@ -37601,7 +37601,8 @@ html.is-browser{ --fade-paper: transparent; }
        time, not just the first: a seen-once mark or the empty copy an earlier visit left behind no longer means "returning". */
     var firstVisit = false;
     try {
-      var noAcct = !window.localStorage.getItem("class26e.synccode") && !window.localStorage.getItem("class26e.activeclass");
+      /* (384) and not signed out here: a signed-out device opens on Welcome (showWelcomeFirst), so the splash runs as before */
+      var noAcct = !window.localStorage.getItem("class26e.synccode") && !window.localStorage.getItem("class26e.activeclass") && !window.localStorage.getItem("class26e.signedout");
       if(noAcct){ var sv = JSON.parse(window.localStorage.getItem("class26e.drill.v1") || "null"); if(sv && (sv.onboardingComplete || String(sv.firstName || "").trim())) noAcct = false; }
       firstVisit = noAcct && !isUpdating;
     } catch(e){}
@@ -91964,6 +91965,10 @@ function gsLeave(page){
    is still one tap away. */
 function showWelcomeFirst(){
   if(accountTraceNow() || String(store.firstName || "").trim()){ gsMarkSeen(); showWelcome(); return; }
+  /* (384, Madison's call on the Get Started round: "Signing out, signing out will just bring them to the welcome screen.")
+     A device signed out here (class26e.signedout, set by Sign out, cleared by signing in or up) opens on Welcome, as in
+     383 - the person has an account and Sign in is right there. A device with nothing on it still gets Get Started. */
+  if(signedOutHere()){ gsMarkSeen(); showWelcome(); return; }
   showGetStarted();
   findAccountTrace().then(t => {
     if(!t || !stage.querySelector('[data-screen="getstarted"]')) return;

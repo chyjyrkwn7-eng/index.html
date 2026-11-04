@@ -132,6 +132,13 @@ def sec_route(br, url):
             early = pg.evaluate(SCREEN)
             pg.wait_for_timeout(2200)
             r = pg.evaluate(SCREEN)
+            if kind == "signedout":
+                # (384) Madison: "Signing out, signing out will just bring them to the welcome screen."
+                for _ in range(16):
+                    if r["screen"] == "welcome": break
+                    pg.wait_for_timeout(500); r = pg.evaluate(SCREEN)
+                chk("%s, signed out: Welcome, not Get Started (%s)" % (dev, r["screen"]), r["screen"] == "welcome", [early, r])
+                ctx.close(); continue
             chk("%s, %s: Get Started is up 1.6s in with no loading screen in front, and still up after 3.8s (%s)" % (dev, kind, r["screen"]),
                 early["screen"] == "getstarted" and not early["splash"] and r["screen"] == "getstarted", [early, r])
             if kind != "fresh":
