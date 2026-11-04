@@ -33632,6 +33632,11 @@ WHAT CHANGED (worst first; nothing looks different - screenshots of the touched 
    phone profile, 8-16s on the laptop profile at load ~14, where native idle work competes); slices at most 64 questions.
    Open time to the second frame (full CPU, wall clock, load 13-24, three each): before 1.0-3.5s, after 0.25-1.7s - the same work
    (the pass starts after the frame), within the noise.
+   Two things found on the way: (a) under a 4x CPU at load ~29 one frame left a question 1,172px below the fold unlaid-out with a
+   two-screen look-ahead - frames were ~130ms, ~400px each - so the observer looks three screens ahead; (b) the step that keeps
+   the page still (Safari has no scroll anchoring) did nothing at first: <html> has scroll-behavior:smooth (284), so scrollBy
+   started a glide that the next one cut short - emulated (overflow-anchor off, CSS.supports saying so), a jump to 30,000px moved
+   the question mid-screen 1,554px. It now jumps as closeChatDock does (behaviour auto for the step): 0.2-1px.
 2. NO WHOLE-PAGE STYLE PASS IN A TAB TAP FOR THE STATUS-BAR COLOUR (syncStatusBarColorSoon). syncSky asked for theme-color's
    colour inside the tap whenever Home's sky went on or off; the probe forced a style pass over the whole page (1,231-1,650
    elements) before the new screen's first frame, and the frame styled most of it again. 384's cache (CSS_COLOR_HEX_CACHE) missed in
@@ -33661,7 +33666,23 @@ hundo effect's own --band and check-b327z14's probe).
 
 GATE tools/check-b384-perf.py [--against REV] [--only 1,2,3]: (1) Review, four class x device: (a) no question on screen or within
 1.5 screens below unlaid-out while scrolling at 3,000px/s from 300ms after opening at 4x; (b) all laid out when left alone (25s);
-(c) in more than one slice, none over 64 questions; (2) phone and laptop: Home -> Profile -> Home twice by real taps, each landing,
-no whole-page style pass forced by the colour read; laptop: no --tabbar-half write; (3) no backdrop filter on an unseen element on
-Home, Profile, the board/Stats, Settings, the Calendar - phone academy and laptop Fire Code; (4) no page errors. Against 1dca98e:
-(1a)(1b)(1c) fail in all four, (2) fails three times (2 forced passes each, 4 writes), (3) fails both; (4) passes on both.
+(c) in more than one slice, none over 64 questions; (d) no scroll anchoring (Safari, emulated), jumped 30,000px down just after
+opening: the question mid-screen moves <= 2px while all are laid out; (2) phone and laptop: Home -> Profile -> Home twice by real
+taps, each landing, no whole-page style pass forced by the colour read; laptop: no --tabbar-half write; (3) no backdrop filter on
+an unseen element on Home, Profile, the board/Stats, Settings, the Calendar - phone academy and laptop Fire Code; (4) no page
+errors. The account has nothing owed (rank-ups and Home unlocks marked shown, What's New seen) - an unlock cutscene at ~12s took
+the bar away and ate the first tap. This build: ALL PASS (19). Against 1dca98e: (1a)(1b)(1c)(1d) fail in all, (2) fails three
+times (2 forced passes each, 4 writes), (3) fails both; (4) passes on both.
+OTHER GATES (one at a time, Chromium 1243 via the 1194 link, load 13-29): check-js ALL PASS; sweep-layout --quick 20/20 clean;
+check-b383-review ALL PASS (10, rerun on the final code); check-b384-laptop ALL PASS (6); check-b384-board2 ALL PASS (24);
+check-b358 ALL PASS (6); check-b384-slide ALL PASS (19); check-sound ALL PASS; check-b384-cutscenes ALL PASS (73); check-b341 (3)
+and check-b338 (4) pass (the band colour); check-b384-browsers ALL PASS (349); check-sync 1 failure, "Find me finds your row"
+(the row is found, the .rank-flash class is already gone when read - timing) - failed the same alone on this build and on 1dca98e
+(which also failed "the mirror is left holding only the code" in that run); 383's notes record it as load-only. The page console,
+laptop and iPhone, both classes, through Profile, the board, Settings, Customize, Review and a hide/show: no page errors, no
+console errors or warnings but the blocked Firebase CDN.
+ONLY A REAL DEVICE CAN CONFIRM: that Safari on his iPhone lays Review out without visible fill-in (WebKit's own content-visibility
+margin and tiling are not Chromium's; the pass and the three-screen look-ahead are engine-neutral) and that the page-still step
+holds on a real fling; how much the Profile character's SVG filter and the emblem's drop-shadow cost per frame in WebKit; the
+iPhone's and a Windows laptop's real tab-switch times (Send tab timings reports them; reading needs the admin tool); integrated-GPU
+costs of the backdrop blurs on Windows.
