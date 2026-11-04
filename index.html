@@ -10730,12 +10730,19 @@
     background-color:rgba(128,128,128,.16); background-image:none;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(255,255,255,.05);
   }
+  /* (384) "I feel like there's start button also has a small catch/lag to it when it shows something has been selected and
+     turns white." Read off his recording frame by frame: the pill went DARKER for two frames (the label switched to the
+     lit ink at once, dark on the still-grey pill), then jumped to white in three - the clip-path grow is not the
+     compositor's in WebKit, so the tap's own work held it. Now the fill is the pill itself, grown from its centre by
+     transform and opacity (composited), ending exactly as the lit pill it hands over to; and the words take the ink as the
+     fill grows under them (.just-ready's colour transition), never before. */
   .bottomtabs.has-start-tab .bottomtab-start.just-ready::before{
     content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
     background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 58%), var(--accent);
-    clip-path:circle(0% at 50% 50%);
-    animation:start-fill-in .3s cubic-bezier(.3,.8,.3,1) forwards;
+    transform:scale(.18, .3); opacity:0; will-change:transform, opacity;
+    animation:start-fill-grow .3s cubic-bezier(.25,.8,.3,1) forwards;
   }
+  @keyframes start-fill-grow{ 0%{ transform:scale(.18, .3); opacity:0; } 35%{ opacity:1; } 100%{ transform:none; opacity:1; } }
   /* ...and as it lands, one small press-out and a single sheen across it
      (build 311: "could be a little better ... it's just not good enough").
      Both run once, both on the compositor, and both stop. */
@@ -10744,7 +10751,7 @@
      the fill grows over, and it must come off at 420ms like it always
      has. The pop and the sheen are over by ~450ms too, so the button is
      back to its one shape and its full depth within half a second. */
-  .bottomtabs.has-start-tab .bottomtab-start.just-ready,
+  .bottomtabs.has-start-tab .bottomtab-start.just-ready{ transition:color .26s ease; }
   .bottomtabs.has-start-tab .bottomtab-start.ready-settle{ transition:none; }
   /* ONE BEAT, AND IT LANDS (build 314): "The start menu effect when the
      start button is activated, could be a smidge better, the timing of
@@ -10769,7 +10776,7 @@
     animation:start-ready-sheen .46s cubic-bezier(.3,.6,.4,1) .2s both;
   }
   .bottomtabs.has-start-tab .bottomtab-start:not(.is-inert):not(:disabled):active{ transform:scale(.96); }
-  [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.just-ready::before{ animation:none; clip-path:none; }
+  [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.just-ready::before{ animation:none; clip-path:none; transform:none; opacity:1; }
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop,
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop .bottomtab-icon,
   [data-reduce-motion="true"] .bottomtabs.has-start-tab .bottomtab-start.ready-pop::after{ animation:none; }
@@ -34666,6 +34673,13 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-tag.is-ifc{ background:rgba(255,122,26,.18); color:#FFB35C; }
   .ifc-tag.is-county{ background:rgba(90,170,255,.18); color:#8FC4FF; }
   .ifc-code-head{ margin:.75rem 0 .35rem; }
+  /* (384) opening eases in (transform and opacity, nothing laid out frame by frame); a picture that arrives after the open
+     fades in rather than popping */
+  .ifc-code[open] > :not(summary){ animation:ifc-code-in .3s cubic-bezier(.2,.8,.2,1) both; }
+  .ifc-code[open] .ifc-code-body > .ifc-clips{ animation:ifc-code-in .3s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes ifc-code-in{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:none; } }
+  [data-reduce-motion="true"] .ifc-code[open] > :not(summary),
+  [data-reduce-motion="true"] .ifc-code[open] .ifc-code-body > .ifc-clips{ animation:none; }
   .ifc-ptr{ margin:0; font-size:.86rem; font-weight:650; color:var(--ink); line-height:1.35; }
   .ifc-pages{ margin:.15rem 0 0; font-size:.78rem; color:var(--soft); }
   .ifc-code-body{ border-radius:.75rem; }
@@ -36725,6 +36739,17 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid rgba(255,255,255,.16) !important;
     box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
   }
+  /* (384) and the search circle that stands over the tab bar's right end (registerTabSearch) - "that search icon where applied
+     that's right above the bottom tab, that needs to look like the bottom tab as well that nice look. Ensure it's all cohesive,
+     and then the pause button/chat button also match as well." It was the 327z15 glass (.74 body, blur 30px); now the bar's,
+     closed and open (the field). Pause and the chat button already wear it (384's chat button rule, the 380 pause pill). */
+  html[data-theme="dark"][data-layout="modern"] body .tabsearch.tabsearch{
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
   html[data-theme="dark"][data-layout="modern"] body #backtotop.backtotop.show{
     backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
   }
@@ -36810,6 +36835,12 @@ html.is-browser{ --fade-paper: transparent; }
   @media (min-width:40rem){
     html[data-layout] body:has(#stage .settings-nav) .chatdock:not(.in-test) .chatdock-btn{ top:calc(env(safe-area-inset-top, 0px) + .75rem + .6rem - 4px + var(--vv-shift, 0px)); }
   }
+  /* (384) "The back button flashed white or something when you hit it." The press shimmer (setupBubbleButtons: .glass-pressed,
+     a pool of white in ::after) reached the back links - and a back link's ::after is its invisible 44px tap target, centred by
+     translate(-50%,-50%). Pressed, the shimmer's inset:0 pinned that box to the button's corner and the translate threw it up
+     and left: a pale square flashed half off the round button. A back button never changes colour when pressed (327z15), so
+     its press is the scale alone and the target stays invisible. */
+  html[data-layout] body .back-link.glass-pressed::after{ background:none !important; }
   html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back{ transition:transform .12s ease; }
   html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back:active{ transform:translateY(-50%) scale(.92); }
   [data-reduce-motion="true"] body #stage .settings-nav-back:active{ transform:translateY(-50%) !important; }
@@ -106494,6 +106525,45 @@ function ifcLinkBtn(label, mark){
   b.appendChild(ifcEl("span", null, label));
   return b;
 }
+/* (384) the room a code picture has: its body's width - or, drawn ahead while the code is still shut (its body unlaid), the
+   box's own (the details), which is the same column */
+function ifcRoomOf(body){
+  if(body.clientWidth) return body.clientWidth;
+  const det = body.closest(".ifc-code");
+  return (det && det.clientWidth) || 300;
+}
+/* (384) DRAWN AHEAD, ONE AT A TIME. Madison: "Sometimes when doing the 'show the code' drop down, it isn't seamless and perfectly
+   moves, there just a super small catch/lag. Ensure that it's super smooth." The catch was the drawing: the code opened on
+   'Opening the code…', pdf.js cut and painted the section on the main thread, and the box jumped to the picture's height.
+   Now a box that has sat in view for a moment while the page is still draws its code in idle time, hidden, so opening it
+   shows the finished picture at once - only when the book is already open in memory (ifcBook), one box at a time, never
+   while scrolling or under a finger. A finger landing on 'Show the code' starts its own, ahead of the tap's end. */
+var ifcAheadQ = [], ifcAheadBusy = false, ifcAheadIO = null, ifcLastScroll = 0;
+function ifcAheadRun(){
+  if(ifcAheadBusy || !ifcAheadQ.length) return;
+  if(Date.now() - ifcLastScroll < 300){ setTimeout(ifcAheadRun, 320); return; }
+  const job = ifcAheadQ.shift();
+  if(!job || !job.box.isConnected || !job.visible()){ ifcAheadRun(); return; }
+  ifcAheadBusy = true;
+  const go = () => Promise.resolve(job.fill()).catch(() => {}).then(() => { ifcAheadBusy = false; setTimeout(ifcAheadRun, 60); });
+  if(window.requestIdleCallback) requestIdleCallback(go, { timeout: 900 }); else setTimeout(go, 60);
+}
+function ifcDrawAhead(box, fill){
+  if(!("IntersectionObserver" in window)) return;
+  if(!ifcAheadIO){
+    addEventListener("scroll", () => { ifcLastScroll = Date.now(); }, { passive: true, capture: true });
+    /* a touch is the user doing something: stand aside for it and the open it may start (a press holds the queue ~.8s) */
+    addEventListener("pointerdown", () => { ifcLastScroll = Date.now() + 500; }, { passive: true, capture: true });
+    ifcAheadIO = new IntersectionObserver(entries => entries.forEach(en => {
+      const b = en.target; b._ifcSeen = en.isIntersecting;
+      if(!en.isIntersecting || b._ifcQueued || !b._ifcAhead || !ifcBook) return;
+      b._ifcQueued = true;
+      setTimeout(() => { b._ifcQueued = false; if(b._ifcSeen && b._ifcAhead){ ifcAheadQ.push({ box: b, fill: b._ifcAhead, visible: () => b._ifcSeen }); ifcAheadRun(); } }, 450);
+    }), { rootMargin: "120px 0px" });
+  }
+  box._ifcAhead = fill;
+  ifcAheadIO.observe(box);
+}
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
   body.textContent = "";
@@ -106509,7 +106579,7 @@ async function ifcFillCode(item, body, foot){
     body.prepend(holder);
     /* THE PICTURE FIRST (build 333): "why is the amendments not showing the cropped photo? It should be". A wide
        crop scrolls sideways (or Enlarge); the exact text is one tap away. */
-    const wide = ifcFitPictures(holder, body.clientWidth || 300, 1.7);
+    const wide = ifcFitPictures(holder, ifcRoomOf(body), 1.7);
     text.hidden = true;
     /* TWO WAYS ON (build 382): "The show as text option, let's remove that option for the code ... ensure you update the placements
        of the other two options". "Show as text" (and the "Show the page picture" it swapped with) are gone; Enlarge and Show the
@@ -106561,7 +106631,7 @@ async function ifcFillCode(item, body, foot){
     foot.textContent = "The whole page from your book.";
   }
   body.appendChild(holder);
-  ifcFitPictures(holder, body.clientWidth || 300, shown ? 1.7 : 1.4);
+  ifcFitPictures(holder, ifcRoomOf(body), shown ? 1.7 : 1.4);
   {
     const links = ifcEl("div", "ifc-links");
     const whole = ifcLinkBtn("Show the whole book page", "page");
@@ -106653,11 +106723,19 @@ function buildIfcRef(item){
   const body = ifcEl("div", "ifc-code-body"), foot = ifcEl("p", "ifc-foot");
   body.appendChild(ifcEl("p", "ifc-busy", "Opening the code…"));
   det.append(sum, head, body, foot);
-  let filled = false;
+  let filling = null;
+  const fill = () => {
+    if(!filling) filling = ifcFillCode(item, body, foot).catch(e => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-note", "Could not open this reference: " + ((e && e.message) || e))); });
+    if(box._ifcAhead){ box._ifcAhead = null; try{ ifcAheadIO && ifcAheadIO.unobserve(box); }catch(e){} }
+    return filling;
+  };
   det.addEventListener("toggle", () => {
     sum.querySelector(".ifc-sum-text").textContent = det.open ? "Hide the code" : "Show the code";
-    if(det.open && !filled){ filled = true; ifcFillCode(item, body, foot).catch(e => { body.textContent = ""; body.appendChild(ifcEl("p", "ifc-note", "Could not open this reference: " + ((e && e.message) || e))); }); }
+    if(det.open) fill();
   });
+  /* (384) drawn ahead: a finger on the summary, or the box sitting in view (ifcDrawAhead) */
+  sum.addEventListener("pointerdown", () => { if(!det.open && ifcBook) fill(); }, { passive: true });
+  ifcDrawAhead(box, fill);
   box.appendChild(det);
   if(missed){ box.dataset.autoOpened = "1"; det.open = true; }
   ifcNodeCache.set(key, box);

@@ -32256,3 +32256,34 @@ lowered. Like increments of 25, 50, 75, 150?"
     shift, the page scrolls as before.
   - check-b384-modes; fails 5 on the previous commit. check-b383-modeselect, check-b383-look, check-b384-haptics pass;
     check-b342's one failure (the preview image's live address) fails the same on 383 - the sandbox can't reach the site.
+
+### Build 384 - smooth: the code drop-down, the Start pill, the back button's flash, the search circle's glass
+
+- "Sometimes when doing the 'show the code' drop down, it isn't seamless and perfectly moves, there just a super small
+  catch/lag." The code opened on "Opening the code..." while pdf.js cut and painted the section on the main thread, and the box
+  jumped to the picture's height. Now (ifcDrawAhead): a code box that sits in view for 450ms while the page is still - not
+  scrolling, no finger down for ~.8s - draws its code in idle time, hidden, one box at a time, only when the book is already
+  open in memory (ifcBook); a finger on "Show the code" starts its own fill too. The fill sizes its picture from the box when its
+  body is unlaid (ifcRoomOf). Opening eases the contents in (ifc-code-in: transform + opacity, .3s) and a picture that arrives
+  after the open fades in. check-b384-codeopen (runs with PDFJS_DIR + IFC_BOOK, the owner's book from the handoff, never in the
+  repo): drawn ahead while shut, opens on the finished picture with no task over 50ms after the tap (after one ordinary tap -
+  a session's first sound builds the sound engine's reverb, sndImpulseData, ~12ms at 4x, whatever is tapped), eases in on
+  transform/opacity, nothing drawn mid-scroll. Fails 3 on the previous commit. check-b383-ifcbook (the book), check-b383-flashcards
+  pass.
+- "start button also has a small catch/lag to it when it shows something has been selected and turns white." His recording,
+  frame by frame (60fps): the pill went DARKER for two frames (brightness 70 -> 59 - .just-ready gave the words the lit ink at
+  once, dark on the still-grey pill), then jumped to white in three (the clip-path grow is main-thread in WebKit and the tap's
+  own work held it). Now the fill is the pill itself grown from its centre by transform + opacity (start-fill-grow: from
+  scale(.18,.3) and 0, opacity full by 35%), ending exactly as the lit pill it hands over to, and .just-ready eases the words'
+  colour (.26s) instead of switching it. (The Virtual Room bar's .is-lighting fill is the same idea, left for the VR work in
+  flight; the Max/All slider button's fill carries its own dark word and is untouched.)
+- "The back button flashed white or something when you hit it." setupBubbleButtons' press shimmer (.glass-pressed, a white pool
+  in ::after) reached .back-link - whose ::after is its invisible 44px tap target, centred by translate(-50%,-50%): pressed, the
+  shimmer's inset:0 pinned the box to the corner and the translate threw it up and left, a pale square half off the round
+  button. `.back-link.glass-pressed::after{ background:none }` - a back button's press is the scale alone (327z15).
+- "that search icon ... right above the bottom tab, that needs to look like the bottom tab ... and then the pause button/chat
+  button also match": the search circle (.tabsearch, .74 / blur 30px) wears the bar's glass now; Pause and the chat button
+  already did in 384 (his recording was the live 383).
+- check-b384-smooth: (1) back button press paints nothing, (2) search / Pause / chat = the bar's glass, (3) the Start pill's
+  words start at the unlit colour and ease, its fill is transform/opacity only and ends at the lit pill. Fails 3 on the previous
+  commit. check-b383-tabslide, check-b384-slide, check-b382-units pass.
