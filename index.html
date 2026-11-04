@@ -32804,8 +32804,12 @@
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row :is(.settings-row-words, .settings-plainrow > .settings-row-label){ text-box:trim-both cap alphabetic; }
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev,
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev svg{ width:17px; height:17px; }
+  /* (384) INSET AT BOTH ENDS. Madison, with Delta's Settings beside ours: "Pay attention to their lines. Theirs don't touch the
+     sides, why would ours?" Delta's run from the words to the end of the row's content (the chevron's right edge) - the row's
+     own padding clear of the card's edge on the right as well as the left. Ours ran on to the card's edge. The same for every
+     grouped list: the switch rows below, Customize's rows, the Leaderboard's list. */
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row::before{
-    left:calc(18px + 32px + 15px); right:0; background:rgba(255,255,255,.1);
+    left:calc(18px + 32px + 15px); right:18px; background:rgba(255,255,255,.1);
   }
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > :is(.settings-plainrow, .settings-linkrow, .settings-textrow) + .settings-row::before,
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row:not(:has(.settings-row-icon)) + .settings-row:not(:has(.settings-row-icon))::before{ left:18px; }
@@ -32840,7 +32844,7 @@
   html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt .ohint{ font-size:14px; line-height:1.4; margin-top:3px; }
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{
-    left:calc(32px + 15px); right:-18px; background:rgba(255,255,255,.1);
+    left:calc(32px + 15px); right:0; background:rgba(255,255,255,.1);   /* (384) to the switch's edge, not the card's */
   }
   html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
   html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{ background:rgba(0,0,0,.1); }
@@ -36107,7 +36111,7 @@ html.is-browser{ --fade-paper: transparent; }
     border-bottom-width:1px !important; border-bottom-left-radius:var(--lb-group-r) !important; border-bottom-right-radius:var(--lb-group-r) !important;
   }
   html[data-layout] body .screen-rankings .rank-rows > .rank-row:not(.rank-row-head, .rank-podium-1, .rank-podium-2, .rank-podium-3, .rank-skel-podium):not(:last-child)::after{
-    content:""; position:absolute; left:var(--lb-hair-l); right:0; bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+    content:""; position:absolute; left:var(--lb-hair-l); right:var(--lb-pad); bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
   }
   /* a press lights the row, as a Settings row does (no shrink inside a grouped card) */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row.is-tappable:not(.rank-podium-1, .rank-podium-2, .rank-podium-3):active{ transform:none; }
@@ -36161,7 +36165,7 @@ html.is-browser{ --fade-paper: transparent; }
     border-bottom-width:1px !important; border-bottom-left-radius:var(--lb-group-r) !important; border-bottom-right-radius:var(--lb-group-r) !important;
   }
   html[data-layout] body #stage .screen-rankings .rank-rows > .rank-row:not(.rank-row-head):not(:last-child)::after{
-    content:""; position:absolute; left:var(--lb-hair-l); right:0; bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+    content:""; position:absolute; left:var(--lb-hair-l); right:var(--lb-pad); bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
   }
   html[data-layout] body #stage .screen-rankings .rank-rows > .rank-row:is(.rank-podium-1, .rank-podium-2, .rank-podium-3)::before{ display:none !important; }
   /* your row on the podium: the list's accent wash, no ring of its own */
@@ -36556,7 +36560,7 @@ html.is-browser{ --fade-paper: transparent; }
     border-bottom-width:1px; border-bottom-left-radius:var(--ios-group-r); border-bottom-right-radius:var(--ios-group-r);
   }
   html[data-layout] body #stage .screen-customize .cz-row + .cz-row::before{
-    content:""; position:absolute; top:0; left:var(--cz-inset); right:0; height:1px;
+    content:""; position:absolute; top:0; left:var(--cz-inset); right:.85rem; height:1px;   /* (384) to the chevron's edge */
     background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
   }
   html[data-layout] body #stage .screen-customize .cz-row:active{ background:var(--surface-lift); }

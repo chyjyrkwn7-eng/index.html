@@ -32601,3 +32601,20 @@ spray 900x585, ext 582x1280), that the three-spurt sputter reads as a sputter an
   25/50/75/150 against 50/100/150/200); the four are Extinguisher, Sprinklers, Thermal Camera, Hazmat in that order up the
   ladder; R4 = the four sources' hashes on 42bbffa (383, live, --dump there): all four differ now; bubbles plays ifxThermal and
   ufo ifxHazmat. 45/45 here.
+
+### Build 384 - hairlines inset at both ends, like Delta's (NOT on main, waiting for Madison)
+
+Madison, with Delta's Settings beside ours: "Pay attention to their lines. Theirs don't touch the sides, why would ours? Come on,
+please pay attention to details. Please ensure ours looks this great".
+- Delta's row line runs from the words to the row's content edge (the chevron's right edge; a row of words alone, a Support
+  link, ends at the same place) - the row's padding clear of the card on the right as on the left. Ours ran to the card's edge
+  (1px from it: right:0, or right:-18px on the switch rows).
+- Now, every grouped list: Settings and its pages and Contributors (.settings-row + .settings-row::before) right:18px, the
+  row's padding; the switch rows (label.opt.has-tile + label.opt::before, inside the card's 18px padding) right:0 - the
+  switch's edge; Customize (.cz-row + .cz-row::before) right:.85rem, its padding; the Leaderboard's grouped list
+  (.rank-row::after, both rules) right:var(--lb-pad). Left ends unchanged (at the words). The Stats 4-box cross was already
+  inset (18px from the box's sides, 10px from the top and bottom) and the calendar's topic list ends inside its card's padding.
+- Gate: tools/check-b384-hairlines.py - on Settings, Sound, Studying, Contributors, Customize and a filled Leaderboard
+  (check-b382-board's loader, __fill), every 1px row line ends at its row's content edge (within 1.5px), is 8px+ clear of the
+  card's right edge and its left edge, and every screen has lines. Here: all at 0 off, 13-19px clear. On 45fb8fd every screen
+  fails (1) and (2): 12-18px past the content, 1px from the card's edge.
