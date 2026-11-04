@@ -52353,8 +52353,8 @@ function ifcUnitTopic(u){
   if(u.kind === "finder") return u.title;
   return u.title.indexOf(u.label) === 0 ? u.title : u.label + ": " + u.title;
 }
-const IFC_QUESTIONS = (function(){
-  const B = window.IFC_BANK;
+/* (384) a function of the bank, so the academy can build the same list when a Fire Code room is joined (classBankReady) */
+function ifcQuestionsFrom(B){
   if(!B || !Array.isArray(B.questions)) return [];
   const byId = {}; (B.units || []).forEach(u => { byId[u.id] = u; });
   const seen = {}, out = [];
@@ -52381,8 +52381,19 @@ const IFC_QUESTIONS = (function(){
     out.push(it);
   });
   return out;
-})();
-if(window.NOVA_CLASS === "ifc"){ QUESTIONS.length = 0; Array.prototype.push.apply(QUESTIONS, IFC_QUESTIONS); }
+}
+const IFC_QUESTIONS = ifcQuestionsFrom(window.IFC_BANK);
+/* ---- A ROOM'S BANK (build 384, the Virtual Room in every class) ----
+   A Virtual Room belongs to the class it was made in and plays that class's questions for everybody in it - a joiner from
+   another class too (the owner's friends are academy users). So QUESTIONS (and KEYS beside it) can hold ANOTHER class's bank
+   for the length of a room: useClassBank() swaps it in place, restoreClassBank() puts this class's back. BANK_CLASS says whose
+   bank QUESTIONS holds now; ownClass() is the class this page is. CLASS_BANKS keeps each bank once it has been needed (the
+   academy's own list is kept here in Fire Code before it is replaced, so an academy room can be joined from there). While
+   another class's bank is in, nothing of it is recorded as this class's progress - see vroomForeign(). */
+var BANK_CLASS = window.NOVA_CLASS === "ifc" ? "ifc" : "academy";
+var CLASS_BANKS = {};
+function ownClass(){ return window.NOVA_CLASS === "ifc" ? "ifc" : "academy"; }
+if(window.NOVA_CLASS === "ifc"){ CLASS_BANKS.academy = { q: QUESTIONS.slice() }; QUESTIONS.length = 0; Array.prototype.push.apply(QUESTIONS, IFC_QUESTIONS); }
 
 /* ---- FIRE CODE SAYS "CHAPTER", NEVER "UNIT" (build 382) ----
    "in the fire code side, we aren't gonna refer to the units as units at all, anywhere, they are gonna be referred to as
@@ -52395,9 +52406,11 @@ if(window.NOVA_CLASS === "ifc"){ QUESTIONS.length = 0; Array.prototype.push.appl
    so is the BOOK - 63 Fire Code questions say "dwelling unit", "sleeping unit" and the like, and the code's own words are
    never rewritten. A text that is (part of) one of those questions' strings - its question, choices, explanation,
    reference or citation - is left exactly as written (questionTextHas). classNoun() is the same word for code that builds
-   a string itself. The academy is untouched: the observer is never started there. */
+   a string itself. The academy is untouched: the observer is never started there.
+   (384) THE WORDS FOLLOW THE BANK: a Fire Code room joined from the academy says "chapter" while its questions are in
+   (BANK_CLASS "ifc" - the observer is started then), and an academy room joined from Fire Code says "unit". */
 function classNoun(plural, cap){
-  const w = (window.NOVA_CLASS === "ifc" ? "chapter" : "unit") + (plural ? "s" : "");
+  const w = (BANK_CLASS === "ifc" ? "chapter" : "unit") + (plural ? "s" : "");
   return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
 }
 const CHAPTER_RX = /\bunit(s?)\b/gi;
@@ -52418,7 +52431,8 @@ function questionTextHas(t){
       else if(Array.isArray(v)) v.forEach(add);
       else if(v && typeof v === "object") Object.keys(v).forEach(k => add(v[k]));
     };
-    try{ IFC_QUESTIONS.forEach(q => add([q.q, q.choices, q.explanation, q.ref, q.ifc])); }catch(e){}
+    /* the class's own list, or (384) the one the academy built for a Fire Code room */
+    try{ (IFC_QUESTIONS.length ? IFC_QUESTIONS : ((CLASS_BANKS.ifc && CLASS_BANKS.ifc.q) || [])).forEach(q => add([q.q, q.choices, q.explanation, q.ref, q.ifc])); }catch(e){}
   }
   const s = String(t).trim();
   if(!s) return false;
@@ -52426,14 +52440,18 @@ function questionTextHas(t){
 }
 function chapterFix(t){
   if(t == null) return t;
+  if(BANK_CLASS !== "ifc") return t;
   CHAPTER_RX.lastIndex = 0;
   if(!CHAPTER_RX.test(t)) return t;
   CHAPTER_RX.lastIndex = 0;
   if(questionTextHas(t)) return t;
   return chapterWords(t);
 }
-(function(){
-  if(window.NOVA_CLASS !== "ifc") return;
+/* Started at boot in Fire Code; in the academy (384) only when a Fire Code room's bank first comes in. Once. */
+var chapterWordsOn = false;
+function startChapterWords(){
+  if(chapterWordsOn) return;
+  chapterWordsOn = true;
   const ATTRS = ["aria-label", "placeholder", "title", "alt"];
   const SKIP = "script, style, textarea, input, [contenteditable], .ifc-clip, [data-keep-words]";
   const fixText = n => {
@@ -52462,21 +52480,28 @@ function chapterFix(t){
   };
   try{
     const mo = new MutationObserver(list => {
+      if(BANK_CLASS !== "ifc") return;
       for(const m of list){
         if(m.type === "characterData") fixText(m.target);
         else if(m.type === "attributes") fixAttr(m.target, m.attributeName);
         else m.addedNodes.forEach(fixTree);
       }
     });
-    mo.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
-    fixTree(document.body || document.documentElement);
+    /* (384) the academy watches only the stage, where a Fire Code room's screens are drawn: the chrome around it is the
+       academy's own, and a word rewritten there could not be put back when the room ends */
+    const whole = window.NOVA_CLASS === "ifc";
+    const root = whole ? document.documentElement : (document.getElementById("stage") || document.body);
+    mo.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+    fixTree(whole ? (document.body || document.documentElement) : root);
+    if(!whole) return;
     document.title = chapterFix(document.title);
     ["alert", "confirm", "prompt"].forEach(k => {
       const orig = window[k];
       if(typeof orig === "function") window[k] = function(msg){ const a = Array.prototype.slice.call(arguments); a[0] = chapterFix(msg); return orig.apply(window, a); };
     });
   }catch(e){}
-})();
+}
+if(window.NOVA_CLASS === "ifc") startChapterWords();
 
 /* ==========================================================================
    Everything below runs the drill. You should not need to edit it.
@@ -63499,15 +63524,16 @@ function acctDb(){ return fbDb || ifcAcctDb; }
    able to see any friend I have in the chat and friends list and stuff. Vice Versa, any class."
    Friends, the chat (friend chats, group chats, the Inbox), the mailbox and presence belong to the ACADEMY ACCOUNT in every
    class: one public id, one friend code, the same friends and the same threads. In the academy socialDb() is fbDb and nothing
-   there changes. In Fire Code it is ifcSocialDb, a Firestore handle that only the friends, chat, mailbox and presence code use;
-   fbDb stays null there, so the leaderboard, the Virtual Room and everything else keyed on fbDb stay academy-only.
+   there changes. In Fire Code it is ifcSocialDb, a Firestore handle that only the friends, chat, mailbox and presence code use
+   (and, since the Virtual Room went to every class, the rooms - vroomDb()); fbDb stays null there, so the leaderboard and
+   everything else keyed on fbDb stay academy-only.
    BOTH OF FIRE CODE'S HANDLES ARE SCOPED (scopedFirestore): each refuses any write outside what it is for, whatever asks.
    The account's (ifcAcctDb, 383) writes only progress/<academy code>__ifc and the notes beside it (its __floor), and reads
    progress (its own document, and the academy's for the friends block - read, never written). The social one reads the class
    board's rows (who is who: names, faces, friend codes, requests) and `vrooms`, and writes `vrooms` alone (presence-v1, the
    inbox-<id> mailboxes, chat documents) - never progress, never the leaderboard. So nothing in Fire Code can write the
-   academy's progress, its backup or its row. The Virtual Room's documents are in `vrooms` too; they stay out of reach because
-   every Virtual Room function still asks for fbDb.
+   academy's progress, its backup or its row. The Virtual Room's documents are in `vrooms` too, and (384) Fire Code reaches
+   them through this same handle (vroomDb), so a room there writes nothing outside `vrooms` either.
    THE FRIENDS LIST ITSELF (SOCIAL_FIELDS: friendsIn/Out/Declined, the friend code, the group chats) is kept on each class's
    own store and saved to each class's own account document. `socialAt` dates its last change; each class takes the other's
    list when it is newer (foldSocialFrom) - at launch from the other class's copy on this device, and live from the other
@@ -63515,6 +63541,16 @@ function acctDb(){ return fbDb || ifcAcctDb; }
    is still written by the academy alone; from Fire Code a request goes by mailbox, as an accept always has. */
 var ifcSocialDb = null;
 function socialDb(){ return fbDb || ifcSocialDb; }
+/* (384) THE VIRTUAL ROOM IN EVERY CLASS: every room read and write goes through this - fbDb in the academy, exactly as
+   before, and in Fire Code the friends' scoped handle, which may read `leaderboard` and read and write `vrooms` (rooms live
+   there) and nothing else. So a Fire Code room is a `vrooms` document like any other, and Fire Code still cannot write the
+   academy's progress or the board whatever a room does. */
+function vroomDb(){ return socialDb(); }
+/* What the Virtual Room says when it cannot reach the cloud. In Fire Code it rides the academy account's sync, as friends do. */
+function vroomUnreachable(){
+  if(window.NOVA_CLASS === "ifc" && !syncCode) return "Virtual Room needs sync. Turn it on in the Police Academy class.";
+  return "Virtual Room needs a live connection — check your connection and try again.";
+}
 /* "when the friends and chat can reach the cloud": onFirebaseReady in the academy; Fire Code's own queue there */
 var socialReadyCallbacks = [];
 function onSocialReady(cb){
@@ -64696,7 +64732,11 @@ function inviteFriendToLobby(pub, roomCode){
     showToast("They are already in this room.");
     return;
   }
-  sendToInbox(pub, { type: "vroom", code: roomCode });
+  /* (384) a Fire Code room says so on the invite (`cls`; an academy room's invite is what it always was) */
+  const invite = { type: "vroom", code: roomCode };
+  const roomCls = roomCode === vroomCode ? BANK_CLASS : ownClass();
+  if(roomCls !== "academy") invite.cls = roomCls;
+  sendToInbox(pub, invite);
   store.lobbyInvitesOut = store.lobbyInvitesOut || {};
   store.lobbyInvitesOut[pub] = { code: roomCode, at: Date.now() };
   saveStore();
@@ -64875,13 +64915,13 @@ function incomingLobbyInvites(){
   const now = Date.now();
   const box = inboxOfType("vroom", LOBBY_INVITE_TTL_MS)
     .filter(m => friends.has(m.pub))
-    .map(m => ({ from: m, code: m.code }));
+    .map(m => ({ from: m, code: m.code, cls: m.cls === "ifc" ? "ifc" : "academy" }));
   if(box.length) return box;
   return (leaderboardRows || []).filter(e => {
     if(!e || !e.pub || !friends.has(e.pub)) return false;
     const inv = e.inv && e.inv[store.publicId];
     return !!(inv && inv.code && (now - (inv.at || 0)) < LOBBY_INVITE_TTL_MS);
-  }).map(e => ({ from: e, code: e.inv[store.publicId].code }));
+  }).map(e => ({ from: e, code: e.inv[store.publicId].code, cls: "academy" }));
 }
 
 function publicIdOf(){
@@ -67040,13 +67080,80 @@ function hashOf(s){
 
 /* Stable per-question id, so edits elsewhere in the bank do not scramble
    which question your history belongs to. */
-const KEYS = QUESTIONS.map((q, i) =>
-  (q.topic || "") + "|" + (q.src == null ? i : q.src) + "|" +
-  hashOf(String(q.keyText != null ? q.keyText : q.q) + "\u0001" + (q.keyChoices || q.choices || []).join("\u0001")));
+/* (384) one formula for any class's bank - a room from another class needs that bank's keys too (useClassBank) */
+function bankKeysOf(list){
+  return list.map((q, i) =>
+    (q.topic || "") + "|" + (q.src == null ? i : q.src) + "|" +
+    hashOf(String(q.keyText != null ? q.keyText : q.q) + "\u0001" + (q.keyChoices || q.choices || []).join("\u0001")));
+}
+const KEYS = bankKeysOf(QUESTIONS);
 /* keyChoices does for repaired choices what keyText does for cleaned
    wording: the identity stays the one the question was first stored
    under. Build 313 split a Victims of Crime question whose import had
    cut one choice in half and glued "All of the Above" onto another. */
+
+/* ---- ANOTHER CLASS'S BANK, FOR ONE ROOM (build 384) ----
+   Madison: "The ifc version says the virtual room is only for the police academy when I try to use it, but it shouldn't be.
+   It should be for all the versions!" A room plays the bank of the class it was made in (its `cls`, roomClassOf), on every
+   device in it. A device in another class swaps that bank into QUESTIONS and KEYS - in place, both are consts - for as long
+   as it is in the room, and puts its own back when it leaves (leaveVirtualRoom, and the stage watch below for any other way
+   out). Question identity is untouched: each bank keeps the keys its own class stores them under.
+   WHAT KEEPS READING THIS CLASS'S OWN BANK while another is in: the progress side. classTopics() is this class's units for
+   every count of badges, hundos, stars and ranks (so a level, a rank or a board row worked out mid-room is the true one), and
+   the unit-size cache holds both banks' units (their names never repeat across classes). The per-question memos (choice
+   signatures, "choices refer to each other", the Fire Code reference cards) are keyed by index and are cleared on a swap. */
+var CLASS_TOPICS = null;
+function classTopics(){ return (CLASS_TOPICS && BANK_CLASS !== ownClass()) ? CLASS_TOPICS.slice() : topicsIn(QUESTIONS); }
+/* Another class's questions are in: nothing answered here is this class's progress (see summarizeVisitingRun) */
+function vroomForeign(){ return BANK_CLASS !== ownClass(); }
+/* Resolves true once `cls`'s bank can be swapped in: the academy's is kept from boot (and is the page itself there); Fire
+   Code's is its own file (ifc/bank.js, 1.4 MB), loaded the first time a Fire Code room is joined from the academy. */
+function classBankReady(cls){
+  cls = cls === "ifc" ? "ifc" : "academy";
+  if(cls === BANK_CLASS || CLASS_BANKS[cls]) return Promise.resolve(true);
+  if(cls === "academy") return Promise.resolve(false);
+  return ifcBankReady().then(B => {
+    const q = ifcQuestionsFrom(B);
+    if(!q.length) return false;
+    if(!CLASS_BANKS.ifc) CLASS_BANKS.ifc = { q: q };
+    chapterBookText = null;
+    return true;
+  }).catch(() => false);
+}
+function useClassBank(cls){
+  cls = cls === "ifc" ? "ifc" : "academy";
+  if(cls === BANK_CLASS) return true;
+  const to = CLASS_BANKS[cls];
+  if(!to || !to.q || !to.q.length) return false;
+  const own = ownClass();
+  if(BANK_CLASS === own){
+    /* leaving this class's bank: what the progress side goes on reading */
+    CLASS_TOPICS = topicsIn(QUESTIONS);
+    try{ unitQuestionCount(""); }catch(e){}
+    if(!CLASS_BANKS[own] || !CLASS_BANKS[own].k) CLASS_BANKS[own] = { q: QUESTIONS.slice(), k: KEYS.slice() };
+  }
+  if(!to.k) to.k = bankKeysOf(to.q);
+  QUESTIONS.length = 0; Array.prototype.push.apply(QUESTIONS, to.q);
+  KEYS.length = 0; Array.prototype.push.apply(KEYS, to.k);
+  BANK_CLASS = cls;
+  if(cls === own) CLASS_TOPICS = null;
+  try{ topicsInBankCache = null; }catch(e){}
+  try{ unitTeachOrderCache = null; }catch(e){}
+  try{ questionSigMemo = null; }catch(e){}
+  try{ choicesReferMemo.clear(); }catch(e){}
+  try{ ifcNodeCache.clear(); }catch(e){}
+  /* both banks' unit sizes, side by side */
+  try{
+    if(UNIT_SIZE_CACHE){
+      const add = {};
+      QUESTIONS.forEach(q => { if(q && q.topic && inWholeUnit(q)) add[q.topic] = (add[q.topic] || 0) + 1; });
+      Object.keys(add).forEach(t => { if(!UNIT_SIZE_CACHE[t]) UNIT_SIZE_CACHE[t] = add[t]; });
+    }
+  }catch(e){}
+  if(cls === "ifc") startChapterWords();
+  return true;
+}
+function restoreClassBank(){ return useClassBank(ownClass()); }
 
 /* How many times a question has to be missed before the opt-in
    auto-flag picks it up. Counted over the question's whole history, not
@@ -67057,6 +67164,8 @@ const AUTO_FLAG_MISS_THRESHOLD = 5;
 function statFor(i){ return store.stats[KEYS[i]] || { n: 0, m: 0, r: [] }; }
 
 function recordResult(i, missed){
+  /* (384) another class's question, in a room from that class: nothing of it is this class's progress */
+  if(vroomForeign()) return;
   const s = statFor(i);
   const recent = (s.r || []).slice(-19); // cap: keep at most the last 20 miss timestamps
   if(missed) recent.push(Date.now());
@@ -67155,6 +67264,7 @@ function isFlagged(qi){ return !!store.flagged[KEYS[qi]]; }
    oldest possible flag, so any unflag since beats it. */
 function flagStamp(v){ return typeof v === "number" && isFinite(v) && v > 0 ? v : (v ? 1 : 0); }
 function setFlag(qi, on){
+  if(vroomForeign()) return;   /* (384) never another class's question */
   const key = KEYS[qi];
   if(!store.unflagged || typeof store.unflagged !== "object") store.unflagged = {};
   if(on){ store.flagged[key] = Date.now(); delete store.unflagged[key]; }
@@ -68203,7 +68313,7 @@ function ifcLadderFloorOnce(){
       for(let i = 0; i < BADGE_THRESHOLD_BANDS.length; i++) if(q <= BADGE_THRESHOLD_BANDS[i].max) return BADGE_THRESHOLD_BANDS[i].hundos;
       return BADGE_THRESHOLD;
     };
-    const b = topicsIn(QUESTIONS).filter(u => (perf[u] || 0) >= oldThreshold(u)).length;
+    const b = classTopics().filter(u => (perf[u] || 0) >= oldThreshold(u)).length;
     const lvl = levelFromPoints(store.lifetime ? Number(store.lifetime.points) || 0 : 0);
     let held = 0;
     TIER_ORDER_FULL.forEach((k, i) => { const r = TIER_UNLOCKS_ACADEMY[k]; if(r && lvl >= (r.level || 0) && b >= (r.badges || 0)) held = i + 1; });
@@ -69095,7 +69205,7 @@ function unitQuestionCount(name){
    (build 314). */
 function badgeRangeText(){
   try{
-    const v = topicsIn(QUESTIONS).map(badgeThresholdFor);
+    const v = classTopics().map(badgeThresholdFor);
     const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
     return lo === hi ? lo + (lo === 1 ? " hundo" : " hundos") : lo + " to " + hi + " hundos";
   }catch(e){ return "a few hundos"; }
@@ -69206,7 +69316,7 @@ function grantRetroBadgesOnce(){
   const perf = store.unitPerfects || {};
   const was = store.badgeBandsVersion >= 3 ? legacyBadgeThreshold279
     : store.badgeBandsVersion >= 2 ? legacyBadgeThreshold210 : legacyBadgeThreshold209;
-  const owed = topicsIn(QUESTIONS).filter(u =>
+  const owed = classTopics().filter(u =>
     (perf[u] || 0) >= badgeThresholdFor(u) && (perf[u] || 0) < was(u));
   /* Added to whatever is still waiting, never in place of it: a badge
      210 handed out that has not been celebrated yet is still owed. */
@@ -69220,13 +69330,13 @@ function unitBadgeEarned(name){
   return (store.unitPerfects[name] || 0) >= badgeThresholdFor(name);
 }
 function badgesEarnedList(){
-  return topicsIn(QUESTIONS).filter(unitBadgeEarned);
+  return classTopics().filter(unitBadgeEarned);
 }
 function badgeCountOf(st){
   const perf = (st && st.unitPerfects) || {};
   const hide = (st === store && retroHideBadges) ? retroHideBadges : null;
   try {
-    return topicsIn(QUESTIONS).filter(u => (perf[u] || 0) >= badgeThresholdFor(u)
+    return classTopics().filter(u => (perf[u] || 0) >= badgeThresholdFor(u)
       && !(hide && hide.has(u))).length;
   } catch(e){ return 0; }
 }
@@ -69343,7 +69453,7 @@ function badgeThemeFor(unitName){
     if(!badgeThemeFallback){
       badgeThemeFallback = {};
       const keys = Object.keys(BADGE_FAMILY);
-      topicsIn(QUESTIONS).slice().sort().forEach((nm, i) => {
+      classTopics().slice().sort().forEach((nm, i) => {
         badgeThemeFallback[nm] = [keys[Math.round(i * keys.length / 16) % keys.length]];
       });
     }
@@ -71517,7 +71627,7 @@ function revokePenalKoi295(){
 }
 function unitsWithHundo(){
   const up = store.unitPerfects || {};
-  return topicsIn(QUESTIONS).filter(u => (up[u] || 0) > 0).length;
+  return classTopics().filter(u => (up[u] || 0) > 0).length;
 }
 function bannerDef(id){ return BANNERS.find(b => b.id === id) || null; }
 function bannerEarned(id){
@@ -74898,7 +75008,7 @@ function wornBanner(){
 function fullTestsOf(){ return (store.lifetime && store.lifetime.fullTests) || 0; }
 function seedBannerCounters(){
   if(store.fullTestsSeeded) return;
-  const units = topicsIn(QUESTIONS).length || 1;
+  const units = classTopics().length || 1;
   const avg = QUESTIONS.length / units;
   const answered = (store.lifetime && store.lifetime.answered) || 0;
   const est = Math.min(testsCompletedOf(store), Math.floor(answered / avg));
@@ -75211,7 +75321,7 @@ function rankStepProgress(){
   try{
     const missing = Math.max(0, needBdg - badges);
     const perf = store.unitPerfects || {};
-    const fr = topicsIn(QUESTIONS).filter(u => !unitBadgeEarned(u))
+    const fr = classTopics().filter(u => !unitBadgeEarned(u))
       .map(u => Math.min(.999, (perf[u] || 0) / badgeThresholdFor(u))).sort((a, b) => b - a);
     partials = fr.slice(0, missing).reduce((a, b) => a + b, 0);
   }catch(e){}
@@ -75280,7 +75390,7 @@ function rankRoadStateNow(){
   try{
     const missing = Math.max(0, ((next && TIER_UNLOCKS[next] && TIER_UNLOCKS[next].badges) || 0) - badges);
     const perf = store.unitPerfects || {};
-    partials = topicsIn(QUESTIONS).filter(u => !unitBadgeEarned(u))
+    partials = classTopics().filter(u => !unitBadgeEarned(u))
       .map(u => Math.min(.999, (perf[u] || 0) / badgeThresholdFor(u))).sort((a, b) => b - a)
       .slice(0, missing).reduce((a, b) => a + b, 0);
   }catch(e){}
@@ -83787,6 +83897,8 @@ function noteStudyActivity(){
 
 function addStudyTime(ms){
   if(!(ms > 0)) return;
+  /* (384) time in another class's room is no class's study time here */
+  if(vroomForeign()) return;
   const key = dayKey(new Date());
   store.studyLog[key] = Math.min(studyLogCaps().dayMax, (Number(store.studyLog[key]) || 0) + ms);
   saveStore();
@@ -83894,7 +84006,7 @@ function isFullUnitRun(){
 function unitRunsMap(){
   if(store.unitRuns && typeof store.unitRuns === "object") return store.unitRuns;
   const out = {};
-  const all = topicsIn(QUESTIONS);
+  const all = classTopics();
   Object.keys(store.testStats || {}).forEach(key => {
     const plays = (store.testStats[key] || {}).plays || 0;
     if(!plays) return;
@@ -83977,7 +84089,7 @@ function bestMsForUnitAnyMode(name){
    into a single "Unit" entry, keeping the fastest time and combined totals. */
 function migrateTestStatsToPerUnit(){
   let changed = false;
-  topicsIn(QUESTIONS).forEach(name => {
+  classTopics().forEach(name => {
     ["drill", "exam", "game"].forEach(mode => {
       const oldKey = name + "|" + mode;
       const old = store.testStats[oldKey];
@@ -84046,7 +84158,7 @@ function unitFullyStarred(name){
 /* Total stars collected across every real unit \u2014 the actual figure
    the new Mastery Ladder climbs on. */
 function totalStarsEarned(units){
-  return (units || topicsIn(QUESTIONS)).reduce((sum, u) => sum + unitStarCount(u), 0);
+  return (units || classTopics()).reduce((sum, u) => sum + unitStarCount(u), 0);
 }
 __bm("L72649");
 const LEVEL_STARS = { beginner: 1, intermediate: 2, mastery: 3 };
@@ -84070,14 +84182,14 @@ function unitLevel(name){
    maximum possible (3 stars \u00d7 however many units exist) \u2014 shown on
    Home as a running tally, similar in spirit to the points bank. */
 function totalStarsFor(track){
-  const all = topicsIn(QUESTIONS);
+  const all = classTopics();
   if(track === "drill"){
     return all.reduce((sum, u) => sum + (LEVEL_STARS[unitLevel(u)] || 0), 0);
   }
   return all.reduce((sum, u) => sum + gameTrackStars(u), 0);
 }
 function maxStarsPossible(){
-  return topicsIn(QUESTIONS).length * 3;
+  return classTopics().length * 3;
 }
 
 
@@ -84121,7 +84233,7 @@ function gameTrackStars(name){
    towards the banners and the Masked One. */
 
 function blackStarCount(){
-  return topicsIn(QUESTIONS).filter(hasBlackStar).length;
+  return classTopics().filter(hasBlackStar).length;
 }
 
 /* Builds the star badge for a unit. When a unit has both Mastery and its
@@ -84184,7 +84296,7 @@ function buildLevelBadge(name){
 }
 
 function allBlackStars(){
-  const all = topicsIn(QUESTIONS);
+  const all = classTopics();
   return all.length > 0 && all.every(hasBlackStar);
 }
 
@@ -84195,11 +84307,11 @@ function isFullyMastered(name){
 }
 
 function fullMasteryCount(){
-  return topicsIn(QUESTIONS).filter(isFullyMastered).length;
+  return classTopics().filter(isFullyMastered).length;
 }
 
 function allFullyMastered(){
-  const all = topicsIn(QUESTIONS);
+  const all = classTopics();
   return all.length > 0 && all.every(isFullyMastered);
 }
 
@@ -86272,7 +86384,7 @@ function optionOrder(qi){
     /* fixedOrder, or a choice that points at the others: the study
        bank's order in every mode (see above). */
     if((runMode === "exam" || cfg.shuffle) && ids.length > 1){
-      layout[qi] = shuffledChoiceOrder(qi, true);
+      layout[qi] = shuffledChoiceOrder(qi, !vroomForeign());
     } else {
       layout[qi] = ids;
     }
@@ -92092,7 +92204,7 @@ function buildNovaVoyage(stormNow){
    unit, whatever the bank holds. */
 function novaBadgeParade(){
   let units = [];
-  try{ units = topicsIn(QUESTIONS); }catch(e){}
+  try{ units = classTopics(); }catch(e){}
   let have = [];
   try{ have = badgesEarnedList(); }catch(e){}
   const tiles = units.map(u => novaWarmTake("badge:" + u) || novaBadgeTile(u, have.indexOf(u) >= 0));
@@ -92146,7 +92258,7 @@ function novaWarmProps(o){
   /* badges first: they are on the stage before the crew */
   try{
     const have = badgesEarnedList(), W = badgeStrikeSize(novaBadgePx() * badgeDpr());
-    topicsIn(QUESTIONS).forEach(u => {
+    classTopics().forEach(u => {
       const got = have.indexOf(u) >= 0;
       /* the finished strike, the expensive part, a job of its own */
       if(got) jobs.push(() => { let d = 0; try{ d = badgeDirtStage(u); }catch(e){} badgeStrikeURL(u, false, W, d); });
@@ -97629,7 +97741,7 @@ function novaAcceptChallenge(wk){
   document.querySelectorAll("#nova-challenge").forEach(b => b.remove());
   if(!novaChallengeLive(wk)){ showToast("That challenge has ended. Challenge Nova from his chat any time."); return false; }
   if(typeof testInProgress !== "undefined" && testInProgress) return false;
-  if(!fbDb){ showToast(academyOnly("Virtual Room", "Virtual Room needs a live connection — check your connection and try again.")); return false; }
+  if(!vroomDb()){ showToast(vroomUnreachable()); return false; }
   if(typeof vroomCode !== "undefined" && vroomCode){ showToast("You’re already in a Virtual Room."); return false; }
   const s = novaState(); s.accepted = Object.assign({}, s.accepted || {}, { [wk]: Date.now() });
   Object.keys(s.accepted).sort().slice(0, -8).forEach(k => delete s.accepted[k]);
@@ -97643,7 +97755,7 @@ function novaAcceptChallenge(wk){
 /* A match with him whenever you like (327z15): a Virtual Room, with him in it. */
 function novaChallengeNow(){
   if(typeof testInProgress !== "undefined" && testInProgress) return false;
-  if(!fbDb){ showToast(academyOnly("Virtual Room", "Virtual Room needs a live connection — check your connection and try again.")); return false; }
+  if(!vroomDb()){ showToast(vroomUnreachable()); return false; }
   if(typeof vroomCode !== "undefined" && vroomCode){ showToast("You’re already in a Virtual Room."); return false; }
   try{ if(chatDockOpen){ closeChatRoom(); closeChatDock(); } }catch(e){}
   return Promise.resolve(createVirtualRoomLobby([], null)).then(ok => {
@@ -98692,18 +98804,20 @@ let vroomBeatTimer = null;
 function startVroomPresence(){
   clearInterval(vroomBeatTimer);
   vroomBeatTimer = setInterval(() => {
-    if(!vroomCode || !vroomMyKey || !fbDb){ clearInterval(vroomBeatTimer); vroomBeatTimer = null; return; }
+    if(!vroomCode || !vroomMyKey || !vroomDb()){ clearInterval(vroomBeatTimer); vroomBeatTimer = null; return; }
     try{
       /* Name and character ride along with the stamp (build 279), for the
          reason chatPresencePatch() gives: a lone nested `.seen` on a
          deleted entry recreates it nameless. */
       const patch = {};
       patch["participants." + vroomMyKey + ".seen"] = Date.now();
-      patch["participants." + vroomMyKey + ".name"] = store.firstName || "Anonymous";
-      patch["participants." + vroomMyKey + ".avatarChar"] = store.avatarChar || "ninja";
+      /* (384) the account's, as the entry was written (vroomMeEntry) - the same as the store in the academy */
+      const sm = socialMe();
+      patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
+      patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ninja";
       /* and Nova's, if this device brought him (build 324) */
       try{ novaVrPresencePatch(patch); }catch(e){}
-      fbDb.collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
+      vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
     }catch(e){}
   }, PRESENCE_BEAT_MS);
 }
@@ -99632,14 +99746,14 @@ window.addEventListener("pagehide", () => {
       patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
       socialDb().collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
     }
-    if(typeof vroomCode !== "undefined" && vroomCode && vroomMyKey && fbDb){
+    if(typeof vroomCode !== "undefined" && vroomCode && vroomMyKey && vroomDb()){
       const gone = firebase.firestore.FieldValue.delete();
       const vp = {};
       vp["participants." + vroomMyKey] = gone;
       vp["tug.progress." + vroomMyKey] = gone;
       vp["tug.teams." + vroomMyKey] = gone;
-      vp.lastLeave = { name: store.firstName || "Someone", key: vroomMyKey, at: Date.now() };
-      fbDb.collection("vrooms").doc(vroomCode).update(vp).catch(() => {});
+      vp.lastLeave = { name: socialMe().firstName || "Someone", key: vroomMyKey, at: Date.now() };
+      vroomDb().collection("vrooms").doc(vroomCode).update(vp).catch(() => {});
     }
   }catch(e){}
 });
@@ -100598,7 +100712,7 @@ function notificationItems(){
     kind: "vroom", at: inv.from.at || ((inv.from.inv || {})[store.publicId] || {}).at || 0,
     who: inv.from,
     code: inv.code,
-    text: (inv.from.firstName || "Someone") + " invited you to a Virtual Room",
+    text: (inv.from.firstName || "Someone") + " invited you to " + inviteRoomWords(inv.cls),
     actLabel: "Join",
     /* Same rule as the chat invite above, and the stakes are higher: a
        lobby that has already started refuses the join, and dismissing
@@ -101237,7 +101351,7 @@ function whatsNewState(){
   try{ st.rank = rankOf(store); }catch(e){}
   try{ st.level = levelOf(store); }catch(e){}
   try{ st.badges = badgeCountOf(store); }catch(e){}
-  try{ st.units = topicsIn(QUESTIONS).length || st.units; }catch(e){}
+  try{ st.units = classTopics().length || st.units; }catch(e){}
   /* "Your level was adjusted" (build 314/319), only for somebody the
      update actually moved down - its facts exactly as levelGateNoteText
      words them, said by him */
@@ -101612,7 +101726,7 @@ function openPersonSheet(entry){
       16 - the bank has grown before and a hardcoded total is how a
       card starts lying about somebody's progress. */
    ["Badges", (entry.badges || 0) + " / " + (function(){
-      try{ return topicsIn(QUESTIONS).length; }catch(e){ return 16; } })()],
+      try{ return classTopics().length; }catch(e){ return 16; } })()],
    ["Hundos", String(entry.hundos || 0)],
    ["Correct answers", known("correct") ? Number(entry.correct).toLocaleString() : "\u2014"]]).forEach(([label, value]) => {
     const cell = document.createElement("div");
@@ -102343,7 +102457,7 @@ function playQueuedBadgeCutscenes(){
      crossed it already knows. The case count is the thing they cannot
      see from here and the reason to care about the next one. */
   const have = badgeCountOf(store);
-  const all = topicsIn(QUESTIONS).length;
+  const all = classTopics().length;
   sub.textContent = have >= all
     ? "Every unit mastered. The case is full."
     : have + " of " + all + " units mastered";
@@ -105768,13 +105882,18 @@ let originalTestLabel = null;
    reason retroHideBadges gives. */
 var runStartLocked = null, runStartBanners = null, runStartHundos = null;
 function beginRun(indexes, label, practiceMinutes, missedRetake){
+  /* (384) A ROOM FROM ANOTHER CLASS: its questions earn nothing here, so nothing is seeded, snapshotted or remembered for
+     them, and no flare is hidden in them (summarizeVisitingRun ends it) */
+  const visiting = vroomForeign();
   /* Settle what counts as already seen before anything can be earned
      (build 299) - a no-op once the record exists. */
+  if(!visiting){
   try{ if(store.onboardingComplete) ensureSeenUnlocks(); }catch(e){}
   try{ seedBannerCounters(); seedChallenges289(); runStartLocked = lockedCharacterSet(); runStartBanners = earnedBannerSet(); }
   catch(e){ runStartLocked = null; runStartBanners = null; }
   runStartHundos = hundosOf(store);
   rememberOpeners(indexes);
+  } else { runStartLocked = null; runStartBanners = null; runStartHundos = null; }
   order = indexes.slice();
   testInProgress = true;
   lastRunPool = indexes.slice();
@@ -105791,8 +105910,10 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
   pendingXpFly = 0;
   mysteryFoundThisSession = false;
   flareCompletedVoidThisSession = false;
-  maybeStartMysteryForRun();
-  maybeStartShadesForRun();
+  if(!visiting){
+    maybeStartMysteryForRun();
+    maybeStartShadesForRun();
+  } else { mysteryAppearsAtPos = -1; mysteryColorThisRun = null; shadesAppearsAtPos = -1; shadesFoundThisRun = false; }
   pos = 0;
   attempts = {};
   picked = {};
@@ -105824,7 +105945,7 @@ function beginRun(indexes, label, practiceMinutes, missedRetake){
      count as hundos (unless you managed to star every question from an entire unit) but yeah you
      should still get xp for starred tests." A starred run earns its XP; every hundo below already
      needs the whole unit, so a starred run is one only when its stars cover a unit. */
-  runTrackable = (runLabel === null || runLabel === "Daily question") && (cfg.source === "all" || cfg.source === "flagged");
+  runTrackable = !visiting && (runLabel === null || runLabel === "Daily question") && (cfg.source === "all" || cfg.source === "flagged");
   timedOut = false;
   paused = false;
   pauseStartedAt = null;
@@ -106859,9 +106980,10 @@ function render(){
     numRow.appendChild(num);
   }
 
-  const flagBtn = buildQuestionFlag(qi);
+  /* no star on another class's question (384): it would be this class's */
+  const flagBtn = vroomForeign() ? null : buildQuestionFlag(qi);
   const svgNS = "http://www.w3.org/2000/svg";   /* the swipe hint below draws with it */
-  numRow.appendChild(flagBtn);
+  if(flagBtn) numRow.appendChild(flagBtn);
   if(pos === mysteryAppearsAtPos && mysteryColorThisRun && !mysteryFoundThisSession){
     numRow.appendChild(buildMysterySpark());
   }
@@ -118751,7 +118873,8 @@ function showRunRewards(run, hooks, opts){
   if(!run.xpLines.length){
     const none = document.createElement("p");
     none.className = "rs-xpline rs-xpline-none rs-land";
-    none.textContent = run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
+    none.textContent = run.visiting ? run.visiting
+      : run.timedOut && run.total === 0 ? "Time ran out before any questions were answered."
       : "No XP this run.";
     xp.appendChild(none);
     lineEls.push(none);
@@ -118790,7 +118913,8 @@ function showRunRewards(run, hooks, opts){
   const levelBlock = buildResultsLevelBlock(run.xpTotal, run.pointsAfter, { me: true, rankBefore: rankGoingIn,
     badgesBefore: ruGate(run.badgesBefore), badgesAfter: ruGate(run.badgesAfter) });
   levelBlock.classList.add("rs-levelblock", "rs-land");
-  xp.appendChild(levelBlock);
+  /* (384) a room from another class moved no level of this class's */
+  if(!run.visiting) xp.appendChild(levelBlock);
 
   /* ---- EVERYTHING ELSE THE RUN MOVED ---- */
   const boxes = [];
@@ -119707,7 +119831,96 @@ function resultsScreenUp(){
   return !!(el && el.classList && el.classList.contains("rs-screen"));
 }
 
+/* ---- A RUN IN ANOTHER CLASS'S ROOM (build 384) ----
+   The match is the player's: their score, time and room XP go to the room, and the standings count toward their Virtual Room
+   record (vrMatches / vrWins / vrTop3, recordVroomOutcome) in the class they are in. Nothing else of the run is: no XP, no
+   question stats, no star, hundo or badge, no test played, no study time, no flare - the questions are another class's. So a
+   room run on another class's bank ends here and never reaches summarize()'s bookkeeping. The room XP is worked out by the
+   same rules summarize() gives every other player in the room (right answers, streaks, speed, long test, a hundo, several
+   units - never a personal best or a badge), from nothing but this run, so the standings compare like with like. */
+function roomRunXpOf(missed, pct, elapsedMs){
+  const total = order.length, good = total - missed.length;
+  const missedSet = new Set(missed);
+  const units = cfg.units || [];
+  const inUnit = name => order.filter(qi => (QUESTIONS[qi].topic || "").trim() === name);
+  const whole = name => {
+    const n = inUnit(name).length;
+    return n > 0 && n === QUESTIONS.filter(q => (q.topic || "").trim() === name && inWholeUnit(q)).length;
+  };
+  /* recordMultiUnitPerfectsIfEligible's units, and isFullUnitRun's one, counted and written nowhere */
+  const aced = units.length >= 2 ? units.filter(name => whole(name) && inUnit(name).every(qi => !missedSet.has(qi))) : [];
+  const hundos = aced.length ? aced.length : ((pct === 100 && isFullUnitRun()) ? 1 : 0);
+  return computeRunXp({ good: good, answered: total, elapsedMs: elapsedMs, okList: order.map(qi => !missedSet.has(qi)),
+    hundos: hundos, wholeUnits: units.filter(whole).length, hundoUnits: aced.slice(), timePRs: [], scorePRs: [], badgesPaid: [] });
+}
+/* what the results say in place of the XP: whose room it was, and what counted */
+function visitingRoomNote(){
+  const c = NOVA_CLASSES.find(x => x.key === BANK_CLASS);
+  return "No XP. This was a " + (c ? c.name : "another class's") + " room; the match counts toward your Virtual Room record.";
+}
+function summarizeVisitingRun(){
+  if(runSaveSlot) clearRunSession();
+  runSaveSlot = false;
+  qClockStop();
+  testInProgress = false;
+  setTimeout(() => checkForUpdate(true), 1200);
+  stopTimer();
+  stopQuestionTimer();
+  timerlineEl.hidden = true;
+  restartEl.hidden = true;
+  appearanceBtn.hidden = false;
+  homeBtn.hidden = false;
+  profileBtn.hidden = false;
+  pauseBtn.hidden = true;
+  paused = false;
+  window.forceHideBottomTabs = true;
+  /* the run's length - addStudyTime books none of it while the room's bank is in */
+  const elapsedMs = flushStudyTime();
+  runStartLocked = null; runStartBanners = null; runStartHundos = null;
+  drawMeter();
+  hintEl.hidden = true;
+  const total = order.length;
+  /* a room runs as an exam: the pick, or nothing when its clock ran out */
+  const missed = total === 0 ? [] : order.filter(qi => optionOrder(qi)[picked[qi]] !== QUESTIONS[qi].answer);
+  const good = total - missed.length;
+  const pct = total === 0 ? 0 : Math.round((good / total) * 100);
+  const isPerfect = total > 0 && pct === 100 && !timedOut;
+  lastRunRoomXp = (total > 0 && !timedOut) ? roomRunXpOf(missed, pct, elapsedMs) : null;
+  const badgesNow = badgeCountOf(store);
+  lastRunXpEarned = 0;
+  lastHistoryEntry = null;
+  lastRunPointsAfter = store.lifetime.points;
+  lastRunBadgesBefore = badgesNow;
+  lastRunBadgesAfter = badgesNow;
+  lastRunXpLines = [];
+  pendingXpFly = 0;
+  pendingXpFlyDaily = false;
+  const topicsHere = new Set(order.map(qi => (QUESTIONS[qi].topic || "").trim()));
+  const unitsSat = (cfg.units || []).filter(u => topicsHere.has(u));
+  topicsHere.forEach(t => { if(t && unitsSat.indexOf(t) < 0) unitsSat.push(t); });
+  const runResult = {
+    total, good, pct, missed, isPerfect, elapsedMs, timedOut,
+    order: order.slice(), attempts: Object.assign({}, attempts), picked: Object.assign({}, picked),
+    firstPick: Object.assign({}, firstPick), flare: null, flareAll: false, flareCount: mysteryColorsFoundCount(),
+    timedOutSet: Object.assign({}, timedOutSet),
+    mode: runMode, retake: false, practice: false, vroom: true, source: cfg.source,
+    units: (cfg.units || []).slice(), unitsSat,
+    xpLines: [], xpTotal: 0, pointsAfter: store.lifetime.points,
+    badgesBefore: badgesNow, badgesAfter: badgesNow,
+    hundosEarned: 0, leveledUpTo: null, newBest: false,
+    progUnits: [], perfectsBefore: Object.assign({}, store.unitPerfects || {}),
+    badges: [], retroBadges: [], colors: [], characters: [], banners: [], fx: [], supernova: false,
+    visiting: visitingRoomNote()
+  };
+  lastRunResult = runResult;
+  showRunRewards(runResult, { finalActions: () => document.createElement("div"), tour: () => {} });
+  inVirtualRoom = false;
+  finishVirtualRoomTest(pct, elapsedMs);
+}
+
 function summarize(){
+  /* (384) a run in another class's room ends above: the match, and nothing of this class's */
+  if(inVirtualRoom && vroomForeign()) return summarizeVisitingRun();
   noteFlareMissIfPassed(true);
   /* only a run that owns the save slot empties it (build 319): a daily
      question or a Virtual Room finishing leaves a saved test alone */
@@ -123471,7 +123684,7 @@ function syncVroomHost(data){
 function leaveVirtualRoom(){
   const code = vroomCode;
   const myKey = vroomMyKey;
-  const myName = (store.firstName || "Someone");
+  const myName = (socialMe().firstName || "Someone");   /* (384) the account's name, as the room shows it */
   detachVroomListener();
   /* THE RACE LINE'S LISTENER TOO. It is separate from the lobby's, and
      leaving mid-race left it running - still reading the room on every
@@ -123490,7 +123703,7 @@ function leaveVirtualRoom(){
   vroomAwaitingOthers = false;
   lastVroomFinale = null;
   window.forceHideBottomTabs = false;
-  if(code && myKey && fbDb){
+  if(code && myKey && vroomDb()){
     try{
       const gone = firebase.firestore.FieldValue.delete();
       const patch = {};
@@ -123510,7 +123723,7 @@ function leaveVirtualRoom(){
          moment between two of them is a banner that sometimes does not
          appear. */
       patch.lastLeave = { name: withNova ? myName + " and Nova" : myName, key: myKey, at: Date.now() };
-      fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+      vroomDb().collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
   clearInterval(vroomBeatTimer); vroomBeatTimer = null;
@@ -123519,7 +123732,33 @@ function leaveVirtualRoom(){
   vroomMyKey = null;
   vroomIsHost = false;
   vroomIsOpen = false;
+  /* (384) out of a room from another class: this class's own questions back */
+  restoreClassBank();
 }
+/* ---- AND ANY OTHER WAY OUT (384) ----
+   vroomCode outlives a room on any path that is not leaveVirtualRoom() (see inVroomNow), so the bank also follows the
+   SCREEN: when another class's bank is in and what the stage now shows is not one of the room's screens, this class's own
+   bank comes back. A room's screens: the lobby, Match settings, a race question, its pause and results, Tug of War and
+   Battle (play, waiting, result), the standings - and an empty stage between them (the start flourish, the countdowns).
+   Costs nothing in the ordinary case: one comparison per screen change while this class's own bank is in. */
+const ROOM_SCREENS = ".screen-vroom-lobby, .screen-vroom-setup, .qpanel, .pausepanel, .rs-screen, .screen-tug, .screen-tug-wait, "
+  + ".screen-tug-result, .screen-battle, .screen-battle-wait, .screen-battle-result, .vroom-finale-panel, .vroom-results-panel";
+function roomBankInUse(){
+  let inRun = false;
+  try{ inRun = !!inVirtualRoom; }catch(e){}
+  if(inRun) return true;
+  let code = null;
+  try{ code = vroomCode; }catch(e){}
+  if(!code) return false;
+  const top = stage.firstElementChild;
+  return !top || !!(top.matches && top.matches(ROOM_SCREENS));
+}
+try{
+  new MutationObserver(() => {
+    if(BANK_CLASS === ownClass()) return;
+    try{ if(!roomBankInUse()) restoreClassBank(); }catch(e){}
+  }).observe(stage, { childList: true });
+}catch(e){}
 
 /* The banner the others get. Keyed on the timestamp this device last
    announced, so a re-render, a reconnect or a second listener cannot
@@ -123575,10 +123814,10 @@ function showVirtualRoomChoice(){
   sub.textContent = "Study together. Everyone in the room takes the same test at the same time, and you see how you all did at the end.";
   panel.appendChild(sub);
 
-  if(!fbDb){
+  if(!vroomDb()){
     const note = document.createElement("p");
     note.className = "info-note"; note.style.marginTop = "1rem";
-    note.textContent = academyOnly("Virtual Room", "Virtual Room needs a live connection \u2014 check your connection and try again.");
+    note.textContent = vroomUnreachable();
     panel.appendChild(note);
     stage.replaceChildren(panel);
     toTop();
@@ -124216,8 +124455,8 @@ function showVirtualRoomSetup(editRoom){
        sequence reads units/timeLimit/count off the live snapshot, not
        the copy taken at join, so this reaches somebody who joined ten
        minutes ago. */
-    if(!fbDb || !vroomCode){ showVirtualRoomLobby(); return; }
-    fbDb.collection("vrooms").doc(vroomCode)
+    if(!vroomDb() || !vroomCode){ showVirtualRoomLobby(); return; }
+    vroomDb().collection("vrooms").doc(vroomCode)
       .update({ units: [...picked], versions: versions, timeLimit: null, count: qCount, game: vroomGame })
       .then(() => { showToast("Match settings updated.", "good"); showVirtualRoomLobby(); })
       .catch(() => showToast("Couldn't save the settings \u2014 try again."));
@@ -124365,6 +124604,24 @@ let vroomArriveSoft = false;
 /* The last room document this device knows, by code (build 314 - see
    drawLobbyRoster): written by create, join and every lobby snapshot. */
 let vroomLastDoc = null;
+/* ---- WHOSE ROOM IT IS (build 384) ----
+   A room records the class it was made in (`cls`; none is the academy - every room from before this build). Its questions,
+   choices, unit or chapter names and words are that class's on every device in it (classBankReady / useClassBank), and a
+   player whose own class is another one plays it as a visitor: the match counts toward their Virtual Room record, and
+   nothing else of it is theirs (summarizeVisitingRun). */
+function roomClassOf(data){ return (data && data.cls === "ifc") ? "ifc" : "academy"; }
+function classNameOf(cls){ const c = NOVA_CLASSES.find(x => x.key === cls); return c ? c.name : "Police Academy"; }
+/* "Fire Code room" - said wherever it is not simply this class's own academy room (the academy's rooms read as they did) */
+function roomClassLabel(data){
+  const cls = roomClassOf(data);
+  return (cls === "academy" && ownClass() === "academy") ? "" : classNameOf(cls) + " room";
+}
+/* What a room shows of you. Your name and character are the account's, as your friends see them everywhere (socialMe - the
+   same as the store in the academy); the numbers are the class you are in, as a room entry has always carried. */
+function vroomMeEntry(){
+  const me = socialMe();
+  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false };
+}
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
      lobby" \u2014 confirmed directly: with no live connection, this call
@@ -124374,12 +124631,15 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
      a silent, totally invisible failure \u2014 tapping the button visibly
      did nothing, no toast, nothing in the console a real user would
      ever see. This guard is what actually surfaces it now. */
-  if(!fbDb){
+  if(!vroomDb()){
     showToast("Couldn't create the lobby \u2014 check your connection and try again.");
     return false;
   }
+  /* (384) the host plays their own class's questions: a room is made in the class it belongs to */
+  restoreClassBank();
   const code = generateSyncCode();
-  const myName = store.firstName || "Anonymous";
+  const me = vroomMeEntry();
+  const myName = me.name;
   const doc = {
     /* The HOST's public id, not their sync code. This is published in
        a listable collection and was the same exposure as the board. */
@@ -124410,7 +124670,7 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
     open: false,
     /* So the browser can say whose room it is without a second lookup. */
     hostName: myName,
-    hostAvatar: store.avatarChar || "ninja",
+    hostAvatar: me.avatarChar,
     status: "waiting",
     startAt: null,
     /* The room's own mode, so the host can change it without everyone
@@ -124420,9 +124680,12 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
     mode: "exam",
     createdAt: Date.now(),
     participants: {
-      [publicIdOf()]: { name: myName, avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false }
+      [publicIdOf()]: me
     }
   };
+  /* THE ROOM'S CLASS (384): its questions are that class's for everybody in it (roomClassOf). Written only for a class other
+     than the academy, so an academy room is the document it always was - no `cls` reads as the academy. */
+  if(ownClass() !== "academy") doc.cls = ownClass();
   /* IN WITHIN A SECOND OR SO, NOT WHEN THE SERVER GETS ROUND TO IT
      (build 310). "Sometimes when hosting a room ... it will say starting
      room and takes forever, should only take 2-3 seconds." The lobby
@@ -124464,7 +124727,7 @@ function createVirtualRoomLobby(units, timeLimit, game, versions){
     return new Promise(r => setTimeout(() => r(enterNow()), left));
   };
   let write;
-  try{ write = fbDb.collection("vrooms").doc(code).set(doc); }
+  try{ write = vroomDb().collection("vrooms").doc(code).set(doc); }
   catch(e){ showToast("Couldn't create the lobby — try again."); return false; }
   return new Promise(resolve => {
     const t = setTimeout(() => resolve(enter()), HOST_ENTER_MS);
@@ -124635,11 +124898,16 @@ function buildAppBanner(id, kind, message, actionLabel, onAction, onDismiss){
 /* A banner, not a toast: a toast is gone in four seconds and this is
    something to act on. Same top placement and the same measured offset
    every other banner here uses, so it cannot land on the screen title. */
-function showLobbyInviteBanner(from, code){
+/* "a Virtual Room", or (384) "a Fire Code room" - whose room it is, wherever that is not simply the academy's own */
+function inviteRoomWords(cls){
+  cls = cls === "ifc" ? "ifc" : "academy";
+  return (cls === "academy" && ownClass() === "academy") ? "a Virtual Room" : "a " + classNameOf(cls) + " room";
+}
+function showLobbyInviteBanner(from, code, cls){
   if(document.getElementById("lobby-invite")) return;
   if(holdForCutscene("lobbyinvite", () => checkLobbyInvites())) return;
   const el = buildAppBanner("lobby-invite", "vroom",
-    (from.firstName || "A student") + "\nInvited you to a Virtual Room.",
+    (from.firstName || "A student") + "\nInvited you to " + inviteRoomWords(cls) + ".",
     "Join",
     () => { dismissInvite(code); joinVirtualRoomLobby(code); },
     () => dismissInvite(code));
@@ -124654,12 +124922,11 @@ function showLobbyInviteBanner(from, code){
 }
 
 function checkLobbyInvites(){
-  /* (384) the Virtual Room is the academy's: no banner offering one in another class (the Inbox still lists it, and says so) */
-  if(window.NOVA_CLASS === "ifc") return;
+  /* (384) every class has the Virtual Room now, so Fire Code shows the banner too (its first build of 384 held it back) */
   if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   const live = incomingLobbyInvites().filter(x => !inviteDismissed(x.code));
   if(!live.length) return;
-  showLobbyInviteBanner(live[0].from, live[0].code);
+  showLobbyInviteBanner(live[0].from, live[0].code, live[0].cls);
 }
 
 /* SOMEBODY ASKING TO BE YOUR FRIEND NEVER ANNOUNCED ITSELF AT ALL.
@@ -125599,7 +125866,7 @@ function detachTug(){
    slower. Everybody DRAWS the rope from the same numbers, so what the
    host writes is only the full stop. */
 function tugCheckOver(d){
-  if(!vroomIsHost || !fbDb || !vroomCode) return;
+  if(!vroomIsHost || !vroomDb() || !vroomCode) return;
   const t = d.tug || {};
   if(t.over) return;
   const teams = t.teams || {};
@@ -125629,7 +125896,7 @@ function tugCheckOver(d){
   const timeUp = Date.now() >= (Number(d.startAt) || 0) + tugPace(count).total + count * (3000 + TUG_ARM_MS) + 15000;
   if(Math.abs(pos) < gap && !allDone && !timeUp && !forfeit) return;
   const winner = forfeit && Math.abs(pos) < gap ? forfeit : (pos > 0 ? "a" : (pos < 0 ? "b" : null));
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     "tug.over": true,
     "tug.finalPos": pos,
     "tug.winner": winner,
@@ -125684,7 +125951,7 @@ function beginTugMatch(data){
     stage.replaceChildren();
     showVroomCountdown(tugStartAt, () => { tugCountingDown = false; tugRedrawFromCache(); });
   }
-  tugUnsub = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), snap => {
+  tugUnsub = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), snap => {
     if(!snap.exists) return;
     const d = snap.data();
     announceVroomLeave(d);
@@ -125721,8 +125988,8 @@ function beginTugMatch(data){
    finishing a question in the same second would otherwise overwrite
    each other's progress, and the rope would jump backwards. */
 function tugPublishProgress(){
-  if(!fbDb || !vroomCode || !vroomMyKey) return;
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  if(!vroomDb() || !vroomCode || !vroomMyKey) return;
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     ["tug.progress." + vroomMyKey]: {
       pos: tugMyPos, correct: tugMyCorrect, pull: Math.round(tugMyPull * 1000) / 1000, done: tugMyDone, at: Date.now()
     }
@@ -126272,7 +126539,8 @@ function showTugResult(d){
   const paidKey = Number(d.startAt) || 1;
   if(tugPaidFor !== paidKey){
     tugPaidFor = paidKey;
-    if(myXp > 0){ awardXp(myXp); saveStore(); }
+    /* (384) a visitor from another class takes the result and the match, not the XP */
+    if(myXp > 0 && !vroomForeign()){ awardXp(myXp); saveStore(); }
     try{ setTimeout(publishNow, 800); }catch(e){}
     /* A TUG MATCH COUNTS (build 313). Battle recorded its outcome and
        Tug never did, so no Tug of War ever reached "Matches played" or the
@@ -126286,12 +126554,13 @@ function showTugResult(d){
   const xpCard = document.createElement("div");
   xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
   const xpNum = document.createElement("p");
-  xpNum.className = "tug-xp-num"; xpNum.textContent = "+" + myXp.toLocaleString() + " XP";
+  xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
   const xpWhy = document.createElement("p");
   xpWhy.className = "tug-xp-why";
   xpWhy.textContent = drawn ? "A draw — everyone keeps their own answers"
     : won ? "Winner takes all — your side split the whole pot of " + pot.toLocaleString()
           : "Winner takes all — the other side took the pot";
+  if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
   xpCard.append(xpNum, xpWhy);
   panel.appendChild(xpCard);
   /* ---- THE TEAM LEADERBOARD, TEN SECONDS LATER ----
@@ -126356,10 +126625,10 @@ function showTugResult(d){
   lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
   lobby.textContent = "Back to lobby";
   lobby.addEventListener("click", () => {
-    if(!fbDb || !vroomCode){ showVirtualRoomLobby(); return; }
+    if(!vroomDb() || !vroomCode){ showVirtualRoomLobby(); return; }
     const reset = { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null, status: "waiting" };
     if(!vroomIsHost){ showVirtualRoomLobby(); return; }
-    fbDb.collection("vrooms").doc(vroomCode).update(reset)
+    vroomDb().collection("vrooms").doc(vroomCode).update(reset)
       .then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
   });
   const home = document.createElement("button");
@@ -126540,7 +126809,7 @@ function battleBestOf(d, side){
    clock the pace implies runs out - and then the side with more health
    left wins, or it is a draw. */
 function battleCheckOver(d){
-  if(!vroomIsHost || !fbDb || !vroomCode) return;
+  if(!vroomIsHost || !vroomDb() || !vroomCode) return;
   const b = d.battle || {};
   if(b.over) return;
   const r = battleReplay(d);
@@ -126559,7 +126828,7 @@ function battleCheckOver(d){
   const winner = r.downed ? battleOther(r.downed)
     : forfeit ? forfeit
     : (r.hp.a > r.hp.b ? "a" : r.hp.b > r.hp.a ? "b" : null);
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     "battle.over": true,
     "battle.winner": winner,
     status: "finished"
@@ -126567,8 +126836,8 @@ function battleCheckOver(d){
 }
 
 function battlePublishProgress(done){
-  if(!fbDb || !vroomCode || !vroomMyKey) return;
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  if(!vroomDb() || !vroomCode || !vroomMyKey) return;
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     ["battle.progress." + vroomMyKey]: { pos: battlePos, correct: battleCorrect, done: !!done, at: Date.now() }
   }).catch(() => {});
 }
@@ -126576,10 +126845,10 @@ function battlePublishProgress(done){
    also stops arrayUnion treating two identical hits in the same
    millisecond as one. */
 function battleLog(entry){
-  if(!fbDb || !vroomCode || !vroomMyKey) return;
+  if(!vroomDb() || !vroomCode || !vroomMyKey) return;
   const e = Object.assign({ id: vroomMyKey + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6),
                             at: Date.now(), from: vroomMyKey }, entry);
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     "battle.log": firebase.firestore.FieldValue.arrayUnion(e)
   }).catch(() => {});
   /* Drawn straight away from what this device already knows, rather
@@ -126634,7 +126903,7 @@ function beginBattleMatch(data){
     stage.replaceChildren();
     showVroomCountdown(battleStartAt, () => { battleCountingDown = false; battleRedrawFromCache(); });
   }
-  battleUnsub = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), snap => {
+  battleUnsub = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), snap => {
     if(!snap.exists) return;
     const d = snap.data();
     announceVroomLeave(d);
@@ -127164,7 +127433,7 @@ function showBattleResult(d){
   const paidKey = Number(d.startAt) || 1;
   if(battlePaidFor !== paidKey){
     battlePaidFor = paidKey;
-    if(myXp > 0) awardXp(myXp);
+    if(myXp > 0 && !vroomForeign()) awardXp(myXp);   /* (384) never a visitor from another class */
     try{ setTimeout(publishNow, 800); }catch(e){}
     const others = Object.keys(battleTeams(d)).filter(k => k !== vroomMyKey);
     try{ recordVroomOutcome(vroomCode, won ? [vroomMyKey].concat(others) : others.concat([vroomMyKey]), vroomMyKey, d.startAt); }catch(e){}
@@ -127175,10 +127444,11 @@ function showBattleResult(d){
   const xpCard = document.createElement("div");
   xpCard.className = "tug-xp" + (won ? " is-won" : drawn ? " is-draw" : " is-lost");
   const xpNum = document.createElement("p");
-  xpNum.className = "tug-xp-num"; xpNum.textContent = "+" + myXp.toLocaleString() + " XP";
+  xpNum.className = "tug-xp-num"; xpNum.textContent = vroomForeign() ? "No XP" : "+" + myXp.toLocaleString() + " XP";
   const xpWhy = document.createElement("p");
   xpWhy.className = "tug-xp-why";
   xpWhy.textContent = right(vroomMyKey) + " right" + (won ? " · the win" : "");
+  if(vroomForeign()) xpWhy.textContent = visitingRoomNote().replace(/^No XP\. /, "");
   xpCard.append(xpNum, xpWhy);
   panel.appendChild(xpCard);
 
@@ -127226,8 +127496,8 @@ function showBattleResult(d){
   lobby.type = "button"; lobby.className = "next ghost vroom-exit-btn";
   lobby.textContent = "Back to lobby";
   lobby.addEventListener("click", () => {
-    if(!fbDb || !vroomCode || !vroomIsHost){ showVirtualRoomLobby(); return; }
-    fbDb.collection("vrooms").doc(vroomCode).update({
+    if(!vroomDb() || !vroomCode || !vroomIsHost){ showVirtualRoomLobby(); return; }
+    vroomDb().collection("vrooms").doc(vroomCode).update({
       "battle.over": false, "battle.log": [], "battle.progress": {}, "battle.winner": null, status: "waiting"
     }).then(() => showVirtualRoomLobby()).catch(() => showVirtualRoomLobby());
   });
@@ -127380,13 +127650,13 @@ function novaVrInRoom(data){ return !!(data && data.participants && data.partici
 /* INVITING HIM. From the lobby's own invite sheet, host only (the sheet is
    only ever the host's). He is in the room the moment the write lands. */
 function novaVrInvite(code){
-  if(!fbDb || !code || code !== vroomCode || !vroomMyKey){ showToast("Lost connection — try again in a moment."); return false; }
+  if(!vroomDb() || !code || code !== vroomCode || !vroomMyKey){ showToast("Lost connection — try again in a moment."); return false; }
   if(!vroomIsHost){ showToast("Only the host can invite Nova."); return false; }
   const live = (vroomLastDoc && vroomLastDoc.code === code && vroomLastDoc.data) ? vroomLastDoc.data : null;
   const here = live && live.participants && live.participants[NOVA_VR_KEY];
   if(here && (presentParticipants({ nova: here }) || {}).nova){ showToast("Nova is already in this room."); return false; }
   const entry = novaVrEntry();
-  fbDb.collection("vrooms").doc(code).update({ ["participants." + NOVA_VR_KEY]: entry }).catch(() => {});
+  vroomDb().collection("vrooms").doc(code).update({ ["participants." + NOVA_VR_KEY]: entry }).catch(() => {});
   if(vroomLastDoc && vroomLastDoc.code === code && vroomLastDoc.data){
     vroomLastDoc.data.participants = Object.assign({}, vroomLastDoc.data.participants || {}, { [NOVA_VR_KEY]: entry });
   }
@@ -127441,11 +127711,11 @@ function buildNovaInviteRow(roomCode){
 function novaVrDrive(code){
   if(novaVrDriving(code)) return;
   novaVrStop();
-  if(!fbDb || !code) return;
+  if(!vroomDb() || !code) return;
   const me = { code: code, data: null, unsub: null, timer: null, readyAt: 0, lobbySent: "", match: null, judged: null };
   novaVr = me;
   try{
-    me.unsub = onSnapshotResilient(fbDb.collection("vrooms").doc(code), snap => {
+    me.unsub = onSnapshotResilient(vroomDb().collection("vrooms").doc(code), snap => {
       if(novaVr !== me) return;
       if(!snap.exists){ novaVrStop(); return; }
       me.data = snap.data();
@@ -127461,8 +127731,8 @@ function novaVrStop(){
   novaVr = null;
 }
 function novaVrWrite(patch){
-  if(!novaVr || !fbDb) return;
-  try{ fbDb.collection("vrooms").doc(novaVr.code).update(patch).catch(() => {}); }catch(e){}
+  if(!novaVr || !vroomDb()) return;
+  try{ vroomDb().collection("vrooms").doc(novaVr.code).update(patch).catch(() => {}); }catch(e){}
 }
 function novaVrTick(){
   const v = novaVr;
@@ -127719,7 +127989,7 @@ function novaVrLeavePatch(patch, code){
 let novaVrOrphanDone = "";
 function novaVrOrphanCheck(data){
   const p = data && data.participants && data.participants[NOVA_VR_KEY];
-  if(!p || !vroomIsHost || !vroomCode || !vroomMyKey || !fbDb) return;
+  if(!p || !vroomIsHost || !vroomCode || !vroomMyKey || !vroomDb()) return;
   if(!p.by || p.by === vroomMyKey) return;
   const live = presentParticipants(data.participants || {}) || {};
   if(live[p.by]) return;
@@ -127728,7 +127998,7 @@ function novaVrOrphanCheck(data){
   novaVrOrphanDone = tag;
   const gone = firebase.firestore.FieldValue.delete();
   try{
-    fbDb.collection("vrooms").doc(vroomCode).update({
+    vroomDb().collection("vrooms").doc(vroomCode).update({
       ["participants." + NOVA_VR_KEY]: gone,
       ["tug.progress." + NOVA_VR_KEY]: gone,
       ["tug.teams." + NOVA_VR_KEY]: gone,
@@ -127780,6 +128050,8 @@ function novaVrMatchLine(out, earned, game){
    the Sheriff through the ordinary unlock card, then his message. */
 let novaVrJudgedMatch = "";
 function novaVrAfterMatch(data, opts){
+  /* (384) beating him in another class's room unlocks nothing here: it was that class's match */
+  if(vroomForeign()) return null;
   opts = opts || {};
   let out = null;
   try{ out = novaVrOutcome(data, vroomMyKey); }catch(e){ out = null; }
@@ -127813,7 +128085,7 @@ function joinVirtualRoomLobby(code){
   /* Same class of bug as createVirtualRoomLobby's own fix \u2014 fbDb
      being null throws synchronously here too, before the .catch()
      below ever gets a chance to run. */
-  if(!fbDb){
+  if(!vroomDb()){
     showToast("Couldn't reach that lobby \u2014 check your connection and try again.");
     return Promise.resolve(false);
   }
@@ -127821,7 +128093,7 @@ function joinVirtualRoomLobby(code){
      reason as joinChatRoom's: a lobby that has already started refuses
      the join, and the notifications list was dismissing the invite on
      the tap - so the one route back into that room went with it. */
-  return fbDb.collection("vrooms").doc(code).get().then(docSnap => {
+  return vroomDb().collection("vrooms").doc(code).get().then(docSnap => {
     if(!docSnap.exists){ lastJoinGone = true; showToast("That lobby doesn't exist any more \u2014 it has been closed."); return false; }
     const data = docSnap.data();
     /* A MATCH IN PROGRESS IS NOT A CLOSED DOOR (build 287): you join the
@@ -127846,16 +128118,25 @@ function joinVirtualRoomLobby(code){
        rankings rows do. Written once at join - it cannot change
        while somebody is sitting in a lobby - and read with a
        fallback, so a room created by an older build still renders. */
-    const meEntry = { name: store.firstName || "Anonymous", avatarChar: store.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false };
-    return fbDb.collection("vrooms").doc(code).update({
+    const meEntry = vroomMeEntry();
+    /* THE ROOM'S OWN QUESTIONS (384): a room from another class plays that class's bank here too - loaded first (Fire
+       Code's is a file of its own), swapped in once the join has landed, before the lobby draws its units */
+    const cls = roomClassOf(data);
+    const enter = () => vroomDb().collection("vrooms").doc(code).update({
       ["participants." + myKey]: meEntry
     }).then(() => {
+      useClassBank(cls);
       /* what this device knows of the room, itself included (build 314) */
       vroomLastDoc = { code: code, data: Object.assign({}, data, { participants: Object.assign({}, data.participants || {}, { [myKey]: meEntry }) }) };
       vroomCode = code; vroomIsHost = false; vroomUnits = data.units;
       vroomMyKey = myKey;
       showVirtualRoomLobby();
       return true;
+    });
+    if(cls === BANK_CLASS) return enter();
+    return classBankReady(cls).then(ok => {
+      if(!ok){ showToast("Couldn\u2019t load this room\u2019s questions \u2014 check your connection and try again."); return false; }
+      return enter();
     });
   }).catch(() => { showToast("Couldn't reach that lobby \u2014 try again."); return false; });
 }
@@ -127960,9 +128241,10 @@ function openInviteFriendsSheet(roomCode){
     waitingForBoard = !leaderboardRows || !leaderboardRows.length;
     /* Its own listener, torn down with the sheet. onSnapshotResilient,
        never a bare .onSnapshot(). */
-    if(fbDb){
+    /* (384) through socialDb(): the friends' own read of the board, in Fire Code too (a room can be hosted there now) */
+    if(socialDb()){
       try{
-        overlay.__unsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+        overlay.__unsub = onSnapshotResilient(socialDb().collection("leaderboard"), snap => {
           const next = [];
           snap.forEach(doc => {
             if(isLegacyBoardId(doc.id)) return;
@@ -128135,14 +128417,16 @@ function showRoomBrowser(){
       text.append(nm, sub);
       const units = r.units || [];
       const gameName = r.game === "tug" ? "Tug of War" : r.game === "battle" ? "Battle" : r.game === "race" ? "Race" : "";
+      /* (384) whose room it is, first; "All units" only against the bank it was made from */
+      const clsLabel = roomClassLabel(r);
       const unitLine = !units.length ? ""
         : units.length === 1 ? units[0]
-        : units.length >= topicsIn(QUESTIONS).length ? "All units"
+        : (roomClassOf(r) === BANK_CLASS && units.length >= topicsIn(QUESTIONS).length) ? "All units"
         : units.length + " units";
-      if(gameName || unitLine){
+      if(clsLabel || gameName || unitLine){
         const set = document.createElement("p");
         set.className = "friend-row-sub room-row-settings";
-        set.textContent = [gameName, unitLine].filter(Boolean).join(" \u00b7 ");
+        set.textContent = [clsLabel, gameName, unitLine].filter(Boolean).join(" \u00b7 ");
         text.appendChild(set);
       }
       const go = document.createElement("button");
@@ -128178,7 +128462,7 @@ function showRoomBrowser(){
   const OPEN_ROOMS_SEARCH_MS = 5000, OPEN_ROOMS_LOOK_EVERY_MS = 1250;
   let searchToken = 0;
   function load(){
-    if(!fbDb){ note("No connection right now \u2014 try again in a moment."); return; }
+    if(!vroomDb()){ note("No connection right now \u2014 try again in a moment."); return; }
     const token = ++searchToken, t0 = Date.now();
     const alive = () => token === searchToken && list.isConnected;
     note("Looking for open rooms\u2026");
@@ -128194,7 +128478,7 @@ function showRoomBrowser(){
            search, again on every Refresh, to find the two marked open.
            The server filters now; openRoomsFrom still judges who is
            actually there. */
-        const vcol = fbDb.collection("vrooms");
+        const vcol = vroomDb().collection("vrooms");
         (typeof vcol.where === "function" ? vcol.where("open", "==", true) : vcol).get().then(snap => {
           if(!alive() || settled) return;
           const rooms = [];
@@ -128217,6 +128501,8 @@ function showRoomBrowser(){
 
 function showVirtualRoomLobby(){
   if(!document.querySelector(".screen-vroom-lobby")) playSound("vr.lobby");
+  /* (384) the room's bank before anything here counts its questions (see attachLobbyListener) */
+  if(vroomLastDoc && vroomLastDoc.code === vroomCode && vroomLastDoc.data && roomClassOf(vroomLastDoc.data) !== BANK_CLASS) useClassBank(roomClassOf(vroomLastDoc.data));
   /* who was in the room last time the roster was drawn (for vr.join);
      declared up here because drawLobbyRoster runs before its own line */
   let sndLobbyKeys = null;
@@ -128346,8 +128632,8 @@ function showVirtualRoomLobby(){
       vroomIsOpen = !vroomIsOpen;
       paintOpen();
       playSound(vroomIsOpen ? "ui.toggle.on" : "ui.toggle.off");
-      if(fbDb && vroomCode){
-        try{ fbDb.collection("vrooms").doc(vroomCode)
+      if(vroomDb() && vroomCode){
+        try{ vroomDb().collection("vrooms").doc(vroomCode)
                .update({ open: vroomIsOpen }).catch(() => {}); }catch(e){}
       }
     });
@@ -128447,7 +128733,7 @@ function showVirtualRoomLobby(){
      lit, grey, then green. */
   let readyBusy = false;
   readyBtn.addEventListener("click", () => {
-    if(!fbDb || !vroomCode || !vroomMyKey){
+    if(!vroomDb() || !vroomCode || !vroomMyKey){
       showToast("Lost connection \u2014 try again in a moment."); return;
     }
     if(!amReady && !lobbyCanReady) return;
@@ -128456,7 +128742,7 @@ function showVirtualRoomLobby(){
     playSound(amReady ? "vr.ready" : "ui.toggle.off");
     paintReady();
     readyBusy = true;
-    fbDb.collection("vrooms").doc(vroomCode).update({
+    vroomDb().collection("vrooms").doc(vroomCode).update({
       ["participants." + vroomMyKey + ".ready"]: amReady
     }).then(() => { readyBusy = false; })
       .catch(() => {
@@ -128566,6 +128852,18 @@ function showVirtualRoomLobby(){
       : isTug ? "Two teams \u00b7 about " + tugPaceMinutes(asked) + " min, the clock tightens"
       : Math.round(RACE_QUESTION_MS / 1000) + " seconds a question";
     testSummary.append(t, l1, l2);
+    /* WHOSE ROOM IT IS (384): "Fire Code room" on everybody's card (an academy room seen from Fire Code says "Police Academy
+       room"; the academy's own rooms read as they always did), and for a player from another class what counts for them */
+    const clsLabel = roomClassLabel(data);
+    if(clsLabel){
+      const cl = document.createElement("p");
+      cl.className = "vroom-test-summary-line vroom-summary-class";
+      const cn = document.createElement("strong");
+      cn.textContent = clsLabel;
+      cl.appendChild(cn);
+      if(roomClassOf(data) !== ownClass()) cl.appendChild(document.createTextNode(". Wins and matches count toward your Virtual Room record. No XP or question progress is added."));
+      testSummary.appendChild(cl);
+    }
 
     /* THE UNITS, NAMED. "the units being taken should be displayed so
        everyone can see which units are being taken" - and until now
@@ -128820,17 +129118,20 @@ function showVirtualRoomLobby(){
        not update on other devices properly." onFirebaseReady queues
        this to actually attach the moment the SDK becomes available,
        instead of giving up. */
-    if(!fbDb){
+    if(!vroomDb()){
       vroomUnsubscribe = null;
-      onFirebaseReady(() => {
+      onSocialReady(() => {
         if(vroomCode && document.body.contains(panel)) attachLobbyListener();
       });
       return;
     }
-    vroomUnsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
+    vroomUnsubscribe = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), docSnap => {
       if(!docSnap.exists) return;
       droppedToastShown = false;
       const data = docSnap.data();
+      /* (384) the room's own bank, whatever screen this device went by on its way back here (the stage watch puts this
+         class's back when a screen outside the room comes up); it was loaded when the room was joined */
+      if(roomClassOf(data) !== BANK_CLASS) useClassBank(roomClassOf(data));
       /* A CACHED ANSWER THAT DOES NOT HAVE YOU IN IT IS OLD (build 314):
          Firestore can hand back what its cache held before this device's
          own join landed - a room without you, sometimes without anybody -
@@ -128889,10 +129190,10 @@ function showVirtualRoomLobby(){
         /* Somebody who readied up before the last other person left,
            or before the units were cleared, is not ready for a race
            that no longer exists - so it is written back, once. */
-        if(amReady && !lobbyCanReady && fbDb && vroomCode && vroomMyKey){
+        if(amReady && !lobbyCanReady && vroomDb() && vroomCode && vroomMyKey){
           amReady = false; paintReady();
           readyBtn.disabled = true; readyBtn.classList.add("is-waiting");
-          fbDb.collection("vrooms").doc(vroomCode).update({
+          vroomDb().collection("vrooms").doc(vroomCode).update({
             ["participants." + vroomMyKey + ".ready"]: false
           }).catch(() => {});
         }
@@ -128958,7 +129259,7 @@ function showVirtualRoomLobby(){
             teams: tugTeamsFor(inIt)
           };
         }
-        fbDb.collection("vrooms").doc(vroomCode).update(patch)
+        vroomDb().collection("vrooms").doc(vroomCode).update(patch)
           .catch(() => { vroomAutoStartTriggered = false; showToast("Couldn't start the test \u2014 try again."); });
       }
       /* ---- A MATCH ON THE DOCUMENT IS NOT ALWAYS ONE TO JOIN (build 246) ----
@@ -128997,12 +129298,12 @@ function showVirtualRoomLobby(){
           : midMatch
             ? "A match is in progress \u2014 you\u2019re in the next one when it finishes."
             : "The last match is still wrapping up \u2014 waiting for the host to open the lobby\u2026";
-        if(vroomIsHost && !staleResetSent && fbDb && vroomCode){
+        if(vroomIsHost && !staleResetSent && vroomDb() && vroomCode){
           staleResetSent = true;
           const reset = { status: "waiting" };
           if(data.tug) Object.assign(reset, { "tug.over": false, "tug.progress": {}, "tug.finalPos": 0, "tug.winner": null });
           if(data.battle) Object.assign(reset, { "battle.over": false, "battle.log": [], "battle.progress": {}, "battle.winner": null });
-          fbDb.collection("vrooms").doc(vroomCode).update(reset).catch(() => { staleResetSent = false; });
+          vroomDb().collection("vrooms").doc(vroomCode).update(reset).catch(() => { staleResetSent = false; });
         }
       }
       if(data.status === "starting" && !vroomTestStarted && inThisStart){
@@ -129016,8 +129317,8 @@ function showVirtualRoomLobby(){
            again started a match with people who were still looking at
            their results. Written by its owner only, and only now that
            this device has committed to the start. */
-        if(fbDb && vroomCode && vroomMyKey){
-          fbDb.collection("vrooms").doc(vroomCode).update({
+        if(vroomDb() && vroomCode && vroomMyKey){
+          vroomDb().collection("vrooms").doc(vroomCode).update({
             ["participants." + vroomMyKey + ".ready"]: false
           }).catch(() => {});
         }
@@ -130414,13 +130715,13 @@ function startVroomRaceListener(){
      way — per explicit request the live race view specifically needs
      to be "perfectly synced," so a device whose race bar simply never
      attaches at all (no retry, ever) is about as unsynced as it gets. */
-  if(!fbDb){
+  if(!vroomDb()){
     vroomRaceUnsubscribe = null;
-    onFirebaseReady(() => { if(inVirtualRoom && vroomCode) startVroomRaceListener(); });
+    onSocialReady(() => { if(inVirtualRoom && vroomCode) startVroomRaceListener(); });
     return;
   }
   if(vroomRaceUnsubscribe) vroomRaceUnsubscribe();
-  vroomRaceUnsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
+  vroomRaceUnsubscribe = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), docSnap => {
     if(!docSnap.exists || !raceMarkersEl) return;
     const data = docSnap.data();
     announceVroomLeave(data);
@@ -130532,21 +130833,21 @@ function stopVroomRaceListener(){
    reads a minute saying nothing new. */
 let lastRoomProgressSent = "";
 function pushVirtualRoomProgress(){
-  if(!vroomCode || !fbDb) return;
+  if(!vroomCode || !vroomDb()) return;
   const myKey = vroomMyKey;
   if(!myKey) return;
   const progress = order.length > 0 ? Math.round((pos / order.length) * 100) : 0;
   const sig = vroomCode + "|" + myKey + "|" + progress;
   if(sig === lastRoomProgressSent) return;
   lastRoomProgressSent = sig;
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     ["participants." + myKey + ".progress"]: progress
   }).catch(() => {});
 }
 
 function finishVirtualRoomTest(pct, elapsedMs){
   if(vroomProgressTimer){ clearInterval(vroomProgressTimer); vroomProgressTimer = null; }
-  if(!vroomCode || !fbDb) return;
+  if(!vroomCode || !vroomDb()) return;
   const myKey = vroomMyKey;
   if(!myKey) return;
   /* ---- THE ROOM IS SCORED IN XP (build 213) ----
@@ -130562,7 +130863,7 @@ function finishVirtualRoomTest(pct, elapsedMs){
   const xp = Math.max(0, room.total || 0);
   const lines = (room.lines || []).map(l => ({ key: String(l.key || ""), label: String(l.label || ""), value: Number(l.value) || 0 }));
   const xpNoBadge = lines.reduce((s, l) => s + l.value, 0);
-  fbDb.collection("vrooms").doc(vroomCode).update({
+  vroomDb().collection("vrooms").doc(vroomCode).update({
     ["participants." + myKey + ".finished"]: true,
     ["participants." + myKey + ".revealDone"]: false,
     ["participants." + myKey + ".score"]: pct,
@@ -130741,9 +131042,9 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
       || (allInAt > 0 && Date.now() - allInAt >= VROOM_OWN_REVEAL_CAP_MS);
     /* and never over a scene that is playing, whatever the clocks say */
     const sceneUp = !!document.querySelector(VROOM_SCENE_SELECTOR);
-    if(mine && !iSaidDone && vroomCode && vroomMyKey && fbDb){
+    if(mine && !iSaidDone && vroomCode && vroomMyKey && vroomDb()){
       iSaidDone = true;
-      fbDb.collection("vrooms").doc(vroomCode).update({ ["participants." + vroomMyKey + ".revealDone"]: true }).catch(() => {});
+      vroomDb().collection("vrooms").doc(vroomCode).update({ ["participants." + vroomMyKey + ".revealDone"]: true }).catch(() => {});
     }
     if(!allInAt) return;
     const now = Date.now();
@@ -130776,7 +131077,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
   }, 250);
 
   detachVroomListener();
-  vroomUnsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
+  vroomUnsubscribe = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), docSnap => {
     if(!docSnap.exists) return;
     const data = docSnap.data();
     lastFinaleData = data;
@@ -130931,7 +131232,7 @@ function vroomReturnToLobby(){
   };
   if(vroomIsHost) resetFields.status = "waiting";
   vroomAwaitingOthers = false;
-  fbDb.collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
+  vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
     detachVroomListener();
     showVirtualRoomLobby();
   });
@@ -131318,7 +131619,7 @@ function showVirtualRoomResults(){
       ["participants." + vroomMyKey + ".ready"]: false
     };
     if(vroomIsHost) resetFields.status = "waiting";
-    fbDb.collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
+    vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
       detachVroomListener();
       showVirtualRoomLobby();
     });
@@ -131561,11 +131862,11 @@ function showVirtualRoomResults(){
     sub.textContent = everyoneDone ? "Ranked by total score." : "Nobody\u2019s place is final yet.";
   }
 
-  fbDb.collection("vrooms").doc(vroomCode).get().then(docSnap => {
+  vroomDb().collection("vrooms").doc(vroomCode).get().then(docSnap => {
     if(docSnap.exists){ announceVroomLeave(docSnap.data()); renderResults(docSnap.data()); }
   });
   detachVroomListener();
-  vroomUnsubscribe = onSnapshotResilient(fbDb.collection("vrooms").doc(vroomCode), docSnap => {
+  vroomUnsubscribe = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), docSnap => {
     if(docSnap.exists){ announceVroomLeave(docSnap.data()); renderResults(docSnap.data()); }
   });
 
@@ -138623,7 +138924,7 @@ function showProfile(defaultTab, opts){
      See buildProfileStanding. */
   const prog = levelStateFor(store);
   const badgeCount = badgeCountOf(store);
-  const totalUnitsForBadges = topicsIn(QUESTIONS).length;
+  const totalUnitsForBadges = classTopics().length;
   const standing = buildProfileStanding(prog, rankNow);
   const xpFill = standing.querySelector(".xpbar-fill");
   heroSect.appendChild(standing);
@@ -139812,7 +140113,7 @@ function showRankings(defaultBoard){
    Under the medal, the one badge you are closest to. */
 function closestBadge(){
   let best = null;
-  topicsIn(QUESTIONS).forEach(u => {
+  classTopics().forEach(u => {
     if(unitBadgeEarned(u)) return;
     const need = badgeThresholdFor(u);
     const done = Math.min(need, (store.unitPerfects && store.unitPerfects[u]) || 0);
@@ -141467,7 +141768,7 @@ function afterFirstPaint(fn){
    is drawn - 90ms of the first Badges visit at 4x CPU. Measured here
    instead, one a frame, a few seconds after launch (build 281). */
 setTimeout(() => {
-  try{ topicsIn(QUESTIONS).forEach(u => afterFirstPaint(() => { try{ badgeViewBoxFor(badgeShapeFor(u).d); }catch(e){} })); }catch(e){}
+  try{ classTopics().forEach(u => afterFirstPaint(() => { try{ badgeViewBoxFor(badgeShapeFor(u).d); }catch(e){} })); }catch(e){}
   /* And the date formatter the class calendar rows use (build 282): the
      first Intl formatter in a session costs ~50ms at 4x, which landed on
      the first Profile switch. */
@@ -141930,7 +142231,7 @@ function buildRanksTab(){
 
   const levelNow = levelOf(store);
   const badgesNow = badgeCountOf(store);
-  const totalUnits = topicsIn(QUESTIONS).length;
+  const totalUnits = classTopics().length;
   const held = rankOf(store);
   const heldIndex = held ? TIER_ORDER_FULL.indexOf(held) : -1;
   const nextKey = TIER_ORDER_FULL[heldIndex + 1] || null;

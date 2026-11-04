@@ -1,7 +1,8 @@
 """Build 384: friends in every class. Madison: "your friends will be shown no matter what class type you are in. So for example
 while I'm in the ifc, I should be able to see any friend I have in the chat and friends list and stuff. Vice Versa, any class."
 In Fire Code the friends, the chat and presence are the academy account's (its public id and friend code), reached through a
-scoped handle of their own (socialDb / ifcSocialDb); fbDb stays null, so the leaderboard and the Virtual Room stay academy-only,
+scoped handle of their own (socialDb / ifcSocialDb); fbDb stays null, so the leaderboard stays academy-only (the Virtual Room
+reaches `vrooms` through the same handle since its own 384 change - check-b384-vrifc),
 and Fire Code still writes nothing of the academy's progress. With an in-memory Firestore (the CDN is blocked here; documents,
 dotted updates, FieldValue/FieldPath, transactions, batches, collection and document listeners, every write logged), the
 owner's account (TEST-3846, a fake code) and made-up classmates:
@@ -214,7 +215,7 @@ with sync_playwright() as pw:
     ctx, pg, errs = page(br, init("ifc"), seed=CLOUD0)
     r = pg.evaluate("""()=>({ cls: window.NOVA_CLASS, fb: (typeof fbDb === 'undefined') ? 'undef' : (fbDb === null ? null : 'set'),
         social: (typeof socialDb === 'function' && !!socialDb()), pub: store.publicId, fcode: store.friendCode, optin: store.leaderboardOptIn })""")
-    chk("(A) Fire Code: fbDb stays null (no leaderboard, no Virtual Room) and the friends reach the cloud through their own handle (%s)" % r,
+    chk("(A) Fire Code: fbDb stays null (no leaderboard) and the friends reach the cloud through their own handle (%s)" % r,
         r["cls"] == "ifc" and r["fb"] is None and r["social"] is True, r)
     chk("(A) Fire Code is the academy account on the friends side: its public id and its friend code %s (%s / %s), off the board itself" % (MYCODE, r["pub"], r["fcode"]),
         r["pub"] == OWNER and r["fcode"] == MYCODE and r["optin"] is False, r)

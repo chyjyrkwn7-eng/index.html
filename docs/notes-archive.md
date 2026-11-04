@@ -32256,3 +32256,108 @@ lowered. Like increments of 25, 50, 75, 150?"
     shift, the page scrolls as before.
   - check-b384-modes; fails 5 on the previous commit. check-b383-modeselect, check-b383-look, check-b384-haptics pass;
     check-b342's one failure (the preview image's live address) fails the same on 383 - the sandbox can't reach the site.
+
+### Build 384 - the Virtual Room in every class (NOT on main, waiting for Madison)
+Madison: "The ifc version says the virtual room is only for the police academy when I try to use it, but it shouldn't be. It
+should be for all the versions!"
+- WHAT: Fire Code has the whole Virtual Room - host, join an open room, invites (the Inbox and the banner), Race, Tug of War,
+  Battle, presence, the chat, results, the standings cutscene, Nova's challenge. Its first 384 build said "Virtual Room is only
+  for the Police Academy class." (academyOnly) at every way in; that is gone (vroomUnreachable: "Virtual Room needs sync. Turn
+  it on in the Police Academy class." without an academy code, otherwise the connection line).
+- A ROOM BELONGS TO THE CLASS IT WAS MADE IN. A room made in Fire Code carries `cls: "ifc"`; an academy room is written exactly
+  as before, with no `cls` (roomClassOf: none = the academy, which every room from before this build is). The room's questions
+  are its class's bank on EVERY device in it: an academy joiner of a Fire Code room plays Fire Code's questions, choices,
+  chapter names and words, and the owner in Fire Code joining a classmate's academy room plays the academy's. Same question
+  order on every device (the seeded shuffle, unchanged); choice order is per device, as it always was.
+  - HOW: QUESTIONS and KEYS (both consts) are swapped IN PLACE for the room. BANK_CLASS says whose bank they hold;
+    ownClass() is the page's class; CLASS_BANKS keeps each bank once needed - Fire Code keeps the academy's list at boot (before
+    it empties QUESTIONS), the academy loads ifc/bank.js the first time it joins a Fire Code room (ifcBankReady, built with the
+    same ifcQuestionsFrom() Fire Code boots with, keys by the same bankKeysOf()). joinVirtualRoomLobby loads the room's bank,
+    writes the join, then useClassBank(cls) before the lobby draws. restoreClassBank() puts this class's back: in
+    leaveVirtualRoom, and from a stage watch (vroomCode outlives a room on other ways out): when another bank is in and the
+    stage shows none of the room's screens (lobby, Match settings, a race question / its pause / results, Tug and Battle
+    screens, the standings, or an empty stage between them), the own bank comes back. The lobby listener (and
+    showVirtualRoomLobby) put the room's bank back in if a device comes back to the room from elsewhere.
+  - What keeps reading THIS class's bank while another is in: the progress side. classTopics() replaces topicsIn(QUESTIONS)
+    in every count of badges / hundos / stars / ranks (badgeCountOf, badgesEarnedList, unitsWithHundo, the star and mastery
+    counts, rank road, retro badges, banner seeds, Nova's badge lines, closestBadge, the ranks tab...), so a level, rank, banner
+    or board row worked out mid-room (a presence beat, a row push after vrMatches) is the true one. The unit-size cache holds
+    both banks' units (names never repeat across classes). Index-keyed memos are cleared on a swap (choice signatures,
+    "choices refer to each other", the Fire Code reference cards).
+  - Words: classNoun() and chapterFix() follow BANK_CLASS. The academy starts the chapter observer the first time a Fire Code
+    room's bank comes in, watching ONLY #stage (its own chrome is never rewritten, so nothing is left saying "chapter" after the
+    room); Fire Code's observer does nothing while an academy room's bank is in.
+- A PLAYER FROM ANOTHER CLASS ("visiting", vroomForeign()) gets the match and nothing else of it:
+  - gets: the room score, time and room XP written to the room (so the standings rank everybody alike - roomRunXpOf works the
+    room XP out by the same rules summarize() gives every player: right answers, streaks, speed, long test, a hundo, several
+    units; never a personal best or a badge), the standings, and recordVroomOutcome in the class they are in (vrMatches /
+    vrWins / vrTop3, the Clown at five wins);
+  - not: XP (race, Tug's pot, Battle's), store.stats, lifetime answered/correct/streak, stars (no flag button on the
+    question, setFlag refuses), hundos, badges, unit bests, test history / test played, study time (addStudyTime refuses), a
+    flare in the run, Nova's Sheriff for beating him, the "openers" and last-slot memories. beginRun skips its seeds and
+    snapshots; recordResult returns; summarize() hands a visiting room run to summarizeVisitingRun (the results screen with
+    "No XP. This was a Fire Code room; the match counts toward your Virtual Room record." and no level bar, then
+    finishVirtualRoomTest as ever). Tug/Battle results say "No XP" and why.
+  - The same class: exactly as before (summarize() untouched for it).
+  - Fire Code's own progress is still only Fire Code's store and progress/<code>__ifc (ifcAcctDb).
+- THE CLOUD: every room read and write goes through vroomDb() = socialDb(): fbDb in the academy (the same object as before),
+  ifcSocialDb in Fire Code (reads `leaderboard` and `vrooms`, writes `vrooms` only). Switched: startVroomPresence, the pagehide
+  away-mark, leaveVirtualRoom, showVirtualRoomChoice, syncCountSlider, createVirtualRoomLobby, joinVirtualRoomLobby, the room
+  browser, the lobby (open switch, ready, the listener and its start/reset writes), the race listener, pushVirtualRoomProgress,
+  finishVirtualRoomTest, the finale's revealDone and listener, vroomReturnToLobby, showVirtualRoomResults, Tug (check-over,
+  listener, progress, result reset), Battle (check-over, progress, log, listener, result reset), Nova in a room (invite, drive,
+  write, orphan check), Nova's challenge entry points; onFirebaseReady -> onSocialReady for the two room listeners. The invite
+  sheet's board read is socialDb(). seedVroomHistory / seedVroomTop3 stay fbDb (academy-only one-off backfills).
+- IDENTITY in a room: the participant key is publicIdOf() (the academy account's id in Fire Code, 384 friends). vroomMeEntry():
+  name and character are the account's (socialMe - the store in the academy), the numbers the class you are in (as a room
+  entry always carried). The presence beat, lastLeave and the away-mark use the same name.
+- COPY: the lobby's room card says "Fire Code room" (a Police Academy room seen from Fire Code: "Police Academy room"; the
+  academy's own rooms say nothing new), and for a visitor ". Wins and matches count toward your Virtual Room record. No XP or
+  question progress is added." The invite carries `cls` (only for a non-academy room) and the Inbox / banner say "invited you to
+  a Fire Code room" ("a Virtual Room" for the academy's own, as before). The open-rooms list names the class first. The
+  Virtual Room banner is back in Fire Code (checkLobbyInvites).
+- BUDGET: the academy - nothing new (same documents, same writes and reads; an academy room is the same document). A Fire
+  Code room costs what an academy room costs (measured below). The academy joiner of a Fire Code room also downloads
+  ifc/bank.js once (1.4 MB, not Firestore). Fire Code keeps the academy's bank in memory (the owner only).
+- Not changed: Contributors' "Virtual Room design" row still opens nothing in Fire Code (check-b382-credits counts 0 links
+  there); bug reports / lag tests stay fbDb.
+- GATE tools/check-b384-vrifc.py - THREE DEVICES, ONE CLOUD. Each device is its own browser context (its own storage and
+  class); they share a Firestore stand-in served by the gate over HTTP (documents, dotted updates, FieldValue / FieldPath,
+  transactions, batches, document and collection listeners by long poll), so a write on one phone reaches the others as
+  Firestore's does. Every write is logged with its device; every read a device takes is counted there (a get, a query's
+  documents, one per document change a listener is told of). The page is served from the stand-in's own origin: a page
+  Playwright fulfils by route sits outside the loopback address space and Chromium's local-network checks refuse its
+  requests to 127.0.0.1. Fixtures: the owner (TEST-3849, made up) in Fire Code, Alexis (academy, his friend), Kimber
+  (academy). It waits out a seeded account's opening cutscene (which holds every banner) and flushes the account push
+  (pushToCloud - at most once a minute otherwise) before reading a cloud copy.
+  (1) Fire Code's Virtual Room screen offers Host / Join, no academy-only note; hosting makes cls "ifc", host = the academy
+  id; the lobby says "Fire Code room". (2) the invite carries cls; the academy classmate's banner says "Fire Code room"; he
+  joins on Fire Code's bank ("chapters"); his lobby says what counts; both play the same five Fire Code questions in the same
+  order. (3) both finish, both rank the room the same (host first). (4) his academy store: vrMatches +1, XP / answered /
+  correct / stats / stars / hundos / tests / study time / exam plays unchanged, no Fire Code keys; his results say "No XP...";
+  his cloud copy the same; the Fire Code host's match counts in Fire Code as ever (XP, 5 stats, vrMatches); out of the room
+  he is the academy again. (5) an academy room: no cls, no class line, same questions/order, standings, XP and stats and
+  vrMatches as ever. (5b) the owner in Fire Code invited to "a Police Academy room", joins on the academy's bank ("units"),
+  same order, wins: Fire Code vrMatches +1, vrWins +1, XP and stats unchanged, no academy keys; Fire Code itself again after.
+  (6) Fire Code wrote only progress/TEST-3849__ifc and vrooms/*; its room handle refuses progress/<code> and the board.
+  (7) no sync code in any vrooms document. (8) no page errors on the three devices; cost (below).
+  36 checks ALL PASS; --against 63cbae3: 12 FAIL (Fire Code cannot host, no invite class, can't join an academy room), the
+  academy room (5) passes on both.
+- COST, room document per match (ready to everyone in, two players, five questions): academy room on 63cbae3 17 writes /
+  40 reads; on this build 17 / 36-39 (reads vary by a few with how the stand-in's polls coalesce); a Fire Code room 17 / 39.
+  Setting a room up (host, units, invite, join): 3 writes / 8 reads, academy (both builds) and Fire Code alike.
+- OTHER GATES, one at a time: check-vroom ALL PASS (a first run lost one chat message in section 5, "two people typing at
+  once" - the harness's own cross-tab localStorage race its notes describe; section 5 passes on 63cbae3 and on the rerun here,
+  and the whole rerun is ALL PASS); check-friends ALL PASS; check-chat 1 failure, the known peek check; check-groupchat ALL
+  PASS; check-b383-ifcsync ALL PASS; check-b384-friends ALL PASS; check-b384-chatback ALL PASS; check-sync twice, 119 pass each:
+  run 1 failed "Find me finds your row" (the known race, see the friends notes), run 2 "the mirror is left holding only the
+  code" (its fixture deletes the IndexedDB store record 600ms after a saveStore, and a mirror write can land after it) - each
+  passed in the other run, and neither touches a room; check-b384-ifccurve, check-b383-classes ALL PASS; check-b382-ifc 56
+  pass + "Profile has no Stats tab" (fails identically on 63cbae3: it expects a Profile switch Fire Code lost in 383);
+  check-js ALL PASS; sweep-layout --quick 14/14 clean. check-b384-friends and check-b383-ifcsync: labels only (fbDb still null;
+  rooms now go through the friends' handle).
+- ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the security rules taking Fire Code's room writes through ifcSocialDb (the
+  same `vrooms` documents and fields the academy writes, plus `cls` on a Fire Code room's create and on its invite - if the
+  rules list a room's fields, that field must be allowed), the compat SDK's listeners and dotted updates through
+  scopedFirestore's Proxy for a whole match, the start instant and the 45-second clocks across two real phones, and how long
+  ifc/bank.js takes to load on a classmate's phone before the lobby opens (a toast says so if it fails).
