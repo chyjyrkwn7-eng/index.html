@@ -90,8 +90,8 @@ with sync_playwright() as pw:
         page.evaluate("document.getElementById('splashscreen')?.remove()"); page.wait_for_timeout(600)
         chk("first visit: the Get Started page, not Welcome", page.evaluate("()=>!!document.querySelector('.gs-page') && !document.querySelector('.cosmic-welcome')"))
         r = page.evaluate("()=>{ const v=[...document.querySelectorAll('.gs-page video')]; return {n:v.length, srcs:v.map(x=>x.getAttribute('src')), scenes:document.querySelectorAll('.gs-scene').length} }")
-        # 330: a fifth scene, Fire Code's
-        chk("it has a clip beside each of its five scenes, and two beside the title", r["n"] == 7 and r["scenes"] == 5 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
+        # 330: a fifth scene, Fire Code's; (384, round 2) a sixth, Police Academy questions - "some police academy questions in there"
+        chk("it has a clip beside each of its scenes (five or more), and two beside the title", r["scenes"] >= 5 and r["n"] == r["scenes"] + 2 and all(x and x.startswith("landing/") for x in r["srcs"]), r)
         page.wait_for_timeout(2200)
         # 330: the button waits for the end of the page
         page.evaluate("()=>{ const s=document.querySelector('.gs-scroll'); s.scrollTo(0, s.scrollHeight); }"); page.wait_for_timeout(900)
@@ -110,7 +110,11 @@ with sync_playwright() as pw:
         page.click(".gs-go"); page.wait_for_timeout(1200)
         chk("Let's get started leads to Welcome, and the page is gone", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
         page.reload(); page.wait_for_timeout(3500); page.evaluate("document.getElementById('splashscreen')?.remove()"); page.wait_for_timeout(600)
-        chk("a second visit goes straight to Welcome", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
+        # (384, round 2) "Ensure it shows up everywhere when you aren't signed [in] or don't have an account": a second visit with no
+        # account opens Get Started again - its button up from the start - and Let's get started is Welcome (was: straight to Welcome)
+        chk("a second visit with no account opens Get Started again, its button up at once", page.evaluate("()=>!!document.querySelector('.gs-page .gs-bar.is-ready') && !document.querySelector('.cosmic-welcome')"))
+        page.click(".gs-go"); page.wait_for_timeout(1200)
+        chk("...and Let's get started is Welcome", page.evaluate("()=>!!document.querySelector('.cosmic-welcome') && !document.querySelector('.gs-page')"))
         page.click(".cosmic-welcome-btn.welcome-new"); page.wait_for_timeout(800)
         page.click(".signupcheck-panel .signupcheck-go"); page.wait_for_timeout(800)
         chk("sign-up: the check goes straight to the class screen (no What This Actually Is)", page.evaluate("()=>!!document.querySelector('.classselect-panel') && !document.querySelector('.welcomeintro-panel')"))

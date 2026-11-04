@@ -33164,3 +33164,138 @@ something is unlocked and next to stuff, ensure that thing looks better too, it 
   are kept in the page now instead of re-attached); the 3x crispness and ring colour of the dot on the real glass; how much
   faster the board's rows feel with the stills on a phone that has (or has not) recorded its classmates' loops; that his flares
   are no longer empty bubbles after the first board visit of this build (old kept geometry is dropped by LB_GEOM_REV).
+### Build 384 - the Get Started page, round 2 (NOT on main, waiting for Madison)
+Madison: "the start up screen, I said this earlier but it doesn't seem like it got taken care of. The start up screen wasn't
+showing for me on my laptop but it's been showing for me on iPhone. Ensure it shows up everywhere when you aren't signed or
+don't have an account. Ensure the videos through the screen are high quality cause they didn't look like it. Ensure the videos
+are good to go cause some seem weird and start at weird spots and skip around like the upload pdf one. On the start up screen,
+maybe include an interactive thing with some example badges and then rank flares but have all the flares lit up in a row or
+something and you see them nicely as you scroll? Idk. Ensure the videos show a lot of the test example with the ifc fire code
+stuff and some police academy questions in there. When you hit let's get started, ensure the transition to sign up/sign in
+screen is nice, like maybe the word nova zooms in really fast and then the transition happens. The let's get started button
+looks small btw? It should be nice and big hush like the start studying button. The sign in and sign up buttons look small
+too idk why?"
+- SHOWS FOR ANYONE NOT SIGNED IN (showWelcomeFirst, the splash). Get Started showed once per device: class26e.getstarted, or a
+  sign-out (383's signedOutHere), sent a device to Welcome for good - so a laptop that had looked once, or signed out, never saw
+  it again; and the splash took a leftover nameless store (drill.v1, which any visit writes) or the seen mark as "returning",
+  so the long loading screen came first. Now: any launch with no account opens on Get Started - in every browser, at every
+  size, installed or not. "No account" = no sync code here, and a saved copy (if any) that never finished sign-up and has no
+  name; the splash reads the same thing before the app loads (no code, no activeclass, drill.v1 neither onboardingComplete nor
+  named) and steps aside (60ms) for it. A code (mid sign-up), a name in the store, or the mirror's copy (findAccountTrace)
+  still goes to Welcome, which offers the account back - unchanged. An onboarded device opens Home, as ever.
+  THE BUTTON: a first visit's Let's get started still waits for the end of the page (330: "shouldn't the get started button not
+  appear till you scroll through it"); a repeat visit (the seen mark) or a device just signed out has it up at once (700ms), so
+  Sign in is one tap past the page - 383's reason for sending sign-out to Welcome. JUDGEMENT CALL for Madison: sign-out now
+  lands on Get Started (he asked for it whenever "you aren't signed in"), not Welcome.
+- CLIPS (tools/record-landing.py, rewritten; tools/record-landing-ifc.py). Why they looked bad and jumped: 540x1170 from a
+  360px page at 1.5x, crf 29 (80-260 kb/s) - shown 255px wide on a 3x phone; the encoder gave each screencast frame its gap
+  to the next CAPPED AT 1s, so any still moment over a second was cut short (jumps); hundo's and rank's posters were mid-clip
+  moments (11.5s/9s), so the clip jumped back when it started; the ifc clip opened on the Analyzing screen already at 1%; the
+  rank clip stopped at 15s, mid-whirl, before the rank was named; and the page resumed a clip where it had paused when it came
+  back on screen. Now:
+  * Captured at 2x: the screencast only sends frames at the page's CSS size, so the page is a 780x1690 mobile view whose
+    viewport tag (rewritten by the recorder only) says width=390, initial/min/max-scale 2 (min/max: Chromium's mobile view
+    otherwise zooms out to fit when a question slides in from the side), devicePixelRatio reads 2 (badges, code pictures
+    drawn at 2x). A frame that size takes 70-110ms to capture here (more under the helpers' load), so the page runs in SLOW
+    MOTION while recorded: TIMEWARP slows setTimeout/setInterval/requestAnimationFrame/performance.now/Date.now, and CDP
+    Animation.setPlaybackRate slows every CSS/Web animation, by the same RATE (.2; hundo .1, rank .08), and each frame's time is
+    its capture time x RATE. html{scroll-behavior:auto} while recording (a smooth scroll runs in real time); scrolls the
+    recorder makes are eased on the page's own clock (glide_to). Sound off in the fixture (the results' count follows the
+    sound's clock, which cannot be slowed).
+  * Encoded on a true 30 fps clock (each frame held until the next - a still moment keeps its length), an optional uniform
+    speed-up of a stretch (rank: 1-19s at 2.4x - plays faster, never skips), the last 0.5s dissolved into the first frame (the
+    loop has no seam), H.264 High 4.1 yuv420p crf 20 (stepped up only past 3 MB), faststart, no audio, piped to ffmpeg; the
+    poster IS frame one.
+  * Content (fixture "Alex", publicId the class owner's only where Fire Code needs it - never on screen; sound off; owed
+    reward cards marked shown first): academy (new) - TCOLE Rules: what TCOLE stands for (right), continuing-education hours
+    (a miss, then right), the proficiency certificates (right). test - Fire Code with the owner's book loaded through "Load my
+    IFC PDF" (the real 1-2 minute analysis, before the camera): 307.4.2 recreational fires (right, Show the code, the code cut
+    from his book), 907.4.2.2 the alarm box handle height (a miss, the code opens itself) - each a small cut, never a page.
+    ifc - the Enroll in Fire Code screen, Choose my IFC PDF (a stand-in file named "2021 International Fire Code.pdf"; the
+    analysis stands in, the screen and its 12s floor are the app's), to Verified / Go to Fire Code. hundo, rank (Silver,
+    whole), customize as before.
+- THE PAGE PLAYS THEM: preload none (posters only) until a clip is a screen away (IntersectionObserver, rootMargin 100%), then
+  preload auto + load(); plays at 35% on screen; off screen it pauses AND goes back to 0 - every time a clip is seen it starts
+  at its beginning. disablepictureinpicture / disableremoteplayback.
+- THE SHOWCASE (gsBuildShowcase, after the six scenes): "Collect / Badges and flares" - five real badges (buildUnitBadgeSVG,
+  clean, px 88: TCOLE Rules, Identity Crimes, Professionalism and Ethics, Victims of Crime, De-Escalation), drawn one per 90ms
+  slice from 2.2s in (each is a ~0.1s strike - never during the warp-in), then all seven rank flares as Home's lit glass
+  (.cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit + homeRankEmblem, --rank-color), without its backdrop blur (stars
+  drift behind). Each row rises in turn as it arrives (the page's reveal observer adds .is-in to .gs-badges / .gs-flares;
+  staggered transform/opacity transitions; a ring of each flare's colour as it lands). Tap: a badge turns once (rotateY), a
+  flare presses and rings and plays its Home sound; the caption names it ("Gold flare · rank 3 of 7"), back to "Tap one to
+  see its name." after 3.2s. One row everywhere: badges clamp(44px, (100vw-4rem)/5.6, 6.2rem), flares clamp(36px,
+  (100vw-5rem)/7.6, 4.2rem) with a 4px touch margin (44px at the smallest); 1rem sides under 22rem. Reduce motion: just there.
+- THE TRANSITION (gsLeave): in the tap, only two small elements in <body> (.gs-cover, the page's #05060D, and .gs-zoom with
+  NOVA in the hero's own face and gradient) and four animations: the page's words and button fade (200ms); NOVA comes up
+  in the middle and flies at the viewer - scale .72 -> 1 -> 1.35 -> 16, fading over its second half, 620ms; the cover
+  darkens by 200ms, holds, and clears by 600ms. Welcome is built 200ms after the move STARTS (zoomA.ready), under the dark
+  cover; the cover clears to it. All transform/opacity, so from the next frame the compositor runs it and Welcome's build
+  (the planet) cannot hold the word up. Measured here, two designs that did not hold: moving the page out of the stage
+  (a re-attach of the whole page) and building Welcome in the tap each kept the word still for 0.5-1.9s on the loaded
+  laptop. Cover and word remove themselves on the zoom's finish (timers behind it, counted from its start, and a 1.5s one
+  for a hidden tab); the page goes with the stage (its MutationObserver teardown). Reduce motion: the cover is up at
+  once over the page, Welcome is built, the cover fades (280ms).
+- WELCOME ON AN UPRIGHT TABLET: the +24px of the two buttons comes out of the planet there (its height-tied max-width
+  calc(100dvh - 31rem) -> 32.6rem, for Welcome only): the iPad Pro 11" Welcome scrolled 16px without it.
+- BUTTONS: Let's get started = Home's Start Studying (measured off the page): phone rule clamp(146px,49vw,216px) x
+  clamp(44px,12.8vw,60px) in clamp(.88rem,4.4vw,1.2rem) - Pro Max 216x56 in 19.2px (was 352x50 in 16.8px); >=40rem 17rem x 56px
+  in 1.22rem (the iPad's 272x56 in 19.5px; a laptop's Home has its button in the tab bar, so it takes the iPad's). The SE's
+  38px Home pill is not copied (Home's room problem): 375x667 gets 184x48. Welcome's two buttons: clamp(52px,12.8vw,60px) in
+  clamp(1rem,4.4vw,1.2rem) on a phone (Pro Max 352x56 in 19.2px, was 352x44 in 16.8px), 56px in 1.2rem from 40rem (laptop was
+  49.6px in 16.8px). Full-width pills as before.
+- CLIP FILES (780x1690, H.264 High 4.1, 30 fps, faststart; poster = frame one, ~60-105 KB): academy 0.77 MB 8.6s, test
+  1.29 MB 13.5s, ifc 1.32 MB 16.8s, hundo 0.73 MB 12.1s, rank 2.90 MB 17.7s (crf 20, its whirl at 2.4x), customize 0.96 MB
+  10.2s - 8.3 MB in all with posters (was 1.5 MB). Nothing loads until a clip is a screen away.
+- RECORDER LESSONS (for the next re-record): rAF's frame time is the ANIMATION clock - CDP Animation.setPlaybackRate already
+  slows it, so the time warp leaves requestAnimationFrame alone (wrapping it slowed it twice: the results' XP count read
+  "-740,591"); Date is a Proxy so `new Date()` and Date.now() agree; after a rate change the page clock is lined up 2ms behind
+  the frame clock (__timeSync), so a count never starts below zero. Sound off in the fixture. A heavy scene gets a lower rate
+  (Recorder.start(rate)). Load here was 20-25 on 4 cores through the session (other helpers); at RATE .2 a 780x1690 frame
+  still landed every ~10-40ms of page time.
+- GATE: tools/check-b384-getstarted.py [route clips show buttons leave] (--against a tree holding the old index.html with its
+  landing/ beside it: `git archive 91a1d96 index.html landing version.json ifc | tar -x -C /tmp/old`). route: Get Started up
+  1.6s in (no splash in front) and still up at 3.8s for fresh / seen-mark / leftover nameless store / signed out, on a phone
+  (installed and tab), iPad, 1536x864 and 1366x768; never for an onboarded account (with or without the seen mark) - Home -
+  or a code mid sign-up - Welcome; a repeat visit's button up at once, a first visit's waiting. clips: every clip (phone: the
+  six scenes; laptop: all eight, the title's two included) plays from t<0.5s as it comes on screen, its time never going back
+  and never ahead of the clock (+0.5s for the player's late-updated official position), 1s+ along over the samples; off
+  screen paused at 0, on screen again from 0; videoWidth >= 2x its CSS width; poster = frame one (mean diff < 6 levels) and
+  last frame = frame one (seam < 6). show: >= 4 drawn badges, all 7 flares lit in one row, inside the screen (375, 440, iPad,
+  laptop), hidden then risen, transitions on transform/opacity only, 36px+ (44 with margin), a tap names it, Reduce motion
+  there at once. buttons: Let's get started = Home's Start Studying within 2px on the Pro Max and iPad Pro 11 (Home measured
+  with an account), 44px+ on 375x667, 52px+ in 18px+ on the laptops; Welcome's two 52px+, full width of their column, its box
+  and buttons on screen and nothing more to scroll (the installed Pro Max's .wrap overflows 12px under Welcome on 91a1d96 as
+  here - left as it was). leave: NOVA's animation (made in the tap) is transform/opacity only, 450-750ms, scale rising to 4x+,
+  opacity peaking at 1 and ending at 0; as drawn it only grows; Welcome up and page, cover and word gone within 1s of the move's
+  start (1.6s where the page's frames come 150ms+ apart - this sandbox); Reduce motion: no zoom, Welcome. No page errors.
+- RESULTS, gates one at a time (the sandbox at a load of 20-25 on 4 cores all session, other helpers' browsers):
+  check-js ALL PASS. check-b384-getstarted: every section ALL PASS on this build (route 56, clips 59, show/buttons/leave);
+  --against 91a1d96: 77 FAIL (73 in one run, which then stopped at leave on a missing button - since guarded - and the
+  leave section's 4 on its own) - route (seen, leftover, signed out: Welcome, on all five devices; the long splash in front),
+  clips (re-entry resumes mid-clip on all; hundo/rank posters 20/40 levels off frame one; 540px clips on a laptop), show
+  (no showcase), buttons (352x50 in 16.8px; Welcome's 44px), leave (no zoom). sweep-layout --quick 14/14 clean. check-b329
+  ALL PASS. check-b330: Get Started's own checks pass; "every Back button at one left edge" and "mode descriptions <= 130"
+  FAIL identically on 91a1d96 (run there from a copy of its tools); "bg" failed once and passed on a rerun. check-b384-laptop
+  ALL PASS. check-b383-signup: signin, had, signout, icon, settings all pass; fresh: 8 failures in Nova's intro (name/partner/
+  save-code card under load), the same 8 on 91a1d96 (ONLY=fresh --against). check-sync: run 1 118 pass + "Find me finds your
+  row" (the known race) and "Continue brings it back ... on Home" (home not up 600ms after Continue); run 2 ALL PASS (121).
+- GATES BROUGHT UP TO DATE (each assumed a seen mark or a sign-out meant Welcome):
+  check-b329 "flow": "a clip beside each of its five scenes" -> five or more, two more clips than scenes (a sixth scene,
+  Police Academy, was asked for); "a second visit goes straight to Welcome" -> a second visit with no account opens Get
+  Started with its button up, and Let's get started is Welcome. check-b383-signup: open_page taps through a Get Started whose
+  button is up (its SEEN fixture), as a person would; "[fix] after Sign out: Welcome" -> Get Started with its button up at
+  once; the icon's "Sign out sticks" (twice) -> getstarted. check-sync: booted() taps through a ready Get Started. (Fixture
+  changes in the many gates that set class26e.getstarted for an ONBOARDED account were not needed - they open Home.)
+- ONLY A PHONE CAN CONFIRM: that iOS Safari autoplays the muted inline clips (Low Power Mode shows the posters only - each
+  poster is its clip's first frame now, so that still looks right) and decodes 780x1690 H.264 smoothly in a scroll; that the
+  NOVA zoom stays smooth while Welcome builds under it (here, compositor animations under a load of 20+ - the move is all
+  transform/opacity, made in the tap); the safe areas under the page's button and in Welcome; and Windows Chrome/Edge on his
+  laptop playing H.264 (it should: every desktop browser does).
+- LEFT FOR MADISON: sign-out now lands on Get Started (button up at once) rather than Welcome; the first visit's button still
+  waits for the end (his 330 ask); the Fire Code clips show the class to everyone though only his account can open it (as
+  330's did); a 375px phone's Let's get started is 184x48 (Home's SE pill is 142x38 - not copied); clip lengths 8.6-17.7s.
+- Page console, fresh device, phone and laptop: only the blocked Firebase CDN (ERR_TUNNEL_CONNECTION_FAILED, the sandbox).
+  For Madison: walkthroughs of a fresh device scrolled through, a badge and a flare tapped, then Let's get started -> Welcome,
+  recorded in the same slow-motion capture - getstarted-phone-440x956.mp4 (880x1912) and getstarted-laptop-1536x864.mp4, in
+  the session's scratchpad gs384/ folder (not in the repo).
