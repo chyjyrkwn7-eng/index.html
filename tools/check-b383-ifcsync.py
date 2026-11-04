@@ -1,10 +1,11 @@
 """Build 383: Fire Code syncs. Madison: "The police class has sync code working. The fire code side says sync code isn't
 reachable. Fix that as well."
 Fire Code's account lives at progress/<academy code>__ifc (beside the academy's, never in it); only the account reaches the
-cloud there - fbDb stays null, so the leaderboard, Virtual Room, chat and invites stay off. With an in-memory Firestore stand-in
+cloud there - fbDb stays null, so the leaderboard and the Virtual Room stay off (since 384 the friends, chat and presence reach
+the academy account's own `vrooms` documents through their own handle - check-b384-friends). With an in-memory Firestore stand-in
 (the CDN is blocked here) and the owner's account (TEST-3830, a fake code):
  (1) device 1 in Fire Code writes its Fire Code progress to progress/TEST-3830__ifc - and nothing to progress/TEST-3830, the
-     leaderboard or the rooms;
+     leaderboard, and nothing in the rooms but the friends' own documents (presence, mailboxes, friend chats - build 384);
  (2) its Settings: the Sync row reads On, not Unreachable; the code it shows is the academy's (no suffix); fbDb is still null;
  (3) device 2, signed in to the same academy account and opening Fire Code for the first time, gets device 1's Fire Code
      progress from the cloud;
@@ -28,6 +29,8 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else ("  -> " + str(info)[:300]), flush=True)
 OWNER = "xph5b57jbp5a"; CODE = "TEST-3830"
+# (384) the academy account's friends documents, which Fire Code now writes as the academy would: presence, mailboxes, friend chats
+FRIENDS_DOCS = ("vrooms/presence-v1", "vrooms/inbox-", "vrooms/DM-")
 # an in-memory Firestore: docs, get, set, update, delete, live listeners; every write logged as collection/id
 FAKE = r"""(()=>{
   const seed = window.__cloudSeed || {};
@@ -89,9 +92,9 @@ with sync_playwright() as pw:
         writes: window.__writes.slice(), fb: (typeof fbDb === 'undefined') ? 'undef' : (fbDb === null ? null : 'set') })""", CODE)
     pts = r["doc"] and (r["doc"].get("lifetime") or {}).get("points")
     chk("(1) in Fire Code, device 1's Fire Code progress is saved to its own account (progress/%s__ifc, %s points)" % (CODE, pts), r["cls"] == "ifc" and pts == 4321, r)
-    bad = [w for w in r["writes"] if not w.startswith("progress/" + CODE + "__ifc")]
-    chk("(1) and nothing else is written - not the academy's account, not the leaderboard, not the rooms (%s)" % bad, not r["academyDoc"] and not bad, r["writes"])
-    chk("(2) fbDb stays null in Fire Code (the leaderboard, rooms and chat stay off)", r["fb"] is None, r["fb"])
+    bad = [w for w in r["writes"] if not w.startswith(("progress/" + CODE + "__ifc",) + FRIENDS_DOCS)]
+    chk("(1) and nothing else is written - not the academy's account, not the leaderboard, no room but the friends' own (%s)" % bad, not r["academyDoc"] and not bad, r["writes"])
+    chk("(2) fbDb stays null in Fire Code (the leaderboard and the Virtual Room stay off)", r["fb"] is None, r["fb"])
     pg.evaluate("()=>showAppearance()"); pg.wait_for_timeout(900)
     row = pg.evaluate("()=>{ const b=document.getElementById('settings-row-sync'); return b ? b.textContent.replace(/\\s+/g,' ').trim() : null; }")
     chk("(2) Settings' Sync row reads On, not Unreachable (%r)" % row, bool(row) and "On" in row and "Unreachable" not in row, row)
@@ -110,7 +113,7 @@ with sync_playwright() as pw:
         if got["pts"] == 4321: break
         pg.wait_for_timeout(500)
     chk("(3) device 2 opening Fire Code gets device 1's Fire Code progress from the cloud (%s)" % (got,), got and got["cls"] == "ifc" and got["pts"] == 4321 and got["correct"] == 777, got)
-    w2 = pg.evaluate("()=>window.__writes.filter(w => !w.startsWith('progress/%s__ifc'))" % CODE)
+    w2 = [w for w in pg.evaluate("()=>window.__writes.slice()") if not w.startswith(("progress/" + CODE + "__ifc",) + FRIENDS_DOCS)]
     chk("(3) and writes nothing outside its Fire Code account (%s)" % w2, not w2, w2)
     chk("(3) no page errors on device 2", not errs, errs[:2])
     ctx.close()

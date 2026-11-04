@@ -71,7 +71,9 @@
      (device settings excepted), IndexedDB names get an "ifc:" prefix, and initFirebase()
      stands down - so nothing it does can reach the academy's saved progress, its backup,
      its sync code, the cloud account, the leaderboard or any classmate. Switching is a
-     reload (switchClass()). This runs before every other script, so they all see it. */
+     reload (switchClass()). This runs before every other script, so they all see it.
+     (383: Fire Code syncs its own account at progress/<academy code>__ifc. 384: friends, the
+     chat and presence are the academy account's in every class - see socialDb().) */
   (function(){
     /* SIGNED OUT (build 383). Settings > Account > Sign out leaves "class26e.signout" and reloads; here, before any other script
        reads storage, this device forgets the account in BOTH classes - their saved copies, codes and backups (class26e.* and the
@@ -112,7 +114,10 @@
     /* its question bank, a file of its own (1.4 MB) that only this class loads: written in
        here so it runs, in order, before the app's script reads it (window.IFC_BANK) */
     document.write('<script src="ifc/bank.js"><\/script>');
-    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen)$/;
+    /* (384) FRIENDS IN EVERY CLASS: the chat's own marks are the academy account's, kept once for both classes - what is read
+       (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
+       with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
+    var SHARED = /^class26e\.(signout|activeclass|enrolled|classseen|greet\.[a-z]+|statusbar\.v1|safarisound|soundon\.327|swipeon\.288|shuffleon|device|update\.dismissed|updating|bootmark|booterr|bootcb|diag|forced\.v1|forced\.log|frame\.ok|intro\.seen|freshstart|unithold\.tip|penal\d+\.seen|chatseen|chatmuted|chatleft|chatroom|chatlistcache|chatheight|friendmoment|friendreq\.seen|invite\.seen|notifhandled)$/;
     var map = function(k){ k = String(k); return (k.indexOf("class26e.") === 0 && k.indexOf("class26e.ifc.") !== 0 && !SHARED.test(k)) ? "class26e.ifc." + k.slice(9) : k; };
     try{
       var P = Storage.prototype, g = P.getItem, st = P.setItem, rm = P.removeItem;
@@ -62480,6 +62485,8 @@ try { syncCode = window.localStorage.getItem(SYNC_CODE_KEY) || null; } catch(e){
    progress/<academy code>__ifc - beside the academy's, never in it - so every device signed in to the academy account syncs its
    Fire Code too, with no second code to keep. Only the ACCOUNT goes to the cloud here: fbDb stays null in Fire Code, so the
    leaderboard, the Virtual Room, chat, friends and invites stay off exactly as before; the account's own functions use acctDb().
+   (384: friends, the chat and presence are back in Fire Code as the academy account's own, through socialDb() - a separate,
+   scoped handle. The leaderboard and the Virtual Room are still academy-only.)
    The code shown and shared in Fire Code is the academy's (shownSyncCode). */
 const IFC_ACCOUNT_SUFFIX = "__ifc";
 if(window.NOVA_CLASS === "ifc"){
@@ -62523,6 +62530,11 @@ let storageHadData = false;
 /* Declared up here, ahead of `store`, because applyLoadedData() runs at
    boot and a const further down would still be in its dead zone. */
 const TEST_HISTORY_MAX = 50;
+/* THE FRIENDS LIST, as one block (build 384 - see socialDb()): the same in every class, dated by `socialAt`. Declared up here
+   for the same reason: applyLoadedData() reads it during boot. socialSigBase is what the block was when it was last loaded,
+   copied or saved - a `var` with no value, so nothing resets it once boot has set it. */
+const SOCIAL_FIELDS = ["friendCode", "friendsIn", "friendsOut", "friendsDeclined", "chats", "chatInvitesOut"];
+var socialSigBase;
 let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: [], studyLog: {}, theme: null,
               lifetime: { answered: 0, correct: 0, drillPlays: 0, examPlays: 0, gamePlays: 0,
                           perfectTests: 0, currentStreak: 0, longestStreak: 0, points: 0 },
@@ -62547,6 +62559,8 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
                  one stays in localStorage, because which conversation
                  you are sitting in is this device's business. */
               chats: [],
+              /* when the friends block above last changed (build 384) - see foldSocialFrom */
+              socialAt: 0,
               lastModified: 0, firstName: "", avatarChar: null, onboardingComplete: false,
               dailyQuestionDate: null, dailyQuestionCorrect: false,
               seenModeSelectTour: false, seenUnitSelectTour: false,
@@ -62703,6 +62717,8 @@ function applyLoadedData(got){
      erase somebody's chat list on load. Keep the two numbers in step. */
   store.chats = Array.isArray(got.chats)
     ? got.chats.filter(c => c && c.code).slice(0, 30) : [];
+  /* (384) when the friends block last changed: 0 for a copy that has never said (an older build), which never beats a dated one */
+  store.socialAt = typeof got.socialAt === "number" && isFinite(got.socialAt) ? got.socialAt : 0;
   /* THE ONE PLACE THE "DEFAULT TO ALREADY-SEEN" RULE IS DELIBERATELY
      INVERTED. Every other flag here defaults so an existing account is
      not ambushed by something new; this one has to reach exactly those
@@ -63073,6 +63089,8 @@ function applyLoadedData(got){
   store.tally = okMap(got.tally) ? JSON.parse(JSON.stringify(got.tally)) : {};
   store.tallyBase = okMap(got.tallyBase) ? Object.assign({}, got.tallyBase) : {};
   tallyNormalize(store);
+  /* (384) a friends block that arrives is not a change made here: only an edit after this is dated (saveStore) */
+  socialSigBase = socialSig(store);
   return true;
 }
 /* WHAT SOMEBODY HELD UNDER THE PRE-243 RULES and would otherwise lose.
@@ -63118,6 +63136,9 @@ function loadStore(){
 
 function saveStore(){
   store.lastModified = Date.now();
+  /* (384) a change to the friends block made here is dated, so the other class, and this account's other devices, can tell
+     which list is newer (foldSocialFrom, mergeSameAccount). A block that came in from elsewhere is the base already. */
+  try{ if(socialSigBase !== undefined && socialSig(store) !== socialSigBase) store.socialAt = Date.now(); }catch(e){}
   persistLocally();
   scheduleCloudPush();
 }
@@ -63129,6 +63150,8 @@ function saveStore(){
    listeners are involved). */
 function persistLocally(){
   try{ tallyCapture(store); }catch(e){}
+  /* (384) what is saved is the base the next local edit of the friends block is measured from */
+  try{ socialSigBase = socialSig(store); }catch(e){}
   if(storageOK){
     try { window.localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
     catch(e){ storageOK = false; }
@@ -63159,6 +63182,119 @@ let fbDb = null;
    use (var, not let: initFirebase reads it at the top level) */
 var ifcAcctDb = null;
 function acctDb(){ return fbDb || ifcAcctDb; }
+/* ---- FRIENDS IN EVERY CLASS (build 384) ----
+   Madison: "your friends will be shown no matter what class type you are in. So for example while I'm in the ifc, I should be
+   able to see any friend I have in the chat and friends list and stuff. Vice Versa, any class."
+   Friends, the chat (friend chats, group chats, the Inbox), the mailbox and presence belong to the ACADEMY ACCOUNT in every
+   class: one public id, one friend code, the same friends and the same threads. In the academy socialDb() is fbDb and nothing
+   there changes. In Fire Code it is ifcSocialDb, a Firestore handle that only the friends, chat, mailbox and presence code use;
+   fbDb stays null there, so the leaderboard, the Virtual Room and everything else keyed on fbDb stay academy-only.
+   BOTH OF FIRE CODE'S HANDLES ARE SCOPED (scopedFirestore): each refuses any write outside what it is for, whatever asks.
+   The account's (ifcAcctDb, 383) writes only progress/<academy code>__ifc and the notes beside it (its __floor), and reads
+   progress (its own document, and the academy's for the friends block - read, never written). The social one reads the class
+   board's rows (who is who: names, faces, friend codes, requests) and `vrooms`, and writes `vrooms` alone (presence-v1, the
+   inbox-<id> mailboxes, chat documents) - never progress, never the leaderboard. So nothing in Fire Code can write the
+   academy's progress, its backup or its row. The Virtual Room's documents are in `vrooms` too; they stay out of reach because
+   every Virtual Room function still asks for fbDb.
+   THE FRIENDS LIST ITSELF (SOCIAL_FIELDS: friendsIn/Out/Declined, the friend code, the group chats) is kept on each class's
+   own store and saved to each class's own account document. `socialAt` dates its last change; each class takes the other's
+   list when it is newer (foldSocialFrom) - at launch from the other class's copy on this device, and live from the other
+   class's account document, read only (watchOtherClassSocial). The leaderboard row that publishes the list (fcode/freq/facc)
+   is still written by the academy alone; from Fire Code a request goes by mailbox, as an accept always has. */
+var ifcSocialDb = null;
+function socialDb(){ return fbDb || ifcSocialDb; }
+/* "when the friends and chat can reach the cloud": onFirebaseReady in the academy; Fire Code's own queue there */
+var socialReadyCallbacks = [];
+function onSocialReady(cb){
+  if(socialDb()){ cb(); return; }
+  if(window.NOVA_CLASS === "ifc"){ socialReadyCallbacks.push(cb); return; }
+  onFirebaseReady(cb);
+}
+/* Fire Code's friends and chat come up: what waited for them, a beat if Home already started the heartbeat, then the
+   academy's friends block, live */
+function ifcSocialReady(){
+  if(!ifcSocialDb) return;
+  const pending = socialReadyCallbacks.splice(0);
+  pending.forEach(cb => { try{ cb(); }catch(e){} });
+  try{ if(heartbeatTimer) sendHeartbeat(true); }catch(e){}
+  try{ watchOtherClassSocial(); }catch(e){}
+}
+/* What the chat says when it cannot be reached. In Fire Code the friends ride the academy account, so without its sync code
+   there is nothing to reach them with. */
+function chatUnreachable(){
+  if(window.NOVA_CLASS === "ifc" && !syncCode) return "Chat needs sync. Turn it on in the Police Academy class.";
+  return "Chat needs a live connection — check your connection and try again.";
+}
+/* A Firestore handle that can do only what may(op, collection, id) allows ("read" / "write"). A read it refuses comes back
+   empty (a listener never fires, a get rejects); a write it refuses rejects, or throws inside a transaction so that
+   transaction writes nothing. Documents, queries, transactions and batches all go through it. */
+function scopedFirestore(db, may){
+  const RAW = "__scopedRaw", PATH = "__scopedPath";
+  const refuse = what => Promise.reject(new Error("not reachable from this class: " + what));
+  const own = (t, v) => typeof v === "function" ? v.bind(t) : v;
+  const raw = r => (r && r[RAW]) || r;
+  const QUERY = ["where", "orderBy", "limit", "limitToLast", "startAt", "startAfter", "endAt", "endBefore"];
+  function docRef(ref, coll, id){
+    return new Proxy(ref, { get(t, p){
+      if(p === RAW) return t;
+      if(p === PATH) return [coll, id];
+      if(p === "set" || p === "update" || p === "delete")
+        return function(){ return may("write", coll, id) ? t[p].apply(t, arguments) : refuse(coll + "/" + id); };
+      if(p === "get") return function(){ return may("read", coll, id) ? t.get.apply(t, arguments) : refuse(coll + "/" + id); };
+      if(p === "onSnapshot") return function(){ return may("read", coll, id) ? t.onSnapshot.apply(t, arguments) : () => {}; };
+      if(p === "collection") return n => collRef(t.collection(n), coll + "/" + id + "/" + n);
+      return own(t, t[p]);
+    } });
+  }
+  function collRef(c, coll){
+    return new Proxy(c, { get(t, p){
+      if(p === RAW) return t;
+      if(p === "doc") return function(id){ const r = arguments.length ? t.doc(id) : t.doc(); return docRef(r, coll, String((r && r.id) || id || "")); };
+      if(p === "add") return function(v){ return may("write", coll, "") ? t.add(v) : refuse(coll); };
+      if(p === "get") return function(){ return may("read", coll, "") ? t.get.apply(t, arguments) : refuse(coll); };
+      if(p === "onSnapshot") return function(){ return may("read", coll, "") ? t.onSnapshot.apply(t, arguments) : () => {}; };
+      if(QUERY.indexOf(p) >= 0) return function(){ return collRef(t[p].apply(t, arguments), coll); };
+      return own(t, t[p]);
+    } });
+  }
+  function writer(w){
+    const self = new Proxy(w, { get(t, p){
+      if(p === "set" || p === "update" || p === "delete") return function(r){
+        const at = r && r[PATH];
+        if(!at || !may("write", at[0], at[1])) throw new Error("not writable from this class");
+        const a = Array.prototype.slice.call(arguments); a[0] = raw(r);
+        t[p].apply(t, a);
+        return self;
+      };
+      if(p === "get") return function(r){
+        const at = r && r[PATH];
+        return (at && may("read", at[0], at[1])) ? t.get(raw(r)) : refuse("a transaction's read");
+      };
+      return own(t, t[p]);
+    } });
+    return self;
+  }
+  return new Proxy(db, { get(t, p){
+    if(p === RAW) return t;
+    if(p === "collection") return n => collRef(t.collection(n), String(n));
+    if(p === "runTransaction" && typeof t.runTransaction === "function") return (fn, o) => t.runTransaction(tx => fn(writer(tx)), o);
+    if(p === "batch" && typeof t.batch === "function") return () => writer(t.batch());
+    return own(t, t[p]);
+  } });
+}
+/* Fire Code's account handle: writes its own document (<academy code>__ifc) and the notes beside it, nothing else; reads
+   account documents (its own, and the academy's for the friends block) */
+function ifcAccountMay(op, coll, id){
+  if(coll !== "progress") return false;
+  if(op === "read") return true;
+  const mine = syncCode;
+  return !!mine && /__ifc$/.test(mine) && (id === mine || String(id).indexOf(mine + "__") === 0);
+}
+/* Fire Code's friends and chat handle: reads the board's rows and `vrooms`; writes `vrooms` alone */
+function ifcSocialMay(op, coll){
+  if(coll === "vrooms") return true;
+  return op === "read" && coll === "leaderboard";
+}
 /* In another class (NOVA_CLASS "ifc") there is no cloud on purpose: the words say so (build 332)
    instead of asking for a connection that would never come. */
 function academyOnly(what, fallback){
@@ -63184,15 +63320,17 @@ function ifcAccountReady(){
 function initFirebase(){
   /* another class (NOVA_CLASS, top of the document) never reaches the cloud */
   if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy"){
-    /* Fire Code (build 383): the account only - fbDb stays null, so nothing else in the app reaches the cloud */
-    if(window.NOVA_CLASS === "ifc" && !ifcAcctDb && syncCode){
+    /* Fire Code (build 383): the account - and (384) the friends, chat and presence, each through its own scoped handle (see
+       socialDb). fbDb stays null, so nothing else in the app reaches the cloud. */
+    if(window.NOVA_CLASS === "ifc" && (!ifcAcctDb || !ifcSocialDb) && syncCode){
       try{
         if(window.firebase){
           if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-          ifcAcctDb = firebase.firestore();
-          setTimeout(() => { try{ ifcAccountReady(); }catch(e){} }, 0);
+          const raw = firebase.firestore();
+          if(!ifcAcctDb){ ifcAcctDb = scopedFirestore(raw, ifcAccountMay); setTimeout(() => { try{ ifcAccountReady(); }catch(e){} }, 0); }
+          if(!ifcSocialDb){ ifcSocialDb = scopedFirestore(raw, ifcSocialMay); setTimeout(() => { try{ ifcSocialReady(); }catch(e){} }, 0); }
         }
-      }catch(e){ ifcAcctDb = null; }
+      }catch(e){ ifcAcctDb = null; ifcSocialDb = null; }
     }
     return false;
   }
@@ -63545,6 +63683,116 @@ function friendCodeOf(){
   return store.friendCode;
 }
 
+/* ---- WHO YOU ARE TO YOUR FRIENDS, IN EVERY CLASS (build 384 - see socialDb()) ----
+   In Fire Code the friends side is the academy account: its public id, its name and character, its class-sharing choice
+   (Fire Code itself stays off the board), and the level, badges and flares its board row shows. Read from the academy's copy
+   (NOVA_ACADEMY_RAW, read-only, at launch) and from each newer copy of its account document (noteAcademyCopy). In the
+   academy it is simply this store, so nothing there reads differently. */
+var academyCopy = null;
+function pickAcademyCopy(a){
+  a = (a && typeof a === "object") ? a : {};
+  return { publicId: typeof a.publicId === "string" && a.publicId ? a.publicId : null, firstName: a.firstName || "",
+           avatarChar: a.avatarChar || null, leaderboardOptIn: a.leaderboardOptIn, lastModified: Number(a.lastModified) || 0 };
+}
+function academyCopyNow(){
+  if(academyCopy === null){
+    let a = null;
+    try{ a = JSON.parse(window.NOVA_ACADEMY_RAW || "null"); }catch(e){ a = null; }
+    academyCopy = pickAcademyCopy(a);
+  }
+  return academyCopy;
+}
+function noteAcademyCopy(d){
+  const cur = academyCopyNow();
+  if(!d || !d.publicId || (cur.publicId && d.publicId !== cur.publicId)) return;
+  if((Number(d.lastModified) || 0) >= cur.lastModified) academyCopy = pickAcademyCopy(d);
+}
+function socialMe(){
+  if(window.NOVA_CLASS !== "ifc") return { publicId: store.publicId, firstName: store.firstName, avatarChar: store.avatarChar, optIn: !!store.leaderboardOptIn };
+  const a = academyCopyNow();
+  return { publicId: a.publicId || store.publicId, firstName: a.firstName || store.firstName,
+           avatarChar: a.avatarChar || store.avatarChar, optIn: a.leaderboardOptIn !== false };
+}
+/* class sharing, which friends need (they are read off the class board): the academy account's choice in every class */
+function socialOptIn(){ return !!socialMe().optIn; }
+/* What a mailbox message or a chat roster entry says about you. In Fire Code the numbers are the academy row's (null until
+   the board has been read, and then simply left out) - never Fire Code's own. */
+function socialCard(){
+  const me = socialMe();
+  if(window.NOVA_CLASS !== "ifc"){
+    return { firstName: me.firstName, avatarChar: me.avatarChar, level: levelOf(store), badges: badgeCountOf(store), mystery: mysteryColorsFoundCount() };
+  }
+  const row = (me.publicId && rowsByPublicId()[me.publicId]) || null;
+  /* the level the academy published (fixBoardLevel keeps it as rawLevel when it caps what the board draws) */
+  return { firstName: me.firstName, avatarChar: me.avatarChar,
+           level: row ? (Number(typeof row.rawLevel === "number" ? row.rawLevel : row.level) || 0) : null, badges: row ? (Number(row.badges) || 0) : null,
+           mystery: row ? (Number(row.mystery) || 0) : null };
+}
+
+/* ---- THE FRIENDS BLOCK, THE SAME IN EVERY CLASS (build 384) ----
+   SOCIAL_FIELDS on each class's own store, saved to each class's own account document. The newer change wins (socialAt,
+   dated by saveStore); a tie goes to the academy (a Fire Code copy from before this build has an undated list of its own).
+   Only a copy of THIS account (the same public id) is ever taken - a reset one, with its id dropped, never is. */
+function socialSig(st){
+  try{ return JSON.stringify(SOCIAL_FIELDS.map(k => (st && st[k] !== undefined) ? st[k] : null)); }catch(e){ return ""; }
+}
+function socialTakeInto(dst, src){
+  dst.friendCode = typeof src.friendCode === "string" && src.friendCode ? src.friendCode : null;
+  ["friendsIn", "friendsOut", "friendsDeclined"].forEach(k => { dst[k] = Array.isArray(src[k]) ? src[k].slice(0, 200) : []; });
+  dst.chats = Array.isArray(src.chats) ? JSON.parse(JSON.stringify(src.chats.filter(c => c && c.code).slice(0, 30))) : [];
+  dst.chatInvitesOut = (src.chatInvitesOut && typeof src.chatInvitesOut === "object") ? JSON.parse(JSON.stringify(src.chatInvitesOut)) : {};
+  dst.socialAt = Number(src.socialAt) || 0;
+  if(dst === store) socialSigBase = socialSig(store);
+}
+function foldSocialFrom(src, fromAcademy){
+  if(!src || typeof src !== "object" || !src.publicId || !store.publicId || src.publicId !== store.publicId) return false;
+  const a = Number(src.socialAt) || 0, b = Number(store.socialAt) || 0;
+  if(!(a > b || (fromAcademy && a === b))) return false;
+  const was = socialSig(store);
+  socialTakeInto(store, src);
+  if(socialSig(store) === was && a === b) return false;
+  saveStore();
+  socialShown();
+  return true;
+}
+/* what shows the friends repaints, never under a finger */
+function socialShown(){
+  try{ if(chatDockOpen && !chatRoomCode) rebuildChatTab(); }catch(e){}
+  try{ syncChatDockDot(); }catch(e){}
+  try{
+    const top = stage && stage.firstElementChild;
+    const field = document.querySelector(".friend-add-input");
+    if(top && top.classList && top.classList.contains("screen-friends") && !(field && (document.activeElement === field || field.value))
+       && !document.querySelector(".invite-overlay .person-card")) showFriends();
+  }catch(e){}
+}
+/* The other class's account document, read only, while this one is open: in Fire Code the academy's (whose devices change
+   the friends too); in the academy, for the one account that has another class, its Fire Code document. Reads only when
+   that document is written - and only that one person's. */
+var otherClassSocialUnsub = null;
+function watchOtherClassSocial(){
+  if(otherClassSocialUnsub || !acctDb() || !syncCode) return;
+  let ref = null, fromAcademy = false;
+  try{
+    if(window.NOVA_CLASS === "ifc"){
+      const ac = window.NOVA_ACADEMY_CODE;
+      if(!ac || syncCode !== ac + IFC_ACCOUNT_SUFFIX) return;
+      ref = acctDb().collection("progress").doc(ac); fromAcademy = true;
+    } else {
+      if(String(syncCode).indexOf("__") >= 0 || !store.publicId || store.publicId !== window.NOVA_CLASS_OWNER) return;
+      ref = acctDb().collection("progress").doc(syncCode + IFC_ACCOUNT_SUFFIX);
+    }
+  }catch(e){ ref = null; }
+  if(!ref) return;
+  const code = syncCode;
+  otherClassSocialUnsub = onSnapshotResilient(ref, snap => {
+    if(code !== syncCode || !snap || !snap.exists) return;
+    const d = snap.data() || {};
+    if(fromAcademy) noteAcademyCopy(d);
+    foldSocialFrom(d, fromAcademy);
+  });
+}
+
 /* Everyone the board knows about, by public id, so every screen here
    reads one map rather than scanning the array again. `leaderboardRows`
    is whatever the last snapshot delivered. */
@@ -63649,7 +63897,7 @@ let presenceMap = null;
 let presenceUnsub = null;
 
 function sendHeartbeat(force){
-  if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
+  if(!socialDb() || !syncCode || !socialOptIn() || !store.publicId) return;
   if(document.visibilityState !== "visible") return;
   const now = Date.now();
   if(!force && now - lastHeartbeatAt < HEARTBEAT_MS - 5000) return;
@@ -63660,7 +63908,7 @@ function sendHeartbeat(force){
   const act = currentActivity();
   activityShared = act; activityLastWrite = now;
   try{
-    fbDb.collection("vrooms").doc(PRESENCE_DOC)
+    socialDb().collection("vrooms").doc(PRESENCE_DOC)
       .set({ kind: "presence", p: { [store.publicId]: now }, a: { [store.publicId]: act } }, { merge: true })
       .catch(() => {});
   }catch(e){}
@@ -63713,7 +63961,7 @@ function currentActivity(){
   return "app";
 }
 function shareActivity(){
-  if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
+  if(!socialDb() || !syncCode || !socialOptIn() || !store.publicId) return;
   if(document.visibilityState !== "visible") return;
   const act = currentActivity();
   if(act === activityShared) return;
@@ -63728,7 +63976,7 @@ function shareActivity(){
   lastHeartbeatAt = now;
   offlineSent = false;
   try{
-    fbDb.collection("vrooms").doc(PRESENCE_DOC)
+    socialDb().collection("vrooms").doc(PRESENCE_DOC)
       .set({ kind: "presence", p: { [store.publicId]: now }, a: { [store.publicId]: act } }, { merge: true })
       .catch(() => {});
   }catch(e){}
@@ -63767,10 +64015,10 @@ function paintActivityLabels(){
    is the whole point of the change. Idempotent, and it detaches itself
    on the next screen change the same way the banners do. */
 function attachPresence(){
-  if(!fbDb || presenceUnsub) return;
+  if(!socialDb() || presenceUnsub) return;
   try{
     presenceUnsub = onSnapshotResilient(
-      fbDb.collection("vrooms").doc(PRESENCE_DOC), snap => {
+      socialDb().collection("vrooms").doc(PRESENCE_DOC), snap => {
         const d = (snap && snap.exists) ? (snap.data() || {}) : {};
         presenceMap = d.p || {};
         presenceActivity = d.a || {};
@@ -63849,12 +64097,12 @@ function repaintOnlineDots(){
    negative number as long ago - offline - which is what it did with 0. */
 const OFFLINE_GRACE_MS = 2 * 60 * 1000;
 function sendOffline(){
-  if(!fbDb || !syncCode || !store.leaderboardOptIn || !store.publicId) return;
+  if(!socialDb() || !syncCode || !socialOptIn() || !store.publicId) return;
   lastHeartbeatAt = 0;
   if(offlineSent) return;
   offlineSent = true;
   try{
-    fbDb.collection("vrooms").doc(PRESENCE_DOC)
+    socialDb().collection("vrooms").doc(PRESENCE_DOC)
       .set({ kind: "presence", p: { [store.publicId]: -Date.now() } }, { merge: true })
       .catch(() => {});
   }catch(e){}
@@ -63960,6 +64208,9 @@ function sendFriendRequest(code){
     store.friendsOut = (store.friendsOut || []).concat([match.pub]);
     saveStore();
   }
+  /* (384) the row that carries a request (freq) is published by the academy alone, so from another class the request goes
+     to their mailbox at once, the way a request from a person's card always has (sendFriendRequestTo) */
+  if(window.NOVA_CLASS === "ifc") sendToInbox(match.pub, { type: "friendreq" });
   return { ok: true, name: match.firstName || "They" };
 }
 
@@ -64030,7 +64281,9 @@ function celebrateNewFriend(pub, tries){
   const title = document.createElement("p"); title.className = "friend-moment-title";
   title.textContent = "You and " + name + " are now friends";
   const sub = document.createElement("p"); sub.className = "friend-moment-sub";
-  sub.textContent = "Your chat with " + name + " is ready on the Friends tab. Race them in a Virtual Room, or see how they are doing on the leaderboard.";
+  /* (384) the Virtual Room and the leaderboard are the academy's: another class names only the chat */
+  sub.textContent = "Your chat with " + name + " is ready on the Friends tab."
+    + (window.NOVA_CLASS === "ifc" ? "" : " Race them in a Virtual Room, or see how they are doing on the leaderboard.");
   const row = document.createElement("div"); row.className = "friend-moment-actions";
   const hi = document.createElement("button"); hi.type = "button"; hi.className = "next"; hi.textContent = "Say hi";
   const ok = document.createElement("button"); ok.type = "button"; ok.className = "next ghost"; ok.textContent = "Nice";
@@ -64193,24 +64446,27 @@ let inboxMsgs = null;
 let inboxUnsub = null;
 
 function inboxDocFor(pub){
-  return fbDb.collection("vrooms").doc(INBOX_PREFIX + pub);
+  return socialDb().collection("vrooms").doc(INBOX_PREFIX + pub);
 }
 
 /* One entry per SENDER, so a second invite from the same person
    replaces their first rather than piling up - the same shape the row
    field had, which is what keeps the readers simple. */
 function sendToInbox(pub, payload){
-  if(!fbDb || !pub || !payload) return;
+  if(!socialDb() || !pub || !payload) return;
   try{
     const me = publicIdOf();
+    /* (384) who you are to them: the academy account's name, face and numbers, in every class (socialCard) */
+    const card = socialCard();
     const msg = Object.assign({
       pub: me,
       at: Date.now(),
-      firstName: store.firstName || "Someone",
-      avatarChar: store.avatarChar || "ninja",
-      level: levelOf(store),
-      badges: badgeCountOf(store),
-      mystery: mysteryColorsFoundCount()
+      firstName: card.firstName || "Someone",
+      avatarChar: card.avatarChar || "ninja"
+    }, card.level == null ? {} : {
+      level: card.level,
+      badges: card.badges,
+      mystery: card.mystery
     }, payload);
     inboxDocFor(pub).set({ kind: "inbox", msgs: { [me]: msg } },
                          { merge: true }).catch(() => {});
@@ -64222,12 +64478,13 @@ function sendToInbox(pub, payload){
    last); a message ping must not replace an invite from that person, so
    it gets a slot of its own. */
 function sendToInboxSlot(pub, slot, payload){
-  if(!fbDb || !pub || !slot || !payload) return;
+  if(!socialDb() || !pub || !slot || !payload) return;
   try{
+    const me = socialMe();
     const msg = Object.assign({
       pub: publicIdOf(), at: Date.now(),
-      firstName: store.firstName || "Someone",
-      avatarChar: store.avatarChar || "ninja"
+      firstName: me.firstName || "Someone",
+      avatarChar: me.avatarChar || "ninja"
     }, payload);
     inboxDocFor(pub).set({ kind: "inbox", msgs: { [slot]: msg } }, { merge: true }).catch(() => {});
   }catch(e){}
@@ -64240,7 +64497,7 @@ function sendToInboxSlot(pub, slot, payload){
    same lesson the board listener had to learn. */
 function attachInbox(){
   if(inboxUnsub) return;
-  if(!fbDb){ onFirebaseReady(attachInbox); return; }
+  if(!socialDb()){ onSocialReady(attachInbox); return; }
   if(!store || !store.onboardingComplete) return;
   try{
     inboxUnsub = onSnapshotResilient(inboxDocFor(publicIdOf()), snap => {
@@ -64292,7 +64549,7 @@ function inboxOfType(type, ttl){
 /* Taking something out of your own mailbox once it is dealt with -
    otherwise a declined request is offered again on every launch. */
 function clearInbox(pub){
-  if(!fbDb || !pub) return;
+  if(!socialDb() || !pub) return;
   try{
     if(inboxMsgs && inboxMsgs[pub]) delete inboxMsgs[pub];
     const patch = {};
@@ -64317,7 +64574,9 @@ function incomingLobbyInvites(){
 
 function publicIdOf(){
   if(!store.publicId){
-    store.publicId = generatePublicId();
+    /* (384) Fire Code is the academy account on the friends side: its id, never a new one */
+    const ac = window.NOVA_CLASS === "ifc" ? academyCopyNow().publicId : null;
+    store.publicId = ac || generatePublicId();
     saveStore();
   }
   return store.publicId;
@@ -64594,6 +64853,9 @@ function wipeLocalProgressAndSettings(){
   store.lobbyInvitesOut = {};
   store.chatInvitesOut = {};
   store.chats = [];
+  /* (384) an emptied list is not a newer one: undated, so it never replaces the other class's (and the id is gone anyway) */
+  store.socialAt = 0;
+  socialSigBase = socialSig(store);
   store.firstName = "";
   store.avatarChar = null;
   /* This is the actual fix for the reset glitch: everything else here
@@ -65289,7 +65551,9 @@ function accountAhead(a, b){
   if(Object.keys(Sa).some(day => n(Sa[day]) > n(Sb[day]))) return true;
   const key = h => h ? String(h.playedAt || h.ts || "") + "|" + String(h.label || "") + "|" + String(h.pct) : "";
   const had = new Set(((b && b.testHistory) || []).map(key));
-  return ((a && a.testHistory) || []).some(h => h && !had.has(key(h)));
+  if(((a && a.testHistory) || []).some(h => h && !had.has(key(h)))) return true;
+  /* (384) a newer friends list (mergeSameAccount takes it by socialAt): the server's is not written over by an older one */
+  return n(a && a.socialAt) > n(b && b.socialAt);
 }
 function writeAccount(code, withMain, withFloor, leaving){
   if(!acctDb() || !code || (!withMain && !withFloor)) return;
@@ -66316,6 +66580,14 @@ function mergeSameAccount(dst, src){
     const merged = mergeWeekStats(dst[k], src[k]);
     if(JSON.stringify(merged) !== was){ dst[k] = merged; res.gained = true; }
   });
+  /* THE FRIENDS LIST IS THE NEWER CHANGE'S (build 384), not the copy that saved last: friends, requests, the friend code and
+     the group chats (SOCIAL_FIELDS) come from the side whose socialAt is later, so a friend added on one device - or in the
+     other class - is not undone by a copy that only saved something else more recently. Neither side dated: as before. */
+  try{
+    const sa = num(src.socialAt), da = num(dst.socialAt);
+    if(sa > da){ socialTakeInto(dst, src); res.gained = true; }
+    else if(da > sa) res.otherHadLess = true;
+  }catch(e){}
   return res;
 }
 
@@ -70661,6 +70933,8 @@ function finalRankForWeek(wk){
    test passes through, and again whenever the board arrives from the
    server. Returns true if this settled a win. */
 function settleWeeklyWin(){
+  /* (384) another class reads the class board for friends only: the board's weeks are never its own */
+  if(window.NOVA_CLASS === "ifc") return false;
   const seen = store.weekRankSeen;
   if(!seen || !seen.week || seen.week === weekKeyNow()) return false;
   const final = finalRankForWeek(seen.week);
@@ -95610,7 +95884,7 @@ function clearReadPings(code, ts){
   });
   if(!slots.length) return;
   slots.forEach(k => { delete inboxMsgs[k]; });
-  if(!fbDb) return;
+  if(!socialDb()) return;
   try{
     const args = [];
     slots.forEach(k => { args.push(new firebase.firestore.FieldPath("msgs", k), firebase.firestore.FieldValue.delete()); });
@@ -95760,7 +96034,7 @@ function paintChatFaces(el, code){
   el.hidden = false;
 }
 function refreshChatList(force){
-  if(!fbDb) return;
+  if(!socialDb()) return;
   if(!chatDockOpen || !isChatTab()) return;
   const now = Date.now();
   const tabKey = chatDockTab === "friends" ? "friends" : "groups";
@@ -95774,7 +96048,7 @@ function refreshChatList(force){
     : groupChatList().slice();
   entries.forEach(entry => {
     if(!entry || !entry.code) return;
-    fbDb.collection("vrooms").doc(entry.code).get().then(snap => {
+    socialDb().collection("vrooms").doc(entry.code).get().then(snap => {
       if(!snap) return;
       const fromServer = !(snap.metadata && snap.metadata.fromCache);
       const isGroup = !isFriendChatCode(entry.code);
@@ -97179,13 +97453,13 @@ function openFriendChat(pub){
   if(!code) return;
   chatDockTab = "friends";
   if(!chatDockOpen) openChatDock();
-  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection \u2014 check your connection and try again.")); return; }
+  if(!socialDb()){ showToast(chatUnreachable()); return; }
   const me = publicIdOf();
   const row = rowsByPublicId()[pub] || {};
   rememberChat(code, row.firstName || (chatEntry(code) || {}).name || "", [pub]);
-  const ref = fbDb.collection("vrooms").doc(code);
-  const ensure = (typeof fbDb.runTransaction === "function")
-    ? fbDb.runTransaction(tx => tx.get(ref).then(snap => {
+  const db = socialDb(), ref = db.collection("vrooms").doc(code);
+  const ensure = (typeof db.runTransaction === "function")
+    ? db.runTransaction(tx => tx.get(ref).then(snap => {
         if(!snap.exists){
           tx.set(ref, { kind: "dm", createdAt: Date.now(), chatMessages: [], typing: {},
                         participants: { [me]: chatSelfEntry() } });
@@ -97324,11 +97598,11 @@ const CHAT_CTX = {
       /* Here from the first snapshot that has you in it, not before - see
          startChatPresence. A missing joinedAt (older builds) is filled in
          once, so the roster's order and colours stop shifting. */
-      if(fbDb && (first || !mine.joinedAt)){
+      if(socialDb() && (first || !mine.joinedAt)){
         try{
           const patch = chatPresencePatch(Date.now());
           if(!mine.joinedAt) patch["participants." + chatMyKey + ".joinedAt"] = data.createdAt || Date.now();
-          fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+          socialDb().collection("vrooms").doc(code).update(patch).catch(() => {});
         }catch(e){}
       }
     } else if(code && !mine && !isFriendChatCode(code) && chatMyKey){
@@ -97545,7 +97819,7 @@ const CHAT_PING_FRESH_MS = 24 * 60 * 60 * 1000;
    because a ping's slot has a "~" in it. */
 let pingPruneAt = 0;
 function pruneStalePings(){
-  if(!inboxMsgs || !fbDb) return;
+  if(!inboxMsgs || !socialDb()) return;
   const now = Date.now();
   if(now - pingPruneAt < 60000) return;
   const slots = Object.keys(inboxMsgs).filter(k => {
@@ -97696,7 +97970,8 @@ let chatAllMembers = {};
 function chatPersonOf(key, entry){
   const e = entry || {};
   if(key && key === publicIdOf()){
-    return { name: store.firstName || e.name || "You", avatarChar: store.avatarChar || e.avatarChar || "ninja" };
+    const me = socialMe();   /* (384) as your friends see you, in every class */
+    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ninja" };
   }
   let row = null;
   try{ row = rowsByPublicId()[key] || null; }catch(err){}
@@ -97906,10 +98181,12 @@ function chatMsgAge(ts){
 }
 
 function chatSelfEntry(){
-  return { name: store.firstName || "Anonymous",
-           avatarChar: store.avatarChar || "ninja",
-           level: levelOf(store), badges: badgeCountOf(store),
-           joinedAt: Date.now(), seen: Date.now() };
+  /* (384) the academy account's name, face and numbers in every class (socialCard); Fire Code's numbers never */
+  const c = socialCard();
+  const out = { name: c.firstName || "Anonymous", avatarChar: c.avatarChar || "ninja" };
+  if(c.level != null){ out.level = c.level; out.badges = c.badges; }
+  out.joinedAt = Date.now(); out.seen = Date.now();
+  return out;
 }
 
 /* One timer, replaced rather than stacked, and it stops itself the
@@ -97943,10 +98220,10 @@ function startVroomPresence(){
 function chatPresencePatch(seen){
   const k = "participants." + chatMyKey + ".";
   const patch = {};
-  patch[k + "name"] = store.firstName || "Anonymous";
-  patch[k + "avatarChar"] = store.avatarChar || "ninja";
-  patch[k + "level"] = levelOf(store);
-  patch[k + "badges"] = badgeCountOf(store);
+  const c = socialCard();   /* (384) see chatSelfEntry */
+  patch[k + "name"] = c.firstName || "Anonymous";
+  patch[k + "avatarChar"] = c.avatarChar || "ninja";
+  if(c.level != null){ patch[k + "level"] = c.level; patch[k + "badges"] = c.badges; }
   patch[k + "seen"] = seen;
   return patch;
 }
@@ -97961,7 +98238,7 @@ let chatSawMeIn = null;
 function chatMayStamp(){
   /* Nova's chat has no document to stamp (build 324) */
   if(isNovaChatCode(chatRoomCode)) return false;
-  return !!(chatRoomCode && chatMyKey && fbDb
+  return !!(chatRoomCode && chatMyKey && socialDb()
     && (isFriendChatCode(chatRoomCode) || chatSawMeIn === chatRoomCode));
 }
 function startChatPresence(){
@@ -97972,19 +98249,19 @@ function startChatPresence(){
      blind: an immediate stamp here is the write that re-adds somebody who
      has already left. A friend chat has no leaving, so it stamps now. */
   chatSawMeIn = null;
-  if(chatRoomCode && chatMyKey && fbDb && isFriendChatCode(chatRoomCode)){
+  if(chatRoomCode && chatMyKey && socialDb() && isFriendChatCode(chatRoomCode)){
     try{
-      fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
+      socialDb().collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
     }catch(e){}
   }
   chatBeatTimer = setInterval(() => {
-    if(!chatRoomCode || !chatMyKey || !fbDb){ clearInterval(chatBeatTimer); chatBeatTimer = null; return; }
+    if(!chatRoomCode || !chatMyKey || !socialDb()){ clearInterval(chatBeatTimer); chatBeatTimer = null; return; }
     if(!chatMayStamp()) return;
     /* A hidden app is not here: no beat, so the stamp ages out (and
        visibilitychange below marks it away at once). */
     if(document.visibilityState !== "visible") return;
     try{
-      fbDb.collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
+      socialDb().collection("vrooms").doc(chatRoomCode).update(chatPresencePatch(Date.now())).catch(() => {});
     }catch(e){}
   }, CHAT_BEAT_MS);
 }
@@ -97992,12 +98269,12 @@ function startChatPresence(){
 /* Starting one and joining one are the same write with a different
    document id, so they are one function. */
 function createChatRoom(){
-  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection — check your connection and try again.")); return; }
+  if(!socialDb()){ showToast(chatUnreachable()); return; }
   const code = generateSyncCode();
   const me = publicIdOf();
   /* RETURNED, so "message this person" can invite them the moment the
      room exists. Every existing call site ignores it. */
-  return fbDb.collection("vrooms").doc(code).set({
+  return socialDb().collection("vrooms").doc(code).set({
     kind: "chat",
     createdAt: Date.now(),
     chatMessages: [],
@@ -98022,9 +98299,9 @@ function joinChatRoom(rawCode){
   lastJoinGone = false;
   const code = String(rawCode || "").trim().toUpperCase();
   if(!code){ showToast("Type a chat code first."); return Promise.resolve(false); }
-  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection — check your connection and try again.")); return Promise.resolve(false); }
+  if(!socialDb()){ showToast(chatUnreachable()); return Promise.resolve(false); }
   const me = publicIdOf();
-  return fbDb.collection("vrooms").doc(code).get().then(snap => {
+  return socialDb().collection("vrooms").doc(code).get().then(snap => {
     /* A DEAD INVITE SAYS IT IS DEAD (build 240) - "if the invite is no
        longer good say the chat doesn't exist ... clearly". */
     if(!snap.exists){ lastJoinGone = true; showToast("That chat doesn't exist any more \u2014 everyone in it has left."); return false; }
@@ -98046,8 +98323,8 @@ function joinChatRoom(rawCode){
     patch["participants." + me] = chatSelfEntry();
     /* So everybody already in it is told, rather than having to notice
        a roster growing by one. */
-    patch.lastJoin = { name: store.firstName || "Someone", key: me, at: Date.now() };
-    return fbDb.collection("vrooms").doc(code).update(patch).then(() => {
+    patch.lastJoin = { name: socialMe().firstName || "Someone", key: me, at: Date.now() };
+    return socialDb().collection("vrooms").doc(code).update(patch).then(() => {
       enterChatRoom(code);
       showToast("Joined the chat.", "good");
       return true;
@@ -98172,13 +98449,13 @@ function leaveChatRoom(quiet){
   closeLeaveChatConfirm();
   saveChatRoom(null);
   if(chatPanelCleanup){ try{ chatPanelCleanup(); }catch(e){} chatPanelCleanup = null; }
-  if(code && me && fbDb){
+  if(code && me && socialDb()){
     try{
       const patch = {};
       patch["participants." + me] = firebase.firestore.FieldValue.delete();
       patch["typing." + me] = firebase.firestore.FieldValue.delete();
-      patch.lastLeave = { name: store.firstName || "Someone", key: me, at: Date.now() };
-      fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+      patch.lastLeave = { name: socialMe().firstName || "Someone", key: me, at: Date.now() };
+      socialDb().collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
   /* LEAVING TAKES THE ROW WITH IT. That is the whole difference between
@@ -98199,13 +98476,13 @@ function leaveChatByCode(code){
   if(code === chatRoomCode){ leaveChatRoom(); return; }
   const me = publicIdOf();
   forgetChat(code);
-  if(fbDb && me){
+  if(socialDb() && me){
     try{
       const patch = {};
       patch["participants." + me] = firebase.firestore.FieldValue.delete();
       patch["typing." + me] = firebase.firestore.FieldValue.delete();
-      patch.lastLeave = { name: store.firstName || "Someone", key: me, at: Date.now() };
-      fbDb.collection("vrooms").doc(code).update(patch).catch(() => {});
+      patch.lastLeave = { name: socialMe().firstName || "Someone", key: me, at: Date.now() };
+      socialDb().collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
   rebuildChatTab();
@@ -98256,7 +98533,7 @@ function openDirectChatWith(entry){
   chatDockTab = "groups";
   const existing = chatWithPerson(pub);
   if(existing){ openChatDock(); enterChatRoom(existing.code); return; }
-  if(!fbDb){ showToast(academyOnly("Chat", "Chat needs a live connection \u2014 check your connection and try again.")); return; }
+  if(!socialDb()){ showToast(chatUnreachable()); return; }
   openChatDock();
   const code = generateSyncCode();
   const me = publicIdOf();
@@ -98264,7 +98541,7 @@ function openDirectChatWith(entry){
   const them = { name: theirName, avatarChar: entry.avatarChar || "ninja",
                  level: entry.level || 0, badges: entry.badges || 0,
                  joinedAt: Date.now(), seen: 0 };
-  fbDb.collection("vrooms").doc(code).set({
+  socialDb().collection("vrooms").doc(code).set({
     kind: "chat", createdAt: Date.now(), chatMessages: [], typing: {},
     participants: { [me]: chatSelfEntry(), [pub]: them }
   }).then(() => {
@@ -98856,7 +99133,7 @@ window.addEventListener("pagehide", () => {
       chatAwaySent = true;
       const patch = chatPresencePatch(0);
       patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
-      fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
+      socialDb().collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
     }
     if(typeof vroomCode !== "undefined" && vroomCode && vroomMyKey && fbDb){
       const gone = firebase.firestore.FieldValue.delete();
@@ -98882,7 +99159,7 @@ document.addEventListener("visibilitychange", () => {
     chatAwaySent = !visible;
     const patch = chatPresencePatch(visible ? Date.now() : 0);
     if(!visible) patch["typing." + chatMyKey] = firebase.firestore.FieldValue.delete();
-    fbDb.collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
+    socialDb().collection("vrooms").doc(chatRoomCode).update(patch).catch(() => {});
   }catch(e){}
 });
 
@@ -99874,13 +100151,13 @@ function notificationItems(){
    and drawn from the rankings like everywhere else (chatMemberMap). */
 const chatInvitePeekMemo = {};
 function peekChatInvite(code, onDone){
-  if(!code || !fbDb) return;
+  if(!code || !socialDb()) return;
   const had = chatInvitePeekMemo[code];
   if(had && had.done){ if(onDone) onDone(had); return; }
   if(had && Date.now() - had.at < 15000) return;
   chatInvitePeekMemo[code] = { at: Date.now(), done: false };
   try{
-    fbDb.collection("vrooms").doc(code).get().then(snap => {
+    socialDb().collection("vrooms").doc(code).get().then(snap => {
       if(!snap || !snap.exists){
         chatInvitePeekMemo[code] = { at: Date.now(), done: true, gone: true, people: [], n: 0 };
       } else {
@@ -123810,6 +124087,8 @@ function showLobbyInviteBanner(from, code){
 }
 
 function checkLobbyInvites(){
+  /* (384) the Virtual Room is the academy's: no banner offering one in another class (the Inbox still lists it, and says so) */
+  if(window.NOVA_CLASS === "ifc") return;
   if(introPending || (document.getElementById("intro-pop") || document.getElementById("nova-intro"))) return;
   const live = incomingLobbyInvites().filter(x => !inviteDismissed(x.code));
   if(!live.length) return;
@@ -124409,7 +124688,7 @@ let boardFullAt = 0;
 let boardDeltaOk = true;
 
 function fetchBoardForInvites(force){
-  if(!fbDb){ onFirebaseReady(() => fetchBoardForInvites(true)); return; }
+  if(!socialDb()){ onSocialReady(() => fetchBoardForInvites(true)); return; }
   if(boardFetchInFlight) return;
   if(!force && Date.now() - boardFetchedAt < BOARD_REFETCH_MS) return;
   boardFetchInFlight = true;
@@ -124422,7 +124701,7 @@ function fetchBoardForInvites(force){
      only noticed by the next full fetch - removal was always the server's
      full answer's word (mergeBoardSnapshot). If the query is refused the
      next fetch is a full one again. */
-  const col = fbDb.collection("leaderboard");
+  const col = socialDb().collection("leaderboard");
   const delta = !!(boardFullAt && Date.now() - boardFullAt < BOARD_FULL_MS && boardDeltaOk
     && leaderboardRowsFromServer && Array.isArray(leaderboardRows) && leaderboardRows.length
     && typeof col.where === "function");
@@ -128435,8 +128714,8 @@ const chatPhotoDeleted = {};
 function loadChatImage(id){
   if(!id) return Promise.resolve(null);
   if(chatImageCache[id]) return Promise.resolve(chatImageCache[id]);
-  if(!fbDb) return Promise.resolve(null);
-  return fbDb.collection("vrooms").doc(id).get().then(snap => {
+  if(!socialDb()) return Promise.resolve(null);
+  return socialDb().collection("vrooms").doc(id).get().then(snap => {
     const d = snap && snap.exists ? (snap.data() || {}) : {};
     if(d.data) chatImageCache[id] = d.data;
     return d.data || null;
@@ -128737,11 +129016,11 @@ function buildVroomChatPanel(container, ctx){
       try{ const next = transform(lastMessages || []); if(next && CTX.local.rewrite) CTX.local.rewrite(next); }catch(e){}
       return;
     }
-    if(!fbDb || !CTX.code()) return;
+    if(!socialDb() || !CTX.code()) return;
     try{
-      const ref = fbDb.collection("vrooms").doc(CTX.code());
-      if(typeof fbDb.runTransaction === "function"){
-        fbDb.runTransaction(tx => tx.get(ref).then(snap => {
+      const db = socialDb(), ref = db.collection("vrooms").doc(CTX.code());
+      if(typeof db.runTransaction === "function"){
+        db.runTransaction(tx => tx.get(ref).then(snap => {
           if(!snap.exists) return;
           const next = transform((snap.data() || {}).chatMessages || []);
           if(next) tx.update(ref, { chatMessages: next });
@@ -128754,7 +129033,7 @@ function buildVroomChatPanel(container, ctx){
   }
 
   function toggleReaction(m, id){
-    if((!fbDb && !CTX.local) || !CTX.code() || !CTX.myKey()) return;
+    if((!socialDb() && !CTX.local) || !CTX.code() || !CTX.myKey()) return;
     playSound("chat.react");
     const me = CTX.myKey();
     rewriteChat(list => !list.some(x => x.id === m.id) ? null : list.map(x => {
@@ -129129,23 +129408,23 @@ function buildVroomChatPanel(container, ctx){
     if(!lastTypingWrite) return;
     lastTypingWrite = 0;
     if(CTX.local) return;
-    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    if(!socialDb() || !CTX.code() || !CTX.myKey()) return;
     try{
       const patch = {};
       patch["typing." + CTX.myKey()] = firebase.firestore.FieldValue.delete();
-      fbDb.collection("vrooms").doc(CTX.code()).update(patch).catch(() => {});
+      socialDb().collection("vrooms").doc(CTX.code()).update(patch).catch(() => {});
     }catch(e){}
   }
   function noteTyping(){
     if(CTX.local) return;
-    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    if(!socialDb() || !CTX.code() || !CTX.myKey()) return;
     const now = Date.now();
     if(now - lastTypingWrite < TYPING_WRITE_MS) return;
     lastTypingWrite = now;
     try{
       const patch = {};
       patch["typing." + CTX.myKey()] = now;
-      fbDb.collection("vrooms").doc(CTX.code()).update(patch).catch(() => {});
+      socialDb().collection("vrooms").doc(CTX.code()).update(patch).catch(() => {});
     }catch(e){}
   }
 
@@ -129162,7 +129441,7 @@ function buildVroomChatPanel(container, ctx){
       playSound("chat.send");
       return;
     }
-    if(!text || !CTX.code() || !fbDb || !CTX.myKey()) return;
+    if(!text || !CTX.code() || !socialDb() || !CTX.myKey()) return;
     input.value = "";
     playSound("chat.send");
     lastTypingWrite = 0;
@@ -129179,7 +129458,7 @@ function buildVroomChatPanel(container, ctx){
     const msg = {
       id: (CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
       key: CTX.myKey(),
-      name: store.firstName || "Anonymous",
+      name: socialMe().firstName || "Anonymous",
       text: text.slice(0, 200),
       ts: Date.now()
     };
@@ -129188,7 +129467,7 @@ function buildVroomChatPanel(container, ctx){
          nobody sees "is typing" under a message that has already landed. */
       const up = { chatMessages: firebase.firestore.FieldValue.arrayUnion(msg) };
       up["typing." + CTX.myKey()] = firebase.firestore.FieldValue.delete();
-      fbDb.collection("vrooms").doc(CTX.code()).update(up).catch(() => {});
+      socialDb().collection("vrooms").doc(CTX.code()).update(up).catch(() => {});
       if(CTX.onSent){ try{ CTX.onSent(msg, roomParticipants); }catch(e){} }
     } catch(e){
       /* No FieldValue (an SDK that never loaded) - the message is lost
@@ -129204,17 +129483,17 @@ function buildVroomChatPanel(container, ctx){
      same record as a line of text with a `type` and their own fields, so
      they share the id, the arrayUnion append, the ping and the trim. */
   function sendKind(extra, previewText){
-    if(CTX.local || !CTX.code() || !fbDb || !CTX.myKey()) return;
+    if(CTX.local || !CTX.code() || !socialDb() || !CTX.myKey()) return;
     playSound("chat.send");
     const msg = Object.assign({
       id: (CTX.myKey() + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)),
       key: CTX.myKey(),
-      name: store.firstName || "Anonymous",
+      name: socialMe().firstName || "Anonymous",
       text: String(previewText || "").slice(0, 200),
       ts: Date.now()
     }, extra);
     try{
-      fbDb.collection("vrooms").doc(CTX.code()).update({
+      socialDb().collection("vrooms").doc(CTX.code()).update({
         chatMessages: firebase.firestore.FieldValue.arrayUnion(msg)
       }).catch(() => {});
       if(CTX.onSent){ try{ CTX.onSent(msg, roomParticipants); }catch(e){} }
@@ -129290,7 +129569,7 @@ function buildVroomChatPanel(container, ctx){
       const dataUrl = shot.data;
       const id = "img-" + CTX.myKey().slice(0, 6) + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       chatImageCache[id] = dataUrl;
-      fbDb.collection("vrooms").doc(id).set({ kind: "chatimg", data: dataUrl, by: CTX.myKey(), at: Date.now() })
+      socialDb().collection("vrooms").doc(id).set({ kind: "chatimg", data: dataUrl, by: CTX.myKey(), at: Date.now() })
         .then(() => sendKind({ type: "img", img: id, w: shot.w, h: shot.h }, "\u{1F4F7} Photo"))
         .catch(() => showToast("Photo not sent \u2014 no connection."));
     });
@@ -129335,7 +129614,7 @@ function buildVroomChatPanel(container, ctx){
      your own takes it back. Written the same way a reaction is - the
      message rewritten in place in the array from the last snapshot. */
   function votePoll(m, idx){
-    if(!fbDb || !CTX.code() || !CTX.myKey()) return;
+    if(!socialDb() || !CTX.code() || !CTX.myKey()) return;
     const me = CTX.myKey();
     rewriteChat(list => !list.some(x => x.id === m.id) ? null : list.map(x => {
       if(x.id !== m.id) return x;
@@ -129429,7 +129708,7 @@ function buildVroomChatPanel(container, ctx){
     return "Someone";
   }
   function trimIfHost(messages){
-    if(CTX.local || !fbDb || !CTX.code()) return;
+    if(CTX.local || !socialDb() || !CTX.code()) return;
     if(!messages || !messages.length) return;
     if(!CTX.shouldTrim(messages)) return;
     rewriteChat(trimmedChat);
@@ -129447,7 +129726,7 @@ function buildVroomChatPanel(container, ctx){
         if(chatPhotoDeleted[m.img]) return;
         chatPhotoDeleted[m.img] = 1;
         delete chatImageCache[m.img];
-        fbDb.collection("vrooms").doc(m.img).delete().catch(() => {});
+        socialDb().collection("vrooms").doc(m.img).delete().catch(() => {});
       });
     }catch(e){}
   }
@@ -129524,9 +129803,9 @@ function buildVroomChatPanel(container, ctx){
       }) || (() => {});
       return;
     }
-    if(!fbDb) return;
+    if(!socialDb()) return;
     unsubscribe = trackVroomHandle(
-      onSnapshotResilient(fbDb.collection("vrooms").doc(CTX.code()), docSnap => {
+      onSnapshotResilient(socialDb().collection("vrooms").doc(CTX.code()), docSnap => {
         if(!docSnap.exists) return;
         const data = docSnap.data();
         roomParticipants = CTX.participantsOf(data);
@@ -129538,8 +129817,8 @@ function buildVroomChatPanel(container, ctx){
         trimIfHost(messages);
       }));
   }
-  if(fbDb || CTX.local) attachChat();
-  else onFirebaseReady(() => {
+  if(socialDb() || CTX.local) attachChat();
+  else onSocialReady(() => {
     if(dead || !CTX.code() || !document.body.contains(container)) return;
     attachChat();
   });
@@ -132030,7 +132309,8 @@ function maybeShowWeekRecap(tries){
   const again = () => { if(n < 60) weekRecapTimer = setTimeout(() => maybeShowWeekRecap(n + 1), 1000); };
   if(weekRecapBlocked()){ again(); return; }
   let r = null;
-  if(store.leaderboardOptIn === false) r = buildWeekRecapOptedOut();
+  /* (384) another class's recap is its own, whatever board rows its friends list has read */
+  if(store.leaderboardOptIn === false || window.NOVA_CLASS === "ifc") r = buildWeekRecapOptedOut();
   else {
     /* the server's rows, never a cached board - a cache can be a day stale
        and name the wrong three (build 289's rule) */
@@ -132675,7 +132955,7 @@ function lbPaintWatch(rows){
 }
 /* saved loops read back in the quiet after launch, for the characters and ranks on the board (never recorded here) */
 var lbPreloadT = 0, lbPreloadBusy = false;
-function lbArtPreloadSoon(){ clearTimeout(lbPreloadT); lbPreloadT = setTimeout(() => { try{ lbArtPreload(); }catch(e){} }, 1500); }
+function lbArtPreloadSoon(){ if(window.NOVA_CLASS === "ifc") return; /* (384) no Leaderboard there to ready */ clearTimeout(lbPreloadT); lbPreloadT = setTimeout(() => { try{ lbArtPreload(); }catch(e){} }, 1500); }
 async function lbArtPreload(){
   if(lbPreloadBusy) return;
   lbPreloadBusy = true;
@@ -134465,10 +134745,10 @@ function friendsViewSignature(){
 }
 
 function attachFriendsBoardListener(){
-  if(!fbDb) return;
+  if(!socialDb()) return;
   if(friendsLiveUnsub){ try{ friendsLiveUnsub(); }catch(e){} friendsLiveUnsub = null; }
   try{
-    friendsLiveUnsub = onSnapshotResilient(fbDb.collection("leaderboard"), snap => {
+    friendsLiveUnsub = onSnapshotResilient(socialDb().collection("leaderboard"), snap => {
       const next = [];
       snap.forEach(doc => {
         if(isLegacyBoardId(doc.id)) return;
@@ -134907,11 +135187,13 @@ function showFriends(){
   /* Nova's row (b324n2): first, always, since build 382 - or on his own when there is nobody else.
      No Remove: "the option to remove him won't be there". */
   const nova = novaIsFriend();
-  if(!store.leaderboardOptIn){
+  /* (384) the academy account's class sharing, in every class (Fire Code itself has no board or switch) */
+  if(!socialOptIn()){
     if(nova) list.appendChild(novaManageRow());
     const off = document.createElement("p");
     off.className = "friend-hint";
-    off.textContent = "Turn on class sharing in Settings to use friends \u2014 it is what puts you and your friends on the class board, which is where this reads from.";
+    off.textContent = (window.NOVA_CLASS === "ifc" ? "Turn on class sharing in the Police Academy class\u2019s Settings to use friends" : "Turn on class sharing in Settings to use friends")
+      + " \u2014 it is what puts you and your friends on the class board, which is where this reads from.";
     list.appendChild(off);
   } else if(!ids.length){
     if(nova) list.appendChild(novaManageRow());
@@ -146031,6 +146313,20 @@ if(window.NOVA_CLASS && window.NOVA_CLASS !== "academy" && !storageHadData){
     seed.leaderboardOptIn = false; seed.leaderboardOptInChanged = true;
     if(applyLoadedData(seed)){ storageHadData = true; persistLocally(); }
   }catch(e){}
+}
+/* FRIENDS IN EVERY CLASS (build 384 - see socialDb()): the other class's friends block, from its copy on this device, when
+   it is the newer. In Fire Code: the academy's (and its public id, if this copy has lost it). In the academy, for the one
+   account with another class: Fire Code's, then its account document live once the cloud is up. */
+if(socialSigBase === undefined) socialSigBase = socialSig(store);
+if(window.NOVA_CLASS === "ifc"){
+  try{
+    const ac = academyCopyNow();
+    if(ac.publicId && !store.publicId){ store.publicId = ac.publicId; persistLocally(); }
+    foldSocialFrom(JSON.parse(window.NOVA_ACADEMY_RAW || "null"), true);
+  }catch(e){}
+} else if(store.publicId && store.publicId === window.NOVA_CLASS_OWNER){
+  try{ foldSocialFrom(JSON.parse(localStorage.getItem("class26e.ifc.drill.v1") || "null"), false); }catch(e){}
+  onFirebaseReady(() => { try{ watchOtherClassSocial(); }catch(e){} });
 }
 
 /* ---------- THE ONE-TIME FRESH START ----------
