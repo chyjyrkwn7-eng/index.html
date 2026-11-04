@@ -6,6 +6,8 @@
      Explanation below them, so nothing delays them. -->
 <meta name="color-scheme" id="colorscheme" content="dark">
 <style>:root{--splash-bg:#0A0A0A;}html{background:var(--splash-bg);color-scheme:dark;}
+  /* (384) arriving from a class switch: the splash is up from the page's first frame - see #class-switch-loader */
+  html.class-arrive #splash-group, html.class-arrive #splashscreen::before{ animation:none !important; opacity:1 !important; }
   /* The on-glass floor. Only ever set on a page-zoomed touch device -
      see syncFieldFloor(). !important because it must beat every
      per-field size in this file, each of which is right in CSS pixels
@@ -74,6 +76,44 @@
      reload (switchClass()). This runs before every other script, so they all see it.
      (383: Fire Code syncs its own account at progress/<academy code>__ifc. 384: friends, the
      chat and presence are the academy account's in every class - see socialDb().) */
+  /* (384) a page arriving from a class switch says so before its first frame: the splash is shown at once (html.class-arrive)
+     and carries on from the loader the switch put up (switchClass) - sessionStorage, this app session only, read once */
+  (function(){ /* its own scope: nothing here may become a global the app's script declares again */
+  try{
+    var csw = JSON.parse(sessionStorage.getItem("class26e.classswitch") || "null");
+    if(csw && typeof csw.at === "number" && Date.now() - csw.at >= 0 && Date.now() - csw.at < 10000){
+      document.documentElement.classList.add("class-arrive"); window.NOVA_CLASS_ARRIVE = csw;
+      /* the loader's own picture on the page's root, from its first frame: the head is long (the stylesheet) and a browser that
+         will not keep the old page's last frame until the splash is parsed draws this page before it - that frame is the
+         loader too (its words and bar where they were, the bar running on), not the bare background. The splash covers it the
+         moment it is in the page, and its script takes it away (class-arrive-pre). */
+      var P = csw.pic, q = function(v){ return String(v).replace(/[^#0-9a-zA-Z.,%()\s"'-]/g, ""); };
+      if(P && P.w && P.s && P.t && P.c){
+        var el = Math.max(0, Math.min((csw.dur || 2500) - 400, Date.now() - csw.at)), c1 = q(P.c[0]), c2 = q(P.c[1]), c3 = q(P.c[2]);
+        /* (never "top": a global var of that name is the window's own, read-only) */
+        var pTop = Math.min(P.s[1], P.t[1]), pLeft = Math.min(P.s[0], P.t[0]), pWid = Math.max(P.s[2], P.t[2]);
+        var dur = csw.dur || 2500, cap = Math.max(.1, (dur - 800) / dur);
+        var css = "html.class-arrive-pre{background:radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, " + c2 + " 17%, transparent), transparent 72%)," +
+          "radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, " + c3 + " 13%, transparent), transparent 70%)," +
+          "radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, " + c1 + " 10%, transparent), transparent 70%), #0A0A0A !important;}" +
+          "html.class-arrive-pre::before{content:'NOVA';position:fixed;z-index:1;pointer-events:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;white-space:nowrap;" +
+          "left:" + P.w[0] + "px;top:" + P.w[1] + "px;width:" + P.w[2] + "px;height:" + P.w[3] + "px;" +
+          "font-weight:" + q(P.wf[0]) + ";font-size:" + q(P.wf[1]) + ";font-family:" + q(P.wf[2]) + ";letter-spacing:" + q(P.wf[3]) + ";line-height:" + q(P.wf[4]) + ";" +
+          "background:linear-gradient(90deg, " + c1 + ", " + c2 + ", " + c3 + ");-webkit-background-clip:text;background-clip:text;color:transparent;}" +
+          "html.class-arrive-pre::after{content:" + JSON.stringify(String(csw.line || "")) + ";position:fixed;z-index:1;pointer-events:none;box-sizing:border-box;white-space:nowrap;text-align:center;" +
+          "left:" + pLeft + "px;top:" + pTop + "px;width:" + pWid + "px;height:" + (P.t[1] + P.t[3] - pTop) + "px;color:" + c1 + ";" +
+          "font-weight:" + q(P.sf[0]) + ";font-size:" + q(P.sf[1]) + ";font-family:" + q(P.sf[2]) + ";letter-spacing:" + q(P.sf[3]) + ";line-height:" + P.s[3] + "px;" +
+          "background:linear-gradient(90deg, " + c1 + ", " + c2 + ", " + c3 + ") no-repeat, linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12)) no-repeat;" +
+          "background-position:" + (P.t[0] - pLeft) + "px 100%, " + (P.t[0] - pLeft) + "px 100%;background-size:0 " + P.t[3] + "px, " + P.t[2] + "px " + P.t[3] + "px;" +
+          "animation:csl-pre " + dur + "ms linear -" + Math.min(el, dur - 800) + "ms " + cap.toFixed(4) + " forwards;}" +
+          "@keyframes csl-pre{from{background-size:0 " + P.t[3] + "px, " + P.t[2] + "px " + P.t[3] + "px;}to{background-size:" + P.t[2] + "px " + P.t[3] + "px, " + P.t[2] + "px " + P.t[3] + "px;}}";
+        var st = document.createElement("style"); st.id = "class-arrive-pre"; st.textContent = css;
+        (document.head || document.documentElement).appendChild(st);
+        document.documentElement.classList.add("class-arrive-pre");
+      }
+    }
+  }catch(e){}
+  })();
   (function(){
     /* SIGNED OUT (build 383). Settings > Account > Sign out leaves "class26e.signout" and reloads; here, before any other script
        reads storage, this device forgets the account in BOTH classes - their saved copies, codes and backups (class26e.* and the
@@ -111,9 +151,12 @@
     /* build 383: Fire Code syncs under the academy account's code (its own document beside it, never the academy's): read here,
        before the redirect below, the only moment this page can see the academy's key */
     try{ window.NOVA_ACADEMY_CODE = localStorage.getItem("class26e.synccode") || null; }catch(e){ window.NOVA_ACADEMY_CODE = null; }
-    /* its question bank, a file of its own (1.4 MB) that only this class loads: written in
-       here so it runs, in order, before the app's script reads it (window.IFC_BANK) */
-    document.write('<script src="ifc/bank.js"><\/script>');
+    /* its question bank, a file of its own (1.4 MB) that only this class loads: written in so it runs, in order, before the app's
+       script reads it (window.IFC_BANK). (384) Written just after the splash's markup now, not here: a script written here held
+       the parser in the head until the bank had downloaded and run, so the splash was not in the page yet and a browser that will
+       not hold the last frame that long drew a frame of bare background - the blank between a class switch's loader and the
+       splash. After the splash the page shows its splash while the bank loads, and the app's script still runs after it. */
+    window.NOVA_IFC_BANK_WRITE = true;
     /* (384) FRIENDS IN EVERY CLASS: the chat's own marks are the academy account's, kept once for both classes - what is read
        (chatseen), muted, left, open and cached, its height, the friend and invite banners already shown, the notifications dealt
        with and each new friend's moment - so a chat read or a request answered in one class is the same in the other */
@@ -1484,17 +1527,17 @@
   /* The Nova wordmark, in the same warm gradient as the app icon and
      welcome-screen sphere, so the very first thing anyone sees already
      carries the brand's own color identity. */
-  #splash-wordmark{
+  #splash-wordmark, #csl-wordmark{
     font-family:var(--serif); font-size:2.1rem; font-weight:800;
     letter-spacing:.12em; margin:0 0 .3rem; text-align:center;
     background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
-  #splash-status{
+  #splash-status, #csl-status{
     font-family:var(--mono); font-size:.72rem; color:var(--theme-c1); text-align:center;
     min-height:1.2em; letter-spacing:.02em;
   }
-  #splash-track{
+  #splash-track, #csl-track{
     width:55vw; max-width:14rem; height:4px; border-radius:999px;
     background:rgba(255,255,255,.12); overflow:hidden;
   }
@@ -1507,7 +1550,7 @@
      compositor runs whatever the main thread is doing. Scaled rather
      than slid, so the whole gold-to-magenta ramp shows at every point,
      as it did when the width grew; sliding showed only its magenta end. */
-  #splash-fill, #genprofile-fill{
+  #splash-fill, #genprofile-fill, #csl-fill{
     height:100%; width:100%; border-radius:999px;
     background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
     transform:scaleX(0); transform-origin:0 50%; will-change:transform;
@@ -1553,6 +1596,27 @@
     animation:splash-glow-in .7s ease .15s forwards;
   }
   @keyframes splash-glow-in{ to{ opacity:1; } }
+  /* ---- A CLASS SWITCH IS NEVER A BLANK SCREEN (build 384) ----
+     Madison: "When switching between classes, the screen completely blank and then loading bar comes up. Remove the completely
+     blank part." A switch is a reload (switchClass). It used to fade the whole page out to the bare background (.35s), reload,
+     and the new page's splash only faded its NOVA and bar in after .45s - so between the tap and the bar there was a screen of
+     nothing for most of a second. Now the tap puts the splash's own picture over the screen that is up (fading in over it, so
+     every frame shows that screen or the loader), its bar already moving; the page reloads under it, and the new page's splash
+     comes up already showing (html.class-arrive, the first style block) with its bar where this one left it. A browser keeps
+     the last frame of the old page until the new one has drawn something, so that last frame is the loader. */
+  #class-switch-loader{
+    position:fixed; inset:0; width:100vw; height:100vh; height:100lvh; overflow:hidden; z-index:100000;
+    background:var(--splash-bg, #0A0A0A); opacity:0; transition:opacity .16s ease; pointer-events:auto; touch-action:none;
+  }
+  #class-switch-loader.is-on{ opacity:1; }
+  #class-switch-loader::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 85% 55% at 50% 44%, color-mix(in srgb, var(--theme-c2) 17%, transparent), transparent 72%),
+      radial-gradient(ellipse 70% 45% at 22% 88%, color-mix(in srgb, var(--theme-c3) 13%, transparent), transparent 70%),
+      radial-gradient(ellipse 70% 45% at 80% 8%, color-mix(in srgb, var(--theme-c1) 10%, transparent), transparent 70%);
+  }
+  #csl-group{ display:flex; flex-direction:column; align-items:center; gap:.7rem; position:fixed; left:50%; top:50%; transform:translate(-50%, -50%); }
   /* Matches the startup splash screen's own structure exactly now \u2014
      wordmark, one status line, one thin progress bar \u2014 rather than a
      separate bold caption, a rotating multi-line message feed, and a
@@ -3304,7 +3368,7 @@
      flares go and fills them in one by one over ~0.7s, which read as "not loading properly". Until its art is in, the frame is a soft
      disc in the character's own glow (--char-glow, set on .rank-avatar) and the flare's a soft disc in its rank's colour: free to
      draw, and the real art replaces it. */
-  .rank-avatar-wrap[data-lazy-av]:not([data-flip-pre]) .rank-avatar{
+  .rank-avatar-wrap[data-lazy-av]:not([data-flip-pre]):not([data-still]) .rank-avatar{
     background:radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--char-glow, #8a8f9a) 60%, #23262e) 0%, #16181e 80%);
     border-radius:50%;
   }
@@ -34841,7 +34905,6 @@ html.is-browser{ --fade-paper: transparent; }
     .class-stack-item{ transform:translateY(10px); }
     .class-bubble-wrap.is-open .class-stack-item{ transform:none; }
   }
-  html.class-switching body{ opacity:0; transition:opacity .35s ease; }
   .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
   .class-stack{ position:absolute; left:0; top:calc(var(--cb) + var(--cg)); z-index:2; display:flex; flex-direction:column; gap:var(--cg); }
   .class-stack-item{ display:flex; align-items:center; gap:.65rem; height:var(--cb); padding:0; margin:0; border:0; background:none; color:var(--ink); font:inherit; cursor:pointer;
@@ -34859,7 +34922,6 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid rgba(255,255,255,.15); box-shadow:0 4px 14px rgba(0,0,0,.32), inset 0 3px 5px -2px rgba(255,255,255,.18), inset 0 -3px 5px -2px rgba(0,0,0,.26); }
   @supports (text-box:trim-both cap alphabetic){ .csi-label{ display:block; height:36px; padding:calc((34px - 1cap)/2 - .65px) .95rem calc((34px - 1cap)/2 + .65px); text-align:center; text-box:trim-both cap alphabetic; } }
   .class-stack-item:active .csi-bubble{ transform:scale(.94); }
-  html.class-switching body{ opacity:0; transition:opacity .35s ease; }
   .class-enroll > .back-link, .class-catalog > .back-link{ align-self:flex-start; }
   .class-stack{ position:absolute; left:0; top:calc(var(--cb) + var(--cg)); z-index:2; display:flex; flex-direction:column; gap:var(--cg); }
   .class-stack-item{ display:flex; align-items:center; gap:.6rem; padding:0; margin:0; border:0; background:none; color:var(--ink); font:inherit; cursor:pointer;
@@ -36168,6 +36230,9 @@ html.is-browser{ --fade-paper: transparent; }
   @media (max-width:29rem){ .screen-rankings{ --lb-pad:.75rem; --lb-gap:.5rem; --lb-av:2.25rem; } }
   @media (max-width:24rem){ .screen-rankings{ --lb-hair-l:calc(var(--lb-pad) + var(--lb-place-w) + var(--lb-gap)); } }
   @media (min-width:40rem){ .screen-rankings{ --lb-pad:1.1rem; --lb-gap:.85rem; --lb-av:2.75rem; --lb-group-r:20px; } }
+  /* (384) the line between rows is Settings' own: 383's clean look made --surface-border transparent beyond Home, and the board's
+     line, mixed from it, went with it - every hairline in the list (and last week's top 3) was there and drawn in nothing */
+  html[data-theme="dark"][data-layout="modern"] body .screen-rankings{ --lb-hair:rgba(255,255,255,.1); }
   /* the switch: an iOS segmented control across the page - a quiet track, the picked segment a raised lighter pill
      (383: Profile's Profile / Stats / Settings switch is this one too - "ensure all pieces line up with their look") */
   html[data-theme][data-layout] body :is(.screen-rankings, .screen-profile) > .navsegment.profiletabs{
@@ -36319,12 +36384,56 @@ html.is-browser{ --fade-paper: transparent; }
   /* the placeholders breathe their bars only, so the grouped card under them stays still */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row-skel{ animation:none !important; }
   html[data-layout] body .screen-rankings .rank-rows > .rank-row-skel > *{ animation:rank-skel 1.5s ease-in-out infinite; animation-delay:calc(var(--skel-i, 0) * 90ms); }
-  /* last week's podium (This Week, Mondays): the list's card surface, no frost */
+  /* LAST WEEK'S TOP 3 (This Week), build 384: a grouped list in the board's look - a grey sentence-case caption over one card on
+     the list's surface (no frost, no gold rim), a row a place with the board's medal and disc, hairlines inset at both ends */
   html[data-theme][data-layout] body .screen-rankings .lw-podium{
-    border-radius:var(--lb-group-r); border:1px solid var(--surface-border); box-shadow:none;
-    background:var(--lb-cell); backdrop-filter:none; -webkit-backdrop-filter:none;
+    margin:0 0 1.25rem; padding:0; border:0; border-radius:0; box-shadow:none; background:none; backdrop-filter:none; -webkit-backdrop-filter:none;
   }
-  html[data-layout] body .screen-rankings .lw-podium-head{ text-transform:none; letter-spacing:0; font-size:.9rem; font-weight:600; color:var(--soft); }
+  html[data-layout] body .screen-rankings .lw-podium-head{
+    margin:0 0 .45rem; padding:0 var(--lb-pad); text-align:left; text-transform:none; letter-spacing:0; font-size:.85rem; font-weight:500; color:var(--soft);
+  }
+  html[data-theme][data-layout] body .screen-rankings .lw-podium-card{
+    border-radius:var(--lb-group-r); border:1px solid var(--surface-border); background:var(--lb-cell); box-shadow:none;
+    backdrop-filter:none; -webkit-backdrop-filter:none; overflow:hidden;
+  }
+  html[data-layout] body .screen-rankings .lw-row{
+    position:relative; display:flex; flex-direction:row; align-items:center; gap:var(--lb-gap); min-height:var(--lb-row-h);
+    padding:.45rem var(--lb-pad); box-sizing:border-box; border-radius:0; -webkit-tap-highlight-color:transparent;
+  }
+  html[data-layout] body .screen-rankings .lw-row:not(:last-child)::after{
+    content:""; position:absolute; left:var(--lb-hair-l); right:var(--lb-pad); bottom:0; height:1px; background:var(--lb-hair); pointer-events:none; z-index:1;
+  }
+  html[data-layout] body .screen-rankings .lw-row.is-tappable:active{ transform:none; background:var(--surface-lift); }
+  html[data-layout] body .screen-rankings .lw-row .rank-place{
+    width:var(--lb-place-w); flex:0 0 var(--lb-place-w); text-align:center; font-family:var(--sans); font-variant-numeric:tabular-nums; font-size:.95rem; font-weight:700;
+  }
+  html[data-layout] body .screen-rankings .lw-row .rank-place.lb-rank-medal{
+    width:var(--lb-medal); height:var(--lb-medal); flex:0 0 var(--lb-medal);
+    margin-left:calc((var(--lb-place-w) - var(--lb-medal)) / 2); margin-right:calc((var(--lb-place-w) - var(--lb-medal)) / 2);
+    font-size:.85rem; font-weight:800; letter-spacing:0;
+  }
+  html[data-layout] body .screen-rankings .lw-row .lb-rank-1{ box-shadow:inset 0 0 0 1px rgba(122,85,8,.55), inset 0 0 0 2px rgba(255,246,214,.5), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body .screen-rankings .lw-row .lb-rank-2{ box-shadow:inset 0 0 0 1px rgba(80,84,90,.5), inset 0 0 0 2px rgba(255,255,255,.45), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body .screen-rankings .lw-row .lb-rank-3{ box-shadow:inset 0 0 0 1px rgba(92,48,18,.55), inset 0 0 0 2px rgba(255,214,176,.4), 0 1px 2px var(--surface-inset); }
+  html[data-layout] body .screen-rankings .lw-row .rank-avatar-wrap{ width:var(--lb-av); height:var(--lb-av); flex:0 0 var(--lb-av); }
+  html[data-layout] body .screen-rankings .lw-row .rank-avatar{
+    border-radius:50%; overflow:hidden; clip-path:circle(50% at 50% 50%);
+    background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #8FA4BE) 30%, #151A22) 0%, #0D1117 78%);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--char-glow, #8FA4BE) 45%, rgba(255,255,255,.18)), inset 0 1px 0 rgba(255,255,255,.14);
+  }
+  html[data-layout] body .screen-rankings .lw-row .rank-avatar svg{ transform:scale(.94); transform-origin:50% 56%; }
+  html[data-layout] body .screen-rankings .lw-row .rank-avatar > .char-flip-play{
+    border-radius:50%; -webkit-mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%);
+  }
+  html[data-layout] body .screen-rankings .lw-row .lw-podium-name{
+    flex:1 1 auto; min-width:0; max-width:none; font-size:1rem; font-weight:600; letter-spacing:-.005em; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  html[data-layout] body .screen-rankings .lw-row.lw-place-1 .lw-podium-name{ font-weight:700; }
+  html[data-layout] body .screen-rankings .lw-row.is-me .lw-podium-name{ color:var(--accent); }
+  html[data-layout] body .screen-rankings .lw-row .lw-podium-pts{
+    flex:0 0 auto; font-family:var(--sans); font-size:.9rem; font-weight:600; font-variant-numeric:tabular-nums; color:var(--soft);
+  }
 
   /* ---- THE CALENDAR, A SMIDGE BETTER ---- */
   .screen-calendar-tab{ --cal-cell-bg:linear-gradient(var(--surface-lift), var(--surface-lift)), linear-gradient(var(--surface-1), var(--surface-1)), var(--surface-1); }
@@ -36691,6 +36800,8 @@ html.is-browser{ --fade-paper: transparent; }
     content:""; position:absolute; top:0; left:var(--cz-inset); right:.85rem; height:1px;   /* (384) to the chevron's edge */
     background:color-mix(in srgb, var(--surface-border) 55%, transparent); pointer-events:none;
   }
+  /* (384) Settings' own line: mixed from --surface-border it was drawn in nothing beyond Home (383 made that border transparent) */
+  html[data-theme="dark"][data-layout="modern"] body #stage .screen-customize .cz-row + .cz-row::before{ background:rgba(255,255,255,.1); }
   html[data-layout] body #stage .screen-customize .cz-row:active{ background:var(--surface-lift); }
   /* the words, the way a Settings row reads: what it is, then what you have on in grey */
   html[data-layout] body #stage .screen-customize .cz-label{
@@ -37011,6 +37122,42 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.rankhero-name, .rankmap-name, .profile-name-display){
     font-family:var(--sans) !important; font-weight:700 !important; letter-spacing:-.01em;
   }
+
+  /* ---- THE NEW DOT, ONE LOOK (build 384) ----
+     Madison: "The yellow dot you get next to your profile when something is unlocked and next to stuff, ensure that thing looks
+     better too, it looked bad before." It was a radial gradient with a highlight and a 9px yellow glow, 10-12px, each place
+     placing it its own way (outside the tab's icon, beside Customize's chevron, inline after the case's NEW). Now one iOS badge
+     dot everywhere it appears: a solid circle (9px), no gradient, no glow, no blur, a 2px ring in the colour of the surface it
+     sits on so it reads apart from the icon, and its centre on the icon's corner at 45 degrees - on the circle for a round icon
+     (the Profile tab's character, a character or theme in Customize, a badge, the class button), on the corner's curve for a
+     rounded tile (--nd-r, the tile's radius: a row's icon in Profile, a banner or hundo effect), on the corner itself for a word.
+     YELLOW, the app's own (#FFD43B, a hair from iOS's dark system yellow #FFD60A): the chat's unread count is red, so red here
+     would read as "messages"; yellow was Madison's pick in 299 ("what about it being yellow?"); and on the dark glass it is the
+     brightest of the system colours, where a theme's accent can be a grey (Silver) that disappears. */
+  :root{ --new-dot:#FFD43B; --new-dot-glow:transparent; --nd-d:9px; --nd-ring:2px; --nd-ring-c:#26282F; }
+  html body .new-dot,
+  html body #bottomtab-profile.has-new .bottomtab-icon::after,
+  html body .class-bubble-wrap.has-new .class-bubble::after{
+    content:""; position:absolute !important; display:block !important; box-sizing:border-box !important;
+    width:var(--nd-d) !important; height:var(--nd-d) !important; aspect-ratio:1 / 1; flex:none; padding:0 !important; border:0 !important; border-radius:50% !important;
+    background:var(--new-dot) !important; background-image:none !important; box-shadow:0 0 0 var(--nd-ring) var(--nd-ring-c) !important;
+    filter:none !important; opacity:1 !important; animation:none !important; transform:none !important;
+    top:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important; right:calc(var(--nd-r, 0px) * .29289 - var(--nd-d) / 2) !important;
+    left:auto !important; bottom:auto !important; margin:0 !important; pointer-events:none; z-index:6;
+  }
+  /* the hosts: what the dot marks, and that thing's corner */
+  #bottomtab-profile .bottomtab-icon, .class-bubble, .avatarchar-option, .swatch, .badge-tile-art{ --nd-r:50%; }
+  .banner-opt, .hfx-opt{ --nd-r:12px; }
+  .new-dot-anchor{ --nd-r:0px; }
+  .settings-row-icon{ position:relative; --nd-r:8px; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon.settings-row-icon{ --nd-r:9px; overflow:visible; }
+  /* the ring is what is behind it: the bar's glass, the lit tab's platter, a card, the page */
+  #bottomtab-profile .bottomtab-icon{ --nd-ring-c:#272A32; }
+  #bottomtab-profile.active .bottomtab-icon{ --nd-ring-c:#4F5157; }
+  .screen-customize, .badges-tab{ --nd-ring-c:#18171C; }
+  .class-bubble-wrap{ --nd-ring-c:#1A1B21; }
+  /* (the class button's pulsing ring for a class not yet seen, 329, stays: it is the button's, not the dot's) */
+  .pf-case-new-word{ text-transform:none !important; letter-spacing:0 !important; font-size:.8rem !important; font-weight:600 !important; color:var(--soft) !important; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -37243,6 +37390,15 @@ html.is-browser{ --fade-paper: transparent; }
        on it - so it gets the brisk returning-user pace rather than the
        long first-run one, whichever kind of user triggered it. */
     var duration = isUpdating ? 2600 : (isReturningUser ? 2500 : 8000);
+    /* (384) A CLASS SWITCH CARRIES ON: the loader the switch put up had its bar moving (switchClass); this one starts where that
+       one is now, over the same whole length, says the same line first, and is up from the first frame (html.class-arrive) */
+    var arrive = window.NOVA_CLASS_ARRIVE || null, arriveAt = 0;
+    try{ sessionStorage.removeItem("class26e.classswitch"); }catch(e){}
+    try{ document.documentElement.classList.remove("class-arrive-pre"); var pre = document.getElementById("class-arrive-pre"); if(pre) pre.remove(); }catch(e){}
+    if(arrive && !isUpdating){
+      duration = Math.max(800, Number(arrive.dur) || 2500);
+      arriveAt = Math.max(0, Math.min(duration - 800, Date.now() - arrive.at));
+    }
     /* A FIRST VISIT OPENS ON GET STARTED, NOT THE LOADING SCREEN (build 330): "The start up sequence, it
        does the loading thing first before the start up, don't do that." Nothing on this device - no code,
        no progress, Get Started never seen - so there is nothing to load: the splash steps aside at once and
@@ -37327,6 +37483,7 @@ html.is-browser{ --fade-paper: transparent; }
     }
     var messageCount = isUpdating ? 4 : (isReturningUser ? 3 : 6);
     var messages = pool.slice(0, Math.min(messageCount, pool.length)).concat([readyMsg]);
+    if(arrive && arriveAt && arrive.line) messages[0] = String(arrive.line);
     var msgInterval = duration / messages.length;
     var msgIndex = 0;
     statusEl.textContent = messages[0];
@@ -37338,7 +37495,10 @@ html.is-browser{ --fade-paper: transparent; }
     /* The bar runs itself (see #splash-fill); this only says when. */
     /* important: a loading bar is information, not decoration, and the
        reduce-motion rule would otherwise leave it empty. */
-    fill.style.setProperty("animation", "loadbar-fill " + duration + "ms linear forwards", "important");
+    fill.style.setProperty("animation", "loadbar-fill " + duration + "ms linear " + (arriveAt ? -arriveAt : 0) + "ms forwards", "important");
+    /* the loader has already run arriveAt of the bar: the splash lasts what is left of it */
+    if(arriveAt){ duration -= arriveAt; msgInterval = duration / messages.length; clearInterval(msgTimer);
+      msgTimer = setInterval(function(){ msgIndex++; if(msgIndex < messages.length) statusEl.textContent = messages[msgIndex]; }, msgInterval); }
     var start = performance.now();
     /* NEVER ON ANIMATION FRAMES ALONE (327t). iOS can hold frames back
        (Low Power Mode, an in-app browser sheet, a busy compositor), and the
@@ -37393,6 +37553,10 @@ html.is-browser{ --fade-paper: transparent; }
     }
     requestAnimationFrame(tick);
   })();
+</script>
+<script>
+  /* Fire Code's question bank (see NOVA_IFC_BANK_WRITE in the first script): after the splash is in the page and its bar is running, before the app */
+  if(window.NOVA_IFC_BANK_WRITE) document.write('<script src="ifc/bank.js"><\/script>');
 </script>
 
 <div class="wrap">
@@ -53869,11 +54033,55 @@ function mountClassBubble(){
 }
 function switchClass(key, row){
   if(!classSwitchAllowed() || !NOVA_CLASSES.some(c => c.key === key)) return;
+  if(document.getElementById("class-switch-loader")) return;
   try{ persistLocally(); }catch(e){}
   try{ if(key === "academy") localStorage.removeItem("class26e.activeclass"); else localStorage.setItem("class26e.activeclass", key); }catch(e){ return; }
   if(row) row.classList.add("is-going");
   document.documentElement.classList.add("class-switching");
-  setTimeout(() => location.reload(), 380);
+  /* (384) NO BLANK SCREEN ON THE WAY (see #class-switch-loader): the splash's picture fades in OVER the screen that is up, its bar
+     already moving, and the page reloads under it once it covers the screen - the new page's splash carries on from it */
+  const DUR = 2500;
+  const info = NOVA_CLASS_INFO[key] || {}, cls = NOVA_CLASSES.find(c => c.key === key) || {};
+  const line = "> opening " + String(info.title || cls.name || "your class") + "...";
+  let reloadIn = 380;
+  try{
+    const L = document.createElement("div");
+    L.id = "class-switch-loader"; L.setAttribute("role", "status"); L.setAttribute("aria-label", "Opening " + String(info.title || cls.name || "your class"));
+    /* the class it is going to wears its own theme's colours here, as its splash will */
+    try{
+      const raw = key === "academy" ? localStorage["class26e.drill.v1"] : localStorage["class26e." + key + ".drill.v1"];
+      const acc = raw && JSON.parse(raw) && JSON.parse(raw).theme && JSON.parse(raw).theme.accent;
+      if(acc && /^[a-z0-9-]+$/.test(acc)) L.dataset.accent = acc;
+    }catch(e){}
+    L.innerHTML = '<div id="csl-group"><p id="csl-wordmark">NOVA</p><p id="csl-status"></p><div id="csl-track"><div id="csl-fill"></div></div></div>';
+    L.querySelector("#csl-status").textContent = line;
+    /* centred on the visible screen in pixels, as the splash's group is */
+    const g = L.querySelector("#csl-group"), vv = window.visualViewport;
+    const w = vv && vv.width > 0 ? vv.width : innerWidth, h = vv && vv.height > 0 ? vv.height : innerHeight;
+    g.style.left = Math.round((vv ? vv.offsetLeft : 0) + w / 2) + "px"; g.style.top = Math.round((vv ? vv.offsetTop : 0) + h / 2) + "px";
+    /* it runs as the splash's would, to where the splash carries on from at most (arriveAt), and holds there if the page is slow */
+    L.querySelector("#csl-fill").style.setProperty("animation", "loadbar-fill " + DUR + "ms linear 0ms " + ((DUR - 800) / DUR).toFixed(4) + " forwards", "important");
+    document.body.appendChild(L);
+    const at = Date.now();
+    /* where its words and bar are and how they look, so the new page can draw the same picture before its own splash is in it */
+    let pic = null;
+    try{
+      const box = id => { const b = L.querySelector(id).getBoundingClientRect(); return [b.left, b.top, b.width, b.height].map(v => Math.round(v * 100) / 100); };
+      const csw = getComputedStyle(L.querySelector("#csl-wordmark")), css = getComputedStyle(L.querySelector("#csl-status")), csL = getComputedStyle(L);
+      pic = { w: box("#csl-wordmark"), s: box("#csl-status"), t: box("#csl-track"),
+        wf: [csw.fontWeight, csw.fontSize, csw.fontFamily, csw.letterSpacing, csw.lineHeight], sf: [css.fontWeight, css.fontSize, css.fontFamily, css.letterSpacing, css.lineHeight],
+        c: ["--theme-c1", "--theme-c2", "--theme-c3"].map(v => csL.getPropertyValue(v).trim()) };
+      if(!pic.c.every(c => /^#[0-9a-f]{3,8}$|^rgb/i.test(c))) pic = null;
+    }catch(e){ pic = null; }
+    try{ sessionStorage.setItem("class26e.classswitch", JSON.stringify({ at, dur: DUR, line, to: key, pic })); }catch(e){}
+    void L.offsetWidth;
+    L.classList.add("is-on");
+    /* covered once its fade is done and a frame has shown it whole */
+    reloadIn = 230;
+    /* a reload that never happens (blocked) gives the screen back */
+    setTimeout(() => { if(L.isConnected){ L.remove(); document.documentElement.classList.remove("class-switching"); } }, 8000);
+  }catch(e){}
+  setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => location.reload())), reloadIn);
 }
 /* ---- NOVA GREETS A NEW CLASS (build 328) ----
    "When signing up the new class, ensure you get greeted by nova for signing up, he will talk
@@ -77646,7 +77854,25 @@ function appTopEdgeColor(){
 /* Any CSS colour expression (var(), color-mix()) as a solid #rrggbb, or
    null. Was the body of appTopEdgeColor; the Safari edge strips need the
    bottom edge's colour the same way (build 327z3). */
+/* (384) A SCREEN CHANGE DOES NOT WAIT ON THIS. Every switch to or from Home (syncSky -> syncStatusBarColor) put a probe in the page
+   and read its computed colour - a style pass over the whole new screen, forced inside the tap's own task, before its first frame
+   (traced opening the Leaderboard at 4x CPU: up to ~130ms of the tap). The answer depends only on the theme, the accent, the
+   layout and the page's state classes, so each one is worked out once and kept. */
+var CSS_COLOR_HEX_CACHE = new Map();
 function cssColorHex(expr){
+  let key = null;
+  try{
+    const de = document.documentElement, b = document.body;
+    key = expr + "|" + (de.dataset.theme || "") + "|" + (de.dataset.layout || "") + "|" + (de.dataset.accent || "") + "|" + de.className + "|" +
+      (b ? ["sky-home", "sky-calm", "has-active-question"].map(c => b.classList.contains(c) ? 1 : 0).join("") : "-") + "|" +
+      (window.matchMedia && matchMedia("(min-width:40rem)").matches ? 1 : 0);
+    if(CSS_COLOR_HEX_CACHE.has(key)) return CSS_COLOR_HEX_CACHE.get(key);
+  }catch(e){ key = null; }
+  const out = cssColorHexNow(expr);
+  if(key && out){ if(CSS_COLOR_HEX_CACHE.size > 60) CSS_COLOR_HEX_CACHE.clear(); CSS_COLOR_HEX_CACHE.set(key, out); }
+  return out;
+}
+function cssColorHexNow(expr){
   const probe = document.createElement("div");
   probe.style.cssText = "position:fixed; top:0; left:0; width:1px; height:1px; opacity:0; pointer-events:none;";
   /* Composed from the live custom properties, not a hardcoded hex, so
@@ -77790,9 +78016,11 @@ function syncStatusBarColor(){
      times while the splash is still up - so without this the head
      script's value was simply overwritten seconds before it mattered
      (measured: theme-color read #271E23 throughout the splash). */
-  const splashBg = getComputedStyle(document.documentElement)
-                     .getPropertyValue("--splash-bg").trim() || "#0A0A0A";
-  tcMeta.content = splashOwnsFrame() ? splashBg : color;
+  /* (384) the splash's colour is read only while the splash has the frame: reading a computed style off the root is a style pass
+     over the whole page, and this runs on every switch to or from Home, inside the tap */
+  const owns = splashOwnsFrame();
+  const splashBg = owns ? (getComputedStyle(document.documentElement).getPropertyValue("--splash-bg").trim() || "#0A0A0A") : "";
+  if(tcMeta.content !== (owns ? splashBg : color)) tcMeta.content = owns ? splashBg : color;
   refreshEdgeTints(color);
   /* The cache always holds the APP's colour, never the splash's - it is
      replayed before first paint on the next launch to get a standalone
@@ -88573,6 +88801,21 @@ function trimForBackground(){
        rings for seconds while its art went back in a row at a time - stripped here on the way out (build 357, for memory: iOS was ending
        the page in the background). The leak that made the page that big is fixed (375) and his reports since show no page ended in the
        background; the decoded sheets still go (above). */
+    /* build 384: AND HOME KEEPS ITS FLARES' LOOPS. Madison: "When leaving the app and coming back, the lag is a lot better but it
+       still kinda does a weird thing". Measured coming back to Home (hidden -> frozen -> shown, 4x CPU): every lit bubble had lost
+       its moving sheet here on the way out, so the first frames back showed the still drawings, and then each sheet came back
+       (restoreAfterBackground) with its half-second crossfade, one bubble after another - five fades and five loops starting over
+       in the 0.1-0.6s after the page was back: the flares visibly blinking and restarting. They stay on now, paused with every other
+       loop (loopsPauseAll) and let go from the same pose, so coming back looks like nothing happened. The memory this saved was
+       the reason (357: iOS ending a big page in the background); the board's art has stayed on since 377 with no page ended in the
+       background since, and iOS drops a hidden page's decoded pictures itself. Only a window that comes back another size (an
+       iPad turned while away) takes them off, on the way back, so the size it now is gets its own. */
+    trimHeroVP = orbitVPNow() + "|" + (window.devicePixelRatio || 1);
+  }catch(e){}
+}
+var trimHeroVP = "";
+function trimHeroSheetsNow(){
+  try{
     document.querySelectorAll(".cosmic-hero-wrap .cosmic-rank-anim").forEach(w => {
       const b = w.closest(".cosmic-badge-rank"); const sv = b && b.querySelector("svg.cosmic-rank-emblem");
       if(sv){ sv.classList.remove("rk-under-anim"); try{ sv.getAnimations().forEach(a => { if(a.__sheetFade) a.cancel(); }); }catch(e){} }
@@ -88587,7 +88830,16 @@ function restoreAfterBackground(){
     const rows = document.querySelector(".rank-rows");
     if(rows) lbArtQueue(rows, lbNearRows(rows));
     const hero = document.querySelector(".cosmic-hero-wrap");
-    if(hero){
+    /* build 384: the sheets stayed on while away; only a window now another size than it left gets them made again for its size,
+       at once. Back at the size it left, a bubble that had no sheet yet gets it in the quiet after (2.5s): a loop crossfading in
+       is new motion, and the first moments back are to look like nothing happened. */
+    const resized = !!(hero && trimHeroVP && trimHeroVP !== orbitVPNow() + "|" + (window.devicePixelRatio || 1));
+    if(resized) trimHeroSheetsNow();
+    trimHeroVP = "";
+    if(hero && !resized){
+      setTimeout(() => { try{ if(!document.hidden && hero.isConnected){ const r = hero.parentElement || hero; startOrbitEmblemAnimsKnown(r); orbitStandIns(r); startOrbitEmblemAnims(r); } }catch(e){} }, 2500);
+    }
+    else if(hero){
       startOrbitEmblemAnimsKnown(hero.parentElement || hero);
       /* build 380: AND EVERY BUBBLE STILL WITHOUT ITS SHEET GETS ONE. Madison: "the iPads main menu, the rank flares, the stuff within
          them aren't moving". The sheets come off on the way out (trimForBackground) and only those whose geometry is known for THIS
@@ -88912,8 +89164,15 @@ function startOrbitEmblemAnims(root, readyOnly){
       badge = ref.deref();
       svg = badge && badge.querySelector("svg.cosmic-rank-emblem");
       if(!sp || !badge || !svg || !badge.isConnected || orbitHasSheet(badge) || !orbitAnimAllowed()) continue;
+      /* (384) THE FLARE'S OWN LOOK, NOT A MOMENT'S. A board row filled from the art queue holds its art at opacity 0 until the
+         screenful is in (.lb-art-new, 382); a sheet already in memory came back inside that hold, so the loop was laid on at
+         opacity 0 - an empty bubble where the rank's flare goes - and that 0 was kept with the board's geometry (lbGeomPut), so
+         every later board drew that rank's flare as nothing ("the ranks aren't showing right"). The hold is lifted for the read. */
+      const held = badge.closest(".lb-art-new");
+      if(held) held.classList.remove("lb-art-new");
       const cs = getComputedStyle(svg);
       const g = { px, cellCss: sp.px / scale / S, filter: cs.filter, opacity: cs.opacity };
+      if(held) held.classList.add("lb-art-new");
       orbitSheetGeom.set(orbitGeomKey(badge, tier), g);
       /* build 375: a board flare's geometry is kept for the next board (lbMarkKnown) */
       if(badge.closest(".screen-rankings .rank-rows")) lbGeomPut(c => { c.marks[tier] = { px, cellCss: g.cellCss, filter: g.filter, opacity: g.opacity }; });
@@ -89376,6 +89635,7 @@ function charFlipFallback(el){
   if(el.querySelector(".char-flip-play")) return;
   const solo = el.dataset.flipSolo || el.closest(".bottomtabs");
   if(!solo && document.querySelectorAll(".char-flip-fallback").length >= 4) return;
+  charStillToLive(el);
   el.classList.remove("char-flip");
   el.classList.add("char-live", "char-flip-fallback");
 }
@@ -89474,6 +89734,7 @@ function charFlipAttach(el){
     waitT = setTimeout(() => {
       if(!el.isConnected || el.querySelector(".char-flip-play") || !el.classList.contains("char-flip") || el.classList.contains("char-sleep")) return;
       if(el.classList.contains("char-live") || document.querySelectorAll(".char-flip-wait").length >= CHAR_FLIP_WAIT_MAX) return;
+      charStillToLive(el);   /* (384) a still cannot move: its drawing takes its place */
       el.classList.add("char-live", "char-flip-wait");
     }, 450);
   }
@@ -134078,43 +134339,51 @@ function buildTrendMark(moved){
    board (a week can outlive a reset). The congratulations popup passes
    nothing, so its podium stays a picture rather than a card over a card. */
 function buildLastWeekPodium(top, entries){
+  /* (384) IN THE BOARD'S OWN LOOK. Madison: "The top three on the leaderboard (last weeks top 3) ensure that's updated to the
+     new iOS theme." It was its own gold-rimmed frosted panel - spaced gold capitals, three columns on coloured podium blocks.
+     Now it is a grouped list like the board under it and like Settings: a grey sentence-case caption over one card on the
+     list's surface, no frost, a row for each place - the board's medal, the character in the board's disc, the name, last
+     week's XP on the right - and a hairline between rows from the name to the row's content edge, clear of both sides. */
   const box = document.createElement("div");
   box.className = "lw-podium";
   const h = document.createElement("p");
   h.className = "lw-podium-head"; h.textContent = "Last week's top 3";
   box.appendChild(h);
-  const stage = document.createElement("div");
-  stage.className = "lw-podium-stage";
-  const order = top.length >= 3 ? [1, 0, 2] : (top.length === 2 ? [1, 0] : [0]);
-  order.forEach(i => {
-    const t = top[i];
-    const col = document.createElement("div");
-    col.className = "lw-podium-spot lw-place-" + (i + 1) + (t.pub && t.pub === store.publicId ? " is-me" : "");
+  const card = document.createElement("div");
+  card.className = "lw-podium-card";
+  top.slice(0, 3).forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "lw-podium-spot lw-row lw-place-" + (i + 1) + (t.pub && t.pub === store.publicId ? " is-me" : "");
+    const place = document.createElement("span");
+    place.className = "rank-place";
+    renderRankMarker(place, i + 1);
+    const avw = document.createElement("span");
+    avw.className = "rank-avatar-wrap lw-podium-avwrap";
     const av = document.createElement("span");
-    av.className = "lw-podium-av";
+    av.className = "rank-avatar";
+    try{ av.style.setProperty("--char-glow", avatarGlowColor(t.avatar)); }catch(e){}
     av.appendChild(buildAvatarCharSVGSafe(t.avatar));
-    setCharState(av, "live");
+    avw.appendChild(av);
+    setCharState(avw, "live");
     const nm = document.createElement("span");
     nm.className = "lw-podium-name"; nm.textContent = t.name;
     const pts = document.createElement("span");
     pts.className = "lw-podium-pts"; pts.textContent = t.label ? t.label : t.pts == null ? (i === 0 ? "Winner" : "") : t.pts.toLocaleString() + " XP";
-    const block = document.createElement("span");
-    block.className = "lw-podium-block"; block.textContent = String(i + 1);
-    col.append(av, nm, pts, block);
+    row.append(place, avw, nm, pts);
     const entry = entries && t.pub ? entries.find(e => e && e.pub === t.pub) : null;
     if(entry){
-      col.classList.add("is-tappable");
-      col.setAttribute("role", "button");
-      col.tabIndex = 0;
-      col.setAttribute("aria-label", t.name + ", " + (i + 1) + (i === 0 ? "st" : i === 1 ? "nd" : "rd") + " last week");
-      col.addEventListener("click", () => openPersonSheet(entry));
-      col.addEventListener("keydown", e => {
+      row.classList.add("is-tappable");
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.setAttribute("aria-label", t.name + ", " + (i + 1) + (i === 0 ? "st" : i === 1 ? "nd" : "rd") + " last week");
+      row.addEventListener("click", () => openPersonSheet(entry));
+      row.addEventListener("keydown", e => {
         if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openPersonSheet(entry); }
       });
     }
-    stage.appendChild(col);
+    card.appendChild(row);
   });
-  box.appendChild(stage);
+  box.appendChild(card);
   return box;
 }
 /* ---- NOVA'S WEEKLY RECAP (build 324) ----
@@ -135191,6 +135460,8 @@ function renderRankingRows(rows, entries, board, opts){
      come within 240px. A tall screen (an iPad) gets more rows drawn up front. */
   const lbDrawnFirst = Math.ceil((window.innerHeight || 800) / 60) + 3;
   const knownRows = lbKnownRows();
+  /* (384) the rows a still is made for in the tap if it is not made yet: the screenful this device shows (counted on a visit), and one */
+  const lbStillRows = (() => { try{ const G = lbGeomGet(); return G && G.vis > 0 ? G.vis + 1 : 12; }catch(e){ return 12; } })();
   requestAnimationFrame(() => requestAnimationFrame(() => lbCountVisible(rows)));
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
@@ -135259,7 +135530,12 @@ function renderRankingRows(rows, entries, board, opts){
          first screenful is built as its words and numbers with an empty frame where the character and the flare go
          (same size, so nothing moves), and the art goes in as the row comes within a screen of the view, or in the
          quiet after the list is up. */
-      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase; if(rowIdx < knownRows) lbFlipKnown(avatarWrap, entry.avatarChar); }
+      if(rowIdx >= artNow){ avatarWrap.dataset.lazyAv = entry.avatarChar || ""; row.dataset.lazyArt = "1"; if(keptPhase != null) avatarWrap.dataset.flipPhase = keptPhase; if(rowIdx < knownRows) lbFlipKnown(avatarWrap, entry.avatarChar);
+        /* (384) no loop on yet: the character's still picture, from the first frame (on screen always; below it, if made already) */
+        if(avatarWrap.dataset.lazyAv !== undefined && !avatarWrap.dataset.flipPre && entry.avatarChar !== "nova" && (rowIdx < lbStillRows || charStillReady(entry.avatarChar))){
+          try{ avatar.appendChild(charStillSVG(entry.avatarChar)); avatarWrap.dataset.still = "1"; }catch(e){}
+        }
+      }
       else {
         avatar.appendChild(buildAvatarCharSVGSafe(entry.avatarChar));
         /* Alive on the boards (build 304): "make all characters in the
@@ -135413,6 +135689,104 @@ function renderRankingRows(rows, entries, board, opts){
    rows nearest the view first. On the phone a list that builds a few rows a frame, behind frames that are slow, was a
    screen with empty space under seven rows for over a second (his recording of 356). */
 function lbArtNow(){ return 0; }
+/* ---- A ROW'S PICTURE BEFORE ITS DRAWING (build 384) ----
+   Madison: "the leaderboard doesn't perfectly populate when you open it ... The characters don't load in by the way that's what I
+   was referring to mostly." Measured opening the board by a tap (iPhone, 3x, 4x CPU): every row came up with an empty disc where
+   the character goes and an empty ring where its flare goes, and they stayed empty for 2.2-3.9s - the art queue waits out the
+   glass (up to 2.5s), then draws one ~230-part character and one ~115-part flare a step (~100-150ms each here), holding them
+   hidden until the screenful is done (382). Only rows whose recorded loop was already in memory came up whole. So every row now
+   comes up with a STILL PICTURE of its character and of its flare: the drawing itself, serialised once per character (and per
+   rank) and shown as one image inside an svg of the drawing's own class and viewBox - the same box, transform, depth filter and
+   fade as the drawing (they are the svg's own CSS), so it is the still drawing to look at, at the cost of two elements, not
+   ~350. The rest goes on as before over it: the loop is recorded or read back and laid over it (charFlipAttach / startRankMarks,
+   which measure the svg and record from the character's own drawing, never from this), and a row that plays its live drawing
+   while it waits (327z13) or cannot have a loop (charFlipFallback) has the real drawing put in first (charStillToLive). */
+var CHAR_STILLS = new Map(), RANK_STILLS = new Map();
+function stillOf(src, extraCss){
+  const NS = "http://www.w3.org/2000/svg";
+  const c = src.cloneNode(true);
+  c.setAttribute("xmlns", NS);
+  const vb = (src.getAttribute("viewBox") || "0 0 40 40").trim();
+  const v = vb.split(/[\s,]+/).map(Number);
+  c.setAttribute("width", String(v[2] || 40)); c.setAttribute("height", String(v[3] || 40));
+  c.removeAttribute("style");
+  if(extraCss){ const st = document.createElementNS(NS, "style"); st.textContent = extraCss; c.insertBefore(st, c.firstChild); }
+  const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(c));
+  const im = new Image(); im.src = url;
+  try{ im.decode().catch(() => {}); }catch(e){}
+  return { url, vb, v, cls: src.getAttribute("class") || "", par: src.getAttribute("preserveAspectRatio") || "", im };
+}
+/* the parts the page's own CSS keeps hidden at rest (an image cannot see the page's CSS) */
+var CHAR_STILL_CSS = ".cx-uw{visibility:hidden}.cx-hx-cheeks{opacity:0}.cx-hx-fishbub circle{opacity:0}";
+function charStill(charId){
+  const id = lbCharId(charId || "");
+  let st = CHAR_STILLS.get(id);
+  if(!st){
+    const src = charAnimDrawing(id).svg;
+    st = stillOf(src, CHAR_STILL_CSS); st.id = id;
+    CHAR_STILLS.set(id, st);
+  }
+  return st;
+}
+function rankStill(rk){
+  let st = RANK_STILLS.get(rk);
+  if(!st){ st = stillOf(orbitAnimDrawing(rk).svg); RANK_STILLS.set(rk, st); }
+  return st;
+}
+function stillSVG(st, extraCls){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", st.vb);
+  svg.setAttribute("class", (st.cls + " " + extraCls).trim());
+  if(st.par) svg.setAttribute("preserveAspectRatio", st.par);
+  svg.setAttribute("aria-hidden", "true");
+  const im = document.createElementNS(NS, "image");
+  im.setAttribute("x", String(st.v[0] || 0)); im.setAttribute("y", String(st.v[1] || 0));
+  im.setAttribute("width", String(st.v[2] || 40)); im.setAttribute("height", String(st.v[3] || 40));
+  im.setAttribute("preserveAspectRatio", "none");
+  im.setAttribute("href", st.url);
+  svg.appendChild(im);
+  return svg;
+}
+function charStillSVG(charId){
+  const st = charStill(charId);
+  const svg = stillSVG(st, "cx-still");
+  svg.setAttribute("data-char", st.id);
+  return svg;
+}
+/* a board character's still, made in the quiet if it is not made yet - only those (and every made one) go into a row at once */
+function charStillReady(charId){ return CHAR_STILLS.has(lbCharId(charId || "")); }
+/* the real drawing in place of the still, for a row that is to play it live */
+function charStillToLive(el){
+  try{
+    const st = el && el.querySelector("svg.cx-still");
+    if(!st) return;
+    const real = buildAvatarCharSVGSafe(st.getAttribute("data-char"));
+    if(st.classList.contains("char-under-flip")) real.classList.add("char-under-flip");
+    st.replaceWith(real);
+    delete el.dataset.still;
+  }catch(e){}
+}
+/* the flare with its still emblem: its loop goes on over it (startRankMarks) as over a drawn one */
+function buildRankMarkStill(rk, cls){
+  const b = buildFlareBubble(rk, { lit: true, still: true });
+  b.classList.add("rank-mark");
+  if(cls) b.classList.add(cls);
+  b.dataset.still = "1";
+  return b;
+}
+/* every character and rank on the board, made in the quiet (JS only - no layout), so the board's first frame has them all */
+function lbStillsWarm(list){
+  try{
+    const ids = [], tiers = [];
+    (list || []).forEach(e => {
+      const c = e && e.avatarChar && e.avatarChar !== "nova" ? lbCharId(e.avatarChar) : null; if(c && ids.indexOf(c) < 0) ids.push(c);
+      let rk = null; try{ rk = rankOfEntry(e); }catch(x){} if(rk && tiers.indexOf(rk) < 0) tiers.push(rk);
+    });
+    try{ if(store && store.avatarChar){ const c = lbCharId(store.avatarChar); if(ids.indexOf(c) < 0) ids.push(c); } }catch(e){}
+    return { ids: ids.filter(id => !CHAR_STILLS.has(id)), tiers: tiers.filter(rk => !RANK_STILLS.has(rk)) };
+  }catch(e){ return { ids: [], tiers: [] }; }
+}
 /* build 366: the bare rows within 1.6 screens below / .6 above the view: the only ones whose art is drawn without being scrolled toward */
 function lbNearRows(rows){
   const vh = window.innerHeight || 800;
@@ -135440,8 +135814,13 @@ function lbFillArt(row, rows, quiet){
         aw.classList.add("char-flip");
         aw.dataset.flipArmed = "1";
         charFlipWatch(aw);
+      } else if(aw.dataset.still && av && av.querySelector(":scope > svg.cx-still")){
+        /* (384) its still stays: the loop is put on over it (setCharState -> charFlipAttach), as over the drawing */
+        av.querySelectorAll(":scope > .char-flip-play").forEach(n => n.remove());
+        setCharState(aw, "live");
       } else {
-        if(av){ av.querySelectorAll(":scope > .char-flip-play").forEach(n => n.remove()); av.appendChild(buildAvatarCharSVGSafe(id)); }
+        if(av){ av.querySelectorAll(":scope > .char-flip-play, :scope > svg.cx-still").forEach(n => n.remove()); av.appendChild(buildAvatarCharSVGSafe(id)); }
+        delete aw.dataset.still;
         setCharState(aw, "live");
       }
     }
@@ -135484,7 +135863,12 @@ function lbCountVisible(rows){
   }catch(e){}
 }
 var lbGeomAll = null;
-function lbGeomVP(){ return orbitVPNow() + "|" + (window.devicePixelRatio || 1); }
+/* (384) and the board's layout: a place kept from a board drawn another way is not this board's. Found measuring: 382's grouped
+   list made the character's frame 36px (it was 35.19), and the loops kept from before were laid at the old cell and offsets for
+   good - nothing re-measures a row that comes up with its loop. Bump LB_GEOM_REV whenever the rows' character or flare frame
+   changes size; the first board after it measures afresh (and comes up whole on its stills meanwhile). */
+var LB_GEOM_REV = 2;
+function lbGeomVP(){ return orbitVPNow() + "|" + (window.devicePixelRatio || 1) + "|r" + LB_GEOM_REV; }
 function lbGeomGet(){
   if(!lbGeomAll){ try{ lbGeomAll = JSON.parse(localStorage.getItem(LB_GEOM_KEY) || "null"); }catch(e){ lbGeomAll = null; } if(!lbGeomAll || typeof lbGeomAll !== "object") lbGeomAll = {}; }
   return lbGeomAll[lbGeomVP()] || null;
@@ -135540,6 +135924,7 @@ function lbFlipKnown(aw, charId){
     play.appendChild(img);
     if(f.rel) av.style.position = "relative";
     av.appendChild(play);
+    av.querySelectorAll(":scope > svg.cx-still").forEach(n => n.classList.add("char-under-flip"));
     aw.dataset.flipPre = "1";
     /* build 377: and that is the row's character, done - the drawing under a loop is never seen and nothing on a board takes the loop
        off (rows are not parked, the background no longer strips them), so it is not queued: putting ~250-part drawings in under loops
@@ -135553,7 +135938,8 @@ function lbMarkKnown(rk){
   try{
     if(!rk || !orbitAnimAllowed()) return null;
     const G = lbGeomGet(), g = G && G.marks && G.marks[rk];
-    if(!g || !(g.px > 0)) return null;
+    /* (384) a kept look of opacity 0 is the hold's, never the flare's (see startOrbitEmblemAnims): measured again instead */
+    if(!g || !(g.px > 0) || !(Number(g.opacity) > .05)) return null;
     const d = orbitAnimDrawings.get(rk);
     const sp = d && orbitAnimReady.get(d.id + "|" + g.px);
     if(!sp) return null;
@@ -135650,9 +136036,14 @@ async function lbArtPreload(){
   lbPreloadBusy = true;
   try{
     const G = lbGeomGet();
-    if(!G || typeof leaderboardRows === "undefined" || !Array.isArray(leaderboardRows) || !leaderboardRows.length) return;
+    if(typeof leaderboardRows === "undefined" || !Array.isArray(leaderboardRows) || !leaderboardRows.length) return;
     /* build 376: not behind quietIdle's two quiet seconds - he opens the Leaderboard straight after launch, still tapping */
     const pause = async () => { do{ await new Promise(r => setTimeout(r, 40)); } while(Date.now() < settleUntil || document.documentElement.classList.contains("tab-held")); };
+    /* (384) the stills first, one a step (JS only), on a first visit too */
+    { const w = lbStillsWarm(leaderboardRows);
+      for(const id of w.ids){ await pause(); try{ charStill(id); }catch(e){} }
+      for(const rk of w.tiers){ await pause(); try{ rankStill(rk); }catch(e){} } }
+    if(!G) return;
     if(G.flip && G.flip.px > 0){
       const ids = [];
       leaderboardRows.forEach(e => { const c = e && e.avatarChar && e.avatarChar !== "nova" ? lbCharId(e.avatarChar) : null; if(c && ids.indexOf(c) < 0) ids.push(c); });
@@ -135720,7 +136111,10 @@ function lbArtQueue(rows, list){
        lens has landed and the page has been drawn by then), and a step is 5ms (one row at least), as before 362. */
     const t0 = performance.now();
     const budget = 5;
-    while(q.length && (did < 1 || performance.now() - t0 < budget)){ const r = q.shift(); if(r && r.dataset && r.dataset.lazyArt){ r.classList.add("lb-art-new"); if(!rows._lbNewAt) rows._lbNewAt = performance.now(); } lbFillArt(r, rows, true); did++; }
+    while(q.length && (did < 1 || performance.now() - t0 < budget)){ const r = q.shift();
+      /* (384) a row already showing its art (its stills or loops) is not hidden while it is filled: nothing it shows changes */
+      if(r && r.dataset && r.dataset.lazyArt && r.querySelector(".rank-avatar-wrap[data-lazy-av]:not([data-still]):not([data-flip-pre]), .rank-mark.is-lazy")){ r.classList.add("lb-art-new"); if(!rows._lbNewAt) rows._lbNewAt = performance.now(); }
+      lbFillArt(r, rows, true); did++; }
     if(did){ try{ lbWatchOffscreen(rows, true); startRankMarks(rows); }catch(e){} }
     /* build 382: the art filled so far comes in together - once no row left in the queue is on the screen (the rest are below it), or
        after 1.5s on a queue that long (never a row a frame) */
@@ -135816,6 +136210,8 @@ function buildOverallCols(entry, keptMarks, third, lazyArt, known){
     if(em && known && !em.dataset.loopOnly){ const fresh = lbMarkKnown(rk); if(fresh){ keptMarks.delete(mk); em = fresh; } }
     if(em && keptMarks.get(mk) === em) keptMarks.delete(mk);
     else if(lazyArt && known && (em = lbMarkKnown(rk))){ /* build 375: the flare with its loop on, from the first frame */ }
+    /* (384) the flare with its still emblem, from the first frame; its loop goes on over it (startRankMarks) */
+    else if(lazyArt && (em = (() => { try{ return buildRankMarkStill(rk, "rank-col-flare"); }catch(x){ return null; } })())){ }
     else if(lazyArt){
       /* an empty frame the flare's size; lbFillArt puts the flare in */
       em = document.createElement("span");
@@ -139775,6 +140171,8 @@ function buildFlareBubble(key, o){
     b.style.setProperty("--tier-glow", flareColorOf(key));
     if(FLARE_NOIR[key]) b.classList.add("cosmic-badge-noir");
   }
+  /* (384) o.still: the emblem as its still picture (see A ROW'S PICTURE BEFORE ITS DRAWING) */
+  if(o.still){ try{ b.appendChild(stillSVG(rankStill(key), "rk-still")); return b; }catch(e){} }
   b.appendChild(homeRankEmblem(key));
   return b;
 }
@@ -140367,7 +140765,10 @@ function buildProfileCase(have, total){
     const tag = mk("pf-case-new");
     const word = mk("pf-case-new-word");
     word.textContent = "New";
-    tag.append(word, buildNewDot());
+    /* (384) the word stays before the chevron; the dot is on the row's icon, at its corner, as Customize's is */
+    const tile = n.querySelector(":scope > .settings-row-icon");
+    if(tile){ tag.append(word); tile.appendChild(buildNewDot()); }
+    else tag.append(word, buildNewDot());
     n.insertBefore(tag, arrow);
   }
   n.setAttribute("aria-label", badgeCaseName(BADGE_CASES[0]) + ", " + have + " of " + total + " badges found" + (fresh ? ", " + fresh + " new" : "") + ". Open the badge case.");
@@ -140601,9 +141002,10 @@ function showProfile(defaultTab, opts){
     if(customizeNewCount() > 0){
       nameEditBtn.classList.add("has-new");
       nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme - something new");
-      nameEditSlot = document.createElement("span");
-      nameEditSlot.className = "new-dot-anchor";
-      nameEditSlot.append(nameEditBtn, buildNewDot());
+      /* (384) the dot is on the row's icon, at its corner, as an app's badge is (see THE NEW DOT, ONE LOOK) */
+      const tile = nameEditBtn.querySelector(":scope > .settings-row-icon");
+      if(tile) tile.appendChild(buildNewDot());
+      else { nameEditSlot = document.createElement("span"); nameEditSlot.className = "new-dot-anchor"; nameEditSlot.append(nameEditBtn, buildNewDot()); }
     }
   }catch(e){}
   nameDisplayRow.append(nameDisplayText);
@@ -141501,7 +141903,9 @@ document.addEventListener("visibilitychange", () => {
   const f = rankingsOnVisible;
   if(!f) return;
   if(!f.rows.isConnected){ rankingsOnVisible = null; return; }
-  if(!document.hidden) f.paint();
+  /* (384) not in the frames that wake the page (the rest of the wake-up work waits ~2s too, build 349): a board that has not
+     changed is not drawn again anyway, and one that has is drawn a moment later */
+  if(!document.hidden) setTimeout(() => { if(!document.hidden && f.rows.isConnected && rankingsOnVisible === f) f.paint(); }, 2200);
 });
 /* Fire Code's bar has Stats where the Leaderboard is (build 382): the class has no board, so its tab, Stats. */
 function showStatsScreen(){ return showProfile("stats"); }
@@ -146521,7 +146925,9 @@ if(backToTopBtn){
      puts in and takes out of the screen many times a second - the box's
      own layer, the breath's bubbles: none of it is tappable, and each one
      queued a measure of every tappable thing on the screen */
-  const BTT_QUIET = ".hfx-box, .results-level-avatar, svg";
+  /* (384) nor a board row's art going in or a loop going on over it (its frame is the same size either way): each queued that
+     measure over the whole board - a forced layout - on every step of the art queue, and on the way back to the app */
+  const BTT_QUIET = ".hfx-box, .results-level-avatar, svg, .rank-avatar, .rank-col-rank, .rank-col-flare, .cosmic-rank-anim, .char-flip-play, .lw-podium-avwrap";
   try{ new MutationObserver(ms => { if(ms.some(m => !(m.target && m.target.closest && m.target.closest(BTT_QUIET)))) queueBackToTopRoom(); })
     .observe(stage, { childList: true, subtree: true }); }catch(e){}
   /* Wrapped, not passed directly. addEventListener hands the listener

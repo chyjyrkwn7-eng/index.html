@@ -8,7 +8,8 @@ Settings, Settings' Sound page and Studying page (the switch rows), Contributors
     or points end (a row of words alone, a Support link, ends there too, as Delta's do) - within 1.5px;
 (2) ...and so it is clear of the card's right edge by at least 8px (it never touches the side);
 (3) its left end is clear of the card's left edge as well (from the words, as before);
-(4) every screen named has at least one line to measure, and no page errors.
+(4) every screen named has at least one line to measure, and no page errors;
+(5) (384) every line is drawn in a colour you can see (its alpha above 0) - the Leaderboard's were transparent from 383 to 384.
 Run:  python3 tools/check-b384-hairlines.py   (--against: copy the old index.html over first, as check-b382-board)"""
 import os, sys, json
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +35,10 @@ LINES = """()=>{ const stage=document.getElementById('stage'); const out=[];
       const rs=getComputedStyle(row); const cRight=r.right - parseFloat(rs.borderRightWidth) - parseFloat(rs.paddingRight);
       const c=card(row).getBoundingClientRect();
       const cls=(typeof row.className==='string'?row.className:'').trim().split(/\\s+/).slice(0,2).join('.');
-      out.push({ row: row.tagName.toLowerCase()+'.'+cls+pe, end: Math.round((cRight-x1)*10)/10, clearR: Math.round((c.right-x1)*10)/10, clearL: Math.round((x0-c.left)*10)/10 });
+      /* (384) and drawn in something: 383's clean look made --surface-border transparent beyond Home, and a line mixed from it was
+         there and drawn in nothing (a computed 'color(srgb 0 0 0 / 0)' is not the 'rgba(0, 0, 0, 0)' this used to test for) */
+      const bg=s.backgroundColor; let al=1; let m=/rgba\([^)]*,\s*([\d.]+)\)/.exec(bg); if(m) al=+m[1]; else { m=/color\([^)]*\/\s*([\d.]+)\)/.exec(bg); if(m) al=+m[1]; }
+      out.push({ row: row.tagName.toLowerCase()+'.'+cls+pe, end: Math.round((cRight-x1)*10)/10, clearR: Math.round((c.right-x1)*10)/10, clearL: Math.round((x0-c.left)*10)/10, alpha: al });
     }
   }
   return out; }"""
@@ -55,6 +59,9 @@ for name, _ in SCREENS:
     chk("(2) %s: ...clear of the card's right edge (%s px)" % (name, sorted(set(l["clearR"] for l in L))), L and not near, near[:4])
     nearL = [l for l in L if l["clearL"] < 8]
     chk("(3) %s: ...and of its left edge (%s px)" % (name, sorted(set(l["clearL"] for l in L))), L and not nearL, nearL[:4])
+for name, _ in SCREENS:
+    L = res[name]; faint = [l for l in L if not l["alpha"] > .03]
+    chk("(5) %s: every line is drawn in a colour you can see (alpha %s) (384)" % (name, sorted(set(l["alpha"] for l in L))), L and not faint, faint[:3])
 chk("(4) every screen had lines to measure (%s), no page errors (%s)" % ({n: len(res[n]) for n, _ in SCREENS}, errs[:2]), all(res[n] for n, _ in SCREENS) and not errs)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
