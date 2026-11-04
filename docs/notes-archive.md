@@ -31822,3 +31822,49 @@ advanced/credits/legal): Share & Install already took the menu's rules (.setting
   the 384 Manage friends change, so H5 now reads the icon's glyph (currentColor) on its fill as well. Its B (a sheet's drag-dismiss
   slide timing) swung 145ms/80% -> 94ms/30% between two runs while three agents were also driving Chromium - load, to re-run quiet.
 - check-b325-e (Save and exit / iPad unit cards) and check-b327-i (Welcome lines, the T.Sale name editor) fail identically on 383.
+
+### Build 384 - Stats' ring, its lines and Test history; Profile's three buttons; back to top
+
+Madison: "The back to top button, that button needs to match the look of the bottom tab" / "the big thing at the top of at a
+glance with the accuracy circle may not be the move? It's gonna be red for most people because questions are hard and then you'd
+have a hard time getting it up. However ... I love the circle and red and the cool and it really is my favorite part of stats but
+i just don't like what it's tracking. Is there something instead of accuracy it could track there perhaps?" / "The box with the 4
+stats, maybe it should have the lines in the box similar to the settings" / "The test history button, not a fan ... a bigger button
+under the last test shown there under recent test? The number line thing, maybe the same thing could be done for numbers in study
+time?" / "In profile, the customize button, the badge button, and rank button. I actually do not like that at all. It's terrible."
+
+- Back to top (#backtotop): the 380 glass list (`:is(.chatdock-btn, ..., .daily-question-fab:not(.is-done), .backtotop)`, 0-4-0,
+  !important) gave it a .62 body and blur(30px) saturate(1.25). Now, by id, exactly the tab bar's: the .26 body + lift, the .16
+  rim, 0 8px 32px shadow, blur(7px) saturate(1.5) while shown (THE iOS LOOK keeps a hidden one unblurred). Computed values equal.
+- THE RING = THE QUESTION BANK. Same ring (buildScoreRing, class `is-bank`), same colours (statBand: red < 70, green, gold 100).
+  It counts this class's unique KEYS with store.stats[k].n > .m - a question answered right at least once. n counts answers and
+  m misses (recordResult), so n - m only grows: the ring only fills, a missed hard question costs nothing, gold is the whole bank.
+  Floored, so 100 only when every question is in. "Question bank" / "657 of 1,118 questions answered right at least once"; before
+  any answer, "No answers yet". Accuracy is no longer shown on Stats (STAT_MEANINGS has no entry for the hero). Offered back to
+  Madison as a small number if he wants it.
+- Hairlines in both four-number boxes (At a glance, Study time): Settings' white 10%, drawn by the buttons (:nth-of-type, so the
+  explanation box that opens between rows doesn't shift them). Phone: an upright in the middle of the 12px column gap on each row
+  and one line across the row gap, grid edge to grid edge; offsets count from the padding box, inside the cards' 1px transparent
+  border, so the gap's middle is 7.5px out. iPad (4 across): three uprights, nothing across.
+- Test history: off the heading (the 327z15 pill is gone) and under the last test - Profile's row (pfActFill), the tests' width,
+  the history tile, "All N tests, newest first". Recent tests' heading no longer reserves 44px for the pill.
+- PROFILE'S THREE (pfActFill): Customize, Badge case, Rank ladder are Settings rows on the tab bar's glass - Settings' tile
+  (settingsRowIcon: new palette / badgecase / ladder glyphs), 18px name, 14px grey line, chevron, 62px, 18px corners. Tiles:
+  Customize in --theme-sig (the theme's own colour, as Settings' foot), the case gold #FF9F0A, the ladder the next rank's --nx
+  darkened 22% for its white mark. Only Customize blurs (it sits on the banner); the other two are on solid cards. Buttons keep
+  their classes (profile-customize-btn / pf-case-count with .pf-case-num "N of M badges" / pf-goal-foot with .pf-goal-foot-word)
+  so tours, gates and check-behaviour's caseNum still find them. The shut case's front padding 54px -> 23px so the case's row is
+  Customize's width. New-dot / New tag sit before the chevron. The Profile tour's copy says "Rank ladder".
+- Rows of words alone in Settings (plain / link / red text rows): their words are a span (settings-row-words, or the plain row's
+  label) trimmed with text-box: trim-both cap alphabetic, so the 18px capitals sit in the row's middle (Contributors and Terms sat
+  1.2-2px high on 383 too; check-ink-centre).
+- Gate: tools/check-b384-stats.py (back to top = the bar; the ring on a seeded 40% bank with 92% accuracy, +1 on a new right
+  answer, nothing on a known miss, green at 75%; the cross / the iPad's uprights; Test history row; Profile rows + they open).
+  Fails 6 on 383.
+- Gates moved to the new designs: check-b383-profile (2) rim + tile instead of a light fill, (3) the Tap needs a missed colour
+  (384's flare change; the gate had not been moved then), (5) rows instead of centred pills, and its colour parse reads
+  color(srgb 0-1); check-b382-ifc (2) Test history's row; check-b327z15 GG Rank ladder's words centred top to bottom.
+- Same on 383, not this: check-b382-ifc (5) "Profile has no Stats tab" (tabs read as []), check-b327z15 GG save-code banner,
+  check-ink-centre "Continue" on sign-up. check-ink-centre "Send" (+0.98 low) is Manage friends' Send at the same metrics as 383's,
+  now on a 1/8px row offset (the 384 field wrapper is 49.875px tall) - rounding, not a visible shift. Advanced's "Reset" on iPad
+  reads +0.98 (phone passes) - the same rounding.

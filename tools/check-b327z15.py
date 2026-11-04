@@ -1007,8 +1007,10 @@ def section_gg(br):
       showProfile('profile'); await wait(900);
       const sub = document.querySelector('#stage .pf-standing .pf-idsub');
       const pill = document.querySelector('#stage .pf-goal-foot'); const pr = pill.getBoundingClientRect();
-      const range = document.createRange(); range.selectNodeContents(pill); const tr = [...range.getClientRects()].filter(x => x.width > 4)[0];
-      const word = tr ? Math.abs((tr.left + tr.right) / 2 - (pr.left + pr.right) / 2) : 99;
+      /* (384) a Settings row now, its words after its tile (Madison: "the customize button, the badge button, and rank button ...
+         Please change that"): the words' block in the row's middle, top to bottom */
+      const wb = pill.querySelector('.pf-act-words'); const tr = wb ? wb.getBoundingClientRect() : null;
+      const word = tr ? Math.abs((tr.top + tr.bottom) / 2 - (pr.top + pr.bottom) / 2) : 99;
       showProfile('stats'); await wait(900);
       const hs = [...document.querySelectorAll('#stage .stx-glance .stat-card')].map(e => Math.round(e.getBoundingClientRect().height));
       startDailyQuestion(); await wait(1200);
@@ -1016,7 +1018,7 @@ def section_gg(br):
       const sbg = sb ? getComputedStyle(sb).backgroundColor : null;
       return { sub: sub ? sub.textContent.replace(/\s+/g, ' ').trim() : null, word, hs, sbg }; }""")
     check("GG. under the rank: 'Level N · N badges'", bool(r["sub"]) and bool(__import__("re").match(r"^Level \d+\s*·\s*\d+ badges?$", r["sub"])), r)
-    check("GG. See rank ladder's word in the pill's middle (within 1.5px)", r["word"] <= 1.5, r)
+    check("GG. Rank ladder's words in the row's middle, top to bottom (within 1.5px)", r["word"] <= 1.5, r)
     check("GG. Stats' four glance tiles are one height", len(r["hs"]) == 4 and len(set(r["hs"])) == 1, r)
     m = __import__("re").findall(r"[\d.]+", r["sbg"] or "")
     check("GG. the daily question's Submit is grey before a pick, not white (%s)" % r["sbg"], len(m) >= 3 and max(float(x) for x in m[:3]) < 120, r)

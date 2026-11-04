@@ -32776,6 +32776,11 @@
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-sub{ font-size:14px; }
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-linkrow,
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-plainrow .settings-row-label{ font-size:18px; }
+  /* rows of words alone (Contributors, Legal, the Support links, Advanced's red rows): an 18px label's capitals sat 1-2px above
+     the row's middle (check-ink-centre; Contributors and Terms did on 383 too). Each label is trimmed to its capital height and
+     baseline (text-box, the fix the ink gate names), so the row's own centring centres the letters, in Inter or San Francisco.
+     The link and red rows' words are a span now (settingsLinkRow / settingsTextRow) - text-box trims a box, not a flex row. */
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row :is(.settings-row-words, .settings-plainrow > .settings-row-label){ text-box:trim-both cap alphabetic; }
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev,
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev svg{ width:17px; height:17px; }
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row::before{
@@ -36661,6 +36666,87 @@ html.is-browser{ --fade-paper: transparent; }
     border:1px solid rgba(255,255,255,.16) !important;
     backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
     box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
+  /* (384) the back-to-top button too: "that button needs to match the look of the bottom tab". It was a heavier, frostier glass
+     (.62 body, blur 30px) beside the tab bar's clear one; now the same body, lift, rim, shadow and blur as the bar - the blur only
+     while it shows (THE iOS LOOK keeps it off a hidden button, so nothing blurs where nothing is). By id: the 380 glass list it sat in
+     (:is(.chatdock-btn, ..., .daily-question-fab:not(.is-done), .backtotop)) weighs 0-4-0. */
+  html[data-theme="dark"][data-layout="modern"] body #backtotop.backtotop{
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    border:1px solid rgba(255,255,255,.16) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05) !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body #backtotop.backtotop.show{
+    backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
+  }
+  /* (384) PROFILE'S THREE ROWS - Customize, Badge case, Rank ladder (pfActFill builds them). "In profile, the customize button,
+     the badge button, and rank button. I actually do not like that at all. It's terrible." 383 made them light pills, white on
+     the dark themes, an icon masked on at the left and a chevron disc on the right. Now each is a Settings row standing on its
+     own: the tab bar's glass (the .26 body, its lift, the .16 rim - Customize's also blurs the banner behind it; the other two
+     sit on a solid card, where a blur would only cost), 62px, an 18px corner, Settings' 34px tile, the name at 18px with its
+     grey line at 14px, the chevron. This out-ranks THE iOS LOOK's light-pill rules (1-5-2, !important) and voids their
+     ::before icon and ::after disc. */
+  html[data-theme][data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) button.pf-act.pf-act.pf-act{
+    position:relative; display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:14px !important;
+    width:100%; max-width:30rem; min-height:62px; margin-left:auto; margin-right:auto; box-sizing:border-box;
+    padding:10px 16px 10px 13px !important; border:1px solid rgba(255,255,255,.16) !important; border-radius:18px !important;
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26) !important;
+    background-repeat:no-repeat !important; background-origin:border-box !important;
+    box-shadow:0 8px 24px rgba(0,0,0,.32), inset 0 1px 1px rgba(255,255,255,.05) !important;
+    color:var(--ink) !important; text-align:left; text-box:normal !important; font-size:16px !important; font-weight:500 !important;
+    letter-spacing:0; text-transform:none; text-shadow:none; transition:transform .12s ease;
+  }
+  html[data-theme][data-layout] body #stage .profile-identity-tab .profile-hero button.pf-act.pf-act.pf-act{
+    backdrop-filter:blur(7px) saturate(1.5) !important; -webkit-backdrop-filter:blur(7px) saturate(1.5) !important;
+  }
+  html[data-theme][data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) button.pf-act.pf-act.pf-act::before,
+  html[data-theme][data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) button.pf-act.pf-act.pf-act::after{ content:none !important; display:none !important; }
+  html[data-theme][data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) button.pf-act.pf-act.pf-act:active{ transform:scale(.98); }
+  [data-reduce-motion="true"] body #stage :is(.profile-identity-tab, .profile-stats-tab) button.pf-act.pf-act.pf-act:active{ transform:none; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon.settings-row-icon{ flex:0 0 34px; width:34px; height:34px; border-radius:9px; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon svg{ width:22px; height:22px; shape-rendering:geometricPrecision; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon :is(svg, svg [stroke]){ stroke-width:2.15; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .pf-act-words{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act .pf-act-label{ display:block; font-size:18px; font-weight:600; line-height:1.2; color:var(--ink); text-box:normal; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act .pf-act-sub{ display:block; margin:0; font-size:14px; font-weight:500; line-height:1.3; color:var(--soft); opacity:1; text-box:normal; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .pf-act-chev{ flex:0 0 auto; display:inline-flex; width:17px; height:17px; color:var(--soft); opacity:.85; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .pf-act-chev svg{ width:17px; height:17px; display:block; }
+  /* the case's row the width of Customize's: the shut case's front kept 54px each side for 383's narrower pill; its latches
+     and guards are up on the lid's seam, clear of the row */
+  html[data-theme][data-layout] body #stage .profile-identity-tab .pf-case-closed .pf-ccase-front{ padding-left:23px !important; padding-right:23px !important; }
+  /* something new: Customize's dot and the case's New tag sit before the chevron, not on it */
+  html[data-layout] body #stage .profile-hero > .profile-customize-row > .new-dot-anchor > .new-dot{ right:44px; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .pf-case-new{ flex:0 0 auto; margin:0 !important; }
+  /* STATS (384). Test history is that row now, under the last test, the tests' width (no 30rem cap there), and the heading
+     over Recent tests no longer carries a pill, so the card sits where every other card does. */
+  html[data-theme][data-layout] body #stage .profile-stats-tab button.stx-histrow.pf-act.pf-act{ max-width:none; margin:10px 0 0; }
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect.stx-recent.stx-recent{ margin-top:calc(var(--ios-sect-gap) + 1.2rem + var(--ios-head-gap)); }
+  html[data-layout] body #stage .profile-stats-tab > .points-progress-sect.stx-recent.stx-recent:first-child{ margin-top:calc(1rem + 1.2rem + var(--ios-head-gap)); }
+  html[data-layout] body #stage .profile-stats-tab > .stx-recent > .stx-recent-top.stx-recent-top{ min-height:0; margin:0 0 var(--ios-head-gap); }
+  /* "The box with the 4 stats, maybe it should have the lines in the box similar to the settings to kinda separate the 4
+     stats" / "maybe the same thing could be done for numbers in study time": Settings' hairline (white 10%) down the middle
+     of the column gap and across the row gap - a cross on a phone, three uprights in the tablet's one row. Drawn by the
+     cards (buttons, so :nth-of-type skips the explanation box that opens between rows). */
+  html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card{ position:relative; overflow:visible; }
+  html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card::after,
+  html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card::before{
+    content:none; position:absolute; pointer-events:none; background:rgba(255,255,255,.1);
+  }
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card:nth-of-type(odd)::after{
+      content:""; top:10px; bottom:10px; right:-7.5px; width:1px;
+    }
+    html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card:nth-of-type(n+3)::before{
+      content:""; top:-7.5px; height:1px; left:-1px; right:-1px;
+    }
+    html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card:nth-of-type(3)::before{ right:-7px; }
+    html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card:nth-of-type(4)::before{ left:-7px; }
+  }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .profile-stats-tab :is(.stx-glance, .points-progress-sect) > .stat-grid-four > button.stat-card:not(:last-of-type)::after{
+      content:""; top:10px; bottom:10px; right:-7.5px; width:1px;
+    }
   }
   html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back{ transition:transform .12s ease; }
   html[data-theme="dark"][data-layout="modern"] body #stage .settings-nav-back:active{ transform:translateY(-50%) scale(.92); }
@@ -92399,7 +92485,7 @@ const PROFILE_TIPS_289 = [
   { target: ".profile-identity-tab .pf-case", align: "left", vplacement: "above",
     text: "Your badge case, a slot for every unit. Master a unit with enough hundos (100% on the whole unit) to find its badge. Tap the badge count to open the case, then pick a badge up to turn it over." },
   { target: ".profile-identity-tab .pf-goal", align: "left", vplacement: "above",
-    text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or See rank ladder for every rank and what each one unlocks." }
+    text: "The challenges for your next rank, ticked off as you go. Tap a challenge to see how it is done, or Rank ladder for every rank and what each one unlocks." }
 ];
 
 function startSimpleTour(steps, onComplete, _waitedMs){
@@ -120663,7 +120749,11 @@ function settingsRowIcon(kind, tone){
     credits: '<path d="M12 19.6s-7.4-4.4-7.4-9.8A4.1 4.1 0 0 1 12 7.4a4.1 4.1 0 0 1 7.4 2.4c0 5.4-7.4 9.8-7.4 9.8z"/>',
     tap: '<path d="M10 11V5.8a1.6 1.6 0 0 1 3.2 0V11"/><path d="M13.2 10.2a1.6 1.6 0 0 1 3.2 0v1.2a1.6 1.6 0 0 1 3.1.5v2.6a6 6 0 0 1-6 6h-.8a5.6 5.6 0 0 1-4.5-2.3l-2.7-3.7a1.5 1.5 0 0 1 2.3-1.9L10 14.6"/>',
     pause: '<circle cx="12" cy="12.8" r="7.4"/><path d="M12 8.8v4.2l2.6 1.6"/><path d="M9.6 3h4.8"/>',
-    person: '<circle cx="12" cy="8.4" r="3.7"/><path d="M4.8 19.8c.9-3.7 3.7-5.7 7.2-5.7s6.3 2 7.2 5.7"/>'
+    person: '<circle cx="12" cy="8.4" r="3.7"/><path d="M4.8 19.8c.9-3.7 3.7-5.7 7.2-5.7s6.3 2 7.2 5.7"/>',
+    /* (384) Profile's three rows - Customize, the badge case, the rank ladder - share this tile and its one stroke */
+    palette: '<path d="M12 3.8a8.2 8.2 0 1 0 0 16.4c1 0 1.6-.7 1.6-1.5 0-.42-.16-.8-.43-1.08-.26-.28-.42-.64-.42-1.06 0-.88.72-1.5 1.6-1.5h1.88a3.9 3.9 0 0 0 3.9-3.9C20.13 7.2 16.5 3.8 12 3.8z"/><path d="M7.9 11.3h.01M9.8 7.7h.01M14.1 7.4h.01M16.7 10.6h.01"/>',
+    badgecase: '<rect x="3.6" y="7.4" width="16.8" height="12" rx="2.4"/><path d="M9.2 7.4V5.9a1.5 1.5 0 0 1 1.5-1.5h2.6a1.5 1.5 0 0 1 1.5 1.5v1.5"/><path d="M3.6 12.6h16.8"/><path d="M10.6 12.6v1.8h2.8v-1.8"/>',
+    ladder: '<path d="M7.6 3.6v16.8M16.4 3.6v16.8"/><path d="M7.6 7.6h8.8M7.6 12h8.8M7.6 16.4h8.8"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
@@ -120673,6 +120763,28 @@ function settingsRowIcon(kind, tone){
   tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
     + (paths[kind] || "") + "</svg>";
   return tile;
+}
+/* ---- PROFILE'S ROWS (384) ----
+   Madison: "In profile, the customize button, the badge button, and rank button. I actually do not like that at all. It's
+   terrible. Please change that". They were 383's light pills (white on the dark themes), each with an icon masked on at the
+   left and a chevron disc at the right. They are Settings' rows now - the look he chose for Settings, Delta's - on the tab
+   bar's glass so no banner hides them: a coloured tile (Settings' own, settingsRowIcon), the name, a grey line under it, a
+   chevron. The button keeps its own class and handler (profile-customize-btn / pf-case-count / pf-goal-foot), so every tour,
+   check and tap that finds it still does. Returns the parts a caller adds to (the badge case's New tag goes before the
+   chevron). */
+function pfActFill(btn, kind, label, sub, tile){
+  const t = settingsRowIcon(kind);
+  if(tile) t.style.setProperty("--tile", tile);
+  const words = document.createElement("span"); words.className = "pf-act-words";
+  const l = document.createElement("span"); l.className = "pf-act-label"; l.textContent = label;
+  words.appendChild(l);
+  let sb = null;
+  if(sub){ sb = document.createElement("span"); sb.className = "pf-act-sub"; sb.textContent = sub; words.appendChild(sb); }
+  const chev = document.createElement("span"); chev.className = "pf-act-chev"; chev.setAttribute("aria-hidden", "true");
+  chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  btn.classList.add("pf-act");
+  btn.replaceChildren(t, words, chev);
+  return { tile: t, words, label: l, sub: sb, chev };
 }
 function settingsRowSub(text){
   const sub = document.createElement("span");
@@ -120713,7 +120825,8 @@ function settingsTextRow(label, tone){
   const b = document.createElement("button");
   b.type = "button";
   b.className = "settings-row settings-textrow" + (tone ? " is-" + tone : "");
-  b.textContent = label;
+  const w = document.createElement("span"); w.className = "settings-row-words"; w.textContent = label;   /* (384) a box text-box can trim */
+  b.appendChild(w);
   return b;
 }
 /* Credits' rows: words and a chevron, no tile (the inspiration's Contributors / Software Licenses). */
@@ -120735,7 +120848,8 @@ function settingsLinkRow(label){
   const b = document.createElement("button");
   b.type = "button";
   b.className = "settings-row settings-linkrow";
-  b.textContent = label;
+  const w = document.createElement("span"); w.className = "settings-row-words"; w.textContent = label;   /* (384) a box text-box can trim */
+  b.appendChild(w);
   return b;
 }
 function settingsFootnote(text){
@@ -137395,9 +137509,10 @@ function pfGoalFoot(){
   const foot = document.createElement("button");
   foot.type = "button";
   foot.className = "pf-goal-foot";
-  /* the words in a box of their own: text-box trims a block, not the pill's flex box (round 33) */
-  const word = document.createElement("span"); word.className = "pf-goal-foot-word"; word.textContent = "See rank ladder";
-  foot.append(word);
+  /* (384) a row: the ladder in the next rank's colour (darkened for its white mark), "Rank ladder", what it holds */
+  const r = pfActFill(foot, "ladder", "Rank ladder", "Every rank and what it unlocks", "color-mix(in srgb, var(--nx, #8E8E93) 78%, #23262D)");
+  r.label.classList.add("pf-goal-foot-word");
+  foot.setAttribute("aria-label", "Rank ladder: every rank and what it unlocks");
   foot.addEventListener("click", () => showRanksScreen("ranks"));
   return foot;
 }
@@ -137549,11 +137664,10 @@ function buildProfileCase(have, total){
   const mid = mk("pf-ccase-mid");
   const n = mk("pf-case-count", "button");
   n.type = "button";
-  const num = mk("pf-case-num");
-  num.textContent = have + " of " + total + " badges";
-  const arrow = mk("pf-case-arrow");
-  arrow.textContent = "\u203a";
-  n.append(num, arrow);
+  /* (384) a row: the case in gold, "Badge case", the count under it (still .pf-case-num, "N of M badges") */
+  const cr = pfActFill(n, "badgecase", "Badge case", have + " of " + total + " badges", "#FF9F0A");
+  cr.sub.classList.add("pf-case-num");
+  const arrow = cr.chev;
   const plate = buildCaseSidePlate("pf-case-sideplate");
   plate.setAttribute("aria-hidden", "true");
   mid.append(plate, n);
@@ -137791,25 +137905,9 @@ function showProfile(defaultTab, opts){
      person card's one action, the width of the card under the XP bar, a light button (dark on the light theme) - the
      same on every banner - with a palette and the three things it holds named under the word. */
   {
-    const NS = "http://www.w3.org/2000/svg";
-    const ic = document.createElementNS(NS, "svg");
-    ic.setAttribute("viewBox", "0 0 24 24"); ic.setAttribute("aria-hidden", "true"); ic.setAttribute("class", "pcz-icon");
-    ic.setAttribute("fill", "none"); ic.setAttribute("stroke", "currentColor"); ic.setAttribute("stroke-width", "2");
-    ic.setAttribute("stroke-linecap", "round"); ic.setAttribute("stroke-linejoin", "round");
-    const pal = document.createElementNS(NS, "path");
-    pal.setAttribute("d", "M12 3.2a8.8 8.8 0 1 0 0 17.6c1.05 0 1.75-.75 1.75-1.65 0-.46-.18-.86-.47-1.17-.28-.3-.46-.7-.46-1.15 0-.96.78-1.63 1.74-1.63h2.03a4.2 4.2 0 0 0 4.2-4.2C20.8 6.9 16.85 3.2 12 3.2z");
-    ic.appendChild(pal);
-    [[7.6, 11.2], [9.6, 7.3], [14.2, 7], [17, 10.4]].forEach(([cx, cy]) => {
-      const d = document.createElementNS(NS, "circle");
-      d.setAttribute("cx", cx); d.setAttribute("cy", cy); d.setAttribute("r", "1.15");
-      d.setAttribute("fill", "currentColor"); d.setAttribute("stroke", "none");
-      ic.appendChild(d);
-    });
-    const words = document.createElement("span"); words.className = "pcz-words";
-    const w1 = document.createElement("span"); w1.className = "pcz-label"; w1.textContent = "Customize";
-    const w2 = document.createElement("span"); w2.className = "pcz-sub"; w2.textContent = "Character \u00b7 Banner \u00b7 Theme";
-    words.append(w1, w2);
-    nameEditBtn.append(ic, words);
+    /* (384) a row: the palette in the theme's own colour (--theme-sig, as Settings' foot), "Customize", what it holds */
+    const cz = pfActFill(nameEditBtn, "palette", "Customize", "Character \u00b7 Banner \u00b7 Theme", "var(--theme-sig)");
+    cz.label.classList.add("pcz-label"); cz.sub.classList.add("pcz-sub"); cz.words.classList.add("pcz-words");
     nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme");
   }
   /* something new waiting in Customize (build 299) */
@@ -138135,7 +138233,6 @@ function showProfile(defaultTab, opts){
   const glanceHead = document.createElement("p");
   glanceHead.className = "slab"; glanceHead.textContent = "At a glance";
   glanceSect.appendChild(glanceHead);
-  const accPct = answered ? Math.max(0, Math.min(100, Math.round(correct / answered * 100))) : null;
   const hero = document.createElement("div");
   hero.className = "stx-hero";
   /* in the tab's own colour, as every number on Stats is (build 326: it
@@ -138151,16 +138248,28 @@ function showProfile(defaultTab, opts){
   /* BY THE PASS MARK (build 327 round 10): "ensure it's green or red. Red if
      under a 70, green if above a 70 and a gold if somehow a hundred".
      statBand() is the one rule, shared with Your units below. */
-  hero.appendChild(buildScoreRing(accPct, "stx-ring is-accuracy", statBand(accPct)));
+  /* THE QUESTION BANK, NOT ACCURACY (384). Madison: "the big thing at the top of at a glance with the accuracy circle may not
+     be the move? It's gonna be red for most people because questions are hard and then you'd have a hard time getting it
+     up. However ... I love the circle and red and the cool and it really is my favorite part of stats but i just don't like
+     what it's tracking." The ring keeps its look and its colours (statBand: red under 70, green from 70, gold at 100) and
+     tracks how much of this class's bank you have answered right at least once: store.stats[key] counts a question's answers
+     (n) and its misses (m), so n > m is a question answered right at least once - and n - m only ever grows, so the ring only
+     ever fills. Every question learned moves it; a hard question missed costs nothing. Gold is the whole bank. Floored, so
+     it reads 100 only when every question is in. */
+  const bankKeys = [...new Set(KEYS)];
+  let bankRight = 0;
+  bankKeys.forEach(k => { const st = store.stats && store.stats[k]; if(st && (Number(st.n) || 0) > (Number(st.m) || 0)) bankRight++; });
+  const bankPct = (answered || bankRight) && bankKeys.length ? Math.max(0, Math.min(100, Math.floor(bankRight / bankKeys.length * 100))) : null;
+  hero.appendChild(buildScoreRing(bankPct, "stx-ring is-bank", statBand(bankPct)));
   const heroText = document.createElement("div");
   heroText.className = "stx-hero-text";
   const heroBig = document.createElement("p");
   heroBig.className = "stx-hero-big";
-  heroBig.textContent = accPct == null ? "No answers yet" : "Accuracy";
+  heroBig.textContent = bankPct == null ? "No answers yet" : "Question bank";
   const heroSub = document.createElement("p");
   heroSub.className = "stx-hero-sub";
-  heroSub.textContent = accPct == null ? "Answer a few questions and your accuracy shows here."
-    : correct.toLocaleString() + " of " + answered.toLocaleString() + " answers right first time";
+  heroSub.textContent = bankPct == null ? "Every question you answer right fills this ring."
+    : bankRight.toLocaleString() + " of " + bankKeys.length.toLocaleString() + " questions answered right at least once";
   heroText.append(heroBig, heroSub);
   hero.appendChild(heroText);
   glanceSect.appendChild(hero);
@@ -138205,12 +138314,16 @@ function showProfile(defaultTab, opts){
     p.textContent = "Finish a Drill or a Mock and it shows up here.";
     recentSect.appendChild(p);
   }
+  /* (384) "The test history button, not a fan. Find a better spot, id think it could maybe just be a bigger button under
+     the last test shown there under recent test?" Off the heading and under the list: Profile's row (pfActFill), the
+     width of the tests above it, the history's own tile, how many there are under the name. */
   const reviewBtn = document.createElement("button");
-  reviewBtn.type = "button"; reviewBtn.className = "stx-allbtn stx-allpill";
-  reviewBtn.innerHTML = '<span><b></b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>';
-  reviewBtn.querySelector("b").textContent = hist.length > 3 ? "All " + hist.length + " tests" : "Test history";
+  reviewBtn.type = "button"; reviewBtn.className = "stx-histrow";
+  pfActFill(reviewBtn, "history", "Test history",
+    hist.length ? (hist.length === 1 ? "Your 1 test" : "All " + hist.length + " tests, newest first") : "Every test you finish");
+  reviewBtn.setAttribute("aria-label", "Test history" + (hist.length ? ", " + hist.length + (hist.length === 1 ? " test" : " tests") : ""));
   reviewBtn.addEventListener("click", showTestReviewList);
-  recentTop.appendChild(reviewBtn);
+  recentSect.appendChild(reviewBtn);
   statsTab.appendChild(recentSect);
 
   /* (YOUR UNITS - the weakest and strongest units, "Needs work" and
