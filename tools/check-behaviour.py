@@ -13942,6 +13942,8 @@ def check_b317_pfcard(br):
           const cs = document.querySelector('.profile-identity-tab .pf-case');
           const dot = cs && cs.querySelector('.new-dot');
           out.dot = box(dot); out.arrow = box(cs && cs.querySelector('.pf-case-arrow'));
+          /* (384) the dot is on the case row's icon, at its corner */
+          out.tile = box(cs && cs.querySelector('.settings-row-icon'));
           /* MOVED IN 327z15: the case count is a pill (327z10) whose arrow is its ::after disc,
              in its right padding - the old text arrow is display:none */
           const cc = cs && cs.querySelector('.pf-case-count');
@@ -13995,9 +13997,15 @@ def check_b317_pfcard(br):
           return out; }""")
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         d, a, sp = r.get("dot"), r.get("arrow"), r.get("strip")
-        adj = bool(d and a) and d["r"] <= a["l"] + 0.5 and a["l"] - d["r"] <= 12 \
-            and min(d["b"], a["b"]) - max(d["t"], a["t"]) >= (d["b"] - d["t"]) * 0.5
-        check(f"{dev}: the new-badge dot sits right beside the case's arrow, not over it", adj, [d, a])
+        # REVISED IN 384 (the new dot, one look): the dot is on the case row's icon, its centre on the icon's corner at 45 degrees
+        # (as far in from the right as down from the top), not beside the arrow; the word "New" stays before the arrow
+        t = r.get("tile")
+        adj = False
+        if d and t:
+            cx, cy = (d["l"] + d["r"]) / 2, (d["t"] + d["b"]) / 2
+            dx, dy = t["r"] - cx, cy - t["t"]
+            adj = abs(dx - dy) <= 1.5 and -1 <= dx <= 6 and (not a or d["r"] <= a["l"])
+        check(f"{dev}: the new-badge dot sits on the case's icon at its corner, clear of the arrow (384)", adj, [d, t, a])
         # REVISED IN 319: no strip on the card any more - the dot is on the
         # shut case's front, in the count's row, never in the plate.
         check(f"{dev}: ...on the count's row on the case's front, not in the 'Badge case' plate",

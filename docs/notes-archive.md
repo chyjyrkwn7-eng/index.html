@@ -32722,3 +32722,140 @@ should be for all the versions!"
   rules list a room's fields, that field must be allowed), the compat SDK's listeners and dotted updates through
   scopedFirestore's Proxy for a whole match, the start instant and the 45-second clocks across two real phones, and how long
   ifc/bank.js takes to load on a classmate's phone before the lobby opens (a toast says so if it fails).
+
+### Build 384 - the Leaderboard fills in right, coming back to the app, switching class (NOT on main, waiting for Madison)
+
+Madison (iPhone 17 Pro Max, the installed app): "When switching between classes, the screen completely blank and then loading bar
+comes up. Remove the completely blank part.." / "When leaving the app and coming back, the lag is a lot better but it still kinda
+does a weird thing" / "... the leaderboard doesn't perfectly populate when you open it. Even when it does load, the ranks aren't
+showing right. The characters don't load in by the way that's what I was referring to mostly." / "The top three on the
+leaderboard (last weeks top 3) ensure that's updated to the new iOS theme." / "The yellow dot you get next to your profile when
+something is unlocked and next to stuff, ensure that thing looks better too, it looked bad before."
+
+- CLASS SWITCH, THE BLANK (measured: CDP screencast, every composited frame across the reload, edges counted per frame). On 91a1d96
+  switchClass faded the whole body to opacity 0 (.35s) and reloaded; the new page's splash faded its NOVA and bar in after .45s -
+  frames of bare background for most of a second (WebKit keeps the old page's last frame until the new one has drawn something,
+  and that last frame was the faded-out page). Now:
+  - switchClass puts #class-switch-loader over the screen at the tap: the splash's own picture (#0A0A0A, the theme glow, NOVA,
+    "> opening Fire Code...", the bar already moving), in the colours of the class it is going to (its saved accent, data-accent on
+    the loader), fading in over .16s over the screen that is up, then reloads two frames after it covers it. html.class-switching
+    stays as the marker (check-b381-class reads it); the body fade is gone.
+  - It leaves sessionStorage class26e.classswitch {at, dur, line, to, pic}. The head's first script (its own IIFE) reads it before
+    the first frame: html.class-arrive (first style block) shows #splash-group and its glow at once; and html.class-arrive-pre
+    draws the loader's own picture on the root (glow as html's background, NOVA as html::before, the line and the bar as
+    html::after, at the pixel boxes the old page measured, the bar running on) - because Chromium did draw one frame of bare
+    background after the reload committed and before the splash markup (behind ~1.5 MB of head CSS) was parsed. The splash's
+    script removes class-arrive-pre (the splash covers it from then on), starts its bar where the loader's is (negative delay)
+    and lasts what is left of it, saying the loader's line first.
+  - The bars never go back: the old loader's bar runs as the splash's would and holds at (dur-800)/dur (fractional
+    animation-iteration-count), the root's the same, and the splash starts at min(elapsed, dur-800).
+  - Fire Code's ifc/bank.js (1.4 MB) is document.written just after the splash's two scripts instead of in the head
+    (NOVA_IFC_BANK_WRITE): the parser no longer waits in the head for it, so every Fire Code launch shows its splash while the
+    bank loads. IFC_BANK is first read by the app's script (52550), after it.
+- COMING BACK (hidden -> CDP frozen 3s -> pageshow persisted + visible + focus, 4x CPU, Home and the Leaderboard). Found on Home:
+  trimForBackground took every lit bubble's moving sheet off on the way out (357, for memory) and restoreAfterBackground put them
+  back after the first steady frames - each with its half-second crossfade from the still drawing, one after another: 5 crossfades
+  + 5 loops starting over in 0.1-0.6s after the return, and a 691ms long task at ~1s (base, 4x). That is the "weird thing". Now:
+  - Home's sheets stay on while away (paused with every loop, loopsPauseAll, as before) - the board's art has stayed on since 377
+    with no page ended in the background since. Only a window that comes back another size (an iPad turned while away) takes them
+    off on the way back (trimHeroVP vs orbitVPNow|dpr) and gets its size's own, at once, as 380 did.
+  - Back at the same size, a bubble that had no sheet yet gets it 2.5s later (not in the first frames back).
+  - The Leaderboard's repaint on visibilitychange (rankingsOnVisible) waits 2.2s like the rest of the wake-up work.
+  - BTT_QUIET adds a board row's art boxes (.rank-avatar, .rank-col-rank, .rank-col-flare, .cosmic-rank-anim, .char-flip-play,
+    .lw-podium-avwrap): art going into a row queued backToTopRoom's measure of 40 tappables (a forced layout) on every art step
+    and on the way back.
+  After, both screens: nothing moved in the first frame back, 0 animations started / element.animate() calls / sheets put on in
+  the 2s after, worst long task 54-86ms at 4x.
+- THE LEADERBOARD - THE CHARACTERS (opened by a real touch, iPhone UA, 3x, 4x CPU). Every row came up with an empty disc where the
+  character goes and an empty ring where its flare goes; the art queue waited 450ms + the glass (up to 2.5s), then drew one ~230
+  part character and one ~115 part flare a step (100-150ms each at 4x) and held them hidden until the screenful was done (382) -
+  2.2-3.9s on a first visit here, and on the base gate run 0 of 9 rows had a character 6.5s in. Only characters whose recorded
+  loop was in memory and whose geometry was known came up whole. Now every row comes up with A STILL PICTURE of its character
+  and of its flare from the first frame: charStill / rankStill serialise the character's (charAnimDrawing) and the rank's
+  (orbitAnimDrawing) drawing once into a data: SVG, and a row gets an <svg> of the drawing's own class and viewBox holding that
+  one <image> (svg.cx-still / svg.rk-still) - same box, transform (.94), depth filter and fade as the drawing, 2 elements instead
+  of ~350. Checked pixel against the drawing for all 30 characters (mean difference < .5 of 255, Umbra 1.8) and 7 ranks (< .3,
+  Titan 2.6 - the drawing was mid-animation). Everything else goes on over it as over the drawing: the loop is read back or
+  recorded and laid over it (charFlipAttach measures the svg, data-char says which character; startRankMarks/startOrbitEmblemAnims
+  for the flare), a row that plays live while it waits (327z13) or cannot have a loop (charFlipFallback) gets the real drawing
+  first (charStillToLive). The queue no longer builds drawings for rows with stills, and a row already showing its art is not
+  held hidden (lb-art-new only for a bare frame). The lazy disc is not drawn behind a still ([data-still]).
+  Stills are made in the quiet (lbArtPreload, first visit too, one a step, JS only) for every board character and rank; in the
+  tap only for the rows this device shows (lbGeom vis + 1) if not made yet.
+- THE LEADERBOARD - THE RANKS. Every row's rank (word, its colour, the flare's tier) is rankOfEntry's for its numbers - checked
+  over 30 rows with every rank, a level over its badge wall, rank floors and secret flares; nothing wrong there on either build.
+  What made the ranks look wrong: (1) the empty rings above, and (2) A FLARE LAID ON AT OPACITY 0. startOrbitEmblemAnims read the
+  emblem's computed opacity to give its loop - and a row filled from the queue is held at opacity 0 (.lb-art-new) until the
+  screenful is in. A sheet already in memory came back inside that hold: the loop went on at opacity 0, the drawing under it was
+  hidden (rk-under-anim) - an empty bubble - and that 0 was kept in the board's geometry (class26e.lbgeom marks[tier].opacity),
+  so every later board drew that rank's flare as nothing (lbMarkKnown). Reproduced on 91a1d96 (a ready sheet, a held row:
+  loop 0, kept "0"). Now the hold is lifted for the read, and lbMarkKnown refuses a kept opacity of 0.
+- LB_GEOM_REV: lbGeomVP() carries "|r2". 382 made the row's character frame 36px (35.19 before) and nothing re-measures a row
+  that comes up with its loop, so geometry kept from before 382 laid every loop at the old cell for good; and kept geometry may
+  hold the 0 opacity above. The first board after this build measures afresh (and comes up whole on its stills meanwhile). Bump
+  it whenever the rows' character or flare frame changes size.
+- THE BOARD'S HAIRLINES WERE INVISIBLE: --lb-hair was color-mix(--surface-border 60%, transparent), and 383's clean look made
+  --surface-border transparent beyond Home, so every line in the list was drawn in nothing (computed color(srgb 0 0 0 / 0) -
+  check-b384-hairlines tested only for 'rgba(0, 0, 0, 0)'). Customize's rows the same. Both now Settings' rgba(255,255,255,.1)
+  in the dark modern look; check-b384-hairlines (5) now requires a line you can see (fails on 91a1d96: Customize, Leaderboard).
+- TAP TO SCREEN (4x CPU; the sandbox ran at load 14-22 the whole time, four helpers' Chromes, so single timings swing 0.7-5s;
+  only interleaved A/B medians mean anything). Taken out of the tap:
+  - syncStatusBarColor on every switch to or from Home (syncSky) put a probe in the page and read its computed colour (cssColorHex)
+    and read --splash-bg off the root: two forced style passes over the whole new screen inside the tap (~100-130ms at 4x in
+    the profile). cssColorHex now keeps each answer per theme/layout/accent/state classes (CSS_COLOR_HEX_CACHE); --splash-bg is
+    read only while the splash owns the frame; theme-color is only written when it changes.
+  - the board's art no longer queues back-to-top measures (above); the stills are made in the quiet.
+  Still in the way (not changed): a badge-strike warm-up or finish that has already started (warmBadgeStrikes / badgeStrikeFinish,
+  one render per idle slice: 500-1500ms at 4x here) blocks a tap that lands on it; the first touch of a launch makes the audio
+  context (~280ms at 4x). The board's first frame is ~+60ms at 4x with stills (they are images to draw; it used to draw empty
+  discs) - in exchange for rows that are whole.
+- LAST WEEK'S TOP 3 (This Week): buildLastWeekPodium is a grouped list in the board's look - a grey sentence-case caption
+  ("Last week's top 3", .85rem, --soft, left at the row padding) over one card on the list's surface (--lb-cell, 1px
+  --surface-border, --lb-group-r; no frost, no gold rim, no podium blocks), a row a place (.lw-row.lw-podium-spot: the board's
+  medal via renderRankMarker, the character in the board's disc with its flip-book, the name, last week's XP in grey on the
+  right), and a hairline under each row but the last from the name (--lb-hair-l) to the row's content edge (right: --lb-pad).
+  Rows stay tappable to the person card; .lw-podium-spot kept (the off-screen observer).
+- THE NEW DOT, ONE LOOK (THE NEW DOT, ONE LOOK block at the end of the main style): 9px, a solid fill (the app's yellow
+  #FFD43B - not red, which is the chat's unread count; Madison's pick in 299; the brightest of the system colours on the dark
+  glass, where an accent can be a grey), no gradient, no glow, a 2px unblurred ring in the colour of the surface under it (the
+  bar #272A32, the lit tab's platter #4F5157, a card #26282F, Customize's page #18171C), its centre on the icon's corner at 45
+  degrees: --nd-r is the host's corner radius (50% round: the Profile tab's character, characters, themes, badges, the class
+  button; 12px banner and hundo tiles; 8/9px a row's icon tile; 0 a word), top = right = r x .29289 - 4.5px. Customize's and the
+  badge case's dots moved from beside the chevron onto the row's icon tile; the case keeps "New" before the chevron, in grey
+  sentence case. The class button's pulsing ring (329) stays.
+- GATE tools/check-b384-board2.py [--against REV] [--only 1,2,...]: (1) class switch frames, none blank, the loader up, arrived in
+  Fire Code with its splash showing; (2) coming back on Home (all 7 sheets on first) and the board: first frame unmoved, nothing
+  re-animates in 2s, no long task > 120ms (best of 3); (3) the board by a real tap at 4x: every frame with rows has every row's
+  character and flare, all drawn at the end, ranks = rankOfEntry, a flare put on while its row is held keeps its own opacity (and
+  that is what is kept); (4) last week's top 3: no backdrop-filter, the list's surface, grey sentence case caption, the board's
+  medals, visible inset hairlines; (5) the dots on the tab, Profile and Customize's pages: solid, unblurred, round, 8-10px, one
+  fill and size, on the 45-degree corner line; (6) no page errors. B384_MEDIA=dir writes the videos and screenshots.
+  On 91a1d96 it fails (1) blank frames + no loader, (2) Home: 16 re-animations, a 691ms task, (3) bare rows in 14 frames, 0 of 9
+  drawn at the end, the held flare at opacity 0 / kept "0", (4) card, medals, lines, (5) every dot (gradient, glow, 10-12px, two
+  off the corner); passes (2) board, (3) ranks, (6).
+- OTHER GATES REVISED: check-b358 "Home's moving emblems come off while hidden" reversed to "stay on while hidden and are all
+  there after" (384), and it waits for a sheet before measuring (it read 0 sheets in a slow sandbox); check-behaviour
+  check_b317_pfcard "the new-badge dot sits right beside the case's arrow" -> "on the case's icon at its corner, clear of the
+  arrow"; check-b384-hairlines (5) "every line is drawn in a colour you can see".
+- GATES RUN (one at a time, Chromium 1243 after the symlink, load 14-22): check-js 9 blocks ALL PASS; the page console in both
+  classes: no page errors, only the blocked Firebase CDN; check-b384-board2 ALL PASS (26), --against 91a1d96 FAILS (1)(1b)(2 home
+  re-animation, 28 events)(3 bare frames, held flare)(4 x3)(5 x4); check-b382-board 6/7 - "no layout shift while the board opens"
+  CLS 0.0571, identical on 91a1d96 (pre-existing); check-b382-ios ALL PASS; check-b384-hairlines ALL PASS (on 91a1d96 (5) fails
+  Customize and the Leaderboard); sweep-layout --quick 14/14 clean; check-b384-slide ALL PASS (the release's frame 13-59ms at 4x);
+  check-b381-class ALL PASS; check-b329 ALL PASS on a rerun (its xp section failed once and passed alone; it times a banner);
+  check-b358 ALL PASS; check-b380-flares ALL PASS; check-b383-classes ALL PASS; check-b382-ifc 1 failure, "Profile has no Stats
+  tab" (known since 383); check-unlocks 3 failures in 7b (an fx unlock pops on the daily question) - the same 3 on 91a1d96 in the
+  same sandbox; check-behaviour ONLY_FN=check_swipe,check_navigation,check_b314h_board,check_b314h_tabs,check_b313_lead,
+  check_b324l_board,check_b229,check_b299,check_b317_pfcard: every failure also fails on 91a1d96 (the board's column-header gap, the
+  cold-open placeholder trio, "the same element" sig, the tab dot colour read off a gradient, Home flares on iPad, the Profile card's
+  order and the case's place) except two that now pass ("carried over when a snapshot rebuilds the rows") and the revised dot
+  check; the four-tab tap-to-paint median at 4x 516ms here vs 772ms on 91a1d96 (both over its 590ms bar in this sandbox).
+- ENVIRONMENT: during this round another helper's Playwright upgrade (1.63) removed /opt/pw-browsers/chromium-1194, which 44 tools
+  hard-code; /opt/pw-browsers/chromium-1194/chrome-linux/chrome is now a symlink to chromium-1243's chrome so they run (the gates
+  after that point ran on Chromium 1243).
+- ONLY HIS PHONE CAN CONFIRM: that WebKit shows the loader (not a blank) between the tap and the splash on a real reload (it
+  should: it keeps the old page's last frame until the new one has content, and the new one's first content is the same
+  picture); the coming-back feel with iOS's own decoded-image purge (the sheets may need a decode on the first frame back - they
+  are kept in the page now instead of re-attached); the 3x crispness and ring colour of the dot on the real glass; how much
+  faster the board's rows feel with the stills on a phone that has (or has not) recorded its classmates' loops; that his flares
+  are no longer empty bubbles after the first board visit of this build (old kept geometry is dropped by LB_GEOM_REV).
