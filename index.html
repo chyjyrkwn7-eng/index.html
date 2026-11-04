@@ -1335,7 +1335,8 @@
   html.sky-ready[data-layout="modern"] body::after{ opacity:0; }   /* (383) stars are Home's alone - see #nova-wash below */
   html.sky-ready[data-layout="modern"] body.sky-home::after{ opacity:1; }
   html.sky-ready[data-layout="modern"] body.sky-calm::after{ opacity:0; }
-  /* ---- ONE LOOK BEYOND HOME: THE THEME'S COLOURS, WASHED (build 383) ----
+  /* ---- (SUPERSEDED, 383 round 2 - see "THE CLEAN LOOK BEYOND HOME" at the end of this stylesheet: the wash is gone) ----
+     ---- ONE LOOK BEYOND HOME: THE THEME'S COLOURS, WASHED (build 383) ----
      Madison: "the app needs a cohesive look ... if the rest of the app didn't have the starry space background but instead like
      the same color theme but kinda how the background used to be where it just some colors but it would be kinda washed out so
      it's not distracting? Almost like the result screen ... The main menu background is perfect, it's the rest though ... Maybe
@@ -1348,27 +1349,11 @@
      settles it (.45), as the glow and the stars always have; results take it at full, like every other screen. The cards over it
      are see-through glass (--surface-1, below), so each picks the wash up - the tab bar's frosted look, without a blur per card.
      Opacity is the only thing that ever changes (Home <-> the rest), and the compositor does it. */
-  #nova-wash{
-    position:fixed; left:0; right:0; bottom:0; height:100lvh; z-index:-1; pointer-events:none;
-    background:
-      radial-gradient(ellipse 95% 60% at 8% 4%, color-mix(in srgb, var(--bg-c2) 30%, transparent), transparent 72%),
-      radial-gradient(ellipse 85% 55% at 100% 42%, color-mix(in srgb, var(--bg-c3) 26%, transparent), transparent 72%),
-      radial-gradient(ellipse 120% 55% at 30% 104%, color-mix(in srgb, var(--bg-c1) 20%, transparent), transparent 72%);
-    /* clear over the status bar's strip, as the stars are - and clear at the very foot too, so a browser's bounce (which shows
-       html's own background, matched to body::before) meets the page without a band (check-fixes GREY BAR) */
-    -webkit-mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem), #000 calc(100% - 4rem), transparent 100%);
-    mask-image:linear-gradient(to bottom, transparent var(--sky-clear), #000 calc(var(--sky-clear) + 3.5rem), #000 calc(100% - 4rem), transparent 100%);
-    opacity:0; transition:opacity .6s ease;
-  }
-  html.sky-ready[data-theme="dark"][data-layout="modern"] body:not(.sky-home) > #nova-wash{ opacity:1; }
-  html.sky-ready[data-theme="dark"][data-layout="modern"] body.has-active-question:not(.sky-home) > #nova-wash{ opacity:.45; }
   /* (party has its own sky: its stars stay where they were, and no wash) */
   html.sky-ready[data-theme="party"][data-layout="modern"] body::after{ opacity:.6; }
   html.sky-ready[data-theme="party"][data-layout="modern"] body.sky-home::after{ opacity:1; }
   html.sky-ready[data-theme="party"][data-layout="modern"] body.sky-calm::after{ opacity:0; }
-  [data-reduce-motion="true"] #nova-wash{ transition:none !important; }
-  /* the cards over it: the same glass, thinner, so the wash comes through (Home's own pieces are as they were) */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home){ --surface-1:rgba(12,13,19,.4); --surface-2:rgba(18,20,28,.45); }
+
   /* `[data-reduce-motion] *` reaches elements, not pseudo-elements. */
   [data-reduce-motion="true"] body::after{ transition:none !important; }
   /* A structural guarantee, not just a stacking one: as long as
@@ -34130,24 +34115,12 @@ html.is-browser{ --fade-paper: transparent; }
   /* (383) ONE LOOK: Profile's three cards on every other card's glass - each keeps its own pool of colour at the top (the banner's,
      the next rank's, the case's silver); the opaque #14171C-#0B0D11 slab, its rim and its 44px drop shadow are the card material
      the rest of the app no longer has */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .profile-hero.has-cover.has-tint{
-    background:
-      radial-gradient(120% 30% at 18% 0%, color-mix(in srgb, var(--hero-t1) 26%, transparent), transparent 100%),
-      radial-gradient(120% 30% at 82% 4%, color-mix(in srgb, var(--hero-t2) 22%, transparent), transparent 100%),
-      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), rgba(12,13,19,.4) !important;
-    border-color:transparent !important; box-shadow:none !important;
-  }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .pf-goal{
-    background:
-      radial-gradient(70% 34% at 50% 0%, color-mix(in srgb, var(--nx) 20%, transparent), transparent 100%),
-      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), rgba(12,13,19,.4);
-    border-color:transparent; box-shadow:none;
-  }
+  /* (383 round 2) Profile's three cards are the clean look's solid card - no pools, no rim, no shadow */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .profile-hero.has-cover.has-tint,
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .pf-goal,
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase{
-    background:
-      radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--case-tint) 12%, transparent), transparent 100%),
-      linear-gradient(var(--ios-card-fill), var(--ios-card-fill)), rgba(12,13,19,.4);
-    border-color:transparent; box-shadow:none;
+    background:var(--clean-card) !important; border-color:transparent !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
   }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-lid{ border-bottom-color:rgba(255,255,255,.06); background:none; }
   html[data-theme][data-layout] .screen-profile .profile-identity-tab > .pf-case.pf-case-closed .pf-ccase-front{ padding-top:.9rem; padding-bottom:1.1rem; }
@@ -34282,12 +34255,12 @@ html.is-browser{ --fade-paper: transparent; }
     /* the pane a shade denser, so the sky's stars do not show through where the frost hid them */
     --surface-1:rgba(12,13,19,.7); --surface-2:rgba(18,20,28,.7);
   }
-  /* (383) BEYOND HOME THERE ARE NO STARS TO HIDE - every card is the same thinner glass over the wash (see #nova-wash) */
+  /* (383) BEYOND HOME THERE ARE NO STARS TO HIDE - every card is the clean look's one solid card (see THE CLEAN LOOK at the end) */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) :is(.motion-summary, .cal-month-head, .cal-action-btn, .cal-row, .cal-grid-arrow,
     .cal-daycard, .lb-row, .vroom-roster, .rank-row, .vroom-test-summary, .welcomeintro-row, .speedopt, .chip, .info-note, .codereveal-box,
     .results-review, .points-progress-sect, .points-stat-box, .pbbanner, .stat-card, .modecard, .pick, .more-toggle,
     .unlock-row, .cz-row, .friend-sect, .settings-card, .cal-monthview, .profile-hero, .pf-goal){
-    --surface-1:rgba(12,13,19,.4); --surface-2:rgba(18,20,28,.45);
+    --surface-1:var(--clean-card); --surface-2:var(--clean-card);
   }
   /* Welcome's two buttons are 44px on a phone too (they were 37-38: under the tap minimum) */
   html[data-layout] body .cosmic-welcome .cosmic-welcome-btn{ min-height:44px; }
@@ -36405,6 +36378,116 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .screen-ranks .ios-nav + .ranks-tab > .rankhero:first-child,
   html[data-layout] body #stage .screen-ranks .ios-nav + .badges-tab > .badges-head:first-child{ margin-top:0; }
   html[data-layout] body #stage .screen-ranks .ranks-tab > .ranks-note{ margin:0 1rem 1rem; font-size:.82rem; line-height:1.45; color:var(--soft); }
+
+  /* ===================== THE CLEAN LOOK BEYOND HOME (build 383, round 2) =====================
+     Madison, with screenshots of Orbit (its planet home, its Settings) and Delta's Settings: "do you see how much is going on
+     with that screen and how there's different looks/colors all over the place? I feel like the app may have too much Liquid
+     Glass. The planet system here, do you see how the Netflix YouTube spots, they aren't Liquid Glass just a nice look. Same
+     for both settings backgrounds, they are clean. So maybe the background in most other places should just be that same nice
+     look. This won't affect the rest stuff, or main menu ... profile and stuff within profile, the stats, the settings, the
+     customize, the calendar, the unit selection screen, review mode. HOWEVER, I love the way the flashcards look ... We want
+     simplicity and nothing overly distracting outside the main menu."
+     Measured off his screenshots: Orbit's Settings is a flat (8,6,17) with solid (26,22,36) cards - +18 levels, no rim, no
+     glass, no gradient; Delta's a flat #1C1C1E with solid #2C2C2E cards (+16). So, beyond Home (body:not(.sky-home)):
+     - THE BACKGROUND is the app's own dark paper with its glow barely there (the "settle down" a question already gets) - no
+       stars, no wash, nothing that moves;
+     - EVERY CARD is one solid colour, --clean-card (white 7% into the paper, +18 levels): the surface tokens every card is drawn
+       from are set to it - no sheen, no rim, no shadow, no blur - so every screen that uses them follows;
+     - a picked or pressed thing is a step lighter (--clean-card-2); hairlines inside a card are --clean-line;
+     - the switches (Profile / Stats / Settings, the levels, the boards) are a flat track with a lighter flat pill; the search
+       fields, Select all, Find me and the round buttons are the same solid colour.
+     Home, the tab bar (his "pop frosted look and bottom tab") and the flash cards keep theirs. */
+  html[data-theme="dark"][data-layout="modern"] body{
+    --clean-card:color-mix(in srgb, #FFFFFF 7%, var(--paper));
+    --clean-card-2:color-mix(in srgb, #FFFFFF 13%, var(--paper));
+    --clean-line:rgba(255,255,255,.08);
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home){
+    --surface-1:var(--clean-card); --surface-2:var(--clean-card);
+    --surface-lift:rgba(255,255,255,.05);
+    --surface-sheen:linear-gradient(transparent, transparent);
+    --surface-border:transparent;
+    --surface-shadow:none;
+    --surface-blur:none;
+    --ios-card-fill:transparent;
+    --pop-bg-card:var(--clean-card);
+  }
+  /* the paper with its glow barely there - a question's values, on every screen beyond Home */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home)::before{
+    background:
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
+      var(--paper);
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home){ --statusbar-mix2:2.2%; --statusbar-mix3:2.35%; }
+  /* the switches: a flat track, the picked segment a flat lighter pill */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs{
+    background:var(--clean-card) !important; border-color:transparent !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .seg-slider,
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
+    background:var(--clean-card-2) !important; background-image:none !important; box-shadow:none !important; border:0 !important;
+  }
+  /* fields and the small actions beside them: the card's colour, no rim */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.searchwrap input, .rank-search-wrap input, input.searchbox){
+    background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.selall-btn, .starred-pill, .rank-me-btn, .iconbtn.rank-me-btn){
+    background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important; color:var(--ink) !important;
+  }
+  /* the units screen's mode word: the mode's colour on a faint fill - no rim, no glow */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .setup-modechip .rs-mode{
+    border-color:transparent !important; box-shadow:none !important; background-image:none !important;
+    background-color:color-mix(in srgb, currentColor 13%, transparent) !important;
+  }
+  /* a picked unit: a step lighter, and the green dot (its glow quieter) - no green edge, no green wash */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .picks > label.pick.pick-checked{
+    background:var(--clean-card-2) !important; border-color:transparent !important; box-shadow:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .picks > label.pick > .box{
+    box-shadow:0 0 6px 1px color-mix(in srgb, var(--pick-dot) 60%, transparent) !important;
+  }
+  /* the chat button beyond Home: a solid round button, like the back button - not glass */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #chatdock-btn{
+    background:var(--clean-card-2) !important; background-image:none !important; border-color:rgba(255,255,255,.06) !important;
+    box-shadow:0 4px 14px rgba(0,0,0,.35) !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .ios-nav > .back-link.ios-nav-back{
+    background:var(--clean-card-2) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+  }
+  /* the Rank tab: its top box and the climb's cards are the solid card; what sits inside them is a step lighter, no rims */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.rankhero, .rankmap-card, .badges-head){
+    background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.rankhero-gauge, .rankmap-gift){
+    background:rgba(255,255,255,.05) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+  }
+  /* Badges' head: one box, not a box in a box */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .badges-head .rankhero-gauge.statbox{ background:transparent !important; padding-left:0 !important; padding-right:0 !important; }
+  /* the results: every card the solid card - the grade's coloured frame (its tone layers), the XP card's blue rim and every glow
+     go; the grade and the bars keep their colour. The hundo's own box (.hfx-tinted) is the celebration and keeps its look. */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card:not(.hfx-tinted){
+    background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+    -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card:not(.hfx-tinted) .rs-grade-tone{ display:none !important; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen :is(.rs-byunit, .rs-xptotal){ border-color:var(--clean-line) !important; background:transparent !important; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-mode{
+    border-color:transparent !important; box-shadow:none !important; background-image:none !important;
+    background-color:color-mix(in srgb, currentColor 13%, transparent) !important;
+  }
+  /* Review's and Starred's head card: the solid card, its mark keeps its colour */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .ar-head{
+    background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
+  }
+  /* the words in the app's own face - the serif display face is Home's wordmark's alone */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.rankhero-name, .rankmap-name, .profile-name-display){
+    font-family:var(--sans) !important; font-weight:700 !important; letter-spacing:-.01em;
+  }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -36789,8 +36872,6 @@ html.is-browser{ --fade-paper: transparent; }
   })();
 </script>
 
-<!-- (383) the wash behind every screen but Home - see #nova-wash in the stylesheet -->
-<div id="nova-wash" aria-hidden="true"></div>
 <div class="wrap">
   <div class="top">
     <div class="banktitle-group">
@@ -52528,7 +52609,9 @@ function syncSky(isQuestion){
      full sky as well ("Ensure the background is updated too during it") -
      the first thing anybody sees is the same night as Home. */
   let preAccount = false;
-  try{ preAccount = !!stage.querySelector('[data-screen="welcome"]') || !(store && store.onboardingComplete); }catch(e){}
+  /* 383 round 2: "The sign up screen and everything and start would have to be updated to reflect this all" - the sign-up steps
+     are the clean look now (body:not(.sky-home)); Welcome (its planet) and the first-visit page keep Home's sky */
+  try{ preAccount = !!stage.querySelector('[data-screen="welcome"], [data-screen="getstarted"]'); }catch(e){}
   b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]') || preAccount);
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the

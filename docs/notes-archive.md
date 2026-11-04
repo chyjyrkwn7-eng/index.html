@@ -31523,3 +31523,37 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   (b383-tabslide); on the merged build check-b383-tabslide, -slide, check-b380-slide, check-b383-look, check-b382-units, -signup,
   -review, -profile, -flashcards (its taps now wait for the target to stand still - one run tapped mid-scroll), -toggles and
   sweep-layout --quick 14/14 pass. check-sync's "Find me" fails only under load (passes alone; 382 the same).
+
+### Build 383, round 2 - the clean look beyond Home (less Liquid Glass)
+- Madison, with screenshots of Orbit's planet home, Orbit's Settings and Delta's Settings: "I feel like the app may have too much
+  Liquid Glass ... the Netflix YouTube spots, they aren't Liquid Glass just a nice look. Same for both settings backgrounds, they
+  are clean ... profile and stuff within profile, the stats, the settings, the customize, the calendar, the unit selection screen,
+  review mode. HOWEVER, I love the way the flashcards look ... The mode selection screen, ensure the back buttons go with the app
+  ... The result screen, same kinda thing ... the badge screen, that top box, the rank up screen top box and the boxes that contain
+  the rank information ... The sign up screen and everything and start would have to be updated." Home ("won't affect ... main
+  menu") and the tab bar stay as they are.
+- Measured off his screenshots: Orbit's Settings is flat (8,6,17) with solid (26,22,36) cards, Delta's flat #1C1C1E with #2C2C2E
+  cards: +16-18 levels, no rim, no glass, no gradient. So beyond Home (body:not(.sky-home)) the dark modern look is:
+  - BACKGROUND: the paper with its glow barely there (body::before's pools at 4% / 4.7%, the status-bar mixes 2.2% / 2.35% to
+    match); body::after (the stars) 0. The round-1 wash (#nova-wash, three pools of the theme's colours) is REMOVED - element and
+    CSS; its header comment is marked SUPERSEDED. Party keeps its own stars (.6, Home 1, calm 0).
+  - ONE CARD: --clean-card = color-mix(#FFF 7%, var(--paper)); --clean-card-2 (13%) for picked/pressed; --clean-line
+    (white .08) for hairlines. The surface tokens are set to them beyond Home (--surface-1/-2 clean-card, sheen a transparent
+    gradient, border transparent, shadow none, blur none, --ios-card-fill transparent, --pop-bg-card clean-card), so everything
+    drawn from them follows; 382's element-level --surface-1 on the card list and the Profile three cards are pointed at it too.
+  - Flattened by name where a screen paints its own: the Profile / Stats / Settings switch (track clean-card, pill clean-card-2),
+    the search fields, Select all, Starred, Find me, the mode chip on the units screen, a picked unit (clean-card-2, no green edge,
+    the dot's glow smaller), the chat button and the round back button (clean-card-2, solid), the Rank tab's hero and ladder cards
+    and Badges' top box (gauge rgba(255,255,255,.05)), the results' cards (the grade's tone frame hidden), Review's head.
+  - Profile's name and the Rank tab's names in the app's sans (700), not the serif. The answer choices' reading face and the
+    Settings "NOVA" wordmark are unchanged.
+  - Sign-up: syncSky's pre-account sky (Home's) is now only Welcome and Get started (the planet); every other sign-up step is clean.
+  - Kept: Home, the tab bar, the flash cards (their face's gradient and rim), the daily question's comet, the green dot.
+- Gate tools/check-b383-look.py rewritten for this (phone 440x956, dark): (1) Home's stars at full; mode selection, the units,
+  Profile, Stats, Settings, Customize, the Calendar, Review's list, the Rank tab, Badges, a results screen and "New to Nova?" have
+  no stars and no wash; Welcome keeps Home's sky; (2) 28 cards on those screens opaque, no painting gradient, rim, shadow or blur,
+  and one colour; (3) the switch flat with a lighter pill, the search field the card's colour, the back and chat buttons solid;
+  (4) no serif title (17px+) on Profile, Stats, Ranks, Badges; results' cards solid with the tone hidden; (5) a picked unit a step
+  lighter with the green dot, no edge; (6) the daily question's comet when ready, none answered; (7) the flash cards' face keeps its
+  gradient and rim. On the previous commit (ec40930): 21 fail (the wash on every screen, 0 of 28 cards solid, three colours, glass
+  buttons, serif names, the tone frame, stars on the sign-up step); (6) and (7) pass on both, as they should. This build: ALL PASS.
