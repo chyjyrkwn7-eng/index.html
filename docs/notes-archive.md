@@ -31376,3 +31376,55 @@ screen so fix that pathway/navigation."
   goes; a Drill's Quit test still Home - 7 fail on the previous commit. check-behaviour b13114 (starred box) now takes 382's plain
   count ("1"), not "1 question" (it failed on the previous commit too). check-b382-input, check-b327z10, check-studyflow,
   check-savetest, behaviour b297/b303/b314_study/review_reach/update_and_cards, sweep-layout --quick 14/14: pass.
+
+### Build 383 - the tab bar slide: from any tab where none is lit; no whole-page restyle as it starts; the glass where the finger is now
+Madison, 383: "Again like I said, the tab sliding/swiping function needs to be fixed and smooth with no delay/lag because it's still
+not fixed. While in the unit selection screen and using the bottom tab, you can only tab the bottom tab stuff, ensure you can still
+slide your finger across it to swipe/select similar to how you can on the main menu and stuff." (Earlier in 383, of his 382 video:
+"I think calendar is good but not the rest. Tapping seems to be working really well.")
+Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces and CPU profiles at 4x CPU.
+- THE UNITS SCREEN: no tab is lit there (it belongs to no tab - syncActive lights nothing; the same on mode selection and the Virtual
+  Room's screens), and 380's rule "a slide starts on the lit tab" (tabDragFromActive) made every press there a press on "another
+  tab": 40 touch moves Home -> Leaderboard, the glass never left Home, and let go over the Leaderboard nothing opened
+  (lensRelease(null)). Now the navrow's pointerdown sets tabDragFromActive = no lit tab, or the press is on the lit one: where none is
+  lit any tab slides, and the tab let go on opens (its _navigate; the bar losing its Start pill is carried by _lensRelayout as a tap's
+  is). Where a tab IS lit, 380's rule stands.
+- THE SLIDE'S FIRST FRAME (the lag, and why the Calendar was the good one): 383's first pass held Profile's card, its challenges and
+  the board's rows with html.slide-hold and `html.slide-hold #stage :is(...) *` - a class on <html> with a rule reaching every element
+  under it. Putting it on (the slide's start) and taking it off (the landing) restyled the WHOLE page; barUnderPause's getAnimations,
+  a frame later, forced that restyle inside a frame that moves the glass. Traced at 4x CPU: Home 1637 elements / 152ms (that frame
+  201ms; 382's first slide frame on Home was 43ms), Profile 1327 / 89ms, Leaderboard 1075 / 70ms, Calendar 951 / 42ms - the order of
+  his "calendar is good but not the rest" - and the same again at every landing. The class and its rule are gone. SLIDE_HOLD_SEL
+  (".cosmic-hero-wrap, .profile-hero *, .pf-goal *, .rank-row *") pauses the same animations in barUnderPause's one listing (382's way
+  for Home's hero); a paused animation restyles only its own element. check-b383-slide's holds (25 on Profile, 5 on the board) read the
+  same. After: no style pass in a slide over ~125 elements, and the app's own worst task in a slide at 4x is Home 24-38ms, Profile
+  13-19, Leaderboard 8-14, Calendar 7-11 (load-dependent).
+- THE GLASS WHERE THE FINGER IS NOW (lensMove's tick): the glass was written at the finger's last move, and touches do not come one per
+  frame (two or three between Safari's 60Hz frames on a 120Hz phone, sometimes none at 60Hz) - so it stepped one move, then three, and
+  on a frame with no move the lead (382) shrank and it stepped BACK. The finger's speed is now taken from the moves' own times
+  (e.timeStamp; the arrival time when that is not on performance.now()'s clock), and each frame the glass goes where that speed has
+  carried the finger since its last move came in, for as long as the next move is normally due (1.3x the longest recent gap between
+  moves, 12-40ms), plus 382's lead, the two together never past LENS.leadMax. A move later than that and what is ahead of the finger
+  fades in ~15ms: a finger that stops has the glass on it (check-behaviour b323t's drag reads 1px off the previous commit's). Moves
+  6/6/22ms apart on the Calendar at 1x: the glass stood still or stepped back on 45-60% of a slide's frames before, 0-3% now.
+- A SCREEN BUILD NEVER RUNS UNDER A SLIDE: a tap's waiting build (TAB_SCREEN_AFTER after its press) ran on its timer even if a finger
+  was by then sliding; it now waits while tabDragActive && tabDragMoved (2s at most - the screen always follows, 314), and the release
+  lands it or replaces it.
+- Looked at, not changed: the press (pointerdown 50-110ms at 4x - lensDown's measures force a style pass and layout; taps share it and
+  he says taps are good); the release's onGesture (~55ms at 4x) is the sound context made on a session's first touch only; the screen
+  built after a release is the screen's own (the glass holds over it, 382). Mid-glide the app's script is ~1-2ms a frame at 4x; the
+  rest of a Chromium frame is its own compositing (Layerize/Commit), heaviest on Home (more layers), which WebKit does differently.
+- Gate tools/check-b383-tabslide.py (real touches): (1) units screen, Home -> Leaderboard and Calendar -> Profile: the glass follows,
+  the tab let go on is lit with its screen up; (2) Home, Profile, Leaderboard, Calendar at 4x, traced, a slide to the far tab: lands,
+  no style pass over 300 elements, no task over 50ms of the app's script/style/layout; (3) uneven touches: still or back frames <=20%;
+  (4) a build due mid-slide (the Leaderboard tab clicked from the page during a slide, its screen made 300ms) waits for the release.
+  On the previous commit: (1) 4 of 4 fail; (2) restyles 1427 / 1327 / 532 / 715 elements fail on all four screens, Home 105ms and
+  Profile 163ms fail the 50ms; (3) 45%; (4) built 1.4s before the release. On this build: ALL PASS (twice, load 3-6).
+- Also run: check-b383-slide ALL PASS (glass on the finger 3.0 / 2.2px behind at worst); check-b380-slide ALL PASS; check-b382-slide
+  all but (3) Home, 8.7-9.1px behind - 9.0 on the previous commit under the same load (noted at 383's first pass too);
+  check-b327z15 F (68 of 153) and G (12 of 18) fail the same on the previous commit (65 / 12) - their "nothing extra built" predates
+  365's 40ms build - W passes; check-behaviour b323t_tabbar's 4 fails are all on the previous commit too (two read the hidden Stats
+  and Settings tabs, Settings lit with Profile, the drag 6px vs 3 - 5px before); b314h_tabs, b282, b268, b245_start_pill, b312_looks,
+  b323v_vroom pass; check-js; sweep-layout --quick 14/14.
+- Phone only: whether the slide now feels smooth on his 17 Pro Max (Chromium neither repaints SVG nor composites as iOS WebKit does),
+  and how its touches really arrive against Safari's frames.
