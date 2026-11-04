@@ -30862,6 +30862,7 @@
   .bc-intro.is-in{ opacity:1; transform:none; }
   .bc-intro .bc-name{ font-size:2rem; }
   @media (min-width:40rem){ .bc-intro .bc-name{ font-size:2.5rem; } }
+  .bc-intro.is-long .bc-name{ font-size:1.35rem; }
   .bc-words{ position:absolute; left:0; right:0; top:84%; text-align:center; padding:0 1rem; opacity:0; transform:translateY(8px);
     transition:opacity .45s ease, transform .45s ease; pointer-events:none; }
   .bc-words.bc-words-in{ opacity:1; transform:none; }
@@ -30870,6 +30871,10 @@
   .bc-name{ margin:.3rem 0 0; font-family:var(--serif); font-size:1.7rem; font-weight:700; color:#fff; }
   .bc-sub{ margin:.3rem 0 0; font-size:.88rem; color:rgba(255,255,255,.7); }
   @media (min-width:40rem){ .bc-name{ font-size:2.1rem; } }
+  /* (384) a long name under the case, stepped down until it fits (placeWords) */
+  .bc-words.is-long .bc-name{ font-size:1.25rem; }
+  .bc-words.is-longer .bc-name{ font-size:1.02rem; }
+  .bc-words.is-longer .bc-sub{ margin-top:.2rem; }
   /* ---- REDUCE MOTION: the case already open, nothing moving ---- */
   /* (the pseudo-elements by name: a * never reaches a ::before, and the
      seated slot's glow is one) */
@@ -54168,16 +54173,23 @@ function ifcGreetingLines(){
   const name = novaName();
   const hello = ctx => { const t = document.createElement("p"); t.className = "nt-hello"; t.textContent = "Nova";
     novaProp(ctx, novaStack(t, novaCap("Fire Code · Instructor"))); };
+  /* (384, going live) THE DIFFERENCES, SAID: the placeholders ("A few things work differently ... I'll point them out as we
+     go") promised a tour nothing gave, and one line named the academy. Now he says what is different, from the class's own
+     numbers (a chapter's badge is one 100%; the hundo effects' counts off HUNDO_FX). No "unit" in a line: the chapter
+     observer would rewrite it. */
+  const needs = HUNDO_FX.filter(d => d.need > 0).map(d => d.need);
+  const counts = needs.length > 1 ? needs.slice(0, -1).join(", ") + " and " + needs[needs.length - 1] : String(needs[0] || "");
   return [
     { gesture: "wave", text: "Welcome to Fire Code, " + name + "!", enter: hello },
     { text: "This class has the 2021 IFC and the Harris County (HC) amendments." },
     { text: "Same me, a brand new class." },
     { gesture: "raise", text: "Your rank and level start fresh here." },
-    { text: "Nothing you earn here changes the academy." },
+    { text: "Nothing you earn here changes your other class." },
     { text: "Every question comes with the code it’s from." },
     { gesture: "nod", text: "Answer one, and I’ll show you the page." },
-    { text: "A few things work differently in this class." },
-    { gesture: "wave", text: "I’ll point them out as we go. Ready?" }
+    { gesture: "raise", text: "Every chapter has a badge. Score 100% on it once, and it’s yours." },
+    { text: "Hundo effects come sooner here: at " + counts + " hundos." },
+    { gesture: "wave", text: "That’s what’s different. Ready?" }
   ];
 }
 function maybeClassGreeting(){
@@ -99063,11 +99075,14 @@ function novaReplyFor(raw){
   const rankNow = rk ? "You’re " + RANK_DISPLAY_NAME[rk] + " now" : "You haven’t reached Bronze yet";
   const nextIdx = rk ? TIER_ORDER_FULL.indexOf(rk) + 1 : 0;
   const next = TIER_ORDER_FULL[nextIdx] ? RANK_DISPLAY_NAME[TIER_ORDER_FULL[nextIdx]] : null;
+  /* (384) Fire Code has no class calendar (its bar is Home, Profile, Stats, Settings), and its Sheriff is the Chief */
   if(has(/ (next test|the test|test (on|is|day|date|topics?)|what's on|whats on|on the test|calendar|sunday|topics?|quiz|mock) /))
-    return "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
-  if(has(/ (virtual room|vr|race|challenge|sheriff|battle|duel|versus|vs|play you|fight) /))
+    return window.NOVA_CLASS === "ifc"
+      ? "This class has no calendar or test dates. Study the chapters at your own pace, and the Stats tab keeps your numbers."
+      : "The Calendar tab has the next test date and every class day. When your instructor gives out what’s on it, I’ll pass the topics on here, usually on a Sunday.";
+  if(has(/ (virtual room|vr|race|challenge|sheriff|chief|battle|duel|versus|vs|play you|fight) /))
     return NOVA_VR_READY
-      ? "I’m always up for a match. Tap Challenge at the top of this chat: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and you’ll unlock the Sheriff."
+      ? "I’m always up for a match. Tap Challenge at the top of this chat: Race, Tug of War or Battle. Now and then I’ll challenge you, too. Beat me and you’ll unlock the " + (AVATAR_DISPLAY_NAME.poseidon || "Sheriff") + "."
       : "A Virtual Room is a race against your friends. Open one from Start Studying and invite your friends.";
   /* what helping him gets you (build 326) */
   if(has(/ (rewards?|what do i get|what do we get|in return|why help|why should i|what's in it|whats in it) /))
@@ -102762,6 +102777,9 @@ function whatsNewHolds(){
 }
 function maybeShowIntro(){
   if(novaMeetOn) return;
+  /* (384) NOT IN FIRE CODE: the card is the academy's news (its new units, its Calendar tab, Settings in Profile, the
+     Sheriff), and its seen mark is shared by the two classes - it waits for the academy, where it is true */
+  if(window.NOVA_CLASS === "ifc"){ introPending = false; return; }
   if(introSeen()){ introPending = false; return; }
   clearTimeout(introTimer);
   introPending = true;
@@ -116248,7 +116266,9 @@ function ifxThermal(scr, bx, c){
     }
     rk.push([T.lock, { transform: "translate(" + bnF(tx) + "px," + bnF(ty) + "px)" }]);
     ifxAt(c, ret, tot, rk);
-    const rWrap = ifxEl(ret, "left:0;top:0;width:0;height:0;");
+    /* (384) hidden at rest: its opacity is animated end to end, so this only shows when a stop (a card tapped away, the screen
+       changing) cancels the animations - the reticle and readout then went to the corner of the screen for the fade */
+    const rWrap = ifxEl(ret, "left:0;top:0;width:0;height:0;opacity:0;");
     ifxAt(c, rWrap, tot, [[T.ret, { opacity: 0, transform: "scale(1.5)", easing: IFX_OUT }], [T.ret + .28, { opacity: 1, transform: "scale(1)" }],
       [T.off - .15, { opacity: 1, transform: "scale(1)", easing: IFX_IN }], [T.off + .3, { opacity: 0, transform: "scale(1.2)" }]]);
     const fw = nw / 2 + pad, fh = nh / 2 + pad;
@@ -117717,7 +117737,7 @@ function caseKit(){
       const p = mk("nova-case-plate nova-case-nameplate" + (extra ? " " + extra : ""), "b");
       p.setAttribute("aria-hidden", "true");
       const slab = mk("nova-case-np-slab", "b");
-      const l1 = mk("nova-case-np-l1", "b"); l1.textContent = "Nova \u00B7 Class 26E";
+      const l1 = mk("nova-case-np-l1", "b"); l1.textContent = "Nova \u00B7 " + BADGE_CASE_CLASS;
       const rule = mk("nova-case-np-rule", "b");
       const l2 = mk("nova-case-np-l2", "b"); l2.textContent = badgeCaseName(BADGE_CASES[0]);
       slab.append(l1, rule, l2);
@@ -118014,16 +118034,30 @@ function playBadgeCaseScene(units, done, retro, opts){
     try{
       const o = overlay.getBoundingClientRect();
       const lo = Math.max(C.handle.getBoundingClientRect().bottom, C.front.getBoundingClientRect().bottom);
-      const room = o.bottom - (parseFloat(getComputedStyle(overlay).paddingBottom) || 0) - words.offsetHeight - 8;
-      words.classList.remove("is-beside");
+      const pb = parseFloat(getComputedStyle(overlay).paddingBottom) || 0;
+      words.classList.remove("is-beside", "is-long", "is-longer");
       words.style.left = words.style.right = "";
+      let room = o.bottom - pb - words.offsetHeight - 8;
+      /* (384) A LONG NAME IS SET SMALLER until it fits under the case: Fire Code's chapters run to 118 letters ("Appendix H:
+         Hazardous Materials Management Plan ..."), five lines at this size, which were laid over the case's latches and
+         ran down into the bottom inset. The academy's names fit as they were. */
+      if(lo + 14 > room && !(o.width > o.height * 1.3)){
+        words.classList.add("is-long"); room = o.bottom - pb - words.offsetHeight - 8;
+        if(lo + 14 > room){ words.classList.add("is-longer"); room = o.bottom - pb - words.offsetHeight - 8; }
+      }
       /* a phone held sideways has no room under the case: beside it */
       if(lo + 14 > room && o.width > o.height * 1.3){
         const right = Math.max(C.lidIn.getBoundingClientRect().right, C.tray.getBoundingClientRect().right);
         words.classList.add("is-beside");
         words.style.left = Math.round(right - o.left + 20) + "px";
-        words.style.right = "12px";
-        words.style.top = Math.round((o.height - words.offsetHeight) / 2) + "px";
+        /* (384) clear of the notch's side too (a long name's lines run to the right edge) */
+        words.style.right = "calc(env(safe-area-inset-right, 0px) + 12px)";
+        /* (384) and beside it, the same steps down while the name is taller than the screen's room (a long chapter) */
+        const pt = parseFloat(getComputedStyle(overlay).paddingTop) || 0, tall = () => words.offsetHeight > o.height - pt - pb - 16;
+        if(tall()){ words.classList.add("is-long"); if(tall()) words.classList.add("is-longer"); }
+        /* centred, but never into the insets (a short name is where it was) */
+        const wh = words.offsetHeight;
+        words.style.top = Math.round(Math.max(pt + 8, Math.min((o.height - wh) / 2, o.height - pb - 8 - wh))) + "px";
         return;
       }
       words.style.top = Math.round(Math.min(room, lo + 14) - o.top) + "px";
@@ -118221,6 +118255,10 @@ function playBadgeCaseScene(units, done, retro, opts){
     showCoin(first, BC_SPIN_TURNS, BC_SPIN_MS, SHOW_P);
     iName.textContent = badgeTitle(first);
     iSub.textContent = paid(first);
+    /* (384) and under the token alone: a name that would run off the bottom is set smaller (Fire Code's long chapters) */
+    try{ intro.classList.remove("is-long");
+      const ob = overlay.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(overlay).paddingBottom) || 0) - 8;
+      if(intro.getBoundingClientRect().bottom > ob) intro.classList.add("is-long"); }catch(e){}
   });
   at(BC_T.intro, () => intro.classList.add("is-in"));
   at(BC_T.glint, () => { const g = bcGlintCoin(flyer, 1400); if(g) anims.push(g); });
@@ -118664,9 +118702,11 @@ function playVoidFlareScene(done){
   st.appendChild(F.el);
   sfOrbit(st, F.el, VOID_FLARES, .2, -8, "sfv-ring");
   const kick = "THREE SECRET FLARES";
+  /* (384) the character's own name, as the other three scenes have it: Fire Code's is the Breacher, not Void */
+  const who = (AVATAR_DISPLAY_NAME.voidwalker || "Void").toUpperCase();
   if(S.still){
     F.lit();
-    S.stillEnd(kick, "VOID", "More of them are still out there.");
+    S.stillEnd(kick, who, "More of them are still out there.");
     return S.handle;
   }
   S.later(820, () => comet.classList.add("is-go"));
@@ -118697,7 +118737,7 @@ function playVoidFlareScene(done){
   S.later(17100, () => F.special());
   S.later(20200, () => { F.reveal(); S.overlay.classList.add("sf-lit"); S.flashAt(50, 50, "is-soft"); });
   S.step(21500, "sf-orbits");
-  S.later(22300, () => S.title(kick, "VOID", "More of them are still out there."));
+  S.later(22300, () => S.title(kick, who, "More of them are still out there."));
   S.later(27300, S.endScene);
   return S.handle;
 }
@@ -118956,7 +118996,8 @@ function playGenesisFlareScene(done){
   S.later(8700, () => S.flashAt(50, 50, "is-rose"));
   S.step(8950, "sf-forge");
   S.later(9300, () => S.hush());
-  S.later(10600, () => S.say("GENESIS", "Out of the core, a world", ""));
+  /* (384) "GENESIS" is the academy character's name; Fire Code's is the Flashbang, so its line is headed by the flare's */
+  S.later(10600, () => S.say(IFC_ART_ON ? MYSTERY_NAME.core.toUpperCase() : "GENESIS", "Out of the core, a world", ""));
   S.later(11300, () => F.keys());
   S.later(12200, () => F.emerge());
   S.later(14400, () => S.hush());
@@ -119921,8 +119962,10 @@ function flareFoundItem(c, all){
     const nth = VOID_FLARES.filter(k => (store.mysteryColorsFound || {})[k]).length;
     /* Void's three, said as Void's (build 326): "it says there's only 3
        secret flares but there's more than that?" */
-    name = MYSTERY_NAME[c] + " \u2014 " + nth + " of Void\u2019s " + VOID_FLARES.length;
-    sub = all ? "The last of Void\u2019s three" : "Keep an eye out for the next one";
+    /* (384) by the character's own name: in Fire Code the three are the Breacher's */
+    const who = AVATAR_DISPLAY_NAME.voidwalker || "Void";
+    name = MYSTERY_NAME[c] + " \u2014 " + nth + " of " + who + "\u2019s " + VOID_FLARES.length;
+    sub = all ? "The last of " + who + "\u2019s three" : "Keep an eye out for the next one";
   }
   return { kind: "flare", flare: c, kicker: "Secret flare found", name, sub,
     color: MYSTERY_COLOR[c], art: () => buildFlareOrb(MYSTERY_COLOR[c], "ul") };
@@ -130358,7 +130401,8 @@ function novaVrOutcome(data, myKey){
 function novaVrMatchLine(out, earned, game){
   const n = novaName();
   const mode = game === "tug" ? "Tug of War" : game === "battle" ? "Battle" : "race";
-  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. The Sheriff, one of my crew, is with you now. Wear the badge well.";
+  /* (384) the character by its class's own name: Fire Code's is the Chief */
+  if(out === "won" && earned) return "Well, " + n + ". You beat me fair and square, and that doesn’t happen often. The " + (AVATAR_DISPLAY_NAME.poseidon || "Sheriff") + ", one of my crew, is with you now. Wear the badge well.";
   if(out === "won") return "You got me again, " + n + ". I’m going to need more practice. Invite me back any time.";
   if(out === "draw") return "A dead heat, " + n + ". Neither of us gave an inch. Next time one of us won’t be so lucky.";
   return "Good " + mode + ", " + n + ". I had the edge today, but you made me work for it. Invite me any time you want another go.";
@@ -136703,6 +136747,11 @@ function unitTitle(unit){ return (UNIT_TITLES && UNIT_TITLES[unit]) || unit; }
 const BADGE_CASES = [
   { level: 1, name: "Level 1 Badge Case", units: null }
 ];
+/* (384) FIRE CODE'S CASE IS ITS OWN. "Level 1" is the academy's (its units come in levels; Fire Code's 58 chapters are one
+   case), and the case's plate and every badge's back said "Class 26E". In Fire Code the case is "Badge Case", its plate
+   "Nova · Fire Code" and a badge's back "FIRE CODE" (the same nine letters as "CLASS 26E", so the backs lay out alike). */
+var BADGE_CASE_CLASS = window.NOVA_CLASS === "ifc" ? "Fire Code" : "Class 26E";
+if(window.NOVA_CLASS === "ifc") BADGE_CASES[0].name = "Badge Case";
 function badgeCaseOf(unit){
   return BADGE_CASES.find(c => Array.isArray(c.units) && c.units.indexOf(unit) >= 0)
     || BADGE_CASES.find(c => !Array.isArray(c.units)) || BADGE_CASES[0];
@@ -137541,7 +137590,7 @@ function buildCustomizeCharacterSect(){
     /* THE LAST ONE (build 304): "It will be the last character on the
        list." Its own section, after everything it asks for. */
     /* BUILD 312: three of them, hardest last - Astral, Celestial, Zenith */
-    { title: "Ultimate", note: "The hardest three \u2014 Zenith takes everything",
+    { title: "Ultimate", note: "The hardest three \u2014 " + (AVATAR_DISPLAY_NAME.zenith || "Zenith") + " takes everything",   /* (384) Fire Code's is the Solar Flare */
       ids: AVATAR_CHARACTERS.filter(c => c.ultimate).map(c => c.id) },
     /* A character from an earlier version that nobody can earn now, shown
        only to whoever holds it (or is still wearing a retired one). */
@@ -143178,7 +143227,7 @@ function badgeBackPlan(unitName){
     v = [a, Math.max(d, fs * .05)]; VC.set(fs, v); return v; };
   const pad = Math.max(1, R.wallU * u * .5) + .5;
   const words = String(unitName).toUpperCase().split(/\s+/).filter(Boolean);
-  const CLASS = "CLASS 26E";
+  const CLASS = BADGE_CASE_CLASS.toUpperCase();   /* (384) "FIRE CODE" in Fire Code */
   /* rows: every way of breaking the words into k rows, in order */
   const splits = k => { const out = []; const rec = (i, left, acc) => {
     if(left === 1){ out.push(acc.concat([words.slice(i).join(" ")])); return; }
