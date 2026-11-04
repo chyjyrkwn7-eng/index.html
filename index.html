@@ -11653,7 +11653,13 @@
     65%{ opacity:1; }
     100%{ transform:translate(var(--dx), calc(var(--dy) + 24px)) scale(.9); opacity:0; }
   }
-  @keyframes stardust-twinkle{ 0%, 100%{ filter:brightness(1); } 50%{ filter:brightness(1.8); } }
+  /* (384) the sparks' twinkle is a swell of their own `scale` (which
+     composes with the flight's transform), not a filter: an animated
+     brightness() on a clip-pathed element is redrawn every frame */
+  @keyframes stardust-twinkle{ 0%, 100%{ scale:1; } 50%{ scale:1.45; } }
+  /* Confetti's half in the 100% box (hfxConfettiGrade): the nova's flash
+     softer over the number than across the screen */
+  .hfx-cf-soft{ position:absolute; inset:0; opacity:.55; }
 
   /* ---- HUNDO EFFECTS (build 313) - see playHundoFx ----
      Transform and opacity only, one-shot (every iteration count is
@@ -12076,8 +12082,10 @@
     box-shadow:inset 0 -8px 16px rgba(255,255,255,.12), inset 0 10px 18px rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.2); }
   .hfx-gb .hfx-bb-film{ opacity:.85; }
   .hfx-bub-halo{ position:absolute; width:var(--hr); height:var(--hr); margin:calc(var(--hr) / -2) 0 0 calc(var(--hr) / -2); background:center / 100% 100% no-repeat; opacity:0;
-    animation:hfx-bub-halo 2.2s cubic-bezier(.15,.7,.3,1) var(--t) both; }
-  @keyframes hfx-bub-halo{ 0%{ transform:scale(.25); opacity:0; } 10%{ opacity:.95; } 100%{ transform:scale(1.15); opacity:0; } }
+    animation:hfx-bub-halo 1.5s cubic-bezier(.15,.7,.3,1) var(--t) both; }
+  /* (384) opens at the ring of bubbles as they pop (scale 1 = their ring)
+     and spreads from there, never in over the number */
+  @keyframes hfx-bub-halo{ 0%{ transform:scale(.96); opacity:0; } 7%{ opacity:.95; } 100%{ transform:scale(1.55); opacity:0; } }
 
   /* UFO. One timeline shared by the saucer's path, its rocking and
      settle, its beam and its lights, so they cannot drift apart: 7s in a
@@ -12124,10 +12132,12 @@
     56.84%{ transform:translate(0, var(--hov)) scale(1); animation-timing-function:cubic-bezier(.45,0,.35,1); }
     64.21%{ transform:translate(0, 0) scale(1); }
     77.89%{ transform:translate(0, 0) scale(1); animation-timing-function:cubic-bezier(.45,0,.4,1); }
-    84.21%{ transform:translate(0, -70px) scale(1); animation-timing-function:ease-in-out; }
-    86.84%{ transform:translate(0, -66px) scale(1); animation-timing-function:ease-in-out; }
-    89.47%{ transform:translate(0, -72px) scale(1); }
-    90%{ transform:translate(0, -72px) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
+    /* (384) lifted as high as the sky lets it (--lift, hfxUfoSize: at most
+       the 70px it always was) - 70px put the dome off the top of a phone */
+    84.21%{ transform:translate(0, calc(var(--lift, 70px) * -1)) scale(1); animation-timing-function:ease-in-out; }
+    86.84%{ transform:translate(0, calc(var(--lift, 70px) * -.943)) scale(1); animation-timing-function:ease-in-out; }
+    89.47%{ transform:translate(0, calc(var(--lift, 70px) * -1.029)) scale(1); }
+    90%{ transform:translate(0, calc(var(--lift, 70px) * -1.029)) scale(1); animation-timing-function:cubic-bezier(.55,0,1,.5); }
     93.16%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:1; }
     93.79%, 100%{ transform:translate(var(--ox), var(--oy)) scale(.2); opacity:0; } }
   .hfx-ufo-bob{ position:absolute; left:calc(var(--uw) / -2); top:calc(var(--uh) * -1); width:var(--uw); height:var(--uh); transform-origin:50% 100%;
@@ -80669,7 +80679,11 @@ Object.keys(SND_DARK_VOL).forEach(id => { if(SOUND_CATALOGUE[id]) SOUND_CATALOGU
    it circles and when it passes the far top, its side, the near bottom,
    the other side and the top again (seconds from the effect's start). */
 var hfxUfoFlight = null;
-const SND_UFO_MARKS = [1.68, 1.99, 2.29, 2.6, 2.9];
+/* (384) a phone's path as it is now, read off hfxUfoFlight on a real 100%
+   on a 17 Pro Max (it was [1.68, 1.99, 2.29, 2.6, 2.9], 60-120ms ahead of
+   the path it stood for even before the circle was fitted to the sky) -
+   what the score plays when it is played on its own (a Settings preview) */
+const SND_UFO_MARKS = [1.74, 2.06, 2.38, 2.7, 3.02];
 /* a weighted hit: a sub drop, a mid body and a crack of air, so it lands on
    a phone speaker as well as on headphones */
 function sndHit(K, o){
@@ -111220,7 +111234,19 @@ function hfxContext(opts){
   if(opts.pct && box){
     let x = 0, y = 0, el = opts.pct;
     while(el && el !== box){ x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; }
-    if(el === box && opts.pct.offsetWidth) p = { x, y, w: opts.pct.offsetWidth, h: opts.pct.offsetHeight };
+    if(el === box && opts.pct.offsetWidth){
+      p = { x, y, w: opts.pct.offsetWidth, h: opts.pct.offsetHeight };
+      /* (384) to the sub-pixel: offsetLeft/Top/Width are whole pixels, and a centred number sits on a fraction - the lit
+         copy half a pixel off the real one read as a doubled 100%. Taken off the on-screen rects, undoing the box's scale;
+         kept only when it agrees with the whole-pixel answer (a box mid-turn would not) */
+      try{
+        const bR = box.getBoundingClientRect(), pR = opts.pct.getBoundingClientRect(), sc = box.offsetWidth ? bR.width / box.offsetWidth : 1;
+        if(sc > 0){
+          const fx = (pR.left - bR.left) / sc - box.clientLeft, fy = (pR.top - bR.top) / sc - box.clientTop, fw = pR.width / sc, fh = pR.height / sc;
+          if(Math.abs(fx - x) < 1.5 && Math.abs(fy - y) < 1.5 && Math.abs(fw - p.w) < 1.5 && Math.abs(fh - p.h) < 1.5) p = { x: fx, y: fy, w: fw, h: fh };
+        }
+      }catch(e){}
+    }
   }
   const k = 1;
   return { vw, vh, box, br, bw, bh, p, k, pct: opts.pct || null,
@@ -111257,6 +111283,10 @@ function hfxLitText(bx, c, o){
   t.style.width = c.p.w + "px"; t.style.height = c.p.h + "px"; t.style.top = pad + "px";
   t.style.fontFamily = cs.fontFamily; t.style.fontSize = cs.fontSize; t.style.fontWeight = cs.fontWeight;
   t.style.letterSpacing = cs.letterSpacing; t.style.lineHeight = cs.lineHeight;
+  /* (384) and its digits' own shapes: the grade is tabular, lining figures, and a copy in the font's default figures came
+     out 2.5px narrower - its 100% a ghost beside the real one ("100%" looked doubled in the tiles) */
+  t.style.fontVariantNumeric = cs.fontVariantNumeric; t.style.fontFeatureSettings = cs.fontFeatureSettings;
+  t.style.fontStretch = cs.fontStretch; t.style.fontStyle = cs.fontStyle; t.style.fontKerning = cs.fontKerning;
   return win;
 }
 
@@ -111489,9 +111519,12 @@ function hfxWarm(id){
     /* the Fire Code effects' sprites (IFX_DEF) */
     if(IFC_ART_ON && IFX_DEF[hundoFxId(id)]) urls.push(...ifxWarmList(hundoFxId(id)));
     else
-    if(id === "bubbles"){ [190, 280, 320, 150, 45, 230].forEach(h => { urls.push(hfxBubbleURL(h), hfxFilmURL(h), hfxFilmURL(h + 150)); }); urls.push(hfxHeroShellURL(), hfxRingURL()); }
+    if(id === "bubbles"){ [190, 280, 320, 150, 45, 230].forEach(h => { urls.push(hfxBubbleURL(h), hfxFilmURL(h), hfxFilmURL(h + 150)); }); urls.push(hfxHeroShellURL(), hfxRingURL(), hfxHaloURL()); }
     else if(id === "worldtree"){ [0, 1, 2].forEach(i => urls.push(hfxBlossomURL(i))); urls.push(hfxLeafURL()); HFX_BLOOM.forEach(cl => urls.push(hfxPetalURL(cl))); }
     else if(id === "fireworks"){ hfxFwHeads(); urls.push(hfxGlintURL()); }
+    /* (384) the UFO's own pictures, made and turned to bitmaps ahead like
+       every other effect's (they were first drawn as the effect started) */
+    else if(id === "ufo"){ urls.push(hfxUfoURL(), hfxUfoLightsURL(false), hfxUfoLightsURL(true), hfxBeamURL(), hfxBeamRingURL(), hfxGlintURL(), hfxMeteorURL("#9DFFB4")); }
     else if(id === "blackhole"){ urls.push(hfxDiscURL(), hfxSwirlURL(), hfxStreakURL(), hfxGlintURL()); }
     else if(id === "underwater"){ urls.push(hfxWaveURL(0), hfxWaveURL(1), hfxUwLensURL(), hfxUwLightURL(0), hfxUwLightURL(1), hfxUwDappleURL(), hfxRayURL(), hfxUwBubbleURL(), hfxDropURL(), hfxGlintURL());
       [0, 1, 2, 4].forEach(k => urls.push(hfxFishURL(k))); urls.push(hfxFishURL(0, null, true)); [1, 2, 4].forEach(k => urls.push(hfxFishURL(k, "body", false, HFX_FISH_HAZE.mid), hfxFishURL(k, "tail", false, HFX_FISH_HAZE.mid)));
@@ -111611,27 +111644,80 @@ function hfxGlassBubble(parent, o){
   hfxMk(w, "i", "hfx-bb-shell").style.backgroundImage = hfxHeroShellURL();
   return p;
 }
+/* (384) WHERE THEY GO: the whole screen round the box, not only over it.
+   They used to bud off the box's top edge and leave upwards only - which,
+   with the box now opening the results screen (170px down a phone, 185px
+   down an iPad), crammed every bubble into the strip over it, most of them
+   gone off the top within a second, and left the rest of the screen (the XP
+   card, and on an iPad a third of the screen under it) bare. Now each one
+   leaves from one of the box's four edges, picked in proportion to the room
+   past that edge (its length times the distance to the screen's edge, from
+   under the status bar), heading out of that edge: on a phone about one in
+   four goes up, the rest drift down over the cards - soap bubbles sink, so
+   that is the way they fall anyway - and on a wide screen some go out to
+   the sides. `pick(u)` maps u in 0..1 to an edge and a heading, so a set
+   spread evenly over 0..1 (the heroes) is spread over the room. */
+function hfxBubbleRoom(c){
+  const r = c.br, top = c.frame ? 0 : hfxSafeTop();
+  const sides = [
+    { k: "top", room: Math.max(0, r.top - top), len: r.width, a0: -Math.PI + .12, a1: -.12 },
+    { k: "bottom", room: Math.max(0, c.vh - r.bottom), len: r.width, a0: .12, a1: Math.PI - .12 },
+    { k: "left", room: Math.max(0, r.left), len: r.height, a0: Math.PI / 2 + .25, a1: Math.PI * 1.5 - .25 },
+    { k: "right", room: Math.max(0, c.vw - r.right), len: r.height, a0: -Math.PI / 2 + .25, a1: Math.PI / 2 - .25 }
+  ];
+  /* a side the bubbles cannot get out past (a 24px margin) is no way out */
+  sides.forEach(s => { s.w = s.room > 60 ? s.room * s.len : 0; });
+  const tot = sides.reduce((n, s) => n + s.w, 0) || 1;
+  if(tot === 1) sides[0].w = 1;
+  const pick = u => {
+    let acc = 0;
+    for(const s of sides){
+      if(!s.w) continue;
+      const f = s.w / tot;
+      if(u <= acc + f || s === sides[3]){
+        const v = Math.max(0, Math.min(1, (u - acc) / f));
+        /* the heading sweeps across the side as v does, a little scattered */
+        const a = s.a0 + (s.a1 - s.a0) * Math.max(0, Math.min(1, v + hfxR(-.08, .08)));
+        const e = hfxR(.08, .92), p = s.k === "top" ? { x: r.left + r.width * e, y: r.top + hfxR(2, 14) }
+          : s.k === "bottom" ? { x: r.left + r.width * e, y: r.bottom - hfxR(2, 14) }
+          : s.k === "left" ? { x: r.left + hfxR(2, 14), y: r.top + r.height * e } : { x: r.right - hfxR(2, 14), y: r.top + r.height * e };
+        return { a, x: p.x, y: p.y, side: s.k };
+      }
+      acc += f;
+    }
+    return { a: -Math.PI / 2, x: r.left + r.width / 2, y: r.top + 4, side: "top" };
+  };
+  return { sides, pick, top };
+}
 function hfxBubblesGlass(scr, c){
   const hues = [190, 280, 320, 150, 45, 230], small = c.vw < 600, r = c.br;
-  const src = () => ({ x: r.left + r.width * hfxR(.1, .9), y: r.top + hfxR(2, 16) });
+  const RM = hfxBubbleRoom(c);
+  /* the point on the box's edge facing (x, y) - where a chain sets out for a pop */
+  const toward = (x, y) => { const cx = r.left + r.width / 2, cy = r.top + r.height / 2, p = hfxBoxExit(c, Math.atan2(y - cy, x - cx));
+    return { x: p.x + hfxR(-12, 12), y: p.y }; };
   const route = (a, dist, swirl) => {
     const dx = Math.cos(a), dy = Math.sin(a), px = -dy * swirl, py = dx * swirl;
     return { mx: dx * dist * .42 + px * dist * hfxR(.14, .28), my: dy * dist * .42 + py * dist * hfxR(.14, .28),
              ex: dx * dist + px * dist * hfxR(0, .1), ey: dy * dist + py * dist * hfxR(0, .1) };
   };
-  const far = (s, a, k) => Math.max(160, hfxToEdge(c, s.x, s.y, a) * k);
+  /* (384) going down, they are gone before the bottom 120px, where the
+     way-on buttons rise as the tail begins (4.6s) */
+  const floorY = c.vh - (c.frame ? c.vh * .1 : 120);
+  const far = (s, a, k) => Math.max(160, Math.min(hfxToEdge(c, s.x, s.y, a), Math.sin(a) > .2 ? Math.max(60, (floorY - s.y) / Math.sin(a)) : Infinity) * k);
   const glass = typeof CSS !== "undefined" && CSS.supports && (CSS.supports("backdrop-filter", "blur(2px)") || CSS.supports("-webkit-backdrop-filter", "blur(2px)"));
-  /* the far layer: small, faint, slow */
-  for(let i = 0; i < (small ? 12 : 16); i++){
-    const s = src(), a = hfxR(-Math.PI + .1, -.1);
+  /* the far layer: small, faint, slow - spread evenly over the room */
+  const nS = small ? 12 : 16;
+  for(let i = 0; i < nS; i++){
+    const s = RM.pick((i + Math.random()) / nS), a = s.a;
     hfxBB(scr, Object.assign({ kind: "small", x: s.x, y: s.y, sz: hfxR(8, 18), d: hfxR(2.6, 3.6), dl: .25 + (i / 16) * 2.4, h: hues[i % hues.length] }, route(a, far(s, a, hfxR(.4, .85)), Math.random() < .5 ? 1 : -1)));
   }
-  /* the heroes: glass, spread over the upper half-circle */
+  /* the heroes: glass, spread evenly over the room (they were spread over
+     the half-circle over the box) */
   /* four heroes on a phone, six on a tablet (build 317: nine and six cost a
      filtered layer each, and the glass is the one costly thing here) */
   const nH = small ? 4 : 6, pops = [];
   for(let i = 0; i < nH; i++){
-    const s = src(), a = -Math.PI + Math.PI * (i + .5) / nH + hfxR(-.16, .16);
+    const s = RM.pick((i + .5) / nH), a = s.a;
     const sz = (small ? hfxR(76, 116) : hfxR(104, 160)) * (c.frame ? .48 : 1);
     const pop = i % 3 === 1;
     const d = pop ? hfxR(2.9, 3.3) : hfxR(4.2, 4.9), dl = .2 + i * .17;
@@ -111640,17 +111726,19 @@ function hfxBubblesGlass(scr, c){
     if(glass) hfxGlassBubble(scr, o); else hfxBB(scr, Object.assign({ kind: "hero" }, o));
     if(pop) pops.push({ x: s.x + rt.ex, y: s.y + rt.ey, t: dl + d, sz });
   }
-  /* mids, sprites, outward (a few sideways) */
-  for(let i = 0; i < (small ? 8 : 12); i++){
-    const s = src(), a = i % 4 === 3 ? (Math.random() < .5 ? hfxR(-.25, .15) : hfxR(Math.PI - .15, Math.PI + .25)) : hfxR(-Math.PI + .05, -.05);
+  /* mids, sprites, outward, spread over the room */
+  const nM = small ? 8 : 12;
+  for(let i = 0; i < nM; i++){
+    const s = RM.pick((i + Math.random()) / nM), a = s.a;
     hfxBB(scr, Object.assign({ kind: "mid", x: s.x, y: s.y, sz: (small ? hfxR(26, 48) : hfxR(32, 60)) * (c.frame ? .5 : 1), d: hfxR(2.6, 3.4), dl: hfxR(.3, 1.8), h: hues[i % hues.length] },
       route(a, far(s, a, hfxR(.5, .9)), Math.random() < .5 ? 1 : -1)));
   }
-  /* chains: two mids meet each popping hero where it bursts */
+  /* chains: two mids meet each popping hero where it bursts, setting out
+     from the edge of the box that faces it */
   pops.forEach((q, j) => {
     for(let k = 0; k < 2; k++){
-      const s = src(), T = q.t + .14 * (k + 1), dl = hfxR(.3, .7), d = Math.max(1.6, T - dl);
-      const tx = q.x + hfxR(-1, 1) * q.sz * .8, ty = q.y + hfxR(-1, 1) * q.sz * .6, ex = tx - s.x, ey = ty - s.y, sz = hfxR(24, 40);
+      const tx = q.x + hfxR(-1, 1) * q.sz * .8, ty = q.y + hfxR(-1, 1) * q.sz * .6, s = toward(tx, ty);
+      const T = q.t + .14 * (k + 1), dl = hfxR(.3, .7), d = Math.max(1.6, T - dl), ex = tx - s.x, ey = ty - s.y, sz = hfxR(24, 40);
       hfxBB(scr, { kind: "mid", pop: true, x: s.x, y: s.y, sz, d, dl, h: hues[(j + k * 2) % hues.length], mx: ex * .42 + hfxR(-50, 50), my: ey * .42, ex, ey });
       hfxSpray(scr, tx, ty, sz, T, k === 1);
     }
@@ -111658,8 +111746,9 @@ function hfxBubblesGlass(scr, c){
   });
   /* two pairs meet and merge */
   for(let m = 0; m < 2; m++){
-    const a = m ? hfxR(-2.6, -2) : hfxR(-1.1, -.5), sA = src(), sB = src();
-    const P = { x: sA.x + Math.cos(a) * 170, y: sA.y + Math.sin(a) * 210 }, d = hfxR(3.3, 3.8), dl = .5 + m * .5, h = hues[(m * 3 + 1) % hues.length];
+    /* (384) out past one edge of the box each, as the rest go */
+    const u = (m + hfxR(.25, .75)) / 2, sA = RM.pick(u), sB = RM.pick(u), a = sA.a, reach = Math.min(1, far(sA, a, .55) / 210);
+    const P = { x: sA.x + Math.cos(a) * 170 * reach, y: sA.y + Math.sin(a) * 210 * reach }, d = hfxR(3.3, 3.8), dl = .5 + m * .5, h = hues[(m * 3 + 1) % hues.length];
     const endD = far(P, a, .9);
     hfxBB(scr, { kind: "mid", merge: "a", x: sA.x, y: sA.y, sz: small ? 44 : 54, d, dl, h, mx: P.x - sA.x, my: P.y - sA.y, ex: P.x - sA.x + Math.cos(a) * endD, ey: P.y - sA.y + Math.sin(a) * endD });
     hfxBB(scr, { kind: "mid", merge: "b", x: sB.x, y: sB.y, sz: small ? 36 : 44, d, dl, h: h + 40, mx: P.x - sB.x, my: P.y - sB.y, ex: P.x - sB.x, ey: P.y - sB.y });
@@ -111672,7 +111761,24 @@ function hfxBubblesGlass(scr, c){
     hfxBB(scr, { kind: "mid", pop: true, x: cx, y: cy, sz, d: .9, dl: TF - .9, h: hues[i % hues.length], mx: ex * .55, my: ey * .55, ex, ey });
     hfxSpray(scr, cx + ex, cy + ey, sz, TF, true);
   }
-  hfxMk(scr, "i", "hfx-bub-halo", { left: cx + "px", top: cy + "px", "--hr": (R * 2.4) + "px", "--t": TF - .05 }).style.backgroundImage = hfxRingURL();
+  /* (384) THE HALO IS BORN WHERE THEY POP. It was the pops' small rainbow
+     ring (a 4.5-unit stroke drawn at 320px) blown up to 2.4x the ring of
+     bubbles: it opened at a quarter of that, in the middle of the box, so
+     at its brightest it crossed the 100% as a thick band, and grown to
+     400-700px from a 320px bitmap it went on as a soft, smeared doughnut.
+     Now it is its own picture, two fine rainbow rings drawn at 1024px
+     (hfxHaloURL), opening at the ring of bubbles itself - outside the
+     number - as they pop, and spreading out from there as it fades. */
+  hfxMk(scr, "i", "hfx-bub-halo", { left: cx + "px", top: cy + "px", "--hr": (R * 2) + "px", "--t": TF - .02 }).style.backgroundImage = hfxHaloURL();
+}
+function hfxHaloURL(){
+  if(hfxSprites.halo) return hfxSprite("halo");
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+    ["#FF4D6D", "#FF9F43", "#FFE45C", "#5CFF9D", "#4DD8FF", "#6B7CFF", "#C46BFF"].map((c, i) => '<stop offset="' + (i / 6).toFixed(2) + '" stop-color="' + c + '"/>').join("") +
+    '</linearGradient></defs><circle cx="50" cy="50" r="48.6" fill="none" stroke="url(#g)" stroke-width="1.1" stroke-opacity=".95"/>' +
+    '<circle cx="50" cy="50" r="47.5" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".35"/>' +
+    '<circle cx="50" cy="50" r="45.8" fill="none" stroke="url(#g)" stroke-width=".55" stroke-opacity=".5"/></svg>';
+  return hfxSpriteSVG("halo", svg, 1024);
 }
 
 /* ============ WORLD TREE ============
@@ -113569,10 +113675,27 @@ function hfxFireworks(scr, bx, c){
   if(scr){
     const W = c.vw, H = c.vh, T = HFX_FW_TOT;
     const S = hfxFwShow(kk);
-    const R = Math.min(W * (small ? .3 : .22), H * .2, 230);
-    /* the sky above the box: where the bursts go */
-    const yTop = Math.max(R * .8, H * .1), yBot = Math.max(yTop + 30, r.top - R * .6 - 16);
+    /* THE SHOW FITS THE SKY (build 384). The sky is the screen over the
+       box, and the box now sits high on the results screen (build 320's
+       order: 170px down a 17 Pro Max, 185px down an 11" iPad). The bursts
+       were sized off the screen's width (132px across on a phone, 183 on an
+       iPad, the finale's middle one 1.4x that) and centred in a band from
+       .1 of the screen's height - so every one was cut off by the top edge
+       of the screen, the finale's by up to 80px, and the band they were
+       squeezed into was 30px tall. Now the radius is also held to .6 of
+       the sky (from under the status bar, hfxSafeTop, to the box's top
+       edge), the bursts are centred from one radius under the top of the
+       sky down to near the box, and no burst - the finale's included - is
+       bigger than the room over its centre: every one opens whole, its
+       lower edge going down behind the box (which is lifted over the sky)
+       as if over a skyline. The finale's middle one goes off lowest and
+       biggest, a crown over the box. Times are untouched (the score is
+       cut to them). */
+    const skyTop = mini ? 0 : hfxSafeTop(), skyH = Math.max(60, r.top - skyTop);
+    const R = Math.max(30 * kk, Math.min(W * (small ? .3 : .22), H * .2, 230, skyH * .6));
+    const yTop = skyTop + R + 6, yBot = Math.max(yTop + 24, r.top - R * .3);
     const Y = f => yTop + (yBot - yTop) * f, X = f => R * .7 + (W - R * 1.4) * f;
+    const fit = (y, rr) => Math.max(R * .5, Math.min(rr, y - skyTop - 4));
     const from = f => [r.left + r.width * f, r.top + 2];
     const glow = (t, x, y, rr, key) => { hfxMk(scr, "i", "hfx-fw-glow", { left: x + "px", top: y + "px", "--gs": rr * 3.4, "--c": rgba(key, .5), "--t": t, "--d": 1.5 }); flashes.push([t, key]); };
     const shots = [
@@ -113584,12 +113707,12 @@ function hfxFireworks(scr, bx, c){
       [1.6, .75, .86, .86, .62, .7, { type: "peony", cols: ["c", "v"], n: small ? 30 : 40, life: 1.5 }, "c"],
       /* the finale: three together, the biggest in the middle */
       [2.55, .8, .25, .22, .42, 1, { type: "peony", cols: ["c"], n: small ? 44 : 56, life: 1.8, strobe: true }, "c"],
-      [2.5, .95, .5,  .5,  .12, 1.4, { type: "chrys", cols: ["m", "c", "w"], n: small ? 84 : 108, pistil: 18, life: 2 }, "m"],
+      [2.5, .95, .5,  .5,  .7,  1.4, { type: "chrys", cols: ["m", "c", "w"], n: small ? 84 : 108, pistil: 18, life: 2 }, "m"],
       [2.6, .8, .75, .78, .44, 1, { type: "peony", cols: ["m"], n: small ? 44 : 56, life: 1.8, strobe: true }, "m"]
     ];
     let fin = null;
     shots.forEach((s, i) => {
-      const o = from(s[2]), x = X(s[3]), y = Y(s[4]), rr = R * s[5], tb = s[0] + s[1];
+      const o = from(s[2]), x = X(s[3]), y = Y(s[4]), rr = fit(y, R * s[5]), tb = s[0] + s[1];
       S.shell(s[0], s[1], o[0], o[1], x, y);
       S.burst(tb, x, y, rr, s[6]);
       glow(tb, x, y, rr, s[7]);
@@ -113600,11 +113723,15 @@ function hfxFireworks(scr, bx, c){
     /* it crackles, then the embers come down */
     for(let i = 0; i < (small ? 26 : 36); i++){
       const a = hfxR(0, Math.PI * 2), d = fin.rr * Math.sqrt(hfxR(.15, 1)) * .95;
-      S.crackle(fin.t + 1.05 + hfxR(0, .7), fin.x + Math.cos(a) * d, fin.y + Math.sin(a) * d + fin.rr * .2);
+      /* (384) round the upper part of the crown, which is what shows over the box */
+      S.crackle(fin.t + 1.05 + hfxR(0, .7), fin.x + Math.cos(a) * d, fin.y + Math.sin(a) * d * .8 - fin.rr * .12);
     }
+    /* (384) the embers start in the sky over the box, all of it, and
+       drift down towards the box - not from under it, where the floor
+       (below) hid them as they began */
     for(let i = 0; i < (small ? 34 : 48); i++){
       const t = hfxR(3.9, 4.7);
-      S.ember(t, hfxR(R * .3, W - R * .3), Y(hfxR(.05, .8)) + hfxR(0, R * .5), Math.min(T - .25 - t, hfxR(2.1, 2.6)));
+      S.ember(t, hfxR(R * .3, W - R * .3), hfxR(skyTop + R * .35, Math.max(skyTop + R * .5, r.top - 40)), Math.min(T - .25 - t, hfxR(2.1, 2.6)));
     }
     const sky = hfxFwSky(scr, c, S, W, H, T - .1, r.top);
     sky.style.setProperty("--tot", T + "s");
@@ -113840,9 +113967,19 @@ const HFX_UFO_BEAMS = {
 __bm("L100489");
 const HFX_UFO_BEAM = "blue";
 function hfxUfoBeam(){ return HFX_UFO_BEAMS[HFX_UFO_BEAM] || HFX_UFO_BEAMS.green; }
+/* (384) STRETCHED, NOT LETTERBOXED. The beam is drawn at whatever width and
+   length the saucer's size and hover give it, never at the picture's own 1:2;
+   and an svg drawn into a box of another shape keeps its shape ("meet") and
+   leaves the rest clear. Until its bitmap was made (and the UFO's sprites were
+   never warmed ahead, so on the first UFO of a session it never was) the
+   beam was letterboxed: on a phone two-unit run it showed only from 50px
+   below the hull - starting at the box's edge instead of at the saucer - and
+   stopped 50px short of the box's floor; on an iPad it was a quarter
+   narrower than its own width. preserveAspectRatio="none" fills the box,
+   as the bitmap does; hfxWarm now makes the UFO's sprites ahead too. */
 function hfxBeamURL(){
   const b = hfxUfoBeam();
-  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".4"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".2"/></linearGradient>' +
+  return hfxSprite("beam-" + HFX_UFO_BEAM, () => 'viewBox="0 0 100 200" preserveAspectRatio="none"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + b.hi + '" stop-opacity=".75"/><stop offset=".35" stop-color="' + b.c + '" stop-opacity=".4"/><stop offset="1" stop-color="' + b.c + '" stop-opacity=".2"/></linearGradient>' +
     '<linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>' +
     '<path d="M38 0 L62 0 L100 200 L0 200 Z" fill="url(#b)"/><path d="M45 0 L55 0 L70 200 L30 200 Z" fill="url(#c)"/></svg>', 400);
 }
@@ -113860,8 +113997,9 @@ function hfxUfo(scr, bx, c){
       const t = .45 + hfxR(0, 1.1);
       hfxPiece(scr, "hfx-glint is-ufo", hfxGlintURL(), hfxR(.04, .96) * c.vw, hfxR(.03, .97) * c.vh, hfxR(8, 18), { "--t": t, "--d": 9.9 + hfxR(0, .9) - t });
     }
-    const w = c.frame ? c.vw * .42 : small ? 168 : 230, h = w * .62;
-    const hov = -Math.round(Math.min(120, Math.max(60, r.top * .25)));
+    /* (384) its size, how high it hovers and how high it lifts, all
+       fitted into the sky over the box (hfxUfoSize) */
+    const SZ = hfxUfoSize(c), w = SZ.w, h = SZ.h, hov = SZ.hov, lift = SZ.lift;
     const exit = { x: (Math.random() < .5 ? -1 : 1) * c.vw * .9, y: -L.y - 160 };
     /* how far its beam sweeps either way across the box (round 4) */
     const swa = hfxUfoSwa(c);
@@ -113880,7 +114018,7 @@ function hfxUfo(scr, bx, c){
     const top = document.createElement("div");
     top.setAttribute("aria-hidden", "true");
     const u = hfxMk(top, "span", "hfx-saucer", { left: L.x + "px", top: L.y + "px", "--sx": (hfxR(-.3, .3) * c.vw) + "px", "--sy": (-L.y - h - 20) + "px",
-      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px",
+      "--hov": hov + "px", "--ox": exit.x + "px", "--oy": exit.y + "px", "--uw": w + "px", "--uh": h + "px", "--swa": swa + "px", "--lift": lift,
       "--bmg": hfxUfoBeam().glow, "--bmd": hfxUfoBeam().deep });
     /* THE BEAM IS FIRED, THEN IT RIDES WITH THE HULL (build 317, round 3):
        "the UFO's projection is shown before it's shot out of the UFO and
@@ -113894,7 +114032,7 @@ function hfxUfo(scr, bx, c){
        --bk the same floor seen from the landed and the lifted hull */
     const floor = Math.max(8, (c.bh || 0) - 3), bh = -hov + h * .2 + floor;
     const beam = hfxMk(u, "i", "hfx-ufo-beam", { "--bh": bh + "px", "--bw": (w * .82) + "px", "--bt": ((-hov + h * .2 + 1) / bh).toFixed(4),
-      "--bl": ((h * .2 + floor) / bh).toFixed(4), "--bk": ((70 + h * .2 + floor) / bh).toFixed(4) });
+      "--bl": ((h * .2 + floor) / bh).toFixed(4), "--bk": ((lift + h * .2 + floor) / bh).toFixed(4) });
     beam.style.backgroundImage = hfxBeamURL();
     /* its bright head, on the beam's own curve (327, round 6) */
     hfxMk(u, "i", "hfx-ufo-beamtip", { "--bh": bh + "px", "--bw": (w * .82) + "px" });
@@ -113905,7 +114043,11 @@ function hfxUfo(scr, bx, c){
     /* searchlights sweeping the dark as it comes down (round 3) */
     /* no longer than from the rim to the box's top edge where it hovers,
        so they never reach the box: the beam is the one light that does */
-    [-1, 1].forEach(s => hfxMk(bob, "i", "hfx-ufo-search", { "--s0": (s * 34) + "deg", "--s1": (-s * 22) + "deg", "--slh": Math.round(-hov + h * .38) + "px" }));
+    /* (384) and since the circle came down into the sky over the box, they
+       are no longer than from the rim to the box where the circle passes
+       nearest it either (its near side, at .75 scale, at 2.4s) */
+    const nearGap = Math.max(4, -(SZ.cy + SZ.ry) - 1);
+    [-1, 1].forEach(s => hfxMk(bob, "i", "hfx-ufo-search", { "--s0": (s * 34) + "deg", "--s1": (-s * 22) + "deg", "--slh": Math.round(Math.min(-hov + h * .38, (nearGap - 4) / .75 + h * .38)) + "px" }));
     hfxUfoOnCards(scr, c);
     hfxMk(bob, "i", "hfx-ufo-glow");
     /* and it charges before it fires (327, round 6) */
@@ -113924,11 +114066,11 @@ function hfxUfo(scr, bx, c){
        here is under the card, so it shows only once it is clear of the
        box's top edge; the one in the box (below) carries it up to there
        on the same path, so the two meet at the edge without a seam */
-    hfxUfoAbduct(scr, c, r.left, r.top, h);
+    hfxUfoAbduct(scr, c, r.left, r.top, h, lift);
     /* and it goes in a warp: a flash where it was, then the streak - and
        (round 4) a boom: a ring of light thrown out flat from where it
        broke away, and the screen lit by it */
-    const ex = { x: L.x, y: L.y - 72 - h * .45 };
+    const ex = { x: L.x, y: L.y - lift * 1.03 - h * .45 };
     hfxMk(scr, "i", "hfx-ufo-flash", { "--fx": ex.x + "px", "--fy": ex.y + "px", "--t": 8.55 });
     hfxMk(scr, "i", "hfx-ufo-boom", { left: ex.x + "px", top: ex.y + "px", "--t": 8.55 });
     hfxMk(scr, "i", "hfx-ufo-warp", { left: ex.x + "px", top: ex.y + "px", "--t": 8.54 });
@@ -113971,9 +114113,10 @@ function hfxUfo(scr, bx, c){
       "--lk": (c.mini ? 7 : 12) + "px", "--t": 4.95 + sh });
     if(!c.boxOnly){
       /* the score up the beam, from the number to the box's top edge */
-      hfxUfoAbduct(bx, c, 0, 0, (c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230) * .62);
+      const SZ = hfxUfoSize(c);
+      hfxUfoAbduct(bx, c, 0, 0, SZ.h, SZ.lift);
       /* where its feet stood, glowing as it goes */
-      const w = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
+      const w = SZ.w;
       hfxMk(bx, "i", "hfx-ufo-marks", { left: (cx - w * .36) + "px", width: (w * .72) + "px", "--t": 7.4 });
     }
   }
@@ -113982,11 +114125,12 @@ function hfxUfo(scr, bx, c){
    the saucer's light, laid exactly over the number, rising up the beam to
    the saucer's underside and shrinking into it. `ox, oy` is where the box
    is in the parent's coordinates (0, 0 inside the box itself). */
-function hfxUfoAbduct(parent, c, ox, oy, uh){
+function hfxUfoAbduct(parent, c, ox, oy, uh, lift){
   if(!c.pct) return null;
   const cs = getComputedStyle(c.pct);
-  /* up the beam to the saucer's underside, over the middle of the box */
-  const up = -(c.p.y + c.p.h / 2) - 70 - uh * .12, ux = c.bw / 2 - (c.p.x + c.p.w / 2);
+  /* up the beam to the saucer's underside, over the middle of the box
+     (lifted `lift` px off it as it takes the score - 70 until build 384) */
+  const up = -(c.p.y + c.p.h / 2) - (lift == null ? 70 : lift) - uh * .12, ux = c.bw / 2 - (c.p.x + c.p.w / 2);
   const g = hfxMk(parent, "span", "hfx-ufo-ghost", { left: (ox + c.p.x) + "px", top: (oy + c.p.y) + "px", width: c.p.w + "px", height: c.p.h + "px",
     "--up": Math.round(up) + "px", "--ux": Math.round(ux) + "px", "--t": 7.38 });
   /* children, not textContent, as hfxLitText does: a grade drawn as a
@@ -114002,6 +114146,53 @@ function hfxUfoAbduct(parent, c, ox, oy, uh){
    tablet's wide one so the saucer does not race (one value, so the
    saucer's beam and the box's own move as one). */
 function hfxUfoSwa(c){ return Math.round(Math.min((c.bw || 0) * .3, 150)); }
+/* THE SKY OVER THE BOX (build 384). "Tighten up all of them where you can
+   to ensure they perfect, that goes for the police ones too." The results
+   screen now opens on the grade box (build 320's order), so the box sits
+   high: 170px from the top of a 17 Pro Max and 185px on an 11" iPad, under
+   a status bar 59px tall on the phone itself. The UFO was sized and placed
+   for a box far down the screen - a 168px (230px) saucer hovering 60px
+   over it and lifting 70px off it - so it hovered with its dome at the top
+   edge, circled half off the top of the screen, and on an iPad it hovered
+   and charged with its dome cut off (by 18 and 30px). hfxSafeTop is the
+   status bar's height (0 in Chromium, and 0 inside a stand-in frame);
+   hfxUfoSize fits the saucer into what is left: it keeps its size and
+   hovers 60px up where that fits, else it hovers lower (down to 40px) and
+   only then gets smaller; it lifts as high as the sky lets it, at most the
+   old 70px. Cached on the context, so the screen layer and the box agree. */
+function hfxSafeTop(){
+  try{
+    const p = document.createElement("i");
+    p.style.cssText = "position:fixed;left:0;top:0;width:0;height:env(safe-area-inset-top, 0px);visibility:hidden;pointer-events:none";
+    document.body.appendChild(p);
+    const v = p.offsetHeight || 0;
+    p.remove();
+    return v;
+  }catch(e){ return 0; }
+}
+function hfxUfoSize(c){
+  if(c.__ufoSize) return c.__ufoSize;
+  const r = c.br, top = c.frame ? 0 : hfxSafeTop(), base = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
+  /* the sky: from under the status bar (and 8px clear of it) to the box's top edge */
+  const room = r.top - top - 8;
+  let w = base, h = w * .62, hov = Math.min(120, Math.max(60, r.top * .25));
+  if(hov + h > room){
+    hov = Math.max(40, room - h);
+    if(hov + h > room){ h = Math.max(base * .62 * .66, room - hov); w = h / .62; }
+  }
+  const lift = Math.round(Math.max(36, Math.min(70, room - h)));
+  w = Math.round(w); h = Math.round(h);
+  /* ...and the circle it flies first (hfxUfoArrival), in the same sky, as
+     offsets from where it lands (the box's top edge, +1): as round as the
+     room allows (its depth a third of it, 12-70px), the saucer whole all the
+     way round - on the far side, smallest (.55), its dome 4px under the status
+     bar; on the near side, biggest (.75), its feet 6px over the box and its
+     middle 40px+ over it (check_b317_hundobox's rule) */
+  const sky = top + 4 - (r.top + 1), lo0 = sky + h * .55, hi0 = Math.min(-6, h * .375 - 46);
+  const ry = Math.max(12, Math.min(70, (hi0 - lo0) * .33));
+  const cy = Math.max(lo0 + ry, Math.min(hi0 - ry, (lo0 + hi0) / 2));
+  return (c.__ufoSize = { w, h, hov: -Math.round(hov), lift, top, room, sky, cy, ry });
+}
 /* The UFO's box, unlit until its beam strikes (round 5): put on as the
    card is built wherever the UFO is about to play on it, so not even the
    card's landing shows the beam's light. Not with reduce motion - no beam
@@ -114080,12 +114271,22 @@ function hfxUfoTopLayer(c, scr, top, bx){
    is the bob's `rotate`, read off the same path. 1.0s to 3.7s. */
 function hfxUfoArrival(c, u, bob, L, hov, w){
   const T0 = 1, T1 = 3.7, D = T1 - T0, side = Math.random() < .5 ? 1 : -1;
-  const ry = Math.max(12, Math.min(70, L.y * .12)), rx = Math.min(c.vw * .27, 230), cy = -L.y * .52;
-  const Fy = cy - ry, ex = side > 0 ? -(L.x + w * .75) : (c.vw - L.x + w * .75);
+  /* (384) THE CIRCLE FITS THE SKY. It was centred .52 of the way up from
+     the box and 12% of that tall, which with the box 170px down a phone put
+     the far side of the circle (and the way in, 30px over it) off the top of
+     the screen - the saucer flew in cut in half and its circle read as a
+     flat line along the top edge. Now the circle is as round as the sky over
+     the box allows (its depth a third of that room, 12-70px) and placed so
+     the saucer is whole all the way round: on the far side its dome clears
+     the status bar (hfxSafeTop) by 4px, and on the near side, biggest, its
+     feet stay 6px over the box (and its middle 40px+ over it, the gate's
+     rule). It comes in level with the circle's top, not from over it. */
+  const SZ = hfxUfoSize(c), uh = SZ.h, sky = SZ.sky, ry = SZ.ry, cy = SZ.cy, rx = Math.min(c.vw * .27, 230);
+  const Fy = cy - ry, Fin = Math.max(Fy - 12, sky + uh * .45), ex = side > 0 ? -(L.x + w * .75) : (c.vw - L.x + w * .75);
   const P = [];
   /* in: a curve from off the side that meets the circle along it */
   for(let i = 0; i <= 40; i++){ const a = i / 40, b = 1 - a;
-    P.push([b * b * ex + 2 * b * a * ex * .35, b * b * (Fy - 30) + (2 * b * a + a * a) * Fy, .45 + .1 * a]); }
+    P.push([b * b * ex + 2 * b * a * ex * .35, b * b * Fin + (2 * b * a + a * a) * Fy, .45 + .1 * a]); }
   /* round once */
   for(let i = 1; i <= 120; i++){ const th = i / 120 * Math.PI * 2;
     P.push([side * rx * Math.sin(th), cy - ry * Math.cos(th), .55 + .1 * (1 - Math.cos(th))]); }
@@ -114110,7 +114311,7 @@ function hfxUfoArrival(c, u, bob, L, hov, w){
     const f = Math.max(0, Math.min(1, (sArc - len[j - 1]) / ((len[j] - len[j - 1]) || 1)));
     return [0, 1, 2].map(m => P[j - 1][m] + (P[j][m] - P[j - 1][m]) * f); };
   const N = 81, path = [], bank = [];
-  path.push({ offset: 0, translate: ex + "px " + (Fy - 30 - .45 * hov) + "px", scale: ".45" });
+  path.push({ offset: 0, translate: ex + "px " + (Fin - .45 * hov) + "px", scale: ".45" });
   bank.push({ offset: 0, rotate: "0deg" });
   for(let i = 0; i < N; i++){
     const t = D * i / (N - 1), o = (T0 + t) / T1, p = at(t);
@@ -114142,6 +114343,38 @@ function hfxConfettiBox(bx, c){
     p.style.animationDelay = (Math.random() * .2).toFixed(2) + "s";
     p.style.animationDuration = (1.4 + Math.random() * 1).toFixed(2) + "s";
   }
+}
+/* CONFETTI'S 100% (build 384). On the results screen Confetti was
+   celebrate() alone, across the screen, and the box is lifted over that
+   layer (hfx-over) so the dim never touches the number - which also put
+   the nova's flash and the first of its rings BEHIND the box: the burst
+   went off out of sight under the number, and the number itself did
+   nothing at all, the one effect whose 100% had no moment of its own. Now
+   the box carries the burst's own half, as every other effect's box does:
+   the same nova (the flash, gentler here, and the two rings, on the same
+   clock, so they run on seamlessly into the screen's past the box's edge),
+   the number lit gold on the crack of the score (.07s), and a few glints
+   catching on it as the stardust settles. Gone by Confetti's 3s; a scene
+   going up fades it with the other boxes (clearCelebrationsForScene). */
+function hfxConfettiGrade(box, pct, palette){
+  if(!box || !pct || !box.isConnected) return null;
+  const c = hfxContext({ box, pct });
+  const colors = (palette && palette.length) ? palette : ["#FFD37A", "#F5804D", "#C23B7A", "#FFFFFF"];
+  const bx = document.createElement("span");
+  bx.className = "hfx-box hfx-confetti is-grade stardust-layer";
+  bx.setAttribute("aria-hidden", "true");
+  bx.style.setProperty("--ox", (c.p.x + c.p.w / 2) + "px");
+  bx.style.setProperty("--oy", (c.p.y + c.p.h / 2) + "px");
+  bx.style.setProperty("--c0", colors[0]);
+  hfxMk(hfxMk(bx, "span", "hfx-cf-soft"), "span", "stardust-flash");
+  hfxMk(bx, "span", "stardust-ring"); hfxMk(bx, "span", "stardust-ring is-late");
+  box.appendChild(bx);
+  hfxLitText(bx, c, { mode: "flash", color: "#FFF4D6", glow: "#FFC85A", dl: .04, dur: 1.5 });
+  for(let i = 0; i < 5; i++){
+    hfxPiece(bx, "hfx-glint", hfxGlintURL(), c.p.x + c.p.w * hfxR(.06, .94), c.p.y + c.p.h * hfxR(.12, .88), hfxR(12, 16), { "--t": .32 + i * .26, "--d": 1.1 });
+  }
+  setTimeout(() => bx.remove(), 3000);
+  return bx;
 }
 /* Every effect that can play, whether or not HUNDO_FX lists it: the
    Black Hole and Underwater (the 50 before Fireworks) stay built, so
@@ -115824,6 +116057,8 @@ function playHundoFx(id, opts){
   if(id === "confetti" && !opts.boxOnly && !opts.frame){
     playSound("hundo.confetti");
     celebrate(opts.palette, opts.pct || opts.box);
+    /* (384) and its half in the box: the burst at the number, the number lit */
+    try{ hfxConfettiGrade(opts.box, opts.pct, opts.palette); }catch(e){}
     /* the one dim (build 326), and the box lifted over it and the
        stardust, so the number is never dimmed */
     hfxDim("confetti", null);
@@ -116017,9 +116252,11 @@ function hundoFxPosterSVG(id){
       }
       return s;
     };
-    body += burst(36, 15, 13, "#FF7BE0", "m", 18, 0) + burst(126, 13, 11, "#7FEBFF", "c", 16, 0) + burst(104, 7, 6, "#FFE7B4", "y", 12, 5);
+    /* (384) three units lower: their tops ran into the tile's top edge and
+       its rounded corners, cut off as the effect's own bursts used to be */
+    body += burst(36, 18, 13, "#FF7BE0", "m", 18, 0) + burst(126, 16, 11, "#7FEBFF", "c", 16, 0) + burst(104, 10, 6, "#FFE7B4", "y", 12, 5);
     /* a shell still climbing on its trail, out of the box's top edge */
-    body += '<path d="M58 22 Q57 15 55 8" stroke="#FFE7B4" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".75" stroke-dasharray="1.2 1.4"/><circle cx="55" cy="7.6" r="1.1" fill="#FFFFFF"/>';
+    body += '<path d="M58 24 Q57 17 55 11" stroke="#FFE7B4" stroke-width=".9" stroke-linecap="round" fill="none" opacity=".75" stroke-dasharray="1.2 1.4"/><circle cx="55" cy="10.6" r="1.1" fill="#FFFFFF"/>';
     for(let i = 0; i < 20; i++){ const x = rnd() * 160, y = 40 + rnd() * 20; if(Math.abs(x - 80) < 30 && y < 44) continue;
       body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.35 + rnd() * .5) + '" fill="' + (i % 2 ? "#FFB3EE" : "#B3F3FF") + '" opacity="' + F(.4 + rnd() * .4) + '"/>'; }
   } else if(id === "worldtree"){
@@ -116065,15 +116302,21 @@ function hundoFxPosterSVG(id){
       '<circle cx="' + F(x + r * .45) + '" cy="' + F(y + r * .4) + '" r="' + F(r * .07) + '" fill="#FFFFFF" opacity=".6"/>';
     [[24, 34, 13], [44, 12, 7], [118, 14, 10], [140, 40, 12], [102, 47, 5], [60, 52, 4], [152, 12, 4], [12, 10, 4], [88, 8, 3.2], [132, 26, 3]].forEach(b => { body += bub(b[0], b[1], b[2]); });
   } else if(id === "ufo"){
-    rg("bm", [[0, "#EAFFEE", 0.5], [1, "#6BFF8F", 0]]);
-    defs += '<linearGradient id="' + g + 'cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".75"/><stop offset=".7" stop-color="#6BFF8F" stop-opacity=".28"/><stop offset="1" stop-color="#6BFF8F" stop-opacity=".1"/></linearGradient>' +
+    /* (384) the beam in the effect's own colour: it has been blue since
+       build 317 round 5 (HFX_UFO_BEAM) while the tile still drew it green;
+       and no green line across the box under the number - it read as the
+       number struck through. Its falling ring sits on the box instead. */
+    const ub = hfxUfoBeam();
+    rg("bm", [[0, ub.hi, 0.5], [1, ub.c, 0]]);
+    defs += '<linearGradient id="' + g + 'cone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + ub.hi + '" stop-opacity=".75"/><stop offset=".7" stop-color="' + ub.c + '" stop-opacity=".28"/><stop offset="1" stop-color="' + ub.c + '" stop-opacity=".1"/></linearGradient>' +
       '<linearGradient id="' + g + 'hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4EAF4"/><stop offset=".55" stop-color="#9AA6B8"/><stop offset="1" stop-color="#5A6478"/></linearGradient>' +
       '<linearGradient id="' + g + 'dome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D8FBFF" stop-opacity=".95"/><stop offset="1" stop-color="#58CFE8" stop-opacity=".55"/></linearGradient>';
     for(let i = 0; i < 26; i++){ const x = rnd() * 160, y = rnd() * 60; if(Math.abs(x - 80) < 40) continue;
       body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.3 + rnd() * .5) + '" fill="#FFFFFF" opacity="' + F(.3 + rnd() * .5) + '"/>'; }
     /* the beam on the number, and the scan line across it */
     body += '<path d="M73 16 L87 16 L106 60 L54 60 Z" fill="url(#' + g + 'cone)"/>' + glow(80, 36, 30, "bm", .8) +
-      '<rect x="52" y="41.5" width="56" height=".7" fill="#EAFFEE" opacity=".75"/><rect x="52" y="40.2" width="56" height="3.2" fill="#6BFF8F" opacity=".16"/>';
+      '<ellipse cx="80" cy="50" rx="17" ry="3.2" fill="none" stroke="' + ub.ring + '" stroke-opacity=".55" stroke-width=".7"/>' +
+      '<ellipse cx="80" cy="50" rx="17" ry="3.2" fill="none" stroke="' + ub.c + '" stroke-opacity=".18" stroke-width="2.2"/>';
     /* the saucer, a little down from the tile's top edge so its dome is
        whole inside the tile's rounded clip */
     body += '<g transform="translate(0 5)"><path d="M71 7 A9 7.4 0 0 1 89 7 Z" fill="url(#' + g + 'dome)"/><circle cx="80" cy="3.8" r="1.6" fill="#7BE27A"/>' +
@@ -116111,8 +116354,10 @@ function buildHundoFxStill(id){
   } else if(id === "fireworks"){
     /* three bursts over a climbing trail */
     const bursts = [[16, 17, 10, "#FF5CD6"], [33, 13, 8, "#5CE3FF"], [27, 29, 6, "#FFD38C"]];
-    body = '<defs><radialGradient id="' + g + 'f"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#FF5CD6" stop-opacity="0"/></radialGradient></defs>' +
-      '<circle cx="16" cy="17" r="11" fill="url(#' + g + 'f)" opacity=".5"/><path d="M24 47 Q25 40 27 31" stroke="#FFE7B4" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity=".8"/>' +
+    /* (384) the glow behind the big burst is its own magenta with a hot
+       core: white fading straight to clear read as a grey disc in it */
+    body = '<defs><radialGradient id="' + g + 'f"><stop offset="0" stop-color="#FF9BEA" stop-opacity=".95"/><stop offset=".28" stop-color="#FF5CD6" stop-opacity=".55"/><stop offset="1" stop-color="#FF5CD6" stop-opacity="0"/></radialGradient></defs>' +
+      '<circle cx="16" cy="17" r="12" fill="url(#' + g + 'f)" opacity=".75"/><path d="M24 47 Q25 40 27 31" stroke="#FFE7B4" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity=".8"/>' +
       bursts.map(b => { let rays = ""; for(let i = 0; i < 12; i++){ const a = i / 12 * Math.PI * 2, r0 = b[2] * .35, r1 = b[2];
         rays += '<path d="M' + (b[0] + Math.cos(a) * r0).toFixed(1) + ' ' + (b[1] + Math.sin(a) * r0).toFixed(1) + ' L' + (b[0] + Math.cos(a) * r1).toFixed(1) + ' ' + (b[1] + Math.sin(a) * r1).toFixed(1) + '"/>' +
           '<circle cx="' + (b[0] + Math.cos(a) * r1).toFixed(1) + '" cy="' + (b[1] + Math.sin(a) * r1).toFixed(1) + '" r=".9" fill="#fff"/>'; }
@@ -116131,7 +116376,9 @@ function buildHundoFxStill(id){
       '<path d="M15 30 Q22 25 30 29 L34 25 Q33 30 34 34 L30 31 Q22 35 15 30 Z" fill="#C6EEF6"/><circle cx="19" cy="29" r="1" fill="#0B2530"/>' +
       '<circle cx="36" cy="22" r="2.1" fill="none" stroke="#F2FFFF" stroke-opacity=".85" stroke-width=".8"/><circle cx="33" cy="17" r="1.3" fill="none" stroke="#F2FFFF" stroke-opacity=".85" stroke-width=".7"/><circle cx="10" cy="38" r="1.6" fill="none" stroke="#F2FFFF" stroke-opacity=".7" stroke-width=".7"/>';
   } else if(id === "ufo"){
-    body = '<defs><linearGradient id="' + g + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C8FFD4" stop-opacity=".7"/><stop offset="1" stop-color="#6BFF8F" stop-opacity="0"/></linearGradient></defs>' +
+    /* (384) its beam blue, as the effect's is (HFX_UFO_BEAM) */
+    const ub = hfxUfoBeam();
+    body = '<defs><linearGradient id="' + g + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + ub.hi + '" stop-opacity=".7"/><stop offset="1" stop-color="' + ub.c + '" stop-opacity="0"/></linearGradient></defs>' +
       '<path d="M20 26 L28 26 L40 47 L8 47 Z" fill="url(#' + g + 'b)"/>' +
       '<path d="M15 19 A9 9 0 0 1 33 19 Z" fill="#7FE9FF" fill-opacity=".7"/><circle cx="24" cy="15" r="2.6" fill="#7BE27A"/>' +
       '<ellipse cx="24" cy="21" rx="20" ry="5.4" fill="#AEB8C8"/><ellipse cx="24" cy="25" rx="11" ry="3" fill="#3C4352"/>' +

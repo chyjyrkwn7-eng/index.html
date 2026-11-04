@@ -32898,3 +32898,133 @@ button. A pointer for "open as web app" ensuring it's on."
   is up; once only; never installed / computer / nothing answered / shown before; the sign-up's keeps "Home Screen". Against
   b46b17f, (1), (2) and (4) FAIL. Gate fixtures for an existing account need class26e.intro.seen at INTRO_REV (6) or more -
   '1' puts What's new up and the tip (rightly) waits behind it.
+
+### Build 384 - the academy's hundo effects, tightened (NOT on main; waiting for Madison)
+
+Madison, with the Fire Code redo: *"Tighten up all of them where you can to ensure they perfect, that goes for the police
+ones too."* Branch `fx384-police` (from `claude/b384` 3b6f4ad). Gate: `tools/check-b384-policefx.py` (A-F, `B384P_ONLY=`,
+`--against`): ALL PASS here, 22 failures on 3b6f4ad. Ids, counts (50/100/150/200), names, picks, beats and scores are
+unchanged; nothing in `ifx*` / `IFX_*` / `SND_IFX` was touched (proof below).
+
+**What the recordings showed (frame by frame, phone 440x956 and iPad 834x1194, every one).** The results screen opens on the
+grade box since build 320, so the box sits HIGH - its top 170px down a 17 Pro Max and 185px down an 11" iPad (on the phone
+itself the 59px status bar sits over the top of that). Fireworks, Bubbles and the UFO were laid out for a box far down the
+screen, and all three spent their effect in that strip: the bursts cut off by the top of the screen, the bubbles leaving
+upwards through it in a second, the UFO circling half off the top and (iPad) hovering and charging with its dome cut off -
+with the XP card and, on an iPad, a third of the screen under it left bare. Confetti's burst went off BEHIND the lifted box,
+so its 100% had no moment of its own. Underwater was right and is left as it is.
+
+**Confetti (0)**
+- Before: the nova's flash and first ring went off under the number, hidden by the box (it is lifted over the layer, hfx-over,
+  so the dim never touches the number); the 100% did nothing; the sparks' twinkle animated `filter: brightness()` on
+  clip-pathed elements (redrawn every frame).
+- After: `hfxConfettiGrade` gives the box its half of the burst, as every other effect's box has: the same nova (its flash at
+  .55 over the number, the two rings on the same clock, so they run on seamlessly past the box's edge into the screen's), the
+  number lit gold on the score's crack (.04s, peak .16s), five glints as the stardust settles; gone by 3s, faded with the boxes
+  by clearCelebrationsForScene. One line in playHundoFx's confetti branch calls it (both classes' Confetti; nothing else).
+  The twinkle is the spark's own `scale` (composes with the flight's transform). celebrate() is otherwise untouched.
+
+**Fireworks (50)**
+- Before: R = .3 of the width (132px phone, 183px iPad; the finale's middle 1.4x), centred in a band from .1 of the screen's
+  height - every burst ran off the top of the screen (the finale's by up to 80px; 3% of lit spark samples off the screen, 18%
+  under a real phone's status bar) and the band they were squeezed into was 30px tall.
+- After: the radius is also held to .6 of the sky (from under the status bar, `hfxSafeTop`, to the box's top edge), bursts are
+  centred from one radius under the sky's top down to near the box, and no burst - the finale's included - is bigger than the
+  room over its centre (`fit`): every one opens whole, its lower edge going down behind the box like a skyline. The finale's
+  middle one goes off lowest and biggest, a crown over the box; its crackle sits round the part that shows; the embers start
+  in the sky over the box. Launch/climb/burst times are untouched, so the score still lands on them (check-b327w 5).
+- Tile: the three bursts 3 units lower (they ran into the tile's top edge and corners). Still: the glow behind the big burst is
+  its magenta round a hot core (white fading straight to clear read as a grey disc).
+
+**Underwater (100)** - looked at frame by frame on both devices and left: the sea rises from the very bottom (his ask), the
+surface sits clear of a phone's status bar (~81px), the fish swim in the clear water under the cards, the drain hands to the
+buttons at 6.25s. No change.
+
+**Bubbles (150)**
+- Before: every bubble budded off the box's top edge and left upwards (the heroes over the half-circle above it): on a phone
+  2 of 39 ended below the box, all crammed into the strip over it and gone off the top within a second. The flourish's halo
+  was the pops' small rainbow ring (a 4.5-unit stroke drawn at 320px) blown up to 2.4x the ring of bubbles, opening at a
+  quarter of that in the middle of the box - across the 100% at its brightest - and going on as a soft, smeared doughnut.
+- After: `hfxBubbleRoom` - each bubble leaves from one of the box's four edges, picked in proportion to the room past it
+  (edge length x distance to the screen's edge, from under the status bar), heading out of that edge; a side with under 60px
+  is no way out. A phone sends about one in four up and the rest drifting down over the cards (26 of 39 end below the box);
+  heroes and the far layer are spread evenly over that room, chains set out from the edge facing their pop, merges go out
+  past one edge each. Going down they are gone before the bottom 120px, where the buttons rise at 4.6s. The halo is its own
+  picture (`hfxHaloURL`: two fine rainbow rings and a pale line, drawn at 1024px), born AT the ring of bubbles as they pop
+  (scale .96 of their ring) and spreading to 1.55x over 1.5s - outside the number on a phone; on an iPad (the number sits
+  further out than the 300px ring) a thin line crosses its first digit as it fades.
+
+**UFO (200)**
+- Before: a 168px (230px) saucer hovering 60px over the box and lifting 70px off it: hovering with its dome at the top edge,
+  on an iPad cut off (by 18px hovering, 30px charging); the circle centred .52 of the way up from the box and 12% of that tall
+  - the way in started off the top, the far side of the circle off the top, and the circle read as a flat line along the top
+  edge (under a real phone's status bar for most of it). The tile and still drew the beam green; the effect's has been blue
+  since build 317 round 5.
+- After: `hfxUfoSize` fits it into the sky over the box (status bar and 8px off): it keeps its size and the 60px hover where
+  that fits, else hovers lower (to 40px) and only then shrinks (iPad: 221px, hovering 40px); it lifts as high as the sky lets it,
+  at most 70px (`--lift`, phone 58px - the lift keyframes, the beam's `--bk`, the grab's path up the beam and the warp's place
+  all follow it). The circle (`hfxUfoArrival`) is as round as the sky allows (its depth a third of the room, 12-70px; phone
+  33px against 20) and placed so the saucer is whole all the way round - dome 4px under the status bar on the far side, feet
+  6px over the box (middle 40px+ over it, check_b317's rule) on the near side - and it comes in level with the circle's top,
+  not from above it. The miniature in the unlock card fits the same way (it was cut off by the frame's top). Tile and still:
+  the beam blue (`hfxUfoBeam()`), the green line under the number (it read as the number struck through) replaced by the
+  beam's ring on the box. `SND_UFO_MARKS` (what a Settings preview plays the doppler on) is the phone's path as it is now,
+  [1.74, 2.06, 2.38, 2.7, 3.02] - it was 60-120ms ahead of it even before.
+- The searchlights (on 1.0-2.41s) are no longer than from the rim to the box where the circle passes nearest it (its near side,
+  at .75 scale, ~2.4s), as well as where it hovers: with the circle now down in the sky over the box they reached 14-20px into
+  it (check_b317_hundobox caught it: "the beam is the only light that touches it").
+- THE BEAM WAS LETTERBOXED (found by check_b317's two-unit seam read, on this build and - less - on 3b6f4ad). The beam is drawn
+  at whatever width and length the saucer's size and hover give it, never its picture's own 1:2, and an svg in a box of another
+  shape keeps its shape ("meet") and leaves the rest clear. The UFO's sprites were never warmed ahead (hfxWarm had no ufo
+  branch), so on the first UFO of a session the beam was that svg: on a phone two-unit run (the reveal has scrolled 83px, the
+  sky is 113px, the saucer 111px) it showed only from 50px under the hull - starting at the box's edge - and stopped 50px short
+  of the floor; on an iPad it was a quarter narrower than itself (140 of 189px) every time. `hfxBeamURL` is
+  preserveAspectRatio="none" (as its bitmap always was) and hfxWarm makes all the UFO's sprites and bitmaps ahead.
+- Two units on a phone: the reveal has scrolled the page 83px when the effect starts, so the sky over the box is 113px: the
+  saucer is 111px there, hovering 40px up - whole; on 3b6f4ad it was 168px hovering 60px, its dome off the top of the screen
+  from the circle to the charge (check-b384-policefx A).
+- Beats untouched: prime 3.1, fired 3.66, floor 4.18, sweep 4.2-5.1, landing 6.1, scan 6.3, lock 6.95, steal 7.38, charge
+  8.0, warp 8.55.
+
+**Fire Code untouched, shown.** The ifx code region is byte-identical; the shared helpers it calls (hfxSprite, hfxLitText,
+hfxAnim, hfxCloneNum) are unchanged; playHundoFx changed only in its Confetti branch; hfxWarm only in the academy branch.
+Recorded `--ifc --seed 7` before and after: the Fire Alarm 273/273 frames identical; Sprinklers and Hazmat within the same-build
+re-record noise (.22 / .12 mean level); the Extinguisher's billows land elsewhere on both builds run to run (a real-time timer
+shifts the seeded sequence: before vs before = 3.29, before vs after = 3.09).
+
+**Tools.** `record-hundo.py` clips now START AT THE EFFECT in both classes, opened by the half second before it (the police
+clips had been running out before the effect began - "fx at frame None": the grade and XP box take ~13s first); `--against`
+and `--seed N` added. `f-<fx>-NN.jpg` are NN seconds into the effect.
+
+**Gates run (one at a time; the box was at load 15-20 from other sessions most of the afternoon).** check-js ALL PASS;
+check-b384-policefx ALL PASS (22 FAIL on 3b6f4ad); check-sound ALL PASS; check-b327w ALL PASS (the beats); check-b327-b 0;
+check-b383-look ALL PASS; sweep-layout --quick 14/14 clean. check-behaviour b313_fx + b317_hundobox + b320b_reactions: 4
+failures, the same 4 on 3b6f4ad (Confetti's gold rim: every results card's border has been clear since 383's iOS card, no rim).
+Moved in place: b313_fx's "the sky above the box is lit ... to within 40px of the top" was met by bursts running off the top;
+it is "into the top third of the sky over the box" now (B here holds that none is cut). Failing the same on 3b6f4ad (counted
+both ways): check-b327-j 11 and check-b325-a 3 and check-b326-a 16 and check-b327q 6 (the card rims again), check-b327z14 3 (the
+iPhone tab switch). Not in this diff (nothing in it touches them): check-loops 5 (cx-fc-*, mystery-*), check-b326-d (Nova's
+slides), check-b327z13 3 (tab timings under load), check-b382-ifcart 1 (Fire Code's 25/50/75/150, set by 3b6f4ad itself).
+Midway the session's Chromium (chromium-1194, which every gate names) was removed from /opt/pw-browsers by another session's
+install; the path now links to chromium-1243 (Chrome 153), so the later gates and the final clips ran on that.
+
+**Clips** (`/tmp/claude-0/-home-user-index-html/920022cb-51dc-5785-b32b-503aff219f98/scratchpad/fx384/police/`): `clips/`
+hundo-<fx>-phone|ipad.mp4 - the real drill to its 100% with the app's own sound (record-sound), each with its play log;
+`compare/` hundo-<fx>-phone|ipad-before-after.mp4 - 3b6f4ad | this build side by side, from half a second before the effect;
+`before/`, `after/` - the silent frame-exact clips (record-hundo) with per-second frames and box crops.
+
+**Only a phone can say:** that the fitted sky is right under the real status bar (Chromium reports env(safe-area-inset-top) as
+0, so the gate serves the page with 59px written in, as sim-safe-area does); the glass heroes' backdrop blur drifting over the
+XP card (the same four heroes, now over text rather than the header); the haptics and the scores on a phone speaker.
+
+### Build 384 - police effects merged; the lit "100%" lies exactly on the number
+- Merged fx384-police (68ffabf): the academy's hundo effects fitted to the results screen's grade box sitting high (see that
+  section). check-b384-policefx, check-b382-ifcart (0 FAIL, hashes unchanged) and check-b384-czfx pass on the merge.
+- "100%" looked doubled in the tiles: hfxLitText's copy of the number was set in the font's default figures while the grade
+  (.rs-pct / .hfx-stage-pct) is `lining-nums tabular-nums` - the copy came out 2.5px narrower - and hundoFxContext measured the
+  number with offsetLeft/Top/Width, whole pixels, while a centred number sits on a fraction (0.48px off). Now the copy takes
+  font-variant-numeric, font-feature-settings, font-stretch, font-style and font-kerning from the number, and the position
+  is read off the on-screen rects (undoing the box's scale), used only when it agrees with the whole-pixel answer within
+  1.5px (a box mid-turn falls back). Measured: 0 / 0 / 0 px (left, top, width) in every tile, phone and iPad.
+- check-b384-litnum: in each live tile (buildHundoFxStage) that lights the number, the copy's digits are set as the number's
+  and its glyph run lies on the real one within 0.25px. Against 57d034a: FAIL (normal figures, width -2.5px).
