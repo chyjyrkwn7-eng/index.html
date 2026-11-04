@@ -33604,3 +33604,85 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   SE / Pro Max / iPad with nothing scrolling; history leads with 10. Against 1dca98e: (1), (4), (5) FAIL ((3) is a guard).
 - Old content gates that assert 9.2's or Version 9's rows (check-b325-d, check-b326-d, check-b327-m's titles) describe the
   card of their own build; they now read Version 10's.
+
+### Build 384 - Add to Home Screen, the second recording (NOT on main, waiting for Madison)
+Madison, with a new recording: "My video example is different because the add to homescreen screen button was at the top
+and not grouped with the view more stuff, put that pointer in there too. Secondly, the very top of my phone, it has the
+recording thing, and my stuff, blurr that out a smidge. Keep it but blur. ... this one includes me actually selecting add,
+and then clicking it to see the functionality." Then: "blur our stuff, like the people you see in the share thing, blur that
+all out or remove it. The Home Screen, blur all my apps out. Blur out some of the stuff at the top of the phone as like the
+red recording light, and stuff like that."
+- THE CLIP (landing/a2hs-iphone.mp4 579,516 bytes + a2hs-iphone.jpg poster 39,796 bytes, its first frame; 540x1174, H.264
+  High, yuv420p, 30fps, 18.17s / 545 frames, no audio, faststart), cut from the new recording (1320x2868 HEVC 10-bit HDR PQ,
+  29.0s, with sound - dropped). Tone-mapped as before (zscale linear npl 100, tonemap=mobius, bt709; a plain conversion is
+  grey). Five spans with 4-frame cross-fades, every cut between two still moments: source 2.63-5.3s (Welcome, ••• pressed
+  4.37s, the menu), 5.67-8.77s (Share pressed 6.43s, the sheet, View More pressed 8.33s, it opens), 9.67-16.43s (the list
+  scrolls 9.83s, Add to Home Screen - a row in the list under the icons - pressed 11.13s, the Add page, Add pressed 14.93s,
+  the Home Screen with the new icon 15.63s), 20.57-22.1s (the Home Screen, the Nova icon pressed 21.37s, it opens),
+  23.83-25.9s (Nova open from the icon, full screen: Get Started's title and rays). Held: 10 frames on the closed sheet,
+  12 on the scrolled list (the pointers there get time to be read), 18 at the end. Cut: 4.1s of the Home Screen sitting
+  still, 1.7s of the app's dark launch, and short dwells on the open menu (0.4s) and the open list (0.9s).
+  In the clip: ••• 1.73s, Share 3.6s, View More 5.83s, the scroll 6.6s, Add to Home Screen 8.3s, the Add page from 9.5s,
+  Add 12.1s, the Home Screen from 12.8s, the Nova icon 14.57s, Nova from 15.67s.
+- PRIVACY, in every frame each is in (the scripts and the raw recording stay in the session scratchpad, not the repo):
+  - The share sheet's row of people (his friends' photos and names, the group, the fifth avatar at the edge): tracked frame
+    by frame (NCC at 7 scales, half resolution), full width between its hairlines, two Gaussian passes r18; hand boxes where
+    the sheet first appears small and see-through mid-page (6.93-7.03s source) and while it scrolls. Once the list scrolls,
+    the row sits behind the header's glass and shows through it (the Harris County badge, the names): a blur there smeared
+    the header's own title, address and X, so for those 45 frames the header (66-218) is replaced by itself from the frame
+    before the scroll (nothing behind its glass then), and for the 8 frames the Add page rises over it, the same header
+    dimmed to match (gain measured on the plain header); the last 4 thin strips above the arriving page are blurred.
+  - The status bar strip (0-92, fading out over 64-82 so no line shows under the Island), every frame, r9: the time, the
+    location arrow, the Live Activity picture in the Dynamic Island, the red recording light, signal, 5G+ and the battery
+    are soft blobs; the Island's pill still reads as the top of a phone. The windows that zoom in and out carry their own
+    status bar (the Add page shrinking into the Home Screen, Nova's window growing out of its icon): blurred there too.
+  - The Home Screen: every app, its name and badge, the Search pill and the dock, two passes r16 - all but the Nova icon and
+    its name (kept sharp; the box under it filled from its neighbours before the blur, so no dark halo), from the Add page
+    shrinking into it to Nova's window covering it. The wallpaper is left (a blur of a gradient is the gradient).
+  - Left as is: the share sheet's own controls (AirDrop, Messages, Mail, Notes, the actions, the list), the Add page (its
+    address is the plain site, no code - he was on Welcome), the app's build label on Welcome.
+  - Checked independently on the shipped file (every frame decoded, whole frame searched, high-passed NCC, templates cut
+    from the untouched recording): the row (collapsed, open, 60-90% sizes, and its ghost behind the header) best 0.41 in the
+    frames the sheet is in, against 0.41 on untouched frames where it is not (the floor) and 0.71-1.00 where it is; the
+    status bar (the time 10:50 / 10:51 at full and 55-90% size, the Live Activity, the battery, 5G+) best 0.525 anywhere -
+    found in the menu's text, not at the top - against a floor of 0.522 and 1.00 where it is; the Home Screen's apps (11
+    icons and the names row, the Nova icon itself left out of the search) best 0.28, floor 0.25-0.30, untouched 0.89-1.00.
+    One miss found this way and fixed: the frame the Nova icon starts to grow kept a sliver of Orbit sharp.
+- POINTERS (A2HS_POINTERS, now each with a `kind`, carried as data-kind): ••• (.867,.939) .3-1.8s; Share (.451,.666)
+  2.35-3.7; View More (.831,.9) 4.5-5.87; Add to Home Screen, the row's glyph in the list (.125,.73) 6.8-8.4 (after the
+  scroll, so the ring does not have to move); Open as Web App's switch (.883,.335) 9.55-10.8 "Make sure this is on"; Add
+  (.883,.119) 10.8-12.25; the Nova icon on the Home Screen (.841,.248) 12.85-14.65 "Tap Nova to open it" (label above it,
+  over the blurred apps, so its name stays readable). Each checked by eye at the start, middle and end of its window.
+- STEPS (A2HS_STEPS_APPLE, six, "Step N of 6" under the clip): In Safari, tap •••, then Share (note: the toolbar's Share);
+  Tap View More (note: skip it if Add to Home Screen already shows); Tap Add to Home Screen (new note: "It is in the list
+  under the icons, or on some iPhones with the icons. Scroll down if it is not showing."); Make sure Open as Web App is on;
+  Tap Add; Open Nova from your Home Screen.
+- GATE tools/check-b384-a2hs.py: iphone now also asserts the pointers are the recording's in its order (dots > share >
+  viewmore > a2hs > switch > add > icon), one step each in order with the last the Nova icon's, every pointer's ring at its
+  place and its step said under the clip (7 of them now), and reads the clip under two more rings: Add to Home Screen on
+  the row's white glyph over the list's neutral grey, the Nova icon's V sharp on its dark tile with the warm wallpaper round
+  it (neither at the clip's start). clip: the row's band against the apps row (66 frames, 0.11; on an unblurred cut 1.67);
+  the header after the scroll against itself before it (53 frames, 0.05 of 255; unblurred 6.93); the status bar's steepest
+  edges against its own range of light, every frame (0.07; unblurred 0.73, the old clip 0.70); the Home Screen's other apps
+  against the Nova icon's detail (54 frames, 0.09; unblurred 1.12). A2_CLIP= runs the clip checks on another file. The
+  Messages back-link check is gone (no back-link in this recording). settings: since Get Started opens on a device with no
+  account (6ddf9ce) the fixture taps .gs-signin there (it timed out on Welcome's Sign in on claude/b384 too).
+  The caption check now also needs the step's words clear of the pinned Not now (the box itself reserves two lines and
+  always reaches under the foot, so the words are measured): it caught a first, two-line step 6 ("Open Nova from its new
+  icon on your Home Screen.", its second line under Not now on a 440x956 phone), now "Open Nova from your Home Screen."
+  The colour reads under the rings retake a read that comes back one flat grey (no frame drawn yet under load), and the
+  seek waits for the frame's data as well as 'seeked'.
+- RESULTS, one at a time (the machine at load 15-28 from other sessions): check-js ALL PASS; check-b384-a2hs ALL PASS (82:
+  iphone, samsung, desktop, installed, settings, clip); check-b384-a2hstip ALL PASS; sweep-layout --quick 20/20 clean.
+  The new gate against claude/b384 (its index.html and its clip, ONLY=iphone,clip): 36 pass, 8 FAIL - the pointers'
+  order, the steps following them, the Add to Home Screen ring on its row, the Nova icon ring, and the four clip checks
+  (row 4.71, header 14.69, status bar 0.70, Home Screen 0.88). On an unblurred cut of the new recording (A2_CLIP) the four
+  clip checks FAIL (1.67, 6.93, 0.73, 1.12).
+- FOR MADISON (session scratchpad a2hsv2out/): a2hs-popup-iphone.mp4 (440x956, an iPhone Safari tab: the pop-up as a
+  sign-up shows it, one full turn of the clip with its pointers and "Step N of 6" under it, the six steps scrolled into
+  view, Not now; a CDP screencast at about 8 frames a second because the machine was loaded - the clip itself is 30fps);
+  statusbar-blur.png (the top of the clip in five scenes, 2x); homescreen-blur.png; sharesheet-row-blur.png;
+  sharesheet-scrolled.png.
+- ONLY A PHONE CAN CONFIRM: how the blurs read on a Retina screen at the clip's size; the rest as in the first section.
+- LEFT FOR MADISON: the wording of step 3's note and of "Tap Nova to open it"; that the clip ends on Get Started (he was
+  not signed in when he recorded; an icon added while the pop-up is up opens signed in, as the note under the clip says).
