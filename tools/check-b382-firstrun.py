@@ -106,7 +106,7 @@ def up_to_nova(pg, label, full):
     hid = pg.evaluate("()=>{ const b=document.querySelector('.classselect-panel #nextbtn'); return !b || b.hidden || b.getBoundingClientRect().height===0; }")
     chk("%s: Continue waits until a class is picked (no way past it unchosen)" % label, hid)
     pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); step(pg, label, "7-classes-picked")
-    pg.click(".classselect-panel #nextbtn")
+    pg.click(".classselect-panel #nextbtn"); pg.wait_for_timeout(300); pg.click("#classenroll-confirm .classenroll-yes")   # (384) the enroll confirm
     pg.wait_for_selector("#genprofile-overlay", timeout=8000); pg.wait_for_timeout(700)
     step(pg, label, "8-loading")
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000); pg.wait_for_timeout(2600)

@@ -5,13 +5,14 @@ our words are smaller. You see how ours has the gold text and the word nova in t
 too.. would be a nice touch. The word nova 'Davis' is like white and bold. Make that entire 'made by Davis' cohesive there."
 iPhone 17 Pro Max (440x956), dark, Settings:
 (1) the rows are 58px+ tall, their tiles 32px+, their glyphs 21px+ on one stroke weight (2px+), their labels 18px+;
-(2) between two rows of a card a hairline shows (white, 8%+), starting at the label (an icon row) and running to the card's edge;
+(2) between two rows of a card a hairline shows (white, 8%+), starting at the label (an icon row) and running to the row's content
+    edge - (384, round 2) "Theirs don't touch the sides, why would ours?": clear of the card's edge by the row's padding;
 (3) the theme's colour at the foot: the Support links, the NOVA wordmark's middle and both halves of "MADE BY DAVIS" are in the
     theme's signature - not the near-gold planet highlight they were; in Amethyst they are violet, in Default its coral-rose, and the
     two themes differ; "MADE BY" and "DAVIS" are the same hue;
 (5) and the pages Settings opens ("When clicking the tabs and getting in them too, ensure that stuff within them is updated too"):
     on Sound & Haptics, Study, Motion & Effects and Leaderboard & Privacy every switch row is 58px+, its tile 32px+, its title 18px+
-    and its description 14px+, and between two switch rows a hairline shows (white, 8%+) from the title to the card's edge; Account's
+    and its description 14px+, and between two switch rows a hairline shows (white, 8%+) from the title to the row's content edge (the switch's); Account's
     name row and Sign out are 58px+ at 18px; Advanced's red rows 18px; every Contributors row 18px; Legal / Terms / Privacy text 16px;
     the sync code's label 18px and still blue;
 (4) no page errors.
@@ -47,12 +48,13 @@ with sync_playwright() as pw:
       const b=rows[1], sep=getComputedStyle(b,'::before'), lr=b.querySelector('.settings-row-label').getBoundingClientRect(), br=b.getBoundingClientRect(), card=b.parentElement.getBoundingClientRect();
       return { h: r.getBoundingClientRect().height, tile: ic.getBoundingClientRect().width, glyph: sv.getBoundingClientRect().width, label: parseFloat(getComputedStyle(lab).fontSize),
                strokes: [...new Set(parts.map(v=>Math.round(v*100)/100))], sepBg: sep.backgroundColor, sepLeft: br.left + parseFloat(sep.left), labelLeft: lr.left,
-               sepRight: br.right - parseFloat(sep.right || '0'), cardRight: card.right }; }""")
+               sepRight: br.right - parseFloat(sep.right || '0'), cardRight: card.right,
+               contentRight: br.right - parseFloat(getComputedStyle(b).paddingRight) - parseFloat(getComputedStyle(b).borderRightWidth) }; }""")
     ck("(1) rows %spx, tiles %spx, glyphs %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], m["glyph"], m["strokes"], m["label"]),
        m["h"] >= 58 and m["tile"] >= 32 and m["glyph"] >= 21 and len(m["strokes"]) == 1 and m["strokes"][0] >= 2 and m["label"] >= 18, m)
     sa = re.findall(r"[\d.]+", m["sepBg"] or ""); alpha = float(sa[3]) if len(sa) > 3 else (1 if sa else 0)
-    ck("(2) a hairline between rows (%s), from the label (%s / %s) to the card's edge (%s / %s)" % (m["sepBg"], round(m["sepLeft"]), round(m["labelLeft"]), round(m["sepRight"]), round(m["cardRight"])),
-       alpha >= .08 and abs(m["sepLeft"] - m["labelLeft"]) <= 2 and abs(m["sepRight"] - m["cardRight"]) <= 2, m)
+    ck("(2) a hairline between rows (%s), from the label (%s / %s) to the row's content edge (%s / %s), clear of the card's (%s)" % (m["sepBg"], round(m["sepLeft"]), round(m["labelLeft"]), round(m["sepRight"]), round(m["contentRight"]), round(m["cardRight"])),
+       alpha >= .08 and abs(m["sepLeft"] - m["labelLeft"]) <= 2 and abs(m["sepRight"] - m["contentRight"]) <= 2 and m["cardRight"] - m["sepRight"] >= 8, m)
     out = {}
     for acc in ("ink", "elite"):
         pg.evaluate("(a)=>{ theme.accent=a; applyTheme(); showAppearance(); }", acc); pg.wait_for_timeout(900)
@@ -72,7 +74,8 @@ with sync_playwright() as pw:
         const between = !!(prev && prev.matches('label.opt, .settings-volume'));
         return { h: Math.round(rr.height), title: parseFloat(getComputedStyle(t).fontSize), hint: h ? parseFloat(getComputedStyle(h).fontSize) : 99, tile: ic ? Math.round(ic.getBoundingClientRect().width) : 99,
                  between, sep: between ? sep.backgroundColor : null, sepL: between ? Math.round(rr.left + parseFloat(sep.left)) : null, titleL: Math.round(tr.left),
-                 sepR: between ? Math.round(rr.right - parseFloat(sep.right)) : null, cardR: Math.round(card.right) }; }); }"""
+                 sepR: between ? Math.round(rr.right - parseFloat(sep.right)) : null, cardR: Math.round(card.right),
+                 contR: Math.round(rr.right - parseFloat(getComputedStyle(r).paddingRight) - parseFloat(getComputedStyle(r).borderRightWidth)) }; }); }"""
     def alpha_of(c):
         a = re.findall(r"[\d.]+", c or ""); return float(a[3]) if len(a) > 3 else (1 if a else 0)
     bad = []
@@ -80,7 +83,7 @@ with sync_playwright() as pw:
         pg.evaluate("(p)=>showAppearance({ page: p })", page); pg.wait_for_timeout(800)
         for r in pg.evaluate(SW):
             okr = r["h"] >= 58 and r["title"] >= 18 and r["hint"] >= 14 and r["tile"] >= 32
-            if r["between"]: okr = okr and alpha_of(r["sep"]) >= .08 and abs(r["sepL"] - r["titleL"]) <= 2 and abs(r["sepR"] - r["cardR"]) <= 2
+            if r["between"]: okr = okr and alpha_of(r["sep"]) >= .08 and abs(r["sepL"] - r["titleL"]) <= 2 and abs(r["sepR"] - r["contR"]) <= 2 and r["cardR"] - r["sepR"] >= 8
             if not okr: bad.append((page, r))
     pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(800)
     acc = pg.evaluate("""()=>{ const n=document.querySelector('#stage .customize-namerow'), d=n && n.querySelector('.profile-name-display'), so=document.querySelector('#stage .signout-row');

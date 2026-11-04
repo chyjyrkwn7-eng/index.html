@@ -90825,24 +90825,71 @@ function showClassSelection(){
      and your username? Could be a better tie in" */
   /* (383 sign-in audit) once: a double tap, or Enter pressed twice, started the sign-up twice - two loading screens over
      each other and Home built twice under Nova */
+  /* (384) CONFIRM FIRST. Madison: "After you select a class and hit continue, have it ask to confirm and stuff." Continue opens
+     a confirm sheet (the sign-up's own savecode-card look); Enroll starts the sign-up, Go back (or a tap outside) closes it
+     with the class still picked. */
   continueBtn.addEventListener("click", () => {
-    if(continueBtn.disabled) return;
-    continueBtn.disabled = true;
-    startSignupWithNova();
+    if(continueBtn.disabled || !classCard.classList.contains("is-picked")) return;
+    showClassEnrollConfirm(ainfo.title || academy.name, academy.sub, () => {
+      if(continueBtn.disabled) return;
+      continueBtn.disabled = true;
+      startSignupWithNova();
+    });
   });
   /* (330) "something at the bottom saying something about the classes to CYA" - under the cards, above the
      pinned Continue, so the button stays where every other sign-up step has its own */
   panel.appendChild(buildLegalNote("classes"));
   panel.appendChild(continueBtn);
 
+  /* (384) A SECOND TAP UNPICKS. Madison: "When signing up, when you select a class to enroll, there's no way to unselect it. Ensure
+     that if you tap it again after you click it, you'd unenroll." The card toggles: picked -> "Selected" and Continue; tapped
+     again -> back to "Select" and Continue goes away. */
+  classCard.setAttribute("aria-pressed", "false");
   classCard.addEventListener("click", () => {
-    classCard.classList.add("selected", "is-picked");
-    const chip = classCard.querySelector(".cc-status"); chip.className = "cc-status is-enrolled"; chip.textContent = "Selected";
-    continueBtn.hidden = false;
+    const on = !classCard.classList.contains("is-picked");
+    classCard.classList.toggle("selected", on); classCard.classList.toggle("is-picked", on);
+    classCard.setAttribute("aria-pressed", on ? "true" : "false");
+    const chip = classCard.querySelector(".cc-status");
+    chip.className = "cc-status " + (on ? "is-enrolled" : "is-enroll"); chip.textContent = on ? "Selected" : "Select";
+    continueBtn.hidden = !on;
+    try{ playSound(on ? "ui.toggle.on" : "ui.toggle.off"); }catch(e){}
   });
 
   stage.replaceChildren(panel);
   toTop();
+}
+
+/* (384) the class confirm at sign-up: the savecode-card sheet, as "Already have an account?" uses it */
+function showClassEnrollConfirm(name, sub, onEnroll){
+  const old = document.getElementById("classenroll-confirm");
+  if(old) old.remove();
+  const el = document.createElement("div");
+  el.id = "classenroll-confirm";
+  el.className = "savecode-card classenroll-confirm";
+  el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "classenroll-title");
+  const sheet = document.createElement("div");
+  sheet.className = "savecode-sheet";
+  const title = document.createElement("h2");
+  title.className = "savecode-title"; title.id = "classenroll-title";
+  title.textContent = "Enroll in " + name + "?";
+  const body = document.createElement("p");
+  body.className = "savecode-body";
+  body.textContent = "You\u2019re signing up for " + name + (sub && sub !== name ? " (" + sub + ")" : "") + ". You can add more classes later from the class button on Home.";
+  const yes = document.createElement("button");
+  yes.type = "button"; yes.className = "next savecode-save classenroll-yes"; yes.textContent = "Enroll";
+  const back = document.createElement("button");
+  back.type = "button"; back.className = "next ghost savecode-continue classenroll-back"; back.textContent = "Go back";
+  sheet.append(title, body, yes, back);
+  el.appendChild(sheet);
+  const close = () => { el.classList.remove("show"); setTimeout(() => el.remove(), 220); };
+  yes.addEventListener("click", () => { close(); onEnroll(); });
+  back.addEventListener("click", close);
+  el.addEventListener("click", e => { if(e.target === el) close(); });
+  document.body.appendChild(el);
+  clearBannerOnScreenChange(el);
+  requestAnimationFrame(() => el.classList.add("show"));
+  setTimeout(() => { try{ yes.focus({ preventScroll: true }); }catch(e){} }, 80);
+  return el;
 }
 
 function showWelcomeNamePrompt(){
@@ -122675,9 +122722,13 @@ function creditsPeople(){
     /* (384) "Cameron Wharton started the idea of this entire app. He made the beta and I took it from there. He should be second
        on the list under me (Madison Davis) update his stuff." - second, under the founder; then the rest by surname.
        (383) "Cam helped think of characters and stuff" */
-    { name: "Cameron Wharton", role: "Co-Founder & Original Beta", did: [
+    /* (384, round 2) "Cameron started this process with the very first beta when the app was called study drill and had like 5
+       percent of what we have now. Is he considered the founder? Co founder? Idk but ensure it's right, Cameron should be
+       underneath me." Co-founder: he started it (the first beta, Study Drill); the app as it is was built from there under the
+       founder above. His first rows say so. */
+    { name: "Cameron Wharton", role: "Co-Founder", did: [
+      { t: "Started the first beta, Study Drill" },
       { t: "The original idea for the app" },
-      { t: "The first beta build" },
       { t: "Virtual Room design", open: roomOpen },
       { t: "Live multiplayer test sessions" },
       { t: "Race, Tug of War and Battle modes" },
@@ -122686,6 +122737,11 @@ function creditsPeople(){
       { t: "Real-time messaging", open: chatOpen },
       { t: "Direct and group conversations" },
       { t: "Live presence and typing indicators" } ] },
+    /* (384) "Robert Morgan can be included in the contributor list. He helped come up with ideas here and there. Give him
+       something too." By surname, after Darjean. */
+    { name: "Robert Morgan", role: "Ideas & Feedback", did: [
+      { t: "Feature ideas and suggestions" },
+      { t: "Feedback on new features" } ] },
     { name: "Logan Preston", role: "Question Engineering", did: [
       { t: "Question bank development" },
       { t: "Exam structure and test format" },
@@ -122705,7 +122761,8 @@ function showCredits(){
   const intro = document.createElement("div");
   intro.className = "credits-intro";
   const p1 = document.createElement("p");
-  p1.textContent = window.NOVA_CLASS === "ifc" ? "These people helped build Nova for the class." : "These people helped build Nova for Class 26E.";
+  /* (384) "at the top it says helped build for the class, should say helped build the app" - and where it began */
+  p1.textContent = "These people helped build Nova, from its first beta, Study Drill, to the app it is today.";
   const p2 = document.createElement("p");
   p2.append(document.createTextNode("Thank you to everyone who contributed. Your help is much appreciated. "));
   const heart = document.createElement("span");

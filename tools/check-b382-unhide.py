@@ -148,7 +148,7 @@ def signup(br):
     ctx, pg = page(br, False, fresh=True)
     if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
         pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
-    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn"):
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn", "#classenroll-confirm .classenroll-yes"):
         try: pg.click(sel, timeout=4000)
         except Exception: pass
         pg.wait_for_timeout(600)

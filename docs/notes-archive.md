@@ -32732,3 +32732,28 @@ of that was matched to your theme? ... If I don't like it we'll just change back
   (color-mix with white 22% / 72% and black 62%) instead of fixed greens. TO GO BACK: --pick-dot:#34C759 on that one line.
 - check-b383-look (5) now reads --theme-c2 off the page and wants the dot's gradient to carry it, then flips data-accent to
   another theme and wants the dot to follow. Both fail on 91a1d96 (green); all pass here.
+
+### Build 384 - Contributors: "helped build Nova", Cameron the co-founder, Robert Morgan; sign-up's class: unpick and confirm (NOT on main, waiting for Madison)
+
+Madison: "In contributors, at the top it says helped build for the class, should say helped build the app? ... Cameron started
+this process with the very first beta when the app was called study drill and had like 5 percent of what we have now. Is he
+considered the founder? Co founder? Idk but ensure it's right, Cameron should be underneath me. Robert Morgan can be included in
+the contributor list. He helped come up with ideas here and there. Give him something too." / "When signing up, when you select
+a class to enroll, there's no way to unselect it. Ensure that if you tap it again after you click it, you'd unenroll. After you
+select a class and hit continue, have it ask to confirm and stuff."
+- Contributors' intro: "These people helped build Nova, from its first beta, Study Drill, to the app it is today." (both
+  classes; was "...for Class 26E" / "...for the class").
+- Cameron Wharton, second under the founder: role "Co-Founder" (was "Co-Founder & Original Beta"); first rows "Started the first
+  beta, Study Drill" and "The original idea for the app", then his Virtual Room rows as before. Co-founder rather than founder:
+  he started it; the app as it is was built from there under the founder (Madison Davis, "Founder & Lead Designer", first).
+- Robert Morgan, by surname after Darjean: "Ideas & Feedback" - "Feature ideas and suggestions", "Feedback on new features".
+  check-b382-credits' PEOPLE list has him (six people).
+- showClassSelection: the class card toggles (picked -> "Selected" + Continue; tapped again -> "Select", Continue hidden;
+  aria-pressed; the switch sounds). Continue opens showClassEnrollConfirm (the savecode-card sheet "Already have an account?"
+  uses): "Enroll in Police Academy?" / "You're signing up for Police Academy (Class 26E). You can add more classes later from
+  the class button on Home." - Enroll starts the sign-up (startSignupWithNova, still once-only), Go back or a tap outside closes
+  it with the class still picked.
+- Gate: tools/check-b384-signupclass.py - (1) tap picks / second unpicks / third picks; (2) Continue opens the sheet with Enroll
+  and Go back, nothing started; (3) Go back keeps the pick; (4) Continue + Enroll starts the sign-up; (5) no page errors. 5/5
+  here; fails (1)-(4) on 91a1d96. The gates that walk sign-up now tap Enroll after Continue: check-b382-firstrun,
+  check-b383-signup (its double-tap test is on Enroll now), check-b329, check-b327z15, check-b382-unhide, record-signup.py.

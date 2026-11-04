@@ -241,7 +241,9 @@ with sync_playwright() as pw:
             pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300)
             step(pg, "Class picked")
             t0 = time.time()
-            pg.evaluate("()=>{ const b=document.querySelector('.classselect-panel #nextbtn'); b.click(); b.click(); }")
+            # (384) Continue asks first (the enroll confirm); a double tap on Enroll is the double tap now
+            pg.evaluate("()=>{ const b=document.querySelector('.classselect-panel #nextbtn'); b.click(); b.click(); }"); pg.wait_for_timeout(300)
+            pg.evaluate("()=>{ const y=document.querySelector('#classenroll-confirm .classenroll-yes'); if(y){ y.click(); y.click(); } }")
             most = 0
             for _ in range(12):
                 most = max(most, pg.evaluate("()=>document.querySelectorAll('#genprofile-overlay').length")); pg.wait_for_timeout(100)

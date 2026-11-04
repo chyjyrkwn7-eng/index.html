@@ -813,7 +813,7 @@ def section_dd(br):
     pg.evaluate("() => { document.getElementById('splashscreen')?.remove(); }")
     if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
         pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
-    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn"):
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn", "#classenroll-confirm .classenroll-yes"):
         pg.click(sel); pg.wait_for_timeout(600)
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
     try:
@@ -976,7 +976,7 @@ def section_ff(br):
     pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(900)
     check("FF. each sign-up step's button sits just under its content (within 60px)", all(0 <= v <= 60 for v in gaps.values()), gaps)
     pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300)
-    pg.click(".classselect-panel .next.playbtn")
+    pg.click(".classselect-panel .next.playbtn"); pg.wait_for_timeout(300); pg.click("#classenroll-confirm .classenroll-yes")
     try:
         pg.wait_for_selector("#nova-intro .nt-talk", timeout=25000)
     except Exception:
@@ -1131,7 +1131,7 @@ def section_hh(br):
     same = len({tuple(v[:3]) for v in spots.values()}) == 1
     check("HH. the sign-up steps: Back and the title in the same places on every step, in the top fifth, nothing scrolls",
           same and all(v[1] < 820 * .2 and v[3] for v in spots.values()), spots)
-    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn")
+    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn"); pg.wait_for_timeout(300); pg.click("#classenroll-confirm .classenroll-yes")
     try:
         pg.wait_for_selector("#nova-intro", timeout=25000)
     except Exception:

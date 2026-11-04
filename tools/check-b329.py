@@ -118,7 +118,7 @@ with sync_playwright() as pw:
         chk("class screen: the Classes screen's cards - Police Academy and 'More classes', no Fire Code", r["cards"] == 2 and r["soon"] and not r["ifc"], r)
         page.click(".classselect-panel .class-card.is-academy"); page.wait_for_timeout(300)
         chk("picking one marks it Selected and shows Continue", page.evaluate("()=>document.querySelector('.classselect-panel .cc-status.is-enrolled')?.textContent==='Selected' && !document.querySelector('.classselect-panel .next.playbtn').hidden"))
-        page.click(".classselect-panel .next.playbtn")
+        page.click(".classselect-panel .next.playbtn"); page.wait_for_timeout(300); page.click("#classenroll-confirm .classenroll-yes")   # (384) the enroll confirm
         import time
         t0 = time.time()
         while not page.evaluate("()=>!!document.querySelector('#nova-intro .nt-ask-input')") and time.time() - t0 < 60:
