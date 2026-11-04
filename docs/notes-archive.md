@@ -32209,3 +32209,20 @@ on the bottom right ... if they could be just a smidge bigger too".
   say not found yet ... The rank flares should just say not lit yet centered under the other stuff." homeTapCopyRank's locked
   line is "Not lit yet." (was "Not lit yet. It lights at <rank> rank."); the name line above it still names the flare. Centred
   under "GOLD FLARE · LOCKED" (measured: middles within 1px).
+
+### Build 384 - Fire Code's hundo effects: Hazmat on top, counts 25 / 50 / 75 / 150 (round 5 begins)
+
+Madison: "The fire alarm one, absolutely not the move. That thing is terrible. Make that one something else, get creative match
+the theme of them all. Give me the best you can make. The hazmat one is super cool, I don't love love it though, I just feel like
+it has so much potential. The hazmat one should probably be the 200 hundos one, it's my favorite/coolest/has the best potential.
+The extinguisher one is super cool. Tighten it up though, maybe it better. Tighten up all of them where you can to ensure they
+perfect, that goes for the police ones too. For the ifc one, I think the amount of hundos needed to get the stuff could be
+lowered. Like increments of 25, 50, 75, 150?"
+- The rung ids (fireworks / underwater / bubbles / ufo) carry saved picks, shown records, sounds and every list in both classes,
+  so Hazmat MOVED to the top rung rather than the rungs being reordered: IFX_DEF, IFX_BUILD, ifxWarmList, ifxPosterBody,
+  ifxStillBody and SND_IFX now have Hazmat under ufo and the Fire Alarm (a stand-in until its replacement) under bubbles. The ufo
+  rung's own rule now reaches Hazmat: the box is lifted over the screen layer (hfx-over) while it plays. hfxUfoUnlit still
+  returns in Fire Code.
+- Fire Code's counts: fireworks 25, underwater 50, bubbles 75, ufo 150 - set on the HUNDO_FX rows right after the list, before
+  anything reads them (window.NOVA_CLASS, not IFC_ART_ON: that var is assigned later). The academy keeps 50 / 100 / 150 / 200.
+- Fire Code is: 25 Extinguisher, 50 Sprinklers, 75 (the Fire Alarm's replacement), 150 Hazmat.
