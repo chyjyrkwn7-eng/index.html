@@ -33654,3 +33654,16 @@ interpretation of Feb 4, 2025. 1,779 -> 1,812 questions, 58 units.
   The new class one for ifc can have a second." The card's "Hundo effects, redrawn" row is gone (and "Hundo Effects, Redrawn"
   from Version 10's history); Fire Code has a second row, "Fire Code, made its own": "A badge for every chapter, and its own
   characters, flares and hundo effects." Six rows; check-b384-whatsnew10 passes (fits on the SE, Pro Max, iPad).
+
+### Build 384 - the share page is the app's splash
+- Madison, with a screenshot of the live (383) share page - a bare yellow "Open Nova" link: "Not sure why this type of thing pops
+  up when loading the link? Why is that there? That's a problem. I've seen it on my computer and on my phone." Why it is there:
+  the Share button sends .../share/ (the small page iMessage can read for the preview card); its forward to the app is
+  instant, but the browser keeps showing it until the 8MB app has downloaded - seconds on a phone, longer on a laptop.
+- SHARE_HTML (tools/gen-share-card.py, share/index.html regenerated; og-card.png / icon-512.png byte-identical) is now the app's
+  splash read off the running page: #0A0A0A, NOVA in Georgia 800 33.6px with the splash's gradient (#FFD37A -> #F5804D ->
+  #C23B7A) as text, "> opening Nova..." in the splash's monospace and gold, its 224x4 track with a running gradient bar
+  (reduced motion: still). No visible link; "Open Nova" and the meta refresh only in <noscript>. Same meta, same forward
+  (location.replace("../" + search + hash)). The page names nobody (check-b384-browsers' share check).
+- gen-share-card --check passes; check-b384-browsers share ALL PASS; check-b381-share's "SHARE_URL is the share page" and "names
+  the card picture" fail identically without this change (384's ?v=384 links).
