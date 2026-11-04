@@ -32925,6 +32925,14 @@
     width:auto; min-width:0; aspect-ratio:1; margin:0; padding:0; background:none; border:0; border-radius:0;
     font:inherit; color:inherit; -webkit-tap-highlight-color:transparent; }
   .bcs .ncase-cell .badge-tile-art{ width:100%; height:100%; max-width:none; aspect-ratio:auto; background:none; }
+  /* (384) THE HEAD AND THE CASE ONE WIDTH. Madison, circling the Badges box over Fire Code's case: "The badge one isn't the same
+     size, ensure it's the same size." The head took --badges-col, min(100%, 25.85rem) - a rem cap from the leaning lid's
+     days - while the tray (.bcs, 327 round 10) is width:100% up to 34rem. On his phone the text size is smaller, so 25.85rem came
+     to ~350px against the tray's ~405; on an iPad the head was 32rem (512px) over a 34rem (544px) tray. One column now, for both:
+     the panel's width on a phone (the rem cap can't bite there at any text size) and 34rem on a tablet. */
+  html[data-layout] body #stage .badges-tab{ --badges-col:min(100%, 34rem); }
+  html[data-layout] body #stage .badges-tab > .badges-head,
+  html[data-layout] body #stage .badges-tab .bcs{ width:var(--badges-col); max-width:none; margin-left:auto; margin-right:auto; }
   /* (384) a short last row sits in the middle: moved by half its missing slots (a slot is its own width and the 1.8cqw gap) */
   .bcs .ncase-cell.is-lastrow{ left:calc(var(--row-shift, 0) * (100% + 1.8cqw)); }
   .bcs .ncase-cell .badge-tile-art::before{ content:none; }

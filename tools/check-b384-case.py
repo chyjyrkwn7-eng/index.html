@@ -7,6 +7,9 @@ iPhone 17 Pro Max (440x956), the Badges page, read off the page:
 (2) its badges are the academy case's size (within 1px), bigger than the eight-across they were;
 (3) the academy's case is unchanged: six by four, every row full, nothing moved;
 (4) the 3D badge scene's grid (badgeCaseGrid) is unchanged for both (it stands the case upright);
+(6) "The badge one isn't the same size, ensure it's the same size": the Badges box over the case is the case's width, edge for
+    edge (within 1px), at a smaller and a larger text size (the root at 13.6px and 19px - the box's old rem cap followed the
+    phone's text size, the case doesn't) and on an iPad;
 (5) no page errors.
 Run:  python3 tools/check-b384-case.py   (--against OLD/index.html must FAIL)"""
 import json, os, sys
@@ -54,6 +57,18 @@ with sync_playwright() as pw:
     chk("(3) the academy's case: six by four, full, unmoved (%s)" % ([r["n"] for r in a["rows"]] if a else None,), afull, a)
     chk("(4) the 3D scene's grid unchanged: academy %s, Fire Code %s" % (a and a["scene"], f and f["scene"]),
         a and f and a["scene"] == {"cols": 6, "rows": 4} and f["scene"] == {"cols": 8, "rows": 8}, [a and a["scene"], f and f["scene"]])
+    sizes = []
+    for vw, vh, px in ((440, 956, 13.6), (440, 956, 19), (834, 1194, 16)):
+        ctx, pg, errs = G["page"](br, G["init"](G["ifc"]))
+        pg.set_viewport_size({"width": vw, "height": vh})
+        pg.evaluate("(px)=>{ document.documentElement.style.fontSize = px + 'px'; document.getElementById('splashscreen')?.remove(); showRanksScreen('badges'); }", px)
+        pg.wait_for_timeout(1500)
+        sizes.append((vw, px, pg.evaluate("""()=>{ const R=s=>{ const e=document.querySelector(s); if(!e) return null; const r=e.getBoundingClientRect(); return [r.left, r.right]; };
+          return { head: R('#stage .badges-tab > .badges-head'), kase: R('#stage .badges-tab .badge-case') }; }""")))
+        allerrs += errs; ctx.close()
+    same = all(s and s["head"] and s["kase"] and abs(s["head"][0] - s["kase"][0]) <= 1 and abs(s["head"][1] - s["kase"][1]) <= 1 for _, _, s in sizes)
+    chk("(6) the Badges box is the case's width at every text size and on an iPad: %s" % [(vw, px, s and s["head"] and [round(x) for x in s["head"]], s and s["kase"] and [round(x) for x in s["kase"]]) for vw, px, s in sizes],
+        same, sizes)
     chk("(5) no page errors", not allerrs, allerrs[:3])
     br.close()
 print("\nALL PASS" if ok else "\nFAILURES")

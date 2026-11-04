@@ -32191,3 +32191,10 @@ on the bottom right ... if they could be just a smidge bigger too".
   (328), so the scene keeps eight by eight for Fire Code.
 - Gate: tools/check-b384-case.py (rows full but the last, the last centred within 1px, the academy's badge size, the academy's
   case unchanged, the scene's grid unchanged). Fails 2 on the previous commit. check-b382-badges passes.
+- (384, the same day) "The badge one isn't the same size, ensure it's the same size" - the Badges box over the case. The head
+  took --badges-col, min(100%, 25.85rem), from the leaning-lid days; the tray (.bcs) is width:100% to 34rem. Madison's phone has
+  a smaller text size: the rem cap bit at ~350px over a ~405px tray (reproduced with the root at 13.6px: 352 / 406 on 383).
+  An iPad had 512 over 544. Now one column for both, `--badges-col: min(100%, 34rem)`, set by the 384 tray rules and given to
+  .badges-head and .bcs alike: the panel's width on any phone at any text size, 34rem on a tablet. check-b384-case (6) measures it
+  at 13.6px and 19px roots and on an iPad; fails on the previous commit. Other `min(100%, Nrem)` widths in the file are lone
+  centred pieces (results cards, sign-up fields), not a pair that must agree.
