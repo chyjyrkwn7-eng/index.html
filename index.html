@@ -116835,7 +116835,17 @@ function playHundoFx(id, opts){
     if(scr) hfxTintVars(scr, tint);
     if(opts.box) hfxApplyTint(id, opts);
   }
-  const undo = fade => { c.anims.forEach(a => { try{ a.cancel(); }catch(e){} }); c.anims.length = 0; c.cleanup.forEach(f => { try{ f(fade); }catch(e){} }); c.cleanup.length = 0; };
+  /* (384) STOPPED PART WAY (a card tapped away, the screen changing): the pieces in the layers that fade (scr, bx) are held
+     where they are for the fade and let go after it. Cancelling them put each piece back where it rests - the corner of
+     the screen - for the .6s fade (the audit: "Underwater ... throws about 20 pieces toward the left edge as it fades";
+     Fire Code's Thermal Camera had hidden its reticle for the same reason). Anything on the grade box itself is let go
+     at once, as before. */
+  const inLayer = a => { try{ const t = a.effect && a.effect.target; return !!(t && ((scr && scr.contains(t)) || (bx && bx.contains(t)))); }catch(e){ return false; } };
+  const undo = fade => {
+    const held = [];
+    c.anims.forEach(a => { try{ if(fade && inLayer(a)){ a.pause(); held.push(a); } else a.cancel(); }catch(e){} });
+    if(held.length) setTimeout(() => held.forEach(a => { try{ a.cancel(); }catch(e){} }), 700);
+    c.anims.length = 0; c.cleanup.forEach(f => { try{ f(fade); }catch(e){} }); c.cleanup.length = 0; };
   try{
     if(id === "confetti") hfxConfettiBox(bx, c);
     else HUNDO_FX_BUILD[id](scr, bx, c);

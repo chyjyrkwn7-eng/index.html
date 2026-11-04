@@ -33536,3 +33536,17 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   rest of the page.
 - check-b384-browsers keep: after site data is cleared, Get Started's Sign in is on screen and 44px+, one tap reaches the
   code entry; then Welcome's Sign in as before.
+
+### Build 384 - a hundo effect stopped part way holds its pieces for the fade (both classes)
+- The cutscene audit's note: "Academy Underwater: tapping its card away mid-showcase throws about 20 pieces toward the left
+  edge as it fades". playHundoFx's stop (handle.stop: a card tapped away, the screen changing) ran undo(true), which
+  cancelled every animation in c.anims and then faded the layers for .6s - a piece placed by its animation went back to
+  where it rests, the corner of the screen, for the fade. Fire Code's Thermal Camera had hidden its reticle at rest for the
+  same reason (679d57c); this fixes it once for every effect.
+- undo(fade): an animation whose target is inside the fading layers (scr, bx) is paused, held where it is, and cancelled
+  700ms later (after hfxFadeOut's 650ms); anything else (the grade box's own) is cancelled at once, as before. The normal
+  end (undo(false)) is unchanged.
+- check-b384-fxstop: both classes, every effect, on a results card and in a tile, stopped at 1.4s and 3s - no piece still
+  showing moves more than 4px or appears; nothing left after; no page errors. Against d9f01e7: the academy's Underwater on a
+  card FAILS (1 piece at 1.4s, 20 at 3s, to x -17..-38). Confetti on a card returns no handle and is listed as not played.
+  check-b384-cutscenes (1) and check-b384-policefx pass with it.
