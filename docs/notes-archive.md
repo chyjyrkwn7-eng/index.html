@@ -33550,3 +33550,12 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   showing moves more than 4px or appears; nothing left after; no page errors. Against d9f01e7: the academy's Underwater on a
   card FAILS (1 piece at 1.4s, 20 at 3s, to x -17..-38). Confetti on a card returns no handle and is listed as not played.
   check-b384-cutscenes (1) and check-b384-policefx pass with it.
+
+### Build 384 - This Week's numbers flush with the row's edge, where its line ends
+- Looking at the board helper's screenshots: on the one-column boards (This Week's XP, Hundos) the number was centred in its
+  4.2rem column (.rank-cols justify-items:center), so 1,000 and 983 ended 7px apart and every number stopped 12-19px short
+  of the row's content edge - where the hairline now ends (ca07841). An iOS list's trailing value sits flush with that edge.
+- `html[data-layout] body .screen-rankings .rank-cols.rank-cols-one{ justify-items:end; }` (after the modern board block):
+  the number and its header ("XP") flush right. The three-column boards (Rank / Level / Badges) stay a centred table.
+- check-b384-hairlines (6): on This Week every row's number ends at the row's content edge within 1px. Against d84caf5: FAIL
+  (off by 12.3 / 19.1 / 25.1). check-b384-board2 passes.

@@ -36568,6 +36568,10 @@ html.is-browser{ --fade-paper: transparent; }
   /* the numbers on the right: tabular, a step lighter than before */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-col-num{ font-weight:650; letter-spacing:-.01em; }
   html[data-layout] body .screen-rankings .rank-rows > .rank-row .rank-col-rankname{ font-weight:700; letter-spacing:0; }
+  /* (384) the one-column boards (This Week's XP, Hundos): the number is the row's trailing value, flush with the row's content
+     edge as an iOS list's is - where its hairline ends - and its header with it. Centred in its column, 1,000 and 983 ended
+     7px apart and every number stopped 12-19px short of its line. The three-column boards stay a centred table. */
+  html[data-layout] body .screen-rankings .rank-cols.rank-cols-one{ justify-items:end; }
   /* the placeholders breathe their bars only, so the grouped card under them stays still */
   html[data-layout] body .screen-rankings .rank-rows > .rank-row-skel{ animation:none !important; }
   html[data-layout] body .screen-rankings .rank-rows > .rank-row-skel > *{ animation:rank-skel 1.5s ease-in-out infinite; animation-delay:calc(var(--skel-i, 0) * 90ms); }

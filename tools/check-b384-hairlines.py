@@ -50,6 +50,13 @@ with sync_playwright() as pw:
         pg.evaluate("()=>{ %s; window.scrollTo(0,0); }" % js); pg.wait_for_timeout(1800)
         for _ in range(2): pg.evaluate(G["CLEAR"]); pg.wait_for_timeout(200)
         res[name] = pg.evaluate(LINES)
+    # (5) This Week: the one number on each row ends where the row's content (and its line) ends
+    pg.evaluate("()=>{ leaderboardRows=__fill(); showRankings(); }"); pg.wait_for_timeout(1500)
+    pg.evaluate("()=>{ const b=[...document.querySelectorAll('#stage button, #stage [role=tab]')].find(x=>/This Week/.test(x.textContent)); b && b.click(); }"); pg.wait_for_timeout(1500)
+    for _ in range(2): pg.evaluate(G["CLEAR"]); pg.wait_for_timeout(200)
+    week = pg.evaluate("""()=>[...document.querySelectorAll('#stage .rank-row')].map(r=>{ const c=r.querySelector('.rank-cols.rank-cols-one'); if(!c || !c.children.length) return null;
+      const k=c.children[c.children.length-1], g=document.createRange(); g.selectNodeContents(k); const t=g.getBoundingClientRect(), rr=r.getBoundingClientRect(), rs=getComputedStyle(r);
+      return { n:(k.textContent||'').trim(), off: Math.round((rr.right-parseFloat(rs.paddingRight)-parseFloat(rs.borderRightWidth)-t.right)*10)/10 }; }).filter(Boolean)""")
     br.close()
 for name, _ in SCREENS:
     L = res[name]
@@ -62,6 +69,9 @@ for name, _ in SCREENS:
 for name, _ in SCREENS:
     L = res[name]; faint = [l for l in L if not l["alpha"] > .03]
     chk("(5) %s: every line is drawn in a colour you can see (alpha %s) (384)" % (name, sorted(set(l["alpha"] for l in L))), L and not faint, faint[:3])
+offw = [w for w in week if abs(w["off"]) > 1]
+chk("(6) This Week: each row's number ends at the row's content edge, where its line ends (%d rows, off by %s)" % (len(week), sorted(set(w["off"] for w in week))[:6]),
+    len(week) >= 5 and not offw, offw[:4])
 chk("(4) every screen had lines to measure (%s), no page errors (%s)" % ({n: len(res[n]) for n, _ in SCREENS}, errs[:2]), all(res[n] for n, _ in SCREENS) and not errs)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
