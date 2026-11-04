@@ -32768,3 +32768,84 @@ Madison (Customize, Your look): "The Hundo effect box here, it doesn't animate b
 - Gate: tools/check-b384-czfx.py - academy (Fireworks) and Fire Code (Extinguisher): the row runs animations (11 / 33 at the
   busiest) and none once the screen has gone; the grid's 5 tiles run none; Reduce motion shows a still and runs nothing; no page
   errors. Fails (1) in both classes on 91a1d96.
+
+### Build 384 - every cutscene and unlock, both classes, ready for go-live (NOT on main, waiting for Madison)
+
+Madison: "ensure all the cutscenes for the ifc version have been updated. Ensure all the unlock banners and everything else for
+that version is good to go. We are gonna go live with the fire code and add class button tomorrow. Ensure all the cutscenes and
+everything for the police academy are good to go as well too."
+Every moment found in the code was played in Chromium in both classes (440x956 at 2x portrait and landscape, iPad 834x1194), its
+words sampled while it played and the page read after it. Contact sheets, recordings and an index (scratchpad only):
+cutscenes384/INDEX.md. What was wrong in Fire Code, and is fixed:
+- THE VOID SCENE'S TITLE said "VOID" (hard-coded); the other three flare scenes used AVATAR_DISPLAY_NAME. It is the character's
+  own name now: BREACHER in Fire Code, VOID in the academy.
+- A SECRET FLARE'S CARD said "Afterglow - 3 of Void's 3" / "The last of Void's three" in Fire Code (flareFoundItem). Now the
+  class's own name (Breacher's).
+- THE GENESIS SCENE's line was headed "GENESIS" (the academy character's name; Fire Code's is the Flashbang): Fire Code heads it
+  with the flare's own name, WORLDHEART. The academy keeps GENESIS.
+- THE BADGE CASE: its plate said "Nova - Class 26E", every badge's back was engraved "CLASS 26E", and the case was the academy's
+  "Level 1 Badge Case" (Fire Code has no levels of chapters - UNIT_LEVELS is "All chapters"). BADGE_CASE_CLASS ("Fire Code" /
+  "Class 26E") feeds the plate and badgeBackPlan's class line ("FIRE CODE" is nine letters like "CLASS 26E", so the backs lay out
+  alike); Fire Code's BADGE_CASES[0].name is "Badge Case" (the plate, the kicker over the badge's name, the lid's label, the Badges
+  page and Profile's strip all read badgeCaseName). The academy's case is unchanged.
+- A LONG CHAPTER NAME UNDER THE CASE: Fire Code's chapters run to 118 letters ("Appendix H: Hazardous Materials Management Plan
+  (HMMP) and ..."), five lines of the 1.7rem serif, which placeWords set over the open case's latches and down to the bottom inset.
+  placeWords now steps the name down (.bc-words.is-long 1.25rem, .is-longer 1.02rem) until it fits under the case; the same for
+  the name under the token alone (.bc-intro.is-long 1.35rem). The academy's names fit as they were (no class added).
+- THE THERMAL CAMERA STOPPED PART WAY (its unlock card tapped away mid-showcase, the screen changing under it): handle.stop fades
+  the layer over .6s and cancels its animations at once, and the reticle and its "0 F" readout - placed only by their
+  animations - jumped to the top-left corner of the screen for the fade. Its wrapper is opacity:0 at rest now (its opacity is
+  animated end to end, so playback is unchanged). The other three Fire Code effects move nothing on a stop.
+- NOVA'S GREETING ON ENROLLING (ifcGreetingLines) was placeholders: "Nothing you earn here changes the academy", "A few things work
+  differently in this class", "I'll point them out as we go" (nothing does). Now: "Nothing you earn here changes your other
+  class." / "Every chapter has a badge. Score 100% on it once, and it's yours." / "Hundo effects come sooner here: at 25, 50, 75
+  and 150 hundos." (read off HUNDO_FX) / "That's what's different. Ready?" No "unit" in a line (the chapter observer).
+- WHAT'S NEW (WHATS_NEW_320) is the academy's news - eight new units, the Calendar tab, Settings in Profile, "the Sheriff is
+  yours" - and its seen mark (class26e.intro.seen) is shared by the classes. maybeShowIntro does not show it in Fire Code; it waits
+  for the academy.
+- NOVA'S WORDS: beaten in a Virtual Room, "The Sheriff, one of my crew, is with you now" (novaVrMatchLine) and his match answer
+  ("you'll unlock the Sheriff") name AVATAR_DISPLAY_NAME.poseidon - the Chief in Fire Code; his next-test answer in Fire Code no
+  longer sends anyone to "the Calendar tab" (Fire Code's bar is Home, Profile, Stats, Settings). Customize's Ultimate note "Zenith
+  takes everything" names AVATAR_DISPLAY_NAME.zenith (Solar Flare).
+Checked and right in both classes (the index has each): the rank-up cutscene and Supernova (the planet, the class's own counts on
+the road map - Fire Code's Bronze is "level 21 and 4 badges"), the rank-up journey on Profile and its reward card, Nova's words over
+the relit flare, the results (grade, XP, level, the badge's case, the unlock cards, Found & unlocked), every unlock card (characters,
+banners, the four hundo effects at 25/50/75/150 with Fire Code's art and names, themes, flares, rank rewards, the secret flare
+cards and hints), Home's unlock queue and a find played there (in order, once - a relaunch plays nothing again), the flare scenes,
+the enrolled banner, the daily question's alert and its challenge card, sounds (every cutscene sound is in the catalogue; Fire
+Code's hundo sounds are SND_IFX's). No academy word, name, art or icon in any Fire Code moment; no Fire Code word in the academy.
+Not reached by any route (left alone): showCharacterUnlockBanner / showThemeUnlockBanner / showTierUpBanner / showFlareFoundBanner /
+announceCharacterUnlocks have no callers (the cards replaced them; showTierUpBanner also lacks topNoticeOffset and would sit over
+the chat button); the Home badge queue (playQueuedBadgeCutscenes) only plays a pendingBadgeUnlocks list stored by an old build;
+pendingDailyProgress (the "DETECTIVE" banner) is never set.
+FOR GO-LIVE (not changed - the class button's area): unseenClasses() treats Fire Code as already seen when nothing is stored, so
+when the class button opens to everyone, nobody gets the "NEW CLASS - Fire Code is open to join" banner or the button's pulse. If
+classmates should be told, the default seen list becomes ["academy"] in the same change that opens the button.
+Seen in the academy, not changed (the police hundo effects are another round's): Underwater stopped part way (its card tapped
+away) moves ~20 pieces (hfx-uw-sf) towards the screen's left edge for its .6s fade - the same kind of fault as the Thermal
+Camera's (pieces placed only by their animations, visible at rest), in hfxUnderwater.
+Sandbox: /opt/pw-browsers/chromium-1194 was removed mid-session (Playwright 1.63 and chromium-1243 now); a chromium-1194/chrome-linux/
+chrome link to 1243's binary was put back so the tools' CHROME path works. check-b384-cutscenes finds whichever is installed.
+- Gate tools/check-b384-cutscenes.py (both classes in one run, side by side; ONLY=n runs a section): (1) every card's words, the
+  counts, the art on the played cards, nothing left after, the effects' stops; (2) the flare scenes' titles and words; (3) the
+  badge case's plate, name, backs and the longest chapter's place (phone and iPad); (4) rank-up and Supernova, the sound catalogue;
+  (5) Fire Code's greeting and the enrolled banner, once; (6) a find played on Home, in order, once; (7) What's New; (8) Nova's
+  words and Customize's note; (9) the whole earn walked; (10) no page errors.
+  This build ALL PASS (73); on 3ec8227 20 fail - every fix above (the Void cards and title, the Thermal Camera's stop, the Genesis
+  line, the case's plate, name, backs and the long name, the greeting (3), What's New, Nova's three, and the walk's "Class 26E").
+- Also in this round: placeWords' beside-the-case words (a phone held sideways) step down the same way when a long name is taller
+  than the room, are centred but never into the insets, and keep clear of the notch's side (right: env(safe-area-inset-right) +
+  12px) - measured with an iPhone's insets patched in: Appendix H fits portrait (under the case 740 > 726), landscape (beside it,
+  10-411 of 440, right edge 882 of 956 with a 62px inset), an SE (is-longer) and an iPad (no step).
+- check-b384-hazmat (6) counted every .hfx-layer on the page after Hazmat's total; with What's New no longer holding Fire Code's
+  Home queue, the fixture's account (141 hundos) now gets its effect cards, and the Thermal Camera's card shows its effect in a
+  layer of its own inside the card. It counts only layers outside an unlock card now (the ifxnew gate's rule). ALL PASS.
+- Gates (one at a time): check-js ALL PASS; the page console in both classes: no page errors (only the blocked Firebase CDN);
+  check-b382-ifcart 45 PASS; check-b384-ifxnew 9/9; check-b384-hazmat ALL PASS; check-b384-extspr ALL PASS; check-behaviour
+  (cutscene, badges, 317b, 321d, 317s, 318f, 324p, 314u, 324n, 324v2, 319r) - 10 failures (317b's Badges-tab case parts x4,
+  321d's "sixteen in your hand", 324n's five Nova chat checks) fail identically on 3ec8227, the rest pass; check-unlocks' 3
+  daily-question failures and check-tours' mainmenu / modeselect / profile "target matched nothing" fail identically on 3ec8227;
+  sweep-layout --quick 14/14.
+- Phone checks owed: the long chapter names under the case and beside it with real insets and text size; the Thermal Camera's
+  card tapped away mid-showcase (nothing at the corner); Nova's greeting typing speed (the sandbox ran slow) and the enrolled
+  banner after it; sound through the speaker for the Fire Code greeting and cards (unchanged sounds); haptics.

@@ -127,7 +127,9 @@ END = r"""async () => {
   const X = window.__hz;
   X.anims().forEach(a => { try{ a.play(); }catch(e){} });
   await new Promise(r => setTimeout(r, X.h.total + 500));
-  return { layers: document.querySelectorAll('.hfx-layer').length, top: document.querySelectorAll('.hfx-ufo-top').length, box: X.card.querySelectorAll('.hfx-box').length,
+  /* (384, cutscenes) only a layer this play could leave: an unlock card Home puts up meanwhile (What's New no longer holds
+     Fire Code's queue) shows its own effect in a layer of its own, inside the card */
+  return { layers: [...document.querySelectorAll('.hfx-layer')].filter(l => !l.closest('.rs-spot')).length, top: document.querySelectorAll('.hfx-ufo-top').length, box: X.card.querySelectorAll('.hfx-box').length,
     lifted: X.card.classList.contains('hfx-over') || X.card.classList.contains('hfx-lift'), done: X.h.done };
 }"""
 SMALL = r"""async () => {
