@@ -31705,3 +31705,25 @@ manage friends or something, when I leave that, it goes back to the main menu in
   orb's mystery-burst; (7) on the last question, finished without it -> missed; (8) saved and read back through applyLoadedData,
   another device's miss merged; (9) no page errors. On 383: 7 fail ((1) Tap on a first appearance; the point at -1 / 11.5 of 25;
   no burst, the orb still on its beckon). This build ALL PASS.
+
+### Build 384 - Fire Code: a curve a fifth of the academy's; its flares every 13 levels from 13
+- Madison: "the ifc version, the xp curve and xp amount needed to level up. Ensure this is made right. A person probably won't be
+  grinding these nearly as hard as the police one. And remember that each unit 1 one hundred is a badge. So the xp curve is gonna
+  need to be easier, it's gonna have to be easier to reach the max rank." / "ensure for the ifc version, the secret flares are
+  more spread out and come through earlier on ... There's 6 of them, so every 15 levels or so".
+- MEASURED: the academy curve is 217,910 XP to level 80. Fire Code: 58 chapters, 1,779 questions, a badge is one 100%
+  (badgeThresholdFor 1); its ranks (382) ask the academy's levels 21 ... 80 with 4, 12, 20, 28, 36, 48, 56 badges. Every chapter
+  taken to 100% - an imperfect first go (~70%, 9s a question) and a perfect second (8s), paid by computeRunXp itself - is 53,510
+  XP: a QUARTER of level 80. On 383 Fire Code's top rank was out of reach by playing all of it.
+- LEVEL_COST_SCALE (0.2 in Fire Code, 1 in the academy) and levelCost(need): levelProgress and xpForLevel step `need` on the
+  academy's numbers and charge levelCost(need) - the same shape, every level a fifth; span / toNext / fraction / topSpan in Fire
+  Code's XP. Level 80 = 43,583 XP. A Fire Code level only goes UP (cheaper), so no level or rank drops (rank floors / the legacy
+  curve are dearer and stay below). Placed under LEVEL_CAP (whose own TDZ already rules out earlier callers).
+- FLARE_WINDOWS_IFC: red 12-14, orange 25-27, yellow 38-40, violet 51-53, white 64-66, core 77-79 - every 13 levels, the last
+  where the academy's sixth is; ~0.9k, 3.6k, 8.6k, 15.6k, 26k, 41k XP on the new curve. FLARE_WINDOWS_ACADEMY unchanged (20,
+  34-36, 47-49, 59-61, 70-72, 78-80). A level drawn from the academy windows is outside the new ones and is redrawn when asked.
+- Gate tools/check-b384-ifccurve.py: (1) every Fire Code level a fifth of the academy's (within 1%), the academy unscaled; (2)
+  every chapter to 100% (53,510 XP) reaches level 80; (3) each rank's level there by its badges (its badge count of average
+  chapters reaches it; even the cheapest reach half); (4) the flares 13-15 levels apart from ~13 (drawn 14, 26, 39, 53, 65, 79),
+  the academy's first still 20; (5) no page errors. On 383: (1)-(4) fail (ratio 1.0; 53,510 vs 217,910; flares 20, 35, 48 ...).
+  check-curve (the academy's) ALL PASS unchanged.
