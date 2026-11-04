@@ -32226,3 +32226,86 @@ lowered. Like increments of 25, 50, 75, 150?"
 - Fire Code's counts: fireworks 25, underwater 50, bubbles 75, ufo 150 - set on the HUNDO_FX rows right after the list, before
   anything reads them (window.NOVA_CLASS, not IFC_ART_ON: that var is assigned later). The academy keeps 50 / 100 / 150 / 200.
 - Fire Code is: 25 Extinguisher, 50 Sprinklers, 75 (the Fire Alarm's replacement), 150 Hazmat.
+
+### Build 384 - Fire Code's 150: Hazmat, the showpiece
+
+Madison: "The hazmat one is super cool, I don't love love it though, I just feel like it has so much potential. The hazmat one
+should probably be the 200 hundos one, it's my favorite/coolest/has the best potential. ... Tighten up all of them where you can
+to ensure they perfect" (383: "The hazmat one could be so much cooler"). Now on the ufo rung (150 in Fire Code), it is rebuilt as
+the class's top reward: a 7.2s short film (IFX_HZ, IFX_DEF.ufo total 7200 / tail 6100 / box 5000; it was 6.6s with the last
+piece gone at 4.8s). Kept: the hazard bands, the green vapour, the NFPA 704 diamond reading 1-0-0, the containment scan locking
+on the box, the suited responder, the decon and the all clear.
+- THREE DEPTHS. The world behind the box (scr: the beacons' light, the mesh, the containment field, the far vapour), the box
+  itself (the ufo rung's hfx-over keeps it lifted over scr - kept, it suits Hazmat), and a layer OVER the box (hfxUfoTopLayer,
+  the UFO's own helper, reused unchanged: the tape, the near vapour, the placard, the scan line, the brackets, the responder and
+  his spray, the mist on the box). Before this the brackets, the tag and the scan sat in scr, UNDER the lifted box. The near
+  world is pushed in and shaken harder than the far one (two camera wrappers about the box's centre: push-in to the slam, a
+  shake at the slam, a thud at the lock, eased back at the all clear); the box holds still between them. The bands are the
+  screen's frame and do not move with either.
+- BEATS (IFX_HZ): 0.0 ALERT - an amber flash at the edges (twice), two rotating beacons above the screen sweeping their light
+  down across it out of step, the hazard bands slam in from opposite sides with an overshoot, scene tape ("HAZARDOUS
+  MATERIALS") snaps taut across two corners (.34/.46). 0.28 SPILL - vapour rolls in at three depths over a toxic floor haze,
+  tendrils curl up out of it, a green film creeps up the box. 1.0 PLACARD - the quarters fly in out of the camera one at a
+  time, each landing with a ring of light: blue 1 (1.0), red 0 (1.18), yellow 0 (1.36), white (1.54); the steel frame SLAMS
+  round them at 1.74 (flash under the placard so it stays crisp, a ring, the world shakes, the placard punches); a glint
+  crosses it. 2.06 CONTAIN - a scan line comes down (the mesh behind it), slows to read the box (2.22-2.56); four brackets
+  fly in from the screen's four corners and lock on the box's (2.64) with a squeeze; the hex containment field closes round
+  the box; the number lights; the placard spins up onto a CONTAINED tag over the box (2.2-2.66) and the tag slides out from
+  behind it. 2.95 DECON - the responder walks in from beyond the right edge (wand and all), raises the wand and sprays the box
+  side to side (3.84-5.0: left, right, back to the middle): mist blooms where it strikes, droplets thrown off, the film is
+  blown off the glass where the spray crosses it, rinse water runs down, the vapour thins away nearest him first. 5.15 ALL
+  CLEAR - the tag turns over to ALL CLEAR (lime), the placard spins once, the beacons turn green, slow and go out, the tape
+  snaps back, the bands slide away, the brackets let go, the field opens in a lime ring, the box blooms clean from behind, a
+  wave of clean light crosses the screen, glints come off the box, the 100% is swept with light; the responder lowers the
+  wand and walks off. The dim lifts with it (gone at the tail, 6.1); the tag fades by 6.5; everything is gone by 7.2.
+- THE RESPONDER is redrawn (ifxSpr.suit, 220 x 400): a Level A suit three-quarters to the left - the big hood and wide face
+  shield (the mask and regulator dim behind the glass, a lime reflection of the vapour and an amber one of a beacon), the air
+  pack's hump at the back, the splash flap, the waist gathered, folds, baggy legs taped at the boots, lime soles; cool key
+  light from the front left, amber rim from the beacons, a green bounce from below. The arm and the decon wand are their own
+  sprite (hzArm) turning at the shoulder, with the gun cocked up 52 degrees from the forearm (IFX_HZ_ARM): with the box almost
+  straight above him on a phone, a straight arm crossed his face shield; cocked, the arm rises only ~30 degrees and the lance
+  points up. The aim is solved per frame (the nozzle moves as the arm turns: six iterations) and sampled into keyframes every
+  0.08s. The spray (hzSpray, a dense core into mist, streaks and droplets) is the arm's child on a mount turned by the cock, so
+  it turns with it; three droplet runs stream down it.
+- PIECES: about 130 across the three layers on a phone (scr 30ish); sprites drawn once and rasterised by hfxWarm (the warm
+  list has them all; the containment field, hzCage, is drawn per box shape at play). Transform and opacity only; no svg
+  filter. New sprites are added after ifxSpr with Object.assign (hzFrame, hzSheen, hzTape, hzBeam, hzFume, hzWisp, hzArm,
+  hzSpray, hzDrops, hzGlint, hzDrip, hzTagOk, hzCage); the hazmat ones in the object (stripe, quad, scan, bracket, tag, suit)
+  are redrawn in place; `vapor` is gone (nothing used it).
+- THE SMALL BOX (ifxHazmatSmall, a tile's stage or the unlock card, 4.9s): the alert, the bands, the vapour, the placard
+  slammed together (at the right of a wide box and held; over a square one and then away), the scan and the brackets on the
+  number, a pass of decon mist with rinse water, the all clear.
+- TILE / STILL: the tile is the film's frame at the lock - beacon light, bands, tape over a corner, vapour, the scan line, the
+  field and brackets round the 100%, the 1-0-0 placard in its steel frame, the responder low at the left spraying. The still
+  (reduce motion) is the placard in its frame inside four lime brackets.
+- SOUND (SND_IFX["hundo.ufo"], on IFX_HZ's beats): a drop into the dark and a two-tone hazard warning; band slams L/R and the
+  tape's snaps; the vapour's hiss over a low D and the dark Bb, a detector's clicks speeding up and a riser climbing to the
+  slam, cut dead by it; the four quarters whoosh in and clank home on a rising D minor (D F A D - "1, 0, 0"); the SLAM (a heavy
+  hit, a ring of steel, a bell on D3) and a glint; the scanner's sweep and the box read off in blips; four bracket clicks, a
+  lock chirp (A5-D6), the field engaging with a thud and humming; suit rustle and four rubber-boot steps, the wand raised and
+  pumped; the spray's hiss panned with the sweep (left, right, middle) over a body, water pattering; the bass climbs Bb, C to
+  the ALL CLEAR - a bright D major (pad, bells D5 F#5 A5 D6, a shimmer), the field powering down, the tape's snap-backs, the
+  bands' whooshes and his steps away. Rendered in Fire Code: peak .38, loudest 50ms .16 at the all clear (.15 on the slam), the
+  decon .09 (the old score: peak .34, loudest .11, decon .03).
+- Gate: tools/check-b384-hazmat.py (phone and iPad, a 100% box on the page, the effect paused and seeked on its own clock):
+  the rung is ifxHazmat and 6.5-7.5s; the quarters land one at a time, blue first and white last, 0.12s+ apart, sit as a
+  diamond and a frame slams round them; four brackets fly in from the screen's corners onto the box's corners, on a layer over
+  the lifted box; the placard sits on a tag over the box, centred, and the tag turns over at the all clear; the responder is
+  beyond the right edge (wand too) before he walks in and his spray's far end lands on the box, swept from left of its middle
+  to right of it; every piece faded at the tail and nothing left after the total; transform/opacity only, no filters, <=170
+  pieces; the small box plays and is gone; the tile and still draw the four colours; the sound renders, not clipping, its
+  loudest moment on the slam or the all clear, the decon not left quiet. ALL PASS; on 3b6f4ad it fails on every new leg.
+- check-b382-ifcart pins the effects' source hashes (round 4); its hashes need re-pinning after the merge.
+- Clips: tools/record-hundo.py OUT ufo --ifc (and 834 1194), the sound rendered with NovaSound.render in Fire Code and muxed
+  under each (the first frame is ~1/30s into the effect).
+- Only a phone can confirm: real-device smoothness (about 130 pieces, several large soft images: the beacon cones, the
+  vapour banks, the field), the arm's turn reading as one limb at 3x, the sound through the limiter on the speaker, and that
+  the box lifted over the dim with a layer above it composites the same in WebKit.
+- Seen, not changed (shared): hfxLitText's copy of the number sits a few px left of the number in a 16:6 stage on both this
+  build and the one before, so the small box's lock flash shows doubled for a moment.
+- Gates on this commit: check-js ALL PASS; console clean in both classes (only the sandbox's blocked Firebase CDN);
+  check-b384-hazmat ALL PASS (fails on 3b6f4ad on every new leg); check-sound ALL PASS; sweep-layout --quick 14/14 clean;
+  check-b382-ifcart all but "the hundo ladder keeps its ids and counts in Fire Code", which fails the same on 3b6f4ad (it
+  predates 25/50/75/150); check-behaviour check_b313_fx + check_b317_hundobox: only "Confetti ... leaves the box and its bar
+  gold" and the three "confetti: then gold" hand-off legs fail, the same on 3b6f4ad (academy; untouched here). A "bubbles:
+  spreads out" fail under load passed on its own re-run.
