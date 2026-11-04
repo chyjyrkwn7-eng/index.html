@@ -32510,3 +32510,82 @@ with the scroll but it's not on some of the other screens? Is it meant to be the
 - Removed from showModeSelect only. The sign-up screens (sign-up check, class, name, character, code reveal/entry) keep theirs.
 - Gate: check-b384-modes (7) - no radial gradient on the panel or anything in it (before/after included), both classes, phone,
   iPad and SE. Fails on 4f3d9c3 (homeglow, all six); passes here with (1)-(6).
+
+### Build 384 - Fire Code's 25 and 50: the Extinguisher and the Sprinklers, tightened (NOT on main, waiting for Madison)
+
+Madison: "The extinguisher one is super cool. Tighten it up though, maybe it better. Tighten up all of them where you can to
+ensure they perfect" (and in 383: "The sprinklers is my favorite one but it could be better, the sprinkler water could look
+better, the fire could look better"). Both recorded first on a real 100% results screen (phone 440x956 and iPad 834x1194, with
+the app's own sound) and studied frame by frame; the same scenes, the same ids and rungs (fireworks 25, underwater 50),
+refined. Only ifxExtinguisher, ifxSprinklers, their IFX_DEF rows, their ifxWarmList / ifxPosterBody / ifxStillBody branches,
+their ifxSpr sprites and their two SND_IFX scores changed. Each effect's beats are one table now (EXT_T, SPR_T, declared just
+above its builder) and its score reads the same table, so the sound cannot drift off the picture.
+
+**Extinguisher (fireworks), before -> after**
+- Length: 5.4s play / IFX_DEF 5800 total, 4700 tail -> 5.0s / 5300 / 4300 (box alone 4.2 -> 3.9s, IFX box 4400 -> 4200).
+  Every beat earlier: set down .46 -> .40, pull .52 -> .46, aim .68 -> .56 (it starts as the pin flies), blast .98 -> .86,
+  off 3.25 -> 2.95, the 100% lit 3.55 -> 3.19.
+- Entrance: a swing up with a springy ease -> up OVER its mark and SET DOWN, with a squash (scale 1.03 x .955) on the clunk.
+- PULL: the pin slid off the left edge, too small to read -> a twist (seal, a small glint), a yank, then tossed up over the
+  cylinder on a real parabola (12 keyframes), spinning and growing a little, falling out past the label.
+- AIM: the nozzle already pointed nearly at the box at rest, so the aim turned it 3 deg on a phone (13-17 on an iPad) -> it hangs
+  down the cylinder's side and is swung up 135-145 deg onto the box, over the mark and back; after the blast it swings back down.
+  The ferrule moved from the cylinder sprite onto the nozzle (it turns with it); the nozzle and hose got a lit grey edge so they
+  read on the dark screen (black on navy was invisible).
+- SQUEEZE dips the whole unit; the blast KICKS it back along the stream, then an irregular rumble (was an 18 Hz square shake).
+- The stream: a still cone that breathed -> three looping layers of comet streaks (ifxSpr.jetFlow, new) poured out along it;
+  a punch on the open (over-scaled, opening over .1s - faster read as a one-frame jump on the iPad); and a SPUTTER as it empties - three spurts at 2.775 / 2.845 / 2.9s, each with a
+  jolt of the cylinder and a cough in the score - and the last puff leaves the horn.
+- The cloud: billows were cotton balls (every lump its own highlight) -> ifxSpr.cloud redrawn as ONE volume: 29 soft lobes, each
+  a near-flat tint by where it sits (lit above-left, warm grey under), the under-belly painted first, a few lit curls, fine powder
+  at the rim. Flung out fast and dragged to a stop, swelling, then SETTLING (dry chem is heavier than air; they drifted up). Five
+  big slow billows give the cloud a body. The haze was a full-screen grey (+0.24 luminance in the far corner) -> only where the
+  cloud is, lighter, sinking away (+0.004).
+- The box: whited out at .82 for 1.3s (the number unreadable) -> the powder at .6 with the 100% ghosting through, six wisps blown
+  up across it, and as it settles it slides off downward (a soft top edge passing down); then a glint, the box's red and the lit
+  100% on the chime. The tile's box alone (Customize, the unlock card) gets the same payoff; its billows are thinner (x.8).
+- Score: retimed to EXT_T - the entry whoosh runs into the clunk; scrape, click and ping on the twist / free / flight; a swish
+  on the aim; the roar (its pan on the sweep, .8/s) cut at the sputter into three coughs; a hush as it settles; the A4-D5 chime
+  and sparkle exactly at the lit 100%; a low whoosh as it is taken away.
+- Crisp: ext drawn at 1280 (960: 0.84 of a 3x phone's pixels), nozzle 400, jet 1024; the cloud at 400.
+- Tile / still: the poster's cloud is lobes in three shades (no cotton balls), with a settling fall; the still's billow likewise.
+
+**Sprinklers (underwater), before -> after**
+- Length: 6.3s play / 6800 / tail 5500 -> 5.0s / 5400 / 4300 (box alone 4.6 -> 4.0s, IFX box 4800 -> 4300). Bulbs 1.15 ->
+  1.0s, in one run left to right (.16s across, any number of heads); heads open in .2s (.24); knock-down from 1.55 (1.9), 90% of
+  the fire out at ~2.6s (3.25); spray off 3.3 (4.0); the heads go back up 3.9s, .5s after the spray (round 4 left them hanging
+  1.2-1.6s with nothing happening).
+- The payoff: the 100% was lit at 2.4s with the fire still burning and the chime came with the drips at 4.45s -> lit at 2.6s as
+  the last of the fire goes out, a sheet of water running down the glass just before it, and the D5-A5-D6 chime on it.
+- The water: ifxSpr.spray redrawn - streams that leave the plate whole and break into droplets (a solid run, dashes, beads),
+  loose drops with glints, a thin bright sheet off the plate's rim and a faint bell of mist; the hard white disc is gone. Drawn at
+  900 (640). Rain drawn at 300 (120 - a blur at 3x), each streak with its bright drop at the head, falling faster. Each head jolts
+  as its bulb goes. Two drips per head on a phone.
+- The fire: flames at 800 (320 was 0.36 of a 3x phone's pixels), bulb 200 (120), glass 320 (120). Knock-down unchanged in kind
+  (a flare, then beaten down) but on the faster beats.
+- Steam: a round puff per flame that hung 2s over the floor as a smeared band -> ifxSpr.steam (new): a curling plume that rises
+  ~a fire's height and is gone in ~0.9s, sizes and starts varied.
+- Score: retimed to SPR_T - the bulbs louder (glass crack, tinkle and the head's water bursting out, panned left to right), the
+  spray shut at 3.3, the chime moved to the lit 100%, the six drips on the drips. iPad: rain 9 per head and one drip per head,
+  to stay under 170 pieces (172 -> 168).
+- Tile: the umbrellas as the effect's (sheet, solid-then-dotted streams, mist bell); the steam in wisps (was two flat discs).
+
+**Gate** tools/check-b384-extspr.py (Fire Code, a stand-in card, every animation paused and seeked, read off the page; the
+score rendered offline with NovaSound.render): E1 aim >= 90 deg (phone and iPad); E2 the pin rises >= 70px and stays on screen;
+E3 the squash < .975; E4 >= 3 dips in the stream's last .45s and a score onset within 40ms of every spurt; E5 >= 2 looping flow
+layers moving outward; E6 hung billows move DOWN over the second after the blast (both sizes); E7 lit <= 3.3s, total <= 5.4s,
+the far corner <= +.02 luminance mid-cloud; S1 heads up <= .8s after the spray (both sizes), total <= 5.6s; S2 lit within .35s
+of 90% of the fire out (both) and the D5 chime's onset within 60ms of it; S3 >= 5 steam plumes, each rising >= a quarter of the
+fire and gone within 1.4s (both); C1 hard-edged art rasterised >= .95 of its displayed size at 3x, flames >= .8; C2 (a guard
+joined to C1) transform/opacity only, no svg filters, <= 170 phone pieces, the tile's box plays and lights, nothing fully shown
+when the layer goes, both scores peak between .02 and 1, no page errors. On 3b6f4ad every one of its 18 legs FAILS; here ALL PASS.
+Also: check-js ALL PASS; check-sound ALL PASS; sweep-layout --quick 14/14 clean; check-b382-ifcart passes every leg but "the
+hundo ladder keeps its ids and counts in Fire Code", which already fails on 3b6f4ad (384's 25/50/75/150 counts; its hashes are
+re-pinned after merge, not here). record-hundo (phone and iPad): no frozen or jumpy frame inside either effect - the ones it
+still reports are the app's own cut to BADGE FOUND after the tail, there before too (5.1/5.4s then, 4.7/5.0s now). My own first
+passes had three, fixed: a dead frame at the landing (the squash now spreads over .07s), a lull at the end of the yank (the yank
+runs straight into the toss and the aim starts as the pin flies), and the blast opening in one frame on the iPad.
+
+Clips (phone and iPad, with the app's own sound, and before | after side by side on a phone) are in the session's scratchpad
+fx384/extspr/. Only a phone can confirm: smoothness at 120 Hz with the bigger rasters (sprites decoded once; flame 400x800,
+spray 900x585, ext 582x1280), that the three-spurt sputter reads as a sputter and not a flicker, and the score on the speaker.
