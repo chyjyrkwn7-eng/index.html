@@ -33604,3 +33604,126 @@ chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browser
   SE / Pro Max / iPad with nothing scrolling; history leads with 10. Against 1dca98e: (1), (4), (5) FAIL ((3) is a guard).
 - Old content gates that assert 9.2's or Version 9's rows (check-b325-d, check-b326-d, check-b327-m's titles) describe the
   card of their own build; they now read Version 10's.
+
+### Build 384 - the stuck zoom, the tab bar, Sign out's buttons, the sync code's copy, Save it on a laptop (NOT on main, waiting for Madison)
+Madison, on the live 383: "For some reason, when I first logged into nova signing in, the screen was zoomed in? Fix this as
+well." / "The bottom tab is glitching right now, it's showing up in the middle of the screen of review and the unit selection
+screen and stuff. Some other stuff is weird and glitched like when paused the box is glitched and is showing at the top?" /
+"The copy button to how the friend button has, the sync code needs that same kinda button as well." / "When you sign out the
+buttons overlap as well." / "Why did my laptop do a weird thing when I selected save code by the way?" / "We need a full check
+of the entire app to ensure everything is running perfectly".
+
+THE ZOOM - MEASURED, THEN FIXED
+- WHY IT ZOOMED: at his 85% page zoom (518 CSS px on a 440pt screen) the sign-in code field and sign-up's username field
+  computed 17px = 14.4px ON THE GLASS, under iOS's 16, so iOS zooms the page the moment the field is tapped. The page-zoomed
+  floor (build 199: html.page-zoomed ... font-size:var(--field-floor) !important, specificity 0-8-2) is there for exactly this,
+  but since BUILD 382 ("the sign-up steps in the Settings look") those two fields carry `font-size:17px !important` in a rule
+  with #stage in it (`html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel)
+  .onboarding-input-wrap > input.searchbox`, 1-4-3). Two !important declarations are settled by specificity; the field's rule
+  won. Every other field was already 16px+ on the glass (26 fields on 13 screens in the academy, 15 on 8 in Fire Code; at 440,
+  at 518 installed and in a tab, and on an SE). Present in 382, the live 383 and 384; not in 381. (The 1.15 CSS zoom on the
+  sign-up panels is a laptop-only rule - not a phone cause.)
+- WHY IT STAYED ZOOMED - nothing ever gave it back:
+  - Sync This Device replaces the screen under the focused field; a removed element is not blurred, so no focusout, and the
+    focusout unwind never ran from there;
+  - the keyboard's unwind (visualViewport resize) asked keyboardGone() = visualViewport.height >= innerHeight - 40. Under a held
+    zoom the visual viewport is smaller BY THE ZOOM (1125/1.18 = 953 < 1085): "the keyboard is still up" for as long as the
+    zoom lasted, so resetStuckZoom() was never reached that way;
+  - nothing looked at boot, pageshow or a return to the app (a reload - Sign out, a class switch - can carry a scale back);
+  - resetStuckZoom() lifted its maximum-scale=1 clamp after two frames. Safari applies a viewport change in its own process,
+    not in the frame it is written, so two frames may be a clamp it never sees (a reading, not a measurement - the phone has to
+    say). Two calls within two frames could also read the clamped content as "the original" and put it back last, leaving
+    maximum-scale=1 in place for good (pinch-zoom taken away).
+- WHAT A HELD ZOOM DID: everything placed against "the screen" was placed against a viewport that is not the one on the glass.
+  Pause's card: centerPauseStack() centred it on visualViewport.height / 2 measured from the LAYOUT viewport's top - the top of
+  what is showing once the zoom has panned down to the field. Measured with the zoom held at 1.5 and the visible part 240px down
+  the page: the card's middle at 391 against a visible middle of 559 on a Pro Max (518: 402 vs 615) - "the box ... showing at
+  the top". The tab bar under a held zoom: a fixed bar is laid on the layout viewport, which iOS moves on its own terms while
+  zoomed (and while the keyboard is up) - so it shows part way up the glass. Chromium cannot reproduce where iOS puts it; what
+  is fixed is that the app now asks for the zoom back (below).
+- THE OTHER SUSPECT, RULED OUT: a transformed / filtered / contained / will-change ancestor of #bottomtabs or Pause (it would
+  make the "fixed" bar sit on that ancestor - mid-screen on a short one). Sampled EVERY FRAME for 1.2s after every transition -
+  Start Studying, Review's units, the units scrolled 700px, Review's list (and scrolled 2,500px), Review paused / resumed, Home
+  by the tab, the Drill's units, a question (from the moment it is up), paused, resumed, paused again - on 383 and 384, at 440
+  and 518, installed and in a Safari tab, both classes: no such ancestor in any frame, the bar's foot at the screen's foot,
+  Pause in the top band. In the CSS no rule puts a transform/filter/contain/will-change on html, body, .wrap or #stage. So it
+  is not a containing-block bug Chromium can show.
+- THE FIX:
+  - the floor out-ranks every field rule: `html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) input...` (3-8-2; a :not(#id)
+    matches everything). At 518 the code field is 20px CSS = 17px on the glass. At 440 nothing changes (the class is not set).
+  - unwindHeldZoom(): a held scale (visualViewport.scale > 1.01) with no text field focused is asked back at boot, on load, on
+    pageshow, on visibilitychange to visible and on every screen change (#stage's children), each 4 times over ~900ms. At
+    scale 1 it writes nothing (measured: 0 viewport writes); with a field focused, nothing.
+  - resetStuckZoom(): never under a focused field; one clamp at a time; held until the scale reads back or 400ms (a 460ms
+    timer for a hidden page, which runs no frames), then the AUTHORED content put back - never a copy of a clamped one.
+  - keyboardGone() in the layout's pixels (visualViewport.height x scale).
+  - centerPauseStack() centres on what is showing (the visible part's top + half its height; at scale 1 its top is 0, so
+    nothing moves) and is placed again on the visual viewport's resize (a zoom being given back).
+  - NOT brought back: a viewport swap on every focus ("THE VIEWPORT CLAMP IS GONE"). Pinch-zoom stays: the clamp exists only
+    while a held scale is being given back, and a zoom pinched on a screen stays until that screen is left.
+
+THE SYNC CODE'S COPY: Settings > Sync's "Your sync code" has Manage friends' copy button beside it. buildCopyIconButton() is
+the one builder for both now (class friend-copy-btn: 46.4px round, #0A0A0C, the two-squares glyph; a tap copies, the glyph turns
+to the green tick for 1.4s, a toast says so; aria-label "Copy your sync code"). It stands beside the code's well, centred on it
+(0.0px off), outside the row that shows and hides the code - so it copies whether the code is showing or not and never reveals
+it - and copies shownSyncCode() (Fire Code's included: never the account's "__ifc" name). Below 22rem (a 320px phone) the code
+steps down to 1.4rem to stay on one line. Both classes.
+
+SIGN OUT'S BUTTONS: "Save my code" and "Sign out" had NO gap: the pop-up's .next is margin:0 and only the ghost buttons took
+.6rem. 0px at every size measured - Pro Max installed and in a tab, 85% installed and in a tab, SE, iPad, laptop, both classes -
+the white Sign out flush on Save my code with its shadow over it. Now any two adjacent buttons in a pop-up sheet are .6rem
+(9.6px) apart, and a label that wraps grows its button. Save my code says "Copied your sync code..." (green) when it copies.
+
+SAVE IT ON A LAPTOP: saveSyncCodeVia() used navigator.share wherever it exists. Chrome and Edge on Windows have it - it opens
+the Windows share dialog over the app: the "weird thing". On a computer (a2hsDeviceGuess() === "computer": not an iPhone, an
+iPad (iPadOS's Mac user agent with touch points) or Android) Save it copies the code (copyTextQuietly: the async clipboard,
+then execCommand) and says "Copied your sync code. Paste it into a note or an email to yourself to keep it."; Settings' row
+reads "Copy it, to paste into a note or an email" there. A phone or tablet keeps its share sheet. The old clipboard fallback
+copied the raw syncCode ("XXXX-XXXX__ifc" in Fire Code); every copy is shownSyncCode() now, and the save-code card shows it.
+
+THE FULL CHECK (tools/check-b384-walk.py): 37 screens in the academy, 33 in Fire Code (its bar is Home, Profile, Stats,
+Settings), on 7 devices. It found one more thing, fixed: Pause's "Save and exit" was cut to "Save and exi" on an iPhone SE (the
+card's pair of buttons went to one column below 360px; 375 needs it too) - one column below 400px now. Looked at, not changed:
+on an iPad and a laptop the tab bar's Profile and Leaderboard tap areas share 5-7px (their words and icons are well apart);
+on an SE in Fire Code a 6-row progress meter (88 questions) pushes Pause's card below the middle (it stays under the meter, by
+the 297 rule).
+
+FIND ME, ON THE WAY (check-sync): Find me's flash came off the row a moment after the tap - its `animationend` listener (once)
+took ANY animationend that bubbled up, and a character or flare in the row finishing its .24s fade-in (lb-art-in) is one. Racy:
+it failed twice running here and passed on the build before. Both of the flash's listeners (Find me's and the row builder's) now
+take only rank-flash-anim's own end on the row itself.
+
+GATES (Chromium 153, one at a time):
+- tools/check-b384-glitches.py (new; sections fields zoom place copy signout save; --against REV|DIR): this build ALL PASS
+  (179 checks, 83 [fix]). --against 34765be: 79 FAIL - every [fix] that is reached fails (63; the copy section stops at "no copy
+  button"), and the two guards that also failed there were about changed behaviour and are [fix] now (a zoom given back when a
+  field is left - 383's two-frame clamp is not long enough in the model; a wrapping label in Sign out's sheet still 0px).
+  --against 42bbffa (the live 383): 78 FAIL, all [fix]: the live build has every one of these problems (the field under 16px on the glass at 85%, nothing that gives a held zoom back, Pause off the middle of what is showing, no copy button, Sign out's 0px, Save it sharing on a laptop). One [fix] passed there by chance (a screen change on the simulated 85% phone: a 383 two-frame clamp happened to last past the model's 150ms while the harness ran slow frames).
+  THE MODEL IN IT: Chromium cannot zoom on a field or give a scale back to a viewport clamp the way Safari does. A real held
+  scale is Chromium's page scale set from outside (Emulation.setPageScaleFactor) and panned by a scroll gesture; it proves
+  what the app asks for (the clamp, when, never under a field, never at scale 1). Safari's answer is simulated: a visual
+  viewport held at a scale that comes back to 1 once the viewport has been clamped to maximum-scale=1 for 150ms (the 150ms is
+  the model's assumption). (A synthesized pinch does not take on this app: body is touch-action:pan-y.)
+- tools/check-b384-walk.py (new; devices as arguments; --against): this build ALL PASS - 7 devices x 2 classes, 37 screens in
+  the academy and 33 in Fire Code each. --against 34765be: FAIL on the SE in both classes ("Save and exit" cut off), every other
+  device and screen passes there too. Self-test: a transformed .wrap injected on the units screen and Review's list fails it
+  (the bar "at 2401-2480 of 956", off the screen).
+- check-js ALL PASS; the page's console in both classes (and signed out), an iPhone and a laptop: nothing but the blocked
+  Firebase CDN; sweep-layout --quick 20/20 clean; check-b382-ios ALL PASS; check-b384-settings ALL PASS; check-b384-hairlines
+  ALL PASS; check-b384-friends ALL PASS; check-sync ALL PASS (121) - its "the sync section is not a pile of buttons" count is 4
+  now (the copy button, on request); check-b382-savecode ALL PASS - its desktop context at a phone's size is told it is a phone
+  where it checks the share sheet (a computer copies now).
+- check-b383-signup: 2 FAIL - "[guard] phone/ipad after Nova, the main menu's tips run over Home"; the same two fail on
+  34765be (with two more there). Not this round's area (sign-up / Nova's walkthrough); left for that session.
+
+ONLY HIS PHONE CAN CONFIRM: that iOS no longer zooms on the sign-in field at his 85% page zoom (20px CSS = 17px on the glass
+here); that Safari gives a held scale back to a maximum-scale=1 clamp held up to 400ms (the mechanism the app has always used -
+the 383 version lifted it after two frames); where iOS puts a fixed bar while zoomed or while the keyboard is up; the copy
+button's clipboard on iOS; that the share sheet still opens on the iPhone and iPad, and that Windows Chrome/Edge copy instead of
+opening the share dialog.
+SCREENSHOTS (scratchpad glitch384/, deviceScaleFactor 2, -before383 = the live build, -after = this one): 1 the sign-in field at
+518 wide; 2 Pause under a held zoom (1.5, panned 240px) - 383 leaves the card at the top of what shows, cut off; this build asks
+for the zoom back as the screen changes and Chromium gives it; 3 Settings > Sync in both classes, and after a tap on the copy
+button; 4 Sign out's sheet on a Pro Max, an SE and a laptop; 5 Save it on a laptop (with navigator.share present): copied, 0
+share calls. (Headless Chromium has no navigator.share, so its phone shots read Save it's "Copy it" line; an iPhone reads "Send
+it to Notes or a message to yourself".)

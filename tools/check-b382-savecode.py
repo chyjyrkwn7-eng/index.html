@@ -168,6 +168,9 @@ with sync_playwright() as pw:
                c["text"] == c["code"] and bool(c["code"]) and c["px"] >= 24 and c["mono"], c)
             dis = lambda: pg.evaluate("()=>document.querySelector('#savecode-card .savecode-continue').disabled")
             ck("Continue starts disabled", dis() is True)
+            # (384) Save it shares on a phone and copies on a computer (check-b384-glitches save); this context is Chromium's
+            # desktop at a phone's size, so it is told it is a phone where the phone's share sheet is what is checked
+            pg.evaluate("()=>{ a2hsDeviceGuess = () => 'apple'; }")
             pg.evaluate("""()=>{ Object.defineProperty(navigator,'share',{configurable:true,value:()=>Promise.reject(Object.assign(new Error('x'),{name:'AbortError'}))}); }""")
             pg.click("#savecode-card .savecode-save"); pg.wait_for_timeout(400)
             ck("a cancelled Save does not enable Continue", dis() is True)
@@ -356,6 +359,7 @@ with sync_playwright() as pw:
                      inView: r ? (r.top >= 0 && r.bottom <= innerHeight) : false }; }""")
         ck("the code row and a Save it row, 44px+, in view when Settings opens on Sync", r and r["codeRow"] and r["save"] >= 44 and r["inView"], r)
         if r and r["save"]:
+            pg.evaluate("()=>{ a2hsDeviceGuess = () => 'apple'; }")   # (384) a phone - see section 1
             pg.evaluate("""()=>{ window.__shared=null; Object.defineProperty(navigator,'share',{configurable:true,value:d=>{window.__shared=d;return Promise.resolve();}}); }""")
             pg.click("#settings-sync-sect .sync-save-code-row"); pg.wait_for_timeout(500)
             s = pg.evaluate("()=>({ text: window.__shared && window.__shared.text, saved: store.savedCodeSaved })")

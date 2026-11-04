@@ -136201,7 +136201,9 @@ function renderRankingRows(rows, entries, board, opts){
       row.classList.add("lb-row-me"); row.dataset.me = "1";
       const since = Date.now() - lbFindMeAt;
       if(since < 3300){ row.classList.add("rank-flash"); row.style.animationDelay = (-since) + "ms";
-        row.addEventListener("animationend", () => { row.classList.remove("rank-flash"); row.style.animationDelay = ""; }, { once: true }); }
+        /* (384) the row's own end, not a picture inside it finishing its fade (animationend bubbles) - see Find me */
+        const end = e => { if(e.target !== row || e.animationName !== "rank-flash-anim") return; row.removeEventListener("animationend", end); row.classList.remove("rank-flash"); row.style.animationDelay = ""; };
+        row.addEventListener("animationend", end); }
     }
 
     const rank = document.createElement("span");
@@ -142877,7 +142879,10 @@ function showRankings(defaultBoard){
     mine.classList.remove("rank-flash");
     void mine.offsetWidth;
     mine.classList.add("rank-flash");
-    mine.addEventListener("animationend", () => mine.classList.remove("rank-flash"), { once: true });
+    /* (384) ONLY THE FLASH'S OWN END TAKES IT OFF. animationend bubbles: a character or flare in the row finishing its .24s fade-in
+       (lb-art-in, as the board's pictures arrive) took the flash off the row a moment after Find me - check-sync caught it */
+    const end = e => { if(e.target !== mine || e.animationName !== "rank-flash-anim") return; mine.removeEventListener("animationend", end); mine.classList.remove("rank-flash"); };
+    mine.addEventListener("animationend", end);
   });
 
   /* Only over NOTHING. The listener retries by itself, and a dropped
