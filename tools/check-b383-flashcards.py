@@ -35,8 +35,13 @@ XY = """(sel)=>{ const e=document.querySelector(sel); if(!e) return null; const 
 
 def tap(pg, sel):
     if not pg.evaluate(AT, sel): return False
-    pg.wait_for_timeout(700)
-    xy = pg.evaluate(XY, sel)
+    pg.wait_for_timeout(400)
+    # the page may still be gliding from the scroll (or the card growing): tap once the target has stood still
+    xy, prev = None, None
+    for _ in range(20):
+        xy = pg.evaluate(XY, sel)
+        if xy and prev and abs(xy[0] - prev[0]) < .5 and abs(xy[1] - prev[1]) < .5: break
+        prev = xy; pg.wait_for_timeout(120)
     if not xy: return False
     pg.touchscreen.tap(xy[0], xy[1]); return True
 

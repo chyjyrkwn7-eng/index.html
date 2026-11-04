@@ -31517,3 +31517,9 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   b323v_vroom pass; check-js; sweep-layout --quick 14/14.
 - Phone only: whether the slide now feels smooth on his 17 Pro Max (Chromium neither repaints SVG nor composites as iOS WebKit does),
   and how its touches really arrive against Safari's frames.
+- (the look, closing) The wash also clears over the page's last 4rem (a browser's bounce shows html's own background). check-fixes'
+  one failure - iPhone SE (1st gen) 568x260 in a browser, GREY BAR 7 levels at (284, 221) - is the same on the commit before the
+  look (run SE-only on both), not this change. Merged into 383 this round: the sign-up audit (b383-signup) and the tab bar slide
+  (b383-tabslide); on the merged build check-b383-tabslide, -slide, check-b380-slide, check-b383-look, check-b382-units, -signup,
+  -review, -profile, -flashcards (its taps now wait for the target to stand still - one run tapped mid-scroll), -toggles and
+  sweep-layout --quick 14/14 pass. check-sync's "Find me" fails only under load (passes alone; 382 the same).
