@@ -31557,3 +31557,35 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   lighter with the green dot, no edge; (6) the daily question's comet when ready, none answered; (7) the flash cards' face keeps its
   gradient and rim. On the previous commit (ec40930): 21 fail (the wash on every screen, 0 of 28 cards solid, three colours, glass
   buttons, serif names, the tone frame, stars on the sign-up step); (6) and (7) pass on both, as they should. This build: ALL PASS.
+
+### Build 383, round 3 - the sky beyond Home: Home's own, turned down, eased
+- Madison (screenshots of Settings, Name, Customize from an earlier 383 - the round-1 wash, stars still showing): "these
+  backgrounds look good but what if they were more 'blurry' but not blurry just like more dull and less distracting so it's like
+  leaving the main menu isn't such a major screen change the transition is still easy on the eyes but maybe it'd be darker but
+  still little bit of the color from the theme, but the main menu will be the only screen with the stars for sure (of course the
+  sign up and startup will differ slightly)."
+- ONE SKY, ONE DIAL. Every dark glow layer is now (its Home strength) x a registered number: --sky-k for the two top glows
+  (13.5% / 14.5% of --bg-c2 / --bg-c3) and --sky-kb for the gold at the foot (11% of --bg-c1), in all five places the dark sky is
+  written - body::before (installed), html's fallback (installed), body::before in a browser tab (both copies, 32908 and 33267, with
+  the fades), html's fallback in a tab. Home = 1 (exact pixels as before), beyond Home .55, a question .3 with no gold. Measured off
+  his screenshot: Home's warm corner is +26 levels over the paper; at .55 it is +14 - darker and duller, the colour still there.
+- @property --sky-k / --sky-kb: <number>, inherits:false, initial 1, set on body::before (state rules) and on html via
+  `html:has(> body:not(.sky-home))` / `:has(> body.has-active-question)` for the fallback. body::before transitions them over
+  .6s ease (the stars' fade is .6s too): leaving Home the glow eases down while the stars go, and back up on the way home; into
+  and out of a question it fades too. inherits:false so an animating value restyles one layer, not the page (an inherited
+  property on html would restyle every element each frame). Reduce motion: no transition. No @property: it switches.
+- Dark's separate question skies (the 4% / 4.7% rules, installed and in a tab) are REMOVED - a question is the same sky at .3. The
+  light/party question rules are scoped off dark with :where() (same specificity as before, so nothing changes there). The
+  question's pixels measure the same as before (17,21,27 / 23,28,34 at the same spots).
+- The status-bar strip: beyond Home --statusbar-mix2/3 = 4.07% / 3.99% (Home's 7.4 / 7.25 x .55); a question keeps 2.2 / 2.35.
+  syncSky now calls syncStatusBarColor() when sky-home actually flips (the meta theme-color and the tab's --band were never
+  re-read on Home <-> elsewhere before; only a question flip did).
+- FIXED ON THE WAY: round 2's beyond-Home body::before override had the same specificity as the browser tab's and came later, so
+  in a browser tab every screen beyond Home lost the sky's top and bottom fades (2 layers instead of 6). The override is gone.
+- Unchanged: Welcome and Get started keep Home's sky (the planet, stars at full); the sign-up steps after them take the sky beyond
+  Home. Light and party themes untouched.
+- Gate tools/check-b383-look.py section (8): at the left margin under the top glow, the glow's lift over the paper beyond Home is
+  between a quarter and four fifths of Home's, same hue; 160ms after leaving Home --sky-k is between Home's and the final value;
+  the meta theme-color differs Home vs Settings; html's --sky-k equals body::before's; in a browser tab as many sky layers beyond
+  Home as on Home; a question's value lower still; and it eases back up going Home. On the previous commit (41310d3) all 7 fail
+  (lift 7 of 29, no dial, the meta unchanged, 2 layers vs 6); this build ALL PASS.

@@ -18,9 +18,15 @@ Phone 440x956, dark theme:
 (4) no serif display face on Profile, Stats, the Rank tab or Badges (the names and titles);
 (5) a picked unit card: a step lighter, the green dot (scale 1, no tick), no green edge; unpicked: nothing in the corner;
 (6) the daily question, ready: a light running round its rim and a glow inside; answered: neither;
-(7) the flash cards keep their own look (their face's gradient and rim).
+(7) the flash cards keep their own look (their face's gradient and rim);
+(8) round 3 - "more dull and less distracting so it's like leaving the main menu isn't such a major screen change ... darker but
+    still little bit of the color from the theme": beyond Home the sky is Home's own turned down - at the screen's edge the
+    glow's lift over the paper is a fraction of Home's (more than a quarter, less than four fifths) in the same hue; it EASES
+    down (a moment after leaving Home it is between the two) and back up; a question is lower still; the status-bar colour
+    follows it; html's fallback is turned down with it; in a browser tab the sky keeps its fades (as many layers as Home's).
 Run:  python3 tools/check-b383-look.py   (--against OLD/index.html must FAIL)"""
-import os, sys, re
+import os, sys, re, io
+from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "check-b382-savecode.py")).read().split("\nwith sync_playwright() as pw:")[0]
 g = {"__file__": os.path.join(HERE, "check-b382-savecode.py"), "__name__": "b383l"}
@@ -55,6 +61,40 @@ with sync_playwright() as pw:
                cometOn: be.content !== 'none' && parseFloat(be.width) > 0 }; }""")
     ck("(6) the daily question, ready: a light running round its rim and a glow inside (%s)" % d,
        d and d["ready"] and d["ring"] > .9 and d["cometOn"] and d["comet"] not in ("none", "") and d["glow"] not in ("none", ""), d)
+    # (8) the sky beyond Home: Home's, turned down, eased
+    SK = """()=>{ const b=getComputedStyle(document.body,'::before'), h=getComputedStyle(document.documentElement);
+      return { k: parseFloat(b.getPropertyValue('--sky-k')), hk: parseFloat(h.getPropertyValue('--sky-k')), layers: (b.backgroundImage.match(/gradient\\(/g) || []).length,
+               meta: document.getElementById('themecolor').content, paper: getComputedStyle(document.body).getPropertyValue('--paper').trim() }; }"""
+    def edge(pg):   # the left margin beside the cards, under the top glow
+        im = Image.open(io.BytesIO(pg.screenshot(clip={"x": 2, "y": 130, "width": 12, "height": 260}))).convert("RGB")
+        return im.resize((1, 1), Image.BILINEAR).getpixel((0, 0))
+    def lift(px, paper): return sum(abs(a - b) for a, b in zip(px, paper))
+    PAPER = pg.evaluate("()=>{ const d=document.createElement('div'); d.style.cssText='position:fixed;width:1px;height:1px;background:var(--paper)'; document.body.appendChild(d); const c=getComputedStyle(d).backgroundColor.match(/[\\d.]+/g).map(Number); d.remove(); return c.slice(0,3).map(v=>v<=1&&c.length>3&&/color\\(/.test(getComputedStyle(document.body).backgroundColor)?Math.round(v*255):Math.round(v)); }")
+    hs = pg.evaluate(SK); hpx = edge(pg)
+    pg.evaluate("()=>{ showAppearance(); }"); pg.wait_for_timeout(160)
+    mid = pg.evaluate(SK)
+    pg.wait_for_timeout(1400)
+    bs = pg.evaluate(SK); bpx = edge(pg)
+    hl, bl = lift(hpx, PAPER), lift(bpx, PAPER)
+    hue = lambda px: (px[0] - px[2])
+    ck("(8) beyond Home the sky is Home's turned down: the glow's lift over the paper %d of Home's %d (%s vs %s, paper %s)" % (bl, hl, bpx, hpx, PAPER),
+       hl > 6 and .25 * hl < bl < .8 * hl and (hue(bpx) - hue(PAPER)) * (hue(hpx) - hue(PAPER)) >= 0, [hpx, bpx, PAPER])
+    ck("(8) it eases: a moment after leaving Home the sky is between the two (%s -> %s -> %s)" % (hs.get("k"), mid.get("k"), bs.get("k")),
+       hs["k"] == hs["k"] and bs["k"] == bs["k"] and bs["k"] < mid["k"] < hs["k"], [hs, mid, bs])
+    ck("(8) the status-bar colour follows it (%s on Home, %s here)" % (hs["meta"], bs["meta"]), hs["meta"] != bs["meta"], [hs, bs])
+    ck("(8) html's fallback is turned down with it (%s / %s)" % (bs["hk"], bs["k"]), bs["hk"] == bs["k"] and hs["hk"] == hs["k"], [hs, bs])
+    ck("(8) in a browser tab the sky keeps its layers and fades beyond Home (%d, Home %d)" % (bs["layers"], hs["layers"]), bs["layers"] == hs["layers"] and hs["layers"] >= 3, [hs, bs])
+    pg.evaluate("""()=>{ const t=topicsIn(QUESTIONS)[6]; cfg.mode='drill'; cfg.units=[t]; cfg.source='all';
+      beginRun(QUESTIONS.map((q,i)=>[q,i]).filter(([q])=>(q.topic||'').trim()===t).map(([,i])=>i).slice(0,3), null, null); }""")
+    for _ in range(30):
+        pg.wait_for_timeout(250)
+        if pg.evaluate("()=>document.body.classList.contains('has-active-question')"): break
+    pg.wait_for_timeout(1200)
+    qs = pg.evaluate(SK)
+    ck("(8) a question turns it lower still (%s, beyond Home %s)" % (qs["k"], bs["k"]), qs["k"] == qs["k"] and qs["k"] < bs["k"], qs)
+    pg.evaluate("()=>{ showHome(); }"); pg.wait_for_timeout(160)
+    up = pg.evaluate(SK); pg.wait_for_timeout(1400); back = pg.evaluate(SK)
+    ck("(8) and eases back up on the way Home (%s -> %s)" % (up["k"], back["k"]), qs["k"] < up["k"] < back["k"] and back["k"] == hs["k"], [up, back])
     pg.evaluate("()=>{ store.dailyQuestionDate = dailyPeriodKey(); showHome(); }"); pg.wait_for_timeout(1500)
     d2 = pg.evaluate("""()=>{ const b=document.querySelector('.daily-question-fab'); const r=b && b.querySelector('.dq-ring'); if(!b||!r) return null;
       const be=getComputedStyle(r,'::before'); return { done: b.classList.contains('is-done'), comet: be.content === 'none' ? 'none' : be.animationName }; }""")

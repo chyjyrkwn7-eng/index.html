@@ -1053,8 +1053,8 @@
      they were calibrated at (see their own note). */
   [data-theme="dark"][data-layout="modern"] body::before{
     background:
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
       /* Viewport units, not percentages, and this is not a style choice:
          the html fallback has to state this same ellipse over a
          DOCUMENT-sized box so it continues below the first viewport
@@ -1075,7 +1075,7 @@
          grey bar, the same symptom this whole layer was rebuilt to
          cure. So a theme that needs to read warmer gets there by
          changing --theme-c1's COLOUR, not by turning this up. */
-      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
       var(--paper);
   }
   /* A hard, flat-colored bar running the full width of the very top of
@@ -1171,8 +1171,8 @@
          LAYER'S box, so it cannot be given a document-sized box without
          changing shape, and matching it on body::before would change the
          app's actual background. Left alone. */
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
       /* THE GREY BAR FIX. Same ellipse as body::before's, but written in
          VIEWPORT UNITS instead of percentages, which lets this one layer
          be sized to the whole document (100vw 100%) instead of to one
@@ -1209,7 +1209,7 @@
          The two corner glows above keep their 100lvh box: they sit at
          8% and 25% from the top and have faded out long before the
          first viewport ends, so they have nothing to continue. */
-      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+      radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
       /* The corner glows, continued past the first viewport, and the
          trick is that these are MIRRORED copies sitting at 0 100lvh.
 
@@ -1232,8 +1232,8 @@
          copy evaluated at its own y=0 is the original evaluated at its
          y=100%, so the two meet at exactly the same value and carry on
          from there. */
-      radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+      radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+      radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
       /* An opaque var(--paper) layer sized to html's OWN BOX, between the
          glows and the background-colour. This is what lets one rule serve
          two regions that need different colours:
@@ -1278,18 +1278,14 @@
      never applied. Written as a proper descendant selector (matching
      how the two rules above already reference html's own data-layout)
      is what actually makes it match now. */
-  [data-layout="modern"] body.has-active-question::before{
+  :where(html:not([data-theme="dark"]))[data-layout="modern"] body.has-active-question::before{
     background:
       radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 2%, transparent), transparent var(--bg-glow-r1)),
       radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 2%, transparent), transparent var(--bg-glow-r2)),
       var(--paper);
   }
-  [data-theme="dark"][data-layout="modern"] body.has-active-question::before{
-    background:
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
-      var(--paper);
-  }
+  /* (383 round 3) dark's question is no longer a separate sky: it is the same sky turned down (--sky-k .3, no gold) - see
+     "THE SKY BEYOND HOME" at the end of this stylesheet - so going into and out of a question fades instead of switching */
   /* The status bar has to follow the glow down when a question dims it,
      or the strip would stay tuned to the FULL-glow color and re-open
      the exact same seam on the single most-used screen in the app.
@@ -32907,9 +32903,9 @@ html.is-browser[data-layout="modern"] body::before{
 }
 html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
-    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
-    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
     linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 html.is-browser[data-layout="modern"] body::after{
@@ -33268,9 +33264,9 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
   background:
     linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
     linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
-    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
-    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
+    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at left 50vw bottom calc(var(--bleed) - 4lvh), color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
     linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
 /* A TEST IS AS DARK ON A LAPTOP AS ON A PHONE (round 26). "On the phone,
@@ -33284,7 +33280,7 @@ html.is-browser[data-theme="dark"][data-layout="modern"] body::before{
    phone's at every size, and a browser tab gets the dimmed glows with
    its fades. */
 html[data-layout="modern"] body.has-active-question{ --bg-glow-r1:40%; --bg-glow-r2:45%; }
-html.is-browser[data-layout="modern"] body.has-active-question::before{
+html.is-browser:where(:not([data-theme="dark"]))[data-layout="modern"] body.has-active-question::before{
   background:
     linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
     linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
@@ -33292,14 +33288,7 @@ html.is-browser[data-layout="modern"] body.has-active-question::before{
     radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 2%, transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
 }
-html.is-browser[data-theme="dark"][data-layout="modern"] body.has-active-question::before{
-  background:
-    linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))) var(--bleed), transparent calc(var(--bleed) + var(--fade-top, 6rem))),
-    linear-gradient(to top, var(--fade-paper, var(--paper)) calc(var(--bleed) + var(--fade-bot-solid, 1.5rem)), transparent calc(var(--bleed) + var(--fade-bot, 5.5rem))),
-    radial-gradient(circle hypot(85vw, 92lvh) at left 15vw bottom calc(var(--bleed) + 92lvh), color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
-    radial-gradient(circle hypot(90vw, 75lvh) at left 90vw bottom calc(var(--bleed) + 75lvh), color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
-    linear-gradient(var(--paper), var(--paper));   /* an image layer, not the colour: Safari 26 takes a fixed, full-width element's background COLOUR as the tint of its bars, which hid the app under them (337) */
-}
+/* (383 round 3) dark's question in a tab: the rule above, with its fades, turned down by --sky-k (see "THE SKY BEYOND HOME") */
 /* ...and the root's fallback carries the same two fades (round 26). What a
    rubber-band past the bottom reveals is html's background, and with the
    glows alone there check-fixes measured 31-46 levels between it and the
@@ -33325,11 +33314,11 @@ html.is-browser[data-theme="dark"][data-layout="modern"]{
     var(--root-sky-b, none), var(--root-sky-a, none),   /* build 382: the stars, where Safari shows the page past its fixed layers */
     linear-gradient(to bottom, var(--fade-paper-top, var(--fade-paper, var(--paper))), transparent var(--fade-top, 6rem)),
     linear-gradient(to top, var(--fade-paper, var(--paper)) var(--fade-bot-solid, 1.5rem), transparent var(--fade-bot, 5.5rem)),
-    radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-    radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
-    radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) 11%, transparent), transparent 70%),
-    radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) 13.5%, transparent), transparent var(--bg-glow-r1)),
-    radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) 14.5%, transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
+    radial-gradient(ellipse 120vw 55lvh at 50vw 104lvh, color-mix(in srgb, var(--bg-c1) calc(11% * var(--sky-kb)), transparent), transparent 70%),
+    radial-gradient(circle at 15% 92%, color-mix(in srgb, var(--bg-c2) calc(13.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r1)),
+    radial-gradient(circle at 90% 75%, color-mix(in srgb, var(--bg-c3) calc(14.5% * var(--sky-k)), transparent), transparent var(--bg-glow-r2)),
     linear-gradient(var(--paper), var(--paper)),
     var(--band, var(--paper));   /* the root's colour in a tab is the sky's own top colour - Safari fills its status-bar band with it (--band, set from JS) */
   background-size:var(--sky-b-size, auto), var(--sky-a-size, auto), 100vw 100%, 100vw 100%, 100vw 100lvh, 100vw 100lvh, 100vw 200lvh, 100vw 100lvh, 100vw 100lvh, 100vw 100%;
@@ -36389,8 +36378,8 @@ html.is-browser{ --fade-paper: transparent; }
      simplicity and nothing overly distracting outside the main menu."
      Measured off his screenshots: Orbit's Settings is a flat (8,6,17) with solid (26,22,36) cards - +18 levels, no rim, no
      glass, no gradient; Delta's a flat #1C1C1E with solid #2C2C2E cards (+16). So, beyond Home (body:not(.sky-home)):
-     - THE BACKGROUND is the app's own dark paper with its glow barely there (the "settle down" a question already gets) - no
-       stars, no wash, nothing that moves;
+     - THE BACKGROUND is Home's own sky turned down, with no stars (round 3: "THE SKY BEYOND HOME", below) - no wash, nothing
+       that moves;
      - EVERY CARD is one solid colour, --clean-card (white 7% into the paper, +18 levels): the surface tokens every card is drawn
        from are set to it - no sheen, no rim, no shadow, no blur - so every screen that uses them follows;
      - a picked or pressed thing is a step lighter (--clean-card-2); hairlines inside a card are --clean-line;
@@ -36412,14 +36401,31 @@ html.is-browser{ --fade-paper: transparent; }
     --ios-card-fill:transparent;
     --pop-bg-card:var(--clean-card);
   }
-  /* the paper with its glow barely there - a question's values, on every screen beyond Home */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home)::before{
-    background:
-      radial-gradient(circle at 15% 8%, color-mix(in srgb, var(--bg-c2) 4%, transparent), transparent var(--bg-glow-r1)),
-      radial-gradient(circle at 90% 25%, color-mix(in srgb, var(--bg-c3) 4.7%, transparent), transparent var(--bg-glow-r2)),
-      var(--paper);
-  }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home){ --statusbar-mix2:2.2%; --statusbar-mix3:2.35%; }
+  /* ---- THE SKY BEYOND HOME (383 round 3) ----
+     Madison, after the clean look: "what if they were more 'blurry' but not blurry just like more dull and less distracting so
+     it's like leaving the main menu isn't such a major screen change the transition is still easy on the eyes but maybe it'd be
+     darker but still little bit of the color from the theme, but the main menu will be the only screen with the stars."
+     So beyond Home the sky is HOME'S OWN SKY TURNED DOWN, not a different one: the same three glows (the theme's colours, in the
+     same places), the same paper, at a little over half their strength (--sky-k .55: measured off his own screenshot, Home's
+     warm corner is +26 levels over the paper, here +14) - darker and duller, the colour still there - and no stars. A
+     question turns it further down (.3, no gold at the foot: the "super nice and dark" test sky it always had). Every dark
+     glow layer - body::before, html's fallback, both again in a browser tab - is written as (its Home strength) x --sky-k, so
+     Home at 1 is the exact pixels it was, the fallbacks stay identical to the fixed layer, and the browser tab keeps its fades.
+     --sky-k is a registered number, so it TRANSITIONS: going from Home to any screen the glow eases down over .6s while the
+     stars fade (.6s, body::after), and back up on the way home - a dimmer, not a cut. (The status-bar strip follows: --statusbar-mix2/3 x .55 below.) inherits:false - set on body::before
+     (and on html for its fallback), so an animating value restyles one layer, never the page. Without @property support it
+     simply switches. */
+  @property --sky-k{ syntax:"<number>"; inherits:false; initial-value:1; }
+  @property --sky-kb{ syntax:"<number>"; inherits:false; initial-value:1; }
+  html[data-theme="dark"][data-layout="modern"] body::before{ transition:--sky-k .6s ease, --sky-kb .6s ease; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home)::before,
+  html[data-theme="dark"][data-layout="modern"]:has(> body:not(.sky-home)){ --sky-k:.55; --sky-kb:.55; }
+  html[data-theme="dark"][data-layout="modern"] body.has-active-question::before,
+  html[data-theme="dark"][data-layout="modern"]:has(> body.has-active-question){ --sky-k:.3; --sky-kb:0; }
+  [data-reduce-motion="true"] body::before{ transition:none !important; }
+  /* the status-bar strip models the top edge's share of the two top glows (7.4% / 7.25% at Home's strength): x .4 here, and
+     syncSky re-reads it whenever Home's sky goes on or off; a question keeps its own (2.2% / 2.35%, above) */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home):not(.has-active-question){ --statusbar-mix2:4.07%; --statusbar-mix3:3.99%; }
   /* the switches: a flat track, the picked segment a flat lighter pill */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs{
     background:var(--clean-card) !important; border-color:transparent !important; box-shadow:none !important;
@@ -52612,7 +52618,11 @@ function syncSky(isQuestion){
   /* 383 round 2: "The sign up screen and everything and start would have to be updated to reflect this all" - the sign-up steps
      are the clean look now (body:not(.sky-home)); Welcome (its planet) and the first-visit page keep Home's sky */
   try{ preAccount = !!stage.querySelector('[data-screen="welcome"], [data-screen="getstarted"]'); }catch(e){}
+  const wasHome = b.classList.contains("sky-home");
   b.classList.toggle("sky-home", !!stage.querySelector('[data-screen="home"]') || preAccount);
+  /* 383 round 3: beyond Home the sky is turned down, so the status-bar strip (--statusbar-mix2/3) follows it, as it follows
+     a question - only when Home's sky actually goes on or off (screen changes, not every mutation) */
+  if(wasHome !== b.classList.contains("sky-home")){ try{ syncStatusBarColor(); }catch(e){} }
   /* build 327 round 12: "the result screen, shouldn't the starry background be
      there too?" Results had been calm (no stars) since 323 along with the
      question; only a question or a flashcard on screen is now. */
