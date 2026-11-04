@@ -85,6 +85,10 @@
         for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf("class26e.") === 0 && !keepRe.test(k)) del.push(k); }
         for(var j = 0; j < del.length; j++){ try{ localStorage.removeItem(del[j]); }catch(e){} }
         try{ indexedDB.deleteDatabase("class26e-drill-backup"); indexedDB.deleteDatabase("ifc:class26e-drill-backup"); }catch(e){}
+        /* (383 sign-in audit) and it stays signed out until somebody signs in or signs up (setSyncCode clears this): a Home
+           Screen icon whose launch address carries the code (#k=) no longer signs it straight back in, and the next screen is
+           Welcome, not the first-visit Get Started page (signedOutHere()) */
+        try{ localStorage.setItem("class26e.signedout", String(Date.now())); }catch(e){}
         window.NOVA_SIGNED_OUT = true;
       }
     }catch(e){}
@@ -64224,6 +64228,8 @@ function setSyncCode(code){
   if(previous && previous !== code) retireLeaderboardEntry(previousPublic);
   try { window.localStorage.setItem(SYNC_CODE_KEY, code); } catch(e){}
   try { window.localStorage.removeItem(SYNC_OFF_KEY); } catch(e){}
+  /* an account on this device again: no longer signed out (383 audit, signedOutHere) */
+  try { window.localStorage.removeItem("class26e.signedout"); } catch(e){}
   idbSaveCode(code);
   try{ browserLinkCode = null; syncBrowserCodeUrl(); }catch(e){}
 }
@@ -89463,7 +89469,9 @@ function showGetStarted(){
    Welcome, which offers that account first - the recovery paths live
    there - and the page is marked seen so it never shows on it later. */
 function showWelcomeFirst(){
-  if(gsSeen() || accountTraceNow() || String(store.firstName || "").trim()){ gsMarkSeen(); showWelcome(); return; }
+  /* (383 audit) a device that has just signed out goes to Welcome, where Sign in is: it was landing on this first-visit page,
+     whose button only rises once the whole page has been scrolled through */
+  if(gsSeen() || accountTraceNow() || String(store.firstName || "").trim() || signedOutHere()){ gsMarkSeen(); showWelcome(); return; }
   showGetStarted();
   findAccountTrace().then(t => {
     if(!t || !stage.querySelector('[data-screen="getstarted"]')) return;
@@ -89609,7 +89617,13 @@ function showClassSelection(){
   /* (327z15) the username and the character are asked by Nova now, in his
      introduction - "maybe that's where you pick your starting character,
      and your username? Could be a better tie in" */
-  continueBtn.addEventListener("click", startSignupWithNova);
+  /* (383 sign-in audit) once: a double tap, or Enter pressed twice, started the sign-up twice - two loading screens over
+     each other and Home built twice under Nova */
+  continueBtn.addEventListener("click", () => {
+    if(continueBtn.disabled) return;
+    continueBtn.disabled = true;
+    startSignupWithNova();
+  });
   /* (330) "something at the bottom saying something about the classes to CYA" - under the cards, above the
      pinned Continue, so the button stays where every other sign-up step has its own */
   panel.appendChild(buildLegalNote("classes"));
@@ -90263,6 +90277,29 @@ function showWelcomeCodeReveal(){
   toTop();
 }
 
+/* ---- A SYNC CODE FIELD (383 sign-in audit) - Welcome's Sign in and Settings > Sync > Enter a code ----
+   It had maxLength 9, which cut a paste to its first nine characters BEFORE the input handler could tidy it: the message
+   Save it shares ("Nova sign-in code: ABCD-EFGH ...", copied whole out of Notes or Messages) became "NOVA-SIGN", and
+   " ABCD-EFGH" with a space in front lost its last letter. Now a code written out in what was pasted is taken as it is
+   (no check after it: a text field drops a paste's line breaks, which can join the code to "Keep this"); otherwise the
+   first eight letters and digits, upper case, with the dash - as typing always was. A code, not a word: no autocorrect,
+   spellcheck or autofill over it. */
+function syncCodeFieldText(text){
+  const up = String(text || "").toUpperCase();
+  const inText = up.length > 9 ? up.match(/(?:^|[^A-Z0-9])([A-Z0-9]{4})-([A-Z0-9]{4})/) : null;
+  const raw = inText ? inText[1] + inText[2] : up.replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  return raw.length > 4 ? raw.slice(0, 4) + "-" + raw.slice(4) : raw;
+}
+function syncCodeFieldSetup(input){
+  input.autocapitalize = "characters";
+  input.spellcheck = false;
+  input.setAttribute("autocorrect", "off");
+  input.setAttribute("autocomplete", "off");
+  input.addEventListener("input", () => {
+    const v = syncCodeFieldText(input.value);
+    if(input.value !== v) input.value = v;
+  });
+}
 function showWelcomeCodeEntry(){
   setOnboardingHeader();
   const panel = document.createElement("section");
@@ -90304,11 +90341,8 @@ function showWelcomeCodeEntry(){
   const input = document.createElement("input");
   input.type = "text"; input.className = "searchbox searchbox-plain";
   input.placeholder = "XXXX-XXXX";
-  input.autocapitalize = "characters";
-  input.maxLength = 9;
+  syncCodeFieldSetup(input);   /* (383 sign-in audit) no maxLength; a pasted message gives up its code */
   input.addEventListener("input", () => {
-    let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-    input.value = raw.length > 4 ? raw.slice(0, 4) + "-" + raw.slice(4) : raw;
     status.classList.remove("show", "bad", "good");
     confirmCard.classList.remove("show");
     /* Brings Continue back if it's hidden \u2014 editing the code after a
@@ -90388,11 +90422,13 @@ function showWelcomeCodeEntry(){
     }
     acctDb().collection("progress").doc(code).get().then(docSnap => {
       linkBtn.disabled = false; linkBtn.textContent = "Continue";
-      if(!docSnap.exists){
+      const cloud = docSnap.exists ? docSnap.data() : null;
+      /* (383 sign-in audit) a code from before the class-wide fresh start is no code, as Sync This Device (pullFromCloud)
+         already says - this said "Code verified" and named the account first */
+      if(!docSnap.exists || (FRESH_START_CUTOFF && ((cloud && cloud.lastModified) || 0) < FRESH_START_CUTOFF)){
         showStatus("No progress found under that code yet.", "bad", true);
         return;
       }
-      const cloud = docSnap.data();
       verifiedCode = code;
       showStatus("Code verified.", "good", false);
       confirmName.textContent = (cloud && typeof cloud.firstName === "string" && cloud.firstName.trim()) || "this device";
@@ -121119,12 +121155,7 @@ function showAppearance(opts){
     wrap.className = "sync-enter-wrap";
     const input = document.createElement("input");
     input.type = "text"; input.className = "searchbox searchbox-plain"; input.placeholder = "XXXX-XXXX";
-    input.autocapitalize = "characters";
-    input.maxLength = 9;
-    input.addEventListener("input", () => {
-      let raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-      input.value = raw.length > 4 ? raw.slice(0, 4) + "-" + raw.slice(4) : raw;
-    });
+    syncCodeFieldSetup(input);   /* (383 sign-in audit) no maxLength; a pasted message gives up its code */
     wrap.appendChild(input);
 
     const bar = document.createElement("div");
@@ -124052,7 +124083,15 @@ function showSignOutConfirm(){
 function finishSignOut(){
   try{ detachLiveListener(); }catch(e){}
   try{ localStorage.setItem("class26e.signout", String(Date.now())); localStorage.removeItem("class26e.activeclass"); }catch(e){}
+  /* (383 sign-in audit) the reload must not carry the code: an installed app opened from an icon made with the code in its
+     address (#k=, installCodeInUrl) still has it in the live address, and boot adopted it straight back - Sign out did nothing */
+  try{ stripBrowserCodeUrl(); }catch(e){}
   location.reload();
+}
+/* Signed out on this device, and nobody has signed in or up since (the head script sets class26e.signedout after a sign-out's
+   wipe; setSyncCode clears it). A launch address's code is not adopted, and Welcome, not Get Started, is the first screen. */
+function signedOutHere(){
+  try{ return !!localStorage.getItem("class26e.signedout"); }catch(e){ return false; }
 }
 
 function checkSaveCodeReminder(){
@@ -145802,6 +145841,11 @@ if(launchCode && !isStandaloneApp()){
   /* BUILD 339: a code in a browser address is never offered or adopted.
      Links that already went out carrying one are now just plain links. */
   stripBrowserCodeUrl();
+} else if(launchCode && !syncCode && signedOutHere()){
+  /* SIGNED OUT ON PURPOSE (383 sign-in audit): Settings > Account > Sign out is a decision, as "stop syncing" is. The icon's
+     code would sign this device straight back in, on the reload after Sign out and on every launch after it; the code signs
+     it back in when the person types it. (Storage iOS evicts takes this mark with it, so that recovery still works.) */
+  stripRecoveryCodeFromUrl();
 } else if(launchCode && !syncCode && !syncOff){
   adoptedLaunchCode = true;
   setSyncCode(launchCode);
@@ -145815,7 +145859,10 @@ if(launchCode && !isStandaloneApp()){
         applySaved(); loadTheme(); applyTheme(); updateHeaderTitle();
         stripRecoveryCodeFromUrl();
         attachLiveListener(syncCode);
-        if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"]')){
+        /* (383 audit) the first-visit Get Started page too: a wiped device has lost its "seen" mark with everything else,
+           and was left on that page over the restored account */
+        if(store.onboardingComplete && stage.querySelector('[data-screen="welcome"], [data-screen="getstarted"]')){
+          gsMarkSeen();
           showHome();
           showWelcomeBackBanner("Signed back in \u2014 your progress was restored.");
         }

@@ -31419,3 +31419,50 @@ main menu."
   .7rem, glow kept). (2) a tick restyled 256-264 elements (budget 250; 222 before): the ring's ::after existed on all 24 cards'
   dots - it is made on a picked card only now (237). The ring's reach x3.2 -> x2.4 (stays inside the card). (5) a picked card's
   edge may be the dot's green. check-b327-d (2): the tick is not drawn any more - picked, the dot is up.
+### Build 383 - sign-up and sign-in audit
+Madison: "Ensure the sign up login process is perfect and good to go." Walked as a person would (Playwright, installed app,
+iPhone 17 Pro Max 440x956 and iPad Pro 11 834x1194, an in-memory Firestore that keeps its documents across reloads): a fresh
+install through Get Started, Welcome, New to Nova?, the class step, GENERATING PROFILE, Nova's name and partner questions, the
+save-your-code card, his talk and the tips to Home; Sign in with a code (empty, wrong, lower case/spaces, pasted, offline, no
+Firebase, a pre-fresh-start code, the right one); "I'm new here" on a device that held an account; Sign out and back in (the
+owner, both classes); an icon whose launch address carries the code (#k=).
+FIXED (each FAILS on the previous commit in tools/check-b383-signup.py):
+- SIGN OUT DID NOT STICK ON AN ICON MADE WITH THE CODE IN ITS ADDRESS (installCodeInUrl's #k=). The live address still held
+  the code (it is only stripped after a launch ADOPTS it), so the reload after Sign out adopted it straight back - the device
+  sat on Get Started with the account restored behind it - and every later launch from that icon did the same. Now:
+  finishSignOut strips the code from the address before reloading; the head script, after its wipe, sets
+  class26e.signedout; boot does not adopt a launch code while signedOutHere() (and strips it); setSyncCode clears the mark
+  (sign-in, sign-up, link, self-heal). Storage iOS evicts takes the mark with it, so the icon's recovery still works there.
+- SIGN OUT LANDED ON THE FIRST-VISIT GET STARTED PAGE (its button only rises after scrolling the whole trailer), not
+  Welcome: the wipe takes class26e.getstarted. showWelcomeFirst goes to Welcome while signedOutHere().
+- A WIPED DEVICE OPENED FROM SUCH AN ICON was left on Get Started over its restored account (the launch-code adopt only put
+  Welcome right). It takes [data-screen="getstarted"] too, marks it seen, and opens Home.
+- THE CODE FIELD'S maxLength 9 CUT A PASTE BEFORE IT WAS TIDIED: the message Save it shares ("Nova sign-in code: ABCD-EFGH
+  ...", copied whole from Notes/Messages) became NOVA-SIGN; " ABCD-EFGH" lost its last letter. syncCodeFieldSetup /
+  syncCodeFieldText (Welcome's Sign in and Settings > Sync > Enter a code): no maxLength; a code written out in a long paste
+  is taken (no check after it - a text field drops the paste's line break, joining it to "Keep this"); otherwise the first
+  eight letters/digits as before; autocorrect, spellcheck and autocomplete off.
+- A CODE FROM BEFORE THE FRESH START (FRESH_START_CUTOFF) said "Code verified" and named its account, then Sync This Device
+  said "No progress found". The lookup now applies the same cutoff.
+- A DOUBLE TAP (or Enter twice) ON THE CLASS STEP'S CONTINUE started the sign-up twice: two GENERATING overlays stacked, Home
+  built twice under Nova. Continue disables itself on the first tap.
+CHECKED AND FINE: every step's Back (Sign in, New to Nova?, the class step -> where they came from); Continue waits for a
+class; Enter answers Nova's name and checks a typed code; one account and one document however often the partner is chosen;
+the save-code card's Continue is off until ticked; the tips follow Nova; a reload after sign-up and after sign-in stays on
+Home; sign-in restores the progress with no Nova, tips or card and does not lower the cloud copy; the cloud not answering
+leaves Continue on "Checking..." with Back working; no Firebase says so; the had-account sheet's three answers; fields 17px;
+every sign-up button 44px+; no overlaps; no owner's name on any screen; no page or console errors.
+LEFT FOR MADISON (judgement, not changed): GENERATING PROFILE is 10.6s of nothing to wait for (SYNCING DEVICES 3.2s); Fire Code
+enrolment is a device setting Sign out clears, and signing back in does not restore it (re-enrolling needs the PDF again; the
+progress returns from progress/<code>__ifc); a new account whose app closes between the partner pick and the code line never
+sees the save-code card (383 turned the Home card off) or the tips (tourRev is set at creation); Settings > Account's Change
+pill is 74x28 (under 44px; shared with Customize's name editor); "No progress found under that code yet." for a wrong code
+(the "yet"); on a laptop Enter on New to Nova? is "I'm new, continue"; Sign in tapped before the deferred SDK has loaded says
+"Couldn't reach sync" at once rather than waiting; "Start a new account" on the had-account sheet skips New to Nova? (its Back
+then shows it); the old username/character/code-reveal screens are unreachable (Nova asks), kept for the older gates.
+PHONE ONLY: the soft keyboard over the code screen (return checks the code), autocorrect/autofill staying off, a paste from
+Notes/Messages in Safari, the #k= icon after Sign out, the real SDK's offline answer (~10s) on the code check.
+Gates: tools/check-b383-signup.py (fresh, signin, had, signout, icon, settings; 95 pass; on the previous commit the 10 [fix]
+checks and the stacked-overlay layout checks, phone and iPad, fail). check-sync, check-b382-firstrun, check-b382-savecode, check-b383-classes,
+check-b383-ifcsync, check-js ALL PASS; sweep-layout --quick 14/14; check-tours (mainmenu/modeselect/profile) and check-save-code
+(part 1 Get Started; part 2, the existing-account card 383 turned off) fail identically on the previous commit.
