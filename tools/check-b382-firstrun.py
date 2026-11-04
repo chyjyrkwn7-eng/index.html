@@ -257,9 +257,10 @@ with sync_playwright() as pw:
                 pg.click(".class-bubble"); pg.wait_for_timeout(700)
             chk("%s %s: no page or console errors (%s)" % (label, state, pg.errs[:3]), not pg.errs, pg.errs)
             ctx.close()
-    # ---------- F. the class button stays the owner's alone ----------
-    # (a guard, not a fix: it passes before and after) a different publicId has no class button and no class banner on Home,
-    # and asking for Fire Code without the owner's account stays in the academy
+    # ---------- F. another account ----------
+    # (384, Madison: "everyone is gonna get the button") a different publicId HAS the class button now; it still gets no class
+    # banner on Home (that is for the accounts on the invite list - check-b384-classes-open), and asking for Fire Code with only
+    # the device's setting - the account is not enrolled in it - still stays in the academy
     other = dict(SEED); other["publicId"] = "pubnotowner382"
     for label, w, h in (("nonowner-iphone", 440, 956), ("nonowner-ipad", 834, 1194)):
         init = "(()=>{ if(sessionStorage.getItem('fr.f')) return; sessionStorage.setItem('fr.f','1'); localStorage.clear(); localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0383'); %s" \
@@ -274,7 +275,7 @@ with sync_playwright() as pw:
             home: !!document.querySelector('.panel.home.screen-home-actual') })""")
         if SHOTS: pg.screenshot(path=os.path.join(SHOTS, "fr-%s-home.png" % label))
         chk("%s: activeclass 'ifc' without the owner's account stays in the academy and is cleared (%s)" % (label, r), r["cls"] == "academy" and r["active"] is None, r)
-        chk("%s: no class button and no class banner on Home for another account (%s)" % (label, r), r["home"] and not r["allowed"] and not r["bubble"] and not r["banner"], r)
+        chk("%s: another account has the class button (384) but no class banner on Home (%s)" % (label, r), r["home"] and r["allowed"] and r["bubble"] and not r["banner"], r)
         chk("%s: no page or console errors (%s)" % (label, pg.errs[:3]), not pg.errs, pg.errs)
         ctx.close()
     br.close()

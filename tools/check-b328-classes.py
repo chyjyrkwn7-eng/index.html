@@ -35,7 +35,8 @@ with sync_playwright() as pw:
         page.evaluate("()=>{ homeUnlocksOwed=()=>false; showHome(); }"); page.wait_for_timeout(1200)
         has = page.evaluate("()=>!!document.querySelector('.class-bubble')")
         if who=="classmate":
-            chk("classmate: no class bubble", not has)
+            # (384, Madison: "everyone is gonna get the button") a classmate has it now; Fire Code still needs the account enrolled
+            chk("classmate: the class bubble (every account's since 384)", has)
             page.evaluate("()=>localStorage.setItem('class26e.activeclass','ifc')"); page.reload(); page.wait_for_timeout(3500)
             st = page.evaluate("()=>({cls:window.NOVA_CLASS, key:localStorage.getItem('class26e.activeclass'), pts:store.lifetime.points})")
             chk("classmate forcing the key stays in the academy, key cleared", st["cls"]=="academy" and st["key"] is None and st["pts"]==12400, st)
