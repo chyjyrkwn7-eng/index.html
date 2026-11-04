@@ -80603,7 +80603,7 @@ const SND_IFX = {
     } },
   /* 384: the Thermal Camera, in the Fire Alarm's place, on its beats (IFX_TIC.full): power-up 0-.6, the reticle .5 and a
      refresh every .12, the XP total 1.05, the character 1.84, the swing 2.2-2.5, lock 2.75, white-hot and MAX 3.35, down 4.25 */
-  "hundo.bubbles": { desc: "Thermal Camera (Fire Code): a thermal camera's shutter clicking and its whine rising as it powers up and the picture builds, a low sensor hum and quiet readout ticks as the reticle hunts, a warm blip on the XP total and a softer one on the character, a whoosh as it swings onto the score, a two-tone lock, the readout racing up through a building rush of heat to a bright MAX and a deep whump, the heat breathing and ticking, then the camera powering down and a chime rising through B flat and C to D as the 100% is left glowing.",
+  "hundo.bubbles": { desc: "Thermal Camera (Fire Code): a thermal camera's shutter clicking and its whine rising as it powers up and the picture builds, a low sensor hum over a dark pad and quiet readout ticks as the reticle hunts, a warm blip on the XP total and a softer one on the character, a whoosh as it swings onto the score, a two-tone lock, the readout racing up through a building rush of heat to a bright MAX and a deep whump, the heat breathing and ticking, then the camera powering down and a chime rising through B flat and C to D as the 100% is left glowing.",
     fn: K => {
       /* power-up: the shutter, the whine rising, the picture building down the screen, the ready chirp */
       K.click({ t: 0, bp: 2600, q: 3, d: .02, g: .12 }); K.thump({ t: .01, f: 260, f2: 120, gl: .04, d: .06, g: .08 });
@@ -80614,6 +80614,7 @@ const SND_IFX = {
       /* the hunt: the sensor's hum, a tick on each refresh, a blip on each warm thing it crosses */
       K.noise({ t: .5, color: "b", lp: 380, a: .3, hold: 1.95, d: .4, g: .03 });
       K.tone({ t: .5, f: 62, type: "triangle", lp: 300, a: .3, hold: 2.0, d: .3, g: .02 });
+      K.pad(["D3", "A3"], { t: .45, a: .9, hold: 1.5, d: .7, g: .009 });
       for(let t = .55; t < 2.74; t += .12) K.click({ t, bp: 5200, q: 6, d: .006, g: .018 });
       sndWhoosh(K, { t: .55, f: 400, f2: 900, dur: .45, peak: .5, g: .022, pan: 0, pan2: .5, tone: false });
       K.fm({ t: 1.07, f: "D5", ratio: 2, idx: .8, idx2: .1, a: .004, d: .18, g: .03, pan: .45 }); K.fm({ t: 1.19, f: "F5", ratio: 2, idx: .8, idx2: .1, a: .004, d: .2, g: .026, pan: .45 });
@@ -114159,7 +114160,7 @@ function ifxPosterBody(id, g, rnd){
     const L = (x, y, sx, sy, a, w) => '<path d="M' + x + ' ' + (y + sy * a) + ' L' + x + ' ' + y + ' L' + (x + sx * a) + ' ' + y + '" fill="none" stroke="#FFFFFF" stroke-width="' + w + '" stroke-linecap="square"/>';
     body += '<g opacity=".95">' + L(46, 13, 1, 1, 6, 1.4) + L(114, 13, -1, 1, 6, 1.4) + L(114, 47, -1, -1, 6, 1.4) + L(46, 47, 1, -1, 6, 1.4) + '</g>' +
       '<g opacity=".75">' + L(4, 4, 1, 1, 7, 1) + L(156, 4, -1, 1, 7, 1) + L(156, 56, -1, -1, 7, 1) + L(4, 56, 1, -1, 7, 1) + '</g>' +
-      '<rect x="146.5" y="12" width="4" height="36" rx="1.2" fill="url(#' + g + 'i)" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".5"/><path d="M152.2 12.4 L155.4 10.4 L155.4 14.4 Z" fill="#FFFFFF"/>' +
+      '<rect x="146.5" y="17" width="4" height="32" rx="1.2" fill="url(#' + g + 'i)" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".5"/><path d="M152.2 17.4 L155.4 15.4 L155.4 19.4 Z" fill="#FFFFFF"/>' +
       '<text x="9" y="13" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="5" letter-spacing=".9" fill="#FFFFFF" opacity=".85">THERMAL</text>' +
       '<rect x="8" y="45.5" width="27" height="9" rx="2" fill="#080416" fill-opacity=".7" stroke="#FFFFFF" stroke-opacity=".5" stroke-width=".4"/>' +
       '<text x="21.5" y="52.6" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="6.4" fill="#FFFFFF">1000°F</text>' +
