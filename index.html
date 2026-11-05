@@ -35094,6 +35094,14 @@ html.is-browser{ --fade-paper: transparent; }
     -webkit-tap-highlight-color:transparent; user-select:none; transition:background-color .12s ease, transform .12s ease; }
   .ifc-link.ifc-link-pill > span{ overflow:hidden; text-overflow:ellipsis; }
   .ifc-link.ifc-link-pill svg{ width:17px; height:17px; flex:none; }
+  /* (384 final check) "Am I crazy or is this still centered properly?" - not crazy: measured at 3x, Enlarge's ink sat 1.00px and
+     Show the whole page's 2.25px right of the pill's middle. The icon-and-words group was centred, but each icon was a 24-unit
+     box round a narrower drawing - the page mark only 12 of 24 wide and a unit right of its box's middle - so the empty left of
+     the box pushed the ink right. Each mark's box is now its own ink, left to right (the same scale, 17/24, and the same
+     height): the magnifier 3.1..20.9, the page 5.85..20.15 of 24 - so the gap between mark and words is the gap it says, and
+     the ink lands on the middle (check-b384-codelinks). */
+  .ifc-link.ifc-link-pill.is-zoom svg{ width:12.61px; }
+  .ifc-link.ifc-link-pill.is-page svg{ width:10.13px; }
   .ifc-link.ifc-link-pill:active{ background:rgba(255,255,255,.12); transform:scale(.98); }
   .ifc-link{ min-height:44px; padding:0; border:0; background:none; font:inherit; font-size:.86rem; font-weight:650; color:#FFB35C; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
   .ifc-link:disabled{ opacity:.5; }
@@ -110940,11 +110948,11 @@ async function ifcOpenViewer(opts){
 }
 /* One of the code card's ways on (Enlarge, the whole page): a pill with its mark, the card's own summary pill's glass. */
 function ifcLinkBtn(label, mark){
-  const b = ifcEl("button", "ifc-link ifc-link-pill"); b.type = "button";
+  const b = ifcEl("button", "ifc-link ifc-link-pill is-" + (mark === "zoom" ? "zoom" : "page")); b.type = "button";
   const ic = mark === "zoom"
     /* (384) the magnifier in the page mark's own line weight (1.9), its ink centred in its box (3.3 to 20.7 of 24 each way) */
-    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.25" cy="10.25" r="6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M14.75 14.75l5 5M10.25 7.75v5M7.75 10.25h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
-    : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M14 3v5h5M10 13h6M10 17h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+    ? '<svg viewBox="3.1 0 17.8 24" preserveAspectRatio="none" aria-hidden="true"><circle cx="10.25" cy="10.25" r="6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M14.75 14.75l5 5M10.25 7.75v5M7.75 10.25h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>'
+    : '<svg viewBox="5.85 0 14.3 24" preserveAspectRatio="none" aria-hidden="true"><path d="M7 3h7l5 5v13H7z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M14 3v5h5M10 13h6M10 17h6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
   b.innerHTML = ic;
   b.appendChild(ifcEl("span", null, label));
   return b;

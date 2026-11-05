@@ -35435,3 +35435,17 @@ MEASURED over every IFC clip (crops-work/survey.py --noshots, 1,391 each way, th
 a few points on the gutter side; 0 clips gain ink at a side edge; 5 lose it (ch9b-050, ch10-168, ch10-063, ch12-032, ch12-033);
 0 errors. ch63-005's "k" stays: it is a whole mark beside the heading line inside the cut - the book's own margin marker for that
 section, not a sliver. Before/after of the four: scratchpad fin/slivers.jpg.
+
+## 384 final check: the code card's Enlarge / Show the whole page pills, centred by their ink
+
+Madison, circling Enlarge on a code card (a crops contact sheet): "Am I crazy or is this still centered properly?" Not crazy:
+measured at 3x on an iPhone 17 Pro Max, Enlarge's ink sat +1.00px and Show the whole page's +2.25px right of the pill's middle.
+The pill centres its mark-and-words group exactly; the marks were 24-unit boxes round narrower drawings (the page mark 12 of 24
+wide, a unit right of the box's middle; the magnifier 3.3..20.7), so each box's empty left pushed the ink right.
+FIX: each mark's box is its own ink left to right, at the same scale (17/24) and height - viewBox "3.1 0 17.8 24" at 12.61px
+(magnifier) and "5.85 0 14.3 24" at 10.13px (page), preserveAspectRatio none at exactly the viewBox's aspect, classes is-zoom /
+is-page on ifcLinkBtn's pill. After: -0.25 / -0.25px across (3x rounding), the mark-to-words gap 8.5 / 8.0px (was 10.5 of which
+2-4px was empty box).
+GATE: tools/check-b384-codelinks.py (needs PDFJS_DIR): both pills' ink on the middle across and up/down within .5px, the gap the
+same on both. ALL PASS; --against the build before FAILS (1) on both pills. check-centering never opens a code card - that is
+how this got past it.
