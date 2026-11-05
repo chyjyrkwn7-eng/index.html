@@ -103654,6 +103654,19 @@ function rebuildChatTab(){
    and nothing to delete: a friend appears here the moment you are
    friends and goes when you are not. Unread first, then whoever is on,
    then by name, so the row you want is the top one. */
+/* (384, desktop pass) THE FRIENDS TAB CATCHES UP WITH THE CLASS. Opened soon after a launch on a slow connection, before the board's
+   rows had arrived, every friend was "Friend" with the default character - and stayed so, because nothing redrew the list when the
+   rows came (only leaving the tab and coming back did). Called where the class's rows land; redraws only an open friends list that
+   has a row drawn without them, and never inside a chat. */
+function friendsListCatchUp(){
+  try{
+    if(!chatDockOpen || chatDockTab !== "friends" || chatRoomCode || !chatTabBody) return;
+    if(!chatTabBody.querySelector(".chatdock-chatrow.is-friend[data-unknown]")) return;
+    const rows = rowsByPublicId();
+    if(!friendPublicIds().some(p => rows[p])) return;
+    rebuildChatTab();
+  }catch(e){}
+}
 function renderFriendChatList(){
   attachPresence();
   const pubs = friendPublicIds();
@@ -103730,6 +103743,8 @@ function renderFriendChatList(){
     const row = document.createElement("div");
     row.className = "chatdock-chatrow is-friend";
     row.dataset.code = code;
+    /* (384, desktop pass) drawn before the class's rows had arrived: no name or character yet - friendsListCatchUp redraws it */
+    if(!rows[e.pub]) row.dataset.unknown = "1";
     const open = document.createElement("button");
     open.type = "button"; open.className = "chatdock-chatrow-open";
     const art = document.createElement("span");
@@ -131410,6 +131425,7 @@ function fetchBoardForInvites(force){
       try{ lbArtPreloadSoon(); }catch(e){}
       try{ syncChatDockDot(); }catch(e){}
       try{ if(chatDockOpen && chatDockTab === "notifs") renderNotifications(); }catch(e){}
+      friendsListCatchUp();
       try{ checkLobbyInvites(); checkFriendRequests(); checkChatInvites(); }catch(e){}
     }).catch(() => { boardFetchInFlight = false; if(delta) boardDeltaOk = false; });
   }catch(e){ boardFetchInFlight = false; if(delta) boardDeltaOk = false; }
@@ -139226,7 +139242,7 @@ function renderRankingRows(rows, entries, board, opts){
   const lbDrawnFirst = Math.ceil((window.innerHeight || 800) / 60) + 3;
   const knownRows = lbKnownRows();
   /* (384) the rows a still is made for in the tap if it is not made yet: the screenful this device shows (counted on a visit), and one */
-  const lbStillRows = (() => { try{ const G = lbGeomGet(); return G && G.vis > 0 ? G.vis + 1 : 12; }catch(e){ return 12; } })();
+  const lbStillRows = (() => { try{ const G = lbGeomGet(); return G && G.vis > 0 ? G.vis + 1 : lbScreenRowsGuess(); }catch(e){ return 12; } })();
   requestAnimationFrame(() => requestAnimationFrame(() => lbCountVisible(rows)));
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
@@ -139619,6 +139635,13 @@ const LB_KNOWN_ROWS = 16;
    on this device are counted on each visit (lbGeom .vis) and only those, and one more, come up with their loops; the rest get theirs from
    the queue just after the glass lands (as loops - lbFillArt - never as drawings). */
 function lbKnownRows(){ try{ const G = lbGeomGet(); return G && G.vis > 0 ? Math.min(LB_KNOWN_ROWS, G.vis + 1) : LB_KNOWN_ROWS; }catch(e){ return LB_KNOWN_ROWS; } }
+/* (384, desktop pass) THE SCREENFUL, BEFORE IT HAS BEEN COUNTED. The rows a still is made for in the tap were the counted screenful
+   (lbGeom .vis) or 12 - a phone's. A first board on a tall window (a monitor: 29 rows on screen at 2160px) brought rows 13 and on up as
+   empty discs until the queue reached them. Unknown, it is now read off the window: the rows that fit under the board's head (~260px)
+   at a row's ~64px, and one - 12 on a phone, as before. */
+function lbScreenRowsGuess(){ return Math.max(12, Math.ceil(((window.innerHeight || 800) - 260) / 64) + 1); }
+/* (384, desktop pass) how long a cold board waits for the server before it shows what the cache had, when that is only you (showRankings) */
+const LB_SLOW_WAIT_MS = 12000;
 function lbCountVisible(rows){
   try{
     if(!rows || !rows.isConnected) return;
@@ -139626,7 +139649,11 @@ function lbCountVisible(rows){
     if(!list.length || list[0].getBoundingClientRect().top < 0) return;
     const vh = window.innerHeight || 800; let n = 0;
     for(const r of list){ if(r.getBoundingClientRect().top < vh) n++; else break; }
-    if(n > 0) lbGeomPut(cur => { cur.vis = n; });
+    /* (384, desktop pass) a list that ends before the screen does says how many rows there were, not how many fit: a board of one
+       (you, shown while the class was still on its way) kept vis 1, and the class arriving a moment later came up with a still for
+       two rows and empty discs below them. Only a list that runs past the screen counts it; a short one may raise a count, never
+       set or lower it. */
+    if(n > 0 && (n < list.length || n > (lbGeomGet() || {}).vis)) lbGeomPut(cur => { cur.vis = n; });
   }catch(e){}
 }
 var lbGeomAll = null;
@@ -146069,12 +146096,21 @@ function showRankings(defaultBoard){
     }
     /* Offline, or a server that never answers: after a beat show what
        the cache had - which may be only you - rather than placeholders
-       forever. */
-    setTimeout(() => {
+       forever.
+       (384, desktop pass) A SLOW NETWORK IS NOT NO NETWORK. Opened before the class had ever arrived (a cold start), on a
+       connection that answers in 3-6s, this painted the one row the cache had - you, 1st of 1 - and the class replaced it a
+       moment later. While the browser says it is online and nobody but you is known, the placeholders stay up to LB_SLOW_WAIT_MS
+       instead (the listener paints the moment the server answers); offline, or with classmates in hand, it is 2.5s as before. */
+    const skelAt = Date.now();
+    const fallback = () => {
       if(loaded || !rows.isConnected || !fbDb) return;
       if(!rows.querySelector(".rank-row-skel")) return;
+      if(navigator.onLine !== false && Date.now() - skelAt < LB_SLOW_WAIT_MS && !entries.some(e => e && e.pub !== store.publicId)){
+        setTimeout(fallback, 500); return;
+      }
       loaded = true; paint();
-    }, 2500);
+    };
+    setTimeout(fallback, 2500);
   }
 
   if(rankingsLiveUnsub){ try{ rankingsLiveUnsub(); }catch(e){} rankingsLiveUnsub = null; }
@@ -146133,6 +146169,7 @@ function showRankings(defaultBoard){
            and must not open a second listener on the same
            collection. */
         leaderboardRows = entries; leaderboardRowsFromServer = served; try{ settleWeeklyWinQueued(); }catch(e){}
+        friendsListCatchUp();
         /* A cache that knows nobody but you is not the class: the
            placeholders stay up until the server answers, rather than
            crowning you 1st of 1 for a second. Offline, the fallback
