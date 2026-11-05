@@ -34638,3 +34638,14 @@ re-run at the end with the machine quiet.
   comes open, Hide shrinks over 27 frames and ends shut, the next answer comes shut, a Review list stays shut. check-b384-
   codeopen's (2) (no task over 50ms after the tap at 4x CPU) failed on BOTH builds while five helpers loaded the machine
   (205-259ms, with the slide switched off too) - load, to re-run quiet.
+- NOVA'S HELLO, ONCE PER ACCOUNT: "he keeps sending me the 'hello Maddog, it's nova, you'll find me here now' even though I've
+  already seen that message multiple times and I've had an account for a while." novaBefriend sent "Hello again" whenever this
+  device's class26e.nova had no `since` - which a sign-out wipes (the signed-out keep-list has no nova), a Safari tab beside the
+  installed app never had, and Fire Code keeps its own copy of (the storage map: class26e.ifc.nova). Now the hello is on the
+  account too: novaHeard.hello (synced, max-merged like his broadcasts since 325). An account that has heard anything from him
+  (novaHeard has keys - in Fire Code, either this copy or the academy copy) becomes his friend quietly; one that never has gets
+  the hello once, recorded; a new account's introduction hello is unchanged. tools/check-b384-novahello.py (3 failures on
+  800fcb4).
+- FIRE CODE'S FINDER FIRST: "Can we put the chapter finder unit at the top? It's all the way at the bottom." The Chapter and
+  Section Finder is the bank's last unit (NAV, order 59). ifcFinderFirst() puts it first on the unit screen (showSetup) only:
+  the bank's order, question identity, badges and every other list are untouched.

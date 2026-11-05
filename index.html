@@ -100160,6 +100160,22 @@ function novaBefriend(o){
   s.congrats = novaShownRankIdx();
   s.thread = s.thread || []; s.sent = s.sent || {};
   novaSave(s);
+  /* (384 review) HIS HELLO, ONCE PER ACCOUNT. Madison: "the nova instructor will keep messaging me, he keeps sending me the
+     'hello Maddog, it's nova, you'll find me here now' even though I've already seen that message multiple times and I've had
+     an account for a while." Being friends is remembered on the DEVICE (class26e.nova), which a sign-out wipes, a Safari tab
+     beside the installed app never had, and Fire Code keeps its own copy of - so every sign-in, every second jar and the first
+     visit to the other class was owed "Hello again" once more. The hello is now recorded on the account too (novaHeard.hello,
+     synced and merged by the higher, as his broadcasts are since 325), in either class's copy, and an account that has heard
+     anything from him already met him long ago: on those he becomes a friend quietly. His introduction's own hello (a new
+     account) is unchanged. */
+  const heard = novaHeardMap();
+  let had = !!heard.hello;
+  if(!had && !o.intro){
+    if(Object.keys(heard).length) had = true;
+    try{ if(window.NOVA_CLASS === "ifc"){ const a = academyCopyNow(); if(a && a.novaHeard && typeof a.novaHeard === "object" && Object.keys(a.novaHeard).length) had = true; } }catch(e){}
+  }
+  if(!heard.hello){ heard.hello = now; try{ persistLocally(); }catch(e){} }
+  if(had && !o.intro){ try{ if(chatDockOpen && !chatRoomCode) rebuildChatTab(); }catch(e){} return true; }
   novaSendDM(novaHelloLine(!!o.intro), { id: "hello", kind: "hello", quiet: !!o.quiet });
   try{ if(chatDockOpen && !chatRoomCode) rebuildChatTab(); }catch(e){}
   return true;
@@ -107312,6 +107328,17 @@ function showLevelComingSheet(lv){
   mountSheetOverlay(overlay);
   try{ playSound("ui.popup.open"); }catch(e){}
 }
+/* (384 review) FIRE CODE'S FINDER FIRST. Madison: "The ifc class. Can we put the chapter finder unit at the top? It's all the
+   way at the bottom." The Chapter and Section Finder is the bank's last unit (NAV, order 59), so it came after every chapter.
+   On the unit screen it is the first card now; nothing else moves - the bank's order, the questions' identity (unit |
+   position | wording) and every other list (badges, the calendar) stay as they are. */
+function ifcFinderFirst(units){
+  if(window.NOVA_CLASS !== "ifc" || !Array.isArray(units)) return units;
+  let f = null;
+  try{ const q = QUESTIONS.find(x => x && x.ifc && x.ifc.type === "chapter_finder"); f = q ? String(q.topic || "").trim() : null; }catch(e){}
+  const i = f ? units.indexOf(f) : -1;
+  return i > 0 ? [units[i]].concat(units.slice(0, i), units.slice(i + 1)) : units;
+}
 function showSetup(){
   /* Arriving with no units picked (from the mode menu, which clears them)
      is a new test: defaults. Arriving WITH units picked is a round trip -
@@ -107328,7 +107355,7 @@ function showSetup(){
   paused = false;
   setActiveNav(null);
 
-  const all = unitsInTeachingOrder();
+  const all = ifcFinderFirst(unitsInTeachingOrder());
   startReadyQuietUntil = performance.now() + 700;
   /* the title is the page's own, centred over it (below) */
   countEl.textContent = "";
