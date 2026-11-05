@@ -188,10 +188,17 @@ def main():
           Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'visible' });
           Object.defineProperty(document, 'hidden', { configurable:true, get: () => false });
           document.dispatchEvent(new Event('visibilitychange'));
+          /* coming back counts after 1.8s (a glance away and back writes nothing - startHeartbeat's return heartbeat waits) */
+          await new Promise(r => setTimeout(r, 2300));
           __log = [];
+          /* (384 full check) hidden as the first hide was - both flags; this left document.hidden false, so the app saw a
+             visible page and rightly wrote nothing (failed the same on 383) */
           Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'hidden' });
+          Object.defineProperty(document, 'hidden', { configurable:true, get: () => true });
           document.dispatchEvent(new Event('visibilitychange'));
+          await new Promise(r => setTimeout(r, 30));
           const again = __log.filter(x => x.id === PRESENCE_DOC && x.op === 'set').length;
+          Object.defineProperty(document, 'hidden', { configurable:true, get: () => false });
           Object.defineProperty(document, 'visibilityState', { configurable:true, get: () => 'visible' });
           chatRoomCode = null;
           return { may, pres, chat: chat.length, typingCleared: !!typingCleared, again };
