@@ -22,8 +22,8 @@ Played in Chromium in the Fire Code class (class26e.activeclass = "ifc") and rea
      the badge case cutscene's coin (read while they are up), and its unlock card (the results' badge item, played with
      playUnlockSpotlight when the walk shows none), each draw Chapter 40's outline and enamel as the case on Profile does,
      and none of them looks like Chapter 26's badge;
- (6) THE ACADEMY'S BADGES ARE AS THEY WERE: its 24 units' outlines, channels, colours, back plans and vector drawings hash to
-     what build 384 had before this round (taken with --dump on 1dca98e);
+ (6) THE ACADEMY'S BADGES ARE AS PINNED: its 24 units' outlines, channels, colours, back plans and vector drawings hash to
+     the pin (badges round 2 changed them on purpose - four outlines and seven enamels; --dump prints the hash);
  (7) no page errors in either class.
 Run:  python3 tools/check-b384-ifcbadges.py   (--against OLD/index.html must FAIL; ONLY=1,3 runs those sections; --dump prints
 the academy's hash)"""
@@ -275,7 +275,10 @@ with sync_playwright() as pw:
             return [u, s.d, (s.cuts || []).join('|'), badgeThemeFor(u).p, p.mode, p.rows, p.items.map(i => i.rule ? 'R' + i.rule.map(v => v.toFixed(2)).join(',') : i.s + '@' + i.x.toFixed(2) + ',' + i.y.toFixed(2) + ',' + i.fs.toFixed(2)).join(';'), __h(ser)]; });
           return { n: us.length, h: __h(JSON.stringify(rows)), cls: window.NOVA_CLASS }; }"""
         ra = A.evaluate(ACAD)
-        PIN = "8996cbb2"   # 1dca98e (build 384 before this round), --dump
+        # CHANGED ON PURPOSE (384 final check, badges round 2): the academy's own look-alikes went - TCOLE Rules, De-Escalation,
+        # Crisis Intervention Training and Civil Process have new outlines, seven units new enamels (check-b384-badgetwins
+        # holds the academy to Fire Code's rule now). Was 8996cbb2 (1dca98e). Taken with --dump on this round's build.
+        PIN = "ac3f329d"
         if DUMP: print("DUMP academy badges", ra)
         chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are exactly as they were (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)
