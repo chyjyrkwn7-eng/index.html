@@ -8974,7 +8974,8 @@ def check_b304_polish(br):
               (r.get("whyInGrid"), r.get("whyGap"), r.get("whyVisible")))
         check(dev + ": a grey Start does not animate", r.get("inertBefore") is True and r.get("inertAnim") in ("none", ""), r.get("inertAnim"))
         check(dev + ": Start fills from its centre once as it lights up (build 308)",
-              r.get("pop") is True and r.get("fill") == "start-fill-in" and r.get("popGone") is True, (r.get("pop"), r.get("fill"), r.get("popGone")))
+              # (384) the fill keyframes are start-fill-grow now (the Start pill's catch) - the name is not the thing
+              r.get("pop") is True and str(r.get("fill") or "").startswith("start-fill") and r.get("popGone") is True, (r.get("pop"), r.get("fill"), r.get("popGone")))
         check(dev + ": and once ready it does not pulse - no halo, no sweep (build 308)",
               r.get("halo") in ("none", "") and r.get("sweep") in ("none", ""), (r.get("halo"), r.get("sweep")))
         bg = r.get("begin") or {}
@@ -13167,7 +13168,7 @@ def check_b314_sheet(br):
           /* the beat, read off the animations themselves (wall-clock frame
              sampling is at the mercy of a loaded machine) */
           const an = tab.getAnimations({ subtree: true });
-          const fill = an.find(a => a.animationName === 'start-fill-in'), punch = an.find(a => a.animationName === 'start-ready-punch');
+          const fill = an.find(a => /^start-fill/.test(a.animationName)), punch = an.find(a => a.animationName === 'start-ready-punch');
           const tm = a => a ? a.effect.getComputedTiming() : null;
           const peak = punch ? Math.max(...punch.effect.getKeyframes().map(k => { const m = String(k.transform || '').match(/scale\\(([\\d.]+)/); return m ? +m[1] : 1; })) : 0;
           out.start = { fillMs: fill ? tm(fill).duration : null, punchDelay: punch ? tm(punch).delay : null,
@@ -13225,7 +13226,8 @@ def check_b314_sheet(br):
         check("%s All at All shows no note (dropped with the bank boxes)" % label, r.get("allNote") is False, r.get("allNote"))
         check("%s a tap on Max that changes the value shows nothing" % label, r.get("maxOnChange") is False, r.get("maxOnChange"))
         check("%s Max at the top says 'Max time set / 90 minutes', in view and not clipped by its card, then goes" % label,
-              r.get("max") == "Max time set | 90 minutes" and r.get("maxVisible") is True and r.get("maxGone") is True,
+              # (380) the limit runs 1 to 120 minutes now (Madison) - the label's shape, not its number
+              re.match(r"^Max time set \| \d+ minutes$", r.get("max") or "") and r.get("maxVisible") is True and r.get("maxGone") is True,
               (r.get("max"), r.get("maxVisible"), r.get("maxGone")))
 
 
