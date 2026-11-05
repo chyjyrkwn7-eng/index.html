@@ -35280,3 +35280,15 @@ before it. Not run: sweep-layout / check-centering (no new screen; the greyed bu
 opacity), check-behaviour b314h_lobby (joins by joinVirtualRoomLobby; an academy room, so the class rule lets it in).
 MEDIA (scratchpad out-vroom/, made-up names): invite-academy-room[-tapped]-{iphone17promax-440x956,ipadpro11-834x1194}.png,
 invite-firecode-room[-tapped]-*.png - the greyed friend and the line its tap gives. The per-game MP4s are the lead's pack.
+
+## 384 review round - final check: check-b382-test's fixture and Home's unlock queue
+
+check-b382-test crashed in its layout section ("Value after * must be an iterable") on the merged build, twice, on a quiet
+machine. Not the app: the fixture's Fire Code hundos earn the Sprinklers effect, and Home's unlock queue collects its cards at
+launch and plays the first ~14s in. The check then starts a drill BY SCRIPT under that card (a person cannot - the card covers
+the screen and takes the tap), so the second drill's answer tap landed on the card and the question was never answered.
+Marking the unlocks seen in setup is not enough on its own: the queue had already collected its items. So setup now marks
+pendingHomeUnlocks() shown (nothing new joins) AND start() removes any card that is up before beginRun. The harness is shared by
+check-b384-codeslide / cropfit / ifccrop and check-b383-flashcards, which exec it. Result: check-b382-test ALL PASS (40).
+Lesson worth keeping: a fixture with real progress earns real unlocks, and Home's queue plays them on its own clock - a gate
+that drives screens by script from Home has to clear them, or it reads a covered screen.

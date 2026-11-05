@@ -62,12 +62,18 @@ def page(br, w, h, ins, ua=UA):
     pg.route("**/index.html", lambda route, request, b=body: route.fulfill(status=200, headers={"content-type": "text/html; charset=utf-8"}, body=b))
     pg.add_init_script(INIT % json.dumps(json.dumps(d)))
     pg.goto(url); pg.wait_for_timeout(3500)
-    pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed=()=>false; }catch(e){} store.novaMet=99; document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove()); }")
+    # (384) the fixture's hundos earn Fire Code's Sprinklers effect, whose card Home queues ~10s in - over the drill this then
+    # starts by script (a person cannot start one under it). Marked as already seen, the queue has nothing to play.
+    pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed=()=>false; }catch(e){} store.novaMet=99;"
+                " try{ const p = pendingHomeUnlocks(); markUnlocksShown(p.chars, p.banners, p.fx); }catch(e){}"
+                " document.querySelectorAll('#tour-overlay, #tour-tooltip, #nova-intro, .rs-spot, .unlock-card').forEach(n=>n.remove()); }")
     return ctx, pg, ctx.new_cdp_session(pg)
 CENTRE = "(sel)=>{ const b=document.querySelector(sel); if(!b) return null; b.scrollIntoView({block:'center',behavior:'instant'}); const r=b.getBoundingClientRect(); return [r.left+r.width/2, r.top+r.height/2]; }"
 AMEND = "QUESTIONS.map((q,i)=>i).filter(i => QUESTIONS[i].ifc && QUESTIONS[i].ifc.citation.source==='amendment' && !QUESTIONS[i].ifc.citation.blur)"
 def start(pg, which, n=4):
     """a drill of county questions: 'long' = the longest answers first, 'short' = the shortest"""
+    # a card Home's queue had already collected before the setup marked it seen plays ~14s in; a person taps it away before Start
+    pg.evaluate("()=>{ document.querySelectorAll('.rs-spot, .unlock-card').forEach(n=>n.remove()); }")
     pg.evaluate("""([lf, n])=>{ let ids = %s;
       const L = i => (QUESTIONS[i].ifc.explanation||'').length + String(QUESTIONS[i].q||'').length + QUESTIONS[i].choices.join('').length;
       ids.sort((a,b)=> lf ? L(b)-L(a) : L(a)-L(b)); ids = ids.slice(0, n);
