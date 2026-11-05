@@ -48,6 +48,7 @@ const LEAD_LINES = 7;                         // lines of a section shown under 
 const BODY_TOP = 735, BODY_BOTTOM = 36;      // items above / below are running headers, page labels and the licence footer
 const BODY_H = 9.5;                           // body text is 10 pt; table cells are 9 pt or smaller
 const COL_L = 28, COL_R = 584;                // left / right edge used for clippings
+const COL_STEP = 261;                          // from the left column's text to the right column's (243pt column + 18pt gutter)
 
 export function norm(s) {
   return String(s).toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9]+/g, '');
@@ -571,9 +572,9 @@ function linesIn(items) {
 function rhythmOf(lines) {
   const out = { margin: null, right: null, pitch: null, para: null };
   if (!lines.length) return out;
+  // the left margin: the leftmost place two or more lines start (indented lists and subsections start further in)
   const n = new Map(); for (const l of lines) { const x = Math.round(l.x0); n.set(x, (n.get(x) || 0) + 1); }
-  const need = Math.max(2, 0.15 * lines.length);
-  out.margin = Math.min(...[...n].filter(([, c]) => c >= need).map(([x]) => x).concat([Infinity]));
+  out.margin = Math.min(...[...n].filter(([, c]) => c >= 2).map(([x]) => x).concat([Infinity]));
   if (!isFinite(out.margin)) out.margin = Math.min(...lines.map(l => l.x0));
   const r = lines.map(l => l.x1).sort((a, b) => a - b); out.right = r[Math.floor(0.9 * (r.length - 1))];
   const fs = lines.map(l => l.fs).sort((a, b) => a - b)[lines.length >> 1];
@@ -594,14 +595,23 @@ function sheetOf(segs, pageOf) {
     const pg = pageOf(sg.page);
     const lines = linesIn(pg.items.filter(it => centre(it) >= sg.x0 && centre(it) <= sg.x1 && it.y >= sg.y0 && it.y <= sg.y1));
     const col = sg.col === 1 ? 1 : 0;                    // a full-width piece starts where the left column does
-    const inCol = (c) => (it) => it.h >= 7.5 && (pg.g == null || (centre(it) < pg.g ? 0 : 1) === c);
+    // a column's rhythm from its running text (the book's body type, not a table's cells, set later in the page's stream)
+    const inCol = (c) => (it) => (pg.g == null ? it.h >= 7.5 : it.body) && (pg.g == null || (centre(it) < pg.g ? 0 : 1) === c);
     const r = rhythmOf(linesIn(pg.items.filter(inCol(col))));
-    // where the page's left column starts: every piece's column is moved there (a right column's text under a left one's, a
-    // full-width table under a column, the next page's column - its margins mirrored - under this page's)
-    r.left = col === 0 ? r.margin : rhythmOf(linesIn(pg.items.filter(inCol(0)))).margin;
+    // where this piece's column starts on its page. The book is set on one grid: the right column starts 261pt right of the left
+    // (243pt of column and 18 of gutter), and the left column's start moves between facing pages. A column whose lines are all
+    // indented (subsections, a list) does not show where it starts, so the page's two columns are read together: the left edge is
+    // the leftmost start either column shows, the right column's taken back by the grid's step.
+    if (pg.g == null) r.colLeft = r.margin;
+    else {
+      const m0 = rhythmOf(linesIn(pg.items.filter(inCol(0)))).margin, m1 = rhythmOf(linesIn(pg.items.filter(inCol(1)))).margin;
+      const step = m0 != null && m1 != null && Math.abs(m1 - m0 - COL_STEP) < 3 ? m1 - m0 : COL_STEP;
+      const L = Math.min(m0 == null ? Infinity : m0, m1 == null ? Infinity : m1 - step);
+      r.colLeft = isFinite(L) ? (col === 1 ? L + step : L) : r.margin;
+    }
     return { sg, lines, ...r };
   });
-  const dxOf = (Q) => (Q.margin == null || Q.left == null || P[0].left == null ? 0 : P[0].left - Q.margin);
+  const dxOf = (Q) => (Q.colLeft == null || P[0].colLeft == null ? 0 : P[0].colLeft - Q.colLeft);
   const pieces = [{ i: 0, dx: dxOf(P[0]), top: segs[0].y1, bot: segs[0].y0, gap: 0 }];
   for (let k = 1; k < P.length; k++) {
     const A = P[k - 1], B = P[k], pa = pieces[k - 1];
@@ -649,7 +659,8 @@ async function bookPages(doc, r, fontBold, cache) {
   const map = new Map();
   for (const p of new Set([...(r.segments || []).map(sg => sg.page), ...(r.marks || []).map(m => m.page)])) {
     const model = await pageModel(doc, p, fontBold, cache);
-    map.set(p, { items: model.items.filter(it => it.t && inBody(it)), g: model.g });
+    const F = model.hasBody ? model.F : model.items.length;
+    map.set(p, { items: model.items.filter(it => it.t && inBody(it)).map(it => ({ ...it, body: isBodySize(it) && it.i < F })), g: model.g });
   }
   return (p) => map.get(p) || { items: [], g: null };
 }
