@@ -27,7 +27,7 @@ with sync_playwright() as pw:
     pg.evaluate("""()=>{document.getElementById('splashscreen')?.remove(); __useFake();
       store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99; store.rankMapFx244=true;
       ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
-       'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+       'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
       syncCode='AAAA-1111'; store.leaderboardOptIn=true; showHome();}""")
     pg.wait_for_timeout(300)
     r = pg.evaluate("""()=>{

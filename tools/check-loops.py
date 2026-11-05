@@ -36,6 +36,12 @@ KNOWN = {
     "mystery-halo": "fades to nothing at the end, restarts from small",
     "pushsweep": "a sweep from off one edge to off the other",
     "rankmap-here": "a ping that fades to nothing",
+    # 384 full check: pings and Fire Code character effects already shipping, each read and listed with its reason
+    "a2hs-ping": "the Add to Home Screen pointer's ping - grows and fades to nothing, then the next one starts",
+    "mystery-ping": "a ping that fades to nothing",
+    "cx-fc-wave": "a Fire Code character's heat wave, invisible at both ends - fades in, grows and fades out",
+    "cx-fc-spray": "a Fire Code character's water spray, invisible at both ends",
+    "cx-fc-strobe": "a Fire Code character's strobe light - steps(1), on and off, a flash by design",
     "rankmap-tip-ping": "a ping off the road's progress light that fades to nothing",
     "stat-shine": "shifted by exactly one period of a 200% background",
     "swatch-sheen": "a sweep from off one edge to off the other",

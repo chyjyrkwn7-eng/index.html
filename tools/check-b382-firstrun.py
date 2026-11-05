@@ -32,7 +32,7 @@ STANDALONE = """Object.defineProperty(navigator,'standalone',{get:()=>true,confi
 OWNER = "xph5b57jbp5a"
 SEED = {"firstName": "Casey", "avatarChar": "ninja", "onboardingComplete": True, "publicId": OWNER, "leaderboardOptIn": True,
         "lastModified": 1700000000000, "tourRev": 99, "novaMet": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True,
-        "seenUnitSelectTour": True, "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True,
+        "seenUnitSelectTour": True, "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True,
         "lifetime": {"points": 900, "answered": 300, "correct": 250}}
 SEEN = ['class26e.freshstart', 'class26e.intro.seen', 'class26e.unithold.tip', 'class26e.daily.seen', 'class26e.savecode.asked', 'class26e.getstarted']
 

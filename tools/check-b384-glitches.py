@@ -135,7 +135,7 @@ SEEN = ("['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','c
 CODE = "TEST-3849"   # a fake code
 ACCOUNT = {"firstName": "Casey", "avatarChar": "ghost", "onboardingComplete": True, "publicId": "xph5b57jbp5a", "leaderboardOptIn": True,
            "tourRev": 999, "novaMet": 99, "lastModified": 1790500000000, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-           "rankMapFx244": True, "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
+           "rankMapFx244": True, "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
            "seenRankingsTour": True, "seenAppearanceTour": True, "seenSettingsTour": True, "seenRewardsTour": True, "seenHomeTour": True,
            "seenLadderTour": True, "friendCode": "QRT-384",
            "lifetime": {"points": 6400, "answered": 840, "correct": 712, "drillPlays": 22, "examPlays": 9, "gamePlays": 6, "perfectTests": 3,

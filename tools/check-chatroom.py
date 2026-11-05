@@ -78,7 +78,7 @@ def main(src):
                      fails a check that has nothing to do with tours. */
                   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
                    'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
-                   'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+                   'seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
                   syncCode = 'SYNC-' + a.pub; cloudConfirmedFor = syncCode;  /* read done, as on a real launch (build 296 guard) */
                   try{ localStorage.removeItem('class26e.chatroom'); }catch(e){}
                   chatRoomCode = null; chatMyKey = null;
@@ -112,7 +112,7 @@ def main(src):
               store.tourRev = 99;
               ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
                'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
-               'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+               'seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
               syncCode = 'SYNC-' + a.pub; cloudConfirmedFor = syncCode;  /* read done, as on a real launch (build 296 guard) */
               showHome();
               return new Promise(r=>setTimeout(()=>r({

@@ -35,7 +35,7 @@ INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
 # a near-fresh account: a starter on, a little XP, nothing earned
 SEED = {"firstName": "Casey", "avatarChar": "ninja", "onboardingComplete": True, "leaderboardOptIn": True, "lastModified": 1700000000000,
         "tourRev": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
-        "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaMet": 99,
+        "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaMet": 99,
         "lifetime": {"points": 150, "answered": 40, "correct": 30}}
 ok = True
 def chk(name, cond, info=""):

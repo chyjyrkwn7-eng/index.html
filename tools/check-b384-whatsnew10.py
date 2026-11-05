@@ -26,7 +26,7 @@ CODE = "TEST-3843"
 def acct():
     return {"firstName": "Gate Tester", "avatarChar": "ghost", "onboardingComplete": True, "publicId": "gatetest3843", "leaderboardOptIn": False,
             "tourRev": 999, "novaMet": 99, "lastModified": 1790500000000, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-            "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True, "seenRankingsTour": True,
+            "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True, "seenRankingsTour": True,
             "seenAppearanceTour": True, "lifetime": {"points": 1200, "answered": 300, "correct": 250}}
 INIT = ("['class26e.freshstart','class26e.unithold.tip','class26e.getstarted','class26e.daily.seen'].forEach(k=>localStorage.setItem(k,'1'));"
         "localStorage.setItem('class26e.intro.seen','6'); localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.a2hs', String(Date.now()));"

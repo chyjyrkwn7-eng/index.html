@@ -105,7 +105,7 @@ SEEN_IFC = ("['class26e.ifc.freshstart','class26e.ifc.daily.seen','class26e.ifc.
 def account(name, pub, pts=0, correct=0, **extra):
     d = {"firstName": name, "avatarChar": "ghost", "onboardingComplete": True, "publicId": pub, "leaderboardOptIn": True,
          "tourRev": 999, "novaMet": 99, "lastModified": 1790500000000, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-         "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
+         "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
          "seenRankingsTour": True, "seenAppearanceTour": True, "badgeBandsVersion": 99,
          "lifetime": {"points": pts, "answered": correct + 10, "correct": correct}}
     d.update(extra)

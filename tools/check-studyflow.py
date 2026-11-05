@@ -63,7 +63,7 @@ def ck(name, cond, detail=""):
 SEED = ('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"tourRev":99,'
         '"rankMapFx244":true,"rankMapSeen":99,"badgeBandsVersion":2,"retroBadgePending":[],'
         '"seenFirstResultsTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
-        '"seenMainMenuTour":true,"seenProfileTour":true,"seenSettingsTour":true,'
+        '"seenMainMenuTour":true,"seenClassTip":true,"seenProfileTour":true,"seenSettingsTour":true,'
         '"lifetime":{"points":6400,"answered":800,"correct":700}}')
 errors = []
 

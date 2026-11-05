@@ -28,7 +28,7 @@ SEEN = ("['class26e.freshstart','class26e.unithold.tip','class26e.getstarted','c
 def acct(answered):
     return {"firstName": "Gate Tester", "avatarChar": "ghost", "onboardingComplete": True, "publicId": "gatetest3842", "leaderboardOptIn": False,
             "tourRev": 999, "novaMet": 99, "lastModified": 1790500000000, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-            "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True, "seenRankingsTour": True,
+            "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True, "seenRankingsTour": True,
             "seenAppearanceTour": True, "lifetime": {"points": 1200 if answered else 0, "answered": answered, "correct": int(answered * .8)}}
 def init(answered, extra=""):
     return SEEN + "localStorage.setItem('class26e.drill.v1', %s);" % json.dumps(json.dumps(acct(answered))) + \

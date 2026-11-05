@@ -75,7 +75,7 @@ UA = {
 TOUCH_POINTS = "Object.defineProperty(navigator,'maxTouchPoints',{get:()=>5,configurable:true});"
 SEED = json.dumps({"firstName": "Casey", "avatarChar": "ninja", "onboardingComplete": True, "leaderboardOptIn": True,
     "tourRev": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
-    "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True, "seenHomeTour": True, "seenSettingsTour": True,
+    "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True, "seenHomeTour": True, "seenSettingsTour": True,
     "seenRewardsTour": True, "seenLadderTour": True, "novaMet": 99, "publicId": "pubtest00384",
     "lifetime": {"points": 12400, "answered": 5400, "correct": 4980, "drillPlays": 64, "examPlays": 22, "gamePlays": 9,
                  "perfectTests": 141, "currentStreak": 23, "longestStreak": 57}})

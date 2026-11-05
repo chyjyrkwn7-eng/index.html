@@ -63,7 +63,7 @@ ALL_BANNERS = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr
 # an existing account (its tours seen, Nova met, everything it holds already announced) - the moments are played on purpose
 SEED = {"onboardingComplete": True, "firstName": "Maddog", "avatarChar": "ninja", "publicId": OWNER, "novaMet": 99,
         "tourRev": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
-        "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaHeard": {"@recap": 99991231},
+        "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaHeard": {"@recap": 99991231},
         "lifetime": {"points": 41000, "answered": 2100, "correct": 1980, "drillPlays": 60, "examPlays": 12, "perfectTests": 64,
                      "longestStreak": 44, "currentStreak": 12},
         "unitPerfects": {"Professionalism and Ethics": 35, "TCOLE Rules": 35, "Penal Code": 35, "Racial Profiling": 35, "Victims of Crime": 35},

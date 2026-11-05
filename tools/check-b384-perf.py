@@ -73,7 +73,7 @@ def week_key_now():
     d = datetime.date.today(); d -= datetime.timedelta(days=d.weekday()); return d.isoformat()
 SEED = {"firstName": "Casey", "avatarChar": "ninja", "onboardingComplete": True, "weekKey": week_key_now(), "weekPoints": 640, "leaderboardOptIn": True,
         "lastModified": 1700000000000, "publicId": "xph5b57jbp5a", "novaMet": 99, "tourRev": 99, "rankMapFx244": True, "seenProfileTour": True,
-        "seenModeSelectTour": True, "seenUnitSelectTour": True, "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True,
+        "seenModeSelectTour": True, "seenUnitSelectTour": True, "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True,
         "novaHeard": {"@recap": 99991231}, "unitPerfects": {"Penal Code": 35, "TCOLE Rules": 35, "Racial Profiling": 22},
         "lifetime": {"points": 12400, "answered": 5400, "correct": 4980, "drillPlays": 64, "examPlays": 22, "perfectTests": 141, "currentStreak": 23, "longestStreak": 57}}
 SEEN = ["freshstart", "intro.seen", "unithold.tip", "daily.seen", "savecode.asked", "savecode.card", "getstarted", "penal55124.seen", "penal124256.seen", "penal256578.seen"]

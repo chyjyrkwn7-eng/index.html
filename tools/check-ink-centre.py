@@ -30,7 +30,7 @@ TOL = float(arg("--tol", "0.8"))
 HTOL = float(arg("--htol", "1.5"))
 
 SEED = ('{"publicId":"xph5b57jbp5a","firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,"leaderboardOptIn":true,"lastModified":1700000000000,'
-        '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,"seenMainMenuTour":true,'
+        '"tourRev":99,"rankMapFx244":true,"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,"seenMainMenuTour":true,"seenClassTip":true,'
         '"seenRankingsTour":true,"seenAppearanceTour":true,"novaMet":99,"lifetime":{"points":12400,"answered":5400,"correct":4980,"perfectTests":141}}')
 CAND = """()=>{ const out=[]; const seen=new Set();
  /* round 33: a pass's ids start at 0 again - last pass's must go, or [data-ink-id] finds a stale control */

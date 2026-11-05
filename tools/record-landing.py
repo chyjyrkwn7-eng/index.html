@@ -36,7 +36,7 @@ FADE = .5                         # the last half second dissolves into the firs
 SEED = {
     "onboardingComplete": True, "firstName": "Alex", "avatarChar": "ninja", "publicId": "pubfixture0384",
     "tourRev": 999, "rankMapFx244": True, "novaMet": 99, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-    "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
+    "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
     "seenRankingsTour": True, "seenAppearanceTour": True,
     # sound off: a clip is silent, and the results' count runs to the sound's clock, which slow motion cannot slow
     "theme": {"soundOn": False, "soundOn327": True, "vibrate": False},

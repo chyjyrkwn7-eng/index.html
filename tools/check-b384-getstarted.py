@@ -48,7 +48,7 @@ SEEN = ("freshstart", "intro.seen", "unithold.tip", "daily.seen", "savecode.aske
         "penal124256.seen", "penal256578.seen")
 ACCOUNT = {"firstName": "Casey", "avatarChar": "ghost", "onboardingComplete": True, "publicId": "pubgate0384", "tourRev": 999,
            "novaMet": 99, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True, "lastModified": 1790500000000,
-           "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
+           "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
            "seenRankingsTour": True, "seenAppearanceTour": True,
            "lifetime": {"points": 4000, "answered": 300, "correct": 280}}
 

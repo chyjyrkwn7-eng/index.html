@@ -87,7 +87,7 @@ SEEN_ACCT = SEEN + "['class26e.daily.seen','class26e.savecode.card','class26e.sa
 def account(name, pub, pts, correct, **extra):
     d = {"firstName": name, "avatarChar": "ghost", "onboardingComplete": True, "publicId": pub, "leaderboardOptIn": False,
          "tourRev": 999, "novaMet": 99, "lastModified": 1790500000000, "novaHeard": {"@recap": 99991231}, "savedCodeSaved": True,
-         "seenMainMenuTour": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
+         "seenMainMenuTour": True, "seenClassTip": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
          "seenRankingsTour": True, "seenAppearanceTour": True,
          "lifetime": {"points": pts, "answered": correct + 100, "correct": correct}, "testStats": {"Penal Code": {"plays": 3}}}
     d.update(extra)

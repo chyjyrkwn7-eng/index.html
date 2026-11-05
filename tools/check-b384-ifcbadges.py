@@ -53,7 +53,7 @@ ALL_CHARS = ["detective", "masked", "zeus", "poseidon", "clown", "valkyrie", "ma
 # an existing account (tours seen, Nova met, everything it holds announced), so nothing lands over what is measured
 SEED = {"onboardingComplete": True, "firstName": "Maddog", "avatarChar": "ninja", "publicId": OWNER, "novaMet": 99,
         "tourRev": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True, "seenUnitSelectTour": True,
-        "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaHeard": {"@recap": 99991231},
+        "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True, "novaHeard": {"@recap": 99991231},
         "lifetime": {"points": 9000, "answered": 900, "correct": 860, "drillPlays": 30, "examPlays": 4, "perfectTests": 30,
                      "longestStreak": 20, "currentStreak": 3},
         "unlocksShown": {"chars": ALL_CHARS, "banners": [], "fx": ["fireworks", "underwater", "bubbles", "ufo"]},
