@@ -6721,6 +6721,10 @@
       0 0 9px 1px currentColor;
   }
   .vroom-race-marker.is-finished{ box-shadow:0 0 10px 1px currentColor; }
+  /* (384 vr2) paused: where they stopped, dimmed - nobody waits on them (vroomNotePaused) */
+  .vroom-race-marker.is-paused{ opacity:.42; }
+  /* the paused race screen's line about the room (paintPauseRoomLine) */
+  .pausepanel .pause-room{ margin:.1rem 0 0; font-size:.86rem; line-height:1.4; color:var(--soft); text-align:center; }
   /* ---- THE RACE'S CLOCK (build 246) ----
      Forty-five seconds a question, beside "Question N" with a bar under
      the row running it down - in the theme's own three colours, the
@@ -7784,6 +7788,10 @@
   .vroom-chat-msg-name.is-me{ color:var(--accent); }
   .vroom-chat-msg-time{ font-size:.68rem; color:var(--soft); margin-left:.3rem; }
   .vroom-chat-empty{ font-size:.82rem; color:var(--soft); text-align:center; padding:.5rem 0; }
+  /* (384 vr2) "<name> left the match." - written by the leave, a quiet line across the chat rather than a message */
+  .vroom-chat-sys{ margin:.35rem 0; font-size:.78rem; line-height:1.35; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
+  .vroom-chat-sys-name{ font-weight:700; }
+  @media (min-width:40rem){ .vroom-chat-sys{ font-size:.86rem; } }
   /* ---- REACTIONS ---------------------------------------------------
      Five, named: heart, thumbs up, thumbs down, laughing, question.
      A message becomes a button so the whole line is the target - at
@@ -66171,6 +66179,58 @@ function friendCardFromPresence(pub){
   const e = pub && presenceClasses && presenceClasses[pub];
   return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ninja" } : null;
 }
+/* ---- A FRIEND, AS EVERY FRIENDS SCREEN DRAWS THEM (384, Virtual Room round 2) ----
+   Madison: "If I'm friends with someone they should be there and stuff." A friend in Fire Code alone has no academy board row,
+   so the chat's Friends tab called them "Friend" with the default character, Manage friends left them off the list ("1 friend is
+   not on the board right now"), and the chat's invite sheet said "Student" - until a chat with them had been read. One answer
+   for every screen that lists a friend, from what this device already holds, with no read or write of its own:
+     1. their board row (an academy member - name, character, rank, level);
+     2. their own presence beat, `c` in vrooms/presence-v1 (384: first name and character, and which classes) - `fromBeat`;
+     3. the chat with them, where it has been read - `fromChat`;
+     4. nothing yet (a device on an older build that has not beaten since, or one that never opened the app since) - `unknown`:
+        drawn as "Friend" with the default character, and filled in where it stands when the row or the beat arrives.
+   `rows` is rowsByPublicId(), passed by a caller that already has it. */
+function friendCardOf(pub, rows){
+  if(!pub) return { pub: pub, unknown: true };
+  let r = null;
+  try{ r = (rows || rowsByPublicId())[pub] || null; }catch(e){}
+  if(r) return r;
+  const beat = friendCardFromPresence(pub);
+  if(beat){ beat.fromBeat = true; beat.classes = friendClassesOf(pub) || []; return beat; }
+  try{
+    const code = friendChatCode(pub);
+    const p = ((chatListPeople || {})[code] || []).find(x => x && x.key === pub);
+    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ninja", fromChat: true };
+    const ce = chatEntry(code);
+    if(ce && ce.name) return { pub: pub, firstName: String(ce.name), fromChat: true };
+  }catch(e){}
+  return { pub: pub, unknown: true };
+}
+/* What a friend with no board row is, in a line: the classes their beat names ("Fire Code"), or that nothing says yet */
+function friendClassLine(card){
+  const ks = (card && card.classes) || [];
+  if(ks.length) return ks.map(k => classNameOf(k)).join(" · ");
+  return "Not on the class board yet";
+}
+/* Names and faces drawn before the friend's row or beat had arrived are filled in where they stand: an element drawn from a
+   fallback carries data-friend-name / data-friend-art (the public id) and data-fallback. Called when presence and the board land. */
+function paintFriendFallbacks(){
+  const els = document.querySelectorAll("[data-friend-name][data-fallback], [data-friend-art][data-fallback]");
+  if(!els.length) return;
+  let rows = null;
+  try{ rows = rowsByPublicId(); }catch(e){ rows = {}; }
+  els.forEach(el => {
+    const pub = el.dataset.friendName || el.dataset.friendArt;
+    const c = friendCardOf(pub, rows);
+    if(c.unknown || c.fromChat) return;
+    if(el.dataset.friendName){ if(c.firstName) el.textContent = c.firstName; }
+    else {
+      const old = el.querySelector(".rank-avatar");
+      try{ const nu = avatarSpanFor(c); if(old) old.replaceWith(nu); else el.prepend(nu); }catch(e){}
+    }
+    delete el.dataset.fallback;
+  });
+}
 /* false only when it is KNOWN the friend is not in that class; true when it is known they are; null when nothing says. An unknown
    friend stays invitable, and their own device turns away a room of a class they are not in (joinVirtualRoomLobby). A board row
    says the academy: only an academy member's device writes one. Nova is in every class. */
@@ -66311,6 +66371,8 @@ function attachPresence(){
         presenceActivity = d.a || {};
         presenceClasses = d.c || {};
         try{ paintInviteClassStates(); }catch(e){}
+        /* (384 vr2) a friend known only by their beat (Fire Code alone): the Friends tab and any name drawn as a fallback */
+        try{ friendsListCatchUp(); paintFriendFallbacks(); }catch(e){}
         try{ paintActivityLabels(); }catch(e){}
         try{ repaintOnlineDots(); }catch(e){}
         /* Repaint whatever is showing the dot right now. */
@@ -71415,104 +71477,116 @@ const UNIT_BADGE_THEME = {
   /* The one badge whose colours are deliberately unalike, because the
      unit is about many things holding together. */
   "Multiculturalism and Human Relations":          ["teal", "amber"],
-  "Racial Profiling":                              ["violet"],
+  "Racial Profiling":                              ["#B07FEB"],  /* light violet - was violet */
   "US and Texas Constitution and Rights":          ["red", "royal"],
   "Penal Code":                                    ["brown", "gold"],
-  "Code of Criminal Procedure and Bill of Rights": ["indigo"],
+  "Code of Criminal Procedure and Bill of Rights": ["#DBD1FF"],  /* pale indigo - was indigo */
   "Arrest, Search, and Seizure":                   ["steel"],
   "Victims of Crime":                              ["pink"],
   "Missing and Exploited Children":                ["amber"],
   "Identity Crimes":                               ["magenta"],
-  "Sexual Assault and Family Violence":            ["mauve"],
+  "Sexual Assault and Family Violence":            ["#A0227D"],  /* dark pink - was mauve */
   "Verbal Communication":                          ["sky"],
   "Civil Process and Liability":                   ["olive"],
   /* build 328: the five families no unit had, then three that share a
      colour with an older badge but never its shape - Radio takes the
      Amber Alert's amber, the brain injury unit the brain's pink, and
      Consular Notification Multiculturalism's teal (both about people from
-     elsewhere) */
-  "Consular Notification":                         ["teal"],
-  "Crisis Intervention Training":                  ["purple"],
+     elsewhere).
+     (384 final check, badges round 2) "why are there so many repeating
+     colors ... Make colors darker lighter, do some whites, some blacks" -
+     and the academy held to the same rule as Fire Code: no colour twice in
+     the class, none within CIEDE2000 11 of another, none within 9 as struck
+     on the token, nothing within 14 side by side (check-b384-badgetwins).
+     Those three shared colours went, and so did the near ones (violet /
+     indigo 6.5, purple / violet 6.7, red / terracotta 6.8, pink / mauve):
+     eight units take a lighter or darker enamel - the newer unit of each
+     pair where there was a choice - and the other sixteen keep theirs.
+     A table entry may now be the enamel itself (#RRGGBB). */
+  "Consular Notification":                         ["#003C39"],  /* deep teal - was teal */
+  "Crisis Intervention Training":                  ["#422765"],  /* deep violet - was purple */
   "De-Escalation":                                 ["emerald"],
   "Health and Safety Code":                        ["orange"],
   "Interacting with Deaf or Hard-of-Hearing":      ["crimson"],
-  "Radio Communications, Alerts, and TCIC-TLETS":  ["amber"],
-  "Traumatic Brain Injury":                        ["pink"],
-  "Phonetic Alphabet and Military Time":           ["terracotta"]
+  "Radio Communications, Alerts, and TCIC-TLETS":  ["#FDCFA2"],  /* pale amber - was amber */
+  "Traumatic Brain Injury":                        ["#F6ACC2"],  /* light rose - was pink */
+  "Phonetic Alphabet and Military Time":           ["#641B0D"]  /* deep rust - was terracotta */
 };
-/* FIRE CODE'S CHAPTERS, A COLOUR EACH (build 384). Madison: "IFC badges, there's multiple duplicates badges ... there's
-   multiple of the exact same style/shape in the case." No chapter was in either table, so all 58 fell back: a shape by a
-   hash into the academy's 24 (20 outlines for 58 badges: seven burst plates, six triangles, five each of the drop, the twin
-   discs and the trefoil) and a colour dealt from the families every sixteen chapters - five pairs came out identical
-   (Chapters 1 and 34, 5 and 21, 9 and 12, 26 and 40, 35 and 59) and more alike (an amber and an orange six-point star side
-   by side). Each chapter has its own outline now
-   (IFC_BADGE_SHAPE, no two alike) and a colour that nods at it the way the academy's do: red and crimson for fire, orange for
-   emergencies, heat and hot work, amber and gold for hazmat and an oxidizer's yellow placard, blue for water and the sky
-   (Chapter 67's "dangerous when wet" label is blue, Chapter 20 is aviation), green for egress and crops, brown for wood
-   and stored stock, steel for the building code and tires. 58 chapters and 21 families, so a colour is used two to four
-   times - never by two badges beside each other in the case (six across, diagonals too) or in its scene (eight across),
-   and near colours side by side in a row only twice (Chapters 1 and 2, indigo and royal; 58 and 59, orange and terracotta
-   - flammable gases beside flammable solids). Keyed by the chapter's own title, which no academy unit shares, so the
-   academy's badges are as they were. */
+/* FIRE CODE'S CHAPTERS, A COLOUR EACH (build 384; badges round 2). The first pass dealt 21 families over 58 chapters - each
+   used two to four times, and several families a shade apart (violet / indigo, red / terracotta) - and Madison: "why are
+   there so many repeating colors. Make that right. Make colors darker lighter, do some whites, some blacks? Idk make them
+   great." Now every chapter has an enamel of its own, chosen from a lattice of lightness x hue x two strengths (and an
+   onyx, a graphite, an ivory and a frost) by an annealing script (scratchpad), measured as the badge is struck - each
+   enamel on the same token at the case's size, because the token's metal and clear coat squeeze colours together - and
+   held to: no two within CIEDE2000 11 as written, none within 9 as struck, nothing within 14 side by side in the unit list,
+   the case scene's eight columns or the case on Profile (check-b384-badgetwins reads all of that off the page). Where a
+   chapter had a meaning the colour keeps it, now at a lightness of its own: fire reds (Chapter 5 a fire red, 57 a
+   brighter one, Appendix C a hydrant's dark red, Appendix I a coral, 7 a deep wine, 64 a pale blush), oranges for emergencies and hot work, gold and amber for
+   hazmat (Chapter 63 the oxidizer placard's pale yellow), blues for water and the air (67 the "dangerous when wet" blue),
+   greens for egress and crops, browns for wood, a frost for cryogenic fluids, graphite for tires and onyx for the access
+   roads' asphalt. The chapters whose old colour meant nothing were left free, which is what spreads the 58 round the wheel
+   instead of bunching eight of them in pink. A pale enamel (ivory, frost, the pastels) is struck with a fine dark edge
+   where it meets the silver (BADGE_STRIKE.paleEdge) so it never reads as a blank token; a near-black one glows in its
+   colour lifted half way to white (badgeThemeFor's g). Keyed by the chapter's own title, which no academy unit shares. */
 const IFC_BADGE_THEME = {
-  "Chapter 1: Scope and Administration":                             ["indigo"],
-  "Chapter 2: Definitions":                                          ["royal"],
-  "Chapter 3: General Requirements":                                 ["steel"],
-  "Chapter 4: Emergency Planning and Preparedness":                  ["orange"],
-  "Chapter 5: Fire Service Features":                                ["crimson"],
-  "Chapter 6: Building Services and Systems":                        ["cyan"],
-  "Chapter 7: Fire and Smoke Protection Features":                   ["crimson"],
-  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": ["mauve"],
-  "Chapter 9: Fire Protection and Life Safety Systems":              ["sky"],
-  "Chapter 10: Means of Egress":                                     ["emerald"],
-  "Chapter 11: Construction Requirements for Existing Buildings":    ["brown"],
-  "Chapter 12: Energy Systems":                                      ["gold"],
-  "Chapter 20: Aviation Facilities":                                 ["royal"],
-  "Chapter 21: Dry Cleaning":                                        ["teal"],
-  "Chapter 22: Combustible Dust-Producing Operations":               ["olive"],
-  "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages": ["red"],
-  "Chapter 24: Flammable Finishes":                                  ["magenta"],
-  "Chapter 25: Fruit and Crop Ripening":                             ["grass"],
-  "Chapter 26: Fumigation and Insecticidal Fogging":                 ["purple"],
-  "Chapter 27: Semiconductor Fabrication Facilities":                ["cyan"],
-  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": ["brown"],
-  "Chapter 29: Manufacture of Organic Coatings":                     ["pink"],
-  "Chapter 30: Industrial Ovens":                                    ["terracotta"],
-  "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": ["pink"],
-  "Chapter 32: High-Piled Combustible Storage":                      ["brown"],
-  "Chapter 33: Fire Safety During Construction and Demolition":      ["amber"],
-  "Chapter 34: Tire Rebuilding and Tire Storage":                    ["steel"],
-  "Chapter 35: Welding and Other Hot Work":                          ["orange"],
-  "Chapter 36: Marinas":                                             ["royal"],
-  "Chapter 37: Combustible Fibers":                                  ["grass"],
-  "Chapter 38: Higher Education Laboratories":                       ["indigo"],
-  "Chapter 39: Processing and Extraction Facilities":                ["emerald"],
-  "Chapter 40: Storage of Distilled Spirits and Wines":              ["mauve"],
-  "Chapter 50: Hazardous Materials\u2014General Provisions":         ["gold"],
-  "Chapter 51: Aerosols":                                            ["pink"],
-  "Chapter 53: Compressed Gases":                                    ["teal"],
-  "Chapter 54: Corrosive Materials":                                 ["violet"],
-  "Chapter 55: Cryogenic Fluids":                                    ["cyan"],
-  "Chapter 56: Explosives and Fireworks":                            ["magenta"],
-  "Chapter 57: Flammable and Combustible Liquids":                   ["red"],
-  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":      ["orange"],
-  "Chapter 59: Flammable Solids":                                    ["terracotta"],
-  "Chapter 60: Highly Toxic and Toxic Materials":                    ["purple"],
-  "Chapter 61: Liquefied Petroleum Gases":                           ["orange"],
-  "Chapter 62: Organic Peroxides":                                   ["olive"],
-  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": ["amber"],
-  "Chapter 64: Pyrophoric Materials":                                ["crimson"],
-  "Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics":              ["mauve"],
-  "Chapter 66: Unstable (Reactive) Materials":                       ["olive"],
-  "Chapter 67: Water-Reactive Solids and Liquids":                   ["sky"],
-  "Chapter 80: Referenced Standards":                                ["indigo"],
-  "Appendix B: Fire-Flow Requirements for Buildings":                ["sky"],
-  "Appendix C: Fire Hydrant Locations and Distribution":             ["gold"],
-  "Appendix D: Fire Apparatus Access Roads":                         ["terracotta"],
-  "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": ["amber"],
-  "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": ["red"],
-  "Exhibit B: Amendments to the International Building Code":        ["steel"],
-  "Chapter and Section Finder":                                      ["violet"]
+  "Chapter 1: Scope and Administration":                              ["#007A7C"],  /* aqua */
+  "Chapter 2: Definitions":                                           ["#83399B"],  /* dark purple */
+  "Chapter 3: General Requirements":                                  ["#00375D"],  /* deep azure */
+  "Chapter 4: Emergency Planning and Preparedness":                   ["#E59977"],  /* light orange */
+  "Chapter 5: Fire Service Features":                                 ["#DD524F"],  /* red */
+  "Chapter 6: Building Services and Systems":                         ["#DBB3E5"],  /* light purple */
+  "Chapter 7: Fire and Smoke Protection Features":                    ["#6A0B2C"],  /* deep crimson */
+  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": ["#83E6F2"],  /* pale aqua */
+  "Chapter 9: Fire Protection and Life Safety Systems":               ["#2E9BD8"],  /* azure */
+  "Chapter 10: Means of Egress":                                      ["#00954C"],  /* emerald */
+  "Chapter 11: Construction Requirements for Existing Buildings":     ["#5F2100"],  /* deep rust */
+  "Chapter 12: Energy Systems":                                       ["#7E6B35"],  /* yellow */
+  "Chapter 20: Aviation Facilities":                                  ["#0073AB"],  /* azure */
+  "Chapter 21: Dry Cleaning":                                         ["#006917"],  /* dark green */
+  "Chapter 22: Combustible Dust-Producing Operations":                ["#B9CB3B"],  /* pale olive */
+  "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages":  ["#003C3D"],  /* deep aqua */
+  "Chapter 24: Flammable Finishes":                                   ["#6A55CF"],  /* violet */
+  "Chapter 25: Fruit and Crop Ripening":                              ["#ADCA96"],  /* pale lime */
+  "Chapter 26: Fumigation and Insecticidal Fogging":                  ["#C8315E"],  /* crimson */
+  "Chapter 27: Semiconductor Fabrication Facilities":                 ["#FE7ED3"],  /* light pink */
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": ["#473100"],  /* deep ochre */
+  "Chapter 29: Manufacture of Organic Coatings":                      ["#00A5BD"],  /* cyan */
+  "Chapter 30: Industrial Ovens":                                     ["#B54D1B"],  /* orange */
+  "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": ["#9A7F00"],  /* yellow */
+  "Chapter 32: High-Piled Combustible Storage":                       ["#313800"],  /* deep olive */
+  "Chapter 33: Fire Safety During Construction and Demolition":       ["#8A5A34"],  /* amber */
+  "Chapter 34: Tire Rebuilding and Tire Storage":                     ["#444F58"],  /* graphite */
+  "Chapter 35: Welding and Other Hot Work":                           ["#FFCDAC"],  /* pale amber */
+  "Chapter 36: Marinas":                                              ["#1E54B9"],  /* dark indigo */
+  "Chapter 37: Combustible Fibers":                                   ["#E296A3"],  /* light crimson */
+  "Chapter 38: Higher Education Laboratories":                        ["#9F70AC"],  /* purple */
+  "Chapter 39: Processing and Extraction Facilities":                 ["#3FC270"],  /* light emerald */
+  "Chapter 40: Storage of Distilled Spirits and Wines":               ["#A8176C"],  /* dark pink */
+  "Chapter 50: Hazardous Materials\u2014General Provisions":          ["#C9A831"],  /* light yellow */
+  "Chapter 51: Aerosols":                                             ["#4F215D"],  /* deep purple */
+  "Chapter 53: Compressed Gases":                                     ["#65A63B"],  /* lime */
+  "Chapter 54: Corrosive Materials":                                  ["#A2A7DF"],  /* light indigo */
+  "Chapter 55: Cryogenic Fluids":                                     ["#D5ECF5"],  /* frost */
+  "Chapter 56: Explosives and Fireworks":                             ["#535F00"],  /* dark olive */
+  "Chapter 57: Flammable and Combustible Liquids":                    ["#F96186"],  /* crimson */
+  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":       ["#E0703A"],  /* orange */
+  "Chapter 59: Flammable Solids":                                     ["#C695FF"],  /* light violet */
+  "Chapter 60: Highly Toxic and Toxic Materials":                     ["#005235"],  /* dark jade */
+  "Chapter 61: Liquefied Petroleum Gases":                            ["#B7710E"],  /* amber */
+  "Chapter 62: Organic Peroxides":                                    ["#00A8A0"],  /* teal */
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": ["#F2D584"],  /* pale yellow */
+  "Chapter 64: Pyrophoric Materials":                                 ["#FFCACB"],  /* pale crimson */
+  "Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics":               ["#83D0B6"],  /* pale jade */
+  "Chapter 66: Unstable (Reactive) Materials":                        ["#CE52A7"],  /* orchid */
+  "Chapter 67: Water-Reactive Solids and Liquids":                    ["#5A7BE6"],  /* indigo */
+  "Chapter 80: Referenced Standards":                                 ["#798900"],  /* olive */
+  "Appendix B: Fire-Flow Requirements for Buildings":                 ["#91C6F7"],  /* light azure */
+  "Appendix C: Fire Hydrant Locations and Distribution":              ["#AB242B"],  /* dark red */
+  "Appendix D: Fire Apparatus Access Roads":                          ["#232425"],  /* onyx */
+  "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": ["#E89A3D"],  /* light amber */
+  "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": ["#FF8980"],  /* light red */
+  "Exhibit B: Amendments to the International Building Code":         ["#006278"],  /* dark cyan */
+  "Chapter and Section Finder":                                       ["#D2D4FF"]  /* pale indigo */
 };
 /* A unit the table does not know still has to draw something - the
    leaderboard lost three classmates to a builder returning null for an
@@ -71534,7 +71608,9 @@ function badgeThemeFor(unitName){
     pair = badgeThemeFallback[name] ||
       [Object.keys(BADGE_FAMILY)[(parseInt(hashOf(name), 36) >>> 0) % 21]];
   }
-  const p = BADGE_FAMILY[pair[0]];
+  /* (badges round 2) a table may name a family or give the enamel itself ("#RRGGBB") */
+  const en = n => String(n).charAt(0) === "#" ? n : BADGE_FAMILY[n];
+  const p = en(pair[0]);
   /* One colour per badge now. There used to be a secondary and an accent
      for the inner fields, back when a badge was concentric bands of
      colour; the plates are cut from one plate by silver channels, so the
@@ -71542,7 +71618,10 @@ function badgeThemeFor(unitName){
      UNIT_BADGE_THEME that name two families still resolve - the second
      name is simply unused, and kept so the table still reads as the
      record of which unit nods at which colour. */
-  return { p: p, s: pair[1] ? BADGE_FAMILY[pair[1]] : p };
+  /* g, its LIGHT (badges round 2): the glow round a found badge, its cutscene's rays and kicker, its card's tint - the
+     enamel itself, except a near-black one (onyx, a deep navy), whose own colour gives off no light at all: that one
+     glows in its colour lifted half way to white. Every enamel the academy had is lighter than that, so g is its p. */
+  return { p: p, s: pair[1] ? en(pair[1]) : p, g: badgeEnamelLuma(p) < .07 ? badgeShade(p, .5) : p };
 }
 
 /* Shading, and it takes "rgb(r,g,b)" as well as "#RRGGBB" - its own
@@ -71658,7 +71737,7 @@ const UNIT_BADGE_SHAPE = {
   "Professionalism and Ethics":                    "gate",
   "Professional Policing":                         "diamond",
   "Fitness, Wellness, and Stress Management":      "peaks",
-  "TCOLE Rules":                                   "hex",
+  "TCOLE Rules":                                   "slope",
   "Multiculturalism and Human Relations":          "trefoil",
   "Racial Profiling":                              "burstplate",
   "US and Texas Constitution and Rights":          "cross",
@@ -71670,33 +71749,40 @@ const UNIT_BADGE_SHAPE = {
   "Identity Crimes":                               "bolt",
   "Sexual Assault and Family Violence":            "fan",
   "Verbal Communication":                          "disc",
-  "Civil Process and Liability":                   "wedge",
+  "Civil Process and Liability":                   "slipsq",
   /* build 328 */
   "Consular Notification":                         "hexstar",
-  "Crisis Intervention Training":                  "shield",
-  "De-Escalation":                                 "octagon",
+  "Crisis Intervention Training":                  "bent",
+  "De-Escalation":                                 "twinblock",
   "Health and Safety Code":                        "drop",
   "Interacting with Deaf or Hard-of-Hearing":      "lens",
   "Radio Communications, Alerts, and TCIC-TLETS":  "chevron",
   "Traumatic Brain Injury":                        "bilobe",
   "Phonetic Alphabet and Military Time":           "hourglass"
+  /* (384 final check, badges round 2) "if the academy has look a like badges as well then get on that too": the gate,
+     the hex and the octagon read as one rounded polygon at a unit card's 28px, the disc and the shield as one shape upside
+     down (and the keystone beside the shield), the fan and the wedge as one triangle. The fewest that clear all of it:
+     TCOLE Rules leaves the hex for the slope, De-Escalation the octagon for the twin block, Crisis Intervention Training
+     the shield for the bent plate and Civil Process the wedge for the slipped block - four of Fire Code's plain
+     outlines (sharing across the classes is fine), each holding its unit's back title no smaller than before. */
 };
-/* Fire Code's 58 (build 384): the academy's 24 outlines and 34 more in the same hand (BADGE_SHAPE, after
-   BADGE_SHAPE_KEYS), one each - no outline twice. Which chapter has which was chosen for its back: every back carries its
-   title and FIRE CODE, and the longest titles have the roomiest outlines (Appendix H the castle, Chapters 28 and 31 the
-   octagon and the coin), the shortest the narrow ones (the dart, the bolt, the C-ring), so no back's words come out smaller
-   than the academy's smallest (the C-ring's, 0.0368 of the badge; Fire Code's smallest is 0.0363). Then no two outlines
-   that read alike (the gear and the seal, the gem and the kite, the three-, four- and five-lobed ones) sit side by side
-   in the case or its scene. The Maltese cross, the fire service's own, is Chapter 5's - Fire Service Features. */
+/* Fire Code's 58 (build 384): an outline each, no outline twice. Which chapter has which was chosen for its back: every
+   back carries its title and FIRE CODE, and the longest titles have the roomiest outlines (Appendix H the castle, Chapter
+   31 the coin), the shortest the narrow ones (the dart, the bolt, the C-ring), so no back's words come out smaller than
+   the academy's smallest (the C-ring's, 0.0368 of the badge; Fire Code's smallest is 0.0363, Chapters 2 and 10). The
+   Maltese cross, the fire service's own, is Chapter 5's - Fire Service Features. (Badges round 2) The ten that pictured
+   things and the gear and the hex (look-alikes at 28px) are twelve plain outlines now - see BADGE_SHAPE - each set by
+   badgeBackPlan on the chapter whose title it holds largest (the smallest of the twelve 0.0513, Chapter 8 on the
+   scooped square). */
 const IFC_BADGE_SHAPE = {
   "Chapter 1: Scope and Administration":                             "crown",
   "Chapter 2: Definitions":                                          "dart",
-  "Chapter 3: General Requirements":                                 "flask",
+  "Chapter 3: General Requirements":                                 "bowhex",
   "Chapter 4: Emergency Planning and Preparedness":                  "shield",
   "Chapter 5: Fire Service Features":                                "maltese",
-  "Chapter 6: Building Services and Systems":                        "gear",
+  "Chapter 6: Building Services and Systems":                        "slipdisc",
   "Chapter 7: Fire and Smoke Protection Features":                   "gem",
-  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": "hex",
+  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": "scoopsq",
   "Chapter 9: Fire Protection and Life Safety Systems":              "cinquefoil",
   "Chapter 10: Means of Egress":                                     "bolt",
   "Chapter 11: Construction Requirements for Existing Buildings":    "wave",
@@ -71707,32 +71793,32 @@ const IFC_BADGE_SHAPE = {
   "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages": "disc",
   "Chapter 24: Flammable Finishes":                                  "kite",
   "Chapter 25: Fruit and Crop Ripening":                             "cross",
-  "Chapter 26: Fumigation and Insecticidal Fogging":                 "shell",
+  "Chapter 26: Fumigation and Insecticidal Fogging":                 "twinblock",
   "Chapter 27: Semiconductor Fabrication Facilities":                "ticket",
-  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": "puzzle",
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": "slope",
   "Chapter 29: Manufacture of Organic Coatings":                     "bucket",
   "Chapter 30: Industrial Ovens":                                    "slant",
   "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": "coin",
   "Chapter 32: High-Piled Combustible Storage":                      "burstplate",
   "Chapter 33: Fire Safety During Construction and Demolition":      "saddle",
   "Chapter 34: Tire Rebuilding and Tire Storage":                    "halfdisc",
-  "Chapter 35: Welding and Other Hot Work":                          "mushroom",
+  "Chapter 35: Welding and Other Hot Work":                          "bitehex",
   "Chapter 36: Marinas":                                             "tau",
   "Chapter 37: Combustible Fibers":                                  "medal",
   "Chapter 38: Higher Education Laboratories":                       "chevron",
   "Chapter 39: Processing and Extraction Facilities":                "keystone",
   "Chapter 40: Storage of Distilled Spirits and Wines":              "quarterdome",
   "Chapter 50: Hazardous Materials\u2014General Provisions":         "roundel",
-  "Chapter 51: Aerosols":                                            "goblet",
+  "Chapter 51: Aerosols":                                            "slipsq",
   "Chapter 53: Compressed Gases":                                    "star4",
   "Chapter 54: Corrosive Materials":                                 "ribbon",
   "Chapter 55: Cryogenic Fluids":                                    "peaks",
   "Chapter 56: Explosives and Fireworks":                            "gonfalon",
   "Chapter 57: Flammable and Combustible Liquids":                   "pennon",
-  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":      "heart",
+  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":      "bent",
   "Chapter 59: Flammable Solids":                                    "cring",
   "Chapter 60: Highly Toxic and Toxic Materials":                    "spire",
-  "Chapter 61: Liquefied Petroleum Gases":                           "acorn",
+  "Chapter 61: Liquefied Petroleum Gases":                           "notchsq",
   "Chapter 62: Organic Peroxides":                                   "hexstar",
   "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": "tag",
   "Chapter 64: Pyrophoric Materials":                                "diamond",
@@ -71740,13 +71826,13 @@ const IFC_BADGE_SHAPE = {
   "Chapter 66: Unstable (Reactive) Materials":                       "card",
   "Chapter 67: Water-Reactive Solids and Liquids":                   "arches",
   "Chapter 80: Referenced Standards":                                "drop",
-  "Appendix B: Fire-Flow Requirements for Buildings":                "vase",
-  "Appendix C: Fire Hydrant Locations and Distribution":             "anvil",
+  "Appendix B: Fire-Flow Requirements for Buildings":                "bitetri",
+  "Appendix C: Fire Hydrant Locations and Distribution":             "cuttri",
   "Appendix D: Fire Apparatus Access Roads":                         "trefoil",
   "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": "castle",
   "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": "quatre",
   "Exhibit B: Amendments to the International Building Code":        "lens",
-  "Chapter and Section Finder":                                      "bell"
+  "Chapter and Section Finder":                                      "bardia"
 };
 __bm("L59652");
 const BADGE_SHAPE_KEYS = Object.keys(BADGE_SHAPE);
@@ -71763,8 +71849,6 @@ const BADGE_SHAPE_KEYS = Object.keys(BADGE_SHAPE);
 Object.assign(BADGE_SHAPE, {
   coin:       { c: [50, 50], cuts: ["M50 -10V110"],
     d: "M50 7 A43 43 0 1 1 50 93 A43 43 0 1 1 50 7 Z" },
-  gear:       { c: [50, 50], cuts: [],
-    d: "M42.4 12.2L42.9 8.7Q43.3 5.5 46.5 5.5L53.5 5.5Q56.7 5.5 57.1 8.7L57.6 12.2Q58 15.4 60.9 16.6L65.9 18.7Q68.8 19.9 71.4 18L74.2 15.8Q76.8 13.8 79 16.1L83.9 21Q86.2 23.2 84.2 25.8L82 28.6Q80.1 31.2 81.3 34.1L83.4 39.1Q84.6 42 87.8 42.4L91.3 42.9Q94.5 43.3 94.5 46.5L94.5 53.5Q94.5 56.7 91.3 57.1L87.8 57.6Q84.6 58 83.4 60.9L81.3 65.9Q80.1 68.8 82 71.4L84.2 74.2Q86.2 76.8 83.9 79L79 83.9Q76.8 86.2 74.2 84.2L71.4 82Q68.8 80.1 65.9 81.3L60.9 83.4Q58 84.6 57.6 87.8L57.1 91.3Q56.7 94.5 53.5 94.5L46.5 94.5Q43.3 94.5 42.9 91.3L42.4 87.8Q42 84.6 39.1 83.4L34.1 81.3Q31.2 80.1 28.6 82L25.8 84.2Q23.2 86.2 21 83.9L16.1 79Q13.8 76.8 15.8 74.2L18 71.4Q19.9 68.8 18.7 65.9L16.6 60.9Q15.4 58 12.2 57.6L8.7 57.1Q5.5 56.7 5.5 53.5L5.5 46.5Q5.5 43.3 8.7 42.9L12.2 42.4Q15.4 42 16.6 39.1L18.7 34.1Q19.9 31.2 18 28.6L15.8 25.8Q13.8 23.2 16.1 21L21 16.1Q23.2 13.8 25.8 15.8L28.6 18Q31.2 19.9 34.1 18.7L39.1 16.6Q42 15.4 42.4 12.2Z" },
   cinquefoil: { c: [50, 49.1], cuts: ["M50 45A7 7 0 1 1 49.9 45"],
     d: "M30.4 25A20 20 0 1 1 69.6 25A20 20 0 1 1 81.7 62.3A20 20 0 1 1 50 85.3A20 20 0 1 1 18.3 62.3A20 20 0 1 1 30.4 25Z" },
   medal:      { c: [50, 49.2], cuts: ["M-10 66H110"],
@@ -71815,36 +71899,56 @@ Object.assign(BADGE_SHAPE, {
     d: "M53.8 7.3L77.5 28Q82 32 79.3 37.4L51.8 92.4Q50 96 48.2 92.4L20.7 37.4Q18 32 22.5 28L46.2 7.3Q50 4 53.8 7.3Z" },
   quarterdome: { c: [50, 50], cuts: ["M-10 58H110"],
     d: "M14 10L48 10A42 42 0 0 1 90 52L90 85Q90 90 85 90L15 90Q10 90 10 85L10 15Q10 10 14 10Z" },
-  /* (384 final check) TEN MORE, in place of Fire Code outlines that were another one turned, flipped or stretched - "These
-     badges are the exact same just in a different direction? ... Each badge will need to be unique." Out of Fire Code: the
-     crystal and the nameplate (the hex stood on end and laid on its side), the tile (the diamond turned), the plaque (the
-     card on its side), the oval (the coin stretched), the notchplate (the ribbon turned), and - read at a unit card's 28px,
-     where rounded corners and small scallops vanish - the octagon and the seal (the coin) and the gate (the hex); the
-     wedge too (the fan, point down). The octagon, gate and wedge are still the academy's own. In their place, ten whole
-     silhouettes: a bell, a mushroom, a shell, a puzzle piece, an anvil, a goblet, an acorn, a vase, a heart and a flask -
-     each chosen for a chapter whose back holds its title largest, and never one that pictures its chapter (no acorn on the
-     lumber yards, no anvil on welding, no flask or vase on the gas and chemical chapters, no mushroom on fumigation).
-     check-b384-badgetwins compares every pair's edge at every turn and both flips. */
-  bell:      { c: [50.0, 55.9], cuts: ["M-10 66H110"],
-    d: "M20.3 70.7L19.4 71.9L9.4 78.5L8.5 79.4L8.0 80.9L8.0 84.6L8.5 86.0L9.5 87.0L11.2 87.5L88.9 87.5L90.9 86.7L91.6 85.9L92.0 84.9L92.0 80.8L91.2 79.1L80.6 71.9L79.9 71.1L75.2 57.9L74.9 35.1L74.1 30.8L72.3 26.2L70.8 23.6L69.0 21.2L64.9 17.4L60.2 14.6L54.9 13.0L51.2 12.5L47.0 12.7L43.4 13.4L39.8 14.6L36.6 16.4L33.3 18.9L30.7 21.6L28.5 24.7L26.3 29.6L25.1 35.0L25.0 57.5Z" },
-  mushroom:  { c: [50.0, 44.6], cuts: ["M-10 54H110"],
-    d: "M5.1 45.2L5.1 50.6L5.9 52.0L7.2 52.8L31.5 53.0L32.7 53.3L33.5 54.1L34.0 55.6L34.0 88.1L34.3 89.2L34.9 90.1L35.9 90.7L37.0 91.0L62.8 91.0L64.6 90.4L65.6 89.3L65.9 88.0L66.0 55.6L66.5 54.0L67.3 53.3L68.4 53.0L92.2 52.9L93.2 52.6L94.1 51.9L94.7 51.0L94.9 50.0L94.9 45.9L94.3 42.2L93.3 38.3L92.0 34.6L88.5 28.4L86.1 25.1L83.3 22.1L80.1 19.3L76.7 16.8L73.1 14.7L69.2 12.8L65.1 11.3L60.9 10.2L56.6 9.4L52.2 9.0L47.8 9.0L43.4 9.4L35.8 11.0L31.7 12.4L27.7 14.2L24.0 16.3L20.5 18.7L17.4 21.4L14.5 24.3L12.0 27.6L9.8 30.9L6.9 37.4L5.8 41.1Z" },
-  shell:     { c: [50.0, 46.1], cuts: ["M50 -10V110"],
-    d: "M10.1 46.2L10.5 48.1L11.9 49.4L13.1 49.7L16.9 49.8L18.3 50.5L37.3 74.1L37.8 75.3L37.5 76.6L36.8 77.5L34.7 78.9L34.2 79.9L34.0 80.9L34.2 87.6L35.4 89.2L37.2 89.7L62.9 89.7L64.8 89.0L65.6 88.1L66.0 87.0L66.0 80.4L65.1 78.8L63.2 77.5L62.5 76.8L62.2 75.4L62.6 74.2L81.6 50.5L83.1 49.8L86.8 49.7L88.0 49.4L89.4 48.2L89.9 46.5L89.0 40.2L86.6 33.6L83.3 27.5L79.6 22.8L76.1 19.4L71.6 16.1L67.3 15.1L63.7 12.1L59.7 10.9L56.3 10.3L54.8 10.6L52.3 12.3L50.3 12.7L47.7 12.3L45.4 10.7L44.3 10.3L40.2 10.9L36.0 12.3L32.9 15.0L31.3 15.6L28.6 16.0L25.4 18.2L22.4 20.8L19.7 23.6L17.3 26.7L14.7 30.8L13.0 34.5L11.0 40.1Z" },
-  puzzle:    { c: [44.9, 55.1], cuts: ["M50 -10V110"],
-    d: "M8.5 48.4L9.0 50.1L10.7 52.1L11.7 53.6L12.5 56.8L12.4 59.0L11.8 60.9L10.8 62.8L9.0 64.8L8.5 66.4L8.6 88.6L9.5 90.5L11.3 91.4L33.9 91.4L35.2 91.0L37.1 89.3L38.7 88.3L40.6 87.7L42.5 87.5L44.5 87.7L46.2 88.3L47.9 89.2L49.8 90.9L51.2 91.4L73.3 91.5L74.5 91.2L75.9 90.2L76.5 88.6L76.5 69.8L76.8 68.6L77.5 67.8L78.5 67.3L83.3 67.3L85.3 66.7L87.1 65.8L88.7 64.4L90.0 62.8L91.0 60.8L91.5 58.7L91.5 56.3L90.9 53.9L89.7 51.7L88.0 49.9L86.1 48.5L83.8 47.7L81.8 47.5L78.4 47.6L77.5 47.1L76.8 46.2L76.5 45.1L76.5 26.5L76.3 25.4L75.7 24.5L74.7 23.8L73.5 23.5L54.9 23.5L53.7 23.2L52.9 22.5L52.4 21.5L52.4 16.7L51.8 14.7L50.8 12.9L49.5 11.2L47.7 9.9L45.9 9.0L43.8 8.5L41.3 8.5L38.9 9.1L36.8 10.3L34.9 12.0L33.6 13.9L32.8 16.2L32.5 18.2L32.7 21.6L32.2 22.5L31.3 23.2L30.2 23.5L11.5 23.5L10.3 23.8L9.3 24.5L8.8 25.5L8.5 26.5Z" },
-  anvil:     { c: [51.3, 48.3], cuts: ["M-10 34H110"],
-    d: "M8.6 20.3L7.6 21.1L6.9 22.2L6.8 23.5L7.2 24.7L20.2 42.7L21.1 43.5L22.2 43.9L27.8 44.0L29.3 44.6L33.9 53.5L34.2 54.4L33.9 55.9L32.8 56.9L16.9 63.3L15.4 64.6L15.0 66.0L13.5 84.7L13.7 86.0L14.6 87.2L15.6 87.8L16.7 88.0L81.7 88.0L83.0 87.7L84.1 86.9L84.7 85.9L84.9 84.7L83.4 66.0L82.9 64.6L81.5 63.3L65.6 56.9L64.4 55.8L64.2 54.3L68.5 45.3L69.8 44.2L70.8 44.0L90.2 44.0L91.6 43.6L92.6 42.6L93.2 40.8L93.2 15.2L92.9 13.9L92.1 12.8L91.1 12.2L90.0 12.0L25.6 12.0L24.5 12.3Z" },
-  goblet:    { c: [50.0, 42.8], cuts: ["M-10 36H110"],
-    d: "M8.0 13.8L9.0 21.0L10.8 28.0L13.4 34.7L16.9 40.8L21.0 46.2L25.0 50.2L30.2 54.1L36.8 57.5L37.5 58.3L37.9 59.2L38.0 71.4L37.7 72.5L37.1 73.3L36.2 73.8L31.3 74.1L30.2 74.5L29.4 75.3L22.1 89.7L22.0 91.3L22.7 92.9L23.8 93.7L25.2 94.0L74.8 94.0L75.9 93.8L76.9 93.2L77.9 91.7L77.8 89.8L70.6 75.3L69.7 74.5L68.6 74.1L63.7 73.8L62.7 73.2L62.2 72.4L62.0 71.4L62.0 59.3L62.3 58.4L63.0 57.6L69.8 54.1L75.8 49.4L81.1 43.6L84.9 37.8L88.4 30.2L90.7 22.1L92.0 13.2L91.9 8.8L91.2 7.1L90.1 6.3L88.8 6.0L10.9 6.0L9.2 6.6L8.2 8.1Z" },
-  acorn:     { c: [50.0, 49.8], cuts: ["M-10 46H110"],
-    d: "M6.1 38.9L6.0 44.2L6.3 45.2L7.0 46.1L8.8 47.0L14.1 47.1L15.1 47.6L15.8 48.5L17.0 58.2L18.9 65.7L22.2 73.5L24.3 77.1L26.6 80.4L31.1 85.3L33.9 87.6L36.9 89.5L42.5 91.9L48.4 93.0L54.2 92.7L57.5 91.9L60.6 90.7L66.0 87.6L70.9 83.3L74.0 79.6L76.3 76.2L78.3 72.5L80.3 67.7L82.8 59.3L83.5 54.9L84.0 49.3L84.3 48.3L85.0 47.5L86.0 47.1L91.0 47.0L92.0 46.8L93.4 45.7L94.0 44.0L94.0 39.5L92.6 34.6L91.4 32.2L89.8 30.0L86.0 26.1L80.3 22.2L72.6 18.7L64.8 16.6L55.4 15.0L54.6 14.4L54.1 13.5L54.0 9.9L53.6 8.7L52.5 7.5L51.0 7.0L48.3 7.2L46.7 8.2L46.0 9.7L45.9 13.5L45.4 14.4L44.6 15.0L35.2 16.5L28.3 18.4L22.1 20.9L16.0 24.5L12.2 27.7L9.3 31.1L7.3 34.8Z" },
-  vase:      { c: [50.0, 52.6], cuts: ["M-10 46H110"],
-    d: "M27.2 81.9L28.0 83.5L28.1 91.6L29.0 93.1L30.5 93.9L68.9 94.0L70.4 93.6L71.6 92.4L72.0 91.0L72.1 83.0L72.6 82.1L75.0 79.5L77.4 76.4L80.5 70.7L82.4 64.4L82.8 61.2L83.0 57.2L82.6 53.2L81.8 49.2L80.2 44.7L78.3 41.0L76.0 37.7L73.4 34.7L69.7 31.5L65.9 29.0L65.1 27.7L65.0 18.6L65.2 17.5L65.9 16.7L66.7 16.2L69.3 16.0L70.4 15.6L71.4 14.7L71.9 13.6L71.9 8.5L71.4 7.3L70.4 6.4L68.8 6.0L31.1 6.0L29.5 6.5L28.4 7.6L28.0 8.9L28.0 12.8L28.5 14.5L29.2 15.3L30.2 15.8L33.6 16.3L34.4 17.0L34.9 17.8L34.9 27.7L34.1 29.0L30.3 31.5L26.6 34.7L24.0 37.7L21.7 41.0L19.8 44.7L18.2 49.2L17.4 53.1L17.0 57.2L17.2 61.2L17.6 64.4L19.5 70.7L22.6 76.4L25.0 79.5Z" },
-  heart:     { c: [50.0, 42.6], cuts: ["M50 -10V110"],
-    d: "M19.0 52.6L22.4 55.0L47.7 86.0L49.4 87.0L51.3 86.8L52.5 85.9L77.7 54.9L81.1 52.6L83.2 50.9L85.1 48.9L86.9 46.3L88.9 41.8L90.0 36.6L89.8 31.7L88.3 26.5L85.7 21.8L81.9 17.9L79.4 16.1L77.0 14.9L71.8 13.3L66.4 13.0L63.7 13.4L60.7 14.2L56.3 16.3L54.0 18.0L51.5 20.3L50.1 20.8L48.6 20.4L45.5 17.6L42.4 15.6L39.9 14.4L36.9 13.5L33.6 13.0L30.4 13.0L26.7 13.6L23.6 14.6L20.7 16.1L18.1 17.9L16.1 19.8L14.0 22.3L12.4 25.0L11.1 28.0L10.4 30.7L10.0 33.9L10.1 37.1L10.7 40.2L11.5 42.9L12.9 45.8L14.7 48.5L16.8 50.8Z" },
-  flask:     { c: [50.0, 61.5], cuts: ["M-10 66H110"],
-    d: "M38.0 38.2L37.6 39.6L8.4 84.4L8.0 85.8L8.0 90.0L8.3 91.1L8.9 92.0L9.9 92.7L11.2 93.0L88.8 93.0L90.0 92.8L91.0 92.1L91.7 91.1L92.0 90.1L92.0 85.8L91.6 84.4L62.1 39.1L62.0 14.1L62.3 13.0L63.4 11.4L63.7 10.2L63.3 8.8L62.5 7.7L60.6 7.0L39.5 7.0L38.2 7.3L37.1 8.2L36.5 9.1L36.3 10.3L36.6 11.5L37.7 13.1L38.0 14.1Z" }
+  /* (384 final check, badges round 2) TWELVE ABSTRACT OUTLINES. Madison, of the last ten: "I don't like the acorn badge..
+     please don't make badges that look like real things? I thought we've been over that." All ten were things - a bell,
+     a flask, a shell, a puzzle piece, a mushroom, a goblet, a heart, an acorn, a vase, an anvil. These are plain geometry in
+     the set's own hand (shapely parts, every corner rounded, one or two channels): no object, no symbol, no letter, nothing
+     a chapter is about. Two more went with them, as look-alikes at a unit card's 28px: the gear (Chapter 6 - beside the
+     burst plate it is one toothed disc) and the hex (Chapter 8 - beside the coin, one rounded polygon). Each was scored
+     against every other Fire Code outline turned, flipped and (advisory) stretched, at 1px and 2px and blurred to 28px
+     (check-b384-badgetwins), and looked at as a dark slot at 28px. Turned down on the way: a pentagon (the spire
+     stretched), a heptagon, a notched pentagon and a concave-cornered octagon (the coin at 28px), a square bowed in on all
+     four sides (the four-point star turned), a hexagon bowed in (the hex), a folder-like stepped block, a square notched
+     on every side (an X), a stepped diamond (the diamond at 28px), a spool and a cushion (the ribbon stretched), a leaf
+     square and a stadium (the lens stretched), two overlapping squares (the slipped block stretched), a square bowed in on two sides and out on two (the diamond at
+     2px), a hexagon crossed by a bar (the bar diamond's cousin). The academy's
+     TCOLE Rules, De-Escalation, Crisis Intervention Training and Civil Process take four of these (UNIT_BADGE_SHAPE). */
+  /* a tall diamond crossed by a bar that runs out past its sides */
+  bardia:    { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M27.2 36.7L26.3 37.6L25.1 38.0L9.3 38.0L8.0 38.3L6.9 39.1L6.3 40.2L6.0 41.4L6.0 58.6L6.2 59.7L6.7 60.6L7.3 61.2L8.1 61.7L9.0 62.0L24.9 62.0L25.8 62.2L26.6 62.6L27.2 63.3L47.2 91.9L47.9 92.7L48.9 93.2L49.9 93.4L51.0 93.2L51.9 92.8L52.7 92.1L72.8 63.3L73.4 62.6L74.2 62.2L75.1 62.0L91.0 62.0L91.9 61.7L92.7 61.2L93.4 60.5L93.8 59.7L94.0 58.5L94.0 41.4L93.8 40.3L93.2 39.3L92.1 38.4L90.8 38.0L75.1 38.0L74.2 37.8L73.4 37.4L72.8 36.7L52.8 8.1L52.1 7.3L51.1 6.8L50.1 6.6L49.0 6.8L48.1 7.2L47.3 7.9Z" },
+  /* a wide hexagon, its top and bottom bowed in */
+  bowhex:    { c: [50.0, 50.0], cuts: ["M50 -10V110"],
+    d: "M7.3 47.9L6.9 48.9L6.7 50.0L6.9 51.1L7.3 52.1L23.9 78.7L25.3 79.9L27.1 80.4L28.7 80.1L33.8 77.4L38.9 75.6L44.1 74.4L49.5 74.0L54.4 74.2L59.2 75.1L62.5 76.0L65.3 77.0L71.5 80.2L73.0 80.4L74.4 80.0L75.4 79.4L76.2 78.5L92.7 52.1L93.1 51.1L93.3 50.1L93.1 49.0L92.7 47.9L76.1 21.4L74.7 20.1L72.9 19.6L71.3 19.9L66.2 22.6L61.1 24.4L55.9 25.6L50.5 26.0L45.6 25.8L40.8 24.9L37.9 24.1L34.7 23.0L28.5 19.8L27.0 19.6L25.6 20.0L24.6 20.6L23.9 21.4Z" },
+  /* a wide block with a round notch in the middle of its top and bottom */
+  twinblock: { c: [50.0, 50.0], cuts: ["M50 -10V110"],
+    d: "M6.0 78.0L6.3 79.4L7.0 80.6L8.1 81.5L9.5 82.0L36.1 82.0L37.5 81.5L38.6 80.5L40.8 76.0L41.9 74.5L43.3 73.3L44.9 72.3L46.7 71.5L48.5 71.1L50.4 71.0L52.2 71.2L53.9 71.7L55.5 72.5L57.1 73.6L58.3 74.8L59.4 76.2L61.3 80.4L62.3 81.4L63.5 81.9L90.1 82.0L91.2 81.8L92.2 81.3L93.5 79.9L94.0 78.1L94.0 22.0L93.8 20.9L93.3 19.8L92.0 18.5L90.2 18.0L63.6 18.1L62.3 18.6L61.3 19.5L59.3 23.9L58.2 25.3L56.9 26.6L55.3 27.6L53.6 28.4L51.7 28.9L49.9 29.0L48.0 28.8L46.3 28.4L44.6 27.6L43.0 26.5L41.8 25.3L40.7 23.8L38.7 19.6L37.8 18.7L36.5 18.1L9.9 18.0L8.8 18.2L7.8 18.7L6.5 20.0L6.0 21.9Z" },
+  /* a block whose top runs downhill */
+  slope:     { c: [47.6, 54.9], cuts: ["M-10 62H110"],
+    d: "M13.7 10.9L11.7 10.8L9.9 11.5L8.6 13.0L8.0 15.0L8.0 84.8L8.3 86.5L9.3 87.9L10.8 88.9L12.5 89.2L87.6 89.2L89.2 88.9L90.7 87.9L91.6 86.5L92.0 84.7L92.0 36.5L91.6 34.8L90.7 33.5L89.8 32.7L88.7 32.3Z" },
+  /* a hexagon with a round bite out of its two side points */
+  bitehex:   { c: [50.0, 50.0], cuts: ["M50 -10V110"],
+    d: "M14.0 34.3L13.4 36.0L13.5 37.7L14.2 38.9L16.5 41.7L17.8 44.1L18.7 47.1L19.0 50.2L18.7 52.9L18.0 55.4L16.5 58.3L13.8 61.8L13.4 63.1L13.5 64.6L14.0 65.6L25.9 84.2L26.6 85.1L27.6 85.7L29.2 86.0L70.8 86.0L72.1 85.8L73.2 85.2L74.1 84.3L86.3 65.1L86.6 63.6L86.4 62.2L85.8 61.1L83.5 58.4L82.3 56.1L81.3 53.1L81.0 49.8L81.2 47.2L82.0 44.6L83.5 41.7L86.2 38.2L86.6 36.9L86.5 35.4L86.0 34.4L74.1 15.8L73.3 14.9L72.3 14.3L70.8 14.0L29.2 14.0L27.9 14.2L26.7 14.8L25.9 15.7Z" },
+  /* a block cut across and its halves slipped apart */
+  slipsq:    { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M34.0 35.0L33.8 36.0L33.3 36.9L32.5 37.6L31.6 37.9L11.6 38.0L10.6 38.3L9.7 38.7L8.9 39.4L8.4 40.3L8.0 42.0L8.0 82.2L8.2 83.2L8.7 84.2L9.4 85.0L10.3 85.6L12.0 86.0L62.0 86.0L63.2 85.8L64.2 85.3L65.0 84.6L65.6 83.7L65.9 82.7L66.0 64.9L66.3 63.7L67.0 62.8L67.9 62.2L68.9 62.0L88.5 62.0L89.5 61.7L90.4 61.2L91.2 60.4L91.7 59.5L92.0 58.0L92.0 17.8L91.8 16.7L91.3 15.7L90.5 14.9L89.5 14.3L88.0 14.0L38.0 14.0L36.6 14.3L35.6 14.8L34.9 15.5L34.3 16.5L34.0 17.5Z" },
+  /* a plate bent: its top bowed up, its bottom bowed in to match */
+  bent:      { c: [50.0, 49.2], cuts: ["M-10 52H110"],
+    d: "M8.0 80.6L8.4 82.2L9.3 83.6L10.8 84.4L12.4 84.6L13.5 84.3L18.6 81.9L23.2 80.1L27.9 78.6L32.6 77.4L37.4 76.4L43.1 75.7L48.0 75.5L52.9 75.5L60.7 76.2L67.4 77.4L72.1 78.6L76.8 80.1L81.3 81.9L86.9 84.4L88.6 84.5L90.1 84.0L90.9 83.3L91.5 82.5L91.9 81.6L92.0 80.7L92.0 29.7L91.8 28.6L91.4 27.5L90.1 26.3L84.0 23.1L78.6 20.8L73.1 18.9L67.5 17.4L62.6 16.4L56.8 15.7L51.0 15.4L46.1 15.5L40.3 16.0L34.5 17.0L29.7 18.1L24.2 19.7L19.6 21.5L14.3 23.9L9.9 26.3L8.5 27.7L8.0 29.6Z" },
+  /* a square with a step out of each corner */
+  notchsq:   { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M23.0 20.0L22.8 20.9L22.5 21.7L21.8 22.4L21.0 22.8L20.1 23.0L10.4 23.1L8.9 23.8L8.1 25.2L8.0 74.0L8.1 74.9L8.6 75.8L9.4 76.6L10.5 77.0L20.2 77.0L21.2 77.3L22.1 77.8L22.7 78.7L23.0 79.8L23.1 89.7L23.9 91.1L25.3 91.9L74.0 92.0L74.9 91.9L75.8 91.4L76.6 90.6L77.0 89.5L77.0 79.8L77.3 78.8L77.8 77.9L78.7 77.3L79.8 77.0L89.7 76.9L91.1 76.1L91.9 74.7L92.0 26.0L91.9 25.1L91.4 24.2L90.6 23.4L89.5 23.0L79.8 23.0L78.8 22.7L77.9 22.2L77.3 21.3L77.0 20.3L76.9 10.2L76.5 9.4L75.9 8.7L75.1 8.2L74.2 8.0L25.3 8.1L24.5 8.4L23.8 8.9L23.3 9.6L23.1 10.4Z" },
+  /* a triangle with a round bite out of each corner */
+  bitetri:   { c: [50.0, 55.0], cuts: ["M-10 58H110"],
+    d: "M10.5 63.5L10.0 65.0L10.5 66.5L11.0 67.2L14.1 70.0L16.3 72.8L17.7 75.1L18.7 77.6L20.2 83.4L21.3 84.6L22.8 85.0L77.1 85.0L78.0 84.9L79.1 84.3L79.9 83.3L81.1 77.9L82.1 75.6L83.1 73.7L85.7 70.2L89.3 66.9L89.8 66.0L90.0 65.1L89.6 63.5L62.4 16.4L61.3 15.4L59.9 15.0L59.0 15.1L54.8 16.5L50.8 17.0L48.4 16.9L46.0 16.6L40.4 15.0L39.2 15.2L38.1 15.8Z" },
+  /* a triangle on its point with its corners cut off - long and short sides */
+  cuttri:    { c: [50.0, 48.5], cuts: ["M-10 36H110"],
+    d: "M32.1 81.5L32.7 82.3L33.6 83.0L34.5 83.4L35.6 83.5L64.6 83.5L66.5 82.9L67.8 81.6L87.5 47.5L88.1 45.7L87.9 44.6L87.5 43.5L73.1 18.4L71.7 17.1L70.8 16.7L69.7 16.5L30.3 16.5L28.4 17.0L27.6 17.6L27.0 18.4L12.4 43.6L12.0 44.7L11.9 45.8L12.5 47.5Z" },
+  /* a disc cut across and its halves slipped apart */
+  slipdisc:  { c: [50.0, 50.0], cuts: ["M-10 50H110"],
+    d: "M3.2 45.5L3.3 46.8L3.8 48.0L4.6 49.0L5.6 49.7L7.0 50.0L14.5 50.0L15.6 50.4L16.4 51.2L17.0 52.4L17.6 56.9L18.4 60.7L19.7 64.4L21.1 67.6L23.0 71.0L25.2 74.2L27.7 77.2L30.5 79.9L35.2 83.5L38.1 85.3L40.8 86.6L44.0 87.8L46.8 88.7L50.1 89.4L53.1 89.8L57.0 90.0L60.9 89.8L64.8 89.2L68.6 88.3L72.3 86.9L75.9 85.3L79.2 83.2L82.3 80.9L85.3 78.3L87.9 75.4L90.3 72.2L92.3 68.9L94.0 65.3L95.3 61.6L96.2 57.8L96.8 54.4L96.7 53.1L96.2 51.9L95.4 51.0L94.3 50.3L92.9 50.0L85.6 50.0L84.4 49.6L83.6 48.9L83.0 47.6L82.3 42.7L81.4 38.9L80.3 35.6L78.9 32.4L77.0 29.0L74.8 25.8L72.3 22.8L69.5 20.1L64.8 16.5L61.9 14.7L59.2 13.4L56.0 12.2L53.2 11.3L49.9 10.6L46.9 10.2L43.0 10.0L39.1 10.2L35.2 10.8L31.4 11.7L28.1 12.9L24.6 14.5L21.2 16.5L18.0 18.8L15.0 21.4L12.4 24.3L10.0 27.4L7.9 30.7L6.2 34.3L4.9 37.9L3.9 41.7Z" },
+  /* a square with a round scoop out of one corner */
+  scoopsq:   { c: [45.3, 54.7], cuts: ["M-10 62H110"],
+    d: "M14.0 10.0L12.5 10.3L11.2 11.1L10.4 12.4L10.0 13.8L10.0 86.1L10.3 87.5L11.1 88.7L12.4 89.7L14.0 90.0L86.1 90.0L87.5 89.7L88.7 88.9L89.7 87.6L90.0 86.0L90.0 49.7L89.7 48.3L88.9 47.0L88.1 46.4L87.2 46.0L83.4 45.4L80.4 44.7L77.5 43.8L74.6 42.5L71.9 41.1L69.3 39.5L66.8 37.6L64.6 35.5L60.8 31.1L57.8 26.2L56.4 23.0L55.4 20.0L54.7 17.0L54.0 12.6L53.2 11.3L52.0 10.4L50.2 10.0Z" }
 });
 function badgeShapeFor(unitName){
   const name = String(unitName || "");
@@ -71946,7 +72050,7 @@ Object.keys(BADGE_SHAPE).forEach(k => { BADGE_CENTRE_OF[BADGE_SHAPE[k].d] = BADG
    BADGE_SHAPE is redrawn - a key missing here is simply measured. */
 const BADGE_BBOX_PRESET = {"gate":[12,9.1,76,80.9],"diamond":[8.45,8.45,83.1,83.1],"disc":[6,6,88,78],"trefoil":[3.188,-0.0367,93.6239,88.0527],"peaks":[8,16.1747,84,71.8253],"wedge":[9.9091,16,80.1818,75.35],"hex":[9,6.7,82,86.6],"cross":[8,8,84,84],"spire":[13.1691,7.3,73.6618,86.7],"fan":[11.2886,12.35,77.4228,69.65],"burstplate":[6.8,6.8,86.4,86.4],"cring":[26,5.9816,69.272,88],"bolt":[16.1905,10,66.1284,80.3879],"star5":[8.719,6.65,82.562,78.7453],"keystone":[10,8,80,84],"quatre":[1.9576,1.9576,96.0848,96.0848]};
 /* (384) Fire Code's 34, measured the same way */
-Object.assign(BADGE_BBOX_PRESET, {"coin":[7,7,86,86],"gear":[5.5,5.5,89,89],"cinquefoil":[0.5961,1.0201,98.8079,96.0705],"medal":[20,6.9112,60,84.6602],"roundel":[6,15.1559,88,69.6882],"ribbon":[9.193,24,81.614,52],"gonfalon":[16,8,68,82.807],"ticket":[9,16,82,68],"slant":[7.5,16,85,68],"castle":[8,12,84,78],"ziggurat":[8,10,84,80],"tau":[8,12,84,78],"saddle":[8,16,84,72],"wave":[8,18,84,64],"pennon":[8,18,84.4,64],"star4":[6.2,6.2,87.6,87.6],"maltese":[5.7436,5.7436,88.5128,88.5128],"dart":[10.4882,8.25,79.0235,78.3654],"bucket":[9.0685,14,81.863,74],"gem":[9.5484,12,80.9032,78],"halfdisc":[6,28,88,52],"card":[20,6,60,88],"tag":[10,14,80,76],"crown":[10,12.1,80,75.9],"arches":[8,24,84,66],"kite":[19.6875,5.65,60.625,88.55],"quarterdome":[10,10,80,80],"bell":[8.0,12.5,84.0,75.0],"mushroom":[5.1,9.0,89.8,82.0],"shell":[10.1,10.3,79.8,79.4],"puzzle":[8.5,8.5,83.0,83.0],"anvil":[6.8,12.0,86.4,76.0],"goblet":[8.0,6.0,84.0,88.0],"acorn":[6.0,7.0,88.0,86.0],"vase":[17.0,6.0,66.0,88.0],"heart":[10.0,13.0,80.0,74.0],"flask":[8.0,7.0,84.0,86.0]});
+Object.assign(BADGE_BBOX_PRESET, {"coin":[7,7,86,86],"cinquefoil":[0.5961,1.0201,98.8079,96.0705],"medal":[20,6.9112,60,84.6602],"roundel":[6,15.1559,88,69.6882],"ribbon":[9.193,24,81.614,52],"gonfalon":[16,8,68,82.807],"ticket":[9,16,82,68],"slant":[7.5,16,85,68],"castle":[8,12,84,78],"ziggurat":[8,10,84,80],"tau":[8,12,84,78],"saddle":[8,16,84,72],"wave":[8,18,84,64],"pennon":[8,18,84.4,64],"star4":[6.2,6.2,87.6,87.6],"maltese":[5.7436,5.7436,88.5128,88.5128],"dart":[10.4882,8.25,79.0235,78.3654],"bucket":[9.0685,14,81.863,74],"gem":[9.5484,12,80.9032,78],"halfdisc":[6,28,88,52],"card":[20,6,60,88],"tag":[10,14,80,76],"crown":[10,12.1,80,75.9],"arches":[8,24,84,66],"kite":[19.6875,5.65,60.625,88.55],"quarterdome":[10,10,80,80],"bardia":[6.0,6.6,88.0,86.8],"bowhex":[6.7,19.6,86.6,60.8],"twinblock":[6.0,18.0,88.0,64.0],"slope":[8.0,10.8,84.0,78.4],"bitehex":[13.4,14.0,73.2,72.0],"slipsq":[8.0,14.0,84.0,72.0],"bent":[8.0,15.4,84.0,69.2],"notchsq":[8.0,8.0,84.0,84.0],"bitetri":[10.0,15.0,80.0,70.0],"cuttri":[11.9,16.5,76.2,67.0],"slipdisc":[3.2,10.0,93.6,80.0],"scoopsq":[10.0,10.0,80.0,80.0]});
 Object.keys(BADGE_BBOX_PRESET).forEach(k => {
   const b = BADGE_BBOX_PRESET[k], sh = BADGE_SHAPE[k];
   if(sh && b) BADGE_BBOX_CACHE[sh.d] = { x: b[0], y: b[1], w: b[2], h: b[3] };
@@ -72220,8 +72324,20 @@ const BADGE_STRIKE = {
      enDiff keeps a little of the flat colour so the dark band stays the
      unit's colour and never goes black. */
   enDome: .02, enTilt: .45, enMetal: 1.1, enDiff: .25, coatK: .6,
-  enRamp: [1.6, 1.25, .9, .62, .5, .52, .66]
+  enRamp: [1.6, 1.25, .9, .62, .5, .52, .66],
+  /* A PALE ENAMEL'S DARK EDGE (384 final check, badges round 2): a white or pearl enamel against polished silver is the
+     gunmetal trap the other way up - colour and setting both light, and at a unit card's 28px the badge read as a blank
+     token. Where the enamel is pale (badgeEnamelPale), the shade at its foot, where it meets the metal, deepens into a
+     fine dark line - the line a white cloisonne enamel has. No academy enamel is that light. */
+  paleEdge: .62, paleEdgeW: .75
 };
+/* An enamel's own luminance, 0 black to 1 white. Over .58 (L* about 81) it is pale enough to need that edge; under .07
+   (L* about 32) too dark to glow in its own colour (badgeThemeFor's g). */
+function badgeEnamelLuma(hex){
+  const c = badgeHexRgb(hex).map(v => { v /= 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+}
+function badgeEnamelPale(hex){ return badgeEnamelLuma(hex) > .58; }
 const BADGE_STRIKE_PX = 92;      /* CSS px a badge is taken to show at until it is measured */
 /* ...and on this device, the Badges tab's own tile (.badge-tile-art's
    max-width: 5.4rem, 6.6rem from 40rem), so the idle warm-up renders the
@@ -72641,6 +72757,7 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
   }
   const Lt = badgeLightTables(), LN = BADGE_LIGHT_N, LN1 = LN - 1, EE = Lt.E, ENC = Lt.ENC;
   const en = badgeHexRgb(grey ? "#6B6E73" : badgeThemeFor(unitName).p).map(c => Lt.TO_LIN[Math.max(0, Math.min(255, Math.round(c)))]);
+  const PALE = !grey && badgeEnamelPale(badgeThemeFor(unitName).p);
   const tint = grey ? [1, 1, 1] : [.92, .955, 1];
   const l = Lt.l, ll = Math.sqrt(l[0] * l[0] + l[1] * l[1]);
   const ldx = l[0] / ll, ldy = l[1] / ll, rise = l[2] / ll;
@@ -72724,6 +72841,7 @@ function renderBadgeStrike(unitName, grey, Wout, ssForce, dirt){
         let shade = 1;
         const wd = WD[i] > 0 ? WD[i] : 0;
         shade *= 1 - P.ao * Math.exp(-wd / P.aoL);
+        if(PALE) shade *= 1 - P.paleEdge * Math.exp(-wd / P.paleEdgeW);
         let oc = 0; const hz = h0 * Zp;
         for(let t = 1; t <= shN; t++){
           const qx = (x - ldx * shStep * t + .5) | 0, qy = (y - ldy * shStep * t + .5) | 0;
@@ -87765,7 +87883,55 @@ function pauseRun(){
   timerlineEl.classList.add("is-paused");
   hintEl.hidden = true;
   saveRunSession();
+  /* (384 vr2) a race: the room is told, so it does not wait on you - see vroomNotePaused */
+  vroomNotePaused(true);
   renderPausedScreen();
+}
+
+/* ---- PAUSE ONLY PAUSES YOU (384, Virtual Room round 2) ----
+   Madison: "Pausing should only pause you.. and yeah if you pause it would let you leave." A race's Pause held the whole room:
+   your own clock stopped (right - that is what pausing is), but presence kept you "here" and every finished player's results
+   waited on your finish for as long as you stayed paused. So a race's pause is said on your room entry - `paused` (the moment,
+   one write on Pause and one on Resume; never periodic) - and:
+   - EVERYBODY ELSE CARRIES ON. The finale counts a paused racer as in, as it counts somebody whose app died
+     (showVirtualRoomFinaleReveal), so the race can finish without you; the race line dims your marker.
+   - YOUR OWN TEST IS HELD, all of it, until you resume - the question, its clock and your time.
+   - RESUME PUTS YOU BACK IN IT. Before the leaderboard rolls, the others are waiting on you again (their wait card goes back
+     from "results coming up" to the count). After it, you finish on your own: your results, then the standings as they are -
+     or, if the others are already back in the lobby, a line saying so and Return to lobby (vroomBackFrom).
+   - THE PAUSE SCREEN IS THE WAY OUT as well: Leave match, as Tug of War's and Battle's Pause already is (confirmLeaveTeamMatch).
+   Tug of War and Battle are live team games with nothing to hold, so their Pause stays only a way out - in all three, nobody is
+   ever waited on for having paused. The flag goes in the finish write, a return to the lobby, or the leave (the entry goes). */
+let vroomPausedSent = false;
+function vroomRaceRunHere(){
+  try{ return !!(inVirtualRoom && raceTimed && testInProgress && vroomCode && vroomMyKey && !vroomTeamMatchUp()); }catch(e){ return false; }
+}
+function vroomNotePaused(on){
+  if(on ? (vroomPausedSent || !vroomRaceRunHere()) : !vroomPausedSent) return;
+  vroomPausedSent = !!on;
+  try{
+    if(!vroomDb() || !vroomCode || !vroomMyKey) return;
+    vroomDb().collection("vrooms").doc(vroomCode).update({
+      ["participants." + vroomMyKey + ".paused"]: on ? Date.now() : firebase.firestore.FieldValue.delete()
+    }).catch(() => {});
+  }catch(e){}
+}
+/* The paused race screen's line about the room: who is still racing, from the race line's own listener (no read of its own) */
+let vroomRaceLast = null;
+function paintPauseRoomLine(data){
+  if(data) vroomRaceLast = data;
+  const el = document.querySelector("#stage .pausepanel .pause-room");
+  if(!el || !vroomRaceLast) return;
+  const racing = vroomRacersOf(vroomRaceLast);
+  const here = presentParticipants(racing) || {};
+  const others = Object.keys(racing).filter(k => k !== vroomMyKey);
+  const still = others.filter(k => here[k] && !racing[k].finished && !racing[k].paused).length;
+  const done = others.filter(k => racing[k].finished).length;
+  const t = !others.length ? "Nobody else is in the race now."
+    : still ? (still === 1 ? "1 other player is still racing." : still + " other players are still racing.")
+    : done ? "Everyone else has finished." : "Everyone else is paused too.";
+  if(el.textContent !== t) el.textContent = t;
+  el.dataset.still = String(still);
 }
 
 function renderPausedScreen(){
@@ -87813,6 +87979,15 @@ function renderPausedScreen(){
   p.textContent = (runLabel === "Daily question" || !hasClock)
     ? subject + " is on hold."
     : subject + " and its timer are on hold.";
+  /* (384 vr2) A RACE: only yours is on hold - the room carries on, and says where it has got to */
+  const inRace = vroomRaceRunHere();
+  let roomLine = null;
+  if(inRace){
+    p.textContent = "Your race and its timer are on hold. Everyone else carries on, and the results won\u2019t wait for you.";
+    roomLine = document.createElement("p");
+    roomLine.className = "pause-room";
+    roomLine.setAttribute("aria-live", "polite");
+  }
   const actions = document.createElement("div");
   actions.className = "actions";
   const resumeBtn = document.createElement("button");
@@ -87834,7 +88009,7 @@ function renderPausedScreen(){
      actually showed up during it. */
   /* QUIT, NOT EXIT (build 319): with Save and exit beside it, "exit" no
      longer says which one throws the run away. */
-  menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Quit test";
+  menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : inRace ? "Leave match" : "Quit test";
   menuBtn.insertAdjacentHTML("afterbegin", pauseIc("M6.5 6.5l11 11M17.5 6.5l-11 11"));
   menuBtn.id = "pause-quit";
   menuBtn.addEventListener("click", confirmExitTest);
@@ -87857,7 +88032,8 @@ function renderPausedScreen(){
      mode and the count, the clock is amber, and the units are right here. */
   const mark = document.createElement("span");
   mark.className = "pause-mark"; mark.setAttribute("aria-hidden", "true");
-  mountPausePanel(panel, [mark, info, p, actions], resumeBtn);
+  mountPausePanel(panel, roomLine ? [mark, info, p, roomLine, actions] : [mark, info, p, actions], resumeBtn);
+  if(roomLine) paintPauseRoomLine(null);
 }
 
 /* PAUSE AND ITS CONFIRMATIONS SHARE ONE PLACE (build 297): "ensure the
@@ -88196,7 +88372,9 @@ function confirmExitTest(){
     pauseBtn.hidden = true;
     timerlineEl.classList.add("is-paused");
     hintEl.hidden = true;
+    vroomNotePaused(true);   /* (384 vr2) held here as on Pause */
   }
+  const inRace = vroomRaceRunHere();
 
   const panel = document.createElement("section");
   panel.className = "panel pausepanel";
@@ -88207,10 +88385,13 @@ function confirmExitTest(){
   /* Same "test" \u2192 daily-question-aware language as the pause screen
      itself, for the same reason. */
   const isDailyExit = runLabel === "Daily question";
-  h.textContent = isDailyExit ? "Exit Daily Question?" : "Quit this test?";
+  h.textContent = isDailyExit ? "Exit Daily Question?" : inRace ? "Leave the match?" : "Quit this test?";
   const p = document.createElement("p");
   p.className = "qtext";
-  p.textContent = runSessionSavable()
+  /* (384 vr2) a race says what Tug of War's and Battle's leave says (confirmLeaveTeamMatch) */
+  p.textContent = inRace
+    ? "The race carries on without you. You won\u2019t get any XP from it."
+    : runSessionSavable()
     ? "Your progress on this test will be lost. Use Save and exit to finish it later."
     : "Your progress on this test will be lost.";
   const actions = document.createElement("div");
@@ -88221,6 +88402,7 @@ function confirmExitTest(){
   stayBtn.addEventListener("click", () => {
     if(runStartTime === null){
       paused = false;
+      vroomNotePaused(false);
       showCountdown(3);
     } else if(wasAlreadyPaused){
       renderPausedScreen();
@@ -88230,7 +88412,7 @@ function confirmExitTest(){
   });
   const leaveBtn = document.createElement("button");
   leaveBtn.type = "button"; leaveBtn.className = "next ghost";
-  leaveBtn.textContent = isDailyExit ? "Exit Daily Question" : "Quit test";
+  leaveBtn.textContent = isDailyExit ? "Exit Daily Question" : inRace ? "Leave" : "Quit test";
   leaveBtn.id = "quit-confirm";
   leaveBtn.addEventListener("click", () => {
     cancelPauseTiming();
@@ -88288,6 +88470,7 @@ function cancelPauseTiming(){
 
 function resumeRun(){
   if(!paused) return;
+  vroomNotePaused(false);   /* (384 vr2) back in the race: the room waits on you again */
   cancelPauseTiming();
   playSound("test.resume");
   hintEl.hidden = false;
@@ -101897,7 +102080,7 @@ function openFriendChat(pub){
   if(!chatDockOpen) openChatDock();
   if(!socialDb()){ showToast(chatUnreachable()); return; }
   const me = publicIdOf();
-  const row = rowsByPublicId()[pub] || {};
+  const row = friendCardOf(pub);   /* (384 vr2) a friend in Fire Code alone is named by their beat */
   rememberChat(code, row.firstName || (chatEntry(code) || {}).name || "", [pub]);
   const db = socialDb(), ref = db.collection("vrooms").doc(code);
   const ensure = (typeof db.runTransaction === "function")
@@ -102417,6 +102600,8 @@ function chatPersonOf(key, entry){
   }
   let row = null;
   try{ row = rowsByPublicId()[key] || null; }catch(err){}
+  /* (384 vr2) no board row (Fire Code alone): their own beat's name and character (friendCardFromPresence) */
+  if(!row){ try{ row = friendCardFromPresence(key); }catch(err){} }
   return { name: (row && row.firstName) || e.name || "",
            avatarChar: (row && row.avatarChar) || e.avatarChar || "ninja" };
 }
@@ -103754,7 +103939,8 @@ function rebuildChatTab(){
        friend chats you can't invite people to them or leave the chat".
        The friend, whether they are on, and the mute. */
     const pub = friendOfChatCode(chatRoomCode);
-    const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || {});
+    /* (384 vr2) their row, or their own beat (a friend in Fire Code alone), or the chat - friendCardOf */
+    const e = Object.assign({ pub: pub }, friendCardOf(pub));
     const who = document.createElement("div");
     who.className = "chatdock-friendhead";
     const art = document.createElement("span");
@@ -103765,7 +103951,8 @@ function rebuildChatTab(){
     txt.className = "chatdock-friendhead-text";
     const nm = document.createElement("span");
     nm.className = "chatdock-friendhead-name";
-    nm.textContent = e.firstName || (chatEntry(chatRoomCode) || {}).name || "Friend";
+    nm.textContent = e.firstName || "Friend";
+    if(e.unknown || e.fromChat){ nm.dataset.friendName = pub || ""; nm.dataset.fallback = "1"; art.dataset.friendArt = pub || ""; art.dataset.fallback = "1"; }
     const st = document.createElement("span");
     st.className = "chatdock-friendhead-status";
     /* What they are doing, when they are on (build 240); Away when not. */
@@ -103826,9 +104013,12 @@ function rebuildChatTab(){
 function friendsListCatchUp(){
   try{
     if(!chatDockOpen || chatDockTab !== "friends" || chatRoomCode || !chatTabBody) return;
-    if(!chatTabBody.querySelector(".chatdock-chatrow.is-friend[data-unknown]")) return;
+    const unknown = [...chatTabBody.querySelectorAll(".chatdock-chatrow.is-friend[data-unknown]")];
+    if(!unknown.length) return;
     const rows = rowsByPublicId();
-    if(!friendPublicIds().some(p => rows[p])) return;
+    /* (384 vr2) a row drawn with nothing to go on is drawn again once the board row OR the friend's own beat names them (a
+       friend in Fire Code alone has no row) - friendCardOf */
+    if(!unknown.some(r => { const c = friendCardOf(r.dataset.pub, rows); return !c.unknown && !c.fromChat; })) return;
     rebuildChatTab();
   }catch(e){}
 }
@@ -103854,7 +104044,7 @@ function renderFriendChatList(){
     const info = document.createElement("p");
     info.className = "chatdock-friendsbar-info";
     const shownN = shownFriendsCount();
-    const onN = pubs.map(p => rows[p]).filter(e => e && isOnline(e)).length + ((nova && !novaAway()) ? 1 : 0);
+    const onN = pubs.map(p => friendCardOf(p, rows)).filter(e => e && isOnline(e)).length + ((nova && !novaAway()) ? 1 : 0);
     const b1 = document.createElement("b");
     b1.textContent = shownN ? shownN + (shownN === 1 ? " friend" : " friends") : "No friends yet";
     info.appendChild(b1);
@@ -103892,7 +104082,8 @@ function renderFriendChatList(){
   const seen = chatSeenMap();
   const pings = chatPings();
   const unread = pub => { const c = friendChatCode(pub); const m = pings[c]; return !!(m && (m.at || 0) > (seen[c] || 0)); };
-  const people = pubs.map(pub => Object.assign({ pub: pub }, rows[pub] || {}));
+  /* (384 vr2) every friend by name and face: the row, or their own beat (Fire Code alone), or the chat - friendCardOf */
+  const people = pubs.map(pub => Object.assign({ pub: pub }, friendCardOf(pub, rows)));
   people.sort((a, b) => (unread(b.pub) - unread(a.pub))
     || ((isOnline(b) ? 1 : 0) - (isOnline(a) ? 1 : 0))
     || String(a.firstName || "").localeCompare(String(b.firstName || "")));
@@ -103908,8 +104099,10 @@ function renderFriendChatList(){
     const row = document.createElement("div");
     row.className = "chatdock-chatrow is-friend";
     row.dataset.code = code;
-    /* (384, desktop pass) drawn before the class's rows had arrived: no name or character yet - friendsListCatchUp redraws it */
-    if(!rows[e.pub]) row.dataset.unknown = "1";
+    /* (384, desktop pass) drawn before the class's rows had arrived: no name or character yet - friendsListCatchUp redraws it.
+       (384 vr2) Known from the friend's own beat is known; known only from the chat is drawn again when the row or beat lands. */
+    row.dataset.pub = e.pub || "";
+    if(e.unknown || e.fromChat) row.dataset.unknown = "1";
     const open = document.createElement("button");
     open.type = "button"; open.className = "chatdock-chatrow-open";
     const art = document.createElement("span");
@@ -103921,7 +104114,7 @@ function renderFriendChatList(){
     top.className = "chatdock-chatrow-top";
     const nm = document.createElement("span");
     nm.className = "chatdock-chatrow-name";
-    nm.textContent = e.firstName || (chatEntry(code) || {}).name || "Friend";
+    nm.textContent = e.firstName || "Friend";
     /* The chip says what they are doing, not just that they are on. */
     const kind = activityLabel(e.pub, false, "chatdock-chatrow-kind is-online");
     const when = document.createElement("span");
@@ -104940,7 +105133,8 @@ function openChatInviteSheet(){
      else. The Virtual Room's own sheet learned this: filtering on the
      row silently emptied a list of three friends. */
   const ids = friendPublicIds();
-  const people = ids.map(id => rows[id] || { pub: id });
+  /* (384 vr2) named and drawn like every friends list: friendCardOf */
+  const people = ids.map(id => friendCardOf(id, rows));
   if(!people.length){
     const none = document.createElement("p");
     none.className = "friend-hint";
@@ -104962,7 +105156,8 @@ function openChatInviteSheet(){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = e.firstName || "Student";
+      nm.textContent = e.firstName || "Friend";
+      if(e.unknown || e.fromChat){ nm.dataset.friendName = e.pub || ""; nm.dataset.fallback = "1"; art.dataset.friendArt = e.pub || ""; art.dataset.fallback = "1"; }
       text.appendChild(nm);
       /* What they are doing right now (build 240) - hidden when they are not on. */
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
@@ -106341,7 +106536,7 @@ function playQueuedBadgeCutscenes(){
      taking down the rest of a script. Caught by running the cutscene,
      not by reading it. */
   const badgeTheme = badgeThemeFor(unit);
-  const col = (badgeTheme && badgeTheme.p) || "#9FACBA";
+  const col = (badgeTheme && (badgeTheme.g || badgeTheme.p)) || "#9FACBA";
   overlay.style.setProperty("--badge-col", col);
 
   /* The rays are a CIRCLE filled with a falloff, never a burst shape
@@ -106806,7 +107001,7 @@ function appendUnitProgress(row, name){
      glow off that badge matches the color of the badge." It was the
      theme's triad, so every earned badge on the screen gave off the same
      gold light whatever it was made of. */
-  try{ badgeMark.style.setProperty("--badge-glow", badgeThemeFor(name).p); }catch(e){}
+  try{ badgeMark.style.setProperty("--badge-glow", badgeThemeFor(name).g); }catch(e){}
   badgeMark.appendChild(cardBadgeSVG(name, earned));
   badgeMark.title = earned ? badgeTitle(name) + " found" : badgeTitle(name) + " not found yet";
   /* Blank, and kept only because the grid reserves a cell for it - the
@@ -121401,7 +121596,7 @@ function buildBadgeCase3D(all, held){
   all.forEach((u, i) => {
     const s = mk("bc-slot" + (held(u) ? " is-held" : ""));
     /* its own light, in its own colour (build 320) */
-    try{ const bt = badgeThemeFor(u); if(bt && bt.p) s.style.setProperty("--slot-col", bt.p); }catch(e){}
+    try{ const bt = badgeThemeFor(u); if(bt && bt.p) s.style.setProperty("--slot-col", bt.g || bt.p); }catch(e){}
     s.dataset.i = String(i);
     setBadgeSlotShift(s, u);
     s.appendChild(buildUnitBadgeSVG(u, held(u), { px }));
@@ -121453,7 +121648,7 @@ function bcBadgeSpots(all, held, grid){
     const c = i % cols, r = Math.floor(i / cols);
     /* the slots sit inside the lining's inset: about nine tenths of the tray */
     const fx = .5 + ((c + .5) / cols - .5) * .9, fy = .5 + ((r + .5) / rows - .5) * .9;
-    out.push({ u, c, r, fx, fy, depth: (r + .5) / rows, col: ((badgeThemeFor(u) || {}).p) || "#C9D3DE" });
+    out.push({ u, c, r, fx, fy, depth: (r + .5) / rows, col: ((badgeThemeFor(u) || {}).g) || "#C9D3DE" });
   });
   return out;
 }
@@ -121491,7 +121686,7 @@ function playBadgeCaseScene(units, done, retro, opts){
   const caseName = badgeCaseName(caseDef);
   const newSet = new Set(units);
   const retroSet = new Set(retro || []);
-  const col = ((badgeThemeFor(units[0]) || {}).p) || "#9FACBA";
+  const col = ((badgeThemeFor(units[0]) || {}).g) || "#9FACBA";
   const mk = (cls, tag) => { const e = document.createElement(tag || "div"); e.className = cls; return e; };
 
   const overlay = mk("bc-scene" + (still ? " bc-still" : "") + ((g0 => g0.cols > g0.rows)(badgeCaseGrid(all.length)) ? " bc-wide" : ""));
@@ -121698,7 +121893,7 @@ function playBadgeCaseScene(units, done, retro, opts){
     if(coin) coin.remove();
     coin = buildBadgeCoin(u);
     persp.replaceChildren(coin);
-    flyer.style.setProperty("--badge-col", ((badgeThemeFor(u) || {}).p) || col);
+    flyer.style.setProperty("--badge-col", ((badgeThemeFor(u) || {}).g) || col);
     flyer.classList.remove("bc-alive", "bc-landed", "bc-show", "bc-lifted");
     /* the last flight's animation is filled forwards and would hold the
        flyer where the last token landed, over any inline position */
@@ -124357,7 +124552,7 @@ function unlockSpotLook(item){
   const id = item.banner || item.character || item.fx || item.unit || item.rank || item.flare || item.hint || "";
   if(item.kind === "banner"){ const t = bannerTintOf(item.banner); if(t){ c = t[0]; c2 = t[1]; } }
   else if(item.kind === "fx"){ const t = HFX_TINT[item.fx]; if(t) c2 = t.g3 || t.g1; }
-  else if(item.kind === "badge"){ try{ const bt = badgeThemeFor(item.unit); if(bt && bt.p){ c = bt.p; c2 = bt.s || bt.p; } }catch(e){} }
+  else if(item.kind === "badge"){ try{ const bt = badgeThemeFor(item.unit); if(bt && bt.p){ c = bt.g || bt.p; c2 = bt.s && bt.s !== bt.p ? bt.s : c; } }catch(e){} }
   else if(item.kind === "theme" || item.kind === "rank" || item.kind === "rankrewards"){
     const k = item.kind === "theme" ? item.rankReward : item.rank;
     c2 = (k && RANK_COLOR[k]) || null;
@@ -124870,7 +125065,7 @@ function showRunRewards(run, hooks, opts){
     card.className = "rs-card rs-badges badgeprogress-wrap rs-land" + (earned ? " is-earned" : "");
     if(earned){
       const th = badgeThemeFor(u) || {};
-      card.style.setProperty("--bt", th.p || "#9FACBA");
+      card.style.setProperty("--bt", th.g || th.p || "#9FACBA");
     }
     const k = document.createElement("p");
     k.className = "rs-kicker"; k.textContent = earned ? "Badge found" : "Badge progress";
@@ -129689,6 +129884,9 @@ function leaveVirtualRoom(){
   const code = vroomCode;
   const myKey = vroomMyKey;
   const myName = (socialMe().firstName || "Someone");   /* (384) the account's name, as the room shows it */
+  /* (384 vr2) where this device is as it goes - read before the flags below are cleared */
+  let where = "room";
+  try{ where = vroomLeaveWhere(); }catch(e){}
   detachVroomListener();
   /* THE RACE LINE'S LISTENER TOO. It is separate from the lobby's, and
      leaving mid-race left it running - still reading the room on every
@@ -129726,12 +129924,27 @@ function leaveVirtualRoom(){
          coalesce, and a banner that depends on catching the exact
          moment between two of them is a banner that sometimes does not
          appear. */
-      patch.lastLeave = { name: withNova ? myName + " and Nova" : myName, key: myKey, at: Date.now() };
+      const who = withNova ? myName + " and Nova" : myName;
+      const at = Date.now();
+      /* (384 vr2) and WHERE they were (`where`: "match", "lobby" or "room"), so everybody says the same thing about it */
+      patch.lastLeave = { name: who, key: myKey, at: at, where: where };
+      /* ---- AND A LINE IN THE ROOM'S CHAT (384, Virtual Room round 2) ----
+         Madison: "If someone leaves it would update real time so people know they left ... In the chat, it would say x player
+         left or whatever." A line in the room's own chat ("<name> left the match."), in THIS write - the leave already makes
+         it, so it costs no write of its own: chatMessages takes it by arrayUnion beside the entry's delete. It is a `left`
+         line, not a message: drawn as a quiet line across the chat, never counted unread and never a preview banner (the
+         toast from lastLeave already says it once - announceVroomLeave). An older build draws it as "<name>: left the match." */
+      try{
+        patch.chatMessages = firebase.firestore.FieldValue.arrayUnion({
+          id: myKey + "-left-" + at, key: myKey, name: who, type: "left", text: "left the " + where + ".", ts: at
+        });
+      }catch(e){}
       vroomDb().collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
   clearInterval(vroomBeatTimer); vroomBeatTimer = null;
   try{ novaVrStop(); }catch(e){}
+  vroomPausedSent = false;   /* (384 vr2) the entry goes, and its pause with it */
   vroomCode = null;
   vroomMyKey = null;
   vroomIsHost = false;
@@ -129769,6 +129982,17 @@ try{
    announce the same departure twice - and so somebody who joins later
    is not told about a person who left before they arrived. */
 let vroomLastLeaveSeen = 0;
+/* (384 vr2) Where THIS device is in the room, as it leaves: "match" (a race run or its pause, its wait for the others, a
+   countdown, Tug of War or Battle), "lobby" (the lobby or Match settings), or "room" (after a match). Said once, by the one
+   leaving, in lastLeave.where and the chat's line - so everybody's toast and the chat agree. */
+function vroomLeaveWhere(){
+  let inMatch = false;
+  try{ inMatch = !!inVirtualRoom || !!vroomAwaitingOthers || vroomMatchRunningHere(); }catch(e){}
+  if(!inMatch) inMatch = !!document.querySelector("#stage .screen-tug, #stage .screen-tug-wait, #stage .screen-battle, #stage .screen-battle-wait");
+  if(inMatch) return "match";
+  if(document.querySelector("#stage .screen-vroom-lobby, #stage .screen-vroom-setup")) return "lobby";
+  return "room";
+}
 function announceVroomLeave(data){
   const l = data && data.lastLeave;
   if(!l || !l.at) return;
@@ -129786,10 +130010,9 @@ function announceVroomLeave(data){
      looked for .tug-screen / .battle-screen, which no screen has ever been called - so somebody quitting mid-race was announced
      as having "left the lobby". In a match: a race's run (inVirtualRoom) or its wait for the others, the countdown, Tug of War
      or Battle in play. After one, on a results screen: "left the room". */
-  let inMatch = false; try{ inMatch = !!inVirtualRoom || !!vroomAwaitingOthers || vroomMatchRunningHere(); }catch(e){}
-  if(!inMatch) inMatch = !!document.querySelector("#stage .screen-tug, #stage .screen-tug-wait, #stage .screen-battle, #stage .screen-battle-wait");
-  const onLobby = !!document.querySelector("#stage .screen-vroom-lobby, #stage .screen-vroom-setup");
-  showToast((l.name || "Someone") + (inMatch ? " left the match." : onLobby ? " left the lobby." : " left the room."));
+  /* (384 vr2) where THEY were, as they said it (lastLeave.where); an older build's leave says nothing, so this device's own place */
+  const where = (l.where === "match" || l.where === "lobby" || l.where === "room") ? l.where : vroomLeaveWhere();
+  showToast((l.name || "Someone") + " left the " + where + ".");
   playSound("vr.leave");
 }
 __bm("L109377");
@@ -132125,12 +132348,44 @@ function buildTugRope(d){
   const state = document.createElement("p");
   state.className = "tug-state";
   wrap.append(sides, field, state);
+  wrap.dataset.people = tugPeopleSig(d);
   tugPaintRope(wrap, d);
   return wrap;
+}
+/* ---- WHO IS ON THE ROPE, LIVE (384, Virtual Room round 2) ----
+   Madison: "If someone leaves it would update real time so people know they left." The two ends' figures and the side names
+   were drawn with the screen, which is rebuilt only when YOUR question changes - so somebody who left stood on their end until
+   you next answered. A leave takes them off tug.teams (leaveVirtualRoom), and every snapshot now redraws the ends and the names
+   when who is on them has changed. */
+function tugPeopleSig(d){
+  const v = tugView(d);
+  return tugMembers(d, v.mine).join(",") + "|" + tugMembers(d, v.theirs).join(",");
+}
+function tugPaintPeople(root, d){
+  const wrap = root && (root.classList && root.classList.contains("tug-rope-wrap") ? root : root.querySelector(".tug-rope-wrap"));
+  if(!wrap) return;
+  const sig = tugPeopleSig(d);
+  if(wrap.dataset.people === sig) return;
+  wrap.dataset.people = sig;
+  const v = tugView(d);
+  [["tug-team-us", v.mine], ["tug-team-them", v.theirs]].forEach(([cls, side]) => {
+    const old = wrap.querySelector(".tug-team." + cls);
+    if(!old) return;
+    const nu = tugTeamEnd(d, side, cls);
+    /* the end that was leaning keeps its lean (the field's class decides it) */
+    old.replaceWith(nu);
+  });
+  [["tug-side-us", v.mine, "Your side"], ["tug-side-them", v.theirs, "Their side"]].forEach(([cls, side, label]) => {
+    const nm = wrap.querySelector(".tug-side." + cls + " .tug-side-name");
+    if(!nm) return;
+    const members = tugMembers(d, side);
+    nm.textContent = label + (members.length ? " \u00b7 " + vroomNameList(members, d) : "");
+  });
 }
 __bm("L111207");
 let sndTugPct = null;
 function tugPaintRope(root, d){
+  try{ tugPaintPeople(root, d); }catch(e){}
   const v = tugView(d);
   /* the rope moved: somebody pulled */
   if(sndTugPct != null && v.pct !== sndTugPct) playSound("vr.tug");
@@ -133170,10 +133425,42 @@ function buildBattleBoard(d){
   refreshBattleBoard(board, d);
   return board;
 }
+/* (384 vr2) WHO IS ON EACH SIDE, LIVE: the faces and names were drawn with the screen, rebuilt only when YOUR question changes,
+   so somebody who left stayed on their side until you next answered. battleMembers() leaves out anybody no longer on the room,
+   and the faces and names are drawn again whenever that changes. */
+function battlePaintFaces(row, d, side){
+  const keys = battleMembers(d, side).sort((a, b) => (a === vroomMyKey ? -1 : b === vroomMyKey ? 1 : 0));
+  const sig = keys.join(",");
+  if(row.dataset.people === sig) return;
+  const first = row.dataset.people == null;
+  row.dataset.people = sig;
+  if(first) return;   /* just built from the same snapshot */
+  const faces = row.querySelector(".battle-faces");
+  if(faces){
+    faces.replaceChildren();
+    keys.slice(0, 3).forEach(k => {
+      const p = (d.participants || {})[k] || {};
+      const av = document.createElement("span");
+      av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
+      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ninja"));
+      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+      faces.appendChild(av);
+    });
+    if(keys.length > 3){
+      const more = document.createElement("span");
+      more.className = "battle-av battle-av-more";
+      more.textContent = "+" + (keys.length - 3);
+      faces.appendChild(more);
+    }
+  }
+  const ln = row.querySelector(".battle-side-names");
+  if(ln) ln.textContent = vroomNameList(keys, d);
+}
 function refreshBattleBoard(board, d){
   const r = battleReplay(d);
   [...board.querySelectorAll(".battle-side")].forEach(row => {
     const side = row.dataset.side;
+    try{ battlePaintFaces(row, d, side); }catch(e){}
     const hp = r.hp[side], max = r.max[side];
     const prev = Number(row.dataset.hp);
     row.dataset.hp = hp;
@@ -134307,16 +134594,8 @@ function openInviteFriendsSheet(roomCode){
     const ids = friendPublicIds();
     /* (384) a friend in Fire Code alone has no board row: their name and face from their own presence beat (friendCardFromPresence),
        or from their chat with you where it has been read */
-    const known = id => {
-      if(rows[id]) return rows[id];
-      const fromBeat = friendCardFromPresence(id);
-      if(fromBeat) return fromBeat;
-      try{
-        const p = (chatListPeople[friendChatCode(id)] || []).find(x => x && x.key === id);
-        if(p && p.name) return { pub: id, firstName: p.name, avatarChar: p.avatarChar || "ninja" };
-      }catch(e){}
-      return { pub: id };
-    };
+    /* (384 vr2) the same answer every friends list gives now: friendCardOf */
+    const known = id => friendCardOf(id, rows);
     /* THE ROOM'S CLASS DECIDES WHO CAN COME (384): a friend known not to be in it sorts below the rest, greyed */
     const roomCls = inviteRoomClass(roomCode);
     const people = ids.map(known).map((e, i) => ({ e, i, out: friendInClass(e.pub, roomCls) === false }))
@@ -134354,7 +134633,7 @@ function openInviteFriendsSheet(roomCode){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Student");
+      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Friend");
       text.appendChild(nm);
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
       const b = document.createElement("button");
@@ -136137,6 +136416,19 @@ function buildVroomChatPanel(container, ctx){
       const ordered = messages.slice().sort(
         (a, b) => ((a.bump || a.ts || 0) - (b.bump || b.ts || 0)));
       ordered.forEach(m => {
+        /* (384 vr2) SOMEBODY LEFT: a quiet line across the chat, written by the leave itself (leaveVirtualRoom) - not a message,
+           so no name-colon, no reactions and nothing to tap */
+        if(m && m.type === "left"){
+          const sys = document.createElement("p");
+          sys.className = "vroom-chat-sys";
+          sys.dataset.key = m.key || "";
+          const who = document.createElement("span");
+          who.className = "vroom-chat-sys-name";
+          who.textContent = m.name || "Someone";
+          sys.append(who, document.createTextNode(" " + (m.text || "left.")));
+          list.appendChild(sys);
+          return;
+        }
         const wrap = document.createElement("button");
         wrap.type = "button";
         wrap.className = "vroom-chat-msgwrap";
@@ -136225,7 +136517,8 @@ function buildVroomChatPanel(container, ctx){
        badge. On a tablet the panel is always on screen, so anything that
        renders is seen; the dot is only ever meaningful on the phone
        sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
-    const others = (messages || []).filter(m => m.key !== CTX.myKey());
+    /* (384 vr2) a "left" line is not somebody saying something: never unread, never a preview, no sound */
+    const others = (messages || []).filter(m => m.key !== CTX.myKey() && m.type !== "left");
     newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
     /* somebody else's message arriving after the first render (build 322) */
     if(announcedAny && newestTs > sndHeardTs){
@@ -136902,6 +137195,8 @@ function startVroomRaceListener(){
     if(!docSnap.exists || !raceMarkersEl) return;
     const data = docSnap.data();
     announceVroomLeave(data);
+    /* (384 vr2) this device's own Pause screen says who is still racing */
+    try{ paintPauseRoomLine(data); }catch(e){}
     /* THE PEOPLE IN THIS RACE, not everybody on the room document - see
        vroomRacersOf(). */
     const entries = Object.entries(vroomRacersOf(data))
@@ -136976,6 +137271,8 @@ function startVroomRaceListener(){
       const stack = stackOf[key] || { y: "0rem", z: "1" };
       marker.className = "vroom-race-marker"
         + (p.finished ? " is-finished" : "")
+        /* (384 vr2) paused: still on the line where they stopped, dimmed - the race is not waiting on them */
+        + (!p.finished && p.paused ? " is-paused" : "")
         + (key === vroomMyKey ? " is-me" : "");
       marker.style.setProperty("--stack-y", stack.y);
       marker.style.setProperty("--stack-z", stack.z);
@@ -136983,7 +137280,7 @@ function startVroomRaceListener(){
       marker.style.color = color;
       const pct = p.finished ? 100 : Math.min(100, p.progress || 0);
       marker.style.left = pct + "%";
-      marker.title = p.name + " \u2014 " + pct + "%";
+      marker.title = p.name + " \u2014 " + pct + "%" + (!p.finished && p.paused ? " (paused)" : "");
       const avatar = document.createElement("span");
       avatar.className = "vroom-race-marker-avatar";
       /* SAFE, like every other row built from somebody else's document:
@@ -137047,8 +137344,11 @@ function finishVirtualRoomTest(pct, elapsedMs){
     ["participants." + myKey + ".elapsedMs"]: elapsedMs,
     ["participants." + myKey + ".xp"]: xpNoBadge || xp,
     ["participants." + myKey + ".xpLines"]: lines,
-    ["participants." + myKey + ".totalScore"]: xpNoBadge || xp
+    ["participants." + myKey + ".totalScore"]: xpNoBadge || xp,
+    /* (384 vr2) finished is not paused (vroomNotePaused) - in the write the finish already makes */
+    ["participants." + myKey + ".paused"]: firebase.firestore.FieldValue.delete()
   }).catch(() => {});
+  vroomPausedSent = false;
   /* (384 review) THE WAIT CARD AT ONCE, NOT ON THE SERVER'S ANSWER. It came up only when the server had acknowledged this write -
      on a slow connection seconds after the results, with nothing on them saying the room was still going, and on a dropped one
      never (a queued write's promise does not settle offline). The write is in the local cache the moment it is made, so the
@@ -137215,6 +137515,9 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
      compared. A player who never reports - gone quiet, an old build - is
      waited for up to VROOM_REVEAL_WAIT_MS and no longer. */
   let allInAt = 0, allRevealedAt = 0, rolled = false, iSaidDone = false, prep = null;
+  /* (384 vr2) who was counted in for being paused, and whether this match's outcome has been recorded */
+  const pausedAtAllIn = [];
+  let outcomeRecorded = false, movedOn = false;
   const clearPrep = () => { if(prep){ prep.remove(); prep = null; } };
   const tick = setInterval(() => {
     /* Out of the room is out of the show: somebody who left from the
@@ -137292,11 +137595,40 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
        longer than any one question's 45 seconds), so they stop holding
        the room up; the board ranks them where their score puts them. */
     const here = presentParticipants(racing) || {};
-    const finishedN = Object.keys(racing).filter(k => racing[k].finished || !here[k]).length;
+    /* ---- PAUSED IS NOT WAITED FOR; BACK IN THE LOBBY IS NOT RACING (384, Virtual Room round 2) ----
+       "Pausing should only pause you." A racer paused (their entry's `paused`, vroomNotePaused) counts as in, as somebody whose
+       app died does - the race finishes without them. If they resume before the leaderboard rolls they are waited on again
+       (pausedAtAllIn, below). A racer whose entry says they are back in the lobby from THIS match (vroomBackFrom) is not racing
+       either: that is only ever seen by somebody who finished after the others had gone back - a racer who paused - and they
+       are told so rather than left waiting on people who are no longer in it. */
+    /* (said once, below: nothing more to count on this card) */
+    if(movedOn) return;
+    const keys = Object.keys(racing);
+    const backK = k => vroomBackFrom(data, racing[k]);
+    const doneK = k => !!racing[k].finished || !here[k] || backK(k);
+    const pausedK = k => !doneK(k) && !!racing[k].paused;
+    const finishedN = keys.filter(doneK).length;
+    const pausedKeys = keys.filter(pausedK);
+    const inN = finishedN + pausedKeys.length;
     /* a pair like every other on the results (build 315, see rsPair) */
     wCount.textContent = finishedN + " / " + totalN;
     setBarFill(wFill, totalN ? Math.round(finishedN / totalN * 100) : 0);
-    if(totalN > 0 && finishedN === totalN){
+    if(totalN > 0 && inN === totalN){
+      /* THE MATCH WENT ON WITHOUT THIS DEVICE: everybody else is back in the lobby (their results already gone from the room
+         document), so there are no standings to roll - a line saying so, and Return to lobby where Leave room was. */
+      if(!allInAt && !rolled && keys.some(k => k !== vroomMyKey && backK(k))){
+        rolled = true; movedOn = true;
+        clearInterval(tick);
+        clearPrep();
+        wait.classList.add("is-all-in", "is-moved-on");
+        wText.textContent = "The race is over \u2014 everyone else is back in the lobby";
+        const toLobby = document.createElement("button");
+        toLobby.type = "button"; toLobby.className = "vroom-wait-leave vroom-wait-tolobby";
+        toLobby.textContent = "Return to lobby";
+        toLobby.addEventListener("click", () => { vroomStashedResults = null; document.getElementById("vroom-prep")?.remove(); vroomReturnToLobby(); });
+        if(leave.parentNode) leave.replaceWith(toLobby); else wait.appendChild(toLobby);
+        return;
+      }
       if(!allInAt){
         allInAt = Date.now();
         /* THE MATCH COUNTS HERE (build 313), the moment the standings are
@@ -137304,10 +137636,17 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
            which a race has not reached since build 240 - so no race had
            counted towards "Matches played", first places or the top
            three since then. Ranked the way the leaderboard ranks. */
-        try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
+        /* (384 vr2) once, though a resume can take the room out of "all in" and back */
+        if(!outcomeRecorded){
+          outcomeRecorded = true;
+          try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
+        }
       }
+      pausedKeys.forEach(k => { if(pausedAtAllIn.indexOf(k) < 0) pausedAtAllIn.push(k); });
       wait.classList.add("is-all-in");
-      wText.textContent = "Everyone's done — results coming up";
+      wText.textContent = pausedKeys.length
+        ? "Results coming up \u2014 " + (pausedKeys.length === 1 ? "1 player is paused" : pausedKeys.length + " players are paused")
+        : "Everyone\u2019s done \u2014 results coming up";
       /* THE WAY OUT STAYS (build 246). It used to go the moment the last
          person finished, and until the leaderboard rolled - twelve
          seconds at the soonest, close to a minute when somebody's own
@@ -137321,7 +137660,14 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
          leaderboard for the whole of VROOM_REVEAL_WAIT_MS, because a
          reveal that never ran never reports being done. Everybody else
          sat on "Everyone's done - results coming up" for over a minute. */
-      if(!allRevealedAt && Object.keys(racing).every(k => racing[k].revealDone === true || !here[k])) allRevealedAt = Date.now();
+      /* (384 vr2) nor a paused racer, whose results have not started, nor one already back in the lobby */
+      if(!allRevealedAt && keys.every(k => racing[k].revealDone === true || !here[k] || backK(k) || pausedK(k))) allRevealedAt = Date.now();
+    } else if(allInAt && !rolled && pausedAtAllIn.some(k => racing[k] && !doneK(k) && !pausedK(k))){
+      /* (384 vr2) SOMEBODY WHO WAS PAUSED IS RACING AGAIN before the leaderboard rolled: the room waits on them again */
+      allInAt = 0; allRevealedAt = 0;
+      clearPrep();
+      wait.classList.remove("is-all-in");
+      wText.textContent = "Waiting on other players to finish";
     }
   });
 }
@@ -137417,6 +137763,22 @@ function buildRoomReviewTabs(run){
   return wrap;
 }
 
+/* ---- BACK IN THE LOBBY FROM WHICH MATCH (384 vr2) ----
+   A racer who paused may finish after the others have gone back to the lobby, and going back resets their entries (finished,
+   score, xp) - so that late finisher's results waited on people who were no longer racing, for good, or drew a leaderboard of
+   zeros. Going back says which match it was back from: `back` = that match's startAt, in the reset the return already writes
+   (no write of its own). vroomBackFrom(d, p): this entry is back from the match d is on. */
+function vroomBackPatch(fields){
+  try{
+    const d = lastFinaleData || (vroomLastDoc && vroomLastDoc.code === vroomCode ? vroomLastDoc.data : null) || {};
+    if(d.startAt) fields["participants." + vroomMyKey + ".back"] = Number(d.startAt) || 0;
+    fields["participants." + vroomMyKey + ".paused"] = firebase.firestore.FieldValue.delete();
+  }catch(e){}
+  vroomPausedSent = false;
+}
+function vroomBackFrom(d, p){
+  return !!(p && p.back && d && d.startAt && Number(p.back) === Number(d.startAt));
+}
 function vroomReturnToLobby(){
   const resetFields = {
     ["participants." + vroomMyKey + ".progress"]: 0,
@@ -137428,6 +137790,7 @@ function vroomReturnToLobby(){
     ["participants." + vroomMyKey + ".revealDone"]: false,
     ["participants." + vroomMyKey + ".ready"]: false
   };
+  vroomBackPatch(resetFields);
   if(vroomIsHost) resetFields.status = "waiting";
   vroomAwaitingOthers = false;
   /* (384 review) INTO THE LOBBY ON THE TAP. It waited for the server's answer (and on a failed or queued write never came):
@@ -137819,6 +138182,7 @@ function showVirtualRoomResults(){
       ["participants." + vroomMyKey + ".revealDone"]: false,
       ["participants." + vroomMyKey + ".ready"]: false
     };
+    vroomBackPatch(resetFields);
     if(vroomIsHost) resetFields.status = "waiting";
     vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
       detachVroomListener();
@@ -140773,7 +141137,7 @@ function showUnlockDetail(o){
        should not be there, you should not be able to see them". The grey
        form (build 314) still gave the shape and its channels away; a badge
        not found is its empty slot, the outline and nothing in it. */
-    if(o.unlocked){ try{ const bt = badgeThemeFor(o.id); if(bt && bt.p) art.style.setProperty("--badge-glow", bt.p); }catch(e){} }
+    if(o.unlocked){ try{ const bt = badgeThemeFor(o.id); if(bt && bt.p) art.style.setProperty("--badge-glow", bt.g || bt.p); }catch(e){} }
     else { art.style.setProperty("--badge-glow", "#8E9196"); art.classList.add("is-empty-slot"); }
     try{ art.appendChild(buildUnitBadgeSVG(o.id, o.unlocked ? true : false, { fine: true })); }catch(e){}
   } else if(o.kind === "fx"){
@@ -141978,10 +142342,14 @@ let friendsShownSignature = null;
    changed, not on a snapshot having arrived. */
 function friendsViewSignature(){
   const ids = xs => (xs || []).slice().sort().join(",");
+  /* (384 vr2) and each friend as drawn - a name or face arriving from their beat (Fire Code alone) or the board redraws it, and
+     a friend with no row who comes online lights up */
+  const cards = friendPublicIds().map(p => friendCardOf(p));
   return [ids(friendPublicIds()),
           ids(incomingFriendRequests().map(e => e.pub)),
           ids(outgoingFriendRequests()),
-          ids((leaderboardRows || []).filter(isOnline).map(e => e.pub))].join("|");
+          ids((leaderboardRows || []).filter(isOnline).map(e => e.pub)),
+          ids(cards.map(c => c.pub + ":" + (c.firstName || "") + ":" + (c.avatarChar || "") + ":" + (isOnline(c) ? 1 : 0)))].join("|");
 }
 
 function attachFriendsBoardListener(){
@@ -142260,7 +142628,10 @@ function showFriends(){
     text.className = "friend-row-text";
     const nm = document.createElement("p");
     nm.className = "friend-row-name";
-    nm.textContent = entry.firstName || "Anonymous";
+    /* (384 vr2) a friend with no board row is a card from friendCardOf: named by their own beat, or "Friend" until it lands */
+    const noRow = !!(entry && (entry.fromBeat || entry.fromChat || entry.unknown));
+    nm.textContent = entry.firstName || (noRow ? "Friend" : "Anonymous");
+    if(entry && (entry.unknown || entry.fromChat)){ nm.dataset.friendName = entry.pub || ""; nm.dataset.fallback = "1"; art.dataset.friendArt = entry.pub || ""; art.dataset.fallback = "1"; }
     const sub = document.createElement("p");
     sub.className = "friend-row-sub";
     /* THE DOT SAYS ONLINE; THE LINE STILL HAS TO SAY WHO THEY ARE.
@@ -142283,6 +142654,14 @@ function showFriends(){
        The colour comes from RANK_COLOR, the one table the emblems, the
        cards and the themes all read, so a rank is the same colour
        everywhere it is mentioned. */
+    /* (384 vr2) no board row, no rank or level to name (a friend in Fire Code alone has neither in the academy): the classes
+       their beat names instead, or that nothing says yet */
+    if(noRow){
+      const cl = document.createElement("span");
+      cl.className = "friend-row-lvl friend-row-class";
+      cl.textContent = friendClassLine(entry);
+      sub.appendChild(cl);
+    } else {
     const rk = rankOfEntry(entry);
     if(rk){
       const rankEl = document.createElement("span");
@@ -142295,6 +142674,7 @@ function showFriends(){
     lvl.className = "friend-row-lvl";
     lvl.textContent = "Level " + (entry.level || 0);
     sub.appendChild(lvl);
+    }
     text.append(nm, sub);
     row.append(art, text);
     /* ---- TAP A FRIEND, GET THEIR CARD (build 231) ----
@@ -142302,7 +142682,8 @@ function showFriends(){
        friend list of people you can click it there too". The buttons on
        the row keep their own jobs - a tap on Accept is not a tap on the
        person. */
-    if(entry && entry.pub){
+    /* (the card is the class board's numbers - a friend with no row has none to show, so their row is not a door to it) */
+    if(entry && entry.pub && !noRow){
       row.classList.add("is-tappable");
       row.setAttribute("role", "button");
       row.tabIndex = 0;
@@ -142448,13 +142829,16 @@ function showFriends(){
   lh.className = "sect-label";
   {
     /* Nova counts as online while he is available (b324n2) */
-    const onlineN = friendPublicIds().map(id => rows[id]).filter(isOnline).length
+    const onlineN = friendPublicIds().map(id => friendCardOf(id, rows)).filter(isOnline).length
       + ((novaIsFriend() && !novaAway()) ? 1 : 0);
     lh.textContent = "Your friends" + (onlineN ? "  \u00b7  " + onlineN + " online" : "");
   }
   list.appendChild(lh);
   const ids = friendPublicIds();
-  const known = ids.map(id => rows[id]).filter(Boolean);
+  /* (384 vr2) EVERY FRIEND IS ON THE LIST. Madison: "If I'm friends with someone they should be there and stuff." This was the
+     friends with a board row, and a friend in Fire Code alone has none - left off, and counted under "1 friend is not on the
+     board right now". Each is a card now (friendCardOf): the row, their own beat, the chat, or "Friend" until one of them lands. */
+  const known = ids.map(id => friendCardOf(id, rows));
   /* Nova's row (b324n2): first, always, since build 382 - or on his own when there is nobody else.
      No Remove: "the option to remove him won't be there". */
   const nova = novaIsFriend();
@@ -142498,19 +142882,8 @@ function showFriends(){
         })
       ]));
     });
-    /* Somebody on your list whose row has not loaded - they have not
-       opened the app since, or turned sharing off. Named rather than
-       silently dropped, so a friends list of four does not quietly
-       become three. */
-    const missing = ids.length - known.length;
-    if(missing > 0){
-      const m = document.createElement("p");
-      m.className = "friend-hint";
-      m.textContent = missing === 1
-        ? "1 friend is not on the board right now."
-        : missing + " friends are not on the board right now.";
-      list.appendChild(m);
-    }
+    /* (A friend whose row has not loaded was counted here, "1 friend is not on the board right now", and left off the list.
+       Every friend is a row above now, said for what it is - see friendClassLine.) */
   }
   /* Your code, then how to add one, then who you have. Requests, when
      there are any, were appended above all three - somebody is waiting
@@ -146707,7 +147080,7 @@ function buildBadgeStrip(cls){
     cell.className = "badge-strip-cell" + (has ? " is-earned" : "");
     try{
       const bt = badgeThemeFor(unit);
-      if(bt && bt.p) cell.style.setProperty("--badge-glow", bt.p);
+      if(bt && bt.p) cell.style.setProperty("--badge-glow", bt.g || bt.p);
     }catch(e){}
     try{ cell.appendChild(buildUnitBadgeSVG(unit, has)); }catch(e){}
     cell.title = has ? badgeTitle(unit) : "";
@@ -146847,7 +147220,7 @@ function buildBadgesTab(opts){
     /* its own colour on a badge found; no colour on an empty slot */
     try {
       const bt = badgeThemeFor(unit);
-      if(bt && bt.p) art.style.setProperty("--badge-glow", has ? bt.p : "#8E9196");
+      if(bt && bt.p) art.style.setProperty("--badge-glow", has ? (bt.g || bt.p) : "#8E9196");
     } catch(e){}
     /* the one look (build 382): badges no longer lose their shine */
     const dirt = has ? badgeDirtStage(unit) : 0;
@@ -147798,7 +148171,7 @@ function openBadgeInspect(unit, tile){
   ov.setAttribute("role", "dialog");
   ov.setAttribute("aria-modal", "true");
   ov.setAttribute("aria-label", det.name);
-  try{ const bt = badgeThemeFor(unit); ov.style.setProperty("--badge-col", found && bt && bt.p ? bt.p : "#8E9196"); }catch(e){}
+  try{ const bt = badgeThemeFor(unit); ov.style.setProperty("--badge-col", found && bt && bt.p ? (bt.g || bt.p) : "#8E9196"); }catch(e){}
   try{ setBadgeSlotShift(ov, unit); }catch(e){}
   const dim = mk("binspect-dim");
   const stageEl = mk("binspect-stage");

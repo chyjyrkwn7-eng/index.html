@@ -24,7 +24,11 @@ connection holds them (CLOUD.slow), so "the screen waited for the server" can be
  (K) Nova invited while the server is slow still readies (his driver outlived a first answer from before his entry);
  (L) the lobby line for a Fire Code room names Fire Code, and a Battle lobby says the number of questions it runs;
  (M) the invite sheet in Fire Code asks for class sharing only when the account has it off;
- (N) no sync code in any `vrooms` document; no page errors.
+ (N) no sync code in any `vrooms` document; no page errors;
+ (O) (384, Virtual Room round 2: "Just ensure it makes sense and ensure it works") EVERY DOOR: an invite to a Fire Code room that
+     reaches the academy-only account anyway (as an older build would send it) is turned away from its banner's Join and from the
+     Inbox's Join, as (C) turns away a join by code and the open rooms list; an account in both classes joins an academy room from
+     Fire Code's page, as (B) has one join a Fire Code room from the academy's.
 Run:  python3 tools/check-b384-vroom-review.py     (--against OLD/index.html must FAIL)    ONLY=B,C to run some sections"""
 import copy, http.server, json, os, re, socket, sys, threading, time
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -710,6 +714,45 @@ with sync_playwright() as pw:
             leave(O)
         except Exception as e:
             chk("(M) ran to the end", False, repr(e)[:300]); leave(O)
+
+    # ===================== (O) every door, for an account not in the room's class =====================
+    if want("O"):
+        print("\n-- (O) every way in: the invite banner and the Inbox turn her away; an account in both classes joins either", flush=True)
+        try:
+            code_f = host_room(O, unit_f, "race", 5)
+            # an invite as an older build would send it (the greyed button sends none) - straight into her mailbox
+            inv = {"type": "vroom", "code": code_f, "cls": "ifc", "pub": OWNER, "at": now_ms(), "firstName": NAMES[OWNER], "avatarChar": AVATAR[OWNER]}
+            CLOUD.handle("set", {"dev": "test", "c": "vrooms", "id": "inbox-" + ALEX, "v": {"kind": "inbox", "msgs": {OWNER: inv}}, "merge": True})
+            A.evaluate("()=>showHome()")
+            ban = wait_for(A, "()=>{ try{ checkLobbyInvites(); }catch(e){} return document.querySelector('#lobby-invite .app-banner-act') ? true : null; }", tries=30, step=400)
+            if ban: A.evaluate("()=>document.querySelector('#lobby-invite .app-banner-act').click()")
+            A.wait_for_timeout(1500)
+            t1 = A.evaluate(TOASTS)
+            in1 = ALEX in (room(code_f).get("participants") or {}) or A.evaluate("()=>!!document.querySelector('#stage .screen-vroom-lobby')")
+            chk("(O) the invite banner's Join turns the academy-only account away from the Fire Code room, and says why (banner %s; in: %s; %r)" % (bool(ban), in1, t1),
+                bool(ban) and not in1 and bool(t1.strip()), {"toast": t1})
+            # the same invite again, from the Inbox
+            inv["at"] = now_ms()
+            CLOUD.handle("set", {"dev": "test", "c": "vrooms", "id": "inbox-" + ALEX, "v": {"kind": "inbox", "msgs": {OWNER: inv}}, "merge": True})
+            A.wait_for_timeout(1500)
+            A.evaluate("()=>{ document.getElementById('lobby-invite')?.remove(); document.querySelectorAll('.toast').forEach(t => t.remove()); chatDockTab = 'notifs'; openChatDock(); try{ syncChatDock(); renderNotifications(); }catch(e){} }")
+            JOIN = ".chatdock-notif-vroom .chatdock-notif-acts .next:not(.ghost)"
+            jb = wait_for(A, "(s)=>{ try{ renderNotifications(); }catch(e){} return document.querySelector(s) ? true : null; }", JOIN, tries=20, step=400)
+            if jb: A.evaluate("(s)=>document.querySelector(s).click()", JOIN)
+            A.wait_for_timeout(1500)
+            t2 = A.evaluate(TOASTS)
+            in2 = ALEX in (room(code_f).get("participants") or {}) or A.evaluate("()=>!!document.querySelector('#stage .screen-vroom-lobby')")
+            chk("(O) the Inbox's Join turns her away the same (row %s; in: %s; %r)" % (bool(jb), in2, t2), bool(jb) and not in2 and bool(t2.strip()), {"toast": t2})
+            A.evaluate("()=>{ try{ closeChatDock(); }catch(e){} showHome(); }")
+            leave(O)
+            # an account in both classes, on Fire Code's page, into an academy room
+            code_a = host_room(A, unit_a, "race", 5)
+            lo = join(O, code_a)
+            chk("(O) an account in both classes joins an academy room from Fire Code's page (%s)" % bool(lo),
+                bool(lo) and OWNER in (room(code_a).get("participants") or {}) and room(code_a).get("cls") in (None, "academy"), room(code_a).get("participants"))
+            leave(O); leave(A)
+        except Exception as e:
+            chk("(O) ran to the end", False, repr(e)[:300]); leave(O); leave(A)
 
     # ===================== (N) =====================
     print("\n-- (N) no sync code in any vrooms document; no page errors", flush=True)

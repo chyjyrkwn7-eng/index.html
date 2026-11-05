@@ -35467,3 +35467,184 @@ that checks out, if we need update some colors so it all meshed together perfect
   deliberate second step; the off-whites inside character and banner art (#E8ECEF).
 Before/after of nine screens (Home, Profile, Stats, Settings, Leaderboard, units, modes, a question, chat) in the scratchpad
 r2/white-cmp-a.jpg, -b.jpg and r2/white-zoom.jpg: crisper titles and rows, the hierarchy intact, nothing out of family.
+
+## 384 Virtual Room round 2: pause only pauses you; leaving updates everyone live; every friend by name (NOT on main)
+
+Madison, on the last review's open questions: "Pausing should only pause you.. and yeah if you pause it would let you leave." /
+"If someone leaves it would update real time so people know they left. For example the race, if someone leaves, it would remove
+them from the top thing on the race. In the chat, it would say x player left or whatever." / "If I'm friends with someone they
+should be there and stuff." / on the invite rule: "Just ensure it makes sense and ensure it works".
+
+PAUSE ONLY PAUSES YOU (a race; Tug of War and Battle's Pause was already only a way out and stays so)
+- Before: a race's Pause stopped your clock (right) but presence kept you "here", so every finished player's results sat on
+  "Waiting on other players" for as long as you stayed paused.
+- The pause is said on your room entry: `participants.<you>.paused` = the moment (vroomNotePaused) - ONE write on Pause and ONE on
+  Resume, only in a race, never periodic. Cleared inside writes that happen anyway: the finish (finishVirtualRoomTest), a return to
+  the lobby (vroomBackPatch), a leave (the entry goes).
+- THE RULE CHOSEN: a paused racer is not waited for - the finale counts them as in, exactly as it counts a racer whose app died
+  (showVirtualRoomFinaleReveal), and their reveal is not waited for either. Your own run stays held, all of it (question, the 45s
+  clock, your time), until you resume. Resume before the leaderboard rolls and the others wait on you again (their card goes from
+  "results coming up" back to the count - only for a racer counted in BECAUSE paused, pausedAtAllIn, so an old build's reset can
+  never make anybody wait for good). Resume after it and you finish on your own: your results, then the standings as the room has
+  them. NOT chosen: ending a paused racer's race when the others finish (a ten-second pause would cost the rest of the race).
+- FINISHING AFTER THE OTHERS WENT BACK: going back to the lobby resets an entry (finished/score/xp), so a late finisher waited on
+  people who were no longer racing, for good. A return now writes `back` = that match's startAt in the reset it already makes
+  (vroomBackPatch, both return paths); a racer back from THIS match (vroomBackFrom) is not racing, and a device that only gets to
+  "all in" because others are back shows "The race is over - everyone else is back in the lobby" with Return to lobby instead of
+  Leave room (`.vroom-waitcard.is-moved-on`), and rolls no leaderboard of zeros.
+- The race line dims a paused racer's marker (.is-paused, opacity .42; "(paused)" in its title). The race's pause screen says
+  "Your race and its timer are on hold. Everyone else carries on, and the results won't wait for you.", a live line of who is
+  still racing (.pause-room, fed by the race line's own listener - no read of its own), and Leave match where Quit test was; its
+  confirm reads like Tug of War's and Battle's ("Leave the match?" / "The race carries on without you. You won't get any XP from
+  it." / Keep going, Leave).
+- STILL OPEN (owner's call): somebody still paused in the last race is present in the lobby and not ready, so the NEXT match waits
+  for them to come back or leave (as the lobby already waits on anybody sitting on results).
+
+LEAVING, LIVE (every way out is leaveVirtualRoom: Pause > Leave match, Tug/Battle's Pause, Leave room on the results, the lobby)
+- Race line: the leaver's marker already went on the next snapshot (vroomRacersOf drops a deleted entry) - asserted, unchanged.
+- THE ROOM'S CHAT: the leave's own update now also carries chatMessages arrayUnion({ type: "left", key, name, text: "left the
+  match." / "left the lobby." / "left the room.", ts }) - no write of its own. Drawn as a quiet centred line (.vroom-chat-sys), not
+  a message (no name-colon, no reactions), and never counted unread, sounded or raised as a preview (the toast already says it).
+  An older build would draw it as "<name>: left the match." What the room chat is during a test: a race question has no chat on
+  screen - the lobby's listener stays up and new messages come as the one-line VIRTUAL ROOM preview; after your finish the results'
+  Room button (#roomchat-fab) opens the room's chat in a sheet (and over the leaderboard); the lobby has it at its foot.
+- lastLeave carries `where` (vroomLeaveWhere, read by the leaver before its flags clear), so every toast says where THEY were.
+- TUG OF WAR / BATTLE: the rope's figures and side names, and Battle's faces and names, were drawn with the screen, which is rebuilt
+  only when YOUR question changes - a leaver stood there until you next answered. tugPaintPeople (from tugPaintRope) and
+  battlePaintFaces (from refreshBattleBoard) redraw them on any snapshot where who is on a side changed.
+- Results: a leaver's entry is gone, so no game waits on them (unchanged, asserted).
+COST: a leave is the same one write it always was (each device in the room reads it once, as before). A pause is +1 write and a
+resume +1 (each read once by every other device in the room): a 4-person race where one person pauses and resumes is 2 writes and
+6 reads. A return to the lobby: no new write. Nothing periodic was added.
+
+EVERY FRIEND BY NAME
+- friendCardOf(pub, rows): the board row, else the friend's own presence beat (384's `c`: name, character, classes) - fromBeat,
+  else the chat with them where it has been read - fromChat, else unknown. No read or write of its own (presence is the document
+  every friends screen already attaches). Used by the chat's Friends tab, the friend chat's header, Manage friends, the chat's
+  invite sheet, the Virtual Room invite sheet (its own copy replaced), openFriendChat's remembered name, and chatPersonOf (group
+  chat members) as a fallback after the row.
+- Manage friends lists EVERY friend now (it dropped anybody without a row and said "1 friend is not on the board right now"). A
+  friend with no row has no academy rank or level to show: the line under the name says their classes from the beat ("Fire Code")
+  or "Not on the class board yet", and the row does not open the class-board card (it has no numbers for them).
+- A FRIEND NOTHING IS KNOWN ABOUT (an older build that has not beaten since, never opened since): "Friend" with the default
+  character, asleep; data-unknown / data-fallback mark it, and friendsListCatchUp (now on presence snapshots as well as the
+  board's) and paintFriendFallbacks fill it in where it stands when the row or the beat arrives.
+- Not changed: the Leaderboard's boards rank the academy's rows; a friend in Fire Code alone has none to rank.
+
+THE INVITE RULE, END TO END: re-verified - check-b384-vroom-review (B)/(C) as before, plus (O): an invite to a Fire Code room that
+reaches the academy-only account anyway (as an older build would send it) is turned away from the banner's Join and from the
+Inbox's Join with the same line, and an account in both classes joins an academy room from Fire Code's page. Every door goes
+through joinVirtualRoomLobby, which asks the account's own enrolledClasses. (O) passes on the build before too - nothing to fix.
+
+GATE tools/check-b384-vrpause.py (check-b384-vroom-review's harness exec'd, plus two made-up academy accounts for 2 v 2; Devon's
+character changed so "from his beat" differs from the default): (P) the pause on the entry, the marker dimmed, the room line and
+the way out, the finished player all in and the leaderboard rolled while the other is still paused; (R) a resume before the roll
+puts the finished player back to waiting; (Q) the return says which match, the late finisher gets the moved-on card and Return to
+lobby works; (L) Pause > Leave match asks then leaves, marker gone, the chat's `left` line, one write, results not held, not unread
+nor a preview, shown in the Room chat sheet; (T) Tug: the leaver's figure and name off the rope with the others' question unchanged,
+and the chat line; (B) Battle: the leaver's face and name off their side the same way; (F) the Fire Code-only friend named with
+their character on the Friends tab as their beat lands (tab already open), the unknown friend as "Friend", Manage friends 4 of 4
+with the class line, the chat invite sheet, no room/presence write, the friend chat header; (N) no code in vrooms, no page errors.
+RESULTS (one browser at a time, load 4-13): ALL PASS (34). --against claude/b384 (c323281) FAILS 19: every (P), (R), (Q), the
+chat line and Room chat line in (L), both (T), (B), and (F)'s Friends tab, Manage friends (2 of 4), invite sheet ("Student"),
+header ("Friend"). Passing on both, as invariants: Leave match asks and leaves, the marker leaving (already worked), one write,
+results not held, nothing unread, the beat names them (384), the unknown friend's "Friend", no writes, no codes, no page errors.
+Others: check-js ALL PASS; check-b384-vroom-review ALL PASS (45, with (O)); check-b384-vrifc ALL PASS (36; a room still 17 writes
+/ 39 reads, Fire Code and academy alike); check-vroom ALL PASS (219); check-friends ALL PASS (76 - the same 76 on c323281);
+check-b384-bannerroom ALL PASS. Not run (as asked): sweep-layout. Looked at (scratchpad vr2/shots, made-up names): the race's
+pause card with the room line, the other player's line with the dimmed marker, the Room chat sheet with "Kimber left the match.".
+
+### Build 384, round 2 final check - check-b326-f brought up to the 382-384 unit card (NOT on main, waiting for Madison)
+- check-b326-f failed 21 checks on 384; the same 21 on the build just before pure white (1ee8f06), on round one's final build
+  (185cc5c) and on live 383. Not a 384 fault, and not from pure white.
+- Section 6 (the unit card) still described the card from before 382/383: a check circle above the name, the name at 700, an
+  accent ring round a picked card, the Penal Code "versions" line. Since then: the iOS look (name 600 over the count's 500,
+  the badge 2.3rem on a phone), "a green glowing dot" for a picked unit (383; no edge, the card a step lighter), the dot in the
+  theme's colour (--pick-dot, 384), and the Penal versions ended on their own at PENAL_VERSIONS_END_AT (Oct 26).
+  Rewritten to that card: the badge bottom-right (>=2rem) and the name the headline at the top; a picked card a step lighter
+  (its background read off the page) with the dot visible in --pick-dot in its top-right corner, clear of the name's words
+  (a Range over the name), no edge or stripe, and an unpicked card with no dot; the Penal line only while the unit has a
+  second version, otherwise none. The picked-card check FAILS on 382 (a330ee8: no dot, no step) and passes on 383 and 384.
+- Left, both failing the same on live 383: Level 2 / Level 3 on the unit screen's level tabs at 3.9:1 (round one's note), and
+  "the tab bar's glass ... the Virtual Room's bar the same frost" - the tab bar went to blur(7px) in 377 and the Virtual Room's
+  Match settings bar kept blur(30px); the gate also still names 30px. Nobody has asked for that bar to change.
+- check-b382-test re-run on the merged build: ALL PASS (the zoom hint at 3.5s was load).
+
+## 384 final check: badges round 2 - abstract outlines, a colour of its own for every badge, the academy's look-alikes
+
+Madison, of the last round's ten new Fire Code outlines: "I can tell you right now I don't like the acorn badge.. please don't
+make badges that look like real things? I thought we've been over that. Seems like you need to redo a few. ALSO why are there so
+many repeating colors. Make that right. Make colors darker lighter, do some whites, some blacks? Idk make them great." Then: "if
+the academy has look a like badges as well then get on that too."
+OUTLINES, FIRE CODE. All ten from the twins round pictured things (bell, flask, shell, puzzle piece, mushroom, goblet, heart,
+acorn, vase, anvil). Twelve plain outlines replace them and two look-alikes found on the way - the gear (Ch 6; beside the burst
+plate it is one toothed disc at 28px, 0.98) and the hex (Ch 8; beside the coin one rounded polygon, 0.90 on the 2px band).
+Built from shapely parts (scratchpad b2/gen10.py), every corner rounded, one or two channels; names and chapters (set by
+badgeBackPlan, the assignment that keeps the smallest title largest - b2/fit3.py, solve.py):
+  Finder bardia (a tall diamond crossed by a bar), Ch 3 bowhex (a wide hexagon, top and bottom bowed in), Ch 6 slipdisc (a disc
+  cut across, halves slipped), Ch 8 scoopsq (a square with a round scoop out of one corner), Ch 26 twinblock (a wide block with
+  a round notch top and bottom), Ch 28 slope (a block whose top runs downhill), Ch 35 bitehex (a hexagon with round bites out of
+  its side points), Ch 51 slipsq (a block cut across, halves slipped), Ch 58 bent (top bowed up, bottom bowed in), Ch 61 notchsq
+  (a square with a step out of each corner), App B bitetri (a triangle with a round bite out of each corner), App C cuttri (a
+  triangle on its point with its corners cut off). Smallest back title of the twelve 0.0513 (Ch 8); every back's words inside
+  the field on three phones (check-b384-ifcbadges (3)(4)).
+  Turned down, measured (b2/score.py, eval2.py, ch8.py) or by eye at 28px: pentagon (the spire stretched), heptagon, notched
+  pentagon, concave-cornered octagon (the coin), a square bowed in on four sides (the four-point star turned, 0.92), a hexagon
+  bowed in (the hex), a stepped block (reads as a folder), a square notched on every side (an X), a stepped diamond (the diamond
+  at 28px), a spool and a cushion (the ribbon stretched), a leaf square and a stadium (the lens), two overlapping squares (the
+  slipped block), a square bowed in on two sides and out on two (the diamond at 2px, 0.85), a hexagon crossed by a bar (the bar
+  diamond's cousin), a fat three-pointed shape (its back too small).
+  NOTE: the PIL-rasterised masks the scratch tools first used scored lower than the page's own rasterising (the bowed square
+  0.74 vs 0.85) - candidates were re-scored on the page's masks (b2/pmasks.py) before the gate.
+OUTLINES, ACADEMY. Measured the same way, the academy had the look-alikes the lead listed: gate / hex / octagon (2px 0.85-0.90,
+one rounded polygon at 28px), disc / shield (one shape upside down, 0.87 stretch-blind), keystone / shield, fan / wedge. The
+fewest that clear all of it: TCOLE Rules hex -> slope, De-Escalation octagon -> twinblock, Crisis Intervention Training shield ->
+bent, Civil Process wedge -> slipsq - four of Fire Code's new outlines (sharing across classes is fine, per Madison). Each back
+holds its title no smaller than before (0.0920 = 0.0920, 0.0776 > 0.0740, 0.0796 > 0.0703, 0.0616 > 0.0425). The hex, octagon,
+shield and wedge stay in BADGE_SHAPE (BADGE_SHAPE_KEYS - the hash fallback set - is unchanged); Fire Code still uses the shield.
+COLOURS. Every badge in a class has its own enamel now. A table entry may be the enamel itself ("#RRGGBB"; badgeThemeFor's en).
+- How chosen (scratchpad b2/pal.py, cpal2.py): a lattice of CIELAB lightness (22-86) x hue (every 10 deg) x two strengths, plus
+  onyx, graphite, ivory and frost; each colour STRUCK on one reference token (the coin) at the case's size and its enamel's mean
+  colour measured (b2/rendercols.py) - the token's metal and clear coat squeeze colours (onyx strikes as #434343, a pearl as
+  #DFDEDD), so the hex alone overstates how far apart two enamels look. Annealed to targets, then the best nods.
+- The rule (check-b384-badgetwins (3)/(4)): no two enamels within CIEDE2000 11 as defined, none within 9 as struck, nothing
+  within 14 side by side - in the unit list as laid out at 440px (two columns, so the card below counts; Fire Code's list puts
+  the Finder first), the case scene's grid and the case on Profile (its tiles read off the page). Why those numbers: CIEDE2000
+  ~1-2 is a just-noticeable difference for large patches; marks the size of a badge on a card need several times that to be
+  told apart at a glance, and the struck reading is compressed, so 9 struck / 11 defined / 14 neighbouring is what keeps two
+  badges from reading as one colour while still fitting 58 colours. Achieved: Fire Code 11.2 / 9.8 / 15.1, academy 11.6 /
+  10.4 / 14.8. The 21 families alone ran down to 6.5 (violet / indigo), 6.7 (purple / violet), 6.8 (red / terracotta).
+- Fire Code: chapters whose old colour meant something keep the nod at a new lightness (fire reds: Ch 5 fire red, 57 brighter,
+  App C a hydrant's dark red, App I coral, 7 deep wine, 64 pale blush; oranges for emergencies and hot work; hazmat gold/amber,
+  Ch 63 the oxidizer placard's pale yellow; water and air blues, 67 the "dangerous when wet" blue; egress and crop greens;
+  wood browns; frost for cryogenic fluids; graphite for tires; onyx for the access roads' asphalt). Chapters whose old colour
+  meant nothing were left free - that is what spread the 58 round the wheel instead of eight pinks.
+- Academy: eight units change (the newer of each repeated or near pair where there was a choice): Racial Profiling light
+  violet, Code of Criminal Procedure pale lavender, Consular Notification deep teal, Sexual Assault deep magenta, Radio pale
+  amber, Phonetic Alphabet deep rust, Crisis Intervention deep violet, Traumatic Brain Injury light rose. Sixteen keep theirs
+  (Professional Policing's blue, Ethics' gold, Arrest's steel, Missing Children's amber ... pinned).
+- PALE ENAMELS (luminance over .58, badgeEnamelPale): struck with a fine dark edge where they meet the silver
+  (BADGE_STRIKE.paleEdge .62 over .75 token units at the wall) - the gunmetal trap the other way up; the band at the wall goes
+  from ~.40 of the field's light (the bevel's shade alone) to ~.30. The vector fallback already draws a dark plate edge.
+- NEAR-BLACK ENAMELS (luminance under .07): badgeThemeFor returns g, the colour lifted half way to white, and every glow/tint
+  that used .p (the found badge's --badge-glow, the case slot's --slot-col, the cutscene's and binspect's --badge-col, the
+  results card's --bt, the unlock card's colours) uses g - an onyx badge otherwise glows black. Every academy family is lighter
+  than that, so g is p there.
+GATES. check-b384-badgetwins now holds BOTH classes: outlines under 0.85 on the 1px band, the 2px band and blurred to a 28px
+card (sigma 9 of 200px), turned and flipped; then the colour rule above, the pale edge (<= .35) and the dark glow (L* >= 45).
+ALL PASS. --against claude/b384 (2ac229b): FAILS (1c) Ch 8 / Ch 31 0.90, (1d) Ch 6 / Ch 32 0.98, (2c) gate / hex 0.90, gate /
+octagon 0.89, (3a-d) 21 enamels for 58, (4a-d) 3 shared - the old ten objects are not twins, so (1b) passes there. The pale-
+edge and dark-glow checks pass vacuously on the old build (it had neither); against this build with paleEdge 0 and g = p the
+glow checks fail on every dark enamel, and the edge ratio moves .30 -> .41 (threshold .35).
+check-b384-ifcbadges: the academy pin moves ON PURPOSE 8996cbb2 -> 2de41ef8 (four outlines, eight enamels); ALL PASS
+(29), the academy's smallest back unchanged (10.6px on the Pro Max). check-b384-case ALL PASS. check-js ALL PASS.
+STILL READING AS THINGS (not changed, Madison's call - earlier rounds accepted them): Fire Code's crown (Ch 1), cut gem (7),
+flower (9, cinquefoil), lightning bolt (10), stars (20 five-point, 62 six-point, 53 four-point sparkle), hourglass (21), plus
+sign (25), bucket (29), medal (37), open book (38, chevron), letter T (36, tau), letter C / crescent (59), mountains (55),
+briefcase (63, tag), castle (App H), club suit (App D, trefoil), water drop (80), shield (4); the Maltese cross (5) is the fire
+service's own emblem by design. Near the gate's line but under it: diamond / quatrefoil 0.83 (Ch 64 / App I and the academy's
+Professional Policing / Victims of Crime), roundel / lens 0.83 (Ch 50 / Ex B), wave / card 0.83 (Ch 11 / 66). Stretch-blind
+(advisory, not gated - it also calls a rectangle and a diamond one shape): Fire Code keeps the disc / shield / half disc /
+keystone family the academy just lost (Ch 23 / 4 / 34 / 39).
+Media (scratchpad only): out-badges2/ - every badge per class before/after, the changed outlines before/after, the enamels, the
+unit screens on an iPhone 17 Pro Max.

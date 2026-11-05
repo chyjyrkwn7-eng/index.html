@@ -500,12 +500,23 @@ def check_contrast(br):
 
 # --------------------------------------------------------------------------
 CARDS = """() => {
+  /* a colour as 0-255 numbers, rgb() or color(srgb 0-1) alike */
+  const rgb = v => { const n = (String(v).match(/[\\d.]+/g) || []).map(Number); return /color\\(srgb/.test(v) ? n.slice(0, 3).map(x => x * 255) : n.slice(0, 3); };
+  /* the corner dot: where it is, whether it shows, whether its fill carries --pick-dot, whether it overlaps the name's words */
+  const dotOf = (c, b) => { const e = c.querySelector(':scope > .box'); if(!e) return null; const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+    const p = document.createElement('i'); p.style.color = 'var(--pick-dot)'; c.appendChild(p); const pd = getComputedStyle(p).color; p.remove();
+    const want = rgb(pd).map(x => Math.round(x)).join(', ');
+    const inDot = cs.backgroundImage.replace(/color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/g, (m, a, g, bb) => 'rgb(' + [a, g, bb].map(x => Math.round(x * 255)).join(', ')).includes(want);
+    const nm = c.querySelector('.pname'); let hits = false;
+    if(nm && r.width > 0){ const rg = document.createRange(); rg.selectNodeContents(nm);
+      hits = [...rg.getClientRects()].some(q => q.width > 0 && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top); }
+    return { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height, op: parseFloat(cs.opacity), inDot: inDot, hitsName: hits }; };
   const cards = [...document.querySelectorAll('.picks > label.pick')].filter(c => c.getBoundingClientRect().height > 0);
   return cards.map(c => { const b = c.getBoundingClientRect(), s = getComputedStyle(c);
     const q = sel => { const e = c.querySelector(sel); if(!e) return null; const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
       return { x: r.left - b.left, y: r.top - b.top, w: r.width, h: r.height, r: b.right - r.right, fs: parseFloat(cs.fontSize), fw: parseInt(cs.fontWeight) || 400 }; };
     return { name: (c.querySelector('.pname') || {}).textContent, top: b.top, w: b.width, h: b.height, radius: parseFloat(s.borderTopLeftRadius),
-      checked: c.classList.contains('pick-checked'), shadow: s.boxShadow, stripe: getComputedStyle(c, '::before').display !== 'none' && getComputedStyle(c, '::before').backgroundColor !== 'rgba(0, 0, 0, 0)',
+      checked: c.classList.contains('pick-checked'), shadow: s.boxShadow, bg: rgb(s.backgroundColor), dot: dotOf(c, b), stripe: getComputedStyle(c, '::before').display !== 'none' && getComputedStyle(c, '::before').backgroundColor !== 'rgba(0, 0, 0, 0)',
       box: q('.box'), badge: q('.pick-badge'), pname: q('.pname'), pcount: q('.pcount'), bar: q('.pick-bar-track'), ver: q('.pick-version') }; }); }"""
 
 
@@ -527,10 +538,19 @@ def check_unit_cards(br):
         pg.wait_for_timeout(1500)
         cards = pg.evaluate(CARDS)
         rem = pg.evaluate("() => parseFloat(getComputedStyle(document.documentElement).fontSize)")
-        # MOVED IN 327z15 rounds 31-32: the badge sits in the card's bottom-right corner (the circle stays top-left)
-        top_line = all(c["box"] and c["badge"] and c["box"]["y"] < c["h"] / 3
-                       and c["badge"]["x"] > c["w"] / 2 and c["badge"]["y"] > c["h"] / 2 and c["badge"]["r"] <= 16 and c["badge"]["w"] >= 2.4 * rem for c in cards)
-        headline = all(c["pname"]["fs"] > c["pcount"]["fs"] + 1 and c["pname"]["fw"] >= 700 and c["pname"]["y"] > c["box"]["y"] + c["box"]["h"] - 1 for c in cards)
+        # MOVED IN 382-384 (the iOS look, then "a green glowing dot", then the dot in the theme's colour - see the
+        # notes-archive sections "Build 383 - one look beyond Home ... a green dot for a picked unit" and "(384) THE DOT IN
+        # YOUR THEME'S COLOUR"): the check circle is gone. A picked card has a small glowing dot in its top-right corner
+        # and is a step lighter than its neighbours, with no edge, ring or stripe; an unpicked card has nothing in the
+        # corner. The name is the headline at the iOS weight (600 over the count's 500), its first line kept clear of the
+        # dot. The badge stays in the bottom-right corner, small (2.3rem on a phone, 3rem from 40rem). These fail the same
+        # on live 383 as on 384 - the gate had not been brought up to 382/383, not a fault in either build.
+        def _corner(c):
+            return bool(c["badge"]) and c["badge"]["x"] > c["w"] / 2 and c["badge"]["y"] > c["h"] / 2 and c["badge"]["r"] <= 16 \
+                and c["badge"]["w"] >= 2 * rem
+        corner = all(_corner(c) for c in cards)
+        headline = all(c["pname"]["fs"] > c["pcount"]["fs"] + 1 and c["pname"]["fw"] > c["pcount"]["fw"]
+                       and c["pname"]["y"] < c["h"] / 3 for c in cards)
         # footers: the question counts in a row of cards share one line
         rows = {}
         for c in cards:
@@ -539,29 +559,46 @@ def check_unit_cards(br):
         # badge so it's closest to the bottom border" - a found card (no bar) has its count at its foot;
         # the cards still working on theirs line up with each other
         def _al(r):
-            work = [c for c in r if c.get("bar")]
-            done = [c for c in r if not c.get("bar")]
+            work = [c for c in r if c.get("bar") and c["bar"]["w"] > 0]
+            done = [c for c in r if not (c.get("bar") and c["bar"]["w"] > 0)]
             return (len(work) < 2 or max(abs(a["pcount"]["y"] - b["pcount"]["y"]) for a in work for b in work) <= 1) \
                 and all(c["h"] - (c["pcount"]["y"] + c["pcount"]["h"]) <= 24 for c in done)
         aligned = all(_al(r) for r in rows.values())
         squares = len(rows) >= 6 and all(len(r) == 2 for r in list(rows.values())[:-1])
         radius = len(set(c["radius"] for c in cards)) == 1
         targets = all(c["h"] >= 44 and c["w"] >= 44 for c in cards)
-        check("%s: every card has the circle on its top line and the badge (>=2.4rem) in its bottom-right corner, the name below as the headline, two across"
-              % label, top_line and headline and squares and radius and targets,
-              {"first": cards[0] if cards else None, "rows": len(rows)})
+        check("%s: every card has its badge in the bottom-right corner (>=2rem) and the name as the headline at the top, two across"
+              % label, corner and headline and squares and radius and targets,
+              {"corner": corner, "headline": headline, "squares": squares, "radius": radius, "targets": targets,
+               "first": cards[0] if cards else None, "rows": len(rows)})
         check("%s: in every row the cards' footers (question count) line up, found badge or not" % label, aligned,
               [[(c["name"][:14], round(c["pcount"]["y"])) for c in r] for r in rows.values()][:4])
         sel = [c for c in cards if c["checked"]]
-        acc = pg.evaluate("() => { const p = document.createElement('i'); p.style.color = 'var(--accent)'; document.body.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; }")
-        check("%s: a selected card is ringed in the accent all the way round (a spread outside the border), with no stripe down its left" % label,
-              bool(sel) and all(acc + " 0px 0px 0px 1px" in s["shadow"] and not s["stripe"] for s in sel) and not any(c["stripe"] for c in cards),
-              {"sel": [(s["name"], s["shadow"][:90], s["stripe"]) for s in sel], "accent": acc})
-        # the Penal Code version line stays in the name's cell, clear of the count
+        un = [c for c in cards if not c["checked"]]
+        dot = pg.evaluate("() => { const p = document.createElement('i'); const card = document.querySelector('.picks > label.pick');"
+                          " p.style.color = 'var(--pick-dot)'; card.appendChild(p); const c = getComputedStyle(p).color; p.remove(); return c; }")
+        def _lum(c):
+            return sum(c["bg"][i] * w for i, w in enumerate((.2126, .7152, .0722)))
+        lighter = bool(sel) and bool(un) and all(_lum(s_) > max(_lum(u) for u in un) + 2 for s_ in sel)
+        dots = bool(sel) and all(s_["dot"]["op"] > .99 and s_["dot"]["w"] >= 8 and s_["dot"]["inDot"]
+                                 and s_["dot"]["x"] > s_["w"] / 2 and s_["dot"]["y"] < s_["h"] / 3 and not s_["dot"]["hitsName"] for s_ in sel)
+        bare = all(u["dot"]["op"] < .01 or u["dot"]["w"] < 1 for u in un)
+        plain = not any(c["stripe"] for c in cards) and all(s_["shadow"] == "none" for s_ in sel)
+        check("%s: a picked card is a step lighter with the dot in --pick-dot in its top-right corner, clear of the name, and no edge or stripe; an unpicked card has no dot"
+              % label, lighter and dots and bare and plain,
+              {"lighter": lighter, "dots": dots, "bare": bare, "plain": plain, "pick-dot": dot,
+               "sel": [(s_["name"], s_["bg"], s_["dot"], s_["shadow"][:60], s_["stripe"]) for s_ in sel]})
+        # the Penal Code version line: under the name, clear of the count, while the unit has a second version;
+        # MOVED: the versions ended on their own at PENAL_VERSIONS_END_AT (Oct 26, 9 PM) - after that, no line
+        live = pg.evaluate("() => !!(typeof UNIT_TEST_VERSIONS !== 'undefined' && UNIT_TEST_VERSIONS['Penal Code'])")
         pen = next((c for c in cards if (c["name"] or "").strip() == "Penal Code"), None)
-        check("%s: the Penal Code version line sits under the name, clear of the question count" % label,
-              bool(pen and pen["ver"]) and pen["ver"]["y"] >= pen["pname"]["y"] and pen["ver"]["y"] + pen["ver"]["h"] <= pen["pcount"]["y"] + 1,
-              pen)
+        if live:
+            check("%s: the Penal Code version line sits under the name, clear of the question count" % label,
+                  bool(pen and pen["ver"]) and pen["ver"]["y"] >= pen["pname"]["y"] and pen["ver"]["y"] + pen["ver"]["h"] <= pen["pcount"]["y"] + 1,
+                  pen)
+        else:
+            check("%s: the Penal Code versions are over, and its card carries no version line" % label,
+                  bool(pen) and not pen["ver"], pen)
         if label == PHONE[0]:
             # a long press still opens the unit's details
             pt = pg.evaluate("() => { const c = document.querySelectorAll('.picks > label.pick')[3]; c.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = c.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height * .6 }; }")
