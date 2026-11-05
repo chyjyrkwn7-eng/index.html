@@ -589,6 +589,10 @@ def check_find(pg):
 # --------------------------------------------------------------------------
 BANNER_RUN = """()=>{
   [...document.querySelectorAll('.charup-banner')].forEach(b => b.remove());
+  /* (384 full check) a card the seed's hundos already owed (Fireworks at 50) can be up from the boot's first Home: let it go,
+     so the queue below is the Detective's alone (failed the same way on 383) */
+  document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus');
+  try{ homeUnlockPlaying = false; clearTimeout(homeUnlockTimer); homeUnlockTimer = null; }catch(e){}
   store.dailyCorrectStreak = 9;
   const topics = [...new Set(QUESTIONS.map(q => (q.topic||'').trim()))].filter(Boolean);
   cfg.mode = 'drill'; cfg.source = 'all'; cfg.units = [topics[0]];
