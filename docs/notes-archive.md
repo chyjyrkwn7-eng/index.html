@@ -35467,3 +35467,89 @@ that checks out, if we need update some colors so it all meshed together perfect
   deliberate second step; the off-whites inside character and banner art (#E8ECEF).
 Before/after of nine screens (Home, Profile, Stats, Settings, Leaderboard, units, modes, a question, chat) in the scratchpad
 r2/white-cmp-a.jpg, -b.jpg and r2/white-zoom.jpg: crisper titles and rows, the hierarchy intact, nothing out of family.
+
+## 384 Virtual Room round 2: pause only pauses you; leaving updates everyone live; every friend by name (NOT on main)
+
+Madison, on the last review's open questions: "Pausing should only pause you.. and yeah if you pause it would let you leave." /
+"If someone leaves it would update real time so people know they left. For example the race, if someone leaves, it would remove
+them from the top thing on the race. In the chat, it would say x player left or whatever." / "If I'm friends with someone they
+should be there and stuff." / on the invite rule: "Just ensure it makes sense and ensure it works".
+
+PAUSE ONLY PAUSES YOU (a race; Tug of War and Battle's Pause was already only a way out and stays so)
+- Before: a race's Pause stopped your clock (right) but presence kept you "here", so every finished player's results sat on
+  "Waiting on other players" for as long as you stayed paused.
+- The pause is said on your room entry: `participants.<you>.paused` = the moment (vroomNotePaused) - ONE write on Pause and ONE on
+  Resume, only in a race, never periodic. Cleared inside writes that happen anyway: the finish (finishVirtualRoomTest), a return to
+  the lobby (vroomBackPatch), a leave (the entry goes).
+- THE RULE CHOSEN: a paused racer is not waited for - the finale counts them as in, exactly as it counts a racer whose app died
+  (showVirtualRoomFinaleReveal), and their reveal is not waited for either. Your own run stays held, all of it (question, the 45s
+  clock, your time), until you resume. Resume before the leaderboard rolls and the others wait on you again (their card goes from
+  "results coming up" back to the count - only for a racer counted in BECAUSE paused, pausedAtAllIn, so an old build's reset can
+  never make anybody wait for good). Resume after it and you finish on your own: your results, then the standings as the room has
+  them. NOT chosen: ending a paused racer's race when the others finish (a ten-second pause would cost the rest of the race).
+- FINISHING AFTER THE OTHERS WENT BACK: going back to the lobby resets an entry (finished/score/xp), so a late finisher waited on
+  people who were no longer racing, for good. A return now writes `back` = that match's startAt in the reset it already makes
+  (vroomBackPatch, both return paths); a racer back from THIS match (vroomBackFrom) is not racing, and a device that only gets to
+  "all in" because others are back shows "The race is over - everyone else is back in the lobby" with Return to lobby instead of
+  Leave room (`.vroom-waitcard.is-moved-on`), and rolls no leaderboard of zeros.
+- The race line dims a paused racer's marker (.is-paused, opacity .42; "(paused)" in its title). The race's pause screen says
+  "Your race and its timer are on hold. Everyone else carries on, and the results won't wait for you.", a live line of who is
+  still racing (.pause-room, fed by the race line's own listener - no read of its own), and Leave match where Quit test was; its
+  confirm reads like Tug of War's and Battle's ("Leave the match?" / "The race carries on without you. You won't get any XP from
+  it." / Keep going, Leave).
+- STILL OPEN (owner's call): somebody still paused in the last race is present in the lobby and not ready, so the NEXT match waits
+  for them to come back or leave (as the lobby already waits on anybody sitting on results).
+
+LEAVING, LIVE (every way out is leaveVirtualRoom: Pause > Leave match, Tug/Battle's Pause, Leave room on the results, the lobby)
+- Race line: the leaver's marker already went on the next snapshot (vroomRacersOf drops a deleted entry) - asserted, unchanged.
+- THE ROOM'S CHAT: the leave's own update now also carries chatMessages arrayUnion({ type: "left", key, name, text: "left the
+  match." / "left the lobby." / "left the room.", ts }) - no write of its own. Drawn as a quiet centred line (.vroom-chat-sys), not
+  a message (no name-colon, no reactions), and never counted unread, sounded or raised as a preview (the toast already says it).
+  An older build would draw it as "<name>: left the match." What the room chat is during a test: a race question has no chat on
+  screen - the lobby's listener stays up and new messages come as the one-line VIRTUAL ROOM preview; after your finish the results'
+  Room button (#roomchat-fab) opens the room's chat in a sheet (and over the leaderboard); the lobby has it at its foot.
+- lastLeave carries `where` (vroomLeaveWhere, read by the leaver before its flags clear), so every toast says where THEY were.
+- TUG OF WAR / BATTLE: the rope's figures and side names, and Battle's faces and names, were drawn with the screen, which is rebuilt
+  only when YOUR question changes - a leaver stood there until you next answered. tugPaintPeople (from tugPaintRope) and
+  battlePaintFaces (from refreshBattleBoard) redraw them on any snapshot where who is on a side changed.
+- Results: a leaver's entry is gone, so no game waits on them (unchanged, asserted).
+COST: a leave is the same one write it always was (each device in the room reads it once, as before). A pause is +1 write and a
+resume +1 (each read once by every other device in the room): a 4-person race where one person pauses and resumes is 2 writes and
+6 reads. A return to the lobby: no new write. Nothing periodic was added.
+
+EVERY FRIEND BY NAME
+- friendCardOf(pub, rows): the board row, else the friend's own presence beat (384's `c`: name, character, classes) - fromBeat,
+  else the chat with them where it has been read - fromChat, else unknown. No read or write of its own (presence is the document
+  every friends screen already attaches). Used by the chat's Friends tab, the friend chat's header, Manage friends, the chat's
+  invite sheet, the Virtual Room invite sheet (its own copy replaced), openFriendChat's remembered name, and chatPersonOf (group
+  chat members) as a fallback after the row.
+- Manage friends lists EVERY friend now (it dropped anybody without a row and said "1 friend is not on the board right now"). A
+  friend with no row has no academy rank or level to show: the line under the name says their classes from the beat ("Fire Code")
+  or "Not on the class board yet", and the row does not open the class-board card (it has no numbers for them).
+- A FRIEND NOTHING IS KNOWN ABOUT (an older build that has not beaten since, never opened since): "Friend" with the default
+  character, asleep; data-unknown / data-fallback mark it, and friendsListCatchUp (now on presence snapshots as well as the
+  board's) and paintFriendFallbacks fill it in where it stands when the row or the beat arrives.
+- Not changed: the Leaderboard's boards rank the academy's rows; a friend in Fire Code alone has none to rank.
+
+THE INVITE RULE, END TO END: re-verified - check-b384-vroom-review (B)/(C) as before, plus (O): an invite to a Fire Code room that
+reaches the academy-only account anyway (as an older build would send it) is turned away from the banner's Join and from the
+Inbox's Join with the same line, and an account in both classes joins an academy room from Fire Code's page. Every door goes
+through joinVirtualRoomLobby, which asks the account's own enrolledClasses. (O) passes on the build before too - nothing to fix.
+
+GATE tools/check-b384-vrpause.py (check-b384-vroom-review's harness exec'd, plus two made-up academy accounts for 2 v 2; Devon's
+character changed so "from his beat" differs from the default): (P) the pause on the entry, the marker dimmed, the room line and
+the way out, the finished player all in and the leaderboard rolled while the other is still paused; (R) a resume before the roll
+puts the finished player back to waiting; (Q) the return says which match, the late finisher gets the moved-on card and Return to
+lobby works; (L) Pause > Leave match asks then leaves, marker gone, the chat's `left` line, one write, results not held, not unread
+nor a preview, shown in the Room chat sheet; (T) Tug: the leaver's figure and name off the rope with the others' question unchanged,
+and the chat line; (B) Battle: the leaver's face and name off their side the same way; (F) the Fire Code-only friend named with
+their character on the Friends tab as their beat lands (tab already open), the unknown friend as "Friend", Manage friends 4 of 4
+with the class line, the chat invite sheet, no room/presence write, the friend chat header; (N) no code in vrooms, no page errors.
+RESULTS (one browser at a time, load 4-13): ALL PASS (34). --against claude/b384 (c323281) FAILS 19: every (P), (R), (Q), the
+chat line and Room chat line in (L), both (T), (B), and (F)'s Friends tab, Manage friends (2 of 4), invite sheet ("Student"),
+header ("Friend"). Passing on both, as invariants: Leave match asks and leaves, the marker leaving (already worked), one write,
+results not held, nothing unread, the beat names them (384), the unknown friend's "Friend", no writes, no codes, no page errors.
+Others: check-js ALL PASS; check-b384-vroom-review ALL PASS (45, with (O)); check-b384-vrifc ALL PASS (36; a room still 17 writes
+/ 39 reads, Fire Code and academy alike); check-vroom ALL PASS (219); check-friends ALL PASS (76 - the same 76 on c323281);
+check-b384-bannerroom ALL PASS. Not run (as asked): sweep-layout. Looked at (scratchpad vr2/shots, made-up names): the race's
+pause card with the room line, the other player's line with the dimmed marker, the Room chat sheet with "Kimber left the match.".
