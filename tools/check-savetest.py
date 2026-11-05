@@ -494,9 +494,12 @@ def check_not_offered(br):
       out.fcPause = !!document.querySelector('.pausepanel');
       out.fcSave = !!document.getElementById('pause-save');
       showHome(); await wait(400);
-      /* Review's answer list has no Pause at all */
+      /* Review's answer list: (383) a pinned Pause to leave it from - and, like flashcards, nothing to save */
       showAnswerReview([UNIT], 'all', {}); await wait(700);
       out.reviewPause = !pauseBtn.hidden;
+      pauseRun(); await wait(500);
+      out.reviewSave = !!document.getElementById('pause-save');
+      out.reviewKept = slot() === saved0;
       showHome(); await wait(400);
       /* a Virtual Room run */
       inVirtualRoom = true; vroomStartAt = null; cfg.mode = 'exam'; cfg.units = [UNIT];
@@ -524,7 +527,9 @@ def check_not_offered(br):
       out.stillOffered = !!readRunSession() && readRunSession().saved === true;
     """)
     check("flashcards: Pause has no Save and exit", r.get("fcPause") is True and r.get("fcSave") is False, (r.get("fcPause"), r.get("fcSave")))
-    check("Review's answer list has no Pause", r.get("reviewPause") is False, r.get("reviewPause"))
+    check("Review's answer list has its pinned Pause (383) with no Save and exit, and the saved test is kept",
+          r.get("reviewPause") is True and r.get("reviewSave") is False and r.get("reviewKept") is True,
+          (r.get("reviewPause"), r.get("reviewSave"), r.get("reviewKept")))
     check("a Virtual Room run: Pause has no Save and exit and it never writes the slot",
           r.get("vrPause") is True and r.get("vrSave") is False and r.get("vrSavable") is False and r.get("vrKept") is True,
           {k: r.get(k) for k in ("vrPause", "vrSave", "vrSavable", "vrKept")})
