@@ -34742,3 +34742,11 @@ NOT CHANGED - ANOTHER HELPER'S AREA OR NEEDS A QUIET MACHINE:
 - The rank-up cutscene at 4K (cutscene helper): not measured.
 - What a real GPU does with Home's blurred bubbles over the moving planet on a 4K/5K screen, and Safari on a Mac (WebKit cannot
   run here): only a real computer can say.
+GATES RUN (one browser at a time, load 6-30): check-js ALL PASS (10 blocks); check-b384-desktop ALL PASS (30) on 34c4517 (the
+fix); --against f9694e7 --only 1,2,3,5 FAILS (1) both (60 of 364 / 54 of 253 frames as you alone), (2) (9 of 49 frames short, vis
+1), (3) both (16 of 29 / 6-12 of 18 rows bare in 24 of 88 / 29 of 127 frames), (5) both. check-b384-perf: 17 pass, (2) fails -
+one whole-page style pass forced by the status-bar colour read (cssColorHexNow) on the phone, two on the laptop, over two Home ->
+Profile -> Home trips - and fails the same on f9694e7 (--only 2: 1 and 2), so it came in before this pass (after 1dca98e's
+perf pass, which had 0); not touched here (the status-bar colour is not this pass's area) - to look at with the machine quiet.
+Not run at the lead's call (wrap-up): sweep-layout --only laptop/MacBook/Dell (nothing here changes layout), check-b382-board and
+check-b384-board2 (the board's look and coming-back paths are untouched; check-b384-desktop (4) covers the board's load).
