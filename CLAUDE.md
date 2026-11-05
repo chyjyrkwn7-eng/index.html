@@ -102,6 +102,9 @@ Run gates one at a time (they are timing-sensitive under load):
   read the console (a missing function parses fine).
 - `python3 tools/sweep-layout.py` (`--quick` while iterating) - every
   device, both orientations, installed and in a browser.
+- `python3 tools/check-centering.py` (`--quick`: Pro Max, both classes) -
+  every control's ink centred in its box at the real pixel ratio; run after
+  any UI change (384: the permanent gate for off-centre text and icons).
 - Area gates: `check-sync.py` (accounts), `check-behaviour.py` (most
   features; sections can be run alone), `check-positions.py`,
   `check-fixes.py`, `check-results.py`, `check-tours.py`, `check-vroom.py`,

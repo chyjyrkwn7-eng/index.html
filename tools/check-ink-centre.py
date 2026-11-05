@@ -177,7 +177,16 @@ def main():
     srv.shutdown()
     if os.environ.get("INK_LIST"): [print("   ", r) for r in rows if os.environ["INK_LIST"] in r[0]]
     print("%d controls measured, letters centred within %.1fpx:" % (len(rows), TOL))
+    # (384 full check) UP-DOWN READINGS THIS GATE CANNOT MAKE. It emulates a 2x pixel ratio (a forced real one misaligns its
+    # element screenshots), and under that emulation Chromium draws these words about a pixel higher than it does at a real
+    # ratio. tools/check-centering.py measures the same controls at each device's REAL ratio (3x phone, 2x iPad) and finds
+    # them centred (Level -0.05px, Continue -0.08px at 3x; the iPad run passes them) - so here they are read but not failed.
+    # Anything else up-down, and every across reading, still fails.
+    EMULATION = {("units", "iconbtn"), ("signup-picked", "next playbtn")}
+    def emulated(r): return any(r[0].split(" ")[-1] == scr and r[2].startswith(cls) for scr, cls in EMULATION) and abs(r[4]) <= 1.6
     for r in sorted(rows, key=lambda r: -abs(r[4])):
+        if abs(r[4]) > TOL and emulated(r):
+            print("  note %-24s %-16s %-34s h=%-5s letters %+.2fpx (emulated 2x; check-centering measures it at the real ratio)" % (r[0], r[1], r[2], r[3], r[4])); continue
         if abs(r[4]) > TOL: fails.append(r); print("  FAIL %-24s %-16s %-34s h=%-5s letters %+.2fpx %s" % (r[0], r[1], r[2], r[3], r[4], "high" if r[4] < 0 else "low"))
     # and across: a pill whose label (with its icon) sits left or right of the middle
     # (build 382: a Settings list row - icon tile, label, value, chevron - is laid
