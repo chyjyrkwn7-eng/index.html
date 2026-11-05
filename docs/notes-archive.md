@@ -34509,12 +34509,13 @@ tolerance); the SE's Fire Code Next question (re-measured on its own: passes - i
 iPad's Race chip 0.56px left (0.06 over; the phone's .66px nudge was measured on an 82px chip, the iPad's is 92px). The
 board row and the Race chip are NOT fixed here - LEFT for the next round, with the laptop's re-run.
 
-CHECK-INK-CENTRE.PY (327) NOW RENDERS AT A REAL 2x. On c071343+ it failed the units' Level 1/2/3 tabs (1.24px high) and
-sign-up's Continue (1.48px high) on both its devices. Measured with the same seed and the same screens, at a real 3x the
-Level tabs' letters are at -0.05 and Continue at -0.08 - on the middle. Under its emulated device_scale_factor=2 Chromium
-drew the same words ~1px higher (Level ink 171.5..182 vs 173..183; Continue 815..828 vs 816..830): lesson 1 above, worse
-than half a pixel here. Nudging them down would have put them ~1.2px LOW on a phone, so the gate was fixed instead
-(`--force-device-scale-factor=2`, contexts at scale 1; screenshots come back in device pixels and its own scale maths
-already reads them). Banner "View" on the iPad (8.31px high before), the class list's "Fire Code" (1.00 high) and Settings'
-Contributors / Terms of Use (383) were already inside its tolerance on this branch with the fixes block.
-check-ink-centre (real 2x) on this branch and --against c071343: see the commit after this one.
+CHECK-INK-CENTRE.PY (327), UNCHANGED, ON THIS BRANCH: 183 controls, FAILS 8, and all 8 are its emulated pixel ratio, not the
+app. The banner "View" on the iPad (8.31px high on c071343), the class list's "Fire Code" (1.00 high), the Settings foot rows
+(Contributors / Terms of Use, 383) and the rest now pass. What it still fails: the units' Level 1/2/3 tabs (1.24px high, both
+devices) and sign-up's Continue (1.48px high, both devices). Measured with its own seed and screens: at a REAL 3x the Level
+tabs' letters are at -0.05 and Continue at -0.08 (on the middle); under its emulated device_scale_factor=2 Chromium draws the
+same words ~1px higher (Level ink 171.5..182 vs 173..183; Continue 815..828 vs 816..830) - lesson 1 above, worse than half a
+pixel here. Nudging them down would put them ~1.2px LOW on a phone, so they are NOT nudged. Launching that gate with
+--force-device-scale-factor=2 was tried and is NOT the fix: Playwright's element screenshots then misalign (same numbers on
+both builds, boxes at other heights, View at 8.31 again), so it was reverted. LEFT: check-ink-centre needs check-centering's
+CDP capture (clips snapped to CSS px, scale 1) before it can run at a real ratio - or be retired in favour of check-centering.
