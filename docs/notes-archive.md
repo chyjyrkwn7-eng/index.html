@@ -35176,3 +35176,107 @@ check-b384-board2 (the board's look and coming-back paths are untouched; check-b
   below .5): measured, a 17 Pro Max's sky stays 660x789 (0.52M) and an iPad Pro 11's 1251x986 (1.23M) - unchanged - while
   1920x1080@2 goes 2.57M -> 2.00M and 3840x2160 4.56M -> 2.00M. Soft glow and trails read the same at a little under 1x.
   Underwater's full-window sea is a transform-animated layer (rastered once, then moved) and was left.
+
+### Build 384 review - the Virtual Room: invites follow the room's class; every game played through (NOT on main, waiting for Madison)
+Madison: "your account friends, that's your account friends for any class. However if one of your friends isn't enrolled into
+the class of whatever virtual room you are in, they won't appear on the invite list or maybe their invite button is greyed out
+and when you try to invite it says this player is not enrolled" / "do a check on the virtual room games, ensure they work
+wonderfully and if they need any fixes, updates, improvements do them, I've barely been able to use them."
+
+THE INVITE LIST AND THE ROOM'S CLASS
+- WHAT A FRIEND'S DEVICE SAYS: nothing published which classes an account is in (the board row is the academy's alone, and a
+  Fire Code-only account has none). The presence beat carries it now: `c` in vrooms/presence-v1, beside `p` (seen) and `a`
+  (activity), per public id { k: "academy" | "ifc" | "academy,ifc" (enrolledClasses), n: first name, v: character }. Written by
+  sendHeartbeat in the set(merge) it already makes - NO new write, no new read (the invite sheet already attached presence).
+  The name and face are there because a friend in Fire Code alone has no board row and the invite list called him "Student".
+  Public id, class names, a first name and a character id - never a code (check-b384-vroom-review (N)).
+- friendInClass(pub, cls): false only when the friend's own beat says another class; true when it says this one or (for the
+  academy) the friend has a board row; null when nothing says (a device from before this build) - an unknown friend stays
+  invitable, and their own device turns the room away on the join (below). Nova is in every class.
+- THE SHEET (openInviteFriendsSheet): the room's class is inviteRoomClass (the room document's `cls`). A friend known not to be
+  in it: the Invite button greyed (.friend-act.is-unenrolled, opacity .35 like a disabled button, aria-disabled) but still
+  takes the tap and says "<Name> isn't enrolled in Fire Code." / "... isn't enrolled in the Police Academy." ("This friend"
+  when no name is known); nothing is sent. Greyed rows sort below the rest. Painted from each presence snapshot as it lands
+  (paintInviteClassStates); a row drawn before a friend's beat named them is drawn again once. inviteFriendToLobby refuses the
+  same friend too. A toast over the invite sheet goes to the top of the screen above it (the start sheet's rule since 267) -
+  the line landed under the sheet and the Ready bar. The empty sheet's "Turn on class sharing" follows the account's sharing (socialOptIn) - in Fire Code it said
+  so to everybody, Fire Code's own store having it off - and in Fire Code names the Police Academy class's Settings.
+- A ROOM IS FOR ITS CLASS, BY EVERY DOOR (joinVirtualRoomLobby): an account not in the room's class is turned away with "This
+  is a Fire Code room. You aren't enrolled in Fire Code." (its own account decides - enrolledClasses), whatever led there: an
+  invite from an older build, the Inbox, the banner. The open rooms list leaves out rooms of classes the account is not in. An
+  account in both classes still plays the other class's room from this page as a visitor (vroomForeign, 384), so
+  check-b384-vrifc's visiting classmate is now enrolled in both (its fixture changed, its checks did not).
+- The lobby's Open to class line names the room's class: "anyone in Fire Code" in a Fire Code room (it said 26E).
+
+FOUND PLAYING THEM (several real pages, one stand-in cloud: race, Tug of War and Battle at 2 and 4 players, both classes,
+with Nova; leave, rejoin, host leaving, an app that dies) - each fixed:
+- BATTLE ENDED AT THE ROOM'S COUNT. battleCheckOver read the room's `count`; every device plays max(50, count)
+  (battleBuildPool cycles the bank). A room set to six questions was called over when both had answered six - at "Question 7 of
+  50", on health. Now max(BATTLE_MIN_Q, count), as the pool. The lobby said "9 questions" and "at least 50 questions": it says
+  "Two teams · 50 questions, 20 seconds each · the 9 repeat".
+- BACK AFTER THE APP DIED: REFUSED FOR GOOD. "This account is already in the lobby." whenever the account's entry was on the
+  room - and an app killed without its pagehide leaves it there for the life of the room. A room entry carries `dev` now (this
+  device's random tallyDeviceId - never a code); the same device, or an entry presence has given up on (no beat for 150s), is
+  taken over; only another device of the account still beating in the room is refused.
+- ...AND A COMEBACK HELD THE MATCH. Back in mid-match, the fresh entry (nothing answered, not finished) is one of the racers /
+  on a team, and the finale waited on it. Joining during a match writes `late: <that match's startAt>`; vroomLateFor /
+  vroomMatchHere leave them out of THAT match only (vroomRacersOf, battleMembers, tug and battle's "everyone done"); the next
+  start has a new startAt. Their lobby says a match is in progress, as for anyone joining then.
+- THE HOST LEAVES: NOBODY CAN INVITE. The next joiner is host (vroomHostKeyOf) and got Match settings, but Invite friends and
+  Open to class were built only for whoever created the room. syncLobbyTools() puts them up (or down) on every snapshot, the
+  switch painted from the document. The open rooms list named the room after its maker, gone or not: it names the host now
+  (earliest present joiner) - no write.
+- "LEFT THE LOBBY" MID-RACE: announceVroomLeave asked vroomTestStarted (a race clears it on its first question) and looked for
+  .tug-screen/.battle-screen (no such screens). In a match (a race run, its wait for the others, a countdown, Tug or Battle):
+  "left the match."; the lobby or Match settings: "left the lobby."; after a match: "left the room.".
+- JOINING FROM ANOTHER LOBBY left this device's entry in the first room (the Inbox's Join): it leaves that room first; already in
+  the room: its lobby; a match running on this device: "Finish or leave your match first."
+- THE WAIT CARD WAITED FOR THE SERVER: finishVirtualRoomTest showed "Waiting on other players" only when the server acknowledged
+  the finish (on a slow connection seconds of results with nothing saying the room was still going; offline never). It shows at
+  once; the write is in the local cache for the room's listener. Return to lobby the same (it waited on the reset's answer, and
+  on a failed one left the bare results under the removed standings).
+- NOVA WHO NEVER READIED: his driver stopped on the first snapshot without his entry - the listener starts as the invite is
+  written, and an answer from before that write ("he left") ended the driver; he sat in the lobby, the room never started (seen
+  once in a Fire Code room). It stops only once he has been seen, or after 15s.
+- TUG OF WAR: the team board put side a on the left - "Their side" first for team b, under a rope that puts your side on the
+  left; your side first now (Battle's board already did). The winning end leaned its last figure past the field's edge (the
+  ghost cut off at the right of every result their side won): the ends sit 1.2rem in, not .7 (the figures' -.62rem overlap
+  reached past the end). "N people are still answering" counts only people still in it.
+- BATTLE'S WINNERS STOOD ON A ROPE: the team cutscene's floor was Tug of War's rope for both games; Battle's is the plain floor
+  (opts.floor "line").
+
+LOOKED AT, NOT CHANGED (for Madison):
+- PAUSE IN A RACE holds the race: the 45s clock and the time stop while paused, and everyone else's finale waits for the paused
+  player (presence keeps them "here" while the app is open). That is as built ("Your Virtual Room test and its timer are on
+  hold"); Tug and Battle's Pause is only a way out. Worth deciding whether a race should do the same.
+- A race that ends waits ~20s from the last finish to the leaderboard (results land ~10s, "Preparing leaderboard", the 3-2-1),
+  as asked in 240-279; a player whose app died is waited for up to 150s (presence).
+- The seeded gate accounts were owed retro badges (badgeBandsVersion), which put a badge case on their first results and held
+  the leaderboard ~45s - not a room bug (the fixtures now carry badgeBandsVersion 4).
+- STILL WORTH DOING: a friend in Fire Code alone has no board row, so the academy's other friend screens (the chat's Friends
+  tab, Manage friends) still have no name for them unless a chat with them has been read - the invite list now takes the name
+  from their beat; the same source could serve those screens. A join waits for the server's answer to its own write (as
+  hosting did before HOST_ENTER_MS) - on a slow connection Join sits a moment. The race's ~14.5s from Ready to the first
+  question (4.5s lead + the 10s count) is as asked.
+- ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the rules taking `c` on the presence document (the rules are open - the app
+  writes with no sign-in - and 384 already added `cls` to rooms the same way), and how an app killed by iOS comes back.
+
+GATE tools/check-b384-vroom-review.py (four devices, one stand-in cloud served over HTTP - check-b384-vrifc's, plus per-device
+write latency, CLOUD.slow, for "waited for the server"; ONLY=B,C): (A) the beat's `c` from an academy, a both, the owner's
+Fire Code and a Fire Code-only device, with name and character, no presence write of its own; (B) the Fire Code room's list
+greys the academy-only friend, the tap names him and sends nothing, the both-classes friend is invited and joins, the Fire
+Code-only friend is listed by name; the academy room greys the Fire Code-only friend; (C) the academy-only account is turned
+away from the Fire Code room and not offered it in open rooms; (D) the promoted host has Invite and Open (open shown), the list
+names them; (E) a second device refused, the same device back in after its app died, the race not held; (F) "left the match";
+(G) out of the first room; (H) wait card and Return to lobby under 2.6s with the server 4s behind; (I) Battle past question 8
+of a 6-question room, its winners on the floor; (J) Tug board your side first, figures inside the field; (K) Nova readies with
+the server slow; (L) Fire Code's open line, Battle's line; (M) the sharing line; (N) no code in vrooms, no page errors.
+RESULTS (one run each, load 25-30 on 4 cores): this gate 42 PASS, ALL PASS; --against 1fc96f9 26 FAIL, the 12 that pass on
+both are invariants (no presence write of its own, hosting, the both-classes account offered the room, a second device refused,
+no code in vrooms, no page errors). check-b384-vrifc ALL PASS (36; room cost per match unchanged, 17 writes / 37-38 reads),
+check-vroom ALL PASS (220; its baseline run on 1fc96f9 had one load failure, "all three are up before it ends"), check-friends ALL
+PASS (77), check-js ALL PASS. Run after the toast's move over the sheet (CSS only): the screenshots below; the gates were run
+before it. Not run: sweep-layout / check-centering (no new screen; the greyed button is the existing .friend-act at .35
+opacity), check-behaviour b314h_lobby (joins by joinVirtualRoomLobby; an academy room, so the class rule lets it in).
+MEDIA (scratchpad out-vroom/, made-up names): invite-academy-room[-tapped]-{iphone17promax-440x956,ipadpro11-834x1194}.png,
+invite-firecode-room[-tapped]-*.png - the greyed friend and the line its tap gives. The per-game MP4s are the lead's pack.
