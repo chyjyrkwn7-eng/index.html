@@ -470,6 +470,18 @@ export function wholePages(index, ptr, maxPages = 3) {
 const top = (it) => it.y + 0.95 * it.h;
 const bottom = (it) => it.y - 0.3 * it.h;
 function rectOf(it) { return { x0: it.x, x1: it.x + it.w, y0: bottom(it), y1: top(it) }; }
+// (384 one picture) WHERE A LINE'S INK IS. A mark carries the ink of the words it covers - i0..i1, from the baseline: the tallest
+// letters (ASC) above it and the descenders (DSC) below, in ems - and the size of its type (fs). Measured on the rendered pages
+// (pdf.js, both sources): the book's Times 0.68-0.69 / 0.21, the county booklet's Calibri 0.69 / 0.18-0.19. The marker is laid
+// on that ink with the same room above and below (paint), not on the item's box, which reached 0.95 em up and 0.3 down: the gold
+// rode high on its words. y0..y1 stay the marker's band (the ink and an even pad) for anything that reads the rectangle.
+const ASC = 0.69, DSC = 0.205;
+export const MARK_INK = { asc: ASC, dsc: DSC };
+function inkMark(m, base, fs) {
+  m.i0 = base - DSC * fs; m.i1 = base + ASC * fs; m.fs = fs;
+  m.y0 = m.i0 - 0.12 * fs; m.y1 = m.i1 + 0.12 * fs;
+  return m;
+}
 function union(r, q) {
   return r ? { x0: Math.min(r.x0, q.x0), x1: Math.max(r.x1, q.x1), y0: Math.min(r.y0, q.y0), y1: Math.max(r.y1, q.y1) } : { ...q };
 }
@@ -528,6 +540,118 @@ function trimEdges(model, seg) {
     else { const l = Math.min(...words.map(it => it.x)) - 2.5; if (l > x0 && l < model.g + 30) x0 = l; }
   }
   return x0 === seg.x0 && x1 === seg.x1 ? seg : { ...seg, x0, x1 };
+}
+
+// ---- (384 one picture) ONE PICTURE PER CITATION. Madison: "why would there be two cropped images? That should be one cropped image ...
+// If it's going across the left side of the page and continuing to the right side of the page, don't do two crops, just make it look
+// like it's one cropped. Just make it cohesive and make it look like how the code book has it". A citation's segments are cut where
+// the book prints them; when there are several (a section that runs from the foot of one column to the head of the next, or onto the
+// next page; a text and the full-width table under both columns; a standard's organisation heading and its entry), paint() sets them
+// in ONE picture, one under the other, as one column of the book reads: each piece's column moved so its left margin is the first
+// piece's, and each piece's first line set under the last line of the piece above at the book's own line pitch (plus its paragraph
+// space when the piece starts a new paragraph - a heading, an indented or numbered line, a table, after a short line). The seam is cut
+// halfway between the two lines' ink, so nothing of either is lost and nothing from the page between them shows. The layout is
+// clip.sheet = { pieces: [{ i, dx, top, bot, gap }] } in pdf points: segment i shown from page y `top` down to `bot`, moved right by dx,
+// `gap` points of paper above it. (Pieces cut from one column of one page with lines between are not stitched: the cut runs through
+// the lines between - see tableRowClip and countyClip.)
+// The lines of a set of text items: baseline, size, ends, whether it starts bold. A superscript stands a little above its line.
+function linesIn(items) {
+  const ls = [];
+  for (const it of items) {
+    let l = ls.find(q => Math.abs(q.y - it.y) < 0.45 * Math.max(q.fs, it.h));
+    if (!l) { ls.push({ y: it.y, fs: it.h, x0: it.x, x1: it.x + it.w, b: !!it.b }); continue; }
+    if (it.h > l.fs) { l.y = it.y; l.fs = it.h; }
+    if (it.x < l.x0) { l.x0 = it.x; l.b = !!it.b; }
+    l.x1 = Math.max(l.x1, it.x + it.w);
+  }
+  return ls.sort((a, b) => b.y - a.y);
+}
+// a column's rhythm on its page: its left margin (where most lines start), its right edge, the pitch of its lines and the extra
+// space between paragraphs
+function rhythmOf(lines) {
+  const out = { margin: null, right: null, pitch: null, para: null };
+  if (!lines.length) return out;
+  const n = new Map(); for (const l of lines) { const x = Math.round(l.x0); n.set(x, (n.get(x) || 0) + 1); }
+  const need = Math.max(2, 0.15 * lines.length);
+  out.margin = Math.min(...[...n].filter(([, c]) => c >= need).map(([x]) => x).concat([Infinity]));
+  if (!isFinite(out.margin)) out.margin = Math.min(...lines.map(l => l.x0));
+  const r = lines.map(l => l.x1).sort((a, b) => a - b); out.right = r[Math.floor(0.9 * (r.length - 1))];
+  const fs = lines.map(l => l.fs).sort((a, b) => a - b)[lines.length >> 1];
+  const d = []; for (let k = 1; k < lines.length; k++) d.push(lines[k - 1].y - lines[k].y);
+  const reg = d.filter(v => v >= 0.95 * fs && v <= 1.6 * fs).sort((a, b) => a - b);
+  if (reg.length) {
+    const lo = reg[0], near = reg.filter(v => v <= lo + 0.6);
+    out.pitch = near[near.length >> 1];
+    const big = d.filter(v => v > out.pitch + 0.12 * fs && v < 2.3 * out.pitch).sort((a, b) => a - b);
+    if (big.length) out.para = big[big.length >> 1] - out.pitch;
+  }
+  return out;
+}
+// pageOf(p) -> { items: [{x, y, w, h, b}] (the page's text), g: the gutter or null }
+function sheetOf(segs, pageOf) {
+  if (segs.length < 2 || segs.some(sg => sg.whole)) return null;
+  const P = segs.map(sg => {
+    const pg = pageOf(sg.page);
+    const lines = linesIn(pg.items.filter(it => centre(it) >= sg.x0 && centre(it) <= sg.x1 && it.y >= sg.y0 && it.y <= sg.y1));
+    const col = sg.col === 1 ? 1 : 0;                    // a full-width piece starts where the left column does
+    const inCol = (c) => (it) => it.h >= 7.5 && (pg.g == null || (centre(it) < pg.g ? 0 : 1) === c);
+    const r = rhythmOf(linesIn(pg.items.filter(inCol(col))));
+    // where the page's left column starts: every piece's column is moved there (a right column's text under a left one's, a
+    // full-width table under a column, the next page's column - its margins mirrored - under this page's)
+    r.left = col === 0 ? r.margin : rhythmOf(linesIn(pg.items.filter(inCol(0)))).margin;
+    return { sg, lines, ...r };
+  });
+  const dxOf = (Q) => (Q.margin == null || Q.left == null || P[0].left == null ? 0 : P[0].left - Q.margin);
+  const pieces = [{ i: 0, dx: dxOf(P[0]), top: segs[0].y1, bot: segs[0].y0, gap: 0 }];
+  for (let k = 1; k < P.length; k++) {
+    const A = P[k - 1], B = P[k], pa = pieces[k - 1];
+    const pb = { i: k, dx: dxOf(B), top: B.sg.y1, bot: B.sg.y0, gap: 0 };
+    const a = A.lines[A.lines.length - 1], b = B.lines[0];
+    if (a && b) {
+      const fs = Math.max(a.fs, b.fs);
+      const d = [];
+      for (const ls of [A.lines.slice(-6), B.lines.slice(0, 6)]) for (let j = 1; j < ls.length; j++) { const v = ls[j - 1].y - ls[j].y; if (v >= 0.95 * fs && v <= 1.6 * fs) d.push(v); }
+      const pitch = d.length ? Math.min(...d) : (A.pitch || B.pitch || 1.1 * fs);
+      const afresh = b.b || (B.margin != null && b.x0 > B.margin + 2) || (A.right != null && a.x1 < A.right - 1.2 * a.fs) || !!B.sg.table || (B.sg.col === -1 && A.sg.col !== -1);
+      const g = pitch + (afresh ? (A.para != null ? A.para : B.para != null ? B.para : 0.4 * fs) : 0);
+      // the seam: halfway between a's descenders and b's tallest letters (a table's last row keeps its rule: its piece is shown whole)
+      const h = (DSC * a.fs + g - ASC * b.fs) / 2;
+      pa.bot = a.fs < 9.4 ? A.sg.y0 : Math.max(A.sg.y0, a.y - h);
+      const want = g - (a.y - pa.bot);
+      pb.top = Math.min(B.sg.y1, b.y + Math.max(want, (ASC + 0.15) * b.fs));
+      pb.gap = Math.max(0, want - (pb.top - b.y));
+    } else pb.gap = 4;
+    pieces.push(pb);
+  }
+  return { pieces };
+}
+// the pitch of the lines around a mark (its paragraph's): what the marker's room above and below is measured against
+function pitchAt(items, m) {
+  if (!m.fs) return null;
+  const base = m.i0 + DSC * m.fs;
+  let best = null;
+  for (const it of items) {
+    if (it.x > m.x1 || it.x + it.w < m.x0) continue;
+    const d = Math.abs(it.y - base);
+    if (d >= 0.9 * m.fs && d <= 2.2 * m.fs && (best == null || d < best)) best = d;
+  }
+  return best == null ? 1.15 * m.fs : best;
+}
+// after a clip is cut: each mark's line pitch, and the sheet that sets several pieces as one picture
+function finishClip(r, pageOf) {
+  if (!r || !r.ok) return r;
+  for (const m of r.marks || []) if (m.fs && !m.lp) m.lp = pitchAt(pageOf(m.page).items, m);
+  const sheet = sheetOf(r.segments, pageOf);
+  if (sheet) r.sheet = sheet;
+  return r;
+}
+async function bookPages(doc, r, fontBold, cache) {
+  const map = new Map();
+  for (const p of new Set([...(r.segments || []).map(sg => sg.page), ...(r.marks || []).map(m => m.page)])) {
+    const model = await pageModel(doc, p, fontBold, cache);
+    map.set(p, { items: model.items.filter(it => it.t && inBody(it)), g: model.g });
+  }
+  return (p) => map.get(p) || { items: [], g: null };
 }
 
 function textIn(model, segs, onlyMain) {
@@ -669,9 +793,11 @@ function findMarks(model, segs, find) {
       if (cutH && cutH.k === k) { r.x1 = mid(cutH.b); b = cutH.b.end; }
       const text = it.s.slice(a, b);
       const cl = !!(cutL && cutL.k === k), cr = !!(cutH && cutH.k === k);        // (cl / cr: this edge is a cut inside a line, not the end of the line)
+      inkMark(r, it.y, it.h);
       const last = bands[bands.length - 1];
-      if (last && Math.abs((last.y0 + last.y1) / 2 - (r.y0 + r.y1) / 2) < 5 && r.x0 >= last.x0 && r.x0 - last.x1 <= 20) {
+      if (last && Math.abs((last.i0 + last.i1) / 2 - (r.i0 + r.i1) / 2) < 5 && r.x0 >= last.x0 && r.x0 - last.x1 <= 20) {
         last.x1 = Math.max(last.x1, r.x1); last.y0 = Math.min(last.y0, r.y0); last.y1 = Math.max(last.y1, r.y1); last.text += ' ' + text; last.cl = last.cl || cl; last.cr = last.cr || cr;
+        last.i0 = Math.min(last.i0, r.i0); last.i1 = Math.max(last.i1, r.i1); last.fs = Math.max(last.fs, r.fs);
       } else bands.push({ ...r, text, cl, cr });
     }
     for (const b of bands) out.push({ page: model.p, ...b, kind: 'cite' });
@@ -686,6 +812,7 @@ function findMarks(model, segs, find) {
     if (before) hit.cl = m.cl; else if (m.x0 === hit.x0) hit.cl = hit.cl && m.cl;
     if (m.x1 > hit.x1) hit.cr = m.cr; else if (m.x1 === hit.x1) hit.cr = hit.cr && m.cr;
     hit.x0 = Math.min(hit.x0, m.x0); hit.x1 = Math.max(hit.x1, m.x1); hit.y0 = Math.min(hit.y0, m.y0); hit.y1 = Math.max(hit.y1, m.y1);
+    hit.i0 = Math.min(hit.i0, m.i0); hit.i1 = Math.max(hit.i1, m.i1); hit.fs = Math.max(hit.fs, m.fs);
     if (!hit.text.includes(m.text)) hit.text = before ? m.text + ' ' + hit.text : hit.text + ' ' + m.text;
   }
   return merged;
@@ -848,7 +975,7 @@ export async function hideAnswer(doc, clip, nums, opts = {}) {
   for (const re of res) { re.lastIndex = 0; if (re.test(seen)) return null; }
   return { hide, hiddenText };
 }
-const headMark = (p, r) => ({ page: p, x0: r.x - 2, x1: r.x + r.w + 2, y0: r.y - 0.35 * r.h, y1: r.y + 1.0 * r.h, kind: 'heading' });
+const headMark = (p, r) => inkMark({ page: p, x0: r.x, x1: r.x + r.w, kind: 'heading' }, r.y, r.h);
 
 // -> { ok, segments:[{page,x0,x1,y0,y1,col}], marks:[{page,x0,x1,y0,y1,kind}], text, pages:[...], truncated }
 // segment coordinates are pdf points (origin bottom-left); col -1 = full width, 0 / 1 = left / right column, -2 = whole page.
@@ -856,9 +983,10 @@ export async function computeClip(doc, index, loc, ptr, opts = {}) {
   if (!loc.ok) return { ok: false };
   const fontBold = opts.fontBold || (opts.fontBold = new Map());
   const cache = opts.cache || (opts.cache = new Map());
-  if (loc.kind === 'table') return tableClip(doc, index, loc, ptr, opts, fontBold, cache);
-  if (loc.kind === 'entry') return entryClip(doc, index, loc, ptr, opts, fontBold, cache);
-  if (loc.kind === 'figure') return figureClip(doc, index, loc, ptr, fontBold, cache);
+  const done = async (r) => (r && r.ok ? finishClip(r, await bookPages(doc, r, fontBold, cache)) : r);
+  if (loc.kind === 'table') return done(await tableClip(doc, index, loc, ptr, opts, fontBold, cache));
+  if (loc.kind === 'entry') return done(await entryClip(doc, index, loc, ptr, opts, fontBold, cache));
+  if (loc.kind === 'figure') return done(await figureClip(doc, index, loc, ptr, fontBold, cache));
   const r = await flowClip(doc, index, loc, ptr, opts, fontBold, cache);
   if (r.ok && ptr && ptr.blur) { try { const h = await hideInfo(doc, loc, fontBold, cache); if (h) { r.hide = h.hide; r.hiddenText = h.hiddenText; } } catch (e) { /* shown unblurred is never a leak: without the rectangles nothing is hidden, so the app must check clip.hide before it shows the picture */ } }
   // The clipping stops above an exception (or a table) the question is not about; the whole-page view highlights the whole section, so the
@@ -869,7 +997,7 @@ export async function computeClip(doc, index, loc, ptr, opts = {}) {
       if (full.ok && !full.segments.some(sg => sg.whole)) r.cited = full.segments;
     } catch (e) { /* the whole-page view then highlights the clipping only */ }
   }
-  return r;
+  return done(r);
 }
 
 // ---- figures
@@ -1024,8 +1152,8 @@ async function flowClip(doc, index, loc, ptr, opts, fontBold, cache) {
       const num = (String(ptr.exception).match(/\d+/) || [])[0];
       let seenExc = false;
       for (const it of slice) {
-        if (it.b && EXC.test(it.t)) { marks.push({ page: p, ...rectOf(it), kind: 'exception' }); seenExc = true; }
-        else if (seenExc && num && it.t === num + '.') { marks.push({ page: p, ...rectOf(it), kind: 'exceptionNumber' }); seenExc = false; }
+        if (it.b && EXC.test(it.t)) { marks.push(inkMark({ page: p, ...rectOf(it), kind: 'exception' }, it.y, it.h)); seenExc = true; }
+        else if (seenExc && num && it.t === num + '.') { marks.push(inkMark({ page: p, ...rectOf(it), kind: 'exceptionNumber' }, it.y, it.h)); seenExc = false; }
       }
     }
   }
@@ -1110,7 +1238,7 @@ async function tableClip(doc, index, loc, ptr, opts, fontBold, cache) {
     for (const s of segs) segments.push(trimEdges(model, s));
     textParts.push(textIn(model, segs));
     pages.push(p);
-    if (p === loc.start.page) marks.push({ page: p, x0: loc.start.x - 2, x1: loc.start.x + loc.start.w + 2, y0: loc.start.y - 0.35 * loc.start.h, y1: loc.start.y + 1.0 * loc.start.h, kind: 'heading' });
+    if (p === loc.start.page) marks.push(headMark(p, loc.start));
   }
   // optional `row`: the question is about one row (or a few) of the table: show the caption and column headings, the rows around it and the notes,
   // from the one page that holds the row, with the row marked
@@ -1146,7 +1274,24 @@ function findRow(model, want, rect) {
     if (dy <= 6 && (!F || dy < Math.abs(F.y - L.y))) F = it;
   }
   const a = rectOf(L), b = F ? rectOf(F) : a;
-  return { L, F, x0: Math.min(a.x0, b.x0) - 2, x1: Math.max(a.x1, b.x1) + 2, y0: Math.min(a.y0, b.y0) - 0.5, y1: Math.max(a.y1, b.y1) + 0.5 };
+  const G = F || L;
+  // (384 one picture) a footnote letter printed against the label or the value ("50 a, b") is part of the row: the mark takes it in
+  let x1 = Math.max(a.x1, b.x1);
+  for (const it of model.items) {
+    if (!it.t || !inBody(it) || it.h >= 0.8 * G.h) continue;
+    for (const o of [L, G]) if (it.x >= o.x + o.w - 0.5 && it.x - (o.x + o.w) <= 3 && it.y > o.y - 0.2 * o.h && it.y < o.y + 0.7 * o.h) x1 = Math.max(x1, it.x + it.w);
+  }
+  let i0 = Math.min(L.y - DSC * L.h, G.y - DSC * G.h), i1 = Math.max(L.y + ASC * L.h, G.y + ASC * G.h);
+  const x0 = Math.min(a.x0, b.x0);
+  // (384 one picture) a cell of the row set on two half-lines beside it ("Less than or equal" / "to 6,000" beside "Protected above-")
+  // is in the row: a line of print inside the mark's width whose letters stand a third or more within the mark's height is taken in
+  // whole, so the gold never slices a word
+  for (let pass = 0; pass < 2; pass++) for (const it of model.items) {
+    if (!it.t || !inBody(it) || it.x < x0 - 1 || it.x + it.w > x1 + 1) continue;
+    const a0 = it.y - DSC * it.h, a1 = it.y + ASC * it.h, ov = Math.min(a1, i1) - Math.max(a0, i0);
+    if (ov > 0 && ov >= 0.3 * (a1 - a0) && (a0 < i0 || a1 > i1)) { i0 = Math.min(i0, a0); i1 = Math.max(i1, a1); }
+  }
+  return { L, F, x0, x1, y0: Math.min(a.y0, b.y0) - 0.5, y1: Math.max(a.y1, b.y1) + 0.5, i0, i1, fs: Math.max(L.h, G.h) };
 }
 
 async function tableRowClip(model, segs, caps, rows) {
@@ -1183,24 +1328,19 @@ async function tableRowClip(model, segs, caps, rows) {
     for (let k = 1; k < lines.length; k++) {
       if (lines[k - 1].y - lines[k].y >= 1.3 * lines[k].h) breaks.push((lines[k - 1].bot + lines[k].top) / 2);
     }
-    const snapUp = (y) => breaks.filter(b => b >= y).reduce((m, b) => Math.min(m, b), yHead);
     const snapDown = (y) => breaks.filter(b => b <= y).reduce((m, b) => Math.max(m, b), seg.y0);
-    // pieces, top to bottom: caption + headings, the rows around the one asked about (five lines each way), the notes;
-    // pieces that touch (or nearly) are joined
-    const pieces = [[yHead, seg.y1], [snapDown(rBot - 72), snapUp(rTop + 72)]];
-    if (notes.length) pieces.push([Math.max(Math.min(...notes.map(it => bottom(it))) - 2, seg.y0), Math.max(...notes.map(it => top(it))) + 2]);
-    const merged = [];
-    for (const [y0, y1] of pieces) {
-      const last = merged[merged.length - 1];
-      if (last && last[0] - y1 <= 14) last[0] = Math.min(last[0], y0);
-      else merged.push([y0, y1]);
-    }
-    const out = merged.map(([y0, y1]) => ({ page: seg.page, x0: seg.x0, x1: seg.x1, y0, y1, col: seg.col, context: true }));
+    // (384 one picture) ONE CUT, as the book prints it: from the caption and column headings down through the row asked about and
+    // the rows around it (five lines under it), every row between included, and on through the table's notes where it has them
+    // (a note's letter is on the column heading: "OCCUPANT LOAD FACTOR a"). It used to be cut in pieces - the caption, a window of
+    // rows, the notes - and shown as two or three pictures.
+    let y0 = snapDown(rBot - 72);
+    if (notes.length) y0 = Math.min(y0, Math.max(Math.min(...notes.map(it => bottom(it))) - 2, seg.y0));
+    const out = [{ page: seg.page, x0: seg.x0, x1: seg.x1, y0: Math.max(y0, seg.y0), y1: seg.y1, col: seg.col, context: true }];
     const marks = [];
     if (cap) marks.push(headMark(seg.page, cap));
-    for (const h of hits) marks.push({ page: seg.page, x0: h.x0, x1: h.x1, y0: h.y0, y1: h.y1, kind: 'row' });
-    const cited = hits.map(h => ({ page: seg.page, x0: seg.x0, x1: seg.x1, y0: h.y0 - 1, y1: h.y1 + 1 }));
-    return { segments: out, marks, cited, text: textIn(model, out) };
+    for (const h of hits) { const m = { page: seg.page, x0: h.x0, x1: h.x1, i0: h.i0, i1: h.i1, fs: h.fs, kind: 'row' }; m.y0 = h.i0 - 0.12 * h.fs; m.y1 = h.i1 + 0.12 * h.fs; marks.push(m); }
+    // the whole page washes what the picture shows (the cut), with the row in the stronger gold
+    return { segments: out, marks, cited: out.slice(), text: textIn(model, out) };
   }
   return null;
 }
@@ -1266,7 +1406,7 @@ async function entryClip(doc, index, loc, ptr, opts, fontBold, cache) {
     }
     segments.push({ page: p, x0: COL_L, x1: COL_R, y0: Math.max(r.y0 - 2, BODY_BOTTOM), y1: line.y + 0.8 * line.h + 1.5, col: -1 });
     textParts.push(textIn(model, [segments[segments.length - 1]]));
-    marks.push({ page: p, x0: line.x - 2, x1: line.x + line.w + 2, y0: line.y - 0.35 * line.h, y1: line.y + 1.0 * line.h, kind: 'heading' });
+    marks.push(headMark(p, line));
     // the list of code sections may run onto the next page (above that page's first designation)
     if (!ended && p < index.numPages) {
       const m2 = await pageModel(doc, p + 1, fontBold, cache);
@@ -1310,7 +1450,8 @@ async function countyChars(doc, p, cache) {
   }
   for (const ln of lines) {
     ln.items.sort((a, b) => a.x - b.x);
-    ln.y = ln.items.reduce((m, it) => (it.w > m.w ? it : m), ln.items[0]).y;
+    const wide = ln.items.reduce((m, it) => (it.w > m.w ? it : m), ln.items[0]);
+    ln.y = wide.y; ln.fs = wide.h || 11;
   }
   const chars = [];                           // letters and digits only, with the x range each one covers on its line
   lines.forEach((ln, li) => {
@@ -1341,7 +1482,19 @@ export async function countyClip(doc, ptr, opts = {}) {
   const N = all.map(a => a.c).join('');
   // Where a piece stands in the booklet text N. A table row of the question file is written "cell | cell" (or "group › kind | amount"): the cells are
   // found one after the other, near each other.
-  const nearest = (w, key, c) => { let best = -1; for (let j = w.indexOf(key); j >= 0; j = w.indexOf(key, j + 1)) if (best < 0 || Math.abs(j - c) < Math.abs(best - c)) best = j; return best; };
+  // (384 one picture) the cell of a row nearest the anchor's LINE first (a row's cells are printed side by side; the row above can be
+  // nearer in the text order - "Corrosive ... 200" just before "Flammable (except ..." - and its value is not this row's), then the
+  // nearest in the text
+  const yAt = (k) => { const a = all[Math.max(0, Math.min(all.length - 1, k))]; return a.pt.p * 10000 - a.pt.lines[a.li].y; };
+  let nearBase = 0;
+  const nearest = (w, key, c) => {
+    let best = -1, bd = Infinity;
+    for (let j = w.indexOf(key); j >= 0; j = w.indexOf(key, j + 1)) {
+      const d = Math.abs(yAt(nearBase + j) - yAt(nearBase + c)) * 1000 + Math.abs(j - c);
+      if (d < bd) { bd = d; best = j; }
+    }
+    return best;
+  };
   const findPiece = (text, from) => {
     const E = cnorm(text);
     if (E.length < 6) return null;
@@ -1363,6 +1516,10 @@ export async function countyClip(doc, ptr, opts = {}) {
       for (let at = N.indexOf(anchor, from); at >= 0; at = N.indexOf(anchor, at + 1)) {
         let lo = at, hi = at + anchor.length, ok = true;
         const base = Math.max(from, at - 140), w = N.slice(base, at + anchor.length + 200);
+        nearBase = base;
+        // (384 one picture) the anchor cell's own end, where it wraps onto a line of its own ("Four per school year, two per" /
+        // "semester"): the row is cut and marked to its end
+        if (anchor !== longest) { const t = nearest(w, longest.slice(-8), at - base); if (t >= 0 && base + t > at) hi = Math.max(hi, base + t + 8); }
         for (let ci = 0; ci < cells.length && ok; ci++) {
           const cell = cells[ci];
           if (cell === longest) continue;
@@ -1441,19 +1598,29 @@ export async function countyClip(doc, ptr, opts = {}) {
     }
     if (!hl) { const h = findPiece(ptr.highlight, a); if (h && h[1] <= b) { hl = h; ranges.push(h); } }
   }
-  // lines of the booklet that hold the pieces; a gap of up to three lines between two pieces is closed (no point in a cut that skips a line or two)
+  // the lines of the booklet that hold the pieces. (384 one picture) ONE CUT A PAGE: from the first line of the first piece to the last
+  // line of the last, every line between included - the section's lead, the exceptions or list items before the one the question is
+  // about, the table rows between its heading and the row - as the booklet prints them. A gap of more than three lines used to start
+  // a second cut, shown as a second picture.
   const segments = [], marks = [], texts = [], pages = [];
   for (const pt of parts) {
     const used = new Set(lead.get(pt) || []);
     for (const [x, y] of ranges) for (let k = x; k < y; k++) if (all[k].pt === pt) used.add(all[k].li);
     if (!used.size) continue;
     const idx = [...used].sort((u, v) => u - v);
-    const runs = [];
-    for (const li of idx) {
-      const last = runs[runs.length - 1];
-      if (last && li - last[last.length - 1] <= 4) { for (let g = last[last.length - 1] + 1; g <= li; g++) last.push(g); }
-      else runs.push([li]);
+    let lo = idx[0], hi = idx[idx.length - 1];
+    // a line whose letters reach into the cut's top or bottom (a table cell set on two half-lines beside a one-line cell:
+    // "Four per school year, two per" / "Group E" / "semester") is part of it - the cut never shows half a line
+    const iTop = (l) => l.y + 0.75 * l.fs, iBot = (l) => l.y - 0.25 * l.fs;
+    for (let grew = true; grew;) {
+      grew = false;
+      const p = pt.lines[lo - 1], n = pt.lines[hi + 1];
+      const top = Math.max(...pt.lines.slice(lo, hi + 1).map(iTop)), bot = Math.min(...pt.lines.slice(lo, hi + 1).map(iBot));
+      if (p && iBot(p) < top) { lo--; grew = true; }
+      if (n && iTop(n) > bot) { hi++; grew = true; }
     }
+    const runs = [[]];
+    for (let g = lo; g <= hi; g++) runs[0].push(g);
     for (const run of runs) {
       const ls = run.map(i => pt.lines[i]);
       const x0 = Math.max(0, Math.min(...ls.map(l => l.x0)) - 4), x1 = Math.min(612, Math.max(...ls.map(l => l.x1)) + 4);
@@ -1473,11 +1640,31 @@ export async function countyClip(doc, ptr, opts = {}) {
       const ch = all[k], key = ch.pt.p + ':' + ch.li;
       const m = byLine.get(key);
       if (m) { m.x0 = Math.min(m.x0, ch.x0); m.x1 = Math.max(m.x1, ch.x1); }
-      else byLine.set(key, { page: ch.pt.p, x0: ch.x0, x1: ch.x1, y0: ch.pt.lines[ch.li].y0, y1: ch.pt.lines[ch.li].y1, kind });
+      else {
+        const ln = ch.pt.lines[ch.li], nb = [ch.pt.lines[ch.li - 1], ch.pt.lines[ch.li + 1]].filter(Boolean).map(o => Math.abs(o.y - ln.y)).filter(d => d >= 0.9 * ln.fs && d <= 2.2 * ln.fs);
+        // (snap: placed from Times widths on a booklet set in Calibri - the painter moves its ends onto the words it covers)
+        byLine.set(key, inkMark({ page: ch.pt.p, x0: ch.x0, x1: ch.x1, kind, snap: true, lp:nb.length ? Math.min(...nb) : 1.25 * ln.fs }, ln.y, ln.fs));
+      }
     }
     for (const m of byLine.values()) marks.push(m);
   };
-  if (hl) markRange(hl[0], hl[1], 'cite');
+  if (hl) {
+    const n0 = marks.length;
+    markRange(hl[0], hl[1], 'cite');
+    // (384 one picture) a table row ("cell | cell | cell") is marked as one block over its cells and their wrapped lines - not one
+    // band per printed line, which stepped up and down across the row
+    const rowHl = / \| | › /.test(String(ptr.highlight));
+    if (rowHl) for (let k = n0; k < marks.length; k++) marks[k].tableRow = true;
+    if (rowHl && marks.length - n0 > 1) {
+      const rows = marks.splice(n0);
+      for (const pg of new Set(rows.map(m => m.page))) {
+        const rs = rows.filter(m => m.page === pg);
+        const m = { ...rs[0], x0: Math.min(...rs.map(r => r.x0)), x1: Math.max(...rs.map(r => r.x1)), i0: Math.min(...rs.map(r => r.i0)), i1: Math.max(...rs.map(r => r.i1)), fs: Math.max(...rs.map(r => r.fs)) };
+        m.y0 = m.i0 - 0.12 * m.fs; m.y1 = m.i1 + 0.12 * m.fs; m.lp = m.i1 - m.i0; m.tableRow = true;
+        marks.push(m);
+      }
+    }
+  }
   const T = cnorm((ptr.section || '') + (ptr.heading || ''));
   if (T.length >= 4 && N.startsWith(T, a)) markRange(a, a + T.length, 'heading');
   else if (headOnly) markRange(a, b, 'heading');               // a heading given whole ("SECTION 322 BATTERY STORAGE") carries its own number
@@ -1502,61 +1689,262 @@ export async function countyClip(doc, ptr, opts = {}) {
       cited.push({ page: lastPt.p, x0, x1, y0: bottom - 1, y1: top, col: -1 });
     }
   }
-  return { ok: true, segments, marks, text: texts.join(' '), pages, truncated: false, cited };
+  const byPage = new Map(parts.map(pt => [pt.p, { items: pt.lines.flatMap(ln => ln.items.map(it => ({ ...it, b: false }))), g: null }]));
+  return finishClip({ ok: true, segments, marks, text: texts.join(' '), pages, truncated: false, cited }, (p) => byPage.get(p) || { items: [], g: null });
 }
 
 // ------------------------------------------------------------------------------------------------ painting (browser only)
-// container: an element; the clipping is appended as one canvas per segment, in reading order.
-// Highlighting (owner, 2026-10-25): the whole cited section is washed pale yellow, and the sentence / table row / deciding words are a clearly stronger gold on top of it.
-// A section whose deciding sentence is known (a 'cite' or 'row' mark) does not also get a strong heading; one without it keeps the strong heading as the fallback.
-const WASH = 'rgb(255, 245, 160)', STRONG = 'rgb(255, 224, 40)', EXCPT = 'rgb(255, 150, 70)';   // all drawn with 'multiply': the paper is coloured, the print stays black
+// container: an element. (384 one picture) The clipping is appended as ONE canvas: its pieces set one under the other as one column
+// of the book reads (clip.sheet, see sheetOf). Only where a segment is a whole page (a sideways page) is each segment its own canvas.
+// TWO TONES (owner, 2026-10-25, and 384: "Should really only ever be two tones"): the cited code is washed pale yellow and the words
+// that decide the answer - the sentence, the table row, a heading cited alone - are ONE stronger gold on top of it. Nothing else: the
+// exception's orange mark is gone (every exception question's deciding words are its 'cite' mark, the darker gold), each tone is one
+// shape filled once (marks that overlap or touch never darken further), and on the whole page the wash runs under every gold mark,
+// so the gold is always the same gold. Both are drawn with 'multiply': the paper is coloured, the print stays black.
+const WASH = 'rgb(255, 245, 160)', STRONG = 'rgb(255, 224, 40)';
+export const TONES = { wash: [255, 245, 160], strong: [255, 224, 40] };
 const hasKeyMark = (marks) => marks.some(m => m.kind === 'cite' || m.kind === 'row');
-function markFill(m, keyed) {
-  if (m.kind === 'cite' || m.kind === 'row') return STRONG;
-  if (m.kind === 'heading') return keyed ? null : STRONG;
-  return EXCPT;
+// the darker gold: the deciding words; a heading (or an exception's label) only where nothing more precise is marked
+const isDark = (m, keyed) => m.kind === 'cite' || m.kind === 'row' || (!keyed && (m.kind === 'heading' || m.kind === 'exception' || m.kind === 'exceptionNumber'));
+
+// A closed outline through pts (corners of an outline made of horizontal and vertical edges), each corner rounded by r (less where an
+// edge is short): convex and concave corners alike, so a highlight over several lines reads as one soft-cornered shape.
+function roundedPoly(path, pts, r) {
+  const q = [];
+  for (const p of pts) { const l = q[q.length - 1]; if (!l || Math.abs(l[0] - p[0]) > 0.01 || Math.abs(l[1] - p[1]) > 0.01) q.push(p); }
+  while (q.length > 1 && Math.abs(q[0][0] - q[q.length - 1][0]) <= 0.01 && Math.abs(q[0][1] - q[q.length - 1][1]) <= 0.01) q.pop();
+  for (let again = true; again && q.length > 4;) {                    // a corner on a straight edge is no corner
+    again = false;
+    for (let i = 0; i < q.length; i++) {
+      const a = q[(i - 1 + q.length) % q.length], b = q[i], c = q[(i + 1) % q.length];
+      if ((Math.abs(a[0] - b[0]) < 0.01 && Math.abs(b[0] - c[0]) < 0.01) || (Math.abs(a[1] - b[1]) < 0.01 && Math.abs(b[1] - c[1]) < 0.01)) { q.splice(i, 1); again = true; break; }
+    }
+  }
+  const n = q.length;
+  if (n < 3) return;
+  const len = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const a0 = q[n - 1], b0 = q[0];
+  path.moveTo((a0[0] + b0[0]) / 2, (a0[1] + b0[1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const p = q[i], prev = q[(i - 1 + n) % n], next = q[(i + 1) % n];
+    path.arcTo(p[0], p[1], next[0], next[1], Math.max(0, Math.min(r, len(prev, p) / 2, len(p, next) / 2)));
+  }
+  path.closePath();
 }
+
+// THE MARKER, DRAWN ONCE ("the highlighting is perfectly ... not like weirdly highlighted ... where it goes slightly above the word ...
+// The edges of the highlight need to be nice as well and cohesive"). bands: one per marked line, in picture pixels: x0..x1 the words,
+// t..b their ink (the tallest letters to the descenders), em the type size, lp the pitch of the lines there, cl / cr an end that is a
+// cut between two sentences (no extra room there). Each line gets the same room above and below its ink - half the space between two
+// lines of its paragraph, 0.08-0.2 em - and 0.14 em past its first and last letters; lines that follow one another meet halfway
+// between them (no gap, no overlap); lines that touch and overlap sideways are ONE shape whose corners are all rounded alike.
+export function markerPath(bands) {
+  if (!bands || !bands.length) return null;
+  let N = bands.filter(b => b && b.x1 > b.x0 && b.b > b.t).map(b => {
+    const em = b.em || 10, lp = b.lp || 1.15 * em;
+    const pad = Math.min(0.2 * em, Math.max(0.08 * em, (lp - (b.b - b.t)) / 2)), px = 0.14 * em;
+    return { t: b.top != null ? b.top : b.t - pad, b: b.bot != null ? b.bot : b.b + pad, c: (b.t + b.b) / 2, em, x0: b.x0 - (b.cl ? 0 : px), x1: b.x1 + (b.cr ? 0 : px), ruled: b.top != null || b.bot != null };
+  }).sort((u, v) => u.c - v.c || u.x0 - v.x0);
+  if (!N.length) return null;
+  const sameLine = (u, v) => Math.abs(u.c - v.c) < 0.33 * Math.min(u.em, v.em);
+  // marks on one line that touch are one
+  for (let again = true; again;) {
+    again = false;
+    for (let i = 0; i < N.length && !again; i++) for (let j = i + 1; j < N.length && !again; j++) {
+      const u = N[i], v = N[j];
+      if (sameLine(u, v) && v.x0 <= u.x1 + 0.3 * u.em && u.x0 <= v.x1 + 0.3 * u.em) {
+        u.x0 = Math.min(u.x0, v.x0); u.x1 = Math.max(u.x1, v.x1); u.t = Math.min(u.t, v.t); u.b = Math.max(u.b, v.b); u.em = Math.max(u.em, v.em);
+        N.splice(j, 1); again = true;
+      }
+    }
+  }
+  N.sort((u, v) => u.c - v.c || u.x0 - v.x0);
+  // the next line down meets this one halfway
+  const parent = N.map((_, i) => i), find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const below = N.map(() => []);
+  for (let i = 0; i < N.length; i++) {
+    const u = N[i];
+    const next = N.filter(v => v.c - u.c >= 0.33 * u.em && v.c - u.c <= 1.9 * u.em && Math.min(u.x1, v.x1) - Math.max(u.x0, v.x0) > 0.5);
+    if (!next.length) continue;
+    const c0 = Math.min(...next.map(v => v.c));
+    for (const v of next.filter(w => sameLine(w, { c: c0, em: w.em }))) {
+      if (v.t - u.b >= 0.6 * Math.min(u.em, v.em)) continue;
+      if (!u.ruled && !v.ruled) { const mid = (u.b + v.t) / 2; u.b = mid; v.t = mid; } else if (v.t > u.b) continue;
+      below[i].push(N.indexOf(v)); parent[find(i)] = find(N.indexOf(v));
+    }
+  }
+  const groups = new Map();
+  N.forEach((u, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(u); });
+  const path = new Path2D();
+  for (const g of groups.values()) {
+    g.sort((u, v) => u.c - v.c);
+    const chain = g.every((u, k) => k === 0 || (!sameLine(u, g[k - 1]) && Math.abs(u.t - g[k - 1].b) < 0.5));
+    const R = 0.2 * Math.min(...g.map(u => u.em));
+    if (!chain) { for (const u of g) roundedPoly(path, [[u.x0, u.t], [u.x1, u.t], [u.x1, u.b], [u.x0, u.b]], R); continue; }
+    // the ends of lines that are nearly level are made level (a justified column's lines end a hair apart): a clean edge, no notches
+    for (const side of ['x0', 'x1']) for (let k = 1; k < g.length; k++) {
+      if (Math.abs(g[k][side] - g[k - 1][side]) < 0.2 * g[k].em) {
+        const v = side === 'x0' ? Math.min(g[k][side], g[k - 1][side]) : Math.max(g[k][side], g[k - 1][side]);
+        for (let j = k; j >= 0 && Math.abs(g[j][side] - v) < 0.2 * g[k].em; j--) g[j][side] = v;
+        g[k][side] = v;
+      }
+    }
+    const pts = [];
+    for (const u of g) pts.push([u.x1, u.t], [u.x1, u.b]);
+    for (let k = g.length - 1; k >= 0; k--) pts.push([g[k].x0, g[k].b], [g[k].x0, g[k].t]);
+    roundedPoly(path, pts, R);
+  }
+  return path;
+}
+export function fillMarker(ctx, bands, color) {
+  const path = markerPath(bands);
+  if (!path) return;
+  ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = color || STRONG; ctx.fill(path, 'nonzero'); ctx.restore();
+}
+// A county mark is placed from Times widths on a booklet set in Calibri, so on a long line it can stop inside a word ("the la|ne") or
+// reach into the next. Its ends are moved onto the words it covers, read off the picture's own pixels (before the gold is laid): the
+// line's letters, a space being a gap wider than a letter's; a word is marked when the mark covers at least half of it (the rule the
+// column picture uses too).
+function snapBand(ctx, b) {
+  const W = ctx.canvas.width, H = ctx.canvas.height, em = b.em;
+  const X0 = Math.max(0, Math.floor(b.x0 - 1.5 * em)), X1 = Math.min(W, Math.ceil(b.x1 + 1.5 * em));
+  const Y0 = Math.max(0, Math.floor(b.t + 0.1 * em)), Y1 = Math.min(H, Math.ceil(b.b - 0.05 * em));
+  if (X1 - X0 < 4 || Y1 - Y0 < 3) return;
+  let D; try { D = ctx.getImageData(X0, Y0, X1 - X0, Y1 - Y0).data; } catch (e) { return; }
+  const w = X1 - X0, h = Y1 - Y0, ink = new Uint8Array(w);
+  for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) { const i = (y * w + x) * 4; if (D[i] + D[i + 1] + D[i + 2] < 330) { ink[x] = 1; break; } }
+  const gap = Math.max(2, 0.16 * em), words = [];
+  let s0 = -1, last = -1;
+  for (let x = 0; x < w; x++) { if (!ink[x]) continue; if (s0 < 0) s0 = x; else if (x - last > gap) { words.push([s0, last]); s0 = x; } last = x; }
+  if (s0 >= 0) words.push([s0, last]);
+  const on = words.filter(([a, z]) => Math.min(z + 1, b.x1 - X0) - Math.max(a, b.x0 - X0) >= 0.5 * (z + 1 - a));
+  if (!on.length) return;
+  const nx0 = X0 + on[0][0], nx1 = X0 + on[on.length - 1][1] + 1;
+  if (Math.abs(nx0 - b.x0) < 1.5 * em && Math.abs(nx1 - b.x1) < 1.5 * em) { b.x0 = nx0; b.x1 = nx1; }
+}
+
+// AN OUTER EDGE CUTS NOTHING. A cut is made 2pt or more clear of its lines' letters, but a mark printed in the margin beside the line
+// above or below - the book's deletion arrow, a change bar's end - can reach across it and showed as a sliver on the picture's top or
+// bottom edge. The edge is moved to the nearest row with nothing on it (an upright table rule that runs on through the edge does not
+// count): inward up to 3.6pt (the cut's own lines stand 3.9pt or more inside it: a clean row is never in a letter), else outward up to EDGE_ROOM, so the mark is
+// either left out whole or taken in whole. D: the piece's pixels; r: its first row shown (dir 1) or one past its last (dir -1).
+const EDGE_ROOM = 9;
+function settleEdge(D, W, H, r, dir, s) {
+  const ink = (x, y) => { const i = (y * W + x) * 4; return D[i] + D[i + 1] + D[i + 2] < 600; };
+  const edge = dir > 0 ? r : r - 1;
+  if (edge < 0 || edge >= H) return r;
+  const L = Math.round(2.5 * s), rule = new Uint8Array(W);
+  for (let x = 0; x < W; x++) { let all = true; for (let k = -L; k <= L && all; k++) { const y = edge + k; if (y >= 0 && y < H && !ink(x, y)) all = false; } rule[x] = all ? 1 : 0; }
+  const clean = (y) => { for (let x = 0; x < W; x++) if (!rule[x] && ink(x, y)) return false; return true; };
+  if (clean(edge)) return r;
+  for (let k = 1; k <= Math.round(3.6 * s); k++) { const y = edge + dir * k; if (y < 0 || y >= H) break; if (clean(y)) return dir > 0 ? y : y + 1; }
+  for (let k = 1; k <= Math.round((EDGE_ROOM - 0.2) * s); k++) { const y = edge - dir * k; if (y < 0 || y >= H) break; if (clean(y)) return dir > 0 ? y : y + 1; }
+  return r;
+}
+
+// A TABLE ROW'S GOLD FILLS ITS ROW. A row is ruled above and below; the marker's even room around the words reached a hair past a
+// rule (a gold sliver under the line, in the next row's cell) or stopped a hair short of it. A row's band (b.row) takes its edge from
+// the rule where there is one within 0.45 em of its letters - just inside it - and keeps its even room where there is none.
+function ruleBand(ctx, b) {
+  const W = ctx.canvas.width, H = ctx.canvas.height, em = b.em;
+  const X0 = Math.max(0, Math.floor(b.x0)), X1 = Math.min(W, Math.ceil(b.x1)), w = X1 - X0;
+  const Y0 = Math.max(0, Math.floor(b.t - 0.45 * em)), Y1 = Math.min(H, Math.ceil(b.b + 0.45 * em));
+  if (w < 8 || Y1 - Y0 < 4) return;
+  let D; try { D = ctx.getImageData(X0, Y0, w, Y1 - Y0).data; } catch (e) { return; }
+  // a rule: a level run of ink (its faint anti-aliased edge row counts) across half the band or more
+  const ruled = (y) => { let run = 0, best = 0; for (let x = 0; x < w; x++) { const i = ((y - Y0) * w + x) * 4; if (D[i] + D[i + 1] + D[i + 2] < 600) { run++; if (run > best) best = run; } else run = 0; } return best >= 0.5 * w; };
+  for (let y = Math.floor(b.t) - 1; y >= Y0; y--) if (ruled(y)) { b.top = y + 1; break; }
+  for (let y = Math.ceil(b.b) + 1; y < Y1; y++) if (ruled(y)) { b.bot = y; break; }
+}
+
 export async function paint(doc, clip, container, opts = {}) {
   const scale = opts.scale || 1.6;
   const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
   const s = scale * Math.min(dpr, 2);
-  for (const seg of clip.segments) {
+  const segs = clip.segments || [];
+  if (!segs.length) return;
+  const one = (i) => ({ pieces: [{ i, dx: 0, top: segs[i].y1, bot: segs[i].y0, gap: 0 }] });
+  if (segs.some(sg => sg.whole)) {                                  // a whole page among them: each segment its own canvas
+    for (let i = 0; i < segs.length; i++) {
+      if (segs[i].whole) await paintWhole(await doc.getPage(segs[i].page), segs[i].rotation || 0, container, s, dpr);
+      else container.appendChild(await paintSheet(doc, clip, one(i), s, dpr, opts));
+    }
+    return;
+  }
+  const sheet = segs.length === 1 ? one(0) : (clip.sheet || { pieces: segs.map((sg, i) => ({ i, dx: 0, top: sg.y1, bot: sg.y0, gap: i ? 4 : 0 })) });
+  container.appendChild(await paintSheet(doc, clip, sheet, s, dpr, opts));
+}
+// one picture: each piece rendered as it lies on its page, then set in place on one canvas (rows and columns copied whole, so the
+// print is not resampled); then the wash over all of it and the marker over the deciding words, in the picture's own pixels.
+// opts.keepPlain: the picture before the marker is kept on the canvas (canvas._ifcPlain), for a caller that sets the words again.
+async function paintSheet(doc, clip, sheet, s, dpr, opts) {
+  const segs = clip.segments, parts = [];
+  let X0 = Infinity, X1 = -Infinity, y = 0;
+  for (const pc of sheet.pieces) { const sg = segs[pc.i]; X0 = Math.min(X0, sg.x0 + pc.dx); X1 = Math.max(X1, sg.x1 + pc.dx); }
+  const last = sheet.pieces.length - 1;
+  for (const [k, pc] of sheet.pieces.entries()) {
+    const seg = segs[pc.i];
     const page = await doc.getPage(seg.page);
-    if (seg.whole) { await paintWhole(page, seg.rotation || 0, container, s, dpr); continue; }
     const vp = page.getViewport({ scale: s });
     const H = page.view[3];
-    const px0 = seg.x0 * s, px1 = seg.x1 * s;
-    const py0 = (H - seg.y1) * s, py1 = (H - seg.y0) * s;
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.ceil(px1 - px0)); canvas.height = Math.max(1, Math.ceil(py1 - py0));
-    canvas.style.width = (canvas.width / Math.min(dpr, 2)) + 'px';
-    canvas.style.maxWidth = '100%'; canvas.style.height = 'auto';
-    canvas.className = 'ifc-clip';
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // rendered with a little of the page above and below the cut, so an outer edge can be settled (see settleEdge)
+    const rTop = Math.min(H, seg.y1 + EDGE_ROOM), rBot = Math.max(0, seg.y0 - EDGE_ROOM);
+    const px0 = seg.x0 * s, py0 = (H - rTop) * s;
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.ceil((seg.x1 - seg.x0) * s)); cv.height = Math.max(1, Math.ceil((rTop - rBot) * s));
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
     await page.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, -px0, -py0] }).promise;
-    if (!opts.blur) {                                                // the whole cited section: a pale wash (the print stays black), the picture of a hidden name carries none
-      ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = WASH; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore();
-    }
-    const keyed = hasKeyMark(clip.marks.filter(m => m.page === seg.page));
-    const paths = new Map();                                         // one path per colour, filled once: stripes that touch or overlap are not painted twice
-    for (const m of clip.marks) {
-      if (m.page !== seg.page || opts.blur) continue;                // the picture of a hidden name carries no marks
-      const mx0 = m.x0 * s - px0, mx1 = m.x1 * s - px0, my0 = (H - m.y1) * s - py0, my1 = (H - m.y0) * s - py0;
-      if (mx1 < 0 || mx0 > canvas.width || my1 < 0 || my0 > canvas.height) continue;
-      const fill = markFill(m, keyed); if (!fill) continue;
-      if (!paths.has(fill)) paths.set(fill, new Path2D());
-      paths.get(fill).rect(mx0, my0, mx1 - mx0, my1 - my0);
-    }
-    for (const [fill, path] of paths) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = fill; ctx.fill(path, 'nonzero'); ctx.restore(); }
     if (opts.blur && clip.hide) for (const h of clip.hide) if (h.page === seg.page) {
       let r = null;
       if (h.snap) { try { r = snapRect(ctx, h, s, px0, py0, H); } catch (e) { r = null; } }
       if (r) blurRect(ctx, r.x, r.y, r.w, r.h);
       else blurRect(ctx, h.x0 * s - px0, (H - h.y1) * s - py0, (h.x1 - h.x0) * s, (h.y1 - h.y0) * s);
     }
-    container.appendChild(canvas);
+    let r0 = Math.max(0, Math.min(cv.height, Math.round((rTop - pc.top) * s)));
+    let r1 = Math.max(r0, Math.min(cv.height, Math.round((rTop - pc.bot) * s)));
+    if (k === 0 || k === last) {
+      let D = null; try { D = ctx.getImageData(0, 0, cv.width, cv.height).data; } catch (e) { D = null; }
+      if (D) {
+        if (k === 0) r0 = settleEdge(D, cv.width, cv.height, r0, 1, s);
+        if (k === last) r1 = settleEdge(D, cv.width, cv.height, r1, -1, s);
+      }
+    }
+    y += Math.round((pc.gap || 0) * s);
+    parts.push({ seg, pc, cv, r0, r1, ry: rTop, x: Math.round((seg.x0 + pc.dx - X0) * s), y });
+    y += r1 - r0;
   }
+  let canvas;
+  if (parts.length === 1 && parts[0].r0 === 0 && parts[0].r1 === parts[0].cv.height && parts[0].x === 0 && parts[0].y === 0) canvas = parts[0].cv;
+  else {
+    canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.ceil((X1 - X0) * s), ...parts.map(p => p.x + p.cv.width)); canvas.height = Math.max(1, y);
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height);
+    for (const p of parts) if (p.r1 > p.r0) g.drawImage(p.cv, 0, p.r0, p.cv.width, p.r1 - p.r0, p.x, p.y, p.cv.width, p.r1 - p.r0);
+    for (const p of parts) { p.cv.width = 0; p.cv.height = 0; }
+  }
+  canvas.style.width = (canvas.width / Math.min(dpr, 2)) + 'px';
+  canvas.style.maxWidth = '100%'; canvas.style.height = 'auto';
+  canvas.className = 'ifc-clip';
+  // where a one-piece picture lies on its page: page point (x, y) is picture pixel ((x - x0) * s, (top - y) * s)
+  if (parts.length === 1) canvas._ifcAt = { page: parts[0].seg.page, x0: parts[0].seg.x0 - parts[0].x / s, top: parts[0].ry - parts[0].r0 / s, s };
+  if (opts.blur) return canvas;                                      // the picture of a hidden name carries no wash and no marks
+  const ctx = canvas.getContext('2d');
+  ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = WASH; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore();
+  if (opts.keepPlain) { const pl = document.createElement('canvas'); pl.width = canvas.width; pl.height = canvas.height; pl.getContext('2d').drawImage(canvas, 0, 0); canvas._ifcPlain = pl; }
+  const keyed = hasKeyMark(clip.marks || []), bands = [];
+  for (const m of clip.marks || []) {
+    if (!isDark(m, keyed)) continue;
+    const cx = (m.x0 + m.x1) / 2, cy = m.i0 != null ? (m.i0 + m.i1) / 2 : (m.y0 + m.y1) / 2;
+    const p = parts.find(q => q.seg.page === m.page && cx >= q.seg.x0 - 2 && cx <= q.seg.x1 + 2 && cy <= q.pc.top + 1 && cy >= q.pc.bot - 1);
+    if (!p) continue;
+    const X = (v) => (v - p.seg.x0) * s + p.x, Y = (v) => (p.ry - v) * s - p.r0 + p.y;
+    bands.push({ x0: X(m.x0), x1: X(m.x1), t: Y(m.i1 != null ? m.i1 : m.y1), b: Y(m.i0 != null ? m.i0 : m.y0), em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow });
+  }
+  for (const b of bands) { if (b.snap) snapBand(ctx, b); if (b.row) ruleBand(ctx, b); }
+  fillMarker(ctx, bands);
+  return canvas;
 }
 
 // The hidden words are placed from font-width estimates, which can drift a few points on a long line set in another typeface (the county booklet). Here the
@@ -1610,7 +1998,7 @@ function blurRect(ctx, x, y, w, h) {
   ctx.restore();
 }
 
-async function paintWhole(page, rotation, container, s, dpr, hl) {
+async function paintWhole(page, rotation, container, s, dpr, hl, model, keyed) {
   const vp = page.getViewport({ scale: s, rotation: ((page.rotate || 0) + rotation) % 360 });
   const canvas = document.createElement('canvas');
   canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
@@ -1619,32 +2007,92 @@ async function paintWhole(page, rotation, container, s, dpr, hl) {
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   await page.render({ canvasContext: ctx, viewport: vp }).promise;
-  if (hl && (hl.segments.length || hl.marks.length)) highlightPage(ctx, vp, hl, s);
+  if (hl && (hl.segments.length || hl.marks.length)) highlightPage(ctx, vp, hl, s, model, keyed);
   container.appendChild(canvas);
 }
 
-// On a whole page the cited code is highlighted like with a marker: a pale yellow wash over the lines the clipping is cut from, and the
-// same yellow (heading, table row, deciding words) / orange (exception) marks as in the clipping drawn on top. No frame, no other colour.
-// Rectangles are in pdf points; the viewport converts them.
-function highlightPage(ctx, vp, hl, s) {
-  const box = (r) => {
-    const q = vp.convertToViewportRectangle([r.x0, r.y0, r.x1, r.y1]);
-    return { x: Math.min(q[0], q[2]), y: Math.min(q[1], q[3]), w: Math.abs(q[2] - q[0]), h: Math.abs(q[3] - q[1]) };
-  };
-  ctx.save();
-  ctx.globalCompositeOperation = 'multiply';                     // the wash colours the paper, the print stays black
-  ctx.fillStyle = WASH;
-  for (const sg of hl.segments) { const b = box(sg); ctx.fillRect(b.x, b.y, b.w, b.h); }
-  ctx.restore();
-  const keyed = hasKeyMark(hl.marks);
-  const paths = new Map();
+// On a whole page the cited code is highlighted like with a marker, in the picture's two tones: a pale wash over each block of the
+// cited code - hugging its lines, the same room on every side, the corners rounded (one block per column: the section's lines, its
+// exceptions, a table's rows, as one rectangle, not a ragged edge where the cut pieces were) - and the darker gold (the same
+// marker as the picture's) over the deciding words, the wash always under it. No frame, no other colour. Marks are in pdf points.
+function highlightPage(ctx, vp, hl, s, model, keyed) {
+  const P = (x, y) => vp.convertToViewportPoint(x, y);
+  const box = (x0, y0, x1, y1) => { const a = P(x0, y0), b = P(x1, y1); return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) }; };
+  if (keyed == null) keyed = hasKeyMark(hl.marks);
+  const upright = !((vp.rotation || 0) % 360);
+  const items = model ? model.items.filter(it => it.t && inBody(it)) : [];
+  const bands = [];
   for (const m of hl.marks) {
-    const b = box(m);
-    const fill = markFill(m, keyed); if (!fill) continue;
-    if (!paths.has(fill)) paths.set(fill, new Path2D());
-    paths.get(fill).rect(b.x, b.y, b.w, b.h);
+    if (!isDark(m, keyed)) continue;
+    const r = box(m.x0, m.i0 != null ? m.i0 : m.y0, m.x1, m.i1 != null ? m.i1 : m.y1);
+    bands.push({ x0: r.x0, x1: r.x1, t: r.y0, b: r.y1, em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow });
   }
-  for (const [fill, path] of paths) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = fill; ctx.fill(path, 'nonzero'); ctx.restore(); }
+  const rects = [], W = ctx.canvas.width;
+  for (const sg of hl.segments) {
+    const ins = upright ? items.filter(it => centre(it) >= sg.x0 && centre(it) <= sg.x1 && it.y >= sg.y0 && it.y <= sg.y1) : [];
+    let r, fs = 10;
+    if (ins.length) {
+      const hs = ins.map(it => it.h).sort((a, b) => a - b); fs = hs[hs.length >> 1];
+      const pad = 0.45 * fs;
+      let L = Math.min(...ins.map(it => it.x)), R = Math.max(...ins.map(it => it.x + it.w));
+      let Bt = Math.min(...ins.map(it => it.y - DSC * it.h)), Tp = Math.max(...ins.map(it => it.y + ASC * it.h));
+      // the block's room stops halfway to the print around it that is not cited (the line above, the line below, the next column)
+      let top = Tp + pad, bot = Bt - pad, lft = L - pad, rgt = R + pad;
+      const inSet = new Set(ins);
+      for (const it of items) {
+        if (inSet.has(it)) continue;
+        const i0 = it.y - DSC * it.h, i1 = it.y + ASC * it.h;
+        const sideways = it.x < R + pad && it.x + it.w > L - pad, level = i1 > Bt - pad && i0 < Tp + pad;
+        if (sideways && i0 >= Tp - 0.5) top = Math.min(top, (Tp + i0) / 2);
+        if (sideways && i1 <= Bt + 0.5) bot = Math.max(bot, (Bt + i1) / 2);
+        if (level && it.x >= R - 0.5) rgt = Math.min(rgt, (R + it.x) / 2);
+        if (level && it.x + it.w <= L + 0.5) lft = Math.max(lft, (L + it.x + it.w) / 2);
+      }
+      r = box(lft, bot, rgt, top);
+      // a table's rules reach past its text: the block takes in the rules ruled across these lines (a long level run of ink)
+      try {
+        const sx = model && model.g != null ? box(sg.x0, sg.y0, sg.x1, sg.y1) : { x0: 0, x1: W };
+        const X0 = Math.max(0, Math.floor(sx.x0)), X1 = Math.min(W, Math.ceil(sx.x1)), Y0 = Math.max(0, Math.floor(r.y0)), Y1 = Math.min(ctx.canvas.height, Math.ceil(r.y1));
+        if (X1 - X0 > 8 && Y1 - Y0 > 2) {
+          const D = ctx.getImageData(X0, Y0, X1 - X0, Y1 - Y0).data, w = X1 - X0, need = Math.max(0.25 * (r.x1 - r.x0), 12 * s);
+          let a0 = Infinity, a1 = -Infinity;
+          for (let y = 0; y < Y1 - Y0; y++) {
+            let run = 0;
+            for (let x = 0; x <= w; x++) {
+              const i = (y * w + x) * 4, dk = x < w && D[i] + D[i + 1] + D[i + 2] < 480;
+              if (dk) { run++; continue; }
+              if (run >= need) { a0 = Math.min(a0, X0 + x - run); a1 = Math.max(a1, X0 + x); }
+              run = 0;
+            }
+          }
+          if (a1 > a0) { const e = 0.45 * fs * s; r.x0 = Math.min(r.x0, a0 - e); r.x1 = Math.max(r.x1, a1 + e); }
+        }
+      } catch (e) { /* the block hugs the text */ }
+    } else r = box(sg.x0, sg.y0, sg.x1, sg.y1);
+    rects.push({ ...r, em: fs * s });
+  }
+  for (const b of bands) { if (b.snap && upright) snapBand(ctx, b); if (b.row && upright) ruleBand(ctx, b); b.done = true; }
+  // the wash is under every gold mark: a mark is part of the block it sits in (or a block of its own), the marker's own extent
+  for (const b of bands) {
+    const pad = Math.min(0.2 * b.em, Math.max(0.08 * b.em, ((b.lp || 1.15 * b.em) - (b.b - b.t)) / 2)), px = 0.14 * b.em;
+    rects.push({ x0: b.x0 - px, x1: b.x1 + px, y0: b.top != null ? b.top : b.t - pad, y1: b.bot != null ? b.bot : b.b + pad, em: b.em });
+  }
+  // one block per run of a column: rectangles that overlap sideways and follow one another down the page are one (their outline)
+  for (let again = true; again;) {
+    again = false;
+    for (let i = 0; i < rects.length && !again; i++) for (let j = i + 1; j < rects.length && !again; j++) {
+      const a = rects[i], b = rects[j];
+      const ov = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), gy = Math.max(a.y0, b.y0) - Math.min(a.y1, b.y1);
+      if (ov > 0.3 * Math.min(a.x1 - a.x0, b.x1 - b.x0) && gy < 1.2 * Math.max(a.em, b.em)) {
+        a.x0 = Math.min(a.x0, b.x0); a.x1 = Math.max(a.x1, b.x1); a.y0 = Math.min(a.y0, b.y0); a.y1 = Math.max(a.y1, b.y1); a.em = Math.max(a.em, b.em);
+        rects.splice(j, 1); again = true;
+      }
+    }
+  }
+  const wash = new Path2D();
+  for (const r of rects) roundedPoly(wash, [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1]], 0.35 * r.em);
+  ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = WASH; ctx.fill(wash, 'nonzero'); ctx.restore();
+  fillMarker(ctx, bands);
 }
 
 // Whole pages (sideways pages are turned so that they read normally): the "show the whole book page" view and the fallback.
@@ -1656,11 +2104,12 @@ export async function paintPages(doc, pages, container, opts = {}) {
   const fontBold = opts.fontBold || (opts.fontBold = new Map());
   const cache = opts.cache || (opts.cache = new Map());
   const clip = opts.clip && opts.clip.ok ? opts.clip : null;
+  const keyed = clip ? hasKeyMark(clip.marks || []) : false;
   for (const p of pages) {
     const model = await pageModel(doc, p, fontBold, cache);
     const page = await doc.getPage(p);
     const cited = clip ? (clip.cited || clip.segments.filter(sg => !sg.whole)) : [];
     const hl = clip ? { segments: cited.filter(sg => sg.page === p), marks: clip.marks.filter(m => m.page === p) } : null;
-    await paintWhole(page, model.rot || 0, container, s, dpr, hl);
+    await paintWhole(page, model.rot || 0, container, s, dpr, hl, model, keyed);
   }
 }

@@ -110709,6 +110709,7 @@ function ifcFrameClips(holder, scale, fill, clip){
       frame.appendChild(out);
       cv.replaceWith(frame);
       cv.width = 0; cv.height = 0;
+      if(cv._ifcPlain){ cv._ifcPlain.width = 0; cv._ifcPlain = null; }
     }
   }
   holder.classList.remove("is-scroll");
@@ -110783,12 +110784,18 @@ const IFC_STRONG = [255, 224, 40];
 /* cv: the kit's picture of one county piece (seg: its page and its box in pdf points), s picture pixels per point, marks: the kit's
    marks on that page. A new picture of the same words in lines of at most IFC_COUNTY_COL points, or null where the piece is to be
    shown as cut. */
-function ifcReflowCounty(cv, seg, page, s, marks){
+function ifcReflowCounty(cv, seg, page, s, marks, V){
   const W = cv.width, H = cv.height;
   if(W < 8 || H < 8 || seg.whole || seg.x1 - seg.x0 <= IFC_COUNTY_COL + 8) return null;
+  /* (384 one picture) the kit keeps the picture as it was before its marker (canvas._ifcPlain): the words are taken from that, so
+     nothing of the old marker has to be undone */
+  const plainSrc = cv._ifcPlain && cv._ifcPlain.width === W && cv._ifcPlain.height === H ? cv._ifcPlain : null;
   let img;
-  try{ img = cv.getContext("2d").getImageData(0, 0, W, H); }catch(e){ return null; }
-  const rowOf = ypt => (seg.y1 - ypt) * s, colOf = xpt => (xpt - seg.x0) * s;
+  try{ img = (plainSrc || cv).getContext("2d").getImageData(0, 0, W, H); }catch(e){ return null; }
+  /* (384 one picture) where the kit's picture lies on the page (cv._ifcAt: its top and left in page points - the kit settles a
+     picture's edges a little off the cut's own box), else the cut's box */
+  const at = cv._ifcAt && cv._ifcAt.page === seg.page ? cv._ifcAt : null, ox = at ? at.x0 : seg.x0, oy = at ? at.top : seg.y1;
+  const rowOf = ypt => (oy - ypt) * s, colOf = xpt => (xpt - ox) * s;
   /* THE MARKER LIFTED. The kit places a mark from estimated letter widths (Times New Roman's, for a booklet set in another face), so
      on a long line it can stop inside a word ("the la|ne") or reach into the next. Here the picture is first taken back to the
      plain wash - each mark undone exactly: a multiply by the marker over a covered fraction a of a pixel is a factor (1 - a + a.m),
@@ -110796,7 +110803,7 @@ function ifcReflowCounty(cv, seg, page, s, marks){
   const keyed = marks.some(m => m.kind === "cite" || m.kind === "row");
   const strong = marks.filter(m => m.kind === "cite" || m.kind === "row" || (m.kind === "heading" && !keyed));
   const D = img.data;
-  for(const m of strong){
+  if(!plainSrc) for(const m of strong){
     const X0 = colOf(m.x0), X1 = colOf(m.x1), Y0 = rowOf(m.y1), Y1 = rowOf(m.y0);
     for(let y = Math.max(0, Math.floor(Y0)); y < Math.min(H, Math.ceil(Y1)); y++){
       const cy = Math.min(y + 1, Y1) - Math.max(y, Y0);
@@ -110841,7 +110848,7 @@ function ifcReflowCounty(cv, seg, page, s, marks){
          booklet's text puts it - the widest gap near there, in order - or the line is not read */
       const E = ln.spaces || [];
       if(E.length !== ln.nw - 1) return null;
-      const at = g => seg.x0 + (g[0] + g[1] / 2) / s, pick = [];
+      const at = g => ox + (g[0] + g[1] / 2) / s, pick = [];
       let from = -1;
       for(let k = 0; k < E.length; k++){
         const tol = Math.min(5, 0.45 * Math.min(k ? E[k] - E[k - 1] : 99, k < E.length - 1 ? E[k + 1] - E[k] : 99));
@@ -110861,7 +110868,7 @@ function ifcReflowCounty(cv, seg, page, s, marks){
     let a = first;
     for(const g of sp.slice().sort((p, q) => p[0] - q[0])){ ws.push([a, g[0] - 1]); a = g[0] + g[1]; }
     ws.push([a, last]);
-    ln.words = ws; ln.ix0 = seg.x0 + first / s; ln.ix1 = seg.x0 + (last + 1) / s;
+    ln.words = ws; ln.ix0 = ox + first / s; ln.ix1 = ox + (last + 1) / s;
   }
   /* a word is marked when the kit's mark on its line covers at least half of it */
   const marked = (ln, a, b) => {
@@ -110957,28 +110964,32 @@ function ifcReflowCounty(cv, seg, page, s, marks){
     const ln = it.wd.ln, sx = Math.max(0, it.wd.a - it.wd.padL), ex = Math.min(W, it.wd.b + 1 + it.wd.padR);
     g.drawImage(plain, sx, ln.r0, ex - sx, ln.r1 - ln.r0, it.x - (it.wd.a - sx), r.base - Math.round(rowOf(ln.y) - ln.r0), ex - sx, ln.r1 - ln.r0);
   }
-  /* the marker again, in the kit's band for a line (its rows, multiplied over the paper; as deep as the type is large), over whole
-     marked words and the spaces between them */
-  const ink = new Path2D(); let any = false;
-  const ext = Math.round(0.35 * s);
+  /* the marker again, over whole marked words and the spaces between them - (384 one picture) the kit's own marker (V.fillMarker):
+     on each row's ink (the tallest letters to the descenders, from the row's baseline) with the same room above and below, the
+     rows of one passage meeting halfway, one shape with the same rounded corners as every other highlight */
+  const bands = [], INK = (V && V.MARK_INK) || { asc: 0.69, dsc: 0.205 };
   for(const r of rows){
     let run = null;
-    const flush = () => { if(run){ ink.rect(run[0], r.base - 9.5 * r.k * s, run[1] - run[0], 12.5 * r.k * s); any = true; run = null; } };
+    const em = 11 * r.k * s, lp = Math.round(Math.max(P, 12.9 * r.k * 1.05) * s);
+    const flush = () => { if(run){ bands.push({ x0: run[0], x1: run[1], t: r.base - INK.asc * em, b: r.base + INK.dsc * em, em, lp }); run = null; } };
     for(const it of r.items){
       if(!it.wd.hl){ flush(); continue; }
-      const x0 = it.x - ext, x1 = it.x + (it.wd.b - it.wd.a + 1) + ext;
+      const x0 = it.x, x1 = it.x + (it.wd.b - it.wd.a + 1);
       if(run) run[1] = x1; else run = [x0, x1];
     }
     flush();
   }
-  if(any){ g.save(); g.globalCompositeOperation = "multiply"; g.fillStyle = "rgb(" + IFC_STRONG.join(",") + ")"; g.fill(ink, "nonzero"); g.restore(); }
+  if(bands.length){
+    if(V && V.fillMarker) V.fillMarker(g, bands);
+    else { const ink = new Path2D(); for(const b of bands) ink.rect(b.x0, b.t, b.x1 - b.x0, b.b - b.t); g.save(); g.globalCompositeOperation = "multiply"; g.fillStyle = "rgb(" + IFC_STRONG.join(",") + ")"; g.fill(ink, "nonzero"); g.restore(); }
+  }
   plain.width = 0; plain.height = 0;
   return out;
 }
 /* every piece of a county picture (holder: the kit's canvases, one per clip segment) set to a column where it can be - not a table
    (a citation of table cells, "cell | cell", or of a TABLE), whose columns are its sense */
 async function ifcCountyColumn(doc, clip, holder, scale, c){
-  const s = (scale || 1.7) * Math.min(window.devicePixelRatio || 1, 2);
+  const s = (scale || 1.7) * Math.min(window.devicePixelRatio || 1, 2), V = await ifcViewer();
   const cvs = [...holder.querySelectorAll("canvas")];
   if(!clip || !clip.segments || cvs.length !== clip.segments.length) return 0;
   if(c && (/ \| | \u203a /.test(c.excerpt || "") || /\bTABLE\b/.test(c.excerpt || ""))) return 0;
@@ -110987,11 +110998,12 @@ async function ifcCountyColumn(doc, clip, holder, scale, c){
     const seg = clip.segments[i];
     if(seg.whole) continue;
     let out = null;
-    try{ out = ifcReflowCounty(cvs[i], seg, await ifcCountyLines(doc, seg.page), s, (clip.marks || []).filter(m => m.page === seg.page)); }catch(e){ out = null; }
+    try{ out = ifcReflowCounty(cvs[i], seg, await ifcCountyLines(doc, seg.page), s, (clip.marks || []).filter(m => m.page === seg.page), V); }catch(e){ out = null; }
     if(!out) continue;
     out.className = cvs[i].className; out.dataset.ifcGroup = "county";
     cvs[i].replaceWith(out); cvs[i].width = 0; cvs[i].height = 0; n++;
   }
+  for(const cv of cvs) if(cv._ifcPlain){ cv._ifcPlain.width = 0; cv._ifcPlain = null; }
   return n;
 }
 /* THE PAGE VIEWER (build 333): "it's a little difficult to see the cropped photo ... hard to see the
@@ -111215,7 +111227,7 @@ async function ifcFillCode(item, body, foot){
       clip = doc ? await V.countyClip(doc, c, ifcCountyOpts) : null;
       if(clip && clip.ok && clip.segments.length){
         holder = ifcEl("div", "ifc-clips");
-        await V.paint(doc, clip, holder, { scale: 1.7 });
+        await V.paint(doc, clip, holder, { scale: 1.7, keepPlain: true });
         await ifcCountyColumn(doc, clip, holder, 1.7, c);   /* (384 crops) at the book's print size */
         /* (384) framed and fitted like every code picture (ifcFrameClips): whole, centred, never scrolled sideways */
         ifcFrameClips(holder, 1.7, false, clip);
@@ -111233,7 +111245,7 @@ async function ifcFillCode(item, body, foot){
     const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
       note: wholePage ? "The whole page of the HC Amendments. The highlighted lines are the code this question cites." : "",
       render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip })
-        : V.paint(doc, clip, box, { scale: 2.6 }).then(() => ifcCountyColumn(doc, clip, box, 2.6, c)).then(() => ifcFrameClips(box, 2.6, true, clip)) });
+        : V.paint(doc, clip, box, { scale: 2.6, keepPlain: true }).then(() => ifcCountyColumn(doc, clip, box, 2.6, c)).then(() => ifcFrameClips(box, 2.6, true, clip)) });
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
     const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
