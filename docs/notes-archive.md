@@ -34797,3 +34797,88 @@ banners, I don't really like any of those, that much. Same for the ultimate char
   check-b327z15 N: the specials pass, "the live drawing's loops within 80ms" fails at 202ms here and 366ms on 185cc5c
   (load, as before). Recorded (Fire Code, 440x956, app's own sound): the four secret-flare scenes and the three ultimates'
   character and banner cards.
+### Build 384 - Fire Code's 25 and 150 made cooler: the Extinguisher puts out a fire, Hazmat washes a spill off and goes off (NOT on main, waiting for Madison)
+
+Madison, having watched both clips: "The hazmat one could be cooler I think. Could we try to make it cooler?" and "The fire
+extinguisher one, I don't think I love that one, could we make it a little cooler too?" Branch claude/b384-fx (from
+claude/b384 185cc5c). Only ifxExtinguisher (and EXT_T, extSweep, extFire), ifxHazmat, ifxHazmatSmall, their ifxWarmList
+rows, Hazmat's sprites (hzSpray redrawn; hzSplash, hzSlime, hzOoze, hzRays, hzSpark new) and the two SND_IFX scores changed.
+Ids, rungs, counts, lengths, tails and every old beat are unchanged (Extinguisher 5.0s / IFX 5300 / tail 4300, lit 3.19;
+Hazmat IFX_HZ as it was, 7.2s / tail 6.1), so the results flow still hands to BADGE FOUND where it did.
+
+**What the frames said was weak.** Extinguisher: it sprayed at nothing - a stream into the box and a cotton cloud, the
+box whitened and a soft clearing; no fire, no stakes, no moment the job was done. Hazmat: the slam was good; the rest was
+soft - the "green film" on the box was nearly invisible, the decon spray a needle (a lance a tenth as wide as it was long),
+the all clear a lime ring and a pale band of light over a murky green screen, and the vapour just drifted off.
+
+**Extinguisher - the 100% is on fire and P.A.S.S. puts it out.**
+- From .02s two rows of flames (ifxSpr.flame, the Sprinklers' fire) burst up off the box's floor, middle outward, inside the
+  box (clipped to it) up past the foot of the number; embers; the fire's light on the box (its floor) and round it (a glow in
+  the screen layer behind the lifted box); the number glows hot (an ifxNumCopy, so its figures sit on the real ones).
+- The stream is aimed at the BASE of the fire, the box's bottom edge, and swept across it and back (extSweep: -cos, a pass
+  every half period, per 1s; .8 in a box alone). Its reach is a wrapper whose length follows the distance (stops at the box,
+  never runs on out past its top - it did on the iPad). Each pass over a flame flares it, bends it away from the nozzle and
+  beats it down a step (1 / .66 / .38); the last pass puts it out in a curl of smoke (extFire computes every flame's hits from
+  the sweep; the two end flames, crossed twice at the turn, go out on the second). The fire is out by ~2.5s.
+- ONE STUBBORN FLAME: the flame the last spurt of the sputter lands on (extFire: nearest extSweep(sput + .215)) flickers back
+  up at 2.62 - a beat after the fire is out, with the stream away from it - and the third cough puts it out (2.915). The third
+  spurt of the jet reaches .86 of its length (was .55) so it gets there.
+- The blast: a flash of powder off the horn and the screen kicked (a camera wrapper, 3px). Billows fewer (18) and lighter, the
+  haze an ellipse round the fire's base; powder bursts up the box where the stream hits; the box's powder comes later (as the
+  fire goes) so the knock-down can be seen.
+- The payoff as before (glint, red wash, lit at 3.19) and THE 100% SMOKES: two wisps (ifxSpr.steam) curl up off the top of the
+  number, one copy in the box and a twin in the screen layer at the same screen place, so each runs on past the box's top.
+- Box alone (tiles, unlock card): the same story at the stage's floor under the number (5 flames).
+- Score (reads EXT_T / extFire): a whoomp as it catches, the fire's roar and crackle under everything dying at 2.5, a hiss as
+  each flame goes, the comeback (a short whump and crackle - short, so the three coughs still stand out: check-b384-extspr E4
+  went red with a .5s one), a hiss as it is snuffed.
+- Pieces on a phone: 42 screen + 75 box (was ~49 + ~16).
+
+**Hazmat - the spill, the wash and the all clear going off.**
+- THE SPILL ON THE BOX (bx): a toxic film (hzSlime: a glowing wavy top edge, lime to deep green, bubbles) creeps up the box
+  from .5 to 1.9, six runs of ooze (hzOoze) stretch down from its top edge, the number glows sick green through it (a copy),
+  and a green light pulses round the box from behind (screen layer).
+- THE WASH: all of it sits in a window whose left edge is carried across the box by the spray's first pass (sweep 3.86 ->
+  4.48), the window and its contents counter-translated as the scan's mesh is: behind the spray the box is clean, with a line
+  of foam at the edge. Everything in it is let go (opacity 0) once washed (the hazmat gate's (6) counts unfaded pieces).
+- THE FAN: hzSpray redrawn as a fog pattern (400 x 200, same key and far end, so check-b384-hazmat's probe still lands): nested
+  cones from a white throat to a wide soft edge, rays, droplets; the mount is .5 of its length wide (.3); a burst of spray
+  (hzSplash) pulses at its far end.
+- SPARKS: ten streaks (hzSpark) thrown off the placard's slam.
+- THE ALL CLEAR GOES OFF (5.15): a flash of clean light out of the box across the screen, a second faster white ring inside the
+  lime one, sixteen rays (hzRays) turning behind the box, the clean 100% POPS (a copy at 1.12x, back in .3s), the ALL CLEAR tag
+  pops as it turns, and the vapour left over is BLOWN AWAY - thinned by the decon to under half, then pushed out from the box,
+  nearest first, gone in .5s (the floor haze with it). The pale band of light that crossed the screen after it is gone.
+- Small box (ifxHazmatSmall): the film and the green number under the placard, washed off right to left by the mist's pass,
+  foam at the edge; a ring and the pop at the all clear.
+- Score: the spill bubbling up (.6-1.9), sparks crackling off the slam, a rising squeak as the first pass washes the box, and
+  a great rush of air at the all clear. Loudest moment still the all clear (5.15).
+- Pieces: 154 across the three layers on a phone (was ~130; the cap is 170): ten glints (14) and ten sparks keep it there.
+
+**Gate** tools/check-b384-fxcool.py (Fire Code, stand-in card, phone 440x956 and iPad 834x1194, every animation paused and
+seeked - the layer over the box too): X1 five+ flames on the box's floor up past its middle by .45s; X2 the stream's end on
+the box's bottom edge (-.06..+.2 of its height) swept over .6+ of its width; X3 half+ the flames beaten down two steps, all out
+at one moment before the sputter ends; X4 exactly one comes back after that, none left at sput+.5; X5 two wisps rise off the
+top of the number in the box and two run on over its top edge; X6 a score onset at the ignition and within 60ms of the
+comeback, <= 170 screen+box pieces; Z1 the film covers 60%+ of the box at the lock; Z2 the film's edge goes across the box
+with the spray's first pass (covered at its start, within a quarter box of the spray's end mid-pass, clean at its end); Z3 the
+spray .4+ as wide as long; Z4 8+ sparks fly out from the slam; Z5 a full-screen flash (none just before), rays centred
+behind the box, the number popping (>= 1.08x, back to 1x by .4s), the leftover vapour moving out a fifth of the screen's width
+in .4s and gone by .65s (a fifth of the width: round 5's vapour drifted 61px on an iPad, which a flat 40px let through); Z6
+the small box has the film and washes it off; transform/opacity only, no page errors. ALL PASS here; on 185cc5c 24 of its
+25 legs FAIL (only the shared "transform/opacity, no errors" passes there).
+
+**Clips** (scratchpad out-fx/): extinguisher-|hazmat-before|after-440x956.mp4 - record-hundo --ifc --seed 7 (17 Pro Max), the
+score rendered offline in Fire Code (NovaSound.render, the catalogue's vol) and laid under from the effect's first frame
+(467ms in), yuv420p, faststart; *-before-vs-after-silent.mp4 side by side. record-hundo: 2 frozen / 0-1 jump per clip, the
+same as before (the app's own cut to BADGE FOUND after the tail).
+
+**Only a phone can say:** smoothness with the fire's 13 flames (26 pieces) over the box plus the cloud (the Extinguisher went
+from ~65 to ~117 pieces), Hazmat at 154; the flash's strength on an OLED screen; the score on the speaker.
+- Gates on this commit (one at a time; the machine at load 25-37 on 4 cores): check-js ALL PASS; the page loaded in both
+  classes, console clean but for the sandbox's blocked Firebase CDN; check-b384-fxcool ALL PASS (24 of 25 FAIL on 185cc5c);
+  check-b384-extspr ALL PASS; check-b384-hazmat ALL PASS (154 pieces); check-b384-ifxnew 9/9; check-b384-fxstop ALL PASS;
+  check-b384-czfx ALL PASS; check-b382-ifcart 45/45; check-sound ALL PASS; check-loops 486 loops, 0 seams; sweep-layout
+  --quick 20/20 clean. Failing the same on 185cc5c, not these effects: check-b327-d's 14 (the calendar's next-test mark, the
+  tab bar's line icons, the plum theme - identical lists); check-b384-cutscenes 72 PASS / 1 FAIL, (6) ifc: the secret flare
+  find's card order and words - section 6 run against 185cc5c fails it too (and the academy's, under load).
