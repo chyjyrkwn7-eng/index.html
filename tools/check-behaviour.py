@@ -2304,8 +2304,10 @@ def check_b234(br):
       await T('grey', () => { const st = [...document.querySelectorAll('.rankmap-stop')];
         const f = (el) => el ? getComputedStyle(el).filter : null;
         /* a reached rank's theme is its live swatch (build 315), not the plain dot */
-        return { reached: f(st[0].querySelector('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift.is-theme .rankmap-dot')), next: f(st[3].querySelector('.rankmap-dot')),
-                 nextIsNext: st[3].classList.contains('is-next'), lockedDot: f(st[4].querySelector('.rankmap-dot')),
+        /* (384) every rank's theme is its real swatch now, reached or not - the flat .rankmap-dot is gone */
+        const TH = '.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift.is-theme .rankmap-dot';
+        return { reached: f(st[0].querySelector(TH)), next: f(st[3].querySelector(TH)),
+                 nextIsNext: st[3].classList.contains('is-next'), lockedDot: f(st[4].querySelector(TH)),
                  lockedChar: f(st[4].querySelector('.rankmap-gift.is-char .rankmap-giftav svg')) }; });
       /* the banner preview is drawn after first paint too: wait for it under load */
       for(let i = 0; i < 40 && ![...document.querySelectorAll('.rankmap-stop')].pop()?.querySelector('.rankmap-gift.is-banner .bnr'); i++) await wait(100);
@@ -3334,7 +3336,8 @@ def check_b242(br):
     # AND OFF AGAIN IN 319: "no case there would be best". The shut case's
     # front carries the count; no badges on the card, still no meter.
     check("Profile shows the count on the shut case, no badges and no meter",
-          p.get("strip") == 0 and p.get("segs") == 0 and re.match(r"^\d+ of \d+ badges", p.get("count", "")), p)
+          # (384) the case is one of Profile's rows now, its label ("Badge case") before the count
+          p.get("strip") == 0 and p.get("segs") == 0 and re.search(r"\d+ of \d+ badges", p.get("count", "")), p)
     rb = r.get("rankBox") or {}
     # REVERSED IN 243: "the profile box got worse somehow ... it was so
     # good before" - back to the 241 plate: one bar and "Gold · 35%".
