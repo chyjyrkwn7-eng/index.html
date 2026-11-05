@@ -35449,3 +35449,21 @@ is-page on ifcLinkBtn's pill. After: -0.25 / -0.25px across (3x rounding), the m
 GATE: tools/check-b384-codelinks.py (needs PDFJS_DIR): both pills' ink on the middle across and up/down within .5px, the gap the
 same on both. ALL PASS; --against the build before FAILS (1) on both pills. check-centering never opens a code card - that is
 how this got past it.
+
+## 384 final check: pure white ink, app-wide
+
+Madison, after the round buttons' glyphs went pure white: "The pure white for the chat and back button thing looked [great]. We
+need more pure white however we gotta ensure that the app is cohesive and that the app looks good with pure white so ensure
+that checks out, if we need update some colors so it all meshed together perfectly then do so."
+- [data-theme="dark"] --ink #E7EDF1 -> #FFFFFF (322 uses: every primary label, icon and white control, as iOS draws them).
+- The hard-coded #F3F5F7 the cards and sheets used for their own text and glyphs (44 in the stylesheet: Nova's lines, tips, the
+  stats pop-over, unlock cards, the save-code and Add to Home Screen sheets, the Advanced toggle's chevron, the pause mark's
+  fallback) -> #FFFFFF, so nothing reads a step greyer than its neighbour.
+- Text colours that were the OLD off-white at an opacity (rgba(243,245,247,a), rgba(236,240,245,a), rgba(240,245,252,a),
+  rgba(236,237,241,a) - 61) -> rgba(255,255,255,a), the same opacity: the secondary steps are measured from the same white. And
+  the neutral near-white primaries (#E7EDF1 x2, #F5F6F7, #F3F6FA, #F3F5F8, #F2F4FA, #EEF2F6, #EEF2F8, #E6EAF0) -> #FFFFFF.
+- LEFT AS THEY ARE, on purpose: --soft #A0ACB6 (the secondary grey - the step from white to it is the hierarchy, wider now);
+  tinted text in coloured contexts (#FFF3D6 gold, #E0F2FE blue, #F0EEFA violet, #FFD9D2 ...); white at .8-.9 used as a
+  deliberate second step; the off-whites inside character and banner art (#E8ECEF).
+Before/after of nine screens (Home, Profile, Stats, Settings, Leaderboard, units, modes, a question, chat) in the scratchpad
+r2/white-cmp-a.jpg, -b.jpg and r2/white-zoom.jpg: crisper titles and rows, the hierarchy intact, nothing out of family.
