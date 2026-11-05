@@ -34667,3 +34667,78 @@ re-run at the end with the machine quiet.
   20,000. One saving made: a new account no longer runs the two once-per-account room-history backfills (seedVroomHistory /
   seedVroomTop3 each read every vrooms document - ~430 reads per sign-up); vrRetroDone/vrTop3RetroDone are set at both sign-up
   completions, as a reset already did.
+
+### Build 384 - computers and big monitors; the Leaderboard loading everywhere (NOT on main, waiting for Madison)
+Madison: "Please do another check on computers, larger monitors and things like that to ensure this app runs really well on them
+without any lag as well." / "Please ensure leaderboard functions really well, and it loads properly."
+
+HOW IT WAS MEASURED. Chromium (headless, software raster and compositing), desktop browser tabs (Windows user agent, a mouse) at
+1366x768, 1536x864 @1.25, 1920x1080 (and @2), 2560x1440, 3840x2160; phone 440x956 @3 and iPad 834x1194 @2 for the board. The
+machine ran at load 25-44 on 4 cores the whole time (six other helpers), so wall-clock frame times and long-task lengths are
+noise (a Home idle "fps" of 1-6); the numbers below are thread CPU (CDP ThreadTime = main thread, ProcessTime = the renderer's
+threads: raster and compositor here) and counts, A/B against 185cc5c and f9694e7 interleaved, medians where there were several
+runs. 44 classmates from a fake cloud (every rank, a podium, 28 characters; the board's listener and the launch's board fetch
+answer after a set delay - a slow network is that delay; cold is a launch whose board fetch never answered). Scratch harness
+(journey/probe_lb/probe_cpu/probe_layers/probe_resize) in the scratchpad's out-perf/, not in the repo; the gate is.
+
+THE DESKTOP MATRIX (tabs journey: Home idle, Profile, Leaderboard, its scroll, the three boards, Find me, a row's card, Calendar,
+Home and back; pages journey started but cut short at the lead's call). Main-thread CPU per step does NOT grow with the window -
+the screens are width-capped (~800px column, the planet at most 768px) and nothing builds per pixel:
+  step (main / renderer CPU, ms)   1366x768        1920x1080 (n2)   2560x1440       3840x2160 (n2)
+  Home idle 4s                     427-613/730-990  304-350/440-585  246-435/540-670  315-372/545-570
+  tap Profile                      216-282/890-1280 228-242/~1100    192-245/~1140    ~191/1695-1780
+  tap Leaderboard                  722-852/1410-1860 444-570/~1300   277-1088/1030-2150 ~290/2085-2255
+  Leaderboard again                206-709/800-1880 254-301/1305-1480 216-360/1440-1740 326-332/3390-3840
+  scroll the whole board           264-392/800-910  334-446/1040-1270 430-541/1350-1580 581-599/~1790
+What grows is the renderer's raster and compositing (software here, the GPU on a real computer): ~1.3s -> 2.1-3.8s for a board at
+4K - in proportion to the pixels, with no layer re-rastered over and over (traced: tiles by layer on a board open at 4K, 606
+tiles, the root layer 288 of them, once). 185cc5c, f9694e7 and this build are level within the noise on every step.
+Structure at 4K (every screen above): no canvas, filter or backdrop blur sized to the window - the largest backdrop blur is the
+tab bar (572x91), the largest masked layers Home's three smoke circles (~635px, transform/opacity); Home steady at 33-35 running
+animations (as 384's laptop pass found). Three window-sized layers are static (the root, html - composited by overlap over the
+fixed sky - and body's fixed sky pseudo-elements). A GPU-emulated run (SwiftShader) only said Home is the GPU-heaviest screen (its
+blurred bubbles over the moving planet, the masked smoke) - only a real big monitor can say whether that costs frames there.
+WINDOW RESIZING (a desktop-only thing): dragging a window 1280x720 <-> 2400x1350 on Home costs ~37-50ms of main-thread CPU a step
+(5-11 style passes, 4-8 layouts) - the same with every one of the app's 27 resize listeners removed (ablation, one at a time and
+all: none is the cost). It is the whole-page restyle a size change brings with an 11k-rule stylesheet; not changed.
+
+WHAT WAS WRONG WITH THE LEADERBOARD, AND IS FIXED (each found by probe_lb; shapes per frame from the tap):
+1. A COLD BOARD ON A SLOW NETWORK CROWNED YOU 1ST OF 1. The board's 2.5s fallback ("offline, or a server that never answers")
+   painted what the cache had - only your own row - whenever the class had not arrived yet, so on a 3-6s connection the board was
+   you alone until the class replaced it: f9694e7, phone (class 3s away) 22 frames, 4K 5, 1366x768 (6s away) 133 frames. Now, while
+   navigator.onLine is not false and nobody but you is known, the placeholders stay up to LB_SLOW_WAIT_MS (12s; the listener paints
+   the moment the server answers); offline, or with classmates in hand, 2.5s as before. Fix: 0 frames.
+2. THAT ONE-ROW BOARD ALSO SET THE KEPT SCREENFUL. lbCountVisible counted the rows on screen of whatever board was up, so the
+   one-row board stored vis 1, and the class arriving a moment later (renderRankingRows' lbStillRows = vis + 1) came up with a still
+   for two rows and empty discs below: f9694e7 phone, 4 of 10 rows bare for 5 frames; offline, 4 rows for 5 of 16 frames. Now only
+   a list that runs past the screen counts it; a short list may raise a count, never set or lower it.
+3. A FIRST BOARD ON A TALL WINDOW CAME UP HALF EMPTY. With nothing counted yet, the rows given a still in the tap were 12 (a
+   phone's screenful); a 4K window shows 29 rows, 2560x1440 18, and rows 13+ were empty discs until the art queue reached them -
+   f9694e7: 16 of 29 rows bare in every frame for 3.5s+ at 4K, 6-12 of 18 at 2560x1440 (cold, the class by the listener). Unknown,
+   the count is now read off the window (lbScreenRowsGuess: rows that fit under the ~260px head at ~64px, +1, never under 12 - a
+   phone keeps 12). Fix: 0 bare. Its cost in the tap is the stills of the characters not made yet (one per character, not per
+   row); renderRankingRows at 4K 770-1341ms wall vs 915-1195 on f9694e7 under load 25+ - within the noise.
+4. THE CHAT DOCK'S FRIENDS TAB NEVER CAUGHT UP. Opened before the class's rows had arrived (soon after a launch on a slow
+   connection), every friend was "Friend" with the default character, and stayed so - nothing redrew the list when the rows came
+   (the board fetch's answer redraws only the notifications). friendsListCatchUp(), called where the class's rows land (the board
+   fetch and the Leaderboard's listener), redraws an open Friends list that has a row drawn without them, never inside a chat.
+Checked and fine on both builds (warm: the class in memory as after a launch; phone, iPad 11, 1366x768, 1920x1080, 2560x1440,
+3840x2160): rows whole from the first frame, no blank frame, all 45 in each board's order (This Week, Overall, Hundos), places
+1-45, the podium the top three, every rank rankOfEntry's, Find me on screen and flashing, the whole list scrolled with no row left
+without art, Home <-> Leaderboard five times each whole and in order with the element count flat (1.6-4.1k, not growing).
+
+GATE tools/check-b384-desktop.py [--against REV] [--only 1,...]: (1) cold board, slow network (phone, 1920x1080): no frame as you
+alone, placeholders until the class, then 45 in order; (2) offline then the class: every row whole from the class's first frame,
+the one-row board sets no vis; (3) first board on 3840x2160 and 2560x1440: every row on screen whole from the first frame; (4)
+the Leaderboard everywhere (phone, 1366x768, 3840x2160 by default; B384_DESKTOP_DEVS for more): whole, order, podium, ranks, Find
+me, the board tabs, scrolled, four returns; (5) the Friends tab catches up (1920x1080, phone); (6) no page errors.
+Against f9694e7: (1) fails both (46 of 142 / 38 of 57 frames as you alone), (2) fails (5 of 16 frames short, vis 1), (3) fails
+both (16 of 29 / 6-12 of 18 rows bare), (5) fails both ("Friend" x3 after the rows land); (4) and (6) pass on both.
+
+NOT CHANGED - ANOTHER HELPER'S AREA OR NEEDS A QUIET MACHINE:
+- Hundo effects on a big window (hundo helper): Underwater's sea is window-wide and rises/drains as a 3840x1976 layer at 4K (its
+  wave strips 4060px), and Fireworks' sky canvas is window-sized at up to 1.5x (~5760x2250 at 4K) redrawn every frame - the one
+  per-pixel-per-frame cost found in the app. Their CPU at 4K was being measured when the lead called time: to re-run quiet.
+- The rank-up cutscene at 4K (cutscene helper): not measured.
+- What a real GPU does with Home's blurred bubbles over the moving planet on a 4K/5K screen, and Safari on a Mac (WebKit cannot
+  run here): only a real computer can say.
