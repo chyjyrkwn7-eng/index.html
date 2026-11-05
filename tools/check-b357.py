@@ -21,8 +21,13 @@ with sync_playwright() as pw:
       const visible = rows().filter(x=>x.getBoundingClientRect().top < innerHeight - 90);
       out.visible = visible.length; out.visibleBare = visible.filter(x=>!x.querySelector('.rank-avatar svg')).length;
       window.buildAvatarCharSVGSafe = real; return out; }""")
-    chk("the tap builds the whole list in a short task, even with each character costing 6ms (%s)" % (r,), r["n"] >= 40 and r["took"] <= 70, r)
-    chk("without building any character in it (%s)" % (r["svgNow"],), r["svgNow"] <= 3, r)
+    # (384) "the Leaderboard fills in whole": the rows IN VIEW are drawn in the tap's own task so the board arrives whole, never
+    # a character popping in; everything below the fold still follows from the queue. So: the whole list in the tap, short
+    # apart from the in-view characters it chose to draw (6ms each here), and no more than a screenful of them.
+    chk("the tap builds the whole list in a short task, apart from the characters in view (%s)" % (r,),
+        r["n"] >= 40 and r["took"] <= 70 + 6 * r["svgNow"] * 1.5, r)
+    chk("and draws no character below the fold in it (%s drawn, %s rows in view)" % (r["svgNow"], r["visible"]),
+        r["svgNow"] <= r["visible"] + 6, r)
     chk("and the screenful has its characters by 1.2s (the art waits 450ms for the screen to land, then a row a frame - build 363) (%s of %s bare)" % (r["visibleBare"], r["visible"]), r["visibleBare"] == 0, r)
     # Home's moving emblems are decoded off the screen change: they are not there in the first frame back, and they all arrive
     # build 366: a recording starts once a screen has been up 3s, so let Home stay up until its first emblem sheet is recorded
