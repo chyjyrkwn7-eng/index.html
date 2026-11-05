@@ -34519,3 +34519,38 @@ pixel here. Nudging them down would put them ~1.2px LOW on a phone, so they are 
 --force-device-scale-factor=2 was tried and is NOT the fix: Playwright's element screenshots then misalign (same numbers on
 both builds, boxes at other heights, View at 8.31 again), so it was reverted. LEFT: check-ink-centre needs check-centering's
 CDP capture (clips snapped to CSS px, scale 1) before it can run at a real ratio - or be retired in favour of check-centering.
+
+### Build 384 - the full check (November 5)
+Every gate in tools/ run one at a time per lane (three lanes on separate worktrees of the same commit, check-behaviour in
+18 chunks of 12 sections on a fourth), every failure re-run on its own and then against live 383 (42bbffa, the 384 copy of
+the gate). The machine was heavily loaded throughout, so a failure that changed between runs was put down to timing and
+re-run at the end with the machine quiet.
+- NO APP REGRESSION FOUND. Every 384-only failure was a gate encoding something 384 changed on purpose, or a fixture the
+  new 384 features trip:
+  - The shared seeds (shoot-flow's SEED through check-b383-ifcsync, record-cutscenes' SEED) hold 234 hundos and no
+    seenUnlocks, so Home owes them hundo-effect unlock cards (Fireworks, Underwater; in Fire Code its own effects, new in
+    384). One up dims the screen and holds the tab bar down (cutscene focus). Gates that measure Home, mode select, flash
+    cards or the week's recap now let those cards go first (homeUnlocksOwed = () => false and the cards removed).
+  - Seeds set after load (store.onboardingComplete = true by hand) default seenClassTip false, so the class button's tip
+    (TOUR_REV 4) dims Home; every fixture that lists the seen tours now lists seenClassTip.
+  - A Safari-tab fixture gets 384's Add to Home Screen quick tip unless class26e.a2hs is set.
+  - check-tours counted steps from the source and could not follow spread/conditional steps; it now counts the steps each
+    tour hands startSimpleTour at runtime, and has a scenario for maybeClassButtonTip.
+  - Decisions 384 changed, now held by the gates: the consent twins both Revoked with no note (b325-pc, b328-level1, b379),
+    Version 10's What's New (check-chat, b327z15-fb), the Review list's pinned Pause (383, check-savetest), the road map's
+    theme as its swatch, the badge case count on its row, Profile's rows (behaviour, b327z z10), the Leaderboard drawing the
+    rows in view in the tap (b357), the icon Copy button (profilecard), mode cards' third sentence (b333), Version history's
+    title (b346), a lazy row's still flare (b365).
+  - Timing: check-b383-signup's Nova walk had 120s for 27 lines and gave up 8s after the walk began (now 480s, and 8s with
+    no Nova at all); check-study-time wanted the elapsed time to the millisecond.
+- THE QUESTION BANK: every academy key (1,119) is at the same index as live 383 (check-b328-level1 --base live). The twelve
+  questions whose shown choices differ from keyChoices are build 328's study-guide updates, identical on 383; the wording
+  gate allows them by name.
+- WAS ALREADY FAILING ON 383, looked at, not an app fault: check-chatroom's stale classmate (CHAT_STALE_MS is 330s since
+  presence went to every 4 minutes; the gate rewound 300s - now reads the window); b327z15-fb C4 (its second hide set only
+  visibilityState, and a return counts after 1.8s by design); check-unlocks (a card owed at boot was still up when the
+  Detective's run began); check-save-code (a fresh device opens on Get Started now; 383 retired the card on Home).
+- WAS ALREADY FAILING ON 383 AND LEFT: check-b381's "Search names" centred (the 382 iOS look left-aligns the search field's
+  placeholder); check-b330's Back buttons at 40px on the sign-up steps vs 20px elsewhere; check-b326-f's Level 2/3 tab ink
+  contrast 3.9 (< 4.5); b376/b360/b327z13/b378 timings; b327t backdrop luminance at its boundary; b327z5-c; behaviour
+  b258 (two animations still running under the update bar) and b268 (road map light frame count).
