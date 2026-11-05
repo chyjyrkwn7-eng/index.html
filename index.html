@@ -14537,26 +14537,43 @@
       color-mix(in srgb, var(--theme-c2) 30%, transparent) 61%, color-mix(in srgb, var(--theme-c2) 9%, transparent) 67%, transparent 72%);
     transform:scale(0); opacity:0;
   }
+  /* ONE MOVE, NOT THREE (384 polish). The flash's three keyframes each eased out on their own (an
+     animation's timing function runs per keyframe interval), so the light stopped dead at 14% and
+     again at 35% - the peak, as the planet changes colour under it - and then lurched on: the "weird
+     lag" Madison saw. Now it is one expansion that only ever slows (scale 5.5 x (1 - (1 - t)^1.47),
+     the old 14% and 35% points on it) and one brightness curve (up to .94 at 35%, then down) laid out
+     as keyframes run LINEAR, so nothing stops mid-flight. Same box, same colours, same 2.6s. */
   #supernova-cutscene.supernova-burst .supernova-flash{
-    animation:supernova-flash-burst 2.6s cubic-bezier(.15,.7,.25,1) forwards;
+    animation:supernova-flash-burst 2.6s linear forwards;
   }
   @keyframes supernova-flash-burst{
-    0%{ transform:scale(0); opacity:0; }
-    14%{ transform:scale(1.1); opacity:.4; }
-    35%{ transform:scale(2.6); opacity:.94; }
-    100%{ transform:scale(5.5); opacity:0; }
+    0%{ transform:scale(0.000); opacity:0.000; } 2%{ transform:scale(0.161); opacity:0.084; } 4%{ transform:scale(0.320); opacity:0.168; }
+    6%{ transform:scale(0.478); opacity:0.250; } 8%{ transform:scale(0.634); opacity:0.330; } 10%{ transform:scale(0.789); opacity:0.408; }
+    12%{ transform:scale(0.942); opacity:0.482; } 14%{ transform:scale(1.094); opacity:0.553; } 16%{ transform:scale(1.243); opacity:0.618; }
+    20%{ transform:scale(1.538); opacity:0.735; } 24%{ transform:scale(1.826); opacity:0.828; } 28%{ transform:scale(2.107); opacity:0.894; }
+    32%{ transform:scale(2.380); opacity:0.931; } 34%{ transform:scale(2.514); opacity:0.939; } 35%{ transform:scale(2.580); opacity:0.940; }
+    36%{ transform:scale(2.646); opacity:0.930; } 38%{ transform:scale(2.776); opacity:0.876; } 40%{ transform:scale(2.904); opacity:0.795; }
+    42%{ transform:scale(3.031); opacity:0.699; } 44%{ transform:scale(3.155); opacity:0.596; } 46%{ transform:scale(3.277); opacity:0.496; }
+    48%{ transform:scale(3.397); opacity:0.402; } 52%{ transform:scale(3.630); opacity:0.246; } 56%{ transform:scale(3.855); opacity:0.138; }
+    60%{ transform:scale(4.070); opacity:0.071; } 64%{ transform:scale(4.275); opacity:0.034; } 68%{ transform:scale(4.470); opacity:0.015; }
+    72%{ transform:scale(4.653); opacity:0.006; } 76%{ transform:scale(4.825); opacity:0.002; } 80%{ transform:scale(4.984); opacity:0.001; }
+    84%{ transform:scale(5.128); opacity:0.000; } 88%{ transform:scale(5.256); opacity:0.000; } 92%{ transform:scale(5.366); opacity:0.000; }
+    96%{ transform:scale(5.452); opacity:0.000; } 100%{ transform:scale(5.500); opacity:0.000; }
   }
   /* the deep bloom that leads the flash: the rank's deepest colour, out
      first, then the bright light comes up through it */
   .tier-cutscene .supernova-flash::before{ content:""; position:absolute; inset:0; border-radius:50%; opacity:0;
     background:radial-gradient(circle, color-mix(in srgb, var(--theme-c3) 85%, #000) 0%, var(--theme-c3) 18%, color-mix(in srgb, var(--theme-c3) 55%, transparent) 34%, color-mix(in srgb, var(--theme-c3) 18%, transparent) 50%, transparent 66%); }
-  #supernova-cutscene.tier-cutscene.supernova-burst .supernova-flash::before{ animation:rank-flash-deep 2.6s cubic-bezier(.15,.7,.25,1) forwards; }
+  #supernova-cutscene.tier-cutscene.supernova-burst .supernova-flash::before{ animation:rank-flash-deep 2.6s linear forwards; }
+  /* (384 polish) the same: one ease-out to 1.25, one rise and fall, run linear (it stopped at 10% and 30%) */
   @keyframes rank-flash-deep{
-    0%{ transform:scale(.2); opacity:0; }
-    10%{ transform:scale(.9); opacity:.95; }
-    30%{ transform:scale(1.15); opacity:.55; }
-    55%{ transform:scale(1.25); opacity:0; }
-    100%{ transform:scale(1.25); opacity:0; }
+    0%{ transform:scale(0.200); opacity:0.000; } 2%{ transform:scale(0.361); opacity:0.294; } 4%{ transform:scale(0.502); opacity:0.558; }
+    6%{ transform:scale(0.626); opacity:0.769; } 8%{ transform:scale(0.732); opacity:0.904; } 10%{ transform:scale(0.824); opacity:0.950; }
+    12%{ transform:scale(0.903); opacity:0.945; } 14%{ transform:scale(0.970); opacity:0.929; } 18%{ transform:scale(1.074); opacity:0.871; }
+    22%{ transform:scale(1.145); opacity:0.783; } 26%{ transform:scale(1.191); opacity:0.675; } 30%{ transform:scale(1.220); opacity:0.554; }
+    34%{ transform:scale(1.236); opacity:0.428; } 38%{ transform:scale(1.245); opacity:0.304; } 42%{ transform:scale(1.248); opacity:0.192; }
+    46%{ transform:scale(1.250); opacity:0.099; } 50%{ transform:scale(1.250); opacity:0.033; } 54%{ transform:scale(1.250); opacity:0.001; }
+    56%{ transform:scale(1.250); opacity:0.000; } 100%{ transform:scale(1.25); opacity:0; }
   }
   .supernova-title{
     position:relative; font-family:var(--serif); font-size:2.2rem; font-weight:800;
@@ -14726,6 +14743,10 @@
     animation:rb-glow 1.3s cubic-bezier(.2,.8,.3,1) both; }
   .rank-bang.is-big > .rb-core{ animation-duration:1.3s; }
   .rank-bang.is-big > .rb-ring{ animation-name:rb-ring-big; animation-duration:1.4s; }
+  /* (384 polish) made with the scene and held until it goes off; spent, hidden - never added to or
+     taken off the page mid-scene (playRankUpScene, bangsHeld) */
+  .rank-bang.is-held, .rank-bang.is-spent{ visibility:hidden; }
+  .rank-bang.is-held > i{ animation:none !important; }
   @keyframes rb-core{ 0%{ opacity:0; transform:scale(.2); } 7%{ opacity:1; transform:scale(1.15); } 30%{ opacity:.85; transform:scale(1.35); } 100%{ opacity:0; transform:scale(1.7); } }
   @keyframes rb-ring{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(3.6); } }
   @keyframes rb-ring-big{ 0%{ opacity:1; transform:scale(.3); } 100%{ opacity:0; transform:scale(7); } }
@@ -14764,7 +14785,10 @@
      reaches past its anchor joins one invalidation set Chromium re-applies under <body> on
      each :has() re-check, and a bare "svg" there restyled every badge on the units screen
      (and its tick) on every tap. The bubble passes the dim down. */
-  .tier-cutscene.is-igniting:not(.is-swapped) .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)) > .cosmic-icon-badge{ --cib-dim:.35; }
+  /* (384 polish) no :not(.is-swapped): the old planet keeps its dim as it fades out at the swap - lifting it
+     there changed an inherited property under every old bubble (~600 nodes restyled) in the frame the
+     planet changes colour, to undim a planet that is gone .2s later */
+  .tier-cutscene.is-igniting .rank-before .rank-orbit-slot:not(.is-igniting):not(:has(> .cosmic-badge-lit)) > .cosmic-icon-badge{ --cib-dim:.35; }
   .rank-after{ position:absolute; inset:0; opacity:0; pointer-events:none; }
   .tier-cutscene.is-swapped .rank-before{ opacity:0; transition:opacity .2s ease; }
   .tier-cutscene.is-swapped .rank-after{ opacity:1; transition:opacity .35s ease; }
@@ -29370,6 +29394,45 @@
     .results-level-avatar > svg{ width:4.1rem; height:4.1rem; }
     .results-level-rank{ font-size:.8rem; }
   }
+  /* ---- THE FOOT OF THE XP BOX, ONE PIECE (384 polish) ----
+     Madison: "the grade box is looking great, the xp box is looking great, as far as the xp box goes, could the
+     bottom of it with your level and character and stuff, could that all look better?" It was the character and its
+     two lines on their own, the bar across the whole card under them (starting under the character) and the numbers
+     hanging below it - on a laptop a small corner and a bar 1,500px long. Now it is one piece, set off from the total
+     by the same hairline the total has over it: the character on the left in a soft ring of the rank's colour (no
+     icon - "the ranking with the words is enough", build 241), and beside it one column: the level (and its Level up
+     chip), the rank in its colour, the bar, and under the bar the numbers, with where the bar is going ("Level 43",
+     .results-level-next) at its other end. A grid of the same elements as before (the head and its text are
+     display:contents), so the bar, its numbers and everything that reads or animates them are unchanged. */
+  .rs-screen .rs-xp .results-level.rs-levelblock.has-me{
+    display:grid; grid-template-columns:auto minmax(0, 1fr) auto; column-gap:1rem; align-items:center;
+    padding-top:1.1rem; border-top:1px solid var(--clean-line, rgba(255,255,255,.08));
+  }
+  .rs-xp .results-level.has-me > .results-level-head,
+  .rs-xp .results-level.has-me .results-level-metext{ display:contents; }
+  .rs-xp .results-level.has-me .results-level-me{ grid-column:1; grid-row:1 / span 4; align-self:center; }
+  .rs-xp .results-level.has-me .results-level-num{ grid-column:2 / -1; grid-row:1; font-size:1.22rem; }
+  .rs-xp .results-level.has-me .results-level-rank{ grid-column:2 / -1; grid-row:2; justify-self:start; margin-top:.3rem; }
+  .rs-xp .results-level.has-me > .results-level-trackwrap{ grid-column:2 / -1; grid-row:3; margin-top:.72rem; }
+  .rs-xp .results-level.has-me > .results-level-line{ grid-column:2; grid-row:4; align-self:start; margin-top:.48rem; min-width:0; }
+  .rs-xp .results-level.has-me > .results-level-next{
+    grid-column:3; grid-row:4; align-self:start; justify-self:end; margin-top:.48rem; padding-left:.75rem;
+    font-size:var(--rs-cap, .78rem); line-height:1.35; font-weight:700; color:var(--soft); white-space:nowrap;
+  }
+  .rs-xp .results-level.has-me > .results-level-next:empty{ display:none; }
+  .rs-xp .results-level.has-me .results-level-avatar{
+    box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--rank-color, #9FACBA) 45%, transparent),
+      0 0 18px -5px color-mix(in srgb, var(--rank-color, #9FACBA) 40%, transparent), 0 6px 16px rgba(0,0,0,.35);
+  }
+  /* a 320-350px phone: the column is ~160px, room for the numbers and not their target too */
+  @media (max-width:22rem){
+    .rs-screen .rs-xp .results-level.rs-levelblock.has-me{ column-gap:.8rem; }
+    .rs-xp .results-level.has-me > .results-level-next{ display:none; }
+  }
+  @media (min-width:40rem){
+    .rs-screen .rs-xp .results-level.rs-levelblock.has-me{ column-gap:1.3rem; padding-top:1.3rem; }
+    .rs-xp .results-level.has-me .results-level-num{ font-size:1.36rem; }
+  }
 
   /* Badge progress, Game difficulty, personal best. */
   /* The heading sits on the same .75rem as every other card's (build 315):
@@ -29478,6 +29541,9 @@
      white." */
   .rs-screen .rs-grade .rs-frac-of{ opacity:1; }
   .rs-screen .rs-grade-sub.slabel{ margin:.3rem 0 0; font-size:var(--rs-cap); font-weight:500; line-height:1.35; text-wrap:balance; }
+  /* (384 polish) the words under "10 / 12" wait with it and come in just after it - never before the numbers they describe */
+  .rs-screen .rs-grade-sub.slabel{ transition:opacity .35s ease .12s, transform .35s cubic-bezier(.2,.8,.2,1) .12s; }
+  .rs-screen .rs-grade-sub.slabel.is-waiting{ opacity:0; transform:translateY(4px); transition:none; }
   .rs-stamps{ display:flex; flex-wrap:wrap; gap:.4rem; margin:.95rem 0 0; }
   .rs-stamp{
     padding:.28rem .62rem; border-radius:999px; border:1px solid rgba(255,255,255,.14);
@@ -30189,19 +30255,13 @@
     box-shadow:0 0 22px -8px rgba(var(--te), .42), inset 0 0 0 1px rgba(var(--te), .18), inset 0 0 24px rgba(var(--te), .26); }
   .rs-grade-tone > i.is-red{ --tw:rgba(200,60,84,.16); --te:232,104,124; }
   .rs-grade-tone > i.is-green{ --tw:rgba(46,170,106,.16); --te:92,214,146; opacity:0; }
-  /* passed: the green is the card in ONE frame, never a blend - and it
-     comes on with a bloom of itself (a brighter, richer green - no scale:
-     a scaled layer pulls its rim off the card edge)
-     over .38s, so the change reads as a moment, not a cut */
+  /* passed: the washes trade places, never a blend. (384 polish) The bloom
+     that marked it (rs-green-on / rs-num-flip / rs-bar-flip: a brighter,
+     more saturated green and a 1.12x pop) is gone with the switch it
+     covered: the number and each bar now fade out of the red and into the
+     green (rsTurn), and these two change places at the bottom of it. */
   .rs-grade-tone.is-green-on > i.is-red{ opacity:0; }
-  .rs-grade-tone.is-green-on > i.is-green{ opacity:1; animation:rs-green-on .38s cubic-bezier(.2,.8,.3,1) both; }
-  @keyframes rs-green-on{ 0%{ filter:brightness(1.25) saturate(1.6); } 100%{ filter:none; } }
-  .rs-grade .rs-pct.pct.rs-num-flip{ animation:rs-num-flip .38s cubic-bezier(.2,1.3,.35,1) both; transform-origin:20% 60%; }
-  @keyframes rs-num-flip{ 0%{ transform:scale(1.12); filter:brightness(1.25) saturate(1.5); } 100%{ transform:none; filter:none; } }
-  .rs-byunit .unit-breakdown-fill.rs-bar-flip{ animation:rs-bar-flip .38s ease-out both; }
-  @keyframes rs-bar-flip{ 0%{ filter:brightness(1.3) saturate(1.6); } 100%{ filter:none; } }
-  [data-reduce-motion="true"] .rs-grade-tone.is-green-on > i.is-green, [data-reduce-motion="true"] .rs-grade .rs-pct.pct.rs-num-flip,
-  [data-reduce-motion="true"] .rs-byunit .unit-breakdown-fill.rs-bar-flip{ animation:none; }
+  .rs-grade-tone.is-green-on > i.is-green{ opacity:1; }
   /* the 100's hand-off: a FADE (b327j round 3 - "the green told to the
      Hundo color from left to right and not the fade it used to be"). The
      effect's look (copied off the card) fades in OVER the green, which
@@ -97264,7 +97324,8 @@ function playRankUpScene(tierKey, opts, spec){
 
   /* "You ranked up" every time, Home included (build 308) - the words
      are half of what the scene is for. */
-  overlay.appendChild(rankCutKicker());
+  const kicker = rankCutKicker();
+  overlay.appendChild(kicker);
   const title = document.createElement("p");
   title.className = "supernova-title";
   title.textContent = spec.title;
@@ -97273,6 +97334,25 @@ function playRankUpScene(tierKey, opts, spec){
   subtitle.className = "supernova-subtitle";
   subtitle.textContent = spec.subtitle;
   overlay.appendChild(subtitle);
+  /* THE PLANET CHANGES COLOUR WITH NOTHING ELSE CHANGING (384 polish). Madison: "when the large planet changes color, there's
+     like a weird lag". The swap under the flash used to re-theme the whole overlay (its data-accent) and the app under it
+     (setNewTheme -> applyTheme, a forced style pass), and the bangs, the aura and the charge's corona were added to the page
+     or taken off it during the flash - each of those restyled the whole document (~30-40ms a time in Chromium here, 3,300+
+     elements: a node added or removed anywhere re-checks the :has() rules under <body>), dropped frames exactly as the new
+     planet came out of the light. Now the words that come up after the flash wear the new rank's colours from the start
+     (they were the only things in the overlay that took its accent after the swap - the old planet keeps its own colours as
+     it fades), the bangs are made with the scene and held (.is-held) until they go off, nothing is taken off the page until
+     the scene ends (spent pieces are hidden), and the theme is set in the dark at the end, before the overlay lifts. */
+  [kicker, title, subtitle].forEach(el => { el.dataset.theme = theme0; el.dataset.accent = tierKey; });
+  const bangsHeld = {};
+  (spec.times.swell ? ["is-sn"] : ["", "is-big"]).forEach(cls => {
+    const b = document.createElement("div");
+    b.className = ("rank-bang is-held " + cls).trim();
+    b.setAttribute("aria-hidden", "true");
+    b.innerHTML = '<i class="rb-glow"></i><i class="rb-core"></i><i class="rb-ring"></i>' + (cls === "is-sn" ? '<i class="rb-void"></i>' : "");
+    overlay.appendChild(b);
+    bangsHeld[cls] = b;
+  });
   document.body.appendChild(overlay);
 
   const timers = [];
@@ -97294,6 +97374,8 @@ function playRankUpScene(tierKey, opts, spec){
     if(finished) return;
     finished = true;
     timers.forEach(clearTimeout);
+    /* the theme goes on here, in the dark, before anything lifts (384 polish - see above) */
+    setNewTheme();
     if(spec.onFinish) spec.onFinish();
     overlay.classList.add("supernova-exit");
     /* Only when a pop-up is coming: inline, the results sequence has the
@@ -97312,10 +97394,14 @@ function playRankUpScene(tierKey, opts, spec){
     }, 700);
   }
   /* The theme you just earned is SET, not just unlocked - "when the cut
-     scene hits for a theme, that new theme is now set for you" - at the
-     moment the new planet appears, so the app under the overlay is
-     already in it when the overlay goes. */
+     scene hits for a theme, that new theme is now set for you" - so the
+     app under the overlay is already in it when the overlay goes. Once:
+     at once in the still scene, and since 384 polish at the end of the
+     full one (it used to be under the flash, as the planet changed). */
+  let themeSet = false;
   function setNewTheme(){
+    if(themeSet) return;
+    themeSet = true;
     try{
       if(ACCENTS.indexOf(tierKey) >= 0 && !isLockedAccent(tierKey)){
         theme.accent = tierKey; theme.accentAt = Date.now(); applyTheme(); saveTheme();
@@ -97582,14 +97668,20 @@ function playRankUpScene(tierKey, opts, spec){
   const bangAt = (el, cls, size, life) => {
     try{
       const c = centreOf(el);
-      const b = document.createElement("div");
-      b.className = "rank-bang " + (cls || "");
-      b.setAttribute("aria-hidden", "true");
+      /* the one made with the scene, set off where it is needed (384 polish) */
+      const held = bangsHeld[cls || ""];
+      const b = held && held.classList.contains("is-held") ? held : document.createElement("div");
+      if(b !== held){
+        b.className = "rank-bang " + (cls || "");
+        b.setAttribute("aria-hidden", "true");
+        b.innerHTML = '<i class="rb-glow"></i><i class="rb-core"></i><i class="rb-ring"></i>' + (cls && cls.indexOf("is-sn") >= 0 ? '<i class="rb-void"></i>' : "");
+      }
       b.style.setProperty("--bc", newColor);
       Object.assign(b.style, { left: c.x.toFixed(1) + "px", top: c.y.toFixed(1) + "px", width: (c.w * size).toFixed(1) + "px" });
-      b.innerHTML = '<i class="rb-glow"></i><i class="rb-core"></i><i class="rb-ring"></i>' + (cls && cls.indexOf("is-sn") >= 0 ? '<i class="rb-void"></i>' : "");
-      overlay.appendChild(b);
-      setTimeout(() => b.remove(), life);
+      if(b === held) b.classList.remove("is-held");
+      else overlay.appendChild(b);
+      /* spent, it is hidden - not taken off the page mid-scene */
+      setTimeout(() => b.classList.add("is-spent"), life);
       return b;
     }catch(e){ return null; }
   };
@@ -97725,7 +97817,14 @@ function playRankUpScene(tierKey, opts, spec){
             { duration: dur, delay: at0, easing: "linear", fill: "both" });
         }catch(e){}
       });
-      setTimeout(() => { aura.remove(); if(fl) fl.remove(); pulses.forEach(r => r.remove()); }, D + 1600);
+      /* (384 polish) the aura, held full into the flash, goes out under the flash on its own fade - it used to stay full
+         and vanish in one frame 1.6s in, as the new planet came out of the light - and the spent pieces are hidden, not
+         taken off the page in the middle of the scene (each removal restyled the whole document) */
+      at(D, () => { try{ aura.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1100, easing: "ease-in-out", fill: "forwards" }); }catch(e){ aura.style.opacity = "0"; } });
+      setTimeout(() => {
+        [aura, ...pulses].forEach(x => { x.style.visibility = "hidden"; });
+        if(fl){ fl.under.style.visibility = "hidden"; fl.over.style.visibility = "hidden"; }
+      }, D + 1600);
     }catch(e){}
   };
   /* After the spin has STOPPED: the half-second, the flash, and the rest,
@@ -97741,6 +97840,10 @@ function playRankUpScene(tierKey, opts, spec){
     const SW = spec.times.swell || 0;
     const p0 = spec.times.pause != null ? spec.times.pause : (SW ? RANK_CUTSPIN_PAUSE_MS : RANK_WINDUP_MS);
     const b = p0 + SW;
+    /* (384 polish) THE BACKGROUND WAITS FOR THE FLASH: the flip-book recordings (a host added to <body>, a forced style pass
+       a frame) and every other warm-up that keys off settleUntil hold from the charge until the title is up, so none of
+       them lands on the frames where the planet changes colour */
+    try{ beginSettle(b + (T.settle - T.burst) + 900); }catch(e){}
     if(SW) at(p0, () => { playSound("rank.sn.swell", { dur: SW / 1000 }); snSwell(); });
     else windUp(p0);
     at(b, () => {
@@ -97769,10 +97872,10 @@ function playRankUpScene(tierKey, opts, spec){
       if(SW) snDetonate();
     });
     /* Under the peak of the flash (35% of its 2.6s). */
+    /* (384 polish) only the planets trade places here: the words already wear the new rank's colours and the theme is
+       set at the end, in the dark (finish) - see "THE PLANET CHANGES COLOUR WITH NOTHING ELSE CHANGING" */
     at(b + 850, () => {
       overlay.classList.add("is-swapped");
-      overlay.dataset.accent = tierKey;
-      setNewTheme();
     });
     /* SUPERNOVA'S TRANSFORMATION (the second evolution round): "after the
        flash at the end, something happens and then the planet system
@@ -118786,6 +118889,8 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     meRank.className = "results-level-rank";
     txt.append(lvl, meRank);
     head.append(me, txt, gainEl);
+    /* (384 polish) THE FOOT OF THE XP BOX AS ONE PIECE - see .results-level.has-me */
+    wrap.classList.add("has-me");
   } else {
     head.append(lvl, gainEl);
   }
@@ -118794,6 +118899,8 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     if(meMark){ meMark.remove(); meMark = null; }
     meRank.textContent = key ? (RANK_DISPLAY_NAME[key] || key) + " rank" : "No rank yet";
     meRank.style.setProperty("--rank-color", key ? (RANK_COLOR[key] || "#9FACBA") : "#9FACBA");
+    /* (384 polish) and on the block, for the soft ring of the rank's colour round the character */
+    wrap.style.setProperty("--rank-color", key ? (RANK_COLOR[key] || "#9FACBA") : "#9FACBA");
     /* No coin on the character (build 241) - the rank is the word above. */
     if(animate){
       wrap.classList.remove("is-rankup"); void wrap.offsetWidth; wrap.classList.add("is-rankup");
@@ -118819,6 +118926,12 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
 
   const line = document.createElement("p");
   line.className = "results-level-line";
+  /* (384 polish) where the bar is going: "Level 43" at its right-hand end, under it - with the level above it as it
+     changes (blank while a run climbs through several, and at level 80, the top) */
+  const nextEl = document.createElement("span");
+  nextEl.className = "results-level-next";
+  const setNext = n => { nextEl.textContent = n == null || n >= LEVEL_CAP ? "" : "Level " + (n + 1); };
+  setNext(before.level);
   /* The line under the bar follows the level ABOVE it (build 309). It was
      written from where the run ENDED the moment the card was built, while
      the number above still showed where it STARTED until the bar wrapped -
@@ -118884,6 +118997,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
   shownOf = null;
 
   wrap.append(head, trackWrap, line);
+  if(opts && opts.me) wrap.appendChild(nextEl);
   /* NOTHING UNDER THE NUMBERS (build 314): the badge challenge and the
      closest badge were shown here and taken off - "not a fan of the
      challenge stuff under the xp there at all. Remove it". The bar and
@@ -118932,6 +119046,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
     fill.style.transition = "none";
     setBarFill(fill, Math.round(barAfter.fraction * 1000) / 10);
     lvl.textContent = "Level " + after.level;
+    setNext(after.level);
     line.classList.remove("is-seeking");
     setLine(after);
     if(levelsUp) wrap.classList.add("is-levelup");
@@ -119040,6 +119155,7 @@ function buildResultsLevelBlock(earned, pointsAfter, opts){
         lv += 1;
         playSound("res.levelup");
         lvl.textContent = "Level " + lv;
+        setNext(lv < after.level ? null : lv);
         wrap.classList.add("is-levelup");
         fill.style.transition = "none";
         setBarFill(fill, 0);
@@ -122875,6 +122991,45 @@ function rsToneAt(p){
 }
 /* (rsToneWeights, the two washes' crossfade, is gone in b327j: a
    crossfade of red and green passes through grey. The card wipes.) */
+/* RED INTO GREEN, SMOOTHLY, AND NO OTHER COLOUR (384 polish). Madison: "still ensure when it changes from red to
+   green that it's a smooth transition. Don't put in other colors just ensure it's smooth." b327j made it a switch in
+   one frame with a .38s bloom (a brighter, more saturated green and a 1.12x pop), which read as a jump; every blend of
+   the two (a crossfade, any colour transition) passes a grey, an olive or an orange (321, 327f). So the colour goes OUT
+   and the other comes IN, one after the other, through the card itself: the red fades down (its opacity, held in its
+   own hue) to RS_TURN_FLOOR, changes to the green there, in the frame where it is all but gone, and the green comes up
+   - 1 - v^1.7 down, then 1 - (1 - v)^1.7 up, so it eases out of the red and into the green and never stops at the
+   bottom. Every frame is the red or the green over the dark card, never a mix of the two. rsTurnAt(u) -> { green, s }
+   (s the strength, 0-1). */
+const RS_TURN_MS = 700, RS_TURN_FLOOR = .12;
+function rsTurnAt(u){
+  u = Math.max(0, Math.min(1, Number(u) || 0));
+  if(u < .5){ const v = u * 2; return { green: false, s: 1 - Math.pow(v, 1.7) }; }
+  const v = u * 2 - 1;
+  return { green: true, s: 1 - Math.pow(1 - v, 1.7) };
+}
+/* Runs paint(green, alpha, last) once a frame for RS_TURN_MS (alpha from RS_TURN_FLOOR to 1), then once more with
+   last = true; finish() jumps to that end, and .onEnd runs after it. */
+function rsTurn(paint){
+  const T = { done: false, onEnd: null };
+  const t0 = performance.now();
+  const at = u => { const k = rsTurnAt(u); paint(k.green, RS_TURN_FLOOR + (1 - RS_TURN_FLOOR) * k.s, false); };
+  const step = now => {
+    if(T.done) return;
+    const u = (performance.now() - t0) / RS_TURN_MS;
+    if(u >= 1){ T.finish(); return; }
+    at(u);
+    requestAnimationFrame(step);
+  };
+  T.finish = () => {
+    if(T.done) return;
+    T.done = true;
+    try{ paint(true, 1, true); }catch(e){}
+    if(T.onEnd){ const f = T.onEnd; T.onEnd = null; try{ f(); }catch(e){} }
+  };
+  at(0);
+  requestAnimationFrame(step);
+  return T;
+}
 /* A 100's green crossing into its hundo effect's look as it lands (the
    card's wash, its border and glow, the bars and the number together). */
 const RS_HUNDO_CROSS_MS = 900;
@@ -123243,13 +123398,18 @@ function showRunRewards(run, hooks, opts){
        with it ("70%" beside "8 / 12", build 327 audit) */
     rsPair(frac, run.good, run.total);
     if(countIt) frac.classList.add("is-waiting");
-    gradeParts = { pctEl, pctTone, frac };
     const fracSub = document.createElement("p");
     fracSub.className = "rs-grade-sub slabel";
     fracSub.textContent = run.total === 0 ? "Time ran out before you answered any questions."
       : run.retake ? "Retake — your test grade doesn't change."
       : (run.mode === "exam" || run.vroom) ? "correct"
       : "right on the first try";
+    /* ...AND THE WORDS UNDER IT WITH IT (384 polish). Madison: "the grade box, it says 'right in first try' before the
+       numbers above it appear, shouldn't that be fixed?" The line says what "10 / 12" counts, so it waits with the
+       fraction and comes in just after it (landGrade; .rs-grade-sub.is-waiting) - opacity and a 4px rise, so nothing
+       around it moves. */
+    if(countIt) fracSub.classList.add("is-waiting");
+    gradeParts = { pctEl, pctTone, frac, fracSub };
     gSide.append(frac, fracSub);
     gRow.append(pctEl, gSide);
     grade.appendChild(gRow);
@@ -123491,34 +123651,51 @@ function showRunRewards(run, hooks, opts){
     pe.style.backgroundImage = ""; pe.style.webkitBackgroundClip = ""; pe.style.backgroundClip = "";
     pe.style.webkitTextFillColor = ""; pe.style.color = col || "";
   };
-  let greenOn = false;
+  /* (384 polish) the turn is a fade out of the red and into the green (rsTurn, RS_TURN_MS) - the number by its
+     opacity, each bar by its own; the card's two washes (hidden under the plain results card since build 383) trade
+     places at the bottom of it, where neither shows. */
+  let greenOn = false, numTurn = null;
   const goGreen = () => {
     if(greenOn) return;
     greenOn = true;
     const tl = grade.querySelector(".rs-grade-tone");
-    if(tl) tl.classList.add("is-green-on");
-    if(gradeParts){ numPlain(gradeParts.pctEl, rsToneAt(100)); gradeParts.pctEl.classList.add("rs-num-flip"); }
+    if(!gradeParts){ if(tl) tl.classList.add("is-green-on"); return; }
+    const pe = gradeParts.pctEl;
+    numPlain(pe, rsToneAt(0));
+    numTurn = rsTurn((green, a, last) => {
+      if(green && tl) tl.classList.add("is-green-on");
+      if(last){ pe.style.opacity = ""; if(pe.style.color) pe.style.color = rsToneAt(100); return; }
+      pe.style.color = rsToneAt(green ? 100 : 0);
+      pe.style.opacity = a.toFixed(3);
+    });
   };
   const paintUnit = (u, p) => {
     setBarFill(u.fill, Math.round(u.up * p * 10) / 10);
     const r = Math.min(u.right, Math.floor(u.right * p + 1e-6));
     if(u.shown !== r){ u.shown = r; if(u.score) rsPair(u.score, r, u.total); }
-    /* the bar's own switch, by its own unit's verdict */
+    /* the bar's own turn, by its own unit's verdict */
     const green = u.up >= PASS_MARK && u.up * p >= Math.min(PASS_MARK, u.up - 1e-6);
     const bg = green ? "var(--right)" : "var(--wrong)";
     if(u.bgNow !== bg){
-      u.bgNow = bg; u.fill.style.background = bg;
-      if(green){ u.fill.classList.remove("rs-bar-flip"); void u.fill.offsetWidth; u.fill.classList.add("rs-bar-flip"); }
+      const was = u.bgNow;
+      u.bgNow = bg;
+      if(green && was){
+        u.turn = rsTurn((g, a, last) => {
+          if(last){ u.fill.style.opacity = ""; u.fill.style.background = u.home ? "" : "var(--right)"; return; }
+          u.fill.style.background = g ? "var(--right)" : "var(--wrong)";
+          u.fill.style.opacity = a.toFixed(3);
+        });
+      } else u.fill.style.background = bg;
     }
   };
-  /* a bar home takes its own verdict's colour - which its wipe has
-     already reached (build 327); a 100's gold is the landing's */
+  /* a bar home takes its own verdict's colour - which its turn has
+     already reached, or reaches as its turn ends; a 100's gold is the landing's */
   const unitHome = u => {
     if(u.home) return;
     u.home = true;
     paintUnit(u, 1);
-    u.fill.style.background = "";
-    u.fill.className = u.tone + " sbar is-home" + (u.fill.classList.contains("rs-bar-flip") ? " rs-bar-flip" : "");
+    if(!u.turn || u.turn.done) u.fill.style.background = "";
+    u.fill.className = u.tone + " sbar is-home";
   };
   /* the card is built showing 0% and 0 / N: the first change ticks */
   let shownPct = 0;
@@ -123641,8 +123818,16 @@ function showRunRewards(run, hooks, opts){
       gradePctMarkup(pe, run.pct);
       rsPair(gradeParts.frac, run.good, run.total);
       gradeParts.frac.classList.remove("is-waiting");
+      if(gradeParts.fracSub) gradeParts.fracSub.classList.remove("is-waiting");
       unitBars.forEach(u => { if(u.score) rsPair(u.score, u.right, u.total); });
       const done = () => { numPlain(pe, ""); if(tl && tl.isConnected) tl.remove(); };
+      /* (384 polish) a turn still going plays out (a grade just over the pass mark turns as it lands), and the
+         layers come off once it is over; landed at once (a tap) or into a 100's effect, it ends where it is */
+      if(instant || run.isPerfect){ if(numTurn) numTurn.finish(); unitBars.forEach(u => { if(u.turn) u.turn.finish(); }); }
+      const doneAfterTurn = () => {
+        if(numTurn && !numTurn.done) numTurn.onEnd = () => { if(grade.isConnected) done(); };
+        else done();
+      };
       /* a 100 in its effect's colours from the moment it lands (the UFO's
          unlit until its beam strikes) - FROM THE GREEN IT COUNTED UP IN
          (build 321: "It would go from green into the hundo effect though,
@@ -123656,11 +123841,11 @@ function showRunRewards(run, hooks, opts){
         if(instant || !tl) done();
         else rsHandoff(tl, pe, done);
       } else if(passes && !instant && tl && !greenOn){
-        /* tapped in early: it turns green as it lands, with its bloom,
-           and the layers come off once the bloom is over */
+        /* tapped in early: it turns green as it lands, and the layers come
+           off once the turn is over */
         goGreen();
-        setTimeout(() => { if(grade.isConnected) done(); }, 400);
-      } else done();
+        doneAfterTurn();
+      } else doneAfterTurn();
     }
     if(!instant){
       panel.classList.add("rs-shake");

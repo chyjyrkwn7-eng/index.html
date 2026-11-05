@@ -139,13 +139,18 @@ def number_grey(im, pbox, scale):
 
 
 def bars_grey(im, bars, scale):
+    # MOVED IN 384 polish: "still ensure when it changes from red to green that it's a smooth transition. Don't put in
+    # other colors". A bar now fades out of its red and into its green through the dark of its own track (rsTurn), so
+    # for a frame or two at the bottom it is a dim red or green over the track, darker than either end - not a blend of
+    # the two at strength, which is what this was written for (320-327's crossfade: red and green half and half is
+    # ~(153,151,132), as bright as the bars). A grey is counted only as bright as that (max channel 120 and up).
     out = 0
     for b in bars:
         x0, y0, x1, y1 = [int(round(v * scale)) for v in b]
         if x1 - x0 < 6: continue
         ym = (y0 + y1) // 2
         px = [im.getpixel((x, ym)) for x in range(x0 + 2, x1 - 2)]
-        out = max(out, sum(1 for p in px if max(p) > 60 and chroma(p) < .3))
+        out = max(out, sum(1 for p in px if max(p) > 120 and chroma(p) < .3))
     return out
 
 
