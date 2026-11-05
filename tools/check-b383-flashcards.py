@@ -53,6 +53,9 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G["g"]["CHROME"])
     for kind in ("book", "amendment"):
         ctx, pg, errs = G["page"](br, G["init"](G["ifc"]))
+        # (384 full check) the shared seed's 234 hundos owe it Fire Code's hundo-effect unlock cards (no seenUnlocks); one up
+        # covers the card and takes the tap, so they are let go first
+        pg.evaluate("()=>{ try{ homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus'); }")
         unit = pg.evaluate("""async(kind)=>{ const w=ms=>new Promise(r=>setTimeout(r,ms));
           const q = QUESTIONS.find(q=>q.ifc && q.ifc.citation && ((q.ifc.citation.source==='amendment') === (kind==='amendment')));
           if(!q) return null; showFlashcards([q.topic.trim()], 'all'); await w(1200);
