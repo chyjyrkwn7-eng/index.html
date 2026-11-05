@@ -33718,6 +33718,9 @@ html.is-browser.safari-bars-over :is(.gs-bar, .cosmic-welcome > .cosmic-welcome-
     display:grid; grid-template-columns:minmax(0, .9fr) minmax(0, 1.1fr); grid-template-rows:auto auto auto 1fr;
     column-gap:1.4rem; align-items:start; }
   html[data-layout] body .screen-calendar-tab > *{ grid-column:1 / -1; }
+  /* (384 full check) the page's name sits in the top-left corner here (THE PAGE'S NAME IN THE TOP-LEFT CORNER), and this
+     column is wide enough to start under it - so whose calendar it is goes on the line below the name, never through it */
+  html[data-theme][data-layout] body .screen-calendar-tab > .cal-classhead{ margin-top:2.6rem; }   /* [data-theme]: past the calendar block's margin shorthand further down */
   html[data-layout] body .screen-calendar-tab > .cal-glance{ grid-column:1; grid-row:2; display:flex; flex-direction:column; gap:1rem; margin:0 !important; }
   html[data-layout] body .screen-calendar-tab > .cal-glance > *{ width:100%; }
   html[data-layout] body .screen-calendar-tab > .cal-monthview{ grid-column:2; grid-row:2 / 5; margin-top:0; }
