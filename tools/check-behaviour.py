@@ -1450,7 +1450,13 @@ def check_b313_shuffle(br):
     # BUILD 319: Penal Code #346's "Manslaughter. 1" -> "Manslaughter." was
     # asked for by name in the 319 list, so it is the one allowed repair
     # (check_b319_penal346 holds it to that one choice and its identity).
-    kc = [k for k in kc if k not in ("Penal Code 346", "Victims of C 5")]
+    # BUILD 328: the updated study guides were imported word for word, and where a guide's choices changed (capitals, "All of
+    # the above") the question shows the guide's words with keyChoices pinning its identity (notes, "Existing units, what
+    # changed in the guides"); Arrest #66 got back its lost choice A ("12 hours") the same way. Those are the guide, not a
+    # rewording.
+    GUIDE_328 = ("Code of Crim 4", "Code of Crim 20", "Missing and  6", "Missing and  13", "Sexual Assau 9", "Sexual Assau 13",
+                 "US and Texas 42", "US and Texas 43", "US and Texas 66", "Arrest, Sear 66")
+    kc = [k for k in kc if k not in ("Penal Code 346", "Victims of C 5") + GUIDE_328]
     check("no question's choices are reworded from the study guide (no keyChoices that differ)", kc == [], kc)
     ctx.close()
 
