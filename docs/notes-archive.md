@@ -34578,3 +34578,19 @@ re-run at the end with the machine quiet.
 - ALREADY ON 383, MEASURED AND LEFT: check-fixes' grey bar on an SE 1st gen in a Safari tab held sideways (568x260): the
   html fallback is 7 levels off body::before at the bottom edge against a 6-level limit, identical on 383, and only shows
   if the fixed layer fails to paint. The S24 915x356 "no banner on a done daily question" was load: alone, 8/8 clean.
+- THE SIGN-UP CLASS STEP FITS A PHONE AGAIN (found by check-b329's SE 1st gen check, then measured on every phone): with
+  Fire Code beside the academy, "More classes / Coming soon" wrapped to a row of its own in .class-cards' two-column grid,
+  whose rows are all as tall as the tallest (grid-auto-rows:1fr) - a ~300px box - and Continue fell below the fold on every
+  iPhone but a Pro Max: 338px of scroll on an SE 2nd/3rd gen, 193 on a 13 mini, 240 on a 14/15/16 in Safari (383 fitted:
+  two cards side by side). Now:
+  - "More classes" is a slim full-width row (its mark, its name, the chip; no kicker or line) on the sign-up step at every
+    width and on the Classes screen on a phone (a tablet's Classes screen is three across and keeps its card). Under 26rem
+    wide the row gives up its mark so the name stays on one line clear of the chip (padding-left/right longhands only: a
+    padding shorthand took the chip's trimmed-text vertical padding and the words sat high).
+  - On a short phone ((max-width:39.99rem) and (max-height:46rem)) the two class cards draw tighter: 38px mark, smaller gaps
+    and line, padding .75rem (from 600px tall; under that the step's own 8px rule stands).
+  - The small print under the cards keeps .9rem under it (Continue's auto margin takes it back where there is room): where
+    the step overflows, Continue sat flush against its last line.
+  - Where it still cannot fit (an SE in Safari, an SE 1st gen) a pick brings Continue into view (scrollIntoView, block end).
+  Result: an SE 2nd/3rd gen, 13 mini, 14/15/16 in Safari, Pro Max and iPad Pro 11 show Continue with nothing scrolled.
+  tools/check-b384-classstep.py: 30 failures on 32d646c, none now.

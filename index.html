@@ -37001,6 +37001,49 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .class-catalog .class-card.is-here,
   html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 55%, transparent) !important; }
   html[data-theme][data-layout] body #stage :is(.class-catalog, .classselect-panel) .class-card.is-soon{ border-radius:var(--ios-group-r) !important; }
+  /* (384 full check) "MORE CLASSES" IS A ROW UNDER THE CLASSES, NOT A THIRD CARD. With Fire Code beside the academy it wrapped
+     to a row of its own in a two-column grid whose rows are all as tall as the tallest (1fr) - a 300px box saying "Coming
+     soon" - and on the sign-up step that put Continue below the fold on every iPhone but a Pro Max (338px of scroll on an SE
+     2nd/3rd gen, 193 on a 13 mini; 383 fitted, its two cards side by side). It is a slim full-width row now: its mark, its
+     name and the chip, on the sign-up step at every width and on the Classes screen on a phone (three across on a tablet
+     there, so it already sits in line). */
+  html[data-theme][data-layout] body #stage .classselect-panel > .classselect-cards{ grid-auto-rows:auto; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{
+    grid-column:1 / -1; min-height:0 !important; flex-direction:row; align-items:center; gap:.8rem; padding:.6rem .95rem !important; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem{ width:40px; height:40px; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem svg{ width:22px; height:22px; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon :is(.cc-kicker, .cc-desc){ display:none; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-title{ margin:0; font-size:1rem; white-space:nowrap; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-foot{ width:auto; margin:0 0 0 auto; }
+  /* a gap under the small print that Continue's auto margin takes back wherever there is room: where the step overflows
+     (an SE, a phone in Safari) Continue sat against the note's last line */
+  html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-bottom:.9rem !important; }
+  /* on a narrow phone the row is its name and its chip: the mark gives up its room so "More classes" stays on one line */
+  @media (max-width:26rem){
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card.is-soon .cc-emblem{ display:none; }
+    html[data-theme][data-layout] body #stage :is(.classselect-panel, .class-catalog) .class-card.is-soon .cc-status{ padding-left:.65rem; padding-right:.65rem; }
+  }
+  /* and on a short phone (an SE, a phone in Safari) the two class cards draw a little tighter - their mark, padding, gaps and
+     the line about each - so the step and Continue fit, or nearly (the pick then brings Continue into view) */
+  @media (max-width:39.99rem) and (max-height:46rem){
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ gap:.4rem; min-height:0 !important; }
+    /* (under 600px tall the step's own rule already pads them 8px top and bottom) */
+    @media (min-height:37.5rem){ html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon){ padding:.75rem .8rem .8rem !important; } }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem{ width:38px; height:38px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-emblem svg{ width:22px; height:22px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-title{ margin:.1rem 0 .25rem; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card:not(.is-soon) .cc-desc{ font-size:.76rem; line-height:1.35; }
+  }
+  @media (max-width:39.99rem){
+    html[data-theme][data-layout] body #stage .class-catalog .class-cards{ grid-auto-rows:auto; }
+    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon{
+      grid-column:1 / -1; min-height:0 !important; flex-direction:row; align-items:center; gap:.8rem; padding:.6rem .95rem !important; }
+    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-emblem{ width:40px; height:40px; }
+    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-emblem svg{ width:22px; height:22px; }
+    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon :is(.cc-kicker, .cc-desc){ display:none; }
+    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-title{ margin:0; font-size:1rem; white-space:nowrap; }
+    html[data-theme][data-layout] body #stage .class-catalog .class-card.is-soon .cc-foot{ width:auto; margin:0 0 0 auto; }
+  }
   /* (383) PROFILE'S CUSTOMIZE: the person card's one action, its own row under the XP bar, the card's width; light on the
      dark themes and dark on the light one, so no banner hides it (see showProfile) */
   html[data-layout] body #stage .profile-hero > .profile-customize-row{ position:relative; z-index:3; display:flex; margin:1.05rem 0 0; }
@@ -93268,6 +93311,12 @@ function showClassSelection(){
       continueBtn.hidden = !list.length;
       rememberSignupPicks(list);
       try{ playSound(on ? "ui.toggle.on" : "ui.toggle.off"); }catch(e){}
+      /* (384 full check) where the screen is too short for the cards and Continue together (a small phone in Safari), the
+         pick brings Continue up into view, so the next step is never under the fold unseen */
+      if(on) requestAnimationFrame(() => { try{
+        const b = continueBtn.getBoundingClientRect(), vv = window.visualViewport, vh = vv && vv.height > 0 ? vv.height : innerHeight;
+        if(b.height && b.bottom > vh - 8) continueBtn.scrollIntoView({ block: "end", behavior: ringMotionOff() ? "auto" : "smooth" });
+      }catch(e){} });
     });
   });
   continueBtn.hidden = !pickedNow().length;
