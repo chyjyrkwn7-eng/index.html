@@ -35423,3 +35423,15 @@ effect now plays - the 100% on fire and the extinguisher putting it out (P.A.S.S
   puffing at their base.
 Both use the effect's own pieces (ifxFlameD, ifxRad, IFX_RED), no new helpers. Rendered before/after in the scratchpad
 (r2/extinguisher-tile-before-after.png).
+
+## 384 final check: a Fire Code cut's gutter side hugs its own column's text (ifc-viewer trimEdges)
+
+Decision 13's "four IFC clips show a sliver of the next column" (ch10-168 a ruler's ticks, ch12-033 a few letters, ch63-005 a
+"k", ch9b-050 a tick): trimEdges only saw the other column's LETTERS reaching under 4pt into a cut, and two of the four are not
+letters at all. Now a cut of running text in one column (col 0/1, no table cell - a table's borders run past its text) ends 2.5pt
+past its widest line on the side that faces the other column (only when that line comes within 30pt of the page's gutter); the
+outer side (change bars, margin marks) is unchanged.
+MEASURED over every IFC clip (crops-work/survey.py --noshots, 1,391 each way, the trim swapped in with --viewer): 1,194 cuts move
+a few points on the gutter side; 0 clips gain ink at a side edge; 5 lose it (ch9b-050, ch10-168, ch10-063, ch12-032, ch12-033);
+0 errors. ch63-005's "k" stays: it is a whole mark beside the heading line inside the cut - the book's own margin marker for that
+section, not a sliver. Before/after of the four: scratchpad fin/slivers.jpg.

@@ -515,6 +515,18 @@ function trimEdges(model, seg) {
   }
   if (x1 < seg.x1 && inside.some(it => it.x + it.w > x1 + 0.2)) x1 = seg.x1;
   if (x0 > seg.x0 && inside.some(it => it.x < x0 - 0.2)) x0 = seg.x0;
+  // (384 final check) THE GUTTER SIDE HUGS THE COLUMN'S OWN TEXT. The trim above only sees the other column's LETTERS, and only
+  // ones that reach under 4pt into the cut; a ruler's ticks or a tick mark printed by the gutter is not a letter at all, and a
+  // few letters reached further - four cuts kept a sliver of the neighbouring column at their edge (ch10-168, ch12-033,
+  // ch63-005, ch9b-050). A cut of running text in one column (col 0 or 1, no table cell in it - a table's borders run past its
+  // text) now ends 2.5pt past its widest line on the side facing the other column, so nothing from that column fits in; the
+  // outer side (change bars, margin marks) is left as it was.
+  const words = inside.filter(it => it.t);
+  const fl = model.F == null ? Infinity : model.F;
+  if ((seg.col === 0 || seg.col === 1) && model.g != null && words.length && !words.some(it => it.i >= fl)) {
+    if (seg.col === 0) { const r = Math.max(...words.map(it => it.x + it.w)) + 2.5; if (r < x1 && r > model.g - 30) x1 = r; }
+    else { const l = Math.min(...words.map(it => it.x)) - 2.5; if (l > x0 && l < model.g + 30) x0 = l; }
+  }
   return x0 === seg.x0 && x1 === seg.x1 ? seg : { ...seg, x0, x1 };
 }
 
