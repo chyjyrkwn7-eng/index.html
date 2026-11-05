@@ -34393,3 +34393,128 @@ newclass-banner-440x956.mp4, switch-to-firecode-440x956.mp4, switch-to-academy-4
 PHONE ONLY: the colour change and the bar on a real reload (iOS keeps the old page's last frame until the new one paints);
 the real network for the bank's warm-up and a 304; crypto.subtle on the live https page; the file picker for the book at
 sign-up; Safari's @property support (16.4+; older steps the colours).
+
+### Build 384 - centring, measured by the ink: every pill and button, and check-centering.py (NOT on main, waiting for Madison)
+
+Madison, after yet another off-centre pill: "ensure the still here is also centered cause I can tell it's slightly off. You
+need to do a full check on the entire app to ensure there's nothing else like this whatsoever. I've been asking you to fix
+this off centering problem over and over and over. It's a waste of time, we need a permanent fix so you don't allow it to
+happen again." ("the still here" is read as Get Started's new "Sign in" pill at the top right, added the same day; it is
+trimmed onto its capitals with everything else below.)
+
+**AFTER ANY CHANGE TO A SCREEN: `python3 tools/check-centering.py --quick`** (iPhone 17 Pro Max 440x956, both classes,
+~6-7 min; fails naming the element, its words, the screen, class and size, and by how much). `python3
+tools/check-centering.py --jobs 3` adds the SE, the iPad Pro 11" and a 1536x864 laptop. It supersedes
+tools/check-ink-centre.py (327: text controls only, on fewer screens, with an emulated pixel ratio - see lesson 1).
+
+HOW IT MEASURES (tools/check-centering.py; the half that runs in the page is tools/check-centering.js):
+- Walks 127 screens per class (sign-up and Get Started, Home and its class list, modes, units in every mode, a test, its
+  answer and Pause card, results, Review, history, flash cards, Profile, Stats, Customize, ladder, badge case, Friends,
+  the boards, Calendar, Settings and every page, classes, chat's three tabs, Virtual Room, the sheets, banners, notices,
+  a toast, the tips), each top to bottom (6 steps at most).
+- A candidate is anything that draws a shape (its own fill / rim / glass, or a pseudo-element's) with words or an icon in
+  it. Not asked: content laid out from an edge (list rows; two lines set from the left; a row with a picture in it), a
+  card holding its own button, a track of several controls, the tab bar's tabs up-down (their words share one line on
+  purpose; across they are asked, the lit one against the slider's pill), pictures (a character, a flare, an emblem - their
+  visible box stands in), Home's and Welcome's orbit planets, the case's drawn latches. The OWNED list in
+  check-centering.js lists-but-does-not-fail elements another session owns (now: the Fire Code code pictures' tag pills).
+- Ink = a screenshot as drawn vs with the content hidden: the words by -webkit-text-fill-color only (nothing drawn in
+  currentColor changes), then everything. Edges to a fraction of a device pixel (half-coverage crossing). Words are
+  measured top to BASELINE (descenders do not count); a word with a capital and an ascender or i-dot on its capitals (1cap
+  above the baseline), as text-box trims it and a typesetter centres it. Waits for entrance animations to end, pauses
+  what never ends, re-reads anything that changed or moved while measured, lists what never held still. Fails on > 0.5px
+  (> 1px for a shape over 120px wide).
+- CHROMIUM LESSONS, each of which gave a wrong answer before it was found (measured on test pages):
+  1. With only an EMULATED pixel ratio (Playwright's device_scale_factor), Chromium draws a line of words and an <svg> at
+     a position rounded to a whole CSS pixel - up to 0.5px off, varying with where the element happens to sit; a phone
+     rounds to a device pixel. The gate launches Chromium per size with --force-device-scale-factor=<dpr> (screenshots at
+     scale 1, already device pixels), and then it rounds as a phone does. Every older gate that judges sub-pixel positions
+     with an emulated ratio (check-ink-centre included) carries up to half a pixel of this - several "fixes" made from its
+     numbers in earlier rounds were answers to it (see csi-label and Enroll below).
+  2. Canvas measureText rounds glyph extents to whole pixels: CSS 1cap on a probe gives the true capital height.
+  3. The layout's baseline (Range rect + ascent) can be 0.5-3px off the drawn one (a trimmed line reports its trimmed
+     box): the baseline is read off the pixels (where the stems end; a 4's crossbar is not mistaken for it).
+  4. An <svg>/<img> is drawn at its box rounded to a device pixel: that rounding is taken back out of the icon's ink.
+  5. Every size is measured at 3x (an iPad draws at 2x): the layout is the same in CSS pixels, and 2x only adds its own
+     half-pixel rounding to the reading.
+
+WHAT WAS OFF, AND THE CURE - all in ONE block at the very END of the stylesheet ("BUILD 384: CENTRING, MEASURED BY THE
+INK"); no other line of index.html changed. Measured with the final gate on c071343 (claude/b384 before this work) and
+after, iPhone 17 Pro Max 440x956 at 3x (+ is right / low):
+| Element | Words | Size | Off before (px; + right/low) | After | Cure | Class |
+|---|---|---|---|---|---|---|
+| Virtual Room rooms - Couldn't load card | Couldn’t load th | 400x58 | y +3.97 | y -0.03 | the hint's 8px top margin removed | academy,ifc |
+| Units - Start pill | Start | 94x64 | x +2.38 | x -0.06 y -0.05 | icon and word translated -.177em (2px) | academy,ifc |
+| Units / results - mode chip | GAME | 89x31 | x -2.27 | x +0.01 y -0.07 | padding moved (.104rem; results .07rem); Game +.6px | academy,ifc |
+| Save-code card - the code | TEST-3843 | 364x62 | x -2.20 | x -0.30 y +0.00 | padding-left +.12em (the letter-spacing) + trim | academy,ifc |
+| Pause card - Quit test / Save and exit | Quit test | 151x50 | x +1.94 | x +0.26 y -0.13 | 1.7px of padding moved | academy,ifc |
+| Chat - count in a tab | 1 | 16x16 | x -1.94 y -1.67 | x -0.09..+0.14 y -0.10..-0.00 | trim, a block the disc's size | ifc |
+| Units / results - mode chip | DRILL | 88x31 | x -1.90..-1.29 | x -0.23..-0.18 y -0.09..+0.00 | padding moved (.104rem; results .07rem); Game +.6px | academy,ifc |
+| Virtual Room - game chips | Tug of War | 117x29 | x -1.90 | x +0.10 y -0.09 | content translated (Race .66, Tug 2, Battle -.55px); words trimmed | academy,ifc |
+| Units / results - mode chip | MOCK | 91x31 | x -1.88 | x -0.21 y -0.05 | padding moved (.104rem; results .07rem); Game +.6px | academy |
+| Units / results - mode chip | REVIEW | 103x31 | x -1.64 | x +0.02 y -0.22 | padding moved (.104rem; results .07rem); Game +.6px | academy,ifc |
+| Pause card - Quit test / Save and exit | Save and exit | 151x50 | x +1.50 | x -0.18 y -0.16..+0.10 | 1.7px of padding moved | academy,ifc |
+| Virtual Room - Match settings | Match settings | 178x62 | x -1.50 | x -0.43 y -0.34..-0.20 | label and arrow translated 1.1px | academy,ifc |
+| Re-add notice - the code | TEST-3843 | 135x35 | x -1.49 | x -0.27 y -0.04 | .07em of padding moved + trim | academy |
+| Re-add notice - the code | TEST-3843__ifc | 198x35 | x -1.41 | x -0.19 y -0.04 | .07em of padding moved + trim | ifc |
+| Stats - Virtual Room empty icon | (icon) | 41x41 | x -1.28 y +0.48..+0.57 | x +0.09 y -0.13..-0.03 | icon translated 1.38px, -.54px | academy,ifc |
+| Profile - reward tiles | Theme | 173x89 | y +1.05..+1.18 | x -0.06..-0.02 y -0.05..+0.08 | padding moved up 1.2px | academy,ifc |
+| Units - Select all | Select all | 114x44 | x -1.16..-0.99 | x +0.06..+0.14 y +0.00 | 1.1px of padding moved | academy,ifc |
+| Sign-up steps - round back | (icon) | 44x44 | x -1.03 | x -0.01 y -0.01 | chevron margin removed, .25px | academy,ifc |
+| Test / Review - star button | (icon) | 44x44 | y -0.92..-0.51 | x -0.11..-0.02 y -0.35..+0.12 | the star (not its ring) moved .45 of 24 down | academy,ifc |
+| Settings - Study / Motion tiles | (icon) | 32x32 | x -0.61..-0.00 y -0.14..+0.71 | x -0.35..+0.34 y -0.47..+0.42 | icon translated (Study -.5px up, Motion .61px) | academy,ifc |
+| Add to Home Screen - step numbers | 2 | 24x24 | y -0.69..-0.61 | x -0.17..+0.05 y -0.17..+0.17 | trim, a block the disc's size | academy,ifc |
+| Classes / sign-up - Enroll, Select, Enrolled, Selected | Selected | 98x28 | x +0.69 | x +0.09 y +0.20 | Select: a clear 1px rim + even padding (329's nudge out); Selected: .5px of padding moved | academy,ifc |
+| Settings pages / units - round back | (icon) | 42x42 | x -0.63 | x +0.00 y -0.11 | chevron translated .625px | academy,ifc |
+| Chat button (beyond Home) | (icon) | 42x42 | y +0.51 | x -0.28..+0.21 y -0.19..+0.18 | bubble translated .3px up | academy,ifc |
+| Virtual Room - game chips | Race | 82x29 | x -0.51 | x +0.15 y +0.06 | content translated (Race .66, Tug 2, Battle -.55px); words trimmed | academy,ifc |
+| Classes / sign-up - Enroll, Select, Enrolled, Selected | Select | 64x30 | y +0.51 | x +0.16..+0.19 y +0.18 | Select: a clear 1px rim + even padding (329's nudge out); Selected: .5px of padding moved | academy,ifc |
+
+Also trimmed onto their capitals although Chromium's Inter measured them inside 0.5px on c071343 (the iPhone's SF sits its
+capitals ~2px high in a line box where Inter sits them ~1px, notes 327; text-box trim centres them whatever the font):
+Get Started's Sign in (-0.20 -> +0.14), the A2HS "Tap" labels (-0.67 -> -0.33..+0.14) and step numbers, Today, the days-to-
+go pair, the Instructor tag (-0.30 -> +0.03), Manage friends (-0.24 -> +0.10), Pause (-0.34 -> 0.00), Settings > Sync's (i)
+(-0.39 -> -0.06), the class list's labels (329's -.65px nudge, which put them -0.48 high, made even -> +0.19), a banner's
+View / Join / Save it (a block, so the trim reaches its word), the history chip, the address in A2HS, and from a tablet up
+the boards' medals and the Calendar's today disc.
+
+Cures, by cause:
+- LETTERS HIGH IN THEIR LINE -> text-box: trim-both cap alphabetic, the padding giving back the trim (no size change;
+  inside @supports, so Safari before 18.2 is untouched). A flex box's anonymous text is never trimmed: such pills are
+  made blocks the same size, or their word's span is trimmed.
+- NUDGES THAT HAD COMPENSATED THE WRONG THING, made even: the class list's labels (329's -.65px) and Enroll / Select
+  (329's 1.2px down stood in for the 1px rim its siblings have: it gets a clear rim now and even padding).
+- AN ICON'S AIR / LETTER-SPACING / UNEVEN PADDING -> padding moved side to side (width unchanged) or the pieces translated.
+- ICONS DRAWN OFF THEIR OWN MIDDLE -> translated by their own geometry (the chevrons, the star - its ring left alone -, the
+  Stats VR icon, the Study and Motion tiles, the chat bubble).
+- LAYOUT: Profile's reward tiles sat 1.1-1.5px low (padding moved up 1.2px); the rooms list's "Couldn't load" card had a
+  hint's 8px top margin with nothing above it; from a tablet up the ladder's reward chips (.3rem / .6rem sides) sat 2px left.
+
+LEFT ALONE, ON PURPOSE: list rows and cards laid out from an edge; characters (placed per character, AVATAR_CENTRE_DY);
+the tab bar's icon-and-word up-down (one line of words by design).
+FIRE CODE'S CODE PICTURES (their own session, c72a33a "the IFC / AMENDMENTS / HINT pills centred"): on the phone all pass;
+in the 3x run of the other sizes AMENDMENTS on an iPad measured 5.6px left at one scroll position - listed under OWNED,
+not touched here. Their "Show the code" summary is listed as Moving (something in it animates).
+ONLY A PHONE CAN CONFIRM: SF's widths and capitals and Safari's own rounding; the cures do not depend on the font, but a
+residue under half a pixel can differ.
+
+GATE RESULTS: check-js 10 blocks ALL PASS; check-centering --quick ALL PASS (1105 elements, 127 screens per class, no page errors in
+either class; Fire Code's "Show the code" listed as Moving), --against c071343 (the start) FAILS 159, --against claude/b383
+FAILS 232 (two screens 383 does not have are listed as not opened); check-b384-podium-hint ALL PASS (18, pdf.js stand-in);
+sweep-layout --quick 20/20 clean.
+THE OTHER THREE SIZES (`--jobs 3 --sizes "SE|iPad|laptop"`): stopped by the session's 30-minute background limit on a machine
+also running three other gate lanes (load ~23). The SE and the iPad, both classes, finished; the laptop's jobs did not report.
+What they found: the SE's board row "1 Casey 141" (a list row laid out from its edges, 1.03px high against its 1px
+tolerance); the SE's Fire Code Next question (re-measured on its own: passes - it moved while measured under load); the
+iPad's Race chip 0.56px left (0.06 over; the phone's .66px nudge was measured on an 82px chip, the iPad's is 92px). The
+board row and the Race chip are NOT fixed here - LEFT for the next round, with the laptop's re-run.
+
+CHECK-INK-CENTRE.PY (327) NOW RENDERS AT A REAL 2x. On c071343+ it failed the units' Level 1/2/3 tabs (1.24px high) and
+sign-up's Continue (1.48px high) on both its devices. Measured with the same seed and the same screens, at a real 3x the
+Level tabs' letters are at -0.05 and Continue at -0.08 - on the middle. Under its emulated device_scale_factor=2 Chromium
+drew the same words ~1px higher (Level ink 171.5..182 vs 173..183; Continue 815..828 vs 816..830): lesson 1 above, worse
+than half a pixel here. Nudging them down would have put them ~1.2px LOW on a phone, so the gate was fixed instead
+(`--force-device-scale-factor=2`, contexts at scale 1; screenshots come back in device pixels and its own scale maths
+already reads them). Banner "View" on the iPad (8.31px high before), the class list's "Fire Code" (1.00 high) and Settings'
+Contributors / Terms of Use (383) were already inside its tolerance on this branch with the fixes block.
+check-ink-centre (real 2x) on this branch and --against c071343: see the commit after this one.

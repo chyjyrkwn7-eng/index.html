@@ -97,9 +97,13 @@ def main():
     rows = []; fails = []
     srv, url = serve()
     with sync_playwright() as pw:
-        br = pw.chromium.launch(executable_path=CHROME)
+        # build 384: a REAL 2x, not an emulated one. With only device_scale_factor=2 Chromium draws a line of
+        # words up to ~1px off where a phone draws it (measured: the units' Level tabs' ink at 171.5..182 emulated,
+        # 173..183 at a real scale; sign-up's Continue 815..828 vs 816..830), so this read them 1.2-1.5px "high"
+        # while they sat on the middle. Same lesson as check-centering.py's (notes, build 384).
+        br = pw.chromium.launch(executable_path=CHROME, args=["--force-device-scale-factor=2"])
         for (W, H, ins, name) in [(440, 956, (62, 0, 34, 0), "17 Pro Max"), (834, 1194, (24, 0, 20, 0), "iPad Pro 11")]:
-            ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=2)
+            ctx = br.new_context(viewport={"width": W, "height": H}, device_scale_factor=1)
             ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.drill.v1', '%s');"
                                 "localStorage.setItem('class26e.synccode','MADI-0001');localStorage.setItem('class26e.frame.ok','go-live-1');"
                                 "localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');"
