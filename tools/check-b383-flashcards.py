@@ -82,7 +82,12 @@ with sync_playwright() as pw:
             hit = tap(pg, ".fc-card .fc-back .ifc-code button"); pg.wait_for_timeout(900)
             s3 = pg.evaluate(STATE); picked = pg.evaluate("()=>window.__picked || 0")
             chk("(3) book: the code box's own button does its thing (%s) and the card stays on its answer" % picked, hit and picked >= 1 and s3["flipped"] is True, s3)
-        tap(pg, ".fc-card .fc-back summary.ifc-code-sum"); pg.wait_for_timeout(1000)
+        tap(pg, ".fc-card .fc-back summary.ifc-code-sum"); pg.wait_for_timeout(600)
+        # (384 review) "Hide the code" slides shut now (ifcCodeSlide): wait for it to end - up to 3s - then the card refits
+        for _ in range(24):
+            if pg.evaluate("()=>{ const d=document.querySelector('.fc-card .fc-back details.ifc-code'); return !d || (!d.open && !d.style.height); }"): break
+            pg.wait_for_timeout(100)
+        pg.wait_for_timeout(400)
         s4 = pg.evaluate(STATE)
         chk("(4) %s: 'Hide the code' closes it, the card stays on its answer and shrinks back (%s -> %s)" % (kind, s2["cardH"], s4["cardH"]),
             s4["flipped"] is True and s4["open"] is False and s4["cardH"] < s2["cardH"], s4)

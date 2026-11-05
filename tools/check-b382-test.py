@@ -30,7 +30,9 @@ INIT = """(()=>{ if(localStorage.getItem('class26e.drill.v1')) return;
  ['class26e.freshstart','class26e.intro.seen','class26e.unithold.tip','class26e.daily.seen','class26e.savecode.asked','class26e.savecode.card','class26e.getstarted',
   'class26e.ifc.intro.seen','class26e.ifc.unithold.tip','class26e.ifc.daily.seen','class26e.ifc.savecode.asked','class26e.ifc.getstarted'].forEach(k=>localStorage.setItem(k,'1'));
  localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); localStorage.setItem('class26e.greet.ifc','done'); localStorage.setItem('class26e.activeclass','ifc');
- localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1'); })()"""
+ localStorage.setItem('class26e.frame.ok','go-live-1'); localStorage.setItem('class26e.penal256578.seen','1');
+ /* (384 review) the code box remembers being opened (class26e.codeopen): each page here starts with it shut */
+ localStorage.removeItem('class26e.ifc.codeopen'); })()"""
 d = json.loads(g["SEED"].replace("__WEEK__", g["week_key_now"]())); d["publicId"] = OWNER; d["firstName"] = "Casey"; d["novaMet"] = 99
 UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
 UA_IPAD = "Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
@@ -75,7 +77,9 @@ def answer_right(pg, cdp):
     c = pg.evaluate("()=>{ const r=correctSlot(order[pos]); const el=document.querySelector('.choice[data-index=\"'+r+'\"]'); el.scrollIntoView({block:'center',behavior:'instant'}); const b=el.getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }")
     tap(cdp, *c); pg.wait_for_timeout(1900)   # the pill rises .78s + .62s after the answer
 def open_code(pg, cdp, before_wait=None):
-    tap(cdp, *pg.evaluate(CENTRE, ".ifc-code-sum"))
+    # (384 review) a box already open (remembered, or a wrong first try) is left open - a tap would shut it
+    if not pg.evaluate("()=>{ const d=document.querySelector('.qpanel details.ifc-code, details.ifc-code'); return !!(d && d.open); }"):
+        tap(cdp, *pg.evaluate(CENTRE, ".ifc-code-sum"))
     if before_wait: before_wait()
     for _ in range(100):
         if pg.evaluate("()=>!!document.querySelector('.ifc-code[open] .ifc-links') && !!document.querySelector('.ifc-code[open] .ifc-clips canvas')"): break

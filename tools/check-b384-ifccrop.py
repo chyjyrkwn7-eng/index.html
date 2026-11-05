@@ -370,6 +370,8 @@ with sync_playwright() as pw:
             c = pg.evaluate(TAPC, ".qpanel .ifc-hint-btn"); pg.touchscreen.tap(c[0], c[1])
             r = pg.evaluate(r"""async ([id, s])=>{ const wt = ms => new Promise(r => setTimeout(r, ms)); let pic = null;
               for(let k = 0; k < 300 && !pic; k++){ await wt(50); pic = document.querySelector('.qpanel .ifc-hintpic canvas'); }
+              /* (384 review) the Hint's picture drops in (ifcSlideHeight): measured once the slide has let go of its height */
+              for(let k = 0; k < 80; k++){ const h = document.querySelector('.qpanel .ifc-hintpic'); if(!h || !h.style.height) break; await wt(50); }
               await wt(80); if(!pic) return { id, m: null };
               const item = QUESTIONS.find(q => q.ifc && q.ifc.id === id); const V = await ifcViewer(); const c = item.ifc.citation;
               let doc, clip; if(c.source === 'amendment'){ doc = await ifcCountyDoc(); clip = await V.countyClip(doc, c, ifcCountyOpts); }
