@@ -485,6 +485,8 @@ def z10(br):
                 bad[k] += one[k]
         check("z10 none inside a native control, a label, a Settings switch, or a card holding other controls", bad["opts"] >= 4 and bad["inInput"] == 0 and bad["onHost"] == 0, str(bad))
         # a scroll that starts on a button (its switch) still scrolls the page, and does not tap it
+        # (384 full check: Profile's buttons are rows higher up the card now, so the band a button is looked for in is wider -
+        # still clear of the top bar and the tab bar)
         done = False
         for name, js in (("Profile", "() => showProfile()"), ("Stats", "() => showProfile('stats')"), ("Leaderboard", "() => showRankings()")):
             pg.evaluate(js)
@@ -492,7 +494,7 @@ def z10(br):
             pg.evaluate("() => window.scrollTo(0, 0)")
             pg.wait_for_timeout(300)
             h = pg.evaluate("() => document.documentElement.scrollHeight - innerHeight")
-            pt = pg.evaluate("""() => { const b = [...document.querySelectorAll('#stage button, #stage [role=button]')].find(x => { const r = x.getBoundingClientRect(); return x.querySelector(':scope > .nova-hsw') && r.top > 260 && r.bottom < innerHeight - 200 && r.width > 80; });
+            pt = pg.evaluate("""() => { const b = [...document.querySelectorAll('#stage button, #stage [role=button]')].find(x => { const r = x.getBoundingClientRect(); return x.querySelector(':scope > .nova-hsw') && r.top > 140 && r.bottom < innerHeight - 160 && r.width > 80; });
               if(!b) return null; const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }""")
             if h > 250 and pt:
                 pg.evaluate("() => { window.__clicks = 0; window.addEventListener('click', () => { window.__clicks++; }, true); }")
@@ -524,7 +526,10 @@ def z11(br):
          the character is live (.char-live), which a list row turns on and off on its own clock,
          so between the two snapshots it moved without any switch being touched (failed the same
          way on round 38's build) */
-      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw') && !e.classList.contains('hsw-opt') && !e.closest('.avatarchar-svg'));
+      /* (384 full check) and the chat's live counts (its button's dot, a tab's count): friends reach every class in 384, and an
+         unread count arriving from the feed between the two snapshots widens its tab without any switch being touched */
+      const els = [...document.querySelectorAll('body *')].filter(e => !e.classList.contains('nova-hsw') && !e.closest('.nova-hsw') && !e.classList.contains('hsw-opt') && !e.closest('.avatarchar-svg')
+        && !e.closest('.chatdock-tabs, .chatdock-dot'));
       window.__zEls = els; return els.map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
     SNAP2 = """() => { document.getAnimations().forEach(a => { try{ a.pause(); a.currentTime = 0; }catch(e){} });
       return window.__zEls.map(e => { if(!e.isConnected) return null; const r = e.getBoundingClientRect(); return [Math.round(r.left * 2) / 2, Math.round(r.top * 2) / 2, Math.round(r.width * 2) / 2, Math.round(r.height * 2) / 2]; }); }"""
