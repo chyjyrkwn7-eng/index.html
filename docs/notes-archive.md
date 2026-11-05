@@ -34649,3 +34649,21 @@ re-run at the end with the machine quiet.
 - FIRE CODE'S FINDER FIRST: "Can we put the chapter finder unit at the top? It's all the way at the bottom." The Chapter and
   Section Finder is the bank's last unit (NAV, order 59). ifcFinderFirst() puts it first on the unit screen (showSetup) only:
   the bank's order, question identity, badges and every other list are untouched.
+- TAB BAR GLYPHS, ROUND 3 (his reference bar again: "ensure the stats icon and calendar icon look better and ensure they look
+  more like the example I sent because it's great"): the calendar is the reference's - the page filling the box (3.6 corners), a
+  header band a third of it, the body cut out, four columns of 2.2 dots in 3/4/3; Stats is the same page and frame with three
+  rising bars in the body (one family with the calendar); the Leaderboard's trophy fuller ("could that look a little better?"):
+  a lip, closed loop handles, a waisted stem and a two-step base, one evenodd path, still no star (381).
+- PROFILE'S ROWS, ROUND 2: "Still not a fan of the customize icon, it's a wand? And it's purple? I don't like the colors of any of
+  those three buttons" - all three tiles one neutral graphite (#48484A, PF_ROW_TILE) with white glyphs, as his reference bar is
+  monochrome; Customize is `personcircle` (a character's head and shoulders in its frame - what Customize opens first). Options
+  rendered for him (graphite / iOS grey / no tile; person / shirt) are in the review pack.
+- LAUNCH CHECK, FIREBASE (Nov 5): firestore-admin audit - 44 accounts, 41 rankings rows, no problems. progress holds 45
+  accounts, 45 __floor, 6 __merge, 4 __moved, 7 __credit and one Fire Code account (__ifc + __ifc__floor, written within 3 days:
+  the rules take Fire Code's documents). vrooms holds 217 documents (rooms are never deleted). The admin key cannot read Cloud
+  Monitoring (403), so daily usage is only in the Firebase console. Fire Code's cost per account: its own document at most once
+  a minute while answering, its __floor at most every 10 minutes, both on hide; no leaderboard, no rows read; a Fire Code-only
+  account writes nothing of the academy's. 5-30 Fire Code accounts at ~40 writes a day each is 200-1,200 writes a day against
+  20,000. One saving made: a new account no longer runs the two once-per-account room-history backfills (seedVroomHistory /
+  seedVroomTop3 each read every vrooms document - ~430 reads per sign-up); vrRetroDone/vrTop3RetroDone are set at both sign-up
+  completions, as a reset already did.

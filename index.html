@@ -93814,6 +93814,9 @@ function novaSignupCreate(){
   store.badgeBandsVersion = BADGE_BANDS_VERSION;
   /* (384) the class button is among a new account's first tips (mainMenuTourSteps), not shown again on its own */
   store.seenClassTip = true;
+  /* (384 launch check) a new account has no room history to backfill: seedVroomHistory / seedVroomTop3 would each read every
+     vrooms document (217 at launch) once for nothing - ~430 reads per sign-up off the shared 50,000 a day */
+  store.vrRetroDone = true; store.vrTop3RetroDone = true;
   try{ markIntroSeen(); }catch(e){}
   saveStore();
   updateHeaderTitle();
@@ -105194,6 +105197,8 @@ function showHome(){
     /* Current on badge bands by definition too: every badge this
        account ever gets is earned under them and celebrated at the time. */
     store.badgeBandsVersion = BADGE_BANDS_VERSION;
+    /* (384 launch check) and has no room history to backfill (see novaSignupCreate) */
+    store.vrRetroDone = true; store.vrTop3RetroDone = true;
     /* And the chat explainer is not news to an account made today: it
        arrived straight after What's New and the tour, headed "New in
        this update", for somebody who had never seen the app before. */
