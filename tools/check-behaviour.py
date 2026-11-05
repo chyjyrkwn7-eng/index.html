@@ -17827,7 +17827,7 @@ B321E_SAMPLE = r"""(t) => {
   if(o.map && toI >= 0 && stops[toI + 1]){ const st = stops[toI + 1];
     const gf = sel => { const e = st.querySelector(sel); if(!e) return null; const cs = getComputedStyle(e); return { f: cs.filter, o: +cs.opacity }; };
     o.nx = { next: st.classList.contains('is-next'), state: (st.querySelector('.rankmap-state') || {}).textContent,
-      dot: gf('.rankmap-gift .rankmap-dot'), flare: gf('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: gf('.rankmap-gift.is-char .rankmap-giftav svg'), bn: gf('.rankmap-gift .rankmap-giftbanner .bnr') }; }
+      dot: gf('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift .rankmap-dot'), flare: gf('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: gf('.rankmap-gift.is-char .rankmap-giftav svg'), bn: gf('.rankmap-gift .rankmap-giftbanner .bnr') }; }
   /* the card at the top */
   const heroes = [...document.querySelectorAll('.screen-ranks .rankhero')];
   if(heroes.length){ o.hero = heroes.map(h => ({ n: (h.querySelector('.rankhero-name') || {}).textContent, op: +getComputedStyle(h).opacity,
@@ -18097,7 +18097,7 @@ def check_b320d_rankup(br):
         out.mapAt = +tip.dataset.tipAt; out.gap = Math.round((nr.top - (d.top + d.height / 2)) * 10) / 10; out.stretch = Math.round((H - n - 18) * 10) / 10; }
       /* build 321: Up next's unlocks in colour, every rank past it grey */
       const gifts = st => { if(!st) return null; const g = sel => { const e = st.querySelector(sel); if(!e) return null; const cs = getComputedStyle(e); return { f: cs.filter, o: +cs.opacity }; };
-        return { name: (st.querySelector('.rankmap-name') || {}).textContent, dot: g('.rankmap-gift .rankmap-dot'), flare: g('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: g('.rankmap-gift.is-char .rankmap-giftav svg'), bn: g('.rankmap-gift .rankmap-giftbanner .bnr') }; };
+        return { name: (st.querySelector('.rankmap-name') || {}).textContent, dot: g('.rankmap-gift.is-theme .rankmap-swatch .dot, .rankmap-gift .rankmap-dot'), flare: g('.rankmap-gift .rankmap-giftbubble .flare-solo'), ch: g('.rankmap-gift.is-char .rankmap-giftav svg'), bn: g('.rankmap-gift .rankmap-giftbanner .bnr') }; };
       out.nextGifts = gifts(document.querySelector('.screen-ranks .rankmap-stop.is-next'));
       out.lockedGifts = gifts([...document.querySelectorAll('.screen-ranks .rankmap-stop.is-locked')].find(x => x.querySelector('.rankmap-gift.is-char')));
       }catch(e){ out.threw = String(e && e.stack || e); }
