@@ -566,9 +566,8 @@ def run_intro(src_dir, label):
                       /* MOVED IN 327z15: Mock (a quiz for one build) is no row of its
                          own - "that's not a thing, all we did was change the name" -
                          and the Nova row no longer lists the room games */
-                      says78: ['nova', 'sound', 'profile', 'calendar', 'save a test', 'study'].every(w => txt.indexOf(w) >= 0)
-                        && ['briefing', 'badge case', 'weekly recap', 'a real test'].every(w => txt.indexOf(w) < 0)
-                        && txt.indexOf('version 9') >= 0,
+                      /* (384) the card's own words are check-b384-whatsnew10's to hold now (Version 10); here it names a version */
+                      says78: /version [0-9]+/.test(txt),
                       go: !!el.querySelector('.intro-go')};}""")
             if not out:
                 fails.append("the introduction never opened")
@@ -580,7 +579,7 @@ def run_intro(src_dir, label):
                 if not (out["topReachable"] and out["bottomReachable"]):
                     fails.append("part of the introduction cannot be scrolled to: %s" % out)
                 if not out["says78"]:
-                    fails.append("the what's new card is missing one of the things it was asked to say, or is not Version 9")
+                    fails.append("the what's new card names no version")
                 if not out["go"]:
                     fails.append("there is no way to dismiss the introduction")
 
@@ -637,6 +636,18 @@ def run_peek(src_dir, label):
             pg.evaluate("document.getElementById('splashscreen')?.remove()")
             pg.evaluate("()=>{ vroomCode='TESTROOM'; vroomMyKey='me'; vroomIsHost=true; showVirtualRoomLobby(); }")
             pg.wait_for_timeout(700)
+            # (384 full check) the lobby's layout has moved on since 323 and now fits the chat on a 956px phone, so the peek
+            # this was written for is made here: the page scrolled (or the window made shorter) until only the chat's top ~60px
+            # is in view - the state build 323 left it in
+            peek = pg.evaluate("""()=>{ const w=document.querySelector('.vroom-chat'); if(!w) return null;
+              const top = w.getBoundingClientRect().top + scrollY; return { top, h: innerHeight }; }""")
+            if peek and peek["top"] + 60 < peek["h"]:
+                if peek["top"] + 60 > 480:
+                    pg.set_viewport_size({"width": 440, "height": int(peek["top"] + 60)})
+                else:
+                    pg.set_viewport_size({"width": 440, "height": 480})
+                    pg.evaluate("(t)=>window.scrollTo({top: Math.max(0, t + 60 - innerHeight), behavior:'instant'})", peek["top"])
+                pg.wait_for_timeout(400)
             for k, n, t in [("ann","Ann","are we starting"),("bo","Bo","one sec"),("cy","Cy","ready"),("di","Di","go")]:
                 pg.evaluate("([k,n,t])=>window.__push(k,n,t)", [k,n,t]); pg.wait_for_timeout(260)
             before = pg.evaluate("()=>{ const d=document.querySelector('.vroom-chat-dot'); return d ? {hidden:d.hidden, text:d.textContent} : null; }")
