@@ -125783,9 +125783,9 @@ function settingsRowIcon(kind, tone){
     palette: '<path d="M12 3.8a8.2 8.2 0 1 0 0 16.4c1 0 1.6-.7 1.6-1.5 0-.42-.16-.8-.43-1.08-.26-.28-.42-.64-.42-1.06 0-.88.72-1.5 1.6-1.5h1.88a3.9 3.9 0 0 0 3.9-3.9C20.13 7.2 16.5 3.8 12 3.8z"/><path d="M7.9 11.3h.01M9.8 7.7h.01M14.1 7.4h.01M16.7 10.6h.01"/>',
     badgecase: '<rect x="3.6" y="7.4" width="16.8" height="12" rx="2.4"/><path d="M9.2 7.4V5.9a1.5 1.5 0 0 1 1.5-1.5h2.6a1.5 1.5 0 0 1 1.5 1.5v1.5"/><path d="M3.6 12.6h16.8"/><path d="M10.6 12.6v1.8h2.8v-1.8"/>',
     ladder: '<path d="M7.6 3.6v16.8M16.4 3.6v16.8"/><path d="M7.6 7.6h8.8M7.6 12h8.8M7.6 16.4h8.8"/>',
-    /* (384 review) Customize: "I just don't like the icon for customize" - the paint palette read as a blob at 30px; a wand
-       with its sparkles says "make it yours" in the same line family */
-    wand: '<path d="M4.4 19.6 13.4 10.6"/><path d="M16.4 3.8l1 2.7 2.7 1-2.7 1-1 2.7-1-2.7-2.7-1 2.7-1z"/><path d="M8.6 3.8v2.6M7.3 5.1h2.6"/><path d="M19.4 13.6v2.6M18.1 14.9h2.6"/>'
+    /* (384 review, round 2) Customize: "Still not a fan of the customize icon, it's a wand?" (the palette before it read as
+       a blob) - what Customize opens first is your character, so: a character's head and shoulders in its round frame */
+    personcircle: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="9.9" r="2.9"/><path d="M6.4 18.3c1.2-2.4 3.2-3.6 5.6-3.6s4.4 1.2 5.6 3.6"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
@@ -125807,7 +125807,9 @@ function settingsRowIcon(kind, tone){
 /* (384 review) "I don't like the colors you went with for the icons": they were the rank's colour darkened (a grey tile on
    Iron), iOS orange and the theme's own colour (pale on the default) - three unrelated tiles. Now Settings' iOS hues, as its
    rows have them: one each, none shared, none borrowed from the theme or the rank. */
-const PF_ROW_TILE = { customize: "#BF5AF2", ladder: "#0A84FF", badgecase: "#FFB800" };
+/* (round 2) "I don't like the colors of any of those three buttons tbh" - with his reference beside it (a bar of white glyphs on
+   dark, no colour at all): one neutral graphite tile for all three, the glyph white, as the bar's own icons are. */
+const PF_ROW_TILE = { customize: "#48484A", ladder: "#48484A", badgecase: "#48484A" };
 function pfActFill(btn, kind, label, sub, tile){
   const t = settingsRowIcon(kind);
   if(tile) t.style.setProperty("--tile", tile);
@@ -143362,7 +143364,7 @@ function showProfile(defaultTab, opts){
      same on every banner - with a palette and the three things it holds named under the word. */
   {
     /* (384) a row: the palette in the theme's own colour (--theme-sig, as Settings' foot), "Customize", what it holds */
-    const cz = pfActFill(nameEditBtn, "wand", "Customize", "Character \u00b7 Banner \u00b7 Theme", PF_ROW_TILE.customize);
+    const cz = pfActFill(nameEditBtn, "personcircle", "Customize", "Character \u00b7 Banner \u00b7 Theme", PF_ROW_TILE.customize);
     cz.label.classList.add("pcz-label"); cz.sub.classList.add("pcz-sub"); cz.words.classList.add("pcz-words");
     nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme");
   }
@@ -149612,25 +149614,26 @@ function tabPerfText(){
       '<path class="tg-ring tg-ring-back" d="M22 7.6A10.9 4 -24 0 0 2 16.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>' +
       '<circle class="tg-planet" cx="12" cy="12" r="7.7" fill="currentColor" mask="url(#tg-home-cut)"/>' +
       '<path class="tg-ring tg-ring-front" d="M2 16.4A10.9 4 -24 0 0 22 7.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    /* (384 review) "ensure the stats icon and calendar icon look better and ensure they look more like the example I sent":
+       his reference again, measured: the page fills the box (a 3.6 corner), the header band is a third of it, the body is cut
+       out with a frame as thick as the band's foot, and the days are four columns of big square dots, 3 / 4 / 3 */
     calendar:
-      '<path class="tg-page" fill="currentColor" fill-rule="evenodd" d="M5.4 2.8h13.2A3.4 3.4 0 0 1 22 6.2v12A3.4 3.4 0 0 1 18.6 21.6H5.4A3.4 3.4 0 0 1 2 18.2v-12A3.4 3.4 0 0 1 5.4 2.8zM5.6 8.4a1.6 1.6 0 0 0-1.6 1.6v8a1.6 1.6 0 0 0 1.6 1.6h12.8a1.6 1.6 0 0 0 1.6-1.6v-8a1.6 1.6 0 0 0-1.6-1.6z"/>' +
-      '<g class="tg-days" fill="currentColor">' +
-      [[1,0],[2,0],[3,0],[4,0],[0,1],[1,1],[2,1],[3,1],[4,1],[0,2],[1,2],[2,2]].map(([c, r]) =>
-        '<rect class="tg-day" x="' + (5.65 + c * 2.85).toFixed(2) + '" y="' + (10.2 + r * 2.85).toFixed(2) + '" width="1.85" height="1.85" rx=".45"/>').join("") +
-      '</g>',
+      '<path class="tg-page" fill="currentColor" fill-rule="evenodd" d="M5.6 2.4h12.8A3.6 3.6 0 0 1 22 6v12.4A3.6 3.6 0 0 1 18.4 22H5.6A3.6 3.6 0 0 1 2 18.4V6A3.6 3.6 0 0 1 5.6 2.4zM5.9 8.9a1.8 1.8 0 0 0-1.8 1.8v7.6a1.8 1.8 0 0 0 1.8 1.8h12.2a1.8 1.8 0 0 0 1.8-1.8v-7.6a1.8 1.8 0 0 0-1.8-1.8z"/>' +
+      '<g class="tg-days" fill="currentColor"><rect class="tg-day" x="9.05" y="10.15" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="12.75" y="10.15" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="16.45" y="10.15" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="5.35" y="13.55" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="9.05" y="13.55" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="12.75" y="13.55" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="16.45" y="13.55" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="5.35" y="16.95" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="9.05" y="16.95" width="2.2" height="2.2" rx=".55"/><rect class="tg-day" x="12.75" y="16.95" width="2.2" height="2.2" rx=".55"/></g>',
     /* build 380: "could the leaderboard icon look a little better on the bottom tabs? I don't love it" - one solid trophy, as the
        planet and the calendar are solid: the cup with a star cut out of it, handles as thick as the planet's ring and joined to
        the cup, a short stem and a rounded foot */
+    /* (384 review) "the leaderboard icon on the bottom tab, could that look a little better?" - the example's weight: a
+       deep cup with a lip, its handles closed loops (each a ring cut through, evenodd), a waisted stem and a two-step
+       base, about 20 units of ink like the calendar beside it; still no star (381) */
     rewards:
-      /* ONE path, nonzero fill (380): the glyph's colour is a little see-through, and separate pieces painted their overlaps twice
-         (bright dots where the handles met the cup). The cup, both handles, the stem and the foot run clockwise and unite.
-         Build 381: no star - Madison, of the Leaderboard tab: "I don't like the leaderboards icon with the star in the middle". */
-      '<path class="tg-cup" fill="currentColor" fill-rule="nonzero" d="' +
-        'M6.9 2.8h10.2c.4 0 .7.3.7.7v5.3a5.8 5.8 0 0 1-11.6 0V3.5c0-.4.3-.7.7-.7z' +
-        'M7.6 3.3V5.3H4.6A.75 .75 0 0 0 3.85 6.15C4.05 7.75 5.25 8.95 6.95 9.35L6.55 11.3C3.85 10.75 2.15 8.85 1.86 6.32A2.75 2.75 0 0 1 4.6 3.3z' +
-        'M16.4 3.3H19.4A2.75 2.75 0 0 1 22.14 6.32C21.85 8.85 20.15 10.75 17.45 11.3L17.05 9.35C18.75 8.95 19.95 7.75 20.15 6.15A.75 .75 0 0 0 19.4 5.3H16.4z' +
-        'M10.75 14h2.5v3.4h-2.5z' +
-        'M8.3 17.2h7.4c.7 0 1.25.55 1.25 1.25v1.5c0 .7-.55 1.25-1.25 1.25H8.3c-.7 0-1.25-.55-1.25-1.25v-1.5c0-.7.55-1.25 1.25-1.25z"/>'
+      '<path class="tg-cup" fill="currentColor" fill-rule="evenodd" d="' +
+        'M5.6 2.6h12.8c.55 0 1 .45 1 1v.9c0 .4-.3.7-.7.7h-.3v3.6a6.4 6.4 0 0 1-12.8 0V5.2h-.3c-.4 0-.7-.3-.7-.7v-.9c0-.55.45-1 1-1z' +
+        'M5.2 6.1H3.9A2.5 2.5 0 0 0 1.4 8.6c0 2.3 1.7 4.2 4.1 4.6l.5.1-.5-1.9c-1.4-.4-2.3-1.5-2.3-2.8 0-.4.3-.7.7-.7h1.3z' +
+        'M18.8 6.1h1.3a2.5 2.5 0 0 1 2.5 2.5c0 2.3-1.7 4.2-4.1 4.6l-.5.1.5-1.9c1.4-.4 2.3-1.5 2.3-2.8 0-.4-.3-.7-.7-.7h-1.3z' +
+        'M10.6 14.6h2.8l.35 2.6h-3.5z' +
+        'M8.4 17.2h7.2c.6 0 1.1.5 1.1 1.1v.5H7.3v-.5c0-.6.5-1.1 1.1-1.1z' +
+        'M6.6 19.2h10.8c.6 0 1.1.5 1.1 1.1v.6c0 .3-.25.55-.55.55H6.05c-.3 0-.55-.25-.55-.55v-.6c0-.6.5-1.1 1.1-1.1z"/>'
 ,
     /* build 382, Fire Code's Settings tab: "make it look more like this one" - his reference is a gear with many short teeth round
        a ring and a three-spoke hub inside it, like a steering wheel. ONE path, nonzero (the trophy's rule, 380): the toothed ring
@@ -149641,8 +149644,11 @@ function tabPerfText(){
       '<path class="tg-gear" fill="currentColor" fill-rule="nonzero" d="M11.09 3.35L11.33 1.92A10.1 10.1 0 0 1 12.67 1.92L12.91 3.35A8.7 8.7 0 0 1 14.1 3.56L14.82 2.3A10.1 10.1 0 0 1 16.08 2.76L15.81 4.18A8.7 8.7 0 0 1 16.86 4.79L17.97 3.85A10.1 10.1 0 0 1 18.99 4.71L18.26 5.96A8.7 8.7 0 0 1 19.04 6.89L20.39 6.38A10.1 10.1 0 0 1 21.06 7.54L19.95 8.46A8.7 8.7 0 0 1 20.36 9.6L21.81 9.59A10.1 10.1 0 0 1 22.04 10.91L20.68 11.39A8.7 8.7 0 0 1 20.68 12.61L22.04 13.09A10.1 10.1 0 0 1 21.81 14.41L20.36 14.4A8.7 8.7 0 0 1 19.95 15.54L21.06 16.46A10.1 10.1 0 0 1 20.39 17.62L19.04 17.11A8.7 8.7 0 0 1 18.26 18.04L18.99 19.29A10.1 10.1 0 0 1 17.97 20.15L16.86 19.21A8.7 8.7 0 0 1 15.81 19.82L16.08 21.24A10.1 10.1 0 0 1 14.82 21.7L14.1 20.44A8.7 8.7 0 0 1 12.91 20.65L12.67 22.08A10.1 10.1 0 0 1 11.33 22.08L11.09 20.65A8.7 8.7 0 0 1 9.9 20.44L9.18 21.7A10.1 10.1 0 0 1 7.92 21.24L8.19 19.82A8.7 8.7 0 0 1 7.14 19.21L6.03 20.15A10.1 10.1 0 0 1 5.01 19.29L5.74 18.04A8.7 8.7 0 0 1 4.96 17.11L3.61 17.62A10.1 10.1 0 0 1 2.94 16.46L4.05 15.54A8.7 8.7 0 0 1 3.64 14.4L2.19 14.41A10.1 10.1 0 0 1 1.96 13.09L3.32 12.61A8.7 8.7 0 0 1 3.32 11.39L1.96 10.91A10.1 10.1 0 0 1 2.19 9.59L3.64 9.6A8.7 8.7 0 0 1 4.05 8.46L2.94 7.54A10.1 10.1 0 0 1 3.61 6.38L4.96 6.89A8.7 8.7 0 0 1 5.74 5.96L5.01 4.71A10.1 10.1 0 0 1 6.03 3.85L7.14 4.79A8.7 8.7 0 0 1 8.19 4.18L7.92 2.76A10.1 10.1 0 0 1 9.18 2.3L9.9 3.56A8.7 8.7 0 0 1 11.09 3.35ZM9.15 18.34A6.95 6.95 0 0 0 18.91 12.7L14.4 12.7A2.5 2.5 0 0 1 11.41 14.43ZM7.94 6.36A6.95 6.95 0 0 0 7.94 17.64L10.19 13.73A2.5 2.5 0 0 1 10.19 10.27ZM18.91 11.3A6.95 6.95 0 0 0 9.15 5.66L11.41 9.57A2.5 2.5 0 0 1 14.4 11.3ZM13.2 12A1.2 1.2 0 0 0 10.8 12A1.2 1.2 0 0 0 13.2 12Z"/>',
     /* build 382, Fire Code's Stats tab (the Leaderboard's place on that class's bar): three solid bars, rising, rounded like the
        calendar's page - separate pieces that never touch */
+    /* (384 review) Stats, in the calendar's family (the example's boxed, solid shapes): the same page and frame, its body
+       cut out, three bars rising inside it */
     stats:
-      '<path class="tg-bars" fill="currentColor" fill-rule="nonzero" d="M3.9 12.6h1.8c0.715 0 1.3 0.585 1.3 1.3v5.8c0 0.715-0.585 1.3-1.3 1.3H3.9c-0.715 0-1.3-0.585-1.3-1.3V13.9c0-0.715 0.585-1.3 1.3-1.3zM11.1 7.4h1.8c0.715 0 1.3 0.585 1.3 1.3v11c0 0.715-0.585 1.3-1.3 1.3H11.1c-0.715 0-1.3-0.585-1.3-1.3V8.7c0-0.715 0.585-1.3 1.3-1.3zM18.3 2.8h1.8c0.715 0 1.3 0.585 1.3 1.3v15.6c0 0.715-0.585 1.3-1.3 1.3H18.3c-0.715 0-1.3-0.585-1.3-1.3V4.1c0-0.715 0.585-1.3 1.3-1.3z"/>'
+      '<path class="tg-page" fill="currentColor" fill-rule="evenodd" d="M5.6 2.4h12.8A3.6 3.6 0 0 1 22 6v12.4A3.6 3.6 0 0 1 18.4 22H5.6A3.6 3.6 0 0 1 2 18.4V6A3.6 3.6 0 0 1 5.6 2.4zM5.9 4.5a1.8 1.8 0 0 0-1.8 1.8v12a1.8 1.8 0 0 0 1.8 1.8h12.2a1.8 1.8 0 0 0 1.8-1.8v-12a1.8 1.8 0 0 0-1.8-1.8z"/>' +
+      '<g class="tg-bars" fill="currentColor"><rect x="6.3" y="12.6" width="2.8" height="5.4" rx=".7"/><rect x="10.6" y="9.4" width="2.8" height="8.6" rx=".7"/><rect x="14.9" y="6.4" width="2.8" height="11.6" rx=".7"/></g>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
      glide (LENS.glide, build 327z13) is ~94% of the way at 290ms, so the
