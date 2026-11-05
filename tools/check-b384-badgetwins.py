@@ -17,6 +17,14 @@ most alike pairs for the full comparison):
          at 28px they are one rounded polygon);
   28px - the silhouette blurred to what a 28px unit card shows (sigma 9 of 200px, ~1.5 CSS px) and cut at half, then 1px
          (Fire Code's gear and burst plate scored 1.00 - one toothed disc).
+  STRETCHED (badges round 3; "none the same shape turned, flipped OR stretched") - each silhouette's bounding box scaled to
+         a square (a stretch along the badge's own axes only, never a turn mixed in, so a rectangle and a diamond stay two
+         shapes: card / diamond 0.12), then the 8 orientations at 90 degree steps (turned and flipped), the same 1px band
+         at the same scale (the box 65px of the 176 grid, the size a square comes to under the area scaling above). Held
+         under 0.88: an outline against an independently drawn stretched copy of itself scores 1.00 (round 1's crystal /
+         nameplate, card / plaque, coin / oval) and a scalloped coin against the coin 0.94; no two different outlines in
+         either class score over 0.83 (Fire Code's quarter dome / scooped square, notched square / ticket, card /
+         saddle; the academy's disc / keystone 0.79) - 0.88 sits half way across that gap.
 COLOURS, per class, read off the page:
   (a) every unit its own enamel (badgeThemeFor(u).p);
   (b) no two enamels within CIEDE2000 11 as defined (the 21 families run down to 6.5: violet / indigo);
@@ -48,7 +56,7 @@ from playwright.sync_api import sync_playwright
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:500], flush=True)
-N = 200; LIM = .85; DE_HEX, DE_STRUCK, DE_SIDE = 11, 9, 14; EDGE = .35
+N = 200; LIM = .85; SLIM, SBOX = .88, 65; DE_HEX, DE_STRUCK, DE_SIDE = 11, 9, 14; EDGE = .35
 RASTER = """(N)=>{ const cv=document.createElement('canvas'); cv.width=N; cv.height=N; const x=cv.getContext('2d'); const seen={}, units={};
   for(const u of unitsInTeachingOrder()){ const d=badgeShapeFor(u).d; units[u]=d; if(seen[d]) continue;
     x.clearRect(0,0,N,N); x.save(); x.scale(N/120, N/120); x.translate(10,10); x.fill(new Path2D(d)); x.restore();
@@ -138,6 +146,26 @@ def compare(masks, band, small):
         rows.append((round(float(best), 2), a, b))
     rows.sort(reverse=True)
     return rows
+def boxnorm(m):
+    """the silhouette's bounding box scaled to an SBOX square in the GS grid (a stretch on the badge's own axes)"""
+    ys, xs = np.nonzero(m); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    iy = np.minimum(y1 - 1, (y0 + (np.arange(SBOX) + .5) / SBOX * (y1 - y0)).astype(int))
+    ix = np.minimum(x1 - 1, (x0 + (np.arange(SBOX) + .5) / SBOX * (x1 - x0)).astype(int))
+    out = np.zeros((GS, GS), bool); o = (GS - SBOX) // 2; out[o:o + SBOX, o:o + SBOX] = m[np.ix_(iy, ix)]; return out
+def compare_stretch(masks):
+    """every pair: the 8 turns and flips of one box-squared silhouette against the other, 1px band"""
+    E = {}
+    for k, m in masks.items():
+        n = boxnorm(m); Es = [edge(np.rot90(f, q)) for f in (n, np.fliplr(n)) for q in range(4)]; E[k] = (Es, [dil(e, 1) for e in Es])
+    rows = []
+    for a, b in itertools.combinations(list(masks), 2):
+        A, Ad = E[a][0][0], E[a][1][0]; best = 0
+        for B, Bd in zip(*E[b]):
+            s = min((A & Bd).sum() / A.sum(), (B & Ad).sum() / B.sum())
+            if s > best: best = s
+        rows.append((round(float(best), 2), a, b))
+    rows.sort(reverse=True)
+    return rows
 def lab(h):
     if h.startswith("rgb"): h = "#%02X%02X%02X" % tuple(int(float(v)) for v in h[h.index("(") + 1:-1].split(","))
     h = h.lstrip("#")
@@ -190,6 +218,10 @@ for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the acad
         bad = [(s, names[a], names[b]) for s, a, b in rows if s >= LIM]
         chk("(%s%s) %s: no two outlines alike turned or flipped, by %s - every pair under %.2f (closest: %s)" % (s1, tag, label, what, LIM,
             ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
+    rows = compare_stretch(masks)
+    bad = [(s, names[a], names[b]) for s, a, b in rows if s >= SLIM]
+    chk("(%se) %s: no outline is another one stretched (each box squared, 8 turns and flips, 1px) - every pair under %.2f (closest: %s)" % (s1, label, SLIM,
+        ", ".join("%s/%s %.2f" % (names[a][0], names[b][0], s) for s, a, b in rows[:3])), not bad, bad[:6])
     U_ = c["units"]
     ps = [x["p"].upper() for x in U_]
     rep = sorted({p for p in ps if ps.count(p) > 1})
