@@ -115,10 +115,12 @@ SPEND = r"""async () => {
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     if(!charHasSpecial(el)){ bad.push(id + ' none'); el.remove(); continue; }
     const before = new Set(svg.getAnimations({ subtree: true }));
-    charSpecialBusyUntil = 0; const t0 = Date.now(); playCharSpecial(el);
-    const planned = charSpecialBusyUntil - 400 - t0; let end = 0;
+    /* the call itself can take a while on a loaded machine, so what it planned is read as a window: from the moment
+       after the call (lo) to the moment before it (hi); the animations' end has to fall in it */
+    charSpecialBusyUntil = 0; const t0 = Date.now(); playCharSpecial(el); const t1 = Date.now();
+    const hi = charSpecialBusyUntil - 400 - t0, lo = charSpecialBusyUntil - 400 - t1; let end = 0;
     svg.getAnimations({ subtree: true }).forEach(a => { if(before.has(a)) return; const e = a.effect.getComputedTiming().endTime; if(isFinite(e)) end = Math.max(end, e); });
-    (planned >= end - 5 && planned <= end + 60 ? ok : bad).push(id + ' ' + Math.round(planned) + '/' + Math.round(end));
+    (end >= lo - 60 && end <= hi + 5 ? ok : bad).push(id + ' ' + Math.round(lo) + '-' + Math.round(hi) + '/' + Math.round(end));
     el.__charSpecial = null; el.classList.remove('char-special'); el.remove();
   }
   return { bad, ok }; }""" % json.dumps(SQUAD + TRIO)

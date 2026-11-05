@@ -34644,6 +34644,13 @@ banners, I don't really like any of those, that much. Same for the ultimate char
   window across the street going off every 7s. fbRangerScene - the same desert and mesas, the ranger on his rock with his eyes
   lit, and his own sky: the moon rising with thin cloud, a comet with shooting stars, the agency's star burning with turning
   rays and embers. Transform/opacity only, no filters, 7-13 layers; the sky objects sit inside the middle band a row shows.
-- Gate: tools/check-b384-sets.py (both classes; 19 fail on 185cc5c). check-b382-ifcart moved to the decision: the Breacher and
-  Recon are no longer "exactly round 2's", the four flare banners no longer "as round 2 left them", and the cowboy-hat check
-  covers the three rangers (Star Ranger is zenith's now).
+- Gate: tools/check-b384-sets.py (both classes; 19 fail on 185cc5c). Its special-timing check reads what playCharSpecial
+  planned as a window (before and after the call), so a loaded machine does not fail it. check-b382-ifcart moved to the
+  decision: the Breacher and Recon are no longer "exactly round 2's", the four flare banners no longer "as round 2 left
+  them", and the cowboy-hat check covers the three rangers (Star Ranger is zenith's now).
+- Gates (one at a time, the machine at load 20-40 from other sessions): check-js OK; check-b384-sets ALL PASS;
+  check-b382-ifcart 45 PASS; check-b384-secretnames ALL PASS; check-unlocks ALL PASS; check-b382-unhide ALL PASS;
+  check-b384-cutscenes 1, 2, 6, 8, 10 pass (6 failed once in both classes under load, academy included, and passed alone);
+  check-b327z15 N: the specials pass, "the live drawing's loops within 80ms" fails at 202ms here and 366ms on 185cc5c
+  (load, as before). Recorded (Fire Code, 440x956, app's own sound): the four secret-flare scenes and the three ultimates'
+  character and banner cards.
