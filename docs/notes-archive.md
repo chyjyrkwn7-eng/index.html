@@ -35553,3 +35553,19 @@ Others: check-js ALL PASS; check-b384-vroom-review ALL PASS (45, with (O)); chec
 / 39 reads, Fire Code and academy alike); check-vroom ALL PASS (219); check-friends ALL PASS (76 - the same 76 on c323281);
 check-b384-bannerroom ALL PASS. Not run (as asked): sweep-layout. Looked at (scratchpad vr2/shots, made-up names): the race's
 pause card with the room line, the other player's line with the dimmed marker, the Room chat sheet with "Kimber left the match.".
+
+### Build 384, round 2 final check - check-b326-f brought up to the 382-384 unit card (NOT on main, waiting for Madison)
+- check-b326-f failed 21 checks on 384; the same 21 on the build just before pure white (1ee8f06), on round one's final build
+  (185cc5c) and on live 383. Not a 384 fault, and not from pure white.
+- Section 6 (the unit card) still described the card from before 382/383: a check circle above the name, the name at 700, an
+  accent ring round a picked card, the Penal Code "versions" line. Since then: the iOS look (name 600 over the count's 500,
+  the badge 2.3rem on a phone), "a green glowing dot" for a picked unit (383; no edge, the card a step lighter), the dot in the
+  theme's colour (--pick-dot, 384), and the Penal versions ended on their own at PENAL_VERSIONS_END_AT (Oct 26).
+  Rewritten to that card: the badge bottom-right (>=2rem) and the name the headline at the top; a picked card a step lighter
+  (its background read off the page) with the dot visible in --pick-dot in its top-right corner, clear of the name's words
+  (a Range over the name), no edge or stripe, and an unpicked card with no dot; the Penal line only while the unit has a
+  second version, otherwise none. The picked-card check FAILS on 382 (a330ee8: no dot, no step) and passes on 383 and 384.
+- Left, both failing the same on live 383: Level 2 / Level 3 on the unit screen's level tabs at 3.9:1 (round one's note), and
+  "the tab bar's glass ... the Virtual Room's bar the same frost" - the tab bar went to blur(7px) in 377 and the Virtual Room's
+  Match settings bar kept blur(30px); the gate also still names 30px. Nobody has asked for that bar to change.
+- check-b382-test re-run on the merged build: ALL PASS (the zoom hint at 3.5s was load).
