@@ -7325,6 +7325,9 @@
      bottom where the sheet is. It goes on top, and to the top of the
      screen, where the sheet is not. */
   body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
+  /* (384 review) and over the invite sheet: "<Name> isn't enrolled in Fire Code." landed under the sheet (340) and the room's
+     Ready bar, where nobody could read it. */
+  body:has(.invite-overlay) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
   }
