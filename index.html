@@ -99429,6 +99429,35 @@ function settleTopBanner(el){
   if(Math.abs(top - parseFloat(cs.top)) > .5) el.style.top = top + "px";
 }
 
+/* A BANNER THAT LEAVES GIVES ITS ROOM BACK (384 final check). settleTopBanner() only ever moves a banner DOWN, past
+   whatever is already up - and nothing moved it back when that went. So the "It's out" banner that arrived under "Welcome
+   back to Fire Code" stayed where it had been pushed, 218px down, over the planet, after the banner above it had gone:
+   "Why is the pop up showing in the middle?" Any banner leaving <body> now sends the ones still up back to their own
+   places, top first, each one sliding (transform only) from where it was. */
+let topBannerWatch = null;
+function resettleTopBanners(){
+  const list = [...document.querySelectorAll(".daily-alert.show")].filter(b => b.isConnected)
+    .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+  list.forEach(b => {
+    const was = b.getBoundingClientRect().top;
+    try{ positionDailyAlert(b); }catch(e){}
+    const dy = was - b.getBoundingClientRect().top;
+    if(Math.abs(dy) > 1 && !dailyMotionOffSafe() && b.animate){
+      try{ b.animate([{ transform: "translateY(" + dy + "px)" }, { transform: "translateY(0)" }], { duration: 320, easing: "cubic-bezier(.2,.8,.2,1)", composite: "add" }); }catch(e){}
+    }
+  });
+}
+function dailyMotionOffSafe(){ try{ return dailyMotionOff(); }catch(e){ return false; } }
+function watchTopBanners(){
+  if(topBannerWatch || typeof MutationObserver === "undefined" || !document.body) return;
+  topBannerWatch = new MutationObserver(recs => {
+    for(const r of recs) for(const n of r.removedNodes){
+      if(n.nodeType === 1 && n.classList && (n.classList.contains("daily-alert") || n.classList.contains("app-banner"))){ requestAnimationFrame(resettleTopBanners); return; }
+    }
+  });
+  topBannerWatch.observe(document.body, { childList: true });
+}
+
 /* A short, self-dismissing line at the top of the screen (see
    .daily-alert). It parks below the update notice when one is already up
    rather than overlapping it - the same measure-what-is-actually-there
@@ -99452,6 +99481,7 @@ function bannerTitleSub(text, msg){
   text.append(ttl, document.createTextNode(" "), sub);
 }
 function showDailyAlert(msg, opts){
+  watchTopBanners();
   /* a notice banner: held while a cutscene has the screen (build 320) */
   if(typeof holdForCutscene === "function" && holdForCutscene("dailyalert:" + msg, () => showDailyAlert(msg, opts))) return null;
   const o = opts || {};
@@ -99889,6 +99919,10 @@ function announceDailyReset(btn){
      is only the fallback for when the "?" is not on screen. */
   const announce = motion => {
     if(!document.body.contains(btn)) return;
+    /* (384 final check) one banner at a time: "It's out" waits while another is up at the top ("Welcome back to the
+       Police Academy" after a class switch) rather than stacking under it, mid-screen; up to 12 seconds */
+    const other = () => [...document.querySelectorAll(".daily-alert.show, .app-banner.show")].some(b => b.id !== "dailyalert" && !b.classList.contains("nova-friend-note"));
+    if(other() && (announce.waited = (announce.waited || 0) + 1) < 24){ setTimeout(() => announce(motion), 500); return; }
     playSound("home.daily.ready");
     const tap = () => { try { btn.click(); } catch(e){} };
     /* AT THE TOP, ON THE BANNER (build 327z5), superseding the bubble

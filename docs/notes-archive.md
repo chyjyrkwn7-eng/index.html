@@ -35386,3 +35386,27 @@ the middle up and down, the chat bubble on the middle. ALL PASS; --against the b
 chevrons' placement on all five; the chat bubble was already centred). check-centering: a round back control (.back-link /
 .settings-nav-back, no words, square <= 64px) is held to opticalDx = -3% of its width, not to its box's middle - otherwise this
 gate would call iOS's own placement off-centre. check-b383-look, check-b384-home, -navmeet, -smooth ALL PASS on the change.
+
+## 384 final check: a top banner never strands another mid-screen; the videos recorded as the installed app
+
+Madison, off a frame of the class-switch video (round 1's pack): "Why is the pop up showing in the middle? Why is the bottom tab
+so high up? What's up this video in general? I'm assuming it may be because this is a smaller device but it still needs to be
+done right."
+TWO CAUSES, one the app's and one the recorder's:
+- THE APP: settleTopBanner() only ever moves a banner DOWN past what is already up, and nothing moved it back. "It's out" (the
+  daily question coming due on Home) arrived while "Welcome back to Fire Code" was up, settled under it at 216px - over the
+  planet - and stayed there after "Welcome back" left. Reproduced in check-b384-bannerroom (2): the old build holds the second
+  banner at 216 for as long as it is up. FIX: (a) watchTopBanners() - a MutationObserver on <body>'s children, started by the
+  first showDailyAlert - and when any .daily-alert or .app-banner leaves, resettleTopBanners() re-places every .daily-alert still
+  up (top first, positionDailyAlert, so the update notice and the chat button are still cleared) and slides it there (a
+  transform-only FLIP, composite add, off with reduce motion); (b) "It's out" waits (500ms steps, up to 12s) while another top
+  banner is up, so the two do not stack at all - the wait is before its chime, so the sound is not repeated.
+- THE RECORDER: record384.py opened the "iPhone" through check-b384-a2hs's open_page with installed=False - an iPhone Safari
+  tab - at the installed app's full 440x956 with its insets. A Safari tab on that phone is ~797px (iOS 26 Safari's bars float
+  over a full-height page, which the app reads as html.safari-bars-over and answers by lifting the tab bar 91px clear of the
+  toolbar). The video draws no toolbar, so the bar sat 91px off the bottom with nothing under it. Installed it sits 22px off,
+  over the home indicator. The class-switch and new-class videos are re-recorded as the installed app (installed=True).
+GATE: tools/check-b384-bannerroom.py - (1) a lone banner's place (128px, under the chat button); (2) a banner shown under
+another slides back to that place within a second of the other leaving on its own timer; (3) "It's out" coming due on Home
+while "Welcome back" (9s) is up is never pushed under it, and then takes the lone place; (4) no page errors. ALL PASS; --against
+the build before FAILS (2) (held at 216) and (3) (stacked under it, 216).
