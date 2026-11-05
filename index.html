@@ -6709,6 +6709,10 @@
       0 0 9px 1px currentColor;
   }
   .vroom-race-marker.is-finished{ box-shadow:0 0 10px 1px currentColor; }
+  /* (384 vr2) paused: where they stopped, dimmed - nobody waits on them (vroomNotePaused) */
+  .vroom-race-marker.is-paused{ opacity:.42; }
+  /* the paused race screen's line about the room (paintPauseRoomLine) */
+  .pausepanel .pause-room{ margin:.1rem 0 0; font-size:.86rem; line-height:1.4; color:var(--soft); text-align:center; }
   /* ---- THE RACE'S CLOCK (build 246) ----
      Forty-five seconds a question, beside "Question N" with a bar under
      the row running it down - in the theme's own three colours, the
@@ -7772,6 +7776,10 @@
   .vroom-chat-msg-name.is-me{ color:var(--accent); }
   .vroom-chat-msg-time{ font-size:.68rem; color:var(--soft); margin-left:.3rem; }
   .vroom-chat-empty{ font-size:.82rem; color:var(--soft); text-align:center; padding:.5rem 0; }
+  /* (384 vr2) "<name> left the match." - written by the leave, a quiet line across the chat rather than a message */
+  .vroom-chat-sys{ margin:.35rem 0; font-size:.78rem; line-height:1.35; color:var(--soft); text-align:center; overflow-wrap:anywhere; }
+  .vroom-chat-sys-name{ font-weight:700; }
+  @media (min-width:40rem){ .vroom-chat-sys{ font-size:.86rem; } }
   /* ---- REACTIONS ---------------------------------------------------
      Five, named: heart, thumbs up, thumbs down, laughing, question.
      A message becomes a button so the whole line is the target - at
@@ -66151,6 +66159,58 @@ function friendCardFromPresence(pub){
   const e = pub && presenceClasses && presenceClasses[pub];
   return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ninja" } : null;
 }
+/* ---- A FRIEND, AS EVERY FRIENDS SCREEN DRAWS THEM (384, Virtual Room round 2) ----
+   Madison: "If I'm friends with someone they should be there and stuff." A friend in Fire Code alone has no academy board row,
+   so the chat's Friends tab called them "Friend" with the default character, Manage friends left them off the list ("1 friend is
+   not on the board right now"), and the chat's invite sheet said "Student" - until a chat with them had been read. One answer
+   for every screen that lists a friend, from what this device already holds, with no read or write of its own:
+     1. their board row (an academy member - name, character, rank, level);
+     2. their own presence beat, `c` in vrooms/presence-v1 (384: first name and character, and which classes) - `fromBeat`;
+     3. the chat with them, where it has been read - `fromChat`;
+     4. nothing yet (a device on an older build that has not beaten since, or one that never opened the app since) - `unknown`:
+        drawn as "Friend" with the default character, and filled in where it stands when the row or the beat arrives.
+   `rows` is rowsByPublicId(), passed by a caller that already has it. */
+function friendCardOf(pub, rows){
+  if(!pub) return { pub: pub, unknown: true };
+  let r = null;
+  try{ r = (rows || rowsByPublicId())[pub] || null; }catch(e){}
+  if(r) return r;
+  const beat = friendCardFromPresence(pub);
+  if(beat){ beat.fromBeat = true; beat.classes = friendClassesOf(pub) || []; return beat; }
+  try{
+    const code = friendChatCode(pub);
+    const p = ((chatListPeople || {})[code] || []).find(x => x && x.key === pub);
+    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ninja", fromChat: true };
+    const ce = chatEntry(code);
+    if(ce && ce.name) return { pub: pub, firstName: String(ce.name), fromChat: true };
+  }catch(e){}
+  return { pub: pub, unknown: true };
+}
+/* What a friend with no board row is, in a line: the classes their beat names ("Fire Code"), or that nothing says yet */
+function friendClassLine(card){
+  const ks = (card && card.classes) || [];
+  if(ks.length) return ks.map(k => classNameOf(k)).join(" · ");
+  return "Not on the class board yet";
+}
+/* Names and faces drawn before the friend's row or beat had arrived are filled in where they stand: an element drawn from a
+   fallback carries data-friend-name / data-friend-art (the public id) and data-fallback. Called when presence and the board land. */
+function paintFriendFallbacks(){
+  const els = document.querySelectorAll("[data-friend-name][data-fallback], [data-friend-art][data-fallback]");
+  if(!els.length) return;
+  let rows = null;
+  try{ rows = rowsByPublicId(); }catch(e){ rows = {}; }
+  els.forEach(el => {
+    const pub = el.dataset.friendName || el.dataset.friendArt;
+    const c = friendCardOf(pub, rows);
+    if(c.unknown || c.fromChat) return;
+    if(el.dataset.friendName){ if(c.firstName) el.textContent = c.firstName; }
+    else {
+      const old = el.querySelector(".rank-avatar");
+      try{ const nu = avatarSpanFor(c); if(old) old.replaceWith(nu); else el.prepend(nu); }catch(e){}
+    }
+    delete el.dataset.fallback;
+  });
+}
 /* false only when it is KNOWN the friend is not in that class; true when it is known they are; null when nothing says. An unknown
    friend stays invitable, and their own device turns away a room of a class they are not in (joinVirtualRoomLobby). A board row
    says the academy: only an academy member's device writes one. Nova is in every class. */
@@ -66291,6 +66351,8 @@ function attachPresence(){
         presenceActivity = d.a || {};
         presenceClasses = d.c || {};
         try{ paintInviteClassStates(); }catch(e){}
+        /* (384 vr2) a friend known only by their beat (Fire Code alone): the Friends tab and any name drawn as a fallback */
+        try{ friendsListCatchUp(); paintFriendFallbacks(); }catch(e){}
         try{ paintActivityLabels(); }catch(e){}
         try{ repaintOnlineDots(); }catch(e){}
         /* Repaint whatever is showing the dot right now. */
@@ -87745,7 +87807,55 @@ function pauseRun(){
   timerlineEl.classList.add("is-paused");
   hintEl.hidden = true;
   saveRunSession();
+  /* (384 vr2) a race: the room is told, so it does not wait on you - see vroomNotePaused */
+  vroomNotePaused(true);
   renderPausedScreen();
+}
+
+/* ---- PAUSE ONLY PAUSES YOU (384, Virtual Room round 2) ----
+   Madison: "Pausing should only pause you.. and yeah if you pause it would let you leave." A race's Pause held the whole room:
+   your own clock stopped (right - that is what pausing is), but presence kept you "here" and every finished player's results
+   waited on your finish for as long as you stayed paused. So a race's pause is said on your room entry - `paused` (the moment,
+   one write on Pause and one on Resume; never periodic) - and:
+   - EVERYBODY ELSE CARRIES ON. The finale counts a paused racer as in, as it counts somebody whose app died
+     (showVirtualRoomFinaleReveal), so the race can finish without you; the race line dims your marker.
+   - YOUR OWN TEST IS HELD, all of it, until you resume - the question, its clock and your time.
+   - RESUME PUTS YOU BACK IN IT. Before the leaderboard rolls, the others are waiting on you again (their wait card goes back
+     from "results coming up" to the count). After it, you finish on your own: your results, then the standings as they are -
+     or, if the others are already back in the lobby, a line saying so and Return to lobby (vroomBackFrom).
+   - THE PAUSE SCREEN IS THE WAY OUT as well: Leave match, as Tug of War's and Battle's Pause already is (confirmLeaveTeamMatch).
+   Tug of War and Battle are live team games with nothing to hold, so their Pause stays only a way out - in all three, nobody is
+   ever waited on for having paused. The flag goes in the finish write, a return to the lobby, or the leave (the entry goes). */
+let vroomPausedSent = false;
+function vroomRaceRunHere(){
+  try{ return !!(inVirtualRoom && raceTimed && testInProgress && vroomCode && vroomMyKey && !vroomTeamMatchUp()); }catch(e){ return false; }
+}
+function vroomNotePaused(on){
+  if(on ? (vroomPausedSent || !vroomRaceRunHere()) : !vroomPausedSent) return;
+  vroomPausedSent = !!on;
+  try{
+    if(!vroomDb() || !vroomCode || !vroomMyKey) return;
+    vroomDb().collection("vrooms").doc(vroomCode).update({
+      ["participants." + vroomMyKey + ".paused"]: on ? Date.now() : firebase.firestore.FieldValue.delete()
+    }).catch(() => {});
+  }catch(e){}
+}
+/* The paused race screen's line about the room: who is still racing, from the race line's own listener (no read of its own) */
+let vroomRaceLast = null;
+function paintPauseRoomLine(data){
+  if(data) vroomRaceLast = data;
+  const el = document.querySelector("#stage .pausepanel .pause-room");
+  if(!el || !vroomRaceLast) return;
+  const racing = vroomRacersOf(vroomRaceLast);
+  const here = presentParticipants(racing) || {};
+  const others = Object.keys(racing).filter(k => k !== vroomMyKey);
+  const still = others.filter(k => here[k] && !racing[k].finished && !racing[k].paused).length;
+  const done = others.filter(k => racing[k].finished).length;
+  const t = !others.length ? "Nobody else is in the race now."
+    : still ? (still === 1 ? "1 other player is still racing." : still + " other players are still racing.")
+    : done ? "Everyone else has finished." : "Everyone else is paused too.";
+  if(el.textContent !== t) el.textContent = t;
+  el.dataset.still = String(still);
 }
 
 function renderPausedScreen(){
@@ -87793,6 +87903,15 @@ function renderPausedScreen(){
   p.textContent = (runLabel === "Daily question" || !hasClock)
     ? subject + " is on hold."
     : subject + " and its timer are on hold.";
+  /* (384 vr2) A RACE: only yours is on hold - the room carries on, and says where it has got to */
+  const inRace = vroomRaceRunHere();
+  let roomLine = null;
+  if(inRace){
+    p.textContent = "Your race and its timer are on hold. Everyone else carries on, and the results won\u2019t wait for you.";
+    roomLine = document.createElement("p");
+    roomLine.className = "pause-room";
+    roomLine.setAttribute("aria-live", "polite");
+  }
   const actions = document.createElement("div");
   actions.className = "actions";
   const resumeBtn = document.createElement("button");
@@ -87814,7 +87933,7 @@ function renderPausedScreen(){
      actually showed up during it. */
   /* QUIT, NOT EXIT (build 319): with Save and exit beside it, "exit" no
      longer says which one throws the run away. */
-  menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : "Quit test";
+  menuBtn.textContent = (runLabel === "Daily question") ? "Exit Daily Question" : inRace ? "Leave match" : "Quit test";
   menuBtn.insertAdjacentHTML("afterbegin", pauseIc("M6.5 6.5l11 11M17.5 6.5l-11 11"));
   menuBtn.id = "pause-quit";
   menuBtn.addEventListener("click", confirmExitTest);
@@ -87837,7 +87956,8 @@ function renderPausedScreen(){
      mode and the count, the clock is amber, and the units are right here. */
   const mark = document.createElement("span");
   mark.className = "pause-mark"; mark.setAttribute("aria-hidden", "true");
-  mountPausePanel(panel, [mark, info, p, actions], resumeBtn);
+  mountPausePanel(panel, roomLine ? [mark, info, p, roomLine, actions] : [mark, info, p, actions], resumeBtn);
+  if(roomLine) paintPauseRoomLine(null);
 }
 
 /* PAUSE AND ITS CONFIRMATIONS SHARE ONE PLACE (build 297): "ensure the
@@ -88176,7 +88296,9 @@ function confirmExitTest(){
     pauseBtn.hidden = true;
     timerlineEl.classList.add("is-paused");
     hintEl.hidden = true;
+    vroomNotePaused(true);   /* (384 vr2) held here as on Pause */
   }
+  const inRace = vroomRaceRunHere();
 
   const panel = document.createElement("section");
   panel.className = "panel pausepanel";
@@ -88187,10 +88309,13 @@ function confirmExitTest(){
   /* Same "test" \u2192 daily-question-aware language as the pause screen
      itself, for the same reason. */
   const isDailyExit = runLabel === "Daily question";
-  h.textContent = isDailyExit ? "Exit Daily Question?" : "Quit this test?";
+  h.textContent = isDailyExit ? "Exit Daily Question?" : inRace ? "Leave the match?" : "Quit this test?";
   const p = document.createElement("p");
   p.className = "qtext";
-  p.textContent = runSessionSavable()
+  /* (384 vr2) a race says what Tug of War's and Battle's leave says (confirmLeaveTeamMatch) */
+  p.textContent = inRace
+    ? "The race carries on without you. You won\u2019t get any XP from it."
+    : runSessionSavable()
     ? "Your progress on this test will be lost. Use Save and exit to finish it later."
     : "Your progress on this test will be lost.";
   const actions = document.createElement("div");
@@ -88201,6 +88326,7 @@ function confirmExitTest(){
   stayBtn.addEventListener("click", () => {
     if(runStartTime === null){
       paused = false;
+      vroomNotePaused(false);
       showCountdown(3);
     } else if(wasAlreadyPaused){
       renderPausedScreen();
@@ -88210,7 +88336,7 @@ function confirmExitTest(){
   });
   const leaveBtn = document.createElement("button");
   leaveBtn.type = "button"; leaveBtn.className = "next ghost";
-  leaveBtn.textContent = isDailyExit ? "Exit Daily Question" : "Quit test";
+  leaveBtn.textContent = isDailyExit ? "Exit Daily Question" : inRace ? "Leave" : "Quit test";
   leaveBtn.id = "quit-confirm";
   leaveBtn.addEventListener("click", () => {
     cancelPauseTiming();
@@ -88268,6 +88394,7 @@ function cancelPauseTiming(){
 
 function resumeRun(){
   if(!paused) return;
+  vroomNotePaused(false);   /* (384 vr2) back in the race: the room waits on you again */
   cancelPauseTiming();
   playSound("test.resume");
   hintEl.hidden = false;
@@ -101877,7 +102004,7 @@ function openFriendChat(pub){
   if(!chatDockOpen) openChatDock();
   if(!socialDb()){ showToast(chatUnreachable()); return; }
   const me = publicIdOf();
-  const row = rowsByPublicId()[pub] || {};
+  const row = friendCardOf(pub);   /* (384 vr2) a friend in Fire Code alone is named by their beat */
   rememberChat(code, row.firstName || (chatEntry(code) || {}).name || "", [pub]);
   const db = socialDb(), ref = db.collection("vrooms").doc(code);
   const ensure = (typeof db.runTransaction === "function")
@@ -102397,6 +102524,8 @@ function chatPersonOf(key, entry){
   }
   let row = null;
   try{ row = rowsByPublicId()[key] || null; }catch(err){}
+  /* (384 vr2) no board row (Fire Code alone): their own beat's name and character (friendCardFromPresence) */
+  if(!row){ try{ row = friendCardFromPresence(key); }catch(err){} }
   return { name: (row && row.firstName) || e.name || "",
            avatarChar: (row && row.avatarChar) || e.avatarChar || "ninja" };
 }
@@ -103734,7 +103863,8 @@ function rebuildChatTab(){
        friend chats you can't invite people to them or leave the chat".
        The friend, whether they are on, and the mute. */
     const pub = friendOfChatCode(chatRoomCode);
-    const e = Object.assign({ pub: pub }, rowsByPublicId()[pub] || {});
+    /* (384 vr2) their row, or their own beat (a friend in Fire Code alone), or the chat - friendCardOf */
+    const e = Object.assign({ pub: pub }, friendCardOf(pub));
     const who = document.createElement("div");
     who.className = "chatdock-friendhead";
     const art = document.createElement("span");
@@ -103745,7 +103875,8 @@ function rebuildChatTab(){
     txt.className = "chatdock-friendhead-text";
     const nm = document.createElement("span");
     nm.className = "chatdock-friendhead-name";
-    nm.textContent = e.firstName || (chatEntry(chatRoomCode) || {}).name || "Friend";
+    nm.textContent = e.firstName || "Friend";
+    if(e.unknown || e.fromChat){ nm.dataset.friendName = pub || ""; nm.dataset.fallback = "1"; art.dataset.friendArt = pub || ""; art.dataset.fallback = "1"; }
     const st = document.createElement("span");
     st.className = "chatdock-friendhead-status";
     /* What they are doing, when they are on (build 240); Away when not. */
@@ -103806,9 +103937,12 @@ function rebuildChatTab(){
 function friendsListCatchUp(){
   try{
     if(!chatDockOpen || chatDockTab !== "friends" || chatRoomCode || !chatTabBody) return;
-    if(!chatTabBody.querySelector(".chatdock-chatrow.is-friend[data-unknown]")) return;
+    const unknown = [...chatTabBody.querySelectorAll(".chatdock-chatrow.is-friend[data-unknown]")];
+    if(!unknown.length) return;
     const rows = rowsByPublicId();
-    if(!friendPublicIds().some(p => rows[p])) return;
+    /* (384 vr2) a row drawn with nothing to go on is drawn again once the board row OR the friend's own beat names them (a
+       friend in Fire Code alone has no row) - friendCardOf */
+    if(!unknown.some(r => { const c = friendCardOf(r.dataset.pub, rows); return !c.unknown && !c.fromChat; })) return;
     rebuildChatTab();
   }catch(e){}
 }
@@ -103834,7 +103968,7 @@ function renderFriendChatList(){
     const info = document.createElement("p");
     info.className = "chatdock-friendsbar-info";
     const shownN = shownFriendsCount();
-    const onN = pubs.map(p => rows[p]).filter(e => e && isOnline(e)).length + ((nova && !novaAway()) ? 1 : 0);
+    const onN = pubs.map(p => friendCardOf(p, rows)).filter(e => e && isOnline(e)).length + ((nova && !novaAway()) ? 1 : 0);
     const b1 = document.createElement("b");
     b1.textContent = shownN ? shownN + (shownN === 1 ? " friend" : " friends") : "No friends yet";
     info.appendChild(b1);
@@ -103872,7 +104006,8 @@ function renderFriendChatList(){
   const seen = chatSeenMap();
   const pings = chatPings();
   const unread = pub => { const c = friendChatCode(pub); const m = pings[c]; return !!(m && (m.at || 0) > (seen[c] || 0)); };
-  const people = pubs.map(pub => Object.assign({ pub: pub }, rows[pub] || {}));
+  /* (384 vr2) every friend by name and face: the row, or their own beat (Fire Code alone), or the chat - friendCardOf */
+  const people = pubs.map(pub => Object.assign({ pub: pub }, friendCardOf(pub, rows)));
   people.sort((a, b) => (unread(b.pub) - unread(a.pub))
     || ((isOnline(b) ? 1 : 0) - (isOnline(a) ? 1 : 0))
     || String(a.firstName || "").localeCompare(String(b.firstName || "")));
@@ -103888,8 +104023,10 @@ function renderFriendChatList(){
     const row = document.createElement("div");
     row.className = "chatdock-chatrow is-friend";
     row.dataset.code = code;
-    /* (384, desktop pass) drawn before the class's rows had arrived: no name or character yet - friendsListCatchUp redraws it */
-    if(!rows[e.pub]) row.dataset.unknown = "1";
+    /* (384, desktop pass) drawn before the class's rows had arrived: no name or character yet - friendsListCatchUp redraws it.
+       (384 vr2) Known from the friend's own beat is known; known only from the chat is drawn again when the row or beat lands. */
+    row.dataset.pub = e.pub || "";
+    if(e.unknown || e.fromChat) row.dataset.unknown = "1";
     const open = document.createElement("button");
     open.type = "button"; open.className = "chatdock-chatrow-open";
     const art = document.createElement("span");
@@ -103901,7 +104038,7 @@ function renderFriendChatList(){
     top.className = "chatdock-chatrow-top";
     const nm = document.createElement("span");
     nm.className = "chatdock-chatrow-name";
-    nm.textContent = e.firstName || (chatEntry(code) || {}).name || "Friend";
+    nm.textContent = e.firstName || "Friend";
     /* The chip says what they are doing, not just that they are on. */
     const kind = activityLabel(e.pub, false, "chatdock-chatrow-kind is-online");
     const when = document.createElement("span");
@@ -104920,7 +105057,8 @@ function openChatInviteSheet(){
      else. The Virtual Room's own sheet learned this: filtering on the
      row silently emptied a list of three friends. */
   const ids = friendPublicIds();
-  const people = ids.map(id => rows[id] || { pub: id });
+  /* (384 vr2) named and drawn like every friends list: friendCardOf */
+  const people = ids.map(id => friendCardOf(id, rows));
   if(!people.length){
     const none = document.createElement("p");
     none.className = "friend-hint";
@@ -104942,7 +105080,8 @@ function openChatInviteSheet(){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = e.firstName || "Student";
+      nm.textContent = e.firstName || "Friend";
+      if(e.unknown || e.fromChat){ nm.dataset.friendName = e.pub || ""; nm.dataset.fallback = "1"; art.dataset.friendArt = e.pub || ""; art.dataset.fallback = "1"; }
       text.appendChild(nm);
       /* What they are doing right now (build 240) - hidden when they are not on. */
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
@@ -129657,6 +129796,9 @@ function leaveVirtualRoom(){
   const code = vroomCode;
   const myKey = vroomMyKey;
   const myName = (socialMe().firstName || "Someone");   /* (384) the account's name, as the room shows it */
+  /* (384 vr2) where this device is as it goes - read before the flags below are cleared */
+  let where = "room";
+  try{ where = vroomLeaveWhere(); }catch(e){}
   detachVroomListener();
   /* THE RACE LINE'S LISTENER TOO. It is separate from the lobby's, and
      leaving mid-race left it running - still reading the room on every
@@ -129694,12 +129836,27 @@ function leaveVirtualRoom(){
          coalesce, and a banner that depends on catching the exact
          moment between two of them is a banner that sometimes does not
          appear. */
-      patch.lastLeave = { name: withNova ? myName + " and Nova" : myName, key: myKey, at: Date.now() };
+      const who = withNova ? myName + " and Nova" : myName;
+      const at = Date.now();
+      /* (384 vr2) and WHERE they were (`where`: "match", "lobby" or "room"), so everybody says the same thing about it */
+      patch.lastLeave = { name: who, key: myKey, at: at, where: where };
+      /* ---- AND A LINE IN THE ROOM'S CHAT (384, Virtual Room round 2) ----
+         Madison: "If someone leaves it would update real time so people know they left ... In the chat, it would say x player
+         left or whatever." A line in the room's own chat ("<name> left the match."), in THIS write - the leave already makes
+         it, so it costs no write of its own: chatMessages takes it by arrayUnion beside the entry's delete. It is a `left`
+         line, not a message: drawn as a quiet line across the chat, never counted unread and never a preview banner (the
+         toast from lastLeave already says it once - announceVroomLeave). An older build draws it as "<name>: left the match." */
+      try{
+        patch.chatMessages = firebase.firestore.FieldValue.arrayUnion({
+          id: myKey + "-left-" + at, key: myKey, name: who, type: "left", text: "left the " + where + ".", ts: at
+        });
+      }catch(e){}
       vroomDb().collection("vrooms").doc(code).update(patch).catch(() => {});
     }catch(e){}
   }
   clearInterval(vroomBeatTimer); vroomBeatTimer = null;
   try{ novaVrStop(); }catch(e){}
+  vroomPausedSent = false;   /* (384 vr2) the entry goes, and its pause with it */
   vroomCode = null;
   vroomMyKey = null;
   vroomIsHost = false;
@@ -129737,6 +129894,17 @@ try{
    announce the same departure twice - and so somebody who joins later
    is not told about a person who left before they arrived. */
 let vroomLastLeaveSeen = 0;
+/* (384 vr2) Where THIS device is in the room, as it leaves: "match" (a race run or its pause, its wait for the others, a
+   countdown, Tug of War or Battle), "lobby" (the lobby or Match settings), or "room" (after a match). Said once, by the one
+   leaving, in lastLeave.where and the chat's line - so everybody's toast and the chat agree. */
+function vroomLeaveWhere(){
+  let inMatch = false;
+  try{ inMatch = !!inVirtualRoom || !!vroomAwaitingOthers || vroomMatchRunningHere(); }catch(e){}
+  if(!inMatch) inMatch = !!document.querySelector("#stage .screen-tug, #stage .screen-tug-wait, #stage .screen-battle, #stage .screen-battle-wait");
+  if(inMatch) return "match";
+  if(document.querySelector("#stage .screen-vroom-lobby, #stage .screen-vroom-setup")) return "lobby";
+  return "room";
+}
 function announceVroomLeave(data){
   const l = data && data.lastLeave;
   if(!l || !l.at) return;
@@ -129754,10 +129922,9 @@ function announceVroomLeave(data){
      looked for .tug-screen / .battle-screen, which no screen has ever been called - so somebody quitting mid-race was announced
      as having "left the lobby". In a match: a race's run (inVirtualRoom) or its wait for the others, the countdown, Tug of War
      or Battle in play. After one, on a results screen: "left the room". */
-  let inMatch = false; try{ inMatch = !!inVirtualRoom || !!vroomAwaitingOthers || vroomMatchRunningHere(); }catch(e){}
-  if(!inMatch) inMatch = !!document.querySelector("#stage .screen-tug, #stage .screen-tug-wait, #stage .screen-battle, #stage .screen-battle-wait");
-  const onLobby = !!document.querySelector("#stage .screen-vroom-lobby, #stage .screen-vroom-setup");
-  showToast((l.name || "Someone") + (inMatch ? " left the match." : onLobby ? " left the lobby." : " left the room."));
+  /* (384 vr2) where THEY were, as they said it (lastLeave.where); an older build's leave says nothing, so this device's own place */
+  const where = (l.where === "match" || l.where === "lobby" || l.where === "room") ? l.where : vroomLeaveWhere();
+  showToast((l.name || "Someone") + " left the " + where + ".");
   playSound("vr.leave");
 }
 __bm("L109377");
@@ -132093,12 +132260,44 @@ function buildTugRope(d){
   const state = document.createElement("p");
   state.className = "tug-state";
   wrap.append(sides, field, state);
+  wrap.dataset.people = tugPeopleSig(d);
   tugPaintRope(wrap, d);
   return wrap;
+}
+/* ---- WHO IS ON THE ROPE, LIVE (384, Virtual Room round 2) ----
+   Madison: "If someone leaves it would update real time so people know they left." The two ends' figures and the side names
+   were drawn with the screen, which is rebuilt only when YOUR question changes - so somebody who left stood on their end until
+   you next answered. A leave takes them off tug.teams (leaveVirtualRoom), and every snapshot now redraws the ends and the names
+   when who is on them has changed. */
+function tugPeopleSig(d){
+  const v = tugView(d);
+  return tugMembers(d, v.mine).join(",") + "|" + tugMembers(d, v.theirs).join(",");
+}
+function tugPaintPeople(root, d){
+  const wrap = root && (root.classList && root.classList.contains("tug-rope-wrap") ? root : root.querySelector(".tug-rope-wrap"));
+  if(!wrap) return;
+  const sig = tugPeopleSig(d);
+  if(wrap.dataset.people === sig) return;
+  wrap.dataset.people = sig;
+  const v = tugView(d);
+  [["tug-team-us", v.mine], ["tug-team-them", v.theirs]].forEach(([cls, side]) => {
+    const old = wrap.querySelector(".tug-team." + cls);
+    if(!old) return;
+    const nu = tugTeamEnd(d, side, cls);
+    /* the end that was leaning keeps its lean (the field's class decides it) */
+    old.replaceWith(nu);
+  });
+  [["tug-side-us", v.mine, "Your side"], ["tug-side-them", v.theirs, "Their side"]].forEach(([cls, side, label]) => {
+    const nm = wrap.querySelector(".tug-side." + cls + " .tug-side-name");
+    if(!nm) return;
+    const members = tugMembers(d, side);
+    nm.textContent = label + (members.length ? " \u00b7 " + vroomNameList(members, d) : "");
+  });
 }
 __bm("L111207");
 let sndTugPct = null;
 function tugPaintRope(root, d){
+  try{ tugPaintPeople(root, d); }catch(e){}
   const v = tugView(d);
   /* the rope moved: somebody pulled */
   if(sndTugPct != null && v.pct !== sndTugPct) playSound("vr.tug");
@@ -133138,10 +133337,42 @@ function buildBattleBoard(d){
   refreshBattleBoard(board, d);
   return board;
 }
+/* (384 vr2) WHO IS ON EACH SIDE, LIVE: the faces and names were drawn with the screen, rebuilt only when YOUR question changes,
+   so somebody who left stayed on their side until you next answered. battleMembers() leaves out anybody no longer on the room,
+   and the faces and names are drawn again whenever that changes. */
+function battlePaintFaces(row, d, side){
+  const keys = battleMembers(d, side).sort((a, b) => (a === vroomMyKey ? -1 : b === vroomMyKey ? 1 : 0));
+  const sig = keys.join(",");
+  if(row.dataset.people === sig) return;
+  const first = row.dataset.people == null;
+  row.dataset.people = sig;
+  if(first) return;   /* just built from the same snapshot */
+  const faces = row.querySelector(".battle-faces");
+  if(faces){
+    faces.replaceChildren();
+    keys.slice(0, 3).forEach(k => {
+      const p = (d.participants || {})[k] || {};
+      const av = document.createElement("span");
+      av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
+      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ninja"));
+      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+      faces.appendChild(av);
+    });
+    if(keys.length > 3){
+      const more = document.createElement("span");
+      more.className = "battle-av battle-av-more";
+      more.textContent = "+" + (keys.length - 3);
+      faces.appendChild(more);
+    }
+  }
+  const ln = row.querySelector(".battle-side-names");
+  if(ln) ln.textContent = vroomNameList(keys, d);
+}
 function refreshBattleBoard(board, d){
   const r = battleReplay(d);
   [...board.querySelectorAll(".battle-side")].forEach(row => {
     const side = row.dataset.side;
+    try{ battlePaintFaces(row, d, side); }catch(e){}
     const hp = r.hp[side], max = r.max[side];
     const prev = Number(row.dataset.hp);
     row.dataset.hp = hp;
@@ -134275,16 +134506,8 @@ function openInviteFriendsSheet(roomCode){
     const ids = friendPublicIds();
     /* (384) a friend in Fire Code alone has no board row: their name and face from their own presence beat (friendCardFromPresence),
        or from their chat with you where it has been read */
-    const known = id => {
-      if(rows[id]) return rows[id];
-      const fromBeat = friendCardFromPresence(id);
-      if(fromBeat) return fromBeat;
-      try{
-        const p = (chatListPeople[friendChatCode(id)] || []).find(x => x && x.key === id);
-        if(p && p.name) return { pub: id, firstName: p.name, avatarChar: p.avatarChar || "ninja" };
-      }catch(e){}
-      return { pub: id };
-    };
+    /* (384 vr2) the same answer every friends list gives now: friendCardOf */
+    const known = id => friendCardOf(id, rows);
     /* THE ROOM'S CLASS DECIDES WHO CAN COME (384): a friend known not to be in it sorts below the rest, greyed */
     const roomCls = inviteRoomClass(roomCode);
     const people = ids.map(known).map((e, i) => ({ e, i, out: friendInClass(e.pub, roomCls) === false }))
@@ -134322,7 +134545,7 @@ function openInviteFriendsSheet(roomCode){
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Student");
+      nm.textContent = e.firstName || (waitingForBoard ? "Loading\u2026" : "Friend");
       text.appendChild(nm);
       text.appendChild(activityLabel(e.pub, true, "friend-activity-line"));
       const b = document.createElement("button");
@@ -136105,6 +136328,19 @@ function buildVroomChatPanel(container, ctx){
       const ordered = messages.slice().sort(
         (a, b) => ((a.bump || a.ts || 0) - (b.bump || b.ts || 0)));
       ordered.forEach(m => {
+        /* (384 vr2) SOMEBODY LEFT: a quiet line across the chat, written by the leave itself (leaveVirtualRoom) - not a message,
+           so no name-colon, no reactions and nothing to tap */
+        if(m && m.type === "left"){
+          const sys = document.createElement("p");
+          sys.className = "vroom-chat-sys";
+          sys.dataset.key = m.key || "";
+          const who = document.createElement("span");
+          who.className = "vroom-chat-sys-name";
+          who.textContent = m.name || "Someone";
+          sys.append(who, document.createTextNode(" " + (m.text || "left.")));
+          list.appendChild(sys);
+          return;
+        }
         const wrap = document.createElement("button");
         wrap.type = "button";
         wrap.className = "vroom-chat-msgwrap";
@@ -136193,7 +136429,8 @@ function buildVroomChatPanel(container, ctx){
        badge. On a tablet the panel is always on screen, so anything that
        renders is seen; the dot is only ever meaningful on the phone
        sheet, and .vroom-chat-toggle is display:none above 40rem anyway. */
-    const others = (messages || []).filter(m => m.key !== CTX.myKey());
+    /* (384 vr2) a "left" line is not somebody saying something: never unread, never a preview, no sound */
+    const others = (messages || []).filter(m => m.key !== CTX.myKey() && m.type !== "left");
     newestTs = others.length ? Math.max.apply(null, others.map(m => m.ts || 0)) : 0;
     /* somebody else's message arriving after the first render (build 322) */
     if(announcedAny && newestTs > sndHeardTs){
@@ -136870,6 +137107,8 @@ function startVroomRaceListener(){
     if(!docSnap.exists || !raceMarkersEl) return;
     const data = docSnap.data();
     announceVroomLeave(data);
+    /* (384 vr2) this device's own Pause screen says who is still racing */
+    try{ paintPauseRoomLine(data); }catch(e){}
     /* THE PEOPLE IN THIS RACE, not everybody on the room document - see
        vroomRacersOf(). */
     const entries = Object.entries(vroomRacersOf(data))
@@ -136944,6 +137183,8 @@ function startVroomRaceListener(){
       const stack = stackOf[key] || { y: "0rem", z: "1" };
       marker.className = "vroom-race-marker"
         + (p.finished ? " is-finished" : "")
+        /* (384 vr2) paused: still on the line where they stopped, dimmed - the race is not waiting on them */
+        + (!p.finished && p.paused ? " is-paused" : "")
         + (key === vroomMyKey ? " is-me" : "");
       marker.style.setProperty("--stack-y", stack.y);
       marker.style.setProperty("--stack-z", stack.z);
@@ -136951,7 +137192,7 @@ function startVroomRaceListener(){
       marker.style.color = color;
       const pct = p.finished ? 100 : Math.min(100, p.progress || 0);
       marker.style.left = pct + "%";
-      marker.title = p.name + " \u2014 " + pct + "%";
+      marker.title = p.name + " \u2014 " + pct + "%" + (!p.finished && p.paused ? " (paused)" : "");
       const avatar = document.createElement("span");
       avatar.className = "vroom-race-marker-avatar";
       /* SAFE, like every other row built from somebody else's document:
@@ -137015,8 +137256,11 @@ function finishVirtualRoomTest(pct, elapsedMs){
     ["participants." + myKey + ".elapsedMs"]: elapsedMs,
     ["participants." + myKey + ".xp"]: xpNoBadge || xp,
     ["participants." + myKey + ".xpLines"]: lines,
-    ["participants." + myKey + ".totalScore"]: xpNoBadge || xp
+    ["participants." + myKey + ".totalScore"]: xpNoBadge || xp,
+    /* (384 vr2) finished is not paused (vroomNotePaused) - in the write the finish already makes */
+    ["participants." + myKey + ".paused"]: firebase.firestore.FieldValue.delete()
   }).catch(() => {});
+  vroomPausedSent = false;
   /* (384 review) THE WAIT CARD AT ONCE, NOT ON THE SERVER'S ANSWER. It came up only when the server had acknowledged this write -
      on a slow connection seconds after the results, with nothing on them saying the room was still going, and on a dropped one
      never (a queued write's promise does not settle offline). The write is in the local cache the moment it is made, so the
@@ -137183,6 +137427,9 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
      compared. A player who never reports - gone quiet, an old build - is
      waited for up to VROOM_REVEAL_WAIT_MS and no longer. */
   let allInAt = 0, allRevealedAt = 0, rolled = false, iSaidDone = false, prep = null;
+  /* (384 vr2) who was counted in for being paused, and whether this match's outcome has been recorded */
+  const pausedAtAllIn = [];
+  let outcomeRecorded = false, movedOn = false;
   const clearPrep = () => { if(prep){ prep.remove(); prep = null; } };
   const tick = setInterval(() => {
     /* Out of the room is out of the show: somebody who left from the
@@ -137260,11 +137507,40 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
        longer than any one question's 45 seconds), so they stop holding
        the room up; the board ranks them where their score puts them. */
     const here = presentParticipants(racing) || {};
-    const finishedN = Object.keys(racing).filter(k => racing[k].finished || !here[k]).length;
+    /* ---- PAUSED IS NOT WAITED FOR; BACK IN THE LOBBY IS NOT RACING (384, Virtual Room round 2) ----
+       "Pausing should only pause you." A racer paused (their entry's `paused`, vroomNotePaused) counts as in, as somebody whose
+       app died does - the race finishes without them. If they resume before the leaderboard rolls they are waited on again
+       (pausedAtAllIn, below). A racer whose entry says they are back in the lobby from THIS match (vroomBackFrom) is not racing
+       either: that is only ever seen by somebody who finished after the others had gone back - a racer who paused - and they
+       are told so rather than left waiting on people who are no longer in it. */
+    /* (said once, below: nothing more to count on this card) */
+    if(movedOn) return;
+    const keys = Object.keys(racing);
+    const backK = k => vroomBackFrom(data, racing[k]);
+    const doneK = k => !!racing[k].finished || !here[k] || backK(k);
+    const pausedK = k => !doneK(k) && !!racing[k].paused;
+    const finishedN = keys.filter(doneK).length;
+    const pausedKeys = keys.filter(pausedK);
+    const inN = finishedN + pausedKeys.length;
     /* a pair like every other on the results (build 315, see rsPair) */
     wCount.textContent = finishedN + " / " + totalN;
     setBarFill(wFill, totalN ? Math.round(finishedN / totalN * 100) : 0);
-    if(totalN > 0 && finishedN === totalN){
+    if(totalN > 0 && inN === totalN){
+      /* THE MATCH WENT ON WITHOUT THIS DEVICE: everybody else is back in the lobby (their results already gone from the room
+         document), so there are no standings to roll - a line saying so, and Return to lobby where Leave room was. */
+      if(!allInAt && !rolled && keys.some(k => k !== vroomMyKey && backK(k))){
+        rolled = true; movedOn = true;
+        clearInterval(tick);
+        clearPrep();
+        wait.classList.add("is-all-in", "is-moved-on");
+        wText.textContent = "The race is over \u2014 everyone else is back in the lobby";
+        const toLobby = document.createElement("button");
+        toLobby.type = "button"; toLobby.className = "vroom-wait-leave vroom-wait-tolobby";
+        toLobby.textContent = "Return to lobby";
+        toLobby.addEventListener("click", () => { vroomStashedResults = null; document.getElementById("vroom-prep")?.remove(); vroomReturnToLobby(); });
+        if(leave.parentNode) leave.replaceWith(toLobby); else wait.appendChild(toLobby);
+        return;
+      }
       if(!allInAt){
         allInAt = Date.now();
         /* THE MATCH COUNTS HERE (build 313), the moment the standings are
@@ -137272,10 +137548,17 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
            which a race has not reached since build 240 - so no race had
            counted towards "Matches played", first places or the top
            three since then. Ranked the way the leaderboard ranks. */
-        try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
+        /* (384 vr2) once, though a resume can take the room out of "all in" and back */
+        if(!outcomeRecorded){
+          outcomeRecorded = true;
+          try{ recordVroomOutcome(vroomCode, vroomRankedEntries(data).map(e => e.key), vroomMyKey, data.startAt); }catch(e){}
+        }
       }
+      pausedKeys.forEach(k => { if(pausedAtAllIn.indexOf(k) < 0) pausedAtAllIn.push(k); });
       wait.classList.add("is-all-in");
-      wText.textContent = "Everyone's done — results coming up";
+      wText.textContent = pausedKeys.length
+        ? "Results coming up \u2014 " + (pausedKeys.length === 1 ? "1 player is paused" : pausedKeys.length + " players are paused")
+        : "Everyone\u2019s done \u2014 results coming up";
       /* THE WAY OUT STAYS (build 246). It used to go the moment the last
          person finished, and until the leaderboard rolled - twelve
          seconds at the soonest, close to a minute when somebody's own
@@ -137289,7 +137572,14 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
          leaderboard for the whole of VROOM_REVEAL_WAIT_MS, because a
          reveal that never ran never reports being done. Everybody else
          sat on "Everyone's done - results coming up" for over a minute. */
-      if(!allRevealedAt && Object.keys(racing).every(k => racing[k].revealDone === true || !here[k])) allRevealedAt = Date.now();
+      /* (384 vr2) nor a paused racer, whose results have not started, nor one already back in the lobby */
+      if(!allRevealedAt && keys.every(k => racing[k].revealDone === true || !here[k] || backK(k) || pausedK(k))) allRevealedAt = Date.now();
+    } else if(allInAt && !rolled && pausedAtAllIn.some(k => racing[k] && !doneK(k) && !pausedK(k))){
+      /* (384 vr2) SOMEBODY WHO WAS PAUSED IS RACING AGAIN before the leaderboard rolled: the room waits on them again */
+      allInAt = 0; allRevealedAt = 0;
+      clearPrep();
+      wait.classList.remove("is-all-in");
+      wText.textContent = "Waiting on other players to finish";
     }
   });
 }
@@ -137385,6 +137675,22 @@ function buildRoomReviewTabs(run){
   return wrap;
 }
 
+/* ---- BACK IN THE LOBBY FROM WHICH MATCH (384 vr2) ----
+   A racer who paused may finish after the others have gone back to the lobby, and going back resets their entries (finished,
+   score, xp) - so that late finisher's results waited on people who were no longer racing, for good, or drew a leaderboard of
+   zeros. Going back says which match it was back from: `back` = that match's startAt, in the reset the return already writes
+   (no write of its own). vroomBackFrom(d, p): this entry is back from the match d is on. */
+function vroomBackPatch(fields){
+  try{
+    const d = lastFinaleData || (vroomLastDoc && vroomLastDoc.code === vroomCode ? vroomLastDoc.data : null) || {};
+    if(d.startAt) fields["participants." + vroomMyKey + ".back"] = Number(d.startAt) || 0;
+    fields["participants." + vroomMyKey + ".paused"] = firebase.firestore.FieldValue.delete();
+  }catch(e){}
+  vroomPausedSent = false;
+}
+function vroomBackFrom(d, p){
+  return !!(p && p.back && d && d.startAt && Number(p.back) === Number(d.startAt));
+}
 function vroomReturnToLobby(){
   const resetFields = {
     ["participants." + vroomMyKey + ".progress"]: 0,
@@ -137396,6 +137702,7 @@ function vroomReturnToLobby(){
     ["participants." + vroomMyKey + ".revealDone"]: false,
     ["participants." + vroomMyKey + ".ready"]: false
   };
+  vroomBackPatch(resetFields);
   if(vroomIsHost) resetFields.status = "waiting";
   vroomAwaitingOthers = false;
   /* (384 review) INTO THE LOBBY ON THE TAP. It waited for the server's answer (and on a failed or queued write never came):
@@ -137787,6 +138094,7 @@ function showVirtualRoomResults(){
       ["participants." + vroomMyKey + ".revealDone"]: false,
       ["participants." + vroomMyKey + ".ready"]: false
     };
+    vroomBackPatch(resetFields);
     if(vroomIsHost) resetFields.status = "waiting";
     vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
       detachVroomListener();
@@ -141946,10 +142254,14 @@ let friendsShownSignature = null;
    changed, not on a snapshot having arrived. */
 function friendsViewSignature(){
   const ids = xs => (xs || []).slice().sort().join(",");
+  /* (384 vr2) and each friend as drawn - a name or face arriving from their beat (Fire Code alone) or the board redraws it, and
+     a friend with no row who comes online lights up */
+  const cards = friendPublicIds().map(p => friendCardOf(p));
   return [ids(friendPublicIds()),
           ids(incomingFriendRequests().map(e => e.pub)),
           ids(outgoingFriendRequests()),
-          ids((leaderboardRows || []).filter(isOnline).map(e => e.pub))].join("|");
+          ids((leaderboardRows || []).filter(isOnline).map(e => e.pub)),
+          ids(cards.map(c => c.pub + ":" + (c.firstName || "") + ":" + (c.avatarChar || "") + ":" + (isOnline(c) ? 1 : 0)))].join("|");
 }
 
 function attachFriendsBoardListener(){
@@ -142228,7 +142540,10 @@ function showFriends(){
     text.className = "friend-row-text";
     const nm = document.createElement("p");
     nm.className = "friend-row-name";
-    nm.textContent = entry.firstName || "Anonymous";
+    /* (384 vr2) a friend with no board row is a card from friendCardOf: named by their own beat, or "Friend" until it lands */
+    const noRow = !!(entry && (entry.fromBeat || entry.fromChat || entry.unknown));
+    nm.textContent = entry.firstName || (noRow ? "Friend" : "Anonymous");
+    if(entry && (entry.unknown || entry.fromChat)){ nm.dataset.friendName = entry.pub || ""; nm.dataset.fallback = "1"; art.dataset.friendArt = entry.pub || ""; art.dataset.fallback = "1"; }
     const sub = document.createElement("p");
     sub.className = "friend-row-sub";
     /* THE DOT SAYS ONLINE; THE LINE STILL HAS TO SAY WHO THEY ARE.
@@ -142251,6 +142566,14 @@ function showFriends(){
        The colour comes from RANK_COLOR, the one table the emblems, the
        cards and the themes all read, so a rank is the same colour
        everywhere it is mentioned. */
+    /* (384 vr2) no board row, no rank or level to name (a friend in Fire Code alone has neither in the academy): the classes
+       their beat names instead, or that nothing says yet */
+    if(noRow){
+      const cl = document.createElement("span");
+      cl.className = "friend-row-lvl friend-row-class";
+      cl.textContent = friendClassLine(entry);
+      sub.appendChild(cl);
+    } else {
     const rk = rankOfEntry(entry);
     if(rk){
       const rankEl = document.createElement("span");
@@ -142263,6 +142586,7 @@ function showFriends(){
     lvl.className = "friend-row-lvl";
     lvl.textContent = "Level " + (entry.level || 0);
     sub.appendChild(lvl);
+    }
     text.append(nm, sub);
     row.append(art, text);
     /* ---- TAP A FRIEND, GET THEIR CARD (build 231) ----
@@ -142270,7 +142594,8 @@ function showFriends(){
        friend list of people you can click it there too". The buttons on
        the row keep their own jobs - a tap on Accept is not a tap on the
        person. */
-    if(entry && entry.pub){
+    /* (the card is the class board's numbers - a friend with no row has none to show, so their row is not a door to it) */
+    if(entry && entry.pub && !noRow){
       row.classList.add("is-tappable");
       row.setAttribute("role", "button");
       row.tabIndex = 0;
@@ -142416,13 +142741,16 @@ function showFriends(){
   lh.className = "sect-label";
   {
     /* Nova counts as online while he is available (b324n2) */
-    const onlineN = friendPublicIds().map(id => rows[id]).filter(isOnline).length
+    const onlineN = friendPublicIds().map(id => friendCardOf(id, rows)).filter(isOnline).length
       + ((novaIsFriend() && !novaAway()) ? 1 : 0);
     lh.textContent = "Your friends" + (onlineN ? "  \u00b7  " + onlineN + " online" : "");
   }
   list.appendChild(lh);
   const ids = friendPublicIds();
-  const known = ids.map(id => rows[id]).filter(Boolean);
+  /* (384 vr2) EVERY FRIEND IS ON THE LIST. Madison: "If I'm friends with someone they should be there and stuff." This was the
+     friends with a board row, and a friend in Fire Code alone has none - left off, and counted under "1 friend is not on the
+     board right now". Each is a card now (friendCardOf): the row, their own beat, the chat, or "Friend" until one of them lands. */
+  const known = ids.map(id => friendCardOf(id, rows));
   /* Nova's row (b324n2): first, always, since build 382 - or on his own when there is nobody else.
      No Remove: "the option to remove him won't be there". */
   const nova = novaIsFriend();
@@ -142466,19 +142794,8 @@ function showFriends(){
         })
       ]));
     });
-    /* Somebody on your list whose row has not loaded - they have not
-       opened the app since, or turned sharing off. Named rather than
-       silently dropped, so a friends list of four does not quietly
-       become three. */
-    const missing = ids.length - known.length;
-    if(missing > 0){
-      const m = document.createElement("p");
-      m.className = "friend-hint";
-      m.textContent = missing === 1
-        ? "1 friend is not on the board right now."
-        : missing + " friends are not on the board right now.";
-      list.appendChild(m);
-    }
+    /* (A friend whose row has not loaded was counted here, "1 friend is not on the board right now", and left off the list.
+       Every friend is a row above now, said for what it is - see friendClassLine.) */
   }
   /* Your code, then how to add one, then who you have. Requests, when
      there are any, were appended above all three - somebody is waiting
