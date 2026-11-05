@@ -35326,3 +35326,40 @@ iPhone/iPad (382, measured off his phone; check-b382 holds it) is unchanged.
 Why no gate caught it: check-centering measures a control's text; a placeholder is not a control's text.
 GATE: tools/check-b384-searchink.py - the placeholder's ink against the field's middle (unit screen, both classes, and the
 Leaderboard), level with Select all, fields still 44px. ALL PASS (0-0.67px); --against the build before FAILS (2-2.67px).
+
+## 384 final check: Fire Code badges - no outline that is another one turned, flipped or stretched
+
+Madison, circling Chapter and Section Finder and Chapter 3 on the unit screen: "These badges are the exact same just in a
+different direction? That needs to be fixed, that isn't gonna work.. that's lazy. Each badge will need to be unique. If some of
+the badges look the same across the classes that's okay too.." He was right: the Finder's crystal and Chapter 3's nameplate are
+one hexagon, stood on end and laid on its side. check-b384-ifcbadges compared outlines in ONE orientation, so any turned or
+flipped twin passed.
+MEASURED (scratchpad r2/badges: masks.py, rigid.py, edge.py): every outline drawn by the page, centred on its centroid and
+scaled by its area, edge against edge at every 3 degrees and both flips, 1px band. Twins found in Fire Code's 58: crystal /
+nameplate 0.99 (and both the hex stretched), diamond / tile 1.00 (a square turned 45), card / plaque 0.98 (the card on its
+side), coin / octagon 1.00 and coin / seal 0.96 (at a unit card's 28px the octagon's rounded corners and the seal's scallops
+vanish), plus stretch twins the turn-only measure does not catch: coin / oval, ribbon / notchplate, hex / gate, and the wedge
+(the fan point down with a notch). Area IoU was useless here (every convex blob scores 0.9+); edges at 1px separate cleanly:
+the old twins 0.96-1.00, the closest honest pair (the academy's keystone and shield) 0.75.
+FIX: ten Fire Code chapters get ten new silhouettes (scratchpad r2/badges/gen9.py: built from plain parts with shapely, every
+corner rounded, one or two channels): bell (Chapter and Section Finder), flask (Ch 3), shell (Ch 26), puzzle (Ch 28),
+mushroom (Ch 35), goblet (Ch 51), heart (Ch 58), acorn (Ch 61), vase (App B), anvil (App C). Out of BADGE_SHAPE (Fire Code's
+own, nothing else used them): crystal, nameplate, tile, plaque, oval, notchplate, seal. Octagon, gate and wedge stay - they are
+the academy's own; Fire Code no longer uses them. Each candidate was scored against the 48 that stay (the new ten top out at
+0.80 on the looser measure, acorn / shield) and looked at at 28px; turned down: a pagoda (the spire's house), a lantern (the
+hex), a keyhole (the medal), a doorway (the disc), a cloud (the disc and shield), a scroll (the ribbon), a speech bubble (reads
+as the chat button). The thin parts were thickened after a first render (the anvil's face, the goblet's stem, the vase's neck):
+the inset plate cannot follow a part thinner than its band, and the plate fell apart there.
+WHICH CHAPTER GETS WHICH (r2/badges/fit.py): every chapter x outline back planned in the page (badgeBackPlan), then every
+assignment tried, keeping the smallest title largest - 0.0420 of the badge (the academy's smallest 0.0368; Fire Code's smallest
+stays Chapters 2 and 10, untouched) - and never an outline that pictures its chapter: no acorn on the lumber yards, no anvil on
+welding, no flask on the gas and chemical chapters, no vase (a gas cylinder) on Ch 58/61, no mushroom on fumigation. Colours
+are each chapter's as before.
+GATE: tools/check-b384-badgetwins.py - Fire Code: 58 chapters, 58 outlines, no pair at 0.9 or more under any turn or flip
+(closest now Ch 4 / Ch 39, shield / keystone 0.75); the academy's closest listed for reference (0.76). ALL PASS; --against the
+build before FAILS with exactly the twins (Ch 64/App B, Ch 28/Ch 31, Ch 3/Finder, Ch 58/Ch 66, Ch 26/Ch 31).
+check-b384-ifcbadges ALL PASS (29) on the new set: 58 outlines, every back its title and FIRE CODE inside the rim, smallest
+titles as before, the academy's 24 byte-identical (8996cbb2).
+NOT DONE (asked as a decision): the academy's own set has the same kind of near-likeness on the looser measure (gate / octagon
+/ hex, disc / shield, fan / wedge, keystone / shield). Madison said across classes is fine; within the academy it has been
+live a long time and was not raised.
