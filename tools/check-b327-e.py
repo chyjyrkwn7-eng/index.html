@@ -118,14 +118,18 @@ def hexrgb(h):
 
 
 def section_a(br):
-    print("\nA. Stats: the accuracy ring is red under 70, green from 70, gold at 100")
+    print("\nA. Stats: the ring is red under 70, green from 70, gold at 100 (384: the ring is the question bank's, banded on its own number)")
     for label, w, h in (PHONE, TABLET):
         ctx, pg = boot(br, w, h)
         for acc in ("ink", "titan", "adept"):
             r = pg.evaluate("""async (acc) => { theme.accent = acc; try{ applyTheme(); }catch(e){} showProfile('stats');
               await new Promise(r => setTimeout(r, 700));
               const arc = document.querySelector('.stx-hero .thx-ring-arc'), num = document.querySelector('.profile-stats-tab .stat-num');
-              const pct = store.lifetime.answered ? Math.round(store.lifetime.correct / store.lifetime.answered * 100) : null;
+              /* (384) the ring follows the question bank now ("Stats' ring follows the question bank"), not accuracy - so its
+                 band is read against its OWN number, off the ring */
+              const own = document.querySelector('.stx-hero .thx-ring-num, .stx-hero .score-ring-num, .stx-hero [class*=ring-num]');
+              const pct = own && /\d/.test(own.textContent) ? parseInt(own.textContent, 10)
+                : (store.lifetime.answered ? Math.round(store.lifetime.correct / store.lifetime.answered * 100) : null);
               return { ring: arc ? getComputedStyle(arc).stroke : null, num: num ? getComputedStyle(num).color : null, pct }; }""", acc)
             # build 327 round 10 replaced the grey (and round 9's fixed green): "Red if under a 70,
             # green if above a 70 and a gold if somehow a hundred" - the same bands whatever the theme
