@@ -44,6 +44,7 @@ const DEFTERM = /^(?:\[[A-Z]{1,3}\]\s*)?([A-Z0-9][A-Z0-9’'\-\/ ,&()]{1,80})\.$
 const SUBTERM = /^(?:\[[A-Z]{1,3}\]\s*)?([A-Za-z0-9][A-Za-z0-9’'\-\/ ,&()]{2,80})\.$/;  // nested definition ("Level 1 aerosol products.")
 const NEWHEAD = /^(?:\[[A-Z]{1,3}\]\s*)?(?:(?:[A-Z]{1,2})?\d{2,4}(?:\.\d+)+|TABLE\s|SECTION\s|CHAPTER\s|APPENDIX\s|Exceptions?\b)/;
 
+const LEAD_LINES = 7;                         // lines of a section shown under its banner when the banner alone is cited (locate, flowClip)
 const BODY_TOP = 735, BODY_BOTTOM = 36;      // items above / below are running headers, page labels and the licence footer
 const BODY_H = 9.5;                           // body text is 10 pt; table cells are 9 pt or smaller
 const COL_L = 28, COL_R = 584;                // left / right edge used for clippings
@@ -414,6 +415,15 @@ export function locate(index, ptr) {
     e = j; break;
   }
   out.end = e == null ? null : { page: heads[e][0], i: heads[e][1], x: heads[e][5], y: heads[e][6], w: heads[e][7], h: heads[e][8] };
+  // A section's banner alone ("SECTION 312 VEHICLE IMPACT PROTECTION": the next heading is the section's first subsection, set right under it)
+  // is cut with the start of the section, as a chapter's title is cut with its note: the clipping runs on through that first subsection,
+  // and flowClip keeps the banner and at most LEAD_LINES lines under it, in the banner's column, on its page (see `lead` there).
+  if (kind === 'banner' && /^SECTION /.test(token) && !ptr.blur && e != null && heads[e][2] === 'sec' && heads[e][0] === h[0]) {
+    let e2 = null;
+    for (let j = e + 1; j < heads.length; j++) { const hk = heads[j][2]; if (hk === 'exc' || hk === 'table' || hk === 'def' || hk === 'sub') continue; e2 = j; break; }
+    out.end = e2 == null ? null : { page: heads[e2][0], i: heads[e2][1], x: heads[e2][5], y: heads[e2][6], w: heads[e2][7], h: heads[e2][8] };
+    out.lead = LEAD_LINES;
+  }
   const fullEnd = out.end;                                  // where the whole section ends (the whole-page view highlights all of it, exceptions and tables included)
   // optional "stopAtException": n  - the question is not about an exception, so the clipping ends just above the n-th "Exception(s):" heading of this section
   // (counted from the section heading). Not found (another copy of the book laid out differently): the section is shown whole, nothing is lost.
@@ -875,7 +885,7 @@ async function flowClip(doc, index, loc, ptr, opts, fontBold, cache) {
   const maxPages = opts.maxPages || 4;
   const sp = loc.start.page;
   const ep = loc.end ? loc.end.page : sp;
-  const last = Math.min(ep, sp + maxPages - 1, index.numPages);
+  const last = loc.lead ? sp : Math.min(ep, sp + maxPages - 1, index.numPages);
   const segments = [], marks = [], textParts = [], pages = [];
   for (let p = sp; p <= last; p++) {
     const model = await pageModel(doc, p, fontBold, cache);
@@ -891,10 +901,39 @@ async function flowClip(doc, index, loc, ptr, opts, fontBold, cache) {
     const mainEnd = model.hasBody ? model.F : items.length;
     const a = p === sp ? loc.start.i : 0;
     const b = loc.end && p === ep ? loc.end.i : items.length;
-    const slice = [];
+    let slice = [];
     for (let k = a; k < Math.min(b, mainEnd); k++) { const it = items[k]; if (it.t && inBody(it)) slice.push(it); }
     if (!slice.length) continue;
-    const endHere = loc.end && p === ep ? loc.end : null;
+    // `lead` (a banner cited alone, see locate): the banner and the first loc.lead lines under it in the banner's column - ending on a sentence's
+    // end where one ends from the third line on (or within three lines past the limit). Cut short, the clipping ends at its last line, not at
+    // the next heading.
+    let leadCut = false;
+    if (loc.lead && p === sp) {
+      const side = g == null ? -1 : (centre(loc.start) < g ? 0 : 1);
+      const same = (it) => side < 0 || (centre(it) < g ? 0 : 1) === side;
+      const floor = Math.min(...bannerLines(items, loc.start.i).map(l => l.y)) - 2;
+      const rows = [];                                                     // the lines under the banner: baseline, right end, the words there
+      for (const it of slice) {
+        if (it.y >= floor || !same(it)) continue;
+        const r = rows.find(q => Math.abs(q.y - it.y) < 2.5);
+        if (!r) rows.push({ y: it.y, x1: it.x + it.w, end: it.t });
+        else if (it.x + it.w > r.x1) { r.x1 = it.x + it.w; r.end = it.t; }
+      }
+      rows.sort((u, v) => v.y - u.y);
+      let n = Math.min(rows.length, loc.lead);
+      if (n < rows.length) {                                              // a sentence's end: the last within the limit, else one just past it
+        const ends = (k) => /\.$/.test(rows[k - 1].end);
+        let k = n; while (k >= 3 && !ends(k)) k--;
+        if (k >= 3) n = k;
+        else for (k = n + 1; k <= Math.min(rows.length, loc.lead + 3); k++) if (ends(k)) { n = k; break; }
+      }
+      if (n < rows.length || slice.some(it => !same(it))) {
+        const cut = n ? rows[n - 1].y - 0.5 : floor;
+        slice = slice.filter(it => same(it) && it.y >= cut);
+        leadCut = true;
+      }
+    }
+    const endHere = loc.end && p === ep && !leadCut ? loc.end : null;
     let mode = 'mixed';
     const cols = [[], []];
     if (g != null) {
@@ -978,7 +1017,7 @@ async function flowClip(doc, index, loc, ptr, opts, fontBold, cache) {
       }
     }
   }
-  return { ok: true, segments, marks, text: textParts.join(' '), pages, truncated: last < ep };
+  return { ok: true, segments, marks, text: textParts.join(' '), pages, truncated: !loc.lead && last < ep };
 }
 
 // ---- tables: found by position. The caption is in the text; the cells are floats listed at the end of the page.
@@ -1351,12 +1390,49 @@ export async function countyClip(doc, ptr, opts = {}) {
   // the exception that a reference is about is printed after the excerpt: the cut runs to its end
   if (ptr.exceptionText) {
     let xp = ranges[ranges.length - 1][1];
-    for (const piece of String(ptr.exceptionText).split('\n')) { const r = findPiece(piece, xp); if (r) { ranges.push(r); b = Math.max(b, r[1]); xp = r[1]; } }
+    // (an excerpt may quote a line the booklet prints after the exceptions: the exception is then looked for from the excerpt's start)
+    for (const piece of String(ptr.exceptionText).split('\n')) { const r = findPiece(piece, xp) || findPiece(piece, a); if (r) { ranges.push(r); b = Math.max(b, r[1]); xp = r[1]; } }
+  }
+  // A reference that is only a heading ("SECTION 322 BATTERY STORAGE", "CHAPTER 1 SCOPE AND ADMINISTRATION": no deciding words) is cut with the start of
+  // what it heads, as a chapter title of the book is cut with its note: the headings set under it, then the first paragraph of running text (to its end,
+  // or LEAD_MAX lines), on the heading's own page; never a table, nor the exceptions or list under that paragraph. The heading is marked (below); the lines
+  // under it carry the wash only.
+  const LEADSEC = /^(?:\d{2,4}(?:\.\d+)+[A-Za-z]?\b|SECTION\b|CHAPTER\b|TABLE\b|Table\b|APPENDIX\b)/;
+  const lead = new Map();                                      // page part -> the lines added under the heading
+  const headOnly = !ptr.highlight && !ptr.exceptionText && !!ptr.heading && cnorm(ptr.excerpt || '') === cnorm(ptr.heading);
+  if (headOnly) {
+    const LEAD_MAX = 7;
+    const pt = all[b - 1].pt, add = [];
+    let body = false;
+    for (let li = all[b - 1].li + 1; li < pt.lines.length && add.length < LEAD_MAX; li++) {
+      const ln = pt.lines[li], prev = pt.lines[li - 1];
+      const words = ln.items.map(i => i.s).join(' '), first = (ln.items[0] || { s: '' }).s.trim();
+      if (body) { if (prev.y - ln.y > 16 || LEADSEC.test(first) || /^Exceptions?\b/.test(first) || /^\d{1,2}\.(?:\s|$)/.test(first)) break; }
+      else if (/^(?:TABLE|Table)\b/.test(first)) break;
+      else if (/[a-z]/.test(words)) body = true;           // the first line of running text: its paragraph is the one shown
+      add.push(li);
+    }
+    if (add.length) lead.set(pt, add);
+  }
+  // The deciding words: where the excerpt's own lines carry them, there (a table repeats a cell's words - "Any Amount" - and the first one in
+  // the booklet after the excerpt's start can be another row's, on a line the cut does not show); else their first place in the excerpt's
+  // span, whose lines are then cut too, so the mark is always in the picture.
+  let hl = null;
+  if (ptr.highlight) {
+    const lineOf = (k) => all[k].pt.p + ':' + all[k].li, cut = new Set();
+    for (const [x, y] of ranges) for (let k = x; k < y; k++) cut.add(lineOf(k));
+    for (const [pt, add] of lead) for (const li of add) cut.add(pt.p + ':' + li);
+    const E = cnorm(ptr.highlight);
+    if (E.length >= 6) for (let at = N.indexOf(E, a); at >= 0 && at + E.length <= b && !hl; at = N.indexOf(E, at + 1)) {
+      let on = true; for (let k = at; k < at + E.length && on; k++) on = cut.has(lineOf(k));
+      if (on) hl = [at, at + E.length];
+    }
+    if (!hl) { const h = findPiece(ptr.highlight, a); if (h && h[1] <= b) { hl = h; ranges.push(h); } }
   }
   // lines of the booklet that hold the pieces; a gap of up to three lines between two pieces is closed (no point in a cut that skips a line or two)
   const segments = [], marks = [], texts = [], pages = [];
   for (const pt of parts) {
-    const used = new Set();
+    const used = new Set(lead.get(pt) || []);
     for (const [x, y] of ranges) for (let k = x; k < y; k++) if (all[k].pt === pt) used.add(all[k].li);
     if (!used.size) continue;
     const idx = [...used].sort((u, v) => u - v);
@@ -1389,9 +1465,10 @@ export async function countyClip(doc, ptr, opts = {}) {
     }
     for (const m of byLine.values()) marks.push(m);
   };
-  if (ptr.highlight) { const h = findPiece(ptr.highlight, a); if (h && h[1] <= b) markRange(h[0], h[1], 'cite'); }
+  if (hl) markRange(hl[0], hl[1], 'cite');
   const T = cnorm((ptr.section || '') + (ptr.heading || ''));
   if (T.length >= 4 && N.startsWith(T, a)) markRange(a, a + T.length, 'heading');
+  else if (headOnly) markRange(a, b, 'heading');               // a heading given whole ("SECTION 322 BATTERY STORAGE") carries its own number
   // The whole-page view highlights the whole provision: when exceptions are printed after the cut (and the question is not about them), they are cited code too.
   const cited = segments.slice();
   const lastPt = parts[parts.length - 1];
