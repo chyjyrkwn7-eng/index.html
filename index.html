@@ -34957,6 +34957,7 @@ html.is-browser{ --fade-paper: transparent; }
   .ifc-code > summary::after{ content:""; width:7px; height:7px; margin-left:.15rem; border-right:1.8px solid currentColor; border-bottom:1.8px solid currentColor;
     transform:translateY(-2px) rotate(45deg); transition:transform .2s ease; opacity:.8; }
   .ifc-code[open] > summary::after{ transform:translateY(2px) rotate(-135deg); }
+  .ifc-code.is-closing > summary::after{ transform:translateY(-2px) rotate(45deg); }   /* (384 review) turns back as the close starts */
   .ifc-tag{ display:inline-flex; align-items:center; justify-content:center; height:28px; padding:0 .7rem 0 calc(.7rem + .08em); border-radius:999px; font-size:.7rem; font-weight:800; line-height:1; letter-spacing:.08em; text-transform:uppercase; box-sizing:border-box; }
   @supports (text-box:trim-both cap alphabetic){ .ifc-tag{ text-box:trim-both cap alphabetic; } }
   .ifc-tag.is-ifc{ background:rgba(255,122,26,.18); color:#FFB35C; }
@@ -109838,13 +109839,88 @@ async function ifcRemoveBook(){
   if(ifcBook){ try{ ifcBook.doc.destroy(); }catch(e){} }
   ifcBook = null; ifcBookP = null; ifcNodeCache.clear();
 }
+/* ---- (384 review) THE CODE DROPS DOWN, AND STAYS DOWN ----
+   Madison: "when hitting 'show the code' in the ifc tests ... ensure when you hit that drop down, it's a very smooth and nice
+   transition. Not just instant, it will be instant, just make it actually nicely drop down." The <details> opened in one frame
+   (its words faded in, but the room for them - and everything under it - jumped). Now the box grows from the pill to its full
+   height and back, starting on the tap. Its height FOLLOWS what is inside rather than a number measured once, because the
+   code's picture often arrives a moment after the tap: an ease toward wherever the content is, frame by frame, until it has
+   arrived and settled - then the height is let go (auto). Reduce motion: no slide.
+   "Also, when you enable show code drop down, ensure it stays like that unless you hit the button again. Cause every question
+   I'm having to hit the drop down if I want to always see it." Opening or closing it by hand is remembered
+   (class26e.codeopen; each class keeps its own), and every answer after opens with the code shown until it is closed again.
+   A wrong first try still opens it by itself without changing what is remembered. */
+const IFC_CODE_OPEN_KEY = "class26e.codeopen";
+function ifcCodeOpenPref(){ try{ return localStorage.getItem(IFC_CODE_OPEN_KEY) === "1"; }catch(e){ return false; } }
+function ifcCodeOpenSet(on){ try{ localStorage.setItem(IFC_CODE_OPEN_KEY, on ? "1" : "0"); }catch(e){} }
+function ifcSlideStill(){ try{ return ringMotionOff(); }catch(e){ return false; } }
+/* what is remembered applies where one question is shown at a time - a question, the Tug's answer, a flash card - not to a list
+   of them (the Review list, a results review), where it would open and draw every box on the page. Checked in the frame the box
+   is put on the screen, before it is painted, so it never shows shut and then opens. */
+function ifcApplyCodePref(box){
+  requestAnimationFrame(() => {
+    const d = box.querySelector("details.ifc-code");
+    if(!d || !box.isConnected || d._slideRaf || d.classList.contains("is-closing")) return;
+    const want = ifcCodeOpenPref();
+    if(d.open === want || (d.open && box.dataset.autoOpened)) return;
+    const scope = box.closest("#stage > *") || document;
+    if(scope.querySelectorAll(".ifc-ref").length > 1) return;
+    d.open = want;
+  });
+}
+/* el's height eases from fromH toward target() (read every frame), and is let go once pending() is false and it has arrived */
+function ifcSlideHeight(el, fromH, target, pending, done){
+  if(el._slideRaf){ cancelAnimationFrame(el._slideRaf); el._slideRaf = 0; }
+  const finish = () => { el._slideRaf = 0; el.style.height = ""; el.style.overflow = ""; if(done) done(); };
+  if(ifcSlideStill() || !el.isConnected){ finish(); return; }
+  el.style.overflow = "hidden"; el.style.height = fromH + "px";
+  let h = fromH, last = performance.now();
+  const t0 = last;
+  const step = now => {
+    const dt = Math.min(64, Math.max(1, now - last)); last = now;
+    const tgt = Math.max(0, target());
+    h += (tgt - h) * (1 - Math.pow(.8, dt / 16.7));
+    el.style.height = h.toFixed(2) + "px";
+    const waiting = pending && pending() && now - t0 < 3000;
+    if(!waiting && Math.abs(tgt - h) < .6){ finish(); return; }
+    el._slideRaf = requestAnimationFrame(step);
+  };
+  el._slideRaf = requestAnimationFrame(step);
+}
+/* the code box's own open and close, from a tap: grows from the pill, or shrinks back to it */
+function ifcCodeSlide(det, open, fill){
+  const sum = det.querySelector(":scope > summary");
+  const kids = () => [...det.children].filter(k => k !== sum);
+  (det._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); det._fades = [];
+  const fromH = det.getBoundingClientRect().height;
+  if(open){
+    det.classList.remove("is-closing");
+    det.open = true;   /* (its toggle: the pill's words, and the code drawn) */
+    let busy = true;
+    try{ Promise.resolve(fill && fill()).finally(() => { busy = false; }); }catch(e){ busy = false; }
+    ifcSlideHeight(det, fromH, () => det.scrollHeight, () => busy);
+  } else {
+    det.classList.add("is-closing");
+    const w = sum.querySelector(".ifc-sum-text"); if(w) w.textContent = "Show the code";
+    if(!ifcSlideStill()) det._fades = kids().map(k => k.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-6px)" }], { duration: 200, easing: "ease", fill: "forwards" }));
+    ifcSlideHeight(det, fromH, () => sum.getBoundingClientRect().height, null, () => {
+      det.open = false; det.classList.remove("is-closing");
+      (det._fades || []).forEach(a => { try{ a.cancel(); }catch(e){} }); det._fades = [];
+    });
+  }
+}
 /* explanation, reference line and the code (open by itself after a wrong first try) */
 function buildIfcRef(item){
   const qi = QUESTIONS.indexOf(item);
   const missed = qi >= 0 && typeof attempts !== "undefined" && attempts && attempts[qi] > 1;
   const key = "ref:" + qi;
   const cached = ifcNodeCache.get(key);
-  if(cached){ if(missed && !cached.dataset.autoOpened){ cached.dataset.autoOpened = "1"; const d = cached.querySelector("details"); if(d && !d.open) d.open = true; } return cached; }
+  if(cached){
+    const d = cached.querySelector("details");
+    if(missed && !cached.dataset.autoOpened){ cached.dataset.autoOpened = "1"; if(d && !d.open) d.open = true; }
+    else ifcApplyCodePref(cached);
+    return cached;
+  }
   const c = item.ifc.citation;
   const box = ifcEl("div", "ifc-ref");
   if(item.ifc.explanation) box.appendChild(ifcEl("p", "ifc-expl", item.ifc.explanation));
@@ -109870,11 +109946,19 @@ function buildIfcRef(item){
     sum.querySelector(".ifc-sum-text").textContent = det.open ? "Hide the code" : "Show the code";
     if(det.open) fill();
   });
+  /* (384 review) the tap slides it open or shut, and is remembered for the next answers (see ifcCodeSlide) */
+  sum.addEventListener("click", e => {
+    e.preventDefault();
+    const open = !det.open || det.classList.contains("is-closing");
+    ifcCodeOpenSet(open);
+    ifcCodeSlide(det, open, fill);
+  });
   /* (384) drawn ahead: a finger on the summary, or the box sitting in view (ifcDrawAhead) */
   sum.addEventListener("pointerdown", () => { if(!det.open && ifcBook) fill(); }, { passive: true });
   ifcDrawAhead(box, fill);
   box.appendChild(det);
   if(missed){ box.dataset.autoOpened = "1"; det.open = true; }
+  else ifcApplyCodePref(box);   /* (384 review) opened by hand before: every answer after shows it */
   ifcNodeCache.set(key, box);
   if(ifcNodeCache.size > 12) ifcNodeCache.delete(ifcNodeCache.keys().next().value);
   return box;
@@ -109940,8 +110024,16 @@ function ifcPreAnswer(item, qtext, panel){
       const put = on => { shown = on; b.classList.toggle("is-on", on); word.textContent = on ? "Hide the code" : "Show the code";
         b.setAttribute("aria-expanded", on ? "true" : "false"); b.setAttribute("aria-label", on ? "Hint: hide the code" : "Hint: show the code, answer hidden"); };
       b.addEventListener("click", async () => {
-        if(shown){ holder.textContent = ""; put(false); return; }
+        /* (384 review) its picture drops in and folds away as the code's does (ifcSlideHeight), not in one frame */
+        if(shown){
+          put(false);
+          const fromH = holder.getBoundingClientRect().height;
+          ifcSlideHeight(holder, fromH, () => 0, null, () => { if(!shown) holder.textContent = ""; });
+          return;
+        }
         put(true);
+        let busy = true;
+        ifcSlideHeight(holder, holder.getBoundingClientRect().height, () => holder.scrollHeight, () => busy);
         if(typeof hinted !== "undefined") { /* the Hint does not count as a miss: the answer stays hidden */ }
         try{
           /* (384) painted off the page and framed before it is shown, like every code picture */
@@ -109951,6 +110043,7 @@ function ifcPreAnswer(item, qtext, panel){
           if(shown) holder.replaceChildren(...tmp.childNodes);
         }
         catch(e){ holder.textContent = ""; put(false); }
+        busy = false;
       });
       pre.append(b, holder);
     })().catch(() => {});
@@ -125662,7 +125755,10 @@ function settingsRowIcon(kind, tone){
     /* (384) Profile's three rows - Customize, the badge case, the rank ladder - share this tile and its one stroke */
     palette: '<path d="M12 3.8a8.2 8.2 0 1 0 0 16.4c1 0 1.6-.7 1.6-1.5 0-.42-.16-.8-.43-1.08-.26-.28-.42-.64-.42-1.06 0-.88.72-1.5 1.6-1.5h1.88a3.9 3.9 0 0 0 3.9-3.9C20.13 7.2 16.5 3.8 12 3.8z"/><path d="M7.9 11.3h.01M9.8 7.7h.01M14.1 7.4h.01M16.7 10.6h.01"/>',
     badgecase: '<rect x="3.6" y="7.4" width="16.8" height="12" rx="2.4"/><path d="M9.2 7.4V5.9a1.5 1.5 0 0 1 1.5-1.5h2.6a1.5 1.5 0 0 1 1.5 1.5v1.5"/><path d="M3.6 12.6h16.8"/><path d="M10.6 12.6v1.8h2.8v-1.8"/>',
-    ladder: '<path d="M7.6 3.6v16.8M16.4 3.6v16.8"/><path d="M7.6 7.6h8.8M7.6 12h8.8M7.6 16.4h8.8"/>'
+    ladder: '<path d="M7.6 3.6v16.8M16.4 3.6v16.8"/><path d="M7.6 7.6h8.8M7.6 12h8.8M7.6 16.4h8.8"/>',
+    /* (384 review) Customize: "I just don't like the icon for customize" - the paint palette read as a blob at 30px; a wand
+       with its sparkles says "make it yours" in the same line family */
+    wand: '<path d="M4.4 19.6 13.4 10.6"/><path d="M16.4 3.8l1 2.7 2.7 1-2.7 1-1 2.7-1-2.7-2.7-1 2.7-1z"/><path d="M8.6 3.8v2.6M7.3 5.1h2.6"/><path d="M19.4 13.6v2.6M18.1 14.9h2.6"/>'
   };
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
@@ -125681,6 +125777,10 @@ function settingsRowIcon(kind, tone){
    chevron. The button keeps its own class and handler (profile-customize-btn / pf-case-count / pf-goal-foot), so every tour,
    check and tap that finds it still does. Returns the parts a caller adds to (the badge case's New tag goes before the
    chevron). */
+/* (384 review) "I don't like the colors you went with for the icons": they were the rank's colour darkened (a grey tile on
+   Iron), iOS orange and the theme's own colour (pale on the default) - three unrelated tiles. Now Settings' iOS hues, as its
+   rows have them: one each, none shared, none borrowed from the theme or the rank. */
+const PF_ROW_TILE = { customize: "#BF5AF2", ladder: "#0A84FF", badgecase: "#FFB800" };
 function pfActFill(btn, kind, label, sub, tile){
   const t = settingsRowIcon(kind);
   if(tile) t.style.setProperty("--tile", tile);
@@ -142832,7 +142932,7 @@ function pfGoalFoot(){
   foot.type = "button";
   foot.className = "pf-goal-foot";
   /* (384) a row: the ladder in the next rank's colour (darkened for its white mark), "Rank ladder", what it holds */
-  const r = pfActFill(foot, "ladder", "Rank ladder", "Every rank and what it unlocks", "color-mix(in srgb, var(--nx, #8E8E93) 78%, #23262D)");
+  const r = pfActFill(foot, "ladder", "Rank ladder", "Every rank and what it unlocks", PF_ROW_TILE.ladder);
   r.label.classList.add("pf-goal-foot-word");
   foot.setAttribute("aria-label", "Rank ladder: every rank and what it unlocks");
   foot.addEventListener("click", () => showRanksScreen("ranks"));
@@ -142991,7 +143091,7 @@ function buildProfileCase(have, total){
   const n = mk("pf-case-count", "button");
   n.type = "button";
   /* (384) a row: the case in gold, "Badge case", the count under it (still .pf-case-num, "N of M badges") */
-  const cr = pfActFill(n, "badgecase", "Badge case", have + " of " + total + " badges", "#FF9F0A");
+  const cr = pfActFill(n, "badgecase", "Badge case", have + " of " + total + " badges", PF_ROW_TILE.badgecase);
   cr.sub.classList.add("pf-case-num");
   const arrow = cr.chev;
   const plate = buildCaseSidePlate("pf-case-sideplate");
@@ -143235,7 +143335,7 @@ function showProfile(defaultTab, opts){
      same on every banner - with a palette and the three things it holds named under the word. */
   {
     /* (384) a row: the palette in the theme's own colour (--theme-sig, as Settings' foot), "Customize", what it holds */
-    const cz = pfActFill(nameEditBtn, "palette", "Customize", "Character \u00b7 Banner \u00b7 Theme", "var(--theme-sig)");
+    const cz = pfActFill(nameEditBtn, "wand", "Customize", "Character \u00b7 Banner \u00b7 Theme", PF_ROW_TILE.customize);
     cz.label.classList.add("pcz-label"); cz.sub.classList.add("pcz-sub"); cz.words.classList.add("pcz-words");
     nameEditBtn.setAttribute("aria-label", "Customize: character, banner and theme");
   }

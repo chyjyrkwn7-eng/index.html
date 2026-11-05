@@ -34614,3 +34614,27 @@ re-run at the end with the machine quiet.
   Welcome planet may be 1.6rem narrower than Home's, the room its taller buttons took). check-b380's Home loop "off" was the
   loops arriving while it measured (3 -> 5); sampled at eight moments, every loop matches. check-b327z15 N (a loop 96-184ms
   from its place under load, 80ms allowed) and the rest of the old gates' failures are the same as on 383.
+
+### Build 384 review round (November 5, afternoon): Profile's icons, and the code that drops down and stays down
+- PROFILE'S ROWS: "I like the idea, it's nice, I just don't like the icon for customize and I don't like the colors you went
+  with for the icons." Customize's paint palette (a blob at 30px) is a wand with its sparkles (`wand` in settingsRowIcon, the
+  same 24-grid line family). The tiles were the rank's colour darkened (grey on Iron), iOS orange and the theme's own colour
+  (pale on the default): now PF_ROW_TILE - Settings' iOS hues, one each: Customize #BF5AF2, Rank ladder #0A84FF, Badge case
+  #FFB800. Test history (Stats) keeps its indigo.
+- "SHOW THE CODE" DROPS DOWN: "Not just instant, it will be instant, just make it actually nicely drop down." The <details>
+  opened in one frame (its words eased in, but the room under it jumped). The summary's tap is taken (preventDefault) and
+  ifcCodeSlide grows the box from the pill to its full height, or shrinks it back, starting on the tap. ifcSlideHeight eases
+  the height toward the content's height READ EVERY FRAME (h += (target - h) * (1 - .8^(dt/16.7))), so a code picture that
+  arrives after the tap is followed rather than jumped to, and lets go (height auto) once the drawing has settled; reduce
+  motion skips it. Closing fades the contents (WAAPI, transform/opacity), turns the chevron back at once (.is-closing) and
+  sets open=false at the end. The Hint's code (before an answer, in a Drill) drops in and folds away the same way.
+- ...AND STAYS DOWN: "when you enable show code drop down, ensure it stays like that unless you hit the button again." A tap
+  is remembered (class26e.codeopen - per class by the storage map, "class26e.ifc.codeopen" in Fire Code) and every answer
+  after comes with the code shown until it is closed again. Only where one question is on the screen (a question, the Tug's
+  answer, a flash card - one .ifc-ref under the screen): a Review list or a results review would otherwise open and draw every
+  box on the page (88 in the gate's list). Applied in the frame the box is put up (requestAnimationFrame, before paint), so it
+  never shows shut and then opens. A wrong first try still opens it by itself without changing what is remembered.
+- tools/check-b384-codeslide.py: open grows over 46 frames 44 -> 263px (on 185cc5c: 139 then 263, two steps), the next answer
+  comes open, Hide shrinks over 27 frames and ends shut, the next answer comes shut, a Review list stays shut. check-b384-
+  codeopen's (2) (no task over 50ms after the tap at 4x CPU) failed on BOTH builds while five helpers loaded the machine
+  (205-259ms, with the slide switched off too) - load, to re-run quiet.
