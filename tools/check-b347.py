@@ -30,14 +30,15 @@ with sync_playwright() as pw:
     ctx.close()
     # the Classes list
     ctx, pg = g["page_for"](br, "promax")
-    pg.evaluate("()=>{ localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); showClassCatalog(); }"); pg.wait_for_timeout(900)
+    # (384) the ACCOUNT records its classes (store.classes, synced); class26e.enrolled is only its mirror now
+    pg.evaluate("()=>{ localStorage.setItem('class26e.enrolled', JSON.stringify(['ifc'])); store.classes = ['academy', 'ifc']; showClassCatalog(); }"); pg.wait_for_timeout(900)
     cards = pg.evaluate("()=>[...document.querySelectorAll('.class-card:not(.is-soon)')].map(c=>({k:c.className, dis:c.getAttribute('aria-disabled'), st:c.querySelector('.cc-status').textContent, pe:getComputedStyle(c).pointerEvents}))")
     chk_ = all(c["st"] == "Enrolled" and c["dis"] == "true" and c["pe"] == "none" for c in cards) and len(cards) == 2
     g["chk"]("every class you are in says Enrolled and is not tappable (%s)" % [c["st"] for c in cards], chk_, cards)
     pg.evaluate("()=>{ document.querySelectorAll('.class-card:not(.is-soon)').forEach(c=>c.click()); }"); pg.wait_for_timeout(900)
     still = pg.evaluate("()=>({ catalog: !!document.querySelector('.class-catalog'), class: window.NOVA_CLASS })")
     g["chk"]("tapping them does nothing (still on the list, same class)", still["catalog"] and still["class"] == "academy", still)
-    pg.evaluate("()=>{ localStorage.setItem('class26e.enrolled', '[]'); showClassCatalog(); }"); pg.wait_for_timeout(900)
+    pg.evaluate("()=>{ localStorage.setItem('class26e.enrolled', '[]'); store.classes = ['academy']; showClassCatalog(); }"); pg.wait_for_timeout(900)
     pg.evaluate("()=>document.querySelector('.class-card.is-ifc').click()"); pg.wait_for_timeout(900)
     e = pg.evaluate("()=>!!document.querySelector('.class-enroll')")
     g["chk"]("a class you are not in still opens its enrolment", e)

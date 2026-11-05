@@ -1,3 +1,4 @@
+import re
 """Build 339: a sync code never rides in a browser tab's address, and Share hands out the real site.
 The installed app still adopting its launch code is covered by check-readd.py.
 Run:  python3 tools/check-b339.py"""
@@ -25,7 +26,9 @@ with sync_playwright() as pw:
     h = page.evaluate("location.hash + '|' + location.search")
     g["chk"]("a signed-in browser tab's address carries no sync code after Home", "k=" not in h and CODE not in h, h)
     shared = page.evaluate("()=>{ window.__shared = null; navigator.share = async d => { window.__shared = d; }; return typeof SHARE_URL === 'string' ? SHARE_URL : null; }")
-    g["chk"]("the Share link is the real site, a plain address", bool(shared) and shared.startswith("https://") and "#" not in shared and "?" not in shared and not shared.endswith("/Nova/"), shared)
+    # (381) the address carries a ?v= cache-buster so a link preview is fetched fresh - the site and path are the thing
+    base = (shared or "").split("?")[0]
+    g["chk"]("the Share link is the real site, a plain address (its ?v= cache-buster aside)", bool(shared) and shared.startswith("https://") and "#" not in shared and ("?" not in shared or re.search(r"\?v=\d+$", shared)) and not base.endswith("/Nova/"), shared)
     page.evaluate("()=>{ showAppearance({ page: 'share' }); }"); page.wait_for_timeout(600)   # build 382: Settings > Share & Install
     page.evaluate("()=>{ const b=[...document.querySelectorAll('button')].find(x=>/Share this app/.test(x.textContent)); b && b.click(); }"); page.wait_for_timeout(800)
     sd = page.evaluate("window.__shared")
