@@ -44,7 +44,11 @@ with sync_playwright() as pw:
         for (w, h) in ((440, 956), (834, 1194), (375, 667)):
             ctx, pg, errs = G["page"](br, G["init"](G["ifc"] if cls == "ifc" else G["academy"], **({} if cls == "ifc" else {"active": "academy"})))
             pg.set_viewport_size({"width": w, "height": h})
-            pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); store.seenModeSelectTour = true; showModeSelect(); }"); pg.wait_for_timeout(1400)
+            # (384 full check) the seed's 234 hundos owe it each class's hundo-effect unlock cards (no seenUnlocks); one up holds
+            # the tab bar down (cutscene focus) and dims the cards, so they are let go before the screen is measured
+            pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); try{ homeUnlocksOwed = () => false; }catch(e){} "
+                        "document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus'); "
+                        "store.seenModeSelectTour = true; showModeSelect(); }"); pg.wait_for_timeout(1400)
             out[(cls, w)] = pg.evaluate(READ); errs_all += errs; ctx.close()
     fmt = lambda r: "%d cards, %.0f above / %.0f below" % (r["n"], r["above"], r["below"])
     for cls in ("ifc", "academy"):
