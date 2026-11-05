@@ -193,21 +193,25 @@ KEPT3 = ["masked", "voidwalker", "umbra"]   # Smoke Diver; "breaches and recon l
 REDO3 = [i for i in F["chars"] if i not in STARTERS and i not in RANK_CHARS and i not in KEPT3]
 same3 = [i for i in REDO3 if F["chars"].get(i) == R2["ifc"]["chars"].get(i)]
 chk("round 3 redraws every Fire Code character but the Smoke Diver, Breacher and Recon (unchanged since round 2: %s)" % same3, len(REDO3) >= 15 and not same3, same3)
-kept3 = [i for i in KEPT3 if F["chars"].get(i) != R2["ifc"]["chars"].get(i)]
-chk("...and those three are exactly as round 2 left them (changed: %s)" % kept3, not kept3, kept3)
+# (384 sets) "All three of the ultimate characters need to look like they are trio. Same goes for the secret flare characters":
+# the Breacher and Recon were redrawn as two of one squad (tools/check-b384-sets.py holds that decision now)
+REDO384 = ["voidwalker", "umbra", "singularity", "genesis", "astral", "celestial", "zenith"]
+kept3 = [i for i in KEPT3 if i not in REDO384 and F["chars"].get(i) != R2["ifc"]["chars"].get(i)]
+chk("...and those three are exactly as round 2 left them, but for the two 384 redrew as the squad (changed: %s)" % kept3, not kept3, kept3)
 pl = F.get("placard") or {}
 chk("the Hazmat is round 1's again with its placard whole: under the chin, inside the circle (%s)" % pl, pl.get("found") and pl["worst"] <= .96 and pl["top"] >= pl["headBottom"] - .5, pl)
 peaks = [i for i, v in F["hats"].items() if v["peak"]]
 chk("no Fire Code character wears a police-style peaked cap (%s)" % peaks, F["hats"] and not peaks, peaks)
 badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble") for h in v["hat"])]
 chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood or a space helmet (%s)" % badhat, not badhat, badhat)
-west = [i for i in ("detective", "poseidon", "astronaut", "celestial") if "cowboy" not in F["hats"].get(i, {}).get("hat", [])]
-chk("the inspector, the chief, the investigator and the star ranger wear cowboy hats (missing: %s)" % west, not west, west)
+# (384 sets) Star Ranger is the last ultimate's (zenith) now, and the other two ultimates are rangers too
+west = [i for i in ("detective", "poseidon", "astronaut", "astral", "celestial", "zenith") if "cowboy" not in F["hats"].get(i, {}).get("hat", [])]
+chk("the inspector, the chief, the investigator and the three rangers wear cowboy hats (missing: %s)" % west, not west, west)
 chk("the clown's character is called Strobe (%s)" % F["cnames"].get("clown"), F["cnames"].get("clown") == "Strobe")
 BREDO3 = ["tests100", "early10", "hundos100", "study50", "astral", "celestial", "zenith"]
 bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i)]
 chk("round 3 redraws headquarters, code 3, exit, code book and the three ultimates' banners (unchanged since round 2: %s)" % bsame3, not bsame3, bsame3)
-bkept3 = [i for i in F["banners"] if i not in BREDO3 and F["banners"][i] != R2["ifc"]["banners"].get(i)]
+bkept3 = [i for i in F["banners"] if i not in BREDO3 and i not in ("flare_void", "flare_umbra", "flare_horizon", "flare_genesis") and F["banners"][i] != R2["ifc"]["banners"].get(i)]   # (384 sets) the four flare banners redrawn as one set
 chk("...and the banners he called awesome are as round 2 left them (changed: %s)" % bkept3, not bkept3, bkept3)
 tr = F["trucks"]
 chk("the office's vehicles are white pickups: no SUV left, headquarters and code 3 drive pickups (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function" and tr["hq"] and tr["code3"], tr)
