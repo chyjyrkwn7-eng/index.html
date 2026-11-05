@@ -256,13 +256,17 @@ with sync_playwright() as pw:
             pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000)
             print("  INFO %s GENERATING PROFILE took %.1fs" % (dev, time.time() - t0))
             seen = set(); name = "Casey Rivera"; count_after = None; card_off = None
-            t1 = time.time()
-            while time.time() - t1 < 120:
+            t1 = time.time(); last_nova = time.time()
+            # (384 full check) 27 lines now: 120s ran out under load before he reached the code; the walk ends on its own at his end
+            while time.time() - t1 < 480:
                 st = nova(pg)
                 if not st:
-                    if pg.evaluate("()=>!!document.getElementById('savecode-card')"): pass
-                    elif "end" in seen or time.time() - t1 > 8: break
+                    # (384 full check) gone for good, not between two lines: 8s with no Nova at all, counted from when he was
+                    # last up (it was 8s from the walk's start, so a moment between lines on a slow run ended the walk early)
+                    if pg.evaluate("()=>!!document.getElementById('savecode-card')"): last_nova = time.time()
+                    elif "end" in seen or time.time() - last_nova > 8: break
                     pg.wait_for_timeout(150); continue
+                last_nova = time.time()
                 if st["card"] and "card" not in seen:
                     seen.add("card"); pg.wait_for_timeout(400)
                     card_off = pg.evaluate("()=>document.querySelector('#savecode-card .savecode-continue').disabled")
