@@ -148,9 +148,14 @@ with sync_playwright() as pw:
         ctx.add_init_script("try{localStorage.setItem('class26e.getstarted','1');}catch(e){}")
         page.goto(url); page.wait_for_timeout(3000); page.evaluate("document.getElementById('splashscreen')?.remove()")
         page.evaluate("()=>showClassSelection()"); page.wait_for_timeout(1400)
-        r = page.evaluate("""()=>({ scroll: document.documentElement.scrollHeight - innerHeight,
+        # REVISED IN 384: two classes now (Fire Code beside the academy), and their cards and words do not fit 320x568 with
+        # Continue under them - as the intro screen does not on this phone. What is asked now is that Continue is on the
+        # screen once a class is picked (the pick brings it into view; check-b384-classstep holds the larger phones to no
+        # scroll at all).
+        page.evaluate("()=>document.querySelector('.class-card.is-academy').click()"); page.wait_for_timeout(1200)
+        r = page.evaluate("""()=>({ scroll: Math.round(document.getElementById('nextbtn').getBoundingClientRect().bottom - innerHeight),
           spill: Math.max(...[...document.querySelectorAll('.class-card')].map(c => { const a = c.getBoundingClientRect(), t = c.querySelector('.cc-status').getBoundingClientRect(); return Math.round(t.right - (a.right - 1)); })) })""")
-        chk("se1: the sign-up class screen does not scroll", r["scroll"] <= 0, r)
+        chk("se1: on the sign-up class screen Continue is on the screen once a class is picked", r["scroll"] <= 0, r)
         chk("se1: every class card's chip sits inside its card", r["spill"] <= 0, r)
         ctx.close()
     if "xp" in want:

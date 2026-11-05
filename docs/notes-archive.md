@@ -34594,3 +34594,10 @@ re-run at the end with the machine quiet.
   - Where it still cannot fit (an SE in Safari, an SE 1st gen) a pick brings Continue into view (scrollIntoView, block end).
   Result: an SE 2nd/3rd gen, 13 mini, 14/15/16 in Safari, Pro Max and iPad Pro 11 show Continue with nothing scrolled.
   tools/check-b384-classstep.py: 30 failures on 32d646c, none now.
+- check-centering on the SE, iPad and laptop sizes (the full run, not --quick), at the end of the check: what is left is a
+  residue between 0.56 and 1.32px, none of it on the Pro Max (the permanent --quick gate): the laptop's "Continue as <name>"
+  on New to Nova 1.02px high (stable over three runs; its neighbour "I'm new, continue", same box and rules at 16.8px, is
+  centred), Virtual Room's "Race" pill 0.56px left on the iPad and laptop (the flag's ink), an SE leaderboard row 1.03px high
+  (a whole row measured as a control). The first full run also had the laptop's sign-up Continue ~1.3px low and the class
+  chips 0.68px low; re-measured on 49afc2f they are centred. Left, per the tool's own note that Chromium draws Inter where
+  the devices draw SF and a residue near a pixel can differ there; worth a look on a real laptop and iPad.
