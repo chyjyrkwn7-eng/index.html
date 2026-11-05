@@ -302,7 +302,9 @@ def main():
           return { rev: INTRO_REV, rows: rows.slice(0, 3), all: rows, fits, goH: Math.round(go.height) };
         }""")
         check("J1. a device that saw Version 9's card sees it again", r["rev"] > 5, r)
-        check("J2. the layout and fixes rows lead", r["rows"][:2] == ["devices92", "fixes92"], r["rows"])
+        # (384) Version 10's card leads with the new class (Madison: the new class "can have a second" row) - its own order is
+        # check-b384-whatsnew10's; here the card is the current one, rows present and its fixes row still in it
+        check("J2. the card is Version 10's, the new class first and its fixes row in it", r["rows"][:1] == ["ifc10"] and "fixes10" in r["all"], r["all"])
         check("J3. no 'Mock, a real test' row (only the name changed)", "modes" not in r["all"], r["all"])
         check("J4. the card fits the screen with nothing to scroll, Got it still 44px+",
               r["fits"] and r["goH"] >= 44, (r["fits"], r["goH"]))
