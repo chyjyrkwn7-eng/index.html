@@ -37,7 +37,10 @@ import numpy as np
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:300], flush=True)
-CLEAN = "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner').forEach(e=>e.remove());"
+# (384 full check) and no unlock cards: the shared seed has 234 hundos and no seenUnlocks, so Home owes it Fireworks and Underwater
+# (383 the same) and their dim lands over the corners this measures
+CLEAN = ("try{ homeUnlocksOwed = () => false; }catch(e){} "
+         "document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.unlock-card,.rs-spot,.rs-fly').forEach(e=>e.remove());")
 def icon_shape(pg):
     r = pg.evaluate("""()=>{ const b=document.querySelector('.class-bubble'); const s=b && b.querySelector('svg'); if(!s) return null;
       const p=s.querySelector('path'); const c=getComputedStyle(p); const br=b.getBoundingClientRect(), sr=s.getBoundingClientRect();
