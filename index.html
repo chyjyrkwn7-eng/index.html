@@ -56401,9 +56401,11 @@ function characterLockMessage(id){
        "Ensure that singularity and umbra requirements can't be seen till
        you unlock the one before it." The hunt is the point of them, and
        naming the next flare before you have the last one gives it away. */
-    if(def.feat === "flare4" && isLockedCharacter("voidwalker")) return "Unlock Void to see how to unlock Umbra.";
-    if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock Umbra to see how to unlock Horizon.";
-    if(def.feat === "flare6" && isLockedCharacter("singularity")) return "Unlock Horizon to see how to unlock Genesis.";
+    /* (384) by each class's own names: in Fire Code the four are the Breacher, Recon, Whiteout and Flashbang, not Void's */
+    const nm = k => AVATAR_DISPLAY_NAME[k] || k;
+    if(def.feat === "flare4" && isLockedCharacter("voidwalker")) return "Unlock " + nm("voidwalker") + " to see how to unlock " + nm("umbra") + ".";
+    if(def.feat === "flare5" && isLockedCharacter("umbra")) return "Unlock " + nm("umbra") + " to see how to unlock " + nm("singularity") + ".";
+    if(def.feat === "flare6" && isLockedCharacter("singularity")) return "Unlock " + nm("singularity") + " to see how to unlock " + nm("genesis") + ".";
     const f = CHARACTER_FEATS[def.feat];
     if(!f) return "";
     /* The progress, not just the target. "0 of 10" and "7 of 10" are
@@ -138629,6 +138631,11 @@ const UNLOCK_NOTES = {
 };
 function unlockNoteFor(o){
   if(!o) return "";
+  /* (384) the secrets' notes name the one before by this class's name (Fire Code: "once you have the Breacher", not Void) */
+  if(o.kind === "character" && (o.id === "umbra" || o.id === "singularity")){
+    const prev = o.id === "umbra" ? "voidwalker" : "umbra";
+    return "A secret. Its challenge shows here once you have " + (AVATAR_DISPLAY_NAME[prev] || prev) + ".";
+  }
   return UNLOCK_NOTES[o.kind + ":" + o.id] || "";
 }
 function showUnlockDetail(o){
