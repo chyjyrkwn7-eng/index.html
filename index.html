@@ -37783,6 +37783,26 @@ html.is-browser{ --fade-paper: transparent; }
   /* a card holding only its one line (the rooms list's "Couldn't load") has no line above to keep a gap from */
   html[data-layout] .rooms-list > .friend-hint:only-child{ margin-top:0; }
   /* ==== end of build 384's centring ==== */
+  /* ==== THE ROUND BUTTONS, AS iOS DRAWS THEM (384 final check) ====
+     Madison, beside a screenshot of iMessage's round back and FaceTime buttons: "Those bubbles look amazing ... it looks so
+     clean and white and it's a great size. Ensure our bubbles look that great ... The icons within the bubbles need to look
+     that great." and of ours, "The arrow isn't centered". Measured off his two screenshots at one scale: the circles are the
+     same size (44pt); inside, iMessage's chevron is 41% of the circle tall (ours 27%), its stroke about 2.3pt (ours ~1.5),
+     pure white (ours #E7EDF1, the chat glyph at .92 too), and it sits ~3% of the circle LEFT of the middle - a "<" centred by
+     its box reads right-heavy, its two open ends carrying the weight (ours was box-centred). The camera glyph is 41% of the
+     circle tall; our speech bubble was 31%. So every round icon button's glyph is white and the size iOS draws it, and the
+     chevron is set where iOS sets it (check-b384-roundbtns measures all of it). The circles themselves are unchanged. */
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron,
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-chevron{
+    width:26px !important; height:26px !important; color:#fff; opacity:1; stroke-width:1.45;
+  }
+  html[data-layout] body #stage .settings-nav-back svg{ width:29px !important; height:29px !important; color:#fff; opacity:1; stroke-width:1.95; }
+  html[data-layout] body .chatdock-btn svg{ width:56% !important; height:56% !important; color:#fff; opacity:1 !important; }
+  /* the chevron 3% of the circle (1.3px at 44) left of the middle, as iOS sets it; each variant's own viewBox puts its stroke
+     somewhere else, so each has its own nudge (measured at 3x: the ink's middle at -1.32px) */
+  html[data-layout] body #stage .settings-nav-back svg{ translate:-.87px 0; }
+  html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ translate:-.99px 0; }
+  html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-chevron{ translate:-1.07px 0; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>

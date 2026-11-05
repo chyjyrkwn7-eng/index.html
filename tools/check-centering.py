@@ -544,13 +544,13 @@ def verdict(r):
     m = r.get("m")
     if not m or "dx" not in m: return []
     tol = tol_for(r); bad = []
-    if r["hIntent"] and not m["edgeX"] and abs(m["dx"]) > tol: bad.append("x")
+    if r["hIntent"] and not m["edgeX"] and abs(m["dx"] - r.get("opticalDx", 0)) > tol: bad.append("x")   # (384) a round back chevron's centre is 3% left
     if r["vIntent"] and not m["edgeY"] and abs(m["dy"]) > tol: bad.append("y")
     return bad
 
 def describe(r):
     m = r["m"]; parts = []
-    if "x" in r["bad"]: parts.append("%.2fpx %s" % (abs(m["dx"]), "right" if m["dx"] > 0 else "left"))
+    if "x" in r["bad"]: dx = m["dx"] - r.get("opticalDx", 0); parts.append("%.2fpx %s" % (abs(dx), "right" if dx > 0 else "left") + (" of iOS's optical centre" if r.get("opticalDx") else ""))
     if "y" in r["bad"]: parts.append("%.2fpx %s" % (abs(m["dy"]), "low" if m["dy"] > 0 else "high"))
     return ", ".join(parts)
 

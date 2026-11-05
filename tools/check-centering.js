@@ -262,6 +262,9 @@
       if (el.matches('.bottomtab.active')) { const sl = document.getElementById('bottomtabs-slider'); const sr = sl && sl.getBoundingClientRect();
         if (sr && sr.width > 10 && Math.abs((sr.left + sr.right) / 2 - (r.left + r.right) / 2) < 1.5) { S.l = sr.left; S.t = sr.top; S.r = sr.right; S.b = sr.bottom; S.kind = 'slider'; vIntent = false; } }
       if (!hIntent && !vIntent) { why.push(['intent', nameOf(el)]); continue; }
+      /* (384 final check) a ROUND back button's chevron is set 3% of the circle left of its middle, as iOS sets it - a "<"
+         centred by its box reads right-heavy, its two open ends carrying the weight - so that is the centre it is held to */
+      const opticalDx = (el.matches('.back-link, .settings-nav-back') && !runs.length && Math.abs(r.width - r.height) < 2 && r.width <= 64) ? -.03 * r.width : 0;
       /* not under anything (a header's glass, the tab bar, a sheet): every probe point lands on it or inside it */
       const probes = [[.5, .5], [.25, .3], [.75, .3], [.25, .7], [.75, .7]];
       let hidden = false;
@@ -310,7 +313,7 @@
            measured on their own (by their baseline) and the rest by its ink */
         mixed: runs.length > 0 && (icons.length + pics.length > 0 || pseudoIcon ||
           desc.some(d => !deco.has(d) && !shapeKids.has(d) && !within(deco, d) && !d.closest('svg') && paints(getComputedStyle(d)) && d.getBoundingClientRect().width > 0)),
-        hIntent, vIntent, layH: +layH.toFixed(2), layV: +layV.toFixed(2), cssH: css.h, cssV: css.v });
+        hIntent, vIntent, opticalDx, layH: +layH.toFixed(2), layV: +layV.toFixed(2), cssH: css.h, cssV: css.v });
     }
     pe.remove();
     return out;

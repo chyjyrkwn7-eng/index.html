@@ -35363,3 +35363,26 @@ titles as before, the academy's 24 byte-identical (8996cbb2).
 NOT DONE (asked as a decision): the academy's own set has the same kind of near-likeness on the looser measure (gate / octagon
 / hex, disc / shield, fan / wedge, keystone / shield). Madison said across classes is fine; within the academy it has been
 live a long time and was not raised.
+
+## 384 final check: the round buttons' icons, as iOS draws them
+
+Madison, beside his own iMessage screenshot (the round back and FaceTime buttons circled): "Those bubbles look amazing, the back
+arrow looks great. The FaceTime one looks good ... it looks so clean and white and it's a great size. Ensure our bubbles look that
+great and stuff. The icons within the bubbles need to look that great." And of ours (the unit screen's back): "The arrow isn't
+centered here by the way."
+MEASURED off his two screenshots (same 1186px width, so one scale): the circles are the same size (~117px there, 44pt). Inside:
+iMessage's chevron 24-25% x 41-43% of the circle (ours 14% x 27%), stroke ~1.5x ours, pure white (ours #E7EDF1; the chat glyph
+also at opacity .92), and its box 3% of the circle LEFT of the middle (ours box-centred, dx +0.3) - a "<" centred by its box
+reads right-heavy, the two open ends carrying the weight. The FaceTime camera is 41% of the circle tall; our speech bubble 31%.
+THE ROUND BUTTONS (three builders): .ios-nav-back (fillBackLabel's 16-unit chevron), .settings-nav-back (Settings pages and the
+unit screen's .setup-nav-back - a 24-unit chevron), the sign-up panels' round .back-link, and #chatdock-btn.
+FIX (CSS only, after the centring block): chevron svgs 26px (16-unit) / 29px (24-unit) with stroke-width 1.45 / 1.95 units - both
+draw an ~18px chevron with a 2.35px stroke, 42% of the circle; the chat svg 56% of its button (any size: phone 44, SE 38,
+tablet) - its bubble 41%; all three color:#fff, opacity 1. Each chevron variant's own translate puts its ink 1.17-1.33px left of
+the middle at 3x (3% of 44 = 1.32). The circles, their glass and their sizes are unchanged.
+GATES: tools/check-b384-roundbtns.py - five round buttons (unit screen, mode screen, a Settings page, sign-up class step, chat):
+white (computed, opacity, brightest ink >= 250), 44px, glyph 38-46% of the circle tall, chevron ink at -3% +-.5px across and on
+the middle up and down, the chat bubble on the middle. ALL PASS; --against the build before FAILS 14 of 16 (colour, size and the
+chevrons' placement on all five; the chat bubble was already centred). check-centering: a round back control (.back-link /
+.settings-nav-back, no words, square <= 64px) is held to opticalDx = -3% of its width, not to its box's middle - otherwise this
+gate would call iOS's own placement off-centre. check-b383-look, check-b384-home, -navmeet, -smooth ALL PASS on the change.
