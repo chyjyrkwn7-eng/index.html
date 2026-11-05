@@ -26,7 +26,8 @@ PDF) and pdf.js served from a local copy, as his iPhone 17 Pro Max draws it (440
      sliver of the gold on its own (under 0.25 em tall, 3 em long or more: a band that ran on past a table's rule). A table row's gold
      runs to its rules, so an edge of the gold that lies along a rule is the rule's and is not measured by (1e).
 (1g) NOTHING CUT: in the kit's own cut (before it is framed), no letter sliced by the top or the bottom edge (a table's rule running on
-     past the cut is a rule, not a letter).
+     past the cut is a rule, not a letter; a mark in the margin beside the print - a change bar's end, the book's deletion arrow - is
+     reported as 'margin', not counted here).
 (1h) ENLARGE ONE PICTURE: every citation whose cut has more than one piece, and every 20th other one, opened with Enlarge.
 (2)  no page errors.
 The book never goes into the repo (the repo is public): its path is given when the gate is run.
@@ -149,8 +150,17 @@ window.__gold = function(D, W, H, s){
     const colN = new Uint16Array(w), rowN = new Uint32Array(h);
     for(let y = c.y0; y <= c.y1; y++) for(let x = c.x0; x <= c.x1; x++) if(ink((y * W + x) * 4)) colN[x - c.x0]++;
     const rcol = (x) => colN[x - c.x0] >= 0.8 * h;
-    for(let y = c.y0; y <= c.y1; y++){ let m = 0; for(let x = c.x0; x <= c.x1; x++) if(!rcol(x) && ink((y * W + x) * 4)) m++; rowN[y - c.y0] = m; }
-    const prow = (y) => rowN[y - c.y0] >= 0.6 * w;
+    /* a rule row: a level run of ink across 30% of the shape or more (letters always leave gaps); a chapter title's rules too */
+    const runY = new Uint8Array(h);
+    /* letters are counted only where the gold is on that row (between its first and last pixel there): print beside a shape
+       that starts part-way along a line (a raised figure before it) is not under it */
+    for(let y = c.y0; y <= c.y1; y++){
+      let lo = -1, hi = -1; for(let x = c.x0; x <= c.x1; x++) if(lab[y * W + x] === c.id){ if(lo < 0) lo = x; hi = x; }
+      let m = 0, run = 0, best = 0;
+      if(lo >= 0) for(let x = lo; x <= hi; x++){ if(!rcol(x) && ink((y * W + x) * 4)){ m++; run++; if(run > best) best = run; } else run = 0; }
+      rowN[y - c.y0] = m; runY[y - c.y0] = best >= 0.3 * w ? 1 : 0;
+    }
+    const prow = (y) => runY[y - c.y0] === 1;
     /* the lines of print inside the shape: runs of rows with letters, a blank row or more between two lines */
     const lines = []; let cur = null;
     for(let y = c.y0; y <= c.y1; y++){
@@ -163,17 +173,30 @@ window.__gold = function(D, W, H, s){
       const mx = Math.max(...L.rows.map(r => r[1]));
       const dense = L.rows.filter(r => r[1] >= 0.45 * mx).map(r => r[0]);
       L.base = Math.max(...dense); L.xt = Math.min(...dense);
-      L.em = Math.max(4, (L.base - L.xt + 1) / 0.46);
-      L.tall = (L.base + 1 - L.a) / L.em >= 0.6;            /* a capital, a figure or an ascender in the line */
-      L.desc = (L.b - L.base) / L.em >= 0.1;                /* a descender in the line */
+      const xh = L.base - L.xt + 1, asc = L.base + 1 - L.a;
+      /* a capital, a figure or an ascender stands well above the x-height (0.66-0.69 em against 0.45-0.47): the em is read from
+         it - a line of figures has no x-height of its own - else from the x-height */
+      L.tall = asc >= 1.3 * xh;
+      L.em = Math.max(4, L.tall ? asc / 0.68 : xh / 0.455);
+      /* a real descender (g, p, q, y: 0.19-0.22 em) - a comma or a semicolon alone reaches 0.12-0.16 and is not one */
+      L.desc = (L.b - L.base) / L.em >= 0.17;
     }
     /* a table row's gold fills its row up to the rules: an edge that runs along a rule is the rule's, not measured */
-    const ruledAt = (y) => { if(y < 0 || y >= H) return false; let run = 0, best = 0; for(let x = c.x0; x <= c.x1; x++){ if(ink((y * W + x) * 4)){ run++; if(run > best) best = run; } else run = 0; } return best >= 0.5 * w; };
-    rec.ruled = [ruledAt(c.y0 - 1) || ruledAt(c.y0 - 2), ruledAt(c.y1 + 1) || ruledAt(c.y1 + 2)];
+    const faint = (i) => D[i] + D[i + 1] + D[i + 2] < 600;   /* a rule's anti-aliased edge row counts */
+    const ruledAt = (y) => { if(y < 0 || y >= H) return false; let run = 0, best = 0; for(let x = c.x0; x <= c.x1; x++){ if(faint((y * W + x) * 4)){ run++; if(run > best) best = run; } else run = 0; } return best >= Math.max(0.5 * w, 25 * s); };
+    rec.ruled = [ruledAt(c.y0 - 1) || ruledAt(c.y0 - 2) || ruledAt(c.y0 - 3), ruledAt(c.y1 + 1) || ruledAt(c.y1 + 2) || ruledAt(c.y1 + 3)];
     if(rec.ruled[0] || rec.ruled[1]){ rec.skip = 'a table row: its gold runs to the rule'; out.push(rec); continue; }
     const T = lines[0], B = lines[lines.length - 1];
+    /* the shape's type size: read off its lines that have both tall letters and an x-height (a short last line such as "kW."
+       has no x-height of its own to read) */
+    const ems = lines.filter(L => L.tall).map(L => L.em).sort((p, q) => p - q);
+    const emRef = ems.length ? ems[ems.length >> 1] : T.em;
+    if(!B.tall) B.em = emRef;
+    if(T.em < 6 * s || B.em < 6 * s){ rec.skip = 'no line of print read under an edge (under 6pt)'; out.push(rec); continue; }
+    /* a block over more lines than this part of it holds (a table row's cell whose words are on one of the row's lines) */
+    if((c.y1 - c.y0 + 1) - (B.b - T.a + 1) > 0.9 * T.em){ rec.skip = 'part of a row block: its words on one of the row\'s lines'; out.push(rec); continue; }
     const above = T.a - c.y0;
-    const inkBot = B.desc ? B.b + 1 : B.base + 1 + 0.205 * B.em;
+    const inkBot = B.desc ? B.b + 1 : B.base + 1 + 0.2 * B.em;
     const below = c.y1 + 1 - inkBot;
     rec.above = +above.toFixed(2); rec.below = +below.toFixed(2); rec.em = +T.em.toFixed(1); rec.viaFont = !B.desc; rec.lines = lines.length;
     if(!T.tall){ rec.skip = 'no tall letter in the top line'; out.push(rec); continue; }
@@ -186,7 +209,11 @@ window.__gold = function(D, W, H, s){
   const stripes = [];
   for(const a of big) for(const b of big){ if(a === b) continue;
     const ov = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), gap = b.y0 - a.y1 - 1;
-    if(ov > 4 * s && gap >= 1 && gap <= 0.3 * 10 * s) stripes.push([a.y1, b.y0, gap]); }
+    if(!(ov > 4 * s && gap >= 1 && gap <= 0.3 * 10 * s)) continue;
+    /* what is between them: a table's rule (ink across the overlap) separates two rows; anything else is a stripe of wash */
+    const xa = Math.max(a.x0, b.x0), xb = Math.min(a.x1, b.x1); let ruled = false;
+    for(let y = a.y1 + 1; y < b.y0 && !ruled; y++){ let m = 0; for(let x = xa; x <= xb; x++) if(ink((y * W + x) * 4)) m++; if(m >= 0.6 * (xb - xa + 1)) ruled = true; }
+    if(!ruled) stripes.push([a.y1, b.y0, gap]); }
   /* slivers: a long thin strip of the gold on its own (under 0.25 em tall, over 3 em long) - a band that ran past a table's rule */
   const slivers = comps.filter(c => c.n >= 20 && c.y1 - c.y0 + 1 <= 0.25 * 10 * s && c.x1 - c.x0 + 1 >= 3 * 10 * s).map(c => [c.x0, c.y0, c.x1, c.y1]);
   return { shapes: out, stripes, slivers, n: big.length };
@@ -196,8 +223,17 @@ window.__gold = function(D, W, H, s){
 window.__edges = function(D, W, H){
   const ink = (x, y) => { const i = (y * W + x) * 4; return D[i] + D[i + 1] + D[i + 2] < 300; };
   const res = {};
+  /* the print's own width: columns with ink in the middle half of the picture's rows, upright bars (a column inked all the way
+     down that middle) left out - ink at an edge beyond it, by more than 4px, is a mark in the margin, not a letter */
+  let tx0 = W, tx1 = -1;
+  { const a = Math.floor(H * 0.25), b = Math.ceil(H * 0.75);
+    for(let x = 0; x < W; x++){ let n = 0; for(let y = a; y < b; y++) if(ink(x, y)) n++; if(n && n < (b - a)){ if(x < tx0) tx0 = x; if(x > tx1) tx1 = x; } } }
+  const inPrint = (x0, x1) => x1 >= tx0 - 4 && x0 <= tx1 + 4;
   for(const [side, ys] of [['top', [0, 1]], ['bottom', [H - 1, H - 2]]]){
     let kind = null, x = 0;
+    /* a table's rule level with the edge (within 4 rows): the stubs of its upright rules below or above it are rule, not letters */
+    let ruleNear = false;
+    for(let k = 0; k < 5 && !ruleNear; k++){ const y = side === 'top' ? k : H - 1 - k; if(y < 0 || y >= H) break; let m = 0; for(let xx = 0; xx < W; xx++) if(ink(xx, y)) m++; if(m >= 0.3 * W) ruleNear = true; }
     while(x < W){
       if(!ys.some(y => y >= 0 && y < H && ink(x, y))){ x++; continue; }
       let e = x; while(e < W && ys.some(y => y >= 0 && y < H && ink(e, y))) e++;
@@ -208,8 +244,8 @@ window.__edges = function(D, W, H){
       for(let xx = x; xx < e; xx++){ let run = 0; for(let k = 0; k < Math.min(H, 26); k++){ const y = side === 'top' ? k : H - 1 - k; if(ink(xx, y)) run++; else break; } solid = Math.min(solid, run); }
       /* or a thin level line along the edge (a table's rule cut through): its columns empty 3 rows in */
       let deep = 0; for(let xx = x; xx < e; xx++){ const y = side === 'top' ? 4 : H - 5; if(y >= 0 && y < H && ink(xx, y)) deep++; }
-      const isRule = solid >= Math.min(26, H - 2) || w >= 0.3 * W || (w >= 12 && deep <= 0.3 * w);
-      kind = isRule ? (kind || 'rule') : 'text';
+      const isRule = solid >= Math.min(26, H - 2) || w >= 0.3 * W || (w >= 12 && deep <= 0.3 * w) || (ruleNear && w <= 5);
+      kind = isRule ? (kind || 'rule') : !inPrint(x, e - 1) ? (kind === 'text' ? 'text' : 'margin') : 'text';
       x = e;
     }
     res[side] = kind;
@@ -273,16 +309,22 @@ window.__one = async function(id, opts){
     await V.paintPages(doc, clip.pages, pg, { scale: 2.2, ...popts, clip });
     rec.page = []; const shots = [];
     for(const cv of pg.querySelectorAll('canvas')){
-      const p = __readCanvas(cv); if(!p) continue;
-      const t = __tones(p.D, p.W, p.H, 2), g = __gold(p.D, p.W, p.H, 2.2 * Math.min(devicePixelRatio || 1, 2));
-      rec.page.push({ W: p.W, H: p.H, tones: t.tones, darker: t.darker, gold: g.shapes, stripes: g.stripes, slivers: g.slivers });
+      /* the page is read where it is highlighted (a coarse pass finds that region; everything outside it is the page as printed) */
+      const W0 = cv.width, H0 = cv.height; let D0; try{ D0 = cv.getContext('2d').getImageData(0, 0, W0, H0).data; }catch(e){ continue; }
+      let bx0 = W0, bx1 = -1, by0 = H0, by1 = -1;
+      for(let y = 0; y < H0; y += 3) for(let x = 0; x < W0; x += 3){ const i = (y * W0 + x) * 4; if(D0[i] >= 245 && !(D0[i + 1] >= 248 && D0[i + 2] >= 235)){ if(x < bx0) bx0 = x; if(x > bx1) bx1 = x; if(y < by0) by0 = y; if(y > by1) by1 = y; } }
+      let p = { W: W0, H: H0, D: D0 };
+      if(bx1 >= bx0){
+        bx0 = Math.max(0, bx0 - 40); by0 = Math.max(0, by0 - 40); bx1 = Math.min(W0 - 1, bx1 + 40); by1 = Math.min(H0 - 1, by1 + 40);
+        p = { W: bx1 - bx0 + 1, H: by1 - by0 + 1, D: cv.getContext('2d').getImageData(bx0, by0, bx1 - bx0 + 1, by1 - by0 + 1).data };
+      } else p = { W: 4, H: 4, D: new Uint8ClampedArray(64).fill(255) };
+      const t = __tones(p.D, p.W, p.H, 1), g = __gold(p.D, p.W, p.H, 2.2 * Math.min(devicePixelRatio || 1, 2));
+      rec.page.push({ W: W0, H: H0, region: [bx0, by0, bx1, by1], tones: t.tones, darker: t.darker, gold: g.shapes, stripes: g.stripes, slivers: g.slivers });
       if(opts && opts.shots){
         /* the page as the viewer shows it, and a close crop of what is highlighted on it */
-        let x0 = p.W, x1 = -1, y0 = p.H, y1 = -1;
-        for(let y = 0; y < p.H; y += 2) for(let x = 0; x < p.W; x += 2){ const i = (y * p.W + x) * 4; if(p.D[i] >= 245 && (p.D[i + 1] < 248 || p.D[i + 2] < 230) && p.D[i + 2] < 200){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; } }
         const full = __jpeg(cv, 760);
         let crop = null;
-        if(x1 > x0){ const m = 70; const cx0 = Math.max(0, x0 - m), cy0 = Math.max(0, y0 - m), cw = Math.min(p.W, x1 + m) - cx0, ch = Math.min(p.H, y1 + m) - cy0; crop = __jpeg(cv, 1100, [cx0, cy0, cw, ch]); }
+        if(bx1 > bx0){ const m = 30; const cx0 = Math.max(0, bx0 - m), cy0 = Math.max(0, by0 - m), cw = Math.min(W0, bx1 + m) - cx0, ch = Math.min(H0, by1 + m) - cy0; crop = __jpeg(cv, 1100, [cx0, cy0, cw, ch]); }
         shots.push({ full, crop });
       }
       cv.width = 0;

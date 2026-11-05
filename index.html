@@ -110967,7 +110967,7 @@ function ifcReflowCounty(cv, seg, page, s, marks, V){
   /* the marker again, over whole marked words and the spaces between them - (384 one picture) the kit's own marker (V.fillMarker):
      on each row's ink (the tallest letters to the descenders, from the row's baseline) with the same room above and below, the
      rows of one passage meeting halfway, one shape with the same rounded corners as every other highlight */
-  const bands = [], INK = (V && V.MARK_INK) || { asc: 0.69, dsc: 0.205 };
+  const bands = [], INK = (V && V.MARK_INK && (V.MARK_INK.county || V.MARK_INK)) || { asc: 0.69, dsc: 0.19 };
   for(const r of rows){
     let run = null;
     const em = 11 * r.k * s, lp = Math.round(Math.max(P, 12.9 * r.k * 1.05) * s);

@@ -475,10 +475,10 @@ function rectOf(it) { return { x0: it.x, x1: it.x + it.w, y0: bottom(it), y1: to
 // (pdf.js, both sources): the book's Times 0.68-0.69 / 0.21, the county booklet's Calibri 0.69 / 0.18-0.19. The marker is laid
 // on that ink with the same room above and below (paint), not on the item's box, which reached 0.95 em up and 0.3 down: the gold
 // rode high on its words. y0..y1 stay the marker's band (the ink and an even pad) for anything that reads the rectangle.
-const ASC = 0.69, DSC = 0.205;
-export const MARK_INK = { asc: ASC, dsc: DSC };
-function inkMark(m, base, fs) {
-  m.i0 = base - DSC * fs; m.i1 = base + ASC * fs; m.fs = fs;
+const ASC = 0.69, DSC = 0.205, DSC_COUNTY = 0.19;
+export const MARK_INK = { asc: ASC, dsc: DSC, county: { asc: ASC, dsc: DSC_COUNTY } };
+function inkMark(m, base, fs, dsc) {
+  m.i0 = base - (dsc || DSC) * fs; m.i1 = base + ASC * fs; m.fs = fs;
   m.y0 = m.i0 - 0.12 * fs; m.y1 = m.i1 + 0.12 * fs;
   return m;
 }
@@ -628,7 +628,7 @@ function sheetOf(segs, pageOf) {
 // the pitch of the lines around a mark (its paragraph's): what the marker's room above and below is measured against
 function pitchAt(items, m) {
   if (!m.fs) return null;
-  const base = m.i0 + DSC * m.fs;
+  const base = m.i1 - ASC * m.fs;
   let best = null;
   for (const it of items) {
     if (it.x > m.x1 || it.x + it.w < m.x0) continue;
@@ -797,8 +797,20 @@ function findMarks(model, segs, find) {
       const last = bands[bands.length - 1];
       if (last && Math.abs((last.i0 + last.i1) / 2 - (r.i0 + r.i1) / 2) < 5 && r.x0 >= last.x0 && r.x0 - last.x1 <= 20) {
         last.x1 = Math.max(last.x1, r.x1); last.y0 = Math.min(last.y0, r.y0); last.y1 = Math.max(last.y1, r.y1); last.text += ' ' + text; last.cl = last.cl || cl; last.cr = last.cr || cr;
-        last.i0 = Math.min(last.i0, r.i0); last.i1 = Math.max(last.i1, r.i1); last.fs = Math.max(last.fs, r.fs);
-      } else bands.push({ ...r, text, cl, cr });
+        last.its.push(it);
+      } else bands.push({ ...r, text, cl, cr, its: [it] });
+    }
+    // a line's ink: its text's - a raised or lowered small figure ("1 1/4", "m 2") reaches only as far as its own figures, from its
+    // own baseline up, so it does not stretch the line's marker
+    for (const b of bands) {
+      const H = Math.max(...b.its.map(it => it.h));
+      let i0 = Infinity, i1 = -Infinity;
+      for (const it of b.its) {
+        const small = it.h < 0.8 * H;
+        i0 = Math.min(i0, small ? it.y : it.y - DSC * it.h); i1 = Math.max(i1, it.y + ASC * it.h);
+      }
+      b.i0 = i0; b.i1 = i1; b.fs = H; b.y0 = i0 - 0.12 * H; b.y1 = i1 + 0.12 * H;
+      delete b.its;
     }
     for (const b of bands) out.push({ page: model.p, ...b, kind: 'cite' });
    } catch (e) { /* no highlight for this phrase */ }
@@ -1455,7 +1467,8 @@ async function countyChars(doc, p, cache) {
   }
   const chars = [];                           // letters and digits only, with the x range each one covers on its line
   lines.forEach((ln, li) => {
-    ln.y0 = ln.y - 3; ln.y1 = ln.y + 9.5;
+    // (384 one picture) a heading set larger than the body (an Exhibit's title) has a taller box: it was cut through its capitals
+    ln.y0 = ln.y - Math.max(3, 0.3 * ln.fs); ln.y1 = ln.y + Math.max(9.5, 0.95 * ln.fs);
     for (const it of ln.items) {
       const ws = Array.from(it.s, c => TNR[c] || 500), tot = ws.reduce((a, b) => a + b, 0) || 1;
       let acc = 0, k = 0;
@@ -1643,7 +1656,7 @@ export async function countyClip(doc, ptr, opts = {}) {
       else {
         const ln = ch.pt.lines[ch.li], nb = [ch.pt.lines[ch.li - 1], ch.pt.lines[ch.li + 1]].filter(Boolean).map(o => Math.abs(o.y - ln.y)).filter(d => d >= 0.9 * ln.fs && d <= 2.2 * ln.fs);
         // (snap: placed from Times widths on a booklet set in Calibri - the painter moves its ends onto the words it covers)
-        byLine.set(key, inkMark({ page: ch.pt.p, x0: ch.x0, x1: ch.x1, kind, snap: true, lp:nb.length ? Math.min(...nb) : 1.25 * ln.fs }, ln.y, ln.fs));
+        byLine.set(key, inkMark({ page: ch.pt.p, x0: ch.x0, x1: ch.x1, kind, snap: true, lp:nb.length ? Math.min(...nb) : 1.25 * ln.fs }, ln.y, ln.fs, DSC_COUNTY));
       }
     }
     for (const m of byLine.values()) marks.push(m);
@@ -1738,12 +1751,55 @@ function roundedPoly(path, pts, r) {
 // cut between two sentences (no extra room there). Each line gets the same room above and below its ink - half the space between two
 // lines of its paragraph, 0.08-0.2 em - and 0.14 em past its first and last letters; lines that follow one another meet halfway
 // between them (no gap, no overlap); lines that touch and overlap sideways are ONE shape whose corners are all rounded alike.
+// The outline of a union of rectangles ({x0, x1, t, b}): its boundary loops, corners in order - each outer loop clockwise on the
+// screen and each hole the other way, so a nonzero fill leaves the holes open. For a group of marks that is not a simple stack of
+// lines (two marks on one line under one above): one outline, so every corner can be rounded alike and no seam shows where they meet.
+function unionLoops(rects) {
+  const xs = [...new Set(rects.flatMap(r => [r.x0, r.x1]))].sort((a, b) => a - b);
+  const ys = [...new Set(rects.flatMap(r => [r.t, r.b]))].sort((a, b) => a - b);
+  const nx = xs.length - 1, ny = ys.length - 1;
+  if (nx < 1 || ny < 1) return [];
+  const cov = new Uint8Array(nx * ny);
+  for (const r of rects) {
+    const i0 = xs.indexOf(r.x0), i1 = xs.indexOf(r.x1), j0 = ys.indexOf(r.t), j1 = ys.indexOf(r.b);
+    for (let j = j0; j < j1; j++) for (let i = i0; i < i1; i++) cov[j * nx + i] = 1;
+  }
+  const at = (i, j) => i >= 0 && j >= 0 && i < nx && j < ny && cov[j * nx + i] === 1;
+  const next = new Map(), key = (i, j) => i + ',' + j;
+  const add = (a, b) => { const k = key(a[0], a[1]); if (!next.has(k)) next.set(k, []); next.get(k).push(b); };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    if (!at(i, j)) continue;
+    if (!at(i, j - 1)) add([i, j], [i + 1, j]);
+    if (!at(i + 1, j)) add([i + 1, j], [i + 1, j + 1]);
+    if (!at(i, j + 1)) add([i + 1, j + 1], [i, j + 1]);
+    if (!at(i - 1, j)) add([i, j + 1], [i, j]);
+  }
+  const loops = [];
+  for (const [k0, list] of next) {
+    while (list.length) {
+      const start = k0.split(',').map(Number), loop = [start];
+      let cur = list.pop();
+      for (let guard = 0; guard < 100000; guard++) {
+        const kk = key(cur[0], cur[1]);
+        if (kk === k0) break;
+        loop.push(cur);
+        const nl = next.get(kk);
+        if (!nl || !nl.length) break;
+        cur = nl.pop();
+      }
+      if (loop.length >= 4) loops.push(loop.map(([i, j]) => [xs[i], ys[j]]));
+    }
+  }
+  return loops;
+}
+
 export function markerPath(bands) {
   if (!bands || !bands.length) return null;
   let N = bands.filter(b => b && b.x1 > b.x0 && b.b > b.t).map(b => {
     const em = b.em || 10, lp = b.lp || 1.15 * em;
     const pad = Math.min(0.2 * em, Math.max(0.08 * em, (lp - (b.b - b.t)) / 2)), px = 0.14 * em;
-    return { t: b.top != null ? b.top : b.t - pad, b: b.bot != null ? b.bot : b.b + pad, c: (b.t + b.b) / 2, em, x0: b.x0 - (b.cl ? 0 : px), x1: b.x1 + (b.cr ? 0 : px), ruled: b.top != null || b.bot != null };
+    return { t: b.top != null ? b.top : b.t - pad, b: b.bot != null ? b.bot : b.b + pad, c: (b.t + b.b) / 2, em, x0: b.x0 - (b.cl ? 0 : px), x1: b.x1 + (b.cr ? 0 : px),
+             it: b.t, ib: b.b, pad, rt: b.top != null, rb: b.bot != null, ruled: b.top != null || b.bot != null, ra: b.ruleAbove, rbl: b.ruleBelow };
   }).sort((u, v) => u.c - v.c || u.x0 - v.x0);
   if (!N.length) return null;
   const sameLine = (u, v) => Math.abs(u.c - v.c) < 0.33 * Math.min(u.em, v.em);
@@ -1754,6 +1810,9 @@ export function markerPath(bands) {
       const u = N[i], v = N[j];
       if (sameLine(u, v) && v.x0 <= u.x1 + 0.3 * u.em && u.x0 <= v.x1 + 0.3 * u.em) {
         u.x0 = Math.min(u.x0, v.x0); u.x1 = Math.max(u.x1, v.x1); u.t = Math.min(u.t, v.t); u.b = Math.max(u.b, v.b); u.em = Math.max(u.em, v.em);
+        u.it = Math.min(u.it, v.it); u.ib = Math.max(u.ib, v.ib); u.pad = Math.min(u.pad, v.pad); u.rt = u.rt || v.rt; u.rb = u.rb || v.rb; u.ruled = u.ruled || v.ruled;
+        if (v.ra != null) u.ra = u.ra == null ? v.ra : Math.max(u.ra, v.ra);
+        if (v.rbl != null) u.rbl = u.rbl == null ? v.rbl : Math.min(u.rbl, v.rbl);
         N.splice(j, 1); again = true;
       }
     }
@@ -1769,6 +1828,7 @@ export function markerPath(bands) {
     const c0 = Math.min(...next.map(v => v.c));
     for (const v of next.filter(w => sameLine(w, { c: c0, em: w.em }))) {
       if (v.t - u.b >= 0.6 * Math.min(u.em, v.em)) continue;
+      if ((u.rbl != null && u.rbl < v.it) || (v.ra != null && v.ra > u.ib)) continue;   // a rule between them: two rows, not one passage
       if (!u.ruled && !v.ruled) { const mid = (u.b + v.t) / 2; u.b = mid; v.t = mid; } else if (v.t > u.b) continue;
       below[i].push(N.indexOf(v)); parent[find(i)] = find(N.indexOf(v));
     }
@@ -1778,9 +1838,16 @@ export function markerPath(bands) {
   const path = new Path2D();
   for (const g of groups.values()) {
     g.sort((u, v) => u.c - v.c);
+    // one shape, one room: its top and bottom edges stand as far off its letters as each other (the tightest line's room - a
+    // passage of list items set wide apart would otherwise take more room under its last line than over its first)
+    const P = Math.min(...g.map(u => u.pad));
+    for (const u of g) {
+      if (!u.rt && !g.some(v => v !== u && Math.abs(v.b - u.t) < 0.5 && Math.min(u.x1, v.x1) - Math.max(u.x0, v.x0) > 0.5)) u.t = u.it - P;
+      if (!u.rb && !g.some(v => v !== u && Math.abs(v.t - u.b) < 0.5 && Math.min(u.x1, v.x1) - Math.max(u.x0, v.x0) > 0.5)) u.b = u.ib + P;
+    }
     const chain = g.every((u, k) => k === 0 || (!sameLine(u, g[k - 1]) && Math.abs(u.t - g[k - 1].b) < 0.5));
     const R = 0.2 * Math.min(...g.map(u => u.em));
-    if (!chain) { for (const u of g) roundedPoly(path, [[u.x0, u.t], [u.x1, u.t], [u.x1, u.b], [u.x0, u.b]], R); continue; }
+    if (!chain) { for (const loop of unionLoops(g)) roundedPoly(path, loop, R); continue; }
     // the ends of lines that are nearly level are made level (a justified column's lines end a hair apart): a clean edge, no notches
     for (const side of ['x0', 'x1']) for (let k = 1; k < g.length; k++) {
       if (Math.abs(g[k][side] - g[k - 1][side]) < 0.2 * g[k].em) {
@@ -1829,7 +1896,7 @@ function snapBand(ctx, b) {
 // count): inward up to 3.6pt (the cut's own lines stand 3.9pt or more inside it: a clean row is never in a letter), else outward up to EDGE_ROOM, so the mark is
 // either left out whole or taken in whole. D: the piece's pixels; r: its first row shown (dir 1) or one past its last (dir -1).
 const EDGE_ROOM = 9;
-function settleEdge(D, W, H, r, dir, s) {
+function settleEdge(D, W, H, r, dir, s, inwardOnly) {
   const ink = (x, y) => { const i = (y * W + x) * 4; return D[i] + D[i + 1] + D[i + 2] < 600; };
   const edge = dir > 0 ? r : r - 1;
   if (edge < 0 || edge >= H) return r;
@@ -1838,6 +1905,7 @@ function settleEdge(D, W, H, r, dir, s) {
   const clean = (y) => { for (let x = 0; x < W; x++) if (!rule[x] && ink(x, y)) return false; return true; };
   if (clean(edge)) return r;
   for (let k = 1; k <= Math.round(3.6 * s); k++) { const y = edge + dir * k; if (y < 0 || y >= H) break; if (clean(y)) return dir > 0 ? y : y + 1; }
+  if (inwardOnly) return r;
   for (let k = 1; k <= Math.round((EDGE_ROOM - 0.2) * s); k++) { const y = edge - dir * k; if (y < 0 || y >= H) break; if (clean(y)) return dir > 0 ? y : y + 1; }
   return r;
 }
@@ -1845,16 +1913,59 @@ function settleEdge(D, W, H, r, dir, s) {
 // A TABLE ROW'S GOLD FILLS ITS ROW. A row is ruled above and below; the marker's even room around the words reached a hair past a
 // rule (a gold sliver under the line, in the next row's cell) or stopped a hair short of it. A row's band (b.row) takes its edge from
 // the rule where there is one within 0.45 em of its letters - just inside it - and keeps its even room where there is none.
-function ruleBand(ctx, b) {
+function ruleBand(ctx, b, clampOnly) {
   const W = ctx.canvas.width, H = ctx.canvas.height, em = b.em;
   const X0 = Math.max(0, Math.floor(b.x0)), X1 = Math.min(W, Math.ceil(b.x1)), w = X1 - X0;
   const Y0 = Math.max(0, Math.floor(b.t - 0.45 * em)), Y1 = Math.min(H, Math.ceil(b.b + 0.45 * em));
   if (w < 8 || Y1 - Y0 < 4) return;
   let D; try { D = ctx.getImageData(X0, Y0, w, Y1 - Y0).data; } catch (e) { return; }
   // a rule: a level run of ink (its faint anti-aliased edge row counts) across half the band or more
-  const ruled = (y) => { let run = 0, best = 0; for (let x = 0; x < w; x++) { const i = ((y - Y0) * w + x) * 4; if (D[i] + D[i + 1] + D[i + 2] < 600) { run++; if (run > best) best = run; } else run = 0; } return best >= 0.5 * w; };
-  for (let y = Math.floor(b.t) - 1; y >= Y0; y--) if (ruled(y)) { b.top = y + 1; break; }
-  for (let y = Math.ceil(b.b) + 1; y < Y1; y++) if (ruled(y)) { b.bot = y; break; }
+  const need = Math.max(0.5 * w, 2.5 * em);         // (and long in its own right: a dash or a letter's bar beside a short word is not a rule)
+  const ruled = (y) => { let run = 0, best = 0; for (let x = 0; x < w; x++) { const i = ((y - Y0) * w + x) * 4; if (D[i] + D[i + 1] + D[i + 2] < 600) { run++; if (run > best) best = run; } else run = 0; } return best >= need; };
+  // (a tight table's rule can lie inside its descenders' room: the search down starts just under the baseline)
+  const base = b.b - (DSC / (ASC + DSC)) * Math.min(b.b - b.t, 0.9 * em);
+  // an ordinary band (clampOnly) keeps its even room and only stops at a rule that lies inside that room
+  const pad = Math.min(0.2 * em, Math.max(0.08 * em, ((b.lp || 1.15 * em) - (b.b - b.t)) / 2));
+  // (the rules found are kept, so the marker never joins two lines across a rule)
+  for (let y = Math.floor(b.t) - 1; y >= Y0; y--) if (ruled(y)) { b.ruleAbove = y; if (!clampOnly || y + 1 > b.t - pad) b.top = y + 1; break; }
+  for (let y = Math.ceil(base) + 1; y < Y1; y++) if (ruled(y)) { b.ruleBelow = y; if (!clampOnly || y < b.b + pad) b.bot = y; break; }
+}
+
+// What is left on an outer edge that no clean row could clear - a fragment of the line above or below, or of a mark in the margin
+// beside it (the book's deletion arrow sits half in the next line's room) - is not the citation's: the cut stands clear of the
+// citation's own letters, so nothing touching the edge within 3.6pt of it belongs to them. Such a fragment (ink joined to the edge
+// that ends inside that strip) is painted out with the paper; anything that runs on further in (a change bar, a table's rule, a
+// letter that reaches the edge) is left as printed, and an upright bar running through the strip is kept whole.
+function clearEdge(ctx, W, H, r, dir, s) {
+  const e = dir > 0 ? r : r - 1, Z = Math.round(3.6 * s);
+  const y0 = dir > 0 ? e : Math.max(0, e - Z), y1 = dir > 0 ? Math.min(H - 1, e + Z) : e, h = y1 - y0 + 1;
+  if (e < 0 || e >= H || h < 2) return;
+  let img; try { img = ctx.getImageData(0, y0, W, h); } catch (err) { return; }
+  const D0 = img.data, ink0 = (x, y) => { const i = (y * W + x) * 4; return D0[i] + D0[i + 1] + D0[i + 2] < 600; };
+  // an upright bar or rule running through the strip (a change bar beside the lines) is not part of any fragment beside it
+  const bar = new Uint8Array(W);
+  for (let x = 0; x < W; x++) { let all = true; for (let y = 0; y < h && all; y++) if (!ink0(x, y)) all = false; bar[x] = all ? 1 : 0; }
+  const D = D0, ink = (x, y) => !bar[x] && ink0(x, y);
+  const er = e - y0, far = dir > 0 ? h - 1 : 0, seen = new Uint8Array(W * h);
+  let changed = false;
+  for (let x = 0; x < W; x++) {
+    if (seen[er * W + x] || !ink(x, er)) continue;
+    const st = [er * W + x], blob = []; seen[er * W + x] = 1; let deep = false;
+    while (st.length) {
+      const q = st.pop(), qx = q % W, qy = (q - qx) / W; blob.push(q);
+      if (qy === far) deep = true;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = qx + dx, ny = qy + dy;
+        if (nx < 0 || nx >= W || ny < 0 || ny >= h) continue;
+        const k = ny * W + nx; if (seen[k] || !ink(nx, ny)) continue;
+        seen[k] = 1; st.push(k);
+      }
+    }
+    if (deep) continue;
+    for (const q of blob) { const i = q * 4; D[i] = 255; D[i + 1] = 255; D[i + 2] = 255; }
+    changed = true;
+  }
+  if (changed) ctx.putImageData(img, 0, y0);
 }
 
 export async function paint(doc, clip, container, opts = {}) {
@@ -1906,8 +2017,11 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
     if (k === 0 || k === last) {
       let D = null; try { D = ctx.getImageData(0, 0, cv.width, cv.height).data; } catch (e) { D = null; }
       if (D) {
-        if (k === 0) r0 = settleEdge(D, cv.width, cv.height, r0, 1, s);
-        if (k === last) r1 = settleEdge(D, cv.width, cv.height, r1, -1, s);
+        // (a picture with something hidden - a definition's term, the Hint's number - is never taken further out than its cut)
+        if (k === 0) r0 = settleEdge(D, cv.width, cv.height, r0, 1, s, !!opts.blur);
+        if (k === last) r1 = settleEdge(D, cv.width, cv.height, r1, -1, s, !!opts.blur);
+        if (k === 0) clearEdge(ctx, cv.width, cv.height, r0, 1, s);
+        if (k === last) clearEdge(ctx, cv.width, cv.height, r1, -1, s);
       }
     }
     y += Math.round((pc.gap || 0) * s);
@@ -1942,7 +2056,7 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
     const X = (v) => (v - p.seg.x0) * s + p.x, Y = (v) => (p.ry - v) * s - p.r0 + p.y;
     bands.push({ x0: X(m.x0), x1: X(m.x1), t: Y(m.i1 != null ? m.i1 : m.y1), b: Y(m.i0 != null ? m.i0 : m.y0), em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow });
   }
-  for (const b of bands) { if (b.snap) snapBand(ctx, b); if (b.row) ruleBand(ctx, b); }
+  for (const b of bands) { if (b.snap) snapBand(ctx, b); ruleBand(ctx, b, !b.row); }
   fillMarker(ctx, bands);
   return canvas;
 }
@@ -2071,7 +2185,7 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
     } else r = box(sg.x0, sg.y0, sg.x1, sg.y1);
     rects.push({ ...r, em: fs * s });
   }
-  for (const b of bands) { if (b.snap && upright) snapBand(ctx, b); if (b.row && upright) ruleBand(ctx, b); b.done = true; }
+  for (const b of bands) { if (b.snap && upright) snapBand(ctx, b); if (upright) ruleBand(ctx, b, !b.row); }
   // the wash is under every gold mark: a mark is part of the block it sits in (or a block of its own), the marker's own extent
   for (const b of bands) {
     const pad = Math.min(0.2 * b.em, Math.max(0.08 * b.em, ((b.lp || 1.15 * b.em) - (b.b - b.t)) / 2)), px = 0.14 * b.em;
