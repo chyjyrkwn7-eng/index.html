@@ -37007,14 +37007,22 @@ html.is-browser{ --fade-paper: transparent; }
      2nd/3rd gen, 193 on a 13 mini; 383 fitted, its two cards side by side). It is a slim full-width row now: its mark, its
      name and the chip, on the sign-up step at every width and on the Classes screen on a phone (three across on a tablet
      there, so it already sits in line). */
-  html[data-theme][data-layout] body #stage .classselect-panel > .classselect-cards{ grid-auto-rows:auto; }
-  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{
-    grid-column:1 / -1; min-height:0 !important; flex-direction:row; align-items:center; gap:.8rem; padding:.6rem .95rem !important; }
-  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem{ width:40px; height:40px; }
-  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem svg{ width:22px; height:22px; }
-  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon :is(.cc-kicker, .cc-desc){ display:none; }
-  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-title{ margin:0; font-size:1rem; white-space:nowrap; }
-  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-foot{ width:auto; margin:0 0 0 auto; }
+  @media (max-width:63.99rem){
+    html[data-theme][data-layout] body #stage .classselect-panel > .classselect-cards{ grid-auto-rows:auto; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon{
+      grid-column:1 / -1; min-height:0 !important; flex-direction:row; align-items:center; gap:.8rem; padding:.6rem .95rem !important; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem{ width:40px; height:40px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-emblem svg{ width:22px; height:22px; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon :is(.cc-kicker, .cc-desc){ display:none; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-title{ margin:0; font-size:1rem; white-space:nowrap; }
+    html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-soon .cc-foot{ width:auto; margin:0 0 0 auto; }
+  }
+  /* from a laptop's width there is room for the three side by side, as the Classes screen has them from a tablet's: "More
+     classes" is the third card in the row, which takes its row off the step's height (a 1366x638 window: Continue 87px
+     below the fold -> in view with the pick's scroll; 1440x820 and 1536x864: in view) */
+  @media (min-width:64rem){
+    html[data-layout] body #stage > .classselect-panel > .classselect-cards{ grid-template-columns:repeat(3, minmax(0, 16rem)) !important; }
+  }
   /* a gap under the small print that Continue's auto margin takes back wherever there is room: where the step overflows
      (an SE, a phone in Safari) Continue sat against the note's last line */
   html[data-layout] body #stage > .classselect-panel > .affiliation-note.legal-classes{ margin-bottom:.9rem !important; }

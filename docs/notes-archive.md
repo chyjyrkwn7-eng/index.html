@@ -34601,3 +34601,16 @@ re-run at the end with the machine quiet.
   (a whole row measured as a control). The first full run also had the laptop's sign-up Continue ~1.3px low and the class
   chips 0.68px low; re-measured on 49afc2f they are centred. Left, per the tool's own note that Chromium draws Inter where
   the devices draw SF and a residue near a pixel can differ there; worth a look on a real laptop and iPad.
+- ...AND ON A LAPTOP, THREE ACROSS: from 64rem wide the class step is three 16rem columns with "More classes" as the third
+  card in the row (the Classes screen's arrangement from a tablet), which takes the row off the step's height - Continue in
+  view with nothing scrolled at 1440x820, 1536x864 and 1920x1080 (it was 87px below the fold on a 1366x638 window, 42px on
+  1440x820 with the slim row); a 1280x670 window is 2px short and a 1366x638 one 18px, where the pick brings it up. The slim
+  row's rules are under (max-width:63.99rem) now. check-b384-classstep covers 1440x820 and 1366x638: 36 failures on 32d646c.
+- OLD GATES MOVED TO 384'S DECISIONS (each re-read against what 384 was asked to do): check-b327z12 M (the dark chat sheet is
+  its .95 fill always - "see through and then you see it change to blurry") and R (answered, the daily button shows the time
+  left, "9h"; measured at the phone's real scale, as the centring tool does - an emulated ratio rounds a line of words to a
+  whole CSS pixel and read 1.83px high, 0.5 at 3x); check-b329 (both classes at sign-up; the new-class banner goes to an
+  account on the invite list, in the academy only - the shared seed is in both); check-b327z15 AA (an upright tablet's
+  Welcome planet may be 1.6rem narrower than Home's, the room its taller buttons took). check-b380's Home loop "off" was the
+  loops arriving while it measured (3 -> 5); sampled at eight moments, every loop matches. check-b327z15 N (a loop 96-184ms
+  from its place under load, 80ms allowed) and the rest of the old gates' failures are the same as on 383.

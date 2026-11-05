@@ -44,7 +44,10 @@ with sync_playwright() as pw:
         chk("nothing is new today: no pulse, no banner", page.evaluate("()=>!document.querySelector('.class-bubble-wrap.has-new') && !document.getElementById('newclass-banner')"))
         ctx.close()
         ctx, page = page_for(br, "15", "localStorage.setItem('class26e.classseen','[\"academy\"]');")
-        page.evaluate("()=>{ sessionStorage.clear(); showHome(); }"); page.wait_for_timeout(3800)
+        # REVISED IN 384: the new-class banner (and its pulse) goes only to accounts on Fire Code's invite list (newClassInvited:
+        # a hash of the public id on NEW_CLASS_INVITES), not yet enrolled in it and not shown on this device - so the fixture
+        # stands in for an invited account, in the academy only (the shared seed is in both classes)
+        page.evaluate("()=>{ try{ localStorage.removeItem('class26e.newclass.ifc'); }catch(e){} newClassInvited = () => Promise.resolve(true); store.classes = ['academy']; if(store.publicId === window.NOVA_CLASS_OWNER) store.publicId = 'b329-test-pid'; try{ localStorage.setItem('class26e.a2hs','1'); homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly,#tour-overlay,#tour-tooltip').forEach(n => n.remove()); sessionStorage.clear(); showHome(); }"); page.wait_for_timeout(6500)   # (384) the banner waits 2.4s and then two calm looks 0.7s apart
         r = page.evaluate("""()=>{ const b=document.querySelector('.class-bubble'); const cs=getComputedStyle(b,'::before');
           return {has:!!document.querySelector('.class-bubble-wrap.has-new'), ring:cs.animationName, banner:!!document.querySelector('#newclass-banner'),
                   txt:(document.querySelector('#newclass-banner')||{}).innerText||''} }""")
@@ -119,7 +122,8 @@ with sync_playwright() as pw:
         page.click(".signupcheck-panel .signupcheck-go"); page.wait_for_timeout(800)
         chk("sign-up: the check goes straight to the class screen (no What This Actually Is)", page.evaluate("()=>!!document.querySelector('.classselect-panel') && !document.querySelector('.welcomeintro-panel')"))
         r = page.evaluate("()=>({cards:document.querySelectorAll('.classselect-panel .class-card').length, soon:!!document.querySelector('.classselect-panel .class-card.is-soon'), ifc:!!document.querySelector('.classselect-panel .is-ifc')})")
-        chk("class screen: the Classes screen's cards - Police Academy and 'More classes', no Fire Code", r["cards"] == 2 and r["soon"] and not r["ifc"], r)
+        # REVISED IN 384: both classes are offered at sign-up ("Pick one or both"), with "More classes" after them
+        chk("class screen: the sign-up step's cards - Police Academy, Fire Code and 'More classes'", r["cards"] == 3 and r["soon"] and r["ifc"], r)
         page.click(".classselect-panel .class-card.is-academy"); page.wait_for_timeout(300)
         chk("picking one marks it Selected and shows Continue", page.evaluate("()=>document.querySelector('.classselect-panel .cc-status.is-enrolled')?.textContent==='Selected' && !document.querySelector('.classselect-panel .next.playbtn').hidden"))
         page.click(".classselect-panel .next.playbtn"); page.wait_for_timeout(300); page.click("#classenroll-confirm .classenroll-yes")   # (384) the enroll confirm

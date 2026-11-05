@@ -42,7 +42,8 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=rc["CHROME"])
     errs_all = []
     # the sign-up step: fits (no scroll to Continue) on these, and is brought into view on the two short ones
-    for w, h, fits in ((375, 667, True), (375, 812, True), (393, 742, True), (440, 956, True), (834, 1194, True), (375, 548, False), (320, 568, False)):
+    for w, h, fits in ((375, 667, True), (375, 812, True), (393, 742, True), (440, 956, True), (834, 1194, True), (375, 548, False), (320, 568, False),
+                       (1440, 820, True), (1366, 638, False)):
         ctx, pg, errs = page(br, w, h, False)
         pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); document.querySelectorAll('.gs-page').forEach(n=>n.remove()); showClassSelection(); }")
         pg.wait_for_timeout(1500)
@@ -50,15 +51,20 @@ with sync_playwright() as pw:
         m = pg.evaluate(MEASURE); errs_all += errs; ctx.close()
         tag = "%dx%d sign-up" % (w, h)
         s, g = m["soon"], m["grid"]
-        chk("%s: 'More classes' is a slim row across the cards (%dpx tall, %d of %dpx wide)" % (tag, s["h"], s["w"], g["w"]),
-            s and s["h"] <= 80 and s["w"] >= g["w"] - 2, (s, g))
-        chk("%s: its name is one line and clear of its chip (%s lines, text ends %s, chip starts %s)" % (tag, m["titleLines"], m["textRight"] and round(m["textRight"]), m["chip"] and round(m["chip"]["l"])),
-            m["titleLines"] == 1 and m["textRight"] is not None and m["textRight"] <= m["chip"]["l"] - 4, m)
+        if w >= 1024:
+            # a laptop's width: three across, "More classes" a card in the classes' row (as the Classes screen from a tablet's)
+            chk("%s: three across, 'More classes' in line with the classes" % tag,
+                abs(s["t"] - m["cards"][0]["t"]) < 2 and abs(s["h"] - m["cards"][0]["h"]) < 2, (s, m["cards"]))
+        else:
+            chk("%s: 'More classes' is a slim row across the cards (%dpx tall, %d of %dpx wide)" % (tag, s["h"], s["w"], g["w"]),
+                s and s["h"] <= 80 and s["w"] >= g["w"] - 2, (s, g))
+            chk("%s: its name is one line and clear of its chip (%s lines, text ends %s, chip starts %s)" % (tag, m["titleLines"], m["textRight"] and round(m["textRight"]), m["chip"] and round(m["chip"]["l"])),
+                m["titleLines"] == 1 and m["textRight"] is not None and m["textRight"] <= m["chip"]["l"] - 4, m)
         c, n = m["cont"], m["note"]
         chk("%s: after a pick Continue is on the screen (bottom %d of %d)" % (tag, c["b"], m["vh"]), c and c["h"] > 0 and c["b"] <= m["vh"] + .5, c)
         chk("%s: ... and clear of the small print above it (%dpx)" % (tag, c["t"] - n["b"]), n and c["t"] - n["b"] >= 8, (n, c))
     # it fits without the pick's scroll: measured before any tap
-    for w, h in ((375, 667), (375, 812), (393, 742)):
+    for w, h in ((375, 667), (375, 812), (393, 742), (1440, 820), (1536, 864)):
         ctx, pg, errs = page(br, w, h, False)
         pg.evaluate("()=>{ document.getElementById('splashscreen')?.remove(); document.querySelectorAll('.gs-page').forEach(n=>n.remove()); showClassSelection(); }")
         pg.wait_for_timeout(1500)

@@ -739,7 +739,11 @@ def section_aa(br):
         pg.evaluate("() => { showHome(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }"); pg.wait_for_timeout(1500)
         home = pg.evaluate(M)
         check("AA. %s: Home's rings are Welcome's (%s vs %s)" % (label, home and home["radii"], wel and wel["radii"]),
-              bool(home and wel) and home["radii"][:2] == wel["radii"][:2] and abs(home["w"] - wel["w"]) <= 4, {"home": home, "welcome": wel})
+              # REVISED IN 384: on an upright tablet Welcome's two buttons are 24px taller ("The sign in and sign up buttons look
+              # small too"), and the room comes out of its planet (calc(100dvh - 32.6rem), 1.6rem less than Home's), so there it
+              # may be up to 1.6rem (26px) narrower than Home's - the same rings, the same planet, a little smaller. A phone: 4px.
+              bool(home and wel) and home["radii"][:2] == wel["radii"][:2]
+              and -4 <= home["w"] - wel["w"] <= (4 if w < 640 else 26), {"home": home, "welcome": wel})
         check("AA. %s: no halo behind Home's planet, as on Welcome" % label, bool(home) and not home["halo"] and not wel["halo"], home)
         ctx.close()
 

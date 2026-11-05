@@ -86,7 +86,7 @@ def chat_open(br):
     pg.wait_for_timeout(2500)
     pg.evaluate(CLEAN)
     pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel'); window.__tr = [];
-      const L = () => { const cs = getComputedStyle(p); __tr.push({ top: p.getBoundingClientRect().top, bf: cs.backdropFilter, wbf: cs.webkitBackdropFilter || '' });
+      const L = () => { const cs = getComputedStyle(p); __tr.push({ top: p.getBoundingClientRect().top, bf: cs.backdropFilter, wbf: cs.webkitBackdropFilter || '', bg: cs.backgroundColor });
         if(__tr.length < 90) requestAnimationFrame(L); };
       requestAnimationFrame(L); openChatDock(); }""")
     time.sleep(1.6)
@@ -96,7 +96,14 @@ def chat_open(br):
     blurred = [f for f in moving if f["bf"] not in ("none", "") or f["wbf"] not in ("none", "")]
     check("%s: M. no backdrop blur on any frame of the slide up (%d of %d moving frames blurred)" % (label, len(blurred), len(moving)),
           len(moving) >= 3 and not blurred, (len(moving), blurred[:2]))
-    check("%s: M. at rest it is glass again (%s)" % (label, tr[-1]["bf"]), tr[-1]["bf"] not in ("none", ""), tr[-1])
+    # REVISED IN 384: "the background behind the chat is see through and then you see it change to blurry" - an iPhone builds
+    # a backdrop blur a few frames after it is asked for, so the dark sheet is its near-opaque fill always now, with no blur
+    # to arrive late (the light theme keeps its own). At rest: that fill, not see-through.
+    import re as _re
+    _a = _re.findall(r"[\d.]+", tr[-1].get("bg", ""))
+    alpha = float(_a[3]) if len(_a) >= 4 else (1.0 if len(_a) == 3 else 0.0)
+    check("%s: M. at rest it is the sheet's own fill, not see-through (%s, %s)" % (label, tr[-1].get("bg"), tr[-1]["bf"]),
+          alpha >= .9 and tr[-1]["bf"] in ("none", ""), tr[-1])
     ctx.close()
 
 
@@ -238,6 +245,9 @@ def daily_mark(br):
     import io
     from PIL import Image
     label, w, h, dpr = z5b.PHONE
+    # (384) at the phone's own scale: with only an emulated pixel ratio Chromium rounds where it draws a line of words to a
+    # whole CSS pixel (check-centering's note), which put the answered button's "9h" 1.83px high here and 0.5 at 3x
+    br = br.browser_type.launch(executable_path=z5b.cb.CHROME, args=["--force-device-scale-factor=%d" % dpr])
     ctx, pg = z5b.boot(br, w, h, dpr)
     pg.wait_for_timeout(2500)
     for done in (False, True):
@@ -247,10 +257,13 @@ def daily_mark(br):
         box = pg.evaluate("""() => { const f = document.querySelector('.daily-question-fab');
           f.style.cssText += ';background:#000 !important;box-shadow:none !important;border-color:transparent !important;animation:none !important';
           f.classList.remove('is-ready', 'is-fresh'); f.querySelectorAll('.dq-ring').forEach(r => r.style.opacity = 0);
-          const g = f.querySelector('.dq-glyph'); g.style.opacity = 1; g.style.color = '#fff';
+          /* (384) answered, the button shows the time left (.dq-left) where the "?" was: that is what is measured then */
+          const L = f.querySelector('.dq-left'), shown = L && getComputedStyle(L).display !== 'none' && L.textContent.trim();
+          const g = f.querySelector('.dq-glyph');
+          if(shown){ L.style.color = '#fff'; if(g) g.style.opacity = 0; } else { g.style.opacity = 1; g.style.color = '#fff'; }
           const r = f.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height,
             tick: [...f.querySelectorAll('.dq-mark')].some(m => !m.classList.contains('dq-mark-q') && getComputedStyle(m).display !== 'none'),
-            q: !!f.querySelector('.dq-mark-q') && getComputedStyle(f.querySelector('.dq-mark-q')).display !== 'none' }; }""")
+            q: !!f.querySelector('.dq-mark-q') && getComputedStyle(f.querySelector('.dq-mark-q')).display !== 'none', left: shown ? L.textContent.trim() : '' }; }""")
         pg.wait_for_timeout(250)
         im = Image.open(io.BytesIO(pg.screenshot(clip={"x": box["x"], "y": box["y"], "width": box["w"], "height": box["h"]}))).convert("L")
         W, H = im.size
@@ -261,9 +274,12 @@ def daily_mark(br):
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
         k = W / box["w"]
         dx = ((min(xs) + max(xs)) / 2 - W / 2) / k; dy = ((min(ys) + max(ys)) / 2 - H / 2) / k
-        check("%s: R. %s, the \"?\" is shown, no tick, its ink centred (%.2f, %.2f px off)" % (label, "answered" if done else "waiting", dx, dy),
-              abs(dx) <= .5 and abs(dy) <= .5 and box["q"] and not box["tick"], (dx, dy, box))
+        # REVISED IN 384: answered, the button counts down to the next question (the time left, "9h") instead of the "?"
+        what = ("the time left (%s)" % box["left"]) if done else 'the "?"'
+        check("%s: R. %s, %s is shown, no tick, its ink centred (%.2f, %.2f px off)" % (label, "answered" if done else "waiting", what, dx, dy),
+              abs(dx) <= .5 and abs(dy) <= .5 and (bool(box["left"]) if done else box["q"]) and not box["tick"], (dx, dy, box))
     ctx.close()
+    br.close()
 
 
 def main():
