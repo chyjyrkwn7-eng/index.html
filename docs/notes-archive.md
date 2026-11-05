@@ -35170,3 +35170,9 @@ Profile -> Home trips - and fails the same on f9694e7 (--only 2: 1 and 2), so it
 perf pass, which had 0); not touched here (the status-bar colour is not this pass's area) - to look at with the machine quiet.
 Not run at the lead's call (wrap-up): sweep-layout --only laptop/MacBook/Dell (nothing here changes layout), check-b382-board and
 check-b384-board2 (the board's look and coming-back paths are untouched; check-b384-desktop (4) covers the board's load).
+- FIREWORKS ON A BIG MONITOR (from the desktop pass: the one cost found anywhere that grows with the screen). Its canvas was
+  capped at 1.5x per CSS pixel but not in total, so a window-wide sky was ~4.6M canvas pixels at 3840x2160 (and ~11M a monitor
+  wider still), cleared, drawn and committed every frame. A ceiling of 2,000,000 canvas pixels (FW_MAX_PX; the scale drops, never
+  below .5): measured, a 17 Pro Max's sky stays 660x789 (0.52M) and an iPad Pro 11's 1251x986 (1.23M) - unchanged - while
+  1920x1080@2 goes 2.57M -> 2.00M and 3840x2160 4.56M -> 2.00M. Soft glow and trails read the same at a little under 1x.
+  Underwater's full-window sea is a transform-animated layer (rastered once, then moved) and was left.

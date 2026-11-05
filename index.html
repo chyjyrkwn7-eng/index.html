@@ -117146,12 +117146,19 @@ function hfxFwSky(parent, c, S, W, H, end, floor){
      the same seeded show at the same moments differs by 0.05-0.18 of a
      level on average, 0.01% of pixels by more than 30. Do not raise it
      without measuring again. */
-  const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+  let dpr = Math.min(1.5, window.devicePixelRatio || 1);
   /* ONLY AS TALL AS THE SKY (build 317). Nothing is drawn below `floor`
      (the box's top edge) - it used to be erased there every frame - so
      the canvas stops at it: on a phone that is a third fewer pixels to
      clear, composite and send each frame. */
   if(floor != null && floor > 0 && floor < H) H = Math.ceil(floor);
+  /* (384 desktop pass) AND NO BIGGER THAN A PHONE'S SKY TIMES THREE IN ALL. The 1.5x cap is per CSS pixel, and a window-wide sky
+     on a 4K monitor was ~5760x2250 - eleven million pixels cleared, drawn and sent every frame, the one cost found anywhere that
+     grows with the screen. A ceiling of 2,000,000 canvas pixels leaves every phone and iPad exactly as it was (a 17 Pro Max's sky
+     is ~690,000 at 1.5x, an iPad Pro 11's ~1.3 million) and draws a big monitor's glow and trails at a little under 1x, where
+     soft light reads the same. */
+  const FW_MAX_PX = 2e6;
+  if(W * H * dpr * dpr > FW_MAX_PX) dpr = Math.max(.5, Math.sqrt(FW_MAX_PX / Math.max(1, W * H)));
   cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr));
   cv.style.width = W + "px"; cv.style.height = H + "px";
   parent.appendChild(cv);
