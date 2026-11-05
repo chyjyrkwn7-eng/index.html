@@ -119859,20 +119859,25 @@ function ifxPosterBody(id, g, rnd){
   const F = bnF;
   let defs = "", body = "";
   if(id === "fireworks"){
-    /* the extinguisher low at the left, its stream and the cloud rolling across - (384) drawn as the
-       effect's billows now are: lobes that run together into one volume, lit from above-left and a
-       warm grey underneath (round 4's tile was the cotton balls too) */
-    defs += ifxLin(g + "rd", 1, 0, IFX_RED) + ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .95], [.6, "#F6F1E6", .5], [1, "#F2EDE2", 0]]);
+    /* (384 final check) the effect as it is now - the 100% on fire, and the extinguisher putting it out: the fire across the
+       frame behind the 100% (tallest to the right, where the stream has not reached), the horn low at the left on the base of
+       the flames, P.A.S.S. as it is taught, and the agent billowing up where it lands - not the cloud rolling across it was.
+       ("Yes, things need to be updated" - the tile was the old effect.) */
+    defs += ifxLin(g + "rd", 1, 0, IFX_RED) + ifxRad(g + "o", 0, 60, 7, 3.4, [[0, "#FFE08A"], [.35, "#FF8A24", .95], [.72, "#E2361A", .6], [1, "#A3170C", 0]]) +
+      ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .95], [.7, "#F6F1E6", .6], [1, "#F2EDE2", .1]]);
     ["#FFFFFF", "#EDE8DF", "#C4BCAE"].forEach((cl, k) => { defs += '<radialGradient id="' + g + 'c' + k + '"><stop offset="0" stop-color="' + cl + '" stop-opacity=".95"/><stop offset=".55" stop-color="' + cl + '" stop-opacity=".8"/>' +
       '<stop offset=".82" stop-color="' + cl + '" stop-opacity=".3"/><stop offset="1" stop-color="' + cl + '" stop-opacity="0"/></radialGradient>'; });
     body += '<rect width="160" height="60" fill="#0A0C12" opacity=".55"/>';
-    body += '<path d="M31 21 L150 0 L160 0 L160 26 Z" fill="url(#' + g + 'jt)" opacity=".5"/>';
+    body += '<ellipse cx="114" cy="62" rx="62" ry="28" fill="#FF6A2E" opacity=".2"/>';
+    [[70, 10, 6, -1], [82, 15, 8, 1], [94, 22, 7, -1], [106, 30, 9, 1], [118, 34, 8, -1], [130, 31, 9, 1], [142, 25, 8, -1], [153, 18, 7, 1]].forEach(([x, h, w, ln]) => {
+      body += '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, 60, w, h, ln) + '" fill="url(#' + g + 'o)"/></g>'; });
+    body += '<path d="M33 46 L88 50 L88 60 L33 48.5 Z" fill="url(#' + g + 'jt)" opacity=".85"/>';
     const L = [];
-    for(let i = 0; i < 30; i++){ const t = Math.pow(rnd(), .8); L.push([44 + t * 118 + (rnd() - .5) * 12, 16 - t * 8 + (rnd() - .5) * (10 + t * 26), 5 + t * 9 + rnd() * 4]); }
-    for(let i = 0; i < 7; i++) L.push([96 + rnd() * 62, 30 + rnd() * 16, 6 + rnd() * 5]);
-    L.sort((a, b) => b[1] - a[1]).forEach(([x, y, r]) => { body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="url(#' + g + 'c' + (y > 24 ? 2 : y > 12 ? 1 : 0) + ')"/>'; });
+    /* low, along the base of the flames, so the 100% above them stays clear */
+    for(let i = 0; i < 18; i++){ const t = rnd(); L.push([54 + t * 40 + (rnd() - .5) * 8, 58 - t * 6 - rnd() * 3, 3 + t * 4 + rnd() * 2]); }
+    L.sort((p, q) => q[1] - p[1]).forEach(([x, y, r]) => { body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="url(#' + g + 'c' + (y > 55 ? 2 : y > 51 ? 1 : 0) + ')"/>'; });
     body += '<path d="M6 60 L6 36 Q6 30 12 30 Q18 30 18 36 L18 60 Z" fill="url(#' + g + 'rd)"/><rect x="8" y="42" width="8" height="10" rx="1" fill="#F6F2E8"/><rect x="9.5" y="25" width="5" height="6" rx="1" fill="#C9CED6"/>' +
-      '<path d="M15 27 C22 27 24 36 22 40 C21 44 24 40 26 30" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><path d="M25 31 L31 21" stroke="#3A3F48" stroke-width="2.8" stroke-linecap="round"/><path d="M25 31 L31 21" stroke="#8A909A" stroke-width=".7" stroke-linecap="round"/>' +
+      '<path d="M15 27 C22 27 24 34 23 40 C22 44 24 45.5 27 46" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><path d="M26 45.8 L33 47" stroke="#3A3F48" stroke-width="2.8" stroke-linecap="round"/><path d="M26 45.8 L33 47" stroke="#8A909A" stroke-width=".7" stroke-linecap="round"/>' +
       '<circle cx="7.5" cy="28" r="2.6" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".7"/>';
   } else if(id === "underwater"){
     /* the main, three heads throwing their umbrellas, rain, the fire going down in steam */
@@ -119951,10 +119956,17 @@ function ifxPosterBody(id, g, rnd){
   return { defs, body };
 }
 function ifxStillBody(id, g){
-  if(id === "fireworks") return '<defs>' + ifxLin(g + "rd", 1, 0, IFX_RED) + [["c", "#FFFFFF"], ["d", "#CFC8BB"]].map(([k, cl]) => '<radialGradient id="' + g + k + '"><stop offset="0" stop-color="' + cl + '" stop-opacity=".95"/><stop offset=".6" stop-color="' + cl + '" stop-opacity=".8"/><stop offset="1" stop-color="' + cl + '" stop-opacity="0"/></radialGradient>').join("") + '</defs>' +
-    [[37, 17, 7, "d"], [43, 14, 5, "d"], [34, 12, 9, "c"], [41, 8, 6, "c"], [28, 7, 5, "c"]].map(([x, y, r, k]) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#' + g + k + ')"/>').join("") +
-    '<path d="M11 46 L11 22 Q11 15 18 15 Q25 15 25 22 L25 46 Z" fill="url(#' + g + 'rd)"/><rect x="13.5" y="27" width="9" height="11" rx="1" fill="#F6F2E8"/><rect x="15" y="9" width="6" height="7" rx="1.2" fill="#C9CED6"/>' +
-    '<path d="M21 11.5 L29 10" stroke="#14161A" stroke-width="2.4" stroke-linecap="round"/><path d="M20 12 C28 13 29 24 26 27 C24 30 26 20 28 17 L31 14" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".8"/>';
+  /* (384 final check) the 100% on fire and being put out, as the effect now is - not the cloud it was: the horn low on the
+     base of the flames at the right, the agent billowing up where it lands */
+  if(id === "fireworks") return '<defs>' + ifxLin(g + "rd", 1, 0, IFX_RED) + ifxRad(g + "o", 0, 46, 5, 3, [[0, "#FFE08A"], [.35, "#FF8A24", .95], [.72, "#E2361A", .6], [1, "#A3170C", 0]]) +
+    ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .95], [1, "#F2EDE2", .15]]) +
+    [["c", "#FFFFFF"], ["d", "#CFC8BB"]].map(([k, cl]) => '<radialGradient id="' + g + k + '"><stop offset="0" stop-color="' + cl + '" stop-opacity=".95"/><stop offset=".6" stop-color="' + cl + '" stop-opacity=".8"/><stop offset="1" stop-color="' + cl + '" stop-opacity="0"/></radialGradient>').join("") + '</defs>' +
+    '<ellipse cx="40" cy="46" rx="10" ry="6" fill="#FF6A2E" opacity=".28"/>' +
+    [[41, 17, 5, 1], [46, 12, 3.6, -1], [36, 10, 3.4, -1]].map(([x, h, w, ln]) => '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, 46, w, h, ln) + '" fill="url(#' + g + 'o)"/></g>').join("") +
+    '<path d="M28.5 38 L37 40.5 L37 46 L28.5 40 Z" fill="url(#' + g + 'jt)" opacity=".9"/>' +
+    [[33, 43, 3.4, "d"], [36.5, 41.5, 3.8, "c"], [31, 41, 2.6, "c"]].map(([x, y, r, k]) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#' + g + k + ')"/>').join("") +
+    '<path d="M6 46 L6 22 Q6 15 13 15 Q20 15 20 22 L20 46 Z" fill="url(#' + g + 'rd)"/><rect x="8.5" y="27" width="9" height="11" rx="1" fill="#F6F2E8"/><rect x="10" y="9" width="6" height="7" rx="1.2" fill="#C9CED6"/>' +
+    '<path d="M15 12 C24 13 26 26 24 33 C23 36 24 37 26 37.5" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><path d="M25 37.4 L29 38.6" stroke="#14161A" stroke-width="2.4" stroke-linecap="round"/><circle cx="7" cy="12" r="3.2" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".8"/>';
   if(id === "underwater") return '<defs>' + ifxLin(g + "br", 1, 0, IFX_BRASS) + ifxRad(g + "o", 0, 46, 7, 2.6, [[0, "#FFC15A"], [.4, "#FF7A1F", .95], [1, "#A3170C", 0]]) + '</defs>' +
     '<rect x="17" y="3" width="14" height="3" rx="1" fill="#D9DEE4"/><path d="M20 6 L28 6 L27 10 L21 10 Z" fill="url(#' + g + 'br)"/><rect x="22.8" y="9.6" width="2.4" height="6" rx="1.2" fill="#E5332A"/><path d="M13 17 L35 17" stroke="#D9A23A" stroke-width="1.8" stroke-linecap="round"/>' +
     [-1.1, -.6, -.15, .3, .75, 1.15].map(a => '<path d="M' + (24 + Math.sin(a) * 5).toFixed(1) + ' 18.5 Q' + (24 + Math.sin(a) * 13).toFixed(1) + ' ' + (19 + Math.cos(a) * 3).toFixed(1) + ' ' + (24 + Math.sin(a) * 18).toFixed(1) + ' ' + (25 + Math.cos(a) * 6).toFixed(1) + '" fill="none" stroke="#9FDCFF" stroke-width="1.5" stroke-dasharray="2 2.4" stroke-linecap="round"/>').join("") +

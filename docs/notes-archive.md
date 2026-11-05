@@ -35410,3 +35410,16 @@ GATE: tools/check-b384-bannerroom.py - (1) a lone banner's place (128px, under t
 another slides back to that place within a second of the other leaving on its own timer; (3) "It's out" coming due on Home
 while "Welcome back" (9s) is up is never pushed under it, and then takes the lone place; (4) no page errors. ALL PASS; --against
 the build before FAILS (2) (held at 216) and (3) (stacked under it, 216).
+
+## 384 final check: the Extinguisher's tile and still show the effect it is now
+
+Madison, on the decision "the Extinguisher's Customize tile still shows the extinguisher and cloud, not the new fire": "yes,
+things need to be updated? Why is that a question." Both pictures of the Fire Code 25 effect (key "fireworks") are redrawn as the
+effect now plays - the 100% on fire and the extinguisher putting it out (P.A.S.S., at the base):
+- ifxPosterBody (the 160x60 tile in Customize and the unlock rows): flames across the frame behind the 100% (tallest to the right,
+  where the stream has not reached), the horn low at the left on the base of the flames, the agent billowing up LOW where it
+  lands (kept under y~40 so the 100% above stays clear), the extinguisher where it was.
+- ifxStillBody (the 48x48 still): the extinguisher at the left, its horn low on two small flames at the right, the agent
+  puffing at their base.
+Both use the effect's own pieces (ifxFlameD, ifxRad, IFX_RED), no new helpers. Rendered before/after in the scratchpad
+(r2/extinguisher-tile-before-after.png).
