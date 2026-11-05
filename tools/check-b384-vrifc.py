@@ -13,7 +13,8 @@ does. Every write is logged with the device that made it; every read a device ta
 query's documents, one per document change a listener is told of). The owner's account is TEST-3849 (a made-up code) and
 the classmates are made up too.
  (1) the owner in Fire Code hosts: the room is a Fire Code room (cls "ifc"), his lobby says so;
- (2) an academy classmate is invited (the invite and the banner say "Fire Code room"), joins, and plays the SAME Fire Code
+ (2) an academy classmate (enrolled in Fire Code too, on the academy's page - since the 384 review a room lets in only accounts
+     in its class) is invited (the invite and the banner say "Fire Code room"), joins, and plays the SAME Fire Code
      questions in the SAME order; his lobby says what counts for him;
  (3) both finish and both devices rank the room the same way;
  (4) the academy joiner's academy store gains vrMatches and nothing else - no XP, no answers, no stats for Fire Code keys,
@@ -343,6 +344,9 @@ def academy_store(pub, friends):
     return d
 owner_acad = academy_store(OWNER, [ALEX])
 alex = academy_store(ALEX, [OWNER, KIM]); alex["avatarChar"] = "ghost"
+# (384 review) a room only lets in an account that is in its class (check-b384-vroom-review (C)), so the academy classmate who
+# visits the Fire Code room is enrolled in Fire Code too - and plays it from the academy's page, as a visitor, as before
+alex["classes"] = ["academy", "ifc"]
 kim = academy_store(KIM, [ALEX]); kim["avatarChar"] = "grizzly"
 ifc = {k: owner_acad[k] for k in ["firstName", "avatarChar", "publicId", "onboardingComplete", "tourRev", "novaMet", "novaHeard", "weekKey"] if k in owner_acad}
 ifc.update({k: v for k, v in owner_acad.items() if k.startswith("seen")})

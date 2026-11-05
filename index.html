@@ -25844,6 +25844,8 @@
     box-shadow:none; background-image:none;
   }
   [data-layout="modern"] .friend-act.ghost:hover{ border-color:var(--soft); }
+  /* (384) the invite list: a friend not in the room's class - greyed like a disabled button, but it still takes the tap and says why */
+  .friend-act.is-unenrolled{ opacity:.35; cursor:default; }
   .friend-add-hint{ margin:.15rem 0 .7rem; }
   /* CENTRED IN THE CARD, both of them. Reported together - "both of
      these boxes (your code and enter a code) that stuff should be
@@ -26231,8 +26233,11 @@
     position:absolute; top:50%; display:flex; z-index:4; pointer-events:none;
     transition:transform .55s cubic-bezier(.3,.9,.3,1);
   }
-  .tug-team-us{ left:.7rem; transform:translateY(-50%); }
-  .tug-team-them{ right:.7rem; transform:translateY(-50%); flex-direction:row-reverse; }
+  /* (384 review) 1.2rem in, not .7: the figures overlap by a negative margin (.62rem) that reaches past each end, and the side
+     ahead leans back further - so the end figure of a winning side was cut off by the field's edge (the ghost at the right of
+     every result Their side won). */
+  .tug-team-us{ left:1.2rem; transform:translateY(-50%); }
+  .tug-team-them{ right:1.2rem; transform:translateY(-50%); flex-direction:row-reverse; }
   .tug-team-fig{
     width:2.3rem; height:2.3rem; margin:0 -.62rem; border-radius:50%;
     background:rgba(8,10,14,.72); display:grid; place-items:center;
@@ -65706,6 +65711,50 @@ let offlineSent = false;
 const PRESENCE_DOC = "presence-v1";
 let presenceMap = null;
 let presenceUnsub = null;
+/* ---- WHICH CLASSES EACH FRIEND IS IN (build 384, the Virtual Room's invite list) ----
+   Madison: "if one of your friends isn't enrolled into the class of whatever virtual room you are in, they won't appear on the
+   invite list or maybe their invite button is greyed out and when you try to invite it says this player is not enrolled".
+   Nothing a friend's device published said which classes the account is in (the board row is the academy's alone, and a Fire
+   Code-only account has none), so the presence beat carries it: `c` beside `p` and `a`, per public id { k: the account's
+   classes ("academy", "ifc" or "academy,ifc" - enrolledClasses), n: its first name, v: its character }. The name and face are
+   there because a friend in Fire Code alone has no board row, and the invite list had nothing to call them but "Student". It
+   rides the writes the beat already makes - no write and no read of its own - and holds a public id, class names, a first name
+   and a character id (all of which the board already shows for everybody else), never a code. presenceClasses is what the
+   last presence snapshot said. */
+let presenceClasses = null;
+function presenceClassesValue(){
+  let k = "academy"; try{ k = enrolledClasses().join(",") || "academy"; }catch(e){}
+  const out = { k: k };
+  try{ const me = socialMe(); if(me.firstName) out.n = String(me.firstName).slice(0, 40); if(me.avatarChar) out.v = String(me.avatarChar).slice(0, 40); }catch(e){}
+  return out;
+}
+/* The classes a friend's account is in, or null when nothing has said (a device from before this build, a friend who has not
+   opened the app since). */
+function friendClassesOf(pub){
+  if(!pub) return null;
+  const e = presenceClasses && presenceClasses[pub];
+  const v = (e && typeof e === "object") ? e.k : e;
+  if(typeof v === "string" && v){
+    const list = v.split(",").filter(k => k === "academy" || k === "ifc");
+    if(list.length) return list;
+  }
+  return null;
+}
+/* A friend's name and character as their own beat gave them, or null */
+function friendCardFromPresence(pub){
+  const e = pub && presenceClasses && presenceClasses[pub];
+  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ninja" } : null;
+}
+/* false only when it is KNOWN the friend is not in that class; true when it is known they are; null when nothing says. An unknown
+   friend stays invitable, and their own device turns away a room of a class they are not in (joinVirtualRoomLobby). A board row
+   says the academy: only an academy member's device writes one. Nova is in every class. */
+function friendInClass(pub, cls){
+  if(pub === "nova") return true;
+  const list = friendClassesOf(pub);
+  if(list) return list.indexOf(cls) >= 0;
+  if(cls === "academy" && rowsByPublicId()[pub]) return true;
+  return null;
+}
 
 function sendHeartbeat(force){
   if(!socialDb() || !syncCode || !socialOptIn() || !store.publicId) return;
@@ -65719,8 +65768,9 @@ function sendHeartbeat(force){
   const act = currentActivity();
   activityShared = act; activityLastWrite = now;
   try{
+    /* (384) `c`: the classes this account is in, for friends' invite lists (presenceClasses) - in the write the beat makes anyway */
     socialDb().collection("vrooms").doc(PRESENCE_DOC)
-      .set({ kind: "presence", p: { [store.publicId]: now }, a: { [store.publicId]: act } }, { merge: true })
+      .set({ kind: "presence", p: { [store.publicId]: now }, a: { [store.publicId]: act }, c: { [store.publicId]: presenceClassesValue() } }, { merge: true })
       .catch(() => {});
   }catch(e){}
 }
@@ -65833,6 +65883,8 @@ function attachPresence(){
         const d = (snap && snap.exists) ? (snap.data() || {}) : {};
         presenceMap = d.p || {};
         presenceActivity = d.a || {};
+        presenceClasses = d.c || {};
+        try{ paintInviteClassStates(); }catch(e){}
         try{ paintActivityLabels(); }catch(e){}
         try{ repaintOnlineDots(); }catch(e){}
         /* Repaint whatever is showing the dot right now. */
@@ -66197,7 +66249,12 @@ function inviteFriendToLobby(pub, roomCode){
   }
   /* (384) a Fire Code room says so on the invite (`cls`; an academy room's invite is what it always was) */
   const invite = { type: "vroom", code: roomCode };
-  const roomCls = roomCode === vroomCode ? BANK_CLASS : ownClass();
+  const roomCls = inviteRoomClass(roomCode);
+  /* a friend known not to be in the room's class is not sent one (the invite list greys them) */
+  if(friendInClass(pub, roomCls) === false){
+    showToast(notEnrolledLine((rowsByPublicId()[pub] || {}).firstName, roomCls));
+    return;
+  }
   if(roomCls !== "academy") invite.cls = roomCls;
   sendToInbox(pub, invite);
   store.lobbyInvitesOut = store.lobbyInvitesOut || {};
@@ -96591,7 +96648,8 @@ function playVroomWinnerCutscene(opts, done){
   }
 
   const floor = document.createElement("div");
-  floor.className = isTeam ? "vroom-cut-rope" : "vroom-cut-floor";
+  /* (384 review) the rope is Tug of War's: a Battle's side stands on the plain floor (opts.floor "line"), not on a rope */
+  floor.className = (isTeam && o.floor !== "line") ? "vroom-cut-rope" : "vroom-cut-floor";
 
   const skip = document.createElement("p");
   skip.className = "vroom-cut-skip";
@@ -128081,9 +128139,14 @@ function announceVroomLeave(data){
      departure mid-match went unsaid. Every room listener calls this now -
      the timestamp check above keeps it to one notice per departure - and
      it says which: the lobby, or the match. */
-  let inMatch = false; try{ inMatch = !!vroomTestStarted; }catch(e){}
-  if(!inMatch) inMatch = !!document.querySelector(".screen-vroom-results, .tug-screen, .battle-screen");
-  showToast((l.name || "Someone") + (inMatch ? " left the match." : " left the lobby."));
+  /* (384 review) A RACE IS A MATCH TOO. This asked vroomTestStarted, which a race clears as its first question comes up, and
+     looked for .tug-screen / .battle-screen, which no screen has ever been called - so somebody quitting mid-race was announced
+     as having "left the lobby". In a match: a race's run (inVirtualRoom) or its wait for the others, the countdown, Tug of War
+     or Battle in play. After one, on a results screen: "left the room". */
+  let inMatch = false; try{ inMatch = !!inVirtualRoom || !!vroomAwaitingOthers || vroomMatchRunningHere(); }catch(e){}
+  if(!inMatch) inMatch = !!document.querySelector("#stage .screen-tug, #stage .screen-tug-wait, #stage .screen-battle, #stage .screen-battle-wait");
+  const onLobby = !!document.querySelector("#stage .screen-vroom-lobby, #stage .screen-vroom-setup");
+  showToast((l.name || "Someone") + (inMatch ? " left the match." : onLobby ? " left the lobby." : " left the room."));
   playSound("vr.leave");
 }
 __bm("L109377");
@@ -128921,9 +128984,12 @@ function roomClassLabel(data){
 }
 /* What a room shows of you. Your name and character are the account's, as your friends see them everywhere (socialMe - the
    same as the store in the academy); the numbers are the class you are in, as a room entry has always carried. */
+/* (384 review) `dev` is this device's own random id (tallyDeviceId - never a code), so the same person coming back after their app
+   died is told apart from a second device of the same account (joinVirtualRoomLobby). */
 function vroomMeEntry(){
   const me = socialMe();
-  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false };
+  let dev = ""; try{ dev = tallyDeviceId(); }catch(e){}
+  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
 }
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
@@ -130221,7 +130287,7 @@ function tugCheckOver(d){
      minutes and more of everybody else sitting on "Waiting for the
      others". Presence already knows (no heartbeat for PRESENCE_STALE_MS),
      the same rule the race's finale uses. */
-  const here = presentParticipants(d.participants || {}) || {};
+  const here = vroomMatchHere(d);   /* (384 review) and not back in late */
   const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count || !here[k]);
   /* A SIDE WITH NOBODY LEFT ON IT HAS LOST. Everybody on one end left or
      went quiet, and the rope could only ever be pulled by the other. */
@@ -130692,8 +130758,10 @@ function refreshTugLive(d){
   if(live && !live.hidden){
     const count = tugMatchCount(d);
     const prog = (d.tug && d.tug.progress) || {};
+    /* (384 review) only people still in it: somebody who left or whose app died is not "still answering" */
+    const here = vroomMatchHere(d);
     const still = Object.keys((d.tug && d.tug.teams) || {})
-      .filter(k => k !== vroomMyKey && (Number((prog[k] || {}).pos) || 0) < count).length;
+      .filter(k => k !== vroomMyKey && here[k] && (Number((prog[k] || {}).pos) || 0) < count).length;
     live.textContent = still === 0 ? "Everyone has finished"
       : (still === 1 ? "1 person is still answering" : still + " people are still answering");
   }
@@ -130912,7 +130980,9 @@ function showTugResult(d){
   cols.className = "tug-board-cols";
   const all = Object.keys(teams);
   const mvp = all.slice().sort((a, b) => rightOf(b) - rightOf(a))[0];
-  ["a", "b"].forEach(side => {
+  /* (384 review) YOUR SIDE FIRST, on the left - where the rope above has always put it (tugView), and where Battle's board puts
+     it. Team b read "Their side" on the left over a rope with "Your side" on the left. */
+  [mine, mine === "a" ? "b" : "a"].forEach(side => {
     const col = document.createElement("div");
     col.className = "tug-board-col" + (side === winner ? " is-winner" : "") + (side === mine ? " is-mine" : "");
     const members = tugMembers(d, side).sort((a, b) => rightOf(b) - rightOf(a));
@@ -131065,7 +131135,8 @@ function battleOther(side){ return side === "a" ? "b" : "a"; }
 function battleMembers(d, side){
   const parts = (d && d.participants) || {};
   const t = battleTeams(d);
-  return Object.keys(t).filter(k => t[k] === side && parts[k]);
+  /* (384 review) not somebody back in during the match (vroomLateFor) */
+  return Object.keys(t).filter(k => t[k] === side && parts[k] && !vroomLateFor(d, parts[k]));
 }
 function battleMaxHp(d, side){
   const t = battleTeams(d);
@@ -131149,13 +131220,15 @@ function battleCheckOver(d){
   const b = d.battle || {};
   if(b.over) return;
   const r = battleReplay(d);
-  const count = Number(b.count) || BATTLE_MIN_Q;
+  /* (384 review) THE BANK EVERY DEVICE PLAYS, which is never under fifty (battleBuildPool cycles it). This read the room's own
+     count, so a room set to ten questions was called over the moment everybody had answered ten - at "Question 11 of 50". */
+  const count = Math.max(BATTLE_MIN_Q, Number(b.count) || 0);
   const prog = b.progress || {};
   const everyone = battleMembers(d, "a").concat(battleMembers(d, "b"));
   if(!everyone.length) return;
   /* Gone is not still playing, and a side with nobody left on it has
      lost - the same two rules as Tug (build 313). */
-  const here = presentParticipants(d.participants || {}) || {};
+  const here = vroomMatchHere(d);   /* (384 review) and not back in late */
   const allDone = everyone.every(k => (Number((prog[k] || {}).pos) || 0) >= count || !here[k]);
   const sideHere = s => battleMembers(d, s).some(k => here[k]);
   const forfeit = sideHere("a") !== sideHere("b") ? (sideHere("a") ? "a" : "b") : null;
@@ -131268,6 +131341,7 @@ function beginBattleMatch(data){
       detachBattleEffects();
       playVroomWinnerCutscene({
         kind: "team",
+        floor: "line",
         entries: shown,
         opening: "The dust is settling",
         counting: "Counting what is left",
@@ -131696,8 +131770,9 @@ function refreshBattleLive(d){
   if(live){
     const count = battleCount || BATTLE_MIN_Q;
     const prog = (d.battle && d.battle.progress) || {};
+    const here = vroomMatchHere(d);   /* (384 review) see refreshTugLive */
     const still = battleMembers(d, "a").concat(battleMembers(d, "b"))
-      .filter(k => k !== vroomMyKey && (Number((prog[k] || {}).pos) || 0) < count).length;
+      .filter(k => k !== vroomMyKey && here[k] && (Number((prog[k] || {}).pos) || 0) < count).length;
     live.textContent = still === 0 ? "Everyone has finished"
       : (still === 1 ? "1 person is still answering" : still + " people are still answering");
   }
@@ -132048,7 +132123,7 @@ function novaVrDrive(code){
   if(novaVrDriving(code)) return;
   novaVrStop();
   if(!vroomDb() || !code) return;
-  const me = { code: code, data: null, unsub: null, timer: null, readyAt: 0, lobbySent: "", match: null, judged: null };
+  const me = { code: code, data: null, unsub: null, timer: null, readyAt: 0, lobbySent: "", match: null, judged: null, since: Date.now(), sawHim: false };
   novaVr = me;
   try{
     me.unsub = onSnapshotResilient(vroomDb().collection("vrooms").doc(code), snap => {
@@ -132077,8 +132152,11 @@ function novaVrTick(){
   const d = v.data;
   if(!d) return;
   const nv = (d.participants || {})[NOVA_VR_KEY];
-  /* He left (or was removed): nothing to drive. */
-  if(!nv){ novaVrStop(); return; }
+  /* He left (or was removed): nothing to drive. (384 review) But a first snapshot from before his entry landed is not him
+     leaving: the listener starts as the invite is written, and an answer from before that write stopped the driver for good -
+     he sat in the lobby, never readied, and the room never started. Only once he has been seen, or after a while. */
+  if(!nv){ if(v.sawHim || Date.now() - v.since > 15000) novaVrStop(); return; }
+  v.sawHim = true;
   /* ONE DRIVER: whoever invited him, and nobody else. */
   if(nv.by && nv.by !== vroomMyKey){ novaVrStop(); return; }
   if(!d.status || d.status === "waiting") novaVrLobbyTick(v, d, nv);
@@ -132426,6 +132504,13 @@ function joinVirtualRoomLobby(code){
     showToast("Couldn't reach that lobby \u2014 check your connection and try again.");
     return Promise.resolve(false);
   }
+  /* (384 review) ALREADY IN IT: back to its lobby rather than a second entry. And A MATCH UNDER WAY IN ANOTHER ROOM is not left
+     by an invite tapped in the Inbox - it is finished or left from its own Pause first. */
+  if(vroomCode && vroomCode === code){ showVirtualRoomLobby(); return Promise.resolve(true); }
+  if(vroomCode && vroomMatchRunningHere()){
+    showToast("Finish or leave your match first.");
+    return Promise.resolve(false);
+  }
   /* RESOLVES TRUE ONLY IF THIS DEVICE IS ACTUALLY IN THE LOBBY. Same
      reason as joinChatRoom's: a lobby that has already started refuses
      the join, and the notifications list was dismissing the invite on
@@ -132439,6 +132524,15 @@ function joinVirtualRoomLobby(code){
        then, so a joiner is in nobody's count until the room is back to
        waiting. */
     const myKey = publicIdOf();
+    /* (384 review) A ROOM IS FOR ITS CLASS. Madison, on the invite list: a friend "not enrolled into the class of whatever
+       virtual room you are in" is not invited - so an account not in the room's class is not let in by any other door either
+       (an invite from an older build, the open rooms, the Inbox). Its own account is the authority (enrolledClasses). An
+       account in both classes still plays the other class's room from this page, as a visitor (vroomForeign). */
+    const cls = roomClassOf(data);
+    if(enrolledClasses().indexOf(cls) < 0){
+      showToast("This is a " + classNameOf(cls) + " room. You aren\u2019t enrolled in " + classInSentence(cls) + ".");
+      return false;
+    }
     /* The actual fix for joining the same lobby twice from two devices
        on one synced account \u2014 confirmed directly: both devices share
        the same syncCode, which is also the participant key, so a
@@ -132446,9 +132540,18 @@ function joinVirtualRoomLobby(code){
        entry in the shared doc rather than being stopped or even
        mentioned. Checked here, before the join actually happens,
        rather than after. */
-    if(data.participants && data.participants[myKey]){
-      showToast("This account is already in the lobby.");
-      return false;
+    /* (384 review) BUT COMING BACK IS NOT A SECOND DEVICE. An app that died (or was swiped away without its goodbye landing)
+       leaves its entry on the room, and this refused that same person for as long as the room lasted. Their own device (the
+       entry's `dev`) or an entry presence has given up on (no beat for PRESENCE_STALE_MS) is taken over; only another device
+       of the account that is still beating in the room is refused. */
+    const mine = data.participants && data.participants[myKey];
+    if(mine){
+      const stillHere = !!(presentParticipants({ [myKey]: mine }) || {})[myKey];
+      const thisDevice = !!mine.dev && mine.dev === tallyDeviceId();
+      if(stillHere && !thisDevice){
+        showToast("This account is already in the lobby.");
+        return false;
+      }
     }
     /* level rides along with the participant, per explicit request:
        the lobby should say who you are up against the way the
@@ -132456,10 +132559,16 @@ function joinVirtualRoomLobby(code){
        while somebody is sitting in a lobby - and read with a
        fallback, so a room created by an older build still renders. */
     const meEntry = vroomMeEntry();
+    /* (384 review) IN DURING A MATCH, NOT IN IT: somebody who comes back mid-match was one of its racers or on one of its
+       teams, and their fresh entry (nothing answered, not finished) would hold the finale or the team's "everyone is done" for
+       good. `late` names the match they arrived during; vroomLateFor() / vroomMatchHere() leave them out of that one only. */
+    if(data.status && data.status !== "waiting" && data.startAt) meEntry.late = Number(data.startAt) || 0;
     /* THE ROOM'S OWN QUESTIONS (384): a room from another class plays that class's bank here too - loaded first (Fire
        Code's is a file of its own), swapped in once the join has landed, before the lobby draws its units */
-    const cls = roomClassOf(data);
-    const enter = () => vroomDb().collection("vrooms").doc(code).update({
+    const enter = () => {
+      /* (384 review) out of the lobby this device was in, so it does not stay listed there */
+      if(vroomCode && vroomCode !== code){ try{ leaveVirtualRoom(); }catch(e){} }
+      return vroomDb().collection("vrooms").doc(code).update({
       ["participants." + myKey]: meEntry
     }).then(() => {
       useClassBank(cls);
@@ -132470,12 +132579,45 @@ function joinVirtualRoomLobby(code){
       showVirtualRoomLobby();
       return true;
     });
+    };
     if(cls === BANK_CLASS) return enter();
     return classBankReady(cls).then(ok => {
       if(!ok){ showToast("Couldn\u2019t load this room\u2019s questions \u2014 check your connection and try again."); return false; }
       return enter();
     });
   }).catch(() => { showToast("Couldn't reach that lobby \u2014 try again."); return false; });
+}
+
+/* ---- A ROOM IS FOR ITS CLASS (384) ----
+   Friends are the account's, in every class; a room belongs to the class it was made in. So the invite list greys a friend whose
+   account is known not to be in the room's class (friendInClass, from the presence document's `c`), and a tap on that button
+   says so instead of inviting. Nova is in every class. */
+function inviteRoomClass(roomCode){
+  try{
+    if(vroomLastDoc && vroomLastDoc.code === roomCode && vroomLastDoc.data) return roomClassOf(vroomLastDoc.data);
+  }catch(e){}
+  return roomCode === vroomCode ? BANK_CLASS : ownClass();
+}
+/* "Fire Code" / "the Police Academy" - the class as a sentence names it */
+function classInSentence(cls){ return cls === "ifc" ? "Fire Code" : "the Police Academy"; }
+function notEnrolledLine(name, cls){
+  return (name || "This friend") + " isn’t enrolled in " + classInSentence(cls) + ".";
+}
+function paintInviteClassState(b){
+  if(!b || !b.dataset || !b.dataset.invitePub) return;
+  const out = friendInClass(b.dataset.invitePub, b.dataset.inviteCls) === false;
+  b.classList.toggle("is-unenrolled", out);
+  if(out){ b.setAttribute("aria-disabled", "true"); b.setAttribute("aria-label", "Invite - " + notEnrolledLine(b.dataset.inviteName, b.dataset.inviteCls)); }
+  else { b.removeAttribute("aria-disabled"); b.removeAttribute("aria-label"); }
+}
+function paintInviteClassStates(){
+  document.querySelectorAll(".invite-overlay .friend-act[data-invite-pub]").forEach(paintInviteClassState);
+  /* a row drawn before the beat that names that friend arrived is drawn again, once, with the name */
+  document.querySelectorAll(".invite-overlay").forEach(ov => {
+    if(typeof ov.__refill !== "function") return;
+    const unnamed = [...ov.querySelectorAll('.friend-act[data-invite-pub][data-invite-name=""]')].some(b => friendCardFromPresence(b.dataset.invitePub));
+    if(unnamed) ov.__refill();
+  });
 }
 
 /* Who to invite, as a sheet rather than a screen: it is a short list
@@ -132519,7 +132661,22 @@ function openInviteFriendsSheet(roomCode){
        the row is only ever used to put a name and a face on the row.
        Missing row, generic name, still invitable. */
     const ids = friendPublicIds();
-    const people = ids.map(id => rows[id] || { pub: id });
+    /* (384) a friend in Fire Code alone has no board row: their name and face from their own presence beat (friendCardFromPresence),
+       or from their chat with you where it has been read */
+    const known = id => {
+      if(rows[id]) return rows[id];
+      const fromBeat = friendCardFromPresence(id);
+      if(fromBeat) return fromBeat;
+      try{
+        const p = (chatListPeople[friendChatCode(id)] || []).find(x => x && x.key === id);
+        if(p && p.name) return { pub: id, firstName: p.name, avatarChar: p.avatarChar || "ninja" };
+      }catch(e){}
+      return { pub: id };
+    };
+    /* THE ROOM'S CLASS DECIDES WHO CAN COME (384): a friend known not to be in it sorts below the rest, greyed */
+    const roomCls = inviteRoomClass(roomCode);
+    const people = ids.map(known).map((e, i) => ({ e, i, out: friendInClass(e.pub, roomCls) === false }))
+      .sort((a, b) => (a.out - b.out) || (a.i - b.i)).map(x => x.e);
     body.replaceChildren();
     /* NOVA FIRST, LIKE A FRIEND (build 324): "He's invitable like anyone
        else now and can join." He is on every account's friends list in the
@@ -132530,10 +132687,11 @@ function openInviteFriendsSheet(roomCode){
     if(!people.length){
       const none = document.createElement("p");
       none.className = "friend-hint";
+      /* (384) class sharing is the account's (socialOptIn: the academy's choice in every class) - Fire Code's own store has it off */
       none.textContent = waitingForBoard
         ? "Loading your friends\u2026"
-        : store.leaderboardOptIn === false
-          ? "Turn on class sharing in Settings to use friends."
+        : !socialOptIn()
+          ? (window.NOVA_CLASS === "ifc" ? "Turn on class sharing in the Police Academy class\u2019s Settings to use friends." : "Turn on class sharing in Settings to use friends.")
           : "No friends yet \u2014 add someone from the chat \u203a Friends first.";
       body.appendChild(none);
       return;
@@ -132563,13 +132721,25 @@ function openInviteFriendsSheet(roomCode){
       /* NOT "INVITED" FOR GOOD (build 323): a 15-second cooldown, then
          Invite again - see LOBBY_INVITE_COOLDOWN_MS. */
       if(here){ b.textContent = "In room"; b.disabled = true; }
-      else armInviteButton(b, e.pub, pub => lobbyInviteCooldownLeft(pub, roomCode), pub => inviteFriendToLobby(pub, roomCode));
+      else {
+        /* NOT IN THE ROOM'S CLASS (384): the button is greyed, still takes the tap, and says why rather than inviting. The
+           state is painted from the presence document as it arrives (paintInviteClassStates), and asked again on the tap. */
+        b.dataset.invitePub = e.pub;
+        b.dataset.inviteCls = roomCls;
+        b.dataset.inviteName = e.firstName || "";
+        armInviteButton(b, e.pub, pub => lobbyInviteCooldownLeft(pub, roomCode), pub => {
+          if(friendInClass(pub, roomCls) === false){ paintInviteClassState(b); showToast(notEnrolledLine(b.dataset.inviteName, roomCls)); return; }
+          inviteFriendToLobby(pub, roomCode);
+        });
+        paintInviteClassState(b);
+      }
       row.append(art, text, b);
       list.appendChild(row);
     });
     body.appendChild(list);
   }
 
+  overlay.__refill = fill;
   /* Attach when the board is empty OR when a friend is missing from it -
      the second case is the one that showed an empty list on a board
      that had already loaded. */
@@ -132659,7 +132829,14 @@ function openRoomsFrom(docs){
     const lastSeen = Math.max(r.createdAt || 0, ...Object.values(here).map(p => Number(p.seen) || 0));
     if((now - lastSeen) > VROOM_BROWSER_STALE_MS) return;
     if(d.id === vroomCode) return;       /* my own room */
-    out.push({ code: d.id, room: r, count: n, inMatch: !!(r.status && r.status !== "waiting") });
+    /* (384 review) a room of a class this account is not in is not one it can join (joinVirtualRoomLobby) */
+    try{ if(enrolledClasses().indexOf(roomClassOf(r)) < 0) return; }catch(e){}
+    /* WHOSE ROOM IT IS NOW: the host is the earliest joiner still here (vroomHostKeyOf), so a room whose maker has gone is
+       listed under whoever took it over, not under somebody who is not in it (hostName is only what it was at the start) */
+    const hk = vroomHostKeyOf(here);
+    const host = (hk && here[hk]) || null;
+    out.push({ code: d.id, room: r, count: n, inMatch: !!(r.status && r.status !== "waiting"),
+               hostName: (host && host.name) || r.hostName, hostAvatar: (host && host.avatarChar) || r.hostAvatar });
   });
   /* Fullest first: a room with people in it is the one worth joining,
      and an empty-looking list of one-person rooms is what makes a
@@ -132735,12 +132912,12 @@ function showRoomBrowser(){
       row.className = "friend-row room-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor({ avatarChar: r.hostAvatar || "ninja" }));
+      art.appendChild(avatarSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ninja" }));
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
       nm.className = "friend-row-name";
-      nm.textContent = (r.hostName || "A student") + "\u2019s room";
+      nm.textContent = (entry.hostName || r.hostName || "A student") + "\u2019s room";
       /* WHO IS IN IT AND WHERE THEY ARE, then the match settings ONLY IF
          THEY ARE SET (build 287): "it just shows how many people are in
          and match settings IF they are set ... state whether they are at
@@ -132905,8 +133082,11 @@ function showVirtualRoomLobby(){
      an invite is addressed from the room owner. Null for a joiner. */
   let lobbyTools = null;
 
-  if(vroomIsHost){
-    lobbyTools = document.createElement("div");
+  /* (384 review) BUILT FOR WHOEVER IS HOST NOW, not only for whoever made the room: the host is the earliest joiner still here
+     (syncVroomHost), so when the host leaves the next person is host - and was left with Match settings but no Invite friends and
+     no Open to class, so nobody new could ever be brought in. syncLobbyTools() puts them up or takes them down on every snapshot. */
+  const buildLobbyTools = () => {
+    const lobbyTools = document.createElement("div");
     lobbyTools.className = "vroom-roster-tools";
     const inviteBtn = document.createElement("button");
     inviteBtn.type = "button";
@@ -132960,7 +133140,9 @@ function showVirtualRoomLobby(){
     sw.append(swWord, knob);
     const openLine = document.createElement("p");
     openLine.className = "vroom-open-line";
-    openLine.textContent = "On, anyone in 26E can find this room and join.";
+    /* (384 review) the room's class, not always the academy's "26E": a Fire Code room is found by Fire Code */
+    const openCls = (vroomLastDoc && vroomLastDoc.code === vroomCode && vroomLastDoc.data) ? roomClassOf(vroomLastDoc.data) : BANK_CLASS;
+    openLine.textContent = "On, anyone in " + (openCls === "ifc" ? "Fire Code" : "26E") + " can find this room and join.";
     const paintOpen = () => {
       sw.setAttribute("aria-checked", vroomIsOpen ? "true" : "false");
       sw.classList.toggle("on", vroomIsOpen);
@@ -132975,8 +133157,10 @@ function showVirtualRoomLobby(){
       }
     });
     paintOpen();
+    lobbyTools.paintOpen = paintOpen;
     lobbyTools.append(inviteBtn, sw, openLine);
-  }
+    return lobbyTools;
+  };
 
   /* The pre-test summary, per explicit request \u2014 "make sure to show
      what the test and how many questions and stuff so people joining
@@ -133013,7 +133197,13 @@ function showVirtualRoomLobby(){
   const readyCount = document.createElement("p");
   readyCount.className = "vroom-readycount";
   rosterHead.append(rosterTitle, readyCount);
-  if(lobbyTools){ rosterHead.appendChild(lobbyTools); roster.classList.add("has-tools"); }
+  const syncLobbyTools = () => {
+    if(vroomIsHost && !lobbyTools){ lobbyTools = buildLobbyTools(); rosterHead.appendChild(lobbyTools); roster.classList.add("has-tools"); }
+    else if(!vroomIsHost && lobbyTools){ lobbyTools.remove(); lobbyTools = null; roster.classList.remove("has-tools"); }
+    /* what the room document says (a host handed the room inherits its state) */
+    if(lobbyTools && lobbyTools.paintOpen) lobbyTools.paintOpen();
+  };
+  syncLobbyTools();
   roster.append(rosterHead, list);
   panel.appendChild(roster);
 
@@ -133185,7 +133375,10 @@ function showVirtualRoomLobby(){
        was described as "No time limit", which is the one thing it is
        not: its clock is per question and tightens as the match runs. */
     l2.textContent = noGame ? (vroomIsHost ? "Set both in Match settings." : "The host sets both in Match settings.")
-      : isBattle ? "Two teams \u00b7 at least " + BATTLE_MIN_Q + " questions"
+      /* (384 review) the number the match actually runs - the line above says "9 questions" and this said "at least 50"; a
+         small room's questions come round again (battleBuildPool), so it says so */
+      : isBattle ? "Two teams \u00b7 " + Math.max(BATTLE_MIN_Q, asked) + " questions, 20 seconds each"
+          + (asked > 0 && asked < BATTLE_MIN_Q ? " \u00b7 the " + asked + " repeat" : "")
       : isTug ? "Two teams \u00b7 about " + tugPaceMinutes(asked) + " min, the clock tightens"
       : Math.round(RACE_QUESTION_MS / 1000) + " seconds a question";
     testSummary.append(t, l1, l2);
@@ -133307,7 +133500,9 @@ function showVirtualRoomLobby(){
       /* `count`, the field Match settings writes. This read
          `questionCount`, which nothing has ever written, so changing
          only the number of questions did not redraw the summary. */
-      + "|" + (data.count || 0) + "|" + (data.game || "");
+      + "|" + (data.count || 0) + "|" + (data.game || "")
+      /* (384 review) and who is host: a promoted host's summary grows its Match settings button */
+      + "|" + (vroomIsHost ? "h" : "");
     if(shape !== shownShape){
       shownShape = shape;
       if(arrive) setTimeout(arrive, 0);
@@ -133480,6 +133675,7 @@ function showVirtualRoomLobby(){
          remaining joiner is host from this snapshot onward - which is
          what makes a room survive losing the person who made it. */
       syncVroomHost(data);
+      syncLobbyTools();
       announceVroomLeave(data);
       /* THE LOBBY LIST, AND ONLY THE LOBBY LIST. Somebody whose app was
          closed or who lost signal writes no leave, so their entry sits
@@ -135208,7 +135404,12 @@ function finishVirtualRoomTest(pct, elapsedMs){
     ["participants." + myKey + ".xp"]: xpNoBadge || xp,
     ["participants." + myKey + ".xpLines"]: lines,
     ["participants." + myKey + ".totalScore"]: xpNoBadge || xp
-  }).then(() => showVirtualRoomFinaleReveal(pct, elapsedMs, xpNoBadge || xp));
+  }).catch(() => {});
+  /* (384 review) THE WAIT CARD AT ONCE, NOT ON THE SERVER'S ANSWER. It came up only when the server had acknowledged this write -
+     on a slow connection seconds after the results, with nothing on them saying the room was still going, and on a dropped one
+     never (a queued write's promise does not settle offline). The write is in the local cache the moment it is made, so the
+     room's listener below already counts this finish; the server's copy follows. The same lesson as HOST_ENTER_MS. */
+  showVirtualRoomFinaleReveal(pct, elapsedMs, xpNoBadge || xp);
 }
 
 /* ---- WHO IS IN THIS RACE (build 246) ----
@@ -135224,10 +135425,26 @@ function finishVirtualRoomTest(pct, elapsedMs){
 function vroomRacersOf(data){
   const parts = (data && data.participants) || {};
   const list = (data && Array.isArray(data.racers)) ? data.racers : null;
-  if(!list || !list.length) return parts;
   const out = {};
-  list.forEach(k => { if(parts[k]) out[k] = parts[k]; });
+  /* (384 review) and not somebody who came back in during it (`late`, see joinVirtualRoomLobby) */
+  (list && list.length ? list : Object.keys(parts)).forEach(k => { if(parts[k] && !vroomLateFor(data, parts[k])) out[k] = parts[k]; });
   return out;
+}
+/* (384 review) An entry written during the match that started at data.startAt - a player who left (or whose app died) and came
+   back - is in the room for the next match, not this one. */
+function vroomLateFor(data, p){
+  return !!(p && p.late && data && data.startAt && Number(p.late) === Number(data.startAt));
+}
+/* Who is still playing this match: present (presence has not given up on them) and not back in late. */
+function vroomMatchHere(d){
+  const here = presentParticipants((d && d.participants) || {}) || {};
+  Object.keys(here).forEach(k => { if(vroomLateFor(d, here[k])) delete here[k]; });
+  return here;
+}
+/* A match is running on this device: a race question, a Tug of War or Battle in play, or the count that starts one. */
+function vroomMatchRunningHere(){
+  try{ if(inVirtualRoom) return true; }catch(e){}
+  return !!(document.getElementById("vroom-reveal-overlay") || document.getElementById("vroom-flourish-overlay"));
 }
 
 /* The same ranking everywhere: XP, then time. */
@@ -135569,10 +135786,13 @@ function vroomReturnToLobby(){
   };
   if(vroomIsHost) resetFields.status = "waiting";
   vroomAwaitingOthers = false;
-  vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).then(() => {
-    detachVroomListener();
-    showVirtualRoomLobby();
-  });
+  /* (384 review) INTO THE LOBBY ON THE TAP. It waited for the server's answer (and on a failed or queued write never came):
+     "Return to lobby" took the standings away and left the bare results under them. The reset is in the local cache at once,
+     which is what the lobby's listener reads first. */
+  if(!vroomDb() || !vroomCode){ showHome(); return; }
+  vroomDb().collection("vrooms").doc(vroomCode).update(resetFields).catch(() => {});
+  detachVroomListener();
+  showVirtualRoomLobby();
 }
 
 /* ---- THE RACE CUTSCENE ----
