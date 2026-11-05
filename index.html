@@ -35185,7 +35185,10 @@ html.is-browser{ --fade-paper: transparent; }
   .class-bubble-wrap.is-open .class-dock{ opacity:1; transform:none; height:calc(var(--cb) + 10px + var(--n) * (var(--cb) + var(--cg))); }
   /* (384 full check) open, the list's labels sat straight over Home's words and Start Studying, nothing behind them dimmed -
      what is behind steps back while it is open (opacity only), and takes no tap: a tap anywhere closes the list, as before */
-  #stage:has(> .class-bubble-wrap.is-open) > :not(.class-bubble-wrap){ opacity:.22; pointer-events:none; transition:opacity .2s ease; }
+  /* (384 final check) a class on #stage, set by the list itself - NOT #stage:has(> .class-bubble-wrap.is-open). Under that :has()
+     every change anywhere on a screen (a code box opening, a row drawn) made the browser restyle the whole screen: 138ms on a
+     Fire Code Review list at 4x CPU, every time. The class only changes when the list opens or shuts. */
+  #stage.class-list-open > :not(.class-bubble-wrap){ opacity:.22; pointer-events:none; transition:opacity .2s ease; }
   .class-bubble, .csi-bubble{
     border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--ink);
     background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04) 55%), rgba(14,16,24,.7); background-repeat:no-repeat; background-origin:border-box;
@@ -54898,15 +54901,22 @@ function mountClassBubble(){
     stack.appendChild(b);
   });
   const outside = (e) => { if(!wrap.contains(e.target)) closeStack(); };
+  /* what is behind steps back while the list is open (#stage.class-list-open); the class goes with the list - shut, or the
+     list taken off the screen by the next screen's mount, which would otherwise leave that screen dimmed and untappable */
+  let dimWatch = null;
+  const dimOff = () => { stage.classList.remove("class-list-open"); if(dimWatch){ dimWatch.disconnect(); dimWatch = null; } };
   function openStack(){
     try{ warmIfcBank(); }catch(e){}   /* (384) a head start on Fire Code's questions, before a switch is tapped */
     wrap.classList.add("is-open"); btn.setAttribute("aria-expanded", "true");
+    stage.classList.add("class-list-open");
+    if(!dimWatch){ dimWatch = new MutationObserver(() => { if(!wrap.isConnected || !wrap.classList.contains("is-open")) dimOff(); }); dimWatch.observe(stage, { childList: true }); }
     stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = 0; });
     try{ playSound("ui.popup.open"); }catch(e){}
     setTimeout(() => document.addEventListener("pointerdown", outside, true), 0);
   }
   function closeStack(){
     wrap.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false");
+    dimOff();
     stack.querySelectorAll(".class-stack-item").forEach(b => { b.tabIndex = -1; });
     document.removeEventListener("pointerdown", outside, true);
   }

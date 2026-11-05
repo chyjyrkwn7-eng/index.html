@@ -35292,3 +35292,24 @@ pendingHomeUnlocks() shown (nothing new joins) AND start() removes any card that
 check-b384-codeslide / cropfit / ifccrop and check-b383-flashcards, which exec it. Result: check-b382-test ALL PASS (40).
 Lesson worth keeping: a fixture with real progress earns real unlocks, and Home's queue plays them on its own clock - a gate
 that drives screens by script from Home has to clear them, or it reads a covered screen.
+
+## 384 final check: the class list's dim was a :has() that restyled every screen on any change
+
+check-b384-codeopen (2) ("no task over 50ms after tapping Show the code", Fire Code Review list, 4x CPU) failed on the merged
+build and on the build before the drop-down slide, and passed on the build it was written for (0247490) under the same load.
+A single-run bisect blamed 9c1068c (secret names' wording - noise). A trace settled it: the 208ms task was a 138ms
+UpdateLayoutTree of 6,914 objects, and invalidation tracking named the rule:
+  #stage:has(> .class-bubble-wrap.is-open) > :not(.class-bubble-wrap)   (775a30c, "the class button's list dims what is behind it")
+A :has() on #stage whose styled set is "every child but one" is re-checked on changes under #stage, and its invalidation set
+for ":not(.class)" is the whole subtree - so ANY change on ANY screen (a code box opening, a row drawn, a class toggled) restyled
+the entire screen. App-wide cost, worst on long screens (Review lists, the Leaderboard).
+FIX: the list sets #stage.class-list-open itself (openStack / closeStack), and a MutationObserver on #stage's children takes it
+off if the list leaves the screen while open (the next screen's mount), so no screen is ever left dimmed and untappable. The
+rule is now #stage.class-list-open > :not(.class-bubble-wrap) - a class that only changes when the list opens or shuts.
+After: the tap's long tasks went 113-263ms -> 50-87ms at load 12, and 0 at load 5-7 (3 of 3, the same as 0247490 alternated).
+What remains at load 12 is two narrow :has() rules re-matching 107 rows each (.qnumrow:has(> .qnum) > .flagbtn.qflag,
+.fc-face:has(> .nova-hlb) .ifc-ref) - class-keyed, so they touch only those elements; left as they are.
+GATE: tools/check-b384-classdim.py - (1) open dims the rest of Home (<= .3) and it takes no tap; (2) a tap outside brings it
+back; (3) a screen mounted while open is not left dimmed; (4) no :has() rule in any stylesheet styles a broad set after it
+(:not(...), *, a bare tag) - the shape that does this; (5) no page errors. ALL PASS; --against the build before FAILS (4).
+RULE WORTH KEEPING: never write X:has(...) > :not(...) / * / tag on a container. Toggle a class instead.
