@@ -34984,3 +34984,106 @@ flex buttons, the sideways-scrolling chapter titles and the 3px county margins t
 - ONLY HIS PHONE CAN CONFIRM: the set-to-a-column pictures at 3x on Safari (same canvas path as every code picture); the warm-up of
   the booklet while a county question is up (one 1.1MB fetch a visit); the tag pill's sizer (an invisible ::after in a grid cell) with
   SF Pro's widths.
+## Build 384 polish (claude/b384-polish) - the rank-up cutscene once and smooth, the grade box's words with its numbers, red into green through the card, the XP box's foot as one piece
+
+Madison (he/him), after the 384 videos: *"The rank up cutscene, double check that this only forms up during that entire
+rank up ladder cutscene. And ensure that problem we talked about a while ago is fixed where you couldn't leave it because
+it kept going in circles going it again and again is fixed."* *"The rank up cutscene, when the large planet changes color,
+there's like a weird lag that happens in the video, ensure it's smooth transitions."* *"The result screen, the grade box,
+it says 'right in first try' before the numbers above it appear, shouldn't that be fixed?"* *"Also, still ensure when it
+changes from red to green that it's a smooth transition. Don't put in other colors just ensure it's smooth."* Then: *"the
+grade box is looking great, the xp box is looking great, as far as the xp box goes, could the bottom of it with your level
+and character and stuff, could that all look better?"* No APP_BUILD bump (the lead merges). Gate:
+`tools/check-b384-polish.py` (A-E, `--only`, `--against`, `--sabotage-loop`).
+
+- **THE CUTSCENE IS ONLY THE JOURNEY'S (checked, nothing to change).** `playRankUpScene` is reached only through
+  `playTierCutscene` / `playSupernovaCutscene`, and those only from `rankUpCutscene` (the journey's cutscene step); an older
+  build's `pendingTierCutscene` / `pendingSupernovaCutscene` is absorbed into a journey (`rankUpAbsorbPending`). The loop he
+  remembers is build 331's (a forced update reloading the app mid-journey before `rankUpMarkShown`, so the journey owed itself
+  again on the next launch); 331 holds updates for the whole journey. Gate A walks it on the page's clock in both classes:
+  a real 100% that ranks up -> its results -> Main menu -> Home's call -> the Profile tab -> the journey, with taps all over
+  the cutscene and the app sent to the background and back in the middle of it (academy); two ranks owed (two journeys, one
+  cutscene each); a relaunch in the middle of the cutscene (the rest plays - the cutscene once more - then never again);
+  relaunches after; Home and Profile free for 50s after each (no lock, no journey, no cutscene); every cutscene called inside
+  a journey's cutscene step for that journey's rank, each one finished, a forced update held in every phase. It passes on
+  185cc5c too (the loop was fixed in 331); `--sabotage-loop` (a copy whose `rankUpMarkShown` marks nothing - the journey
+  owing itself again) fails it, which is what shows the section can see a loop. 45 checks pass on this build;
+  the sabotaged copy fails 14 (journeys 1 -> 3 after the first, 8 for two ranks, the journey's focus never let go).
+- **THE "WEIRD LAG" WHEN THE PLANET CHANGES COLOUR was two things.**
+  1. *In the video:* the flash (`supernova-flash-burst`, 3 keyframes, and its deep bloom `rank-flash-deep`, 5) ran with
+     `cubic-bezier(.15,.7,.25,1)` - and an animation's timing function applies to EACH keyframe interval, so the light eased
+     to a dead stop at 14% and again at 35% (the peak, where the planet swaps under it) and then lurched on: frame steps
+     ~100x the one before (frames 724-729 and 736-741 of rankup-cutscene-440x956.mp4, 24.1-24.7s: four near-still frames, then
+     a jump). Now one expansion that only slows (scale 5.5 x (1 - (1 - t)^1.47), through the old 14% and 35% points) and one
+     brightness curve (up to .94 at 35%, then down), laid out as keyframes every 2-4% and run `linear`; the deep bloom the
+     same (an ease-out to 1.25, one rise and fall). Same box, colours and 2.6s. The aura (held at full into the flash) now
+     fades out under it over 1.1s; it used to vanish in one frame 1.6s in (frame 766's bump).
+  2. *On a phone:* traced at the swap (Chromium, 1x, 3,357 elements): the swap re-themed `<html>` (`setNewTheme` ->
+     `applyTheme` -> `syncStatusBarColor`'s forced style pass) and the overlay (`overlay.dataset.accent`) - two whole-document
+     style recalcs, 37ms and 42ms, back to back - and the flash's big bang was ADDED to the page at the burst (35ms: every
+     node added or removed anywhere re-checks the :has() rules under <body>; measured, appending one div to the overlay cost
+     27-39ms, a class change on it 0.4-2.6ms), with the bangs, aura and charge rings TAKEN OFF it 1.6-2s in (four more
+     whole-document recalcs, 26-30ms each), and the flip-book recordings (a host on <body>, a forced style pass a frame)
+     landing in the same window. Eight whole-document recalcs from the flash to the title; now none over 200 elements.
+     - The words that come up after the flash (kicker, title, subtitle) wear the new rank's `data-accent`/`data-theme` from
+       the start - they were the only things in the overlay that took its accent after the swap; the old planet keeps its
+       own colours as it fades (it used to snap to the new accent's CSS colours in its last .2s).
+     - The theme is set in `finish()`, in the dark after the words and planet have faded, before the overlay lifts (once:
+       `themeSet`); the still (Reduce motion) scene still sets it at once.
+     - The bangs are made with the overlay (`bangsHeld`, `.rank-bang.is-held`: hidden, animations off) and set off where
+       they are needed; spent ones are hidden (`.is-spent`), as are the aura, the pulses and the charge, never removed
+       mid-scene (the overlay's removal at the end takes them).
+     - `beginSettle()` from the charge until the title is up: every warm-up keyed off `settleUntil` (the emblem flip-book
+       recordings among them) waits.
+     - The old planet's dim rule no longer lifts at the swap (`:not(.is-swapped)` gone): lifting it changed an inherited
+       custom property under every old bubble (~620 nodes restyled) to undim a planet that is gone .2s later.
+     Real-time frame gaps, flash to title, are printed by gate B (not gated - a shared machine).
+  Gate B (both classes and Supernova, the page's clock): the flash's size and light and the deep bloom's never stop dead
+  and lurch on (on 185cc5c: steps of .0017 then .185, and .036 then .395, at the 35% and 14% keys), and nothing is added,
+  removed or re-themed from the flash to the title (185cc5c: the big bang added, the overlay and <html> re-themed, a body
+  child in and out, the aura and the charge's pieces removed) - 12 failures on 185cc5c, none now. Real-time frame gaps
+  could not be measured honestly here (the machine was at load 25-38 on 4 cores); the trace numbers above are the evidence.
+  Re-recorded: the flash's frame-to-frame change now runs 3-12 (mean abs, 220px frames) with no near-still frame before a
+  jump (rankup-cutscene-440x956.mp4 had 0.92 -> 9.71 and 2.85 -> 26.95).
+- **"RIGHT ON THE FIRST TRY" COMES WITH ITS NUMBERS.** The fraction ("10 / 12") waited for the landing (`.is-waiting`, b327)
+  but the words under it did not, so they sat on the card from its first frame. `fracSub` now waits too and comes in .12s
+  after the fraction (`.rs-grade-sub.is-waiting`; opacity and a 4px rise, nothing moves). `gradeParts.fracSub`.
+- **RED INTO GREEN THROUGH THE CARD.** b327j's switch (one frame, then a .38s bloom: brightness 1.25-1.3, saturate 1.5-1.6
+  and a 1.12x pop) read as a jump, and its bloom was a brighter, more saturated green than the landed one (chroma .20
+  against .13, lightness .88 against .72 in OKLab). Every blend of the two is a grey, an olive or an orange (321, 327f), so
+  the colour goes OUT and the other comes IN, one after the other, through the card: `rsTurn` / `rsTurnAt` over
+  `RS_TURN_MS` (700): the red fades (opacity, in its own hue) to `RS_TURN_FLOOR` (.12) as 1 - v^1.7, changes to the green in
+  that frame, where it is all but gone, and the green comes up as 1 - (1 - v)^1.7. The number by its opacity, each unit
+  bar by its own (its own verdict, its own moment); the card's two washes (hidden under the plain results card since 383)
+  trade places at the bottom. A turn still going when the grade lands plays out (a grade just over the pass mark turns
+  as it lands) and the layers come off after it (`doneAfterTurn`); a tap, or a 100's hand-off to its effect, ends it where
+  it is. `rs-green-on` / `rs-num-flip` / `rs-bar-flip` are deleted. Measured off the pixels every frame (gate D): only the
+  red or the green, no hue between with any colour in it; the largest frame-to-frame step ~.07 in OKLab (the switch was
+  .26-.38 in one frame); 8+ frames from the last full red to the first full green (the switch: 1-4). Gates C and D: 7 runs (both classes, phone, iPad, laptop, a fail, a 100, a 7/10 that turns as it lands) - 37
+  failures on 185cc5c (the words up 120-150 frames before the grade; the switch .26-.38 in one frame, 1-4 frames long, the
+  bloom's chroma .20 against the landed .13), none now.
+- **THE XP BOX'S FOOT AS ONE PIECE** (`.results-level.has-me`, `.results-level-next`). It was the character and its two
+  lines on their own, the bar across the whole card under them (starting under the character) and the numbers hanging
+  below it - on a laptop a small corner and a bar ~1,500px long. Now a grid of the same elements (the head and its text are
+  `display:contents`, so the bar, its numbers, the level-up chip, the charge glow, the bump and everything that reads them
+  are untouched): set off from the total by the same hairline the total has over it; the character on the left in a soft
+  ring of the rank's colour (no icon - "the ranking with the words is enough", 241); beside it one column - the level, the
+  rank in its colour, the bar, and under the bar the numbers with where the bar is going ("Level 43") at its other end
+  (`setNext`: follows the level as it changes; blank while a run climbs through several levels and at 80; hidden under 22rem
+  wide, where the column is ~160px). The Virtual Room's standings block (no character) is unchanged. Gate E (SE, Pro Max,
+  iPad Pro 11", laptop; both classes): one column beside the character, the character level with it, the hairline, the
+  target at the bar's end on the numbers' line, nothing out of the card, legible sizes - 30 failures on 185cc5c, none now.
+  Before/after at 2x: out-polish/xpbox-before, out-polish/xpbox-after.
+- Gates moved: check-behaviour `check_b317_cutspin` (the mini-bang's life is `:not(.is-held):not(.is-spent)` - it is made
+  with the scene now) and `EVOLVE_ST`'s `bang`/`big`, the same. check-b327-j A's "no unit bar is ever grey" counts a grey
+  only as bright as a red-green blend at strength (max channel 120+): a bar turning dims through its own track for a frame or
+  two, darker than either end (its other 11 A failures - the rim and wash since 383's plain card - are the same on 185cc5c).
+- Gates run once (the lead asked for one browser at a time at load ~25-38): check-results ALL PASS; check-b331 ALL PASS;
+  check-b380 one failure, "a board's flares are put on the loop clock once each" (the leaderboard, nothing touched here - a
+  load flake or as on 384, not re-run); check-behaviour check_cutscene / b317_cutspin / b317_cutend / b317_evolve /
+  b317_noflash: 70 pass, 4 fail - "it slows slowly (~5.4s)" on both devices (4373ms / 2979ms: real-time timers under load;
+  the spin is untouched) and "Reduce motion ... nothing moving" for Platinum and Supernova (3 running: the sky, the nebula and
+  the title's hairline transitions - the same on 185cc5c, measured). check_b319_rankup, b320d_rankup and the results sections
+  were not run (time); gate A covers the journey end to end.
+- Not seen on a device: the frame cost is Chromium's (WebKit's :has() invalidation differs, but a node added or removed
+  under <body> is the expensive case in both); the turn's dip and the foot's layout want a look on his phone.

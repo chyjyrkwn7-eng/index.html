@@ -14534,7 +14534,9 @@ def check_b317_cutspin(br):
                 if burst_at is None and pg.evaluate("() => !!document.querySelector('#supernova-cutscene.supernova-burst')"): burst_at = i
                 continue
             ph = pg.evaluate("""() => { const o = document.getElementById('supernova-cutscene'); if(!o) return [false, false, null];
-              const lp = o.querySelector('.rank-bang:not(.is-big)'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
+              /* MOVED IN 384 polish: the bangs are made with the scene and held (.is-held) until they go off, and hidden when
+                 spent (.is-spent) rather than taken off the page - a bang's life is now between the two */
+              const lp = o.querySelector('.rank-bang:not(.is-big):not(.is-held):not(.is-spent)'), sl = o.querySelector('.rank-before .rank-orbit-slot.is-igniting');
               const pool = sl ? getComputedStyle(sl, '::before') : null;
               return [!!lp, o.classList.contains('supernova-burst'), {
                 parts: lp ? [...lp.children].map(c => c.className).sort().join(',') : null,
@@ -14855,7 +14857,8 @@ EVOLVE_ST = """([tier]) => { const o = document.getElementById('supernova-cutsce
     stageT: st.translate, long: op('.rank-before .rank-trail.is-long'), neu: op('.rank-before .rank-trail.is-new'),
     ring: op('.rank-before .rank-trail.is-newring'), old: op('.rank-before .rank-trail.is-old'),
     slotOp: other ? +getComputedStyle(other).opacity : null,
-    bang: rect(o.querySelector('.rank-bang:not(.is-big)')), big: rect(o.querySelector('.rank-bang.is-big')),
+    /* MOVED IN 384 polish: a bang is on from the moment it goes off (.is-held off) until it is spent (.is-spent) */
+    bang: rect(o.querySelector('.rank-bang:not(.is-big):not(.is-held):not(.is-spent)')), big: rect(o.querySelector('.rank-bang.is-big:not(.is-held):not(.is-spent)')),
     gather: !!o.querySelector('.rank-gather'), spinScale: sp ? getComputedStyle(sp).scale : null,
     flash: fl ? (() => { const r = fl.getBoundingClientRect(); return [r.left + r.width / 2 - ob.left, r.top + r.height / 2 - ob.top]; })() : null }; }"""
 
