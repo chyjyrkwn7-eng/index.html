@@ -207,11 +207,17 @@ window.__gold = function(D, W, H, s){
   }
   /* stripes: two shapes one above the other, overlapping sideways, with a thin band of something else between */
   const stripes = [];
+  /* the gold's extent on one row of a shape */
+  const rowSpan = (c, y) => { let lo = -1, hi = -1; for(let x = c.x0; x <= c.x1; x++) if(lab[y * W + x] === c.id){ if(lo < 0) lo = x; hi = x; } return [lo, hi]; };
   for(const a of big) for(const b of big){ if(a === b) continue;
-    const ov = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), gap = b.y0 - a.y1 - 1;
-    if(!(ov > 4 * s && gap >= 1 && gap <= 0.3 * 10 * s)) continue;
+    const gap = b.y0 - a.y1 - 1;
+    if(!(gap >= 1 && gap <= 0.3 * 10 * s)) continue;
+    /* where the two face each other: a's last row against b's first (the end of one line over the start of the next, side by
+       side, is not a stripe) */
+    const [a0, a1] = rowSpan(a, a.y1), [b0, b1] = rowSpan(b, b.y0);
+    if(a0 < 0 || b0 < 0 || Math.min(a1, b1) - Math.max(a0, b0) <= 4 * s) continue;
     /* what is between them: a table's rule (ink across the overlap) separates two rows; anything else is a stripe of wash */
-    const xa = Math.max(a.x0, b.x0), xb = Math.min(a.x1, b.x1); let ruled = false;
+    const xa = Math.max(a0, b0), xb = Math.min(a1, b1); let ruled = false;
     for(let y = a.y1 + 1; y < b.y0 && !ruled; y++){ let m = 0; for(let x = xa; x <= xb; x++) if(ink((y * W + x) * 4)) m++; if(m >= 0.6 * (xb - xa + 1)) ruled = true; }
     if(!ruled) stripes.push([a.y1, b.y0, gap]); }
   /* slivers: a long thin strip of the gold on its own (under 0.25 em tall, over 3 em long) - a band that ran past a table's rule */
