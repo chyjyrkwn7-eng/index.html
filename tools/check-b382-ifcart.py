@@ -164,8 +164,12 @@ chk("every Fire Code non-rank banner moves (layered, with a bl- motion) (still: 
 off = [n for n in ["Hotshot", "Sparky", "Fire Marshal", "Truckie", "Air Attack", "Rescue Diver", "Gold Helmet", "Backdraft", "Night Shift", "Flashover", "Blue Flame", "Phoenix",
   "K9 Officer", "Logistics", "Horn Strobe", "Cyber Marshal", "Grand Marshal", "Commander"] if n in F["cnames"].values()]
 chk("no round-1 character he turned down is left in Fire Code (%s)" % off, not off, off)
-need = ["Plans Examiner", "Public Educator", "Strobe", "Sprinkler Head", "Investigator"]
-chk("the plans examiner, public educator, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
+# (384) "I don't like the plane examiner ... a fire extinguisher character", "Let's not do the investigator, can you make that a
+# hazmat monster", "I don't like public educator, try something else": those three are the Extinguisher, Toxic Spill and Hydrant now
+need = ["Extinguisher", "Toxic Spill", "Hydrant", "Strobe", "Sprinkler Head"]
+chk("the extinguisher, toxic spill, hydrant, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
+gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in F["cnames"].values()]
+chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
 boff = [n for n in ["Station 26", "Ladder 26", "The Crew", "Tower Ladder", "Night Watch", "Night Call", "Gold Helmet", "Fire Watch", "Blue Flame", "Phoenix", "Grand Marshal"] if n in F["bnames"].values()]
 chk("no firehouse, engine, ladder, crew, helmet or round-2 ultimate banner is left (%s)" % boff, not boff, boff)
 chk("a headquarters, two hazmat banners, an alarm panel and an exit banner are there", all(n in F["bnames"].values() for n in ["Headquarters", "Spill Response", "Hazmat", "Alarm Panel", "Exit"]), sorted(F["bnames"].values()))
@@ -201,8 +205,9 @@ peaks = [i for i, v in F["hats"].items() if v["peak"]]
 chk("no Fire Code character wears a police-style peaked cap (%s)" % peaks, F["hats"] and not peaks, peaks)
 badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble") for h in v["hat"])]
 chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood or a space helmet (%s)" % badhat, not badhat, badhat)
-west = [i for i in ("detective", "poseidon", "astronaut", "celestial") if "cowboy" not in F["hats"].get(i, {}).get("hat", [])]
-chk("the inspector, the chief, the investigator and the star ranger wear cowboy hats (missing: %s)" % west, not west, west)
+# (384) the investigator (astronaut) is the Toxic Spill now, a creature with no hat
+west = [i for i in ("detective", "poseidon", "celestial") if "cowboy" not in F["hats"].get(i, {}).get("hat", [])]
+chk("the inspector, the chief and the star ranger wear cowboy hats (missing: %s)" % west, not west, west)
 chk("the clown's character is called Strobe (%s)" % F["cnames"].get("clown"), F["cnames"].get("clown") == "Strobe")
 BREDO3 = ["tests100", "early10", "hundos100", "study50", "astral", "celestial", "zenith"]
 bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i)]

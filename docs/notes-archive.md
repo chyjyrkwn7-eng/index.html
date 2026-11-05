@@ -34667,3 +34667,49 @@ re-run at the end with the machine quiet.
   20,000. One saving made: a new account no longer runs the two once-per-account room-history backfills (seedVroomHistory /
   seedVroomTop3 each read every vrooms document - ~430 reads per sign-up); vrRetroDone/vrTop3RetroDone are set at both sign-up
   completions, as a reset already did.
+### Build 384 - Fire Code's challenge characters, his review (NOT on main, waiting for Madison)
+Madison on the screenshots: "I don't like the plane examiner. Could we make that a fire extinguisher character? That could be
+cool." / "The inspector looks cool but inspector needs the blue colored shirt like investigator." / "Let's not do the
+investigator, can you make that a hazmat monster or something cool?" / "I don't like public educator, try something else." /
+"Strobe and sprinkler look awesome, could they be better? We don't need to add stuff to it like I see you do? But could they
+look better?" / "Drone pilot is sick, the drone is like sitting on his head though?" / "After this do any touchups on the
+entire character list". Same ids (saved avatars and challenges keep working); only kind, name, glow, scene change.
+- valkyrie (was Plans Examiner, fcplans) -> **Extinguisher** (fcextinguisher, #FF3D4F): a stored-pressure ABC extinguisher
+  with a face. The gloss red cylinder is the whole figure; the chrome valve is its crown with the gauge on its brow (needle in
+  the green, cx-fx-fcbeam with an inline fill-box origin so it pivots on its own base), the levers swept back with the yellow
+  inspection tag swinging off them (cx-fx-tail1, origin at its string), the hose round its side and back up, a wisp of powder
+  off the nozzle (and two cx-fx-smoke puffs live), the class label across the chest (A B C and the green triangle, red
+  square, blue circle). Set brows and low inner lids: a can that has never failed an inspection.
+- astronaut (was Investigator, fcinvest2) -> **Toxic Spill** (fcspill, #B266FF): not a second suited person (the Hazmat is
+  that) but what the hazmat team is called out to - a violet ooze climbing out of a dented yellow drum with the trefoil on
+  it, three acid-green slit eyes with a soft pulsing glow (a radial gradient, cx-fx-scopeglow), a grin of teeth with two fangs,
+  green drool, drips over the rim, bubbles rising (cx-fx-smoke).
+- timekeeper (was Public Educator, fceducator) -> **Hydrant** (fchydrant, #FFC62E): the hydrant the code keeps clear - a
+  stout yellow barrel with a face, the bonnet and operating nut in the light blue that marks the biggest flow (NFPA 291), the
+  side outlets capped and chained either side, the steamer cap on its chest. With the Strobe, the Sprinkler Head and the
+  Extinguisher it makes a set: the systems the code is about. No helmet, engine, ladder or dog.
+- The three device characters are rigid in cx-body and their cx-head is only the face, so a nod, a slump or sleep's tilt moves
+  the expression and never splits a cylinder. The Spill's drum front lip and drips are drawn after its head (outside both
+  groups) so the ooze can tilt without a gap at the rim.
+- Inspector (detective): the shirt, collar and flaps are the investigator's agency blue (#4A78C8/#2E5AA8/#14306A) and the
+  nameplate its gold (the dark one did not read on blue); hat, glasses, clipboard, patch, gold star and glow as they were.
+- Strobe and Sprinkler Head: the same parts and nothing new (check-b384-ifcchars D: their part lists are 185cc5c's exactly).
+  Strobe: lacquered housing (window reflection, light edge, shade on the far side and under the jaw), a chrome bezel round the
+  lens, the eyes lit inside the glass with a reflection over them, raised plate letters, grille and horn slots cut in with lit
+  lips, a shaded neck, modelled shoulders and band. Sprinkler: chrome as chrome (a dark horizon band and a hot line across the
+  helm and down each arm, shade under the jaw), the bulb as glass with its red liquid, lit core and air bubble, the deflector
+  given its thickness, glass reflection and lit eyes, the collar and chest light modelled.
+- Drone Pilot: the drone was centred a hair over his crown with its glow ellipse lying on his hair. It flies up in clear air
+  now, banked 6 degrees, its downlight under its own belly: 3.46 units between it and his hair in a coin (-0.28 before), the
+  whole drone inside the coin's circle (0.94 of the radius).
+- Touch-up across the list (every challenge character at tile, coin and plate size, locked and unlocked): the Dispatcher's
+  navy polo went into his navy sky and left the head floating on a tile; a shade lighter with light along the shoulders.
+  Everything else was left: nothing clipped in the plate, the Hazmat's placard whole, the Smoke Diver kept as he asked.
+- Specials: every Fire Code character keeps ifcSpecial (embers into the cross, in its own glow), registered by id in the
+  IFC_CHAR_LOOK loop, so the new kinds have theirs without a line of their own; check-b384-ifcchars F runs check-b327z15 N's
+  end-of-special measure on all eleven in Fire Code (N itself runs in the academy only).
+- Gates: tools/check-b384-ifcchars.py (new; 16 of 19 fail on 185cc5c - the other three, "the page is Fire Code", "still wears
+  his cowboy hat" and "the whole drone is inside the coin", held before too; F subtracts the call's own time from N's
+  60ms, which a load average of 25 ran past by itself). check-b382-ifcart moved to this decision
+  (the names it asserted, and the investigator in the cowboy-hat list: he is the Toxic Spill now).
+- Contact sheets (before/after, tile/coin/plate, locked and unlocked) were made in the session's scratchpad for Madison.
