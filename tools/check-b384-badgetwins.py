@@ -24,10 +24,12 @@ COLOURS, per class, read off the page:
       size, found as the pixels that change when the enamel is swapped for black. The token's metal, lighting and clear
       coat squeeze colours together (onyx strikes as a dark grey, a pearl as a light one), so this is the stricter reading;
       one reference, because a thin outline's enamel is mostly wall and shade and strikes darker than a broad one's;
-  (d) side by side - in the unit list (teaching order), the badge case scene's grid (badgeCaseGrid) and the case on Profile
-      (its tiles' own positions, diagonals too) - no two struck enamels within 14;
-  (e) a pale enamel (badgeEnamelPale) keeps a dark edge where it meets the silver (its band at the wall at least 10% darker
-      than its field), and a near-black one glows in a light that can be seen (badgeThemeFor(u).g, L* 45 or more).
+  (d) side by side - in the unit list (its cards as laid out at 440px: two columns, so the card below counts too, and teaching
+      order), the badge case scene's grid (badgeCaseGrid) and the case on Profile (its tiles' own positions, diagonals too) -
+      no two struck enamels within 14;
+  (e) a pale enamel (badgeEnamelPale) keeps a dark edge where it meets the silver - the band of its enamel at the wall has at
+      most .35 of its field's light (the bevel's shade alone leaves ~.40; with BADGE_STRIKE.paleEdge ~.30) - and a
+      near-black one glows in a light that can be seen (badgeThemeFor(u).g, L* 45 or more).
   (5) no page errors in either class.
   python3 tools/check-b384-badgetwins.py [--against OLD/index.html]   (must FAIL on the build before)"""
 import json, os, sys, itertools, math
@@ -46,7 +48,7 @@ from playwright.sync_api import sync_playwright
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:500], flush=True)
-N = 200; LIM = .85; DE_HEX, DE_STRUCK, DE_SIDE = 11, 9, 14
+N = 200; LIM = .85; DE_HEX, DE_STRUCK, DE_SIDE = 11, 9, 14; EDGE = .35
 RASTER = """(N)=>{ const cv=document.createElement('canvas'); cv.width=N; cv.height=N; const x=cv.getContext('2d'); const seen={}, units={};
   for(const u of unitsInTeachingOrder()){ const d=badgeShapeFor(u).d; units[u]=d; if(seen[d]) continue;
     x.clearRect(0,0,N,N); x.save(); x.scale(N/120, N/120); x.translate(10,10); x.fill(new Path2D(d)); x.restore();
@@ -81,6 +83,10 @@ TILES = r"""async () => { unitsInTeachingOrder().forEach(u => { store.unitPerfec
   showRanksScreen('badges'); await new Promise(r => setTimeout(r, 2500));
   return [...document.querySelectorAll('#stage .badge-tile')].map(c => { const r = c.getBoundingClientRect();
     return { label: c.getAttribute('aria-label') || '', x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }); }"""
+CARDS = r"""async () => { cfg.mode = 'drill'; cfg.units = []; showSetup(); await new Promise(r => setTimeout(r, 1800));
+  const t = {}; unitsInTeachingOrder().forEach(u => { t[unitTitle(u)] = u; });
+  return [...document.querySelectorAll('#stage label.pick')].map(c => { const n = c.querySelector('.pname'), r = c.getBoundingClientRect();
+    return { u: n ? t[n.textContent] || null : null, x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }).filter(o => o.u); }"""
 GS = 176; gv = (np.arange(GS) + .5) / GS * 2 - 1; U, V = np.meshgrid(gv * 2.4, gv * 2.4)
 def blur(m, sigma=9.0):
     r = int(3 * sigma); x = np.arange(-r, r + 1); k = np.exp(-x * x / (2 * sigma * sigma)); k /= k.sum()
@@ -168,11 +174,11 @@ with sync_playwright() as pw:
     for cls in ("ifc", "academy"):
         ctx, pg, errs = G["page"](br, G["init"](G["ifc"]) if cls == "ifc" else G["init"](G["academy"], active="academy"))
         pg.wait_for_timeout(800)
-        r = pg.evaluate(RASTER, N); c = pg.evaluate(COLOURS, 104); t = pg.evaluate(TILES)
-        res[cls] = (r, c, t, list(errs)); ctx.close()
+        r = pg.evaluate(RASTER, N); c = pg.evaluate(COLOURS, 104); cards = pg.evaluate(CARDS); t = pg.evaluate(TILES)
+        res[cls] = (r, c, t, cards, list(errs)); ctx.close()
     br.close()
 for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the academy", "2", "4")):
-    r, c, tiles, errs = res[cls]
+    r, c, tiles, cards, errs = res[cls]
     names, masks = {}, {}
     for i, (d, s) in enumerate(r["masks"].items()):
         k = "o%d" % i; masks[k] = np.array([ch == "1" for ch in s], bool).reshape(N, N)
@@ -205,13 +211,17 @@ for cls, label, s1, s2 in (("ifc", "Fire Code", "1", "3"), ("academy", "the acad
     tl = [(i, t) for i, t in tl if i is not None]
     for (i, a), (j, b) in itertools.combinations(tl, 2):
         if abs(a["x"] - b["x"]) <= a["w"] * 1.6 and abs(a["y"] - b["y"]) <= a["h"] * 1.6: nb.add(tuple(sorted((i, j))))
+    cl = [(idx[k["u"]], k) for k in cards if k["u"] in idx]
+    for (i, a), (j, b) in itertools.combinations(cl, 2):
+        if abs(a["x"] - b["x"]) <= a["w"] * 1.6 and abs(a["y"] - b["y"]) <= a["h"] * 1.6: nb.add(tuple(sorted((i, j))))
     sd = sorted((round(de00(U_[i]["mean"], U_[j]["mean"]), 1), U_[i]["u"][:18], U_[j]["u"][:18]) for i, j in nb)
-    chk("(%sd) %s: side by side - the unit list, the case scene's %d columns, the case on Profile (%d tiles) - no two struck enamels within %d (closest %.1f: %s / %s)"
-        % (s2, label, cols, len(tl), DE_SIDE, sd[0][0], sd[0][1], sd[0][2]), sd[0][0] >= DE_SIDE and len(tl) == len(U_), (sd[:5], len(tl)))
+    chk("(%sd) %s: side by side - the unit list on an iPhone 17 Pro Max (%d cards, as laid out), the case scene's %d columns, the case on Profile (%d tiles) - no two struck enamels within %d (closest %.1f: %s / %s)"
+        % (s2, label, len(cl), cols, len(tl), DE_SIDE, sd[0][0], sd[0][1], sd[0][2]), sd[0][0] >= DE_SIDE and len(tl) == len(U_) and len(cl) == len(U_), (sd[:5], len(tl), len(cl)))
     pale = [x for x in U_ if x["pale"]]
-    noedge = [(x["u"][:22], round(x["edgeY"], 3), round(x["fieldY"], 3)) for x in pale if not x["edgeY"] < x["fieldY"] * .9]
-    chk("(%se) %s: every pale enamel (%d of them) keeps a dark edge at the silver - its band at the wall at least 10%% darker than its field" % (s2, label, len(pale)),
-        not noedge, noedge)
+    ratios = sorted((round(x["edgeY"] / x["fieldY"], 3), x["u"][:22]) for x in pale if x["fieldY"])
+    noedge = [(r_, u_) for r_, u_ in ratios if r_ > EDGE]
+    chk("(%se) %s: every pale enamel (%d of them) keeps a dark edge at the silver - its band at the wall no more than %.2f of its field's light (worst %s)"
+        % (s2, label, len(pale), EDGE, ratios[-1] if ratios else "-"), not noedge, noedge)
     darks = [x for x in U_ if lab(x["p"])[0] < 30]
     dim = [(x["u"][:22], x["p"], x["g"]) for x in darks if lab(x["g"])[0] < 45]
     chk("(%se) %s: every near-black enamel (%d of them) glows in a light that can be seen (L* 45 or more)" % (s2, label, len(darks)), not dim, dim)

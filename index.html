@@ -71471,10 +71471,10 @@ const UNIT_BADGE_THEME = {
   /* The one badge whose colours are deliberately unalike, because the
      unit is about many things holding together. */
   "Multiculturalism and Human Relations":          ["teal", "amber"],
-  "Racial Profiling":                              ["violet"],
+  "Racial Profiling":                              ["#B07FEB"],  /* light violet - was violet */
   "US and Texas Constitution and Rights":          ["red", "royal"],
   "Penal Code":                                    ["brown", "gold"],
-  "Code of Criminal Procedure and Bill of Rights": ["#B8BDF5"],  /* light indigo - was indigo */
+  "Code of Criminal Procedure and Bill of Rights": ["#DBD1FF"],  /* pale indigo - was indigo */
   "Arrest, Search, and Seizure":                   ["steel"],
   "Victims of Crime":                              ["pink"],
   "Missing and Exploited Children":                ["amber"],
@@ -71494,16 +71494,16 @@ const UNIT_BADGE_THEME = {
      on the token, nothing within 14 side by side (check-b384-badgetwins).
      Those three shared colours went, and so did the near ones (violet /
      indigo 6.5, purple / violet 6.7, red / terracotta 6.8, pink / mauve):
-     seven units take a lighter or darker enamel - the newer unit of each
-     pair where there was a choice - and the other seventeen keep theirs.
+     eight units take a lighter or darker enamel - the newer unit of each
+     pair where there was a choice - and the other sixteen keep theirs.
      A table entry may now be the enamel itself (#RRGGBB). */
-  "Consular Notification":                         ["#00504C"],  /* dark teal - was teal */
-  "Crisis Intervention Training":                  ["#C695FF"],  /* light violet - was purple */
+  "Consular Notification":                         ["#003C39"],  /* deep teal - was teal */
+  "Crisis Intervention Training":                  ["#422765"],  /* deep violet - was purple */
   "De-Escalation":                                 ["emerald"],
   "Health and Safety Code":                        ["orange"],
   "Interacting with Deaf or Hard-of-Hearing":      ["crimson"],
   "Radio Communications, Alerts, and TCIC-TLETS":  ["#FDCFA2"],  /* pale amber - was amber */
-  "Traumatic Brain Injury":                        ["#660E40"],  /* deep pink - was pink */
+  "Traumatic Brain Injury":                        ["#F6ACC2"],  /* light rose - was pink */
   "Phonetic Alphabet and Military Time":           ["#641B0D"]  /* deep rust - was terracotta */
 };
 /* FIRE CODE'S CHAPTERS, A COLOUR EACH (build 384; badges round 2). The first pass dealt 21 families over 58 chapters - each
@@ -71514,8 +71514,8 @@ const UNIT_BADGE_THEME = {
    enamel on the same token at the case's size, because the token's metal and clear coat squeeze colours together - and
    held to: no two within CIEDE2000 11 as written, none within 9 as struck, nothing within 14 side by side in the unit list,
    the case scene's eight columns or the case on Profile (check-b384-badgetwins reads all of that off the page). Where a
-   chapter had a meaning the colour keeps it, now at a lightness of its own: fire reds (Chapter 5 a deep fire red, 57 the
-   flammable-liquid red, Appendix I an oxblood, 64 a pale salmon), oranges for emergencies and hot work, gold and amber for
+   chapter had a meaning the colour keeps it, now at a lightness of its own: fire reds (Chapter 5 a fire red, 57 a
+   brighter one, Appendix C a hydrant's dark red, Appendix I a coral, 7 a deep wine, 64 a pale blush), oranges for emergencies and hot work, gold and amber for
    hazmat (Chapter 63 the oxidizer placard's pale yellow), blues for water and the air (67 the "dangerous when wet" blue),
    greens for egress and crops, browns for wood, a frost for cryogenic fluids, graphite for tires and onyx for the access
    roads' asphalt. The chapters whose old colour meant nothing were left free, which is what spreads the 58 round the wheel
@@ -71523,64 +71523,64 @@ const UNIT_BADGE_THEME = {
    where it meets the silver (BADGE_STRIKE.paleEdge) so it never reads as a blank token; a near-black one glows in its
    colour lifted half way to white (badgeThemeFor's g). Keyed by the chapter's own title, which no academy unit shares. */
 const IFC_BADGE_THEME = {
-  "Chapter 1: Scope and Administration":                              ["#302C6B"],  /* deep indigo */
-  "Chapter 2: Definitions":                                           ["#99E6CC"],  /* pale jade */
-  "Chapter 3: General Requirements":                                  ["#00617E"],  /* dark sky */
-  "Chapter 4: Emergency Planning and Preparedness":                   ["#CE612F"],  /* orange */
-  "Chapter 5: Fire Service Features":                                 ["#AB242B"],  /* dark red */
-  "Chapter 6: Building Services and Systems":                         ["#FE7ED3"],  /* light pink */
-  "Chapter 7: Fire and Smoke Protection Features":                    ["#C8315E"],  /* crimson */
-  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": ["#007C61"],  /* jade */
-  "Chapter 9: Fire Protection and Life Safety Systems":               ["#009BF9"],  /* azure */
+  "Chapter 1: Scope and Administration":                              ["#007A7C"],  /* aqua */
+  "Chapter 2: Definitions":                                           ["#83399B"],  /* dark purple */
+  "Chapter 3: General Requirements":                                  ["#00375D"],  /* deep azure */
+  "Chapter 4: Emergency Planning and Preparedness":                   ["#E59977"],  /* light orange */
+  "Chapter 5: Fire Service Features":                                 ["#DD524F"],  /* red */
+  "Chapter 6: Building Services and Systems":                         ["#DBB3E5"],  /* light purple */
+  "Chapter 7: Fire and Smoke Protection Features":                    ["#6A0B2C"],  /* deep crimson */
+  "Chapter 8: Interior Finish, Decorative Materials and Furnishings": ["#83E6F2"],  /* pale aqua */
+  "Chapter 9: Fire Protection and Life Safety Systems":               ["#2E9BD8"],  /* azure */
   "Chapter 10: Means of Egress":                                      ["#00954C"],  /* emerald */
-  "Chapter 11: Construction Requirements for Existing Buildings":     ["#5E4100"],  /* deep ochre */
-  "Chapter 12: Energy Systems":                                       ["#E89A3D"],  /* light amber */
-  "Chapter 20: Aviation Facilities":                                  ["#485594"],  /* dark indigo */
-  "Chapter 21: Dry Cleaning":                                         ["#393600"],  /* deep olive */
-  "Chapter 22: Combustible Dust-Producing Operations":                ["#85E5FB"],  /* pale cyan */
-  "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages":  ["#91B842"],  /* light lime */
-  "Chapter 24: Flammable Finishes":                                   ["#FCC7F4"],  /* pale orchid */
+  "Chapter 11: Construction Requirements for Existing Buildings":     ["#5F2100"],  /* deep rust */
+  "Chapter 12: Energy Systems":                                       ["#7E6B35"],  /* yellow */
+  "Chapter 20: Aviation Facilities":                                  ["#0073AB"],  /* azure */
+  "Chapter 21: Dry Cleaning":                                         ["#006917"],  /* dark green */
+  "Chapter 22: Combustible Dust-Producing Operations":                ["#B9CB3B"],  /* pale olive */
+  "Chapter 23: Motor Fuel-Dispensing Facilities and Repair Garages":  ["#003C3D"],  /* deep aqua */
+  "Chapter 24: Flammable Finishes":                                   ["#6A55CF"],  /* violet */
   "Chapter 25: Fruit and Crop Ripening":                              ["#ADCA96"],  /* pale lime */
-  "Chapter 26: Fumigation and Insecticidal Fogging":                  ["#660E40"],  /* deep pink */
-  "Chapter 27: Semiconductor Fabrication Facilities":                 ["#008DAB"],  /* cyan */
-  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": ["#866835"],  /* ochre */
-  "Chapter 29: Manufacture of Organic Coatings":                      ["#D84C95"],  /* pink */
-  "Chapter 30: Industrial Ovens":                                     ["#A45845"],  /* vermilion */
-  "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": ["#00504C"],  /* dark teal */
-  "Chapter 32: High-Piled Combustible Storage":                       ["#535F00"],  /* dark olive */
-  "Chapter 33: Fire Safety During Construction and Demolition":       ["#FFCDAC"],  /* pale amber */
+  "Chapter 26: Fumigation and Insecticidal Fogging":                  ["#C8315E"],  /* crimson */
+  "Chapter 27: Semiconductor Fabrication Facilities":                 ["#FE7ED3"],  /* light pink */
+  "Chapter 28: Lumber Yards and Agro-Industrial, Solid Biomass and Woodworking Facilities": ["#473100"],  /* deep ochre */
+  "Chapter 29: Manufacture of Organic Coatings":                      ["#00A5BD"],  /* cyan */
+  "Chapter 30: Industrial Ovens":                                     ["#B54D1B"],  /* orange */
+  "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": ["#9A7F00"],  /* yellow */
+  "Chapter 32: High-Piled Combustible Storage":                       ["#313800"],  /* deep olive */
+  "Chapter 33: Fire Safety During Construction and Demolition":       ["#8A5A34"],  /* amber */
   "Chapter 34: Tire Rebuilding and Tire Storage":                     ["#444F58"],  /* graphite */
-  "Chapter 35: Welding and Other Hot Work":                           ["#562800"],  /* deep umber */
-  "Chapter 36: Marinas":                                              ["#738FFE"],  /* indigo */
-  "Chapter 37: Combustible Fibers":                                   ["#00AA86"],  /* jade */
-  "Chapter 38: Higher Education Laboratories":                        ["#8456BD"],  /* violet */
+  "Chapter 35: Welding and Other Hot Work":                           ["#FFCDAC"],  /* pale amber */
+  "Chapter 36: Marinas":                                              ["#1E54B9"],  /* dark indigo */
+  "Chapter 37: Combustible Fibers":                                   ["#E296A3"],  /* light crimson */
+  "Chapter 38: Higher Education Laboratories":                        ["#9F70AC"],  /* purple */
   "Chapter 39: Processing and Extraction Facilities":                 ["#3FC270"],  /* light emerald */
-  "Chapter 40: Storage of Distilled Spirits and Wines":               ["#A0227D"],  /* dark pink */
+  "Chapter 40: Storage of Distilled Spirits and Wines":               ["#A8176C"],  /* dark pink */
   "Chapter 50: Hazardous Materials\u2014General Provisions":          ["#C9A831"],  /* light yellow */
-  "Chapter 51: Aerosols":                                             ["#D2D4FF"],  /* pale indigo */
-  "Chapter 53: Compressed Gases":                                     ["#D1E152"],  /* pale olive */
-  "Chapter 54: Corrosive Materials":                                  ["#FF869E"],  /* light crimson */
+  "Chapter 51: Aerosols":                                             ["#4F215D"],  /* deep purple */
+  "Chapter 53: Compressed Gases":                                     ["#65A63B"],  /* lime */
+  "Chapter 54: Corrosive Materials":                                  ["#A2A7DF"],  /* light indigo */
   "Chapter 55: Cryogenic Fluids":                                     ["#D5ECF5"],  /* frost */
-  "Chapter 56: Explosives and Fireworks":                             ["#798900"],  /* olive */
-  "Chapter 57: Flammable and Combustible Liquids":                    ["#DD524F"],  /* red */
-  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":       ["#7F4E29"],  /* dark amber */
-  "Chapter 59: Flammable Solids":                                     ["#00BEC2"],  /* light aqua */
-  "Chapter 60: Highly Toxic and Toxic Materials":                     ["#007A7C"],  /* aqua */
-  "Chapter 61: Liquefied Petroleum Gases":                            ["#FF8C57"],  /* light orange */
-  "Chapter 62: Organic Peroxides":                                    ["#003E09"],  /* deep green */
-  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": ["#FFD084"],  /* pale gold */
-  "Chapter 64: Pyrophoric Materials":                                 ["#F8AEA6"],  /* light red */
-  "Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics":               ["#006917"],  /* dark green */
-  "Chapter 66: Unstable (Reactive) Materials":                        ["#C695FF"],  /* light violet */
-  "Chapter 67: Water-Reactive Solids and Liquids":                    ["#006DCA"],  /* blue */
-  "Chapter 80: Referenced Standards":                                 ["#633371"],  /* deep purple */
+  "Chapter 56: Explosives and Fireworks":                             ["#535F00"],  /* dark olive */
+  "Chapter 57: Flammable and Combustible Liquids":                    ["#F96186"],  /* crimson */
+  "Chapter 58: Flammable Gases and Flammable Cryogenic Fluids":       ["#E0703A"],  /* orange */
+  "Chapter 59: Flammable Solids":                                     ["#C695FF"],  /* light violet */
+  "Chapter 60: Highly Toxic and Toxic Materials":                     ["#005235"],  /* dark jade */
+  "Chapter 61: Liquefied Petroleum Gases":                            ["#B7710E"],  /* amber */
+  "Chapter 62: Organic Peroxides":                                    ["#00A8A0"],  /* teal */
+  "Chapter 63: Oxidizers, Oxidizing Gases and Oxidizing Cryogenic Fluids": ["#F2D584"],  /* pale yellow */
+  "Chapter 64: Pyrophoric Materials":                                 ["#FFCACB"],  /* pale crimson */
+  "Chapter 65: Pyroxylin (Cellulose Nitrate) Plastics":               ["#83D0B6"],  /* pale jade */
+  "Chapter 66: Unstable (Reactive) Materials":                        ["#CE52A7"],  /* orchid */
+  "Chapter 67: Water-Reactive Solids and Liquids":                    ["#5A7BE6"],  /* indigo */
+  "Chapter 80: Referenced Standards":                                 ["#798900"],  /* olive */
   "Appendix B: Fire-Flow Requirements for Buildings":                 ["#91C6F7"],  /* light azure */
-  "Appendix C: Fire Hydrant Locations and Distribution":              ["#9A7F00"],  /* yellow */
+  "Appendix C: Fire Hydrant Locations and Distribution":              ["#AB242B"],  /* dark red */
   "Appendix D: Fire Apparatus Access Roads":                          ["#232425"],  /* onyx */
-  "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": ["#B7710E"],  /* amber */
-  "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": ["#681518"],  /* deep red */
-  "Exhibit B: Amendments to the International Building Code":         ["#003856"],  /* deep azure */
-  "Chapter and Section Finder":                                       ["#F5EAD2"]  /* ivory */
+  "Appendix H: Hazardous Materials Management Plan (HMMP) and Hazardous Materials Inventory Statement (HMIS) Instructions": ["#E89A3D"],  /* light amber */
+  "Appendix I: Fire Protection Systems\u2014Noncompliant Conditions": ["#FF8980"],  /* light red */
+  "Exhibit B: Amendments to the International Building Code":         ["#006278"],  /* dark cyan */
+  "Chapter and Section Finder":                                       ["#D2D4FF"]  /* pale indigo */
 };
 /* A unit the table does not know still has to draw something - the
    leaderboard lost three classmates to a builder returning null for an

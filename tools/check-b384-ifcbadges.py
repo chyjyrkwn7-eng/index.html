@@ -23,7 +23,7 @@ Played in Chromium in the Fire Code class (class26e.activeclass = "ifc") and rea
      playUnlockSpotlight when the walk shows none), each draw Chapter 40's outline and enamel as the case on Profile does,
      and none of them looks like Chapter 26's badge;
  (6) THE ACADEMY'S BADGES ARE AS PINNED: its 24 units' outlines, channels, colours, back plans and vector drawings hash to
-     the pin (badges round 2 changed them on purpose - four outlines and seven enamels; --dump prints the hash);
+     the pin (badges round 2 changed them on purpose - four outlines and eight enamels; --dump prints the hash);
  (7) no page errors in either class.
 Run:  python3 tools/check-b384-ifcbadges.py   (--against OLD/index.html must FAIL; ONLY=1,3 runs those sections; --dump prints
 the academy's hash)"""
@@ -276,11 +276,11 @@ with sync_playwright() as pw:
           return { n: us.length, h: __h(JSON.stringify(rows)), cls: window.NOVA_CLASS }; }"""
         ra = A.evaluate(ACAD)
         # CHANGED ON PURPOSE (384 final check, badges round 2): the academy's own look-alikes went - TCOLE Rules, De-Escalation,
-        # Crisis Intervention Training and Civil Process have new outlines, seven units new enamels (check-b384-badgetwins
+        # Crisis Intervention Training and Civil Process have new outlines, eight units new enamels (check-b384-badgetwins
         # holds the academy to Fire Code's rule now). Was 8996cbb2 (1dca98e). Taken with --dump on this round's build.
-        PIN = "ac3f329d"
+        PIN = "2de41ef8"
         if DUMP: print("DUMP academy badges", ra)
-        chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are exactly as they were (%s)" % (ra["n"], ra["h"]),
+        chk("(6) the academy's %d badges - outlines, channels, colours, back plans, drawings - are as pinned (%s)" % (ra["n"], ra["h"]),
             ra["cls"] == "academy" and ra["n"] == 24 and ra["h"] == PIN, ra)
         chk("(7) the academy page: no page errors", not aerr, aerr)
         actx.close()
