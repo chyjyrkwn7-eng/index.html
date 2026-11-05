@@ -35088,6 +35088,14 @@ html.is-browser{ --fade-paper: transparent; }
      stack, each the card's full width - never one small beside one large. */
   .ifc-links:has(> .ifc-link-pill){ display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 15.75rem), 1fr)); gap:.55rem; }
   .ifc-links > .ifc-link.ifc-link-pill{ width:100%; box-sizing:border-box; }
+  /* (384 crops) ONE TAG SIZE. Madison circled the IFC tag beside the AMENDMENTS one: two pills of two sizes, each its own word's
+     width, so "Show the code" started at a different place on every other card. Every tag (IFC, AMENDMENTS, and the Hint's bulb
+     and HINT) is now the width of the longest, AMENDMENTS - set by that word itself, invisible, in the same cell as the tag's own
+     word (so it holds in any font and at any text size) - with its own word centred in it. */
+  .ifc-tag{ display:inline-grid; place-items:center; }
+  .ifc-tag > .ifc-tag-in{ grid-area:1 / 1; display:inline-flex; align-items:center; gap:.3rem; }
+  .ifc-tag{ flex:none; }
+  .ifc-tag::after{ content:"Amendments"; grid-area:1 / 1; height:0; visibility:hidden; line-height:1; margin-right:-.08em; white-space:nowrap; }
   /* ==== end of the code picture's block ==================================================================================== */
   /* ---- THE CLASS BUBBLE AND ITS LIST (build 328, mountClassBubble) ----
      A glass bubble under the planet at the left edge, a soft glow in the class's colour (no
@@ -109490,7 +109498,9 @@ function ifcFrameClips(holder, scale, fill, clip){
     const k = ifcInkBox(cv);
     if(!k) return;
     k.cv = cv; k.tx0 = ifcBarSide(k, s, -1); k.tx1 = ifcBarSide(k, s, 1);
-    const sg = segs && segs[i], key = sg && !sg.whole ? sg.page + ":" + sg.x0 + ":" + sg.x1 + ":" + cv.width : "c" + i;
+    /* (384 crops) the pieces of one county reference set to a column (ifcCountyColumn) share one window too: their lines start
+       at one left edge, as a column's do */
+    const sg = segs && segs[i], key = cv.dataset.ifcGroup ? "g:" + cv.dataset.ifcGroup : sg && !sg.whole ? sg.page + ":" + sg.x0 + ":" + sg.x1 + ":" + cv.width : "c" + i;
     if(!groups.has(key)) groups.set(key, []);
     groups.get(key).push(k);
   });
@@ -109520,6 +109530,287 @@ function ifcFrameClips(holder, scale, fill, clip){
     }
   }
   holder.classList.remove("is-scroll");
+}
+/* (384 crops) THE AMENDMENTS AT THE BOOK'S PRINT SIZE. Madison: "on the amendments one ... some of those don't have the same nice look
+   as the ifc ones" / "each one is cohesive so you know what to expect when you hit the drop down". The book is set in two columns, so
+   a cut of it is a column wide (~250pt) and shows at a column's size; the county booklet is a Word page whose lines run 468pt, so the
+   same card fitted a county cut at about half the print (a 440 phone: 0.64px a point against the book's 1.21 - letters 7px high
+   against 12). The picture stays the booklet's own: its words, cut from the booklet's page as the kit drew it (wash and highlight
+   included), are set again in lines a book column wide - the same words in the same order, the same paragraphs, headings, list
+   numbers and indents, the highlight carried across the spaces it covered - so it shows at the book's print size. Nothing is
+   guessed: a line's words are read off its own pixels and must come to the number of words the booklet's own text gives that line,
+   or the cut is shown as cut; so is any piece with a gap wider than a justified space (a table), ink outside its lines (a rule) or
+   lines set too close. Enlarge shows the same picture; "Show the whole page" is the booklet's page as printed. */
+const IFC_COUNTY_COL = 246;   /* pt: a book column (IFC_PIC_COL), less the hair of paper the frame keeps each side */
+const ifcCountyLineCache = new Map();
+/* a letter's rough width in ems (Calibri-like): only to say about where the spaces of a line stand */
+function ifcCharEm(c){
+  if(/\s/.test(c)) return .226;
+  if("iljI.,:;'|!".includes(c)) return .24;
+  if("ftr()[]-/".includes(c)) return .33;
+  if("mwMW%".includes(c)) return .82;
+  if("\u2014".includes(c)) return 1;
+  if(/[A-Z]/.test(c)) return .6;
+  if(/[0-9]/.test(c)) return .507;
+  return .48;
+}
+/* the booklet's lines on page p, as countyClip reads them: baseline y, ends x0..x1, size, text and its number of words */
+async function ifcCountyLines(doc, p){
+  if(ifcCountyLineCache.has(p)) return ifcCountyLineCache.get(p);
+  const page = await doc.getPage(p), tc = await page.getTextContent();
+  const items = tc.items.filter(it => it.str && it.str.trim()).map(it => ({ s: it.str, x: it.transform[4], y: it.transform[5], w: it.width, h: it.height || 11 }));
+  items.sort((a, b) => b.y - a.y);
+  const lines = [];
+  for(const it of items){
+    const ln = lines.length && lines[lines.length - 1].ref - it.y <= 5 ? lines[lines.length - 1] : null;
+    if(ln) ln.items.push(it); else lines.push({ ref: it.y, items: [it] });
+  }
+  const out = lines.map(ln => {
+    ln.items.sort((a, b) => a.x - b.x);
+    const wide = ln.items.reduce((m, it) => (it.w > m.w ? it : m), ln.items[0]);
+    let text = "", end = null;
+    const chars = [];                                          /* every letter with where it about stands: an item's width shared by rough widths */
+    for(const it of ln.items){
+      if(end != null && it.x - end > 0.8){ text += " "; chars.push([" ", end, it.x]); }
+      text += it.s;
+      const ws = Array.from(it.s, ifcCharEm), tot = ws.reduce((p, q) => p + q, 0) || 1;
+      let acc = 0, k = 0;
+      for(const c of it.s){ const x0 = it.x + it.w * acc / tot; acc += ws[k++]; chars.push([c, x0, it.x + it.w * acc / tot]); }
+      end = end == null ? it.x + it.w : Math.max(end, it.x + it.w);
+    }
+    text = text.replace(/\s+/g, " ").trim();
+    /* where the spaces between its words should be (a run of blanks between two printed letters: its middle) */
+    const spaces = [];
+    let lastInk = null, inGap = false;
+    for(const [c, x0, x1] of chars){
+      if(/\s/.test(c)){ if(lastInk != null) inGap = true; continue; }
+      if(inGap) spaces.push((lastInk + x0) / 2);
+      inGap = false; lastInk = x1;
+    }
+    return { y: wide.y, size: wide.h || 11, x0: ln.items[0].x, x1: end, text, nw: text ? text.split(" ").length : 0, spaces };
+  });
+  /* the page's text margin: where most of its lines start (72pt in the booklet) */
+  const starts = new Map(); out.forEach(l => { const x = Math.round(l.x0); starts.set(x, (starts.get(x) || 0) + 1); });
+  let margin = 72, most = 0; for(const [x, n] of starts) if(n > most || (n === most && x < margin)){ most = n; margin = x; }
+  const r = { lines: out, w: page.view[2] || 612, margin };
+  ifcCountyLineCache.set(p, r);
+  return r;
+}
+/* The kit's strong marker (ifc-viewer.js STRONG), multiplied over the paper: the cited words, or a heading where nothing is cited */
+const IFC_STRONG = [255, 224, 40];
+/* cv: the kit's picture of one county piece (seg: its page and its box in pdf points), s picture pixels per point, marks: the kit's
+   marks on that page. A new picture of the same words in lines of at most IFC_COUNTY_COL points, or null where the piece is to be
+   shown as cut. */
+function ifcReflowCounty(cv, seg, page, s, marks){
+  const W = cv.width, H = cv.height;
+  if(W < 8 || H < 8 || seg.whole || seg.x1 - seg.x0 <= IFC_COUNTY_COL + 8) return null;
+  let img;
+  try{ img = cv.getContext("2d").getImageData(0, 0, W, H); }catch(e){ return null; }
+  const rowOf = ypt => (seg.y1 - ypt) * s, colOf = xpt => (xpt - seg.x0) * s;
+  /* THE MARKER LIFTED. The kit places a mark from estimated letter widths (Times New Roman's, for a booklet set in another face), so
+     on a long line it can stop inside a word ("the la|ne") or reach into the next. Here the picture is first taken back to the
+     plain wash - each mark undone exactly: a multiply by the marker over a covered fraction a of a pixel is a factor (1 - a + a.m),
+     divided out - and the marker is laid again below on whole words: those the kit's mark covers at least half of. */
+  const keyed = marks.some(m => m.kind === "cite" || m.kind === "row");
+  const strong = marks.filter(m => m.kind === "cite" || m.kind === "row" || (m.kind === "heading" && !keyed));
+  const D = img.data;
+  for(const m of strong){
+    const X0 = colOf(m.x0), X1 = colOf(m.x1), Y0 = rowOf(m.y1), Y1 = rowOf(m.y0);
+    for(let y = Math.max(0, Math.floor(Y0)); y < Math.min(H, Math.ceil(Y1)); y++){
+      const cy = Math.min(y + 1, Y1) - Math.max(y, Y0);
+      for(let x = Math.max(0, Math.floor(X0)); x < Math.min(W, Math.ceil(X1)); x++){
+        const a = cy * (Math.min(x + 1, X1) - Math.max(x, X0)), i = (y * W + x) * 4;
+        for(let c = 0; c < 3; c++) D[i + c] = D[i + c] / (1 - a + a * IFC_STRONG[c] / 255);
+      }
+    }
+  }
+  /* print: dark on the plain paper (one pass, kept as a mask) */
+  const dk = new Uint8Array(W * H);
+  for(let j = 0, i = 0; j < dk.length; j++, i += 4) dk[j] = 299 * D[i] + 587 * D[i + 1] + 114 * D[i + 2] < 150000 ? 1 : 0;
+  const L = page.lines.filter(ln => ln.nw && ln.y >= seg.y0 - 1 && ln.y <= seg.y1 + 1 && (ln.x0 + ln.x1) / 2 >= seg.x0 && (ln.x0 + ln.x1) / 2 <= seg.x1).map(ln => ({ ...ln }));
+  if(!L.length) return null;
+  /* each line's rows: an ascent and a descent from its baseline; lines that would share rows are not plain running text */
+  for(const ln of L){ const k = ln.size / 11; ln.r0 = Math.max(0, Math.floor(rowOf(ln.y + 9.7 * k))); ln.r1 = Math.min(H, Math.ceil(rowOf(ln.y - 3.2 * k))); }
+  for(let i = 1; i < L.length; i++) if(L[i].r0 < L[i - 1].r1) return null;
+  /* all the print is in those rows: no rule, drawing or table border elsewhere */
+  const inBand = new Uint8Array(H);
+  for(const ln of L) for(let y = ln.r0; y < ln.r1; y++) inBand[y] = 1;
+  let inside = 0, outside = 0;
+  for(let y = 0; y < H; y++){ let n = 0; for(let j = y * W, e = j + W; j < e; j++) n += dk[j]; if(inBand[y]) inside += n; else outside += n; }
+  if(!inside || outside > inside * 0.002) return null;
+  /* the words of a line: its spaces are its widest gaps. The booklet's text gives the line's number of words, n; the n - 1 widest
+     gaps between inked columns are its spaces - used only if they stand clear of every gap inside a word (a space is 2.3pt of
+     paper or more, letters stand under 2.1pt apart). Spaces of very different widths (a wide one beside ordinary ones, other than
+     the tab after a list number) are a table's columns, not a justified line. */
+  const LIST = /^(?:\d{1,2}\.|\(\d{1,2}\)|[a-z]\.|\([a-z]\))$/;
+  let wideLines = 0;
+  for(const ln of L){
+    const col = new Uint8Array(W);
+    for(let y = ln.r0; y < ln.r1; y++) for(let x = 0, j = y * W; x < W; x++, j++) col[x] |= dk[j];
+    const gaps = [];                                           /* [its first empty column, its width] */
+    let first = -1, last = -1;
+    for(let x = 0; x < W; x++){ if(!col[x]) continue; if(first < 0) first = x; else if(x - last > 1) gaps.push([last + 1, x - last - 1]); last = x; }
+    if(first < 0 || gaps.length < ln.nw - 1) return null;
+    const byWidth = gaps.slice().sort((p, q) => q[1] - p[1]);
+    let sp = byWidth.slice(0, ln.nw - 1);
+    const rest = byWidth[ln.nw - 1];
+    if(sp.length && (sp[sp.length - 1][1] / s < 1.5 || (rest && rest[1] / s > sp[sp.length - 1][1] / s - 0.3))){
+      /* not clear-cut by width alone (a narrow space beside a wide gap between two letters): each space is taken where the
+         booklet's text puts it - the widest gap near there, in order - or the line is not read */
+      const E = ln.spaces || [];
+      if(E.length !== ln.nw - 1) return null;
+      const at = g => seg.x0 + (g[0] + g[1] / 2) / s, pick = [];
+      let from = -1;
+      for(let k = 0; k < E.length; k++){
+        const tol = Math.min(5, 0.45 * Math.min(k ? E[k] - E[k - 1] : 99, k < E.length - 1 ? E[k + 1] - E[k] : 99));
+        let best = null;
+        for(const g of gaps) if(g[0] > from && Math.abs(at(g) - E[k]) <= tol && g[1] / s >= 1.2 && (!best || g[1] > best[1])) best = g;
+        if(!best) return null;
+        pick.push(best); from = best[0];
+      }
+      sp = pick;
+    }
+    if(sp.length){
+      const tab = LIST.test(ln.text.split(" ")[0]) ? gaps[0][0] : -1;
+      const body = sp.filter(g => g[0] !== tab).map(g => g[1] / s), wide = body.filter(v => v > 14).length;
+      if(wide && Math.min(...body) < 0.7 * Math.max(...body)){ if(wide > 1 || ++wideLines > 1) return null; }   /* one odd wide space (a stray tab) is a space */
+    }
+    const ws = [];
+    let a = first;
+    for(const g of sp.slice().sort((p, q) => p[0] - q[0])){ ws.push([a, g[0] - 1]); a = g[0] + g[1]; }
+    ws.push([a, last]);
+    ln.words = ws; ln.ix0 = seg.x0 + first / s; ln.ix1 = seg.x0 + (last + 1) / s;
+  }
+  /* a word is marked when the kit's mark on its line covers at least half of it */
+  const marked = (ln, a, b) => {
+    let cov = 0;
+    for(const m of strong){
+      if(m.y1 < ln.y || m.y0 > ln.y + 1) continue;
+      cov += Math.max(0, Math.min(b + 1, colOf(m.x1)) - Math.max(a, colOf(m.x0)));
+    }
+    return cov >= 0.5 * (b - a + 1);
+  };
+  /* paragraphs. A line carries on the one above unless something says it starts afresh: more room above it, a number, a section
+     number or "Exception" at its start, a step back to the left, a heading line - or the line above stopped short with room for
+     this line's first word, and this line does not start in lower case or after a hyphen (a list item's line ends where the
+     booklet broke it). The booklet's headings are centred on the page and set in capitals, some in larger type. */
+  const maxX1 = Math.max(...L.map(l => l.ix1)), base = Math.min(...L.map(l => l.ix0)), mid = page.w / 2;
+  const kOf = ln => ln.size / 11, body = L.filter(l => l.size <= 12.5);
+  const pitches = []; for(let i = 1; i < L.length; i++) if(L[i - 1].size <= 12.5 && L[i].size <= 12.5) pitches.push(L[i - 1].y - L[i].y);
+  const P = pitches.length ? Math.min(Math.min(...pitches), 14.5) : 13.5;
+  const natural = ln => Math.max(P, 12.9 * kOf(ln) * 1.05);   /* a line's own pitch: the body's, or a large heading's */
+  const centred = ln => !/[a-z]/.test(ln.text) && ln.ix0 > page.margin + 10 && Math.abs((ln.ix0 + ln.ix1) / 2 - mid) < 14;
+  const HEAD = /^(?:\d{2,4}(?:\.\d+)+[A-Za-z]?|\[[A-Z]{1,3}\]|SECTION|CHAPTER|TABLE|Table|EXHIBIT|Exceptions?:?)$/;
+  const paras = [];
+  L.forEach((ln, i) => {
+    const first = ln.text.split(" ")[0], prev = L[i - 1], fw = (ln.words[0][1] - ln.words[0][0] + 1) / s;
+    const cont = prev && !centred(ln) && !centred(prev) && prev.y - ln.y <= natural(prev) * 1.3 && ln.ix0 >= prev.ix0 - 3 && !LIST.test(first) && !HEAD.test(first)
+      && (prev.ix1 + 2.4 + fw > maxX1 - 2 || /^[a-z]/.test(ln.text) || /[A-Za-z0-9]-$/.test(prev.text));
+    if(cont) paras[paras.length - 1].lines.push(ln);
+    else paras.push({ lines: [ln], before: prev ? Math.max(0, Math.min(0.8 * P, prev.y - ln.y - natural(ln))) : 0, centred: centred(ln) });
+  });
+  /* the space between words: the narrowest the booklet itself sets (a justified line only ever widens it) */
+  const spaces = [];
+  (body.length ? body : L).forEach(ln => { for(let k = 1; k < ln.words.length; k++) if(!(k === 1 && LIST.test(ln.text.split(" ")[0]))) spaces.push((ln.words[k][0] - ln.words[k - 1][1] - 1) / s); });
+  spaces.sort((p, q) => p - q);
+  const space = Math.round(Math.max(2.8, Math.min(4.2, spaces.length ? spaces[Math.floor(spaces.length * 0.1)] : 3.2)) * s);
+  const colPx = Math.floor(IFC_COUNTY_COL * s);
+  const gapOf = wd => Math.round(space * kOf(wd.ln));       /* a space as wide as its line's type is large */
+  const rows = [];
+  let cur = null;
+  const newRow = (x0, gap) => { cur = { items: [], x: x0, gap: Math.round((gap || 0) * s), k: 0 }; rows.push(cur); };
+  const put = (wd, x) => { cur.items.push({ wd, x }); cur.x = x + (wd.b - wd.a + 1); cur.k = Math.max(cur.k, kOf(wd.ln)); };
+  for(const pa of paras){
+    const words = [];
+    pa.lines.forEach((ln, li) => ln.words.forEach(([a, b], k) => {
+      const pb = k > 0 ? ln.words[k - 1][1] : null, na = k < ln.words.length - 1 ? ln.words[k + 1][0] : null;
+      words.push({ ln, a, b, hl: marked(ln, a, b),
+        glue: k === 0 && li > 0 && /[A-Za-z0-9]-$/.test(pa.lines[li - 1].text),   /* "H-" at a line's end, "3" on the next: one word again */
+        padL: pb != null ? Math.max(0, Math.min(2, Math.floor((a - pb - 2) / 2))) : 2,
+        padR: na != null ? Math.max(0, Math.min(2, Math.floor((na - b - 2) / 2))) : 2 });
+    }));
+    const l0 = pa.lines[0], listed = l0.words.length > 1 && LIST.test(l0.text.split(" ")[0]);
+    const indent = ln => Math.round(Math.min(24, Math.max(0, ln.ix0 - base) * 0.5) * s);   /* the booklet's indents, halved for a column */
+    const ind = indent(l0);
+    const contInd = listed ? ind + (l0.words[1][0] - l0.words[0][0]) : pa.lines[1] ? indent(pa.lines[1]) : ind;
+    const gap = rows.length ? pa.before : 0;                   /* the room between paragraphs, as printed */
+    if(pa.centred){
+      /* a heading line stays whole and centred where it fits; else it is wrapped, each line centred */
+      for(const ln of pa.lines){
+        const lw = words.filter(w => w.ln === ln), whole = lw[lw.length - 1].b - lw[0].a + 1;
+        if(whole <= colPx){ newRow(Math.round((colPx - whole) / 2), gap); const x0 = cur.x - lw[0].a; lw.forEach(wd => put(wd, x0 + wd.a)); continue; }
+        const groups = []; let g = [], gw = 0;
+        for(const wd of lw){ const w = wd.b - wd.a + 1; if(g.length && gw + gapOf(wd) + w > colPx){ groups.push([g, gw]); g = []; gw = 0; } gw += (g.length ? gapOf(wd) : 0) + w; g.push(wd); }
+        if(g.length) groups.push([g, gw]);
+        groups.forEach(([gs, gw2], j) => { newRow(Math.round((colPx - gw2) / 2), j ? 0 : gap); gs.forEach((wd, q) => put(wd, q ? cur.x + gapOf(wd) : cur.x)); });
+      }
+      continue;
+    }
+    newRow(ind, gap);
+    words.forEach((wd, i) => {
+      const w = wd.b - wd.a + 1;
+      let x = !cur.items.length ? cur.x : wd.glue ? cur.x + Math.round(0.3 * s) : cur.x + gapOf(wd);
+      if(i === 1 && listed && cur.items.length === 1) x = ind + (wd.a - words[0].a);   /* the tab after a list number keeps its width */
+      if(cur.items.length && x + w > colPx){ newRow(contInd, 0); x = cur.x; }
+      put(wd, x);
+    });
+  }
+  /* each row on its own baseline: as tall as its largest type, the body's pitch at least */
+  let y = 0;
+  for(const r of rows){
+    y += r.gap;
+    r.asc = Math.round(9.7 * r.k * s);
+    r.base = y + r.asc;
+    y += Math.round(Math.max(P, 12.9 * r.k * 1.05) * s);
+  }
+  const last = rows[rows.length - 1];
+  /* the plain picture, the words placed on their row's baseline */
+  const plain = document.createElement("canvas"); plain.width = W; plain.height = H;
+  plain.getContext("2d").putImageData(img, 0, 0);
+  const out = document.createElement("canvas");
+  out.width = colPx; out.height = Math.max(1, last.base + Math.round(3.4 * last.k * s) + 2);
+  const g = out.getContext("2d");
+  g.fillStyle = "rgb(" + D[0] + "," + D[1] + "," + D[2] + ")"; g.fillRect(0, 0, out.width, out.height);   /* the paper: the corner */
+  for(const r of rows) for(const it of r.items){
+    const ln = it.wd.ln, sx = Math.max(0, it.wd.a - it.wd.padL), ex = Math.min(W, it.wd.b + 1 + it.wd.padR);
+    g.drawImage(plain, sx, ln.r0, ex - sx, ln.r1 - ln.r0, it.x - (it.wd.a - sx), r.base - Math.round(rowOf(ln.y) - ln.r0), ex - sx, ln.r1 - ln.r0);
+  }
+  /* the marker again, in the kit's band for a line (its rows, multiplied over the paper; as deep as the type is large), over whole
+     marked words and the spaces between them */
+  const ink = new Path2D(); let any = false;
+  const ext = Math.round(0.35 * s);
+  for(const r of rows){
+    let run = null;
+    const flush = () => { if(run){ ink.rect(run[0], r.base - 9.5 * r.k * s, run[1] - run[0], 12.5 * r.k * s); any = true; run = null; } };
+    for(const it of r.items){
+      if(!it.wd.hl){ flush(); continue; }
+      const x0 = it.x - ext, x1 = it.x + (it.wd.b - it.wd.a + 1) + ext;
+      if(run) run[1] = x1; else run = [x0, x1];
+    }
+    flush();
+  }
+  if(any){ g.save(); g.globalCompositeOperation = "multiply"; g.fillStyle = "rgb(" + IFC_STRONG.join(",") + ")"; g.fill(ink, "nonzero"); g.restore(); }
+  plain.width = 0; plain.height = 0;
+  return out;
+}
+/* every piece of a county picture (holder: the kit's canvases, one per clip segment) set to a column where it can be - not a table
+   (a citation of table cells, "cell | cell", or of a TABLE), whose columns are its sense */
+async function ifcCountyColumn(doc, clip, holder, scale, c){
+  const s = (scale || 1.7) * Math.min(window.devicePixelRatio || 1, 2);
+  const cvs = [...holder.querySelectorAll("canvas")];
+  if(!clip || !clip.segments || cvs.length !== clip.segments.length) return 0;
+  if(c && (/ \| | \u203a /.test(c.excerpt || "") || /\bTABLE\b/.test(c.excerpt || ""))) return 0;
+  let n = 0;
+  for(let i = 0; i < cvs.length; i++){
+    const seg = clip.segments[i];
+    if(seg.whole) continue;
+    let out = null;
+    try{ out = ifcReflowCounty(cvs[i], seg, await ifcCountyLines(doc, seg.page), s, (clip.marks || []).filter(m => m.page === seg.page)); }catch(e){ out = null; }
+    if(!out) continue;
+    out.className = cvs[i].className; out.dataset.ifcGroup = "county";
+    cvs[i].replaceWith(out); cvs[i].width = 0; cvs[i].height = 0; n++;
+  }
+  return n;
 }
 /* THE PAGE VIEWER (build 333): "it's a little difficult to see the cropped photo ... hard to see the
    full page ... maybe when you hit full page it goes full page, you can still see the app around all
@@ -109716,7 +110007,8 @@ function ifcDrawAhead(box, fill){
     addEventListener("pointerdown", () => { ifcLastScroll = Date.now() + 500; }, { passive: true, capture: true });
     ifcAheadIO = new IntersectionObserver(entries => entries.forEach(en => {
       const b = en.target; b._ifcSeen = en.isIntersecting;
-      if(!en.isIntersecting || b._ifcQueued || !b._ifcAhead || !ifcBook) return;
+      /* (384 crops) a county box draws from the booklet, which ships with the app: it needs no book open */
+      if(!en.isIntersecting || b._ifcQueued || !b._ifcAhead || !(ifcBook || b._ifcCounty)) return;
       b._ifcQueued = true;
       setTimeout(() => { b._ifcQueued = false; if(b._ifcSeen && b._ifcAhead){ ifcAheadQ.push({ box: b, fill: b._ifcAhead, visible: () => b._ifcSeen }); ifcAheadRun(); } }, 450);
     }), { rootMargin: "120px 0px" });
@@ -109726,36 +110018,47 @@ function ifcDrawAhead(box, fill){
 }
 async function ifcFillCode(item, body, foot){
   const c = item.ifc.citation, V = await ifcViewer();
-  body.textContent = "";
   if(c.source === "amendment"){
-    const text = ifcCountyText(c);
-    body.appendChild(text);
-    const doc = await ifcCountyDoc();
-    if(!doc) return;
-    const clip = await V.countyClip(doc, c, ifcCountyOpts);
-    if(!clip.ok) return;
-    const holder = ifcEl("div", "ifc-clips");
-    await V.paint(doc, clip, holder, { scale: 1.7 });
-    /* (384) framed and fitted like every code picture (ifcFrameClips): whole, centred, never scrolled sideways */
-    ifcFrameClips(holder, 1.7, false, clip);
-    body.prepend(holder);
-    /* THE PICTURE FIRST (build 333): "why is the amendments not showing the cropped photo? It should be". Enlarge opens
-       it big; the exact text is one tap away. */
-    text.hidden = true;
+    /* (384 crops) THE PICTURE, NOT THE TEXT. Madison: "sometimes when i hit the amendment drop down, it comes up as text and not
+       the cropped photo and stuff?" Every county box put the booklet's words up FIRST and swapped in the picture once pdf.js had
+       fetched the booklet and drawn the cut - a few frames on a warm open, a second or more on the first one of a visit (and
+       the box, sliding open, grew to the text's height and then to the picture's). Measured on every county reference: each
+       one opened on the text. Now "Opening the code..." stays until the picture is ready, as for the book; the words are shown
+       only when the booklet truly cannot be drawn (it did not load, the reference was not found in it, or drawing failed). And
+       the county pictures are drawn ahead like the book's (ifcDrawAhead), and the booklet is opened while the question is up
+       (ifcPreAnswer), so most opens find the picture already there. */
+    let doc = null, clip = null, holder = null;
+    try{
+      doc = await ifcCountyDoc();
+      clip = doc ? await V.countyClip(doc, c, ifcCountyOpts) : null;
+      if(clip && clip.ok && clip.segments.length){
+        holder = ifcEl("div", "ifc-clips");
+        await V.paint(doc, clip, holder, { scale: 1.7 });
+        await ifcCountyColumn(doc, clip, holder, 1.7, c);   /* (384 crops) at the book's print size */
+        /* (384) framed and fitted like every code picture (ifcFrameClips): whole, centred, never scrolled sideways */
+        ifcFrameClips(holder, 1.7, false, clip);
+      }
+    }catch(e){ holder = null; }
+    body.textContent = "";
+    if(!holder){ body.appendChild(ifcCountyText(c)); return; }
+    body.appendChild(holder);
     /* TWO WAYS ON (build 382): "The show as text option, let's remove that option for the code ... ensure you update the placements
        of the other two options". "Show as text" (and the "Show the page picture" it swapped with) are gone; Enlarge and Show the
        whole page are two equal pills side by side (ifcLinkBtn). */
     const links = ifcEl("div", "ifc-links");
     const whole = ifcLinkBtn("Show the whole page", "page");
+    /* Enlarge shows the card's picture larger (the same lines); the whole page is the booklet's page as printed */
     const viewOf = (wholePage) => ifcOpenViewer({ anchor: body, title: ifcPointerLine(c), sub: ifcPageLine(c),
       note: wholePage ? "The whole page of the HC Amendments. The highlighted lines are the code this question cites." : "",
-      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip }) : V.paint(doc, clip, box, { scale: 2.6 }).then(() => ifcFrameClips(box, 2.6, true, clip)) });
+      render: box => wholePage ? V.paintPages(doc, clip.pages, box, { scale: 2.2, ...ifcCountyOpts, clip })
+        : V.paint(doc, clip, box, { scale: 2.6 }).then(() => ifcCountyColumn(doc, clip, box, 2.6, c)).then(() => ifcFrameClips(box, 2.6, true, clip)) });
     whole.addEventListener("click", () => viewOf(true));
     holder.classList.add("is-zoomable"); holder.addEventListener("click", () => viewOf(false));
     const big = ifcLinkBtn("Enlarge", "zoom"); big.addEventListener("click", () => viewOf(false));
     links.append(big, whole); body.appendChild(links);
     return;
   }
+  body.textContent = "";
   const book = await ifcEnsureBook();
   if(!book){
     const lock = ifcEl("div", "ifc-locked");
@@ -109961,7 +110264,10 @@ function buildIfcRef(item){
   const sum = ifcEl("summary", "ifc-code-sum");
   /* (384) the tag's word in its own box (.ifc-tag-w), trimmed to its capitals, so the pill can centre the ink itself */
   const tag = ifcEl("span", "ifc-tag " + (c.source === "amendment" ? "is-county" : "is-ifc"));
-  tag.appendChild(ifcEl("span", "ifc-tag-w", c.source === "amendment" ? "Amendments" : "IFC"));
+  /* (384 crops) inside .ifc-tag-in, so every tag is the one width (the CSS sizes each pill to AMENDMENTS) */
+  const tagIn = ifcEl("span", "ifc-tag-in");
+  tagIn.appendChild(ifcEl("span", "ifc-tag-w", c.source === "amendment" ? "Amendments" : "IFC"));
+  tag.appendChild(tagIn);
   sum.append(tag, ifcEl("span", "ifc-sum-text", "Show the code"));
   const head = ifcEl("div", "ifc-code-head");
   head.append(ifcEl("p", "ifc-ptr", ifcPointerLine(c)), ifcEl("p", "ifc-pages", ifcPageLine(c)));
@@ -109986,7 +110292,9 @@ function buildIfcRef(item){
     ifcCodeSlide(det, open, fill);
   });
   /* (384) drawn ahead: a finger on the summary, or the box sitting in view (ifcDrawAhead) */
-  sum.addEventListener("pointerdown", () => { if(!det.open && ifcBook) fill(); }, { passive: true });
+  const county = c.source === "amendment";
+  sum.addEventListener("pointerdown", () => { if(!det.open && (ifcBook || county)) fill(); }, { passive: true });
+  box._ifcCounty = county;   /* (384 crops) drawn ahead without the book: the booklet ships with the app */
   ifcDrawAhead(box, fill);
   box.appendChild(det);
   if(missed){ box.dataset.autoOpened = "1"; det.open = true; }
@@ -110005,6 +110313,9 @@ function ifcPreAnswer(item, qtext, panel){
     pre = ifcEl("div", "ifc-pre");
     ifcNodeCache.set(key, pre);
     const q = item.ifc, c = q.citation;
+    /* (384 crops) a county question: the booklet is opened while the question is up, in idle time, so its code is ready to draw
+       when the answer comes (the first open of a visit used to wait on the fetch) */
+    if(c.source === "amendment"){ try{ (window.requestIdleCallback || (f => setTimeout(f, 200)))(() => { ifcCountyDoc(); }); }catch(e){} }
     (async () => {
       const V = await ifcViewer();
       if(c.blur && q.blurStem){
@@ -110047,8 +110358,8 @@ function ifcPreAnswer(item, qtext, panel){
       b.setAttribute("aria-label", "Hint: show the code, answer hidden");
       const tag = ifcEl("span", "ifc-tag is-hint");
       /* (384) the bulb's box is its ink (viewBox cut to the stroke's outer edge), so the pill centres the bulb itself */
-      tag.innerHTML = '<svg viewBox="4.9 1.9 14.2 20.2" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      tag.appendChild(ifcEl("span", "ifc-tag-w", "Hint"));
+      tag.innerHTML = '<span class="ifc-tag-in"><svg viewBox="4.9 1.9 14.2 20.2" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      tag.firstChild.appendChild(ifcEl("span", "ifc-tag-w", "Hint"));
       const word = ifcEl("span", "ifc-hint-text", "Show the code");
       b.append(tag, word);
       const holder = ifcEl("div", "ifc-clips ifc-hintpic");

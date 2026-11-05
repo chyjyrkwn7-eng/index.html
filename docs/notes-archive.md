@@ -34667,3 +34667,105 @@ re-run at the end with the machine quiet.
   20,000. One saving made: a new account no longer runs the two once-per-account room-history backfills (seedVroomHistory /
   seedVroomTop3 each read every vrooms document - ~430 reads per sign-up); vrRetroDone/vrTop3RetroDone are set at both sign-up
   completions, as a reset already did.
+
+### Build 384 - the code pictures one family: the amendments at the book's print size, a heading cited alone, never the text first, one tag size (NOT on main, waiting for Madison)
+Madison (two phone screenshots, Fire Code): "The cropped thing of the 'section 322 battery storage' why doesn't that look like the
+rest? Why isn't the word highlighted like the others? Why is it cropped so small like that?" / "ensure that the cropped photo from the
+show code drop looks good, it has the context there centered nicely and each one is cohesive so you know what to expect when you hit
+the drop down" / "I also noticed on the amendments one ... some of those don't have the same nice look as the ifc ones so get that good
+to go" / "sometimes when i hit the amendment drop down, it comes up as text and not the cropped photo and stuff?" - and, circled on a
+Review list, the IFC tag beside the AMENDMENTS tag and the amendments card's Enlarge. (His screenshots were of the live 383: the
+flex buttons, the sideways-scrolling chapter titles and the 3px county margins there were already fixed by the 384 framing round.)
+- THE SURVEY (every one of the 1,812 references opened in a 440 phone's answer card, the owner's book loaded; scratchpad
+  crops-work/survey.py, contact sheets in the scratchpad's out-crops/ - book pages never in the repo). On f9694e7:
+  * COUNTY (421): 387 at small print - the booklet's lines run 468pt and were fitted to the card at 0.64px a point, letters
+    ~7px against the book's 12px (the book is two columns: a column is 250pt and shows at 1.21px a point); 229 under 70px tall
+    (median 67px against the book's 109); 17 with no marker at all - the 15 references that are a heading alone ("SECTION 322
+    BATTERY STORAGE", Chapter 1 twice, Sections 102-113, 324, 611, Exhibit B: countyClip's heading test joined the section number
+    to a heading that already carries it, so nothing matched, and the cut was the heading's own line or two) and two whose mark
+    fell on a line the cut did not show (ch56-014: the excerpt quotes a line the booklet prints after the exceptions, so the
+    exception was looked for past it and never cut; ch62-206: "Any Amount" is in many rows of Table 105.5.22 and the first one
+    after the excerpt's start was another row's); every county box opened on the TEXT (check-b384-cropfit (1): 421 of 421).
+  * IFC (1,391): the 59 SECTION banners cited alone (nav "which section is titled ...") were cut as the banner alone, 55-68px -
+    the 322 problem on the book's side, though marked; 97 at small print are the chapter/appendix title pages with their user
+    note, the full-width tables and the Chapter 80 entries, fitted by design (unchanged); 32 with ink at a cut's edge are change
+    bars and table borders, except four slivers of the neighbouring column in the kit's own cut (ch10-168 a ruler's ticks, ch12-033
+    a few letters, ch63-005 a "k", ch9b-050 a tick) - unchanged, worth a look in the kit.
+  * The tags: IFC ~62px, AMENDMENTS 114px. Enlarge and the page button were already one grid in 384 (the same boxes in both
+    sources - kept, guarded).
+- THE TEXT FIRST (the cause): ifcFillCode put the county's stored words (ifcCountyText, the fallback) into the box FIRST and
+  swapped in the picture after pdf.js had fetched and opened the booklet, cut and drawn the reference - a few frames on a warm open,
+  a second or more on the first of a visit - and the 384-review slide grew the box to the text's height, then to the picture's.
+  It was "sometimes" because a county box was never drawn ahead: the draw-ahead (and the press-to-draw on the pill) waited on
+  ifcBook, the IFC book in memory, which a run of county questions never opens. Now: "Opening the code..." until the picture is
+  ready (as the book's boxes); the words only when the booklet truly cannot be drawn (it did not load, the reference is not found
+  in it, the draw throws) - guarded with the booklet routed to 404; county boxes are drawn ahead and on a press without the book
+  (box._ifcCounty); and a county question opens the booklet in idle time while it is up (ifcPreAnswer), so the first answer of a
+  visit no longer waits on the fetch.
+- THE AMENDMENTS AT THE BOOK'S PRINT SIZE (ifcCountyColumn / ifcReflowCounty, index.html, presentation only). The booklet is one
+  Word column; no cut of it can be narrower than its lines. So the picture is set again: the words, cut from the kit's own paint of
+  the booklet page (the same pixels), placed in lines a book column wide (IFC_COUNTY_COL 246pt) - same words, same order, the same
+  paragraphs, headings (centred, large type kept large), list numbers with their hanging indents, "Exception:" lines, the room
+  between paragraphs - and then framed by ifcFrameClips like a book column (the same print size, centred, the same padding).
+  * Nothing guessed: each line's words are read off its pixels and must come to the number of words the booklet's own text gives
+    that line (pdf.js text content): the n-1 widest gaps, used only when they stand clear of every gap inside a word; else each
+    space is looked for where the text puts it (letter widths shared over the item's real width) - the widest gap near there, in
+    order - or the line is not read. A piece with ink outside its lines (a rule), lines set too close (a table's rows), or more than
+    one odd wide space (a table's columns) is shown as cut; so is any citation of table cells ("cell | cell") or of a TABLE.
+  * The marker: the kit places a county mark from Times New Roman widths on a Calibri booklet, so long highlights stopped inside
+    a word ("the la|ne") or reached into the next. The marks are lifted exactly (a multiply over a covered fraction a is a factor
+    1 - a + a.m, divided out) and laid again, in the kit's band and colour, on every word the kit's mark covers at least half of,
+    and across the spaces between marked words.
+  * "H-" at a line's end and "3" on the next are one word again; a line that starts in lower case carries on the one above.
+  * Enlarge shows the same column picture, larger; "Show the whole page" is the booklet's page as printed, highlighted.
+  * Results: 370 of 421 county references at a book column's print size (13.3px letters at 440, the book's 12.1: Calibri 11pt
+    against Times 10pt), 50 tables kept as cut (fitted, as the book's full-width tables), 1 refused and kept as cut (ch32-004: its
+    PDF text runs three words together, "storageareain", so its words cannot be counted); median height 137px (was 67). The step
+    costs a median 8ms, 90th 54ms a picture here (Chromium, load ~25 on 4 cores), drawn ahead in idle time. Works at dpr 1 (laptop).
+- A HEADING CITED ALONE, BOTH SOURCES (ifc/ifc-viewer.js - the kit's file changes for the first time; the kit's own acceptance test
+  check-my-copy.mjs with the 5.4.2 bank and the owner's book prints byte-for-byte the same report as before: 421/421 county cut,
+  406/406 deciding words marked, 1,391/1,391 IFC cut, "RESULT: this copy behaves like the reference copy"):
+  * countyClip: a reference whose excerpt is its heading (no deciding words) marks the heading (the heading given whole carries its
+    own number) and cuts the start of what it heads, as a chapter title is cut with its note: the headings set under it, then the
+    first paragraph of running text to its end or LEAD_MAX 7 lines, on its own page, never a table, nor the exceptions or list under
+    that paragraph. "SECTION 322 / BATTERY STORAGE" (marked) + "322.1 General. The storage of batteries shall comply with Section 322."
+  * countyClip: the deciding words are marked where the excerpt's own lines carry them, else at their first place in the excerpt's
+    span with those lines cut too; an exception printed before an excerpt line is looked for from the excerpt's start.
+  * locate/flowClip: a SECTION banner whose next heading is its first subsection runs on through that subsection (out.lead), and
+    flowClip keeps the banner and at most LEAD_LINES 7 lines under it in the banner's column, on its page, ending on a sentence's end
+    where one ends from the third line (or up to three lines past the limit); not for a blurred pointer; truncated stays false.
+- ONE TAG SIZE: every tag (IFC, AMENDMENTS, the Hint's bulb and HINT) is the width of AMENDMENTS - set by that word itself, invisible
+  (.ifc-tag::after, height 0) in the same grid cell as the tag's own word (.ifc-tag-in), so it holds in any font and text size -
+  flex:none so a narrow summary cannot squeeze one; the word still centred by the 384 rule (text-box trimmed word, even padding).
+  "Show the code" now starts at the same place on every card.
+- GATE tools/check-b384-cropfit.py (PDFJS_DIR + IFC_BOOK; dpr 3, 440x956; --against takes a commit and serves its index.html AND
+  its ifc/ifc-viewer.js): (1) every county reference opened as a tap opens it, watched every frame: the text never on screen, the
+  picture at the end; the first open of a visit shows "Opening the code..."; (2) GUARD the fallback with the booklet unreachable;
+  (3) county pictures at a book column's print size (85%+, the rest tables); (4) the 15 county headings and 59 IFC banners: marked,
+  with print below the heading; (5) the three tags one width and height at 440, 375, 834 and 125%; (6) GUARD Enlarge and the page
+  button the same boxes in an IFC and a county card at 440, 834, 1536; (7) a county box drawn ahead in a Review list with no book in
+  memory; (8) a county flash card at its frame's column scale, Enlarge larger and fitted, a banner's flash card with its lines;
+  (9) no page errors.
+- check-b384-ifccrop re-pinned for this decision: a county picture set to a column is checked for the kit's PRINT (its dark pixels
+  within 2%) and a marker wherever the kit marks one, and its pieces are centred as one group (they share one window); everything
+  else in it unchanged.
+- NOT DONE: the Drill Hint's county picture (before the answer, the number blurred) keeps the booklet's own lines, fitted - its blur is
+  the kit's, painted on the booklet's lines; setting it to a column means placing the blur on the re-set words, which wants its own
+  guard that nothing hidden shows. The IFC chapter/appendix title pages and full-width tables stay fitted (their layout is their sense).
+- GATES RUN (once each, the lead's call - one browser at a time, load ~25-30 on 4 cores): check-b384-cropfit ALL PASS; --against
+  f9694e7 (index.html and ifc-viewer.js of that commit, an earlier revision of this gate): (1) FAIL text on screen in 421 of 421 opens,
+  first open 31 frames of text; (3) FAIL 23 of 421 at the column's size, median 0.670px a point; (4) FAIL 85 (15 county headings unmarked
+  and alone, 59 banners alone); (5) FAIL IFC 42px / AMENDMENTS 114px / HINT 66px; (7) FAIL; (8) FAIL; (2), (6), (9) pass on both.
+  check-b384-codeslide ALL PASS. check-b384-ifccrop --sample 200 (stratified: 134 book, 66 county): (0), (1)-(1e) PASS (49 county
+  pictures set to a column hold the kit's print), the blurred definitions (2), (3), (4) pills within 0.5px, (5), (6), (7) PASS; FAIL
+  (2) the 8 Drill Hints: each measured with its bottom 90-100px below the box (B -94.62) - the Hint's picture is still sliding open
+  (ifcSlideHeight, overflow hidden, 384 review 800fcb4) when the gate reads it at 80ms; the Hint path is unchanged here, so this is
+  that round's, not re-run (a load flake per the lead's rule; to confirm with --against when quiet). check-b383-flashcards: all PASS
+  but amendment (4) "Hide the code closes it" - after 1000ms the card had shrunk 1025 -> 611px but details.open was still true (the
+  close slide sets open=false when it arrives; the county card's code is taller now, ~29 frames, and frames were slow under load) -
+  not re-run. check-b382-test (not in the round's list; run once): its layout part fails the same way on f9694e7 (the 384-review
+  "stays open" choice makes the tap in its open_code close a box that came open) - a gate to re-pin, not this work. The kit's
+  check-my-copy.mjs (5.4.2 bank, the owner's book): output identical line for line to before. check-js ALL PASS.
+- ONLY HIS PHONE CAN CONFIRM: the set-to-a-column pictures at 3x on Safari (same canvas path as every code picture); the warm-up of
+  the booklet while a county question is up (one 1.1MB fetch a visit); the tag pill's sizer (an invisible ::after in a grid cell) with
+  SF Pro's widths.

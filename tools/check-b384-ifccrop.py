@@ -18,6 +18,9 @@ app's own path (Load my IFC PDF, the Analyzing screen) and pdf.js served from a 
     (1d) the box is the card's width (one family: every picture the same width as the card it sits in);
     (1e) WHAT is cut and marked is the kit's: the pixels inked in the app's picture are exactly the ones the kit's own paint()
          inks for that reference (same count, same colour sum), and the highlight is there wherever the kit marks one.
+         (384 crops) A county picture whose running text the app sets again at a book column's width (ifcCountyColumn,
+         check-b384-cropfit) holds the kit's print instead - its dark pixels within 2% - and a marker wherever the kit marks one;
+         its pieces share one window, so they are centred as one.
 (2) THE BLURRED PICTURES: every definition shown before the answer with its term blurred (ifcPreAnswer), and a sample of Drill
     Hints (the number blurred): the app's picture holds exactly the kit's blurred pixels (it hides what it hid - the part that
     holds on both builds), and is framed by (1a)-(1c) (the part that fails before).
@@ -137,11 +140,12 @@ window.__inkRead = function(cv, s){
   const at = (x, y) => (y * W + x) * 4, samp = [at(0,0), at(W-1,0), at(0,H-1), at(W-1,H-1), at(W>>1,0), at(W>>1,H-1), at(0,H>>1), at(W-1,H>>1)];
   const votes = {}; let paper = null, best = 0;
   for(const i of samp){ const k = D[i]+','+D[i+1]+','+D[i+2]; votes[k] = (votes[k]||0) + 1; if(votes[k] > best){ best = votes[k]; paper = [D[i], D[i+1], D[i+2]]; } }
-  const colN = new Uint32Array(W); let y0 = -1, y1 = -1, n = 0, sum = 0, marks = 0;
+  const colN = new Uint32Array(W); let y0 = -1, y1 = -1, n = 0, sum = 0, marks = 0, dk = 0;
   for(let y = 0; y < H; y++){ const o = y * W * 4; for(let x = 0; x < W; x++){ const i = o + x * 4;
+    if(299 * D[i] + 587 * D[i+1] + 114 * D[i+2] < 150000) dk++;
     const d = Math.abs(D[i]-paper[0]) + Math.abs(D[i+1]-paper[1]) + Math.abs(D[i+2]-paper[2]);
     if(d > 40){ colN[x]++; if(y0 < 0) y0 = y; y1 = y; n++; sum += D[i] + D[i+1] + D[i+2]; if(D[i] > 200 && D[i+2] < 120) marks++; } } }
-  if(y0 < 0) return { W, H, paper, n: 0 };
+  if(y0 < 0) return { W, H, paper, n: 0, dk };
   let x0 = 0; while(!colN[x0]) x0++; let x1 = W - 1; while(!colN[x1]) x1--;
   const bar = (side) => {                              /* the text's edge on this side, a margin bar set aside */
     const step = side < 0 ? 1 : -1, e = side < 0 ? x0 : x1; let x = e, w = 0;
@@ -154,7 +158,7 @@ window.__inkRead = function(cv, s){
     return rows >= 6 * s && solid >= .9 * rows ? [x, true] : [e, false];
   };
   const [tx0, bl] = bar(-1), [tx1, br] = bar(1);
-  return { W, H, paper, n, sum, marks, x0, x1, y0, y1, tx0, tx1, bars: (bl ? 1 : 0) + (br ? 1 : 0) };
+  return { W, H, paper, n, sum, marks, dk, x0, x1, y0, y1, tx0, tx1, bars: (bl ? 1 : 0) + (br ? 1 : 0) };
 };
 window.__measure = function(root, s){
   const holder = root.querySelector('.ifc-code-body .ifc-clips') || root.querySelector('.ifc-clips') || root;
@@ -169,7 +173,7 @@ window.__measure = function(root, s){
     let bl = b.left, brt = b.right; if(clipX){ bl = Math.max(bl, clipX[0]); brt = Math.min(brt, clipX[1]); }
     const fx = r.width / k.W, fy = r.height / k.H;
     const X = x => r.left + x * fx, Y = y => r.top + y * fy, q = v => Math.round(v * 100) / 100;
-    out.push({ framed: box !== cv, W: k.W, H: k.H, n: k.n, sum: k.sum, marks: k.marks, bars: k.bars,
+    out.push({ framed: box !== cv, W: k.W, H: k.H, n: k.n, sum: k.sum, marks: k.marks, dk: k.dk, bars: k.bars,
       L: q(X(k.tx0) - bl), R: q(brt - X(k.tx1 + 1)), aL: q(X(k.x0) - bl), aR: q(brt - X(k.x1 + 1)), T: q(Y(k.y0) - b.top), B: q(b.bottom - Y(k.y1 + 1)),
       boxW: q(brt - bl), cardW: q(card.width), cssW: q(r.width) });
   });
@@ -186,11 +190,11 @@ window.__kitInk = async function(item, s, opts){
   const ms = performance.now() - t0;
   const keyed = clip.marks.some(m => m.kind === 'cite' || m.kind === 'row');
   const painted = !(opts && opts.blur) && clip.marks.some(m => m.kind === 'cite' || m.kind === 'row' || m.kind === 'exception' || m.kind === 'exceptionNumber' || (m.kind === 'heading' && !keyed));
-  let n = 0, sum = 0, marks = 0;
-  tmp.querySelectorAll('canvas').forEach(cv => { const k = __inkOf(cv, s); if(k && k.n){ n += k.n; sum += k.sum; marks += k.marks; } });
+  let n = 0, sum = 0, marks = 0, dk = 0, kW = 0;
+  tmp.querySelectorAll('canvas').forEach(cv => { const k = __inkOf(cv, s); kW = Math.max(kW, cv.width); if(k && k.n){ n += k.n; sum += k.sum; marks += k.marks; dk += k.dk; } });
   /* pieces cut from one window of one page belong together (a table's caption, rows and notes): they are centred as one */
   const keys = clip.segments.filter(sg => !sg.whole).map(sg => sg.page + ':' + sg.x0 + ':' + sg.x1);
-  return { n, sum, marks, painted, ms, segs: clip.segments.length, keys };
+  return { n, sum, marks, dk, kW, painted, ms, segs: clip.segments.length, keys };
 };
 true;
 """
@@ -224,20 +228,26 @@ SWEEP = r"""async ([ids, s, w375])=>{
   return out;
 }"""
 
-def groups_of(m, kit):
+def reset_to_column(m, kit, src):
+    """(384 crops) a county picture whose running text the app set again at a book column's width (ifcCountyColumn): its pieces are
+    narrower than the kit's cut and share one window"""
     pieces = [x for x in m if not x.get("page") and not x.get("blank")]
+    return src == "amendment" and bool(kit) and bool(pieces) and all(x["W"] < 0.8 * kit.get("kW", 0) for x in pieces)
+def groups_of(m, kit, src=None):
+    pieces = [x for x in m if not x.get("page") and not x.get("blank")]
+    if reset_to_column(m, kit, src): return [pieces]
     keys = (kit or {}).get("keys") or []
     if len(keys) != len(pieces): keys = ["piece%d" % k for k in range(len(pieces))]
     groups = {}
     for key, x in zip(keys, pieces): groups.setdefault(key, []).append(x)
     return list(groups.values())
-def pic_problems(m, kit):
+def pic_problems(m, kit, src=None):
     """what is wrong with one reference's picture at one width (an empty list: framed like 307.4.2). Pieces the kit cut from the
     same window of one page (kit["keys"]) are centred as one group: the group's narrowest left and right margins must match."""
     p = []
     pieces = [x for x in m if not x.get("page") and not x.get("blank")]
     if not pieces: return ["no picture drawn"]
-    for gi, xs in enumerate(groups_of(m, kit)):
+    for gi, xs in enumerate(groups_of(m, kit, src)):
         L, R = min(x["L"] for x in xs), min(x["R"] for x in xs)
         if abs(L - R) > 1.0: p.append("%s: off centre (left %s, right %s)" % ("group %d of %d pieces" % (gi + 1, len(xs)) if len(xs) > 1 else "piece %d" % (gi + 1), L, R))
         if len(xs) > 1 and len({round(x["cssW"], 1) for x in xs}) > 1: p.append("group %d: its pieces not one width %s" % (gi + 1, [x["cssW"] for x in xs]))
@@ -289,15 +299,15 @@ with sync_playwright() as pw:
         if OUT_JSON:
             with open(OUT_JSON, "w") as f: json.dump(results, f)
         bad = {"1a": [], "1b": [], "1c": [], "1d": [], "1e": [], "draw": []}
-        worst = {"lr": 0, "minm": 99, "tb": [99, 0]}; marked = 0
+        worst = {"lr": 0, "minm": 99, "tb": [99, 0]}; marked = 0; recol = 0
         for r in results:
             if r.get("err") or r.get("locked") or not r.get("m440"):
                 bad["draw"].append((r["id"], r.get("err") or r.get("note") or "locked")); continue
             for wk in ("m440", "m375"):
-                for pr in pic_problems(r[wk], r.get("kit")):
+                for pr in pic_problems(r[wk], r.get("kit"), r.get("src")):
                     key = "1a" if "edge" in pr or "no picture" in pr else "1b" if "off centre" in pr or "one width" in pr else "1d" if "card" in pr else "1c"
                     bad[key].append("%s @%s %s: %s" % (r["id"], wk[1:], r["label"], pr))
-                for xs in groups_of(r[wk], r.get("kit")):
+                for xs in groups_of(r[wk], r.get("kit"), r.get("src")):
                     worst["lr"] = max(worst["lr"], abs(min(x["L"] for x in xs) - min(x["R"] for x in xs)))
                 for x in r[wk]:
                     if x.get("page") or x.get("blank"): continue
@@ -307,7 +317,13 @@ with sync_playwright() as pw:
             shown = [x for x in r["m440"] if not x.get("page") and not x.get("blank")]
             n = sum(x["n"] for x in shown); sm = sum(x["sum"] for x in shown); mk = sum(x["marks"] for x in shown)
             if kit and kit["marks"]: marked += 1
-            if not kit or kit["n"] != n or kit["sum"] != sm or kit["marks"] != mk:
+            if reset_to_column(r["m440"], kit, r.get("src")):
+                # the same print (its dark pixels, within 2%: a letter's edge under the marker can cross the threshold) and a marker
+                # wherever the kit marks one - laid on whole words now (check-b384-cropfit)
+                dk = sum(x.get("dk", 0) for x in shown); recol += 1
+                if abs(dk - kit["dk"]) > 0.02 * max(1, kit["dk"]) or (mk > 0) != (kit["marks"] > 0):
+                    bad["1e"].append("%s %s (set to a column): kit dark %s marks %s, shown dark %s marks %s" % (r["id"], r["label"], kit["dk"], kit["marks"], dk, mk))
+            elif not kit or kit["n"] != n or kit["sum"] != sm or kit["marks"] != mk:
                 bad["1e"].append("%s %s: kit %s, shown n %s sum %s marks %s" % (r["id"], r["label"], kit and {k: kit[k] for k in ("n", "sum", "marks", "painted")}, n, sm, mk))
         nb = sum(1 for r in results if r.get("src") != "amendment"); nc = len(results) - nb
         print("  measured %d references (%d book, %d county) at two widths; worst |left-right| %.2fpx, smallest margin %.2fpx, top/bottom %.2f-%.2fpx"
@@ -317,7 +333,7 @@ with sync_playwright() as pw:
         chk("(1b) the print centred, left and right margins within 1px (%d not)" % len(bad["1b"]), not bad["1b"], bad["1b"][:6])
         chk("(1c) one padding rule: every margin 10px+, top and bottom 10-16px in every picture (%d not)" % len(bad["1c"]), not bad["1c"], bad["1c"][:6])
         chk("(1d) every picture's box is the card's width (%d not)" % len(bad["1d"]), not bad["1d"], bad["1d"][:6])
-        chk("(1e) GUARD: each picture holds exactly the kit's inked pixels, its highlight included (%d carry one; %d differ)" % (marked, len(bad["1e"])), not bad["1e"], bad["1e"][:6])
+        chk("(1e) GUARD: each picture holds exactly the kit's inked pixels, its highlight included (%d carry one; %d county pictures set to a column hold the kit's print; %d differ)" % (marked, recol, len(bad["1e"])), not bad["1e"], bad["1e"][:6])
         fills = sorted(r["fillMs"] for r in results if r.get("fillMs")); kitms = sorted(r["kit"]["ms"] for r in results if r.get("kit"))
         if fills: print("  draw time per reference (opened -> picture and buttons in place): median %dms, 90th %dms; the kit's paint alone median %dms"
                         % (fills[len(fills) // 2], fills[int(len(fills) * .9)], kitms[len(kitms) // 2] if kitms else -1), flush=True)
