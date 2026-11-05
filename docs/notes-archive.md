@@ -35569,3 +35569,82 @@ pause card with the room line, the other player's line with the dimmed marker, t
   "the tab bar's glass ... the Virtual Room's bar the same frost" - the tab bar went to blur(7px) in 377 and the Virtual Room's
   Match settings bar kept blur(30px); the gate also still names 30px. Nobody has asked for that bar to change.
 - check-b382-test re-run on the merged build: ALL PASS (the zoom hint at 3.5s was load).
+
+## 384 final check: badges round 2 - abstract outlines, a colour of its own for every badge, the academy's look-alikes
+
+Madison, of the last round's ten new Fire Code outlines: "I can tell you right now I don't like the acorn badge.. please don't
+make badges that look like real things? I thought we've been over that. Seems like you need to redo a few. ALSO why are there so
+many repeating colors. Make that right. Make colors darker lighter, do some whites, some blacks? Idk make them great." Then: "if
+the academy has look a like badges as well then get on that too."
+OUTLINES, FIRE CODE. All ten from the twins round pictured things (bell, flask, shell, puzzle piece, mushroom, goblet, heart,
+acorn, vase, anvil). Twelve plain outlines replace them and two look-alikes found on the way - the gear (Ch 6; beside the burst
+plate it is one toothed disc at 28px, 0.98) and the hex (Ch 8; beside the coin one rounded polygon, 0.90 on the 2px band).
+Built from shapely parts (scratchpad b2/gen10.py), every corner rounded, one or two channels; names and chapters (set by
+badgeBackPlan, the assignment that keeps the smallest title largest - b2/fit3.py, solve.py):
+  Finder bardia (a tall diamond crossed by a bar), Ch 3 bowhex (a wide hexagon, top and bottom bowed in), Ch 6 slipdisc (a disc
+  cut across, halves slipped), Ch 8 scoopsq (a square with a round scoop out of one corner), Ch 26 twinblock (a wide block with
+  a round notch top and bottom), Ch 28 slope (a block whose top runs downhill), Ch 35 bitehex (a hexagon with round bites out of
+  its side points), Ch 51 slipsq (a block cut across, halves slipped), Ch 58 bent (top bowed up, bottom bowed in), Ch 61 notchsq
+  (a square with a step out of each corner), App B bitetri (a triangle with a round bite out of each corner), App C cuttri (a
+  triangle on its point with its corners cut off). Smallest back title of the twelve 0.0513 (Ch 8); every back's words inside
+  the field on three phones (check-b384-ifcbadges (3)(4)).
+  Turned down, measured (b2/score.py, eval2.py, ch8.py) or by eye at 28px: pentagon (the spire stretched), heptagon, notched
+  pentagon, concave-cornered octagon (the coin), a square bowed in on four sides (the four-point star turned, 0.92), a hexagon
+  bowed in (the hex), a stepped block (reads as a folder), a square notched on every side (an X), a stepped diamond (the diamond
+  at 28px), a spool and a cushion (the ribbon stretched), a leaf square and a stadium (the lens), two overlapping squares (the
+  slipped block), a square bowed in on two sides and out on two (the diamond at 2px, 0.85), a hexagon crossed by a bar (the bar
+  diamond's cousin), a fat three-pointed shape (its back too small).
+  NOTE: the PIL-rasterised masks the scratch tools first used scored lower than the page's own rasterising (the bowed square
+  0.74 vs 0.85) - candidates were re-scored on the page's masks (b2/pmasks.py) before the gate.
+OUTLINES, ACADEMY. Measured the same way, the academy had the look-alikes the lead listed: gate / hex / octagon (2px 0.85-0.90,
+one rounded polygon at 28px), disc / shield (one shape upside down, 0.87 stretch-blind), keystone / shield, fan / wedge. The
+fewest that clear all of it: TCOLE Rules hex -> slope, De-Escalation octagon -> twinblock, Crisis Intervention Training shield ->
+bent, Civil Process wedge -> slipsq - four of Fire Code's new outlines (sharing across classes is fine, per Madison). Each back
+holds its title no smaller than before (0.0920 = 0.0920, 0.0776 > 0.0740, 0.0796 > 0.0703, 0.0616 > 0.0425). The hex, octagon,
+shield and wedge stay in BADGE_SHAPE (BADGE_SHAPE_KEYS - the hash fallback set - is unchanged); Fire Code still uses the shield.
+COLOURS. Every badge in a class has its own enamel now. A table entry may be the enamel itself ("#RRGGBB"; badgeThemeFor's en).
+- How chosen (scratchpad b2/pal.py, cpal2.py): a lattice of CIELAB lightness (22-86) x hue (every 10 deg) x two strengths, plus
+  onyx, graphite, ivory and frost; each colour STRUCK on one reference token (the coin) at the case's size and its enamel's mean
+  colour measured (b2/rendercols.py) - the token's metal and clear coat squeeze colours (onyx strikes as #434343, a pearl as
+  #DFDEDD), so the hex alone overstates how far apart two enamels look. Annealed to targets, then the best nods.
+- The rule (check-b384-badgetwins (3)/(4)): no two enamels within CIEDE2000 11 as defined, none within 9 as struck, nothing
+  within 14 side by side - in the unit list as laid out at 440px (two columns, so the card below counts; Fire Code's list puts
+  the Finder first), the case scene's grid and the case on Profile (its tiles read off the page). Why those numbers: CIEDE2000
+  ~1-2 is a just-noticeable difference for large patches; marks the size of a badge on a card need several times that to be
+  told apart at a glance, and the struck reading is compressed, so 9 struck / 11 defined / 14 neighbouring is what keeps two
+  badges from reading as one colour while still fitting 58 colours. Achieved: Fire Code 11.2 / 9.8 / 15.1, academy 11.6 /
+  10.4 / 14.8. The 21 families alone ran down to 6.5 (violet / indigo), 6.7 (purple / violet), 6.8 (red / terracotta).
+- Fire Code: chapters whose old colour meant something keep the nod at a new lightness (fire reds: Ch 5 fire red, 57 brighter,
+  App C a hydrant's dark red, App I coral, 7 deep wine, 64 pale blush; oranges for emergencies and hot work; hazmat gold/amber,
+  Ch 63 the oxidizer placard's pale yellow; water and air blues, 67 the "dangerous when wet" blue; egress and crop greens;
+  wood browns; frost for cryogenic fluids; graphite for tires; onyx for the access roads' asphalt). Chapters whose old colour
+  meant nothing were left free - that is what spread the 58 round the wheel instead of eight pinks.
+- Academy: eight units change (the newer of each repeated or near pair where there was a choice): Racial Profiling light
+  violet, Code of Criminal Procedure pale lavender, Consular Notification deep teal, Sexual Assault deep magenta, Radio pale
+  amber, Phonetic Alphabet deep rust, Crisis Intervention deep violet, Traumatic Brain Injury light rose. Sixteen keep theirs
+  (Professional Policing's blue, Ethics' gold, Arrest's steel, Missing Children's amber ... pinned).
+- PALE ENAMELS (luminance over .58, badgeEnamelPale): struck with a fine dark edge where they meet the silver
+  (BADGE_STRIKE.paleEdge .62 over .75 token units at the wall) - the gunmetal trap the other way up; the band at the wall goes
+  from ~.40 of the field's light (the bevel's shade alone) to ~.30. The vector fallback already draws a dark plate edge.
+- NEAR-BLACK ENAMELS (luminance under .07): badgeThemeFor returns g, the colour lifted half way to white, and every glow/tint
+  that used .p (the found badge's --badge-glow, the case slot's --slot-col, the cutscene's and binspect's --badge-col, the
+  results card's --bt, the unlock card's colours) uses g - an onyx badge otherwise glows black. Every academy family is lighter
+  than that, so g is p there.
+GATES. check-b384-badgetwins now holds BOTH classes: outlines under 0.85 on the 1px band, the 2px band and blurred to a 28px
+card (sigma 9 of 200px), turned and flipped; then the colour rule above, the pale edge (<= .35) and the dark glow (L* >= 45).
+ALL PASS. --against claude/b384 (2ac229b): FAILS (1c) Ch 8 / Ch 31 0.90, (1d) Ch 6 / Ch 32 0.98, (2c) gate / hex 0.90, gate /
+octagon 0.89, (3a-d) 21 enamels for 58, (4a-d) 3 shared - the old ten objects are not twins, so (1b) passes there. The pale-
+edge and dark-glow checks pass vacuously on the old build (it had neither); against this build with paleEdge 0 and g = p the
+glow checks fail on every dark enamel, and the edge ratio moves .30 -> .41 (threshold .35).
+check-b384-ifcbadges: the academy pin moves ON PURPOSE 8996cbb2 -> 2de41ef8 (four outlines, eight enamels); ALL PASS
+(29), the academy's smallest back unchanged (10.6px on the Pro Max). check-b384-case ALL PASS. check-js ALL PASS.
+STILL READING AS THINGS (not changed, Madison's call - earlier rounds accepted them): Fire Code's crown (Ch 1), cut gem (7),
+flower (9, cinquefoil), lightning bolt (10), stars (20 five-point, 62 six-point, 53 four-point sparkle), hourglass (21), plus
+sign (25), bucket (29), medal (37), open book (38, chevron), letter T (36, tau), letter C / crescent (59), mountains (55),
+briefcase (63, tag), castle (App H), club suit (App D, trefoil), water drop (80), shield (4); the Maltese cross (5) is the fire
+service's own emblem by design. Near the gate's line but under it: diamond / quatrefoil 0.83 (Ch 64 / App I and the academy's
+Professional Policing / Victims of Crime), roundel / lens 0.83 (Ch 50 / Ex B), wave / card 0.83 (Ch 11 / 66). Stretch-blind
+(advisory, not gated - it also calls a rectangle and a diamond one shape): Fire Code keeps the disc / shield / half disc /
+keystone family the academy just lost (Ch 23 / 4 / 34 / 39).
+Media (scratchpad only): out-badges2/ - every badge per class before/after, the changed outlines before/after, the enamels, the
+unit screens on an iPhone 17 Pro Max.
