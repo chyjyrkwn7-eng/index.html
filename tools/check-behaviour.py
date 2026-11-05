@@ -1518,8 +1518,30 @@ def check_b313_sheet2(br):
           abs(ce[0]) <= 1 and abs(ce[1]) <= 1 and 2 <= ce[2] <= 9, ce)
     # "it looks like a different red": the note is the chip's tint and border
     rd = r.get("reds") or ["", ""]
-    check("the No hundo note is the same red as its chip, tint and border",
-          "rgba(255, 107, 91, 0.12)" in rd[1] and rd[0].split(" | ")[2] == rd[1].split(" | ")[2], rd)
+    # MOVED IN 327 round 12 (before this repo's history; in the stylesheet
+    # since 4f9c74e): "THE BANNERS' CLEAR GLASS, ON EVERY POP-UP" - the
+    # no-hundo note left its solid base for the pop-ups' glass
+    # (--pop-bg-card) and its red is a shade stronger there (.14 tint, .4
+    # border, against the chip's .12 / .35) so its words keep 4.5:1. What 313
+    # asked ("it looks like a different red") still holds and is what is
+    # held: the note's tint and border are the chip's red - the same
+    # 255,107,91, not the old dark brown - at the chip's strength or a shade
+    # more, and nothing else in the note has a hue.
+    import re as _re313
+    def _rgba(s):
+        return [(int(m[0]), int(m[1]), int(m[2]), float(m[3]) if m[3] else 1.0)
+                for m in _re313.findall(r"rgba?\((\d+), (\d+), (\d+)(?:, ([0-9.]+))?\)", s or "")]
+    chip_p = (rd[0].split(" | ") + ["", "", ""])[:3]
+    note_p = (rd[1].split(" | ") + ["", "", ""])[:3]
+    chip_t = [c for c in _rgba(chip_p[0] + " " + chip_p[1]) if c[3] < 1]
+    chip_b = _rgba(chip_p[2]); note_b = _rgba(note_p[2])
+    note_cols = _rgba(note_p[0] + " " + note_p[1])
+    note_red = [c for c in note_cols if c[:3] == (255, 107, 91)]
+    note_other = [c for c in note_cols if c[:3] != (255, 107, 91) and max(c[:3]) - min(c[:3]) > 30]
+    check("the No hundo note is the chip's red, tint and border - the same colour, at its strength or a shade more, and no other red (313, 327 round 12)",
+          chip_t and chip_b and note_b and note_red and not note_other
+          and all(c[:3] == chip_t[0][:3] and chip_t[0][3] <= c[3] <= chip_t[0][3] + .06 for c in note_red)
+          and note_b[0][:3] == chip_b[0][:3] and chip_b[0][3] <= note_b[0][3] <= chip_b[0][3] + .1, rd)
     m0, m1, m2 = r.get("max0") or {}, r.get("max1") or {}, r.get("max2") or {}
     check("the time limit has a Max button, lit while the limit is below the top",
           m0.get("text", "").strip().lower() == "max" and m0.get("on") is False, m0)
@@ -7793,8 +7815,19 @@ def check_b298(br):
           r["keysUnique"] and r["repeatLast"] and not r["dailyRepeat"], r)
     ctx.close()
     # and no lag: with the flip-book playing, Home paints nothing per frame
+    # MOVED IN 380 (fef8ce3, "loops as window-sized layers"): by default
+    # (html.loops-paint) a loop's sheet steps through its window by left/top
+    # - each step repaints that one window, on purpose, in exchange for the
+    # ~57MB of whole-sheet layers Home used to hold (measured here: 600-675
+    # paints, 42-83ms over 2.5s, against 0-9ms the transform way). loopsWatch
+    # puts the transform way back on a phone where the painted way is not
+    # smooth, and under load it does so here too - which is why this passed
+    # on some runs and not others. What 298 holds - the transform playback is
+    # the compositor's alone, no paint per frame - is measured on that
+    # playback (html.loops-paint off); the painted way is 380's.
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT, dpr=3)
     pg.evaluate("""()=>{ document.getElementById('pushing-update')?.remove(); store.lifetime.points = 300000; topicsIn(QUESTIONS).forEach(u => store.unitPerfects[u] = 40);
+      document.documentElement.classList.remove('loops-paint');
       store.pendingBadgeUnlocks = []; theme.muteBanners = true; showHome(); }""")
     pg.wait_for_function("()=>document.querySelectorAll('.cosmic-rank-anim').length >= document.querySelectorAll('.cosmic-badge-rank.cosmic-badge-lit').length && document.querySelectorAll('.cosmic-rank-anim').length > 0", timeout=60000)
     def paint_ms(on):
@@ -7806,7 +7839,7 @@ def check_b298(br):
         data = json.loads(br.stop_tracing()); ev = data["traceEvents"] if isinstance(data, dict) else data
         return sum(e.get("dur", 0) for e in ev if e.get("name") in ("Paint", "RasterTask")) / 1000
     on1, off1, on2, off2 = paint_ms(True), paint_ms(False), paint_ms(True), paint_ms(False)
-    check("17 Pro Max: Home with the emblems moving paints no more than with them still (paint+raster over 2.5s, ms)",
+    check("17 Pro Max: Home with the emblems moving by transform paints no more than with them still (paint+raster over 2.5s, ms)",
           min(on1, on2) <= max(off1, off2) + 40, [round(on1), round(off1), round(on2), round(off2)])
     ctx.close()
 
@@ -7962,7 +7995,10 @@ def check_b299(br):
             /* the dot inside, same colour */
             store.seenUnlocks.chars = store.seenUnlocks.chars.filter(x => x !== ch);
             showProfile('profile'); await wait(600);
-            const d = document.querySelector('.namedisplay-row .new-dot');
+            /* MOVED IN 383 (42bbffa): Customize went "off the name row onto its own row at the bottom of the person card" and
+               "the 'something new' dot sits inside its right end" (.profile-customize-row) - the card's dot is read wherever
+               the card puts it, as profileDot above already is */
+            const d = document.querySelector('.profile-hero .new-dot, .namedisplay-row .new-dot');
             out.dotColor = d ? ((getComputedStyle(d).backgroundImage.match(/rgb\(255, 212, 59\)/) || [getComputedStyle(d).backgroundColor])[0]) : null;
             markUnlockSeen('chars', ch);
             /* every flare moves, locked ones included */
@@ -8039,7 +8075,13 @@ def check_b299(br):
         # REVISED IN 317: the case moved above the Next rank card.
         # REVISED BACK IN THE 317 TOUCH-UP: "The badge case being at the top
         # is not the move, revert that location at the bottom."
-        check(f"{dev}: the Profile card reads where you stand, the next rank, the badge case from the top", order == "standing,next,case", order)
+        # MOVED IN 383 (42bbffa): "Should the badge case be between the
+        # challenges and the top box instead? I feel like it's easy to miss at
+        # the bottom" - person card, badge case, next rank. 317's "at the top is
+        # not the move" was the case INSIDE the one card above Next rank; this is
+        # the case as its own card between them (archive, "Build 383 - Profile:
+        # the badge case under the person card"). Still three, one of each.
+        check(f"{dev}: the Profile tab reads where you stand, the badge case, the next rank from the top (383)", order == "standing,case,next", order)
         ctx.close()
 
 
@@ -8069,21 +8111,33 @@ def check_b300(br):
               const frame = img.parentElement, fw = parseFloat(frame.style.width);
               /* SCREEN pixels: the hero is scaled, so take the ancestors' scale too */
               const badge = wr.parentElement, S = badge.getBoundingClientRect().width / parseFloat(getComputedStyle(badge).width);
+              /* MOVED IN 384 (9656473, "the rank flares' shake"): under a scaled hero the window is laid out in screen units
+                 and scaled back by its OWN transform (scale(1/hero)), so a step is whole device pixels both in the window's
+                 own paint (fw x dpr - how Safari rasters a layer) and on the screen (fw x that scale x the ancestors' x dpr).
+                 Both are asserted; before 384 the window had no scale of its own (K = 1) and the two were one number. */
+              const ft = getComputedStyle(frame).transform, K = ft && ft !== 'none' ? new DOMMatrix(ft).a : 1;
               const res = { imgs: imgs.length, anims: anims.length, running: anims.every(a => a.playState === 'running'),
-                frameDev: fw * S * dprNow, wrong: 0, offPx: 0 };
+                frameDev: fw * K * S * dprNow, frameOwn: fw * dprNow, wrong: 0, offPx: 0 };
               if(anims.length !== 1) return res;
               /* walk the whole loop: at the middle of every frame and just
                  after every frame boundary, the frame on show must be that one */
               const a = anims[0], L = Number(a.effect.getTiming().duration);
               const cols = Math.round(img.offsetWidth / fw), n = a.effect.getKeyframes().length - 1;
+              /* MOVED IN 380 (fef8ce3, "loops as window-sized layers"): with html.loops-paint (on by default, until
+                 loopsWatch finds a phone not smooth with it) the sheet steps through its window by left/top - the
+                 painted twin of the transform keyframes (lbPaintKF, rk-pos-*), the same frames on the same clock.
+                 Which way a run plays depends on the machine's load, so the frame is read off whichever is moving it. */
+              const painted = /^rk-pos-/.test(a.animationName || '');
+              res.mode = painted ? 'paint' : 'layers';
               a.pause();
               for(let k = 0; k < n; k++){
                 for(const t of [(k + 0.5) * L / n, k * L / n + 0.5]){
                   a.currentTime = t;
-                  const m = new DOMMatrix(getComputedStyle(img).transform);
-                  const col = Math.round(-m.m41 / fw), row = Math.round(-m.m42 / fw);
+                  const cs = getComputedStyle(img), m = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+                  const x = painted ? parseFloat(cs.left) || 0 : m.m41, y = painted ? parseFloat(cs.top) || 0 : m.m42;
+                  const col = Math.round(-x / fw), row = Math.round(-y / fw);
                   if(row * cols + col !== k) res.wrong++;
-                  for(const v of [m.m41 * S * dprNow, m.m42 * S * dprNow]) if(Math.abs(v - Math.round(v)) > 0.02) res.offPx++;
+                  for(const v of [x * K * S * dprNow, y * K * S * dprNow, x * dprNow, y * dprNow]) if(Math.abs(v - Math.round(v)) > 0.02) res.offPx++;
                 }
               }
               a.play();
@@ -8113,11 +8167,12 @@ def check_b300(br):
         check(f"{dev}: each is ONE animation on ONE image - no second clock to drift",
               per and all(p["imgs"] == 1 and p["anims"] == 1 and p["running"] for p in per), [(p["imgs"], p["anims"]) for p in per])
         check(f"{dev}: the frame on show is the right one at every moment of the loop, row changes included (no shake)",
-              per and all(p.get("anims") == 1 and p.get("wrong") == 0 for p in per), [p.get("wrong") for p in per])
-        check(f"{dev}: every frame step lands on whole device pixels (no shimmer)",
+              per and all(p.get("anims") == 1 and p.get("wrong") == 0 for p in per), [(p.get("wrong"), p.get("mode")) for p in per])
+        check(f"{dev}: every frame step lands on whole device pixels, on the screen and in the window's own paint (no shimmer; 384)",
               per and all(p.get("anims") == 1 and p.get("offPx") == 0 and isinstance(p.get("frameDev"), (int, float))
-                          and abs(p["frameDev"] - round(p["frameDev"])) < 0.02 for p in per),
-              [(p.get("offPx"), p.get("frameDev") if not isinstance(p.get("frameDev"), (int, float)) else round(p["frameDev"], 2)) for p in per])
+                          and abs(p["frameDev"] - round(p["frameDev"])) < 0.02 and abs(p["frameOwn"] - round(p["frameOwn"])) < 0.02 for p in per),
+              [(p.get("offPx"), round(p["frameDev"], 2) if isinstance(p.get("frameDev"), (int, float)) else p.get("frameDev"),
+                round(p["frameOwn"], 2) if isinstance(p.get("frameOwn"), (int, float)) else p.get("frameOwn")) for p in per])
         check(f"{dev}: 30 frames a second (180 over the 6s loop; build 302)", per and all(p.get("n") == 180 for p in per), [p.get("n") for p in per])
         check(f"{dev}: the sheets are cached by drawing, not by build, so an update does not re-record them",
               r.get("keys", 0) > 0 and not r.get("buildKeyed") and r.get("v3") == r.get("keys"), (r.get("keys"), r.get("buildKeyed"), r.get("v3")))
@@ -8928,13 +8983,16 @@ def check_b304_polish(br):
           const tints = [];
           for(const id of ['tests100', 'vr50', 'exam100']){
             store.banner = id; showProfile('profile'); await wait(500);
-            const hero = document.querySelector('.profile-hero');
-            tints.push({ id, t1: hero.style.getPropertyValue('--hero-t1').trim(), bg: getComputedStyle(hero).backgroundImage });
+            const hero = document.querySelector('.profile-hero'), cv = hero.querySelector('.profile-cover');
+            tints.push({ id, t1: hero.style.getPropertyValue('--hero-t1').trim(), bg: getComputedStyle(hero).backgroundImage,
+                         fill: getComputedStyle(hero).backgroundColor, cover: cv && cv.classList.contains('has-banner') ? cv.dataset.banner : null });
           }
-          out.tints = tints.map(t => ({ id: t.id, t1: t.t1, tinted: /gradient/.test(t.bg) }));
+          out.tints = tints.map(t => ({ id: t.id, t1: t.t1, tinted: /gradient/.test(t.bg), fill: t.fill, cover: t.cover }));
           out.distinct = new Set(tints.map(t => t.t1)).size;
+          out.covers = new Set(tints.map(t => t.cover)).size;
           store.banner = ''; showProfile('profile'); await wait(500);
           out.defaultTinted = /gradient/.test(getComputedStyle(document.querySelector('.profile-hero')).backgroundImage);
+          out.defaultFill = getComputedStyle(document.querySelector('.profile-hero')).backgroundColor;
           /* a stat's answer opens under the tapped card's row */
           showProfile('stats'); await wait(700);
           const cards = [...document.querySelectorAll('.stat-card')];
@@ -8966,9 +9024,19 @@ def check_b304_polish(br):
         }""")
         ctx.close()
         check(dev + ": no error in the 304 polish run", "err" not in r, r.get("err"))
-        check(dev + ": the Profile card under a banner is tinted, and differently per banner",
-              all(t["tinted"] and t["t1"] for t in r.get("tints", [])) and r.get("distinct") == 3, r.get("tints"))
-        check(dev + ": the default banner's card takes the theme's colours", r.get("defaultTinted") is True)
+        # MOVED IN 383 round 2 (42bbffa): "Profile's three cards are the clean
+        # look's solid card - no pools, no rim, no shadow" (the 383 clean look
+        # beyond Home: every card one solid fill). The banner still goes on the
+        # person card - on its cover, a different one per banner - and the card
+        # under it is that one solid card for every banner and for none (320
+        # already took the theme's colours off the default). 304's wash of the
+        # banner's colours over the card is what 383 took away.
+        tt = r.get("tints", [])
+        fills = {t.get("fill") for t in tt} | {r.get("defaultFill")}
+        check(dev + ": the Profile card under a banner wears that banner on its cover, a different one per banner, over one solid card (383)",
+              len(tt) == 3 and all(t.get("cover") == t["id"] and not t["tinted"] for t in tt) and r.get("covers") == 3 and len(fills) == 1, tt)
+        check(dev + ": with no banner the card is the same solid card - no colour wash, the theme's or the rank's (320, 383)",
+              r.get("defaultTinted") is False and len(fills) == 1, (r.get("defaultTinted"), r.get("defaultFill")))
         check(dev + ": a stat's explanation opens directly under the row you tapped",
               r.get("whyInGrid") is True and 0 <= (r.get("whyGap") or -1) <= 20 and r.get("whyVisible") is True,
               (r.get("whyInGrid"), r.get("whyGap"), r.get("whyVisible")))
@@ -9137,14 +9205,28 @@ def check_b305_resultstap(br):
         landed = "()=>document.querySelectorAll('.rs-rewards .rs-land.rs-in, .rs-rewards .rs-land.rs-in-now').length"
         total = pg.evaluate("()=>document.querySelectorAll('.rs-rewards .rs-land').length")
         graded = "()=>!!document.querySelector('.rs-rewards .rs-grade.rs-graded')"
-        before = pg.evaluate(landed); g0 = pg.evaluate(graded)
+        # which box each landed piece belongs to: the outermost .rs-land round it (a card's lines are inside the card)
+        boxes = """()=>{ const all = [...document.querySelectorAll('.rs-rewards .rs-land')];
+          return all.map((e, i) => { let top = e; for(let p = e.parentElement; p; p = p.parentElement) if(p.classList && p.classList.contains('rs-land')) top = p;
+            return [i, all.indexOf(top), e.classList.contains('rs-in') || e.classList.contains('rs-in-now')]; }); }"""
+        before = pg.evaluate(landed); g0 = pg.evaluate(graded); b0 = pg.evaluate(boxes)
         pg.touchscreen.tap(w / 2, h * 0.45); pg.wait_for_timeout(60)
-        after = pg.evaluate(landed); g1 = pg.evaluate(graded)
+        after = pg.evaluate(landed); g1 = pg.evaluate(graded); b1 = pg.evaluate(boxes)
+        new_boxes = sorted({x[1] for x, y in zip(b0, b1) if y[2] and not x[2]}) if len(b0) == len(b1) else ["changed"]
         # BUILD 320: the grade is counted in, and a tap while it counts is
         # "the box on screen" - it finishes the count and lands the grade,
         # one step, and the XP card waits for the next tap.
-        check(dev + ": a tap on the screen brings in the next card (or lands the grade being counted), not the rest of them",
-              ((after == before + 1) or (after == before and g1 and not g0)) and after < total, (before, after, total, g0, g1))
+        # MOVED IN 380 (fef8ce3, "TAP-THROUGH, BOX BY BOX"): "if you tap it
+        # while it loads it would finish instantly and then go to the xp box
+        # and do it normally, if you tap it again that would finish and so
+        # on" - 305's tap ran one step of the timeline and often seemed to do
+        # nothing, so a tap now finishes the box coming in (the XP card's
+        # lines, its total and its level block land together) and the next
+        # box follows after a beat. One tap is still never the rest of the
+        # reveal: what lands is inside ONE box, and the way-on row is not it.
+        check(dev + ": a tap finishes the box coming in (or lands the grade being counted) - one box, never the rest of them (380)",
+              ((after > before and len(new_boxes) == 1) or (after == before and g1 and not g0)) and after < total,
+              (before, after, total, g0, g1, new_boxes))
         for _ in range(150):
             pg.wait_for_timeout(200)
             if pg.evaluate("()=>!!document.querySelector('.rs-rewards.rs-done')"): break
@@ -9534,8 +9616,13 @@ def check_b314h_flares(br):
     found = [d for d in dots if d["found"]]
     unfound = [d for d in dots if not d["found"]]
     check("a found flare is lit in its own colour", found and all(d["fc"] == real.get(d["k"]) for d in found), found)
-    check("no unfound flare on Home carries its colour - not even the next one being hunted",
-          unfound and any(d["next"] for d in unfound) and all(d["fc"] != real.get(d["k"]) and d["fc"] == r.get("tint") for d in unfound), unfound)
+    # MOVED IN 329 (main at 802f873): "I don't want hunted secret flares or
+    # rank flares." flareHuntState is only "found" or "missing" - no flare on
+    # the planet is marked as the one being hunted (no ring, no tint, no
+    # rumour), so there is no "next one" to look at any more; none may be
+    # marked, and every unfound one is the same plain unfound light.
+    check("no unfound flare on Home carries its colour, and none is marked as the one being hunted (329)",
+          unfound and not any(d["next"] for d in unfound) and all(d["fc"] != real.get(d["k"]) and d["fc"] == r.get("tint") for d in unfound), unfound)
     check("the Home hint card draws the missing flare without its colour",
           r.get("hintColor") != real.get("violet") and real.get("violet") not in (r.get("hintFills") or []) + (r.get("hintStops") or []),
           {k: r.get(k) for k in ("hintColor", "hintFills", "hintStops")})
@@ -9569,7 +9656,7 @@ _RANKMAP_SAMPLE = """async (scen) => {
   await wait(scen === 'climb' ? 11000 : 8000);
   stop = true;
   window.scrollTo = o;
-  return { frames, calls: [...new Set(calls)] };
+  return { frames, calls: [...new Set(calls)], vh: window.innerHeight, maxScroll: document.documentElement.scrollHeight - window.innerHeight };
 }"""
 
 
@@ -9606,8 +9693,22 @@ def check_b314h_rankmap(br):
               last and last["op"] > 0.9 and abs(last["dotY"] - last["fillEnd"]) <= 3, last)
         sy = [f["sy"] for f in fr]
         if scen == "climb":
-            check("climb: the show went down the road and came back to the very top",
-                  sy and max(sy) > 100 and sy[-1] == 0, {"max": max(sy) if sy else None, "end": sy[-1] if sy else None})
+            # MOVED IN 384 (45fb8fd, "the back button and the chat button meet
+            # in the middle"): every pushed screen's nav row - Rank's included -
+            # went up .6rem, the road with it, so the deepest scroll of this
+            # climb went 109 -> 99px and a fixed "more than 100px" read a page
+            # moving up as the show not going down. What is held is the shape:
+            # the camera went down the road WITH the light (at its deepest the
+            # light is on screen, in the band rankUpFollowY holds it in - .42 of
+            # the screen down - or the page is as far down as it goes), and came
+            # back to the very top.
+            deep = max(fr, key=lambda f: f["sy"]) if fr else {}
+            vh = r.get("vh") or 956
+            band = (deep.get("dotY", -1) / float(vh)) if deep else -1
+            floor = bool(deep) and r.get("maxScroll") is not None and deep["sy"] >= r["maxScroll"] - 2
+            check("climb: the show went down the road with its light and came back to the very top",
+                  sy and max(sy) > 20 and 0 < band < 1 and (0.3 <= band <= 0.55 or floor) and sy[-1] == 0,
+                  {"max": max(sy) if sy else None, "end": sy[-1] if sy else None, "lightAtDeepest": round(band, 3), "pageFloor": r.get("maxScroll")})
             check("climb: every scroll of the show is a plain jump, never the options form an engine may not know",
                   r.get("calls") and all(c == "xy" for c in r["calls"]), r.get("calls"))
         else:
@@ -9752,14 +9853,24 @@ def check_b314h_chat(br):
     info = pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel'); const r = p.getBoundingClientRect();
       window.__cls = []; new MutationObserver(() => __cls.push(p.className)).observe(p, { attributes: true, attributeFilter: ['class'] });
       const g = p.querySelector('.chatdock-grip'); const gr = g ? g.getBoundingClientRect() : r;
-      return { bf: getComputedStyle(p).backdropFilter, x: gr.left + gr.width / 2, y: gr.top + gr.height / 2, open: chatDockOpen }; }""")
+      return { bf: getComputedStyle(p).backdropFilter, bg: getComputedStyle(p).backgroundColor + ' ' + getComputedStyle(p).backgroundImage,
+               x: gr.left + gr.width / 2, y: gr.top + gr.height / 2, open: chatDockOpen }; }""")
     cdp = ctx.new_cdp_session(pg)
     cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": info["x"], "y": info["y"]}]})
     cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
     pg.wait_for_timeout(60)
-    a = pg.evaluate("() => ({ cls: __cls.slice(), bf: getComputedStyle(document.querySelector('.chatdock-panel')).backdropFilter, open: chatDockOpen })")
-    check("a tap on the sheet never turns its glass into the dark moving fill",
-          info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bf"] != "none", a)
+    a = pg.evaluate("""() => { const p = document.querySelector('.chatdock-panel');
+      return { cls: __cls.slice(), bf: getComputedStyle(p).backdropFilter, bg: getComputedStyle(p).backgroundColor + ' ' + getComputedStyle(p).backgroundImage, open: chatDockOpen }; }""")
+    # MOVED IN 384 (db0e4a2): "the background behind the chat is see through
+    # and then you see it change to blurry" (again) - an iPhone builds a
+    # backdrop blur a few frames after it is asked for, so the dark sheet is
+    # now its near-opaque .95 fill ALWAYS, with no backdrop-filter to arrive
+    # late (archive, "Build 384 - Home's class icons and daily question; the
+    # chat sheet"). So there may be no glass to look at; what 314 asked still
+    # holds and is held: a tap never puts the sheet into its moving states and
+    # leaves its look - fill and filter - exactly as it was.
+    check("a tap on the sheet never turns it into the moving fill: no settling or dragging state, its fill and filter unchanged (384: no blur on the dark sheet)",
+          info["open"] and a["open"] and not any(("is-settling" in c or "is-dragging" in c) for c in a["cls"]) and a["bf"] == info["bf"] and a["bg"] == info["bg"], a)
     # a real pull down closes it; every move after the first is claimed
     pg.evaluate("""() => { window.__prevented = 0; window.__moves = 0; document.querySelector('.chatdock-panel').addEventListener('touchmove', e => { __moves++; setTimeout(() => { if(e.defaultPrevented) __prevented++; }, 0); }, { passive: true }); }""")
     # REVISED IN 327z8/z15 ("it goes away even if you barely swipe down, it should be like if you swipe really
@@ -9857,9 +9968,21 @@ def check_b314h_board(br):
         r = pg.evaluate("""() => { const h = document.querySelector('.rank-row-head'); const f = document.querySelector('.rank-rows .rank-row.lb-place-1');
           const hr = h.getBoundingClientRect(), fr = f.getBoundingClientRect(); const cs = getComputedStyle(h);
           const lab = [...h.querySelectorAll('.rank-col-head')].map(e => e.getBoundingClientRect().bottom);
-          return { gap: Math.round(fr.top - hr.bottom), labGap: Math.round(fr.top - Math.max(...lab)), bf: cs.backdropFilter, bg: cs.backgroundColor }; }""")
-        check("%s: the Rank / Level / Badges header keeps its own line, clear of first place and its glow, with no glass strip" % dn,
-              r["gap"] >= 8 and r["labGap"] >= 12 and r["bf"] == "none", r)
+          /* does first place throw any light out past its edge (a box-shadow that is not inset)? */
+          const glow = getComputedStyle(f).boxShadow.split(/,(?![^(]*\\))/).filter(s => s.trim() !== 'none' && !/inset/.test(s)).length > 0;
+          return { gap: Math.round(fr.top - hr.bottom), labGap: Math.round(fr.top - Math.max(...lab)), bf: cs.backdropFilter, bg: cs.backgroundColor, glow }; }""")
+        # MOVED IN 382 (a330ee8, "the Leaderboard and the Calendar in Settings'
+        # language"; 383 joined the top three to the list): first place is no
+        # longer a lit card with a gold glow round it ("medals without the
+        # glow") but the top row of one grouped card, and the header is a
+        # sentence-case caption over it, iOS's section header - 7px above the
+        # card, where 314 kept 8px clear and 12px for the glow. Held: the
+        # header has its own line above first place, its labels clear of it,
+        # no glass strip; and wherever first place does throw a glow, 314's
+        # 8px / 12px clearance still applies.
+        clear = (r["gap"] >= 8 and r["labGap"] >= 12) if r.get("glow") else (r["gap"] >= 4 and r["labGap"] >= 4)
+        check("%s: the Rank / Level / Badges header keeps its own line, clear of first place (and of any glow it throws), with no glass strip" % dn,
+              clear and r["bf"] == "none", r)
         ctx.close()
     # characters that hold still: every flip-book frame on the same pixel grid
     ctx = br.new_context(viewport={"width": 440, "height": 956}, device_scale_factor=3, has_touch=True, is_mobile=True)
@@ -9965,6 +10088,15 @@ def check_b314h_settings_calendar(br):
       out.today = { sel: t.classList.contains('cal-cell-sel'), bgImg: c.backgroundImage,
         shadow: rimFrom === 'ring' ? (/inset/.test(c.boxShadow) && / 0px 0px 0px /.test(c.boxShadow) ? 'none' : c.boxShadow) : c.boxShadow,
         border: rimFrom === 'ring' ? (c.boxShadow.match(/rgba?\([^)]*\)/) || [''])[0] : c.borderTopColor, bg: c.backgroundColor, rimFrom };
+      /* 382: today's circle in both of its states, and the page's accent to compare it with */
+      const look = () => { const n = document.querySelector('.cal-grid .cal-cell-today .cal-cell-num'); const s = getComputedStyle(n);
+        const pr = document.createElement('i'); pr.style.color = 'var(--accent)'; n.appendChild(pr); const acc = getComputedStyle(pr).color; pr.remove();
+        return { picked: n.closest('.cal-cell').classList.contains('cal-cell-sel'), bg: s.backgroundColor, img: s.backgroundImage,
+                 ring: (/inset/.test(s.boxShadow) ? (s.boxShadow.match(/rgba?\\([^)]*\\)/) || [''])[0] : ''),
+                 glow: s.boxShadow === 'none' || (/inset/.test(s.boxShadow) && / 0px 0px 0px /.test(s.boxShadow)) ? 'none' : s.boxShadow, accent: acc }; };
+      out.today382 = [look()];
+      const other = [...document.querySelectorAll('.cal-grid .cal-cell:not(.cal-cell-today):not(.cal-cell-empty)')].find(x => x.querySelector('.cal-cell-num'));
+      if(other){ other.click(); await wait(300); out.today382.push(look()); }
       return out; }""")
     if "page" not in r:
         op = r["open"]; cl = r["close"]
@@ -9979,11 +10111,18 @@ def check_b314h_settings_calendar(br):
         check("(382) Advanced settings' row on the Settings menu opens its own page, with a back button and its resets",
               a.get("row") and a.get("open") and a.get("back") and (a.get("resets") or 0) >= 2, a)
         check("(382) ...and Back returns to the Settings menu", a.get("backOnMenu") is True, a)
-    t = r["today"]
-    import re as _re
-    nums = [int(x) for x in _re.findall(r"\d+", t["border"])[:3]]
-    check("today is matte and neutral: no gradient, no glow, a neutral rim (theme set to a colour)",
-          t["bgImg"] == "none" and t["shadow"] == "none" and len(nums) == 3 and max(nums) - min(nums) <= 6, t)
+    # MOVED IN 382 (a330ee8, "the Leaderboard and the Calendar in Settings'
+    # language"): "Today is the accent's circle: filled when it is the picked
+    # day, a ring otherwise" - the clean iOS calendar. The fixture's today is
+    # the picked day, so it has no ring to read a rim off (the old reading
+    # found none). What 314 asked - matte, no theme gradient, no glow - is
+    # held in both states; the colour is 382's: the page's accent (the clean
+    # look's accent is the ink, white, whatever theme is set).
+    st = r.get("today382") or []
+    ok382 = len(st) == 2 and {s["picked"] for s in st} == {True, False} and all(
+        s["img"] == "none" and s["glow"] == "none" and
+        ((s["picked"] and s["bg"] == s["accent"]) or (not s["picked"] and s["ring"] == s["accent"])) for s in st)
+    check("today is matte: no gradient, no glow - the accent's circle, filled when picked and a ring otherwise (382)", ok382, st)
     ctx.close()
 
 
@@ -11076,7 +11215,10 @@ def check_b313_lead(br):
       onSnapshotResilient = (ref, onNext) => ref.onSnapshot(onNext, () => {});
       fbDb = { collection: n => n !== 'leaderboard' ? real.collection(n) : ({ doc: id => real.collection(n).doc(id),
         get: () => new Promise(() => {}), onSnapshot: cb => { cbs.push(cb); return () => { cbs = cbs.filter(c => c !== cb); }; } }) };
-      const real4 = () => document.querySelectorAll('.rank-row:not(.rank-row-skel)').length;
+      /* MOVED IN 327z12 (main at f5a95d5): This Week and Hundos took Overall's column header ("can [hundos] and xp be like
+         [overall] ... the title header", LB_THIRD_COL) - a .rank-row-head, which is a .rank-row but nobody's row; from 382 it
+         stands over the placeholders too. People are counted, not the header. */
+      const real4 = () => document.querySelectorAll('.rank-row:not(.rank-row-skel):not(.rank-row-head)').length;
       /* cold: nothing in memory, the cache knows only you */
       leaderboardRows = []; showRankings('week'); await wait(60);
       cbs.forEach(cb => cb(mk([me], true))); await wait(300);
@@ -11342,7 +11484,14 @@ def _b314_extent(pg, cid, sil=False):
       (el.tagName === 'svg' ? [el] : [...el.querySelectorAll('svg')]).forEach(s => {
         s.setAttribute('viewBox', '-7 -7 54 54'); s.style.cssText = 'position:absolute;left:0;top:0;width:540px;height:540px;overflow:visible;-webkit-mask-image:none;mask-image:none;filter:none';
         s.querySelectorAll('.cx-bg').forEach(n => n.remove());
-        s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); }); });
+        s.querySelectorAll('circle').forEach(n => { if(/url\\(#(aura|halo)-/.test(n.getAttribute('fill') || '')) n.remove(); });
+        /* MOVED IN 327z10 (main at 92f434d, "the ghost character is not centered in the circle"): the Ghost's cold light is
+           an ellipse (-gaura) and is light, not figure, like the halo circles; and the wisp that floats off its shoulder
+           (.cx-k-ghost > .cx-fx-tip) is not its outline either. Centring the Ghost (AVATAR_CENTRE_DY 2.3 -> -2.5, held by
+           check-b325-a, which sets the same two aside) lifted that wisp to y 1.8, near the frame's top corner, where it
+           floats; what 272's line keeps clear is a head or a hat, and the Ghost's head is well inside it. */
+        s.querySelectorAll('ellipse').forEach(n => { if(/-gaura\\)/.test(n.getAttribute('fill') || '')) n.remove(); });
+        s.querySelectorAll('.cx-k-ghost > .cx-fx-tip').forEach(n => n.remove()); });
       host.appendChild(el); document.body.appendChild(host); }""", [cid, sil])
     png = pg.screenshot(clip={"x": 0, "y": 0, "width": 540, "height": 540}, omit_background=True)
     A = _Im.open(_io.BytesIO(png)).convert("RGBA").getchannel("A").load()
@@ -11473,6 +11622,8 @@ def check_b314_chars(br):
           const tick = o => { const c = o.querySelector('.avatarchar-check'); return !!c && parseFloat(getComputedStyle(c).opacity) > .9; };
           out.rings = opts.filter(ring).length; out.ticks = opts.filter(tick).length;
           out.selRing = opts.filter(o => o.classList.contains('selected')).every(o => ring(o) && tick(o));
+          /* 327 round 11: the selected one is marked by its tick alone */
+          out.selTick = opts.filter(o => o.classList.contains('selected')).length === 1 && opts.filter(o => o.classList.contains('selected')).every(o => tick(o) && !ring(o));
           /* the picker's own drawing has its halo turned down */
           const held = opts.find(o => !o.classList.contains('locked') && !o.classList.contains('selected'));
           const aura = held && [...held.querySelectorAll('svg.avatarchar-svg circle')].find(c => /url\\(#(aura|halo)-/.test(c.getAttribute('fill') || ''));
@@ -11488,7 +11639,14 @@ def check_b314_chars(br):
           out.font = parseFloat(ics.fontSize); out.fieldToBtn = Math.round(sr.top - ir.bottom);
           out.inView = ir.left >= 8 && ir.right <= innerWidth - 8 && sr.right <= innerWidth - 8;
           return out; }""")
-        check("%s: exactly one character wears the selection ring and the tick" % label, r["rings"] == 1 and r["ticks"] == 1 and r["selRing"] is True, (r["rings"], r["ticks"], r["selRing"]))
+        # MOVED IN 327 round 11 (before this repo's history; in the stylesheet
+        # since 4f9c74e): "the character you have selected being circled is not
+        # the move, just the checkmark is okay" - .avatarchar-option.selected's
+        # ring (::after) stays at opacity 0. 314's ask ("hard to tell which
+        # character is selected") still holds: exactly one tile is marked, the
+        # selected one, by its tick - and no tile wears a ring.
+        check("%s: exactly one character, the selected one, wears the tick, and none a ring (327 round 11)" % label,
+              r["rings"] == 0 and r["ticks"] == 1 and r.get("selTick") is True, (r["rings"], r["ticks"], r.get("selTick")))
         if label != "iPhone SE 1st gen":
             check("%s: a picker character's own halo is turned down (it read as selected)" % label, r["halo"] is not None and r["halo"] <= .5, r["halo"])
         check("%s: changing your name, the name row goes away while the field is open" % label, r["rowGone"] is True)
@@ -12800,7 +12958,15 @@ def check_b313_fx(br):
     # MOVED IN 327 (round 6): "Now that the edges are like a hard stop for the
     # borders it's kinda bad. It used to be better." Every results card's rim,
     # the 100% box's included, is the colour at .36 now, not full strength.
-    check("Confetti, the default, leaves the box and its bar gold", r.get("border") == "rgba(242, 200, 115, 0.46)" and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+    # MOVED IN 383 round 2 (42bbffa, "the clean look beyond Home"): every card
+    # beyond Home is one solid card - "border transparent, shadow none" - and
+    # "the results' cards (the grade's tone frame hidden)", so the 100% box
+    # has no gold rim left to keep (on 382 it was rgba(242,200,115,.46)). What
+    # is held: Confetti, the default, puts no effect's colours on the box (not
+    # tinted, and its rim is the clean card's - none - or the old gold), and
+    # its bar is still gold.
+    check("Confetti, the default, leaves the box untinted - the clean card's rim (383) - and its bar gold",
+          r.get("border") in ("rgba(0, 0, 0, 0)", "rgba(242, 200, 115, 0.46)") and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
