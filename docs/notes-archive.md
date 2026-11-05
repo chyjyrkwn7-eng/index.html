@@ -34554,3 +34554,27 @@ re-run at the end with the machine quiet.
   placeholder); check-b330's Back buttons at 40px on the sign-up steps vs 20px elsewhere; check-b326-f's Level 2/3 tab ink
   contrast 3.9 (< 4.5); b376/b360/b327z13/b378 timings; b327t backdrop luminance at its boundary; b327z5-c; behaviour
   b258 (two animations still running under the update bar) and b268 (road map light frame count).
+- FOUND AND FIXED AT THE END OF THE CHECK (after the full sweep came back 144/144):
+  - A NARROW TABLET SCREEN HAS NO CORNER BESIDE THE BAR (check-fixes, the rumoured iPhone Fold inner screen, 640x904 and
+    640x830 - 383 the same). From 40rem the daily "?" sits 6rem past the bar's measured half-width, which needs ~44.25rem of
+    screen; below that its 1rem floor put it 12px inside the bar's right end and its ready ring 99px into it. Between 40rem
+    and 44.24rem in portrait it now stands over the bar's corner as on a phone (bottom = tabs-bottom + 7.85rem: the 101px bar
+    plus 1.5rem, which keeps the ring's widest pulse clear). 707px wide: 25px above the bar; 712px: beside it, 23px clear.
+  - WHAT'S NEW SAID TWO THINGS TWICE (check-b327z15 K): Version 10 reused "The Leaderboard" (9) and "Finishing Touches"
+    (9.2). Now "A Quicker Leaderboard" and "Startup And Sign-Up".
+  - THE SPLASH NEVER FADES OVER AN EMPTY STAGE (seen on the video recordings under load: after a class switch the splash
+    went and the page's bare top row - a "Main menu" pill and a hairline - showed 1.0-1.7s before Home). The splash's time
+    is a timer and the first screen mounts after the saved copy loads, and a class switch runs only what is left of its bar
+    (0.8s at the least). finishSplash() now waits for #stage to have a child, polling every 80ms, for SPLASH_STAGE_WAIT_MS
+    (6s) at most, then goes whatever is there; a first visit (Get Started, splash never shown) is not held.
+    tools/check-b384-splashstage.py holds every change to #stage back (replaceChildren/append/appendChild/prepend/
+    insertBefore deferred) and samples every 50ms: 0 bare samples now, 37 on 775a30c; nothing mounted -> off at ~8.8s; an
+    ordinary launch -> off at its own time (~2.7s).
+  - UMBRA'S MOONS CROSSED ITS TITLE (video recording): the phases circle at 45% of the stage and the lowest moon reaches
+    48%, the title starts 40% below the centre. .sf-umbra's title block starts at 51% now, and below 30rem of height the
+    scene's centre is 38% (not 44%) so the subtitle still ends on the screen. Over a whole turn of the ring the nearest moon
+    is 3-8px clear of the caption on every size measured (was 22-52px into it); a 568x320 phone ends the subtitle 1px past
+    the edge (9px before).
+- ALREADY ON 383, MEASURED AND LEFT: check-fixes' grey bar on an SE 1st gen in a Safari tab held sideways (568x260): the
+  html fallback is 7 levels off body::before at the bottom edge against a 6-level limit, identical on 383, and only shows
+  if the fixed layer fails to paint. The S24 915x356 "no banner on a done daily question" was load: alone, 8/8 clean.
