@@ -37556,6 +37556,15 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] .cal-today-badge{ padding-block:calc(.15rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
     html[data-layout] .a2hs-pt-label{ padding-block:calc(.22rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
     html[data-layout] .chatdock-chatrow-kind{ padding-block:calc(.12rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] .thx-chip{ padding-block:calc(.1rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    html[data-layout] .a2hs-address{ padding-block:calc(.15rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* the boards' medals (the number on its metal) and, from a tablet up, the Calendar's today disc */
+    html[data-layout] body .screen-rankings .rank-row .rank-place.lb-rank-medal{ display:block; box-sizing:border-box; line-height:1; text-align:center;
+      padding-block:calc((var(--lb-medal) - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    @media (min-width:40rem){
+      html[data-theme][data-layout] body .screen-calendar-tab .cal-grid .cal-cell.cal-cell-today .cal-cell-num{ display:inline-block; box-sizing:border-box;
+        line-height:1; text-align:center; padding-block:calc((2rem - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    }
     /* the class list's labels: trimmed already (329); the extra .65px nudge put the capitals high, so it is even now */
     html[data-layout] .csi-label{ padding-block:calc((34px - 1cap) / 2); }
     /* the sync code (its card and the re-add notice), Get Started's Sign in, the test's Pause, the chat's Manage friends */
@@ -37568,9 +37577,9 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] .cal-nt-count > :is(.cal-nt-num, .cal-nt-unit){ display:block; padding-block:calc((1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
     /* the Virtual Room's game chips and the units' mode chip: the word beside its icon, on its capitals */
     html[data-layout] .vrc-game > span, html[data-layout] .setup-modechip .rs-mode > span{ display:block; padding-block:calc((1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
-    /* Enroll / Select: no rim, so its 30px holds (30px - the capitals) of padding, even; 329's 1.2px nudge down stood in
-       for the missing 2px and put the capitals half a pixel low */
-    html[data-layout] .cc-status.is-enroll{ padding-top:calc((30px - 1cap) / 2); padding-bottom:calc((30px - 1cap) / 2); }
+    /* Enroll / Select: its siblings' padding assumes a 1px rim, which it lacked; 329's 1.2px nudge down stood in for the
+       missing 2px and put the capitals half a pixel low. Now a clear rim (the gradient runs under it) and even padding */
+    html[data-layout] .cc-status.is-enroll{ border:1px solid transparent; padding-top:calc((28px - 1cap) / 2); padding-bottom:calc((28px - 1cap) / 2); }
     /* Enrolled / Selected: its tick and word sat half a pixel right */
     html[data-layout] .cc-status.is-enrolled{ padding-left:calc(.8rem - .5px); padding-right:calc(.8rem + .5px); }
     /* Settings > Sync's (i): a letter in a 1.15rem ring, on its capitals */
@@ -37594,7 +37603,7 @@ html.is-browser{ --fade-paper: transparent; }
   /* Next question's swipe chevrons end 5.2px short of their 16px box: that air is not the button's to centre */
   html[data-layout] .foot > .floatbtn.qnext .swipehint{ margin-right:-.325rem; }
   html[data-theme][data-layout] #stage > .vroom-setup-bar > .vroom-setup-go > :is(.vroom-bar-label, .vroom-bar-icon){ translate:1.1px 0; }
-  html[data-layout] #bottomtab-start > :is(.bottomtab-icon, .bottomtab-label){ translate:-2.04px 0; }
+  html[data-layout] #bottomtab-start > :is(.bottomtab-icon, .bottomtab-label){ translate:-.177em 0; }   /* the play mark's air: 2px at a phone's size */
   /* Profile's reward tiles (Theme, Flare, a character): the picture's box has air above its drawing and the word its
      descent below, so the pair sat low; the padding moved up by what was measured */
   html[data-layout] .pf-rw{ padding-top:calc(.65rem - 1.2px); padding-bottom:calc(.55rem + 1.2px); }
@@ -37602,16 +37611,19 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .stx-vr-empty-ico > svg{ translate:1.38px -.54px; }
   html[data-layout] .settings-row-icon[data-tile="motion"] > svg{ translate:.61px 0; }
   html[data-layout] .settings-row-icon[data-tile="study"] > svg{ translate:0 -.5px; }
-  html[data-layout] .flagbtn.qflag .flagicon{ translate:0 .6px; }
+  html[data-layout] .flagbtn.qflag:not(.on) .flagicon :is(.starfill, .starline){ translate:0 .45px; }   /* the star sat .45 of 24 high (starred, its ring - .4 low - evens it) */
   html[data-layout] #chatdock-btn > svg{ translate:0 -.3px; }        /* the speech bubble's tail reaches lower than its top */
   /* letter-spacing after the last letter pushes spaced words left by half of it: given back on the left */
-  html[data-layout] .savecode-value{ text-indent:.12em; }
+  html[data-layout] .savecode-value{ padding-left:calc(.5rem + .12em); }   /* every line, if a long code wraps */
   html[data-layout] .frame-code{ padding-left:calc(.7rem + .07em); padding-right:calc(.7rem - .07em); }
   /* the round back buttons' chevrons: their stroke sits left of their viewBox's middle (by .75 of 24 at 20px, and .2 of 16) */
   html[data-layout] body #stage .settings-nav-back svg{ translate:.625px 0; }
   html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-chevron{
     margin:0; translate:.25px 0;
   }
+  /* the rank ladder's reward chips, from a tablet up (where they sit two to a row, their content filling them): the
+     orb's side had .3rem, the word's .6rem - the pair 2px left */
+  @media (min-width:40rem){ html[data-layout] .rankmap-gift{ padding-left:.42rem; padding-right:.48rem; } }
   /* a card holding only its one line (the rooms list's "Couldn't load") has no line above to keep a gap from */
   html[data-layout] .rooms-list > .friend-hint:only-child{ margin-top:0; }
   /* ==== end of build 384's centring ==== */

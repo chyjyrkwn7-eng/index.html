@@ -101,10 +101,11 @@
   const VIRTUAL = '.bottomtab';
   /* drawn ornaments that look like a shape with something in it but are pictures: the badge case's latches */
   /* and the planets on Home's and Welcome's orbits (pictures of galaxies, turning as they go round) */
-  /* elements another piece of work owns right now (build 384: the Fire Code code pictures - their IFC / AMENDMENTS / HINT
-     tags, "Show the code" and Enlarge - are being redone): still measured and listed, but not failed unless --strict. When
-     that work lands, empty this. */
-  const OWNED = { '.ifc-ref .ifc-code-sum, .ifc-ref .ifc-tag, .ifc-ref .ifc-hint-btn, .ifc-ref .ifc-vz, .ifc-ref .ifc-vz *, .ifc-ref .ifc-clips *': 'the Fire Code code pictures (IFC / AMENDMENTS / HINT tags, Show the code, Enlarge)' };
+  /* elements another piece of work owns right now: still measured and listed under "owned by other work", but not
+     failed unless --strict. Add { 'selector': 'what owns it' } while a session redoes them; empty it when that lands.
+     (Build 384: the Fire Code code pictures' IFC / AMENDMENTS / HINT tags, Show the code and Enlarge were listed here
+     while another session redid them; that landed (c72a33a) and all pass but the tags on an iPad - left to that work.) */
+  const OWNED = { '.ifc-ref .ifc-tag': 'the Fire Code code pictures\' tag pills (their own session: c72a33a centred them; AMENDMENTS on an iPad still measures off - left to them)' };
   const ownedBy = el => { for (const k in OWNED) if (el.matches(k)) return OWNED[k]; return ''; };
   const NOT_A_CONTROL = '.nova-case-latch, .cosmic-hero .cosmic-icon-badge, .cosmic-welcome .cosmic-icon-badge';
   /* a character (Customize's, the tab's, a board's, the hero's): drawn on purpose off-symmetric, and placed per character */
@@ -190,7 +191,10 @@
           const cx = (dr.left + dr.right) / 2, cy = (dr.top + dr.bottom) / 2;
           const off = Math.abs(cx - (S.l + S.r) / 2) > .2 * W || Math.abs(cy - (S.t + S.b) / 2) > .2 * H;
           const out = dr.left < S.l - 1 || dr.right > S.r + 1 || dr.top < S.t - 1 || dr.bottom > S.b + 1;
-          if ((off || out) && !covers) { deco.add(d); continue; }
+          /* and a badge sticking out of the piece it sits on (a medal's crown) is that piece's decoration */
+          const pr = d.parentElement !== el ? d.parentElement.getBoundingClientRect() : null;
+          const outHost = pr && (dr.top < pr.top - .25 * dr.height || dr.bottom > pr.bottom + .25 * dr.height || dr.left < pr.left - .25 * dr.width || dr.right > pr.right + .25 * dr.width);
+          if ((off || out || outHost) && !covers) { deco.add(d); continue; }
         }
         if (/^(svg|IMG|CANVAS|VIDEO)$/.test(d.tagName)) {
           if (+dc.opacity < .05 || dc.visibility === 'hidden') continue;
@@ -250,8 +254,11 @@
          across only: the tabs' words share one line by design and their icons differ in height (the Profile tab's
          character is the tallest), so a tab's icon-and-word is not asked to centre up and down */
       if (S.kind === 'virtual') vIntent = false;
-      /* two lines of words set from the left (a stat tile, a gauge's caption) are a card's text, not a label in a pill */
+      /* two lines of words set from the left (a stat tile, a gauge's caption) are a card's text, not a label in a pill;
+         and a list row with a picture in it (a board's row: medal, character, name, number) has each piece centred by
+         the row's own layout - the picture's box is not its drawing, so the row as a whole is not asked up and down */
       if (lines.length >= 2 && !hIntent) vIntent = false;
+      if (spreadH && art.length) vIntent = false;
       if (el.matches('.bottomtab.active')) { const sl = document.getElementById('bottomtabs-slider'); const sr = sl && sl.getBoundingClientRect();
         if (sr && sr.width > 10 && Math.abs((sr.left + sr.right) / 2 - (r.left + r.right) / 2) < 1.5) { S.l = sr.left; S.t = sr.top; S.r = sr.right; S.b = sr.bottom; S.kind = 'slider'; vIntent = false; } }
       if (!hIntent && !vIntent) { why.push(['intent', nameOf(el)]); continue; }
@@ -289,7 +296,7 @@
       const keep = new Set([...deco, ...orn, ...art]);
       CZ.cands[id] = { el, keep, shapeKids, look: lookOf(el) };
       out.push({ id, name: nameOf(el), path: pathOf(el), txt: txt.slice(0, 40), S: { l: S.l, t: S.t, r: S.r, b: S.b }, kind: S.kind, owned: ownedBy(el),
-        lines: letters ? lines.map(L => ({ l: L.l, r: L.r, base: L.base, cap: L.cap })) : [], tall, caps, desc: descender, icons: icons.length + pics.length + (pseudoIcon ? 1 : 0),
+        lines: letters ? lines.map(L => ({ l: L.l, r: L.r, base: L.base, cap: L.cap, desc: /[gjpqyQJ,;()\[\]{}|_@$]/.test(L.txt) })) : [], tall, caps, desc: descender, icons: icons.length + pics.length + (pseudoIcon ? 1 : 0),
         /* an <svg> or <img> is drawn at its box rounded to the nearest device pixel (as on a phone): where it lands
            depends on where the element happens to sit, up to a sixth of a pixel at 3x; that rounding is taken back
            out so a centred icon does not read off-centre at one place and centred at another */

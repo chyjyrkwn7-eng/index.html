@@ -23,7 +23,7 @@ centres capitals. Then: the ink's gap to the shape's left vs right edge, and top
 FAILS on anything off by more than 0.5 CSS px (1 px for a shape over 120px wide), and prints which element, its words, the
 screen, class and size, and by how much (+ is right / low). Not measured, on purpose:
   - content laid out from an edge (a list row: tile at its left, chevron at its right; two lines set from the left in a
-    card) - it is not meant to be centred; its up-down still is when it is one line;
+    card) - it is not meant to be centred; its up-down still is when it is one line (not a row with a picture in it);
   - a card or bar that holds its own button (the button is measured), a track of several controls (each control is);
   - the tab bar's tabs up-down (their words share one line by design; icons differ in height) - across they are asked,
     the lit one against the slider's pill;
@@ -31,17 +31,18 @@ screen, class and size, and by how much (+ is right / low). Not measured, on pur
     their ink (a character is drawn off-symmetric on purpose and placed per character); Home's and Welcome's orbit
     planets are left out; the badge case's drawn latches too;
   - anything that will not hold still (re-read twice, then listed under "Moving");
-  - OWNED (the OWNED list in check-centering.js): elements another piece of work is redoing (build 384: the Fire Code code pictures'
-    IFC / AMENDMENTS / HINT tags, Show the code, Enlarge) - listed under "owned by other work", failed only with --strict.
-    Empty that list when that work lands.
+  - OWNED (the OWNED list in check-centering.js): elements another piece of work owns - listed under "owned by other
+    work", failed only with --strict (build 384: the Fire Code code pictures' tag pills). Empty it when that lands.
 CHROMIUM, NOT THE APP: with only an emulated pixel ratio, Chromium rounds where it draws a line of words and an <svg> to
 a whole CSS pixel (up to half a pixel off) where a phone rounds to a device pixel. So each size runs in a Chromium launched
 at that device's own scale (--force-device-scale-factor), which rounds as the phone does (build 384 notes: the test page).
+Every size is measured at 3x: an iPad draws at 2x and a laptop at 1-2x, but the layout is the same in CSS pixels and a
+coarser screen only adds its own rounding (half a CSS pixel at 2x) to what is measured.
 Fonts: Chromium here draws Inter where the iPhone draws SF; the cures (text-box trim, padding moved, icons moved by their
 own geometry) do not depend on the font, but a residue under a pixel can differ on a phone.
 
-  python3 tools/check-centering.py --quick            iPhone 17 Pro Max (440x956 @3x), both classes: run after any UI change
-  python3 tools/check-centering.py                    + iPhone SE (375x667 @3x), iPad Pro 11" (834x1194 @2x), laptop 1536x864
+  python3 tools/check-centering.py --quick            iPhone 17 Pro Max (440x956), both classes: run after any UI change
+  python3 tools/check-centering.py --jobs 3           + iPhone SE (375x667), iPad Pro 11" (834x1194), laptop 1536x864
   options: --against REV|FILE   measure another build (git rev or file): build 384's start (claude/b384) FAILS
            --only REGEX         screens whose name matches (home, units/game, settings/sound, signup/class ...)
            --class academy|ifc  --sizes REGEX   --jobs N (default 2: each size and class is its own browser)
@@ -75,8 +76,10 @@ UA_IPAD = "Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (K
 # name, w, h, dpr, safe-area insets, installed (Home Screen app), touch, UA
 DEVICES = [("iPhone 17 Pro Max", 440, 956, 3, (62, 0, 34, 0), True, True, UA),
            ("iPhone SE", 375, 667, 3, (20, 0, 0, 0), True, True, UA),
-           ("iPad Pro 11", 834, 1194, 2, (24, 0, 20, 0), True, True, UA_IPAD),
-           ("laptop", 1536, 864, 2, (0, 0, 0, 0), False, False, None)]
+           # an iPad draws at 2x and a laptop at 1-2x, but every size is measured at 3x: the layout is the same in CSS
+           # pixels, and a coarser screen only adds its own rounding (half a CSS pixel at 2x) to what is measured
+           ("iPad Pro 11", 834, 1194, 3, (24, 0, 20, 0), True, True, UA_IPAD),
+           ("laptop", 1536, 864, 3, (0, 0, 0, 0), False, False, None)]
 if arg("--sizes"): DEVICES = [d for d in DEVICES if re.search(arg("--sizes"), d[0], re.I)]
 elif QUICK: DEVICES = DEVICES[:1]
 
@@ -204,6 +207,8 @@ def measure_cand(c, A1, A2, B, C, dpr, org):
             if not (lo <= r <= hi): continue
             if ((bottoms >= r - 1) & (bottoms <= r)).sum() >= need: pick = r; break
         if pick is None:
+            # (the layout's baseline can be pixels off - a trimmed line reports its trimmed box - so the row most
+            # columns end on is taken instead)
             vals, counts = np.unique(bottoms, return_counts=True)
             best = max(((v, counts[(vals >= v) & (vals <= v + 1)].sum()) for v in vals), key=lambda t: t[1])
             if best[1] < max(3, .3 * cols.size): return None
@@ -212,6 +217,13 @@ def measure_cand(c, A1, A2, B, C, dpr, org):
         ys = [edge(d[:, x].astype(float), int(bb) - 1, -1) for x, bb in zip(cols, bottoms) if pick - 1 <= bb <= pick]
         return (y0 + float(np.median(ys))) / dpr
     ink_all = box_of(dall)
+    # the shape itself must be the same with its content hidden: if much of it changed outside the content (the
+    # whole bar slid in or out between the screenshots), this reading is not a reading - it is tried again
+    if ink_all:
+        ix0, iy0 = int(ink_all[0] * dpr) - x0, int(ink_all[1] * dpr) - y0
+        ix1, iy1 = int(math.ceil(ink_all[2] * dpr)) - x0, int(math.ceil(ink_all[3] * dpr)) - y0
+        outside = dall > 24; outside[max(0, iy0 - 2):iy1 + 2, max(0, ix0 - 2):ix1 + 2] = False
+        if outside.mean() > .05: return {"unstable": round(float(outside.mean()), 3)}
     if not ink_all and not c["art"]: return {"empty": True}
     dtext = dall
     if c["mixed"] and B is not None:
@@ -230,18 +242,19 @@ def measure_cand(c, A1, A2, B, C, dpr, org):
         if c["lines"]:
             # the words stand on their baseline: what hangs below it (g, p, y) is not counted, as a typesetter
             # centres capitals, not descenders. The baseline is read off the pixels; the layout's own is the fallback.
-            base_dom = max(L["base"] for L in c["lines"])
+            last = c["lines"][-1]
+            base_dom = last["base"]
             base_px = baseline_of(dtext, ink_t[4], base_dom)
-            base = base_px if base_px is not None and abs(base_px - base_dom) < 3 else base_dom
+            base = base_px if base_px is not None and abs(base_px - base_dom) < 6 else base_dom
             bases = [round(base_dom, 2), None if base_px is None else round(base_px, 2)]
-            # without a descender the ink's own bottom IS the baseline (no guessing); with one, the baseline read off
-            # the stems
-            if c.get("desc") or len(c["lines"]) > 1: bot = base
+            # a last line without a descender: the ink's own bottom IS its baseline (no guessing); with one, the
+            # baseline read off the stems
+            if last.get("desc", c.get("desc")): bot = base
             else: base = bot
-            # words with a capital or a digit are centred on their capitals (cap height above the baseline, as
-            # text-box trims them and as a typesetter centres them): an i's dot or an l's ascender reaching a
-            # little higher is not counted; words without one are taken by their ink's own top
-            if c.get("caps") and len(c["lines"]) == 1: top = base - c["lines"][0]["cap"]
+            # words with a capital and something taller (an i's dot, an ascender) are centred on their capitals - the
+            # first line's capital height above its baseline (the lines' spacing from the layout), as text-box trims
+            # them and as a typesetter centres them; words without a capital or ascender by their ink's own top
+            if c.get("caps"): top = base - (last["base"] - c["lines"][0]["base"]) - c["lines"][0]["cap"]
             elif not c["tall"]: top = min(base - L["cap"] for L in c["lines"][-1:])
         parts.append([ink_t[0], top, ink_t[2], bot])
     if ink_i:
@@ -448,7 +461,7 @@ def run():
 CLR = "document.querySelectorAll('.cz-none').forEach(n=>n.remove());"
 SCREENS = [
     # Home and what floats on it
-    {"name": "home", "js": "showHome();", "ready": "document.querySelector('#stage .cosmic-hero, #nextbtn')"},
+    {"name": "home", "js": "showHome();", "wait": 2600, "ready": "document.querySelector('#stage .cosmic-hero, #nextbtn')"},
     {"name": "home/class list", "js": "showHome(); setTimeout(()=>document.querySelector('.class-bubble')?.click(), 600);", "wait": 1700, "ready": "document.querySelector('.class-bubble-wrap.is-open, .class-stack')"},
     {"name": "modes", "js": "showModeSelect();", "ready": "document.querySelector('#stage .modecard')"},
     {"name": "units", "js": "cfg.mode='drill'; cfg.units=[]; showSetup();", "ready": "document.querySelector('#stage .picks')"},
