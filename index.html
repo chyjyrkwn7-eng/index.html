@@ -35443,7 +35443,11 @@ html.is-browser{ --fade-paper: transparent; }
      its line box, and lowercase words ride above that line's middle). Every search
      bar's words come down 2px, and Find me takes the field's size and a regular
      weight, white. */
-  html[data-layout] body input.searchbox{ padding-top:calc(.7rem + 2px) !important; padding-bottom:calc(.7rem - 2px) !important; }
+  /* (384 final check) "The word search in the search bar is slightly lowered" - and it was, 2.0px (CSS) below the field's middle
+     in a browser. The 2px drop was for lowercase words ("search names"); since 382 every field just says "Search", a capital and
+     ascenders, whose ink a centred line box already centres. Even padding: the ink sits on the middle (measured 0px), the field the
+     same height. The iPhone/iPad rule below (measured on a phone) is unchanged. */
+  html[data-layout] body input.searchbox{ padding-top:.7rem !important; padding-bottom:.7rem !important; }
   /* build 382: "Fix the placement of the word search names". Measured off his iPhone screenshot (Leaderboard, 3x): the field's rims at
      rows 581 and 702 (middle 642), the magnifier 626-655 (middle 640, centred), the words' capitals 631 and baseline 663 with the
      lowercase from 640 - their middle 647-651, 2-3.5px (CSS) below the field's and the magnifier's. The 2px drop above was measured

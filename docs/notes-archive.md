@@ -35313,3 +35313,16 @@ GATE: tools/check-b384-classdim.py - (1) open dims the rest of Home (<= .3) and 
 back; (3) a screen mounted while open is not left dimmed; (4) no :has() rule in any stylesheet styles a broad set after it
 (:not(...), *, a bare tag) - the shape that does this; (5) no page errors. ALL PASS; --against the build before FAILS (4).
 RULE WORTH KEEPING: never write X:has(...) > :not(...) / * / tag on a container. Toggle a class instead.
+
+## 384 final check: "Search" sat 2px low in every search field (in a browser)
+
+Madison, circling the unit screen's field beside Select all, off one of the review screenshots: "The word search in the search
+bar is slightly lowered". Measured at 3x: the placeholder's ink 2.0px (CSS) below the field's middle (2.67 on the Leaderboard),
+Select all's words 1.3-2.3px above it. Cause: build 328's  html[data-layout] body input.searchbox{ padding-top:calc(.7rem + 2px);
+padding-bottom:calc(.7rem - 2px) }  - a 2px drop for lowercase placeholders ("search names", whose ink rides above a line box's
+middle). Since 382 every field says just "Search" (a capital and ascenders), which a centred line box already centres.
+FIX: even padding (.7rem / .7rem) - same total, so every field keeps its height. The @supports (-webkit-touch-callout) rule for
+iPhone/iPad (382, measured off his phone; check-b382 holds it) is unchanged.
+Why no gate caught it: check-centering measures a control's text; a placeholder is not a control's text.
+GATE: tools/check-b384-searchink.py - the placeholder's ink against the field's middle (unit screen, both classes, and the
+Leaderboard), level with Select all, fields still 44px. ALL PASS (0-0.67px); --against the build before FAILS (2-2.67px).
