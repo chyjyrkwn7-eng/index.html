@@ -58057,13 +58057,15 @@ var IFC_CHAR_LOOK = {
   timekeeper:  ["fchydrant",    "Hydrant",        "#FFC62E"],
   ronin:       ["fcdrone2",     "Drone Pilot",    "#3DE0C0"],
   hive:        ["fcsprinkler2", "Sprinkler Head", "#4FC3FF"],
-  voidwalker:  ["fcbreacher",   "Breacher",       "#F97316"],
-  umbra:       ["fcrecon",      "Recon",          "#8B5CF6"],
-  singularity: ["fcwhiteout",   "Whiteout",       "#9FDCFF"],
-  genesis:     ["fcflashbang2", "Flashbang",      "#FF5CA8"],
-  astral:      ["fcnebula",     "Nebula Marshal", "#3FE9FF"],
-  celestial:   ["fcranger",     "Star Ranger",    "#F5C84A"],
-  zenith:      ["fcsolar",      "Solar Flare",    "#FF9A3D"]
+  /* (384) the four secret flares are one squad and the three ultimates three rangers - see fcSquad
+     and fcRanger; Star Ranger is Zenith's now, the last of them */
+  voidwalker:  ["fcsqbreacher",  "Breacher",       "#F97316"],
+  umbra:       ["fcsqrecon",     "Recon",          "#8B5CF6"],
+  singularity: ["fcsqwhiteout",  "Whiteout",       "#9FDCFF"],
+  genesis:     ["fcsqflashbang", "Flashbang",      "#FF5CA8"],
+  astral:      ["fcmoonranger",  "Moon Ranger",    "#9CC0FF"],
+  celestial:   ["fccometranger", "Comet Ranger",   "#3FE9FF"],
+  zenith:      ["fcranger",      "Star Ranger",    "#F5C84A"]
 };
 /* the scene behind each (the BACKDROP plan types in drawAvatarCharSVG) */
 var IFC_BACKDROP = {
@@ -58079,13 +58081,13 @@ var IFC_BACKDROP = {
   fchydrant:    [["rays", "#FFC62E", 12], ["nebula", "#2A64B0", "#06102A"], ["stars", "#FFF1C2"]],
   fcdrone2:     [["nebula", "#2AD8B8", "#04181C"], ["stars", "#D8FFF6"]],
   fcsprinkler2: [["nebula", "#2A8CFF", "#06203F"], ["fall", "confetti", ["#CFF2FF", "#7FD4FF", "#FFFFFF"]]],
-  fcbreacher:   [["nebula", "#F97316", "#120806"], ["rise", "ember", ["#FF6A2E", "#FFB04A"]]],
-  fcrecon:      [["nebula", "#8B5CF6", "#140A2E"], ["phasemoon", "#C4B5FD", 30.8, 8.4, 2.6], ["stars", "#E2D8FF"]],
-  fcwhiteout:   [["nebula", "#6AA8E8", "#0A1A34"], ["fall", "confetti", ["#FFFFFF", "#DCEFFF", "#BFE6FF"]]],
-  fcflashbang2: [["nebula", "#FF5CA8", "#2A0A20"], ["rise", "ember", ["#FFB8D8", "#FF5CA8"]]],
-  fcnebula:     [["nebula", "#3A7AE0", "#14082A"], ["stars", "#D8FDFF"], ["rise", "ember", ["#9FFBFF", "#FFFFFF"]]],
-  fcranger:     [["nebula", "#6A4AC8", "#0A0820"], ["stars", "#FFF1C2"], ["rise", "ember", ["#FFE7A0", "#FF9A3D"]]],
-  fcsolar:      [["nebula", "#FF6A2E", "#1A0604"], ["rise", "ember", ["#FFB25A", "#FFFFFF"]], ["stars", "#FFF3DE"]]
+  fcsqbreacher: [["nebula", "#F97316", "#120806"], ["rise", "ember", ["#FF6A2E", "#FFB04A"]]],
+  fcsqrecon:    [["nebula", "#8B5CF6", "#140A2E"], ["phasemoon", "#C4B5FD", 30.8, 8.4, 2.6], ["stars", "#E2D8FF"]],
+  fcsqwhiteout: [["nebula", "#6AA8E8", "#0A1A34"], ["fall", "snow", ["#FFFFFF", "#DCEFFF"]]],
+  fcsqflashbang:[["nebula", "#FF5CA8", "#2A0A20"], ["rise", "ember", ["#FFB8D8", "#FF5CA8"]]],
+  fcmoonranger: [["nebula", "#3A5AB0", "#060A20"], ["moon", "#DCE8FF", 31, 8.6, 2.7], ["stars", "#E4EEFF"]],
+  fccometranger:[["nebula", "#1E8AB8", "#04101E"], ["stars", "#D8FDFF"], ["rise", "ember", ["#9FFBFF", "#FFFFFF"]]],
+  fcranger:     [["nebula", "#6A4AC8", "#0A0820"], ["stars", "#FFF1C2"], ["rise", "ember", ["#FFE7A0", "#FF9A3D"]]]
 };
 function ifcRedrawn(id){ return IFC_ART_ON && Object.prototype.hasOwnProperty.call(IFC_CHAR_LOOK, id); }
 /* Zeus off a Fire Code avatar: the first starter, and out of the queue of unlocks to announce. */
@@ -59019,286 +59021,313 @@ var IFC_CHAR_DRAW = {
       k.close();
     });
   },
-  /* BREACHER (Void's): the entry team's point man - high-cut helmet with its rails and headset,
-     the four-tube night vision down over the eyes, three of the tubes lit with the three secret
-     flares, a black balaclava, the plate carrier with its breaching charges */
-  fcbreacher(k){
-    fcCoat(k, { coat: ["#3A3A42", "#1E1E24", "#060608"], extra(){
-      fcPlate(k, { body: ["#3A3A42", "#22222A", "#08080A"], panel: "#121216", pouches: ["#2A2A32", "#F97316", "#2A2A32"], extra(){
-        k.add("rect", { x: 16.4, y: 32.2, width: 3.2, height: 1.8, fill: "#F97316" });
-        k.add("path", { d: "M16.4 32.8 h3.2 M16.4 33.4 h3.2", stroke: "#1E1E24", "stroke-width": ".2" });
-        k.add("rect", { x: 20.6, y: 32.2, width: 3.2, height: 1.8, rx: .2, fill: "#2A2A32", stroke: "#F97316", "stroke-width": ".15" });
-        k.add("path", { d: fcCrossPath(22.2, 33.1, .7), fill: "#F97316" });
+  /* ---- THE FLARE TEAM (384): "All three of the ultimate characters need to look like they are
+     trio. Same goes for the secret flare characters." / "I don't like flashbang that much, try
+     again. I don't like how you can see his face." The four secret characters are one squad now,
+     drawn by fcSquad: the same high-cut helmet, the same goggles lit in their own flare's colour, the
+     same respirator (no face shows on any of them), the same carrier with the flare they were found
+     with on its chest, the shoulder pads in their colour. Each carries one thing of its own. ---- */
+  /* BREACHER (Void's): the point man - the four-tube night vision flipped up on the helmet, three of
+     its tubes lit with the three flares that bring him; orange */
+  fcsqbreacher(k){
+    fcSquad(k, { c: "#F97316", hi: "#FFC48A", dark: "#7A2A06", lens: ["#FFE2B8", "#FF9A3D", "#B8400A"],
+      shell: ["#5A4A44", "#2E2622", "#0C0806"], pad: ["#FF9A4A", "#C8500E", "#5A1E04"], flare: [MYSTERY_COLOR.orange, "#FFC48A"],
+      helmet(){
+        /* the night vision, flipped up: its housing across the helmet's front and the four tubes' ends */
+        k.add("path", { d: "M19 14.6 L21 14.6 L21.2 12.6 L18.8 12.6 Z", fill: "#16161A" });
+        k.add("rect", { x: 14.2, y: 9, width: 11.6, height: 3.9, rx: 1.3, fill: k.headGrad("#4A4A52", "#22222A", "#060608"), stroke: "#000", "stroke-width": ".25" });
+        k.add("path", { d: "M14.8 12.2 L25.2 12.2", stroke: "#000", "stroke-width": ".3", opacity: ".4" });
+        k.open("cx-fx cx-fx-sqlight cx-fx-lens");
+        [[15.8, MYSTERY_COLOR.red, 1], [18.6, MYSTERY_COLOR.orange, 1], [21.4, MYSTERY_COLOR.yellow, 1], [24.2, "#FF9A3D", .4]].forEach(([x, col, on]) => {
+          k.add("circle", { cx: x, cy: 10.95, r: 2.3, fill: col, opacity: fcF(.22 * on) });
+          k.add("circle", { cx: x, cy: 10.95, r: 1.22, fill: "#0A0A0C", stroke: "#4A4A52", "stroke-width": ".22" });
+          k.add("circle", { cx: x, cy: 10.95, r: .9, fill: col, opacity: fcF(.95 * on) });
+          k.add("circle", { cx: x - .2, cy: 10.75, r: .34, fill: "#FFFFFF", opacity: fcF(.95 * on) });
+        });
+        k.close();
+      },
+      body(){
+        /* a strip of breaching charge on the strap */
+        k.add("rect", { x: 25.6, y: 30.2, width: 1.5, height: 3.6, rx: .3, fill: "#F97316", transform: "rotate(-12 26.3 32)" });
+        k.add("path", { d: "M25.8 31.2 h1.3 M25.8 32.2 h1.3 M25.8 33.2 h1.3", stroke: "#5A1E04", "stroke-width": ".2", transform: "rotate(-12 26.3 32)" });
       } });
-      k.add("path", { d: "M8.6 31.6 L12.4 30 L13 33.4 L9 35 Z", fill: "#2A2A32" });
-      k.add("path", { d: "M31.4 31.6 L27.6 30 L27 33.4 L31 35 Z", fill: "#2A2A32" });
-      k.add("path", { d: "M27.4 30.6 Q29 33 28.6 36.6", fill: "none", stroke: "#0A0A0C", "stroke-width": ".5" });
-      k.add("rect", { x: 27.6, y: 29.4, width: 1.6, height: 2.6, rx: .4, fill: "#16161A" });
-    } });
-    k.open("cx-head");
-    fcBalaclava(k, { knit: ["#3A3A42", "#1E1E24", "#060608"] });
-    k.noEyes();
-    /* the comms boom */
-    k.add("path", { d: "M11.4 23.4 Q12 28.4 17 28", fill: "none", stroke: "#0A0A0C", "stroke-width": ".6", "stroke-linecap": "round" });
-    k.add("rect", { x: 16.6, y: 27.4, width: 2, height: 1.3, rx: .6, fill: "#2A2A32" });
-    k.open("cx-mouth"); k.close();
-    fcFast(k, { shell: ["#5A5A62", "#2E2E36", "#0A0A0E"], patch: "#1E1E24", flag(){
-      k.add("rect", { x: 17.2, y: 9.9, width: 5.6, height: 2.2, rx: .2, fill: "#2A2A32" });
-      k.add("path", { d: "M17.6 10.5 h4.8 M17.6 11.1 h4.8 M17.6 11.7 h4.8", stroke: "#4A4A52", "stroke-width": ".25" });
-    } });
-    /* the night vision, down */
-    k.add("path", { d: "M18.4 15.6 L21.6 15.6 L21.2 18 L18.8 18 Z", fill: "#16161A" });
-    k.add("path", { d: "M11.4 18.4 Q20 16.8 28.6 18.4 L28.2 23.4 Q20 24.4 11.8 23.4 Z", fill: k.headGrad("#3A3A42", "#1A1A20", "#050506"), stroke: "#000", "stroke-width": ".25" });
-    k.close();
-    k.open("cx-fx cx-fx-flares");
-    k.svg.appendChild(k.pivot(20, 21, 9));
-    const T = [[13.9, MYSTERY_COLOR.red], [17.95, MYSTERY_COLOR.orange], [22.05, MYSTERY_COLOR.yellow], [26.1, MYSTERY_COLOR.orange]];
-    T.forEach(([x, col], i) => {
-      k.add("circle", { cx: x, cy: 21, r: 1.85, fill: "#0A0A0C", stroke: "#4A4A52", "stroke-width": ".3" });
-      k.add("circle", { cx: x, cy: 21, r: 1.35, fill: col, opacity: i === 3 ? ".45" : ".95" });
-      k.add("circle", { cx: x, cy: 21, r: .55, fill: "#FFFFFF", opacity: i === 3 ? ".5" : ".95" });
-      k.add("circle", { cx: x, cy: 21, r: 3.2, fill: col, opacity: i === 3 ? ".08" : ".2" });
-    });
-    k.close();
-    k.add("path", { d: "M12.6 19.6 Q14 19.1 15.4 19.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".35" });
   },
-  /* RECON (Umbra's): the one you never see - hood up, a shemagh wrapped to the eyes, eyes lit
-     violet, the single night-vision monocular on its arm with the violet flare for its lens */
-  fcrecon(k){
-    fcCoat(k, { coat: ["#3A3456", "#221E38", "#0A0816"], extra(){
-      /* chest rig */
-      k.add("path", { d: "M12.4 33.4 L27.6 33.4 L28 40 L12 40 Z", fill: "#1A1630" });
-      [13.2, 17.6, 22, 26.4].forEach(x => { k.add("rect", { x: x - .2, y: 34, width: 3.6, height: 5.2, rx: .4, fill: "#2A2446" }); k.add("rect", { x: x - .2, y: 34, width: 3.6, height: 1.2, rx: .3, fill: "#14102A" }); });
-      k.add("path", { d: "M12.6 33.4 L15.4 28.8 M27.4 33.4 L24.6 28.8", stroke: "#14102A", "stroke-width": "1" });
-      k.add("rect", { x: 8, y: 33.6, width: 2.8, height: 2.6, rx: .3, fill: "#14102A", stroke: "#8B5CF6", "stroke-width": ".2", transform: "rotate(-22 9.4 34.9)" });
-    } });
-    k.open("cx-head");
-    /* the hood */
-    k.add("path", { d: "M8.6 31 Q7.4 20 10.4 13.4 Q14 6.6 20 6.4 Q26 6.6 29.6 13.4 Q32.6 20 31.4 31 Q27 28 26.6 22 Q26.4 14.6 20 14.2 Q13.6 14.6 13.4 22 Q13 28 8.6 31 Z", fill: k.headGrad("#4A4270", "#26204A", "#0A0820") });
-    k.add("path", { d: "M12.4 26 Q11.6 18.6 14.4 15 M27.6 26 Q28.4 18.6 25.6 15", fill: "none", stroke: "#000", "stroke-width": ".4", opacity: ".3" });
-    /* the face in shadow, the shemagh up to the eyes */
-    k.add("path", { d: "M13.4 21 Q13.6 14.8 20 14.6 Q26.4 14.8 26.6 21 Q26.8 27 20 29.4 Q13.2 27 13.4 21 Z", fill: "#1A1430" });
-    const wrap = k.headGrad("#5A5070", "#3A3256", "#141026");
-    k.add("path", { d: "M12.6 22.2 Q20 20.6 27.4 22.2 Q28 28.6 20 31.4 Q12 28.6 12.6 22.2 Z", fill: wrap });
-    k.add("path", { d: "M13 23.6 L27 23.6 M13.4 25.6 L26.6 25.6 M14.4 27.6 L25.6 27.6 M16 22 L17 29.4 M20 21.4 L20 31 M24 22 L23 29.4", stroke: "#8B7AB8", "stroke-width": ".22", opacity: ".45" });
-    k.open("cx-eyes");
-    k.add("path", { d: "M15 19.8 Q16.8 18.8 18.6 19.6 Q16.8 20.6 15 19.8 Z M25 19.8 Q23.2 18.8 21.4 19.6 Q23.2 20.6 25 19.8 Z", fill: "#D8CCFF" });
-    k.add("circle", { cx: 16.9, cy: 19.6, r: .4, fill: "#8B5CF6" }); k.add("circle", { cx: 23.1, cy: 19.6, r: .4, fill: "#8B5CF6" });
-    k.close();
-    k.closedEyes([[16.8, 19.8, 1.3], [23.2, 19.8, 1.3]], "#D8CCFF", .4);
-    k.open("cx-mouth"); k.close();
-    /* the monocular, on its arm off the hood */
-    k.add("path", { d: "M27.4 12.6 L26.2 16.8", stroke: "#14102A", "stroke-width": "1.1", "stroke-linecap": "round" });
-    k.add("rect", { x: 23.6, y: 15.2, width: 4.8, height: 3.4, rx: 1.2, fill: "#16122A", stroke: "#4A4270", "stroke-width": ".3", transform: "rotate(-14 26 16.9)" });
-    k.close();
-    k.open("cx-fx cx-fx-flare");
-    k.wornFlare(24.6, 17.4, MYSTERY_COLOR.violet, "#C4B5FD", .62);
-    k.close();
-    k.wornFlareFx(24.6, 17.4, MYSTERY_COLOR.violet, .62);
-  },
-  /* WHITEOUT (Horizon's; round 3: "Thermal is cool though I like the winter theme"): the cold-
-     weather unit - a white parka with the fur ruff up round the face, mirrored ice-blue goggles, a
-     frosted face cover, snow camouflage and the white flare clipped to the chest */
-  fcwhiteout(k){
-    fcCoat(k, { coat: ["#FFFFFF", "#DCE4EC", "#8A98A8"], extra(){
-      [[9, 34.6, 1.6], [13.6, 38.2, 1.2], [27, 35.4, 1.8], [31.6, 38.4, 1.1], [24, 39, 1]].forEach(([x, y, r]) => k.add("ellipse", { cx: x, cy: y, rx: r, ry: r * .6, fill: "#B8C4D0", opacity: ".7" }));
-      k.add("path", { d: "M12.6 31.6 L27.4 31.6 L28 40 L12 40 Z", fill: "#C8D2DC", opacity: ".7" });
-      [14.2, 18.4, 22.6].forEach(x => { k.add("rect", { x, y: 34.4, width: 3.4, height: 4.6, rx: .5, fill: "#A8B4C2" }); k.add("rect", { x, y: 34.4, width: 3.4, height: 1.2, rx: .3, fill: "#8A98A8" }); });
-      k.add("path", { d: "M14 32.6 L26 32.6", stroke: "#7FC8FF", "stroke-width": ".5" });
-    } });
-    k.open("cx-fx cx-fx-flare");
-    k.wornFlare(26.2, 32.4, MYSTERY_COLOR.white, "#BFE6FF", .7);
-    k.close();
-    k.wornFlareFx(26.2, 32.4, "#BFE6FF", .7);
-    k.open("cx-head cx-fc-hat-hood");
-    /* the hood and its fur ruff */
-    k.add("path", { d: "M8.6 24 Q8 9.6 20 9 Q32 9.6 31.4 24 Q31.2 31.4 26 32 L14 32 Q8.8 31.4 8.6 24 Z", fill: k.headGrad("#FFFFFF", "#DCE4EC", "#8A98A8") });
-    let fur = "";
-    for(let i = 0; i < 22; i++){ const a = Math.PI * (.95 + i / 21 * 1.1) - Math.PI * .02, r = 9.4 + (i % 2) * .9;
-      fur += "M" + fcF(20 + Math.cos(a) * 7.6) + " " + fcF(21 + Math.sin(a) * 8.6) + " L" + fcF(20 + Math.cos(a) * r) + " " + fcF(21 + Math.sin(a) * (r + 1)) + " "; }
-    k.add("path", { d: "M11.4 22 Q11.2 12.4 20 12.2 Q28.8 12.4 28.6 22 Q28.8 29.4 20 30.4 Q11.2 29.4 11.4 22 Z", fill: "none", stroke: "#E8E2D6", "stroke-width": "2.4" });
-    k.add("path", { d: fur, stroke: "#CFC6B6", "stroke-width": ".55", "stroke-linecap": "round" });
-    /* the face cover, frosted */
-    k.add("path", { d: "M12.6 22 Q12.6 13.8 20 13.6 Q27.4 13.8 27.4 22 Q27.6 28.4 20 29.4 Q12.4 28.4 12.6 22 Z", fill: k.headGrad("#F4F8FC", "#C8D4E0", "#7A8898") });
-    k.add("path", { d: "M14.4 25.6 Q20 27.6 25.6 25.6 M15.6 27.6 Q20 29 24.4 27.6", fill: "none", stroke: "#8A98A8", "stroke-width": ".3", opacity: ".6" });
-    [[15.2, 26.4], [18.2, 27.4], [22.6, 27.2], [24.8, 25.8]].forEach(([x, y]) => k.svg.appendChild(k.sparkle(x, y, .45, "#FFFFFF")));
-    k.noEyes();
-    /* the goggles */
-    k.add("path", { d: "M11.2 18.4 Q20 16.6 28.8 18.4", fill: "none", stroke: "#2A3446", "stroke-width": "1.3" });
-    k.add("path", { d: "M12.6 17.6 Q20 15.8 27.4 17.6 L27 22.4 Q23.4 23.8 20.6 22.6 Q20 22.2 19.4 22.6 Q16.6 23.8 13 22.4 Z", fill: "#1E2838", stroke: "#0E141E", "stroke-width": ".3" });
-    k.add("path", { d: "M13.4 18.2 Q20 16.6 26.6 18.2 L26.3 21.8 Q23.2 23 20.6 21.9 Q20 21.6 19.4 21.9 Q16.8 23 13.7 21.8 Z", fill: fcLin(k, [["0", "#EAF8FF"], [".35", "#7FC8FF"], [".7", "#2A6AB8"], ["1", "#8A5ACF"]], "0", "0", "1", "1") });
-    k.add("path", { d: "M14.4 18.8 Q17 17.8 19.4 18", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", opacity: ".9", "stroke-linecap": "round" });
-    k.open("cx-fx cx-fx-scopeglow");
-    k.add("path", { d: "M21 18.4 L24.6 21.4 M22.6 18 L25.8 20.8", stroke: "#FFFFFF", "stroke-width": ".35", opacity: ".55" });
-    k.close();
-    k.open("cx-mouth"); k.close();
-    k.close();
-  },
-  /* FLASHBANG (Genesis's; round 3: "Flashbang is eh try again"): the assault lead mid-throw - a
-     plum riot helmet with its rose face shield down over a black hood, comms at the ear, one hand
-     up with the bang, its pin out and its spark lit, the rose flare on the carrier */
-  fcflashbang2(k){
-    fcCoat(k, { coat: ["#3A2234", "#22121E", "#08040A"], extra(){
-      fcPlate(k, { body: ["#4A2A42", "#2A1426", "#0A040A"], panel: "#14081A", pouches: ["#2A1426", "#FF5CA8", "#2A1426"], extra(){
-        k.add("rect", { x: 16, y: 32.2, width: 8, height: 1.8, rx: .3, fill: "#2A1426", stroke: "#FF5CA8", "stroke-width": ".2" });
+  /* RECON (Umbra's): the eyes out front - a long monocular swung down over the right lens on its arm,
+     a whip antenna, the shemagh wound round the neck; violet */
+  fcsqrecon(k){
+    fcSquad(k, { c: "#8B5CF6", hi: "#D8CCFF", dark: "#2A1460", lens: ["#EDE6FF", "#A78BFA", "#4C1D95"],
+      shell: ["#5A4E86", "#2C2450", "#0A0818"], pad: ["#B69CFF", "#7046D8", "#24104E"], flare: [MYSTERY_COLOR.violet, "#C4B5FD"],
+      neck(){
+        /* the shemagh, wound twice round the neck and over the top of the carrier */
+        const wrap = k.headGrad("#7A6E96", "#4A3E68", "#1A1430");
+        k.add("path", { d: "M12.4 30.2 Q20 27.6 27.6 30.2 Q28.2 32.4 26.4 33.2 Q20 31.4 13.6 33.2 Q11.8 32.4 12.4 30.2 Z", fill: wrap });
+        k.add("path", { d: "M13.2 31.2 Q20 29 26.8 31.2 M14.6 32.4 Q20 30.6 25.4 32.4", fill: "none", stroke: "#C4B5FD", "stroke-width": ".22", opacity: ".45" });
+        k.add("path", { d: "M24.6 32.4 Q26 34.8 25.2 37.4 L23.8 37.2 Q24.2 34.8 23.4 32.8 Z", fill: wrap });
+      },
+      helmet(){
+        /* the whip antenna off the left of the helmet */
+        k.add("path", { d: "M12.2 12 Q10.6 7.4 9.4 3.6", fill: "none", stroke: "#14102A", "stroke-width": ".42", "stroke-linecap": "round" });
+        k.add("rect", { x: 11.4, y: 11.2, width: 1.8, height: 2.4, rx: .4, fill: "#1A1630", transform: "rotate(-18 12.3 12.4)" });
+        k.open("cx-fx cx-fx-led");
+        k.add("circle", { cx: 9.45, cy: 3.8, r: .36, fill: "#C4B5FD" });
+        k.close();
+        /* the arm off the helmet's mount and the monocular, down over the right lens */
+        k.add("path", { d: "M21.4 15.4 L24.2 15.6 L24.6 17", fill: "none", stroke: "#14102A", "stroke-width": ".9", "stroke-linejoin": "round" });
+        k.add("rect", { x: 22.3, y: 16.5, width: 4.6, height: 5.2, rx: 1.4, fill: k.headGrad("#4A4270", "#221C40", "#08061A"), stroke: "#000", "stroke-width": ".25" });
+        k.open("cx-fx cx-fx-sqlight cx-fx-lens");
+        k.add("circle", { cx: 24.6, cy: 20.4, r: 2.6, fill: MYSTERY_COLOR.violet, opacity: ".25" });
+        k.add("circle", { cx: 24.6, cy: 20.4, r: 1.55, fill: "#0A0818", stroke: "#4A4270", "stroke-width": ".25" });
+        k.add("circle", { cx: 24.6, cy: 20.4, r: 1.15, fill: MYSTERY_COLOR.violet });
+        k.add("circle", { cx: 24.6, cy: 20.4, r: .46, fill: "#FFFFFF" });
+        k.add("circle", { cx: 24.15, cy: 19.9, r: .3, fill: "#FFFFFF", opacity: ".9" });
+        k.close();
       } });
-    } });
-    k.open("cx-fx cx-fx-flare");
-    k.wornFlare(20, 33.1, MYSTERY_COLOR.core, "#FFC2DE", .7);
-    k.close();
-    k.wornFlareFx(20, 33.1, MYSTERY_COLOR.core, .7);
-    /* the throwing arm and the bang */
-    k.add("path", { d: "M27.8 40 Q28 33.6 30.6 30.6 L33.6 31.8 Q31.6 35 31.8 40 Z", fill: k.headGrad("#4A2A42", "#2A1426", "#0A040A") });
-    k.add("path", { d: "M30 31.2 Q29.6 28.4 30.8 26.6 L33.4 26.8 Q33.8 29.4 33.4 31.8 Z", fill: "#1A0A16" });
-    k.add("rect", { x: 30.4, y: 21.4, width: 2.8, height: 5.4, rx: .6, fill: "#9AA2AE", stroke: "#3A3E48", "stroke-width": ".2" });
-    k.add("rect", { x: 30.4, y: 21.4, width: 2.8, height: 1.2, rx: .5, fill: "#FF5CA8" });
-    k.add("path", { d: "M33.2 22.4 Q34.4 23.6 33.4 26", fill: "none", stroke: "#C9CED6", "stroke-width": ".4" });
-    k.add("circle", { cx: 29.6, cy: 21.2, r: .6, fill: "none", stroke: "#E8ECEF", "stroke-width": ".25" });
-    k.open("cx-fx cx-fx-fcflash", { opacity: "0" });
-    k.add("circle", { cx: 31.8, cy: 21, r: 3.2, fill: "#FFE8F4", opacity: ".6" });
-    k.svg.appendChild(k.sparkle(31.8, 20.8, 2.2, "#FFFFFF"));
-    k.close();
-    k.open("cx-fx cx-fx-tip");
-    k.svg.appendChild(k.sparkle(31.8, 20.6, .9, "#FFD0E6"));
-    k.close();
-    k.open("cx-head");
-    /* the hood under the helmet */
-    k.add("path", { d: "M11.6 20 Q11.4 12 20 11.8 Q28.6 12 28.4 20 Q28.6 27.6 24.6 30.4 L15.4 30.4 Q11.4 27.6 11.6 20 Z", fill: "#120810" });
-    k.add("path", { d: "M14 19.4 Q20 18.6 26 19.4 L25.6 22.4 Q20 23.2 14.4 22.4 Z", fill: k.headGrad.apply(null, FC_SKIN.tan) });
-    fcEyes(k, { y: 20.9, brow: "#120810", iris: "#3A2A1A", browUp: -.8 });
-    k.open("cx-mouth"); k.close();
-    k.add("path", { d: "M13.8 25.6 Q20 27.4 26.2 25.6 M15 28 Q20 29.4 25 28", fill: "none", stroke: "#3A2234", "stroke-width": ".3", opacity: ".6" });
-    /* the riot helmet and its shield, down */
-    k.open("cx-fx cx-fx-hat cx-fc-hat-helmet");
-    k.add("path", { d: "M10.4 20.4 Q9.6 8.4 20 8 Q30.4 8.4 29.6 20.4 L27.8 20.4 Q27.6 14.4 20 14.2 Q12.4 14.4 12.2 20.4 Z", fill: k.headGrad("#7A4A6E", "#4A2A44", "#14060E") });
-    k.add("path", { d: "M12.6 11.8 Q14 9 17.6 8.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".35", "stroke-linecap": "round" });
-    k.add("rect", { x: 17.6, y: 9.4, width: 4.8, height: 1.6, rx: .4, fill: "#FF5CA8" });
-    k.add("path", { d: "M11.2 14.4 Q20 12.6 28.8 14.4 Q29.4 23.8 25.8 28.4 Q20 31.4 14.2 28.4 Q10.6 23.8 11.2 14.4 Z", fill: "#FF8AC4", "fill-opacity": ".22", stroke: "#FFB8D8", "stroke-width": ".4" });
-    k.add("path", { d: "M12.6 15.6 Q14.4 14.6 17 14.4 M12.4 18 L12.6 24", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".7", "stroke-linecap": "round" });
-    k.add("ellipse", { cx: 10.4, cy: 20.6, rx: 1.6, ry: 2.6, fill: "#2A1426" });
-    k.add("ellipse", { cx: 29.6, cy: 20.6, rx: 1.6, ry: 2.6, fill: "#2A1426" });
-    k.close();
-    k.close();
   },
-  /* ---- THE ULTIMATES (round 3): one family - space-fire. Each wears the dark cosmic suit with
-     its constellation, the burning star badge and a ring of sparks turning round it; each its own
-     figure and colour ---- */
-  /* NEBULA MARSHAL (Astral's): a fire marshal in a space helmet, the visor full of nebula, cyan
-     flame streaming back off the helmet */
-  fcnebula(k){
-    k.open("cx-fx cx-fx-fcflame cx-fx-wings");
-    k.add("path", { d: fcFlamePath(9, 22, 3.4, 12, -4) + fcFlamePath(31, 22, 3.4, 12, 4), fill: "#3FE9FF", opacity: ".55" });
-    k.add("path", { d: fcFlamePath(9.6, 22, 1.8, 7, -3) + fcFlamePath(30.4, 22, 1.8, 7, 3), fill: "#E8FFFF", opacity: ".8" });
-    k.close();
-    fcCoat(k, { coat: ["#2A2A5A", "#141438", "#04041A"], extra(){
-      fcConstellation(k, [[8.6, 35.6], [11.4, 33], [14, 34.8], [12.6, 38]], "#7FE9FF");
-      fcConstellation(k, [[27.6, 36.4], [30.4, 33.6], [32.4, 36.2]], "#7FE9FF");
-      k.add("path", { d: "M14.4 29 L17.4 33 M25.6 29 L22.6 33", stroke: "#3FE9FF", "stroke-width": ".35", opacity: ".8" });
-    } });
-    k.open("cx-fx cx-fx-hotspot", { style: "transform-origin:20px 34.4px" });
-    k.add("circle", { cx: 20, cy: 34.4, r: 3.2, fill: "#3FE9FF", opacity: ".3" });
-    k.close();
-    fcStarBadge(k, 20, 34.4, 1.9, { fill: fcLin(k, [["0", "#E8FFFF"], ["1", "#3FB8D8"]]), rim: "#0A4A5A", star: "#FFFFFF", core: "#3FE9FF" });
-    k.open("cx-head cx-fc-hat-bubble");
-    k.add("circle", { cx: 20, cy: 19.6, r: 10.2, fill: k.headGrad("#5A5A8A", "#2A2A5A", "#08081E"), stroke: "#7FE9FF", "stroke-width": ".35" });
-    const neb = k.mk("radialGradient", { id: k.uid + "-neb", cx: "40%", cy: "40%", r: "70%" });
-    [["0%", "#FFFFFF"], ["18%", "#9FF6FF"], ["45%", "#3A7AE0"], ["75%", "#6A2AB8"], ["100%", "#14082A"]].forEach(([o, c]) => neb.appendChild(k.mk("stop", { offset: o, "stop-color": c })));
-    k.defs.appendChild(neb);
-    k.add("path", { d: "M12.2 18.4 Q12.6 12.6 20 12.4 Q27.4 12.6 27.8 18.4 L27.4 23 Q20 26.4 12.6 23 Z", fill: "url(#" + k.uid + "-neb)" });
-    k.noEyes();
-    [[15, 16], [24.6, 15.4], [22.4, 21.6], [16.6, 21.8], [26, 19.6]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i % 2 ? .3 : .45, fill: "#FFFFFF", opacity: ".9" }));
-    k.open("cx-fx cx-fx-scopeglow");
-    k.add("path", { d: "M14 20.2 L18.6 20.8 L18 22 Z M26 20.2 L21.4 20.8 L22 22 Z", fill: "#FFFFFF" });
-    k.close();
-    k.add("path", { d: "M13.4 16.4 Q14.6 13.8 18 13.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".6", opacity: ".8", "stroke-linecap": "round" });
-    k.add("path", { d: "M13 25.8 Q20 29 27 25.8", fill: "none", stroke: "#7FE9FF", "stroke-width": ".4", opacity: ".6" });
-    k.open("cx-mouth"); k.close();
-    k.close();
-    fcOrbit(k, 20, 21, 13.6, ["#9FF6FF", "#FFFFFF", "#3FE9FF"], 12);
-    k.open("cx-fx cx-fx-star");
-    k.svg.appendChild(k.sparkle(30.6, 10.4, 1.1, "#FFFFFF"));
-    k.close();
+  /* WHITEOUT (Horizon's): the cold-weather man - the helmet under its snow cover, the fur ruff round
+     the collar, snow on the shoulders, the goggles mirrored ice; white and ice blue */
+  fcsqwhiteout(k){
+    fcSquad(k, { c: "#9FDCFF", hi: "#FFFFFF", dark: "#1E4A7A", lens: ["#FFFFFF", "#7FC8FF", "#2A5AB8"], mirror: true,
+      shell: ["#FFFFFF", "#DCE4EC", "#8A98A8"], pad: ["#E8F6FF", "#8EC4EE", "#2E5E8E"], flare: [MYSTERY_COLOR.white, "#BFE6FF"],
+      neck(){
+        /* the fur ruff: a soft collar, its top edge in tufts */
+        let top = "M11.4 31.6";
+        for(let i = 0; i <= 10; i++){ const t = i / 10, x = 11.4 + t * 17.2, y = 30.6 - Math.sin(t * Math.PI) * 2.2;
+          top += " Q" + fcF(x - .86) + " " + fcF(y - 1.1) + " " + fcF(x) + " " + fcF(y); }
+        k.add("path", { d: top + " Q28.9 32.8 27.8 33.6 Q20 31.2 12.2 33.6 Q11.1 32.8 11.4 31.6 Z", fill: k.headGrad("#FFFFFF", "#ECE6DA", "#A89E8A") });
+        k.add("path", { d: "M13 32.6 Q20 30.2 27 32.6 M14.6 31.4 l.2 -.9 M17.4 30.6 l.1 -.9 M22.6 30.6 l-.1 -.9 M25.4 31.4 l-.2 -.9", fill: "none", stroke: "#B8AE9C", "stroke-width": ".3", opacity: ".7", "stroke-linecap": "round" });
+      },
+      body(){
+        /* snow on the pads */
+        [[8.4, 33.4, 1.3], [10.6, 31.8, .9], [31.6, 33.4, 1.3], [29.4, 31.8, .9]].forEach(([x, y, r]) => k.add("ellipse", { cx: x, cy: y, rx: r, ry: r * .55, fill: "#FFFFFF", opacity: ".9" }));
+      },
+      helmet(){
+        /* the snow cover's mottling */
+        [[15.2, 10.6, 1.6, .9], [24.6, 11.4, 1.8, 1], [19.8, 8.6, 1.2, .7], [27.4, 15.4, 1, .7], [12.6, 14.8, 1, .8]].forEach(([x, y, rx, ry]) => k.add("ellipse", { cx: x, cy: y, rx, ry, fill: "#B8C8DA", opacity: ".55" }));
+        [[17, 8.4], [23.4, 9.2], [13.8, 12.4]].forEach(([x, y]) => k.svg.appendChild(k.sparkle(x, y, .5, "#FFFFFF")));
+      } });
   },
-  /* STAR RANGER (Celestial's): the agency's cowboy, star-forged - a hat cut from the night sky with
-     a band of burning constellation, gold-lit eyes, a duster over the cosmic suit */
+  /* FLASHBANG (Genesis's): the one who goes in first - the squad's face (no face at all) and one hand
+     up with the bang, its pin pulled and its spark lit; rose */
+  fcsqflashbang(k){
+    fcSquad(k, { c: "#FF5CA8", hi: "#FFD0E6", dark: "#6A0A3A", lens: ["#FFE6F2", "#FF7AB8", "#A0185A"],
+      shell: ["#6E4060", "#3C1E36", "#12060E"], pad: ["#FF9CCB", "#D23C84", "#4A0E2A"], flare: [MYSTERY_COLOR.core, "#FFC2DE"],
+      after(){
+        /* the throwing arm, gloved, and the bang held up, its spark lit */
+        k.add("path", { d: "M28.4 40 Q28.4 33.8 30.8 30.8 L33.8 31.8 Q32 35 32.2 40 Z", fill: k.headGrad("#4A4C56", "#24252C", "#08090C") });
+        k.add("path", { d: "M30.6 31.6 Q31.6 30.6 33.6 31 L33.9 32.2 Q32 32 30.9 32.8 Z", fill: "#D23C84" });
+        k.add("path", { d: "M30.2 31.4 Q29.8 28.6 31 26.8 L33.6 27 Q34 29.6 33.6 32 Z", fill: "#16171C" });
+        k.add("rect", { x: 30.5, y: 21.4, width: 2.8, height: 5.6, rx: .6, fill: "#9AA2AE", stroke: "#3A3E48", "stroke-width": ".2" });
+        k.add("path", { d: "M30.5 23.4 h2.8 M30.5 25.2 h2.8", stroke: "#3A3E48", "stroke-width": ".25" });
+        k.add("rect", { x: 30.5, y: 21.4, width: 2.8, height: 1.2, rx: .5, fill: "#FF5CA8" });
+        k.add("path", { d: "M33.3 22.4 Q34.5 23.6 33.5 26", fill: "none", stroke: "#C9CED6", "stroke-width": ".4" });
+        k.add("circle", { cx: 29.7, cy: 21.2, r: .6, fill: "none", stroke: "#E8ECEF", "stroke-width": ".25" });
+        k.open("cx-fx cx-fx-fcflash", { opacity: "0" });
+        k.add("circle", { cx: 31.9, cy: 20.8, r: 3.4, fill: "#FFE8F4", opacity: ".6" });
+        k.svg.appendChild(k.sparkle(31.9, 20.6, 2.3, "#FFFFFF"));
+        k.close();
+        k.open("cx-fx cx-fx-tip");
+        k.svg.appendChild(k.sparkle(31.9, 20.5, .95, "#FFD0E6"));
+        k.close();
+      } });
+  },
+  /* ---- THE RANGERS (384): "Star ranger looks sick, that should be the last ultimate character ...
+     Use that idea for another character?" / "All three of the ultimate characters need to look like
+     they are trio." Star Ranger is Zenith's, the last of the three; Astral's and Celestial's are drawn
+     on the same idea by fcRanger: the agency's cowboy, star-forged - a hat cut from the night sky,
+     eyes lit, the brown duster over the cosmic suit, the star badge, a ring of sparks turning. They
+     climb to him: the Moon Ranger is cold silver and quiet, the Comet Ranger burns blue and moves,
+     the Star Ranger is on fire. ---- */
+  /* MOON RANGER (Astral's): silver and night blue - a bandana up over his face, a crescent pinned to
+     the hat's silver band, eight sparks */
+  fcmoonranger(k){
+    fcRanger(k, { c: "#9CC0FF", suit: ["#34406A", "#1A2244", "#060A1E"], con: "#CFE0FF", skin: ["#F2D2B4", "#D8AE88", "#9A7050"],
+      eye: "#E4EEFF", glow: "#9CC0FF", badge: { fill: fcLin(k, [["0", "#FFFFFF"], [".5", "#C8D4E4"], ["1", "#5A6A84"]]), rim: "#2E3A50", star: "#F4F8FF", core: "#7FA8FF" },
+      felt: ["#6A7AA0", "#36446A", "#0C1428"], band: "#C8D8F0", orbit: ["#E4EEFF", "#FFFFFF", "#9CC0FF"], n: 8, spark: [[30.8, 10.6, 1, "#FFFFFF"]],
+      face(){
+        /* the bandana, up over the nose */
+        const cloth = k.headGrad("#9CB4E0", "#5470A8", "#1E2E56");
+        k.add("path", { d: "M12.1 22.9 Q20 21.5 27.9 22.9 Q28.3 27.4 24.8 29.8 Q22.6 31.2 20 32.2 Q17.4 31.2 15.2 29.8 Q11.7 27.4 12.1 22.9 Z", fill: cloth });
+        k.add("path", { d: "M12.5 24.1 Q20 22.7 27.5 24.1", fill: "none", stroke: "#000", "stroke-width": ".35", opacity: ".25" });
+        k.add("path", { d: "M17.6 23.2 Q18.4 26.4 17.2 29.6 M22.4 23.2 Q21.6 26.4 22.8 29.6", fill: "none", stroke: "#1E2E56", "stroke-width": ".3", opacity: ".45" });
+        [[15.2, 26], [19.4, 25.4], [24.6, 26], [16.8, 28.4], [20.4, 28.2], [23.4, 28.6], [19.8, 30.6]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i % 2 ? .22 : .3, fill: "#E8F0FF", opacity: ".8" }));
+      },
+      faceOver: true,
+      bandArt(dy){
+        /* the crescent pinned to the front of the band, and silver studs either side */
+        k.add("path", { d: "M20.3 " + fcF(12.5 + dy) + " A2.1 2.1 0 1 0 21.9 " + fcF(15.8 + dy) + " A1.7 1.75 0 1 1 20.3 " + fcF(12.5 + dy) + " Z", fill: "#F4F8FF", stroke: "#2E3A50", "stroke-width": ".15" });
+        [14.2, 16.4, 23.8, 25.9].forEach(x => k.add("circle", { cx: x, cy: fcF(14.85 + dy), r: .32, fill: "#FFFFFF" }));
+      } });
+  },
+  /* COMET RANGER (Celestial's): blue fire - a comet across his hat's crown, a band of small blue flames,
+     a long scarf streaming off like the comet's tail, ten sparks */
+  fccometranger(k){
+    fcRanger(k, { c: "#3FE9FF", suit: ["#1E4A62", "#0E2A3C", "#020C16"], con: "#9FF6FF", skin: ["#B07A54", "#86563A", "#4E2E1A"],
+      eye: "#CFFBFF", glow: "#3FE9FF", badge: { fill: fcLin(k, [["0", "#E8FFFF"], ["1", "#3FB8D8"]]), rim: "#0A4A5A", star: "#FFFFFF", core: "#3FE9FF" },
+      felt: ["#2E6488", "#123A58", "#021222"], band: "#0E1A24", orbit: ["#CFFBFF", "#FFFFFF", "#3FE9FF"], n: 10, spark: [[9.6, 11.2, 1.05, "#E8FFFF"], [31.4, 9.8, .7, "#FFFFFF"]],
+      scarf(){
+        /* the scarf, streaming off the left shoulder */
+        k.open("cx-fx cx-fx-sascarf", { style: "transform-origin:15.6px 30.4px" });
+        k.add("path", { d: "M15.8 29.2 Q11.4 29.6 8.2 32.4 Q6 34.4 3.4 35 Q6.6 35.8 9.4 34.4 Q12.8 32.6 16.6 31.8 Z", fill: fcLin(k, [["0", "#1E8AB8", ".55"], [".6", "#3FD8F0", ".9"], ["1", "#7FE9FF"]], "0", "0", "1", "0") });
+        k.add("path", { d: "M15.6 30.2 Q11.8 30.8 8.8 33.4 Q7 34.6 5.2 35", fill: "none", stroke: "#CFFBFF", "stroke-width": ".3", opacity: ".7" });
+        k.close();
+        k.add("path", { d: "M14.4 28.8 Q20 31.4 25.6 28.8 L25.4 30.6 Q20 33.2 14.6 30.6 Z", fill: k.headGrad("#9FF6FF", "#2EB8D8", "#0A4A60") });
+        k.add("path", { d: "M14.6 29.5 Q20 32 25.4 29.5", fill: "none", stroke: "#FFFFFF", "stroke-width": ".25", opacity: ".5" });
+        k.add("ellipse", { cx: 16.4, cy: 31, rx: 1.1, ry: .9, fill: "#2EB8D8", stroke: "#0A4A60", "stroke-width": ".2" });
+      },
+      face(){
+        /* the handlebar moustache */
+        k.add("path", { d: "M20 25.6 Q17.6 25 16.2 26.4 Q15.4 27.4 14.6 26.8 Q15.4 28.4 17 27.6 Q18.6 26.8 20 26.6 Q21.4 26.8 23 27.6 Q24.6 28.4 25.4 26.8 Q24.6 27.4 23.8 26.4 Q22.4 25 20 25.6 Z", fill: "#2A1A10" });
+      },
+      bandArt(dy){
+        k.open("cx-fx cx-fx-fcflame");
+        k.add("path", { d: fcFlamePath(15.4, 14.6 + dy, .8, 2, 0) + fcFlamePath(17.8, 14.4 + dy, .8, 2.5, 0) + fcFlamePath(20.2, 14.3 + dy, .8, 2.1, 0) + fcFlamePath(22.6, 14.4 + dy, .8, 2.5, 0) + fcFlamePath(25, 14.6 + dy, .8, 2, 0), fill: "#3FB8FF" });
+        k.add("path", { d: fcFlamePath(17.8, 14.4 + dy, .4, 1.4, 0) + fcFlamePath(22.6, 14.4 + dy, .4, 1.4, 0), fill: "#CFFBFF" });
+        k.close();
+        [14, 16.6, 19, 21.4, 23.8, 26.2].forEach(x => k.add("circle", { cx: x, cy: fcF(14.8 + dy), r: .3, fill: "#BFFBFF" }));
+      },
+      hatArt(dy){
+        /* the comet over the crown: its tail streaming back, the head white-hot */
+        k.add("path", { d: "M25.6 " + fcF(9.4 + dy) + " Q20 " + fcF(9.6 + dy) + " 13.6 " + fcF(13 + dy) + " Q19.6 " + fcF(11.2 + dy) + " 25.4 " + fcF(10.4 + dy) + " Z", fill: fcLin(k, [["0", "#3FE9FF", "0"], ["1", "#CFFBFF", ".9"]], "0", "0", "1", "0") });
+        k.add("circle", { cx: 25.6, cy: fcF(9.9 + dy), r: 1.5, fill: "#3FE9FF", opacity: ".35" });
+        k.add("circle", { cx: 25.6, cy: fcF(9.9 + dy), r: .7, fill: "#FFFFFF" });
+      } });
+  },
+  /* STAR RANGER (Zenith's, the last of the three; round 3's Celestial): the agency's cowboy, star-forged
+     - a hat cut from the night sky with a band of burning constellation, gold-lit eyes, a duster over
+     the cosmic suit, twelve sparks */
   fcranger(k){
-    fcCoat(k, { coat: ["#3A2E5A", "#1E163A", "#08041A"], neck: ["#C8A07A", "#9A7050", "#5A3A20"], extra(){
-      k.add("path", { d: "M12.4 29 L16 28.2 L20 36 L17 40 L12 40 Z M27.6 29 L24 28.2 L20 36 L23 40 L28 40 Z", fill: "#5A3A28" });
-      k.add("path", { d: "M13 29.6 L17.6 37.6 M27 29.6 L22.4 37.6", stroke: "#F5C84A", "stroke-width": ".25", opacity: ".7" });
-      fcConstellation(k, [[8.4, 36], [10.6, 33.4], [13, 35.2]], "#F5C84A");
-      fcConstellation(k, [[27.6, 35.8], [30, 33.2], [32.2, 35.6], [30.6, 38]], "#F5C84A");
-    } });
-    k.open("cx-fx cx-fx-hotspot", { style: "transform-origin:20px 33.6px" });
-    k.add("circle", { cx: 20, cy: 33.6, r: 3.2, fill: "#F5C84A", opacity: ".3" });
-    k.close();
-    fcStarBadge(k, 20, 33.6, 1.9, { core: "#FF8A3D" });
-    k.open("cx-head");
-    fcFace(k, ["#C8A07A", "#9A7050", "#5A3A20"]);
-    fcBrimShade(k);
-    k.add("path", { d: "M12.6 23.8 Q13.2 30.4 20 31 Q26.8 30.4 27.4 23.8 Q26.2 27.6 24 28 Q22 27.2 20 27.3 Q18 27.2 16 28 Q13.8 27.6 12.6 23.8 Z", fill: "#3A2414", opacity: ".45" });
-    k.open("cx-eyes");
-    [16.6, 23.4].forEach(x => { k.add("ellipse", { cx: x, cy: 21.6, rx: 1.4, ry: .8, fill: "#FFE7A0" }); k.add("ellipse", { cx: x, cy: 21.6, rx: .6, ry: .45, fill: "#FFFFFF" }); });
-    k.close();
-    k.closedEyes([[16.6, 21.6, 1.3], [23.4, 21.6, 1.3]], "#3A2414", .5);
-    k.open("cx-fx cx-fx-scopeglow");
-    [16.6, 23.4].forEach(x => k.add("ellipse", { cx: x, cy: 21.6, rx: 2.4, ry: 1.4, fill: "#F5C84A", opacity: ".35" }));
-    k.close();
-    k.open("cx-mouth");
-    k.add("path", { d: "M17.6 26.6 Q20.2 27.6 22.6 26.2", fill: "none", stroke: "#5A2A1A", "stroke-width": ".55", "stroke-linecap": "round" });
-    k.close();
-    fcCowboy(k, { felt: ["#3A3A7A", "#1A1A4A", "#04041A"], band: "#2A1A08", bandExtra(dy){
-      k.open("cx-fx cx-fx-fcflame");
-      k.add("path", { d: fcFlamePath(15, 14.6 + dy, 1, 2.6, 0) + fcFlamePath(17.6, 14.4 + dy, 1, 3.4, 0) + fcFlamePath(20.2, 14.3 + dy, 1, 2.8, 0) + fcFlamePath(22.8, 14.4 + dy, 1, 3.4, 0) + fcFlamePath(25.2, 14.6 + dy, 1, 2.6, 0), fill: "#FF9A3D" });
-      k.close();
-      k.add("path", { d: "M13.6 " + fcF(14.9 + dy) + " L16.2 " + fcF(14.5 + dy) + " L18.8 " + fcF(14.8 + dy) + " L21.4 " + fcF(14.4 + dy) + " L24 " + fcF(14.8 + dy) + " L26.4 " + fcF(14.6 + dy), fill: "none", stroke: "#FFE7A0", "stroke-width": ".3" });
-      [13.6, 16.2, 18.8, 21.4, 24, 26.4].forEach((x, i) => k.add("circle", { cx: x, cy: fcF((i % 2 ? 14.5 : 14.85) + dy), r: .38, fill: "#FFFFFF" }));
-    } });
-    k.close();
-    k.add("path", { d: "M14.8 10.6 l.2 .5 M23.6 10.2 l.2 .5", stroke: "#FFFFFF", "stroke-width": ".4", "stroke-linecap": "round" });
-    [[15.6, 11.2], [23.8, 10.8], [18.4, 12.4], [21.6, 12.6], [7.6, 16.4], [32.4, 16.2]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i % 2 ? .25 : .35, fill: "#FFFFFF", opacity: ".9" }));
-    fcOrbit(k, 20, 21, 13.6, ["#FFE7A0", "#FFFFFF", "#F5C84A"], 12);
-    k.open("cx-fx cx-fx-star");
-    k.svg.appendChild(k.sparkle(9.4, 11, 1.1, "#FFF6D8"));
-    k.close();
-  },
-  /* SOLAR FLARE (Zenith's): the commander of it all - a corona of flame turning behind the helmet,
-     a gold-orange visor, sun-forged armour */
-  fcsolar(k){
-    k.open("cx-fx cx-fx-fccorona", { style: "transform-origin:20px 19px" });
-    let rays = "";
-    for(let i = 0; i < 14; i++){ const a = i / 14 * Math.PI * 2, b = a + .13, c = a - .13;
-      rays += "M" + fcF(20 + Math.cos(c) * 10) + " " + fcF(19 + Math.sin(c) * 10) + " L" + fcF(20 + Math.cos(a) * (i % 2 ? 14.6 : 16.4)) + " " + fcF(19 + Math.sin(a) * (i % 2 ? 14.6 : 16.4)) + " L" + fcF(20 + Math.cos(b) * 10) + " " + fcF(19 + Math.sin(b) * 10) + " Z "; }
-    k.add("path", { d: rays, fill: "#FF8A3D", opacity: ".75" });
-    k.add("circle", { cx: 20, cy: 19, r: 11.4, fill: "#FFD36A", opacity: ".35" });
-    k.close();
-    fcCoat(k, { coat: ["#4A2A2A", "#2A1214", "#0A0406"], extra(){
-      fcConstellation(k, [[8.6, 36.2], [11, 33.6], [13.2, 35.8]], "#FFB25A");
-      fcConstellation(k, [[27, 35.6], [29.6, 33.4], [31.8, 36]], "#FFB25A");
-      [[-1, 9.4], [1, 30.6]].forEach(([s, x]) => k.add("path", { d: "M" + (x - s * 3.4) + " 30.4 Q" + x + " 28.8 " + (x + s * 3.4) + " 32.2 L" + (x + s * 3) + " 35 Q" + x + " 33 " + (x - s * 3) + " 33.4 Z", fill: k.headGrad("#FFE7A0", "#E8902A", "#7A2A0A"), stroke: "#4A1A08", "stroke-width": ".25" }));
-    } });
-    k.open("cx-fx cx-fx-hotspot", { style: "transform-origin:20px 34.2px" });
-    k.add("circle", { cx: 20, cy: 34.2, r: 3.2, fill: "#FF8A3D", opacity: ".35" });
-    k.close();
-    fcStarBadge(k, 20, 34.2, 1.9, { core: "#FFFFFF" });
-    k.open("cx-head cx-fc-hat-helmet");
-    k.add("path", { d: "M10.8 20 Q10.6 10 20 9.8 Q29.4 10 29.2 20 Q29.4 28.4 24.8 30.8 L15.2 30.8 Q10.6 28.4 10.8 20 Z", fill: k.headGrad("#FFE7A0", "#D8782A", "#5A1A06"), stroke: "#4A1A08", "stroke-width": ".3" });
-    k.add("path", { d: "M20 9.8 L20 14.4", stroke: "#FFF3C8", "stroke-width": ".8" });
-    k.add("path", { d: "M13 14.6 Q14.4 11.4 18 10.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".6", opacity: ".6", "stroke-linecap": "round" });
-    k.add("path", { d: "M12 17.6 Q20 15.8 28 17.6 L27.4 23.4 Q20 26 12.6 23.4 Z", fill: fcLin(k, [["0", "#FFF3C8"], [".4", "#FFB25A"], ["1", "#8A1A0A"]]), stroke: "#4A1A08", "stroke-width": ".35" });
-    k.noEyes();
-    k.open("cx-fx cx-fx-scopeglow");
-    k.add("path", { d: "M14 20 L18.6 20.6 L18 21.8 Z M26 20 L21.4 20.6 L22 21.8 Z", fill: "#FFFFFF" });
-    k.close();
-    k.add("path", { d: "M13.2 18.6 Q16 17.4 19 17.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".9", "stroke-linecap": "round" });
-    k.add("path", { d: "M14.6 26.8 L20 28.6 L25.4 26.8 L24.6 29.4 L20 30.4 L15.4 29.4 Z", fill: "#3A1206" });
-    k.open("cx-mouth"); k.close();
-    k.close();
-    fcOrbit(k, 20, 21, 13.6, ["#FFE7A0", "#FFFFFF", "#FF8A3D"], 12);
-    k.open("cx-fx cx-fx-star");
-    k.svg.appendChild(k.sparkle(31.2, 9.6, 1.2, "#FFFFFF"));
-    k.close();
+    fcRanger(k, { c: "#F5C84A", suit: ["#3A2E5A", "#1E163A", "#08041A"], con: "#F5C84A", skin: ["#C8A07A", "#9A7050", "#5A3A20"],
+      eye: "#FFE7A0", glow: "#F5C84A", badge: { core: "#FF8A3D" }, badgeY: 33.6,
+      felt: ["#3A3A7A", "#1A1A4A", "#04041A"], band: "#2A1A08", orbit: ["#FFE7A0", "#FFFFFF", "#F5C84A"], n: 12, spark: [[9.4, 11, 1.1, "#FFF6D8"]],
+      crown: [[15.6, 11.2], [23.8, 10.8], [18.4, 12.4], [21.6, 12.6], [7.6, 16.4], [32.4, 16.2]],
+      face(){
+        k.add("path", { d: "M12.6 23.8 Q13.2 30.4 20 31 Q26.8 30.4 27.4 23.8 Q26.2 27.6 24 28 Q22 27.2 20 27.3 Q18 27.2 16 28 Q13.8 27.6 12.6 23.8 Z", fill: "#3A2414", opacity: ".45" });
+      },
+      smile: true,
+      bandArt(dy){
+        k.open("cx-fx cx-fx-fcflame");
+        k.add("path", { d: fcFlamePath(15, 14.6 + dy, 1, 2.6, 0) + fcFlamePath(17.6, 14.4 + dy, 1, 3.4, 0) + fcFlamePath(20.2, 14.3 + dy, 1, 2.8, 0) + fcFlamePath(22.8, 14.4 + dy, 1, 3.4, 0) + fcFlamePath(25.2, 14.6 + dy, 1, 2.6, 0), fill: "#FF9A3D" });
+        k.close();
+        k.add("path", { d: "M13.6 " + fcF(14.9 + dy) + " L16.2 " + fcF(14.5 + dy) + " L18.8 " + fcF(14.8 + dy) + " L21.4 " + fcF(14.4 + dy) + " L24 " + fcF(14.8 + dy) + " L26.4 " + fcF(14.6 + dy), fill: "none", stroke: "#FFE7A0", "stroke-width": ".3" });
+        [13.6, 16.2, 18.8, 21.4, 24, 26.4].forEach((x, i) => k.add("circle", { cx: x, cy: fcF((i % 2 ? 14.5 : 14.85) + dy), r: .38, fill: "#FFFFFF" }));
+      } });
   }
 };
+/* ---- the squad's and the rangers' shared drawings (384) ---- */
+/* THE FLARE TEAM: o.c its colour, o.hi its light, o.lens the goggles' three stops, o.shell the helmet,
+   o.pad the shoulder pads, o.flare the flare worn on the chest; o.neck / o.body / o.helmet / o.after
+   draw what is its own. The goggles (and anything else lit, classed cx-fx-sqlight) are what the
+   secret-flare scene shows first in the dark (SF_SIL). */
+function fcSquad(k, o){
+  fcCoat(k, { coat: ["#3E414A", "#20222A", "#08090C"], extra(){
+    const pad = k.headGrad.apply(null, o.pad);
+    k.add("path", { d: "M5.3 39 Q5.5 32.4 11.2 29.7 L13.4 30.2 L14.4 33.8 Q9.8 34.8 8.2 39.6 Z", fill: pad, stroke: "#000", "stroke-opacity": ".3", "stroke-width": ".2" });
+    k.add("path", { d: "M34.7 39 Q34.5 32.4 28.8 29.7 L26.6 30.2 L25.6 33.8 Q30.2 34.8 31.8 39.6 Z", fill: pad, stroke: "#000", "stroke-opacity": ".3", "stroke-width": ".2" });
+    k.add("path", { d: "M6.4 36.4 Q8.2 33 12.6 31.6 M33.6 36.4 Q31.8 33 27.4 31.6", fill: "none", stroke: o.hi, "stroke-width": ".4", opacity: ".75", "stroke-linecap": "round" });
+    fcPlate(k, { body: ["#383B44", "#1C1E24", "#07080A"], panel: "#101116", pouches: ["#26282F", "#26282F", "#26282F"], extra(){
+      k.add("rect", { x: 15.6, y: 31.6, width: 8.8, height: 3, rx: .4, fill: "none", stroke: o.c, "stroke-width": ".3", opacity: ".85" });
+      k.add("path", { d: "M14.6 37.6 L25.4 37.6", stroke: o.c, "stroke-width": ".35", opacity: ".5" });
+    } });
+    if(o.body) o.body();
+  } });
+  if(o.neck) o.neck();
+  k.open("cx-fx cx-fx-flare cx-fx-sqlight");
+  k.wornFlare(20, 33.1, o.flare[0], o.flare[1], .8);
+  k.close();
+  k.wornFlareFx(20, 33.1, o.flare[0], .8);
+  k.open("cx-head");
+  fcBalaclava(k, { knit: ["#3A3D46", "#1E2026", "#060709"] });
+  k.noEyes();
+  /* the respirator: a half mask over the mouth and jaw, its one filter in front ringed in the colour,
+     a valve either side */
+  k.add("path", { d: "M14.4 23.5 Q20 22.4 25.6 23.5 Q26.2 27.4 23.6 29.6 Q21.9 30.9 20 30.9 Q18.1 30.9 16.4 29.6 Q13.8 27.4 14.4 23.5 Z", fill: k.headGrad("#4E5159", "#272930", "#0B0C0F"), stroke: "#000", "stroke-width": ".25" });
+  k.add("path", { d: "M15.2 24.4 Q20 23.4 24.8 24.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".14" });
+  [[15.9, -1], [24.1, 1]].forEach(([x, s]) => {
+    const t = "rotate(" + (s * -10) + " " + x + " 26.7)";
+    k.add("rect", { x: fcF(x - .8), y: 25.4, width: 1.6, height: 2.6, rx: .6, fill: "#15161B", transform: t });
+    k.add("path", { d: "M" + fcF(x - .4) + " 26.2 h.8 M" + fcF(x - .4) + " 27.1 h.8", stroke: "#3E4048", "stroke-width": ".25", transform: t });
+  });
+  k.add("circle", { cx: 20, cy: 27.5, r: 2.2, fill: k.headGrad("#62656E", "#30323A", "#0E0F12"), stroke: o.c, "stroke-width": ".34", "stroke-opacity": ".9" });
+  k.add("circle", { cx: 20, cy: 27.5, r: 1.35, fill: "#15161B" });
+  k.add("path", { d: "M19.1 27.5 h1.8 M20 26.6 v1.8 M19.4 26.9 l1.2 1.2 M20.6 26.9 l-1.2 1.2", stroke: "#3E4048", "stroke-width": ".22" });
+  k.open("cx-mouth"); k.close();
+  /* the goggles: a dark frame and two lenses lit in the colour */
+  k.add("path", { d: "M11.6 18.8 Q11.8 16.8 14 16.6 L18.4 16.5 Q20 17.3 21.6 16.5 L26 16.6 Q28.2 16.8 28.4 18.8 L28.2 21.4 Q27.8 23.4 25.4 23.4 L22.8 23.4 Q21.1 23.4 20.7 21.9 Q20 21 19.3 21.9 Q18.9 23.4 17.2 23.4 L14.6 23.4 Q12.2 23.4 11.8 21.4 Z", fill: "#0C0D11", stroke: "#2A2C34", "stroke-width": ".25" });
+  const lens = fcLin(k, [["0", o.lens[0]], [".45", o.lens[1]], ["1", o.lens[2]]], "0", "0", o.mirror ? "1" : "0", "1");
+  const L = "M12.8 19 Q12.9 17.7 14.2 17.6 L18.3 17.5 Q19.4 18 19.3 19.3 L19.1 20.9 Q18.7 22.4 17.2 22.4 L14.8 22.4 Q13.1 22.4 12.9 21 Z";
+  const R = "M27.2 19 Q27.1 17.7 25.8 17.6 L21.7 17.5 Q20.6 18 20.7 19.3 L20.9 20.9 Q21.3 22.4 22.8 22.4 L25.2 22.4 Q26.9 22.4 27.1 21 Z";
+  k.open("cx-fx cx-fx-sqlight");
+  k.add("path", { d: L + " " + R, fill: lens });
+  k.open("cx-fx cx-fx-scopeglow");
+  k.add("ellipse", { cx: 16, cy: 20, rx: 4.2, ry: 2.8, fill: o.c, opacity: ".28" });
+  k.add("ellipse", { cx: 24, cy: 20, rx: 4.2, ry: 2.8, fill: o.c, opacity: ".28" });
+  k.close();
+  k.add("path", { d: "M13.8 18.6 Q15.8 18 18.2 18.1 M21.8 18.1 Q23.6 18 25.2 18.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", opacity: ".85", "stroke-linecap": "round" });
+  if(o.mirror) k.add("path", { d: "M15.2 22 L18.4 18.6 M22.6 22 L25.8 18.6", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".5" });
+  k.close();
+  /* the helmet, the same on all four, in its own shell */
+  k.open("cx-fc-hat-helmet");
+  /* the headset's cups, slimmer than fcFast's own so the head keeps its line */
+  [10.9, 29.1].forEach(x => {
+    k.add("ellipse", { cx: x, cy: 21.4, rx: 1.55, ry: 2.6, fill: "#22242A", stroke: "#0A0B0D", "stroke-width": ".3" });
+    k.add("ellipse", { cx: fcF(x - .3), cy: 21, rx: .45, ry: 1.2, fill: "#FFFFFF", opacity: ".12" });
+  });
+  fcFast(k, { shell: o.shell, rail: "#15161A", patch: "#1A1B20", cups: false, flag(){
+    k.add("rect", { x: 16.9, y: 9.7, width: 6.2, height: 2.6, rx: .3, fill: o.c });
+    k.add("path", { d: fcCrossPath(20, 11, 1), fill: o.dark });
+  } });
+  /* the team's stripe over the crown */
+  k.add("path", { d: "M19.4 7.3 Q20 7.2 20.6 7.3 L20.6 9.6 L19.4 9.6 Z", fill: o.c, opacity: ".9" });
+  k.close();
+  if(o.helmet) o.helmet();
+  k.close();
+  if(o.after) o.after();
+}
+/* THE RANGERS: o.c the colour, o.suit / o.con the cosmic suit and its constellations, o.skin, o.eye /
+   o.glow the lit eyes, o.badge the star badge, o.felt / o.band the hat, o.bandArt / o.hatArt what is on
+   it, o.face (bandana, moustache, stubble), o.scarf, o.orbit / o.n the ring of sparks, o.spark the
+   twinkles. Star Ranger's own values draw him as round 3 did. */
+function fcRanger(k, o){
+  fcCoat(k, { coat: o.suit, neck: o.skin, extra(){
+    k.add("path", { d: "M12.4 29 L16 28.2 L20 36 L17 40 L12 40 Z M27.6 29 L24 28.2 L20 36 L23 40 L28 40 Z", fill: "#5A3A28" });
+    k.add("path", { d: "M13 29.6 L17.6 37.6 M27 29.6 L22.4 37.6", stroke: o.c, "stroke-width": ".25", opacity: ".7" });
+    fcConstellation(k, [[8.4, 36], [10.6, 33.4], [13, 35.2]], o.con);
+    fcConstellation(k, [[27.6, 35.8], [30, 33.2], [32.2, 35.6], [30.6, 38]], o.con);
+  } });
+  if(o.scarf) o.scarf();
+  const by = o.badgeY || 33.6;
+  k.open("cx-fx cx-fx-hotspot", { style: "transform-origin:20px " + by + "px" });
+  k.add("circle", { cx: 20, cy: by, r: 3.2, fill: o.c, opacity: ".3" });
+  k.close();
+  fcStarBadge(k, 20, by, 1.9, o.badge);
+  k.open("cx-head");
+  fcFace(k, o.skin);
+  fcBrimShade(k);
+  if(o.face && !o.faceOver) o.face();
+  k.open("cx-eyes");
+  [16.6, 23.4].forEach(x => { k.add("ellipse", { cx: x, cy: 21.6, rx: 1.4, ry: .8, fill: o.eye }); k.add("ellipse", { cx: x, cy: 21.6, rx: .6, ry: .45, fill: "#FFFFFF" }); });
+  k.close();
+  k.closedEyes([[16.6, 21.6, 1.3], [23.4, 21.6, 1.3]], "#3A2414", .5);
+  k.open("cx-fx cx-fx-scopeglow");
+  [16.6, 23.4].forEach(x => k.add("ellipse", { cx: x, cy: 21.6, rx: 2.4, ry: 1.4, fill: o.glow, opacity: ".35" }));
+  k.close();
+  k.open("cx-mouth");
+  if(o.smile) k.add("path", { d: "M17.6 26.6 Q20.2 27.6 22.6 26.2", fill: "none", stroke: "#5A2A1A", "stroke-width": ".55", "stroke-linecap": "round" });
+  else if(!o.faceOver) k.add("path", { d: "M18.2 27.6 Q20 28.2 21.8 27.6", fill: "none", stroke: "#5A2A1A", "stroke-width": ".5", "stroke-linecap": "round" });
+  k.close();
+  if(o.face && o.faceOver) o.face();
+  fcCowboy(k, { felt: o.felt, band: o.band, bandExtra: o.bandArt });
+  if(o.hatArt) o.hatArt(0);
+  k.close();
+  k.add("path", { d: "M14.8 10.6 l.2 .5 M23.6 10.2 l.2 .5", stroke: "#FFFFFF", "stroke-width": ".4", "stroke-linecap": "round" });
+  (o.crown || [[15.6, 11.2], [23.8, 10.8], [18.4, 12.4], [7.6, 16.4], [32.4, 16.2]]).forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i % 2 ? .25 : .35, fill: "#FFFFFF", opacity: ".9" }));
+  fcOrbit(k, 20, 21, 13.6, o.orbit, o.n);
+  (o.spark || []).forEach(([x, y, r, col], i) => {
+    k.open("cx-fx " + (i ? "cx-fx-star2" : "cx-fx-star"));
+    k.svg.appendChild(k.sparkle(x, y, r, col));
+    k.close();
+  });
+}
 /* A SPECIAL OF THEIR OWN: embers gather into the cross of the fire service, it burns bright and
    lets go a ring and a spray of sparks - in each character's own colour. */
 function ifcSpecial(col, hi){
@@ -59337,6 +59366,34 @@ if(IFC_ART_ON){
     CHAR_SPECIAL_DRAW[id] = ifcSpecial(look[2], "#FFF3DE");
     if(!CHAR_SPECIAL_MS[id]) CHAR_SPECIAL_MS[id] = 2800;
   });
+}
+/* (384) the squad's special ends on its flare bursting and the rangers' on the agency's star: the
+   same move and the same timing as ifcSpecial, only the mark it ends on is theirs */
+function ifcMarkSpecial(col, hi, mark){
+  return function(T){
+    const H = [20, 31.4], F = fcF;
+    spAura(T, col, 2.8, .55);
+    spMotes(T, T.front, H[0], H[1], 9, 11, [hi, col], 0, 1.0);
+    spGlow(T, T.front, H[0], H[1], 8.5, col, .7, .4, 2.3, .45, .85);
+    const pop = T.scaled(spPop(T, T.front, H[0], H[1], 6.6, .85, .45, 2.35, .4, .2), H[0], H[1], 1.4);
+    let d = "";
+    if(mark === "star"){
+      for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 1.5 : 3.7; d += (i ? "L" : "M") + F(H[0] + Math.cos(a) * r) + " " + F(H[1] + Math.sin(a) * r) + " "; }
+      d += "Z";
+    } else {
+      for(let i = 0; i < 8; i++){ const a = i * Math.PI / 4, p = (an, r) => F(H[0] + Math.cos(an) * r) + " " + F(H[1] + Math.sin(an) * r);
+        d += "M" + p(a - .22, 1.7) + " L" + p(a, i % 2 ? 3.2 : 4) + " L" + p(a + .22, 1.7) + " Z "; }
+      pop.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: 2.1, fill: col, stroke: hi, "stroke-width": ".3" }));
+    }
+    pop.appendChild(T.mk("path", { d, fill: col, stroke: hi, "stroke-width": ".3", "stroke-linejoin": "round" }));
+    pop.appendChild(T.mk("circle", { cx: H[0], cy: H[1], r: .9, fill: "#FFFFFF" }));
+    spRing(T, T.front, H[0], H[1], 3.4, col, ".5", 1.25, .9, 3.8);
+    spSparks(T, T.front, H[0], H[1], 10, 11, [hi, col], 1.25, .85);
+  };
+}
+if(IFC_ART_ON){
+  ["voidwalker", "umbra", "singularity", "genesis"].forEach(id => { CHAR_SPECIAL_DRAW[id] = ifcMarkSpecial(IFC_CHAR_LOOK[id][2], "#FFF3DE", "flare"); });
+  ["astral", "celestial", "zenith"].forEach(id => { CHAR_SPECIAL_DRAW[id] = ifcMarkSpecial(IFC_CHAR_LOOK[id][2], "#FFF3DE", "star"); });
 }
 function drawAvatarCharSVG(charId){
   const svgNS = "http://www.w3.org/2000/svg";
@@ -77095,157 +77152,200 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* BACKDRAFT (Void's banner) - a doorway into black smoke, three hot spots burning in it in the
-     secret flares' colours */
+  /* ---- THE FLARE TEAM'S BANNERS (384: "The secret flare banners, I don't really like any of
+     those, that much.") One set, as the four are one squad: the same night, the same roof over the
+     city, the squad member at its edge with the goggles lit, and up over the city the flare that
+     brings them, fired from that roof - its smoke trail, its little chute, its light on everything,
+     its sparks dripping. Each its own colour and one thing of its own. See fbSquadScene. ---- */
+  /* BREACHER: the three flares that bring him - red, orange, gold - hanging over the city together */
   flare_void(u){
-    const rnd = bnRand(3813);
-    const glow = (id, c) => bnRad(u + id, [[0, c, 0.95], [0.35, c, 0.45], [1, c, 0]]);
-    const base = '<defs>' + bnLin(u + "bg", [[0, "#050507"], [1, "#16100C"]]) + glow("r", MYSTERY_COLOR.red) + glow("o", MYSTERY_COLOR.orange) + glow("y", MYSTERY_COLOR.yellow) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + bnStars(rnd, 30, 180) +
-      '<path d="M170 180 L170 30 L310 30 L310 180 Z" fill="#0A0806"/><path d="M160 180 L160 22 L320 22 L320 180 L310 180 L310 30 L170 30 L170 180 Z" fill="#2A2420"/>' +
-      fbSmoke(rnd, 240, 160, 10, 26, "#1A1612", 0.7) +
-      '<path d="M205 70 L240 52 L272 92 Z" fill="none" stroke="#FFE6CC" stroke-width=".8" stroke-dasharray="2 3" opacity=".4"/>' +
-      '<rect x="0" y="170" width="480" height="10" fill="#0A0806"/>';
-    const spot = (x, y, id, c) => '<circle cx="' + x + '" cy="' + y + '" r="34" fill="url(#' + u + id + ')"/><circle cx="' + x + '" cy="' + y + '" r="7" fill="' + c + '"/><circle cx="' + x + '" cy="' + y + '" r="3" fill="#FFFFFF"/>';
-    return [
-      { svg: base },
-      { svg: spot(205, 70, "r", MYSTERY_COLOR.red), box: [165, 30, 80, 80], o: [205, 70], cls: "bl-pulse", style: "animation-duration:2.4s" },
-      { svg: spot(240, 52, "o", MYSTERY_COLOR.orange), box: [200, 12, 80, 80], o: [240, 52], cls: "bl-pulse", style: "animation-duration:2.4s;animation-delay:-.8s" },
-      { svg: spot(272, 92, "y", MYSTERY_COLOR.yellow), box: [232, 52, 80, 80], o: [272, 92], cls: "bl-pulse", style: "animation-duration:2.4s;animation-delay:-1.6s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 26, ["#FF6A2E", "#FFB04A"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:10s" }
-    ];
+    return fbSquadScene(u, { seed: 3813, c: "#F97316", hi: "#FFC48A", sky: ["#050302", "#1A0C06", "#3A1A0A"], roof: "#0C0806",
+      flares: [[262, 66, MYSTERY_COLOR.red, 2.6], [336, 54, MYSTERY_COLOR.orange, 3.1], [404, 72, MYSTERY_COLOR.yellow, 3.4]],
+      fig: (X, G) => "M" + (X - 6) + " " + (G - 52) + " h12 v4 h-12 Z" });
   },
-
-  /* NIGHT SHIFT (Umbra's) - a violet night, a crescent through the smoke, embers drifting up */
+  /* RECON: one violet flare, high, and the crescent moon beside it; the antenna on his helmet */
   flare_umbra(u){
-    const rnd = bnRand(3814);
-    const st = bnStarsSplit(rnd, 80, 120);
-    let smoke = '<rect x="0" y="152" width="960" height="30" fill="#2A1E52"/>';
-    for(let x = 0; x < 960; x += 40) smoke += '<circle cx="' + x + '" cy="' + (150 + (x % 80 ? 6 : -4)) + '" r="30" fill="#2A1E52"/><circle cx="' + (x + 14) + '" cy="' + (140 + (x % 120 ? 4 : -6)) + '" r="18" fill="#3A2A6A" opacity=".8"/>';
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#0A0618"], [1, "#2A1A50"]]) + bnRad(u + "moon", [[0, "#C4B5FD", 0.5], [1, "#8B5CF6", 0]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still +
-      '<circle cx="240" cy="78" r="70" fill="url(#' + u + 'moon)"/><path d="M240 40 A38 38 0 1 0 270 104 A30 34 0 1 1 240 40 Z" fill="#E2D8FF"/>' +
-      '<path d="M-10 180 L-10 132 L40 132 L40 116 L70 116 L70 140 L120 140 L120 108 L150 108 L150 180 Z M330 180 L330 120 L370 120 L370 100 L400 100 L400 130 L440 130 L440 112 L490 112 L490 180 Z" fill="#120A26"/>';
-    return [
-      { svg: base },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3.4s" },
-      { svg: smoke, box: [0, 100, 960, 80], vb: [0, 100, 960, 80], cls: "bl-slide", style: "animation-duration:40s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 22, ["#FF8A3D", "#C4B5FD"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:11s" }
-    ];
+    return fbSquadScene(u, { seed: 3814, c: "#8B5CF6", hi: "#D8CCFF", sky: ["#04030C", "#140C30", "#2A1A52"], roof: "#08061A",
+      flares: [[318, 58, MYSTERY_COLOR.violet, 3]],
+      moon: [420, 46, 15],
+      fig: (X, G) => "M" + (X - 7.2) + " " + (G - 48) + " L" + (X - 10.6) + " " + (G - 70) + " L" + (X - 9.6) + " " + (G - 70) + " L" + (X - 6) + " " + (G - 48) + " Z" });
   },
-
-  /* THERMAL (Horizon's) - a building seen through a thermal camera: the heat white-hot in an
-     ice-blue picture, the crosshair sweeping */
+  /* WHITEOUT: a white flare over the city in the snow; snow on the roof */
   flare_horizon(u){
-    const rnd = bnRand(3815);
-    const base = '<defs>' + bnLin(u + "bg", [[0, "#06102A"], [1, "#0E1A44"]]) + bnRad(u + "hot", [[0, "#FFFFFF", 1], [0.25, "#BFE6FF", 0.9], [0.6, "#4A8ACC", 0.5], [1, "#4A8ACC", 0]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + bnStars(rnd, 30, 70) +
-      '<path d="M140 160 L140 70 L240 30 L340 70 L340 160 Z" fill="#14244E"/>' +
-      [[170, 84], [280, 84], [170, 118], [280, 118]].map(([x, y]) => '<rect x="' + x + '" y="' + y + '" width="30" height="24" fill="#1E3466"/>').join("") +
-      '<rect x="222" y="110" width="36" height="50" fill="#1E3466"/>' +
-      '<circle cx="295" cy="96" r="34" fill="url(#' + u + 'hot)"/><circle cx="240" cy="134" r="28" fill="url(#' + u + 'hot)" opacity=".8"/><circle cx="185" cy="130" r="16" fill="url(#' + u + 'hot)" opacity=".5"/>' +
-      '<rect x="0" y="160" width="480" height="20" fill="#0A1430"/>' +
-      '<rect x="12" y="12" width="456" height="156" fill="none" stroke="#7FC8FF" stroke-width="1.2" opacity=".5"/>' +
-      '<path d="M12 30 L12 12 L30 12 M450 12 L468 12 L468 30 M468 150 L468 168 L450 168 M30 168 L12 168 L12 150" fill="none" stroke="#DDF4FF" stroke-width="2.4"/>' +
-      '<rect x="380" y="20" width="76" height="8" rx="2" fill="#7FC8FF" opacity=".35"/><rect x="380" y="20" width="52" height="8" rx="2" fill="#DDF4FF" opacity=".7"/>';
-    return [
-      { svg: base },
-      { svg: '<circle cx="295" cy="96" r="14" fill="none" stroke="#DDF4FF" stroke-width="1.4"/><path d="M295 76 L295 88 M295 104 L295 116 M275 96 L287 96 M303 96 L315 96" stroke="#DDF4FF" stroke-width="1.4"/>', box: [265, 66, 60, 60], o: [295, 96], cls: "bl-pulse", style: "animation-duration:1.8s" },
-      { svg: '<rect x="12" y="0" width="456" height="3" fill="#DDF4FF" opacity=".35"/>', box: [12, 12, 456, 156], vb: [12, 0, 456, 156], cls: "bl-pour", style: "animation-duration:6s" }
-    ];
+    return fbSquadScene(u, { seed: 3815, c: "#9FDCFF", hi: "#FFFFFF", sky: ["#040A16", "#0E2244", "#24487A"], roof: "#0A1424",
+      flares: [[326, 58, "#F4FBFF", 3]], snow: true,
+      fig: (X, G) => "M" + (X - 11) + " " + (G - 36) + " Q" + X + " " + (G - 41) + " " + (X + 11) + " " + (G - 36) + " L" + (X + 10) + " " + (G - 32) + " Q" + X + " " + (G - 36) + " " + (X - 10) + " " + (G - 32) + " Z" });
   },
-
-  /* FLASHOVER (Genesis's) - the moment a room lights all at once: rose and gold rolling across the
-     ceiling, the rose flare at its heart */
+  /* FLASHBANG: a rose flare up, and across the street a window going off white every few seconds */
   flare_genesis(u){
-    const rnd = bnRand(3816);
-    const base = '<defs>' + bnLin(u + "bg", [[0, "#3A0A2A"], [0.5, "#8A1A4A"], [1, "#1A0610"]]) + bnRad(u + "core", [[0, "#FFFFFF", 1], [0.2, MYSTERY_COLOR.core, 0.9], [1, MYSTERY_COLOR.core, 0]]) +
-      bnLin(u + "roll", [[0, "#FFD36A", 0.9], [1, "#FF5CA8", 0]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' +
-      '<path d="M-10 0 L490 0 L490 40 Q420 70 360 46 Q300 74 240 50 Q180 76 120 48 Q60 72 -10 44 Z" fill="url(#' + u + 'roll)"/>' +
-      '<path d="M60 180 L100 110 L380 110 L420 180 Z" fill="#1A0610" opacity=".7"/><path d="M100 110 L100 60 L380 60 L380 110" fill="none" stroke="#5A1A3A" stroke-width="3"/>' +
-      '<rect x="0" y="168" width="480" height="12" fill="#12040A"/>';
-    return [
-      { svg: base },
-      { svg: (() => { const fr = bnRand(81); let o = ""; for(let x = 0; x < 480; x += 24){ const y = 30 + fr() * 22; o += '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y) + '" rx="' + bnF(18 + fr() * 12) + '" ry="' + bnF(10 + fr() * 8) + '" fill="' + (fr() < .5 ? "#FF8A3D" : "#FFB86B") + '" opacity=".75"/><ellipse cx="' + bnF(x + 4) + '" cy="' + bnF(y - 3) + '" rx="' + bnF(8 + fr() * 5) + '" ry="' + bnF(4 + fr() * 3) + '" fill="#FFE6A8" opacity=".7"/>'; } return o + '<g transform="translate(480 0)">' + o + '</g><g transform="translate(-480 0)">' + o + '</g>'; })(), box: [0, 0, 960, 80], vb: [0, 0, 960, 80], cls: "bl-slide", style: "animation-duration:24s" },
-      { svg: '<circle cx="240" cy="110" r="56" fill="url(#' + u + 'core)"/><circle cx="240" cy="110" r="10" fill="' + MYSTERY_COLOR.core + '" stroke="#FFC2DE" stroke-width="2"/><circle cx="240" cy="110" r="4.4" fill="#FFFFFF"/>', box: [180, 50, 120, 120], o: [240, 110], cls: "bl-pulse", style: "animation-duration:2.2s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 26, ["#FFB86B", "#FF5CA8"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:7s" }
-    ];
+    return fbSquadScene(u, { seed: 3816, c: "#FF5CA8", hi: "#FFD0E6", sky: ["#08030A", "#220A1E", "#4A1236"], roof: "#10060E",
+      flares: [[330, 58, MYSTERY_COLOR.core, 3]], bang: [252, 118],
+      fig: (X, G) => "M" + (X + 11) + " " + (G - 31) + " L" + (X + 17) + " " + (G - 52) + " L" + (X + 21) + " " + (G - 51) + " L" + (X + 15) + " " + (G - 29) + " Z M" + (X + 16) + " " + (G - 58) + " h6 v8 h-6 Z" });
   },
-  /* ---- THE ULTIMATES' BANNERS (round 3: "phoenix, blue flame grand marshal????, we need
-     something cool") - space-fire, one family with the characters ---- */
-  /* NEBULA (Nebula Marshal's): a cyan-and-violet nebula, a burning star badge at its heart, a comet
-     of blue fire crossing it, stars turning */
+  /* ---- THE RANGERS' BANNERS (384: "Same for the ultimate character banners, not a big fan of any
+     of those banners.") One set, as the three are one trio: the same desert at night, the same mesas,
+     the ranger standing on the rock with his eyes lit, and over him his own sky - the moon, a comet,
+     the agency's star burning. See fbRangerScene. ---- */
+  /* MOON RANGER: a great moon rising over the mesas, thin cloud drifting across it */
   astral(u){
-    const rnd = bnRand(3842);
-    const st = bnStarsSplit(rnd, 90, 180);
-    const cloud = (cx, cy, rx, ry, col, op, rot) => '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="url(#' + u + col + ')" opacity="' + op + '" transform="rotate(' + rot + ' ' + cx + ' ' + cy + ')"/>';
-    const star = (cx, cy, r) => { let d = ""; for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .4 : r; d += (i ? "L" : "M") + bnF(cx + Math.cos(a) * rr) + " " + bnF(cy + Math.sin(a) * rr) + " "; } return d + "Z"; };
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#04041A"], [1, "#0A0A2A"]]) + bnRad(u + "c", [[0, "#3FE9FF", 0.7], [1, "#3FE9FF", 0]]) + bnRad(u + "v", [[0, "#8A4AE8", 0.7], [1, "#8A4AE8", 0]]) + bnRad(u + "p", [[0, "#FF5CA8", 0.5], [1, "#FF5CA8", 0]]) +
-      bnRad(u + "core", [[0, "#FFFFFF", 1], [0.3, "#9FF6FF", 0.7], [1, "#3FE9FF", 0]]) + bnLin(u + "tail", [[0, "#3FE9FF", 0], [1, "#E8FFFF", 0.9]], 0, 0, 1, 0) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still;
-    const neb = cloud(200, 90, 160, 60, "v", .8, -12) + cloud(280, 80, 140, 46, "c", .7, 8) + cloud(150, 110, 90, 34, "p", .5, -20) + cloud(340, 110, 100, 30, "v", .55, 14);
-    return [
-      { svg: base },
-      { svg: neb, box: [0, 0, 480, 180], cls: "bl-drift", style: "animation-duration:30s" },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:3s;animation-delay:-1.5s" },
-      { svg: '<circle cx="240" cy="88" r="44" fill="url(#' + u + 'core)"/>', box: [190, 38, 100, 100], o: [240, 88], cls: "bl-breathe", style: "animation-duration:3.4s" },
-      { svg: '<circle cx="240" cy="88" r="17" fill="#0A3A4A" stroke="#BFFBFF" stroke-width="2"/><path d="' + star(240, 88, 14) + '" fill="#E8FFFF" stroke="#3FE9FF" stroke-width="1.2"/><circle cx="240" cy="88" r="3.4" fill="#3FE9FF"/>' +
-          '<path d="' + fcFlamePath(240, 72, 8, 20, 0) + '" fill="#3FE9FF" opacity=".7"/><path d="' + fcFlamePath(240, 72, 4, 12, 0) + '" fill="#E8FFFF"/>', box: [210, 40, 60, 70], o: [240, 72], cls: "bl-flame", style: "animation-duration:1.4s" },
-      { svg: '<path d="M60 40 L140 64" stroke="url(#' + u + 'tail)" stroke-width="5" stroke-linecap="round"/><circle cx="140" cy="64" r="4" fill="#FFFFFF"/><circle cx="140" cy="64" r="10" fill="#3FE9FF" opacity=".35"/>', box: [40, 20, 120, 60], cls: "bl-meteor", style: "animation-duration:7s" }
-    ];
+    return fbRangerScene(u, { seed: 3842, c: "#9CC0FF", hi: "#E4EEFF", sky: ["#03050E", "#0E1636", "#28366A"], land: "#0A0C1A", moon: true });
   },
-
-  /* STAR RANGER (Star Ranger's): a desert mesa under the Milky Way, and in the sky a constellation
-     drawn as the agency's star badge with a cowboy hat over it, its lines burning gold */
+  /* COMET RANGER: a comet crossing the whole sky, blue fire streaming off it, shooting stars */
   celestial(u){
-    const rnd = bnRand(3843);
-    const st = bnStarsSplit(rnd, 110, 140);
-    const pts = []; for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 18 : 44; pts.push([bnF(240 + Math.cos(a) * rr), bnF(84 + Math.sin(a) * rr)]); }
-    const badge = '<path d="M' + pts.map(p => p.join(" ")).join(" L") + ' Z" fill="#FFD36A" fill-opacity=".1" stroke="#FFD36A" stroke-width="2.6" stroke-linejoin="round"/><circle cx="240" cy="84" r="50" fill="none" stroke="#FFD36A" stroke-width="1.6" stroke-dasharray="3 5"/>' +
-      pts.map((p, i) => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (i % 2 ? 1.6 : 2.6) + '" fill="#FFFFFF"/>').join("");
-    const hat = '<path d="M196 34 Q206 40 240 38 Q274 40 284 34 Q280 46 240 46 Q200 46 196 34 Z M222 38 Q220 22 230 20 Q236 24 240 21 Q244 24 250 20 Q260 22 258 38" fill="none" stroke="#FFD36A" stroke-width="2.2"/>' +
-      [[196, 34], [222, 38], [230, 20], [240, 21], [250, 20], [258, 38], [284, 34]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="1.8" fill="#FFFFFF"/>').join("");
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#060418"], [0.6, "#1E1448"], [1, "#5A2A4A"]]) + bnLin(u + "way", [[0, "#C8B0FF", 0], [0.5, "#E8D8FF", 0.35], [1, "#C8B0FF", 0]], 0, 0, 1, 1) + bnRad(u + "glow", [[0, "#FFD36A", 0.45], [1, "#FFD36A", 0]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + '<path d="M-20 160 L140 -10 L230 -10 L60 180 Z" fill="url(#' + u + 'way)"/>' + st.still +
-      '<path d="M0 150 L40 146 L52 128 L118 126 L128 146 L210 150 L232 140 L250 118 L330 116 L342 140 L400 146 L420 132 L470 132 L480 150 L480 180 L0 180 Z" fill="#1A0E1E"/>' +
-      '<path d="M0 162 L480 158 L480 180 L0 180 Z" fill="#0E0810"/>' +
-      [[30, 160], [160, 158], [380, 156], [450, 160]].map(([x, y]) => '<path d="M' + x + ' ' + y + ' l0 -14 M' + x + ' ' + (y - 8) + ' l-4 -4 l0 -4 M' + x + ' ' + (y - 6) + ' l4 -3 l0 -5" stroke="#0E0810" stroke-width="2.4" fill="none" stroke-linecap="round"/>').join("");
-    return [
-      { svg: base },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:2.6s;animation-delay:-1.3s" },
-      { svg: '<circle cx="240" cy="84" r="70" fill="url(#' + u + 'glow)"/>', box: [170, 14, 140, 140], o: [240, 84], cls: "bl-breathe", style: "animation-duration:4s" },
-      { svg: badge + hat, cls: "bl-glow", style: "animation-duration:2.4s" },
-      { svg: '<path d="' + fcFlamePath(240, 46, 3, 8, 0) + fcFlamePath(214, 44, 2.4, 6, 0) + fcFlamePath(266, 44, 2.4, 6, 0) + '" fill="#FF9A3D"/>', box: [206, 30, 68, 18], o: [240, 46], cls: "bl-flame", style: "animation-duration:1.2s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 14, ["#FFD36A", "#FFFFFF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:16s;opacity:.5" }
-    ];
+    return fbRangerScene(u, { seed: 3843, c: "#3FE9FF", hi: "#CFFBFF", sky: ["#020810", "#062436", "#0E4A5E"], land: "#061018", comet: true });
   },
-
-  /* SOLAR FLARE (Solar Flare's): the sun close up over a dark planet's edge, prominences arcing off
-     it, its corona turning, embers streaming */
+  /* STAR RANGER: the agency's star burning over the desert, its rays turning, embers going up */
   zenith(u){
-    const rnd = bnRand(3844);
-    const st = bnStarsSplit(rnd, 70, 110);
-    let rays = ""; for(let i = 0; i < 24; i++){ const a = i / 24 * Math.PI * 2, b = a + .07, c = a - .07, r1 = 58, r2 = i % 2 ? 84 : 100;
-      rays += '<path d="M' + bnF(340 + Math.cos(c) * r1) + ' ' + bnF(70 + Math.sin(c) * r1) + ' L' + bnF(340 + Math.cos(a) * r2) + ' ' + bnF(70 + Math.sin(a) * r2) + ' L' + bnF(340 + Math.cos(b) * r1) + ' ' + bnF(70 + Math.sin(b) * r1) + ' Z"/>'; }
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#0A0406"], [1, "#1A0A0A"]]) + bnRad(u + "sun", [[0, "#FFFFFF", 1], [0.35, "#FFE7A0", 1], [0.7, "#FF9A3D", 1], [1, "#E8402E", 1]]) + bnRad(u + "halo", [[0, "#FF8A3D", 0.55], [1, "#FF8A3D", 0]]) +
-      bnLin(u + "planet", [[0, "#2A1A2A"], [1, "#06040A"]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still;
-    return [
-      { svg: base },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
-      { svg: '<circle cx="340" cy="70" r="140" fill="url(#' + u + 'halo)"/>', box: [200, -70, 280, 280], o: [340, 70], cls: "bl-breathe", style: "animation-duration:4.4s" },
-      { svg: '<g fill="#FF9A3D" opacity=".55">' + rays + '</g>', box: [240, -30, 200, 200], o: [340, 70], cls: "bl-spin", style: "animation-duration:50s" },
-      { svg: '<circle cx="340" cy="70" r="58" fill="url(#' + u + 'sun)"/><path d="M300 40 Q310 50 304 62 M370 96 Q384 92 388 80 M320 100 Q330 106 344 104" stroke="#FFF3C8" stroke-width="1.6" fill="none" opacity=".6"/>' },
-      { svg: '<g transform="rotate(-40 340 70)"><path d="' + fcFlamePath(340, 14, 12, 30, 2) + '" fill="#FF8A3D"/><path d="' + fcFlamePath(340, 14, 6, 18, 1) + '" fill="#FFE7A0"/></g>', box: [300, -30, 60, 60], o: [322, 20], cls: "bl-flame", style: "animation-duration:1.6s" },
-      { svg: '<g transform="rotate(130 340 70)"><path d="' + fcFlamePath(340, 14, 10, 26, -2) + '" fill="#FF6A2E"/><path d="' + fcFlamePath(340, 14, 5, 15, -1) + '" fill="#FFE7A0"/></g>', box: [360, 80, 60, 60], o: [383, 106], cls: "bl-flame", style: "animation-duration:1.9s;animation-delay:-.6s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 26, ["#FFB25A", "#FFFFFF", "#FF6A2E"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:9s" },
-      { svg: '<path d="M-20 180 Q160 120 500 150 L500 190 L-20 190 Z" fill="url(#' + u + 'planet)"/><path d="M-20 180 Q160 120 500 150" fill="none" stroke="#FF8A3D" stroke-width="1.6" opacity=".7"/><path d="M-20 182 Q160 124 500 153" fill="none" stroke="#FFD36A" stroke-width="6" opacity=".12"/>' }
-    ];
+    return fbRangerScene(u, { seed: 3844, c: "#F5C84A", hi: "#FFE7A0", sky: ["#060418", "#1E1448", "#5A2A4A"], land: "#140A18", star: true });
   }
 };
+/* THE FLARE TEAM'S SCENE: o.c the colour, o.sky three stops, o.roof, o.flares [[x, y, colour, size]],
+   o.fig(X, G) the member's own shape added to the squad silhouette, o.moon / o.snow / o.bang extras */
+function fbSquadScene(u, o){
+  const rnd = bnRand(o.seed);
+  const st = bnStarsSplit(rnd, 70, 120);
+  const town = fbBuildings(rnd, 152, "#0A0C14", "#FFD58A", -10, 490, 22, 70, 0.13);
+  const X = 112, G = 152, S = 1.3, SG = '<g transform="translate(' + X + ' ' + G + ') scale(' + S + ') translate(-' + X + ' -' + G + ')">';
+  /* the squad member, one silhouette: legs, the carrier, arms, the helmet and the mask */
+  const fig = "M" + (X - 8) + " " + G + " L" + (X - 7) + " " + (G - 19) + " L" + (X + 7) + " " + (G - 19) + " L" + (X + 8) + " " + G + " L" + (X + 2) + " " + G + " L" + X + " " + (G - 10) + " L" + (X - 2) + " " + G + " Z" +
+    " M" + (X - 13) + " " + (G - 29) + " Q" + (X - 13) + " " + (G - 34) + " " + (X - 8) + " " + (G - 35) + " L" + (X + 8) + " " + (G - 35) + " Q" + (X + 13) + " " + (G - 34) + " " + (X + 13) + " " + (G - 29) + " L" + (X + 9) + " " + (G - 17) + " L" + (X - 9) + " " + (G - 17) + " Z" +
+    " M" + (X - 13) + " " + (G - 30) + " L" + (X - 15) + " " + (G - 15) + " L" + (X - 11) + " " + (G - 15) + " L" + (X - 10) + " " + (G - 27) + " Z" +
+    " M" + (X - 8) + " " + (G - 40) + " Q" + (X - 9) + " " + (G - 52) + " " + X + " " + (G - 53) + " Q" + (X + 9) + " " + (G - 52) + " " + (X + 8) + " " + (G - 40) + " Z" +
+    " M" + (X - 6.5) + " " + (G - 42) + " Q" + X + " " + (G - 31) + " " + (X + 6.5) + " " + (G - 42) + " Z" +
+    " M" + (X - 9.6) + " " + (G - 43) + " h2.4 v-5 h-2.4 Z M" + (X + 7.2) + " " + (G - 43) + " h2.4 v-5 h-2.4 Z";
+  /* his right arm down at his side - unless it is up, throwing - and what is his own, each a path of its own */
+  const own = '<path d="' + fig + '"/>' + (o.bang ? "" : '<path d="M' + (X + 13) + " " + (G - 30) + " L" + (X + 15) + " " + (G - 15) + " L" + (X + 11) + " " + (G - 15) + " L" + (X + 10) + " " + (G - 27) + ' Z"/>') +
+    (o.fig ? '<path d="' + o.fig(X, G) + '"/>' : "");
+  const goggles = '<rect x="' + (X - 7) + '" y="' + (G - 45.5) + '" width="6.2" height="3.6" rx="1.4" fill="' + o.c + '"/><rect x="' + (X + .8) + '" y="' + (G - 45.5) + '" width="6.2" height="3.6" rx="1.4" fill="' + o.c + '"/>' +
+    '<rect x="' + (X - 6) + '" y="' + (G - 45) + '" width="3" height=".9" rx=".4" fill="#FFFFFF" opacity=".8"/><rect x="' + (X + 1.8) + '" y="' + (G - 45) + '" width="3" height=".9" rx=".4" fill="#FFFFFF" opacity=".8"/>';
+  const glowAt = o.flares[0];
+  let defs = '<defs>' + bnLin(u + "sky", [[0, o.sky[0]], [0.55, o.sky[1]], [1, o.sky[2]]]) + bnLin(u + "roof", [[0, o.roof], [1, "#000000"]]) +
+    bnLin(u + "trail", [[0, "#C8CCD8", 0], [1, "#C8CCD8", 0.32]], 0, 1, 0, 0) + bnRad(u + "eye", [[0, o.c, 0.8], [1, o.c, 0]]);
+  o.flares.forEach((f, i) => { defs += bnRad(u + "w" + i, [[0, f[2], 0.5], [0.35, f[2], 0.16], [1, f[2], 0]]) + bnRad(u + "c" + i, [[0, "#FFFFFF", 1], [0.3, f[2], 0.9], [1, f[2], 0]]); });
+  if(o.moon) defs += bnRad(u + "moon", [[0, "#E2D8FF", 0.4], [1, "#8B5CF6", 0]]);
+  if(o.bang) defs += bnRad(u + "bang", [[0, "#FFFFFF", 0.95], [0.25, "#FFE0F0", 0.7], [1, "#FF5CA8", 0]]);
+  defs += '</defs>';
+  /* where each flare was fired from: the roof by his hand, up and over to the chute */
+  const trails = o.flares.map(([fx, fy], i) => {
+    const sx = bnF(X + 24 * S + i * 6), sy = G - 2, ax = (+sx + fx) / 2 - 16, ay = Math.min(fy - 40, 10);
+    return '<path d="M' + sx + ' ' + sy + ' Q' + bnF(ax) + ' ' + bnF(ay) + ' ' + fx + ' ' + (fy - 16) + '" fill="none" stroke="url(#' + u + 'trail)" stroke-width="' + (3.4 - i * .4) + '" stroke-linecap="round"/>';
+  }).join("");
+  let base = defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still;
+  if(o.moon){
+    const [mx, my, mr] = o.moon;
+    base += '<circle cx="' + mx + '" cy="' + my + '" r="' + (mr * 2.6) + '" fill="url(#' + u + 'moon)"/>' +
+      '<path d="M' + mx + ' ' + (my - mr) + ' A' + mr + ' ' + mr + ' 0 1 0 ' + bnF(mx + mr * .8) + ' ' + bnF(my + mr * .6) + ' A' + bnF(mr * .8) + ' ' + bnF(mr * .82) + ' 0 1 1 ' + mx + ' ' + (my - mr) + ' Z" fill="#E2D8FF"/>';
+  }
+  /* the light it throws over the sky and the city */
+  base += o.flares.map((f, i) => '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="' + bnF(120 + f[3] * 10) + '" fill="url(#' + u + 'w' + i + ')"/>').join("") +
+    town.body + town.win +
+    /* the roof: the parapet, rim-lit; a unit and a vent pipe */
+    '<path d="M-10 ' + G + ' L490 ' + G + ' L490 190 L-10 190 Z" fill="url(#' + u + 'roof)"/>' +
+    '<rect x="-10" y="' + (G - 1) + '" width="500" height="1.6" fill="' + o.c + '" opacity=".45"/>' +
+    '<path d="M362 ' + G + ' L362 ' + (G - 17) + ' L414 ' + (G - 17) + ' L414 ' + G + ' Z M372 ' + (G - 17) + ' L372 ' + (G - 21) + ' L388 ' + (G - 21) + ' L388 ' + (G - 17) + ' Z M436 ' + G + ' L436 ' + (G - 26) + ' L442 ' + (G - 26) + ' L442 ' + G + ' Z M432 ' + (G - 26) + ' L446 ' + (G - 26) + ' L446 ' + (G - 29) + ' L432 ' + (G - 29) + ' Z" fill="' + o.roof + '"/>' +
+    '<path d="M362 ' + (G - 17) + ' L414 ' + (G - 17) + ' M436 ' + (G - 26) + ' L446 ' + (G - 26) + '" stroke="' + o.c + '" stroke-width="1" opacity=".5"/>' +
+    (o.snow ? '<path d="M-10 ' + (G - 1) + ' Q60 ' + (G - 3.4) + ' 140 ' + (G - 1.4) + ' Q260 ' + (G - 3.6) + ' 380 ' + (G - 1.2) + ' Q440 ' + (G - 3) + ' 490 ' + (G - 1) + ' L490 ' + (G + 1) + ' L-10 ' + (G + 1) + ' Z M361 ' + (G - 17) + ' Q388 ' + (G - 20.4) + ' 415 ' + (G - 17) + ' Z" fill="#EAF6FF" opacity=".9"/>' : "") +
+    trails +
+    /* the member: the shape once in the flare's light, a hair to the right and up, then in black */
+    SG + '<g fill="' + o.c + '" opacity=".75" transform="translate(1.1 -.6)">' + own + '</g><g fill="#06070A">' + own + '</g></g>';
+  const L = [{ svg: base }, { svg: st.a, cls: "bl-tw", style: "animation-duration:3.2s" }, { svg: st.b, cls: "bl-tw", style: "animation-duration:3.2s;animation-delay:-1.6s" }];
+  /* the goggles, lit */
+  L.push({ svg: SG + '<circle cx="' + X + '" cy="' + (G - 43.7) + '" r="14" fill="url(#' + u + 'eye)"/>' + goggles + '</g>', box: [X - 16 * S, G - 60 * S, 32 * S, 32 * S], o: [X, G - 44 * S], cls: "bl-glow", style: "animation-duration:2.6s" });
+  o.flares.forEach(([fx, fy, col, s], i) => {
+    /* the flare's glow breathing */
+    L.push({ svg: '<circle cx="' + fx + '" cy="' + fy + '" r="' + bnF(s * 9) + '" fill="url(#' + u + 'c' + i + ')"/>', box: [fx - s * 9, fy - s * 9, s * 18, s * 18], o: [fx, fy], cls: "bl-pulse", style: "animation-duration:" + bnF(1.4 + i * .3) + "s;animation-delay:-" + bnF(i * .5) + "s" });
+    /* the flare under its chute, swinging */
+    const chute = '<path d="M' + bnF(fx - s * 3.2) + ' ' + bnF(fy - s * 5) + ' Q' + fx + ' ' + bnF(fy - s * 8.4) + ' ' + bnF(fx + s * 3.2) + ' ' + bnF(fy - s * 5) + ' Q' + fx + ' ' + bnF(fy - s * 6) + ' ' + bnF(fx - s * 3.2) + ' ' + bnF(fy - s * 5) + ' Z" fill="#C8CCD8" opacity=".75"/>' +
+      '<path d="M' + bnF(fx - s * 3.1) + ' ' + bnF(fy - s * 5) + ' L' + fx + ' ' + bnF(fy - s) + ' L' + bnF(fx + s * 3.1) + ' ' + bnF(fy - s * 5) + ' M' + fx + ' ' + bnF(fy - s * 6) + ' L' + fx + ' ' + bnF(fy - s) + '" fill="none" stroke="#C8CCD8" stroke-width=".5" opacity=".6"/>' +
+      '<circle cx="' + fx + '" cy="' + fy + '" r="' + bnF(s * 1.5) + '" fill="' + col + '"/><circle cx="' + fx + '" cy="' + fy + '" r="' + bnF(s * .8) + '" fill="#FFFFFF"/>';
+    L.push({ svg: chute, box: [fx - s * 6, fy - s * 9, s * 12, s * 12], o: [fx, fy - s * 8.4], cls: "bl-sway", style: "animation-duration:" + bnF(5 + i * .8) + "s;animation-delay:-" + bnF(i * 1.7) + "s" });
+    /* its sparks dripping */
+    const sr = bnRand(o.seed + 7 * i + 1); let one = "";
+    for(let k = 0; k < 7; k++) one += '<circle cx="' + bnF(fx - 5 + sr() * 10) + '" cy="' + bnF(fy + 4 + sr() * 30) + '" r="' + bnF(.5 + sr() * .7) + '" fill="' + (k % 2 ? "#FFFFFF" : col) + '" opacity="' + bnF(.5 + sr() * .5) + '"/>';
+    L.push({ svg: one + '<g transform="translate(0 30)">' + one + '</g>', box: [fx - 8, fy + 4, 16, 60], vb: [fx - 8, fy + 4, 16, 60], cls: "bl-rise", style: "animation-duration:2.4s;animation-direction:reverse" });
+  });
+  if(o.snow){
+    const sn = bnRand(o.seed + 99); let flakes = "";
+    for(let k = 0; k < 40; k++) flakes += '<circle cx="' + bnF(sn() * 480) + '" cy="' + bnF(sn() * 90) + '" r="' + bnF(.6 + sn() * 1.2) + '" fill="#FFFFFF" opacity="' + bnF(.45 + sn() * .5) + '"/>';
+    L.push({ svg: flakes + '<g transform="translate(0 90)">' + flakes + '</g>', box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:9s;animation-direction:reverse" });
+  }
+  if(o.bang){
+    const [bx, by] = o.bang;
+    /* the window across the street, and every 7s it goes off */
+    L.push({ svg: '<rect x="' + (bx - 6) + '" y="' + (by - 5) + '" width="12" height="10" fill="#FFF0F8"/><circle cx="' + bx + '" cy="' + by + '" r="64" fill="url(#' + u + 'bang)"/>', box: [bx - 64, by - 64, 128, 128], o: [bx, by], cls: "bl-burst", style: "animation-duration:7s;opacity:0" });
+    L.push({ svg: '<rect x="-10" y="-10" width="500" height="200" fill="#FFE6F2" fill-opacity=".14"/>', cls: "bl-spike", style: "animation-duration:7s;opacity:0" });
+  }
+  return L;
+}
+/* THE RANGERS' SCENE: o.c the colour, o.sky three stops, o.land the mesas; o.moon / o.comet / o.star
+   the sky that is his */
+function fbRangerScene(u, o){
+  const rnd = bnRand(o.seed);
+  const st = bnStarsSplit(rnd, 110, 140);
+  const X = 132, G = 150, S = 1.25;
+  const R = (px, py) => bnF(X + px * S) + " " + bnF(G + py * S);
+  const fig = "M" + R(-7, 0) + " L" + R(-6, -16) + " L" + R(6, -16) + " L" + R(7, 0) + " L" + R(2, 0) + " L" + R(0, -9) + " L" + R(-2, 0) + " Z" +
+    " M" + R(-12, -36) + " Q" + R(-14, -30) + " " + R(-16, -5) + " L" + R(-10, -3) + " L" + R(-8, -14) + " L" + R(8, -14) + " L" + R(10, -3) + " L" + R(16, -5) + " Q" + R(14, -30) + " " + R(12, -36) + " Q" + R(0, -40) + " " + R(-12, -36) + " Z" +
+    " M" + R(-5, -37) + " Q" + R(-6, -46) + " " + R(0, -47) + " Q" + R(6, -46) + " " + R(5, -37) + " Z" +
+    " M" + R(-15, -45.5) + " Q" + R(0, -50) + " " + R(15, -45.5) + " Q" + R(12, -43.4) + " " + R(0, -44) + " Q" + R(-12, -43.4) + " " + R(-15, -45.5) + " Z" +
+    " M" + R(-6, -46.6) + " Q" + R(-7, -55) + " " + R(-3, -55.4) + " Q" + R(0, -53.8) + " " + R(3, -55.4) + " Q" + R(7, -55) + " " + R(6, -46.6) + " Z";
+  /* the rock he stands on */
+  const rock = "M" + R(-30, 8) + " L" + R(-24, 0) + " Q" + R(0, -3) + " " + R(22, 0) + " L" + R(32, 8) + " L" + R(36, 40) + " L" + R(-36, 40) + " Z";
+  const mesa = "M0 150 L40 146 L52 128 L118 126 L128 146 L210 150 L232 140 L250 118 L330 116 L342 140 L400 146 L420 132 L470 132 L480 150";
+  let defs = '<defs>' + bnLin(u + "sky", [[0, o.sky[0]], [0.6, o.sky[1]], [1, o.sky[2]]]) +
+    bnRad(u + "way", [[0, o.hi, 0.2], [0.55, o.hi, 0.08], [1, o.hi, 0]]) + bnRad(u + "eye", [[0, o.c, 0.85], [1, o.c, 0]]) + bnRad(u + "sk", [[0, o.c, 0.4], [1, o.c, 0]]);
+  if(o.moon) defs += bnRad(u + "moon", [[0, "#FFFFFF"], [0.7, "#E4EEFF"], [1, "#9CB4E0"]]);
+  if(o.comet) defs += bnLin(u + "tail", [[0, o.c, 0], [0.7, o.c, 0.55], [1, "#FFFFFF", 0.95]], 0, 0, 1, 0) + bnLin(u + "tail2", [[0, "#FFFFFF", 0], [1, "#FFFFFF", 0.7]], 0, 0, 1, 0);
+  if(o.star) defs += bnRad(u + "sun", [[0, "#FFFFFF", 1], [0.4, "#FFE7A0", 1], [1, "#F5A83A", 1]]);
+  defs += '</defs>';
+  let base = defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/><ellipse cx="130" cy="70" rx="210" ry="30" fill="url(#' + u + 'way)" transform="rotate(-42 130 70)"/>' + st.still;
+  /* where his sky is: its light over the land */
+  const SX = o.moon ? 336 : o.comet ? 372 : 334, SY = o.moon ? 70 : o.comet ? 58 : 64;
+  base += '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="url(#' + u + 'sk)"/>';
+  if(o.moon) base += '<circle cx="' + SX + '" cy="' + SY + '" r="34" fill="url(#' + u + 'moon)"/>' +
+    [[-12, -8, 6], [10, 6, 8], [-4, 14, 4], [14, -14, 3.6], [-18, 8, 3]].map(([dx, dy, r]) => '<circle cx="' + (SX + dx) + '" cy="' + (SY + dy) + '" r="' + r + '" fill="#8A9CC4" opacity=".35"/>').join("");
+  base += '<path d="' + mesa + ' L480 180 L0 180 Z" fill="' + o.land + '"/><path d="' + mesa + '" fill="none" stroke="' + o.c + '" stroke-width="1.2" opacity=".5"/>' +
+    '<path d="M0 166 L480 162 L480 180 L0 180 Z" fill="#05040A" opacity=".7"/>' +
+    [[30, 166], [214, 162], [384, 160], [452, 164]].map(([x, y]) => '<path d="M' + x + ' ' + y + ' l0 -14 M' + x + ' ' + (y - 8) + ' l-4 -4 l0 -4 M' + x + ' ' + (y - 6) + ' l4 -3 l0 -5" stroke="#05040A" stroke-width="2.4" fill="none" stroke-linecap="round"/>').join("") +
+    '<path d="' + rock + '" fill="#07060C"/><path d="M' + R(-24, 0) + ' Q' + R(0, -3) + ' ' + R(22, 0) + ' L' + R(32, 8) + '" fill="none" stroke="' + o.c + '" stroke-width="1" opacity=".55"/>' +
+    '<path d="' + fig + '" fill="' + o.c + '" opacity=".8" transform="translate(1.2 -.8)"/><path d="' + fig + '" fill="#06050A"/>' +
+    /* his star badge catching the light */
+    '<circle cx="' + bnF(X + 3.2 * S) + '" cy="' + bnF(G - 31 * S) + '" r="1.8" fill="' + o.hi + '"/>';
+  const L = [{ svg: base }, { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" }, { svg: st.b, cls: "bl-tw", style: "animation-duration:2.6s;animation-delay:-1.3s" }];
+  /* his eyes, lit */
+  const EY = bnF(G - 41.4 * S);
+  L.push({ svg: '<circle cx="' + X + '" cy="' + EY + '" r="11" fill="url(#' + u + 'eye)"/><circle cx="' + bnF(X - 2.6) + '" cy="' + EY + '" r="1.1" fill="' + o.hi + '"/><circle cx="' + bnF(X + 2.6) + '" cy="' + EY + '" r="1.1" fill="' + o.hi + '"/>',
+    box: [X - 12, G - 41.4 * S - 12, 24, 24], o: [X, G - 41.4 * S], cls: "bl-glow", style: "animation-duration:2.4s" });
+  if(o.moon){
+    L.push({ svg: '<circle cx="' + SX + '" cy="' + SY + '" r="64" fill="url(#' + u + 'sk)"/>', box: [SX - 64, SY - 64, 128, 128], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:4.6s" });
+    /* thin cloud drifting over it */
+    const cl = (x, y, w) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + w + '" ry="3.2" fill="#C8D4F0" opacity=".22"/><ellipse cx="' + (x + w * .3) + '" cy="' + (y - 2) + '" rx="' + bnF(w * .5) + '" ry="2.4" fill="#C8D4F0" opacity=".18"/>';
+    L.push({ svg: cl(300, 64, 40) + cl(380, 80, 30) + cl(220, 40, 34) + cl(560, 58, 40) + cl(640, 74, 30), box: [0, 0, 960, 180], vb: [0, 0, 960, 180], cls: "bl-slide", style: "animation-duration:70s" });
+    L.push({ svg: fbEmberSheet(rnd, 480, 90, 12, ["#E4EEFF", "#9CC0FF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:18s;opacity:.55" });
+  }
+  if(o.comet){
+    /* the comet: a long tail of blue fire back across the sky, the head white-hot */
+    const tail = '<path d="M40 112 Q200 54 ' + (SX - 6) + ' ' + (SY - 3) + ' L' + (SX - 4) + ' ' + (SY + 6) + ' Q210 76 40 112 Z" fill="url(#' + u + 'tail)"/>' +
+      '<path d="M90 96 Q220 50 ' + (SX - 6) + ' ' + (SY + 1) + '" fill="none" stroke="url(#' + u + 'tail2)" stroke-width="1.6"/>';
+    L.push({ svg: tail, box: [30, 20, SX - 20, 100], vb: [30, 20, SX - 20, 100], o: [SX, SY], cls: "bl-shimmer", style: "animation-duration:2.8s" });
+    L.push({ svg: '<circle cx="' + SX + '" cy="' + SY + '" r="16" fill="' + o.c + '" opacity=".3"/><circle cx="' + SX + '" cy="' + SY + '" r="7" fill="' + o.hi + '"/><circle cx="' + SX + '" cy="' + SY + '" r="3.6" fill="#FFFFFF"/>',
+      box: [SX - 16, SY - 16, 32, 32], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:1.6s" });
+    [[440, 30, 6, -1.2], [300, 22, 7.5, -4.4]].forEach(([x, y, dur, dl]) => L.push({ svg: '<path d="M' + (x - 26) + ' ' + (y - 10) + ' L' + x + ' ' + y + '" stroke="' + o.hi + '" stroke-width="1.3" stroke-linecap="round"/><circle cx="' + x + '" cy="' + y + '" r="1.4" fill="#FFFFFF"/>',
+      box: [x - 50, y - 22, 100, 44], cls: "bl-meteor", style: "animation-duration:" + dur + "s;animation-delay:" + dl + "s" }));
+  }
+  if(o.star){
+    /* the star: its rays turning, its body burning, embers going up */
+    let rays = ""; for(let i = 0; i < 20; i++){ const a = i / 20 * Math.PI * 2, b = a + .09, c = a - .09, r1 = 24, r2 = i % 2 ? 46 : 60;
+      rays += '<path d="M' + bnF(SX + Math.cos(c) * r1) + ' ' + bnF(SY + Math.sin(c) * r1) + ' L' + bnF(SX + Math.cos(a) * r2) + ' ' + bnF(SY + Math.sin(a) * r2) + ' L' + bnF(SX + Math.cos(b) * r1) + ' ' + bnF(SY + Math.sin(b) * r1) + ' Z"/>'; }
+    L.push({ svg: '<circle cx="' + SX + '" cy="' + SY + '" r="70" fill="url(#' + u + 'sk)"/>', box: [SX - 70, SY - 70, 140, 140], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:3.6s" });
+    L.push({ svg: '<g fill="#F5C84A" opacity=".55">' + rays + '</g>', box: [SX - 62, SY - 62, 124, 124], o: [SX, SY], cls: "bl-spin", style: "animation-duration:40s" });
+    let star = ""; for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 11 : 26; star += (i ? "L" : "M") + bnF(SX + Math.cos(a) * rr) + " " + bnF(SY + 2 + Math.sin(a) * rr) + " "; }
+    L.push({ svg: '<circle cx="' + SX + '" cy="' + SY + '" r="30" fill="#FF9A3D" opacity=".25"/><path d="' + star + 'Z" fill="url(#' + u + 'sun)" stroke="#FFF3C8" stroke-width="1.4" stroke-linejoin="round"/><circle cx="' + SX + '" cy="' + (SY + 2) + '" r="5" fill="#FFFFFF"/>' });
+    L.push({ svg: '<path d="' + fcFlamePath(SX, SY - 22, 5, 14, 0) + fcFlamePath(SX - 23, SY - 5, 4, 10, -2) + fcFlamePath(SX + 23, SY - 5, 4, 10, 2) + '" fill="#FF9A3D" opacity=".85"/>', box: [SX - 30, SY - 38, 60, 36], o: [SX, SY - 8], cls: "bl-flame", style: "animation-duration:1.3s" });
+    L.push({ svg: fbEmberSheet(rnd, 480, 90, 18, ["#FFD36A", "#FF9A3D", "#FFFFFF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:12s;opacity:.7" });
+  }
+  return L;
+}
 const IFC_BANNER_LOOK = {
   tests100: ["Headquarters", "#F2C14E", "#4A5AB8"], tests250: ["Spill Response", "#9AF03A", "#F2C21E"],
   tests500: ["Field Kit", "#F2C14E", "#B07A44"], hundos100: ["Exit", "#FF3B30", "#FFD9A0"],
@@ -77253,10 +77353,10 @@ const IFC_BANNER_LOOK = {
   study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["Alarm Panel", "#E8402E", "#2ECC71"],
   correct5000: ["Sprinklers", "#6FA8D8", "#FF8A3D"], correct10000: ["Origin & Cause", "#F2C21E", "#FF7A2E"],
   level80: ["Hazmat", "#7AF03A", "#2A6CE0"], early10: ["Fire Response", "#3D7BFF", "#FF2D2D"],
-  exam100: ["Hose Line", "#F95E2F", "#FF2931"], flare_void: ["Backdraft", "#9AA6C8", "#F97316"],
-  flare_umbra: ["Night Shift", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Thermal", "#6FB4F2", "#CFEAFF"],
-  flare_genesis: ["Flashover", "#E0507F", "#F7934F"], astral: ["Nebula", "#3FE9FF", "#8A4AE8"],
-  celestial: ["Star Ranger", "#FFD36A", "#6A4AC8"], zenith: ["Solar Flare", "#FFB25A", "#E8402E"]
+  exam100: ["Hose Line", "#F95E2F", "#FF2931"], flare_void: ["Breacher", "#F97316", "#FFB04A"],
+  flare_umbra: ["Recon", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Whiteout", "#6FB4F2", "#CFEAFF"],
+  flare_genesis: ["Flashbang", "#FF5CA8", "#E0507F"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
+  celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"]
 };
 if(IFC_ART_ON){
   Object.keys(IFC_BANNER_ART).forEach(id => {
@@ -120881,15 +120981,16 @@ const SF_WIPE_MS = 1700;
    in the three colours that made it. `body` is the black, a breath of the
    flare's colour in it so it reads as a figure, not a hole. */
 const SF_SIL = {
-  voidwalker:  { keep: ["cx-fx-flares", "cx-fx-starfield", "cx-fx-wfrings", "cx-fx-wforbit"], drop: [], first: ["cx-fx-flares"],
+  /* cx-fx-sqlight: Fire Code's squad (384, fcSquad) - the goggles and the lights on the helmet, lit in the dark first */
+  voidwalker:  { keep: ["cx-fx-flares", "cx-fx-starfield", "cx-fx-wfrings", "cx-fx-wforbit", "cx-fx-sqlight"], drop: [], first: ["cx-fx-flares", "cx-fx-sqlight"],
                  rim: [["0%", "#FF7A70", ".95"], ["50%", "#FFB070", ".95"], ["100%", "#FFE27A", ".95"]], dir: "x", body: "#05050B" },
-  umbra:       { keep: ["cx-eyes", "cx-fx-umflare", "cx-fx-crescent", "cx-fx-umaura", "cx-fx-umaura2", "cx-fx-wfrings", "cx-fx-wforbit"], first: ["cx-eyes"],
+  umbra:       { keep: ["cx-eyes", "cx-fx-umflare", "cx-fx-crescent", "cx-fx-umaura", "cx-fx-umaura2", "cx-fx-wfrings", "cx-fx-wforbit", "cx-fx-sqlight"], first: ["cx-eyes", "cx-fx-sqlight"],
                  drop: ["cx-fx-umrim", "cx-fx-umcglow", "cx-fx-umcglint", "cx-fx-wisps"],
                  rim: [["0%", "#F1ECFF", "1"], ["45%", "#B69CFF", ".85"], ["100%", "#6D28D9", "0"]], body: "#07050F" },
-  singularity: { keep: ["cx-eyes", "cx-fx-sgstar", "cx-fx-sgsparks", "cx-fx-wfrings", "cx-fx-wforbit"], first: ["cx-eyes", "cx-fx-sgstar"],
+  singularity: { keep: ["cx-eyes", "cx-fx-sgstar", "cx-fx-sgsparks", "cx-fx-wfrings", "cx-fx-wforbit", "cx-fx-sqlight"], first: ["cx-eyes", "cx-fx-sgstar", "cx-fx-sqlight"],
                  drop: ["cx-fx-sglight", "cx-fx-sgsurgew", "cx-fx-sgsurgeb", "cx-fx-sgaurora"],
                  rim: [["0%", "#FFFFFF", "1"], ["45%", "#BFE6FF", ".85"], ["100%", "#3B7FD0", "0"]], body: "#04070F" },
-  genesis:     { keep: ["cx-eyes", "cx-fx-gnheart", "cx-fx-gnseam", "cx-fx-wfrings", "cx-fx-wforbit"], first: ["cx-eyes", "cx-fx-gnheart"],
+  genesis:     { keep: ["cx-eyes", "cx-fx-gnheart", "cx-fx-gnseam", "cx-fx-wfrings", "cx-fx-wforbit", "cx-fx-sqlight"], first: ["cx-eyes", "cx-fx-gnheart", "cx-fx-sqlight"],
                  drop: ["cx-fx-gnatm", "cx-fx-gnleak", "cx-fx-gnerupt"],
                  rim: [["0%", "#FFE6C8", "1"], ["45%", "#FF9CC8", ".85"], ["100%", "#C23B7A", "0"]], body: "#0B050A" }
 };
@@ -140172,7 +140273,7 @@ function buildCustomizeCharacterSect(){
     /* THE LAST ONE (build 304): "It will be the last character on the
        list." Its own section, after everything it asks for. */
     /* BUILD 312: three of them, hardest last - Astral, Celestial, Zenith */
-    { title: "Ultimate", note: "The hardest three \u2014 " + (AVATAR_DISPLAY_NAME.zenith || "Zenith") + " takes everything",   /* (384) Fire Code's is the Solar Flare */
+    { title: "Ultimate", note: "The hardest three \u2014 " + (AVATAR_DISPLAY_NAME.zenith || "Zenith") + " takes everything",   /* (384) Fire Code's is the Star Ranger */
       ids: AVATAR_CHARACTERS.filter(c => c.ultimate).map(c => c.id) },
     /* A character from an earlier version that nobody can earn now, shown
        only to whoever holds it (or is still wearing a retired one). */

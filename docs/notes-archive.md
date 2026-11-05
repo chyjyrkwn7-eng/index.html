@@ -34758,3 +34758,42 @@ Hose Line, the rank banners and the flare/ultimate banners are untouched (their 
   strobe flash; nothing solid red low in Sprinklers; no filters, every one moves; ids per copy and every url(#) resolves;
   none heavier than the heaviest other banner): 8 of 13 fail on 185cc5c. check-b382-ifcart: two lines moved to this
   decision (the round-3 "kept" list leaves out the six redrawn here; the vehicle helper it checks is fbChevy now).
+### Build 384 - Fire Code's secret four are one squad, its ultimates three rangers; Star Ranger is the last (NOT on main, waiting for Madison)
+Madison, on the review screenshots: "I don't like flashbang that much, try again. I don't like how you can see his face." /
+"Star ranger looks sick, that should be the last ultimate character? ... Use that idea for another character?" / "All three of
+the ultimate characters need to look like they are trio. Same goes for the secret flare characters." / "The secret flare
+banners, I don't really like any of those, that much. Same for the ultimate character banners". Fire Code only; same ids.
+- THE SQUAD (fcSquad; kinds fcsqbreacher, fcsqrecon, fcsqwhiteout, fcsqflashbang): one helmet, one pair of goggles lit in the
+  member's flare colour, one half-mask respirator (a front filter ringed in the colour, a valve each side), one plate carrier
+  with the flare they are found with on its chest, shoulder pads in the colour, a team stripe and patch on the helmet. No face
+  shows on any of them (the Flashbang's was the complaint). Each keeps one thing: the Breacher the four-tube night vision
+  flipped up on the helmet, three tubes lit red/orange/gold (Void's three); the Recon a monocular swung down over the right
+  lens, a whip antenna, a shemagh; the Whiteout a snow-covered helmet, a fur ruff, snow on the pads, mirrored ice lenses; the
+  Flashbang a hand up with the bang, its spark lit. Names unchanged (Breacher, Recon, Whiteout, Flashbang).
+- THE SECRET-FLARE SCENES: everything lit on the squad (the goggles, the night vision's tubes, the monocular, the chest flare)
+  is classed cx-fx-sqlight, which SF_SIL keeps lit and shows first in the dark - "Something opens its eyes" is the goggles.
+- THE RANGERS (fcRanger): Star Ranger (round 3's Celestial drawing, unchanged) is ZENITH's now - zenith is the last ultimate
+  (feat "everything", the other two included). Astral is the MOON RANGER (silver and night blue: a bandana over his face, a
+  crescent on the hat's silver band, eight sparks) and Celestial the COMET RANGER (blue fire: a comet across the crown, a band
+  of small blue flames, a scarf streaming like its tail, a handlebar moustache, ten sparks). All three share the hat, the
+  brown duster over the cosmic suit, the star badge, lit eyes and the turning ring of sparks (8 -> 10 -> 12), climbing from
+  cold and quiet to Star Ranger on fire. Customize's note now reads "Star Ranger takes everything".
+- SPECIALS: same move and timing as ifcSpecial (2800ms), ending on the squad's flare bursting / the agency's star
+  (ifcMarkSpecial), set just after the IFC_CHAR_LOOK loop.
+- BANNERS, named for their characters (Breacher, Recon, Whiteout, Flashbang; Moon Ranger, Comet Ranger, Star Ranger):
+  fbSquadScene - one night over the city from the same roof, the member's silhouette at the edge with goggles lit (bl-glow),
+  and the flare that brings them fired from that roof (smoke trail, a little chute swaying, its light pulsing, sparks
+  dripping); Breacher three flares, Recon violet with the crescent, Whiteout white in falling snow, Flashbang rose with a
+  window across the street going off every 7s. fbRangerScene - the same desert and mesas, the ranger on his rock with his eyes
+  lit, and his own sky: the moon rising with thin cloud, a comet with shooting stars, the agency's star burning with turning
+  rays and embers. Transform/opacity only, no filters, 7-13 layers; the sky objects sit inside the middle band a row shows.
+- Gate: tools/check-b384-sets.py (both classes; 19 fail on 185cc5c). Its special-timing check reads what playCharSpecial
+  planned as a window (before and after the call), so a loaded machine does not fail it. check-b382-ifcart moved to the
+  decision: the Breacher and Recon are no longer "exactly round 2's", the four flare banners no longer "as round 2 left
+  them", and the cowboy-hat check covers the three rangers (Star Ranger is zenith's now).
+- Gates (one at a time, the machine at load 20-40 from other sessions): check-js OK; check-b384-sets ALL PASS;
+  check-b382-ifcart 45 PASS; check-b384-secretnames ALL PASS; check-unlocks ALL PASS; check-b382-unhide ALL PASS;
+  check-b384-cutscenes 1, 2, 6, 8, 10 pass (6 failed once in both classes under load, academy included, and passed alone);
+  check-b327z15 N: the specials pass, "the live drawing's loops within 80ms" fails at 202ms here and 366ms on 185cc5c
+  (load, as before). Recorded (Fire Code, 440x956, app's own sound): the four secret-flare scenes and the three ultimates'
+  character and banner cards.
