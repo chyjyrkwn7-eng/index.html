@@ -34713,3 +34713,48 @@ entire character list". Same ids (saved avatars and challenges keep working); on
   60ms, which a load average of 25 ran past by itself). check-b382-ifcart moved to this decision
   (the names it asserted, and the investigator in the cowboy-hat list: he is the Toxic Spill now).
 - Contact sheets (before/after, tile/coin/plate, locked and unlocked) were made in the session's scratchpad for Madison.
+## 384 (banners): nine Fire Code banners redrawn after Madison's review (branch claude/b384-banners)
+Only IFC_BANNER_ART's nine entries, their IFC_BANNER_LOOK rows and the helpers beside them; Dispatch, Code Book, Hazmat,
+Hose Line, the rank banners and the flare/ultimate banners are untouched (their drawings hash the same as 185cc5c).
+- SHARED PIECES: fbText draws lettering as strokes on a 4x6 grid (no font, so a still picture reads the same everywhere);
+  fbChevy(u, x, y, s, {kind: "pickup"|"suv", f}) is the office's vehicle: all white, NO STRIPES (round 3's red and gold
+  stripe read as an ambulance), "FIRE MARSHAL" ghost-lettered across the doors (silver a shade off the paint with a bright
+  edge, class fb-ghost) and the star ghosted on the front door, a low light bar (fbChevyLight lights one half), push bar,
+  pillar spotlight, black wheels and running boards, the front turned a little towards us so the gold bowtie shows.
+  fbChevyDefs(u) gives its gradients (the body is still u+"fbtruck"). fbHazmatTech is a Level A technician; fbMarshal a
+  cowboy-hat silhouette; fbPuffs is smoke with soft edges (fbSmoke's discs read as grey coins). fbPickup, fbSuit,
+  fbExitSign and fbEmergencyUnit/Cones are gone (nothing else used them).
+- Headquarters ("why are there ambulances?"): a Tahoe and a Silverado at the kerb, ghost-lettered, the Silverado's bar lit;
+  US and Texas flags; FIRE MARSHAL over the doors. Still (first rung), so both halves of the bar show lit.
+- Spill Response ("the hazmat guys look weird"): the scene kept; the two responders are people in Level A suits - boots,
+  baggy legs, the air pack bulging the back, a hood with a wide faceplate and a face behind it, two-part arms, dark gloves,
+  grey tape at wrists and ankles; one on a foam hand line, one reading a gas meter (its light blinks).
+- Field Kit ("none of us put our badge in a wallet like that"): the kit as worn - close on a khaki pearl-snap shirt tucked
+  into jeans, a stitched western belt and buckle, the star badge on its belt clip (faceted, catching the light), a light in
+  its ring, the radio in its holster with the coiled cord up to the shoulder mic. No wallet.
+- Exit ("there's like 5 exits"): one exit - a pair of steel doors with panic bars at the end of a dark corridor, one red EXIT
+  sign over them, two emergency lights through ceiling smoke, a glow strip at the foot of the wall. Still (first rung).
+- Air Tanker -> PYROTECHNICS ("change that to something else completely"): standing by at a public fireworks display - bursts
+  over the town across a lake, doubled in the water, the white Chevy at the safety line of cones, a marshal at its nose. NOT
+  "Fireworks ...": Fireworks is the academy's hundo effect and check-b384-cutscenes (rightly) fails a Fire Code card naming it.
+- Alarm Panel ("not sure why there is a strobe right next to it, maybe ... the document box"): the strobe and the pull station
+  are gone; the panel is laid out as one is (FIRE ALARM on the door, the display reading ALARM / ZONE 3, power and alarm
+  lights, keypad, four function keys, key lock with an inspection tag) and the RECORD DOCUMENTS box stands beside it, conduit
+  down the wall into both. Its red glow sits behind the cabinets.
+- Sprinklers ("the red box in the bottom right"): that was an extinguisher at the bottom left, too small to read; gone. The fire
+  is in a wastebasket by a desk, heads are pendent heads with their bulbs gone, rings where the water lands, steam off the fire.
+  The spray is clipped to start at the deflectors (it slid up over the main every loop, since round 1).
+- Pull Station -> ORIGIN & CAUSE ("make that something else but make it cool"): a burned room, the investigator in his hat
+  dark against the doorway, his flashlight on the V burned up the wall to the space heater, evidence markers 1-3, FIRE LINE
+  tape, smoke off the origin, dust in the beam, the scene camera's flash every 6s.
+- Code 3 -> FIRE RESPONSE ("we don't do code threes. We do fire responses"): the white Silverado at night, bar flashing red then
+  blue and washing the street, grille lights, siren arcs, wheels turning (bl-spin-r) under a body riding its springs (bl-bob,
+  the lit lenses are its kids so they ride with it), lamps and lane lines streaming past, its reflection on the wet road.
+  Round 3's town windows were a layer above the truck (lit squares across its body); they are behind it now.
+- Tints: Field Kit gold/leather, Exit red/warm white, Pyrotechnics gold/blue, Sprinklers water/fire, Origin & Cause tape/ember,
+  Fire Response blue/red.
+- Gate: tools/check-b384-banners.py (all nine redrawn; the four untouched; names; ghost-lettered vehicles with no long thin red
+  band; two technicians with faceplates at the top; badge on the belt; one EXIT sign; documents box beside the panel and no
+  strobe flash; nothing solid red low in Sprinklers; no filters, every one moves; ids per copy and every url(#) resolves;
+  none heavier than the heaviest other banner): 8 of 13 fail on 185cc5c. check-b382-ifcart: two lines moved to this
+  decision (the round-3 "kept" list leaves out the six redrawn here; the vehicle helper it checks is fbChevy now).

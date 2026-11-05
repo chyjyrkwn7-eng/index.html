@@ -83,7 +83,7 @@ SNAP = """()=>{
       const worst = Math.max(...pts.map(([x, y]) => Math.hypot(x - cx, y - cy)));
       const out = { found: true, worst: Math.round(worst / R * 1000) / 1000, top: Math.round(r.top * 10) / 10, headBottom: Math.round(h.bottom * 10) / 10 };
       box.remove(); return out; }catch(e){ return { err: String(e) }; } })(),
-    trucks: { suv: typeof fbSUV, pickup: typeof fbPickup, hq: /fbtruck/.test(bannerStaticSVG('tests100') || ''), code3: /fbtruck/.test(bannerStaticSVG('early10') || '') },
+    trucks: { suv: typeof fbSUV, pickup: typeof fbChevy, hq: /fbtruck/.test(bannerStaticSVG('tests100') || ''), code3: /fbtruck/.test(bannerStaticSVG('early10') || '') },
     fxBuild: Object.fromEntries(HUNDO_FX.map(d => [d.id, d.id === 'confetti' ? 'celebrate' : ((typeof HUNDO_FX_BUILD !== 'undefined' && HUNDO_FX_BUILD[d.id]) || {}).name || '?'])),
     fxPlay: HUNDO_FX.filter(d => d.need > 0).map(d => {
       const out = { id: d.id };
@@ -212,10 +212,13 @@ chk("the clown's character is called Strobe (%s)" % F["cnames"].get("clown"), F[
 BREDO3 = ["tests100", "early10", "hundos100", "study50", "astral", "celestial", "zenith"]
 bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i)]
 chk("round 3 redraws headquarters, code 3, exit, code book and the three ultimates' banners (unchanged since round 2: %s)" % bsame3, not bsame3, bsame3)
-bkept3 = [i for i in F["banners"] if i not in BREDO3 and F["banners"][i] != R2["ifc"]["banners"].get(i)]
+# (384) Madison's banner review redrew six of these as well (tools/check-b384-banners.py holds them now)
+REDO384 = ["tests250", "tests500", "hundos250", "study60", "correct5000", "correct10000"]
+bkept3 = [i for i in F["banners"] if i not in BREDO3 and i not in REDO384 and F["banners"][i] != R2["ifc"]["banners"].get(i)]
 chk("...and the banners he called awesome are as round 2 left them (changed: %s)" % bkept3, not bkept3, bkept3)
 tr = F["trucks"]
-chk("the office's vehicles are white pickups: no SUV left, headquarters and code 3 drive pickups (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function" and tr["hq"] and tr["code3"], tr)
+# (384) "Our trucks are white chevys with ghost lettering and lights": round 3's pickup (fbPickup) is the white Chevy now (fbChevy)
+chk("the office's vehicles are the white Chevys: no round-2 SUV left, headquarters and fire response (was code 3) drive them (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function" and tr["hq"] and tr["code3"], tr)
 acad3 = [i for i in A["chars"] if A["chars"][i] != R2["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R2["academy"]["banners"].get(i)]
 chk("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
 fxn = [i for i in ("fireworks", "ufo") if F["fxSrc"].get(i) == R2["ifc"]["fxSrc"].get(i)]
