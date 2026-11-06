@@ -51,7 +51,7 @@ with sync_playwright() as pw:
                sepRight: br.right - parseFloat(sep.right || '0'), cardRight: card.right,
                contentRight: br.right - parseFloat(getComputedStyle(b).paddingRight) - parseFloat(getComputedStyle(b).borderRightWidth) }; }""")
     ck("(1) rows %spx, tiles %spx, glyphs %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], m["glyph"], m["strokes"], m["label"]),
-       m["h"] >= 58 and m["tile"] >= 32 and m["glyph"] >= 21 and len(m["strokes"]) == 1 and m["strokes"][0] >= 2 and m["label"] >= 18, m)
+       m["h"] >= 58 and m["tile"] >= 32 and m["glyph"] >= 21 and len(m["strokes"]) == 1 and m["strokes"][0] >= 1.5 and m["label"] >= 18, m)   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
     sa = re.findall(r"[\d.]+", m["sepBg"] or ""); alpha = float(sa[3]) if len(sa) > 3 else (1 if sa else 0)
     ck("(2) a hairline between rows (%s), from the label (%s / %s) to the row's content edge (%s / %s), clear of the card's (%s)" % (m["sepBg"], round(m["sepLeft"]), round(m["labelLeft"]), round(m["sepRight"]), round(m["contentRight"]), round(m["cardRight"])),
        alpha >= .08 and abs(m["sepLeft"] - m["labelLeft"]) <= 2 and abs(m["sepRight"] - m["contentRight"]) <= 2 and m["cardRight"] - m["sepRight"] >= 8, m)

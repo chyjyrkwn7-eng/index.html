@@ -55537,6 +55537,29 @@ function showClassCatalog(){
    - Dated (classLeftAt), so another device's copy does not bring the class back (classesWithLeaves). */
 const LEAVE_CLASS_KEY = "class26e.leaveclass";
 function classTitle(k){ return (NOVA_CLASS_INFO[k] || {}).title || ((NOVA_CLASSES.find(c => c.key === k) || {}).name) || k; }
+/* (384 r5) WHICH CLASS HAS A LEADERBOARD: "The leaderboard should not be available for Fire Code ... maybe in leaderboard settings it
+   shows each class". A read-only list of the classes you are in and what each one does about the leaderboard - the Police Academy's
+   is the one that exists (shown or hidden is its own switch, set in the academy's Settings), Fire Code has none. */
+function buildLeaderboardClassList(){
+  const mine = enrolledClasses();
+  const card = document.createElement("div");
+  card.className = "settings-card settings-list settings-lb-classes";
+  let acad = null;
+  try{ acad = (window.NOVA_CLASS === "ifc") ? academyCopyNow() : store; }catch(e){ acad = store; }
+  const status = k => k === "academy" ? ((acad && acad.leaderboardOptIn) ? "Shown" : "Hidden") : "No leaderboard";
+  mine.forEach(k => {
+    const info = NOVA_CLASS_INFO[k] || {};
+    const row = document.createElement("div");
+    row.className = "settings-row settings-row-static settings-lb-class"; row.dataset.cls = k;
+    const txt = document.createElement("span"); txt.className = "settings-row-text";
+    const lab = document.createElement("span"); lab.className = "settings-row-label"; lab.textContent = info.title || k;
+    txt.appendChild(lab);
+    const val = document.createElement("span"); val.className = "settings-row-value"; val.textContent = status(k);
+    row.append(txt, val);
+    card.appendChild(row);
+  });
+  return card;
+}
 function buildClassesSect(){
   const mine = enrolledClasses();
   const card = document.createElement("div");
@@ -128384,15 +128407,20 @@ function moreBodyMoving(body){
    would read thin at 18px (star, heart, sparkle). `tone` "muted" is the one
    grey tile, kept for the sync-unreachable status (a status, not a row). */
 function settingsTileColor(kind){
-  /* iOS system hues; no two tiles side by side share one (build 382, round 3) */
+  /* (384 r5) THE INSPIRATION'S OWN NINE COLOURS, sampled off its Settings tiles (flat, away from the rim and the glyph), each kind
+     given the one of its family: Skins pink #EC4A61, Touch red #ED514C, Controllers purple #CA42EB, Audio green #67CE66, Video teal
+     #5ECEDC, Cores sky #6CD0FA, Online orange #F19747, App Icon blue #3F8EF9, Delta Sync indigo #6D79F8. Softer than the iOS
+     system hues these were. */
+  const PINK = "#EC4A61", RED = "#ED514C", PURPLE = "#CA42EB", GREEN = "#67CE66", TEAL = "#5ECEDC", SKY = "#6CD0FA", ORANGE = "#F19747", BLUE = "#3F8EF9", INDIGO = "#6D79F8";
   const C = {
-    motion: "#5E5CE6", effects: "#5E5CE6", sound: "#FF375F", haptics: "#FF9F0A",
-    swipe: "#30D158", forward: "#32ADE6", star: "#FFB800", party: "#BF5AF2",
-    trophy: "#FF9F0A", key: "#0A84FF", cloudup: "#0A84FF", entercode: "#30B0C7",
-    share: "#0A84FF", install: "#30D158",
-    update: "#34C759", bug: "#FF453A", history: "#5E5CE6",
-    advanced: "#7C8696", credits: "#FF375F", cloudoff: "#8E8E93",
-    classacademy: "#0A84FF", classifc: "#FF453A", study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A", person: "#BF5AF2"
+    motion: INDIGO, effects: INDIGO, sound: PINK, haptics: ORANGE,
+    swipe: GREEN, forward: SKY, star: "#F2B84B", party: PURPLE,
+    trophy: ORANGE, key: BLUE, cloudup: BLUE, entercode: TEAL,
+    share: BLUE, install: GREEN,
+    update: GREEN, bug: RED, history: INDIGO,
+    advanced: "#7C8696", credits: PINK, cloudoff: "#8E8E93", classes: TEAL,
+    study: GREEN, sync: BLUE, tap: PURPLE, pause: ORANGE, person: PURPLE,
+    classacademy: BLUE, classifc: RED
   };
   return C[kind] || "#8E8E93";
 }
@@ -129184,6 +129212,14 @@ function showAppearance(opts){
   lbCard.className = "settings-card";
   lbCard.appendChild(lbRow);
   lbSect.appendChild(lbCard);
+  /* (384 r5) more than one class: say which one this switch is for, and what the other one does */
+  try{
+    if(enrolledClasses().length > 1){
+      lbHint.textContent = lbHint.textContent.replace("Ranks the class ", "Ranks the Police Academy class ");
+      const cl = document.createElement("p"); cl.className = "slab section-divider motion-summary"; cl.textContent = "Your classes";
+      lbSect.appendChild(cl); lbSect.appendChild(buildLeaderboardClassList());
+    }
+  }catch(e){}
   /* no leaderboard in Fire Code (build 382), so no switch for one */
   if(window.NOVA_CLASS !== "ifc") panel.appendChild(lbSect);
 
@@ -129633,6 +129669,11 @@ function showAppearance(opts){
       share:  ["Share & Install", [settingsHeader("This app"), shareCard]]
     };
     if(!noBoard) PAGES.rankings = ["Leaderboard & Privacy", [lbSect]];
+    else if(academyMember()){
+      const note = document.createElement("p"); note.className = "settings-classes-note";
+      note.textContent = "Fire Code has no leaderboard. The Police Academy class does: whether you show on it is set in the Police Academy's Settings.";
+      PAGES.rankings = ["Leaderboard & Privacy", [settingsHeader("Your classes"), buildLeaderboardClassList(), note]];
+    }
     /* YOUR NAME (build 383): Madison, "The change your name option in customize, that needs to be in settings somewhere".
        Customize's own editor (the one-name-per-person rule and all), built only when this page is opened. */
     /* (383) the Account page: the name, and signing out - "name" (its first home, earlier in 383) opens it too */
@@ -129684,7 +129725,8 @@ function showAppearance(opts){
       /* (384 r4) "We need a function where you can unenroll from a class" - the classes you are in, and leaving one */
       cat("classes", "classes", "Classes", (() => { const n = enrolledClasses().length; return n === 1 ? ((NOVA_CLASS_INFO[enrolledClasses()[0]] || {}).title || "1 class") : n + " classes"; })()),
       cat("sync", "sync", "Sync", !acctDb() ? "Unreachable" : (syncCode ? "On" : "Off")),
-      noBoard ? null : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
+      noBoard ? (academyMember() ? cat("rankings", "trophy", "Leaderboard & Privacy", "Police Academy only") : null)
+              : cat("rankings", "trophy", "Leaderboard & Privacy", store.leaderboardOptIn ? "Shown" : "Hidden")
     ]));
     dataSect.classList.add("settings-menu-card");
     dataSect.replaceChildren(cat("share", "share", "Share & Install"), updBtn, ...dataSect.children);

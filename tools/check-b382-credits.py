@@ -126,7 +126,8 @@ PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "study": ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"],   # (383: the longer pause is gone)
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
          "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
-         "account": []}   # (383) Settings > Account: the name editor and Sign out (no switches)
+         "account": [],   # (383) Settings > Account: the name editor and Sign out (no switches)
+         "classes": ["Join another class"]}   # (384 r4) the classes you are in, and joining another
 # (384) "Cameron Wharton started the idea of this entire app. He made the beta ... He should be second on the list under me"
 # (384, round 2) "Robert Morgan can be included in the contributor list" - by surname, after Darjean
 # (384) "Add Durrell Kennedy as a contributor as well. He helped with creation of the question bank" - by surname, after Darjean
@@ -140,7 +141,7 @@ with sync_playwright() as pw:
         ctx, pg = page(br, 440, 956, (62, 0, 34, 0), True, cls)
         tag = "[%s]" % cls
         chk("%s the page is in that class" % tag, pg.evaluate("()=>window.NOVA_CLASS") == cls, pg.evaluate("()=>window.NOVA_CLASS"))
-        want = [k for k in PAGES if not (cls == "ifc" and k == "rankings")]
+        want = list(PAGES)   # (384 r5: Fire Code keeps a read-only Leaderboard & Privacy page - which class has one)
         # (1) the menu
         settings(pg)
         litSettings = pg.evaluate(LIT)
@@ -187,9 +188,10 @@ with sync_playwright() as pw:
             if k == "sync" and cls == "ifc":
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
                 titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Your sync code'] : []")]
-            chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], PAGES[k]),
-                opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in PAGES[k])
-                and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in PAGES[k]), {"page": pr, "titles": titles})
+            need = [] if (cls == "ifc" and k == "rankings") else PAGES[k]   # Fire Code's page is a read-only list of classes, no switch
+            chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], need),
+                opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in need)
+                and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in need), {"page": pr, "titles": titles})
             if k == "sound":
                 lit = pg.evaluate(LIT)
                 chk("%s a category page lights what Settings lights (%s)" % (tag, lit), lit == litSettings, lit)

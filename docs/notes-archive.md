@@ -36058,3 +36058,6 @@ check_b320f_nova, check_b321g_nova and check_b324n_nova were failing before this
 
 ## 384 r5: Tug of War and Battle line up with the race
 Their clock is the race's amber pill (.tug-clock), red when low; the empty question count (#count, 40px) no longer holds their board 55-80px below the header (hidden on .screen-tug / .screen-battle), so the board starts where the race's does.
+
+## 384 r5: tile colours = the inspiration's nine; the leaderboard is the Police Academy's
+Settings tiles use the inspiration's own sampled colours (pink #EC4A61, red #ED514C, purple #CA42EB, green #67CE66, teal #5ECEDC, sky #6CD0FA, orange #F19747, blue #3F8EF9, indigo #6D79F8), each kind given its family's; Classes is teal (no grey tile). The leaderboard: Fire Code had no tab and no switch already; now its Settings has a read-only Leaderboard & Privacy row ('Police Academy only', only for someone in the academy too) whose page lists each class (Police Academy shown/hidden, Fire Code 'No leaderboard') and says where the switch is; the academy's page says its switch is the Police Academy's and lists the classes when there are two. Gate tools/check-b384-lbclasses.py (fails on the previous build). check-b382-credits and check-b384-settings were brought up to the Classes row, the Fire Code page and the lighter glyph stroke.
