@@ -24611,7 +24611,14 @@ def check_b320c_case(br):
               && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
           showRanksScreen('badges'); await wait(900);
           const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining') || document.querySelector('.badges-tab .badge-case-lining');
-          const tab = { n: tcells.length, inside: tl ? inside(tcells, tl) : 0 };
+          /* (384) the tray (327 r10) is a flat grid, not the nested boxes the offset walk in inside() was written for: its slots are
+             measured by their real rectangles against the lining's - inside it, one size (within 6%), clear of each other */
+          const insideRects = (cells, box) => { const B = box.getBoundingClientRect(); const hs = cells.map(c => c.getBoundingClientRect());
+            const med = k => hs.map(r => r[k]).sort((x, y) => x - y)[Math.floor(hs.length / 2)] || 0, mw = med('width'), mh = med('height');
+            const lap = (r, i) => hs.some((q, j) => j !== i && Math.min(r.right, q.right) - Math.max(r.left, q.left) > 1 && Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top) > 1);
+            return hs.filter((r, i) => r.left >= B.left - 1 && r.right <= B.right + 1 && r.top >= B.top - 1 && r.bottom <= B.bottom + 1
+              && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
+          const tab = { n: tcells.length, inside: tl ? (tl.closest('.bcs-shell') ? insideRects(tcells, tl) : inside(tcells, tl)) : 0 };
           showHome(); await wait(400);
           theme.reduceMotion = true; playBadgeCaseScene(['Identity Crimes'], () => {}); await wait(300);
           const scells = [...document.querySelectorAll('.bc-scene .bc-slot')], sl = document.querySelector('.bc-scene .bc-lining');

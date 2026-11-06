@@ -128337,7 +128337,8 @@ function settingsRowIcon(kind, tone){
     /* (384 review, round 2) Customize: "Still not a fan of the customize icon, it's a wand?" (the palette before it read as
        a blob) - what Customize opens first is your character, so: a character's head and shoulders in its round frame */
     /* (384 r4) Classes: a mortarboard */
-    classes: '<path d="M2.8 9.4 12 5l9.2 4.4L12 13.8z"/><path d="M6.6 11.4v4.2c1.4 1.5 3.2 2.2 5.4 2.2s4-.7 5.4-2.2v-4.2"/><path d="M21.2 9.4v5"/>',
+    /* (384 r4) shifted down .6 so the ink's middle is the tile's (check-centering: it was .67px high) */
+    classes: '<g transform="translate(0 .6)"><path d="M2.8 9.4 12 5l9.2 4.4L12 13.8z"/><path d="M6.6 11.4v4.2c1.4 1.5 3.2 2.2 5.4 2.2s4-.7 5.4-2.2v-4.2"/><path d="M21.2 9.4v5"/></g>',
     personcircle: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="9.9" r="2.9"/><path d="M6.4 18.3c1.2-2.4 3.2-3.6 5.6-3.6s4.4 1.2 5.6 3.6"/>'
   };
   const tile = document.createElement("span");
