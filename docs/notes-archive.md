@@ -36067,3 +36067,11 @@ Madison: 'is this not a perfect circle?' - it was not. The marker was 1.6rem (25
 
 ## 384 r5: characters sit inside their round token
 Madison: parts of the character stick out of the circle on the Leaderboard (and should not, anywhere). The drawings have no disc of their own; at .94 (and 1.0 on a person's card, and the recorded loop not scaled at all) hood, bust and shoulders ran to the rim, and a bust's frame edge showed as a dark band. Measured over all 31 characters: art in the outer tenth of the radius 9 percent at .94, 3 at .84. Now the board rows, the podium and a person's card draw the character at .85 with its last fifth faded (live drawing, still and loop alike). Not the Profile's own or Customize: there the art's halo is meant to fill the disc and scaling shows its edge as a second circle. check-b384-seams holds the scale and the fade (fails on the previous build). The Friends list and the Virtual Room lobby have no round token (a soft glow and shoulder fade) and were left.
+
+## 384 r5: a person's card, and your own profile
+- The default banner's six stars all sit in the top half of the strip (three were 58-84% down, in the part the card fades into its glass).
+- The rank line (flare and name) on a card is a picture, not a control: pointer-events none, no touch callout, no selection (the Haptic Touch).
+- Opening and closing a card: the dim is its own ::before layer faded by opacity (it was a background-colour transition, repainted every frame, and ended with no fade), the card on a longer eased beat, the flare's loop started after it has landed (380ms), and Close / the backdrop fade it out (is-leaving, 220ms) instead of removing it.
+- 'Level N · N badges' on the card (as on Profile), the Badges cell gone; the three left have XP across both columns.
+- Your own profile: the card's own rank line (flare, name in its colour) above 'Level N · N badges' (buildProfileStanding), spacing as the card.
+tools/check-b384-card.py holds all of it (fails on the previous build). Older gates seen failing and unrelated: check-b327z15 (tab landing, specials, Welcome icons...), check-b327q (results soft edge), check-b325-c (a NameError in the script), check-b327-i (Welcome).

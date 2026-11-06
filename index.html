@@ -23155,12 +23155,14 @@
   .bnr.bnr-theme::before{
     content:""; position:absolute; inset:0; opacity:.7;
     background-image:
-      radial-gradient(1.2px 1.2px at 12% 30%, #fff 50%, transparent 51%),
-      radial-gradient(1px 1px at 34% 70%, #fff 50%, transparent 51%),
-      radial-gradient(1.4px 1.4px at 58% 22%, #fff 50%, transparent 51%),
-      radial-gradient(1px 1px at 76% 58%, #fff 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 90% 26%, #fff 50%, transparent 51%),
-      radial-gradient(1px 1px at 24% 84%, #fff 50%, transparent 51%);
+      /* (384 r5) all in the top half of the strip: three of these sat at 58-84% down, in the part a person card fades into its glass, so
+         they read as stars scattered over the card below the banner ("stars way below where a normal banner's would be") */
+      radial-gradient(1.2px 1.2px at 12% 26%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 34% 44%, #fff 50%, transparent 51%),
+      radial-gradient(1.4px 1.4px at 58% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 76% 40%, #fff 50%, transparent 51%),
+      radial-gradient(1.2px 1.2px at 90% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 24% 52%, #fff 50%, transparent 51%);
   }
   @keyframes bn-fall{ 0%{ transform:translate(0,-20px) rotate(0deg); opacity:0; } 8%{ opacity:1; } 90%{ opacity:1; } 100%{ transform:translate(-70px,200px) rotate(420deg); opacity:0; } }
   .bnr .bn-twinkle{ animation:bn-twinkle 3.6s ease-in-out infinite; }
@@ -26918,7 +26920,11 @@
   /* The rank's own colour is set inline per person; the glow comes off
      the WORD so it lights rather than just prints (on the line it would
      double the flare's own halo). */
+  /* (384 r5) "why is the flare on this screen tappable? When I click it I get Haptic Touch" - it is a picture, not a control: it takes no touch, no
+     image callout, no selection */
+  .person-card-rank, .person-card-rank *{ -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; pointer-events:none; }
   .person-card-rankword{ filter:drop-shadow(0 0 14px color-mix(in srgb, var(--rank-color, #fff) 45%, transparent)); }
+  .pf-standing > .profile-rankline{ margin:-.55rem 0 .15rem; }   /* (384 r5) the card's own spacing: the rank line close under the name, the level line close under it */
   .person-card-rank > .person-card-mark{ width:2.1rem; height:2.1rem; }
   @media (min-width:40rem){ .person-card-rank > .person-card-mark{ width:2.4rem; height:2.4rem; } }
   .person-card-level{
@@ -26939,6 +26945,8 @@
     display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:.55rem;
   }
+  .person-card-grid.has-three > .person-card-cell:first-child{ grid-column:1 / -1; padding-top:.95rem; padding-bottom:.95rem; }
+  .person-card-grid.has-three > .person-card-cell:first-child .person-card-cell-value{ font-size:1.7rem; }
   .person-card-cell{
     display:flex; flex-direction:column; align-items:center; gap:.1rem;
     padding:.55rem .35rem; border-radius:14px;
@@ -34382,14 +34390,24 @@ html.is-browser{ --fade-paper: transparent; }
      and the unlock, rank and note cards built on it) the dim fades in by
      its colour and the card by its own opacity, which does not hide the
      page from its blur. */
+  /* (384 r5) SMOOTH IN AND OUT: "tapping someone on the leaderboard, the transition isn't perfectly smooth, and the background gets darker but
+     it's not smooth". The dim was a background-colour transition on the overlay (repainted every frame, over a heavy page) and ended
+     with no fade at all - it vanished on close. It is its own layer now, faded by OPACITY (the compositor's, no repaint), in and out, the
+     card comes in on a longer eased beat, and the card's moving flare is not started until it has landed (openPersonSheet). */
   .invite-overlay:has(> .invite-sheet.person-card){
-    opacity:1; background:rgba(0,0,0,0); transition:background-color .2s ease;
+    opacity:1; background:transparent; transition:none;
   }
-  .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card){ background:rgba(0,0,0,.5); }
+  .invite-overlay:has(> .invite-sheet.person-card)::before{
+    content:""; position:absolute; inset:0; background:rgba(0,0,0,.5); opacity:0; transition:opacity .32s ease; pointer-events:none; will-change:opacity;
+  }
+  .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card)::before{ opacity:1; }
   .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{
-    opacity:0; transform:scale(.97); transition:opacity .2s ease, transform .26s cubic-bezier(.2,.8,.25,1);
+    position:relative; opacity:0; transform:translateY(8px) scale(.965); transition:opacity .3s ease, transform .36s cubic-bezier(.2,.8,.25,1); will-change:opacity, transform;
   }
   .invite-overlay.invite-overlay-show:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ opacity:1; transform:none; }
+  /* closing: the same beat backwards, a little quicker */
+  .invite-overlay.is-leaving:has(> .invite-sheet.person-card)::before{ opacity:0; transition-duration:.2s; }
+  .invite-overlay.is-leaving:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ opacity:0; transform:translateY(4px) scale(.98); transition-duration:.2s; }
   @media (prefers-reduced-motion:reduce){
     .invite-overlay:has(> .invite-sheet.person-card) > .invite-sheet.person-card{ transform:none; transition:opacity .2s ease; }
   }
@@ -106526,7 +106544,8 @@ function openPersonSheet(entry){
   }
   const lvlEl = document.createElement("p");
   lvlEl.className = "person-card-level";
-  lvlEl.textContent = isNova ? "Space explorer \u00b7 Instructor" : "Level " + (entry.level || 0);
+  /* (384 r5) the badges moved up beside the level, as they were: "Level 60 · 7 badges" */
+  lvlEl.textContent = isNova ? "Space explorer \u00b7 Instructor" : "Level " + (entry.level || 0) + " \u00b7 " + (entry.badges || 0) + ((entry.badges || 0) === 1 ? " badge" : " badges");
   sheet.appendChild(lvlEl);
 
   /* ---- PROGRESS ----
@@ -106541,7 +106560,7 @@ function openPersonSheet(entry){
   progLab.textContent = isNova ? "Lost in the storm \u00b7 found by you" : "Progress";
   prog.appendChild(progLab);
   const grid = document.createElement("div");
-  grid.className = "person-card-grid";
+  grid.className = "person-card-grid" + (isNova ? "" : " has-three");
   /* ---- ONLY NUMBERS THE ROW ACTUALLY CARRIES ----
      "When you go to click a profile some of the stuff is showing as 0."
      Measured on the live board: 35 of 41 rows had no `xp` and no `tests`
@@ -106554,12 +106573,7 @@ function openPersonSheet(entry){
      (see republishRowOnLaunch). */
   const known = k => entry[k] !== undefined && entry[k] !== null && entry[k] !== "";
   (isNova ? novaCardCells() : [["XP", known("xp") ? Number(entry.xp).toLocaleString() : "\u2014"],
-   /* The ceiling is the number of units there are, read off the
-      question bank the same way badgeCountOf does rather than typed as
-      16 - the bank has grown before and a hardcoded total is how a
-      card starts lying about somebody's progress. */
-   ["Badges", (entry.badges || 0) + " / " + (function(){
-      try{ return classTopics().length; }catch(e){ return 16; } })()],
+   /* (384 r5) Badges is on the level line now; three numbers are left */
    ["Hundos", String(entry.hundos || 0)],
    ["Correct answers", known("correct") ? Number(entry.correct).toLocaleString() : "\u2014"]]).forEach(([label, value]) => {
     const cell = document.createElement("div");
@@ -106637,13 +106651,20 @@ function openPersonSheet(entry){
   const close = document.createElement("button");
   close.type = "button"; close.className = "next ghost person-sheet-close";
   close.textContent = "Close";
-  close.addEventListener("click", () => overlay.remove());
+  /* leaves by fading (the dim and the card, .2s) rather than vanishing */
+  const leave = () => {
+    if(overlay.classList.contains("is-leaving")) return;
+    overlay.classList.add("is-leaving"); overlay.classList.remove("invite-overlay-show");
+    setTimeout(() => overlay.remove(), 220);
+  };
+  close.addEventListener("click", leave);
   sheet.appendChild(close);
 
   overlay.appendChild(sheet);
-  overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+  overlay.addEventListener("click", e => { if(e.target === overlay) leave(); });
   mountSheetOverlay(overlay);
-  startRankMarks(sheet);
+  /* the flare's recorded loop starts once the card has landed: starting it in the opening frames is main-thread work in the middle of the fade */
+  setTimeout(() => { try{ if(overlay.isConnected) startRankMarks(sheet); }catch(e){} }, 380);
 }
 
 /* (384) AN ACCOUNT IN FIRE CODE ALONE HAS NO HOME IN THE ACADEMY. The head script opens Fire Code for it at launch; within a
@@ -145800,10 +145821,17 @@ function buildProfileStanding(prog, rankNow){
      takes .pf-idline's colour like "Level N" and "N badges"; it keeps its
      heavier weight, so it still leads the line. The new-rank dot that sat
      on the emblem (build 299) sits on the word. */
+  /* (384 r5) "when looking at your own, ensure it looks like this - the name of your rank, put your flare there": the SAME rank line a person's card
+     carries (the flare, moving, and the rank's name, in its colour) above "Level N · N badges", as the card has them. */
   if(rankNow){
-    const nm = document.createElement("b");
-    nm.className = "pf-rankname"; nm.textContent = RANK_DISPLAY_NAME[rankNow];
-    line.append(rankNew ? wrapWithNewDot(nm) : nm, sep("a"));
+    const rl = document.createElement("p");
+    rl.className = "person-card-rank profile-rankline";
+    rl.style.color = RANK_COLOR[rankNow]; rl.style.setProperty("--rank-color", RANK_COLOR[rankNow]);
+    try{ rl.appendChild(buildRankMark(rankNow, "person-card-mark")); }catch(e){}
+    const nm = document.createElement("span");
+    nm.className = "person-card-rankword pf-rankname"; nm.textContent = RANK_DISPLAY_NAME[rankNow];
+    rl.appendChild(rankNew ? wrapWithNewDot(nm) : nm);
+    box.appendChild(rl);
     if(rankNew) box.classList.add("has-new");
   }
   const lv = document.createElement("span");
@@ -146608,6 +146636,7 @@ function showProfile(defaultTab, opts){
   heroId.append(nameDisplayRow, nameInput, nameSaveBtn);
   heroTop.append(heroAvatar, heroId);
   heroSect.appendChild(heroTop);
+  if(rankNow) setTimeout(() => { try{ if(heroSect.isConnected) startRankMarks(heroSect); }catch(e){} }, 400);
 
 
   /* ---- WHERE YOU STAND, WHAT IS NEXT, WHAT YOU HOLD (build 315) ----
