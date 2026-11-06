@@ -36015,3 +36015,6 @@ The finish is a flat chequered band centred on the 100% mark (a finisher lands o
 
 ## 384 r5: Pause on a test header
 Pause (phone) is 16px text, min 5.4rem wide (was 15px, 4.6rem). Its bottom was cut off in a Virtual Room race: the pinned race bar's fade (in a layer above the header's, which holds Pause) started at the bar's top edge and painted over the pill's foot; the fade now starts .7rem down (the header's own fade already covers above it). Question dots stay under the race bar on purpose: the race bar is pinned with the header, the dots scroll.
+
+## 384 r5: race question timer bar
+Fixed mint-to-sky gradient (was the theme's three colours); still red when low.

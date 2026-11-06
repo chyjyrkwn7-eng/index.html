@@ -6828,7 +6828,8 @@
   .race-qbar > span{
     display:block; height:100%; width:100%; transform-origin:left;
     transform:scaleX(var(--left, 1)); transition:transform .12s linear;
-    background:linear-gradient(90deg, var(--theme-c1), var(--theme-c2), var(--theme-c3));
+    /* (384 r5) its own colour, not the theme's: a clock should not change with the accent, and it still turns red when low */
+    background:linear-gradient(90deg, #34D399, #38BDF8);
   }
   .race-qbar.is-low > span{ background:var(--wrong); }
   [data-reduce-motion="true"] .race-qbar > span{ transition:none; }
