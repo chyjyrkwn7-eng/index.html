@@ -131,7 +131,7 @@ def open_page(br, dev, extra=()):
         quiet = 0 if busy else quiet + 1
         if quiet >= 4: break
         pg.wait_for_timeout(600)
-    pg.evaluate("()=>{ for(let i=0;i<3;i++) [...document.querySelectorAll('button')].filter(b=>/^(Got it|Not now|Later)$/i.test(b.textContent.trim()) && b.offsetParent).forEach(b=>b.click()); }")
+    pg.evaluate("()=>{ for(let i=0;i<3;i++) [...document.querySelectorAll('button')].filter(b=>/^(Got it|Not now|Later|I.ll add it later)$/i.test(b.textContent.trim()) && b.offsetParent).forEach(b=>b.click()); }")
     return ctx, pg, cdp, errs, dev in DEVS
 def tap(pg, cdp, touch, sel):
     c = pg.evaluate("(s)=>{ const e=document.querySelector(s); if(!e) return null; const r=e.getBoundingClientRect(); if(!r.width) return null; return [r.left+r.width/2, r.top+r.height/2]; }", sel)

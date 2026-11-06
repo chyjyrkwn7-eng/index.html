@@ -181,7 +181,7 @@ with sync_playwright() as pw:
     chk("signin: the code names whose account it is before anything is synced (%s)" % (who,), who and who["shown"] and "Riley" in (who["name"] or ""), who)
     pg.click(".synccode-confirm .next"); pg.wait_for_timeout(2500)
     for _ in range(4):
-        pg.evaluate("()=>{ [...document.querySelectorAll('button')].filter(b=>/^(Got it|Continue|Close|Done|Not now)$/.test(b.textContent.trim())).forEach(b=>b.click()); }"); pg.wait_for_timeout(300)
+        pg.evaluate("()=>{ [...document.querySelectorAll('button')].filter(b=>/^(Got it|Continue|Close|Done|Not now|I.ll add it later)$/.test(b.textContent.trim())).forEach(b=>b.click()); }"); pg.wait_for_timeout(300)
     step(pg, "signin", "3-home")
     st = pg.evaluate("()=>({ home: !!document.querySelector('.panel.home.screen-home-actual'), code: syncCode, name: store.firstName, pts: (store.lifetime||{}).points })")
     chk("signin: lands on Home as that account (%s)" % st, st["home"] and st["code"] == code and st["name"] == "Riley" and st["pts"] == 4321, st)

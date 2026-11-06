@@ -35873,3 +35873,50 @@ it's good to go."
   (24 academy units); the tab's plate is `.bcs-plate-text`; the head says Badges; the shut Profile case keeps its plate and handle
   checks but not 319's 1.1rem corners (check_b316t holds it to the Customize row). The crack light's row-by-row falloff (tuned on
   321's 4x4 hardware case) is said, not failed; its colours are still asserted (two or more, all from the case).
+
+### Build 384, round 4 - Madison's list after round 3 (NOT on main, waiting for Madison)
+- **Leaving a class** (Settings > Account > Classes; `buildClassesSect`, `askLeaveClass`, `leaveClass`, `finishLeaveClass`,
+  `runPendingClassLeave`). Each class the account is in is a row (tap to leave), then Join another class (the class list).
+  The only class cannot be left: its sheet says so and offers Join another class. Progress is never touched - the class
+  comes off the account's list and the class button; joining again brings it all back. The list lives on the academy's copy
+  (`setEnrolled`), which Fire Code never writes, so a leave asked for in Fire Code is finished by the academy page
+  (`class26e.leaveclass`), which goes back to Fire Code if the academy was the one left. Leaving the academy retires the
+  account's board row (`retireLeaderboardEntry`) and waits (<= 6s) for the account write before the page changes.
+  **Dated**: `store.classJoinedAt` / `store.classLeftAt` ({} default in applyLoadedData). The class list merged by union
+  ("nobody leaves a class"), so a leave would have come straight back from another device; now both sides' dates are
+  maxed and the union loses any class whose latest leave is after its latest join (`classesWithLeaves`, in
+  mergeSameAccount, mergeLeavingAccount and accountClassesOf; the head script's owner rule respects it too).
+- **The name field** (Nova's "what should I call you?"), the third report of its caret: an empty field shows no caret (the
+  placeholder stays; the line appears with the first letter), its card fades without the swell the other props have and the
+  focus waits for the fade (420ms), no promoted layer (translateZ off), and nothing of Safari's sits in it (autocomplete
+  off, name "nt-callsign", the AutoFill/contacts buttons hidden) - those buttons take width at the right edge, which is
+  what centred text looks off-centre against. Chromium measures it centred either way; confirm on an iPhone.
+- **The end of a sign-up, reordered** (Madison: the friend line at the end of the tips; Nova should not say goodbye and then
+  come back with tips; "tap here when you are ready to study" last, after Add to Home Screen; a shorter introduction):
+  Nova's introduction for a new account now ends "Now let me show you around." (no friend line, no "Rank up. Find my
+  badges.", one line for the modes instead of three - Mode Select's tips explain them). Home arrives out of his dark
+  (`homeArrive`: the planet blooms in, a ring of light runs out across the flares, the greeting, button and bar rise; `scale`
+  and `translate`, never `transform`, so nothing's own transform is replaced). The tips no longer open on a welcome and end
+  on the friend line at the chat button (`onShow` on a tour step runs `novaFriendMoment`). Then +100 XP, the Add to Home
+  Screen sheet, and last `scheduleStudyTip`: Start Studying's tip, "Rank up, find my badges and bring my crew home!".
+- **Every tip shorter**: the main menu's, Profile's, Mode Select's, unit select's, results', Settings' and the Leaderboard's -
+  one idea each (Profile's badge tip went 189 -> 84 characters).
+- **Add to Home Screen**: the clip plays at half speed (`A2HS_CLIP.rate`; seven taps in 18s was a pace nobody could follow),
+  the sign-up's button says "I'll add it later", and the note says the icon opens signed in when added from that sheet
+  (it carries the account's code, `installCodeInUrl`) and to tap Sign in with the sync code if it is ever asked for.
+- **Copy and icons**: Fire Code is "2021 IFC + HC Amendments" (card kicker, enroll screen, confirm); Welcome's flares: a
+  shield badge in place of the trophy and a target in place of the circled check, drawn as the other four.
+- **Welcome's planet** (a fix to round 3's arrival): `welcome-rise-hero` animated `transform`, and a phone's planet is
+  `transform:scale(.94)` - it drew at full size until the class came off, then snapped down. It animates `scale` now.
+- **Forge, Bronze's character** (`unlock: "rookie"`, both classes - rank characters are not redrawn in Fire Code): a crowned
+  bronze ruler, the plainest of the six above him as Silver's is below Gold's - a hammered bronze crown of five points with
+  an ember at its heart, cropped copper hair, coal-lit eyes, bronze pauldrons, an ember medallion, the forge's glow behind
+  and sparks rising. Name, glow (#D98A44), scene, special length, centring and reactions (tools/reactions-table.py, then
+  gen-reactions.py) all added. An account already on Bronze is handed it with no card and no dot (`seedForgeSilently`, once
+  per device per class at the first Home of this build); reaching Bronze from now on brings the usual card. The rank map's
+  Bronze card lists it.
+- **The code pictures' words**: compared against the live build (onepic-work/compare.mjs, main's viewer against this one,
+  all 1,812 citations): no picture lost a word; three highlights moved (Table 1017.2 no longer marks a raised "b"; two
+  county rows marked rule to rule). The pictures are the book's own pages, never retyped.
+- Gate: tools/check-b384-r4.py - (U) leaving a class, (F) Forge, (N) the name field, (O) the order, (V) the clip, (T) the
+  tips, (E).

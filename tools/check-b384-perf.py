@@ -115,7 +115,7 @@ def open_page(br, dev, cls, extra=()):
         if not pg.evaluate("()=>document.body.classList.contains('cutscene-focus')"): break
         pg.evaluate("()=>{ const s = document.querySelector('.rs-spot.is-up'); if(s) s.click(); }"); pg.wait_for_timeout(500)
     pg.evaluate("""()=>{ document.getElementById('splashscreen')?.remove();
-      for(let i=0;i<3;i++) [...document.querySelectorAll('button')].filter(b=>/^(Got it|Not now|Later)$/i.test(b.textContent.trim()) && b.offsetParent).forEach(b=>b.click());
+      for(let i=0;i<3;i++) [...document.querySelectorAll('button')].filter(b=>/^(Got it|Not now|Later|I.ll add it later)$/i.test(b.textContent.trim()) && b.offsetParent).forEach(b=>b.click());
       document.querySelectorAll('.intro-popup,.daily-alert,#intro-pop,.nova-talk,.app-banner,.rs-spot,.unlock-card').forEach(e=>e.remove()); }""")
     return ctx, pg, cdp, errs
 ALLERR = []

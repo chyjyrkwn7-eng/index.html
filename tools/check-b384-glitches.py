@@ -202,7 +202,7 @@ def open_dev(br, dev, inits=(), dsf=1, wait=3200, perms=None, cloud=None):
     return pg
 
 def clear_popups(pg):
-    pg.evaluate("""()=>{ [...document.querySelectorAll('button')].filter(b=>/^(Got it|Not now|Skip)$/.test(b.textContent.trim()) && b.offsetParent).forEach(b=>b.click());
+    pg.evaluate("""()=>{ [...document.querySelectorAll('button')].filter(b=>/^(Got it|Not now|Skip|I.ll add it later)$/.test(b.textContent.trim()) && b.offsetParent).forEach(b=>b.click());
       document.querySelectorAll('.rs-spot,.unlock-card,#tour-tooltip,.tour-dim').forEach(n=>n.remove()); }""")
 
 # ---------------------------------------------------------------------------------------------------------------- fields

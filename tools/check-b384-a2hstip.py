@@ -63,7 +63,7 @@ with sync_playwright() as pw:
     chk("(2) iPhone: while an unlock card is up on Home the tip waits (%s); once it is gone, it comes (%s)" % (held and held["from"], r and r["from"]), home and held is None and r is not None, [home, held, r])
     chk("(1) iPhone, a Safari tab, an existing account: the sheet on Home headed '%s', iPhone picked, '%s' to close" % (r and r["tag"], r and r["close"]),
         bool(r) and r["from"] == "tip" and re.fullmatch(r"\s*quick tip\s*", r["tag"], re.I) and r["checked"] == ["apple"] and r["screen"] == "home"
-        and re.search(r"not now", r["close"], re.I) and not re.search(r"computer", r["intro"], re.I), r)
+        and re.search(r"later|not now", r["close"], re.I) and not re.search(r"computer", r["intro"], re.I), r)
     if r:
         G["sheet_layout"](pg, "Quick tip sheet")
         gone = G["close_sheet"](pg)
