@@ -6814,9 +6814,11 @@
     display:inline-flex; align-items:baseline; gap:.05rem;
     padding:.28rem .68rem; border-radius:999px;
     font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:800; line-height:1;
-    color:var(--theme-c1);
-    background:color-mix(in srgb, var(--theme-c2) 16%, transparent);
-    border:1.5px solid color-mix(in srgb, var(--theme-c2) 62%, transparent);
+    /* (384 r5) a CLOCK's own colour, the same on the pill and the bar under it, whatever the theme: amber, the colour of a timer
+       running, and red for the last ten seconds */
+    color:#FFD27A;
+    background:color-mix(in srgb, #F5A524 16%, transparent);
+    border:1.5px solid color-mix(in srgb, #F5A524 62%, transparent);
     transition:color .2s ease, border-color .2s ease, background-color .2s ease;
   }
   /* Beside the flag, not floating between it and the label: the flag
@@ -6839,8 +6841,8 @@
   .race-qbar > span{
     display:block; height:100%; width:100%; transform-origin:left;
     transform:scaleX(var(--left, 1)); transition:transform .12s linear;
-    /* (384 r5) its own colour, not the theme's: a clock should not change with the accent, and it still turns red when low */
-    background:linear-gradient(90deg, #34D399, #38BDF8);
+    /* (384 r5) amber, the pill's own colour (not the theme's): the bar and the number beside it are one clock, and it turns red when low */
+    background:linear-gradient(90deg, #F5A524, #FFD27A);
   }
   .race-qbar.is-low > span{ background:var(--wrong); }
   [data-reduce-motion="true"] .race-qbar > span{ transition:none; }

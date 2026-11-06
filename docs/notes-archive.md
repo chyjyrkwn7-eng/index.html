@@ -36049,3 +36049,6 @@ The first Delta pass put a lightened rim on all four edges, which read as a whit
 
 ## 384 r5: race track square-ended
 The race track is a .35rem-radius bar (was a pill) with the start line and the chequered finish flush on its ends, full height.
+
+## 384 r5: the race clock is one colour
+The 'Ns' pill and the bar under it are both amber (#F5A524 / #FFD27A), whatever the theme, and both turn red for the last ten seconds. (The first fixed colour, mint-to-blue, had nothing to do with the pill beside it.)
