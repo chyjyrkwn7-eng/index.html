@@ -35995,3 +35995,6 @@ it's good to go."
   no icon leaning sideways; Study, Share, Rankings .33-.4px high/low (the weight-vs-box compromise), the Profile checklist's tick .4
   right, the enroll screen's emblem .46 high, 'Coming soon' .32 high, the masked sync code .78 high (bullets sit mid-height). Not
   fixed - none is more than half a pixel; ask if any should be.
+
+## 384 r5: Settings tiles in the inspiration's style
+Measured off its Settings at 3x: flat saturated tile (ours had a +12% black foot), a thin lightened-hue rim on all four edges, squircle corner, one lighter glyph stroke. Now: no gradient, rim via two inset box-shadows (color-mix oklch toward white), `corner-shape:squircle` under @supports (radius 11px in Settings), glyph stroke 1.75 (Settings) / 1.8 (Profile rows). Tile size left at 32px (his call: the inspiration's is ~28pt).

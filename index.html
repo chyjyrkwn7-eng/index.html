@@ -33096,10 +33096,17 @@
   .settings-row-icon.is-muted{
     flex:0 0 30px; width:30px; height:30px; border-radius:7px;
     background-color:var(--tile, #8E8E93);
-    /* its own hue, lighter at the top, deeper at the foot - gradients only */
-    background-image:linear-gradient(180deg, rgba(255,255,255,.24) 0%, rgba(255,255,255,.06) 48%, rgba(0,0,0,.12) 100%);
-    box-shadow:inset 0 0 0 .5px rgba(255,255,255,.22), inset 0 .5px 0 rgba(255,255,255,.32), 0 1px 1.5px rgba(0,0,0,.22);
+    /* (384 r5) the inspiration's tile, measured off its Settings at 3x: FLAT saturated colour (no darker foot - ours had a black
+       12% overlay that dulled every tile), and a thin bright rim of a LIGHTENED version of the same hue on all four edges, fading
+       inward over ~1pt - that rim is the "look" that is hard to describe. A continuous (squircle) corner where supported.
+       box-shadow only: no filter, and ::before/::after stay free for the new-dot ring. */
+    background-image:none;
+    box-shadow:inset 0 0 0 .5px color-mix(in oklch, var(--tile, #8E8E93) 62%, #fff), inset 0 0 1.5px .5px color-mix(in oklch, var(--tile, #8E8E93) 78%, #fff 22%);
     color:#fff;
+  }
+  @supports (corner-shape:squircle){
+    .settings-row-icon, .settings-row-icon.is-accent, .settings-row-icon.is-muted{ corner-shape:squircle; }
+    [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon, .settings-row-icon.is-accent, .settings-row-icon.is-muted){ border-radius:11px; }
   }
   /* (384 r4) 22px, not 21: an icon in a 30px or 32px tile at an ODD size sits on a half pixel (4.5 / 5.5px in), the browser snaps
      it, and every icon leaned right by a third to half a pixel ("a lot of the settings icons aren't centered", measured off his
@@ -33264,7 +33271,7 @@
   /* (384 r4) 22px in the 32px tile = 5px in each side, whole pixels (21px was 5.5: see the base rule); stroke 2.05 x 22/24 = the
      1.88px that 2.15 x 21/24 was */
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon svg{ width:22px; height:22px; shape-rendering:geometricPrecision; }
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:2.05; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:1.75; } /* (384 r5) one lighter even weight, as the inspiration's glyphs */
   /* (out-ranking the 383 iOS-body rule - html[data-layout] body #stage :is(...) .settings-row-label, 17px) */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label{ font-size:18px; line-height:1.25; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-value{ font-size:17px; }
@@ -37784,7 +37791,7 @@ html.is-browser{ --fade-paper: transparent; }
   [data-reduce-motion="true"] body #stage :is(.profile-identity-tab, .profile-stats-tab) button.pf-act.pf-act.pf-act:active{ transform:none; }
   html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon.settings-row-icon{ flex:0 0 34px; width:34px; height:34px; border-radius:9px; }
   html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon svg{ width:22px; height:22px; shape-rendering:geometricPrecision; }
-  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon :is(svg, svg [stroke]){ stroke-width:2.15; }
+  html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .settings-row-icon :is(svg, svg [stroke]){ stroke-width:1.8; }
   html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act > .pf-act-words{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
   html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act .pf-act-label{ display:block; font-size:18px; font-weight:600; line-height:1.2; color:var(--ink); text-box:normal; }
   html[data-layout] body #stage :is(.profile-identity-tab, .profile-stats-tab) .pf-act .pf-act-sub{ display:block; margin:0; font-size:14px; font-weight:500; line-height:1.3; color:var(--soft); opacity:1; text-box:normal; }
