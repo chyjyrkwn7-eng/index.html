@@ -36009,3 +36009,6 @@ Sapphire's third glow (--theme-c3) was purple #6A1FD8 and it had no page-glow ov
 The n / N count is finished / racers still in the room (a player who left drops out of both, so a solo finish read 1 / 1). It is now the soft grey (was the pulse dot's blue), and while anyone is still racing the line names them: 'Waiting on Sam', 'Sam and Alex', 'N players'; paused or gone players are not named.
 
 ## 384 r5: Stats glyph = bars on a baseline (option A); option C (progress ring) is the alternative.
+
+## 384 r5: race line start and finish
+The finish is a flat chequered band centred on the 100% mark (a finisher lands on it), the start a plain line at 0%, replacing the flag emoji.

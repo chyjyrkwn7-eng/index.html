@@ -6718,9 +6718,16 @@
     position:absolute; left:.2rem; right:.2rem; top:50%; height:2px;
     background:rgba(128,128,128,.4); transform:translateY(-50%);
   }
+  /* (384 r5) "The finish line is a flag, but that's hard to see who wins.. shouldn't it be a legit flat finish". A flat chequered
+     band ON the 100% mark, where a finisher's marker lands centred on it (markers sit at left:pct%, so the band's middle IS 100%),
+     and a plain start line at 0% the same height. Behind the markers, so a runner is never hidden by it. */
+  .vroom-racetrack-start, .vroom-racetrack-finish{ position:absolute; top:6%; bottom:6%; z-index:0; pointer-events:none; }
+  .vroom-racetrack-start{ left:0; width:3px; margin-left:-1.5px; border-radius:2px; background:rgba(255,255,255,.55); }
   .vroom-racetrack-finish{
-    position:absolute; right:-1.5rem; top:50%; transform:translateY(-50%);
-    font-size:1.3rem; line-height:1;
+    right:0; width:1.2rem; margin-right:-.6rem; border-radius:2px;
+    background:
+      conic-gradient(#fff 25%, #111 0 50%, #fff 0 75%, #111 0) 0 0 / .8rem .8rem;
+    box-shadow:0 0 0 1px rgba(255,255,255,.35);
   }
   .vroom-racetrack-markers{ position:absolute; inset:0; }
   /* LANES, because two people on the same question used to sit on top of
@@ -38535,7 +38542,8 @@ html.is-browser{ --fade-paper: transparent; }
   <div class="vroom-racebar" id="vroomracebar" hidden>
     <div class="vroom-racetrack">
       <div class="vroom-racetrack-line"></div>
-      <div class="vroom-racetrack-finish">🏁</div>
+      <div class="vroom-racetrack-start" aria-hidden="true"></div>
+      <div class="vroom-racetrack-finish" aria-hidden="true"></div>
       <div class="vroom-racetrack-markers" id="vroomracemarkers"></div>
     </div>
   </div>
