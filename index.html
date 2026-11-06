@@ -2176,7 +2176,8 @@
      fill, the same colour, so nothing shows; the taper keeps it inside the tail's sloped sides (half-width 11.5 at the
      border, 6 three pixels down, against the tail's 12.7 - y - 1.4). */
   .nt-bubble::before{ content:""; position:absolute; left:calc(3.2rem + 9px - 14px); bottom:-3px; width:28px; height:7px;
-    background:rgb(19,23,39); pointer-events:none;
+    background:linear-gradient(to bottom, rgba(19,23,39,0) 0, rgb(19,23,39) 3px);   /* (384 r5) fades in over the bubble's body: a flat edge 3px up showed as a faint box at high zoom, the body there not being exactly this colour; the border is 4px from the top, under the solid part */
+    pointer-events:none;
     clip-path:polygon(2.5px 0, 25.5px 0, 25.5px 4.2px, 20px 7px, 8px 7px, 2.5px 4.2px); }
   .nt-who{ margin:0 0 .3rem; font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
     color:#FFD27A; display:flex; align-items:center; gap:.35rem; }
@@ -2630,6 +2631,7 @@
       border-bottom-left-radius:4px; border-bottom-right-radius:0; clip-path:polygon(-1px -1px, -1px calc(100% + 1px), calc(100% + 1px) calc(100% + 1px)); }
     /* the tail is at the bubble's side here: the patch is the same, turned (its border is the left one) */
     .nt-bubble::before{ left:-3px; bottom:calc(3.2rem + 9px - 14px); width:7px; height:28px;
+      background:linear-gradient(to left, rgba(19,23,39,0) 0, rgb(19,23,39) 3px);
       clip-path:polygon(7px 2.5px, 7px 25.5px, 2.8px 25.5px, 0 20px, 0 8px, 2.8px 2.5px); }
     .nt-text{ font-size:1.32rem; line-height:1.5; }
     .nt-who{ font-size:.8rem; }

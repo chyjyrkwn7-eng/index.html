@@ -36024,3 +36024,8 @@ Drill / Mock / Review / Virtual Room each back under 130 characters, three short
 
 ## 384 r5: Save it is gone, the copy button is the way
 The save-your-code card has the code with the same copy button as the friend code and Settings' sync code beside it (no Save it button, no share sheet, so no Windows share dialog on a laptop); a copy counts as saved, as the ticked box still does; the toast says 'Copied' (raised above the card). Settings > Sync's Save it row is gone: its copy button records the code saved. buildSettingsSaveCodeRow stays unused. Sign-out's 'Save my code' still uses saveSyncCodeVia. check-b382-savecode and check-b384-glitches updated (written against the old buttons; the new savecode check fails against the previous build).
+
+## 384 r5: Nova bubble tail, second look
+At very high zoom the 3px of the seam patch above the bubble's border showed as a faint box (the body there is not exactly the patch's colour, +-1 level). The patch now fades in from transparent over its top 3px (the border sits 4px down, under the solid part). check-b384-r4 (S) still passes.
+## 384 r5: name field caret
+Own steady caret (.nt-caret) placed from measured text width; the browser's blinking caret is off; shown while focused, empty or typed; placeholder steps aside on focus.
