@@ -55504,6 +55504,7 @@ function buildClassesSect(){
     const info = NOVA_CLASS_INFO[k] || {};
     const b = settingsRow("classes", classTitle(k), info.kicker || null, null, k === window.NOVA_CLASS ? "Open now" : null);
     b.classList.add("settings-class-row"); b.dataset.cls = k;
+    { const ic = b.querySelector(":scope > .settings-row-icon"); if(ic && (k === "academy" || k === "ifc")) ic.replaceWith(settingsRowIcon(k === "ifc" ? "classifc" : "classacademy")); }
     b.addEventListener("click", () => askLeaveClass(k));
     card.appendChild(b);
   });
@@ -128314,7 +128315,7 @@ function settingsTileColor(kind){
     share: "#0A84FF", install: "#30D158",
     update: "#34C759", bug: "#FF453A", history: "#5E5CE6",
     advanced: "#7C8696", credits: "#FF375F", cloudoff: "#8E8E93",
-    study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A", person: "#BF5AF2"
+    classacademy: "#0A84FF", classifc: "#FF453A", study: "#30D158", sync: "#0A84FF", tap: "#BF5AF2", pause: "#FF9F0A", person: "#BF5AF2"
   };
   return C[kind] || "#8E8E93";
 }
@@ -128359,6 +128360,9 @@ function settingsRowIcon(kind, tone){
        a blob) - what Customize opens first is your character, so: a character's head and shoulders in its round frame */
     /* (384 r4) Classes: a mortarboard */
     classes: '<path d="M2.8 9.4 12 5l9.2 4.4L12 13.8z"/><path d="M6.6 11.4v4.2c1.4 1.5 3.2 2.2 5.4 2.2s4-.7 5.4-2.2v-4.2"/><path d="M21.2 9.4v5"/>',
+    /* (384 r5) a class's own mark in Settings > Classes: the academy's badge (a shield with a star), Fire Code's flame */
+    classacademy: '<path d="M12 3.6l7 2.6v5.4c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V6.2z"/><path fill="currentColor" stroke="none" d="M12 8.3l1.2 2.5 2.7.4-2 1.9.5 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.4z"/>',
+    classifc: '<path d="M12 3.4c.7 3.2 4.9 5.2 4.9 9.8a4.9 4.9 0 0 1-9.8 0c0-2 .9-3.3 1.9-4.3.2 1.3.8 2.1 1.6 2.5C10.4 8.8 11 6.2 12 3.4z"/>',
     personcircle: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="9.9" r="2.9"/><path d="M6.4 18.3c1.2-2.4 3.2-3.6 5.6-3.6s4.4 1.2 5.6 3.6"/>'
   };
   /* EACH GLYPH ON ITS TILE'S MIDDLE (384 r4: "These aren't centered and I can tell. A lot of the settings icons aren't centered").
@@ -128379,7 +128383,7 @@ function settingsRowIcon(kind, tone){
     + (nudge && body ? '<g transform="translate(' + nudge[0] + ' ' + nudge[1] + ')">' + body + "</g>" : body) + "</svg>";
   return tile;
 }
-var settingsIconNudge = { badgecase: [0, -0.15], bug: [0, -0.85], classes: [-0.25, 0.6], cloudoff: [0.15, -0.25], cloudup: [-0.2, -0.9], credits: [0, -0.4], effects: [-0.15, 0.1], forward: [0.4, 0], key: [0.15, 0], motion: [0.7, 0], party: [0.05, 0.2], pause: [0, 0.4], person: [0, -0.25], share: [0, -0.25], sound: [0.15, 0], star: [0, 0.1], study: [0, -0.3], swipe: [0.45, 0], tap: [-0.4, -0.35], trophy: [0, 0.25] };
+var settingsIconNudge = { classifc: [0, 1.2], badgecase: [0, -0.15], bug: [0, -0.85], classes: [-0.25, 0.6], cloudoff: [0.15, -0.25], cloudup: [-0.2, -0.9], credits: [0, -0.4], effects: [-0.15, 0.1], forward: [0.4, 0], key: [0.15, 0], motion: [0.7, 0], party: [0.05, 0.2], pause: [0, 0.4], person: [0, -0.25], share: [0, -0.25], sound: [0.15, 0], star: [0, 0.1], study: [0, -0.3], swipe: [0.45, 0], tap: [-0.4, -0.35], trophy: [0, 0.25] };
 /* ---- PROFILE'S ROWS (384) ----
    Madison: "In profile, the customize button, the badge button, and rank button. I actually do not like that at all. It's
    terrible. Please change that". They were 383's light pills (white on the dark themes), each with an icon masked on at the

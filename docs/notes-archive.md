@@ -35998,3 +35998,6 @@ it's good to go."
 
 ## 384 r5: Settings tiles in the inspiration's style
 Measured off its Settings at 3x: flat saturated tile (ours had a +12% black foot), a thin lightened-hue rim on all four edges, squircle corner, one lighter glyph stroke. Now: no gradient, rim via two inset box-shadows (color-mix oklch toward white), `corner-shape:squircle` under @supports (radius 11px in Settings), glyph stroke 1.75 (Settings) / 1.8 (Profile rows). Tile size left at 32px (his call: the inspiration's is ~28pt).
+
+## 384 r5: Classes rows carry their own class mark
+Settings > Classes: academy = shield with a filled star (blue), Fire Code = flame (red) (kinds classacademy / classifc in settingsRowIcon); the generic mortarboard stays for the Classes category row.
