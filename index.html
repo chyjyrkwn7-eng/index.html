@@ -26424,8 +26424,13 @@
     margin:0 0 .8rem; text-align:center; font-size:.8rem; color:var(--soft);
     font-weight:600;
   }
-  .tug-clock{ font-family:var(--mono); font-weight:800; color:var(--ink); }
-  .tug-clock.is-low{ color:#F5804D; }
+  /* (384 r5) THE SAME CLOCK AS THE RACE'S: the amber pill (see .race-qclock), red for the last stretch - three modes, one clock */
+  .tug-clock{ display:inline-block; padding:.22rem .62rem; border-radius:999px; font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:800; line-height:1;
+    color:#FFD27A; background:color-mix(in srgb, #F5A524 16%, transparent); border:1.5px solid color-mix(in srgb, #F5A524 62%, transparent); vertical-align:middle;
+    transition:color .2s ease, border-color .2s ease, background-color .2s ease; }
+  .tug-clock.is-low{ color:var(--wrong); border-color:var(--wrong); background:color-mix(in srgb, var(--wrong) 14%, transparent); }
+  /* and nothing between the header row and the board but air they need: the empty question count (40px, hidden text) held the board 55-80px lower than the race's */
+  .wrap:has(.screen-tug, .screen-battle) > #count{ display:none; }
   .tug-waiting{ text-align:center; margin-top:.9rem; }
   /* THE READ-IN: the choices sit dimmed while a bar fills across the
      top of them, then wake. */

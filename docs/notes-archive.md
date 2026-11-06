@@ -36055,3 +36055,6 @@ The 'Ns' pill and the bar under it are both amber (#F5A524 / #FFD27A), whatever 
 
 ## 384 r5: the three stale Nova gates rewritten
 check_b320f_nova, check_b321g_nova and check_b324n_nova were failing before this build for decisions that had moved on (the shorter introduction, no Back to Home on the history screen, the friend line at the end of the tips, 382's quieter schedule: three days between messages, a tip a fortnight, a challenge a week, and the rank-up reaction now an on-screen talk that replaces the chat message). Each failing check now asks the current shape (names, counts, the app's own constants) rather than an old sentence; the schedule test reads the gaps off the constants and forces the challenge due. All three pass; the Nova ones before them (b314, b324v2) too.
+
+## 384 r5: Tug of War and Battle line up with the race
+Their clock is the race's amber pill (.tug-clock), red when low; the empty question count (#count, 40px) no longer holds their board 55-80px below the header (hidden on .screen-tug / .screen-battle), so the board starts where the race's does.
