@@ -35932,3 +35932,16 @@ it's good to go."
   alike). Looked at as a contact sheet of every clip before installing. check-b384-getstarted's leave section: the hand-off to
   Welcome was made slower on purpose in round 3 (zoom 950ms, Welcome up ~1.3s), so it now asserts <= 1300ms and under two
   seconds, not the old 750ms / one second.
+- **The seam where Nova's speech tail meets his bubble** (Madison, with a circled screenshot: "you can see where the pointy part
+  connects to the rectangle, we have seen this type of issue before"). The tail (`.nt-bubble::after`) is a rotated square clipped
+  to its lower half; its top edge is anti-aliased and lands a fraction of a device pixel off the bubble's border, which is drawn
+  hard, so one row of the border (the third of three at 3x; a partial row at 2.5x and 2x) showed across the tail's base -
+  measured: (32,35,51) across the tail's middle against the fill's (19,23,39), at all three ratios. A flat same-fill patch ending ON
+  the border (first try) still left a quarter of the row, because the bubble sits in a filtered layer at a fractional position
+  (top 596.48px): the border's edge and the patch's edge are both anti-aliased and the leftover of one under the other blends
+  through. The fix (`.nt-bubble::before`): a patch of the bubble's own fill that runs 3px up into the bubble and PAST the border,
+  tapered with clip-path to stay inside the tail's sloped sides (half-width 11.5px at the border, 6px three pixels down), so
+  below the border it sits under the tail's fill, the same colour. Across the tail's centre the border rows now read the fill
+  (19,23,40) at 3x, 2.5x and 2x. The iPad's side tail (left edge) has the same patch turned. tools/check-b384-r4.py (S) reads it
+  off the pixels at the three ratios. The lesson, again: where two anti-aliased edges are meant to meet, one has to overlap past
+  the other by a device pixel; ending exactly on it leaves a seam.

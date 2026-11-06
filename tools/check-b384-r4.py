@@ -17,6 +17,8 @@
  (T) THE TIPS ARE SHORTER: every main-menu and Profile tip is shorter than the same step was on the build before
      (--against prints that build's numbers; on its own the gate asserts the shape: no tip over two lines' worth of the
      longest Nova line).
+ (S) THE SEAM where Nova's speech tail meets his bubble: across the tail's base the border's rows are the bubble's own fill
+     (read off the pixels at 3x, 2.5x and 2x).
  (E) no page errors.
 Run:  python3 tools/check-b384-r4.py            (--against OLD/index.html must FAIL)"""
 import importlib.util, json, os, sys
@@ -184,6 +186,39 @@ with sync_playwright() as pw:
     print("    tips: %s chars, longest %s, mean %s" % (t.get("lens"), t.get("max"), t.get("mean")))
     chk("(T) no main-menu or Profile tip runs past about two short lines (longest %s, mean %s characters)" % (t.get("max"), t.get("mean")),
         (t.get("max") or 999) <= 90 and (t.get("mean") or 999) <= 60, t)
+
+    # ---------------- (S) the seam where Nova's speech tail meets the bubble ----------------
+    # "The bottom of the arrow is messed up, you can see where the pointy part connects to the rectangle": one row of the bubble's
+    # border showed across the tail's base. Read off the pixels at 3x, 2.5x and 2x: beside the tail the border is a few bright
+    # rows; across the tail's centre those same rows must be the bubble's own fill.
+    import io
+    from PIL import Image
+    def seam(dpr):
+        c2, p2 = cb.booted(br, 440, 956, seed=cb.USED_ACCOUNT, dpr=dpr)
+        p2.evaluate("()=>{ document.querySelectorAll('#splashscreen,.app-banner,.daily-alert').forEach(n=>n.remove()); playNovaIntro(()=>{}, { signup: true }); }")
+        p2.wait_for_timeout(2600)
+        bb = p2.evaluate("()=>{ const b = document.querySelector('.nt-bubble'); const r = b.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; }")
+        x, y, w, h = bb
+        clip = {"x": x + 10, "y": y + h - 30, "width": 120, "height": 50}
+        im = Image.open(io.BytesIO(p2.screenshot(clip=clip))).convert("RGB")
+        c2.close()
+        W, H = im.size
+        bright = lambda px: sum(px) > 150
+        side = [yy for yy in range(H) if bright(im.getpixel((int(W * .06), yy)))]
+        if not side: return {"err": "no border found", "dpr": dpr}
+        # the tail's centre column: the lowest bright pixel of the tail's own outline, below the border rows
+        best = None
+        for xx in range(int(W * .15), W - 5):
+            ys = [yy for yy in range(max(side) + 2, H) if bright(im.getpixel((xx, yy))) and im.getpixel((xx, yy))[2] > 60]
+            if ys and (best is None or max(ys) > best[0]): best = (max(ys), xx)
+        if not best: return {"err": "no tail found", "dpr": dpr}
+        cx = best[1]
+        fill = im.getpixel((cx, min(side) - 4))
+        worst = max(max(abs(a - b) for a, b in zip(im.getpixel((cx, yy)), fill)) for yy in side)
+        return {"dpr": dpr, "border rows": side, "tail column": cx, "fill": fill, "worst row off the fill": worst}
+    sm = [seam(d) for d in (3, 2.5, 2)]
+    chk("(S) across the tail's base the bubble's border rows are the bubble's fill, at 3x, 2.5x and 2x (worst: %s)" % [m.get("worst row off the fill") for m in sm],
+        all(m.get("worst row off the fill", 99) <= 6 for m in sm), sm)
 
     chk("(E) no page errors (%d)" % len(errs), not errs, errs[:3])
     br.close()
