@@ -35990,3 +35990,8 @@ it's good to go."
   lean +.50 across; on this build 10 of 10 and +.00. The centring gate's badge slots (`.badge-tile-art`) are pictures now: their
   SHAPES' places are asserted by the badge sections (every badge within .5px of its slot), and the gate had been measuring a
   locked slot's recess lip as ink.
+  The optical pull towards a glyph's visual weight is capped at .25px (it was .4): at .4 the swipe arrow and the key landed .4px right
+  of their box. A tighter pass of the whole centring gate (`CENTER_TOL_SCALE=.6`, i.e. .3px) now lists, on the iPhone 17 Pro Max:
+  no icon leaning sideways; Study, Share, Rankings .33-.4px high/low (the weight-vs-box compromise), the Profile checklist's tick .4
+  right, the enroll screen's emblem .46 high, 'Coming soon' .32 high, the masked sync code .78 high (bullets sit mid-height). Not
+  fixed - none is more than half a pixel; ask if any should be.

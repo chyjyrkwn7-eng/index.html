@@ -128357,7 +128357,7 @@ function settingsRowIcon(kind, tone){
      right (fixed in the CSS: 22px). And the glyphs themselves were drawn about a middle that is not 12,12: the bug 1px low, the
      person .6 low, the trophy top-heavy. Each glyph's EXACT geometry (getBBox, in the
      viewBox's own units, so it holds in any layout - a first table read off pixels in one layout was sub-pixel noise and
-     overshot in the Profile's rows) is moved onto the middle, then up to .4px further towards its visual weight where that
+     overshot in the Profile's rows) is moved onto the middle, then up to .25px further towards its visual weight where that
      is clearly off (more than .5px: the trophy's cup, the bug's body). settingsIconNudge[kind] = [dx, dy]. */
   const nudge = (typeof settingsIconNudge !== "undefined" && settingsIconNudge) ? settingsIconNudge[kind] : null;   /* var, below: safe if a screen is built before it is assigned (TDZ) */
   const body = (paths[kind] || "");
@@ -128370,7 +128370,7 @@ function settingsRowIcon(kind, tone){
     + (nudge && body ? '<g transform="translate(' + nudge[0] + ' ' + nudge[1] + ')">' + body + "</g>" : body) + "</svg>";
   return tile;
 }
-var settingsIconNudge = { badgecase: [0, -0.35], bug: [0, -0.95], classes: [-0.35, 0.6], cloudoff: [0.15, -0.45], cloudup: [-0.2, -0.9], credits: [0, -0.25], effects: [-0.15, 0.1], forward: [0.4, 0], key: [0.3, 0], motion: [0.7, 0], party: [0.1, 0.2], pause: [0, 0.4], person: [0, -0.25], share: [0, -0.25], sound: [0.15, 0], study: [0, -0.3], swipe: [0.65, 0], tap: [-0.4, -0.35], trophy: [0, 0.45] };
+var settingsIconNudge = { badgecase: [0, -0.15], bug: [0, -0.85], classes: [-0.25, 0.6], cloudoff: [0.15, -0.25], cloudup: [-0.2, -0.9], credits: [0, -0.4], effects: [-0.15, 0.1], forward: [0.4, 0], key: [0.15, 0], motion: [0.7, 0], party: [0.05, 0.2], pause: [0, 0.4], person: [0, -0.25], share: [0, -0.25], sound: [0.15, 0], star: [0, 0.1], study: [0, -0.3], swipe: [0.45, 0], tap: [-0.4, -0.35], trophy: [0, 0.25] };
 /* ---- PROFILE'S ROWS (384) ----
    Madison: "In profile, the customize button, the badge button, and rank button. I actually do not like that at all. It's
    terrible. Please change that". They were 383's light pills (white on the dark themes), each with an icon masked on at the

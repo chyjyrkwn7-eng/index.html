@@ -288,7 +288,10 @@ def save_crop(r, path):
     im.save(path)
 
 def tol_for(c):
-    return 1.0 if (c["S"]["r"] - c["S"]["l"]) > 120 else 0.5
+    # CENTER_TOL_SCALE=.6 asks for .3px (.6 for a wide shape): a tighter look for what a person can see but .5px lets through (384 r4:
+    # every Settings icon leaned .38px right and the gate, at .5, passed them all)
+    k = float(os.environ.get("CENTER_TOL_SCALE", "1"))
+    return k * (1.0 if (c["S"]["r"] - c["S"]["l"]) > 120 else 0.5)
 
 def batches(cands):
     out = []
