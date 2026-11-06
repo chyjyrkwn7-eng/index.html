@@ -13071,7 +13071,7 @@
   }
   .wrap.test-pinned.race-pinned > #vroomracebar::before{
     content:""; position:absolute; left:calc(50% - 50vw); right:calc(50% - 50vw);
-    top:0; bottom:-.9rem; pointer-events:none; z-index:-1;
+    top:.7rem; bottom:-.9rem; pointer-events:none; z-index:-1;   /* (384 r5) from .7rem down, not 0: the header's own fade already covers the top, and this one painted over the bottom of Pause (it sits in the header's layer, which is under the race bar's) */
     background:linear-gradient(to bottom,
       color-mix(in srgb, var(--paper) 95%, transparent) 0%,
       color-mix(in srgb, var(--paper) 95%, transparent) 70%,
@@ -20246,7 +20246,7 @@
       top:calc(max(1.25rem, env(safe-area-inset-top, 0px)) + .35rem);
       right:max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.1rem));
       z-index:150; transform:none;
-      min-height:44px; min-width:4.6rem; padding:.55rem 1.1rem;
+      min-height:44px; min-width:5.4rem; padding:.55rem 1.3rem; font-size:1rem;   /* (384 r5) "why is the pause button so small": the label was 15px in a 74px pill */
       touch-action:manipulation;
     }
     /* It no longer holds the row up, so the row holds its own height -
