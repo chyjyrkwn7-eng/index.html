@@ -33326,6 +33326,12 @@
   .bcs .ncase-cell.is-lastrow{ left:calc(var(--row-shift, 0) * (100% + 1.8cqw)); }
   .bcs .ncase-cell .badge-tile-art::before{ content:none; }
   .bcs .ncase-cell svg{ width:100%; height:100%; display:block; position:relative; overflow:visible; }
+  /* (384) a tap on a slot is that slot's: the art draws past its box (overflow:visible), so it takes no taps - the button does */
+  .bcs .ncase-cell svg{ pointer-events:none; }
+  /* (384) every shape on the middle of its slot (badgeSlotShift, build 321c) - the tray that replaced .nova-case.ncase lost the
+     rule, and the C-ring sat 5px right of its slot again, the trefoil, the disc and the star 2-3px high */
+  .bcs .ncase-cell .badge-tile-art{ container-type:size; }
+  .bcs .ncase-cell .badge-tile-art > svg{ translate:calc(var(--sdx, 0) * 100cqmin) calc(var(--sdy, 0) * 100cqmin); }
   .badges-tab .bcs .bcs-front{ position:relative; inset:auto; display:flex; align-items:center; justify-content:space-between; gap:3cqw; padding:3.2cqw 2.4cqw 3.6cqw; pointer-events:none; }
   .badges-tab .bcs .bcs-front .bcs-latch{ position:relative; flex:none; width:12cqw; height:3.4cqw; border-radius:999px;
     background:linear-gradient(180deg, #F1F4F7 0%, #C3CAD3 30%, #8E98A4 62%, #A6AFBA 86%, #6E7883 100%);
@@ -73394,6 +73400,8 @@ function buildUnitBadgeSVG(unitName, earned, opts){
       r.setAttribute("fill", "#000000"); r.setAttribute("opacity", String(a));
       r.setAttribute("mask", "url(#" + uid + "-seat" + k + ")");
       r.setAttribute("class", "badge-seat-shade");
+      /* (384) 260 units square, so it lies over the slots beside it: never the thing a tap lands on */
+      r.setAttribute("pointer-events", "none");
       root.appendChild(r);
     });
   }
@@ -87997,15 +88005,119 @@ let vroomPausedSent = false;
 function vroomRaceRunHere(){
   try{ return !!(inVirtualRoom && raceTimed && testInProgress && vroomCode && vroomMyKey && !vroomTeamMatchUp()); }catch(e){ return false; }
 }
+/* ---- PAUSED FOR A MINUTE IS OUT (384, Virtual Room round 3) ----
+   Madison: "Say you are paused for 1 minute, then you get kicked for inactivity. That's what the chat would say. Same would
+   apply for the phone die, they just wouldn't know for a minute or two or whatever works best. That's mid test."
+   Two halves, because a phone that has died cannot remove itself:
+   - THIS DEVICE, paused for VROOM_PAUSE_KICK_MS, leaves the match itself (vroomKickSelf): the run ends as Leave ends it, the
+     room's chat says "<name> was removed for inactivity." and this device lands on Home with a line saying why. A timer, and
+     a look at the clock when the app comes back (an iPhone stops a backgrounded page's timers).
+   - THE OTHERS remove a racer whose app has gone quiet (vroomWardenCheck, from the race line's listener and the wait card's -
+     no read of its own): paused for longer than a minute (plus VROOM_KICK_GRACE_MS, so the device's own leave goes first), or
+     no presence beat for VROOM_GONE_KICK_MS - two beats missed (PRESENCE_BEAT_MS 45s) and some. One device writes it, the
+     WARDEN: the lowest key among the racers still active here, so everybody agrees without asking. The write is the leave's
+     own shape (the entry deleted, lastLeave, a `left` chat line), with its time and id worked out from the racer's own stamp,
+     so a second warden writing the same kick writes the identical line and arrayUnion keeps one.
+   A finished racer is never removed (their result stands), nor anybody in Tug of War or Battle (a live team game with no
+   pause to hold - their own leave and presence cover them). Cost: one write per removal, none while nobody is idle. */
+const VROOM_PAUSE_KICK_MS = 60 * 1000;
+const VROOM_GONE_KICK_MS = 100 * 1000;
+const VROOM_KICK_GRACE_MS = 15 * 1000;
+let vroomPausedAt = 0;
+let vroomPauseKickTimer = null;
 function vroomNotePaused(on){
+  if(!on){ clearTimeout(vroomPauseKickTimer); vroomPauseKickTimer = null; }
   if(on ? (vroomPausedSent || !vroomRaceRunHere()) : !vroomPausedSent) return;
   vroomPausedSent = !!on;
+  vroomPausedAt = on ? Date.now() : 0;
+  if(on){
+    clearTimeout(vroomPauseKickTimer);
+    vroomPauseKickTimer = setTimeout(vroomKickSelfIfIdle, VROOM_PAUSE_KICK_MS);
+  }
   try{
     if(!vroomDb() || !vroomCode || !vroomMyKey) return;
     vroomDb().collection("vrooms").doc(vroomCode).update({
-      ["participants." + vroomMyKey + ".paused"]: on ? Date.now() : firebase.firestore.FieldValue.delete()
+      ["participants." + vroomMyKey + ".paused"]: on ? vroomPausedAt : firebase.firestore.FieldValue.delete()
     }).catch(() => {});
   }catch(e){}
+}
+function vroomKickSelfIfIdle(){
+  vroomPauseKickTimer = null;
+  if(!vroomPausedSent || !vroomPausedAt || !vroomRaceRunHere()) return;
+  const left = VROOM_PAUSE_KICK_MS - (Date.now() - vroomPausedAt);
+  if(left > 250){ vroomPauseKickTimer = setTimeout(vroomKickSelfIfIdle, left); return; }
+  vroomKickSelf(true);
+}
+/* The run ends here as Leave ends it (the #quit-confirm handler), then Home and the reason. `write` false: the room has
+   already removed this device (a warden did, while this phone was away) - nothing more to tell it. */
+function vroomKickSelf(write){
+  clearTimeout(vroomPauseKickTimer); vroomPauseKickTimer = null;
+  try{ cancelPauseTiming(); }catch(e){}
+  try{ stopTimer(); stopQuestionTimer(); }catch(e){}
+  try{ flushStudyTime(); }catch(e){}
+  try{ timerlineEl.hidden = true; }catch(e){}
+  leaveVirtualRoom(write ? "inactive" : "kicked");
+  showHome();
+  setTimeout(() => { try{ showToast("You were removed from the match for inactivity."); }catch(e){} }, 400);
+}
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState !== "visible") return;
+  try{ if(vroomPausedSent && vroomPausedAt && Date.now() - vroomPausedAt >= VROOM_PAUSE_KICK_MS) vroomKickSelfIfIdle(); }catch(e){}
+});
+/* The others' half. `data` is the room document as the listener calling this last saw it. */
+let vroomWardenData = null;
+let vroomWardenTimer = null;
+const vroomKicksSent = new Set();
+function vroomWardenCheck(data){
+  if(data) vroomWardenData = data;
+  const d = vroomWardenData;
+  if(!d || !vroomCode || !vroomMyKey || !d.startAt) return;
+  /* keep looking while nothing new arrives - a quiet phone writes nothing, so no snapshot would come to say it went quiet */
+  if(!vroomWardenTimer) vroomWardenTimer = setInterval(() => {
+    if(!vroomCode || !(vroomRaceUnsubscribe || vroomAwaitingOthers)){ clearInterval(vroomWardenTimer); vroomWardenTimer = null; vroomWardenData = null; return; }
+    try{ vroomWardenCheck(); }catch(e){}
+  }, VROOM_KICK_GRACE_MS);
+  try{ if(vroomTeamMatchUp()) return; }catch(e){}
+  const racing = vroomRacersOf(d);
+  const now = Date.now();
+  const idleFor = p => {
+    if(!p || p.finished) return null;
+    if(typeof p.paused === "number" && now - p.paused >= VROOM_PAUSE_KICK_MS + VROOM_KICK_GRACE_MS) return { at: p.paused + VROOM_PAUSE_KICK_MS };
+    if(typeof p.seen === "number" && p.seen > 0 && now - p.seen >= VROOM_GONE_KICK_MS) return { at: p.seen + VROOM_GONE_KICK_MS };
+    return null;
+  };
+  const keys = Object.keys(racing);
+  const idle = keys.filter(k => k !== vroomMyKey && idleFor(racing[k]));
+  if(!idle.length) return;
+  /* the warden: the lowest key among the racers nobody is about to remove (this device among them, or it is not its call) */
+  const active = keys.filter(k => !idleFor(racing[k])).sort();
+  if(!active.length || active[0] !== vroomMyKey || !vroomDb()) return;
+  idle.forEach(k => {
+    const p = racing[k], at = idleFor(p).at, id = k + "-inactive-" + at;
+    if(vroomKicksSent.has(id)) return;
+    vroomKicksSent.add(id);
+    try{
+      const gone = firebase.firestore.FieldValue.delete();
+      const patch = {};
+      patch["participants." + k] = gone;
+      patch["tug.progress." + k] = gone;
+      patch["tug.teams." + k] = gone;
+      const name = p.name || "Someone";
+      patch.lastLeave = { name: name, key: k, at: at, where: "match", why: "inactive" };
+      patch.chatMessages = firebase.firestore.FieldValue.arrayUnion({ id: id, key: k, name: name, type: "left", text: "was removed for inactivity.", ts: at });
+      vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
+    }catch(e){}
+  });
+}
+/* This device, removed while it was away (its app asleep past the minute, or quiet past VROOM_GONE_KICK_MS): the run ends
+   here too, and it says why, rather than the next presence beat putting a nameless entry back. */
+function vroomCheckKickedOut(data){
+  if(!data || !vroomMyKey || !vroomRaceRunHere()) return false;
+  const parts = data.participants || {};
+  const l = data.lastLeave;
+  if(parts[vroomMyKey] || !l || l.key !== vroomMyKey || l.why !== "inactive") return false;
+  vroomKickSelf(false);
+  return true;
 }
 /* The paused race screen's line about the room: who is still racing, from the race line's own listener (no read of its own) */
 let vroomRaceLast = null;
@@ -130026,7 +130138,13 @@ function syncVroomHost(data){
 
    The listeners go first, so my own delete does not come back as a
    snapshot and get rendered against a room I am no longer in. */
-function leaveVirtualRoom(){
+function leaveVirtualRoom(reason){
+  /* (384 vr3) "inactive": removed for inactivity by this device (vroomKickSelf) - the chat and the toast say so.
+     "kicked": already removed by the room - the entry is gone, so nothing is written. */
+  const inactive = reason === "inactive";
+  const kicked = reason === "kicked";
+  const kickAt = vroomPausedAt ? vroomPausedAt + VROOM_PAUSE_KICK_MS : Date.now();
+  clearTimeout(vroomPauseKickTimer); vroomPauseKickTimer = null;
   const code = vroomCode;
   const myKey = vroomMyKey;
   const myName = (socialMe().firstName || "Someone");   /* (384) the account's name, as the room shows it */
@@ -130051,7 +130169,7 @@ function leaveVirtualRoom(){
   vroomAwaitingOthers = false;
   lastVroomFinale = null;
   window.forceHideBottomTabs = false;
-  if(code && myKey && vroomDb()){
+  if(code && myKey && vroomDb() && !kicked){
     try{
       const gone = firebase.firestore.FieldValue.delete();
       const patch = {};
@@ -130071,9 +130189,10 @@ function leaveVirtualRoom(){
          moment between two of them is a banner that sometimes does not
          appear. */
       const who = withNova ? myName + " and Nova" : myName;
-      const at = Date.now();
+      /* (384 vr3) removed for inactivity: the time a warden would give it (vroomWardenCheck), so the two write one line */
+      const at = inactive ? kickAt : Date.now();
       /* (384 vr2) and WHERE they were (`where`: "match", "lobby" or "room"), so everybody says the same thing about it */
-      patch.lastLeave = { name: who, key: myKey, at: at, where: where };
+      patch.lastLeave = inactive ? { name: who, key: myKey, at: at, where: "match", why: "inactive" } : { name: who, key: myKey, at: at, where: where };
       /* ---- AND A LINE IN THE ROOM'S CHAT (384, Virtual Room round 2) ----
          Madison: "If someone leaves it would update real time so people know they left ... In the chat, it would say x player
          left or whatever." A line in the room's own chat ("<name> left the match."), in THIS write - the leave already makes
@@ -130082,7 +130201,8 @@ function leaveVirtualRoom(){
          toast from lastLeave already says it once - announceVroomLeave). An older build draws it as "<name>: left the match." */
       try{
         patch.chatMessages = firebase.firestore.FieldValue.arrayUnion({
-          id: myKey + "-left-" + at, key: myKey, name: who, type: "left", text: "left the " + where + ".", ts: at
+          id: myKey + (inactive ? "-inactive-" : "-left-") + at, key: myKey, name: who, type: "left",
+          text: inactive ? "was removed for inactivity." : "left the " + where + ".", ts: at
         });
       }catch(e){}
       vroomDb().collection("vrooms").doc(code).update(patch).catch(() => {});
@@ -130091,6 +130211,7 @@ function leaveVirtualRoom(){
   clearInterval(vroomBeatTimer); vroomBeatTimer = null;
   try{ novaVrStop(); }catch(e){}
   vroomPausedSent = false;   /* (384 vr2) the entry goes, and its pause with it */
+  vroomPausedAt = 0;
   vroomCode = null;
   vroomMyKey = null;
   vroomIsHost = false;
@@ -130158,7 +130279,8 @@ function announceVroomLeave(data){
      or Battle in play. After one, on a results screen: "left the room". */
   /* (384 vr2) where THEY were, as they said it (lastLeave.where); an older build's leave says nothing, so this device's own place */
   const where = (l.where === "match" || l.where === "lobby" || l.where === "room") ? l.where : vroomLeaveWhere();
-  showToast((l.name || "Someone") + " left the " + where + ".");
+  /* (384 vr3) removed for inactivity (vroomWardenCheck / vroomKickSelf) says so, as the chat does */
+  showToast((l.name || "Someone") + (l.why === "inactive" ? " was removed for inactivity." : " left the " + where + "."));
   playSound("vr.leave");
 }
 __bm("L109377");
@@ -137340,7 +137462,10 @@ function startVroomRaceListener(){
   vroomRaceUnsubscribe = onSnapshotResilient(vroomDb().collection("vrooms").doc(vroomCode), docSnap => {
     if(!docSnap.exists || !raceMarkersEl) return;
     const data = docSnap.data();
+    /* (384 vr3) removed for inactivity while this phone was away: out, and told why */
+    if(vroomCheckKickedOut(data)) return;
     announceVroomLeave(data);
+    try{ vroomWardenCheck(data); }catch(e){}
     /* (384 vr2) this device's own Pause screen says who is still racing */
     try{ paintPauseRoomLine(data); }catch(e){}
     /* THE PEOPLE IN THIS RACE, not everybody on the room document - see
@@ -137730,6 +137855,7 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
     lastFinaleData = data;
     syncVroomHost(data);
     announceVroomLeave(data);
+    try{ vroomWardenCheck(data); }catch(e){}   /* (384 vr3) a finished racer still removes the idle */
     const racing = vroomRacersOf(data);
     const entries = Object.values(racing);
     const totalN = entries.length;

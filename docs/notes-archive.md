@@ -35831,3 +35831,45 @@ it's good to go."
   badge case at the foot of the Profile card, before 383 moved it; not this build's.
 - Pack: scratchpad Nova-384-round2 (437 files) with the code pictures' before/after for Madison's nine, the 175 that were pieces, the
   96 table rows (book and county) and all 1,812 cards; the decisions left are the two Virtual Room ones.
+
+### Build 384, round 3 - Madison's list after the round-2 pack (NOT on main, waiting for Madison)
+- **The four known failures**: an empty Level tab's words at .56 white (were .42); Match settings' Start bar in the tab bar's glass;
+  the Phonetic Alphabet back's rows on a tighter track (8.8 -> 9.4px, `BADGE_BACK_RELIEF.fsRead/.tightTrack`); and the badge-case
+  behaviour sections brought up to the case as it is (below).
+- **Sign-up and Welcome**: no build tag on Welcome; "Practice, track your mastery, and climb the ranks."; "Choose the classes
+  you're taking. You can add one later."; Sign in / I'm new here 53px and 1.05rem; a picked class card takes its class colour
+  (ring, wash, glow, a check); Fire Code's card says it is cross-referenced with the Harris County Fire Code Amendments; the sound
+  defaults to 35% (`SOUND_DEFAULT_VOLUME`; the theme object carries the literal `.35` - the const is below it, TDZ).
+- **Welcome's planet is Home's**: the flares are Home's glass bubbles with white icons at Home's size, and the sphere and every
+  flare answer a tap as on Home.
+- **Hand-offs**: Get Started and the splash fade into Welcome, which rises in (`welcomeArrive`); Generating profile hands over to a
+  whole Home before it fades, and Nova's intro waits for the overlay to go and HOME_HOLD_BEFORE_NOVA_MS (1.1s) more.
+- **Loading screens** (splash, class switch, Generating profile, Loading test) sized up from 40rem and from 64rem.
+- **Get Started's clips** play at GS_CLIP_RATE (0.66, the rank one 0.45), start the moment any of them is on screen, loop, and go
+  back to frame 0 only when wholly off it - never a paused frame while scrolling.
+- **PAUSED FOR A MINUTE IS OUT (the Virtual Room)**. Madison: "Say you are paused for 1 minute, then you get kicked for inactivity.
+  That's what the chat would say. Same would apply for the phone die, they just wouldn't know for a minute or two or whatever works
+  best. That's mid test." Two halves, because a dead phone cannot remove itself:
+  - the paused device leaves after VROOM_PAUSE_KICK_MS (60s) on its own timer, and on coming back to the app if the timer slept
+    (`vroomKickSelfIfIdle`, `vroomKickSelf`): the run ends as Leave ends it, Home, "You were removed from the match for inactivity.";
+  - the others' devices remove a racer paused past 60s + VROOM_KICK_GRACE_MS (15s), or with no presence beat for
+    VROOM_GONE_KICK_MS (100s, two 45s beats and some) - `vroomWardenCheck`, run from the race line's listener and the wait card's
+    and every 15s on the last snapshot (no reads of its own). One device writes: the WARDEN, the lowest key among racers nobody is
+    about to remove. The write is the leave's shape (entry deleted, `lastLeave` with `why:"inactive"`, a `left` chat line "was removed
+    for inactivity."), its time and id worked out from the racer's own stamp, so two wardens write one identical line (arrayUnion).
+  - a phone removed while asleep, waking, sees its entry gone with `lastLeave.why` "inactive" (`vroomCheckKickedOut`): its race ends
+    there and it is told, writing nothing back (`leaveVirtualRoom("kicked")`).
+  - never a finished racer, never Tug of War or Battle (no pause to hold). Toast for the others: "<name> was removed for inactivity."
+  - Cost: one write per removal; nothing while nobody is idle.
+  - Gate: tools/check-b384-vrkick.py - (S) self, (W) asleep then waking, (G) died, (K) not too soon / never the finished, (N). Against
+    358ac0a: (S) 4, (W) 2, (G) 2 FAIL; (K) and (N) pass on both (they hold it back from over-reaching).
+- **Badges screen, two real faults found by the old sections**: a seated badge's 260-unit seat shade lay over the slots beside it,
+  so a tap on the right of an empty slot opened its neighbour (`pointer-events:none` on the rect and on `.bcs` slot art); and the
+  tray that replaced `.nova-case.ncase` had lost badgeSlotShift's translate, so the C-ring sat 5px right of its slot and the
+  trefoil, disc and star 2-3px high (the `.bcs` rule restores it; all 24 within 0.5px).
+- **check-behaviour's badge-case sections** (b318_badges, b319_badges, b320g_inspect, b320c_case, b321c_case, b321d_badges): the
+  checks of the hardware case (lid, guards, caps, screws, hinges, the handle on the wall, part for part with the cutscene) are said
+  as SKIP "superseded" (`superseded()`, TRAY_ONLY: 327 r10's "tray only" / "sleek premium"), never failed; counts read off the bank
+  (24 academy units); the tab's plate is `.bcs-plate-text`; the head says Badges; the shut Profile case keeps its plate and handle
+  checks but not 319's 1.1rem corners (check_b316t holds it to the Customize row). The crack light's row-by-row falloff (tuned on
+  321's 4x4 hardware case) is said, not failed; its colours are still asserted (two or more, all from the case).

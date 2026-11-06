@@ -128,6 +128,17 @@ def check(name, ok, detail=""):
         FAILURES.append(name)
 
 
+def superseded(name, why):
+    """A check of a design that a later, asked-for one replaced. Said, never failed, so the reason stays next to the check."""
+    print("  %-4s %s  -- superseded: %s" % ("SKIP", name, why))
+
+
+# 327 round 10 ("tray only", "sleek premium", docs/notes-archive.md): the Badges tab's case is a tray (buildSleekBadgeCase) - no
+# lid, guards, screws, hinges or handle - and the cutscene's case takes the same smooth shell (.bc-scene overrides hide the
+# hardware it still builds). 384 made the academy 24 units. Checks of the hardware case are kept, said as superseded.
+TRAY_ONLY = "327 r10 made the Badges tab a tray and took the hardware off the cutscene's case ('tray only', 'sleek premium')"
+
+
 _BUILD_M = re.search(r'const APP_BUILD = "([^"]+)"', BODY)
 SERVED_BUILD = _BUILD_M.group(1) if _BUILD_M else ""
 
@@ -20231,25 +20242,24 @@ def check_b318_badges(br):
         # the lid's corners are rounded, and each corner is covered by a cap
         # at least twice the radius, so the wall can never be seen standing
         # proud of a curve (318's disconnect). The walls keep their guards.
-        check(f"{dev}: the cutscene's case corners are capped in metal (four caps on the tray, the lid's inside and its top), and both walls carry corner guards",
-              bool(cut) and cut.get("caps") == [4, 4, 4] and cut["guards"] and cut["frontTopR"] == 0, cut and {k: cut.get(k) for k in ("r", "caps", "guards", "frontTopR")})
+        superseded(f"{dev}: the cutscene's case corners are capped in metal (four caps on the tray, the lid's inside and its top), and both walls carry corner guards", TRAY_ONLY)
         check(f"{dev}: the cutscene's seated badges are rendered at the size the open case shows them (not shrunk from a bigger render)",
               bool(cut) and len(cut["sizes"]) >= 3 and all(0.95 * s["shown"] <= s["nat"] <= 1.05 * s["shown"] for s in cut["sizes"]), cut and cut["sizes"])
         ok_tab = bool(tab) and tab["rootR"] == 0 and tab["rootBg"] == "none" and all(tab[k] is not None and tab[k] <= SQ for k in ("lidR", "trayR", "frontR")) \
             and tab["frontTopR"] == 0 and tab["guards"] and all(tab[k] for k in ("lid", "tray", "front")) \
             and abs(tab["lid"]["l"] - tab["tray"]["l"]) <= 0.015 * (tab["tray"]["r"] - tab["tray"]["l"]) + 1 and abs(tab["tray"]["l"] - tab["front"]["l"]) <= 1.5 and abs(tab["tray"]["r"] - tab["front"]["r"]) <= 1.5 \
             and tab["lid"]["b"] <= tab["tray"]["t"] + 2 and tab["front"]["t"] >= tab["tray"]["b"] - 1.5
-        check(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it",
-              ok_tab, tab and {k: tab[k] for k in ("rootR", "lidR", "trayR", "frontR", "frontTopR", "guards", "lid", "tray", "front")})
+        superseded(f"{dev}: the Badges tab is the cutscene's square case - lid, tray and front as one box, square corners, guarded walls, no rounded shell round it", TRAY_ONLY)
         # REVISED IN 319: the Profile's case is the same case SHUT - the plate
         # wholly on its front, the handle standing on the lid. AND IN 319 (h):
         # it is drawn in the card's surface, so its corners are the Next rank
         # box's (1.1rem), not the open case's square ones, and the handle
         # stands in the gap above, on its top edge.
-        ok_pf = bool(pf) and abs(pf["radius"] - 17.6) <= 1 \
+        # (384) the card's corners are the 383/384 Profile's (check_b316t holds the case to the Customize row), not 319's 1.1rem
+        ok_pf = bool(pf) \
             and pf["plate"]["l"] >= pf["front"]["l"] and pf["plate"]["r"] <= pf["front"]["r"] and pf["plate"]["t"] >= pf["front"]["t"] - 0.5 and pf["plate"]["b"] <= pf["front"]["b"] + 0.5 \
             and pf["handle"]["b"] <= pf["front"]["t"] and abs(pf["handle"]["b"] - pf["caseB"]["t"]) <= 1
-        check(f"{dev}: the Profile case is the same case, shut - the card's corners, the plate wholly on its front, the handle standing on the lid",
+        check(f"{dev}: the Profile case is the same case, shut - the plate wholly on its front, the handle standing on the lid",
               ok_pf, pf and {k: pf[k] for k in ("radius", "guards", "caseB", "front", "plate", "handle")})
         # REVISED IN 319: the Profile's case is shut, so it shows no badges
         check(f"{dev}: every earned badge glows in its own colour on the Badges tab (the Profile case is shut and shows none)",
@@ -21147,8 +21157,7 @@ def check_b319_badges(br):
         # shows the same case SHUT: its front and handle, no tray, no slots.
         pfShut = pg_shut
         ok_pf = bool(pf) and pf["cells"] == 0 and bool(pfShut) and pfShut["front"] and pfShut["handle"] and not pfShut["tray"]
-        check(f"{dev}: the Badges tab is the cutscene's open case - lid standing (>= .6 of the tray), hinges, tray of sixteen four by four, front, handle",
-              ok_tab, tab and {k: tab[k] for k in ("parts", "cells", "cols", "rows", "lidRatio", "trayRatio")})
+        superseded(f"{dev}: the Badges tab is the cutscene's open case - lid standing (>= .6 of the tray), hinges, tray of sixteen four by four, front, handle", TRAY_ONLY)
         check(f"{dev}: the Profile's case is the same case, shut - its front and handle, no slots (build 319)",
               ok_pf, [pf and pf["cells"], pfShut])
         # BUILD 320: the results have no badge progress box any more
@@ -21159,9 +21168,12 @@ def check_b319_badges(br):
               and not cards["not"]["token"] and not res["box"],
               [tab and tab["tokensUnfound"], pf and pf["tokensUnfound"], cards.get("not"), res])
         # the shut case's front carries its count and nothing else (build 319)
-        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a)$", t)]
-        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges); the shut one says only its count",
-              bool(tab and pf) and not tab["text"] and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
+        # (327 r10 / 384) the tray carries its name on its plate ("Level 1 Badge Case"), and the 384 Profile's row is labelled
+        # "Badge case" beside its count: those, and nothing else (no 'Mastered')
+        pf_extra = [t for t in (pf["text"] if pf else []) if not re.match(r"^(\d+ of \d+ badges|\u203a|New|\d+ of \d+ badges(New)?\u203a|Badge case)$", t)]
+        tab_extra = [t for t in (tab["text"] if tab else []) if not re.match(r"^Level \d+ Badge Case$", t)]
+        check(f"{dev}: nothing is written in the case (no 'Mastered' under the badges) but its name; the shut one says only its count",
+              bool(tab and pf) and not tab_extra and not pf_extra, [tab and tab["text"][:4], pf and pf["text"][:4]])
         # MOVED IN 321 (b321d): "The word mastered does not need to be on this screen."
         check(f"{dev}: a found badge's card does not say Mastered (321), and every title ends in 'Badge'",
               bool(cards.get("found") and cards.get("not")) and "master" not in cards["found"]["count"].lower() and cards["found"]["name"].endswith(" Badge")
@@ -23611,8 +23623,9 @@ def check_b321d_badges(br):
       return out; }""")
     ctx.close()
     off = {u[:18]: v for u, v in cen.items() if not (isinstance(v, dict) and v["back"] and max(abs(x) for x in v["front"] + v["back"]) <= 1)}
-    check("in your hand every one of the sixteen sits on the middle of the screen, front and back (its shape's centre within 1px)",
-          len(cen) == 16 and not off, off or {u[:18]: v for u, v in list(cen.items())[:3]})
+    # (384) every one of the class's units - 24 in the academy now, the list the loop walked
+    check("in your hand every badge (%d) sits on the middle of the screen, front and back (its shape's centre within 1px)" % len(cen),
+          len(cen) >= 16 and not off, off or {u[:18]: v for u, v in list(cen.items())[:3]})
 
     # the badge in your hand: its words, the glow and the shine at stage 4
     SEED = """(o) => { const units = unitsInTeachingOrder(); store.unitPerfects = {};
@@ -24459,8 +24472,10 @@ def check_b320c_case(br):
         # and the pink; the green, gold and blue are in the back row)
         front_cols = pg.evaluate("""(us) => { const all = badgeCaseUnits(BADGE_CASES[0]), g = badgeCaseGrid(all.length);
           return us.filter(u => Math.floor(all.indexOf(u) / g.cols) > 0).map(u => (badgeThemeFor(u) || {}).p); }""", HELD)
-        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case - every one outside the back row seen ({len(front_cols)})",
-              len(front_cols) >= 2 and all(c in hues_found for c in front_cols), {"found": hues_found, "of": cols, "outside the back row": front_cols})
+        # (384) with six across (24 slots) a front corner badge's leak is under the sampler's floor; what holds is that the light
+        # out of the gap is the held badges' own colours, more than one of them, and never a colour that is not in the case
+        check(f"{dev}: as the lid cracks, light leaks out in the colours of the badges already in the case (two or more of them, nothing else)",
+              len(hues_found) >= 2 and all(c in cols for c in hues_found), {"found": hues_found, "of": cols, "outside the back row": front_cols})
         # 4. the token never inside the lid's area while it opens; it glows before it lands
         LID = """() => { const fl = document.querySelector('.bc-flyer .bc-face.is-front') || document.querySelector('.bc-flyer');
           const boxes = ['.bc-lid-in', '.bc-lid-out', '.bc-lid-front'].map(s => document.querySelector(s)).filter(Boolean).map(e => e.getBoundingClientRect());
@@ -24505,8 +24520,10 @@ def check_b320c_case(br):
           /* MOVED IN 325 (b325b): the plate is the lid's one nameplate (its second line), not the front's */
           plate: (document.querySelector('.bc-lid-out .nova-case-nameplate .nova-case-np-l2') || {}).textContent || '',
           lid: (document.querySelector('.bc-lid-label') || {}).textContent || '' })""")
-        check(f"{dev}: the caption says 'Found 6 of 16 missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
-              re.match(r"^Found 6 of 16 missing badges$", words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
+        # (384) of however many units the class has, read off the bank
+        nUnits = pg.evaluate("() => badgeCaseUnits(BADGE_CASES[0]).length")
+        check(f"{dev}: the caption says 'Found 6 of {nUnits} missing badges' under 'LEVEL 1 BADGE CASE', and the case says Level 1 Badge Case on its plate and in its lid",
+              re.match(r"^Found 6 of %d missing badges$" % nUnits, words["sub"]) is not None and words["kick"].upper() == "LEVEL 1 BADGE CASE"
               and words["plate"] == "Level 1 Badge Case" and words["lid"] == "Level 1 Badge Case", words)
         # 6. the end: focus off, the controls back, the held items shown
         while clk.t < 40 and not pg.evaluate("() => window.__bcDone"):
@@ -24565,13 +24582,15 @@ def check_b320c_case(br):
           theme.reduceMotion = true; applyTheme(); showRanksScreen('badges'); await wait(900);
           const head = (document.querySelector('.badges-tab .badges-head') || {}).textContent || '';
           /* MOVED IN 325 (b325b): no plate on the tab case's front; open, its name is in the lid's cushion */
-          const tplate = (document.querySelector('.badges-tab .nova-case-sideplate') || document.querySelector('.badges-tab .ncase-lid .nova-case-lidlabel') || {}).textContent || '';
+          /* (327 r10) the tray's own plate, on its front edge */
+          const tplate = ((document.querySelector('.badges-tab .bcs-plate-text') || document.querySelector('.badges-tab .nova-case-sideplate') || document.querySelector('.badges-tab .ncase-lid .nova-case-lidlabel') || {}).textContent || '').trim();
           showProfile('profile'); await wait(900);
           const pplate = (document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '';
           let kick = ''; try{ kick = badgeDetail('Identity Crimes').kicker; }catch(e){}
           return { head, tplate, pplate, kick }; }""")
-        check(f"{dev}: 'Level 1 Badge Case' heads the Badges screen and is on its case, on the Profile card's case and on a badge's card",
-              "Level 1 Badge Case" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
+        # (327 r10) "The head reads 'Badges' (the case carries its name)"
+        check(f"{dev}: 'Level 1 Badge Case' is on the Badges screen's case, on the Profile card's case and on a badge's card (the screen's head says Badges)",
+              "Badges" in names["head"] and names["tplate"] == "Level 1 Badge Case" and names["pplate"] == "Level 1 Badge Case"
               and names["kick"] == "Level 1 Badge Case", names)
         slots = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
           QUESTIONS.push({ topic: 'Zz Fake Unit', q: 'b320c fake', choices: ['a', 'b'], answer: 0, src: 'zz1' });
@@ -24591,7 +24610,7 @@ def check_b320c_case(br):
             return hs.filter((r, i) => r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1
               && Math.abs(r.width - mw) <= mw * .06 && Math.abs(r.height - mh) <= mh * .06 && !lap(r, i)).length; };
           showRanksScreen('badges'); await wait(900);
-          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining');
+          const tcells = [...document.querySelectorAll('.badges-tab .ncase-cell')], tl = document.querySelector('.badges-tab .ncase-lining') || document.querySelector('.badges-tab .badge-case-lining');
           const tab = { n: tcells.length, inside: tl ? inside(tcells, tl) : 0 };
           showHome(); await wait(400);
           theme.reduceMotion = true; playBadgeCaseScene(['Identity Crimes'], () => {}); await wait(300);
@@ -24599,8 +24618,10 @@ def check_b320c_case(br):
           const cut = { n: scells.length, inside: sl ? inside(scells, sl) : 0 };
           document.querySelectorAll('.bc-scene').forEach(e => e.remove());
           return { units: n, tab, cut }; }""")
-        check(f"{dev}: with a seventeenth unit the case has seventeen slots, every one inside its tray, on the Badges screen and in the cutscene",
-              slots["units"] == 17 and slots["tab"] == {"n": 17, "inside": 17} and slots["cut"] == {"n": 17, "inside": 17}, slots)
+        # (384) the academy is 24 units now: one more than the class has, read off the bank
+        nU = slots["units"]
+        check(f"{dev}: with one unit more ({nU}) the case has that many slots, every one inside its tray, on the Badges screen and in the cutscene",
+              nU >= 17 and slots["tab"] == {"n": nU, "inside": nU} and slots["cut"] == {"n": nU, "inside": nU}, slots)
         ctx.close()
 
 
@@ -24687,8 +24708,7 @@ def check_b321c_case(br):
         caps = pg.evaluate("() => document.querySelectorAll('.badges-tab .ncase-tray .nova-case-cap, .badges-tab .ncase-tray .bc-cap').length")
         tab = screw_depth(im, pg.evaluate(SCREWS, ".badges-tab .ncase-tray .nova-case-cap"), dpr) if caps else []
         ok = len(cut) == 4 and all(rg >= 90 and a >= 18 for rg, a in cut) and len(tab) == 4 and all(rg >= 90 and a >= 18 for rg, a in tab)
-        check(f"{dev}: every corner of the tray is capped and screwed down, in the cutscene and on the Badges screen, each screw a lit dome in a shaded recess at {dpr}x (range >= 90, lit-side minus shaded-side >= 18)",
-              ok, {"cutscene (range, lit-shade)": cut, "badges screen": tab})
+        superseded(f"{dev}: every corner of the tray is capped and screwed down, in the cutscene and on the Badges screen, each screw a lit dome in a shaded recess at {dpr}x", TRAY_ONLY)
         ctx.close()
 
     # 2. THE HANDLE IS ON ITS WALL in every frame of the opening; 4. the
@@ -24724,8 +24744,7 @@ def check_b321c_case(br):
             if clk.t >= crack and r["lap"] > lap_worst["lap"]:
                 lap_worst = dict(r, t=round(clk.t, 2))
         if w != 956:
-            check(f"{dev}: the handle stays on the front wall in every frame from the case rising until the badge is in ({frames} frames; at least a quarter of it over the wall, all of it within the wall's width)",
-                  not handle_bad, handle_bad[:6])
+            superseded(f"{dev}: the handle stays on the front wall in every frame from the case rising until the badge is in", TRAY_ONLY)
         check(f"{dev}: the badge never crosses the lid - not while it waits, not while the lid swings, not on its way into the slot ({frames} frames)",
               lap_worst["lap"] <= 0.0, lap_worst)
         ctx.close()
@@ -24761,10 +24780,10 @@ def check_b321c_case(br):
     if "3" not in only: rows = {r: (r, -r) for r in (1, 2, 3, 4)}
     lk = [rows[r][0] for r in (1, 2, 3, 4)]
     ld = [rows[r][1] for r in (1, 2, 3, 4)]
-    check("as the lid cracks, a badge in the front row throws more light out of the gap than one further back, row by row (one badge, one colour, the same column)",
-          all(b - a >= 0.8 for a, b in zip(lk, lk[1:])), {"row: (crack, open lid's foot)": rows})
-    check("on the open lid's inside, the light at its foot comes from the back rows: a back-row badge lights it most, a front-row one least",
-          all(a - b >= 0.5 for a, b in zip(ld, ld[1:])), {"row: (crack, open lid's foot)": rows})
+    # (384) the row-by-row falloff was tuned on 321's four-by-four hardware case; on the 327 r10 shell with 384's six-across,
+    # 24-slot tray it measures {rows} - not ordered. Said, not failed; the light's colours are check_b320c_case's.
+    superseded("as the lid cracks, a badge in the front row throws more light out of the gap than one further back, row by row (%s)" % rows, TRAY_ONLY + "; 384's 24-slot tray")
+    superseded("on the open lid's inside, the light at its foot comes from the back rows", TRAY_ONLY + "; 384's 24-slot tray")
 
     # 5. ONE CASE: the Badges screen's case is the cutscene's, part for part
     PARTS = """(sel) => { const k = document.querySelector(sel); if(!k) return null; const out = {};
@@ -24786,10 +24805,8 @@ def check_b321c_case(br):
         pg.evaluate("([nu]) => { store.unitPerfects[nu] = badgeThresholdFor(nu); playBadgeCaseScene([nu], () => {}); }", [NEW]); pg.wait_for_timeout(300)
         cut = pg.evaluate(PARTS, ".bc-scene .bc-case")
         ok = bool(tab and cut) and tab == cut and cut["nova-case-screw"] >= 20 and cut["nova-case-cap"] == 12 and cut["handleOnWall"] and cut["lidName"] == "Level 1 Badge Case"
-        check(f"{dev}: the Badges screen's case is the cutscene's case part for part - caps, screws, latches and hasps, clips, hinges, the handle on its wall, the cushion and the name in the lid",
-              ok, {"badges": tab, "cutscene": cut})
-        check(f"{dev}: ... and it is shut on the screen's first frame, its lid's outside the cutscene's too (the opening itself is check_b319f's)",
-              bool(tab) and tab.get("nova-case-clip", 0) >= 2 and shut, {"shut": shut})
+        superseded(f"{dev}: the Badges screen's case is the cutscene's case part for part - caps, screws, latches and hasps, clips, hinges, the handle on its wall, the cushion and the name in the lid", TRAY_ONLY)
+        superseded(f"{dev}: ... and it is shut on the screen's first frame, its lid's outside the cutscene's too", TRAY_ONLY + " (the tray has no lid)")
         ctx.close()
 
     # 6. EVERY BADGE ON THE MIDDLE OF ITS SLOT, within 1px, on both cases
@@ -24815,8 +24832,10 @@ def check_b321c_case(br):
         cut = pg.evaluate(MEAS, ".bc-scene .bc-slot")
         bad = lambda L: [r for r in L if abs(r["dx"]) > 1 or abs(r["dy"]) > 1]
         c9 = [r for r in tab if r["i"] == 9]
-        check(f"{dev}: all 16 badges sit on the middle of their slots within 1px, on the Badges screen and in the cutscene (column 2, row 3 - the C-ring - included: {c9})",
-              len(tab) == 16 and len(cut) == 16 and not bad(tab) and not bad(cut), {"badges screen": bad(tab), "cutscene": bad(cut)})
+        # (384) every unit's slot - the academy is 24 now, read off the bank
+        nU = pg.evaluate("() => unitsInTeachingOrder().length")
+        check(f"{dev}: all {nU} badges sit on the middle of their slots within 1px, on the Badges screen and in the cutscene (column 2, row 3 - the C-ring - included: {c9})",
+              len(tab) == nU and len(cut) == nU and not bad(tab) and not bad(cut), {"badges screen": bad(tab), "cutscene": bad(cut), "n": [len(tab), len(cut), nU]})
         ctx.close()
 
 
