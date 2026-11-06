@@ -2140,8 +2140,8 @@
   .nt-stage{ flex:1 1 auto; min-height:0; position:relative; display:flex; flex-direction:column; }
   .nt-talk{ flex:0 0 auto; position:relative; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
     grid-template-areas:"bubble bubble" "nova hint"; align-items:end; column-gap:.5rem; }
-  .nt-bubble{ grid-area:bubble; position:relative; margin:0 0 .9rem; padding:.95rem 1.1rem 1rem;
-    border-radius:22px; background:linear-gradient(0deg, rgba(0,0,0,.12) 0, rgba(0,0,0,.12) var(--nt-flat, 0px), rgba(255,255,255,.02) max(50%, calc(var(--nt-flat, 0px) + 2rem)), rgba(255,255,255,.1) 100%), rgb(22,26,44);
+  .nt-bubble{ --nt-flat:1.6rem; grid-area:bubble; position:relative; margin:0 0 .9rem; padding:.95rem 1.1rem 1rem;
+    border-radius:22px; background:linear-gradient(0deg, rgb(19,23,39) 0, rgb(19,23,39) var(--nt-flat, 0px), rgba(255,255,255,.02) max(50%, calc(var(--nt-flat, 0px) + 2rem)), rgba(255,255,255,.1) 100%), rgb(22,26,44);
     border:1px solid rgba(255,255,255,.16);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14); filter:drop-shadow(0 14px 20px rgba(0,0,0,.45));
     transform-origin:18% 100%; opacity:0; transform:translateY(8px) scale(.94);
@@ -2176,7 +2176,7 @@
      fill, the same colour, so nothing shows; the taper keeps it inside the tail's sloped sides (half-width 11.5 at the
      border, 6 three pixels down, against the tail's 12.7 - y - 1.4). */
   .nt-bubble::before{ content:""; position:absolute; left:calc(3.2rem + 9px - 14px); bottom:-3px; width:28px; height:7px;
-    background:linear-gradient(to bottom, rgba(19,23,39,0) 0, rgb(19,23,39) 3px);   /* (384 r5) fades in over the bubble's body: a flat edge 3px up showed as a faint box at high zoom, the body there not being exactly this colour; the border is 4px from the top, under the solid part */
+    background:rgb(19,23,39);   /* (384 r5) the foot of the bubble is this same SOLID colour (--nt-flat deep): Chromium dithers a gradient, and two gradients that should be one colour dithered differently - a checker one level apart, visible as a box at high zoom. An opaque constant is not dithered. */
     pointer-events:none;
     clip-path:polygon(2.5px 0, 25.5px 0, 25.5px 4.2px, 20px 7px, 8px 7px, 2.5px 4.2px); }
   .nt-who{ margin:0 0 .3rem; font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
@@ -2631,7 +2631,7 @@
       border-bottom-left-radius:4px; border-bottom-right-radius:0; clip-path:polygon(-1px -1px, -1px calc(100% + 1px), calc(100% + 1px) calc(100% + 1px)); }
     /* the tail is at the bubble's side here: the patch is the same, turned (its border is the left one) */
     .nt-bubble::before{ left:-3px; bottom:calc(3.2rem + 9px - 14px); width:7px; height:28px;
-      background:linear-gradient(to left, rgba(19,23,39,0) 0, rgb(19,23,39) 3px);
+        background:rgb(19,23,39);
       clip-path:polygon(7px 2.5px, 7px 25.5px, 2.8px 25.5px, 0 20px, 0 8px, 2.8px 2.5px); }
     .nt-text{ font-size:1.32rem; line-height:1.5; }
     .nt-who{ font-size:.8rem; }
@@ -4689,7 +4689,7 @@
     position:fixed; z-index:420; max-width:min(18rem, calc(100vw - 24px));
     padding:.55rem .75rem; border-radius:12px;
     font-size:.78rem; line-height:1.35; font-weight:600; color:var(--ink); text-align:center;
-    background:rgba(28,32,40,.96); border:1px solid rgba(255,255,255,.12);
+    background:rgb(28,32,40); border:1px solid rgba(255,255,255,.12);   /* (384 r5) opaque: the arrow's translucent fill doubled up over the body's, a diamond inside it */
     box-shadow:0 8px 24px rgba(0,0,0,.4);
     opacity:0; transform:translateY(-4px); transition:opacity .16s ease, transform .16s ease;
     pointer-events:none;
@@ -4698,7 +4698,7 @@
   .under-note::before{
     content:""; position:absolute; top:-6px; left:var(--arrow-x, 50%); width:10px; height:10px;
     margin-left:-5px; transform:rotate(45deg);
-    background:rgba(28,32,40,.96); border-left:1px solid rgba(255,255,255,.12); border-top:1px solid rgba(255,255,255,.12);
+    background:rgb(28,32,40); border-left:1px solid rgba(255,255,255,.12); border-top:1px solid rgba(255,255,255,.12);
   }
   /* Scoped to the id, not the whole .next class — #nextbtn is reused
      one screen at a time (only ever one in the DOM), so this promotes
@@ -13432,7 +13432,7 @@
        where it says no hundo"). It was a separate dark brown. Now it is the
        chip's tint and the chip's border, laid over the sheet's own colour
        so it stays solid over the slider. */
-    background:linear-gradient(rgba(255,107,91,.12), rgba(255,107,91,.12)), #0F1115;
+    background:rgb(44,28,29);   /* (384 r5) = rgba(255,107,91,.12) over #0F1115, as one solid colour: a layered, translucent fill is dithered, and the arrow's dither and the body's differed by a level, a visible diamond */
     border:1px solid rgba(255,107,91,.35);
     box-shadow:0 10px 24px rgba(0,0,0,.45); animation:hundo-why-in .18s ease-out; }
   .hundo-why::before{ content:""; position:absolute; top:-6px; left:calc(var(--tip-x, 50%) - 6px - .2rem); width:11px; height:11px;
@@ -13445,7 +13445,7 @@
   .has-topnote{ position:relative; }
   .slider-topnote{ position:absolute; z-index:6; display:flex; flex-direction:column; align-items:center; gap:.12rem;
     max-width:calc(100% - .4rem); padding:.5rem .95rem .52rem; border-radius:11px; text-align:center; pointer-events:none;
-    background:linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.2)), #15181D;
+    background:rgb(68,70,74);   /* (384 r5) = white at 20% over #15181D, solid (see .hundo-why) */
     border:1px solid rgba(255,255,255,.12); box-shadow:0 1px 3px rgba(0,0,0,.28), 0 10px 24px rgba(0,0,0,.4);
     animation:slider-topnote-in .2s cubic-bezier(.3,.8,.3,1); transform-origin:var(--tip-x, 50%) 0; }
   .slider-topnote::before{ content:""; position:absolute; top:-6px; left:calc(var(--tip-x, 50%) - 6px); width:11px; height:11px;
@@ -33563,8 +33563,10 @@
     box-shadow:var(--pop-shadow-card);
   }
   html[data-theme="dark"][data-layout="modern"] .hundo-why{
-    background:linear-gradient(rgba(255,107,91,.14), rgba(255,107,91,.14)), var(--pop-bg-card); border:1px solid rgba(255,107,91,.4);
-    backdrop-filter:var(--pop-blur); -webkit-backdrop-filter:var(--pop-blur);
+    /* (384 r5) SOLID, not glass: this popover's arrow takes the body's fill (background:inherit), and a translucent, layered fill
+       painted twice where the arrow overlaps the body is a visible diamond inside it (measured: 47 levels). One opaque colour is the
+       same under the arrow as beside it, so there is nothing to see. */
+    background:rgb(44,28,29); border:1px solid rgba(255,107,91,.4);
   }
 
   /* build 327d: "the Goodbye and See you next week buttons have a weird white
