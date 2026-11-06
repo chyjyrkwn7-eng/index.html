@@ -1606,9 +1606,12 @@
        duration reads as a deliberate crossfade rather than a blip,
        since there's genuine visible content change the whole way
        through it now instead of just at the last instant. */
-    transition:opacity .5s ease;
+    transition:opacity .75s cubic-bezier(.4,0,.2,1);
   }
   #splashscreen.splash-hide{ opacity:0; pointer-events:none; }
+  /* (384) the splash's word and bar drift back a touch as it fades, so Welcome comes up through it rather than behind a wipe */
+  #splash-group{ transition:scale .75s cubic-bezier(.4,0,.2,1); }
+  #splashscreen.splash-hide #splash-group{ scale:1.04; }   /* scale, not transform: the group is centred by its transform */
   #splashscreen.splash-first{ visibility:hidden; }   /* a first visit never shows it (330) */
   /* Positioned in PIXELS from the top-left, not centred inside its
      parent, and that distinction is the whole fix for the bottom-right
@@ -1699,9 +1702,9 @@
   #genprofile-overlay{
     position:fixed; inset:0; z-index:400; background:#050505;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:1.2rem; transition:opacity .3s ease;
+    gap:1.2rem; transition:opacity .6s cubic-bezier(.4,0,.2,1);
   }
-  #genprofile-overlay.genprofile-hide{ opacity:0; }
+  #genprofile-overlay.genprofile-hide{ opacity:0; pointer-events:none; }
   /* ---- EVERY LOADING SCREEN WEARS THE THEME (build 244) ----
      "Ensure the loading screens match the theme color." The wordmark,
      the line and the bar already took the theme's three colours; the
@@ -35458,6 +35461,15 @@ html.is-browser{ --fade-paper: transparent; }
   @keyframes gs-press{ 0%{ transform:scale(1); } 35%{ transform:scale(.86); } 100%{ transform:scale(1); } }
   .gs-show-cap{ margin:-.6rem 0 0; min-height:1.5em; font-size:.92rem; line-height:1.5; color:rgba(220,228,255,.7); }
   @media (max-width:22rem){ .gs-show{ padding-left:1rem; padding-right:1rem; } }
+  /* (384) Welcome rising in after Get Started or the splash (welcomeArrive) */
+  @keyframes welcome-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  @keyframes welcome-rise-hero{ from{ opacity:0; transform:scale(.94); } to{ opacity:1; transform:none; } }
+  body.welcome-arrive .cosmic-welcome > .cosmic-hero-wrap{ animation:welcome-rise-hero 1s cubic-bezier(.2,.7,.2,1) .32s both; }
+  body.welcome-arrive .cosmic-welcome > .cosmic-welcome-title{ animation:welcome-rise .8s cubic-bezier(.2,.7,.2,1) .5s both; }
+  body.welcome-arrive .cosmic-welcome > .cosmic-welcome-sub{ animation:welcome-rise .8s cubic-bezier(.2,.7,.2,1) .6s both; }
+  body.welcome-arrive .cosmic-welcome > .cosmic-welcome-actions{ animation:welcome-rise .8s cubic-bezier(.2,.7,.2,1) .72s both; }
+  [data-reduce-motion="true"] body.welcome-arrive .cosmic-welcome > *{ animation:none !important; }
+  @media (prefers-reduced-motion:reduce){ body.welcome-arrive .cosmic-welcome > *{ animation:none !important; } }
   /* LET'S GET STARTED -> WELCOME: the word NOVA, flying at the viewer (gsLeave) */
   .gs-zoom{ position:fixed; inset:0; z-index:62; display:flex; align-items:center; justify-content:center; pointer-events:none; overflow:hidden; }
   .gs-cover{ position:fixed; inset:0; z-index:61; background:#05060D; opacity:0; }   /* takes the taps while it is up */
@@ -38295,6 +38307,8 @@ html.is-browser{ --fade-paper: transparent; }
         clearInterval(msgTimer);
         try{ if(window.__bm) window.__bm("done"); }catch(e){}
         try{ if(window.__installUpdateFinish) window.__installUpdateFinish(); }catch(e){}
+        /* (384) Welcome rises in under the fading splash (welcomeArrive) - only when it is Welcome that is there */
+        try{ if(document.querySelector("#stage .cosmic-welcome") && typeof welcomeArrive === "function") welcomeArrive(); }catch(e){}
         splash.classList.add("splash-hide");
         /* Handed back as the fade STARTS, not when the element is
            removed, so Safari's bars cross-fade along with the splash
@@ -38324,7 +38338,7 @@ html.is-browser{ --fade-paper: transparent; }
              nothing ever ran it again once the splash was gone and Home
              came up with no chat button at all. */
           try{ if(typeof syncChatDock === "function") syncChatDock(); }catch(e){}
-        }, 550);
+        }, 800);   /* (384) after the .75s fade */
     }
     requestAnimationFrame(tick);
   })();
@@ -94201,6 +94215,16 @@ function gsBuildShowcase(){
    stage instead, or building Welcome at once, each held the word still for most of a second on a busy laptop here.)
    Reduce motion: the dark comes up at once over the page and clears to Welcome. The cover and the word are in <body> and
    remove themselves when the move ends (timers behind it, counted from its start); the page goes with the stage. */
+/* (384) WELCOME ARRIVES: for the next 2s Welcome's first screen rises in - the planet, then the title, the line, the buttons - each
+   a short fade and lift, staggered, starting as the dark over it clears (gsLeave) or as the splash fades (finishSplash). Opacity
+   and transform only; nothing when motion is reduced. */
+function welcomeArrive(){
+  try{
+    document.body.classList.add("welcome-arrive");
+    clearTimeout(welcomeArrive._t);
+    welcomeArrive._t = setTimeout(() => document.body.classList.remove("welcome-arrive"), 2200);
+  }catch(e){}
+}
 function gsLeave(page){
   page.__gsLeaving = true;
   const calm = document.documentElement.dataset.reduceMotion === "true" || !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -94210,7 +94234,7 @@ function gsLeave(page){
   const zoom = document.createElement("div"); zoom.className = "gs-zoom"; zoom.setAttribute("aria-hidden", "true");
   zoom.innerHTML = '<span class="gs-zoom-word">NOVA</span>';
   let finished = false, welcomed = false;
-  const welcome = () => { if(welcomed) return; welcomed = true; try{ showWelcome(); }catch(e){} };
+  const welcome = () => { if(welcomed) return; welcomed = true; try{ welcomeArrive(); showWelcome(); }catch(e){} };
   const finish = () => {
     if(finished) return; finished = true;
     welcome();
@@ -94230,17 +94254,18 @@ function gsLeave(page){
   page.querySelectorAll(".gs-scroll, .gs-bar, .gs-signin").forEach(n => n.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(.96)" }],
     { duration: 200, easing: "cubic-bezier(.4,0,1,1)", fill: "forwards" }));
   /* an ease-out arrival, a short swell, then gathering speed toward the viewer as it fades */
+  /* (384) "ensure that transition is extremely smooth and nice": slower and softer - NOVA arrives, swells and flies on over
+     .95s; the dark is full by 300ms (Welcome is built under it then) and clears slowly to 1.15s while Welcome's planet, words
+     and buttons rise in one after another (welcomeArrive) */
   const zoomA = zoom.firstChild.animate([
-    { transform: "scale(.72)", opacity: 0, offset: 0, easing: "cubic-bezier(.2,.8,.3,1)" },
-    { transform: "scale(1)", opacity: 1, offset: .3, easing: "cubic-bezier(.45,0,.9,.5)" },
-    { transform: "scale(1.35)", opacity: 1, offset: .5, easing: "cubic-bezier(.6,0,1,.6)" },
-    { transform: "scale(16)", opacity: 0, offset: 1 }
-  ], { duration: 620, easing: "linear", fill: "forwards" });
-  /* dark by 200ms (Welcome goes in under it then), held, and clear by 600ms */
-  cover.animate([{ opacity: 0 }, { opacity: 1, offset: .33 }, { opacity: 1, offset: .5 }, { opacity: 0 }], { duration: 600, easing: "ease-in-out", fill: "forwards" });
-  zoomA.onfinish = finish;
+    { transform: "scale(.78)", opacity: 0, offset: 0, easing: "cubic-bezier(.2,.8,.3,1)" },
+    { transform: "scale(1)", opacity: 1, offset: .32, easing: "cubic-bezier(.45,0,.9,.5)" },
+    { transform: "scale(1.3)", opacity: 1, offset: .52, easing: "cubic-bezier(.55,0,1,.65)" },
+    { transform: "scale(12)", opacity: 0, offset: 1 }
+  ], { duration: 950, easing: "linear", fill: "forwards" });
+  cover.animate([{ opacity: 0 }, { opacity: 1, offset: .26 }, { opacity: 1, offset: .42 }, { opacity: 0 }], { duration: 1150, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
   let began = false;
-  const begin = () => { if(began) return; began = true; setTimeout(welcome, 200); setTimeout(finish, 900); };
+  const begin = () => { if(began) return; began = true; setTimeout(welcome, 300); setTimeout(finish, 1250); };
   zoomA.ready.then(begin, begin);
   setTimeout(begin, 400);   /* where frames do not come (a hidden tab) */
 }
@@ -95088,6 +95113,10 @@ function novaCodeProp(){
    "waiting" on has already finished by the time this runs), but gives
    creating a profile the sense of weight it deserves instead of an
    instant, anticlimactic jump cut. */
+/* (384) the loading overlay's fade off the built screen (CSS: .6s) */
+const GENPROFILE_FADE_MS = 600;
+/* (384) after a loading overlay has gone, how long Home holds on its own before Nova comes in: a clear beat of "this is your home" */
+const HOME_HOLD_BEFORE_NOVA_MS = 1100;
 function showGeneratingProfile(then){
   /* (384) `then`: where it goes after (Home, or a Fire Code sign-up's first half); never an event (a handler's argument) */
   buildGeneratingOverlay("GENERATING PROFILE", [
@@ -95156,11 +95185,12 @@ function buildGeneratingOverlay(labelText, messages, duration, onComplete){
     if(frac < 1){
       requestAnimationFrame(tick);
     } else {
-      overlay.classList.add("genprofile-hide");
-      setTimeout(() => {
-        overlay.remove();
-        onComplete();
-      }, 300);
+      /* (384) "the Home Screen is there for a split second but it's not entirely there": the next screen used to be built only
+         AFTER this faded off (over whatever was behind it), and Nova came in 0.4s later, while Home was still fading in. Now the
+         next screen is built underneath first, and this fades off a whole one - Home, planet and all. */
+      try{ onComplete(); }catch(e){ try{ console.error(e); }catch(_){} }
+      requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("genprofile-hide")));
+      setTimeout(() => overlay.remove(), GENPROFILE_FADE_MS + 60);
     }
   }
   requestAnimationFrame(tick);
@@ -106427,7 +106457,13 @@ function showHome(){
     try{ localStorage.removeItem("class26e.nova"); }catch(e){}
     /* (384) in Fire Code, the second half of a sign-up for Fire Code alone (ifcSignupOwed): the account was made in the first */
     const part = signupPart;
-    setTimeout(() => {
+    /* (384) Nova comes in once the loading overlay has gone and Home has held on its own for a beat (it came 0.4s after Home was
+       mounted, which was while the overlay was still fading or Home still fading in) */
+    const novaWhenSettled = (tries) => {
+      if(document.getElementById("genprofile-overlay") && tries < 60){ setTimeout(() => novaWhenSettled(tries + 1), 100); return; }
+      setTimeout(novaGo, HOME_HOLD_BEFORE_NOVA_MS);
+    };
+    const novaGo = () => {
       if(document.querySelector(".homeversion-btn")) playNovaIntro(reason => {
         signupInNova = false; signupPart = 0;
         if(reason === "signin" || !syncCode) return;
@@ -106437,7 +106473,8 @@ function showHome(){
            its moment first */
         setTimeout(() => { if(document.querySelector(".homeversion-btn") && !document.getElementById("tour-overlay")) startMainMenuTour(); }, 2500);
       }, { signup: true, part });
-    }, 400);
+    };
+    novaWhenSettled(0);
   } else if(pendingMainMenuTour){
     pendingMainMenuTour = false;
     /* The genuine completion point for a fresh signup \\u2014 flipped here
