@@ -38,7 +38,8 @@ with sync_playwright() as pw:
       return out; }""")
     chk("(1) level line reads 'Level 60 · 7 badges' (%r), three cells and no Badges (%s), the first across both columns (%s)" % (r["level"], r["labels"], r["firstWide"]),
         re.match(r"Level 60 · 7 badges$", r["level"] or "") and len(r["labels"]) == 3 and "Badges" not in r["labels"] and r["firstWide"], r)
-    chk("(2) the rank line takes no touch: %s" % (r["rank"],), r["rank"] and r["rank"]["pe"] == "none" and r["rank"]["us"] == "none"   # (the touch callout is WebKit-only and Chromium does not report it), r)
+    # (the touch callout is WebKit-only and Chromium does not report it, so pointer-events and selection are what is read)
+    chk("(2) the rank line takes no touch: %s" % (r["rank"],), r["rank"] and r["rank"]["pe"] == "none" and r["rank"]["us"] == "none", r)
     chk("(3) the default banner's stars all sit in the top 55%% of the strip (%s)" % (r["starYs"],), r["starYs"] and max(r["starYs"]) <= 55, r["starYs"])
     chk("(4) the dim is a layer of its own (%s); Close fades the card (is-leaving: %s) and then removes it (%s)" % (r["dimLayer"], r["leaving"], r["gone"]),
         r["dimLayer"] not in ("none", "normal", "") and r["leaving"] and r["gone"], r)
