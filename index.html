@@ -2269,6 +2269,15 @@
        a promoted layer is what iOS's editing overlay drifts against. */
   .nt-ask .nt-ask-input{ transform:none; }
   .nt-ask .nt-ask-input:placeholder-shown{ caret-color:transparent; }
+  /* (384 r5) "is it supposed to flash? ... attempt to fix it": the browser's own caret blinks (and iOS draws it unsteadily next to a
+     centred field), and an empty field showed none, so there was nothing to see. The field now draws its own: a steady white line
+     (.nt-caret, placed from the text's measured width - novaAskName), shown while the field has focus, empty or not, and the
+     browser's own is switched off. The placeholder steps aside while the field is focused and empty. */
+  .nt-ask-name{ position:relative; }
+  .nt-ask .nt-ask-input{ caret-color:transparent; }
+  .nt-ask .nt-ask-input:focus::placeholder{ color:transparent; }
+  .nt-caret{ position:absolute; width:2px; height:1.3rem; border-radius:1px; background:#fff; pointer-events:none; opacity:0; z-index:2; }
+  .nt-caret.is-on{ opacity:1; }
   .nt-ask .nt-ask-input::-webkit-contacts-auto-fill-button,
   .nt-ask .nt-ask-input::-webkit-credentials-auto-fill-button,
   .nt-ask .nt-ask-input::-webkit-strong-password-auto-fill-button{ visibility:hidden; display:none !important; pointer-events:none; width:0; margin:0; }
@@ -95571,7 +95580,30 @@ function novaAskName(ctx, answered){
   input.addEventListener("input", () => { msg.hidden = true; msg.className = "nt-ask-msg"; signIn.hidden = true; go.hidden = !input.value.trim(); });
   input.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); submit(); } });
   go.addEventListener("click", submit);
-  card.append(input, msg, go, signIn);
+  /* the field's own steady caret (see .nt-caret): placed at the text's measured width, centred as the text is */
+  const caret = document.createElement("span"); caret.className = "nt-caret"; caret.setAttribute("aria-hidden", "true");
+  const caretMeasure = document.createElement("canvas").getContext("2d");
+  const placeCaret = () => {
+    try{
+      if(!card.isConnected){ return; }
+      const cs = getComputedStyle(input);
+      caretMeasure.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+      const ls = parseFloat(cs.letterSpacing) || 0;
+      const w = t => caretMeasure.measureText(t).width + ls * t.length;
+      const v = input.value, at = Math.max(0, Math.min(v.length, input.selectionStart == null ? v.length : input.selectionEnd));
+      const inner = input.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+      const full = w(v);
+      const startX = input.offsetLeft + (parseFloat(cs.paddingLeft) || 0) + Math.max(0, (inner - full) / 2);
+      const x = Math.min(input.offsetLeft + input.clientWidth - (parseFloat(cs.paddingRight) || 0) - 2, startX + w(v.slice(0, at)));
+      caret.style.left = Math.round(x - 1) + "px";
+      const h = caret.offsetHeight || 20;
+      caret.style.top = Math.round(input.offsetTop + (input.offsetHeight - h) / 2) + "px";
+      caret.classList.toggle("is-on", document.activeElement === input);
+    }catch(e){}
+  };
+  ["input", "keyup", "click", "select", "focus", "blur", "touchend"].forEach(ev => input.addEventListener(ev, () => requestAnimationFrame(placeCaret)));
+  document.addEventListener("selectionchange", () => { if(document.activeElement === input) placeCaret(); });
+  card.append(input, caret, msg, go, signIn);
   try{ fetchBoardForInvites(false); }catch(e){}
   novaProp(ctx, card);
   /* (384 r4) once the card has finished fading in (.3s) - never while it moves */

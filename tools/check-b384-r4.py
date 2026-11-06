@@ -124,15 +124,24 @@ with sync_playwright() as pw:
         await w(700);
         out.focused = document.activeElement === i;
         out.caretEmpty = getComputedStyle(i).caretColor;
+        const c = document.querySelector('.nt-caret'), box = i.getBoundingClientRect();
+        const own = () => { const r = c.getBoundingClientRect(); return { on: c.classList.contains('is-on') && getComputedStyle(c).opacity === '1', x: r.left + r.width / 2, w: r.width, h: r.height, anim: getComputedStyle(c).animationName }; };
+        await w(120); out.ownEmpty = own(); out.mid = box.left + box.width / 2;
         i.value = 'Ab'; i.dispatchEvent(new Event('input'));
-        out.caretTyped = getComputedStyle(i).caretColor;
+        await w(120); out.caretTyped = getComputedStyle(i).caretColor; out.ownTyped = own();
+        i.value = 'Abcdefghij Klmnopqrst'; i.dispatchEvent(new Event('input')); await w(120); out.ownLong = own(); out.boxRight = box.right;
         t.remove();
       }catch(e){ out.err = String(e); }
       return out; }""")
     chk("(N) Safari has nothing to fill in the name field (autocomplete %r, name %r)" % (n.get("auto"), n.get("name")),
         n.get("auto") == "off" and n.get("name") and "name" not in (n.get("name") or "").lower() and "user" not in (n.get("name") or "").lower(), n)
-    chk("(N) an empty field shows no caret (%s), a typed one does (%s)" % (n.get("caretEmpty"), n.get("caretTyped")),
-        "0)" in (n.get("caretEmpty") or "") or n.get("caretEmpty") == "transparent", n)
+    chk("(N) the browser's own caret is off (it blinks): %s / %s" % (n.get("caretEmpty"), n.get("caretTyped")),
+        all("0)" in (n.get(k) or "") or n.get(k) == "transparent" for k in ("caretEmpty", "caretTyped")), n)
+    eo, to, lo = n.get("ownEmpty") or {}, n.get("ownTyped") or {}, n.get("ownLong") or {}
+    chk("(N) the field's own caret is there and steady while it has focus, empty or typed (no animation: %r), in the middle when empty (%.1f vs %.1f), right of it once typed, inside the box when long"
+        % (eo.get("anim"), eo.get("x", 0), n.get("mid", 0)),
+        eo.get("on") and to.get("on") and lo.get("on") and eo.get("anim") == "none" and abs(eo.get("x", 0) - n.get("mid", 0)) <= 1.5
+        and to.get("x", 0) > n.get("mid", 0) + 4 and lo.get("x", 0) < n.get("boxRight", 0) and eo.get("w", 0) >= 2, n)
     chk("(N) the field's card fades in without moving (transform %s; transition %s) and takes focus after (%s)" % (n.get("propTransform"), n.get("propTransition"), n.get("focused")),
         n.get("propTransform") == "none" and "transform" not in (n.get("propTransition") or "") and n.get("focused"), n)
 
