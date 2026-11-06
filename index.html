@@ -86888,9 +86888,11 @@ function showInstallGuide(platform){
 var A2HS_KEY = "class26e.a2hs";
 var a2hsPending = false, a2hsTimer = 0, a2hsClosedAt = 0;
 var A2HS_CLIP = { src: "landing/a2hs-iphone.mp4", poster: "landing/a2hs-iphone.jpg",
-  /* (384 r4) "the add to homescreen screen video is in like 20x speed": the recording is someone who knows the way - seven taps
-     in 18 seconds. Half speed is a pace to follow along at; the pointers run off the clip's own clock, so they stay with it. */
-  rate: .5 };
+  /* (384 r4) "the add to homescreen screen video is in like 20x speed" - it was not: this is a real iPhone recording, cut at
+     its own speed (the share sheet takes 0.3s, as on a phone), and what looked 20x was a screen recording of the page made
+     in slow motion, where a video element keeps playing in real time. Measured, not guessed: it plays at 1x. (A half-speed
+     rate went in first, and made every iOS animation in it sluggish.) The pointers run off the clip's own clock. */
+  rate: 1 };
 var A2HS_ADDRESS = "chyjyrkwn7-eng.github.io/index.html";
 /* Read off the clip frame by frame: in it ••• is pressed at 1.73s, Share at 3.6s, View More at 5.83s; the list
    scrolls at 6.6s and Add to Home Screen (a row in the list, under the icons) is pressed at 8.3s; the Add page is

@@ -13,7 +13,7 @@
  (O) THE END OF A SIGN-UP, IN ORDER: Nova's introduction for a new account ends without his goodbye and without the friend
      line; the main menu's tips end on the friend line (the chat button) and do not include Start Studying; Start
      Studying's tip comes once the Add to Home Screen sheet has been closed, not before.
- (V) THE ADD TO HOME SCREEN CLIP plays slower than recorded, and the sign-up's sheet closes with a button that says later.
+ (V) THE ADD TO HOME SCREEN CLIP plays at the speed it was recorded (a real iPhone recording), and the sign-up's sheet closes with a button that says later.
  (T) THE TIPS ARE SHORTER: every main-menu and Profile tip is shorter than the same step was on the build before
      (--against prints that build's numbers; on its own the gate asserts the shape: no tip over two lines' worth of the
      longest Nova line).
@@ -171,7 +171,7 @@ with sync_playwright() as pw:
 
     # ---------------- (V) the clip and its button ----------------
     v = pg.evaluate("""() => ({ rate: (typeof A2HS_CLIP === 'object' && A2HS_CLIP.rate) || 1 })""")
-    chk("(V) the Add to Home Screen clip plays slower than it was recorded (rate %s)" % v.get("rate"), (v.get("rate") or 1) < 0.9, v)
+    chk("(V) the Add to Home Screen clip plays at the speed it was recorded - a real iPhone recording, not slowed (rate %s)" % v.get("rate"), v.get("rate") == 1, v)
     chk("(V) the sign-up's sheet closes with a button that says later (%r)" % o.get("closeLabel"), "later" in (o.get("closeLabel") or "").lower(), o)
 
     # ---------------- (T) the tips ----------------
