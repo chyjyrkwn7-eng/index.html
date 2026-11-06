@@ -101977,6 +101977,15 @@ function novaSendDM(text, opts){
   /* never two stamps the same: unread and ordering both compare them */
   const last = (s.thread || []).slice(-1)[0];
   const ts = Math.max(Date.now(), last ? (last.ts || 0) + 1 : 0);
+  /* (384 r5) BROAD, NOT PER CLASS: what he says about progress belongs to the class it happened in, so for somebody enrolled in more
+     than one it opens with that class's name and two classes' news can never read as one (a rank in each, a badge in each). A
+     tip, a hello, a broadcast or a reply is for the whole account and is left as it is. */
+  try{
+    if(/^(rank|progress|challenge|vr)$/.test(opts.kind || "") && enrolledClasses().length > 1){
+      const nm = classTitle(ownClass());
+      if(nm && text.indexOf(nm) !== 0) text = nm + ": " + text;
+    }
+  }catch(e){}
   const msg = { id: "nova-" + ts.toString(36) + "-" + Math.random().toString(36).slice(2, 6),
                 key: "nova", name: "Nova", text: text.slice(0, 600), ts: ts };
   if(opts.kind) msg.kind = opts.kind;
@@ -102323,7 +102332,10 @@ function novaChallengeDue(wk, now){
    not the calendar day of his last message. */
 function novaDayOpen(heard, now){
   const s = novaState();
-  const last = Number(heard["@last"]) || 0;
+  /* (384 r5) ONE NOVA FOR EVERY CLASS: his thread (class26e.nova) is the device's, shared by the academy and Fire Code, while
+     novaHeard belongs to each class's own progress - so each class's copy used to keep its own "last said" and a person in
+     both could be messaged twice in a day. His own last message (s.lastAt, written on every send from either class) counts too. */
+  const last = Math.max(Number(heard["@last"]) || 0, Number(s.lastAt) || 0);
   const from = Math.max(last, Number(heard["@base"]) || 0, Number(s.since) || 0);
   if(now - from < NOVA_GAP_MS) return false;
   if(last && dayKey(new Date(last)) === dayKey(new Date(now))) return false;
@@ -102345,7 +102357,7 @@ function novaMarkSaid(heard, now, p){
 /* Has he already had his moment today, on any device of this account? */
 function novaSaidToday(now){
   try{
-    const last = Number((store.novaHeard || {})["@last"]) || 0;
+    const last = Math.max(Number((store.novaHeard || {})["@last"]) || 0, Number(novaState().lastAt) || 0);
     return !!last && dayKey(new Date(last)) === dayKey(new Date(now || Date.now()));
   }catch(e){ return false; }
 }
