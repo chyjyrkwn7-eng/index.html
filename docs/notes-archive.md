@@ -36001,3 +36001,6 @@ Measured off its Settings at 3x: flat saturated tile (ours had a +12% black foot
 
 ## 384 r5: Classes rows carry their own class mark
 Settings > Classes: academy = shield with a filled star (blue), Fire Code = flame (red) (kinds classacademy / classifc in settingsRowIcon); the generic mortarboard stays for the Classes category row.
+
+## 384 r5: Sapphire bluer
+Sapphire's third glow (--theme-c3) was purple #6A1FD8 and it had no page-glow override, so its sky read as Amethyst. Now c1 #6FD6FF, c3 #1F44C9, and --bg-c1/2/3 blue. The seven ranks are Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova (Platinum is the teal one).
