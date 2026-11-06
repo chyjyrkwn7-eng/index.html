@@ -140,6 +140,11 @@ def settle(pg):
 
 
 _SLOW = {"r": 1.0}
+# (384 round 4) THE PACE BETWEEN TAPS. Madison: the clips "cut way too fast" - the animations in them are at real speed (they were
+# captured in slow motion and put back on a true clock), but the taps followed each other half a second apart, quicker than any
+# person reads and answers. HOLD stretches only the pauses a person would take (before an answer, between questions, on each
+# pick); every animation stays at its own speed, so the clips play at 1x in the app (no playbackRate) and move as the app does.
+HOLD = float(os.environ.get("LANDING_HOLD", "1.9"))
 
 
 def wait(pg, ms):
@@ -264,6 +269,7 @@ def start_unit_run(pg, unit, idx=None):
 
 
 def answer(pg, right=True, ms=1100):
+    ms = int(ms * HOLD)
     pg.evaluate("""(right)=>{ const r = correctSlot(order[pos]);
       const all = [...document.querySelectorAll('.qpanel .choice')];
       const c = right ? all.find(x => x.dataset.index === String(r)) : all.find(x => x.dataset.index !== String(r) && !x.disabled && !x.classList.contains('wrong'));
@@ -272,6 +278,7 @@ def answer(pg, right=True, ms=1100):
 
 
 def next_q(pg, ms=500):
+    ms = int(ms * HOLD)
     p = pg.evaluate("()=>pos")
     pg.evaluate("()=>document.getElementById('nextbtn')?.click()")
     for _ in range(200):
@@ -315,7 +322,7 @@ def scene_academy(pg, rec):
     """Police Academy questions, as they are played: right, a miss then right, right"""
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(500)
     start_unit_run(pg, "TCOLE Rules", ACADEMY_QS)
-    rec.start(); wait(pg, 1000)
+    rec.start(); wait(pg, int(1000 * HOLD))
     answer(pg, True, 1500); next_q(pg, 700)
     answer(pg, False, 1300); answer(pg, True, 1500); next_q(pg, 700)
     answer(pg, True, 1800)
@@ -353,7 +360,7 @@ def scene_rank(pg, rec):
     rec.start(rate=.08); wait(pg, 500)
     pg.evaluate("(k)=>{store.pendingTierCutscene=k; playTierCutscene(k)}", "ranger")
     wait(pg, int(os.environ.get("RANK_MS", "29500")))
-    sp = [tuple(map(float, x.split(":"))) for x in os.environ.get("RANK_SPEED", "1.0:19.0:2.4").split(",") if x]
+    sp = [tuple(map(float, x.split(":"))) for x in os.environ.get("RANK_SPEED", "1.0:19.0:1.4").split(",") if x]
     return {"speed": sp, "trim_end": float(os.environ.get("RANK_TRIM", "1.8"))}
 
 
@@ -362,7 +369,7 @@ def scene_customize(pg, rec):
     rec.start(); wait(pg, 900)
     for k in (2, 5, 8, 3, 6, 1):
         pg.evaluate("(k)=>{ const o=[...document.querySelectorAll('.screen-customize .avatarchar-option:not(.locked)')]; o[k] && o[k].click(); }", k)
-        wait(pg, 1500)
+        wait(pg, int(1500 * HOLD))
     return {}
 
 

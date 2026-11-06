@@ -77,7 +77,7 @@ def scene_test(br, port):
     pg.evaluate("()=>showHome()"); pg.wait_for_timeout(600)
     rl.start_unit_run(pg, unit, TEST_QS)
     rec = rl.Recorder(pg); rec.start()
-    rl.wait(pg, 1100)
+    rl.wait(pg, int(1100 * rl.HOLD))
     # a right answer, then the code under it
     rl.answer(pg, True, 1200)
     open_code(pg); rl.wait(pg, 250)
