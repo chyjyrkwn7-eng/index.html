@@ -35964,3 +35964,8 @@ it's good to go."
   for a sign-up that picked Fire Code: "Fire Code has the same, without Mock." (Fire Code-only sign-ups already get the three.) The
   pre-class "What This Actually Is" card said "Four ways to study" for both: now "Ways to study", "Mock (police academy) grades you
   at the end" - and shorter than before, so the screen fits as it did. check-b384-r4 (O) reads both sign-ups.
+- **The chat icon** (Madison, zoomed screenshot: "the right side of the chat icon ... isn't perfect?" - he was right): the path's
+  last arc ended at y 12.3 where the first began at 11.3, so `Z` drew a 1-unit straight on the right edge, and its arcs were of
+  two radii (7.8 and 7.6). Now one true circle (centre 12.35,11.7, r 8) with the tail leaving its lower left:
+  `M5.45 15.7 4.15 20.9l5.5-1.7A8 8 0 1 0 5.45 15.7Z`, in `chatDockIcon()` and the two chat banner glyphs. Nudged so its ink sits
+  on the button's centre (measured at 4x: it was ~0.9px high, now ~0.4px, the thin tail tip biasing the measure upward).

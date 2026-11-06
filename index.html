@@ -103880,8 +103880,10 @@ function chatDockIcon(){
   /* A speech bubble with a tail, which is the one glyph nobody has to
      be taught. The tail is what stops a rounded rectangle reading as a
      card. */
-  p.setAttribute("d", "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3"
-    + "a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z");
+  /* (384 r4) "the right side of the chat icon ... isn't perfect?" - it was not: the old path's last arc ended 1 unit from where
+     the first began (12.3 against 11.3), so Z drew a short straight at the right edge, and its arcs were of two radii. Now a true
+     circle (centre 12.35,11.7, r 8 - nudged so the ink sits on the button's centre) with the tail leaving its lower left: one arc, so nothing can be off. */
+  p.setAttribute("d", "M5.45 15.7 4.15 20.9l5.5-1.7A8 8 0 1 0 5.45 15.7Z");
   svg.appendChild(p);
   return svg;
 }
@@ -106001,7 +106003,7 @@ const WHATS_NEW_92 = [
     body: "Stats charts your study time for the week, day by day.",
     say: "Stats now charts your study time for the week. Tap a day to see exactly how long you studied." },
   { key: "novachat", color: "#8E7CF5", title: "Message Nova",
-    glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z",
+    glyph: "M5.45 15.7 4.15 20.9l5.5-1.7A8 8 0 1 0 5.45 15.7Z",
     body: "Nova is in your chats with news, the next test and answers to questions.",
     say: "My chat isn’t one-way, either. Ask me about ranks, badges, the modes or the next test, and I’ll answer when I’m around." },
   { key: "novavr", color: "#E23B3B", title: "Challenge Nova",
@@ -131703,7 +131705,7 @@ const BANNER_KINDS = {
      three have their own: at a glance on a phone, three banners that
      look alike are the same banner three times. Violet and a speech
      bubble - not the friend green, not the room blue. */
-  chat: { tag: "CHAT", color: "#8E7CF5", glyph: "M20.5 11.3a7.8 7.8 0 0 1-8.4 7.8 9.2 9.2 0 0 1-2.7-.4L4 20.7l1.5-4.3a7.6 7.6 0 0 1-1-4.1 7.8 7.8 0 0 1 8-7.8 7.8 7.8 0 0 1 8 7.8Z" },
+  chat: { tag: "CHAT", color: "#8E7CF5", glyph: "M5.45 15.7 4.15 20.9l5.5-1.7A8 8 0 1 0 5.45 15.7Z" },
   /* A KEY THAT READS AT BANNER SIZE (build 327z5): "The key icon looks
      broken still". The old glyph was one filled outline with a bow, a
      stepped bit and a hole cut through it, and at 21px the steps and the
