@@ -31909,7 +31909,7 @@
   .vroom-wait-line{ margin:0; display:flex; align-items:center; gap:.55rem; font-size:var(--rs-label, .9rem); font-weight:700; line-height:1.3; color:var(--ink); }
   .vroom-wait-text{ flex:1 1 auto; min-width:0; text-wrap:balance; }
   /* "3 / 4" in the screen's figures, not the mono (build 315) */
-  .vroom-wait-count{ flex:none; white-space:nowrap; font-family:var(--sans); font-weight:800; color:#7CC0F4; }
+  .vroom-wait-count{ flex:none; white-space:nowrap; font-family:var(--sans); font-weight:800; color:var(--soft); }   /* (384 r5) was the pulse dot's blue, which read as a link or a warning on a count */
   .vroom-wait-dots{ width:.6rem; height:.6rem; border-radius:50%; background:#7CC0F4; box-shadow:0 0 10px #4A9FE8; animation:vroom-wait-pulse 1.2s ease-in-out infinite; flex-shrink:0; }
   @keyframes vroom-wait-pulse{ 50%{ opacity:.3; transform:scale(.7); } }
   .vroom-wait-bar{ height:.35rem; margin:.6rem 0 0; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
@@ -138324,6 +138324,15 @@ function showVirtualRoomFinaleReveal(pct, elapsedMs, totalScore){
     const inN = finishedN + pausedKeys.length;
     /* a pair like every other on the results (build 315, see rsPair) */
     wCount.textContent = finishedN + " / " + totalN;
+    /* (384 r5) WHO IS BEING WAITED ON: "Waiting on other players to finish" said nobody. Named, up to two, then a number */
+    if(!(totalN > 0 && inN === totalN)){
+      const wk = keys.filter(k => !doneK(k) && !pausedK(k) && k !== vroomMyKey);
+      const wn = wk.map(k => String(racing[k].name || "").trim() || "A player");
+      wText.textContent = !wn.length ? "Waiting on other players to finish"
+        : wn.length === 1 ? "Waiting on " + wn[0]
+        : wn.length === 2 ? "Waiting on " + wn[0] + " and " + wn[1]
+        : "Waiting on " + wn.length + " players";
+    }
     setBarFill(wFill, totalN ? Math.round(finishedN / totalN * 100) : 0);
     if(totalN > 0 && inN === totalN){
       /* THE MATCH WENT ON WITHOUT THIS DEVICE: everybody else is back in the lobby (their results already gone from the room

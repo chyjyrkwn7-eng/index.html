@@ -36004,3 +36004,6 @@ Settings > Classes: academy = shield with a filled star (blue), Fire Code = flam
 
 ## 384 r5: Sapphire bluer
 Sapphire's third glow (--theme-c3) was purple #6A1FD8 and it had no page-glow override, so its sky read as Amethyst. Now c1 #6FD6FF, c3 #1F44C9, and --bg-c1/2/3 blue. The seven ranks are Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova (Platinum is the teal one).
+
+## 384 r5: Virtual Room wait card
+The n / N count is finished / racers still in the room (a player who left drops out of both, so a solo finish read 1 / 1). It is now the soft grey (was the pulse dot's blue), and while anyone is still racing the line names them: 'Waiting on Sam', 'Sam and Alex', 'N players'; paused or gone players are not named.
