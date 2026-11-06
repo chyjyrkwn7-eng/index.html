@@ -1279,13 +1279,18 @@ async function tableClip(doc, index, loc, ptr, opts, fontBold, cache) {
 
 // the row label (and its factor, on the same line) inside a table rectangle
 function findRow(model, want, rect) {
+  // (384) THE ROW'S OWN LABEL. A footnote letter raised against a value can spell a short label ("B" and the "b" in "250 b", a row
+  // above it): of the matches, the larger print wins (a raised letter is a few points smaller than the cells), then the one further
+  // left by more than a little (a row's label is in the first column); otherwise the first in reading order, as before.
   let L = null;
   for (const it of model.items) {
     if (!it.t || !inBody(it)) continue;
     const c = centre(it);
     if (c < rect.x0 || c > rect.x1 || it.y < rect.y0 || it.y > rect.y1) continue;
     const n = norm(it.t);
-    if (n && (n === want || (n.length >= 12 && want.startsWith(n)) || (want.length >= 6 && n.startsWith(want)))) { L = it; break; }
+    if (n && (n === want || (n.length >= 12 && want.startsWith(n)) || (want.length >= 6 && n.startsWith(want)))) {
+      if (!L || it.h > L.h + 0.5 || (Math.abs(it.h - L.h) <= 0.5 && it.x < L.x - 2)) L = it;
+    }
   }
   if (!L) return null;
   let F = null;
@@ -1306,6 +1311,17 @@ function findRow(model, want, rect) {
   }
   let i0 = Math.min(L.y - DSC * L.h, G.y - DSC * G.h), i1 = Math.max(L.y + ASC * L.h, G.y + ASC * G.h);
   const x0 = Math.min(a.x0, b.x0);
+  // (384) THE WHOLE ROW. The gold ran from the label to the one cell nearest it, so in a table of four columns half the row asked
+  // about was marked and half was not. It runs on to the row's last cell now: every line of print to the right of the label whose
+  // letters stand a third or more inside the row's band (a row's cells, a value set midway down a row of two lines; the next row's
+  // lines lie outside it), with a note letter raised against it. The passes below then take in the rest of a cell of two lines.
+  for (const it of model.items) {
+    if (!it.t || !inBody(it) || it.x < L.x) continue;
+    const c = centre(it);
+    if (c < rect.x0 || c > rect.x1) continue;
+    const a0 = it.y - DSC * it.h, a1 = it.y + ASC * it.h, ov = Math.min(a1, i1) - Math.max(a0, i0);
+    if (ov >= 0.3 * (a1 - a0)) x1 = Math.max(x1, it.x + it.w);
+  }
   // (384 one picture) a cell of the row set on two half-lines beside it ("Less than or equal" / "to 6,000" beside "Protected above-")
   // is in the row: a line of print inside the mark's width whose letters stand a third or more within the mark's height is taken in
   // whole, so the gold never slices a word
@@ -1314,7 +1330,27 @@ function findRow(model, want, rect) {
     const a0 = it.y - DSC * it.h, a1 = it.y + ASC * it.h, ov = Math.min(a1, i1) - Math.max(a0, i0);
     if (ov > 0 && ov >= 0.3 * (a1 - a0) && (a0 < i0 || a1 > i1)) { i0 = Math.min(i0, a0); i1 = Math.max(i1, a1); }
   }
-  return { L, F, x0, x1, y0: Math.min(a.y0, b.y0) - 0.5, y1: Math.max(a.y1, b.y1) + 0.5, i0, i1, fs: Math.max(L.h, G.h) };
+  // (384) HOW FAR THE ROW CAN REACH. A row of two or three lines (a wrapped label, a cell set on three lines beside a label centred on
+  // the middle one) is ruled above and below its whole height, and the gold fills it to those rules (ruleBand) - but never past the
+  // next row's start: a line in the label's column beginning where the label begins (or centred where it is centred; a wrapped label's
+  // second line is indented, so it is not one). The table's own edge where there is no row beyond.
+  // A line starting where the label starts is looked for first; a line merely centred where it is centred only where there is none
+  // on that side (a wrapped label's indented, shorter second line can be centred on the first: "Maximum floor area" / "per unit of A").
+  const reach = (same) => {
+    let u = null, d = null;
+    for (const it of model.items) {
+      if (!it.t || !inBody(it) || it === L || it.h < 0.8 * L.h || !same(it)) continue;
+      const c = centre(it);
+      if (c < rect.x0 || c > rect.x1 || it.y < rect.y0 || it.y > rect.y1) continue;
+      if (it.y > L.y + 0.5 * L.h && (!u || it.y < u.y)) u = it;
+      if (it.y < L.y - 0.5 * L.h && (!d || it.y > d.y)) d = it;
+    }
+    return [u, d];
+  };
+  const [ux, dx] = reach(it => Math.abs(it.x - L.x) <= 2), [uc, dc] = reach(it => Math.abs(centre(it) - centre(L)) <= 2 && it.x <= L.x + 2);
+  const up = ux || uc, down = dx || dc;
+  const lt = up ? up.y - DSC * up.h : rect.y1, lb = down ? down.y + ASC * down.h : rect.y0;
+  return { L, F, x0, x1, y0: Math.min(a.y0, b.y0) - 0.5, y1: Math.max(a.y1, b.y1) + 0.5, i0, i1, fs: Math.max(L.h, G.h), lt, lb };
 }
 
 async function tableRowClip(model, segs, caps, rows) {
@@ -1361,7 +1397,7 @@ async function tableRowClip(model, segs, caps, rows) {
     const out = [{ page: seg.page, x0: seg.x0, x1: seg.x1, y0: Math.max(y0, seg.y0), y1: seg.y1, col: seg.col, context: true }];
     const marks = [];
     if (cap) marks.push(headMark(seg.page, cap));
-    for (const h of hits) { const m = { page: seg.page, x0: h.x0, x1: h.x1, i0: h.i0, i1: h.i1, fs: h.fs, kind: 'row' }; m.y0 = h.i0 - 0.12 * h.fs; m.y1 = h.i1 + 0.12 * h.fs; marks.push(m); }
+    for (const h of hits) { const m = { page: seg.page, x0: h.x0, x1: h.x1, i0: h.i0, i1: h.i1, fs: h.fs, kind: 'row', lt: h.lt, lb: h.lb }; m.y0 = h.i0 - 0.12 * h.fs; m.y1 = h.i1 + 0.12 * h.fs; marks.push(m); }
     // the whole page washes what the picture shows (the cut), with the row in the stronger gold
     return { segments: out, marks, cited: out.slice(), text: textIn(model, out) };
   }
@@ -1927,7 +1963,11 @@ function settleEdge(D, W, H, r, dir, s, inwardOnly) {
 function ruleBand(ctx, b, clampOnly) {
   const W = ctx.canvas.width, H = ctx.canvas.height, em = b.em;
   const X0 = Math.max(0, Math.floor(b.x0)), X1 = Math.min(W, Math.ceil(b.x1)), w = X1 - X0;
-  const Y0 = Math.max(0, Math.floor(b.t - 0.45 * em)), Y1 = Math.min(H, Math.ceil(b.b + 0.45 * em));
+  // (384) a table row looks for its rules as far as its reach (the next row's start, findRow): a row of two or three lines is filled to
+  // the rules round all of it, not only round the line its label is on; an ordinary band looks 0.45 em out, as before
+  const far = !clampOnly && b.row;
+  const Y0 = Math.max(0, Math.floor(far && b.lt != null ? Math.min(b.t - 0.45 * em, b.lt) : b.t - 0.45 * em));
+  const Y1 = Math.min(H, Math.ceil(far && b.lb != null ? Math.max(b.b + 0.45 * em, b.lb) : b.b + 0.45 * em));
   if (w < 8 || Y1 - Y0 < 4) return;
   let D; try { D = ctx.getImageData(X0, Y0, w, Y1 - Y0).data; } catch (e) { return; }
   // a rule: a level run of ink (its faint anti-aliased edge row counts) across half the band or more
@@ -1940,6 +1980,55 @@ function ruleBand(ctx, b, clampOnly) {
   // (the rules found are kept, so the marker never joins two lines across a rule)
   for (let y = Math.floor(b.t) - 1; y >= Y0; y--) if (ruled(y)) { b.ruleAbove = y; if (!clampOnly || y + 1 > b.t - pad) b.top = y + 1; break; }
   for (let y = Math.ceil(base) + 1; y < Y1; y++) if (ruled(y)) { b.ruleBelow = y; if (!clampOnly || y < b.b + pad) b.bot = y; break; }
+  if (far) { sideRules(ctx, b); mergedLabel(ctx, b); }
+}
+// (384) A LABEL CELL MERGED ACROSS ROWS ("Protected above- / ground tanks" beside "Less than or equal to 6,000" and "Greater than 6,000")
+// has no rule where the row asked about ends, so the row's gold, ending on that rule, cut through the label's second line. Where the
+// rule above or below the row does not run through its first cell, the row's gold starts at that cell's right-hand rule, and the label
+// is marked on its own: its lines of print in that cell, with the marker's even room, never sliced.
+function mergedLabel(ctx, b) {
+  const W = ctx.canvas.width, H = ctx.canvas.height, em = b.em;
+  const top = b.top != null ? b.top : b.t, bot = b.bot != null ? b.bot : b.b;
+  const y0 = Math.max(0, Math.ceil(top + 1)), y1 = Math.min(H, Math.floor(bot - 1)), h = y1 - y0;
+  if (h < 4 || (b.ruleAbove == null && b.ruleBelow == null)) return;
+  const X0 = Math.max(0, Math.floor(b.x0)), X1 = Math.min(W, Math.ceil(b.x1)), w = X1 - X0;
+  if (w < 8) return;
+  const span = Math.round(6 * em), Y0 = Math.max(0, y0 - span), Y1 = Math.min(H, y1 + span), hh = Y1 - Y0;
+  let D; try { D = ctx.getImageData(X0, Y0, w, hh).data; } catch (e) { return; }
+  const ink = (x, y) => { const i = ((y - Y0) * w + (x - X0)) * 4; return D[i] + D[i + 1] + D[i + 2] < 600; };
+  // the first cell's right-hand rule: the first column of ink the row's whole height, right of the label
+  let cx = -1;
+  for (let x = X0 + 2; x < X1 - 2 && cx < 0; x++) { let n = 0; for (let y = y0; y < y1; y++) if (ink(x, y)) n++; if (n >= 0.95 * h) cx = x; }
+  if (cx < 0 || cx - X0 < 1.5 * em) return;
+  const across = (y) => { if (y == null || y < Y0 || y >= Y1) return true; let n = 0; for (let x = X0 + 2; x < cx - 1; x++) if (ink(x, y)) n++; return n >= 0.8 * (cx - 1 - X0 - 2); };
+  if (across(b.ruleAbove) && across(b.ruleBelow)) return;                       // the rules run through the first cell: an ordinary row
+  // the label's own lines: rows of ink in the first cell, from the row's top down (or up) to the cell's own rules
+  const level = (y) => { let n = 0; for (let x = X0 + 2; x < cx - 1; x++) if (ink(x, y)) n++; return n >= 0.8 * (cx - 1 - X0 - 2); };
+  let ct = Y0, cb = Y1 - 1;
+  for (let y = y0; y >= Y0; y--) if (level(y)) { ct = y + 1; break; }
+  for (let y = y1; y < Y1; y++) if (level(y)) { cb = y - 1; break; }
+  let it = -1, ib = -1;
+  for (let y = ct; y <= cb; y++) { let any = false; for (let x = X0 + 2; x < cx - 1 && !any; x++) if (ink(x, y)) any = true; if (any) { if (it < 0) it = y; ib = y; } }
+  if (it < 0) return;
+  b.extra = { x0: b.x0, x1: cx, t: it, b: ib + 1, em, lp: null, cl: true, cr: true, snap: false, row: false };
+  b.x0 = cx + 1; b.cl = true;
+}
+// (384) A ROW'S GOLD RUNS FROM RULE TO RULE ACROSS THE TABLE. It ran from the label's first letter to the last cell's last letter, so a
+// value centred in its cell left a pale strip before the table's edge and an indented label a pale step at its start. Each side goes
+// out to the nearest upright rule (a column of ink the whole height of the row, inside the rules above and below) within 8 em, just
+// inside it; where there is none it stays where it was.
+function sideRules(ctx, b) {
+  const W = ctx.canvas.width, H = ctx.canvas.height, em = b.em;
+  const top = b.top != null ? b.top : b.t, bot = b.bot != null ? b.bot : b.b;
+  const y0 = Math.max(0, Math.ceil(top + 1)), y1 = Math.min(H, Math.floor(bot - 1)), h = y1 - y0;
+  if (h < 4) return;
+  const L = Math.max(0, Math.floor(b.x0 - 8 * em)), R = Math.min(W, Math.ceil(b.x1 + 8 * em));
+  let D; try { D = ctx.getImageData(L, y0, R - L, h).data; } catch (e) { return; }
+  const w = R - L;
+  const upright = (x) => { let n = 0; for (let y = 0; y < h; y++) { const i = (y * w + (x - L)) * 4; if (D[i] + D[i + 1] + D[i + 2] < 600) n++; } return n >= 0.95 * h; };
+  // (an edge on a rule takes no marker's room past it: cl / cr)
+  for (let x = Math.ceil(b.x1); x < R; x++) if (upright(x)) { b.x1 = x; b.cr = true; break; }
+  for (let x = Math.floor(b.x0) - 1; x >= L; x--) if (upright(x)) { b.x0 = x + 1; b.cl = true; break; }
 }
 
 // What is left on an outer edge that no clean row could clear - a fragment of the line above or below, or of a mark in the margin
@@ -2065,9 +2154,11 @@ async function paintSheet(doc, clip, sheet, s, dpr, opts) {
     const p = parts.find(q => q.seg.page === m.page && cx >= q.seg.x0 - 2 && cx <= q.seg.x1 + 2 && cy <= q.pc.top + 1 && cy >= q.pc.bot - 1);
     if (!p) continue;
     const X = (v) => (v - p.seg.x0) * s + p.x, Y = (v) => (p.ry - v) * s - p.r0 + p.y;
-    bands.push({ x0: X(m.x0), x1: X(m.x1), t: Y(m.i1 != null ? m.i1 : m.y1), b: Y(m.i0 != null ? m.i0 : m.y0), em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow });
+    bands.push({ x0: X(m.x0), x1: X(m.x1), t: Y(m.i1 != null ? m.i1 : m.y1), b: Y(m.i0 != null ? m.i0 : m.y0), em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow,
+                 lt: m.lt != null ? Y(m.lt) : null, lb: m.lb != null ? Y(m.lb) : null });
   }
   for (const b of bands) { if (b.snap) snapBand(ctx, b); ruleBand(ctx, b, !b.row); }
+  for (const b of bands.slice()) if (b.extra) bands.push(b.extra);
   fillMarker(ctx, bands);
   return canvas;
 }
@@ -2150,7 +2241,8 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
   for (const m of hl.marks) {
     if (!isDark(m, keyed)) continue;
     const r = box(m.x0, m.i0 != null ? m.i0 : m.y0, m.x1, m.i1 != null ? m.i1 : m.y1);
-    bands.push({ x0: r.x0, x1: r.x1, t: r.y0, b: r.y1, em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow });
+    bands.push({ x0: r.x0, x1: r.x1, t: r.y0, b: r.y1, em: (m.fs || 10) * s, lp: m.lp ? m.lp * s : null, cl: m.cl, cr: m.cr, snap: m.snap, row: m.kind === 'row' || m.tableRow,
+                 lt: m.lt != null ? P(m.x0, m.lt)[1] : null, lb: m.lb != null ? P(m.x0, m.lb)[1] : null });
   }
   const rects = [], W = ctx.canvas.width;
   for (const sg of hl.segments) {
@@ -2197,6 +2289,7 @@ function highlightPage(ctx, vp, hl, s, model, keyed) {
     rects.push({ ...r, em: fs * s });
   }
   for (const b of bands) { if (b.snap && upright) snapBand(ctx, b); if (upright) ruleBand(ctx, b, !b.row); }
+  for (const b of bands.slice()) if (b.extra) bands.push(b.extra);
   // the wash is under every gold mark: a mark is part of the block it sits in (or a block of its own), the marker's own extent
   for (const b of bands) {
     const pad = Math.min(0.2 * b.em, Math.max(0.08 * b.em, ((b.lp || 1.15 * b.em) - (b.b - b.t)) / 2)), px = 0.14 * b.em;

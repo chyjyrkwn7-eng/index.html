@@ -35648,3 +35648,40 @@ Professional Policing / Victims of Crime), roundel / lens 0.83 (Ch 50 / Ex B), w
 keystone family the academy just lost (Ch 23 / 4 / 34 / 39).
 Media (scratchpad only): out-badges2/ - every badge per class before/after, the changed outlines before/after, the enamels, the
 unit screens on an iPhone 17 Pro Max.
+
+### Build 384, round 2 - the code pictures: one picture per citation, two tones, the marker on its words, table rows rule to rule (NOT on main, waiting for Madison)
+Madison, on phone screenshots of Fire Code: "When showing the show code, why would there be two cropped images? That should be one
+cropped image ... Like tables too ... make it look like how the code book has it ... why do some ... have 3 different tones of
+highlighted stuff? ... Should really only ever be two tones ... I see some highlights where it goes slightly above the word ... The
+edges of the highlight need to be nice as well and cohesive. This is very very VERY VITAL." / "I need 1000 percent confirmation that
+it's good to go."
+- ONE PICTURE (d4607a9): a citation cut in pieces is one picture - skipped lines between pieces of one column are cut through (a county
+  lead and its exceptions; a table from its caption through the row and its notes); a section running into the next column or onto the
+  next page, a text and the full-width table under it, a standard's organisation and its entry, are set one under the other on one
+  canvas (sheetOf), the seam halfway between two lines; stitched columns sit on the book's grid (0276314: right column = left + 261pt).
+- TWO TONES: the pale wash (WASH) and one gold (STRONG); the exception's orange is gone; each tone is one shape filled once; on the page
+  the wash hugs each cited block and runs under every gold mark. (isDark: cite/row, or a heading only where nothing more precise is
+  marked - so a whole table cited alone, "Table C102.1", has its caption's number in gold, as a section cited alone has its heading.)
+- THE MARKER ON ITS WORDS (81fea61): same room above and below the letters, consecutive lines meet halfway, one outline with rounded
+  corners, county marks snapped onto whole words, outer edges settle on a clean row or paint out a fragment of the next line.
+- TABLE ROWS (this commit, found going through every citation's picture): of the 44 book citations that point at a row,
+  Table 1017.2 "row: B" was marked on the raised note letter "b" of "250 b" a row above (findRow took the first print spelling the
+  label) - the larger print now wins, then the leftmost; in tables of three or more columns the gold ran from the label to the one cell
+  nearest it - it now runs on to the row's last cell (every line of print whose letters stand a third or more in the row's band);
+  rows of two or three lines (906.3(1) "Maximum floor area / per unit of A", D103.4's three-line turnarounds) were a stripe through the
+  label's line - findRow now hands the painter the row's REACH (the next row's start in the label's column above and below: a line
+  starting where the label starts, else centred where it is centred and not indented; the table's edge where there is none) and
+  ruleBand fills the row to its own rules within it; sideRules takes both ends out to the table's upright rules (a value centred in
+  its cell left a pale strip before the edge); mergedLabel: a label cell merged across rows (2306.2.3 "Protected above- / ground
+  tanks") has no rule where the row ends, so the row's gold starts at that cell's rule and the label is marked on its own, both
+  lines, never sliced. County table rows (tableRow) take sideRules too: their gold now reaches the table's edge (52 checked).
+- tools/check-b384-onepicture.py (the helper's): every citation's card and whole page read off their pixels - one picture, two tones,
+  nothing darker than the gold, gold centred on its ink, no stripes or slivers, no letter cut, Enlarge one picture.
+  tools/check-b384-tablerows.py (new): Table 1017.2's gold on row B; every row's gold across the whole row; every row's reach; never a
+  raised letter for a label - all four FAIL on 4dfd194 (['b']; 18 of 50 rows short; no reach; ch10-061 5.4 vs 7.92) and pass here.
+- WHAT WAS LOOKED AT, by eye: Madison's own nine citations (card and page), all 175 that were several pictures (card), all 44 book
+  table rows and all 52 county table rows (page, close up), and every citation whose marked words changed. Machine-checked: all
+  1,812 (1,391 book, 421 county). node compare (onepic-work/compare.mjs): against 4dfd194 only the 18 row citations change their marked
+  words; no citation loses shown text.
+- Left as the data has it: a row given ambiguously (3206.2 "I-IV; 2,501-12,000" matches three sub-rows) marks the first; a table cited
+  without a row (C102.1) marks its caption number. The questions and their citations are the study guide's and are not changed.
