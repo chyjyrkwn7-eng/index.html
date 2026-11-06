@@ -23441,6 +23441,10 @@ def check_b321d_badges(br):
           let ok = true; for(const q of [i, i - 6, i + 6, i - 6 * W, i + 6 * W, i - 5 - 5 * W, i + 5 + 5 * W, i + 5 - 5 * W, i - 5 + 5 * W]) if(d0[q*4+3] < 255 || ch(q) < 45){ ok = false; break; }
           if(!ok) continue; let m = 0; for(let v = -3; v <= 3; v++) for(let w = -3; w <= 3; w++) m += L0[i + v * W + w]; hs += Math.abs(L0[i] - m / 49); hn++; }
         if(hn > 200) out.tex[u] = +(hs / hn).toFixed(2);
+        /* a789dc2: how light the enamel itself strikes (the same interior), and whether the app calls it pale */
+        { let ls = 0, ln = 0; for(let y = 6; y < W - 6; y += 3) for(let x = 6; x < W - 6; x += 3){ const i = y * W + x; if(d0[i*4+3] >= 255 && ch(i) >= 45){ ls += L0[i]; ln++; } }
+          out.lum = out.lum || {}; out.pale = out.pale || {}; out.lum[u] = ln ? Math.round(ls / ln) : null;
+          try{ const t = badgeThemeFor(u); out.pale[u] = typeof badgeEnamelPale === 'function' && !!badgeEnamelPale(t.en || t.p); }catch(e){ out.pale[u] = false; } }
         /* shine: stage 0 against stage 4 at 300px */
         const a = px(u, 300, 0), b = px(u, 300, 4), La = lumOf(a), Lb = lumOf(b), A = [], B = [];
         for(let i = 0; i < La.length; i++){ if(a[i*4+3] >= 250) A.push(La[i]); if(b[i*4+3] >= 250) B.push(Lb[i]); }
@@ -23476,19 +23480,55 @@ def check_b321d_badges(br):
       }
       return out; }""")
     ctx.close()
+    # MOVED IN a789dc2 (badges round 2, "Make colors darker lighter, do some
+    # whites, some blacks"): eight academy enamels changed on purpose, four of
+    # them deep (Consular Notification, Sexual Assault, Phonetic Alphabet,
+    # Crisis Intervention: their struck field 43-83 levels of light) and three
+    # pale (Code of Criminal Procedure and Radio - the app's own
+    # badgeEnamelPale, struck with a fine dark edge at the wall - and
+    # Traumatic Brain Injury's light rose, striking at 180).
+    # These three rules were set on enamels striking at 100-175, and each
+    # measures something the enamel's own lightness caps; for the rest they
+    # stand exactly as written:
+    # - the grain is a texture laid over the colour, so its swing scales with
+    #   the colour's light: on a deep enamel the same grain is the same share
+    #   of its light (measured: .60-.72 per 100 levels, against .45-.61 on
+    #   the mid enamels and ~.2-.3 on 6a387e2's smooth ones);
+    # - a pale enamel's own field strikes above 225 at every stage, so it is
+    #   not a highlight: on those the dirtiest must still lose most of what
+    #   is bright and fall at its brightest;
+    # - near black has no 30% shade left below it and near white no 1.7x light
+    #   above it: a deep enamel's bevel must catch the light (>= 1.7) and still
+    #   dip, a pale one's must fall into shadow (<= .7, its dark edge) and
+    #   still catch.
     tex = r["tex"]
+    lum = r.get("lum") or {}
+    # pale: the app's own badgeEnamelPale, or striking lighter than any enamel the rules were set on (175: Traumatic
+    # Brain Injury's light rose strikes at 180 without being "pale" to the strike); deep: darker than any (100)
+    pale = {u: bool((r.get("pale") or {}).get(u)) or (lum.get(u) or 0) > 175 for u in set(lum) | set(r.get("pale") or {})}
     tv = sorted(tex.values())
-    check("texture: a clean badge's enamel has a grain (high-pass mean >= .5 on every badge, median >= .6; it was smooth)",
-          len(tv) >= 12 and tv[0] >= .5 and tv[len(tv) // 2] >= .6, sorted(tex.items(), key=lambda kv: kv[1])[:4])
+    rough = [u for u, t in tex.items() if not (t >= .5 or ((lum.get(u) or 999) < 100 and t / max(1, lum[u]) >= .005))]
+    check("texture: a clean badge's enamel has a grain (high-pass mean >= .5, or as much per level of light on a deep enamel (a789dc2), every badge; median >= .6; it was smooth)",
+          len(tv) >= 12 and not rough and tv[len(tv) // 2] >= .6,
+          {u[:24]: (tex[u], lum.get(u)) for u in (rough or sorted(tex, key=lambda k: tex[k]))[:4]})
     sh = r["shine"]
     drops = sorted(v[0] - v[1] for v in sh.values())
-    gone = [u for u, v in sh.items() if v[3] > .02 * max(1, v[2])]
-    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's) and the brightest 3% fall by a median of 85+ levels",
-          len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85, [drops[len(drops) // 2] if drops else None, gone[:3]])
+    gone = [u for u, v in sh.items() if (v[3] > .02 * max(1, v[2])) if not pale.get(u)]
+    gone += [u for u, v in sh.items() if pale.get(u) and not (v[3] <= .5 * max(1, v[2]) and v[0] - v[1] >= 10)]
+    check("the dirtiest is far duller: no bright highlight left at stage 4 (<= 2% of stage 0's; a pale enamel's own field is not one - it loses half of what is bright, a789dc2) and the brightest 3% fall by a median of 85+ levels",
+          len(sh) == len(r["shine"]) >= 12 and not gone and drops[len(drops) // 2] >= 85,
+          [drops[len(drops) // 2] if drops else None, gone[:3], {u[:24]: sh[u] for u in sh if pale.get(u)}])
     bev = r["bevel"]
-    flat = [u for u, v in bev.items() if not (v[0] <= .7 and v[1] >= 1.7)]
-    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge",
-          len(bev) >= 12 and not flat, {u[:16]: bev[u] for u in (flat or list(bev))[:4]})
+    def _bevel_ok(u, v):
+        L = lum.get(u)
+        if pale.get(u):
+            return v[0] <= .7 and v[1] > 1.0
+        if L is not None and L < 100:
+            return v[1] >= 1.7 and v[0] < 1.0
+        return v[0] <= .7 and v[1] >= 1.7
+    flat = [u for u, v in bev.items() if not _bevel_ok(u, v)]
+    check("the bevel: from the silver into the colour along the light the step falls into shadow (<= .7), against it it catches the light (>= 1.7), every badge (a deep or pale enamel on the side its light leaves room for, a789dc2)",
+          len(bev) >= 12 and not flat, {u[:16]: (bev[u], lum.get(u), bool(pale.get(u))) for u in (flat or list(bev))[:4]})
     bh = [v for v in back.values() if v]
     h99 = sorted(v["hp99"] for v in bh)
     check("the back is engraved: its words' walls catch the light and throw shadows (99th percentile local contrast every >= 88, median >= 95)",
