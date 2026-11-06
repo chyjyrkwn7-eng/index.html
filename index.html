@@ -1820,6 +1820,25 @@
     font:inherit; font-size:.78rem; padding:.4rem 1rem; border-radius:999px;
     cursor:pointer; margin-top:1rem;
   }
+  /* (384) EVERY LOADING SCREEN IS SIZED FOR ITS DEVICE. "ensure the loading splash screens, loading test screens, generating
+     profile and all those types of screens are sized up and look great for the larger devices". They were one phone-sized picture
+     everywhere - a 33.6px NOVA, 11.5px words and a 224px bar in the middle of an iPad or a laptop window. From a tablet up they
+     scale with the screen: the word to 3.4rem (4rem on a big window), the words and the bar with it, the gaps opened to match.
+     The splash, the class-switch loader, Generating profile / Syncing devices and Loading test alike. */
+  @media (min-width:40rem) and (min-height:34rem){
+    :is(#splash-wordmark, #csl-wordmark, #genprofile-wordmark, #teststart-wordmark){ font-size:3.4rem; margin-bottom:.45rem; }
+    :is(#splash-status, #csl-status, #genprofile-label, #teststart-label){ font-size:1rem; }
+    :is(#splash-track, #csl-track, #genprofile-track, #teststart-track){ width:40vw; max-width:22rem; height:6px; }
+    :is(#splash-group, #csl-group){ gap:1rem; }
+    :is(#genprofile-overlay, #teststart-overlay){ gap:1.5rem; }
+    #teststart-skip{ font-size:.95rem; padding:.55rem 1.3rem; }
+  }
+  @media (min-width:64rem) and (min-height:44rem){
+    :is(#splash-wordmark, #csl-wordmark, #genprofile-wordmark, #teststart-wordmark){ font-size:4rem; }
+    :is(#splash-status, #csl-status, #genprofile-label, #teststart-label){ font-size:1.08rem; }
+    :is(#splash-track, #csl-track, #genprofile-track, #teststart-track){ max-width:26rem; }
+  }
+
 
   /* Virtual Room's own two-part synced start sequence, per explicit
      request — a brief "everyone's ready" flourish the instant the
