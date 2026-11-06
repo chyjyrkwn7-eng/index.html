@@ -35682,3 +35682,101 @@ the same on 2ac229b (before round 2): "17 Pro Max: the name's letters are at lea
 hourglass, 8.8 (an outline no round touched); its cutscene-hasp check failed once under load and passes alone. check-js ALL
 PASS. Media: out-badges2/ (scratchpad) - fire-code-round3-ch34-before-after.png, the thirteen changed Fire Code outlines
 against the build before round 2, all-58 and all-24 re-rendered, the Fire Code unit screen re-shot.
+## 384 final check: check-behaviour's 15 failing sections, triaged (branch claude/b384-behtriage)
+
+The 15 sections that failed on the merged 384 (b258, b298, b299, b300, b304_polish, b305_resultstap, b314h_flares, b314h_rankmap,
+b314h_chat, b314h_board, b314h_settings_calendar, b313_lead, b313_sheet2, b314_chars, b313_fx), each assertion traced to the
+commit it started failing in. Method: the 15 run against 185cc5c (round one's final build) first - every consistent failure was
+already there, so NONE came in with this round's merges (characters, banners, sets, fx, polish, crops, desktop, Virtual Room).
+Then the first-parent builds before it, back to 4f9c74e (the oldest index.html in this repo, ~327u): anchors at 383 (42bbffa),
+382 (a330ee8), 381 (bbc018a) and 4f9c74e, then a scripted bisect (one section, one browser, one build at a time, each build
+saved to the scratchpad and run with --against, with an untouched copy of the gate for the old assertions). Each start was
+checked on the commit and on its parent. The machine ran at load 3-9 on 4 cores throughout.
+
+ONE APP REGRESSION, FIXED (its own commit): b258 "before an update reloads ... nothing else is animating". 383's dimmer sky
+beyond Home is a .6s transition of --sky-k / --sky-kb on body::before; releasePageForReload() cancels every animation, then
+empties the stage, which takes Home off - so the dimming started again under the opaque #0A0A0A bar for the reload's last
+frames (2 running on 42bbffa .. 5bb4865, 0 on a330ee8). Same shape as 323's starfield (html.is-reloading body::after
+display:none): html.is-reloading body::before{ transition:none !important }. The bar covers the sky, so nothing visible
+changes. b258 fails on 5bb4865, passes with it. (Round one had left this as a known 383 failure.)
+
+DECISIONS THAT CHANGED, the gate moved (each marked MOVED IN with the commit and the archive's reason; what still holds of the
+old intent is still asserted):
+- b298 paint (fef8ce3, 380 "loops as window-sized layers"): by default (html.loops-paint) a loop steps through its window by
+  left/top and repaints that window each step - measured 600-675 paints, 42-83ms over 2.5s, against 0-9ms the transform way.
+  loopsWatch puts the transform way back where the painted way is not smooth, and under load here it does, so the check passed
+  on some runs (e434e19) and not others (185cc5c, 5bb4865). It now measures the transform playback it was written for (the
+  page's loops-paint off).
+- b299 the dot's colour and the card's order (42bbffa, 383 "Profile: the badge case under the person card, a Customize button
+  you can see"): the card's dot is on Customize's row now (read wherever the card puts it, as profileDot already was); the tab
+  reads person card, badge case, next rank.
+- b300 frame on show (fef8ce3, 380): in paint mode the frame is left/top, not a transform (358 of 360 read as frame 0) - read
+  off whichever is moving it; whole device pixels (9656473, 384 "the rank flares' shake"): the window carries its own
+  scale(1/hero), so a step is fw x K x S x dpr on the screen (126.0) and fw x dpr in the window's own paint (126) - both
+  asserted (the own-paint half is 9656473's fix: 134.04 before it).
+- b304 tint (42bbffa, 383 round 2 "Profile's three cards are the clean look's solid card"): under any banner, and none, the
+  card is one solid fill; the banner is on its cover, a different one per banner.
+- b305 a tap (fef8ce3, 380 "TAP-THROUGH, BOX BY BOX"): a tap finishes the box coming in (the XP card's lines, total and level
+  block land together: 4 -> 10 of 11); held: what lands is one box, never the way-on row.
+- b314h_flares "the next one being hunted" (802f873, 329 "I don't want hunted secret flares"): none may be marked hunted now.
+- b314h_rankmap "went down the road" (45fb8fd, 384 "the back button and the chat button meet in the middle"): Rank's nav row
+  went up .6rem and the deepest scroll 109 -> 99 against a fixed 100; now: the camera went down WITH the light (at the deepest
+  frame the light is on screen in rankUpFollowY's band, .3-.55, or the page is at its floor) and came back to the top.
+- b314h_chat (db0e4a2, 384 "the chat sheet": "see through and then you see it change to blurry"): the dark sheet has no
+  backdrop-filter at all; held: a tap puts it in no settling/dragging state and leaves its fill and filter as they were.
+- b314h_board header (a330ee8, 382 "the Leaderboard and the Calendar in Settings' language"; 383 joined the podium to the
+  list): first place no longer glows (box-shadow none; on 381 0 3px 18px gold), the header is a caption 7px over the card.
+  314's 8px / 12px still applies wherever first place throws a glow; otherwise the header's own line, labels clear (4px+).
+- b314h_settings_calendar today (a330ee8, 382 "Today is the accent's circle: filled when it is the picked day, a ring
+  otherwise"): the fixture's today is picked, so there was no ring to read; now both states, matte (no gradient, no glow) and
+  in the page's accent (the clean look's accent is the white ink whatever theme).
+- b313_lead the cold-open trio (f5a95d5, 327z12 "This Week and Hundos use Overall's header"; a330ee8 382 puts it over the
+  placeholders): the header is a .rank-row and was counted as a person (12 for 11, 9 for 8, 1 for 0). People are counted now.
+- b313_sheet2 the No hundo note's red (327 round 12, before 4f9c74e - already failing on 327z9 per the archive): the note is on
+  the pop-ups' glass at .14 / .4 against the chip's .12 / .35; held: the chip's 255,107,91 at its strength or a shade more, no
+  other red.
+- b314_chars "no still character rises above y 4.35" (92f434d, 327z10 "the Ghost is centred", AVATAR_CENTRE_DY 2.3 -> -2.5):
+  what rose to 1.8 is the wisp floating off its shoulder (and its cold light is an ellipse, not a halo circle); both are set
+  aside here as check-b325-a sets them aside since 327z10. Looked at (Customize tile, Profile portrait, before/after): the
+  head is well inside the frame.
+- b314_chars "exactly one character wears the selection ring and the tick" (327 round 11, in the stylesheet at 4f9c74e: "the
+  character you have selected being circled is not the move, just the checkmark is okay"): 0 rings, 1 tick on 4f9c74e too.
+  Now: one tile marked, the selected one, by its tick; no ring anywhere.
+- b313_fx "Confetti ... leaves the box and its bar gold" (42bbffa, 383 round 2 "ONE CARD ... border transparent ... the
+  results' cards (the grade's tone frame hidden)"): the box's rim is the clean card's; held: untinted, the bar gold.
+
+TIMING (passes on a quieter run; not changed): b300 iPad "coming back to Home ... within a second" (1212ms, the 185cc5c run
+only); b313_fx underwater "holds its breath" (4 of 4 looks under load, 35/35 later) and bubbles "every piece gone" (the one
+run at load 9); b314h_rankmap "the light is there before its line moves" (one to four frames at 0-.87 after 900ms, different
+every run). That last one had a real cause on 185cc5c and e434e19, already gone: opening Rank made 4-6 long tasks (300-370ms)
+in its first 700ms, so the light's .25s + .4s fade-in finished at 830-953ms against the gate's 900 - 775a30c's
+#stage:has(...) > :not(...) restyling the whole screen on every change, which 480a023 fixed. Measured at load 2-3, three
+opens each: 383 and 3ec8227 0-1 long tasks, light full at 677-718ms; 185cc5c 5-6 / 843-953; e434e19 4-6 / 830-914; 480a023
+0 / 675-715; the merged branch 0-2 / 696-723. On the branch it failed only at load 8+ and passed twice at load 3.
+
+BADGES ROUND 2 (a789dc2, merged in before the final runs): every check-behaviour section that draws or measures badges re-run on
+the merge and on 6475230 just before it (ranks, update_and_cards, b232, b242, b270, b281_badge_card, b316_tiles, b317_pfcard,
+b317_badgecase, b317_badge2, b318_badges, b319_badges, b320g_inspect, b321d_badges, b320c_case, b321c_case, b314_unlocks, and
+b314_chars in the 15). The ranks' "no two produce the same shape signature" passes. ONLY three assertions failed after a789dc2
+and not before, all in check_b321d_badges, and none pins an outline name or a colour - each measures something the enamel's own
+lightness caps, and a789dc2 brought in four deep enamels (struck 43-83 levels: Consular Notification, Sexual Assault, Phonetic
+Alphabet, Crisis Intervention) and three pale ones (180-193: Code of Criminal Procedure, Radio, Traumatic Brain Injury) where
+every enamel before struck 100-175:
+- the grain (high-pass >= .5): a texture over the colour swings with its light - .31-.50 absolute on the deep four, but .60-.72
+  per 100 levels against .45-.61 on the mid ones; a deep enamel is held on its grain per level of light;
+- "no bright highlight left" at stage 4: a pale enamel's own field strikes over 225 at every stage (Radio 6304 -> 2130 px) -
+  on those, half of what is bright must go and the brightest 3% must fall (Radio 253 -> 237, CCP 255 -> 236);
+- the bevel (<= .7 into shadow, >= 1.7 against the light): near black has no 30% shade below it (Phonetic .96, Crisis .87),
+  near white no 1.7x light above it (Radio 1.56, TBI 1.52) - each held on the side its light leaves room for (deep: catches
+  >= 1.7 and still dips; pale: falls <= .7, its new dark edge, and still catches).
+Looked at struck clean and at stage 4 side by side (scratchpad bt/shots/merged-badges.png): every one, pale and deep, reads
+duller and grainier dirty, the bevel plain on all. The mid enamels keep the rules exactly; all three pass on both builds.
+Every other failure in those sections (49 of them, in b316_tiles, b317_pfcard, b317_badgecase, b317_badge2 - which then stops
+on an IndexError - b318_badges, b319_badges, b320g_inspect, b320c_case, b321c_case, and b321d's "in your hand ... on the middle")
+is identical on 6475230: older than this round's badge work and outside these 15; not triaged here.
+
+RESULT on claude/b384-behtriage (a789dc2 merged in): the 15 sections 315 PASS, 1 FAIL - b314h_rankmap's light at load 8; run
+alone twice at load 3, both pass. Checked across a change: b258 fails on 5bb4865 and passes with the fix; b300's new
+own-paint half fails on 1647a98 (134.04) and passes on 9656473 (126); b321d's three moved rules pass on 6475230 and on the
+merge. The other moves describe behaviour that has been right since its change, so they were run on the branch only.
+Bisect builds, logs, probes and screenshots: scratchpad bt/ (not in the repo).

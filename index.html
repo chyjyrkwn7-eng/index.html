@@ -1562,6 +1562,12 @@
      than a child: clearing the stage re-runs syncSky(), whose opacity
      transition would otherwise start again under the bar. */
   html.is-reloading body::after{ display:none !important; }
+  /* ...and the sky under it (384): 383's dimmer sky beyond Home is a
+     .6s transition of --sky-k / --sky-kb on body::before, and emptying the
+     stage takes Home away, so the dimming ran under the opaque bar for the
+     reload's last frames - two animations a page that is letting go should
+     not start. The bar hides the sky; it takes its new value at once. */
+  html.is-reloading body::before{ transition:none !important; }
   #splashscreen{
     /* Sized in viewport units as well as inset:0, and clipped.
        Reported on a real device: on launch the splash content appears in
