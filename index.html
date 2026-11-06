@@ -33101,7 +33101,11 @@
     box-shadow:inset 0 0 0 .5px rgba(255,255,255,.22), inset 0 .5px 0 rgba(255,255,255,.32), 0 1px 1.5px rgba(0,0,0,.22);
     color:#fff;
   }
-  .settings-row-icon svg{ width:21px; height:21px; }
+  /* (384 r4) 22px, not 21: an icon in a 30px or 32px tile at an ODD size sits on a half pixel (4.5 / 5.5px in), the browser snaps
+     it, and every icon leaned right by a third to half a pixel ("a lot of the settings icons aren't centered", measured off his
+     phone: Sound +.3, Study +.4, Motion +.6 right). An even size sits on whole pixels. The stroke keeps its thickness (1.53 x
+     22/24 = the 1.4px it was at 21). */
+  .settings-row-icon svg{ width:22px; height:22px; stroke-width:1.53; }
   .settings-row-label{ font-weight:500; }
   .settings-row-value{
     flex:0 0 auto; margin-left:.25rem; font-size:.92rem; font-weight:500; color:var(--soft);
@@ -33257,8 +33261,10 @@
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon, .settings-row-icon.is-accent, .settings-row-icon.is-muted){
     flex:0 0 32px; width:32px; height:32px; border-radius:8px;
   }
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon svg{ width:21px; height:21px; shape-rendering:geometricPrecision; }
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:2.15; }
+  /* (384 r4) 22px in the 32px tile = 5px in each side, whole pixels (21px was 5.5: see the base rule); stroke 2.05 x 22/24 = the
+     1.88px that 2.15 x 21/24 was */
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon svg{ width:22px; height:22px; shape-rendering:geometricPrecision; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:2.05; }
   /* (out-ranking the 383 iOS-body rule - html[data-layout] body #stage :is(...) .settings-row-label, 17px) */
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label{ font-size:18px; line-height:1.25; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-value{ font-size:17px; }
@@ -37955,7 +37961,13 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] .frame-code{ padding-block:calc(.4rem + (1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
     html[data-layout] .gs-signin{ padding-block:calc((42px - 1cap) / 2); text-box:trim-both cap alphabetic; }
     html[data-layout] #pausebtn:not([hidden]){ text-box:trim-both cap alphabetic; padding-block:calc(.35rem + (1lh - 1cap) / 2); }
-    html[data-layout] .chatdock-friendsbar-btn{ padding-block:calc((44px - 1cap) / 2); text-box:trim-both cap alphabetic; }
+    /* (384 r4) "Manage friends" read low ("these aren't centered and I can tell"): its CAPITALS were centred (measured off his phone:
+       dead on), but it is a mixed-case word, and its lowercase letters and the g hang below the capitals' middle - the word as a
+       whole sat ~1.6px low (Chromium) / .9px (his phone). Lifted .7px, between the two: capitals .2px high, the word's own
+       middle .9px low. All-caps labels are centred by their capitals and stay as they are. */
+    /* a <button> centres its own content, so the lift is half the extra bottom padding (device pixels round it: measured at 3x, .8px takes the whole word from 1.3 to ~1.0px low with the capitals still within .5 - 1.0px+ would put the capitals past the gate's .5). The selector is the
+       one that sets this button's padding at 0 (higher in the file); a rule with less weight than it does nothing */
+    html[data-theme][data-layout] .chatdock-friendsbar-btn{ padding-top:0; padding-bottom:.8px; text-box:trim-both cap alphabetic; }
     /* the Calendar's days-to-go: the number and its words each on their own capitals, the pair in the middle */
     html[data-layout] .cal-nt-count > :is(.cal-nt-num, .cal-nt-unit){ display:block; padding-block:calc((1lh - 1cap) / 2); text-box:trim-both cap alphabetic; }
     /* the Virtual Room's game chips and the units' mode chip: the word beside its icon, on its capitals */
@@ -37992,8 +38004,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .pf-rw{ padding-top:calc(.65rem - 1.2px); padding-bottom:calc(.55rem + 1.2px); }
   /* icons drawn off their own middle */
   html[data-layout] .stx-vr-empty-ico > svg{ translate:1.38px -.54px; }
-  html[data-layout] .settings-row-icon[data-tile="motion"] > svg{ translate:.61px 0; }
-  html[data-layout] .settings-row-icon[data-tile="study"] > svg{ translate:0 -.5px; }
+  /* (384 r4) the Motion and Study icons' hand-made shifts (.61px right, .5px up) are gone: every Settings glyph is centred from its
+     own geometry now (settingsIconNudge in settingsRowIcon), and a shift here would be counted twice */
   html[data-layout] .flagbtn.qflag:not(.on) .flagicon :is(.starfill, .starline){ translate:0 .45px; }   /* the star sat .45 of 24 high (starred, its ring - .4 low - evens it) */
   html[data-layout] #chatdock-btn > svg{ translate:0 -.3px; }        /* the speech bubble's tail reaches lower than its top */
   /* letter-spacing after the last letter pushes spaced words left by half of it: given back on the left */
@@ -128337,19 +128349,28 @@ function settingsRowIcon(kind, tone){
     /* (384 review, round 2) Customize: "Still not a fan of the customize icon, it's a wand?" (the palette before it read as
        a blob) - what Customize opens first is your character, so: a character's head and shoulders in its round frame */
     /* (384 r4) Classes: a mortarboard */
-    /* (384 r4) shifted down .6 so the ink's middle is the tile's (check-centering: it was .67px high) */
-    classes: '<g transform="translate(0 .6)"><path d="M2.8 9.4 12 5l9.2 4.4L12 13.8z"/><path d="M6.6 11.4v4.2c1.4 1.5 3.2 2.2 5.4 2.2s4-.7 5.4-2.2v-4.2"/><path d="M21.2 9.4v5"/></g>',
+    classes: '<path d="M2.8 9.4 12 5l9.2 4.4L12 13.8z"/><path d="M6.6 11.4v4.2c1.4 1.5 3.2 2.2 5.4 2.2s4-.7 5.4-2.2v-4.2"/><path d="M21.2 9.4v5"/>',
     personcircle: '<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="9.9" r="2.9"/><path d="M6.4 18.3c1.2-2.4 3.2-3.6 5.6-3.6s4.4 1.2 5.6 3.6"/>'
   };
+  /* EACH GLYPH ON ITS TILE'S MIDDLE (384 r4: "These aren't centered and I can tell. A lot of the settings icons aren't centered").
+     Two things were wrong. The icon was 21px in a 30/32px tile - an odd size, so a half-pixel in, snapped, and every icon leaned
+     right (fixed in the CSS: 22px). And the glyphs themselves were drawn about a middle that is not 12,12: the bug 1px low, the
+     person .6 low, the trophy top-heavy. Each glyph's EXACT geometry (getBBox, in the
+     viewBox's own units, so it holds in any layout - a first table read off pixels in one layout was sub-pixel noise and
+     overshot in the Profile's rows) is moved onto the middle, then up to .4px further towards its visual weight where that
+     is clearly off (more than .5px: the trophy's cup, the bug's body). settingsIconNudge[kind] = [dx, dy]. */
+  const nudge = (typeof settingsIconNudge !== "undefined" && settingsIconNudge) ? settingsIconNudge[kind] : null;   /* var, below: safe if a screen is built before it is assigned (TDZ) */
+  const body = (paths[kind] || "");
   const tile = document.createElement("span");
   tile.className = "settings-row-icon" + (tone ? " is-" + tone : "");
   tile.dataset.tile = kind;
   tile.style.setProperty("--tile", settingsTileColor(kind));
   tile.setAttribute("aria-hidden", "true");
   tile.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
-    + (paths[kind] || "") + "</svg>";
+    + (nudge && body ? '<g transform="translate(' + nudge[0] + ' ' + nudge[1] + ')">' + body + "</g>" : body) + "</svg>";
   return tile;
 }
+var settingsIconNudge = { badgecase: [0, -0.35], bug: [0, -0.95], classes: [-0.35, 0.6], cloudoff: [0.15, -0.45], cloudup: [-0.2, -0.9], credits: [0, -0.25], effects: [-0.15, 0.1], forward: [0.4, 0], key: [0.3, 0], motion: [0.7, 0], party: [0.1, 0.2], pause: [0, 0.4], person: [0, -0.25], share: [0, -0.25], sound: [0.15, 0], study: [0, -0.3], swipe: [0.65, 0], tap: [-0.4, -0.35], trophy: [0, 0.45] };
 /* ---- PROFILE'S ROWS (384) ----
    Madison: "In profile, the customize button, the badge button, and rank button. I actually do not like that at all. It's
    terrible. Please change that". They were 383's light pills (white on the dark themes), each with an icon masked on at the

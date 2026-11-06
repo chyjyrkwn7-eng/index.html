@@ -19,6 +19,7 @@
      longest Nova line).
  (S) THE SEAM where Nova's speech tail meets his bubble: across the tail's base the border's rows are the bubble's own fill
      (read off the pixels at 3x, 2.5x and 2x).
+ (C) the Settings icons on their tiles' middles: on whole CSS pixels, and no lean (measured at 3x against the exact layout centre).
  (E) no page errors.
 Run:  python3 tools/check-b384-r4.py            (--against OLD/index.html must FAIL)"""
 import importlib.util, json, os, sys
@@ -181,7 +182,7 @@ with sync_playwright() as pw:
         rememberSignupPicks([]);
       }catch(e){ out.err = String(e); }
       return out; }""")
-    chk("(O) a sign-up into both classes says Fire Code needs one 100% (%s); an academy-only one does not mention it (%s)" % (bl.get("both"), bl.get("academy")),
+    chk("(O) a sign-up into both classes says Fire Code needs one 100%% (%s); an academy-only one does not mention it (%s)" % (bl.get("both"), bl.get("academy")),
         any("Fire Code" in t and "one 100%" in t for t in (bl.get("both") or [])) and not any("Fire Code" in t for t in (bl.get("academy") or [])) and bool(bl.get("academy")), bl)
 
     chk("(O) a sign-up into both classes says Fire Code has no Mock (%s); an academy-only one has just the four (%s)" % (bl.get("modesBoth"), bl.get("modesAcademy")),
@@ -235,6 +236,41 @@ with sync_playwright() as pw:
     sm = [seam(d) for d in (3, 2.5, 2)]
     chk("(S) across the tail's base the bubble's border rows are the bubble's fill, at 3x, 2.5x and 2x (worst: %s)" % [m.get("worst row off the fill") for m in sm],
         all(m.get("worst row off the fill", 99) <= 6 for m in sm), sm)
+
+    # ---------------- (C) the Settings icons on their tiles' middles ----------------
+    # "These aren't centered and I can tell. A lot of the settings icons aren't centered ... I thought you checked this?" The
+    # centring gate passed them: it allows .5px, and every icon leaned right by .38px - inside it, and seen. The cause was an
+    # icon of an ODD size (21px) in an even tile (32px): a half-pixel in, snapped. So: (1) every tile's icon sits on whole CSS
+    # pixels in its tile, both ways; (2) read off a screenshot at 3x against the tile's exact layout centre, the icons do not
+    # lean: the median offset across them is under .2px sideways (.3 vertically: a row's own sub-pixel position moves it that much), and none is past .5px sideways.
+    import numpy as np
+    c3, p3 = cb.booted(br, 440, 956, seed=cb.USED_ACCOUNT, dpr=3)
+    p3.evaluate("()=>{ document.querySelectorAll('#splashscreen,.app-banner,.daily-alert').forEach(n=>n.remove()); showAppearance(); }")
+    p3.wait_for_timeout(1800)
+    n_t = p3.evaluate("()=>[...document.querySelectorAll('.settings-row-icon')].length")
+    offs, whole, rows_c = [], [], []
+    for i in range(n_t):
+        g = p3.evaluate("""(i)=>{ const t=[...document.querySelectorAll('.settings-row-icon')][i]; const r=t.getBoundingClientRect(); if(!r.width) return null;
+          t.scrollIntoView({block:'center'}); const r2=t.getBoundingClientRect(), s=t.querySelector('svg').getBoundingClientRect();
+          return { r:[r2.left,r2.top,r2.width,r2.height], dx:(s.left-r2.left), dy:(s.top-r2.top), kind:t.dataset.tile }; }""", i)
+        if not g: continue
+        p3.wait_for_timeout(100)
+        g = p3.evaluate("""(i)=>{ const t=[...document.querySelectorAll('.settings-row-icon')][i]; const r2=t.getBoundingClientRect(), s=t.querySelector('svg').getBoundingClientRect();
+          return { r:[r2.left,r2.top,r2.width,r2.height], dx:(s.left-r2.left), dy:(s.top-r2.top), kind:t.dataset.tile }; }""", i)
+        whole.append((g["kind"], abs(g["dx"] - round(g["dx"])) < .01 and abs(g["dy"] - round(g["dy"])) < .01))
+        a3 = np.asarray(Image.open(io.BytesIO(p3.screenshot())).convert("RGB")).astype(int)
+        x, y, w, h = g["r"]; sc = 3
+        x0, y0, x1, y1 = int(np.floor(x * sc)), int(np.floor(y * sc)), int(np.ceil((x + w) * sc)), int(np.ceil((y + h) * sc))
+        m = (a3[y0:y1, x0:x1].min(axis=2) > 215); ys, xs = np.nonzero(m)
+        if not len(xs): continue
+        offs.append((g["kind"], ((xs.min() + xs.max() + 1) / 2 - ((x + w / 2) * sc - x0)) / sc, ((ys.min() + ys.max() + 1) / 2 - ((y + h / 2) * sc - y0)) / sc))
+    c3.close()
+    med = lambda v: sorted(v)[len(v) // 2] if v else 99
+    mdx, mdy = med([o[1] for o in offs]), med([o[2] for o in offs])
+    chk("(C) every Settings icon sits on whole CSS pixels in its tile (%d of %d; off: %s)" % (sum(1 for _, ok_ in whole if ok_), len(whole), [k for k, ok_ in whole if not ok_][:6]),
+        bool(whole) and all(ok_ for _, ok_ in whole), whole)
+    chk("(C) the Settings icons do not lean: median offset %+.2f across, %+.2f down (css px, 3x), the worst sideways %.2f" % (mdx, mdy, max([abs(o[1]) for o in offs] or [99])),
+        len(offs) >= 8 and abs(mdx) < .2 and abs(mdy) < .3 and max(abs(o[1]) for o in offs) <= .5, [(k, round(a_, 2), round(b_, 2)) for k, a_, b_ in offs])
 
     chk("(E) no page errors (%d)" % len(errs), not errs, errs[:3])
     br.close()

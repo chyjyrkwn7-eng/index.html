@@ -35969,3 +35969,24 @@ it's good to go."
   two radii (7.8 and 7.6). Now one true circle (centre 12.35,11.7, r 8) with the tail leaving its lower left:
   `M5.45 15.7 4.15 20.9l5.5-1.7A8 8 0 1 0 5.45 15.7Z`, in `chatDockIcon()` and the two chat banner glyphs. Nudged so its ink sits
   on the button's centre (measured at 4x: it was ~0.9px high, now ~0.4px, the thin tail tip biasing the measure upward).
+- **The Settings icons were not centred - and the gate passed them** (Madison, two zoomed screenshots: "These aren't centered and I
+  can tell. A lot of the settings icons aren't centered ... I thought you checked this?"). Measured off HIS screenshot (the
+  best evidence there is): Sound +.3px right, Study +.4 right / .4 up, Motion +.6 right / .7 up. Three causes, one found by
+  measuring and not by reading:
+  1. **An odd icon size in an even tile.** The glyph was 21px in a 32px tile (30px in the base rule): 5.5px in each side, a half
+     pixel, which the browser snaps - so EVERY icon leaned right by .38px (.5 at 3x phones). 22px now (5px in, whole pixels;
+     stroke 2.05 = the 1.88px it was). The centring gate allows .5px, so a uniform .38 lean passed it every time.
+  2. **Glyphs drawn about a middle that is not 12,12** (the bug 1px low, the person .6, the trophy top-heavy ...). Each is moved
+     from its EXACT geometry (getBBox, viewBox units - `settingsIconNudge` in settingsRowIcon), then up to .4px towards its
+     visual weight where that is clearly off. A first table read off pixels in one layout was sub-pixel noise from that layout's
+     row positions and overshot elsewhere (the Profile's badge-case row went .52 high); geometry holds in any layout. Two old
+     hand shifts (Motion .61px, Study .5px) are gone: they counted twice.
+  3. **Mixed-case words sit low when their CAPITALS are centred** ("Manage friends": capitals dead on, the word's own middle
+     ~1.3px low at 3x). Lifted by padding-bottom .8px on that pill (a `<button>` centres its content, so the lift is half): the word
+     ~1.0 low, the capitals still within .5 of the gate. All-caps labels stay as they are; other mixed-case buttons are the same
+     in principle and NOT changed - his call.
+  New in tools/check-b384-r4.py (C): every Settings icon on whole CSS pixels in its tile, and no lean (median across < .2px, none
+  > .5px sideways), read at 3x against the tile's exact layout centre. On the commit before: 0 of 10 on whole pixels, median
+  lean +.50 across; on this build 10 of 10 and +.00. The centring gate's badge slots (`.badge-tile-art`) are pictures now: their
+  SHAPES' places are asserted by the badge sections (every badge within .5px of its slot), and the gate had been measuring a
+  locked slot's recess lip as ink.

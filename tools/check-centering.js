@@ -107,7 +107,11 @@
      while another session redid them; that landed (c72a33a) and all pass but the tags on an iPad - left to that work.) */
   const OWNED = { '.ifc-ref .ifc-tag': 'the Fire Code code pictures\' tag pills (their own session: c72a33a centred them; AMENDMENTS on an iPad still measures off - left to them)' };
   const ownedBy = el => { for (const k in OWNED) if (el.matches(k)) return OWNED[k]; return ''; };
-  const NOT_A_CONTROL = '.nova-case-latch, .cosmic-hero .cosmic-icon-badge, .cosmic-welcome .cosmic-icon-badge';
+  /* (384 r4) the badge case's slots: a picture (a badge's coin with its glow and contact shadow, or its empty recess lit from the
+     top left with a lip) whose ink is not its shape - the colour count passes a grey recess as an "icon" and measured its
+     shadow. Where the SHAPE sits is asserted off the outline itself (check-behaviour check_b320c_case / check_b321d_badges:
+     every one of the units' badges within .5px of its slot's middle, front and back). */
+  const NOT_A_CONTROL = '.nova-case-latch, .cosmic-hero .cosmic-icon-badge, .cosmic-welcome .cosmic-icon-badge, .badge-tile-art';
   /* a character (Customize's, the tab's, a board's, the hero's): drawn on purpose off-symmetric, and placed per character */
   const CHARACTER = 'svg.avatarchar-svg, .char-live img, .char-live svg, [class*=avatar] img, [class*=char-flip] img, [class*=char-flip] svg';
   const nameOf = el => {
