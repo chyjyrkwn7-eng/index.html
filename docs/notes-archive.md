@@ -35817,3 +35817,17 @@ it's good to go."
   words; no citation loses shown text.
 - Left as the data has it: a row given ambiguously (3206.2 "I-IV; 2,501-12,000" matches three sub-rows) marks the first; a table cited
   without a row (C102.1) marks its caption number. The questions and their citations are the study guide's and are not changed.
+
+### Build 384, round 2 - the final check and the pack (NOT on main, waiting for Madison)
+- On 7ceed83 (everything merged: Virtual Room round 2, badges rounds 2-3, behaviour triage, the code pictures):
+  sweep-layout --quick 20/20, check-centering --quick 0 off centre; check-b384-roundbtns, -bannerroom, -badgetwins (24), -vrpause (34),
+  -tablerows, -codelinks, -cropfit, -ifccrop, -codeslide, check-b383-ifcsync, check-b382-test ALL PASS; check-b383-flashcards (3) failed
+  once under the full code-picture run's load and passed twice alone.
+- check-b384-onepicture, all 1,812 citations: every check passes but (1e) on ONE of 2,685 gold shapes - ch8-605 (804.3.1, "Class I,"):
+  looked at at 3x, ~6px of room over the capitals and ~5px under the comma; the next line's raised "2" (cm2) under it is what the
+  measure reads (its 'lines: 2'). The pixels are identical to the helper's run, which an earlier version of the gate passed (it took
+  the shape for a table row); left, and said so in the pack.
+- check-behaviour badge-case sections (b316_tiles ... b321d): 16 fail, the same 16 on live 383 and on 185cc5c - they describe the
+  badge case at the foot of the Profile card, before 383 moved it; not this build's.
+- Pack: scratchpad Nova-384-round2 (437 files) with the code pictures' before/after for Madison's nine, the 175 that were pieces, the
+  96 table rows (book and county) and all 1,812 cards; the decisions left are the two Virtual Room ones.
