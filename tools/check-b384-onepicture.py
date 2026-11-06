@@ -182,7 +182,9 @@ window.__gold = function(D, W, H, s){
       L.desc = (L.b - L.base) / L.em >= 0.17;
     }
     /* a table row's gold fills its row up to the rules: an edge that runs along a rule is the rule's, not measured */
-    const faint = (i) => D[i] + D[i + 1] + D[i + 2] < 600;   /* a rule's anti-aliased edge row counts */
+    /* a rule's anti-aliased edge row counts; the gold's and the wash's own edge rows do not (the red channel stays at 255 in both
+       tones, a grey or black rule's comes down with it) */
+    const faint = (i) => D[i] < 200 && D[i] + D[i + 1] + D[i + 2] < 600;
     const ruledAt = (y) => { if(y < 0 || y >= H) return false; let run = 0, best = 0; for(let x = c.x0; x <= c.x1; x++){ if(faint((y * W + x) * 4)){ run++; if(run > best) best = run; } else run = 0; } return best >= Math.max(0.5 * w, 25 * s); };
     rec.ruled = [ruledAt(c.y0 - 1) || ruledAt(c.y0 - 2) || ruledAt(c.y0 - 3), ruledAt(c.y1 + 1) || ruledAt(c.y1 + 2) || ruledAt(c.y1 + 3)];
     if(rec.ruled[0] || rec.ruled[1]){ rec.skip = 'a table row: its gold runs to the rule'; out.push(rec); continue; }
