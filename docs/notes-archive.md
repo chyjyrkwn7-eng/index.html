@@ -36052,3 +36052,6 @@ The race track is a .35rem-radius bar (was a pill) with the start line and the c
 
 ## 384 r5: the race clock is one colour
 The 'Ns' pill and the bar under it are both amber (#F5A524 / #FFD27A), whatever the theme, and both turn red for the last ten seconds. (The first fixed colour, mint-to-blue, had nothing to do with the pill beside it.)
+
+## 384 r5: the three stale Nova gates rewritten
+check_b320f_nova, check_b321g_nova and check_b324n_nova were failing before this build for decisions that had moved on (the shorter introduction, no Back to Home on the history screen, the friend line at the end of the tips, 382's quieter schedule: three days between messages, a tip a fortnight, a challenge a week, and the rank-up reaction now an on-screen talk that replaces the chat message). Each failing check now asks the current shape (names, counts, the app's own constants) rather than an old sentence; the schedule test reads the gaps off the constants and forces the challenge due. All three pass; the Nova ones before them (b314, b324v2) too.

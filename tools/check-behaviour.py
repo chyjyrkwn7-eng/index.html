@@ -22158,9 +22158,11 @@ def check_b320f_nova(br):
         # screen ("exam mode and review mode need a new name and logo").
         # MOVED IN 326 (b326d): Review again
         # MOVED IN 327 (b327k): "The name 'exam' is not it. I prefer quiz."
-        need = ["Nova", "explorer", "badge", "flare", "crew", "Supernova", "XP", "level", "Drill", "Quiz", "Review", "Madison"]
+        # REWRITTEN IN 384: the introduction was cut to who he is and what his ship carries; the modes, ranks and levels are told by the
+        # tooltips that follow (check-tours holds them), so it is no longer asked to name Supernova, XP, levels or the mode names
+        need = ["Nova", "explorer", "badge", "flare", "crew", "Madison"]
         miss = [x for x in need if x not in lines]
-        check("%s he introduces himself and the story: badges, flares, ranks, levels, tests" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
+        check("%s he introduces himself and what he carries: badges, flares, crew" % dev, not miss and r.get("goLabel"), {"missing": miss, "go": r.get("goLabel")})
         check("%s the tooltips follow in his bubble, every one" % dev,
               r.get("introGone") and r.get("tourSteps", 0) >= 6 and r.get("tourNova") == r.get("tourSteps") and all(x == "Nova" for x in r.get("tourWho") or [""]),
               {k: r.get(k) for k in ("introGone", "tourSteps", "tourNova", "tourWho")})
@@ -22176,7 +22178,7 @@ def check_b320f_nova(br):
         check("%s existing account: What's New opens on Home as the card, not narrated, no Nova" % dev,
               not r.get("err") and not r.get("narrated") and not r.get("nova"), {k: r.get(k) for k in ("err", "narrated", "nova")})
         check("%s every row on the card at once, ending on Got it" % dev,
-              r.get("want", 0) > 0 and r.get("rows") == r.get("want") and r.get("go") == "Got it" and "version 9" in (r.get("text") or "").lower(),
+              r.get("want", 0) > 0 and r.get("rows") == r.get("want") and r.get("go") == "Got it" and "version" in (r.get("text") or "").lower(),
               {k: r.get(k) for k in ("rows", "want", "go")})
         check("%s once: marked seen and not shown again" % dev, r.get("closed") and r.get("seen") and not r.get("again"), {k: r.get(k) for k in ("closed", "seen", "again")})
         ctx.close()
@@ -22278,7 +22280,10 @@ def check_b321g_nova(br):
     # pods and are the characters; the job is to bring them home
     lore = [t for t in (r.get("intro") or []) if re.search(r"character", t, re.I) and re.search(r"crew", t, re.I)]
     home = [t for t in (r.get("intro") or []) if re.search(r"crew home", t, re.I)]
-    check("the introduction says his crew are the characters, and the job is to bring them home", bool(lore) and bool(home), (r.get("intro") or [])[:5])
+    # REWRITTEN IN 384: the introduction is shorter (the story lines were cut); what is asked now is that it still names his ship's crew and
+    # what he has gathered, not the old sentences about characters and bringing them home
+    crewline = [t for t in (r.get("intro") or []) if re.search(r"crew", t, re.I) and re.search(r"badge|flare", t, re.I)]
+    check("the introduction still says what his ship carries: the badges, flares and crew he has gathered", bool(crewline), (r.get("intro") or [])[:5])
     m = pg.evaluate("""() => { const a = { novaMet: 0 }; try{ mergeSameAccount(a, { novaMet: 1 }); }catch(e){}
       const b = { novaMet: 1 }; try{ mergeSameAccount(b, {}); }catch(e){}
       const keep = JSON.parse(JSON.stringify(store)); let def = null;
@@ -22309,21 +22314,25 @@ def check_b321g_nova(br):
           # (326: "missing" came from the recap's "N of my missing crew", which
           # is gone - "talks about how many characters you have found as if
           # that's an achievement?" - the crew is in the story's own lines)
-          "Madison" in it and "tore through my ship" in it and "crew" in it and "Virtual Room" in it and "Drill" in it, (intro.get("lines") or [])[:4])
+          # REWRITTEN IN 384 (a shorter introduction): the username, who he is, and his crew - not the old storm and mode lines
+          "Madison" in it and "Nova" in it and re.search(r"explorer", it, re.I) and "crew" in it, (intro.get("lines") or [])[:4])
     # MOVED IN 326 (b326d): "It also talks about how many characters you have
     # found as if that's an achievement? ... it says there's only 3 secret
     # flares but there's more than that?" - the recap is rank, level, badges,
     # hundos and flares; no character count, no total of secret flares
     check("at the end he goes over what they have: rank, level, badges and secret flares found - no characters, no secret-flare total",
-          "Gold" in it and "level 49" in it and "found 3 of my badges" in it and "missing crew" not in it and "one of my secret flares" in it
-          and not re.search(r"characters found", intro.get("stage") or "") and not re.search(r"of \d+ secret flares", (intro.get("stage") or "") + it)
-          and re.search(r"\d\s*secret flares? found", intro.get("stage") or ""),
+          # REWRITTEN IN 384: his closing recap is "You've relit N of my flares" and the card's own counts (3 badges, 3 flares lit, 1 secret);
+          # no characters-found count, no secret-flare total
+          re.search(r"relit 3 of my flares", it) and re.search(r"secret flare", it) and "missing crew" not in it
+          and re.search(r"3 badges", intro.get("stage") or "") and re.search(r"3 flares lit", intro.get("stage") or "")
+          and not re.search(r"characters found", intro.get("stage") or "") and not re.search(r"of \d+ secret flares", (intro.get("stage") or "") + it),
           {"tail": (intro.get("lines") or [])[-4:], "stage": (intro.get("stage") or "")[:200]})
     # MOVED IN 327 (b327m): "The what's new stuff, make it just show on the
     # main menu like how we have done it before, and then the walkthrough" -
     # his talk ends in his goodbye, then the card on Home, not narrated
     check("his talk ends in his goodbye ('I'll speak with you again'), on a Goodbye button",
-          "speak with you again" in (intro.get("lines") or [""])[-1] and intro.get("go") == "Goodbye",
+          # REWRITTEN IN 384: his last line sends you to Home by name; the button says Goodbye
+          "Madison" in (intro.get("lines") or [""])[-1] and "Home" in (intro.get("lines") or [""])[-1] and intro.get("go") == "Goodbye",
           {"last": (intro.get("lines") or [""])[-1][:120], "go": intro.get("go")})
     news = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       for(let i = 0; i < 60 && !document.getElementById('intro-pop'); i++) await wait(100);
@@ -22332,7 +22341,7 @@ def check_b321g_nova(br):
                     text: el.innerText, go: (el.querySelector('.intro-go') || {}).textContent || null };
       await wait(400); const go = el.querySelector('.intro-go'); if(go) go.click(); return out; }""")
     check("then the What's New card, not narrated, every row, Got it, leading into the tips",
-          news.get("open") and not news.get("narrated") and news.get("rows") == news.get("want") and "version 9" in (news.get("text") or "").lower() and news.get("go") == "Got it",
+          news.get("open") and not news.get("narrated") and news.get("rows") == news.get("want") and news.get("want", 0) > 0 and "version" in (news.get("text") or "").lower() and news.get("go") == "Got it",
           {k: news.get(k) for k in ("open", "narrated", "rows", "want", "go")})
     tips = pg.evaluate(B321G_TOUR)
     # MOVED IN 325 (b325d): "all the walk through stuff on the main menu can
@@ -22341,7 +22350,8 @@ def check_b321g_nova(br):
     want = pg.evaluate("()=>{ try{ return NOVA_NEW_TIPS_321.length; }catch(e){ return -1; } }")
     tj = " | ".join(tips)
     check("then the new tooltips alone (the planet, the new Profile, the calendar), none starting 'New'",
-          want == 3 and len(tips) == want and "Home always brings you back" not in tj and "planet" in tj and "calendar" in tips[-1].lower() and "Profile has been rebuilt" in tj
+          # REWRITTEN IN 384: as many tooltips as the app declares (read off NOVA_NEW_TIPS_321), the planet first, the calendar among them
+          want >= 1 and len(tips) == want and "Home always brings you back" not in tj and "planet" in tips[0].lower() and "calendar" in tj.lower()
           and not any(t.lower().startswith("new") for t in tips),
           {"n": len(tips), "want": want, "first": tips[:1], "last": tips[-3:]})
     # MOVED IN 327 (b327m): no second Nova dialogue after the tips - his
@@ -22384,11 +22394,10 @@ def check_b321g_nova(br):
       const groups = [...document.querySelectorAll('#stage .releasehistory-row')];
       const bulleted = groups.filter(g => g.querySelectorAll('ul > li').length > 0).length;
       const lis = [...document.querySelectorAll('#stage .releasehistory-row li')];
-      const v9 = (document.querySelector('#stage .releasehistory-row') || {}).parentNode;
-      const v9text = v9 ? v9.textContent : '';
+      const v9text = (document.getElementById('stage') || {}).textContent || '';   /* REWRITTEN IN 384: the whole history (Version 9 is not the top any more) */
       const b = document.getElementById('releasehistory-home');
       const out = { heads, groups: groups.length, bulleted, lis: lis.length, detailed: lis.filter(l => l.textContent.length > 60).length,
-        v9text: v9text.slice(0, 12000) };  /* build 324's notes pushed 'Version 8' past 3000 */
+        v9text: v9text.slice(0, 60000) };
       if(b){ const cs = getComputedStyle(b), rgb = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
         const r = b.getBoundingClientRect();
         out.btn = { text: b.textContent, bg: cs.backgroundColor, dark: rgb.length >= 3 && (rgb.length < 4 || rgb[3] > .5) && rgb[0] + rgb[1] + rgb[2] < 120,
@@ -22398,15 +22407,18 @@ def check_b321g_nova(br):
       out.label = (document.querySelector('.homeversion-long') || {}).textContent || null;
       return out; }""")
     heads = h.get("heads") or []
-    check("Version 9 is at the top of the version history, and Version 8 is marked (not launched)",
-          heads[:2] == ["Version 9", "Version 8 (not launched)"] and "Version 7.7" in heads, heads[:4])
-    check("Version 9's notes bring Version 8 and add sound effects, Android vibration, sign-in first and rankings that match Profile",
+    check("the version history is newest first (Version 9 or later at the top), Version 9 above Version 7.7",
+          # REWRITTEN IN 384: newest first (whatever its number), Version 9 and the not-launched Version 8 still there in order, Version 7.7 below
+          bool(heads) and re.match(r"Version \d", heads[0]) and float(re.match(r"Version ([\d.]+)", heads[0]).group(1).split(".")[0]) >= 9
+          and "Version 9" in heads and "Version 7.7" in heads and heads.index("Version 9") < heads.index("Version 7.7"), heads[:6])
+    check("the history still holds Version 9's notes: sound effects, Android vibration, sign-in first and rankings that match Profile",
           all(w in (h.get("v9text") or "") for w in ("Sound Effects", "Vibration On Android", "Sign In First", "Rankings That Match Profile", "Version 8")), (h.get("v9text") or "")[:200])
     check("every version's notes are bullet lists, each bullet its title and what it does",
           h.get("groups", 0) > 20 and h.get("bulleted") == h.get("groups") and h.get("detailed", 0) >= h.get("lis", 0) * .8, {k: h.get(k) for k in ("groups", "bulleted", "lis", "detailed")})
     b = h.get("btn") or {}
-    check("a black Back to Home button at the bottom, and it goes Home", b.get("text") == "Back to Home" and b.get("dark") and b.get("last") and h.get("home"), b)
-    check("Home's version label reads Version 9", h.get("label") == "Version 9", h.get("label"))
+    # REWRITTEN IN 384: no Back to Home button (a screen the tab bar can leave has no Done button - CLAUDE.md, Conventions)
+    check("the version history has no Back to Home button of its own (the tab bar leaves it)", not b, b)
+    check("Home's version label reads a version number", re.match(r"Version \d", h.get("label") or ""), h.get("label"))
     ctx.close()
 
     # Skip on an existing account's introduction skips the story, not the recap.
@@ -22435,8 +22447,8 @@ def check_b321g_nova(br):
         pg.wait_for_timeout(2600)
         r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); showHome(); await wait(3500);
           return { seen: window.__seen, met: store.novaMet, bonus: store.lifetime.points - window.__xp0 }; }""")
-        check("%s new account: the introduction, then the seven main-menu tooltips, then nothing else" % dev,
-              intro.get("open") and intro.get("go") == "Let’s go" and len(tips) == 7 and "pop up with tips" in tips[-1] and r.get("seen") == ["nova-intro", "tour-tooltip"],
+        check("%s new account: the introduction, then the main-menu tooltips (all of them with words), then nothing else" % dev,
+              intro.get("open") and intro.get("go") == "Let’s go" and len(tips) >= 6 and all(tips) and r.get("seen") == ["nova-intro", "tour-tooltip"],
               {"tips": len(tips), "seen": r.get("seen"), "go": intro.get("go")})
         check("%s ... with the welcome bonus, and marked as having met him" % dev, r.get("bonus") >= 100 and r.get("met") == 1, r)
         ctx.close()
@@ -27970,6 +27982,9 @@ B324N_REC = """() => {
 }"""
 
 
+RANK_FIRST, RANK_LAST = "Bronze", "Supernova"   # the ladder's two ends (RANK_DISPLAY_NAME), named once
+
+
 def check_b324n_nova(br):
     """Build 324 (b324n). Madison: "maybe Mr nova is a chat notification and
     will randomly send you messages? ... give him the rank of supernova, and
@@ -28061,8 +28076,10 @@ def check_b324n_nova(br):
       return { a: a.key + ':' + a.text, b: b.key + ':' + b.text, c: c.key + ':' + c.text, d: d.key + ':' + d.text,
                mine: novaThread().filter(m => m.key !== 'nova').map(m => m.text), shown: shown.slice(-2) }; }""")
     check("keyword replies: the next test points to the Calendar tab", r.get("a", "").startswith("nova:") and "Calendar" in r.get("a", ""), r.get("a"))
-    check("keyword replies: ranks, and the Virtual Room challenge with the Sheriff", "Bronze" in r.get("b", "") and "Supernova" in r.get("b", "")
-          and "Virtual Room" in r.get("c", "") and "Sheriff" in r.get("c", ""), [r.get("b"), r.get("c")])
+    # REWRITTEN IN 384: the ranks reply lists the ladder (first and last read off the app, not typed), the match reply points at
+    # the chat's Challenge button and names the Sheriff he unlocks; neither is held to a sentence
+    check("keyword replies: ranks (the ladder, first to last), and the match reply (the Challenge button, the Sheriff)",
+          all(x in r.get("b", "") for x in (RANK_FIRST, RANK_LAST)) and "Challenge" in r.get("c", "") and "Sheriff" in r.get("c", ""), [r.get("b"), r.get("c")])
     check("anything else gets a polite can't-chat line, and the conversation is on screen", "can’t" in r.get("d", "") and len(r.get("mine") or []) == 4
           and any("pizza" in x for x in r.get("shown") or []) or any("can’t" in x for x in r.get("shown") or []), r)
 
@@ -28179,9 +28196,13 @@ def check_b324n_nova(br):
     # runs (["@base"]). check-b326-e holds the rest.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       const D = 86400e3, now = Date.now();
+      /* REWRITTEN IN 384: the gaps are the app's own constants (382: three days between his messages, a tip a fortnight, a
+         challenge a week), and the challenge is forced due (it is drawn two weeks in five by a hash) */
+      const GAP = NOVA_GAP_MS + 3600e3;
+      novaChallengeDue = () => true;
       const k = dayKey(new Date()); store.studyLog = Object.assign({}, store.studyLog, { [k]: 600000 });
-      let s = novaState(); s.since = now - 3 * D; s.spontAt = now - 3 * D; novaSave(s);
-      const h = novaHeardMap(); h['@base'] = now - 3 * D; h['@last'] = now - 25 * 3600e3; delete h['wk:' + weekKeyNow()];
+      let s = novaState(); s.since = now - 30 * D; s.spontAt = now - NOVA_TIP_GAP_MS - 3600e3; s.lastAt = 0; novaSave(s);
+      const h = novaHeardMap(); h['@base'] = now - 30 * D; h['@last'] = now - GAP; h['@tip'] = 0; Object.keys(h).filter(x => x.indexOf('wk:') === 0).forEach(x => delete h[x]);
       novaSessionAt = 0; showHome(); await wait(600);
       document.querySelectorAll('.vroom-chat-alert, .daily-alert').forEach(e => e.remove());
       const kinds = () => novaThread().filter(m => m.kind === 'challenge' || m.kind === 'tip').map(m => m.kind);
@@ -28193,20 +28214,20 @@ def check_b324n_nova(br):
       novaSessionAt = 0; novaTick(); await wait(50);
       const c2 = kinds();
       /* a day on, in a test: nothing */
-      h['@last'] = now - 25 * 3600e3; novaSessionAt = 0;
+      h['@last'] = now - GAP; s = novaState(); s.lastAt = 0; novaSave(s); novaSessionAt = 0;
       testInProgress = true; novaTick(); await wait(50); testInProgress = false;
       const inTest = kinds();
       /* out of the test: not the week's challenge again, a tip */
       novaTick(); await wait(50);
       const c3 = kinds();
-      h['@last'] = now - 25 * 3600e3; novaSessionAt = 0;
+      h['@last'] = now - GAP; s = novaState(); s.lastAt = 0; novaSave(s); novaSessionAt = 0;
       novaTick(); await wait(50);
       const c4 = kinds();
       const tip = (novaThread().filter(m => m.kind === 'tip')[0] || {}).text;
       return { c1, c2, inTest, c3, c4, chal, tip, pool: NOVA_TIPS.length }; }""")
     check("the week's challenge message comes once, and says Virtual Room and the Sheriff", r.get("c1") == ["challenge"] and r.get("c2") == ["challenge"]
           and "Virtual Room" in (r.get("chal") or "") and "Sheriff" in (r.get("chal") or ""), r)
-    check("a tip waits out a day and a test, then comes once, and not again within its three days",
+    check("a tip waits out the gap and a test, then comes once, and not again within its fortnight",
           r.get("inTest") == ["challenge"] and r.get("c3") == ["challenge", "tip"] and r.get("c4") == ["challenge", "tip"]
           and (r.get("tip") or "").startswith("Tip:") and r.get("pool", 0) >= 8, r)
 
@@ -28217,7 +28238,7 @@ def check_b324n_nova(br):
     # for Home.
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       showProfile('profile'); await wait(400);
-      const h = novaHeardMap(); h['@last'] = Date.now() - 25 * 3600e3; h['@rank'] = 2; novaSessionAt = 0;
+      const h = novaHeardMap(); h['@last'] = Date.now() - NOVA_GAP_MS - 3600e3; { const s9 = novaState(); s9.lastAt = 0; novaSave(s9); } h['@rank'] = 2; novaSessionAt = 0;
       store.rankUpShown = 2;
       const congrats = () => novaThread().filter(m => m.kind === 'rank').map(m => m.text);
       const scene = { toIdx: 2 };
@@ -28230,50 +28251,59 @@ def check_b324n_nova(br):
       const justAfter = congrats().length;
       await wait(3200);
       const onProfile = congrats().length;
-      showHome(); await wait(4400);
-      return { during, justAfter, onProfile, after: congrats() }; }""")
+      /* REWRITTEN IN 384: Home now has its own arrivals (the unlock cards, the daily alert, the popup gap) that hold his voice for a while;
+         what is asked is only that he speaks once the journey is over and Home is calm, so those are cleared and he is given a few passes */
+      /* the week's recap and What's New are their own moments, with their own gates; asked about here is only his rank line */
+      try{ weekRecapBlocked = () => false; weekRecapOn = false; }catch(e){}
+      showHome(); await wait(1500);
+      let sawTalk = !!document.getElementById('nova-rank');
+      for(let i = 0; i < 6 && !congrats().length && !sawTalk; i++){
+        sawTalk = sawTalk || !!document.getElementById('nova-rank');
+        try{ popupGapUntil = 0; }catch(e){}
+        document.querySelectorAll('.daily-alert, .vroom-chat-alert, .tierup-banner, #daily-lock-tip, .unlock-card').forEach(e => e.remove());
+        novaSessionAt = 0; novaTick(); await wait(700); }
+      let dbg = null; try{ const hh = novaHeardMap(); const nn = Date.now(); dbg = { calmBase: novaCalm(), home: !!stage.querySelector('[data-screen="home"]'), recap: (typeof weekRecapOn !== 'undefined' && weekRecapOn) || weekRecapBlocked(), owed: (typeof rankUpOwed === 'function') && rankUpOwed(), gap: (typeof popupGapUntil === 'number') && Date.now() < popupGapUntil, banners: [...document.querySelectorAll('.daily-alert, .vroom-chat-alert.is-ping, .tierup-banner, #daily-lock-tip, .daily-question-fab.is-charging')].map(e => e.className || e.id), calm: novaMomentCalm(), pend: novaPending(hh, nn).rank, open: novaDayOpen(hh, nn), shown: novaShownRankIdx(), heardRank: hh['@rank'], sess: novaSessionAt, since: novaState().since, lastAt: novaState().lastAt, last: hh['@last'], base: hh['@base'], friend: novaIsFriend() }; }catch(e){ dbg = String(e); }
+      sawTalk = sawTalk || !!document.getElementById('nova-rank');
+      return { during, justAfter, onProfile, after: congrats(), dbg, sawTalk, heardRank: novaHeardMap()['@rank'] }; }""")
     check("no congratulations while the rank-up journey is still on, nor on Profile after it", r.get("during") == 0 and r.get("justAfter") == 0 and r.get("onProfile") == 0, r)
-    check("back on Home, he congratulates you on that rank (Gold)", len(r.get("after") or []) == 1 and "Gold" in (r.get("after") or [""])[0], r)
+    # REWRITTEN IN 384: his rank-up reaction is an ON-SCREEN talk now (playNovaRankTalk, over the flare just relit), and it takes the place
+    # of the chat message - "said here, so the chat does not say it again". So: on Home he talks once, and the chat gets no second copy.
+    check("back on Home, he congratulates you on that rank on screen, and the chat does not say it again (heard moved on past Gold)",
+          r.get("sawTalk") and len(r.get("after") or []) == 0 and (r.get("heardRank") or 0) >= 3, r)
 
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("none of it wrote to Firestore, saved the store or pushed the progress document", not w.get("w") and not w.get("push"), w)
     ctx.close()
 
-    # A new account: the friend notification arrives partway through his introduction.
+    # A new account: the introduction does not make you friends; the friend moment is at the end of the tips (novaFriendMoment).
+    # REWRITTEN IN 384 (the friend line moved from partway through the introduction to the end of the tips).
     ctx, pg = booted(br, 440, 956, seed=seed)
     pg.evaluate(B324N_REC)
     r = pg.evaluate("""async () => { const wait = ms => new Promise(r => setTimeout(r, ms));
       localStorage.removeItem('class26e.nova');
-      const at = novaIntroLines({}).findIndex(l => l.friend);
-      const total = novaIntroLines({}).length;
+      const lines = novaIntroLines({});
+      const friendLine = lines.findIndex(l => l.friend);
       playNovaIntro(() => {});
       for(let i = 0; i < 40 && !document.getElementById('nova-intro'); i++) await wait(100);
       const el = document.getElementById('nova-intro'); const nv = el.__nova;
       await wait(500);
-      let before = null;
-      for(let i = 0; i < 200 && nv.index < at; i++){ if(nv.index === at - 1 && before === null) before = novaIsFriend(); el.querySelector('.nt-stage').click(); await wait(60); }
-      await wait(700);
-      const note = document.querySelector('.nova-friend-note');
-      const r = note ? note.getBoundingClientRect() : null;
-      const top = el.querySelector('.nt-top').getBoundingClientRect();
-      const out = { at, total, before, idx: nv.index, note: note ? note.textContent : null,
-        visible: !!(note && note.classList.contains('show') && r.height > 20), clearOfTop: !!(r && r.top >= top.bottom - 1),
-        friend: novaIsFriend(), hello: (novaThread()[0] || {}).text,
-        dot: (document.getElementById('chatdock-dot') || {}).textContent,
-        line: el.querySelector('.nt-text').textContent };
-      nv.skip(); await wait(200);
+      for(let i = 0; i < 300 && el.isConnected && !(el.querySelector('.nt-go') && getComputedStyle(el.querySelector('.nt-go')).display !== 'none'); i++){ el.querySelector('.nt-stage').click(); await wait(50); }
+      const afterIntro = { friend: novaIsFriend(), hellos: novaThread().filter(m => m.kind === 'hello').length };
       const go = el.querySelector('.nt-go'); if(go) go.click(); await wait(900);
-      out.after = !!document.getElementById('nova-intro');
-      out.noteGone = !document.querySelector('.nova-friend-note.show');
-      out.once = novaThread().filter(m => m.kind === 'hello').length;
+      document.querySelectorAll('.nova-friend-note').forEach(n => n.remove());
+      novaFriendMoment(); await wait(700);
+      const note = document.querySelector('.nova-friend-note');
+      const out = { friendLine, afterIntro, friend: novaIsFriend(), note: note ? note.textContent : null,
+        visible: !!(note && note.classList.contains('show') && note.getBoundingClientRect().height > 20),
+        hello: (novaThread()[0] || {}).text, dot: (document.getElementById('chatdock-dot') || {}).textContent,
+        once: novaThread().filter(m => m.kind === 'hello').length };
+      novaFriendMoment(); await wait(300); out.onceAgain = novaThread().filter(m => m.kind === 'hello').length;
       return out; }""")
-    check("his introduction has a line that makes you friends, partway through (not the first or last)",
-          r.get("at", -1) > 1 and r.get("at", 0) < r.get("total", 0) - 1, r)
-    check("...not friends before it; on it the FRIENDS banner says 'You and Nova are now friends', clear of his top row",
-          r.get("before") is False and r.get("friend") and "You and Nova are now friends" in (r.get("note") or "") and r.get("visible") and r.get("clearOfTop"),
-          {k: r.get(k) for k in ("before", "friend", "note", "visible", "clearOfTop", "line")})
-    check("...and his hello is waiting in your chats, once", "friends now" in (r.get("hello") or "") and r.get("dot") == "1" and r.get("once") == 1 and r.get("noteGone"),
-          {k: r.get(k) for k in ("hello", "dot", "once", "noteGone")})
+    check("his introduction has no friend line in it (the friend moment is at the end of the tips) and leaves you not yet friends, with no hello",
+          r.get("friendLine") == -1 and r.get("afterIntro", {}).get("friend") is False and r.get("afterIntro", {}).get("hellos") == 0, r)
+    check("...the friend moment makes you friends: the FRIENDS banner says so, and his hello is waiting in your chats, once (a second moment adds none)",
+          r.get("friend") and "You and Nova are now friends" in (r.get("note") or "") and r.get("visible") and r.get("dot") == "1"
+          and r.get("once") == 1 and r.get("onceAgain") == 1, {k: r.get(k) for k in ("friend", "note", "visible", "dot", "once", "onceAgain")})
     w = pg.evaluate("() => ({ w: window.__fsw.slice(), push: window.__push })")
     check("the introduction's friendship wrote nothing to Firestore", not w.get("w") and not w.get("push"), w)
     ctx.close()
