@@ -36042,3 +36042,4 @@ Madison: 'Open now' was not level with its arrow (2-3px high on every Settings r
 
 ## 384 r5: Leave class sheet uses the app's own danger button
 The sheet's Leave button was a flat #FF453A (an override with !important and no shadow) and was focused on open, which drew a white focus ring. Now the app's .next.danger (matte #8B1E1E, the Reset red) and a destructive button is never focused on open. (The 'x' body in an earlier screenshot was my test's placeholder text: the app's own text is the sentence about progress being kept.)
+'Coming soon' pill nudged .5px low (it read .75px high on Classes, .2 on the sign-up: two sub-pixel positions, so half way); full quick centring 0 off.
