@@ -35951,3 +35951,8 @@ it's good to go."
   (`signupPicked()` has "ifc") one short line follows: "In Fire Code, one 100% on a chapter is enough." An academy-only sign-up is
   unchanged. check-b384-r4 (O) reads both. Left as they are: the Get Started page's general line ("Ace a unit enough times and its
   badge goes in your case", shown before any class is chosen), and the academy's own greeting - both are about the academy's badges.
+- **Nova's crew lines in a sign-up** (Madison, circled screenshot: "My crew are waiting in their pods ... doesn't make sense, since we
+  are unlocking majority of them"): the crew are not waiting to be rescued - a partner is free, most come home with a challenge, some
+  with a rank (his own chat answer already said so). "My crew are waiting in their pods." is now "My crew join you as you rank up and
+  take on challenges."; "The rest of my crew are still out there. Find them, and they'll join you too." is "Earn the rest, and they'll
+  join you too." (and the Fire Code half's "Find the rest" the same). The story's pods stay where they are told (his chat answer).

@@ -97347,11 +97347,13 @@ function novaIntroLines(o){
        is not Fire Code's: "in fire code, you don't need multiple hundos". One more short line for those who picked it. */
     if(!ifcNow && o.signup && signupPicked().indexOf("ifc") >= 0)
       lines.push({ gesture: "nod", text: "In Fire Code, one 100% on a chapter is enough." });
-    lines.push({ gesture: "raise", text: "My crew are waiting in their pods.",
+    /* (384 r4) "This one doesn't make sense, since we are unlocking majority of them": the crew are not waiting to be rescued - most
+       come home with a challenge, some with a rank, and a partner is free (his own chat answer says the same, novaAnswer) */
+    lines.push({ gesture: "raise", text: "My crew join you as you rank up and take on challenges.",
       ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(o.signup ? "My crew" : crew.have + " of " + crew.total + " characters found"))) });
     if(part === 2){
       /* the partner was picked in the first half */
-      lines.push({ text: "Your partner is already with you. Find the rest, and they’ll join you too." });
+      lines.push({ text: "Your partner is already with you. Earn the rest, and they’ll join you too." });
     } else if(o.signup){
       /* (327z15) you pick who comes home first, and the account is made */
       /* (round 26) the starters are all yours from day one - "you get all
@@ -97359,7 +97361,7 @@ function novaIntroLines(o){
          ones who stayed aboard, not a rescue */
       lines.push({ gesture: "raise", text: "A few of them stayed aboard with me. Who do you want as your partner?", ask: novaAskCharacter });
       lines.push(picked);
-      lines.push({ text: "The rest of my crew are still out there. Find them, and they’ll join you too." });
+      lines.push({ text: "Earn the rest, and they’ll join you too." });
       codeLines.forEach(l => lines.push(l));
     } else {
       lines.push({ text: "Every one you find joins your team." });
