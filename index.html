@@ -38002,6 +38002,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools > .selall-btn{ padding-left:calc(.85rem + 1.12px); padding-right:calc(1rem - 1.12px); }
   html[data-layout][data-theme] :is(.screen-setup, .screen-vroom-setup) .setup-tools > .picks-tools > .selall-btn{ padding-left:calc(.95rem + 1.15px); padding-right:calc(1.1rem - 1.15px); }
   html[data-layout] .pausepanel .actions > :is(#pause-quit, #pause-save){ padding-left:calc(.75rem - 1.7px); padding-right:calc(.75rem + 1.7px); }
+  /* (384 r5) the x/save mark is centred on the CAPITALS, but "Leave match" is mostly lowercase, whose mass sits lower: the mark read high. Dropped .7px onto the word's visual middle */
+  html[data-layout] .pausepanel .actions > :is(#pause-quit, #pause-save) > .pause-ic{ translate:0 .7px; }
   /* Next question's swipe chevrons end 5.2px short of their 16px box: that air is not the button's to centre */
   html[data-layout] .foot > .floatbtn.qnext .swipehint{ margin-right:-.325rem; }
   html[data-theme][data-layout] #stage > .vroom-setup-bar > .vroom-setup-go > :is(.vroom-bar-label, .vroom-bar-icon){ translate:1.1px 0; }
