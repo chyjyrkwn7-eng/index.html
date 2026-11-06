@@ -97280,7 +97280,8 @@ function novaIntroLines(o){
      badges, crew and modes. Everything a class has its own of is that class's here (ifcNow). */
   const ifcNow = window.NOVA_CLASS === "ifc";
   const part = o.signup ? (o.part || 0) : 0;
-  const picked = { gesture: "nod", text: () => novaCrewName(store.avatarChar) + " it is! You can switch any time in Customize.",
+  const picked = { gesture: "nod", /* (384 r4) "Make this make more sense": it said who and not what ("Ninja it is!"), and "switch" did not say what */
+    text: () => novaCrewName(store.avatarChar) + " is now your partner. You can change them any time in Customize.",
     enter: ctx => { const a = document.createElement("span"); a.className = "nt-picked";
       try{ a.appendChild(pickerCharSVG(store.avatarChar)); }catch(e){}
       novaProp(ctx, novaStack(a, novaCap(novaCrewName(store.avatarChar)))); } };

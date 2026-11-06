@@ -35956,3 +35956,6 @@ it's good to go."
   with a rank (his own chat answer already said so). "My crew are waiting in their pods." is now "My crew join you as you rank up and
   take on challenges."; "The rest of my crew are still out there. Find them, and they'll join you too." is "Earn the rest, and they'll
   join you too." (and the Fire Code half's "Find the rest" the same). The story's pods stay where they are told (his chat answer).
+- **Nova's line after the partner pick** (Madison, circled screenshot: "Make this make more sense"): "Ninja it is! You can switch any
+  time in Customize." said who and not what, and "switch" did not say what. It is now "<Name> is now your partner. You can change
+  them any time in Customize." (the same line for every character; the question before it asks for a partner).
