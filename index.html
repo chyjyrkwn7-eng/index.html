@@ -6331,7 +6331,21 @@
     box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--char-glow, #8FA4BE) 45%, rgba(255,255,255,.18)),
                inset 0 1px 0 rgba(255,255,255,.14);
   }
-  .rank-row .rank-avatar svg{ transform:scale(.94); transform-origin:50% 56%; }
+  /* (384 r5) "Look at how some of the character sticks out of the circle ... fixed for all characters and everywhere". The drawings have no disc
+     of their own (the disc is this token's), and at .94 the hood, bust and shoulders ran to the rim - and a bust's flat frame edge showed as a
+     dark band under it. Measured over all 31 characters (art pixels in the outer tenth of the radius): up to 9 percent at .94, 3 at .84, 2 at .80.
+     So the drawing sits at .85, and its last fifth fades into the token instead of ending on a flat edge. The live drawing, the still and the
+     recorded loop (which was not scaled at all) all take it. */
+  .rank-row .rank-avatar:not(.has-plate) > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
+    -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
+  .rank-row .rank-avatar:not(.has-plate) > .char-flip-play{
+    -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%);
+    -webkit-mask-composite:source-in; mask-composite:intersect; }
+  /* ...and a person's card. (Not the Profile's own, nor Customize: there the art's soft halo is meant to fill the disc, and scaling the drawing down shows its edge as a second, smaller circle.) */
+  :is(.person-card-art) .rank-avatar:not(.has-plate) > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
+    -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
+  :is(.person-card-art) .rank-avatar:not(.has-plate) > .char-flip-play{
+    -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); -webkit-mask-composite:source-in; mask-composite:intersect; }
   /* ...AND THE FLIP-BOOK TOO (build 327z10): "The characters on the
      leaderboard, the bottom half slightly comes out of the circle." The
      recorded loop is an <img> slid by a stepped transform - its own
@@ -37129,9 +37143,11 @@ html.is-browser{ --fade-paper: transparent; }
     background:radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--char-glow, #8FA4BE) 30%, #151A22) 0%, #0D1117 78%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
   }
-  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar svg{ transform:scale(.94); transform-origin:50% 56%; }
+  html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar > :is(svg, .char-flip-play){ transform:scale(.85); transform-origin:50% 52%;
+    -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%); }
   html[data-layout] body .screen-rankings .lw-podium-avwrap .rank-avatar > .char-flip-play{
-    border-radius:50%; -webkit-mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:radial-gradient(circle closest-side, #000 98%, transparent 100%);
+    border-radius:50%; -webkit-mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%); mask-image:linear-gradient(to bottom, #000 80%, transparent 100%), radial-gradient(circle closest-side, #000 98%, transparent 100%);
+    -webkit-mask-composite:source-in; mask-composite:intersect;
   }
   /* the name in the page's ink (the accent if it is you), cut short with an ellipsis rather than wrapped; the XP grey under it */
   html[data-layout] body .screen-rankings .lw-podium-spot .lw-podium-name{

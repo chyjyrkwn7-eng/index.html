@@ -64,6 +64,20 @@ with sync_playwright() as pw:
         chk("race markers are round at %dx (ring width and height differ by %d device px, wanted 1 or less)" % (dpr, worst), worst <= 1, worst)
         ctx.close()
     br.close()
+# a character sits INSIDE its round token ("some of the character sticks out of the circle"): over all 31 characters, art pixels in the outer
+# tenth of the radius were up to 9% at the old .94 scale, 3% at .84. So the drawing is held to .86 or less, and its foot fades (no flat frame edge).
+with sync_playwright() as pw:
+    br = pw.chromium.launch(executable_path=cb.CHROME)
+    ctx, pg = cb.booted(br, 440, 956, seed=cb.USED_ACCOUNT, dpr=3)
+    pg.evaluate("document.querySelectorAll('#splashscreen').forEach(n=>n.remove())")
+    r = pg.evaluate("""()=>{ const out={}; const mk=(cls, wrapCls)=>{ const host=document.createElement('div'); host.className=cls; host.style.cssText='position:fixed;left:0;top:0;width:60px;height:60px;z-index:99999';
+        const wrap=document.createElement('span'); wrap.className=wrapCls; const av=avatarSpanFor({avatarChar:'zeus'}); wrap.appendChild(av); host.appendChild(wrap); document.body.appendChild(host);
+        const sv=av.querySelector('svg'); const cs=getComputedStyle(sv); const m=new DOMMatrixReadOnly(cs.transform); const r={ scale:m.a, mask:(cs.webkitMaskImage||cs.maskImage||'').indexOf('linear-gradient')>=0 }; host.remove(); return r; };
+      out.row = mk('rank-row','rank-avatar-wrap'); out.card = mk('person-card-art','x');
+      return out; }""")
+    for k, v in r.items():
+        chk("%s: the character is held inside its token (scale %.2f, wanted .86 or less) and its foot fades" % (k, v["scale"]), v["scale"] <= .86 and v["mask"], v)
+    ctx.close(); br.close()
 cb.SERVER.shutdown()
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
