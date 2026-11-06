@@ -94489,7 +94489,10 @@ function showGetStarted(){
      its own beginning at 2x and loops on itself (record-landing.py), its still IS its first frame, and here: nothing is
      fetched until the clip is a screen away (preload none, then auto), it plays only while on screen, and when it leaves
      the screen it goes back to its first frame - so every time it is seen it starts at its beginning, never mid-way. */
-  const GS_CLIP_RATE = { default: .66, rank: .45 };
+  /* (384 r4) 1x: the clips were re-recorded with a person's pauses between taps (record-landing.py LANDING_HOLD), so they play
+     as recorded and every animation in them runs at the app's own speed. (A playbackRate of .66 / .45 had slowed the taps and
+     the animations alike, which made the animations sluggish.) The hook stays, so a clip that ever needs a rate has the place. */
+  const GS_CLIP_RATE = { default: 1 };
   const vid = key => {
     const f = document.createElement("div"); f.className = "gs-phone";
     const v = document.createElement("video");
@@ -94497,9 +94500,9 @@ function showGetStarted(){
     v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
     v.setAttribute("disablepictureinpicture", ""); v.setAttribute("disableremoteplayback", "");
     v.poster = "landing/" + key + ".jpg"; v.src = "landing/" + key + ".mp4"; v.dataset.gs = key;
-    /* (384) "why are videos in like 5x speed? ... it cuts way too fast to the loading pdf screen": the recorded taps come quicker
-       than a person's, and Rank's clip is sped up 2.4x as recorded. They play at two-thirds speed (Rank's at under half), and the
-       rate is set again on every play (a browser resets it on load). */
+    /* (384) "why are videos in like 5x speed? ... it cuts way too fast to the loading pdf screen": the recorded taps came quicker
+       than a person's. They were re-recorded in round 4 with a person's pauses and play at 1x; the rate is still set on every
+       play (a browser resets it on load). */
     v.__gsRate = GS_CLIP_RATE[key] || GS_CLIP_RATE.default;
     const rate = () => { try{ v.defaultPlaybackRate = v.__gsRate; v.playbackRate = v.__gsRate; }catch(e){} };
     rate(); v.addEventListener("loadedmetadata", rate); v.addEventListener("play", rate);

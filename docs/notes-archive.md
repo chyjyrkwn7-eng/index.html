@@ -35920,3 +35920,15 @@ it's good to go."
   county rows marked rule to rule). The pictures are the book's own pages, never retyped.
 - Gate: tools/check-b384-r4.py - (U) leaving a class, (F) Forge, (N) the name field, (O) the order, (V) the clip, (T) the
   tips, (E).
+- **The clips' speed, measured** (Madison: the Add to Home Screen video looked 20x, the Get Started ones 5x - "it needs to be the
+  right speed"): the Add to Home Screen clip is a real iPhone recording cut at its own speed - the share sheet takes 0.3s, a
+  menu 0.2s, the app's launch 0.3s, as on a phone - so it plays at 1x (a half-speed rate had gone in first, a guess, and made
+  every iOS animation sluggish). What looked 20x was a screen recording OF the page made in slow motion: a video element keeps
+  playing in real time inside it. The Get Started clips' animations were at the app's speed too (captured in slow motion and put
+  back on a true clock), but the TAPS came 0.5-0.7s apart (academy: a screen change every 0.7s, test: every 0.5s) - quicker than
+  anyone reads. All six were re-recorded with a person's pauses (`LANDING_HOLD` 1.9 in record-landing.py stretches only the
+  pauses before an answer, between questions and on each pick; the rank clip's speed-up 2.4x -> 1.4x): academy now changes every
+  ~2s, test every ~4s. They play at 1x (`GS_CLIP_RATE` default 1; the .66 / .45 slow-down is gone, it slowed animations and taps
+  alike). Looked at as a contact sheet of every clip before installing. check-b384-getstarted's leave section: the hand-off to
+  Welcome was made slower on purpose in round 3 (zoom 950ms, Welcome up ~1.3s), so it now asserts <= 1300ms and under two
+  seconds, not the old 750ms / one second.

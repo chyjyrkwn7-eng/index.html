@@ -365,7 +365,7 @@ def sec_leave(br, url):
         an = r["anim"] or {}
         sc = an.get("scales") or []
         chk("%s: Let's get started sets NOVA moving - a transform and opacity move of %sms, scale %s, opacity %s" % (dev, an.get("dur"), sc, an.get("ops")),
-            bool(an) and 450 <= (an.get("dur") or 0) <= 750 and set(an.get("props") or []) <= {"transform", "opacity"}
+            bool(an) and 450 <= (an.get("dur") or 0) <= 1300 and set(an.get("props") or []) <= {"transform", "opacity"}
             and sc and sc[0] < 1 and max(sc) >= 4 and all(b >= a for a, b in zip(sc, sc[1:])) and max(an.get("ops") or [0]) >= 1 and an["ops"][-1] == 0, r)
         smp = [s[1] for s in r["samples"]]
         chk("%s: as drawn, the word only ever grows (%d frames read, to %.1fx)" % (dev, len(smp), max(smp or [0])),
@@ -375,9 +375,11 @@ def sec_leave(br, url):
         # under a second; a page whose frames come 150ms+ apart (this sandbox at a load of 20+ on 4 cores - the frame gaps
         # are printed) is given 1.6s, since the end of the move is only seen on the next frame after it
         slow = bool(gaps) and sorted(gaps)[len(gaps) // 2] >= 150
+        # (384 round 3) the hand-off to Welcome was made slower on purpose - the zoom 950ms, the dark's cover 1150ms, Welcome
+        # rising in as it clears - "extremely smooth": so under two seconds now (it was a second), 2.6s on a slow-framed page
         chk("%s: then Welcome is up and the page and the word are gone, %sms after the move began (under %s; frames %sms apart)" % (
-            dev, took and round(took), "1.6s" if slow else "a second", gaps),
-            r["welcomeAt"] is not None and took is not None and took <= (1600 if slow else 1000) and pg.evaluate(SCREEN)["screen"] == "welcome", r)
+            dev, took and round(took), "2.6s" if slow else "two seconds", gaps),
+            r["welcomeAt"] is not None and took is not None and took <= (2600 if slow else 2000) and pg.evaluate(SCREEN)["screen"] == "welcome", r)
         ctx.close()
     ctx, pg = page(br, url, "phone", "seen", reduce=True)
     pg.wait_for_timeout(3800)
