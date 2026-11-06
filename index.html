@@ -8234,15 +8234,18 @@
     z-index:200; box-sizing:border-box; width:min(23.7rem, calc(100vw - 1.5rem)); max-width:none;
     margin:0; padding:.42rem;
     display:flex; align-items:center; justify-content:space-between; gap:.5rem; overflow:hidden; isolation:isolate;
-    border:0; border-radius:999px;
-    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
-    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.07), inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 1px rgba(0,0,0,.3);
+    border:1px solid rgba(255,255,255,.16); border-radius:999px;
+    /* (384 final check) THE TAB BAR'S GLASS, AS IT IS NOW. Build 377 made the tab bar see-through ("You should be able to see through
+       the bottom tab well") - 7px of blur over a light body, a faint white lift, one .16 rim - and 380 gave the chat button, Pause and
+       the search pills the same; this pill, the same kind of thing as the bar, kept the old 30px over an 80% body and read as solid
+       beside it. It takes the bar's own values now. */
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26);
+    box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.05);
     will-change:backdrop-filter;
-    /* the tab bar's frost (327z15: it went to saturate(1.25) and this bar was left at 1.8) */
-    backdrop-filter:blur(30px) saturate(1.25); -webkit-backdrop-filter:blur(30px) saturate(1.25);
+    backdrop-filter:blur(7px) saturate(1.5); -webkit-backdrop-filter:blur(7px) saturate(1.5);
   }
   [data-theme="dark"] .startbar.vroom-setup-bar{
-    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%), rgba(20,24,30,.8);
+    background:linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.04) 55%), rgba(12,13,19,.26);
   }
   /* the tab bar's sheen, moved by transform (see .bottomtabs::before) */
   .startbar.vroom-setup-bar::before{
@@ -35444,7 +35447,9 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] .screen-setup .setup-levels .setup-level-count{ display:none !important; }
   html[data-layout] .screen-setup .setup-levels[hidden]{ display:none !important; }
   html[data-layout] .screen-setup .setup-levels .iconbtn{ flex:1 1 0; display:inline-flex; align-items:center; justify-content:center; gap:.4rem; }
-  html[data-layout] .screen-setup .setup-levels .iconbtn.is-empty:not(.active){ color:rgba(255,255,255,.42); }
+  /* (384 final check) an empty level's tab is dimmer than one with units, but still reads: .42 white was 3.9:1 on the switch's fill,
+     under the 4.5 every label is held to (check-b326-f); .56 is 4.6:1 and still a step below the other tabs' .62 */
+  html[data-layout] .screen-setup .setup-levels .iconbtn.is-empty:not(.active){ color:rgba(255,255,255,.56); }
   .setup-level-count{
     min-width:1.3rem; padding:.05rem .38rem; border-radius:999px; font-size:.72rem; line-height:1.35; font-weight:800;
     background:var(--accent); color:var(--accent-ink, #0B0D12); font-variant-numeric:tabular-nums;
@@ -147548,7 +147553,7 @@ const BADGE_BACK_CACHE = {};
    and a dark, blackened floor - an engraver's fill - on a field that is
    lighter than the letters, never the same grey. */
 const BADGE_BACK_RELIEF = { depth: .2, lipK: 1.6, cut: .5, cutK: .55, toolK: .3, wallU: .42, shadowU: .9, shadowK: 1.4, floor: .5, floorSp: .25, ink: [.30, .31, .33], inkK: .85, brush: .13, fieldFlat: .6, fieldLevel: .34, fieldDirt: .55,
-  rimIn: 4.6, margin: 1.6, planW: 260, fsMax: .092, fsMin: .026, classMin: .034, classKeep: .96, classNameMin: 5.6, aboveKeep: .8, tidyKeep: .9, weight: 800 };
+  rimIn: 4.6, margin: 1.6, planW: 260, fsMax: .092, fsMin: .026, fsRead: .041, tightTrack: -.05, classMin: .034, classKeep: .96, classNameMin: 5.6, aboveKeep: .8, tidyKeep: .9, weight: 800 };
 const BADGE_BACK_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
 const BADGE_BACK_PLAN = {};
 /* the outline's signed distance (token units, negative inside) as the
@@ -147610,6 +147615,8 @@ function badgeBackPlan(unitName){
      can win, not the thousands that cannot (Appendix H's plan is ~40ms here, as an academy back's is). */
   const longName = String(unitName).length > 60;
   const allSplits = (longName ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4]).map(splits);
+  /* the rows' letter spacing, an em fraction: 0, but for a name too small to read (below) */
+  let rowTrack = 0;
   /* the field's widest row, for throwing out a break whose longest row
      could never fit anywhere at a size */
   let fieldW = 0, fieldY0 = -1, fieldY1 = -1;
@@ -147651,7 +147658,7 @@ function badgeBackPlan(unitName){
       } else cband = { sa, sd, ls, ruleH, cw };
     }
     if(cband && above) bands.push(cband);
-    rows.forEach((s, i) => bands.push({ s, fs, ls: 0, base: y0 + i * lh, top: y0 + i * lh - asc - pad, bot: y0 + i * lh + desc + pad, w: width(s, fs, 0) }));
+    rows.forEach((s, i) => bands.push({ s, fs, ls: rowTrack * fs, base: y0 + i * lh, top: y0 + i * lh - asc - pad, bot: y0 + i * lh + desc + pad, w: width(s, fs, rowTrack * fs) }));
     if(cband && !above){
       const { sa, sd, ls, ruleH, cw } = cband;
       const last = bands[bands.length - 1].base, ruleY = last + desc + fs * .34, sb = ruleY + ruleH + small * .42 + sa;
@@ -147812,6 +147819,16 @@ function badgeBackPlan(unitName){
       return arc || a || n;
     };
     plan = attempt();
+    /* (384 final check) A NAME TOO SMALL TO READ IS SET A LITTLE TIGHTER. "Phonetic Alphabet and Military Time" on the hourglass
+       (wide at the top and the foot, narrow at the waist: two rows, one in each half, is already its best break) came out at 8.8
+       CSS px on an iPhone, under the 9.2 every back is held to (check-b325-b). Only a back whose plan is under fsRead is planned
+       again with its rows' letters closed up by rowTrack (an em fraction - as a sign-maker spaces a long name to fit a plate), and
+       the tighter plan is kept only if it is larger. Every other back is exactly as it was. */
+    if(plan && plan.mode === "rows" && plan.fs < R.fsRead * WR){
+      const was = plan; rowTrack = R.tightTrack; WC.clear(); runCache.clear();
+      const more = attempt();
+      if(more && more.fs > was.fs) plan = more; else rowTrack = 0;
+    }
     /* NOTHING CUT OFF THE FIELD (384). A name too long for its shape at the smallest size came out as one row at that
        size laid over the middle - across the rim and off both sides, with no class line (Fire Code's Chapter 31 on the
        drop). It is planned again with the floor halved, so it is set inside the field like every other back; the single

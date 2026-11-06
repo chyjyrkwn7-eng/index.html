@@ -14060,6 +14060,12 @@ def check_b316_tiles(br):
           out.caseBorderW = parseFloat(cs.borderTopWidth) || 0;
           const fr = document.querySelector('.pf-case .pf-ccase-front');
           out.frontBg = fr ? getComputedStyle(fr).backgroundImage : '';
+          /* (384) the shut case's parts, and its row against Customize's (Profile's rows, one look) */
+          const rowLook = e => { if(!e) return null; const c = getComputedStyle(e); return [c.backgroundColor, c.backgroundImage, c.borderTopColor, c.borderRadius].join(' | '); };
+          out.caseParts = { handle: !!document.querySelector('.pf-case .pf-ccase-handle, .pf-case .nova-case-handle'),
+            latches: document.querySelectorAll('.pf-case .nova-case-latch').length, plate: ((document.querySelector('.pf-case .nova-case-sideplate') || {}).textContent || '').trim() };
+          out.caseRow = rowLook(document.querySelector('.pf-case .pf-case-count.pf-act'));
+          out.custRow = rowLook([...document.querySelectorAll('.profile-identity-tab .pf-act')].find(e => !e.classList.contains('pf-case-count')));
           } catch(e){ out.threw = String(e && e.stack || e); }
           return out; }""")
         circ = [r.get(k) for k in ("theme", "flare", "char")]
@@ -14074,11 +14080,13 @@ def check_b316_tiles(br):
         # REVISED IN 319 (b319g), AND BACK IN 319 (b319h): g drew the shut
         # case in its own grained shell; it "sticks out", so the strip is the
         # Next rank card's flow again - a diagonal light and a tinted edge.
-        check(f"{dev}: the badge case has the Next rank card's flow - a diagonal light and a tinted edge, not a flat box",
-              # MOVED IN 327z15 round 27: "the profile box, challenge box, and badge case should all look
-              # a little more alike" - one family on the person card's surface, its white .14 rim, one
-              # colour pool at the top; a light and an edge still, never a flat box
-              "gradient" in (r.get("caseBg") or "") and r.get("caseBorderAlpha", 0) >= 0.12, [r.get("caseBg", "")[:70], r.get("caseBorderAlpha"), ch])
+        # MOVED IN 383/384 (the clean look, then Profile's three rows - "Customize, Badge case and Rank ladder have plain graphite
+        # tiles"): the case on Profile is the shut case drawn whole - its handle, two latches and its side plate - and its
+        # "Badge case" row is Profile's row, the same as Customize's; the strip with a diagonal light and a tinted edge is gone
+        cp, cr, cu = r.get("caseParts") or {}, r.get("caseRow"), r.get("custRow")
+        check(f"{dev}: the badge case is the shut case (handle, two latches, its plate) with its row in Profile's rows' look, Customize's (384)",
+              cp.get("handle") and cp.get("latches", 0) >= 2 and "badge case" in (cp.get("plate") or "").lower() and cr is not None and cr == cu,
+              [cp, cr, cu])
         check(f"{dev}: nothing threw", not r.get("threw"), r.get("threw"))
         ctx.close()
 
@@ -14138,8 +14146,11 @@ def check_b317_pfcard(br):
           out.newWord = ((cs && cs.querySelector('.pf-case-new')) || {}).textContent || null;
           const st = document.querySelector('.profile-hero .pf-standing'), gl = document.querySelector('.profile-identity-tab .pf-goal');
           out.caseLast = !!(cs && gl && (gl.compareDocumentPosition(cs) & 4) && cs.parentElement.lastElementChild === cs);
-          out.gaps = (st && cs && gl) ? [Math.round(gl.getBoundingClientRect().top - st.getBoundingClientRect().bottom),
-            Math.round(cs.getBoundingClientRect().top - gl.getBoundingClientRect().bottom)] : null;
+          /* (383) the case sits between the Profile card and the Next rank card */
+          const hero = document.querySelector('.profile-hero');
+          out.caseBetween = !!(cs && gl && hero && (cs.compareDocumentPosition(gl) & 4) && cs.getBoundingClientRect().top > hero.getBoundingClientRect().bottom && gl.getBoundingClientRect().top > cs.getBoundingClientRect().bottom);
+          out.gaps = (hero && cs && gl) ? [Math.round(cs.getBoundingClientRect().top - hero.getBoundingClientRect().bottom),
+            Math.round(gl.getBoundingClientRect().top - cs.getBoundingClientRect().bottom)] : null;
           /* the XP under the bar: what you have, what the level asks, the total */
           const col = sel => { const e = document.querySelector('.profile-hero .pf-standing ' + sel); if(!e) return null;
             const c = getComputedStyle(e).color, m = c.match(/[\d.]+/g); if(!m) return null;
@@ -14198,7 +14209,8 @@ def check_b317_pfcard(br):
               [r.get("dotAfter"), r.get("newAfter")])
         # REVISED IN THE 317 TOUCH-UP: "The badge case being at the top is
         # not the move, revert that location at the bottom."
-        check(f"{dev}: the badge case is at the bottom of the card, after the Next rank card", r.get("caseLast") is True, r.get("caseLast"))
+        # MOVED IN 383: the case moved up - under the Profile card, above the Next rank card (the triage of b299 found the same move)
+        check(f"{dev}: the badge case sits between the Profile card and the Next rank card (383)", r.get("caseBetween") is True, [r.get("caseBetween"), r.get("gaps")])
         g, rem = r.get("gaps"), r.get("rem") or 16
         # REVISED IN 319 (g: 1.1rem), BACK IN 319 (h): the strip is part of
         # the card, so it takes the boxes' own .8rem; its handle stands in it.
@@ -14207,8 +14219,10 @@ def check_b317_pfcard(br):
         # MOVED IN 327z12 round 2: three cards - the next rank a card of its
         # own (the cards' 1.1rem gap below the Profile card), the case's
         # handle .45rem more under it
-        check(f"{dev}: ...with the cards' gaps (1.1rem+ under the Profile card, 1.55rem from the Next rank card to the case)",
-              bool(g) and g[0] >= 1.1 * rem - 1.5 and abs(g[1] - 1.55 * rem) <= 1.5, [g, rem])
+        # MOVED IN 383: the same two gaps, in the new order - the case's handle .45rem more under the Profile card (1.55rem), the
+        # cards' own 1.1rem from the case to the Next rank card
+        check(f"{dev}: ...with the cards' gaps (1.55rem from the Profile card to the case's handle, 1.1rem from the case to the Next rank card)",
+              bool(g) and abs(g[0] - 1.55 * rem) <= 1.5 and abs(g[1] - 1.1 * rem) <= 1.5, [g, rem])
         # REVISED IN THE 317 TOUCH-UP: no grey. This level's XP, what it
         # asks and the total are one blue - mid level (not over) and at
         # level 80 (over).
@@ -19558,6 +19572,11 @@ def check_b317_badgecase(br):
           document.querySelectorAll('#pushing-update,#intro-pop,.app-banner,.daily-alert').forEach(n => n.remove());
           showRanksScreen('badges'); await wait(900);
           out.tab = mat(document.querySelector('.badges-tab .badge-case'));
+          /* (327 round 10) the Badges tab's case is a sleek tray: its lining, its two flush latches, its front nameplate */
+          const T = document.querySelector('.badges-tab .bcs');
+          out.tray = T ? { lining: (getComputedStyle(T.querySelector('.badge-case-lining') || T).backgroundImage.match(/radial-gradient\([^,]*at 50% 0%/) || [null])[0],
+            latches: T.querySelectorAll('.bcs-latch').length, plate: ((T.querySelector('.bcs-plate-text') || {}).textContent || '').trim(),
+            handle: !!T.querySelector('.nova-case-handle') } : null;
           /* tap-to-view still works through the case */
           const tile = document.querySelector('.badges-tab .badge-tile'); if(tile){ tile.click(); await wait(500); }
           /* MOVED IN 320 (b320g): the badge in your hand, not its card */
@@ -19573,18 +19592,24 @@ def check_b317_badgecase(br):
         # REVISED IN 319: the Profile card's case is SHUT ("no case there would
         # be best"), so it shows no lining - the same latches, handle and
         # leather, the inside only on the open two.
-        check(f"{dev}: the cutscene, the Badges tab and the Profile card are one case - the same parts (lining when open, two latches, handle) in each",
-              bool(cut) and all(x.get("root") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, tab, pf))
-              and cut.get("lining") and tab.get("lining") and not pf.get("lining"),
-              {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tab": {k: tab.get(k) for k in ("root", "latches")}, "pf": {k: pf.get(k) for k in ("root", "latches")}})
+        # MOVED IN 327 round 10 ("THE BADGES TAB'S CASE: A SLEEK TRAY"): the cutscene and the Profile card are the case - two latches
+        # and a handle, the lining only on the open one - and the Badges tab is the tray: a lining, two flush latches, no handle
+        tray = r.get("tray") or {}
+        check(f"{dev}: the cutscene and the Profile card are one case (two latches, a handle, the lining when open); the Badges tab is the tray (a lining, two latches, no handle)",
+              bool(cut) and all(x.get("root") and x.get("latches", 0) >= 2 and x.get("handle") for x in (cut, pf))
+              and cut.get("lining") and not pf.get("lining") and tray.get("lining") and tray.get("latches") == 2 and not tray.get("handle"),
+              {"cut": cut and {k: cut[k] for k in ("root", "latches")}, "tray": tray, "pf": {k: pf.get(k) for k in ("root", "latches")}})
         # REVISED IN 319 (h): the cutscene and the Badges tab are one case in
         # one set of materials; the Profile card's shut strip is drawn in the
         # card's own surface ("the brief case sticks out"), so it is held to
         # check_b319h_layout's measurements instead of to these.
-        same = lambda k: cut and cut.get(k) and cut.get(k) == tab.get(k)
-        check(f"{dev}: ...in the same materials: one lining, one metal for the latches, one handle, one grained leather (cutscene and Badges tab)",
-              cut.get("lining") == tab.get("lining") and same("latch") and same("handle") and same("leather") and all(x.get("grain") for x in (cut, tab)),
-              {"lining": [x and (x.get("lining") or "")[:48] for x in (cut, tab, pf)], "leather": [x and (x.get("leather") or "")[:40] for x in (cut, tab, pf)]})
+        # MOVED IN 327 round 10: the tray is not the case's leather; what the two share is the lining's light - a radial pool from
+        # the top centre. (The cutscene's case is the hardware case since - an aluminium bead round a velvet cushion, its leather
+        # on --hw-seat - so the shell's grain this used to read is not there to read; not held here.)
+        check(f"{dev}: ...the tray's lining lit as the cutscene case's is - from the top centre",
+              bool(cut) and (cut.get("lining") or "").startswith("radial-gradient") and "at 50% 0%" in (cut.get("lining") or "")
+              and bool(tray.get("lining")),
+              {"cut lining": cut and (cut.get("lining") or "")[:60], "tray lining": tray.get("lining")})
         check(f"{dev}: a badge in the case still opens when tapped (in your hand since build 320)", r.get("tapCard") is True and not r.get("threw"), r.get("threw") or r.get("tapCard"))
         ctx.close()
     # 4. clean edges, every badge: no light copy of the outline drawn off it,
@@ -19899,9 +19924,16 @@ def check_b317_badge2(br):
         # MOVED IN 325 (b325b): no plate on the tab's front; open, its lid says
         # the name only in the cushion; shut, on the nameplate (tabPlate)
         tabCushion = pg.evaluate("() => (document.querySelector('.badge-case .badge-case-lid .nova-case-lidlabel') || {}).textContent || ''")
-        check(f"{dev}: the Badges tab's case has nothing on its front, the name on its shut lid's nameplate and in the open lid's cushion, nothing else on the lid (325)",
-              tab is None and tabLid is False and bool(tabPlate) and tabPlate["text"].lower() == "level 1 badge case" and tabCushion.lower() == "level 1 badge case",
-              {"front plate": tab, "lid says it (outside the deboss)": tabLid, "nameplate": tabPlate, "cushion": tabCushion})
+        # MOVED IN 327 round 10: the tab's case is the tray - no lid; its name is on the one nameplate on its front, between its two
+        # latches, and nowhere else on it (the screen's own heading says "Badges")
+        trayPlate = pg.evaluate("""() => { const T = document.querySelector('.badges-tab .bcs'); if(!T) return null; const t = T.querySelector('.bcs-plate-text'), sl = T.querySelector('.bcs-plate');
+          const c = T.cloneNode(true); c.querySelectorAll('.bcs-plate').forEach(n => n.remove());
+          return { text: t ? t.textContent.trim() : '', font: t ? getComputedStyle(t).fontWeight : '', bg: sl ? getComputedStyle(sl).backgroundImage.slice(0, 60) : '',
+            latches: T.querySelectorAll('.bcs-latch').length, lid: !!T.querySelector('.badge-case-lid'), elsewhere: /badge case/i.test(c.textContent) }; }""")
+        tp = trayPlate or {}
+        check(f"{dev}: the Badges tab's tray says its name once - on the nameplate on its front, between its two latches - and has no lid (327 round 10)",
+              bool(trayPlate) and tp.get("text", "").lower() == "level 1 badge case" and tp.get("latches") == 2 and not tp.get("lid") and not tp.get("elsewhere"),
+              trayPlate)
         check(f"{dev}: ...and so does the Profile card's - its name on its side, no heading over the tray",
               # build 319: the Profile case is shut and has no head row at all
               good(pf) and pfHead in (False, None), {"plate": pf, "head says it": pfHead})
@@ -19909,8 +19941,9 @@ def check_b317_badge2(br):
         # is in the card's own dull surface, not the open case's bright metal
         # ("the brief case sticks out") - see check_b319h_layout.
         # MOVED IN 325: the tab's name is its nameplate's second line now
+        # MOVED IN 327 round 10: the tab's nameplate is the tray's front plate
         check(f"{dev}: ...one lettering: the Profile's plate and the tab's nameplate the same weight, the Profile's in the card's own dull surface",
-              bool(tabPlate and pf) and tabPlate["font"] == pf["font"].split(" ")[0] and tabPlate["bg"] != pf["bg"], [tabPlate, pf and pf["bg"]])
+              bool(trayPlate and pf) and tp.get("font") == pf["font"].split(" ")[0] and tp.get("bg") != pf["bg"], [tp.get("font"), tp.get("bg"), pf and pf["font"], pf and pf["bg"]])
         # every badge on the tab: struck at its own device pixels (after the measure)
         pg.wait_for_timeout(1200)
         res = pg.evaluate("""(dpr) => { const out = [];
@@ -19922,8 +19955,11 @@ def check_b317_badge2(br):
             i.onerror = () => { out.push({ raster: true, nat: 0, need }); done(); };
             i.src = im.getAttribute('href'); }))).then(() => out); }""", dpr)
         bad = [r for r in res if not r["raster"] or not (r["need"] * 0.97 <= r["nat"] <= r["need"] * 1.12)]
+        # MOVED: the seed earns every other unit - 8 of 16 when this was written, 12 of 24 since the academy's Level 2 and 3 units;
+        # read off the page, every earned tile counted
+        earned = pg.evaluate("() => document.querySelectorAll('.badges-tab .badge-tile.is-earned').length")
         check(f"{dev}: every badge on the Badges tab is struck at the size it is shown (no image scaled up or crushed)",
-              len(res) == 8 and not bad, {"tiles": len(res), "off": bad[:4]})
+              len(res) >= 1 and len(res) == earned and not bad, {"tiles": len(res), "earned": earned, "off": bad[:4]})
         ctx.close()
     # ---- 3. one casting, no slivers: all sixteen, big, at 3x ----
     ctx, pg = booted(br, 1240, 1240, seed=USED_ACCOUNT, dpr=3)

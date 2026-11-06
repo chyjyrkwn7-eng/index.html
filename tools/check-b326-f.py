@@ -404,7 +404,9 @@ def check_surfaces(br):
     tb = pg.evaluate("() => { const c = getComputedStyle(document.querySelector('.bottomtabs')); return [c.backdropFilter, c.borderRadius]; }")
     pg.evaluate("() => showVirtualRoomSetup()"); pg.wait_for_timeout(1000)
     vb = pg.evaluate("() => { const c = getComputedStyle(document.querySelector('.vroom-setup-bar')); return [c.backdropFilter, c.borderRadius]; }")
-    check("the tab bar's glass is left alone, and the Virtual Room's bar still wears the same frost", tb[0] == vb[0] and "30px" in tb[0], {"tab": tb, "vr": vb})
+    # MOVED IN 384: the tab bar went to blur(7px) in 377 (see-through, asked for); the check named its old 30px. What it holds is the
+    # Virtual Room's pill wearing the bar's own frost, whatever that is, and the bar keeping a frost at all
+    check("the tab bar's glass is left alone, and the Virtual Room's bar still wears the same frost", tb[0] == vb[0] and "blur(" in tb[0], {"tab": tb, "vr": vb})
     ctx.close()
 
 
