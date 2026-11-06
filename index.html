@@ -35383,8 +35383,10 @@ html.is-browser{ --fade-paper: transparent; }
   @media (min-width:40rem){ .gs-bar .gs-go{ min-width:17rem; min-height:56px; font-size:1.22rem; } }
   /* Welcome's two buttons (Sign in / I'm new here, or Continue / Use a different account): "The sign in and sign up
      buttons look small too". The same size class - full-width pills, Start Studying's words, 52px and up on a phone */
-  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ min-height:clamp(52px, 12.8vw, 60px); font-size:clamp(1rem, 4.4vw, 1.2rem); }
-  @media (min-width:40rem){ html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ min-height:56px; font-size:1.2rem; } }
+  /* (384) "they now seem a smidge too big ... ensure it's cohesive for the sign up process": the sign-up steps' Continue exactly -
+     53px tall, 16.8px words - on every device */
+  html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ min-height:53px; font-size:1.05rem; }
+  @media (min-width:40rem){ html[data-layout] body .cosmic-welcome > .cosmic-welcome-actions > .cosmic-welcome-btn{ min-height:53px; font-size:1.05rem; } }
   /* the two taller buttons (+24px) come out of an upright tablet's planet, which is sized to the screen's height there
      (Home's rule, calc(100dvh - 31rem)): without this an iPad Pro 11" Welcome scrolled 16px */
   @media (min-width:40rem) and (orientation:portrait){
@@ -37118,6 +37120,22 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme][data-layout] body #stage .class-catalog .class-card.is-here,
   html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked{ box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 55%, transparent) !important; }
   html[data-theme][data-layout] body #stage :is(.class-catalog, .classselect-panel) .class-card.is-soon{ border-radius:var(--ios-group-r) !important; }
+  /* (384) A PICKED CLASS IS PLAIN TO SEE. "When selecting a class at sign up ensure the selected is easy to tell, it's only a white
+     border currently." The picked card takes its class's own colour - a 2px ring in it, a wash of it over the card, a glow off the
+     edge - and a filled check in its top-right corner; the "Selected" chip stays. Box-shadow and a pseudo-element only: nothing
+     moves the layout. */
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-academy{ --pick:#8FA2FF; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-ifc{ --pick:#FF8A3D; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked{
+    background-image:linear-gradient(color-mix(in srgb, var(--pick, #fff) 16%, transparent), color-mix(in srgb, var(--pick, #fff) 16%, transparent)), linear-gradient(var(--ios-card-fill), var(--ios-card-fill)) !important;
+    box-shadow:inset 0 0 0 2px var(--pick, #fff), 0 0 0 1px color-mix(in srgb, var(--pick, #fff) 35%, transparent), 0 6px 26px color-mix(in srgb, var(--pick, #fff) 30%, transparent) !important;
+  }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card{ position:relative; }
+  html[data-theme][data-layout] body #stage .classselect-panel .class-card.is-picked::after{
+    content:""; position:absolute; top:12px; right:12px; width:26px; height:26px; border-radius:50%; pointer-events:none;
+    background:var(--pick, #fff) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23101318' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/16px 16px no-repeat;
+    box-shadow:0 2px 8px rgba(0,0,0,.35);
+  }
   /* (384 full check) "MORE CLASSES" IS A ROW UNDER THE CLASSES, NOT A THIRD CARD. With Fire Code beside the academy it wrapped
      to a row of its own in a two-column grid whose rows are all as tall as the tallest (1fr) - a 300px box saying "Coming
      soon" - and on the sign-up step that put Continue below the fold on every iPhone but a Pro Max (338px of scroll on an SE
@@ -55193,7 +55211,8 @@ const NOVA_CLASS_INFO = {
     desc: "Every unit, the class calendar and the leaderboard." },
   ifc: { title: "Fire Code", kicker: "IFC 2021 + HC",
     /* (384, 5.4.2) the county booklet by its name, and the count from the bank where it is loaded (1,812 in 5.4.2) */
-    desc: "The 2021 IFC with the Harris County Fire Code Amendments. " + ifcQuestionCountText() + " questions.",
+    /* (384) "ensure that it says it's cross referenced to the Harris County fire code amendments" */
+    desc: "The 2021 IFC, cross-referenced with the Harris County Fire Code Amendments. " + ifcQuestionCountText() + " questions.",
     needs: "Needs your own IFC PDF" }
 };
 /* "Don't put them beneath each other ... unless it's a bigger screen device. Also ensure each box is
@@ -80105,7 +80124,7 @@ let theme = { mode: "dark", accent: "ink", layout: "modern", smoothScroll: true,
                  stays off. soundVolume is 0-1. soundOn327: this account
                  has had the one-time switch-on (loadTheme) - a new
                  account starts with it done. */
-              soundOn: true, soundVolume: .7, vibrate: false, soundOn327: true,
+              soundOn: true, soundVolume: .35, vibrate: false, soundOn327: true,
               /* iPhone haptics (build 327): on by default; Android keeps vibrate */
               haptics: true,
               /* Settings > Sound & Haptics (build 382): the clicks for buttons,
@@ -80507,7 +80526,8 @@ function saveTheme(){
      All no-ops while the setting is off. (The hidden sound test page,
      showSoundTest, came out in build 325: "I see a picture of a 'sound
      test' but I don't want that screen in the app.") */
-const SOUND_DEFAULT_VOLUME = .7;
+/* (384) 35%: "some people may not be aware of the sound ... I just don't want it to be crazy loud" (was .7) */
+const SOUND_DEFAULT_VOLUME = .35;
 __bm("L66724");
 const SOUND_MAX_VOICES = 24;
 /* Haptic patterns (ms) per kind of event, Android only. */
@@ -93538,12 +93558,8 @@ function showWelcome(){
      auto margins all the way down and measured to the pixel - is
      untouched. Guarded on APP_BUILD existing at all, because this
      function is defined thousands of lines above the constant. */
-  if(typeof APP_BUILD === "string" && APP_BUILD){
-    const buildTag = document.createElement("p");
-    buildTag.className = "welcome-build";
-    buildTag.textContent = "Build " + APP_BUILD;
-    setTimeout(() => { if(stage.querySelector(".cosmic-welcome")) stage.appendChild(buildTag); }, 0);
-  }
+  /* (384) no build line on Welcome: "At the top left corner of the welcome screen, the build version is there.. remove that.
+     Itd be cleaner without." (Settings > Check for update still names the build.) */
 
   const title = document.createElement("p");
   title.className = "cosmic-welcome-title";
@@ -93552,7 +93568,8 @@ function showWelcome(){
 
   const sub = document.createElement("p");
   sub.className = "cosmic-welcome-sub";
-  sub.textContent = "Practice, track your mastery, and be ready for whatever comes next.";
+  /* (384) "I don't like the be ready part" */
+  sub.textContent = "Practice, track your mastery, and climb the ranks.";
   wrap.appendChild(sub);
 
   /* SIGN IN FIRST (build 322) - see fillWelcomeActions. A device that
@@ -94325,7 +94342,8 @@ function showClassSelection(){
   sub.className = "cal-sub classselect-sub";
   /* (330) shorter: the More classes card already says more are coming, and the small print needs the room */
   /* (384) one or both */
-  sub.textContent = "Pick one or both. You can add a class later.";
+  /* (384) "should just say select your classes or something instead" - the title says it; this line no longer says "one or both" */
+  sub.textContent = "Choose the classes you're taking. You can add one later.";
   panel.appendChild(sub);
 
   /* Build 329: the same cards as the Classes screen (the class button's "Add a class"): an emblem,
