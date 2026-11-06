@@ -7410,6 +7410,8 @@
   body:has(.unitoptions-modal:not([hidden])) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   /* (384 review) and over the invite sheet: "<Name> isn't enrolled in Fire Code." landed under the sheet (340) and the room's
      Ready bar, where nobody could read it. */
+  /* (384 r5) over the save-your-code card (420) the toast says Copied on top of the dim, not behind it */
+  body:has(.savecode-card) .toast{ z-index:430; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   body:has(.invite-overlay) .toast{ z-index:390; top:calc(env(safe-area-inset-top, 0px) + .75rem); bottom:auto; }
   body.chatdock-open .vroom-chat-alert{
     opacity:0 !important; pointer-events:none !important;
@@ -36725,6 +36727,11 @@ html.is-browser{ --fade-paper: transparent; }
     color:#FFFFFF; background:rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.12);
     user-select:all; -webkit-user-select:all; overflow-wrap:anywhere;
   }
+  /* (384 r5) the code with its copy button beside it */
+  .savecode-coderow{ display:flex; align-items:center; gap:.6rem; margin:0 0 .9rem; }
+  .savecode-coderow > .savecode-value{ flex:1 1 auto; min-width:0; margin:0; }
+  .savecode-coderow > .savecode-copy{ flex:0 0 auto; }
+  @media (max-width:24rem){ .savecode-value{ font-size:1.7rem; letter-spacing:.08em; } }
   .savecode-body{ margin:0 0 1rem; font-size:.98rem; line-height:1.45; color:rgba(255,255,255,.86); text-align:left; }
   html[data-layout] body .savecode-card .next{ display:block; width:100%; min-height:48px; margin:0; animation:none; }
   html[data-layout] body .savecode-card .next.ghost:disabled{ opacity:.38; }
@@ -129225,7 +129232,7 @@ function showAppearance(opts){
          the code whether it is showing or not, and never shows or hides it - it is the row's neighbour, not part of it. */
       const codeBlock = document.createElement("div");
       codeBlock.className = "sync-code-block";
-      const copyCode = buildCopyIconButton("Copy your sync code", () => shownSyncCode(), "Sync code copied.", t => "Your sync code is " + t);
+      const copyCode = buildCopyIconButton("Copy your sync code", () => shownSyncCode(), "Copied", t => "Your sync code is " + t, () => { store.savedCodeSaved = true; try{ localStorage.setItem("class26e.savecode.card", String(Date.now())); }catch(e){} saveStore(); });
       copyCode.classList.add("sync-copy-btn");
       codeBlock.append(row, copyCode);
       card.appendChild(codeBlock);
@@ -129280,7 +129287,6 @@ function showAppearance(opts){
          off for making the section a pile; it returns because saving the
          code is now the thing the app asks of everybody, and the place it
          is found again has to be able to do it. */
-      card.appendChild(buildSettingsSaveCodeRow());
 
       /* NO "STOP SYNCING THIS DEVICE". Asked against directly - "it's
          pointless and doesn't need to be there at all, we already have
@@ -132102,15 +132108,18 @@ function showSaveCodeCard(opts){
   title.textContent = "Save your sync code";
   const code = document.createElement("p");
   code.className = "savecode-value"; code.textContent = shownSyncCode();
+  /* (384 r5) "should we just remove [Save it] and only have the copy thing?" - yes: the same copy button as the friend code and
+     Settings' sync code, beside the code. A tap copies, the glyph turns to a tick, and that counts as saved (the ticked box
+     still does too). */
+  const copy = buildCopyIconButton("Copy your sync code", () => shownSyncCode(), "Copied", t => "Your sync code is " + t, () => { saved = true; refresh(); });
+  copy.classList.add("savecode-copy");
+  const codeRow = document.createElement("div");
+  codeRow.className = "savecode-coderow";
+  codeRow.append(code, copy);
   code.setAttribute("aria-label", "Sync code " + String(shownSyncCode()).split("").join(" "));
   const body = document.createElement("p");
   body.className = "savecode-body";
-  body.textContent = "This is your sync code. Write it down or save it somewhere safe. It is the only way to get your progress back on a new phone or if this app is deleted.";
-  const save = document.createElement("button");
-  save.type = "button"; save.className = "next savecode-save";
-  save.textContent = "Save it";
-  const status = document.createElement("p");
-  status.className = "savecode-status"; status.setAttribute("role", "status");
+  body.textContent = "This is your sync code. Copy it or write it down, and keep it somewhere safe. It is the only way to get your progress back on a new phone or if this app is deleted.";
   const ack = document.createElement("button");
   ack.type = "button"; ack.className = "savecode-ack";
   ack.setAttribute("role", "checkbox"); ack.setAttribute("aria-checked", "false");
@@ -132124,7 +132133,7 @@ function showSaveCodeCard(opts){
   go.textContent = "Continue";
   const foot = document.createElement("p");
   foot.className = "savecode-foot"; foot.textContent = "You can find it again any time in Settings, under Sync.";
-  sheet.append(tag, title, code, body, save, status, ack, go, foot);
+  sheet.append(tag, title, codeRow, body, ack, go, foot);
   el.appendChild(sheet);
 
   let ticked = false, saved = false, closed = false;
@@ -132136,25 +132145,6 @@ function showSaveCodeCard(opts){
     ack.classList.toggle("is-on", ticked);
   };
   ack.addEventListener("click", () => { ticked = !ticked; refresh(); });
-  save.addEventListener("click", async () => {
-    if(save.disabled) return;
-    save.disabled = true;
-    let ok = false;
-    /* no anchor: the card does not scroll, and awaiting frames first would
-       step outside the tap iOS requires for share() */
-    try{ ok = await saveSyncCodeVia(null); }catch(e){ ok = false; }
-    save.disabled = false;
-    if(ok){
-      saved = true;
-      /* (384) what actually happened: a share sheet took it, or it was copied (always, on a computer) */
-      status.textContent = lastCodeSaveWay === "share" ? "Saved." : saveCodeCopiedLine();
-      status.className = "savecode-status is-good";
-    } else {
-      status.textContent = "Not saved. Write the code down instead, then tick the box below.";
-      status.className = "savecode-status";
-    }
-    refresh();
-  });
   go.addEventListener("click", () => {
     if(go.disabled || closed) return;
     closed = true;
@@ -132174,7 +132164,7 @@ function showSaveCodeCard(opts){
      unanswered, so it comes back on the next Home. */
   if(opts.mode === "existing") clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
-  setTimeout(() => { try{ save.focus({ preventScroll: true }); }catch(e){} }, 80);
+  setTimeout(() => { try{ copy.focus({ preventScroll: true }); }catch(e){} }, 80);
   return el;
 }
 /* Settings > Sync: Save it, under the code (a settingsRow, 44px+). */
@@ -143244,7 +143234,7 @@ let friendsBackFresh = false;
    so the sync code can wear the very same one - Madison: "The copy button to how the friend button has, the sync code needs
    that same kinda button as well." A round 44px+ matte button with the two-squares glyph; a tap copies, the glyph turns to
    a green tick with a small pop for 1.4s and the toast says what was copied. Its name is its aria-label. */
-function buildCopyIconButton(label, getText, copiedToast, failToast){
+function buildCopyIconButton(label, getText, copiedToast, failToast, onCopied){
   const COPY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-ic"><rect x="8.6" y="8.6" width="11.4" height="11.4" rx="2.7"/>' +
     '<path d="M15.4 8.6V6.7A2.7 2.7 0 0 0 12.7 4H6.7A2.7 2.7 0 0 0 4 6.7v6a2.7 2.7 0 0 0 2.7 2.7h1.9"/></svg>';
   const TICK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" class="friend-copy-tick"><path d="M5.2 12.6l4.4 4.4L18.8 7.6"/></svg>';
@@ -143260,6 +143250,7 @@ function buildCopyIconButton(label, getText, copiedToast, failToast){
       btn.classList.remove("is-copied"); void btn.offsetWidth; btn.classList.add("is-copied");
       clearTimeout(btn._t); btn._t = setTimeout(() => btn.classList.remove("is-copied"), 1400);
       showToast(copiedToast);
+      if(typeof onCopied === "function"){ try{ onCopied(); }catch(err){} }
     } else if(text) showToast(failToast(text));
   });
   return btn;
@@ -143498,7 +143489,7 @@ function showFriends(){
      glyph. A round 44px matte button (the same black as Send) with the glyph; a tap copies, the glyph turns to a green tick with a
      small pop for a moment, and the toast says so - the button's name is its aria-label. */
   /* (384: built by buildCopyIconButton, which the sync code's copy in Settings > Sync shares) */
-  const copyBtn = buildCopyIconButton("Copy your friend code", () => friendCodeOf(), "Friend code copied.", t => "Your code is " + t);
+  const copyBtn = buildCopyIconButton("Copy your friend code", () => friendCodeOf(), "Copied", t => "Your code is " + t);
   codeWrap.append(codeEl, copyBtn);
   const mhint = document.createElement("p");
   mhint.className = "friend-hint";

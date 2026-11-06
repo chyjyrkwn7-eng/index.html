@@ -36021,3 +36021,6 @@ Fixed mint-to-sky gradient (was the theme's three colours); still red when low.
 
 ## 384 r5: mode card descriptions trimmed
 Drill / Mock / Review / Virtual Room each back under 130 characters, three short sentences (what, how, best for). Review keeps 'as a list or as flashcards'. Virtual Room opens with 'Multiplayer.'. check-b330's 'every Back button at the same left edge' was already failing before this (Settings sub-pages sit at 40px, the rest at 20px): not touched here.
+
+## 384 r5: Save it is gone, the copy button is the way
+The save-your-code card has the code with the same copy button as the friend code and Settings' sync code beside it (no Save it button, no share sheet, so no Windows share dialog on a laptop); a copy counts as saved, as the ticked box still does; the toast says 'Copied' (raised above the card). Settings > Sync's Save it row is gone: its copy button records the code saved. buildSettingsSaveCodeRow stays unused. Sign-out's 'Save my code' still uses saveSyncCodeVia. check-b382-savecode and check-b384-glitches updated (written against the old buttons; the new savecode check fails against the previous build).

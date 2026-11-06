@@ -168,22 +168,19 @@ with sync_playwright() as pw:
                c["text"] == c["code"] and bool(c["code"]) and c["px"] >= 24 and c["mono"], c)
             dis = lambda: pg.evaluate("()=>document.querySelector('#savecode-card .savecode-continue').disabled")
             ck("Continue starts disabled", dis() is True)
-            # (384) Save it shares on a phone and copies on a computer (check-b384-glitches save); this context is Chromium's
-            # desktop at a phone's size, so it is told it is a phone where the phone's share sheet is what is checked
-            pg.evaluate("()=>{ a2hsDeviceGuess = () => 'apple'; }")
-            pg.evaluate("""()=>{ Object.defineProperty(navigator,'share',{configurable:true,value:()=>Promise.reject(Object.assign(new Error('x'),{name:'AbortError'}))}); }""")
-            pg.click("#savecode-card .savecode-save"); pg.wait_for_timeout(400)
-            ck("a cancelled Save does not enable Continue", dis() is True)
+            # (384 r5) NO SAVE IT: the code has the same copy button as the friend code and Settings, and a copy counts as saved
+            ck("there is no Save it button on the card, and a copy button sits beside the code",
+               pg.evaluate("()=>!document.querySelector('#savecode-card .savecode-save') && !!document.querySelector('#savecode-card .savecode-coderow > .savecode-copy')") is True)
+            pg.evaluate("()=>{ window.__copied=null; Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:t=>{window.__copied=t;return Promise.resolve();}}}); }")
             pg.click("#savecode-card .savecode-ack"); pg.wait_for_timeout(150)
             on = dis()
             pg.click("#savecode-card .savecode-ack"); pg.wait_for_timeout(150)
             ck("ticking the box enables Continue, unticking disables it", on is False and dis() is True)
-            pg.evaluate("""()=>{ window.__shared=null; Object.defineProperty(navigator,'share',{configurable:true,value:d=>{window.__shared=d;return Promise.resolve();}}); }""")
-            pg.click("#savecode-card .savecode-save"); pg.wait_for_timeout(400)
-            shared = pg.evaluate("()=>window.__shared && window.__shared.text")
-            ck("a Save that worked enables Continue", dis() is False and shared and c["code"] in shared, shared)
+            pg.click("#savecode-card .savecode-copy"); pg.wait_for_timeout(400)
+            copied = pg.evaluate("()=>window.__copied")
+            ck("copying the code enables Continue and puts the code (and only the code) on the clipboard", dis() is False and copied == c["code"], copied)
             ck("Nova waits while the card is up", pg.evaluate("()=>document.getElementById('nova-intro').__nova.asking") is True)
-            sizes = pg.evaluate("""()=>['.savecode-save','.savecode-ack','.savecode-continue'].map(s=>Math.round(document.querySelector('#savecode-card '+s).getBoundingClientRect().height))""")
+            sizes = pg.evaluate("""()=>['.savecode-copy','.savecode-ack','.savecode-continue'].map(s=>Math.round(document.querySelector('#savecode-card '+s).getBoundingClientRect().height))""")
             ck("every control is 44px or taller", min(sizes) >= 44, sizes)
             i0 = pg.evaluate("()=>document.getElementById('nova-intro').__nova.index")
             pg.click("#savecode-card .savecode-continue"); pg.wait_for_timeout(700)
@@ -350,22 +347,17 @@ with sync_playwright() as pw:
         ctx.close()
 
     if want("settings"):
-        print("\n8. Settings > Sync: the code and Save it")
+        print("\n8. Settings > Sync: the code and its copy button (no Save it row)")
         ctx, pg = open_page(br, init_account("TEST-9999", store()))
         pg.evaluate("()=>showAppearance({ focus:'sync' })"); pg.wait_for_timeout(1300)
         r = pg.evaluate("""()=>{ const s=document.getElementById('settings-sync-sect'); if(!s) return null;
-            const row=s.querySelector('.sync-save-code-row'); const r=row?row.getBoundingClientRect():null;
-            return { codeRow:!!s.querySelector('.sync-code-row'), save: r ? Math.round(r.height) : 0,
-                     inView: r ? (r.top >= 0 && r.bottom <= innerHeight) : false }; }""")
-        ck("the code row and a Save it row, 44px+, in view when Settings opens on Sync", r and r["codeRow"] and r["save"] >= 44 and r["inView"], r)
-        if r and r["save"]:
-            pg.evaluate("()=>{ a2hsDeviceGuess = () => 'apple'; }")   # (384) a phone - see section 1
-            pg.evaluate("""()=>{ window.__shared=null; Object.defineProperty(navigator,'share',{configurable:true,value:d=>{window.__shared=d;return Promise.resolve();}}); }""")
-            pg.click("#settings-sync-sect .sync-save-code-row"); pg.wait_for_timeout(500)
-            s = pg.evaluate("()=>({ text: window.__shared && window.__shared.text, saved: store.savedCodeSaved })")
-            ck("Save it hands the code to the share sheet and records it saved", s["text"] and "TEST-9999" in s["text"] and s["saved"] is True, s)
-        else:
-            ck("Save it hands the code to the share sheet and records it saved", False, "no row")
+            const b=s.querySelector('.sync-copy-btn'); const r=b?b.getBoundingClientRect():null;
+            return { codeRow:!!s.querySelector('.sync-code-row'), noSaveRow:!s.querySelector('.sync-save-code-row'), copy: r ? Math.round(r.height) : 0 }; }""")
+        ck("the code row and a copy button (44px+), and no Save it row", r and r["codeRow"] and r["noSaveRow"] and r["copy"] >= 44, r)
+        pg.evaluate("()=>{ window.__copied=null; store.savedCodeSaved=false; Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:t=>{window.__copied=t;return Promise.resolve();}}}); }")
+        pg.click("#settings-sync-sect .sync-copy-btn"); pg.wait_for_timeout(500)
+        s2 = pg.evaluate("()=>({ text: window.__copied, saved: store.savedCodeSaved })")
+        ck("the copy button copies the code and records it saved", s2["text"] and "TEST-9999" in s2["text"] and s2["saved"] is True, s2)
         ctx.close()
     br.close()
 

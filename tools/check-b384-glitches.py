@@ -572,17 +572,18 @@ def sec_save(br):
             if cls == "academy":
                 pg.evaluate("()=>{ showHome(); showSaveCodeCard({ mode: 'settings' }); }"); pg.wait_for_timeout(700)
                 pg.evaluate("()=>navigator.clipboard.writeText('nothing yet')")
-                pg.click("#savecode-card .savecode-save"); pg.wait_for_timeout(600)
+                pg.click("#savecode-card .savecode-copy"); pg.wait_for_timeout(600)
                 res["card"] = pg.evaluate("""async ()=>({ shares: window.__shares.length, clip: await navigator.clipboard.readText(), shown: shownSyncCode(),
-                    status: document.querySelector('#savecode-card .savecode-status').textContent, cont: !document.querySelector('#savecode-card .savecode-continue').disabled })""")
+                    status: [...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' | '), cont: !document.querySelector('#savecode-card .savecode-continue').disabled })""")
                 pg.evaluate("()=>{ const c=document.getElementById('savecode-card'); c && c.remove(); window.__shares=[]; }")
             # Settings > Sync > Save it
             pg.evaluate("()=>showAppearance({ page: 'sync' })"); pg.wait_for_timeout(900)
             pg.evaluate("()=>{ navigator.clipboard.writeText('nothing yet'); document.querySelectorAll('.toast').forEach(t=>t.remove()); }")
-            if pg.evaluate("()=>!!document.querySelector('#stage .sync-save-code-row')"):
-                pg.click("#stage .sync-save-code-row"); pg.wait_for_timeout(600)
+            chk("[fix] %s %s: Settings has no Save it row any more (the copy button is the way)" % (dev, cls), pg.evaluate("()=>!document.querySelector('#stage .sync-save-code-row')"))
+            if pg.evaluate("()=>!!document.querySelector('#stage .sync-copy-btn')"):
+                pg.click("#stage .sync-copy-btn"); pg.wait_for_timeout(600)
                 res["row"] = pg.evaluate("""async ()=>({ shares: window.__shares.length, clip: await navigator.clipboard.readText(), shown: shownSyncCode(),
-                    toast: [...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' | '), sub: (document.querySelector('#stage .sync-save-code-row .settings-row-sub')||{}).textContent })""")
+                    toast: [...document.querySelectorAll('.toast')].map(t=>t.textContent).join(' | ') })""")
             pg.evaluate("()=>{ window.__shares=[]; }")
             # Sign out's Save my code
             pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(800)
@@ -591,14 +592,16 @@ def sec_save(br):
             res["signout"] = pg.evaluate("""async ()=>({ shares: window.__shares.length, clip: await navigator.clipboard.readText(), shown: shownSyncCode(),
                 msg: document.querySelector('#signout-confirm .signout-msg').textContent })""")
             for where, r in res.items():
-                if laptop:
+                if where in ("card", "row"):
+                    said = r.get("status") or r.get("toast") or ""
+                    chk("[fix] %s %s %s: the copy button copies the code (%r), never opens a share sheet (%d calls), and says Copied (%r)"
+                        % (dev, cls, where, r["clip"], r["shares"], said[:40]), r["shares"] == 0 and r["clip"] == r["shown"] and "__" not in r["clip"] and re.search(r"copied", said, re.I), r)
+                elif laptop:
                     said = r.get("status") or r.get("toast") or r.get("msg") or ""
                     chk("[fix] laptop %s %s: Save it copies the code (%r), never opens the share dialog (%d calls; the browser has one: %s), and says it copied (%r)"
                         % (cls, where, r["clip"], r["shares"], had, said[:70]), had and r["shares"] == 0 and r["clip"] == r["shown"] and "__" not in r["clip"] and re.search(r"copied", said, re.I), r)
                 else:
                     chk("[guard] iPhone %s %s: Save it still hands the code to the share sheet (%d calls)" % (cls, where, r["shares"]), r["shares"] == 1, r)
-            if laptop and "row" in res:
-                chk("[fix] laptop %s: Settings' Save it says what it will do on a computer (%r)" % (cls, res["row"]["sub"]), re.search(r"copy", res["row"]["sub"] or "", re.I), res["row"])
             chk("[guard] %s %s: no page errors" % (dev, cls), not pg.errs, pg.errs[:2])
             pg.ctx.close()
 
