@@ -71773,7 +71773,8 @@ const UNIT_BADGE_SHAPE = {
    Maltese cross, the fire service's own, is Chapter 5's - Fire Service Features. (Badges round 2) The ten that pictured
    things and the gear and the hex (look-alikes at 28px) are twelve plain outlines now - see BADGE_SHAPE - each set by
    badgeBackPlan on the chapter whose title it holds largest (the smallest of the twelve 0.0513, Chapter 8 on the
-   scooped square). */
+   scooped square). (Badges round 3) Chapter 34's half disc read as Chapter 23's dome on a shorter base; it is the
+   dished hexagon now (0.0631). */
 const IFC_BADGE_SHAPE = {
   "Chapter 1: Scope and Administration":                             "crown",
   "Chapter 2: Definitions":                                          "dart",
@@ -71801,7 +71802,7 @@ const IFC_BADGE_SHAPE = {
   "Chapter 31: Tents, Temporary Special Event Structures and Other Membrane Structures": "coin",
   "Chapter 32: High-Piled Combustible Storage":                      "burstplate",
   "Chapter 33: Fire Safety During Construction and Demolition":      "saddle",
-  "Chapter 34: Tire Rebuilding and Tire Storage":                    "halfdisc",
+  "Chapter 34: Tire Rebuilding and Tire Storage":                    "dishhex",
   "Chapter 35: Welding and Other Hot Work":                          "bitehex",
   "Chapter 36: Marinas":                                             "tau",
   "Chapter 37: Combustible Fibers":                                  "medal",
@@ -71885,8 +71886,6 @@ Object.assign(BADGE_SHAPE, {
     d: "M14 14L86 14Q92 14 90.7 19.9L77.3 82.1Q76 88 70 88L30 88Q24 88 22.7 82.1L9.3 19.9Q8 14 14 14Z" },
   gem:        { c: [50, 51], cuts: ["M-10 36H110"],
     d: "M33 12L67 12Q72 12 75.2 15.8L88.8 32.2Q92 36 89 40L53 88Q50 92 47 88L11 40Q8 36 11.2 32.2L24.8 15.8Q28 12 33 12Z" },
-  halfdisc:   { c: [50, 54], cuts: ["M50 84L18 -10", "M50 84L82 -10"],
-    d: "M6 72A44 44 0 0 1 94 72L94 76Q94 80 90 80L10 80Q6 80 6 76Z" },
   card:       { c: [50, 50], cuts: ["M-10 36H110", "M-10 64H110"],
     d: "M31 6L69 6Q80 6 80 17L80 83Q80 94 69 94L31 94Q20 94 20 83L20 17Q20 6 31 6Z" },
   tag:        { c: [50, 52], cuts: ["M-10 52H110"],
@@ -71943,6 +71942,10 @@ Object.assign(BADGE_SHAPE, {
   /* a triangle on its point with its corners cut off - long and short sides */
   cuttri:    { c: [50.0, 48.5], cuts: ["M-10 36H110"],
     d: "M32.1 81.5L32.7 82.3L33.6 83.0L34.5 83.4L35.6 83.5L64.6 83.5L66.5 82.9L67.8 81.6L87.5 47.5L88.1 45.7L87.9 44.6L87.5 43.5L73.1 18.4L71.7 17.1L70.8 16.7L69.7 16.5L30.3 16.5L28.4 17.0L27.6 17.6L27.0 18.4L12.4 43.6L12.0 44.7L11.9 45.8L12.5 47.5Z" },
+  /* (badges round 3) a hexagon on its side with its top edge dished in - Chapter 34, in place of the half disc, which
+     read as Chapter 23's dome with a shorter base */
+  dishhex:   { c: [50.0, 51.0], cuts: ["M-10 54H110"],
+    d: "M31.3 17.8L29.9 17.1L28.2 17.1L26.8 17.6L25.6 18.7L7.3 47.1L6.9 48.1L6.8 49.1L6.9 50.2L7.4 51.2L26.9 81.2L27.5 82.0L28.4 82.6L30.2 83.0L69.8 83.0L71.0 82.8L72.0 82.4L73.2 81.2L92.7 51.0L93.1 50.0L93.2 48.9L93.1 47.8L92.6 46.8L74.4 18.8L73.7 18.0L72.8 17.4L71.3 17.0L69.7 17.3L64.1 20.6L61.3 21.9L58.8 22.7L54.6 23.7L50.4 24.0L45.4 23.7L40.2 22.4L35.5 20.5Z" },
   /* a disc cut across and its halves slipped apart */
   slipdisc:  { c: [50.0, 50.0], cuts: ["M-10 50H110"],
     d: "M3.2 45.5L3.3 46.8L3.8 48.0L4.6 49.0L5.6 49.7L7.0 50.0L14.5 50.0L15.6 50.4L16.4 51.2L17.0 52.4L17.6 56.9L18.4 60.7L19.7 64.4L21.1 67.6L23.0 71.0L25.2 74.2L27.7 77.2L30.5 79.9L35.2 83.5L38.1 85.3L40.8 86.6L44.0 87.8L46.8 88.7L50.1 89.4L53.1 89.8L57.0 90.0L60.9 89.8L64.8 89.2L68.6 88.3L72.3 86.9L75.9 85.3L79.2 83.2L82.3 80.9L85.3 78.3L87.9 75.4L90.3 72.2L92.3 68.9L94.0 65.3L95.3 61.6L96.2 57.8L96.8 54.4L96.7 53.1L96.2 51.9L95.4 51.0L94.3 50.3L92.9 50.0L85.6 50.0L84.4 49.6L83.6 48.9L83.0 47.6L82.3 42.7L81.4 38.9L80.3 35.6L78.9 32.4L77.0 29.0L74.8 25.8L72.3 22.8L69.5 20.1L64.8 16.5L61.9 14.7L59.2 13.4L56.0 12.2L53.2 11.3L49.9 10.6L46.9 10.2L43.0 10.0L39.1 10.2L35.2 10.8L31.4 11.7L28.1 12.9L24.6 14.5L21.2 16.5L18.0 18.8L15.0 21.4L12.4 24.3L10.0 27.4L7.9 30.7L6.2 34.3L4.9 37.9L3.9 41.7Z" },
@@ -72050,7 +72053,7 @@ Object.keys(BADGE_SHAPE).forEach(k => { BADGE_CENTRE_OF[BADGE_SHAPE[k].d] = BADG
    BADGE_SHAPE is redrawn - a key missing here is simply measured. */
 const BADGE_BBOX_PRESET = {"gate":[12,9.1,76,80.9],"diamond":[8.45,8.45,83.1,83.1],"disc":[6,6,88,78],"trefoil":[3.188,-0.0367,93.6239,88.0527],"peaks":[8,16.1747,84,71.8253],"wedge":[9.9091,16,80.1818,75.35],"hex":[9,6.7,82,86.6],"cross":[8,8,84,84],"spire":[13.1691,7.3,73.6618,86.7],"fan":[11.2886,12.35,77.4228,69.65],"burstplate":[6.8,6.8,86.4,86.4],"cring":[26,5.9816,69.272,88],"bolt":[16.1905,10,66.1284,80.3879],"star5":[8.719,6.65,82.562,78.7453],"keystone":[10,8,80,84],"quatre":[1.9576,1.9576,96.0848,96.0848]};
 /* (384) Fire Code's 34, measured the same way */
-Object.assign(BADGE_BBOX_PRESET, {"coin":[7,7,86,86],"cinquefoil":[0.5961,1.0201,98.8079,96.0705],"medal":[20,6.9112,60,84.6602],"roundel":[6,15.1559,88,69.6882],"ribbon":[9.193,24,81.614,52],"gonfalon":[16,8,68,82.807],"ticket":[9,16,82,68],"slant":[7.5,16,85,68],"castle":[8,12,84,78],"ziggurat":[8,10,84,80],"tau":[8,12,84,78],"saddle":[8,16,84,72],"wave":[8,18,84,64],"pennon":[8,18,84.4,64],"star4":[6.2,6.2,87.6,87.6],"maltese":[5.7436,5.7436,88.5128,88.5128],"dart":[10.4882,8.25,79.0235,78.3654],"bucket":[9.0685,14,81.863,74],"gem":[9.5484,12,80.9032,78],"halfdisc":[6,28,88,52],"card":[20,6,60,88],"tag":[10,14,80,76],"crown":[10,12.1,80,75.9],"arches":[8,24,84,66],"kite":[19.6875,5.65,60.625,88.55],"quarterdome":[10,10,80,80],"bardia":[6.0,6.6,88.0,86.8],"bowhex":[6.7,19.6,86.6,60.8],"twinblock":[6.0,18.0,88.0,64.0],"slope":[8.0,10.8,84.0,78.4],"bitehex":[13.4,14.0,73.2,72.0],"slipsq":[8.0,14.0,84.0,72.0],"bent":[8.0,15.4,84.0,69.2],"notchsq":[8.0,8.0,84.0,84.0],"bitetri":[10.0,15.0,80.0,70.0],"cuttri":[11.9,16.5,76.2,67.0],"slipdisc":[3.2,10.0,93.6,80.0],"scoopsq":[10.0,10.0,80.0,80.0]});
+Object.assign(BADGE_BBOX_PRESET, {"coin":[7,7,86,86],"cinquefoil":[0.5961,1.0201,98.8079,96.0705],"medal":[20,6.9112,60,84.6602],"roundel":[6,15.1559,88,69.6882],"ribbon":[9.193,24,81.614,52],"gonfalon":[16,8,68,82.807],"ticket":[9,16,82,68],"slant":[7.5,16,85,68],"castle":[8,12,84,78],"ziggurat":[8,10,84,80],"tau":[8,12,84,78],"saddle":[8,16,84,72],"wave":[8,18,84,64],"pennon":[8,18,84.4,64],"star4":[6.2,6.2,87.6,87.6],"maltese":[5.7436,5.7436,88.5128,88.5128],"dart":[10.4882,8.25,79.0235,78.3654],"bucket":[9.0685,14,81.863,74],"gem":[9.5484,12,80.9032,78],"card":[20,6,60,88],"tag":[10,14,80,76],"crown":[10,12.1,80,75.9],"arches":[8,24,84,66],"kite":[19.6875,5.65,60.625,88.55],"quarterdome":[10,10,80,80],"bardia":[6.0,6.6,88.0,86.8],"bowhex":[6.7,19.6,86.6,60.8],"twinblock":[6.0,18.0,88.0,64.0],"slope":[8.0,10.8,84.0,78.4],"bitehex":[13.4,14.0,73.2,72.0],"slipsq":[8.0,14.0,84.0,72.0],"bent":[8.0,15.4,84.0,69.2],"notchsq":[8.0,8.0,84.0,84.0],"bitetri":[10.0,15.0,80.0,70.0],"cuttri":[11.9,16.5,76.2,67.0],"dishhex":[6.8,17.0,86.4,66.0],"slipdisc":[3.2,10.0,93.6,80.0],"scoopsq":[10.0,10.0,80.0,80.0]});
 Object.keys(BADGE_BBOX_PRESET).forEach(k => {
   const b = BADGE_BBOX_PRESET[k], sh = BADGE_SHAPE[k];
   if(sh && b) BADGE_BBOX_CACHE[sh.d] = { x: b[0], y: b[1], w: b[2], h: b[3] };

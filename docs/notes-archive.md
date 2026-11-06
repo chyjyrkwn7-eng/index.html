@@ -35649,6 +35649,39 @@ keystone family the academy just lost (Ch 23 / 4 / 34 / 39).
 Media (scratchpad only): out-badges2/ - every badge per class before/after, the changed outlines before/after, the enamels, the
 unit screens on an iPhone 17 Pro Max.
 
+## 384 final check: badges round 3 - a stretch reading, and Chapter 34
+
+The lead, after round 2: Madison's rule was "none the same shape turned, flipped OR STRETCHED", and Chapter 23's dome and
+Chapter 34's half disc read alike.
+THE STRETCH READING (check-b384-badgetwins (1e)/(2e)): each silhouette's bounding box scaled to a square - a stretch along the
+badge's own axes only, never combined with a turn, so a rectangle and a diamond stay two shapes (card / diamond 0.12) - then
+the 8 orientations at 90 degree steps, the same 1px band, at the same scale (the box 65px of the 176 grid: the size a square
+reaches under the turn reading's area scaling). Calibration (scratchpad b2/stretch.py, stretch2.py): independently drawn
+stretched copies score 1.00 (round 1's crystal / nameplate, card / plaque, coin / oval) and the scalloped coin 0.94; no two
+different outlines in either class score over 0.83 (Fire Code's quarter dome / scooped square, notched square / ticket, card
+/ saddle; the academy's disc / keystone 0.79). Held under 0.88, half way across that gap. Box sizes 128 and 76 were tried and
+give the same picture (twins 0.94-1.00, honest pairs at most 0.83-0.84).
+WHAT IT DOES NOT CATCH, AND WHY: the dome / half disc scores 0.62 - the 111th most alike of Fire Code's 1,653 pairs. It is not
+the same shape stretched: the dome is a half ellipse on straight sides, the half disc a half ellipse to its foot, and under a
+stretch along the axes their curves never coincide; what they share is a category (a round top on a flat base). A threshold
+low enough to flag it would flag ~110 pairs nobody has called alike (card / saddle 0.83 ...). So the reading passes on
+a789dc2 (the round-2 merge) - it has no stretched copies - and FAILS on the round-1 build (38d636b~1) at 1.00 (Ch 58 plaque /
+Ch 66 card, Ch 31 coin / Ch 61 oval, Ch 3 nameplate / Finder crystal), which is the evidence it measures what the rule says.
+CHAPTER 34 changed anyway, on the lead's eye: the half disc (also a gauge, read as a thing) is a dished hexagon now - a hexagon
+on its side, its top edge dished in (dishhex) - graphite as before; back 0.0631 (was 0.0575); against every other Fire Code
+outline at most 0.47 / 0.64 / 0.53 on the 1px / 2px / 28px turn readings and 0.68 stretched (bowhex). The half disc is out of
+BADGE_SHAPE (Fire Code's own). Still in the group the lead named: Ch 23 dome / Ch 39 keystone 0.79 stretched (the closest pair
+involving them), Ch 4 shield / Ch 39 keystone 0.68 - and the academy's own dome / keystone (Verbal Communication / Penal Code)
+0.79, its closest stretched pair. Turned down for Ch 34: a fat three-pointed plate (the triangle at 2px, 0.98), a bar with
+round bites at each end (reads as an I-beam), a hexagon crossed by a bar (the lens stretched, 0.84), a square scooped at two
+corners (reads as an S), two overlapping squares (the slipped block stretched, 0.84).
+GATES (one at a time): check-b384-badgetwins ALL PASS (Fire Code's closest stretched 0.83, the academy's 0.79); --against
+a789dc2 ALL PASS (no stretched copy there - see above); --against 38d636b~1 FAILS (1b) and (1e) at 1.00. check-b384-ifcbadges
+ALL PASS (29; academy pin 2de41ef8 unchanged). check-b384-case ALL PASS. check-b382-badges ALL PASS. check-b325-b: 1 failure,
+the same on 2ac229b (before round 2): "17 Pro Max: the name's letters are at least 9.2 CSS px" - Phonetic Alphabet's
+hourglass, 8.8 (an outline no round touched); its cutscene-hasp check failed once under load and passes alone. check-js ALL
+PASS. Media: out-badges2/ (scratchpad) - fire-code-round3-ch34-before-after.png, the thirteen changed Fire Code outlines
+against the build before round 2, all-58 and all-24 re-rendered, the Fire Code unit screen re-shot.
 ## 384 final check: check-behaviour's 15 failing sections, triaged (branch claude/b384-behtriage)
 
 The 15 sections that failed on the merged 384 (b258, b298, b299, b300, b304_polish, b305_resultstap, b314h_flares, b314h_rankmap,
