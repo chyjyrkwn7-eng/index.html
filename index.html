@@ -152558,9 +152558,10 @@ function tabPerfText(){
        calendar's page - separate pieces that never touch */
     /* (384 review) Stats, in the calendar's family (the example's boxed, solid shapes): the same page and frame, its body
        cut out, three bars rising inside it */
+    /* (384 round 4) "Not a fan of the new stats icon. Revert that": the three plain rising bars it had before the boxed chart
+       (build 384 review) - rounded, solid, no frame. Calendar and the trophy keep their redraws. */
     stats:
-      '<path class="tg-page" fill="currentColor" fill-rule="evenodd" d="M5.6 2.4h12.8A3.6 3.6 0 0 1 22 6v12.4A3.6 3.6 0 0 1 18.4 22H5.6A3.6 3.6 0 0 1 2 18.4V6A3.6 3.6 0 0 1 5.6 2.4zM5.9 4.5a1.8 1.8 0 0 0-1.8 1.8v12a1.8 1.8 0 0 0 1.8 1.8h12.2a1.8 1.8 0 0 0 1.8-1.8v-12a1.8 1.8 0 0 0-1.8-1.8z"/>' +
-      '<g class="tg-bars" fill="currentColor"><rect x="6.3" y="12.6" width="2.8" height="5.4" rx=".7"/><rect x="10.6" y="9.4" width="2.8" height="8.6" rx=".7"/><rect x="14.9" y="6.4" width="2.8" height="11.6" rx=".7"/></g>'
+      '<path class="tg-bars" fill="currentColor" fill-rule="nonzero" d="M3.9 12.6h1.8c0.715 0 1.3 0.585 1.3 1.3v5.8c0 0.715-0.585 1.3-1.3 1.3H3.9c-0.715 0-1.3-0.585-1.3-1.3V13.9c0-0.715 0.585-1.3 1.3-1.3zM11.1 7.4h1.8c0.715 0 1.3 0.585 1.3 1.3v11c0 0.715-0.585 1.3-1.3 1.3H11.1c-0.715 0-1.3-0.585-1.3-1.3V8.7c0-0.715 0.585-1.3 1.3-1.3zM18.3 2.8h1.8c0.715 0 1.3 0.585 1.3 1.3v15.6c0 0.715-0.585 1.3-1.3 1.3H18.3c-0.715 0-1.3-0.585-1.3-1.3V4.1c0-0.715 0.585-1.3 1.3-1.3z"/>'
   };
   /* how long after the lens lifts a tapped tab's screen is built: the
      glide (LENS.glide, build 327z13) is ~94% of the way at 290ms, so the
