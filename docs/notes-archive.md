@@ -36018,3 +36018,6 @@ Pause (phone) is 16px text, min 5.4rem wide (was 15px, 4.6rem). Its bottom was c
 
 ## 384 r5: race question timer bar
 Fixed mint-to-sky gradient (was the theme's three colours); still red when low.
+
+## 384 r5: mode card descriptions trimmed
+Drill / Mock / Review / Virtual Room each back under 130 characters, three short sentences (what, how, best for). Review keeps 'as a list or as flashcards'. Virtual Room opens with 'Multiplayer.'. check-b330's 'every Back button at the same left edge' was already failing before this (Settings sub-pages sit at 40px, the rest at 20px): not touched here.
