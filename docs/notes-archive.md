@@ -36046,3 +36046,6 @@ The sheet's Leave button was a flat #FF453A (an override with !important and no 
 
 ## 384 r5: Settings tiles, glass not outlined
 The first Delta pass put a lightened rim on all four edges, which read as a white border next to the inspiration's (no outline at all). Now: a soft sheen over the top half, one specular line along the TOP edge only, the lower edge a shade lighter in the tile's own hue, a small drop shadow. The Leaderboard row's glyph is the bottom tab's own solid trophy (one drawing). Gates: check-b384-rows, r4, centring (Settings, Profile, Classes) pass.
+
+## 384 r5: race track square-ended
+The race track is a .35rem-radius bar (was a pill) with the start line and the chequered finish flush on its ends, full height.

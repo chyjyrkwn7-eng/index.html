@@ -6722,7 +6722,7 @@
   }
   .vroom-racetrack{
     position:relative; height:5.9rem;
-    background:rgba(128,128,128,.14); border-radius:999px;
+    background:rgba(128,128,128,.14); border-radius:.35rem;   /* (384 r5) square-ended, so the start line and the finish meet its ends instead of floating inside a pill's curve */
     margin-right:1.6rem; /* room for the fixed finish flag beyond 100% */
   }
   .vroom-racetrack-line{
@@ -6732,7 +6732,7 @@
   /* (384 r5) "The finish line is a flag, but that's hard to see who wins.. shouldn't it be a legit flat finish". A flat chequered
      band ON the 100% mark, where a finisher's marker lands centred on it (markers sit at left:pct%, so the band's middle IS 100%),
      and a plain start line at 0% the same height. Behind the markers, so a runner is never hidden by it. */
-  .vroom-racetrack-start, .vroom-racetrack-finish{ position:absolute; top:6%; bottom:6%; z-index:0; pointer-events:none; }
+  .vroom-racetrack-start, .vroom-racetrack-finish{ position:absolute; top:0; bottom:0; z-index:0; pointer-events:none; }
   .vroom-racetrack-start{ left:0; width:3px; margin-left:-1.5px; border-radius:2px; background:rgba(255,255,255,.55); }
   .vroom-racetrack-finish{
     right:0; width:1.2rem; margin-right:-.6rem; border-radius:2px;
