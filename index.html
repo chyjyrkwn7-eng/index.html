@@ -15452,11 +15452,41 @@
      the planet, at the Pro Max's own share, so every phone shows the same picture. Their
      places are already percentages of the box, so the whole system scales as one. */
   .cosmic-welcome .cosmic-hero-wrap{ container-type:inline-size; }
-  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge{ width:max(1.5rem, min(2.9rem, 9.45cqw)); height:max(1.5rem, min(2.9rem, 9.45cqw)); }
+  /* (384) Home's size: "the welcome planet system isn't the same size as the Home Screen one, do your best to make them alike" -
+     the planet's box already is (399 x 379 on a 17 Pro Max); the bubbles were 9.45% of it to Home's 10.7% */
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge{ width:max(1.75rem, min(2.9rem, 10.7cqw)); height:max(1.75rem, min(2.9rem, 10.7cqw)); }
   /* and the icon inside keeps its share of the bubble (1.2rem of 2.6rem), so a small bubble
      does not carry a full-size icon ("some of the flares look bad because the icons inside
      them didn't get their sizes changed") */
   .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge svg{ width:46%; height:46%; }
+  /* (384) WELCOME'S BUBBLES IN HOME'S LIQUID GLASS. "Those flares should look like the main menu flares but with those white
+     icons it has ... ensure the flares have that same Liquid Glass look". Home's unreached bubble exactly - the clear body, the
+     light from the top, the .24 rim, a 6px blur, the inner lights and the drop shadow, the rim's soft refraction (::before) and the
+     lens (::after) - with Welcome's own white icon sitting in the glass. */
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge{
+    position:absolute; isolation:isolate; overflow:hidden; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    color:#FFFFFF;
+    background:rgba(255,255,255,.09);
+    background-image:
+      radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.30), rgba(255,255,255,0) 62%),
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 55%, rgba(255,255,255,.06));
+    border:1px solid rgba(255,255,255,.24);
+    -webkit-backdrop-filter:blur(6px) saturate(1.4); backdrop-filter:blur(6px) saturate(1.4);
+    box-shadow:0 1px 4px rgba(255,255,255,.1) inset, 0 -1px 3px rgba(255,255,255,.06) inset, 3px 7px 12px -2px rgba(0,0,0,.42);
+    cursor:pointer; -webkit-tap-highlight-color:rgba(0,0,0,0);
+  }
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge svg{ position:relative; z-index:1; color:#FFFFFF; opacity:.96; filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35)); }
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge::before{
+    content:""; position:absolute; inset:1px; border-radius:50%; pointer-events:none; z-index:2;
+    box-shadow:inset 1px 2px 4px rgba(255,255,255,.2), inset -1px -2px 4px rgba(255,255,255,.08);
+  }
+  .cosmic-welcome .cosmic-hero-wrap > .cosmic-icon-badge::after{
+    content:""; position:absolute; inset:0; border-radius:50%; pointer-events:none; z-index:2;
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255,255,255,.16), rgba(255,255,255,0) 52%),
+      radial-gradient(circle at 34% 30%, rgba(0,0,0,0) 50%, rgba(0,0,0,.12) 76%, rgba(0,0,0,.26) 100%);
+    box-shadow:inset -3px -4px 7px rgba(0,0,0,.18);
+  }
   .cosmic-icon-badge.cosmic-badge-rank svg.cosmic-rank-emblem{ width:100%; height:100%; flex:none; overflow:hidden; border-radius:50%; clip-path:circle(50% at 50% 50%); }
   /* the recorded motion, laid exactly over the still emblem (build 298) */
   .cosmic-icon-badge.cosmic-badge-rank .cosmic-rank-anim{ position:absolute; inset:0; overflow:hidden; border-radius:50%; pointer-events:none; z-index:0; mix-blend-mode:screen; }
@@ -93074,6 +93104,13 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
       }
     }catch(err){}
   }
+  /* (384) WELCOME ANSWERS A TOUCH TOO: "Ensure that the welcome screen's planet system is still interactive". The planet ripples
+     as Home's does (planetTapFx, its sound); a bubble presses in its glass and lets its light go (white - Welcome's bubbles are
+     icons, not anyone's ranks). Nothing opens; no caption (there is no account to talk about yet). */
+  if(!useTierIcons && !forceAccent){
+    sphere.style.cursor = "pointer";
+    homeTapBind(sphere, (e) => { try{ playSound("home.planet"); }catch(err){} try{ planetTapFx(wrap, e); }catch(err){} });
+  }
   svg.appendChild(sphere);
   /* A bright, warm corona right at the sphere's own boundary instead
      of the dark edge tried previously \u2014 that dark edge was exactly
@@ -93467,6 +93504,10 @@ function buildCosmicHero(useTierIcons, forceAccent, reuse){
     /* Welcome keeps its learning icons exactly as they were (327z15: "make
        them very simple and easy to see like before") - no glass. */
     if(!useTierIcons) badge.appendChild(iconSvg);
+    if(!useTierIcons && !forceAccent){
+      badge.style.setProperty("--rank-color", "#FFFFFF");
+      homeTapBind(badge, () => { try{ playSound("home.flare.veteran"); }catch(err){} try{ flareBubbleTold(badge); homeBubblePress(badge); homeBubbleHalo(badge); }catch(err){} });
+    }
     /* Interactive on Home specifically (useTierIcons is only ever
        true there) \u2014 tapping a "flare" that isn't lit yet tells you
        exactly what's left to reach it, using the same live numbers
