@@ -77,6 +77,12 @@ SCENARIOS = [
      "setup": "try{ homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.daily-alert').forEach(n => n.remove()); showHome(); maybeClassButtonTip()",
      "wait": 8000, "min": 1,
      "note": "the class button, on Home"},
+    # Build 384 round 4: Start Studying's tip, the last of a sign-up's tips - after the sign-up's Add to Home Screen sheet
+    # (scheduleStudyTip waits for it, for the +100 XP and for a calm Home). Standalone here: nothing owed, so it comes at once.
+    {"key": "studytip", "flag": None, "source": "scheduleStudyTip",
+     "setup": "try{ homeUnlocksOwed = () => false; }catch(e){} try{ localStorage.removeItem('class26e.a2hs'); }catch(e){} document.querySelectorAll('.daily-alert').forEach(n => n.remove()); showHome(); scheduleStudyTip()",
+     "wait": 9000, "min": 1,
+     "note": "Start Studying, on Home"},
     {"key": "modeselect", "flag": "seenModeSelectTour", "source": "showModeSelect",
      "setup": "showModeSelect()", "note": "Drill / Quiz / Review / Virtual Room"},  # MOVED IN 327 (b327k)
     {"key": "unitselect", "flag": "seenUnitSelectTour", "source": "showSetup",
