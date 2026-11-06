@@ -35945,3 +35945,9 @@ it's good to go."
   (19,23,40) at 3x, 2.5x and 2x. The iPad's side tail (left edge) has the same patch turned. tools/check-b384-r4.py (S) reads it
   off the pixels at the three ratios. The lesson, again: where two anti-aliased edges are meant to meet, one has to overlap past
   the other by a device pixel; ending exactly on it leaves a seam.
+- **Nova's badge line in a both-class sign-up** (Madison, circled screenshot: "in fire code, you don't need multiple hundos"): a
+  sign-up into both classes is told in the academy's page (`ifcNow` false), so "Score 100% on a unit enough times, and its badge is
+  yours." was the whole of it. A Fire Code-only sign-up says "once" in its own half already. For a sign-up that picked Fire Code
+  (`signupPicked()` has "ifc") one short line follows: "In Fire Code, one 100% on a chapter is enough." An academy-only sign-up is
+  unchanged. check-b384-r4 (O) reads both. Left as they are: the Get Started page's general line ("Ace a unit enough times and its
+  badge goes in your case", shown before any class is chosen), and the academy's own greeting - both are about the academy's badges.

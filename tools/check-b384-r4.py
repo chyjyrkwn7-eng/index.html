@@ -171,6 +171,17 @@ with sync_playwright() as pw:
     chk("(O) Start Studying's tip waits for the Add to Home Screen sheet, then comes (during: %s, after: %s %r)" % (o.get("tipWhileSheet"), o.get("tipAfter"), (o.get("tipText") or "")[:60]),
         not o.get("noFn") and o.get("tipWhileSheet") is False and o.get("tipAfter") and o.get("tipOnStart"), o)
 
+    # a sign-up into BOTH classes is told in the academy's page: its badge line must say Fire Code's is one 100%
+    bl = pg.evaluate("""() => { const txt = l => typeof l.text === 'function' ? '' : String(l.text || ''); const out = {};
+      try{
+        rememberSignupPicks(['academy', 'ifc']); out.both = novaIntroLines({ signup: true }).map(txt).filter(t => /100%/.test(t));
+        rememberSignupPicks(['academy']); out.academy = novaIntroLines({ signup: true }).map(txt).filter(t => /100%/.test(t));
+        rememberSignupPicks([]);
+      }catch(e){ out.err = String(e); }
+      return out; }""")
+    chk("(O) a sign-up into both classes says Fire Code needs one 100% (%s); an academy-only one does not mention it (%s)" % (bl.get("both"), bl.get("academy")),
+        any("Fire Code" in t and "one 100%" in t for t in (bl.get("both") or [])) and not any("Fire Code" in t for t in (bl.get("academy") or [])) and bool(bl.get("academy")), bl)
+
     # ---------------- (V) the clip and its button ----------------
     v = pg.evaluate("""() => ({ rate: (typeof A2HS_CLIP === 'object' && A2HS_CLIP.rate) || 1 })""")
     chk("(V) the Add to Home Screen clip plays at the speed it was recorded - a real iPhone recording, not slowed (rate %s)" % v.get("rate"), v.get("rate") == 1, v)

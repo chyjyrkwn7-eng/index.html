@@ -97343,6 +97343,10 @@ function novaIntroLines(o){
     lines.push({ text: ifcNow ? "Every chapter has one of my badges to win." : "Every unit has one of my badges to win.",
       ...novaSlide("badges", () => novaStack(novaBadgeParade(), novaCap(ifcNow ? "Every chapter has its own badge" : "Every unit has its own badge"))) });
     lines.push({ text: ifcNow ? "Score 100% on a chapter once, and its badge is yours." : "Score 100% on a unit enough times, and its badge is yours." });   /* (384) Fire Code: one */
+    /* (384 r4) A SIGN-UP INTO BOTH CLASSES is told in the academy's page, so the line above is the academy's - and "enough times"
+       is not Fire Code's: "in fire code, you don't need multiple hundos". One more short line for those who picked it. */
+    if(!ifcNow && o.signup && signupPicked().indexOf("ifc") >= 0)
+      lines.push({ gesture: "nod", text: "In Fire Code, one 100% on a chapter is enough." });
     lines.push({ gesture: "raise", text: "My crew are waiting in their pods.",
       ...novaSlide("crew", () => novaStack(novaCrewParade(), novaCap(o.signup ? "My crew" : crew.have + " of " + crew.total + " characters found"))) });
     if(part === 2){
