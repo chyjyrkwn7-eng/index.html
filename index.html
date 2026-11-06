@@ -94068,6 +94068,7 @@ function showGetStarted(){
      its own beginning at 2x and loops on itself (record-landing.py), its still IS its first frame, and here: nothing is
      fetched until the clip is a screen away (preload none, then auto), it plays only while on screen, and when it leaves
      the screen it goes back to its first frame - so every time it is seen it starts at its beginning, never mid-way. */
+  const GS_CLIP_RATE = { default: .66, rank: .45 };
   const vid = key => {
     const f = document.createElement("div"); f.className = "gs-phone";
     const v = document.createElement("video");
@@ -94075,6 +94076,12 @@ function showGetStarted(){
     v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("aria-hidden", "true");
     v.setAttribute("disablepictureinpicture", ""); v.setAttribute("disableremoteplayback", "");
     v.poster = "landing/" + key + ".jpg"; v.src = "landing/" + key + ".mp4"; v.dataset.gs = key;
+    /* (384) "why are videos in like 5x speed? ... it cuts way too fast to the loading pdf screen": the recorded taps come quicker
+       than a person's, and Rank's clip is sped up 2.4x as recorded. They play at two-thirds speed (Rank's at under half), and the
+       rate is set again on every play (a browser resets it on load). */
+    v.__gsRate = GS_CLIP_RATE[key] || GS_CLIP_RATE.default;
+    const rate = () => { try{ v.defaultPlaybackRate = v.__gsRate; v.playbackRate = v.__gsRate; }catch(e){} };
+    rate(); v.addEventListener("loadedmetadata", rate); v.addEventListener("play", rate);
     f.appendChild(v);
     return f;
   };
@@ -94142,16 +94149,20 @@ function showGetStarted(){
     if(v && v.preload !== "auto"){ v.preload = "auto"; try{ v.load(); }catch(err){} }
     near.unobserve(e.target);
   }), { root: scroll, rootMargin: "100% 0px" });
+  /* (384) "When you scroll through, you shouldn't see a paused video ... they should be on a loop": a clip plays from the moment
+     any of it is on screen (it waited for a third of it, so it sat still while it came up) and loops until it has gone; only once
+     it is wholly off screen does it go back to its first frame, so each time it comes up it starts at its beginning. */
   const play = new IntersectionObserver(es => es.forEach(e => {
     const v = e.target.querySelector("video"); if(!v) return;
     if(e.isIntersecting){
       if(v.preload !== "auto"){ v.preload = "auto"; }
+      v.loop = true;
       const p = v.play(); if(p && p.catch) p.catch(() => {});
     } else {
       v.pause();
       try{ if(v.currentTime > 0) v.currentTime = 0; }catch(err){}
     }
-  }), { root: scroll, threshold: .35 });
+  }), { root: scroll, threshold: 0 });
   page.querySelectorAll(".gs-phone").forEach(n => { near.observe(n); play.observe(n); });
   let torn = false;
   const teardown = () => {
