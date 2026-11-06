@@ -6767,8 +6767,10 @@
     position:absolute;
     top:calc(50% + var(--stack-y, 0rem));
     z-index:var(--stack-z, 1);
-    width:1.6rem; height:1.6rem;
-    transform:translate(-50%, -50%); transition:left .6s ease, top .25s ease;
+    /* (384 r5) a whole, EVEN number of pixels and centred by margin, not by transform: 1.6rem (25.6px) turned by translate(-50%) landed on
+       fractional pixels and the ring rendered taller than wide ("is this not a perfect circle?" - 77 device pixels by 74 at 3x) */
+    width:26px; height:26px; margin:-13px 0 0 -13px;
+    transition:left .6s ease, top .25s ease;
     display:flex; align-items:center; justify-content:center;
     border-radius:999px; border:2px solid; overflow:visible;
     /* A ring of the page's own dark behind each one, so a shingled

@@ -44,6 +44,26 @@ with sync_playwright() as pw:
             pg.evaluate("document.getElementById('__t').remove()")
         ctx.close()
     br.close()
+# the race line's markers are PERFECT circles ("Am I crazy or is this not a perfect circle?"): a 25.6px box turned by translate(-50%)
+# landed on fractional pixels and the ring rendered 77 device pixels tall by 74 wide
+with sync_playwright() as pw:
+    br = pw.chromium.launch(executable_path=cb.CHROME)
+    for dpr in (3, 2):
+        ctx, pg = cb.booted(br, 440, 956, seed=cb.USED_ACCOUNT, dpr=dpr)
+        pg.evaluate("""()=>{ document.querySelectorAll('#splashscreen').forEach(n=>n.remove());
+          const st=document.getElementById('stage'); const rb=document.getElementById('vroomracebar'); st.replaceChildren(); st.appendChild(rb); rb.hidden=false; rb.style.marginTop='3rem';
+          const m=document.getElementById('vroomracemarkers'); [[0,'#ff4d4d'],[37,'#4dc3ff'],[100,'#ffd24d']].forEach(([p,c])=>{ const d=document.createElement('div'); d.className='vroom-race-marker'; d.style.left=p+'%'; d.style.borderColor=c; d.style.setProperty('--stack-y','0rem'); d.style.background='#222'; m.appendChild(d); }); }""")
+        pg.wait_for_timeout(700)
+        a = np.asarray(Image.open(io.BytesIO(pg.screenshot())).convert("RGB")).astype(int)
+        ms = pg.evaluate("()=>[...document.querySelectorAll('.vroom-race-marker')].map(m=>{const r=m.getBoundingClientRect(); return [r.left,r.top,r.width,r.height]})")
+        worst = 0
+        for (x, y, w, h), col in zip(ms, ((255, 77, 77), (77, 195, 255), (255, 210, 77))):
+            reg = a[int((y - 3) * dpr):int((y + h + 3) * dpr), int((x - 3) * dpr):int((x + w + 3) * dpr)]
+            m = (np.abs(reg - np.array(col)).sum(axis=2) < 90); ys, xs = np.nonzero(m)
+            worst = max(worst, abs((xs.max() - xs.min()) - (ys.max() - ys.min())))
+        chk("race markers are round at %dx (ring width and height differ by %d device px, wanted 1 or less)" % (dpr, worst), worst <= 1, worst)
+        ctx.close()
+    br.close()
 cb.SERVER.shutdown()
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
