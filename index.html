@@ -33138,7 +33138,7 @@
   .settings-row-label{ font-weight:500; }
   .settings-row-value{
     flex:0 0 auto; margin-left:.25rem; font-size:.92rem; font-weight:500; color:var(--soft);
-    white-space:nowrap;
+    white-space:nowrap; position:relative; top:.08em;   /* (384 r5) the words sat 2-3px above the chevron beside them: a line box centres its capitals' ascent, not the word */
   }
   /* the headings */
   [data-theme="dark"][data-layout="modern"] .screen-settings .slab.motion-summary,
