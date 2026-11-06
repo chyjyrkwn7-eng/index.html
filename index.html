@@ -33249,7 +33249,7 @@
   .settings-foot{ margin:2.6rem 0 .8rem; text-align:center; }
   /* (384 r4) Settings > Classes: the line under the list, as iOS words a group's footer; and Leave in red on its sheet */
   .settings-classes-note{ margin:.5rem 1rem 1.3rem; font-size:.84rem; line-height:1.4; color:var(--soft); text-align:left; }
-  html[data-layout] body .classenroll-confirm .classenroll-yes.danger{ background:#FF453A !important; border-color:#FF453A !important; color:#fff !important; box-shadow:none !important; }
+  /* (384 r5) Leave in this sheet is the app's own danger button (.next.danger: the matte red Reset wears) - a flat #FF453A with no shadow was a different button */
   .settings-madeby{
     margin:0 0 .5rem; display:flex; align-items:baseline; justify-content:center; gap:.45em; line-height:1.2;
   }
@@ -95085,7 +95085,8 @@ function showClassEnrollConfirm(name, sub, onEnroll, o){
   document.body.appendChild(el);
   clearBannerOnScreenChange(el);
   requestAnimationFrame(() => el.classList.add("show"));
-  setTimeout(() => { try{ yes.focus({ preventScroll: true }); }catch(e){} }, 80);
+  /* never focus a destructive button: its focus ring is a white outline round the red one (and Enter would leave) */
+  if(!o.danger) setTimeout(() => { try{ yes.focus({ preventScroll: true }); }catch(e){} }, 80);
   return el;
 }
 

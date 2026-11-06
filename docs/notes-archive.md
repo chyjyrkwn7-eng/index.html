@@ -36039,3 +36039,6 @@ Madison could see the Nova bubble's seam patch (and asked for any like it gone).
 
 ## 384 r5: a row's grey value sits on the chevron's line
 Madison: 'Open now' was not level with its arrow (2-3px high on every Settings row with a value: a line box centres the capitals' ascent, not the word). .settings-row-value moves down .08em. New gate tools/check-b384-rows.py: on the Settings menu and every Settings page, both classes, phone and tablet at 3x, each row's tile and chevron against the row's middle (1px) and the value's visual middle (first letter's top + 56% of the cap height) against the chevron's (1.25px); fails on the previous build (2.0px). The centring gate measures a control's ink against its own box, never text beside an icon: that is how this was missed.
+
+## 384 r5: Leave class sheet uses the app's own danger button
+The sheet's Leave button was a flat #FF453A (an override with !important and no shadow) and was focused on open, which drew a white focus ring. Now the app's .next.danger (matte #8B1E1E, the Reset red) and a destructive button is never focused on open. (The 'x' body in an earlier screenshot was my test's placeholder text: the app's own text is the sentence about progress being kept.)
