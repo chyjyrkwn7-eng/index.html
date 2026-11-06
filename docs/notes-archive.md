@@ -35959,3 +35959,8 @@ it's good to go."
 - **Nova's line after the partner pick** (Madison, circled screenshot: "Make this make more sense"): "Ninja it is! You can switch any
   time in Customize." said who and not what, and "switch" did not say what. It is now "<Name> is now your partner. You can change
   them any time in Customize." (the same line for every character; the question before it asks for a partner).
+- **"Four ways to train" for Fire Code** (Madison, circled screenshot: "Ensure this is updated for fire code, cause it has 3"): a
+  both-class sign-up is told in the academy's page, so Nova said four ways (with Mock) and showed four cards. A short line follows
+  for a sign-up that picked Fire Code: "Fire Code has the same, without Mock." (Fire Code-only sign-ups already get the three.) The
+  pre-class "What This Actually Is" card said "Four ways to study" for both: now "Ways to study", "Mock (police academy) grades you
+  at the end" - and shorter than before, so the screen fits as it did. check-b384-r4 (O) reads both sign-ups.

@@ -94800,7 +94800,8 @@ function showWelcomeIntro(){
      line says what it is for and that it is not one class's app. */
   const items = [
     { head: "Built for one thing", body: "Studying you'll actually enjoy. Every question comes straight from your class's material, from the police academy to fire code." },
-    { head: "Four ways to study", body: "Drill gives instant feedback, Mock is test day with your grade at the end, Review goes over the material, and Virtual Room takes it live against your class." },
+    /* (384 r4) not "Four": Fire Code has no Mock ("Ensure this is updated for fire code, cause it has 3"); shorter than it was, so the screen fits as before */
+    { head: "Ways to study", body: "Drill gives instant feedback, Mock (police academy) grades you at the end, Review goes over the material, and Virtual Room takes it live." },
     { head: "Progress that means something", body: "Right answers level you up, a perfect unit earns its badge, and levels and badges together climb the ranks." },
     { head: "Everything saves itself", body: "No save button \u2014 your progress is already here next time, on any device." },
   ];
@@ -97375,6 +97376,10 @@ function novaIntroLines(o){
     } else {
       lines.push({ text: "There are four ways to train: Drill, Mock, Review and the Virtual Room.",
         ...novaSlide("modes", () => novaModeRow()) });
+      /* (384 r4) A SIGN-UP INTO BOTH CLASSES is told in the academy's page, so it is the academy's four: Fire Code has no Mock (342) -
+         "Ensure this is updated for fire code, cause it has 3". One short line for those who picked it. */
+      if(o.signup && signupPicked().indexOf("ifc") >= 0)
+        lines.push({ text: "Fire Code has the same, without Mock." });
     }
   }
   /* he becomes your friend partway through (build 324) */

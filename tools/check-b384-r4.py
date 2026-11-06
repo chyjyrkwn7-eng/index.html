@@ -176,11 +176,16 @@ with sync_playwright() as pw:
       try{
         rememberSignupPicks(['academy', 'ifc']); out.both = novaIntroLines({ signup: true }).map(txt).filter(t => /100%/.test(t));
         rememberSignupPicks(['academy']); out.academy = novaIntroLines({ signup: true }).map(txt).filter(t => /100%/.test(t));
+        rememberSignupPicks(['academy', 'ifc']); out.modesBoth = novaIntroLines({ signup: true }).map(txt).filter(t => /ways to train|without Mock/.test(t));
+        rememberSignupPicks(['academy']); out.modesAcademy = novaIntroLines({ signup: true }).map(txt).filter(t => /ways to train|without Mock/.test(t));
         rememberSignupPicks([]);
       }catch(e){ out.err = String(e); }
       return out; }""")
     chk("(O) a sign-up into both classes says Fire Code needs one 100% (%s); an academy-only one does not mention it (%s)" % (bl.get("both"), bl.get("academy")),
         any("Fire Code" in t and "one 100%" in t for t in (bl.get("both") or [])) and not any("Fire Code" in t for t in (bl.get("academy") or [])) and bool(bl.get("academy")), bl)
+
+    chk("(O) a sign-up into both classes says Fire Code has no Mock (%s); an academy-only one has just the four (%s)" % (bl.get("modesBoth"), bl.get("modesAcademy")),
+        any("without Mock" in t for t in (bl.get("modesBoth") or [])) and len(bl.get("modesAcademy") or []) == 1 and "four" in (bl.get("modesAcademy") or [""])[0], bl)
 
     # ---------------- (V) the clip and its button ----------------
     v = pg.evaluate("""() => ({ rate: (typeof A2HS_CLIP === 'object' && A2HS_CLIP.rate) || 1 })""")
