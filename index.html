@@ -70937,22 +70937,29 @@ const TIER_UNLOCKS = {
    seven of these, rather than repeating the same seven-item array at
    each call site. */
 const TIER_ORDER_FULL = ["rookie", "ranger", "veteran", "vanguard", "adept", "elite", "titan"];
-/* ---- FIRE CODE'S LADDER, SIZED TO ITS OWN CHAPTERS (build 382) ----
-   "the rank ladder needs to be updated and good to go. Needs to be updated for the amount of units." The badge counts above
-   are the academy's, spread over its sixteen units and ending two short of every badge there is (see BADGE COUNTS RE-SPREAD
-   OVER SIXTEEN UNITS). Fire Code has 58 chapters and a badge is one 100% there, so the same shape is laid over ITS count:
-   each rank asks round(academy badges / 14 * (chapters - 2)) - Supernova two short of every chapter, as in the academy.
-   Levels are unchanged (they are the XP curve's, not the bank's). Read off the bank, never typed: a chapter added moves it.
-   The academy copy is kept (TIER_UNLOCKS_ACADEMY) for the one-time rank floor (ifcLadderFloorOnce). */
+/* ---- FIRE CODE'S LADDER, SIZED TO ITS OWN CHAPTERS AND ITS OWN CURVE (build 382, re-lined in 384) ----
+   382: "the rank ladder needs to be updated and good to go. Needs to be updated for the amount of units." - the academy's badge
+   counts laid over Fire Code's 58 chapters (4, 12, 20, 28, 36, 48, 56: Supernova two short of every chapter). 384: with Fire Code's
+   own XP curve (level 80 = ~100k) Madison asked "ensure the badges line up with this as well ... the rank road map is synced up to the
+   requirements for the levels and badges so it feels natural". The badges' own XP (one imperfect and one perfect run a chapter,
+   ~930 XP on average, nothing else) is what a rank's badge count is held against: in the academy the badges' own XP is 55%, 71%,
+   60%, 51%, 42%, 40% and 35% of the XP its level asks (Bronze ... Supernova); the old Fire Code counts were 82%, 106%, 90%, 75%, 63%,
+   60% and 52% - badges outrunning the level from Silver up, then the top rank asking for 56 of 58 chapters. Each rank now asks
+   FIRE_BADGE_SHARE of the chapters (5%, 14%, 22.5%, 33%, 41.5%, 55%, 65.5% - 3, 8, 13, 19, 24, 32, 38 of 58), so the badges' own XP
+   is 61%, 71%, 58%, 51%, 42%, 40% and 35% of its level's XP: the academy's own proportions (55, 71, 60, 51, 42, 40, 35), practice and tests and the rest of
+   what people do covering the remainder. Levels are unchanged (they are the XP curve's, not the bank's). Read off the bank, never
+   typed: a chapter added moves it. The academy copy is kept (TIER_UNLOCKS_ACADEMY) for the one-time rank floor (ifcLadderFloorOnce);
+   a rank only gets easier here, so nobody drops one. */
 const TIER_UNLOCKS_ACADEMY = {};
 Object.keys(TIER_UNLOCKS).forEach(k => { TIER_UNLOCKS_ACADEMY[k] = Object.assign({}, TIER_UNLOCKS[k]); });
+const FIRE_BADGE_SHARE = { rookie: .05, ranger: .14, veteran: .225, vanguard: .33, adept: .415, elite: .55, titan: .655 };
 if(window.NOVA_CLASS === "ifc"){
   try{
     const seen = {}; QUESTIONS.forEach(q => { const t = q && (q.topic || "").trim(); if(t) seen[t] = 1; });
-    const n = Object.keys(seen).length, top = TIER_UNLOCKS_ACADEMY.titan.badges;
+    const n = Object.keys(seen).length;
     if(n > 2) TIER_ORDER_FULL.forEach(k => {
       const r = TIER_UNLOCKS[k]; if(!r) return;
-      r.badges = Math.max(1, Math.round(TIER_UNLOCKS_ACADEMY[k].badges / top * (n - 2)));
+      r.badges = Math.max(1, Math.round((FIRE_BADGE_SHARE[k] || 1) * n));
       r.label = "Reach level " + r.level + " and " + r.badges + (r.badges === 1 ? " badge" : " badges");
     });
   }catch(e){}

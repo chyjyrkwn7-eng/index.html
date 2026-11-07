@@ -56,14 +56,17 @@ with sync_playwright() as pw:
     # (2) finishing every chapter once is real progress but not the top: under level 80's XP, over a third of it (the top ranks take repetition)
     chk("(2) every chapter once (%d XP, %d chapters) is over a third and under all of level 80's XP (%d)" % (total, len(ch), icurve[-1]),
         .33 * icurve[-1] <= total < icurve[-1], [total, icurve[-1]])
-    # (3) the ranks' levels are not walls: each rank's level is reachable with its badges' chapters plus repetition - no rank asks for a level
-    #     that more than 8x the XP of its badges' average chapters would be needed for (a sanity bound, not a target)
-    far = []
+    # (3) THE RANKS' BADGES LINE UP WITH THEIR LEVELS: what a rank's badge count earns by itself (the chapters' own XP, `mean` each) is a share of the
+    #     XP its level asks, and that share FALLS from Silver up the way the academy's does (71, 60, 51, 42, 40, 35%) - never a badge count that runs
+    #     ahead of its level (over 85%) and never one so small it asks for nothing (under 25%); badge counts rise rank by rank and fit the chapters
+    shares = []
     mean = total / max(1, len(ch))
     for k, lvl, b in info["tiers"]:
         need = pg.evaluate("(l)=>xpForLevel(l)", lvl)
-        if need > 8 * mean * b: far.append((k, lvl, b, round(mean * b), need))
-    chk("(3) no rank's level is out of all reach of its badges (%s)" % ([(k, l, b) for k, l, b in info["tiers"]],), not far, far)
+        shares.append((k, b, round(100 * mean * b / need)))
+    sh = [x[2] for x in shares]; bs = [x[1] for x in shares]
+    chk("(3) each rank's badges earn %s%% of its level's XP: between 25 and 85, falling from Silver up; counts rise and fit %d chapters (%s)" % (sh, len(ch), bs),
+        all(25 <= x <= 85 for x in sh) and all(sh[i] >= sh[i + 1] - 1 for i in range(1, len(sh) - 1)) and all(bs[i] < bs[i + 1] for i in range(len(bs) - 1)) and bs[-1] <= len(ch), shares)
     gaps = [b - a for a, b in zip(flares, flares[1:])]
     chk("(4) Fire Code's flares about every 15 levels from ~15 (%s, gaps %s); the academy's first still %s" % (flares, gaps, acad["first"]),
         flares[0] <= 16 and all(10 <= g <= 18 for g in gaps) and flares[-1] <= 80 and acad["first"] == 20, [flares, gaps, acad])

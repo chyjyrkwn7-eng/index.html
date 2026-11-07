@@ -36171,3 +36171,14 @@ Pace for context (45 real accounts; the academy is studied under a test every Mo
 days at 6k, ~25 at 4k, ~40 at 2.5k. Told Madison this is faster than the two months he first asked for; he chose ~100k. No account lists Fire Code yet (0 of 45).
 `check-b384-ifccurve.py` (1) is now "one steady fraction between a third and two thirds" and (2) "every chapter once is over a third and under all of level 80's XP" - read off
 the page, not the number; (1) FAILS on the academy-scale build, (1)-(5) PASS now; `check-curve.py` (the academy's) ALL PASS.
+
+## 384 - Fire Code's rank badge counts lined up with its XP curve (3, 8, 13, 19, 24, 32, 38 of 58)
+
+Madison: "That sounds good around 100k for level 80 it is. Can we ensure that the badges line up with this as well? We gotta ensure the rank road map is synced up to the
+requirements for the levels and badges so it feels natural". Measured: a rank's badges earn, by themselves (one imperfect + one perfect run a chapter, ~932 XP on average, no
+practice), this share of the XP its level asks: ACADEMY 55, 71, 60, 51, 42, 40, 35% (Bronze ... Supernova); Fire Code with the old 382 counts (4, 12, 20, 28, 36, 48, 56) 82, 106, 90, 75,
+63, 60, 52% - the badges ran ahead of the level from Silver up and the top rank asked for 56 of 58 chapters. `FIRE_BADGE_SHARE` (5%, 14%, 22.5%, 33%, 41.5%, 55%, 65.5% of the chapters, read
+off the bank) gives 3, 8, 13, 19, 24, 32, 38 and shares of 61, 71, 58, 51, 42, 40, 35% - the academy's own proportions. Levels unchanged (21 ... 80). A rank only gets easier, so nobody drops one; the
+one-time legacy floor (`ifcLadderFloorOnce`) still reads the academy's counts. No account lists Fire Code yet. `check-b384-ifccurve.py` (3) asserts the shape: each share between 25 and 85%,
+falling from Silver up, counts rising and fitting the chapters - FAILS on the previous build (106% at Silver); `check-b382-ifc.py` section 6's "nearly every chapter" became "more than the academy's 14, from
+Fire Code's own chapters". `check-b382-ifc` check 5 ("Profile has no Stats tab") fails on this build and the previous alike: Profile has a Stats tab now (a later decision), so it is stale.
