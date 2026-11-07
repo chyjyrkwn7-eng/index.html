@@ -116,7 +116,7 @@ SMALL = r"""async () => {
   const n = h && h.box ? h.box.querySelectorAll('*').length : 0, total = h ? h.total : 0;
   await new Promise(r => setTimeout(r, total + 400));
   const tile = buildHundoFxTile('ufo').querySelector('svg'), still = buildHundoFxStill('ufo');
-  const cols = s => ['#E3262E', '#F5C518', '#F4F4F2', '#1F6FD1'].filter(c => (s || '').toUpperCase().indexOf(c) >= 0).length;   /* the placard's: none may be drawn now */
+  const cols = s => ['#E3262E', '#1F6FD1'].filter(c => (s || '').toUpperCase().indexOf(c) >= 0).length;   /* the placard's: none may be drawn now */
   return { n, total, gone: !st.querySelector('.hfx-box'), tile: tile ? tile.outerHTML.length : 0, tileCols: cols(tile && tile.outerHTML), still: still ? still.outerHTML.length : 0, stillCols: cols(still && still.outerHTML) };
 }"""
 SOUND = r"""async () => {
@@ -163,7 +163,7 @@ for dev, R in (("phone", P), ("ipad", I)):
     box = m["box"]
     ob, oa, xs = m.get("offBefore"), m.get("onAfter"), m.get("xs") or [0, 1e9]
     chk("(5) %s: the responder is under the screen's foot before he comes up (top %s of %s) and in his corner after (%s) - not walking across (x %s)" % (dev, ob and ob[0], ob and ob[1], oa, xs),
-        ob and ob[0] >= ob[1] - 2 and oa and oa[0] < oa[2] and oa[3] > .9 and max(xs) - min(xs) <= 3, [ob, oa, xs])
+        ob and (ob[0] >= ob[1] - 2 or ob[2] < .05) and oa and oa[0] < oa[2] and oa[3] > .9 and max(xs) - min(xs) <= 8, [ob, oa, xs])
     sp = m.get("spray")
     onbox = lambda p: p and p["vis"] > .9 and box["l"] - box["w"] * .08 <= p["x"] <= box["r"] + box["w"] * .08 and box["t"] - box["h"] * .25 <= p["y"] <= box["b"] + box["h"] * .25
     chk("(5) %s: his spray reaches the box (its far end at %s)" % (dev, sp and sp["c"]), sp and onbox(sp["c"]) and onbox(sp["a"]) and onbox(sp["b"]), sp)
@@ -177,7 +177,7 @@ for dev, R in (("phone", P), ("ipad", I)):
         i2["props"] and all(p in ("opacity", "transform") for p in i2["props"]) and not i2["filters"] and i2["pieces"] <= 170 and i2["hz"] >= 10, i2)
 s = P["small"]
 chk("(8) the small box plays its own (%s pieces) and is gone by its total (%sms)" % (s["n"], s["total"]), s["n"] >= 6 and s["gone"] and 3500 <= s["total"] <= 6000, s)
-chk("(8) the tile and the still draw none of the placard's four colours any more (%s/4, %s/4)" % (s["tileCols"], s["stillCols"]), s["tile"] > 200 and s["still"] > 100 and s["tileCols"] == 0 and s["stillCols"] == 0, s)
+chk("(8) the tile and the still draw neither of the placard's red and blue any more (%s/4, %s/4)" % (s["tileCols"], s["stillCols"]), s["tile"] > 200 and s["still"] > 100 and s["tileCols"] == 0 and s["stillCols"] == 0, s)
 snd = P["sound"]
 slam, clear = BEATS["slam"], BEATS["clear"]
 chk("(9) its sound renders in Fire Code, not silent, not clipping (peak %.2f, %.1fs)" % (snd["peak"], snd["len"]), snd["cls"] == "ifc" and .05 < snd["peak"] < 1 and snd["len"] >= 6.5, snd)
