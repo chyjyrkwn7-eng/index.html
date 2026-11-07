@@ -25,7 +25,8 @@ def chk(name, cond, info=""):
 
 PROBE = r"""(ids) => {
   const stage = document.getElementById('stage');
-  const out = {};
+  document.body.classList.remove('sky-home');   /* Home's sky is not on a results screen */
+  const out = { _html: [document.documentElement.dataset.theme, document.documentElement.dataset.layout] };
   const mk = () => {
     const sc = document.createElement('div'); sc.className = 'rs-screen';
     const xp = document.createElement('div'); xp.className = 'rs-card rs-xp'; xp.textContent = 'XP';
@@ -93,9 +94,10 @@ for cls in ("ifc", "academy"):
     nc, R, errs = res[cls]
     chk("%s: the page is in the %s class (%s)" % (cls, cls, nc), (nc == "ifc") == (cls == "ifc"), nc)
     hues = set()
+    print(cls, 'html', R.get('_html'))
     for id in IDS:
         r = R[id]; g, x = r["g"], r["x"]
-        same = g["bg"] == x["bg"] and re.search(r",\s*1\)$|^rgb\(", g["bg"]) is not None
+        same = g["bg"] == x["bg"] and "/" not in g["bg"] and not re.search(r"rgba\(.*,\s*0?\.\d+\)$|,\s*0\)$", g["bg"])
         chk("(B1) %s %s: the box is the XP card - same colour (%s / %s), opaque, no gradient, no blur, no rim, no tone frame (%s)" % (cls, id, g["bg"], x["bg"], r["tone"]),
             same and g["img"] == "none" and g["blur"] in ("none", "") and re.search(r"(,\s*0\)|/\s*0\))$", g["rim"]) and r["tone"] == "none", r)
         if id == "confetti":
