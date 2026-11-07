@@ -77537,7 +77537,7 @@ const IFC_BANNER_ART = {
       const cx = x + w / 2;
       if(o.title) g += fbText(o.title, cx, y + 9.6 + (o.dy || 0), Math.min(5, h / 9), "#2A3358", .9);
       for(let i = 0; i < Math.max(2, Math.floor((h - 26) / 5)); i++) g += '<path d="M' + bnF(x + 8) + ' ' + bnF(y + 17 + i * 4.6) + ' L' + bnF(x + w - 8 - (i % 2) * 8) + ' ' + bnF(y + 17 + i * 4.6) + '" stroke="#8A8E9E" stroke-width=".8"/>';
-      g += fbC(x + w - 11, y + h - 10, 4.2, o.seal || "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width=".6"') + fbP("M" + bnF(x + w - 12.6) + " " + bnF(y + h - 6) + " l-1 7 l2.6 -1.6 l1.8 2.4 l.4 -7 Z", "#B5121B");
+      if(!o.noseal) g += fbC(x + w - 11, y + h - 10, 4.2, o.seal || "url(#" + u + "gold)", ' stroke="#8A5E10" stroke-width=".6"') + fbP("M" + bnF(x + w - 12.6) + " " + bnF(y + h - 6) + " l-1 7 l2.6 -1.6 l1.8 2.4 l.4 -7 Z", "#B5121B");
       return g;
     };
     const flag = (x0, y0, kind) => {
@@ -77553,7 +77553,7 @@ const IFC_BANNER_ART = {
     base += fbR(0, 112, 480, 20, "url(#" + u + "wood)") + fbR(0, 110, 480, 3, "#8A5E34") + [0, 1, 2, 3, 4, 5, 6, 7].map(i => '<rect x="' + (6 + i * 62) + '" y="116" width="52" height="12" fill="none" stroke="#1E1008" stroke-width="1" opacity=".7"/>').join("");
     /* the frames: a wall of them round the big one */
     base += frame(66, 34, 42, 54, { title: "STATE" }) + frame(114, 50, 38, 40, { title: "HONOR", seal: "#B5121B" }) +
-      frame(164, 18, 116, 76, { title: "", dy: 5 }) +
+      frame(164, 18, 116, 76, { title: "", dy: 5, noseal: true }) +
       frame(292, 28, 44, 52, { title: "COMMEND", seal: "#2E9A56" }) + frame(344, 44, 44, 44, { title: "SCHOOL" }) + frame(396, 22, 32, 40, { title: "MERIT", seal: "#3D7BFF" });
     /* the big one's own details: a lettering rule, the seal and ribbons, a signature */
     base += fbText("CERTIFIED", 222, 38, 11, "#1B2440", 2.2) + fbText("FIRE MARSHAL", 222, 55, 4.6, "#8A5E10", .9) +
@@ -78310,35 +78310,148 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* ---- THE FLARE TEAM'S BANNERS (384: "The secret flare banners, I don't really like any of
-     those, that much.") One set, as the four are one squad: the same night, the same roof over the
-     city, the squad member at its edge with the goggles lit, and up over the city the flare that
-     brings them, fired from that roof - its smoke trail, its little chute, its light on everything,
-     its sparks dripping. Each its own colour and one thing of its own. See fbSquadScene. ---- */
-  /* BREACHER: the three flares that bring him - red, orange, gold - hanging over the city together */
+  /* NEBULA (flare_void; was Breacher - 384 review: "Why do all the secret flare banners look the exact same?";
+     named for its character) - the three flares are three newborn stars, and this is where they are born: a gas
+     cloud lit red, orange and yellow, three dark pillars of dust standing out of it, and at the tip of each the
+     star it has just lit - red on the left, orange on the tallest, yellow on the right. The clouds drift, the dust
+     rises, the three stars pulse on their own clocks. */
   flare_void(u){
-    return fbSquadScene(u, { seed: 3813, c: "#F97316", hi: "#FFC48A", sky: ["#050302", "#1A0C06", "#3A1A0A"], roof: "#0C0806",
-      flares: [[262, 66, MYSTERY_COLOR.red, 2.6], [336, 54, MYSTERY_COLOR.orange, 3.1], [404, 72, MYSTERY_COLOR.yellow, 3.4]],
-      fig: (X, G) => "M" + (X - 6) + " " + (G - 52) + " h12 v4 h-12 Z" });
+    const rnd = bnRand(3813);
+    const st = bnStarsSplit(rnd, 80, 170);
+    const C = [["#EF4444", "#FF7A6A"], ["#F97316", "#FFB070"], ["#FACC15", "#FFF0A0"]];
+    /* a pillar: its two sides wander on a seeded line from a wide foot up to a rounded tip at (tx, ty) */
+    const pillar = (cx, tx, ty, wFoot, wTip, seed) => {
+      const r = bnRand(seed), L = [], R = [];
+      for(let i = 0; i <= 10; i++){ const t = i / 10, y = 184 - (184 - ty) * t, w = (wFoot + (wTip - wFoot) * Math.pow(t, .8)) / 2, x = cx + (tx - cx) * Math.pow(t, 1.4) + Math.sin(t * 6 + seed) * 3;
+        L.push([x - w * (1 + (r() - .5) * .25), y]); R.push([x + w * (1 + (r() - .5) * .25), y]); }
+      const cap = 'Q' + bnF(tx) + ' ' + bnF(ty - wTip * .9);
+      const d = "M" + L.map(p => bnF(p[0]) + " " + bnF(p[1])).join(" L") + " " + cap + " " + bnF(R[10][0]) + " " + bnF(R[10][1]) + " L" + R.slice().reverse().slice(1).map(p => bnF(p[0]) + " " + bnF(p[1])).join(" L") + " Z";
+      const rim = "M" + R.map(p => bnF(p[0]) + " " + bnF(p[1])).join(" L");
+      return { d, rim, rimTop: cap };
+    };
+    const P = [pillar(70, 66, 76, 96, 20, 11), pillar(238, 236, 44, 120, 24, 22), pillar(396, 390, 88, 90, 18, 33)];
+    const S = [[66, 70], [236, 38], [390, 82]];
+    const star = (x, y, c, hi) => '<circle cx="' + x + '" cy="' + y + '" r="26" fill="url(#' + u + 'sg' + (hi ? 1 : 0) + ')"/><circle cx="' + x + '" cy="' + y + '" r="7" fill="' + c + '"/><circle cx="' + x + '" cy="' + y + '" r="3.4" fill="#FFFFFF"/>' +
+      '<path d="M' + (x - 30) + ' ' + y + ' L' + (x + 30) + ' ' + y + ' M' + x + ' ' + (y - 22) + ' L' + x + ' ' + (y + 22) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".8"/>';
+    const defs = '<defs>' + bnLin(u + "bg", [[0, "#080208"], [0.6, "#220A10"], [1, "#3A1208"]]) + C.map(([c], i) => bnRad(u + "gas" + i, [[0, c, 0.55], [0.55, c, 0.18], [1, c, 0]]) + bnRad(u + "sg" + i, [[0, c, 0.9], [0.4, c, 0.35], [1, c, 0]])).join("") + bnLin(u + "dust", [[0, "#1A0408"], [1, "#050105"]], 0, 0, 1, 0) + '</defs>';
+    const gas = (i, x, y, rx, ry) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + rx + '" ry="' + ry + '" fill="url(#' + u + 'gas' + i + ')"/>';
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + st.still },
+      { svg: gas(0, 90, 70, 190, 80) + gas(1, 250, 50, 230, 90) + gas(2, 410, 74, 190, 80), box: [-30, -40, 540, 220], vb: [-30, -40, 540, 220], cls: "bl-drift", style: "animation-duration:24s" },
+      { svg: gas(1, 150, 130, 130, 40) + gas(0, 330, 120, 140, 44) + gas(2, 250, 150, 160, 36), box: [-30, 60, 540, 140], vb: [-30, 60, 540, 140], cls: "bl-drift", style: "animation-duration:30s;animation-direction:alternate-reverse" },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.2s;animation-delay:-1.4s" },
+      /* the pillars, lit on their right edges by the star at the tip of each */
+      { svg: P.map((p, i) => fbP(p.d, "url(#" + u + "dust)") + fbL(p.rim, C[i][1], 1.6, ' opacity=".8"') + fbL(p.rim, "#FFFFFF", .6, ' opacity=".5"')).join("") },
+      ...S.map(([x, y], i) => ({ svg: star(x, y, C[i][0], i === 1), box: [x - 32, y - 28, 64, 56], o: [x, y], cls: "bl-pulse", style: "animation-duration:" + (2.6 + i * .7) + "s;animation-delay:-" + (i * .9) + "s" })),
+      { svg: fbEmberSheet(rnd, 480, 90, 30, ["#FFB070", "#FFE08A", "#FF7A6A"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:22s;opacity:.55" }
+    ];
   },
-  /* RECON: one violet flare, high, and the crescent moon beside it; the antenna on his helmet */
+  /* QUASAR (flare_umbra; was Recon) - the violet flare is the engine at the heart of a galaxy: a black hole at
+     the middle with its disc seen edge-on and tilted, glowing white at the inside and violet at the rim, and out of
+     both poles two long jets of violet light driven off through the whole banner, bright knots running along
+     them. The disc turns, the jets pulse, the knots travel. */
   flare_umbra(u){
-    return fbSquadScene(u, { seed: 3814, c: "#8B5CF6", hi: "#D8CCFF", sky: ["#04030C", "#140C30", "#2A1A52"], roof: "#08061A",
-      flares: [[318, 58, MYSTERY_COLOR.violet, 3]],
-      moon: [420, 46, 15],
-      fig: (X, G) => "M" + (X - 7.2) + " " + (G - 48) + " L" + (X - 10.6) + " " + (G - 70) + " L" + (X - 9.6) + " " + (G - 70) + " L" + (X - 6) + " " + (G - 48) + " Z" });
+    const rnd = bnRand(3814);
+    const st = bnStarsSplit(rnd, 70, 170);
+    const CX = 240, CY = 90, TILT = 14;
+    /* the disc: concentric rings in dashes of different violets, so that turning them reads as motion */
+    let ring = "";
+    [[96, "#B49CFF", .8, "18 10"], [84, "#8B6CF0", .9, "30 6"], [72, "#D8CCFF", .8, "12 14"], [60, "#6A44D8", 1, "40 8"], [50, "#FFFFFF", .9, "8 20"], [42, "#C8B8FF", 1, "26 12"], [34, "#FFFFFF", .95, "50 6"]].forEach(([r, c, o, da], i) => {
+      ring += '<circle cx="120" cy="120" r="' + r + '" fill="none" stroke="' + c + '" stroke-width="' + (i % 2 ? 4.4 : 3) + '" stroke-dasharray="' + da + '" opacity="' + o + '"/>'; });
+    const defs = '<defs>' + bnLin(u + "bg", [[0, "#04030C"], [0.5, "#140C30"], [1, "#0A0620"]]) + bnRad(u + "halo", [[0, "#D8CCFF", 0.75], [0.3, "#8B5CF6", 0.4], [1, "#8B5CF6", 0]]) +
+      bnLin(u + "jetU", [[0, "#FFFFFF", 0.95], [0.25, "#CDBDFB", 0.6], [1, "#8B5CF6", 0]], 0, 1, 0, 0) + bnLin(u + "jetD", [[0, "#FFFFFF", 0.95], [0.25, "#CDBDFB", 0.6], [1, "#8B5CF6", 0]], 0, 0, 0, 1) +
+      bnRad(u + "disc", [[0, "#000000", 1], [0.2, "#000000", 1], [0.28, "#FFFFFF", 0.9], [0.4, "#CDBDFB", 0.55], [0.7, "#8B5CF6", 0.22], [1, "#8B5CF6", 0]]) + bnRad(u + "knot", [[0, "#FFFFFF", 1], [1, "#B49CFF", 0]]) + '</defs>';
+    const jet = (dir) => '<path d="M' + (CX - 6) + ' ' + CY + ' L' + (CX + 6) + ' ' + CY + ' L' + (CX + 6 + dir * 0) + ' ' + (CY + dir * 130) + ' L' + (CX - 6) + ' ' + (CY + dir * 130) + ' Z" fill="none"/>' +
+      '<path d="M' + (CX - 5) + ' ' + CY + ' L' + (CX - 26) + ' ' + (CY + dir * 130) + ' L' + (CX + 26) + ' ' + (CY + dir * 130) + ' L' + (CX + 5) + ' ' + CY + ' Z" fill="url(#' + u + (dir < 0 ? "jetU" : "jetD") + ')"/>' +
+      '<path d="M' + (CX - 2) + ' ' + CY + ' L' + (CX - 7) + ' ' + (CY + dir * 130) + ' L' + (CX + 7) + ' ' + (CY + dir * 130) + ' L' + (CX + 2) + ' ' + CY + ' Z" fill="url(#' + u + (dir < 0 ? "jetU" : "jetD") + ')"/>';
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3.2s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.6s" },
+      { svg: '<ellipse cx="' + CX + '" cy="' + CY + '" rx="230" ry="80" fill="url(#' + u + 'halo)" opacity=".5"/>', box: [CX - 230, CY - 80, 460, 160], cls: "bl-breathe", style: "animation-duration:5s" },
+      /* the two jets, tilted with the disc's axis, pulsing out from the core */
+      { svg: jet(-1), box: [CX - 30, CY - 130, 60, 130], o: [CX, CY], wrap: "rotate(" + TILT + "deg)", cls: "bl-jet", style: "animation-duration:2.2s" },
+      { svg: jet(1), box: [CX - 30, CY, 60, 130], o: [CX, CY], wrap: "rotate(" + TILT + "deg)", cls: "bl-jet", style: "animation-duration:2.2s;animation-delay:-1.1s" },
+      /* the disc: a turning plane seen edge-on, tilted */
+      { svg: ring, box: [CX - 120, CY - 120, 240, 240], vb: [0, 0, 240, 240], o: [CX, CY], wrap: "rotate(" + TILT + "deg) scale(1, .17)", cls: "bl-spin", style: "animation-duration:16s" },
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="64" fill="url(#' + u + 'disc)"/>', box: [CX - 64, CY - 64, 128, 128], o: [CX, CY], wrap: "rotate(" + TILT + "deg) scale(1, .3)" },
+      { svg: '<circle cx="' + CX + '" cy="' + CY + '" r="9" fill="#000"/><circle cx="' + CX + '" cy="' + CY + '" r="9" fill="none" stroke="#FFFFFF" stroke-width="1.4" opacity=".9"/>', box: [CX - 10, CY - 10, 20, 20] },
+      /* knots of light running up and down the jets */
+      { svg: '<circle cx="' + CX + '" cy="' + (CY - 30) + '" r="4" fill="url(#' + u + 'knot)"/><circle cx="' + CX + '" cy="' + (CY - 74) + '" r="3" fill="url(#' + u + 'knot)"/>', box: [CX - 12, CY - 130, 24, 130], wrap: "rotate(" + TILT + "deg)", o: [CX, CY], cls: "bl-meteor", style: "animation-duration:4s" },
+      { svg: '<circle cx="' + CX + '" cy="' + (CY + 34) + '" r="4" fill="url(#' + u + 'knot)"/><circle cx="' + CX + '" cy="' + (CY + 76) + '" r="3" fill="url(#' + u + 'knot)"/>', box: [CX - 12, CY, 24, 130], wrap: "rotate(" + TILT + "deg)", o: [CX, CY], cls: "bl-meteor", style: "animation-duration:4s;animation-delay:-2s" },
+      { svg: fbEmberSheet(rnd, 480, 90, 20, ["#CDBDFB", "#FFFFFF", "#8B6CF0"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.5" }
+    ];
   },
-  /* WHITEOUT: a white flare over the city in the snow; snow on the roof */
+  /* PULSAR (flare_horizon; was Whiteout) - the white flare is a neutron star turning: a point of white light high in
+     a black sky throwing two narrow beams out of its poles as it spins, sweeping the whole banner like a
+     lighthouse, a ring of radio pulse leaving it with every turn, and under it a bare world of ice spires that lights
+     up white each time a beam goes across. The beams turn, the rings go out, the ground answers. */
   flare_horizon(u){
-    return fbSquadScene(u, { seed: 3815, c: "#9FDCFF", hi: "#FFFFFF", sky: ["#040A16", "#0E2244", "#24487A"], roof: "#0A1424",
-      flares: [[326, 58, "#F4FBFF", 3]], snow: true,
-      fig: (X, G) => "M" + (X - 11) + " " + (G - 36) + " Q" + X + " " + (G - 41) + " " + (X + 11) + " " + (G - 36) + " L" + (X + 10) + " " + (G - 32) + " Q" + X + " " + (G - 36) + " " + (X - 10) + " " + (G - 32) + " Z" });
+    const rnd = bnRand(3815);
+    const st = bnStarsSplit(rnd, 90, 120);
+    const SX = 312, SY = 52;
+    /* the ice: rows of spires, each a lit left face and a dark right face (the near row darker and taller) */
+    let dark = "", lit = "";
+    const rr = bnRand(77);
+    [[160, 24, 34, "back"], [170, 18, 46, "front"]].forEach(([base, wMin, hMax, row]) => {
+      for(let x = -10; x < 500; x += wMin * (.5 + rr() * .6)){ const w = wMin + rr() * 18, h = (hMax * (.4 + rr() * .6)) * (Math.abs(x - 300) < 80 ? .75 : 1);
+        dark += "M" + bnF(x) + " " + base + " L" + bnF(x + w * .55) + " " + bnF(base - h) + " L" + bnF(x + w) + " " + base + " Z ";
+        lit += "M" + bnF(x) + " " + base + " L" + bnF(x + w * .55) + " " + bnF(base - h) + " L" + bnF(x + w * .55) + " " + base + " Z "; }
+    });
+    const defs = '<defs>' + bnLin(u + "bg", [[0, "#02040C"], [0.6, "#0A1530"], [1, "#16284C"]]) + bnRad(u + "core", [[0, "#FFFFFF", 1], [0.2, "#E4F4FF", 0.9], [0.5, "#9FD0FF", 0.3], [1, "#6FB4F2", 0]]) +
+      bnLin(u + "beam", [[0, "#FFFFFF", 0.95], [0.5, "#CFEAFF", 0.35], [1, "#6FB4F2", 0]], 0, 0, 1, 0) + bnRad(u + "gl", [[0, "#CFEAFF", 0.7], [1, "#CFEAFF", 0]]) + bnLin(u + "ice", [[0, "#12244A"], [1, "#050A18"]]) + '</defs>';
+    const beamPair = '<path d="M' + SX + ' ' + SY + ' L' + (SX + 360) + ' ' + (SY - 30) + ' L' + (SX + 360) + ' ' + (SY + 30) + ' Z" fill="url(#' + u + 'beam)"/><path d="M' + SX + ' ' + SY + ' L' + (SX - 360) + ' ' + (SY + 30) + ' L' + (SX - 360) + ' ' + (SY - 30) + ' Z" fill="url(#' + u + 'beam)"/>';
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + st.still },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.8s" },
+      /* the two beams, turning about the star (the box is square about it so the turn is true) */
+      { svg: beamPair, box: [SX - 360, SY - 360, 720, 720], vb: [SX - 360, SY - 360, 720, 720], o: [SX, SY], cls: "bl-spin", style: "animation-duration:7s" },
+      /* a pulse leaving the star at every turn */
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.4" opacity=".75"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.5s;opacity:0" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.4" opacity=".75"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.5s;animation-delay:-1.75s;opacity:0" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="34" fill="url(#' + u + 'core)"/><circle cx="' + SX + '" cy="' + SY + '" r="4.6" fill="#FFFFFF"/>', box: [SX - 34, SY - 34, 68, 68], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:.9s" },
+      /* the ice world: its sky-glow, the spires, their lit edges */
+      { svg: '<ellipse cx="' + SX + '" cy="150" rx="230" ry="40" fill="url(#' + u + 'gl)"/>', box: [SX - 230, 110, 460, 80], cls: "bl-glow", style: "animation-duration:3.5s" },
+      { svg: fbP(dark, "#0A1630") + fbP(lit, "#4A78B8", ' opacity=".5"') + fbR(-10, 164, 500, 20, "#02050C") },
+      { svg: fbP(lit, "#CFE8FF", ' opacity=".7"'), box: [-10, 90, 500, 80], vb: [-10, 90, 500, 80], cls: "bl-glow", style: "animation-duration:3.5s" },
+      { svg: fbEmberSheet(rnd, 480, 90, 18, ["#CFEAFF", "#FFFFFF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:26s;opacity:.4" }
+    ];
   },
-  /* FLASHBANG: a rose flare up, and across the street a window going off white every few seconds */
+  /* SOLSTICE (flare_genesis; was Flashbang) - the core flare is the sun on the longest day: a great gold-white sun
+     standing exactly on the edge of a dark world, rose-coloured sky round it, and in front of it a ring of standing
+     stones raised for this one moment - the sun through the gap of the tall trilithon at the middle, shorter
+     stones leading out either side, long shadows laid across the ground. A dotted arc over the sky is the path it
+     took. The corona breathes, its rays turn slowly, the light streaks along the horizon. */
   flare_genesis(u){
-    return fbSquadScene(u, { seed: 3816, c: "#FF5CA8", hi: "#FFD0E6", sky: ["#08030A", "#220A1E", "#4A1236"], roof: "#10060E",
-      flares: [[330, 58, MYSTERY_COLOR.core, 3]], bang: [252, 118],
-      fig: (X, G) => "M" + (X + 11) + " " + (G - 31) + " L" + (X + 17) + " " + (G - 52) + " L" + (X + 21) + " " + (G - 51) + " L" + (X + 15) + " " + (G - 29) + " Z M" + (X + 16) + " " + (G - 58) + " h6 v8 h-6 Z" });
+    const rnd = bnRand(3816);
+    const st = bnStarsSplit(rnd, 60, 70);
+    const SX = 240, SY = 116;
+    let rays = ""; for(let i = 0; i < 28; i++){ const a = Math.PI + i / 27 * Math.PI, c = Math.cos(a), s = Math.sin(a), r1 = 28, r2 = i % 2 ? 70 : 104, w = .035;
+      rays += '<path d="M' + bnF(SX + Math.cos(a - w) * r1) + ' ' + bnF(SY + Math.sin(a - w) * r1) + ' L' + bnF(SX + c * r2) + ' ' + bnF(SY + s * r2) + ' L' + bnF(SX + Math.cos(a + w) * r1) + ' ' + bnF(SY + Math.sin(a + w) * r1) + ' Z"/>'; }
+    /* the stones: a tall trilithon, then pairs going out, each a rounded slab with its long shadow to the right */
+    const stone = (x, w, h, base) => 'M' + (x - w / 2) + ' ' + base + ' L' + (x - w / 2 + .6) + ' ' + (base - h + 3) + ' Q' + (x - w / 2 + 1) + ' ' + (base - h) + ' ' + (x - w / 2 + 3) + ' ' + (base - h - .6) + ' L' + (x + w / 2 - 3) + ' ' + (base - h) + ' Q' + (x + w / 2 - .4) + ' ' + (base - h + .4) + ' ' + (x + w / 2 - .6) + ' ' + (base - h + 3) + ' L' + (x + w / 2) + ' ' + base + ' Z';
+    const stones = [[160, 9, 24], [118, 8, 18], [78, 9, 22], [320, 9, 24], [362, 8, 18], [402, 9, 22]].map(([x, w, h]) => stone(x, w, h, 140)).join(" ") + stone(214, 14, 44, 140) + stone(266, 14, 44, 140) +
+      'M204 94 L276 94 L275 101.6 L205 101.6 Z';
+    const shadows = [[160, 24], [118, 18], [78, 22], [320, 24], [362, 18], [402, 22], [214, 44], [266, 44]].map(([x, h]) => '<path d="M' + (x - 4) + ' 140 L' + (x + h * 1.8 + 6 * (x > 240 ? 1 : -1)) + ' 146 L' + (x + h * 1.8 + 12 * (x > 240 ? 1 : -1)) + ' 146 L' + (x + 4) + ' 140 Z" fill="#12040A" opacity=".5"/>').join("");
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#140418"], [0.5, "#4A1238"], [0.82, "#E0507F"], [1, "#FFB070"]]) + bnRad(u + "sun", [[0, "#FFFFFF", 1], [0.3, "#FFF0C8", 0.95], [0.6, "#FFC070", 0.45], [1, "#FF5CA8", 0]]) + bnRad(u + "corona", [[0, "#FFE9B8", 0.7], [0.4, "#FF8AB0", 0.3], [1, "#FF5CA8", 0]]) +
+      bnLin(u + "streak", [[0, "#FFD0C0", 0], [0.5, "#FFF0D8", 0.9], [1, "#FFD0C0", 0]], 0, 0, 1, 0) + bnLin(u + "world", [[0, "#2A0A1E"], [1, "#07020A"]]) + '</defs>';
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still +
+        /* the day's path: a dotted arc across the sky, a faint sun at each hour */
+        '<path d="M-20 138 Q240 -52 500 138" fill="none" stroke="#FFD8C0" stroke-width="1.2" stroke-dasharray="1.6 5" stroke-linecap="round" opacity=".7"/>' + [[56, 96], [112, 54], [172, 26], [240, 18], [308, 26], [368, 54], [424, 96]].map(([x, y], i) => fbC(x, y, 3 + (i === 3 ? 2 : 0), "#FFE9B8", ' opacity="' + (i === 3 ? ".95" : ".55") + '"')).join("") },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="url(#' + u + 'corona)"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:4.4s" },
+      { svg: '<g fill="#FFE9B8" opacity=".5">' + rays + '</g>', box: [SX - 110, SY - 110, 220, 220], vb: [SX - 110, SY - 110, 220, 220], o: [SX, SY], cls: "bl-spin", style: "animation-duration:90s" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="40" fill="url(#' + u + 'sun)"/><circle cx="' + SX + '" cy="' + SY + '" r="24" fill="#FFF8E4"/>', box: [SX - 40, SY - 40, 80, 80], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:3.6s" },
+      /* the dark world's edge, lit along its rim */
+      { svg: '<path d="M-20 140 Q240 124 500 140 L500 180 L-20 180 Z" fill="url(#' + u + 'world)"/><path d="M-20 140 Q240 124 500 140" fill="none" stroke="#FFC0A0" stroke-width="1.6" opacity=".8"/>' + shadows },
+      { svg: '<rect x="-30" y="124.4" width="540" height="3.4" fill="url(#' + u + 'streak)"/>', box: [-30, 120, 540, 12], cls: "bl-shimmer", style: "animation-duration:3.4s" },
+      /* the stones, black, lit on the edge that faces the sun */
+      { svg: '<path d="' + stones + '" fill="#08030A"/><path d="M226 140 L226 98 M254 140 L254 98" stroke="#FFD8A0" stroke-width="1.2" opacity=".8"/><path d="M205 94 L276 94" stroke="#FFD8A0" stroke-width="1" opacity=".7"/>' },
+      { svg: fbEmberSheet(rnd, 480, 90, 20, ["#FFE9B8", "#FFB070", "#FFFFFF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:22s;opacity:.5" }
+    ];
   },
   /* ---- THE RANGERS' BANNERS (384: "Same for the ultimate character banners, not a big fan of any
      of those banners.") One set, as the three are one trio: the same desert at night, the same mesas,
