@@ -6830,11 +6830,10 @@
     display:inline-flex; align-items:baseline; gap:.05rem;
     padding:.28rem .68rem; border-radius:999px;
     font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:800; line-height:1;
-    /* (384 r5) a CLOCK's own colour, the same on the pill and the bar under it, whatever the theme: amber, the colour of a timer
-       running, and red for the last ten seconds */
-    color:#FFD27A;
-    background:color-mix(in srgb, #F5A524 16%, transparent);
-    border:1.5px solid color-mix(in srgb, #F5A524 62%, transparent);
+    /* (384 r5) a CLOCK's own colour, the same on the pill and the bar under it, whatever the theme: green (it was amber), and red for the last ten seconds */
+    color:#8CF0B6;
+    background:color-mix(in srgb, #2FBF71 16%, transparent);
+    border:1.5px solid color-mix(in srgb, #2FBF71 62%, transparent);
     transition:color .2s ease, border-color .2s ease, background-color .2s ease;
   }
   /* Beside the flag, not floating between it and the label: the flag
@@ -6858,7 +6857,7 @@
     display:block; height:100%; width:100%; transform-origin:left;
     transform:scaleX(var(--left, 1)); transition:transform .12s linear;
     /* (384 r5) amber, the pill's own colour (not the theme's): the bar and the number beside it are one clock, and it turns red when low */
-    background:linear-gradient(90deg, #F5A524, #FFD27A);
+    background:linear-gradient(90deg, #2FBF71, #7BE3A8);
   }
   .race-qbar.is-low > span{ background:var(--wrong); }
   [data-reduce-motion="true"] .race-qbar > span{ transition:none; }
@@ -26444,7 +26443,7 @@
   }
   /* (384 r5) THE SAME CLOCK AS THE RACE'S: the amber pill (see .race-qclock), red for the last stretch - three modes, one clock */
   .tug-clock{ display:inline-block; padding:.22rem .62rem; border-radius:999px; font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:800; line-height:1;
-    color:#FFD27A; background:color-mix(in srgb, #F5A524 16%, transparent); border:1.5px solid color-mix(in srgb, #F5A524 62%, transparent); vertical-align:middle;
+    color:#8CF0B6; background:color-mix(in srgb, #2FBF71 16%, transparent); border:1.5px solid color-mix(in srgb, #2FBF71 62%, transparent); vertical-align:middle;
     transition:color .2s ease, border-color .2s ease, background-color .2s ease; }
   .tug-clock.is-low{ color:var(--wrong); border-color:var(--wrong); background:color-mix(in srgb, var(--wrong) 14%, transparent); }
   /* and nothing between the header row and the board but air they need: the empty question count (40px, hidden text) held the board 55-80px lower than the race's */

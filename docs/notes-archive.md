@@ -36075,3 +36075,6 @@ Madison: parts of the character stick out of the circle on the Leaderboard (and 
 - 'Level N · N badges' on the card (as on Profile), the Badges cell gone; the three left have XP across both columns.
 - Your own profile: the card's own rank line (flare, name in its colour) above 'Level N · N badges' (buildProfileStanding), spacing as the card.
 tools/check-b384-card.py holds all of it (fails on the previous build). Older gates seen failing and unrelated: check-b327z15 (tab landing, specials, Welcome icons...), check-b327q (results soft edge), check-b325-c (a NameError in the script), check-b327-i (Welcome).
+
+## 384 r5: the clock is green
+Madison: green instead of amber. The race's pill and bar, and Tug of War's and Battle's clock, are #2FBF71 / #8CF0B6 / #7BE3A8; red for the last stretch as before.
