@@ -38028,15 +38028,17 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card .rs-grade-tone{ display:none !important; }
   /* ...and the miniature of it in a hundo effect's preview (Customize): the same solid card, the same glow layer */
   html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card{ background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important; }
-  html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted{ isolation:isolate; }
+  html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted{ isolation:isolate; border-color:var(--hfx-rim, rgba(255,255,255,.14)) !important; }
   html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted > .hfx-tint{
     z-index:-1; background:linear-gradient(180deg, var(--hfx-wash), transparent 68%);
     box-shadow:0 0 0 1px var(--hfx-rimline, rgba(255,255,255,.12)), 0 0 16px -4px var(--hfx-rimglow, rgba(255,255,255,.2)), inset 0 0 16px var(--hfx-rimin, rgba(255,255,255,.1));
   }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted{ isolation:isolate; }
+  /* the one line it keeps: a hairline of the effect's colour (--hfx-rim, the soft edge every box has carried since 327) - the card's own
+     border, so a box in its effect's colours still reads it from its first frame to its last */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted{ isolation:isolate; border-color:var(--hfx-rim, rgba(255,255,255,.14)) !important; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted > .hfx-tint{
     z-index:-1; background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-wash) 52%, transparent), transparent 56%);
-    box-shadow:0 0 0 1px color-mix(in srgb, var(--hfx-rimglow, rgba(255,255,255,.2)) 62%, transparent), 0 0 30px -6px var(--hfx-rimglow, rgba(255,255,255,.2)), 0 0 72px -26px var(--hfx-rimglow, rgba(255,255,255,.2)), inset 0 0 22px color-mix(in srgb, var(--hfx-rimin, rgba(255,255,255,.1)) 42%, transparent);
+    box-shadow:0 0 30px -6px var(--hfx-rimglow, rgba(255,255,255,.2)), 0 0 72px -26px var(--hfx-rimglow, rgba(255,255,255,.2)), inset 0 0 22px color-mix(in srgb, var(--hfx-rimin, rgba(255,255,255,.1)) 42%, transparent);
   }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen :is(.rs-byunit, .rs-xptotal){ border-color:var(--clean-line) !important; background:transparent !important; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-mode{

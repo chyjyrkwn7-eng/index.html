@@ -44,7 +44,7 @@ PROBE = r"""(ids) => {
     const m = mk();
     if(id !== 'confetti') hfxTintGrade(m.gr, id);
     const g = read(m.gr), x = read(m.xp), t = m.gr.querySelector(':scope > .hfx-tint');
-    const r = { g, x, tone: getComputedStyle(m.tone).display, tinted: m.gr.classList.contains('hfx-tinted') };
+    const r = { bw: getComputedStyle(m.gr).borderTopWidth, g, x, tone: getComputedStyle(m.tone).display, tinted: m.gr.classList.contains('hfx-tinted') };
     if(t){ const ts = getComputedStyle(t); r.t = { op: +ts.opacity, z: ts.zIndex, img: ts.backgroundImage, shadow: ts.boxShadow, pos: ts.position }; }
     r.num = getComputedStyle(m.pct).backgroundImage;
     r.vars = ['--hfx-b', '--hfx-glow', '--hfx-rimglow'].map(k => m.gr.style.getPropertyValue(k));
@@ -98,8 +98,9 @@ for cls in ("ifc", "academy"):
     for id in IDS:
         r = R[id]; g, x = r["g"], r["x"]
         same = g["bg"] == x["bg"] and "/" not in g["bg"] and not re.search(r"rgba\(.*,\s*0?\.\d+\)$|,\s*0\)$", g["bg"])
-        chk("(B1) %s %s: the box is the XP card - same colour (%s / %s), opaque, no gradient, no blur, no rim, no tone frame (%s)" % (cls, id, g["bg"], x["bg"], r["tone"]),
-            same and g["img"] == "none" and g["blur"] in ("none", "") and re.search(r"(,\s*0\)|/\s*0\))$", g["rim"]) and r["tone"] == "none", r)
+        chk("(B1) %s %s: the box is the XP card - same colour (%s / %s), opaque, no gradient, no blur, no shadow on the card itself, no tone frame (%s) - a 1px hairline in the effect's colour is its one line" % (cls, id, g["bg"], x["bg"], r["tone"]),
+            same and g["img"] == "none" and g["blur"] in ("none", "") and r["tone"] == "none" and g["shadow"] == "none"
+            and (id == "confetti" or (re.search(r"(,\s*0\)|/\s*0\))$", g["rim"]) is None and r["bw"] == "1px")), r)
         if id == "confetti":
             chk("(B4) %s confetti: untinted, no glow layer, the plain card" % cls, not r["tinted"] and "t" not in r, r)
             continue
