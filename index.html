@@ -37776,6 +37776,19 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
     background:var(--clean-card-2) !important; background-image:none !important; box-shadow:none !important; border:0 !important;
   }
+  /* (384 r5) ONE TOGGLE LOOK, THE STATS WEEK SWITCH'S: "the touch look and toggles ... the entire app needs to be cohesive". A round
+     track, the picked segment an accent-tinted pill with its own ring and accent-tinted text (.stx-dots-switch). The Profile / Stats /
+     Settings and Leaderboard switches had a grey raised pill. */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs{ border-radius:999px; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn{ border-radius:999px; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .seg-slider,
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
+    background:color-mix(in srgb, var(--theme-c2) 20%, transparent) !important; background-image:none !important; border-radius:999px !important;
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--theme-c2) 42%, transparent) !important; border:0 !important;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
+    color:color-mix(in srgb, var(--theme-c2) 22%, #fff); background:transparent !important; box-shadow:none !important;
+  }
   /* fields and the small actions beside them: the card's colour, no rim */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.searchwrap input, .rank-search-wrap input, input.searchbox){
     background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
