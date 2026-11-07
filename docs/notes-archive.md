@@ -36182,3 +36182,11 @@ off the bank) gives 3, 8, 13, 19, 24, 32, 38 and shares of 61, 71, 58, 51, 42, 4
 one-time legacy floor (`ifcLadderFloorOnce`) still reads the academy's counts. No account lists Fire Code yet. `check-b384-ifccurve.py` (3) asserts the shape: each share between 25 and 85%,
 falling from Silver up, counts rising and fitting the chapters - FAILS on the previous build (106% at Silver); `check-b382-ifc.py` section 6's "nearly every chapter" became "more than the academy's 14, from
 Fire Code's own chapters". `check-b382-ifc` check 5 ("Profile has no Stats tab") fails on this build and the previous alike: Profile has a Stats tab now (a later decision), so it is stale.
+
+## 384 - when Fire Code's secret flares come out (confirmed by Madison: "that sounds great")
+
+Level windows unchanged (red 12-14, orange 25-27, yellow 38-40, violet 51-53, white 64-66, core 77-79), drawn once per account inside the window. On the 0.46 curve their XP is
+red ~2.0-2.4k, orange ~6.1-7.8k, yellow ~18.6-20.8k, violet ~36.4-40.1k, white ~61.4-65.6k, core ~91.7-97.3k. Time estimates (a GUESS at voluntary use, not measured; paces 12k / 9k / 4k XP a week
+= daily / 3 days a week / 2 days a week): red ~2-4 days, orange ~4-12 days, yellow ~11 days-5 weeks, violet ~3-10 weeks, white ~5-16 weeks, core ~8 weeks-6 months. Each lands near a rank
+boundary without sitting on it (red before Bronze 21, orange before Silver 30, yellow just before Gold 40, violet just after Platinum 50, white between Sapphire 60 and Amethyst 70, core just before Supernova 80).
+Considered and NOT done: pulling White and Core a few levels earlier so the last flare is less tied to the cap (it would make the end of the climb emptier). Gate: `check-b384-ifccurve.py` (4).
