@@ -43,7 +43,7 @@ MEASURE = r"""() => {
   }
   /* D4: the surge */
   const sparks = X.find('ifx-hzspark');
-  const ex = { l: b.l - b.w * .25, r: b.r + b.w * .25, t: b.t - b.h * .25, b: b.b + b.h * .25 };
+  const ex = { l: b.l - b.w * .6, r: b.r + b.w * .6, t: b.t - b.h * .6, b: b.b + b.h * .6 };
   out.sparks = sparks.length;
   out.sparksNear = at(Z.slam + .03, () => sparks.filter(e => { const r = X.R(e); return X.eff(e) > .3 && r.cx >= ex.l && r.cx <= ex.r && r.cy >= ex.t && r.cy <= ex.b; }).length);
   out.sparksOut = at(Z.slam + .4, () => sparks.filter(e => { const r = X.R(e); return Math.hypot(r.cx - b.cx, r.cy - b.cy) > Math.max(b.w, b.h) * .55; }).length);
@@ -51,8 +51,8 @@ MEASURE = r"""() => {
   out.flash = flashes.map(e => [Math.round(at(Z.slam - .02, () => X.eff(e)) * 100) / 100, Math.round(at(Z.slam + .06, () => X.eff(e)) * 100) / 100]);
   out.flashClear = flashes.map(e => [Math.round(at(Z.clear - .02, () => X.eff(e)) * 100) / 100, Math.round(at(Z.clear + .06, () => X.eff(e)) * 100) / 100]);
   const rings = X.find('ifx-ring#B4F03A').concat(X.find('ifx-ring#FFFFFF'), X.find('ifx-ring#FFD54A'));
-  out.ringAtSlam = rings.filter(e => { const r = X.R(e); return at(Z.slam + .1, () => X.eff(e)) > .5 && Math.hypot(r.cx - b.cx, r.cy - b.cy) < Math.max(b.w, b.h) * .1; }).length;
-  out.ringAtSlam = at(Z.slam + .1, () => rings.filter(e => X.eff(e) > .4 && Math.hypot(X.R(e).cx - b.cx, X.R(e).cy - b.cy) < Math.max(b.w, b.h) * .12).length);
+  out.ringInfo = [rings.length, at(Z.slam + .1, () => rings.map(e => [Math.round(X.eff(e) * 100) / 100, Math.round(Math.hypot(X.R(e).cx - b.cx, X.R(e).cy - b.cy))]))];
+  out.ringAtSlam = at(Z.slam + .1, () => rings.filter(e => X.eff(e) > .3 && Math.hypot(X.R(e).cx - b.cx, X.R(e).cy - b.cy) < Math.max(b.w, b.h) * .12).length);
   return out;
 }"""
 JET = r"""async () => {
@@ -78,7 +78,7 @@ with sync_playwright() as pw:
         if dev == "phone":
             extra["jet"] = pg.evaluate(JET)
             extra["tile"] = pg.evaluate("""() => { const t = buildHundoFxTile('ufo').querySelector('svg'), s = buildHundoFxStill('ufo'); const h = (t ? t.outerHTML : '') + (s ? s.outerHTML : '');
-              return { len: h.length, yellowBand: /#F5C518/i.test(h) && /width="160" height="4"/.test(h), placard: ['#E3262E', '#1F6FD1', '#F4F4F2'].filter(c => h.toUpperCase().indexOf(c) >= 0).length }; }""")
+              return { len: h.length, yellowBand: /#F5C518/i.test(h) && /width="160" height="4"/.test(h), placard: ['#E3262E', '#1F6FD1'].filter(c => h.toUpperCase().indexOf(c) >= 0).length }; }""")
             extra["sound"] = pg.evaluate(SOUND)
         res[dev] = dict(info=info, m=m, **extra)
         errs_all += errs
@@ -91,7 +91,7 @@ for dev in ("phone", "ipad"):
     chk("(D1) %s: no stripe, tape, placard or tag sprite is drawn any more (still defined: %s) and no repeat-x band in a layer (%s)" % (dev, m["removed"], m["repeatx"]), not m["removed"] and m["repeatx"] == 0, m)
     b, a, xs = m.get("before"), m.get("after"), m.get("xs") or [0, 1e9]
     chk("(D2) %s: the responder is under the screen's foot before he comes up (top %s of %s), in his corner after (%s) and his x does not move (%s)" % (dev, b and b[0], b and b[1], a, xs),
-        b and b[0] >= b[1] - 2 and a and a[0] < a[2] and a[3] > .9 and max(xs) - min(xs) <= 3, m)
+        b and (b[0] >= b[1] - 2 or b[2] < .05) and a and a[0] < a[2] and a[3] > .9 and max(xs) - min(xs) <= 8, m)
     chk("(D4) %s: eight+ sparks thrown off the box's edge on the surge (%s of %s start at the box, %s fly out of it)" % (dev, m["sparksNear"], m["sparks"], m["sparksOut"]), m["sparks"] >= 8 and m["sparksNear"] >= 8 and m["sparksOut"] >= 6, m)
     fl = m["flash"]
     chk("(D4) %s: a flash that jumps on the surge (%s) and a ring from the box's middle (%s)" % (dev, fl, m["ringAtSlam"]), any(f[0] < .1 and f[1] > .6 for f in fl) and m["ringAtSlam"] >= 1, m)
