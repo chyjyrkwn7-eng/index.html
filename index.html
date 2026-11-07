@@ -37571,6 +37571,19 @@ html.is-browser{ --fade-paper: transparent; }
      they were 13px under the tab bar); still the big cards, nowhere near 334's 138px */
   @media (max-width:39.99rem){ html[data-layout] body #stage > .panel.modeselect .modecards.modecards:has(> .modecard:nth-of-type(4)) > .modecard.modecard{ min-height:154px; } }
   @media (min-width:40rem){ html[data-layout] body #stage > .panel.modeselect .modecard.modecard{ padding:24px 26px; } html[data-layout] body #stage > .panel.modeselect .modecards.modecards{ gap:16px; } }
+  /* (384 r5) VIRTUAL ROOM'S CHOICE IS THE MODE SCREEN'S SECOND PAGE: the same question under the title, the same big cards (22px 24px,
+     the same words size, 10px between), the three games a flat row of chips like every other small control */
+  html[data-layout] body #stage > .panel.screen-vroom-choice{ padding-top:24px; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > .ios-nav{ position:relative; z-index:1; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice > .cal-sub{
+    position:relative; z-index:1; margin:-.2rem auto 0; max-width:26rem; text-align:center;
+    font-family:inherit; font-size:1rem; line-height:1.45; color:var(--soft); text-wrap:balance;
+  }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ min-height:160px; padding:22px 24px; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard .modecarddesc.modecarddesc{ font-size:.95rem; }
+  html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:10px; margin-top:1.1rem; }
+  @media (min-width:40rem){ html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecard.vrc-modecard{ padding:24px 26px; } html[data-layout] body #stage > .panel.screen-vroom-choice .vrc-modecards.vrc-modecards{ gap:16px; } }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vrc-game{ background:var(--clean-card); border:0; }
   /* (383) Report a bug's label: a grey sentence-case heading like Settings' groups, not spaced capitals */
   html[data-layout] body #stage .screen-bugreport .bugreport-label{ text-transform:none; letter-spacing:0; font-size:.86rem; font-weight:600; color:var(--soft); }
   /* (383) the Virtual Room's Host / Join cards are mode selection's cards */
@@ -37796,6 +37809,36 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
     color:color-mix(in srgb, var(--theme-c2) 22%, #fff); background:transparent !important; box-shadow:none !important;
   }
+  /* (384 r5) THE VIRTUAL ROOM IN THE SAME LOOK AS THE MODE SCREEN: "the option to select open room or host ... didn't get updated ...
+     same goes for all parts of the virtual room - the lobby, results, leaderboard, cutscenes". The room's own screens were still
+     the old look: a serif, upper-case, centred title ("RESULTS", "YOU'RE DONE"), a serif game name on the lobby's summary, and a
+     bordered glass card for your score. Now the title is the app's one (sans, bold, sentence case), the summary's game name is
+     sans, and your score is a solid card like every other. */
+  html[data-layout] body #stage > :is(.vroom-results-panel, .vroom-finale-panel, .screen-tug-wait, .screen-tug-result, .screen-battle-wait, .screen-battle-result) > .welcomeintro-title{
+    font-family:inherit; font-size:clamp(1.55rem, 6.4vw, 2rem); font-weight:700; letter-spacing:-.01em; text-transform:none; line-height:1.15;
+    color:var(--ink); text-shadow:none;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .sheet-summary-mode{ font-family:inherit; letter-spacing:-.005em; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vroom-mine{
+    background:var(--clean-card); border:0; box-shadow:none; border-radius:20px;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vroom-mine-row.is-total{ border-top-color:var(--clean-line); }
+  /* the lobby: Stats' headings (sentence case, 16px, 600) over its cards, and the game's name in the app's face */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-vroom-lobby :is(.vroom-setup-head, .vroom-roster-title){
+    font-size:1rem; font-weight:600; letter-spacing:normal; text-transform:none; color:var(--soft);
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-vroom-lobby .vroom-setup-head{ padding-left:1rem; margin:0 0 .45rem; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .vroom-test-summary-title{ font-family:inherit; font-size:1.1rem; }
+  /* the match boards and the XP card: solid, no rim, no glow (Battle's two sides keep a tint of their team's colour) */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.tug-xp, .tug-board-col){
+    background:var(--clean-card); border:0; box-shadow:none; border-radius:20px;
+  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .tug-xp.is-won{ background:color-mix(in srgb, #FFD37A 5%, var(--clean-card)); box-shadow:none; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .tug-board-col.is-winner{ background:color-mix(in srgb, #FFD37A 5%, var(--clean-card)); border:0; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .battle-side{ border:0; border-radius:20px; background:var(--clean-card); }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .battle-side.is-ours{ background:color-mix(in srgb, #4ADE80 9%, var(--clean-card)); }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .battle-side.is-theirs{ background:color-mix(in srgb, #F5804D 9%, var(--clean-card)); }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .battle-vs{ background:var(--clean-card-2); border:0; }
   /* fields and the small actions beside them: the card's colour, no rim */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage :is(.searchwrap input, .rank-search-wrap input, input.searchbox){
     background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
