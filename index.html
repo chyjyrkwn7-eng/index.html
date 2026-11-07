@@ -37808,19 +37808,17 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
     background:var(--clean-card-2) !important; background-image:none !important; box-shadow:none !important; border:0 !important;
   }
-  /* (384 r5) ONE TOGGLE LOOK, THE STATS WEEK SWITCH'S: "the touch look and toggles ... the entire app needs to be cohesive". A round
-     track, the picked segment an accent-tinted pill with its own ring and accent-tinted text (.stx-dots-switch). The Profile / Stats /
-     Settings and Leaderboard switches had a grey raised pill. */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs{ border-radius:999px; }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn{ border-radius:999px; }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .seg-slider,
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
-    background:color-mix(in srgb, var(--theme-c2) 20%, transparent) !important; background-image:none !important; border-radius:999px !important;
-    box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--theme-c2) 42%, transparent) !important; border:0 !important;
+  /* (384 r5) THE CALENDAR TAKES STATS' LOOK: "I just wanted the calendar to kinda match the theme of stats a little better, and anywhere else
+     that can take that on so the entire app is cohesive". Stats puts each card's heading ABOVE the card, 16px 600 in the soft grey, 16px
+     in; the calendar's sat inside the card at .9rem. Painted above (the heading stays in the card's markup, so everything that finds
+     it still does): the card makes room, the heading rides in that room, the aside ("Sat, Nov 7", "1 of 6") on its right. */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-calendar-tab .cal-card:has(> .cal-card-head){ position:relative; margin-top:2.1rem; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-calendar-tab .cal-card.cal-count-card:has(> .cal-card-head){ margin-top:2.9rem; }   /* under the month: the room Stats leaves between a card and the next heading */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-calendar-tab .cal-card > .cal-card-head{
+    position:absolute; left:0; right:0; top:-1.95rem; padding:0 1rem; margin:0; align-items:baseline;
   }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .navsegment.profiletabs > .iconbtn.active{
-    color:color-mix(in srgb, var(--theme-c2) 22%, #fff); background:transparent !important; box-shadow:none !important;
-  }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-calendar-tab .cal-card .cal-card-head .slab{ font-size:1rem !important; margin:0; }
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .screen-calendar-tab .cal-card .cal-card-head .cal-card-aside{ font-size:.9rem; color:var(--soft); }
   /* (384 r5) THE VIRTUAL ROOM IN THE SAME LOOK AS THE MODE SCREEN: "the option to select open room or host ... didn't get updated ...
      same goes for all parts of the virtual room - the lobby, results, leaderboard, cutscenes". The room's own screens were still
      the old look: a serif, upper-case, centred title ("RESULTS", "YOU'RE DONE"), a serif game name on the lobby's summary, and a
