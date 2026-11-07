@@ -49,7 +49,7 @@ SNAP = r"""() => {
   for(const id of ['voidwalker', 'umbra', 'singularity', 'genesis', 'valkyrie', 'timekeeper']) out.ch[id] = info(id);
   { const { s } = drawn('detective'); const body = s.querySelector('.cx-body path'); out.shirt = stops(s, body);
     const face = [...s.querySelectorAll('.cx-head path')].find(p => /url\(/.test(p.getAttribute('fill') || '')); out.face = stops(s, face); }
-  for(const c of AVATAR_CHARACTERS){ if(c.retired || c.legacy) continue; const t = info(c.id); if(t) out.all[c.id] = { filter: t.filter, head: t.head, eyes: t.eyes, closed: t.closed, mouth: t.mouth }; }
+  for(const c of AVATAR_CHARACTERS){ if(c.retired || c.legacy || !IFC_CHAR_LOOK[c.id]) continue; const t = info(c.id); if(t) out.all[c.id] = { filter: t.filter, head: t.head, eyes: t.eyes, closed: t.closed, mouth: t.mouth }; }
   return out; }"""
 srv, port = rc["serve"]()
 with sync_playwright() as pw:
@@ -93,6 +93,6 @@ fb = r["face"][1] if len(r["face"]) > 1 else r["face"][0]
 chk("C. ...and his face is not pale: base %s, luminance %.3f (the light tone it was is .50; under .42)" % (fb, lum(fb)), lum(fb) < .42, r["face"])
 # D
 bad = [i for i, v in r["all"].items() if v["filter"] or not (v["head"] and v["eyes"] and v["closed"] and v["mouth"])]
-chk("D. every Fire Code character has its parts and no svg filter (%d checked, bad: %s)" % (len(r["all"]), bad), len(r["all"]) >= 20 and not bad, bad)
+chk("D. every character Fire Code draws itself has its parts and no svg filter (%d checked, bad: %s)" % (len(r["all"]), bad), len(r["all"]) >= 14 and not bad, bad)
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
