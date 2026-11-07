@@ -36161,3 +36161,13 @@ windows (12-14 ... 77-79, evenly spread - that was about levels, not XP): at the
 No account lists Fire Code in `classes` yet (0 of 45), so no level or rank moves. `check-b384-ifccurve.py` rewritten: (1) the curve equals the academy's,
 (2) level 80 takes 30+ study days at 6,000 XP a day and every chapter once is under half of it, (3) a sanity bound on ranks vs badges, (4) flares, (5) errors;
 (1)-(2) FAIL on the previous build. `check-curve.py` (the academy's) ALL PASS.
+
+## 384 - Fire Code's XP curve: 0.46 of the academy's, level 80 = ~100,240 XP (supersedes "the academy's again", above)
+
+Madison: "So it should be less still but idk" / "See, 200+ thousand xp is probably too much tbh. I would think it should be closer to 100k?" `LEVEL_COST_SCALE`
+is 0.46 in Fire Code (1 in the academy): every level 0.46 of the academy's, the same shape; level 80 = 100,240 XP (20: 4,212; 40: 20,779; 60: 53,380).
+Every chapter taken to 100% once is ~54k XP = level 60; the top ranks take repetition. Flares keep their level windows (~2.2k, 7k, 19.7k, 38k, 63k, 94k XP).
+Pace for context (45 real accounts; the academy is studied under a test every Monday, so inflated): heavy ~5-7k XP a study day, middle 2-4k - 100k is ~17 study
+days at 6k, ~25 at 4k, ~40 at 2.5k. Told Madison this is faster than the two months he first asked for; he chose ~100k. No account lists Fire Code yet (0 of 45).
+`check-b384-ifccurve.py` (1) is now "one steady fraction between a third and two thirds" and (2) "every chapter once is over a third and under all of level 80's XP" - read off
+the page, not the number; (1) FAILS on the academy-scale build, (1)-(5) PASS now; `check-curve.py` (the academy's) ALL PASS.

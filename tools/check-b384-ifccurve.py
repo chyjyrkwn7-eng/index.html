@@ -48,14 +48,14 @@ with sync_playwright() as pw:
     ch = pg.evaluate(CHAPTERS)
     flares = pg.evaluate("()=>{ store.flareLevels = {}; return MYSTERY_ORDER.map(c => mysteryLevelGate(c)); }")
     ratios = [round(i / a, 4) for i, a in zip(icurve, acurve)]
-    chk("(1) Fire Code's curve is the academy's, level for level (ratios %s ... %s; %s XP to 80, %s)" % (ratios[0], ratios[-1], acurve[-1], acad["cls"]),
-        info["cls"] == "ifc" and acad["cls"] == "academy" and all(abs(r - 1) <= .01 for r in ratios), list(zip(LEVELS, acurve, icurve)))
+    # (1) one steady fraction of the academy's curve, level for level, between a third and two thirds of it
+    chk("(1) Fire Code's curve is one steady fraction of the academy's - ratios %s ... %s, level 80 at %s XP against the academy's %s (%s)" % (ratios[0], ratios[-1], icurve[-1], acurve[-1], acad["cls"]),
+        info["cls"] == "ifc" and acad["cls"] == "academy" and max(ratios) - min(ratios) <= .01 and .33 <= ratios[-1] <= .67, list(zip(LEVELS, acurve, icurve)))
     total = sum(c["xp"] for c in ch)
     total = sum(c["xp"] for c in ch)
-    # (2) level 80 is not a quick climb: at the heaviest pace measured in the class (about 6,000 XP a study day) it takes 30+ study days, and
-    #     finishing every chapter once is well short of it (the top ranks take repetition, as the academy's do)
-    chk("(2) level 80 (%d XP) takes 30+ study days at 6,000 XP a day, and every chapter once (%d XP, %d chapters) is under half of it" % (icurve[-1], total, len(ch)),
-        icurve[-1] / 6000 >= 30 and total < .5 * icurve[-1], [total, icurve[-1]])
+    # (2) finishing every chapter once is real progress but not the top: under level 80's XP, over a third of it (the top ranks take repetition)
+    chk("(2) every chapter once (%d XP, %d chapters) is over a third and under all of level 80's XP (%d)" % (total, len(ch), icurve[-1]),
+        .33 * icurve[-1] <= total < icurve[-1], [total, icurve[-1]])
     # (3) the ranks' levels are not walls: each rank's level is reachable with its badges' chapters plus repetition - no rank asks for a level
     #     that more than 8x the XP of its badges' average chapters would be needed for (a sanity bound, not a target)
     far = []
