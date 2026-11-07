@@ -36190,3 +36190,22 @@ red ~2.0-2.4k, orange ~6.1-7.8k, yellow ~18.6-20.8k, violet ~36.4-40.1k, white ~
 = daily / 3 days a week / 2 days a week): red ~2-4 days, orange ~4-12 days, yellow ~11 days-5 weeks, violet ~3-10 weeks, white ~5-16 weeks, core ~8 weeks-6 months. Each lands near a rank
 boundary without sitting on it (red before Bronze 21, orange before Silver 30, yellow just before Gold 40, violet just after Platinum 50, white between Sapphire 60 and Amethyst 70, core just before Supernova 80).
 Considered and NOT done: pulling White and Core a few levels earlier so the last flare is less tied to the cap (it would make the end of the climb emptier). Gate: `check-b384-ifccurve.py` (4).
+
+## 384 - characters, banners, hundo effects round: the RULES (lead); the art is four helpers' (see their notes)
+
+Madison's list, as built (check-b384-batch.py holds the shape; it FAILS on the previous build):
+- THREE STARTERS, all classes: `ninja` and `wizard` are `retired: true` (the drawings stay for a stale row; Customize's "Kept" shows one only to whoever still wears it). `retireStarters384()`
+  (called from applyLoadedData beside ifcRetireZeus) moves an account wearing either to ghost / grizzly / alien by a stable pick (FNV hash of the first name mod 3), so every device of one
+  account lands on the same one and nothing flaps. Display fallbacks for a missing avatar are `ghost` now, not `ninja`. The sign-up picker (flex-wrap, centred) shows three.
+- Inspector/Detective (`daily10`): "Answer 10 daily questions correctly" - a TOTAL. New persisted `store.dailyCorrectTotal` (default seeds from the best run so nobody loses it; max in
+  mergeSameAccount and mergeLeavingAccount; reset on account reset; +1 on a perfect daily). `dailyCorrectCount()` = max(total, best run).
+- Strobe/Clown (`vrwins5`) 3 wins; Toxic Spill/Orion (`hundo7day`) a hundo in 3 units in a day. Every class (the keys stay as names).
+- Hazmat/Marksman (`streak100`): Fire Code ONLY - 100 in a row, across tests (max of bestTestStreak, lifetime.longestStreak, currentStreak); the academy keeps 250 in one test (Madison's 267 decision, not
+  asked to change). ASK if he wants the academy's single-test rule dropped too.
+- Hydrant's slot/Timekeeper (`days30`): Fire Code 14 different days; the academy 30.
+- Sprinkler Head/Hive (`busyday300`) "was the same challenge as Drone Pilot/Ronin" (500 questions in a day vs a test of 500): now "Play every mode 3 times" - Drill, Test, Retake, Daily question,
+  Virtual Room, from counters already kept (drillPlays, examPlays, retakenQuestions, dailyCorrectCount, vrMatches), five parts, the bar counts modes done. Every class.
+- ONE ULTIMATE PER CLASS: `ULTIMATE_TOP` is zenith (Fire Code, Star Ranger) / astral (academy). The others are retired (characters) / spliced out of BANNERS; the survivor's challenge is
+  "everything" (Zenith's), its banner too; it is listed under Challenge rewards (no Ultimate section). `retireUltimates384()` moves whoever wears a removed one (character or banner).
+- Hundo rungs: Fire Code 0/25/50/75/100 (top was 150); academy 0/25/75/125/200 - the top was ALREADY 200 (lowered from 350 in 327), the three under it came down (50/100/150).
+Not done by me: the characters' art, the banners, the effects and the grade box (four helpers, merged separately).
