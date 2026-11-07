@@ -139,7 +139,10 @@ for i in ("clown", "hive"):
     now, was = r["strobe"][i], BEFORE[i]
     chk("D. %s is redrawn (%s, was %s)" % (i, now["hash"], was["hash"]), now["hash"] != was["hash"], now)
     added, lost = sorted(set(now["parts"]) - set(was["parts"])), sorted(set(was["parts"]) - set(now["parts"]))
-    chk("D. ...with exactly the parts it had: nothing added (%s), nothing lost (%s)" % (added, lost), now["hash"] != was["hash"] and not added and not lost, now["parts"])
+    # 384 round 5: "Sprinkler head is sick but could be cooler" / "I want strobe character though, improve it" - the
+    # "no new parts" limit of round 4 is lifted: they keep every part they had and gain a new one (the strobe's beacon, the
+    # sprinkler's water), so a redraw that only re-shades fails
+    chk("D. ...keeping every part it had (lost: %s) and gaining one (added: %s)" % (lost, added), now["hash"] != was["hash"] and not lost and len(added) >= 1, now["parts"])
 # E
 def lum(h):
     h = h.lstrip("#"); c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]; c = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in c]

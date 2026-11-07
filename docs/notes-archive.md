@@ -36221,3 +36221,38 @@ Madison: "I think the characters (every single one of them) could be touched up 
 - Gate: tools/check-b384-acchars.py (neck geometry, the ghost's strokes and arms, the marksman's paint, the hive's sill, the ronin's gradients, the tempest's hair, every character draws) - FAILS on bb7eb94 (6 of 9), passes now. check-behaviour's check_b314_chars (frame, edges, silhouettes, still pictures) passes.
 - Chromium cannot say how the necks and the hive's gradients look on an iPhone's colour pipeline; the 26px tab character and the coin were looked at in Chromium only.
 - 384 r6, second pass (every remaining one looked at again at 3x, one at a time): SHERIFF's star was painted with a headGrad (anchored at the face, so the badge came out in the gradient's dark end) and sat in the fade at the foot of the figure; it has its own light-to-dark gradient and is 1.8 higher. ALIEN: a 2.4-wide cheek stroke read as a wide smile over the frown; now a faint shade along the jaw. CLOWN: the ruff's points were 2.8 wide on a 2.4 spacing and overlapped at random; 2.8 on 2.8 tiles. KOI: the bowl's mouth was an empty ellipse of line floating on the sphere like a halo; it is an opening now (dark inside, a lit lip). HACKER: a jaw-light arc ran through the cheeks and read as a second, wider smile; it follows the face's edge. The rulers' and Inferno's robes had a flat top edge beside the neck; it now slopes up to it. Looked at and left: Bear, Zeus (the pale patch on the left of the face is the marble gradient), Timekeeper, Orion, Astral, Void/Umbra/Horizon/Genesis. Per-character images (before/after, Customize cards) are in the session scratchpad, not the repo.
+
+### 384 (fc characters): the Fire Code characters reviewed one by one (branch claude/b384-fcchars; NOT on main)
+Madison: "I think the characters (every single one of them) could be touched up ... ensure none of them have weird disconnections
+or just out of place things" / "Inspector is cool ... looks pale, and too white ... shirt needs to be navy too" / "I like the strobe
+character but I don't love it ... improve it" / "The extinguisher character, I don't like it at all, make that something else" /
+"Hydrant character is an absolute no" / "Sprinkler head is sick but could be cooler" / "I don't like the secret flare characters
+from ifc, I love the academy ones ... follow the academy theme but just come up with new ones". Fire Code only (IFC_CHAR_LOOK /
+IFC_CHAR_DRAW); the academy's art, the AVATAR_CHARACTERS list, feats and the rank tables are untouched. Same ids throughout.
+- THE FOUR SECRETS ARE CELESTIAL NOW, not an operator squad (fcSquad and the four fcsq* drawings are deleted). Each is a new
+  body in the academy's family (dark where unlit, one glowing mark, the flare worn): NEBULA (voidwalker, fcnebula) a head of
+  gas in red / orange / yellow round a dark face, the three flares set in the cloud; QUASAR (umbra, fcquasar) a dark core with a
+  hot disc round it and two violet jets through its poles, the flare on its brow; PULSAR (singularity, fcpulsar) a small white
+  star with two dark eyes, two thin beams that turn (cx-fx-fcradar) and field lines pole to pole, the flare on its chest;
+  SOLSTICE (genesis, fcsolstice) a head half day and half night - a sun for one eye and a moon for the other - the sun's path
+  over it with the core flare at the top. Glow colours are the old table's (they are the flares' colours: #F97316, #8B5CF6,
+  #9FDCFF, #FF5CA8), so the worn flare, the secret-flare scene's rim and the special still agree. Everything lit is classed
+  cx-fx-sqlight, which SF_SIL keeps lit in the dark. fcGas(k, col, hi) is a soft cloud fill (objectBoundingBox radial gradient,
+  no filter). fcLin takes a 7th argument (true = userSpaceOnUse): a gradient on a shape whose box is thin needs it.
+  NOTE for whoever owns names: the flare BANNERS (flare_void..flare_genesis) are still called Breacher / Recon / Whiteout /
+  Flashbang (see the banner-name table near "flare_void: [") and check-b384-sets (7) asserts a banner is named for its character.
+- PYROTECH (valkyrie, fcpyro) replaces the Extinguisher: a fireworks technician - black hard hat with a magenta ridge, ear
+  defenders, magenta safety glasses, a ponytail, a high-vis vest with its reflective Y, the firing controller on a lanyard,
+  sparks round her (matches the Pyrotechnics banner). SALAMANDER (timekeeper, fcsalamander) replaces the Hydrant: the fire
+  salamander, glossy black with yellow markings and glands, ember eyes with slit pupils, lava seams over the shoulders, fire
+  either side. Neither is an object with a face.
+- INSPECTOR: shirt navy (#3C5A9E / #22387A / #0C1848, collar and yoke to match), face and hand the tan skin tone (was the pale
+  one) with a shade along the jaw. STROBE: a red beacon dome on top (cx-fx-fcstrobe), chrome horn drivers on the cheeks, hazard
+  chevrons on the shoulder band. SPRINKLER HEAD: two fans of water off the deflector, lit at the tips. HAZMAT: a bigger visor, a
+  face that reads, a respirator with two orange-ringed cartridges (the red dots read as cheeks). SMOKE DIVER: the shoulder light
+  sits on a clip. DISPATCHER: a lanyard with an ID and a shoulder radio. STAR RANGER (zenith): a lighter face, smaller flames on
+  the band. Left alone: Chief, Toxic Spill, Drone Pilot (nothing out of place at tile, coin or 26px).
+- Gates: tools/check-b384-fcchars2.py (new; fails on bb7eb94), tools/shoot-fc-chars.py (contact sheets, any class, any ids).
+  check-b384-ifcchars D no longer forbids new parts (they must keep every part and gain one), check-b382-ifcart knows the new
+  names and the hard hat, check-b384-sets (3)/(4) now assert the four are not operators. Not mine and still failing:
+  check-b382-ifcart 'forge' (academy art changed in 384 r4) and check-b384-sets (7) (banners).

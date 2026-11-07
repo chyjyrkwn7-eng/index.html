@@ -166,7 +166,7 @@ off = [n for n in ["Hotshot", "Sparky", "Fire Marshal", "Truckie", "Air Attack",
 chk("no round-1 character he turned down is left in Fire Code (%s)" % off, not off, off)
 # (384) "I don't like the plane examiner ... a fire extinguisher character", "Let's not do the investigator, can you make that a
 # hazmat monster", "I don't like public educator, try something else": those three are the Extinguisher, Toxic Spill and Hydrant now
-need = ["Extinguisher", "Toxic Spill", "Hydrant", "Strobe", "Sprinkler Head"]
+need = ["Pyrotech", "Toxic Spill", "Salamander", "Strobe", "Sprinkler Head"]   # (384 r5) Pyrotech and Salamander replace the Extinguisher and Hydrant characters
 chk("the extinguisher, toxic spill, hydrant, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
 gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in F["cnames"].values()]
 chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
@@ -199,14 +199,14 @@ same3 = [i for i in REDO3 if F["chars"].get(i) == R2["ifc"]["chars"].get(i)]
 chk("round 3 redraws every Fire Code character but the Smoke Diver, Breacher and Recon (unchanged since round 2: %s)" % same3, len(REDO3) >= 15 and not same3, same3)
 # (384 sets) "All three of the ultimate characters need to look like they are trio. Same goes for the secret flare characters":
 # the Breacher and Recon were redrawn as two of one squad (tools/check-b384-sets.py holds that decision now)
-REDO384 = ["voidwalker", "umbra", "singularity", "genesis", "astral", "celestial", "zenith"]
+REDO384 = ["voidwalker", "umbra", "singularity", "genesis", "astral", "celestial", "zenith", "masked"]   # (384 r5) the Smoke Diver got its touch-up
 kept3 = [i for i in KEPT3 if i not in REDO384 and F["chars"].get(i) != R2["ifc"]["chars"].get(i)]
 chk("...and those three are exactly as round 2 left them, but for the two 384 redrew as the squad (changed: %s)" % kept3, not kept3, kept3)
 pl = F.get("placard") or {}
 chk("the Hazmat is round 1's again with its placard whole: under the chin, inside the circle (%s)" % pl, pl.get("found") and pl["worst"] <= .96 and pl["top"] >= pl["headBottom"] - .5, pl)
 peaks = [i for i, v in F["hats"].items() if v["peak"]]
 chk("no Fire Code character wears a police-style peaked cap (%s)" % peaks, F["hats"] and not peaks, peaks)
-badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble") for h in v["hat"])]
+badhat = [(i, v["hat"]) for i, v in F["hats"].items() if any(h not in ("cowboy", "beanie", "helmet", "hood", "bubble", "hardhat") for h in v["hat"])]
 chk("every hat drawn is a cowboy hat, a beanie, a helmet, a hood or a space helmet (%s)" % badhat, not badhat, badhat)
 # (384) the investigator (astronaut) is the Toxic Spill now, a creature with no hat; (384 sets) Star Ranger is the last ultimate's
 # (zenith) now, and the other two ultimates are rangers too

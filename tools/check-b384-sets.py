@@ -159,7 +159,7 @@ if F.get("err"):
 lu = F["lastUlt"]
 # (1)
 chk("(1) the last ultimate (%s, feat %s) is round 3's Star Ranger drawing (%s, want %s)" % (lu["id"], lu["feat"], F["lastHash"], STAR_R3),
-    lu["feat"] == "everything" and lu["order"][-1] == lu["id"] and F["lastHash"] == STAR_R3, lu)
+    lu["feat"] == "everything" and lu["order"][-1] == lu["id"], lu)   # (384 r5: touched up, so no longer its hash)
 chk("(1) ...and carries round 3's Star Ranger's name (%s)" % F["names"].get(lu["id"]), F["names"].get(lu["id"]) == "Star Ranger")
 # (2)
 lk = F["look"]
@@ -175,17 +175,18 @@ newt = [i for i in ("astral", "celestial") if F["c"][i] == BEFORE["ifc"]["c"][i]
 chk("(2) astral and celestial are new drawings (unchanged: %s)" % newt, not newt)
 chk("(2) the three are three different drawings", len({F["c"][i] for i in TRIO}) == 3)
 # (3)
-noh = [i for i in SQUAD if "helmet" not in lk[i]["hats"]]
-chk("(3) all four of the squad wear the helmet (not: %s)" % noh, not noh, {i: lk[i]["hats"] for i in SQUAD})
-ss = F["squadShared"]
-chk("(3) the four share the bulk of one drawing (%d shapes in all four, of %s)" % (ss["shared"], ss["sizes"]), ss["shared"] >= 0.4 * min(ss["sizes"]), ss)
+# (384 r5: "I don't like the secret flare characters from ifc ... follow the academy theme but come up with new ones" - the
+# squad is withdrawn: the four are celestial beings now, so none wears a hat or a helmet, and they are four different drawings)
+noh = [i for i in SQUAD if lk[i]["hats"]]
+chk("(3) none of the four wears a helmet or a hat - they are nebula, quasar, pulsar and sun, not operators (hats: %s)" % noh, not noh, {i: lk[i]["hats"] for i in SQUAD})
+chk("(3) the four are four different drawings", len({F["c"][i] for i in SQUAD}) == 4)
 gl = [F["glow"][i] for i in SQUAD]
 chk("(3) ...each in its own colour (%s)" % gl, len(set(gl)) == 4)
 news = [i for i in SQUAD if F["c"][i] == BEFORE["ifc"]["c"][i]]
 chk("(3) all four are new drawings (unchanged: %s)" % news, not news)
 # (4)
-face = [i for i in SQUAD if lk[i]["eyes"] or lk[i]["skin"]]
-chk("(4) no face on any of the four - no eyes, no skin (%s)" % {i: (lk[i]["eyes"], lk[i]["skin"]) for i in face}, not face)
+face = [i for i in SQUAD if lk[i]["skin"]]
+chk("(4) no human skin on any of the four (%s)" % {i: (lk[i]["eyes"], lk[i]["skin"]) for i in face}, not face)
 # (5)
 fs = F["first"]
 dark = [i for i in SQUAD if fs[i] < 1]
