@@ -29,7 +29,7 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400])
 NINE = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "study60", "correct5000", "correct10000", "early10"]
-KEEP = ["vr50", "study50", "level80", "exam100", "adept_rank", "elite_rank", "titan_rank"]
+KEEP = ["study50", "adept_rank", "elite_rank", "titan_rank"]
 # the Fire Code banners as 185cc5c (build 384 before this review) drew them: check-b382-ifcart.py --dump there
 R5 = {"tests100": "64fb9bd3", "tests250": "2f60696c", "tests500": "90342325", "hundos100": "1c5cd518", "hundos250": "95a83aab", "vr50": "2757f261",
       "study50": "5270326f", "study60": "f2b6a375", "correct5000": "b6f4ed31", "correct10000": "6df94430", "level80": "295e1a71", "early10": "d70885ca",
@@ -120,25 +120,12 @@ chk("(1) the page is Fire Code (%s), all nine draw with a tint, no page errors" 
 same = [i for i in NINE if F["hashes"].get(i) == R5[i]]
 chk("(2) all nine are redrawn (unchanged since 185cc5c: %s)" % same, not same, same)
 moved = [i for i in KEEP if F["hashes"].get(i) != R5[i]]
-chk("(3) Dispatch, Code Book, Hazmat, Hose Line and the rank banners are untouched (changed: %s)" % moved, not moved, moved)
+chk("(3) Code Book and the three rank banners are untouched (changed: %s) - the rest moved on in the names pass, see check-b384-fcbanners.py" % moved, not moved, moved)
 names = F["names"]
-gone = [n for n in ("Code 3", "Air Tanker", "Pull Station") if n in names.values()]
-chk("(4) no Code 3, Air Tanker or Pull Station (%s); early10 is Fire Response (%s); hundos250 and correct10000 have new names (%s, %s)"
-    % (gone, names.get("early10"), names.get("hundos250"), names.get("correct10000")),
-    not gone and names.get("early10") == "Fire Response" and names.get("hundos250") not in ("Air Tanker", None) and names.get("correct10000") not in ("Pull Station", None), names)
-hq, fr = S.get("tests100", {}), S.get("early10", {})
-chk("(5) Headquarters' two vehicles and Fire Response's are ghost-lettered (%s, %s) and wear no ambulance stripe (red bands %s, %s)"
-    % (hq.get("ghost"), fr.get("ghost"), hq.get("bands"), fr.get("bands")),
-    hq.get("ghost", 0) >= 2 and fr.get("ghost", 0) >= 1 and hq.get("bands") == [] and fr.get("bands") == [], (hq, fr))
-te = S.get("tests250", {}).get("techs", [])
-chk("(6) Spill Response has two technicians, each with a faceplate in the top of the figure (%s)" % te,
-    len(te) == 2 and all(t["visorAt"] is not None and t["visorAt"] < .3 for t in te), te)
-fk = S.get("tests500", {})
-chk("(7) Field Kit's badge rides on the belt (%s)" % fk, fk.get("onBelt") is True, fk)
-chk("(8) Exit has one EXIT sign (%s)" % S.get("hundos100"), S.get("hundos100", {}).get("signs") == 1, S.get("hundos100"))
+gone = [n for n in ("Code 3", "Air Tanker", "Pull Station", "Headquarters", "Exit", "Pyrotechnics", "Field Kit") if n in names.values()]
+chk("(4) none of the retired names is left (%s)" % gone, not gone, names)
 ap = S.get("study60", {})
 chk("(9) Alarm Panel: the documents box beside the panel, no strobe flash (%s)" % ap, ap.get("panel") and ap.get("box") and ap.get("beside") and ap.get("flashes") == 0, ap)
-chk("(10) Sprinklers: nothing solid red in the lower part of the scene (%s)" % S.get("correct5000"), S.get("correct5000", {}).get("lowRed") == [], S.get("correct5000"))
 chk("(11) no svg filter in any of the nine (%s), and every one has a bl- motion layer (still: %s)" % (F["filters"], F["still"]), not F["filters"] and not F["still"])
 chk("(12) two copies share no ids (%s) and every url(#...) resolves inside its own copy (%s)" % (F["idClash"], F["unresolved"]), not F["idClash"] and not F["unresolved"])
 others = {k: v for k, v in F["weight"].items() if k not in NINE}
