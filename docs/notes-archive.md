@@ -36293,3 +36293,41 @@ untouched; the academy is untouched; Code Book, Sapphire, Amethyst, Supernova an
   this decision. check-b382-ifcart still reports `forge` changed in the academy: that is not from this pass (nothing here touches a character).
 - NOT confirmable in Chromium: how the strips look on a phone's real screen at the scale the covers are shown. The Customize tile is the real surface and was looked
   at at 440x956 (dpr 2) and 834x1194. Banner label text "Comes with Breacher ..." follows AVATAR_DISPLAY_NAME, which the character helper renames.
+## 384 round 6 (h-hundo): the hundo grade box is the app's card; Hazmat without tape, placard or walk; the fire; the Extinguisher (NOT on main)
+
+Madison: "The Hundo effects are cool, but the grade box has the old look and not the new one.. it doesn't need to be the exact new one because we still need hundo
+grade boxes to be cool. Just still make it cohesive app wide all classes." / "Could the fire in the sprinkler and extinguisher effects look better?" / "The thermal one
+is absolutely sick. If the extinguisher one needs to be replaced and we get something as cool as that again, then do it." / "The hazmat one I love the concept but it needs to be
+better. I don't like the caution tape and I don't think I like the hazmat placard across the screen? I don't know if I like the hazmat guy coming across the screen either? Maybe
+it's the spray?" The order is now 0, 25, 50, 75, 100 (the lead sets the `need` numbers; nothing here names a count).
+
+**The grade box.** The clean look's rule (`.rs-screen .rs-card`, solid --clean-card, no rim / shadow / blur / tone frame) used to exclude `.hfx-tinted`, so the moment a 100% landed in
+any effect but Confetti the box went back to the old card: translucent glass, a gradient wash, a coloured rim, the red/green frame. Now the tinted box is that same card from its first
+frame; the celebration is ONE layer on it, `.hfx-tint` (z -1, `isolation:isolate` on the card): the effect's wash down from the top at ~half strength, a hairline, a 30px and a 72px glow OUT
+of the card and a light one in from the edge, all from the --hfx-* variables (so Hazmat's unlit beam logic, --hfx-wash, still works in the academy's UFO). The hand-off already fades `.hfx-tint`
+in (--rs-gf), so the glow arrives with the number's colour turn; the tone layers are display:none for every card. Confetti's box stays the plain card with its gold number (check-b383-look (2)
+holds the untinted card to "no shadow"; a glow there would break it). The Customize preview miniature (`.hfx-mock > .rs-card`) got the same. Gate: tools/check-b384-hundobox.py (both classes, five
+effects): the box's colour equals the XP card's and is opaque, no gradient/blur/rim/tone frame; the glow layer is on, behind the words, with a wash, a 20px+ glow out and one in; four colours differ.
+
+**Fire** (shared `ifxSpr.flame`, key ifx-fl5-): each layer fades along its own height (a vertical ramp per shape, tips dissolve), the body throws two side tongues and a licked-off tip, the yellow heart
+has its own side tongue, a hot pool at the root, a soft halo behind, and each outline is stroked twice wide and faint for a soft edge (no svg filter). Both Sprinklers and Extinguisher use it.
+
+**Extinguisher: kept and improved, not replaced.** Replacing it would only be right if a new effect could honestly stand beside the Thermal Camera, whose strength is one coherent screen (a camera display);
+the nearest honest idea, a CO2 discharge frosting the screen, would be ice-blue and collide with the Sprinklers' blue and the 25 rung's red. So: the better fire, and the powder redrawn (cloud sprite
+ifx-cloud5-: lighter, warmer, with the fire's light on its underside). Its place, id 'fireworks' and its tile name are unchanged.
+
+**Hazmat** (ifxHazmat, IFX_HZ; still 7.2s, all clear 5.15, tail 6.1): GONE: the hazard bands, the scene tape, the 704 placard (quarters, frame, sheen, tag, ALL CLEAR tag, its glow), the glint; their sprites
+(stripe, quad, tag, hzFrame, hzSheen, hzTape, hzTagOk) are deleted. WHERE THE SLAM WAS, THE SPILL SURGES: a flash and a shockwave ring out of the box's middle, ten sparks thrown off the BOX's edge,
+the camera kicked (the world wrapper, as before). THE RESPONDER no longer walks across: he comes UP into his corner from under the screen's foot (rise/dn in the rig keyframes), works from where he stands
+and sinks away at the exit. THE JET: `hzSpray` redrawn (key ifx-hzspray2): a solid white core, a body that thickens as it travels, long ligaments and spray at the sides (was a fan of dots). The alert,
+beacons, vapour, the spill film and ooze, the scan, the containment brackets and field, the wash and the all clear (rings, rays, the number's pop) are as they were. The small box (tile stage / unlock
+card) lost its bands and placard (a ring on the surge instead); the tile poster lost its tape, bands and placard; the still is now the responder's helmet inside the lime brackets. Sound (SND_IFX
+"hundo.ufo"): the bands/tape, the four quarters, the placard's flight and the footsteps are out; the surge is the old slam's hit (1.74) without the steel ring; the responder's rise is a rustle, a
+whoosh and one heavy settle (3.34). Gates: check-b384-hzdecon.py (new); check-b384-hazmat.py legs (2)/(4) removed, (5) now "comes up, does not cross", (8) "no placard colours".
+Tools: tools/shoot-fx.py (stills of an effect at chosen moments on the lab's stand-in card, the layer over the box included).
+(h-hundo, later) The hundo box keeps ONE line of its own: its card border is `--hfx-rim` (the effect's colour, a 1px hairline) - the old behaviour gates read the card's border to prove "in its effect's colours from the first frame to the last",
+and that is still true. Everything else of the old card is gone. Gates on this build: check-b384-hundobox (new, 34 PASS; 16 FAIL on the previous build), check-b384-hzdecon (new; 10 FAIL on the previous build), check-b384-hazmat, -fxcool,
+-extspr, -fxstop, -czfx, -ifxnew all PASS; check-behaviour check_b317_hundobox + check_b313_fx: only the 3 confetti "then gold ... border" legs fail, and they fail the same on the previous build (the clean card's transparent border);
+check-sound, check-loops (492, 0 seams), sweep-layout --quick 20/20, check-centering --quick ALL PASS. Failing the same without this work: check-b382-ifcart's three 'forge' art legs, check-b383-look (8) the Home sky's ease back, check-b325-a's
+three "has the hundo box's edge" legs for the XP / pass / unlocked cards (the clean look took their edges). Seen and left: a darker rectangle behind the big "100" in the effect boxes (the lit copy's drop-shadow over background-clip:text) - on the previous build too.
+Phone checks owed: smoothness of the Extinguisher (fire + powder), Hazmat's jet; the glow's strength on an OLED screen; the box's look with the real safe areas. Not merged with 6b15be6 (the lead's new rungs 0/25/50/75/100; academy 0/25/75/125/200): nothing here touches HUNDO_FX / IFC_HUNDO_NEED, expect only notes-archive.md to conflict.

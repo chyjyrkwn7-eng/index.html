@@ -5,13 +5,13 @@ you can to ensure they perfect". In the Fire Code class, on the iPhone 17 Pro Ma
 box on the page plays the ufo rung; its animations are paused and seeked to moments on the effect's own clock (IFX_HZ, or
 the 384 beats where an older build has none) and everything is read off the page:
  (1) the ufo rung in Fire Code is ifxHazmat; its run is 6.5-7.5s with the tail before the total;
- (2) the NFPA 704 placard assembles a quarter at a time: each quarter reaches its place at its own moment, blue (health 1)
-     first and white last, at least 0.12s apart, and they sit as a diamond; then a frame slams round all four;
+ (2) [ROUND 6: REMOVED] the NFPA 704 placard that assembled a quarter at a time and slammed is gone ("I don't like the caution
+     tape and I don't think I like the hazmat placard across the screen") - tools/check-b384-hzdecon.py asserts it is gone;
  (3) the containment scan locks on the box: four brackets fly in from the screen's four corners and lock on the box's four
      corners, drawn OVER the lifted box (their layer stacks above it);
- (4) the placard then sits on a tag over the box, centred on it, and the tag turns over at the all clear;
- (5) the responder walks in from beyond the right edge (wand and all) and his spray reaches the box, swept side to side
-     across it;
+ (4) [ROUND 6: REMOVED] the tag the placard sat on is gone with it;
+ (5) the responder (round 6: no longer walking across the screen) comes up from under the screen's foot into his corner,
+     and his jet reaches the box, swept side to side across it;
  (6) it ends by its total: at the tail every piece has faded, and after the total no layer, box piece or lift is left;
  (7) only transform and opacity move, no ifx sprite has an svg filter, no more than 170 pieces across its layers;
  (8) the small box (a tile's stage) plays its own short one and is gone by its total; the tile and the still draw the
@@ -30,13 +30,13 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 # the 384 beats, for a build that has no IFX_HZ
-BEATS = {"tot": 7.2, "q": [1.0, 1.18, 1.36, 1.54], "slam": 1.74, "brk": 2.38, "lock": 2.64, "docked": 2.66, "walk": 2.95, "spray": 3.84,
+BEATS = {"tot": 7.2, "slam": 1.74, "brk": 2.38, "lock": 2.64, "walk": 2.95, "walked": 3.5, "spray": 3.84,
          "sweep": [3.86, 4.48, 4.96], "sprayEnd": 5.0, "clear": 5.15, "fade": 6.05}
 SETUP = r"""async (beats) => {
   const Z = (typeof IFX_HZ !== 'undefined') ? IFX_HZ : beats;
   try{ hfxWarm('ufo'); }catch(e){}
   /* the sprites drawn to bitmaps first, as on the results screen */
-  for(let i = 0; i < 80 && !['ifx-quad0', 'ifx-quad3', 'ifx-bracket', 'ifx-tag'].every(k => hfxSprites[k] && hfxSprites[k].png); i++) await new Promise(r => setTimeout(r, 100));
+  for(let i = 0; i < 80 && !['ifx-bracket', 'ifx-hzspray2'].every(k => hfxSprites[k] && hfxSprites[k].png); i++) await new Promise(r => setTimeout(r, 100));
   await new Promise(r => setTimeout(r, 300));
   const W = innerWidth, H = innerHeight, bw = Math.min(W - 60, 600), bh = Math.round(bw * .45);
   const card = document.createElement('div'); card.className = 'rs-card rs-grade is-perfect';
@@ -66,26 +66,6 @@ SETUP = r"""async (beats) => {
 MEASURE = r"""() => {
   const X = window.__hz, Z = X.Z, out = {};
   const at = (t, fn) => { X.seek(t); return fn(); };
-  /* (2) the quarters: when each comes to rest where it ends up (sampled every 20ms) */
-  const quads = [0, 1, 2, 3].map(k => X.find('ifx-quad' + k)[0] || null);
-  out.quadsFound = quads.filter(Boolean).length;
-  if(out.quadsFound === 4){
-    const fin = at(Z.slam + .3, () => quads.map(q => X.R(q)));
-    /* home: no transform of its own left (moved, turned or scaled) in the placard it sits in, and shown */
-    const home = q => { const m = (getComputedStyle(q).transform.match(/matrix\(([^)]*)\)/) || [, '1,0,0,1,0,0'])[1].split(',').map(Number);
-      return Math.abs(m[0] - 1) < .01 && Math.abs(m[1]) < .01 && Math.abs(m[2]) < .01 && Math.abs(m[3] - 1) < .01 && Math.abs(m[4]) < .5 && Math.abs(m[5]) < .5 && X.eff(q) > .9; };
-    const land = [null, null, null, null];
-    for(let t = .5; t <= Z.slam + .3; t += .02){ X.seek(t); quads.forEach((q, k) => { if(home(q)){ if(land[k] == null) land[k] = Math.round(t * 100) / 100; } else land[k] = null; }); }
-    out.land = land;
-    const [top, right, bottom, left] = fin;
-    out.diamond = Math.abs(top.cx - bottom.cx) <= 2 && Math.abs(left.cy - right.cy) <= 2 && Math.abs((bottom.cy - top.cy) - (right.cx - left.cx)) <= 3 && top.cy < left.cy && bottom.cy > left.cy;
-    /* the frame round all four, slammed on at the end */
-    const fr = X.find('ifx-hzframe')[0];
-    out.frame = fr ? { before: at(Z.slam - .15, () => X.eff(fr)), after: at(Z.slam + .12, () => X.eff(fr)), wraps: at(Z.slam + .3, () => { const r = X.R(fr); return fin.every(q => q.l >= r.l - 1 && q.r <= r.r + 1 && q.t >= r.t - 1 && q.b <= r.b + 1); }) } : null;
-    /* (4) where the placard is once it has docked: over the box, small */
-    out.dock = at(Z.docked + .5, () => { const d = quads[0].parentElement, r = X.R(d); return { cy: r.cy, w: r.w, vis: X.eff(quads[0]) }; });
-    out.diaW = at(Z.slam + .3, () => X.R(quads[0].parentElement).w);
-  }
   /* (3) the brackets: from the screen's corners onto the box's, over the box */
   const br = X.find('ifx-bracket');
   out.brackets = br.length;
@@ -100,16 +80,13 @@ MEASURE = r"""() => {
     const lay = br[0].closest('.hfx-layer') || br[0].closest('.hfx-box');
     out.zOver = lay ? [+getComputedStyle(lay).zIndex || 0, +getComputedStyle(X.card).zIndex || 0, lay.classList.contains('hfx-box')] : null;
   }
-  /* (4) the tag over the box, turned over at the all clear */
-  const tg = X.find('ifx-tag')[0], ok = X.find('ifx-hztagok')[0];
-  out.tag = tg ? at(Z.docked + .6, () => { const r = X.R(tg.parentElement), v = X.eff(tg); return { cy: r.cy, cx: r.cx, l: r.l, vis: v }; }) : null;
-  out.turned = (tg && ok) ? at(Z.clear + .5, () => [X.eff(tg), X.eff(ok)]) : null;
-  /* (5) the responder: off the screen with his wand before he walks in, on it after; the spray's far end on the box */
-  const suit = X.find('ifx-suit2')[0], sp = X.find('ifx-hzspray')[0];
+  /* (5) the responder: below the screen's foot before he rises, in his corner after, and not walking (his x holds); the jet's far end on the box */
+  const suit = X.find('ifx-suit2')[0], sp = X.find('ifx-hzspray2')[0];
   if(suit){
     const rig = suit.parentElement, arm = X.find('ifx-hzarm2')[0];
-    out.offBefore = at(Z.walk - .02, () => [X.R(suit).l, arm ? X.R(arm).l : -1, X.W]);
-    out.onAfter = at(Z.walk + .7, () => { const r = X.R(suit); return [r.l, r.r, X.W]; });
+    out.offBefore = at(Z.walk - .02, () => [X.R(suit).t, X.H, X.eff(suit)]);
+    out.onAfter = at(Z.walked + .2, () => { const r = X.R(suit); return [r.t, r.b, X.H, X.eff(suit)]; });
+    out.xs = [Z.walked + .2, Z.aim, Z.spray + .5, Z.sprayEnd].map(t => at(t, () => Math.round(X.R(suit).cx)));
   }
   if(sp){
     const probe = document.createElement('i'); probe.style.cssText = 'position:absolute;left:0;top:50%;width:0;height:0;';
@@ -139,7 +116,7 @@ SMALL = r"""async () => {
   const n = h && h.box ? h.box.querySelectorAll('*').length : 0, total = h ? h.total : 0;
   await new Promise(r => setTimeout(r, total + 400));
   const tile = buildHundoFxTile('ufo').querySelector('svg'), still = buildHundoFxStill('ufo');
-  const cols = s => ['#E3262E', '#F5C518', '#F4F4F2', '#1F6FD1'].filter(c => (s || '').toUpperCase().indexOf(c) >= 0).length;
+  const cols = s => ['#E3262E', '#1F6FD1'].filter(c => (s || '').toUpperCase().indexOf(c) >= 0).length;   /* the placard's: none may be drawn now */
   return { n, total, gone: !st.querySelector('.hfx-box'), tile: tile ? tile.outerHTML.length : 0, tileCols: cols(tile && tile.outerHTML), still: still ? still.outerHTML.length : 0, stillCols: cols(still && still.outerHTML) };
 }"""
 SOUND = r"""async () => {
@@ -177,28 +154,16 @@ chk("(1) ...a run of 6.5-7.5s, its tail before its total (total %s, tail %s, lay
     6500 <= d[0] <= 7500 and d[1] < d[0] and info["total"] == d[0], info)
 for dev, R in (("phone", P), ("ipad", I)):
     m = R["m"]
-    land = m.get("land") or [None] * 4
-    order = [3, 0, 1, 2]   # blue, red, yellow, white
-    seq = [land[k] for k in order]
-    one_by_one = all(x is not None for x in seq) and all(seq[i + 1] - seq[i] >= .12 for i in range(3))
-    chk("(2) %s: the placard's quarters land one at a time - blue 1 first, white last, 0.12s+ apart (blue/red/yellow/white at %s)" % (dev, seq), m.get("quadsFound") == 4 and one_by_one, m.get("land"))
-    chk("(2) %s: ...and sit as a diamond" % dev, m.get("diamond"), m)
-    fr = m.get("frame")
-    chk("(2) %s: ...then a frame slams round all four (%s)" % (dev, fr), fr and fr["before"] < .05 and fr["after"] > .9 and fr["wraps"], fr)
     lockErr, vis = m.get("lockErr") or [999] * 4, m.get("lockVis") or [0] * 4
     chk("(3) %s: four brackets lock on the box's four corners (%s of a bracket off, shown %s)" % (dev, lockErr, vis), m.get("brackets") == 4 and max(lockErr) <= .5 and min(vis) > .9, m)
     fc = m.get("fromCorners") or [1] * 4
     chk("(3) %s: ...flying in from the screen's four corners (%s of the diagonal away as they start)" % (dev, fc), max(fc) <= .2, fc)
     z = m.get("zOver")
     chk("(3) %s: ...drawn over the lifted box (their layer z %s, the box %s)" % (dev, z and z[0], z and z[1]), z and (z[2] or z[0] > z[1]), z)
-    tag, box, dock = m.get("tag"), m["box"], m.get("dock") or {}
-    chk("(4) %s: the placard sits on a tag over the box, centred on it (tag at %s, box %s..%s)" % (dev, tag, round(box["t"]), round(box["b"])),
-        tag and tag["vis"] > .9 and tag["cy"] < box["t"] and abs(tag["cx"] - box["cx"]) < box["w"] * .2 and dock.get("cy", 1e9) < box["t"] + 6 and dock.get("w", 1e9) < (m.get("diaW") or 0) * .4 and dock.get("vis", 0) > .9, [tag, dock, m.get("diaW")])
-    tn = m.get("turned")
-    chk("(4) %s: ...and the tag turns over at the all clear (%s)" % (dev, tn), tn and tn[0] < .05 and tn[1] > .9, tn)
-    ob, oa = m.get("offBefore"), m.get("onAfter")
-    chk("(5) %s: the responder is beyond the right edge, wand and all, before he walks in (%s), and on the screen after (%s)" % (dev, ob, oa),
-        ob and ob[0] >= ob[2] and ob[1] >= ob[2] and oa and oa[0] < oa[2] and oa[1] > oa[2] * .5, [ob, oa])
+    box = m["box"]
+    ob, oa, xs = m.get("offBefore"), m.get("onAfter"), m.get("xs") or [0, 1e9]
+    chk("(5) %s: the responder is under the screen's foot before he comes up (top %s of %s) and in his corner after (%s) - not walking across (x %s)" % (dev, ob and ob[0], ob and ob[1], oa, xs),
+        ob and (ob[0] >= ob[1] - 2 or ob[2] < .05) and oa and oa[0] < oa[2] and oa[3] > .9 and max(xs) - min(xs) <= 8, [ob, oa, xs])
     sp = m.get("spray")
     onbox = lambda p: p and p["vis"] > .9 and box["l"] - box["w"] * .08 <= p["x"] <= box["r"] + box["w"] * .08 and box["t"] - box["h"] * .25 <= p["y"] <= box["b"] + box["h"] * .25
     chk("(5) %s: his spray reaches the box (its far end at %s)" % (dev, sp and sp["c"]), sp and onbox(sp["c"]) and onbox(sp["a"]) and onbox(sp["b"]), sp)
@@ -212,7 +177,7 @@ for dev, R in (("phone", P), ("ipad", I)):
         i2["props"] and all(p in ("opacity", "transform") for p in i2["props"]) and not i2["filters"] and i2["pieces"] <= 170 and i2["hz"] >= 10, i2)
 s = P["small"]
 chk("(8) the small box plays its own (%s pieces) and is gone by its total (%sms)" % (s["n"], s["total"]), s["n"] >= 6 and s["gone"] and 3500 <= s["total"] <= 6000, s)
-chk("(8) the tile and the still draw the placard's four colours (%s/4, %s/4)" % (s["tileCols"], s["stillCols"]), s["tile"] > 200 and s["still"] > 100 and s["tileCols"] == 4 and s["stillCols"] == 4, s)
+chk("(8) the tile and the still draw neither of the placard's red and blue any more (%s/4, %s/4)" % (s["tileCols"], s["stillCols"]), s["tile"] > 200 and s["still"] > 100 and s["tileCols"] == 0 and s["stillCols"] == 0, s)
 snd = P["sound"]
 slam, clear = BEATS["slam"], BEATS["clear"]
 chk("(9) its sound renders in Fire Code, not silent, not clipping (peak %.2f, %.1fs)" % (snd["peak"], snd["len"]), snd["cls"] == "ifc" and .05 < snd["peak"] < 1 and snd["len"] >= 6.5, snd)
