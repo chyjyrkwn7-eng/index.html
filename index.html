@@ -77969,7 +77969,7 @@ const IFC_BANNER_ART = {
       '<rect x="0" y="158" width="480" height="22" fill="#14161C"/><rect x="0" y="156" width="480" height="3" fill="#3E4250"/>' +
       conduit(PX + 30) + conduit(PX + 120) + conduit(DX + DW / 2) +
       /* ON CALL (384, "the names do need to line up with the challenge" - 60 hours studied): the panel is always on, and so is whoever is
-         on it: a wall clock at ten past three in the morning, a desk lamp and a mug on the ledge below */
+         on it: a wall clock past one in the morning, a desk lamp and a mug on the ledge below */
       '<circle cx="65" cy="61" r="26" fill="#000" opacity=".35"/><circle cx="63" cy="58" r="25" fill="#2A2D34" stroke="#0A0C10" stroke-width="1.4"/><circle cx="63" cy="58" r="21.4" fill="#F4F1EA"/>' +
       Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6; return fbL("M" + bnF(63 + Math.sin(t) * (i % 3 ? 18.4 : 16.6)) + " " + bnF(58 - Math.cos(t) * (i % 3 ? 18.4 : 16.6)) + " L" + bnF(63 + Math.sin(t) * 20) + " " + bnF(58 - Math.cos(t) * 20), "#2A2D34", i % 3 ? 1 : 1.8); }).join("") +
       fbL("M63 58 L" + bnF(63 + Math.sin(Math.PI * 0.2) * 11) + " " + bnF(58 - Math.cos(Math.PI * 0.2) * 11), "#14161C", 2.4) + fbL("M63 58 L" + bnF(63 + Math.sin(Math.PI * 0.6) * 17) + " " + bnF(58 - Math.cos(Math.PI * 0.6) * 17), "#14161C", 1.6) + fbC(63, 58, 2.2, "#14161C") +
@@ -78034,13 +78034,17 @@ const IFC_BANNER_ART = {
       '<rect x="330" y="88" width="44" height="28" rx="2" fill="#16181E"/><rect x="333" y="91" width="38" height="22" fill="#0E1A26"/><rect x="348" y="114" width="8" height="3" fill="#16181E"/>' +
       '<path d="M300 116 L428 116" stroke="#BFE6FF" stroke-width=".8" opacity=".35"/>' +
       /* the wastebasket on fire, scorched at the rim */
-      '<ellipse cx="240" cy="160" rx="96" ry="20" fill="url(#' + u + 'fire)"/>' +
+      '<ellipse cx="240" cy="156" rx="110" ry="26" fill="url(#' + u + 'fire)"/>' +
       '<path d="M224 128 L256 128 L252 158 L228 158 Z" fill="url(#' + u + 'can)"/>' + [232, 240, 248].map(x => '<path d="M' + x + ' 130 L' + (x + (x - 240) * -.1) + ' 156" stroke="#2A2E36" stroke-width="1" opacity=".6"/>').join("") +
       '<ellipse cx="240" cy="128" rx="16" ry="3" fill="#1A1C22"/><path d="M224 128 Q240 124 256 128" fill="none" stroke="#14161A" stroke-width="2"/>' +
       '<path d="M226 132 L254 132" stroke="#14161A" stroke-width="2" opacity=".6"/>' + splash;
     return [
       { svg: base },
-      { svg: fbFlames(rnd, 227, 255, 129, 10, 24, "#FF7A2E", 6) + fbFlames(rnd, 230, 252, 129, 6, 14, "#FFD36A", 6), box: [218, 100, 44, 32], o: [240, 129], cls: "bl-flame", style: "animation-duration:1.1s" },
+      /* DOWNPOUR (384: "the names do need to line up"; "fire in it must look better"): a real fire in the basket - dark red body, orange middle, pale core,
+         tongues leaning off a charred paper pile - flickering, with a second smaller body on its own clock and sparks going up */
+      { svg: fbFire(240, 130, 15, 40, 3) + fbP("M226 130 Q232 122 240 126 Q248 120 254 130 Z", "#1A1008"), box: [212, 86, 56, 48], o: [240, 130], cls: "bl-flame", style: "animation-duration:1.1s" },
+      { svg: fbFire(246, 130, 9, 26, -3), box: [232, 100, 32, 32], o: [246, 130], cls: "bl-flame", style: "animation-duration:.8s;animation-delay:-.4s" },
+      { svg: fbEmberSheet(rnd, 60, 60, 12, ["#FFD25A", "#FF8A1E", "#FFFFFF"]), box: [210, 40, 60, 90], vb: [0, 0, 60, 90], cls: "bl-rise", style: "animation-duration:3.4s" },
       { svg: fbPuffs(rnd, 240, 114, 5, 9, "url(#" + u + "puff)"), box: [200, 50, 80, 76], cls: "bl-steam", style: "animation-duration:3.2s" },
       { svg: fbPuffs(bnRand(3810), 246, 114, 4, 8, "url(#" + u + "puff)"), box: [200, 50, 80, 76], cls: "bl-steam", style: "animation-duration:3.2s;animation-delay:-1.6s" },
       { svg: [64, 152, 328, 416].map(x => '<ellipse cx="' + x + '" cy="166" rx="16" ry="2.6" fill="none" stroke="#D8F0FF" stroke-width=".9" opacity=".7"/>').join(""), box: [40, 160, 400, 12], cls: "bl-glow", style: "animation-duration:.9s" },
