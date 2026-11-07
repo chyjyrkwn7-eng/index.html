@@ -64,8 +64,8 @@ SNAP = r"""(a) => {
     const miss = [...new Set(refs.filter(r => !ia.has(r)))]; if(miss.length) out.unresolved.push([id, miss.slice(0, 3)]); });
   /* the lettering's drawn paths, by the app's own sign-writer */
   const tp = (s, cx, cy, h) => { try{ return fbTextPath(s, cx, cy, h); }catch(e){ return ''; } };
-  out.tape = { dnc: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('DO NOT CROSS', 328, 30, 8.4)) >= 0 : false,
-    fs: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('FIRE SCENE', 214, 30, 8.4)) >= 0 : false,
+  out.tape = { dnc: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('DO NOT CROSS', 304, 30, 8.4)) >= 0 : false,
+    fs: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('FIRE SCENE', 196, 30, 8.4)) >= 0 : false,
     fireLine: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('FIRE LINE', 300, 23.5, 7)) >= 0 : false };
   out.glyphs = ['P', 'K', 'W', 'V', 'G', '0', '5', '9', '%', '-'].filter(g => !(window.FB_GLYPH || (typeof FB_GLYPH !== 'undefined' && FB_GLYPH) || {})[g]);
   /* shapes: counts of things in the still pictures, mounted off screen */

@@ -78083,8 +78083,8 @@ const IFC_BANNER_ART = {
        whole inside the frame: three words' worth, no half-letters at the edge. */
     const tape = '<g transform="rotate(-5 330 30)"><path d="M130 21.5 L530 21.5 L530 38.5 L130 38.5 Z" fill="#F2C21E"/>' +
       '<path d="M130 22 L530 22 M130 38 L530 38" stroke="#8A6A0A" stroke-width=".8"/>' +
-      fbText("FIRE SCENE", 214, 30, 8.4, "#14161C", 1.9) + fbText("DO NOT CROSS", 328, 30, 8.4, "#14161C", 1.9) + fbText("FIRE SCENE", 436, 30, 8.4, "#14161C", 1.9) +
-      [271, 382, 160].map(x => '<path d="M' + x + ' 25.4 l3.6 4.6 l-3.6 4.6 l-3.6 -4.6 Z" fill="#14161C"/>').join("") + '</g>';
+      fbText("FIRE SCENE", 196, 30, 8.4, "#14161C", 1.9) + fbText("DO NOT CROSS", 304, 30, 8.4, "#14161C", 1.9) + fbText("FIRE SCENE", 410, 30, 8.4, "#14161C", 1.9) +
+      [250, 358, 144].map(x => '<path d="M' + x + ' 25.4 l3.6 4.6 l-3.6 4.6 l-3.6 -4.6 Z" fill="#14161C"/>').join("") + '</g>';
     const base = '<defs>' + bnLin(u + "wall", [[0, "#0C0A0A"], [0.6, "#1E1814"], [1, "#2A221C"]]) + bnLin(u + "clean", [[0, "#5A544E", 0.2], [0.7, "#8A8278", 0.75], [1, "#A89E90", 0.9]]) +
       bnLin(u + "floor", [[0, "#221C18"], [1, "#0A0807"]]) + bnRad(u + "ember", [[0, "#FF7A2E", 0.5], [1, "#FF7A2E", 0]]) + bnLin(u + "beam", [[0, "#FFF6D8", 0.5], [1, "#FFF6D8", 0.06]], 0, 0, 1, 0) +
       bnRad(u + "spot", [[0, "#FFF3D0", 0.45], [1, "#FFF3D0", 0]]) + bnLin(u + "door", [[0, "#8A9AB0"], [1, "#4E5A6E"]]) + bnLin(u + "spill", [[0, "#8A9AB0", 0.28], [1, "#8A9AB0", 0]]) + bnRad(u + "puff", [[0, "#9A9088", 0.34], [1, "#9A9088", 0]]) + bnLin(u + "heater", [[0, "#6A625A"], [1, "#2A2420"]]) + '</defs>' +
