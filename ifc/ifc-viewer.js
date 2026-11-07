@@ -1507,6 +1507,13 @@ async function countyChars(doc, p, cache) {
     if (ln) { ln.items.push(it); ln.x0 = Math.min(ln.x0, it.x); ln.x1 = Math.max(ln.x1, it.x + it.w); }
     else lines.push({ p, ref: it.y, y: it.y, x0: it.x, x1: it.x + it.w, items: [it] });
   }
+  // (384 table side cells) a table cell centred between the two lines of its neighbour ("100 ft." between the two lines of "Motor vehicles
+  // fuel-dispensing ... / dispensing station dispenser") sorts between them and cut the neighbour's sentence in two, so the row's first
+  // cell was found as its first line alone. A line that stands right of both its neighbours and between them is read after them.
+  for (let i = 1; i < lines.length - 1; i++) {
+    const L = lines[i], a = lines[i - 1], b = lines[i + 1];
+    if (L.x0 >= Math.max(a.x1, b.x1) - 2 && a.ref - L.ref <= 9 && L.ref - b.ref <= 9) { lines[i] = b; lines[i + 1] = L; i++; }
+  }
   for (const ln of lines) {
     ln.items.sort((a, b) => a.x - b.x);
     const wide = ln.items.reduce((m, it) => (it.w > m.w ? it : m), ln.items[0]);

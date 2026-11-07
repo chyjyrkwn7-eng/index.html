@@ -36117,3 +36117,16 @@ Madison, Delta's Settings beside ours: "Our icons are not the same shape ... eve
 Measured on the two screenshots (same phone, same scale; Delta = ours x .85): Delta's tile 27.6pt, row pitch 51pt, label ~15.5pt, value the same, the second line ~12.5pt, text 14pt after the tile, hairline from the text to 18pt short of the card's right edge, the chevron 7 x 11pt with a ~1.9pt stroke in a flat grey (rgba(235,235,245,.3)), and an iOS squircle tile. Ours were 32 / 60 / 18 / 14 / 15, a bright chevron and an 8px rounded square. (The earlier "Delta's size" pass, 384 round 3, had gone the other way off a different pair of screenshots.)
 - Rows 51px (padding 8px 18px, gap 14px); tiles 28px with a 17px glyph on one 2.05-unit stroke (=1.45px), `border-radius:6.3px`, and for every tile without a new-dot a superellipse (n=5) `mask-image` (a data-URI polygon) - the dot sits on the tile's corner and a mask would cut it; labels and values 15.5px, sub 12.5px; chevron colour rgba(235,235,245,.3), opacity 1; hairline left = 18 + 28 + 14.
 - The switch rows (`label.opt.has-tile` on Sound, Study, Motion, Leaderboard), Account's name row and Sign out, the sync code, Advanced's red rows and Contributors take the same sizes. `check-b384-settings.py` now names Delta's numbers as ranges (49-53 / 27-29 / 16-18 / 15-16.5).
+
+## 384 - county table rows: a side cell centred between a neighbour's two lines (Fire Code code pictures)
+
+Found by the media helper going through every Fire Code citation picture: Harris County Table 5609.4.1's fuel-dispenser row
+(`ch56-016`) was gold on its first line and on "100 ft.", with the second line of the same cell ("dispensing station dispenser")
+outside the gold. The booklet prints a cell's value centred between the two lines of its neighbour; `countyChars` lists lines top to
+bottom, so "100 ft." sorted BETWEEN the two lines, the highlight's first cell read "...propane100ft dispensing station dispenser", and
+the row's first cell was found as its first line alone. Fix (`ifc/ifc-viewer.js`, `countyChars`): a line that stands right of both
+neighbours and between them (within 9pt of each) is read after them. Of the 401 distinct county citations only two change: 5609.4.1
+and Table 105.5.9's "Carbon dioxide used in carbon dioxide enrichment / systems | 875 (100 lb)" - both now cover every line.
+Gate: `tools/check-b384-countyrows.py` (PDFJS_DIR only - the county booklet ships in the repo); FAILS `--against HEAD` (the two rows), passes now.
+Not fixed, reported: the county tables' gold stops 15-25px short of the rules on 405.3 / 1004.5 / 5609.4.1; Exhibit B Table 508.4's own grey
+cell shading shows under the yellow. The book-row gate (`check-b384-tablerows.py`) needs the owner's book, which was not on the machine; the change does not touch the book path.
