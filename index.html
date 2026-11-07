@@ -78427,7 +78427,7 @@ const IFC_BANNER_ART = {
   flare_genesis(u){
     const rnd = bnRand(3816);
     const st = bnStarsSplit(rnd, 60, 70);
-    const SX = 240, SY = 116;
+    const SX = 240, SY = 102;
     let rays = ""; for(let i = 0; i < 28; i++){ const a = Math.PI + i / 27 * Math.PI, c = Math.cos(a), s = Math.sin(a), r1 = 28, r2 = i % 2 ? 70 : 104, w = .035;
       rays += '<path d="M' + bnF(SX + Math.cos(a - w) * r1) + ' ' + bnF(SY + Math.sin(a - w) * r1) + ' L' + bnF(SX + c * r2) + ' ' + bnF(SY + s * r2) + ' L' + bnF(SX + Math.cos(a + w) * r1) + ' ' + bnF(SY + Math.sin(a + w) * r1) + ' Z"/>'; }
     /* the stones: a tall trilithon, then pairs going out, each a rounded slab with its long shadow to the right */
@@ -78444,7 +78444,7 @@ const IFC_BANNER_ART = {
       { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
       { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="url(#' + u + 'corona)"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:4.4s" },
       { svg: '<g fill="#FFE9B8" opacity=".5">' + rays + '</g>', box: [SX - 110, SY - 110, 220, 220], vb: [SX - 110, SY - 110, 220, 220], o: [SX, SY], cls: "bl-spin", style: "animation-duration:90s" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="40" fill="url(#' + u + 'sun)"/><circle cx="' + SX + '" cy="' + SY + '" r="24" fill="#FFF8E4"/>', box: [SX - 40, SY - 40, 80, 80], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:3.6s" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="56" fill="url(#' + u + 'sun)"/><circle cx="' + SX + '" cy="' + SY + '" r="31" fill="#FFF8E4"/>', box: [SX - 56, SY - 56, 112, 112], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:3.6s" },
       /* the dark world's edge, lit along its rim */
       { svg: '<path d="M-20 140 Q240 124 500 140 L500 180 L-20 180 Z" fill="url(#' + u + 'world)"/><path d="M-20 140 Q240 124 500 140" fill="none" stroke="#FFC0A0" stroke-width="1.6" opacity=".8"/>' + shadows },
       { svg: '<rect x="-30" y="124.4" width="540" height="3.4" fill="url(#' + u + 'streak)"/>', box: [-30, 120, 540, 12], cls: "bl-shimmer", style: "animation-duration:3.4s" },
