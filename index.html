@@ -6734,6 +6734,13 @@
   @media (min-width:40rem){
     .vroom-racebar{ margin-top:3.3rem; }
   }
+  /* (384 r5) NOT DURING A QUESTION, THE LINE STARTS BELOW THE CHAT BUTTON ON EVERY SCREEN, PHONE TOO. On the results screen
+     (while others are still racing) there is no counter row above the line, and the fixed chat button sat on the finish flag:
+     "Why is the chat icon on top of the race?" A question keeps its own arrangement (counter row, line pinned under it). */
+  .wrap:not(:has(.qnumrow, .pausepanel)) .vroom-racebar{ margin-top:3.8rem; }
+  @media (min-width:40rem){ .wrap:not(:has(.qnumrow, .pausepanel)) .vroom-racebar{ margin-top:4.2rem; } }
+  /* and in a question on a phone, a little air under the pinned Pause (its pill is taller than the row, and the finish flag touched it) */
+  @media (max-width:39.99rem){ .wrap:has(.qnumrow, .pausepanel) .vroom-racebar{ margin-top:.4rem; } }   /* the tablet's chat button is 52px */
   .vroom-racetrack{
     position:relative; height:5.9rem;
     background:rgba(128,128,128,.14); border-radius:.35rem;   /* (384 r5) square-ended, so the start line and the finish meet its ends instead of floating inside a pill's curve */
