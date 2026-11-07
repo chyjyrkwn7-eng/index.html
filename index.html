@@ -56221,10 +56221,14 @@ const AVATAR_CHARACTERS = [
      characters." The Queen and the Dragon went in 242, the Samurai now.
      Retired characters stay in the table so an old row anywhere still
      resolves - RETIRED_CHARACTER_TO says what each one is drawn as. */
-  { id: "ninja", kind: "ninja" },
+  /* (384) THREE STARTERS: "I think we have too many starters. I love the wizard but no one has it selected ... removing two starters and leaving
+     just three. Let's get rid of ninja, and wizard. (This goes for all classes) if someone has either of these selected change it to one of
+     the other available starters by random." Retired like the queen and the samurai: the drawing stays so an old row anywhere still shows,
+     and retireStarters384() moves whoever wears one. */
+  { id: "ninja", kind: "ninja", retired: true },
   { id: "ghost", kind: "ghost" },
   { id: "queen", kind: "queen", retired: true },
-  { id: "wizard", kind: "wizard" },
+  { id: "wizard", kind: "wizard", retired: true },
   { id: "grizzly", kind: "grizzly" },
   { id: "alien", kind: "alien" },
   { id: "samurai", kind: "samurai", retired: true },
@@ -56449,6 +56453,7 @@ function avatarGlowColor(id){
    sentence shown to somebody who has not earned it can never drift
    apart - the same reason TIER_UNLOCKS carries its own label. */
 const MARKSMAN_RUN = 250;
+const MODE_TRIES = 3;   /* (384) the Hive's challenge: every mode this many times (before CHARACTER_FEATS reads it) */
 /* 500, not 300 (build 292): "300 questions in a single day is weak."
    The feat key stays busyday300 - it is an id, like streak100. */
 const HIVE_DAY = 500;
@@ -56460,9 +56465,9 @@ const CHARACTER_FEATS = {
      the live streak, so a Detective earned at ten was taken back by the
      next wrong daily question. dailyCorrectBest keeps the longest run;
      the current one still counts so nothing reads lower than it did. */
-  daily10:  { label: "Answer 10 daily questions correctly in a row",
-              done: () => dailyBestRun() >= 10,
-              have: () => dailyBestRun(), need: 10 },
+  daily10:  { label: "Answer 10 daily questions correctly",
+              done: () => dailyCorrectCount() >= 10,
+              have: () => Math.min(dailyCorrectCount(), 10), need: 10 },
   /* hardcore10 ("Beat Hardcore on 10 units") was here, the Masked One's
      old feat. No character has used it since the Masked One moved on,
      and it went with Game mode in build 283 (retired/game-mode.md). */
@@ -56542,9 +56547,10 @@ const CHARACTER_FEATS = {
      counts. The Virtual Room one counts `store.vrWins`, which a one-off
      scan of the finished rooms still in Firestore seeds for anybody who
      won before it was tracked (see seedVroomHistory). */
-  vrwins5:   { label: "Place first in a Virtual Room 5 times",
-               done: () => (store.vrWins || 0) >= 5,
-               have: () => (store.vrWins || 0), need: 5 },
+  /* 3 SINCE BUILD 384 (was 5): "The strobe challenge, it says place first in a virtual room 5 times, make that 3." Every class. The key stays vrwins5. */
+  vrwins5:   { label: "Place first in a Virtual Room 3 times",
+               done: () => (store.vrWins || 0) >= 3,
+               have: () => Math.min(store.vrWins || 0, 3), need: 3 },
   /* Build 232: "Ensure there's a character for finishing first in 10
      virtual room matches". The same counter the Champion reads, so wins
      from before this shipped count. */
@@ -56581,10 +56587,10 @@ const CHARACTER_FEATS = {
      before it kept the day each unit was aced. */
   /* 5 SINCE BUILD 258 (was 7): "the get 7 different hundos is a lot
      too, can we make it 5?" Lowering it takes nothing from anybody. The
-     key stays `hundo7day`. */
-  hundo7day: { label: "Get a hundo in 5 different units in one day",
-               done: () => hundoDayCount() >= 5,
-               have: () => hundoDayCount(), need: 5 },
+     key stays `hundo7day`. 3 SINCE BUILD 384 (was 5): "Toxic spill, make that 3 (change for all classes)". */
+  hundo7day: { label: "Get a hundo in 3 different units in one day",
+               done: () => hundoDayCount() >= 3,
+               have: () => Math.min(hundoDayCount(), 3), need: 3 },
   /* Build 243, the K-9's; the Scholar's since 244. Time put in, which nothing else in the app
      rewards - every other challenge counts a result. Read straight off
      the study log the calendar already keeps, so every minute studied
@@ -56626,10 +56632,11 @@ const CHARACTER_FEATS = {
      against the device's own calendar day; the best day is kept, so a
      quiet day after it takes nothing back. Nothing kept answers per day
      before this build, so it counts from here. */
-  busyday300: { label: "Answer " + HIVE_DAY + " questions in a single day",
-                done: () => busiestDay() >= HIVE_DAY,
-                have: () => Math.min(busiestDay(), HIVE_DAY), need: HIVE_DAY,
-                note: "Any mode counts. Your best day from this update on is what counts." },
+  /* (384) was "Answer 500 questions in a single day" - too like the Ronin's/Drone Pilot's 500-question test. Now every mode, three times. */
+  busyday300: { label: "Play every mode " + MODE_TRIES + " times",
+                done: () => modeCoverage().done >= modeCoverage().total,
+                have: () => modeCoverage().done, get need(){ return modeCoverage().total; },
+                note: "A Drill, a Test, a Retake, the Daily question and a Virtual Room match, " + MODE_TRIES + " of each. What you have already played counts." },
   studyrun7: { label: "Study 7 days in a row",
                done: () => bestStudyRun() >= 7,
                have: () => Math.min(bestStudyRun(), 7), need: 7,
@@ -56663,6 +56670,17 @@ const CHARACTER_FEATS = {
                get need(){ return ultimateProgress().need; },
                get note(){ return ultimateProgress().note; } }
 };
+/* (384) FIRE CODE'S OWN NUMBERS for two challenges. The Hazmat (id marksman, streak100): "it says in a single test.. it doesn't need to be a
+   single test though ... For the ifc one, make that 100" - the run is the longest right-answer streak across tests (lifetime.longestStreak)
+   or inside one (bestTestStreak), whichever is longer, and 100. The Hydrant's slot (id timekeeper, days30): "In the ifc one, make that 14
+   different days". The academy keeps its own (250 in one test; 30 days). */
+if(window.NOVA_CLASS === "ifc"){
+  CHARACTER_FEATS.streak100 = { label: "Answer 100 questions in a row without a miss",
+    done: () => ifcRunBest() >= 100, have: () => Math.min(ifcRunBest(), 100), need: 100 };
+  CHARACTER_FEATS.days30 = { label: "Study on 14 different days",
+    done: () => studyDaysTotal() >= 14, have: () => Math.min(studyDaysTotal(), 14), need: 14 };
+}
+function ifcRunBest(){ return Math.max(Number(store.bestTestStreak) || 0, Number(store.lifetime && store.lifetime.longestStreak) || 0, Number(store.lifetime && store.lifetime.currentStreak) || 0); }
 /* ---- THE ULTIMATE UNLOCK (build 304) ----
    "The unlock requirement will be, unlock all characters and banners and
    themes." Counted from the unlock checks the rest of the app already
@@ -56732,8 +56750,13 @@ const HUNDO_FX = [
    come sooner there: 25, 50, 75 and the top one (Hazmat, IFX_DEF) at 150. Set on the rows themselves, here, before anything
    reads them; held off the count like every rung, so lowering one only hands it over (its pop-up shows once). */
 if(window.NOVA_CLASS === "ifc"){
-  const IFC_HUNDO_NEED = { fireworks: 25, underwater: 50, bubbles: 75, ufo: 150 };
+  const IFC_HUNDO_NEED = { fireworks: 25, underwater: 50, bubbles: 75, ufo: 100 };   /* (384) the top one 100, not 150: "150 hundos is kinda a lot for the highest one. Make that 100." */
   HUNDO_FX.forEach(d => { if(IFC_HUNDO_NEED[d.id] != null) d.need = IFC_HUNDO_NEED[d.id]; });
+} else {
+  /* (384) THE ACADEMY'S, TONED DOWN: "The police academy class, tone down the hundo requirements there as well. Like the highest one there should be
+     200." The top rung was already 200 (lowered from 350 in 327); the three under it come down so the climb starts sooner: 25, 75, 125, 200. */
+  const AC_HUNDO_NEED = { fireworks: 25, underwater: 75, bubbles: 125, ufo: 200 };
+  HUNDO_FX.forEach(d => { if(AC_HUNDO_NEED[d.id] != null) d.need = AC_HUNDO_NEED[d.id]; });
 }
 /* An id from an older build, read as the rung that replaced it. */
 const HUNDO_FX_ALIAS = { worldtree: "underwater" };
@@ -56763,7 +56786,16 @@ function hundoFxInUse(){
 }
 function hundoFxNeedText(d){ return d.need > 0 ? "Earn " + d.need + " hundos" : "Yours from day one"; }
 __bm("L46707");
-const ULTIMATE_TOP = "zenith";
+/* (384) ONE ULTIMATE PER CLASS: "The ultimate characters and ultimate banners. There only needs to be one instead of three, for ifc, only keep the
+   star ranger and its banner. For the academy, keep astral and its banner. Change the astral challenge to zenith's though. This character will
+   now just fall into challenges." Fire Code keeps Zenith (Star Ranger); the academy keeps Astral, which now asks for everything Zenith asked
+   (every other character, banner, theme and hundo effect). The other two are retired per class (characters here, banners after BANNERS);
+   whoever wears one is moved by retireStarters384(). It is listed with the challenge rewards (Customize, the unlock card). */
+const ULTIMATE_TOP = window.NOVA_CLASS === "ifc" ? "zenith" : "astral";
+AVATAR_CHARACTERS.forEach(c => {
+  if(c.ultimate && c.id !== ULTIMATE_TOP) c.retired = true;
+  if(c.id === "astral" && ULTIMATE_TOP === "astral") c.feat = "everything";
+});
 function collectionProgress(which){
   const items = which === "banners"
     ? BANNERS.filter(b => !b.ultimate).map(b => () => { try{ return bannerEarned(b.id); }catch(e){ return false; } })
@@ -56824,6 +56856,20 @@ function noteAnsweredToday(){
   if(store.dayAnswered.n > (Number(store.dayAnsweredBest) || 0)) store.dayAnsweredBest = store.dayAnswered.n;
 }
 function dailyBestRun(){ return Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak || 0); }
+/* (384) THE INSPECTOR'S CHALLENGE IS A TOTAL: "instead of 10 daily questions right in a row, just make it get 10 daily questions right."
+   store.dailyCorrectTotal counts every daily question answered right from this build on; an account that already had a run counts at least
+   its best run (applyLoadedData seeds it), so nobody who held the Inspector or the Detective loses it. */
+function dailyCorrectCount(){ return Math.max(Number(store.dailyCorrectTotal) || 0, dailyBestRun()); }
+/* (384) THE HIVE'S / SPRINKLER HEAD'S CHALLENGE: "Sprinkler head and drone pilot are like the exact same challenge" (500 questions in a day, a test
+   of 500 questions) - the Hive now asks for something no other reward does: every way to study, three times each. Read off counters the
+   app already keeps, so what an account has done already counts. Five modes; the bar is how many are done. */
+function modeCoverage(){
+  const L = store.lifetime || {};
+  const parts = [
+    ["Drill", Number(L.drillPlays) || 0], ["Test", Number(L.examPlays) || 0], ["Retake", Number(store.retakenQuestions) || 0],
+    ["Daily question", dailyCorrectCount()], ["Virtual Room", Number(store.vrMatches) || 0]];
+  return { parts, done: parts.filter(p => p[1] >= MODE_TRIES).length, total: parts.length };
+}
 function unitStreakBest(){ return Math.max(store.unitHundoStreakBest || 0, store.unitHundoStreak || 0); }
 /* ONCE PER ACCOUNT (build 289): the counters the new rules read, filled
    in from what is already on record so nobody starts them at zero.
@@ -56942,14 +56988,16 @@ const UNLOCK_WINDOWS = {
   /* Detective: daily questions answered in a row. A miss ends the run; a
      skipped day does not (see summarize). */
   "feat:daily10": () => {
-    const need = CHARACTER_FEATS.daily10.need, now = Number(store.dailyCorrectStreak) || 0;
-    return { now, need, label: "Current run", tail: "in a row",
-      note: "The daily question on Home. A wrong answer starts the run over; a day you skip does not." + unlockBestLine(dailyBestRun(), now, "in a row") };
+    const need = CHARACTER_FEATS.daily10.need, now = Math.min(dailyCorrectCount(), need);
+    return { now, need, label: "Answered right", tail: "daily questions",
+      note: "The daily question on Home. Every one you answer right counts; a miss takes nothing away." };
   },
   /* Marksman: inside ONE test, so outside a test there is nothing in
      progress to show - the bar is the best test so far, and says so. */
   "feat:streak100": () => {
     const need = CHARACTER_FEATS.streak100.need;
+    if(window.NOVA_CLASS === "ifc") return { now: Math.min(ifcRunBest(), need), need, label: "Best run", tail: "in a row",
+      note: "Right on the first try. A miss starts the count over; it carries from one test to the next. The bar shows your best run so far." };
     return { now: Number(store.bestTestStreak) || 0, need, label: "Best in one test", tail: "",
       note: "Right on the first try, all inside one test. A miss starts the count over, and so does a new test. The bar shows your best test so far." };
   },
@@ -56959,12 +57007,6 @@ const UNLOCK_WINDOWS = {
     return { now, need, label: "Today", tail: "different units",
       note: "A hundo is 100% on a whole unit. All " + need + " have to be on the same day: today's count starts over at midnight." +
         unlockBestLine(Number(store.hundoDayBest) || 0, now, "units") };
-  },
-  /* Hive: questions answered on today's date, in any mode. */
-  "feat:busyday300": () => {
-    const need = CHARACTER_FEATS.busyday300.need, now = answeredToday();
-    return { now, need, label: "Today", tail: "questions",
-      note: "Any mode counts. Today's count starts over at midnight." + unlockBestLine(Number(store.dayAnsweredBest) || 0, now, "questions") };
   },
   /* Koi: days in a row with study time on the log. */
   "feat:studyrun7": () => {
@@ -57179,7 +57221,7 @@ function characterLockMessage(id){
    return, and which callers append straight into a row.
 
    This is not hypothetical: the leaderboard rows did
-   `appendChild(buildAvatarCharSVG(entry.avatarChar || "ninja"))`, and
+   `appendChild(buildAvatarCharSVG(entry.avatarChar || "ghost"))`, and
    that `||` only catches an EMPTY avatar, not an unrecognised one. Fed
    eight entries where three carried ids this build does not know, the
    rankings rendered five rows and threw three times - three classmates
@@ -58735,6 +58777,34 @@ var IFC_BACKDROP = {
 };
 function ifcRedrawn(id){ return IFC_ART_ON && Object.prototype.hasOwnProperty.call(IFC_CHAR_LOOK, id); }
 /* Zeus off a Fire Code avatar: the first starter, and out of the queue of unlocks to announce. */
+/* THREE STARTERS (build 384): the Ninja and the Wizard are retired (AVATAR_CHARACTERS). Whoever is wearing one is moved to one of the three
+   that remain, "by random" - a pseudo-random pick fixed by the account's own first name, so every device of one account lands
+   on the same one and a later load does not move it again. The old drawings stay for a stale row elsewhere. All classes. */
+var STARTERS_KEPT_384 = ["ghost", "grizzly", "alien"];   /* var: a load before this line must not meet a TDZ */
+function pickStarter384(){
+  const seed = String(store.firstName || store.avatarChar || "x");
+  let h = 2166136261;
+  for(let i = 0; i < seed.length; i++){ h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return STARTERS_KEPT_384[h % STARTERS_KEPT_384.length];
+}
+function retireStarters384(){
+  if(!store || (store.avatarChar !== "ninja" && store.avatarChar !== "wizard")) return false;
+  store.avatarChar = pickStarter384();
+  return true;
+}
+/* (384) the two ultimates a class no longer has (ULTIMATE_TOP): whoever wears the character or the banner is moved to the one that is left if
+   they hold it, else to a starter (characters) / the default banner. */
+function retireUltimates384(){
+  if(!store) return false;
+  let changed = false;
+  const drop = ["astral", "celestial", "zenith"].filter(id => id !== ULTIMATE_TOP);
+  if(drop.indexOf(store.avatarChar) >= 0){
+    store.avatarChar = !isLockedCharacter(ULTIMATE_TOP) ? ULTIMATE_TOP : pickStarter384();
+    changed = true;
+  }
+  if(drop.indexOf(store.banner) >= 0){ store.banner = bannerEarned(ULTIMATE_TOP) ? ULTIMATE_TOP : ""; changed = true; }
+  return changed;
+}
 function ifcRetireZeus(){
   if(!IFC_ART_ON || !store) return false;
   let changed = false;
@@ -65343,7 +65413,7 @@ let store = { stats: {}, opts: null, units: null, testStats: {}, testHistory: []
               mysteryColorsFound: { red: false, orange: false, yellow: false, violet: false, white: false, core: false },
               testsUntilMystery: null, flareNextTestAt: 0, flareSchedRev: 0,
               savedCodePrompts: 0, savedCodeSaved: false,
-              dailyCorrectStreak: 0, dailyCorrectBest: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, bestTestStreak: 0,
+              dailyCorrectStreak: 0, dailyCorrectBest: 0, dailyCorrectTotal: 0, unitHundoStreakBest: 0, challengeSeed289: true, dayAnswered: null, dayAnsweredBest: 0, friendsBest: 0, koiRevoked295: true, unitHundoStreak: 0, unitHundoStreakUnits: [], practiceTestPassed: false, bigTestPassed: false, bigTest450Passed: false, bigTest500Passed: false, novaBeaten: false, sheriffMoved324: true, bestTestStreak: 0,
               weeklyWins: 0, weeklyTop3: 0, weekWinWeeks: [], retakenQuestions: 0, hundoDay: null, hundoDayBest: 0, shadesFound: false, shadesAt: null, legacyChars: [], rankMapSeen: null, rankMapFx244: false, rankMapProg: null, rankUpShown: 0, rankUpFrom: null, unlocksShown: null, seenUnlocks: null, badgeCleanedAt: null, unitRuns: null, weekRankSeen: null, pendingVoidCutscene: false,
               lateHundos: 0, lateHundosSeed312: true, flareHintsShown: [],
               vrMatches: 0, vrWins: 0, vrCounted: [], vrRetroDone: false, vrTop3: 0, vrTop3Rooms: [], vrTop3RetroDone: false,
@@ -65551,6 +65621,8 @@ function applyLoadedData(got){
      on purpose - seedChallenges289() is how it reaches everybody, and it
      never lowers anything. */
   store.dailyCorrectBest = typeof got.dailyCorrectBest === "number" ? got.dailyCorrectBest : 0;
+  /* (384) every daily question answered right; an account without the count starts at its best run, so nobody loses the Inspector */
+  store.dailyCorrectTotal = typeof got.dailyCorrectTotal === "number" ? got.dailyCorrectTotal : Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak || 0);
   store.unitHundoStreakBest = typeof got.unitHundoStreakBest === "number" ? got.unitHundoStreakBest : 0;
   store.challengeSeed289 = got.challengeSeed289 === true;
   /* Build 291: the Hive's busiest day. Starts at nothing - no answers
@@ -65901,6 +65973,9 @@ function applyLoadedData(got){
   try{ applyWeekWinVoids(); }catch(e){}
   /* no Zeus in the Fire Code class (build 382) */
   try{ ifcRetireZeus(); }catch(e){}
+  /* three starters (build 384) */
+  try{ retireStarters384(); }catch(e){}
+  try{ retireUltimates384(); }catch(e){}
   /* Per-device tallies (build 298). A copy without them - an older
      build, or one from before this - keeps empty ones and is read the
      old way in a merge; a copy with them has any count it holds beyond
@@ -66762,7 +66837,7 @@ function friendClassesOf(pub){
 /* A friend's name and character as their own beat gave them, or null */
 function friendCardFromPresence(pub){
   const e = pub && presenceClasses && presenceClasses[pub];
-  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ninja" } : null;
+  return (e && typeof e === "object" && e.n) ? { pub: pub, firstName: String(e.n), avatarChar: e.v || "ghost" } : null;
 }
 /* ---- A FRIEND, AS EVERY FRIENDS SCREEN DRAWS THEM (384, Virtual Room round 2) ----
    Madison: "If I'm friends with someone they should be there and stuff." A friend in Fire Code alone has no academy board row,
@@ -66785,7 +66860,7 @@ function friendCardOf(pub, rows){
   try{
     const code = friendChatCode(pub);
     const p = ((chatListPeople || {})[code] || []).find(x => x && x.key === pub);
-    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ninja", fromChat: true };
+    if(p && p.name) return { pub: pub, firstName: String(p.name), avatarChar: p.avatarChar || "ghost", fromChat: true };
     const ce = chatEntry(code);
     if(ce && ce.name) return { pub: pub, firstName: String(ce.name), fromChat: true };
   }catch(e){}
@@ -67207,7 +67282,7 @@ function celebrateNewFriend(pub, tries){
   const pair = document.createElement("div");
   pair.className = "friend-moment-pair";
   const a = document.createElement("span"); a.className = "friend-moment-art";
-  try{ a.appendChild(avatarSpanFor({ avatarChar: store.avatarChar || "ninja" })); }catch(err){}
+  try{ a.appendChild(avatarSpanFor({ avatarChar: store.avatarChar || "ghost" })); }catch(err){}
   const b = document.createElement("span"); b.className = "friend-moment-art";
   try{ b.appendChild(avatarSpanFor(e)); }catch(err){}
   const link = document.createElement("span"); link.className = "friend-moment-link";
@@ -67407,7 +67482,7 @@ function sendToInbox(pub, payload){
       pub: me,
       at: Date.now(),
       firstName: card.firstName || "Someone",
-      avatarChar: card.avatarChar || "ninja"
+      avatarChar: card.avatarChar || "ghost"
     }, card.level == null ? {} : {
       level: card.level,
       badges: card.badges,
@@ -67429,7 +67504,7 @@ function sendToInboxSlot(pub, slot, payload){
     const msg = Object.assign({
       pub: publicIdOf(), at: Date.now(),
       firstName: me.firstName || "Someone",
-      avatarChar: me.avatarChar || "ninja"
+      avatarChar: me.avatarChar || "ghost"
     }, payload);
     inboxDocFor(pub).set({ kind: "inbox", msgs: { [slot]: msg } }, { merge: true }).catch(() => {});
   }catch(e){}
@@ -67788,7 +67863,7 @@ function wipeLocalProgressAndSettings(){
   store.gameHardcoreMs = {};
   store.mysteryColorsFound = { red: false, orange: false, yellow: false, violet: false, white: false, core: false };
   store.testsUntilMystery = null;
-  store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
+  store.dailyCorrectStreak = 0; store.dailyCorrectBest = 0; store.dailyCorrectTotal = 0; store.unitHundoStreakBest = 0; store.challengeSeed289 = true; store.dayAnswered = null; store.dayAnsweredBest = 0;
   store.unitHundoStreak = 0;
   store.unitHundoStreakUnits = [];
   store.friendsBest = 0; store.koiRevoked295 = true;
@@ -68056,7 +68131,7 @@ function buildLeaderboardRow(){
   const n = boardNumbersOf(store);
   return {
         firstName: store.firstName || "Anonymous",
-        avatarChar: store.avatarChar || "ninja",
+        avatarChar: store.avatarChar || "ghost",
         accent: theme.accent || "ink",
         /* Correct answers is the single ranked metric now. points and
            stars are deliberately no longer published: the board tracks
@@ -69065,7 +69140,7 @@ function mergeLeavingAccount(src, note){
   store.testHistory = (store.testHistory || []).concat(src.testHistory || [])
     .sort((a, b) => num(b && b.playedAt) - num(a && a.playedAt)).slice(0, TEST_HISTORY_MAX);
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "lateHundos"].forEach(k => { store[k] = num(store[k]) + num(src[k]); });
-  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
+  ["dailyCorrectStreak", "hundoDayBest", "bestTestStreak", "unitHundoStreak", "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest"].forEach(k => { store[k] = Math.max(num(store[k]), num(src[k])); });
   ["vrCounted", "vrTop3Rooms", "flareHintsShown", "weekWinWeeks"].forEach(k => {
     const a = Array.isArray(store[k]) ? store[k] : [];
     store[k] = a.concat((src[k] || []).filter(x => a.indexOf(x) < 0)).slice(-300);
@@ -69503,7 +69578,7 @@ function mergeSameAccount(dst, src){
     }
     if(a.some(h => h && !theirs.has(key(h)))) res.otherHadLess = true; }
   ["vrMatches", "vrWins", "vrTop3", "weeklyWins", "weeklyTop3", "retakenQuestions", "hundoDayBest", "bestTestStreak",
-   "dailyCorrectBest", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
+   "dailyCorrectBest", "dailyCorrectTotal", "unitHundoStreakBest", "dayAnsweredBest", "friendsBest", "lateHundos"]
     .forEach(k => maxInto(dst, k, src[k]));
   ["vrCounted", "vrTop3Rooms", "legacyChars", "creditsApplied", "flareHintsShown", "weekWinWeeks"].forEach(k => unionArr(k));
   /* The backfills ran once per ACCOUNT (build 327): a device whose copy
@@ -74168,7 +74243,7 @@ function rememberWeekTop(list){
     const wk = weekKeyNow();
     const top = (list || []).filter(e => weekPointsOfEntry(e) > 0)
       .sort((a, b) => weekPointsOfEntry(b) - weekPointsOfEntry(a)).slice(0, 3)
-      .map(e => ({ pub: e.pub || "", name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: weekPointsOfEntry(e) }));
+      .map(e => ({ pub: e.pub || "", name: e.firstName || "?", avatar: e.avatarChar || "ghost", pts: weekPointsOfEntry(e) }));
     const c = weekTopCache();
     c[wk] = top;
     Object.keys(c).sort().slice(0, -3).forEach(k => delete c[k]);
@@ -74227,7 +74302,7 @@ function lastWeekTop3(list){
       const pts = typeof k === "string" ? null : (typeof k.pts === "number" ? k.pts : null);
       const label = typeof k === "string" ? null : (k.label || null);
       const e = (list || []).find(x => x && x.pub === pub);
-      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ninja", pts: pts, label: label } : null;
+      return e ? { pub: pub, name: e.firstName || "?", avatar: e.avatarChar || "ghost", pts: pts, label: label } : null;
     }).filter(Boolean);
   }
   const byKey = new Map();
@@ -74237,7 +74312,7 @@ function lastWeekTop3(list){
     const held = byKey.get(k);
     if(!held || pts > held.pts) byKey.set(k, { pub, name, avatar, pts });
   };
-  (list || []).forEach(e => put(e.pub || "", e.firstName || "?", e.avatarChar || "ninja", lastWeekPointsOfEntry(e)));
+  (list || []).forEach(e => put(e.pub || "", e.firstName || "?", e.avatarChar || "ghost", lastWeekPointsOfEntry(e)));
   (weekTopCache()[lastWeekKey()] || []).forEach(t => put(t.pub, t.name, t.avatar, t.pts));
   return Array.from(byKey.values()).sort((a, b) => b.pts - a.pts).slice(0, 3);
 }
@@ -74571,6 +74646,12 @@ const BANNERS = [
     have: () => ultimateProgress().have, get need(){ return ultimateProgress().need; },
     note: () => ultimateProgress().note }
 ];
+/* (384) one ultimate banner per class - see ULTIMATE_TOP. The academy's Astral takes over Zenith's challenge. */
+for(let i = BANNERS.length - 1; i >= 0; i--) if(BANNERS[i].ultimate && BANNERS[i].id !== ULTIMATE_TOP) BANNERS.splice(i, 1);
+BANNERS.forEach(b => { if(b.ultimate){
+  b.label = "Unlock every other character, banner, theme and hundo effect";
+  b.have = () => ultimateProgress().have; Object.defineProperty(b, "need", { get(){ return ultimateProgress().need; }, configurable: true });
+  b.note = () => ultimateProgress().note; } });
 function fullTestsNote(){
   return "A full-length test has every question in each unit you picked. Shortened tests count on your Stats tab (" +
     testsCompletedOf(store).toLocaleString() + " so far) but not here.";
@@ -97289,7 +97370,7 @@ function novaRecapCard(st){
   /* who */
   const head = document.createElement("div"); head.className = "nt-rc-head";
   const av = document.createElement("span"); av.className = "nt-rc-av";
-  try{ av.appendChild(buildAvatarCharSVGSafe(store.avatarChar || "ninja")); }catch(e){}
+  try{ av.appendChild(buildAvatarCharSVGSafe(store.avatarChar || "ghost")); }catch(e){}
   const who = document.createElement("div"); who.className = "nt-rc-who";
   const nm = document.createElement("p"); nm.className = "nt-rc-name"; nm.textContent = st.name;
   const rk = document.createElement("p"); rk.className = "nt-rc-rank";
@@ -98482,7 +98563,7 @@ function playVroomWinnerCutscene(opts, done){
       mate.className = "vroom-cut-mate";
       const fig = document.createElement("span");
       fig.className = "vroom-cut-figure";
-      fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ninja"));
+      fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ghost"));
       const nm = document.createElement("p");
       nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
       mate.append(fig, nm);
@@ -98515,7 +98596,7 @@ function playVroomWinnerCutscene(opts, done){
       plinth.dataset.place = String(idx + 1);
       const fig = document.createElement("span");
       fig.className = "vroom-cut-figure";
-      fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ninja"));
+      fig.appendChild(buildAvatarCharSVGSafe(p.avatar || "ghost"));
       const nm = document.createElement("p");
       nm.className = "vroom-cut-pname"; nm.textContent = p.name || "?";
       const sb = document.createElement("p");
@@ -101439,7 +101520,7 @@ function chatPeopleOf(members){
   const m = members || {};
   return Object.keys(m).filter(k => k !== me)
     .sort((a, b) => (((m[a] || {}).joinedAt || 0) - ((m[b] || {}).joinedAt || 0)) || (a < b ? -1 : 1))
-    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ninja" }));
+    .map(k => ({ key: k, name: (m[k] || {}).name || "", avatarChar: (m[k] || {}).avatarChar || "ghost" }));
 }
 function paintChatFaces(el, code){
   /* Before the room has been read, the people recorded on the entry
@@ -101464,7 +101545,7 @@ function paintChatFaces(el, code){
   shown.forEach(p => {
     const f = document.createElement("span");
     f.className = "chatdock-face";
-    try{ f.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" })); }catch(e){}
+    try{ f.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" })); }catch(e){}
     el.appendChild(f);
   });
   if(n > 3){
@@ -103451,14 +103532,14 @@ function chatPersonOf(key, entry){
   const e = entry || {};
   if(key && key === publicIdOf()){
     const me = socialMe();   /* (384) as your friends see you, in every class */
-    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ninja" };
+    return { name: me.firstName || e.name || "You", avatarChar: me.avatarChar || e.avatarChar || "ghost" };
   }
   let row = null;
   try{ row = rowsByPublicId()[key] || null; }catch(err){}
   /* (384 vr2) no board row (Fire Code alone): their own beat's name and character (friendCardFromPresence) */
   if(!row){ try{ row = friendCardFromPresence(key); }catch(err){} }
   return { name: (row && row.firstName) || e.name || "",
-           avatarChar: (row && row.avatarChar) || e.avatarChar || "ninja" };
+           avatarChar: (row && row.avatarChar) || e.avatarChar || "ghost" };
 }
 function chatMemberMap(participants, data){
   const out = {};
@@ -103497,7 +103578,7 @@ function openChatMembers(){
     row.className = "chat-member";
     const art = document.createElement("span");
     art.className = "chat-member-art";
-    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ninja" }));
+    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ghost" }));
     const nm = document.createElement("span");
     nm.className = "chat-member-name";
     nm.textContent = k === chatMyKey ? (e.name || "You") + " (you)" : (e.name || "Student");
@@ -103589,7 +103670,7 @@ function renderChatRoster(participants){
     one.title = (k === chatMyKey ? "You" : (e.name || "Someone")) + (isHere(k) ? " \u2014 here" : " \u2014 away");
     const art = document.createElement("span");
     art.className = "chatdock-who-art";
-    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ninja" }));
+    art.appendChild(avatarSpanFor({ avatarChar: e.avatarChar || "ghost" }));
     const nm = document.createElement("span");
     nm.className = "chatdock-who-name";
     nm.textContent = k === chatMyKey ? "You" : (e.name || "Someone");
@@ -103665,7 +103746,7 @@ function chatMsgAge(ts){
 function chatSelfEntry(){
   /* (384) the academy account's name, face and numbers in every class (socialCard); Fire Code's numbers never */
   const c = socialCard();
-  const out = { name: c.firstName || "Anonymous", avatarChar: c.avatarChar || "ninja" };
+  const out = { name: c.firstName || "Anonymous", avatarChar: c.avatarChar || "ghost" };
   if(c.level != null){ out.level = c.level; out.badges = c.badges; }
   out.joinedAt = Date.now(); out.seen = Date.now();
   return out;
@@ -103687,7 +103768,7 @@ function startVroomPresence(){
       /* (384) the account's, as the entry was written (vroomMeEntry) - the same as the store in the academy */
       const sm = socialMe();
       patch["participants." + vroomMyKey + ".name"] = sm.firstName || "Anonymous";
-      patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ninja";
+      patch["participants." + vroomMyKey + ".avatarChar"] = sm.avatarChar || "ghost";
       /* and Nova's, if this device brought him (build 324) */
       try{ novaVrPresencePatch(patch); }catch(e){}
       vroomDb().collection("vrooms").doc(vroomCode).update(patch).catch(() => {});
@@ -103706,7 +103787,7 @@ function chatPresencePatch(seen){
   const patch = {};
   const c = socialCard();   /* (384) see chatSelfEntry */
   patch[k + "name"] = c.firstName || "Anonymous";
-  patch[k + "avatarChar"] = c.avatarChar || "ninja";
+  patch[k + "avatarChar"] = c.avatarChar || "ghost";
   if(c.level != null){ patch[k + "level"] = c.level; patch[k + "badges"] = c.badges; }
   patch[k + "seen"] = seen;
   return patch;
@@ -104022,7 +104103,7 @@ function openDirectChatWith(entry){
   const code = generateSyncCode();
   const me = publicIdOf();
   const theirName = entry.firstName || entry.name || "Student";
-  const them = { name: theirName, avatarChar: entry.avatarChar || "ninja",
+  const them = { name: theirName, avatarChar: entry.avatarChar || "ghost",
                  level: entry.level || 0, badges: entry.badges || 0,
                  joinedAt: Date.now(), seen: 0 };
   socialDb().collection("vrooms").doc(code).set({
@@ -105702,7 +105783,7 @@ function paintChatInvitePeek(box, code){
     ((p && p.people) || []).slice(0, 4).forEach(x => {
       const f = document.createElement("span");
       f.className = "chatdock-face";
-      try{ f.appendChild(avatarSpanFor({ avatarChar: x.avatarChar || "ninja" })); }catch(e){}
+      try{ f.appendChild(avatarSpanFor({ avatarChar: x.avatarChar || "ghost" })); }catch(e){}
       faces.appendChild(f);
     });
     faces.hidden = !faces.childNodes.length;
@@ -127131,6 +127212,7 @@ function summarize(){
        does break it, which is the part that makes it worth holding. */
     store.dailyCorrectStreak = isPerfect ? (store.dailyCorrectStreak || 0) + 1 : 0;
     store.dailyCorrectBest = Math.max(store.dailyCorrectBest || 0, store.dailyCorrectStreak);
+    if(isPerfect) store.dailyCorrectTotal = (Number(store.dailyCorrectTotal) || 0) + 1;   /* (384) the Inspector counts every one */
     if(isPerfect) weekStatsAdd("d", 1);   /* Nova's recap (build 324) */
     saveStore();
   }
@@ -131793,7 +131875,7 @@ function roomClassLabel(data){
 function vroomMeEntry(){
   const me = socialMe();
   let dev = ""; try{ dev = tallyDeviceId(); }catch(e){}
-  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ninja", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
+  return { name: me.firstName || "Anonymous", avatarChar: me.avatarChar || "ghost", level: levelOf(store), badges: badgeCountOf(store), hundos: hundosOf(store), xp: (store.lifetime && store.lifetime.points) || 0, tests: Array.isArray(store.testHistory) ? store.testHistory.length : 0, correct: (store.lifetime && store.lifetime.correct) || 0, mystery: mysteryColorsFoundCount(), banner: wornBanner(), accent: theme.accent || "ink", joinedAt: Date.now(), seen: Date.now(), progress: 0, finished: false, score: null, elapsedMs: null, ready: false, dev: dev };
 }
 function createVirtualRoomLobby(units, timeLimit, game, versions){
   /* The actual bug behind "wouldn't let me start a Virtual Room
@@ -133239,7 +133321,7 @@ function tugTeamEnd(d, side, cls){
     fig.className = "tug-team-fig char-live";
     fig.style.setProperty("--i", i);
     fig.title = pp.name || "";
-    fig.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ninja"));
+    fig.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
     end.appendChild(fig);
   });
   return end;
@@ -133837,7 +133919,7 @@ function showTugResult(d){
       row.style.setProperty("--i", i);
       const av = document.createElement("span");
       av.className = "tug-board-av";
-      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ninja"));
+      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
       const nm = document.createElement("span");
       nm.className = "tug-board-name";
       /* "You", as Battle's board and every side label say (build 313). */
@@ -134177,7 +134259,7 @@ function beginBattleMatch(data){
       /* THE WHOLE WINNING SIDE, like Tug - they won it together. */
       const shown = (side ? battleMembers(d, side) : Object.keys(d.participants || {}))
         .map(k => ({ name: (d.participants[k] || {}).name || "?",
-                     avatar: (d.participants[k] || {}).avatarChar || "ninja" }));
+                     avatar: (d.participants[k] || {}).avatarChar || "ghost" }));
       detachBattleEffects();
       playVroomWinnerCutscene({
         kind: "team",
@@ -134331,8 +134413,8 @@ function buildBattleBoard(d){
       const p = d.participants[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
-      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ninja"));
-      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ghost"));
+      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
       faces.appendChild(av);
     });
     if(sideKeys.length > 3){
@@ -134383,8 +134465,8 @@ function battlePaintFaces(row, d, side){
       const p = (d.participants || {})[k] || {};
       const av = document.createElement("span");
       av.className = "battle-av" + (k === vroomMyKey ? " is-me" : "");
-      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ninja"));
-      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+      av.style.setProperty("--pl", avatarGlowColor(p.avatarChar || "ghost"));
+      av.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
       faces.appendChild(av);
     });
     if(keys.length > 3){
@@ -134757,7 +134839,7 @@ function showBattleResult(d){
       row.style.setProperty("--i", i);
       const av = document.createElement("span");
       av.className = "tug-board-av";
-      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ninja"));
+      av.appendChild(buildAvatarCharSVGSafe(pp.avatarChar || "ghost"));
       const nm = document.createElement("span");
       nm.className = "tug-board-name";
       nm.textContent = (k === vroomMyKey ? "You" : (pp.name || "?")) + (k === mvp && (r.dealt[k] || 0) > 0 ? "  ★" : "");
@@ -135776,7 +135858,7 @@ function showRoomBrowser(){
       row.className = "friend-row room-row";
       const art = document.createElement("div");
       art.className = "friend-row-art";
-      art.appendChild(avatarSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ninja" }));
+      art.appendChild(avatarSpanFor({ avatarChar: entry.hostAvatar || r.hostAvatar || "ghost" }));
       const text = document.createElement("div");
       text.className = "friend-row-text";
       const nm = document.createElement("p");
@@ -136406,7 +136488,7 @@ function showVirtualRoomLobby(){
         avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
       /* In a .rank-avatar wrapper (build 266), which carries the glow's
          drop-shadow - see .vroom-avatar.has-glow > .rank-avatar. */
-      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
+      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" }));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
       /* alive in the lobby (build 314: "make sure the ones that are meant
          to animate do") - a flip-book, like a board row */
@@ -138232,7 +138314,7 @@ function startVroomRaceListener(){
          character, a renamed one) came back null and threw here, which
          stopped the loop and left everybody after that person off the
          line. Found recording a four-person room. */
-      avatar.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ninja"));
+      avatar.appendChild(buildAvatarCharSVGSafe(p.avatarChar || "ghost"));
       const initials = document.createElement("span");
       initials.className = "vroom-race-marker-initials";
       initials.textContent = "You";
@@ -138829,10 +138911,10 @@ function playVroomRaceCutscene(ranked){
     /* Each player's bar in their OWN colour - the colour their character
        glows in everywhere else - so you can follow a person down the
        board as it reshuffles rather than reading names every step. */
-    row.style.setProperty("--pl", avatarGlowColor(r.p.avatarChar || "ninja"));
+    row.style.setProperty("--pl", avatarGlowColor(r.p.avatarChar || "ghost"));
     const fig = document.createElement("span");
     fig.className = "vrc-fig";
-    fig.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ninja"));
+    fig.appendChild(buildAvatarCharSVGSafe(r.p.avatarChar || "ghost"));
     const place = document.createElement("span");
     place.className = "vrc-place";
     fig.appendChild(place);
@@ -139316,7 +139398,7 @@ function showVirtualRoomResults(){
       avatarWrap.className = "lb-avatar vroom-avatar has-glow";
       avatarWrap.style.setProperty("--char-glow",
         avatarGlowColor(p.avatarChar || AVATAR_CHARACTERS[0].id));
-      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ninja" }));
+      avatarWrap.appendChild(avatarSpanFor({ avatarChar: p.avatarChar || "ghost" }));
       decorateAvatar(avatarWrap, p.level, p.badges, p.mystery);
       setCharState(avatarWrap, "live");
       /* Your own row too, with the whole entry - see the lobby's (build 323). */
@@ -140115,7 +140197,7 @@ function weekRecapMentions(list, top, lw){
       if(!cands.length) continue;
       const w = cands[0];
       named.add(w.e.pub); namedNames.add(recapNameKey(w.e.firstName));
-      out.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ninja",
+      out.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ghost",
                  value: w.v, me: !!(store.publicId && w.e.pub === store.publicId) });
     }
     return out;
@@ -140167,7 +140249,7 @@ function weekRecapClassWeek(list, top, lw, mentions){
     if(!cands.length) return;
     const w = cands[0];
     named.add(w.e.pub); namedNames.add(nk(w));
-    out.awards.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ninja",
+    out.awards.push({ cat, pub: w.e.pub, name: String(w.e.firstName || "").trim(), avatar: w.e.avatarChar || "ghost",
                       value: w.v, me: !!(store.publicId && w.e.pub === store.publicId) });
   });
   return (Object.keys(out.totals).length || out.awards.length) ? out : null;
@@ -140186,7 +140268,7 @@ function weekRecapClose(list, top, viewer){
   const mine = weekPointsOf(store) || 0;
   if(now.length){
     const L = now[0];
-    return { kind: "now", leader: String(L.e.firstName || "").trim(), leaderAvatar: L.e.avatarChar || "ninja", leaderPts: L.pts,
+    return { kind: "now", leader: String(L.e.firstName || "").trim(), leaderAvatar: L.e.avatarChar || "ghost", leaderPts: L.pts,
              leaderMe: !!(me && L.e.pub === me), mine, gap: Math.max(0, L.pts - mine) };
   }
   const v = viewer || {};
@@ -140316,7 +140398,7 @@ function weekRecapTop(list){
     const held = byKey.get(pub);
     if(!held || pts > held.pts) byKey.set(pub, { pub, name, avatar, pts });
   };
-  (list || []).forEach(e => put(e.pub, e.firstName || "?", e.avatarChar || "ninja", lastWeekPointsOfEntry(e)));
+  (list || []).forEach(e => put(e.pub, e.firstName || "?", e.avatarChar || "ghost", lastWeekPointsOfEntry(e)));
   (weekTopCache()[lw] || []).forEach(t => put(t.pub, t.name, t.avatar, t.pts));
   return Array.from(byKey.values()).sort((a, b) => b.pts - a.pts).slice(0, 3);
 }
@@ -140330,11 +140412,11 @@ function buildWeekRecap(rowsIn){
   const patch = { week: weekKeyNow(), rawWeekPoints: weekPointsOf(store), weekPoints: weekPointsOf(store), prevWeek: lw, prevWeekPoints: mine };
   const list = rows.map(e => (me && e.pub === me) ? Object.assign({}, e, patch) : e);
   if(me && store.leaderboardOptIn !== false && !byPub.has(me) && mine > 0){
-    list.push(Object.assign({ pub: me, firstName: store.firstName || "", avatarChar: store.avatarChar || "ninja" }, patch));
+    list.push(Object.assign({ pub: me, firstName: store.firstName || "", avatarChar: store.avatarChar || "ghost" }, patch));
   }
   const top = weekRecapTop(list).map(t => {
     const e = list.find(x => x.pub === t.pub) || {};
-    return { pub: t.pub, name: String(e.firstName || t.name || "").trim(), avatar: e.avatarChar || t.avatar || "ninja",
+    return { pub: t.pub, name: String(e.firstName || t.name || "").trim(), avatar: e.avatarChar || t.avatar || "ghost",
              pts: typeof t.pts === "number" && t.pts > 0 ? t.pts : null, me: !!(me && t.pub === me) };
   }).filter(t => t.name);
   if(!top.length) return null;
@@ -140370,7 +140452,7 @@ function recapIcon(glyph){
 }
 function recapAvatar(id, cls){
   const a = document.createElement("span"); a.className = cls;
-  try{ a.appendChild(buildAvatarCharSVGSafe(id || "ninja")); }catch(e){}
+  try{ a.appendChild(buildAvatarCharSVGSafe(id || "ghost")); }catch(e){}
   return a;
 }
 /* The stage he talks over: the week's title, the podium, the mentions,
@@ -140505,7 +140587,7 @@ function buildWeekRecapStage(r){
   } else {
     const pg = el("div", "wr-page wr-page-me"); pg.dataset.page = "me";
     const card = el("div", "wr-mecard");
-    card.appendChild(recapAvatar(store.avatarChar || "ninja", "wr-meav"));
+    card.appendChild(recapAvatar(store.avatarChar || "ghost", "wr-meav"));
     const tx = el("div", "wr-metext");
     const v = r.viewer, bits = [];
     if(v.pts > 0) bits.push(recapFmt(v.pts) + " XP");
@@ -140530,8 +140612,8 @@ function buildWeekRecapStage(r){
         rw.append(recapAvatar(av, "wr-av wr-close-av"), el("span", "wr-close-name", who), el("span", "wr-close-pts", recapFmt(pts) + " XP"));
         return rw;
       };
-      card.appendChild(row(cl.leaderMe ? (store.avatarChar || "ninja") : cl.leaderAvatar, cl.leaderMe ? "You" : cl.leader, cl.leaderPts, "is-lead" + (cl.leaderMe ? " is-me" : "")));
-      if(!cl.leaderMe && cl.mine > 0) card.appendChild(row(store.avatarChar || "ninja", "You", cl.mine, "is-me"));
+      card.appendChild(row(cl.leaderMe ? (store.avatarChar || "ghost") : cl.leaderAvatar, cl.leaderMe ? "You" : cl.leader, cl.leaderPts, "is-lead" + (cl.leaderMe ? " is-me" : "")));
+      if(!cl.leaderMe && cl.mine > 0) card.appendChild(row(store.avatarChar || "ghost", "You", cl.mine, "is-me"));
     } else {
       card.appendChild(el("p", "wr-close-line", "The board reset Monday"));
     }
@@ -141838,7 +141920,7 @@ function rankDetail(rankKey){
 }
 function characterDetail(id){
   const def = AVATAR_CHARACTERS.find(c => c.id === id);
-  const kind = def && def.ultimate ? "Ultimate reward" : def && def.secret ? "Secret" : def && def.unlock ? "Rank reward" : def && def.feat ? "Challenge reward" : "Starter";
+  const kind = def && def.secret ? "Secret" : def && def.unlock ? "Rank reward" : def && def.feat ? "Challenge reward" : "Starter";
   const o = { kind: "character", id: id, kicker: kind, name: AVATAR_DISPLAY_NAME[id] || id };
   if(!def) return o;
   /* Held through a press-and-hold (build 259): a starter says so, and a
@@ -142045,11 +142127,12 @@ function setBarFill(el, v){
    banner itself (Second Wind, Unbroken and so on) stay: each is a
    rule like these. */
 const UNLOCK_NOTES = {
-  "character:detective": "The daily question on Home. A miss starts a new run, but your best run is kept.",
+  "character:detective": "The daily question on Home. Every one you answer right counts.",
   "character:zeus": "Be #1 on the This Week board when the week ends.",
   "character:poseidon": "Invite Nova from a Virtual Room lobby and finish ahead of him, in any mode.",
-  "character:marksman": MARKSMAN_RUN + " in a row, right on the first try, inside one test. A miss starts it over.",
-  "character:astronaut": "A hundo is 100% on a whole unit. Get one in 5 different units on the same day.",
+  "character:marksman": (window.NOVA_CLASS === "ifc" ? "100 in a row, right on the first try. A miss starts it over; the run carries from one test to the next." : MARKSMAN_RUN + " in a row, right on the first try, inside one test. A miss starts it over."),
+  "character:astronaut": "A hundo is 100% on a whole unit. Get one in 3 different units on the same day.",
+  "character:hive": "A Drill, a Test, a Retake, the Daily question and a Virtual Room match, " + MODE_TRIES + " of each.",
   "character:ronin": "One test of " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better.",
   "character:voidwalker": "They hide inside tests. Keep your eyes open.",
   "character:umbra": "A secret. Its challenge shows here once you have Void.",
@@ -142776,17 +142859,13 @@ function buildCustomizeCharacterSect(){
     { title: "Rank rewards", note: "Handed over as you climb the ranks",
       ids: AVATAR_CHARACTERS.filter(c => c.unlock).sort((a, b) => TIER_ORDER_FULL.indexOf(a.unlock) - TIER_ORDER_FULL.indexOf(b.unlock)).map(c => c.id) },
     { title: "Challenge rewards", note: "Each one is unlocked by a challenge",
-      ids: AVATAR_CHARACTERS.filter(c => c.feat && !c.secret && !c.ultimate).map(c => c.id) },
+      ids: AVATAR_CHARACTERS.filter(c => c.feat && !c.secret && !c.retired).map(c => c.id) },
     /* THEIR OWN SECTION (build 243): "should the secret flares be its own
        section in character unlocks?" - yes, and the SWAT with them. These
        are found rather than worked towards. */
     { title: "Secrets", note: "Found, not earned \u2014 keep your eyes open",
       ids: AVATAR_CHARACTERS.filter(c => c.secret).map(c => c.id) },
-    /* THE LAST ONE (build 304): "It will be the last character on the
-       list." Its own section, after everything it asks for. */
-    /* BUILD 312: three of them, hardest last - Astral, Celestial, Zenith */
-    { title: "Ultimate", note: "The hardest three \u2014 " + (AVATAR_DISPLAY_NAME.zenith || "Zenith") + " takes everything",   /* (384) Fire Code's is the Star Ranger */
-      ids: AVATAR_CHARACTERS.filter(c => c.ultimate).map(c => c.id) },
+    /* (384) no Ultimate section: the one ultimate left is a challenge reward, last in that list (ULTIMATE_TOP) */
     /* A character from an earlier version that nobody can earn now, shown
        only to whoever holds it (or is still wearing a retired one). */
     { title: "Kept", note: "From an earlier version \u2014 yours to keep",
