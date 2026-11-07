@@ -78266,31 +78266,47 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* HOSE LINE - a firefighter on a hose line, knocking down a wall of fire */
+  /* HOSE LINE (384 review: "Hose line is great but doesn't look like the rest, update it") - the same scene, drawn
+     the way the rest of the set is now: a firefighter in full turnouts (helmet with its shield and brim, the air
+     pack on his back, reflective bands, gloves on the nozzle) leaning into a charged line, rim-lit by the fire he is
+     fighting; the line running back along a wet street under him with its couplings; a brick building ahead
+     burning out of its windows, the stream arcing into it, steam and embers going up, the fire's light running
+     down the wet road. */
   exam100(u){
     const rnd = bnRand(3812);
-    let water = "";
-    for(let rep = 0; rep < 10; rep++) for(let k = 0; k < 4; k++){
-      const t = rep * 0.1 + k * 0.025;
-      const x = 150 + t * 220, y = 120 - Math.sin(t * Math.PI) * 40 - t * 10;
-      water += '<circle cx="' + bnF(x) + '" cy="' + bnF(y + (k - 1.5) * 2) + '" r="' + bnF(1.4 + t * 2) + '" fill="#D8F2FF" opacity=".8"/>';
-    }
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#2A0A0A"], [0.5, "#8A1A0E"], [1, "#FF6A2E"]]) + bnRad(u + "heat", [[0, "#FFD36A", 0.8], [1, "#FF6A2E", 0]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/><ellipse cx="380" cy="120" rx="160" ry="90" fill="url(#' + u + 'heat)"/>' +
-      fbSmoke(rnd, 380, 50, 8, 22, "#2A1414", 0.5) +
-      '<path d="M300 60 L460 60 L460 160 L300 160 Z" fill="#2A1010"/><rect x="320" y="80" width="30" height="30" fill="#FFB03A"/><rect x="400" y="80" width="30" height="30" fill="#FFB03A"/><rect x="360" y="110" width="30" height="50" fill="#FFD36A"/>' +
-      '<rect x="0" y="160" width="480" height="20" fill="#1A0A08"/>' +
-      /* the firefighter */
-      '<g fill="#14080A"><path d="M110 160 L114 128 Q118 112 132 112 L142 112 Q152 116 150 128 L154 160 L140 160 L136 140 L128 140 L124 160 Z"/>' +
-      '<circle cx="136" cy="104" r="9"/><path d="M122 104 Q136 86 150 104 L156 106 Q136 100 118 106 Z"/>' +
-      '<path d="M140 124 L160 116 L164 122 L144 130 Z"/><path d="M160 115 L172 113 L173 118 L162 121 Z"/></g>' +
-      '<path d="M114 154 Q80 170 0 166" fill="none" stroke="#14080A" stroke-width="5"/>' +
-      '<rect x="116" y="138" width="34" height="3" fill="#D9F23A"/><rect x="128" y="90" width="16" height="3" fill="#D9F23A" opacity=".8"/>';
+    const GY = 158, FX = 90, FS = 1.5;
+    const nz = [FX + 47 * FS, GY - 45 * FS];
+    const BXr = 296, BYr = 40, BWr = 190;
+    let bricks = "";
+    for(let r = 0; r < 12; r++){ const y = BYr + r * 10; bricks += "M" + BXr + " " + y + " L" + (BXr + BWr) + " " + y + " "; for(let x = BXr + (r % 2 ? 8 : 0); x < BXr + BWr; x += 16) bricks += "M" + x + " " + y + " L" + x + " " + (y + 10) + " "; }
+    const wins = [[316, 58], [366, 58], [416, 58], [316, 104], [366, 104], [416, 104]];
+    const base = '<defs>' + bnLin(u + "sky", [[0, "#1A0606"], [0.55, "#6A1A10"], [1, "#E8542A"]]) + bnRad(u + "heat", [[0, "#FFD36A", 0.85], [0.5, "#FF7A2E", 0.35], [1, "#FF4A1E", 0]]) + bnLin(u + "wall", [[0, "#4A2420"], [1, "#2A1210"]]) +
+      bnLin(u + "road", [[0, "#2A1816"], [1, "#0E0707"]]) + bnLin(u + "refl", [[0, "#FF8A3D", 0.5], [1, "#FF8A3D", 0]]) + bnRad(u + "smoke", [[0, "#1A0E0E", 0.8], [1, "#1A0E0E", 0]]) + bnRad(u + "puff", [[0, "#F4E8E0", 0.7], [1, "#F4E8E0", 0]]) + bnRad(u + "winf", [[0, "#FFD36A", 0.95], [0.5, "#FF8A1E", 0.7], [1, "#D9391E", 0.3]]) + '</defs>' +
+      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/><ellipse cx="390" cy="110" rx="200" ry="100" fill="url(#' + u + 'heat)"/>' +
+      /* the burning building: brick face, its cornice, the windows with fire behind the glass, a doorway at the foot */
+      fbR(BXr, BYr, BWr, GY - BYr, "url(#" + u + "wall)") + fbL(bricks, "#1A0C0A", .8, ' opacity=".7"') + fbR(BXr - 4, BYr - 6, BWr + 8, 8, "#5A2E28") + fbR(BXr - 4, BYr - 6, BWr + 8, 1.6, "#9A5A48") +
+      wins.map(([x, y]) => fbR(x - 2, y - 2, 34, 34, "#1A0C0A") + fbR(x, y, 30, 30, "url(#" + u + "winf)") + fbR(x + 14, y, 2, 30, "#1A0C0A") + fbR(x, y + 14, 30, 2, "#1A0C0A") + fbR(x - 4, y + 32, 38, 3, "#6A3A30")).join("") +
+      fbR(BXr + 2, GY - 36, 30, 36, "#0E0606") + fbR(BXr + 2, GY - 36, 30, 36, "url(#" + u + "winf)", ' opacity=".55"') +
+      /* the road: wet, the fire's light down it, the line of lights of the engine far behind */
+      fbR(0, GY, 480, 22, "url(#" + u + "road)") + fbR(0, GY, 480, 1.6, "#6A3A30") + [330, 380, 430, 460].map(x => fbR(x - 6, GY + 2, 12, 20, "url(#" + u + "refl)")).join("") + '<ellipse cx="380" cy="' + (GY + 8) + '" rx="110" ry="8" fill="#FF8A3D" opacity=".18"/>' +
+      /* a hydrant with the line coming off it, and the hose laid back under the firefighter, couplings on it */
+      fbR(14, GY - 14, 8, 14, "#D7262E") + fbR(12, GY - 16, 12, 3, "#A81820") + fbC(18, GY - 17, 3.6, "#D7262E") + fbR(22, GY - 8, 5, 3.4, "#A81820") +
+      fbL("M" + bnF(nz[0] - 14) + " " + bnF(nz[1] + 10) + " Q" + (FX + 10) + " " + (GY - 6) + " 56 " + (GY + 2) + " Q36 " + (GY + 6) + " 24 " + (GY - 6), "#3A1A1A", 6.6) + fbL("M" + bnF(nz[0] - 14) + " " + bnF(nz[1] + 10) + " Q" + (FX + 10) + " " + (GY - 6) + " 56 " + (GY + 2) + " Q36 " + (GY + 6) + " 24 " + (GY - 6), "#C9A02A", 1.4, ' stroke-dasharray="4 7" opacity=".7"') +
+      [[60, GY + 1.6], [120, GY - 14]].map(([x, y]) => fbR(x - 3, y - 4, 6, 8, "#C9CED6", ' rx="1.4"')).join("") +
+      '<ellipse cx="' + (FX + 20) + '" cy="' + (GY + 2) + '" rx="46" ry="4.4" fill="#000" opacity=".55"/>' +
+      fbFF(FX, GY, FS, 1, { coat: "#B08A4A", dark: "#6A5028", helm: "#E04030", rim: "#FFB070", pants: "#8A6A34" });
     return [
       { svg: base },
-      { svg: fbFlames(bnRand(71), 280, 490, 160, 30, 70, "#FF6A2E", 18) + fbFlames(bnRand(72), 290, 480, 160, 18, 44, "#FFD36A", 16), box: [270, 80, 220, 82], o: [380, 162], cls: "bl-flame" },
-      { svg: water, box: [140, 60, 240, 80], vb: [140, 60, 240, 80], cls: "bl-shimmer", o: [150, 120], style: "animation-duration:.5s" },
-      { svg: fbEmberSheet(rnd, 200, 90, 18, ["#FFB03A", "#FFE08A"]), box: [280, 0, 200, 180], cls: "bl-rise", style: "animation-duration:6s" }
+      { svg: '<ellipse cx="390" cy="100" rx="190" ry="90" fill="url(#' + u + 'heat)"/>', box: [200, 10, 280, 180], cls: "bl-glow", style: "animation-duration:1.4s" },
+      { svg: fbPuffs(bnRand(91), 392, 44, 7, 20, "url(#" + u + "smoke)"), box: [300, -50, 200, 110], cls: "bl-steam", style: "animation-duration:7s" },
+      { svg: fbPuffs(bnRand(92), 420, 44, 6, 18, "url(#" + u + "smoke)"), box: [300, -50, 200, 110], cls: "bl-steam", style: "animation-duration:7s;animation-delay:-3.5s" },
+      /* the fire in each window, each on its own clock, and along the foot of the wall */
+      ...wins.map(([x, y], i) => ({ svg: fbFire(x + 15, y + 30, 13, 26 + (i % 3) * 5, (i % 2 ? 1 : -1) * 2), box: [x - 2, y - 6, 34, 40], o: [x + 15, y + 30], cls: "bl-flame", style: "animation-duration:" + (0.8 + i * .13) + "s;animation-delay:-" + (i * .21) + "s" })),
+      { svg: fbFire(330, GY, 22, 40, 3) + fbFire(396, GY, 26, 50, -3) + fbFire(452, GY, 22, 36, 2), box: [296, GY - 56, 186, 58], o: [390, GY], cls: "bl-flame", style: "animation-duration:1.2s" },
+      /* the stream: from the nozzle in an arc into the window, flickering as water does, a mist where it lands */
+      { svg: '<path d="M' + bnF(nz[0]) + ' ' + bnF(nz[1]) + ' Q250 42 330 84" fill="none" stroke="#E4F4FF" stroke-width="4.2" stroke-linecap="round" stroke-dasharray="5 6" opacity=".95"/><path d="M' + bnF(nz[0]) + ' ' + bnF(nz[1]) + ' Q250 42 330 84" fill="none" stroke="#9FD0FF" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="2 8" opacity=".8"/>', box: [nz[0] - 4, 40, 340 - nz[0], 58], cls: "bl-tw", style: "animation-duration:.4s" },
+      { svg: fbPuffs(bnRand(93), 336, 84, 5, 8, "url(#" + u + "puff)"), box: [296, 20, 80, 90], cls: "bl-steam", style: "animation-duration:2.8s" },
+      { svg: fbEmberSheet(rnd, 200, 90, 22, ["#FFB03A", "#FFE08A", "#FFFFFF"]), box: [290, 0, 200, 180], vb: [0, 0, 200, 180], cls: "bl-rise", style: "animation-duration:6s" }
     ];
   },
 
