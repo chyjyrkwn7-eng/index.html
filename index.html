@@ -71161,17 +71161,18 @@ const LEVEL_COST_TOP = 150000;   /* a guard; build 318's curve tops out at 14,00
    80 is also the anchor the whole curve is fitted to - see
    LEVEL_LATE_GROWTH: twenty badges is meant to land you at the cap. */
 const LEVEL_CAP = 80;
-/* ---- FIRE CODE'S CURVE IS A FIFTH OF THE ACADEMY'S (build 384) ----
-   Madison: "the ifc version, the xp curve and xp amount needed to level up. Ensure this is made right. A person probably won't be
-   grinding these nearly as hard as the police one. And remember that each unit 1 one hundred is a badge. So the xp curve is gonna
-   need to be easier, it's gonna have to be easier to reach the max rank."
-   Measured, not chosen: the academy curve asks 217,910 XP for level 80. Fire Code has 58 chapters (1,779 questions) and a badge is
-   one 100%; a 100% pays about 12 XP a question and ~150 in bonuses, so every chapter taken to 100% - an imperfect first go and a
-   perfect second - is about 40-45k XP. Each level costs LEVEL_COST_SCALE of the academy's (the same shape, every step x0.2), so
-   level 80 is ~43,600 XP and arrives with the badges: the levels a rank asks for (21 ... 80) land about where its badges (4 ... 56)
-   do, cheapest chapters first, and sooner on the bigger ones - the badges are the climb, the level never the wall. The academy is
-   x1, byte-identical. A level only ever goes UP for a Fire Code account (cheaper), so nobody drops a level or a rank. */
-const LEVEL_COST_SCALE = window.NOVA_CLASS === "ifc" ? 0.2 : 1;
+/* ---- FIRE CODE'S CURVE IS THE ACADEMY'S (build 384, revised) ----
+   First asked as "the ifc version, the xp curve ... easier to reach the max rank", and built as a fifth of the academy's (level 80 =
+   43,583 XP). Then: "only 43k to level 80 in total seems incredibly low" / "I feel like I could reach level 80 in like a month this
+   way ... I'd want it to at least take 2 months" / "we are forced to study in the academy, we have a test every single Monday. So
+   those numbers probably are slightly inflated". Measured on the class's 45 real accounts: a heavy academy user earns ~5-7k XP per
+   study day (294,795 XP in 45 study days; 197,160 in 27), the middle of the class 2-4k - and Fire Code is studied by choice, so
+   slower. At a fifth, a heavy user reaches level 80 in ~7 study days. At the academy's own curve (217,910 XP) it is ~36 study days
+   for the heaviest, ~2 months of calendar time, longer for everyone else. So Fire Code's levels cost what the academy's do
+   (LEVEL_COST_SCALE 1); the mechanism stays (levelCost, a scale per class) in case a class ever needs its own. The ranks'
+   levels (21 ... 80) and their badge counts (4 ... 56) are unchanged; finishing every chapter once is ~54k XP, level ~43, so the
+   top ranks take repetition, as the academy's do. No account lists Fire Code yet (0 of 45), so no level or rank moves. */
+const LEVEL_COST_SCALE = 1;
 function levelCost(need){ return LEVEL_COST_SCALE === 1 ? need : Math.max(1, Math.round(need * LEVEL_COST_SCALE)); }
 /* THE CURVE GETS STEEPER AFTER 20, AND IS UNTOUCHED BELOW IT.
    Asked for directly: "do not let leveling up be too easy ... after
@@ -89555,8 +89556,8 @@ const FLARE_WINDOWS_ACADEMY = {
 /* FIRE CODE'S FLARES ARE EARLIER AND EVENLY SPREAD (build 384). Madison: "ensure for the ifc version, the secret flares are more
    spread out and come through earlier on ... There's 6 of them, so every 15 levels or so I'd think you can get one for the ifc?"
    Every 13 levels, evenly, ending where the academy's sixth does (78, by the cap): ~13, 26, 39, 52, 65, 78. On Fire Code's curve
-   (LEVEL_COST_SCALE, a fifth of the academy's) that is ~0.9k, 3.6k, 8.6k, 15.6k, 26k and 41k XP - the first a couple of chapters
-   in, the last with level 80. Drawn once per account inside its window (as the academy's are); a level already drawn from the
+   (LEVEL_COST_SCALE 1 since the curve was made the academy's) that is ~4.8k, 15k, 43k, 83k, 138k and 205k XP - the levels
+   are what is spread, whatever the curve costs. Drawn once per account inside its window (as the academy's are); a level already drawn from the
    academy's windows is outside these and is redrawn the first time it is asked. */
 const FLARE_WINDOWS_IFC = {
   red: [12, 14], orange: [25, 27], yellow: [38, 40], violet: [51, 53], white: [64, 66], core: [77, 79]

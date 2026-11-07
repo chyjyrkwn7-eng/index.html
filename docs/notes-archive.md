@@ -36147,3 +36147,17 @@ The county booklet's tables have no outer upright rules, so `sideRules` found no
 Tables 405.3, 1004.5, 5609.4.1). A county row (`snap`) with no upright rule on a side now runs out to the end of the horizontal rule above/below
 it, just inside it (`cl`/`cr` set, capped at 12 em). Committed before its pictures were looked at - the helper is re-shooting the county tables on
 iPhone and iPad; revert this commit's `sideRules` block if (b) spill past a rule or (c) another row looks worse.
+
+## 384 - Fire Code's XP curve is the academy's again (supersedes "a fifth", above)
+
+Madison: "only 43k to level 80 in total seems incredibly low tbh" / "I feel like I could reach level 80 in like a month this way in fire code. I'd want it to at
+least take 2 months" / "we are forced to study in the academy, we have a test every single Monday. So those numbers probably are slightly inflated".
+MEASURED on the 45 real accounts (lifetime points / study days): top 294,795 XP in 45 days (~6.5k a day), 229,831 in 39, Nap 197,160 in 27 (~7.3k),
+Z 100,080 in 26 (~3.8k), middle of the class ~1.9-2.3k a day. At a fifth (43,583 XP) a heavy user reaches level 80 in ~7 study days; at two-fifths ~15.
+At the academy's curve (217,910 XP) it is ~36 study days for the heaviest (about two months of calendar time) and longer for everyone else - and Fire Code is
+studied by choice, so slower still. `LEVEL_COST_SCALE` is 1 for both classes (the mechanism, `levelCost`, stays). Rank levels (21...80) and badge counts
+(4...56) unchanged; every chapter once is ~54k XP (level ~43), so the top ranks take repetition as the academy's do. Fire Code's flares keep their LEVEL
+windows (12-14 ... 77-79, evenly spread - that was about levels, not XP): at the academy's cost they land at ~4.8k, 15k, 43k, 83k, 138k, 205k XP.
+No account lists Fire Code in `classes` yet (0 of 45), so no level or rank moves. `check-b384-ifccurve.py` rewritten: (1) the curve equals the academy's,
+(2) level 80 takes 30+ study days at 6,000 XP a day and every chapter once is under half of it, (3) a sanity bound on ranks vs badges, (4) flares, (5) errors;
+(1)-(2) FAIL on the previous build. `check-curve.py` (the academy's) ALL PASS.

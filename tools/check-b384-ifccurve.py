@@ -48,17 +48,22 @@ with sync_playwright() as pw:
     ch = pg.evaluate(CHAPTERS)
     flares = pg.evaluate("()=>{ store.flareLevels = {}; return MYSTERY_ORDER.map(c => mysteryLevelGate(c)); }")
     ratios = [round(i / a, 4) for i, a in zip(icurve, acurve)]
-    chk("(1) every Fire Code level costs a fifth of the academy's (ratios %s ... %s), the academy's unscaled (%s XP to 80, %s)" % (ratios[0], ratios[-1], acurve[-1], acad["cls"]),
-        info["cls"] == "ifc" and acad["cls"] == "academy" and all(abs(r - .2) <= .2 * .01 + 1 / max(1, a) for r, a in zip(ratios, acurve)), list(zip(LEVELS, acurve, icurve)))
+    chk("(1) Fire Code's curve is the academy's, level for level (ratios %s ... %s; %s XP to 80, %s)" % (ratios[0], ratios[-1], acurve[-1], acad["cls"]),
+        info["cls"] == "ifc" and acad["cls"] == "academy" and all(abs(r - 1) <= .01 for r in ratios), list(zip(LEVELS, acurve, icurve)))
     total = sum(c["xp"] for c in ch)
-    chk("(2) every chapter taken to 100%% (%d chapters, %d XP) reaches level 80 (%d XP)" % (len(ch), total, icurve[-1]), total >= icurve[-1], [total, icurve[-1]])
+    total = sum(c["xp"] for c in ch)
+    # (2) level 80 is not a quick climb: at the heaviest pace measured in the class (about 6,000 XP a study day) it takes 30+ study days, and
+    #     finishing every chapter once is well short of it (the top ranks take repetition, as the academy's do)
+    chk("(2) level 80 (%d XP) takes 30+ study days at 6,000 XP a day, and every chapter once (%d XP, %d chapters) is under half of it" % (icurve[-1], total, len(ch)),
+        icurve[-1] / 6000 >= 30 and total < .5 * icurve[-1], [total, icurve[-1]])
+    # (3) the ranks' levels are not walls: each rank's level is reachable with its badges' chapters plus repetition - no rank asks for a level
+    #     that more than 8x the XP of its badges' average chapters would be needed for (a sanity bound, not a target)
     far = []
     mean = total / max(1, len(ch))
     for k, lvl, b in info["tiers"]:
         need = pg.evaluate("(l)=>xpForLevel(l)", lvl)
-        typical, cheapest = mean * b, sum(c["xp"] for c in ch[:b])
-        if typical < need or cheapest < .5 * need: far.append((k, lvl, b, round(typical), cheapest, need))
-    chk("(3) each rank's level is there by its badges: its badge count of average chapters reaches it, and even the cheapest chapters reach half of it (%s)" % ([(k, l, b) for k, l, b in info["tiers"]],), not far, far)
+        if need > 8 * mean * b: far.append((k, lvl, b, round(mean * b), need))
+    chk("(3) no rank's level is out of all reach of its badges (%s)" % ([(k, l, b) for k, l, b in info["tiers"]],), not far, far)
     gaps = [b - a for a, b in zip(flares, flares[1:])]
     chk("(4) Fire Code's flares about every 15 levels from ~15 (%s, gaps %s); the academy's first still %s" % (flares, gaps, acad["first"]),
         flares[0] <= 16 and all(10 <= g <= 18 for g in gaps) and flares[-1] <= 80 and acad["first"] == 20, [flares, gaps, acad])
