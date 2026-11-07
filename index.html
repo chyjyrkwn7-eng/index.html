@@ -26548,8 +26548,9 @@
   .battle-fx{ grid-area:fx; font-size:.72rem; color:#FFD37A; font-weight:800; white-space:nowrap; text-align:center; }
   .battle-hpnum{ grid-area:num; font-family:var(--mono); font-weight:800; font-size:.78rem; white-space:nowrap; }
   .battle-vs{
-    align-self:center; font-weight:900; font-size:.8rem; letter-spacing:.06em; color:var(--soft);
-    padding:.35rem .3rem; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    align-self:center; font-weight:900; font-size:.8rem; line-height:1; letter-spacing:0; color:var(--soft);
+    /* (384 r5) a fixed round pill with the letters dead centre: letter-spacing adds space after the last letter, which pushed VS left */
+    width:2.4rem; height:2.4rem; box-sizing:border-box; display:grid; place-items:center; padding:0; border-radius:50%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
   }
   .battle-side.is-theirs .battle-bar-fill, .battle-side.is-theirs .battle-bar-lag{ left:auto; right:0; }
   .battle-side.is-theirs .battle-pop{ right:auto; left:.7rem; }
@@ -78471,6 +78472,12 @@ function overallCompare(a, b){
       || ((Number(b.level) || 0) - (Number(a.level) || 0))
       || ((Number(b.badges) || 0) - (Number(a.badges) || 0))
       || String(a.firstName || "").localeCompare(String(b.firstName || ""));
+}
+/* (384 r5) two people the board cannot tell apart share a place: everything overallCompare orders on, but the name */
+function overallTied(a, b){
+  const A = overallProgressOf(a.level, a.badges, a.rankFloor), B = overallProgressOf(b.level, b.badges, b.rankFloor);
+  return A.tier === B.tier && A.progress === B.progress && (Number(a.level) || 0) === (Number(b.level) || 0)
+      && (Number(a.badges) || 0) === (Number(b.badges) || 0);
 }
 /* What the row says: the three things the sort is made of, in words.
    Unranked is left unnamed rather than called "Unranked" - somebody
@@ -133837,7 +133844,7 @@ const BATTLE_HP = 300;   /* (384 r5) was 100 a member: twenty right answers empt
 const BATTLE_HIT = 5;
 const BATTLE_STREAK_HIT = 7;
 const BATTLE_HEAL = 15;
-const BATTLE_ABILITY_FROM = 10;
+const BATTLE_ABILITY_FROM = 0;   /* (384 r5) powers from the first question; was 10 */
 const BATTLE_ABILITY_EVERY = 3;
 const BATTLE_FREEZE_MS = 5000;
 const BATTLE_FLIP_MS = 8000;
@@ -139473,6 +139480,7 @@ let leaderboardLiveUnsub = null;
    .lb-rank-medal / .lb-rank-1/2/3 in the stylesheet); everyone else
    gets a plain "#N". */
 function renderRankMarker(el, place){
+  if(!(place >= 1)){ el.textContent = "\u2013"; el.classList.add("rank-unplaced"); return; }
   if(place <= 3){
     el.classList.add("lb-rank-medal", "lb-rank-" + place);
     el.textContent = String(place);
@@ -140740,7 +140748,17 @@ function renderRankingRows(rows, entries, board, opts){
   /* Rank is computed over the WHOLE board and then filtered, never the
      other way round: searching for a name must tell you that person's
      real position, not their position among the search results. */
-  const ranked = sorted.map((e, i) => ({ entry: e, place: i + 1 }));
+  /* (384 r5) TIES SHARE A PLACE (1, 1, 1, 4) and nothing scored is not a place. Six people on 360 XP were 1st to 6th by the
+     alphabet, three of them on the podium; on a Monday, with the whole class at zero, somebody was first for doing nothing.
+     A row with no XP / no hundo this board counts has place 0: a dash, no medal. */
+  const tied = board.sort ? overallTied : ((a, b) => val(a) === val(b));
+  let prevE = null, prevPlace = 0;
+  const ranked = sorted.map((e, i) => {
+    if(!board.sort && !(val(e) > 0)) return { entry: e, place: 0 };
+    const place = (prevE && tied(prevE, e)) ? prevPlace : i + 1;
+    prevE = e; prevPlace = place;
+    return { entry: e, place };
+  });
   const shown = query
     ? ranked.filter(r => String(r.entry.firstName || "").toLowerCase().includes(query))
     : ranked;
@@ -140831,7 +140849,7 @@ function renderRankingRows(rows, entries, board, opts){
   requestAnimationFrame(() => requestAnimationFrame(() => lbCountVisible(rows)));
   const addRow = ({ entry, place }, rowIdx) => {
     const row = document.createElement("div");
-    row.className = "rank-row" + (place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
+    row.className = "rank-row" + (place >= 1 && place <= 3 ? " lb-place-" + place + " rank-podium-" + place : "");
     if(rowIdx >= lbDrawnFirst){ row.classList.add("is-offscreen"); row.style.containIntrinsicHeight = "35px"; }
     /* Matched on the sync code, not the name. Two classmates called
        Madison would otherwise both light up as "me". The code is NOT a

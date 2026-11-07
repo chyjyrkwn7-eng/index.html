@@ -36088,3 +36088,9 @@ Madison: "not a fan of how this looks ... those matches can't end really quick? 
 - TEST HOOK: `window.__vroomFast` (set by check-vroom's init script only) drops both floors and uses 100 HP per member so the old fixtures still finish in seconds. Nothing in the app sets it.
 - RACE is NOT changed: the host picks the question count and a race ends when everybody finishes, so a small unit can still finish in under five minutes. Asked Madison whether to cycle questions there.
 - GATE: `tools/check-b384-matchlength.py` (fails on the previous build). `check-vroom.py` ALL PASS.
+
+## Build 384 round 5 - Battle VS and powers, ties on the boards
+
+- BATTLE: the VS badge is a fixed round 2.4rem pill with the letters in a grid (letter-spacing 0). Letter-spacing adds space after the last letter, which had pushed "VS" left of centre. `BATTLE_ABILITY_FROM` is 0: a power is offered from the first question (every third right answer, one held at a time); the hint reads "N more right for a power" throughout. Gate: `tools/check-b384-battleui.py` (fails on the build before).
+- LEADERBOARD: ties share a place (competition ranking: 1, 1, 1, 4). Week and Hundos tie on the number; Overall ties on everything `overallCompare` orders by except the name (`overallTied`). A row with nothing scored on Week/Hundos is unplaced: `renderRankMarker(el, 0)` prints an en dash, no medal. (Six people on 360 XP had been 1st to 6th by alphabet, and on a Monday somebody was first with zero.) `tools/check-b384-ties.py`; `check-b382-board.py` fixture changed so no two rows tie.
+- Known stale failures, unchanged by this work: check-b382-board CLS, check_b324l_board (flare element), check_b314h_board (flip-book phases), check_ranks (rank rewards counts).

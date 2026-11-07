@@ -35,7 +35,7 @@ FRAMES = """async(ms)=>{ const L=[]; const T0=performance.now();
       L.push([Math.round(performance.now()-T0), rs.length, art]); }
     if(performance.now()-T0<ms) requestAnimationFrame(tick); else res(); }; requestAnimationFrame(tick); });
   return L; }"""
-FILLFN = """()=>{ window.__fill=()=>{ const ids=['ninja','wizard','ghost','grizzly']; const rows=[]; for(let i=0;i<30;i++){ rows.push(Object.assign({pub:'zz'+i, firstName:'Cadet'+i, avatarChar:ids[i%4]}, boardNumbersOf(store), {weekPoints:1000-i*17, hundos:60-i, correct:5000-i*70, level:40-(i>>1), badges:20-(i>>2), xp:90000-i*2000})); } return rows; }; }"""
+FILLFN = """()=>{ window.__fill=()=>{ const ids=['ninja','wizard','ghost','grizzly']; const rows=[]; for(let i=0;i<30;i++){ rows.push(Object.assign({pub:'zz'+i, firstName:'Cadet'+i, avatarChar:ids[i%4]}, boardNumbersOf(store), {weekPoints:1000-i*17, hundos:60-i, correct:5000-i*70, level:40-(i>>1), badges:20-(i>>2)-(i&1), xp:90000-i*2000})); } return rows; }; }"""
 TAP = """()=>{ const el=document.getElementById('bottomtab-rewards'); const b=el.getBoundingClientRect(), x=b.left+b.width/2, y=b.top+b.height/2;
   const mk=t=>new PointerEvent(t,{bubbles:true,cancelable:true,pointerType:'touch',pointerId:77,isPrimary:true,clientX:x,clientY:y});
   window.__tapAt=performance.now(); el.dispatchEvent(mk('pointerdown')); el.dispatchEvent(mk('pointerup')); el.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:x,clientY:y})); }"""
