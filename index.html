@@ -152840,7 +152840,7 @@ function tabPerfText(){
        behind the planet.
      - Calendar: that calendar - a rounded page, the header band solid,
        the body cut out with the days left as dots.
-     - Leaderboard: a filled trophy, so the set matches. Profile stays the
+     - Leaderboard: a filled podium (it was a trophy), so the set matches. Profile stays the
        person's character. */
   const TAB_GLYPHS = {
     home:
@@ -152862,14 +152862,13 @@ function tabPerfText(){
     /* (384 review) "the leaderboard icon on the bottom tab, could that look a little better?" - the example's weight: a
        deep cup with a lip, its handles closed loops (each a ring cut through, evenodd), a waisted stem and a two-step
        base, about 20 units of ink like the calendar beside it; still no star (381) */
+    /* (384 review) "The new bottom tab leaderboard icon is not it. Fix that" / "do the podium": the trophy (380, 384 review - a cup
+       with closed-loop handles) is gone; the Leaderboard is a podium, as the calendar is a page: three solid blocks, 2nd - 1st - 3rd,
+       the middle one tallest, rounded at the top, separate pieces that never touch. About 19 units of ink, like its neighbours. */
     rewards:
-      '<path class="tg-cup" fill="currentColor" fill-rule="evenodd" d="' +
-        'M5.6 2.6h12.8c.55 0 1 .45 1 1v.9c0 .4-.3.7-.7.7h-.3v3.6a6.4 6.4 0 0 1-12.8 0V5.2h-.3c-.4 0-.7-.3-.7-.7v-.9c0-.55.45-1 1-1z' +
-        'M5.2 6.1H3.9A2.5 2.5 0 0 0 1.4 8.6c0 2.3 1.7 4.2 4.1 4.6l.5.1-.5-1.9c-1.4-.4-2.3-1.5-2.3-2.8 0-.4.3-.7.7-.7h1.3z' +
-        'M18.8 6.1h1.3a2.5 2.5 0 0 1 2.5 2.5c0 2.3-1.7 4.2-4.1 4.6l-.5.1.5-1.9c1.4-.4 2.3-1.5 2.3-2.8 0-.4-.3-.7-.7-.7h-1.3z' +
-        'M10.6 14.6h2.8l.35 2.6h-3.5z' +
-        'M8.4 17.2h7.2c.6 0 1.1.5 1.1 1.1v.5H7.3v-.5c0-.6.5-1.1 1.1-1.1z' +
-        'M6.6 19.2h10.8c.6 0 1.1.5 1.1 1.1v.6c0 .3-.25.55-.55.55H6.05c-.3 0-.55-.25-.55-.55v-.6c0-.6.5-1.1 1.1-1.1z"/>'
+      '<path class="tg-podium" fill="currentColor" d="M2.5 21.5V12.6a1.6 1.6 0 0 1 1.6-1.6h4.1v10.5z"/>' +
+      '<path class="tg-podium" fill="currentColor" d="M9.4 21.5V4.6A1.6 1.6 0 0 1 11 3h2a1.6 1.6 0 0 1 1.6 1.6v16.9z"/>' +
+      '<path class="tg-podium" fill="currentColor" d="M15.8 21.5V9.6a1.6 1.6 0 0 1 1.6-1.6h2.5a1.6 1.6 0 0 1 1.6 1.6v11.9z"/>'
 ,
     /* build 382, Fire Code's Settings tab: "make it look more like this one" - his reference is a gear with many short teeth round
        a ring and a three-spoke hub inside it, like a steering wheel. ONE path, nonzero (the trophy's rule, 380): the toothed ring

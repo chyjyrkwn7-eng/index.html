@@ -36130,3 +36130,13 @@ and Table 105.5.9's "Carbon dioxide used in carbon dioxide enrichment / systems 
 Gate: `tools/check-b384-countyrows.py` (PDFJS_DIR only - the county booklet ships in the repo); FAILS `--against HEAD` (the two rows), passes now.
 Not fixed, reported: the county tables' gold stops 15-25px short of the rules on 405.3 / 1004.5 / 5609.4.1; Exhibit B Table 508.4's own grey
 cell shading shows under the yellow. The book-row gate (`check-b384-tablerows.py`) needs the owner's book, which was not on the machine; the change does not touch the book path.
+
+## 384 - Leaderboard tab icon: a podium (the trophy is gone)
+
+"The new bottom tab leaderboard icon is not it. Fix that" -> options A-F were sent, in the real tab bar -> "do the podium". `TAB_GLYPHS.rewards` is
+three solid blocks, 2nd - 1st - 3rd, the middle one tallest, rounded at the top, separate pieces that never touch (19 units of ink in the 24 box,
+like the calendar page beside it). Classes are `tg-podium` (the trophy's `tg-cup` is gone). `check-b381.py` (1) now asserts the shape (three
+`currentColor` blocks, the middle one tallest, none touching another) instead of the trophy's star-fill. Fire Code's own Stats tab (three plain
+rising bars, build 382) is similar in spirit but different in shape (a podium peaks in the middle; Stats rises) - told Madison.
+`check-b381.py`'s three "Search names" centring checks fail on this and the previous build alike: the search field's placeholder is left-aligned
+in the clean look (a later decision), so they are stale, not a regression of this change.
