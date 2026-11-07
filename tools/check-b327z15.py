@@ -524,12 +524,15 @@ def section_s(br):
       const fill = document.querySelector('.ranklore-reqfill');
       const chip = document.querySelector('.ranklore-card .rankmap-giftbubble .flare-solo');
       return { fast, running, locked: card && card.classList.contains('is-locked'), filter: svg ? getComputedStyle(svg).filter : null,
+               op: svg ? +getComputedStyle(svg).opacity : 0, lock: !!document.querySelector('.ranklore-art .ranklore-lock'),
                fillDur: fill ? parseFloat(getComputedStyle(fill).transitionDuration) : 0, chipLit: chip ? chip.classList.contains('cosmic-badge-lit') : null }; }""")
     check("%s: S. the card is up 40ms after the tap" % label, r["fast"], r)
     check("%s: S. its big emblem moves (%d)" % (label, r["running"]), r["running"] >= 1, r)
-    check("%s: S. a locked rank's emblem is darkened without a filter" % label, r["locked"] and r["filter"] == "none", r)
+    # (384) "why is the big flare so dark without its color ... make it consistent and make it make sense": a rank's card shows it
+    # as it really is - no filter, not faded - and a padlock on the circle says it isn't yours yet
+    check("%s: S. a locked rank's emblem in its colour (no filter, not faded) with a padlock" % label, r["locked"] and r["filter"] == "none" and r["op"] >= .99 and r["lock"], r)
     check("%s: S. its bars fill (a transition)" % label, r["fillDur"] >= .3, r)
-    check("%s: S. a locked rank's flare chip is unlit" % label, r["chipLit"] is False, r)
+    check("%s: S. a locked rank's flare chip is lit (384: \"Why can't I see the color of the flare in the unlocks\")" % label, r["chipLit"] is True, r)
     ctx.close()
 
 
@@ -736,7 +739,11 @@ def section_aa(br):
         pg.evaluate("() => { showHome(); document.querySelectorAll('#tour-overlay, #tour-tooltip').forEach(n => n.remove()); }"); pg.wait_for_timeout(1500)
         home = pg.evaluate(M)
         check("AA. %s: Home's rings are Welcome's (%s vs %s)" % (label, home and home["radii"], wel and wel["radii"]),
-              bool(home and wel) and home["radii"][:2] == wel["radii"][:2] and abs(home["w"] - wel["w"]) <= 4, {"home": home, "welcome": wel})
+              # REVISED IN 384: on an upright tablet Welcome's two buttons are 24px taller ("The sign in and sign up buttons look
+              # small too"), and the room comes out of its planet (calc(100dvh - 32.6rem), 1.6rem less than Home's), so there it
+              # may be up to 1.6rem (26px) narrower than Home's - the same rings, the same planet, a little smaller. A phone: 4px.
+              bool(home and wel) and home["radii"][:2] == wel["radii"][:2]
+              and -4 <= home["w"] - wel["w"] <= (4 if w < 640 else 26), {"home": home, "welcome": wel})
         check("AA. %s: no halo behind Home's planet, as on Welcome" % label, bool(home) and not home["halo"] and not wel["halo"], home)
         ctx.close()
 
@@ -810,7 +817,7 @@ def section_dd(br):
     pg.evaluate("() => { document.getElementById('splashscreen')?.remove(); }")
     if not pg.evaluate("() => !!document.querySelector('.cosmic-welcome-btn.welcome-new')"):
         pg.evaluate("() => showWelcome()"); pg.wait_for_timeout(600)
-    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn"):
+    for sel in (".cosmic-welcome-btn.welcome-new", ".signupcheck-panel .signupcheck-go", ".classselect-panel .class-card.is-academy", ".classselect-panel .next.playbtn", "#classenroll-confirm .classenroll-yes"):
         pg.click(sel); pg.wait_for_timeout(600)
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=25000)
     try:
@@ -973,7 +980,7 @@ def section_ff(br):
     pg.click(".signupcheck-panel .signupcheck-go"); pg.wait_for_timeout(900)
     check("FF. each sign-up step's button sits just under its content (within 60px)", all(0 <= v <= 60 for v in gaps.values()), gaps)
     pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300)
-    pg.click(".classselect-panel .next.playbtn")
+    pg.click(".classselect-panel .next.playbtn"); pg.wait_for_timeout(300); pg.click("#classenroll-confirm .classenroll-yes")
     try:
         pg.wait_for_selector("#nova-intro .nt-talk", timeout=25000)
     except Exception:
@@ -1007,8 +1014,10 @@ def section_gg(br):
       showProfile('profile'); await wait(900);
       const sub = document.querySelector('#stage .pf-standing .pf-idsub');
       const pill = document.querySelector('#stage .pf-goal-foot'); const pr = pill.getBoundingClientRect();
-      const range = document.createRange(); range.selectNodeContents(pill); const tr = [...range.getClientRects()].filter(x => x.width > 4)[0];
-      const word = tr ? Math.abs((tr.left + tr.right) / 2 - (pr.left + pr.right) / 2) : 99;
+      /* (384) a Settings row now, its words after its tile (Madison: "the customize button, the badge button, and rank button ...
+         Please change that"): the words' block in the row's middle, top to bottom */
+      const wb = pill.querySelector('.pf-act-words'); const tr = wb ? wb.getBoundingClientRect() : null;
+      const word = tr ? Math.abs((tr.top + tr.bottom) / 2 - (pr.top + pr.bottom) / 2) : 99;
       showProfile('stats'); await wait(900);
       const hs = [...document.querySelectorAll('#stage .stx-glance .stat-card')].map(e => Math.round(e.getBoundingClientRect().height));
       startDailyQuestion(); await wait(1200);
@@ -1016,7 +1025,7 @@ def section_gg(br):
       const sbg = sb ? getComputedStyle(sb).backgroundColor : null;
       return { sub: sub ? sub.textContent.replace(/\s+/g, ' ').trim() : null, word, hs, sbg }; }""")
     check("GG. under the rank: 'Level N · N badges'", bool(r["sub"]) and bool(__import__("re").match(r"^Level \d+\s*·\s*\d+ badges?$", r["sub"])), r)
-    check("GG. See rank ladder's word in the pill's middle (within 1.5px)", r["word"] <= 1.5, r)
+    check("GG. Rank ladder's words in the row's middle, top to bottom (within 1.5px)", r["word"] <= 1.5, r)
     check("GG. Stats' four glance tiles are one height", len(r["hs"]) == 4 and len(set(r["hs"])) == 1, r)
     m = __import__("re").findall(r"[\d.]+", r["sbg"] or "")
     check("GG. the daily question's Submit is grey before a pick, not white (%s)" % r["sbg"], len(m) >= 3 and max(float(x) for x in m[:3]) < 120, r)
@@ -1126,7 +1135,7 @@ def section_hh(br):
     same = len({tuple(v[:3]) for v in spots.values()}) == 1
     check("HH. the sign-up steps: Back and the title in the same places on every step, in the top fifth, nothing scrolls",
           same and all(v[1] < 820 * .2 and v[3] for v in spots.values()), spots)
-    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn")
+    pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); pg.click(".classselect-panel .next.playbtn"); pg.wait_for_timeout(300); pg.click("#classenroll-confirm .classenroll-yes")
     try:
         pg.wait_for_selector("#nova-intro", timeout=25000)
     except Exception:

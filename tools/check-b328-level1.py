@@ -27,11 +27,17 @@ base = None
 if "--base" in sys.argv:
     base = os.path.abspath(sys.argv[sys.argv.index("--base") + 1])
 else:
-    try:
-        src = subprocess.run(["git", "-C", ROOT, "show", "ba173e4:index.html"], capture_output=True, check=True).stdout
-        tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False); tmp.write(src); tmp.close(); base = tmp.name
-    except Exception:
-        base = None
+    # the build before 328 if the clone has it; (384 full check) a shallow clone does not, so then the live build on main -
+    # every key at the same index is what matters either way (the bank grows or stays the same size)
+    BASE_IS_LIVE = False
+    for ref in ("ba173e4", "origin/main", "main"):
+        try:
+            src = subprocess.run(["git", "-C", ROOT, "show", ref + ":index.html"], capture_output=True, check=True).stdout
+            tmp = tempfile.NamedTemporaryFile(suffix=".html", delete=False); tmp.write(src); tmp.close(); base = tmp.name
+            BASE_IS_LIVE = ref != "ba173e4"
+            break
+        except Exception:
+            base = None
 
 from playwright.sync_api import sync_playwright
 CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
@@ -83,7 +89,7 @@ with sync_playwright() as p:
         bctx.close(); bsrv.shutdown()
         check("every key of the previous bank is at the same index", keys[:len(old)] == old,
               [i for i in range(min(len(old), len(keys))) if keys[i] != old[i]][:8])
-        check("the bank only grew (new questions are appended)", len(keys) > len(old), [len(old), len(keys)])
+        check("the bank only grew (new questions are appended)", len(keys) > len(old) or ("BASE_IS_LIVE" in globals() and BASE_IS_LIVE and len(keys) >= len(old)) or ("--base" in sys.argv and len(keys) >= len(old)), [len(old), len(keys)])
     else:
         check("previous build available to compare", False, "no base")
     check("no two questions share a key, apart from TCOLE's three #12s", len(keys) - len(set(keys)) <= 2, len(keys) - len(set(keys)))
@@ -117,9 +123,9 @@ with sync_playwright() as p:
     print("\n328d. the answer being verified says so in red (build 379: each twin counts the guide's own answer, and its note names it)")
     note = pg.evaluate("""() => { const f = s => QUESTIONS.find(q => q.topic === 'Arrest, Search, and Seizure' && q.src === s);
       return [31, 55].map(s => { const q = f(s), n = buildBankNote(q); return [q.choices[q.answer], n ? n.textContent : null]; }); }""")
-    check("#31 and #55 each draw a red note naming the instructor and the answer that question counts",
-          note[0][0] == "Revoked by the person granting consent" and note[1][0] == "Is a mere acquiescence to authority claimed by the officer"
-          and all(n[1] and "instructor" in n[1] and "verif" in n[1].lower() and n[0] in n[1] for n in note), note)
+    # (384) Madison: "the answer is revoked, remove the warning" - both count Revoked and neither draws the note any more
+    check("#31 and #55 both count 'Revoked by the person granting consent' and draw no being-verified note (384)",
+          all(n[0] == "Revoked by the person granting consent" and not n[1] for n in note), note)
     check("a plain question draws none", pg.evaluate("() => buildBankNote(QUESTIONS[0]) === null"))
     color = pg.evaluate("""() => { const n = buildBankNote(Object.assign({}, QUESTIONS[0], { verifyNote: 'An admin is confirming this answer with the instructor.' })); document.body.appendChild(n);
       const c = getComputedStyle(n.querySelector('.bank-note-text')).color; n.remove(); return c; }""")

@@ -78,7 +78,7 @@ def main(src):
                      fails a check that has nothing to do with tours. */
                   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
                    'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
-                   'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+                   'seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
                   syncCode = 'SYNC-' + a.pub; cloudConfirmedFor = syncCode;  /* read done, as on a real launch (build 296 guard) */
                   try{ localStorage.removeItem('class26e.chatroom'); }catch(e){}
                   chatRoomCode = null; chatMyKey = null;
@@ -112,7 +112,7 @@ def main(src):
               store.tourRev = 99;
               ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour',
                'seenRewardsTour','seenSettingsTour','seenUnitOptionsTour',
-               'seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+               'seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
               syncCode = 'SYNC-' + a.pub; cloudConfirmedFor = syncCode;  /* read done, as on a real launch (build 296 guard) */
               showHome();
               return new Promise(r=>setTimeout(()=>r({
@@ -350,7 +350,8 @@ def main(src):
               return ref.get().then(sn=>{
                 const d = sn.data();
                 Object.keys(d.participants).forEach(k=>{
-                  if(k !== chatMyKey) d.participants[k].seen = Date.now() - 300000;
+                  /* past the app's own window, read off the page (CHAT_STALE_MS went to 330s when presence went to a write every 4 minutes) */
+                  if(k !== chatMyKey) d.participants[k].seen = Date.now() - ((typeof CHAT_STALE_MS === 'number' ? CHAT_STALE_MS : 300000) + 60000);
                 });
                 return ref.set(d);
               }).then(()=>new Promise(r=>setTimeout(()=>r({

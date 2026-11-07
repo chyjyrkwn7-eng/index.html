@@ -53,6 +53,9 @@ with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=G["g"]["CHROME"])
     for kind in ("book", "amendment"):
         ctx, pg, errs = G["page"](br, G["init"](G["ifc"]))
+        # (384 full check) the shared seed's 234 hundos owe it Fire Code's hundo-effect unlock cards (no seenUnlocks); one up
+        # covers the card and takes the tap, so they are let go first
+        pg.evaluate("()=>{ try{ homeUnlocksOwed = () => false; }catch(e){} document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus'); }")
         unit = pg.evaluate("""async(kind)=>{ const w=ms=>new Promise(r=>setTimeout(r,ms));
           const q = QUESTIONS.find(q=>q.ifc && q.ifc.citation && ((q.ifc.citation.source==='amendment') === (kind==='amendment')));
           if(!q) return null; showFlashcards([q.topic.trim()], 'all'); await w(1200);
@@ -72,10 +75,19 @@ with sync_playwright() as pw:
             % (kind, s2["faceH"], s2["cardH"], s2["cardBottom"], s2["navTop"]),
             s2["faceH"] <= s2["cardH"] + 2 and s2["navTop"] is not None and s2["navTop"] >= s2["cardBottom"] - 1, s2)
         if kind == "book":
+            # the lock card and its button are drawn once the app has looked for a book (ifcEnsureBook) - under load that is later
+            # than the wait above: tap the button once it is there
+            try: pg.wait_for_selector(".fc-card .fc-back .ifc-code button", state="visible", timeout=15000)
+            except Exception: pass
             hit = tap(pg, ".fc-card .fc-back .ifc-code button"); pg.wait_for_timeout(900)
             s3 = pg.evaluate(STATE); picked = pg.evaluate("()=>window.__picked || 0")
             chk("(3) book: the code box's own button does its thing (%s) and the card stays on its answer" % picked, hit and picked >= 1 and s3["flipped"] is True, s3)
-        tap(pg, ".fc-card .fc-back summary.ifc-code-sum"); pg.wait_for_timeout(1000)
+        tap(pg, ".fc-card .fc-back summary.ifc-code-sum"); pg.wait_for_timeout(600)
+        # (384 review) "Hide the code" slides shut now (ifcCodeSlide): wait for it to end - up to 3s - then the card refits
+        for _ in range(24):
+            if pg.evaluate("()=>{ const d=document.querySelector('.fc-card .fc-back details.ifc-code'); return !d || (!d.open && !d.style.height); }"): break
+            pg.wait_for_timeout(100)
+        pg.wait_for_timeout(400)
         s4 = pg.evaluate(STATE)
         chk("(4) %s: 'Hide the code' closes it, the card stays on its answer and shrinks back (%s -> %s)" % (kind, s2["cardH"], s4["cardH"]),
             s4["flipped"] is True and s4["open"] is False and s4["cardH"] < s2["cardH"], s4)

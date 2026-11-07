@@ -31650,3 +31650,4500 @@ Measured with an iPhone user agent and real CDP touches (440x956 at 3x), traces 
   the app's first line - the splash, Welcome to NOVA (scrolled section by section), every step, Nova (name, partner, the
   save-your-code card), the tips, Home - on the video's clock, with the app's own sound. --device phone (an iPhone Safari tab,
   440x838) | laptop (1440x820).
+
+## Build 384 - Friends from the chat goes back to where you were (a test above all)
+Madison (383 live): "Chat button while in a test takes you back to main menu. What I mean is, if I am in a test and I hit like
+manage friends or something, when I leave that, it goes back to the main menu instead? Fix that."
+- CAUSE: openFriendsFromChat (327z12/z15) knew four screens to go back to (Home, Calendar, Leaderboard, Profile); from anything
+  else its Back was Home with the chat open - a test left behind (the stage replaced, the clock running on, then Home).
+- A TEST (friendsOverRun: a question up, not results / Review's list / flash cards / a team match / a room still waiting, not
+  paused) is HELD as Pause holds it (holdRunForFriends: paused, pauseStartedAt, both clocks stopped, the session saved - a phone
+  that closes the app on Friends finds it under Continue your test) and its strip (the progress dots, the clock - outside the
+  stage) put away. Friends over it has NO TAB BAR (friendsBack.hold -> forceHideBottomTabs, set after setActiveNav, which clears
+  it) - the test has none, Back is the way out. Back: the strip back, resumeRun() (the time away taken off the clock by
+  cancelPauseTiming, the question redrawn - the same question, its answers in the same order), the chat open on Friends.
+- REVIEW'S LIST: its run is let go when the list leaves the stage (383's observer), so Back puts back the run, the same list node
+  (its search, its opened codes), its header labels, its scroll, Pause.
+- FLASH CARDS: setActiveNav closes the deck (fcLeave), so Back deals the same deck again - its order, the card, its side.
+- ANY OTHER SCREEN (the units being ticked, a results screen, Settings, Customize): Back puts back the same stage nodes at the same
+  scroll, the tab that was lit kept. Home, Calendar, Leaderboard and Profile are rebuilt as before (fresh presence/data).
+- Gate tools/check-b384-chatback.py (iPhone, real chat Friends tab, Manage friends, Friends' Back): (1) a Mock with a 10-minute
+  countdown: held on Friends (paused, clock still over 3s), no tab bar, no test strip; Back: the same question, answers in the same
+  order, resumed (Pause, dots, the clock moving), the time on Friends not counted (within 3s - the chat open before and the moment
+  after Back), the chat on Friends; (2) Review's list scrolled to 900: same list, same scroll, run alive, its Pause pauses it;
+  (3) flash cards, third card, answer side: same card, same side; (4) the units with two ticked: the same two; (5) Home: Home + the
+  chat (unchanged); (6) no page errors. On 383 (origin/main): 8 fail - Back is Home, the test gone, the clock ran on Friends.
+- check-b383-flashcards (3) waits for the lock card's button (drawn after ifcEnsureBook looks for a book - later under load) before
+  tapping it; it failed twice under load with nothing to tap.
+- APP_BUILD / version.json = 2026-11-04-384.
+
+### Build 384 - Contributors: Cameron Wharton second; the flare's "Tap" after a miss, a burst on a tap, the bubble's point
+- Madison: "Cameron Wharton started the idea of this entire app. He made the beta and I took it from there. He should be second on
+  the list under me (Madison Davis) update his stuff." creditsPeople(): Madison Davis, then Cameron Wharton - role "Co-Founder &
+  Original Beta"; rows: the original idea for the app, the first beta build, Virtual Room design (opens it), live multiplayer
+  test sessions, Race / Tug of War / Battle modes, character concepts and ideas - then the rest by surname. check-b382-credits'
+  PEOPLE order updated (both classes pass).
+- Madison: "Secret flare 'tap' button, only appear when they miss it the first time, don't show that the first time a flare comes
+  up, for each color even. But if they miss it, then next time it's there it should say tap."
+  store.flareMissed {colour: true} (NEW persisted field: default {} in applyLoadedData - the six colours written out, not
+  MYSTERY_ORDER, a const further down while applyLoadedData runs at boot; OR-merged in mergeSameAccount and mergeLeavingAccount).
+  noteFlareMissIfPassed(atEnd): in render() (the flare's question gone by, pos > mysteryAppearsAtPos) and summarize() (the run
+  ended at or after it), untapped and that colour not found -> missed, saveStore(). buildMysterySpark adds the tag only for a
+  colour this account has missed (383 showed it until the first flare of any colour was found).
+- "Ensure when you tap it, it does a cool animation": .mystery-pop - ten sparks (each its own angle, 30-51px, a 0-60ms stagger)
+  and two shockwave rings (its colour, then white) out of the orb, the tag popping up and away; transforms and opacity only; off
+  under Reduce motion. FOUND ON THE WAY: since 383 the orb's own burst never played - 383's beckon
+  (.mystery-spark:not(.shades-spark) svg, 0-2-1) out-ranked .mystery-spark-found svg (0-1-1); a 0-4-1 rule plays it again.
+- "ensure the pointy part lines up in the tap bubble box thing cause it looked off": the bubble was see-through (.9 alpha) with a
+  1px outline, the point drawn over it 1px left of and 1px above the body's edge/middle - the outline showed through the point and
+  stepped where a straight side met the round end. Tried: an opaque fill (the step stayed), the point behind the outlined body (a
+  separate triangle). Now one solid shape with no outline: the body is ::after, the point ::before (a 9px square turned 45deg, its
+  centre on the body's left edge and middle), the same fill (the flare's colour 46% into #101117) and the glow; padding +1px for
+  the border that went.
+- Gate tools/check-b384-flare.py: (1) first appearance no Tap; (2) past it untapped -> missed; (3) next time Tap; (4) another
+  colour no Tap; (5) one solid shape, the point's centre on the edge and middle (+-1px), 45deg; (6) a tap: 10 sparks, 2 rings, the
+  orb's mystery-burst; (7) on the last question, finished without it -> missed; (8) saved and read back through applyLoadedData,
+  another device's miss merged; (9) no page errors. On 383: 7 fail ((1) Tap on a first appearance; the point at -1 / 11.5 of 25;
+  no burst, the orb still on its beckon). This build ALL PASS.
+
+### Build 384 - Fire Code: a curve a fifth of the academy's; its flares every 13 levels from 13
+- Madison: "the ifc version, the xp curve and xp amount needed to level up. Ensure this is made right. A person probably won't be
+  grinding these nearly as hard as the police one. And remember that each unit 1 one hundred is a badge. So the xp curve is gonna
+  need to be easier, it's gonna have to be easier to reach the max rank." / "ensure for the ifc version, the secret flares are
+  more spread out and come through earlier on ... There's 6 of them, so every 15 levels or so".
+- MEASURED: the academy curve is 217,910 XP to level 80. Fire Code: 58 chapters, 1,779 questions, a badge is one 100%
+  (badgeThresholdFor 1); its ranks (382) ask the academy's levels 21 ... 80 with 4, 12, 20, 28, 36, 48, 56 badges. Every chapter
+  taken to 100% - an imperfect first go (~70%, 9s a question) and a perfect second (8s), paid by computeRunXp itself - is 53,510
+  XP: a QUARTER of level 80. On 383 Fire Code's top rank was out of reach by playing all of it.
+- LEVEL_COST_SCALE (0.2 in Fire Code, 1 in the academy) and levelCost(need): levelProgress and xpForLevel step `need` on the
+  academy's numbers and charge levelCost(need) - the same shape, every level a fifth; span / toNext / fraction / topSpan in Fire
+  Code's XP. Level 80 = 43,583 XP. A Fire Code level only goes UP (cheaper), so no level or rank drops (rank floors / the legacy
+  curve are dearer and stay below). Placed under LEVEL_CAP (whose own TDZ already rules out earlier callers).
+- FLARE_WINDOWS_IFC: red 12-14, orange 25-27, yellow 38-40, violet 51-53, white 64-66, core 77-79 - every 13 levels, the last
+  where the academy's sixth is; ~0.9k, 3.6k, 8.6k, 15.6k, 26k, 41k XP on the new curve. FLARE_WINDOWS_ACADEMY unchanged (20,
+  34-36, 47-49, 59-61, 70-72, 78-80). A level drawn from the academy windows is outside the new ones and is redrawn when asked.
+- Gate tools/check-b384-ifccurve.py: (1) every Fire Code level a fifth of the academy's (within 1%), the academy unscaled; (2)
+  every chapter to 100% (53,510 XP) reaches level 80; (3) each rank's level there by its badges (its badge count of average
+  chapters reaches it; even the cheapest reach half); (4) the flares 13-15 levels apart from ~13 (drawn 14, 26, 39, 53, 65, 79),
+  the academy's first still 20; (5) no page errors. On 383: (1)-(4) fail (ratio 1.0; 53,510 vs 217,910; flares 20, 35, 48 ...).
+  check-curve (the academy's) ALL PASS unchanged.
+
+### Build 384 - Home's class icons and daily question; the chat sheet; Nova's tag; Manage friends' copy icon and field
+- CLASS ICONS (NOVA_CLASSES): "The fire in the ifc class, it's not centered, nearly but it's not." / "I like the fire and police
+  icon but I don't think I love them." The flame's tip curled to one side (its halves 9.2 levels apart mirrored about the button's
+  middle; ink 1.8px low), the shield an outline with a 22% fill. Redrawn SOLID and SYMMETRIC: Fire Code a teardrop flame
+  (#FFE08A -> #FF9447 -> #EE4B3F) with a pale core; the academy a filled shield (#FFB3A6 -> #B9A4FF -> #7FA6FF) with a white
+  star and a soft lit half. Same 24 box; every place they appear follows (the button, its list, the catalog, sign-up class cards).
+- THE DAILY QUESTION: "The ready version is it just spinning and that's distracting, the loading version is kinda lame and it's
+  not much." READY: 383's comet (dq-comet, a 2.6s turn) is gone; the ring is drawn whole and lit (.dq-ring svg visible, its
+  stroke the rank's colour toward white, a soft glow round it), the colour inside breathes slowly (dq-glow 4.2s), the "?" lit -
+  the ring that goes out every 3.6s (the button's ::after) is the only outward motion. WAITING (answered): the middle says the
+  time to the next 5pm (dailyLeftText: "10h", "40m"; setDailyLeft on build and on dailyRingTick's minute; the aria-label says
+  it), the "?" hidden, the arc's track a shade brighter and a lit head at the arc's end (.dq-ring-head + -halo, circles at
+  (97.5, 50) turned by --dq-p about the centre; `.dq-ring circle` is fill:none at 0-1-1, so they are 0-2-1). The recharge
+  (is-charging) is unchanged and shows the "?" as before.
+- THE CHAT SHEET: "the background behind the chat is see through and then you see it change to blurry" (again). Since 327z12 it
+  rose on a near-opaque fill and turned to a 30px glass 300ms later; an iPhone builds a backdrop blur a few frames after it is
+  asked for, so the sheet was the .82 tint over a sharp page for those frames. The dark sheet is now that fill (.95, its sheen
+  and rim) always - no backdrop-filter to arrive late (the light theme keeps its own).
+- NOVA'S TAG: "the spot that says instructor on the right, center that" - on his row the tag is absolutely placed on the row's
+  middle at its right edge (it sat on the name's line, 8.3px above the middle); name and "Say hi" keep 6.4rem clear.
+- MANAGE FRIENDS: "remove the copy button and just put that copy button you see. The word copy don't need to be there. Make it
+  look good." - a round 44px matte button (Send's black) with the two-squares copy glyph; a tap copies, the glyph turns to a
+  green tick with a pop and a green ring for 1.4s, the toast as before; aria-label "Copy your friend code". "The 'enter a
+  friends code' doesn't come off as a text box ... give it a more 'type here' vibe?" - the same field in a label
+  (.friend-add-field): a soft inner edge (brighter, in the accent, when tapped), a brighter hint nudged right, and a cursor
+  blinking at the start while it is empty and untapped (::before, steps(1) 1.1s; still under Reduce motion). The clean look's
+  field rule (#stage ... input.searchbox, !important, 1-4-3) is out-ranked at 1-6-3.
+- Gate tools/check-b384-home.py: (1) both class icons solid (fill opacity >= .9) and mirror-symmetric (< 6 levels), centred
+  across within 1px; (2) ready: no running rotation, the ring whole and lit; (3) answered: the time left as the app's 5pm makes
+  it, no "?", the head at the arc's end (within 3 deg); (4) the chat sheet with no backdrop blur at 0/120/320/700ms, alpha >= .9;
+  (5) Nova's tag on his row's middle (1.5px), at its right edge; (6) the copy control an icon button (no word, svg, 44px+) that
+  turns to a tick; the field's inner edge, its cursor blinking until tapped; (7) no page errors. On 383: 8 fail (icons 0.22 /
+  0.28 fill, the flame 9.19 asymmetric; dq-comet turning; no time left; blur from 320ms; the tag 8.3px high; "Copy" a word).
+
+### Build 384 - the chat button is Home's everywhere; the round back buttons match it
+- Madison: "The Home Screen, the chat button looks good, it looks how it should look, but the chat button changed on like every
+  other screen.. the chat button on home looks amazing, revert the chat button it looks like that everywhere still. I think the
+  new back button needs to match it as well.."
+- 383's clean look overrode the chat button beyond Home (body:not(.sky-home) #chatdock-btn) and the round back button with a flat
+  --clean-card-2 disc. The chat override is GONE: build 380's tab-bar glass (the .26 body with its faint white lift, the one .16
+  rim, blur(7px) saturate(1.5), 0 8px 32px shadow) is on every screen. Both round back buttons - a pushed screen's .ios-nav-back
+  and Settings' pages' .settings-nav-back (also the units screen's setup-nav-back) - wear exactly that glass in dark modern; held
+  they scale to .92 (Settings' keeps its translateY(-50%)).
+- Gates revised (they asked for the flat look): check-b383-look (3) the chat button beyond Home is Home's glass, the round back
+  button wears it; (6) ready is lit and still (384's daily question); check-b327-d surfaces: the chat button is the bar's glass,
+  the bar's frost. check-b384-home (8): the chat button and the round back buttons on Settings, Account, Mode select, Customize
+  and Profile computed identical to Home's chat button - 0 differ; on 383, 8 differ. All pass.
+
+### Build 384 - Settings in Delta's proportions; the theme's colour at the foot
+
+Madison, with Delta's Settings beside ours: our rows, icons and words were smaller, the icons less crisp, there were no lines
+between rows, and the Support links / NOVA wordmark / "MADE BY DAVIS" were gold-and-white whatever the theme.
+
+- One block after `.settings-adv-card .startbar:first-child` (Settings and its sub-pages, modern layout):
+  rows `min-height:60px; padding:10px 18px; gap:15px` (were ~52px), tiles 32px (were 30) at radius 8px, glyphs 21px with
+  `shape-rendering:geometricPrecision` and one stroke weight 2.15 on the svg and its stroked parts; labels 18px, values 17px,
+  subs 14px, chevrons 17px. The label/value rules carry `html[data-layout] body #stage ... .settings-card` because a later
+  `html[data-layout] body #stage` rule set 1.0625rem and won.
+- Hairlines: the clean look sets `--surface-border` to transparent beyond Home, which is why the existing `::before`
+  separators had vanished. They now paint their own colour: `rgba(255,255,255,.1)` dark / `rgba(0,0,0,.1)` light, starting at
+  the label (`18px + 32px + 15px`) for icon rows and at 18px for plain/link/text rows, running to the card's right edge.
+- `html{ --theme-sig: var(--rank-accent, color-mix(in srgb, var(--theme-c2) 50%, var(--theme-c3))) }` - the theme's signature.
+  The Support links (`.settings-linkrow`), the NOVA wordmark gradient, "MADE BY" and "DAVIS" are all mixed from it, so the whole
+  foot is one hue per theme (coral-rose in Default, violet in Amethyst, ...). Light mode uses the signature straight.
+- Gate: `tools/check-b384-settings.py` (rows/tiles/glyphs/labels, a visible hairline from label to edge, the foot violet in
+  Amethyst and not gold in Default, MADE BY and DAVIS one hue). Fails 3 on 383. check-b382-settings, check-b382-credits,
+  check-b383-look, sweep --quick all green.
+- (Light mode is retired - loadTheme() ignores a stored "light" - so the dark-on-light cards seen by forcing theme.mode='light'
+  in a harness are not a real state. The light-theme hairline/link rules are harmless leftovers.)
+
+#### 384 - the pages Settings opens, the same proportions
+
+Madison: "When clicking the tabs and getting in them too, ensure that stuff within them is updated too for all this" (his "tabs"
+are Settings' rows). Every page was measured (tools: a scratch measure over sound/study/motion/account/sync/rankings/share/
+advanced/credits/legal): Share & Install already took the menu's rules (.settings-row in .screen-settings-sub); the rest did not.
+- Switch rows (label.opt in a padded .settings-card - Sound & Haptics, Study, Motion & Effects, Leaderboard & Privacy): the card
+  18px in at each side (`:has(> label.opt)`), rows 60px+ with 13px top/bottom, tile-to-words 15px, title 18px, description 14px
+  (was 17 / 13.1). Their hairline (`label.opt.has-tile + label.opt::before`, and after the volume) was the same transparent
+  --surface-border: now white 10%, from the words (32 + 15) to the card's edge (right:-18px). The volume row's words line up.
+- Account: the name row 60px, name 18px (was 16.3); Sign out 60px (was 52).
+- Sync: "Your sync code" 18px/600 (was 15.2/700), still the fixed #6FC2FF blue Madison asked to keep; Save it's row lines up with
+  the code's tile (it carried the menu rows' 18px side padding inside an already padded card).
+- Advanced's red text rows 18px/400 (were 15.2/500). Contributors: every item 18px/400 (were 16.3/500; the link rows were already
+  18), names 18px, roles 16px, the intro 16px. Card footnotes 14px. Legal / Terms / Privacy text 16px (was 13.8), card 16px 18px.
+- Left alone: the volume slider's blue (the XP bar's blue by design), green switches, Version history and Report a bug (not
+  Settings pages - a document and a form).
+- Rules are in the 384 Settings block, prefixed `html[data-layout] body #stage .screen-settings-sub` to out-rank THE iOS LOOK
+  block's `html[data-layout] body #stage :is(...)` rules.
+- Gate: check-b384-settings (5) - every switch row on the four pages, Account, the sync label (18px and still blue), Advanced,
+  Contributors and Legal/Terms/Privacy. Fails on 383 (4 failures in all).
+- check-b327z10 H5 measured Copy and Send as two worded `.friend-send` buttons; Copy has been an icon (`.friend-copy-btn`) since
+  the 384 Manage friends change, so H5 now reads the icon's glyph (currentColor) on its fill as well. Its B (a sheet's drag-dismiss
+  slide timing) swung 145ms/80% -> 94ms/30% between two runs while three agents were also driving Chromium - load, to re-run quiet.
+- check-b325-e (Save and exit / iPad unit cards) and check-b327-i (Welcome lines, the T.Sale name editor) fail identically on 383.
+
+### Build 384 - Stats' ring, its lines and Test history; Profile's three buttons; back to top
+
+Madison: "The back to top button, that button needs to match the look of the bottom tab" / "the big thing at the top of at a
+glance with the accuracy circle may not be the move? It's gonna be red for most people because questions are hard and then you'd
+have a hard time getting it up. However ... I love the circle and red and the cool and it really is my favorite part of stats but
+i just don't like what it's tracking. Is there something instead of accuracy it could track there perhaps?" / "The box with the 4
+stats, maybe it should have the lines in the box similar to the settings" / "The test history button, not a fan ... a bigger button
+under the last test shown there under recent test? The number line thing, maybe the same thing could be done for numbers in study
+time?" / "In profile, the customize button, the badge button, and rank button. I actually do not like that at all. It's terrible."
+
+- Back to top (#backtotop): the 380 glass list (`:is(.chatdock-btn, ..., .daily-question-fab:not(.is-done), .backtotop)`, 0-4-0,
+  !important) gave it a .62 body and blur(30px) saturate(1.25). Now, by id, exactly the tab bar's: the .26 body + lift, the .16
+  rim, 0 8px 32px shadow, blur(7px) saturate(1.5) while shown (THE iOS LOOK keeps a hidden one unblurred). Computed values equal.
+- THE RING = THE QUESTION BANK. Same ring (buildScoreRing, class `is-bank`), same colours (statBand: red < 70, green, gold 100).
+  It counts this class's unique KEYS with store.stats[k].n > .m - a question answered right at least once. n counts answers and
+  m misses (recordResult), so n - m only grows: the ring only fills, a missed hard question costs nothing, gold is the whole bank.
+  Floored, so 100 only when every question is in. "Question bank" / "657 of 1,118 questions answered right at least once"; before
+  any answer, "No answers yet". Accuracy is no longer shown on Stats (STAT_MEANINGS has no entry for the hero). Offered back to
+  Madison as a small number if he wants it.
+- Hairlines in both four-number boxes (At a glance, Study time): Settings' white 10%, drawn by the buttons (:nth-of-type, so the
+  explanation box that opens between rows doesn't shift them). Phone: an upright in the middle of the 12px column gap on each row
+  and one line across the row gap, grid edge to grid edge; offsets count from the padding box, inside the cards' 1px transparent
+  border, so the gap's middle is 7.5px out. iPad (4 across): three uprights, nothing across.
+- Test history: off the heading (the 327z15 pill is gone) and under the last test - Profile's row (pfActFill), the tests' width,
+  the history tile, "All N tests, newest first". Recent tests' heading no longer reserves 44px for the pill.
+- PROFILE'S THREE (pfActFill): Customize, Badge case, Rank ladder are Settings rows on the tab bar's glass - Settings' tile
+  (settingsRowIcon: new palette / badgecase / ladder glyphs), 18px name, 14px grey line, chevron, 62px, 18px corners. Tiles:
+  Customize in --theme-sig (the theme's own colour, as Settings' foot), the case gold #FF9F0A, the ladder the next rank's --nx
+  darkened 22% for its white mark. Only Customize blurs (it sits on the banner); the other two are on solid cards. Buttons keep
+  their classes (profile-customize-btn / pf-case-count with .pf-case-num "N of M badges" / pf-goal-foot with .pf-goal-foot-word)
+  so tours, gates and check-behaviour's caseNum still find them. The shut case's front padding 54px -> 23px so the case's row is
+  Customize's width. New-dot / New tag sit before the chevron. The Profile tour's copy says "Rank ladder".
+- Rows of words alone in Settings (plain / link / red text rows): their words are a span (settings-row-words, or the plain row's
+  label) trimmed with text-box: trim-both cap alphabetic, so the 18px capitals sit in the row's middle (Contributors and Terms sat
+  1.2-2px high on 383 too; check-ink-centre).
+- Gate: tools/check-b384-stats.py (back to top = the bar; the ring on a seeded 40% bank with 92% accuracy, +1 on a new right
+  answer, nothing on a known miss, green at 75%; the cross / the iPad's uprights; Test history row; Profile rows + they open).
+  Fails 6 on 383.
+- Gates moved to the new designs: check-b383-profile (2) rim + tile instead of a light fill, (3) the Tap needs a missed colour
+  (384's flare change; the gate had not been moved then), (5) rows instead of centred pills, and its colour parse reads
+  color(srgb 0-1); check-b382-ifc (2) Test history's row; check-b327z15 GG Rank ladder's words centred top to bottom.
+- Same on 383, not this: check-b382-ifc (5) "Profile has no Stats tab" (tabs read as []), check-b327z15 GG save-code banner,
+  check-ink-centre "Continue" on sign-up. check-ink-centre "Send" (+0.98 low) is Manage friends' Send at the same metrics as 383's,
+  now on a 1/8px row offset (the 384 field wrapper is 49.875px tall) - rounding, not a visible shift. Advanced's "Reset" on iPad
+  reads +0.98 (phone passes) - the same rounding.
+## Build 384 - the tab bar slide, the last 10-15%; Home's rank flares that shook
+
+Madison (383, Fire Code): "The sliding and tapping features look 100x better. I think there's a delay when sliding on home, maybe
+slightly sliding on profile though in ifc. It's about the same for ifc and police versions ... It's so much better but it's at about
+85-90 percent perfect capacity. We need 10-15 percent better." And: "the stuff with the rank flares, if you can tell, they are
+shaking very very slightly but just a noticeable amount. Fix that."
+
+### Read off his recordings (frame by frame)
+- SLIDE VIDEO (23:14, 14.3s, Fire Code, 1320x2868): 837 frames at a steady 60 a second (34 gaps of 25ms, 3 of 33ms). The glass's
+  centre was read from its top rim above the bar on every frame; the screen behind by template; the lit tab by its label. The
+  first half is mostly taps (their glide matches LENS.glide to the pixel: 15% at the first frame seen, 57% four frames on); the
+  second half is 11 slides.
+- THE END OF EVERY SLIDE FROZE: let go over Profile, Stats or Settings and the glass stood still where the finger left it for 3-6
+  frames (Profile 5, 5, 6; Stats 3, 5; Settings 3, 4, 4), over Home 10 (Settings -> Home) - then the tab lit, the screen changed and
+  the glass jumped, all in ONE frame (Home -> Profile: 6 frames at the same spot 85px short of Profile, then Profile lit, Profile up
+  and the glass at 572 on its way to 553, together). The tab lighting in the same frame as the screen means the release's own frame
+  was never drawn: the build ran first. Two Profile -> Home slides were the exception (Home lit one frame after the release, the
+  glass glided on while Home took ~10 frames) - luck of where in the frame the release fell.
+- Mid-slide: 0-1 frames standing still per slide on every screen (one Profile slide stood still every other frame, 4 of 12);
+  a few slides were first seen already moving (the press's frame came late).
+- FLARES VIDEO (23:16, 8.8s, Fire Code Home, untouched): six rank bubbles tracked to a hundredth of a pixel (whole-bubble
+  template, sub-pixel peak): each floats smoothly (0.15-0.28px a frame, 0.02-0.03px rms off its path); the orbiting dots too
+  (0.42px a frame, 0.08-0.18 rms). What moves is the emblem INSIDE each bubble: its sheet steps at 30 a second (by design,
+  ORBIT_ANIM_FRAMES 180 in 6s; between steps the inside is exactly still), and at each step the whole drawing - lines and stars
+  that do not animate - shifts 0.1-0.5px, in a pattern that repeats every row of the sheet (12 steps, 0.4s): it shivers in place.
+
+### What was wrong, and what changed
+1. THE RELEASE'S FRAME BEFORE THE BUILD (navigateTab's me.schedule). A slide's release built its screen from a 0ms timer; Safari
+   runs a timer that is due before its next frame, so the whole build (Home ~170ms on his phone, Profile ~90) ran before the frame
+   that lights the tab and hands the glass its hold track (lensHoldFor) - the glass stood frozen at the finger's last place. Now
+   endTabDrag marks the navigation as a slide's (bar._slideNav) and its build waits for the next frame and runs straight after it
+   (rAF, then a timer, which fires once that frame is committed; a frame held back never holds it past 50ms). Taps keep
+   TAB_SCREEN_AFTER (their glide has been on the compositor since the press). Chromium draws first after input on its own, so in
+   the sandbox Safari's order is emulated (a 0-4ms timer set during the release runs before the page can draw): previous build,
+   release -> first frame 129-371ms at 4x (the build inside it); now 19-56ms, and the build after it.
+2. THE RELEASE MEASURES NOTHING (navigateTab). With the glass held over the tab (bar._lensHeld()), slideBubbleToActiveTab()'s
+   measure of the platter - a whole-page style pass and layout right after the classes changed, the largest piece of the release
+   on Home - is skipped: the platter is only marked as that tab's (bubbleAt, .ready) and the landing (lensRelease) places it as it
+   always did. Reads in the release 23-34 -> 0; the release's handler at 4x ~29ms -> ~12ms (median).
+3. THE GLASS UNDER THE FINGER (lensBarSwell). lensRowGeo (382) measures the row once a touch - and lensDown measured it BEFORE the
+   swell began, marked "at rest". A finger that rested past the swell (160ms) before sliding found no swell running, so the whole
+   slide mapped the finger through the UNSWOLLEN bar. Held still after a slide's first moves: the glass 10.0px left of the finger at
+   Home's centre, 6.3 a tab on, 2.4 right of it on the Leaderboard, 10.0 right of it at the Calendar / Settings end. Sliding out of
+   Home the glass trailed by up to 10px, out of Profile ~4-6, and ran ahead on the far side - his "delay when sliding on home,
+   maybe slightly sliding on profile". check-b382-slide (3) had read it on Home since 382 (8.6-9.1px behind) and it was put down to
+   load. Now a new swell drops the reading (lensGeo = null), so it is taken again while the swell runs and once after. Held: 0.00px
+   everywhere; check-b382-slide's Home slide: never behind (-0.1 to -0.4), median 1.3-1.6 ahead (was 8.4-9.3 behind).
+4. THE FLARES (attachOrbitSheet). Home's hero is drawn at 0.94 (a transform on .cosmic-hero-wrap) and the cell was sized so a step
+   is whole device pixels on the SCREEN (44.68 CSS px x 0.94 x 3 = 126). Safari paints a layer in its own coordinates at the
+   device's scale, whatever transforms are above it (why a scaled-up layer looks soft in Safari): there a step was 44.68 x 3 =
+   134.04 pixels, every column of the sheet on a different fraction of a pixel - the 12-step pattern in the video. Now, where the
+   ancestors are scaled, the window is laid out in screen units (the cell 42 CSS px, px / min(dpr, 2)) and scaled back by their
+   inverse (scale(1.06383) on .rk-frame): 126 pixels a step in its own paint and on the screen; the same box (126 device px,
+   centred within 0.007px), the same frame on the same clock. The board's flares (not scaled) and the cutscenes (g.plain) are as
+   they were. Chromium rasterises at the screen scale, so it never showed the shake.
+
+### Looked at, not changed
+- The haptics: a slide's landing clicks the native switch twice (playSound -> haptic -> taptic in endTabDrag, and the touchend
+  listener's NovaSound.haptic) - ~25 samples each of the release at 4x. Another worker owns the haptic switches; reported, not
+  touched.
+- The press (lensDown's measures, 13-30ms at 4x): taps share it and he says taps are good.
+- The builds themselves: Home ~120-190ms at 4x, Profile ~60-95 - a third of each is the first style pass of the new screen forced
+  inside the build (syncLoopClock's getAnimations on Home, syncSky's colour probe on leaving Home) that the next frame would
+  otherwise do; it now runs while the glass glides on the compositor.
+- The hero pausing for a slide (SLIDE_HOLD_SEL) and the 30-a-second emblem sheets: kept.
+
+### Gate: tools/check-b384-slide.py (iPhone UA, CDP touch, 440x956 at 3x)
+(1) Safari's timer order emulated, Home -> Profile, Profile -> Home, Calendar -> Home at 4x: a frame between the release and the
+build, no layout read in the release, the first frame within 90ms, and it lands; (3) a finger held still mid-slide has the glass
+within 1px (Home x2, Leaderboard, Calendar; Fire Code Home and Settings), and check-b382-slide's Home slide (the finger resting 400ms
+first) is never over 3px behind; (2) Fire Code Home's rank flares: a cell x dpr whole in the window's own paint, whole-cell steps,
+the bubble's screen box, the clock's frame. This build ALL PASS; previous commit 13 FAIL (frame after the release 243-436ms with the
+build first, 25-34 reads, glass -9.97/-6.28/+2.43/+9.97 held and 9.1 behind sliding, Fire Code -9.97/+9.97, cell 134.04).
+
+Also run, one at a time: check-b383-tabslide ALL PASS; check-b383-slide ALL PASS (Profile/Leaderboard -0.2/-0.3 behind at worst);
+check-b380-slide ALL PASS; check-b382-slide ALL PASS (its (3) Home now passes); check-b327z15 FGW: F 68 of 153, G 13 of 18 (previous
+commit 64 / 12, the same failures), W passes; check-behaviour b323t_tabbar 3 fails, all on the previous commit too (which fails a 4th
+- "the lens follows the finger within 3px", 4px off there, now 0); b314h_tabs passes; check-b380 3 fails, all on the previous commit
+too (watchdog under load, the chat button's glass, the unit card's tick ring; the previous commit fails a 4th, the board's flare
+clock, flaky); check-loops 5 seams, the same on the previous commit; check-js; sweep-layout --quick 14/14.
+
+Phone only: whether the glass now glides onto the tab during the build (WebKit plays the hold track on the compositor once it is
+committed - the taps' glides already do in his recording), how Safari actually orders the release, the build and the frame (the
+video says build first), and that the emblems now sit still inside their bubbles (Chromium rasterised them on the screen's grid
+all along). The finger-mapping fix (3) is plain arithmetic and holds in any engine.
+## Build 384 - haptics everywhere (NOT on main; waiting for Madison)
+
+Madison: "Haptic Touch is inconsistent right now. Haptic Touch isn't working on the planet system, and it's not working in other
+places randomly. Ensure haptic touch is good to go."
+
+WHAT AN IPHONE CAN TICK FOR (read off WebKit's own source this time, not reported second-hand - CheckboxInputType.cpp,
+HTMLLabelElement.cpp, Element::dispatchSimulatedClick, RenderThemeIOS.h, trunk, Nov 2026):
+- A native `<input type=checkbox switch>` plays its tick in willDispatchClick -> performSwitchVisuallyOnAnimation, only for a
+  TRUSTED click inside a user gesture (`state.trusted` and `UserGestureIndicator::processingUserGesture()`); iOS says yes to the
+  tick for a click and for a thumb drag (hasSwitchHapticFeedback -> true). The tick is played BEFORE the page's handlers run, so a
+  later preventDefault does not take it back.
+- A touch that STARTS on a native switch is the switch's own (handleTouchEvent: setDefaultHandled on touchstart - the page does not
+  scroll; dispatchSimulatedClick on touchend - even a drag clicks it). That is the "you can't scroll / it clicks stuff" of builds
+  327, 327z12, 327z13 and 381, and why big cards, list rows and the calendar's month never carried a switch.
+- A tap on a `<label>` clicks its control through dispatchSimulatedClick(&tap): source UserAgent (trusted) when the tap was
+  trusted, Bindings (untrusted) when it was a script's label.click(). That last part is the iOS 26.5 change that silenced
+  taptic(): a scripted tick can never play on 26.5+, inside a gesture or not.
+=> A real finger on a LABEL whose control is a native switch ticks, and a label - unlike the switch - is a plain element a finger
+   scrolls the page by. That is the new tool here.
+
+AUDIT (tools/check-b384-haptics.py and a scratch walker; iPhone UA, touch, installed and Safari tab, elementFromPoint at each
+surface's middle and 6px in from each edge):
+| surface | before (383) | after (384) |
+|---|---|---|
+| Home: planet, 7 rank bubbles, 6 secret flares | switch only ~0.5s after Home is drawn (more on a phone) - Home is drawn again on every return to it, so a finger that went straight for the planet system found none | switch goes in with the hero (homeTapBind -> NovaSound.hswHostNow), same task; a tap flips it and still answers |
+| Home: Start Studying, daily question, chat button, tab bar | switch | switch (unchanged) |
+| Mode cards | switch over the head only; the click prune (hswPrune) took it off 450ms after any tap on that screen and the observer put a new one in a beat later (churn: none for a moment, and a switch swapped under a finger drops the tap on iOS); the rest of the card nothing | head switch never pruned; the rest of the card a label |
+| Unit cards, every switch row (.opt: Settings toggles, start sheet) | a label round its own native switch (hsw-opt): by WebKit's source a tap anywhere on the row ticks through the label, not only on the track | same; such a tap now also counts as the switch's (hswLabelTap), so a scripted tick never runs on top |
+| Start sheet / Sound volume sliders | none (a native range has no tick; script cannot make one) | none - cannot |
+| Answer choices, Pause button, Next | switch | switch |
+| Pause: Resume | none (a wide row among its kind) | label |
+| Results: Continue to review | none (wide row) | label |
+| Profile: the character (99px), challenge rows, unlock tiles | none (too big / rows) | label |
+| Profile: Customize, See rank ladder, badge count, tabs | switch | switch |
+| Stats: stat cards, day columns | none (too tall) | label |
+| Calendar: the month's days | none (data-no-hsw, 327z12) | label (data-hsw-soft) |
+| Calendar: exam rows, countdown pages | none | label (the countdown page made position:relative - all:unset had made it static and its label covered the card) |
+| Calendar: Next / Previous month | the hidden Back to top button's switch lay over Next month and took the tap (scrolled to top) | the arrow's own switch |
+| Leaderboard rows, Friends rows, Stats' test-history rows | none (list rows / too tall) | label |
+| Settings rows (incl. Advanced, Contributors) | none (list rows, 381/382) | label |
+| Customize rows | none (too tall) | label |
+| Customize pickers' tiles | switch | switch |
+| Flash cards: the card | none (holds the star) | a label in each face, under the star and the Fire Code box |
+| Flash cards: star, arrows | switch | switch |
+| Chat dock | switch | switch |
+| Sign-up: Sign in / I'm new here, Sign in instead / I'm new, continue, the class cards | none (two wide buttons of a kind = list rows; cards too tall) | label |
+| Sheets and pop-ups (start sheet, the challenge card, badge case, daily question) | switch on their buttons | switch (unchanged) |
+| Hidden controls (Back to top until you scroll, the tab bar behind the chat, the search's hidden tabs, a closed class list, a disabled button) | their switch (pointer-events:auto) took any tap that landed there | `.nova-hsw` pointer-events:inherit - a control the page hides from taps hides its switch too |
+
+WHAT CHANGED (all in NovaSound "A REAL SWITCH UNDER THE FINGER" unless said):
+- hswMode() replaces the yes/no hswOk: 0 nothing, 1 a switch, 2 a LABEL (.nova-hlb), 3 both (a mode card). A control that would
+  have had nothing because it is too big (hswTooBig) or a row among its kind (hswListRow, the 381 rule - unchanged: still no
+  switch) gets the label, unless something inside it answers taps (HLB_INNER) or it submits a form. `[data-hsw-soft]` (the
+  calendar's month) means labels only. HLB_HOSTS (.fc-face) get one too.
+- hlbAttach: `<label class="nova-hlb" aria-hidden><input type=checkbox switch class="nova-hlb-sw" tabindex=-1></label>` as the
+  last child; the label covers the control (z-index 2; 1 on a mode card, under the head's switch, and in a flash card face, under
+  .fc-face-top / .ifc-ref / .ifc-pre raised to 2); the switch inside is 1px, opacity 0, pointer-events:none - no finger lands on it.
+- The label's own click is stopped at the window (capture); its activation still clicks the switch (the tick), and THAT click
+  bubbles to the control - one click, after the tick. If the switch's click does not come, the control is clicked a task later.
+  The switch's change/input/focus/blur never leave it (as .nova-hsw's).
+- hswLabelTap: a finger on any label whose control is a native switch counts as a switch tap (hswDownAt), so haptic() does not
+  run taptic() on top.
+- Nothing changes under a finger (hswTouching: a touch down, or lifted <80ms ago; a touch that never reports its end stops
+  counting after 1.2s): iOS checks the element a tap belongs to as it lifts against the one it landed on (commitPotentialTap) and
+  drops the tap when they differ - a switch put in ~0.5-1s after a screen arrived, under a quick finger, made that tap nothing.
+  hswFlush and hswPrune wait.
+- hswFlush reads every new switch/label's box against its control's once, after writing them all (one extra layout per flush): one
+  that does not fit (a control held at position:static by more than :where() can undo) comes off and the control is left alone
+  (__hswNo).
+- hswPrune: exempts mode cards; a control pruned for size gets the label instead.
+- hswHostNow (exported) + homeTapBind: the planet system's switches go in as the hero is built (iPhone, Haptics on; never capped).
+- CSS: `.nova-hsw{pointer-events:inherit}` (was auto); `.nova-hlb` rules; `:disabled > .nova-hsw/.nova-hlb{pointer-events:none}`;
+  `button.cal-count-page{position:relative}`; the tablet calendar's `.cal-count-page > *{zoom}` skips them.
+- hswStop removes the labels too (Haptics off).
+- Flash card: fcOwnTap treats the face's label as the card.
+- Tab bar: untouched in JS (lensMove/tabDrag/slide timing not touched). The only effect there is the CSS inherit: a hidden tab
+  (search open, the chat open) no longer takes a tap through its switch.
+
+JS HAPTICS (NovaSound.haptic) ON AN IPHONE: only a tick riding a finger's tap on a switch or label can play. taptic() (a
+display:none switch clicked from script) cannot on iOS 26.5+ - kept for 17.4-26.4. So these do nothing on a current iPhone, by
+WebKit's rule, not a bug of ours: anything on a timer (the grade landing, cutscenes, the XP count, nova.arrive), a slide's landing
+(376's haptic("tap", true); by WebKit's source the switch of the tab the slide started on is clicked by iOS on the release, and that click - swallowed by the drag rule - may still tick), a question swipe,
+slider steps, drag-select, the second and third ticks of success/error/boom/celebrate, and taps on cutscene areas (SND_SCENE_TAP)
+that carry no switch. Settings > Sound & Haptics > Haptics: off removes every switch, label and row switch (hswStop) and haptic()
+returns at once (hapticsWanted); on puts them back. Android keeps theme.vibrate.
+
+ONLY A REAL IPHONE CAN SAY: whether the ticks are felt (Chromium has no Taptic Engine - the gate holds the wiring: a native switch
+or a label of a native switch under the finger, the click reaching the control once, the switch flipped); that the label ticks on
+his iOS version (trunk WebKit says yes; if Settings rows still do not tick, the label route does not hold on his iOS and the rest is
+unaffected); and why the planet system was silent beyond the late switches - the wiring was right in Chromium on a settled Home.
+
+GATES (one at a time):
+- NEW tools/check-b384-haptics.py (iPhone UA + touch + no vibrate; installed, and a Safari tab for Home / Settings / the month):
+  every primary surface on Home, Mode select, Units, the start sheet, a question, Pause, results, Profile (and scrolled), Stats
+  (and scrolled), Calendar (and the month), Leaderboard (and scrolled), Settings, Sound & Haptics, Customize and a picker,
+  Friends, flash cards and the chat dock has its own native switch, or a label of its own around one, under a finger at its
+  middle (elementFromPoint; surfaces found by kind, no words); plus (1)-(5) in its docstring. ALL PASS. Against 383 (the
+  pre-change index.html): 22 FAIL - (1) planet system 0 of 14 switches when Home is built; Mode select, Pause, Results, Profile,
+  Profile scrolled, Stats, Stats scrolled, Calendar (Next month taken by the hidden Back to top), the month (30 days),
+  Leaderboard x2, Settings, Customize, Friends, flash cards; (2) 4 mode-card switches pruned; (3) clicks without a flipped switch
+  and a scripted tick; (4) a switch put in under a held finger; Safari tab Settings and month. Passing on both (guards, by
+  design): (1)'s real tap on a settled Home, Units, the start sheet, a question, the chat dock, a switch row's words, (5) the
+  Haptics toggle.
+- check-js ALL PASS; check-sound ALL PASS; check-b383-toggles ALL PASS; check-b382-toggles ALL PASS; check-b383-tabslide ALL PASS;
+  check-b381-class ALL PASS; check-friends ALL PASS; check-b383-look ALL PASS; check-b383-flashcards ALL PASS; check-b379 ALL PASS;
+  sweep-layout --quick 14/14.
+- check-b382-units: (3) "no task over 60ms while scrolling" failed once (92ms), then ALL PASS on a re-run (12/11/7ms); a CPU profile
+  of the same flicks on both builds puts the long tasks in the sound engine's first-gesture start (ensure, 60-76ms), none in the
+  haptic layer. Load, not this build.
+- check-b327z13: U (a tab's screen in 40-200ms after the press) 211ms - fails the same on 383 (309 and 218ms). Timing.
+- check-b380: 3 FAIL - (9) two slow counts put loops back on layers, (25) the chat button not the tab bar's glass on a test, (35) the
+  unit card's tick ring - all three fail the same on 383 (which also failed (40) once). A first run here also failed (7)/(8) (loops
+  on layers after an early fallback) and passed them on the re-run.
+- Scratch (scratchpad only): a walker printing every tappable thing's middle/edge hits per screen, a sign-up walk (Welcome to the
+  class step) and pop-ups (challenge card, badge case, rank ladder, daily question): no regressions (nothing that had a switch
+  lost it), 84 surfaces gained one.
+### Build 384 - friends in every class (NOT on main, waiting for Madison)
+Madison: "your friends will be shown no matter what class type you are in. So for example while I'm in the ifc, I should be able
+to see any friend I have in the chat and friends list and stuff. Vice Versa, any class."
+- WHAT: in Fire Code the friends are the academy account's - one publicId, one friend code, the same friends and threads: the
+  chat (Friends tab with each friend's DM and online dot, Groups, Inbox), Manage friends (your code, Add a friend, requests, your
+  friends with who is online), the friend-request banner, a new friend's card, presence. Anything changed in one class is the
+  same in the other. Leaderboard and Virtual Room stay academy-only: no VR invite banner in Fire Code (checkLobbyInvites); an
+  Inbox VR invite still lists, and Join says "Virtual Room is only for the Police Academy class." (academyOnly, 332). NOVA STAYS
+  PER CLASS on purpose: his thread is local (class26e.nova, redirected), he talks about the class you are in (its greeting, its
+  recap); his row heads both classes' friends lists once he is befriended there.
+- HOW IT REACHES THE CLOUD: socialDb() = fbDb || ifcSocialDb. fbDb stays null in Fire Code, so everything keyed on fbDb (the
+  leaderboard row writes and screens, the Virtual Room, bug reports, the weekly settle) is untouched. initFirebase's Fire Code
+  branch makes two handles from one firebase.firestore(), each wrapped by scopedFirestore(db, may): ifcAcctDb (383's, NOW
+  SCOPED: writes only progress/<academy code>__ifc and progress/<academy code>__ifc__*, reads progress) and ifcSocialDb (reads
+  `leaderboard` and `vrooms`, writes `vrooms` only). A refused write rejects (in a transaction or batch it throws, so nothing is
+  written); a refused read comes back empty. So Fire Code cannot write progress/<code>, its __floor or the leaderboard whatever
+  calls it. VR documents live in `vrooms` too; they stay out of reach because every VR function still asks for fbDb.
+  Switched from fbDb to socialDb(): presence (sendHeartbeat, shareActivity, attachPresence, sendOffline), the mailbox
+  (inboxDocFor, sendToInbox, sendToInboxSlot, attachInbox, clearInbox, clearReadPings, pruneStalePings), the board reads for
+  friends (fetchBoardForInvites, attachFriendsBoardListener), the chat (refreshChatList, openFriendChat, CHAT_CTX.participantsOf,
+  chatMayStamp, startChatPresence, createChatRoom, joinChatRoom, leaveChatRoom, leaveChatByCode, openDirectChatWith,
+  peekChatInvite, the chat half of the pagehide/visibilitychange away marks) and buildVroomChatPanel's writes and listener (send,
+  sendKind, photo, reaction, poll, typing, trim, attachChat). onSocialReady(cb): onFirebaseReady in the academy; in Fire Code its
+  own queue, drained by ifcSocialReady (which also beats if Home already started the heartbeat, and starts watchOtherClassSocial).
+  The academy's behaviour is byte-for-byte the old path (socialDb() IS fbDb there).
+- IDENTITY: socialMe() / socialCard() / socialOptIn(). Academy: the store, as before. Fire Code: the academy copy
+  (NOVA_ACADEMY_RAW at launch, then each newer cloud copy, noteAcademyCopy): publicId, firstName, avatarChar, leaderboardOptIn
+  (class sharing gates the heartbeat/activity/offline marks and showFriends' note, which in Fire Code points at the Police Academy
+  class's Settings), and level/badges/mystery from the academy's own board row (rawLevel when fixBoardLevel capped it; left out
+  until the board is read) - never Fire Code's numbers. Used by mailbox messages, chat roster entries and presence patches,
+  lastJoin/lastLeave and message names. publicIdOf() in Fire Code takes the academy's id and never mints one; boot sets it if
+  Fire Code's copy lost it. Fire Code's own store.leaderboardOptIn stays false (it has no board).
+- THE FRIENDS BLOCK: SOCIAL_FIELDS = friendCode, friendsIn, friendsOut, friendsDeclined, chats, chatInvitesOut - on each class's
+  own store, saved to each class's own account document (Fire Code's to progress/<code>__ifc). New store field `socialAt`
+  (default 0 in the store object and applyLoadedData): saveStore dates it when the block differs from socialSigBase (set by
+  applyLoadedData, persistLocally and socialTakeInto; a `var` with no initialiser, declared with SOCIAL_FIELDS above `store`), so
+  only a change made HERE is dated - a block that arrived is the base. foldSocialFrom(src, fromAcademy): takes the other class's
+  block when its socialAt is newer (a tie goes to the academy - a pre-384 Fire Code copy may hold a friend code it minted on its
+  own), only for the same publicId (a reset copy has none). Sources: at launch (Fire Code: NOVA_ACADEMY_RAW; the academy, owner
+  only: localStorage class26e.ifc.drill.v1 read raw) and live (watchOtherClassSocial: Fire Code listens to progress/<academy
+  code>, read only; the academy, owner only, to progress/<code>__ifc). mergeSameAccount takes the block by socialAt (a friend
+  added on one device is not undone by a copy that merely saved something else later; neither side dated: as before), and
+  accountAhead counts a newer socialAt so writeAccount never writes an older list over a newer one. wipeLocalProgressAndSettings
+  leaves socialAt 0 and the base set (an emptied list never wins).
+- THE ROW: fcode/freq/facc are still published by the academy alone. From Fire Code a request by code also goes to their
+  mailbox (sendFriendRequest, Fire Code only - as sendFriendRequestTo always did), an accept mails friendacc as always; the row
+  catches up the next time the academy runs on any device (it folds Fire Code's block and pushes its own row).
+- SHARED device keys (head script SHARED): chatseen, chatmuted, chatleft, chatroom, chatlistcache, chatheight, friendmoment,
+  friendreq.seen, invite.seen, notifhandled - one copy for both classes (read marks, mutes, the open chat, a friend's moment once).
+  Sign out still clears them (not in its keep list).
+- Fire Code only, so rows read for friends never leak into the class: settleWeeklyWin returns false, lbArtPreloadSoon does
+  nothing, the week's recap is always the personal one (buildWeekRecapOptedOut), the new-friend card names only the chat;
+  chatUnreachable() ("Chat needs sync. Turn it on in the Police Academy class." without an academy code) replaces the four
+  academyOnly("Chat") toasts. A friends-count banner (Koi Pond, five friends) can now be earned in Fire Code: its friends are real.
+- BUDGET: classmates - nothing new (socialAt rides account writes they already make; the other-class listener is the owner's
+  only; no new periodic work). The owner in Fire Code - what he spends in the academy for friends, on that device instead of the
+  academy (heartbeat 1 write / 4 min while visible, presence and mailbox listeners, the board on Home ~40 reads then deltas every
+  15 min, chat documents), plus one listener on the academy's account doc (a read per academy write elsewhere). In the academy -
+  one listener on progress/<code>__ifc (a read per Fire Code write elsewhere).
+- Gate tools/check-b384-friends.py (in-memory Firestore with dotted updates, FieldValue/FieldPath, transactions, batches,
+  document and collection listeners; owner account, TEST-3846, made-up classmates): (A) Fire Code: fbDb null, socialDb up; the
+  academy's id and friend code; the Friends tab lists the academy's friend online and counts a waiting request; Manage friends
+  shows code, friend (online) and request; accepting mails friendacc as the academy; adding by code mails friendreq at the row's
+  level (not Fire Code's); a DM lands in the academy's DM document; presence written; both handles refuse progress/<code> (set,
+  update, transaction, batch) and the board; Fire Code writes only progress/<code>__ifc and vrooms; no code in rooms/board; its own
+  account carries the block, dated. (B) the same device back in the academy: the accept and request are there, the Friends tab
+  has both, the DM sent in Fire Code is in the thread, the academy saves them to its account; a request sent there is saved.
+  (C) a second device in Fire Code with an older academy copy gets the academy's and Fire Code's changes (Lee, accepted from the
+  academy, on its Friends tab; the same DM thread) and writes nothing foreign. On the previous commit 19 fail; the six invariant
+  checks (no code in rooms/board, the academy step's own save, (C) writes nothing foreign, no page errors x3) hold on both.
+- check-b383-ifcsync updated to the new arrangement: Fire Code may now write the friends' own vrooms documents (presence-v1,
+  inbox-, DM-); still nothing to progress/<code> or the leaderboard, fbDb still null.
+- Gates, one at a time: check-js, check-b384-friends, check-friends, check-groupchat, check-b383-ifcsync, check-b332,
+  check-b383-signup, check-b383-classes, check-b384-chatback, check-b382-firstrun, check-behaviour (b301_chat, b314h_chat,
+  b314h_chat2, b318_one_chat, b324n2_friends) ALL PASS; sweep-layout --quick 14/14 clean. The same on the previous commit:
+  check-chat's peek ("never had an unread count to clear"), check-chatroom's 2 stale-classmate checks, check-b328-classes'
+  "academy's saved copy byte-for-byte unchanged". check-sync: 119 pass; "Find me finds your row" is a race that fails on the
+  previous commit too (3 of 5 runs of that section there; the flash is gone 300ms after the tap).
+- ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the compat SDK through scopedFirestore's Proxy (transactions, FieldPath
+  updates, listeners - the stand-in has all of them, the SDK is blocked here), the rules taking Fire Code's writes (the same
+  vrooms documents the academy writes), and the timing of a friend change reaching the other class on another device.
+
+### Build 384 - the rank ladder's colours, one rule; no flare bobs
+
+Madison (Fire Code, unranked, Gold's card open): "The flare shouldn't be moving up and down. The theme unlock looks bad (that's all
+of them). Why can't I see the color of the flare in the unlocks, why is the big flare so dark without its color. ... I'm not sure if
+we should make it where when you click any of the ranks you can see the colors of stuff, or just the ones you have unlocked and your
+next rank? Idk make it the best and make it consistent and make it make sense."
+
+THE RULE (the one Customize already has - a locked tile dim in its grid, held: shown as it really is):
+- The road map's LIST colours the ranks you hold and the one you are working towards; every stop past that is dim (234's and
+  321's asks, unchanged), and a stop still colours in in front of you when you reach it (is-celebrate-pending).
+- OPENING any rank (showRankLore) shows it as it really is: the big emblem in colour (327z15's .38 opacity and the "shade of night"
+  ::after are gone, and the grey circle), the flare chip lit, the theme its real swatch, the character and banner in colour - and a
+  padlock on each thing not yours yet (.rankmap-giftlock, Profile's .pf-rw-lock look) and one on the circle's rim (.ranklore-lock),
+  with the Locked / Up next tag. A reached rank's card has no padlocks.
+- That made the next rank's card agree with the list at last: before, the list showed "Up next" in colour (321) while its own card
+  was as dark as any locked rank's.
+- The theme is its swatch everywhere (buildThemeDot - Customize's and Profile's swirl and sheen), never the flat .rankmap-dot. In
+  the list the swatch takes the dot's state rules (dim .32 + grayscale past the next; colour for next / reached / once celebrated).
+- No bob: the rank card's flare chip (pf-float 4.6s), Profile's reward-tile flare (pf-float, which once removed let Home's
+  .cosmic-icon-badge-0 lift through - now animation:none), Profile's To-reach emblem (pf-float 5s) and the results' reward flare
+  stand still; the emblems still move inside their bubbles. Home's planet system keeps its float.
+- The rank names on these cards are white for every rank (a later rule), reached or not - left as is.
+- Gate: tools/check-b384-ranks.py - fails 5 on the previous commit. Moved to the rule: check-b327z15 S (the locked emblem in
+  colour with a padlock; the locked flare chip lit) and check-behaviour check_b311_rank (a locked card in colour with a padlock,
+  story still held back).
+
+### Build 384 - Fire Code's badge case: no open corner, the academy's badge size
+
+Madison: "The badge case for the ifc. Is there a better layout? If you are looking at the entire case, there's an entire open spot
+on the bottom right ... if they could be just a smidge bigger too".
+- Fire Code's case holds 58 (its chapters). 58 has no rectangle within badgeCaseGrid's reach, so it fell back to eight by eight:
+  64 slots, the last row 2 badges and 6 empty to its right; 37px badges on a phone.
+- The Badges page's tray (buildSleekBadgeCase) now lays a case past 30 out six across - the academy case's six by four, so a
+  badge is the same 52px in both classes - for as many rows as it needs (58: nine rows of six, then four), and a short last row is
+  centred: each of its cells is moved by half the missing slots (`.is-lastrow`, `left: --row-shift * (100% + 1.8cqw)`, the
+  well's gap). The academy's 24 is unchanged (six by four, full).
+- badgeCaseGrid itself is untouched: the 3D badge scene stands its case upright and a deep case swings off the top of a phone
+  (328), so the scene keeps eight by eight for Fire Code.
+- Gate: tools/check-b384-case.py (rows full but the last, the last centred within 1px, the academy's badge size, the academy's
+  case unchanged, the scene's grid unchanged). Fails 2 on the previous commit. check-b382-badges passes.
+- (384, the same day) "The badge one isn't the same size, ensure it's the same size" - the Badges box over the case. The head
+  took --badges-col, min(100%, 25.85rem), from the leaning-lid days; the tray (.bcs) is width:100% to 34rem. Madison's phone has
+  a smaller text size: the rem cap bit at ~350px over a ~405px tray (reproduced with the root at 13.6px: 352 / 406 on 383).
+  An iPad had 512 over 544. Now one column for both, `--badges-col: min(100%, 34rem)`, set by the 384 tray rules and given to
+  .badges-head and .bcs alike: the panel's width on any phone at any text size, 34rem on a tablet. check-b384-case (6) measures it
+  at 13.6px and 19px roots and on an iPad; fails on the previous commit. Other `min(100%, Nrem)` widths in the file are lone
+  centred pieces (results cards, sign-up fields), not a pair that must agree.
+- (384) "In the challenge thing for ifc, it says I need to score a 100 enough times for a badge but the ifc is just a single one
+  hundred for the badge". Fire Code's badge is one 100% (badgeThresholdFor returns 1 there since 382) but four texts still told
+  the academy's rule. Each now says Fire Code's: the rank challenge card (rankChallengeDetail - "Score 100% on a whole unit once
+  and its badge is yours", shown as "chapter"), Nova's intro line, Nova's answer about badges ("one hundo in a unit earns its
+  badge"), and the Profile tour's badge case step. They read window.NOVA_CLASS === "ifc" (badgeThresholdFor's own test): the tour
+  copy is built at load, where badgeThresholdFor would fill the academy's unit-size cache early. The academy's words are unchanged.
+  Release-history entries about badge counts are history and stay. check-b384-case (7); fails on the previous commit.
+- (384) Home, a rank flare not yet lit: "Each rank has a 'lights a bronze rank' thing. Get rid of that. The secret flares just
+  say not found yet ... The rank flares should just say not lit yet centered under the other stuff." homeTapCopyRank's locked
+  line is "Not lit yet." (was "Not lit yet. It lights at <rank> rank."); the name line above it still names the flare. Centred
+  under "GOLD FLARE · LOCKED" (measured: middles within 1px).
+
+### Build 384 - Fire Code's hundo effects: Hazmat on top, counts 25 / 50 / 75 / 150 (round 5 begins)
+
+Madison: "The fire alarm one, absolutely not the move. That thing is terrible. Make that one something else, get creative match
+the theme of them all. Give me the best you can make. The hazmat one is super cool, I don't love love it though, I just feel like
+it has so much potential. The hazmat one should probably be the 200 hundos one, it's my favorite/coolest/has the best potential.
+The extinguisher one is super cool. Tighten it up though, maybe it better. Tighten up all of them where you can to ensure they
+perfect, that goes for the police ones too. For the ifc one, I think the amount of hundos needed to get the stuff could be
+lowered. Like increments of 25, 50, 75, 150?"
+- The rung ids (fireworks / underwater / bubbles / ufo) carry saved picks, shown records, sounds and every list in both classes,
+  so Hazmat MOVED to the top rung rather than the rungs being reordered: IFX_DEF, IFX_BUILD, ifxWarmList, ifxPosterBody,
+  ifxStillBody and SND_IFX now have Hazmat under ufo and the Fire Alarm (a stand-in until its replacement) under bubbles. The ufo
+  rung's own rule now reaches Hazmat: the box is lifted over the screen layer (hfx-over) while it plays. hfxUfoUnlit still
+  returns in Fire Code.
+- Fire Code's counts: fireworks 25, underwater 50, bubbles 75, ufo 150 - set on the HUNDO_FX rows right after the list, before
+  anything reads them (window.NOVA_CLASS, not IFC_ART_ON: that var is assigned later). The academy keeps 50 / 100 / 150 / 200.
+- Fire Code is: 25 Extinguisher, 50 Sprinklers, 75 (the Fire Alarm's replacement), 150 Hazmat.
+- (384) "The chat button should be slightly relocated so it's brought down a little, so it lines up with the new back button ...
+  maybe they could both kinda meet each other in the middle so the change isn't noticeable but still improved? ... move the back
+  button slightly up and the chat button slightly down". On every pushed screen (.settings-nav: Settings' pages, and .ios-nav,
+  which carries the same class: the modes, Customize, Friends, Rank, Badges ...) the back button's middle was 1.2rem below the chat
+  button's (115.2 / 96 on a Pro Max installed; 77.2 / 62 on an iPad). Each moves half, .6rem: the nav row's margin-top
+  .2rem -> calc(.2rem - .6rem) (the title and the page move with it), and the chat button's top + .6rem while
+  `body:has(#stage .settings-nav)` (not in a test). A tablet's chat button is 52px against the back button's 44, so there its top
+  is 4px higher again and the middles meet (67.6 / 67.6). Home and the tab screens keep the chat button at the inset + .75rem,
+  beside their big titles. check-b384-navmeet (waits out a seeded account's opening cutscene, which parks the chat button off
+  the top); fails 4 on the previous commit.
+- THE MERGED 384, ALL GATES (after the slide / haptics / friends merges), one at a time: every check-b384-* ALL PASS (haptics,
+  slide, friends, stats, settings, home, flare, chatback, ifccurve), check-b383-profile/look/ifcsync/tabslide/flashcards/signup,
+  check-b382-settings/slide, check-friends, check-sound, check-sync ALL PASS, sweep-layout --quick 14/14. check-chat's one
+  failure ("the peek scenario never had an unread count to clear") fails identically on 383.
+- (384) Choose your mode: "there's so much empty space on the bottom here and it feels super off.. should these 3 options be
+  centered, and for the police one you'd centered the 4 a little better? The wording within the boxes is a little too short. Could
+  we add a smidge more?" Measured on a Pro Max: Fire Code's three cards ended 142px above the tab bar with nothing under them; the
+  academy's four ran 40px under it (the page scrolled); every card was a 166px min-height box holding ~76px of words.
+  - Each description says the second beat build 287 asked for, its "best for": Drill "... Best for learning the material.", Mock
+    "... Best for checking you are ready.", Review "... Best for going over a unit before you test yourself." (a chapter in Fire
+    Code - the word swap), Virtual Room "... Best for studying together."
+  - Cards are sized to their words (min-height 0, 20px 22px padding, 12px between; 24px 26px and 16px on a tablet), so the
+    academy's four fit a Pro Max's screen.
+  - centerModeGroup(panel): the question stays under the title as the screen's heading; where there is room, the cards sit in the
+    middle of the space between it and 16px above the tab bar (Fire Code Pro Max 107 / 107, academy 28 / 28, iPad ~260 / 260). A
+    padding-top (--ms-shift) on .modecards - a margin there collapsed with the question's and moved them short. Read from layout
+    positions (offsetTop), run at the mount, again at 450ms and on resize while the screen is on the stage. No room (an SE): no
+    shift, the page scrolls as before.
+  - check-b384-modes; fails 5 on the previous commit. check-b383-modeselect, check-b383-look, check-b384-haptics pass;
+    check-b342's one failure (the preview image's live address) fails the same on 383 - the sandbox can't reach the site.
+
+### Build 384 - smooth: the code drop-down, the Start pill, the back button's flash, the search circle's glass
+
+- "Sometimes when doing the 'show the code' drop down, it isn't seamless and perfectly moves, there just a super small
+  catch/lag." The code opened on "Opening the code..." while pdf.js cut and painted the section on the main thread, and the box
+  jumped to the picture's height. Now (ifcDrawAhead): a code box that sits in view for 450ms while the page is still - not
+  scrolling, no finger down for ~.8s - draws its code in idle time, hidden, one box at a time, only when the book is already
+  open in memory (ifcBook); a finger on "Show the code" starts its own fill too. The fill sizes its picture from the box when its
+  body is unlaid (ifcRoomOf). Opening eases the contents in (ifc-code-in: transform + opacity, .3s) and a picture that arrives
+  after the open fades in. check-b384-codeopen (runs with PDFJS_DIR + IFC_BOOK, the owner's book from the handoff, never in the
+  repo): drawn ahead while shut, opens on the finished picture with no task over 50ms after the tap (after one ordinary tap -
+  a session's first sound builds the sound engine's reverb, sndImpulseData, ~12ms at 4x, whatever is tapped), eases in on
+  transform/opacity, nothing drawn mid-scroll. Fails 3 on the previous commit. check-b383-ifcbook (the book), check-b383-flashcards
+  pass.
+- "start button also has a small catch/lag to it when it shows something has been selected and turns white." His recording,
+  frame by frame (60fps): the pill went DARKER for two frames (brightness 70 -> 59 - .just-ready gave the words the lit ink at
+  once, dark on the still-grey pill), then jumped to white in three (the clip-path grow is main-thread in WebKit and the tap's
+  own work held it). Now the fill is the pill itself grown from its centre by transform + opacity (start-fill-grow: from
+  scale(.18,.3) and 0, opacity full by 35%), ending exactly as the lit pill it hands over to, and .just-ready eases the words'
+  colour (.26s) instead of switching it. (The Virtual Room bar's .is-lighting fill is the same idea, left for the VR work in
+  flight; the Max/All slider button's fill carries its own dark word and is untouched.)
+- "The back button flashed white or something when you hit it." setupBubbleButtons' press shimmer (.glass-pressed, a white pool
+  in ::after) reached .back-link - whose ::after is its invisible 44px tap target, centred by translate(-50%,-50%): pressed, the
+  shimmer's inset:0 pinned the box to the corner and the translate threw it up and left, a pale square half off the round
+  button. `.back-link.glass-pressed::after{ background:none }` - a back button's press is the scale alone (327z15).
+- "that search icon ... right above the bottom tab, that needs to look like the bottom tab ... and then the pause button/chat
+  button also match": the search circle (.tabsearch, .74 / blur 30px) wears the bar's glass now; Pause and the chat button
+  already did in 384 (his recording was the live 383).
+- check-b384-smooth: (1) back button press paints nothing, (2) search / Pause / chat = the bar's glass, (3) the Start pill's
+  words start at the unlit colour and ease, its fill is transform/opacity only and ends at the lit pill. Fails 3 on the previous
+  commit. check-b383-tabslide, check-b384-slide, check-b382-units pass.
+
+### Build 384 - the shared link says what Nova is; the mode cards big again
+
+- "When sharing the app, the description still hasn't been updated. In the actual link it's referred to as the police academy
+  study app, it's a study app rank up game where studying is fun, has tcole material, and 2021 ifc and Harris county amendments
+  drills and multiplayer and unlocks?" tools/gen-share-card.py: TAGLINE "Studying, made a rank-up game", CARD_LINES "TCOLE and the
+  2021 IFC. Drills, / multiplayer, ranks and unlocks.", DESC "Nova turns studying into a rank-up game. TCOLE material and the 2021
+  IFC with the Harris County amendments: drills, practice tests, live multiplayer, ranks, badges and unlocks." Rerun: share/
+  og-card.png redrawn, the meta block in index.html and share/index.html rewritten. iMessage keeps a link's preview BY ITS
+  ADDRESS, so the new words need new addresses: CARD_REV "384" - og:image / twitter:image / image_src are og-card.png?v=384 and
+  SHARE_URL is share/?v=384 (the --check reads both). The Share sheet's own text (shareData.text): "Nova: studying, made a
+  rank-up game. TCOLE material and the 2021 IFC with the Harris County amendments, with drills, live multiplayer, ranks and
+  unlocks." Still names no class (26E). check-b342's "absolute addresses of real files" fetches the live site - fails the same on
+  383 from the sandbox.
+- THE MODE CARDS STAY BIG. Earlier today's centring had cards sized to their words (146px) - check-b342 caught it: 343's ask was
+  "The buttons for mode selection still look small and not big like before" (334's 138px). Back to a 160px floor (154px for the
+  academy's four on a phone, so they fit a Pro Max's room), 10px apart, and centerModeGroup now SETS the gap above the cards
+  (--ms-gap, half the room the cards leave; at least 12px, else the usual 1.1rem and the page scrolls) rather than only adding
+  to it - the academy's four sit 14 / 15 on a Pro Max, Fire Code's three 87 / 88. check-b342's floor reads 150px now, with why.
+
+### Build 384 - Fire Code's 75: Thermal Camera (NOT on main, waiting for Madison)
+Madison: "The fire alarm one, absolutely not the move. That thing is terrible. Make that one something else, get creative match
+the theme of them all. Give me the best you can make." (Rejected twice; Emergency Lights also rejected in 383 - so no alarm, bell,
+strobe or siren.) Round 3 of the characters had his "Thermal is cool". The bubbles rung (75 hundos in Fire Code) is now the
+**Thermal Camera** (`ifxThermal`, IFX_DEF.bubbles: total 6400, box 4400, tail 5300; tint b #FF8A2A, the 100% white -> pale yellow
+-> orange, white-hot cooling). Fire service and fire prevention kit (inspectors and investigators carry TICs for hot wiring),
+nothing water, dry chem or hazmat.
+- The screen becomes a thermal imaging camera's display, in the iron palette (IFX_IRON: white, yellow, orange, red, magenta,
+  indigo). Beats are IFX_TIC.full (the score is timed to them):
+  - 0-.6 power-up: a cold indigo view fades over everything (scan lines, vignette), a band of light builds the picture down the
+    screen and each thing lights as it passes - the grade box and the XP card as faint warm outlines, the XP total and the
+    character as warm spots, the 100% already a warm magenta. The display's frame (four corners), THERMAL + thermometer, battery
+    and a 0-1000 F scale (right, below the box) come up.
+  - .5 the reticle (four corners + a cross) appears with a readout tag under it (digit strips, refreshed every .12s, reading the
+    heat under it from a sum of gaussians): ~70 F in the open, ~215 F on the XP total (1.05), 99 F on the character (body heat,
+    1.84). A hand holds it (a slight drift that settles at the lock). Moves are arcs eased in and out (quadratic, smootherstep):
+    a Catmull-Rom threw the short dwell moves into loops.
+  - 2.2-2.75 it swings past the box (top right of the number) and comes back; 2.75 LOCK - the corners open round the 100%, the
+    cross goes, the readout races up (ticks every .05s) while the number heats through the palette: magenta -> red (2.45) ->
+    orange (2.75) -> yellow (3.05) -> white (3.35). Five copies of the number, each colour's glow wider the cooler it is, so they
+    stack into the palette's halo; the box's outline goes orange.
+  - 3.35 white-hot: the readout pegs 1000 F and a MAX pill pops, the scale's top lights, the number flares (scale 1.045), a halo
+    breathes, five plumes of hot air roll up off it (2.85-4.7).
+  - 4.25 the camera comes down: the HUD and reticle zoom past (scale 1.14) and fade, the view fades (4.2-4.95), a ring of heat
+    (`ticWave`) goes out of the number, the real 100% is lit white with an orange glow (its own copy in the box, 1.95s) and the
+    box washes orange; two faint heat wisps rise; all gone by 6.3s.
+- Box alone (tiles' live preview, unlock card; IFX_TIC.small, 4.3s): the same in the box - cold view, corners, reticle in from
+  the right, lock, heat-up, MAX (readout and scale only where there is room: not in a mini stage), heat ring, lit 100%.
+- Sprites added at the end of ifxSpr: ticHeat(0|1), ticPlume, ticL, ticCross, ticDig, ticUnit, ticMax, ticScale, ticMark,
+  ticMode, ticBatt, ticWave. ifxAlarm and its sprites (pull, pullH, bell, clapper, horn, flare, wave) are deleted.
+- `ifxNumCopy`: a copy of the 100% in its own figures. .rs-pct.pct is tabular + lining (font-variant-numeric and
+  font-feature-settings "lnum" "tnum"); a copy without them is ~7px narrower at the results screen's size, so its 1 and 0s sat
+  off the real ones - a visible double image as one handed over to the other. Measured: real 120.7px, copy 113.3px; with
+  ifxNumCopy 120.7 / 120.7. **hfxLitText (ifxLit, every effect's lit 100%, academy too) has the same mismatch** - not changed
+  here (shared helper, other agents in flight); the Thermal Camera lights its own copy instead.
+- Phone landscape (956x440): by the time the effect starts the results page has scrolled down to the XP card, so the box (and
+  the lock) is above the screen; the hunt's warm spots fall back to cold spots on the display (never off it). The Extinguisher
+  and Hazmat aim at the box too. iPad portrait and landscape and phone portrait are right.
+- Tile: the display at its peak (cold, scan lines, corners locked round the 100%, plumes, THERMAL, 1000 F + MAX, the scale pegged,
+  kept clear of the new dot). Still: a handheld TIC (yellow bumper, carry handle) showing a white-hot spot in the reticle.
+- SND_IFX["hundo.bubbles"]: shutter click and a rising whine, the picture-build sweep, a ready chirp (A5-D6); the hunt under a
+  sensor hum and a dark D/A pad, a tick per refresh, blips on the total (D5-F5) and the character (A4), pan whooshes; the swing
+  whoosh; the lock (click, thump, A5-D6 square chirp); the climb (ticks closing up, a saw rising D4-D6, a rush of heat); 3.35 a
+  deep whump, a D6 bell and an A6 blip (the loudest moment); breathing and crackle; then the whine falling, a shutter click, the
+  heat ring's whoosh and a chime up Bb4, C5 to D/F#/A (the palette's bright D major). Renders peak .26 (the other three .19-.34).
+- Gate: tools/check-b384-ifxnew.py (9): the rung plays ifxThermal (alarm and its sprites gone, academy still hfxBubbles); screen
+  and box, transform/opacity only, no filters, <= 170 pieces (58); ends by its total with a soft tail, its layers gone for real
+  (only what that play put up is counted: the page's own unlock card can be showing an effect); the reticle's corners frame the
+  100% after the lock; the copies sit on the number within .5px; the readout reads 1000 at white-hot; tile and still draw and are
+  not the Fire Alarm's; the sound is installed, unclipped, loudest on the white-hot beat, the lock a hit. 9/9 here; on 3b6f4ad 7
+  fail (the Fire Alarm also ends by its total and has no page errors).
+- check-b382-ifcart: "...and they are an extinguisher, sprinklers, hazmat and a fire alarm" now FAILS (the 75 is the Thermal
+  Camera) and its fxSrc hashes move - needs re-pinning. "the hundo ladder keeps its ids and counts" already failed on 3b6f4ad
+  (the 25/50/75/150 counts).
+- Phone check owed: smoothness on a real iPhone (58 pieces, five text-shadowed copies of the number, the full-screen view's
+  opacity fade), the scan lines' look at 3x, and the sound through the phone speaker (the hunt is quiet by design).
+
+### Build 384 - the laptop round: hover is not a finger, the share page, Fire Code's missing-book card, the viewer's swipes, Nova's recap (NOT on main, waiting for Madison)
+
+Madison, after testing on his Windows laptop: "the app is extremely extremely laggy and delayed on my laptop.. it's almost
+unusable. Like the bottom tab on the laptop is extremely bad. The lag when opening up screens on the laptop is bad." / "when it
+opened up on my laptop, from a share link, there's a yellow word that says open nova that's small, then it went straight to the
+novas introduction, there was no start up screen" / "The introduction for a brand new account needs to be updated. Why is it
+telling me I have 0 badges?" / "Using zoom in page function, swiping on it will swipe to the next question accidentally" /
+"You shouldn't be able to enroll into the CLASS AT ALL unless you upload the pdf. So the unlock thing under the question isn't
+gonna be a thing".
+
+- LAPTOP LAG, the cause found: recUserAt (the "a finger is down, wait" clock behind recordingShouldWait) was set by every
+  pointermove. A finger sends pointermove only while down; a mouse sends it whenever it is over the page. So on a laptop every
+  warm-up that waits for a quiet moment - quietIdle (badge strikes and coin faces, the Badges/Profile art) and orbitAnimYield
+  (the flare and character flip-books) - never ran while the mouse moved: measured 1536x864 at 1.25x, 18s on Home, mouse
+  still 212-324 idle runs and 1-4 flip-books made, mouse moving 2 runs and none. Every screen then drew its art at the moment it
+  opened, and the planet's flares stayed live drawings (style + layout + paint per frame) instead of flip-books. Fix: a mouse
+  pointermove with no button held does not count (a drag, a pen and a finger still do). After: 298 idle runs and 2 flip-books
+  with the mouse moving, same as still.
+- What was ruled out (sandbox Chromium, load average ~11 from the helpers, so frame timing is noise; counts are not): the tab
+  bar's SVG refraction is not live (computed backdrop-filter blur(7px) saturate(1.5)); layer count/area at laptop size (66
+  layers, 8.7 Mpx) is no worse than the phone's (64, 21.5 Mpx); the turbulence texture and grey emblem filters made no
+  measurable difference here. Windows' own GPU path (backdrop-filter, SVG filters on its driver) cannot be measured in this
+  sandbox - it can only be confirmed on the laptop. Every bug report carries the tab timings (perf); a report sent from the
+  laptop after this build would show the real numbers (reading them needs the admin tool, which this session was not allowed).
+- Also seen while profiling (not changed): for ~20s after Home first opens on a fresh device (and once per new emblem size),
+  recording the flip-books takes over half the main thread in idle slices (p50 16ms, p90 39ms, worst 185ms per slice); each
+  frame is one data:-URL SVG image (~5ms to parse here). It steps aside for input, and is cached (Cache Storage) after.
+- SHARE PAGE (tools/gen-share-card.py SHARE_HTML, share/index.html regenerated): was a small yellow "Open Nova" link on #121016,
+  which on a laptop stays up while the app downloads. Now the splash's #0A0A0A, the app icon (96px, the share icon), "Opening
+  Nova..." in soft ink, and the Open Nova link as a quiet outlined pill that only fades in after 4s (if the redirect has not
+  happened). Same meta, same redirect (location.replace("../" + search + hash)).
+- "No start up screen": a FIRST visit skips the splash by design (build 330: Get Started is the first thing seen). His laptop
+  browser most likely already held an old onboarded account from an earlier visit (so no Get Started) with novaMet < 1, so the
+  existing-account Nova meeting played, recap and all. The recap fix below covers what it said; the routing is unchanged.
+- NOVA'S RECAP: novaRecapLines says only what you have - a badges line only when badges > 0, a flares line only when a flare is
+  relit or a secret flare found, a crew line only when one has come home. And playNovaMeeting passes existing:
+  novaHasHistory() (any answer, any XP, or a test in history) - an account with nothing at all meets him as a new player does.
+- FIRE CODE ENROLLMENT: already one way in only - the catalog's Fire Code card -> showIfcEnroll -> "Choose my IFC PDF" ->
+  runIfcAnalysis -> setEnrolled("ifc") only in finish(), after the book is verified (class26e.enrolled is written nowhere
+  else). So the card under a question is only ever seen when the browser has since let the stored copy go (cleared site data,
+  or "This browser would not keep a copy, so it is open for this visit only"). Its words now say that: "Your IFC PDF isn't on
+  this device right now." / "This browser let the saved copy go. Load it again and the code shows here. Until then, the
+  section and page above find it in your book." The padlock is a page icon (evenodd page with a folded corner and two lines);
+  class names unchanged (.ifc-locked, .ifc-lock-ic - check-b383-ifcbook and check-b384-codeopen read them).
+- VIEWER SWIPES: while the page viewer (.ifc-vz, ifcOpenViewer) is up, no touch is a question swipe (swipeGestureAllowed ->
+  swipeOverlayUp) and no tab swipe either (attachTabSwipe's onStart). SWIPE_BLOCKING_TARGET also has .ifc-clips.is-scroll (a
+  code picture wide enough to scroll sideways owns its drag) and .ifc-vz.
+- Gate: tools/check-b384-laptop.py - (1) a Fire Code drill question answered, the viewer up, two real touch swipes across it:
+  the question stays; (2) closed, the same swipe moves on; (3) nothing found -> no recap lines about badges/flares/crew, some
+  found -> one each with its count; (4) never answered -> playNovaIntro without existing, with answers -> existing; (5) no page
+  errors; (6) laptop 1536x864, mouse moving over Home: at least half as many idle runs as with the mouse still.
+
+### Build 384 - Fire Code's 150: Hazmat, the showpiece
+
+Madison: "The hazmat one is super cool, I don't love love it though, I just feel like it has so much potential. The hazmat one
+should probably be the 200 hundos one, it's my favorite/coolest/has the best potential. ... Tighten up all of them where you can
+to ensure they perfect" (383: "The hazmat one could be so much cooler"). Now on the ufo rung (150 in Fire Code), it is rebuilt as
+the class's top reward: a 7.2s short film (IFX_HZ, IFX_DEF.ufo total 7200 / tail 6100 / box 5000; it was 6.6s with the last
+piece gone at 4.8s). Kept: the hazard bands, the green vapour, the NFPA 704 diamond reading 1-0-0, the containment scan locking
+on the box, the suited responder, the decon and the all clear.
+- THREE DEPTHS. The world behind the box (scr: the beacons' light, the mesh, the containment field, the far vapour), the box
+  itself (the ufo rung's hfx-over keeps it lifted over scr - kept, it suits Hazmat), and a layer OVER the box (hfxUfoTopLayer,
+  the UFO's own helper, reused unchanged: the tape, the near vapour, the placard, the scan line, the brackets, the responder and
+  his spray, the mist on the box). Before this the brackets, the tag and the scan sat in scr, UNDER the lifted box. The near
+  world is pushed in and shaken harder than the far one (two camera wrappers about the box's centre: push-in to the slam, a
+  shake at the slam, a thud at the lock, eased back at the all clear); the box holds still between them. The bands are the
+  screen's frame and do not move with either.
+- BEATS (IFX_HZ): 0.0 ALERT - an amber flash at the edges (twice), two rotating beacons above the screen sweeping their light
+  down across it out of step, the hazard bands slam in from opposite sides with an overshoot, scene tape ("HAZARDOUS
+  MATERIALS") snaps taut across two corners (.34/.46). 0.28 SPILL - vapour rolls in at three depths over a toxic floor haze,
+  tendrils curl up out of it, a green film creeps up the box. 1.0 PLACARD - the quarters fly in out of the camera one at a
+  time, each landing with a ring of light: blue 1 (1.0), red 0 (1.18), yellow 0 (1.36), white (1.54); the steel frame SLAMS
+  round them at 1.74 (flash under the placard so it stays crisp, a ring, the world shakes, the placard punches); a glint
+  crosses it. 2.06 CONTAIN - a scan line comes down (the mesh behind it), slows to read the box (2.22-2.56); four brackets
+  fly in from the screen's four corners and lock on the box's (2.64) with a squeeze; the hex containment field closes round
+  the box; the number lights; the placard spins up onto a CONTAINED tag over the box (2.2-2.66) and the tag slides out from
+  behind it. 2.95 DECON - the responder walks in from beyond the right edge (wand and all), raises the wand and sprays the box
+  side to side (3.84-5.0: left, right, back to the middle): mist blooms where it strikes, droplets thrown off, the film is
+  blown off the glass where the spray crosses it, rinse water runs down, the vapour thins away nearest him first. 5.15 ALL
+  CLEAR - the tag turns over to ALL CLEAR (lime), the placard spins once, the beacons turn green, slow and go out, the tape
+  snaps back, the bands slide away, the brackets let go, the field opens in a lime ring, the box blooms clean from behind, a
+  wave of clean light crosses the screen, glints come off the box, the 100% is swept with light; the responder lowers the
+  wand and walks off. The dim lifts with it (gone at the tail, 6.1); the tag fades by 6.5; everything is gone by 7.2.
+- THE RESPONDER is redrawn (ifxSpr.suit, 220 x 400): a Level A suit three-quarters to the left - the big hood and wide face
+  shield (the mask and regulator dim behind the glass, a lime reflection of the vapour and an amber one of a beacon), the air
+  pack's hump at the back, the splash flap, the waist gathered, folds, baggy legs taped at the boots, lime soles; cool key
+  light from the front left, amber rim from the beacons, a green bounce from below. The arm and the decon wand are their own
+  sprite (hzArm) turning at the shoulder, with the gun cocked up 52 degrees from the forearm (IFX_HZ_ARM): with the box almost
+  straight above him on a phone, a straight arm crossed his face shield; cocked, the arm rises only ~30 degrees and the lance
+  points up. The aim is solved per frame (the nozzle moves as the arm turns: six iterations) and sampled into keyframes every
+  0.08s. The spray (hzSpray, a dense core into mist, streaks and droplets) is the arm's child on a mount turned by the cock, so
+  it turns with it; three droplet runs stream down it.
+- PIECES: about 130 across the three layers on a phone (scr 30ish); sprites drawn once and rasterised by hfxWarm (the warm
+  list has them all; the containment field, hzCage, is drawn per box shape at play). Transform and opacity only; no svg
+  filter. New sprites are added after ifxSpr with Object.assign (hzFrame, hzSheen, hzTape, hzBeam, hzFume, hzWisp, hzArm,
+  hzSpray, hzDrops, hzGlint, hzDrip, hzTagOk, hzCage); the hazmat ones in the object (stripe, quad, scan, bracket, tag, suit)
+  are redrawn in place; `vapor` is gone (nothing used it).
+- THE SMALL BOX (ifxHazmatSmall, a tile's stage or the unlock card, 4.9s): the alert, the bands, the vapour, the placard
+  slammed together (at the right of a wide box and held; over a square one and then away), the scan and the brackets on the
+  number, a pass of decon mist with rinse water, the all clear.
+- TILE / STILL: the tile is the film's frame at the lock - beacon light, bands, tape over a corner, vapour, the scan line, the
+  field and brackets round the 100%, the 1-0-0 placard in its steel frame, the responder low at the left spraying. The still
+  (reduce motion) is the placard in its frame inside four lime brackets.
+- SOUND (SND_IFX["hundo.ufo"], on IFX_HZ's beats): a drop into the dark and a two-tone hazard warning; band slams L/R and the
+  tape's snaps; the vapour's hiss over a low D and the dark Bb, a detector's clicks speeding up and a riser climbing to the
+  slam, cut dead by it; the four quarters whoosh in and clank home on a rising D minor (D F A D - "1, 0, 0"); the SLAM (a heavy
+  hit, a ring of steel, a bell on D3) and a glint; the scanner's sweep and the box read off in blips; four bracket clicks, a
+  lock chirp (A5-D6), the field engaging with a thud and humming; suit rustle and four rubber-boot steps, the wand raised and
+  pumped; the spray's hiss panned with the sweep (left, right, middle) over a body, water pattering; the bass climbs Bb, C to
+  the ALL CLEAR - a bright D major (pad, bells D5 F#5 A5 D6, a shimmer), the field powering down, the tape's snap-backs, the
+  bands' whooshes and his steps away. Rendered in Fire Code: peak .38, loudest 50ms .16 at the all clear (.15 on the slam), the
+  decon .09 (the old score: peak .34, loudest .11, decon .03).
+- Gate: tools/check-b384-hazmat.py (phone and iPad, a 100% box on the page, the effect paused and seeked on its own clock):
+  the rung is ifxHazmat and 6.5-7.5s; the quarters land one at a time, blue first and white last, 0.12s+ apart, sit as a
+  diamond and a frame slams round them; four brackets fly in from the screen's corners onto the box's corners, on a layer over
+  the lifted box; the placard sits on a tag over the box, centred, and the tag turns over at the all clear; the responder is
+  beyond the right edge (wand too) before he walks in and his spray's far end lands on the box, swept from left of its middle
+  to right of it; every piece faded at the tail and nothing left after the total; transform/opacity only, no filters, <=170
+  pieces; the small box plays and is gone; the tile and still draw the four colours; the sound renders, not clipping, its
+  loudest moment on the slam or the all clear, the decon not left quiet. ALL PASS; on 3b6f4ad it fails on every new leg.
+- check-b382-ifcart pins the effects' source hashes (round 4); its hashes need re-pinning after the merge.
+- Clips: tools/record-hundo.py OUT ufo --ifc (and 834 1194), the sound rendered with NovaSound.render in Fire Code and muxed
+  under each (the first frame is ~1/30s into the effect).
+- Only a phone can confirm: real-device smoothness (about 130 pieces, several large soft images: the beacon cones, the
+  vapour banks, the field), the arm's turn reading as one limb at 3x, the sound through the limiter on the speaker, and that
+  the box lifted over the dim with a layer above it composites the same in WebKit.
+- Seen, not changed (shared): hfxLitText's copy of the number sits a few px left of the number in a 16:6 stage on both this
+  build and the one before, so the small box's lock flash shows doubled for a moment.
+- Gates on this commit: check-js ALL PASS; console clean in both classes (only the sandbox's blocked Firebase CDN);
+  check-b384-hazmat ALL PASS (fails on 3b6f4ad on every new leg); check-sound ALL PASS; sweep-layout --quick 14/14 clean;
+  check-b382-ifcart all but "the hundo ladder keeps its ids and counts in Fire Code", which fails the same on 3b6f4ad (it
+  predates 25/50/75/150); check-behaviour check_b313_fx + check_b317_hundobox: only "Confetti ... leaves the box and its bar
+  gold" and the three "confetti: then gold" hand-off legs fail, the same on 3b6f4ad (academy; untouched here). A "bubbles:
+  spreads out" fail under load passed on its own re-run.
+
+### Build 384 - Choose your mode: the glow that scrolled is gone (NOT on main, waiting for Madison)
+
+Madison (a 383 screenshot of Fire Code's Choose your mode): "Am I crazy or is there like a glow on this screen and it moves
+with the scroll but it's not on some of the other screens? Is it meant to be there?"
+- It was real and not meant: showModeSelect still appended a .homeglow - the sign-up screens' 600x416 radial of the accent
+  (opacity .12 in dark), position:absolute inside the panel, so it scrolled with the page. Every other screen past Home lost
+  its glow with the clean look (builds 37x); this one was missed. Found by listing every element and pseudo-element over the
+  title (elementsFromPoint missed it: pointer-events:none).
+- Removed from showModeSelect only. The sign-up screens (sign-up check, class, name, character, code reveal/entry) keep theirs.
+- Gate: check-b384-modes (7) - no radial gradient on the panel or anything in it (before/after included), both classes, phone,
+  iPad and SE. Fails on 4f3d9c3 (homeglow, all six); passes here with (1)-(6).
+
+### Build 384 - Fire Code's 25 and 50: the Extinguisher and the Sprinklers, tightened (NOT on main, waiting for Madison)
+
+Madison: "The extinguisher one is super cool. Tighten it up though, maybe it better. Tighten up all of them where you can to
+ensure they perfect" (and in 383: "The sprinklers is my favorite one but it could be better, the sprinkler water could look
+better, the fire could look better"). Both recorded first on a real 100% results screen (phone 440x956 and iPad 834x1194, with
+the app's own sound) and studied frame by frame; the same scenes, the same ids and rungs (fireworks 25, underwater 50),
+refined. Only ifxExtinguisher, ifxSprinklers, their IFX_DEF rows, their ifxWarmList / ifxPosterBody / ifxStillBody branches,
+their ifxSpr sprites and their two SND_IFX scores changed. Each effect's beats are one table now (EXT_T, SPR_T, declared just
+above its builder) and its score reads the same table, so the sound cannot drift off the picture.
+
+**Extinguisher (fireworks), before -> after**
+- Length: 5.4s play / IFX_DEF 5800 total, 4700 tail -> 5.0s / 5300 / 4300 (box alone 4.2 -> 3.9s, IFX box 4400 -> 4200).
+  Every beat earlier: set down .46 -> .40, pull .52 -> .46, aim .68 -> .56 (it starts as the pin flies), blast .98 -> .86,
+  off 3.25 -> 2.95, the 100% lit 3.55 -> 3.19.
+- Entrance: a swing up with a springy ease -> up OVER its mark and SET DOWN, with a squash (scale 1.03 x .955) on the clunk.
+- PULL: the pin slid off the left edge, too small to read -> a twist (seal, a small glint), a yank, then tossed up over the
+  cylinder on a real parabola (12 keyframes), spinning and growing a little, falling out past the label.
+- AIM: the nozzle already pointed nearly at the box at rest, so the aim turned it 3 deg on a phone (13-17 on an iPad) -> it hangs
+  down the cylinder's side and is swung up 135-145 deg onto the box, over the mark and back; after the blast it swings back down.
+  The ferrule moved from the cylinder sprite onto the nozzle (it turns with it); the nozzle and hose got a lit grey edge so they
+  read on the dark screen (black on navy was invisible).
+- SQUEEZE dips the whole unit; the blast KICKS it back along the stream, then an irregular rumble (was an 18 Hz square shake).
+- The stream: a still cone that breathed -> three looping layers of comet streaks (ifxSpr.jetFlow, new) poured out along it;
+  a punch on the open (over-scaled, opening over .1s - faster read as a one-frame jump on the iPad); and a SPUTTER as it empties - three spurts at 2.775 / 2.845 / 2.9s, each with a
+  jolt of the cylinder and a cough in the score - and the last puff leaves the horn.
+- The cloud: billows were cotton balls (every lump its own highlight) -> ifxSpr.cloud redrawn as ONE volume: 29 soft lobes, each
+  a near-flat tint by where it sits (lit above-left, warm grey under), the under-belly painted first, a few lit curls, fine powder
+  at the rim. Flung out fast and dragged to a stop, swelling, then SETTLING (dry chem is heavier than air; they drifted up). Five
+  big slow billows give the cloud a body. The haze was a full-screen grey (+0.24 luminance in the far corner) -> only where the
+  cloud is, lighter, sinking away (+0.004).
+- The box: whited out at .82 for 1.3s (the number unreadable) -> the powder at .6 with the 100% ghosting through, six wisps blown
+  up across it, and as it settles it slides off downward (a soft top edge passing down); then a glint, the box's red and the lit
+  100% on the chime. The tile's box alone (Customize, the unlock card) gets the same payoff; its billows are thinner (x.8).
+- Score: retimed to EXT_T - the entry whoosh runs into the clunk; scrape, click and ping on the twist / free / flight; a swish
+  on the aim; the roar (its pan on the sweep, .8/s) cut at the sputter into three coughs; a hush as it settles; the A4-D5 chime
+  and sparkle exactly at the lit 100%; a low whoosh as it is taken away.
+- Crisp: ext drawn at 1280 (960: 0.84 of a 3x phone's pixels), nozzle 400, jet 1024; the cloud at 400.
+- Tile / still: the poster's cloud is lobes in three shades (no cotton balls), with a settling fall; the still's billow likewise.
+
+**Sprinklers (underwater), before -> after**
+- Length: 6.3s play / 6800 / tail 5500 -> 5.0s / 5400 / 4300 (box alone 4.6 -> 4.0s, IFX box 4800 -> 4300). Bulbs 1.15 ->
+  1.0s, in one run left to right (.16s across, any number of heads); heads open in .2s (.24); knock-down from 1.55 (1.9), 90% of
+  the fire out at ~2.6s (3.25); spray off 3.3 (4.0); the heads go back up 3.9s, .5s after the spray (round 4 left them hanging
+  1.2-1.6s with nothing happening).
+- The payoff: the 100% was lit at 2.4s with the fire still burning and the chime came with the drips at 4.45s -> lit at 2.6s as
+  the last of the fire goes out, a sheet of water running down the glass just before it, and the D5-A5-D6 chime on it.
+- The water: ifxSpr.spray redrawn - streams that leave the plate whole and break into droplets (a solid run, dashes, beads),
+  loose drops with glints, a thin bright sheet off the plate's rim and a faint bell of mist; the hard white disc is gone. Drawn at
+  900 (640). Rain drawn at 300 (120 - a blur at 3x), each streak with its bright drop at the head, falling faster. Each head jolts
+  as its bulb goes. Two drips per head on a phone.
+- The fire: flames at 800 (320 was 0.36 of a 3x phone's pixels), bulb 200 (120), glass 320 (120). Knock-down unchanged in kind
+  (a flare, then beaten down) but on the faster beats.
+- Steam: a round puff per flame that hung 2s over the floor as a smeared band -> ifxSpr.steam (new): a curling plume that rises
+  ~a fire's height and is gone in ~0.9s, sizes and starts varied.
+- Score: retimed to SPR_T - the bulbs louder (glass crack, tinkle and the head's water bursting out, panned left to right), the
+  spray shut at 3.3, the chime moved to the lit 100%, the six drips on the drips. iPad: rain 9 per head and one drip per head,
+  to stay under 170 pieces (172 -> 168).
+- Tile: the umbrellas as the effect's (sheet, solid-then-dotted streams, mist bell); the steam in wisps (was two flat discs).
+
+**Gate** tools/check-b384-extspr.py (Fire Code, a stand-in card, every animation paused and seeked, read off the page; the
+score rendered offline with NovaSound.render): E1 aim >= 90 deg (phone and iPad); E2 the pin rises >= 70px and stays on screen;
+E3 the squash < .975; E4 >= 3 dips in the stream's last .45s and a score onset within 40ms of every spurt; E5 >= 2 looping flow
+layers moving outward; E6 hung billows move DOWN over the second after the blast (both sizes); E7 lit <= 3.3s, total <= 5.4s,
+the far corner <= +.02 luminance mid-cloud; S1 heads up <= .8s after the spray (both sizes), total <= 5.6s; S2 lit within .35s
+of 90% of the fire out (both) and the D5 chime's onset within 60ms of it; S3 >= 5 steam plumes, each rising >= a quarter of the
+fire and gone within 1.4s (both); C1 hard-edged art rasterised >= .95 of its displayed size at 3x, flames >= .8; C2 (a guard
+joined to C1) transform/opacity only, no svg filters, <= 170 phone pieces, the tile's box plays and lights, nothing fully shown
+when the layer goes, both scores peak between .02 and 1, no page errors. On 3b6f4ad every one of its 18 legs FAILS; here ALL PASS.
+Also: check-js ALL PASS; check-sound ALL PASS; sweep-layout --quick 14/14 clean; check-b382-ifcart passes every leg but "the
+hundo ladder keeps its ids and counts in Fire Code", which already fails on 3b6f4ad (384's 25/50/75/150 counts; its hashes are
+re-pinned after merge, not here). record-hundo (phone and iPad): no frozen or jumpy frame inside either effect - the ones it
+still reports are the app's own cut to BADGE FOUND after the tail, there before too (5.1/5.4s then, 4.7/5.0s now). My own first
+passes had three, fixed: a dead frame at the landing (the squash now spreads over .07s), a lull at the end of the yank (the yank
+runs straight into the toss and the aim starts as the pin flies), and the blast opening in one frame on the iPad.
+
+Clips (phone and iPad, with the app's own sound, and before | after side by side on a phone) are in the session's scratchpad
+fx384/extspr/. Only a phone can confirm: smoothness at 120 Hz with the bigger rasters (sprites decoded once; flame 400x800,
+spray 900x585, ext 582x1280), that the three-spurt sputter reads as a sputter and not a flicker, and the score on the speaker.
+
+### Build 384 - round 5 merged: check-b382-ifcart re-pinned (NOT on main, waiting for Madison)
+
+- Merged on claude/b384: the Thermal Camera (75), Hazmat (150, 4f3d9c3), the Extinguisher and Sprinklers tightened (6b92d18).
+  Conflicts were the shared IFX_DEF / ifxSpr / ifxWarmList lines only: each effect keeps its own lines; the Fire Alarm's
+  sprites and Hazmat's unused vapour stay gone; jetFlow and steam join the set. check-b384-ifxnew 9/9, check-b384-hazmat
+  36/36, check-b384-extspr 18/18 on the merge.
+- check-b382-ifcart for round 5: "the hundo ladder keeps its ids and counts" became "keeps its ids, with its own lower counts"
+  (same rungs and order; Fire Code's counts climb, none above the academy's, every rung past Confetti lower - read off the page:
+  25/50/75/150 against 50/100/150/200); the four are Extinguisher, Sprinklers, Thermal Camera, Hazmat in that order up the
+  ladder; R4 = the four sources' hashes on 42bbffa (383, live, --dump there): all four differ now; bubbles plays ifxThermal and
+  ufo ifxHazmat. 45/45 here.
+
+### Build 384 - hairlines inset at both ends, like Delta's (NOT on main, waiting for Madison)
+
+Madison, with Delta's Settings beside ours: "Pay attention to their lines. Theirs don't touch the sides, why would ours? Come on,
+please pay attention to details. Please ensure ours looks this great".
+- Delta's row line runs from the words to the row's content edge (the chevron's right edge; a row of words alone, a Support
+  link, ends at the same place) - the row's padding clear of the card on the right as on the left. Ours ran to the card's edge
+  (1px from it: right:0, or right:-18px on the switch rows).
+- Now, every grouped list: Settings and its pages and Contributors (.settings-row + .settings-row::before) right:18px, the
+  row's padding; the switch rows (label.opt.has-tile + label.opt::before, inside the card's 18px padding) right:0 - the
+  switch's edge; Customize (.cz-row + .cz-row::before) right:.85rem, its padding; the Leaderboard's grouped list
+  (.rank-row::after, both rules) right:var(--lb-pad). Left ends unchanged (at the words). The Stats 4-box cross was already
+  inset (18px from the box's sides, 10px from the top and bottom) and the calendar's topic list ends inside its card's padding.
+- Gate: tools/check-b384-hairlines.py - on Settings, Sound, Studying, Contributors, Customize and a filled Leaderboard
+  (check-b382-board's loader, __fill), every 1px row line ends at its row's content edge (within 1.5px), is 8px+ clear of the
+  card's right edge and its left edge, and every screen has lines. Here: all at 0 off, 13-19px clear. On 45fb8fd every screen
+  fails (1) and (2): 12-18px past the content, 1px from the card's edge.
+### Build 384 - the Virtual Room in every class (NOT on main, waiting for Madison)
+Madison: "The ifc version says the virtual room is only for the police academy when I try to use it, but it shouldn't be. It
+should be for all the versions!"
+- WHAT: Fire Code has the whole Virtual Room - host, join an open room, invites (the Inbox and the banner), Race, Tug of War,
+  Battle, presence, the chat, results, the standings cutscene, Nova's challenge. Its first 384 build said "Virtual Room is only
+  for the Police Academy class." (academyOnly) at every way in; that is gone (vroomUnreachable: "Virtual Room needs sync. Turn
+  it on in the Police Academy class." without an academy code, otherwise the connection line).
+- A ROOM BELONGS TO THE CLASS IT WAS MADE IN. A room made in Fire Code carries `cls: "ifc"`; an academy room is written exactly
+  as before, with no `cls` (roomClassOf: none = the academy, which every room from before this build is). The room's questions
+  are its class's bank on EVERY device in it: an academy joiner of a Fire Code room plays Fire Code's questions, choices,
+  chapter names and words, and the owner in Fire Code joining a classmate's academy room plays the academy's. Same question
+  order on every device (the seeded shuffle, unchanged); choice order is per device, as it always was.
+  - HOW: QUESTIONS and KEYS (both consts) are swapped IN PLACE for the room. BANK_CLASS says whose bank they hold;
+    ownClass() is the page's class; CLASS_BANKS keeps each bank once needed - Fire Code keeps the academy's list at boot (before
+    it empties QUESTIONS), the academy loads ifc/bank.js the first time it joins a Fire Code room (ifcBankReady, built with the
+    same ifcQuestionsFrom() Fire Code boots with, keys by the same bankKeysOf()). joinVirtualRoomLobby loads the room's bank,
+    writes the join, then useClassBank(cls) before the lobby draws. restoreClassBank() puts this class's back: in
+    leaveVirtualRoom, and from a stage watch (vroomCode outlives a room on other ways out): when another bank is in and the
+    stage shows none of the room's screens (lobby, Match settings, a race question / its pause / results, Tug and Battle
+    screens, the standings, or an empty stage between them), the own bank comes back. The lobby listener (and
+    showVirtualRoomLobby) put the room's bank back in if a device comes back to the room from elsewhere.
+  - What keeps reading THIS class's bank while another is in: the progress side. classTopics() replaces topicsIn(QUESTIONS)
+    in every count of badges / hundos / stars / ranks (badgeCountOf, badgesEarnedList, unitsWithHundo, the star and mastery
+    counts, rank road, retro badges, banner seeds, Nova's badge lines, closestBadge, the ranks tab...), so a level, rank, banner
+    or board row worked out mid-room (a presence beat, a row push after vrMatches) is the true one. The unit-size cache holds
+    both banks' units (names never repeat across classes). Index-keyed memos are cleared on a swap (choice signatures,
+    "choices refer to each other", the Fire Code reference cards).
+  - Words: classNoun() and chapterFix() follow BANK_CLASS. The academy starts the chapter observer the first time a Fire Code
+    room's bank comes in, watching ONLY #stage (its own chrome is never rewritten, so nothing is left saying "chapter" after the
+    room); Fire Code's observer does nothing while an academy room's bank is in.
+- A PLAYER FROM ANOTHER CLASS ("visiting", vroomForeign()) gets the match and nothing else of it:
+  - gets: the room score, time and room XP written to the room (so the standings rank everybody alike - roomRunXpOf works the
+    room XP out by the same rules summarize() gives every player: right answers, streaks, speed, long test, a hundo, several
+    units; never a personal best or a badge), the standings, and recordVroomOutcome in the class they are in (vrMatches /
+    vrWins / vrTop3, the Clown at five wins);
+  - not: XP (race, Tug's pot, Battle's), store.stats, lifetime answered/correct/streak, stars (no flag button on the
+    question, setFlag refuses), hundos, badges, unit bests, test history / test played, study time (addStudyTime refuses), a
+    flare in the run, Nova's Sheriff for beating him, the "openers" and last-slot memories. beginRun skips its seeds and
+    snapshots; recordResult returns; summarize() hands a visiting room run to summarizeVisitingRun (the results screen with
+    "No XP. This was a Fire Code room; the match counts toward your Virtual Room record." and no level bar, then
+    finishVirtualRoomTest as ever). Tug/Battle results say "No XP" and why.
+  - The same class: exactly as before (summarize() untouched for it).
+  - Fire Code's own progress is still only Fire Code's store and progress/<code>__ifc (ifcAcctDb).
+- THE CLOUD: every room read and write goes through vroomDb() = socialDb(): fbDb in the academy (the same object as before),
+  ifcSocialDb in Fire Code (reads `leaderboard` and `vrooms`, writes `vrooms` only). Switched: startVroomPresence, the pagehide
+  away-mark, leaveVirtualRoom, showVirtualRoomChoice, syncCountSlider, createVirtualRoomLobby, joinVirtualRoomLobby, the room
+  browser, the lobby (open switch, ready, the listener and its start/reset writes), the race listener, pushVirtualRoomProgress,
+  finishVirtualRoomTest, the finale's revealDone and listener, vroomReturnToLobby, showVirtualRoomResults, Tug (check-over,
+  listener, progress, result reset), Battle (check-over, progress, log, listener, result reset), Nova in a room (invite, drive,
+  write, orphan check), Nova's challenge entry points; onFirebaseReady -> onSocialReady for the two room listeners. The invite
+  sheet's board read is socialDb(). seedVroomHistory / seedVroomTop3 stay fbDb (academy-only one-off backfills).
+- IDENTITY in a room: the participant key is publicIdOf() (the academy account's id in Fire Code, 384 friends). vroomMeEntry():
+  name and character are the account's (socialMe - the store in the academy), the numbers the class you are in (as a room
+  entry always carried). The presence beat, lastLeave and the away-mark use the same name.
+- COPY: the lobby's room card says "Fire Code room" (a Police Academy room seen from Fire Code: "Police Academy room"; the
+  academy's own rooms say nothing new), and for a visitor ". Wins and matches count toward your Virtual Room record. No XP or
+  question progress is added." The invite carries `cls` (only for a non-academy room) and the Inbox / banner say "invited you to
+  a Fire Code room" ("a Virtual Room" for the academy's own, as before). The open-rooms list names the class first. The
+  Virtual Room banner is back in Fire Code (checkLobbyInvites).
+- BUDGET: the academy - nothing new (same documents, same writes and reads; an academy room is the same document). A Fire
+  Code room costs what an academy room costs (measured below). The academy joiner of a Fire Code room also downloads
+  ifc/bank.js once (1.4 MB, not Firestore). Fire Code keeps the academy's bank in memory (the owner only).
+- Not changed: Contributors' "Virtual Room design" row still opens nothing in Fire Code (check-b382-credits counts 0 links
+  there); bug reports / lag tests stay fbDb.
+- GATE tools/check-b384-vrifc.py - THREE DEVICES, ONE CLOUD. Each device is its own browser context (its own storage and
+  class); they share a Firestore stand-in served by the gate over HTTP (documents, dotted updates, FieldValue / FieldPath,
+  transactions, batches, document and collection listeners by long poll), so a write on one phone reaches the others as
+  Firestore's does. Every write is logged with its device; every read a device takes is counted there (a get, a query's
+  documents, one per document change a listener is told of). The page is served from the stand-in's own origin: a page
+  Playwright fulfils by route sits outside the loopback address space and Chromium's local-network checks refuse its
+  requests to 127.0.0.1. Fixtures: the owner (TEST-3849, made up) in Fire Code, Alexis (academy, his friend), Kimber
+  (academy). It waits out a seeded account's opening cutscene (which holds every banner) and flushes the account push
+  (pushToCloud - at most once a minute otherwise) before reading a cloud copy.
+  (1) Fire Code's Virtual Room screen offers Host / Join, no academy-only note; hosting makes cls "ifc", host = the academy
+  id; the lobby says "Fire Code room". (2) the invite carries cls; the academy classmate's banner says "Fire Code room"; he
+  joins on Fire Code's bank ("chapters"); his lobby says what counts; both play the same five Fire Code questions in the same
+  order. (3) both finish, both rank the room the same (host first). (4) his academy store: vrMatches +1, XP / answered /
+  correct / stats / stars / hundos / tests / study time / exam plays unchanged, no Fire Code keys; his results say "No XP...";
+  his cloud copy the same; the Fire Code host's match counts in Fire Code as ever (XP, 5 stats, vrMatches); out of the room
+  he is the academy again. (5) an academy room: no cls, no class line, same questions/order, standings, XP and stats and
+  vrMatches as ever. (5b) the owner in Fire Code invited to "a Police Academy room", joins on the academy's bank ("units"),
+  same order, wins: Fire Code vrMatches +1, vrWins +1, XP and stats unchanged, no academy keys; Fire Code itself again after.
+  (6) Fire Code wrote only progress/TEST-3849__ifc and vrooms/*; its room handle refuses progress/<code> and the board.
+  (7) no sync code in any vrooms document. (8) no page errors on the three devices; cost (below).
+  36 checks ALL PASS; --against 63cbae3: 12 FAIL (Fire Code cannot host, no invite class, can't join an academy room), the
+  academy room (5) passes on both.
+- COST, room document per match (ready to everyone in, two players, five questions): academy room on 63cbae3 17 writes /
+  40 reads; on this build 17 / 36-39 (reads vary by a few with how the stand-in's polls coalesce); a Fire Code room 17 / 39.
+  Setting a room up (host, units, invite, join): 3 writes / 8 reads, academy (both builds) and Fire Code alike.
+- OTHER GATES, one at a time: check-vroom ALL PASS (a first run lost one chat message in section 5, "two people typing at
+  once" - the harness's own cross-tab localStorage race its notes describe; section 5 passes on 63cbae3 and on the rerun here,
+  and the whole rerun is ALL PASS); check-friends ALL PASS; check-chat 1 failure, the known peek check; check-groupchat ALL
+  PASS; check-b383-ifcsync ALL PASS; check-b384-friends ALL PASS; check-b384-chatback ALL PASS; check-sync twice, 119 pass each:
+  run 1 failed "Find me finds your row" (the known race, see the friends notes), run 2 "the mirror is left holding only the
+  code" (its fixture deletes the IndexedDB store record 600ms after a saveStore, and a mirror write can land after it) - each
+  passed in the other run, and neither touches a room; check-b384-ifccurve, check-b383-classes ALL PASS; check-b382-ifc 56
+  pass + "Profile has no Stats tab" (fails identically on 63cbae3: it expects a Profile switch Fire Code lost in 383);
+  check-js ALL PASS; sweep-layout --quick 14/14 clean. check-b384-friends and check-b383-ifcsync: labels only (fbDb still null;
+  rooms now go through the friends' handle).
+- ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the security rules taking Fire Code's room writes through ifcSocialDb (the
+  same `vrooms` documents and fields the academy writes, plus `cls` on a Fire Code room's create and on its invite - if the
+  rules list a room's fields, that field must be allowed), the compat SDK's listeners and dotted updates through
+  scopedFirestore's Proxy for a whole match, the start instant and the 45-second clocks across two real phones, and how long
+  ifc/bank.js takes to load on a classmate's phone before the lobby opens (a toast says so if it fails).
+
+### Build 384 - the picked unit's dot in the theme's colour (NOT on main, waiting for Madison)
+
+Madison: "The green dot signifying you selected a unit is super cool. I wanna give something a shot though, what if the color
+of that was matched to your theme? ... If I don't like it we'll just change back to this green color we got going on for it."
+- --pick-dot (the dot, its landing ring, the picked card's wash) = var(--theme-c2, #34C759): each theme's vivid colour (the
+  default's orange #F5804D, Bronze, Silver, Gold, Teal, Blue, Purple, Red). The dot's light and shade are mixed from it
+  (color-mix with white 22% / 72% and black 62%) instead of fixed greens. TO GO BACK: --pick-dot:#34C759 on that one line.
+- check-b383-look (5) now reads --theme-c2 off the page and wants the dot's gradient to carry it, then flips data-accent to
+  another theme and wants the dot to follow. Both fail on 91a1d96 (green); all pass here.
+
+### Build 384 - Contributors: "helped build Nova", Cameron the co-founder, Robert Morgan; sign-up's class: unpick and confirm (NOT on main, waiting for Madison)
+
+Madison: "In contributors, at the top it says helped build for the class, should say helped build the app? ... Cameron started
+this process with the very first beta when the app was called study drill and had like 5 percent of what we have now. Is he
+considered the founder? Co founder? Idk but ensure it's right, Cameron should be underneath me. Robert Morgan can be included in
+the contributor list. He helped come up with ideas here and there. Give him something too." / "When signing up, when you select
+a class to enroll, there's no way to unselect it. Ensure that if you tap it again after you click it, you'd unenroll. After you
+select a class and hit continue, have it ask to confirm and stuff."
+- Contributors' intro: "These people helped build Nova, from its first beta, Study Drill, to the app it is today." (both
+  classes; was "...for Class 26E" / "...for the class").
+- Cameron Wharton, second under the founder: role "Co-Founder" (was "Co-Founder & Original Beta"); first rows "Started the first
+  beta, Study Drill" and "The original idea for the app", then his Virtual Room rows as before. Co-founder rather than founder:
+  he started it; the app as it is was built from there under the founder (Madison Davis, "Founder & Lead Designer", first).
+- Robert Morgan, by surname after Darjean: "Ideas & Feedback" - "Feature ideas and suggestions", "Feedback on new features".
+  check-b382-credits' PEOPLE list has him (six people).
+- showClassSelection: the class card toggles (picked -> "Selected" + Continue; tapped again -> "Select", Continue hidden;
+  aria-pressed; the switch sounds). Continue opens showClassEnrollConfirm (the savecode-card sheet "Already have an account?"
+  uses): "Enroll in Police Academy?" / "You're signing up for Police Academy (Class 26E). You can add more classes later from
+  the class button on Home." - Enroll starts the sign-up (startSignupWithNova, still once-only), Go back or a tap outside closes
+  it with the class still picked.
+- Gate: tools/check-b384-signupclass.py - (1) tap picks / second unpicks / third picks; (2) Continue opens the sheet with Enroll
+  and Go back, nothing started; (3) Go back keeps the pick; (4) Continue + Enroll starts the sign-up; (5) no page errors. 5/5
+  here; fails (1)-(4) on 91a1d96. The gates that walk sign-up now tap Enroll after Continue: check-b382-firstrun,
+  check-b383-signup (its double-tap test is on Enroll now), check-b329, check-b327z15, check-b382-unhide, record-signup.py.
+
+### Build 384 - Customize's Hundo effect row plays (NOT on main, waiting for Madison)
+
+Madison (Customize, Your look): "The Hundo effect box here, it doesn't animate but everything else does, fix that."
+- buildCustomizePick("fx") was buildHundoFxTile - the effects PAGE's still poster (build 314: the grid of every effect playing at
+  once "seems like a lot"). The Your look row is one effect, so it is now buildHundoFxStage(worn, { live: true, delay: 500 }) -
+  the effect's own small-box build in the 100% box, again after its box total + .9s, waiting while off screen, ended when the
+  screen goes (isConnected), its still under Reduce motion. The effects page's grid is unchanged (still).
+- Gate: tools/check-b384-czfx.py - academy (Fireworks) and Fire Code (Extinguisher): the row runs animations (11 / 33 at the
+  busiest) and none once the screen has gone; the grid's 5 tiles run none; Reduce motion shows a still and runs nothing; no page
+  errors. Fails (1) in both classes on 91a1d96.
+### Build 384 - Add to Home Screen in sign-up (NOT on main, waiting for Madison)
+Madison: "let's ensure that the sign up process gives a thing for the adding app to your iPhone/samsung homescreen as a
+popup. Have it mention that the app has been designed as an app for the phone but is also capable of being used as a website
+on computers and then let it do the walkthrough. For when people select Apple. Have it show them this video I'm gonna
+attach. Similar to how the video is there for the hundo example ... you can see my friends and stuff in the share
+recommendation, blur that out. Blur out anything that shouldn't be there. But show this. Maybe add some pointers like the add
+button. A pointer for "open as web app" ensuring it's on."
+- WHERE: showHomeScreenSheet (beside showInstallGuide). Once, as a NEW account's main-menu tips end (startMainMenuTour's
+  onDone - only a sign-up calls it), on Home, after the +100 XP has flown (a2hsBusy: Home, no tip, no XP banner, nothing
+  weekRecapBlocked() counts; ~3s after the last tip). Not earlier on purpose: the account and its code exist from the partner
+  pick, but tourRev/novaMet are set there too, so an icon added mid-Nova opens on Home with the rest of his talk and the tips
+  never seen (the 383 audit's "closes between the partner pick and the code line" case). NEVER in the installed app
+  (isStandaloneApp when it is owed, scheduled and shown).
+- ONCE: class26e.a2hs = "owed" from the end of the tips until it shows (an app closed in between shows it on its next Home:
+  showHome's ordinary branch reschedules an owed one), then the time it showed. It never comes back on its own; Not now, a
+  scrim tap, Escape or a screen change all end it. Settings > Share & Install > Add to Home Screen (handleInstallTap) opens
+  the same sheet with Done and never touches the key. The enrolled banner (showEnrolledBanner) and Nova's good-luck message
+  wait while it is coming or up (a2hsHolds); the message 7s more after it closes (a2hsClosedAt) so the two banners do not
+  land together. The overlay carries .invite-overlay, so everything that waits for a sheet waits for it.
+- THE SHEET: the save-code card's pop-up (centred, the pop-up glass, light words in every theme, the body scrolls, Not now
+  pinned at the foot, z 420). A "Home Screen" tag, the title, the intro (designed as an app for your phone; opens full screen;
+  also works as a website on a computer), then the device as an iOS segmented control (role=radio, 44px): iPhone or iPad /
+  Android or Samsung / Computer, preselected from the user agent (a2hsDeviceGuess; an iPad asking for the desktop site says
+  Macintosh and has touch points).
+  - iPhone or iPad: the clip in a phone-shaped frame (Get Started's look; aspect 540/1174 exactly, so the pointers' fractions
+    land), muted, inline, looping, played only while it is the choice (src set on first choice: Android and computer users
+    never download it), tap to pause, a play button only when paused (reduced motion: not autoplayed). The five steps in
+    words with the old guide's inline icons (Safari's ••• then Share, or the toolbar's Share; View More - skip it if Add to
+    Home Screen already shows; Add to Home Screen; Open as Web App on; Add); the step the clip is on is lit. The note follows
+    the iOS storage notes (1681, 29215): Safari and the icon are separate storage jars, so while this choice is up the
+    address carries the code (installCodeInUrl(true), re-armed every 60s past its 3-minute limit, stripped on close or on
+    another choice) and an icon added now opens signed in, its progress pulled from the cloud. It says: "Add it while this
+    page is open and the icon opens signed in to your account, with your progress. From then on, open Nova from the icon
+    instead of Safari." (no code on the device: sign in there with your sync code; in the installed app: the steps are for
+    another iPhone or iPad).
+  - Android or Samsung: a card per browser, this browser first and marked "This browser" (SamsungBrowser / Android Chrome),
+    a small drawing of a phone with its menu button ringed in the pointers' amber, three steps (Chrome: ⋮ top right, Add to
+    Home screen or Install app, Install or Add; Samsung Internet: ≡ bottom right, Add page to, Home screen then Add). When the
+    browser fired beforeinstallprompt (window.__deferredInstallPrompt, caught in <head>) a one-tap Install Nova runs it.
+    Note: the icon uses this browser's sign-in (an Android home-screen app shares its browser's storage).
+  - Computer: works here as a website; bookmark (Ctrl + D, ⌘ Command + D on a Mac); Chrome/Edge's install icon; on your
+    phone open the same address (shown) and sign in with your sync code; Install Nova when the browser offered it.
+- THE CLIP (landing/a2hs-iphone.mp4 566,474 bytes + a2hs-iphone.jpg poster 40,903 bytes; 540x1174, H.264 High, yuv420p, 30fps,
+  14.73s, no audio, faststart): his screen recording (1320x2868 HEVC 10-bit HDR PQ, 120fps, 21.6s), tone-mapped to SDR bt709
+  (zscale + tonemap=mobius, npl 100: a plain conversion is grey and dim), cut to four spans with 4-frame cross-fades (source
+  1.5-4.13s Welcome and •••; 4.5-7.27s the menu and Share; 8.6-11.2s the sheet and View More; 13.4-18.83s the expanded sheet,
+  Add to Home Screen and its page - his drag at 19.2s and the keyboard are cut), the last frame held 0.8s. In the clip •••
+  is pressed at 2.03s, Share 3.83s, View More 6.67s, Add to Home Screen 9.83s; the Add page is up from 10.4s.
+  BLURRED: the share sheet's row of people (his friends' photos and names, the group, the fifth avatar peeking at the edge),
+  full width between the row's hairlines, TRACKED frame by frame by normalised cross-correlation against the row itself
+  (half resolution, FFT): y 660-830 (of 1174) while the sheet sits, rising with it as it expands (622 -> 240 over 12 frames),
+  240-410 expanded, plus four hand-measured boxes for the frames where the sheet grows out of the ••• button (scaled,
+  650-920); two Gaussian passes, radius 18. The Messages back-link under the clock (4-104 x 43-68), every frame, radius 7.
+  Checked independently on the shipped file: every frame decoded and searched (high-passed NCC, two templates x four scales)
+  for the unblurred row - best match anywhere 0.17, where the same search finds it in the untouched source at 0.57-1.00 in
+  every state (rising, collapsed, expanding, expanded, behind the Add page). The Add page's URL is the plain address (he was
+  on Welcome; no code in it). Left as is: his app row (AirDrop, Messages, Mail, Notes), the time, the battery, the site's
+  own preview. The scripts (tone map, tracker, boxes, cutter/encoder, verifier) live in the session scratchpad, not the repo,
+  and so does the raw recording (user upload data).
+- POINTERS (A2HS_POINTERS): crisp HTML over the clip, not burned in, on the clip's own clock (rAF while it plays; timeupdate
+  when rAF is held back), placed as fractions of its frame read off the clip: ••• (.869,.938) 0.3-2.2s; Share in the menu
+  (.454,.665) 2.45-3.95; View More (.831,.9) 4.85-6.75; Add to Home Screen (.156,.541) 7.4-9.95; Open as Web App's switch
+  (.881,.335) "Make sure this is on" 10.45-12.6; Add (.88,.119) 12.6 to the end. An amber ring that pops in (transform), a
+  ping (transform + opacity; off with reduced motion), a short label above or below, anchored to the side that keeps it
+  inside the frame.
+- GATE tools/check-b384-a2hs.py (its static server answers byte ranges, as GitHub Pages does - a <video> seeks only where it
+  can; this Chromium decodes H.264 now, canPlayType "probably", so the 22500 note is out of date): iphone (a full sign-up in
+  an iPhone Safari tab: the sheet only after the last tip, never over Nova, the card or a tip, after the XP; Apple preselected;
+  layout; the clip plays and has a poster; each pointer alone on in its window, at its fraction, label inside, its step lit;
+  the switch pointer over the switch's green and the Add pointer over the button's blue, read off the clip; the code in the
+  address while up and gone after; the enrolled banner held then shown; Not now; not back after a reload), samsung (Android
+  preselected, Samsung's card first and marked, the clip not downloaded, Install appears and runs the prompt on a
+  beforeinstallprompt), desktop (Computer preselected; the clip plays on choosing iPhone and pauses on leaving it), installed
+  (no sheet, nothing owed, the enrolled banner still comes), settings (the row opens it with Done; the key untouched), clip
+  (codec, size, faststart, poster; in all 172 frames the row is in, its band holds at most 0.13 of the detail of the apps row
+  under it; the back-link at most 0.02 of the clock's). ALL PASS. --against 91a1d96: 7 FAIL (no sheet on any of the three
+  devices; the Settings row opens the old picker). The clip section measures something: on an unblurred cut of the same
+  recording it FAILS (2.24 and 1.50). Its sign-up walker taps through Nova's typing: the machine was at load 15-22 from other
+  sessions, and at full typing speed a 120s walk budget runs out.
+- OTHER GATES, one at a time: check-js ALL PASS; sweep-layout --quick 14/14 (it now also mounts the sheet on each of its three
+  choices); check-b382-firstrun ALL PASS (123); check-b383-signup 84 pass, its 10 fresh-walk [guard]s failed on the 120s walk
+  budget under that load (Nova reached the name only) - the same file with a 480s budget, ONLY=fresh: 51/51 PASS (that walk is
+  the installed app, where the sheet never shows); check-b382-savecode, check-b382-settings (its stub of handleInstallTap
+  still binds), check-b382-credits, check-b329 ALL PASS; check-behaviour check_b218 (Share & Install's card) ALL PASS;
+  check-b339 all but "the Share link is the real site, a plain address" (SHARE_URL is 384's share page with ?v=384, untouched
+  here; fails on 91a1d96 too) - its Add to Home Screen code-in-address checks pass (showInstallGuide and the picker are kept,
+  unreached from the app, for it and the sweep); check-sync 1 failure, "Find me finds your row" (the known race; on 91a1d96 the
+  same run failed two other known races instead).
+- RECORDINGS for Madison (session scratchpad a2hs384/): a2hs-iphone.mp4 (iPhone 17 Pro Max size, a Safari tab: the last tip,
+  the XP, the sheet, one full turn of the clip with its pointers, the steps, Not now, the enrolled banner) and a2hs-samsung.mp4
+  (Galaxy S24 size, Samsung Internet: Android preselected, its cards, iPhone chosen and back, Not now). CDP screencasts at 2x,
+  about 13 frames a second because the sandbox was loaded; the clip itself is 30fps.
+- ONLY A PHONE CAN CONFIRM: that an icon added from Safari while the sheet is up opens signed in (the #k= launch address) and
+  pulls its progress; muted inline autoplay in Safari (Low Power Mode refuses it: the play button shows then); that the foot
+  clears Safari 26's floating toolbar in a tab (a centred card inside the safe areas rather than a bottom sheet, for that
+  reason); the blur on a Retina screen; Samsung Internet's and Chrome's menus, and whether Chrome offers Install for this
+  manifest (a data: URI) - the Install button only appears if it does.
+- LEFT FOR MADISON: the copy and the moment (after the tips, not inside Nova's talk); whether EXISTING accounts that still use
+  Nova in a Safari tab should be offered it once too (not done: he asked for sign-up); the clip is iOS 26's share sheet -
+  older iOS lists Add to Home Screen lower (step 2's note covers it).
+
+### Build 384 - Add to Home Screen merged; the step said under the clip on a phone
+- Merged the helper's Add to Home Screen pop-up (b46b17f). Its gate's sign-up walk now taps the "Enroll in ...?" confirm
+  (showClassEnrollConfirm) after Continue; builds without it go straight on.
+- Looking at the recording: on a phone the five written steps sit under the clip, and only step 1 is above the fold, so the
+  lit step (is-now) could not be seen while the clip moved on to Share, Add to Home Screen and Add. Added `.a2hs-now` under
+  the clip: "Step N of 5" (amber, like the pointers) and that step's words (a clone of its `.a2hs-step-main`, icons and all),
+  following the clip's clock - between pointers it keeps the last step begun, step 1 before the first. Fixed min-height so
+  nothing jumps; it fades in on a change (opacity/transform). aria-hidden (the list is the readable version). Hidden at
+  min-width:40rem, where the list sits beside the clip.
+- check-b384-a2hs: at each pointer's time the caption is shown, 0-24px under the clip, in view, says the pointer's step of
+  the list's count, and its words are the lit step's; on the laptop it is display:none. Against b46b17f the six caption
+  checks FAIL.
+
+### Build 384 - Add to Home Screen for existing accounts, as a "Quick tip"
+- Madison: "Existing accounts, they can get the pop up too on how to add to Home Screen. But for existing accounts have it
+  say like quick tip or something."
+- `a2hsTipEligible()`: not the installed app, class26e.a2hs never set (neither "owed" nor a time), onboarding done, a sync
+  code, `store.lifetime.answered > 0` (a sign-up under way has answered nothing, and gets its own showing at the end of its
+  tips), and a phone or tablet (a2hsDeviceGuess not "computer" - a laptop has no Home Screen to speak of; Settings > Share &
+  Install still opens it there). Home's hook: "owed" first, else the tip, `scheduleHomeScreenSheet(6000, "tip")`.
+- The tip waits for a longer quiet (4 calm ticks of 700ms, not 2) behind everything a2hsBusy knows - What's new (#intro-pop),
+  cutscenes, unlock cards, the resume offer, the chat, the weekly recap. Shown, it sets the same key to the time: once only,
+  and whichever of the sign-up's showing or the tip comes first is the only one.
+- The sheet: `from: "tip"` - its tag reads "Quick tip" (the sign-up's reads "Home Screen"), the intro says Nova is open in a
+  browser tab now (no "works as a website on a computer" line on a phone), "Not now" to close. Everything else is the same sheet.
+- check-b384-a2hstip: iPhone and Samsung tabs get it headed Quick tip with their device picked; it waits while an unlock card
+  is up; once only; never installed / computer / nothing answered / shown before; the sign-up's keeps "Home Screen". Against
+  b46b17f, (1), (2) and (4) FAIL. Gate fixtures for an existing account need class26e.intro.seen at INTRO_REV (6) or more -
+  '1' puts What's new up and the tip (rightly) waits behind it.
+
+### Build 384 - the academy's hundo effects, tightened (NOT on main; waiting for Madison)
+
+Madison, with the Fire Code redo: *"Tighten up all of them where you can to ensure they perfect, that goes for the police
+ones too."* Branch `fx384-police` (from `claude/b384` 3b6f4ad). Gate: `tools/check-b384-policefx.py` (A-F, `B384P_ONLY=`,
+`--against`): ALL PASS here, 22 failures on 3b6f4ad. Ids, counts (50/100/150/200), names, picks, beats and scores are
+unchanged; nothing in `ifx*` / `IFX_*` / `SND_IFX` was touched (proof below).
+
+**What the recordings showed (frame by frame, phone 440x956 and iPad 834x1194, every one).** The results screen opens on the
+grade box since build 320, so the box sits HIGH - its top 170px down a 17 Pro Max and 185px down an 11" iPad (on the phone
+itself the 59px status bar sits over the top of that). Fireworks, Bubbles and the UFO were laid out for a box far down the
+screen, and all three spent their effect in that strip: the bursts cut off by the top of the screen, the bubbles leaving
+upwards through it in a second, the UFO circling half off the top and (iPad) hovering and charging with its dome cut off -
+with the XP card and, on an iPad, a third of the screen under it left bare. Confetti's burst went off BEHIND the lifted box,
+so its 100% had no moment of its own. Underwater was right and is left as it is.
+
+**Confetti (0)**
+- Before: the nova's flash and first ring went off under the number, hidden by the box (it is lifted over the layer, hfx-over,
+  so the dim never touches the number); the 100% did nothing; the sparks' twinkle animated `filter: brightness()` on
+  clip-pathed elements (redrawn every frame).
+- After: `hfxConfettiGrade` gives the box its half of the burst, as every other effect's box has: the same nova (its flash at
+  .55 over the number, the two rings on the same clock, so they run on seamlessly past the box's edge into the screen's), the
+  number lit gold on the score's crack (.04s, peak .16s), five glints as the stardust settles; gone by 3s, faded with the boxes
+  by clearCelebrationsForScene. One line in playHundoFx's confetti branch calls it (both classes' Confetti; nothing else).
+  The twinkle is the spark's own `scale` (composes with the flight's transform). celebrate() is otherwise untouched.
+
+**Fireworks (50)**
+- Before: R = .3 of the width (132px phone, 183px iPad; the finale's middle 1.4x), centred in a band from .1 of the screen's
+  height - every burst ran off the top of the screen (the finale's by up to 80px; 3% of lit spark samples off the screen, 18%
+  under a real phone's status bar) and the band they were squeezed into was 30px tall.
+- After: the radius is also held to .6 of the sky (from under the status bar, `hfxSafeTop`, to the box's top edge), bursts are
+  centred from one radius under the sky's top down to near the box, and no burst - the finale's included - is bigger than the
+  room over its centre (`fit`): every one opens whole, its lower edge going down behind the box like a skyline. The finale's
+  middle one goes off lowest and biggest, a crown over the box; its crackle sits round the part that shows; the embers start
+  in the sky over the box. Launch/climb/burst times are untouched, so the score still lands on them (check-b327w 5).
+- Tile: the three bursts 3 units lower (they ran into the tile's top edge and corners). Still: the glow behind the big burst is
+  its magenta round a hot core (white fading straight to clear read as a grey disc).
+
+**Underwater (100)** - looked at frame by frame on both devices and left: the sea rises from the very bottom (his ask), the
+surface sits clear of a phone's status bar (~81px), the fish swim in the clear water under the cards, the drain hands to the
+buttons at 6.25s. No change.
+
+**Bubbles (150)**
+- Before: every bubble budded off the box's top edge and left upwards (the heroes over the half-circle above it): on a phone
+  2 of 39 ended below the box, all crammed into the strip over it and gone off the top within a second. The flourish's halo
+  was the pops' small rainbow ring (a 4.5-unit stroke drawn at 320px) blown up to 2.4x the ring of bubbles, opening at a
+  quarter of that in the middle of the box - across the 100% at its brightest - and going on as a soft, smeared doughnut.
+- After: `hfxBubbleRoom` - each bubble leaves from one of the box's four edges, picked in proportion to the room past it
+  (edge length x distance to the screen's edge, from under the status bar), heading out of that edge; a side with under 60px
+  is no way out. A phone sends about one in four up and the rest drifting down over the cards (26 of 39 end below the box);
+  heroes and the far layer are spread evenly over that room, chains set out from the edge facing their pop, merges go out
+  past one edge each. Going down they are gone before the bottom 120px, where the buttons rise at 4.6s. The halo is its own
+  picture (`hfxHaloURL`: two fine rainbow rings and a pale line, drawn at 1024px), born AT the ring of bubbles as they pop
+  (scale .96 of their ring) and spreading to 1.55x over 1.5s - outside the number on a phone; on an iPad (the number sits
+  further out than the 300px ring) a thin line crosses its first digit as it fades.
+
+**UFO (200)**
+- Before: a 168px (230px) saucer hovering 60px over the box and lifting 70px off it: hovering with its dome at the top edge,
+  on an iPad cut off (by 18px hovering, 30px charging); the circle centred .52 of the way up from the box and 12% of that tall
+  - the way in started off the top, the far side of the circle off the top, and the circle read as a flat line along the top
+  edge (under a real phone's status bar for most of it). The tile and still drew the beam green; the effect's has been blue
+  since build 317 round 5.
+- After: `hfxUfoSize` fits it into the sky over the box (status bar and 8px off): it keeps its size and the 60px hover where
+  that fits, else hovers lower (to 40px) and only then shrinks (iPad: 221px, hovering 40px); it lifts as high as the sky lets it,
+  at most 70px (`--lift`, phone 58px - the lift keyframes, the beam's `--bk`, the grab's path up the beam and the warp's place
+  all follow it). The circle (`hfxUfoArrival`) is as round as the sky allows (its depth a third of the room, 12-70px; phone
+  33px against 20) and placed so the saucer is whole all the way round - dome 4px under the status bar on the far side, feet
+  6px over the box (middle 40px+ over it, check_b317's rule) on the near side - and it comes in level with the circle's top,
+  not from above it. The miniature in the unlock card fits the same way (it was cut off by the frame's top). Tile and still:
+  the beam blue (`hfxUfoBeam()`), the green line under the number (it read as the number struck through) replaced by the
+  beam's ring on the box. `SND_UFO_MARKS` (what a Settings preview plays the doppler on) is the phone's path as it is now,
+  [1.74, 2.06, 2.38, 2.7, 3.02] - it was 60-120ms ahead of it even before.
+- The searchlights (on 1.0-2.41s) are no longer than from the rim to the box where the circle passes nearest it (its near side,
+  at .75 scale, ~2.4s), as well as where it hovers: with the circle now down in the sky over the box they reached 14-20px into
+  it (check_b317_hundobox caught it: "the beam is the only light that touches it").
+- THE BEAM WAS LETTERBOXED (found by check_b317's two-unit seam read, on this build and - less - on 3b6f4ad). The beam is drawn
+  at whatever width and length the saucer's size and hover give it, never its picture's own 1:2, and an svg in a box of another
+  shape keeps its shape ("meet") and leaves the rest clear. The UFO's sprites were never warmed ahead (hfxWarm had no ufo
+  branch), so on the first UFO of a session the beam was that svg: on a phone two-unit run (the reveal has scrolled 83px, the
+  sky is 113px, the saucer 111px) it showed only from 50px under the hull - starting at the box's edge - and stopped 50px short
+  of the floor; on an iPad it was a quarter narrower than itself (140 of 189px) every time. `hfxBeamURL` is
+  preserveAspectRatio="none" (as its bitmap always was) and hfxWarm makes all the UFO's sprites and bitmaps ahead.
+- Two units on a phone: the reveal has scrolled the page 83px when the effect starts, so the sky over the box is 113px: the
+  saucer is 111px there, hovering 40px up - whole; on 3b6f4ad it was 168px hovering 60px, its dome off the top of the screen
+  from the circle to the charge (check-b384-policefx A).
+- Beats untouched: prime 3.1, fired 3.66, floor 4.18, sweep 4.2-5.1, landing 6.1, scan 6.3, lock 6.95, steal 7.38, charge
+  8.0, warp 8.55.
+
+**Fire Code untouched, shown.** The ifx code region is byte-identical; the shared helpers it calls (hfxSprite, hfxLitText,
+hfxAnim, hfxCloneNum) are unchanged; playHundoFx changed only in its Confetti branch; hfxWarm only in the academy branch.
+Recorded `--ifc --seed 7` before and after: the Fire Alarm 273/273 frames identical; Sprinklers and Hazmat within the same-build
+re-record noise (.22 / .12 mean level); the Extinguisher's billows land elsewhere on both builds run to run (a real-time timer
+shifts the seeded sequence: before vs before = 3.29, before vs after = 3.09).
+
+**Tools.** `record-hundo.py` clips now START AT THE EFFECT in both classes, opened by the half second before it (the police
+clips had been running out before the effect began - "fx at frame None": the grade and XP box take ~13s first); `--against`
+and `--seed N` added. `f-<fx>-NN.jpg` are NN seconds into the effect.
+
+**Gates run (one at a time; the box was at load 15-20 from other sessions most of the afternoon).** check-js ALL PASS;
+check-b384-policefx ALL PASS (22 FAIL on 3b6f4ad); check-sound ALL PASS; check-b327w ALL PASS (the beats); check-b327-b 0;
+check-b383-look ALL PASS; sweep-layout --quick 14/14 clean. check-behaviour b313_fx + b317_hundobox + b320b_reactions: 4
+failures, the same 4 on 3b6f4ad (Confetti's gold rim: every results card's border has been clear since 383's iOS card, no rim).
+Moved in place: b313_fx's "the sky above the box is lit ... to within 40px of the top" was met by bursts running off the top;
+it is "into the top third of the sky over the box" now (B here holds that none is cut). Failing the same on 3b6f4ad (counted
+both ways): check-b327-j 11 and check-b325-a 3 and check-b326-a 16 and check-b327q 6 (the card rims again), check-b327z14 3 (the
+iPhone tab switch). Not in this diff (nothing in it touches them): check-loops 5 (cx-fc-*, mystery-*), check-b326-d (Nova's
+slides), check-b327z13 3 (tab timings under load), check-b382-ifcart 1 (Fire Code's 25/50/75/150, set by 3b6f4ad itself).
+Midway the session's Chromium (chromium-1194, which every gate names) was removed from /opt/pw-browsers by another session's
+install; the path now links to chromium-1243 (Chrome 153), so the later gates and the final clips ran on that.
+
+**Clips** (`/tmp/claude-0/-home-user-index-html/920022cb-51dc-5785-b32b-503aff219f98/scratchpad/fx384/police/`): `clips/`
+hundo-<fx>-phone|ipad.mp4 - the real drill to its 100% with the app's own sound (record-sound), each with its play log;
+`compare/` hundo-<fx>-phone|ipad-before-after.mp4 - 3b6f4ad | this build side by side, from half a second before the effect;
+`before/`, `after/` - the silent frame-exact clips (record-hundo) with per-second frames and box crops.
+
+**Only a phone can say:** that the fitted sky is right under the real status bar (Chromium reports env(safe-area-inset-top) as
+0, so the gate serves the page with 59px written in, as sim-safe-area does); the glass heroes' backdrop blur drifting over the
+XP card (the same four heroes, now over text rather than the header); the haptics and the scores on a phone speaker.
+
+### Build 384 - police effects merged; the lit "100%" lies exactly on the number
+- Merged fx384-police (68ffabf): the academy's hundo effects fitted to the results screen's grade box sitting high (see that
+  section). check-b384-policefx, check-b382-ifcart (0 FAIL, hashes unchanged) and check-b384-czfx pass on the merge.
+- "100%" looked doubled in the tiles: hfxLitText's copy of the number was set in the font's default figures while the grade
+  (.rs-pct / .hfx-stage-pct) is `lining-nums tabular-nums` - the copy came out 2.5px narrower - and hundoFxContext measured the
+  number with offsetLeft/Top/Width, whole pixels, while a centred number sits on a fraction (0.48px off). Now the copy takes
+  font-variant-numeric, font-feature-settings, font-stretch, font-style and font-kerning from the number, and the position
+  is read off the on-screen rects (undoing the box's scale), used only when it agrees with the whole-pixel answer within
+  1.5px (a box mid-turn falls back). Measured: 0 / 0 / 0 px (left, top, width) in every tile, phone and iPad.
+- check-b384-litnum: in each live tile (buildHundoFxStage) that lights the number, the copy's digits are set as the number's
+  and its glyph run lies on the real one within 0.25px. Against 57d034a: FAIL (normal figures, width -2.5px).
+### Build 384 - the Leaderboard fills in right, coming back to the app, switching class (NOT on main, waiting for Madison)
+
+Madison (iPhone 17 Pro Max, the installed app): "When switching between classes, the screen completely blank and then loading bar
+comes up. Remove the completely blank part.." / "When leaving the app and coming back, the lag is a lot better but it still kinda
+does a weird thing" / "... the leaderboard doesn't perfectly populate when you open it. Even when it does load, the ranks aren't
+showing right. The characters don't load in by the way that's what I was referring to mostly." / "The top three on the
+leaderboard (last weeks top 3) ensure that's updated to the new iOS theme." / "The yellow dot you get next to your profile when
+something is unlocked and next to stuff, ensure that thing looks better too, it looked bad before."
+
+- CLASS SWITCH, THE BLANK (measured: CDP screencast, every composited frame across the reload, edges counted per frame). On 91a1d96
+  switchClass faded the whole body to opacity 0 (.35s) and reloaded; the new page's splash faded its NOVA and bar in after .45s -
+  frames of bare background for most of a second (WebKit keeps the old page's last frame until the new one has drawn something,
+  and that last frame was the faded-out page). Now:
+  - switchClass puts #class-switch-loader over the screen at the tap: the splash's own picture (#0A0A0A, the theme glow, NOVA,
+    "> opening Fire Code...", the bar already moving), in the colours of the class it is going to (its saved accent, data-accent on
+    the loader), fading in over .16s over the screen that is up, then reloads two frames after it covers it. html.class-switching
+    stays as the marker (check-b381-class reads it); the body fade is gone.
+  - It leaves sessionStorage class26e.classswitch {at, dur, line, to, pic}. The head's first script (its own IIFE) reads it before
+    the first frame: html.class-arrive (first style block) shows #splash-group and its glow at once; and html.class-arrive-pre
+    draws the loader's own picture on the root (glow as html's background, NOVA as html::before, the line and the bar as
+    html::after, at the pixel boxes the old page measured, the bar running on) - because Chromium did draw one frame of bare
+    background after the reload committed and before the splash markup (behind ~1.5 MB of head CSS) was parsed. The splash's
+    script removes class-arrive-pre (the splash covers it from then on), starts its bar where the loader's is (negative delay)
+    and lasts what is left of it, saying the loader's line first.
+  - The bars never go back: the old loader's bar runs as the splash's would and holds at (dur-800)/dur (fractional
+    animation-iteration-count), the root's the same, and the splash starts at min(elapsed, dur-800).
+  - Fire Code's ifc/bank.js (1.4 MB) is document.written just after the splash's two scripts instead of in the head
+    (NOVA_IFC_BANK_WRITE): the parser no longer waits in the head for it, so every Fire Code launch shows its splash while the
+    bank loads. IFC_BANK is first read by the app's script (52550), after it.
+- COMING BACK (hidden -> CDP frozen 3s -> pageshow persisted + visible + focus, 4x CPU, Home and the Leaderboard). Found on Home:
+  trimForBackground took every lit bubble's moving sheet off on the way out (357, for memory) and restoreAfterBackground put them
+  back after the first steady frames - each with its half-second crossfade from the still drawing, one after another: 5 crossfades
+  + 5 loops starting over in 0.1-0.6s after the return, and a 691ms long task at ~1s (base, 4x). That is the "weird thing". Now:
+  - Home's sheets stay on while away (paused with every loop, loopsPauseAll, as before) - the board's art has stayed on since 377
+    with no page ended in the background since. Only a window that comes back another size (an iPad turned while away) takes them
+    off on the way back (trimHeroVP vs orbitVPNow|dpr) and gets its size's own, at once, as 380 did.
+  - Back at the same size, a bubble that had no sheet yet gets it 2.5s later (not in the first frames back).
+  - The Leaderboard's repaint on visibilitychange (rankingsOnVisible) waits 2.2s like the rest of the wake-up work.
+  - BTT_QUIET adds a board row's art boxes (.rank-avatar, .rank-col-rank, .rank-col-flare, .cosmic-rank-anim, .char-flip-play,
+    .lw-podium-avwrap): art going into a row queued backToTopRoom's measure of 40 tappables (a forced layout) on every art step
+    and on the way back.
+  After, both screens: nothing moved in the first frame back, 0 animations started / element.animate() calls / sheets put on in
+  the 2s after, worst long task 54-86ms at 4x.
+- THE LEADERBOARD - THE CHARACTERS (opened by a real touch, iPhone UA, 3x, 4x CPU). Every row came up with an empty disc where the
+  character goes and an empty ring where its flare goes; the art queue waited 450ms + the glass (up to 2.5s), then drew one ~230
+  part character and one ~115 part flare a step (100-150ms each at 4x) and held them hidden until the screenful was done (382) -
+  2.2-3.9s on a first visit here, and on the base gate run 0 of 9 rows had a character 6.5s in. Only characters whose recorded
+  loop was in memory and whose geometry was known came up whole. Now every row comes up with A STILL PICTURE of its character
+  and of its flare from the first frame: charStill / rankStill serialise the character's (charAnimDrawing) and the rank's
+  (orbitAnimDrawing) drawing once into a data: SVG, and a row gets an <svg> of the drawing's own class and viewBox holding that
+  one <image> (svg.cx-still / svg.rk-still) - same box, transform (.94), depth filter and fade as the drawing, 2 elements instead
+  of ~350. Checked pixel against the drawing for all 30 characters (mean difference < .5 of 255, Umbra 1.8) and 7 ranks (< .3,
+  Titan 2.6 - the drawing was mid-animation). Everything else goes on over it as over the drawing: the loop is read back or
+  recorded and laid over it (charFlipAttach measures the svg, data-char says which character; startRankMarks/startOrbitEmblemAnims
+  for the flare), a row that plays live while it waits (327z13) or cannot have a loop (charFlipFallback) gets the real drawing
+  first (charStillToLive). The queue no longer builds drawings for rows with stills, and a row already showing its art is not
+  held hidden (lb-art-new only for a bare frame). The lazy disc is not drawn behind a still ([data-still]).
+  Stills are made in the quiet (lbArtPreload, first visit too, one a step, JS only) for every board character and rank; in the
+  tap only for the rows this device shows (lbGeom vis + 1) if not made yet.
+- THE LEADERBOARD - THE RANKS. Every row's rank (word, its colour, the flare's tier) is rankOfEntry's for its numbers - checked
+  over 30 rows with every rank, a level over its badge wall, rank floors and secret flares; nothing wrong there on either build.
+  What made the ranks look wrong: (1) the empty rings above, and (2) A FLARE LAID ON AT OPACITY 0. startOrbitEmblemAnims read the
+  emblem's computed opacity to give its loop - and a row filled from the queue is held at opacity 0 (.lb-art-new) until the
+  screenful is in. A sheet already in memory came back inside that hold: the loop went on at opacity 0, the drawing under it was
+  hidden (rk-under-anim) - an empty bubble - and that 0 was kept in the board's geometry (class26e.lbgeom marks[tier].opacity),
+  so every later board drew that rank's flare as nothing (lbMarkKnown). Reproduced on 91a1d96 (a ready sheet, a held row:
+  loop 0, kept "0"). Now the hold is lifted for the read, and lbMarkKnown refuses a kept opacity of 0.
+- LB_GEOM_REV: lbGeomVP() carries "|r2". 382 made the row's character frame 36px (35.19 before) and nothing re-measures a row
+  that comes up with its loop, so geometry kept from before 382 laid every loop at the old cell for good; and kept geometry may
+  hold the 0 opacity above. The first board after this build measures afresh (and comes up whole on its stills meanwhile). Bump
+  it whenever the rows' character or flare frame changes size.
+- THE BOARD'S HAIRLINES WERE INVISIBLE: --lb-hair was color-mix(--surface-border 60%, transparent), and 383's clean look made
+  --surface-border transparent beyond Home, so every line in the list was drawn in nothing (computed color(srgb 0 0 0 / 0) -
+  check-b384-hairlines tested only for 'rgba(0, 0, 0, 0)'). Customize's rows the same. Both now Settings' rgba(255,255,255,.1)
+  in the dark modern look; check-b384-hairlines (5) now requires a line you can see (fails on 91a1d96: Customize, Leaderboard).
+- TAP TO SCREEN (4x CPU; the sandbox ran at load 14-22 the whole time, four helpers' Chromes, so single timings swing 0.7-5s;
+  only interleaved A/B medians mean anything). Taken out of the tap:
+  - syncStatusBarColor on every switch to or from Home (syncSky) put a probe in the page and read its computed colour (cssColorHex)
+    and read --splash-bg off the root: two forced style passes over the whole new screen inside the tap (~100-130ms at 4x in
+    the profile). cssColorHex now keeps each answer per theme/layout/accent/state classes (CSS_COLOR_HEX_CACHE); --splash-bg is
+    read only while the splash owns the frame; theme-color is only written when it changes.
+  - the board's art no longer queues back-to-top measures (above); the stills are made in the quiet.
+  Still in the way (not changed): a badge-strike warm-up or finish that has already started (warmBadgeStrikes / badgeStrikeFinish,
+  one render per idle slice: 500-1500ms at 4x here) blocks a tap that lands on it; the first touch of a launch makes the audio
+  context (~280ms at 4x). The board's first frame is ~+60ms at 4x with stills (they are images to draw; it used to draw empty
+  discs) - in exchange for rows that are whole.
+- LAST WEEK'S TOP 3 (This Week): buildLastWeekPodium is a grouped list in the board's look - a grey sentence-case caption
+  ("Last week's top 3", .85rem, --soft, left at the row padding) over one card on the list's surface (--lb-cell, 1px
+  --surface-border, --lb-group-r; no frost, no gold rim, no podium blocks), a row a place (.lw-row.lw-podium-spot: the board's
+  medal via renderRankMarker, the character in the board's disc with its flip-book, the name, last week's XP in grey on the
+  right), and a hairline under each row but the last from the name (--lb-hair-l) to the row's content edge (right: --lb-pad).
+  Rows stay tappable to the person card; .lw-podium-spot kept (the off-screen observer).
+- THE NEW DOT, ONE LOOK (THE NEW DOT, ONE LOOK block at the end of the main style): 9px, a solid fill (the app's yellow
+  #FFD43B - not red, which is the chat's unread count; Madison's pick in 299; the brightest of the system colours on the dark
+  glass, where an accent can be a grey), no gradient, no glow, a 2px unblurred ring in the colour of the surface under it (the
+  bar #272A32, the lit tab's platter #4F5157, a card #26282F, Customize's page #18171C), its centre on the icon's corner at 45
+  degrees: --nd-r is the host's corner radius (50% round: the Profile tab's character, characters, themes, badges, the class
+  button; 12px banner and hundo tiles; 8/9px a row's icon tile; 0 a word), top = right = r x .29289 - 4.5px. Customize's and the
+  badge case's dots moved from beside the chevron onto the row's icon tile; the case keeps "New" before the chevron, in grey
+  sentence case. The class button's pulsing ring (329) stays.
+- GATE tools/check-b384-board2.py [--against REV] [--only 1,2,...]: (1) class switch frames, none blank, the loader up, arrived in
+  Fire Code with its splash showing; (2) coming back on Home (all 7 sheets on first) and the board: first frame unmoved, nothing
+  re-animates in 2s, no long task > 120ms (best of 3); (3) the board by a real tap at 4x: every frame with rows has every row's
+  character and flare, all drawn at the end, ranks = rankOfEntry, a flare put on while its row is held keeps its own opacity (and
+  that is what is kept); (4) last week's top 3: no backdrop-filter, the list's surface, grey sentence case caption, the board's
+  medals, visible inset hairlines; (5) the dots on the tab, Profile and Customize's pages: solid, unblurred, round, 8-10px, one
+  fill and size, on the 45-degree corner line; (6) no page errors. B384_MEDIA=dir writes the videos and screenshots.
+  On 91a1d96 it fails (1) blank frames + no loader, (2) Home: 16 re-animations, a 691ms task, (3) bare rows in 14 frames, 0 of 9
+  drawn at the end, the held flare at opacity 0 / kept "0", (4) card, medals, lines, (5) every dot (gradient, glow, 10-12px, two
+  off the corner); passes (2) board, (3) ranks, (6).
+- OTHER GATES REVISED: check-b358 "Home's moving emblems come off while hidden" reversed to "stay on while hidden and are all
+  there after" (384), and it waits for a sheet before measuring (it read 0 sheets in a slow sandbox); check-behaviour
+  check_b317_pfcard "the new-badge dot sits right beside the case's arrow" -> "on the case's icon at its corner, clear of the
+  arrow"; check-b384-hairlines (5) "every line is drawn in a colour you can see".
+- GATES RUN (one at a time, Chromium 1243 after the symlink, load 14-22): check-js 9 blocks ALL PASS; the page console in both
+  classes: no page errors, only the blocked Firebase CDN; check-b384-board2 ALL PASS (26), --against 91a1d96 FAILS (1)(1b)(2 home
+  re-animation, 28 events)(3 bare frames, held flare)(4 x3)(5 x4); check-b382-board 6/7 - "no layout shift while the board opens"
+  CLS 0.0571, identical on 91a1d96 (pre-existing); check-b382-ios ALL PASS; check-b384-hairlines ALL PASS (on 91a1d96 (5) fails
+  Customize and the Leaderboard); sweep-layout --quick 14/14 clean; check-b384-slide ALL PASS (the release's frame 13-59ms at 4x);
+  check-b381-class ALL PASS; check-b329 ALL PASS on a rerun (its xp section failed once and passed alone; it times a banner);
+  check-b358 ALL PASS; check-b380-flares ALL PASS; check-b383-classes ALL PASS; check-b382-ifc 1 failure, "Profile has no Stats
+  tab" (known since 383); check-unlocks 3 failures in 7b (an fx unlock pops on the daily question) - the same 3 on 91a1d96 in the
+  same sandbox; check-behaviour ONLY_FN=check_swipe,check_navigation,check_b314h_board,check_b314h_tabs,check_b313_lead,
+  check_b324l_board,check_b229,check_b299,check_b317_pfcard: every failure also fails on 91a1d96 (the board's column-header gap, the
+  cold-open placeholder trio, "the same element" sig, the tab dot colour read off a gradient, Home flares on iPad, the Profile card's
+  order and the case's place) except two that now pass ("carried over when a snapshot rebuilds the rows") and the revised dot
+  check; the four-tab tap-to-paint median at 4x 516ms here vs 772ms on 91a1d96 (both over its 590ms bar in this sandbox).
+- ENVIRONMENT: during this round another helper's Playwright upgrade (1.63) removed /opt/pw-browsers/chromium-1194, which 44 tools
+  hard-code; /opt/pw-browsers/chromium-1194/chrome-linux/chrome is now a symlink to chromium-1243's chrome so they run (the gates
+  after that point ran on Chromium 1243).
+- ONLY HIS PHONE CAN CONFIRM: that WebKit shows the loader (not a blank) between the tap and the splash on a real reload (it
+  should: it keeps the old page's last frame until the new one has content, and the new one's first content is the same
+  picture); the coming-back feel with iOS's own decoded-image purge (the sheets may need a decode on the first frame back - they
+  are kept in the page now instead of re-attached); the 3x crispness and ring colour of the dot on the real glass; how much
+  faster the board's rows feel with the stills on a phone that has (or has not) recorded its classmates' loops; that his flares
+  are no longer empty bubbles after the first board visit of this build (old kept geometry is dropped by LB_GEOM_REV).
+### Build 384 - the Get Started page, round 2 (NOT on main, waiting for Madison)
+Madison: "the start up screen, I said this earlier but it doesn't seem like it got taken care of. The start up screen wasn't
+showing for me on my laptop but it's been showing for me on iPhone. Ensure it shows up everywhere when you aren't signed or
+don't have an account. Ensure the videos through the screen are high quality cause they didn't look like it. Ensure the videos
+are good to go cause some seem weird and start at weird spots and skip around like the upload pdf one. On the start up screen,
+maybe include an interactive thing with some example badges and then rank flares but have all the flares lit up in a row or
+something and you see them nicely as you scroll? Idk. Ensure the videos show a lot of the test example with the ifc fire code
+stuff and some police academy questions in there. When you hit let's get started, ensure the transition to sign up/sign in
+screen is nice, like maybe the word nova zooms in really fast and then the transition happens. The let's get started button
+looks small btw? It should be nice and big hush like the start studying button. The sign in and sign up buttons look small
+too idk why?"
+- SHOWS FOR ANYONE NOT SIGNED IN (showWelcomeFirst, the splash). Get Started showed once per device: class26e.getstarted, or a
+  sign-out (383's signedOutHere), sent a device to Welcome for good - so a laptop that had looked once, or signed out, never saw
+  it again; and the splash took a leftover nameless store (drill.v1, which any visit writes) or the seen mark as "returning",
+  so the long loading screen came first. Now: any launch with no account opens on Get Started - in every browser, at every
+  size, installed or not. "No account" = no sync code here, and a saved copy (if any) that never finished sign-up and has no
+  name; the splash reads the same thing before the app loads (no code, no activeclass, drill.v1 neither onboardingComplete nor
+  named) and steps aside (60ms) for it. A code (mid sign-up), a name in the store, or the mirror's copy (findAccountTrace)
+  still goes to Welcome, which offers the account back - unchanged. An onboarded device opens Home, as ever.
+  THE BUTTON: a first visit's Let's get started still waits for the end of the page (330: "shouldn't the get started button not
+  appear till you scroll through it"); a repeat visit (the seen mark) or a device just signed out has it up at once (700ms), so
+  Sign in is one tap past the page - 383's reason for sending sign-out to Welcome. JUDGEMENT CALL for Madison: sign-out now
+  lands on Get Started (he asked for it whenever "you aren't signed in"), not Welcome.
+- CLIPS (tools/record-landing.py, rewritten; tools/record-landing-ifc.py). Why they looked bad and jumped: 540x1170 from a
+  360px page at 1.5x, crf 29 (80-260 kb/s) - shown 255px wide on a 3x phone; the encoder gave each screencast frame its gap
+  to the next CAPPED AT 1s, so any still moment over a second was cut short (jumps); hundo's and rank's posters were mid-clip
+  moments (11.5s/9s), so the clip jumped back when it started; the ifc clip opened on the Analyzing screen already at 1%; the
+  rank clip stopped at 15s, mid-whirl, before the rank was named; and the page resumed a clip where it had paused when it came
+  back on screen. Now:
+  * Captured at 2x: the screencast only sends frames at the page's CSS size, so the page is a 780x1690 mobile view whose
+    viewport tag (rewritten by the recorder only) says width=390, initial/min/max-scale 2 (min/max: Chromium's mobile view
+    otherwise zooms out to fit when a question slides in from the side), devicePixelRatio reads 2 (badges, code pictures
+    drawn at 2x). A frame that size takes 70-110ms to capture here (more under the helpers' load), so the page runs in SLOW
+    MOTION while recorded: TIMEWARP slows setTimeout/setInterval/requestAnimationFrame/performance.now/Date.now, and CDP
+    Animation.setPlaybackRate slows every CSS/Web animation, by the same RATE (.2; hundo .1, rank .08), and each frame's time is
+    its capture time x RATE. html{scroll-behavior:auto} while recording (a smooth scroll runs in real time); scrolls the
+    recorder makes are eased on the page's own clock (glide_to). Sound off in the fixture (the results' count follows the
+    sound's clock, which cannot be slowed).
+  * Encoded on a true 30 fps clock (each frame held until the next - a still moment keeps its length), an optional uniform
+    speed-up of a stretch (rank: 1-19s at 2.4x - plays faster, never skips), the last 0.5s dissolved into the first frame (the
+    loop has no seam), H.264 High 4.1 yuv420p crf 20 (stepped up only past 3 MB), faststart, no audio, piped to ffmpeg; the
+    poster IS frame one.
+  * Content (fixture "Alex", publicId the class owner's only where Fire Code needs it - never on screen; sound off; owed
+    reward cards marked shown first): academy (new) - TCOLE Rules: what TCOLE stands for (right), continuing-education hours
+    (a miss, then right), the proficiency certificates (right). test - Fire Code with the owner's book loaded through "Load my
+    IFC PDF" (the real 1-2 minute analysis, before the camera): 307.4.2 recreational fires (right, Show the code, the code cut
+    from his book), 907.4.2.2 the alarm box handle height (a miss, the code opens itself) - each a small cut, never a page.
+    ifc - the Enroll in Fire Code screen, Choose my IFC PDF (a stand-in file named "2021 International Fire Code.pdf"; the
+    analysis stands in, the screen and its 12s floor are the app's), to Verified / Go to Fire Code. hundo, rank (Silver,
+    whole), customize as before.
+- THE PAGE PLAYS THEM: preload none (posters only) until a clip is a screen away (IntersectionObserver, rootMargin 100%), then
+  preload auto + load(); plays at 35% on screen; off screen it pauses AND goes back to 0 - every time a clip is seen it starts
+  at its beginning. disablepictureinpicture / disableremoteplayback.
+- THE SHOWCASE (gsBuildShowcase, after the six scenes): "Collect / Badges and flares" - five real badges (buildUnitBadgeSVG,
+  clean, px 88: TCOLE Rules, Identity Crimes, Professionalism and Ethics, Victims of Crime, De-Escalation), drawn one per 90ms
+  slice from 2.2s in (each is a ~0.1s strike - never during the warp-in), then all seven rank flares as Home's lit glass
+  (.cosmic-icon-badge.cosmic-badge-rank.cosmic-badge-lit + homeRankEmblem, --rank-color), without its backdrop blur (stars
+  drift behind). Each row rises in turn as it arrives (the page's reveal observer adds .is-in to .gs-badges / .gs-flares;
+  staggered transform/opacity transitions; a ring of each flare's colour as it lands). Tap: a badge turns once (rotateY), a
+  flare presses and rings and plays its Home sound; the caption names it ("Gold flare · rank 3 of 7"), back to "Tap one to
+  see its name." after 3.2s. One row everywhere: badges clamp(44px, (100vw-4rem)/5.6, 6.2rem), flares clamp(36px,
+  (100vw-5rem)/7.6, 4.2rem) with a 4px touch margin (44px at the smallest); 1rem sides under 22rem. Reduce motion: just there.
+- THE TRANSITION (gsLeave): in the tap, only two small elements in <body> (.gs-cover, the page's #05060D, and .gs-zoom with
+  NOVA in the hero's own face and gradient) and four animations: the page's words and button fade (200ms); NOVA comes up
+  in the middle and flies at the viewer - scale .72 -> 1 -> 1.35 -> 16, fading over its second half, 620ms; the cover
+  darkens by 200ms, holds, and clears by 600ms. Welcome is built 200ms after the move STARTS (zoomA.ready), under the dark
+  cover; the cover clears to it. All transform/opacity, so from the next frame the compositor runs it and Welcome's build
+  (the planet) cannot hold the word up. Measured here, two designs that did not hold: moving the page out of the stage
+  (a re-attach of the whole page) and building Welcome in the tap each kept the word still for 0.5-1.9s on the loaded
+  laptop. Cover and word remove themselves on the zoom's finish (timers behind it, counted from its start, and a 1.5s one
+  for a hidden tab); the page goes with the stage (its MutationObserver teardown). Reduce motion: the cover is up at
+  once over the page, Welcome is built, the cover fades (280ms).
+- WELCOME ON AN UPRIGHT TABLET: the +24px of the two buttons comes out of the planet there (its height-tied max-width
+  calc(100dvh - 31rem) -> 32.6rem, for Welcome only): the iPad Pro 11" Welcome scrolled 16px without it.
+- BUTTONS: Let's get started = Home's Start Studying (measured off the page): phone rule clamp(146px,49vw,216px) x
+  clamp(44px,12.8vw,60px) in clamp(.88rem,4.4vw,1.2rem) - Pro Max 216x56 in 19.2px (was 352x50 in 16.8px); >=40rem 17rem x 56px
+  in 1.22rem (the iPad's 272x56 in 19.5px; a laptop's Home has its button in the tab bar, so it takes the iPad's). The SE's
+  38px Home pill is not copied (Home's room problem): 375x667 gets 184x48. Welcome's two buttons: clamp(52px,12.8vw,60px) in
+  clamp(1rem,4.4vw,1.2rem) on a phone (Pro Max 352x56 in 19.2px, was 352x44 in 16.8px), 56px in 1.2rem from 40rem (laptop was
+  49.6px in 16.8px). Full-width pills as before.
+- CLIP FILES (780x1690, H.264 High 4.1, 30 fps, faststart; poster = frame one, ~60-105 KB): academy 0.77 MB 8.6s, test
+  1.29 MB 13.5s, ifc 1.32 MB 16.8s, hundo 0.73 MB 12.1s, rank 2.90 MB 17.7s (crf 20, its whirl at 2.4x), customize 0.96 MB
+  10.2s - 8.3 MB in all with posters (was 1.5 MB). Nothing loads until a clip is a screen away.
+- RECORDER LESSONS (for the next re-record): rAF's frame time is the ANIMATION clock - CDP Animation.setPlaybackRate already
+  slows it, so the time warp leaves requestAnimationFrame alone (wrapping it slowed it twice: the results' XP count read
+  "-740,591"); Date is a Proxy so `new Date()` and Date.now() agree; after a rate change the page clock is lined up 2ms behind
+  the frame clock (__timeSync), so a count never starts below zero. Sound off in the fixture. A heavy scene gets a lower rate
+  (Recorder.start(rate)). Load here was 20-25 on 4 cores through the session (other helpers); at RATE .2 a 780x1690 frame
+  still landed every ~10-40ms of page time.
+- GATE: tools/check-b384-getstarted.py [route clips show buttons leave] (--against a tree holding the old index.html with its
+  landing/ beside it: `git archive 91a1d96 index.html landing version.json ifc | tar -x -C /tmp/old`). route: Get Started up
+  1.6s in (no splash in front) and still up at 3.8s for fresh / seen-mark / leftover nameless store / signed out, on a phone
+  (installed and tab), iPad, 1536x864 and 1366x768; never for an onboarded account (with or without the seen mark) - Home -
+  or a code mid sign-up - Welcome; a repeat visit's button up at once, a first visit's waiting. clips: every clip (phone: the
+  six scenes; laptop: all eight, the title's two included) plays from t<0.5s as it comes on screen, its time never going back
+  and never ahead of the clock (+0.5s for the player's late-updated official position), 1s+ along over the samples; off
+  screen paused at 0, on screen again from 0; videoWidth >= 2x its CSS width; poster = frame one (mean diff < 6 levels) and
+  last frame = frame one (seam < 6). show: >= 4 drawn badges, all 7 flares lit in one row, inside the screen (375, 440, iPad,
+  laptop), hidden then risen, transitions on transform/opacity only, 36px+ (44 with margin), a tap names it, Reduce motion
+  there at once. buttons: Let's get started = Home's Start Studying within 2px on the Pro Max and iPad Pro 11 (Home measured
+  with an account), 44px+ on 375x667, 52px+ in 18px+ on the laptops; Welcome's two 52px+, full width of their column, its box
+  and buttons on screen and nothing more to scroll (the installed Pro Max's .wrap overflows 12px under Welcome on 91a1d96 as
+  here - left as it was). leave: NOVA's animation (made in the tap) is transform/opacity only, 450-750ms, scale rising to 4x+,
+  opacity peaking at 1 and ending at 0; as drawn it only grows; Welcome up and page, cover and word gone within 1s of the move's
+  start (1.6s where the page's frames come 150ms+ apart - this sandbox); Reduce motion: no zoom, Welcome. No page errors.
+- RESULTS, gates one at a time (the sandbox at a load of 20-25 on 4 cores all session, other helpers' browsers):
+  check-js ALL PASS. check-b384-getstarted: every section ALL PASS on this build (route 56, clips 59, show/buttons/leave);
+  --against 91a1d96: 77 FAIL (73 in one run, which then stopped at leave on a missing button - since guarded - and the
+  leave section's 4 on its own) - route (seen, leftover, signed out: Welcome, on all five devices; the long splash in front),
+  clips (re-entry resumes mid-clip on all; hundo/rank posters 20/40 levels off frame one; 540px clips on a laptop), show
+  (no showcase), buttons (352x50 in 16.8px; Welcome's 44px), leave (no zoom). sweep-layout --quick 14/14 clean. check-b329
+  ALL PASS. check-b330: Get Started's own checks pass; "every Back button at one left edge" and "mode descriptions <= 130"
+  FAIL identically on 91a1d96 (run there from a copy of its tools); "bg" failed once and passed on a rerun. check-b384-laptop
+  ALL PASS. check-b383-signup: signin, had, signout, icon, settings all pass; fresh: 8 failures in Nova's intro (name/partner/
+  save-code card under load), the same 8 on 91a1d96 (ONLY=fresh --against). check-sync: run 1 118 pass + "Find me finds your
+  row" (the known race) and "Continue brings it back ... on Home" (home not up 600ms after Continue); run 2 ALL PASS (121).
+- GATES BROUGHT UP TO DATE (each assumed a seen mark or a sign-out meant Welcome):
+  check-b329 "flow": "a clip beside each of its five scenes" -> five or more, two more clips than scenes (a sixth scene,
+  Police Academy, was asked for); "a second visit goes straight to Welcome" -> a second visit with no account opens Get
+  Started with its button up, and Let's get started is Welcome. check-b383-signup: open_page taps through a Get Started whose
+  button is up (its SEEN fixture), as a person would; "[fix] after Sign out: Welcome" -> Get Started with its button up at
+  once; the icon's "Sign out sticks" (twice) -> getstarted. check-sync: booted() taps through a ready Get Started. (Fixture
+  changes in the many gates that set class26e.getstarted for an ONBOARDED account were not needed - they open Home.)
+- ONLY A PHONE CAN CONFIRM: that iOS Safari autoplays the muted inline clips (Low Power Mode shows the posters only - each
+  poster is its clip's first frame now, so that still looks right) and decodes 780x1690 H.264 smoothly in a scroll; that the
+  NOVA zoom stays smooth while Welcome builds under it (here, compositor animations under a load of 20+ - the move is all
+  transform/opacity, made in the tap); the safe areas under the page's button and in Welcome; and Windows Chrome/Edge on his
+  laptop playing H.264 (it should: every desktop browser does).
+- LEFT FOR MADISON: sign-out now lands on Get Started (button up at once) rather than Welcome; the first visit's button still
+  waits for the end (his 330 ask); the Fire Code clips show the class to everyone though only his account can open it (as
+  330's did); a 375px phone's Let's get started is 184x48 (Home's SE pill is 142x38 - not copied); clip lengths 8.6-17.7s.
+- Page console, fresh device, phone and laptop: only the blocked Firebase CDN (ERR_TUNNEL_CONNECTION_FAILED, the sandbox).
+  For Madison: walkthroughs of a fresh device scrolled through, a badge and a flare tapped, then Let's get started -> Welcome,
+  recorded in the same slow-motion capture - getstarted-phone-440x956.mp4 (880x1912) and getstarted-laptop-1536x864.mp4, in
+  the session's scratchpad gs384/ folder (not in the repo).
+
+### Build 384 - every cutscene and unlock, both classes, ready for go-live (NOT on main, waiting for Madison)
+
+Madison: "ensure all the cutscenes for the ifc version have been updated. Ensure all the unlock banners and everything else for
+that version is good to go. We are gonna go live with the fire code and add class button tomorrow. Ensure all the cutscenes and
+everything for the police academy are good to go as well too."
+Every moment found in the code was played in Chromium in both classes (440x956 at 2x portrait and landscape, iPad 834x1194), its
+words sampled while it played and the page read after it. Contact sheets, recordings and an index (scratchpad only):
+cutscenes384/INDEX.md. What was wrong in Fire Code, and is fixed:
+- THE VOID SCENE'S TITLE said "VOID" (hard-coded); the other three flare scenes used AVATAR_DISPLAY_NAME. It is the character's
+  own name now: BREACHER in Fire Code, VOID in the academy.
+- A SECRET FLARE'S CARD said "Afterglow - 3 of Void's 3" / "The last of Void's three" in Fire Code (flareFoundItem). Now the
+  class's own name (Breacher's).
+- THE GENESIS SCENE's line was headed "GENESIS" (the academy character's name; Fire Code's is the Flashbang): Fire Code heads it
+  with the flare's own name, WORLDHEART. The academy keeps GENESIS.
+- THE BADGE CASE: its plate said "Nova - Class 26E", every badge's back was engraved "CLASS 26E", and the case was the academy's
+  "Level 1 Badge Case" (Fire Code has no levels of chapters - UNIT_LEVELS is "All chapters"). BADGE_CASE_CLASS ("Fire Code" /
+  "Class 26E") feeds the plate and badgeBackPlan's class line ("FIRE CODE" is nine letters like "CLASS 26E", so the backs lay out
+  alike); Fire Code's BADGE_CASES[0].name is "Badge Case" (the plate, the kicker over the badge's name, the lid's label, the Badges
+  page and Profile's strip all read badgeCaseName). The academy's case is unchanged.
+- A LONG CHAPTER NAME UNDER THE CASE: Fire Code's chapters run to 118 letters ("Appendix H: Hazardous Materials Management Plan
+  (HMMP) and ..."), five lines of the 1.7rem serif, which placeWords set over the open case's latches and down to the bottom inset.
+  placeWords now steps the name down (.bc-words.is-long 1.25rem, .is-longer 1.02rem) until it fits under the case; the same for
+  the name under the token alone (.bc-intro.is-long 1.35rem). The academy's names fit as they were (no class added).
+- THE THERMAL CAMERA STOPPED PART WAY (its unlock card tapped away mid-showcase, the screen changing under it): handle.stop fades
+  the layer over .6s and cancels its animations at once, and the reticle and its "0 F" readout - placed only by their
+  animations - jumped to the top-left corner of the screen for the fade. Its wrapper is opacity:0 at rest now (its opacity is
+  animated end to end, so playback is unchanged). The other three Fire Code effects move nothing on a stop.
+- NOVA'S GREETING ON ENROLLING (ifcGreetingLines) was placeholders: "Nothing you earn here changes the academy", "A few things work
+  differently in this class", "I'll point them out as we go" (nothing does). Now: "Nothing you earn here changes your other
+  class." / "Every chapter has a badge. Score 100% on it once, and it's yours." / "Hundo effects come sooner here: at 25, 50, 75
+  and 150 hundos." (read off HUNDO_FX) / "That's what's different. Ready?" No "unit" in a line (the chapter observer).
+- WHAT'S NEW (WHATS_NEW_320) is the academy's news - eight new units, the Calendar tab, Settings in Profile, "the Sheriff is
+  yours" - and its seen mark (class26e.intro.seen) is shared by the classes. maybeShowIntro does not show it in Fire Code; it waits
+  for the academy.
+- NOVA'S WORDS: beaten in a Virtual Room, "The Sheriff, one of my crew, is with you now" (novaVrMatchLine) and his match answer
+  ("you'll unlock the Sheriff") name AVATAR_DISPLAY_NAME.poseidon - the Chief in Fire Code; his next-test answer in Fire Code no
+  longer sends anyone to "the Calendar tab" (Fire Code's bar is Home, Profile, Stats, Settings). Customize's Ultimate note "Zenith
+  takes everything" names AVATAR_DISPLAY_NAME.zenith (Solar Flare).
+Checked and right in both classes (the index has each): the rank-up cutscene and Supernova (the planet, the class's own counts on
+the road map - Fire Code's Bronze is "level 21 and 4 badges"), the rank-up journey on Profile and its reward card, Nova's words over
+the relit flare, the results (grade, XP, level, the badge's case, the unlock cards, Found & unlocked), every unlock card (characters,
+banners, the four hundo effects at 25/50/75/150 with Fire Code's art and names, themes, flares, rank rewards, the secret flare
+cards and hints), Home's unlock queue and a find played there (in order, once - a relaunch plays nothing again), the flare scenes,
+the enrolled banner, the daily question's alert and its challenge card, sounds (every cutscene sound is in the catalogue; Fire
+Code's hundo sounds are SND_IFX's). No academy word, name, art or icon in any Fire Code moment; no Fire Code word in the academy.
+Not reached by any route (left alone): showCharacterUnlockBanner / showThemeUnlockBanner / showTierUpBanner / showFlareFoundBanner /
+announceCharacterUnlocks have no callers (the cards replaced them; showTierUpBanner also lacks topNoticeOffset and would sit over
+the chat button); the Home badge queue (playQueuedBadgeCutscenes) only plays a pendingBadgeUnlocks list stored by an old build;
+pendingDailyProgress (the "DETECTIVE" banner) is never set.
+FOR GO-LIVE (not changed - the class button's area): unseenClasses() treats Fire Code as already seen when nothing is stored, so
+when the class button opens to everyone, nobody gets the "NEW CLASS - Fire Code is open to join" banner or the button's pulse. If
+classmates should be told, the default seen list becomes ["academy"] in the same change that opens the button.
+Seen in the academy, not changed (the police hundo effects are another round's): Underwater stopped part way (its card tapped
+away) moves ~20 pieces (hfx-uw-sf) towards the screen's left edge for its .6s fade - the same kind of fault as the Thermal
+Camera's (pieces placed only by their animations, visible at rest), in hfxUnderwater.
+Sandbox: /opt/pw-browsers/chromium-1194 was removed mid-session (Playwright 1.63 and chromium-1243 now); a chromium-1194/chrome-linux/
+chrome link to 1243's binary was put back so the tools' CHROME path works. check-b384-cutscenes finds whichever is installed.
+- Gate tools/check-b384-cutscenes.py (both classes in one run, side by side; ONLY=n runs a section): (1) every card's words, the
+  counts, the art on the played cards, nothing left after, the effects' stops; (2) the flare scenes' titles and words; (3) the
+  badge case's plate, name, backs and the longest chapter's place (phone and iPad); (4) rank-up and Supernova, the sound catalogue;
+  (5) Fire Code's greeting and the enrolled banner, once; (6) a find played on Home, in order, once; (7) What's New; (8) Nova's
+  words and Customize's note; (9) the whole earn walked; (10) no page errors.
+  This build ALL PASS (73); on 3ec8227 20 fail - every fix above (the Void cards and title, the Thermal Camera's stop, the Genesis
+  line, the case's plate, name, backs and the long name, the greeting (3), What's New, Nova's three, and the walk's "Class 26E").
+- Also in this round: placeWords' beside-the-case words (a phone held sideways) step down the same way when a long name is taller
+  than the room, are centred but never into the insets, and keep clear of the notch's side (right: env(safe-area-inset-right) +
+  12px) - measured with an iPhone's insets patched in: Appendix H fits portrait (under the case 740 > 726), landscape (beside it,
+  10-411 of 440, right edge 882 of 956 with a 62px inset), an SE (is-longer) and an iPad (no step).
+- check-b384-hazmat (6) counted every .hfx-layer on the page after Hazmat's total; with What's New no longer holding Fire Code's
+  Home queue, the fixture's account (141 hundos) now gets its effect cards, and the Thermal Camera's card shows its effect in a
+  layer of its own inside the card. It counts only layers outside an unlock card now (the ifxnew gate's rule). ALL PASS.
+- Gates (one at a time): check-js ALL PASS; the page console in both classes: no page errors (only the blocked Firebase CDN);
+  check-b382-ifcart 45 PASS; check-b384-ifxnew 9/9; check-b384-hazmat ALL PASS; check-b384-extspr ALL PASS; check-behaviour
+  (cutscene, badges, 317b, 321d, 317s, 318f, 324p, 314u, 324n, 324v2, 319r) - 10 failures (317b's Badges-tab case parts x4,
+  321d's "sixteen in your hand", 324n's five Nova chat checks) fail identically on 3ec8227, the rest pass; check-unlocks' 3
+  daily-question failures and check-tours' mainmenu / modeselect / profile "target matched nothing" fail identically on 3ec8227;
+  sweep-layout --quick 14/14.
+- Phone checks owed: the long chapter names under the case and beside it with real insets and text size; the Thermal Camera's
+  card tapped away mid-showcase (nothing at the corner); Nova's greeting typing speed (the sandbox ran slow) and the enrolled
+  banner after it; sound through the speaker for the Fire Code greeting and cards (unchanged sounds); haptics.
+### Build 384 - Safari in a tab, every device and browser (NOT on main, waiting for Madison)
+
+Madison: "It doesn't seem like the safari version of the app got fixed by the way (I attached more videos) please get this right,
+I've been asking you for a week to fix it. The bottom of the screen is missing and so is the top." His videos did not come
+through; one frame of his phone in a Safari tab did (Welcome, build 383, iPhone 17 Pro Max, iOS 26, the floating toolbar).
+Also asked: a full check on every device and browser (and Internet Explorer if possible), the new icon as the bookmark's
+icon, a bookmarked page that keeps its account, and one shared link that works for five people at once.
+
+WHAT SAFARI ACTUALLY DOES (MEASURED OFF HIS FRAME, NOT GUESSED):
+- His frame is 660x1434 = 440x956pt at 1.5x. The Sign in button is 37.7pt tall = 44.4 CSS px at 85%: his Safari tab is at
+  85% page zoom too (the aA menu), like the installed app (build 199), so the page is 518 CSS px wide.
+- Rendered in Chromium at 518 wide and fitted: the build line, "Welcome to Nova", Sign in and I'm new here all land within
+  2px of a 518x938 CSS viewport that STARTS 62pt DOWN (just under the status bar) with no safe-area insets. 938 CSS = 797pt,
+  so Safari keeps 62pt at the top and 97pt at the bottom (the floating toolbar's pill is 873-922pt). The page runs BETWEEN
+  Safari's bars at rest - which is also what 382's edge test showed (fixed layers stop at the bars) and what the Apple
+  forums report for Safari 26 (fixed content is clipped at the controls, not drawn under them). A model with the page under
+  the status bar and env(top) = 62 does not fit (Sign in would be 113 CSS px lower).
+- So in the state his frame shows, the tab bar is 12px above the page's bottom = above the toolbar, and nothing is hidden.
+  Rendered at 518x938 (and 440x797) with Safari's bars drawn in (scratchpad browsers384/promax-tab85-before-after.png): Home,
+  Profile, Settings, the Leaderboard and a question all sit between the bars, before and after this build alike.
+- What a frame at rest cannot show: the toolbar minimised by a scroll (the page's viewport changes), the keyboard coming and
+  going (Safari 26.0 left fixed bars misplaced after it; Apple lists "a bottom gap on layouts with viewport-sized fixed
+  containers" as fixed in 26.1), the iPad's top bar, the other Tabs layouts (Settings > Apps > Safari > Tabs: with "Top", a
+  fixed header is reported hidden under the address bar). In any state where Safari lets the page run UNDER its bars the
+  layout viewport is the whole screen and the insets come back non-zero, but no inset covers Safari's own toolbar - so a
+  tab bar placed on the home-indicator inset (as the installed app's is) sits behind the toolbar. That is the state this
+  build fixes.
+- WHICH STATE HIS PHONE IS IN WHEN THINGS GO MISSING IS NOT KNOWN. Report a bug now carries `edges` (below): one report from
+  his Safari tab, sent while the bottom is missing, says exactly which.
+- A SUSPECT LEFT IN PLACE, ON PURPOSE: html{min-height:100lvh}. In Safari 100lvh is the viewport with the toolbar minimised,
+  taller than the page's viewport at rest, so every screen that "fits" (Home, the Leaderboard, Welcome) is really ~47pt
+  scrollable in a tab - a swipe moves its top up under the status bar while the toolbar shrinks. Chromium has lvh = dvh and
+  cannot show it (327z15 round 13's "nothing scrolls in a tab" was measured there). NOT changed: the html box carries the
+  sky's fallback layers sized 100% of it, which 338/341/382 tuned against his screenshots under Safari's bars, and shortening
+  it would move what shows under the toolbar. `edges` reports scrollY, the document's height and 100lvh, so his report says
+  whether this is it; the change would be html.is-browser{ min-height:100dvh } plus moving those 100% layers to lvh sizes.
+
+THE FIX: SAFARI'S BARS OVER THE PAGE (index.html, safariBarsReading / syncSafariBars beside syncBottomInsetClass; the CSS right
+after html.is-browser's edge tints):
+- An iPhone or iPad (iPadOS's Mac user agent with touch points) browser tab whose layout viewport is the screen's full height
+  (within 12pt, through the page zoom: innerWidth / the screen's width) and has a safe-area inset is a page Safari's bars are
+  drawn over. Then html.safari-bars-over and --sb-top / --sb-bottom (CSS px), from a MODEL of the bars: iPhone upright - the
+  status bar (62pt Dynamic Island, 50 notch, 20 Home button) and the toolbar from its top edge, 83pt (measured: 873 of 956),
+  60 with a Home button; iPhone on its side - 60 (48); iPad - 74pt at the top, nothing at the bottom past its inset.
+  Re-read on resize, rotation, pageshow and the visual viewport's resize.
+- --tabs-bottom (phone and tablet) becomes max(its old value, --sb-bottom + 8px): the bar and everything written against it
+  (the Start pill, Next, the daily question, back to top, the vroom bar) sit above the toolbar, and --tabs-drop /
+  --panel-reserve / .wrap's padding with the bar grow by the same amount, so the last row still scrolls clear of it.
+- A screen without the bar gets .wrap margin-bottom: --sb-bottom (its last control scrolls above the toolbar). .wrap
+  margin-top and the controls pinned to the top (the chat button and panel, the room chat, Pause, the banners and alerts,
+  toasts, the class bubble, the build line, the vroom race bar) take margin-top: --sb-top-x = what the inset does not already
+  cover (on an iPhone nothing - Safari reports the status bar; on an iPad, Safari's bar); a test's pinned header and the
+  tablet's sticky .top add it to their own top. Toasts and the vroom prep note sit --sb-bottom-x + 8px higher. Welcome ends
+  that much higher instead of scrolling (its --pad-inset-bottom and padding take --sb-bottom-x, no margin), so Sign in and I'm
+  new here are above the toolbar with nothing scrolled; Get Started's button (.gs-bar) rises by it too.
+- Nothing changes in the state measured off his frame, in the installed app, on a laptop or on Android: every rule is behind
+  html.safari-bars-over, which needs all of: an Apple touch device, is-browser, the full-height viewport, an inset.
+- Report a bug: the report gets `edges` - the screen, the layout viewport, the zoom, how many points of the screen are outside
+  the viewport, the safe-area insets, the visual viewport and its offset, whether the overlay is on, scrollY - and
+  `python3 tools/firestore-admin.py bugs` prints it. It rides on the existing report write; no new writes.
+
+THE SWEEP (tools/sweep-layout.py): every context is its device's own browser now - Safari's user agent on an iPhone, iPadOS
+Safari (a Mac user agent with five touch points) on an iPad, Chrome or Samsung Internet on Android, Chrome or Safari on a
+laptop - with touch and the device's screen. An iPhone's Safari-tab chrome is the measured model (status bar + 97pt, 72 with
+a Home button; 60 on its side; an iPad 74), replacing 110/60 and 90/90. iPhones and iPads get a third launch mode, "bars
+over" (the page full screen, its real insets, Safari's bars as the audit's insets, the tab bar given no allowance under the
+toolbar; not for a Home-button iPhone on its side, which has no inset for the app to read and where Safari hides its bars).
+New devices: iPhone 16 Pro / 17 (402x874), iPhone Air (420x912), Galaxy S24/S25 on Samsung Internet (384x832, its
+chrome 112/100), S24+/S25 Ultra on Chrome (412x915), Galaxy Z Fold cover (344x882) and inner (673x841, and the Fold7's
+884x1104), a Windows laptop at 1536x864, and the rumoured iPhone Fold as a foldable (cover 474x696, inner 640x904, MODELLED
+from leaked 2088x1422 / 2713x1920 panels at 3x - not an announced device). Screens added: Get Started, and a drill's
+question with its header and Next.
+
+INTERNET EXPLORER: the first script in the page (ES3 - var, function, no arrow, no let/const, no trailing commas; acorn
+ecmaVersion 3 parses it) checks document.documentMode / MSIE / Trident and, in IE only, stops the page (execCommand("Stop");
+window.stop where it exists, which is what a browser pretending to be IE does) and puts up one plain page: "Nova needs a
+current browser", "Internet Explorer cannot run Nova. Open this page in Microsoft Edge, which is already on this computer.",
+a button whose address is microsoft-edge: + this page, "Or use a current version of Chrome, Edge, Safari or Firefox." and the
+address. Every other browser leaves at its first line. IE 11 itself was not available to run here (an IE user agent in
+Chromium was).
+
+THE BOOKMARK ICON: the icon was already the shipped one everywhere (the "pixel" V; gen-app-icon --check: 6 assets, one art).
+What a bookmark lacked was a FETCHABLE file at the sizes bookmark services ask for: tools/gen-app-icon.py now also writes
+share/favicon-16.png, share/favicon-32.png and share/icon-192.png and their <link rel="icon" sizes> after the embedded one
+(FAVICON_FILES, ?v=384), and --check covers them and share/icon-512.png (10 assets, one art). Its default --variant is now the
+shipped "pixel" (it was "brand": running it plain to add a size would have swapped every icon). Safari's bookmarks, Favorites
+and Home Screen take share/apple-touch-icon.png (180, a real file since 342); Chrome, Edge, Firefox and Samsung Internet take
+the sized favicons; the manifest (data: URI) carries 180/192/512 and a maskable 512. theme-color agrees (#271E23 both). No
+mask-icon: Safari 12+ uses the favicon for pinned tabs.
+
+KEEPING THE ACCOUNT ON A BOOKMARKED PAGE: the device keeps class26e.drill.v1, class26e.synccode and the IndexedDB mirror (names
+unchanged). navigator.storage.persist() is now asked for only once the device holds an account (askToKeepStorage(): at boot
+with a code, and in setSyncCode) - it was asked on every boot including a first visit, where Firefox shows a permission
+question to somebody who has not signed up. What keeps and what does not (each browser's own clear options):
+- KEEPS: a refresh; closing the tab and opening the bookmark; restarting the phone or the browser; clearing ONLY history in
+  Chrome / Edge ("Browsing history" is its own box, apart from "Cookies and other site data"), Firefox ("History" apart from
+  "Cookies and site data") and Samsung Internet ("Browsing history" apart from "Cookies and site data").
+- NEEDS SIGN IN (the account is in the cloud; the device only forgets which one it was): Safari on an iPhone/iPad - "Clear
+  History and Website Data" (Settings > Apps > Safari) and Safari's own Clear History take cookies and website data with the
+  history; Safari on a Mac - History > Clear History does too; "Remove All Website Data"; any browser's "cookies and site
+  data"; a private/incognito tab when it closes; Safari's tracking prevention removing a site's storage after 7 days of
+  Safari use without a visit (the Home Screen app is exempt). persist() protects against the browser clearing storage for
+  space, never against the person clearing it.
+- Welcome's Sign in ("Have an account? Sign in with your sync code.") is the way back, measured on screen at 44px+.
+
+ONE SHARED LINK, FIVE PEOPLE: SHARE_URL is one fixed address (share/?v=384); the Share button hands over exactly that (no code,
+no id, no #k=); share/index.html (from gen-share-card.py) is static and reads nothing per person; it forwards to ../ with
+location.replace and a meta refresh (no script needed). Opened in five fresh browsers (iPhone Safari, Android Chrome, Samsung
+Internet, a Windows laptop, iPadOS Safari): each reaches the app (the share page gone from the address) at its first run, with
+no sync code and no account id of its own or anybody's. gen-share-card --check passes.
+
+GATE: tools/check-b384-browsers.py (sections safari ie icons keep share; --root DIR runs it against a copy of another build).
+347 checks ALL PASS. --root 91a1d96 (safari ie keep icons): 78 FAIL - Safari's bars over the page on all seven device models
+(69: the app does not see them, the tab bar and its tabs under the toolbar, the iPad's chat button, back buttons, Pause and the
+page name under its bar), IE (9: no guard, the app loads), keep (1: persist() asked on a first visit), icons (1: no sized
+favicons). The TAB model (the measured state) passes on both: it guards the state his phone was measured in. share passes on
+both (the link was already right; it is checked so it stays right).
+OTHER GATES, one at a time, all on Chromium 153: check-js ALL PASS; the page's console on a first visit and an account, desktop
+and iPhone: nothing but the blocked Firebase CDN; check-b382-ios ALL PASS (55); check-b384-navmeet ALL PASS; check-b384-laptop
+ALL PASS; check-bugreport ALL PASS; check-b382 ALL PASS; check-b338 and check-b341 (the sky under Safari's bars) PASS;
+check-b384-haptics ALL PASS (Safari tab included); check-sync ALL PASS (120); gen-app-icon --check and gen-share-card --check
+pass.
+SCREENSHOTS (scratchpad browsers384/): promax-tab85-before-after.png and promax-tab100-before-after.png (the measured state:
+the same before and after - nothing hidden), promax-over-before-after.png (bars over the page: the tab bar under the toolbar
+before, above it after), each Home / Profile / Settings / Leaderboard / a question with Safari's status bar and toolbar drawn in.
+ONLY HIS PHONE CAN CONFIRM: which state the page is in when he sees the top and bottom missing (a bug report from the Safari
+tab while it is happening: `edges`); that Safari 26 really reports the insets this model expects when it runs the page under
+its bars; the modelled depths (62/83pt on his phone, the iPad's 74); Safari's own bars, glass and scroll edge; the keyboard
+case on 26.0; the IE page in real IE and the microsoft-edge: hand-off on Windows; which favicon each browser's bookmark keeps;
+Safari's 7-day storage rule and what persist() is granted.
+
+THE FULL SWEEP (sweep-layout.py, no --quick, 32 devices, 144 combinations): every one clean in the end. What it found on the way
+and what changed for it: the iPads on their side with Safari's bar over the page had the page's name (#count, absolute in the
+wide-landscape layout) under the bar - .wrap's margin does not move an absolute box, so it takes the margin itself, only in
+that layout's query (a first try without the query pushed an iPad's upright Home down 41px behind the tab bar; the sweep caught
+it); the rumoured iPhone Fold's short cover with a home indicator was read as a Home-button phone (the toolbar modelled 23pt
+short) - a home indicator's inset now says Face ID; and a Home-button iPhone on its side is not modelled with bars over it (no
+inset to read). Android (Chrome and Samsung Internet, phones, Folds, a tablet) and every laptop and desktop were clean on the
+first run. Chromium for every run after 12:59 is 153 (see the environment note).
+ENVIRONMENT NOTE (384): `python3 -m playwright install webkit` (trying to get Safari's engine; the download is blocked here)
+made Playwright delete /opt/pw-browsers/chromium-1194, the Chromium every tool names. Put back within a minute as a link to
+chromium-1243's chrome (153, the build this Playwright expects): /opt/pw-browsers/chromium-1194/chrome-linux/chrome. Never run
+`playwright install` here. Firefox and WebKit are not installed and cannot be downloaded in this sandbox.
+
+### Build 384 - Safari/devices merged; Get Started gets a Sign in from its first frame
+- Merged the Safari / every device / IE / icons / keep / share helper (15604e2). Its commit also added a line to CLAUDE.md
+  ("never run `playwright install`" - the install deleted chromium-1194, now a link to 1243's chrome). That line was NOT
+  merged: CLAUDE.md is Madison's; it is offered to him instead.
+- With Get Started now opening on every device with no account (6ddf9ce), a device whose site data was cleared opens there,
+  not on Welcome - and as a first visit its Let's get started waits for the end of the page, so the owner of an account
+  would scroll the whole tour to reach Sign in. Added `.gs-signin`: a "Sign in" pill at the top right of Get Started
+  (44px, on screen from the first frame, below Safari's bar when html.safari-bars-over), straight to showWelcomeCodeEntry
+  (its Back goes to Welcome). It fades with the page on Let's get started (gsLeave). Get Started's own rgba palette, as the
+  rest of the page.
+- check-b384-browsers keep: after site data is cleared, Get Started's Sign in is on screen and 44px+, one tap reaches the
+  code entry; then Welcome's Sign in as before.
+
+### Build 384 - a hundo effect stopped part way holds its pieces for the fade (both classes)
+- The cutscene audit's note: "Academy Underwater: tapping its card away mid-showcase throws about 20 pieces toward the left
+  edge as it fades". playHundoFx's stop (handle.stop: a card tapped away, the screen changing) ran undo(true), which
+  cancelled every animation in c.anims and then faded the layers for .6s - a piece placed by its animation went back to
+  where it rests, the corner of the screen, for the fade. Fire Code's Thermal Camera had hidden its reticle at rest for the
+  same reason (679d57c); this fixes it once for every effect.
+- undo(fade): an animation whose target is inside the fading layers (scr, bx) is paused, held where it is, and cancelled
+  700ms later (after hfxFadeOut's 650ms); anything else (the grade box's own) is cancelled at once, as before. The normal
+  end (undo(false)) is unchanged.
+- check-b384-fxstop: both classes, every effect, on a results card and in a tile, stopped at 1.4s and 3s - no piece still
+  showing moves more than 4px or appears; nothing left after; no page errors. Against d9f01e7: the academy's Underwater on a
+  card FAILS (1 piece at 1.4s, 20 at 3s, to x -17..-38). Confetti on a card returns no handle and is listed as not played.
+  check-b384-cutscenes (1) and check-b384-policefx pass with it.
+
+### Build 384 - This Week's numbers flush with the row's edge, where its line ends
+- Looking at the board helper's screenshots: on the one-column boards (This Week's XP, Hundos) the number was centred in its
+  4.2rem column (.rank-cols justify-items:center), so 1,000 and 983 ended 7px apart and every number stopped 12-19px short
+  of the row's content edge - where the hairline now ends (ca07841). An iOS list's trailing value sits flush with that edge.
+- `html[data-layout] body .screen-rankings .rank-cols.rank-cols-one{ justify-items:end; }` (after the modern board block):
+  the number and its header ("XP") flush right. The three-column boards (Rank / Level / Badges) stay a centred table.
+- check-b384-hairlines (6): on This Week every row's number ends at the row's content edge within 1px. Against d84caf5: FAIL
+  (off by 12.3 / 19.1 / 25.1). check-b384-board2 passes.
+
+### Build 384 - signing out goes to Welcome again (Madison's call)
+- Madison, on the Get Started round's judgement call: "Signing out, signing out will just bring them to the welcome screen."
+  showWelcomeFirst: a device signed out here (class26e.signedout - set by Sign out's head-script wipe, cleared by signing in
+  or up) opens on Welcome, as in 383. The splash's fast path for Get Started (noAcct in the head) also leaves a signed-out
+  device out, so its splash runs as before. Get Started stays for a device with nothing on it (and one whose site data was
+  cleared, which loses the signed-out mark with everything else - it has Get Started's top-right Sign in).
+- Gates back to Welcome after a sign-out: check-b383-signup ("after Sign out", "Sign out sticks" x2), check-b384-getstarted
+  route (signedout -> Welcome on all five devices).
+- ASKED, NOT BUILT YET (Madison): the "NEW CLASS - Fire Code is open to join" banner for five existing accounts only (four
+  classmates and the owner), never for new accounts; everyone gets the class button. Needs their publicIds - the leaderboard
+  read was refused by the sandbox's production-read rule; waiting on Madison to let one read through. Stored hashed, no
+  names or ids in the repo. Also raised: sign-up cannot enroll in Fire Code (the class screen offers the academy and "More
+  classes"); proposed both cards, the PDF step for Fire Code, a Fire Code-only account never shown the academy unless added.
+
+### Build 384 - the two consent questions settled; Durrell Kennedy in Contributors
+- Madison: "Arrest search and seizure duplicate questions, the answer is revoked, remove the warning ... make the answer for
+  both woukd be the 'revoked by the person granting consent'". Arrest, Search, and Seizure #31 (already D) and #55 (was C,
+  "Is a mere acquiescence ...") both count "Revoked by the person granting consent"; both verifyNote lines removed (they were
+  the only two in the bank - the note's renderer stays for any future one). The answer is not part of a question's key
+  (topic|src|text-hash), so their keys - and everyone's history on them - are unchanged; 1,119 questions, every other answer
+  unchanged. check-b384-consent (set OLD_HTML to the build before for the key comparison); against 1dca98e (1), (2), (4) FAIL.
+- Madison: "Add Durrell Kennedy as a contributor as well. He helped with creation of the question bank". Role "Question
+  Bank", one row "Helped create the question bank" (nothing claimed beyond what he said), by surname after Darjean.
+  check-b382-credits: seven PEOPLE.
+
+### Build 384 - What's New, Version 10 (existing accounts only)
+- Madison: "for EXISTING accounts only, there is gonna be a 'what's new' pop up for this update as well. We are gonna be onto
+  version 10. Just a semi quick one, mentioning the updating interface, updated settings layout, updated layout, and of course
+  the biggest piece of the update, the new class ... This will talk about the ifc the option to switch between classes and
+  stuff. Make it great. I love how the what's new pop up has been looking, don't change that look." And: don't merge the Fire
+  Code class or the What's New until he says so.
+- INTRO_REV 6 -> 7. A new account marks it seen as it is made (markIntroSeen in novaSignupCreate; the mark is shared by both
+  classes), so only existing accounts get it, once. The card (showIntroPopup, intro-card-compact) is unchanged; its rows are
+  WHATS_NEW_V10 (WHATS_NEW_320, the name the card and its gates read, now points at it; 9.2's rows kept as WHATS_NEW_92):
+  A new class: Fire Code / Switch between classes / A new look / Settings, rebuilt / Hundo effects, redrawn / Smoother
+  everywhere. RELEASE_NOTES gains Version 10 (New In: Fire Code, The Class Button, Fire Code's Own Effects, A Virtual Room
+  In Every Class, Add To Home Screen; Better In: A New Look, Settings Rebuilt, Profile And Stats, The Leaderboard, Hundo
+  Effects Redrawn, Smoother Everywhere, Finishing Touches) - the eyebrow reads "New in version 10".
+- What's New still waits for the academy (the cutscene audit's guard): every existing account is an academy account.
+- check-b384-whatsnew10: existing account sees it once, first row Fire Code, covers switching / look / Settings; Got it and
+  a relaunch - gone; a fresh sign-up (Get Started to the last tip) never sees it, its mark at INTRO_REV; inside the screen on
+  SE / Pro Max / iPad with nothing scrolling; history leads with 10. Against 1dca98e: (1), (4), (5) FAIL ((3) is a guard).
+- Old content gates that assert 9.2's or Version 9's rows (check-b325-d, check-b326-d, check-b327-m's titles) describe the
+  card of their own build; they now read Version 10's.
+
+## Fire Code kit 5.4.2 (build 384)
+Madison sent class26e-ifc-update-5.4.2.zip: "Fix these questions ... Ensure this is done properly. This needs to be CHECKED
+PERFECTLY. We can't mess up questions." Its UPDATE-INSTRUCTIONS: (1) 43 rewordings - the county booklet is "the Harris County
+Fire Code Amendments", IFC facts are "the 2021 IFC" (42 questions, 3 explanations: ch1-040's explanation only, ch1-008 and
+one other both); (2) 36 Finder questions (every IFC chapter, adopted appendix B/C/D/H/I and Exhibit B; the Finder 102 -> 138);
+(3) 3 removed - ch12-008, ch12-071 (county 1203.2.21) and ch4-040 (county Table 405.3, Group I-1) - for the Fire Marshal's
+interpretation of Feb 4, 2025. 1,779 -> 1,812 questions, 58 units.
+- VERIFIED BEFORE ANYTHING CHANGED (field by field, the 5.4.1 bank against 5.4.2): exactly 3 ids gone, exactly 36 new, exactly
+  the 43 listed changed and only in `question`/`explanation` (40 question, 2 question+explanation, 1 explanation); no option,
+  answer, citation, highlight or unit (other than the three questionCounts) changed; meta differs only in questionCount. The
+  36 new questions sit at the Finder's end (positions 103-138); the removed ones were Chapter 4 #19 and Chapter 12 #9, #10.
+- THE KIT'S ACCEPTANCE TEST (check-my-copy.mjs, pdf.js 5.4.149 installed in the scratchpad, the owner's IFC PDF from the 5.4
+  kit, the county booklet beside it - both byte-identical to the app's ifc/ files; the viewer identical to ifc/ifc-viewer.js):
+  "same-book check: EXACT", 1,371 of 1,371 sections; County 421 of 421 cut, 406 of 406 deciding words marked; IFC 1,391 of
+  1,391 cut, 0 whole pages, 0 not found; "RESULT: this copy behaves like the reference copy." - exactly the instructions'
+  expected numbers. (5.4.1 for comparison: county 422, IFC 1,357 - the deltas are the 3 removed and 36 added.)
+- IDENTITY - the part that could have cost progress. Fire Code's key is unit | position in unit | hash(wording + choices)
+  (bankKeysOf over ifcQuestionsFrom's src = position). Applied as it comes, the update moves 42 keys (wording) and every
+  question after a removed one in Chapters 4 and 12 (position). So, beside ifcQuestionsFrom: IFC_KEY_TEXT (42 old wordings
+  as keyText, generated from the 5.4.1 bank, never typed), IFC_SRC_GAPS {"4":[19],"12":[9,10]} (the removed questions'
+  positions stay taken), IFC_RETIRED_KEYS (their three keys). Measured in the app before and after: all 1,776 kept
+  questions' keys identical (0 moved), the 36 new keys unique and clashing with none, every key unique; every question,
+  explanation and keyed answer shown is the 5.4.2 file's word for word; no answer changed.
+- REMOVED QUESTIONS IN SAVED DATA: per-question data is keyed by KEYS (stats, testStats, flagged/unflagged; test history holds
+  units and scores, no question text; a saved test finds its questions by KEYS and is dropped with its notice if one is gone).
+  A star on a removed question comes off once in Fire Code with unflagAll (the tombstone Reset starred questions leaves, so
+  other devices follow). Their answer counts stay where they are: nothing may lower progress, the merges would only bring
+  them back, and every count walks the bank's KEYS so nothing reads them.
+- Wording on the app's own screens: none called the booklet "Harris County Fire Code"; the class card now reads "The 2021
+  IFC with the Harris County Fire Code Amendments. 1,812 questions." and the analysis step "Matching it to the 1,812
+  questions" - both from ifcQuestionCountText() (the loaded bank's meta.questionCount; 1,812 where it is not loaded).
+  citation.excerpt/highlight untouched (the booklet's own words).
+- ifc/bank.js regenerated with tools/gen-ifc-bank.py from 5.4.2's ifc_question_bank.json (its asserts pass).
+- In the app with the owner's book (check-b383-ifcbook ALL PASS - Verified; check-b384-ifc542 (6)): the book is accepted
+  against 5.4.2, and all 36 new Finder questions draw their code - 34 from the book (the chapter or appendix title, highlighted,
+  on its page: Chapter 5 p.112, Chapter 65 p.564, Appendix H p.610 ...), 2 from the county booklet (102.7, Exhibit B).
+- check-b384-ifc542: (1) 1,812, unit sizes from the bank; (2) keys against BASE=1982cbf's app and bank (git); (3) wording;
+  (4) removed + the star tombstone; (5) the class card; (6) with PDFJS_DIR and IFC_BOOK, every new Finder question's code.
+  Against 1982cbf + its bank: (1)-(5) FAIL.
+- Also: check-b328-classes reads the count off the bank (was a hard 1,779); its "academy's saved copy byte-for-byte" check
+  fails as it did before (noted at build 384's friends round). check-b382-ifc loads record-cutscenes.py itself (Get Started
+  round 2 made record-landing.py self-contained, which broke it); its "Profile has no Stats tab" fails as before.
+  check-b383-ifcsync, check-b384-ifccurve, check-b384-vrifc ALL PASS.
+
+### Build 384 - What's New, Version 10: Fire Code's second row
+- Madison: "what's up with the hundo effects redrawn? That's not really a new thing, that just came along with the new class.
+  The new class one for ifc can have a second." The card's "Hundo effects, redrawn" row is gone (and "Hundo Effects, Redrawn"
+  from Version 10's history); Fire Code has a second row, "Fire Code, made its own": "A badge for every chapter, and its own
+  characters, flares and hundo effects." Six rows; check-b384-whatsnew10 passes (fits on the SE, Pro Max, iPad).
+
+### Build 384 - the share page is the app's splash
+- Madison, with a screenshot of the live (383) share page - a bare yellow "Open Nova" link: "Not sure why this type of thing pops
+  up when loading the link? Why is that there? That's a problem. I've seen it on my computer and on my phone." Why it is there:
+  the Share button sends .../share/ (the small page iMessage can read for the preview card); its forward to the app is
+  instant, but the browser keeps showing it until the 8MB app has downloaded - seconds on a phone, longer on a laptop.
+- SHARE_HTML (tools/gen-share-card.py, share/index.html regenerated; og-card.png / icon-512.png byte-identical) is now the app's
+  splash read off the running page: #0A0A0A, NOVA in Georgia 800 33.6px with the splash's gradient (#FFD37A -> #F5804D ->
+  #C23B7A) as text, "> opening Nova..." in the splash's monospace and gold, its 224x4 track with a running gradient bar
+  (reduced motion: still). No visible link; "Open Nova" and the meta refresh only in <noscript>. Same meta, same forward
+  (location.replace("../" + search + hash)). The page names nobody (check-b384-browsers' share check).
+- gen-share-card --check passes; check-b384-browsers share ALL PASS; check-b381-share's "SHARE_URL is the share page" and "names
+  the card picture" fail identically without this change (384's ?v=384 links).
+### Build 384 - last week's podium back, nicer; Fire Code's hint button (NOT on main, waiting for Madison)
+Madison: "Last weeks top 3 should not look like the list, I liked the podium style, it just needed a nicer look to it that's
+all.." (his earlier ask: "The top three on the leaderboard (last weeks top 3) ensure that's updated to the new iOS theme"), and
+"The hint button in ifc, fix that layout/wording. Cause all the words are layed out weird? Idk."
+- LAST WEEK'S TOP 3 IS A PODIUM AGAIN (buildLastWeekPodium; CSS "LAST WEEK'S TOP 3 (This Week), build 384 round 2" in the board's
+  iOS section, where the list's rules were - those are gone). 2nd, 1st, 3rd stand on steps, as in 383, in the board's language:
+  * the grey sentence-case caption "Last week's top 3" over one card on the list's surface (--lb-cell, --lb-group-r), no frost,
+    no gold rim, no glow, no gold capitals;
+  * each place: the character in the board's own disc (the rows' radial fill and stills/flip-book path, a size up: 1st
+    --lb-av x 1.5, the others x 1.2) ringed 2px in its metal with a 2px gap (an outline on .lw-podium-avwrap - the disc itself
+    is clip-pathed); the name in ink (700 for 1st, the accent if it is you), one line, ellipsis; last week's XP in grey, tabular;
+  * the step: a soft tint of its metal (--lw-gold #E9C35A / --lw-silver #C9CCD1 / --lw-bronze #CF8C57, the middles of the board's
+    medals) fading to the card's floor, a 1px catch-light on top, 12px top corners, the board's own medal (renderRankMarker,
+    --lb-medal, the struck circles) on it; heights --lb-medal + 2.3 / 1.45 / .9rem (63 / 50 / 41px on a phone), 1st tallest;
+  * the steps stand on the card's bottom edge; the stage's side padding is max(--lb-pad, 18px) so the outer steps clear the
+    card's 22px rounded corners; on 40rem+ the podium keeps a podium's width (max 31rem) in the middle of the card.
+  * DOM order is 1st, 2nd, 3rd (screen reader and keyboard); grid-column puts them 2-1-3. Tapping, role=button, tabIndex,
+    aria-label, Enter/Space, the off-screen observer (.lw-podium-spot) and the kept-podium key (_lwKey) are as before. Pressed:
+    opacity .55 (nothing moves - the step stays on the floor). With 2 places the 3rd column is left empty (1st stays centred).
+- THE HINT (ifcPreAnswer, CSS ".ifc-hint-btn" in the Fire Code references block): it read "Hint: show the code, answer hidden",
+  a yellow pill whose words wrapped onto two centred lines on a 375 phone (and on a 440 phone at a larger text size). Now it is
+  the twin of the "Show the code" pill the answer brings (.ifc-code > summary: same neutral fill and rim, 44px, .92rem 650, the
+  same arrow turning when open), with a yellow tag holding the bulb and "HINT" where that one has AMENDMENTS / IFC: one line,
+  left-aligned, white-space nowrap (an ellipsis inside the pill before it could ever wrap). Words: "Show the code" / "Hide the
+  code"; aria-label "Hint: show the code, answer hidden" / "Hint: hide the code"; aria-expanded added. What it does is
+  unchanged (the code drawn with the answer hidden; the same tap puts it away); a failed draw now also puts the words back.
+  228px wide on a phone (was 311, 295 wrapped on an SE). The academy's own hint ("Show me the correct answer" after three misses)
+  is untouched - NOTE: it is a ~33px-tall text link on this build and the one before, under the 44px rule; not changed here.
+- GATE tools/check-b384-podium-hint.py [--against REV|FILE] [--only a,b]; PDFJS_DIR for the real pdf.js path (without it the
+  viewer's drawing calls are stood in for and it says so): (a1) a podium, 2-1-3, disc/name/XP/step each, one floor, 1st's step
+  tallest and disc highest, 1st centred; (a2) nothing clipped or overlapping, inside the card and the screen, XP whole, a long
+  name ("Bartholomew-Montgomery") one line with an ellipsis - both at 440x956, 375x667, 834x1194 and a 1536x864 laptop; (a3)
+  GUARD tappable buttons in 1-2-3 order, 44px+, a tap on a disc opens that person's card; (b1) the hint's words on one line (or
+  two from one left edge), none cut short, 44px+, inside the panel, shut and shown, at 375 and 440 (and 440 at 125% text);
+  (b2) GUARD a tap draws the code with the answer hidden, still unanswered, another puts it away; (b3) GUARD the academy's hint
+  still comes after three misses on one line and marks the right answer; (c) no page errors. On 1dca98e it FAILS (a1)(a2) at
+  all four sizes and (b1) at 375 and 440@125%; the guards pass on both by design.
+- check-b384-board2 (4): its "a line between its rows" check (the list) is replaced by "a podium: 2nd, 1st, 3rd on steps that
+  rise from the card's floor, 1st's the tallest, the outer steps clear of its rounded corners" (fails on 1dca98e); its surface,
+  caption and medal checks are kept and pass.
+- GATES RUN (one at a time; load 12-15 from other sessions): check-js 10 blocks ALL PASS; check-b384-podium-hint ALL PASS with
+  the real pdf.js and with the stand-in, --against 1dca98e FAILS as above; check-b384-board2 ALL PASS (all six), --only 4
+  --against 1dca98e fails the podium check only; check-b384-hairlines ALL PASS; check-b383-look ALL PASS on two reruns (the first
+  run reported 1 failure under load, not captured); sweep-layout --quick 20/20 clean; check-b382-test (PDFJS_DIR) ALL PASS;
+  check-behaviour check_b229/b289/b299: every podium check passes (tappable, you included, the popup's podium a picture, last
+  week's numbers); its other failures (the yellow dot x2, the Profile card's order x2) fail on 1dca98e too, and "the right
+  answer never lands where it was last time" is random (passed on two reruns); the page console in both classes: no page
+  errors, only the blocked Firebase / pdf.js CDN.
+- ONLY HIS PHONE CAN CONFIRM: the metal tints on the real glass at 3x (the gold step reads warm-khaki in Chromium); the outline
+  ring's gap on WebKit (Safari 16.4+ follows border-radius); SF Pro's widths (the pill and the names were measured with
+  Chromium's font).
+
+### The retired Nova-Test site now loads the live app (November 4)
+- A classmate's phone had been stuck on build 97 since Sep 22: its Home Screen icon was added from the retired test site
+  (chyjyrkwn7-eng.github.io/Nova-Test/), which GitHub Pages still served, and build 97's update check reads version.json from
+  that same site - frozen at 97 - so it never updated, never followed the merge note waiting on its old account (Oct 2), and
+  kept publishing its sync code as a code-keyed rankings row. (The server side of the merge was already right.)
+- Fix (Madison unarchived Nova-Test and allowed the push; commit 400a3b8 on Nova-Test's main): its index.html is now a loader -
+  it fetches /index.html/index.html and runs it at that address with <base href="/index.html/">, so such an icon opens the
+  CURRENT live app with its own saved account (same keys; FRESH_START is 0, so nothing is wiped); every file and the update
+  check come from the live site, and an update's reload goes back through the loader; if the fetch fails it goes to
+  /index.html/ keeping search and hash. Its version.json names a new build ("2026-11-04-moved", frameId "") so a running build
+  97 offers its own Update banner. A README says what the site is and not to archive it without the loader.
+- Tested here with the live 383 and the 384 branch served as Pages serves them (the loader at /Nova-Test/, the app at
+  /index.html/): a build-97 device's account comes up on Home signed in, no page errors, version.json from /index.html/, the
+  same after an update reload, and the fallback. The merge-note follow is the app's own (check-behaviour b279, check-sync 8d).
+- AFTER THE PHONE FOLLOWS (the note marked done, the old account no longer written): delete the code-keyed rankings row and
+  retire the old account, so the exposed code opens nothing. KEEP Nova-Test unarchived with the loader in place.
+### Build 384 - Add to Home Screen, the second recording (NOT on main, waiting for Madison)
+Madison, with a new recording: "My video example is different because the add to homescreen screen button was at the top
+and not grouped with the view more stuff, put that pointer in there too. Secondly, the very top of my phone, it has the
+recording thing, and my stuff, blurr that out a smidge. Keep it but blur. ... this one includes me actually selecting add,
+and then clicking it to see the functionality." Then: "blur our stuff, like the people you see in the share thing, blur that
+all out or remove it. The Home Screen, blur all my apps out. Blur out some of the stuff at the top of the phone as like the
+red recording light, and stuff like that."
+- THE CLIP (landing/a2hs-iphone.mp4 579,516 bytes + a2hs-iphone.jpg poster 39,796 bytes, its first frame; 540x1174, H.264
+  High, yuv420p, 30fps, 18.17s / 545 frames, no audio, faststart), cut from the new recording (1320x2868 HEVC 10-bit HDR PQ,
+  29.0s, with sound - dropped). Tone-mapped as before (zscale linear npl 100, tonemap=mobius, bt709; a plain conversion is
+  grey). Five spans with 4-frame cross-fades, every cut between two still moments: source 2.63-5.3s (Welcome, ••• pressed
+  4.37s, the menu), 5.67-8.77s (Share pressed 6.43s, the sheet, View More pressed 8.33s, it opens), 9.67-16.43s (the list
+  scrolls 9.83s, Add to Home Screen - a row in the list under the icons - pressed 11.13s, the Add page, Add pressed 14.93s,
+  the Home Screen with the new icon 15.63s), 20.57-22.1s (the Home Screen, the Nova icon pressed 21.37s, it opens),
+  23.83-25.9s (Nova open from the icon, full screen: Get Started's title and rays). Held: 10 frames on the closed sheet,
+  12 on the scrolled list (the pointers there get time to be read), 18 at the end. Cut: 4.1s of the Home Screen sitting
+  still, 1.7s of the app's dark launch, and short dwells on the open menu (0.4s) and the open list (0.9s).
+  In the clip: ••• 1.73s, Share 3.6s, View More 5.83s, the scroll 6.6s, Add to Home Screen 8.3s, the Add page from 9.5s,
+  Add 12.1s, the Home Screen from 12.8s, the Nova icon 14.57s, Nova from 15.67s.
+- PRIVACY, in every frame each is in (the scripts and the raw recording stay in the session scratchpad, not the repo):
+  - The share sheet's row of people (his friends' photos and names, the group, the fifth avatar at the edge): tracked frame
+    by frame (NCC at 7 scales, half resolution), full width between its hairlines, two Gaussian passes r18; hand boxes where
+    the sheet first appears small and see-through mid-page (6.93-7.03s source) and while it scrolls. Once the list scrolls,
+    the row sits behind the header's glass and shows through it (the Harris County badge, the names): a blur there smeared
+    the header's own title, address and X, so for those 45 frames the header (66-218) is replaced by itself from the frame
+    before the scroll (nothing behind its glass then), and for the 8 frames the Add page rises over it, the same header
+    dimmed to match (gain measured on the plain header); the last 4 thin strips above the arriving page are blurred.
+  - The status bar strip (0-92, fading out over 64-82 so no line shows under the Island), every frame, r9: the time, the
+    location arrow, the Live Activity picture in the Dynamic Island, the red recording light, signal, 5G+ and the battery
+    are soft blobs; the Island's pill still reads as the top of a phone. The windows that zoom in and out carry their own
+    status bar (the Add page shrinking into the Home Screen, Nova's window growing out of its icon): blurred there too.
+  - The Home Screen: every app, its name and badge, the Search pill and the dock, two passes r16 - all but the Nova icon and
+    its name (kept sharp; the box under it filled from its neighbours before the blur, so no dark halo), from the Add page
+    shrinking into it to Nova's window covering it. The wallpaper is left (a blur of a gradient is the gradient).
+  - Left as is: the share sheet's own controls (AirDrop, Messages, Mail, Notes, the actions, the list), the Add page (its
+    address is the plain site, no code - he was on Welcome), the app's build label on Welcome.
+  - Checked independently on the shipped file (every frame decoded, whole frame searched, high-passed NCC, templates cut
+    from the untouched recording): the row (collapsed, open, 60-90% sizes, and its ghost behind the header) best 0.41 in the
+    frames the sheet is in, against 0.41 on untouched frames where it is not (the floor) and 0.71-1.00 where it is; the
+    status bar (the time 10:50 / 10:51 at full and 55-90% size, the Live Activity, the battery, 5G+) best 0.525 anywhere -
+    found in the menu's text, not at the top - against a floor of 0.522 and 1.00 where it is; the Home Screen's apps (11
+    icons and the names row, the Nova icon itself left out of the search) best 0.28, floor 0.25-0.30, untouched 0.89-1.00.
+    One miss found this way and fixed: the frame the Nova icon starts to grow kept a sliver of Orbit sharp.
+- POINTERS (A2HS_POINTERS, now each with a `kind`, carried as data-kind): ••• (.867,.939) .3-1.8s; Share (.451,.666)
+  2.35-3.7; View More (.831,.9) 4.5-5.87; Add to Home Screen, the row's glyph in the list (.125,.73) 6.8-8.4 (after the
+  scroll, so the ring does not have to move); Open as Web App's switch (.883,.335) 9.55-10.8 "Make sure this is on"; Add
+  (.883,.119) 10.8-12.25; the Nova icon on the Home Screen (.841,.248) 12.85-14.65 "Tap Nova to open it" (label above it,
+  over the blurred apps, so its name stays readable). Each checked by eye at the start, middle and end of its window.
+- STEPS (A2HS_STEPS_APPLE, six, "Step N of 6" under the clip): In Safari, tap •••, then Share (note: the toolbar's Share);
+  Tap View More (note: skip it if Add to Home Screen already shows); Tap Add to Home Screen (new note: "It is in the list
+  under the icons, or on some iPhones with the icons. Scroll down if it is not showing."); Make sure Open as Web App is on;
+  Tap Add; Open Nova from your Home Screen.
+- GATE tools/check-b384-a2hs.py: iphone now also asserts the pointers are the recording's in its order (dots > share >
+  viewmore > a2hs > switch > add > icon), one step each in order with the last the Nova icon's, every pointer's ring at its
+  place and its step said under the clip (7 of them now), and reads the clip under two more rings: Add to Home Screen on
+  the row's white glyph over the list's neutral grey, the Nova icon's V sharp on its dark tile with the warm wallpaper round
+  it (neither at the clip's start). clip: the row's band against the apps row (66 frames, 0.11; on an unblurred cut 1.67);
+  the header after the scroll against itself before it (53 frames, 0.05 of 255; unblurred 6.93); the status bar's steepest
+  edges against its own range of light, every frame (0.07; unblurred 0.73, the old clip 0.70); the Home Screen's other apps
+  against the Nova icon's detail (54 frames, 0.09; unblurred 1.12). A2_CLIP= runs the clip checks on another file. The
+  Messages back-link check is gone (no back-link in this recording). settings: since Get Started opens on a device with no
+  account (6ddf9ce) the fixture taps .gs-signin there (it timed out on Welcome's Sign in on claude/b384 too).
+  The caption check now also needs the step's words clear of the pinned Not now (the box itself reserves two lines and
+  always reaches under the foot, so the words are measured): it caught a first, two-line step 6 ("Open Nova from its new
+  icon on your Home Screen.", its second line under Not now on a 440x956 phone), now "Open Nova from your Home Screen."
+  The colour reads under the rings retake a read that comes back one flat grey (no frame drawn yet under load), and the
+  seek waits for the frame's data as well as 'seeked'.
+- RESULTS, one at a time (the machine at load 15-28 from other sessions): check-js ALL PASS; check-b384-a2hs ALL PASS (82:
+  iphone, samsung, desktop, installed, settings, clip); check-b384-a2hstip ALL PASS; sweep-layout --quick 20/20 clean.
+  The new gate against claude/b384 (its index.html and its clip, ONLY=iphone,clip): 36 pass, 8 FAIL - the pointers'
+  order, the steps following them, the Add to Home Screen ring on its row, the Nova icon ring, and the four clip checks
+  (row 4.71, header 14.69, status bar 0.70, Home Screen 0.88). On an unblurred cut of the new recording (A2_CLIP) the four
+  clip checks FAIL (1.67, 6.93, 0.73, 1.12).
+- FOR MADISON (session scratchpad a2hsv2out/): a2hs-popup-iphone.mp4 (440x956, an iPhone Safari tab: the pop-up as a
+  sign-up shows it, one full turn of the clip with its pointers and "Step N of 6" under it, the six steps scrolled into
+  view, Not now; a CDP screencast at about 8 frames a second because the machine was loaded - the clip itself is 30fps);
+  statusbar-blur.png (the top of the clip in five scenes, 2x); homescreen-blur.png; sharesheet-row-blur.png;
+  sharesheet-scrolled.png.
+- ONLY A PHONE CAN CONFIRM: how the blurs read on a Retina screen at the clip's size; the rest as in the first section.
+- LEFT FOR MADISON: the wording of step 3's note and of "Tap Nova to open it"; that the clip ends on Get Started (he was
+  not signed in when he recorded; an icon added while the pop-up is up opens signed in, as the note under the clip says).
+### Build 384 - Fire Code's badges, each its own (NOT on main, waiting for Madison)
+
+Madison: "IFC badges, there's multiple duplicates badges, by that I mean, there's multiple of the exact same style/shape in the
+case.." and "Ensure all the badges for ifc, they aren't duplicated and ensure the wording on the back of them is good to go."
+- HOW A BADGE'S LOOK IS CHOSEN: an outline (BADGE_SHAPE: the path, its channels, its centre) struck in one enamel
+  (BADGE_FAMILY via UNIT_BADGE_THEME). There is no separate emblem or frame - the slot, keyline, rim and plate are all rings of
+  the outline. UNIT_BADGE_SHAPE / UNIT_BADGE_THEME name the academy's 24 units and no chapter, so every Fire Code chapter fell
+  back: its outline by hashOf(name) % 24, its colour dealt from the 21 families in sorted-name order every sixteen chapters.
+  Read off the page (before-front.png): 20 outlines for 58 badges - seven burst plates, six triangles, five each of the drop,
+  the twin discs and the trefoil, four peaks, three each of the chevron, disc, shield and wedge ... - and five pairs the same
+  outline in the same colour: Chapters 1 and 34 (red burst plate), 5 and 21 (pink triangle), 9 and 12 (orange chevron), 26 and
+  40 (steel shield), 35 and 59 (crimson trefoil); with near twins too (56 and 57, an amber and an orange six-point star, side
+  by side; 23 and 24, a violet and an indigo drop).
+- EVERY CHAPTER HAS ITS OWN OUTLINE NOW (IFC_BADGE_SHAPE): the academy's 24 and 34 new ones in the same hand (Object.assign
+  into BADGE_SHAPE after BADGE_SHAPE_KEYS, so an unknown unit's hash fallback is still over the academy's 24): coin, oval, gear,
+  cinquefoil (a ring channel leaves a metal boss), medal, roundel, tile, plaque, ribbon, gonfalon, ticket, slant, castle,
+  ziggurat, tau, saddle, wave, nameplate, pennon, notchplate, four-point star, Maltese cross (a cross pattee with notched ends,
+  Chapter 5 Fire Service Features), dart, bucket, gem, crystal, half disc, card, tag, crown, arches, seal, kite, quarter dome.
+  Rounded corners (a Q through each vertex), arcs, one or two channels, nothing that draws a chapter's subject. Generated by a
+  script (scratchpad genshapes.py) and each set beside the 24 at the case's 52px and in the hand. Turned down as reading like
+  another outline: a lozenge and a compass (the diamond), a gable (the spire), a round-bottomed shield (the shield), a Gothic
+  arch (the disc), a pinwheel (the four-point star), a quadrant and a sector (the gem), a barrel (the tile), a Reuleaux
+  triangle (the triangle). Turned down because the back could not hold the title and FIRE CODE at the academy's size: a
+  crescent, a caret, a three-armed bar, twin diamonds, a slimmer Maltese cross.
+- A COLOUR PER CHAPTER (IFC_BADGE_THEME) that nods at it, as the academy's do: red and crimson fire, orange emergencies, heat
+  and hot work, amber and gold hazmat and the oxidizer's yellow placard, blue water and aviation (Chapter 67's "dangerous when
+  wet" label is blue), green egress and crops, brown wood and stored stock, steel the building code and tires. A family is
+  used two to four times (orange four), never twice side by side in the tray (six across, diagonals too) or the scene (eight
+  across); near colours side by side in a row only twice (1-2 indigo/royal, 58-59 orange/terracotta). Chosen by a small
+  annealing script over three preferred families a chapter.
+- WHICH OUTLINE FOR WHICH CHAPTER was solved for the backs: every outline x title back was planned in the page (badgeBackPlan),
+  and the assignment keeps FIRE CODE on every back and makes the smallest title as large as it can be (0.0363 of the badge,
+  Chapters 2 and 10 on the dart and the bolt; the academy's smallest is 0.0368, its C-ring); then outlines that read alike (the
+  gear, seal and coin; the gem and kite; the three-, four- and five-lobed ones; the stars) were swapped apart so none sit side
+  by side in the tray or the scene. A short title on a narrow outline is smaller than before on some (Chapter 2 was 0.063 on
+  the peaks), never under the academy's smallest. Before -> after (colour, outline):
+  Ch 1 red burstplate -> indigo crown; Ch 2 emerald peaks -> royal dart; Ch 3 brown trefoil -> steel nameplate;
+  Ch 4 royal cross -> orange shield; Ch 5 pink fan -> crimson maltese; Ch 6 emerald diamond -> cyan gear;
+  Ch 7 grass trefoil -> crimson gem; Ch 8 amber disc -> mauve hex; Ch 9 orange chevron -> sky cinquefoil;
+  Ch 10 gold fan -> emerald bolt; Ch 11 amber burstplate -> brown wave; Ch 12 orange chevron -> gold bilobe;
+  Ch 20 crimson octagon -> royal star5; Ch 21 pink fan -> teal hourglass; Ch 22 magenta cross -> olive fan;
+  Ch 23 violet drop -> red disc; Ch 24 indigo drop -> magenta kite; Ch 25 brown disc -> grass cross;
+  Ch 26 steel shield -> purple seal; Ch 27 royal wedge -> cyan ticket; Ch 28 sky fan -> brown octagon;
+  Ch 29 teal bilobe -> pink bucket; Ch 30 grass chevron -> terracotta slant; Ch 31 gold drop -> pink coin;
+  Ch 32 amber bilobe -> brown burstplate; Ch 33 orange shield -> amber saddle; Ch 34 red burstplate -> steel halfdisc;
+  Ch 35 crimson trefoil -> orange notchplate; Ch 36 pink burstplate -> royal tau; Ch 37 magenta peaks -> grass medal;
+  Ch 38 violet trefoil -> indigo chevron; Ch 39 indigo gate -> emerald keystone; Ch 40 steel shield -> mauve quarterdome;
+  Ch 50 sky bilobe -> gold roundel; Ch 51 teal peaks -> pink wedge; Ch 53 emerald drop -> teal star4;
+  Ch 54 grass wedge -> violet ribbon; Ch 55 gold burstplate -> cyan peaks; Ch 56 amber hexstar -> magenta gonfalon;
+  Ch 57 orange hexstar -> red pennon; Ch 58 red wedge -> orange plaque; Ch 59 crimson trefoil -> terracotta cring;
+  Ch 60 magenta bilobe -> purple spire; Ch 61 violet hourglass -> orange oval; Ch 62 indigo bilobe -> olive hexstar;
+  Ch 63 brown keystone -> amber tag; Ch 64 steel fan -> crimson diamond; Ch 65 royal disc -> mauve ziggurat;
+  Ch 66 sky keystone -> olive card; Ch 67 teal burstplate -> sky arches; Ch 80 gold star5 -> indigo drop;
+  App B royal fan -> sky tile; App C sky burstplate -> gold gate; App D teal hex -> terracotta trefoil;
+  App H emerald hex -> amber castle; App I grass drop -> red quatre; Ex B crimson lens -> steel lens;
+  Finder red peaks -> violet crystal
+- THE BACKS (badgeBackPlan). Every back reads its chapter's title exactly as the bank has it, uppercased, and FIRE CODE (since
+  this build's cutscenes round). What was wrong, and is fixed:
+  - CHAPTER 31 ("Tents, Temporary Special Event Structures and Other Membrane Structures") did not fit its drop at the smallest
+    size, and the plan's fallback laid it out as ONE ROW at that size across the middle - over the rim and off both sides, with
+    no FIRE CODE (before-back.png). A name that does not fit is now planned again with the floor halved (fsFloor), so a back is
+    always set inside its field; no back today needs it (the old single row is only for a plan that throws).
+  - LONG TITLES CAME OUT TINY: Chapters 27, 28 and Appendix I at the floor (0.026), Appendix H at 0.030. A title over 60
+    letters may now take five or six rows (the academy's longest is 45 letters, so its backs are unchanged); past four rows only
+    breaks whose longest row is within 1.35 of the rows' average are tried, and a long name with its line under it is not also
+    tried with the line over it (Appendix H's plan ~40ms, like an academy back's; ~1s with every break tried). Appendix H is
+    0.0446 on the castle, Chapters 28 and 31 0.059 and 0.056 on the octagon and the coin.
+  - A row may break after an em dash (Chapter 50 "Hazardous Materials-General Provisions" and Appendix I "Fire Protection
+    Systems-Noncompliant Conditions" had a 17-letter word before), and "CHAPTER 63:", "APPENDIX H:", "EXHIBIT B:" never split
+    from their number. The academy's names have neither.
+  - A quick "no" in the block search: a block taller than the field's first-to-last row fits nowhere (the same answer, sooner).
+  - No words changed: every title is the class's own (nothing reworded, no typo fixed - the bank's is what is engraved), and
+    no back says CLASS 26E or any academy word. The detail text in your hand ("<title> Badge", "0 of 1 hundo" / "Swipe to spin
+    it.") and on the cards ("Badge found", "Chapter mastered") reads the same titles; it was already right.
+- WHERE A FIRE CODE BADGE IS DRAWN: all through badgeShapeFor / badgeThemeFor (buildUnitBadgeSVG, the struck token and back,
+  the coin, its edges and silhouette), so the case on Profile > Badges, the badge in your hand (front and back), the badge case
+  cutscene (its slots and the coin, front and back), the results' Found & unlocked row and the badge's unlock card all show
+  the new designs; no render is kept across launches. The vector fallback (no canvas) now lights a slanted channel along its
+  normal (the academy's straight channels draw exactly as before).
+- MEMORY: a shape's strike geometry is six 288x288 float arrays, 2MB, and every one was kept - 48MB for the academy's 24; Fire
+  Code's 58 would be 116MB. BADGE_STRIKE_GEOM now keeps the 24 most recently used (the academy never lets one go), and
+  warmBadgeStrikes does each unit's geometry, render and back plan one after another so a dropped geometry is not made twice in
+  a warm-up. Fire Code's warm-up makes ~58 geometries where it made 20 (~20-40ms each on a phone, in idle slices); measured
+  here, the first minute's long tasks are about what they were.
+- Gate: tools/check-b384-ifcbadges.py - (1) every front at the case's size: no two outlines alike (the 3px edge bands of every
+  pair coincide under 80%; one outline in two colours is 100%; the closest pair now, octagon and coin, 60%) and no two pictures
+  alike; (2) the case on Profile: 58 slots, 58 outlines, 58 looks; (3) every back is its title and FIRE CODE and nothing else,
+  no academy word, every word inside the field; (4) iPhone 17 Pro Max, iPhone SE, iPad Pro 11": every back's words inside the
+  field at the in-hand and coin sizes, the smallest title no smaller than the academy's smallest (within 3%: 10.5 vs 10.6px,
+  7.8 vs 7.9px, 12.1 vs 12.3px), the longest title's badge and words on screen; (5) Chapter 40 earned for real with Chapter
+  26 (its old twin) found: the results row, the cutscene's coin and the unlock card draw Chapter 40's new badge, not 26's;
+  (6) the academy's 24 badges hash as before (8996cbb2, --dump on 1dca98e); (7) no page errors. This build ALL PASS (29);
+  against 1dca98e 16 fail - (1) x2, (2) x2, (3) x2, (4) x6, (5) x4 - the 13 that pass are the guards (class, slot count, no
+  academy words, on-screen, errors, the walk, the academy's hash).
+- Gates (one at a time): check-js ALL PASS. check-b382-ifcart pins no badge art, so no pin changed; on this branch its harness
+  no longer imports (tools/record-landing.py was rewritten in 45182b8 and has no `g` - KeyError: 'g', before any check, on the
+  start commit too); run with record-landing.py from 5bc607a in a scratch copy: 45 PASS. check-b384-cutscenes: 70 PASS, 3
+  timing fails that move between runs and classes - section 2's still flare scenes ("gone after": a tap's dismissal takes
+  ~1.0-1.3s here, the gate allows 1.5s; the start commit fails it too, 1 of 3 runs) and (6)'s order, which passes alone, as does
+  section 5 (failed once). check-behaviour's badge sections (check_badges, check_cutscene, check_b281_badge_card,
+  check_b317_badgecase, check_b317_badge2, check_b318_badges, check_b319_badges, check_b321d_badges,
+  check_b318_vroom_badge_case): 67 PASS, 21 FAIL, identical on 1dca98e (the old case's parts and materials, the 16-badge case,
+  "Mastered", the in-hand centring), and check_b317_badge2 stops at the same IndexError on both (its 24-unit grid outgrows its
+  1240px clip). sweep-layout --quick 20/20. Page console in Fire Code (440x956 at 3x, warm-ups waited out, the case opened, a
+  badge picked up): no page errors; only the blocked Firebase CDN; geometry kept 24 shapes, 45.6MB.
+- Contact sheets (scratchpad, deviceScaleFactor 2): ifcbadges384/before-front.png, before-back.png, after-front.png,
+  after-back.png; the case itself: before-case-iphone17promax.png, before-case-ipadpro11.png, after-case-*.png.
+- Phone checks owed: the new outlines at the case's real size and the phone's text size (do the coin, seal and octagon read
+  apart at 52px); the smallest backs in your hand on an SE (7.8px titles, as the academy's C-ring is today); memory and the
+  warm-up on an older iPhone in Fire Code.
+
+### Account cleanup on the owner's go (November 4)
+- Done with `tools/firestore-admin.py` and one-off scripts, codes masked in every listing; nothing here names anyone.
+- Never-used sign-ups (no progress, idle 40+ days) deleted with their `__floor`, each matched by name + masked code + "still
+  tiny" before the delete; a nameless one that shared a real account's public id had its document deleted and the real
+  account's rankings row left alone.
+- Duplicates whose merge/move note had been followed (`done`): `move --finish`'s job, done by hand so each `__floor` went too.
+- Waiting duplicates that held nothing (or whose progress the server had already folded in - checked by their test history
+  being in the main account's): the account document deleted, the NOTE KEPT, so a phone that ever opens on the old code still
+  lands on the right account (checkAccountMove reads the note without the account document).
+- One waiting merge whose phone had not opened in six weeks was run on the server with the LIVE build's own code: in a
+  clean page, applyLoadedData(old) -> copy, applyLoadedData(main), mergeLeavingAccount(copy, {merge:true}),
+  tallyCapture(store); the stored main document was written back with ONLY the fields that changed replaced (every other
+  field byte-for-byte its stored typed value), under a `currentDocument.updateTime` precondition; then a `__moved` note
+  (take the account whole - no second add) and the old account, its `__merge` and `__floor` deleted. Check before writing:
+  lifetime points and correct are exactly the two added, no field dropped, name / public id / friend code the main's.
+- New merge notes are written with `merge <from-public-id> <to-public-id> --yes`; the duplicate leaves the board when its
+  phone follows. `audit` afterwards: one known problem (a code-keyed row waiting on the retired test site's phone).
+### Build 384 - Safari and laptops, a performance pass (NOT on main, waiting for Madison)
+Madison, about tomorrow's release: "Ensure safari and laptop runs well. THIS A HUGE One." Then: "The review section, while scrolling
+down the questions are populating as you scroll and you can see it happening real time. Fix that, they should already be loaded as you
+scroll so it's super smooth."
+
+HOW IT WAS MEASURED. Chromium only (WebKit cannot be downloaded here); the sandbox's load average ran 7-24 from other sessions the
+whole time, so frame times and wall-clock durations are noise - every number below is a COUNT (long tasks over 50ms under a fixed
+CDP CPU throttle, style passes and how many elements each restyled, layers, running animations, slices) or thread CPU time (trace
+tdur, which the throttle and the load do not inflate). A laptop is 1536x864 at 1.25x with a mouse moving and a Windows Edge user
+agent in a browser tab (also 1366x768 and 1920x1080 for layout); an iPhone is 440x956 at 3x, touch, Safari's user agent, installed,
+with requestIdleCallback removed so the app's Safari stand-in (327v) runs. Both classes. The scratch harness (scen/work/bigrecalc/
+review/audit, scratchpad perf/) is not in the repo; the gate is.
+
+WHAT THE STARTING BUILD (1dca98e) DOES, laptop, academy, 4x CPU (counts of long tasks over 50ms; "style" = style passes):
+- cold boot to Home: Home at 6.4s; 39 long tasks, the longest 2.6s (the main script's evaluation - known since 327x, the splash bar
+  is a compositor animation and keeps moving).
+- Home, its first 30s (the warm-ups: flip-book recorders and badge strikes, in idle slices): 112 long tasks, 398 idle callbacks
+  (3.3s of them). Home steady after that: 2 long tasks in 20s, no rAF, no idle callbacks, 13.5 style passes a second (the painted
+  loops, 380's window-sized layers - by design), 33-35 running animations, none on an element off screen.
+- every tab twice (8 taps): 157 long tasks, worst 732ms; style 7.2s against script 3.2s. Settings and its pages: 21, worst 462.
+- the Leaderboard: open 29 (worst 594), scroll 48 (worst 169), 10s idle 66 - the live drawings of characters still waiting for
+  their flip-books (48 SVG-part animations, main thread in both engines; 327z13's "characters aren't really moving") and the
+  warm-ups recording them. Profile + Customize: 75 (worst 701). A 10-question drill: 34 (worst 491). Results with a hundo and an
+  unlock card: 61 (worst 1.3s). Hidden 3s: none; coming back: 6 (worst 140). Class switch: the other class's boot (worst 2.1s).
+  Get Started idle 6s: 10 (the one-time Intl init and the badge warm-up); the sign-up walk to Nova: 23 (worst 302).
+- memory over 12 tab switches (after GC): 19.2k -> 24.2k nodes, heap 6.7 -> 7.7MB, listeners 266 -> 315 - no runaway.
+- the stylesheet: 11,031 rules, 1,598 @keyframes, 2.7MB; styling one plain element costs ~18us here against ~1.8us on a blank page
+  (no single rule family: without the 55 universal-ending rules 13.7us, without :has() no change). That is why every screen build is
+  style-bound (e.g. Home's rebuild ~1,500 elements). NOT CHANGED - it would mean restructuring the CSS; the fixes below cut how many
+  times the whole page is restyled instead.
+- Safari correctness, read from the code: no syntax newer than Safari 16.0 (an acorn pass over the 10 script blocks: no regex
+  lookbehind, no class static blocks, no v flag, no duplicate named groups); none of Object.groupBy, Promise.withResolvers, Set
+  methods, scheduler.*, checkVisibility, scrollend, freeze/resume, ResizeObserver device-pixel boxes; navigator.vibrate and WeakRef
+  are guarded; all 14 requestIdleCallback uses are guarded AND the 327v stand-in is installed before any of them; nothing waits on
+  an event Safari never fires (the transitionend/animationend waits that gate flow have timers - openCollapsible's 420ms belt etc.).
+  Hover with a mouse restyles nothing big (0 whole-page passes while moving over Home).
+
+WHAT CHANGED (worst first; nothing looks different - screenshots of the touched screens pixel-compared, below):
+1. REVIEW IS LAID OUT AHEAD OF THE SCROLL (reviewRenderAhead, before showAnswerReview; CSS .review-question.rq-on). Every question
+   of an open unit was already BUILT when the unit opened (round 35), but off screen it was skipped (content-visibility:auto,
+   held at 340px) and only laid out when the browser saw it coming - Chromium about one screen ahead, Safari as it arrives - so a
+   flick met questions being laid out and painted (and changing height) as they came up. Now, after the open's first frame (never in
+   the tap - the open costs what it did): a pass lays the unit's questions out in slices of ~6ms (timed, adaptive, on a timer so it
+   goes on while a finger scrolls - Safari's idle stand-in waits for the finger to lift), nearest first, every one below the screen
+   before any above it; those above wait until the page has not scrolled for 250ms (reviewScrollAt), and in a browser without scroll
+   anchoring - Safari - the page then moves by what they grew, so nothing on screen moves (a programmatic scroll during a fling
+   would end an iPhone's fling, hence the wait; in the normal top-down read they were laid out on the way down anyway);
+   meanwhile an IntersectionObserver lays out any question within three screens of the view at once. A unit opened by its header
+   (after its slide), a search, and Resume from Pause start it again; it stops when the list leaves the page. A laid-out question
+   is content-visibility:visible WITH contain:layout style paint - the containment a laid-out `auto` element keeps; without it the
+   first try moved the text inside every card by 1px (margins collapse differently), caught by the pixel comparison below.
+   Numbers (Penal Code 340 questions; Fire Code's longest chapter 145), scrolled at 3,000px/s from 300ms after opening at 4x CPU:
+   frames with a question ON SCREEN still unlaid-out 3 (laptop academy) / 1 (laptop Fire Code) -> 0 everywhere; frames with one
+   within 1.5 screens below 21-32 -> 0 in all four (class x device); frames drawn in those 4s 23 -> 47 (laptop academy).
+   Opened and left alone: questions still unlaid-out after 25s 334 of 340 / 141 of 145 -> 0 (all laid out in 1.2-1.6s on the
+   phone profile, 8-16s on the laptop profile at load ~14, where native idle work competes); slices at most 64 questions.
+   Open time to the second frame (full CPU, wall clock, load 13-24, three each): before 1.0-3.5s, after 0.25-1.7s - the same work
+   (the pass starts after the frame), within the noise.
+   Two things found on the way: (a) under a 4x CPU at load ~29 one frame left a question 1,172px below the fold unlaid-out with a
+   two-screen look-ahead - frames were ~130ms, ~400px each - so the observer looks three screens ahead; (b) the step that keeps
+   the page still (Safari has no scroll anchoring) did nothing at first: <html> has scroll-behavior:smooth (284), so scrollBy
+   started a glide that the next one cut short - emulated (overflow-anchor off, CSS.supports saying so), a jump to 30,000px moved
+   the question mid-screen 1,554px. It now jumps as closeChatDock does (behaviour auto for the step): 0.2-1px.
+2. NO WHOLE-PAGE STYLE PASS IN A TAB TAP FOR THE STATUS-BAR COLOUR (syncStatusBarColorSoon). syncSky asked for theme-color's
+   colour inside the tap whenever Home's sky went on or off; the probe forced a style pass over the whole page (1,231-1,650
+   elements) before the new screen's first frame, and the frame styled most of it again. 384's cache (CSS_COLOR_HEX_CACHE) missed in
+   taps because its key held <html>'s class list, which carries html.tab-held while a finger is on the bar. Now the read runs once
+   the new screen's frame is out (one rAF + a timer; at once if the page is hidden), and the key ignores tab-held/tab-dragging.
+   Traced Home -> Profile -> Home twice by real taps: passes forced by the colour read 2 -> 0 (phone and laptop). Whole-page restyle
+   across Home -> Profile -> Leaderboard -> Home, elements: phone 9,458 -> 6,275, laptop 10,892 -> 9,150 (that one includes a
+   genuine bar-width change after visiting Start). theme-color still lands on the sky's colour (#2e2025 back on Home).
+3. --tabbar-half ONLY WHILE SOMETHING READS IT (syncBarHalf). A custom property on <html> (every element inherits it) whose two
+   readers are Home's (the version line, the daily card); on a laptop the bar's width changes as Home's Start joins it, so every
+   switch to or from Home rewrote it and restyled the whole page. Written now when one of its readers is on the page (or the first
+   time); coming back to Home the kept value is already right. Laptop, two Home -> Profile -> Home trips: writes 4 -> 0.
+4. NO BACKDROP BLUR ON THE FOLDED TOP SWITCHER. The old top .navsegment is folded away in the modern look (0x0, opacity 0) but wore
+   the glass rule's 30px backdrop blur !important on every screen - in WebKit a backdrop filter is a layer of its own that reads
+   back what is under it. `[data-theme][data-layout="modern"] .topctrls > .navsegment:not(.profiletabs){ backdrop-filter:none }`.
+   Elements with a backdrop filter that cannot be seen, every main screen, both classes: 1 -> 0.
+LOOKS: Home, Profile, the board, Settings, Review at its top and 2,400px down, before and after, every animation frozen at its
+start and Math.random seeded: iPhone academy - all six identical (max difference 0 of 255); laptop Fire Code - no pixel over 5
+levels (antialiasing). (Scratch pairs in the scratchpad, perf/shots/.)
+NOT CHANGED, AND WHY (each measured): the painted loops (380, for iPhone memory); the live drawings while board characters wait
+(327z13, his request) and the Profile hero's live character under the avatarDepth SVG filter and the Profile emblem under its
+drop-shadow (flip-books stop at 80 CSS px for memory - on WebKit these re-run their filters every frame; only a phone can say how much);
+Home's seven flare bubbles' backdrop blur over the moving planet (the look); the warm-ups (already yield to touch, scroll, tests);
+the results screen's celebration (bounded, ~40% of a core for its 20s at 1x here); the --band write for Safari's bars (laptop and
+Safari tab: still one whole-page pass per trip to or from Home, now after the frame - making it non-inherited would break the
+hundo effect's own --band and check-b327z14's probe).
+
+GATE tools/check-b384-perf.py [--against REV] [--only 1,2,3]: (1) Review, four class x device: (a) no question on screen or within
+1.5 screens below unlaid-out while scrolling at 3,000px/s from 300ms after opening at 4x; (b) all laid out when left alone (25s);
+(c) in more than one slice, none over 64 questions; (d) no scroll anchoring (Safari, emulated), jumped 30,000px down just after
+opening: the question mid-screen moves <= 2px while all are laid out; (2) phone and laptop: Home -> Profile -> Home twice by real
+taps, each landing, no whole-page style pass forced by the colour read; laptop: no --tabbar-half write; (3) no backdrop filter on
+an unseen element on Home, Profile, the board/Stats, Settings, the Calendar - phone academy and laptop Fire Code; (4) no page
+errors. The account has nothing owed (rank-ups and Home unlocks marked shown, What's New seen) - an unlock cutscene at ~12s took
+the bar away and ate the first tap. This build: ALL PASS (19). Against 1dca98e: (1a)(1b)(1c)(1d) fail in all, (2) fails three
+times (2 forced passes each, 4 writes), (3) fails both; (4) passes on both.
+OTHER GATES (one at a time, Chromium 1243 via the 1194 link, load 13-29): check-js ALL PASS; sweep-layout --quick 20/20 clean;
+check-b383-review ALL PASS (10, rerun on the final code); check-b384-laptop ALL PASS (6); check-b384-board2 ALL PASS (24);
+check-b358 ALL PASS (6); check-b384-slide ALL PASS (19); check-sound ALL PASS; check-b384-cutscenes ALL PASS (73); check-b341 (3)
+and check-b338 (4) pass (the band colour); check-b384-browsers ALL PASS (349); check-sync 1 failure, "Find me finds your row"
+(the row is found, the .rank-flash class is already gone when read - timing) - failed the same alone on this build and on 1dca98e
+(which also failed "the mirror is left holding only the code" in that run); 383's notes record it as load-only. The page console,
+laptop and iPhone, both classes, through Profile, the board, Settings, Customize, Review and a hide/show: no page errors, no
+console errors or warnings but the blocked Firebase CDN.
+ONLY A REAL DEVICE CAN CONFIRM: that Safari on his iPhone lays Review out without visible fill-in (WebKit's own content-visibility
+margin and tiling are not Chromium's; the pass and the three-screen look-ahead are engine-neutral) and that the page-still step
+holds on a real fling; how much the Profile character's SVG filter and the emblem's drop-shadow cost per frame in WebKit; the
+iPhone's and a Windows laptop's real tab-switch times (Send tab timings reports them; reading needs the admin tool); integrated-GPU
+costs of the backdrop blurs on Windows.
+
+### Build 384 - every code picture framed like 307.4.2; the tag pill; Enlarge (NOT on main, waiting for Madison)
+Madison (phone screenshots, Fire Code): "Look at the cropped photo. The 307 looks a lot better because it's nicely centered in the
+crop and just looks much nicer. A very careful change so please ensure this done right but all the cropped stuff needs to look that
+good." / "a lot of that crop stuff isn't even rightly placed? That needs to be fixed. The titles and stuff. Everything needs to be
+cohesive too, because some of the cropped stuff if its code runs border to border." / "the word amendments, ifc aren't centered
+perfectly in the little bubble. Please correct this." / "The word enlarge and magnifying glass could look better, the 'view entire
+page' looks amazing, it's perfect. Ensure the enlarge one is just as great, ensure it's centered and edge to edge or whatever just
+make it cohesive and nice." (Coordinator, same round: the Hint's yellow HINT tag is the same kind of pill - one rule for all three.)
+- WHAT IT WAS. The kit cuts a rectangle of the page - a column (28 to the gutter + 4, or the gutter - 4 to 584), a full-width
+  "mixed" stretch (28-584, every chapter/appendix title), a county line's own width + 4pt - and paint() draws it as it lies on the
+  page. The app showed that canvas as it came. Measured over all 1,812 (the kit's paint, before): IFC column clips had their print
+  7.6-57pt from the cut's left and 7.6-33.5pt from its right (307.4.2 happened to be near even, 907.4.2.2 not); chapter and appendix
+  titles are centred on the book's text block, not on the 28-584 cut, so they sat right of the middle with the highlight on the top
+  edge and the last line of the user note on the bottom edge; county pictures had 4pt (about 3px) of paper each side - "border to
+  border". And ifcFitPictures sized with devicePixelRatio while the kit draws at min(dpr, 2): on his 3x phone nothing scrolled, but
+  on every 2x screen (iPad, SE, laptops) a picture over 0.8x the card scrolled sideways - every title and county line cut at the right.
+- THE PICTURE (ifcFrameClips, presentation only; ifc/ifc-viewer.js untouched). After each paint of a cut picture - the answer's
+  code (book and county), the page viewer's Enlarge, the definition shown blurred before the answer, the Hint - the canvas's ink is
+  read off its pixels (ifcInkBox: everything that is not the paper - print, rules, highlight, blur - one getImageData, paper pixels
+  skipped on one 32-bit compare), and the picture is cut to it (a hair of paper kept) and set in .ifc-frame, a box of the paper's
+  own colour with 12px (--ifc-pic-pad) on every side, the canvas centred (margin auto), the box the card's width, never scrolled.
+  * One size rule: a picture no wider than a column (IFC_PIC_COL 250pt) shows at a column's size - the same print size in every
+    column picture, centred with even margins (in a 440 phone's answer card 307.4.2's text is ~24px in from each side, its print the size it was);
+    a wider one (a title with its user note, a full-width table, a county line, a referenced standard) is fitted to the width; never
+    past the size it was drawn at (1.7, the Hint 1.5). In the viewer the picture fills the frame (8px), zoom does the rest.
+  * Change bars (the book's thick bars beside changed lines, sometimes well out in the margin or beside one table row) are kept
+    where they were printed; the TEXT is centred and the same room is left on the other side (ifcBarSide: an upright solid bar
+    1.5-6.5pt wide, 6pt+ tall, 3.5pt+ clear of the text, alone at one side).
+  * Pieces cut from the same window of the same page (the clip's segments, passed in) share one window: a table's caption, rows
+    and notes line up as printed (45 references: 25 table rows, 20 Chapter 80 entries); the group's print is what is centred.
+  * Nothing inked is dropped: the gate checks every reference's shown pixels against the kit's own paint (same count, same colour
+    sum); the highlight stays on the same words; the blurred term and the Hint's hidden number are painted before the trim.
+  * .ifc-page canvases (a whole page: the fallback or a sideways page) keep the old fit (ifcFitPictures now handles only those).
+- THE TAG PILLS: the word is its own block (.ifc-tag-w) trimmed to cap height/baseline (text-box: Safari 18.2+, Chromium 133+;
+  an older Safari keeps line-height 1, where by SF's own metrics the capitals sit within about a hundredth of an em of the middle -
+  unmeasured here), its trailing letter-spacing taken back (margin-right -.08em), even .7rem padding. The Hint's bulb has its
+  viewBox cut to its ink (4.9 1.9 14.2 20.2) at 12px, so the same rule centres it. Measured in the answer card (glyph pixels, dpr 3,
+  mean of six sub-pixel placements): before up to 0.74px high at 375 and 1.13px at 125% text, HINT 0.56px left (1.03px at 125%);
+  now every one within 0.41px, every single placement within 0.51px.
+- ENLARGE: .ifc-links is a grid, repeat(auto-fit, minmax(min(100%, 15.75rem), 1fr)) - two equal halves where the longer label fits
+  half the card (iPad 352/352, laptop 383/383), else both stacked the card's full width (440 phone 326/326, SE 261/261); before,
+  Enlarge was the small one beside a large one on a phone. Same pill, height, padding, type and colour as the page button (which
+  is untouched); the magnifier redrawn in the page mark's 1.9 line with its ink centred in its box.
+- NUMBERS (the gate, every reference, the answer card on a 440 and a 375 phone at dpr 3 - on his 3x phone nothing scrolled before,
+  so these are what he saw): BEFORE 1,409 of the pictures off centre by more than 1px (median 8.1px, worst 142.7px - the Chapter 80
+  entries; the column pictures 20-40px), 366 pieces with ink on or past an edge, 2,003 with a margin under 10px (county 2-3px),
+  top/bottom 0-26.5px. AFTER worst 0.02px, every margin 12px or more, top/bottom 12.0-12.7px in every picture, nothing on an edge;
+  1,795 carry the kit's highlight, every one's pixels identical to the kit's paint.
+- PERFORMANCE: the framing step is one getImageData plus a scan and a copy: median 19.9ms, worst 31.6ms a picture here (Chromium,
+  sandbox load ~20 on 4 cores) against a median draw of 112-152ms; the draw from open to shown measured median 112ms with it and
+  103ms on the build before (same sweep, same machine - within the noise of the load). Most pictures are drawn ahead, in idle time,
+  before "Show the code" is tapped (ifcDrawAhead), so the open itself is not slower.
+- GATE tools/check-b384-ifccrop.py (PDFJS_DIR + IFC_BOOK; SKIPs without them; book through Load my IFC PDF; dpr 3; --sample N,
+  --ids, --only, OUT_JSON): (1) every reference at the answer card's width on a 440 and a 375 phone: (1a) no ink on/past an edge,
+  (1b) print centred within 1px (bar set aside, same-window pieces as one), (1c) margins 10px+, top/bottom 10-16px everywhere,
+  (1d) the box the card's width, (1e) GUARD the kit's pixels exactly; (2) GUARD the 42 blurred definitions and 8 Drill Hints hold the
+  kit's blurred pixels exactly, framed; (3) a flash card and Enlarge show it framed; (4) the three pills within 0.5px; (5) Enlarge
+  and the page button one family; (6) the framing's cost; (7) no page errors.
+- GATES RUN (one at a time, load ~16-25 from other sessions): check-b384-ifccrop with PDFJS_DIR + IFC_BOOK, every reference
+  (1,812), ALL PASS; --against 39d5b0c (the start): (1a) 366 pieces with ink on or past an edge at 440, 434 at 375; (1b) 1,409
+  pictures off centre at 440, 1,408 at 375; (1c) 2,003 pieces with a margin under 10px at each width; (1d) 7 county Finder
+  pictures narrower than the card; (2) both, (3) both, (4) (375: 0.74px high; 125%: 1.13px; HINT 0.56-1.03px left) and (5) (iPad
+  285/418, laptop 316/449) FAIL; (0), (1), (1e), (7) pass on both (guards). check-js ALL PASS; check-b383-ifcbook
+  (book) ALL PASS; check-b384-ifc542 (book) ALL PASS; check-b384-podium-hint (pdf.js) ALL PASS; sweep-layout --quick 20/20 clean;
+  check-b382-test (pdf.js; Enlarge fitted 0.92, the two pills) ALL PASS; check-b384-codeopen (book; drawn ahead, no task over
+  50ms after the tap) ALL PASS; the console in both classes: no page errors, only the blocked Firebase CDN.
+  Not mine, the same on 39d5b0c: check-b383-flashcards fails 9 (its first tap on the card does not turn it, the rest follow one
+  step late) - identical on the start build; check-b383-ifcbook runs the same flows with the book and passes. check-b333 stops
+  in its harness (KeyError 'g', before the app loads). ifc/ifc-viewer.js is byte-identical (md5 36419cb2...), so the kit's
+  acceptance test was not re-run.
+- CONTACT SHEETS (book pages: scratchpad only, never the repo): .../scratchpad/ifccrop384/contact-sheet-before-after.png and
+  pair-<id>.png (307.4.2, 907.4.2.2, Chapter 5, Chapter 65, Appendix H, county 102.7, Table 1004.5, Table 907.5.2.3.2, two
+  definitions, 314.4 with change bars, a long section, a Chapter 80 entry, the Hint), 440 wide at deviceScaleFactor 2.
+- ONLY HIS PHONE CAN CONFIRM: no seam where the canvas meets its frame (the frame's colour is the canvas's own paper, both sRGB -
+  Display P3 handling is the phone's); text-box on Safari (18.2+) and SF Pro's own bearings in the pills (measured with Inter);
+  getImageData's cost on the phone's GPU-backed canvas (the framing measured 20-32ms here under heavy load); the smaller print of
+  the fitted wide pictures on a 2x screen (they used to scroll there) - Enlarge is beside each.
+### Build 384 - the stuck zoom, the tab bar, Sign out's buttons, the sync code's copy, Save it on a laptop (NOT on main, waiting for Madison)
+Madison, on the live 383: "For some reason, when I first logged into nova signing in, the screen was zoomed in? Fix this as
+well." / "The bottom tab is glitching right now, it's showing up in the middle of the screen of review and the unit selection
+screen and stuff. Some other stuff is weird and glitched like when paused the box is glitched and is showing at the top?" /
+"The copy button to how the friend button has, the sync code needs that same kinda button as well." / "When you sign out the
+buttons overlap as well." / "Why did my laptop do a weird thing when I selected save code by the way?" / "We need a full check
+of the entire app to ensure everything is running perfectly".
+
+THE ZOOM - MEASURED, THEN FIXED
+- WHY IT ZOOMED: at his 85% page zoom (518 CSS px on a 440pt screen) the sign-in code field and sign-up's username field
+  computed 17px = 14.4px ON THE GLASS, under iOS's 16, so iOS zooms the page the moment the field is tapped. The page-zoomed
+  floor (build 199: html.page-zoomed ... font-size:var(--field-floor) !important, specificity 0-8-2) is there for exactly this,
+  but since BUILD 382 ("the sign-up steps in the Settings look") those two fields carry `font-size:17px !important` in a rule
+  with #stage in it (`html[data-layout] body #stage > :is(.synccode-entry-panel, .onboarding-shortform-panel)
+  .onboarding-input-wrap > input.searchbox`, 1-4-3). Two !important declarations are settled by specificity; the field's rule
+  won. Every other field was already 16px+ on the glass (26 fields on 13 screens in the academy, 15 on 8 in Fire Code; at 440,
+  at 518 installed and in a tab, and on an SE). Present in 382, the live 383 and 384; not in 381. (The 1.15 CSS zoom on the
+  sign-up panels is a laptop-only rule - not a phone cause.)
+- WHY IT STAYED ZOOMED - nothing ever gave it back:
+  - Sync This Device replaces the screen under the focused field; a removed element is not blurred, so no focusout, and the
+    focusout unwind never ran from there;
+  - the keyboard's unwind (visualViewport resize) asked keyboardGone() = visualViewport.height >= innerHeight - 40. Under a held
+    zoom the visual viewport is smaller BY THE ZOOM (1125/1.18 = 953 < 1085): "the keyboard is still up" for as long as the
+    zoom lasted, so resetStuckZoom() was never reached that way;
+  - nothing looked at boot, pageshow or a return to the app (a reload - Sign out, a class switch - can carry a scale back);
+  - resetStuckZoom() lifted its maximum-scale=1 clamp after two frames. Safari applies a viewport change in its own process,
+    not in the frame it is written, so two frames may be a clamp it never sees (a reading, not a measurement - the phone has to
+    say). Two calls within two frames could also read the clamped content as "the original" and put it back last, leaving
+    maximum-scale=1 in place for good (pinch-zoom taken away).
+- WHAT A HELD ZOOM DID: everything placed against "the screen" was placed against a viewport that is not the one on the glass.
+  Pause's card: centerPauseStack() centred it on visualViewport.height / 2 measured from the LAYOUT viewport's top - the top of
+  what is showing once the zoom has panned down to the field. Measured with the zoom held at 1.5 and the visible part 240px down
+  the page: the card's middle at 391 against a visible middle of 559 on a Pro Max (518: 402 vs 615) - "the box ... showing at
+  the top". The tab bar under a held zoom: a fixed bar is laid on the layout viewport, which iOS moves on its own terms while
+  zoomed (and while the keyboard is up) - so it shows part way up the glass. Chromium cannot reproduce where iOS puts it; what
+  is fixed is that the app now asks for the zoom back (below).
+- THE OTHER SUSPECT, RULED OUT: a transformed / filtered / contained / will-change ancestor of #bottomtabs or Pause (it would
+  make the "fixed" bar sit on that ancestor - mid-screen on a short one). Sampled EVERY FRAME for 1.2s after every transition -
+  Start Studying, Review's units, the units scrolled 700px, Review's list (and scrolled 2,500px), Review paused / resumed, Home
+  by the tab, the Drill's units, a question (from the moment it is up), paused, resumed, paused again - on 383 and 384, at 440
+  and 518, installed and in a Safari tab, both classes: no such ancestor in any frame, the bar's foot at the screen's foot,
+  Pause in the top band. In the CSS no rule puts a transform/filter/contain/will-change on html, body, .wrap or #stage. So it
+  is not a containing-block bug Chromium can show.
+- THE FIX:
+  - the floor out-ranks every field rule: `html.page-zoomed:not(#nz1):not(#nz2):not(#nz3) input...` (3-8-2; a :not(#id)
+    matches everything). At 518 the code field is 20px CSS = 17px on the glass. At 440 nothing changes (the class is not set).
+  - unwindHeldZoom(): a held scale (visualViewport.scale > 1.01) with no text field focused is asked back at boot, on load, on
+    pageshow, on visibilitychange to visible and on every screen change (#stage's children), each 4 times over ~900ms. At
+    scale 1 it writes nothing (measured: 0 viewport writes); with a field focused, nothing.
+  - resetStuckZoom(): never under a focused field; one clamp at a time; held until the scale reads back or 400ms (a 460ms
+    timer for a hidden page, which runs no frames), then the AUTHORED content put back - never a copy of a clamped one.
+  - keyboardGone() in the layout's pixels (visualViewport.height x scale).
+  - centerPauseStack() centres on what is showing (the visible part's top + half its height; at scale 1 its top is 0, so
+    nothing moves) and is placed again on the visual viewport's resize (a zoom being given back).
+  - NOT brought back: a viewport swap on every focus ("THE VIEWPORT CLAMP IS GONE"). Pinch-zoom stays: the clamp exists only
+    while a held scale is being given back, and a zoom pinched on a screen stays until that screen is left.
+
+THE SYNC CODE'S COPY: Settings > Sync's "Your sync code" has Manage friends' copy button beside it. buildCopyIconButton() is
+the one builder for both now (class friend-copy-btn: 46.4px round, #0A0A0C, the two-squares glyph; a tap copies, the glyph turns
+to the green tick for 1.4s, a toast says so; aria-label "Copy your sync code"). It stands beside the code's well, centred on it
+(0.0px off), outside the row that shows and hides the code - so it copies whether the code is showing or not and never reveals
+it - and copies shownSyncCode() (Fire Code's included: never the account's "__ifc" name). Below 22rem (a 320px phone) the code
+steps down to 1.4rem to stay on one line. Both classes.
+
+SIGN OUT'S BUTTONS: "Save my code" and "Sign out" had NO gap: the pop-up's .next is margin:0 and only the ghost buttons took
+.6rem. 0px at every size measured - Pro Max installed and in a tab, 85% installed and in a tab, SE, iPad, laptop, both classes -
+the white Sign out flush on Save my code with its shadow over it. Now any two adjacent buttons in a pop-up sheet are .6rem
+(9.6px) apart, and a label that wraps grows its button. Save my code says "Copied your sync code..." (green) when it copies.
+
+SAVE IT ON A LAPTOP: saveSyncCodeVia() used navigator.share wherever it exists. Chrome and Edge on Windows have it - it opens
+the Windows share dialog over the app: the "weird thing". On a computer (a2hsDeviceGuess() === "computer": not an iPhone, an
+iPad (iPadOS's Mac user agent with touch points) or Android) Save it copies the code (copyTextQuietly: the async clipboard,
+then execCommand) and says "Copied your sync code. Paste it into a note or an email to yourself to keep it."; Settings' row
+reads "Copy it, to paste into a note or an email" there. A phone or tablet keeps its share sheet. The old clipboard fallback
+copied the raw syncCode ("XXXX-XXXX__ifc" in Fire Code); every copy is shownSyncCode() now, and the save-code card shows it.
+
+THE FULL CHECK (tools/check-b384-walk.py): 37 screens in the academy, 33 in Fire Code (its bar is Home, Profile, Stats,
+Settings), on 7 devices. It found one more thing, fixed: Pause's "Save and exit" was cut to "Save and exi" on an iPhone SE (the
+card's pair of buttons went to one column below 360px; 375 needs it too) - one column below 400px now. Looked at, not changed:
+on an iPad and a laptop the tab bar's Profile and Leaderboard tap areas share 5-7px (their words and icons are well apart);
+on an SE in Fire Code a 6-row progress meter (88 questions) pushes Pause's card below the middle (it stays under the meter, by
+the 297 rule).
+
+FIND ME, ON THE WAY (check-sync): Find me's flash came off the row a moment after the tap - its `animationend` listener (once)
+took ANY animationend that bubbled up, and a character or flare in the row finishing its .24s fade-in (lb-art-in) is one. Racy:
+it failed twice running here and passed on the build before. Both of the flash's listeners (Find me's and the row builder's) now
+take only rank-flash-anim's own end on the row itself.
+
+GATES (Chromium 153, one at a time):
+- tools/check-b384-glitches.py (new; sections fields zoom place copy signout save; --against REV|DIR): this build ALL PASS
+  (179 checks, 83 [fix]). --against 34765be: 79 FAIL - every [fix] that is reached fails (63; the copy section stops at "no copy
+  button"), and the two guards that also failed there were about changed behaviour and are [fix] now (a zoom given back when a
+  field is left - 383's two-frame clamp is not long enough in the model; a wrapping label in Sign out's sheet still 0px).
+  --against 42bbffa (the live 383): 78 FAIL, all [fix]: the live build has every one of these problems (the field under 16px on the glass at 85%, nothing that gives a held zoom back, Pause off the middle of what is showing, no copy button, Sign out's 0px, Save it sharing on a laptop). One [fix] passed there by chance (a screen change on the simulated 85% phone: a 383 two-frame clamp happened to last past the model's 150ms while the harness ran slow frames).
+  THE MODEL IN IT: Chromium cannot zoom on a field or give a scale back to a viewport clamp the way Safari does. A real held
+  scale is Chromium's page scale set from outside (Emulation.setPageScaleFactor) and panned by a scroll gesture; it proves
+  what the app asks for (the clamp, when, never under a field, never at scale 1). Safari's answer is simulated: a visual
+  viewport held at a scale that comes back to 1 once the viewport has been clamped to maximum-scale=1 for 150ms (the 150ms is
+  the model's assumption). (A synthesized pinch does not take on this app: body is touch-action:pan-y.)
+- tools/check-b384-walk.py (new; devices as arguments; --against): this build ALL PASS - 7 devices x 2 classes, 37 screens in
+  the academy and 33 in Fire Code each. --against 34765be: FAIL on the SE in both classes ("Save and exit" cut off), every other
+  device and screen passes there too. Self-test: a transformed .wrap injected on the units screen and Review's list fails it
+  (the bar "at 2401-2480 of 956", off the screen).
+- check-js ALL PASS; the page's console in both classes (and signed out), an iPhone and a laptop: nothing but the blocked
+  Firebase CDN; sweep-layout --quick 20/20 clean; check-b382-ios ALL PASS; check-b384-settings ALL PASS; check-b384-hairlines
+  ALL PASS; check-b384-friends ALL PASS; check-sync ALL PASS (121) - its "the sync section is not a pile of buttons" count is 4
+  now (the copy button, on request); check-b382-savecode ALL PASS - its desktop context at a phone's size is told it is a phone
+  where it checks the share sheet (a computer copies now).
+- check-b383-signup: 2 FAIL - "[guard] phone/ipad after Nova, the main menu's tips run over Home"; the same two fail on
+  34765be (with two more there). Not this round's area (sign-up / Nova's walkthrough); left for that session.
+
+ONLY HIS PHONE CAN CONFIRM: that iOS no longer zooms on the sign-in field at his 85% page zoom (20px CSS = 17px on the glass
+here); that Safari gives a held scale back to a maximum-scale=1 clamp held up to 400ms (the mechanism the app has always used -
+the 383 version lifted it after two frames); where iOS puts a fixed bar while zoomed or while the keyboard is up; the copy
+button's clipboard on iOS; that the share sheet still opens on the iPhone and iPad, and that Windows Chrome/Edge copy instead of
+opening the share dialog.
+SCREENSHOTS (scratchpad glitch384/, deviceScaleFactor 2, -before383 = the live build, -after = this one): 1 the sign-in field at
+518 wide; 2 Pause under a held zoom (1.5, panned 240px) - 383 leaves the card at the top of what shows, cut off; this build asks
+for the zoom back as the screen changes and Chromium gives it; 3 Settings > Sync in both classes, and after a tap on the copy
+button; 4 Sign out's sheet on a Pro Max, an SE and a laptop; 5 Save it on a laptop (with navigator.share present): copied, 0
+share calls. (Headless Chromium has no navigator.share, so its phone shots read Save it's "Copy it" line; an iPhone reads "Send
+it to Notes or a message to yourself".)
+
+
+### Build 384 - Fire Code open to everyone, and at sign-up (NOT on main, waiting for Madison)
+
+Madison: "everyone is gonna get the button" / "almost every single new account will be signing up and enrolling into fire
+code from the beginning" / "Don't get confused, everyone is gonna get the button, but only these people will get banner that
+it's available ... new accounts won't get the banner" / "a fire code only person can enroll into the police academy class if
+they wanted to for whatever reason. No reason to stop them." / "Ensure that it has two types, new accounts, and existing
+enrolling into an additional class. That would go for any class." / "at the end of it, it didn't let me hit continue, I had to
+hit skip to get past it." / "After verified shouldn't it say success ... Like it could say enroll and get started" / "Ensure
+the class button gets a tool tip as well." / switching classes: the other class's theme and character showing, a minute on a
+black screen, the colours to change on the loader, a welcome-back banner.
+
+THE ACCOUNT'S CLASSES (accountClassesOf / enrolledClasses / setEnrolled)
+- New persisted field `classes` on the academy's copy (the account's identity lives there; Fire Code reads it from
+  NOVA_ACADEMY_RAW and each newer cloud copy - pickAcademyCopy - and never writes it). null (applyLoadedData's default and the
+  store literal) = an account from before 384 = the academy's. The owner (CLASS_OWNER) also counts as in Fire Code, as before
+  (his enrolment was the device's). mergeSameAccount unions two said lists (null adds nothing); accountAhead counts a class one
+  copy has and the other lacks; mergeLeavingAccount unions; wipeLocalProgressAndSettings resets to null.
+- class26e.enrolled is only a mirror now (setEnrolled writes it; the sign-out keep list still keeps it).
+- The head script: Fire Code only for an account whose copy says it is in Fire Code; an account in Fire Code ALONE opens in
+  Fire Code whatever activeclass says (activeclass is set), unless the page arrives from the class button into the academy
+  (NOVA_CLASS_ARRIVE.to === "academy": a join, or a device whose copy has not heard of a join elsewhere). The academy page
+  records the class on arrival (setEnrolled) - and a join sets greet.academy pending.
+- classSwitchAllowed: every account that has signed up (academy) / every page in Fire Code. switchClass refuses a class the
+  account is not in (but takes opts.join into the academy). watchOtherClassSocial and the boot fold of Fire Code's friends
+  block: every account in Fire Code, not the owner's alone (foldSocialFrom still takes only the same publicId's copy).
+- The academy's board: pushLeaderboardRow / flushLeaderboardRow / writeLeaderboardRow write nothing for an account not in the
+  academy (academyMember). A Fire Code-only account that joins the academy gets its row from then on.
+- academyHomeBarred / enterAccountClass: whatever brings an account in Fire Code alone to the academy's Home (sign-in with its
+  code, the #k= launch address, Settings' Link this device) opens Fire Code instead, welcomed back there (the switch's note).
+- Fire Code's Sync page: an account not in the academy is told what everybody is ("Keep this somewhere off this phone...")
+  instead of "The same code as your Police Academy account".
+
+SIGN-UP (showClassSelection, showIfcEnroll({signup}), startIfcSignupHere, novaSignupCreate, ifcSignupOwed)
+- The class step offers both classes as cards (each picked/unpicked by a tap, Continue while one is picked) and More classes.
+  Picks are remembered (class26e.signuppick) so the class step comes back with them, this launch and the next.
+- Continue asks to confirm, naming the picks ("Enroll in Fire Code?" / "Enroll in Police Academy and Fire Code?"); with Fire
+  Code picked the book comes next: Fire Code's enrol screen (Back = the class step), Choose my IFC PDF, the same check. All of
+  it before anything of the account exists - leaving costs nothing, strands nobody.
+- Fire Code ALONE: GENERATING PROFILE, then Nova's first half in this page over an empty stage (never the academy's Home):
+  hello, the name, a partner (the starters, the same in both classes; no academy crew under them), the code and its card,
+  "Now let's open Fire Code" (Open Fire Code). The account is made on the partner's pick with classes ["ifc"], greet.ifc done,
+  class26e.signupnext {pid} set (a SHARED key). The app opens Fire Code; its first visit seeds from the academy copy; Nova's
+  second half plays there (Welcome to Fire Code, the code with every question, his story, Fire Code's flares, chapters'
+  badges, Fire Code's crew, three ways to train - no Mock - the friend line); the marker is cleared as he ends (a relaunch
+  before then plays it again). Then the tips on Fire Code's Home, +100 XP (Fire Code's store), Add to Home Screen, "You're
+  enrolled in Fire Code", his good-luck message in Fire Code's chat. The What's New mark is set at INTRO_REV as the account is
+  made (markIntroSeen), so neither class shows the card.
+- BOTH: lands in Police Academy (the full sign-up as it is; then "You're enrolled in Police Academy and Fire Code" / "Switch
+  classes with the class button"), greet.ifc pending: Fire Code greets them the first time they open it. Why the academy: each
+  class then gets its welcome; landing in Fire Code would have left the academy with none.
+- An existing account joining the other class gets Nova's SHORT greeting (no introduction, no name/partner asked): Fire Code's
+  (ifcGreetingLines) and now the academy's (academyGreetingLines - for a Fire Code account joining it). Both say the class keeps
+  its own rank, level, badges and progress, what differs, and that the class button switches.
+
+THE BOOK'S SUCCESS (runIfcAnalysis finish): "Success", "Your IFC PDF is referenced. It is the 2021 International Fire Code ...
+It is kept on this device." Buttons: Enroll and get started (the class list: enrols on the tap, then opens Fire Code),
+Continue (sign-up), Done (the book loaded again inside the class). Enrolling is the tap now, not the check.
+
+LAST LINE ALWAYS ENDS (novaTalk): the live bug - Fire Code's greeting's last line was not marked final, so its Let's begin
+never showed and a tap had no next line; only Skip closed it. novaTalk now treats the last line as final whatever it says
+(and the greetings mark theirs).
+
+THE NEW CLASS BANNER (NEW_CLASS_INVITES): first 16 hex of SHA-256(publicId), six hashes (the owner and five classmates; the
+owner's checked against CLASS_OWNER). crypto.subtle; fail closed. Only in the academy, for a listed account NOT in Fire Code
+(so the owner, being in Fire Code, never sees it), once per device (class26e.newclass.ifc, kept through a sign out), on Home
+when nothing else is up (polled, like Add to Home Screen's sheet); the class button pulses with it (has-new) until the class
+list is opened. Tapping it opens the class list (showDailyAlert's passive banners take onTap now: .is-tap). New accounts mint
+ids that are on no list.
+
+THE CLASS BUTTON'S TIP: (a) a new account's tips have a step on it ("Your classes. Tap here to switch between your classes or
+join another one.") - classButtonTipStep, above it on an upright phone, below elsewhere; (b) an account from before it gets one
+tip on its own (maybeClassButtonTip): TOUR_REV 4 re-arms it (seenClassTip false; the Profile tips only below 3), new persisted
+field seenClassTip (default: seen when onboarded, like the other tours; set at sign-up; OR-merged in mergeSameAccount and
+mergeLeavingAccount), in the academy, after What's New has closed and when nothing else is up (not under a banner), set as it
+shows. Gate fixtures with tourRev 99/999 never see it.
+
+EACH CLASS ITS OWN LOOK
+- Theme: Fire Code's first visit no longer copies the academy's colour (the settings still come across). themeAccentFor: a
+  colour this class has not unlocked (isLockedAccent - rank colours are per class) is shown as the default and HELD (saveTheme
+  writes the pick back; a rank read low before the cloud merge never costs a colour); Fire Code's copy of the academy's colour
+  (equal to it) is not held. applyTheme keeps the shown colour per class (class26e.accentshown): the splash reads it first, and
+  the class switch's loader reads the target's. class26e.statusbar.v1 is per class now (out of SHARED).
+- Behaviour settings (sound, haptics, swipe, auto-advance, reduce motion, banners) stay as they were: each class's own copy of
+  store.theme, seeded once from the academy at Fire Code's first visit; the device keys (soundon.327, swipeon.288, safarisound,
+  shuffleon) stay device-wide.
+- Character: the first visit takes the academy's only if Fire Code has it unlocked (else Fire Code's first starter,
+  classDefaultCharacter). ifcLookCheck: in Fire Code a locked character goes to the first starter - at launch only when it is
+  the academy's own character (the leak), and any locked one once the cloud copy is merged (markCloudConfirmed; build 246's
+  rule: a feat read late never costs a character). The academy is untouched.
+
+SWITCHING
+- The loader starts in the class left's colours and turns to the class opened's (--csw-c1..3, registered colours, CSW_TINT_MS
+  1400 from the tap; "ink" set as such); the head script's arrival picture and the splash carry the change on (class-arrive-tint,
+  a negative delay). Its bar creeps on (csw-creep: 68% at 1.7s, 78% at 4s ... 96% at a minute) instead of holding at 68%;
+  the arrival picture and the splash continue the same curve (csw-finish fills from there). NOVA_CLASS_ARRIVE lasts two
+  minutes (a slow reload). The loader gives the screen back after a minute, not 8s.
+- THE MINUTE ON BLACK, found: measured with a disk cache as a phone has (a persistent profile; an in-memory context will not
+  cache the 9.4MB page), 4x CPU, slow 3G (500 kbps, 2s round trips): the reload's page is a 304, but Fire Code's question bank
+  (ifc/bank.js, 1.4MB, loaded only by Fire Code) downloaded whole on the first switch into it - 25s of a 33s switch, under the
+  splash. warmIfcBank: an account in Fire Code fetches it in the academy, once a launch, 6s after Home (idle), and at once when
+  the class button is opened. After: the same switch 7.5-9.4s, nothing over 50KB fetched. Cold cache (the page itself evicted
+  or a new build): 9.4MB at 500 kbps is ~2.5 minutes, at 9 Mbps ~8s - only the loader (now never still) can cover that.
+- Nothing on the new Home moves after it shows (0px over 5s, both ways, measured).
+- "Welcome back to Fire Code" / "Welcome back to the Police Academy" (maybeSwitchWelcome): an arrival by the class button, not a
+  first enrolment, join, sign-in or sign-up; once; on Home when settled and nothing else is up.
+
+GATE tools/check-b384-classes-open.py (sections ifconly, newdevice, join, both, existing, banner, tip, switch, finals; ONLY=):
+- This build: ALL PASS (54 checks, the full run on the rebased build). Against 5d9798a: 50 FAIL; the four that pass on both are the
+  "no page errors" guards (11b, 16d, 18d, 17b). The switch section against 5d9798a with the owner's id (so 383's rule lets it switch):
+  Fire Code in Silver and wearing Void, no colour change on the loader, ifc/bank.js downloaded whole (1.46MB: 35.0s to Fire Code
+  against 10.2s here; the academy 18.3s against 9.2s - slow 3G, 4x CPU, the sandbox at load 13-21), the bar held at 68%, no
+  welcome-back banner: (19)-(23) FAIL; (22c) "nothing moves after Home shows" and (23b) hold on both (guards).
+- Measured, same setup, unthrottled network: 7.5-11.4s each way at 4x CPU under this load (the 2.5s splash floor plus the 9MB
+  page's parse); at 1x 3.9-6.2s. Nothing on the new Home moves after it shows (0px over 5s), layout shift 0-0.001.
+OTHER GATES, one at a time: check-js ALL PASS; check-b381-class ALL PASS (its Safari case had found Add to Home Screen's Quick tip
+coming up over the open class list - a2hsBusy now waits while the list is open or a class is opening); check-b383-classes 14 pass,
+(5) ifc's recap fails identically on 5d9798a; check-b383-ifcsync ALL PASS; check-b382-ifc 56 pass + "Profile has no Stats tab"
+(known, fails identically since 383); check-b384-signupclass ALL PASS; check-b384-a2hs iphone/samsung/desktop/installed/clip ALL
+PASS (68) - its settings section waits for Welcome where Get Started now opens and fails identically on 5d9798a; check-b383-signup
+signin/had/signout/icon/settings ALL PASS (50), fresh ALL PASS (50) with a 480s walk budget (the 120s budget runs out under this
+load, as noted in 384's Add to Home Screen round); check-b382-firstrun ALL PASS (123); check-sync 119 pass, "Find me finds your
+row" (the known race); check-b384-cutscenes ALL PASS (73); check-b384-whatsnew10 ALL PASS; check-b384-a2hstip ALL PASS;
+check-behaviour check_b289 ALL PASS; check-b384-board2 (1) ALL PASS (no blank frame across a switch); check-b384-friends ALL PASS;
+check-b328-classes 13 pass + "academy's saved copy byte-for-byte unchanged" (fails identically on 5d9798a); sweep-layout --quick
+20/20 clean; the page console in both classes (fresh, academy, both, Fire Code alone): no page errors, only the blocked Firebase
+CDN.
+OLD GATES CHANGED FOR MADISON'S NEW RULE: check-b382-firstrun F and check-b328-classes' classmate (another account has the class
+button now; Fire Code still refused to it by the device setting alone); check-behaviour's "tourRev 3 arms the Profile tips"
+reads TOUR_REV >= 3 (it is 4).
+MEDIA (scratchpad classes384/, made-up names and codes): fireonly-signup-440x956.mp4 (Get Started to Fire Code's Home, 3.5 min),
+newclass-banner-440x956.mp4, switch-to-firecode-440x956.mp4, switch-to-academy-440x956.mp4.
+
+PHONE ONLY: the colour change and the bar on a real reload (iOS keeps the old page's last frame until the new one paints);
+the real network for the bank's warm-up and a 304; crypto.subtle on the live https page; the file picker for the book at
+sign-up; Safari's @property support (16.4+; older steps the colours).
+
+### Build 384 - centring, measured by the ink: every pill and button, and check-centering.py (NOT on main, waiting for Madison)
+
+Madison, after yet another off-centre pill: "ensure the still here is also centered cause I can tell it's slightly off. You
+need to do a full check on the entire app to ensure there's nothing else like this whatsoever. I've been asking you to fix
+this off centering problem over and over and over. It's a waste of time, we need a permanent fix so you don't allow it to
+happen again." ("the still here" is read as Get Started's new "Sign in" pill at the top right, added the same day; it is
+trimmed onto its capitals with everything else below.)
+
+**AFTER ANY CHANGE TO A SCREEN: `python3 tools/check-centering.py --quick`** (iPhone 17 Pro Max 440x956, both classes,
+~6-7 min; fails naming the element, its words, the screen, class and size, and by how much). `python3
+tools/check-centering.py --jobs 3` adds the SE, the iPad Pro 11" and a 1536x864 laptop. It supersedes
+tools/check-ink-centre.py (327: text controls only, on fewer screens, with an emulated pixel ratio - see lesson 1).
+
+HOW IT MEASURES (tools/check-centering.py; the half that runs in the page is tools/check-centering.js):
+- Walks 127 screens per class (sign-up and Get Started, Home and its class list, modes, units in every mode, a test, its
+  answer and Pause card, results, Review, history, flash cards, Profile, Stats, Customize, ladder, badge case, Friends,
+  the boards, Calendar, Settings and every page, classes, chat's three tabs, Virtual Room, the sheets, banners, notices,
+  a toast, the tips), each top to bottom (6 steps at most).
+- A candidate is anything that draws a shape (its own fill / rim / glass, or a pseudo-element's) with words or an icon in
+  it. Not asked: content laid out from an edge (list rows; two lines set from the left; a row with a picture in it), a
+  card holding its own button, a track of several controls, the tab bar's tabs up-down (their words share one line on
+  purpose; across they are asked, the lit one against the slider's pill), pictures (a character, a flare, an emblem - their
+  visible box stands in), Home's and Welcome's orbit planets, the case's drawn latches. The OWNED list in
+  check-centering.js lists-but-does-not-fail elements another session owns (now: the Fire Code code pictures' tag pills).
+- Ink = a screenshot as drawn vs with the content hidden: the words by -webkit-text-fill-color only (nothing drawn in
+  currentColor changes), then everything. Edges to a fraction of a device pixel (half-coverage crossing). Words are
+  measured top to BASELINE (descenders do not count); a word with a capital and an ascender or i-dot on its capitals (1cap
+  above the baseline), as text-box trims it and a typesetter centres it. Waits for entrance animations to end, pauses
+  what never ends, re-reads anything that changed or moved while measured, lists what never held still. Fails on > 0.5px
+  (> 1px for a shape over 120px wide).
+- CHROMIUM LESSONS, each of which gave a wrong answer before it was found (measured on test pages):
+  1. With only an EMULATED pixel ratio (Playwright's device_scale_factor), Chromium draws a line of words and an <svg> at
+     a position rounded to a whole CSS pixel - up to 0.5px off, varying with where the element happens to sit; a phone
+     rounds to a device pixel. The gate launches Chromium per size with --force-device-scale-factor=<dpr> (screenshots at
+     scale 1, already device pixels), and then it rounds as a phone does. Every older gate that judges sub-pixel positions
+     with an emulated ratio (check-ink-centre included) carries up to half a pixel of this - several "fixes" made from its
+     numbers in earlier rounds were answers to it (see csi-label and Enroll below).
+  2. Canvas measureText rounds glyph extents to whole pixels: CSS 1cap on a probe gives the true capital height.
+  3. The layout's baseline (Range rect + ascent) can be 0.5-3px off the drawn one (a trimmed line reports its trimmed
+     box): the baseline is read off the pixels (where the stems end; a 4's crossbar is not mistaken for it).
+  4. An <svg>/<img> is drawn at its box rounded to a device pixel: that rounding is taken back out of the icon's ink.
+  5. Every size is measured at 3x (an iPad draws at 2x): the layout is the same in CSS pixels, and 2x only adds its own
+     half-pixel rounding to the reading.
+
+WHAT WAS OFF, AND THE CURE - all in ONE block at the very END of the stylesheet ("BUILD 384: CENTRING, MEASURED BY THE
+INK"); no other line of index.html changed. Measured with the final gate on c071343 (claude/b384 before this work) and
+after, iPhone 17 Pro Max 440x956 at 3x (+ is right / low):
+| Element | Words | Size | Off before (px; + right/low) | After | Cure | Class |
+|---|---|---|---|---|---|---|
+| Virtual Room rooms - Couldn't load card | Couldn’t load th | 400x58 | y +3.97 | y -0.03 | the hint's 8px top margin removed | academy,ifc |
+| Units - Start pill | Start | 94x64 | x +2.38 | x -0.06 y -0.05 | icon and word translated -.177em (2px) | academy,ifc |
+| Units / results - mode chip | GAME | 89x31 | x -2.27 | x +0.01 y -0.07 | padding moved (.104rem; results .07rem); Game +.6px | academy,ifc |
+| Save-code card - the code | TEST-3843 | 364x62 | x -2.20 | x -0.30 y +0.00 | padding-left +.12em (the letter-spacing) + trim | academy,ifc |
+| Pause card - Quit test / Save and exit | Quit test | 151x50 | x +1.94 | x +0.26 y -0.13 | 1.7px of padding moved | academy,ifc |
+| Chat - count in a tab | 1 | 16x16 | x -1.94 y -1.67 | x -0.09..+0.14 y -0.10..-0.00 | trim, a block the disc's size | ifc |
+| Units / results - mode chip | DRILL | 88x31 | x -1.90..-1.29 | x -0.23..-0.18 y -0.09..+0.00 | padding moved (.104rem; results .07rem); Game +.6px | academy,ifc |
+| Virtual Room - game chips | Tug of War | 117x29 | x -1.90 | x +0.10 y -0.09 | content translated (Race .66, Tug 2, Battle -.55px); words trimmed | academy,ifc |
+| Units / results - mode chip | MOCK | 91x31 | x -1.88 | x -0.21 y -0.05 | padding moved (.104rem; results .07rem); Game +.6px | academy |
+| Units / results - mode chip | REVIEW | 103x31 | x -1.64 | x +0.02 y -0.22 | padding moved (.104rem; results .07rem); Game +.6px | academy,ifc |
+| Pause card - Quit test / Save and exit | Save and exit | 151x50 | x +1.50 | x -0.18 y -0.16..+0.10 | 1.7px of padding moved | academy,ifc |
+| Virtual Room - Match settings | Match settings | 178x62 | x -1.50 | x -0.43 y -0.34..-0.20 | label and arrow translated 1.1px | academy,ifc |
+| Re-add notice - the code | TEST-3843 | 135x35 | x -1.49 | x -0.27 y -0.04 | .07em of padding moved + trim | academy |
+| Re-add notice - the code | TEST-3843__ifc | 198x35 | x -1.41 | x -0.19 y -0.04 | .07em of padding moved + trim | ifc |
+| Stats - Virtual Room empty icon | (icon) | 41x41 | x -1.28 y +0.48..+0.57 | x +0.09 y -0.13..-0.03 | icon translated 1.38px, -.54px | academy,ifc |
+| Profile - reward tiles | Theme | 173x89 | y +1.05..+1.18 | x -0.06..-0.02 y -0.05..+0.08 | padding moved up 1.2px | academy,ifc |
+| Units - Select all | Select all | 114x44 | x -1.16..-0.99 | x +0.06..+0.14 y +0.00 | 1.1px of padding moved | academy,ifc |
+| Sign-up steps - round back | (icon) | 44x44 | x -1.03 | x -0.01 y -0.01 | chevron margin removed, .25px | academy,ifc |
+| Test / Review - star button | (icon) | 44x44 | y -0.92..-0.51 | x -0.11..-0.02 y -0.35..+0.12 | the star (not its ring) moved .45 of 24 down | academy,ifc |
+| Settings - Study / Motion tiles | (icon) | 32x32 | x -0.61..-0.00 y -0.14..+0.71 | x -0.35..+0.34 y -0.47..+0.42 | icon translated (Study -.5px up, Motion .61px) | academy,ifc |
+| Add to Home Screen - step numbers | 2 | 24x24 | y -0.69..-0.61 | x -0.17..+0.05 y -0.17..+0.17 | trim, a block the disc's size | academy,ifc |
+| Classes / sign-up - Enroll, Select, Enrolled, Selected | Selected | 98x28 | x +0.69 | x +0.09 y +0.20 | Select: a clear 1px rim + even padding (329's nudge out); Selected: .5px of padding moved | academy,ifc |
+| Settings pages / units - round back | (icon) | 42x42 | x -0.63 | x +0.00 y -0.11 | chevron translated .625px | academy,ifc |
+| Chat button (beyond Home) | (icon) | 42x42 | y +0.51 | x -0.28..+0.21 y -0.19..+0.18 | bubble translated .3px up | academy,ifc |
+| Virtual Room - game chips | Race | 82x29 | x -0.51 | x +0.15 y +0.06 | content translated (Race .66, Tug 2, Battle -.55px); words trimmed | academy,ifc |
+| Classes / sign-up - Enroll, Select, Enrolled, Selected | Select | 64x30 | y +0.51 | x +0.16..+0.19 y +0.18 | Select: a clear 1px rim + even padding (329's nudge out); Selected: .5px of padding moved | academy,ifc |
+
+Also trimmed onto their capitals although Chromium's Inter measured them inside 0.5px on c071343 (the iPhone's SF sits its
+capitals ~2px high in a line box where Inter sits them ~1px, notes 327; text-box trim centres them whatever the font):
+Get Started's Sign in (-0.20 -> +0.14), the A2HS "Tap" labels (-0.67 -> -0.33..+0.14) and step numbers, Today, the days-to-
+go pair, the Instructor tag (-0.30 -> +0.03), Manage friends (-0.24 -> +0.10), Pause (-0.34 -> 0.00), Settings > Sync's (i)
+(-0.39 -> -0.06), the class list's labels (329's -.65px nudge, which put them -0.48 high, made even -> +0.19), a banner's
+View / Join / Save it (a block, so the trim reaches its word), the history chip, the address in A2HS, and from a tablet up
+the boards' medals and the Calendar's today disc.
+
+Cures, by cause:
+- LETTERS HIGH IN THEIR LINE -> text-box: trim-both cap alphabetic, the padding giving back the trim (no size change;
+  inside @supports, so Safari before 18.2 is untouched). A flex box's anonymous text is never trimmed: such pills are
+  made blocks the same size, or their word's span is trimmed.
+- NUDGES THAT HAD COMPENSATED THE WRONG THING, made even: the class list's labels (329's -.65px) and Enroll / Select
+  (329's 1.2px down stood in for the 1px rim its siblings have: it gets a clear rim now and even padding).
+- AN ICON'S AIR / LETTER-SPACING / UNEVEN PADDING -> padding moved side to side (width unchanged) or the pieces translated.
+- ICONS DRAWN OFF THEIR OWN MIDDLE -> translated by their own geometry (the chevrons, the star - its ring left alone -, the
+  Stats VR icon, the Study and Motion tiles, the chat bubble).
+- LAYOUT: Profile's reward tiles sat 1.1-1.5px low (padding moved up 1.2px); the rooms list's "Couldn't load" card had a
+  hint's 8px top margin with nothing above it; from a tablet up the ladder's reward chips (.3rem / .6rem sides) sat 2px left.
+
+LEFT ALONE, ON PURPOSE: list rows and cards laid out from an edge; characters (placed per character, AVATAR_CENTRE_DY);
+the tab bar's icon-and-word up-down (one line of words by design).
+FIRE CODE'S CODE PICTURES (their own session, c72a33a "the IFC / AMENDMENTS / HINT pills centred"): on the phone all pass;
+in the 3x run of the other sizes AMENDMENTS on an iPad measured 5.6px left at one scroll position - listed under OWNED,
+not touched here. Their "Show the code" summary is listed as Moving (something in it animates).
+ONLY A PHONE CAN CONFIRM: SF's widths and capitals and Safari's own rounding; the cures do not depend on the font, but a
+residue under half a pixel can differ.
+
+GATE RESULTS: check-js 10 blocks ALL PASS; check-centering --quick ALL PASS (1105 elements, 127 screens per class, no page errors in
+either class; Fire Code's "Show the code" listed as Moving), --against c071343 (the start) FAILS 159, --against claude/b383
+FAILS 232 (two screens 383 does not have are listed as not opened); check-b384-podium-hint ALL PASS (18, pdf.js stand-in);
+sweep-layout --quick 20/20 clean.
+THE OTHER THREE SIZES (`--jobs 3 --sizes "SE|iPad|laptop"`): stopped by the session's 30-minute background limit on a machine
+also running three other gate lanes (load ~23). The SE and the iPad, both classes, finished; the laptop's jobs did not report.
+What they found: the SE's board row "1 Casey 141" (a list row laid out from its edges, 1.03px high against its 1px
+tolerance); the SE's Fire Code Next question (re-measured on its own: passes - it moved while measured under load); the
+iPad's Race chip 0.56px left (0.06 over; the phone's .66px nudge was measured on an 82px chip, the iPad's is 92px). The
+board row and the Race chip are NOT fixed here - LEFT for the next round, with the laptop's re-run.
+
+CHECK-INK-CENTRE.PY (327), UNCHANGED, ON THIS BRANCH: 183 controls, FAILS 8, and all 8 are its emulated pixel ratio, not the
+app. The banner "View" on the iPad (8.31px high on c071343), the class list's "Fire Code" (1.00 high), the Settings foot rows
+(Contributors / Terms of Use, 383) and the rest now pass. What it still fails: the units' Level 1/2/3 tabs (1.24px high, both
+devices) and sign-up's Continue (1.48px high, both devices). Measured with its own seed and screens: at a REAL 3x the Level
+tabs' letters are at -0.05 and Continue at -0.08 (on the middle); under its emulated device_scale_factor=2 Chromium draws the
+same words ~1px higher (Level ink 171.5..182 vs 173..183; Continue 815..828 vs 816..830) - lesson 1 above, worse than half a
+pixel here. Nudging them down would put them ~1.2px LOW on a phone, so they are NOT nudged. Launching that gate with
+--force-device-scale-factor=2 was tried and is NOT the fix: Playwright's element screenshots then misalign (same numbers on
+both builds, boxes at other heights, View at 8.31 again), so it was reverted. LEFT: check-ink-centre needs check-centering's
+CDP capture (clips snapped to CSS px, scale 1) before it can run at a real ratio - or be retired in favour of check-centering.
+
+### Build 384 - the full check (November 5)
+Every gate in tools/ run one at a time per lane (three lanes on separate worktrees of the same commit, check-behaviour in
+18 chunks of 12 sections on a fourth), every failure re-run on its own and then against live 383 (42bbffa, the 384 copy of
+the gate). The machine was heavily loaded throughout, so a failure that changed between runs was put down to timing and
+re-run at the end with the machine quiet.
+- NO APP REGRESSION FOUND. Every 384-only failure was a gate encoding something 384 changed on purpose, or a fixture the
+  new 384 features trip:
+  - The shared seeds (shoot-flow's SEED through check-b383-ifcsync, record-cutscenes' SEED) hold 234 hundos and no
+    seenUnlocks, so Home owes them hundo-effect unlock cards (Fireworks, Underwater; in Fire Code its own effects, new in
+    384). One up dims the screen and holds the tab bar down (cutscene focus). Gates that measure Home, mode select, flash
+    cards or the week's recap now let those cards go first (homeUnlocksOwed = () => false and the cards removed).
+  - Seeds set after load (store.onboardingComplete = true by hand) default seenClassTip false, so the class button's tip
+    (TOUR_REV 4) dims Home; every fixture that lists the seen tours now lists seenClassTip.
+  - A Safari-tab fixture gets 384's Add to Home Screen quick tip unless class26e.a2hs is set.
+  - check-tours counted steps from the source and could not follow spread/conditional steps; it now counts the steps each
+    tour hands startSimpleTour at runtime, and has a scenario for maybeClassButtonTip.
+  - Decisions 384 changed, now held by the gates: the consent twins both Revoked with no note (b325-pc, b328-level1, b379),
+    Version 10's What's New (check-chat, b327z15-fb), the Review list's pinned Pause (383, check-savetest), the road map's
+    theme as its swatch, the badge case count on its row, Profile's rows (behaviour, b327z z10), the Leaderboard drawing the
+    rows in view in the tap (b357), the icon Copy button (profilecard), mode cards' third sentence (b333), Version history's
+    title (b346), a lazy row's still flare (b365).
+  - Timing: check-b383-signup's Nova walk had 120s for 27 lines and gave up 8s after the walk began (now 480s, and 8s with
+    no Nova at all); check-study-time wanted the elapsed time to the millisecond.
+- THE QUESTION BANK: every academy key (1,119) is at the same index as live 383 (check-b328-level1 --base live). The twelve
+  questions whose shown choices differ from keyChoices are build 328's study-guide updates, identical on 383; the wording
+  gate allows them by name.
+- WAS ALREADY FAILING ON 383, looked at, not an app fault: check-chatroom's stale classmate (CHAT_STALE_MS is 330s since
+  presence went to every 4 minutes; the gate rewound 300s - now reads the window); b327z15-fb C4 (its second hide set only
+  visibilityState, and a return counts after 1.8s by design); check-unlocks (a card owed at boot was still up when the
+  Detective's run began); check-save-code (a fresh device opens on Get Started now; 383 retired the card on Home).
+- WAS ALREADY FAILING ON 383 AND LEFT: check-b381's "Search names" centred (the 382 iOS look left-aligns the search field's
+  placeholder); check-b330's Back buttons at 40px on the sign-up steps vs 20px elsewhere; check-b326-f's Level 2/3 tab ink
+  contrast 3.9 (< 4.5); b376/b360/b327z13/b378 timings; b327t backdrop luminance at its boundary; b327z5-c; behaviour
+  b258 (two animations still running under the update bar) and b268 (road map light frame count).
+- FOUND AND FIXED AT THE END OF THE CHECK (after the full sweep came back 144/144):
+  - A NARROW TABLET SCREEN HAS NO CORNER BESIDE THE BAR (check-fixes, the rumoured iPhone Fold inner screen, 640x904 and
+    640x830 - 383 the same). From 40rem the daily "?" sits 6rem past the bar's measured half-width, which needs ~44.25rem of
+    screen; below that its 1rem floor put it 12px inside the bar's right end and its ready ring 99px into it. Between 40rem
+    and 44.24rem in portrait it now stands over the bar's corner as on a phone (bottom = tabs-bottom + 7.85rem: the 101px bar
+    plus 1.5rem, which keeps the ring's widest pulse clear). 707px wide: 25px above the bar; 712px: beside it, 23px clear.
+  - WHAT'S NEW SAID TWO THINGS TWICE (check-b327z15 K): Version 10 reused "The Leaderboard" (9) and "Finishing Touches"
+    (9.2). Now "A Quicker Leaderboard" and "Startup And Sign-Up".
+  - THE SPLASH NEVER FADES OVER AN EMPTY STAGE (seen on the video recordings under load: after a class switch the splash
+    went and the page's bare top row - a "Main menu" pill and a hairline - showed 1.0-1.7s before Home). The splash's time
+    is a timer and the first screen mounts after the saved copy loads, and a class switch runs only what is left of its bar
+    (0.8s at the least). finishSplash() now waits for #stage to have a child, polling every 80ms, for SPLASH_STAGE_WAIT_MS
+    (6s) at most, then goes whatever is there; a first visit (Get Started, splash never shown) is not held.
+    tools/check-b384-splashstage.py holds every change to #stage back (replaceChildren/append/appendChild/prepend/
+    insertBefore deferred) and samples every 50ms: 0 bare samples now, 37 on 775a30c; nothing mounted -> off at ~8.8s; an
+    ordinary launch -> off at its own time (~2.7s).
+  - UMBRA'S MOONS CROSSED ITS TITLE (video recording): the phases circle at 45% of the stage and the lowest moon reaches
+    48%, the title starts 40% below the centre. .sf-umbra's title block starts at 51% now, and below 30rem of height the
+    scene's centre is 38% (not 44%) so the subtitle still ends on the screen. Over a whole turn of the ring the nearest moon
+    is 3-8px clear of the caption on every size measured (was 22-52px into it); a 568x320 phone ends the subtitle 1px past
+    the edge (9px before).
+- ALREADY ON 383, MEASURED AND LEFT: check-fixes' grey bar on an SE 1st gen in a Safari tab held sideways (568x260): the
+  html fallback is 7 levels off body::before at the bottom edge against a 6-level limit, identical on 383, and only shows
+  if the fixed layer fails to paint. The S24 915x356 "no banner on a done daily question" was load: alone, 8/8 clean.
+- THE SIGN-UP CLASS STEP FITS A PHONE AGAIN (found by check-b329's SE 1st gen check, then measured on every phone): with
+  Fire Code beside the academy, "More classes / Coming soon" wrapped to a row of its own in .class-cards' two-column grid,
+  whose rows are all as tall as the tallest (grid-auto-rows:1fr) - a ~300px box - and Continue fell below the fold on every
+  iPhone but a Pro Max: 338px of scroll on an SE 2nd/3rd gen, 193 on a 13 mini, 240 on a 14/15/16 in Safari (383 fitted:
+  two cards side by side). Now:
+  - "More classes" is a slim full-width row (its mark, its name, the chip; no kicker or line) on the sign-up step at every
+    width and on the Classes screen on a phone (a tablet's Classes screen is three across and keeps its card). Under 26rem
+    wide the row gives up its mark so the name stays on one line clear of the chip (padding-left/right longhands only: a
+    padding shorthand took the chip's trimmed-text vertical padding and the words sat high).
+  - On a short phone ((max-width:39.99rem) and (max-height:46rem)) the two class cards draw tighter: 38px mark, smaller gaps
+    and line, padding .75rem (from 600px tall; under that the step's own 8px rule stands).
+  - The small print under the cards keeps .9rem under it (Continue's auto margin takes it back where there is room): where
+    the step overflows, Continue sat flush against its last line.
+  - Where it still cannot fit (an SE in Safari, an SE 1st gen) a pick brings Continue into view (scrollIntoView, block end).
+  Result: an SE 2nd/3rd gen, 13 mini, 14/15/16 in Safari, Pro Max and iPad Pro 11 show Continue with nothing scrolled.
+  tools/check-b384-classstep.py: 30 failures on 32d646c, none now.
+- check-centering on the SE, iPad and laptop sizes (the full run, not --quick), at the end of the check: what is left is a
+  residue between 0.56 and 1.32px, none of it on the Pro Max (the permanent --quick gate): the laptop's "Continue as <name>"
+  on New to Nova 1.02px high (stable over three runs; its neighbour "I'm new, continue", same box and rules at 16.8px, is
+  centred), Virtual Room's "Race" pill 0.56px left on the iPad and laptop (the flag's ink), an SE leaderboard row 1.03px high
+  (a whole row measured as a control). The first full run also had the laptop's sign-up Continue ~1.3px low and the class
+  chips 0.68px low; re-measured on 49afc2f they are centred. Left, per the tool's own note that Chromium draws Inter where
+  the devices draw SF and a residue near a pixel can differ there; worth a look on a real laptop and iPad.
+- ...AND ON A LAPTOP, THREE ACROSS: from 64rem wide the class step is three 16rem columns with "More classes" as the third
+  card in the row (the Classes screen's arrangement from a tablet), which takes the row off the step's height - Continue in
+  view with nothing scrolled at 1440x820, 1536x864 and 1920x1080 (it was 87px below the fold on a 1366x638 window, 42px on
+  1440x820 with the slim row); a 1280x670 window is 2px short and a 1366x638 one 18px, where the pick brings it up. The slim
+  row's rules are under (max-width:63.99rem) now. check-b384-classstep covers 1440x820 and 1366x638: 36 failures on 32d646c.
+- OLD GATES MOVED TO 384'S DECISIONS (each re-read against what 384 was asked to do): check-b327z12 M (the dark chat sheet is
+  its .95 fill always - "see through and then you see it change to blurry") and R (answered, the daily button shows the time
+  left, "9h"; measured at the phone's real scale, as the centring tool does - an emulated ratio rounds a line of words to a
+  whole CSS pixel and read 1.83px high, 0.5 at 3x); check-b329 (both classes at sign-up; the new-class banner goes to an
+  account on the invite list, in the academy only - the shared seed is in both); check-b327z15 AA (an upright tablet's
+  Welcome planet may be 1.6rem narrower than Home's, the room its taller buttons took). check-b380's Home loop "off" was the
+  loops arriving while it measured (3 -> 5); sampled at eight moments, every loop matches. check-b327z15 N (a loop 96-184ms
+  from its place under load, 80ms allowed) and the rest of the old gates' failures are the same as on 383.
+
+### Build 384 review round (November 5, afternoon): Profile's icons, and the code that drops down and stays down
+- PROFILE'S ROWS: "I like the idea, it's nice, I just don't like the icon for customize and I don't like the colors you went
+  with for the icons." Customize's paint palette (a blob at 30px) is a wand with its sparkles (`wand` in settingsRowIcon, the
+  same 24-grid line family). The tiles were the rank's colour darkened (grey on Iron), iOS orange and the theme's own colour
+  (pale on the default): now PF_ROW_TILE - Settings' iOS hues, one each: Customize #BF5AF2, Rank ladder #0A84FF, Badge case
+  #FFB800. Test history (Stats) keeps its indigo.
+- "SHOW THE CODE" DROPS DOWN: "Not just instant, it will be instant, just make it actually nicely drop down." The <details>
+  opened in one frame (its words eased in, but the room under it jumped). The summary's tap is taken (preventDefault) and
+  ifcCodeSlide grows the box from the pill to its full height, or shrinks it back, starting on the tap. ifcSlideHeight eases
+  the height toward the content's height READ EVERY FRAME (h += (target - h) * (1 - .8^(dt/16.7))), so a code picture that
+  arrives after the tap is followed rather than jumped to, and lets go (height auto) once the drawing has settled; reduce
+  motion skips it. Closing fades the contents (WAAPI, transform/opacity), turns the chevron back at once (.is-closing) and
+  sets open=false at the end. The Hint's code (before an answer, in a Drill) drops in and folds away the same way.
+- ...AND STAYS DOWN: "when you enable show code drop down, ensure it stays like that unless you hit the button again." A tap
+  is remembered (class26e.codeopen - per class by the storage map, "class26e.ifc.codeopen" in Fire Code) and every answer
+  after comes with the code shown until it is closed again. Only where one question is on the screen (a question, the Tug's
+  answer, a flash card - one .ifc-ref under the screen): a Review list or a results review would otherwise open and draw every
+  box on the page (88 in the gate's list). Applied in the frame the box is put up (requestAnimationFrame, before paint), so it
+  never shows shut and then opens. A wrong first try still opens it by itself without changing what is remembered.
+- tools/check-b384-codeslide.py: open grows over 46 frames 44 -> 263px (on 185cc5c: 139 then 263, two steps), the next answer
+  comes open, Hide shrinks over 27 frames and ends shut, the next answer comes shut, a Review list stays shut. check-b384-
+  codeopen's (2) (no task over 50ms after the tap at 4x CPU) failed on BOTH builds while five helpers loaded the machine
+  (205-259ms, with the slide switched off too) - load, to re-run quiet.
+- NOVA'S HELLO, ONCE PER ACCOUNT: "he keeps sending me the 'hello Maddog, it's nova, you'll find me here now' even though I've
+  already seen that message multiple times and I've had an account for a while." novaBefriend sent "Hello again" whenever this
+  device's class26e.nova had no `since` - which a sign-out wipes (the signed-out keep-list has no nova), a Safari tab beside the
+  installed app never had, and Fire Code keeps its own copy of (the storage map: class26e.ifc.nova). Now the hello is on the
+  account too: novaHeard.hello (synced, max-merged like his broadcasts since 325). An account that has heard anything from him
+  (novaHeard has keys - in Fire Code, either this copy or the academy copy) becomes his friend quietly; one that never has gets
+  the hello once, recorded; a new account's introduction hello is unchanged. tools/check-b384-novahello.py (3 failures on
+  800fcb4).
+- FIRE CODE'S FINDER FIRST: "Can we put the chapter finder unit at the top? It's all the way at the bottom." The Chapter and
+  Section Finder is the bank's last unit (NAV, order 59). ifcFinderFirst() puts it first on the unit screen (showSetup) only:
+  the bank's order, question identity, badges and every other list are untouched.
+- TAB BAR GLYPHS, ROUND 3 (his reference bar again: "ensure the stats icon and calendar icon look better and ensure they look
+  more like the example I sent because it's great"): the calendar is the reference's - the page filling the box (3.6 corners), a
+  header band a third of it, the body cut out, four columns of 2.2 dots in 3/4/3; Stats is the same page and frame with three
+  rising bars in the body (one family with the calendar); the Leaderboard's trophy fuller ("could that look a little better?"):
+  a lip, closed loop handles, a waisted stem and a two-step base, one evenodd path, still no star (381).
+- PROFILE'S ROWS, ROUND 2: "Still not a fan of the customize icon, it's a wand? And it's purple? I don't like the colors of any of
+  those three buttons" - all three tiles one neutral graphite (#48484A, PF_ROW_TILE) with white glyphs, as his reference bar is
+  monochrome; Customize is `personcircle` (a character's head and shoulders in its frame - what Customize opens first). Options
+  rendered for him (graphite / iOS grey / no tile; person / shirt) are in the review pack.
+- LAUNCH CHECK, FIREBASE (Nov 5): firestore-admin audit - 44 accounts, 41 rankings rows, no problems. progress holds 45
+  accounts, 45 __floor, 6 __merge, 4 __moved, 7 __credit and one Fire Code account (__ifc + __ifc__floor, written within 3 days:
+  the rules take Fire Code's documents). vrooms holds 217 documents (rooms are never deleted). The admin key cannot read Cloud
+  Monitoring (403), so daily usage is only in the Firebase console. Fire Code's cost per account: its own document at most once
+  a minute while answering, its __floor at most every 10 minutes, both on hide; no leaderboard, no rows read; a Fire Code-only
+  account writes nothing of the academy's. 5-30 Fire Code accounts at ~40 writes a day each is 200-1,200 writes a day against
+  20,000. One saving made: a new account no longer runs the two once-per-account room-history backfills (seedVroomHistory /
+  seedVroomTop3 each read every vrooms document - ~430 reads per sign-up); vrRetroDone/vrTop3RetroDone are set at both sign-up
+  completions, as a reset already did.
+### Build 384 - Fire Code's challenge characters, his review (NOT on main, waiting for Madison)
+Madison on the screenshots: "I don't like the plane examiner. Could we make that a fire extinguisher character? That could be
+cool." / "The inspector looks cool but inspector needs the blue colored shirt like investigator." / "Let's not do the
+investigator, can you make that a hazmat monster or something cool?" / "I don't like public educator, try something else." /
+"Strobe and sprinkler look awesome, could they be better? We don't need to add stuff to it like I see you do? But could they
+look better?" / "Drone pilot is sick, the drone is like sitting on his head though?" / "After this do any touchups on the
+entire character list". Same ids (saved avatars and challenges keep working); only kind, name, glow, scene change.
+- valkyrie (was Plans Examiner, fcplans) -> **Extinguisher** (fcextinguisher, #FF3D4F): a stored-pressure ABC extinguisher
+  with a face. The gloss red cylinder is the whole figure; the chrome valve is its crown with the gauge on its brow (needle in
+  the green, cx-fx-fcbeam with an inline fill-box origin so it pivots on its own base), the levers swept back with the yellow
+  inspection tag swinging off them (cx-fx-tail1, origin at its string), the hose round its side and back up, a wisp of powder
+  off the nozzle (and two cx-fx-smoke puffs live), the class label across the chest (A B C and the green triangle, red
+  square, blue circle). Set brows and low inner lids: a can that has never failed an inspection.
+- astronaut (was Investigator, fcinvest2) -> **Toxic Spill** (fcspill, #B266FF): not a second suited person (the Hazmat is
+  that) but what the hazmat team is called out to - a violet ooze climbing out of a dented yellow drum with the trefoil on
+  it, three acid-green slit eyes with a soft pulsing glow (a radial gradient, cx-fx-scopeglow), a grin of teeth with two fangs,
+  green drool, drips over the rim, bubbles rising (cx-fx-smoke).
+- timekeeper (was Public Educator, fceducator) -> **Hydrant** (fchydrant, #FFC62E): the hydrant the code keeps clear - a
+  stout yellow barrel with a face, the bonnet and operating nut in the light blue that marks the biggest flow (NFPA 291), the
+  side outlets capped and chained either side, the steamer cap on its chest. With the Strobe, the Sprinkler Head and the
+  Extinguisher it makes a set: the systems the code is about. No helmet, engine, ladder or dog.
+- The three device characters are rigid in cx-body and their cx-head is only the face, so a nod, a slump or sleep's tilt moves
+  the expression and never splits a cylinder. The Spill's drum front lip and drips are drawn after its head (outside both
+  groups) so the ooze can tilt without a gap at the rim.
+- Inspector (detective): the shirt, collar and flaps are the investigator's agency blue (#4A78C8/#2E5AA8/#14306A) and the
+  nameplate its gold (the dark one did not read on blue); hat, glasses, clipboard, patch, gold star and glow as they were.
+- Strobe and Sprinkler Head: the same parts and nothing new (check-b384-ifcchars D: their part lists are 185cc5c's exactly).
+  Strobe: lacquered housing (window reflection, light edge, shade on the far side and under the jaw), a chrome bezel round the
+  lens, the eyes lit inside the glass with a reflection over them, raised plate letters, grille and horn slots cut in with lit
+  lips, a shaded neck, modelled shoulders and band. Sprinkler: chrome as chrome (a dark horizon band and a hot line across the
+  helm and down each arm, shade under the jaw), the bulb as glass with its red liquid, lit core and air bubble, the deflector
+  given its thickness, glass reflection and lit eyes, the collar and chest light modelled.
+- Drone Pilot: the drone was centred a hair over his crown with its glow ellipse lying on his hair. It flies up in clear air
+  now, banked 6 degrees, its downlight under its own belly: 3.46 units between it and his hair in a coin (-0.28 before), the
+  whole drone inside the coin's circle (0.94 of the radius).
+- Touch-up across the list (every challenge character at tile, coin and plate size, locked and unlocked): the Dispatcher's
+  navy polo went into his navy sky and left the head floating on a tile; a shade lighter with light along the shoulders.
+  Everything else was left: nothing clipped in the plate, the Hazmat's placard whole, the Smoke Diver kept as he asked.
+- Specials: every Fire Code character keeps ifcSpecial (embers into the cross, in its own glow), registered by id in the
+  IFC_CHAR_LOOK loop, so the new kinds have theirs without a line of their own; check-b384-ifcchars F runs check-b327z15 N's
+  end-of-special measure on all eleven in Fire Code (N itself runs in the academy only).
+- Gates: tools/check-b384-ifcchars.py (new; 16 of 19 fail on 185cc5c - the other three, "the page is Fire Code", "still wears
+  his cowboy hat" and "the whole drone is inside the coin", held before too; F subtracts the call's own time from N's
+  60ms, which a load average of 25 ran past by itself). check-b382-ifcart moved to this decision
+  (the names it asserted, and the investigator in the cowboy-hat list: he is the Toxic Spill now).
+- Contact sheets (before/after, tile/coin/plate, locked and unlocked) were made in the session's scratchpad for Madison.
+## 384 (banners): nine Fire Code banners redrawn after Madison's review (branch claude/b384-banners)
+Only IFC_BANNER_ART's nine entries, their IFC_BANNER_LOOK rows and the helpers beside them; Dispatch, Code Book, Hazmat,
+Hose Line, the rank banners and the flare/ultimate banners are untouched (their drawings hash the same as 185cc5c).
+- SHARED PIECES: fbText draws lettering as strokes on a 4x6 grid (no font, so a still picture reads the same everywhere);
+  fbChevy(u, x, y, s, {kind: "pickup"|"suv", f}) is the office's vehicle: all white, NO STRIPES (round 3's red and gold
+  stripe read as an ambulance), "FIRE MARSHAL" ghost-lettered across the doors (silver a shade off the paint with a bright
+  edge, class fb-ghost) and the star ghosted on the front door, a low light bar (fbChevyLight lights one half), push bar,
+  pillar spotlight, black wheels and running boards, the front turned a little towards us so the gold bowtie shows.
+  fbChevyDefs(u) gives its gradients (the body is still u+"fbtruck"). fbHazmatTech is a Level A technician; fbMarshal a
+  cowboy-hat silhouette; fbPuffs is smoke with soft edges (fbSmoke's discs read as grey coins). fbPickup, fbSuit,
+  fbExitSign and fbEmergencyUnit/Cones are gone (nothing else used them).
+- Headquarters ("why are there ambulances?"): a Tahoe and a Silverado at the kerb, ghost-lettered, the Silverado's bar lit;
+  US and Texas flags; FIRE MARSHAL over the doors. Still (first rung), so both halves of the bar show lit.
+- Spill Response ("the hazmat guys look weird"): the scene kept; the two responders are people in Level A suits - boots,
+  baggy legs, the air pack bulging the back, a hood with a wide faceplate and a face behind it, two-part arms, dark gloves,
+  grey tape at wrists and ankles; one on a foam hand line, one reading a gas meter (its light blinks).
+- Field Kit ("none of us put our badge in a wallet like that"): the kit as worn - close on a khaki pearl-snap shirt tucked
+  into jeans, a stitched western belt and buckle, the star badge on its belt clip (faceted, catching the light), a light in
+  its ring, the radio in its holster with the coiled cord up to the shoulder mic. No wallet.
+- Exit ("there's like 5 exits"): one exit - a pair of steel doors with panic bars at the end of a dark corridor, one red EXIT
+  sign over them, two emergency lights through ceiling smoke, a glow strip at the foot of the wall. Still (first rung).
+- Air Tanker -> PYROTECHNICS ("change that to something else completely"): standing by at a public fireworks display - bursts
+  over the town across a lake, doubled in the water, the white Chevy at the safety line of cones, a marshal at its nose. NOT
+  "Fireworks ...": Fireworks is the academy's hundo effect and check-b384-cutscenes (rightly) fails a Fire Code card naming it.
+- Alarm Panel ("not sure why there is a strobe right next to it, maybe ... the document box"): the strobe and the pull station
+  are gone; the panel is laid out as one is (FIRE ALARM on the door, the display reading ALARM / ZONE 3, power and alarm
+  lights, keypad, four function keys, key lock with an inspection tag) and the RECORD DOCUMENTS box stands beside it, conduit
+  down the wall into both. Its red glow sits behind the cabinets.
+- Sprinklers ("the red box in the bottom right"): that was an extinguisher at the bottom left, too small to read; gone. The fire
+  is in a wastebasket by a desk, heads are pendent heads with their bulbs gone, rings where the water lands, steam off the fire.
+  The spray is clipped to start at the deflectors (it slid up over the main every loop, since round 1).
+- Pull Station -> ORIGIN & CAUSE ("make that something else but make it cool"): a burned room, the investigator in his hat
+  dark against the doorway, his flashlight on the V burned up the wall to the space heater, evidence markers 1-3, FIRE LINE
+  tape, smoke off the origin, dust in the beam, the scene camera's flash every 6s.
+- Code 3 -> FIRE RESPONSE ("we don't do code threes. We do fire responses"): the white Silverado at night, bar flashing red then
+  blue and washing the street, grille lights, siren arcs, wheels turning (bl-spin-r) under a body riding its springs (bl-bob,
+  the lit lenses are its kids so they ride with it), lamps and lane lines streaming past, its reflection on the wet road.
+  Round 3's town windows were a layer above the truck (lit squares across its body); they are behind it now.
+- Tints: Field Kit gold/leather, Exit red/warm white, Pyrotechnics gold/blue, Sprinklers water/fire, Origin & Cause tape/ember,
+  Fire Response blue/red.
+- Gate: tools/check-b384-banners.py (all nine redrawn; the four untouched; names; ghost-lettered vehicles with no long thin red
+  band; two technicians with faceplates at the top; badge on the belt; one EXIT sign; documents box beside the panel and no
+  strobe flash; nothing solid red low in Sprinklers; no filters, every one moves; ids per copy and every url(#) resolves;
+  none heavier than the heaviest other banner): 8 of 13 fail on 185cc5c. check-b382-ifcart: two lines moved to this
+  decision (the round-3 "kept" list leaves out the six redrawn here; the vehicle helper it checks is fbChevy now).
+### Build 384 - Fire Code's secret four are one squad, its ultimates three rangers; Star Ranger is the last (NOT on main, waiting for Madison)
+Madison, on the review screenshots: "I don't like flashbang that much, try again. I don't like how you can see his face." /
+"Star ranger looks sick, that should be the last ultimate character? ... Use that idea for another character?" / "All three of
+the ultimate characters need to look like they are trio. Same goes for the secret flare characters." / "The secret flare
+banners, I don't really like any of those, that much. Same for the ultimate character banners". Fire Code only; same ids.
+- THE SQUAD (fcSquad; kinds fcsqbreacher, fcsqrecon, fcsqwhiteout, fcsqflashbang): one helmet, one pair of goggles lit in the
+  member's flare colour, one half-mask respirator (a front filter ringed in the colour, a valve each side), one plate carrier
+  with the flare they are found with on its chest, shoulder pads in the colour, a team stripe and patch on the helmet. No face
+  shows on any of them (the Flashbang's was the complaint). Each keeps one thing: the Breacher the four-tube night vision
+  flipped up on the helmet, three tubes lit red/orange/gold (Void's three); the Recon a monocular swung down over the right
+  lens, a whip antenna, a shemagh; the Whiteout a snow-covered helmet, a fur ruff, snow on the pads, mirrored ice lenses; the
+  Flashbang a hand up with the bang, its spark lit. Names unchanged (Breacher, Recon, Whiteout, Flashbang).
+- THE SECRET-FLARE SCENES: everything lit on the squad (the goggles, the night vision's tubes, the monocular, the chest flare)
+  is classed cx-fx-sqlight, which SF_SIL keeps lit and shows first in the dark - "Something opens its eyes" is the goggles.
+- THE RANGERS (fcRanger): Star Ranger (round 3's Celestial drawing, unchanged) is ZENITH's now - zenith is the last ultimate
+  (feat "everything", the other two included). Astral is the MOON RANGER (silver and night blue: a bandana over his face, a
+  crescent on the hat's silver band, eight sparks) and Celestial the COMET RANGER (blue fire: a comet across the crown, a band
+  of small blue flames, a scarf streaming like its tail, a handlebar moustache, ten sparks). All three share the hat, the
+  brown duster over the cosmic suit, the star badge, lit eyes and the turning ring of sparks (8 -> 10 -> 12), climbing from
+  cold and quiet to Star Ranger on fire. Customize's note now reads "Star Ranger takes everything".
+- SPECIALS: same move and timing as ifcSpecial (2800ms), ending on the squad's flare bursting / the agency's star
+  (ifcMarkSpecial), set just after the IFC_CHAR_LOOK loop.
+- BANNERS, named for their characters (Breacher, Recon, Whiteout, Flashbang; Moon Ranger, Comet Ranger, Star Ranger):
+  fbSquadScene - one night over the city from the same roof, the member's silhouette at the edge with goggles lit (bl-glow),
+  and the flare that brings them fired from that roof (smoke trail, a little chute swaying, its light pulsing, sparks
+  dripping); Breacher three flares, Recon violet with the crescent, Whiteout white in falling snow, Flashbang rose with a
+  window across the street going off every 7s. fbRangerScene - the same desert and mesas, the ranger on his rock with his eyes
+  lit, and his own sky: the moon rising with thin cloud, a comet with shooting stars, the agency's star burning with turning
+  rays and embers. Transform/opacity only, no filters, 7-13 layers; the sky objects sit inside the middle band a row shows.
+- Gate: tools/check-b384-sets.py (both classes; 19 fail on 185cc5c). Its special-timing check reads what playCharSpecial
+  planned as a window (before and after the call), so a loaded machine does not fail it. check-b382-ifcart moved to the
+  decision: the Breacher and Recon are no longer "exactly round 2's", the four flare banners no longer "as round 2 left
+  them", and the cowboy-hat check covers the three rangers (Star Ranger is zenith's now).
+- Gates (one at a time, the machine at load 20-40 from other sessions): check-js OK; check-b384-sets ALL PASS;
+  check-b382-ifcart 45 PASS; check-b384-secretnames ALL PASS; check-unlocks ALL PASS; check-b382-unhide ALL PASS;
+  check-b384-cutscenes 1, 2, 6, 8, 10 pass (6 failed once in both classes under load, academy included, and passed alone);
+  check-b327z15 N: the specials pass, "the live drawing's loops within 80ms" fails at 202ms here and 366ms on 185cc5c
+  (load, as before). Recorded (Fire Code, 440x956, app's own sound): the four secret-flare scenes and the three ultimates'
+  character and banner cards.
+### Build 384 - Fire Code's 25 and 150 made cooler: the Extinguisher puts out a fire, Hazmat washes a spill off and goes off (NOT on main, waiting for Madison)
+
+Madison, having watched both clips: "The hazmat one could be cooler I think. Could we try to make it cooler?" and "The fire
+extinguisher one, I don't think I love that one, could we make it a little cooler too?" Branch claude/b384-fx (from
+claude/b384 185cc5c). Only ifxExtinguisher (and EXT_T, extSweep, extFire), ifxHazmat, ifxHazmatSmall, their ifxWarmList
+rows, Hazmat's sprites (hzSpray redrawn; hzSplash, hzSlime, hzOoze, hzRays, hzSpark new) and the two SND_IFX scores changed.
+Ids, rungs, counts, lengths, tails and every old beat are unchanged (Extinguisher 5.0s / IFX 5300 / tail 4300, lit 3.19;
+Hazmat IFX_HZ as it was, 7.2s / tail 6.1), so the results flow still hands to BADGE FOUND where it did.
+
+**What the frames said was weak.** Extinguisher: it sprayed at nothing - a stream into the box and a cotton cloud, the
+box whitened and a soft clearing; no fire, no stakes, no moment the job was done. Hazmat: the slam was good; the rest was
+soft - the "green film" on the box was nearly invisible, the decon spray a needle (a lance a tenth as wide as it was long),
+the all clear a lime ring and a pale band of light over a murky green screen, and the vapour just drifted off.
+
+**Extinguisher - the 100% is on fire and P.A.S.S. puts it out.**
+- From .02s two rows of flames (ifxSpr.flame, the Sprinklers' fire) burst up off the box's floor, middle outward, inside the
+  box (clipped to it) up past the foot of the number; embers; the fire's light on the box (its floor) and round it (a glow in
+  the screen layer behind the lifted box); the number glows hot (an ifxNumCopy, so its figures sit on the real ones).
+- The stream is aimed at the BASE of the fire, the box's bottom edge, and swept across it and back (extSweep: -cos, a pass
+  every half period, per 1s; .8 in a box alone). Its reach is a wrapper whose length follows the distance (stops at the box,
+  never runs on out past its top - it did on the iPad). Each pass over a flame flares it, bends it away from the nozzle and
+  beats it down a step (1 / .66 / .38); the last pass puts it out in a curl of smoke (extFire computes every flame's hits from
+  the sweep; the two end flames, crossed twice at the turn, go out on the second). The fire is out by ~2.5s.
+- ONE STUBBORN FLAME: the flame the last spurt of the sputter lands on (extFire: nearest extSweep(sput + .215)) flickers back
+  up at 2.62 - a beat after the fire is out, with the stream away from it - and the third cough puts it out (2.915). The third
+  spurt of the jet reaches .86 of its length (was .55) so it gets there.
+- The blast: a flash of powder off the horn and the screen kicked (a camera wrapper, 3px). Billows fewer (18) and lighter, the
+  haze an ellipse round the fire's base; powder bursts up the box where the stream hits; the box's powder comes later (as the
+  fire goes) so the knock-down can be seen.
+- The payoff as before (glint, red wash, lit at 3.19) and THE 100% SMOKES: two wisps (ifxSpr.steam) curl up off the top of the
+  number, one copy in the box and a twin in the screen layer at the same screen place, so each runs on past the box's top.
+- Box alone (tiles, unlock card): the same story at the stage's floor under the number (5 flames).
+- Score (reads EXT_T / extFire): a whoomp as it catches, the fire's roar and crackle under everything dying at 2.5, a hiss as
+  each flame goes, the comeback (a short whump and crackle - short, so the three coughs still stand out: check-b384-extspr E4
+  went red with a .5s one), a hiss as it is snuffed.
+- Pieces on a phone: 42 screen + 75 box (was ~49 + ~16).
+
+**Hazmat - the spill, the wash and the all clear going off.**
+- THE SPILL ON THE BOX (bx): a toxic film (hzSlime: a glowing wavy top edge, lime to deep green, bubbles) creeps up the box
+  from .5 to 1.9, six runs of ooze (hzOoze) stretch down from its top edge, the number glows sick green through it (a copy),
+  and a green light pulses round the box from behind (screen layer).
+- THE WASH: all of it sits in a window whose left edge is carried across the box by the spray's first pass (sweep 3.86 ->
+  4.48), the window and its contents counter-translated as the scan's mesh is: behind the spray the box is clean, with a line
+  of foam at the edge. Everything in it is let go (opacity 0) once washed (the hazmat gate's (6) counts unfaded pieces).
+- THE FAN: hzSpray redrawn as a fog pattern (400 x 200, same key and far end, so check-b384-hazmat's probe still lands): nested
+  cones from a white throat to a wide soft edge, rays, droplets; the mount is .5 of its length wide (.3); a burst of spray
+  (hzSplash) pulses at its far end.
+- SPARKS: ten streaks (hzSpark) thrown off the placard's slam.
+- THE ALL CLEAR GOES OFF (5.15): a flash of clean light out of the box across the screen, a second faster white ring inside the
+  lime one, sixteen rays (hzRays) turning behind the box, the clean 100% POPS (a copy at 1.12x, back in .3s), the ALL CLEAR tag
+  pops as it turns, and the vapour left over is BLOWN AWAY - thinned by the decon to under half, then pushed out from the box,
+  nearest first, gone in .5s (the floor haze with it). The pale band of light that crossed the screen after it is gone.
+- Small box (ifxHazmatSmall): the film and the green number under the placard, washed off right to left by the mist's pass,
+  foam at the edge; a ring and the pop at the all clear.
+- Score: the spill bubbling up (.6-1.9), sparks crackling off the slam, a rising squeak as the first pass washes the box, and
+  a great rush of air at the all clear. Loudest moment still the all clear (5.15).
+- Pieces: 154 across the three layers on a phone (was ~130; the cap is 170): ten glints (14) and ten sparks keep it there.
+
+**Gate** tools/check-b384-fxcool.py (Fire Code, stand-in card, phone 440x956 and iPad 834x1194, every animation paused and
+seeked - the layer over the box too): X1 five+ flames on the box's floor up past its middle by .45s; X2 the stream's end on
+the box's bottom edge (-.06..+.2 of its height) swept over .6+ of its width; X3 half+ the flames beaten down two steps, all out
+at one moment before the sputter ends; X4 exactly one comes back after that, none left at sput+.5; X5 two wisps rise off the
+top of the number in the box and two run on over its top edge; X6 a score onset at the ignition and within 60ms of the
+comeback, <= 170 screen+box pieces; Z1 the film covers 60%+ of the box at the lock; Z2 the film's edge goes across the box
+with the spray's first pass (covered at its start, within a quarter box of the spray's end mid-pass, clean at its end); Z3 the
+spray .4+ as wide as long; Z4 8+ sparks fly out from the slam; Z5 a full-screen flash (none just before), rays centred
+behind the box, the number popping (>= 1.08x, back to 1x by .4s), the leftover vapour moving out a fifth of the screen's width
+in .4s and gone by .65s (a fifth of the width: round 5's vapour drifted 61px on an iPad, which a flat 40px let through); Z6
+the small box has the film and washes it off; transform/opacity only, no page errors. ALL PASS here; on 185cc5c 24 of its
+25 legs FAIL (only the shared "transform/opacity, no errors" passes there).
+
+**Clips** (scratchpad out-fx/): extinguisher-|hazmat-before|after-440x956.mp4 - record-hundo --ifc --seed 7 (17 Pro Max), the
+score rendered offline in Fire Code (NovaSound.render, the catalogue's vol) and laid under from the effect's first frame
+(467ms in), yuv420p, faststart; *-before-vs-after-silent.mp4 side by side. record-hundo: 2 frozen / 0-1 jump per clip, the
+same as before (the app's own cut to BADGE FOUND after the tail).
+
+**Only a phone can say:** smoothness with the fire's 13 flames (26 pieces) over the box plus the cloud (the Extinguisher went
+from ~65 to ~117 pieces), Hazmat at 154; the flash's strength on an OLED screen; the score on the speaker.
+- Gates on this commit (one at a time; the machine at load 25-37 on 4 cores): check-js ALL PASS; the page loaded in both
+  classes, console clean but for the sandbox's blocked Firebase CDN; check-b384-fxcool ALL PASS (24 of 25 FAIL on 185cc5c);
+  check-b384-extspr ALL PASS; check-b384-hazmat ALL PASS (154 pieces); check-b384-ifxnew 9/9; check-b384-fxstop ALL PASS;
+  check-b384-czfx ALL PASS; check-b382-ifcart 45/45; check-sound ALL PASS; check-loops 486 loops, 0 seams; sweep-layout
+  --quick 20/20 clean. Failing the same on 185cc5c, not these effects: check-b327-d's 14 (the calendar's next-test mark, the
+  tab bar's line icons, the plum theme - identical lists); check-b384-cutscenes 72 PASS / 1 FAIL, (6) ifc: the secret flare
+  find's card order and words - section 6 run against 185cc5c fails it too (and the academy's, under load).
+
+### Build 384 - the code pictures one family: the amendments at the book's print size, a heading cited alone, never the text first, one tag size (NOT on main, waiting for Madison)
+Madison (two phone screenshots, Fire Code): "The cropped thing of the 'section 322 battery storage' why doesn't that look like the
+rest? Why isn't the word highlighted like the others? Why is it cropped so small like that?" / "ensure that the cropped photo from the
+show code drop looks good, it has the context there centered nicely and each one is cohesive so you know what to expect when you hit
+the drop down" / "I also noticed on the amendments one ... some of those don't have the same nice look as the ifc ones so get that good
+to go" / "sometimes when i hit the amendment drop down, it comes up as text and not the cropped photo and stuff?" - and, circled on a
+Review list, the IFC tag beside the AMENDMENTS tag and the amendments card's Enlarge. (His screenshots were of the live 383: the
+flex buttons, the sideways-scrolling chapter titles and the 3px county margins there were already fixed by the 384 framing round.)
+- THE SURVEY (every one of the 1,812 references opened in a 440 phone's answer card, the owner's book loaded; scratchpad
+  crops-work/survey.py, contact sheets in the scratchpad's out-crops/ - book pages never in the repo). On f9694e7:
+  * COUNTY (421): 387 at small print - the booklet's lines run 468pt and were fitted to the card at 0.64px a point, letters
+    ~7px against the book's 12px (the book is two columns: a column is 250pt and shows at 1.21px a point); 229 under 70px tall
+    (median 67px against the book's 109); 17 with no marker at all - the 15 references that are a heading alone ("SECTION 322
+    BATTERY STORAGE", Chapter 1 twice, Sections 102-113, 324, 611, Exhibit B: countyClip's heading test joined the section number
+    to a heading that already carries it, so nothing matched, and the cut was the heading's own line or two) and two whose mark
+    fell on a line the cut did not show (ch56-014: the excerpt quotes a line the booklet prints after the exceptions, so the
+    exception was looked for past it and never cut; ch62-206: "Any Amount" is in many rows of Table 105.5.22 and the first one
+    after the excerpt's start was another row's); every county box opened on the TEXT (check-b384-cropfit (1): 421 of 421).
+  * IFC (1,391): the 59 SECTION banners cited alone (nav "which section is titled ...") were cut as the banner alone, 55-68px -
+    the 322 problem on the book's side, though marked; 97 at small print are the chapter/appendix title pages with their user
+    note, the full-width tables and the Chapter 80 entries, fitted by design (unchanged); 32 with ink at a cut's edge are change
+    bars and table borders, except four slivers of the neighbouring column in the kit's own cut (ch10-168 a ruler's ticks, ch12-033
+    a few letters, ch63-005 a "k", ch9b-050 a tick) - unchanged, worth a look in the kit.
+  * The tags: IFC ~62px, AMENDMENTS 114px. Enlarge and the page button were already one grid in 384 (the same boxes in both
+    sources - kept, guarded).
+- THE TEXT FIRST (the cause): ifcFillCode put the county's stored words (ifcCountyText, the fallback) into the box FIRST and
+  swapped in the picture after pdf.js had fetched and opened the booklet, cut and drawn the reference - a few frames on a warm open,
+  a second or more on the first of a visit - and the 384-review slide grew the box to the text's height, then to the picture's.
+  It was "sometimes" because a county box was never drawn ahead: the draw-ahead (and the press-to-draw on the pill) waited on
+  ifcBook, the IFC book in memory, which a run of county questions never opens. Now: "Opening the code..." until the picture is
+  ready (as the book's boxes); the words only when the booklet truly cannot be drawn (it did not load, the reference is not found
+  in it, the draw throws) - guarded with the booklet routed to 404; county boxes are drawn ahead and on a press without the book
+  (box._ifcCounty); and a county question opens the booklet in idle time while it is up (ifcPreAnswer), so the first answer of a
+  visit no longer waits on the fetch.
+- THE AMENDMENTS AT THE BOOK'S PRINT SIZE (ifcCountyColumn / ifcReflowCounty, index.html, presentation only). The booklet is one
+  Word column; no cut of it can be narrower than its lines. So the picture is set again: the words, cut from the kit's own paint of
+  the booklet page (the same pixels), placed in lines a book column wide (IFC_COUNTY_COL 246pt) - same words, same order, the same
+  paragraphs, headings (centred, large type kept large), list numbers with their hanging indents, "Exception:" lines, the room
+  between paragraphs - and then framed by ifcFrameClips like a book column (the same print size, centred, the same padding).
+  * Nothing guessed: each line's words are read off its pixels and must come to the number of words the booklet's own text gives
+    that line (pdf.js text content): the n-1 widest gaps, used only when they stand clear of every gap inside a word; else each
+    space is looked for where the text puts it (letter widths shared over the item's real width) - the widest gap near there, in
+    order - or the line is not read. A piece with ink outside its lines (a rule), lines set too close (a table's rows), or more than
+    one odd wide space (a table's columns) is shown as cut; so is any citation of table cells ("cell | cell") or of a TABLE.
+  * The marker: the kit places a county mark from Times New Roman widths on a Calibri booklet, so long highlights stopped inside
+    a word ("the la|ne") or reached into the next. The marks are lifted exactly (a multiply over a covered fraction a is a factor
+    1 - a + a.m, divided out) and laid again, in the kit's band and colour, on every word the kit's mark covers at least half of,
+    and across the spaces between marked words.
+  * "H-" at a line's end and "3" on the next are one word again; a line that starts in lower case carries on the one above.
+  * Enlarge shows the same column picture, larger; "Show the whole page" is the booklet's page as printed, highlighted.
+  * Results: 370 of 421 county references at a book column's print size (13.3px letters at 440, the book's 12.1: Calibri 11pt
+    against Times 10pt), 50 tables kept as cut (fitted, as the book's full-width tables), 1 refused and kept as cut (ch32-004: its
+    PDF text runs three words together, "storageareain", so its words cannot be counted); median height 137px (was 67). The step
+    costs a median 8ms, 90th 54ms a picture here (Chromium, load ~25 on 4 cores), drawn ahead in idle time. Works at dpr 1 (laptop).
+- A HEADING CITED ALONE, BOTH SOURCES (ifc/ifc-viewer.js - the kit's file changes for the first time; the kit's own acceptance test
+  check-my-copy.mjs with the 5.4.2 bank and the owner's book prints byte-for-byte the same report as before: 421/421 county cut,
+  406/406 deciding words marked, 1,391/1,391 IFC cut, "RESULT: this copy behaves like the reference copy"):
+  * countyClip: a reference whose excerpt is its heading (no deciding words) marks the heading (the heading given whole carries its
+    own number) and cuts the start of what it heads, as a chapter title is cut with its note: the headings set under it, then the
+    first paragraph of running text to its end or LEAD_MAX 7 lines, on its own page, never a table, nor the exceptions or list under
+    that paragraph. "SECTION 322 / BATTERY STORAGE" (marked) + "322.1 General. The storage of batteries shall comply with Section 322."
+  * countyClip: the deciding words are marked where the excerpt's own lines carry them, else at their first place in the excerpt's
+    span with those lines cut too; an exception printed before an excerpt line is looked for from the excerpt's start.
+  * locate/flowClip: a SECTION banner whose next heading is its first subsection runs on through that subsection (out.lead), and
+    flowClip keeps the banner and at most LEAD_LINES 7 lines under it in the banner's column, on its page, ending on a sentence's end
+    where one ends from the third line (or up to three lines past the limit); not for a blurred pointer; truncated stays false.
+- ONE TAG SIZE: every tag (IFC, AMENDMENTS, the Hint's bulb and HINT) is the width of AMENDMENTS - set by that word itself, invisible
+  (.ifc-tag::after, height 0) in the same grid cell as the tag's own word (.ifc-tag-in), so it holds in any font and text size -
+  flex:none so a narrow summary cannot squeeze one; the word still centred by the 384 rule (text-box trimmed word, even padding).
+  "Show the code" now starts at the same place on every card.
+- GATE tools/check-b384-cropfit.py (PDFJS_DIR + IFC_BOOK; dpr 3, 440x956; --against takes a commit and serves its index.html AND
+  its ifc/ifc-viewer.js): (1) every county reference opened as a tap opens it, watched every frame: the text never on screen, the
+  picture at the end; the first open of a visit shows "Opening the code..."; (2) GUARD the fallback with the booklet unreachable;
+  (3) county pictures at a book column's print size (85%+, the rest tables); (4) the 15 county headings and 59 IFC banners: marked,
+  with print below the heading; (5) the three tags one width and height at 440, 375, 834 and 125%; (6) GUARD Enlarge and the page
+  button the same boxes in an IFC and a county card at 440, 834, 1536; (7) a county box drawn ahead in a Review list with no book in
+  memory; (8) a county flash card at its frame's column scale, Enlarge larger and fitted, a banner's flash card with its lines;
+  (9) no page errors.
+- check-b384-ifccrop re-pinned for this decision: a county picture set to a column is checked for the kit's PRINT (its dark pixels
+  within 2%) and a marker wherever the kit marks one, and its pieces are centred as one group (they share one window); everything
+  else in it unchanged.
+- NOT DONE: the Drill Hint's county picture (before the answer, the number blurred) keeps the booklet's own lines, fitted - its blur is
+  the kit's, painted on the booklet's lines; setting it to a column means placing the blur on the re-set words, which wants its own
+  guard that nothing hidden shows. The IFC chapter/appendix title pages and full-width tables stay fitted (their layout is their sense).
+- GATES RUN (once each, the lead's call - one browser at a time, load ~25-30 on 4 cores): check-b384-cropfit ALL PASS; --against
+  f9694e7 (index.html and ifc-viewer.js of that commit, an earlier revision of this gate): (1) FAIL text on screen in 421 of 421 opens,
+  first open 31 frames of text; (3) FAIL 23 of 421 at the column's size, median 0.670px a point; (4) FAIL 85 (15 county headings unmarked
+  and alone, 59 banners alone); (5) FAIL IFC 42px / AMENDMENTS 114px / HINT 66px; (7) FAIL; (8) FAIL; (2), (6), (9) pass on both.
+  check-b384-codeslide ALL PASS. check-b384-ifccrop --sample 200 (stratified: 134 book, 66 county): (0), (1)-(1e) PASS (49 county
+  pictures set to a column hold the kit's print), the blurred definitions (2), (3), (4) pills within 0.5px, (5), (6), (7) PASS; FAIL
+  (2) the 8 Drill Hints: each measured with its bottom 90-100px below the box (B -94.62) - the Hint's picture is still sliding open
+  (ifcSlideHeight, overflow hidden, 384 review 800fcb4) when the gate reads it at 80ms; the Hint path is unchanged here, so this is
+  that round's, not re-run (a load flake per the lead's rule; to confirm with --against when quiet). check-b383-flashcards: all PASS
+  but amendment (4) "Hide the code closes it" - after 1000ms the card had shrunk 1025 -> 611px but details.open was still true (the
+  close slide sets open=false when it arrives; the county card's code is taller now, ~29 frames, and frames were slow under load) -
+  not re-run. check-b382-test (not in the round's list; run once): its layout part fails the same way on f9694e7 (the 384-review
+  "stays open" choice makes the tap in its open_code close a box that came open) - a gate to re-pin, not this work. The kit's
+  check-my-copy.mjs (5.4.2 bank, the owner's book): output identical line for line to before. check-js ALL PASS.
+- ONLY HIS PHONE CAN CONFIRM: the set-to-a-column pictures at 3x on Safari (same canvas path as every code picture); the warm-up of
+  the booklet while a county question is up (one 1.1MB fetch a visit); the tag pill's sizer (an invisible ::after in a grid cell) with
+  SF Pro's widths.
+## Build 384 polish (claude/b384-polish) - the rank-up cutscene once and smooth, the grade box's words with its numbers, red into green through the card, the XP box's foot as one piece
+
+Madison (he/him), after the 384 videos: *"The rank up cutscene, double check that this only forms up during that entire
+rank up ladder cutscene. And ensure that problem we talked about a while ago is fixed where you couldn't leave it because
+it kept going in circles going it again and again is fixed."* *"The rank up cutscene, when the large planet changes color,
+there's like a weird lag that happens in the video, ensure it's smooth transitions."* *"The result screen, the grade box,
+it says 'right in first try' before the numbers above it appear, shouldn't that be fixed?"* *"Also, still ensure when it
+changes from red to green that it's a smooth transition. Don't put in other colors just ensure it's smooth."* Then: *"the
+grade box is looking great, the xp box is looking great, as far as the xp box goes, could the bottom of it with your level
+and character and stuff, could that all look better?"* No APP_BUILD bump (the lead merges). Gate:
+`tools/check-b384-polish.py` (A-E, `--only`, `--against`, `--sabotage-loop`).
+
+- **THE CUTSCENE IS ONLY THE JOURNEY'S (checked, nothing to change).** `playRankUpScene` is reached only through
+  `playTierCutscene` / `playSupernovaCutscene`, and those only from `rankUpCutscene` (the journey's cutscene step); an older
+  build's `pendingTierCutscene` / `pendingSupernovaCutscene` is absorbed into a journey (`rankUpAbsorbPending`). The loop he
+  remembers is build 331's (a forced update reloading the app mid-journey before `rankUpMarkShown`, so the journey owed itself
+  again on the next launch); 331 holds updates for the whole journey. Gate A walks it on the page's clock in both classes:
+  a real 100% that ranks up -> its results -> Main menu -> Home's call -> the Profile tab -> the journey, with taps all over
+  the cutscene and the app sent to the background and back in the middle of it (academy); two ranks owed (two journeys, one
+  cutscene each); a relaunch in the middle of the cutscene (the rest plays - the cutscene once more - then never again);
+  relaunches after; Home and Profile free for 50s after each (no lock, no journey, no cutscene); every cutscene called inside
+  a journey's cutscene step for that journey's rank, each one finished, a forced update held in every phase. It passes on
+  185cc5c too (the loop was fixed in 331); `--sabotage-loop` (a copy whose `rankUpMarkShown` marks nothing - the journey
+  owing itself again) fails it, which is what shows the section can see a loop. 45 checks pass on this build;
+  the sabotaged copy fails 14 (journeys 1 -> 3 after the first, 8 for two ranks, the journey's focus never let go).
+- **THE "WEIRD LAG" WHEN THE PLANET CHANGES COLOUR was two things.**
+  1. *In the video:* the flash (`supernova-flash-burst`, 3 keyframes, and its deep bloom `rank-flash-deep`, 5) ran with
+     `cubic-bezier(.15,.7,.25,1)` - and an animation's timing function applies to EACH keyframe interval, so the light eased
+     to a dead stop at 14% and again at 35% (the peak, where the planet swaps under it) and then lurched on: frame steps
+     ~100x the one before (frames 724-729 and 736-741 of rankup-cutscene-440x956.mp4, 24.1-24.7s: four near-still frames, then
+     a jump). Now one expansion that only slows (scale 5.5 x (1 - (1 - t)^1.47), through the old 14% and 35% points) and one
+     brightness curve (up to .94 at 35%, then down), laid out as keyframes every 2-4% and run `linear`; the deep bloom the
+     same (an ease-out to 1.25, one rise and fall). Same box, colours and 2.6s. The aura (held at full into the flash) now
+     fades out under it over 1.1s; it used to vanish in one frame 1.6s in (frame 766's bump).
+  2. *On a phone:* traced at the swap (Chromium, 1x, 3,357 elements): the swap re-themed `<html>` (`setNewTheme` ->
+     `applyTheme` -> `syncStatusBarColor`'s forced style pass) and the overlay (`overlay.dataset.accent`) - two whole-document
+     style recalcs, 37ms and 42ms, back to back - and the flash's big bang was ADDED to the page at the burst (35ms: every
+     node added or removed anywhere re-checks the :has() rules under <body>; measured, appending one div to the overlay cost
+     27-39ms, a class change on it 0.4-2.6ms), with the bangs, aura and charge rings TAKEN OFF it 1.6-2s in (four more
+     whole-document recalcs, 26-30ms each), and the flip-book recordings (a host on <body>, a forced style pass a frame)
+     landing in the same window. Eight whole-document recalcs from the flash to the title; now none over 200 elements.
+     - The words that come up after the flash (kicker, title, subtitle) wear the new rank's `data-accent`/`data-theme` from
+       the start - they were the only things in the overlay that took its accent after the swap; the old planet keeps its
+       own colours as it fades (it used to snap to the new accent's CSS colours in its last .2s).
+     - The theme is set in `finish()`, in the dark after the words and planet have faded, before the overlay lifts (once:
+       `themeSet`); the still (Reduce motion) scene still sets it at once.
+     - The bangs are made with the overlay (`bangsHeld`, `.rank-bang.is-held`: hidden, animations off) and set off where
+       they are needed; spent ones are hidden (`.is-spent`), as are the aura, the pulses and the charge, never removed
+       mid-scene (the overlay's removal at the end takes them).
+     - `beginSettle()` from the charge until the title is up: every warm-up keyed off `settleUntil` (the emblem flip-book
+       recordings among them) waits.
+     - The old planet's dim rule no longer lifts at the swap (`:not(.is-swapped)` gone): lifting it changed an inherited
+       custom property under every old bubble (~620 nodes restyled) to undim a planet that is gone .2s later.
+     Real-time frame gaps, flash to title, are printed by gate B (not gated - a shared machine).
+  Gate B (both classes and Supernova, the page's clock): the flash's size and light and the deep bloom's never stop dead
+  and lurch on (on 185cc5c: steps of .0017 then .185, and .036 then .395, at the 35% and 14% keys), and nothing is added,
+  removed or re-themed from the flash to the title (185cc5c: the big bang added, the overlay and <html> re-themed, a body
+  child in and out, the aura and the charge's pieces removed) - 12 failures on 185cc5c, none now. Real-time frame gaps
+  could not be measured honestly here (the machine was at load 25-38 on 4 cores); the trace numbers above are the evidence.
+  Re-recorded: the flash's frame-to-frame change now runs 3-12 (mean abs, 220px frames) with no near-still frame before a
+  jump (rankup-cutscene-440x956.mp4 had 0.92 -> 9.71 and 2.85 -> 26.95).
+- **"RIGHT ON THE FIRST TRY" COMES WITH ITS NUMBERS.** The fraction ("10 / 12") waited for the landing (`.is-waiting`, b327)
+  but the words under it did not, so they sat on the card from its first frame. `fracSub` now waits too and comes in .12s
+  after the fraction (`.rs-grade-sub.is-waiting`; opacity and a 4px rise, nothing moves). `gradeParts.fracSub`.
+- **RED INTO GREEN THROUGH THE CARD.** b327j's switch (one frame, then a .38s bloom: brightness 1.25-1.3, saturate 1.5-1.6
+  and a 1.12x pop) read as a jump, and its bloom was a brighter, more saturated green than the landed one (chroma .20
+  against .13, lightness .88 against .72 in OKLab). Every blend of the two is a grey, an olive or an orange (321, 327f), so
+  the colour goes OUT and the other comes IN, one after the other, through the card: `rsTurn` / `rsTurnAt` over
+  `RS_TURN_MS` (700): the red fades (opacity, in its own hue) to `RS_TURN_FLOOR` (.12) as 1 - v^1.7, changes to the green in
+  that frame, where it is all but gone, and the green comes up as 1 - (1 - v)^1.7. The number by its opacity, each unit
+  bar by its own (its own verdict, its own moment); the card's two washes (hidden under the plain results card since 383)
+  trade places at the bottom. A turn still going when the grade lands plays out (a grade just over the pass mark turns
+  as it lands) and the layers come off after it (`doneAfterTurn`); a tap, or a 100's hand-off to its effect, ends it where
+  it is. `rs-green-on` / `rs-num-flip` / `rs-bar-flip` are deleted. Measured off the pixels every frame (gate D): only the
+  red or the green, no hue between with any colour in it; the largest frame-to-frame step ~.07 in OKLab (the switch was
+  .26-.38 in one frame); 8+ frames from the last full red to the first full green (the switch: 1-4). Gates C and D: 7 runs (both classes, phone, iPad, laptop, a fail, a 100, a 7/10 that turns as it lands) - 37
+  failures on 185cc5c (the words up 120-150 frames before the grade; the switch .26-.38 in one frame, 1-4 frames long, the
+  bloom's chroma .20 against the landed .13), none now.
+- **THE XP BOX'S FOOT AS ONE PIECE** (`.results-level.has-me`, `.results-level-next`). It was the character and its two
+  lines on their own, the bar across the whole card under them (starting under the character) and the numbers hanging
+  below it - on a laptop a small corner and a bar ~1,500px long. Now a grid of the same elements (the head and its text are
+  `display:contents`, so the bar, its numbers, the level-up chip, the charge glow, the bump and everything that reads them
+  are untouched): set off from the total by the same hairline the total has over it; the character on the left in a soft
+  ring of the rank's colour (no icon - "the ranking with the words is enough", 241); beside it one column - the level, the
+  rank in its colour, the bar, and under the bar the numbers with where the bar is going ("Level 43") at its other end
+  (`setNext`: follows the level as it changes; blank while a run climbs through several levels and at 80; hidden under 22rem
+  wide, where the column is ~160px). The Virtual Room's standings block (no character) is unchanged. Gate E (SE, Pro Max,
+  iPad Pro 11", laptop; both classes): one column beside the character, the character level with it, the hairline, the
+  target at the bar's end on the numbers' line, nothing out of the card, legible sizes - 30 failures on 185cc5c, none now.
+  Before/after at 2x: out-polish/xpbox-before, out-polish/xpbox-after.
+- Gates moved: check-behaviour `check_b317_cutspin` (the mini-bang's life is `:not(.is-held):not(.is-spent)` - it is made
+  with the scene now) and `EVOLVE_ST`'s `bang`/`big`, the same. check-b327-j A's "no unit bar is ever grey" counts a grey
+  only as bright as a red-green blend at strength (max channel 120+): a bar turning dims through its own track for a frame or
+  two, darker than either end (its other 11 A failures - the rim and wash since 383's plain card - are the same on 185cc5c).
+- Gates run once (the lead asked for one browser at a time at load ~25-38): check-results ALL PASS; check-b331 ALL PASS;
+  check-b380 one failure, "a board's flares are put on the loop clock once each" (the leaderboard, nothing touched here - a
+  load flake or as on 384, not re-run); check-behaviour check_cutscene / b317_cutspin / b317_cutend / b317_evolve /
+  b317_noflash: 70 pass, 4 fail - "it slows slowly (~5.4s)" on both devices (4373ms / 2979ms: real-time timers under load;
+  the spin is untouched) and "Reduce motion ... nothing moving" for Platinum and Supernova (3 running: the sky, the nebula and
+  the title's hairline transitions - the same on 185cc5c, measured). check_b319_rankup, b320d_rankup and the results sections
+  were not run (time); gate A covers the journey end to end.
+- Not seen on a device: the frame cost is Chromium's (WebKit's :has() invalidation differs, but a node added or removed
+  under <body> is the expensive case in both); the turn's dip and the foot's layout want a look on his phone.
+
+### Build 384 - computers and big monitors; the Leaderboard loading everywhere (NOT on main, waiting for Madison)
+Madison: "Please do another check on computers, larger monitors and things like that to ensure this app runs really well on them
+without any lag as well." / "Please ensure leaderboard functions really well, and it loads properly."
+
+HOW IT WAS MEASURED. Chromium (headless, software raster and compositing), desktop browser tabs (Windows user agent, a mouse) at
+1366x768, 1536x864 @1.25, 1920x1080 (and @2), 2560x1440, 3840x2160; phone 440x956 @3 and iPad 834x1194 @2 for the board. The
+machine ran at load 25-44 on 4 cores the whole time (six other helpers), so wall-clock frame times and long-task lengths are
+noise (a Home idle "fps" of 1-6); the numbers below are thread CPU (CDP ThreadTime = main thread, ProcessTime = the renderer's
+threads: raster and compositor here) and counts, A/B against 185cc5c and f9694e7 interleaved, medians where there were several
+runs. 44 classmates from a fake cloud (every rank, a podium, 28 characters; the board's listener and the launch's board fetch
+answer after a set delay - a slow network is that delay; cold is a launch whose board fetch never answered). Scratch harness
+(journey/probe_lb/probe_cpu/probe_layers/probe_resize) in the scratchpad's out-perf/, not in the repo; the gate is.
+
+THE DESKTOP MATRIX (tabs journey: Home idle, Profile, Leaderboard, its scroll, the three boards, Find me, a row's card, Calendar,
+Home and back; pages journey started but cut short at the lead's call). Main-thread CPU per step does NOT grow with the window -
+the screens are width-capped (~800px column, the planet at most 768px) and nothing builds per pixel:
+  step (main / renderer CPU, ms)   1366x768        1920x1080 (n2)   2560x1440       3840x2160 (n2)
+  Home idle 4s                     427-613/730-990  304-350/440-585  246-435/540-670  315-372/545-570
+  tap Profile                      216-282/890-1280 228-242/~1100    192-245/~1140    ~191/1695-1780
+  tap Leaderboard                  722-852/1410-1860 444-570/~1300   277-1088/1030-2150 ~290/2085-2255
+  Leaderboard again                206-709/800-1880 254-301/1305-1480 216-360/1440-1740 326-332/3390-3840
+  scroll the whole board           264-392/800-910  334-446/1040-1270 430-541/1350-1580 581-599/~1790
+What grows is the renderer's raster and compositing (software here, the GPU on a real computer): ~1.3s -> 2.1-3.8s for a board at
+4K - in proportion to the pixels, with no layer re-rastered over and over (traced: tiles by layer on a board open at 4K, 606
+tiles, the root layer 288 of them, once). 185cc5c, f9694e7 and this build are level within the noise on every step.
+Structure at 4K (every screen above): no canvas, filter or backdrop blur sized to the window - the largest backdrop blur is the
+tab bar (572x91), the largest masked layers Home's three smoke circles (~635px, transform/opacity); Home steady at 33-35 running
+animations (as 384's laptop pass found). Three window-sized layers are static (the root, html - composited by overlap over the
+fixed sky - and body's fixed sky pseudo-elements). A GPU-emulated run (SwiftShader) only said Home is the GPU-heaviest screen (its
+blurred bubbles over the moving planet, the masked smoke) - only a real big monitor can say whether that costs frames there.
+WINDOW RESIZING (a desktop-only thing): dragging a window 1280x720 <-> 2400x1350 on Home costs ~37-50ms of main-thread CPU a step
+(5-11 style passes, 4-8 layouts) - the same with every one of the app's 27 resize listeners removed (ablation, one at a time and
+all: none is the cost). It is the whole-page restyle a size change brings with an 11k-rule stylesheet; not changed.
+
+WHAT WAS WRONG WITH THE LEADERBOARD, AND IS FIXED (each found by probe_lb; shapes per frame from the tap):
+1. A COLD BOARD ON A SLOW NETWORK CROWNED YOU 1ST OF 1. The board's 2.5s fallback ("offline, or a server that never answers")
+   painted what the cache had - only your own row - whenever the class had not arrived yet, so on a 3-6s connection the board was
+   you alone until the class replaced it: f9694e7, phone (class 3s away) 22 frames, 4K 5, 1366x768 (6s away) 133 frames. Now, while
+   navigator.onLine is not false and nobody but you is known, the placeholders stay up to LB_SLOW_WAIT_MS (12s; the listener paints
+   the moment the server answers); offline, or with classmates in hand, 2.5s as before. Fix: 0 frames.
+2. THAT ONE-ROW BOARD ALSO SET THE KEPT SCREENFUL. lbCountVisible counted the rows on screen of whatever board was up, so the
+   one-row board stored vis 1, and the class arriving a moment later (renderRankingRows' lbStillRows = vis + 1) came up with a still
+   for two rows and empty discs below: f9694e7 phone, 4 of 10 rows bare for 5 frames; offline, 4 rows for 5 of 16 frames. Now only
+   a list that runs past the screen counts it; a short list may raise a count, never set or lower it.
+3. A FIRST BOARD ON A TALL WINDOW CAME UP HALF EMPTY. With nothing counted yet, the rows given a still in the tap were 12 (a
+   phone's screenful); a 4K window shows 29 rows, 2560x1440 18, and rows 13+ were empty discs until the art queue reached them -
+   f9694e7: 16 of 29 rows bare in every frame for 3.5s+ at 4K, 6-12 of 18 at 2560x1440 (cold, the class by the listener). Unknown,
+   the count is now read off the window (lbScreenRowsGuess: rows that fit under the ~260px head at ~64px, +1, never under 12 - a
+   phone keeps 12). Fix: 0 bare. Its cost in the tap is the stills of the characters not made yet (one per character, not per
+   row); renderRankingRows at 4K 770-1341ms wall vs 915-1195 on f9694e7 under load 25+ - within the noise.
+4. THE CHAT DOCK'S FRIENDS TAB NEVER CAUGHT UP. Opened before the class's rows had arrived (soon after a launch on a slow
+   connection), every friend was "Friend" with the default character, and stayed so - nothing redrew the list when the rows came
+   (the board fetch's answer redraws only the notifications). friendsListCatchUp(), called where the class's rows land (the board
+   fetch and the Leaderboard's listener), redraws an open Friends list that has a row drawn without them, never inside a chat.
+Checked and fine on both builds (warm: the class in memory as after a launch; phone, iPad 11, 1366x768, 1920x1080, 2560x1440,
+3840x2160): rows whole from the first frame, no blank frame, all 45 in each board's order (This Week, Overall, Hundos), places
+1-45, the podium the top three, every rank rankOfEntry's, Find me on screen and flashing, the whole list scrolled with no row left
+without art, Home <-> Leaderboard five times each whole and in order with the element count flat (1.6-4.1k, not growing).
+
+GATE tools/check-b384-desktop.py [--against REV] [--only 1,...]: (1) cold board, slow network (phone, 1920x1080): no frame as you
+alone, placeholders until the class, then 45 in order; (2) offline then the class: every row whole from the class's first frame,
+the one-row board sets no vis; (3) first board on 3840x2160 and 2560x1440: every row on screen whole from the first frame; (4)
+the Leaderboard everywhere (phone, 1366x768, 3840x2160 by default; B384_DESKTOP_DEVS for more): whole, order, podium, ranks, Find
+me, the board tabs, scrolled, four returns; (5) the Friends tab catches up (1920x1080, phone); (6) no page errors.
+Against f9694e7: (1) fails both (46 of 142 / 38 of 57 frames as you alone), (2) fails (5 of 16 frames short, vis 1), (3) fails
+both (16 of 29 / 6-12 of 18 rows bare), (5) fails both ("Friend" x3 after the rows land); (4) and (6) pass on both.
+
+NOT CHANGED - ANOTHER HELPER'S AREA OR NEEDS A QUIET MACHINE:
+- Hundo effects on a big window (hundo helper): Underwater's sea is window-wide and rises/drains as a 3840x1976 layer at 4K (its
+  wave strips 4060px), and Fireworks' sky canvas is window-sized at up to 1.5x (~5760x2250 at 4K) redrawn every frame - the one
+  per-pixel-per-frame cost found in the app. Their CPU at 4K was being measured when the lead called time: to re-run quiet.
+- The rank-up cutscene at 4K (cutscene helper): not measured.
+- What a real GPU does with Home's blurred bubbles over the moving planet on a 4K/5K screen, and Safari on a Mac (WebKit cannot
+  run here): only a real computer can say.
+GATES RUN (one browser at a time, load 6-30): check-js ALL PASS (10 blocks); check-b384-desktop ALL PASS (30) on 34c4517 (the
+fix); --against f9694e7 --only 1,2,3,5 FAILS (1) both (60 of 364 / 54 of 253 frames as you alone), (2) (9 of 49 frames short, vis
+1), (3) both (16 of 29 / 6-12 of 18 rows bare in 24 of 88 / 29 of 127 frames), (5) both. check-b384-perf: 17 pass, (2) fails -
+one whole-page style pass forced by the status-bar colour read (cssColorHexNow) on the phone, two on the laptop, over two Home ->
+Profile -> Home trips - and fails the same on f9694e7 (--only 2: 1 and 2), so it came in before this pass (after 1dca98e's
+perf pass, which had 0); not touched here (the status-bar colour is not this pass's area) - to look at with the machine quiet.
+Not run at the lead's call (wrap-up): sweep-layout --only laptop/MacBook/Dell (nothing here changes layout), check-b382-board and
+check-b384-board2 (the board's look and coming-back paths are untouched; check-b384-desktop (4) covers the board's load).
+- FIREWORKS ON A BIG MONITOR (from the desktop pass: the one cost found anywhere that grows with the screen). Its canvas was
+  capped at 1.5x per CSS pixel but not in total, so a window-wide sky was ~4.6M canvas pixels at 3840x2160 (and ~11M a monitor
+  wider still), cleared, drawn and committed every frame. A ceiling of 2,000,000 canvas pixels (FW_MAX_PX; the scale drops, never
+  below .5): measured, a 17 Pro Max's sky stays 660x789 (0.52M) and an iPad Pro 11's 1251x986 (1.23M) - unchanged - while
+  1920x1080@2 goes 2.57M -> 2.00M and 3840x2160 4.56M -> 2.00M. Soft glow and trails read the same at a little under 1x.
+  Underwater's full-window sea is a transform-animated layer (rastered once, then moved) and was left.
+
+### Build 384 review - the Virtual Room: invites follow the room's class; every game played through (NOT on main, waiting for Madison)
+Madison: "your account friends, that's your account friends for any class. However if one of your friends isn't enrolled into
+the class of whatever virtual room you are in, they won't appear on the invite list or maybe their invite button is greyed out
+and when you try to invite it says this player is not enrolled" / "do a check on the virtual room games, ensure they work
+wonderfully and if they need any fixes, updates, improvements do them, I've barely been able to use them."
+
+THE INVITE LIST AND THE ROOM'S CLASS
+- WHAT A FRIEND'S DEVICE SAYS: nothing published which classes an account is in (the board row is the academy's alone, and a
+  Fire Code-only account has none). The presence beat carries it now: `c` in vrooms/presence-v1, beside `p` (seen) and `a`
+  (activity), per public id { k: "academy" | "ifc" | "academy,ifc" (enrolledClasses), n: first name, v: character }. Written by
+  sendHeartbeat in the set(merge) it already makes - NO new write, no new read (the invite sheet already attached presence).
+  The name and face are there because a friend in Fire Code alone has no board row and the invite list called him "Student".
+  Public id, class names, a first name and a character id - never a code (check-b384-vroom-review (N)).
+- friendInClass(pub, cls): false only when the friend's own beat says another class; true when it says this one or (for the
+  academy) the friend has a board row; null when nothing says (a device from before this build) - an unknown friend stays
+  invitable, and their own device turns the room away on the join (below). Nova is in every class.
+- THE SHEET (openInviteFriendsSheet): the room's class is inviteRoomClass (the room document's `cls`). A friend known not to be
+  in it: the Invite button greyed (.friend-act.is-unenrolled, opacity .35 like a disabled button, aria-disabled) but still
+  takes the tap and says "<Name> isn't enrolled in Fire Code." / "... isn't enrolled in the Police Academy." ("This friend"
+  when no name is known); nothing is sent. Greyed rows sort below the rest. Painted from each presence snapshot as it lands
+  (paintInviteClassStates); a row drawn before a friend's beat named them is drawn again once. inviteFriendToLobby refuses the
+  same friend too. A toast over the invite sheet goes to the top of the screen above it (the start sheet's rule since 267) -
+  the line landed under the sheet and the Ready bar. The empty sheet's "Turn on class sharing" follows the account's sharing (socialOptIn) - in Fire Code it said
+  so to everybody, Fire Code's own store having it off - and in Fire Code names the Police Academy class's Settings.
+- A ROOM IS FOR ITS CLASS, BY EVERY DOOR (joinVirtualRoomLobby): an account not in the room's class is turned away with "This
+  is a Fire Code room. You aren't enrolled in Fire Code." (its own account decides - enrolledClasses), whatever led there: an
+  invite from an older build, the Inbox, the banner. The open rooms list leaves out rooms of classes the account is not in. An
+  account in both classes still plays the other class's room from this page as a visitor (vroomForeign, 384), so
+  check-b384-vrifc's visiting classmate is now enrolled in both (its fixture changed, its checks did not).
+- The lobby's Open to class line names the room's class: "anyone in Fire Code" in a Fire Code room (it said 26E).
+
+FOUND PLAYING THEM (several real pages, one stand-in cloud: race, Tug of War and Battle at 2 and 4 players, both classes,
+with Nova; leave, rejoin, host leaving, an app that dies) - each fixed:
+- BATTLE ENDED AT THE ROOM'S COUNT. battleCheckOver read the room's `count`; every device plays max(50, count)
+  (battleBuildPool cycles the bank). A room set to six questions was called over when both had answered six - at "Question 7 of
+  50", on health. Now max(BATTLE_MIN_Q, count), as the pool. The lobby said "9 questions" and "at least 50 questions": it says
+  "Two teams · 50 questions, 20 seconds each · the 9 repeat".
+- BACK AFTER THE APP DIED: REFUSED FOR GOOD. "This account is already in the lobby." whenever the account's entry was on the
+  room - and an app killed without its pagehide leaves it there for the life of the room. A room entry carries `dev` now (this
+  device's random tallyDeviceId - never a code); the same device, or an entry presence has given up on (no beat for 150s), is
+  taken over; only another device of the account still beating in the room is refused.
+- ...AND A COMEBACK HELD THE MATCH. Back in mid-match, the fresh entry (nothing answered, not finished) is one of the racers /
+  on a team, and the finale waited on it. Joining during a match writes `late: <that match's startAt>`; vroomLateFor /
+  vroomMatchHere leave them out of THAT match only (vroomRacersOf, battleMembers, tug and battle's "everyone done"); the next
+  start has a new startAt. Their lobby says a match is in progress, as for anyone joining then.
+- THE HOST LEAVES: NOBODY CAN INVITE. The next joiner is host (vroomHostKeyOf) and got Match settings, but Invite friends and
+  Open to class were built only for whoever created the room. syncLobbyTools() puts them up (or down) on every snapshot, the
+  switch painted from the document. The open rooms list named the room after its maker, gone or not: it names the host now
+  (earliest present joiner) - no write.
+- "LEFT THE LOBBY" MID-RACE: announceVroomLeave asked vroomTestStarted (a race clears it on its first question) and looked for
+  .tug-screen/.battle-screen (no such screens). In a match (a race run, its wait for the others, a countdown, Tug or Battle):
+  "left the match."; the lobby or Match settings: "left the lobby."; after a match: "left the room.".
+- JOINING FROM ANOTHER LOBBY left this device's entry in the first room (the Inbox's Join): it leaves that room first; already in
+  the room: its lobby; a match running on this device: "Finish or leave your match first."
+- THE WAIT CARD WAITED FOR THE SERVER: finishVirtualRoomTest showed "Waiting on other players" only when the server acknowledged
+  the finish (on a slow connection seconds of results with nothing saying the room was still going; offline never). It shows at
+  once; the write is in the local cache for the room's listener. Return to lobby the same (it waited on the reset's answer, and
+  on a failed one left the bare results under the removed standings).
+- NOVA WHO NEVER READIED: his driver stopped on the first snapshot without his entry - the listener starts as the invite is
+  written, and an answer from before that write ("he left") ended the driver; he sat in the lobby, the room never started (seen
+  once in a Fire Code room). It stops only once he has been seen, or after 15s.
+- TUG OF WAR: the team board put side a on the left - "Their side" first for team b, under a rope that puts your side on the
+  left; your side first now (Battle's board already did). The winning end leaned its last figure past the field's edge (the
+  ghost cut off at the right of every result their side won): the ends sit 1.2rem in, not .7 (the figures' -.62rem overlap
+  reached past the end). "N people are still answering" counts only people still in it.
+- BATTLE'S WINNERS STOOD ON A ROPE: the team cutscene's floor was Tug of War's rope for both games; Battle's is the plain floor
+  (opts.floor "line").
+
+LOOKED AT, NOT CHANGED (for Madison):
+- PAUSE IN A RACE holds the race: the 45s clock and the time stop while paused, and everyone else's finale waits for the paused
+  player (presence keeps them "here" while the app is open). That is as built ("Your Virtual Room test and its timer are on
+  hold"); Tug and Battle's Pause is only a way out. Worth deciding whether a race should do the same.
+- A race that ends waits ~20s from the last finish to the leaderboard (results land ~10s, "Preparing leaderboard", the 3-2-1),
+  as asked in 240-279; a player whose app died is waited for up to 150s (presence).
+- The seeded gate accounts were owed retro badges (badgeBandsVersion), which put a badge case on their first results and held
+  the leaderboard ~45s - not a room bug (the fixtures now carry badgeBandsVersion 4).
+- STILL WORTH DOING: a friend in Fire Code alone has no board row, so the academy's other friend screens (the chat's Friends
+  tab, Manage friends) still have no name for them unless a chat with them has been read - the invite list now takes the name
+  from their beat; the same source could serve those screens. A join waits for the server's answer to its own write (as
+  hosting did before HOST_ENTER_MS) - on a slow connection Join sits a moment. The race's ~14.5s from Ready to the first
+  question (4.5s lead + the 10s count) is as asked.
+- ONLY A PHONE WITH THE REAL FIREBASE CAN CONFIRM: the rules taking `c` on the presence document (the rules are open - the app
+  writes with no sign-in - and 384 already added `cls` to rooms the same way), and how an app killed by iOS comes back.
+
+GATE tools/check-b384-vroom-review.py (four devices, one stand-in cloud served over HTTP - check-b384-vrifc's, plus per-device
+write latency, CLOUD.slow, for "waited for the server"; ONLY=B,C): (A) the beat's `c` from an academy, a both, the owner's
+Fire Code and a Fire Code-only device, with name and character, no presence write of its own; (B) the Fire Code room's list
+greys the academy-only friend, the tap names him and sends nothing, the both-classes friend is invited and joins, the Fire
+Code-only friend is listed by name; the academy room greys the Fire Code-only friend; (C) the academy-only account is turned
+away from the Fire Code room and not offered it in open rooms; (D) the promoted host has Invite and Open (open shown), the list
+names them; (E) a second device refused, the same device back in after its app died, the race not held; (F) "left the match";
+(G) out of the first room; (H) wait card and Return to lobby under 2.6s with the server 4s behind; (I) Battle past question 8
+of a 6-question room, its winners on the floor; (J) Tug board your side first, figures inside the field; (K) Nova readies with
+the server slow; (L) Fire Code's open line, Battle's line; (M) the sharing line; (N) no code in vrooms, no page errors.
+RESULTS (one run each, load 25-30 on 4 cores): this gate 42 PASS, ALL PASS; --against 1fc96f9 26 FAIL, the 12 that pass on
+both are invariants (no presence write of its own, hosting, the both-classes account offered the room, a second device refused,
+no code in vrooms, no page errors). check-b384-vrifc ALL PASS (36; room cost per match unchanged, 17 writes / 37-38 reads),
+check-vroom ALL PASS (220; its baseline run on 1fc96f9 had one load failure, "all three are up before it ends"), check-friends ALL
+PASS (77), check-js ALL PASS. Run after the toast's move over the sheet (CSS only): the screenshots below; the gates were run
+before it. Not run: sweep-layout / check-centering (no new screen; the greyed button is the existing .friend-act at .35
+opacity), check-behaviour b314h_lobby (joins by joinVirtualRoomLobby; an academy room, so the class rule lets it in).
+MEDIA (scratchpad out-vroom/, made-up names): invite-academy-room[-tapped]-{iphone17promax-440x956,ipadpro11-834x1194}.png,
+invite-firecode-room[-tapped]-*.png - the greyed friend and the line its tap gives. The per-game MP4s are the lead's pack.
+
+## 384 review round - final check: check-b382-test's fixture and Home's unlock queue
+
+check-b382-test crashed in its layout section ("Value after * must be an iterable") on the merged build, twice, on a quiet
+machine. Not the app: the fixture's Fire Code hundos earn the Sprinklers effect, and Home's unlock queue collects its cards at
+launch and plays the first ~14s in. The check then starts a drill BY SCRIPT under that card (a person cannot - the card covers
+the screen and takes the tap), so the second drill's answer tap landed on the card and the question was never answered.
+Marking the unlocks seen in setup is not enough on its own: the queue had already collected its items. So setup now marks
+pendingHomeUnlocks() shown (nothing new joins) AND start() removes any card that is up before beginRun. The harness is shared by
+check-b384-codeslide / cropfit / ifccrop and check-b383-flashcards, which exec it. Result: check-b382-test ALL PASS (40).
+Lesson worth keeping: a fixture with real progress earns real unlocks, and Home's queue plays them on its own clock - a gate
+that drives screens by script from Home has to clear them, or it reads a covered screen.
+
+## 384 final check: the class list's dim was a :has() that restyled every screen on any change
+
+check-b384-codeopen (2) ("no task over 50ms after tapping Show the code", Fire Code Review list, 4x CPU) failed on the merged
+build and on the build before the drop-down slide, and passed on the build it was written for (0247490) under the same load.
+A single-run bisect blamed 9c1068c (secret names' wording - noise). A trace settled it: the 208ms task was a 138ms
+UpdateLayoutTree of 6,914 objects, and invalidation tracking named the rule:
+  #stage:has(> .class-bubble-wrap.is-open) > :not(.class-bubble-wrap)   (775a30c, "the class button's list dims what is behind it")
+A :has() on #stage whose styled set is "every child but one" is re-checked on changes under #stage, and its invalidation set
+for ":not(.class)" is the whole subtree - so ANY change on ANY screen (a code box opening, a row drawn, a class toggled) restyled
+the entire screen. App-wide cost, worst on long screens (Review lists, the Leaderboard).
+FIX: the list sets #stage.class-list-open itself (openStack / closeStack), and a MutationObserver on #stage's children takes it
+off if the list leaves the screen while open (the next screen's mount), so no screen is ever left dimmed and untappable. The
+rule is now #stage.class-list-open > :not(.class-bubble-wrap) - a class that only changes when the list opens or shuts.
+After: the tap's long tasks went 113-263ms -> 50-87ms at load 12, and 0 at load 5-7 (3 of 3, the same as 0247490 alternated).
+What remains at load 12 is two narrow :has() rules re-matching 107 rows each (.qnumrow:has(> .qnum) > .flagbtn.qflag,
+.fc-face:has(> .nova-hlb) .ifc-ref) - class-keyed, so they touch only those elements; left as they are.
+GATE: tools/check-b384-classdim.py - (1) open dims the rest of Home (<= .3) and it takes no tap; (2) a tap outside brings it
+back; (3) a screen mounted while open is not left dimmed; (4) no :has() rule in any stylesheet styles a broad set after it
+(:not(...), *, a bare tag) - the shape that does this; (5) no page errors. ALL PASS; --against the build before FAILS (4).
+RULE WORTH KEEPING: never write X:has(...) > :not(...) / * / tag on a container. Toggle a class instead.
+
+## 384 final check: "Search" sat 2px low in every search field (in a browser)
+
+Madison, circling the unit screen's field beside Select all, off one of the review screenshots: "The word search in the search
+bar is slightly lowered". Measured at 3x: the placeholder's ink 2.0px (CSS) below the field's middle (2.67 on the Leaderboard),
+Select all's words 1.3-2.3px above it. Cause: build 328's  html[data-layout] body input.searchbox{ padding-top:calc(.7rem + 2px);
+padding-bottom:calc(.7rem - 2px) }  - a 2px drop for lowercase placeholders ("search names", whose ink rides above a line box's
+middle). Since 382 every field says just "Search" (a capital and ascenders), which a centred line box already centres.
+FIX: even padding (.7rem / .7rem) - same total, so every field keeps its height. The @supports (-webkit-touch-callout) rule for
+iPhone/iPad (382, measured off his phone; check-b382 holds it) is unchanged.
+Why no gate caught it: check-centering measures a control's text; a placeholder is not a control's text.
+GATE: tools/check-b384-searchink.py - the placeholder's ink against the field's middle (unit screen, both classes, and the
+Leaderboard), level with Select all, fields still 44px. ALL PASS (0-0.67px); --against the build before FAILS (2-2.67px).
+
+## 384 final check: Fire Code badges - no outline that is another one turned, flipped or stretched
+
+Madison, circling Chapter and Section Finder and Chapter 3 on the unit screen: "These badges are the exact same just in a
+different direction? That needs to be fixed, that isn't gonna work.. that's lazy. Each badge will need to be unique. If some of
+the badges look the same across the classes that's okay too.." He was right: the Finder's crystal and Chapter 3's nameplate are
+one hexagon, stood on end and laid on its side. check-b384-ifcbadges compared outlines in ONE orientation, so any turned or
+flipped twin passed.
+MEASURED (scratchpad r2/badges: masks.py, rigid.py, edge.py): every outline drawn by the page, centred on its centroid and
+scaled by its area, edge against edge at every 3 degrees and both flips, 1px band. Twins found in Fire Code's 58: crystal /
+nameplate 0.99 (and both the hex stretched), diamond / tile 1.00 (a square turned 45), card / plaque 0.98 (the card on its
+side), coin / octagon 1.00 and coin / seal 0.96 (at a unit card's 28px the octagon's rounded corners and the seal's scallops
+vanish), plus stretch twins the turn-only measure does not catch: coin / oval, ribbon / notchplate, hex / gate, and the wedge
+(the fan point down with a notch). Area IoU was useless here (every convex blob scores 0.9+); edges at 1px separate cleanly:
+the old twins 0.96-1.00, the closest honest pair (the academy's keystone and shield) 0.75.
+FIX: ten Fire Code chapters get ten new silhouettes (scratchpad r2/badges/gen9.py: built from plain parts with shapely, every
+corner rounded, one or two channels): bell (Chapter and Section Finder), flask (Ch 3), shell (Ch 26), puzzle (Ch 28),
+mushroom (Ch 35), goblet (Ch 51), heart (Ch 58), acorn (Ch 61), vase (App B), anvil (App C). Out of BADGE_SHAPE (Fire Code's
+own, nothing else used them): crystal, nameplate, tile, plaque, oval, notchplate, seal. Octagon, gate and wedge stay - they are
+the academy's own; Fire Code no longer uses them. Each candidate was scored against the 48 that stay (the new ten top out at
+0.80 on the looser measure, acorn / shield) and looked at at 28px; turned down: a pagoda (the spire's house), a lantern (the
+hex), a keyhole (the medal), a doorway (the disc), a cloud (the disc and shield), a scroll (the ribbon), a speech bubble (reads
+as the chat button). The thin parts were thickened after a first render (the anvil's face, the goblet's stem, the vase's neck):
+the inset plate cannot follow a part thinner than its band, and the plate fell apart there.
+WHICH CHAPTER GETS WHICH (r2/badges/fit.py): every chapter x outline back planned in the page (badgeBackPlan), then every
+assignment tried, keeping the smallest title largest - 0.0420 of the badge (the academy's smallest 0.0368; Fire Code's smallest
+stays Chapters 2 and 10, untouched) - and never an outline that pictures its chapter: no acorn on the lumber yards, no anvil on
+welding, no flask on the gas and chemical chapters, no vase (a gas cylinder) on Ch 58/61, no mushroom on fumigation. Colours
+are each chapter's as before.
+GATE: tools/check-b384-badgetwins.py - Fire Code: 58 chapters, 58 outlines, no pair at 0.9 or more under any turn or flip
+(closest now Ch 4 / Ch 39, shield / keystone 0.75); the academy's closest listed for reference (0.76). ALL PASS; --against the
+build before FAILS with exactly the twins (Ch 64/App B, Ch 28/Ch 31, Ch 3/Finder, Ch 58/Ch 66, Ch 26/Ch 31).
+check-b384-ifcbadges ALL PASS (29) on the new set: 58 outlines, every back its title and FIRE CODE inside the rim, smallest
+titles as before, the academy's 24 byte-identical (8996cbb2).
+NOT DONE (asked as a decision): the academy's own set has the same kind of near-likeness on the looser measure (gate / octagon
+/ hex, disc / shield, fan / wedge, keystone / shield). Madison said across classes is fine; within the academy it has been
+live a long time and was not raised.
+
+## 384 final check: the round buttons' icons, as iOS draws them
+
+Madison, beside his own iMessage screenshot (the round back and FaceTime buttons circled): "Those bubbles look amazing, the back
+arrow looks great. The FaceTime one looks good ... it looks so clean and white and it's a great size. Ensure our bubbles look that
+great and stuff. The icons within the bubbles need to look that great." And of ours (the unit screen's back): "The arrow isn't
+centered here by the way."
+MEASURED off his two screenshots (same 1186px width, so one scale): the circles are the same size (~117px there, 44pt). Inside:
+iMessage's chevron 24-25% x 41-43% of the circle (ours 14% x 27%), stroke ~1.5x ours, pure white (ours #E7EDF1; the chat glyph
+also at opacity .92), and its box 3% of the circle LEFT of the middle (ours box-centred, dx +0.3) - a "<" centred by its box
+reads right-heavy, the two open ends carrying the weight. The FaceTime camera is 41% of the circle tall; our speech bubble 31%.
+THE ROUND BUTTONS (three builders): .ios-nav-back (fillBackLabel's 16-unit chevron), .settings-nav-back (Settings pages and the
+unit screen's .setup-nav-back - a 24-unit chevron), the sign-up panels' round .back-link, and #chatdock-btn.
+FIX (CSS only, after the centring block): chevron svgs 26px (16-unit) / 29px (24-unit) with stroke-width 1.45 / 1.95 units - both
+draw an ~18px chevron with a 2.35px stroke, 42% of the circle; the chat svg 56% of its button (any size: phone 44, SE 38,
+tablet) - its bubble 41%; all three color:#fff, opacity 1. Each chevron variant's own translate puts its ink 1.17-1.33px left of
+the middle at 3x (3% of 44 = 1.32). The circles, their glass and their sizes are unchanged.
+GATES: tools/check-b384-roundbtns.py - five round buttons (unit screen, mode screen, a Settings page, sign-up class step, chat):
+white (computed, opacity, brightest ink >= 250), 44px, glyph 38-46% of the circle tall, chevron ink at -3% +-.5px across and on
+the middle up and down, the chat bubble on the middle. ALL PASS; --against the build before FAILS 14 of 16 (colour, size and the
+chevrons' placement on all five; the chat bubble was already centred). check-centering: a round back control (.back-link /
+.settings-nav-back, no words, square <= 64px) is held to opticalDx = -3% of its width, not to its box's middle - otherwise this
+gate would call iOS's own placement off-centre. check-b383-look, check-b384-home, -navmeet, -smooth ALL PASS on the change.
+
+## 384 final check: a top banner never strands another mid-screen; the videos recorded as the installed app
+
+Madison, off a frame of the class-switch video (round 1's pack): "Why is the pop up showing in the middle? Why is the bottom tab
+so high up? What's up this video in general? I'm assuming it may be because this is a smaller device but it still needs to be
+done right."
+TWO CAUSES, one the app's and one the recorder's:
+- THE APP: settleTopBanner() only ever moves a banner DOWN past what is already up, and nothing moved it back. "It's out" (the
+  daily question coming due on Home) arrived while "Welcome back to Fire Code" was up, settled under it at 216px - over the
+  planet - and stayed there after "Welcome back" left. Reproduced in check-b384-bannerroom (2): the old build holds the second
+  banner at 216 for as long as it is up. FIX: (a) watchTopBanners() - a MutationObserver on <body>'s children, started by the
+  first showDailyAlert - and when any .daily-alert or .app-banner leaves, resettleTopBanners() re-places every .daily-alert still
+  up (top first, positionDailyAlert, so the update notice and the chat button are still cleared) and slides it there (a
+  transform-only FLIP, composite add, off with reduce motion); (b) "It's out" waits (500ms steps, up to 12s) while another top
+  banner is up, so the two do not stack at all - the wait is before its chime, so the sound is not repeated.
+- THE RECORDER: record384.py opened the "iPhone" through check-b384-a2hs's open_page with installed=False - an iPhone Safari
+  tab - at the installed app's full 440x956 with its insets. A Safari tab on that phone is ~797px (iOS 26 Safari's bars float
+  over a full-height page, which the app reads as html.safari-bars-over and answers by lifting the tab bar 91px clear of the
+  toolbar). The video draws no toolbar, so the bar sat 91px off the bottom with nothing under it. Installed it sits 22px off,
+  over the home indicator. The class-switch and new-class videos are re-recorded as the installed app (installed=True).
+GATE: tools/check-b384-bannerroom.py - (1) a lone banner's place (128px, under the chat button); (2) a banner shown under
+another slides back to that place within a second of the other leaving on its own timer; (3) "It's out" coming due on Home
+while "Welcome back" (9s) is up is never pushed under it, and then takes the lone place; (4) no page errors. ALL PASS; --against
+the build before FAILS (2) (held at 216) and (3) (stacked under it, 216).
+
+## 384 final check: the Extinguisher's tile and still show the effect it is now
+
+Madison, on the decision "the Extinguisher's Customize tile still shows the extinguisher and cloud, not the new fire": "yes,
+things need to be updated? Why is that a question." Both pictures of the Fire Code 25 effect (key "fireworks") are redrawn as the
+effect now plays - the 100% on fire and the extinguisher putting it out (P.A.S.S., at the base):
+- ifxPosterBody (the 160x60 tile in Customize and the unlock rows): flames across the frame behind the 100% (tallest to the right,
+  where the stream has not reached), the horn low at the left on the base of the flames, the agent billowing up LOW where it
+  lands (kept under y~40 so the 100% above stays clear), the extinguisher where it was.
+- ifxStillBody (the 48x48 still): the extinguisher at the left, its horn low on two small flames at the right, the agent
+  puffing at their base.
+Both use the effect's own pieces (ifxFlameD, ifxRad, IFX_RED), no new helpers. Rendered before/after in the scratchpad
+(r2/extinguisher-tile-before-after.png).
+
+## 384 final check: a Fire Code cut's gutter side hugs its own column's text (ifc-viewer trimEdges)
+
+Decision 13's "four IFC clips show a sliver of the next column" (ch10-168 a ruler's ticks, ch12-033 a few letters, ch63-005 a
+"k", ch9b-050 a tick): trimEdges only saw the other column's LETTERS reaching under 4pt into a cut, and two of the four are not
+letters at all. Now a cut of running text in one column (col 0/1, no table cell - a table's borders run past its text) ends 2.5pt
+past its widest line on the side that faces the other column (only when that line comes within 30pt of the page's gutter); the
+outer side (change bars, margin marks) is unchanged.
+MEASURED over every IFC clip (crops-work/survey.py --noshots, 1,391 each way, the trim swapped in with --viewer): 1,194 cuts move
+a few points on the gutter side; 0 clips gain ink at a side edge; 5 lose it (ch9b-050, ch10-168, ch10-063, ch12-032, ch12-033);
+0 errors. ch63-005's "k" stays: it is a whole mark beside the heading line inside the cut - the book's own margin marker for that
+section, not a sliver. Before/after of the four: scratchpad fin/slivers.jpg.
+
+## 384 final check: the code card's Enlarge / Show the whole page pills, centred by their ink
+
+Madison, circling Enlarge on a code card (a crops contact sheet): "Am I crazy or is this still centered properly?" Not crazy:
+measured at 3x on an iPhone 17 Pro Max, Enlarge's ink sat +1.00px and Show the whole page's +2.25px right of the pill's middle.
+The pill centres its mark-and-words group exactly; the marks were 24-unit boxes round narrower drawings (the page mark 12 of 24
+wide, a unit right of the box's middle; the magnifier 3.3..20.7), so each box's empty left pushed the ink right.
+FIX: each mark's box is its own ink left to right, at the same scale (17/24) and height - viewBox "3.1 0 17.8 24" at 12.61px
+(magnifier) and "5.85 0 14.3 24" at 10.13px (page), preserveAspectRatio none at exactly the viewBox's aspect, classes is-zoom /
+is-page on ifcLinkBtn's pill. After: -0.25 / -0.25px across (3x rounding), the mark-to-words gap 8.5 / 8.0px (was 10.5 of which
+2-4px was empty box).
+GATE: tools/check-b384-codelinks.py (needs PDFJS_DIR): both pills' ink on the middle across and up/down within .5px, the gap the
+same on both. ALL PASS; --against the build before FAILS (1) on both pills. check-centering never opens a code card - that is
+how this got past it.
+
+## 384 final check: pure white ink, app-wide
+
+Madison, after the round buttons' glyphs went pure white: "The pure white for the chat and back button thing looked [great]. We
+need more pure white however we gotta ensure that the app is cohesive and that the app looks good with pure white so ensure
+that checks out, if we need update some colors so it all meshed together perfectly then do so."
+- [data-theme="dark"] --ink #E7EDF1 -> #FFFFFF (322 uses: every primary label, icon and white control, as iOS draws them).
+- The hard-coded #F3F5F7 the cards and sheets used for their own text and glyphs (44 in the stylesheet: Nova's lines, tips, the
+  stats pop-over, unlock cards, the save-code and Add to Home Screen sheets, the Advanced toggle's chevron, the pause mark's
+  fallback) -> #FFFFFF, so nothing reads a step greyer than its neighbour.
+- Text colours that were the OLD off-white at an opacity (rgba(243,245,247,a), rgba(236,240,245,a), rgba(240,245,252,a),
+  rgba(236,237,241,a) - 61) -> rgba(255,255,255,a), the same opacity: the secondary steps are measured from the same white. And
+  the neutral near-white primaries (#E7EDF1 x2, #F5F6F7, #F3F6FA, #F3F5F8, #F2F4FA, #EEF2F6, #EEF2F8, #E6EAF0) -> #FFFFFF.
+- LEFT AS THEY ARE, on purpose: --soft #A0ACB6 (the secondary grey - the step from white to it is the hierarchy, wider now);
+  tinted text in coloured contexts (#FFF3D6 gold, #E0F2FE blue, #F0EEFA violet, #FFD9D2 ...); white at .8-.9 used as a
+  deliberate second step; the off-whites inside character and banner art (#E8ECEF).
+Before/after of nine screens (Home, Profile, Stats, Settings, Leaderboard, units, modes, a question, chat) in the scratchpad
+r2/white-cmp-a.jpg, -b.jpg and r2/white-zoom.jpg: crisper titles and rows, the hierarchy intact, nothing out of family.
+
+## 384 Virtual Room round 2: pause only pauses you; leaving updates everyone live; every friend by name (NOT on main)
+
+Madison, on the last review's open questions: "Pausing should only pause you.. and yeah if you pause it would let you leave." /
+"If someone leaves it would update real time so people know they left. For example the race, if someone leaves, it would remove
+them from the top thing on the race. In the chat, it would say x player left or whatever." / "If I'm friends with someone they
+should be there and stuff." / on the invite rule: "Just ensure it makes sense and ensure it works".
+
+PAUSE ONLY PAUSES YOU (a race; Tug of War and Battle's Pause was already only a way out and stays so)
+- Before: a race's Pause stopped your clock (right) but presence kept you "here", so every finished player's results sat on
+  "Waiting on other players" for as long as you stayed paused.
+- The pause is said on your room entry: `participants.<you>.paused` = the moment (vroomNotePaused) - ONE write on Pause and ONE on
+  Resume, only in a race, never periodic. Cleared inside writes that happen anyway: the finish (finishVirtualRoomTest), a return to
+  the lobby (vroomBackPatch), a leave (the entry goes).
+- THE RULE CHOSEN: a paused racer is not waited for - the finale counts them as in, exactly as it counts a racer whose app died
+  (showVirtualRoomFinaleReveal), and their reveal is not waited for either. Your own run stays held, all of it (question, the 45s
+  clock, your time), until you resume. Resume before the leaderboard rolls and the others wait on you again (their card goes from
+  "results coming up" back to the count - only for a racer counted in BECAUSE paused, pausedAtAllIn, so an old build's reset can
+  never make anybody wait for good). Resume after it and you finish on your own: your results, then the standings as the room has
+  them. NOT chosen: ending a paused racer's race when the others finish (a ten-second pause would cost the rest of the race).
+- FINISHING AFTER THE OTHERS WENT BACK: going back to the lobby resets an entry (finished/score/xp), so a late finisher waited on
+  people who were no longer racing, for good. A return now writes `back` = that match's startAt in the reset it already makes
+  (vroomBackPatch, both return paths); a racer back from THIS match (vroomBackFrom) is not racing, and a device that only gets to
+  "all in" because others are back shows "The race is over - everyone else is back in the lobby" with Return to lobby instead of
+  Leave room (`.vroom-waitcard.is-moved-on`), and rolls no leaderboard of zeros.
+- The race line dims a paused racer's marker (.is-paused, opacity .42; "(paused)" in its title). The race's pause screen says
+  "Your race and its timer are on hold. Everyone else carries on, and the results won't wait for you.", a live line of who is
+  still racing (.pause-room, fed by the race line's own listener - no read of its own), and Leave match where Quit test was; its
+  confirm reads like Tug of War's and Battle's ("Leave the match?" / "The race carries on without you. You won't get any XP from
+  it." / Keep going, Leave).
+- STILL OPEN (owner's call): somebody still paused in the last race is present in the lobby and not ready, so the NEXT match waits
+  for them to come back or leave (as the lobby already waits on anybody sitting on results).
+
+LEAVING, LIVE (every way out is leaveVirtualRoom: Pause > Leave match, Tug/Battle's Pause, Leave room on the results, the lobby)
+- Race line: the leaver's marker already went on the next snapshot (vroomRacersOf drops a deleted entry) - asserted, unchanged.
+- THE ROOM'S CHAT: the leave's own update now also carries chatMessages arrayUnion({ type: "left", key, name, text: "left the
+  match." / "left the lobby." / "left the room.", ts }) - no write of its own. Drawn as a quiet centred line (.vroom-chat-sys), not
+  a message (no name-colon, no reactions), and never counted unread, sounded or raised as a preview (the toast already says it).
+  An older build would draw it as "<name>: left the match." What the room chat is during a test: a race question has no chat on
+  screen - the lobby's listener stays up and new messages come as the one-line VIRTUAL ROOM preview; after your finish the results'
+  Room button (#roomchat-fab) opens the room's chat in a sheet (and over the leaderboard); the lobby has it at its foot.
+- lastLeave carries `where` (vroomLeaveWhere, read by the leaver before its flags clear), so every toast says where THEY were.
+- TUG OF WAR / BATTLE: the rope's figures and side names, and Battle's faces and names, were drawn with the screen, which is rebuilt
+  only when YOUR question changes - a leaver stood there until you next answered. tugPaintPeople (from tugPaintRope) and
+  battlePaintFaces (from refreshBattleBoard) redraw them on any snapshot where who is on a side changed.
+- Results: a leaver's entry is gone, so no game waits on them (unchanged, asserted).
+COST: a leave is the same one write it always was (each device in the room reads it once, as before). A pause is +1 write and a
+resume +1 (each read once by every other device in the room): a 4-person race where one person pauses and resumes is 2 writes and
+6 reads. A return to the lobby: no new write. Nothing periodic was added.
+
+EVERY FRIEND BY NAME
+- friendCardOf(pub, rows): the board row, else the friend's own presence beat (384's `c`: name, character, classes) - fromBeat,
+  else the chat with them where it has been read - fromChat, else unknown. No read or write of its own (presence is the document
+  every friends screen already attaches). Used by the chat's Friends tab, the friend chat's header, Manage friends, the chat's
+  invite sheet, the Virtual Room invite sheet (its own copy replaced), openFriendChat's remembered name, and chatPersonOf (group
+  chat members) as a fallback after the row.
+- Manage friends lists EVERY friend now (it dropped anybody without a row and said "1 friend is not on the board right now"). A
+  friend with no row has no academy rank or level to show: the line under the name says their classes from the beat ("Fire Code")
+  or "Not on the class board yet", and the row does not open the class-board card (it has no numbers for them).
+- A FRIEND NOTHING IS KNOWN ABOUT (an older build that has not beaten since, never opened since): "Friend" with the default
+  character, asleep; data-unknown / data-fallback mark it, and friendsListCatchUp (now on presence snapshots as well as the
+  board's) and paintFriendFallbacks fill it in where it stands when the row or the beat arrives.
+- Not changed: the Leaderboard's boards rank the academy's rows; a friend in Fire Code alone has none to rank.
+
+THE INVITE RULE, END TO END: re-verified - check-b384-vroom-review (B)/(C) as before, plus (O): an invite to a Fire Code room that
+reaches the academy-only account anyway (as an older build would send it) is turned away from the banner's Join and from the
+Inbox's Join with the same line, and an account in both classes joins an academy room from Fire Code's page. Every door goes
+through joinVirtualRoomLobby, which asks the account's own enrolledClasses. (O) passes on the build before too - nothing to fix.
+
+GATE tools/check-b384-vrpause.py (check-b384-vroom-review's harness exec'd, plus two made-up academy accounts for 2 v 2; Devon's
+character changed so "from his beat" differs from the default): (P) the pause on the entry, the marker dimmed, the room line and
+the way out, the finished player all in and the leaderboard rolled while the other is still paused; (R) a resume before the roll
+puts the finished player back to waiting; (Q) the return says which match, the late finisher gets the moved-on card and Return to
+lobby works; (L) Pause > Leave match asks then leaves, marker gone, the chat's `left` line, one write, results not held, not unread
+nor a preview, shown in the Room chat sheet; (T) Tug: the leaver's figure and name off the rope with the others' question unchanged,
+and the chat line; (B) Battle: the leaver's face and name off their side the same way; (F) the Fire Code-only friend named with
+their character on the Friends tab as their beat lands (tab already open), the unknown friend as "Friend", Manage friends 4 of 4
+with the class line, the chat invite sheet, no room/presence write, the friend chat header; (N) no code in vrooms, no page errors.
+RESULTS (one browser at a time, load 4-13): ALL PASS (34). --against claude/b384 (c323281) FAILS 19: every (P), (R), (Q), the
+chat line and Room chat line in (L), both (T), (B), and (F)'s Friends tab, Manage friends (2 of 4), invite sheet ("Student"),
+header ("Friend"). Passing on both, as invariants: Leave match asks and leaves, the marker leaving (already worked), one write,
+results not held, nothing unread, the beat names them (384), the unknown friend's "Friend", no writes, no codes, no page errors.
+Others: check-js ALL PASS; check-b384-vroom-review ALL PASS (45, with (O)); check-b384-vrifc ALL PASS (36; a room still 17 writes
+/ 39 reads, Fire Code and academy alike); check-vroom ALL PASS (219); check-friends ALL PASS (76 - the same 76 on c323281);
+check-b384-bannerroom ALL PASS. Not run (as asked): sweep-layout. Looked at (scratchpad vr2/shots, made-up names): the race's
+pause card with the room line, the other player's line with the dimmed marker, the Room chat sheet with "Kimber left the match.".
+
+### Build 384, round 2 final check - check-b326-f brought up to the 382-384 unit card (NOT on main, waiting for Madison)
+- check-b326-f failed 21 checks on 384; the same 21 on the build just before pure white (1ee8f06), on round one's final build
+  (185cc5c) and on live 383. Not a 384 fault, and not from pure white.
+- Section 6 (the unit card) still described the card from before 382/383: a check circle above the name, the name at 700, an
+  accent ring round a picked card, the Penal Code "versions" line. Since then: the iOS look (name 600 over the count's 500,
+  the badge 2.3rem on a phone), "a green glowing dot" for a picked unit (383; no edge, the card a step lighter), the dot in the
+  theme's colour (--pick-dot, 384), and the Penal versions ended on their own at PENAL_VERSIONS_END_AT (Oct 26).
+  Rewritten to that card: the badge bottom-right (>=2rem) and the name the headline at the top; a picked card a step lighter
+  (its background read off the page) with the dot visible in --pick-dot in its top-right corner, clear of the name's words
+  (a Range over the name), no edge or stripe, and an unpicked card with no dot; the Penal line only while the unit has a
+  second version, otherwise none. The picked-card check FAILS on 382 (a330ee8: no dot, no step) and passes on 383 and 384.
+- Left, both failing the same on live 383: Level 2 / Level 3 on the unit screen's level tabs at 3.9:1 (round one's note), and
+  "the tab bar's glass ... the Virtual Room's bar the same frost" - the tab bar went to blur(7px) in 377 and the Virtual Room's
+  Match settings bar kept blur(30px); the gate also still names 30px. Nobody has asked for that bar to change.
+- check-b382-test re-run on the merged build: ALL PASS (the zoom hint at 3.5s was load).
+
+## 384 final check: badges round 2 - abstract outlines, a colour of its own for every badge, the academy's look-alikes
+
+Madison, of the last round's ten new Fire Code outlines: "I can tell you right now I don't like the acorn badge.. please don't
+make badges that look like real things? I thought we've been over that. Seems like you need to redo a few. ALSO why are there so
+many repeating colors. Make that right. Make colors darker lighter, do some whites, some blacks? Idk make them great." Then: "if
+the academy has look a like badges as well then get on that too."
+OUTLINES, FIRE CODE. All ten from the twins round pictured things (bell, flask, shell, puzzle piece, mushroom, goblet, heart,
+acorn, vase, anvil). Twelve plain outlines replace them and two look-alikes found on the way - the gear (Ch 6; beside the burst
+plate it is one toothed disc at 28px, 0.98) and the hex (Ch 8; beside the coin one rounded polygon, 0.90 on the 2px band).
+Built from shapely parts (scratchpad b2/gen10.py), every corner rounded, one or two channels; names and chapters (set by
+badgeBackPlan, the assignment that keeps the smallest title largest - b2/fit3.py, solve.py):
+  Finder bardia (a tall diamond crossed by a bar), Ch 3 bowhex (a wide hexagon, top and bottom bowed in), Ch 6 slipdisc (a disc
+  cut across, halves slipped), Ch 8 scoopsq (a square with a round scoop out of one corner), Ch 26 twinblock (a wide block with
+  a round notch top and bottom), Ch 28 slope (a block whose top runs downhill), Ch 35 bitehex (a hexagon with round bites out of
+  its side points), Ch 51 slipsq (a block cut across, halves slipped), Ch 58 bent (top bowed up, bottom bowed in), Ch 61 notchsq
+  (a square with a step out of each corner), App B bitetri (a triangle with a round bite out of each corner), App C cuttri (a
+  triangle on its point with its corners cut off). Smallest back title of the twelve 0.0513 (Ch 8); every back's words inside
+  the field on three phones (check-b384-ifcbadges (3)(4)).
+  Turned down, measured (b2/score.py, eval2.py, ch8.py) or by eye at 28px: pentagon (the spire stretched), heptagon, notched
+  pentagon, concave-cornered octagon (the coin), a square bowed in on four sides (the four-point star turned, 0.92), a hexagon
+  bowed in (the hex), a stepped block (reads as a folder), a square notched on every side (an X), a stepped diamond (the diamond
+  at 28px), a spool and a cushion (the ribbon stretched), a leaf square and a stadium (the lens), two overlapping squares (the
+  slipped block), a square bowed in on two sides and out on two (the diamond at 2px, 0.85), a hexagon crossed by a bar (the bar
+  diamond's cousin), a fat three-pointed shape (its back too small).
+  NOTE: the PIL-rasterised masks the scratch tools first used scored lower than the page's own rasterising (the bowed square
+  0.74 vs 0.85) - candidates were re-scored on the page's masks (b2/pmasks.py) before the gate.
+OUTLINES, ACADEMY. Measured the same way, the academy had the look-alikes the lead listed: gate / hex / octagon (2px 0.85-0.90,
+one rounded polygon at 28px), disc / shield (one shape upside down, 0.87 stretch-blind), keystone / shield, fan / wedge. The
+fewest that clear all of it: TCOLE Rules hex -> slope, De-Escalation octagon -> twinblock, Crisis Intervention Training shield ->
+bent, Civil Process wedge -> slipsq - four of Fire Code's new outlines (sharing across classes is fine, per Madison). Each back
+holds its title no smaller than before (0.0920 = 0.0920, 0.0776 > 0.0740, 0.0796 > 0.0703, 0.0616 > 0.0425). The hex, octagon,
+shield and wedge stay in BADGE_SHAPE (BADGE_SHAPE_KEYS - the hash fallback set - is unchanged); Fire Code still uses the shield.
+COLOURS. Every badge in a class has its own enamel now. A table entry may be the enamel itself ("#RRGGBB"; badgeThemeFor's en).
+- How chosen (scratchpad b2/pal.py, cpal2.py): a lattice of CIELAB lightness (22-86) x hue (every 10 deg) x two strengths, plus
+  onyx, graphite, ivory and frost; each colour STRUCK on one reference token (the coin) at the case's size and its enamel's mean
+  colour measured (b2/rendercols.py) - the token's metal and clear coat squeeze colours (onyx strikes as #434343, a pearl as
+  #DFDEDD), so the hex alone overstates how far apart two enamels look. Annealed to targets, then the best nods.
+- The rule (check-b384-badgetwins (3)/(4)): no two enamels within CIEDE2000 11 as defined, none within 9 as struck, nothing
+  within 14 side by side - in the unit list as laid out at 440px (two columns, so the card below counts; Fire Code's list puts
+  the Finder first), the case scene's grid and the case on Profile (its tiles read off the page). Why those numbers: CIEDE2000
+  ~1-2 is a just-noticeable difference for large patches; marks the size of a badge on a card need several times that to be
+  told apart at a glance, and the struck reading is compressed, so 9 struck / 11 defined / 14 neighbouring is what keeps two
+  badges from reading as one colour while still fitting 58 colours. Achieved: Fire Code 11.2 / 9.8 / 15.1, academy 11.6 /
+  10.4 / 14.8. The 21 families alone ran down to 6.5 (violet / indigo), 6.7 (purple / violet), 6.8 (red / terracotta).
+- Fire Code: chapters whose old colour meant something keep the nod at a new lightness (fire reds: Ch 5 fire red, 57 brighter,
+  App C a hydrant's dark red, App I coral, 7 deep wine, 64 pale blush; oranges for emergencies and hot work; hazmat gold/amber,
+  Ch 63 the oxidizer placard's pale yellow; water and air blues, 67 the "dangerous when wet" blue; egress and crop greens;
+  wood browns; frost for cryogenic fluids; graphite for tires; onyx for the access roads' asphalt). Chapters whose old colour
+  meant nothing were left free - that is what spread the 58 round the wheel instead of eight pinks.
+- Academy: eight units change (the newer of each repeated or near pair where there was a choice): Racial Profiling light
+  violet, Code of Criminal Procedure pale lavender, Consular Notification deep teal, Sexual Assault deep magenta, Radio pale
+  amber, Phonetic Alphabet deep rust, Crisis Intervention deep violet, Traumatic Brain Injury light rose. Sixteen keep theirs
+  (Professional Policing's blue, Ethics' gold, Arrest's steel, Missing Children's amber ... pinned).
+- PALE ENAMELS (luminance over .58, badgeEnamelPale): struck with a fine dark edge where they meet the silver
+  (BADGE_STRIKE.paleEdge .62 over .75 token units at the wall) - the gunmetal trap the other way up; the band at the wall goes
+  from ~.40 of the field's light (the bevel's shade alone) to ~.30. The vector fallback already draws a dark plate edge.
+- NEAR-BLACK ENAMELS (luminance under .07): badgeThemeFor returns g, the colour lifted half way to white, and every glow/tint
+  that used .p (the found badge's --badge-glow, the case slot's --slot-col, the cutscene's and binspect's --badge-col, the
+  results card's --bt, the unlock card's colours) uses g - an onyx badge otherwise glows black. Every academy family is lighter
+  than that, so g is p there.
+GATES. check-b384-badgetwins now holds BOTH classes: outlines under 0.85 on the 1px band, the 2px band and blurred to a 28px
+card (sigma 9 of 200px), turned and flipped; then the colour rule above, the pale edge (<= .35) and the dark glow (L* >= 45).
+ALL PASS. --against claude/b384 (2ac229b): FAILS (1c) Ch 8 / Ch 31 0.90, (1d) Ch 6 / Ch 32 0.98, (2c) gate / hex 0.90, gate /
+octagon 0.89, (3a-d) 21 enamels for 58, (4a-d) 3 shared - the old ten objects are not twins, so (1b) passes there. The pale-
+edge and dark-glow checks pass vacuously on the old build (it had neither); against this build with paleEdge 0 and g = p the
+glow checks fail on every dark enamel, and the edge ratio moves .30 -> .41 (threshold .35).
+check-b384-ifcbadges: the academy pin moves ON PURPOSE 8996cbb2 -> 2de41ef8 (four outlines, eight enamels); ALL PASS
+(29), the academy's smallest back unchanged (10.6px on the Pro Max). check-b384-case ALL PASS. check-js ALL PASS.
+STILL READING AS THINGS (not changed, Madison's call - earlier rounds accepted them): Fire Code's crown (Ch 1), cut gem (7),
+flower (9, cinquefoil), lightning bolt (10), stars (20 five-point, 62 six-point, 53 four-point sparkle), hourglass (21), plus
+sign (25), bucket (29), medal (37), open book (38, chevron), letter T (36, tau), letter C / crescent (59), mountains (55),
+briefcase (63, tag), castle (App H), club suit (App D, trefoil), water drop (80), shield (4); the Maltese cross (5) is the fire
+service's own emblem by design. Near the gate's line but under it: diamond / quatrefoil 0.83 (Ch 64 / App I and the academy's
+Professional Policing / Victims of Crime), roundel / lens 0.83 (Ch 50 / Ex B), wave / card 0.83 (Ch 11 / 66). Stretch-blind
+(advisory, not gated - it also calls a rectangle and a diamond one shape): Fire Code keeps the disc / shield / half disc /
+keystone family the academy just lost (Ch 23 / 4 / 34 / 39).
+Media (scratchpad only): out-badges2/ - every badge per class before/after, the changed outlines before/after, the enamels, the
+unit screens on an iPhone 17 Pro Max.
+
+## 384 final check: badges round 3 - a stretch reading, and Chapter 34
+
+The lead, after round 2: Madison's rule was "none the same shape turned, flipped OR STRETCHED", and Chapter 23's dome and
+Chapter 34's half disc read alike.
+THE STRETCH READING (check-b384-badgetwins (1e)/(2e)): each silhouette's bounding box scaled to a square - a stretch along the
+badge's own axes only, never combined with a turn, so a rectangle and a diamond stay two shapes (card / diamond 0.12) - then
+the 8 orientations at 90 degree steps, the same 1px band, at the same scale (the box 65px of the 176 grid: the size a square
+reaches under the turn reading's area scaling). Calibration (scratchpad b2/stretch.py, stretch2.py): independently drawn
+stretched copies score 1.00 (round 1's crystal / nameplate, card / plaque, coin / oval) and the scalloped coin 0.94; no two
+different outlines in either class score over 0.83 (Fire Code's quarter dome / scooped square, notched square / ticket, card
+/ saddle; the academy's disc / keystone 0.79). Held under 0.88, half way across that gap. Box sizes 128 and 76 were tried and
+give the same picture (twins 0.94-1.00, honest pairs at most 0.83-0.84).
+WHAT IT DOES NOT CATCH, AND WHY: the dome / half disc scores 0.62 - the 111th most alike of Fire Code's 1,653 pairs. It is not
+the same shape stretched: the dome is a half ellipse on straight sides, the half disc a half ellipse to its foot, and under a
+stretch along the axes their curves never coincide; what they share is a category (a round top on a flat base). A threshold
+low enough to flag it would flag ~110 pairs nobody has called alike (card / saddle 0.83 ...). So the reading passes on
+a789dc2 (the round-2 merge) - it has no stretched copies - and FAILS on the round-1 build (38d636b~1) at 1.00 (Ch 58 plaque /
+Ch 66 card, Ch 31 coin / Ch 61 oval, Ch 3 nameplate / Finder crystal), which is the evidence it measures what the rule says.
+CHAPTER 34 changed anyway, on the lead's eye: the half disc (also a gauge, read as a thing) is a dished hexagon now - a hexagon
+on its side, its top edge dished in (dishhex) - graphite as before; back 0.0631 (was 0.0575); against every other Fire Code
+outline at most 0.47 / 0.64 / 0.53 on the 1px / 2px / 28px turn readings and 0.68 stretched (bowhex). The half disc is out of
+BADGE_SHAPE (Fire Code's own). Still in the group the lead named: Ch 23 dome / Ch 39 keystone 0.79 stretched (the closest pair
+involving them), Ch 4 shield / Ch 39 keystone 0.68 - and the academy's own dome / keystone (Verbal Communication / Penal Code)
+0.79, its closest stretched pair. Turned down for Ch 34: a fat three-pointed plate (the triangle at 2px, 0.98), a bar with
+round bites at each end (reads as an I-beam), a hexagon crossed by a bar (the lens stretched, 0.84), a square scooped at two
+corners (reads as an S), two overlapping squares (the slipped block stretched, 0.84).
+GATES (one at a time): check-b384-badgetwins ALL PASS (Fire Code's closest stretched 0.83, the academy's 0.79); --against
+a789dc2 ALL PASS (no stretched copy there - see above); --against 38d636b~1 FAILS (1b) and (1e) at 1.00. check-b384-ifcbadges
+ALL PASS (29; academy pin 2de41ef8 unchanged). check-b384-case ALL PASS. check-b382-badges ALL PASS. check-b325-b: 1 failure,
+the same on 2ac229b (before round 2): "17 Pro Max: the name's letters are at least 9.2 CSS px" - Phonetic Alphabet's
+hourglass, 8.8 (an outline no round touched); its cutscene-hasp check failed once under load and passes alone. check-js ALL
+PASS. Media: out-badges2/ (scratchpad) - fire-code-round3-ch34-before-after.png, the thirteen changed Fire Code outlines
+against the build before round 2, all-58 and all-24 re-rendered, the Fire Code unit screen re-shot.
+## 384 final check: check-behaviour's 15 failing sections, triaged (branch claude/b384-behtriage)
+
+The 15 sections that failed on the merged 384 (b258, b298, b299, b300, b304_polish, b305_resultstap, b314h_flares, b314h_rankmap,
+b314h_chat, b314h_board, b314h_settings_calendar, b313_lead, b313_sheet2, b314_chars, b313_fx), each assertion traced to the
+commit it started failing in. Method: the 15 run against 185cc5c (round one's final build) first - every consistent failure was
+already there, so NONE came in with this round's merges (characters, banners, sets, fx, polish, crops, desktop, Virtual Room).
+Then the first-parent builds before it, back to 4f9c74e (the oldest index.html in this repo, ~327u): anchors at 383 (42bbffa),
+382 (a330ee8), 381 (bbc018a) and 4f9c74e, then a scripted bisect (one section, one browser, one build at a time, each build
+saved to the scratchpad and run with --against, with an untouched copy of the gate for the old assertions). Each start was
+checked on the commit and on its parent. The machine ran at load 3-9 on 4 cores throughout.
+
+ONE APP REGRESSION, FIXED (its own commit): b258 "before an update reloads ... nothing else is animating". 383's dimmer sky
+beyond Home is a .6s transition of --sky-k / --sky-kb on body::before; releasePageForReload() cancels every animation, then
+empties the stage, which takes Home off - so the dimming started again under the opaque #0A0A0A bar for the reload's last
+frames (2 running on 42bbffa .. 5bb4865, 0 on a330ee8). Same shape as 323's starfield (html.is-reloading body::after
+display:none): html.is-reloading body::before{ transition:none !important }. The bar covers the sky, so nothing visible
+changes. b258 fails on 5bb4865, passes with it. (Round one had left this as a known 383 failure.)
+
+DECISIONS THAT CHANGED, the gate moved (each marked MOVED IN with the commit and the archive's reason; what still holds of the
+old intent is still asserted):
+- b298 paint (fef8ce3, 380 "loops as window-sized layers"): by default (html.loops-paint) a loop steps through its window by
+  left/top and repaints that window each step - measured 600-675 paints, 42-83ms over 2.5s, against 0-9ms the transform way.
+  loopsWatch puts the transform way back where the painted way is not smooth, and under load here it does, so the check passed
+  on some runs (e434e19) and not others (185cc5c, 5bb4865). It now measures the transform playback it was written for (the
+  page's loops-paint off).
+- b299 the dot's colour and the card's order (42bbffa, 383 "Profile: the badge case under the person card, a Customize button
+  you can see"): the card's dot is on Customize's row now (read wherever the card puts it, as profileDot already was); the tab
+  reads person card, badge case, next rank.
+- b300 frame on show (fef8ce3, 380): in paint mode the frame is left/top, not a transform (358 of 360 read as frame 0) - read
+  off whichever is moving it; whole device pixels (9656473, 384 "the rank flares' shake"): the window carries its own
+  scale(1/hero), so a step is fw x K x S x dpr on the screen (126.0) and fw x dpr in the window's own paint (126) - both
+  asserted (the own-paint half is 9656473's fix: 134.04 before it).
+- b304 tint (42bbffa, 383 round 2 "Profile's three cards are the clean look's solid card"): under any banner, and none, the
+  card is one solid fill; the banner is on its cover, a different one per banner.
+- b305 a tap (fef8ce3, 380 "TAP-THROUGH, BOX BY BOX"): a tap finishes the box coming in (the XP card's lines, total and level
+  block land together: 4 -> 10 of 11); held: what lands is one box, never the way-on row.
+- b314h_flares "the next one being hunted" (802f873, 329 "I don't want hunted secret flares"): none may be marked hunted now.
+- b314h_rankmap "went down the road" (45fb8fd, 384 "the back button and the chat button meet in the middle"): Rank's nav row
+  went up .6rem and the deepest scroll 109 -> 99 against a fixed 100; now: the camera went down WITH the light (at the deepest
+  frame the light is on screen in rankUpFollowY's band, .3-.55, or the page is at its floor) and came back to the top.
+- b314h_chat (db0e4a2, 384 "the chat sheet": "see through and then you see it change to blurry"): the dark sheet has no
+  backdrop-filter at all; held: a tap puts it in no settling/dragging state and leaves its fill and filter as they were.
+- b314h_board header (a330ee8, 382 "the Leaderboard and the Calendar in Settings' language"; 383 joined the podium to the
+  list): first place no longer glows (box-shadow none; on 381 0 3px 18px gold), the header is a caption 7px over the card.
+  314's 8px / 12px still applies wherever first place throws a glow; otherwise the header's own line, labels clear (4px+).
+- b314h_settings_calendar today (a330ee8, 382 "Today is the accent's circle: filled when it is the picked day, a ring
+  otherwise"): the fixture's today is picked, so there was no ring to read; now both states, matte (no gradient, no glow) and
+  in the page's accent (the clean look's accent is the white ink whatever theme).
+- b313_lead the cold-open trio (f5a95d5, 327z12 "This Week and Hundos use Overall's header"; a330ee8 382 puts it over the
+  placeholders): the header is a .rank-row and was counted as a person (12 for 11, 9 for 8, 1 for 0). People are counted now.
+- b313_sheet2 the No hundo note's red (327 round 12, before 4f9c74e - already failing on 327z9 per the archive): the note is on
+  the pop-ups' glass at .14 / .4 against the chip's .12 / .35; held: the chip's 255,107,91 at its strength or a shade more, no
+  other red.
+- b314_chars "no still character rises above y 4.35" (92f434d, 327z10 "the Ghost is centred", AVATAR_CENTRE_DY 2.3 -> -2.5):
+  what rose to 1.8 is the wisp floating off its shoulder (and its cold light is an ellipse, not a halo circle); both are set
+  aside here as check-b325-a sets them aside since 327z10. Looked at (Customize tile, Profile portrait, before/after): the
+  head is well inside the frame.
+- b314_chars "exactly one character wears the selection ring and the tick" (327 round 11, in the stylesheet at 4f9c74e: "the
+  character you have selected being circled is not the move, just the checkmark is okay"): 0 rings, 1 tick on 4f9c74e too.
+  Now: one tile marked, the selected one, by its tick; no ring anywhere.
+- b313_fx "Confetti ... leaves the box and its bar gold" (42bbffa, 383 round 2 "ONE CARD ... border transparent ... the
+  results' cards (the grade's tone frame hidden)"): the box's rim is the clean card's; held: untinted, the bar gold.
+
+TIMING (passes on a quieter run; not changed): b300 iPad "coming back to Home ... within a second" (1212ms, the 185cc5c run
+only); b313_fx underwater "holds its breath" (4 of 4 looks under load, 35/35 later) and bubbles "every piece gone" (the one
+run at load 9); b314h_rankmap "the light is there before its line moves" (one to four frames at 0-.87 after 900ms, different
+every run). That last one had a real cause on 185cc5c and e434e19, already gone: opening Rank made 4-6 long tasks (300-370ms)
+in its first 700ms, so the light's .25s + .4s fade-in finished at 830-953ms against the gate's 900 - 775a30c's
+#stage:has(...) > :not(...) restyling the whole screen on every change, which 480a023 fixed. Measured at load 2-3, three
+opens each: 383 and 3ec8227 0-1 long tasks, light full at 677-718ms; 185cc5c 5-6 / 843-953; e434e19 4-6 / 830-914; 480a023
+0 / 675-715; the merged branch 0-2 / 696-723. On the branch it failed only at load 8+ and passed twice at load 3.
+
+BADGES ROUND 2 (a789dc2, merged in before the final runs): every check-behaviour section that draws or measures badges re-run on
+the merge and on 6475230 just before it (ranks, update_and_cards, b232, b242, b270, b281_badge_card, b316_tiles, b317_pfcard,
+b317_badgecase, b317_badge2, b318_badges, b319_badges, b320g_inspect, b321d_badges, b320c_case, b321c_case, b314_unlocks, and
+b314_chars in the 15). The ranks' "no two produce the same shape signature" passes. ONLY three assertions failed after a789dc2
+and not before, all in check_b321d_badges, and none pins an outline name or a colour - each measures something the enamel's own
+lightness caps, and a789dc2 brought in four deep enamels (struck 43-83 levels: Consular Notification, Sexual Assault, Phonetic
+Alphabet, Crisis Intervention) and three pale ones (180-193: Code of Criminal Procedure, Radio, Traumatic Brain Injury) where
+every enamel before struck 100-175:
+- the grain (high-pass >= .5): a texture over the colour swings with its light - .31-.50 absolute on the deep four, but .60-.72
+  per 100 levels against .45-.61 on the mid ones; a deep enamel is held on its grain per level of light;
+- "no bright highlight left" at stage 4: a pale enamel's own field strikes over 225 at every stage (Radio 6304 -> 2130 px) -
+  on those, half of what is bright must go and the brightest 3% must fall (Radio 253 -> 237, CCP 255 -> 236);
+- the bevel (<= .7 into shadow, >= 1.7 against the light): near black has no 30% shade below it (Phonetic .96, Crisis .87),
+  near white no 1.7x light above it (Radio 1.56, TBI 1.52) - each held on the side its light leaves room for (deep: catches
+  >= 1.7 and still dips; pale: falls <= .7, its new dark edge, and still catches).
+Looked at struck clean and at stage 4 side by side (scratchpad bt/shots/merged-badges.png): every one, pale and deep, reads
+duller and grainier dirty, the bevel plain on all. The mid enamels keep the rules exactly; all three pass on both builds.
+Every other failure in those sections (49 of them, in b316_tiles, b317_pfcard, b317_badgecase, b317_badge2 - which then stops
+on an IndexError - b318_badges, b319_badges, b320g_inspect, b320c_case, b321c_case, and b321d's "in your hand ... on the middle")
+is identical on 6475230: older than this round's badge work and outside these 15; not triaged here.
+
+RESULT on claude/b384-behtriage (a789dc2 merged in): the 15 sections 315 PASS, 1 FAIL - b314h_rankmap's light at load 8; run
+alone twice at load 3, both pass. Checked across a change: b258 fails on 5bb4865 and passes with the fix; b300's new
+own-paint half fails on 1647a98 (134.04) and passes on 9656473 (126); b321d's three moved rules pass on 6475230 and on the
+merge. The other moves describe behaviour that has been right since its change, so they were run on the branch only.
+Bisect builds, logs, probes and screenshots: scratchpad bt/ (not in the repo).
+
+### Build 384, round 2 - the code pictures: one picture per citation, two tones, the marker on its words, table rows rule to rule (NOT on main, waiting for Madison)
+Madison, on phone screenshots of Fire Code: "When showing the show code, why would there be two cropped images? That should be one
+cropped image ... Like tables too ... make it look like how the code book has it ... why do some ... have 3 different tones of
+highlighted stuff? ... Should really only ever be two tones ... I see some highlights where it goes slightly above the word ... The
+edges of the highlight need to be nice as well and cohesive. This is very very VERY VITAL." / "I need 1000 percent confirmation that
+it's good to go."
+- ONE PICTURE (d4607a9): a citation cut in pieces is one picture - skipped lines between pieces of one column are cut through (a county
+  lead and its exceptions; a table from its caption through the row and its notes); a section running into the next column or onto the
+  next page, a text and the full-width table under it, a standard's organisation and its entry, are set one under the other on one
+  canvas (sheetOf), the seam halfway between two lines; stitched columns sit on the book's grid (0276314: right column = left + 261pt).
+- TWO TONES: the pale wash (WASH) and one gold (STRONG); the exception's orange is gone; each tone is one shape filled once; on the page
+  the wash hugs each cited block and runs under every gold mark. (isDark: cite/row, or a heading only where nothing more precise is
+  marked - so a whole table cited alone, "Table C102.1", has its caption's number in gold, as a section cited alone has its heading.)
+- THE MARKER ON ITS WORDS (81fea61): same room above and below the letters, consecutive lines meet halfway, one outline with rounded
+  corners, county marks snapped onto whole words, outer edges settle on a clean row or paint out a fragment of the next line.
+- TABLE ROWS (this commit, found going through every citation's picture): of the 44 book citations that point at a row,
+  Table 1017.2 "row: B" was marked on the raised note letter "b" of "250 b" a row above (findRow took the first print spelling the
+  label) - the larger print now wins, then the leftmost; in tables of three or more columns the gold ran from the label to the one cell
+  nearest it - it now runs on to the row's last cell (every line of print whose letters stand a third or more in the row's band);
+  rows of two or three lines (906.3(1) "Maximum floor area / per unit of A", D103.4's three-line turnarounds) were a stripe through the
+  label's line - findRow now hands the painter the row's REACH (the next row's start in the label's column above and below: a line
+  starting where the label starts, else centred where it is centred and not indented; the table's edge where there is none) and
+  ruleBand fills the row to its own rules within it; sideRules takes both ends out to the table's upright rules (a value centred in
+  its cell left a pale strip before the edge); mergedLabel: a label cell merged across rows (2306.2.3 "Protected above- / ground
+  tanks") has no rule where the row ends, so the row's gold starts at that cell's rule and the label is marked on its own, both
+  lines, never sliced. County table rows (tableRow) take sideRules too: their gold now reaches the table's edge (52 checked).
+- tools/check-b384-onepicture.py (the helper's): every citation's card and whole page read off their pixels - one picture, two tones,
+  nothing darker than the gold, gold centred on its ink, no stripes or slivers, no letter cut, Enlarge one picture.
+  tools/check-b384-tablerows.py (new): Table 1017.2's gold on row B; every row's gold across the whole row; every row's reach; never a
+  raised letter for a label - all four FAIL on 4dfd194 (['b']; 18 of 50 rows short; no reach; ch10-061 5.4 vs 7.92) and pass here.
+- WHAT WAS LOOKED AT, by eye: Madison's own nine citations (card and page), all 175 that were several pictures (card), all 44 book
+  table rows and all 52 county table rows (page, close up), and every citation whose marked words changed. Machine-checked: all
+  1,812 (1,391 book, 421 county). node compare (onepic-work/compare.mjs): against 4dfd194 only the 18 row citations change their marked
+  words; no citation loses shown text.
+- Left as the data has it: a row given ambiguously (3206.2 "I-IV; 2,501-12,000" matches three sub-rows) marks the first; a table cited
+  without a row (C102.1) marks its caption number. The questions and their citations are the study guide's and are not changed.
+
+### Build 384, round 2 - the final check and the pack (NOT on main, waiting for Madison)
+- On 7ceed83 (everything merged: Virtual Room round 2, badges rounds 2-3, behaviour triage, the code pictures):
+  sweep-layout --quick 20/20, check-centering --quick 0 off centre; check-b384-roundbtns, -bannerroom, -badgetwins (24), -vrpause (34),
+  -tablerows, -codelinks, -cropfit, -ifccrop, -codeslide, check-b383-ifcsync, check-b382-test ALL PASS; check-b383-flashcards (3) failed
+  once under the full code-picture run's load and passed twice alone.
+- check-b384-onepicture, all 1,812 citations: every check passes but (1e) on ONE of 2,685 gold shapes - ch8-605 (804.3.1, "Class I,"):
+  looked at at 3x, ~6px of room over the capitals and ~5px under the comma; the next line's raised "2" (cm2) under it is what the
+  measure reads (its 'lines: 2'). The pixels are identical to the helper's run, which an earlier version of the gate passed (it took
+  the shape for a table row); left, and said so in the pack.
+- check-behaviour badge-case sections (b316_tiles ... b321d): 16 fail, the same 16 on live 383 and on 185cc5c - they describe the
+  badge case at the foot of the Profile card, before 383 moved it; not this build's.
+- Pack: scratchpad Nova-384-round2 (437 files) with the code pictures' before/after for Madison's nine, the 175 that were pieces, the
+  96 table rows (book and county) and all 1,812 cards; the decisions left are the two Virtual Room ones.
+
+### Build 384, round 3 - Madison's list after the round-2 pack (NOT on main, waiting for Madison)
+- **The four known failures**: an empty Level tab's words at .56 white (were .42); Match settings' Start bar in the tab bar's glass;
+  the Phonetic Alphabet back's rows on a tighter track (8.8 -> 9.4px, `BADGE_BACK_RELIEF.fsRead/.tightTrack`); and the badge-case
+  behaviour sections brought up to the case as it is (below).
+- **Sign-up and Welcome**: no build tag on Welcome; "Practice, track your mastery, and climb the ranks."; "Choose the classes
+  you're taking. You can add one later."; Sign in / I'm new here 53px and 1.05rem; a picked class card takes its class colour
+  (ring, wash, glow, a check); Fire Code's card says it is cross-referenced with the Harris County Fire Code Amendments; the sound
+  defaults to 35% (`SOUND_DEFAULT_VOLUME`; the theme object carries the literal `.35` - the const is below it, TDZ).
+- **Welcome's planet is Home's**: the flares are Home's glass bubbles with white icons at Home's size, and the sphere and every
+  flare answer a tap as on Home.
+- **Hand-offs**: Get Started and the splash fade into Welcome, which rises in (`welcomeArrive`); Generating profile hands over to a
+  whole Home before it fades, and Nova's intro waits for the overlay to go and HOME_HOLD_BEFORE_NOVA_MS (1.1s) more.
+- **Loading screens** (splash, class switch, Generating profile, Loading test) sized up from 40rem and from 64rem.
+- **Get Started's clips** play at GS_CLIP_RATE (0.66, the rank one 0.45), start the moment any of them is on screen, loop, and go
+  back to frame 0 only when wholly off it - never a paused frame while scrolling.
+- **PAUSED FOR A MINUTE IS OUT (the Virtual Room)**. Madison: "Say you are paused for 1 minute, then you get kicked for inactivity.
+  That's what the chat would say. Same would apply for the phone die, they just wouldn't know for a minute or two or whatever works
+  best. That's mid test." Two halves, because a dead phone cannot remove itself:
+  - the paused device leaves after VROOM_PAUSE_KICK_MS (60s) on its own timer, and on coming back to the app if the timer slept
+    (`vroomKickSelfIfIdle`, `vroomKickSelf`): the run ends as Leave ends it, Home, "You were removed from the match for inactivity.";
+  - the others' devices remove a racer paused past 60s + VROOM_KICK_GRACE_MS (15s), or with no presence beat for
+    VROOM_GONE_KICK_MS (100s, two 45s beats and some) - `vroomWardenCheck`, run from the race line's listener and the wait card's
+    and every 15s on the last snapshot (no reads of its own). One device writes: the WARDEN, the lowest key among racers nobody is
+    about to remove. The write is the leave's shape (entry deleted, `lastLeave` with `why:"inactive"`, a `left` chat line "was removed
+    for inactivity."), its time and id worked out from the racer's own stamp, so two wardens write one identical line (arrayUnion).
+  - a phone removed while asleep, waking, sees its entry gone with `lastLeave.why` "inactive" (`vroomCheckKickedOut`): its race ends
+    there and it is told, writing nothing back (`leaveVirtualRoom("kicked")`).
+  - never a finished racer, never Tug of War or Battle (no pause to hold). Toast for the others: "<name> was removed for inactivity."
+  - Cost: one write per removal; nothing while nobody is idle.
+  - Gate: tools/check-b384-vrkick.py - (S) self, (W) asleep then waking, (G) died, (K) not too soon / never the finished, (N). Against
+    358ac0a: (S) 4, (W) 2, (G) 2 FAIL; (K) and (N) pass on both (they hold it back from over-reaching).
+- **Badges screen, two real faults found by the old sections**: a seated badge's 260-unit seat shade lay over the slots beside it,
+  so a tap on the right of an empty slot opened its neighbour (`pointer-events:none` on the rect and on `.bcs` slot art); and the
+  tray that replaced `.nova-case.ncase` had lost badgeSlotShift's translate, so the C-ring sat 5px right of its slot and the
+  trefoil, disc and star 2-3px high (the `.bcs` rule restores it; all 24 within 0.5px).
+- **check-behaviour's badge-case sections** (b318_badges, b319_badges, b320g_inspect, b320c_case, b321c_case, b321d_badges): the
+  checks of the hardware case (lid, guards, caps, screws, hinges, the handle on the wall, part for part with the cutscene) are said
+  as SKIP "superseded" (`superseded()`, TRAY_ONLY: 327 r10's "tray only" / "sleek premium"), never failed; counts read off the bank
+  (24 academy units); the tab's plate is `.bcs-plate-text`; the head says Badges; the shut Profile case keeps its plate and handle
+  checks but not 319's 1.1rem corners (check_b316t holds it to the Customize row). The crack light's row-by-row falloff (tuned on
+  321's 4x4 hardware case) is said, not failed; its colours are still asserted (two or more, all from the case).
+
+### Build 384, round 4 - Madison's list after round 3 (NOT on main, waiting for Madison)
+- **Leaving a class** (Settings > Account > Classes; `buildClassesSect`, `askLeaveClass`, `leaveClass`, `finishLeaveClass`,
+  `runPendingClassLeave`). Each class the account is in is a row (tap to leave), then Join another class (the class list).
+  The only class cannot be left: its sheet says so and offers Join another class. Progress is never touched - the class
+  comes off the account's list and the class button; joining again brings it all back. The list lives on the academy's copy
+  (`setEnrolled`), which Fire Code never writes, so a leave asked for in Fire Code is finished by the academy page
+  (`class26e.leaveclass`), which goes back to Fire Code if the academy was the one left. Leaving the academy retires the
+  account's board row (`retireLeaderboardEntry`) and waits (<= 6s) for the account write before the page changes.
+  **Dated**: `store.classJoinedAt` / `store.classLeftAt` ({} default in applyLoadedData). The class list merged by union
+  ("nobody leaves a class"), so a leave would have come straight back from another device; now both sides' dates are
+  maxed and the union loses any class whose latest leave is after its latest join (`classesWithLeaves`, in
+  mergeSameAccount, mergeLeavingAccount and accountClassesOf; the head script's owner rule respects it too).
+- **The name field** (Nova's "what should I call you?"), the third report of its caret: an empty field shows no caret (the
+  placeholder stays; the line appears with the first letter), its card fades without the swell the other props have and the
+  focus waits for the fade (420ms), no promoted layer (translateZ off), and nothing of Safari's sits in it (autocomplete
+  off, name "nt-callsign", the AutoFill/contacts buttons hidden) - those buttons take width at the right edge, which is
+  what centred text looks off-centre against. Chromium measures it centred either way; confirm on an iPhone.
+- **The end of a sign-up, reordered** (Madison: the friend line at the end of the tips; Nova should not say goodbye and then
+  come back with tips; "tap here when you are ready to study" last, after Add to Home Screen; a shorter introduction):
+  Nova's introduction for a new account now ends "Now let me show you around." (no friend line, no "Rank up. Find my
+  badges.", one line for the modes instead of three - Mode Select's tips explain them). Home arrives out of his dark
+  (`homeArrive`: the planet blooms in, a ring of light runs out across the flares, the greeting, button and bar rise; `scale`
+  and `translate`, never `transform`, so nothing's own transform is replaced). The tips no longer open on a welcome and end
+  on the friend line at the chat button (`onShow` on a tour step runs `novaFriendMoment`). Then +100 XP, the Add to Home
+  Screen sheet, and last `scheduleStudyTip`: Start Studying's tip, "Rank up, find my badges and bring my crew home!".
+- **Every tip shorter**: the main menu's, Profile's, Mode Select's, unit select's, results', Settings' and the Leaderboard's -
+  one idea each (Profile's badge tip went 189 -> 84 characters).
+- **Add to Home Screen**: the clip plays at half speed (`A2HS_CLIP.rate`; seven taps in 18s was a pace nobody could follow),
+  the sign-up's button says "I'll add it later", and the note says the icon opens signed in when added from that sheet
+  (it carries the account's code, `installCodeInUrl`) and to tap Sign in with the sync code if it is ever asked for.
+- **Copy and icons**: Fire Code is "2021 IFC + HC Amendments" (card kicker, enroll screen, confirm); Welcome's flares: a
+  shield badge in place of the trophy and a target in place of the circled check, drawn as the other four.
+- **Welcome's planet** (a fix to round 3's arrival): `welcome-rise-hero` animated `transform`, and a phone's planet is
+  `transform:scale(.94)` - it drew at full size until the class came off, then snapped down. It animates `scale` now.
+- **Forge, Bronze's character** (`unlock: "rookie"`, both classes - rank characters are not redrawn in Fire Code): a crowned
+  bronze ruler, the plainest of the six above him as Silver's is below Gold's - a hammered bronze crown of five points with
+  an ember at its heart, cropped copper hair, coal-lit eyes, bronze pauldrons, an ember medallion, the forge's glow behind
+  and sparks rising. Name, glow (#D98A44), scene, special length, centring and reactions (tools/reactions-table.py, then
+  gen-reactions.py) all added. An account already on Bronze is handed it with no card and no dot (`seedForgeSilently`, once
+  per device per class at the first Home of this build); reaching Bronze from now on brings the usual card. The rank map's
+  Bronze card lists it.
+- **The code pictures' words**: compared against the live build (onepic-work/compare.mjs, main's viewer against this one,
+  all 1,812 citations): no picture lost a word; three highlights moved (Table 1017.2 no longer marks a raised "b"; two
+  county rows marked rule to rule). The pictures are the book's own pages, never retyped.
+- Gate: tools/check-b384-r4.py - (U) leaving a class, (F) Forge, (N) the name field, (O) the order, (V) the clip, (T) the
+  tips, (E).
+- **The clips' speed, measured** (Madison: the Add to Home Screen video looked 20x, the Get Started ones 5x - "it needs to be the
+  right speed"): the Add to Home Screen clip is a real iPhone recording cut at its own speed - the share sheet takes 0.3s, a
+  menu 0.2s, the app's launch 0.3s, as on a phone - so it plays at 1x (a half-speed rate had gone in first, a guess, and made
+  every iOS animation sluggish). What looked 20x was a screen recording OF the page made in slow motion: a video element keeps
+  playing in real time inside it. The Get Started clips' animations were at the app's speed too (captured in slow motion and put
+  back on a true clock), but the TAPS came 0.5-0.7s apart (academy: a screen change every 0.7s, test: every 0.5s) - quicker than
+  anyone reads. All six were re-recorded with a person's pauses (`LANDING_HOLD` 1.9 in record-landing.py stretches only the
+  pauses before an answer, between questions and on each pick; the rank clip's speed-up 2.4x -> 1.4x): academy now changes every
+  ~2s, test every ~4s. They play at 1x (`GS_CLIP_RATE` default 1; the .66 / .45 slow-down is gone, it slowed animations and taps
+  alike). Looked at as a contact sheet of every clip before installing. check-b384-getstarted's leave section: the hand-off to
+  Welcome was made slower on purpose in round 3 (zoom 950ms, Welcome up ~1.3s), so it now asserts <= 1300ms and under two
+  seconds, not the old 750ms / one second.
+- **The seam where Nova's speech tail meets his bubble** (Madison, with a circled screenshot: "you can see where the pointy part
+  connects to the rectangle, we have seen this type of issue before"). The tail (`.nt-bubble::after`) is a rotated square clipped
+  to its lower half; its top edge is anti-aliased and lands a fraction of a device pixel off the bubble's border, which is drawn
+  hard, so one row of the border (the third of three at 3x; a partial row at 2.5x and 2x) showed across the tail's base -
+  measured: (32,35,51) across the tail's middle against the fill's (19,23,39), at all three ratios. A flat same-fill patch ending ON
+  the border (first try) still left a quarter of the row, because the bubble sits in a filtered layer at a fractional position
+  (top 596.48px): the border's edge and the patch's edge are both anti-aliased and the leftover of one under the other blends
+  through. The fix (`.nt-bubble::before`): a patch of the bubble's own fill that runs 3px up into the bubble and PAST the border,
+  tapered with clip-path to stay inside the tail's sloped sides (half-width 11.5px at the border, 6px three pixels down), so
+  below the border it sits under the tail's fill, the same colour. Across the tail's centre the border rows now read the fill
+  (19,23,40) at 3x, 2.5x and 2x. The iPad's side tail (left edge) has the same patch turned. tools/check-b384-r4.py (S) reads it
+  off the pixels at the three ratios. The lesson, again: where two anti-aliased edges are meant to meet, one has to overlap past
+  the other by a device pixel; ending exactly on it leaves a seam.
+- **Nova's badge line in a both-class sign-up** (Madison, circled screenshot: "in fire code, you don't need multiple hundos"): a
+  sign-up into both classes is told in the academy's page (`ifcNow` false), so "Score 100% on a unit enough times, and its badge is
+  yours." was the whole of it. A Fire Code-only sign-up says "once" in its own half already. For a sign-up that picked Fire Code
+  (`signupPicked()` has "ifc") one short line follows: "In Fire Code, one 100% on a chapter is enough." An academy-only sign-up is
+  unchanged. check-b384-r4 (O) reads both. Left as they are: the Get Started page's general line ("Ace a unit enough times and its
+  badge goes in your case", shown before any class is chosen), and the academy's own greeting - both are about the academy's badges.
+- **Nova's crew lines in a sign-up** (Madison, circled screenshot: "My crew are waiting in their pods ... doesn't make sense, since we
+  are unlocking majority of them"): the crew are not waiting to be rescued - a partner is free, most come home with a challenge, some
+  with a rank (his own chat answer already said so). "My crew are waiting in their pods." is now "My crew join you as you rank up and
+  take on challenges."; "The rest of my crew are still out there. Find them, and they'll join you too." is "Earn the rest, and they'll
+  join you too." (and the Fire Code half's "Find the rest" the same). The story's pods stay where they are told (his chat answer).
+- **Nova's line after the partner pick** (Madison, circled screenshot: "Make this make more sense"): "Ninja it is! You can switch any
+  time in Customize." said who and not what, and "switch" did not say what. It is now "<Name> is now your partner. You can change
+  them any time in Customize." (the same line for every character; the question before it asks for a partner).
+- **"Four ways to train" for Fire Code** (Madison, circled screenshot: "Ensure this is updated for fire code, cause it has 3"): a
+  both-class sign-up is told in the academy's page, so Nova said four ways (with Mock) and showed four cards. A short line follows
+  for a sign-up that picked Fire Code: "Fire Code has the same, without Mock." (Fire Code-only sign-ups already get the three.) The
+  pre-class "What This Actually Is" card said "Four ways to study" for both: now "Ways to study", "Mock (police academy) grades you
+  at the end" - and shorter than before, so the screen fits as it did. check-b384-r4 (O) reads both sign-ups.
+- **The chat icon** (Madison, zoomed screenshot: "the right side of the chat icon ... isn't perfect?" - he was right): the path's
+  last arc ended at y 12.3 where the first began at 11.3, so `Z` drew a 1-unit straight on the right edge, and its arcs were of
+  two radii (7.8 and 7.6). Now one true circle (centre 12.35,11.7, r 8) with the tail leaving its lower left:
+  `M5.45 15.7 4.15 20.9l5.5-1.7A8 8 0 1 0 5.45 15.7Z`, in `chatDockIcon()` and the two chat banner glyphs. Nudged so its ink sits
+  on the button's centre (measured at 4x: it was ~0.9px high, now ~0.4px, the thin tail tip biasing the measure upward).
+- **The Settings icons were not centred - and the gate passed them** (Madison, two zoomed screenshots: "These aren't centered and I
+  can tell. A lot of the settings icons aren't centered ... I thought you checked this?"). Measured off HIS screenshot (the
+  best evidence there is): Sound +.3px right, Study +.4 right / .4 up, Motion +.6 right / .7 up. Three causes, one found by
+  measuring and not by reading:
+  1. **An odd icon size in an even tile.** The glyph was 21px in a 32px tile (30px in the base rule): 5.5px in each side, a half
+     pixel, which the browser snaps - so EVERY icon leaned right by .38px (.5 at 3x phones). 22px now (5px in, whole pixels;
+     stroke 2.05 = the 1.88px it was). The centring gate allows .5px, so a uniform .38 lean passed it every time.
+  2. **Glyphs drawn about a middle that is not 12,12** (the bug 1px low, the person .6, the trophy top-heavy ...). Each is moved
+     from its EXACT geometry (getBBox, viewBox units - `settingsIconNudge` in settingsRowIcon), then up to .4px towards its
+     visual weight where that is clearly off. A first table read off pixels in one layout was sub-pixel noise from that layout's
+     row positions and overshot elsewhere (the Profile's badge-case row went .52 high); geometry holds in any layout. Two old
+     hand shifts (Motion .61px, Study .5px) are gone: they counted twice.
+  3. **Mixed-case words sit low when their CAPITALS are centred** ("Manage friends": capitals dead on, the word's own middle
+     ~1.3px low at 3x). Lifted by padding-bottom .8px on that pill (a `<button>` centres its content, so the lift is half): the word
+     ~1.0 low, the capitals still within .5 of the gate. All-caps labels stay as they are; other mixed-case buttons are the same
+     in principle and NOT changed - his call.
+  New in tools/check-b384-r4.py (C): every Settings icon on whole CSS pixels in its tile, and no lean (median across < .2px, none
+  > .5px sideways), read at 3x against the tile's exact layout centre. On the commit before: 0 of 10 on whole pixels, median
+  lean +.50 across; on this build 10 of 10 and +.00. The centring gate's badge slots (`.badge-tile-art`) are pictures now: their
+  SHAPES' places are asserted by the badge sections (every badge within .5px of its slot), and the gate had been measuring a
+  locked slot's recess lip as ink.
+  The optical pull towards a glyph's visual weight is capped at .25px (it was .4): at .4 the swipe arrow and the key landed .4px right
+  of their box. A tighter pass of the whole centring gate (`CENTER_TOL_SCALE=.6`, i.e. .3px) now lists, on the iPhone 17 Pro Max:
+  no icon leaning sideways; Study, Share, Rankings .33-.4px high/low (the weight-vs-box compromise), the Profile checklist's tick .4
+  right, the enroll screen's emblem .46 high, 'Coming soon' .32 high, the masked sync code .78 high (bullets sit mid-height). Not
+  fixed - none is more than half a pixel; ask if any should be.
+
+## 384 r5: Settings tiles in the inspiration's style
+Measured off its Settings at 3x: flat saturated tile (ours had a +12% black foot), a thin lightened-hue rim on all four edges, squircle corner, one lighter glyph stroke. Now: no gradient, rim via two inset box-shadows (color-mix oklch toward white), `corner-shape:squircle` under @supports (radius 11px in Settings), glyph stroke 1.75 (Settings) / 1.8 (Profile rows). Tile size left at 32px (his call: the inspiration's is ~28pt).
+
+## 384 r5: Classes rows carry their own class mark
+Settings > Classes: academy = shield with a filled star (blue), Fire Code = flame (red) (kinds classacademy / classifc in settingsRowIcon); the generic mortarboard stays for the Classes category row.
+
+## 384 r5: Sapphire bluer
+Sapphire's third glow (--theme-c3) was purple #6A1FD8 and it had no page-glow override, so its sky read as Amethyst. Now c1 #6FD6FF, c3 #1F44C9, and --bg-c1/2/3 blue. The seven ranks are Bronze, Silver, Gold, Platinum, Sapphire, Amethyst, Supernova (Platinum is the teal one).
+
+## 384 r5: Virtual Room wait card
+The n / N count is finished / racers still in the room (a player who left drops out of both, so a solo finish read 1 / 1). It is now the soft grey (was the pulse dot's blue), and while anyone is still racing the line names them: 'Waiting on Sam', 'Sam and Alex', 'N players'; paused or gone players are not named.
+
+## 384 r5: Stats glyph = bars on a baseline (option A); option C (progress ring) is the alternative.
+
+## 384 r5: race line start and finish
+The finish is a flat chequered band centred on the 100% mark (a finisher lands on it), the start a plain line at 0%, replacing the flag emoji.
+
+## 384 r5: Pause on a test header
+Pause (phone) is 16px text, min 5.4rem wide (was 15px, 4.6rem). Its bottom was cut off in a Virtual Room race: the pinned race bar's fade (in a layer above the header's, which holds Pause) started at the bar's top edge and painted over the pill's foot; the fade now starts .7rem down (the header's own fade already covers above it). Question dots stay under the race bar on purpose: the race bar is pinned with the header, the dots scroll.
+
+## 384 r5: race question timer bar
+Fixed mint-to-sky gradient (was the theme's three colours); still red when low.
+
+## 384 r5: mode card descriptions trimmed
+Drill / Mock / Review / Virtual Room each back under 130 characters, three short sentences (what, how, best for). Review keeps 'as a list or as flashcards'. Virtual Room opens with 'Multiplayer.'. check-b330's 'every Back button at the same left edge' was already failing before this (Settings sub-pages sit at 40px, the rest at 20px): not touched here.
+
+## 384 r5: Save it is gone, the copy button is the way
+The save-your-code card has the code with the same copy button as the friend code and Settings' sync code beside it (no Save it button, no share sheet, so no Windows share dialog on a laptop); a copy counts as saved, as the ticked box still does; the toast says 'Copied' (raised above the card). Settings > Sync's Save it row is gone: its copy button records the code saved. buildSettingsSaveCodeRow stays unused. Sign-out's 'Save my code' still uses saveSyncCodeVia. check-b382-savecode and check-b384-glitches updated (written against the old buttons; the new savecode check fails against the previous build).
+
+## 384 r5: Nova bubble tail, second look
+At very high zoom the 3px of the seam patch above the bubble's border showed as a faint box (the body there is not exactly the patch's colour, +-1 level). The patch now fades in from transparent over its top 3px (the border sits 4px down, under the solid part). check-b384-r4 (S) still passes.
+## 384 r5: name field caret
+Own steady caret (.nt-caret) placed from measured text width; the browser's blinking caret is off; shown while focused, empty or typed; placeholder steps aside on focus.
+
+## 384 r5: one Nova across classes
+Madison: Nova should message as one broad guy, never overlapping when enrolled in several classes. His thread (class26e.nova) is the device's, shared by the academy and Fire Code; novaHeard is each class's own, so each kept its own 'last said'. novaDayOpen / novaSaidToday now also count the shared thread's lastAt (written on every send, either class), so only one of his own messages per gap across classes. A rank / progress / challenge / vr line opens with the class's name when enrolled in 2+ classes (tips, hello, broadcasts, replies are the account's and stay plain). Gate: tools/check-b384-novabroad.py (fails on the previous build). Virtual Room in Fire Code already refuses invites to a friend known not to be enrolled in the room's class (friendInClass, notEnrolledLine); friends and chat are unaffected by class.
+Older gates failing before this and after, untouched: check-behaviour check_b320f_nova, check_b321g_nova, check_b324n_nova (their intro/schedule expectations predate the shorter introduction and 382's quieter schedule), check-b330 back-edge.
+
+## 384 r5: no visible patch where a pointer meets its bubble
+Madison could see the Nova bubble's seam patch (and asked for any like it gone). Cause: Chromium dithers gradients, so the patch (a gradient) and the body (a different gradient) differed by a level in a checker at the foot of the bubble; and the other pointers (hundo-why in the dark modern layout: a translucent glass fill painted twice where the arrow overlaps, 19-47 levels; slider-topnote's layered tint; under-note's .96 alpha) showed a diamond inside the body. Now: the bubble's foot is a flat zone of the SAME opaque colour as the patch and the tail (--nt-flat 1.6rem on a phone), and those three popovers are opaque single colours (hundo-why dark: rgb(44,28,29), slider-topnote rgb(68,70,74), under-note rgb(28,32,40)). Gate: tools/check-b384-seams.py (fails on the previous build). Nova's tail keeps a one-level rounding row at the patch's top edge (measured 1/channel at 3x, 2.5x, 2x). check_b317_hundobox's confetti hand-off checks fail and are about the border/bar colour, not these.
+
+## 384 r5: a row's grey value sits on the chevron's line
+Madison: 'Open now' was not level with its arrow (2-3px high on every Settings row with a value: a line box centres the capitals' ascent, not the word). .settings-row-value moves down .08em. New gate tools/check-b384-rows.py: on the Settings menu and every Settings page, both classes, phone and tablet at 3x, each row's tile and chevron against the row's middle (1px) and the value's visual middle (first letter's top + 56% of the cap height) against the chevron's (1.25px); fails on the previous build (2.0px). The centring gate measures a control's ink against its own box, never text beside an icon: that is how this was missed.
+
+## 384 r5: Leave class sheet uses the app's own danger button
+The sheet's Leave button was a flat #FF453A (an override with !important and no shadow) and was focused on open, which drew a white focus ring. Now the app's .next.danger (matte #8B1E1E, the Reset red) and a destructive button is never focused on open. (The 'x' body in an earlier screenshot was my test's placeholder text: the app's own text is the sentence about progress being kept.)
+'Coming soon' pill nudged .5px low (it read .75px high on Classes, .2 on the sign-up: two sub-pixel positions, so half way); full quick centring 0 off.
+
+## 384 r5: Settings tiles, glass not outlined
+The first Delta pass put a lightened rim on all four edges, which read as a white border next to the inspiration's (no outline at all). Now: a soft sheen over the top half, one specular line along the TOP edge only, the lower edge a shade lighter in the tile's own hue, a small drop shadow. The Leaderboard row's glyph is the bottom tab's own solid trophy (one drawing). Gates: check-b384-rows, r4, centring (Settings, Profile, Classes) pass.
+
+## 384 r5: race track square-ended
+The race track is a .35rem-radius bar (was a pill) with the start line and the chequered finish flush on its ends, full height.
+
+## 384 r5: the race clock is one colour
+The 'Ns' pill and the bar under it are both amber (#F5A524 / #FFD27A), whatever the theme, and both turn red for the last ten seconds. (The first fixed colour, mint-to-blue, had nothing to do with the pill beside it.)
+
+## 384 r5: the three stale Nova gates rewritten
+check_b320f_nova, check_b321g_nova and check_b324n_nova were failing before this build for decisions that had moved on (the shorter introduction, no Back to Home on the history screen, the friend line at the end of the tips, 382's quieter schedule: three days between messages, a tip a fortnight, a challenge a week, and the rank-up reaction now an on-screen talk that replaces the chat message). Each failing check now asks the current shape (names, counts, the app's own constants) rather than an old sentence; the schedule test reads the gaps off the constants and forces the challenge due. All three pass; the Nova ones before them (b314, b324v2) too.
+
+## 384 r5: Tug of War and Battle line up with the race
+Their clock is the race's amber pill (.tug-clock), red when low; the empty question count (#count, 40px) no longer holds their board 55-80px below the header (hidden on .screen-tug / .screen-battle), so the board starts where the race's does.
+
+## 384 r5: tile colours = the inspiration's nine; the leaderboard is the Police Academy's
+Settings tiles use the inspiration's own sampled colours (pink #EC4A61, red #ED514C, purple #CA42EB, green #67CE66, teal #5ECEDC, sky #6CD0FA, orange #F19747, blue #3F8EF9, indigo #6D79F8), each kind given its family's; Classes is teal (no grey tile). The leaderboard: Fire Code had no tab and no switch already; now its Settings has a read-only Leaderboard & Privacy row ('Police Academy only', only for someone in the academy too) whose page lists each class (Police Academy shown/hidden, Fire Code 'No leaderboard') and says where the switch is; the academy's page says its switch is the Police Academy's and lists the classes when there are two. Gate tools/check-b384-lbclasses.py (fails on the previous build). check-b382-credits and check-b384-settings were brought up to the Classes row, the Fire Code page and the lighter glyph stroke.
+
+## 384 r5: race markers are perfect circles
+Madison: 'is this not a perfect circle?' - it was not. The marker was 1.6rem (25.6px) centred by transform:translate(-50%,-50%), so it sat on fractional pixels and the ring rendered 77 device pixels tall by 74 wide at 3x (2 px off at 2x). Now 26px, centred by margin. check-b384-seams measures ring width vs height at 3x and 2x (fails on the previous build: 3 and 2 px).
+
+## 384 r5: characters sit inside their round token
+Madison: parts of the character stick out of the circle on the Leaderboard (and should not, anywhere). The drawings have no disc of their own; at .94 (and 1.0 on a person's card, and the recorded loop not scaled at all) hood, bust and shoulders ran to the rim, and a bust's frame edge showed as a dark band. Measured over all 31 characters: art in the outer tenth of the radius 9 percent at .94, 3 at .84. Now the board rows, the podium and a person's card draw the character at .85 with its last fifth faded (live drawing, still and loop alike). Not the Profile's own or Customize: there the art's halo is meant to fill the disc and scaling shows its edge as a second circle. check-b384-seams holds the scale and the fade (fails on the previous build). The Friends list and the Virtual Room lobby have no round token (a soft glow and shoulder fade) and were left.
+
+## 384 r5: a person's card, and your own profile
+- The default banner's six stars all sit in the top half of the strip (three were 58-84% down, in the part the card fades into its glass).
+- The rank line (flare and name) on a card is a picture, not a control: pointer-events none, no touch callout, no selection (the Haptic Touch).
+- Opening and closing a card: the dim is its own ::before layer faded by opacity (it was a background-colour transition, repainted every frame, and ended with no fade), the card on a longer eased beat, the flare's loop started after it has landed (380ms), and Close / the backdrop fade it out (is-leaving, 220ms) instead of removing it.
+- 'Level N · N badges' on the card (as on Profile), the Badges cell gone; the three left have XP across both columns.
+- Your own profile: the card's own rank line (flare, name in its colour) above 'Level N · N badges' (buildProfileStanding), spacing as the card.
+tools/check-b384-card.py holds all of it (fails on the previous build). Older gates seen failing and unrelated: check-b327z15 (tab landing, specials, Welcome icons...), check-b327q (results soft edge), check-b325-c (a NameError in the script), check-b327-i (Welcome).
+
+## 384 r5: the clock is green
+Madison: green instead of amber. The race's pill and bar, and Tug of War's and Battle's clock, are #2FBF71 / #8CF0B6 / #7BE3A8; red for the last stretch as before.
+
+## Build 384 - Tug of War look, and the five-minute floor (any Virtual Room match)
+
+Madison: "not a fan of how this looks ... those matches can't end really quick? We gotta ensure those matches can last at least 5 minutes ... any virtual room match".
+
+- LOOK: the tan rope-with-a-knot is gone. The field is a flat two-colour bar (each team's colour at 20% over the surface, split at the middle), one light line through it, a round puck, a thin centre mark and a thin win line each side, and small round faces. Phone, tablet (`min-width:40rem`) and the pull cut-scene (`.tug-cut-rope`) all use the thin line and the round puck.
+- FLOOR: `VROOM_MIN_MATCH_MS` (5 min). `tugCheckOver` and `battleCheckOver` return before calling anything on the rope or on HP until the match is five minutes old; a forfeit (a side with nobody left) still ends at once. `TUG_MIN_Q` = 50: a tug bank is cycled (reshuffled lap by lap from the shared start) to at least fifty, so a room set to five questions still plays fifty. `BATTLE_HP` is 300 per member, so the fastest possible play cannot empty a side in under five minutes.
+- TEST HOOK: `window.__vroomFast` (set by check-vroom's init script only) drops both floors and uses 100 HP per member so the old fixtures still finish in seconds. Nothing in the app sets it.
+- RACE is NOT changed: the host picks the question count and a race ends when everybody finishes, so a small unit can still finish in under five minutes. Asked Madison whether to cycle questions there.
+- GATE: `tools/check-b384-matchlength.py` (fails on the previous build). `check-vroom.py` ALL PASS.
+
+## Build 384 round 5 - Battle VS and powers, ties on the boards
+
+- BATTLE: the VS badge is a fixed round 2.4rem pill with the letters in a grid (letter-spacing 0). Letter-spacing adds space after the last letter, which had pushed "VS" left of centre. `BATTLE_ABILITY_FROM` is 0: a power is offered from the first question (every third right answer, one held at a time); the hint reads "N more right for a power" throughout. Gate: `tools/check-b384-battleui.py` (fails on the build before).
+- LEADERBOARD: ties share a place (competition ranking: 1, 1, 1, 4). Week and Hundos tie on the number; Overall ties on everything `overallCompare` orders by except the name (`overallTied`). A row with nothing scored on Week/Hundos is unplaced: `renderRankMarker(el, 0)` prints an en dash, no medal. (Six people on 360 XP had been 1st to 6th by alphabet, and on a Monday somebody was first with zero.) `tools/check-b384-ties.py`; `check-b382-board.py` fixture changed so no two rows tie.
+- Known stale failures, unchanged by this work: check-b382-board CLS, check_b324l_board (flare element), check_b314h_board (flip-book phases), check_ranks (rank rewards counts).
+
+- CLOCKS (384 r5): the digits in the question clock sat ~1.5px high in their pill (a mono face with line-height 1 puts digits high in the line box; text snaps to whole CSS pixels, so the fix is whole-pixel too). `.tug-clock` (Tug and Battle) padding `.30rem .62rem .14rem`; `.race-qclock` `.34rem .68rem .22rem`. Box heights unchanged. `tools/check-b384-clocks.py` measures the ink above and below at 3x and 2x (fails on the build before).
+
+- TOGGLES (384 r5): Madison liked Stats' look and asked for the whole app to match ("the touch look and toggles"). The Profile / Stats / Settings switch and the Leaderboard tabs (`.navsegment.profiletabs`, in the clean look) now take the Stats week switch's look: a round track, the picked segment an accent-tinted pill with its own inset ring (`color-mix(var(--theme-c2) 20%)`, ring 42%), text in the accent-tinted white. Gate: `tools/check-b384-toggles.py` compares the computed fill, ring and text colour against `.stx-dots-switch` (fails on the build before). Other pieces (Calendar's cards and arrows) already share Stats' card surface; headings differ (Stats' sit above the cards, Calendar's inside) and were left.
+- His Stats screenshot (accuracy ring, Test history pill in the heading, four-item bottom bar) is an OLDER build: 384 already has the Question bank ring (statBand colours) and Test history as a row inside the Recent tests card.
+
+- CONTRIBUTORS (384 r5): Robert Morgan and Logan Preston removed from `creditsPeople()` ("Remove Logan Preston and Robert Morgan from contribution list in settings"). Five people remain: Madison Davis, Cameron Wharton, Bryan Darjean, Durrell Kennedy, Alexis Sauceda. `check-b382-credits.py` updated.
+
+- RACE LINE vs CHAT (384 r5): "Why is the chat icon on top of the race?" On the results screen (others still racing) nothing sits above the line and the fixed chat button covered the finish flag (on a phone; on a tablet by 3px). `.wrap:not(:has(.qnumrow, .pausepanel)) .vroom-racebar` now starts 3.8rem down (4.2rem from 40rem, the chat button being 52px); in a question on a phone the line gets .4rem of air under the pinned Pause (the flag touched it). A question's own arrangement (counter row at the top, line pinned under it) is unchanged. Tug and Battle have no race line: their board is in the page under the same counter row. `tools/check-b384-racebar.py` (fails on the build before). `check-b384-vroom-review.py` timed out at 300s here (not looked into; check-vroom ALL PASS).
+
+## Build 384 final - the Virtual Room in the new look
+Madison: "When selecting virtual room, the option to select open room or host ... didn't get updated ... should look like the mode selection screen. Same goes for all parts of the virtual room - the lobby, results, leaderboard, cutscenes, where applicable."
+- CHOICE (Host a room / Join an open room): the mode screen's second page. Same question size/centring under the title (1rem, balanced), same cards (22px 24px, 160px, the words .95rem, 10px between; 24px 26px / 16px from 40rem), the three game chips a flat solid row. CSS keyed on `.screen-vroom-choice` (not `.modeselect`, which the tours and centerModeGroup find by name).
+- LOBBY: "Room setup" and "In this room" are Stats' headings (16px, 600, sentence case, the soft grey); the game's name in the summary card is the app's face (it was Georgia). The rows keep their banners.
+- RESULTS / WAITING (race results, Tug and Battle waiting + result, the finale): the title is the app's one (sans, bold, sentence case, 1.55-2rem, centred) instead of the serif upper-case onboarding title; `.vroom-mine` (your score), `.tug-xp`, `.tug-board-col` and Battle's two sides are solid `--clean-card`s with no rim and no glow (a win tints the XP card 5% gold; Battle's sides 9% of their team's colour).
+- The Open rooms list uses the Friends row (`friend-row`), already in the look. The in-match screens (race question, Tug rope, Battle board) were done earlier this round.
+- Gate: `tools/check-b384-vroomlook.py` (fails on the build before). `tools/shoot-tug.py` now sets `window.__vroomFast` (the five-minute floor would stall its harness).
+
+## Build 384 final - Settings nailed to Delta (measured off two screenshots from one phone)
+Madison, Delta's Settings beside ours: "Our icons are not the same shape ... even the arrows pointing to the section isn't the same ... they need to be the same, the same size and everything."
+Measured on the two screenshots (same phone, same scale; Delta = ours x .85): Delta's tile 27.6pt, row pitch 51pt, label ~15.5pt, value the same, the second line ~12.5pt, text 14pt after the tile, hairline from the text to 18pt short of the card's right edge, the chevron 7 x 11pt with a ~1.9pt stroke in a flat grey (rgba(235,235,245,.3)), and an iOS squircle tile. Ours were 32 / 60 / 18 / 14 / 15, a bright chevron and an 8px rounded square. (The earlier "Delta's size" pass, 384 round 3, had gone the other way off a different pair of screenshots.)
+- Rows 51px (padding 8px 18px, gap 14px); tiles 28px with a 17px glyph on one 2.05-unit stroke (=1.45px), `border-radius:6.3px`, and for every tile without a new-dot a superellipse (n=5) `mask-image` (a data-URI polygon) - the dot sits on the tile's corner and a mask would cut it; labels and values 15.5px, sub 12.5px; chevron colour rgba(235,235,245,.3), opacity 1; hairline left = 18 + 28 + 14.
+- The switch rows (`label.opt.has-tile` on Sound, Study, Motion, Leaderboard), Account's name row and Sign out, the sync code, Advanced's red rows and Contributors take the same sizes. `check-b384-settings.py` now names Delta's numbers as ranges (49-53 / 27-29 / 16-18 / 15-16.5).
+
+## 384 - county table rows: a side cell centred between a neighbour's two lines (Fire Code code pictures)
+
+Found by the media helper going through every Fire Code citation picture: Harris County Table 5609.4.1's fuel-dispenser row
+(`ch56-016`) was gold on its first line and on "100 ft.", with the second line of the same cell ("dispensing station dispenser")
+outside the gold. The booklet prints a cell's value centred between the two lines of its neighbour; `countyChars` lists lines top to
+bottom, so "100 ft." sorted BETWEEN the two lines, the highlight's first cell read "...propane100ft dispensing station dispenser", and
+the row's first cell was found as its first line alone. Fix (`ifc/ifc-viewer.js`, `countyChars`): a line that stands right of both
+neighbours and between them (within 9pt of each) is read after them. Of the 401 distinct county citations only two change: 5609.4.1
+and Table 105.5.9's "Carbon dioxide used in carbon dioxide enrichment / systems | 875 (100 lb)" - both now cover every line.
+Gate: `tools/check-b384-countyrows.py` (PDFJS_DIR only - the county booklet ships in the repo); FAILS `--against HEAD` (the two rows), passes now.
+Not fixed, reported: the county tables' gold stops 15-25px short of the rules on 405.3 / 1004.5 / 5609.4.1; Exhibit B Table 508.4's own grey
+cell shading shows under the yellow. The book-row gate (`check-b384-tablerows.py`) needs the owner's book, which was not on the machine; the change does not touch the book path.
+
+## 384 - Leaderboard tab icon: a podium (the trophy is gone)
+
+"The new bottom tab leaderboard icon is not it. Fix that" -> options A-F were sent, in the real tab bar -> "do the podium". `TAB_GLYPHS.rewards` is
+three solid blocks, 2nd - 1st - 3rd, the middle one tallest, rounded at the top, separate pieces that never touch (19 units of ink in the 24 box,
+like the calendar page beside it). Classes are `tg-podium` (the trophy's `tg-cup` is gone). `check-b381.py` (1) now asserts the shape (three
+`currentColor` blocks, the middle one tallest, none touching another) instead of the trophy's star-fill. Fire Code's own Stats tab (three plain
+rising bars, build 382) is similar in spirit but different in shape (a podium peaks in the middle; Stats rises) - told Madison.
+`check-b381.py`'s three "Search names" centring checks fail on this and the previous build alike: the search field's placeholder is left-aligned
+in the clean look (a later decision), so they are stale, not a regression of this change.
+
+## 384 - county table rows reach the table's edges (pending visual check)
+
+The county booklet's tables have no outer upright rules, so `sideRules` found nothing and the gold stopped at the words (15-25px short on
+Tables 405.3, 1004.5, 5609.4.1). A county row (`snap`) with no upright rule on a side now runs out to the end of the horizontal rule above/below
+it, just inside it (`cl`/`cr` set, capped at 12 em). Committed before its pictures were looked at - the helper is re-shooting the county tables on
+iPhone and iPad; revert this commit's `sideRules` block if (b) spill past a rule or (c) another row looks worse.

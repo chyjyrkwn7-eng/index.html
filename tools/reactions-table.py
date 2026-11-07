@@ -738,6 +738,30 @@ R("genesis", "fail", [
 # ============================================================ RANK REWARDS ===
 
 # ---- LUNAR: her two moons trade places round her head ----------------------------
+# ---- FORGE (Bronze, 384 r4): the forge flares and throws its sparks; a fail lets it die down to embers ----------
+R("forge", "perfect", [
+    P("fx-fgsparks", "transform:translateY(-1.6px) scale(1.12)", (2.0, EASE_OUT, {22: "transform:translateY(-3.4px) scale(1.32)", 55: "transform:translateY(-1.2px) scale(1.08)"}),
+      (1.6, EASE_IO, {50: "transform:translateY(-2.4px) scale(1.18)"})),
+    P("fx-fgglow", "transform:scale(1.1)", (2.0, EASE_OUT, {28: "transform:scale(1.28)"}), (2.4, EASE_IO, {50: "transform:scale(1.18)"})),
+    P("fx-crown", "", (2.0, EASE_OUT, {25: "transform:translateY(-1.2px) scale(1.08)", 45: "transform:none"})),
+    P("fx-gem", "", None, (1.2, EASE_IO, {50: "transform:scale(1.25)"}), at=.6),
+] + joy(.6), flash=("rgba(255,170,90,.6)", .6))
+R("forge", "great", [
+    P("fx-fgsparks", "transform:translateY(-1px)", (1.4, EASE_OUT, {30: "transform:translateY(-2.2px) scale(1.18)"}), (1.8, EASE_IO, {50: "transform:translateY(-1.8px) scale(1.08)"})),
+    P("fx-fgglow", "", (1.4, EASE_OUT, {35: "transform:scale(1.16)"}), (2.6, EASE_IO, {50: "transform:scale(1.08)"})),
+] + joy(.4))
+R("forge", "pass", [
+    P("fx-gem", "", (1.1, EASE_IO, {40: "transform:scale(1.3)"}), at=.25),
+    nod(1.1, .1, .8),
+])
+R("forge", "fail", [
+    P("fx-fgsparks", "transform:translateY(2.6px); opacity:.25", (1.5, EASE_OUT, {})),
+    P("fx-fgglow", "transform:scale(.8); opacity:.4", (1.6, EASE_OUT, {})),
+    P("fx-gem", "opacity:.55", (1.2, EASE_OUT, {})),
+    eyes_down(.6, .7),
+    slump(-7, 1.4),
+])
+
 R("lunar", "perfect", [
     P("fx-moon1", "transform:translate(24px,7px)", (2.2, EASE_IO, {30: "transform:translate(6px,-7px) scale(1.7)", 60: "transform:translate(16px,-6px) scale(1.7)"}),
       (3.0, EASE_IO, {50: "transform:translate(24.5px,6px)"})),

@@ -243,9 +243,11 @@ def round2(br):
       const rule = css.find(r => r.selectorText && /rank-row[^,]*\.rank-avatar[^,]*> \.char-flip-play|\.rank-row,\s*\.friend-row-art\) \.rank-avatar/.test(r.selectorText));
       return { mask: rule ? (rule.style.maskImage || rule.style.webkitMaskImage) : '' }; }""")
     check("%s: H4. a board row's flip-book clips itself round (a mask WebKit applies to the layer)" % label, "radial-gradient" in (r4["mask"] or ""), r4)
-    # H5 Copy and Send: readable words on their own fill
+    # H5 Copy and Send: readable on their own fill. (384) Copy is an icon now - Madison: "remove the copy button and just put that
+    # copy button you see. The word copy don't need to be there" - so its glyph (currentColor) is read on its fill, the same 4.5.
     r5 = pg.evaluate("""async () => { showFriends(); await new Promise(r => setTimeout(r, 900));
-      return [...document.querySelectorAll('#stage .friend-send')].map(b => { const cs = getComputedStyle(b); return [b.textContent.trim(), cs.backgroundColor, cs.color]; }); }""")
+      return [...document.querySelectorAll('#stage .friend-send, #stage .friend-copy-btn')].map(b => { const cs = getComputedStyle(b);
+        return [b.textContent.trim() || b.getAttribute('aria-label') || 'icon', cs.backgroundColor, cs.color]; }); }""")
     def lum(c):
         v = [float(x) for x in c[c.index("(") + 1:c.index(")")].split(",")[:3]]
         f = lambda u: (u / 255 / 12.92) if u / 255 <= .03928 else ((u / 255 + .055) / 1.055) ** 2.4
@@ -276,11 +278,14 @@ def round2(br):
     # H9 the "open me" pill on the rank box and the case
     r9 = pg.evaluate("""async () => { showProfile(); await new Promise(r => setTimeout(r, 900));
       return [...document.querySelectorAll('#stage .pf-goal-foot, #stage .pf-case-closed .pf-case-count')].map(e => { const cs = getComputedStyle(e), rr = e.getBoundingClientRect();
-        return { h: rr.height, radius: parseFloat(cs.borderTopLeftRadius), border: parseFloat(cs.borderTopWidth), chevron: getComputedStyle(e, '::after').content !== 'none' }; }); }""")
+        return { h: rr.height, radius: parseFloat(cs.borderTopLeftRadius), border: parseFloat(cs.borderTopWidth), chevron: getComputedStyle(e, '::after').content !== 'none' || !!e.querySelector('.pf-act-chev svg') }; }); }""")
     check("%s: H9. the rank box and the case each end in a pill with a chevron, 40px high or more" % label,
           # REVISED IN 383: Customize's kind of button now (a solid light pill, check-b383-profile 5) - its edge is its fill and
           # shadow, not a 1px rim, so the rim is no longer asked for
-          len(r9) == 2 and all(x["h"] >= 39.5 and x["radius"] >= 15 and x["chevron"] for x in r9), r9)
+          # REVISED IN 384: Profile's rows are Settings' rows now (a tile, the name, a grey line, a chevron drawn as its own
+          # mark, .pf-act-chev) on the tab bar's glass - asked for in place of 383's pills - so the chevron is a child, not
+          # ::after, and the corner is a row's, not a pill's. Still asked: both there, a real target, a chevron to say it opens.
+          len(r9) == 2 and all(x["h"] >= 39.5 and x["chevron"] for x in r9), r9)
     ctx.close()
     # H10 an iPhone: wide short buttons and the switch rows carry a real switch
     ctx2 = br.new_context(viewport={"width": w, "height": h}, has_touch=True, is_mobile=True, device_scale_factor=2)

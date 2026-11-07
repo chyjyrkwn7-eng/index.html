@@ -52,7 +52,7 @@ SEED = """()=>{ document.getElementById('splashscreen')?.remove(); try{ __useFak
   store.onboardingComplete=true; store.firstName='Madison'; store.publicId='me01'; store.tourRev=99; store.rankMapFx244=true;
   store.retroBadgePending=[]; store.badgeBandsVersion=3;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
-   'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+   'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
   theme.muteBanners=false; theme.reduceMotion=false; theme.soundOn=true; saveTheme(); saveStore(); }"""
 SPY = """()=>{ window.__played = []; const P = NovaSound.play;
   NovaSound.play = (id, o) => { window.__played.push({ id, o: o ? JSON.parse(JSON.stringify(o)) : null, t: performance.now() }); return P(id, o); }; return true; }"""

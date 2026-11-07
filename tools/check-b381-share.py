@@ -13,12 +13,13 @@ page_path = os.path.join(ROOT, "share", "index.html")
 page = open(page_path, encoding="utf-8").read() if os.path.exists(page_path) else ""
 m = re.search(r'const SHARE_URL = "([^"]+)"', app)
 share_url = m.group(1) if m else ""
-chk("the Share button sends the share page (%s)" % share_url, share_url.endswith("/share/"), share_url)
+# (384) one link for everyone, carrying the build (?v=) so a cached copy of the share page is fetched again
+chk("the Share button sends the share page (%s)" % share_url, share_url.split("?")[0].endswith("/share/"), share_url)
 chk("the share page exists and is small (%d bytes)" % len(page.encode()), 0 < len(page.encode()) <= 8000)
 og_img = re.search(r'property="og:image" content="([^"]+)"', page)
 desc = re.search(r'name="description" content="([^"]+)"', app)
 chk("the share page names the card picture and the app's own description (%s)" % (og_img and og_img.group(1)),
-    bool(og_img) and os.path.exists(os.path.join(ROOT, "share", og_img.group(1).rsplit("/share/", 1)[-1]))
+    bool(og_img) and os.path.exists(os.path.join(ROOT, "share", og_img.group(1).rsplit("/share/", 1)[-1].split("?")[0]))
     and bool(desc) and ('content="%s"' % desc.group(1)) in page)
 icon_app = re.search(r'<link rel="apple-touch-icon"[^>]*href="([^"]+)"', app)
 icon_page = re.search(r'<link rel="apple-touch-icon"[^>]*href="([^"]+)"', page)

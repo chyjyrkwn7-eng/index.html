@@ -158,7 +158,7 @@ SETUP = """()=>{
   store.onboardingComplete=true; store.firstName='Madison'; store.tourRev=99; store.rankMapFx244=true;
   store.retroBadgePending=[]; store.badgeBandsVersion=2;
   ['seenFirstResultsTour','seenModeSelectTour','seenProfileTour','seenRewardsTour','seenSettingsTour',
-   'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour'].forEach(k=>store[k]=true);
+   'seenUnitOptionsTour','seenUnitSelectTour','seenMainMenuTour','seenClassTip'].forEach(k=>store[k]=true);
   theme.muteBanners=false; theme.reduceMotion=false; saveStore(); showHome();
   /* Every card's landing, timed. */
   window.__lands=[]; const t0=performance.now();

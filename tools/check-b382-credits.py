@@ -126,10 +126,14 @@ PAGES = {"sound": ["Sound effects", "Tap sounds"],
          "study": ["Swipe to next question", "Auto-advance", "Auto-star questions you keep missing"],   # (383: the longer pause is gone)
          "motion": ["Reduce motion", "Skip celebrations and pop-ups"],
          "sync": ["Your sync code"], "rankings": ["Show me in the rankings"], "share": ["Share this app", "Add to Home Screen"],
-         "account": []}   # (383) Settings > Account: the name editor and Sign out (no switches)
-PEOPLE = ["Madison Davis", "Bryan Darjean", "Logan Preston", "Alexis Sauceda", "Cameron Wharton"]
+         "account": [],   # (383) Settings > Account: the name editor and Sign out (no switches)
+         "classes": ["Join another class"]}   # (384 r4) the classes you are in, and joining another
+# (384) "Cameron Wharton started the idea of this entire app. He made the beta ... He should be second on the list under me"
+# (384, round 2) "Robert Morgan can be included in the contributor list" - by surname, after Darjean
+# (384) "Add Durrell Kennedy as a contributor as well. He helped with creation of the question bank" - by surname, after Darjean
+PEOPLE = ["Madison Davis", "Cameron Wharton", "Bryan Darjean", "Durrell Kennedy", "Alexis Sauceda"]
 # the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
-FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]
+FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda"]
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
@@ -137,7 +141,7 @@ with sync_playwright() as pw:
         ctx, pg = page(br, 440, 956, (62, 0, 34, 0), True, cls)
         tag = "[%s]" % cls
         chk("%s the page is in that class" % tag, pg.evaluate("()=>window.NOVA_CLASS") == cls, pg.evaluate("()=>window.NOVA_CLASS"))
-        want = [k for k in PAGES if not (cls == "ifc" and k == "rankings")]
+        want = list(PAGES)   # (384 r5: Fire Code keeps a read-only Leaderboard & Privacy page - which class has one)
         # (1) the menu
         settings(pg)
         litSettings = pg.evaluate(LIT)
@@ -184,9 +188,10 @@ with sync_playwright() as pw:
             if k == "sync" and cls == "ifc":
                 # Fire Code has no cloud (initFirebase stands down there): its Sync page is the unreachable status
                 titles += [t for t in pg.evaluate("()=>[...document.querySelectorAll('#stage .sync-status-row')].length ? ['Your sync code'] : []")]
-            chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], PAGES[k]),
-                opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in PAGES[k])
-                and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in PAGES[k]), {"page": pr, "titles": titles})
+            need = [] if (cls == "ifc" and k == "rankings") else PAGES[k]   # Fire Code's page is a read-only list of classes, no switch
+            chk("%s %s opens its page (%s) with %s, each with a coloured tile" % (tag, k, pr and pr["title"], need),
+                opened and pr and pr["title"] and pr["back"] and pr["menuGone"] and all(t in titles for t in need)
+                and all(r.get("tile") and r["chroma"] >= 40 for r in prow if r["title"] in need), {"page": pr, "titles": titles})
             if k == "sound":
                 lit = pg.evaluate(LIT)
                 chk("%s a category page lights what Settings lights (%s)" % (tag, lit), lit == litSettings, lit)
@@ -274,7 +279,7 @@ with sync_playwright() as pw:
                    lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].filter(b=>b.offsetParent).map(b=>b.id) }; }""")
         names = [c["name"] for c in (cr or {}).get("cards", [])]
         chk("%s Contributors opens (%s)" % (tag, cr and cr["title"]), opened and cr and cr["title"] == "Contributors" and cr["intro"], cr)
-        chk("%s five people, Madison Davis first, Logan Preston there (%s)" % (tag, names), names == PEOPLE, names)
+        chk("%s five people, Madison Davis first, (384) Cameron Wharton second, Durrell Kennedy there; (384 r5) Robert Morgan and Logan Preston are not on the list (%s)" % (tag, names), names == PEOPLE, names)
         chk("%s no counts: no badge, no totals, no bare numbers (%s)" % (tag, cr and cr["numbers"]), cr and cr["numbers"] == 0 and not cr["introNum"], cr and cr["numbers"])
         chk("%s each card: the name row first (a role, no chevron), then its rows, 44px+" % tag,
             cr and all(c["nameFirst"] and c["role"] and not c["nameChev"] and c["items"] and all(i["h"] >= 44 for i in c["items"]) for c in cr["cards"]), cr and cr["cards"])

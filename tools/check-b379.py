@@ -94,9 +94,11 @@ with sync_playwright() as pw:
     # (6) the twins keep the guide's answers
     tw = pg.evaluate("""()=>{ const f=s=>QUESTIONS.find(q=>q.topic==='Arrest, Search, and Seizure' && q.src===s); const nt=q=>{ const n=buildBankNote(q); return n ? n.textContent : ''; };
       return { a31: f(31).choices[f(31).answer], a55: f(55).choices[f(55).answer], n31: nt(f(31)), n55: nt(f(55)) }; }""")
-    chk("#31 counts '%s' and #55 '%s', each with its being-verified note naming that answer" % (tw["a31"], tw["a55"]),
-        tw["a31"] == "Revoked by the person granting consent" and tw["a55"] == "Is a mere acquiescence to authority claimed by the officer"
-        and "Being verified" in tw["n31"] and tw["a31"] in tw["n31"] and "Being verified" in tw["n55"] and tw["a55"] in tw["n55"], tw)
+    # (384) Madison: "the answer is revoked, remove the warning ... make the answer for both ... 'revoked by the person granting
+    # consent'" - both twins count Revoked now, with no being-verified note (check-b384-consent holds it in every mode)
+    chk("#31 counts '%s' and #55 '%s' - both Revoked, and no being-verified note on either (384)" % (tw["a31"], tw["a55"]),
+        tw["a31"] == "Revoked by the person granting consent" and tw["a55"] == "Revoked by the person granting consent"
+        and "Being verified" not in tw["n31"] and "Being verified" not in tw["n55"], tw)
     # (7) a tap that ticked is a tap
     pg.evaluate("""async()=>{ const wait=ms=>new Promise(r=>setTimeout(r,ms)); showHome(); await wait(600); const unit='Arrest, Search, and Seizure';
       cfg.source='all'; cfg.mode='drill'; cfg.units=[unit]; const idx=QUESTIONS.map((q,i)=>i).filter(i=>(QUESTIONS[i].topic||'').trim()===unit).slice(0,6); beginRun(idx);

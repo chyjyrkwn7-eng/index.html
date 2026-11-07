@@ -57,7 +57,7 @@ def check_surfaces(br):
     search bar, the chat button ... It's not cohesive." On 326 the unit card
     was a near-black blue rgba(13,16,21), the chat button a third recipe
     (an 8px saturating blur), and only the tab bar had the bright top rim."""
-    print("\n1. (383) beyond Home the unit card, the search field and the chat button are solid; the tab bar keeps its glass")
+    print("\n1. (383) beyond Home the unit card and the search field are solid; (384) the chat button is the tab bar's glass, as on Home")
     for label, w, h in (PHONE, TABLET):
         ctx, pg = booted(br, w, h, seed=USED)
         pg.evaluate(UNITS)
@@ -78,7 +78,9 @@ def check_surfaces(br):
               solid(card) and not frosted(card), card)
         check("%s: (383) the search field is the unit card's own solid colour, no frost" % label,
               solid(r["search"]) and same(r["search"], card) and not frosted(r["search"]), {k: r[k]["bg"] for k in ("search", "card")})
-        check("%s: (383) the chat button is solid, no frost" % label, solid(r["chat"]) and not frosted(r["chat"]), r["chat"])
+        # (384) "revert the chat button it looks like that [Home] everywhere": the chat button is the bar's glass again
+        check("%s: (384) the chat button is the tab bar's glass, as on Home - frosted, the bar's tint" % label,
+              frosted(r["chat"]) and r["chat"]["bf"] == r["bar"]["bf"], [r["chat"], r["bar"]["bf"]])
         check("%s: the tab bar keeps its frosted glass (%s)" % (label, bar["bf"]), frosted(bar), bar["bf"])
     # app-wide: the same card on other screens
     ctx, pg = booted(br, *PHONE[1:], seed=USED)

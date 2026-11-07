@@ -9,7 +9,7 @@ os.makedirs(OUT, exist_ok=True)
 SEED=('{"firstName":"Madison","avatarChar":"ninja","onboardingComplete":true,'
       '"leaderboardOptIn":true,"lastModified":1700000000000,"tourRev":99,"rankMapFx244":true,'
       '"seenProfileTour":true,"seenModeSelectTour":true,"seenUnitSelectTour":true,'
-      '"seenMainMenuTour":true,"seenFirstResultsTour":true,'
+      '"seenMainMenuTour":true,"seenClassTip":true,"seenFirstResultsTour":true,'
       '"unitPerfects":{"Professionalism and Ethics":35,"Professional Policing":35},'
       '"lifetime":{"points":12250,"answered":5400,"correct":4980,"perfectTests":141}}')
 STATUS = """

@@ -35,7 +35,8 @@ with sync_playwright() as pw:
         page.evaluate("()=>{ homeUnlocksOwed=()=>false; showHome(); }"); page.wait_for_timeout(1200)
         has = page.evaluate("()=>!!document.querySelector('.class-bubble')")
         if who=="classmate":
-            chk("classmate: no class bubble", not has)
+            # (384, Madison: "everyone is gonna get the button") a classmate has it now; Fire Code still needs the account enrolled
+            chk("classmate: the class bubble (every account's since 384)", has)
             page.evaluate("()=>localStorage.setItem('class26e.activeclass','ifc')"); page.reload(); page.wait_for_timeout(3500)
             st = page.evaluate("()=>({cls:window.NOVA_CLASS, key:localStorage.getItem('class26e.activeclass'), pts:store.lifetime.points})")
             chk("classmate forcing the key stays in the academy, key cleared", st["cls"]=="academy" and st["key"] is None and st["pts"]==12400, st)
@@ -57,7 +58,9 @@ with sync_playwright() as pw:
         # the academy's (<academy code>__ifc) - and nothing else reaches the cloud: no leaderboard, fbDb still null
         chk("off the leaderboard and the shared cloud (fbDb null); its account's code is the academy's + __ifc", st["lb"] is False and st["fb"] is None and isinstance(st["code"], str) and st["code"].endswith("__ifc") and "__" not in st["code"][:-5], st)
         chk("Home shows with the flame bubble", st["home"] and "is-ifc" in (st["icon"] or ""), st)
-        chk("Fire Code's own bank is loaded: 1,779 questions (kit 5.4.1)", st["q"] == 1779, st["q"])
+        # (384, kit 5.4.2) the bank's own count, read off it (Madison's update: "do not hard-code" - 1,812 in 5.4.2)
+        bank_n = page.evaluate("()=>window.IFC_BANK && window.IFC_BANK.meta && window.IFC_BANK.meta.questionCount")
+        chk("Fire Code's own bank is loaded: %s questions, the bank's own count (%s; kit 5.4.2 has 1,812)" % (st["q"], bank_n), st["q"] == bank_n and st["q"] >= 1812, [st["q"], bank_n])
         # the academy's copy, untouched (read raw, past the shim)
         raw = page.evaluate("""()=>{ const k='class26e.drill.v1'; const n=localStorage.length; for(let i=0;i<n;i++){ if(localStorage.key(i)===k) return localStorage[k]; } return null; }""")
         chk("academy's saved copy byte-for-byte unchanged", raw==before)

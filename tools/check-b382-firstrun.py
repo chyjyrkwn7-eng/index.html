@@ -32,7 +32,7 @@ STANDALONE = """Object.defineProperty(navigator,'standalone',{get:()=>true,confi
 OWNER = "xph5b57jbp5a"
 SEED = {"firstName": "Casey", "avatarChar": "ninja", "onboardingComplete": True, "publicId": OWNER, "leaderboardOptIn": True,
         "lastModified": 1700000000000, "tourRev": 99, "novaMet": 99, "rankMapFx244": True, "seenProfileTour": True, "seenModeSelectTour": True,
-        "seenUnitSelectTour": True, "seenMainMenuTour": True, "seenRankingsTour": True, "seenAppearanceTour": True,
+        "seenUnitSelectTour": True, "seenMainMenuTour": True, "seenClassTip": True, "seenRankingsTour": True, "seenAppearanceTour": True,
         "lifetime": {"points": 900, "answered": 300, "correct": 250}}
 SEEN = ['class26e.freshstart', 'class26e.intro.seen', 'class26e.unithold.tip', 'class26e.daily.seen', 'class26e.savecode.asked', 'class26e.getstarted']
 
@@ -106,7 +106,7 @@ def up_to_nova(pg, label, full):
     hid = pg.evaluate("()=>{ const b=document.querySelector('.classselect-panel #nextbtn'); return !b || b.hidden || b.getBoundingClientRect().height===0; }")
     chk("%s: Continue waits until a class is picked (no way past it unchosen)" % label, hid)
     pg.click(".classselect-panel .class-card.is-academy"); pg.wait_for_timeout(300); step(pg, label, "7-classes-picked")
-    pg.click(".classselect-panel #nextbtn")
+    pg.click(".classselect-panel #nextbtn"); pg.wait_for_timeout(300); pg.click("#classenroll-confirm .classenroll-yes")   # (384) the enroll confirm
     pg.wait_for_selector("#genprofile-overlay", timeout=8000); pg.wait_for_timeout(700)
     step(pg, label, "8-loading")
     pg.wait_for_selector("#genprofile-overlay", state="detached", timeout=30000); pg.wait_for_timeout(2600)
@@ -181,7 +181,7 @@ with sync_playwright() as pw:
     chk("signin: the code names whose account it is before anything is synced (%s)" % (who,), who and who["shown"] and "Riley" in (who["name"] or ""), who)
     pg.click(".synccode-confirm .next"); pg.wait_for_timeout(2500)
     for _ in range(4):
-        pg.evaluate("()=>{ [...document.querySelectorAll('button')].filter(b=>/^(Got it|Continue|Close|Done|Not now)$/.test(b.textContent.trim())).forEach(b=>b.click()); }"); pg.wait_for_timeout(300)
+        pg.evaluate("()=>{ [...document.querySelectorAll('button')].filter(b=>/^(Got it|Continue|Close|Done|Not now|I.ll add it later)$/.test(b.textContent.trim())).forEach(b=>b.click()); }"); pg.wait_for_timeout(300)
     step(pg, "signin", "3-home")
     st = pg.evaluate("()=>({ home: !!document.querySelector('.panel.home.screen-home-actual'), code: syncCode, name: store.firstName, pts: (store.lifetime||{}).points })")
     chk("signin: lands on Home as that account (%s)" % st, st["home"] and st["code"] == code and st["name"] == "Riley" and st["pts"] == 4321, st)
@@ -257,9 +257,10 @@ with sync_playwright() as pw:
                 pg.click(".class-bubble"); pg.wait_for_timeout(700)
             chk("%s %s: no page or console errors (%s)" % (label, state, pg.errs[:3]), not pg.errs, pg.errs)
             ctx.close()
-    # ---------- F. the class button stays the owner's alone ----------
-    # (a guard, not a fix: it passes before and after) a different publicId has no class button and no class banner on Home,
-    # and asking for Fire Code without the owner's account stays in the academy
+    # ---------- F. another account ----------
+    # (384, Madison: "everyone is gonna get the button") a different publicId HAS the class button now; it still gets no class
+    # banner on Home (that is for the accounts on the invite list - check-b384-classes-open), and asking for Fire Code with only
+    # the device's setting - the account is not enrolled in it - still stays in the academy
     other = dict(SEED); other["publicId"] = "pubnotowner382"
     for label, w, h in (("nonowner-iphone", 440, 956), ("nonowner-ipad", 834, 1194)):
         init = "(()=>{ if(sessionStorage.getItem('fr.f')) return; sessionStorage.setItem('fr.f','1'); localStorage.clear(); localStorage.setItem('class26e.drill.v1', %s); localStorage.setItem('class26e.synccode','TEST-0383'); %s" \
@@ -274,7 +275,7 @@ with sync_playwright() as pw:
             home: !!document.querySelector('.panel.home.screen-home-actual') })""")
         if SHOTS: pg.screenshot(path=os.path.join(SHOTS, "fr-%s-home.png" % label))
         chk("%s: activeclass 'ifc' without the owner's account stays in the academy and is cleared (%s)" % (label, r), r["cls"] == "academy" and r["active"] is None, r)
-        chk("%s: no class button and no class banner on Home for another account (%s)" % (label, r), r["home"] and not r["allowed"] and not r["bubble"] and not r["banner"], r)
+        chk("%s: another account has the class button (384) but no class banner on Home (%s)" % (label, r), r["home"] and r["allowed"] and r["bubble"] and not r["banner"], r)
         chk("%s: no page or console errors (%s)" % (label, pg.errs[:3]), not pg.errs, pg.errs)
         ctx.close()
     br.close()

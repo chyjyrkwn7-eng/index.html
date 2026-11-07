@@ -4,10 +4,11 @@ Run:  python3 tools/check-b342.py [--shots DIR]"""
 import os, sys, json, re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 H = ROOT + "/tools"
-src = open(H + "/record-landing.py").read().split("\nSCENES = {")[0]
-g = {"__file__": H + "/record-landing.py", "__name__": "rl"}; exec(src, g)
-rl_main = open(H + "/record-landing.py").read()
-exec(rl_main[rl_main.index("def encode("):rl_main.index("\ndef main(") if "\ndef main(" in rl_main else None], g)
+# (384) record-landing.py no longer wraps the cutscene harness (Get Started round 2 made it self-contained), so the
+# harness it used to hand over as g["g"] - record-cutscenes.py's, at 1.5x - is loaded here the way it loaded it
+src = open(H + "/record-cutscenes.py").read().split("\nSCENES = [")[0].replace("device_scale_factor=1)", "device_scale_factor=1.5)")
+_rc = {"__file__": H + "/record-cutscenes.py", "__name__": "rc"}; exec(src, _rc)
+g = {"g": _rc}
 from playwright.sync_api import sync_playwright
 rc = g["g"]; seed = dict(rc["SEED"]); seed["publicId"] = "xph5b57jbp5a"; seed["firstName"] = "Maddog"; seed["novaMet"] = 99
 SHOTS = sys.argv[sys.argv.index("--shots") + 1] if "--shots" in sys.argv else None
@@ -51,7 +52,9 @@ with sync_playwright() as pw:
         pg.evaluate("()=>{ showModeSelect(); }"); pg.wait_for_timeout(900)
         modes = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>c.dataset.mode)")
         hs = pg.evaluate("()=>[...document.querySelectorAll('.modecard')].map(c=>Math.round(c.getBoundingClientRect().height))")
-        chk(tag + ": the mode cards are big (10.4rem, 166px, or more; got %s)" % hs, hs and min(hs) >= 160, hs)
+        # (384) still big - 343's ask against 334's 138px - but the academy's four are 154px on a phone so they fit and centre
+        # between the question and the tab bar (Madison: "for the police one you'd centered the 4 a little better")
+        chk(tag + ": the mode cards are big (150px or more; got %s)" % hs, hs and min(hs) >= 150, hs)
         if ifc: chk(tag + ": no Mock card (" + ",".join(modes) + ")", "exam" not in modes and "drill" in modes, modes)
         else: chk(tag + ": Mock is still a card", "exam" in modes, modes)
         ctx.close()
@@ -67,6 +70,7 @@ with sync_playwright() as pw:
       img: document.querySelector('meta[property="og:image"]').content, touch: document.querySelector('link[rel="apple-touch-icon"]').href, share: typeof SHARE_URL === 'string' ? SHARE_URL : '' })""")
     chk("the page's title, which names the Home Screen app, is exactly Nova", m["title"] == "Nova", m["title"])
     chk("the link preview names no class", not any("26E" in x for x in m["ogs"]), m["ogs"])
-    chk("the preview image and the touch icon are absolute addresses of real files", m["img"].startswith("https://") and m["touch"].startswith("https://") and m["touch"].endswith("share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/og-card.png"), m)
+    # (381+) both carry a ?v= cache-buster, so the file is the address without its query
+    chk("the preview image and the touch icon are absolute addresses of real files", m["img"].startswith("https://") and m["touch"].startswith("https://") and m["touch"].split("?")[0].endswith("share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/apple-touch-icon.png") and os.path.exists(ROOT + "/share/og-card.png"), m)
     ctx.close(); br.close()
 sys.exit(0 if ok else 1)

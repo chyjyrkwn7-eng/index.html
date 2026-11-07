@@ -29,9 +29,13 @@ with sync_playwright() as pw:
     chk("and the last is up within 300ms of the last tap (%s)" % (last,), bool(last) and last[0][1] - r["tLast"] <= 300, r)
     # bare rows are soft discs
     pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(120)
+    # (384) a lazy row's flare comes with its still emblem from the first frame (buildRankMarkStill), the empty disc only if
+    # that cannot be drawn - so its flare is either; the character's frame is still the soft disc
     d = pg.evaluate("""()=>{ const av=document.querySelector('.rank-rows .rank-row[data-lazy-art] .rank-avatar-wrap[data-lazy-av] .rank-avatar'), mk=document.querySelector('.rank-rows .rank-row[data-lazy-art] .rank-mark.is-lazy');
-      return { av: av ? getComputedStyle(av).backgroundImage.slice(0,45) : null, mk: mk ? getComputedStyle(mk).backgroundImage.slice(0,45) : null }; }""")
-    chk("a bare row's character and flare frames are soft discs (%s)" % (d,), d["av"] and d["av"].startswith("radial-gradient(circle at 50% 40%") and d["mk"] and d["mk"].startswith("radial-gradient(circle at 50% 45%"), d)
+      const still=document.querySelector('.rank-rows .rank-row[data-lazy-art] .rank-mark:not(.is-lazy)');
+      return { av: av ? getComputedStyle(av).backgroundImage.slice(0,45) : null, mk: mk ? getComputedStyle(mk).backgroundImage.slice(0,45) : null, still: !!(still && still.querySelector('svg, img, canvas')) }; }""")
+    chk("a bare row's character frame is a soft disc and its flare is the disc or already its still emblem (%s)" % (d,),
+        d["av"] and d["av"].startswith("radial-gradient(circle at 50%") and ((d["mk"] and d["mk"].startswith("radial-gradient(circle at 50%")) or d["still"]), d)
     text = pg.evaluate("async()=>{ const x=await runLagTest(()=>{}); return x.text; }")
     ds = [p for p in text.split(" | ") if p.startswith("[d:")]
     names = [p[3:p.index("]")] for p in ds]

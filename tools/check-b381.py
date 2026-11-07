@@ -31,10 +31,11 @@ def page(br, w, h, ins, touch=False):
     pg.goto(url); pg.wait_for_timeout(3000); pg.evaluate("document.getElementById('splashscreen')?.remove()")
     pg.evaluate("()=>{ homeUnlocksOwed=()=>false; }")
     return ctx, pg
-# (1) the trophy: its middle, where the star was, is filled
-TROPHY = """()=>{ const t=document.getElementById('bottomtab-rewards'); const p=t && t.querySelector('svg path.tg-cup'); if(!p) return null;
- const pts=[[12,7.4],[11.6,6.6],[12.4,6.6],[12,8.6]]; return {filled: pts.map(([x,y])=>{ const q=p.ownerSVGElement.createSVGPoint(); q.x=x; q.y=y; return p.isPointInFill(q); }),
-   rim: (()=>{ const q=p.ownerSVGElement.createSVGPoint(); q.x=12; q.y=3.2; return p.isPointInFill(q); })(), paths: t.querySelectorAll('svg path').length}; }"""
+# (1) the Leaderboard tab's glyph: solid ink only - three separate podium blocks (384: the trophy was replaced by a podium on request),
+#     the middle one tallest, none touching another, each drawn in the tab's own colour
+TROPHY = """()=>{ const t=document.getElementById('bottomtab-rewards'); const ps=t ? [...t.querySelectorAll('svg path')] : []; if(!ps.length) return null;
+ const bb=ps.map(p=>{ const b=p.getBBox(); return {x:b.x,y:b.y,w:b.width,h:b.height,fill:p.getAttribute('fill')}; });
+ return {n:ps.length, bb}; }"""
 # (2) the placeholder's middle against the field's
 SEARCH = """()=>{ const i=document.querySelector('.rank-search'); const r=i.getBoundingClientRect(); const cs=getComputedStyle(i);
  const c=document.createElement('canvas').getContext('2d'); c.font=cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily; const tw=c.measureText(i.placeholder).width;
@@ -50,8 +51,11 @@ with sync_playwright() as pw:
         pg.evaluate("()=>showRankings()"); pg.wait_for_timeout(2500)
         if name == "phone":
             t = pg.evaluate(TROPHY)
-            chk("the Leaderboard tab's trophy is one solid piece with no star cut out of its middle (%s)" % (t,),
-                t and all(t["filled"]) and not t["rim"] is None and t["paths"] == 1, t)
+            ok = bool(t) and t["n"] == 3 and all(x["fill"] == "currentColor" for x in t["bb"])
+            if ok:
+                bb = sorted(t["bb"], key=lambda x: x["x"])
+                ok = bb[1]["h"] > bb[0]["h"] and bb[1]["h"] > bb[2]["h"] and all(bb[i]["x"] + bb[i]["w"] < bb[i + 1]["x"] + 0.01 + 1.2 for i in range(2)) and all(bb[i]["x"] + bb[i]["w"] <= bb[i + 1]["x"] + 1.3 for i in range(2))
+            chk("the Leaderboard tab's glyph is a solid podium: three blocks, the middle one tallest (%s)" % (t,), ok, t)
         s = pg.evaluate(SEARCH)
         if name == "SE":
             chk("on an SE \"Search names\" still fits whole and clear of the magnifier (%s)" % (s,), s["fits"] and s["clearOfIcon"], s)

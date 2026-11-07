@@ -107,7 +107,7 @@ with sync_playwright() as pw:
         G["academy"] = recap_store(G["academy"]); G["ifc"] = recap_store(G["ifc"])
         ctx, pg, errs = G["page"](br, G["init"](G["ifc"] if cls == "ifc" else None, active=cls))
         # any day of the week; and nothing owed ahead of it (a rank-up, a badge, Home's unlock cards go first, by design)
-        pg.evaluate("()=>{ window.weekRecapDayOk = () => true; window.homeUnlocksOwed = () => false; window.rankUpSceneOwed = () => false; store.pendingBadgeUnlocks = []; document.querySelectorAll('#tour-overlay,#tour-tooltip').forEach(n=>n.remove()); }")
+        pg.evaluate("()=>{ window.weekRecapDayOk = () => true; window.homeUnlocksOwed = () => false; window.rankUpSceneOwed = () => false; store.pendingBadgeUnlocks = []; document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus'); try{ homeUnlockPlaying = false; }catch(e){} document.querySelectorAll('#tour-overlay,#tour-tooltip').forEach(n=>n.remove()); }")
         # and this build's What's New, which plays ahead of it (closed as a person would)
         for _ in range(12):
             if pg.evaluate("()=>{ const n=document.getElementById('intro-pop'); if(n){ const b=n.querySelector('button'); if(b) b.click(); else n.remove(); return true; } return false; }"): pg.wait_for_timeout(700)
@@ -126,7 +126,7 @@ with sync_playwright() as pw:
     # (6) a class with nothing done last week - Fire Code just enrolled in - has nothing to recap: no recap of zeros over Home
     G["ifc"] = recap_store(G["ifc"], played=False)
     ctx, pg, errs = G["page"](br, G["init"](G["ifc"], active="ifc"))
-    pg.evaluate("()=>{ window.weekRecapDayOk = () => true; window.homeUnlocksOwed = () => false; window.rankUpSceneOwed = () => false; store.pendingBadgeUnlocks = []; document.querySelectorAll('#tour-overlay,#tour-tooltip').forEach(n=>n.remove()); }")
+    pg.evaluate("()=>{ window.weekRecapDayOk = () => true; window.homeUnlocksOwed = () => false; window.rankUpSceneOwed = () => false; store.pendingBadgeUnlocks = []; document.querySelectorAll('.unlock-card,.rs-spot,.rs-fly').forEach(n => n.remove()); document.body.classList.remove('cutscene-focus'); try{ homeUnlockPlaying = false; }catch(e){} document.querySelectorAll('#tour-overlay,#tour-tooltip').forEach(n=>n.remove()); }")
     for _ in range(12):
         if pg.evaluate("()=>{ const n=document.getElementById('intro-pop'); if(n){ const b=n.querySelector('button'); if(b) b.click(); else n.remove(); return true; } return false; }"): pg.wait_for_timeout(700)
         else: break
