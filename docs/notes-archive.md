@@ -36190,3 +36190,41 @@ red ~2.0-2.4k, orange ~6.1-7.8k, yellow ~18.6-20.8k, violet ~36.4-40.1k, white ~
 = daily / 3 days a week / 2 days a week): red ~2-4 days, orange ~4-12 days, yellow ~11 days-5 weeks, violet ~3-10 weeks, white ~5-16 weeks, core ~8 weeks-6 months. Each lands near a rank
 boundary without sitting on it (red before Bronze 21, orange before Silver 30, yellow just before Gold 40, violet just after Platinum 50, white between Sapphire 60 and Amethyst 70, core just before Supernova 80).
 Considered and NOT done: pulling White and Core a few levels earlier so the last flare is less tied to the cap (it would make the end of the climb emptier). Gate: `check-b384-ifccurve.py` (4).
+
+## 384 (banners, second pass): Fire Code's banners named for their challenges, the weak scenes redrawn (branch worktree-agent-a0d24880bf4c5c5b5, NOT on main)
+Madison's review of the Fire Code banners (Headquarters' vehicles, Spill Response's grey pile, Field Kit "on a wall with gear", Pyrotechnics "more
+fireworks", Exit "terrible", Origin and Cause's tape "says fire lane", Fire Response "looks like the others", Hose Line "doesn't look like the rest", "why
+do all the secret flare banners look the exact same") and then: "The names do need to line up with the challenge, for all the banners in every class."
+Only IFC_BANNER_ART's entries, IFC_BANNER_LOOK (names and the two tint colours) and the shared pieces. BANNERS' ids, labels, needs and unlock rules are
+untouched; the academy is untouched; Code Book, Sapphire, Amethyst, Supernova and Star Ranger hash as they did on bb7eb94 (Moon/Comet Ranger left alone).
+- ID -> NAME -> SCENE. tests100 CERTIFIED (the marshal's office: framed certificates round a big CERTIFIED one with its seal, flags, banker's lamp, badge on
+  its stand, nameplate; still) / tests250 TRAINING TOWER (drill tower at dusk, training fire in a window, ground ladder, crew in turnouts on a charged line,
+  steam, a man footing the ladder) / tests500 THE CREW (five people in a line on the bay floor, each under his own turnout coat and helmet on a hook of the
+  pegboard gear wall, axe, halligan, SCBA mask, radio hung between) / hundos100 FULLY COMPLIANT (steel fire door, the inspection tag on its lever stamped
+  100% COMPLIANT with a green tick, FIRE DOOR KEEP CLOSED, extinguisher, ticked checklist; still) / hundos250 GRAND FINALE (a sky of 13 shells on their own
+  clocks round one huge gold finale burst, doubled in the lake, the crowd along the far bank, the white Chevy and the marshal at the safety line) / vr50 MUTUAL
+  AID (dispatch wall map, the incident at its middle, five agencies' units on five coloured routes running in, two dispatchers in headsets; still) / study50
+  CODE BOOK (unchanged) / study60 ON CALL (the Alarm Panel scene kept, plus a wall clock with a sweeping second hand, a desk lamp, a steaming mug) / correct5000
+  DOWNPOUR (the Sprinklers scene, a real fire in the basket: dark red, orange, pale core, sparks) / correct10000 FIRE INVESTIGATOR (Origin & Cause, the tape now
+  FIRE SCENE - DO NOT CROSS in heavy capitals, whole inside the frame) / level80 INCIDENT COMMAND (night command post: the white Tahoe, the commander in a white
+  helmet at the COMMAND board with its unit magnets, the radio mast and beacon, the fire glowing on the skyline) / early10 AFTER HOURS (the marshal, his hat, down
+  on one knee in the electrical room at 11:42 with a thermal camera; its view cone washes the switchgear in heat colours and one breaker burns; cold teal room,
+  magenta and orange heat - a different night, colour and pose from Fire Investigator) / exam100 HOSE LINE (kept: a firefighter on a hose line at a burning
+  building, now drawn in the set's language: fbFF in full turnouts, rim light, wet road, brick building, fire in every window) / flare_void NEBULA (red, orange and
+  yellow gas, three dust pillars each tipped with the newborn star of one of the three flares) / flare_umbra QUASAR (violet black hole with its tilted turning disc
+  and two jets with knots running along them) / flare_horizon PULSAR (a white neutron star, two beams sweeping like a lighthouse, a pulse ring per turn, an ice-spire
+  world that lights as the beam crosses) / flare_genesis SOLSTICE (rose sky, a great sun standing on a dark world's edge in the gap of a tall trilithon, standing stones
+  either side, the day's dotted arc). The four secret-flare banners share no shape; each carries its own colour.
+- Spill Response (a grey drum lying half in the foam ring read as "grey sorting stuff") and the Hazmat barrels no longer have a slot. The spill scene was fixed first (a
+  red drum lying on its side with its bung open, a mint-shadowed white foam blanket) and then dropped when its slot became the Training Tower; fbHazmatTech,
+  fbPlacard, fbDrum and fbSquadScene are left in place unused.
+- SHARED PIECES (the FCB2 block, before IFC_BANNER_ART): fbR/fbC/fbP/fbL shape shorthand; fbFire (one fire everywhere); fbPerson (a person front on, three poses);
+  fbFF (a firefighter in turnouts from the side, hose and stand poses); more letters and figures in FB_GLYPH (P K W Y V B G J, 0 4-9, - % .). New CSS class bl-fwk (a
+  firework lit most of its cycle, opens and droops; Grand Finale only).
+- Stills are the first rungs: Certified, Fully Compliant and Mutual Aid are not in BANNER_ANIMATED, so they are one frozen frame; the rest move (transform/opacity only,
+  no filters).
+- Gate: tools/check-b384-fcbanners.py (+ .prev.json, the bb7eb94 hashes): 11 of its 15 lines fail on bb7eb94. check-b384-banners (kept list and the retired names),
+  check-b384-sets (the four flare banners are four scenes; named Nebula/Quasar/Pulsar/Solstice) and check-b382-ifcart (the new names; The Crew is allowed) moved to
+  this decision. check-b382-ifcart still reports `forge` changed in the academy: that is not from this pass (nothing here touches a character).
+- NOT confirmable in Chromium: how the strips look on a phone's real screen at the scale the covers are shown. The Customize tile is the real surface and was looked
+  at at 440x956 (dpr 2) and 834x1194. Banner label text "Comes with Breacher ..." follows AVATAR_DISPLAY_NAME, which the character helper renames.
