@@ -61139,17 +61139,21 @@ function drawAvatarCharSVG(charId){
     /* the star */
     const st = (cx, cy, R, r) => { let d = ""; for(let i = 0; i < 12; i++){ const a = -Math.PI / 2 + i * Math.PI / 6, rr = i % 2 ? r : R;
       d += (i ? " L" : "M") + (cx + Math.cos(a) * rr).toFixed(2) + " " + (cy + Math.sin(a) * rr).toFixed(2); } return d + " Z"; };
+    /* (384 r6) the star was a headGrad, which is anchored at the face and so painted the badge in its dark end, and it sat
+       in the fade at the foot of the figure: its own light-to-dark gradient across the badge, and 1.8 higher */
     open("cx-fx cx-fx-shstar");
-    svg.appendChild(mk("circle", { cx: 26, cy: 33.4, r: 2.8, fill: amber, opacity: ".3" }));
-    svg.appendChild(mk("path", { d: st(26, 33.4, 2.1, 1.05), fill: headGrad("#FFE9A8", "#E8B23A", "#9A6A14"), stroke: "#7A5210", "stroke-width": ".2" }));
+    { const sgid = uid + "-shstg"; const sg = mk("linearGradient", { id: sgid, gradientUnits: "userSpaceOnUse", x1: 24.4, y1: 29.4, x2: 28.4, y2: 33.8 });
+      [["0%", "#FFF0BC"], ["55%", "#EDB93E"], ["100%", "#B07A1A"]].forEach(([o, c]) => sg.appendChild(mk("stop", { offset: o, "stop-color": c }))); defs.appendChild(sg);
+      svg.appendChild(mk("circle", { cx: 26.4, cy: 31.6, r: 2.9, fill: amber, opacity: ".34" }));
+      svg.appendChild(mk("path", { d: st(26.4, 31.6, 2.2, 1.1), fill: "url(#" + sgid + ")", stroke: "#7A5210", "stroke-width": ".2" })); }
     [0, 60, 120, 180, 240, 300].forEach(deg => { const a = (deg - 90) * Math.PI / 180;
-      svg.appendChild(mk("circle", { cx: (26 + Math.cos(a) * 2.1).toFixed(2), cy: (33.4 + Math.sin(a) * 2.1).toFixed(2), r: .22, fill: "#FFF2C8" })); });
-    svg.appendChild(mk("circle", { cx: 26, cy: 33.4, r: .45, fill: "#9A6A14" }));
+      svg.appendChild(mk("circle", { cx: (26.4 + Math.cos(a) * 2.2).toFixed(2), cy: (31.6 + Math.sin(a) * 2.2).toFixed(2), r: .24, fill: "#FFF2C8" })); });
+    svg.appendChild(mk("circle", { cx: 26.4, cy: 31.6, r: .45, fill: "#9A6A14" }));
     close();
     /* build 304: the star catches the light now and then, and under the
        brim the eyes go left and right - a lawman watching the street. */
     openHidden("cx-fx cx-fx-sh3glint");
-    svg.appendChild(sparkle(27.2, 32.2, 1.5, "#FFF6D8"));
+    svg.appendChild(sparkle(27.6, 30.4, 1.5, "#FFF6D8"));
     close();
     close();
     open("cx-head");
@@ -63487,7 +63491,8 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(dia);
     /* the ruff: points alternating violet and black */
     for(let i = 0; i < 9; i++){
-      const x = 10.4 + i * 2.4, y = 27.8 + Math.abs(i - 4) * .35;
+      /* (384 r6) 2.8 wide points on a 2.4 spacing overlapped each other at random; a point as wide as its pitch tiles */
+      const x = 8.8 + i * 2.8, y = 27.8 + Math.abs(i - 4) * .35;
       svg.appendChild(mk("path", { d: "M" + (x - 1.4) + " " + (y - .6) + " L" + x + " " + (y + 2.4) + " L" + (x + 1.4) + " " + (y - .6) + " Z", fill: i % 2 ? "#1A1420" : violet, stroke: "#0A080E", "stroke-width": ".15" }));
     }
     close();
@@ -63994,9 +63999,10 @@ function drawAvatarCharSVG(charId){
        oval does not. */
     svg.appendChild(mk("ellipse", { cx: 17.4, cy: 11.4, rx: 5.6, ry: 3.6,
                                     fill: "#FFFFFF", opacity: .17 }));
-    svg.appendChild(mk("path", { d: "M11.6 25.6 Q20 31.6 28.4 25.6", fill: "none",
-                                 stroke: "rgba(24,58,32,.22)", "stroke-width": 2.4,
-                                 "stroke-linecap": "round" }));
+    /* (384 r6) a 2.4-wide stroke across the cheeks read as a wide smile sitting over the frown below it; now a faint shade
+       along the jaw that follows the chin's own edge */
+    svg.appendChild(mk("path", { d: "M12.8 27 Q16.4 31.6 20 32 Q23.6 31.6 27.2 27 Q24 30.2 20 30.4 Q16 30.2 12.8 27 Z",
+                                 fill: "rgba(24,58,32,.2)" }));
     /* BUILD 271: "the alien could a little more mean maybe? Or just a
        different expression." The eyes were tall almonds tilted 12
        degrees - wide, wet and friendly. Now they are the classic grey's:
