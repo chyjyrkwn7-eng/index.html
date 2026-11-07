@@ -131,9 +131,9 @@ PAGES = {"sound": ["Sound effects", "Tap sounds"],
 # (384) "Cameron Wharton started the idea of this entire app. He made the beta ... He should be second on the list under me"
 # (384, round 2) "Robert Morgan can be included in the contributor list" - by surname, after Darjean
 # (384) "Add Durrell Kennedy as a contributor as well. He helped with creation of the question bank" - by surname, after Darjean
-PEOPLE = ["Madison Davis", "Cameron Wharton", "Bryan Darjean", "Durrell Kennedy", "Robert Morgan", "Logan Preston", "Alexis Sauceda"]
+PEOPLE = ["Madison Davis", "Cameron Wharton", "Bryan Darjean", "Durrell Kennedy", "Alexis Sauceda"]
 # the foot of Settings, in Madison's order (round 3): creator, chat, Virtual Room, testing, feedback
-FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda", "Logan Preston"]
+FOOT = ["Madison Davis", "Bryan Darjean", "Cameron Wharton", "Alexis Sauceda"]
 
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=g["CHROME"])
@@ -279,7 +279,7 @@ with sync_playwright() as pw:
                    lit: [...document.querySelectorAll('#bottomtabs .bottomtab.active')].filter(b=>b.offsetParent).map(b=>b.id) }; }""")
         names = [c["name"] for c in (cr or {}).get("cards", [])]
         chk("%s Contributors opens (%s)" % (tag, cr and cr["title"]), opened and cr and cr["title"] == "Contributors" and cr["intro"], cr)
-        chk("%s seven people, Madison Davis first, (384) Cameron Wharton second, Durrell Kennedy, Robert Morgan and Logan Preston there (%s)" % (tag, names), names == PEOPLE, names)
+        chk("%s five people, Madison Davis first, (384) Cameron Wharton second, Durrell Kennedy there; (384 r5) Robert Morgan and Logan Preston are not on the list (%s)" % (tag, names), names == PEOPLE, names)
         chk("%s no counts: no badge, no totals, no bare numbers (%s)" % (tag, cr and cr["numbers"]), cr and cr["numbers"] == 0 and not cr["introNum"], cr and cr["numbers"])
         chk("%s each card: the name row first (a role, no chevron), then its rows, 44px+" % tag,
             cr and all(c["nameFirst"] and c["role"] and not c["nameChev"] and c["items"] and all(i["h"] >= 44 for i in c["items"]) for c in cr["cards"]), cr and cr["cards"])
