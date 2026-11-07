@@ -23435,6 +23435,8 @@
     .bn-stage .bl-shock{ animation:bn-shock 4.8s cubic-bezier(.22,.61,.36,1) infinite; }
     .bn-stage .bl-out{ animation:bl-out 4s cubic-bezier(.12,.68,.4,1) infinite; }
     .bn-stage .bl-burst{ animation:bl-burst 6.4s ease-out infinite; }
+    /* a firework that stays lit while it opens and droops (Grand Finale): lit most of its cycle, so a sky of them is full */
+    .bn-stage .bl-fwk{ animation:bl-fwk 6s ease-out infinite; opacity:0; }
     .bn-stage .bl-rise{ animation:bl-rise 7s linear infinite; }
     .bn-stage .bl-sweep{ animation:bl-sweep 9s ease-in-out infinite alternate; }
     .bn-stage .bl-blink{ animation:bl-blink 2.4s steps(1) infinite; }
@@ -23487,6 +23489,7 @@
   /* debris thrown out from the middle of its box, stretching as it goes */
   /* the blast's spray (bn-burst's moment, as a scale from the core) */
   @keyframes bl-burst{ 0%,100%{ transform:scale(.12); opacity:0; } 1%{ transform:scale(.16); opacity:1; } 14%{ opacity:.8; } 24%{ transform:scale(1); opacity:0; } }
+  @keyframes bl-fwk{ 0%,100%{ transform:scale(.1); opacity:0; } 3%{ transform:scale(.3); opacity:1; } 45%{ transform:scale(.92); opacity:.9; } 80%{ transform:scale(1.02) translateY(3%); opacity:.35; } 99%{ transform:scale(1.06) translateY(7%); opacity:0; } }
   @keyframes bl-out{ 0%{ transform:scale(.18); opacity:0; } 7%{ opacity:1; } 70%{ opacity:.7; } 100%{ transform:scale(1); opacity:0; } }
   @keyframes bl-rise{ from{ transform:translateY(0); } to{ transform:translateY(-50%); } }
   @keyframes bl-sweep{ from{ transform:rotate(-14deg); } to{ transform:rotate(14deg); } }
@@ -78381,15 +78384,15 @@ function fbRangerScene(u, o){
   return L;
 }
 const IFC_BANNER_LOOK = {
-  tests100: ["Headquarters", "#F2C14E", "#4A5AB8"], tests250: ["Spill Response", "#9AF03A", "#F2C21E"],
-  tests500: ["Field Kit", "#F2C14E", "#B07A44"], hundos100: ["Exit", "#FF3B30", "#FFD9A0"],
-  hundos250: ["Pyrotechnics", "#FFD36A", "#7FB8FF"], vr50: ["Dispatch", "#4FB8FF", "#FF3B30"],
-  study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["Alarm Panel", "#E8402E", "#2ECC71"],
-  correct5000: ["Sprinklers", "#6FA8D8", "#FF8A3D"], correct10000: ["Origin & Cause", "#F2C21E", "#FF7A2E"],
-  level80: ["Hazmat", "#7AF03A", "#2A6CE0"], early10: ["Fire Response", "#3D7BFF", "#FF2D2D"],
-  exam100: ["Hose Line", "#F95E2F", "#FF2931"], flare_void: ["Breacher", "#F97316", "#FFB04A"],
-  flare_umbra: ["Recon", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Whiteout", "#6FB4F2", "#CFEAFF"],
-  flare_genesis: ["Flashbang", "#FF5CA8", "#E0507F"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
+  tests100: ["Certified", "#F2C14E", "#2E8A6A"], tests250: ["Training Tower", "#FF9A4E", "#9A5AC8"],
+  tests500: ["The Crew", "#F2C14E", "#E04030"], hundos100: ["Fully Compliant", "#2E9A56", "#8CB4D8"],
+  hundos250: ["Grand Finale", "#FFD36A", "#7FB8FF"], vr50: ["Mutual Aid", "#4FB8FF", "#FF3B30"],
+  study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["On Call", "#E8402E", "#2ECC71"],
+  correct5000: ["Downpour", "#6FA8D8", "#FF8A3D"], correct10000: ["Fire Investigator", "#F2C21E", "#FF7A2E"],
+  level80: ["Incident Command", "#FF8A3D", "#4FB8FF"], early10: ["After Hours", "#3FD0C0", "#FF5A8A"],
+  exam100: ["Hose Line", "#F95E2F", "#FF2931"], flare_void: ["Nebula", "#F97316", "#EF4444"],
+  flare_umbra: ["Quasar", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Pulsar", "#6FB4F2", "#CFEAFF"],
+  flare_genesis: ["Solstice", "#FF5CA8", "#FFB04A"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
   celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"]
 };
 if(IFC_ART_ON){
