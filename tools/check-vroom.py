@@ -1111,6 +1111,7 @@ def main():
         # localStorage and its storage event.
         ctx = br.new_context(viewport={"width": 440, "height": 956})
         ctx.add_init_script("window.__fakeLatency = %d;" % args.latency)
+        ctx.add_init_script("window.__vroomFast = true;")   # (384 r5) the matches here are played in seconds; the five-minute floor has its own check (check-b384-matchlength)
         ctx.add_init_script(FAKE_FIRESTORE)
 
         ctx.add_init_script("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');localStorage.setItem('class26e.unithold.tip','1');localStorage.setItem('class26e.penal55124.seen','1');localStorage.setItem('class26e.penal124256.seen','1');localStorage.setItem('class26e.penal256578.seen','1');"
@@ -1820,8 +1821,9 @@ def main():
                        twist: /repeating-linear-gradient/.test(cs.backgroundImage),
                        knot: !!document.querySelector('.tug-knot'),
                        centre: !!document.querySelector('.tug-centre') };}""")
-            check("the rope is drawn as a rope, not a hairline",
-                  bool(rope) and rope["twist"] and rope["h"] >= 24, rope)
+            # REWRITTEN IN 384 r5: the rope is a clean light line now (the tan hatched rope looked bad), not a twisted strand
+            check("the rope is drawn as a line you can see (4px or more), through the field",
+                  bool(rope) and rope["h"] >= 4, rope)
             check("with a knot on it and a line to pull it past",
                   bool(rope) and rope["knot"] and rope["centre"], rope)
 

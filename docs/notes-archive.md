@@ -36078,3 +36078,13 @@ tools/check-b384-card.py holds all of it (fails on the previous build). Older ga
 
 ## 384 r5: the clock is green
 Madison: green instead of amber. The race's pill and bar, and Tug of War's and Battle's clock, are #2FBF71 / #8CF0B6 / #7BE3A8; red for the last stretch as before.
+
+## Build 384 - Tug of War look, and the five-minute floor (any Virtual Room match)
+
+Madison: "not a fan of how this looks ... those matches can't end really quick? We gotta ensure those matches can last at least 5 minutes ... any virtual room match".
+
+- LOOK: the tan rope-with-a-knot is gone. The field is a flat two-colour bar (each team's colour at 20% over the surface, split at the middle), one light line through it, a round puck, a thin centre mark and a thin win line each side, and small round faces. Phone, tablet (`min-width:40rem`) and the pull cut-scene (`.tug-cut-rope`) all use the thin line and the round puck.
+- FLOOR: `VROOM_MIN_MATCH_MS` (5 min). `tugCheckOver` and `battleCheckOver` return before calling anything on the rope or on HP until the match is five minutes old; a forfeit (a side with nobody left) still ends at once. `TUG_MIN_Q` = 50: a tug bank is cycled (reshuffled lap by lap from the shared start) to at least fifty, so a room set to five questions still plays fifty. `BATTLE_HP` is 300 per member, so the fastest possible play cannot empty a side in under five minutes.
+- TEST HOOK: `window.__vroomFast` (set by check-vroom's init script only) drops both floors and uses 100 HP per member so the old fixtures still finish in seconds. Nothing in the app sets it.
+- RACE is NOT changed: the host picks the question count and a race ends when everybody finishes, so a small unit can still finish in under five minutes. Asked Madison whether to cycle questions there.
+- GATE: `tools/check-b384-matchlength.py` (fails on the previous build). `check-vroom.py` ALL PASS.

@@ -26360,13 +26360,13 @@
   .tug-side-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .tug-side-us{ color:var(--us); }
   .tug-side-them{ color:var(--them); text-align:right; }
+  /* (384 r5) "I'm honestly not a fan of how this looks, never really have been": a tan, hatched rope on a dark rounded box with a tall white pill and
+     overlapping ringed faces. Now the race line's own language: a flat square-ended bar, the two sides' colours as two halves of the ground (not glows), a
+     slim light line for the rope, a round puck for the flag, and the two teams' faces smaller, side by side and clear of the ends. */
   .tug-field{
-    position:relative; height:4.6rem; overflow:hidden; border-radius:1rem;
-    background:
-      radial-gradient(120% 90% at 0% 50%, color-mix(in srgb, var(--us) 16%, transparent), transparent 55%),
-      radial-gradient(120% 90% at 100% 50%, color-mix(in srgb, var(--them) 16%, transparent), transparent 55%),
-      linear-gradient(180deg, rgba(255,255,255,.035), rgba(0,0,0,.18));
-    border:1px solid rgba(255,255,255,.08);
+    position:relative; height:4.6rem; overflow:hidden; border-radius:.35rem;
+    background:linear-gradient(90deg, color-mix(in srgb, var(--us) 20%, #1A1C21) 0 50%, color-mix(in srgb, var(--them) 20%, #1A1C21) 50% 100%);
+    border:0;
     --lean:0;
   }
   /* A REAL ROPE: two strands twisted opposite ways (the repeating
@@ -26374,14 +26374,9 @@
      a natural fibre tan - the one place in the app that is
      deliberately not a theme colour, because a themed rope is a bar. */
   .tug-rope{
-    position:absolute; top:50%; left:-20%; width:140%; height:1.6rem; margin-top:-.8rem;
+    position:absolute; top:50%; left:-20%; width:140%; height:.4rem; margin-top:-.2rem;
     border-radius:999px;
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.28) 0, rgba(255,255,255,.06) 30%, transparent 48%, rgba(0,0,0,.28) 78%, rgba(0,0,0,.5) 100%),
-      repeating-linear-gradient(62deg,
-        #C9A774 0 4px, #B28D58 4px 7px, #8C6A3D 7px 9px, #C9A774 9px 12px),
-      #A8844F;
-    box-shadow:0 .35rem .6rem rgba(0,0,0,.45);
+    background:rgba(255,255,255,.62);
     transition:transform .55s cubic-bezier(.3,.9,.3,1);
     z-index:2;
   }
@@ -26391,18 +26386,18 @@
   .tug-centre, .tug-winline{
     position:absolute; top:.35rem; bottom:.35rem; width:0; transform:translateX(-50%); z-index:1;
   }
-  .tug-centre{ left:50%; border-left:2px dashed rgba(255,255,255,.55); }
-  .tug-winline{ border-left:3px solid; opacity:.55; }
+  .tug-centre{ left:50%; border-left:2px solid rgba(255,255,255,.35); top:0; bottom:0; }
+  .tug-winline{ border-left:3px solid; opacity:.9; top:0; bottom:0; }
   .tug-winline-us{ border-color:var(--us); }
   .tug-winline-them{ border-color:var(--them); }
   /* THE FLAG tied to the rope's middle - what both sides are dragging
      past their own line. */
   .tug-knot{
-    position:absolute; top:50%; width:.75rem; height:3.3rem; z-index:3;
-    transform:translate(-50%,-50%); border-radius:.3rem;
-    background:#F4F1EA; border:1px solid rgba(0,0,0,.45);
+    position:absolute; top:50%; width:1.5rem; height:1.5rem; z-index:3;
+    transform:translate(-50%,-50%); border-radius:50%;
+    background:#F4F1EA; border:0;
     transition:left .55s cubic-bezier(.3,.9,.3,1), background .3s ease;
-    box-shadow:0 2px 10px rgba(0,0,0,.55), inset 0 .2rem .3rem rgba(255,255,255,.35);
+    box-shadow:0 0 0 3px rgba(10,10,10,.85), 0 2px 8px rgba(0,0,0,.5);
   }
   .tug-knot.is-ours{ background:var(--us); }
   .tug-knot.is-theirs{ background:var(--them); }
@@ -26418,9 +26413,9 @@
   .tug-team-us{ left:1.2rem; transform:translateY(-50%); }
   .tug-team-them{ right:1.2rem; transform:translateY(-50%); flex-direction:row-reverse; }
   .tug-team-fig{
-    width:2.3rem; height:2.3rem; margin:0 -.62rem; border-radius:50%;
+    width:2rem; height:2rem; margin:0 .12rem; border-radius:50%;
     background:rgba(8,10,14,.72); display:grid; place-items:center;
-    box-shadow:0 0 0 2px var(--ring), 0 4px 10px rgba(0,0,0,.5);
+    box-shadow:0 0 0 2px var(--ring), 0 0 0 4px rgba(10,10,10,.85);
   }
   .tug-team-us .tug-team-fig{ --ring:color-mix(in srgb, var(--us) 70%, transparent); }
   .tug-team-them .tug-team-fig{ --ring:color-mix(in srgb, var(--them) 70%, transparent); }
@@ -26463,8 +26458,8 @@
   @media (min-width:40rem){
     .tug-rope-wrap{ max-width:36rem; margin-left:auto; margin-right:auto; }
     .tug-field{ height:5.6rem; }
-    .tug-rope{ height:2rem; margin-top:-1rem; }
-    .tug-knot{ width:.95rem; height:4rem; }
+    .tug-rope{ height:.5rem; margin-top:-.25rem; }
+    .tug-knot{ width:1.9rem; height:1.9rem; }
     .tug-team-fig{ width:3rem; height:3rem; }
   }
   .screen-tug .choice.is-wrong{ border-color:#F5804D; }
@@ -26485,8 +26480,8 @@
   .tug-cut-rope{ width:min(94vw, 44rem); max-width:none; margin:0; transform:scale(.92); transition:transform .5s ease; }
   .tug-cut.is-in .tug-cut-rope{ transform:none; }
   .tug-cut-rope .tug-field{ height:9rem; }
-  .tug-cut-rope .tug-rope{ height:2.4rem; margin-top:-1.2rem; transition:transform .6s cubic-bezier(.5,-.3,.3,1.25); }
-  .tug-cut-rope .tug-knot{ height:5.4rem; width:1.15rem; transition:left .6s cubic-bezier(.5,-.3,.3,1.25), background .3s ease; }
+  .tug-cut-rope .tug-rope{ height:.6rem; margin-top:-.3rem; transition:transform .6s cubic-bezier(.5,-.3,.3,1.25); }
+  .tug-cut-rope .tug-knot{ height:2.2rem; width:2.2rem; transition:left .6s cubic-bezier(.5,-.3,.3,1.25), background .3s ease; }
   .tug-cut-rope .tug-team-fig{ width:4.6rem; height:4.6rem; margin:0 -.9rem; }
   .tug-cut-rope .tug-team{ transition:transform .6s cubic-bezier(.5,-.3,.3,1.25); }
   .tug-cut-rope .tug-state{ display:none; }
@@ -132763,6 +132758,16 @@ function attachInviteWatcher(){ fetchBoardForInvites(false); }
    twenty, so the total rises with the question count instead of
    flattening out at ten. A 40-question tug runs about 11 minutes
    against the old 7; a 100-question one about 17 against 10. */
+/* (384 r5) A MATCH LASTS FIVE MINUTES AT THE LEAST: "those matches can't end really quick ... we gotta ensure they can last at least 5 minutes ... any virtual
+   room match". Tug and Battle used to end the moment a rope or a health bar said so - a rope pulled clear in forty seconds, a side downed in two minutes,
+   or a room set to five questions run out. Now: no match is called on the rope (or a side's health) before this long after it started (a side with nobody
+   left is still a forfeit), the bank is never under TUG_MIN_Q / BATTLE_MIN_Q questions (it cycles), and a side's health is deep enough that the fastest
+   possible play cannot empty it sooner (BATTLE_HP). */
+const VROOM_MIN_MATCH_MS = 5 * 60 * 1000;
+const TUG_MIN_Q = 50;
+/* (the checks that play a whole match in seconds set window.__vroomFast, as the Nova checks set novaAwayForce) */
+function vroomMinMs(){ return window.__vroomFast ? 0 : VROOM_MIN_MATCH_MS; }
+function tugMinQ(){ return window.__vroomFast ? 1 : TUG_MIN_Q; }
 const TUG_TARGET_MS = 10 * 60 * 1000;
 /* SEVEN SECONDS, AND ONLY AT THE END. Asked for in those words: "lowest
    time will be 7 seconds but that's ONLY if it takes that long to
@@ -132861,7 +132866,7 @@ function tugRopePos(d){
 }
 function tugMatchCount(d){
   const n = Number(d && d.tug && d.tug.count) || 0;
-  return n > 0 ? n : Math.max(1, (tugPool || []).length);
+  return Math.max(tugMinQ(), n > 0 ? n : Math.max(1, (tugPool || []).length));
 }
 
 /* Alternating by JOIN ORDER, so teams are the same on every device
@@ -133011,6 +133016,8 @@ function tugCheckOver(d){
   /* Plus the pause after every question (build 221), so a match that is
      still being played is never called on time. */
   const timeUp = Date.now() >= (Number(d.startAt) || 0) + tugPace(count).total + count * (3000 + TUG_ARM_MS) + 15000;
+  /* nothing is called on the rope before the match has run VROOM_MIN_MATCH_MS (a forfeit still ends it) */
+  if(!forfeit && Date.now() < (Number(d.startAt) || 0) + vroomMinMs()) return;
   if(Math.abs(pos) < gap && !allDone && !timeUp && !forfeit) return;
   const winner = forfeit && Math.abs(pos) < gap ? forfeit : (pos > 0 ? "a" : (pos < 0 ? "b" : null));
   vroomDb().collection("vrooms").doc(vroomCode).update({
@@ -133050,9 +133057,15 @@ function beginTugMatch(data){
   /* The same order on every device, from the instant they already
      share. Without it a cap or an index means a different question
      per person, which is not a match. */
-  tugPool = shuffleSeeded(poolNow(), data.startAt || 1);
-  const asked = Number(data.count) || Number((data.tug || {}).count) || 0;
-  if(asked > 0 && asked < tugPool.length) tugPool = tugPool.slice(0, asked);
+  {
+    const base = poolNow();
+    const asked = Number(data.count) || Number((data.tug || {}).count) || 0;
+    const want = Math.max(tugMinQ(), asked > 0 ? Math.min(asked, base.length) : base.length);
+    /* the bank, reshuffled lap by lap from the same instant until there are enough: the same order on every device */
+    let out = [], lap = 0;
+    while(base.length && out.length < want && lap < 50){ out = out.concat(shuffleSeeded(base, (data.startAt || 1) + lap * 7919)); lap += 1; }
+    tugPool = out.slice(0, want);
+  }
   tugCount = tugPool.length;
 
   detachTug();
@@ -133820,7 +133833,7 @@ const BATTLE_MIN_Q = 50;
 __bm("L111786");
 const BATTLE_Q_MS = 20000;
 const BATTLE_PAUSE_MS = 2000;
-const BATTLE_HP = 100;
+const BATTLE_HP = 300;   /* (384 r5) was 100 a member: twenty right answers emptied a side, ~2.5 minutes at the fastest; now no play can empty it in under five (see VROOM_MIN_MATCH_MS) */
 const BATTLE_HIT = 5;
 const BATTLE_STREAK_HIT = 7;
 const BATTLE_HEAL = 15;
@@ -133887,7 +133900,7 @@ function battleMembers(d, side){
 }
 function battleMaxHp(d, side){
   const t = battleTeams(d);
-  return BATTLE_HP * Math.max(1, Object.keys(t).filter(k => t[k] === side).length);
+  return (window.__vroomFast ? 100 : BATTLE_HP) * Math.max(1, Object.keys(t).filter(k => t[k] === side).length);
 }
 function battleNameOf(d, k){
   if(k === vroomMyKey) return "you";
@@ -133980,6 +133993,7 @@ function battleCheckOver(d){
   const sideHere = s => battleMembers(d, s).some(k => here[k]);
   const forfeit = sideHere("a") !== sideHere("b") ? (sideHere("a") ? "a" : "b") : null;
   const timeUp = Date.now() >= (Number(d.startAt) || 0) + count * (BATTLE_Q_MS + BATTLE_PAUSE_MS + 1500) + 15000;
+  if(!forfeit && Date.now() < (Number(d.startAt) || 0) + vroomMinMs()) return;
   if(!r.downed && !allDone && !timeUp && !forfeit) return;
   const winner = r.downed ? battleOther(r.downed)
     : forfeit ? forfeit
