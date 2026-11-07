@@ -37541,6 +37541,10 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page, .screen-customize, .screen-ranks .ranks-tab, .screen-friends .friend-sect, .profile-stats-tab > .points-progress-sect) :is(.slab.motion-summary, .sect-label, .slab){
     font-size:1rem !important; font-weight:600 !important;
   }
+  /* (384 r5) Settings' group headings at Delta's: ~14px (ours 16 = x1.14 too big), 20px in from the card's edge */
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page):is(.screen-settings, .screen-settings-sub, .screen-settings-page) :is(.slab.motion-summary, .sect-label, .slab){
+    font-size:.875rem !important; padding-left:20px !important;
+  }
   /* and Profile's ("Rank challenges", "<rank> unlocks") */
   html[data-layout] body #stage .profile-identity-tab .pf-goal > :is(.pf-tasks-kick, .pf-rewards-kick){ font-size:1rem !important; font-weight:600 !important; }
   /* the tiles' glyphs: heavier strokes, a touch larger in the tile */
