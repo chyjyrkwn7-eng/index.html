@@ -2036,6 +2036,19 @@ function sideRules(ctx, b) {
   // (an edge on a rule takes no marker's room past it: cl / cr)
   for (let x = Math.ceil(b.x1); x < R; x++) if (upright(x)) { b.x1 = x; b.cr = true; break; }
   for (let x = Math.floor(b.x0) - 1; x >= L; x--) if (upright(x)) { b.x0 = x + 1; b.cl = true; break; }
+  // (384 county tables) the county booklet's tables have no outer upright rules: the table ends where its horizontal rules end. A county
+  // row (snap) with no upright rule on a side runs out to the end of the rule above or below it, just inside it.
+  if (b.snap && (!b.cr || !b.cl) && (b.ruleAbove != null || b.ruleBelow != null)) {
+    const ry = b.ruleAbove != null ? b.ruleAbove : b.ruleBelow;
+    let R2; try { R2 = ctx.getImageData(0, Math.max(0, ry - 1), W, Math.min(3, H - Math.max(0, ry - 1))).data; } catch (e) { return; }
+    const rows = R2.length / (W * 4);
+    const onRule = (x) => { for (let r = 0; r < rows; r++) { const i = (r * W + x) * 4; if (R2[i] + R2[i + 1] + R2[i + 2] < 600) return true; } return false; };
+    const mid = Math.floor((b.x0 + b.x1) / 2);
+    if (onRule(mid)) {
+      if (!b.cr) { let x = Math.ceil(b.x1); while (x < W && onRule(x)) x++; if (x - 1 > b.x1 && x - 1 - b.x1 < 12 * em) { b.x1 = x - 1; b.cr = true; } }
+      if (!b.cl) { let x = Math.floor(b.x0); while (x >= 0 && onRule(x)) x--; if (x + 1 < b.x0 && b.x0 - (x + 1) < 12 * em) { b.x0 = x + 1; b.cl = true; } }
+    }
+  }
 }
 
 // What is left on an outer edge that no clean row could clear - a fragment of the line above or below, or of a mark in the margin

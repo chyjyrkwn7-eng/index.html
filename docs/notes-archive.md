@@ -36140,3 +36140,10 @@ like the calendar page beside it). Classes are `tg-podium` (the trophy's `tg-cup
 rising bars, build 382) is similar in spirit but different in shape (a podium peaks in the middle; Stats rises) - told Madison.
 `check-b381.py`'s three "Search names" centring checks fail on this and the previous build alike: the search field's placeholder is left-aligned
 in the clean look (a later decision), so they are stale, not a regression of this change.
+
+## 384 - county table rows reach the table's edges (pending visual check)
+
+The county booklet's tables have no outer upright rules, so `sideRules` found nothing and the gold stopped at the words (15-25px short on
+Tables 405.3, 1004.5, 5609.4.1). A county row (`snap`) with no upright rule on a side now runs out to the end of the horizontal rule above/below
+it, just inside it (`cl`/`cr` set, capped at 12 em). Committed before its pictures were looked at - the helper is re-shooting the county tables on
+iPhone and iPad; revert this commit's `sideRules` block if (b) spill past a rule or (c) another row looks worse.
