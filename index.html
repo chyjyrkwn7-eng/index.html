@@ -77967,12 +77967,28 @@ const IFC_BANNER_ART = {
       '<rect width="480" height="180" fill="url(#' + u + 'wall)"/><path d="' + blocks + '" stroke="#22252E" stroke-width="1.2" fill="none"/>' +
       '<ellipse cx="250" cy="20" rx="260" ry="130" fill="url(#' + u + 'lamp)"/>' +
       '<rect x="0" y="158" width="480" height="22" fill="#14161C"/><rect x="0" y="156" width="480" height="3" fill="#3E4250"/>' +
-      conduit(PX + 30) + conduit(PX + 120) + conduit(DX + DW / 2);
+      conduit(PX + 30) + conduit(PX + 120) + conduit(DX + DW / 2) +
+      /* ON CALL (384, "the names do need to line up with the challenge" - 60 hours studied): the panel is always on, and so is whoever is
+         on it: a wall clock at ten past three in the morning, a desk lamp and a mug on the ledge below */
+      '<circle cx="65" cy="61" r="26" fill="#000" opacity=".35"/><circle cx="63" cy="58" r="25" fill="#2A2D34" stroke="#0A0C10" stroke-width="1.4"/><circle cx="63" cy="58" r="21.4" fill="#F4F1EA"/>' +
+      Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6; return fbL("M" + bnF(63 + Math.sin(t) * (i % 3 ? 18.4 : 16.6)) + " " + bnF(58 - Math.cos(t) * (i % 3 ? 18.4 : 16.6)) + " L" + bnF(63 + Math.sin(t) * 20) + " " + bnF(58 - Math.cos(t) * 20), "#2A2D34", i % 3 ? 1 : 1.8); }).join("") +
+      fbL("M63 58 L" + bnF(63 + Math.sin(Math.PI * 0.2) * 11) + " " + bnF(58 - Math.cos(Math.PI * 0.2) * 11), "#14161C", 2.4) + fbL("M63 58 L" + bnF(63 + Math.sin(Math.PI * 0.6) * 17) + " " + bnF(58 - Math.cos(Math.PI * 0.6) * 17), "#14161C", 1.6) + fbC(63, 58, 2.2, "#14161C") +
+      '<ellipse cx="62" cy="52" rx="12" ry="6" fill="#fff" opacity=".12"/>' +
+      /* the lamp */
+      '<ellipse cx="46" cy="158" rx="14" ry="3" fill="#000" opacity=".5"/><path d="M34 158 Q34 153 46 153 Q58 153 58 158 Z" fill="#2A2D34"/>' + fbL("M46 153 L38 132 L62 120", "#3A3E48", 3) + fbC(38, 132, 2.6, "#6A707C") + fbC(46, 153, 2, "#6A707C") +
+      fbP("M54 112 L80 122 L70 134 L50 124 Z", "#E8402E", ' stroke="#7A0E14" stroke-width=".8"') + fbP("M52 124 L70 134 L66 137 L50 128 Z", "#FFE9B8") +
+      /* the mug */
+      '<ellipse cx="416" cy="158" rx="12" ry="2.6" fill="#000" opacity=".5"/>' + fbR(408, 142, 16, 16, "#E8ECEF", ' rx="2.6"') + fbR(408, 142, 16, 3, "#6A4426") + fbL("M424 146 Q432 148 424 155", "#E8ECEF", 3) + fbR(410, 151, 12, 5, "#7A1410", ' opacity=".8"');
     return [
       { svg: base },
+      /* the lamp's pool of light on the ledge, the red of the alarm on the wall round the panel */
       /* the alarm's red on the wall round the panel */
       { svg: '<ellipse cx="' + (PX + PW / 2) + '" cy="' + (PY + PH / 2) + '" rx="150" ry="96" fill="url(#' + u + 'red)"/>', box: [PX + PW / 2 - 150, PY + PH / 2 - 96, 300, 192], cls: "bl-glow", style: "animation-duration:1s" },
       { svg: panel + box },
+      { svg: '<ellipse cx="64" cy="164" rx="62" ry="12" fill="url(#' + u + 'lamp)" opacity="2"/><path d="M52 124 L70 134 L96 164 L36 164 Z" fill="#FFE9B8" opacity=".12"/>', box: [0, 120, 140, 50], cls: "bl-breathe", style: "animation-duration:5s" },
+      /* the second hand, sweeping; steam off the mug */
+      { svg: '<path d="M63 62 L63 40.6" stroke="#D7262E" stroke-width="1" stroke-linecap="round"/><circle cx="63" cy="58" r="1.4" fill="#D7262E"/>', box: [41, 36, 44, 44], o: [63, 58], cls: "bl-tick" },
+      { svg: '<path d="M414 142 Q410 132 416 124 Q422 116 416 106" fill="none" stroke="#E8ECEF" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M420 142 Q416 134 421 128" fill="none" stroke="#E8ECEF" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>', box: [404, 100, 24, 44], cls: "bl-steam", style: "animation-duration:3.6s" },
       /* ALARM on the display, flashing */
       { svg: '<rect x="' + (PX + 21) + '" y="' + (PY + 31) + '" width="' + (PW - 42) + '" height="9" fill="#123A1E"/>' + fbText("ALARM", PX + PW / 2, PY + 35.6, 5, "#C8FFD0", 1.1), box: [PX + 20, PY + 30, PW - 40, 11], cls: "bl-blink", style: "animation-duration:1.4s" },
       /* the ALARM light */
