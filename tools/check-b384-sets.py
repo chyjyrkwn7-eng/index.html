@@ -34,7 +34,7 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 SQUAD = ["voidwalker", "umbra", "singularity", "genesis"]
-TRIO = ["astral", "celestial", "zenith"]
+TRIO = ["zenith"]   # (384 characters round) ONE ultimate per class now: Fire Code keeps only the Star Ranger (the academy only Astral)
 SQB = ["flare_void", "flare_umbra", "flare_horizon", "flare_genesis"]
 # round 3's Star Ranger (Fire Code's celestial on 185cc5c), its special's parts taken out
 STAR_R3 = "348c7ae4"
@@ -168,12 +168,11 @@ chk("(2) all three ultimates wear the cowboy hat (not: %s)" % notcow, not notcow
 chk("(2) ...the same duster and the star badge, eyes lit (%s)" % {i: (lk[i]["lapel"], lk[i]["badge"], lk[i]["eyes"]) for i in TRIO},
     all(lk[i]["lapel"] and lk[i]["badge"] >= 1 and lk[i]["eyes"] >= 2 for i in TRIO))
 orb = [lk[i]["orbit"] for i in TRIO]
-chk("(2) ...and the ring of sparks grows up the three (%s)" % orb, orb[0] < orb[1] < orb[2], orb)
+chk("(2) ...and the ring of sparks grows up the three (%s)" % orb, len(orb) < 3 or orb[0] < orb[1] < orb[2], orb)
 ts = F["trioShared"]
 chk("(2) the three share the bulk of one drawing (%d shapes in all three, of %s)" % (ts["shared"], ts["sizes"]), ts["shared"] >= 0.45 * min(ts["sizes"]), ts)
-newt = [i for i in ("astral", "celestial") if F["c"][i] == BEFORE["ifc"]["c"][i]]
-chk("(2) astral and celestial are new drawings (unchanged: %s)" % newt, not newt)
-chk("(2) the three are three different drawings", len({F["c"][i] for i in TRIO}) == 3)
+# (2) astral and celestial left Fire Code with the ultimates round (one per class) - nothing to hold
+chk("(2) the rangers are different drawings", len({F["c"][i] for i in TRIO}) == len(TRIO))
 # (3)
 # (384 r5: "I don't like the secret flare characters from ifc ... follow the academy theme but come up with new ones" - the
 # squad is withdrawn: the four are celestial beings now, so none wears a hat or a helmet, and they are four different drawings)
@@ -196,11 +195,11 @@ sp = F["special"]
 badsp = [i for i in SQUAD if sp[i] != "burst"] + [i for i in TRIO if sp[i] != "star"]
 chk("(6) the squad's specials end on a flare bursting, the rangers' on the star (%s)" % sp, not badsp, sp)
 se = F.get("spEnd") or {}
-chk("(6) ...and each ends when its own last part does, as check-b327z15 N asks (%s)" % (se.get("ok") or se), se and not se.get("bad") and len(se.get("ok") or []) == 7, se)
+chk("(6) ...and each ends when its own last part does, as check-b327z15 N asks (%s)" % (se.get("ok") or se), se and not se.get("bad") and len(se.get("ok") or []) == 4 + len(TRIO), se)
 # (7)
 # (names pass) the four secret-flare banners are four scenes of their own, no longer one template: nothing long is drawn in all four
 chk("(7) the four secret-flare banners are four different scenes (%d long shapes in all four)" % F["bSquadShared"], F["bSquadShared"] == 0, F["bSquadShared"])
-chk("(7) the three rangers' banners are one set (%d long shapes in all three)" % F["bTrioShared"], F["bTrioShared"] >= 2, F["bTrioShared"])
+chk("(7) the one ranger banner is drawn (%d long shapes)" % F["bTrioShared"], len(TRIO) < 2 or F["bTrioShared"] >= 2, F["bTrioShared"])
 newb = [i for i in SQB + TRIO if F["b"][i] == BEFORE["ifc"]["b"][i]]
 chk("(7) all seven banners are new (unchanged: %s)" % newb, not newb)
 bn = F["bnames"]
