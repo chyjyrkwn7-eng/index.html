@@ -4,7 +4,7 @@ smaller too, our icons don't look as nice/hd/crispy either. It's also missing th
 our words are smaller. You see how ours has the gold text and the word nova in the default color? That needs to match your theme
 too.. would be a nice touch. The word nova 'Davis' is like white and bold. Make that entire 'made by Davis' cohesive there."
 iPhone 17 Pro Max (440x956), dark, Settings:
-(1) the rows are 58px+ tall, their tiles 32px+, their glyphs 21px+ on one stroke weight (2px+), their labels 18px+;
+(1) (384 r5, Delta's numbers) the rows are 49-53px, their tiles 27-29px, their glyphs 16-18px on one stroke weight, their labels 15-16.5px;
 (2) between two rows of a card a hairline shows (white, 8%+), starting at the label (an icon row) and running to the row's content
     edge - (384, round 2) "Theirs don't touch the sides, why would ours?": clear of the card's edge by the row's padding;
 (3) the theme's colour at the foot: the Support links, the NOVA wordmark's middle and both halves of "MADE BY DAVIS" are in the
@@ -51,7 +51,7 @@ with sync_playwright() as pw:
                sepRight: br.right - parseFloat(sep.right || '0'), cardRight: card.right,
                contentRight: br.right - parseFloat(getComputedStyle(b).paddingRight) - parseFloat(getComputedStyle(b).borderRightWidth) }; }""")
     ck("(1) rows %spx, tiles %spx, glyphs %spx on one stroke %s, labels %spx" % (m["h"], m["tile"], m["glyph"], m["strokes"], m["label"]),
-       m["h"] >= 58 and m["tile"] >= 32 and m["glyph"] >= 21 and len(m["strokes"]) == 1 and m["strokes"][0] >= 1.5 and m["label"] >= 18, m)   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
+       49 <= m["h"] <= 53 and 27 <= m["tile"] <= 29 and 16 <= m["glyph"] <= 18 and len(m["strokes"]) == 1 and m["strokes"][0] >= 1.5 and 15 <= m["label"] <= 16.5, m)   # (384 r5) Delta measured off his two screenshots: row 51, tile 27.6, label ~15.5   # (384 r5: one even weight - the lighter 1.75 of the glass tiles)
     sa = re.findall(r"[\d.]+", m["sepBg"] or ""); alpha = float(sa[3]) if len(sa) > 3 else (1 if sa else 0)
     ck("(2) a hairline between rows (%s), from the label (%s / %s) to the row's content edge (%s / %s), clear of the card's (%s)" % (m["sepBg"], round(m["sepLeft"]), round(m["labelLeft"]), round(m["sepRight"]), round(m["contentRight"]), round(m["cardRight"])),
        alpha >= .08 and abs(m["sepLeft"] - m["labelLeft"]) <= 2 and abs(m["sepRight"] - m["contentRight"]) <= 2 and m["cardRight"] - m["sepRight"] >= 8, m)
@@ -82,25 +82,25 @@ with sync_playwright() as pw:
     for page in ("sound", "study", "motion", "rankings"):
         pg.evaluate("(p)=>showAppearance({ page: p })", page); pg.wait_for_timeout(800)
         for r in pg.evaluate(SW):
-            okr = r["h"] >= 58 and r["title"] >= 18 and r["hint"] >= 14 and r["tile"] >= 32
+            okr = 49 <= r["h"] <= 140 and 15 <= r["title"] <= 16.5 and 12 <= r["hint"] <= 13.5 and 27 <= r["tile"] <= 29
             if r["between"]: okr = okr and alpha_of(r["sep"]) >= .08 and abs(r["sepL"] - r["titleL"]) <= 2 and abs(r["sepR"] - r["contR"]) <= 2 and r["cardR"] - r["sepR"] >= 8
             if not okr: bad.append((page, r))
     pg.evaluate("()=>showAppearance({ page: 'account' })"); pg.wait_for_timeout(800)
     acc = pg.evaluate("""()=>{ const n=document.querySelector('#stage .customize-namerow'), d=n && n.querySelector('.profile-name-display'), so=document.querySelector('#stage .signout-row');
       return { nameH: n ? Math.round(n.getBoundingClientRect().height) : 0, name: d ? parseFloat(getComputedStyle(d).fontSize) : 0,
                outH: so ? Math.round(so.getBoundingClientRect().height) : 0, out: so ? parseFloat(getComputedStyle(so.querySelector('.settings-row-label')).fontSize) : 0 }; }""")
-    if not (acc["nameH"] >= 58 and acc["name"] >= 18 and acc["outH"] >= 58 and acc["out"] >= 18): bad.append(("account", acc))
+    if not (49 <= acc["nameH"] <= 54 and 15 <= acc["name"] <= 16.5 and 49 <= acc["outH"] <= 54 and 15 <= acc["out"] <= 16.5): bad.append(("account", acc))
     pg.evaluate("()=>showAppearance({ page: 'sync' })"); pg.wait_for_timeout(800)
     sy = pg.evaluate("()=>{ const l=document.querySelector('#stage .sync-code-label'); return l ? { size: parseFloat(getComputedStyle(l).fontSize), color: getComputedStyle(l).color } : null; }")
     sh = hue(rgb(sy and sy["color"]))
-    if not (sy and sy["size"] >= 18 and sh and 195 <= sh[0] <= 215): bad.append(("sync", sy, sh))
+    if not (sy and 15 <= sy["size"] <= 16.5 and sh and 195 <= sh[0] <= 215): bad.append(("sync", sy, sh))
     pg.evaluate("()=>showAdvancedSettings()"); pg.wait_for_timeout(800)
     adv = pg.evaluate("()=>[...document.querySelectorAll('#stage .settings-textrow')].map(r=>parseFloat(getComputedStyle(r).fontSize))")
-    if not adv or min(adv) < 18: bad.append(("advanced", adv))
+    if not adv or min(adv) < 15: bad.append(("advanced", adv))
     pg.evaluate("()=>showCredits()"); pg.wait_for_timeout(800)
     cr = pg.evaluate("""()=>[...document.querySelectorAll('#stage .credits-card > .credits-item')].map(r=>{ const l=r.querySelector('.settings-row-label') || r; return parseFloat(getComputedStyle(l).fontSize); })
       .concat([...document.querySelectorAll('#stage .credits-name')].map(n=>parseFloat(getComputedStyle(n).fontSize)))""")
-    if not cr or min(cr) < 18: bad.append(("credits", sorted(set(cr))))
+    if not cr or min(cr) < 15: bad.append(("credits", sorted(set(cr))))
     for kind in ("legal", "terms", "privacy"):
         pg.evaluate("(k)=>showSettingsText(k)", kind); pg.wait_for_timeout(700)
         pr = pg.evaluate("()=>[...document.querySelectorAll('#stage .settings-prose > p')].map(p=>parseFloat(getComputedStyle(p).fontSize))")

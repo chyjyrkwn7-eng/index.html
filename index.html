@@ -33322,20 +33322,20 @@
      step up; and the hairlines are BACK - they were there all
      along in the colour of --surface-border, which the clean look set to transparent beyond Home: now white at 10%, inset to the
      text as iOS insets them. */
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row{ min-height:60px; padding:10px 18px; gap:15px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row{ min-height:51px; padding:8px 18px; gap:14px; }
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon, .settings-row-icon.is-accent, .settings-row-icon.is-muted){
-    flex:0 0 32px; width:32px; height:32px; border-radius:8px;
+    flex:0 0 28px; width:28px; height:28px; border-radius:6.3px;
   }
   /* (384 r4) 22px in the 32px tile = 5px in each side, whole pixels (21px was 5.5: see the base rule); stroke 2.05 x 22/24 = the
      1.88px that 2.15 x 21/24 was */
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon svg{ width:22px; height:22px; shape-rendering:geometricPrecision; }
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:1.75; } /* (384 r5) one lighter even weight, as the inspiration's glyphs */
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon svg{ width:17px; height:17px; shape-rendering:geometricPrecision; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) :is(.settings-row-icon svg, .settings-row-icon svg [stroke]){ stroke-width:2.05; } /* (384 r5) one even weight; 2.05 x 17/24 = 1.45px, as the inspiration's glyphs at its tile size */
   /* (out-ranking the 383 iOS-body rule - html[data-layout] body #stage :is(...) .settings-row-label, 17px) */
-  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label{ font-size:18px; line-height:1.25; }
-  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-value{ font-size:17px; }
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-sub{ font-size:14px; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-label{ font-size:15.5px; line-height:1.25; }
+  html[data-layout] body #stage :is(.screen-settings, .screen-settings-sub, .screen-settings-page) .settings-card .settings-row-value{ font-size:15.5px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-sub{ font-size:12.5px; }
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-linkrow,
-  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-plainrow .settings-row-label{ font-size:18px; }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row.settings-plainrow .settings-row-label{ font-size:15.5px; }
   /* rows of words alone (Contributors, Legal, the Support links, Advanced's red rows): an 18px label's capitals sat 1-2px above
      the row's middle (check-ink-centre; Contributors and Terms did on 383 too). Each label is trimmed to its capital height and
      baseline (text-box, the fix the ink gate names), so the row's own centring centres the letters, in Inter or San Francisco.
@@ -33343,12 +33343,20 @@
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row :is(.settings-row-words, .settings-plainrow > .settings-row-label){ text-box:trim-both cap alphabetic; }
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev,
   [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev svg{ width:17px; height:17px; }
+  /* (384 r5) NAILED TO DELTA, MEASURED OFF HIS TWO SCREENSHOTS (same phone, same scale): Delta's tile is 27.6pt, its row 51pt, its label
+     ~15.5pt, its chevron grey at 30% (rgba(235,235,245,.3)), and its tile an iOS squircle (a superellipse, not a rounded square);
+     ours were 32 / 60 / 18, a bright chevron and 8px corners. The squircle is a mask (the tile with a new-dot keeps its corner: a mask
+     would cut the dot). */
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-icon:not(:has(.new-dot)){
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='100.00,50.00 99.97,65.36 99.89,70.26 99.75,73.81 99.56,76.68 99.31,79.12 99.01,81.26 98.64,83.17 98.22,84.89 97.74,86.46 97.20,87.89 96.60,89.21 95.94,90.43 95.20,91.54 94.40,92.58 93.53,93.53 92.58,94.40 91.54,95.20 90.43,95.94 89.21,96.60 87.89,97.20 86.46,97.74 84.89,98.22 83.17,98.64 81.26,99.01 79.12,99.31 76.68,99.56 73.81,99.75 70.26,99.89 65.36,99.97 50.00,100.00 34.64,99.97 29.74,99.89 26.19,99.75 23.32,99.56 20.88,99.31 18.74,99.01 16.83,98.64 15.11,98.22 13.54,97.74 12.11,97.20 10.79,96.60 9.57,95.94 8.46,95.20 7.42,94.40 6.47,93.53 5.60,92.58 4.80,91.54 4.06,90.43 3.40,89.21 2.80,87.89 2.26,86.46 1.78,84.89 1.36,83.17 0.99,81.26 0.69,79.12 0.44,76.68 0.25,73.81 0.11,70.26 0.03,65.36 0.00,50.00 0.03,34.64 0.11,29.74 0.25,26.19 0.44,23.32 0.69,20.88 0.99,18.74 1.36,16.83 1.78,15.11 2.26,13.54 2.80,12.11 3.40,10.79 4.06,9.57 4.80,8.46 5.60,7.42 6.47,6.47 7.42,5.60 8.46,4.80 9.57,4.06 10.79,3.40 12.11,2.80 13.54,2.26 15.11,1.78 16.83,1.36 18.74,0.99 20.88,0.69 23.32,0.44 26.19,0.25 29.74,0.11 34.64,0.03 50.00,0.00 65.36,0.03 70.26,0.11 73.81,0.25 76.68,0.44 79.12,0.69 81.26,0.99 83.17,1.36 84.89,1.78 86.46,2.26 87.89,2.80 89.21,3.40 90.43,4.06 91.54,4.80 92.58,5.60 93.53,6.47 94.40,7.42 95.20,8.46 95.94,9.57 96.60,10.79 97.20,12.11 97.74,13.54 98.22,15.11 98.64,16.83 99.01,18.74 99.31,20.88 99.56,23.32 99.75,26.19 99.89,29.74 99.97,34.64'/%3E%3C/svg%3E"); mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='100.00,50.00 99.97,65.36 99.89,70.26 99.75,73.81 99.56,76.68 99.31,79.12 99.01,81.26 98.64,83.17 98.22,84.89 97.74,86.46 97.20,87.89 96.60,89.21 95.94,90.43 95.20,91.54 94.40,92.58 93.53,93.53 92.58,94.40 91.54,95.20 90.43,95.94 89.21,96.60 87.89,97.20 86.46,97.74 84.89,98.22 83.17,98.64 81.26,99.01 79.12,99.31 76.68,99.56 73.81,99.75 70.26,99.89 65.36,99.97 50.00,100.00 34.64,99.97 29.74,99.89 26.19,99.75 23.32,99.56 20.88,99.31 18.74,99.01 16.83,98.64 15.11,98.22 13.54,97.74 12.11,97.20 10.79,96.60 9.57,95.94 8.46,95.20 7.42,94.40 6.47,93.53 5.60,92.58 4.80,91.54 4.06,90.43 3.40,89.21 2.80,87.89 2.26,86.46 1.78,84.89 1.36,83.17 0.99,81.26 0.69,79.12 0.44,76.68 0.25,73.81 0.11,70.26 0.03,65.36 0.00,50.00 0.03,34.64 0.11,29.74 0.25,26.19 0.44,23.32 0.69,20.88 0.99,18.74 1.36,16.83 1.78,15.11 2.26,13.54 2.80,12.11 3.40,10.79 4.06,9.57 4.80,8.46 5.60,7.42 6.47,6.47 7.42,5.60 8.46,4.80 9.57,4.06 10.79,3.40 12.11,2.80 13.54,2.26 15.11,1.78 16.83,1.36 18.74,0.99 20.88,0.69 23.32,0.44 26.19,0.25 29.74,0.11 34.64,0.03 50.00,0.00 65.36,0.03 70.26,0.11 73.81,0.25 76.68,0.44 79.12,0.69 81.26,0.99 83.17,1.36 84.89,1.78 86.46,2.26 87.89,2.80 89.21,3.40 90.43,4.06 91.54,4.80 92.58,5.60 93.53,6.47 94.40,7.42 95.20,8.46 95.94,9.57 96.60,10.79 97.20,12.11 97.74,13.54 98.22,15.11 98.64,16.83 99.01,18.74 99.31,20.88 99.56,23.32 99.75,26.19 99.89,29.74 99.97,34.64'/%3E%3C/svg%3E"); -webkit-mask-size:100% 100%; mask-size:100% 100%; border-radius:0; box-shadow:none;
+  }
+  [data-layout="modern"] :is(.screen-settings, .screen-settings-sub) .settings-row-chev{ color:rgba(235,235,245,.3); opacity:1; }
   /* (384) INSET AT BOTH ENDS. Madison, with Delta's Settings beside ours: "Pay attention to their lines. Theirs don't touch the
      sides, why would ours?" Delta's run from the words to the end of the row's content (the chevron's right edge) - the row's
      own padding clear of the card's edge on the right as well as the left. Ours ran on to the card's edge. The same for every
      grouped list: the switch rows below, Customize's rows, the Leaderboard's list. */
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row + .settings-row::before{
-    left:calc(18px + 32px + 15px); right:18px; background:rgba(255,255,255,.1);
+    left:calc(18px + 28px + 14px); right:18px; background:rgba(255,255,255,.1);
   }
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > :is(.settings-plainrow, .settings-linkrow, .settings-textrow) + .settings-row::before,
   html[data-layout="modern"] body :is(.screen-settings, .screen-settings-sub) .settings-list > .settings-row:not(:has(.settings-row-icon)) + .settings-row:not(:has(.settings-row-icon))::before{ left:18px; }
@@ -33377,33 +33385,33 @@
      Privacy text go up the same step. The sync code and the volume stay their fixed blue ("the 'sync code' words in settings should
      still be blue"). The prefix out-ranks the 383 rules in THE iOS LOOK block (html[data-layout] body #stage :is(...) ...). */
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card:has(> label.opt){ padding-left:18px; padding-right:18px; }
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.opt{ min-height:60px; padding-top:13px; padding-bottom:13px; }
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile{ gap:15px; }
-  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt > .otext{ font-size:18px; line-height:1.25; }
-  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt .ohint{ font-size:14px; line-height:1.4; margin-top:3px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.opt{ min-height:51px; padding-top:9px; padding-bottom:9px; }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile{ gap:14px; }
+  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt > .otext{ font-size:15.5px; line-height:1.25; }
+  html[data-layout] body #stage .screen-settings-sub .settings-card > label.opt.opt .ohint{ font-size:12.5px; line-height:1.4; margin-top:3px; }
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{
-    left:calc(32px + 15px); right:0; background:rgba(255,255,255,.1);   /* (384) to the switch's edge, not the card's */
+    left:calc(28px + 14px); right:0; background:rgba(255,255,255,.1);   /* (384) to the switch's edge, not the card's */
   }
   html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > label.opt.has-tile + label.opt::before,
   html[data-theme="light"][data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-volume + label.opt.has-tile::before{ background:rgba(0,0,0,.1); }
-  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(32px + 15px); }
+  html[data-layout="modern"] body #stage .screen-settings-sub .settings-card > .settings-sound-row.has-tile + .settings-volume{ padding-left:calc(28px + 14px); }
   html[data-layout] body #stage .screen-settings-sub .settings-volume :is(.settings-volume-label, .sliderval){ font-size:16px; }
   /* Account: the name row and Sign out */
-  html[data-layout] body #stage .settings-page-account .customize-namerow.customize-namerow{ min-height:60px; padding-left:18px; }
-  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display{ font-size:18px; }
-  html[data-layout] body #stage .screen-settings-sub .signout-card > .signout-row.signout-row{ min-height:60px; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow.customize-namerow{ min-height:51px; padding-left:18px; }
+  html[data-layout] body #stage .settings-page-account .customize-namerow .profile-name-display.profile-name-display{ font-size:15.5px; }
+  html[data-layout] body #stage .screen-settings-sub .signout-card > .signout-row.signout-row{ min-height:51px; }
   /* Sync: the code's label at the rows' size; Save lines up with the code's tile */
-  html[data-layout] body #stage .screen-settings-sub .sync-code-row .sync-code-label{ font-size:18px; font-weight:600; }
-  html[data-layout] body #stage .screen-settings-sub .sync-code-row .ohint{ font-size:14px; }
+  html[data-layout] body #stage .screen-settings-sub .sync-code-row .sync-code-label{ font-size:15.5px; font-weight:600; }
+  html[data-layout] body #stage .screen-settings-sub .sync-code-row .ohint{ font-size:12.5px; }
   html[data-layout="modern"] body #stage .screen-settings-sub .sync-card > .sync-save-code-row{ padding-left:0; padding-right:0; }
   /* Advanced's red rows, Contributors' rows */
-  html[data-layout] body #stage .screen-settings-sub .settings-row.settings-textrow{ font-size:18px; font-weight:400; }
+  html[data-layout] body #stage .screen-settings-sub .settings-row.settings-textrow{ font-size:15.5px; font-weight:400; }
   html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-item,
-  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-item.credits-link .settings-row-label{ font-size:18px; font-weight:400; }
-  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-name-row > .credits-name{ font-size:18px; }
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-item.credits-link .settings-row-label{ font-size:15.5px; font-weight:400; }
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-name-row > .credits-name{ font-size:15.5px; }
   html[data-layout] body #stage .screen-settings-sub .credits-intro{ font-size:16px; }
-  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-name-row > .credits-role.credits-role{ font-size:16px; }
+  html[data-layout] body #stage .screen-settings-sub .credits-card > .credits-name-row > .credits-role.credits-role{ font-size:14px; }
   /* the words under a card, and the Legal / Terms / Privacy text */
   html[data-layout] body #stage .screen-settings-sub :is(.settings-footnote, .sync-note-plain){ font-size:14px; line-height:1.45; }
   html[data-layout="modern"] body #stage .screen-settings-sub .settings-card.settings-prose{ padding:16px 18px; }
