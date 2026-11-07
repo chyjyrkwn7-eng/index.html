@@ -170,9 +170,9 @@ need = ["Pyrotech", "Toxic Spill", "Salamander", "Strobe", "Sprinkler Head"]   #
 chk("the extinguisher, toxic spill, hydrant, strobe and sprinkler-head characters are there (%s)" % [n for n in need if n not in F["cnames"].values()], all(n in F["cnames"].values() for n in need))
 gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in F["cnames"].values()]
 chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
-boff = [n for n in ["Station 26", "Ladder 26", "The Crew", "Tower Ladder", "Night Watch", "Night Call", "Gold Helmet", "Fire Watch", "Blue Flame", "Phoenix", "Grand Marshal"] if n in F["bnames"].values()]
+boff = [n for n in ["Station 26", "Ladder 26", "Tower Ladder", "Night Watch", "Night Call", "Gold Helmet", "Fire Watch", "Blue Flame", "Phoenix", "Grand Marshal"] if n in F["bnames"].values()]
 chk("no firehouse, engine, ladder, crew, helmet or round-2 ultimate banner is left (%s)" % boff, not boff, boff)
-chk("a headquarters, two hazmat banners, an alarm panel and an exit banner are there", all(n in F["bnames"].values() for n in ["Headquarters", "Spill Response", "Hazmat", "Alarm Panel", "Exit"]), sorted(F["bnames"].values()))
+chk("a certificate wall, a training tower, an incident command post, an alarm panel (On Call) and a fully-compliant banner are there", all(n in F["bnames"].values() for n in ["Certified", "Training Tower", "Incident Command", "On Call", "Fully Compliant"]), sorted(F["bnames"].values()))
 afx, ffx = dict((r[0], r) for r in A["fx"]), dict((r[0], r) for r in F["fx"])
 # (384) Fire Code's own counts: "the amount of hundos needed to get the stuff could be lowered. Like increments of 25, 50, 75, 150?"
 # Same rungs in the same order; its counts climb, none above the academy's, and the rungs past Confetti are lower (read off the page)
@@ -218,12 +218,12 @@ bsame3 = [i for i in BREDO3 if F["banners"].get(i) == R2["ifc"]["banners"].get(i
 chk("round 3 redraws headquarters, code 3, exit, code book and the three ultimates' banners (unchanged since round 2: %s)" % bsame3, not bsame3, bsame3)
 # (384) Madison's banner review redrew six of these as well (tools/check-b384-banners.py holds them now), and the four flare
 # banners were redrawn as one set (tools/check-b384-sets.py)
-REDO384 = ["tests250", "tests500", "hundos250", "study60", "correct5000", "correct10000", "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"]
+REDO384 = ["tests250", "tests500", "hundos250", "study60", "correct5000", "correct10000", "flare_void", "flare_umbra", "flare_horizon", "flare_genesis", "vr50", "level80", "exam100", "early10", "tests100", "hundos100"]
 bkept3 = [i for i in F["banners"] if i not in BREDO3 and i not in REDO384 and F["banners"][i] != R2["ifc"]["banners"].get(i)]
 chk("...and the banners he called awesome are as round 2 left them (changed: %s)" % bkept3, not bkept3, bkept3)
 tr = F["trucks"]
 # (384) "Our trucks are white chevys with ghost lettering and lights": round 3's pickup (fbPickup) is the white Chevy now (fbChevy)
-chk("the office's vehicles are the white Chevys: no round-2 SUV left, headquarters and fire response (was code 3) drive them (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function" and tr["hq"] and tr["code3"], tr)
+chk("the office's vehicles are the white Chevys: no round-2 SUV left, fbChevy is the one vehicle (Grand Finale, Incident Command) (%s)" % tr, tr["suv"] == "undefined" and tr["pickup"] == "function", tr)  # (names pass) the vehicles are drawn by fbChevy where there are any: Grand Finale and Incident Command
 acad3 = [i for i in A["chars"] if A["chars"][i] != R2["academy"]["chars"].get(i)] + [i for i in A["banners"] if A["banners"][i] != R2["academy"]["banners"].get(i)]
 chk("the academy's art is untouched by round 3 (changed: %s)" % acad3[:6], not acad3, acad3)
 fxn = [i for i in ("fireworks", "ufo") if F["fxSrc"].get(i) == R2["ifc"]["fxSrc"].get(i)]

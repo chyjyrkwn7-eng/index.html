@@ -198,12 +198,14 @@ chk("(6) the squad's specials end on a flare bursting, the rangers' on the star 
 se = F.get("spEnd") or {}
 chk("(6) ...and each ends when its own last part does, as check-b327z15 N asks (%s)" % (se.get("ok") or se), se and not se.get("bad") and len(se.get("ok") or []) == 7, se)
 # (7)
-chk("(7) the four squad banners are one set (%d long shapes in all four)" % F["bSquadShared"], F["bSquadShared"] >= 2, F["bSquadShared"])
+# (names pass) the four secret-flare banners are four scenes of their own, no longer one template: nothing long is drawn in all four
+chk("(7) the four secret-flare banners are four different scenes (%d long shapes in all four)" % F["bSquadShared"], F["bSquadShared"] == 0, F["bSquadShared"])
 chk("(7) the three rangers' banners are one set (%d long shapes in all three)" % F["bTrioShared"], F["bTrioShared"] >= 2, F["bTrioShared"])
 newb = [i for i in SQB + TRIO if F["b"][i] == BEFORE["ifc"]["b"][i]]
 chk("(7) all seven banners are new (unchanged: %s)" % newb, not newb)
 bn = F["bnames"]
-mism = [i for i in SQB if bn[i] != F["names"].get(F["bchar"][i])] + [i for i in TRIO if bn[i] != F["names"][i]]
+# the secret-flare banners are named for the characters they come with (Nebula, Quasar, Pulsar, Solstice: the character helper renames the four to match)
+mism = [i for i in SQB if bn[i] != dict(zip(SQB, ["Nebula", "Quasar", "Pulsar", "Solstice"]))[i]] + [i for i in TRIO if bn[i] != F["names"][i]]
 chk("(7) each banner is named for its character (%s)" % bn, not mism, mism)
 ly = F["layers"]
 badl = {i: v for i, v in ly.items() if v["bad"] or v["filt"] or v["n"] > 14 or v["moving"] < 3}
