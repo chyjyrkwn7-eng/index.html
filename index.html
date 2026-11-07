@@ -78184,56 +78184,85 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* FIRE RESPONSE (was Code 3. 384: "we don't do code threes. We do fire responses though. The
-     concept of driving at night with lights and sirens is cool though. Try that one again.") - one
-     of the office's white Silverados running a wet street at night: the bar flashing red and blue
-     and washing the street and the town with it, the grille lights going, the siren pushing out in
-     front, its wheels turning and the body riding its springs, lamps and lane lines streaming past,
-     its reflection on the wet road. The town's windows are behind it now (round 3's lay over the truck). */
+  /* AFTER HOURS (was Fire Response; 384 review: "Fire response looks a lot like the others. I love the origin and
+     cause concept with the flashlight and actual inspection and the cowboy hat and all of it. Something like that
+     again but not the same?"; named for its challenge, three hundos between 8 PM and midnight) - a different night
+     and a different room: the same marshal, long after the office has shut, down on one knee in the electrical
+     room with a thermal camera. The wall clock reads 11:42. The camera's view cone washes the switchgear in heat
+     colours and one breaker in the row is burning white-orange: the one he came for. Cold teal room, magenta and
+     orange heat - against Fire Investigator's brown soot, doorway and flashlight - and a crouching pose to its
+     standing one. */
   early10(u){
     const rnd = bnRand(3811);
-    const st = bnStarsSplit(rnd, 46, 60);
-    const far = fbBuildings(rnd, 118, "#141838", "#FFD58A", -10, 490, 34, 78, 0.2);
-    const near = fbBuildings(rnd, 118, "#0C0F28", "#FFC870", -10, 490, 18, 46, 0.28);
-    const X = 150, Y = 150, S = 1.3, wheels = fbChevyWheels(X, Y, S, 1, "pickup");
-    /* a lamp post every 120: the sheet is two periods wide and slides one (bl-slide moves half its box) */
-    let lamps = "";
-    for(let i = 0; i < 8; i++){ const lx = 30 + i * 120;
-      lamps += '<rect x="' + (lx - .9) + '" y="62" width="1.8" height="56" fill="#1E2240"/><path d="M' + lx + ' 63 Q' + lx + ' 58 ' + (lx + 9) + ' 58 L' + (lx + 12) + ' 58" fill="none" stroke="#1E2240" stroke-width="1.6"/>' +
-        '<rect x="' + (lx + 9) + '" y="57" width="7" height="2.6" rx="1" fill="#FFE7B0"/><circle cx="' + (lx + 12.5) + '" cy="60" r="14" fill="url(#' + u + 'lamp)"/><ellipse cx="' + (lx + 12) + '" cy="121" rx="22" ry="3" fill="#FFE7B0" opacity=".12"/>'; }
-    const lane = '<g fill="#F2C21E" opacity=".75">' + Array.from({ length: 12 }, (_, i) => '<rect x="' + (i * 80 + 10) + '" y="163" width="42" height="3"/>').join("") + '</g>' +
-      '<g fill="#F2C21E" opacity=".2">' + Array.from({ length: 12 }, (_, i) => '<rect x="' + (i * 80 + 10) + '" y="168" width="42" height="2"/>').join("") + '</g>';
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#03051A"], [0.75, "#141A48"], [1, "#24205A"]]) + bnLin(u + "road", [[0, "#1C1E2E"], [0.5, "#121320"], [1, "#07070C"]]) + fbChevyDefs(u) +
-      bnLin(u + "beam", [[0, "#FFF6D8", 0], [1, "#FFF6D8", 0.4]], 0, 0, 1, 0) + bnRad(u + "lamp", [[0, "#FFE3A8", 0.55], [1, "#FFE3A8", 0]]) + bnRad(u + "red", [[0, "#FF2D2D", 0.4], [1, "#FF2D2D", 0]]) + bnRad(u + "blue", [[0, "#3D7BFF", 0.4], [1, "#3D7BFF", 0]]) +
-      bnLin(u + "refl", [[0, "#FFFFFF", 0.3], [1, "#FFFFFF", 0]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + '<path d="M420 22 A11 11 0 1 0 432 38 A9 9 0 1 1 420 22 Z" fill="#F4F1E0"/>' +
-      far.body + far.win + near.body +
-      '<rect x="0" y="118" width="480" height="62" fill="url(#' + u + 'road)"/><rect x="0" y="117" width="480" height="2.4" fill="#3A3E58"/>';
-    /* the truck's reflection in the wet road, flipped about the ground line and fading */
-    const refl = '<g opacity=".2" transform="translate(0 ' + (2 * Y) + ') scale(1 -1)">' + fbChevy(u, X, Y, S, { kind: "pickup" }) + '</g>';
-    /* the siren's push: three arcs off the front */
-    const arcs = [0, 1, 2].map(i => '<path d="M' + (134 - i * 11) + ' ' + (108 - i * 7) + ' Q' + (126 - i * 13) + ' 121 ' + (134 - i * 11) + ' ' + (134 + i * 7) + '" fill="none" stroke="#FFE3E0" stroke-width="' + bnF(2 - i * .4) + '" stroke-linecap="round" opacity="' + bnF(.8 - i * .2) + '"/>').join("");
+    const CX = 262, CY = 24, CW = 150, CH = 124;
+    /* the breakers: three rows of six on the panel, one of them hot */
+    let brk = "";
+    for(let r = 0; r < 3; r++) for(let c = 0; c < 6; c++){
+      const x = CX + 10 + c * 22.6, y = CY + 14 + r * 36, hot = (r === 1 && c === 3);
+      brk += fbR(x, y, 18, 28, hot ? "#3A1A1A" : "#1A242E", ' rx="2" stroke="#0A0F14" stroke-width="1"') + fbR(x + 4.6, y + (hot ? 3 : 15), 8.8, 9, hot ? "#B5121B" : "#2A3744", ' rx="1.6"') + fbR(x + 2, y + 22.4, 14, 2.4, "#5A6A78", ' opacity=".5"');
+    }
+    const HX = CX + 10 + 3 * 22.6 + 9, HY = CY + 14 + 36 + 14;
+    const D = (a) => a;
+    const shirt = "#3E4E48", pants = "#1C2834", skin = "#D79A86", rim = "#FF8AD0";
+    const limb = (pts, w, c, ex) => fbL("M" + pts.map(p => p.join(" ")).join(" L"), c, w, ex || "");
+    const man = (dx) => {
+      const g = (pts, w, c) => limb(pts.map(p => [p[0] + dx, p[1] + dx * .0]), w, c);
+      return '';
+    };
+    const figure =
+      /* the far arm, behind the body, then the legs: the back knee down, the front knee up */
+      limb([[160, 80], [178, 100], [198, 94]], 7.6, "#2C3A36") +
+      limb([[142, 116], [152, 146], [110, 148]], 13.6, pants) + fbR(100, 142, 16, 8, "#0C0E12", ' rx="3"') +
+      limb([[142, 116], [178, 124], [178, 146]], 13.6, "#26364A") + fbR(168, 142, 24, 8, "#0C0E12", ' rx="3"') +
+      /* torso in its work shirt, the belt and badge, the radio on the hip */
+      limb([[142, 114], [158, 76]], 23, shirt) + fbL("M134 112 L156 116", "#15171B", 4.4) + fbC(151, 113, 3.4, "#F2C14E") + fbR(130, 104, 6, 10, "#14171C", ' rx="1.4"') +
+      /* the head under the hat: neck, jaw, ear, the crown and the brim turned down at the front */
+      fbR(158, 66, 8, 10, skin) + fbC(166, 62, 9.4, skin) + fbP("M158 66 Q160 74 168 72 L172 66 Z", "#B5786A", ' opacity=".6"') +
+      fbP("M155 56 Q154 36 168 36 Q182 36 181 56 Z", "#2E2018") + fbP("M157 51 L180 51 L180.4 55 L156.6 55 Z", "#14100C") + fbP("M164 36 Q168 40 172 36", "none", ' stroke="#0E0A08" stroke-width="1.4"') +
+      fbP("M142 58 Q152 53 168 55 Q186 53 196 59 Q188 63 168 62 Q150 63 142 58 Z", "#2E2018") + fbP("M146 58 Q156 55 168 56 Q184 55 192 58", "none", ' stroke="#5A4030" stroke-width=".8"') +
+      /* the near arm and the hands round the camera */
+      limb([[158, 80], [176, 98], [196, 92]], 8.4, shirt) + fbC(197, 92, 4.4, skin) +
+      /* the thermal camera: body, grip under his hand, lens ring, its screen's glow on his hands */
+      fbR(190, 82, 28, 15, "#14181E", ' rx="3.4" stroke="#2A3440" stroke-width="1"') + fbR(193, 78, 12, 5, "#1E252E", ' rx="1.6"') + fbR(194, 96, 8, 11, "#14181E", ' rx="2.4"') + fbC(197, 94, 4.4, skin) +
+      fbC(219, 89.6, 7, "#0C1016", ' stroke="#3A4654" stroke-width="1.6"') + fbC(219, 89.6, 4.4, "#1A1030") + fbC(217.6, 88, 1.4, "#FF8AD0", ' opacity=".9"') + fbR(204, 83.4, 8, 3, "#FF5A8A", ' rx="1" opacity=".9"') +
+      /* the heat's light on the side of him that faces it: along the front of the torso, the brim, the arm, the knee */
+      fbL("M168 76 L152 112 M180 56 Q190 59 194 60 M176 98 L196 92 M178 124 L178 142", rim, 1.3, ' opacity=".75"');
+    const base = '<defs>' + bnLin(u + "wall", [[0, "#12222C"], [1, "#07101A"]]) + bnLin(u + "cab", [[0, "#3A4A58"], [1, "#222E3A"]]) + bnLin(u + "floor", [[0, "#17222C"], [1, "#070B10"]]) +
+      bnRad(u + "tube", [[0, "#9FF0E0", 0.35], [1, "#9FF0E0", 0]]) + bnRad(u + "hot", [[0, "#FFFFFF", 0.95], [0.18, "#FFE27A", 0.9], [0.45, "#FF7A1E", 0.55], [1, "#D01888", 0]]) + bnLin(u + "cone", [[0, "#FF8AD0", 0.5], [0.5, "#B42AC0", 0.28], [1, "#6A1AA8", 0.16]], 0, 0, 1, 0) +
+      bnRad(u + "screen", [[0, "#FF8AD0", 0.4], [1, "#FF8AD0", 0]]) + bnRad(u + "vig", [[0.55, "#000000", 0], [1, "#000000", 0.6]]) + '</defs>' +
+      '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' +
+      Array.from({ length: 9 }, (_, r) => '<path d="M0 ' + (4 + r * 17) + ' L480 ' + (4 + r * 17) + '" stroke="#0A141C" stroke-width="1.2"/>').join("") +
+      /* a long tube light, its cold wash on the wall */
+      fbR(30, 4, 150, 5, "#CFF6EE", ' rx="2"') + '<ellipse cx="105" cy="40" rx="120" ry="60" fill="url(#' + u + 'tube)"/>' +
+      /* cable tray and conduit down into the cabinet */
+      fbR(0, 12, 480, 7, "#3A4652") + fbR(0, 18, 480, 1.4, "#0A0F14") + [CX + 30, CX + 120].map(x => fbR(x - 3.4, 18, 6.8, 7, "#7A8694") + fbR(x - 2.6, 24, 5.2, 4, "#9AA6B4")).join("") +
+      /* the clock and the sign */
+      fbC(72, 52, 20, "#0A0F14") + fbC(72, 52, 17.6, "#E9ECEF") + Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6; return fbL("M" + bnF(72 + Math.sin(t) * (i % 3 ? 14.4 : 12.6)) + " " + bnF(52 - Math.cos(t) * (i % 3 ? 14.4 : 12.6)) + " L" + bnF(72 + Math.sin(t) * 16) + " " + bnF(52 - Math.cos(t) * 16), "#2A2D34", i % 3 ? .9 : 1.5); }).join("") +
+      fbL("M72 52 L" + bnF(72 + Math.sin(Math.PI * 1.94) * 8.4) + " " + bnF(52 - Math.cos(Math.PI * 1.94) * 8.4), "#14161C", 2.2) + fbL("M72 52 L" + bnF(72 + Math.sin(Math.PI * 1.4) * 13) + " " + bnF(52 - Math.cos(Math.PI * 1.4) * 13), "#14161C", 1.5) + fbC(72, 52, 1.8, "#14161C") +
+      fbR(20, 96, 68, 32, "#E4C21E", ' rx="2"') + fbR(23, 99, 62, 26, "none", ' stroke="#14161C" stroke-width="1"') + fbText("DANGER", 54, 108, 8, "#14161C", 1.6) + fbText("HIGH VOLTAGE", 54, 120, 4.2, "#14161C", .9) +
+      /* the switchgear: cabinet, its door swung open at the left, the breakers */
+      fbR(CX - 6, CY - 6, CW + 12, CH + 12, "#0A0F14", ' rx="3"') + fbR(CX - 3, CY - 3, CW + 6, CH + 6, "url(#" + u + "cab)", ' rx="2"') + fbR(CX, CY, CW, CH, "#101820") + brk +
+      fbP("M" + (CX - 4) + " " + (CY - 3) + " L" + (CX - 26) + " " + (CY + 8) + " L" + (CX - 26) + " " + (CY + CH - 8) + " L" + (CX - 4) + " " + (CY + CH + 3) + " Z", "#2C3A48", ' stroke="#0A0F14" stroke-width="1"') + fbR(CX - 20, CY + 54, 3, 14, "#9AA6B4") + fbR(CX - 18, CY + 18, 10, 8, "#E4C21E", ' opacity=".9"') +
+      fbR(CX + 8, CY + CH - 12, 134, 5, "#0A0F14") + fbText("MAIN BUS", CX + 40, CY + CH - 9.6, 3.6, "#8A96A4", .6) +
+      /* the floor and its hazard line */
+      fbR(0, 150, 480, 30, "url(#" + u + "floor)") + fbR(0, 148, 480, 4, "#14181E") + Array.from({ length: 40 }, (_, i) => fbP("M" + (i * 14) + " 148 L" + (i * 14 + 7) + " 148 L" + (i * 14 + 3) + " 152 L" + (i * 14 - 4) + " 152 Z", "#E4C21E", ' opacity=".7"')).join("") +
+      '<ellipse cx="146" cy="152" rx="56" ry="4" fill="#000" opacity=".5"/>';
+    /* the heat view: the cone from the lens to the row of breakers */
+    const cone = '<path d="M222 89.6 L' + (CX - 2) + ' ' + (CY - 4) + ' L' + (CX - 2) + ' ' + (CY + CH + 4) + ' Z" fill="url(#' + u + 'cone)"/>';
     return [
       { svg: base },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:3s" },
-      { svg: near.win, cls: "bl-lightsout", style: "animation-duration:16s" },
-      { svg: lamps, box: [0, 40, 960, 90], vb: [0, 40, 960, 90], cls: "bl-slide", style: "animation-duration:2.6s;animation-direction:reverse" },
-      { svg: lane, box: [0, 160, 960, 12], vb: [0, 160, 960, 12], cls: "bl-slide", style: "animation-duration:1s;animation-direction:reverse" },
-      { svg: refl },
-      /* the bar's colour on the street and the town, red then blue */
-      { svg: '<ellipse cx="230" cy="80" rx="250" ry="90" fill="url(#' + u + 'red)"/><ellipse cx="230" cy="158" rx="230" ry="26" fill="url(#' + u + 'red)"/>', cls: "bl-blink", style: "animation-duration:.8s" },
-      { svg: '<ellipse cx="250" cy="80" rx="250" ry="90" fill="url(#' + u + 'blue)"/><ellipse cx="250" cy="158" rx="230" ry="26" fill="url(#' + u + 'blue)"/>', cls: "bl-blink", style: "animation-duration:.8s;animation-delay:-.4s" },
-      { svg: '<path d="M' + (X + .5) + ' ' + (Y - 33 * S) + ' L4 96 L4 150 Z" fill="url(#' + u + 'beam)"/>', box: [0, 90, 156, 62], o: [X, Y - 32 * S], cls: "bl-shimmer", style: "animation-duration:2.4s" },
-      { svg: fbChevy(u, X, Y, S, { kind: "pickup", noWheels: true }), box: [140, 70, 182, 72], cls: "bl-bob", style: "animation-duration:.7s", kids: [
-        { svg: fbChevyLight(X, Y, S, 1, 0, 1.4), box: [180, 60, 120, 30], cls: "bl-blink", style: "animation-duration:.8s" },
-        { svg: fbChevyLight(X, Y, S, 1, 1, 1.4), box: [180, 60, 120, 30], cls: "bl-blink", style: "animation-duration:.8s;animation-delay:-.4s" },
-        { svg: '<circle cx="' + bnF(X + 2.2 * S) + '" cy="' + bnF(Y - 28 * S) + '" r="1.6" fill="#FF6A6A"/><circle cx="' + bnF(X + 2.2 * S) + '" cy="' + bnF(Y - 28 * S) + '" r="7" fill="#FF2D2D" opacity=".4"/>', box: [X - 8, Y - 46, 20, 20], cls: "bl-blink", style: "animation-duration:.4s" },
-        { svg: '<circle cx="' + bnF(X + 5.6 * S) + '" cy="' + bnF(Y - 28.4 * S) + '" r="1.6" fill="#8AB0FF"/><circle cx="' + bnF(X + 5.6 * S) + '" cy="' + bnF(Y - 28.4 * S) + '" r="7" fill="#3D7BFF" opacity=".4"/>', box: [X - 4, Y - 46, 20, 20], cls: "bl-blink", style: "animation-duration:.4s;animation-delay:-.2s" }
-      ] },
-      { svg: fbWheel(u, wheels[0][0], wheels[0][1], S), box: [wheels[0][0] - 17, wheels[0][1] - 17, 34, 34], o: wheels[0], cls: "bl-spin-r", style: "animation-duration:.5s" },
-      { svg: fbWheel(u, wheels[1][0], wheels[1][1], S), box: [wheels[1][0] - 17, wheels[1][1] - 17, 34, 34], o: wheels[1], cls: "bl-spin-r", style: "animation-duration:.5s" },
-      { svg: arcs, box: [96, 92, 52, 60], o: [146, 121], cls: "bl-out", style: "animation-duration:1.2s" },
-      { svg: arcs, box: [96, 92, 52, 60], o: [146, 121], cls: "bl-out", style: "animation-duration:1.2s;animation-delay:-.6s" }
+      { svg: '<ellipse cx="' + (CX + 70) + '" cy="' + (CY + 70) + '" rx="150" ry="100" fill="url(#' + u + 'tube)" opacity=".3"/>', box: [CX - 80, CY - 30, 300, 200], cls: "bl-breathe", style: "animation-duration:7s" },
+      { svg: figure },
+      /* the view cone, washing the panel in heat colours, and the hot breaker burning in it */
+      { svg: cone, box: [220, CY - 4, CX - 218, CH + 8], o: [222, 89.6], cls: "bl-shimmer", style: "animation-duration:2.6s" },
+      { svg: '<rect x="' + (CX + 4) + '" y="' + (CY + 4) + '" width="' + (CW - 8) + '" height="' + (CH - 8) + '" fill="#8A1AC0" opacity=".16"/>', box: [CX, CY, CW, CH], cls: "bl-glow", style: "animation-duration:2.6s" },
+      { svg: '<circle cx="' + HX + '" cy="' + HY + '" r="34" fill="url(#' + u + 'hot)"/>', box: [HX - 34, HY - 34, 68, 68], o: [HX, HY], cls: "bl-pulse", style: "animation-duration:1.5s" },
+      { svg: '<circle cx="220" cy="90" r="30" fill="url(#' + u + 'screen)"/>', box: [190, 60, 60, 60], cls: "bl-glow", style: "animation-duration:1.8s" },
+      /* the clock's second hand, a status light on the cabinet, heat shimmering up off the hot breaker, dust */
+      { svg: '<path d="M72 55 L72 37.6" stroke="#D7262E" stroke-width=".9" stroke-linecap="round"/><circle cx="72" cy="52" r="1.2" fill="#D7262E"/>', box: [52, 32, 40, 40], o: [72, 52], cls: "bl-tick" },
+      { svg: '<circle cx="' + (CX + 140) + '" cy="' + (CY + 8) + '" r="1.6" fill="#FF3B30"/><circle cx="' + (CX + 140) + '" cy="' + (CY + 8) + '" r="5" fill="#FF3B30" opacity=".4"/>', box: [CX + 132, CY, 16, 16], cls: "bl-blink", style: "animation-duration:1.2s" },
+      { svg: fbEmberSheet(rnd, 480, 90, 22, ["#BFF6FF", "#FF8AD0", "#FFFFFF"]), box: [0, 10, 480, 150], cls: "bl-rise", style: "animation-duration:15s;opacity:.45" },
+      { svg: '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>' }
     ];
   },
 
