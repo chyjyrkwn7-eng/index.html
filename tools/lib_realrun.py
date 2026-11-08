@@ -57,7 +57,7 @@ def wait_fx(pg, limit=60):
 # every part of the grade card and the XP card beside it, as computed on the page (shape, not label strings)
 READ_GRADE = r"""() => {
   const g = document.querySelector('.rs-grade'); if(!g) return null;
-  const P = (e, props) => { if(!e) return null; const cs = getComputedStyle(e), r = e.getBoundingClientRect(); const o = { w: Math.round(r.width*10)/10, h: Math.round(r.height*10)/10 };
+  const P = (e, props) => { if(!e) return null; const cs = getComputedStyle(e), r = e.getBoundingClientRect(); const o = { w: Math.round(r.width*10)/10, h: Math.round(r.height*10)/10, ow: e.offsetWidth };
     props.forEach(p => o[p] = cs[p]); return o; };
   const T = ['backgroundColor','backgroundImage','borderTopWidth','borderTopColor','boxShadow','borderRadius','filter','opacity'];
   const F = ['fontFamily','fontSize','fontWeight','letterSpacing','color','webkitTextFillColor','backgroundImage','filter','textShadow','lineHeight'];

@@ -65,7 +65,9 @@ def face_same(g, p, tag):
     c, d, x = g["card"], p["card"], g["xp"]
     for k in ("borderRadius", "paddingTop", "paddingLeft", "width"):
         if k == "width":
-            if abs(c["w"] - x["w"]) > .6: bad.append("card width %s vs XP %s" % (c["w"], x["w"]))
+            # (384 r6) the LAYOUT widths: in the middle of the effect the XP card has not landed yet (the 100% plays on the
+            # centred grade before it), so its box is still at the landing's 1.04 scale
+            if abs(c["ow"] - x["ow"]) > .6: bad.append("card width %s vs XP %s" % (c["ow"], x["ow"]))
         elif c[k] != d[k]: bad.append("card.%s %s vs %s" % (k, c[k], d[k]))
     if c["backgroundColor"] != x["backgroundColor"] or c["backgroundImage"] != "none": bad.append("card colour %s / %s vs XP %s" % (c["backgroundColor"], c["backgroundImage"][:40], x["backgroundColor"]))
     if c["borderTopWidth"] != x["borderTopWidth"] or c["borderTopColor"] != x["borderTopColor"] or c["boxShadow"] != "none": bad.append("card edge %s %s %s" % (c["borderTopWidth"], c["borderTopColor"], c["boxShadow"][:40]))

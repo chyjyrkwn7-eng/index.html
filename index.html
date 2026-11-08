@@ -11961,7 +11961,8 @@
     animation:stardust-ring 1.1s cubic-bezier(.15,.7,.3,1) both;
   }
   .stardust-ring.is-late{ animation-delay:.16s; border-width:1px; }
-  @keyframes stardust-ring{ 0%{ transform:scale(.2); opacity:.95; } 100%{ transform:scale(5); opacity:0; } }
+  /* (384 r6) --ring-k: the screen's ring stops at the screen's narrow side (celebrate sets it) */
+  @keyframes stardust-ring{ 0%{ transform:scale(.2); opacity:.95; } 100%{ transform:scale(var(--ring-k, 5)); opacity:0; } }
   .stardust-p{
     position:absolute; left:var(--ox); top:var(--oy); width:var(--s); height:var(--s); margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
     border-radius:50%; background:var(--c);
@@ -11995,6 +11996,7 @@
      `both` fill. Each ends on a slow fade - confetti's tail - and the
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
+  .hfx-out.hfx-fast{ transition-duration:.18s !important; }
   .rs-card.hfx-over{ z-index:61; }
   /* the UFO's own layer over the lifted box (round 6): the saucer and its
      one beam, so the beam can cross the box's edge as one piece of light
@@ -12320,9 +12322,11 @@
   .hfx-fw-glow{ position:absolute; width:var(--gs); height:var(--gs); margin:calc(var(--gs) / -2) 0 0 calc(var(--gs) / -2); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, var(--c), transparent); animation:hfx-fw-glow var(--d) ease-out var(--t) both; }
   @keyframes hfx-fw-glow{ 0%{ opacity:0; transform:scale(.35); } 7%{ opacity:.55; transform:scale(.8); } 100%{ opacity:0; transform:scale(1); } }
+  /* (384 r6) each burst's light falls on the card from above - a soft wash down from its top edge. It was an inset glow
+     round the whole edge (round 8 took its 1.5px line off), which still read as the old look's lit frame */
   .hfx-fw-rim{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
-    box-shadow:inset 0 0 34px var(--c); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
-  @keyframes hfx-fw-rim{ 0%{ opacity:0; } 10%{ opacity:.8; } 100%{ opacity:0; } }
+    background:radial-gradient(90% 60% at 50% 0%, var(--c), rgba(0,0,0,0) 72%); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
+  @keyframes hfx-fw-rim{ 0%{ opacity:0; } 10%{ opacity:.38; } 100%{ opacity:0; } }
   .hfx-fw-mortar{ position:absolute; width:var(--ms); height:var(--ms); margin:calc(var(--ms) / -2) 0 0 calc(var(--ms) / -2); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, rgba(255,250,240,.95), rgba(255,206,150,.5) 35%, rgba(255,92,214,0)); animation:hfx-fw-mortar .7s ease-out var(--t) both; }
   @keyframes hfx-fw-mortar{ 0%{ opacity:0; transform:scale(.3); } 14%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.35); } }
@@ -12386,6 +12390,9 @@
      real box's, not the XP card's blue */
   .hfx-mock .rs-grade .hfx-mk-line b{ color:var(--ink); }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
+  /* (384 r6) the miniature plays the results' order: these wait hidden while the grade has the middle (buildHundoFxMock) */
+  .hfx-mock > .rs-head, .hfx-mock > .rs-xp, .hfx-mock > .rs-actions{ transition:opacity .34s ease, transform .4s cubic-bezier(.2,1.2,.35,1); }
+  .hfx-mock > .hfx-mk-off{ opacity:0; transform:translateY(-8px); transition-duration:.22s; }
   /* `inherit` is not a family inside the `font` shorthand, so the whole
      declaration was dropped and these drew in the browser's own button
      face at its own size (build 315) */
@@ -27524,6 +27531,11 @@
     border-color:rgba(255,196,202,.6);
     box-shadow:0 0 0 1px rgba(232,104,124,.34), 0 0 36px rgba(232,104,124,.2);
   }
+  /* (384 r6) NO RIM ON A LANDING, ANY CARD. The flash above is a lit frame round the card for a moment - the old look's
+     border glow, which the clean cards (and the hundo box) no longer have anywhere else: Madison, "some of it hasn't been
+     updated to the new look? Like the border glow". The slam and the bang are the landing. (The layer and rs-impact stay,
+     drawing nothing, so nothing that reads them breaks.) */
+  .rs-screen .rs-card.rs-land::after, .rs-screen .rs-card.rs-grade.is-counting.rs-land::after{ border-color:transparent; box-shadow:none; }
   /* Transform and opacity only (build 282). A blur rode the first half
      of every landing; on a whole card at 3x it is a filter re-rasterised
      every frame, and under the fade it was all but invisible. */
@@ -27534,6 +27546,12 @@
     100%{ opacity:1; transform:none; }
   }
   @keyframes rs-impact{ 0%{ opacity:1; } 100%{ opacity:0; } }
+  /* (384 r6) "Tap to skip" while the grade and the XP box come in (rsSkipHint): plain, quiet, at the foot of the screen,
+     over any effect's layer, taking no pointer */
+  .rs-skip{ position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1.4rem); z-index:64; margin:0;
+    transform:translateX(-50%); font-size:.8rem; font-weight:600; letter-spacing:.01em; color:var(--soft, rgba(255,255,255,.62));
+    white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .25s ease; }
+  .rs-skip.is-on{ opacity:.8; }
   .rs-xpline.rs-land{ transform:translateY(-12px); }
   .rs-xpline.rs-land.rs-in{ animation:rs-drop .34s cubic-bezier(.2,1.3,.4,1) both; }
   /* AND IT RESTS IN ITS OWN SLOT (build 315). The line above outranks
@@ -118221,6 +118239,12 @@ function celebrate(palette, origin, o){
   const ring2 = document.createElement("span"); ring2.className = "stardust-ring is-late";
   layer.append(flash, ring, ring2);
   const reach = Math.min(window.innerWidth, window.innerHeight) * 0.55;
+  /* (384 r6) ON THE SCREEN: a mote's flight ends inside it. Out of a box in the middle of a phone, a reach of .55 of the width
+     threw a third of the sparks past the side edges - "most of it comes off screen". Each axis is held to the room on its
+     side (less a margin, the fall's 24px and the spark's own size), so the burst is an ellipse that fits. */
+  const vw0 = window.innerWidth || 400, vh0 = window.innerHeight || 800, mg = 22;
+  layer.style.setProperty("--ring-k", Math.min(5, Math.max(2.5, Math.min(vw0, vh0) * .9 / 96)).toFixed(2));
+  const roomX = d => Math.max(30, (d < 0 ? ox : vw0 - ox) - mg), roomY = d => Math.max(30, (d < 0 ? oy : vh0 - oy - 24) - mg);
   const N = 44;
   for(let i = 0; i < N; i++){
     const p = document.createElement("span");
@@ -118228,8 +118252,9 @@ function celebrate(palette, origin, o){
     p.className = "stardust-p" + (spark ? " is-spark" : "");
     const a = (i / N) * Math.PI * 2 + (Math.random() - .5) * 0.5;
     const d = reach * (0.35 + Math.random() * 0.65);
-    p.style.setProperty("--dx", (Math.cos(a) * d).toFixed(1) + "px");
-    p.style.setProperty("--dy", (Math.sin(a) * d * 0.85).toFixed(1) + "px");
+    const cx0 = Math.cos(a) * d, cy0 = Math.sin(a) * d * 0.85;
+    p.style.setProperty("--dx", (Math.sign(cx0) * Math.min(Math.abs(cx0), roomX(cx0) * (0.55 + 0.45 * d / reach))).toFixed(1) + "px");
+    p.style.setProperty("--dy", (Math.sign(cy0) * Math.min(Math.abs(cy0), roomY(cy0) * (0.55 + 0.45 * d / reach))).toFixed(1) + "px");
     p.style.setProperty("--s", (spark ? 9 + Math.random() * 7 : 2.5 + Math.random() * 3.5).toFixed(1) + "px");
     p.style.setProperty("--c", colors[i % colors.length]);
     p.style.animationDelay = (Math.random() * 0.22).toFixed(2) + "s";
@@ -118238,6 +118263,8 @@ function celebrate(palette, origin, o){
   }
   document.body.appendChild(layer);
   setTimeout(() => layer.remove(), 3000);
+  /* (384 r6) the layer, so a tap that skips the results' 100% can take it off at once */
+  return layer;
 }
 
 /* ---- THE HUNDO EFFECTS, PLAYED (build 313) ----
@@ -118392,7 +118419,7 @@ function hfxContext(opts){
   const vw = fr ? fr.clientWidth : (window.innerWidth || 400), vh = fr ? fr.clientHeight : (window.innerHeight || 800);
   const box = opts.box || null;
   let vr = box ? box.getBoundingClientRect() : { left: vw * .1, top: vh * .45, width: vw * .8, height: vh * .2 };
-  if(fr && box){ const o = hfxOffsetIn(box, fr); vr = { left: o.x, top: o.y, width: box.offsetWidth, height: box.offsetHeight }; }
+  if(fr && box){ const o = hfxOffsetIn(box, fr); vr = { left: o.x, top: o.y + (box.__liftY || 0), width: box.offsetWidth, height: box.offsetHeight }; }
   const bw = box ? (box.offsetWidth || vr.width) : vr.width, bh = box ? (box.offsetHeight || vr.height) : vr.height;
   /* WHERE THE BOX WILL REST, not where it is this frame. The effect
      starts while the grade card is still landing (rs-slam opens at 1.45x
@@ -118721,7 +118748,7 @@ function hfxToEdge(c, x, y, a){
   const dx = Math.cos(a), dy = Math.sin(a);
   let t = Infinity;
   if(dx > 1e-6) t = Math.min(t, (c.vw - x) / dx); else if(dx < -1e-6) t = Math.min(t, -x / dx);
-  if(dy > 1e-6) t = Math.min(t, (c.vh - y) / dy); else if(dy < -1e-6) t = Math.min(t, -y / dy);
+  if(dy > 1e-6) t = Math.min(t, (c.vh - y) / dy); else if(dy < -1e-6) t = Math.min(t, -(y - (c.__skyTop != null ? c.__skyTop : (c.__skyTop = hfxSkyTop(c)))) / dy);
   return isFinite(t) ? Math.max(0, t) : 0;
 }
 /* The number's centre on the screen. */
@@ -118767,8 +118794,11 @@ function hfxLayout(c){
   const panel = c.frame || (c.box && c.box.closest && c.box.closest(".rs-screen"));
   if(!panel || c.boxOnly) return null;
   const sx = c.frame ? 0 : (window.scrollX || 0), sy = c.frame ? 0 : (window.scrollY || 0);
+  /* (384 r6) only what is ON the screen: the 100% now plays before anything lands under the grade (showRunRewards), so
+     the XP card and the rest are in the layout but not yet shown - an effect must not light, lift or hunt them */
+  const shown = el => !el.classList.contains("hfx-mk-off") && (c.frame || !el.classList.contains("rs-land") || el.classList.contains("rs-in") || el.classList.contains("rs-in-now"));
   const at = el => {
-    if(!el || !el.offsetWidth) return null;
+    if(!el || !el.offsetWidth || !shown(el)) return null;
     const o = hfxOffsetIn(el, c.frame || null);
     const left = o.x - sx, top = o.y - sy;
     return { left, top, width: el.offsetWidth, height: el.offsetHeight, right: left + el.offsetWidth, bottom: top + el.offsetHeight, el };
@@ -118779,7 +118809,7 @@ function hfxLayout(c){
     unlocked: at(panel.querySelector(":scope > .rs-unlocked")),
     buttons: [...panel.querySelectorAll(".rs-actions button")].map(at).filter(Boolean),
     /* what a black hole can pull: everything on the screen but the box */
-    warp: [...panel.children].filter(e => e !== c.box && !e.classList.contains("hfx-layer") && e.offsetWidth) };
+    warp: [...panel.children].filter(e => e !== c.box && !e.classList.contains("hfx-layer") && e.offsetWidth && shown(e)) };
   return L.xp ? L : null;
 }
 /* the effect's own extras, undone when it ends or is stopped: Web
@@ -118829,7 +118859,7 @@ function hfxGlassBubble(parent, o){
    the sides. `pick(u)` maps u in 0..1 to an edge and a heading, so a set
    spread evenly over 0..1 (the heroes) is spread over the room. */
 function hfxBubbleRoom(c){
-  const r = c.br, top = c.frame ? 0 : hfxSafeTop();
+  const r = c.br, top = hfxSkyTop(c);
   const sides = [
     { k: "top", room: Math.max(0, r.top - top), len: r.width, a0: -Math.PI + .12, a1: -.12 },
     { k: "bottom", room: Math.max(0, c.vh - r.bottom), len: r.width, a0: .12, a1: Math.PI - .12 },
@@ -118874,7 +118904,10 @@ function hfxBubblesGlass(scr, c){
   /* (384) going down, they are gone before the bottom 120px, where the
      way-on buttons rise as the tail begins (4.6s) */
   const floorY = c.vh - (c.frame ? c.vh * .1 : 120);
-  const far = (s, a, k) => Math.max(160, Math.min(hfxToEdge(c, s.x, s.y, a), Math.sin(a) > .2 ? Math.max(60, (floorY - s.y) / Math.sin(a)) : Infinity) * k);
+  /* (384 r6) at least 160px - unless the screen's edge is nearer than that: out of a box in the middle of a phone it often is,
+     and the floor carried a third of the small bubbles past the side edges */
+  const far = (s, a, k) => { const e = hfxToEdge(c, s.x, s.y, a), e2 = Math.max(e * .5, e - (c.frame ? 28 : 60));
+    return Math.max(Math.min(160, e2 * .8), Math.min(e2, Math.sin(a) > .2 ? Math.max(60, (floorY - s.y) / Math.sin(a)) : Infinity) * k); };
   const glass = typeof CSS !== "undefined" && CSS.supports && (CSS.supports("backdrop-filter", "blur(2px)") || CSS.supports("-webkit-backdrop-filter", "blur(2px)"));
   /* the far layer: small, faint, slow - spread evenly over the room */
   const nS = small ? 12 : 16;
@@ -119446,7 +119479,9 @@ function hfxSea(parent, o){
        water's own picture and cost nothing once drawn. They come and go
        with the water. */
     const rw = Math.round(hfxR(46, 110) * k), lean = rw * HFX_UW_RAY_LEAN / 60;
-    const el = hfxMk(body, "i", "hfx-uw-ray", { left: Math.round(x - rw / 2 - lean) + "px", width: Math.round(rw + lean) + "px", "--rh": Math.round(bodyH * hfxR(.6, .92)) + "px" });
+    /* (384 r6) every ray starts inside the screen's sides (the first on a phone began 70px off the left edge) */
+    const rl = Math.max(0, Math.min(o.W - rw - lean, Math.round(x - rw / 2 - lean)));
+    const el = hfxMk(body, "i", "hfx-uw-ray", { left: rl + "px", width: Math.round(rw + lean) + "px", "--rh": Math.round(bodyH * hfxR(.6, .92)) + "px" });
     el.style.backgroundImage = hfxRayURL(); el.style.opacity = hfxR(.6, .85).toFixed(2);
   }
   /* motes drifting in the light: drawn into the light strips (round 6),
@@ -120356,6 +120391,9 @@ function hfxCharReact(av, id, o){
 function hfxResultsAvatar(box){
   const panel = box && box.closest ? box.closest(".rs-screen") : null;
   const av = panel ? panel.querySelector(".results-level-avatar") : null;
+  /* (384 r6) not while its XP card is still to come (the 100% plays first now): it reacts as that card lands */
+  const xpc = av && av.closest(".rs-xp");
+  if(xpc && xpc.classList.contains("rs-land") && !xpc.classList.contains("rs-in") && !xpc.classList.contains("rs-in-now")) return null;
   return av && av.querySelector("svg.avatarchar-svg") ? av : null;
 }
 function hfxUnderwater(scr, bx, c){
@@ -120366,7 +120404,9 @@ function hfxUnderwater(scr, bx, c){
     /* the box where it will REST: the results reveal scrolls the page to its
        foot as later cards land, and the sea is fixed to the screen */
     const de = document.documentElement, page = !c.frame && !(c.box && c.box.closest && c.box.closest(".rs-spot"));
-    const rest = page ? Math.max(0, de.scrollHeight - (window.innerHeight || c.vh)) - (window.scrollY || 0) : 0;
+    /* (384 r6) the page no longer scrolls while the effect plays (it plays on the centred grade, before anything lands
+       under it), so the box rests where it is */
+    const rest = 0;
     const r = c.br, box = { left: r.left, top: r.top - rest, width: r.width, height: r.height };
     const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
     const due = hfxDue(c);
@@ -120869,11 +120909,20 @@ function hfxFireworks(scr, bx, c){
        as if over a skyline. The finale's middle one goes off lowest and
        biggest, a crown over the box. Times are untouched (the score is
        cut to them). */
-    const skyTop = mini ? 0 : hfxSafeTop(), skyH = Math.max(60, r.top - skyTop);
-    const R = Math.max(30 * kk, Math.min(W * (small ? .3 : .22), H * .2, 230, skyH * .6));
-    const yTop = skyTop + R + 6, yBot = Math.max(yTop + 24, r.top - R * .3);
+    /* (384 r6) and under the app's own top bar ("Test results", the chat button), not just the status bar: on a phone the
+       bar covers the top 60px or so of the sky, and every burst that opened up there was half behind it */
+    let barB = 0;
+    try{ const tb = !mini && document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 90 && q.bottom > 0) barB = q.bottom + 4; } }catch(e){}
+    const skyTop = mini ? 0 : Math.max(hfxSafeTop(), barB), skyH = Math.max(60, r.top - skyTop);
+    /* (384 r6) AND WHOLE, OVER THE BOX. The box is in the middle of the screen now (the results' grade plays its effect
+       centred), and the sky is what is between the top bar and the box. A burst's lower half used to go down behind the
+       box "as if over a skyline" - but the sky stops at the box's top edge, so that half was never drawn: on a phone a
+       third of every show was thrown where nothing could show it. The radius is held to .46 of the sky and the bursts
+       sit high enough that all but their last fringe opens above the box. */
+    const R = Math.max(30 * kk, Math.min(W * (small ? .3 : .22), H * .2, 230, skyH * .46));
+    const yTop = skyTop + R + 6, yBot = Math.max(yTop + 24, r.top - R * .78 - 10);
     const Y = f => yTop + (yBot - yTop) * f, X = f => R * .7 + (W - R * 1.4) * f;
-    const fit = (y, rr) => Math.max(R * .5, Math.min(rr, y - skyTop - 4));
+    const fit = (y, rr) => Math.max(R * .5, Math.min(rr, y - skyTop - 4, (r.top - 10 - y) / .8));
     const from = f => [r.left + r.width * f, r.top + 2];
     const glow = (t, x, y, rr, key) => { hfxMk(scr, "i", "hfx-fw-glow", { left: x + "px", top: y + "px", "--gs": rr * 3.4, "--c": rgba(key, .5), "--t": t, "--d": 1.5 }); flashes.push([t, key]); };
     const shots = [
@@ -121063,11 +121112,33 @@ function buildHundoFxMock(id, o){
   }
   let handle = null;
   m.stopFx = () => { m.__dead = true; if(handle && handle.stop) handle.stop(); };
+  /* (384 r6) THE RESULTS SCREEN'S NEW ORDER, IN MINIATURE (Madison: "ensure all the hundo effect previews when clicking on
+     them are updated"): the grade alone in the middle of the frame, the effect on it there, then the grade up into its place
+     and the header, the XP card and the buttons in under it - and, after a beat on the finished screen, round again. The
+     others wait hidden (.hfx-mk-off), so the effect never lights or lifts them (hfxLayout); the grade's offset is a
+     `translate`, which the frame's own geometry (hfxContext) reads back as gr.__liftY. */
+  const rest = [head, xp, acts];
+  const lift = (dy, ms) => {
+    const from = gr.__liftY || 0; gr.__liftY = dy;
+    gr.style.translate = dy ? "0 " + dy + "px" : "";
+    if(ms && from !== dy){ try{ gr.animate([{ translate: "0 " + from + "px" }, { translate: "0 " + dy + "px" }], { duration: ms, easing: "cubic-bezier(.3,.72,.18,1)" }); }catch(e){} }
+  };
+  const centreDy = () => Math.max(0, Math.round((m.clientHeight - gr.offsetHeight) / 2 - gr.offsetTop));
+  const hideRest = () => rest.forEach(e => e.classList.add("hfx-mk-off"));
+  const showRest = () => rest.forEach((e, i) => setTimeout(() => { if(m.isConnected) e.classList.remove("hfx-mk-off"); }, 140 + i * 260));
+  hideRest();
   const play = () => {
     if(!m.isConnected || m.__dead) return;
     if(!handle || handle.done){
-      handle = playHundoFx(id, { box: gr, pct, frame: m, preview: true, palette: null });
-      setTimeout(play, ((handle && handle.total) || 3200) + 1400);
+      lift(centreDy(), gr.__liftY ? 0 : 420);
+      setTimeout(() => {
+        if(!m.isConnected || m.__dead) return;
+        handle = playHundoFx(id, { box: gr, pct, frame: m, preview: true, palette: null });
+        const tail = (HUNDO_FX_TAIL_AT[id] || 1500), total = (handle && handle.total) || 3200;
+        setTimeout(() => { if(!m.isConnected || m.__dead) return; lift(0, 560); showRest(); }, tail);
+        /* the finished screen for a beat, then the rest goes and the grade comes back down to the middle */
+        setTimeout(() => { if(!m.isConnected || m.__dead) return; hideRest(); setTimeout(play, 380); }, Math.max(total, tail + 1300) + 1500);
+      }, 460);
     } else setTimeout(play, 400);
   };
   let tries = 0;
@@ -121338,6 +121409,9 @@ function hfxUfoSwa(c){ return Math.round(Math.min((c.bw || 0) * .3, 150)); }
    hovers 60px up where that fits, else it hovers lower (down to 40px) and
    only then gets smaller; it lifts as high as the sky lets it, at most the
    old 70px. Cached on the context, so the screen layer and the box agree. */
+/* (384 r6) the top of the room a screen-wide effect has: the status bar, or the app's own top bar under it on the results
+   ("Test results" and the chat button) - anything thrown above that is behind them. 0 in a stand-in frame. */
+function hfxSkyTop(c){ return (c && c.frame) ? 0 : Math.max(hfxSafeTop(), ifxCeil(c)); }
 function hfxSafeTop(){
   try{
     const p = document.createElement("i");
@@ -121350,7 +121424,7 @@ function hfxSafeTop(){
 }
 function hfxUfoSize(c){
   if(c.__ufoSize) return c.__ufoSize;
-  const r = c.br, top = c.frame ? 0 : hfxSafeTop(), base = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
+  const r = c.br, top = hfxSkyTop(c), base = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
   /* the sky: from under the status bar (and 8px clear of it) to the box's top edge */
   const room = r.top - top - 8;
   let w = base, h = w * .62, hov = Math.min(120, Math.max(60, r.top * .25));
@@ -121436,7 +121510,7 @@ function hfxUfoTopLayer(c, scr, top, bx){
       run.forEach(a => { if(a.startTime !== t0){ try{ a.startTime = t0; }catch(e){} } });
     });
   });
-  hfxOnEnd(c, fade => { if(fade) hfxFadeOut(top); else top.remove(); });
+  hfxOnEnd(c, fade => { if(fade){ if(c.fast) top.classList.add("hfx-fast"); hfxFadeOut(top); } else top.remove(); });
 }
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
@@ -121603,6 +121677,13 @@ const IFX_DEF = {
      5.3, and the last of it has faded by 6.4; the small box's is 4.6s. */
   ufo:        { name: "Hazmat",     total: 6400, box: 4600, tail: 5300, tint: { b: "#B4F03A", g1: "#F6FFE0", g2: "#B4F03A", g3: "#F5C518" } }
 };
+/* (384 r6) where a screen-wide effect's ceiling is: the bottom of the app's own top bar when it is up at the top of the screen
+   (the results: "Test results" and the chat button, under the status bar on a phone), else the top. 0 in a frame. */
+function ifxCeil(c){
+  if(!c || c.frame || c.boxOnly) return 0;
+  try{ const tb = document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 90 && q.bottom > 0 && q.bottom < (c.vh || 800) * .25) return Math.round(q.bottom + 6); } }catch(e){}
+  return 0;
+}
 function ifxEl(parent, css){
   const d = document.createElement("i");
   d.style.cssText = "position:absolute;display:block;pointer-events:none;" + css;
@@ -122539,7 +122620,8 @@ function ifxSprinklers(scr, bx, c){
         d, dl, "linear", { iterations: Math.max(1, Math.floor((S.knock + .4 - dl) / d)) });
     }
     /* the main along the ceiling */
-    const pipe = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + bnF(hs * .2) + "px;background:linear-gradient(#FF8A7A,#C8262A 55%,#6A0A0E);box-shadow:0 2px 6px rgba(0,0,0,.45);opacity:0;");
+    const pipe = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + bnF(hs * .2) + "px;background:linear-gradient(#A9B2BD,#59616C 55%,#22272E);box-shadow:0 2px 6px rgba(0,0,0,.45);opacity:0;");
+    /* (384 r6) steel, not red: along the top edge of a box a red bar read as the old look's coloured frame */
     ifxAt(c, pipe, tot, [[.1, { opacity: 0, transform: "translateY(-100%)", easing: IFX_OUT }], [.45, { opacity: 1, transform: "translateY(0%)" }], [S.up + .1, { opacity: 1, transform: "translateY(0%)", easing: IFX_IN }], [S.up + .55, { opacity: 0, transform: "translateY(-100%)" }]]);
     /* the heads: burst, spray, rain, mist */
     const sw = small ? W * .62 : Math.min(gap * 1.9, 470), sh = sw * .65, defl = hs * .86;
@@ -122608,7 +122690,9 @@ function ifxSprinklers(scr, bx, c){
     return S;
   };
   let S = null;
-  if(scr) S = play(scr, c.vw, c.vh, false);
+  /* (384 r6) the ceiling is under the app's top bar, not behind it (the heads hung from the very top of the screen, under the
+     status bar on a phone and over "Test results") */
+  if(scr){ const cb = ifxCeil(c); S = play(cb ? ifxEl(scr, "left:0;top:" + bnF(cb) + "px;width:" + c.vw + "px;height:" + bnF(c.vh - cb) + "px;") : scr, c.vw, c.vh - cb, false); }
   if(!bx) return;
   if(c.boxOnly) S = play(bx, c.bw, c.bh, true);
   else {
@@ -122704,7 +122788,9 @@ function ifxHazmat(scr, bx, c){
          BLOWN AWAY by the all clear (out from the box, the nearest first) ---- */
   const bank = (host, n, y0, y1, sz, op, seed) => {
     for(let i = 0; i < n; i++){
-      const fw = sz * (.85 + rnd() * .3), fh = fw * .6, x = W * (-.1 + (i + .2 + rnd() * .6) / n * 1.2), y = y0 + (y1 - y0) * rnd();
+      /* (384 r6) the banks' middles across the floor from .14 to .86 of the width, not -.1 to 1.1: they lie along the floor and
+         thin out at its sides instead of rolling half off them */
+      const fw = sz * (.85 + rnd() * .3), fh = fw * .6, x = W * (.14 + (i + .2 + rnd() * .6) / n * .72), y = y0 + (y1 - y0) * rnd();
       const el = ifxImg(host, ifxSpr.hzFume((i + seed) % 2), x - fw / 2, y - fh / 2, fw, fh, "transform-origin:50% 70%;");
       const t0 = Z.vap + i * .1 + rnd() * .16, side = x < W / 2 ? -1 : 1, dd = W * .05 * (rnd() < .5 ? -1 : 1), out = Z.sweep[0] + Math.max(0, 1 - x / W) * .5 + rnd() * .1;
       const vx = x - bcx, vy = y - bcy, vd = Math.hypot(vx, vy) || 1, hit = Z.clear + .02 + vd / (Math.hypot(W, H) * 2.2), push = W * (.4 + rnd() * .14);
@@ -122713,8 +122799,9 @@ function ifxHazmat(scr, bx, c){
         [hit + .5, { opacity: 0, transform: tr(dd - W * .06 + vx / vd * push, fh * .02 + vy / vd * push, 1.5) }]]);
     }
   };
-  bank(far, 6, H * .74, H * .88, Math.min(W * .74, H * .5), .46, 0);   /* (r3) six far banks, was four, in two shapes, was three: more haze, no new kind */
-  bank(near, 3, H * .88, H * 1.01, Math.min(W * .95, H * .62), .54, 2);
+  /* (384 r6) a little higher, so the banks lie along the floor of the screen rather than half under it */
+  bank(far, 6, H * .72, H * .84, Math.min(W * .56, H * .4), .46, 0);   /* (r3) six far banks, was four, in two shapes, was three: more haze, no new kind */
+  bank(near, 3, H * .84, H * .93, Math.min(W * .66, H * .46), .54, 2);
   /* its peak: one ring out of the box, the camera kicked (above) */
   const R = Math.max(bw, bh) * .32, rg = ifxImg(top, ifxSpr.ring("#B4F03A"), bcx - R * 2.2, bcy - R * 2.2, R * 4.4, R * 4.4);
   A(rg, [[Z.slam, { opacity: 0, transform: "scale(.3)" }], [Z.slam + .03, { opacity: .9, transform: "scale(.4)", easing: IFX_OUT }], [Z.slam + .5, { opacity: 0, transform: "scale(1.05)" }]]);
@@ -122724,7 +122811,11 @@ function ifxHazmat(scr, bx, c){
   /* ---- 3. THE DECON: a responder in a Level A suit rises into his corner, raises the wand and sprays the box down side to side.
          The arm turns at the shoulder (70, 126 of the suit's 220 x 400) and the wand is cocked up from it (IFX_HZ_ARM); the spray is
          the arm's own child, so it turns with it. The angle that puts the spray on a point is found by iterating. ---- */
-  const G = IFX_HZ_ARM, sH = Math.round(Math.min(H * .44, W * 1.05, 540)), k = sH / 400, sW = 220 * k, rx0 = W * .74 - sW / 2, ry0 = H - sH * .985;
+  /* (384 r6) THE BOX IS IN THE MIDDLE OF THE SCREEN NOW (the results' grade, centred, plays the effect), so he is smaller and
+     further off: a third of the screen's height, in the lower right, his shoulder well below and to the side of the box - at
+     .44 of the height he stood right under it, his helmet over its corner, and the box was nearer than the length of his own
+     arm and lance, so no angle could put the stream on it (it went down and off the screen) */
+  const G = IFX_HZ_ARM, sH = Math.round(Math.min(H * .34, W * .86, 430)), k = sH / 400, sW = 220 * k, rx0 = Math.min(W * .8, Math.max(W * .62, Rt + sW * .12)) - sW / 2, ry0 = H - sH * .985;
   const shX = rx0 + 70 * k, shY = ry0 + 126 * k, nzL = { x: (G.nz.x - G.px) * k, y: (G.nz.y - G.py) * k };
   const sweepX = [L + bw * .22, Rt - bw * .22, bcx], sweepY = [bcy + bh * .06, bcy - bh * .04, bcy];
   const ease = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
@@ -122733,7 +122824,19 @@ function ifxHazmat(scr, bx, c){
     if(t <= s[1]){ const p = ease((t - s[0]) / (s[1] - s[0])); return { x: sweepX[0] + (sweepX[1] - sweepX[0]) * p, y: sweepY[0] + (sweepY[1] - sweepY[0]) * p }; }
     const p = ease(Math.min(1, (t - s[1]) / (s[2] - s[1]))); return { x: sweepX[1] + (sweepX[2] - sweepX[1]) * p, y: sweepY[1] + (sweepY[2] - sweepY[1]) * p }; };
   const nozAt = th => { const a = th * Math.PI / 180; return { x: shX + nzL.x * Math.cos(a) - nzL.y * Math.sin(a), y: shY + nzL.x * Math.sin(a) + nzL.y * Math.cos(a) }; };
-  const theta = p => { let th = 0; for(let i = 0; i < 6; i++){ const n = nozAt(th); th = Math.atan2(p.y - n.y, p.x - n.x) * 180 / Math.PI - 180 - G.cock; th = ((th % 360) + 540) % 360 - 180; } return th; };
+  /* (384 r6) THE ANGLE, SOLVED, NOT ITERATED. The stream leaves the mouth along the lance (180 + cock from the arm), so the line it
+     runs on sits a fixed distance from the shoulder; turning the arm turns that line about the shoulder. In the arm's own frame the
+     target must be on that line, ahead of the mouth: q = mouth + s * dir with |q| = |target - shoulder|, then the arm's angle is
+     the target's angle minus q's. The old iteration (aim at the target from where the mouth was a moment ago) went round in circles
+     whenever the target was not far beyond the mouth - which is every case once the box sits in the middle of the screen. */
+  const theta = p => {
+    const ux = Math.cos((180 + G.cock) * Math.PI / 180), uy = Math.sin((180 + G.cock) * Math.PI / 180);
+    const D = Math.hypot(p.x - shX, p.y - shY), b = nzL.x * ux + nzL.y * uy, cc = nzL.x * nzL.x + nzL.y * nzL.y - D * D;
+    const disc = b * b - cc, sl = -b + Math.sqrt(Math.max(0, disc));
+    const qx = nzL.x + sl * ux, qy = nzL.y + sl * uy;
+    let th = (Math.atan2(p.y - shY, p.x - shX) - Math.atan2(qy, qx)) * 180 / Math.PI;
+    return ((th % 360) + 540) % 360 - 180;
+  };
   const crossAt = x => Z.sweep[0] + Math.max(0, Math.min(1, (x - sweepX[0]) / (sweepX[1] - sweepX[0]))) * (Z.sweep[1] - Z.sweep[0]);
   const rig = ifxEl(top, "left:" + F(rx0) + "px;top:" + F(ry0) + "px;width:" + F(sW) + "px;height:" + F(sH) + "px;transform-origin:50% 100%;opacity:0;");
   ifxImg(rig, ifxSpr.suit(), 0, 0, sW, sH, "opacity:1;");
@@ -122775,7 +122878,10 @@ function ifxHazmat(scr, bx, c){
   const pk = []; for(let t = Z.spray + .16, j = 0; t < Z.sprayEnd; t += .09, j++) pk.push([t, { transform: "scale(" + (j % 2 ? .985 : 1) + "," + (j % 2 ? 1.06 : 1) + ")" }]);
   A(plume, pk);
   /* (r3) a plain label for what the beat is: DECON, above the responder, with him and gone before the all clear */
-  const chip = ifxEl(top, "left:" + F(rx0 + sW * .2) + "px;top:" + F(ry0 - 12 * u) + "px;padding:" + F(5 * u) + "px " + F(11 * u) + "px;border-radius:999px;background:rgba(14,18,24,.92);color:#D6FF7A;" +
+  /* (384 r6) over his helmet; where the box comes down too close to it (a laptop's short window), beside the helmet on the
+     side away from the box. (Over the box's edge, where it was, it read as a label on the card.) */
+  const chH = 21 * u, chAbove = ry0 - 8 * u - chH > B + 8 * u;
+  const chip = ifxEl(top, "left:" + F(chAbove ? rx0 + sW * .62 : rx0 + sW * 1.02 + 40 * u) + "px;top:" + F(chAbove ? ry0 - 8 * u - chH : ry0 + sH * .06) + "px;padding:" + F(5 * u) + "px " + F(11 * u) + "px;border-radius:999px;background:rgba(14,18,24,.92);color:#D6FF7A;" +
     "font:800 " + F(11 * u) + "px/1 var(--sans);letter-spacing:.18em;white-space:nowrap;opacity:0;transform:translate(-50%,6px);");
   chip.textContent = "DECON";
   A(chip, [[Z.walk + .12, { opacity: 0, transform: "translate(-50%,6px)", easing: IFX_OUT }], [Z.walk + .4, { opacity: 1, transform: "translate(-50%,0px)" }], [Z.sprayEnd, { opacity: 1, transform: "translate(-50%,0px)" }], [Z.sprayEnd + .22, { opacity: 0, transform: "translate(-50%,0px)" }]]);
@@ -122949,14 +123055,17 @@ function ifxThermal(scr, bx, c){
     /* ---- what the camera sees: the cards a faint warmth, the box warm and heating, two warm spots ---- */
     const card = (r, css) => ifxEl(view, "left:" + bnF(r.left) + "px;top:" + bnF(r.top) + "px;width:" + bnF(r.width) + "px;height:" + bnF(r.height) + "px;border-radius:" + bnF(L.r) + "px;opacity:0;" + css);
     if(L.xp){
-      const e = card(L.xp, "background:linear-gradient(to bottom, rgba(120,32,146,.24), rgba(74,18,124,.12));border:1px solid rgba(196,86,206,.34);");
+      const e = card(L.xp, "background:linear-gradient(to bottom, rgba(120,32,146,.24), rgba(74,18,124,.12));");   /* (384 r6) no rim: a warm shape, not an outlined one */
       ifxAt(c, e, tot, [[built(L.xp.top), { opacity: 0 }], [built(L.xp.top) + .25, { opacity: 1 }]]);
     }
     if(L.box){
       const t0 = built(L.box.top);
-      const wm = card(L.box, "background:radial-gradient(ellipse 70% 80% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(196,40,124,.36), rgba(116,24,134,.22) 60%, rgba(70,16,120,.14));border:1.5px solid rgba(220,80,170,.5);box-shadow:0 0 18px rgba(176,40,150,.32);");
+      const wm = card(L.box, "background:radial-gradient(ellipse 70% 80% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(196,40,124,.36), rgba(116,24,134,.22) 60%, rgba(70,16,120,.14));");
       ifxAt(c, wm, tot, [[t0, { opacity: 0 }], [t0 + .25, { opacity: 1 }]]);
-      const ht = card(L.box, "background:radial-gradient(ellipse 62% 78% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(255,128,40,.5), rgba(232,64,42,.34) 42%, rgba(168,30,118,.26) 78%, rgba(110,24,134,.2));border:2px solid rgba(255,176,70,.9);box-shadow:0 0 26px rgba(255,120,40,.5), inset 0 0 22px rgba(255,120,40,.3);");
+      const ht = card(L.box, "background:radial-gradient(ellipse 62% 78% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(255,128,40,.5), rgba(232,64,42,.34) 42%, rgba(168,30,118,.26) 78%, rgba(110,24,134,.2));");
+      /* (384 r6) the box as the camera sees it is a warm shape with no lit rim: round 8 kept a 1.5px and a 2px line and an
+         outer glow round it as "the display's frame", and that was the one coloured frame left on any 100% box - Madison,
+         "some of it hasn't been updated to the new look? Like the border glow" */
       ifxAt(c, ht, tot, [[2.3, { opacity: 0 }], [T.hot, { opacity: 1 }]]);
     }
     (L.spots || []).forEach(sp => {
@@ -123001,7 +123110,9 @@ function ifxThermal(scr, bx, c){
     const hud = ifxEl(host, "left:0;top:0;width:" + bnF(W) + "px;height:" + bnF(H) + "px;transform-origin:" + bnF(tx) + "px " + bnF(ty) + "px;");
     ifxAt(c, hud, tot, [[T.off - .15, { opacity: 1, transform: "scale(1)", easing: IFX_IN }], [T.off + .3, { opacity: 0, transform: "scale(1.14)" }]]);
     const fL = small ? Math.max(8, Math.min(20, H * .14)) : 40 * u, ix = small ? Math.max(4, H * .05) : Math.max(10, Math.min(30, W * .045));
-    const iyT = small ? ix : Math.max(24, Math.min(88, H * .075)), iyB = small ? ix : Math.max(14, Math.min(56, H * .05));
+    /* (384 r6) clear of the status bar on a phone (in Chromium it is 0, so nothing moves here) */
+    const sTop0 = small || c.frame ? 0 : hfxSafeTop();
+    const iyT = small ? ix : Math.max(24, Math.min(88, H * .075), sTop0 + 16), iyB = small ? ix : Math.max(14, Math.min(56, H * .05));
     const corner = (parent, size, x, y, rot) => ifxImg(parent, S.ticL(), x - size * 6 / 46, y - size * 6 / 46, size, size, "transform-origin:" + bnF(size * 6 / 46) + "px " + bnF(size * 6 / 46) + "px;");
     [[ix, iyT, 0, -1, -1], [W - ix, iyT, 90, 1, -1], [W - ix, H - iyB, 180, 1, 1], [ix, H - iyB, 270, -1, 1]].forEach(([x, y, rot, sx, sy], i) => {
       const e = corner(hud, fL, x, y, rot), o = fL * .5;
@@ -123152,92 +123263,111 @@ const IFX_BUILD = { fireworks: ifxExtinguisher, underwater: ifxSprinklers, bubbl
 /* their tiles: a still of each at its best moment (hundoFxPosterSVG's 160 x 60 frame; the 100%
    sits in the middle, so the art frames it) */
 function ifxPosterBody(id, g, rnd){
+  /* (384 r6) THE FIRE CODE TILES IN THE ACADEMY'S LANGUAGE. Madison: "The picture preview for the ifc hundo effects aren't
+     that great, the academy ones are better." The academy's tiles are the app's dark card with the effect's best moment drawn
+     round the 100% in a few soft glows and fine lines, the middle left clear for the number; the Fire Code ones were scenes
+     painted edge to edge - a red pipe along the top edge and a lime frame round the 100% (both read as the old look's coloured
+     frame), the thermal display's words and readout, a whole responder. Redrawn on the same rules: the card's own dark, one
+     pool of the effect's light, the moment itself (the discharge, the spray, the heat, the wash), nothing framing the number,
+     no words. */
   const F = bnF;
   let defs = "", body = "";
+  const rg = (k, stops, cx, cy, r) => { defs += bnRad(g + k, stops, cx, cy, r); };
+  const glow = (cx, cy, rx, ry, k, o) => '<ellipse cx="' + F(cx) + '" cy="' + F(cy) + '" rx="' + F(rx) + '" ry="' + F(ry == null ? rx : ry) + '" fill="url(#' + g + k + ')"' + (o == null ? "" : ' opacity="' + F(o) + '"') + '/>';
+  const inNum = (x, y, m) => Math.abs(x - 80) < 30 + (m || 0) && Math.abs(y - 30) < 12 + (m || 0);
+  /* a small tongue of fire on the floor line */
+  const flame = (x, h, w, ln, k) => '<g transform="translate(' + F(x) + ' 0)"><path d="' + ifxFlameD(0, 60.5, w, h, ln) + '" fill="url(#' + g + k + ')"/></g>';
   if(id === "fireworks"){
-    /* (384 final check) the effect as it is now - the 100% on fire, and the extinguisher putting it out: the fire across the
-       frame behind the 100% (tallest to the right, where the stream has not reached), the horn low at the left on the base of
-       the flames, P.A.S.S. as it is taught, and the agent billowing up where it lands - not the cloud rolling across it was.
-       ("Yes, things need to be updated" - the tile was the old effect.) */
-    defs += ifxLin(g + "rd", 1, 0, IFX_RED) + ifxRad(g + "o", 0, 60, 7, 3.4, [[0, "#FFE08A"], [.35, "#FF8A24", .95], [.72, "#E2361A", .6], [1, "#A3170C", 0]]) +
-      ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .95], [.7, "#F6F1E6", .6], [1, "#F2EDE2", .1]]);
-    ["#FFFFFF", "#EDE8DF", "#C4BCAE"].forEach((cl, k) => { defs += '<radialGradient id="' + g + 'c' + k + '"><stop offset="0" stop-color="' + cl + '" stop-opacity=".95"/><stop offset=".55" stop-color="' + cl + '" stop-opacity=".8"/>' +
-      '<stop offset=".82" stop-color="' + cl + '" stop-opacity=".3"/><stop offset="1" stop-color="' + cl + '" stop-opacity="0"/></radialGradient>'; });
-    body += '<rect width="160" height="60" fill="#0A0C12" opacity=".55"/>';
-    body += '<ellipse cx="114" cy="62" rx="62" ry="28" fill="#FF6A2E" opacity=".2"/>';
-    [[70, 10, 6, -1], [82, 15, 8, 1], [94, 22, 7, -1], [106, 30, 9, 1], [118, 34, 8, -1], [130, 31, 9, 1], [142, 25, 8, -1], [153, 18, 7, 1]].forEach(([x, h, w, ln]) => {
-      body += '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, 60, w, h, ln) + '" fill="url(#' + g + 'o)"/></g>'; });
-    body += '<path d="M33 46 L88 50 L88 60 L33 48.5 Z" fill="url(#' + g + 'jt)" opacity=".85"/>';
-    const L = [];
-    /* low, along the base of the flames, so the 100% above them stays clear */
-    for(let i = 0; i < 18; i++){ const t = rnd(); L.push([54 + t * 40 + (rnd() - .5) * 8, 58 - t * 6 - rnd() * 3, 3 + t * 4 + rnd() * 2]); }
-    L.sort((p, q) => q[1] - p[1]).forEach(([x, y, r]) => { body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="url(#' + g + 'c' + (y > 55 ? 2 : y > 51 ? 1 : 0) + ')"/>'; });
-    body += '<path d="M6 60 L6 36 Q6 30 12 30 Q18 30 18 36 L18 60 Z" fill="url(#' + g + 'rd)"/><rect x="8" y="42" width="8" height="10" rx="1" fill="#F6F2E8"/><rect x="9.5" y="25" width="5" height="6" rx="1" fill="#C9CED6"/>' +
-      '<path d="M15 27 C22 27 24 34 23 40 C22 44 24 45.5 27 46" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><path d="M26 45.8 L33 47" stroke="#3A3F48" stroke-width="2.8" stroke-linecap="round"/><path d="M26 45.8 L33 47" stroke="#8A909A" stroke-width=".7" stroke-linecap="round"/>' +
-      '<circle cx="7.5" cy="28" r="2.6" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".7"/>';
+    /* EXTINGUISHER: the discharge - the horn in from the left edge, a cone of dry chem widening across the floor and billowing up
+       where it lands on the last of the fire, powder drifting up through the light */
+    rg("w", [[0, "#FF6A3D", .42], [1, "#FF3A20", 0]]);
+    rg("c", [[0, "#FFFFFF", .95], [.5, "#F2EEE8", .7], [1, "#E6E0D6", 0]]);
+    rg("d", [[0, "#D8D2C8", .7], [1, "#C8C0B4", 0]]);
+    defs += ifxRad(g + "f", 0, 60, 6, 3, [[0, "#FFE7A0"], [.35, "#FF9A2E", .95], [.72, "#E8402A", .6], [1, "#A3170C", 0]]) +
+      ifxLin(g + "j", 1, 0, [[0, "#FFFFFF", .95], [.55, "#F4F1EC", .55], [1, "#ECE7DE", 0]]) + ifxLin(g + "hn", 0, 1, [[0, "#4A505A"], [.5, "#1C2026"], [1, "#0C0E12"]]) + ifxLin(g + "rd", 1, 0, IFX_RED);
+    body += glow(132, 58, 46, 20, "w") + glow(28, 46, 26, 14, "w", .35);
+    /* the fire it is putting out: a few tongues on the right, low */
+    [[118, 13, 4.2, 1], [127, 18, 5.4, -1], [136, 15, 4.6, 1], [145, 20, 5.6, -1], [154, 12, 4, 1]].forEach(f => { body += flame(f[0], f[1], f[2], f[3], "f"); });
+    /* the jet: the horn's mouth (20, 47) out to the floor at the right, widening */
+    body += '<path d="M21 45.4 Q60 42.6 106 44 L116 60 Q64 56 21 49.4 Z" fill="url(#' + g + 'j)" opacity=".5"/>' +
+      '<path d="M21 46.4 Q60 45.4 100 48.6" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".7"/>';
+    /* the cloud where it lands: soft puffs, lit from the fire under them */
+    [[86, 55, 10, "d"], [98, 52, 12, "c"], [112, 54, 13, "c"], [124, 51, 11, "c"], [136, 56, 12, "d"], [104, 58, 9, "c"], [118, 47, 8, "c"], [74, 57, 7, "d"]]
+      .forEach(([x, y, r, k]) => { body += glow(x, y, r, r * .78, k); });
+    /* the powder drifting up, and two embers that got away */
+    for(let i = 0; i < 26; i++){ const x = 60 + rnd() * 96, y = 26 + rnd() * 26; if(inNum(x, y, 2)) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.3 + rnd() * .55) + '" fill="#FFFFFF" opacity="' + F(.25 + rnd() * .45) + '"/>'; }
+    [[146, 30], [138, 22]].forEach(([x, y]) => { body += '<circle cx="' + x + '" cy="' + y + '" r=".8" fill="#FFB24A" opacity=".9"/>'; });
+    /* the horn and the hose, in from the left edge; the cylinder's red shoulder just in the corner */
+    body += '<path d="M-6 62 Q-6 49 4 47.6 Q11 47.6 11 55 L11 62 Z" fill="url(#' + g + 'rd)"/><path d="M-1 51 Q4 49.2 9 51.4" fill="none" stroke="#FF8A80" stroke-width=".6" opacity=".7"/>' +
+      '<path d="M6 47.6 C5 41 12 40 14.6 43.8" fill="none" stroke="#14161A" stroke-width="1.4" stroke-linecap="round"/>' +
+      '<path d="M13 43.4 L22 44.8 L22 50 L13 48.6 Z" fill="url(#' + g + 'hn)"/><path d="M13.4 44 L21.6 45.2" stroke="#7C8590" stroke-width=".5"/>';
   } else if(id === "underwater"){
-    /* the main, three heads throwing their umbrellas, rain, the fire going down in steam */
-    defs += '<linearGradient id="' + g + 'f" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF6A2E" stop-opacity=".6"/><stop offset="1" stop-color="#FF6A2E" stop-opacity="0"/></linearGradient>' +
-      ifxRad(g + "o", 0, 60, 6, 3, [[0, "#FFC15A"], [.4, "#FF7A1F", .95], [.75, "#E2361A", .55], [1, "#A3170C", 0]]) + ifxLin(g + "br", 1, 0, IFX_BRASS);
-    body += '<rect x="0" y="28" width="160" height="32" fill="url(#' + g + 'f)"/><rect x="0" y="0" width="160" height="2.2" fill="#C8262A"/>';
-    [[10, 60, 6, 15], [28, 60, 7, 19], [46, 60, 5, 12], [118, 60, 6, 14], [136, 60, 7, 18], [152, 60, 5, 12]].forEach(([x, y, w, h], i) => {
-      body += '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, y, w, h, i % 2 ? 2 : -2) + '" fill="url(#' + g + 'o)"/><path d="' + ifxFlameD(0, y, w * .5, h * .55, 0) + '" fill="#FFE7A0" opacity=".8"/></g>'; });
-    /* (384) the umbrellas as the effect's now are: a bright sheet off the plate, streams that leave it
-       whole and break into droplets, a bell of mist; the steam in wisps (it was two flat discs) */
-    defs += '<radialGradient id="' + g + 'm" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#DDF3FF" stop-opacity=".32"/><stop offset="1" stop-color="#CBEBFF" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="' + g + 's"><stop offset="0" stop-color="#F2F7FA" stop-opacity=".55"/><stop offset="1" stop-color="#E2EAEE" stop-opacity="0"/></radialGradient>';
-    [30, 80, 130].forEach((x, i) => {
-      body += '<path d="M' + x + ' 9 C' + (x - 8) + ' 10 ' + (x - 20) + ' 22 ' + (x - 27) + ' 42 L' + (x + 27) + ' 42 C' + (x + 20) + ' 22 ' + (x + 8) + ' 10 ' + x + ' 9 Z" fill="url(#' + g + 'm)"/>';
-      body += '<rect x="' + (x - 3) + '" y="1.5" width="6" height="2" fill="#D9DEE4"/><path d="M' + (x - 2) + ' 3.5 L' + (x + 2) + ' 3.5 L' + (x + 1.4) + ' 6 L' + (x - 1.4) + ' 6 Z" fill="url(#' + g + 'br)"/><path d="M' + (x - 6) + ' 8.4 L' + (x + 6) + ' 8.4" stroke="#D9A23A" stroke-width="1.1"/>' +
-        '<path d="M' + (x - 8) + ' 9.9 Q' + x + ' 8.3 ' + (x + 8) + ' 9.9" fill="none" stroke="#FFFFFF" stroke-width=".7" stroke-linecap="round" opacity=".85"/>';
-      for(let j = 0; j < 15; j++){ const a = -1.25 + j * 2.5 / 14, t = .55 + (j % 3) * .22;
-        const P = u => [x + Math.sin(a) * 26 * u, 9 + Math.cos(a) * 7 * u + 16 * u * u], seg = (u0, u1) => { const A = P(u0), B = P(u1), h = (u1 - u0) / 2; return 'M' + F(A[0]) + ' ' + F(A[1]) + ' Q' + F(A[0] + Math.sin(a) * 26 * h) + ' ' + F(A[1] + (Math.cos(a) * 7 + 32 * u0) * h) + ' ' + F(B[0]) + ' ' + F(B[1]); };
-        body += '<path d="' + seg(.06, t * .45) + '" fill="none" stroke="#EAF8FF" stroke-width=".65" stroke-linecap="round" opacity=".9"/><path d="' + seg(t * .45, t) + '" fill="none" stroke="#DFF6FF" stroke-width=".75" stroke-dasharray=".9 1.9" stroke-linecap="round" opacity=".75"/>'; }
-      for(let j = 0; j < 5; j++){ const rx = x - 16 + j * 8 + rnd() * 3, ry = 26 + rnd() * 18; body += '<path d="M' + F(rx) + ' ' + F(ry) + ' l' + F((rx - x) * .04) + ' 5" stroke="#E8F7FF" stroke-width=".8" stroke-linecap="round" opacity=".7"/><circle cx="' + F(rx + (rx - x) * .04) + '" cy="' + F(ry + 5) + '" r=".55" fill="#FFFFFF"/>'; }
+    /* SPRINKLERS: two heads at the top, each throwing its umbrella of fine spray; rain across the frame; at the floor the fire
+       knocked down into steam */
+    rg("sky", [[0, "#5EA8E0", .16], [1, "#5EA8E0", 0]]);
+    rg("w", [[0, "#FF7A2E", .4], [1, "#FF5A1C", 0]]);
+    rg("st", [[0, "#F2F7FA", .5], [1, "#E2EAEE", 0]]);
+    rg("um", [[0, "#DDF3FF", .28], [1, "#CBEBFF", 0]], "50%", "0%", "100%");
+    defs += ifxRad(g + "f", 0, 60, 5, 2.8, [[0, "#FFD27A"], [.4, "#FF8A24", .9], [1, "#C8260E", 0]]) + ifxLin(g + "br", 1, 0, IFX_BRASS) + ifxLin(g + "ch", 1, 0, IFX_CHROME);
+    body += glow(80, 0, 70, 26, "sky") + glow(80, 62, 70, 14, "w", .7);
+    /* the last of the fire on the floor, under steam */
+    [[50, 7, 3.4, 1], [60, 5, 2.8, -1], [102, 6, 3, 1], [112, 8, 3.6, -1]].forEach(f => { body += flame(f[0], f[1], f[2], f[3], "f"); });
+    [[46, 50], [62, 48], [100, 49], [116, 51], [80, 53]].forEach(([x, y], i) => { for(let j = 0; j < 3; j++) body += glow(x + Math.sin(j * 1.7 + i) * 2, y - j * 6, 4 + j * 2.4, 3 + j * 1.6, "st"); });
+    [24, 136].forEach(x => {
+      /* the umbrella: a bell of mist and streams of drops off the deflector */
+      body += '<path d="M' + x + ' 7 C' + (x - 7) + ' 8 ' + (x - 20) + ' 18 ' + (x - 27) + ' 38 L' + (x + 27) + ' 38 C' + (x + 20) + ' 18 ' + (x + 7) + ' 8 ' + x + ' 7 Z" fill="url(#' + g + 'um)"/>';
+      for(let j = 0; j < 13; j++){ const t = -1.2 + j * 2.4 / 12, len = .7 + (j % 3) * .15;
+        const P = u => [x + Math.sin(t) * 25 * u, 7.6 + Math.cos(t) * 5 * u + 22 * u * u];
+        const A = P(.08), B = P(len * .5), C = P(len);
+        body += '<path d="M' + F(A[0]) + ' ' + F(A[1]) + ' L' + F(B[0]) + ' ' + F(B[1]) + '" stroke="#EAF8FF" stroke-width=".55" stroke-linecap="round" opacity=".85"/>' +
+          '<path d="M' + F(B[0]) + ' ' + F(B[1]) + ' L' + F(C[0]) + ' ' + F(C[1]) + '" stroke="#DFF6FF" stroke-width=".6" stroke-dasharray=".8 1.6" stroke-linecap="round" opacity=".7"/>'; }
+      /* the head itself, small: the escutcheon at the top edge, the brass frame, the deflector */
+      body += '<rect x="' + (x - 3.4) + '" y="-1" width="6.8" height="2.6" rx=".8" fill="url(#' + g + 'ch)"/><path d="M' + (x - 1.8) + ' 1.6 L' + (x + 1.8) + ' 1.6 L' + (x + 1.2) + ' 5.6 L' + (x - 1.2) + ' 5.6 Z" fill="url(#' + g + 'br)"/>' +
+        '<path d="M' + (x - 5) + ' 6.8 Q' + x + ' 5.8 ' + (x + 5) + ' 6.8" fill="none" stroke="#E0B24A" stroke-width="1" stroke-linecap="round"/>';
     });
-    [[64, 50, 1], [96, 52, -1], [150, 46, 1], [12, 46, -1]].forEach(([x, y, k]) => { for(let j = 0; j < 5; j++){ const u = j / 4;
-      body += '<ellipse cx="' + F(x + Math.sin(u * 3) * k * 3) + '" cy="' + F(y - u * 16) + '" rx="' + F(3 + u * 6) + '" ry="' + F(3 + u * 3) + '" fill="url(#' + g + 's)"/>'; } });
-  } else if(id === "ufo"){
-    /* (384, the showpiece; round 6: no tape, bands or placard) its frame at the lock: the beacons' amber light down from
-       above, the vapour on the floor, the scan line, the field and the brackets round the 100%, and the responder spraying */
-    defs += '<linearGradient id="' + g + 'v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4F03A" stop-opacity="0"/><stop offset=".55" stop-color="#7ED83A" stop-opacity=".34"/><stop offset="1" stop-color="#4AA82E" stop-opacity=".6"/></linearGradient>' +
-      '<linearGradient id="' + g + 's" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4F03A" stop-opacity="0"/><stop offset="1" stop-color="#D8FF8A" stop-opacity=".55"/></linearGradient>' +
-      '<linearGradient id="' + g + 'bm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC24A" stop-opacity=".55"/><stop offset="1" stop-color="#FFB21A" stop-opacity="0"/></linearGradient>' +
-      '<radialGradient id="' + g + 'f"><stop offset="0" stop-color="#8EE04A" stop-opacity=".5"/><stop offset="1" stop-color="#3E9E2C" stop-opacity="0"/></radialGradient>' +
-      ifxLin(g + "y", 1, 0, [[0, "#FFE56E"], [.45, "#F2C418"], [1, "#8A6A06"]]) + ifxLin(g + "m", 1, 0, [[0, "#FFFFFF", .95], [1, "#E8FFF4", 0]]) +
-      ifxLin(g + "fr", 1, 1, [[0, "#FFFFFF"], [.6, "#D2D7DD"], [1, "#9AA1A9"]]) + ifxLin(g + "vz", 1, 1, [[0, "#BFE4F2"], [.4, "#1E3440"], [1, "#05090C"]]);
-    body += '<rect width="160" height="60" fill="#0A0C12" opacity=".35"/>' +
-      '<path d="M18 -2 L62 60 L30 60 Z" fill="url(#' + g + 'bm)"/><path d="M142 -2 L98 60 L130 60 Z" fill="url(#' + g + 'bm)" opacity=".8"/>' +
-      '<rect x="0" y="38" width="160" height="22" fill="url(#' + g + 'v)"/>' +
-      [[12, 54, 16], [40, 57, 14], [74, 56, 15], [104, 55, 14], [150, 56, 16]].map(([x, y, r]) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#' + g + 'f)"/>').join("") +
-      '<rect x="0" y="26" width="160" height="7" fill="url(#' + g + 's)"/><rect x="0" y="32.6" width="160" height=".7" fill="#FFFFFF" opacity=".85"/>' +
-      '<rect x="49" y="13" width="62" height="34" rx="5" fill="none" stroke="#B4F03A" stroke-width="2.4" opacity=".22"/><rect x="49" y="13" width="62" height="34" rx="5" fill="none" stroke="#E8FFB0" stroke-width=".6" opacity=".7"/>';
-    [[47, 11, 1, 1], [113, 11, -1, 1], [113, 49, -1, -1], [47, 49, 1, -1]].forEach(([x, y, sx, sy]) => { body += '<path d="M' + x + ' ' + (y + sy * 5.5) + ' L' + x + ' ' + y + ' L' + (x + sx * 5.5) + ' ' + y + '" fill="none" stroke="#D8FF8A" stroke-width="1.6" stroke-linecap="round"/>'; });
-    /* the responder low at the left, his wand up at the box and the mist going on */
-    body += '<path d="M35 25 L56 14 L59 22 Z" fill="url(#' + g + 'm)" opacity=".85"/>' +
-      '<path d="M10 60 L10 44 Q10 38 16 37 L26 37 Q32 38 32 44 L32 60 Z" fill="url(#' + g + 'y)"/><ellipse cx="21" cy="33" rx="9" ry="8.4" fill="url(#' + g + 'y)"/>' +
-      '<rect x="14" y="28.6" width="12.5" height="9" rx="3.6" fill="url(#' + g + 'vz)"/><path d="M15.6 31 Q16.4 29.6 19 29.4" fill="none" stroke="#FFFFFF" stroke-width=".8" stroke-linecap="round" opacity=".85"/>' +
-      '<path d="M28 41 L35 35" stroke="url(#' + g + 'y)" stroke-width="4.4" stroke-linecap="round"/><circle cx="35.5" cy="34.5" r="2" fill="#1E3A14"/><path d="M35.5 34 L38.5 25.5" stroke="#C9CED6" stroke-width="1" stroke-linecap="round"/>' +
-      '<rect x="22" y="44" width="5" height="3" rx=".6" fill="#F4F4F2"/><rect x="22.8" y="45" width="3.4" height=".9" fill="#D7262E"/>';
+    /* rain falling through the middle, and splashes on the floor */
+    for(let i = 0; i < 30; i++){ const x = 6 + rnd() * 148, y = 12 + rnd() * 40, l = 2.4 + rnd() * 2.6; if(inNum(x, y + l / 2, 3)) continue;
+      body += '<path d="M' + F(x) + ' ' + F(y) + ' l' + F(-.35) + ' ' + F(l) + '" stroke="#CFEFFF" stroke-width=".5" stroke-linecap="round" opacity="' + F(.35 + rnd() * .45) + '"/>'; }
+    for(let i = 0; i < 8; i++){ const x = 14 + rnd() * 132; body += '<path d="M' + F(x - 1.6) + ' 58.6 Q' + F(x) + ' 56.4 ' + F(x + 1.6) + ' 58.6" fill="none" stroke="#DFF6FF" stroke-width=".45" opacity=".6"/>'; }
   } else if(id === "bubbles"){
-    /* (384) the Thermal Camera's display at its peak: cold indigo and scan lines, the reticle's
-       corners locked round the 100% in the middle in the palette's halo, heat rolling up off it,
-       the scale pegged and the readout at 1000 */
-    defs += '<radialGradient id="' + g + 'c" cx="50%" cy="42%" r="78%"><stop offset="0" stop-color="#2E1264"/><stop offset=".62" stop-color="#170838"/><stop offset="1" stop-color="#070314"/></radialGradient>' +
-      ifxRad(g + "h", 80, 31, 50, .46, [[0, "#F0562A", .62], [.32, "#C8286A", .46], [.62, "#7A1890", .26], [1, "#3A0E6A", 0]]) +
-      ifxRad(g + "p", 0, 20, 7, 2.4, [[0, "#FFB23A", .62], [.45, "#D8306A", .34], [1, "#7A1890", 0]]) + ifxLin(g + "i", 0, 1, IFX_IRON);
+    /* THERMAL CAMERA: the screen as the camera sees it at the lock - cold indigo, the 100% white-hot in the middle of its own
+       heat, the heat rolling up off it, two cool spots, faint scan lines and the scale at the edge pegged at the top */
+    defs += '<radialGradient id="' + g + 'c" cx="50%" cy="46%" r="80%"><stop offset="0" stop-color="#2A1060"/><stop offset=".6" stop-color="#140733"/><stop offset="1" stop-color="#070314"/></radialGradient>' +
+      ifxRad(g + "h", 80, 31, 46, .5, [[0, "#FFB02E", .7], [.22, "#F0562A", .55], [.48, "#C8286A", .36], [.75, "#6A1690", .18], [1, "#3A0E6A", 0]]) +
+      ifxRad(g + "p", 0, 20, 6, 2.6, [[0, "#FFB23A", .55], [.5, "#D8306A", .3], [1, "#7A1890", 0]]) +
+      ifxRad(g + "k", 0, 0, 10, .7, [[0, "#3C5AE0", .45], [1, "#2A1A80", 0]]) + ifxLin(g + "i", 0, 1, IFX_IRON);
     body += '<rect width="160" height="60" fill="url(#' + g + 'c)"/>';
-    for(let y = 1; y < 60; y += 2.6) body += '<rect x="0" y="' + bnF(y) + '" width="160" height=".5" fill="#C8AAFF" opacity=".07"/>';
+    for(let y = 1.2; y < 60; y += 2.4) body += '<rect x="0" y="' + F(y) + '" width="160" height=".4" fill="#C8AAFF" opacity=".05"/>';
+    body += '<g transform="translate(26 44)"><ellipse rx="18" ry="9" fill="url(#' + g + 'k)"/></g><g transform="translate(130 14)"><ellipse rx="16" ry="8" fill="url(#' + g + 'k)"/></g>';
     body += '<rect width="160" height="60" fill="url(#' + g + 'h)"/>';
-    [[64, 1], [96, -1], [80, 0]].forEach(([x, s], i) => { body += '<g transform="translate(' + x + ' ' + (i === 2 ? -2 : 0) + ')"><path d="M0 22 C-6 18 -5 10 -2 4 C0 0 -3 -4 0 -8 C4 -2 6 4 3 10 C1 15 5 18 0 22 Z" fill="url(#' + g + 'p)" opacity="' + (i === 2 ? .8 : .6) + '" transform="scale(' + (s || 1) + ' 1)"/></g>'; });
-    const L = (x, y, sx, sy, a, w) => '<path d="M' + x + ' ' + (y + sy * a) + ' L' + x + ' ' + y + ' L' + (x + sx * a) + ' ' + y + '" fill="none" stroke="#FFFFFF" stroke-width="' + w + '" stroke-linecap="square"/>';
-    body += '<g opacity=".95">' + L(46, 13, 1, 1, 6, 1.4) + L(114, 13, -1, 1, 6, 1.4) + L(114, 47, -1, -1, 6, 1.4) + L(46, 47, 1, -1, 6, 1.4) + '</g>' +
-      '<g opacity=".75">' + L(4, 4, 1, 1, 7, 1) + L(156, 4, -1, 1, 7, 1) + L(156, 56, -1, -1, 7, 1) + L(4, 56, 1, -1, 7, 1) + '</g>' +
-      '<rect x="146.5" y="17" width="4" height="32" rx="1.2" fill="url(#' + g + 'i)" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".5"/><path d="M152.2 17.4 L155.4 15.4 L155.4 19.4 Z" fill="#FFFFFF"/>' +
-      '<text x="9" y="13" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="5" letter-spacing=".9" fill="#FFFFFF" opacity=".85">THERMAL</text>' +
-      '<rect x="8" y="45.5" width="27" height="9" rx="2" fill="#080416" fill-opacity=".7" stroke="#FFFFFF" stroke-opacity=".5" stroke-width=".4"/>' +
-      '<text x="21.5" y="52.6" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="6.4" fill="#FFFFFF">1000°F</text>' +
-      '<rect x="37" y="46.6" width="14" height="6.8" rx="1.8" fill="#FFF2C0"/><text x="44" y="51.8" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="4.6" letter-spacing=".4" fill="#8A0E2A">MAX</text>';
+    [[66, 1, .55], [94, -1, .55], [80, 1, .75], [73, -1, .4], [88, 1, .4]].forEach(([x, sx, o], i) => {
+      body += '<g transform="translate(' + x + ' ' + (i === 2 ? -3 : i > 2 ? 2 : 0) + ') scale(' + (sx * (i > 2 ? .7 : 1)) + ' 1)"><path d="M0 20 C-6 16 -5 9 -2 4 C0 0 -3 -4 0 -8 C4 -2 6 4 3 10 C1 14 5 17 0 20 Z" fill="url(#' + g + 'p)" opacity="' + o + '"/></g>'; });
+    /* the scale, thin, at the right edge, and its pointer at the top */
+    body += '<rect x="150" y="12" width="2.6" height="36" rx="1.3" fill="url(#' + g + 'i)" opacity=".9"/><path d="M154 12.6 L156.6 11 L156.6 14.2 Z" fill="#FFFFFF" opacity=".9"/>';
+  } else if(id === "ufo"){
+    /* HAZMAT: the decon wash - the spill's green haze along the floor and running down from the top edge, the stream of foam
+       arcing in from the left and landing in suds on the right, the first clean glints, the alert's amber still in the top corners */
+    rg("v", [[0, "#8EE04A", .5], [1, "#3E9E2C", 0]]);
+    rg("am", [[0, "#FFB21A", .3], [1, "#FFB21A", 0]]);
+    rg("lx", [[0, "#B4F03A", .22], [1, "#B4F03A", 0]]);
+    defs += ifxLin(g + "oz", 0, 1, [[0, "#C8F55A", .9], [1, "#7ED83A", .2]]) + ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .2], [.25, "#F4FBFF", .9], [1, "#E8F6FF", .75]]);
+    body += glow(0, 0, 34, 20, "am") + glow(160, 0, 34, 20, "am") + glow(80, 30, 52, 22, "lx");
+    [[10, 58, 22], [40, 60, 20], [72, 61, 22], [104, 60, 20], [138, 58, 24]].forEach(([x, y, r]) => { body += glow(x, y, r, r * .55, "v"); });
+    /* the ooze running down from the top edge */
+    [[34, 13], [118, 9], [132, 15]].forEach(([x, l]) => { body += '<path d="M' + (x - 1.8) + ' 0 L' + (x + 1.8) + ' 0 L' + (x + 1) + ' ' + l + ' Q' + x + ' ' + (l + 2.6) + ' ' + (x - 1) + ' ' + l + ' Z" fill="url(#' + g + 'oz)"/>' +
+      '<circle cx="' + x + '" cy="' + (l + 3.6) + '" r="1" fill="#B4F03A" opacity=".75"/>'; });
+    /* the stream: up from the bottom-left corner over the floor and down onto the right, a white core in a pale body */
+    body += '<path d="M-2 52 Q46 34 128 50" fill="none" stroke="url(#' + g + 'jt)" stroke-width="3.4" stroke-linecap="round" opacity=".55"/>' +
+      '<path d="M-2 52 Q46 34 128 50" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".95"/>';
+    /* suds where it lands, and a few carried in it: a rim and a highlight each */
+    const sud = (x, y, r) => '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="#F4FFF4" fill-opacity=".14" stroke="#FFFFFF" stroke-opacity=".8" stroke-width="' + F(Math.min(.5, .2 + r * .12)) + '"/>' +
+      (r > 1.1 ? '<circle cx="' + F(x - r * .36) + '" cy="' + F(y - r * .38) + '" r="' + F(r * .24) + '" fill="#FFFFFF" opacity=".85"/>' : "");
+    [[126, 50, 3], [131, 47, 2.2], [134, 52, 2.6], [121, 53, 2], [138, 49, 1.6], [129, 55, 1.8], [142, 53, 1.4], [117, 49, 1.3], [30, 44, 1.2], [56, 40, 1], [86, 42.4, .9]]
+      .forEach(([x, y, r]) => { body += sud(x, y, r); });
+    /* the first glints on the clean side */
+    const gl = (x, y, r) => '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + ' Z" fill="#F2FFD0"/>';
+    body += gl(114, 22, 3) + gl(46, 18, 2.2) + gl(140, 34, 1.8);
   }
   return { defs, body };
 }
@@ -123303,7 +123433,8 @@ function hfxCloneNum(t, pct){
 function hfxFadeOut(el){
   if(!el || el.classList.contains("hfx-out")) return;
   el.classList.add("hfx-out");
-  setTimeout(() => el.remove(), 650);
+  /* .hfx-fast (384 r6, a tap skipping the effect): .18s */
+  setTimeout(() => el.remove(), el.classList.contains("hfx-fast") ? 200 : 650);
 }
 /* Plays effect `id`. opts: palette, box (the 100% card, or a stage),
    pct (the number inside it), boxOnly (no screen part), mini (a small
@@ -123358,16 +123489,25 @@ function playHundoFx(id, opts){
      plays on a results screen, from the moment it starts - hfxCharReact */
   const rxAv = (!opts.boxOnly && !opts.frame && !opts.preview) ? hfxResultsAvatar(opts.box) : null;
   if(id === "confetti" && !opts.boxOnly && !opts.frame){
-    playSound("hundo.confetti");
-    celebrate(opts.palette, opts.pct || opts.box);
+    const snd0 = playSound("hundo.confetti");
+    const lay0 = celebrate(opts.palette, opts.pct || opts.box);
     /* (384) and its half in the box: the burst at the number, the number lit */
-    try{ hfxConfettiGrade(opts.box, opts.pct, opts.palette); }catch(e){}
-    /* the one dim (build 326), and the box lifted over it and the
-       stardust, so the number is never dimmed */
-    hfxDim("confetti", null);
-    if(opts.box){ const bx0 = opts.box; bx0.classList.add("hfx-over"); setTimeout(() => bx0.classList.remove("hfx-over"), hfxDimEnd("confetti")); }
+    let bxc = null;
+    try{ bxc = hfxConfettiGrade(opts.box, opts.pct, opts.palette); }catch(e){}
+    /* (384 r6) NO DIM ANY MORE ("Don't do the darkened thing any"); the box is still lifted over the stardust, so the
+       nova goes off behind the number and never over it */
+    const bx0 = opts.box;
+    if(bx0) bx0.classList.add("hfx-over");
+    const t0 = setTimeout(() => { if(bx0) bx0.classList.remove("hfx-over"); }, HUNDO_FX_TAIL_AT.confetti);
     if(rxAv){ try{ hfxCharReact(rxAv, "confetti", { palette: opts.palette }); }catch(e){} }
-    return null;
+    /* (384 r6) a handle like every other effect's, so a tap can skip it: the stardust and the box's half off at once */
+    const h0 = { id, screen: lay0 || null, box: bxc, total: 3000, startedAt: performance.now(), done: false };
+    h0.stop = fast => { if(h0.done) return; h0.done = true; clearTimeout(t0);
+      [lay0, bxc].forEach(l => { if(l && l.isConnected){ if(fast){ l.classList.add("hfx-fast"); } hfxFadeOut(l); } });
+      if(bx0) setTimeout(() => bx0.classList.remove("hfx-over"), fast ? 200 : 650);
+      if(snd0 && snd0.stop) try{ snd0.stop(fast ? .12 : .5); }catch(e){} };
+    setTimeout(() => { h0.done = true; }, 3000);
+    return h0;
   }
   if(id === "confetti" && opts.frame) opts = Object.assign({}, opts, { boxOnly: true, frame: null });
   const c = hfxContext(opts);
@@ -123427,15 +123567,11 @@ function playHundoFx(id, opts){
     }
   }
   if(bx) opts.box.appendChild(bx);
-  /* THE ONE DIM (build 326): every effect that plays across a screen puts
-     the same dim up under its own layer, and the box is lifted over it
-     (.hfx-lift) for as long as it is up - Underwater's and Bubbles' too,
-     which had none. A Customize showcase (noDim) plays without one. */
-  let dim = null;
-  if(scr && !opts.noDim && !opts.boxOnly){
-    dim = hfxDim(id, layerParent && layerParent.classList && layerParent.classList.contains("hfx-mock") ? layerParent : null);
-    if(opts.box){ const bx1 = opts.box; bx1.classList.add("hfx-lift"); setTimeout(() => bx1.classList.remove("hfx-lift"), hfxDimEnd(id)); }
-  }
+  /* (384 r6) NO DIM. Build 326 put one night-blue dim under every effect that played across a screen (hfxDim, still
+     defined for anything that asks for it); Madison: "the transition is bad because it's like grade, xp, dark, hundo
+     effect. Don't do the darkened thing any". The effect plays on the screen as it is - the box is centred on its own
+     by then (showRunRewards), so nothing else is there to be dimmed. */
+  const dim = null;
   /* The UFO lands ON the box, the black hole opens BEHIND it and the
      fireworks' shells leave from behind its top edge: the box is lifted
      over the screen layer while they play, so the number stays clear of
@@ -123457,7 +123593,10 @@ function playHundoFx(id, opts){
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over", "hfx-lift"); };
   const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(dim) dim.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); if(dim && dim.isConnected) hfxFadeOut(dim); undo(true); setTimeout(lifted, 650); if(sndFx) sndFx.stop(.5); };
+  /* `fast` (384 r6): a tap skipping the results' 100% - the layers go in .18s, not .6s, and the score with them */
+  handle.stop = fast => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect();
+    if(fast){ c.fast = true; if(scr) scr.classList.add("hfx-fast"); if(bx) bx.classList.add("hfx-fast"); }
+    hfxFadeOut(scr); hfxFadeOut(bx); if(dim && dim.isConnected) hfxFadeOut(dim); undo(true); setTimeout(lifted, fast ? 200 : 650); if(sndFx) sndFx.stop(fast ? .12 : .5); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -127881,7 +128020,7 @@ const RS_UNLOCK_GAP_MS = 1900;
    read as a hand-over and not as the XP box's own ending (build 321: "the
    hundo effect is coming in after the xp box is finished? ... do what's
    best" - after, so the character on the XP box is there to react). */
-const RS_FX_AFTER_XP_MS = 900;
+const RS_FX_AFTER_XP_MS = 900;   /* (384 r6) unused: the effect plays on the centred grade now, before the XP box (RS_FX_ON_GRADE_MS) */
 /* THE GRADE'S COLOUR AS IT CLIMBS (build 321): red, and only ever red into
    green - "the color goes from red to orange? And if the grade is a fail
    it shoots from orange to red and it's just weird. It needs to be just
@@ -128525,13 +128664,14 @@ function showRunRewards(run, hooks, opts){
     requestAnimationFrame(tick);
   };
   const celebrateGrade = () => {
-    if(run.retake) return;   /* a retake gets nothing cool */
+    if(run.retake) return null;   /* a retake gets nothing cool */
     if(run.isPerfect){
       const palette = run.leveledUpTo ? LEVEL_CONFETTI[run.leveledUpTo] : null;
       /* the hundo effect picked in Customize (build 313); Confetti is
          celebrate() itself, exactly as before */
-      playHundoFx(hundoFxInUse(), { palette, box: grade, pct: grade.querySelector(".rs-pct") });
+      return playHundoFx(hundoFxInUse(), { palette, box: grade, pct: grade.querySelector(".rs-pct") });
     }
+    return null;
   };
 
   /* ---- THE GRADE, COUNTED IN (build 320) ----
@@ -128771,7 +128911,7 @@ function showRunRewards(run, hooks, opts){
       playSound(gradeSoundFor(run.pct));
     }
     if(!countIt) setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
-    /* (a 100's effect is not played here: it waits for the XP box, below) */
+    /* (a 100's effect is not played here: it is the reveal's next step, on the centred card - 384 r6) */
   };
 
   if(quiet){
@@ -128839,21 +128979,48 @@ function showRunRewards(run, hooks, opts){
   /* What a tap finishes besides the panel's own animations: the grade's
      count, the XP bar's fill and its number (build 320). */
   let moving = null;
-  seq.add(120, instant => rsLand(head, instant), false, "grade");
+  /* ---- (384 r6) THE GRADE ON ITS OWN, CENTRED, THEN UP INTO ITS PLACE ----
+     Madison: "The hundo effect should probably come up before the xp right cause it would just be better? So on the result
+     screen, what if the grade box was centered, then slid up or moved up when it was done, then the xp box, and then unlock
+     and whatever else." and "the transition is bad because it's like grade, xp, dark, hundo effect. Don't do the darkened
+     thing any, ensure the tap to skip thing is in place." So: the grade card comes down alone in the middle of the screen
+     (rsGradeLift: a `translate` offset, which composes with the landing's own transform), counts in there, and on a 100 its
+     hundo effect plays on it there - no dim. When the effect is over (its tail, HUNDO_FX_TAIL_AT) - or a beat after the
+     landing, for any other grade - it moves up into its place at the top of the stack (one transform, FLIP), the header
+     comes in over it, and then the XP card, the unlocks and the rest in their old order. A "Tap to skip" line sits at the
+     foot of the screen through the grade and the XP; a tap (or Enter / Space) skips the effect and settles the grade at
+     once, and then each box as before (build 380's rule). Reduce motion: none of this, everything in its place (quiet). */
+  const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
+  const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
+  const lift = rsGradeLift(grade);
+  const hint = rsSkipHint(panel);
+  let fxHandle = null;
+  const riseGrade = instant => {
+    /* a tap: the effect off at once. Its own time (the tail): it is left to fade out by itself as the grade goes up */
+    if(instant && fxHandle && !fxHandle.done){ try{ fxHandle.stop(true); }catch(e){} }
+    fxHandle = null;
+    lift.rise(instant);
+    rsLand(head, instant);
+  };
+  seq.add(RS_GRADE_IN_MS, instant => { lift.centre(); hint.show(); rsLand(grade, instant); if(!countIt) landGrade(instant); }, false, "grade");
   if(countIt){
-    seq.add(380, instant => rsLand(grade, instant), false, "grade");
     /* a beat on the empty card, then the bars */
     seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } }, false, "grade");
     seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); }, false, "grade");
-  } else {
-    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); }, false, "grade");
   }
-  /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in ---- */
-  const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
-  /* how long a 100's effect has the screen before anything else may come:
-     its tail (HUNDO_FX_TAIL_AT, where its last pieces start fading) */
-  const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
-  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant), false, "xp");
+  if(fxId){
+    /* the effect, on the card where it is, as the effect's colours come in; skipped before it starts, the card simply
+       takes its colours (as the still path does) */
+    seq.add(RS_FX_ON_GRADE_MS, instant => {
+      if(instant){ try{ hfxTintGrade(grade, fxId); }catch(e){} return; }
+      fxHandle = celebrateGrade();
+    }, false, "gradefx");
+    seq.add(fxTail, instant => riseGrade(instant), false, "gradefx");
+  } else {
+    seq.add(RS_GRADE_HOLD_MS, instant => riseGrade(instant), false, "gradefx");
+  }
+  /* ---- HOW IT ADDS UP: THE XP BOX, once the grade is in its place ---- */
+  seq.add(RS_GRADE_RISE_MS + 160, instant => rsLand(xp, instant), false, "xp");
   lineEls.forEach(l => seq.add(380, instant => { rsLand(l, instant); if(!instant) sndXpLine(l); }, false, "xp"));
   seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); }, false, "xp");
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
@@ -128869,15 +129036,8 @@ function showRunRewards(run, hooks, opts){
     moving = () => { if(levelBlock.setFinal) levelBlock.setFinal(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); };
     levelBlock.runFill();
   }, false, "xp");
-  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); }, false, "xp");
-  /* ---- A 100's HUNDO EFFECT, ONCE BOTH BARS HAVE RUN (build 320) ----
-     "the loading bar is going while the Hundo effect happens. Let the bar
-     run and then the effect." The grade's bars are home and its number
-     has landed; the XP box has added up and its bar has filled; THEN the
-     effect - with the results character on the XP box on screen to react
-     to it (hfxCharReact, b320b), and nothing landing under it until its
-     tail. A tap brings it on at once, as a tap brings any card. */
-  if(fxId) seq.add(RS_FX_AFTER_XP_MS, () => celebrateGrade());
+  seq.add(levelBlock.fillMs || 2600, () => { moving = null; hint.hide(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); }, false, "xp");
+  /* (384 r6) the hundo effect is no longer here, after the XP box (build 320 to 384): it plays on the grade, above */
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -128895,7 +129055,8 @@ function showRunRewards(run, hooks, opts){
        its rows one at a time. */
     let first = true, afterScene = false;
     /* the first waits out a 100's effect (its tail) as well as the pause */
-    const nextGap = () => { const g = first ? Math.max(RS_UNLOCK_GAP_MS, fxTail + 400) : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
+    /* (384 r6) the effect has been and gone before the XP box, so the first only waits its beat */
+    const nextGap = () => { const g = first ? RS_UNLOCK_GAP_MS : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
     let caseDone = false;
     const bannerIdx = unlockItems.filter(it => it.kind !== "badge");
     const onRow = {};
@@ -128931,7 +129092,7 @@ function showRunRewards(run, hooks, opts){
     });
     /* The box, once nothing is left to play. A scene's bridge (its light,
        left up for a pop-up that is not coming) goes as the box lands. */
-    seq.add(first ? Math.max(1200, fxTail) : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
+    seq.add(first ? 1200 : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
     unlockRows.forEach((row, n) => seq.add(n ? 380 : 560, instant => {
       rsLand(row, instant);
       if(!instant) playSound(row.classList.contains("rs-unlock-badge") ? "res.found.badge" : row.classList.contains("rs-unlock-flare") ? "res.found.flare"
@@ -128940,8 +129101,8 @@ function showRunRewards(run, hooks, opts){
     }));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
-  if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsRise(actions, { instant }); });
-  seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
+  if(actions) seq.add(unlocked ? 650 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); hint.hide(); rsRise(actions, { instant }); });
+  seq.add(0, () => { resultsSeq = null; hint.hide(); if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
      "You can tap the screen by speeding up the box it's currently
@@ -128950,15 +129111,99 @@ function showRunRewards(run, hooks, opts){
      and brings the next card in straight away. It used to run every step
      up to the next banner at once. Cutscenes and unlock pop-ups hold the
      timeline and keep their own tap. */
-  panel.addEventListener("click", e => {
-    if(e.target.closest("button")) return;
+  const tapOn = () => {
     rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 700);
     if(resultsSeq !== seq || seq.isHeld()) return;
     if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
     rsFinishMoving(panel);
     seq.nextBox();
+  };
+  panel.addEventListener("click", e => {
+    if(e.target.closest("button")) return;
+    tapOn();
   });
+  /* (384 r6) A TAP ANYWHERE: the effect's layers take no pointer, so a tap beside the panel (an iPad's margins, the foot
+     of the screen under the hint) lands on the page itself - and Enter or Space does the same. Only while the reveal
+     runs and the results are up; never a tap on a control, a pop-up or a scene (they keep their own tap). */
+  const offTap = () => { document.removeEventListener("click", docTap, true); document.removeEventListener("keydown", keyTap, true); };
+  const docTap = e => {
+    if(!panel.isConnected || resultsSeq !== seq){ offTap(); return; }
+    const t = e.target;
+    if(!t || panel.contains(t) || (t.closest && t.closest("button, a, input, textarea, select, label, [role='button'], [role='dialog'], .rs-spot, .top"))) return;
+    tapOn();
+  };
+  const keyTap = e => {
+    if(!panel.isConnected || resultsSeq !== seq){ offTap(); return; }
+    if(e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    const a = document.activeElement;
+    if(a && a !== document.body && a.closest && a.closest("button, a, input, textarea, select, [contenteditable='true'], [role='button']")) return;
+    if(seq.isHeld()) return;
+    e.preventDefault();
+    tapOn();
+  };
+  document.addEventListener("click", docTap, true);
+  document.addEventListener("keydown", keyTap, true);
   seq.start();
+}
+
+/* ---- (384 r6) THE GRADE CENTRED, AND ITS WAY UP ----
+   centre(): the card offset (its `translate`, which composes with the landing's transform) so that its middle is the
+   middle of the screen; a card taller than the screen keeps its own place. rise(instant): from there to its place in the
+   stack in one move (a Web Animation on `translate`, so a tap finishing the panel's animations ends it where it rests). */
+const RS_GRADE_IN_MS = 260, RS_GRADE_HOLD_MS = 1100, RS_GRADE_RISE_MS = 640, RS_FX_ON_GRADE_MS = 650;
+function rsGradeLift(grade){
+  const L = { dy: 0, anim: null };
+  L.centre = () => {
+    if(resultsMotionOff() || !grade) return 0;
+    let y = 0, e = grade;
+    while(e){ y += e.offsetTop; e = e.offsetParent; }
+    const vh = window.innerHeight || document.documentElement.clientHeight || 800, h = grade.offsetHeight || 0;
+    const top = y - (window.scrollY || 0);
+    const dy = Math.round((vh - h) / 2 - top);
+    L.dy = (h > 0 && h < vh - 24 && dy > 0) ? dy : 0;
+    if(L.dy){ grade.style.translate = "0 " + L.dy + "px"; grade.classList.add("rs-centred"); }
+    return L.dy;
+  };
+  L.rise = instant => {
+    if(!grade) return;
+    const dy = L.dy; L.dy = 0;
+    grade.style.translate = "";
+    grade.classList.remove("rs-centred");
+    if(!dy || instant || resultsMotionOff()) return;
+    try{
+      L.anim = grade.animate([{ translate: "0 " + dy + "px" }, { translate: "0 0" }], { duration: RS_GRADE_RISE_MS, easing: "cubic-bezier(.3,.72,.18,1)" });
+      L.anim.id = "rs-grade-rise";
+    }catch(e){}
+  };
+  return L;
+}
+/* ---- (384 r6) "TAP TO SKIP" ----
+   A plain line at the foot of the screen while the grade and the XP box come in - the same words and face as the Virtual
+   Room's cutscene. On <body> (the panel shakes as the grade lands, and a fixed line inside it would shake with it), so it
+   takes itself off the moment the results leave the stage. It takes no pointer: a tap goes through it to the page. */
+function rsSkipHint(panel){
+  let el = null, mo = null;
+  const H = {
+    show(){
+      if(el || resultsMotionOff() || !panel.isConnected) return;
+      el = document.createElement("p");
+      el.className = "rs-skip";
+      el.setAttribute("data-skip-hint", "");
+      el.textContent = "Tap to skip";
+      document.body.appendChild(el);
+      requestAnimationFrame(() => { if(el) el.classList.add("is-on"); });
+      try{ mo = new MutationObserver(() => { if(!panel.isConnected) H.hide(true); }); mo.observe(stage, { childList: true }); }catch(e){ mo = null; }
+    },
+    hide(now){
+      if(mo){ mo.disconnect(); mo = null; }
+      const e = el; el = null;
+      if(!e) return;
+      if(now){ e.remove(); return; }
+      e.classList.remove("is-on");
+      setTimeout(() => e.remove(), 260);
+    }
+  };
+  return H;
 }
 
 /* One question on a review: your answer beside the right one. `gotIt`
