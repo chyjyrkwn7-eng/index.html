@@ -38535,14 +38535,41 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock){ top:.4rem; right:.4rem; width:1.15rem; height:1.15rem; background:rgba(8,10,14,.72); }
   html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock) svg{ width:.6rem; height:.6rem; }
 
-  /* the tile you have on: a white tick in a ring on every page, the character's own (.avatarchar-check) drawn the same on the others */
-  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected, .hfx-opt.selected, .swatch.on)::after{
-    content:""; position:absolute; width:1.1rem; height:1.1rem; border-radius:50%; z-index:6; pointer-events:none; box-sizing:border-box;
-    background:#FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4 6.7 11.3 12.4 5' fill='none' stroke='%230E1116' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / .66rem .66rem no-repeat;
-    box-shadow:0 0 0 2px rgba(255,255,255,.55), 0 2px 6px rgba(0,0,0,.45);
+  /* ---- nothing grows or lights on the one you have on ---- */
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option.selected{ transform:translateZ(0); }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option.selected::before{ opacity:0; }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option:not(.locked):is(.selected, .is-unglowing){ filter:none; }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option.selected:not(.locked)::after{ opacity:0; }
+  html[data-layout] body #stage .screen-customize .swatch.on{ border-color:var(--rule); box-shadow:none; }
+  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected .banner-opt-art, .hfx-opt.selected .hfx-opt-art){ box-shadow:none; }
+  /* a held character's name reads the same whether or not it is the one on (the mark says that); a locked one's is quieter */
+  html[data-layout] body #stage .screen-customize .avatarchar-cell .avatarchar-name:not(.is-locked),
+  html[data-layout] body #stage .screen-customize .avatarchar-cell.is-selected .avatarchar-name{ color:var(--ink); opacity:.92; }
+  /* an effect's tile is the results card's own colour - the box's colour - so inside a box it takes the banner tile's hairline */
+  html[data-layout] body #stage .screen-customize .cz-group .hfx-opt-art::after{
+    content:""; position:absolute; inset:0; z-index:5; border-radius:inherit; pointer-events:none;
+    box-shadow:inset 0 0 0 1px var(--clean-line, rgba(255,255,255,.1));
   }
-  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected, .hfx-opt.selected)::after{ top:-.4rem; right:-.4rem; }
-  html[data-layout] body #stage .screen-customize .swatch.on::after{ right:-.1rem; bottom:-.1rem; }
+
+  /* ---- THE ONE MARK ---- */
+  html[data-layout] body .pick-mark{
+    --pm:1.3rem;
+    position:absolute; z-index:6; box-sizing:border-box; width:var(--pm); height:var(--pm); margin:0; padding:0; border:0; border-radius:50%;
+    display:grid; place-items:center; pointer-events:none;
+    background:var(--accent, #FFFFFF); color:#0E1116;
+    box-shadow:0 0 0 2.5px var(--pick-cut, var(--paper));
+    opacity:0; transform:scale(.55); transition:opacity .18s ease, transform .3s cubic-bezier(.3,1.45,.5,1);
+  }
+  html[data-layout] body .pick-mark svg{ display:block; width:66%; height:66%; }
+  html[data-layout] body :is(.avatarchar-option.selected:not(.locked), .swatch.on, .banner-opt.selected, .hfx-opt.selected) .pick-mark{ opacity:1; transform:none; }
+  /* on a round tile (a character, a theme): centred on the circle, 45 degrees below its right-hand side */
+  html[data-layout] body :is(.avatarchar-option, .swatch) > .pick-mark{
+    left:calc(50% + 35.355% - var(--pm) / 2); top:calc(50% + 35.355% - var(--pm) / 2); right:auto; bottom:auto;
+  }
+  /* on a banner or an effect: the picture's top-right corner, where its padlock goes */
+  html[data-layout] body :is(.banner-opt-art, .hfx-opt-art) > .pick-mark{ top:.4rem; right:.4rem; left:auto; bottom:auto; }
+  @media (min-width:40rem){ html[data-layout] body .pick-mark{ --pm:1.45rem; } html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock){ width:1.3rem; height:1.3rem; } }
+  @media (prefers-reduced-motion:reduce){ html[data-layout] body .pick-mark{ transition:none; } }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -57878,14 +57905,23 @@ function pickerCharSVG(id){
 /* ...and the selection says itself: a crisp ring and a tick (build 314),
    besides the glow. The tick is a child of the option, shown only on the
    selected one. */
-function addPickCheck(opt){
+/* (384 r6) THE ONE MARK FOR WHAT YOU HAVE ON - every picker in the app (Customize's four pages, the sign-up character screen,
+   Nova's character question). Madison: "around the theme color is a ring like you selected it, and there's a checkmark? And
+   the box is lit? Seems like a lot" / "Those check marks for your selected thing as well. Could that be updated/better?"
+   One small solid badge in the accent colour, a crisp tick centred in it, a cut-out ring in the colour of whatever it sits on
+   so it stands off the art (.pick-mark in the CSS). It sits where a locked tile's padlock sits, so a tile's status always
+   reads in one place. No ring round the tile, no lit box, no glow, no growing. The element is on every pickable tile and
+   shows only on the one you have on, so it fades in where it lands. */
+function addPickMark(host, extraClass){
   const c = document.createElement("span");
-  c.className = "avatarchar-check";
+  c.className = "pick-mark" + (extraClass ? " " + extraClass : "");
   c.setAttribute("aria-hidden", "true");
-  c.innerHTML = '<svg viewBox="0 0 16 16"><path d="M3.6 8.4 L6.7 11.3 L12.4 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  opt.appendChild(c);
+  c.innerHTML = '<svg viewBox="0 0 16 16"><path d="M4 8.35 L6.85 11.1 L12 5.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  host.appendChild(c);
   return c;
 }
+/* a character's: the same mark, keeping the class the older gates and the sign-up screens know it by */
+function addPickCheck(opt){ return addPickMark(opt, "avatarchar-check"); }
 function buildCharSilhouette(id, as){
   const wrap = document.createElement("span");
   const k = CHAR_SIL_LOOKS.indexOf(as) >= 0 ? as : charCategory(id);
@@ -144548,7 +144584,7 @@ function buildCustomizeBannerSect(){
       lk.className = "banner-opt-lock";
       lk.appendChild(buildLockIcon());
       art.appendChild(lk);
-    }
+    } else addPickMark(art);
     const nm = document.createElement("span");
     nm.className = "banner-opt-name"; nm.textContent = name;
     b.append(art, nm);
@@ -144652,7 +144688,7 @@ function buildCustomizeThemeSect(){
       lockMark.setAttribute("aria-hidden", "true");
       lockMark.appendChild(buildLockIcon());
       b.appendChild(lockMark);
-    }
+    } else addPickMark(b);
     const clearNew = locked ? () => {} : attachNewDot(b, "themes", name);
     const openHeld = locked ? null : attachHoldDetail(b, () => { clearNew(); return name === "ink"
       ? { kind: "theme", id: "ink", kicker: "Theme", name: "Default theme", desc: "Yours from day one." }
@@ -144736,7 +144772,7 @@ function buildCustomizeFxSect(){
       lk.className = "hfx-opt-lock";
       lk.appendChild(buildLockIcon());
       art.appendChild(lk);
-    }
+    } else addPickMark(art);
     const nm = document.createElement("span");
     nm.className = "hfx-opt-name"; nm.textContent = d.name;
     const nd = document.createElement("span");
