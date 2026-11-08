@@ -60913,11 +60913,17 @@ function drawAvatarCharSVG(charId){
     }
     open("cx-body"); close();
     open("cx-head");
-    svg.appendChild(mk("path", {
-      d: "M7 31.4 L7 17 A13 13 0 0 1 33 17 L33 31.4 "
-       + "Q30.8 34.6 28.6 31.6 Q26.4 28.6 24.2 31.6 Q22 34.6 20 31.6 "
-       + "Q18 28.6 15.8 31.6 Q13.6 34.6 11.4 31.6 Q9.2 28.6 7 31.4 Z",
-      fill: bodyFill }));
+    /* (384 r2) The hem used to be six half-waves, down first on the right and UP last on the left, so the two ends of the
+       sheet did not match. Seven half-waves (down, up, down, up, down, up, down) of equal width are the same about the middle. */
+    let hem = "";
+    for(let i = 0; i < 7; i++){
+      const x1 = 33 - (i + 1) * 26 / 7, xm = 33 - (i + .5) * 26 / 7;
+      hem += " Q" + xm.toFixed(2) + " " + (i % 2 ? 28.8 : 34.4) + " " + x1.toFixed(2) + " " + (i === 6 ? 31.4 : 31.6);
+    }
+    const sheetD = "M7 31.4 L7 17 A13 13 0 0 1 33 17 L33 31.4" + hem.replace(/(\d+\.\d+) 31\.4$/, "$1 31.4") + " Z";
+    svg.appendChild(mk("path", { d: sheetD, fill: bodyFill }));
+    const sheetClip = uid + "-gclip";
+    { const cpg = mk("clipPath", { id: sheetClip }); cpg.appendChild(mk("path", { d: sheetD })); defs.appendChild(cpg); }
     /* The folds. Two soft darker bands rather than lines - a drawn line
        on a white sheet reads as an outline, a band reads as shadow. */
     /* (384 r6) They were two round-capped strokes 2.6 wide that ran from the shoulder to the hem, and read as grey pillars
@@ -60925,8 +60931,12 @@ function drawAvatarCharSVG(charId){
     { const sh = (id, x1, x2) => { const g = mk("linearGradient", { id: uid + id, gradientUnits: "userSpaceOnUse", x1, y1: 0, x2, y2: 0 });
         g.appendChild(mk("stop", { offset: "0%", "stop-color": "#5A566E", "stop-opacity": ".2" }));
         g.appendChild(mk("stop", { offset: "100%", "stop-color": "#5A566E", "stop-opacity": "0" })); defs.appendChild(g); return "url(#" + uid + id + ")"; };
-      svg.appendChild(mk("path", { d: "M7 18 L7 31.4 L10.6 31.6 Q9.4 24 10.4 18.4 Z", fill: sh("-gshl", 7, 10.8) }));
-      svg.appendChild(mk("path", { d: "M33 18 L33 31.4 L29.4 31.6 Q30.6 24 29.6 18.4 Z", fill: sh("-gshr", 33, 29.2) })); }
+      /* (384 r2) clipped to the sheet: the bands were plain quads that ended on a flat line at the hem and on a flat top at 18,
+         so they overshot the scallops and stopped short with a step. Now they run up into the dome and stop at the hem. */
+      const gsh = mk("g", { "clip-path": "url(#" + sheetClip + ")" });
+      gsh.appendChild(mk("path", { d: "M6.6 17 L6.6 34 L10.6 34 Q9.4 24 10.4 18.4 Q10.2 14 8 11 L6.6 11 Z", fill: sh("-gshl", 7, 10.8) }));
+      gsh.appendChild(mk("path", { d: "M33.4 17 L33.4 34 L29.4 34 Q30.6 24 29.6 18.4 Q29.8 14 32 11 L33.4 11 Z", fill: sh("-gshr", 33, 29.2) }));
+      svg.appendChild(gsh); }
     /* Arms: two small rounded stubs hanging at the sides, joined to the sheet (they were pointed flaps that read as horns, and
        then ears). */
     svg.appendChild(mk("path", { d: "M7.1 22.4 Q4.7 23 4.8 25.2 Q5 26.8 6.4 26.4 Q7.3 26 7.3 24.6 Z", fill: bodyFill }));
@@ -61264,10 +61274,13 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M5.9 40 Q6.6 32 10.4 29.4 Q11.2 27.6 14 26.4 L26 26.4 Q28.8 27.6 29.6 29.4 Q33.4 32 34.1 40 Z", fill: fill }));
     [[10.4, 35.6, .26], [14.8, 38.2, .2], [27.4, 34.4, .24], [30.6, 37.8, .2], [22.8, 36.6, .16]].forEach(([cx, cy, r]) =>
       svg.appendChild(mk("circle", { cx, cy, r, fill: "#CFE0F5", opacity: ".45" })));
-    svg.appendChild(mk("path", { d: "M10.6 26.4 Q11.2 28.2 10.4 29.4 Q7.4 32 6.6 37.6", fill: "none", stroke: "#9FB8DC", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".6" }));
-    svg.appendChild(mk("path", { d: "M29.4 26.4 Q28.8 28.2 29.6 29.4 Q32.6 32 33.4 37.6", fill: "none", stroke: "#7C93B8", "stroke-width": ".38", "stroke-linecap": "round", opacity: ".3" }));
+    svg.appendChild(mk("path", { d: "M11.1 26.7 Q11 28.4 10.4 29.4 Q7.4 32 6.6 37.6", fill: "none", stroke: "#9FB8DC", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".6" }));
+    svg.appendChild(mk("path", { d: "M28.9 26.7 Q29 28.4 29.6 29.4 Q32.6 32 33.4 37.6", fill: "none", stroke: "#7C93B8", "stroke-width": ".38", "stroke-linecap": "round", opacity: ".3" }));
     close();
     open("cx-head");
+    /* (384 r2) The shoulder rims below start where the HOOD's rims end AFTER the head is scaled (AVATAR_HEAD_SCALE.voidwalker, .945
+       about 20 31.5: the hood's foot (10.6, 26.4) lands at (11.1, 26.7)); they started at the unscaled point and the two strokes
+       overlapped in a kink. */
     /* the hood: rounded at the bottom, running down into the shoulders */
     const hood = "M20 8.4 Q29.6 8.8 30.2 20.6 Q30.4 25.8 27.6 30.2 Q24 32.2 20 32.2 Q16 32.2 12.4 30.2 Q9.6 25.8 9.8 20.6 Q10.4 8.8 20 8.4 Z";
     svg.appendChild(mk("path", { d: hood, fill: fill }));
@@ -61495,7 +61508,8 @@ function drawAvatarCharSVG(charId){
     close();
     close();
     open("cx-head");
-    svg.appendChild(mk("path", { d: "M11.2 14 Q10.2 24 11.8 30.4 L15 28.4 L14 20 Z M28.8 14 Q29.8 24 28.2 30.4 L25 28.4 L26 20 Z", fill: hair }));
+    /* (384 r2) the side locks start inside the cap of hair and leave it along its edge; they began as points beside the head */
+    svg.appendChild(mk("path", { d: "M13 11.8 Q10.6 13.8 10.4 21 Q10.2 26 11.8 30.4 L15 28.4 L14 20 Z M27 11.8 Q29.4 13.8 29.6 21 Q29.8 26 28.2 30.4 L25 28.4 L26 20 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M12.6 15.2 Q12.6 9.6 20 9.4 Q27.4 9.6 27.4 15.2 L27 21.4 Q26 26.4 20 27.6 Q14 26.4 13 21.4 Z", fill: skin }));
     svg.appendChild(mk("path", { d: "M12 16.6 Q11.6 9 20 8.6 Q28.4 9 28 16.6 Q26.4 12.4 22.6 12 Q24 13.4 23.8 14.6 Q20.8 11.8 16.6 12.4 Q14 13 12 16.6 Z", fill: hair }));
     open("cx-fx cx-fx-crown");
@@ -61566,7 +61580,9 @@ function drawAvatarCharSVG(charId){
     [[15, 32.8], [20, 34.4], [25, 32.8]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .8, fill: amy, stroke: "#FFF3C4", "stroke-width": ".22" })));
     close();
     open("cx-head");
-    svg.appendChild(mk("path", { d: "M11.4 14 Q10 23 12 30 L15.4 28 L14 18 Z M28.6 14 Q30 23 28 30 L24.6 28 L26 18 Z", fill: hairC }));
+    /* (384 r2) the locks start under the gold cap and come out along its corner; they began as points below it with a gap of
+       background between the cap, the lock and the face */
+    svg.appendChild(mk("path", { d: "M13.4 11.8 Q11.2 13.4 11.1 19 Q10 24 12 30 L15.4 28 L14 18 Z M26.6 11.8 Q28.8 13.4 28.9 19 Q30 24 28 30 L24.6 28 L26 18 Z", fill: hairC }));
     svg.appendChild(mk("path", { d: "M12.8 15.6 Q12.8 10 20 9.8 Q27.2 10 27.2 15.6 L26.8 21.4 Q25.8 26.2 20 27.4 Q14.2 26.2 13.2 21.4 Z", fill: skin }));
     svg.appendChild(mk("path", { d: "M11.6 14.4 Q12 8.4 20 7.4 Q28 8.4 28.4 14.4 Q24.6 11.6 20 11.6 Q15.4 11.6 11.6 14.4 Z", fill: gold }));
     svg.appendChild(mk("path", { d: "M20 11.6 L17.4 7.8 L20 2.4 L22.6 7.8 Z", fill: gold }));
@@ -61642,19 +61658,22 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M12.6 15.2 Q12.6 9.6 20 9.4 Q27.4 9.6 27.4 15.2 L27 21.4 Q26 26.4 20 27.6 Q14 26.4 13 21.4 Z", fill: skin }));
     /* cropped hair, swept back */
     svg.appendChild(mk("path", { d: "M12.2 17.4 Q11.2 9.6 20 8.8 Q28.8 9.6 27.8 17.4 Q27.2 13.4 24.4 12.6 Q22.4 13.4 20 12.8 Q17.6 13.4 15.6 12.6 Q12.8 13.4 12.2 17.4 Z", fill: hair }));
-    svg.appendChild(mk("path", { d: "M12.4 17.6 Q12.2 20.6 13 22.4 L13.6 18.4 Z M27.6 17.6 Q27.8 20.6 27 22.4 L26.4 18.4 Z", fill: hair }));
+    /* (384 r2) the sideburns start on the hair's own outer edge (12.2, 17.4) and carry it down, rather than starting 0.2 in and 0.2
+       lower with a slanted cut that read as a step */
+    svg.appendChild(mk("path", { d: "M12.2 17.4 Q12.4 20.6 13 22.4 Q13.7 20.2 13.5 18.6 Q13.2 17.6 12.2 17.4 Z M27.8 17.4 Q27.6 20.6 27 22.4 Q26.3 20.2 26.5 18.6 Q26.8 17.6 27.8 17.4 Z", fill: hair }));
     /* THE CROWN: a hammered bronze crown - a broad band and five points, the middle one tallest, a bead on every tip, rivets
        along the band and an ember set at its heart */
     open("cx-fx cx-fx-crown");
     svg.appendChild(mk("path", { d: "M12.4 13.4 L13.2 8.6 L15.4 11.4 L17.4 7.4 L19 10.4 L20 5.6 L21 10.4 L22.6 7.4 L24.6 11.4 L26.8 8.6 L27.6 13.4 Q20 11 12.4 13.4 Z",
       fill: bronze, stroke: "#FFD8A8", "stroke-width": ".25", "stroke-linejoin": "round" }));
     svg.appendChild(mk("path", { d: "M12.3 13.2 Q20 10.6 27.7 13.2 L27.5 14.6 Q20 12.1 12.5 14.6 Z", fill: plate, stroke: "#FFD8A8", "stroke-width": ".2" }));
-    /* a highlight down each point's left edge - hammered metal catching the light */
-    svg.appendChild(mk("path", { d: "M13.2 8.6 L13.7 11.6 M17.4 7.4 L17.8 10.6 M20 5.6 L20.2 10 M22.6 7.4 L22.9 10.4 M26.8 8.6 L26.9 11.4",
+    /* a ridge down the middle of each point, from under its bead towards the middle of its foot - hammered metal catching the
+       light. (384 r2) On each point's own axis, so the five are mirrored and none runs into an outline or past the band. */
+    svg.appendChild(mk("path", { d: "M13.3 9.4 L13.8 11.8 M17.4 8.2 L17.2 10.4 M20 6.5 L20 9.6 M22.6 8.2 L22.8 10.4 M26.7 9.4 L26.2 11.8",
       stroke: "#FFE9CC", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".75" }));
     [[13.2, 8.6, .42], [17.4, 7.4, .46], [20, 5.6, .55], [22.6, 7.4, .46], [26.8, 8.6, .42]].forEach(([x, y, r]) =>
       svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#FFE2B8", stroke: "#8A4A1C", "stroke-width": ".15" })));
-    [[14.6, 13.5], [17.2, 12.8], [22.8, 12.8], [25.4, 13.5]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .26, fill: "#FFE2B8", opacity: ".85" })));
+    [[14.6, 13.27], [17.2, 12.8], [22.8, 12.8], [25.4, 13.27]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .26, fill: "#FFE2B8", opacity: ".85" })));
     svg.appendChild(mk("circle", { cx: 20, cy: 12.6, r: .95, fill: ember, stroke: "#FFE2B8", "stroke-width": ".22" }));
     svg.appendChild(mk("circle", { cx: 19.7, cy: 12.3, r: .25, fill: "#FFFFFF", opacity: ".9" }));
     close();
@@ -61713,19 +61732,20 @@ function drawAvatarCharSVG(charId){
     close();
     open("cx-head");
     /* Long hair, straight and smooth - moonlight, not frost - falling
-       past the shoulders. */
-    svg.appendChild(mk("path", { d: "M11.4 14.4 Q9.4 24.6 10.8 32.4 L15.4 29.2 L14 19 Z M28.6 14.4 Q30.6 24.6 29.2 32.4 L24.6 29.2 L26 19 Z", fill: hair }));
+       past the shoulders. (384 r2) Each side lock starts inside the cap of hair (13, 12) and leaves it along the cap's own edge,
+       where it used to start as a point beside the head with a dark notch between it and the cap. */
+    svg.appendChild(mk("path", { d: "M13 12 Q10.4 13.6 10.2 20.4 Q9.8 26.6 10.8 32.4 L15.4 29.2 L14 19 Z M27 12 Q29.6 13.6 29.8 20.4 Q30.2 26.6 29.2 32.4 L24.6 29.2 L26 19 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M11.2 21 Q10.6 26.4 11.6 31 M28.8 21 Q29.4 26.4 28.4 31", fill: "none", stroke: "#8E9BB0", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".7" }));
     svg.appendChild(mk("path", { d: "M12.6 15.2 Q12.6 9.6 20 9.4 Q27.4 9.6 27.4 15.2 L27 21.4 Q26 26.4 20 27.6 Q14 26.4 13 21.4 Z", fill: skin }));
     svg.appendChild(mk("path", { d: "M12 17 Q11.4 9.2 20 8.8 Q28.6 9.2 28 17 Q27 12.8 21 11.8 L20 11.4 L19 11.8 Q13 12.8 12 17 Z", fill: hair }));
     /* The crown: a silver circlet, and standing up out of it a crescent
        moon with its horns to the sky and a star resting in it. */
     open("cx-fx cx-fx-crown");
-    svg.appendChild(mk("path", { d: "M12.6 12.6 Q20 10 27.4 12.6 L27.2 13.6 Q20 11.1 12.8 13.6 Z", fill: silver }));
+    svg.appendChild(mk("path", { d: "M12.6 12.6 Q20 10 27.4 12.6 L27.2 13.6 Q20 11.1 12.8 13.6 Z", fill: silver, stroke: "#8E9BB0", "stroke-width": ".2", "stroke-linejoin": "round" }));
     const crescent = lune(20, 6.7, 4.3, -Math.PI / 2, .62);
     svg.appendChild(mk("path", { d: crescent, fill: silver, stroke: "#FFFFFF", "stroke-width": ".3" }));
     svg.appendChild(mk("path", { d: "M16.6 8.6 Q17.8 10.3 20 10.6", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".9" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 11.2, r: .7, fill: "#F4F8FF", stroke: "#8E9BB0", "stroke-width": ".2" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 11.85, r: .7, fill: "#F4F8FF", stroke: "#8E9BB0", "stroke-width": ".2" }));
     close();
     open("cx-fx cx-fx-moonstar");
     svg.appendChild(sparkle(20, 6.5, 1.45, "#FFFFFF"));
@@ -61767,6 +61787,9 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-corona");
     svg.appendChild(pivot(20, 15.4, 12.3));
     for(let i = 0; i < 16; i++){
+      /* (384 r2) the five rays that point up through the crown (i 0, 1, 2, 14, 15) are the crown's own spikes now, drawn on the
+         same 22.5-degree lattice from the same centre (see below), so no ray stands behind a spike with a second, offset tip. */
+      if(i <= 2 || i >= 14) continue;
       const a = i * Math.PI / 8 - Math.PI / 2, long = i % 2 === 0;
       const tip = long ? 12.3 : 10.9, base = 8.6, w = long ? .17 : .14;
       const P = (r, t) => (20 + r * Math.cos(t)).toFixed(2) + " " + (15.4 + r * Math.sin(t)).toFixed(2);
@@ -61792,18 +61815,23 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M11.8 14 Q10.4 21.6 11.6 27.4 L15 26.4 L14 19 Z M28.2 14 Q29.6 21.6 28.4 27.4 L25 26.4 L26 19 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M12.6 15.2 Q12.6 9.6 20 9.4 Q27.4 9.6 27.4 15.2 L27 21.4 Q26 26.4 20 27.6 Q14 26.4 13 21.4 Z", fill: skin }));
     svg.appendChild(mk("path", { d: "M12.2 16.6 Q11.8 9.4 20 9 Q28.2 9.4 27.8 16.6 Q26.8 13.2 24 12.4 Q22.2 13.6 20 12.8 Q17.8 13.6 16 12.4 Q13.2 13.2 12.2 16.6 Z", fill: hair }));
-    /* The radiate crown: seven gold rays fanned up from a band, the
-       middle one tallest, and a sun disc set at the front. */
+    /* The radiate crown: five gold spikes fanned up from a band, the middle one tallest, and a sun disc set on the band.
+       (384 r2) Every spike points away from the corona's own centre (20, 15.4) on the corona's lattice (0, +-22.5, +-45
+       degrees) and is a little shorter than the ray it replaces, tallest in the middle and falling away evenly to both sides, so the crown's points and the sun's rays are one set; each stands
+       on the band's top edge, mirrored about x = 20, with its foot tucked under the band so no gap shows. The sun disc sits
+       on the band's own centre line. */
     open("cx-fx cx-fx-crown");
-    [[-48, 3.4], [-24, 4.6], [0, 6], [24, 4.6], [48, 3.4]].forEach(([deg, len]) => {
-      const t = deg * Math.PI / 180, bx = 20 + 7.2 * Math.sin(t), by = 18.2 - 7.2 * Math.cos(t);
-      const tx = 20 + (7.2 + len) * Math.sin(t), ty = 18.2 - (7.2 + len) * Math.cos(t);
-      const nx = Math.cos(t) * .85, ny = Math.sin(t) * .85;
-      const f = n => n.toFixed(2);
+    const bandTop = x => { const t = (x - 12.6) / 14.8; return 12.8 - 5.2 * t * (1 - t); };
+    [[0, 11.4, 1.1], [-22.5, 10.2, .95], [22.5, 10.2, .95], [-45, 9.6, .95], [45, 9.6, .95]].forEach(([deg, tipR, hw]) => {
+      const t = deg * Math.PI / 180, sx = Math.sin(t), cy = Math.cos(t);
+      let lo = 0, hi = 9;
+      for(let k = 0; k < 30; k++){ const r = (lo + hi) / 2; (15.4 - r * cy > bandTop(20 + r * sx)) ? lo = r : hi = r; }
+      const r0 = lo - .55, f = n => n.toFixed(2);
+      const bx = 20 + r0 * sx, by = 15.4 - r0 * cy, tx = 20 + tipR * sx, ty = 15.4 - tipR * cy, nx = cy * hw, ny = sx * hw;
       svg.appendChild(mk("path", { d: "M" + f(bx - nx) + " " + f(by - ny) + " L" + f(tx) + " " + f(ty) + " L" + f(bx + nx) + " " + f(by + ny) + " Z", fill: gold, stroke: "#9A6200", "stroke-width": ".25", "stroke-linejoin": "round" }));
     });
     svg.appendChild(mk("path", { d: "M12.6 12.8 Q20 10.2 27.4 12.8 L27.2 13.9 Q20 11.4 12.8 13.9 Z", fill: gold, stroke: "#8A5A00", "stroke-width": ".15" }));
-    svg.appendChild(mk("circle", { cx: 20, cy: 11.2, r: 1.25, fill: "#FFFBEA", stroke: "#F39A0A", "stroke-width": ".35" }));
+    svg.appendChild(mk("circle", { cx: 20, cy: 12.05, r: 1.25, fill: "#FFFBEA", stroke: "#F39A0A", "stroke-width": ".35" }));
     close();
     open("cx-eyes");
     [[16.8, 17.8], [23.2, 17.8]].forEach(([x, y]) => {
@@ -61896,11 +61924,12 @@ function drawAvatarCharSVG(charId){
     close();
     open("cx-head");
     /* Platinum-teal hair: close on one side of the face, blown out in
-       two streaming locks on the other. */
-    svg.appendChild(mk("path", { d: "M11.6 14.2 Q10.4 21.4 11.6 27.6 L15 26.4 L14 19 Z", fill: hair }));
+       two streaming locks on the other. (384 r2) Both side locks start inside the cap of hair and leave it along its own
+       edge (they began as points beside the head), and the two crown clouds are exact mirrors. */
+    svg.appendChild(mk("path", { d: "M13 12.2 Q10.6 14 10.8 21.4 Q10.8 24.8 11.6 27.6 L15 26.4 L14 19 Z", fill: hair }));
     /* (384 r6) the wind-blown side was one ragged outline that read as torn, and its tip ran into the bolt beside it: a body
        of hair down the cheek and two smooth locks streaming out of it, each ending in one clean point inside the bolts */
-    svg.appendChild(mk("path", { d: "M28.2 13.6 Q29.8 17 29.4 21 Q28.8 24.4 27.6 27.2 L25 26.2 L26 19 Z", fill: hair }));
+    svg.appendChild(mk("path", { d: "M27 12.2 Q29.6 14 29.4 21 Q28.8 24.4 27.6 27.2 L25 26.2 L26 19 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M28.9 16.6 Q31.4 17.2 32.2 20.4 Q30.4 19.4 28.8 20.4 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M28.6 21.8 Q31 22.6 31.6 26 Q29.8 24.6 28 25.6 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M29.4 17.8 Q30.8 18.2 31.3 19.6 M29 22.8 Q30.4 23.4 30.8 24.8", fill: "none", stroke: "#BFFBF1", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".8" }));
@@ -61918,10 +61947,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: crownBolt, fill: boltFill, stroke: deep, "stroke-width": ".24", "stroke-linejoin": "round" }));
     svg.appendChild(mk("path", { d: "M22.4 4.2 L18.1 9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".9" }));
     cloud([[14.2, 12.1, 1.25], [16.1, 11.2, 1.4]], .3);
-    cloud([[23.9, 11.1, 1.4], [25.9, 12, 1.25]], .3);
+    cloud([[23.9, 11.2, 1.4], [25.8, 12.1, 1.25]], .3);
     /* The clouds light up from inside when the lightning goes. */
     openHidden("cx-fx cx-fx-cloudflash");
-    [[14.2, 12.1, 1.25], [16.1, 11.2, 1.4], [23.9, 11.1, 1.4], [25.9, 12, 1.25]]
+    [[14.2, 12.1, 1.25], [16.1, 11.2, 1.4], [23.9, 11.2, 1.4], [25.8, 12.1, 1.25]]
       .forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#9FF6E8", opacity: ".6" })));
     close();
     close();
@@ -62507,8 +62536,10 @@ function drawAvatarCharSVG(charId){
       }
       return d + " Z";
     };
-    const mane = [[13, 27], [8.4, 22.4], [11.2, 21.4], [6.8, 15.4], [10.6, 14.8], [8.8, 8.2], [13, 10.4], [13.8, 4.2], [16.8, 8.8], [20, 3.4],
-                  [23.2, 8.8], [26.2, 4.2], [27, 10.4], [31.2, 8.2], [29.4, 14.8], [33.2, 15.4], [28.8, 21.4], [31.6, 22.4], [27, 27]];
+    /* (384 r2) the mane's two feet end inside the face (14.6 / 25.4, 26.4) and the first and last tongues leave from there; they
+       ended at (13, 27) and (27, 27), and the straight line closing the shape was a flat cut under the fire beside the chin */
+    const mane = [[15, 24.6], [8.4, 22.4], [11.2, 21.4], [6.8, 15.4], [10.6, 14.8], [8.8, 8.2], [13, 10.4], [13.8, 4.2], [16.8, 8.8], [20, 3.4],
+                  [23.2, 8.8], [26.2, 4.2], [27, 10.4], [31.2, 8.2], [29.4, 14.8], [33.2, 15.4], [28.8, 21.4], [31.6, 22.4], [25, 24.6]];
     const scale = (pts, k, cx, cy) => pts.map(([x, y]) => [+(cx + (x - cx) * k).toFixed(2), +(cy + (y - cy) * k).toFixed(2)]);
     open("cx-fx cx-fx-cinders cx-fx-cinders-back");
     [[7.2, 26.6, .42, "-.3s"], [33, 25.4, .36, "-1.1s"], [5.8, 12.6, .34, "-1.9s"], [34.4, 11.4, .4, "-.8s"], [10.4, 5.2, .3, "-1.5s"], [29.4, 4.6, .32, "-2.2s"]]
@@ -63154,7 +63185,7 @@ function drawAvatarCharSVG(charId){
 
     /* THE HAIR: one mass, scalloped round its outside, with a scalloped
        fringe low on the brow - the carved-curl look as a silhouette. */
-    svg.appendChild(mk("path", { d: "M12.6 15.2 Q11.2 13.2 12.4 11.6 Q11.8 9 14.2 8.2 Q15 5.8 17.6 6.1 Q19.6 4.2 22.2 5.9 Q24.9 5.6 25.8 8.1 Q28.3 8.9 27.6 11.6 Q28.8 13.2 27.4 15.2 Q26.8 13 25.4 12.6 Q24.8 11.2 23.2 11.5 Q22 10.4 20 10.9 Q18 10.4 16.8 11.5 Q15.2 11.2 14.6 12.6 Q13.2 13 12.6 15.2 Z",
+    svg.appendChild(mk("path", { d: "M12.7 16.4 Q11.2 13.6 12.4 11.6 Q11.8 9 14.2 8.2 Q15 5.8 17.6 6.1 Q19.6 4.2 22.2 5.9 Q24.9 5.6 25.8 8.1 Q28.3 8.9 27.6 11.6 Q28.8 13.6 27.3 16.4 Q26.6 13.4 25.4 12.6 Q24.8 11.2 23.2 11.5 Q22 10.4 20 10.9 Q18 10.4 16.8 11.5 Q15.2 11.2 14.6 12.6 Q13.4 13.4 12.7 16.4 Z",
                                  fill: stone2 }));
     [["M14.2 8.2 Q15.4 9.4 15.1 11.2"], ["M17.6 6.1 Q18.6 7.8 18.2 10.2"], ["M22.2 5.9 Q21.4 7.8 21.8 10.2"],
      ["M25.8 8.1 Q24.6 9.4 24.9 11.2"], ["M12.4 11.6 Q13.6 12.2 13.6 13.6"], ["M27.6 11.6 Q26.4 12.2 26.4 13.6"]]
@@ -63401,9 +63432,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M17.4 33 L20 38.6 L22.6 33", fill: "none", stroke: red, "stroke-width": ".35", opacity: ".6" }));
     close();
     open("cx-head");
-    /* The mane: spikes all round the mask, the ones at the top longest. */
+    /* The mane: spikes all round the mask, the ones at the top longest. (384 r2) The red lining on the two tall points at the
+       top was on the left one only; both have it now, mirrored. */
     svg.appendChild(mk("path", { d: "M9.4 23.4 L7 18.4 L10 18.6 L8.6 12.8 L12 14.2 L12.2 8.2 L15.6 11 L17.6 5.2 L20 9.2 L22.4 5.2 L24.4 11 L27.8 8.2 L28 14.2 L31.4 12.8 L30 18.6 L33 18.4 L30.6 23.4 Q29.6 28.4 20 29.4 Q10.4 28.4 9.4 23.4 Z", fill: mane, stroke: "#020203", "stroke-width": ".3", "stroke-linejoin": "round" }));
-    [["M17.6 5.6 L16.4 9.4", ""], ["M12.3 8.6 L12.9 12", ""], ["M27.7 8.6 L27.1 12", ""]].forEach(([d]) =>
+    [["M17.6 5.6 L16.4 9.4", ""], ["M22.4 5.6 L23.6 9.4", ""], ["M12.3 8.6 L12.9 12", ""], ["M27.7 8.6 L27.1 12", ""]].forEach(([d]) =>
       svg.appendChild(mk("path", { d, stroke: red, "stroke-width": ".35", "stroke-linecap": "round", opacity: ".55" })));
     /* The mask. */
     const mask = "M20 11.4 Q27.4 12 27.9 19.6 Q28.2 25.4 24.2 28.6 Q22.2 30.2 20 30.6 Q17.8 30.2 15.8 28.6 Q11.8 25.4 12.1 19.6 Q12.6 12 20 11.4 Z";
@@ -63550,10 +63582,17 @@ function drawAvatarCharSVG(charId){
     /* The hat: crown, band, then a brim wide enough to justify the
        shadow it is throwing. */
     open("cx-fx cx-fx-hat");
-    svg.appendChild(mk("path", { d: "M12.4 16.8 Q12.9 9.2 20 8.7 Q27.1 9.2 27.6 16.8 Z", fill: felt }));
-    svg.appendChild(mk("path", { d: "M12.9 13.6 Q20 12.1 27.1 13.6 L26.9 16 Q20 14.5 13.1 16 Z",
-                                 fill: "#101117" }));
-    svg.appendChild(mk("path", { d: "M25.4 13.2 L27 13.5 L26.9 15.4 L25.3 15 Z", fill: "#8D6F45" }));
+    /* (384 r2) The crown's feet were inside the head's width (a wedge of skin showed between crown and brim on both sides) and
+       the band stopped short of the crown's edge (felt showed past each end). The crown is a touch wider at the foot and
+       the band is cut to the crown's own outline. */
+    const crownD = "M11.7 17.4 Q12.3 9.2 20 8.7 Q27.7 9.2 28.3 17.4 Z";
+    const crownClip = uid + "-dtcrown";
+    { const cpc = mk("clipPath", { id: crownClip }); cpc.appendChild(mk("path", { d: crownD })); defs.appendChild(cpc); }
+    svg.appendChild(mk("path", { d: crownD, fill: felt }));
+    const bandG = mk("g", { "clip-path": "url(#" + crownClip + ")" });
+    bandG.appendChild(mk("path", { d: "M11 13.6 Q20 12.1 29 13.6 L29 16 Q20 14.5 11 16 Z", fill: "#101117" }));
+    bandG.appendChild(mk("path", { d: "M25.4 13.2 L27 13.5 L26.9 15.4 L25.3 15 Z", fill: "#8D6F45" }));
+    svg.appendChild(bandG);
     /* The brim, wider than the head at both ends - a brim that stops
        at the temples is a bowler. */
     svg.appendChild(mk("path", { d: "M7.2 17.4 Q20 13.6 32.8 17.4 Q20 20.2 7.2 17.4 Z", fill: felt }));
@@ -63752,10 +63791,11 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx: 20, cy: 21.6, r: 1.5, fill: "#E23B3B" }));
     svg.appendChild(catchlight(19.5, 21.1, .45));
     close();
-    /* THE HAT: three points, two-tone, each ending in a lit bell. */
+    /* THE HAT: three points, two-tone, each ending in a lit bell. (384 r2) The two side points are rooted under the brim's
+       ends (their feet were 2 units out from the brim and hung free), mirrored about x = 20. */
     open("cx-fx cx-fx-cl2hat");
-    svg.appendChild(mk("path", { d: "M11.6 15 Q9.2 10 5 11.6 Q8 12.6 9.4 16.4 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
-    svg.appendChild(mk("path", { d: "M28.4 15 Q30.8 10 35 11.6 Q32 12.6 30.6 16.4 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M12.6 14.6 Q9.2 10 5 11.6 Q7.2 13.8 11.4 16.3 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
+    svg.appendChild(mk("path", { d: "M27.4 14.6 Q30.8 10 35 11.6 Q32.8 13.8 28.6 16.3 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
     svg.appendChild(mk("path", { d: "M14 13.4 Q16 4.6 22.4 3.6 Q19.4 7.2 20.6 12.8 Z", fill: hatB, stroke: "#0A080E", "stroke-width": ".25" }));
     svg.appendChild(mk("path", { d: "M20.6 12.8 Q19.4 7.2 22.4 3.6 Q25.2 7.8 26 13.4 Z", fill: hatA, stroke: "#0A080E", "stroke-width": ".25" }));
     svg.appendChild(mk("path", { d: "M11.2 16.4 Q20 11.2 28.8 16.4 L28.4 14.6 Q20 9.6 11.6 14.6 Z", fill: "#15111C", stroke: violet, "stroke-width": ".3" }));
@@ -64031,9 +64071,10 @@ function drawAvatarCharSVG(charId){
     /* the hood itself, as the first draw had it, in the lighter cloth */
     svg.appendChild(mk("path", { d: SA_HOOD, fill: hoodCloth, stroke: "#03050C", "stroke-width": ".3" }));
     saStars(SA_HOOD, 30, 3, "#DFF7FF");
-    /* a seam down the peak, and the rim light along both outer edges */
+    /* a seam down the peak, and the rim light along both outer edges. (384 r2) The upper-left rim ran 1.4 units outside the hood's
+       own outline (it floated beside the hood); it lies on the edge now. */
     svg.appendChild(mk("path", { d: "M20 4.6 Q20.4 7.6 20 10.6", fill: "none", stroke: "#03050C", "stroke-width": ".4", opacity: ".6", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M11.2 9.8 Q14.4 4.8 20 3", fill: "none", stroke: neon, "stroke-width": ".45", opacity: ".7", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M12.2 10.6 Q15 6.2 19.8 4.9", fill: "none", stroke: neon, "stroke-width": ".45", opacity: ".7", "stroke-linecap": "round" }));
     svg.appendChild(mk("path", { d: "M28.4 10.8 Q31.2 17 29.6 27.4", fill: "none", stroke: neon, "stroke-width": ".35", opacity: ".45", "stroke-linecap": "round" }));
     /* the lining: a band of the cloth's turned edge round the face, which
        is what gives the hood a thickness and makes it read as a hood */
@@ -64620,7 +64661,7 @@ function drawAvatarCharSVG(charId){
        than the rim (29.5), so only one is ever on it */
     svg.appendChild(mk("path", { d: umRim, fill: "none", stroke: "#F5F3FF", "stroke-width": ".85", "stroke-linecap": "round",
       "stroke-dasharray": "4 60", opacity: "0", class: "cx-fx-umrim" }));
-    svg.appendChild(mk("path", { d: "M20.2 11.4 Q26 14 26.2 21.2", fill: "none", stroke: "#7C3AED", "stroke-width": ".5", opacity: ".7" }));
+    svg.appendChild(mk("path", { d: "M20.2 11.4 Q26 14 26.2 21.2", fill: "none", stroke: "#7C3AED", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
     /* The eyes: two narrow slants, a soft bloom behind each. */
     /* Angled down towards the nose - the scowl, the same rule the Dragon
        learned: that way round is menace, the other way is sadness. */
@@ -64885,8 +64926,11 @@ function drawAvatarCharSVG(charId){
     };
     ring(false);
     /* the collar it sits in */
-    svg.appendChild(mk("path", { d: "M12.4 30.4 Q12.2 26.8 14.2 25.2 Q20 28.4 25.8 25.2 Q27.8 26.8 27.6 30.4 Q20 32.6 12.4 30.4 Z", fill: "url(#" + uid + "-gnrock)" }));
-    svg.appendChild(mk("path", { d: "M14.2 25.2 Q20 28.4 25.8 25.2", fill: "none", stroke: "#FF8FC0", "stroke-width": ".4", opacity: ".7" }));
+    /* (384 r2) The collar's lit rim ran along a curve that was hidden behind the planet except for its two ends, which stood out
+       as two pink ticks beside the planet's lower edge. It now runs just under the planet (the planet bottoms at 27), a
+       continuous lip that the planet sits in, and the collar's top edge is the same curve. */
+    svg.appendChild(mk("path", { d: "M12.4 30.4 Q12 27.6 13.6 26.2 Q20 29.8 26.4 26.2 Q28 27.6 27.6 30.4 Q20 32.6 12.4 30.4 Z", fill: "url(#" + uid + "-gnrock)" }));
+    svg.appendChild(mk("path", { d: "M13.6 26.2 Q20 29.8 26.4 26.2", fill: "none", stroke: "#FF8FC0", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".7" }));
     /* the light of the core, leaking up round the planet's base */
     { const lg = uid + "-gnlk"; const rg = mk("radialGradient", { id: lg });
       rg.appendChild(mk("stop", { offset: "0%", "stop-color": "#FFC9A0", "stop-opacity": ".75" }));
