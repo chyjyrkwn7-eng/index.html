@@ -36727,3 +36727,36 @@ IFC_BANNER_LOOK's one name and tint, and the new FCB4 helper block (before IFC_B
 - NOT confirmable in Chromium: how the strips read on a phone at the size the covers are shown (looked at the 1050x348 strip and the 960x360 scene in Chromium); the frame rate of Inspection Team (641 elements),
   Grand Finale (635, six bl-fwk layers) and Ten in a Row (679) on an old iPhone; whether Madison reads Certificate of Merit's name as too long for a card (20 characters; Perfect Mark is the shorter alternative);
   the likeness of the hi-vis vest and torch to the academy's real kit.
+
+## Build 384, round 10 (r5-chars): the faces come back, each one its own (Fire Code and the academy)
+
+- WHAT WENT WRONG IN ROUND 4. Madison said "what's up with all these smiley faces on the characters.. fix that app wide". The lead read that as "no faces on objects or
+  cosmic bodies" and removed them (2dd6eca: Strobe, Toxic Spill, Nebula, Quasar, Eclipse in Fire Code, Genesis and Hive in the academy; cf37f83 the faceless chrome Sprinkler; f3d77d9 Pulsar's
+  face). His reply: "I never said don't give them faces revert their faces. I was just saying the smoke and eyes for a few looked like a copy paste. The sprinkler and fire alarm ones these older
+  ones are cooler, unlike the glowing eyes" (a screenshot of an older Customize, Plans Examiner and Flashbang crossed out). THE RULE THIS LEAVES: faces on objects and bodies are fine; what is
+  not fine is one treatment (glowing eyes, a smile, a halo) stamped on several characters. Never remove a character's face again on a one-line complaint: ask which ones.
+- REVERTS. 5319815 reverts 2dd6eca (the Fire Code Strobe keeps its original closing groups; the academy's Genesis and Hive are byte for byte c1d224b again, every one of the 27 academy drawings
+  hashes the same). 41cbf53 puts the OLDER Strobe and Sprinkler Head back: both are the drawings of 9416af1 (the build 384 review), found by rendering 9416af1 and f204932^ and matching the
+  screenshot (red alarm with FIRE on top, a dark visor with two white lamp eyes, a speaker grille down each side, the horn's two waves, a base plate; the white chrome robot with two blue eyes,
+  a smile of light, two arms to a notched crown and the red bulb seated in it). The Strobe has no beacon dome (f204932's) and the Sprinkler no water arcs; Sprinkler's kind is fcsprinkler2 and
+  its old seat (1.4) is back, the .8 art scale of round 4 gone. Ids, names, glows, challenges ('Place first in a Virtual Room 3 times', 'Play every mode 3 times') are as they were. The brass
+  sprinkler (df7faee, round 3) and the faceless chrome one (cf37f83) are gone. Toxic Spill is exactly c1d224b's again. Undercover and The Irons are untouched.
+- THE FOUR SECRET FLARES, each its own face and its own light (6b03a22). Nebula (voidwalker): two small round coals in the gas, not level, the left bigger and red-orange, the right smaller and
+  yellow, each with a halo of its colour, a wisp of smoke and a spark, NO mouth. Quasar (umbra): ONE eye on the axis (a violet lens wider than tall, a ring round it, a tall dark slit for a pupil,
+  a glint), no mouth. Pulsar (singularity): the round-4 redesign stays (dark star, two lighthouse beams, equator ring, polar caps, lamp on the rim) and it gets a narrow ice-white sensor slit across
+  its middle (about 11.6 by 1.1 units, 10:1), tick marks at its ends, in the same .cx-fx-fcpulse beat as the beams; no eyes, no smile. Eclipse (genesis): two crescents lit on their outer rims, the
+  tops leaning in 11 degrees, black inside, no mouth (the old almond eyes and smile are gone). The Pulsar BANNER is untouched and its star has no face: the slit is deliberately quiet and thin
+  so the two agree; if Madison wants the banner's star to carry the slit too that is a banner change (not made here).
+- THE GATE: tools/check-b384-r5-chars.py replaces check-b384-r4-chars (deleted; its hashes file is now check-b384-r5-chars.prev.json, c1d224b's). It reads a FACE SIGNATURE off the drawn SVG
+  (eye group and mouth group: eye count, the largest lit shape's kind from aspect and fill ratio, size, lamp hue, mouth) and asserts (1) faces exist (only The Irons, and the academy's Koi and Void
+  that never had one, have no mark; Undercover has no eye marks, shades, and a flat mouth); (2a) the fine signature (every eye and mouth shape, place and colour) differs between every two
+  characters of a class, (2b) the coarse one between every two non-human faces, (2c) the four flares and Strobe/Sprinkler differ in eye shape AND colour, (2d) no flare has a mouth and exactly two
+  of the four carry a pair of eyes; (3) each one's own face; (4) Strobe/Sprinkler are fcstrobe/fcsprinkler2; (5) Undercover, The Irons, Pulsar's beams, ring, caps; (6) whole drawings; (7) academy
+  byte for byte c1d224b, only the named Fire Code characters changed, flare and rank banners pinned (flare_*, *_rank, astral, celestial, zenith, galaxy: the banners round's seven are left out on
+  purpose). It FAILS on 7b65a06 (22 lines: faces missing) and on c1d224b (the flares' treatment, Strobe vs Sprinkler by shape, the named legs). check-b384-fcchars3 C and D now assert the older
+  Strobe (visor, two white pill lamps, eight grille slots, FIRE strokes, flash, two waves, no mounting plate) and the white robot (two blue eyes in the visor, a smile, arms to the crown, the bulb seated
+  at both ends); fcchars3 and r3-chars follow the sprinkler's kind; check-b384-ifcchars D drops the round 5 'must gain a part' limit (the older drawings keep every part and add none).
+- LOOKED AT: big (300 to 700 px) and 26 px; the Quasar's eye and the Pulsar's slit are the two that thin out at 26 px (the slit reads as a bar, the eye as a lens); the Nebula's embers and the
+  Eclipse's crescents read at 26 px. Contact sheet before/after in the scratchpad (h-r5-chars/sheet-r5.png).
+- NOT CONFIRMABLE here: the blink and the sleep state of the new faces on a device (closedEyes added for each: one arc for the Quasar and the Pulsar, two for the rest); whether Madison wants the
+  Pulsar's slit stronger or the banner to carry one.
