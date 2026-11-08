@@ -12358,7 +12358,7 @@
   .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.3rem; width:100%; aspect-ratio:4 / 5.8; padding:.6rem .55rem .55rem; box-sizing:border-box;
     border-radius:14px; overflow:hidden; clip-path:inset(0 round 14px); isolation:isolate; text-align:left; pointer-events:none;
     /* (384, r2) the results screen's own ground (the page's paper) and its solid cards: no wash, no border */
-    background:var(--paper, #0E1118); border:0; --rs-card:var(--clean-card, #232830); }
+    background:var(--paper, #0E1118); border:0 solid transparent; --rs-card:var(--clean-card, #232830); }
   .hfx-mock > .rs-head{ display:flex; flex-direction:column; gap:.08rem; margin:0; padding:.05rem .15rem; }
   .hfx-mk-title{ font-size:.7rem; font-weight:800; color:var(--ink); }
   .hfx-mk-sub{ font-size:.5rem; color:var(--soft); }
@@ -12368,7 +12368,7 @@
   .hfx-mk-fracsub{ font-size:.42rem; color:var(--soft); }
   .hfx-mk-unit{ margin:.25rem 0 0; padding-top:.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.5rem; font-weight:700; color:var(--ink); }
   .hfx-mk-kicker.is-sub{ margin-top:.18rem; margin-bottom:.12rem; }
-  .hfx-mock > .rs-card{ position:relative; border:0; border-radius:10px; background:var(--clean-card, #232830); padding:.4rem .5rem .45rem; }
+  .hfx-mock > .rs-card{ position:relative; border:0 solid transparent; border-radius:10px; background:var(--clean-card, #232830); padding:.4rem .5rem .45rem; }
   .hfx-mk-kicker{ margin:0 0 .2rem; font-size:.42rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
   .hfx-mk-line{ display:flex; justify-content:space-between; margin:0 0 .07rem; font-size:.5rem; color:var(--soft); }
   .hfx-mk-line b{ color:#8FB9FF; font-weight:800; }
@@ -12686,7 +12686,7 @@
   .hfx-stage{ position:relative; display:grid; place-items:center; width:100%; aspect-ratio:16 / 6; overflow:hidden;
     --hfx-r:12px; border-radius:12px; clip-path:inset(0 round 12px);
     /* (384, r2) the app's card: solid, no border, no shadow (it was a gold wash and a gold hairline) */
-    background:var(--clean-card, #232830); border:0; --hfx-lx:50%; }
+    background:var(--clean-card, #232830); border:0 solid transparent; --hfx-lx:50%; }
   /* the grade's own face and small raised % (build 315, gradePctMarkup) */
   .hfx-stage-pct{ display:block; font-family:var(--sans); font-weight:800; font-size:1.4rem; line-height:1; letter-spacing:-.045em; font-variant-numeric:lining-nums tabular-nums;
     color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.32); }

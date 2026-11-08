@@ -12688,7 +12688,7 @@ def check_b313_fx(br):
           out.screen = scr ? scr.querySelectorAll('*').length : 0;
           out.box = box ? box.querySelectorAll('*').length : 0;
           const fill = () => { const f = document.querySelector('.rs-screen .unit-breakdown-fill.is-gold'); return f ? getComputedStyle(f).backgroundImage : null; };
-          out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
+          out.border = ((q) => { const t = q.querySelector(':scope > .hfx-tint'); if(!t) return null; const bi = getComputedStyle(t).backgroundImage; let m = /color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/.exec(bi); if(m) return 'rgb(' + [1, 2, 3].map(i => Math.round(m[i] * 255)).join(', ') + ')'; m = /rgba?\\((\\d+), (\\d+), (\\d+)/.exec(bi); return m ? 'rgb(' + m[1] + ', ' + m[2] + ', ' + m[3] + ')' : null; })(g); out.fill = fill();
           if(fx === 'underwater'){
             await until(2600);
             const sea = document.querySelector('.hfx-uw-sea'), sr = sea && sea.getBoundingClientRect(), gr = g.getBoundingClientRect();
@@ -12727,13 +12727,13 @@ def check_b313_fx(br):
             out.dimMid = (d => d ? parseFloat(getComputedStyle(d).opacity) : null)(document.querySelector('.hfx-fw-dim') || document.querySelector('.hfx-dim'));
           }
           if(fx === 'ufo'){
-            out.beforeBeam = getComputedStyle(g).borderTopColor;
+            out.beforeBeam = g.style.getPropertyValue('--hfx-b').trim() + ' ' + (getComputedStyle(g.querySelector('.rs-pct')).backgroundImage.match(/rgb\\([^)]*\\)/) || [''])[0];
             /* landed: 4.1s-5.4s until build 317 round 4, 6.1s-7.4s since
                (it circles the screen first, and sweeps the box with its
                beam) - read from the page's own total so the next change
                of length moves this with it */
             await until(typeof HUNDO_FX_TOTAL === 'object' && HUNDO_FX_TOTAL.ufo > 9000 ? 6700 : 4700);
-            out.border = getComputedStyle(g).borderTopColor; out.fill = fill();
+            out.border = ((q) => { const t = q.querySelector(':scope > .hfx-tint'); if(!t) return null; const bi = getComputedStyle(t).backgroundImage; let m = /color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/.exec(bi); if(m) return 'rgb(' + [1, 2, 3].map(i => Math.round(m[i] * 255)).join(', ') + ')'; m = /rgba?\\((\\d+), (\\d+), (\\d+)/.exec(bi); return m ? 'rgb(' + m[1] + ', ' + m[2] + ', ' + m[3] + ')' : null; })(g); out.fill = fill();
             const b = document.querySelector('.hfx-saucer .hfx-ufo-bob'), br = b && b.getBoundingClientRect(), gr = g.getBoundingClientRect();
             out.landed = br ? { feet: Math.round(br.bottom - gr.top), cx: Math.round(br.left + br.width / 2 - (gr.left + gr.width / 2)) } : null;
           }
@@ -12788,7 +12788,7 @@ def check_b313_fx(br):
               anims: kids.reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation && a.playState !== 'finished').length, 0),
               av: av ? [av.classList.contains('char-hold'), av.classList.contains('char-gasp')] : null, stand: document.querySelectorAll('.rs-screen .cx-uw, .rs-screen .hfx-uw-breath, .rs-screen .hfx-uw-fling').length }; }
           out.after = document.querySelectorAll('.hfx-layer, .hfx-box.is-grade, .hfx-pane').length;
-          out.borderAfter = getComputedStyle(g).borderTopColor; out.fillAfter = fill();
+          out.borderAfter = ((q) => { const t = q.querySelector(':scope > .hfx-tint'); if(!t) return null; const bi = getComputedStyle(t).backgroundImage; let m = /color\\(srgb ([\\d.]+) ([\\d.]+) ([\\d.]+)/.exec(bi); if(m) return 'rgb(' + [1, 2, 3].map(i => Math.round(m[i] * 255)).join(', ') + ')'; m = /rgba?\\((\\d+), (\\d+), (\\d+)/.exec(bi); return m ? 'rgb(' + m[1] + ', ' + m[2] + ', ' + m[3] + ')' : null; })(g); out.fillAfter = fill();
           /* the 100% itself in the effect's ramp (build 317 round 3: the real
              number, no copy laid over it - .hfx-tintnum is gone) */
           const pn = g.querySelector('.rs-pct'), pcs = pn && getComputedStyle(pn);
@@ -12804,12 +12804,16 @@ def check_b313_fx(br):
         # read as beige-grey down the card's lower edge (check-b327-j)
         yellow = "rgba(242, 200, 115, 0.46)"
         check("%s: a 100%% plays it, on the screen and in the box" % fx, r.get("id") == fx and r.get("screen", 0) > 3 and r.get("box", 0) > 2, r)
-        check("%s: the box takes the effect's colours while it plays" % fx, r.get("border") not in (None, yellow), r.get("border"))
+        # MOVED IN 384 round 7 (r2-hundo): the box has NO BORDER of its own now (the XP card's), so the colour is proved from its
+        # light layer (.hfx-tint): the first colour in its gradients - the effect's, never the default's gold
+        near = lambda a, b: bool(a and b) and max(abs(x - y) for x, y in zip(a, b)) <= 3
+        rgbv = lambda c: tuple(int(v) for v in re.findall(r"\d+", c or "")[:3]) if c and c.startswith("rgb") else None
+        check("%s: the box takes the effect's colours while it plays (its light layer's colour, %s, is not the default's gold)" % (fx, r.get("border")), r.get("border") not in (None, yellow) and not near(rgbv(r.get("border")), (242, 200, 115)), r.get("border"))
         rgb = lambda h: "rgb(%d, %d, %d)" % tuple(int(h.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)) if h and h.startswith("#") else None
         tv = r.get("tintVars") or [None, None, None]
         check("%s: and KEEPS them once the effect has finished, the results screen still up (round 3: \"it stays yellow\")" % fx,
               # MOVED IN 327 (round 6): the rim is the colour at .46, not full strength
-              r.get("screenUp") and tv[0] and r.get("borderAfter") in (rgb(tv[0]), (rgb(tv[0]) or "").replace("rgb(", "rgba(")[:-1] + ", 0.46)")
+              r.get("screenUp") and tv[0] and near(rgbv(r.get("borderAfter")), rgbv(rgb(tv[0])))
               and (r.get("numAfter") or {}).get("color") == "rgba(0, 0, 0, 0)" and (r.get("numAfter") or {}).get("bg", "").startswith("linear-gradient(105deg, %s" % rgb(tv[1])),
               {k: r.get(k) for k in ("borderAfter", "numAfter", "screenUp", "tintVars")})
         check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
@@ -12940,8 +12944,8 @@ def check_b313_fx(br):
             # MOVED IN 327 (round 6): "the edges are like a hard stop for the
             # borders" - the rim is the soft one every card has (.36), still
             # there from the first frame, still in the UFO's green
-            check("ufo: the box is in the UFO's colours before the beam reaches it, its rim the soft one every card has - never gold first (build 317, 326, 327)",
-                  (r.get("beforeBeam") or "") == "rgba(107, 255, 143, 0.46)", r.get("beforeBeam"))
+            check("ufo: the box is in the UFO's colours before the beam reaches it (its tint colour and the number's ramp are the UFO's green from the first frame - the light layer is unlit by design, and there is no rim any more, round 7) - never gold first (build 317, 326, 327)",
+                  (r.get("beforeBeam") or "").lower().startswith("#6bff8f") and near(rgbv((r.get("beforeBeam") or "").split(" ", 1)[-1]), (234, 255, 238)), r.get("beforeBeam"))
             ld = r.get("landed") or {}
             check("ufo: it lands ON the 100% box - its feet on the box's top edge, over its middle",
                   ld and abs(ld.get("feet", 99)) <= 8 and abs(ld.get("cx", 99)) <= 30, ld)
@@ -15922,7 +15926,9 @@ def check_b317_hundobox(br):
                 # (build 326: the rim is at full from the first frame, as
                 # every card's edge is - only the beam's wash waits for it)
                 # MOVED IN 327 (round 6): the UFO's rim is the soft one (.36), still there from the start
-                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(107, 255, 143, 0.46)"
+                # MOVED IN 384 round 7 (r2-hundo): the box has NO border of its own now - the XP card's, none - so "its rim at full" is
+                # "no rim" and the colour is proved by the number's ramp and the bar (same(ha, ("num", "bar")) below), both the UFO's
+                unlit = lambda a: bool(a) and (a.get("border") or "") == "rgba(0, 0, 0, 0)"
                 # MOVED IN 327 (b327j): the grade is now counted in as a WIPE
                 # of two full-look layers (red, then the green filling from
                 # the left), and a 100 hands to its effect by wiping the
@@ -15934,12 +15940,12 @@ def check_b317_hundobox(br):
                 # the first frame's rim is either the card's at full or the
                 # green layer's (green(fi): wash and number at full green).
                 rimfull = lambda a: unlit(a) or ((a.get("border") or "") == "rgba(0, 0, 0, 0)" and green(a))
-                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with its rim at full throughout (326) (%s)" % (tag, ha.get("border")),
-                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(107, 255, 143, 0.46)"
+                check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with no border of its own throughout (384 r2: the colour is the number's and the bar's, the light is the glow layer's) (%s)" % (tag, ha.get("border")),
+                      cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(0, 0, 0, 0)"
                       and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
-                check("%s: then gold, the default's own look, by the end of the hand-off - border, 100%%, bar exactly as settled" % tag,
-                      cleared(ha) and same(ha) and ha.get("border") == GOLD_BORDER and "217, 169, 58" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
+                check("%s: then gold, the default's own look, by the end of the hand-off - the plain card (no border, 384 r2), 100%%, bar exactly as settled" % tag,
+                      cleared(ha) and same(ha) and ha.get("border") == "rgba(0, 0, 0, 0)" and "217, 169, 58" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             else:
                 check("%s: then into its colours by the end of the hand-off - border, 100%%, bar exactly as settled, never the gold default" % tag,
                       cleared(ha) and same(ha) and ha.get("border") != GOLD_BORDER and f.get("tinted")
@@ -16148,17 +16154,20 @@ def check_b317_hundobox(br):
         ctx.close()
         L = shots[lit][1]
         tag = "%s, ufo" % label
+        # MOVED IN 384 round 7 (r2-hundo): the rim is gone (the box has no border of its own), so "its edge already there (the rim at
+        # 60%+ of its lit)" is dropped - what stays is the point of the leg: the light layer is on from the first frame, and no beam,
+        # no wash and nothing of the effect is in the box until the saucer fires.
         # MOVED in build 326: the rim and its glow are every card's edge,
         # there from the first frame ("the score box border of it before the
         # ufo arrives it doesn't have the same border like xp"); what waits
         # for the beam is the beam - no column of light down the box, no
         # wash, nothing of the effect in it.
         bad = [(t, shots[t][1], shots[t][0]["border"], shots[t][0]["glow"], shots[t][0]["shown"]) for t in pre
-               if shots[t][1]["ring"] < L["ring"] * .6 or shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) < .95 or shots[t][0]["shown"]
+               if shots[t][1]["col"] > 2 or (shots[t][0]["glow"] or 0) < .95 or shots[t][0]["shown"]
                or shots[t][0]["wash"] == shots[lit][0]["wash"]]
-        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its edge already there (the rim at 60%%+ of its lit %.1f, the glow on), no column of light down it, no wash, nothing of the effect in it - and the light comes with the beam (326)%s" % (
+        check("%s: NO BEAM ON THE BOX before the saucer fires (%s) - its light layer already on (the rim is gone, round 7; lit ring %.1f), no column of light down it, no wash, nothing of the effect in it - and the light comes with the beam (326)%s" % (
                   tag, "/".join("%.1fs" % t for t in pre), L["ring"], " (%d unit rows)" % info["rows"] if multi else ""),
-              not bad and L["ring"] >= 12 and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
+              not bad and L["col"] >= 3 and (multi is False or info["rows"] >= 2),
               {"bad": bad, "lit": L, "rows": info["rows"], "pre": {t: shots[t][1] for t in pre}})
     # --- ONE BEAM, ARRIVING AS ONE (round 6): "the ray beam is still being
     # shown in the box before it even gets there and when it gets there it's
@@ -16304,10 +16313,11 @@ def check_b317_hundobox(br):
     # MOVED IN 327 (round 6): the edge is soft now - the rim at .46, not
     # full - "the edges are like a hard stop ... it's kinda bad". Still the
     # edge from the first frame, and still well clear of the unlit .22.
-    okm = mk and all(alpha(x["border"]) >= .4 and (x["glow"] or 0) > .9 for x in mk["mock"])
-    oks = mk and all(alpha(x["border"]) >= .4 and (x["glow"] or 0) > .9 for x in mk["stage"])
-    check("ufo: the unlock card's miniature and a live Customize stage - their boxes carry their edge from the first frame, before the beam and after (326)",
-          okm and oks and alpha(mk["first"]["mock"]) >= .4 and alpha(mk["first"]["stage"]) >= .4, mk)
+    # MOVED IN 384 round 7 (r2-hundo): no rim - the edge is the card's own (none) and the light layer is the colour, on from the first frame
+    okm = mk and all(alpha(x["border"]) < .05 and (x["glow"] or 0) > .9 for x in mk["mock"])
+    oks = mk and all(alpha(x["border"]) < .05 and (x["glow"] or 0) > .9 for x in mk["stage"])
+    check("ufo: the unlock card's miniature and a live Customize stage - their boxes carry the card's own edge (no rim, round 7) and the light layer from the first frame, before the beam and after (326)",
+          okm and oks and alpha(mk["first"]["mock"]) < .05 and alpha(mk["first"]["stage"]) < .05, mk)
     # and the results flow waits for all of it: the first scene comes after
     # the saucer has gone (8.91s), not 2.3s in, nor at the old 7s tail
     ctx, pg = booted(br, 440, 956, seed=USED_ACCOUNT)
