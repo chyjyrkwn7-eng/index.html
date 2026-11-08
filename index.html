@@ -78119,6 +78119,13 @@ function fbInsp(x, y, s, o){
       /* the shoulder radio on the strap, its coil to the hand, its antenna and a red light */
       pol([[8.4, -87], [14.6, -87], [14.6, -77], [8.4, -77]], "#151A22", ' stroke="#3A4452" stroke-width="' + w(.5) + '" stroke-linejoin="round"') + pol([[9.4, -85.6], [13.6, -85.6], [13.6, -81], [9.4, -81]], "#2A3340") + dc(12.6, -78.6, .7, "#FF4A3A") +
       lim([[13.4, -87], [15, -95]], .9, "#151A22") + dc(10.4, -82.6, 3.4, skin, ' stroke="' + skinD + '" stroke-width="' + w(.4) + '"') + lim([[8.6, -83.8], [8.6, -80.6]], .45, skinD);
+  } else if(pose === "sunrise"){
+    /* looking into the dawn: the left hand grips a clipboard hanging at his side by its top edge, the right hand is held flat above the brow against the sun */
+    armA = [[-16, -80], [-23.4, -62], [-22.4, -46.4]]; armB = [[16, -80], [29, -91], [13.4, -105.6]];
+    held = board(-22.4, -33, 17, 24.4, 3, 4);
+    hands = fingersAt(-22.6, -45.4, 3).replace(/<rect/g, '<rect transform="rotate(90 ' + bnF(x - 22.6 * s * f) + ' ' + bnF(y - 45.4 * s) + ')"') +
+      dc(-22.4, -46.4, 3.4, skin, ' stroke="' + skinD + '" stroke-width="' + w(.4) + '"') +
+      pol([[12, -107.4], [2.6, -107.2], [1.6, -105.6], [2.6, -104], [12, -104.2]], skin, ' stroke="' + skinD + '" stroke-width="' + w(.35) + '" stroke-linejoin="round"') + dc(13.4, -105.6, 3.4, skin, ' stroke="' + skinD + '" stroke-width="' + w(.4) + '"');
   } else if(pose === "post"){
     /* posting a notice: the left hand steadies the frame's edge (fingers flat on it), the right holds a rubber stamp up beside his head, its base down */
     armA = [[-16, -80], [-31, -73], [-43.5, -70]]; armB = [[16, -80], [31, -86], [37, -102]];
@@ -78166,7 +78173,7 @@ function fbInsp(x, y, s, o){
   /* the head: the face under the hat's brim, eyes, a smile; the hard hat with its ridge, a highlight and the agency's shield */
   const face = dc(-7.2, -96.6, 1.5, skin) + dc(7.2, -96.6, 1.5, skin) +
     '<path d="M' + P(-7.2, -100) + ' Q' + P(0, -92.4) + ' ' + P(7.2, -100) + ' Z" fill="' + skinD + '" opacity=".55"/>' +
-    dc(-2.7, -96.8, .85, "#1A1410") + dc(2.7, -96.8, .85, "#1A1410") + '<path d="M' + P(-2.6, -91.6) + ' Q' + P(0, -89.8) + ' ' + P(2.6, -91.6) + '" fill="none" stroke="#5A2E22" stroke-width="' + w(.7) + '" stroke-linecap="round"/>' +
+    dc(-2.7 + (o.look || 0), -96.8, .85, "#1A1410") + dc(2.7 + (o.look || 0), -96.8, .85, "#1A1410") + '<path d="M' + P(-2.6, -91.6) + ' Q' + P(0, -89.8) + ' ' + P(2.6, -91.6) + '" fill="none" stroke="#5A2E22" stroke-width="' + w(.7) + '" stroke-linecap="round"/>' +
     lim([[0, -96], [-.5, -93.4]], .4, skinD);
   const hatSvg = '<path d="M' + P(-9.8, -100.6) + ' Q' + P(-10.4, -114) + ' ' + P(0, -114.6) + ' Q' + P(10.4, -114) + ' ' + P(9.8, -100.6) + ' Z" fill="' + hat + '"/>' +
     '<path d="M' + P(0, -114.6) + ' Q' + P(10.4, -114) + ' ' + P(9.8, -100.6) + ' L' + P(3, -100.6) + ' Q' + P(4.4, -108) + ' ' + P(0, -114.6) + ' Z" fill="' + hatD + '" opacity=".55"/>' +
@@ -79020,7 +79027,7 @@ const IFC_BANNER_ART = {
 
   /* TOP OF THE LADDER (was Fully Involved; for reaching level 80; Madison: "Reach level 80 and ace 10 units are like the exact same one.. They are both a firefighter
      with a hose at a burning building.") - the summit, not a fire: a ground ladder rising out of the bottom of the picture, across the face of a rising sun, to the
-     roof of a tower, and a firefighter standing on the edge at the top with the whole city and the dawn below. Dawn colours (violet to rose to gold) where Ten in a Row is
+     roof of a tower, and an inspector standing on the edge at the top with the whole city and the dawn below. Dawn colours (violet to rose to gold) where Ten in a Row is
      night-time steel; no hose, no fire, no truck. Moves: the sun breathing, its rays turning slowly behind the skyline, streaks of cloud drifting, stars going out. */
   level80(u){
     const rnd = bnRand(8081);
@@ -79050,7 +79057,7 @@ const IFC_BANNER_ART = {
     const near = fbBuildings(rnd, HY + 14, "#22123E", "#FFD58A", -10, 350, 8, 26, .22);
     let tw = "";
     for(let y = TY + 12, r = 0; y < 170; y += 13, r++) for(let c = 0; c < 4; c++) { const lit = rnd() < .3; tw += fbR(TX + 12 + c * 28, y, 12, 7, lit ? "#FFD58A" : "#2E1E52", lit ? ' opacity=".9"' : ""); }
-    const front = '<g opacity=".8">' + far.body + '</g>' + near.body + near.win +
+    const front = '<g opacity=".8">' + far.body + '</g>' + '<ellipse cx="' + SX + '" cy="' + (HY - 1) + '" rx="250" ry="15" fill="url(#' + u + 'sun)" opacity=".55"/>' + near.body + near.win +
       fbR(TX, TY, 134, 96, "url(#" + u + "tower)") + fbR(TX, TY, 2.4, 96, "#FFB070", ' opacity=".9"') + tw +
       fbR(TX - 4, TY - 5, 142, 6, "#2C1A4C", ' class="fb-roof"') + fbR(TX - 4, TY - 5, 142, 1.4, "#FFC88A") + fbR(TX - 4, TY - 5, 3, 6, "#FFB070") +
       fbR(0, HY + 14, 480, 40, "url(#" + u + "ground)") + fbR(0, HY + 14, 480, 1.2, "#6A3A7E", ' opacity=".7"') + '<ellipse cx="240" cy="' + (HY + 14) + '" rx="300" ry="9" fill="url(#' + u + 'mist)"/>' +
@@ -79058,9 +79065,13 @@ const IFC_BANNER_ART = {
       '<g class="fb-ladder"><path class="fb-rung" d="' + rungs + '" stroke="#2A1A48" stroke-width="1.8" fill="none"/><path d="' + rails.join(" ") + '" stroke="#2A1A48" stroke-width="3" fill="none" stroke-linecap="round"/>' +
       '<path d="' + rim + '" stroke="#FFC88A" stroke-width=".9" fill="none" opacity=".85"/>' +
       '<path d="M' + at(L - 2, -HW) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 1) + ' M' + at(L - 2, HW) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 1) + '" stroke="#2A1A48" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>' +
-      /* the firefighter at the top, on the edge of the parapet, looking at the sun: a dark figure with the sun on his left side */
-      fbFF(TX + 40, TY - 5, .8, -1, { pose: "stand", coat: "#1B0F32", dark: "#0E0820", helm: "#2A1646", pants: "#150C28", rim: "#FFC88A" }) +
+      /* the inspector at the top, standing on the roof edge (feet on the parapet's top), facing us with a hand up against the sun, which is on his left: hard hat, hi-vis vest with its
+         bands, the clipboard hanging from his gripped hand; the dawn warms his left side and his face */
+      fbInsp(TX + 44, TY - 5, .63, { pose: "sunrise", look: -.9, lit: -1, rim: "#FFC88A", hat: "#F6F0E8", hatD: "#B49A9A", vest: "#A3BE30", vestD: "#566A10", shirt: "#33264E", pants: "#241A3C", skin: "#C98E64", skinD: "#8A5638" }).svg +
       '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
+   /* a few birds going out over the city */
+    const bird = (x, y, k) => '<path d="M' + x + ' ' + y + ' q' + bnF(2.6 * k) + ' ' + bnF(-2.8 * k) + ' ' + bnF(5.2 * k) + ' 0 q' + bnF(2.6 * k) + ' ' + bnF(-2.8 * k) + ' ' + bnF(5.2 * k) + ' 0" fill="none" stroke="#2A1A48" stroke-width=".9" stroke-linecap="round"/>';
+    const birds = bird(80, 58, 1) + bird(98, 52, 1.2) + bird(116, 61, .9) + bird(134, 55, 1.1) + bird(150, 64, .8) + bird(190, 46, 1);
     return [
       { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + clouds + '<circle cx="' + SX + '" cy="' + SY + '" r="31" fill="#FFF2C0"/>' },
       { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" },
@@ -79068,6 +79079,7 @@ const IFC_BANNER_ART = {
       { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="86" fill="url(#' + u + 'sun)"/>', box: [SX - 86, SY - 86, 172, 172], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:4.6s" },
       { svg: '<path d="' + rays + '" fill="url(#' + u + 'ray)"/>', box: [SX - 330, SY - 330, 660, 330], vb: [SX - 330, SY - 330, 660, 330], o: [SX, SY], cls: "bl-sweep", style: "animation-duration:14s" },
       { svg: cloud(260, 54, 40, 4) + cloud(110, 58, 36, 4), box: [40, 40, 300, 40], cls: "bl-drift", style: "animation-duration:30s" },
+      { svg: birds, box: [60, 36, 160, 40], cls: "bl-drift", style: "animation-duration:22s" },
       { svg: front }
     ];
   },
