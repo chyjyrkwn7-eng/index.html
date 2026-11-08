@@ -58777,7 +58777,7 @@ var IFC_CHAR_LOOK = {
   marksman:    ["fchazmat",     "Hazmat",         "#C8F03A"],
   astronaut:   ["fcspill",      "Toxic Spill",    "#B266FF"],
   hacker:      ["fcdispatch3",  "Dispatcher",     "#4FB8FF"],
-  timekeeper:  ["fcsmoke",      "Smoke Alarm",    "#D5E4F7"],
+  timekeeper:  ["fcirons",      "The Irons",      "#D5E4F7"],
   ronin:       ["fcdrone2",     "Drone Pilot",    "#3DE0C0"],
   hive:        ["fcsprinkler3", "Sprinkler Head", "#4FC3FF"],
   /* (384) the four secret flares are one squad and the three ultimates three rangers - see fcSquad
@@ -58801,7 +58801,7 @@ var IFC_BACKDROP = {
   fcspill:      [["nebula", "#8A3AE0", "#12062A"], ["rise", "ember", ["#D9FF6A", "#D2A8FF"]]],
   fcdispatch2:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
   fcdispatch3:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
-  fcsmoke:      [["nebula", "#7A93B8", "#0A1018"], ["stars", "#E6F0FF"], ["rise", "ember", ["#C8D0DC", "#FFFFFF"]]],
+  fcirons:      [["nebula", "#6A7E9C", "#0A1018"], ["stars", "#E6F0FF"], ["rise", "ember", ["#FFB060", "#FF7A30"]]],
   fcdrone2:     [["nebula", "#2AD8B8", "#04181C"], ["stars", "#D8FFF6"]],
   fcsprinkler3: [["nebula", "#2A8CFF", "#06203F"], ["fall", "confetti", ["#CFF2FF", "#7FD4FF", "#FFFFFF"]]],
   fcnebula:     [["nebula", "#B8341E", "#0E0508"], ["stars", "#FFE8D0"], ["rise", "ember", ["#FF6A2E", "#FFD04A"]]],
@@ -59562,61 +59562,63 @@ var IFC_CHAR_DRAW = {
       k.close();
     });
   },
-  /* SMOKE ALARM (Salamander's, then the Pump Operator's, place; 384 round 8: "I don't like the pump operator, try something else."): the
-     detector on the ceiling that is simply there, watching, every day - a round white alarm seen from below. Not a person, not a
-     hat: a thick cream housing with its ring of radial vent slots, a raised centre cap that holds the face, the red indicator light
-     that blinks on the cap's edge, and the sound of it going off as two arcs either side. The slots are cut INTO the housing's ring
-     (they start and end on it), the cap overlaps the ring's inner edge, and the arcs are concentric with the housing. */
-  fcsmoke(k){
-    const C = [20, 20.4], R = 11.8, PLASTIC = k.headGrad("#FFFFFF", "#ECE6D6", "#A8A18C"), CAP = k.headGrad("#FFFFFF", "#F4F0E4", "#C2BBA6");
-    const EDGE = "#7A7360";
-    /* the sound of it, as arcs round the housing: behind the body so they run out from under its edge */
-    k.open("cx-fx cx-fx-fcwave");
-    [R + 1.5, R + 3.3].forEach((r, i) => {
-      [-1, 1].forEach(s => k.add("path", { d: "M" + fcF(C[0] + s * r * Math.cos(.62)) + " " + fcF(C[1] - r * Math.sin(.62)) + " A" + r + " " + r + " 0 0 " + (s > 0 ? 1 : 0) + " " + fcF(C[0] + s * r * Math.cos(.62)) + " " + fcF(C[1] + r * Math.sin(.62)),
-        fill: "none", stroke: "#FFFFFF", "stroke-width": i ? ".4" : ".6", opacity: i ? ".4" : ".7", "stroke-linecap": "round" }));
-    });
-    k.close();
+  /* THE IRONS (the Pump Operator's, then the Smoke Alarm's, place; round 4: "I don't like the smoke alarm, try something else."): the
+     two tools a company carries in with it and every firefighter knows by weight - the Halligan bar and the flat-head axe - crossed
+     over a shield, which is the fire service's own mark. Not a person, no face. The shield is deep red enamel with a brass rim and
+     the Maltese cross in it, set in the V the two shafts leave above their crossing; the axe (wood handle, steel head with a
+     bevelled bit and a pick) goes up-left, the Halligan (forked claw at the bottom, adze and pick at the top) up-right and in
+     front of it. Steel is worn: a dark core, a warm highlight down the edge that faces the ember light, a nick or two. Each tool is
+     one piece drawn upright in its own frame and turned about the crossing, so no part can float: the shafts run into their heads,
+     the claw is the shaft widening and splitting. */
+  fcirons(k){
+    const EDGE = "#0C0E14", WARM = "#FFD8A0";
+    const steel = fcLin(k, [["0", "#4A5568"], [".3", "#C8D2E0"], [".55", "#8E9AAE"], ["1", "#2E3644"]], "0", "0", "1", "0");
+    const steelV = fcLin(k, [["0", "#F2F5FA"], [".45", "#9AA6BA"], ["1", "#3A4354"]]);
+    const wood = fcLin(k, [["0", "#6A3E18"], [".3", "#E0A25C"], [".6", "#B4763A"], ["1", "#4A2A10"]], "0", "0", "1", "0");
+    const brass = fcLin(k, [["0", "#FFF0B8"], [".5", "#E0A93A"], ["1", "#7A5210"]]);
+    /* the shield: red enamel, a brass rim all round, a second line inside the rim, the cross in the V of the shafts */
+    const SH = "M10 9.2 Q20 11.6 30 9.2 L30 21 Q30 30.4 20 35.6 Q10 30.4 10 21 Z";
     k.open("cx-body");
-    /* the housing's shadow on the ceiling, then the housing: a thick disc with a rolled edge */
-    k.add("circle", { cx: C[0] + .3, cy: C[1] + .9, r: R + .5, fill: "#000", opacity: ".3" });
-    k.add("circle", { cx: C[0], cy: C[1], r: R, fill: PLASTIC, stroke: EDGE, "stroke-width": ".35" });
-    k.add("circle", { cx: C[0], cy: C[1], r: R - 1, fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", opacity: ".6" });
-    k.add("path", { d: "M9.4 14.6 Q12 9.6 18 8.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".8", opacity: ".9", "stroke-linecap": "round" });
-    /* the vent ring: a recessed band, its slots cut across it from edge to edge */
-    k.add("circle", { cx: C[0], cy: C[1], r: 9.6, fill: "#D2CCB8", stroke: EDGE, "stroke-width": ".25" });
-    k.add("circle", { cx: C[0], cy: C[1], r: 7.4, fill: "#B8B19C" });
-    for(let i = 0; i < 20; i++){
-      const a = i * Math.PI / 10 + .13, p = r => fcF(C[0] + Math.cos(a) * r) + " " + fcF(C[1] + Math.sin(a) * r);
-      k.add("path", { d: "M" + p(7.6) + " L" + p(9.4), stroke: "#4A4536", "stroke-width": ".75", "stroke-linecap": "butt", opacity: ".8" });
-    }
+    k.add("path", { d: SH, fill: k.headGrad("#E8584A", "#A81E24", "#3E080C"), stroke: brass, "stroke-width": "1.5", "stroke-linejoin": "round" });
+    k.add("path", { d: SH, fill: "none", stroke: "#3A0A0C", "stroke-width": ".3", "stroke-linejoin": "round", transform: "translate(20 22) scale(.88) translate(-20 -22)" });
+    k.add("path", { d: "M10.9 12 L10.9 21 Q10.9 28 16 32", fill: "none", stroke: WARM, "stroke-width": ".5", opacity: ".6", "stroke-linecap": "round" });
+    k.add("path", { d: fcCrossPath(20, 16.2, 5.6), fill: brass, stroke: "#5A3A08", "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("circle", { cx: 20, cy: 16.2, r: 1.2, fill: "#8A1A1E", stroke: "#5A3A08", "stroke-width": ".2" });
     k.close();
     k.open("cx-head");
-    /* the cap - the face - set over the ring's inner edge */
-    k.add("circle", { cx: C[0], cy: C[1] + .25, r: 7, fill: "#000", opacity: ".25" });
-    k.add("circle", { cx: C[0], cy: C[1], r: 6.9, fill: CAP, stroke: EDGE, "stroke-width": ".3" });
-    k.add("path", { d: "M14.6 17.6 Q16 14.4 19.4 13.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".6", opacity: ".95", "stroke-linecap": "round" });
-    k.add("ellipse", { cx: 15.6, cy: 23.6, rx: 1.4, ry: .8, fill: "#FF8A7A", opacity: ".3" });
-    k.add("ellipse", { cx: 24.4, cy: 23.6, rx: 1.4, ry: .8, fill: "#FF8A7A", opacity: ".3" });
-    k.open("cx-eyes");
-    [17.4, 22.6].forEach(x => {
-      k.add("ellipse", { cx: x, cy: 19.6, rx: 1.05, ry: 1.55, fill: "#1E2430" });
-      k.add("ellipse", { cx: x + .15, cy: 19.9, rx: .6, ry: .95, fill: "#3A5A8A" });
-      k.add("circle", { cx: x - .3, cy: 18.9, r: .42, fill: "#FFFFFF" });
-    });
+    /* THE AXE: handle, then the head. Upright in its own frame (head at the top), turned 36 degrees to lean up-left */
+    k.open("", { transform: "translate(20 24) rotate(-36)" });
+    k.add("path", { d: "M-.95 -6 L.95 -6 L1.15 14.6 Q0 15.6 -1.15 14.6 Z", fill: wood, stroke: "#2A1608", "stroke-width": ".22", "stroke-linejoin": "round" });
+    [4, 6.4, 8.8].forEach(y => k.add("path", { d: "M-.95 " + y + " L.95 " + fcF(y + .15), stroke: "#2A1608", "stroke-width": ".2", opacity: ".55" }));
+    k.add("path", { d: "M-.5 -5 L-.6 14", stroke: "#FFE2B0", "stroke-width": ".3", opacity: ".7", "stroke-linecap": "round" });
+    /* the head: an eye the handle goes through, the bit swept out to the left with its bevelled edge, the pick out to the right */
+    k.add("path", { d: "M-1.9 -13 Q-5.6 -15.4 -8 -14.2 Q-6.4 -9.4 -8 -3.6 Q-5.2 -4 -1.9 -5.6 Z", fill: steel, stroke: EDGE, "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("path", { d: "M-8 -14.2 Q-6.4 -9.4 -8 -3.6", fill: "none", stroke: "#F4F8FF", "stroke-width": ".6", "stroke-linecap": "round" });
+    k.add("path", { d: "M-1.9 -13 Q-5 -14.6 -7.2 -14", fill: "none", stroke: WARM, "stroke-width": ".35", opacity: ".8", "stroke-linecap": "round" });
+    k.add("path", { d: "M1.9 -11.6 L5.6 -10.2 L1.9 -8 Z", fill: steel, stroke: EDGE, "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("path", { d: "M-2 -13.2 L2 -13.2 L2 -5.4 L-2 -5.4 Z", fill: steel, stroke: EDGE, "stroke-width": ".28", "stroke-linejoin": "round" });
+    k.add("path", { d: "M-1.3 -12.6 L-1.3 -6", stroke: "#FFFFFF", "stroke-width": ".4", opacity: ".8", "stroke-linecap": "round" });
+    k.add("path", { d: "M-2 -9 L2 -9", stroke: EDGE, "stroke-width": ".2", opacity: ".5" });
     k.close();
-    k.closedEyes([[17.4, 19.7, 1.4], [22.6, 19.7, 1.4]], "#1E2430", .55);
-    k.open("cx-mouth");
-    k.add("path", { d: "M17.8 23.2 Q20 25 22.2 23.2", fill: "none", stroke: "#5A4638", "stroke-width": ".6", "stroke-linecap": "round" });
+    /* THE HALLIGAN: in front. Upright (claw at the bottom, adze and pick at the top), turned 36 degrees to lean up-right */
+    k.open("", { transform: "translate(20 24) rotate(36)" });
+    const bar = "M-.9 -10 L.9 -10 L.9 10 L1.7 12.2 L1.9 14.6 L.8 13.3 L0 15.4 L-.8 13.3 L-1.9 14.6 L-1.7 12.2 L-.9 10 Z";
+    k.add("path", { d: bar, fill: steel, stroke: EDGE, "stroke-width": ".26", "stroke-linejoin": "round" });
+    k.add("path", { d: "M-.45 -9 L-.45 9.5", stroke: "#FFFFFF", "stroke-width": ".35", opacity: ".85", "stroke-linecap": "round" });
+    k.add("path", { d: "M.5 -9 L.5 9.5", stroke: "#1A202C", "stroke-width": ".25", opacity: ".45" });
+    k.add("ellipse", { cx: 0, cy: 8.2, rx: .38, ry: .8, fill: "#10131A" });
+    k.add("path", { d: "M-.9 3 L.9 3.1 M-.9 3.9 L.9 4", stroke: EDGE, "stroke-width": ".18", opacity: ".55" });
+    /* the head: the adze (a flat, tapering blade) out to the right, the pick out to the left, both leaving the top of the shaft */
+    k.add("path", { d: "M-.9 -10 L-.9 -12.6 L-3.9 -12.3 L-1 -11 Z", fill: steel, stroke: EDGE, "stroke-width": ".24", "stroke-linejoin": "round" });
+    k.add("path", { d: "M.9 -10.2 L.9 -13.6 L3.4 -15.2 L6.4 -15 L5.8 -12.8 L2.2 -10.2 Z", fill: steelV, stroke: EDGE, "stroke-width": ".24", "stroke-linejoin": "round" });
+    k.add("path", { d: "M-.9 -10 L-.9 -13.2 Q0 -14 .9 -13.4 L.9 -10 Z", fill: steel, stroke: EDGE, "stroke-width": ".24", "stroke-linejoin": "round" });
+    k.add("path", { d: "M3.6 -14.7 L6 -14.6", stroke: WARM, "stroke-width": ".4", opacity: ".9", "stroke-linecap": "round" });
+    k.add("path", { d: "M-1.2 -12.2 L-3.4 -12.2", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".7", "stroke-linecap": "round" });
     k.close();
-    /* the indicator: a red lamp in a small bezel on the cap's edge, blinking */
-    k.add("circle", { cx: 24.8, cy: 15.6, r: 1.15, fill: "#8A8472", stroke: EDGE, "stroke-width": ".2" });
-    k.add("circle", { cx: 24.8, cy: 15.6, r: .8, fill: "#9A1A1A" });
-    k.open("cx-fx cx-fx-fcflash");
-    k.add("circle", { cx: 24.8, cy: 15.6, r: 2.1, fill: "#FF4A3D", opacity: ".35" });
-    k.add("circle", { cx: 24.8, cy: 15.6, r: .8, fill: "#FF4A3D" });
-    k.add("circle", { cx: 24.6, cy: 15.4, r: .28, fill: "#FFFFFF" });
     k.close();
+    /* glints on the steel: the axe's bit, the adze's tip and the crossing */
+    k.open("cx-fx cx-fx-star");
+    [[8.4, 21.5], [33.2, 15.9], [20, 24.2]].forEach(([x, y]) => k.add("path", { d: "M" + x + " " + fcF(y - 1) + " L" + x + " " + fcF(y + 1) + " M" + fcF(x - 1) + " " + y + " L" + fcF(x + 1) + " " + y, stroke: "#FFE9C8", "stroke-width": ".34", "stroke-linecap": "round" }));
     k.close();
   },
   /* DISPATCHER (the Hacker's; round 3: "Dispatcher got worse, try again"): round 1's dispatcher,
