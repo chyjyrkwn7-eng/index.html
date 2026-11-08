@@ -62044,10 +62044,17 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx: 20, cy: 12.6, r: .95, fill: ember, stroke: "#FFE2B8", "stroke-width": ".22" }));
     svg.appendChild(mk("circle", { cx: 19.7, cy: 12.3, r: .25, fill: "#FFFFFF", opacity: ".9" }));
     close();
+    /* (384 r6 eyes) "it looks cool on oracle but the rest looks repetitive. Frost keeps the shape and makes a slight change":
+       the same almond, but lit like a coal from below - an ember glow along the lower lid instead of a ring all round, an
+       ember-orange iris with a hot yellow pupil, and a spark kicked up off the outer corner. */
     open("cx-eyes");
-    [[16.8, 17.7], [23.2, 17.7]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.55, ry: .9, fill: "#FF9A3D", opacity: ".5" }));
+    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => {
+      const f = n => +n.toFixed(2);
+      svg.appendChild(mk("path", { d: "M" + f(x - 1.25) + " " + f(y + .1) + " Q" + x + " " + f(y + 1.05) + " " + f(x + 1.25) + " " + f(y + .1), fill: "none", stroke: "#FF8A2A", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".8" }));
       svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1, ry: .52, fill: "#FFF1D6" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .42, fill: "#D9561A" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .17, fill: "#FFE38A" }));
+      svg.appendChild(sparkle(f(x + o * 1.05), f(y - .78), .42, "#FFD27A"));
     });
     close();
     closedEyes([[16.8, 17.9, 1.1], [23.2, 17.9, 1.1]], "#7A4A2A", .35);
