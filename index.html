@@ -63511,10 +63511,17 @@ function drawAvatarCharSVG(charId){
     /* The hat: crown, band, then a brim wide enough to justify the
        shadow it is throwing. */
     open("cx-fx cx-fx-hat");
-    svg.appendChild(mk("path", { d: "M12.4 16.8 Q12.9 9.2 20 8.7 Q27.1 9.2 27.6 16.8 Z", fill: felt }));
-    svg.appendChild(mk("path", { d: "M12.9 13.6 Q20 12.1 27.1 13.6 L26.9 16 Q20 14.5 13.1 16 Z",
-                                 fill: "#101117" }));
-    svg.appendChild(mk("path", { d: "M25.4 13.2 L27 13.5 L26.9 15.4 L25.3 15 Z", fill: "#8D6F45" }));
+    /* (384 r2) The crown's feet were inside the head's width (a wedge of skin showed between crown and brim on both sides) and
+       the band stopped short of the crown's edge (felt showed past each end). The crown is a touch wider at the foot and
+       the band is cut to the crown's own outline. */
+    const crownD = "M11.7 17.4 Q12.3 9.2 20 8.7 Q27.7 9.2 28.3 17.4 Z";
+    const crownClip = uid + "-dtcrown";
+    { const cpc = mk("clipPath", { id: crownClip }); cpc.appendChild(mk("path", { d: crownD })); defs.appendChild(cpc); }
+    svg.appendChild(mk("path", { d: crownD, fill: felt }));
+    const bandG = mk("g", { "clip-path": "url(#" + crownClip + ")" });
+    bandG.appendChild(mk("path", { d: "M11 13.6 Q20 12.1 29 13.6 L29 16 Q20 14.5 11 16 Z", fill: "#101117" }));
+    bandG.appendChild(mk("path", { d: "M25.4 13.2 L27 13.5 L26.9 15.4 L25.3 15 Z", fill: "#8D6F45" }));
+    svg.appendChild(bandG);
     /* The brim, wider than the head at both ends - a brim that stops
        at the temples is a bowler. */
     svg.appendChild(mk("path", { d: "M7.2 17.4 Q20 13.6 32.8 17.4 Q20 20.2 7.2 17.4 Z", fill: felt }));
