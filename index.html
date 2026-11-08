@@ -58976,7 +58976,7 @@ var IFC_ART_ON = window.NOVA_CLASS === "ifc";
    the investigator a toxic spill climbing out of its drum, the public educator a hydrant; the
    inspector wears the investigator's blue; the drone flies clear of its pilot's head. */
 var IFC_CHAR_LOOK = {
-  detective:   ["fcinspector3", "Inspector",      "#F2B84B"],
+  detective:   ["fcinspector4", "Inspector",      "#F2B84B"],
   masked:      ["fcscba",       "Smoke Diver",    "#FF7A3D"],
   poseidon:    ["fcchief3",     "Chief",          "#F4D06A"],
   clown:       ["fcstrobe",     "Strobe",         "#FF4A3D"],
@@ -58999,7 +58999,7 @@ var IFC_CHAR_LOOK = {
 };
 /* the scene behind each (the BACKDROP plan types in drawAvatarCharSVG) */
 var IFC_BACKDROP = {
-  fcinspector3: [["city", "#1A2232", "#F2B84B"], ["stars", "#FFE7A8"]],
+  fcinspector4: [["city", "#1A2232", "#F2B84B"], ["stars", "#FFE7A8"]],
   fcscba:       [["nebula", "#FF6A2E", "#3A1A10"], ["rise", "ember", ["#FF7A3D", "#FFC24A"]]],
   fcchief3:     [["rays", "#F4D06A", 14], ["nebula", "#8A5A2A", "#1A0E06"], ["stars", "#FFF1C2"]],
   fcstrobe:     [["rays", "#FF4A3D", 12], ["nebula", "#E8452F", "#1A0608"]],
@@ -59306,6 +59306,28 @@ function fcStarBadge(k, x, y, r, o){
   k.add("circle", { cx: x, cy: y, r: fcF(r * .2), fill: o.core || rim, opacity: o.core ? 1 : .45 });
   k.add("path", { d: "M" + fcF(x - r * .6) + " " + fcF(y - r * .45) + " Q" + fcF(x - r * .3) + " " + fcF(y - r * .85) + " " + fcF(x + r * .1) + " " + fcF(y - r * .8), fill: "none", stroke: "#FFFFFF", "stroke-width": fcF(r * .14), opacity: ".6", "stroke-linecap": "round" });
 }
+/* (384 r6) the navy ball cap of the fire inspector's duty uniform, front on: six panels meeting at the button, the front
+   panel with an emblem embroidered on it (the fire service's cross, o.emblem), and the curved bill coming towards you with
+   its underside showing. Carries cx-fc-hat-cap. Not a police peaked cap: no crown band, no badge on a stiff front. */
+function fcBallCap(k, o){
+  const shell = k.headGrad.apply(null, o.shell);
+  k.open("cx-fx cx-fx-hat cx-fc-hat-cap");
+  k.add("path", { d: "M11.5 17.8 Q11.2 9.8 20 9.3 Q28.8 9.8 28.5 17.8 Q20 16.4 11.5 17.8 Z", fill: shell, stroke: "#06102C", "stroke-width": ".25", "stroke-linejoin": "round" });
+  /* the seams to the button, and the light on the crown */
+  k.add("path", { d: "M20 9.5 Q16 11.2 15.2 16.9 M20 9.5 Q24 11.2 24.8 16.9 M20 9.5 Q13.4 10.6 11.8 15.2 M20 9.5 Q26.6 10.6 28.2 15.2", fill: "none", stroke: "#06102C", "stroke-width": ".25", opacity: ".55" });
+  k.add("path", { d: "M12.8 14 Q13.8 10.8 17.6 9.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".3", "stroke-linecap": "round" });
+  k.add("circle", { cx: 20, cy: 9.45, r: .6, fill: k.headGrad.apply(null, o.shell), stroke: "#06102C", "stroke-width": ".2" });
+  /* the emblem: the cross in gold thread, outlined, and a hint of the thread's sheen */
+  k.add("path", { d: fcCrossPath(20, 13.4, 2.4), fill: "#6E4A0C" });
+  k.add("path", { d: fcCrossPath(20, 13.3, 2.15), fill: o.emblem || "#F2C14E" });
+  k.add("circle", { cx: 20, cy: 13.3, r: .48, fill: "#B5121B" });
+  /* the bill: its top surface curving down to you, its edge stitched, the dark underside just showing */
+  k.add("path", { d: "M10.9 17.6 Q20 15.6 29.1 17.6 Q28.8 19 26.2 20 Q20 21.9 13.8 20 Q11.2 19 10.9 17.6 Z", fill: shell, stroke: "#06102C", "stroke-width": ".25", "stroke-linejoin": "round" });
+  k.add("path", { d: "M11.8 18 Q20 16.3 28.2 18", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".25" });
+  k.add("path", { d: "M12.6 18.9 Q20 20.9 27.4 18.9", fill: "none", stroke: "#8FA6DA", "stroke-width": ".16", "stroke-dasharray": ".4 .3", opacity: ".6" });
+  k.add("path", { d: "M14.4 20.1 Q20 21.7 25.6 20.1 Q20 22.2 14.4 20.1 Z", fill: "#050A1C", opacity: ".8" });
+  k.close();
+}
 /* a western work shirt: the pointed yoke, pearl snaps, pocket flaps, an open collar */
 function fcWestern(k, o){
   fcCoat(k, { coat: o.shirt, neck: o.neck, extra(){
@@ -59410,23 +59432,45 @@ var IFC_CHAR_DRAW = {
     k.add("rect", { x: 12.2, y: 13.8, width: 15.6, height: 12.8, rx: 3.4, fill: "#B8FF6A", opacity: ".07" });
     fcStrobe(k, 20, 10.6, "#FFB020", -.4);
   },
-  /* INSPECTOR (the Detective's challenge; round 3: "I preferred how it was before. But give it a
-     different feel"): round 1's friendly inspector with his glasses and clipboard, in the agency's
-     own look - a silverbelly cowboy hat, a work shirt with the star badge and a sleeve patch.
-     384: "The inspector looks cool but inspector needs the blue colored shirt like investigator" -
-     the shirt, collar and pocket flaps are the investigator's agency blue (and its gold nameplate,
-     which reads on blue where the dark one did not); everything else as it was */
-  fcinspector3(k){
-    fcWestern(k, { shirt: ["#3C5A9E", "#22387A", "#0C1848"], neck: "tan", collar: "#2C4486", yoke: "#6A86C8", snap: "#E8ECEF", extra(){
-      /* the star on the breast (clear of the yoke seam), his nameplate over the right pocket, the patch on the sleeve */
-      fcStarBadge(k, 26.2, 30.6, 1.5);
-      k.add("rect", { x: 21.6, y: 32.5, width: 3.6, height: 1, rx: .2, fill: "#F2C14E" });
-      k.add("path", { d: "M22 33 h2.8", stroke: "#5A3E0A", "stroke-width": ".3", "stroke-dasharray": ".5 .3" });
-      fcPatch(k, 32, 33.4, 3.2, 26, { fill: "#B5121B", rim: "#F2C14E" });
-      /* the clipboard, held up against his chest in the left hand: a hardboard backer with its chrome clip, the form with its
-         navy header and seal, two ticks and a cross, and the fingers wrapped round the board's edge from the sleeve below */
-      const t = "rotate(-10 12.4 32.6)";
-      k.add("rect", { x: 9.1, y: 28.7, width: 7.6, height: 9, rx: .8, fill: "#2A1A08", opacity: ".35", transform: t });
+  /* INSPECTOR (the Detective's challenge). Round 11 (384 r6), Madison: "We are FIRE inspectors. Fire inspectors wear police
+     gear. We mostly wear the vests ... Our police outfits are navy blue pants and short sleeved polo shirts." So the cowboy hat
+     and the western shirt are gone: a navy duty polo (its collar and placket showing at the neck, the short sleeves' seams on
+     the shoulders), a black tactical vest over it with the gold badge on the chest and the radio mic clipped to the right
+     strap (its curly cord into the vest), and a navy ball cap with the fire service's cross embroidered in gold. He keeps what
+     made him the Inspector: the glasses, the tan skin and the clipboard held up in his left hand. His mouth is his own: a
+     closed, one-sided smile (the old open grin with teeth is gone - "not cartoon-smiley on everything"). */
+  fcinspector4(k){
+    const NAVY = ["#3E5A9C", "#22386E", "#0A1438"], CAP = ["#26376A", "#121C40", "#030716"], VEST = ["#4A505E", "#262A34", "#0A0B10"];
+    fcCoat(k, { coat: NAVY, neck: "tan", extra(){
+      /* the polo: the short sleeves' seams over the shoulders, the collar lying open, the placket and its two buttons */
+      k.add("path", { d: "M5.6 36.4 Q6.6 32.2 9.6 30.4 M34.4 36.4 Q33.4 32.2 30.4 30.4", fill: "none", stroke: "#0A1430", "stroke-width": ".35", opacity: ".6" });
+      k.add("path", { d: "M6.2 35.6 Q7.4 31.8 12.2 29.8", fill: "none", stroke: "#9FB8F0", "stroke-width": ".35", opacity: ".4", "stroke-linecap": "round" });
+      /* the vest: two front panels from the shoulders, open in a V at the neck, its shoulder straps over the polo */
+      const vest = k.headGrad.apply(null, VEST);
+      k.add("path", { d: "M7.6 40 L8.4 34.4 Q9.2 31 12.4 29.6 L15.2 28.9 L17.4 31.8 L18.6 40 Z M32.4 40 L31.6 34.4 Q30.8 31 27.6 29.6 L24.8 28.9 L22.6 31.8 L21.4 40 Z", fill: vest, stroke: "#05060A", "stroke-width": ".25", "stroke-linejoin": "round" });
+      k.add("path", { d: "M8.6 34.4 Q9.4 31.2 12.4 29.9 M31.4 34.4 Q30.6 31.2 27.6 29.9", fill: "none", stroke: "#9AA2B4", "stroke-width": ".3", opacity: ".45", "stroke-linecap": "round" });
+      k.add("path", { d: "M12.6 29.5 L15.2 28.9 L16.2 30.2 L13.4 31 Z M27.4 29.5 L24.8 28.9 L23.8 30.2 L26.6 31 Z", fill: "#2A2E38" });
+      /* stitching round the panels and the MOLLE rows low on the panels */
+      k.add("path", { d: "M9 34.6 Q9.8 31.6 12.6 30.4 L15 29.8 L16.9 32.2 L17.9 40 M31 34.6 Q30.2 31.6 27.4 30.4 L25 29.8 L23.1 32.2 L22.1 40", fill: "none", stroke: "#6A7080", "stroke-width": ".14", "stroke-dasharray": ".35 .25", opacity: ".7" });
+      [37.4, 38.8].forEach(y => k.add("path", { d: "M9.2 " + y + " h7.6 M23.2 " + y + " h7.6", stroke: "#000", "stroke-width": ".3", opacity: ".45" }));
+      k.add("path", { d: "M31.2 34.2 Q30.6 31.4 27.8 30.2", fill: "none", stroke: "#8A93A8", "stroke-width": ".3", opacity: ".45", "stroke-linecap": "round" });
+      /* the polo's collar, laid open over the vest's neck, and its placket in the V */
+      k.add("path", { d: "M19.2 31.2 L20.8 31.2 L21.3 36.4 L18.7 36.4 Z", fill: "#1E3570" });
+      k.add("circle", { cx: 20, cy: 32.6, r: .32, fill: "#E8ECF4" }); k.add("circle", { cx: 20, cy: 34.4, r: .32, fill: "#E8ECF4" });
+      k.add("path", { d: "M15.4 27.5 L20 31.6 L17.6 33.4 L14 29.2 Z M24.6 27.5 L20 31.6 L22.4 33.4 L26 29.2 Z", fill: k.headGrad("#5A78BC", "#2E4888", "#14245A"), stroke: "#0A1430", "stroke-width": ".2", "stroke-linejoin": "round" });
+      k.add("path", { d: "M15.6 28.2 L19.4 31.6 M24.4 28.2 L20.6 31.6", stroke: "#9FB8F0", "stroke-width": ".2", opacity: ".5" });
+      /* the badge on the vest's left chest, and the radio mic clipped to the right strap, its cord coiling down into the vest */
+      fcBadge(k, 25, 34, 3.1);
+      k.add("path", { d: "M27.7 31.4 q1 .8 -.1 1.5 q-1 .7 .3 1.4", fill: "none", stroke: "#0E0F12", "stroke-width": ".4", "stroke-linecap": "round" });
+      k.add("rect", { x: 25.4, y: 28.2, width: 2.4, height: 3.3, rx: .55, fill: k.headGrad("#4A4E58", "#22252C", "#08090C"), stroke: "#000", "stroke-width": ".2", transform: "rotate(16 26.6 29.8)" });
+      k.add("path", { d: "M25.9 29 h1.4 M25.9 29.6 h1.4 M25.9 30.2 h1.4", stroke: "#5A5E68", "stroke-width": ".2", transform: "rotate(16 26.6 29.8)" });
+      k.open("cx-fx cx-fx-led");
+      k.add("circle", { cx: 26.9, cy: 28.5, r: .24, fill: "#FF4A3D" });
+      k.close();
+      /* the clipboard, held up against his chest in the left hand (round 7's board, re-seated on the vest) */
+      const t = "rotate(-10 12.4 33.6)", o = "translate(0 1)";
+      k.open("", { transform: o });
+      k.add("rect", { x: 9.1, y: 28.7, width: 7.6, height: 9, rx: .8, fill: "#000", opacity: ".35", transform: t });
       k.add("rect", { x: 8.6, y: 28.1, width: 7.6, height: 9, rx: .8, fill: fcLin(k, [["0", "#D2A064"], ["1", "#8E6230"]]), stroke: "#5A3A14", "stroke-width": ".25", transform: t });
       k.add("rect", { x: 9.3, y: 29.6, width: 6.2, height: 7.1, rx: .3, fill: "#FAF8F0", transform: t });
       k.add("rect", { x: 9.3, y: 29.6, width: 6.2, height: 1.3, rx: .3, fill: "#22387A", transform: t });
@@ -59438,25 +59482,31 @@ var IFC_CHAR_DRAW = {
         k.add("path", { d: i < 2 ? "M9.95 " + (y + .05) + " l.3 .35 l.45 -.7" : "M9.95 " + (y - .3) + " l.7 .7 M10.65 " + (y - .3) + " l-.7 .7", fill: "none", stroke: i < 2 ? "#2E9A5A" : "#D8342A", "stroke-width": ".3", "stroke-linecap": "round", transform: t });
         k.add("rect", { x: 11.3, y: y - .22, width: i === 1 ? 2.6 : 3.4, height: .44, rx: .2, fill: "#8A93A8", transform: t });
       });
-      k.add("path", { d: "M9.9 36.2 h2 M13.2 36.2 l.9 -.5 l.4 .5", fill: "none", stroke: "#B8BDCB", "stroke-width": ".22", transform: t });
       k.add("path", { d: "M10.4 27.6 h3.6 l.4 1.9 h-4.4 Z", fill: fcLin(k, [["0", "#F4F6FA"], [".5", "#9AA4B4"], ["1", "#4A5262"]]), stroke: "#2A303C", "stroke-width": ".2", transform: t });
       k.add("circle", { cx: 12.2, cy: 28.6, r: .3, fill: "#2A303C", transform: t });
-      /* the sleeve and the hand, over the board's lower edge */
-      k.add("path", { d: "M10.8 40 L12 36.4 Q14.6 35.4 17 36.8 L18 40 Z", fill: fcLin(k, [["0", "#3C5A9E"], ["1", "#0C1848"]]) });
-      k.add("path", { d: "M12 36.5 Q12.4 34.4 14.4 34 Q15.4 33.9 15.9 34.7 Q16.3 35.4 15.7 36.1 Q16.6 36.1 16.6 36.9 Q16.4 37.7 15.4 37.5 Q14.2 37.9 12.8 37.4 Z", fill: fcLin(k, [["0", "#F0C89E"], ["1", "#CC976A"]]), stroke: "#7A4A2A", "stroke-width": ".18" });
-      k.add("path", { d: "M14.5 34.2 L14.4 35.8 M15.5 34.8 L15.4 36.2", stroke: "#7A4A2A", "stroke-width": ".18", opacity: ".7", "stroke-linecap": "round" });
+      k.close();
+      /* the short sleeve and the bare forearm coming up to the hand, over the board's lower edge */
+      k.add("path", { d: "M10.4 40 L11.6 37.6 Q14.4 36.6 17 38 L17.6 40 Z", fill: k.headGrad.apply(null, FC_SKIN.tan) });
+      k.add("path", { d: "M12 37.5 Q12.4 35.4 14.4 35 Q15.4 34.9 15.9 35.7 Q16.3 36.4 15.7 37.1 Q16.6 37.1 16.6 37.9 Q16.4 38.7 15.4 38.5 Q14.2 38.9 12.8 38.4 Z", fill: fcLin(k, [["0", "#F0C89E"], ["1", "#CC976A"]]), stroke: "#7A4A2A", "stroke-width": ".18" });
+      k.add("path", { d: "M14.5 35.2 L14.4 36.8 M15.5 35.8 L15.4 37.2", stroke: "#7A4A2A", "stroke-width": ".18", opacity: ".7", "stroke-linecap": "round" });
     } });
     k.open("cx-head");
     fcFace(k, "tan");
-    k.add("path", { d: "M11.9 18.2 Q11.5 16.6 12.8 16.2 Q13.5 18.4 13.3 20.9 Q12.4 21.2 11.9 20 Z M28.1 18.2 Q28.5 16.6 27.2 16.2 Q26.5 18.4 26.7 20.9 Q27.6 21.2 28.1 20 Z", fill: "#5A3A22" });
-    /* a day's shadow along the jaw and a little warmth in the cheeks, so he is not a paper cut-out */
-    k.add("path", { d: "M12.4 24 Q13 29.2 17 30.6 Q20 31.2 23 30.6 Q27 29.2 27.6 24 Q26 28.2 23 29 Q20 29.4 17 29 Q14 28.2 12.4 24 Z", fill: "#7A4A2A", opacity: ".16" });
-    fcBrimShade(k);
-    fcEyes(k, { y: 21.6, brow: "#5A3A22", iris: "#3A5A7A" });
-    k.add("path", { d: "M14.4 20.3 L18.8 20.3 L18.6 23 L14.6 23 Z M21.2 20.3 L25.6 20.3 L25.4 23 L21.4 23 Z M18.8 21 L21.2 21", fill: "none", stroke: "#2A2A30", "stroke-width": ".5", "stroke-linejoin": "round" });
-    k.add("path", { d: "M15 20.8 L16.6 20.8 M21.8 20.8 L22.8 20.8", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".6" });
-    fcMouth(k, "grin");
-    fcCowboy(k, { felt: ["#CFC5AE", "#A39880", "#554C38"], band: "#2A1E12" });
+    /* short dark hair: the sideburns and the back of the head under the cap */
+    k.add("path", { d: "M11.8 17.6 Q11.6 16.4 12.9 16.2 Q13.4 18.4 13.2 20.6 Q12.3 20.9 11.9 19.8 Z M28.2 17.6 Q28.4 16.4 27.1 16.2 Q26.6 18.4 26.8 20.6 Q27.7 20.9 28.1 19.8 Z", fill: "#3E2816" });
+    k.add("path", { d: "M12.4 24 Q13 29.2 17 30.6 Q20 31.2 23 30.6 Q27 29.2 27.6 24 Q26 28.2 23 29 Q20 29.4 17 29 Q14 28.2 12.4 24 Z", fill: "#7A4A2A", opacity: ".14" });
+    /* the bill's shadow across the brow */
+    k.add("path", { d: "M12.2 19.4 Q20 21.8 27.8 19.4 L27.8 20.8 Q20 23 12.2 20.8 Z", fill: "#000", opacity: ".16" });
+    fcEyes(k, { y: 22.5, brow: "#3E2816", iris: "#3A5A7A" });
+    /* the glasses: thin dark rectangles with a lit top edge */
+    k.add("path", { d: "M14.4 21.2 L18.8 21.2 L18.6 23.9 L14.6 23.9 Z M21.2 21.2 L25.6 21.2 L25.4 23.9 L21.4 23.9 Z M18.8 21.9 L21.2 21.9 M14.4 21.5 L12.2 21.1 M25.6 21.5 L27.8 21.1", fill: "none", stroke: "#22242A", "stroke-width": ".5", "stroke-linejoin": "round", "stroke-linecap": "round" });
+    k.add("path", { d: "M15 21.7 L16.6 21.7 M21.8 21.7 L22.8 21.7", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".6" });
+    /* his mouth: closed, the left corner drawn up - a smile he does not quite give */
+    k.open("cx-mouth");
+    k.add("path", { d: "M17.6 27.1 Q20 27.9 22.6 26.4", fill: "none", stroke: "#7A3E2A", "stroke-width": ".6", "stroke-linecap": "round" });
+    k.add("path", { d: "M22.5 26.5 Q22.9 26.2 22.9 25.9", fill: "none", stroke: "#7A3E2A", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".7" });
+    k.close();
+    fcBallCap(k, { shell: CAP, emblem: "#F2C14E" });
   },
   /* CHIEF (the Sheriff's; round 3: "that's very military looking ... We wear cowboy hats so you can
      go that approach for the chief but his attire would need to change"): the agency's chief in a
@@ -60444,7 +60494,7 @@ if(IFC_ART_ON){
     /* every one is drawn on the same frame: cap or helmet top to chest. Round 2 sets them a little
        higher than round 1 (1.4) so the badge, patches and gear on the chest are in the circle;
        the sprinkler's crown and the drone overhead keep the old seat */
-    const seat = { fcsprinkler2: 1.4, fcdrone2: .6, fcstrobe: .2 }[look[0]];
+    const seat = { fcsprinkler2: 1.4, fcdrone2: .6, fcstrobe: .2, fcinspector4: -1.6 }[look[0]];
     /* the drone pilot is drawn a little smaller so the drone over the head is whole in the circle */
     if(look[0] === "fcdrone2") AVATAR_ART_SCALE[id] = .86;
     AVATAR_CENTRE_DY[id] = seat != null ? seat : -.4;
