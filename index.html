@@ -62456,8 +62456,10 @@ function drawAvatarCharSVG(charId){
       }
       return d + " Z";
     };
-    const mane = [[13, 27], [8.4, 22.4], [11.2, 21.4], [6.8, 15.4], [10.6, 14.8], [8.8, 8.2], [13, 10.4], [13.8, 4.2], [16.8, 8.8], [20, 3.4],
-                  [23.2, 8.8], [26.2, 4.2], [27, 10.4], [31.2, 8.2], [29.4, 14.8], [33.2, 15.4], [28.8, 21.4], [31.6, 22.4], [27, 27]];
+    /* (384 r2) the mane's two feet end inside the face (14.6 / 25.4, 26.4) and the first and last tongues leave from there; they
+       ended at (13, 27) and (27, 27), and the straight line closing the shape was a flat cut under the fire beside the chin */
+    const mane = [[15, 24.6], [8.4, 22.4], [11.2, 21.4], [6.8, 15.4], [10.6, 14.8], [8.8, 8.2], [13, 10.4], [13.8, 4.2], [16.8, 8.8], [20, 3.4],
+                  [23.2, 8.8], [26.2, 4.2], [27, 10.4], [31.2, 8.2], [29.4, 14.8], [33.2, 15.4], [28.8, 21.4], [31.6, 22.4], [25, 24.6]];
     const scale = (pts, k, cx, cy) => pts.map(([x, y]) => [+(cx + (x - cx) * k).toFixed(2), +(cy + (y - cy) * k).toFixed(2)]);
     open("cx-fx cx-fx-cinders cx-fx-cinders-back");
     [[7.2, 26.6, .42, "-.3s"], [33, 25.4, .36, "-1.1s"], [5.8, 12.6, .34, "-1.9s"], [34.4, 11.4, .4, "-.8s"], [10.4, 5.2, .3, "-1.5s"], [29.4, 4.6, .32, "-2.2s"]]
