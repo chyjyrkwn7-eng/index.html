@@ -12321,7 +12321,7 @@
     background:radial-gradient(closest-side, var(--c), transparent); animation:hfx-fw-glow var(--d) ease-out var(--t) both; }
   @keyframes hfx-fw-glow{ 0%{ opacity:0; transform:scale(.35); } 7%{ opacity:.55; transform:scale(.8); } 100%{ opacity:0; transform:scale(1); } }
   .hfx-fw-rim{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
-    box-shadow:inset 0 0 0 1.5px var(--c), inset 0 0 30px var(--c); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
+    box-shadow:inset 0 0 34px var(--c); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
   @keyframes hfx-fw-rim{ 0%{ opacity:0; } 10%{ opacity:.8; } 100%{ opacity:0; } }
   .hfx-fw-mortar{ position:absolute; width:var(--ms); height:var(--ms); margin:calc(var(--ms) / -2) 0 0 calc(var(--ms) / -2); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, rgba(255,250,240,.95), rgba(255,206,150,.5) 35%, rgba(255,92,214,0)); animation:hfx-fw-mortar .7s ease-out var(--t) both; }
@@ -12544,11 +12544,11 @@
   /* (the box's own beam, .hfx-ufo-inbeam, is gone - round 6: the saucer's
      beam reaches the box's floor itself; see hfxUfo) */
   .hfx-ufo-landglow{ position:absolute; inset:0; border-radius:inherit; opacity:0;
-    box-shadow:inset 0 0 0 1.5px rgba(150,255,175,.8), inset 0 0 30px rgba(107,255,143,.35);
+    box-shadow:inset 0 0 30px rgba(107,255,143,.35);
     animation:hfx-ufo-landglow 2.4s ease-out var(--t) both; }
   @keyframes hfx-ufo-landglow{ 0%{ opacity:0; } 10%{ opacity:1; } 60%{ opacity:.6; } 100%{ opacity:0; } }
   .hfx-ufo-landglow.is-hit{ animation-duration:1.2s;
-    box-shadow:inset 0 0 0 1.5px rgba(var(--bmg, 150,255,175), .8), inset 0 0 30px rgba(var(--bmd, 107,255,143), .35); }
+    box-shadow:inset 0 0 30px rgba(var(--bmd, 107,255,143), .35); }
   /* build 314: the scan, the lock, the score taken up, the warp, the marks */
   .hfx-ufo-scanbar{ position:absolute; width:44px; margin-left:-44px; opacity:0; transform-origin:100% 50%;
     background:linear-gradient(90deg, rgba(107,255,143,0), rgba(107,255,143,.18) 62%, rgba(200,255,214,.75) 93%, #F4FFF6 97%, rgba(244,255,246,0));
@@ -12609,7 +12609,7 @@
      (hfxTintGrade) - no transition from gold - and the words in the box
      stay the default's on every effect. */
   .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{
-    --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g2); --hfx-fb:var(--hfx-g1); }
+    --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g1); --hfx-fm:var(--hfx-g2); --hfx-fb:var(--hfx-g3, var(--hfx-g1)); }
   /* THE 100% ITSELF IN THE EFFECT'S RAMP (build 317, round 3) - the number
      and its inline % as one piece of type, not a copy laid over a gold
      one: the colours are on from the card's first frame, so there is
@@ -30526,8 +30526,11 @@
     background:linear-gradient(180deg, var(--hfx-wash), var(--rs-card) 60%);
   }
   @property --hfx-wash{ syntax:"<color>"; inherits:true; initial-value:rgba(226,178,60,.12); }
-  @property --hfx-fa{ syntax:"<color>"; inherits:true; initial-value:#D9A93A; }
-  @property --hfx-fb{ syntax:"<color>"; inherits:true; initial-value:#F6D58E; }
+  /* (384, r3) THE BAR IS THE NUMBER'S RAMP: the same three stops in the same order (the 100's own, light to deep), so a bar and a number
+     in one box are one colour. Gold is Confetti's, the same ramp as its 100. */
+  @property --hfx-fa{ syntax:"<color>"; inherits:true; initial-value:#FFEBC2; }
+  @property --hfx-fm{ syntax:"<color>"; inherits:true; initial-value:#F6D58E; }
+  @property --hfx-fb{ syntax:"<color>"; inherits:true; initial-value:#E3AC4C; }
   /* The 100% in the XP total's manner: a lighter tone of the colour with
      a soft glow, not a saturated gold with a hard one. */
   .rs-screen .rs-grade.is-perfect .rs-pct.pct.perfect{
@@ -30543,7 +30546,7 @@
     -webkit-background-clip:text; background-clip:text;
     filter:drop-shadow(0 0 12px rgba(246,213,142,.3)); }
   /* Its bars gold, and gold wherever a unit was aced. */
-  .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, var(--hfx-fa), var(--hfx-fb)); box-shadow:0 0 10px color-mix(in srgb, var(--hfx-fb) 30%, transparent); }
+  .rs-byunit .unit-breakdown-fill.is-gold{ background:linear-gradient(90deg, var(--hfx-fa), var(--hfx-fm) 55%, var(--hfx-fb)); box-shadow:0 0 10px color-mix(in srgb, var(--hfx-fm) 30%, transparent); }
   /* A retake: no score, only whether anything is left. Every card's
      padding (build 315), and a sentence that breaks evenly on a narrow
      phone rather than leaving "over" on a line of its own. */
@@ -38042,6 +38045,8 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted > .hfx-tint, html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted > .hfx-tint{ z-index:-1; }
   /* its unit bar is a flat fill in the effect's colours, like the level bar beside it: no glow round it */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-byunit .unit-breakdown-fill.is-gold{ box-shadow:none; }
+  /* (384, r3) ...and the miniature's bar in a hundo effect's preview is the same flat fill: no glow round it */
+  html[data-theme="dark"][data-layout="modern"] .hfx-mock .unit-breakdown-fill.is-gold{ box-shadow:none; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen :is(.rs-byunit, .rs-xptotal){ border-color:var(--clean-line) !important; background:transparent !important; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-mode{
     border-color:transparent !important; box-shadow:none !important; background-image:none !important;
