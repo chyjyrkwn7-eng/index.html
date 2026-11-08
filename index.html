@@ -58995,7 +58995,7 @@ var IFC_CHAR_LOOK = {
   genesis:     ["fceclipse",  "Eclipse",  "#FF5CA8"],
   astral:      ["fcmoonranger",  "Moon Ranger",    "#9CC0FF"],
   celestial:   ["fccometranger", "Comet Ranger",   "#3FE9FF"],
-  zenith:      ["fcranger",      "Star Ranger",    "#F5C84A"]
+  zenith:      ["fcstarranger",  "Star Ranger",    "#F5C84A"]
 };
 /* the scene behind each (the BACKDROP plan types in drawAvatarCharSVG) */
 var IFC_BACKDROP = {
@@ -59017,7 +59017,7 @@ var IFC_BACKDROP = {
   fceclipse:    [["nebula", "#E0507F", "#14061A"], ["stars", "#FFE6F0"], ["rise", "ember", ["#FFD890", "#FF8FB8"]]],
   fcmoonranger: [["nebula", "#3A5AB0", "#060A20"], ["moon", "#DCE8FF", 31, 8.6, 2.7], ["stars", "#E4EEFF"]],
   fccometranger:[["nebula", "#1E8AB8", "#04101E"], ["stars", "#D8FDFF"], ["rise", "ember", ["#9FFBFF", "#FFFFFF"]]],
-  fcranger:     [["nebula", "#6A4AC8", "#0A0820"], ["stars", "#FFF1C2"], ["rise", "ember", ["#FFE7A0", "#FF9A3D"]]]
+  fcstarranger: [["nebula", "#6A4AC8", "#0A0820"], ["stars", "#FFF1C2"], ["rise", "ember", ["#FFE7A0", "#FF9A3D"]]]
 };
 function ifcRedrawn(id){ return IFC_ART_ON && Object.prototype.hasOwnProperty.call(IFC_CHAR_LOOK, id); }
 /* Zeus off a Fire Code avatar: the first starter, and out of the queue of unlocks to announce. */
@@ -60439,25 +60439,74 @@ var IFC_CHAR_DRAW = {
         k.add("circle", { cx: 25.6, cy: fcF(9.9 + dy), r: .7, fill: "#FFFFFF" });
       } });
   },
-  /* STAR RANGER (Zenith's, the last of the three; round 3's Celestial): the agency's cowboy, star-forged
-     - a hat cut from the night sky with a band of burning constellation, gold-lit eyes, a duster over
-     the cosmic suit, twelve sparks */
-  fcranger(k){
-    fcRanger(k, { c: "#F5C84A", suit: ["#3A2E5A", "#1E163A", "#08041A"], con: "#F5C84A", skin: ["#E0BA94", "#B48860", "#6A4630"],
-      eye: "#FFE7A0", glow: "#F5C84A", badge: { core: "#FF8A3D" }, badgeY: 33.6,
-      felt: ["#3A3A7A", "#1A1A4A", "#04041A"], band: "#2A1A08", orbit: ["#FFE7A0", "#FFFFFF", "#F5C84A"], n: 12, spark: [[9.4, 11, 1.1, "#FFF6D8"]],
-      crown: [[15.6, 11.2], [23.8, 10.8], [18.4, 12.4], [21.6, 12.6], [7.6, 16.4], [32.4, 16.2]],
-      face(){
-        k.add("path", { d: "M12.6 23.8 Q13.2 30.4 20 31 Q26.8 30.4 27.4 23.8 Q26.2 27.6 24 28 Q22 27.2 20 27.3 Q18 27.2 16 28 Q13.8 27.6 12.6 23.8 Z", fill: "#3A2414", opacity: ".45" });
-      },
-      smile: true,
-      bandArt(dy){
-        k.open("cx-fx cx-fx-fcflame");
-        k.add("path", { d: fcFlamePath(15, 14.6 + dy, .8, 1.8, 0) + fcFlamePath(17.6, 14.4 + dy, .8, 2.3, 0) + fcFlamePath(20.2, 14.3 + dy, .8, 1.9, 0) + fcFlamePath(22.8, 14.4 + dy, .8, 2.3, 0) + fcFlamePath(25.2, 14.6 + dy, .8, 1.8, 0), fill: "#FF9A3D" });
-        k.close();
-        k.add("path", { d: "M13.6 " + fcF(14.9 + dy) + " L16.2 " + fcF(14.5 + dy) + " L18.8 " + fcF(14.8 + dy) + " L21.4 " + fcF(14.4 + dy) + " L24 " + fcF(14.8 + dy) + " L26.4 " + fcF(14.6 + dy), fill: "none", stroke: "#FFE7A0", "stroke-width": ".3" });
-        [13.6, 16.2, 18.8, 21.4, 24, 26.4].forEach((x, i) => k.add("circle", { cx: x, cy: fcF((i % 2 ? 14.5 : 14.85) + dy), r: .38, fill: "#FFFFFF" }));
-      } });
+  /* STAR RANGER (Zenith's, the one ultimate). Round 11 (384 r6): the agency's uniform taken to the stars, not a cowboy - "Fire
+     inspectors wear police gear" and nobody in this class wears a western hat any more. A navy space suit with gold piping and
+     gold-edged shoulder plates, the agency's gold star badge glowing on the chest, a gold neck ring and a clear bubble helmet
+     with its gold sun visor raised over the top (the starlight in it), and inside it a person with a face of their own: dark
+     hair cut short, brown skin, level brows and a sure half-smile, eyes clear (no glow - the glowing eyes were the rulers'
+     treatment, not his). The ring of sparks still turns round him and the constellations still run over the suit. */
+  fcstarranger(k){
+    const GOLD = "#F5C84A", SUIT = ["#3A4E8E", "#1A2654", "#050A22"], SK = FC_SKIN.brown;
+    fcCoat(k, { coat: SUIT, neck: SK, extra(){
+      /* the shoulder plates, edged in gold, and the suit's piping down the chest */
+      k.add("path", { d: "M5.4 37.8 Q5.8 31.6 12 29.4 L14.6 32.4 Q9.6 33.6 8.4 38.6 Z M34.6 37.8 Q34.2 31.6 28 29.4 L25.4 32.4 Q30.4 33.6 31.6 38.6 Z", fill: k.headGrad("#4A5E9E", "#24336A", "#08102C"), stroke: GOLD, "stroke-width": ".35", "stroke-linejoin": "round" });
+      k.add("path", { d: "M6.4 35.4 Q7.4 31.6 11.8 30", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".3", "stroke-linecap": "round" });
+      k.add("path", { d: "M15.8 32 L17.4 40 M24.2 32 L22.6 40", stroke: GOLD, "stroke-width": ".3", opacity: ".85" });
+      fcConstellation(k, [[9.6, 37.8], [11.4, 35.6], [13.4, 37.2]], "#FFE7A0");
+      fcConstellation(k, [[26.8, 37.4], [28.8, 35.4], [30.8, 37], [29.4, 39]], "#FFE7A0");
+    } });
+    /* the badge's glow, the badge */
+    k.open("cx-fx cx-fx-hotspot", { style: "transform-origin:20px 35px" });
+    k.add("circle", { cx: 20, cy: 35, r: 3.4, fill: GOLD, opacity: ".32" });
+    k.close();
+    fcStarBadge(k, 20, 35, 2, { core: "#FF8A3D" });
+    k.open("cx-head");
+    fcFace(k, SK);
+    /* short dark hair */
+    const hair = k.headGrad("#3A2A22", "#1A100A", "#050302");
+    k.add("path", { d: "M11.8 19 Q11 11 20 10.6 Q29 11 28.2 19 Q27.6 15.4 25.8 14.6 Q20 13.2 14.2 14.6 Q12.4 15.4 11.8 19 Z", fill: hair });
+    k.add("path", { d: "M14.6 13.2 Q17.4 11.6 21.4 11.6", fill: "none", stroke: "#8A6A5A", "stroke-width": ".3", opacity: ".5", "stroke-linecap": "round" });
+    /* level brows, eyes clear and dark, a sure half-smile */
+    k.add("path", { d: "M14.9 19.3 L18.3 19 M21.7 19 L25.1 19.3", fill: "none", stroke: "#1A100A", "stroke-width": ".8", "stroke-linecap": "round" });
+    k.open("cx-eyes");
+    [16.6, 23.4].forEach(x => {
+      k.add("ellipse", { cx: x, cy: 21.3, rx: 1.3, ry: .95, fill: "#FFFFFF" });
+      k.add("circle", { cx: x, cy: 21.35, r: .7, fill: "#3A2210" });
+      k.add("circle", { cx: x, cy: 21.35, r: .34, fill: "#0A0604" });
+      k.add("circle", { cx: x + .3, cy: 21.05, r: .22, fill: "#FFFFFF" });
+      k.add("path", { d: "M" + fcF(x - 1.3) + " 20.95 Q" + x + " 20.1 " + fcF(x + 1.3) + " 20.95", fill: "none", stroke: "#2A160A", "stroke-width": ".3" });
+    });
+    k.close();
+    k.closedEyes([[16.6, 21.3, 1.2], [23.4, 21.3, 1.2]], "#2A160A", .5);
+    k.open("cx-mouth");
+    k.add("path", { d: "M17.8 26.9 Q20.4 27.7 22.4 26.5 Q22.8 26.3 22.9 26", fill: "none", stroke: "#4A2016", "stroke-width": ".55", "stroke-linecap": "round" });
+    k.close();
+    /* the helmet: a clear bubble, its gold visor raised over the top, its rim lit; the starlight caught in the visor */
+    k.open("cx-fx cx-fx-hat cx-fc-hat-bubble");
+    const glass = k.mk("radialGradient", { id: k.uid + "-sbub", cx: ".38", cy: ".3", r: ".75" });
+    [["0", "#FFFFFF", ".18"], [".55", "#BFD4FF", ".05"], [".9", "#7FA4FF", ".14"], ["1", "#CFE0FF", ".38"]].forEach(([o, c, op]) => glass.appendChild(k.mk("stop", { offset: o, "stop-color": c, "stop-opacity": op })));
+    k.defs.appendChild(glass);
+    k.add("circle", { cx: 20, cy: 20.2, r: 11.2, fill: "url(#" + k.uid + "-sbub)", stroke: "#DCE8FF", "stroke-width": ".35", "stroke-opacity": ".75" });
+    k.add("path", { d: "M10 15.2 A11.05 11.05 0 0 1 30 15.2 Q20 11.9 10 15.2 Z", fill: fcLin(k, [["0", "#FFF2B8", ".9"], [".5", GOLD, ".78"], ["1", "#8A5A10", ".8"]]), stroke: "#6E4A0C", "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("path", { d: "M10.6 17.8 Q11.2 13.4 15.4 11", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", opacity: ".7", "stroke-linecap": "round" });
+    k.add("path", { d: "M11.4 13.6 Q20 10.8 28.6 13.6", fill: "none", stroke: "#FFF6D8", "stroke-width": ".3", opacity: ".6" });
+    k.svg.appendChild(k.sparkle(24.6, 11.4, 1, "#FFFFFF"));
+    k.add("path", { d: "M27.6 26.4 Q29.6 23.8 29.8 20.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".45", opacity: ".45", "stroke-linecap": "round" });
+    /* the visor's hinges either side */
+    [[9.85, 16.2], [30.15, 16.2]].forEach(([x, y]) => { k.add("circle", { cx: x, cy: y, r: .7, fill: "#C9D0DC", stroke: "#4A5266", "stroke-width": ".2" }); k.add("circle", { cx: x, cy: y, r: .26, fill: "#4A5266" }); });
+    k.close();
+    k.close();
+    /* the gold neck ring the helmet locks into, over the suit */
+    k.open("cx-body cx-collar");
+    k.add("path", { d: "M11.8 28.6 Q20 32.6 28.2 28.6 L28.4 30.4 Q20 34.6 11.6 30.4 Z", fill: fcLin(k, [["0", "#FFF0B8"], [".5", GOLD], ["1", "#8A5A10"]]), stroke: "#6E4A0C", "stroke-width": ".2", "stroke-linejoin": "round" });
+    k.add("path", { d: "M12.6 29.4 Q20 33 27.4 29.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".25", opacity: ".6" });
+    k.close();
+    fcOrbit(k, 20, 21, 13.8, ["#FFE7A0", "#FFFFFF", GOLD], 12);
+    [[7.4, 10.8, 1.1, "#FFF6D8"], [33, 9.4, .7, "#FFFFFF"]].forEach(([x, y, r, col], i) => {
+      k.open("cx-fx " + (i ? "cx-fx-star2" : "cx-fx-star"));
+      k.svg.appendChild(k.sparkle(x, y, r, col));
+      k.close();
+    });
   }
 };
 /* ---- the rangers' shared drawing (384) ---- */
@@ -60537,9 +60586,11 @@ if(IFC_ART_ON){
     /* every one is drawn on the same frame: cap or helmet top to chest. Round 2 sets them a little
        higher than round 1 (1.4) so the badge, patches and gear on the chest are in the circle;
        the sprinkler's crown and the drone overhead keep the old seat */
-    const seat = { fcsprinkler2: 1.4, fcdrone3: .6, fcstrobe: .2, fcinspector4: -1.6, fcchief4: -1.4 }[look[0]];
+    const seat = { fcsprinkler2: 1.4, fcdrone3: .6, fcstrobe: .2, fcinspector4: -1.6, fcchief4: -1.4, fcstarranger: -2.2 }[look[0]];
     /* the drone pilot is drawn a little smaller so the drone over the head is whole in the circle */
     if(look[0] === "fcdrone3") AVATAR_ART_SCALE[id] = .86;
+    /* (384 r6) Star Ranger's helmet is wider than a head: the whole figure a little smaller, so the bubble and the badge are in the circle */
+    if(look[0] === "fcstarranger") AVATAR_ART_SCALE[id] = .86;
     AVATAR_CENTRE_DY[id] = seat != null ? seat : -.4;
     CHAR_SPECIAL_DRAW[id] = ifcSpecial(look[2], "#FFF3DE");
     if(!CHAR_SPECIAL_MS[id]) CHAR_SPECIAL_MS[id] = 2800;
