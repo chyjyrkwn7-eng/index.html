@@ -77613,7 +77613,7 @@ function fbWheel(u, cx, cy, s){
   let spokes = "";
   for(let i = 0; i < 6; i++){ const a = i * Math.PI / 3, c = Math.cos(a), sn = Math.sin(a);
     spokes += '<path d="M' + bnF(cx + c * 2.9 * s - sn * 1 * s) + ' ' + bnF(cy + sn * 2.9 * s + c * 1 * s) + ' L' + bnF(cx + c * 6.6 * s - sn * 1.9 * s) + ' ' + bnF(cy + sn * 6.6 * s + c * 1.9 * s) + ' L' + bnF(cx + c * 6.6 * s + sn * 1.9 * s) + ' ' + bnF(cy + sn * 6.6 * s - c * 1.9 * s) + ' L' + bnF(cx + c * 2.9 * s + sn * 1 * s) + ' ' + bnF(cy + sn * 2.9 * s - c * 1 * s) + ' Z"/>'; }
-  return '<circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(r) + '" fill="#0E0F12"/><circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(r * .86) + '" fill="none" stroke="#25272E" stroke-width="' + bnF(1.2 * s) + '"/>' +
+  return '<circle class="fb-tyre" cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(r) + '" fill="#0E0F12"/><circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(r * .86) + '" fill="none" stroke="#25272E" stroke-width="' + bnF(1.2 * s) + '"/>' +
     '<circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(7.6 * s) + '" fill="url(#' + u + 'fbrim)"/><g fill="#2A2D35">' + spokes + '</g>' +
     '<circle cx="' + bnF(cx) + '" cy="' + bnF(cy) + '" r="' + bnF(2.3 * s) + '" fill="#C9CED6" stroke="#4A4E58" stroke-width="' + bnF(.6 * s) + '"/>';
 }
@@ -77993,7 +77993,7 @@ function fbInspector(x, y, s, o){
     '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y - 100 * s) + '" rx="' + w(12.8) + '" ry="' + w(2.7) + '" fill="' + hat + '"/><path d="M' + P(-12.6, -99.6) + ' Q' + P(0, -96.8) + ' ' + P(12.6, -99.6) + '" fill="none" stroke="' + hatD + '" stroke-width="' + w(.9) + '"/>' +
     '<circle cx="' + bnF(x) + '" cy="' + bnF(y - 106 * s) + '" r="' + w(1.7) + '" fill="#E3B341"/>';
   const bands = '<path d="M' + P(-15.8, -58) + ' L' + P(15.8, -58) + ' M' + P(-15.6, -52.6) + ' L' + P(15.6, -52.6) + ' M' + P(-9.6, -17) + ' L' + P(-2.4, -17) + ' M' + P(2.4, -17) + ' L' + P(9.6, -17) + '" stroke="' + tape + '" stroke-width="' + w(2.4) + '" opacity=".85"/>';
-  return { svg: '<ellipse cx="' + bnF(x) + '" cy="' + bnF(y + .8) + '" rx="' + w(26) + '" ry="' + w(3) + '" fill="#000" opacity=".5"/>' + lit + dark + bands + hatSvg + front, lamp };
+  return { svg: '<g class="fb-inspector"><ellipse cx="' + bnF(x) + '" cy="' + bnF(y + .8) + '" rx="' + w(26) + '" ry="' + w(3) + '" fill="#000" opacity=".5"/>' + lit + dark + bands + hatSvg + front + '</g>', lamp };
 }
 /* ---- the office's 2025 Chevrolet Silverado 1500 crew cab, in profile (Madison: "the vehicle just looks bad") ----
    fbTruck draws it side on, in inches (the real truck is 231 long, 75 high, 147 between the axles on 33-inch tyres): the front bumper at local x 0, the
@@ -78313,7 +78313,7 @@ const IFC_BANNER_ART = {
       const [lx, ly, a] = P5[i].lamp, L = 118, ha = .2, c = Math.cos(a), sn = Math.sin(a);
       const ax = lx + c * L, ay = ly + sn * L, nx = -sn, ny = c, wd = Math.tan(ha) * L;
       return '<linearGradient id="' + u + 'bm' + k + '" gradientUnits="userSpaceOnUse" x1="' + bnF(lx) + '" y1="' + bnF(ly) + '" x2="' + bnF(ax) + '" y2="' + bnF(ay) + '"><stop offset="0" stop-color="#FFF6D8" stop-opacity=".78"/><stop offset=".55" stop-color="#FFEDB8" stop-opacity=".3"/><stop offset="1" stop-color="#FFEDB8" stop-opacity="0"/></linearGradient>' +
-        '|<path d="M' + bnF(lx + nx * 1.4) + ' ' + bnF(ly + ny * 1.4) + ' L' + bnF(ax + nx * wd) + ' ' + bnF(ay + ny * wd) + ' L' + bnF(ax - nx * wd) + ' ' + bnF(ay - ny * wd) + ' L' + bnF(lx - nx * 1.4) + ' ' + bnF(ly - ny * 1.4) + ' Z" fill="url(#' + u + 'bm' + k + ')"/>' +
+        '|<path class="fb-beam" d="M' + bnF(lx + nx * 1.4) + ' ' + bnF(ly + ny * 1.4) + ' L' + bnF(ax + nx * wd) + ' ' + bnF(ay + ny * wd) + ' L' + bnF(ax - nx * wd) + ' ' + bnF(ay - ny * wd) + ' L' + bnF(lx - nx * 1.4) + ' ' + bnF(ly - ny * 1.4) + ' Z" fill="url(#' + u + 'bm' + k + ')"/>' +
         '<circle cx="' + bnF(lx) + '" cy="' + bnF(ly) + '" r="5" fill="#FFF6D8" opacity=".5"/>';
     };
     const b1 = beam(1, 1).split("|"), b2 = beam(3, 2).split("|");
@@ -78365,7 +78365,7 @@ const IFC_BANNER_ART = {
       const on = d === "1" ? "bc" : "abcdef";
       let dim = "", lit = "";
       Object.keys(S).forEach(k => { if(on.indexOf(k) < 0) dim += S[k] + " "; else lit += S[k] + " "; });
-      return '<path d="' + dim + '" fill="#0B2016"/><path d="' + lit + '" fill="' + GR + '" stroke="#D8FFE8" stroke-width=".7" stroke-linejoin="round"/>';
+      return '<path d="' + dim + '" fill="#07160E"/><path class="fb-seg" d="' + lit + '" fill="' + GR + '" stroke="#D8FFE8" stroke-width=".7" stroke-linejoin="round"/>';
     };
     const DW = 46, DH = 66, DT = 9.6, DY = 44, X0 = 128;
     let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
@@ -78382,11 +78382,11 @@ const IFC_BANNER_ART = {
     let digits = seg(X0, DY, DW, DH, DT, "1") + seg(X0 + DW + 12, DY, DW, DH, DT, "0") + seg(X0 + 2 * (DW + 12), DY, DW, DH, DT, "0");
     /* the percent sign in the same lit stroke: two rings and the slash */
     const PX = X0 + 3 * (DW + 12) + 14, PY = DY + 5;
-    digits += '<circle cx="' + (PX + 6) + '" cy="' + (PY + 8) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/><circle cx="' + (PX + 28) + '" cy="' + (PY + DH - 14) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/>' +
-      '<path d="M' + (PX + 30) + ' ' + (PY + 2) + ' L' + (PX + 4) + ' ' + (PY + DH - 8) + '" stroke="' + GR + '" stroke-width="3.8" stroke-linecap="round"/>';
+    digits += '<g class="fb-pct"><circle cx="' + (PX + 6) + '" cy="' + (PY + 8) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/><circle cx="' + (PX + 28) + '" cy="' + (PY + DH - 14) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/>' +
+      '<path d="M' + (PX + 30) + ' ' + (PY + 2) + ' L' + (PX + 4) + ' ' + (PY + DH - 8) + '" stroke="' + GR + '" stroke-width="3.8" stroke-linecap="round"/></g>';
     g += '<ellipse cx="' + (X0 + 120) + '" cy="' + (DY + DH / 2) + '" rx="150" ry="56" fill="url(#' + u + 'glow)"/>' + digits;
     /* ten lamps, all lit */
-    for(let i = 0; i < 10; i++) g += fbR(90 + i * 31.4, 118, 26.4, 7.6, "#0F2C1E", ' rx="1.6"') + fbR(91 + i * 31.4, 119, 24.4, 5.6, GR, ' rx="1"') + fbR(91 + i * 31.4, 119, 24.4, 1.8, "#D8FFE8", ' rx="1" opacity=".8"');
+    for(let i = 0; i < 10; i++) g += fbR(90 + i * 31.4, 118, 26.4, 7.6, "#0F2C1E", ' rx="1.6"') + fbR(91 + i * 31.4, 119, 24.4, 5.6, GR, ' rx="1" class="fb-lamp"') + fbR(91 + i * 31.4, 119, 24.4, 1.8, "#D8FFE8", ' rx="1" opacity=".8"');
     /* the training table across the front, and a helmet on it for every five of the lamps, dark and lit along their tops by the board */
     g += fbR(0, 156, 480, 24, "#171D2A") + fbR(0, 156, 480, 2.4, "#3A4658") + fbR(0, 158.4, 480, 1, "#000", ' opacity=".5"');
     [[52, "#8A1A20"], [146, "#9A7A18"], [240, "#AEB6C2"], [334, "#8A1A20"], [428, "#9A7A18"]].forEach(([x, c]) => {
@@ -78420,7 +78420,7 @@ const IFC_BANNER_ART = {
         [.55, .74, .94].forEach((t, j) => { rings[j] += 'M' + bnF(cx + c * r * t) + ' ' + bnF(cy + sn * r * t + j * j * 1.2) + ' l0 0 '; });
         if(i % 2 === 0){ const tx = cx + c * r * .94, ty = cy + sn * r * .94 + 2.4, ex = tx + c * r * .1, ey = ty + r * (.12 + rr() * .1);
           droop += 'M' + bnF(tx) + ' ' + bnF(ty) + ' Q' + bnF(tx + c * r * .1) + ' ' + bnF(ty + r * .04) + ' ' + bnF(ex) + ' ' + bnF(ey) + ' '; dots += 'M' + bnF(ex) + ' ' + bnF(ey) + ' l0 0 '; } }
-      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + bnF(r * 1.7) + '" fill="url(#' + u + 'gl' + gi + ')"/><circle cx="' + cx + '" cy="' + cy + '" r="' + bnF(r * .5) + '" fill="' + col + '" opacity=".28"/>' +
+      return '<circle class="fb-glow" cx="' + cx + '" cy="' + cy + '" r="' + bnF(r * 1.7) + '" fill="url(#' + u + 'gl' + gi + ')"/><circle cx="' + cx + '" cy="' + cy + '" r="' + bnF(r * .5) + '" fill="' + col + '" opacity=".28"/>' +
         '<path d="' + lines + '" stroke="' + col + '" stroke-width="1.2" stroke-linecap="round" opacity=".62" fill="none"/>' +
         '<path d="' + droop + '" stroke="' + col + '" stroke-width="1" stroke-linecap="round" opacity=".5" fill="none"/><path d="' + dots + '" stroke="' + tip + '" stroke-width="2" stroke-linecap="round" opacity=".9" fill="none"/>' +
         rings.map((d, j) => '<path d="' + d + '" stroke="' + (j === 2 ? tip : col) + '" stroke-width="' + bnF(1.6 + j * 1) + '" stroke-linecap="round" fill="none"/>').join("") +
@@ -78449,7 +78449,7 @@ const IFC_BANNER_ART = {
       '<circle cx="240" cy="50" r="96" fill="url(#' + u + 'gl4)" opacity=".5"/>' +
       town.body + town.win + '<rect x="0" y="124" width="480" height="30" fill="url(#' + u + 'lake)"/><rect x="0" y="124" width="480" height="1.4" fill="#3A3E70" opacity=".8"/>' + crowd + refl + ripples +
       '<path d="M-10 150 Q120 146 240 149 Q360 152 490 148 L490 180 L-10 180 Z" fill="url(#' + u + 'pad)"/><path d="M-10 150 Q120 146 240 149 Q360 152 490 148" fill="none" stroke="#3A3E70" stroke-width="1" opacity=".6"/>' +
-      [432, 454, 474].map(cone).join("") + fbTruck(u, X, Y, K, { f: -1 }) + fbMarshal(X + 44, Y, 1.3, 1, { pose: "stand", rim: "#FFC88A" });
+      [432, 454, 474].map(cone).join("") + '<g class="fb-truck">' + fbTruck(u, X, Y, K, { f: -1 }) + '</g>' + fbMarshal(X + 44, Y, 1.3, 1, { pose: "stand", rim: "#FFC88A" });
     const body = fbTruckGeom(X, Y, K, -1);
     const tkBox = [X - 232 * K - 6, Y - 80 * K, 232 * K + 12, 66 * K];
     return [
@@ -78766,9 +78766,9 @@ const IFC_BANNER_ART = {
       else if(ch !== " ") letters += fbText(ch, 0, 0, LH, "#14161C", 1.5, ' transform="translate(' + bnF(c.x) + ' ' + bnF(c.y) + ') rotate(' + deg + ')"');
       sPos += wc + GAP; });
     /* the turns round the jamb and the post: two slanting strips of the same tape, a knot, and a tail hanging from it */
-    const turn = (x, y, dx) => '<path d="M' + bnF(x - 3.2) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 1.8) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW + .6) + ' L' + bnF(x - 1.6) + ' ' + bnF(y + HW + .6) + ' Z" fill="#D9AC10" stroke="#8A6A0A" stroke-width=".6"/>';
-    const knot = (x, y, dx) => '<path d="M' + bnF(x - 1.6) + ' ' + bnF(y + HW - 1) + ' L' + bnF(x - 2 + dx) + ' ' + bnF(y + HW + 12) + ' L' + bnF(x + 4.6 + dx) + ' ' + bnF(y + HW + 11) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW - 1) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".6"/><circle cx="' + bnF(x + .8) + '" cy="' + bnF(y + HW - 1) + '" r="2.4" fill="#B88A0A" stroke="#6A4E06" stroke-width=".6"/>';
-    const tape = '<path d="' + front.replace(/M/g, "M") + '" fill="#F2C21E"/><path d="' + back + '" fill="#B88A0A"/>' +
+    const turn = (x, y, dx) => '<path class="fb-turn" d="M' + bnF(x - 3.2) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 1.8) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW + .6) + ' L' + bnF(x - 1.6) + ' ' + bnF(y + HW + .6) + ' Z" fill="#D9AC10" stroke="#8A6A0A" stroke-width=".6"/>';
+    const knot = (x, y, dx) => '<path class="fb-knot" d="M' + bnF(x - 1.6) + ' ' + bnF(y + HW - 1) + ' L' + bnF(x - 2 + dx) + ' ' + bnF(y + HW + 12) + ' L' + bnF(x + 4.6 + dx) + ' ' + bnF(y + HW + 11) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW - 1) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".6"/><circle cx="' + bnF(x + .8) + '" cy="' + bnF(y + HW - 1) + '" r="2.4" fill="#B88A0A" stroke="#6A4E06" stroke-width=".6"/>';
+    const tape = '<path class="fb-tape-band" d="' + front + '" fill="#F2C21E"/><path d="' + back + '" fill="#B88A0A"/>' +
       '<path d="' + topE + '" fill="none" stroke="#8A6A0A" stroke-width=".7"/><path d="' + botE + '" fill="none" stroke="#8A6A0A" stroke-width=".7"/>' +
       '<g class="fb-tape">' + letters + '</g>' + turn(JX - 2, JY, 1) + turn(JX + 2.6, JY + .2, 1) + knot(JX - .6, JY, -2) + turn(PX - 1, PY, 1) + turn(PX + 3, PY, 1) + knot(PX + 1, PY, 3);
     /* the stanchion the far end is tied to: a black post on a round weighted base, a cap on top */
@@ -78840,12 +78840,12 @@ const IFC_BANNER_ART = {
     for(let y = TY + 12, r = 0; y < 170; y += 13, r++) for(let c = 0; c < 4; c++) { const lit = rnd() < .3; tw += fbR(TX + 12 + c * 28, y, 12, 7, lit ? "#FFD58A" : "#2E1E52", lit ? ' opacity=".9"' : ""); }
     const front = '<g opacity=".8">' + far.body + '</g>' + near.body + near.win +
       fbR(TX, TY, 134, 96, "url(#" + u + "tower)") + fbR(TX, TY, 2.4, 96, "#FFB070", ' opacity=".9"') + tw +
-      fbR(TX - 4, TY - 5, 142, 6, "#2C1A4C") + fbR(TX - 4, TY - 5, 142, 1.4, "#FFC88A") + fbR(TX - 4, TY - 5, 3, 6, "#FFB070") +
+      fbR(TX - 4, TY - 5, 142, 6, "#2C1A4C", ' class="fb-roof"') + fbR(TX - 4, TY - 5, 142, 1.4, "#FFC88A") + fbR(TX - 4, TY - 5, 3, 6, "#FFB070") +
       fbR(0, HY + 14, 480, 40, "url(#" + u + "ground)") + fbR(0, HY + 14, 480, 1.2, "#6A3A7E", ' opacity=".7"') + '<ellipse cx="240" cy="' + (HY + 14) + '" rx="300" ry="9" fill="url(#' + u + 'mist)"/>' +
       /* the ladder: rails, rungs, the rim of sun on the rail, and its two hooks over the parapet */
-      '<path d="' + rungs + '" stroke="#2A1A48" stroke-width="1.8" fill="none"/><path d="' + rails.join(" ") + '" stroke="#2A1A48" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+      '<g class="fb-ladder"><path class="fb-rung" d="' + rungs + '" stroke="#2A1A48" stroke-width="1.8" fill="none"/><path d="' + rails.join(" ") + '" stroke="#2A1A48" stroke-width="3" fill="none" stroke-linecap="round"/>' +
       '<path d="' + rim + '" stroke="#FFC88A" stroke-width=".9" fill="none" opacity=".85"/>' +
-      '<path d="M' + at(L - 2, -HW) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 1) + ' M' + at(L - 2, HW) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 1) + '" stroke="#2A1A48" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M' + at(L - 2, -HW) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 1) + ' M' + at(L - 2, HW) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 1) + '" stroke="#2A1A48" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>' +
       /* the firefighter at the top, on the edge of the parapet, looking at the sun: a dark figure with the sun on his left side */
       fbFF(TX + 40, TY - 5, .8, -1, { pose: "stand", coat: "#1B0F32", dark: "#0E0820", helm: "#2A1646", pants: "#150C28", rim: "#FFC88A" }) +
       '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
@@ -78896,29 +78896,29 @@ const IFC_BANNER_ART = {
       const arc = (f0, f1, col) => '<path d="M' + P(a0 + f0 * sw, r * .72).join(" ") + ' A' + bnF(r * .72) + ' ' + bnF(r * .72) + ' 0 ' + ((f1 - f0) * sw > 180 ? 1 : 0) + ' 1 ' + P(a0 + f1 * sw, r * .72).join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + bnF(r * .18) + '"/>';
       let ticks = ""; for(let t = 0; t <= 10; t++) ticks += "M" + P(a0 + t / 10 * sw, r * .6).join(" ") + " L" + P(a0 + t / 10 * sw, r * (t % 5 ? .54 : .48)).join(" ") + " ";
       const na = a0 + .78 * sw;
-      return fbC(GX, GY, r + 2.6, "#000", ' opacity=".4" transform="translate(1 2)"') + fbC(GX, GY, r + 1.6, "url(#" + u + "chrome)") + fbC(GX, GY, r, "#1A232B") + fbC(GX, GY, r * .86, "#F4F6F2") +
+      return '<g class="fb-gauge">' + fbC(GX, GY, r + 2.6, "#000", ' opacity=".4" transform="translate(1 2)"') + fbC(GX, GY, r + 1.6, "url(#" + u + "chrome)") + fbC(GX, GY, r, "#1A232B") + fbC(GX, GY, r * .86, "#F4F6F2") +
         arc(0, .3, "#D23A2A") + arc(.3, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".8" fill="none"/>' +
         fbText("PSI", GX, GY + r * .38, 3.6, "#4A545E", .6) + '<path d="M' + P(na + 180, r * .2).join(" ") + ' L' + P(na, r * .74).join(" ") + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' + fbC(GX, GY, 2.2, "#1A232B") +
-        '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity=".5" stroke-linecap="round"/>';
+        '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity=".5" stroke-linecap="round"/></g>';
     })();
     /* the valve's handwheel: a rim, six spokes, a hub, over the valve body on the branch pipe */
     let spokes = "";
     for(let i = 0; i < 6; i++){ const a = i * Math.PI / 3 + .2; spokes += "M" + bnF(WX + Math.cos(a) * 3.6) + " " + bnF(WY + Math.sin(a) * 3.6) + " L" + bnF(WX + Math.cos(a) * 13.4) + " " + bnF(WY + Math.sin(a) * 13.4) + " "; }
-    const wheel = fbC(WX, WY, 16.6, "#000", ' opacity=".35" transform="translate(1.2 2)"') + fbC(WX, WY, 15.4, "none", ' stroke="#FF5A48" stroke-width="3.6"') + fbC(WX, WY, 13.4, "none", ' stroke="#FFB0A0" stroke-width=".8" opacity=".8"') +
-      '<path d="' + spokes + '" stroke="#E8402E" stroke-width="2.4" stroke-linecap="round" fill="none"/>' + fbC(WX, WY, 4.6, "url(#" + u + "chrome)", ' stroke="#4A5260" stroke-width=".6"');
+    const wheel = '<g class="fb-wheel">' + fbC(WX, WY, 16.6, "#000", ' opacity=".35" transform="translate(1.2 2)"') + fbC(WX, WY, 15.4, "none", ' stroke="#FF5A48" stroke-width="3.6"') + fbC(WX, WY, 13.4, "none", ' stroke="#FFB0A0" stroke-width=".8" opacity=".8"') +
+      '<path d="' + spokes + '" stroke="#E8402E" stroke-width="2.4" stroke-linecap="round" fill="none"/>' + fbC(WX, WY, 4.6, "url(#" + u + "chrome)", ' stroke="#4A5260" stroke-width=".6"') + '</g>';
     /* the tag, tied to the wheel's rim: a loop of string round it, the card with its hole, a white tick, OK */
     const TGX = 408, TGY = 112;
     const tag = '<path d="M' + bnF(WX + 10) + ' ' + bnF(WY + 12) + ' Q' + (WX + 22) + ' ' + (WY + 14) + ' ' + (TGX - 1) + ' ' + (TGY - 12) + '" fill="none" stroke="#E8DCA8" stroke-width="1.1"/><ellipse cx="' + bnF(WX + 9.6) + '" cy="' + bnF(WY + 11) + '" rx="3" ry="4.4" fill="none" stroke="#E8DCA8" stroke-width="1.1" transform="rotate(-30 ' + bnF(WX + 9.6) + ' ' + bnF(WY + 11) + ')"/>' +
-      '<g transform="rotate(8 ' + TGX + ' ' + TGY + ')"><rect x="' + (TGX - 11 + 1.6) + '" y="' + (TGY - 12 + 2.4) + '" width="22" height="30" fill="#000" opacity=".35"/><rect x="' + (TGX - 11) + '" y="' + (TGY - 12) + '" width="22" height="30" fill="#2FBF6A" stroke="#0E5A2E" stroke-width=".9"/><circle cx="' + TGX + '" cy="' + (TGY - 8) + '" r="1.8" fill="#0E2A1C"/>' +
+      '<g class="fb-tag" transform="rotate(8 ' + TGX + ' ' + TGY + ')"><rect x="' + (TGX - 11 + 1.6) + '" y="' + (TGY - 12 + 2.4) + '" width="22" height="30" fill="#000" opacity=".35"/><rect x="' + (TGX - 11) + '" y="' + (TGY - 12) + '" width="22" height="30" fill="#2FBF6A" stroke="#0E5A2E" stroke-width=".9"/><circle cx="' + TGX + '" cy="' + (TGY - 8) + '" r="1.8" fill="#0E2A1C"/>' +
       fbL("M" + (TGX - 6) + " " + (TGY + 1) + " L" + (TGX - 1.6) + " " + (TGY + 6) + " L" + (TGX + 6.4) + " " + (TGY - 3.4), "#FFFFFF", 3) + fbText("OK", TGX, TGY + 13, 5.6, "#FFFFFF", 1.1) + '</g>';
     /* the sign: red plate, white capitals, four screws */
     const sTxt = "SPRINKLER RISER 2", sw2 = (sTxt.split("").reduce((a, ch) => a + fbGlyphW(ch) + 1.7, 0) - 1.7) * 6.2 / 6;
     const SGX = 470 - sw2 - 12, sign = fbR(SGX, 24, sw2 + 12, 17, "#5A1410", ' rx="2" stroke="#B8A888" stroke-width="1.2"') + fbText(sTxt, SGX + (sw2 + 12) / 2, 32.6, 6.2, "#EADBC0", 1.2) + [[SGX + 3, 27], [SGX + sw2 + 9, 27], [SGX + 3, 38], [SGX + sw2 + 9, 38]].map(p => fbC(p[0], p[1], .9, "#C9CED6")).join("");
     /* the clock: two minutes to eleven */
     const CKX = 62, CKY = 44, hrA = (10 * 30 + 58 * .5) * Math.PI / 180, mnA = 58 * 6 * Math.PI / 180;
-    const clock = fbC(CKX, CKY, 19, "#0A0F14") + fbC(CKX, CKY, 16.8, "#9AA8B2") +
+    const clock = '<g class="fb-clock" data-time="10:58">' + fbC(CKX, CKY, 19, "#0A0F14") + fbC(CKX, CKY, 16.8, "#9AA8B2") +
       Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6, r0 = i % 3 ? 13.4 : 11.8; return fbL("M" + bnF(CKX + Math.sin(t) * r0) + " " + bnF(CKY - Math.cos(t) * r0) + " L" + bnF(CKX + Math.sin(t) * 15.2) + " " + bnF(CKY - Math.cos(t) * 15.2), "#2A323A", i % 3 ? .8 : 1.4); }).join("") +
-      fbL("M" + CKX + " " + CKY + " L" + bnF(CKX + Math.sin(hrA) * 8.6) + " " + bnF(CKY - Math.cos(hrA) * 8.6), "#14161C", 2.2) + fbL("M" + CKX + " " + CKY + " L" + bnF(CKX + Math.sin(mnA) * 12.6) + " " + bnF(CKY - Math.cos(mnA) * 12.6), "#14161C", 1.5) + fbC(CKX, CKY, 1.6, "#14161C");
+      fbL("M" + CKX + " " + CKY + " L" + bnF(CKX + Math.sin(hrA) * 8.6) + " " + bnF(CKY - Math.cos(hrA) * 8.6), "#14161C", 2.2) + fbL("M" + CKX + " " + CKY + " L" + bnF(CKX + Math.sin(mnA) * 12.6) + " " + bnF(CKY - Math.cos(mnA) * 12.6), "#14161C", 1.5) + fbC(CKX, CKY, 1.6, "#14161C") + '</g>';
     const base = '<defs>' + bnLin(u + "wall", [[0, "#12222C"], [1, "#07101A"]]) + bnLin(u + "floor", [[0, "#17222C"], [1, "#070B10"]]) + bnLin(u + "pipe", [[0, "#7A160E"], [0.3, "#E04A38"], [0.6, "#C0301F"], [1, "#6A120A"]], 0, 0, 1, 0) + bnLin(u + "pipeh", [[0, "#F0644E"], [0.4, "#C0301F"], [1, "#6A120A"]]) +
       bnLin(u + "chrome", [[0, "#FFFFFF"], [0.5, "#A6B0BC"], [1, "#4E5866"]], 0, 0, 1, 1) + bnLin(u + "beam", [[0, "#FFF4D0", .8], [0.45, "#FFF0C0", .32], [1, "#FFF0C0", 0]], 0, 0, 1, 0) + bnRad(u + "spot", [[0, "#FFF6D8", .5], [1, "#FFF6D8", 0]]) + bnRad(u + "vig", [[0.55, "#000", 0], [1, "#000", .6]]) + '</defs>' +
       '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' +
@@ -78936,7 +78936,7 @@ const IFC_BANNER_ART = {
     /* the beam: from the lens, widening towards the valve, the gauge and the tag; its pool on the valve; dust in it */
     const ang = Math.atan2(WY - LY, WX - LX), L2 = 230, ha = .2, c = Math.cos(ang), sn = Math.sin(ang), ex = LX + c * L2, ey = LY + sn * L2, wd = Math.tan(ha) * L2;
     const cone = '<linearGradient id="' + u + 'cn" gradientUnits="userSpaceOnUse" x1="' + LX + '" y1="' + LY + '" x2="' + bnF(ex) + '" y2="' + bnF(ey) + '"><stop offset="0" stop-color="#FFF4D0" stop-opacity=".78"/><stop offset=".5" stop-color="#FFF0C0" stop-opacity=".3"/><stop offset="1" stop-color="#FFF0C0" stop-opacity="0"/></linearGradient>' +
-      '<path d="M' + LX + ' ' + (LY - 1.6) + ' L' + bnF(ex - sn * wd) + ' ' + bnF(ey + c * wd) + ' L' + bnF(ex + sn * wd) + ' ' + bnF(ey - c * wd) + ' L' + LX + ' ' + (LY + 1.6) + ' Z" fill="url(#' + u + 'cn)"/>';
+      '<path class="fb-beam" d="M' + LX + ' ' + (LY - 1.6) + ' L' + bnF(ex - sn * wd) + ' ' + bnF(ey + c * wd) + ' L' + bnF(ex + sn * wd) + ' ' + bnF(ey - c * wd) + ' L' + LX + ' ' + (LY + 1.6) + ' Z" fill="url(#' + u + 'cn)"/>';
     let motes = "";
     for(let i = 0; i < 24; i++){ const t = .1 + rnd() * .75, x = LX + (WX - LX) * t, y = LY + (WY - LY) * t + (rnd() - .5) * 46 * t; motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(.5 + rnd() * .7) + '" fill="#FFF6D8" opacity="' + bnF(.4 + rnd() * .5) + '"/>'; }
     return [
@@ -78967,10 +78967,10 @@ const IFC_BANNER_ART = {
       let ticks = "";
       for(let t = 0; t <= 10; t++){ const p0 = P(a0 + t / 10 * sweep, r * .62), p1 = P(a0 + t / 10 * sweep, r * (t % 5 ? .56 : .5)); ticks += "M" + p0.join(" ") + " L" + p1.join(" ") + " "; }
       const na = a0 + (.955 + (i % 3) * .008) * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
-      return fbC(x, y, r + 2.6, "#000", ' opacity=".4" transform="translate(.8 1.8)"') + fbC(x, y, r + 1.4, "url(#" + u + "chrome)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
+      return '<g class="fb-gauge">' + fbC(x, y, r + 2.6, "#000", ' opacity=".4" transform="translate(.8 1.8)"') + fbC(x, y, r + 1.4, "url(#" + u + "chrome)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
         arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".8" fill="none"/>' +
-        fbText("PSI", x, y + r * .36, 3.6, "#4A545E", .6) + '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#000" stroke-width="2.4" opacity=".25" transform="translate(.6 .9)"/><path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
-        fbC(x, y, 2.4, "#1A232B") + fbC(x - .5, y - .5, .9, "#7A8794") + '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity=".5" stroke-linecap="round"/>';
+        fbText("PSI", x, y + r * .36, 3.6, "#4A545E", .6) + '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#000" stroke-width="2.4" opacity=".25" transform="translate(.6 .9)"/><path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + bnF(.955 + (i % 3) * .008) + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
+        fbC(x, y, 2.4, "#1A232B") + fbC(x - .5, y - .5, .9, "#7A8794") + '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity=".5" stroke-linecap="round"/></g>';
     };
     let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
     /* the wall behind: a block course and the conduit run along the top */
@@ -78986,8 +78986,8 @@ const IFC_BANNER_ART = {
     g += fbR(20, 116, 440, 11, "url(#" + u + "pipe)", ' rx="2"') + fbR(20, 117, 440, 2.6, "#FF9A86", ' opacity=".75" rx="1"') + fbR(16, 112, 6, 19, "#8A929E", ' rx="1.4" stroke="#3A4452" stroke-width=".7"') + fbR(458, 112, 6, 19, "#8A929E", ' rx="1.4" stroke="#3A4452" stroke-width=".7"');
     for(let i = 0; i < N; i++) g += gauge(gx(i), CY, i);
     /* a lamp over each gauge (lit), and the numbered plate under the pipe */
-    for(let i = 0; i < N; i++) g += fbC(gx(i), 44, 3.4, "#0E2A1C", ' stroke="#8A98A6" stroke-width="1"') + fbC(gx(i), 44, 2.4, "#5CFFA6") + fbC(gx(i) - .7, 43.2, .8, "#E8FFF2") +
-      fbR(gx(i) - 9, 133, 18, 14, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8"') + fbText(String(i + 1), gx(i), 140, 8, "#E4EEF4", 1.3);
+    for(let i = 0; i < N; i++) g += fbC(gx(i), 44, 3.4, "#0E2A1C", ' stroke="#8A98A6" stroke-width="1"') + fbC(gx(i), 44, 2.4, "#5CFFA6", ' class="fb-lamp"') + fbC(gx(i) - .7, 43.2, .8, "#E8FFF2") +
+      fbR(gx(i) - 9, 133, 18, 14, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8" class="fb-plate"') + fbText(String(i + 1), gx(i), 140, 8, "#E4EEF4", 1.3);
     g += '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
     const lampPair = k => [k, k + 5].map(i => '<circle cx="' + bnF(gx(i)) + '" cy="44" r="12" fill="url(#' + u + 'lamp)"/>').join("");
     return [

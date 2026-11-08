@@ -2,7 +2,7 @@
 """The Fire Code banners drawn as the strip they are shown in (1050x348, the 480x180 scene cropped to its centre), so a part that
 floats, a letter that is cut off or a scene that does not read at that size can be looked at.
 
-  python3 tools/shoot-fc-banners.py OUTDIR [--ids a,b,c] [--against OLD/index.html] [--w 1050] [--h 348] [--t 1.2] [--sheet] [--dpr 1]
+  python3 tools/shoot-fc-banners.py OUTDIR [--ids a,b,c] [--against OLD/index.html] [--w 1050] [--h 348] [--t 1.2] [--sheet] [--dpr 1] [--cols 2]
 
 Writes OUTDIR/<id>.png (the live, animated banner at --t seconds). With --sheet also OUTDIR/sheet.png: every banner asked for in
 two columns, labelled with its name. --scene also writes OUTDIR/<id>-scene.png, the whole 480x180 scene (nothing cropped).
@@ -56,7 +56,7 @@ with sync_playwright() as pw:
             pg.query_selector("#strip").screenshot(path=os.path.join(OUT, i + ("-scene" if scene else "") + ".png"))
     if "--sheet" in args:
         ims = [(i, Image.open(os.path.join(OUT, i + ".png")).convert("RGB")) for i in ids]
-        tw = 700; th = round(tw * H / W); cols = 2; pad = 8; lab = 22
+        cols = int(opt("--cols", "2")); tw = 1400 // cols; th = round(tw * H / W); pad = 8; lab = 22
         rows = (len(ims) + cols - 1) // cols
         sh = Image.new("RGB", (cols * (tw + pad) + pad, rows * (th + lab + pad) + pad), (18, 20, 26)); d = ImageDraw.Draw(sh)
         for n, (i, im) in enumerate(ims):
