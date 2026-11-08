@@ -12390,6 +12390,9 @@
      real box's, not the XP card's blue */
   .hfx-mock .rs-grade .hfx-mk-line b{ color:var(--ink); }
   .hfx-mock > .rs-actions{ display:flex; gap:.35rem; margin-top:auto; }
+  /* (384 r6) the miniature plays the results' order: these wait hidden while the grade has the middle (buildHundoFxMock) */
+  .hfx-mock > .rs-head, .hfx-mock > .rs-xp, .hfx-mock > .rs-actions{ transition:opacity .34s ease, transform .4s cubic-bezier(.2,1.2,.35,1); }
+  .hfx-mock > .hfx-mk-off{ opacity:0; transform:translateY(-8px); transition-duration:.22s; }
   /* `inherit` is not a family inside the `font` shorthand, so the whole
      declaration was dropped and these drew in the browser's own button
      face at its own size (build 315) */
@@ -117679,7 +117682,7 @@ function hfxContext(opts){
   const vw = fr ? fr.clientWidth : (window.innerWidth || 400), vh = fr ? fr.clientHeight : (window.innerHeight || 800);
   const box = opts.box || null;
   let vr = box ? box.getBoundingClientRect() : { left: vw * .1, top: vh * .45, width: vw * .8, height: vh * .2 };
-  if(fr && box){ const o = hfxOffsetIn(box, fr); vr = { left: o.x, top: o.y, width: box.offsetWidth, height: box.offsetHeight }; }
+  if(fr && box){ const o = hfxOffsetIn(box, fr); vr = { left: o.x, top: o.y + (box.__liftY || 0), width: box.offsetWidth, height: box.offsetHeight }; }
   const bw = box ? (box.offsetWidth || vr.width) : vr.width, bh = box ? (box.offsetHeight || vr.height) : vr.height;
   /* WHERE THE BOX WILL REST, not where it is this frame. The effect
      starts while the grade card is still landing (rs-slam opens at 1.45x
@@ -118056,7 +118059,7 @@ function hfxLayout(c){
   const sx = c.frame ? 0 : (window.scrollX || 0), sy = c.frame ? 0 : (window.scrollY || 0);
   /* (384 r6) only what is ON the screen: the 100% now plays before anything lands under the grade (showRunRewards), so
      the XP card and the rest are in the layout but not yet shown - an effect must not light, lift or hunt them */
-  const shown = el => c.frame || !el.classList.contains("rs-land") || el.classList.contains("rs-in") || el.classList.contains("rs-in-now");
+  const shown = el => !el.classList.contains("hfx-mk-off") && (c.frame || !el.classList.contains("rs-land") || el.classList.contains("rs-in") || el.classList.contains("rs-in-now"));
   const at = el => {
     if(!el || !el.offsetWidth || !shown(el)) return null;
     const o = hfxOffsetIn(el, c.frame || null);
@@ -120372,11 +120375,33 @@ function buildHundoFxMock(id, o){
   }
   let handle = null;
   m.stopFx = () => { m.__dead = true; if(handle && handle.stop) handle.stop(); };
+  /* (384 r6) THE RESULTS SCREEN'S NEW ORDER, IN MINIATURE (Madison: "ensure all the hundo effect previews when clicking on
+     them are updated"): the grade alone in the middle of the frame, the effect on it there, then the grade up into its place
+     and the header, the XP card and the buttons in under it - and, after a beat on the finished screen, round again. The
+     others wait hidden (.hfx-mk-off), so the effect never lights or lifts them (hfxLayout); the grade's offset is a
+     `translate`, which the frame's own geometry (hfxContext) reads back as gr.__liftY. */
+  const rest = [head, xp, acts];
+  const lift = (dy, ms) => {
+    const from = gr.__liftY || 0; gr.__liftY = dy;
+    gr.style.translate = dy ? "0 " + dy + "px" : "";
+    if(ms && from !== dy){ try{ gr.animate([{ translate: "0 " + from + "px" }, { translate: "0 " + dy + "px" }], { duration: ms, easing: "cubic-bezier(.3,.72,.18,1)" }); }catch(e){} }
+  };
+  const centreDy = () => Math.max(0, Math.round((m.clientHeight - gr.offsetHeight) / 2 - gr.offsetTop));
+  const hideRest = () => rest.forEach(e => e.classList.add("hfx-mk-off"));
+  const showRest = () => rest.forEach((e, i) => setTimeout(() => { if(m.isConnected) e.classList.remove("hfx-mk-off"); }, 140 + i * 260));
+  hideRest();
   const play = () => {
     if(!m.isConnected || m.__dead) return;
     if(!handle || handle.done){
-      handle = playHundoFx(id, { box: gr, pct, frame: m, preview: true, palette: null });
-      setTimeout(play, ((handle && handle.total) || 3200) + 1400);
+      lift(centreDy(), gr.__liftY ? 0 : 420);
+      setTimeout(() => {
+        if(!m.isConnected || m.__dead) return;
+        handle = playHundoFx(id, { box: gr, pct, frame: m, preview: true, palette: null });
+        const tail = (HUNDO_FX_TAIL_AT[id] || 1500), total = (handle && handle.total) || 3200;
+        setTimeout(() => { if(!m.isConnected || m.__dead) return; lift(0, 560); showRest(); }, tail);
+        /* the finished screen for a beat, then the rest goes and the grade comes back down to the middle */
+        setTimeout(() => { if(!m.isConnected || m.__dead) return; hideRest(); setTimeout(play, 380); }, Math.max(total, tail + 1300) + 1500);
+      }, 460);
     } else setTimeout(play, 400);
   };
   let tries = 0;
@@ -121848,7 +121873,8 @@ function ifxSprinklers(scr, bx, c){
         d, dl, "linear", { iterations: Math.max(1, Math.floor((S.knock + .4 - dl) / d)) });
     }
     /* the main along the ceiling */
-    const pipe = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + bnF(hs * .2) + "px;background:linear-gradient(#FF8A7A,#C8262A 55%,#6A0A0E);box-shadow:0 2px 6px rgba(0,0,0,.45);opacity:0;");
+    const pipe = ifxEl(host, "left:0;top:0;width:" + W + "px;height:" + bnF(hs * .2) + "px;background:linear-gradient(#A9B2BD,#59616C 55%,#22272E);box-shadow:0 2px 6px rgba(0,0,0,.45);opacity:0;");
+    /* (384 r6) steel, not red: along the top edge of a box a red bar read as the old look's coloured frame */
     ifxAt(c, pipe, tot, [[.1, { opacity: 0, transform: "translateY(-100%)", easing: IFX_OUT }], [.45, { opacity: 1, transform: "translateY(0%)" }], [S.up + .1, { opacity: 1, transform: "translateY(0%)", easing: IFX_IN }], [S.up + .55, { opacity: 0, transform: "translateY(-100%)" }]]);
     /* the heads: burst, spray, rain, mist */
     const sw = small ? W * .62 : Math.min(gap * 1.9, 470), sh = sw * .65, defl = hs * .86;
@@ -122280,14 +122306,17 @@ function ifxThermal(scr, bx, c){
     /* ---- what the camera sees: the cards a faint warmth, the box warm and heating, two warm spots ---- */
     const card = (r, css) => ifxEl(view, "left:" + bnF(r.left) + "px;top:" + bnF(r.top) + "px;width:" + bnF(r.width) + "px;height:" + bnF(r.height) + "px;border-radius:" + bnF(L.r) + "px;opacity:0;" + css);
     if(L.xp){
-      const e = card(L.xp, "background:linear-gradient(to bottom, rgba(120,32,146,.24), rgba(74,18,124,.12));border:1px solid rgba(196,86,206,.34);");
+      const e = card(L.xp, "background:linear-gradient(to bottom, rgba(120,32,146,.24), rgba(74,18,124,.12));");   /* (384 r6) no rim: a warm shape, not an outlined one */
       ifxAt(c, e, tot, [[built(L.xp.top), { opacity: 0 }], [built(L.xp.top) + .25, { opacity: 1 }]]);
     }
     if(L.box){
       const t0 = built(L.box.top);
-      const wm = card(L.box, "background:radial-gradient(ellipse 70% 80% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(196,40,124,.36), rgba(116,24,134,.22) 60%, rgba(70,16,120,.14));border:1.5px solid rgba(220,80,170,.5);box-shadow:0 0 18px rgba(176,40,150,.32);");
+      const wm = card(L.box, "background:radial-gradient(ellipse 70% 80% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(196,40,124,.36), rgba(116,24,134,.22) 60%, rgba(70,16,120,.14));");
       ifxAt(c, wm, tot, [[t0, { opacity: 0 }], [t0 + .25, { opacity: 1 }]]);
-      const ht = card(L.box, "background:radial-gradient(ellipse 62% 78% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(255,128,40,.5), rgba(232,64,42,.34) 42%, rgba(168,30,118,.26) 78%, rgba(110,24,134,.2));border:2px solid rgba(255,176,70,.9);box-shadow:0 0 26px rgba(255,120,40,.5), inset 0 0 22px rgba(255,120,40,.3);");
+      const ht = card(L.box, "background:radial-gradient(ellipse 62% 78% at " + bnF((tx - L.box.left) / L.box.width * 100) + "% 45%, rgba(255,128,40,.5), rgba(232,64,42,.34) 42%, rgba(168,30,118,.26) 78%, rgba(110,24,134,.2));");
+      /* (384 r6) the box as the camera sees it is a warm shape with no lit rim: round 8 kept a 1.5px and a 2px line and an
+         outer glow round it as "the display's frame", and that was the one coloured frame left on any 100% box - Madison,
+         "some of it hasn't been updated to the new look? Like the border glow" */
       ifxAt(c, ht, tot, [[2.3, { opacity: 0 }], [T.hot, { opacity: 1 }]]);
     }
     (L.spots || []).forEach(sp => {
@@ -122483,92 +122512,111 @@ const IFX_BUILD = { fireworks: ifxExtinguisher, underwater: ifxSprinklers, bubbl
 /* their tiles: a still of each at its best moment (hundoFxPosterSVG's 160 x 60 frame; the 100%
    sits in the middle, so the art frames it) */
 function ifxPosterBody(id, g, rnd){
+  /* (384 r6) THE FIRE CODE TILES IN THE ACADEMY'S LANGUAGE. Madison: "The picture preview for the ifc hundo effects aren't
+     that great, the academy ones are better." The academy's tiles are the app's dark card with the effect's best moment drawn
+     round the 100% in a few soft glows and fine lines, the middle left clear for the number; the Fire Code ones were scenes
+     painted edge to edge - a red pipe along the top edge and a lime frame round the 100% (both read as the old look's coloured
+     frame), the thermal display's words and readout, a whole responder. Redrawn on the same rules: the card's own dark, one
+     pool of the effect's light, the moment itself (the discharge, the spray, the heat, the wash), nothing framing the number,
+     no words. */
   const F = bnF;
   let defs = "", body = "";
+  const rg = (k, stops, cx, cy, r) => { defs += bnRad(g + k, stops, cx, cy, r); };
+  const glow = (cx, cy, rx, ry, k, o) => '<ellipse cx="' + F(cx) + '" cy="' + F(cy) + '" rx="' + F(rx) + '" ry="' + F(ry == null ? rx : ry) + '" fill="url(#' + g + k + ')"' + (o == null ? "" : ' opacity="' + F(o) + '"') + '/>';
+  const inNum = (x, y, m) => Math.abs(x - 80) < 30 + (m || 0) && Math.abs(y - 30) < 12 + (m || 0);
+  /* a small tongue of fire on the floor line */
+  const flame = (x, h, w, ln, k) => '<g transform="translate(' + F(x) + ' 0)"><path d="' + ifxFlameD(0, 60.5, w, h, ln) + '" fill="url(#' + g + k + ')"/></g>';
   if(id === "fireworks"){
-    /* (384 final check) the effect as it is now - the 100% on fire, and the extinguisher putting it out: the fire across the
-       frame behind the 100% (tallest to the right, where the stream has not reached), the horn low at the left on the base of
-       the flames, P.A.S.S. as it is taught, and the agent billowing up where it lands - not the cloud rolling across it was.
-       ("Yes, things need to be updated" - the tile was the old effect.) */
-    defs += ifxLin(g + "rd", 1, 0, IFX_RED) + ifxRad(g + "o", 0, 60, 7, 3.4, [[0, "#FFE08A"], [.35, "#FF8A24", .95], [.72, "#E2361A", .6], [1, "#A3170C", 0]]) +
-      ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .95], [.7, "#F6F1E6", .6], [1, "#F2EDE2", .1]]);
-    ["#FFFFFF", "#EDE8DF", "#C4BCAE"].forEach((cl, k) => { defs += '<radialGradient id="' + g + 'c' + k + '"><stop offset="0" stop-color="' + cl + '" stop-opacity=".95"/><stop offset=".55" stop-color="' + cl + '" stop-opacity=".8"/>' +
-      '<stop offset=".82" stop-color="' + cl + '" stop-opacity=".3"/><stop offset="1" stop-color="' + cl + '" stop-opacity="0"/></radialGradient>'; });
-    body += '<rect width="160" height="60" fill="#0A0C12" opacity=".55"/>';
-    body += '<ellipse cx="114" cy="62" rx="62" ry="28" fill="#FF6A2E" opacity=".2"/>';
-    [[70, 10, 6, -1], [82, 15, 8, 1], [94, 22, 7, -1], [106, 30, 9, 1], [118, 34, 8, -1], [130, 31, 9, 1], [142, 25, 8, -1], [153, 18, 7, 1]].forEach(([x, h, w, ln]) => {
-      body += '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, 60, w, h, ln) + '" fill="url(#' + g + 'o)"/></g>'; });
-    body += '<path d="M33 46 L88 50 L88 60 L33 48.5 Z" fill="url(#' + g + 'jt)" opacity=".85"/>';
-    const L = [];
-    /* low, along the base of the flames, so the 100% above them stays clear */
-    for(let i = 0; i < 18; i++){ const t = rnd(); L.push([54 + t * 40 + (rnd() - .5) * 8, 58 - t * 6 - rnd() * 3, 3 + t * 4 + rnd() * 2]); }
-    L.sort((p, q) => q[1] - p[1]).forEach(([x, y, r]) => { body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="url(#' + g + 'c' + (y > 55 ? 2 : y > 51 ? 1 : 0) + ')"/>'; });
-    body += '<path d="M6 60 L6 36 Q6 30 12 30 Q18 30 18 36 L18 60 Z" fill="url(#' + g + 'rd)"/><rect x="8" y="42" width="8" height="10" rx="1" fill="#F6F2E8"/><rect x="9.5" y="25" width="5" height="6" rx="1" fill="#C9CED6"/>' +
-      '<path d="M15 27 C22 27 24 34 23 40 C22 44 24 45.5 27 46" fill="none" stroke="#14161A" stroke-width="1.8" stroke-linecap="round"/><path d="M26 45.8 L33 47" stroke="#3A3F48" stroke-width="2.8" stroke-linecap="round"/><path d="M26 45.8 L33 47" stroke="#8A909A" stroke-width=".7" stroke-linecap="round"/>' +
-      '<circle cx="7.5" cy="28" r="2.6" fill="#FBFBF8" stroke="#A9B1BA" stroke-width=".7"/>';
+    /* EXTINGUISHER: the discharge - the horn in from the left edge, a cone of dry chem widening across the floor and billowing up
+       where it lands on the last of the fire, powder drifting up through the light */
+    rg("w", [[0, "#FF6A3D", .42], [1, "#FF3A20", 0]]);
+    rg("c", [[0, "#FFFFFF", .95], [.5, "#F2EEE8", .7], [1, "#E6E0D6", 0]]);
+    rg("d", [[0, "#D8D2C8", .7], [1, "#C8C0B4", 0]]);
+    defs += ifxRad(g + "f", 0, 60, 6, 3, [[0, "#FFE7A0"], [.35, "#FF9A2E", .95], [.72, "#E8402A", .6], [1, "#A3170C", 0]]) +
+      ifxLin(g + "j", 1, 0, [[0, "#FFFFFF", .95], [.55, "#F4F1EC", .55], [1, "#ECE7DE", 0]]) + ifxLin(g + "hn", 0, 1, [[0, "#4A505A"], [.5, "#1C2026"], [1, "#0C0E12"]]) + ifxLin(g + "rd", 1, 0, IFX_RED);
+    body += glow(132, 58, 46, 20, "w") + glow(28, 46, 26, 14, "w", .35);
+    /* the fire it is putting out: a few tongues on the right, low */
+    [[118, 13, 4.2, 1], [127, 18, 5.4, -1], [136, 15, 4.6, 1], [145, 20, 5.6, -1], [154, 12, 4, 1]].forEach(f => { body += flame(f[0], f[1], f[2], f[3], "f"); });
+    /* the jet: the horn's mouth (20, 47) out to the floor at the right, widening */
+    body += '<path d="M21 45.4 Q60 42.6 106 44 L116 60 Q64 56 21 49.4 Z" fill="url(#' + g + 'j)" opacity=".5"/>' +
+      '<path d="M21 46.4 Q60 45.4 100 48.6" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".7"/>';
+    /* the cloud where it lands: soft puffs, lit from the fire under them */
+    [[86, 55, 10, "d"], [98, 52, 12, "c"], [112, 54, 13, "c"], [124, 51, 11, "c"], [136, 56, 12, "d"], [104, 58, 9, "c"], [118, 47, 8, "c"], [74, 57, 7, "d"]]
+      .forEach(([x, y, r, k]) => { body += glow(x, y, r, r * .78, k); });
+    /* the powder drifting up, and two embers that got away */
+    for(let i = 0; i < 26; i++){ const x = 60 + rnd() * 96, y = 26 + rnd() * 26; if(inNum(x, y, 2)) continue;
+      body += '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(.3 + rnd() * .55) + '" fill="#FFFFFF" opacity="' + F(.25 + rnd() * .45) + '"/>'; }
+    [[146, 30], [138, 22]].forEach(([x, y]) => { body += '<circle cx="' + x + '" cy="' + y + '" r=".8" fill="#FFB24A" opacity=".9"/>'; });
+    /* the horn and the hose, in from the left edge; the cylinder's red shoulder just in the corner */
+    body += '<path d="M-6 62 Q-6 49 4 47.6 Q11 47.6 11 55 L11 62 Z" fill="url(#' + g + 'rd)"/><path d="M-1 51 Q4 49.2 9 51.4" fill="none" stroke="#FF8A80" stroke-width=".6" opacity=".7"/>' +
+      '<path d="M6 47.6 C5 41 12 40 14.6 43.8" fill="none" stroke="#14161A" stroke-width="1.4" stroke-linecap="round"/>' +
+      '<path d="M13 43.4 L22 44.8 L22 50 L13 48.6 Z" fill="url(#' + g + 'hn)"/><path d="M13.4 44 L21.6 45.2" stroke="#7C8590" stroke-width=".5"/>';
   } else if(id === "underwater"){
-    /* the main, three heads throwing their umbrellas, rain, the fire going down in steam */
-    defs += '<linearGradient id="' + g + 'f" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#FF6A2E" stop-opacity=".6"/><stop offset="1" stop-color="#FF6A2E" stop-opacity="0"/></linearGradient>' +
-      ifxRad(g + "o", 0, 60, 6, 3, [[0, "#FFC15A"], [.4, "#FF7A1F", .95], [.75, "#E2361A", .55], [1, "#A3170C", 0]]) + ifxLin(g + "br", 1, 0, IFX_BRASS);
-    body += '<rect x="0" y="28" width="160" height="32" fill="url(#' + g + 'f)"/><rect x="0" y="0" width="160" height="2.2" fill="#C8262A"/>';
-    [[10, 60, 6, 15], [28, 60, 7, 19], [46, 60, 5, 12], [118, 60, 6, 14], [136, 60, 7, 18], [152, 60, 5, 12]].forEach(([x, y, w, h], i) => {
-      body += '<g transform="translate(' + x + ' 0)"><path d="' + ifxFlameD(0, y, w, h, i % 2 ? 2 : -2) + '" fill="url(#' + g + 'o)"/><path d="' + ifxFlameD(0, y, w * .5, h * .55, 0) + '" fill="#FFE7A0" opacity=".8"/></g>'; });
-    /* (384) the umbrellas as the effect's now are: a bright sheet off the plate, streams that leave it
-       whole and break into droplets, a bell of mist; the steam in wisps (it was two flat discs) */
-    defs += '<radialGradient id="' + g + 'm" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#DDF3FF" stop-opacity=".32"/><stop offset="1" stop-color="#CBEBFF" stop-opacity="0"/></radialGradient>' +
-      '<radialGradient id="' + g + 's"><stop offset="0" stop-color="#F2F7FA" stop-opacity=".55"/><stop offset="1" stop-color="#E2EAEE" stop-opacity="0"/></radialGradient>';
-    [30, 80, 130].forEach((x, i) => {
-      body += '<path d="M' + x + ' 9 C' + (x - 8) + ' 10 ' + (x - 20) + ' 22 ' + (x - 27) + ' 42 L' + (x + 27) + ' 42 C' + (x + 20) + ' 22 ' + (x + 8) + ' 10 ' + x + ' 9 Z" fill="url(#' + g + 'm)"/>';
-      body += '<rect x="' + (x - 3) + '" y="1.5" width="6" height="2" fill="#D9DEE4"/><path d="M' + (x - 2) + ' 3.5 L' + (x + 2) + ' 3.5 L' + (x + 1.4) + ' 6 L' + (x - 1.4) + ' 6 Z" fill="url(#' + g + 'br)"/><path d="M' + (x - 6) + ' 8.4 L' + (x + 6) + ' 8.4" stroke="#D9A23A" stroke-width="1.1"/>' +
-        '<path d="M' + (x - 8) + ' 9.9 Q' + x + ' 8.3 ' + (x + 8) + ' 9.9" fill="none" stroke="#FFFFFF" stroke-width=".7" stroke-linecap="round" opacity=".85"/>';
-      for(let j = 0; j < 15; j++){ const a = -1.25 + j * 2.5 / 14, t = .55 + (j % 3) * .22;
-        const P = u => [x + Math.sin(a) * 26 * u, 9 + Math.cos(a) * 7 * u + 16 * u * u], seg = (u0, u1) => { const A = P(u0), B = P(u1), h = (u1 - u0) / 2; return 'M' + F(A[0]) + ' ' + F(A[1]) + ' Q' + F(A[0] + Math.sin(a) * 26 * h) + ' ' + F(A[1] + (Math.cos(a) * 7 + 32 * u0) * h) + ' ' + F(B[0]) + ' ' + F(B[1]); };
-        body += '<path d="' + seg(.06, t * .45) + '" fill="none" stroke="#EAF8FF" stroke-width=".65" stroke-linecap="round" opacity=".9"/><path d="' + seg(t * .45, t) + '" fill="none" stroke="#DFF6FF" stroke-width=".75" stroke-dasharray=".9 1.9" stroke-linecap="round" opacity=".75"/>'; }
-      for(let j = 0; j < 5; j++){ const rx = x - 16 + j * 8 + rnd() * 3, ry = 26 + rnd() * 18; body += '<path d="M' + F(rx) + ' ' + F(ry) + ' l' + F((rx - x) * .04) + ' 5" stroke="#E8F7FF" stroke-width=".8" stroke-linecap="round" opacity=".7"/><circle cx="' + F(rx + (rx - x) * .04) + '" cy="' + F(ry + 5) + '" r=".55" fill="#FFFFFF"/>'; }
+    /* SPRINKLERS: two heads at the top, each throwing its umbrella of fine spray; rain across the frame; at the floor the fire
+       knocked down into steam */
+    rg("sky", [[0, "#5EA8E0", .16], [1, "#5EA8E0", 0]]);
+    rg("w", [[0, "#FF7A2E", .4], [1, "#FF5A1C", 0]]);
+    rg("st", [[0, "#F2F7FA", .5], [1, "#E2EAEE", 0]]);
+    rg("um", [[0, "#DDF3FF", .28], [1, "#CBEBFF", 0]], "50%", "0%", "100%");
+    defs += ifxRad(g + "f", 0, 60, 5, 2.8, [[0, "#FFD27A"], [.4, "#FF8A24", .9], [1, "#C8260E", 0]]) + ifxLin(g + "br", 1, 0, IFX_BRASS) + ifxLin(g + "ch", 1, 0, IFX_CHROME);
+    body += glow(80, 0, 70, 26, "sky") + glow(80, 62, 70, 14, "w", .7);
+    /* the last of the fire on the floor, under steam */
+    [[50, 7, 3.4, 1], [60, 5, 2.8, -1], [102, 6, 3, 1], [112, 8, 3.6, -1]].forEach(f => { body += flame(f[0], f[1], f[2], f[3], "f"); });
+    [[46, 50], [62, 48], [100, 49], [116, 51], [80, 53]].forEach(([x, y], i) => { for(let j = 0; j < 3; j++) body += glow(x + Math.sin(j * 1.7 + i) * 2, y - j * 6, 4 + j * 2.4, 3 + j * 1.6, "st"); });
+    [24, 136].forEach(x => {
+      /* the umbrella: a bell of mist and streams of drops off the deflector */
+      body += '<path d="M' + x + ' 7 C' + (x - 7) + ' 8 ' + (x - 20) + ' 18 ' + (x - 27) + ' 38 L' + (x + 27) + ' 38 C' + (x + 20) + ' 18 ' + (x + 7) + ' 8 ' + x + ' 7 Z" fill="url(#' + g + 'um)"/>';
+      for(let j = 0; j < 13; j++){ const t = -1.2 + j * 2.4 / 12, len = .7 + (j % 3) * .15;
+        const P = u => [x + Math.sin(t) * 25 * u, 7.6 + Math.cos(t) * 5 * u + 22 * u * u];
+        const A = P(.08), B = P(len * .5), C = P(len);
+        body += '<path d="M' + F(A[0]) + ' ' + F(A[1]) + ' L' + F(B[0]) + ' ' + F(B[1]) + '" stroke="#EAF8FF" stroke-width=".55" stroke-linecap="round" opacity=".85"/>' +
+          '<path d="M' + F(B[0]) + ' ' + F(B[1]) + ' L' + F(C[0]) + ' ' + F(C[1]) + '" stroke="#DFF6FF" stroke-width=".6" stroke-dasharray=".8 1.6" stroke-linecap="round" opacity=".7"/>'; }
+      /* the head itself, small: the escutcheon at the top edge, the brass frame, the deflector */
+      body += '<rect x="' + (x - 3.4) + '" y="-1" width="6.8" height="2.6" rx=".8" fill="url(#' + g + 'ch)"/><path d="M' + (x - 1.8) + ' 1.6 L' + (x + 1.8) + ' 1.6 L' + (x + 1.2) + ' 5.6 L' + (x - 1.2) + ' 5.6 Z" fill="url(#' + g + 'br)"/>' +
+        '<path d="M' + (x - 5) + ' 6.8 Q' + x + ' 5.8 ' + (x + 5) + ' 6.8" fill="none" stroke="#E0B24A" stroke-width="1" stroke-linecap="round"/>';
     });
-    [[64, 50, 1], [96, 52, -1], [150, 46, 1], [12, 46, -1]].forEach(([x, y, k]) => { for(let j = 0; j < 5; j++){ const u = j / 4;
-      body += '<ellipse cx="' + F(x + Math.sin(u * 3) * k * 3) + '" cy="' + F(y - u * 16) + '" rx="' + F(3 + u * 6) + '" ry="' + F(3 + u * 3) + '" fill="url(#' + g + 's)"/>'; } });
-  } else if(id === "ufo"){
-    /* (384, the showpiece; round 6: no tape, bands or placard) its frame at the lock: the beacons' amber light down from
-       above, the vapour on the floor, the scan line, the field and the brackets round the 100%, and the responder spraying */
-    defs += '<linearGradient id="' + g + 'v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4F03A" stop-opacity="0"/><stop offset=".55" stop-color="#7ED83A" stop-opacity=".34"/><stop offset="1" stop-color="#4AA82E" stop-opacity=".6"/></linearGradient>' +
-      '<linearGradient id="' + g + 's" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4F03A" stop-opacity="0"/><stop offset="1" stop-color="#D8FF8A" stop-opacity=".55"/></linearGradient>' +
-      '<linearGradient id="' + g + 'bm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC24A" stop-opacity=".55"/><stop offset="1" stop-color="#FFB21A" stop-opacity="0"/></linearGradient>' +
-      '<radialGradient id="' + g + 'f"><stop offset="0" stop-color="#8EE04A" stop-opacity=".5"/><stop offset="1" stop-color="#3E9E2C" stop-opacity="0"/></radialGradient>' +
-      ifxLin(g + "y", 1, 0, [[0, "#FFE56E"], [.45, "#F2C418"], [1, "#8A6A06"]]) + ifxLin(g + "m", 1, 0, [[0, "#FFFFFF", .95], [1, "#E8FFF4", 0]]) +
-      ifxLin(g + "fr", 1, 1, [[0, "#FFFFFF"], [.6, "#D2D7DD"], [1, "#9AA1A9"]]) + ifxLin(g + "vz", 1, 1, [[0, "#BFE4F2"], [.4, "#1E3440"], [1, "#05090C"]]);
-    body += '<rect width="160" height="60" fill="#0A0C12" opacity=".35"/>' +
-      '<path d="M18 -2 L62 60 L30 60 Z" fill="url(#' + g + 'bm)"/><path d="M142 -2 L98 60 L130 60 Z" fill="url(#' + g + 'bm)" opacity=".8"/>' +
-      '<rect x="0" y="38" width="160" height="22" fill="url(#' + g + 'v)"/>' +
-      [[12, 54, 16], [40, 57, 14], [74, 56, 15], [104, 55, 14], [150, 56, 16]].map(([x, y, r]) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="url(#' + g + 'f)"/>').join("") +
-      '<rect x="0" y="26" width="160" height="7" fill="url(#' + g + 's)"/><rect x="0" y="32.6" width="160" height=".7" fill="#FFFFFF" opacity=".85"/>' +
-      '<rect x="49" y="13" width="62" height="34" rx="5" fill="none" stroke="#B4F03A" stroke-width="2.4" opacity=".22"/><rect x="49" y="13" width="62" height="34" rx="5" fill="none" stroke="#E8FFB0" stroke-width=".6" opacity=".7"/>';
-    [[47, 11, 1, 1], [113, 11, -1, 1], [113, 49, -1, -1], [47, 49, 1, -1]].forEach(([x, y, sx, sy]) => { body += '<path d="M' + x + ' ' + (y + sy * 5.5) + ' L' + x + ' ' + y + ' L' + (x + sx * 5.5) + ' ' + y + '" fill="none" stroke="#D8FF8A" stroke-width="1.6" stroke-linecap="round"/>'; });
-    /* the responder low at the left, his wand up at the box and the mist going on */
-    body += '<path d="M35 25 L56 14 L59 22 Z" fill="url(#' + g + 'm)" opacity=".85"/>' +
-      '<path d="M10 60 L10 44 Q10 38 16 37 L26 37 Q32 38 32 44 L32 60 Z" fill="url(#' + g + 'y)"/><ellipse cx="21" cy="33" rx="9" ry="8.4" fill="url(#' + g + 'y)"/>' +
-      '<rect x="14" y="28.6" width="12.5" height="9" rx="3.6" fill="url(#' + g + 'vz)"/><path d="M15.6 31 Q16.4 29.6 19 29.4" fill="none" stroke="#FFFFFF" stroke-width=".8" stroke-linecap="round" opacity=".85"/>' +
-      '<path d="M28 41 L35 35" stroke="url(#' + g + 'y)" stroke-width="4.4" stroke-linecap="round"/><circle cx="35.5" cy="34.5" r="2" fill="#1E3A14"/><path d="M35.5 34 L38.5 25.5" stroke="#C9CED6" stroke-width="1" stroke-linecap="round"/>' +
-      '<rect x="22" y="44" width="5" height="3" rx=".6" fill="#F4F4F2"/><rect x="22.8" y="45" width="3.4" height=".9" fill="#D7262E"/>';
+    /* rain falling through the middle, and splashes on the floor */
+    for(let i = 0; i < 30; i++){ const x = 6 + rnd() * 148, y = 12 + rnd() * 40, l = 2.4 + rnd() * 2.6; if(inNum(x, y + l / 2, 3)) continue;
+      body += '<path d="M' + F(x) + ' ' + F(y) + ' l' + F(-.35) + ' ' + F(l) + '" stroke="#CFEFFF" stroke-width=".5" stroke-linecap="round" opacity="' + F(.35 + rnd() * .45) + '"/>'; }
+    for(let i = 0; i < 8; i++){ const x = 14 + rnd() * 132; body += '<path d="M' + F(x - 1.6) + ' 58.6 Q' + F(x) + ' 56.4 ' + F(x + 1.6) + ' 58.6" fill="none" stroke="#DFF6FF" stroke-width=".45" opacity=".6"/>'; }
   } else if(id === "bubbles"){
-    /* (384) the Thermal Camera's display at its peak: cold indigo and scan lines, the reticle's
-       corners locked round the 100% in the middle in the palette's halo, heat rolling up off it,
-       the scale pegged and the readout at 1000 */
-    defs += '<radialGradient id="' + g + 'c" cx="50%" cy="42%" r="78%"><stop offset="0" stop-color="#2E1264"/><stop offset=".62" stop-color="#170838"/><stop offset="1" stop-color="#070314"/></radialGradient>' +
-      ifxRad(g + "h", 80, 31, 50, .46, [[0, "#F0562A", .62], [.32, "#C8286A", .46], [.62, "#7A1890", .26], [1, "#3A0E6A", 0]]) +
-      ifxRad(g + "p", 0, 20, 7, 2.4, [[0, "#FFB23A", .62], [.45, "#D8306A", .34], [1, "#7A1890", 0]]) + ifxLin(g + "i", 0, 1, IFX_IRON);
+    /* THERMAL CAMERA: the screen as the camera sees it at the lock - cold indigo, the 100% white-hot in the middle of its own
+       heat, the heat rolling up off it, two cool spots, faint scan lines and the scale at the edge pegged at the top */
+    defs += '<radialGradient id="' + g + 'c" cx="50%" cy="46%" r="80%"><stop offset="0" stop-color="#2A1060"/><stop offset=".6" stop-color="#140733"/><stop offset="1" stop-color="#070314"/></radialGradient>' +
+      ifxRad(g + "h", 80, 31, 46, .5, [[0, "#FFB02E", .7], [.22, "#F0562A", .55], [.48, "#C8286A", .36], [.75, "#6A1690", .18], [1, "#3A0E6A", 0]]) +
+      ifxRad(g + "p", 0, 20, 6, 2.6, [[0, "#FFB23A", .55], [.5, "#D8306A", .3], [1, "#7A1890", 0]]) +
+      ifxRad(g + "k", 0, 0, 10, .7, [[0, "#3C5AE0", .45], [1, "#2A1A80", 0]]) + ifxLin(g + "i", 0, 1, IFX_IRON);
     body += '<rect width="160" height="60" fill="url(#' + g + 'c)"/>';
-    for(let y = 1; y < 60; y += 2.6) body += '<rect x="0" y="' + bnF(y) + '" width="160" height=".5" fill="#C8AAFF" opacity=".07"/>';
+    for(let y = 1.2; y < 60; y += 2.4) body += '<rect x="0" y="' + F(y) + '" width="160" height=".4" fill="#C8AAFF" opacity=".05"/>';
+    body += '<g transform="translate(26 44)"><ellipse rx="18" ry="9" fill="url(#' + g + 'k)"/></g><g transform="translate(130 14)"><ellipse rx="16" ry="8" fill="url(#' + g + 'k)"/></g>';
     body += '<rect width="160" height="60" fill="url(#' + g + 'h)"/>';
-    [[64, 1], [96, -1], [80, 0]].forEach(([x, s], i) => { body += '<g transform="translate(' + x + ' ' + (i === 2 ? -2 : 0) + ')"><path d="M0 22 C-6 18 -5 10 -2 4 C0 0 -3 -4 0 -8 C4 -2 6 4 3 10 C1 15 5 18 0 22 Z" fill="url(#' + g + 'p)" opacity="' + (i === 2 ? .8 : .6) + '" transform="scale(' + (s || 1) + ' 1)"/></g>'; });
-    const L = (x, y, sx, sy, a, w) => '<path d="M' + x + ' ' + (y + sy * a) + ' L' + x + ' ' + y + ' L' + (x + sx * a) + ' ' + y + '" fill="none" stroke="#FFFFFF" stroke-width="' + w + '" stroke-linecap="square"/>';
-    body += '<g opacity=".95">' + L(46, 13, 1, 1, 6, 1.4) + L(114, 13, -1, 1, 6, 1.4) + L(114, 47, -1, -1, 6, 1.4) + L(46, 47, 1, -1, 6, 1.4) + '</g>' +
-      '<g opacity=".75">' + L(4, 4, 1, 1, 7, 1) + L(156, 4, -1, 1, 7, 1) + L(156, 56, -1, -1, 7, 1) + L(4, 56, 1, -1, 7, 1) + '</g>' +
-      '<rect x="146.5" y="17" width="4" height="32" rx="1.2" fill="url(#' + g + 'i)" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".5"/><path d="M152.2 17.4 L155.4 15.4 L155.4 19.4 Z" fill="#FFFFFF"/>' +
-      '<text x="9" y="13" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="5" letter-spacing=".9" fill="#FFFFFF" opacity=".85">THERMAL</text>' +
-      '<rect x="8" y="45.5" width="27" height="9" rx="2" fill="#080416" fill-opacity=".7" stroke="#FFFFFF" stroke-opacity=".5" stroke-width=".4"/>' +
-      '<text x="21.5" y="52.6" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="6.4" fill="#FFFFFF">1000°F</text>' +
-      '<rect x="37" y="46.6" width="14" height="6.8" rx="1.8" fill="#FFF2C0"/><text x="44" y="51.8" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="800" font-size="4.6" letter-spacing=".4" fill="#8A0E2A">MAX</text>';
+    [[66, 1, .55], [94, -1, .55], [80, 1, .75], [73, -1, .4], [88, 1, .4]].forEach(([x, sx, o], i) => {
+      body += '<g transform="translate(' + x + ' ' + (i === 2 ? -3 : i > 2 ? 2 : 0) + ') scale(' + (sx * (i > 2 ? .7 : 1)) + ' 1)"><path d="M0 20 C-6 16 -5 9 -2 4 C0 0 -3 -4 0 -8 C4 -2 6 4 3 10 C1 14 5 17 0 20 Z" fill="url(#' + g + 'p)" opacity="' + o + '"/></g>'; });
+    /* the scale, thin, at the right edge, and its pointer at the top */
+    body += '<rect x="150" y="12" width="2.6" height="36" rx="1.3" fill="url(#' + g + 'i)" opacity=".9"/><path d="M154 12.6 L156.6 11 L156.6 14.2 Z" fill="#FFFFFF" opacity=".9"/>';
+  } else if(id === "ufo"){
+    /* HAZMAT: the decon wash - the spill's green haze along the floor and running down from the top edge, the stream of foam
+       arcing in from the left and landing in suds on the right, the first clean glints, the alert's amber still in the top corners */
+    rg("v", [[0, "#8EE04A", .5], [1, "#3E9E2C", 0]]);
+    rg("am", [[0, "#FFB21A", .3], [1, "#FFB21A", 0]]);
+    rg("lx", [[0, "#B4F03A", .22], [1, "#B4F03A", 0]]);
+    defs += ifxLin(g + "oz", 0, 1, [[0, "#C8F55A", .9], [1, "#7ED83A", .2]]) + ifxLin(g + "jt", 1, 0, [[0, "#FFFFFF", .2], [.25, "#F4FBFF", .9], [1, "#E8F6FF", .75]]);
+    body += glow(0, 0, 34, 20, "am") + glow(160, 0, 34, 20, "am") + glow(80, 30, 52, 22, "lx");
+    [[10, 58, 22], [40, 60, 20], [72, 61, 22], [104, 60, 20], [138, 58, 24]].forEach(([x, y, r]) => { body += glow(x, y, r, r * .55, "v"); });
+    /* the ooze running down from the top edge */
+    [[34, 13], [118, 9], [132, 15]].forEach(([x, l]) => { body += '<path d="M' + (x - 1.8) + ' 0 L' + (x + 1.8) + ' 0 L' + (x + 1) + ' ' + l + ' Q' + x + ' ' + (l + 2.6) + ' ' + (x - 1) + ' ' + l + ' Z" fill="url(#' + g + 'oz)"/>' +
+      '<circle cx="' + x + '" cy="' + (l + 3.6) + '" r="1" fill="#B4F03A" opacity=".75"/>'; });
+    /* the stream: up from the bottom-left corner over the floor and down onto the right, a white core in a pale body */
+    body += '<path d="M-2 52 Q46 34 128 50" fill="none" stroke="url(#' + g + 'jt)" stroke-width="3.4" stroke-linecap="round" opacity=".55"/>' +
+      '<path d="M-2 52 Q46 34 128 50" fill="none" stroke="#FFFFFF" stroke-width="1.1" stroke-linecap="round" opacity=".95"/>';
+    /* suds where it lands, and a few carried in it: a rim and a highlight each */
+    const sud = (x, y, r) => '<circle cx="' + F(x) + '" cy="' + F(y) + '" r="' + F(r) + '" fill="#F4FFF4" fill-opacity=".14" stroke="#FFFFFF" stroke-opacity=".8" stroke-width="' + F(Math.min(.5, .2 + r * .12)) + '"/>' +
+      (r > 1.1 ? '<circle cx="' + F(x - r * .36) + '" cy="' + F(y - r * .38) + '" r="' + F(r * .24) + '" fill="#FFFFFF" opacity=".85"/>' : "");
+    [[126, 50, 3], [131, 47, 2.2], [134, 52, 2.6], [121, 53, 2], [138, 49, 1.6], [129, 55, 1.8], [142, 53, 1.4], [117, 49, 1.3], [30, 44, 1.2], [56, 40, 1], [86, 42.4, .9]]
+      .forEach(([x, y, r]) => { body += sud(x, y, r); });
+    /* the first glints on the clean side */
+    const gl = (x, y, r) => '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + ' Z" fill="#F2FFD0"/>';
+    body += gl(114, 22, 3) + gl(46, 18, 2.2) + gl(140, 34, 1.8);
   }
   return { defs, body };
 }
