@@ -59741,88 +59741,80 @@ var IFC_CHAR_DRAW = {
     k.close();
     k.close();
   },
-  /* SPRINKLER HEAD (the Hive's; round 3: "Sprinkler head looks terrible, try again"): a chrome
-     machine built on a sprinkler - the frame's two arms rise off its helm like horns to the
-     deflector crown, the red glass bulb stands between them, a visor with blue eyes, mist off the
-     crown.
-     384 ("could they look better? We don't need to add stuff"): the same parts, finished as real
-     chrome - a dark horizon band and a hot line across the helm and down each arm, shade under the
-     jaw; the bulb as glass with its red liquid, a lit core and its air bubble; the deflector given
-     its thickness; the visor glass with a reflection and the eyes lit inside; the collar and the
-     chest light modelled */
+  /* SPRINKLER HEAD (the Hive's; 384 round 7: "Sprinkler is kinda in the same position as strobe.. it's cool but it's hard to
+     tell now that it's a sprinkler head."): a pendent fire sprinkler, built the way the real one is, top to bottom - the
+     white feed pipe into its brass threaded inlet, the hex body, the two frame arms running down to the boss, the red glass
+     bulb standing between them, and under it all the deflector plate with its notched rim, which is the face: a dark glass
+     plate with two lit eyes. The water it throws comes off the rim as the character's shoulders. */
   fcsprinkler2(k){
+    const chrome = k.headGrad("#FFFFFF", "#AEB8C6", "#4A5262"), CHH = fcLin(k, [["0", "#4A5262"], [".3", "#F4F6FA"], [".6", "#9AA4B4"], ["1", "#3A4250"]], "0", "0", "1", "0");
+    const BR = fcLin(k, [["0", "#7A5410"], [".3", "#FFE9A0"], [".6", "#D8A62E"], ["1", "#5A3C08"]], "0", "0", "1", "0");
+    const cx0 = 20, cy0 = 24.2, RX = 10.6, RY = 5.6;
+    /* the water: a pale cone under the plate, streaks running down it, drops falling */
     k.open("cx-body");
-    k.add("path", { d: "M5 40 Q5.6 31.2 13 29.4 L27 29.4 Q34.4 31.2 35 40 Z", fill: k.headGrad("#C8D0DA", "#7A8494", "#2A303A") });
-    k.add("path", { d: "M5.6 36.4 Q20 33.8 34.4 36.4 L34.6 37.6 Q20 35 5.4 37.6 Z", fill: "#1E2430", opacity: ".22" });
-    k.add("path", { d: "M13 29.6 Q20 33.6 27 29.6 L26.4 31.6 Q20 35.4 13.6 31.6 Z", fill: "#C0262A" });
-    k.add("path", { d: "M13.35 30.15 Q20 33.95 26.65 30.15", fill: "none", stroke: "#FF8A80", "stroke-width": ".25", opacity: ".6" });
-    k.add("path", { d: "M13.75 31.45 Q20 35.15 26.25 31.45", fill: "none", stroke: "#5A0610", "stroke-width": ".3", opacity: ".5" });
-    k.add("path", { d: "M6.4 34.4 Q13 31.8 15.6 34 M33.6 34.4 Q27 31.8 24.4 34", fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", opacity: ".45" });
-    k.add("circle", { cx: 20, cy: 35.4, r: 1.6, fill: "#2A303A", stroke: "#4FC3FF", "stroke-width": ".3" });
-    k.add("circle", { cx: 20, cy: 35.4, r: .7, fill: "#4FC3FF" });
-    k.add("circle", { cx: 19.72, cy: 35.12, r: .24, fill: "#FFFFFF", opacity: ".85" });
+    k.add("path", { d: "M10.4 27.4 Q7.4 33.6 4.8 40 L35.2 40 Q32.6 33.6 29.6 27.4 Q20 31.4 10.4 27.4 Z", fill: fcLin(k, [["0", "#D4F2FF", ".95"], [".5", "#62BEFF", ".8"], ["1", "#2A78F0", ".62"]]) });
+    [[12.4, 28.4, 8.8], [16, 29.4, 14], [20, 29.8, 20], [24, 29.4, 26], [27.6, 28.4, 31.2]].forEach(([x1, y1, x2]) =>
+      k.add("path", { d: "M" + x1 + " " + y1 + " Q" + fcF((x1 + x2) / 2 + (x2 - x1) * .1) + " 34 " + x2 + " 40", fill: "none", stroke: "#FFFFFF", "stroke-width": ".4", opacity: ".7", "stroke-linecap": "round" }));
+    k.add("path", { d: "M10.4 27.4 Q7.4 33.6 4.8 40", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".8", "stroke-linecap": "round" });
+    k.add("path", { d: "M29.6 27.4 Q32.6 33.6 35.2 40", fill: "none", stroke: "#CFF2FF", "stroke-width": ".35", opacity: ".6", "stroke-linecap": "round" });
     k.close();
     k.open("cx-head");
-    const chrome = k.headGrad("#FFFFFF", "#AEB8C6", "#4A5262");
-    /* the arms, up from the helm's sides: a dark line down the outer edge, a hot line down the face */
-    k.add("path", { d: "M12.2 18 Q10.2 11 14.6 6.4 L16.2 7.4 Q13 11.4 14 17 Z M27.8 18 Q29.8 11 25.4 6.4 L23.8 7.4 Q27 11.4 26 17 Z", fill: chrome, stroke: "#3A4250", "stroke-width": ".25" });
-    k.add("path", { d: "M12.55 17.2 Q10.75 11 14.55 6.85 M27.45 17.2 Q29.25 11 25.45 6.85", fill: "none", stroke: "#2A303A", "stroke-width": ".32", opacity: ".45", "stroke-linecap": "round" });
-    k.add("path", { d: "M13.3 16.6 Q11.9 11.3 15.25 7.2 M26.7 16.6 Q28.1 11.3 24.75 7.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".32", opacity: ".8", "stroke-linecap": "round" });
-    /* the helm, as chrome: a horizon band across its crown, shade under the jaw, the hot spots */
-    k.add("path", { d: "M11.6 20 Q11.4 12.8 20 12.6 Q28.6 12.8 28.4 20 Q28.6 27.4 24.4 29.8 L15.6 29.8 Q11.4 27.4 11.6 20 Z", fill: chrome, stroke: "#3A4250", "stroke-width": ".3" });
-    k.add("path", { d: "M12.15 15.7 Q20 13.6 27.85 15.7 L28.05 16.75 Q20 14.75 11.95 16.75 Z", fill: "#3A4250", opacity: ".26" });
-    k.add("path", { d: "M12.6 24.6 Q13.2 28.4 15.8 29.35 L24.2 29.35 Q26.8 28.4 27.4 24.6 Q26.4 27.7 24 28.3 L16 28.3 Q13.6 27.7 12.6 24.6 Z", fill: "#1E2430", opacity: ".24" });
-    k.add("path", { d: "M13.4 24.9 Q20 26.3 26.6 24.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".45", "stroke-linecap": "round" });
-    k.add("path", { d: "M13.2 17.6 Q14 14.4 17.4 13.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".6", opacity: ".85", "stroke-linecap": "round" });
-    k.add("circle", { cx: 24.6, cy: 14.6, r: .32, fill: "#FFFFFF", opacity: ".8" });
-    k.add("path", { d: "M17.6 26.8 Q20 27.8 22.4 26.8", fill: "none", stroke: "#4FC3FF", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".8" });
-    /* the visor: dark glass, the eyes lit inside it, a reflection across it */
-    k.add("path", { d: "M12.8 18.6 Q20 17.4 27.2 18.6 L26.6 23.4 Q20 24.8 13.4 23.4 Z", fill: "#0A1424", stroke: "#3A4250", "stroke-width": ".3" });
-    k.add("ellipse", { cx: 20, cy: 21, rx: 6, ry: 2.2, fill: "#4FC3FF", opacity: ".1" });
+    /* the feed pipe and the brass threaded inlet */
+    k.add("path", { d: "M18.4 3 L21.6 3 L21.6 5.4 L18.4 5.4 Z", fill: CHH, stroke: "#3A4250", "stroke-width": ".2" });
+    k.add("path", { d: "M17.2 5.2 L22.8 5.2 L22.8 8.8 L17.2 8.8 Z", fill: BR, stroke: "#5A3C08", "stroke-width": ".22" });
+    for(let i = 0; i < 4; i++) k.add("path", { d: "M17.2 " + fcF(5.9 + i * .9) + " L22.8 " + fcF(5.5 + i * .9), stroke: "#5A3C08", "stroke-width": ".24", opacity: ".8" });
+    k.add("path", { d: "M17.6 5.5 L17.6 8.6", stroke: "#FFF6C8", "stroke-width": ".25", opacity: ".8", "stroke-linecap": "round" });
+    /* the hex body */
+    k.add("path", { d: "M15.4 9.8 L16.6 8.7 L23.4 8.7 L24.6 9.8 L24.2 11.8 L15.8 11.8 Z", fill: CHH, stroke: "#3A4250", "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("path", { d: "M18.4 8.8 L18.2 11.7 M21.6 8.8 L21.8 11.7", stroke: "#2A303A", "stroke-width": ".2", opacity: ".5" });
+    /* the frame arms, running down and in to the boss */
+    k.add("path", { d: "M15.6 11.6 Q14.6 15.6 18.4 18.6 L19.4 18 Q16.4 15 17.2 11.8 Z M24.4 11.6 Q25.4 15.6 21.6 18.6 L20.6 18 Q23.6 15 22.8 11.8 Z", fill: chrome, stroke: "#3A4250", "stroke-width": ".25", "stroke-linejoin": "round" });
+    k.add("path", { d: "M15.9 12.2 Q15.2 15.2 18.1 17.9 M24.1 12.2 Q24.8 15.2 21.9 17.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".85", "stroke-linecap": "round" });
+    /* the glass bulb between the arms: glass, its red liquid, a lit core, the air bubble at the top */
+    k.add("ellipse", { cx: 20, cy: 14.6, rx: 1.45, ry: 3.4, fill: "#FFD8D4", opacity: ".4", stroke: "#FFE8E4", "stroke-width": ".15" });
+    k.add("ellipse", { cx: 20, cy: 14.8, rx: 1.15, ry: 3, fill: fcLin(k, [["0", "#7A0A12"], [".38", "#FF5A4E"], [".62", "#E5332A"], ["1", "#5A060C"]], "0", "0", "1", "0") });
+    k.add("ellipse", { cx: 20, cy: 15.6, rx: .42, ry: 1.5, fill: "#FF9A8E", opacity: ".55" });
+    k.add("circle", { cx: 20.25, cy: 12.5, r: .36, fill: "#FFC8C0", stroke: "#FFFFFF", "stroke-width": ".12" });
+    k.add("path", { d: "M19.4 13.4 Q19.3 14.8 19.5 16.2", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".85", "stroke-linecap": "round", fill: "none" });
+    /* the boss the deflector hangs from */
+    k.add("path", { d: "M18.2 17.7 L21.8 17.7 L21.4 19.4 L18.6 19.4 Z", fill: CHH, stroke: "#3A4250", "stroke-width": ".22" });
+    k.add("circle", { cx: 20, cy: 18.5, r: .35, fill: "#2A303A" });
+    /* the deflector: a notched rim round a dark glass plate that holds the face */
+    let rim = "";
+    const N = 30;
+    for(let i = 0; i < N * 2; i++){ const a = i * Math.PI / N, r = i % 2 ? .93 : 1; rim += (i ? "L" : "M") + fcF(cx0 + Math.cos(a) * RX * r) + " " + fcF(cy0 + Math.sin(a) * RY * (i % 2 ? .9 : 1)) + " "; }
+    k.add("path", { d: rim + "Z", fill: "#3A4250", transform: "translate(0 .75)" });
+    k.add("path", { d: rim + "Z", fill: fcLin(k, [["0", "#FFFFFF"], [".45", "#B4BECC"], ["1", "#5A6474"]]), stroke: "#3A4250", "stroke-width": ".22", "stroke-linejoin": "round" });
+    k.add("path", { d: "M10.4 23.4 Q12 20.6 16 19.7", fill: "none", stroke: "#FFFFFF", "stroke-width": ".5", opacity: ".9", "stroke-linecap": "round" });
+    k.add("ellipse", { cx: cx0, cy: cy0, rx: 9, ry: 4.6, fill: fcLin(k, [["0", "#1E4666"], [".55", "#0C1E34"], ["1", "#050C18"]]), stroke: "#2A303A", "stroke-width": ".3" });
+    k.add("path", { d: "M11.6 22.6 Q14 20.4 18 19.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".4", "stroke-linecap": "round" });
     k.open("cx-eyes");
-    [16.8, 23.2].forEach(x => {
-      k.add("ellipse", { cx: x, cy: 21, rx: 2.1, ry: 1.35, fill: "#4FC3FF", opacity: ".28" });
-      k.add("ellipse", { cx: x, cy: 21, rx: 1.5, ry: .9, fill: "#7FD4FF" });
-      k.add("ellipse", { cx: x, cy: 21, rx: .7, ry: .45, fill: "#FFFFFF" });
+    [16.4, 23.6].forEach(x => {
+      k.add("ellipse", { cx: x, cy: 24, rx: 2.1, ry: 1.5, fill: "#4FC3FF", opacity: ".3" });
+      k.add("ellipse", { cx: x, cy: 24, rx: 1.5, ry: 1.1, fill: "#7FD4FF" });
+      k.add("ellipse", { cx: x, cy: 24, rx: .7, ry: .55, fill: "#FFFFFF" });
     });
     k.close();
-    k.closedEyes([[16.8, 21, 1.3], [23.2, 21, 1.3]], "#7FD4FF", .45);
-    k.add("path", { d: "M14.25 23.2 L16.35 18.3 L17.45 18.2 L15.35 23.45 Z", fill: "#FFFFFF", opacity: ".08" });
-    k.add("path", { d: "M13.8 19 Q16.4 18.25 19 18.15", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".45", "stroke-linecap": "round" });
+    k.closedEyes([[16.4, 24, 1.5], [23.6, 24, 1.5]], "#7FD4FF", .45);
+    k.open("cx-mouth");
+    k.add("path", { d: "M18 26.3 Q20 27.5 22 26.3", fill: "none", stroke: "#4FC3FF", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".9" });
+    k.close();
     k.open("cx-fx cx-fx-scopeglow");
-    k.add("path", { d: "M12.8 18.6 Q20 17.4 27.2 18.6 L26.6 23.4 Q20 24.8 13.4 23.4 Z", fill: "#4FC3FF", opacity: ".14" });
+    k.add("ellipse", { cx: cx0, cy: cy0, rx: 9, ry: 4.6, fill: "#4FC3FF", opacity: ".12" });
     k.close();
-    k.open("cx-mouth"); k.close();
-    /* the bulb between the arms: the glass, the red liquid with its lit core, the air bubble */
-    k.add("ellipse", { cx: 20, cy: 9.6, rx: 1.45, ry: 3.15, fill: "#FFD8D4", opacity: ".35", stroke: "#FFE8E4", "stroke-width": ".15" });
-    k.add("ellipse", { cx: 20, cy: 9.65, rx: 1.15, ry: 2.8, fill: fcLin(k, [["0", "#7A0A12"], [".38", "#FF5A4E"], [".62", "#E5332A"], ["1", "#5A060C"]], "0", "0", "1", "0") });
-    k.add("ellipse", { cx: 20, cy: 10.4, rx: .42, ry: 1.5, fill: "#FF9A8E", opacity: ".55" });
-    k.add("circle", { cx: 20.3, cy: 7.55, r: .36, fill: "#FFC8C0", stroke: "#FFFFFF", "stroke-width": ".12" });
-    k.add("path", { d: "M19.45 8.3 Q19.35 9.6 19.55 10.9", stroke: "#FFFFFF", "stroke-width": ".32", opacity: ".85", "stroke-linecap": "round", fill: "none" });
-    k.add("path", { d: "M18.8 12.6 L21.2 12.6 L20.8 13.4 L19.2 13.4 Z", fill: "#3A4250" });
-    k.add("path", { d: "M19.1 12.75 L20.9 12.75", stroke: "#C8D0DA", "stroke-width": ".16" });
-    /* the deflector crown, with its thickness under it */
-    let d = "M13 6.6 ";
-    for(let i = 0; i <= 12; i++){ const x = 13 + i * 1.1667; d += "L" + fcF(x) + " " + (i % 2 ? 4.6 : 5.6) + " "; }
-    d += "L27 6.6 Q20 7.6 13 6.6 Z";
-    k.add("path", { d: "M13 6.6 Q20 7.6 27 6.6 L26.9 7.3 Q20 8.3 13.1 7.3 Z", fill: "#4A5262" });
-    k.add("path", { d, fill: chrome, stroke: "#3A4250", "stroke-width": ".2", "stroke-linejoin": "round" });
-    k.add("path", { d: "M13.5 6.35 Q20 7.25 26.5 6.35", fill: "none", stroke: "#FFFFFF", "stroke-width": ".25", opacity: ".6" });
-    k.add("circle", { cx: 20, cy: 6.6, r: .6, fill: "#3A4250" });
-    k.add("circle", { cx: 19.82, cy: 6.42, r: .18, fill: "#FFFFFF", opacity: ".7" });
     k.close();
-    /* the water it throws: two fans of fine streams either side of the deflector, curving down, lit at their tips */
-    const water = fcLin(k, [["0", "#FFFFFF", ".9"], [".6", "#7FD4FF", ".6"], ["1", "#4FC3FF", "0"]], "13.4", "0", "7", "0", true);
-    const waterR = fcLin(k, [["0", "#FFFFFF", ".9"], [".6", "#7FD4FF", ".6"], ["1", "#4FC3FF", "0"]], "26.6", "0", "33", "0", true);
+    /* water thrown off the rim, either side: fine streams curving down, lit at their tips, and drops falling */
+    const water = fcLin(k, [["0", "#FFFFFF", ".95"], [".6", "#7FD4FF", ".6"], ["1", "#4FC3FF", "0"]], "10", "0", "4", "0", true);
+    const waterR = fcLin(k, [["0", "#FFFFFF", ".95"], [".6", "#7FD4FF", ".6"], ["1", "#4FC3FF", "0"]], "30", "0", "36", "0", true);
     k.open("cx-fx cx-fx-star");
-    [["M13.4 6.3 Q9.4 5.4 7.8 9.6", "M13.2 7.2 Q8.4 7 7.2 12.4", "M13.4 5.6 Q10.6 3.8 8.8 6.4"], ["M26.6 6.3 Q30.6 5.4 32.2 9.6", "M26.8 7.2 Q31.6 7 32.8 12.4", "M26.6 5.6 Q29.4 3.8 31.2 6.4"]].forEach((grp, i) =>
+    [["M10.2 24.4 Q6.4 24.6 4.8 29", "M10.6 26.2 Q7 27.6 6 32", "M10.6 22.8 Q7.6 21.6 5.6 24.6"], ["M29.8 24.4 Q33.6 24.6 35.2 29", "M29.4 26.2 Q33 27.6 34 32", "M29.4 22.8 Q32.4 21.6 34.4 24.6"]].forEach((grp, i) =>
       grp.forEach((d, j) => k.add("path", { d, fill: "none", stroke: i ? waterR : water, "stroke-width": j === 2 ? ".3" : ".46", "stroke-linecap": "round" })));
-    [[7.8, 9.9], [7.2, 12.8], [32.2, 9.9], [32.8, 12.8]].forEach(([x, y]) => k.add("circle", { cx: x, cy: y, r: .3, fill: "#CFF2FF" }));
+    [[4.8, 29.3], [6, 32.3], [5.6, 24.9], [35.2, 29.3], [34, 32.3], [34.4, 24.9]].forEach(([x, y]) => k.add("circle", { cx: x, cy: y, r: .3, fill: "#CFF2FF" }));
     k.close();
     [0, 1].forEach(j => {
       k.open("cx-fx cx-fx-fcspray", { style: "animation-delay:" + (-j * .7) + "s" });
       for(let i = 0; i < 6; i++){
-        const s = i < 3 ? -1 : 1, n = i % 3, x = 20 + s * (8.4 + n * 1.8 + j * .8), y = 5.6 + n * 2 + j * 1.1;
+        const s = i < 3 ? -1 : 1, n = i % 3, x = 20 + s * (7.4 + n * 1.9 + j * .8), y = 27.8 + n * 2.2 + j * 1.2;
         k.add("path", { d: "M" + fcF(x - s * .6) + " " + fcF(y - .35) + " Q" + fcF(x + s * .3) + " " + fcF(y - .1) + " " + fcF(x + s * .35) + " " + fcF(y + .3) + " Q" + fcF(x) + " " + fcF(y + .6) + " " + fcF(x - s * .6) + " " + fcF(y - .35) + " Z", fill: n % 2 ? "#CFF2FF" : "#7FD4FF" });
       }
       k.close();
