@@ -26,6 +26,9 @@
   7. The ACADEMY's art is byte for byte c1d224b again (every character), the Fire Code characters changed are exactly the ones named here, the
      flare and rank banners, the unlock rules and the glows are as they were.
 
+  (384 r6 eyes) leg 7 lets exactly Forge, Lunar, Solar and Tempest differ, in both classes, for their new eyes (check-b384-r6-eyes.py);
+  it FAILS on 130a41c, where they still match.
+
   python3 tools/check-b384-r5-chars.py [--against OLD/index.html]       (every line group must FAIL on 7b65a06; the faces legs also on c1d224b)
 """
 import json, os, sys
@@ -255,13 +258,16 @@ PINNED = lambda i: i.startswith("flare_") or i.endswith("_rank") or i in ("astra
 for key, R in (("ifc", IFC), ("academy", ACA)):
     moved = sorted(i for i, h in PREV[key]["banners"].items() if PINNED(i) and R["banners"].get(i) != h)
     chk("7. [%s] no flare or rank banner moved since c1d224b (moved: %s)" % (key, moved), not moved, moved)
+# (384 r6 eyes, check-b384-r6-eyes.py) Forge, Lunar, Solar and Tempest got eyes of their own, in both classes; Oracle, Frost and everybody
+# else stay byte for byte, and only those four may (and must) differ
+EYES4 = {"forge", "lunar", "solar", "tempest"}
 mov = sorted(i for i, h in PREV["academy"]["chars"].items() if ACA["chars"].get(i, {}).get("hash") != h)
-chk("7. the ACADEMY's characters are byte for byte what c1d224b drew, all %d of them (changed: %s)" % (len(PREV["academy"]["chars"]), mov), not mov, mov)
+chk("7. the ACADEMY's characters are byte for byte what c1d224b drew, all %d of them, bar the four rulers' new eyes (changed: %s)" % (len(PREV["academy"]["chars"]), mov), set(mov) == EYES4, {"changed": mov, "expected": sorted(EYES4)})
 mov = sorted(i for i, h in PREV["ifc"]["chars"].items() if IFC["chars"].get(i, {}).get("hash") != h)
 expect = {"clown", "valkyrie", "timekeeper", "hive", "voidwalker", "umbra", "singularity", "genesis",
           # (384 r6, check-b384-r6-chars.py) the police-gear round: the Inspector, Chief, Drone Pilot and Star Ranger redrawn, the Smoke
           # Diver's helmet navy, the Dispatcher's earcup lamp and collar; the Strobe's visor bar and the Pulsar's ring (both already named)
-          "detective", "poseidon", "ronin", "zenith", "masked", "hacker"}
+          "detective", "poseidon", "ronin", "zenith", "masked", "hacker"} | EYES4
 chk("7. in Fire Code only the characters named here changed their art since c1d224b; Toxic Spill is exactly c1d224b's (changed: %s)" % mov, set(mov) == expect and "astronaut" not in mov, {"changed": mov, "expected": sorted(expect)})
 print("\nALL PASS" if ok else "\nFAILURES")
 sys.exit(0 if ok else 1)
