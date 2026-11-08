@@ -38492,6 +38492,11 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .screen-customize .cz-group .swatch-name{ font-size:.74rem; font-weight:700; letter-spacing:0; overflow:visible; text-overflow:clip; }
   html[data-layout] body #stage .screen-customize .cz-group .swatch-cell:has(.swatch.on) .swatch-name{ font-weight:700; }
   html[data-layout] body #stage .screen-customize .cz-group .swatch-cell.is-locked .swatch-name{ color:var(--soft); opacity:1; }
+  /* a phone: a two-word name too long for its cell (Sprinkler Head) goes onto two lines at its space, never mid-word - the
+     box's padding took a few px from each cell (r4 allowed this at 320px only) */
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage .screen-customize .cz-group .avatarchar-name{ white-space:normal; overflow-wrap:normal; word-break:normal; }
+  }
   /* a 320px phone: four characters to a row (five left 47px tiles), names on two lines where they must */
   @media (max-width:22.5rem){
     html[data-layout] body #stage .screen-customize .cz-group{ padding-left:.65rem; padding-right:.65rem; }
@@ -38500,6 +38505,7 @@ html.is-browser{ --fade-paper: transparent; }
     }
     html[data-layout] body #stage .screen-customize .cz-group .swatch{ width:3.3rem; height:3.3rem; }
     html[data-layout] body #stage .screen-customize .cz-group .swatch .dot{ width:2.7rem; height:2.7rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch-name{ font-size:.64rem; }   /* Supernova inside a 60px tile */
   }
   @media (min-width:40rem){
     html[data-layout] body #stage .screen-customize.cz-page > .sect{ --cz-box-gap:1.1rem; }
@@ -38562,7 +38568,7 @@ html.is-browser{ --fade-paper: transparent; }
     box-shadow:0 0 0 2.5px var(--pick-cut, var(--paper));
     opacity:0; transform:scale(.55); transition:opacity .18s ease, transform .3s cubic-bezier(.3,1.45,.5,1);
   }
-  html[data-layout] body .pick-mark svg{ display:block; width:66%; height:66%; }
+  html[data-layout] body .pick-mark svg{ display:block; width:70%; height:70%; }
   html[data-layout] body :is(.avatarchar-option.selected:not(.locked), .swatch.on, .banner-opt.selected, .hfx-opt.selected) .pick-mark{ opacity:1; transform:none; }
   /* on a round tile (a character, a theme): centred on the circle, 45 degrees below its right-hand side */
   html[data-layout] body :is(.avatarchar-option, .swatch) > .pick-mark{
