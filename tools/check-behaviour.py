@@ -12612,7 +12612,8 @@ def check_b313_fx(br):
           /* and any script-made animation on them (the Black Hole's pull, the water's sway are those) */
           let scripted = 0;
           const sampler = fx === 'fireworks' ? setInterval(() => { still.push([Math.round(since()), cards()]);
-            scripted = Math.max(scripted, [...document.querySelectorAll('.rs-screen > *')].reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation).length, 0)); }, 200) : null;
+            scripted = Math.max(scripted, [...document.querySelectorAll('.rs-screen > *')].reduce((n, e) => n + e.getAnimations().filter(a => a.constructor === Animation && a.id !== 'rs-grade-rise').length, 0)); }, 200) : null;
+          /* (384 r6: the grade's own move up into its place after the effect, 'rs-grade-rise', is the reveal going on, not the screen moving) */
           /* what the sky canvas has lit: how many pixels, and their extent, in the viewport */
           const lit = () => { const cv = document.querySelector('.hfx-layer.hfx-fireworks canvas.hfx-fw-sky'); if(!cv) return null;
             const x = cv.getContext('2d'), d = x.getImageData(0, 0, cv.width, cv.height).data, cr = cv.getBoundingClientRect(), sx = cr.width / cv.width, sy = cr.height / cv.height;
@@ -12912,7 +12913,8 @@ def check_b313_fx(br):
                   # phone - and check-b384-policefx B holds that none is cut.
                   la.get("n", 0) > 400 and la["x1"] - la["x0"] >= 440 * .7
                   and la["y0"] < max(0, (r.get("boxLate") or {}).get("t", 0) - 300) + max(40, min(300, (r.get("boxLate") or {}).get("t", 0)) * .35), {"lit": la, "box": r.get("boxLate")})
-            check("fireworks: the screen dims a little behind the sky - and only a little", r.get("dimMid") is not None and .3 <= r["dimMid"] <= .6, r.get("dimMid"))
+            # (384 r6, REVERSED ON PURPOSE) no dim at all: "Don't do the darkened thing any" (check-b384-results-flow F2)
+            check("fireworks: the screen is not dimmed behind the sky (384 r6: no dim)", r.get("dimMid") is None or r["dimMid"] < .05, r.get("dimMid"))
             st = r.get("still") or []
             # BUILD 320: the XP card comes down at the effect's tail (it is
             # the next card, after the grade) - the screen holds still until
@@ -22684,12 +22686,14 @@ def check_b320a_results(br):
     check("A: the 100's effect starts after the bars are home and the grade has landed",
           t_fx is not None and tA["t_bars"] is not None and tA["t_graded"] is not None and t_fx >= max(tA["t_bars"], tA["t_graded"]),
           (tA["t_bars"], tA["t_graded"], t_fx))
-    # ...and after the XP box has added up and its bar has run (the
-    # character on it is on screen to react to the effect - b320b)
+    # (384 r6, REVERSED ON PURPOSE) the effect comes BEFORE the XP box now: Madison, "The hundo effect should probably come
+    # up before the xp right cause it would just be better?" - it plays on the grade, centred on its own, and the XP box
+    # lands only once the grade has moved up into its place (tools/check-b384-results-flow.py holds the rest). Build 320's
+    # leg here asserted the opposite ("the effect waits for the XP box too").
     at_fx = [x for x in s if x["t"] >= (t_fx or 10 ** 9)][:1]
-    xp_last = max([b["t"] for a, b in zip(s, s[1:]) if b["xNum"] != a["xNum"] and b["t"] < (t_fx or 10 ** 9)] or [0])
-    check("A: the effect waits for the XP box too - landed, its bar charged, its number at rest",
-          bool(at_fx) and at_fx[0]["xIn"] and at_fx[0]["charged"] and t_fx - xp_last >= 300, (xp_last, t_fx, at_fx[:1] and {k: at_fx[0][k] for k in ("xIn", "charged", "xNum")}))
+    t_xp = _b320a_first(s, lambda x: x["xIn"])
+    check("A: the effect plays before the XP box - the XP box not in yet as it starts, and in after it",
+          bool(at_fx) and not at_fx[0]["xIn"] and t_xp is not None and t_xp > t_fx, (t_fx, t_xp, at_fx[:1] and {k: at_fx[0][k] for k in ("xIn", "charged", "xNum")}))
     rows = []
     last = 0
     for x in s:

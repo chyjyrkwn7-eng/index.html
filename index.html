@@ -128256,7 +128256,8 @@ function showRunRewards(run, hooks, opts){
   const hint = rsSkipHint(panel);
   let fxHandle = null;
   const riseGrade = instant => {
-    if(fxHandle && !fxHandle.done){ try{ fxHandle.stop(true); }catch(e){} }
+    /* a tap: the effect off at once. Its own time (the tail): it is left to fade out by itself as the grade goes up */
+    if(instant && fxHandle && !fxHandle.done){ try{ fxHandle.stop(true); }catch(e){} }
     fxHandle = null;
     lift.rise(instant);
     rsLand(head, instant);
