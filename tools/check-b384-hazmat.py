@@ -4,11 +4,12 @@ one should probably be the 200 hundos one, it's my favorite/coolest/has the best
 you can to ensure they perfect". In the Fire Code class, on the iPhone 17 Pro Max (440x956) and the iPad (834x1194), a 100%
 box on the page plays the ufo rung; its animations are paused and seeked to moments on the effect's own clock (IFX_HZ, or
 the 384 beats where an older build has none) and everything is read off the page:
- (1) the ufo rung in Fire Code is ifxHazmat; its run is 6.5-7.5s with the tail before the total;
+ (1) the ufo rung in Fire Code is ifxHazmat; its run is 6.0-7.0s with the tail before the total;
  (2) [ROUND 6: REMOVED] the NFPA 704 placard that assembled a quarter at a time and slammed is gone ("I don't like the caution
      tape and I don't think I like the hazmat placard across the screen") - tools/check-b384-hzdecon.py asserts it is gone;
- (3) the containment scan locks on the box: four brackets fly in from the screen's four corners and lock on the box's four
-     corners, drawn OVER the lifted box (their layer stacks above it);
+ (3) [ROUND 2: REPLACED] the containment scan, brackets and field are gone, and the film is three beats told one at a time
+     (alert, spill and decon, all clear): nothing from another beat is on screen, and at most 24 painted pieces at once
+     (it was 66; the mean is 16 at most, it was 36);
  (4) [ROUND 6: REMOVED] the tag the placard sat on is gone with it;
  (5) the responder (round 6: no longer walking across the screen) comes up from under the screen's foot into his corner,
      and his jet reaches the box, swept side to side across it;
@@ -30,8 +31,8 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:400], flush=True)
 # the 384 beats, for a build that has no IFX_HZ
-BEATS = {"tot": 7.2, "slam": 1.74, "brk": 2.38, "lock": 2.64, "walk": 2.95, "walked": 3.5, "spray": 3.84,
-         "sweep": [3.86, 4.48, 4.96], "sprayEnd": 5.0, "clear": 5.15, "fade": 6.05}
+BEATS = {"tot": 6.4, "vap": .95, "slam": 2.3, "walk": 2.55, "walked": 3.0, "spray": 3.28,
+         "sweep": [3.32, 3.86, 4.3], "sprayEnd": 4.45, "clear": 4.75, "fade": 5.7}
 SETUP = r"""async (beats) => {
   const Z = (typeof IFX_HZ !== 'undefined') ? IFX_HZ : beats;
   try{ hfxWarm('ufo'); }catch(e){}
@@ -66,20 +67,19 @@ SETUP = r"""async (beats) => {
 MEASURE = r"""() => {
   const X = window.__hz, Z = X.Z, out = {};
   const at = (t, fn) => { X.seek(t); return fn(); };
-  /* (3) the brackets: from the screen's corners onto the box's, over the box */
-  const br = X.find('ifx-bracket');
-  out.brackets = br.length;
-  if(br.length === 4){
-    const corner = r => [[r.l, r.t], [r.r, r.t], [r.r, r.b], [r.l, r.b]];
-    const near = (r, p) => Math.min(...corner(r).map(c => Math.hypot(c[0] - p[0], c[1] - p[1])));
-    const bc = corner(X.box), sc = [[0, 0], [X.W, 0], [X.W, X.H], [0, X.H]], diag = Math.hypot(X.W, X.H);
-    /* how far the bracket's outer corner sits off the box's corner, in brackets (its L is drawn inset in its square) */
-    out.lockErr = at(Z.lock + .4, () => br.map(b => { const r = X.R(b); return Math.round(Math.min(...bc.map(c => near(r, c))) / r.w * 100) / 100; }));
-    out.lockVis = at(Z.lock + .4, () => br.map(b => Math.round(X.eff(b) * 100) / 100));
-    out.fromCorners = at(Z.brk + .03, () => br.map(b => { const r = X.R(b); return Math.round(Math.min(...sc.map(c => Math.hypot(r.cx - c[0], r.cy - c[1]))) / diag * 100) / 100; }));
-    const lay = br[0].closest('.hfx-layer') || br[0].closest('.hfx-box');
-    out.zOver = lay ? [+getComputedStyle(lay).zIndex || 0, +getComputedStyle(X.card).zIndex || 0, lay.classList.contains('hfx-box')] : null;
-  }
+  /* (3) THE CALM (round 2): the scan, the brackets and the field are gone; one beat at a time - what is on screen at each moment */
+  const pre = p => { const ks = Object.keys(hfxSprites).filter(k => k.indexOf(p) === 0); return X.layers.flatMap(l => [...l.querySelectorAll('*')]).filter(e => ks.some(k => { const sp = hfxSprites[k], b = e.style.backgroundImage || ''; return sp && ((sp.png && b === sp.png) || b === sp.svg || (sp.png && b.indexOf(sp.png.slice(5, -2)) >= 0)); })); };
+  const shown = (t, p) => at(t, () => pre(p).filter(e => X.eff(e) > .05 && X.R(e).w > 2).length);
+  out.gone = { bracket: pre('ifx-bracket').length, scan: pre('ifx-scan').length, hex: pre('ifx-hex').length, cage: pre('ifx-hzcage').length, spark: pre('ifx-hzspark').length, glint: pre('ifx-hzglint').length, splash: pre('ifx-hzsplash').length };
+  out.beats = { alertFume: shown(.5, 'ifx-hzfume'), alertSuit: shown(.5, 'ifx-suit'), alertRays: shown(.5, 'ifx-hzrays'),
+    deconBeacon: shown(Z.sweep[0] + .3, 'ifx-hzbeam'), deconRays: shown(Z.sweep[0] + .3, 'ifx-hzrays'), deconRing: shown(Z.sweep[0] + .3, 'ifx-ring'),
+    clearSpray: shown(Z.clear + .3, 'ifx-hzspray'), clearSlime: shown(Z.clear + .3, 'ifx-hzslime'),
+    spillSuit: shown(Z.slam, 'ifx-suit'), spillSpray: shown(Z.slam, 'ifx-hzspray'), spillRays: shown(Z.slam, 'ifx-hzrays') };
+  /* how much is on screen at once: pieces that paint something and show, sampled every .2s */
+  const count = () => { let n = 0; X.layers.forEach(l => l.querySelectorAll('*').forEach(e => { const r = e.getBoundingClientRect(); if(r.width < 2 || r.height < 2 || r.right < 0 || r.left > X.W || r.bottom < 0 || r.top > X.H) return; const cs = getComputedStyle(e);
+    if(!(cs.backgroundImage !== 'none' || (e.textContent || '').trim() || cs.boxShadow !== 'none')) return; if(X.eff(e) > .03) n++; })); return n; };
+  const ns = []; for(let t = 0; t < Z.tot - .05; t += .2) ns.push(at(t, count));
+  out.load = { peak: Math.max(...ns), mean: Math.round(ns.reduce((a, b) => a + b, 0) / ns.length * 10) / 10, ns: ns.length };
   /* (5) the responder: below the screen's foot before he rises, in his corner after, and not walking (his x holds); the jet's far end on the box */
   const suit = X.find('ifx-suit2')[0], sp = X.find('ifx-hzspray2')[0];
   if(suit){
@@ -125,7 +125,7 @@ SOUND = r"""async () => {
   let peak = 0; for(let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(L[i]), Math.abs(R[i]));
   const rms = []; for(let s = 0; s + w <= n; s += w){ let e = 0; for(let i = s; i < s + w; i++) e += (L[i] * L[i] + R[i] * R[i]) / 2; rms.push(Math.sqrt(e / w)); }
   const top = rms.indexOf(Math.max(...rms)), win = (a, b) => Math.max(...rms.slice(Math.round(a / .05), Math.round(b / .05)));
-  return { peak, len: n / sr, loudestAt: Math.round(top * .05 * 100) / 100, loudest: Math.max(...rms), decon: win(3.9, 4.9), cls: window.NOVA_CLASS };
+  return { peak, len: n / sr, loudestAt: Math.round(top * .05 * 100) / 100, loudest: Math.max(...rms), decon: win(3.3, 4.4), cls: window.NOVA_CLASS };
 }"""
 res = {}
 with sync_playwright() as pw:
@@ -150,16 +150,18 @@ info = P["info"]
 chk("the page is the Fire Code class (%s)" % info["cls"], info["cls"] == "ifc", info)
 chk("(1) the ufo rung in Fire Code plays ifxHazmat (%s)" % info["build"], info["build"] == "ifxHazmat", info["build"])
 d = info["def"] or [0, 0, 0]
-chk("(1) ...a run of 6.5-7.5s, its tail before its total (total %s, tail %s, layers removed at %s)" % (d[0], d[1], info["total"]),
-    6500 <= d[0] <= 7500 and d[1] < d[0] and info["total"] == d[0], info)
+chk("(1) ...a run of 6.0-7.0s (calmed in round 2, was 7.2), its tail before its total (total %s, tail %s, layers removed at %s)" % (d[0], d[1], info["total"]),
+    6000 <= d[0] <= 7000 and d[1] < d[0] and info["total"] == d[0], info)
 for dev, R in (("phone", P), ("ipad", I)):
     m = R["m"]
-    lockErr, vis = m.get("lockErr") or [999] * 4, m.get("lockVis") or [0] * 4
-    chk("(3) %s: four brackets lock on the box's four corners (%s of a bracket off, shown %s)" % (dev, lockErr, vis), m.get("brackets") == 4 and max(lockErr) <= .5 and min(vis) > .9, m)
-    fc = m.get("fromCorners") or [1] * 4
-    chk("(3) %s: ...flying in from the screen's four corners (%s of the diagonal away as they start)" % (dev, fc), max(fc) <= .2, fc)
-    z = m.get("zOver")
-    chk("(3) %s: ...drawn over the lifted box (their layer z %s, the box %s)" % (dev, z and z[0], z and z[1]), z and (z[2] or z[0] > z[1]), z)
+    g = m["gone"]
+    chk("(3) %s: the scan and its mesh, the brackets and the field, the sparks, the glints and the splash are gone (%s)" % (dev, g), all(v == 0 for v in g.values()), g)
+    bt = m["beats"]
+    chk("(3) %s: one beat at a time - the alert has no vapour, responder or rays (%s/%s/%s); the surge has no responder or jet (%s/%s) or rays (%s); the decon has no beacons, rays or ring (%s/%s/%s); the all clear has no jet and no film (%s/%s)" % (
+        dev, bt["alertFume"], bt["alertSuit"], bt["alertRays"], bt["spillSuit"], bt["spillSpray"], bt["spillRays"], bt["deconBeacon"], bt["deconRays"], bt["deconRing"], bt["clearSpray"], bt["clearSlime"]),
+        not any(bt[k] for k in bt), bt)
+    ld = m["load"]
+    chk("(3) %s: calm - %s samples, at most 24 painted pieces on screen at once (peak %s) and 16 on average (mean %s); it was 66 and 36" % (dev, ld["ns"], ld["peak"], ld["mean"]), ld["peak"] <= 24 and ld["mean"] <= 16, ld)
     box = m["box"]
     ob, oa, xs = m.get("offBefore"), m.get("onAfter"), m.get("xs") or [0, 1e9]
     chk("(5) %s: the responder is under the screen's foot before he comes up (top %s of %s) and in his corner after (%s) - not walking across (x %s)" % (dev, ob and ob[0], ob and ob[1], oa, xs),
@@ -181,7 +183,7 @@ chk("(8) the tile and the still draw neither of the placard's red and blue any m
 snd = P["sound"]
 slam, clear = BEATS["slam"], BEATS["clear"]
 chk("(9) its sound renders in Fire Code, not silent, not clipping (peak %.2f, %.1fs)" % (snd["peak"], snd["len"]), snd["cls"] == "ifc" and .05 < snd["peak"] < 1 and snd["len"] >= 6.5, snd)
-chk("(9) ...its loudest moment on the slam or the all clear (at %.2fs)" % snd["loudestAt"], slam - .05 <= snd["loudestAt"] <= slam + .3 or clear - .05 <= snd["loudestAt"] <= clear + .4, snd)
+chk("(9) ...its loudest moment on the surge or the all clear (at %.2fs)" % snd["loudestAt"], slam - .05 <= snd["loudestAt"] <= slam + .3 or clear - .05 <= snd["loudestAt"] <= clear + .4, snd)
 chk("(9) ...and the decon is not left quiet (%.3f against %.3f)" % (snd["decon"], snd["loudest"]), snd["decon"] >= snd["loudest"] * .4, snd)
 chk("(10) no page errors (%s)" % errs_all[:3], not errs_all, errs_all)
 print("ALL PASS" if ok else "SOME FAILED")
