@@ -3,7 +3,8 @@ Madison, with Delta's Settings beside ours: "Pay attention to their lines. Their
 please pay attention to details. Please ensure ours looks this great". Delta's line runs from the words to the chevron's right
 edge, the row's own padding clear of the card on the right as well as the left.
 Installed on an iPhone 17 Pro Max (440x956), dark, read off the page - every line between two rows (a 1px pseudo-element) on:
-Settings, Settings' Sound page and Studying page (the switch rows), Contributors, Customize, and the Leaderboard's grouped list:
+Settings, Settings' Sound page and Studying page (the switch rows), Contributors, and the Leaderboard's grouped list
+(Customize was here until round 4 of 384 made its four rows four separate centred cards - no list, no lines; check-b384-custom):
 (1) the line's right end is at the row's content edge - the row's right side less its padding, where its chevron, switch, value
     or points end (a row of words alone, a Support link, ends there too, as Delta's do) - within 1.5px;
 (2) ...and so it is clear of the card's right edge by at least 8px (it never touches the side);
@@ -21,7 +22,7 @@ ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:600], flush=True)
 SCREENS = [("Settings", "showAppearance()"), ("Sound", "showAppearance({page:'sound'})"), ("Studying", "showAppearance({page:'study'})"),
-           ("Contributors", "showCredits()"), ("Customize", "showCustomize()"), ("Leaderboard", "leaderboardRows=__fill(); showRankings()")]
+           ("Contributors", "showCredits()"), ("Leaderboard", "leaderboardRows=__fill(); showRankings()")]
 LINES = """()=>{ const stage=document.getElementById('stage'); const out=[];
   const card=e=>{ let c=e.parentElement; while(c && c!==stage){ const s=getComputedStyle(c); if(parseFloat(s.borderTopLeftRadius)>6 && s.backgroundColor!=='rgba(0, 0, 0, 0)' && c.getBoundingClientRect().height > e.getBoundingClientRect().height + 4) return c; c=c.parentElement; }
     return e.parentElement; };
