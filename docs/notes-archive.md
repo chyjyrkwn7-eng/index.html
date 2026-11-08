@@ -36331,3 +36331,50 @@ and that is still true. Everything else of the old card is gone. Gates on this b
 check-sound, check-loops (492, 0 seams), sweep-layout --quick 20/20, check-centering --quick ALL PASS. Failing the same without this work: check-b382-ifcart's three 'forge' art legs, check-b383-look (8) the Home sky's ease back, check-b325-a's
 three "has the hundo box's edge" legs for the XP / pass / unlocked cards (the clean look took their edges). Seen and left: a darker rectangle behind the big "100" in the effect boxes (the lit copy's drop-shadow over background-clip:text) - on the previous build too.
 Phone checks owed: smoothness of the Extinguisher (fire + powder), Hazmat's jet; the glow's strength on an OLED screen; the box's look with the real safe areas. Not merged with 6b15be6 (the lead's new rungs 0/25/50/75/100; academy 0/25/75/125/200): nothing here touches HUNDO_FX / IFC_HUNDO_NEED, expect only notes-archive.md to conflict.
+## 384 round 7 (r2-fcchars): the Fire Code characters, second review (branch r2-fcchars, cut from claude/b384 976c414; NOT on main)
+Madison: Inspector "hat a little darker? make the clipboard better?"; Pyrotech "eh ... an undercover styled character? ... with some mystery"; Strobe "doesn't look legit
+enough ... hard to tell it's a strobe"; Salamander "kinda random and not like any of the others"; Toxic Spill "the purple stuff on the barrel isn't connected right ... go through
+each character thoroughly to ensure all pieces connect right"; Sprinkler "hard to tell now that it's a sprinkler head"; secrets "nebula is sick, quasar is cool, pulsar needs to be
+better, I don't like solstice. Ensure ... you can see how their secret flares come from their character". Only IFC_CHAR_LOOK / IFC_CHAR_DRAW / IFC_BACKDROP in index.html (plus one
+keyframe, cx-fc-pulse). Ids, challenges and glow colours unchanged; the base art (rank characters, academy) untouched.
+- INSPECTOR: felt #A39880 (was #C8BEA8, luminance .52 -> .32); the clipboard is 7.6 x 9 (was 8 x 7.4, mostly outside the coin), tilted, with its chrome clip, a navy-headed form with a
+  gold seal, two ticks and a red cross, and a hand and sleeve over its lower edge. The star moved clear of the yoke seam (it sat on the seam and read as pinned to the sleeve patch by a
+  cord), the nameplate to the right pocket. Sideburns are curved shapes (were hard triangles).
+- STROBE (clown, fcstrobe) is the appliance: pale mounting plate with two screws framing a gloss red housing, FIRE in white strokes across the top (fcstrobe's own tiny stroke
+  alphabet F I R E), a chrome-bezelled lens of pale clear glass with 12 ribs, an arched gold xenon tube with a white-hot core, two dark painted eyes on the glass, a slotted horn
+  grille for a mouth, rays either side and the horn's waves, a flash that whites the lens out now and then; the body is the junction box it is fed from (screws, conduit up to the
+  plate, a pilot light). The head is drawn inside a .92 scale wrapper so the plate's corners are not shaved by the coin.
+- UNDERCOVER (valkyrie, fcundercover; was Pyrotech/fcpyro): a dark cattleman hat (fcCowboy, dy 1.6, so it is pulled low), shades with the street's pink in them and the eyes only a
+  gleam behind the glass, the trench-coat collar turned up (left flap higher than the right), the left half of the face lost in shadow (a userSpace gradient over the face path)
+  and the right lit pink, the badge half out of the coat under the lapel's edge (a clipPath), a notebook and pencil in the breast pocket. Glow stays #FF3D9A; scene is a noir city.
+  The hat group is cx-fc-hat-cowboy because check-b382-ifcart only allows cowboy/beanie/helmet/hood/bubble/hardhat.
+- PUMP OPERATOR (timekeeper, fcpump; was Salamander/fcsalamander): the person at the pump panel - white hard hat with the cross on a red shield, ear defenders hung off it, clear safety
+  glasses, a grey moustache, an olive coverall with hi-vis bands, and across the chest the chrome panel with two gauges (needles in the green, cx-fx-fcbeam, swinging about their own
+  centres) and a red hand wheel. Glow #D5E4F7 (white-blue; the table is IFC_CHAR_LOOK) with a pale pump-room scene. No animal, no engine.
+- SPRINKLER HEAD (hive, fcsprinkler2) is built the way a pendent sprinkler is, top to bottom: white feed pipe, brass threaded inlet (4 ridges), hex body, two frame arms running
+  down and in to the boss, the red glass bulb between them, and the deflector - a 60-vertex notched rim round a dark glass plate - as the FACE; the water it throws comes off the
+  rim as the shoulders (a pale cone with streaks) and as fine streams either side. (It was a crown of tines over a visor, the arms rising like horns.)
+- TOXIC SPILL: the ooze base now spans the drum's width (7.9..32.1; it stopped at 9.4..30.6 and showed the drum's dark mouth either side) and each drip is one shape that starts
+  2.2 units up inside the ooze (the same userSpace gradient, so no seam) and runs over the rim to a drop; before, the drips began on the rim's yellow lip. Trefoil unchanged.
+- SECRETS. QUASAR: the flare is the disc's hot spot - a bead set in the ring where it crosses in front of the core (28.3, 24.1; 0.08 units off the ring path), a bright run of
+  the ring into it and its pulse rings; the body gets a rounded top so the head does not sit on a flat ledge. PULSAR (fcpulsar) redrawn: a hard white star with heavy brows, its
+  magnetic field as two dipole loops hugging it (tilted with the star's axis), two beams out of the poles along that axis (they pulse, cx-fx-fcpulse; they do not sweep - a
+  sweep would leave the flare behind), and the flare set in the north pole's socket on the rim, the beam's own source. ECLIPSE (genesis, fceclipse; was Solstice/fcsolstice): a
+  black disc over the sun at totality with a face of two gold eyes, the corona in uneven white/gold/pink streamers (long wings along the equator), the thin pink chromosphere
+  on the rim, and the diamond ring - the core flare is the bead on the rim with the sun's last arc running into it. NEBULA kept (its flares are set in the gas).
+- THE AUDIT (every Fire Code figure drawn at 4x and more, raw and in the coin; the audit sheet and notes are in the helper's scratchpad h-fc-chars2/): fixed - Smoke Diver's dark
+  straps began 1 unit above the shoulder line (they now follow it) and its hose ended 1 unit short of the shoulder light's clip (now runs into it); Dispatcher's screen-light rect
+  stuck out past the jaw (now the jaw's shape); Drone Pilot's hair tufts were a flat colour pasted on the gradient hair, and the fringe had a square notch (one fill, a smooth
+  fringe); Chief's and Inspector's sideburns were hard triangles; Hazmat's glint ran over a strap and a cartridge ring; Toxic Spill's trefoil/drips (above); Strobe/Sprinkler/
+  Pyrotech/Salamander/Solstice replaced. Checked and left: Chief, Hazmat's visor/respirator, Nebula's cloud, Star Ranger, Moon/Comet Rangers (hidden in this class).
+- BASE ART (not mine, reported): Solar - the two inner crown spikes' inner base corners sit ~0.5 unit ABOVE the band (a dark triangle between each spike and the band, at about
+  (17.8, 11.3) and (22.2, 11.3)); the outer flame spikes float free of the crown; Tempest - the side bolts' white inner stroke runs past the teal outline at the fork tips and the
+  crown bolt's outline and fill do not register at the top right, and the wind-swirl hair has no counterpart on the left; Oracle's floating crystals differ by ~0.6 unit in
+  height left to right; Forge, Lunar, Frost, Inferno: crown points and shoulders mirror correctly (checked at 40 px a unit).
+- NAMES THE LEAD OWNS: the flare banner table still says `flare_genesis: ["Solstice", ...]` (index.html near "flare_genesis: [") - the banner should be Eclipse; "Comes with ..."
+  reads AVATAR_DISPLAY_NAME so it already says Eclipse. check-b384-sets passes either way. Nothing else names Solstice/Pyrotech/Salamander in index.html.
+- GATES: tools/check-b384-fcchars3.py (new; every line fails on 976c414: names, hat luminance, clipboard, strobe plate/ribs, sprinkler rim/bulb/ridges, ooze width and drips, the three
+  flares on their rims, undercover, pump operator); check-b384-fcchars2 (names/kinds moved to Undercover / Pump Operator / Eclipse), check-b382-ifcart (the name list). The same five
+  check-b382-ifcart lines fail on 976c414 and now (forge unchanged, the academy-art hash lines, the hundo ladder, round 3's list) - none from this work. check-b384-ifcchars,
+  -secretnames, -batch, -sets all pass. New tool: tools/shoot-fc-audit.py (raw figure at any size with the coin circle and a unit grid; --ids, --px).
+- NOT CONFIRMABLE in Chromium: how the Pump Operator's gauge needles and the Pulsar's beam pulse read on a phone at 26 px in motion; real-device colour of the Eclipse's corona.
