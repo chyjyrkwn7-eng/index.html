@@ -78916,10 +78916,11 @@ const IFC_BANNER_ART = {
     let motes = "";
     for(let i = 0; i < 22; i++){ const t = .15 + rnd() * .8, x = beam[0] + (OX - 8 - beam[0]) * t, y = beam[1] + (134 - beam[1]) * t + (rnd() - .5) * 34 * t;
       motes += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(.5 + rnd() * .7) + '" fill="#FFF6D8" opacity="' + bnF(.4 + rnd() * .5) + '"/>'; }
-    /* FIRE SCENE tape, hung at chest height across the foreground (Madison: "the fire scene tape should be lowered and looking better"): from the doorway's right jamb to the
-       stanchion, one length with a natural sag and a single twist where it has turned over (the back of it a shade darker, unprinted), fixed at both ends - two turns round
-       the jamb and two round the post, a knot and a tail hanging from each. Yellow with black capitals, FIRE SCENE / DO NOT CROSS / FIRE SCENE, each letter set on the curve
-       by its arc length so the line follows the sag and every word is whole. The curve is a quadratic from the jamb (JX, JY) to the post (PX, PY) sagging SAG below the chord. */
+    /* FIRE SCENE tape, hung at chest height across the foreground (round 4, Madison: "The fire scene rope is in a knot at the end and then doesn't say anything? Why the
+       knot and stuff?"): one flat ribbon from the doorway's right jamb to the stanchion with its natural sag, wrapped ONCE round each - a band across the post that bows
+       the way a band round a cylinder does, the end laid over its start with a seam - and no knot, tail or twist. It is printed along its whole length: FIRE SCENE, DO NOT
+       CROSS, FIRE SCENE, DO NOT CROSS with a diamond between, each letter set on the curve by its arc length, the line fitted so the first word starts at the jamb's wrap and the
+       last ends at the post's, whole. The curve is a quadratic from the jamb (JX, JY) to the post (PX, PY) sagging SAG below the chord. */
     const JX = 149, JY = 98, PX = 452, PY = 104, SAG = 13, HW = 7.6;
     const CY2 = (4 * ((JY + PY) / 2 + SAG) - JY - PY) / 2, CXc = (JX + PX) / 2;
     const bez = t => [(1 - t) * (1 - t) * JX + 2 * t * (1 - t) * CXc + t * t * PX, (1 - t) * (1 - t) * JY + 2 * t * (1 - t) * CY2 + t * t * PY];
@@ -78928,32 +78929,32 @@ const IFC_BANNER_ART = {
     const TL = cum[NS];
     const at = sArc => { let i = 1; while(i < NS && cum[i] < sArc) i++; const f = (sArc - cum[i - 1]) / Math.max(1e-6, cum[i] - cum[i - 1]), p0 = pts[i - 1], p1 = pts[i];
       return { x: p0[0] + (p1[0] - p0[0]) * f, y: p0[1] + (p1[1] - p0[1]) * f, a: Math.atan2(p1[1] - p0[1], p1[0] - p0[0]) }; };
-    /* the twist: a full turn between these two arc lengths (the width goes 1 -> -1 -> 1) */
-    const TW0 = TL * .74, TW1 = TL * .84;
-    const wid = sArc => sArc < TW0 || sArc > TW1 ? 1 : Math.cos((sArc - TW0) / (TW1 - TW0) * Math.PI * 2);
-    let front = "", back = "", topE = "", botE = "";
+    let front = "", topE = "", botE = "";
     for(let i = 0; i <= NS; i++){
-      const p = pts[i], q = pts[Math.min(NS, i + 1)], r0 = pts[Math.max(0, i - 1)], ang = Math.atan2(q[1] - r0[1], q[0] - r0[0]), nx = -Math.sin(ang), ny = Math.cos(ang), wv = wid(cum[i]) * HW;
-      topE += (i ? "L" : "M") + bnF(p[0] + nx * wv) + " " + bnF(p[1] + ny * wv) + " "; botE += (i ? "L" : "M") + bnF(p[0] - nx * wv) + " " + bnF(p[1] - ny * wv) + " ";
-      if(i < NS){ const p2 = pts[i + 1], a2 = Math.atan2(pts[Math.min(NS, i + 2)][1] - p[1], pts[Math.min(NS, i + 2)][0] - p[0]), n2x = -Math.sin(a2), n2y = Math.cos(a2), w2 = wid(cum[i + 1]) * HW;
-        const quad = "M" + bnF(p[0] + nx * wv) + " " + bnF(p[1] + ny * wv) + " L" + bnF(p2[0] + n2x * w2) + " " + bnF(p2[1] + n2y * w2) + " L" + bnF(p2[0] - n2x * w2) + " " + bnF(p2[1] - n2y * w2) + " L" + bnF(p[0] - nx * wv) + " " + bnF(p[1] - ny * wv) + " Z ";
-        if(wid(cum[i]) + wid(cum[i + 1]) >= 0) front += quad; else back += quad; } }
-    /* the lettering, one glyph at a time along the arc (h tall), starting after the jamb's turns and ending before the twist */
-    const LH = 6.4, K6 = LH / 6, GAP = 1.7 * K6, WORDS = ["FIRE SCENE", "*", "DO NOT CROSS", "*", "FIRE SCENE"];
-    const wOf = ch => ch === "*" ? 6 * K6 : fbGlyphW(ch) * K6;
-    const chars = WORDS.join(" ").split("");
-    let total = 0; chars.forEach(ch => { total += wOf(ch) + GAP; }); total -= GAP;
-    let sPos = Math.max(16, (TW0 - 10 - total + 16) / 2 + 2), letters = "";
+      const p = pts[i], q = pts[Math.min(NS, i + 1)], r0 = pts[Math.max(0, i - 1)], ang = Math.atan2(q[1] - r0[1], q[0] - r0[0]), nx = -Math.sin(ang), ny = Math.cos(ang);
+      topE += (i ? "L" : "M") + bnF(p[0] + nx * HW) + " " + bnF(p[1] + ny * HW) + " "; botE += (i ? "L" : "M") + bnF(p[0] - nx * HW) + " " + bnF(p[1] - ny * HW) + " ";
+      if(i < NS){ const p2 = pts[i + 1], a2 = Math.atan2(pts[Math.min(NS, i + 2)][1] - p[1], pts[Math.min(NS, i + 2)][0] - p[0]), n2x = -Math.sin(a2), n2y = Math.cos(a2);
+        front += "M" + bnF(p[0] + nx * HW) + " " + bnF(p[1] + ny * HW) + " L" + bnF(p2[0] + n2x * HW) + " " + bnF(p2[1] + n2y * HW) + " L" + bnF(p2[0] - n2x * HW) + " " + bnF(p2[1] - n2y * HW) + " L" + bnF(p[0] - nx * HW) + " " + bnF(p[1] - ny * HW) + " Z "; } }
+    /* the lettering, one glyph at a time along the arc, justified to run from just past the jamb's wrap to just short of the post's */
+    const WORDS = ["FIRE SCENE", "*", "DO NOT CROSS", "*", "FIRE SCENE", "*", "DO NOT CROSS"], MARG = 9.5;
+    const chars = WORDS.join(" ").split(""), avail = TL - 2 * MARG;
+    const widthOf = (LHx, gapx) => { const k = LHx / 6; let tot = 0; chars.forEach(ch => { tot += (ch === "*" ? 6 * k : fbGlyphW(ch) * k) + gapx; }); return tot - gapx; };
+    let LH = 6.4; const w0 = widthOf(LH, 1.7 * LH / 6); LH = Math.max(5.6, Math.min(7.2, LH * avail / w0));
+    const K6 = LH / 6, wOf = ch => ch === "*" ? 6 * K6 : fbGlyphW(ch) * K6;
+    const GAP = 1.7 * K6 + Math.max(0, (avail - widthOf(LH, 1.7 * K6)) / (chars.length - 1));
+    let sPos = MARG, letters = "";
     chars.forEach(ch => { const wc = wOf(ch), c = at(sPos + wc / 2), deg = bnF(c.a * 180 / Math.PI);
       if(ch === "*") letters += '<path d="M' + bnF(c.x) + ' ' + bnF(c.y) + ' m0 -2.8 l2.4 2.8 l-2.4 2.8 l-2.4 -2.8 Z" fill="#14161C" transform="rotate(' + deg + ' ' + bnF(c.x) + ' ' + bnF(c.y) + ')"/>';
       else if(ch !== " ") letters += fbText(ch, 0, 0, LH, "#14161C", 1.5, ' transform="translate(' + bnF(c.x) + ' ' + bnF(c.y) + ') rotate(' + deg + ')"');
       sPos += wc + GAP; });
-    /* the turns round the jamb and the post: two slanting strips of the same tape, a knot, and a tail hanging from it */
-    const turn = (x, y, dx) => '<path class="fb-turn" d="M' + bnF(x - 3.2) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 1.8) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW + .6) + ' L' + bnF(x - 1.6) + ' ' + bnF(y + HW + .6) + ' Z" fill="#D9AC10" stroke="#8A6A0A" stroke-width=".6"/>';
-    const knot = (x, y, dx) => '<path class="fb-knot" d="M' + bnF(x - 1.6) + ' ' + bnF(y + HW - 1) + ' L' + bnF(x - 2 + dx) + ' ' + bnF(y + HW + 12) + ' L' + bnF(x + 4.6 + dx) + ' ' + bnF(y + HW + 11) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW - 1) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".6"/><circle cx="' + bnF(x + .8) + '" cy="' + bnF(y + HW - 1) + '" r="2.4" fill="#B88A0A" stroke="#6A4E06" stroke-width=".6"/>';
-    const tape = '<path class="fb-tape-band" d="' + front + '" fill="#F2C21E"/><path class="fb-tape-back" d="' + back + '" fill="#B88A0A"/>' +
+    /* the wrap round a post: a flat band across it that bows downward like a band round a cylinder, shaded darker towards its two edges, the end laid over the start (a seam and its shadow) */
+    const wrap = (x, y) => '<g class="fb-wrap"><path d="M' + bnF(x - 4) + ' ' + bnF(y - HW) + ' Q' + bnF(x) + ' ' + bnF(y - HW + 2) + ' ' + bnF(x + 4) + ' ' + bnF(y - HW) + ' L' + bnF(x + 4) + ' ' + bnF(y + HW) + ' Q' + bnF(x) + ' ' + bnF(y + HW + 2) + ' ' + bnF(x - 4) + ' ' + bnF(y + HW) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".7" stroke-linejoin="round"/>' +
+      '<path d="M' + bnF(x - 4) + ' ' + bnF(y - HW) + ' L' + bnF(x - 2.2) + ' ' + bnF(y - HW + .6) + ' L' + bnF(x - 2.2) + ' ' + bnF(y + HW + .6) + ' L' + bnF(x - 4) + ' ' + bnF(y + HW) + ' Z" fill="#8A6A0A" opacity=".45"/>' +
+      '<path d="M' + bnF(x + 4) + ' ' + bnF(y - HW) + ' L' + bnF(x + 2.4) + ' ' + bnF(y - HW + .6) + ' L' + bnF(x + 2.4) + ' ' + bnF(y + HW + .6) + ' L' + bnF(x + 4) + ' ' + bnF(y + HW) + ' Z" fill="#8A6A0A" opacity=".5"/>' +
+      '<path d="M' + bnF(x + .6) + ' ' + bnF(y - HW + .9) + ' L' + bnF(x + .6) + ' ' + bnF(y + HW + .9) + '" stroke="#8A6A0A" stroke-width=".7"/><path d="M' + bnF(x - .4) + ' ' + bnF(y - HW + .8) + ' L' + bnF(x - .4) + ' ' + bnF(y + HW + .8) + '" stroke="#FFF0A0" stroke-width=".5" opacity=".6"/></g>';
+    const tape = '<path class="fb-tape-band" d="' + front + '" fill="#F2C21E"/>' +
       '<path d="' + topE + '" fill="none" stroke="#8A6A0A" stroke-width=".7"/><path d="' + botE + '" fill="none" stroke="#8A6A0A" stroke-width=".7"/>' +
-      '<g class="fb-tape">' + letters + '</g>' + turn(JX - 2, JY, 1) + turn(JX + 2.6, JY + .2, 1) + knot(JX - .6, JY, -2) + turn(PX - 1, PY, 1) + turn(PX + 3, PY, 1) + knot(PX + 1, PY, 3);
+      '<g class="fb-tape">' + letters + '</g>' + wrap(JX, JY) + wrap(PX, PY);
     /* the stanchion the far end is tied to: a black post on a round weighted base, a cap on top */
     const post = '<ellipse cx="452" cy="161" rx="15" ry="3.6" fill="#000" opacity=".5"/><ellipse cx="452" cy="158" rx="13" ry="3.2" fill="#1C1A1A" stroke="#05040A" stroke-width=".6"/><rect x="449" y="14" width="6" height="146" fill="#25282E" stroke="#05060A" stroke-width=".5"/><rect x="449" y="14" width="2" height="144" fill="#fff" opacity=".18"/><circle cx="452" cy="12.4" r="4.4" fill="#34383F" stroke="#05060A" stroke-width=".5"/>';
     const base = '<defs>' + bnLin(u + "wall", [[0, "#0C0A0A"], [0.6, "#1E1814"], [1, "#2A221C"]]) + bnLin(u + "clean", [[0, "#5A544E", 0.2], [0.7, "#8A8278", 0.75], [1, "#A89E90", 0.9]]) +
