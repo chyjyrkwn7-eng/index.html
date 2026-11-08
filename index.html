@@ -78779,105 +78779,58 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* FULLY INVOLVED (was Incident Command; for reaching level 80, the top of the climb; Madison: "The command one is terrible, make that a fire
-     scene or something instead.") - "fully involved" is the fire service's word for a fire that has taken the whole structure, which is what
-     level 80 should feel like: a three-storey masonry building at night with every window and the roof alight, the sky red behind it and a
-     column of smoke leaning off into the dark; a rear-mount aerial truck on its outriggers with the ladder run up and over its cab and its
-     master stream arcing down into the roof; two firefighters in turnouts on hose lines from the pump panel (each line runs from the nozzle in
-     their hands, behind them and along the road to a discharge on the truck - none ends in the air); embers rising, the wet road
-     glowing under it all. */
+  /* TOP OF THE LADDER (was Fully Involved; for reaching level 80; Madison: "Reach level 80 and ace 10 units are like the exact same one.. They are both a firefighter
+     with a hose at a burning building.") - the summit, not a fire: a ground ladder rising out of the bottom of the picture, across the face of a rising sun, to the
+     roof of a tower, and a firefighter standing on the edge at the top with the whole city and the dawn below. Dawn colours (violet to rose to gold) where Ten in a Row is
+     night-time steel; no hose, no fire, no truck. Moves: the sun breathing, its rays turning slowly behind the skyline, streaks of cloud drifting, stars going out. */
   level80(u){
-    const rnd = bnRand(3830);
-    const st = bnStarsSplit(rnd, 36, 60);
-    const GY = 152;
-    /* the building: x 20..180, three floors of four windows, a parapet; the roof fire stands on it */
-    const BX = 14, BW = 150, BY = 64;
-    const wins = []; for(let r = 0; r < 3; r++) for(let c = 0; c < 4; c++) wins.push([BX + 10 + c * 36, BY + 8 + r * 26, 24, 17, r, c]);
-    let bricks = ""; for(let r = 0; r < 9; r++){ const y = BY + r * 10; bricks += "M" + BX + " " + y + " L" + (BX + BW) + " " + y + " "; for(let x = BX + (r % 2 ? 7 : 0); x < BX + BW; x += 14) bricks += "M" + x + " " + y + " L" + x + " " + (y + 10) + " "; }
-    /* the truck, facing left: cab x 292..346, body to 458; the aerial turns on the turntable at the rear and runs forward over the cab */
-    const TX0 = 292, PVX = 432, PVY = 106, TIPX = 226, TIPY = 40;
-    const LL = Math.hypot(PVX - TIPX, PVY - TIPY), LA = Math.atan2(TIPY - PVY, TIPX - PVX) * 180 / Math.PI;
-    const dirx = (TIPX - PVX) / LL, diry = (TIPY - PVY) / LL;
-    const wheel = cx => '<circle cx="' + cx + '" cy="138" r="14" fill="#0E0F13"/><circle cx="' + cx + '" cy="138" r="10.6" fill="#22252C" stroke="#050608" stroke-width=".8"/><circle cx="' + cx + '" cy="138" r="7.2" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".6"/>' + fbC(cx, 138, 1.8, "#2A2D34");
-    let lad = ""; /* in the ladder's own frame: along +x from the pivot, 0..LL */
-    for(let s = 0; s < LL - 6; s += 10) lad += '<path d="M' + s + ' -3.4 L' + (s + 5) + ' 3.4 L' + (s + 10) + ' -3.4" fill="none" stroke="#C9CED6" stroke-width=".9"/>';
-    for(let s = 8; s < LL; s += 10) lad += '<path d="M' + s + ' -3.4 L' + s + ' 3.4" stroke="#8A929E" stroke-width=".7"/>';
-    const ladder = '<g transform="translate(' + PVX + ' ' + PVY + ') rotate(' + bnF(LA) + ')">' +
-      '<rect x="0" y="-3.6" width="' + bnF(LL) + '" height="7.2" fill="#000" opacity=".28" transform="translate(0 2.4)"/>' + '<path d="M0 -3.6 L' + bnF(LL) + ' -3.6 M0 3.6 L' + bnF(LL) + ' 3.6" stroke="#E4E8EE" stroke-width="1.8"/>' + lad +
-      '<rect x="0" y="-5" width="64" height="10" rx="1.6" fill="#B5121B" stroke="#6A0E12" stroke-width=".7"/><rect x="0" y="-5" width="64" height="2" fill="#FFFFFF" opacity=".3"/>' +
-      '<rect x="' + bnF(LL - 5) + '" y="-4.6" width="9" height="9.2" rx="1.4" fill="#2A2D34"/><path d="M' + bnF(LL + 3) + ' 0 L' + bnF(LL + 11) + ' -2" stroke="#C9CED6" stroke-width="3" stroke-linecap="round"/></g>';
-    /* where the nozzle at the ladder's tip points */
-    const NZX = TIPX - dirx * -11 * -1 + 0, TNX = PVX + dirx * (LL + 11), TNY = PVY + diry * (LL + 11) - 2 * (-diry) * 0;
-    const hoseTo = (fx, fy, f, s, portX, portY, col) => {
-      /* from just behind the hands (the near hand is at (33, 44) in the firefighter's own frame), behind the body, down to the road, along it, up to the truck's discharge */
-      const hx = fx + 30 * s * f, hy = fy - 42 * s, d = portX - fx;
-      return fbL("M" + bnF(hx) + " " + bnF(hy) + " Q" + bnF(fx - 6 * s * f) + " " + bnF(fy - 8 * s) + " " + bnF(fx + 4 * s * f) + " " + bnF(fy + 1) + " L" + bnF(portX - 14) + " " + bnF(fy + 3.4) + " Q" + bnF(portX - 3) + " " + bnF(fy + 3) + " " + bnF(portX) + " " + bnF(portY), "#2A1214", 6.2) +
-        fbL("M" + bnF(hx) + " " + bnF(hy) + " Q" + bnF(fx - 6 * s * f) + " " + bnF(fy - 8 * s) + " " + bnF(fx + 4 * s * f) + " " + bnF(fy + 1) + " L" + bnF(portX - 14) + " " + bnF(fy + 3.4) + " Q" + bnF(portX - 3) + " " + bnF(fy + 3) + " " + bnF(portX) + " " + bnF(portY), col, 4.6);
-    };
-    const F1 = [222, GY + 2, .84], F2 = [284, GY + 4, .8];
-    const FF1 = { coat: "#2E3440", dark: "#1A1E26", helm: "#F2C21E", rim: "#FF9A5A", pants: "#262A32" }, FF2 = { coat: "#B08A4A", dark: "#6A5028", helm: "#E04030", rim: "#FF9A5A", pants: "#8A6A34" };
-    const nz1 = [F1[0] - 47 * F1[2], F1[1] - 45 * F1[2]], nz2 = [F2[0] - 47 * F2[2], F2[1] - 45 * F2[2]];
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#0A0818"], [0.5, "#38102A"], [1, "#B8381C"]]) + bnRad(u + "heat", [[0, "#FFC868", 0.85], [0.45, "#FF7A2E", 0.4], [1, "#FF4A1E", 0]]) + bnLin(u + "wall", [[0, "#5A2E2A"], [1, "#2E1614"]]) +
-      bnLin(u + "road", [[0, "#2A1816"], [1, "#0C0606"]]) + bnLin(u + "refl", [[0, "#FF8A3D", 0.5], [1, "#FF8A3D", 0]]) + bnRad(u + "smoke", [[0, "#150C0C", 0.82], [1, "#150C0C", 0]]) + bnRad(u + "puff", [[0, "#F4E8E0", 0.7], [1, "#F4E8E0", 0]]) +
-      bnLin(u + "winf", [[0, "#FFE08A"], [0.5, "#FF8A2E"], [1, "#C2301A"]]) + bnLin(u + "red", [[0, "#F0503C"], [0.5, "#CC2A22"], [1, "#8A1410"]]) + bnLin(u + "chrome", [[0, "#FFFFFF"], [0.5, "#B6BEC9"], [1, "#6A7280"]]) + bnLin(u + "glass", [[0, "#8A6A6A"], [1, "#2A1A22"]]) +
-      bnLin(u + "roll", [[0, "#D4D9E0"], [1, "#8A929E"]]) + bnRad(u + "vig", [[0.55, "#000", 0], [1, "#000", 0.55]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + '<ellipse cx="100" cy="84" rx="230" ry="110" fill="url(#' + u + 'heat)"/>' +
-      /* the far block, dark, a few lit windows */
-      fbBuildings(rnd, 146, "#1A0C16", "#FFB05A", 190, 300, 14, 36, 0.12).body + fbBuildings(rnd, 146, "#1A0C16", "#FFB05A", 190, 300, 14, 36, 0.12).win +
-      /* the building: face, brick courses, parapet, windows lit from inside, a door at the foot */
-      fbR(BX, BY, BW, GY - BY, "url(#" + u + "wall)") + fbL(bricks, "#1A0C0A", .8, ' opacity=".6"') + fbR(BX - 4, BY - 6, BW + 8, 8, "#5A2E28") + fbR(BX - 4, BY - 6, BW + 8, 1.6, "#A06A54") +
-      wins.map(([x, y, w, h]) => fbR(x - 2, y - 2, w + 4, h + 4, "#1A0C0A") + fbR(x, y, w, h, "url(#" + u + "winf)") + fbR(x + w / 2 - 1, y, 2, h, "#1A0C0A") + fbR(x - 3, y + h + 2, w + 6, 2.6, "#6A3A30")).join("") +
-      fbR(BX + 62, GY - 24, 26, 24, "#0E0606") + fbR(BX + 64, GY - 22, 22, 22, "url(#" + u + "winf)", ' opacity=".6"') +
-      /* the road, wet, the fire in it, a kerb */
-      fbR(0, GY, 480, 28, "url(#" + u + "road)") + fbR(0, GY, 480, 1.6, "#6A3A30") + [30, 80, 130].map(x => fbR(x - 18, GY + 2, 36, 26, "url(#" + u + "refl)")).join("") + '<ellipse cx="100" cy="' + (GY + 8) + '" rx="130" ry="8" fill="#FF8A3D" opacity=".12"/>' +
-      /* the truck: its jacks down to the road, body, compartments, pump panel with two discharges, cab */
-      '<ellipse cx="376" cy="' + (GY + 2) + '" rx="96" ry="4" fill="#000" opacity=".6"/>' +
-      [388, 452].map(x => fbR(x - 2.4, 140, 4.8, 12, "#5A606C") + fbR(x - 7, 151, 14, 3, "#2A2D34") + fbR(x - 4.4, 136, 8.8, 5, "#3A3E48")).join("") +
-      fbR(346, 114, 112, 28, "url(#" + u + "red)") + fbR(346, 112, 112, 3, "#8A1410") + fbR(346, 124, 112, 2.6, "#FFFFFF", ' opacity=".9"') + fbR(346, 128, 112, 1, "#F2C14E") +
-      [398, 426].map((x, i) => fbR(x, 117, i ? 26 : 24, 7, "url(#" + u + "roll)", ' stroke="#4A505C" stroke-width=".6"')).join("") +
-      fbR(352, 114, 40, 26, "url(#" + u + "chrome)", ' stroke="#4A505C" stroke-width=".7" rx="1.4"') + [[362, 123], [376, 123]].map(p => fbC(p[0], p[1], 3.6, "#F4F6F8", ' stroke="#1A1C22" stroke-width=".8"') + '<path d="M' + p[0] + ' ' + p[1] + ' L' + (p[0] + 2.2) + ' ' + (p[1] - 2.2) + '" stroke="#C8281E" stroke-width=".7"/>').join("") +
-      [[360, "#C8281E"], [370, "#F2C21E"], [380, "#3D7BFF"]].map(p => fbC(p[0], 132, 2.4, p[1], ' stroke="#1A1C22" stroke-width=".6"')).join("") +
-      /* the two discharges at the foot of the pump panel, the lines screwed onto them */
-      [[362, 140], [378, 140]].map(p => fbR(p[0] - 3.4, p[1] - 2, 6.8, 5.4, "url(#" + u + "chrome)", ' stroke="#4A505C" stroke-width=".6" rx="1"')).join("") +
-      fbR(292, 108, 56, 34, "url(#" + u + "red)") + '<path d="M292 142 L292 120 Q292 112 298 108 L304 100 L338 100 L346 108 L346 142 Z" fill="url(#' + u + 'red)"/>' +
-      '<path d="M296 116 L304 103 L318 103 L318 116 Z" fill="url(#' + u + 'glass)" stroke="#1A1C22" stroke-width=".8"/><path d="M321 103 L340 103 L342 116 L321 116 Z" fill="url(#' + u + 'glass)" stroke="#1A1C22" stroke-width=".8"/>' +
-      fbR(292, 124, 56, 2.6, "#FFFFFF", ' opacity=".9"') + fbR(292, 128, 56, 1, "#F2C14E") + fbR(288, 134, 8, 5, "url(#" + u + "chrome)", ' rx="1.6"') + fbR(292, 116, 4, 4, "#FFE9A8") + fbR(320, 116, 1, 24, "#7A1410") +
-      fbR(300, 96, 30, 3, "#2A2D34") + fbR(304, 92, 10, 5, "#E5332A", ' rx="1.4"') + fbR(316, 92, 10, 5, "#F4F6F8", ' rx="1.4"') +
-      wheel(318) + wheel(408) + wheel(436) +
-      /* the aerial: the turntable, the lift cylinder, the ladder on its pivot, the nozzle at its tip */
-      fbR(412, 104, 40, 10, "#3A3E48", ' stroke="#1A1C22" stroke-width=".6" rx="1.4"') + fbR(408, 110, 48, 4, "#2A2D34") +
-      fbL("M410 112 L" + bnF(PVX + dirx * 44) + " " + bnF(PVY + diry * 44 + 4), "#2A2D34", 3.4) + fbL("M410 112 L" + bnF(PVX + dirx * 44) + " " + bnF(PVY + diry * 44 + 4), "#9AA2AE", 1) + fbC(410, 112, 2.2, "#C9CED6", ' stroke="#2A2D34" stroke-width=".6"') + fbC(PVX + dirx * 44, PVY + diry * 44 + 4, 2.2, "#C9CED6", ' stroke="#2A2D34" stroke-width=".6"') +
-      ladder + fbC(PVX, PVY, 3.4, "url(#" + u + "chrome)", ' stroke="#2A2D34" stroke-width=".7"') +
-      /* the hose lines first (the firefighters stand over them), then the firefighters, rim-lit by the fire */
-      hoseTo(F1[0], F1[1], -1, F1[2], 362, 141, "#B5121B") + hoseTo(F2[0], F2[1], -1, F2[2], 378, 141, "#E4C21E") +
-      '<ellipse cx="' + (F1[0] - 14) + '" cy="' + (F1[1] + 2) + '" rx="30" ry="3.6" fill="#000" opacity=".55"/><ellipse cx="' + (F2[0] - 14) + '" cy="' + (F2[1] + 2) + '" rx="28" ry="3.4" fill="#000" opacity=".55"/>' +
-      fbFF(F2[0], F2[1], F2[2], -1, FF2) + fbFF(F1[0], F1[1], F1[2], -1, FF1) +
+    const rnd = bnRand(8081);
+    const st = bnStarsSplit(rnd, 46, 70);
+    const HY = 134, SX = 238, SY = 134;
+    const TX = 352, TY = 88;   /* the tower: left edge and the top of its parapet */
+    /* the ladder: from below the picture (140, 200) to the parapet; unit direction d, normal n */
+    const A = [136, 204], Z = [TX + 4, TY - 1], L = Math.hypot(Z[0] - A[0], Z[1] - A[1]), d = [(Z[0] - A[0]) / L, (Z[1] - A[1]) / L], n = [-d[1], d[0]], HW = 5.6;
+    const at = (t, o) => [A[0] + d[0] * t + n[0] * o, A[1] + d[1] * t + n[1] * o].map(bnF).join(" ");
+    let rungs = "";
+    for(let t = 14; t < L - 4; t += 8.2) rungs += "M" + at(t, -HW) + " L" + at(t, HW) + " ";
+    const rails = ["M" + at(0, -HW) + " L" + at(L, -HW), "M" + at(0, HW) + " L" + at(L, HW)];
+    /* the rim of light on the rail that faces the sun (up and to the left) */
+    const rim = "M" + at(0, -HW - 1.5) + " L" + at(L, -HW - 1.5);
+    /* the sky's rays: thin wedges from the sun, behind the skyline */
+    let rays = "";
+    for(let i = 0; i < 18; i++){ const a = -Math.PI + (i + .5) * Math.PI / 18, w = .016 + (i % 3) * .008;
+      rays += 'M' + SX + ' ' + SY + ' L' + bnF(SX + Math.cos(a - w) * 330) + ' ' + bnF(SY + Math.sin(a - w) * 330) + ' L' + bnF(SX + Math.cos(a + w) * 330) + ' ' + bnF(SY + Math.sin(a + w) * 330) + ' Z '; }
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#150E3E"], [0.34, "#4E2A78"], [0.62, "#B8467E"], [0.84, "#FF8E58"], [1, "#FFD27A"]], 0, 0, 0, 1) + bnRad(u + "sun", [[0, "#FFFBE0", 1], [0.5, "#FFE08A", .55], [1, "#FFC060", 0]]) +
+      '<radialGradient id="' + u + 'ray" gradientUnits="userSpaceOnUse" cx="' + SX + '" cy="' + SY + '" r="320"><stop offset="0" stop-color="#FFE9A8" stop-opacity=".34"/><stop offset="1" stop-color="#FFE9A8" stop-opacity="0"/></radialGradient>' +
+      bnLin(u + "tower", [[0, "#2A1A4A"], [1, "#0C0618"]]) + bnLin(u + "ground", [[0, "#2A1646"], [1, "#0A0614"]]) + bnRad(u + "mist", [[0, "#FFB890", .4], [1, "#FFB890", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .45]]) + '</defs>';
+    /* streaks of cloud lit from beneath: a dark violet body with a rose belly and a gold lower edge */
+    const cloud = (x, y, w, h) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + w + '" ry="' + h + '" fill="#6A3A8A" opacity=".7"/><ellipse cx="' + (x + w * .1) + '" cy="' + (y + h * .45) + '" rx="' + (w * .94) + '" ry="' + (h * .5) + '" fill="#FF8AA0" opacity=".75"/><ellipse cx="' + (x + w * .14) + '" cy="' + (y + h * .8) + '" rx="' + (w * .8) + '" ry="' + (h * .26) + '" fill="#FFD27A" opacity=".85"/>';
+    const clouds = cloud(70, 78, 62, 7) + cloud(150, 98, 84, 8) + cloud(420, 90, 56, 6) + cloud(300, 66, 50, 5) + cloud(40, 112, 44, 5);
+    /* the city: a far layer lost in the haze, a near one with its lights on, the tower, the ground */
+    const far = fbBuildings(rnd, HY + 3, "#5A2E78", "#FFD58A", -10, 360, 10, 36, 0);
+    const near = fbBuildings(rnd, HY + 14, "#22123E", "#FFD58A", -10, 350, 8, 26, .22);
+    let tw = "";
+    for(let y = TY + 12, r = 0; y < 170; y += 13, r++) for(let c = 0; c < 4; c++) { const lit = rnd() < .3; tw += fbR(TX + 12 + c * 28, y, 12, 7, lit ? "#FFD58A" : "#2E1E52", lit ? ' opacity=".9"' : ""); }
+    const front = '<g opacity=".8">' + far.body + '</g>' + near.body + near.win +
+      fbR(TX, TY, 134, 96, "url(#" + u + "tower)") + fbR(TX, TY, 2.4, 96, "#FFB070", ' opacity=".9"') + tw +
+      fbR(TX - 4, TY - 5, 142, 6, "#2C1A4C") + fbR(TX - 4, TY - 5, 142, 1.4, "#FFC88A") + fbR(TX - 4, TY - 5, 3, 6, "#FFB070") +
+      fbR(0, HY + 14, 480, 40, "url(#" + u + "ground)") + fbR(0, HY + 14, 480, 1.2, "#6A3A7E", ' opacity=".7"') + '<ellipse cx="240" cy="' + (HY + 14) + '" rx="300" ry="9" fill="url(#' + u + 'mist)"/>' +
+      /* the ladder: rails, rungs, the rim of sun on the rail, and its two hooks over the parapet */
+      '<path d="' + rungs + '" stroke="#2A1A48" stroke-width="1.8" fill="none"/><path d="' + rails.join(" ") + '" stroke="#2A1A48" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+      '<path d="' + rim + '" stroke="#FFC88A" stroke-width=".9" fill="none" opacity=".85"/>' +
+      '<path d="M' + at(L - 2, -HW) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 1) + ' M' + at(L - 2, HW) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 1) + '" stroke="#2A1A48" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+      /* the firefighter at the top, on the edge of the parapet, looking at the sun: a dark figure with the sun on his left side */
+      fbFF(TX + 40, TY - 5, .8, -1, { pose: "stand", coat: "#1B0F32", dark: "#0E0820", helm: "#2A1646", pants: "#150C28", rim: "#FFC88A" }) +
       '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
-    /* the streams: the aerial's down into the roof, each hand line up into a window */
-    const stream = (a, b, c, w1) => '<path d="M' + bnF(a[0]) + ' ' + bnF(a[1]) + ' Q' + bnF(c[0]) + ' ' + bnF(c[1]) + ' ' + bnF(b[0]) + ' ' + bnF(b[1]) + '" fill="none" stroke="#E4F4FF" stroke-width="' + w1 + '" stroke-linecap="round" stroke-dasharray="5 6" opacity=".95"/><path d="M' + bnF(a[0]) + ' ' + bnF(a[1]) + ' Q' + bnF(c[0]) + ' ' + bnF(c[1]) + ' ' + bnF(b[0]) + ' ' + bnF(b[1]) + '" fill="none" stroke="#9FD0FF" stroke-width="' + bnF(w1 * .4) + '" stroke-linecap="round" stroke-dasharray="2 8" opacity=".8"/>';
-    const tipN = [PVX + dirx * (LL + 11), PVY + diry * (LL + 11)];
-    const LAYERS = [{ svg: base }];
-    LAYERS.push({ svg: st.a, cls: "bl-tw", style: "animation-duration:3s" });
-    LAYERS.push({ svg: '<ellipse cx="90" cy="80" rx="200" ry="96" fill="url(#' + u + 'heat)"/>', box: [-100, -16, 400, 200], cls: "bl-glow", style: "animation-duration:1.3s" });
-    /* the roof's fire: five bodies standing on the parapet, in two groups, each group on its own clock (a layer per body would be too many layers to run) */
-    const roof = [[[38, 15, 44, -2], [72, 18, 52, 2], [90, 12, 36, 4]], [[106, 20, 56, -3], [138, 16, 46, 2]]];
-    roof.forEach((grp, i) => { const x0 = grp[0][0] - grp[0][1] - 4, x1 = grp[grp.length - 1][0] + grp[grp.length - 1][1] + 4, top = BY - 4 - 60;
-      LAYERS.push({ svg: grp.map(([x, w, h, l]) => fbFire(x, BY - 4, w, h, l)).join(""), box: [x0, top, x1 - x0, BY - 4 - top], o: [(x0 + x1) / 2, BY - 4], cls: "bl-flame", style: "animation-duration:" + (.9 + i * .3) + "s;animation-delay:-" + (i * .5) + "s" }); });
-    /* and the windows: a body licking up out of each, the top floor's biggest; a layer per pair of neighbours */
-    for(let r = 0; r < 3; r++) for(let pr = 0; pr < 2; pr++){
-      const ws = [wins[r * 4 + pr * 2], wins[r * 4 + pr * 2 + 1]], x0 = ws[0][0] - 6, x1 = ws[1][0] + ws[1][2] + 6, y = ws[0][1], h = ws[0][3];
-      LAYERS.push({ svg: ws.map((w, k) => fbFire(w[0] + w[2] / 2, w[1] + w[3] - 1, 9 + (2 - r) * 1.6, 17 + (2 - r) * 5 + ((r * 4 + pr * 2 + k) % 3) * 3, ((r + pr + k) % 2 ? 1 : -1) * 2)).join(""), box: [x0, y - 24, x1 - x0, h + 28], o: [(x0 + x1) / 2, y + h - 1], cls: "bl-flame", style: "animation-duration:" + (.85 + ((r * 2 + pr) % 5) * .13) + "s;animation-delay:-" + ((r * 2 + pr) * .27) + "s" });
-    }
-    LAYERS.push({ svg: fbPuffs(bnRand(91), 96, 52, 8, 22, "url(#" + u + "smoke)"), box: [10, -60, 280, 110], cls: "bl-steam", style: "animation-duration:7s" });
-    LAYERS.push({ svg: fbPuffs(bnRand(92), 126, 52, 7, 20, "url(#" + u + "smoke)"), box: [10, -60, 280, 110], cls: "bl-steam", style: "animation-duration:7s;animation-delay:-3.5s" });
-    /* the water: the aerial's master stream and the two hand lines, flickering as water does; mist where it lands */
-    LAYERS.push({ svg: stream(tipN, [96, 68], [150, 20], 4.4), box: [100, 14, 140, 70], cls: "bl-tw", style: "animation-duration:.4s" });
-    LAYERS.push({ svg: stream(nz1, [146, 128], [168, 110], 3.2) + stream(nz2, [140, 98], [194, 66], 3.2), box: [140, 60, 100, 80], cls: "bl-tw", style: "animation-duration:.45s" });
-    LAYERS.push({ svg: fbPuffs(bnRand(93), 100, 68, 5, 9, "url(#" + u + "puff)") + fbPuffs(bnRand(94), 142, 98, 4, 7, "url(#" + u + "puff)"), box: [90, 20, 100, 100], cls: "bl-steam", style: "animation-duration:2.8s" });
-    LAYERS.push({ svg: fbEmberSheet(rnd, 230, 90, 26, ["#FFB03A", "#FFE08A", "#FFFFFF"]), box: [0, 0, 230, 180], vb: [0, 0, 230, 180], cls: "bl-rise", style: "animation-duration:6s" });
-    /* the lights on the cab, slow and soft */
-    LAYERS.push({ svg: fbC(309, 94.6, 12, "#FF3B30", ' opacity=".45"') + fbC(321, 94.6, 12, "#4F8CFF", ' opacity=".3"'), box: [290, 76, 50, 34], cls: "bl-blink", style: "animation-duration:1.2s" });
-    return LAYERS;
+    return [
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + clouds + '<circle cx="' + SX + '" cy="' + SY + '" r="31" fill="#FFF2C0"/>' },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.4s;animation-delay:-1.3s" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="86" fill="url(#' + u + 'sun)"/>', box: [SX - 86, SY - 86, 172, 172], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:4.6s" },
+      { svg: '<path d="' + rays + '" fill="url(#' + u + 'ray)"/>', box: [SX - 330, SY - 330, 660, 330], vb: [SX - 330, SY - 330, 660, 330], o: [SX, SY], cls: "bl-sweep", style: "animation-duration:14s" },
+      { svg: cloud(260, 54, 40, 4) + cloud(110, 58, 36, 4), box: [40, 40, 300, 40], cls: "bl-drift", style: "animation-duration:30s" },
+      { svg: front }
+    ];
   },
 
   /* AFTER HOURS (was Fire Response; 384 review: "Fire response looks a lot like the others. I love the origin and
@@ -78983,47 +78936,53 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* HOSE LINE (384 review: "Hose line is great but doesn't look like the rest, update it") - the same scene, drawn
-     the way the rest of the set is now: a firefighter in full turnouts (helmet with its shield and brim, the air
-     pack on his back, reflective bands, gloves on the nozzle) leaning into a charged line, rim-lit by the fire he is
-     fighting; the line running back along a wet street under him with its couplings; a brick building ahead
-     burning out of its windows, the stream arcing into it, steam and embers going up, the fire's light running
-     down the wet road. */
+  /* TEN IN A ROW (was Hose Line; for acing 10 different units in a row; Madison: "Reach level 80 and ace 10 units are like the exact same one.. They are both a firefighter
+     with a hose at a burning building.") - ten in a row, drawn as ten: the pump room's instrument panel with ten pressure gauges side by side, every needle pinned in
+     the green, a lit lamp over each, each on its own branch off one red manifold pipe, a plate under each numbered 1 to 10, and UNITS ACED IN A ROW engraved along the top.
+     Cool teal steel and green where Top of the Ladder is a dawn sky; no firefighter, no hose, no fire. Moves: the ten lamps breathing one after another along the row,
+     dust drifting past the panel. */
   exam100(u){
-    const rnd = bnRand(3812);
-    const GY = 158, FX = 90, FS = 1.5;
-    const nz = [FX + 47 * FS, GY - 45 * FS];
-    const BXr = 296, BYr = 40, BWr = 190;
-    let bricks = "";
-    for(let r = 0; r < 12; r++){ const y = BYr + r * 10; bricks += "M" + BXr + " " + y + " L" + (BXr + BWr) + " " + y + " "; for(let x = BXr + (r % 2 ? 8 : 0); x < BXr + BWr; x += 16) bricks += "M" + x + " " + y + " L" + x + " " + (y + 10) + " "; }
-    const wins = [[316, 58], [366, 58], [416, 58], [316, 104], [366, 104], [416, 104]];
-    const base = '<defs>' + bnLin(u + "sky", [[0, "#1A0606"], [0.55, "#6A1A10"], [1, "#E8542A"]]) + bnRad(u + "heat", [[0, "#FFD36A", 0.85], [0.5, "#FF7A2E", 0.35], [1, "#FF4A1E", 0]]) + bnLin(u + "wall", [[0, "#4A2420"], [1, "#2A1210"]]) +
-      bnLin(u + "road", [[0, "#2A1816"], [1, "#0E0707"]]) + bnLin(u + "refl", [[0, "#FF8A3D", 0.5], [1, "#FF8A3D", 0]]) + bnRad(u + "smoke", [[0, "#1A0E0E", 0.8], [1, "#1A0E0E", 0]]) + bnRad(u + "puff", [[0, "#F4E8E0", 0.7], [1, "#F4E8E0", 0]]) + bnRad(u + "winf", [[0, "#FFD36A", 0.95], [0.5, "#FF8A1E", 0.7], [1, "#D9391E", 0.3]]) + '</defs>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'sky)"/><ellipse cx="390" cy="110" rx="200" ry="100" fill="url(#' + u + 'heat)"/>' +
-      /* the burning building: brick face, its cornice, the windows with fire behind the glass, a doorway at the foot */
-      fbR(BXr, BYr, BWr, GY - BYr, "url(#" + u + "wall)") + fbL(bricks, "#1A0C0A", .8, ' opacity=".7"') + fbR(BXr - 4, BYr - 6, BWr + 8, 8, "#5A2E28") + fbR(BXr - 4, BYr - 6, BWr + 8, 1.6, "#9A5A48") +
-      wins.map(([x, y]) => fbR(x - 2, y - 2, 34, 34, "#1A0C0A") + fbR(x, y, 30, 30, "url(#" + u + "winf)") + fbR(x + 14, y, 2, 30, "#1A0C0A") + fbR(x, y + 14, 30, 2, "#1A0C0A") + fbR(x - 4, y + 32, 38, 3, "#6A3A30")).join("") +
-      fbR(BXr + 2, GY - 36, 30, 36, "#0E0606") + fbR(BXr + 2, GY - 36, 30, 36, "url(#" + u + "winf)", ' opacity=".55"') +
-      /* the road: wet, the fire's light down it, the line of lights of the engine far behind */
-      fbR(0, GY, 480, 22, "url(#" + u + "road)") + fbR(0, GY, 480, 1.6, "#6A3A30") + [330, 380, 430, 460].map(x => fbR(x - 6, GY + 2, 12, 20, "url(#" + u + "refl)")).join("") + '<ellipse cx="380" cy="' + (GY + 8) + '" rx="110" ry="8" fill="#FF8A3D" opacity=".18"/>' +
-      /* a hydrant with the line coming off it, and the hose laid back under the firefighter, couplings on it */
-      fbR(14, GY - 14, 8, 14, "#D7262E") + fbR(12, GY - 16, 12, 3, "#A81820") + fbC(18, GY - 17, 3.6, "#D7262E") + fbR(22, GY - 8, 5, 3.4, "#A81820") +
-      fbL("M" + bnF(nz[0] - 14) + " " + bnF(nz[1] + 10) + " Q" + (FX + 10) + " " + (GY - 6) + " 56 " + (GY + 2) + " Q36 " + (GY + 6) + " 24 " + (GY - 6), "#3A1A1A", 6.6) + fbL("M" + bnF(nz[0] - 14) + " " + bnF(nz[1] + 10) + " Q" + (FX + 10) + " " + (GY - 6) + " 56 " + (GY + 2) + " Q36 " + (GY + 6) + " 24 " + (GY - 6), "#C9A02A", 1.4, ' stroke-dasharray="4 7" opacity=".7"') +
-      [[60, GY + 1.6], [120, GY - 14]].map(([x, y]) => fbR(x - 3, y - 4, 6, 8, "#C9CED6", ' rx="1.4"')).join("") +
-      '<ellipse cx="' + (FX + 20) + '" cy="' + (GY + 2) + '" rx="46" ry="4.4" fill="#000" opacity=".55"/>' +
-      fbFF(FX, GY, FS, 1, { coat: "#B08A4A", dark: "#6A5028", helm: "#E04030", rim: "#FFB070", pants: "#8A6A34" });
+    const rnd = bnRand(1001);
+    const X0 = 40, PITCH = 44.4, CY = 84, R = 19.2, N = 10;
+    const defs = '<defs>' + bnLin(u + "wall", [[0, "#12222B"], [1, "#0A141B"]]) + bnLin(u + "panel", [[0, "#4A5E6E"], [0.5, "#34444F"], [1, "#222E38"]]) + bnLin(u + "chrome", [[0, "#FFFFFF"], [0.5, "#A6B0BC"], [1, "#4E5866"]], 0, 0, 1, 1) +
+      bnLin(u + "pipe", [[0, "#F0644E"], [0.35, "#D23A2A"], [1, "#7A160E"]]) + bnLin(u + "face", [[0, "#FFFFFF"], [1, "#D4DAD6"]]) + bnLin(u + "plate", [[0, "#1A242C"], [1, "#0C1318"]]) +
+      bnRad(u + "lamp", [[0, "#5CFFA6", .75], [0.5, "#5CFFA6", .25], [1, "#5CFFA6", 0]]) + bnRad(u + "wash", [[0, "#6CFFC0", .16], [1, "#6CFFC0", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .5]]) + '</defs>';
+    const gx = i => X0 + i * PITCH;
+    /* one gauge: bezel, face, the scale's red, amber and green arcs with ticks, the needle pinned at the top of the green, glass glare */
+    const gauge = (x, y, i) => {
+      const r = R, a0 = 135, sweep = 270, P = (ang, rad) => [x + Math.cos(ang * Math.PI / 180) * rad, y + Math.sin(ang * Math.PI / 180) * rad].map(bnF);
+      const arc = (f0, f1, col) => { const p0 = P(a0 + f0 * sweep, r * .74), p1 = P(a0 + f1 * sweep, r * .74); return '<path d="M' + p0.join(" ") + ' A' + bnF(r * .74) + ' ' + bnF(r * .74) + ' 0 ' + ((f1 - f0) * sweep > 180 ? 1 : 0) + ' 1 ' + p1.join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + bnF(r * .17) + '"/>'; };
+      let ticks = "";
+      for(let t = 0; t <= 10; t++){ const p0 = P(a0 + t / 10 * sweep, r * .62), p1 = P(a0 + t / 10 * sweep, r * (t % 5 ? .56 : .5)); ticks += "M" + p0.join(" ") + " L" + p1.join(" ") + " "; }
+      const na = a0 + (.955 + (i % 3) * .008) * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
+      return fbC(x, y, r + 2.6, "#000", ' opacity=".4" transform="translate(.8 1.8)"') + fbC(x, y, r + 1.4, "url(#" + u + "chrome)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
+        arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".8" fill="none"/>' +
+        fbText("PSI", x, y + r * .36, 3.6, "#4A545E", .6) + '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#000" stroke-width="2.4" opacity=".25" transform="translate(.6 .9)"/><path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
+        fbC(x, y, 2.4, "#1A232B") + fbC(x - .5, y - .5, .9, "#7A8794") + '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity=".5" stroke-linecap="round"/>';
+    };
+    let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
+    /* the wall behind: a block course and the conduit run along the top */
+    let courses = ""; for(let y = 8; y < 180; y += 12) courses += "M0 " + y + " L480 " + y + " ";
+    g += '<path d="' + courses + '" stroke="#06101A" stroke-width="1" opacity=".7" fill="none"/>';
+    /* the panel: a steel plate with its bolts, a lit lip along its top, the header engraving */
+    g += fbR(10, 20, 460, 140, "#000", ' opacity=".5" rx="5" transform="translate(2 4)"') + fbR(8, 16, 464, 142, "url(#" + u + "panel)", ' rx="5" stroke="#667A8A" stroke-width="1.6"') + fbR(8, 16, 464, 1.6, "#9FB3C2", ' rx="1"') +
+      [[16, 24], [464, 24], [16, 150], [464, 150]].map(p => fbC(p[0], p[1], 2.4, "#8A98A6", ' stroke="#2A3640" stroke-width=".7"') + '<path d="M' + (p[0] - 1.6) + ' ' + p[1] + ' L' + (p[0] + 1.6) + ' ' + p[1] + '" stroke="#2A3640" stroke-width=".7"/>').join("") +
+      fbR(60, 23, 360, 12, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8"') + fbText("10 UNITS ACED IN A ROW", 240, 29.2, 6.4, "#E4EEF4", 1.1);
+    g += '<ellipse cx="240" cy="' + CY + '" rx="230" ry="46" fill="url(#' + u + 'wash)"/>';
+    /* the manifold: one red pipe along the foot of the gauges with a flange at each end, and a branch up from it into each gauge */
+    for(let i = 0; i < N; i++) g += fbR(gx(i) - 3, CY + R + 2, 6, 118 - CY - R + 2, "url(#" + u + "chrome)") + fbR(gx(i) - 4.4, CY + R + 1, 8.8, 2.4, "#6A7280") + fbR(gx(i) - 4.4, 114.4, 8.8, 2.4, "#6A7280");
+    g += fbR(20, 116, 440, 11, "url(#" + u + "pipe)", ' rx="2"') + fbR(20, 117, 440, 2.6, "#FF9A86", ' opacity=".75" rx="1"') + fbR(16, 112, 6, 19, "#8A929E", ' rx="1.4" stroke="#3A4452" stroke-width=".7"') + fbR(458, 112, 6, 19, "#8A929E", ' rx="1.4" stroke="#3A4452" stroke-width=".7"');
+    for(let i = 0; i < N; i++) g += gauge(gx(i), CY, i);
+    /* a lamp over each gauge (lit), and the numbered plate under the pipe */
+    for(let i = 0; i < N; i++) g += fbC(gx(i), 44, 3.4, "#0E2A1C", ' stroke="#8A98A6" stroke-width="1"') + fbC(gx(i), 44, 2.4, "#5CFFA6") + fbC(gx(i) - .7, 43.2, .8, "#E8FFF2") +
+      fbR(gx(i) - 9, 133, 18, 14, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8"') + fbText(String(i + 1), gx(i), 140, 8, "#E4EEF4", 1.3);
+    g += '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
+    const lampPair = k => [k, k + 5].map(i => '<circle cx="' + bnF(gx(i)) + '" cy="44" r="12" fill="url(#' + u + 'lamp)"/>').join("");
     return [
-      { svg: base },
-      { svg: '<ellipse cx="390" cy="100" rx="190" ry="90" fill="url(#' + u + 'heat)"/>', box: [200, 10, 280, 180], cls: "bl-glow", style: "animation-duration:1.4s" },
-      { svg: fbPuffs(bnRand(91), 392, 44, 7, 20, "url(#" + u + "smoke)"), box: [300, -50, 200, 110], cls: "bl-steam", style: "animation-duration:7s" },
-      { svg: fbPuffs(bnRand(92), 420, 44, 6, 18, "url(#" + u + "smoke)"), box: [300, -50, 200, 110], cls: "bl-steam", style: "animation-duration:7s;animation-delay:-3.5s" },
-      /* the fire in each window, each on its own clock, and along the foot of the wall */
-      ...wins.map(([x, y], i) => ({ svg: fbFire(x + 15, y + 30, 13, 26 + (i % 3) * 5, (i % 2 ? 1 : -1) * 2), box: [x - 2, y - 6, 34, 40], o: [x + 15, y + 30], cls: "bl-flame", style: "animation-duration:" + (0.8 + i * .13) + "s;animation-delay:-" + (i * .21) + "s" })),
-      { svg: fbFire(330, GY, 22, 40, 3) + fbFire(396, GY, 26, 50, -3) + fbFire(452, GY, 22, 36, 2), box: [296, GY - 56, 186, 58], o: [390, GY], cls: "bl-flame", style: "animation-duration:1.2s" },
-      /* the stream: from the nozzle in an arc into the window, flickering as water does, a mist where it lands */
-      { svg: '<path d="M' + bnF(nz[0]) + ' ' + bnF(nz[1]) + ' Q250 42 330 84" fill="none" stroke="#E4F4FF" stroke-width="4.2" stroke-linecap="round" stroke-dasharray="5 6" opacity=".95"/><path d="M' + bnF(nz[0]) + ' ' + bnF(nz[1]) + ' Q250 42 330 84" fill="none" stroke="#9FD0FF" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="2 8" opacity=".8"/>', box: [nz[0] - 4, 40, 340 - nz[0], 58], cls: "bl-tw", style: "animation-duration:.4s" },
-      { svg: fbPuffs(bnRand(93), 336, 84, 5, 8, "url(#" + u + "puff)"), box: [296, 20, 80, 90], cls: "bl-steam", style: "animation-duration:2.8s" },
-      { svg: fbEmberSheet(rnd, 200, 90, 22, ["#FFB03A", "#FFE08A", "#FFFFFF"]), box: [290, 0, 200, 180], vb: [0, 0, 200, 180], cls: "bl-rise", style: "animation-duration:6s" }
+      { svg: g },
+      /* the ten lamps breathe one after another along the row: five layers of two, a fifth of a cycle apart */
+      ...[0, 1, 2, 3, 4].map(k => ({ svg: lampPair(k), box: [X0 - 14, 28, PITCH * 9 + 28, 32], cls: "bl-glow", style: "animation-duration:1.5s;animation-delay:-" + bnF(k * .3) + "s" })),
+      { svg: fbEmberSheet(bnRand(1002), 480, 90, 14, ["#CFFFE8", "#9AD8FF", "#FFFFFF"]), box: [0, 16, 480, 142], cls: "bl-rise", style: "animation-duration:22s;opacity:.28" }
     ];
   },
 
@@ -79378,8 +79337,8 @@ const IFC_BANNER_LOOK = {
   hundos250: ["Grand Finale", "#FFD36A", "#7FB8FF"], vr50: ["Mutual Aid", "#4FB8FF", "#FF3B30"],
   study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["On Call", "#E8402E", "#2ECC71"],
   correct5000: ["Downpour", "#6FA8D8", "#FF8A3D"], correct10000: ["Fire Investigator", "#F2C21E", "#FF7A2E"],
-  level80: ["Fully Involved", "#FF6A2E", "#3A6AD8"], early10: ["After Hours", "#3FD0C0", "#FF5A8A"],
-  exam100: ["Hose Line", "#F95E2F", "#FF2931"], flare_void: ["Nebula", "#F97316", "#EF4444"],
+  level80: ["Top of the Ladder", "#FFB04A", "#C04A9A"], early10: ["After Hours", "#3FD0C0", "#FF5A8A"],
+  exam100: ["Ten in a Row", "#3CD9A0", "#F2B93A"], flare_void: ["Nebula", "#F97316", "#EF4444"],
   flare_umbra: ["Quasar", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Pulsar", "#6FB4F2", "#CFEAFF"],
   flare_genesis: ["Eclipse", "#FF5CA8", "#FFB04A"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
   celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"]
