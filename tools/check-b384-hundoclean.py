@@ -6,7 +6,8 @@ In both classes, for each effect: the small boxes the effect shows off in, read 
  (C2) the miniature results screen (buildHundoFxMock): the frame has no border and no gradient wash, and its grade and XP cards
       are the app's solid card with no border / shadow;
  (C3) the unlock pop-up (playUnlockSpotlight): its card has no border and no coloured shadow, no hazard stripe on its strip, its
-      name is the app's sans (not the serif), its 'challenge' chip has no border.
+      name is the app's sans (not the serif), its 'challenge' chip has no border;
+ (C4) the effect's detail card (showUnlockDetail): its name is the app's sans too.
 Run:  python3 tools/check-b384-hundoclean.py   (--against OLD/index.html must FAIL)"""
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -75,6 +76,9 @@ with G["sync_playwright"]() as pw:
             s = pg.evaluate(SPOT, id)
             chk("(C3) %s %s pop-up: card with no border (%s) or shadow but its lift, strip without a hazard stripe, name in the sans (%s), chip without a border" % (cls, id, s and s["bw"], s and s["font"]),
                 s and s["bw"] == 0 and "colo" not in (s["shadow"] or "").replace("rgba(0, 0, 0", "") and "repeating" not in s["stripImg"] and SH(s["stripShadow"]) and not s["font"].lower().lstrip('"').startswith(("georgia", "iowan", "ui-serif", "times", "palatino", "baskerville")) and s["needBw"] == 0, s)
+        for id in IDS[1:]:
+            f = pg.evaluate("(id) => { document.querySelectorAll('.invite-overlay').forEach(e => e.remove()); showUnlockDetail(hundoFxDetail(id)); const n = document.querySelector('.unlock-card-name'); const f = n ? getComputedStyle(n).fontFamily : ''; document.querySelectorAll('.invite-overlay').forEach(e => e.remove()); return f; }", id)
+            chk("(C4) %s %s detail card: the name is the app's sans (%s)" % (cls, id, f[:40]), f and not f.lower().lstrip('"').startswith(("georgia", "iowan", "ui-serif", "times", "palatino", "baskerville")), f)
         chk("no page errors (%s)" % cls, not errs, errs[:2]); ctx.close()
     br.close()
 print("ALL PASS" if ok else "SOME FAILED"); sys.exit(0 if ok else 1)
