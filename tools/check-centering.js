@@ -111,7 +111,9 @@
      top left with a lip) whose ink is not its shape - the colour count passes a grey recess as an "icon" and measured its
      shadow. Where the SHAPE sits is asserted off the outline itself (check-behaviour check_b320c_case / check_b321d_badges:
      every one of the units' badges within .5px of its slot's middle, front and back). */
-  const NOT_A_CONTROL = '.nova-case-latch, .cosmic-hero .cosmic-icon-badge, .cosmic-welcome .cosmic-icon-badge, .badge-tile-art';
+  /* (384 r4) Customize's banner and effect tiles are scenes (pictures: their ink is the art's), and the theme tile that is on wears a
+     tick on its ring like a character's - a badge on the picture, not part of it */
+  const NOT_A_CONTROL = '.nova-case-latch, .cosmic-hero .cosmic-icon-badge, .cosmic-welcome .cosmic-icon-badge, .badge-tile-art, .banner-opt-art, .hfx-opt-art, .hfx-opt-art .hfx-stage, .screen-customize .swatch.on, .screen-customize .swatch-cell';
   /* a character (Customize's, the tab's, a board's, the hero's): drawn on purpose off-symmetric, and placed per character */
   const CHARACTER = 'svg.avatarchar-svg, .char-live img, .char-live svg, [class*=avatar] img, [class*=char-flip] img, [class*=char-flip] svg';
   const nameOf = el => {

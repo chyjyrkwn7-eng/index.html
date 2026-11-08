@@ -484,6 +484,11 @@ SCREENS = [
     {"name": "profile", "js": "showProfile('profile');", "ready": "document.querySelector('#stage .profile-hero')"},
     {"name": "stats", "js": "showProfile('stats');"},
     {"name": "customize", "js": "showCustomize();", "ready": "document.querySelector('#stage .cz-row')"},
+    # (384 round 4) the four pages behind it
+    {"name": "customize/character", "js": "showCustomize('character');", "wait": 1800, "ready": "document.querySelector('#stage .cz-page-character .avatarchar-option')"},
+    {"name": "customize/banner", "js": "showCustomize('banner');", "wait": 1800, "ready": "document.querySelector('#stage .cz-page-banner .banner-opt')"},
+    {"name": "customize/theme", "js": "showCustomize('theme');", "wait": 1500, "ready": "document.querySelector('#stage .cz-page-theme .swatch')"},
+    {"name": "customize/effect", "js": "showCustomize('fx');", "wait": 1500, "ready": "document.querySelector('#stage .cz-page-fx .hfx-opt')"},
     {"name": "rank ladder", "js": "showRanksScreen('ranks');"},
     {"name": "badge case", "js": "showRanksScreen('badges');"},
     {"name": "friends", "js": "showFriends();"},

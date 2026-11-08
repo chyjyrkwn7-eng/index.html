@@ -38306,9 +38306,10 @@ html.is-browser{ --fade-paper: transparent; }
   }
   html[data-layout] body #stage .screen-customize .cz-meta .cz-new{ order:0; }
   html[data-layout] body #stage .screen-customize .cz-go{
-    display:inline-flex; align-items:center; justify-content:center; gap:.3rem; padding:.28rem .6rem .28rem .7rem; border-radius:99px; background:rgba(255,255,255,.07);
+    display:inline-flex; align-items:center; justify-content:center; gap:.3rem; padding:.28rem .65rem; border-radius:99px; background:rgba(255,255,255,.07);
   }
   html[data-layout] body #stage .screen-customize .cz-count{ font-size:.8rem; font-weight:600; color:var(--ink); opacity:.82; }
+  html[data-layout] body #stage .screen-customize .cz-go > *{ position:relative; top:.6px; }   /* the words' ink sat .6px high in the pill (check-centering) */
   html[data-layout] body #stage .screen-customize .cz-chev{ font-size:1.05rem; line-height:1; color:var(--soft); opacity:.9; }
   @media (min-width:24rem){
     html[data-layout] body #stage .screen-customize .cz-art{ height:6rem; }
@@ -38337,7 +38338,7 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] body #stage .screen-customize .cz-label{ font-size:1.3rem; }
     html[data-layout] body #stage .screen-customize .cz-value{ font-size:1rem; }
     html[data-layout] body #stage .screen-customize .cz-count{ font-size:.88rem; }
-    html[data-layout] body #stage .screen-customize .cz-go{ padding:.34rem .75rem .34rem .85rem; }
+    html[data-layout] body #stage .screen-customize .cz-go{ padding:.34rem .8rem; }
   }
 
   /* a SHORT phone (an SE's 667px): the four cards still fit one screen - a smaller picture, tighter air */
