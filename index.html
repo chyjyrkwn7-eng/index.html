@@ -58761,7 +58761,7 @@ var IFC_CHAR_LOOK = {
   masked:      ["fcscba",       "Smoke Diver",    "#FF7A3D"],
   poseidon:    ["fcchief3",     "Chief",          "#F4D06A"],
   clown:       ["fcstrobe",     "Strobe",         "#FF4A3D"],
-  valkyrie:    ["fcpyro",       "Pyrotech",       "#FF3D9A"],
+  valkyrie:    ["fcundercover", "Undercover",     "#FF3D9A"],
   marksman:    ["fchazmat",     "Hazmat",         "#C8F03A"],
   astronaut:   ["fcspill",      "Toxic Spill",    "#B266FF"],
   hacker:      ["fcdispatch3",  "Dispatcher",     "#4FB8FF"],
@@ -58784,7 +58784,7 @@ var IFC_BACKDROP = {
   fcscba:       [["nebula", "#FF6A2E", "#3A1A10"], ["rise", "ember", ["#FF7A3D", "#FFC24A"]]],
   fcchief3:     [["rays", "#F4D06A", 14], ["nebula", "#8A5A2A", "#1A0E06"], ["stars", "#FFF1C2"]],
   fcstrobe:     [["rays", "#FF4A3D", 12], ["nebula", "#E8452F", "#1A0608"]],
-  fcpyro:       [["nebula", "#D8287A", "#16040E"], ["rise", "ember", ["#FFD23A", "#FF8AC8", "#FFFFFF"]], ["stars", "#FFE2F0"]],
+  fcundercover: [["city", "#170C1E", "#FF3D9A"], ["nebula", "#7A1A52", "#0A040E"], ["stars", "#FFD6EA"]],
   fchazmat:     [["nebula", "#B8E83A", "#1C3410"], ["rise", "ember", ["#D9FF6A", "#FFFFFF"]]],
   fcspill:      [["nebula", "#8A3AE0", "#12062A"], ["rise", "ember", ["#D9FF6A", "#D2A8FF"]]],
   fcdispatch2:  [["nebula", "#3DA8FF", "#0A1A3A"], ["stars", "#CFE6FF"]],
@@ -59373,75 +59373,86 @@ var IFC_CHAR_DRAW = {
       k.close();
     });
   },
-  /* PYROTECH (the Koi's place; 384 round 5: "The extinguisher character, I don't like it at all, make that
-     something else"): the technician who stands behind a public fireworks display - the one the marshal's
-     office checks the permit and the safety line of (see the Pyrotechnics banner). A black hard hat with a
-     magenta ridge and ear defenders on it, safety glasses tinted magenta, a ponytail out the back, a
-     high-vis vest with its reflective Y, the firing controller on a lanyard, sparks in the air. One of
-     the few faces in the set that is not a man's; nothing in her is a cylinder. */
-  fcpyro(k){
-    const MG = "#FF3D9A";
-    fcCoat(k, { coat: ["#4A4E5C", "#2A2D38", "#0E0F16"], neck: "tan", extra(){
-      /* the vest: magenta, its reflective Y in silver, the zip down the middle */
-      k.add("path", { d: "M12.6 28.9 L15.6 28.2 L20 33 L24.4 28.2 L27.4 28.9 L28.6 40 L11.4 40 Z", fill: k.headGrad("#FF8CC4", MG, "#8A0A4A") });
-      k.add("path", { d: "M15.6 28.2 L18 32.6 L18 40 L15.4 40 Z M24.4 28.2 L22 32.6 L22 40 L24.6 40 Z", fill: "#E8ECF0" });
-      k.add("path", { d: "M15.9 29.4 L18 33 M24.1 29.4 L22 33", stroke: "#8A93A4", "stroke-width": ".3", opacity: ".7" });
-      k.add("path", { d: "M12.2 36.2 Q20 34.6 27.8 36.2 L27.9 37.6 Q20 36 12.1 37.6 Z", fill: "#E8ECF0" });
-      k.add("path", { d: "M12.3 36.9 Q20 35.3 27.7 36.9", fill: "none", stroke: "#8A93A4", "stroke-width": ".25", opacity: ".6" });
-      /* the shoulders of the jacket under it, a hair of light on the near one */
-      k.add("path", { d: "M6.4 34.4 Q8 31.4 12.6 29.8 M33.6 34.4 Q32 31.4 27.4 29.8", fill: "none", stroke: "#9AA2B8", "stroke-width": ".35", opacity: ".5", "stroke-linecap": "round" });
-      /* the lanyard and the firing controller: a box with a key switch and three lights */
-      k.add("path", { d: "M16.4 28.6 Q15.4 33.6 17 35.6 M23.6 28.6 Q24.6 33.6 23 35.6", fill: "none", stroke: "#15161A", "stroke-width": ".4" });
-      k.add("rect", { x: 16.2, y: 34.6, width: 7.6, height: 5, rx: .9, fill: "#1C1E26", stroke: "#4A4E5C", "stroke-width": ".25" });
-      k.add("rect", { x: 17, y: 35.3, width: 3.1, height: 1.4, rx: .3, fill: "#0A2A1A" });
-      k.add("path", { d: "M17.4 36 l.6 .3 l.7 -.8 l.6 .5", fill: "none", stroke: "#3DFFA0", "stroke-width": ".2" });
-      [[21.1, "#3DFF8A"], [22, "#FFC62E"], [22.9, "#FF4A3D"]].forEach(([x, c]) => k.add("circle", { cx: x, cy: 36, r: .38, fill: c }));
-      k.add("circle", { cx: 18.4, cy: 38.4, r: .8, fill: "#C9CED6", stroke: "#3A3E48", "stroke-width": ".2" });
-      k.add("path", { d: "M18.4 37.8 v.9", stroke: "#3A3E48", "stroke-width": ".25" });
-      k.add("rect", { x: 20.6, y: 37.8, width: 2.4, height: 1.2, rx: .6, fill: "#FF3D3D" });
+  /* UNDERCOVER (the Koi's place; 384 round 7: "Pyrotech is eh, what about like an undercover styled character? A character
+     with some mystery."): the plainclothes investigator who is never quite in the light. A dark hat pulled right down, shades
+     with the neon in them and eyes you can only just see behind the glass, the collar of his trench coat turned up round
+     his jaw (the left flap higher than the right), half his face in shadow and the other half lit pink from the street,
+     the badge half out of his coat - tucked away under the flap - and a notebook and pencil in the breast pocket. */
+  fcundercover(k){
+    const PK = "#FF3D9A", COAT = ["#6A675E", "#3A3832", "#0F0E0C"];
+    fcCoat(k, { coat: COAT, extra(){
+      /* the shirt and tie in the V, the double-breasted front with its buttons, lapels cut in a darker cloth */
+      k.add("path", { d: "M16.4 28.6 L20 35.6 L23.6 28.6 Z", fill: "#D8D6D0" });
+      k.add("path", { d: "M19.2 29.6 L20.8 29.6 L21.4 34.6 L20 36.2 L18.6 34.6 Z", fill: "#16161E" });
+      k.add("path", { d: "M12.6 29 L16.6 28.4 L19.4 36.6 L17.4 40 L11.8 40 Z M27.4 29 L23.4 28.4 L20.6 36.6 L22.6 40 L28.2 40 Z", fill: fcLin(k, [["0", "#4A473F"], ["1", "#1A1916"]]), stroke: "#0A0908", "stroke-width": ".25" });
+      k.add("path", { d: "M13.4 29.2 L17 28.7 M27 29.2 L23 28.7", stroke: "#8A867A", "stroke-width": ".3", opacity: ".6", "stroke-linecap": "round" });
+      [[17.6, 34.4], [17.2, 37.6], [22.4, 34.4], [22.8, 37.6]].forEach(([x, y]) => { k.add("circle", { cx: x, cy: y, r: .5, fill: "#16151A", stroke: "#6A675E", "stroke-width": ".15" }); });
+      k.add("path", { d: "M6.4 35.2 Q8 31.6 12.6 30 M33.6 35.2 Q32 31.6 27.4 30", fill: "none", stroke: "#B8B4A6", "stroke-width": ".35", opacity: ".45", "stroke-linecap": "round" });
+      /* the badge, half out of the coat: only its lower right shows, tucked under the lapel's edge */
+      const cid = k.uid + "-ucclip", cp = k.mk("clipPath", { id: cid });
+      cp.appendChild(k.mk("path", { d: "M12.6 36.8 L17.4 31.6 L19.4 31.6 L19.4 36.8 Z" }));
+      k.defs.appendChild(cp);
+      k.open("", { "clip-path": "url(#" + cid + ")" });
+      fcStarBadge(k, 15.4, 33.8, 2.1);
+      k.close();
+      k.add("path", { d: "M12.6 36.8 L17.4 31.6", stroke: "#0A0908", "stroke-width": ".5", "stroke-linecap": "round" });
+      k.add("path", { d: "M12.9 36.9 L17.7 31.7", stroke: "#8A867A", "stroke-width": ".16", opacity: ".7" });
+      /* the notebook and its pencil in the breast pocket */
+      k.add("rect", { x: 24.6, y: 32.6, width: 3.6, height: 2.8, rx: .3, fill: "#F2E6B0", stroke: "#8A7A3A", "stroke-width": ".15", transform: "rotate(6 26.4 34)" });
+      k.add("path", { d: "M25.2 33.6 h2.4 M25.2 34.4 h1.8", stroke: "#B8A860", "stroke-width": ".2", transform: "rotate(6 26.4 34)" });
+      k.add("path", { d: "M28 30.6 L27.4 35.4", stroke: "#E8A21A", "stroke-width": ".5", "stroke-linecap": "round" });
+      k.add("path", { d: "M28 30.6 l.1 -.6", stroke: "#3A3A44", "stroke-width": ".5", "stroke-linecap": "round" });
+      k.add("path", { d: "M24 35.4 L28.8 35 L29 40 L24.2 40 Z", fill: fcLin(k, [["0", "#4A473F"], ["1", "#1A1916"]]), stroke: "#0A0908", "stroke-width": ".2" });
+      k.add("path", { d: "M24 35.4 L28.8 35", stroke: "#8A867A", "stroke-width": ".25", opacity: ".7" });
     } });
     k.open("cx-head");
-    /* the ponytail, swung out behind the head and up */
-    const hair = k.headGrad("#9A5A34", "#5E3418", "#2A1408");
-    k.add("path", { d: "M26.6 13.4 Q36.4 11 36 20.6 Q35.8 27.6 31.6 31.4 Q32.6 26 31 21.8 Q29.4 17.6 25.6 16.6 Z", fill: hair });
-    k.add("path", { d: "M32.4 14.2 Q35 18.6 33.2 26.6", fill: "none", stroke: "#D49A6A", "stroke-width": ".45", opacity: ".6", "stroke-linecap": "round" });
-    k.add("rect", { x: 25.6, y: 14.8, width: 1.6, height: 1.9, rx: .5, fill: MG, transform: "rotate(-24 26.4 15.7)" });
+    const FACE = "M11.6 19 Q11.8 12.2 20 12 Q28.2 12.2 28.4 19 Q28.6 26.6 24.6 29.6 Q22.4 31.1 20 31.1 Q17.6 31.1 15.4 29.6 Q11.4 26.6 11.6 19 Z";
     fcFace(k, "tan");
-    /* the fringe under the hat, and freckles */
-    k.add("path", { d: "M11.7 19.6 Q11.4 15.6 13 14.6 Q20 17 27 14.6 Q28.6 15.6 28.3 19.6 Q27 16.4 20 16.8 Q13 16.4 11.7 19.6 Z", fill: hair });
-    [[14.6, 25], [15.8, 25.7], [25.4, 25], [24.2, 25.7]].forEach(([x, y]) => k.add("circle", { cx: x, cy: y, r: .2, fill: "#A8684A", opacity: ".6" }));
-    fcEyes(k, { y: 21.6, brow: "#4A2A14", iris: "#2E5A4A" });
-    /* lashes */
-    k.add("path", { d: "M15.2 20.4 l-.7 -.5 M24.8 20.4 l.7 -.5", stroke: "#2A1408", "stroke-width": ".32", "stroke-linecap": "round" });
-    /* the safety glasses: a dark frame, lenses tinted magenta, a glint across each */
-    k.add("path", { d: "M13.2 20 Q13.4 19.2 14.4 19.2 L18.4 19.2 Q19.2 19.4 19.2 20.4 L19 22.8 Q18.8 23.8 17.8 23.8 L14.6 23.8 Q13.4 23.6 13.3 22.6 Z M20.8 20.4 Q20.8 19.4 21.6 19.2 L25.6 19.2 Q26.6 19.2 26.8 20 L26.7 22.6 Q26.6 23.6 25.4 23.8 L22.2 23.8 Q21.2 23.8 21 22.8 Z M19.2 20.4 L20.8 20.4", fill: MG, "fill-opacity": ".22", stroke: "#22242C", "stroke-width": ".5", "stroke-linejoin": "round" });
-    k.add("path", { d: "M13.2 20.4 L11.8 20.2 M26.8 20.4 L28.2 20.2", stroke: "#22242C", "stroke-width": ".45", "stroke-linecap": "round" });
-    k.add("path", { d: "M14.2 22.8 L16.4 19.9 M22.2 22.8 L24.4 19.9", stroke: "#FFFFFF", "stroke-width": ".35", opacity: ".55", "stroke-linecap": "round" });
-    fcMouth(k, "smile", "#C23A5E");
-    k.add("path", { d: "M17.9 26.5 Q20 28.2 22.1 26.5", fill: "none", stroke: "#FF8AAE", "stroke-width": ".3", opacity: ".55", "stroke-linecap": "round" });
-    /* the ear defenders: cups either side, a band over the hat */
-    k.add("path", { d: "M10.3 20 Q9.6 8.4 20 7.8 Q30.4 8.4 29.7 20", fill: "none", stroke: "#15161A", "stroke-width": ".9", "stroke-linecap": "round" });
-    [[9.6, -1], [30.4, 1]].forEach(([x, s]) => {
-      k.add("ellipse", { cx: x, cy: 22, rx: 2.2, ry: 3.3, fill: k.headGrad("#FF8CC4", MG, "#7A0A40"), stroke: "#2A0A18", "stroke-width": ".3" });
-      k.add("ellipse", { cx: x - s * .2, cy: 22, rx: 1.2, ry: 2.2, fill: "none", stroke: "#2A0A18", "stroke-width": ".3", opacity: ".5" });
-      k.add("ellipse", { cx: x - s * .7, cy: 20.4, rx: .5, ry: 1.1, fill: "#FFFFFF", opacity: ".4" });
+    /* the street's light on the right side, the left half of the face lost in shadow */
+    k.add("path", { d: FACE, fill: fcLin(k, [["0", "#07040C", ".92"], [".45", "#07040C", ".72"], [".72", "#07040C", ".2"], ["1", "#07040C", "0"]], "11.4", "0", "28.6", "0", true) });
+    k.add("path", { d: "M28.3 16.6 Q28.7 24.2 25.6 28.8", fill: "none", stroke: PK, "stroke-width": ".55", opacity: ".85", "stroke-linecap": "round" });
+    k.add("path", { d: "M27.6 22 Q27.8 25.6 25.8 28", fill: "none", stroke: "#FFC8E2", "stroke-width": ".2", opacity: ".6", "stroke-linecap": "round" });
+    /* sideburns, a day's stubble over the jaw */
+    k.add("path", { d: "M11.7 19.8 Q11.3 16 13 15.2 L13.8 22 Z M28.3 19.8 Q28.7 16 27 15.2 L26.2 22 Z", fill: "#0E0A08" });
+    k.add("path", { d: "M13 25 Q14 29.6 17.6 30.6 Q20 31 22.4 30.6 Q26 29.6 27 25 Q25 28.4 22.4 29 Q20 29.4 17.6 29 Q15 28.4 13 25 Z", fill: "#0A0608", opacity: ".3" });
+    fcBrimShade(k, 1.6);
+    /* the eyes, behind the glass: only a gleam each */
+    k.open("cx-eyes");
+    [16.4, 23.6].forEach(x => {
+      k.add("ellipse", { cx: x, cy: 22.2, rx: 1.3, ry: .95, fill: "#FFFFFF", opacity: ".9" });
+      k.add("circle", { cx: x + .15, cy: 22.25, r: .6, fill: "#1A1018" });
     });
-    /* the black hard hat: dome, a raised ridge in magenta, a short brim, a bright edge */
-    k.open("cx-fx cx-fx-hat cx-fc-hat-hardhat");
-    const shell = k.headGrad("#444854", "#1A1C24", "#050507");
-    k.add("path", { d: "M11 17.4 Q10.6 7.8 20 7.2 Q29.4 7.8 29 17.4 Z", fill: shell });
-    k.add("path", { d: "M18.2 7.3 L21.8 7.3 L22.4 17.2 L17.6 17.2 Z", fill: k.headGrad("#FF9CCC", MG, "#8A0A4A") });
-    k.add("path", { d: "M18.7 7.5 L19.1 17.1", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".45" });
-    k.add("path", { d: "M12.8 12.8 Q13.6 9.2 16.6 8.2", fill: "none", stroke: "#FFFFFF", "stroke-width": ".55", opacity: ".4", "stroke-linecap": "round" });
-    k.add("path", { d: "M8.8 17.8 Q20 15 31.2 17.8 Q30.4 19.6 20 19 Q9.6 19.6 8.8 17.8 Z", fill: shell });
-    k.add("path", { d: "M8.8 17.8 Q20 15.4 31.2 17.8 Q20 17.2 8.8 17.8 Z", fill: "#FFFFFF", opacity: ".22" });
-    k.add("path", { d: "M9.6 18.9 Q20 20.2 30.4 18.9 Q20 19.5 9.6 18.9 Z", fill: "#000", opacity: ".3" });
-    k.add("path", { d: "M17.6 16.4 L22.4 16.4 L22.2 17.6 L17.8 17.6 Z", fill: "#E8ECF0" });
-    k.add("path", { d: fcCrossPath(20, 16.9, .8), fill: "#15161A" });
     k.close();
+    k.closedEyes([[16.4, 22.2, 1.3], [23.6, 22.2, 1.3]], "#1A1018", .6);
+    /* the shades: dark glass, the neon laid across it, a bridge, arms back to the ears */
+    const LENS = fcLin(k, [["0", "#33323E", ".94"], [".5", "#0E0D14", ".95"], ["1", "#06050A", ".95"]]);
+    k.add("path", { d: "M13.2 21.4 Q13.4 20.5 14.5 20.5 L18.5 20.5 Q19.5 20.6 19.5 21.6 L19.2 23.8 Q18.9 24.8 17.7 24.8 L14.7 24.8 Q13.5 24.6 13.4 23.6 Z M20.5 21.6 Q20.5 20.6 21.5 20.5 L25.5 20.5 Q26.6 20.5 26.8 21.4 L26.6 23.6 Q26.5 24.6 25.3 24.8 L22.3 24.8 Q21.1 24.8 20.8 23.8 Z", fill: LENS, stroke: "#0A0A0E", "stroke-width": ".45", "stroke-linejoin": "round" });
+    k.add("path", { d: "M19.5 21.4 Q20 21 20.5 21.4", fill: "none", stroke: "#0A0A0E", "stroke-width": ".5" });
+    k.add("path", { d: "M13.3 21.6 L11.7 21.2 M26.7 21.6 L28.3 21.2", stroke: "#0A0A0E", "stroke-width": ".45", "stroke-linecap": "round" });
+    k.add("path", { d: "M15.2 24.5 L17.4 20.9 M17.6 24.5 L18.6 22.8 M22.4 24.5 L24.6 20.9 M24.8 24.5 L25.8 22.8", stroke: PK, "stroke-width": ".4", opacity: ".7", "stroke-linecap": "round" });
+    k.add("path", { d: "M13.9 21.5 Q14.2 21 15 20.9 M21.2 21.5 Q21.5 21 22.3 20.9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".6", "stroke-linecap": "round" });
+    k.open("cx-mouth");
+    k.add("path", { d: "M18.2 27.4 Q20.2 27.9 22.4 26.9", fill: "none", stroke: "#4A2018", "stroke-width": ".55", "stroke-linecap": "round" });
     k.close();
-    /* the sparks of the display, in the air round her */
-    [[8.2, 11.4, .95, "#FFD23A", "cx-fx-star"], [32.2, 10.2, 1.15, "#FFFFFF", "cx-fx-star2"], [6.6, 30.6, .7, "#3DE0FF", "cx-fx-tip"], [34, 28.4, .85, "#FF8AC8", "cx-fx-star"], [12.4, 5.2, .6, "#FFFFFF", "cx-fx-tip"]].forEach(([x, y, r, c, cls]) => {
+    /* the collar, turned up: the left flap high past the ear, the right one lower; lined in black, the street's pink on its edge */
+    const flapL = "M12.2 21.8 Q11.6 25.2 12.4 29 L16.4 31.6 L19.2 31.6 Q17.8 27.4 15.6 25 Q13.8 23.4 12.2 21.8 Z";
+    const flapR = "M27.8 23.6 Q28.4 26.2 27.6 29 L23.6 31.6 L20.8 31.6 Q22.2 28 24.4 26 Q26.2 24.6 27.8 23.6 Z";
+    const cloth = k.headGrad("#7A776C", "#403E37", "#0F0E0C");
+    k.add("path", { d: flapL, fill: cloth, stroke: "#0A0908", "stroke-width": ".3", "stroke-linejoin": "round" });
+    k.add("path", { d: flapR, fill: cloth, stroke: "#0A0908", "stroke-width": ".3", "stroke-linejoin": "round" });
+    k.add("path", { d: "M12.5 22.6 Q13.9 24.2 15.4 25.6 Q17.4 27.6 18.6 31", fill: "none", stroke: "#0A0908", "stroke-width": ".5", opacity: ".5", "stroke-linecap": "round" });
+    k.add("path", { d: "M12.4 23.4 Q12 26 12.7 28.6", fill: "none", stroke: "#B8B4A6", "stroke-width": ".3", opacity: ".5", "stroke-linecap": "round" });
+    k.add("path", { d: "M27.5 24.6 Q28 26.6 27.4 28.8", fill: "none", stroke: PK, "stroke-width": ".4", opacity: ".8", "stroke-linecap": "round" });
+    k.add("path", { d: "M24.8 26.4 Q22.8 28 21.4 31", fill: "none", stroke: "#0A0908", "stroke-width": ".45", opacity: ".5", "stroke-linecap": "round" });
+    /* the hat, pulled low: a dark cattleman, a thin pink line in its band */
+    fcCowboy(k, { felt: ["#43434E", "#1A1A20", "#050507"], band: "#0A0A0E", dy: 1.6, curl: .6, bandExtra(dy){
+      k.add("path", { d: "M13.2 " + fcF(14.9 + dy) + " Q20 " + fcF(14.1 + dy) + " 26.8 " + fcF(14.9 + dy), fill: "none", stroke: PK, "stroke-width": ".28", opacity: ".9" });
+      k.add("circle", { cx: 24.8, cy: fcF(14.55 + dy), r: .55, fill: "#C9CED6", stroke: "#4A4E58", "stroke-width": ".15" });
+    } });
+    k.close();
+    /* the lit edge of the brim, the street's reflection on the felt */
+    k.add("path", { d: "M27 18.4 Q30 18.2 32.2 16.8", fill: "none", stroke: PK, "stroke-width": ".4", opacity: ".6", "stroke-linecap": "round" });
+    [[9.2, 12.6, .7, "#FFC8E2", "cx-fx-tip"], [31.4, 9.6, .85, "#FFFFFF", "cx-fx-star2"]].forEach(([x, y, r, c, cls]) => {
       k.open("cx-fx " + cls);
       k.svg.appendChild(k.sparkle(x, y, r, c));
       k.close();
