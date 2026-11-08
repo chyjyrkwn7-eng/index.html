@@ -18,12 +18,12 @@ Extinguisher (the fireworks rung)
  (X6) the score catches fire with it (an onset at the ignition) and the stubborn flame's comeback is heard (an onset
       within 60ms of it); the screen and the box together stay under 170 pieces on a phone;
 Hazmat (the ufo rung)
- (Z1) THE SPILL: a toxic film covers most of the box by the lock;
+ (Z1) THE SPILL: a toxic film covers most of the box by the surge (round 2: the lock is gone);
  (Z2) THE WASH: the decon's first pass carries the film's edge across the box with the spray - the box covered as the
       pass starts, the edge within a quarter of the box of the spray's far end mid-pass, the box clean as it ends;
  (Z3) THE FAN: the spray is a fan at least 0.4 as wide as it is long (round 5's lance was 0.3);
- (Z4) SPARKS: at least eight sparks fly out from the placard's slam;
- (Z5) THE ALL CLEAR GOES OFF: a flash across the screen on it (none just before), rays turning behind the box, the
+ (Z4) [ROUND 2: CALMED] the surge throws no sparks any more - the ring out of the box and the camera kick are the beat (nothing else flies);
+ (Z5) THE ALL CLEAR GOES OFF: [round 2: the flash across the screen is gone] rays turning behind the box, the
       clean 100% popping (a copy of it over 1.08x, back to 1x within .4s), and the vapour left over BLOWN AWAY - out
       from the box by a fifth of the screen's width within .4s (round 5's drifted off on its own) and gone within .65s;
  (Z6) the small box (a tile's stage) has the spill and washes it off;
@@ -144,7 +144,7 @@ with G["sync_playwright"]() as pw:
         Z = pg.evaluate("() => (typeof IFX_HZ !== 'undefined') ? IFX_HZ : { slam: 1.74, lock: 2.64, sweep: [3.86, 4.48, 4.96], clear: 5.15 }")
         box = pg.evaluate("() => __G.box()")
         # Z1: the film over the box at the lock
-        r["film"] = at(pg, Z["lock"] + .1, "() => (__G.P.slime || []).filter(e => __G.h.box.contains(e)).map(e => { const r = __G.R(e); return [__G.op(e), r.t, r.b]; })")
+        r["film"] = at(pg, Z["slam"] + .1, "() => (__G.P.slime || []).filter(e => __G.h.box.contains(e)).map(e => { const r = __G.R(e); return [__G.op(e), r.t, r.b]; })")
         r["film_ok"] = any(o > .8 and (min(b, box["b"]) - max(t, box["t"])) >= box["h"] * .6 for o, t, b in r["film"])
         # Z2: the window's left edge against the spray's far end through the first pass
         WE = """() => { const s = (__G.P.slime || []).find(e => __G.h.box.contains(e)); const sp = (__G.P.spray || [])[0];
@@ -160,6 +160,7 @@ with G["sync_playwright"]() as pw:
           return (__G.P.spark || []).map(e => { const r = __G.R(e); return [__G.op(e), Math.hypot(r.cx - cx, r.cy - cy)]; }); }"""
         k1, k2 = at(pg, Z["slam"] + .06, SP), at(pg, Z["slam"] + .24, SP)
         r["sparks"] = sum(1 for (o, d), (o2, d2) in zip(k1, k2) if o2 > .5 and d2 > d + 10)
+        r["nsparks"] = pg.evaluate("() => (__G.P.spark || []).length")
         # Z5: the all clear
         FLASH = """() => [...__G.top.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect(); return r.width >= innerWidth * .9 && r.height >= innerHeight * .9 && !e.style.backgroundImage.startsWith('url') && /gradient/.test(e.style.background || e.style.backgroundImage); }).map(e => +__G.op(e).toFixed(2))"""
         fb, fa = (at(pg, Z["clear"] - .05, FLASH) if pg.evaluate("() => !!__G.top") else []), (at(pg, Z["clear"] + .05, FLASH) if pg.evaluate("() => !!__G.top") else [])
@@ -204,9 +205,9 @@ for tag, r in (("phone", P), ("iPad", I)):
     chk("(Z1 %s) THE SPILL: a toxic film covers most of the box by the lock (%s)" % (tag, r["film"]), r["film_ok"], r["film"])
     chk("(Z2 %s) THE WASH: the film's edge goes across the box with the spray's first pass (window left / spray end / film at its start, middle, end: %s)" % (tag, r["wash"]), r["wash_ok"], r["wash"])
     chk("(Z3 %s) THE FAN: the spray is %.2f as wide as it is long (at least .4)" % (tag, r["fan"]), r["fan"] >= .4, r["fan"])
-    chk("(Z4 %s) SPARKS: %d fly out from the slam (at least 8)" % (tag, r["sparks"]), r["sparks"] >= 8, r["sparks"])
-    chk("(Z5 %s) THE ALL CLEAR GOES OFF: a flash across the screen %.2f (before it %.2f), rays behind the box %s, the 100%% pops %s" % (tag, r["flash"][1], r["flash"][0], r["rays"][:1], r["pop"]),
-        r["flash"][1] >= .6 and r["flash"][0] < .05 and r["rays_ok"] and r["pop_ok"], (r["flash"], r["rays"], r["pop"]))
+    chk("(Z4 %s) CALM SURGE: no spark pieces at all (%d)" % (tag, r["nsparks"]), r["nsparks"] == 0, r["nsparks"])
+    chk("(Z5 %s) THE ALL CLEAR GOES OFF: rays behind the box %s, the 100%% pops %s (no screen flash: %.2f)" % (tag, r["rays"][:1], r["pop"], r["flash"][1]),
+        r["flash"][1] < .05 and r["rays_ok"] and r["pop_ok"], (r["flash"], r["rays"], r["pop"]))
     chk("(Z5 %s) ...and the vapour BLOWN AWAY: %d banks still there move %s px out from the box in .4s, %d left .65s on (at least 4, at least %dpx - a fifth of the screen - none)" % (tag, r["blown"][0], r["blown"][1], r["blown"][2], r["blown"][3]),
         r["blown"][0] >= 4 and (r["blown"][1] or 0) >= r["blown"][3] and r["blown"][2] == 0, r["blown"])
 chk("(Z6) the small box has the spill and washes it off (film %s at the lock, %s after the wash)" % tuple(P["small"]), any(o > .5 for o in P["small"][0]) and all(o < .05 for o in P["small"][1]) and P["small"][0], P["small"])
