@@ -6,11 +6,12 @@ Until now a 100% in any effect but Confetti turned its box back into the old car
 coloured rim, the grade's red / green frame) beside XP and Level cards that were solid. For each rung's effect, in the Fire
 Code class and in the Police Academy, a results screen's grade box in that effect's colours (hfxTintGrade, as the landing does it)
 is read off the page next to the XP card:
- (B1) it is the SAME card: its colour is the XP card's, fully opaque, no gradient on the card itself, no backdrop blur, no rim,
-      and the grade's coloured frame (.rs-grade-tone) is not drawn - on every effect;
- (B2) it is still special: its glow layer (.hfx-tint) is on (shown), sits behind the words, carries a wash down from the top in
-      the effect's colour, a glow that reaches at least 20px out of the card and a light one coming in from the edge;
- (B3) and the glow is the EFFECT'S colour (the layer's glow and the number's ramp agree on the hue), differing between at least
+ (B1) it is the SAME card: its colour is the XP card's, fully opaque, no gradient on the card itself, no backdrop blur, NO BORDER
+      (round 2: it is the XP card's border, none - the one hairline in the effect's colour is gone), and the grade's coloured frame
+      (.rs-grade-tone) is not drawn - on every effect;
+ (B2) it is still special: its light layer (.hfx-tint) is on (shown), sits behind the words, carries a wash down from the top and a
+      pool behind the number in the effect's colour - and no box-shadow, so no rim and no glow off the edge (round 2);
+ (B3) and the light is the EFFECT'S colour, proved from the layer's own gradients (the border no longer carries it), differing between at least
       three of the four effects;
  (B4) Confetti's box (untinted) is that card as well (no glow layer: the plain card with its gold number, as it was).
 Run:  python3 tools/check-b384-hundobox.py   (--against OLD/index.html must FAIL)"""
@@ -98,19 +99,25 @@ for cls in ("ifc", "academy"):
     for id in IDS:
         r = R[id]; g, x = r["g"], r["x"]
         same = g["bg"] == x["bg"] and "/" not in g["bg"] and not re.search(r"rgba\(.*,\s*0?\.\d+\)$|,\s*0\)$", g["bg"])
-        chk("(B1) %s %s: the box is the XP card - same colour (%s / %s), opaque, no gradient, no blur, no shadow on the card itself, no tone frame (%s) - a 1px hairline in the effect's colour is its one line" % (cls, id, g["bg"], x["bg"], r["tone"]),
-            same and g["img"] == "none" and g["blur"] in ("none", "") and r["tone"] == "none" and g["shadow"] == "none"
-            and (id == "confetti" or (re.search(r"(,\s*0\)|/\s*0\))$", g["rim"]) is None and r["bw"] == "1px")), r)
+        edge = lambda c: re.search(r"(,\s*0\)|/\s*0\))$", c or "") is not None or c in ("transparent", "rgba(0, 0, 0, 0)")
+        chk("(B1) %s %s: the box is the XP card - same colour (%s / %s), opaque, no gradient, no blur, no shadow on the card itself, no tone frame (%s), and NO BORDER of its own (the XP card's is %s, its is %s, %s)" % (cls, id, g["bg"], x["bg"], r["tone"], x["rim"], g["rim"], r["bw"]),
+            same and g["img"] == "none" and g["blur"] in ("none", "") and r["tone"] == "none" and g["shadow"] == "none" and edge(g["rim"]) and g["rim"] == x["rim"], r)
         if id == "confetti":
             chk("(B4) %s confetti: untinted, no glow layer, the plain card" % cls, not r["tinted"] and "t" not in r, r)
             continue
         t = r.get("t")
         sh = shadows(t["shadow"]) if t else []
-        outer = [s for s in sh if not s[2]]
-        chk("(B2) %s %s: the glow layer is on, behind the words (z %s), a wash down from the top, a glow reaching 20px+ out and one coming in" % (cls, id, t and t["z"]),
-            t and t["op"] == 1 and t["z"] == "-1" and "gradient" in t["img"] and any(s[0] - s[1] * 0 >= 20 for s in outer) and any(s[2] for s in sh) and sum(1 for s in outer) >= 2, [t, sh])
+        rgbs = [tuple(float(n) for n in m[:3]) for m in (re.findall(r"rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)", (t or {}).get("img", "")))] if t else []
+        cs = [tuple(float(n) * 255 for n in m) for m in re.findall(r"color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)", (t or {}).get("img", ""))]
+        lay = rgbs + cs
+        chk("(B2) %s %s: the light layer is on, behind the words (z %s): a wash down from the top and a pool behind the number (two gradients), and NO box-shadow at all (no rim, no glow off the edge)" % (cls, id, t and t["z"]),
+            t and t["op"] == 1 and t["z"] == "-1" and (t["img"] or "").count("gradient(") >= 2 and not sh, [t, sh])
         hues.add(r["vars"][0])
-        chk("(B3) %s %s: the glow is the effect's colour (%s) and the number's ramp is in it" % (cls, id, r["vars"][0]), r["vars"][0] and "gradient" in r["num"], r)
+        hx = r["vars"][0].strip().lstrip("#")
+        want = tuple(int(hx[i:i + 2], 16) for i in (0, 2, 4)) if len(hx) == 6 else None
+        near = lambda a, b: max(abs(a[i] - b[i]) for i in range(3)) <= 14
+        chk("(B3) %s %s: the light is the effect's colour (%s) - proved from the layer's own gradients (%s), and the number's ramp is in it" % (cls, id, r["vars"][0], lay[:2]),
+            want and lay and any(near(c, want) for c in lay) and "gradient" in r["num"], [r["vars"], lay, t and t["img"]])
     chk("(B3) %s: the four effects glow in different colours (%s)" % (cls, sorted(hues)), len(hues) >= 3, hues)
     chk("no page errors (%s)" % cls, not errs, errs[:2])
 print("ALL PASS" if ok else "SOME FAILED")

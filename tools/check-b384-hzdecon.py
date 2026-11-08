@@ -10,10 +10,11 @@ paused and seeked, read off the page:
       move from there to the end of the decon;
  (D3) THE JET: round 5's spray was a fan of dots. The new sprite is a solid white core with a body round it - its opaque area
       (alpha >= .5) is at least 1.8x the old one's, and its body (alpha >= .16) at least 1.5x;
- (D4) THE SURGE where the placard slammed: a flash that jumps on the slam (none just before), a shockwave ring from the box's
-      middle, and at least eight sparks thrown off the BOX'S edge (not off a placard on the floor) that fly outward;
- (D5) the all clear still goes off (a flash after the decon, the pop of the number) - the beats the other gates hold;
- (D6) the beats the sound is scored on still hold: the sound renders, its loudest moment on the surge or the all clear.
+ (D4) THE SURGE where the placard slammed: ROUND 2 - calmed to ONE thing, a shockwave ring from the box's middle (and the camera
+      kick); the flash that jumped on the slam and the ten sparks thrown off the box's edge are gone (it had nine things going at once);
+ (D5) the all clear still goes off - ROUND 2: as a lime ring out of the box and rays turning behind it (the flashes, the second ring and
+      the bloom are gone), the pop of the number - the beats the other gates hold;
+ (D6) the beats the sound is scored on still hold: the sound renders, its loudest moment on the surge (2.3) or the all clear (4.75).
 Run:  python3 tools/check-b384-hzdecon.py   (--against OLD/index.html must FAIL)"""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +53,9 @@ MEASURE = r"""() => {
   out.flashClear = flashes.map(e => [Math.round(at(Z.clear - .02, () => X.eff(e)) * 100) / 100, Math.round(at(Z.clear + .06, () => X.eff(e)) * 100) / 100]);
   const rings = X.find('ifx-ring#B4F03A').concat(X.find('ifx-ring#FFFFFF'), X.find('ifx-ring#FFD54A'));
   out.ringInfo = [rings.length, at(Z.slam + .1, () => rings.map(e => [Math.round(X.eff(e) * 100) / 100, Math.round(Math.hypot(X.R(e).cx - b.cx, X.R(e).cy - b.cy))]))];
+  const clearRings = rings.filter(e => true);
+  out.ringAtClear = at(Z.clear + .2, () => rings.filter(e => X.eff(e) > .3 && Math.hypot(X.R(e).cx - b.cx, X.R(e).cy - b.cy) < Math.max(b.w, b.h) * .12).length);
+  out.raysAtClear = at(Z.clear + .3, () => X.find('ifx-hzrays').filter(e => X.eff(e) > .3).length);
   out.ringAtSlam = at(Z.slam + .1, () => rings.filter(e => X.eff(e) > .3 && Math.hypot(X.R(e).cx - b.cx, X.R(e).cy - b.cy) < Math.max(b.w, b.h) * .12).length);
   return out;
 }"""
@@ -92,19 +96,17 @@ for dev in ("phone", "ipad"):
     b, a, xs = m.get("before"), m.get("after"), m.get("xs") or [0, 1e9]
     chk("(D2) %s: the responder is under the screen's foot before he comes up (top %s of %s), in his corner after (%s) and his x does not move (%s)" % (dev, b and b[0], b and b[1], a, xs),
         b and (b[0] >= b[1] - 2 or b[2] < .05) and a and a[0] < a[2] and a[3] > .9 and max(xs) - min(xs) <= 8, m)
-    chk("(D4) %s: eight+ sparks thrown off the box's edge on the surge (%s of %s start at the box, %s fly out of it)" % (dev, m["sparksNear"], m["sparks"], m["sparksOut"]), m["sparks"] >= 8 and m["sparksNear"] >= 8 and m["sparksOut"] >= 6, m)
     fl = m["flash"]
-    chk("(D4) %s: a flash that jumps on the surge (%s) and a ring from the box's middle (%s)" % (dev, fl, m["ringAtSlam"]), any(f[0] < .1 and f[1] > .6 for f in fl) and m["ringAtSlam"] >= 1, m)
-    fc = m["flashClear"]
-    chk("(D5) %s: the all clear still goes off (a flash after it: %s)" % (dev, fc), any(f[0] < .1 and f[1] > .5 for f in fc), fc)
+    chk("(D4) %s: the surge is one ring from the box's middle (%s) - no sparks (%s) and no flash (%s)" % (dev, m["ringAtSlam"], m["sparks"], fl), m["ringAtSlam"] >= 1 and m["sparks"] == 0 and not any(f[1] > .3 for f in fl), m)
+    chk("(D5) %s: the all clear still goes off - a lime ring out of the box (%s) and rays behind it (%s)" % (dev, m["ringAtClear"], m["raysAtClear"]), m["ringAtClear"] >= 1 and m["raysAtClear"] >= 1, m)
 j = P["jet"]
 print("jet", j)
 chk("(D3) the jet is a solid body, not a fan of dots (opaque area %s px, body %s px)" % (j["solid"], j["body"]), j["key"] == "ifx-hzspray2" and j["solid"] >= 6500 and j["body"] >= 20000, j)
 t = P["tile"]
 chk("(D1) the tile and the still draw no placard colours and no hazard band (%s)" % t, t["len"] > 300 and t["placard"] == 0 and not t["yellowBand"], t)
 snd = P["sound"]
-chk("(D6) the sound renders in Fire Code, not silent, not clipping (peak %.2f)" % snd["peak"], snd["cls"] == "ifc" and .05 < snd["peak"] < 1 and snd["len"] >= 6.5, snd)
-chk("(D6) ...its loudest moment on the surge or the all clear (at %.2fs)" % snd["loudestAt"], 1.69 <= snd["loudestAt"] <= 2.04 or 5.1 <= snd["loudestAt"] <= 5.55, snd)
+chk("(D6) the sound renders in Fire Code, not silent, not clipping (peak %.2f)" % snd["peak"], snd["cls"] == "ifc" and .05 < snd["peak"] < 1 and snd["len"] >= 6.0, snd)
+chk("(D6) ...its loudest moment on the surge or the all clear (at %.2fs)" % snd["loudestAt"], 2.25 <= snd["loudestAt"] <= 2.6 or 4.7 <= snd["loudestAt"] <= 5.15, snd)
 chk("no page errors (%s)" % errs_all[:2], not errs_all, errs_all)
 print("ALL PASS" if ok else "SOME FAILED")
 sys.exit(0 if ok else 1)
