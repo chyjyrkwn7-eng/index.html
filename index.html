@@ -77953,87 +77953,88 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* THE CREW (was Field Kit; 384 review: "Field kit is a weird banner for that challenge. The names do need to
-     line up with the challenge") - the banner for adding five friends is the crew: five people in a line on the
-     bay floor in their station shirts and bunker pants, each under his own turnout coat and helmet on a hook of
-     the gear wall, the tools hung on the pegboard between them (the gear-wall idea Madison liked). A work light
-     from above with dust in it, the radio's light blinking. */
+  /* ENGINE COMPANY (was The Crew; for adding five friends; Madison: "I don't like this one at all either" - no row of people, no gear-wall
+     lineup) - a company is the engine and the five who ride it. The apparatus bay at night: the pumper in profile on the polished floor
+     (cab with its light bar, windshield, door lettered ENGINE 5, a compartment of roll-up doors, the pump panel with its gauges and
+     valves, the hose bed and the ladders racked along the top, tandem rear wheels), and on a shelf bolted to the wall above it five
+     helmets in a row, each its own colour and number on its shield, under a plaque reading ENGINE COMPANY 5. Two pendant lamps hang on
+     chains from the ceiling and throw warm light down; the light bar blinks softly, the lamps breathe, dust rises through the light. */
   tests500(u){
     const rnd = bnRand(3829);
-    const defs = '<defs>' +
-      bnLin(u + "wall", [[0, "#2B333D"], [1, "#161B22"]]) + bnRad(u + "lamp", [[0, "#FFE9B8", 0.5], [0.6, "#FFD58A", 0.14], [1, "#FFD58A", 0]], "50%", "0%", "70%") +
-      bnRad(u + "vig", [[0.55, "#000000", 0], [1, "#000000", 0.6]]) + bnRad(u + "shade", [[0, "#000000", 0.55], [1, "#000000", 0]]) +
-      bnLin(u + "steel", [[0, "#6E7A88"], [0.35, "#E3E9F0"], [0.6, "#9AA7B6"], [1, "#4C5662"]], 0, 0, 1, 0) +
-      bnLin(u + "gold", [[0, "#FFF0B8"], [0.5, "#F2C14E"], [1, "#9A6A10"]], 0, 0, 1, 1) +
-      bnLin(u + "red", [[0, "#7A1410"], [0.4, "#E04030"], [1, "#8A1812"]], 0, 0, 1, 0) +
-      bnLin(u + "glass", [[0, "#5E86A8"], [0.5, "#1C3350"], [1, "#0B1624"]], 0, 0, 1, 1) +
-      bnLin(u + "tan", [[0, "#D9AE6E"], [1, "#9A6E34"]], 0, 0, 1, 1) +
-      bnLin(u + "helm", [[0, "#FFFFFF"], [0.6, "#E4E8EE"], [1, "#9AA3B0"]], 0, 0, 1, 1) +
-      bnLin(u + "wood", [[0, "#7A5230"], [1, "#4A2E18"]]) + bnLin(u + "board", [[0, "#9A7048"], [1, "#6A4626"]], 0, 0, 1, 0) +
-      bnRad(u + "lens", [[0, "#FFFFFF", 0.95], [0.4, "#FFF2C0", 0.5], [1, "#FFD070", 0]]) + bnRad(u + "glint", [[0, "#FFFFFF", 0.9], [1, "#FFFFFF", 0]]) +
-      '<pattern id="' + u + 'holes" width="12" height="12" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="1.5" fill="#0A0D12"/><path d="M4.6 7.5 Q6 8.4 7.4 7.5" fill="none" stroke="#4A5562" stroke-width=".5"/></pattern></defs>';
-    /* pieces, each drawn upright about its own origin and placed with a transform */
-    const at = (x, y, rot, s, svg) => '<g transform="translate(' + x + ' ' + y + ') rotate(' + rot + ') scale(' + s + ')">' + svg + '</g>';
-    const shade = (x, y, rx, ry) => '<ellipse cx="' + (x + 4) + '" cy="' + (y + 7) + '" rx="' + rx + '" ry="' + ry + '" fill="url(#' + u + 'shade)"/>';
-    const peg = (x, y) => '<circle cx="' + x + '" cy="' + y + '" r="3.2" fill="#2A323C" stroke="#566170" stroke-width=".6"/><circle cx="' + x + '" cy="' + y + '" r="1.5" fill="#9AA7B6"/>';
-    const axe = '<rect x="-2.6" y="-46" width="5.2" height="112" rx="2.6" fill="url(#' + u + 'red)"/><rect x="-3" y="30" width="6" height="36" rx="2" fill="#16181C"/>' +
-      [34, 40, 46, 52, 58].map(y => '<path d="M-3 ' + y + ' L3 ' + y + '" stroke="#34383F" stroke-width="1"/>').join("") + '<rect x="-3" y="22" width="6" height="3" fill="#F2C21E"/>' +
-      '<path d="M-4 -60 L-27 -69 Q-33 -50 -27 -30 L-4 -45 Z" fill="url(#' + u + 'steel)" stroke="#2A323C" stroke-width=".8" stroke-linejoin="round"/><path d="M-27.4 -66 Q-32 -50 -27.4 -33" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round"/>' +
-      '<rect x="-4.6" y="-61" width="10" height="17" rx="1.4" fill="#5A6572" stroke="#2A323C" stroke-width=".8"/><rect x="5" y="-59" width="9" height="12" rx="1" fill="#4A5560" stroke="#2A323C" stroke-width=".8"/>';
-    const halligan = '<rect x="-2.4" y="-40" width="4.8" height="104" rx="1.6" fill="url(#' + u + 'steel)" stroke="#2A323C" stroke-width=".7"/>' +
-      '<path d="M-2.4 -40 L-3 -47 L-20 -39 L-3 -35 Z" fill="url(#' + u + 'steel)" stroke="#2A323C" stroke-width=".8" stroke-linejoin="round"/>' +
-      '<path d="M2.4 -40 L3 -50 L18 -52 L21 -36 L2.4 -34 Z" fill="url(#' + u + 'steel)" stroke="#2A323C" stroke-width=".8" stroke-linejoin="round"/>' +
-      '<path d="M-2.4 58 L-6 68 L-1.2 70 L0 62 L1.2 70 L6 68 L2.4 58 Z" fill="url(#' + u + 'steel)" stroke="#2A323C" stroke-width=".7" stroke-linejoin="round"/>' +
-      '<rect x="-3" y="-8" width="6" height="14" fill="#16181C" opacity=".6"/>';
-    /* the badge: a five-point star with ball tips inside its ring, on the plaque's pin */
-    const radio = '<path d="M-17 40 L17 40 L19 52 L-19 52 Z" fill="#171B21" stroke="#4A5562" stroke-width=".8"/>' +
-      '<rect x="-14" y="-36" width="28" height="78" rx="6" fill="#20252C" stroke="#0A0D12" stroke-width="1"/><rect x="-14" y="-36" width="9" height="78" rx="4" fill="#fff" opacity=".07"/>' +
-      '<path d="M-9 -36 L-10 -66 Q-9 -69 -6 -66 L-4 -36 Z" fill="#14171C" stroke="#0A0D12" stroke-width=".7"/><rect x="2" y="-44" width="7" height="9" rx="1.6" fill="#E8570F"/><rect x="9.6" y="-40" width="4" height="12" rx="1.4" fill="#0A0D12"/>' +
-      '<rect x="-9" y="-28" width="18" height="12" rx="1.6" fill="#0C2A1E" stroke="#3A4450" stroke-width=".8"/><path d="M-6 -23 l12 0 M-6 -20 l8 0" stroke="#7CFFA8" stroke-width="1"/>' +
-      [-6, -2, 2, 6, 10, 14, 18].map(y => '<path d="M-9 ' + y + ' L9 ' + y + '" stroke="#07090C" stroke-width="1.4" stroke-linecap="round"/>').join("") +
-      [-8, 0, 8].map(x => '<circle cx="' + x + '" cy="30" r="2.4" fill="#3A424E"/>').join("") + '<rect x="-7" y="22" width="14" height="3" rx="1.5" fill="#F2C21E" opacity=".9"/>';
-    const mask = '<path d="M-22 -26 L-12 -52 M-8 -28 L-3 -55 M0 -27 L0 -56 M8 -28 L3 -55 M22 -26 L12 -52" stroke="#16181C" stroke-width="3.2" stroke-linecap="round"/>' +
-      '<path d="M-30 -8 Q-30 -29 0 -29 Q30 -29 30 -8 L30 8 Q29 26 9 30 L-9 30 Q-29 26 -30 8 Z" fill="#14171C" stroke="#050608" stroke-width="1"/>' +
-      '<path d="M-24 -8 Q-24 -23 0 -23 Q24 -23 24 -8 L24 6 Q23 20 8 23 L-8 23 Q-23 20 -24 6 Z" fill="url(#' + u + 'glass)" stroke="#2A323C" stroke-width="1.4"/>' +
-      '<path d="M-19 -14 Q-17 -20 -6 -20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity=".6"/><path d="M12 -19 Q19 -16 20 -9" fill="none" stroke="#9FD0FF" stroke-width="1.2" opacity=".5"/>' +
-      '<circle cx="0" cy="28" r="9.4" fill="#1A1D23" stroke="#050608" stroke-width="1"/><circle cx="0" cy="28" r="6.2" fill="url(#' + u + 'steel)" stroke="#2A323C" stroke-width=".7"/><circle cx="0" cy="28" r="2.6" fill="#16181C"/><rect x="-3" y="19" width="6" height="3.4" rx="1.2" fill="#E8570F"/>' +
-      '<path d="M-26 -3 L-34 -3 M26 -3 L34 -3" stroke="#16181C" stroke-width="3.4" stroke-linecap="round"/>';
-    const torch = '<rect x="-5.4" y="-14" width="10.8" height="62" rx="3" fill="#1C2026" stroke="#07090C" stroke-width=".8"/><path d="M-5.4 14 L5.4 14" stroke="#E8570F" stroke-width="3.4"/>' +
-      [-2, 4, 20, 26, 32, 38].map(y => '<path d="M-5 ' + y + ' L5 ' + y + '" stroke="#0A0D12" stroke-width=".9"/>').join("") +
-      '<path d="M-10 -34 L10 -34 L6.4 -12 L-6.4 -12 Z" fill="#242A32" stroke="#07090C" stroke-width=".8"/><path d="M-10 -34 L10 -34 L9.2 -30 L-9.2 -30 Z" fill="url(#' + u + 'steel)"/>' +
-      '<ellipse cx="0" cy="-34.4" rx="8.6" ry="3.2" fill="#FFF4C8" stroke="#9AA7B6" stroke-width="1"/><rect x="-3.4" y="48" width="6.8" height="5" rx="1.6" fill="#0A0D12"/><rect x="2" y="2" width="6" height="5" rx="1.4" fill="#3A424E"/>';
-    /* a turnout coat on its hook, seen from the front, with the helmet on the hook above it */
-    const coatSvg = (col, helm) => fbP('M-9 -50 L9 -50 L12 -43 L24 -38 L26 6 L16 7 L15 34 L-15 34 L-16 7 L-26 6 L-24 -38 L-12 -43 Z', col, ' stroke="#07090C" stroke-width=".9" stroke-linejoin="round"') +
-      fbP('M-9 -50 L0 -40 L9 -50 L5 -53 L-5 -53 Z', "#1C2026") + fbP('M0 -40 L0 34', "none", ' stroke="#07090C" stroke-width="1"') +
-      fbR(-15.6, 16, 31.2, 3.4, "#E4F23A") + fbR(-15.6, 21, 31.2, 1.6, "#E8ECEF") + fbR(-25.6, -12, 10.6, 3, "#E4F23A") + fbR(15, -12, 10.6, 3, "#E4F23A") +
-      '<path d="M-26 -38 L-26 6 L-16 7 L-16 -37 Z" fill="#000" opacity=".16"/><rect x="4" y="-30" width="8" height="12" rx="1" fill="#000" opacity=".2"/>' +
-      '<path d="M-14 -58 Q-14 -76 0 -77 Q14 -76 14 -58 Z" fill="' + helm + '" stroke="#07090C" stroke-width=".8"/><path d="M-22 -57 Q-20 -61 -14 -60 L14 -60 Q20 -61 22 -57 Q14 -52 0 -52 Q-14 -52 -22 -57 Z" fill="' + helm + '" stroke="#07090C" stroke-width=".8"/><path d="M-5 -74 L5 -74 L5 -66 Q5 -62 0 -60 Q-5 -62 -5 -66 Z" fill="#F2C14E"/>';
-    const coats = [["#B08A4A", "#E04030"], ["#2A2D34", "#F2C21E"], ["#B08A4A", "#E8ECEF"], ["#8A6A34", "#E04030"], ["#2A2D34", "#E04030"]];
-    const xs = [76, 158, 240, 322, 404];
-    const folk = [
-      { skin: "#C98E64", hair: "#2A1C14", shirt: "#1E2A4A", pose: "cross" },
-      { skin: "#8A5A3A", hair: "#14100E", shirt: "#7A1410", pose: "hips", beard: true },
-      { skin: "#E0B088", hair: "#7A5A2A", shirt: "#1E2A4A", pose: "hold", helm: "#E8ECEF" },
-      { skin: "#B07A52", hair: "#1A1410", shirt: "#2A2D34", pose: "cross", cap: "#7A1410" },
-      { skin: "#D9A47A", hair: "#3A2A1A", shirt: "#1E2A4A", pose: "hips" }];
-    const base = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/><rect width="480" height="180" fill="url(#' + u + 'holes)"/>' +
-      '<rect x="0" y="-4" width="480" height="9" fill="#3A434E"/><path d="M0 5 L480 5" stroke="#0A0D12" stroke-width="1"/><rect x="0" y="12" width="480" height="3" fill="#5A6572" opacity=".8"/>' +
-      '<rect width="480" height="180" fill="url(#' + u + 'lamp)"/>' +
-      /* the tools hung between the coats */
-      [117, 199, 281, 363].map(x => shade(x, 44, 12, 34)).join("") +
-      at(117, 56, -4, .5, axe) + at(199, 56, 3, .5, halligan) + at(281, 50, 0, .6, mask) + at(363, 54, 0, .5, radio) +
-      xs.map(x => peg(x, 8)).join("") + xs.map(x => shade(x, 40, 20, 34)).join("") +
-      xs.map((x, i) => at(x, 59, 0, .72, coatSvg(coats[i][0], coats[i][1]))).join("") +
-      /* the floor, its safety line, shadows, and the five of them */
-      '<rect x="0" y="152" width="480" height="28" fill="#1B2027"/><rect x="0" y="152" width="480" height="2" fill="#566170"/><rect x="0" y="171" width="480" height="3" fill="#E4C21E" opacity=".55"/>' +
-      xs.map(x => '<ellipse cx="' + x + '" cy="165" rx="28" ry="4" fill="#000" opacity=".5"/>').join("") +
-      xs.map((x, i) => fbPerson(x, 168, .92, folk[i])).join("") +
-      '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
+    const defs = '<defs>' + bnLin(u + "wall", [[0, "#1C2230"], [1, "#2A2F3A"]]) + bnLin(u + "floor", [[0, "#2C2E36"], [1, "#0E0F14"]]) +
+      bnLin(u + "red", [[0, "#F0503C"], [0.5, "#CC2A22"], [1, "#8A1410"]]) + bnLin(u + "chrome", [[0, "#FFFFFF"], [0.5, "#B6BEC9"], [1, "#6A7280"]]) +
+      bnLin(u + "glass", [[0, "#6A8CB0"], [1, "#1A2A44"]]) + bnLin(u + "roll", [[0, "#D4D9E0"], [1, "#8A929E"]]) + bnLin(u + "shelf", [[0, "#8A5E34"], [1, "#4A2E16"]]) +
+      bnRad(u + "lamp", [[0, "#FFE2A0", 0.7], [0.5, "#FFC96A", 0.2], [1, "#FFC96A", 0]]) + bnLin(u + "cone", [[0, "#FFE2A0", 0.4], [1, "#FFE2A0", 0]]) + bnRad(u + "vig", [[0.55, "#000", 0], [1, "#000", 0.6]]) + bnRad(u + "refl", [[0, "#FF4A3A", 0.35], [1, "#FF4A3A", 0]]) + '</defs>';
+    const GY = 160;
+    /* five helmets: colour, shade, the shield's colour and its number's colour */
+    const HEL = [["#D7262E", "#7A1410", "#1B2440", "#FFFFFF"], ["#F2C21E", "#A8780A", "#1B2440", "#FFFFFF"], ["#F4F6F8", "#9AA3B0", "#B5121B", "#FFFFFF"], ["#2E6BD6", "#14306A", "#F4F6F8", "#14306A"], ["#F5841F", "#A04A08", "#1B2440", "#FFFFFF"]];
+    const helmet = (cx, by, h, n) => {
+      const [c, d, sh, ink] = h;
+      return '<ellipse cx="' + cx + '" cy="' + (by + .6) + '" rx="21" ry="2.4" fill="#000" opacity=".5"/>' +
+        '<ellipse cx="' + cx + '" cy="' + (by - 3) + '" rx="21" ry="5" fill="' + d + '"/>' +
+        '<path d="M' + (cx - 16.4) + ' ' + (by - 4) + ' Q' + (cx - 18) + ' ' + (by - 31) + ' ' + cx + ' ' + (by - 31) + ' Q' + (cx + 18) + ' ' + (by - 31) + ' ' + (cx + 16.4) + ' ' + (by - 4) + ' Z" fill="' + c + '"/>' +
+        '<path d="M' + (cx - 16.4) + ' ' + (by - 4) + ' Q' + (cx - 18) + ' ' + (by - 31) + ' ' + (cx - 6) + ' ' + (by - 30) + ' Q' + (cx - 11) + ' ' + (by - 17) + ' ' + (cx - 9) + ' ' + (by - 4) + ' Z" fill="#fff" opacity=".28"/>' +
+        '<path d="M' + (cx - 3) + ' ' + (by - 31) + ' L' + (cx + 3) + ' ' + (by - 31) + ' L' + (cx + 3.6) + ' ' + (by - 4) + ' L' + (cx - 3.6) + ' ' + (by - 4) + ' Z" fill="' + d + '" opacity=".45"/>' +
+        '<path d="M' + (cx - 19.6) + ' ' + (by - 3.2) + ' Q' + cx + ' ' + (by + 3) + ' ' + (cx + 19.6) + ' ' + (by - 3.2)  + '" fill="none" stroke="#E8ECEF" stroke-width="1.4" opacity=".85"/>' +
+        '<path d="M' + (cx - 9.4) + ' ' + (by - 23) + ' L' + (cx + 9.4) + ' ' + (by - 23) + ' L' + (cx + 10.4) + ' ' + (by - 9) + ' Q' + (cx + 10.4) + ' ' + (by - 2.4) + ' ' + cx + ' ' + (by + .6) + ' Q' + (cx - 10.4) + ' ' + (by - 2.4) + ' ' + (cx - 10.4) + ' ' + (by - 9) + ' Z" fill="' + sh + '" stroke="#F2C14E" stroke-width=".9"/>' +
+        fbText(String(n), cx, by - 12.4, 9, ink, 1.4);
+    };
+    const HX = [132, 186, 240, 294, 348], SHY = 62;
+    let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
+    /* block wall courses, the floor and its baseboard */
+    let blocks = ""; for(let r = 0; r < 10; r++){ const y = 4 + r * 16, off = r % 2 ? 0 : 30; blocks += 'M0 ' + y + ' L480 ' + y + ' '; for(let x = off; x < 480; x += 60) blocks += 'M' + x + ' ' + (y - 16) + ' L' + x + ' ' + y + ' '; }
+    g += '<path d="' + blocks + '" stroke="#12161F" stroke-width="1.2" fill="none" opacity=".8"/>' +
+      fbR(0, 150, 480, 30, "url(#" + u + "floor)") + fbR(0, 146, 480, 5, "#161A24") + fbR(0, 146, 480, 1.2, "#3A4050") + fbR(0, 174, 480, 2.2, "#E4B31E", ' opacity=".8"');
+    /* the plaque: four screws into the wall */
+    g += fbR(142, 8, 196, 24, "#000", ' opacity=".35" transform="translate(2 3)"') + fbR(142, 8, 196, 24, "#141A2C", ' stroke="#C69A3A" stroke-width="1.6" rx="2"') + fbR(146, 12, 188, 16, "none", ' stroke="#C69A3A" stroke-width=".5"') +
+      fbText("ENGINE COMPANY 5", 240, 20.4, 8.6, "#F2C14E", 1.5) + [[145, 11], [335, 11], [145, 29], [335, 29]].map(p => fbC(p[0], p[1], 1.1, "#8A929E")).join("");
+    /* the shelf, bolted to the wall on three braces, and the five helmets on it */
+    HX.concat([]).forEach(() => {});
+    [104, 240, 376].forEach(x => { g += fbP("M" + (x - 5) + " " + (SHY + 5) + " L" + (x + 5) + " " + (SHY + 5) + " L" + (x + 5) + " " + (SHY + 19) + " L" + (x - 5) + " " + (SHY + 19) + " Z", "#2A2D34", ' stroke="#05070C" stroke-width=".5"') + fbP("M" + (x - 4) + " " + (SHY + 5) + " L" + (x + 4) + " " + (SHY + 5) + " L" + x + " " + (SHY + 14) + " Z", "#4A4E5C") + fbC(x, SHY + 15.4, 1.2, "#8A929E"); });
+    g += fbR(90, SHY - 1, 300, 7, "url(#" + u + "shelf)", ' stroke="#2A1608" stroke-width=".5"') + fbR(90, SHY - 1, 300, 1.4, "#B98A56") + fbR(90, SHY + 6, 300, 1.4, "#000", ' opacity=".4"');
+    HX.forEach((x, i) => { g += helmet(x, SHY - 1, HEL[i], i + 1); });
+    /* the engine, in profile, cab to the left: shadow, wheels' arches, body, compartments, pump panel, hose bed and ladders, cab, light bar */
+    const wheel = cx => '<circle cx="' + cx + '" cy="145" r="16" fill="#0E0F13"/><circle cx="' + cx + '" cy="145" r="12.4" fill="#22252C" stroke="#050608" stroke-width=".8"/><circle cx="' + cx + '" cy="145" r="8.6" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".6"/>' +
+      [0, 1, 2, 3, 4, 5, 6, 7].map(i => { const a = i * Math.PI / 4; return fbC(cx + Math.cos(a) * 5.6, 145 + Math.sin(a) * 5.6, .9, "#2A2D34"); }).join("") + fbC(cx, 145, 2, "#2A2D34");
+    g += '<ellipse cx="240" cy="' + (GY + 1.4) + '" rx="176" ry="5" fill="#000" opacity=".6"/><ellipse cx="240" cy="168" rx="170" ry="9" fill="url(#' + u + 'refl)"/>';
+    /* chassis and skirt */
+    g += fbR(84, 132, 312, 14, "#1A1C22") + fbR(96, 128, 296, 6, "#0E0F13");
+    [134, 332, 368].forEach(cx => { g += '<path d="M' + (cx - 19) + ' 140 Q' + (cx - 19) + ' 124 ' + cx + ' 124 Q' + (cx + 19) + ' 124 ' + (cx + 19) + ' 140 Z" fill="#0A0B0E"/>'; });
+    /* body: below the arches the red runs the whole length, with the arches cut out of it */
+    g += fbP("M172 100 L396 100 L396 138 L388 138 Q386 124 368 124 Q350 124 348 138 L352 138 L348 138 L350 138 Q348 124 332 124 Q316 124 314 138 L172 138 Z", "url(#" + u + "red)");
+    g += fbR(172, 98, 224, 3, "#8A1410") + fbR(172, 120, 224, 3, "#FFFFFF", ' opacity=".9"') + fbR(172, 125, 224, 1.2, "#F2C14E");
+    /* roll-up compartment doors: three on the rear, one before the pump panel, slats and a pull bar */
+    const rdoor = (x, w, y0, y1) => fbR(x, y0, w, y1 - y0, "url(#" + u + "roll)", ' stroke="#4A505C" stroke-width=".8" rx="1.2"') + Array.from({ length: Math.floor((y1 - y0) / 4) }, (_, i) => '<path d="M' + (x + 1) + ' ' + (y0 + 3 + i * 4) + ' L' + (x + w - 1) + ' ' + (y0 + 3 + i * 4) + '" stroke="#6A7280" stroke-width=".6"/>').join("") + fbR(x + w / 2 - 6, y1 - 4.4, 12, 2.6, "#3A3E48", ' rx="1"');
+    g += rdoor(180, 36, 104, 118) + rdoor(222, 32, 104, 118) + rdoor(310, 34, 104, 118) + rdoor(350, 36, 104, 118) + rdoor(180, 36, 127, 138);
+    /* the pump panel: a steel plate, gauges, valve wheels, the intake at its foot */
+    g += fbR(258, 102, 46, 36, "url(#" + u + "chrome)", ' stroke="#4A505C" stroke-width=".8" rx="1.6"') +
+      [[270, 111], [282, 111], [294, 111]].map(p => fbC(p[0], p[1], 4.4, "#F4F6F8", ' stroke="#1A1C22" stroke-width="1"') + '<path d="M' + p[0] + ' ' + p[1] + ' L' + (p[0] + 2.4) + ' ' + (p[1] - 2.4) + '" stroke="#C8281E" stroke-width=".8"/>').join("") +
+      [[268, 128, "#C8281E"], [281, 128, "#F2C21E"], [294, 128, "#3D7BFF"]].map(p => fbC(p[0], p[1], 3.6, p[2], ' stroke="#1A1C22" stroke-width=".8"') + fbR(p[0] - 1, p[1] - 3.6, 2, 7.2, "#1A1C22", ' opacity=".5"')).join("") +
+      fbR(258, 119, 46, 1, "#1A1C22", ' opacity=".5"') + fbR(254, 130, 6, 5, "#C9CED6", ' stroke="#4A505C" stroke-width=".6"');
+    /* the hose bed and the ladders racked on top, held by their brackets at both ends and the middle */
+    g += fbR(284, 92, 112, 8, "#1A1C22") + [0, 1, 2, 3, 4, 5].map(i => fbR(288 + i * 18, 94, 12, 5, "#B5121B", ' opacity=".9"')).join("") +
+      fbR(176, 90, 220, 3, "url(#" + u + "chrome)") + fbR(176, 84.4, 220, 2.6, "url(#" + u + "chrome)") +
+      Array.from({ length: 26 }, (_, i) => '<path d="M' + (181 + i * 8.4) + ' 86.6 L' + (181 + i * 8.4) + ' 90" stroke="#8A929E" stroke-width="1"/>').join("") +
+      [180, 280, 390].map(x => fbR(x - 1.6, 84, 3.2, 17, "#3A3E48")).join("");
+    /* the cab: a body with a sloped windshield, side window, door seam and handle, lettering, mirror; chrome front bumper and a lit headlight */
+    g += fbP("M84 138 L84 114 Q84 108 90 102 L102 94 L168 94 L172 100 L172 138 Z", "url(#" + u + "red)") +
+      fbP("M96 111 L106 98 L124 98 L124 113 Z", "url(#" + u + "glass)", ' stroke="#1A1C22" stroke-width="1"') + fbP("M128 98 L162 98 L162 113 L128 113 Z", "url(#" + u + "glass)", ' stroke="#1A1C22" stroke-width="1"') +
+      '<path d="M110 100 L120 100 L113 112 L106 112 Z" fill="#fff" opacity=".22"/><path d="M127 114 L127 138 M164 114 L164 138" stroke="#7A1410" stroke-width="1"/>' + fbR(156, 117, 6, 2.2, "#C9CED6", ' rx="1"') +
+      fbText("ENGINE 5", 145.6, 129.6, 4.6, "#FFFFFF", .9) + fbR(84, 120, 88, 3, "#FFFFFF", ' opacity=".9"') + fbR(84, 125, 88, 1.2, "#F2C14E") +
+      fbR(80, 131, 12, 6, "url(#" + u + "chrome)", ' rx="2" stroke="#5A606C" stroke-width=".6"') + fbR(84, 116, 5, 5, "#FFF3C8") + fbR(88, 108, 4, 6, "#1A1C22", ' rx="1"') + fbR(120, 138, 20, 2, "#C9CED6");
+    g += wheel(134) + wheel(332) + wheel(368);
+    /* the light bar on the cab roof: red and white, on its two feet */
+    g += fbR(114, 92, 40, 3, "#2A2D34") + fbR(118, 87, 14, 6, "#E5332A", ' rx="1.6"') + fbR(134, 87, 14, 6, "#F4F6F8", ' rx="1.6"') + fbR(142, 90, 6, 6, "#2A2D34", ' opacity="0"');
+    /* two pendant lamps on chains from the ceiling: chain, cap, a dome shade and its bulb */
+    [52, 428].forEach(x => { g += '<path d="M' + x + ' 0 L' + x + ' 28" stroke="#8A929E" stroke-width="1.2" stroke-dasharray="2.4 1.4"/>' + fbR(x - 3, 26, 6, 4, "#3A3E48") + '<path d="M' + (x - 5) + ' 31 Q' + (x - 15) + ' 36 ' + (x - 16) + ' 44 L' + (x + 16) + ' 44 Q' + (x + 15) + ' 36 ' + (x + 5) + ' 31 Z" fill="#2A2D34" stroke="#05070C" stroke-width=".6"/>' + fbR(x - 16, 43, 32, 2, "#8A929E") + '<ellipse cx="' + x + '" cy="45" rx="9" ry="1.8" fill="#FFF3C8"/>'; });
+    g += fbR(0, 0, 480, 180, "url(#" + u + "vig)");
     return [
-      { svg: base },
-      { svg: '<ellipse cx="240" cy="0" rx="260" ry="150" fill="url(#' + u + 'lamp)"/>', box: [-20, 0, 520, 150], cls: "bl-breathe", style: "animation-duration:6s" },
-      { svg: '<circle cx="366" cy="34.4" r="1.6" fill="#FF4A3D"/><circle cx="366" cy="34.4" r="6" fill="#FF4A3D" opacity=".35"/>', box: [358, 26, 16, 16], cls: "bl-blink", style: "animation-duration:1.6s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 26, ["#FFE9B8", "#FFD58A", "#FFFFFF"]), box: [0, 10, 480, 150], cls: "bl-rise", style: "animation-duration:16s;opacity:.5" }
+      { svg: g },
+      /* the pendants' light, warm and breathing; the cone down onto the wall and the engine */
+      { svg: [52, 428].map(x => '<path d="M' + (x - 14) + ' 45 L' + (x + 14) + ' 45 L' + (x + (x < 240 ? 70 : -70) + 28) + ' 120 L' + (x + (x < 240 ? 70 : -70) - 28) + ' 120 Z" fill="url(#' + u + 'cone)"/><ellipse cx="' + x + '" cy="48" rx="46" ry="30" fill="url(#' + u + 'lamp)"/>').join(""), box: [0, 30, 480, 100], cls: "bl-breathe", style: "animation-duration:5s" },
+      /* the light bar, slow and soft */
+      { svg: fbR(118, 87, 14, 6, "#FF8A7A", ' rx="1.6"') + fbC(125, 90, 15, "url(#" + u + "refl)"), box: [100, 72, 50, 36], cls: "bl-blink", style: "animation-duration:1.6s" },
+      { svg: fbEmberSheet(rnd, 480, 90, 16, ["#FFE9B8", "#FFD58A", "#FFFFFF"]), box: [0, 30, 480, 110], cls: "bl-rise", style: "animation-duration:16s;opacity:.35" }
     ];
   },
 
@@ -78942,7 +78943,7 @@ function fbRangerScene(u, o){
 }
 const IFC_BANNER_LOOK = {
   tests100: ["Certified", "#F2C14E", "#2E8A6A"], tests250: ["Plan Review", "#E5332A", "#F2C14E"],
-  tests500: ["The Crew", "#F2C14E", "#E04030"], hundos100: ["Fully Compliant", "#2E9A56", "#8CB4D8"],
+  tests500: ["Engine Company", "#E04030", "#F2C14E"], hundos100: ["Fully Compliant", "#2E9A56", "#8CB4D8"],
   hundos250: ["Grand Finale", "#FFD36A", "#7FB8FF"], vr50: ["Mutual Aid", "#4FB8FF", "#FF3B30"],
   study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["On Call", "#E8402E", "#2ECC71"],
   correct5000: ["Downpour", "#6FA8D8", "#FF8A3D"], correct10000: ["Fire Investigator", "#F2C21E", "#FF7A2E"],
