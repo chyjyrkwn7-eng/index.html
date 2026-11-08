@@ -212,7 +212,7 @@ chk("(7) every layer moves by transform/opacity only, no svg filter, 3+ moving a
 # (8)
 # (384 characters round 2) the base-art connection audit fixed joins in Void, Umbra and Genesis on purpose ("go through each character thoroughly to
 # ensure all pieces connect right"); anything else changed is still a failure
-AUDITED = {"c:voidwalker", "c:umbra", "c:genesis"}
+AUDITED = {"c:voidwalker", "c:umbra", "c:genesis"}   # (384 r4) Genesis is on this list for a second reason: the planet lost its two eyes (no faces on cosmic bodies; check-b384-r4-chars). The academy Hive is not one of the seven this gate hashes; r4-chars pins it
 acad = [k + ":" + i for k in ("c", "b") for i in A[k] if A[k][i] != BEFORE["academy"][k][i] and (k + ":" + i) not in AUDITED]
 chk("(8) the academy's characters and banners are as 185cc5c left them, bar the three joined up in the connection audit (changed: %s)" % acad, not acad)
 # (9)

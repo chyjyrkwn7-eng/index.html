@@ -11,8 +11,8 @@
   A. the four secret flares are Nebula, Quasar, Pulsar and Solstice: four new drawings (no helmet or hat, no human skin),
      each with the parts every character has, no svg filter, a glow that is the one the character table carries; Nebula's
      gas is the three flare colours (red, orange, yellow)
-  B. the extinguisher and the hydrant are gone: the valkyrie id is Lookout and the timekeeper id Smoke Alarm, new kinds
-     with their own scene and glow, no filter, the same ids
+  B. the extinguisher and the hydrant are gone: the valkyrie id is Undercover and the timekeeper id The Irons (384 round 9: they replaced
+     the Lookout and the Smoke Alarm), new kinds with their own scene and glow, no filter, the same ids
   C. the inspector's shirt is navy (dark and blue) and his face is not pale (darker than the light skin tone it was)
   D. every Fire Code character draws without an svg filter and has a head, eyes, closed eyes and a mouth
 Every check fails on the build before:  python3 tools/check-b384-fcchars2.py --against OLD/index.html
@@ -81,10 +81,10 @@ chk("A. each one's glow is the character table's own (%s)" % {i: (C[i]["glow"], 
 g = set(C["voidwalker"]["grads"])
 chk("A. Nebula's gas is three colours: red, orange and yellow (%s)" % sorted(g), {"#EF4444", "#F97316", "#FACC15"} <= g, sorted(g))
 # B
-chk("B. the valkyrie id is Lookout and the timekeeper id Smoke Alarm (%s, %s) (round 8: they replaced Undercover and Pump Operator)" % (C["valkyrie"]["name"], C["timekeeper"]["name"]),
-    C["valkyrie"]["name"] == "Lookout" and C["timekeeper"]["name"] == "Smoke Alarm", C)
+chk("B. the valkyrie id is Undercover and the timekeeper id The Irons (%s, %s) (round 9: they replaced the Lookout and the Smoke Alarm)" % (C["valkyrie"]["name"], C["timekeeper"]["name"]),
+    C["valkyrie"]["name"] == "Undercover" and C["timekeeper"]["name"] == "The Irons", C)
 chk("B. ...new kinds (%s, %s), each with its own scene and glow, no svg filter, no hat of the fire service" % (C["valkyrie"]["kind"], C["timekeeper"]["kind"]),
-    C["valkyrie"]["kind"] == "fclookout" and C["timekeeper"]["kind"] == "fcsmoke" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
+    C["valkyrie"]["kind"] == "fcagent" and C["timekeeper"]["kind"] == "fcirons" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
 # C
 sh = r["shirt"]; base = sh[1] if len(sh) > 1 else sh[0]
 rr, gg, bb = (int(base.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)); hh, ll, ss = colorsys.rgb_to_hls(rr, gg, bb)

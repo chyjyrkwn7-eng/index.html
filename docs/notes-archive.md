@@ -36550,3 +36550,46 @@ the characters and every other banner (Pulsar is another helper's) hash as c8143
 - NOT confirmable in Chromium: how the strips read on a phone's real screen at the scale the covers are shown; frame rate of Grand Finale (580 elements, 14 layers, the clipped truck layers) and Inspection
   Team on an old iPhone; the Silverado's likeness to the real truck is a judgement from its profile (proportions measured, not compared to a photo); the headlamp and grille in profile are a drawing of a
   3/4-turned nose seen edge on, so they read as a nose, not as a particular model.
+
+## 384 round 9 (r4-chars): Undercover is a secret agent, no more smiley faces on objects, a new Irons and Sprinkler, a faceless Pulsar (branch r4-chars, cut from claude/b384 c1d224b; NOT on main)
+
+Madison on round 8's art: "Make the undercover a secret agent or undercover agent just make it cool.. mysterious." / "I don't like the smoke alarm, try something else. I don't like the sprinkler head, not sure why it
+has the smiley face, could look cooler and why is it gold." / "Pulsar smiley face, like what's up with all these smiley faces on the characters.. fix that app wide I'd think."
+Only IFC_CHAR_LOOK / IFC_BACKDROP / IFC_CHAR_DRAW (and the seat and scale lines under them), the academy drawings of Genesis and Hive, and one line of the Quasar's unlock scene. Ids, challenges, unlock rules and
+every other banner and character are as c1d224b drew them (check-b384-r4-chars pins that with hashes; check-b384-r4-chars.prev.json is c1d224b's).
+- THE RULE (his, applied to the whole app): objects, tools, machines, parts, and cosmic bodies get no smiley face; they look cool through their own design and lighting. People keep their faces, and so do the three
+  creatures (Ghost, Bear, Alien - starters in both classes: a ghost, a bear and a grey are someone). No eye marks and no mouth: a character that has none keeps the EMPTY eye, closed-eye and mouth groups
+  (`noEyes()` + an empty `cx-mouth`), because every drawing is meant to have the same parts and the hundo effects / blink / sleep code read them.
+- AUDIT (character, class, had a face?, what was done):
+  Fire Code: Ghost / Bear / Alien creatures with faces, kept. Inspector, Smoke Diver, Chief, Hazmat, Dispatcher, Drone Pilot people, kept. Forge, Lunar, Solar, Tempest, Frost, Oracle, Inferno, Star Ranger
+  people / crowned rulers / masks, kept. STROBE (clown) - a machine with two eyes and a mouth grille: eyes off, the glass shows its reflector bowl and lamp; the slotted "mouth" is a speaker grille of nine UPRIGHT slots.
+  TOXIC SPILL (astronaut) - a substance with three eyes and a toothed grin: no face; acid-green light glowing up through the ooze, veins of it, bubbles in the skin, one tendril reaching up past the drum's shoulder
+  (no single round lit disc in the middle: tried, it read as one eye). NEBULA (voidwalker) - dark globule with two eyes and a mouth: now a young star (core and four fine rays) in the globule. QUASAR (umbra) - eyes: now the
+  event-horizon ring over the core. ECLIPSE (genesis) - eyes and smile: now a cratered moon (dark seas, two craters with a lit lip). PULSAR (singularity): below. UNDERCOVER, THE IRONS, SPRINKLER: below (replaced).
+  Academy: Ghost / Bear / Alien kept. Detective, Masked One, Sheriff, Clown, Marksman, Orion, Hacker, Timekeeper, Ronin, the seven crowned rulers, Astral people / masked figures, kept. Umbra (a hooded being with violet eyes,
+  no mouth) and Horizon (a helmet with a lit visor) are figures, not objects: kept. Zeus is retired in Fire Code, a statue in the academy (a person). GENESIS (the planet) - two lit eyes on its face: off, the planet keeps its
+  weather, ring, moon, seams and the heart at its chest. HIVE (a skep) - two lit eyes in the door and a honey drip for a mouth: off; the door is lit from inside (a warm glow rising from the floor, dark combs on it) and the honey
+  runs off the sill at the side. Koi (a fishbowl) and Void (a hood of stars) never had faces. Retired / legacy characters (Robot, Dragon, Champion ...) are not drawn anywhere a person can pick; not touched.
+- UNDERCOVER (valkyrie, `fcagent`; name "Undercover", glow #7C8CFF, scene violet nebula + a night city in blue): a person. Charcoal suit, a collar turned up round the neck (two flaps standing over the jaw, the body's second
+  `cx-body cx-collar` group, drawn over the head), slicked dark hair, mirrored wrap shades (sky pale at the top to night at the bottom, a bright diagonal), a flat mouth with one corner a hair higher (curve .6, a smile is 1.6+),
+  a clear earpiece with its coil running down the jaw into the collar and a small blue light that blinks, half the face in shadow (a soft gradient across the left cheek) and a cold rim light down the right (hair, cheek, collar,
+  shoulder), a gold badge wallet showing at the jacket edge. No hat (the agency's hat rule is moot: he is not agency dress). The eye marks are empty: the glasses are the eyes.
+- THE IRONS (timekeeper, `fcirons`; name "The Irons", glow kept #D5E4F7, scene slate nebula with ember sparks): a Halligan bar and a flat-head axe crossed over a red enamel shield with a brass rim and the Maltese cross
+  (the fire service's mark), each tool drawn upright in its own frame and turned 36 degrees about the crossing, so no part floats: the axe (wood handle, steel head with a bevelled bit and a short pick) up-left, the Halligan
+  (forked claw, adze and pick) up-right in front of it. Worn steel with a warm edge light. Not the Smoke Alarm (an appliance), not Strobe, Sprinkler, Toxic Spill or Hazmat. The picks are kept SHORT: long ones covered the cross.
+- SPRINKLER HEAD (hive, `fcsprinkler4`; name unchanged, glow #4FC3FF): the real pendent head in chrome, no brass: ceiling pipe and coupling, a flat plate, the threaded inlet, a hex collar, a frame block, two arms bowing in to the boss,
+  a glass bulb of red liquid seated at both ends, a 48-vertex notched deflector, and a fan of water (a veil that fades out, eleven streaks, droplets that fall). Cold light: a blue-white edge down the right of every round part, a hard
+  white one down the left. Seat -5.2 and scale .8 (the water sits in the part of the coin the bottom fade does not eat; at -2.2 it was a grey smear). The bulb is the only warm thing on it.
+- PULSAR (singularity, `fcpulsar`): face off (eyes, brows, smile). Kept: the dark star, two narrow opposed beams on one axis tilted -24 degrees, their wakes, the banded surface, the pulse profile, the flare in the north pole's
+  socket exactly on the rim. Added where the face was: a ring of light on its equator (square to the axis; far half behind the star, near half across it) = the spin, icy polar caps (clipped to the sphere) where the jets
+  leave, two hairline frost marks. The PULSAR BANNER (flare_horizon) already had no face and spins as one body: verified, unchanged (hash pinned).
+- ONE BUG FOUND BY A GATE: the first Strobe edit left one `k.close()` too many, which closed the figure early; the special parts (cx-sp) were lost, so the Strobe had no special. check-b384-ifcchars F caught it; the new
+  gate's section 6 now asserts every drawing has one head, a body in the same figure, special parts (Forge has none, as before) and no filter, in both classes.
+- HUNDO EFFECTS: the effects that put goggles / breath on a character read the character's closed eyes (hfxFaceOf); a character with none falls back to default eye positions (17,19) / (23,19). The faceless Fire Code
+  characters have the same fallback as the academy's Koi and Void always did. NOT TOUCHED (another helper owns the effects); if goggles on the Pulsar or the Sprinkler look wrong, HFX_FACE_FIX needs an entry.
+- GATES: tools/check-b384-r4-chars.py (new, with check-b384-r4-chars.prev.json): the faceless set is derived from the drawings (counts of eye shapes, mouth shapes and symmetric pairs of lit dots) and pinned in both classes
+  (Fire Code: Strobe, Toxic Spill, The Irons, Sprinkler, Nebula, Quasar, Pulsar, Eclipse; academy: Koi, Hive, Void, Genesis), so a new smiley on an object fails, and the people and creatures must keep theirs; the four
+  redrawn drawings by their shapes; every drawing whole; the cutscene line; eleven different glows; unlock rules; no banner and no other character changed. FAILS on c1d224b (--against): every group but the pure guards
+  (creatures keep faces, banners unmoved, the empty groups). Updated for the new names / shapes: check-b384-fcchars2 (B), check-b384-fcchars3 (A, C, D, G rewritten for the new drawings; 9 lines fail on c1d224b),
+  check-b384-r3-chars (the names line), check-b382-ifcart (the names list), check-b384-sets ((8) comment: Genesis is on its AUDITED list already; the academy's Genesis changed on purpose and the Hive is not one of the seven it hashes).
+  check-b384-acchars is unchanged and passes (its H section is the Hive's sill, which is kept).

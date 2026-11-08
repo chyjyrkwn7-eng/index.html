@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build 384, round 8 (r3-chars): Madison's third look at the Fire Code characters (drawn in the Fire Code class only).
 
-  "The undercover one, not a fan.. try something else."      -> valkyrie is the Lookout, a fire lookout tower with a face (fclookout)
+  "The undercover one, not a fan.. try something else."      -> valkyrie is the Lookout, a fire lookout tower with a face (fclookout)  [round 9: Undercover again, a secret agent (fcagent)]
   "I don't like the pump operator, try something else."      -> timekeeper is the Smoke Alarm, a round alarm with its vent ring (fcsmoke)
   "Not sure what happened to the sprinkler head, try again there or revert."  -> hive: a brass-bodied pendent sprinkler, face on the body
   "Pulsar, try something else."                               -> singularity: a dark star, two narrow opposed beams with a wake, a pulse profile
@@ -79,8 +79,8 @@ srv.shutdown()
 import math, re
 chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
-chk("the four are Lookout (fclookout), Smoke Alarm (fcsmoke), Sprinkler Head (fcsprinkler3) and Pulsar (fcpulsar) (%s)" % N,
-    N["valkyrie"] == ["Lookout", "fclookout"] and N["timekeeper"] == ["Smoke Alarm", "fcsmoke"] and N["hive"] == ["Sprinkler Head", "fcsprinkler3"] and N["singularity"] == ["Pulsar", "fcpulsar"], N)
+chk("the four are Undercover (fcagent), The Irons (fcirons), Sprinkler Head (fcsprinkler4) and Pulsar (fcpulsar) (%s) (round 9 replaced the Lookout, the Smoke Alarm and the brass sprinkler: see check-b384-r4-chars)" % N,
+    N["valkyrie"] == ["Undercover", "fcagent"] and N["timekeeper"] == ["The Irons", "fcirons"] and N["hive"] == ["Sprinkler Head", "fcsprinkler4"] and N["singularity"] == ["Pulsar", "fcpulsar"], N)
 P = r["pulsar"]
 chk("Pulsar's head is a dark sphere like its squad's, not a white star (darkest stop %.4f, lightest %.3f; no pale disc: %s)" % (P["darkest"], P["lightest"], P["whiteDisc"]),
     P["darkest"] < .005 and P["lightest"] < .2 and P["whiteDisc"] == 0, P)
