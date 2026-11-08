@@ -29,13 +29,13 @@ DUMP = "--dump" in sys.argv
 ok = True
 def chk(name, cond, info=""):
     global ok; ok = ok and bool(cond); print(("PASS " if cond else "FAIL ") + name, "" if cond else "  -> " + str(info)[:500])
-NAMES = {"tests100": "Certified", "tests250": "Training Tower", "tests500": "The Crew", "hundos100": "Fully Compliant", "hundos250": "Grand Finale",
+NAMES = {"tests100": "Certified", "tests250": "Plan Review", "tests500": "Engine Company", "hundos100": "Fully Compliant", "hundos250": "Grand Finale",
          "vr50": "Mutual Aid", "study50": "Code Book", "study60": "On Call", "correct5000": "Downpour", "correct10000": "Fire Investigator",
-         "level80": "Incident Command", "early10": "After Hours", "exam100": "Hose Line", "adept_rank": "Sapphire", "elite_rank": "Amethyst", "titan_rank": "Supernova",
-         "flare_void": "Nebula", "flare_umbra": "Quasar", "flare_horizon": "Pulsar", "flare_genesis": "Solstice", "zenith": "Star Ranger"}
-REDONE = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr50", "study60", "correct5000", "correct10000", "level80", "early10", "exam100",
-          "flare_void", "flare_umbra", "flare_horizon", "flare_genesis"]
-KEEP = ["study50", "adept_rank", "elite_rank", "titan_rank", "zenith"]
+         "level80": "Fully Involved", "early10": "After Hours", "exam100": "Hose Line", "adept_rank": "Sapphire", "elite_rank": "Amethyst", "titan_rank": "Supernova",
+         "flare_void": "Nebula", "flare_umbra": "Quasar", "flare_horizon": "Pulsar", "flare_genesis": "Eclipse", "zenith": "Star Ranger"}
+REDONE = ["tests100", "tests250", "tests500", "hundos100", "hundos250", "vr50", "study50", "study60", "correct10000", "level80", "early10",
+          "flare_umbra", "flare_horizon", "flare_genesis"]
+KEEP = ["correct5000", "exam100", "flare_void", "adept_rank", "elite_rank", "titan_rank", "zenith"]
 # bannerStaticSVG hashes on bb7eb94 (python3 tools/check-b384-fcbanners.py --dump --against <bb7eb94's index.html>)
 PREV = {}
 try: PREV = json.load(open(os.path.join(HERE, "check-b384-fcbanners.prev.json")))
@@ -64,14 +64,24 @@ SNAP = r"""(a) => {
     const miss = [...new Set(refs.filter(r => !ia.has(r)))]; if(miss.length) out.unresolved.push([id, miss.slice(0, 3)]); });
   /* the lettering's drawn paths, by the app's own sign-writer */
   const tp = (s, cx, cy, h) => { try{ return fbTextPath(s, cx, cy, h); }catch(e){ return ''; } };
-  out.tape = { dnc: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('DO NOT CROSS', 304, 30, 8.4)) >= 0 : false,
-    fs: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('FIRE SCENE', 196, 30, 8.4)) >= 0 : false,
-    fireLine: out.layers.correct10000 ? out.layers.correct10000.all.indexOf(tp('FIRE LINE', 300, 23.5, 7)) >= 0 : false };
+  const has = (id, str) => !!out.layers[id] && out.layers[id].all.indexOf(str) >= 0;
+  out.has = has; 
+  out.tape = { dnc: has('correct10000', tp('DO NOT CROSS', 151, 0, 8.4)), fs: has('correct10000', tp('FIRE SCENE', 46, 0, 8.4)), fireLine: has('correct10000', tp('FIRE LINE', 300, 23.5, 7)),
+    post: has('correct10000', '<rect x="449" y="14" width="6" height="146"'), jamb: has('correct10000', 'fill="#C79A0C"') };
+  out.text = { sysnorm: has('study60', tp('SYSTEMS NORMAL', 238, 60.6, 7.4)), pull: has('study60', 'class="fb-pull"'), clock: has('study60', 'r="25" fill="#2A2D34"'), tag: has('study60', 'fill="#F2C21E"/>' + '<circle'),
+    cert: has('tests100', tp('CERTIFIED', 222, 38, 11)), plan: has('tests250', tp('PLAN REVIEW', 173, 163, 3.6)) || has('tests250', tp('PLAN REVIEW', 128 + 45, 163, 3.6)), engine: has('tests500', tp('ENGINE COMPANY 5', 240, 20.4, 8.6)),
+    helmets: [1, 2, 3, 4, 5].map(n => has('tests500', tp(String(n), [132, 186, 240, 294, 348][n - 1], 48.6, 9))), compliant: has('hundos100', tp('COMPLIANT', 0, 12.4, 5.6)), oldSign: has('hundos100', tp('FIRE DOOR', 84, 76, 9)),
+    ah: has('early10', tp('187F', 234, 62, 4.4)), panel4b: has('early10', tp('PANEL 4B', 322, 30.6, 5.2)) };
+  out.coins = ((out.layers.tests100 || { all: '' }).all.match(/stroke-dasharray="\.7 \.65"/g) || []).length;
+  out.flags = has('tests100', 'x="14" y="30" width="2" height="100"') || has('tests100', 'x="462" y="30" width="2" height="100"');
+  out.ghost = has('hundos250', 'class="fb-ghost"') && has('hundos250', tp('FIRE MARSHAL', 0, 0, 1)) === false;
+  out.stations = ((out.layers.vr50 || { all: '' }).all.match(/r="3\.6" fill="#0B1626"/g) || []).length; out.yellowEnd = has('vr50', 'L251 58');
+  out.ports = has('level80', ' 362 141') && has('level80', ' 378 141'); out.nodrop = true;
   out.glyphs = ['P', 'K', 'W', 'V', 'G', '0', '5', '9', '%', '-'].filter(g => !(window.FB_GLYPH || (typeof FB_GLYPH !== 'undefined' && FB_GLYPH) || {})[g]);
   /* shapes: counts of things in the still pictures, mounted off screen */
   const mount = id => { const d = document.createElement('div'); d.innerHTML = out.svg[id]; return d; };
   const cnt = (id, sel) => mount(id).querySelectorAll(sel).length;
-  out.shape = { persons: cnt('tests500', '.fb-person'), ffTower: cnt('tests250', '.fb-ff'), ffHose: cnt('exam100', '.fb-ff'),
+  out.shape = { persons: cnt('tests500', '.fb-person'), ffTower: cnt('level80', '.fb-ff'), ffHose: cnt('exam100', '.fb-ff'),
     chips: mount('vr50').querySelectorAll('rect[stroke="#0B1626"][rx="3"]').length };
   const longs = id => { const s = new Set(); mount(id).querySelectorAll('path').forEach(p => { const d = p.getAttribute('d') || ''; if(d.length > 60) s.add(d); }); return s; };
   const shared = ids => { const sets = ids.map(longs); return [...sets[0]].filter(k => sets.every(s => s.has(k))).length; };
@@ -109,17 +119,24 @@ chk("(1) the page is Fire Code (%s), every banner draws with a tint, no page err
 bad = {i: (F["names"].get(i), n) for i, n in NAMES.items() if F["names"].get(i) != n}
 chk("(1) each banner is named for its challenge (%d wrong)" % len(bad), not bad, bad)
 same = [i for i in REDONE if PREV.get(i) and F["hashes"].get(i) == PREV[i]]
-chk("(2) every redrawn banner differs from bb7eb94 (unchanged: %s; %d hashes known)" % (same, len(PREV)), PREV and not same, same)
+chk("(2) every redrawn banner differs from 976c414 (the build before round 3) (unchanged: %s; %d hashes known)" % (same, len(PREV)), PREV and not same, same)
 moved = [i for i in KEEP if PREV.get(i) and F["hashes"].get(i) != PREV[i]]
-chk("(2) Code Book, Star Ranger and the rank banners are as they were (changed: %s)" % moved, PREV and not moved, moved)
+chk("(2) Downpour, Hose Line, Nebula, Star Ranger and the rank banners are as they were (changed: %s)" % moved, PREV and not moved, moved)
 t = F["tape"]
 chk("(3) Fire Investigator's tape reads FIRE SCENE and DO NOT CROSS and not FIRE LINE (%s)" % t, t["dnc"] and t["fs"] and not t["fireLine"], t)
 S = F["shape"]
-chk("(4) The Crew is five people (%s)" % S["persons"], S["persons"] == 5, S)
-chk("(4) Mutual Aid has its five unit chips (%s)" % S["chips"], S["chips"] >= 5, S)
+chk("(4) Engine Company: no row of people (%s), its plaque and the five numbered helmets (%s)" % (S["persons"], F["text"]["helmets"]), S["persons"] == 0 and F["text"]["engine"] and all(F["text"]["helmets"]), F["text"])
+chk("(4) Certified has its CERTIFIED lettering, no flag poles, and twenty challenge coins (%s)" % F["coins"], F["text"]["cert"] and not F["flags"] and F["coins"] == 20, (F["text"]["cert"], F["flags"], F["coins"]))
+chk("(4) Plan Review has its title block; Fully Compliant is the tag alone (COMPLIANT stamped, no FIRE DOOR sign)", F["text"]["plan"] and F["text"]["compliant"] and not F["text"]["oldSign"], F["text"])
+chk("(4) On Call reads SYSTEMS NORMAL, has a pull station, and no wall clock or tag (%s)" % F["text"], F["text"]["sysnorm"] and F["text"]["pull"] and not F["text"]["clock"], F["text"])
+chk("(4) After Hours shows the camera's screen (187F) and PANEL 4B on the panel", F["text"]["ah"] and F["text"]["panel4b"], F["text"])
+chk("(4) Mutual Aid has its five unit chips (%s), five station rings (%s) and its yellow line ends on the incident (%s)" % (S["chips"], F["stations"], F["yellowEnd"]), S["chips"] >= 5 and F["stations"] == 5 and F["yellowEnd"], S)
+chk("(4) Fully Involved: both hose lines run to the pump panel's discharges (%s)" % F["ports"], F["ports"], F["ports"])
 L = F["layers"]
-chk("(5) Grand Finale has at least ten fireworks on their own clocks (%s; Pyrotechnics had five)" % F["fwk"], F["fwk"] >= 10, F["fwk"])
-chk("(6) Hose Line is drawn with the shared firefighter (%s) and the Training Tower has %s of them" % (S["ffHose"], S["ffTower"]), S["ffHose"] >= 1 and S["ffTower"] >= 2, S)
+chk("(5) Grand Finale is a composition, not a sky of them: four to six shells on their own clocks (%s; there were 13), and the truck wears ghost lettering (%s)" % (F["fwk"], F["ghost"]), 4 <= F["fwk"] <= 6 and F["ghost"], (F["fwk"], F["ghost"]))
+t = F["tape"]
+chk("(3b) Fire Investigator's tape is tied at both ends: a wrapped knot on the jamb and a stanchion at the far end (%s)" % t, t["post"] and t["jamb"], t)
+chk("(6) Hose Line is drawn with the shared firefighter (%s) and Fully Involved has %s of them" % (S["ffHose"], S["ffTower"]), S["ffHose"] >= 1 and S["ffTower"] >= 2, S)
 chk("(7) After Hours and Fire Investigator share no long shape (%s) and After Hours is the colder picture (%s)" % (F["sharedAH"], F["cold"]),
     F["sharedAH"] == 0 and F["cold"]["early10"] - F["cold"]["correct10000"] > .25, F["cold"])
 fl = ["flare_void", "flare_umbra", "flare_horizon", "flare_genesis"]

@@ -78610,10 +78610,15 @@ const IFC_BANNER_ART = {
     const LAYERS = [{ svg: base }];
     LAYERS.push({ svg: st.a, cls: "bl-tw", style: "animation-duration:3s" });
     LAYERS.push({ svg: '<ellipse cx="90" cy="80" rx="200" ry="96" fill="url(#' + u + 'heat)"/>', box: [-100, -16, 400, 200], cls: "bl-glow", style: "animation-duration:1.3s" });
-    /* the roof's fire: five bodies standing on the parapet, each on its own clock */
-    [[38, 15, 44, -2], [72, 18, 52, 2], [106, 20, 56, -3], [138, 16, 46, 2], [90, 12, 36, 4]].forEach(([x, w, h, l], i) => LAYERS.push({ svg: fbFire(x, BY - 4, w, h, l), box: [x - w - 4, BY - 4 - h - 4, w * 2 + 8, h + 8], o: [x, BY - 4], cls: "bl-flame", style: "animation-duration:" + (.8 + i * .17) + "s;animation-delay:-" + (i * .23) + "s" }));
-    /* and the windows: a body licking up out of each, the top floor's biggest */
-    wins.forEach(([x, y, w, h, r, c], i) => LAYERS.push({ svg: fbFire(x + w / 2, y + h - 1, 9 + (2 - r) * 1.6, 17 + (2 - r) * 5 + (i % 3) * 3, (i % 2 ? 1 : -1) * 2), box: [x - 6, y - 24, w + 12, h + 28], o: [x + w / 2, y + h - 1], cls: "bl-flame", style: "animation-duration:" + (.85 + (i % 5) * .13) + "s;animation-delay:-" + (i * .19) + "s" }));
+    /* the roof's fire: five bodies standing on the parapet, in two groups, each group on its own clock (a layer per body would be too many layers to run) */
+    const roof = [[[38, 15, 44, -2], [72, 18, 52, 2], [90, 12, 36, 4]], [[106, 20, 56, -3], [138, 16, 46, 2]]];
+    roof.forEach((grp, i) => { const x0 = grp[0][0] - grp[0][1] - 4, x1 = grp[grp.length - 1][0] + grp[grp.length - 1][1] + 4, top = BY - 4 - 60;
+      LAYERS.push({ svg: grp.map(([x, w, h, l]) => fbFire(x, BY - 4, w, h, l)).join(""), box: [x0, top, x1 - x0, BY - 4 - top], o: [(x0 + x1) / 2, BY - 4], cls: "bl-flame", style: "animation-duration:" + (.9 + i * .3) + "s;animation-delay:-" + (i * .5) + "s" }); });
+    /* and the windows: a body licking up out of each, the top floor's biggest; a layer per pair of neighbours */
+    for(let r = 0; r < 3; r++) for(let pr = 0; pr < 2; pr++){
+      const ws = [wins[r * 4 + pr * 2], wins[r * 4 + pr * 2 + 1]], x0 = ws[0][0] - 6, x1 = ws[1][0] + ws[1][2] + 6, y = ws[0][1], h = ws[0][3];
+      LAYERS.push({ svg: ws.map((w, k) => fbFire(w[0] + w[2] / 2, w[1] + w[3] - 1, 9 + (2 - r) * 1.6, 17 + (2 - r) * 5 + ((r * 4 + pr * 2 + k) % 3) * 3, ((r + pr + k) % 2 ? 1 : -1) * 2)).join(""), box: [x0, y - 24, x1 - x0, h + 28], o: [(x0 + x1) / 2, y + h - 1], cls: "bl-flame", style: "animation-duration:" + (.85 + ((r * 2 + pr) % 5) * .13) + "s;animation-delay:-" + ((r * 2 + pr) * .27) + "s" });
+    }
     LAYERS.push({ svg: fbPuffs(bnRand(91), 96, 52, 8, 22, "url(#" + u + "smoke)"), box: [10, -60, 280, 110], cls: "bl-steam", style: "animation-duration:7s" });
     LAYERS.push({ svg: fbPuffs(bnRand(92), 126, 52, 7, 20, "url(#" + u + "smoke)"), box: [10, -60, 280, 110], cls: "bl-steam", style: "animation-duration:7s;animation-delay:-3.5s" });
     /* the water: the aerial's master stream and the two hand lines, flickering as water does; mist where it lands */
