@@ -56493,7 +56493,7 @@ const AVATAR_CHARACTERS = [
                     times until build 258; was the Spartan's,
                     build 244: "I don't like the spartan, change that
                     to something else")
-       Marksman   - 250 right in a row in one test (200 until 291; 100 until build
+       Marksman   - 250 right in a row, across tests since 384 (one test 267-383; 200 until 291; 100 until build
                     246, 150 until 259)
        Astronaut  - a hundo in 5 different units in one day (7 until
                     build 258; was Blitz's)
@@ -56822,9 +56822,12 @@ const CHARACTER_FEATS = {
      200." Nobody was at 200 (the best single-test run on record was
      167), so the raise takes nothing from anybody; the live check and
      revokeRaisedCharacters() would take it back if it did. */
-  streak100: { label: "Answer 250 questions in a row without a miss, in a single test",
-               done: () => (store.bestTestStreak || 0) >= MARKSMAN_RUN,
-               have: () => (store.bestTestStreak || 0), need: MARKSMAN_RUN },
+  /* ACROSS TESTS AGAIN (384): "Academy marksmen, doesn't need to happen in a single test. Same for both then." The run is the
+     Fire Code one (ifcRunBest: the longest right-answer streak across tests or inside one, whichever is longer); the academy
+     keeps its 250. Widening the rule can only give the Marksman to more people, never take it from anybody. */
+  streak100: { label: "Answer " + MARKSMAN_RUN + " questions in a row without a miss",
+               done: () => ifcRunBest() >= MARKSMAN_RUN,
+               have: () => Math.min(ifcRunBest(), MARKSMAN_RUN), need: MARKSMAN_RUN },
   /* Build 241, Eclipse. Counted from the whole-unit loop in summarize()
      at the moment a unit comes out at 100%, so it is the same "whole
      unit" every hundo already needs. Tracked from this build: nothing
@@ -57236,14 +57239,13 @@ const UNLOCK_WINDOWS = {
     return { now, need, label: "Answered right", tail: "daily questions",
       note: "The daily question on Home. Every one you answer right counts; a miss takes nothing away." };
   },
-  /* Marksman: inside ONE test, so outside a test there is nothing in
-     progress to show - the bar is the best test so far, and says so. */
+  /* Marksman / Hazmat: the best right-answer run, across tests (384, both classes). */
   "feat:streak100": () => {
     const need = CHARACTER_FEATS.streak100.need;
     if(window.NOVA_CLASS === "ifc") return { now: Math.min(ifcRunBest(), need), need, label: "Best run", tail: "in a row",
       note: "Right on the first try. A miss starts the count over; it carries from one test to the next. The bar shows your best run so far." };
-    return { now: Number(store.bestTestStreak) || 0, need, label: "Best in one test", tail: "",
-      note: "Right on the first try, all inside one test. A miss starts the count over, and so does a new test. The bar shows your best test so far." };
+    return { now: Math.min(ifcRunBest(), need), need, label: "Best run", tail: "in a row",
+      note: "Right on the first try. A miss starts the count over; it carries from one test to the next. The bar shows your best run so far." };
   },
   /* Orion: different units aced on today's date. */
   "feat:hundo7day": () => {
@@ -144063,7 +144065,7 @@ const UNLOCK_NOTES = {
   "character:detective": "The daily question on Home. Every one you answer right counts.",
   "character:zeus": "Be #1 on the This Week board when the week ends.",
   "character:poseidon": "Invite Nova from a Virtual Room lobby and finish ahead of him, in any mode.",
-  "character:marksman": (window.NOVA_CLASS === "ifc" ? "100 in a row, right on the first try. A miss starts it over; the run carries from one test to the next." : MARKSMAN_RUN + " in a row, right on the first try, inside one test. A miss starts it over."),
+  "character:marksman": (window.NOVA_CLASS === "ifc" ? "100" : MARKSMAN_RUN) + " in a row, right on the first try. A miss starts it over; the run carries from one test to the next.",
   "character:astronaut": "A hundo is 100% on a whole unit. Get one in 3 different units on the same day.",
   "character:hive": "A Drill, a Test, a Retake, the Daily question and a Virtual Room match, " + MODE_TRIES + " of each.",
   "character:ronin": "One test of " + RONIN_TEST_SIZE + " questions or more, finished at " + PASS_MARK + "% or better.",

@@ -5610,10 +5610,12 @@ def check_b267(br):
       const a = buildRankEmblemSVG('adept');
       out.dust = !!a.querySelector('.rk-spin.rk-fast') && [...a.querySelectorAll('.rk-spin.rk-fast path')].some(p => /^#0[0-9A-F]{5}$/i.test(p.getAttribute('fill') || ''));
       out.shards = !!buildRankEmblemSVG('titan').querySelector('.rk-spin.rk-fast');
-      const keep = [store.bestTestStreak, store.lifetime.longestStreak];
-      store.bestTestStreak = 0; store.lifetime.longestStreak = 500; out.lifetimeLocked = isLockedCharacter('marksman');
-      store.bestTestStreak = CHARACTER_FEATS.streak100.need; out.testUnlocked = !isLockedCharacter('marksman');
-      store.bestTestStreak = keep[0] || 0; store.lifetime.longestStreak = keep[1];
+      /* REVISED IN 384: "Academy marksmen, doesn't need to happen in a single test." A run across tests counts again; one test's still does. */
+      const keep = [store.bestTestStreak, store.lifetime.longestStreak, store.lifetime.currentStreak], MN = CHARACTER_FEATS.streak100.need;
+      store.bestTestStreak = 0; store.lifetime.currentStreak = 0; store.lifetime.longestStreak = MN - 1; out.lifetimeUnder = isLockedCharacter('marksman');
+      store.lifetime.longestStreak = MN; out.lifetimeUnlocked = !isLockedCharacter('marksman');
+      store.lifetime.longestStreak = 0; store.bestTestStreak = MN; out.testUnlocked = !isLockedCharacter('marksman');
+      store.bestTestStreak = keep[0] || 0; store.lifetime.longestStreak = keep[1]; store.lifetime.currentStreak = keep[2];
       out.defaulted = (() => { const d = JSON.parse(JSON.stringify(store)); delete d.bestTestStreak; applyLoadedData(d); return store.bestTestStreak; })();
       showProfile('profile'); await wait(1400);
       const f = document.querySelector('.profile-xpbar .xpbar-fill'), tr = document.querySelector('.profile-xpbar');
@@ -5666,8 +5668,8 @@ def check_b267(br):
     check("both Virtual Room card icons are mode icons, in colour (build 287)", r.get("icons") == [True, True], r.get("icons"))
     check("Sapphire's dark heart has dark dust spinning faster than its arms", r.get("dust") is True, r)
     check("Supernova throws dark shards of its own", r.get("shards") is True, r)
-    check("a lifetime streak does not unlock the Marksman; one test's does",
-          r.get("lifetimeLocked") is True and r.get("testUnlocked") is True and r.get("defaulted") == 0, r)
+    check("the Marksman unlocks at its number in a row across tests (one under does not), and one test's run still counts",
+          r.get("lifetimeUnder") is True and r.get("lifetimeUnlocked") is True and r.get("testUnlocked") is True and r.get("defaulted") == 0, r)
     xp = r.get("xp") or {}
     check("the XP bar is the unlock card's bar in blue: its .9s glide, no sheen",
           "61, 139, 255" in xp.get("bg", "") and xp.get("tr", "").startswith("0.9") and xp.get("h", 99) <= 12

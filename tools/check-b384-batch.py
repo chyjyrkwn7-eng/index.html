@@ -54,8 +54,8 @@ J = """()=>{
   out.vr = [f.vrwins5.need, f.hundo7day.need];
   out.streak = { need: f.streak100.need, label: f.streak100.label };
   const wb = { b: store.bestTestStreak, l: L.longestStreak, c: L.currentStreak };
-  store.bestTestStreak = 0; L.currentStreak = 0; L.longestStreak = 100; out.streakAcross = f.streak100.done();
-  L.longestStreak = 99; out.streak99 = f.streak100.done(); store.bestTestStreak = wb.b; L.longestStreak = wb.l; L.currentStreak = wb.c;
+  store.bestTestStreak = 0; L.currentStreak = 0; L.longestStreak = f.streak100.need; out.streakAcross = f.streak100.done();
+  L.longestStreak = f.streak100.need - 1; out.streak99 = f.streak100.done(); store.bestTestStreak = wb.b; L.longestStreak = wb.l; L.currentStreak = wb.c;
   out.days = f.days30.need;
   out.hive = { label: f.busyday300.label, ronin: f.bigtest400.label };
   return out; }"""
@@ -79,7 +79,8 @@ for k, v in (("Fire Code", I), ("academy", A)):
         len(v["ultimates"]) == 1 and v["ultimates"][0].startswith(v["top"] + ":everything") and v["ultBanners"] == [v["top"]], v)
 chk("(4) Fire Code: Hazmat 100 in a row across tests (99 no, 100 yes), 14 different days (%s, %s)" % (I["streak"], I["days"]),
     I["streak"]["need"] == 100 and I["streakAcross"] is True and I["streak99"] is False and I["days"] == 14, I)
-chk("(4) the academy keeps 250 in one test and 30 days (%s, %s)" % (A["streak"]["need"], A["days"]), A["streak"]["need"] == 250 and A["days"] == 30, A)
+chk("(4) the academy keeps 250 and 30 days; its Marksman run carries across tests too (Madison: \"doesn't need to happen in a single test. Same for both\") (%s, %s)" % (A["streak"]["need"], A["days"]),
+    A["streak"]["need"] == 250 and A["days"] == 30 and A["streakAcross"] is True and A["streak99"] is False and "single test" not in A["streak"]["label"], A)
 chk("(6) Fire Code's survivor is Zenith, the academy's Astral", I["top"] == "zenith" and A["top"] == "astral", [I["top"], A["top"]])
 chk("(7) Fire Code's hundo rungs are 0, 25, 50, 75, 100 (%s)" % I["fx"], I["fx"] == [0, 25, 50, 75, 100], I["fx"])
 chk("(7) the academy's rise and top out at 200 (%s)" % A["fx"], A["fx"][0] == 0 and A["fx"] == sorted(A["fx"]) and len(set(A["fx"])) == len(A["fx"]) and A["fx"][-1] == 200, A["fx"])
