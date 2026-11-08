@@ -79079,11 +79079,13 @@ const IFC_BANNER_ART = {
     const rnd = bnRand(3841);
     const st = bnStarsSplit(rnd, 64, 30);
     const GY = 157, XS = [112, 192, 270, 348, 424];
+    /* round 6: the five are the one inspector (fbOfficer): navy polos and pants, plate carriers, duty belts; three carry a handgun (the police officers among
+       them), two do not; caps on two, short hair on three. No hard hats, no hi-vis. */
     const who = [
-      { s: .86, pose: "clip", hat: "#F3F6F9", lit: -1, skin: "#C98E64", skinD: "#8E5C3E" }, { s: .94, pose: "torchUp", flip: true, ta: -16, hat: "#F2D45A", lit: -1, skin: "#8E5C3E", skinD: "#5E3A24" }, { s: 1.0, pose: "radio", hat: "#F3F6F9", lit: 1, skin: "#E0AC86", skinD: "#A8714E" },
-      { s: .9, pose: "torchDown", ta: 56, hat: "#F3F6F9", lit: 1, skin: "#A86E4A", skinD: "#744428" }, { s: .82, pose: "plans", hat: "#F2D45A", lit: 1, flip: true, skin: "#D49A72", skinD: "#9A6444" }
+      { s: .9, pose: "clip", lit: -1, skin: "#C98E64", skinD: "#8E5C3E", gun: true }, { s: .97, pose: "torchUp", flip: true, ta: -16, lit: -1, skin: "#8E5C3E", skinD: "#5E3A24", cap: true }, { s: 1.04, pose: "radio", lit: 1, skin: "#E0AC86", skinD: "#A8714E", gun: true },
+      { s: .94, pose: "torchDown", ta: 56, lit: 1, skin: "#A86E4A", skinD: "#744428", cap: true }, { s: .86, pose: "plans", lit: 1, flip: true, skin: "#D49A72", skinD: "#9A6444", gun: true, hair: "#4A2E1C" }
     ];
-    const P5 = who.map((o, i) => fbInsp(XS[i], GY, o.s, o));
+    const P5 = who.map((o, i) => fbOfficer(XS[i], GY, o.s, o));
     /* a beam: a cone from the lens along its angle (a little wider than the lens), the pool it makes where it lands */
     const beam = (i, k, L, ha) => {
       const [lx, ly, a] = P5[i].lens, c = Math.cos(a), sn = Math.sin(a), ax = lx + c * L, ay = ly + sn * L, nx = -sn, ny = c, wd = Math.tan(ha) * L;
@@ -79098,7 +79100,7 @@ const IFC_BANNER_ART = {
       bnLin(u + "pole", [[0, "#1A1E2A"], [0.5, "#4A5266"], [1, "#12151F"]], 0, 0, 1, 0) +
       bnRad(u + "lamp", [[0, "#FFE9B0", .8], [0.35, "#FFD27A", .3], [1, "#FFC060", 0]]) + bnRad(u + "pool", [[0, "#FFD58A", .55], [1, "#FFD58A", 0]]) + bnRad(u + "lens", [[0, "#FFF8E0", .9], [1, "#FFF8E0", 0]]) + bnRad(u + "spot", [[0, "#FFF4D0", .5], [1, "#FFF4D0", 0]]) +
       bnLin(u + "cone", [[0, "#FFD58A", .42], [1, "#FFD58A", 0]]) + bnLin(u + "fog", [[0, "#9AB0DC", 0], [0.5, "#9AB0DC", .16], [1, "#9AB0DC", 0]]) +
-      bnLin(u + "rv", [[0, "#BCDA32", .5], [1, "#BCDA32", 0]], 0, GY, 0, GY + 22).replace('x1="0" y1="' + GY + '" x2="0" y2="' + (GY + 22) + '"', 'gradientUnits="userSpaceOnUse" x1="0" y1="' + GY + '" x2="0" y2="' + (GY + 22) + '"') +
+      bnLin(u + "rv", [[0, "#6A86C8", .4], [1, "#6A86C8", 0]], 0, GY, 0, GY + 22).replace('x1="0" y1="' + GY + '" x2="0" y2="' + (GY + 22) + '"', 'gradientUnits="userSpaceOnUse" x1="0" y1="' + GY + '" x2="0" y2="' + (GY + 22) + '"') +
       bnLin(u + "rp", [[0, "#05070C", .55], [1, "#05070C", 0]]).replace('x1="0" y1="0" x2="0" y2="1"', 'gradientUnits="userSpaceOnUse" x1="0" y1="' + GY + '" x2="0" y2="' + (GY + 20) + '"') +
       bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .5]]) + b1[0] + b2[0] + '</defs>';
     let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still;
