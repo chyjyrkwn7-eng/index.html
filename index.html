@@ -120937,6 +120937,13 @@ const IFX_DEF = {
      5.3, and the last of it has faded by 6.4; the small box's is 4.6s. */
   ufo:        { name: "Hazmat",     total: 6400, box: 4600, tail: 5300, tint: { b: "#B4F03A", g1: "#F6FFE0", g2: "#B4F03A", g3: "#F5C518" } }
 };
+/* (384 r6) where a screen-wide effect's ceiling is: the bottom of the app's own top bar when it is up at the top of the screen
+   (the results: "Test results" and the chat button, under the status bar on a phone), else the top. 0 in a frame. */
+function ifxCeil(c){
+  if(!c || c.frame || c.boxOnly) return 0;
+  try{ const tb = document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 4 && q.bottom > 0 && q.bottom < (c.vh || 800) * .25) return Math.round(q.bottom); } }catch(e){}
+  return 0;
+}
 function ifxEl(parent, css){
   const d = document.createElement("i");
   d.style.cssText = "position:absolute;display:block;pointer-events:none;" + css;
@@ -121943,7 +121950,9 @@ function ifxSprinklers(scr, bx, c){
     return S;
   };
   let S = null;
-  if(scr) S = play(scr, c.vw, c.vh, false);
+  /* (384 r6) the ceiling is under the app's top bar, not behind it (the heads hung from the very top of the screen, under the
+     status bar on a phone and over "Test results") */
+  if(scr){ const cb = ifxCeil(c); S = play(cb ? ifxEl(scr, "left:0;top:" + bnF(cb) + "px;width:" + c.vw + "px;height:" + bnF(c.vh - cb) + "px;") : scr, c.vw, c.vh - cb, false); }
   if(!bx) return;
   if(c.boxOnly) S = play(bx, c.bw, c.bh, true);
   else {
@@ -122361,7 +122370,9 @@ function ifxThermal(scr, bx, c){
     const hud = ifxEl(host, "left:0;top:0;width:" + bnF(W) + "px;height:" + bnF(H) + "px;transform-origin:" + bnF(tx) + "px " + bnF(ty) + "px;");
     ifxAt(c, hud, tot, [[T.off - .15, { opacity: 1, transform: "scale(1)", easing: IFX_IN }], [T.off + .3, { opacity: 0, transform: "scale(1.14)" }]]);
     const fL = small ? Math.max(8, Math.min(20, H * .14)) : 40 * u, ix = small ? Math.max(4, H * .05) : Math.max(10, Math.min(30, W * .045));
-    const iyT = small ? ix : Math.max(24, Math.min(88, H * .075)), iyB = small ? ix : Math.max(14, Math.min(56, H * .05));
+    /* (384 r6) clear of the status bar on a phone (in Chromium it is 0, so nothing moves here) */
+    const sTop0 = small || c.frame ? 0 : hfxSafeTop();
+    const iyT = small ? ix : Math.max(24, Math.min(88, H * .075), sTop0 + 16), iyB = small ? ix : Math.max(14, Math.min(56, H * .05));
     const corner = (parent, size, x, y, rot) => ifxImg(parent, S.ticL(), x - size * 6 / 46, y - size * 6 / 46, size, size, "transform-origin:" + bnF(size * 6 / 46) + "px " + bnF(size * 6 / 46) + "px;");
     [[ix, iyT, 0, -1, -1], [W - ix, iyT, 90, 1, -1], [W - ix, H - iyB, 180, 1, 1], [ix, H - iyB, 270, -1, 1]].forEach(([x, y, rot, sx, sy], i) => {
       const e = corner(hud, fL, x, y, rot), o = fL * .5;
