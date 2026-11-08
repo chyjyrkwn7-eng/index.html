@@ -59900,79 +59900,85 @@ var IFC_CHAR_DRAW = {
     k.close();
     k.wornFlareFx(28.3, 24.1, MYSTERY_COLOR.violet, .66);
   },
-  /* PULSAR (Horizon's place; 384 round 7: "pulsar needs to be better"): a neutron star, as a figure. A small hard white
-     star with the heavy brows of something that has been spinning for a billion years, its magnetic field looping pole to pole
-     round it like a hood, and its two beams of light leaving from the poles - the north pole is tilted to the right, and the
-     flare it is found with is set IN that pole, the beam's own source, with the ring of pulses going out from it. The
-     beams do not sweep round the figure (they would leave the flare behind); they pulse. */
+  /* PULSAR (Horizon's place; 384 round 8: "Pulsar, try something else."): a neutron star that is dark where it is not lit, like the rest of
+     the squad - a small black head with an icy rim and two narrow lit eyes - turning so fast that its two opposed beams sweep round
+     like a lighthouse's. What is new is the turning: each beam leaves a fading fan behind it (the sweep), the star's own surface is
+     banded by the spin, and across the chest runs the pulse profile of the first pulsar ever found, stacked lines with a spike in each.
+     The beams are one straight axis through the head, tilted; the flare it is found with is the north pole's lamp - a bead set in the rim
+     where the beam's bright core starts - and the south pole has the same socket, unlit. */
   fcpulsar(k){
-    const ICE = "#7FC8FF", AX = [.469, -.883], C = [20, 20], R = 8.5;
-    const N = [C[0] + AX[0] * R, C[1] + AX[1] * R], S = [C[0] - AX[0] * R, C[1] - AX[1] * R];
-    /* the magnetic field: two loops each side, pole to pole, behind everything */
-    const NRM = [-AX[1], AX[0]];
-    [[R + 3.4, ".75", ".5"], [R + 6.6, ".45", ".34"]].forEach(([w, op, sw]) => {
-      const loop = s => {
-        const c1 = [C[0] + AX[0] * R * .95 + NRM[0] * s * w * 1.28, C[1] + AX[1] * R * .95 + NRM[1] * s * w * 1.28];
-        const c2 = [C[0] - AX[0] * R * .95 + NRM[0] * s * w * 1.28, C[1] - AX[1] * R * .95 + NRM[1] * s * w * 1.28];
-        return "M" + fcF(N[0]) + " " + fcF(N[1]) + " C" + fcF(c1[0]) + " " + fcF(c1[1]) + " " + fcF(c2[0]) + " " + fcF(c2[1]) + " " + fcF(S[0]) + " " + fcF(S[1]);
-      };
-      k.add("path", { d: loop(1) + " " + loop(-1), fill: "none", stroke: "#CFEAFF", "stroke-width": sw, opacity: op, "stroke-linecap": "round" });
-    });
-    /* the two beams, out of the poles along the star's tilted axis; the near one is the flare's */
-    const beamN = fcLin(k, [["0", "#FFFFFF", ".95"], [".45", "#BFE6FF", ".5"], ["1", "#7FC8FF", "0"]], fcF(N[0]), fcF(N[1]), fcF(N[0] + AX[0] * 20), fcF(N[1] + AX[1] * 20), true);
-    const beamS = fcLin(k, [["0", "#FFFFFF", ".8"], [".45", "#BFE6FF", ".4"], ["1", "#7FC8FF", "0"]], fcF(S[0]), fcF(S[1]), fcF(S[0] - AX[0] * 20), fcF(S[1] - AX[1] * 20), true);
-    const wedge = (P, dir, len, w0, w1) => {
-      const nx = -dir[1], ny = dir[0];
-      return "M" + fcF(P[0] + nx * w0) + " " + fcF(P[1] + ny * w0) + " L" + fcF(P[0] + dir[0] * len + nx * w1) + " " + fcF(P[1] + dir[1] * len + ny * w1)
-        + " L" + fcF(P[0] + dir[0] * len - nx * w1) + " " + fcF(P[1] + dir[1] * len - ny * w1) + " L" + fcF(P[0] - nx * w0) + " " + fcF(P[1] - ny * w0) + " Z";
+    const ICE = "#7FC8FF", PALE = "#DFF3FF", TILT = -24 * Math.PI / 180, C = [20, 20.4], R = 8.6;
+    const AX = [Math.cos(TILT), Math.sin(TILT)], N = [C[0] + AX[0] * R, C[1] + AX[1] * R], S = [C[0] - AX[0] * R, C[1] - AX[1] * R];
+    const P = (o, d, nrm) => fcF(o[0] + AX[0] * d - AX[1] * nrm) + " " + fcF(o[1] + AX[1] * d + AX[0] * nrm);
+    /* a wedge out of a pole along the axis (sgn 1 north, -1 south), half-widths w0 at the pole and w1 at the far end; rot turns it about the star */
+    const wedge = (sgn, len, w0, w1, rot) => {
+      const a = TILT + (sgn < 0 ? Math.PI : 0) + (rot || 0), u = [Math.cos(a), Math.sin(a)], n = [-u[1], u[0]], o = [C[0] + u[0] * (R - 1), C[1] + u[1] * (R - 1)];
+      const q = (d, w) => fcF(o[0] + u[0] * d + n[0] * w) + " " + fcF(o[1] + u[1] * d + n[1] * w);
+      return "M" + q(0, w0) + " L" + q(len, w1) + " L" + q(len, -w1) + " L" + q(0, -w0) + " Z";
     };
+    const beamN = fcLin(k, [["0", "#FFFFFF", ".98"], [".4", "#BFE6FF", ".6"], ["1", "#7FC8FF", "0"]], fcF(N[0]), fcF(N[1]), fcF(N[0] + AX[0] * 22), fcF(N[1] + AX[1] * 22), true);
+    const beamS = fcLin(k, [["0", "#FFFFFF", ".85"], [".4", "#BFE6FF", ".5"], ["1", "#7FC8FF", "0"]], fcF(S[0]), fcF(S[1]), fcF(S[0] - AX[0] * 22), fcF(S[1] - AX[1] * 22), true);
+    /* the sweep: each beam's wake, three fading steps behind it (the star turns the way the wake trails) */
+    k.open("cx-fx cx-fx-sqlight");
+    [[.14, "#7FC8FF", .17], [.32, "#7FC8FF", .08]].forEach(([rot, col, op]) => {
+      k.add("path", { d: wedge(1, 21, 1.4, 3.2 + rot * 5, rot), fill: col, opacity: op });
+      k.add("path", { d: wedge(-1, 21, 1.4, 3.2 + rot * 5, rot), fill: col, opacity: op });
+    });
+    k.close();
+    /* the beams: a wide soft one and a narrow white-hot one in it, out of both poles */
     k.open("cx-fx cx-fx-fcpulse cx-fx-sqlight");
-    k.add("path", { d: wedge(N, AX, 20, 2.4, 6), fill: beamN, opacity: ".32" });
-    k.add("path", { d: wedge(N, AX, 20, 1.1, 2.4), fill: beamN });
-    k.add("path", { d: wedge(S, [-AX[0], -AX[1]], 20, 2, 5), fill: beamS, opacity: ".28" });
-    k.add("path", { d: wedge(S, [-AX[0], -AX[1]], 20, .9, 2), fill: beamS, opacity: ".9" });
+    k.add("path", { d: wedge(1, 22, 1.5, 3.4), fill: beamN, opacity: ".5" });
+    k.add("path", { d: wedge(1, 22, .62, 1.1), fill: beamN });
+    k.add("path", { d: wedge(-1, 22, 1.5, 3.4), fill: beamS, opacity: ".45" });
+    k.add("path", { d: wedge(-1, 22, .56, 1), fill: beamS });
     k.close();
     k.open("cx-body");
     k.add("path", { d: "M5 40 Q5.6 30.8 13.4 28.6 Q20 26.8 26.6 28.6 Q34.4 30.8 35 40 Z", fill: k.headGrad("#2E4670", "#142240", "#050A18") });
-    k.add("path", { d: "M5.9 36.6 Q6.6 31.8 12.6 29.6 M34.1 36.6 Q33.4 31.8 27.4 29.6", fill: "none", stroke: "#DFF3FF", "stroke-width": ".4", opacity: ".6", "stroke-linecap": "round" });
-    /* a collar of pulse rings, drawn as the star's equator would be */
-    k.add("path", { d: "M12.6 31.2 Q20 35.2 27.4 31.2", fill: "none", stroke: ICE, "stroke-width": ".45", opacity: ".8", "stroke-linecap": "round" });
-    k.add("path", { d: "M10 33.2 Q20 38.4 30 33.2", fill: "none", stroke: ICE, "stroke-width": ".3", opacity: ".5", "stroke-linecap": "round" });
-    k.close();
-    k.open("cx-head");
-    k.add("circle", { cx: C[0], cy: C[1], r: R + .9, fill: ICE, opacity: ".28" });
-    k.add("circle", { cx: C[0], cy: C[1], r: R, fill: k.headGrad("#FFFFFF", "#CFE8FF", "#4F82D0"), stroke: "#FFFFFF", "stroke-width": ".4" });
-    /* the star's surface: a bright band of latitude and a lit shoulder */
-    k.add("path", { d: "M12.6 14.6 Q15 11.6 19 11.4", fill: "none", stroke: "#FFFFFF", "stroke-width": ".8", opacity: ".95", "stroke-linecap": "round" });
-    k.add("path", { d: "M14.2 26.4 Q20 29.4 26 26.2", fill: "none", stroke: "#4F82D0", "stroke-width": ".35", opacity: ".5", "stroke-linecap": "round" });
-    /* the south pole's socket, dim; the north pole's is the flare's, below */
-    k.add("circle", { cx: fcF(S[0]), cy: fcF(S[1]), r: 1.3, fill: "#0A1A40", stroke: "#BFE6FF", "stroke-width": ".25" });
-    k.add("circle", { cx: fcF(S[0]), cy: fcF(S[1]), r: .55, fill: "#9FDCFF" });
-    k.open("cx-eyes");
-    [16.8, 23.2].forEach(x => {
-      k.add("ellipse", { cx: x, cy: 20.6, rx: 1.2, ry: 1.9, fill: "#0A1A40" });
-      k.add("ellipse", { cx: x, cy: 21.1, rx: .65, ry: 1.1, fill: "#4F9BFF" });
-      k.add("circle", { cx: x - .38, cy: 19.8, r: .4, fill: "#FFFFFF" });
+    k.add("path", { d: "M5.9 36.6 Q6.6 31.8 12.6 29.6 M34.1 36.6 Q33.4 31.8 27.4 29.6", fill: "none", stroke: PALE, "stroke-width": ".4", opacity: ".55", "stroke-linecap": "round" });
+    /* the pulse profile: stacked lines, each a low noise with its own spike (every one starts and ends on the body's width) */
+    [[32.6, 1, 17.4, 2.6], [34.8, .8, 21.6, 2.1], [37, .6, 14.4, 1.7]].forEach(([y, op, pk, h]) => {
+      let d = "M10.4 " + y;
+      for(let x = 10.4; x < 29.6; x += .8){
+        const dx = x - pk, spike = (Math.exp(-dx * dx / .45) * h + Math.exp(-(dx + 4.4) * (dx + 4.4) / .6) * h * .45), w = Math.sin(x * 2.3 + y) * .18;
+        d += " L" + fcF(x + .8) + " " + fcF(y - spike - w);
+      }
+      k.add("path", { d, fill: "none", stroke: ICE, "stroke-width": ".4", opacity: op * .8, "stroke-linejoin": "round", "stroke-linecap": "round" });
     });
     k.close();
-    k.closedEyes([[16.8, 20.6, 1.5], [23.2, 20.6, 1.5]], "#1A3A78", .55);
-    /* the brows of a thing that has been turning for a billion years */
-    k.add("path", { d: "M14.6 17.4 L18.4 18.6 M25.4 17.4 L21.6 18.6", stroke: "#1A3A78", "stroke-width": ".75", "stroke-linecap": "round" });
-    k.open("cx-mouth");
-    k.add("path", { d: "M18.4 25.2 Q20.2 26.2 22.2 24.8", fill: "none", stroke: "#2A5AA8", "stroke-width": ".5", "stroke-linecap": "round" });
+    k.open("cx-head");
+    /* the star: a dark sphere with a lit rim, banded round by the spin (arcs square to the axis) */
+    k.add("circle", { cx: C[0], cy: C[1], r: R + 1.1, fill: ICE, opacity: ".2" });
+    k.add("circle", { cx: C[0], cy: C[1], r: R, fill: k.headGrad("#4A6AA8", "#14234A", "#03071A"), stroke: PALE, "stroke-width": ".5", "stroke-opacity": ".85" });
+    [-.5, 0, .5].forEach(f => {
+      const d0 = f * R, h = Math.sqrt(R * R - d0 * d0) - .2, a = [C[0] + AX[0] * d0 - AX[1] * h, C[1] + AX[1] * d0 + AX[0] * h], b = [C[0] + AX[0] * d0 + AX[1] * h, C[1] + AX[1] * d0 - AX[0] * h];
+      const m = [C[0] + AX[0] * (d0 + 1.3), C[1] + AX[1] * (d0 + 1.3)];
+      k.add("path", { d: "M" + fcF(a[0]) + " " + fcF(a[1]) + " Q" + fcF(m[0]) + " " + fcF(m[1]) + " " + fcF(b[0]) + " " + fcF(b[1]), fill: "none", stroke: ICE, "stroke-width": ".3", opacity: f ? ".35" : ".5", "stroke-linecap": "round" });
+    });
+    k.add("path", { d: "M13.4 15.4 Q15.2 11.8 19.4 11.8", fill: "none", stroke: "#FFFFFF", "stroke-width": ".7", opacity: ".55", "stroke-linecap": "round" });
+    [[15.4, 25.8], [25, 24.6], [22.8, 14.6]].forEach(([x, y], i) => k.add("circle", { cx: x, cy: y, r: i ? .2 : .28, fill: "#DFF3FF", opacity: ".6" }));
+    /* the south pole's socket, unlit */
+    k.add("circle", { cx: fcF(S[0]), cy: fcF(S[1]), r: 1.45, fill: "#0E2250", stroke: PALE, "stroke-width": ".3" });
+    k.add("circle", { cx: fcF(S[0]), cy: fcF(S[1]), r: .75, fill: "#9FDCFF" });
+    k.open("cx-eyes");
+    k.open("cx-fx cx-fx-sqlight");
+    [17, 23].forEach(x => {
+      k.add("ellipse", { cx: x, cy: 20.4, rx: 2, ry: 2.9, fill: ICE, opacity: ".26" });
+      k.add("ellipse", { cx: x, cy: 20.4, rx: .98, ry: 1.75, fill: "#CFF1FF" });
+      k.add("ellipse", { cx: x, cy: 20.2, rx: .5, ry: 1.1, fill: "#FFFFFF" });
+    });
     k.close();
-    /* the north pole: a socket in the limb, the flare in it, the beam leaving through it */
-    k.add("circle", { cx: fcF(N[0]), cy: fcF(N[1]), r: 1.95, fill: "#0A1A40", stroke: "#DFF3FF", "stroke-width": ".35" });
+    k.close();
+    k.closedEyes([[17, 20.4, 1.3], [23, 20.4, 1.3]], "#9FDCFF", .5);
+    k.open("cx-mouth");
+    k.add("path", { d: "M18.6 25 Q20 25.9 21.4 25", fill: "none", stroke: "#7FC8FF", "stroke-width": ".42", opacity: ".8", "stroke-linecap": "round" });
+    k.close();
+    /* the north pole: a socket in the rim, and the flare set in it - the beam's own lamp */
+    k.add("circle", { cx: fcF(N[0]), cy: fcF(N[1]), r: 1.95, fill: "#050C22", stroke: PALE, "stroke-width": ".35" });
     k.close();
     k.open("cx-fx cx-fx-flare cx-fx-sqlight");
     k.wornFlare(fcF(N[0]), fcF(N[1]), MYSTERY_COLOR.white, "#FFFFFF", .86);
     k.close();
     k.wornFlareFx(fcF(N[0]), fcF(N[1]), MYSTERY_COLOR.white, .86);
-    /* the pulse going out of the pole, as broken rings */
-    k.open("cx-fx cx-fx-star2 cx-fx-sqlight");
-    k.add("path", { d: "M" + fcF(N[0] + 3) + " " + fcF(N[1] - 3.2) + " Q" + fcF(N[0] + 5.4) + " " + fcF(N[1] - 1) + " " + fcF(N[0] + 5) + " " + fcF(N[1] + 2.4), fill: "none", stroke: "#DFF3FF", "stroke-width": ".35", opacity: ".8", "stroke-linecap": "round" });
-    k.add("path", { d: "M" + fcF(N[0] + 4.6) + " " + fcF(N[1] - 5) + " Q" + fcF(N[0] + 8.4) + " " + fcF(N[1] - 1.4) + " " + fcF(N[0] + 7.8) + " " + fcF(N[1] + 3.4), fill: "none", stroke: "#BFE6FF", "stroke-width": ".28", opacity: ".55", "stroke-linecap": "round" });
-    k.close();
   },
   /* ECLIPSE (Genesis's place; 384 round 7: "I don't like solstice"): the moon in front of the sun at totality - a black disc
      with a face of two gold eyes, the corona streaming round it in uneven white and gold wings, the thin pink chromosphere
@@ -78929,55 +78935,69 @@ const IFC_BANNER_ART = {
       { svg: fbEmberSheet(rnd, 480, 90, 20, ["#CDBDFB", "#FFFFFF", "#8B6CF0"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.5" }
     ];
   },
-  /* PULSAR (flare_horizon; was Whiteout) - the white flare's character IS this star: a pulsar with a face. Round 2 (Madison: a stronger design, a
-     characterful face-like core and sweeping beams, the flare white): a bright white core in the middle of the banner with two dark, slanted eyes
-     (each with its glint), a pair of focused brows and a small mouth - the same little star the character draws - two long beams out of its poles
-     sweeping the whole banner like a lighthouse, the field lines looping pole to pole, a ring of radio pulse leaving it with every turn, and
-     the white flare itself, a bead of light on a faint orbit, circling it as the flares circle on Home. Under it a bare world of ice spires
-     that lights white each time a beam crosses. The beams turn, the flare circles, the core breathes, the rings go out, the ground answers. */
+  /* PULSAR (flare_horizon; round 8: "Pulsar character banner is not it and doesn't go with the rest.."): the NEW Pulsar's own picture and
+     nothing else - a dark neutron star with an icy rim, banded round by its spin, two narrow opposed beams out of its poles on a tilted axis
+     sweeping the sky like a lighthouse's (each leaves a fading wake), the flare set in the north pole's socket where the beam begins. It turns
+     as one body, so the beams never leave the flare. It stands over the same ground as the Eclipse banner and the others in the set: low black
+     hills with their pines, a still lake in front with the star and the beams' light in it, a band of the star's colour along the horizon, a
+     cool rim on the ridge. The star turns, its halo breathes, a pulse goes out of it, the stars twinkle, the lake shimmers. */
   flare_horizon(u){
     const rnd = bnRand(3815);
-    const st = bnStarsSplit(rnd, 90, 120);
-    const SX = 240, SY = 74, SR = 25;
-    /* the ice: rows of spires, each a lit left face and a dark right face (the near row darker and taller) */
-    let dark = "", lit = "";
-    const rr = bnRand(77);
-    [[160, 24, 34, "back"], [170, 18, 46, "front"]].forEach(([base, wMin, hMax, row]) => {
-      for(let x = -10; x < 500; x += wMin * (.5 + rr() * .6)){ const w = wMin + rr() * 18, h = (hMax * (.4 + rr() * .6)) * (Math.abs(x - 240) < 90 ? .75 : 1);
-        dark += "M" + bnF(x) + " " + base + " L" + bnF(x + w * .55) + " " + bnF(base - h) + " L" + bnF(x + w) + " " + base + " Z ";
-        lit += "M" + bnF(x) + " " + base + " L" + bnF(x + w * .55) + " " + bnF(base - h) + " L" + bnF(x + w * .55) + " " + base + " Z "; }
+    const st = bnStarsSplit(rnd, 80, 110);
+    const SX = 240, SY = 64, MR = 25, TILT = -24, K = MR / 16;
+    /* the hills' pines, as the Eclipse banner stands them */
+    let pines = ""; const pr = bnRand(913);
+    for(let x = 6; x < 480; x += 8 + pr() * 10){ const h = 8 + pr() * 14, y = 132 - (Math.abs(x - 240) > 150 ? 6 : 0); pines += "M" + bnF(x - 3.4) + " " + y + " L" + bnF(x) + " " + bnF(y - h) + " L" + bnF(x + 3.4) + " " + y + " Z "; }
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#02040C"], [0.5, "#081A3A"], [0.82, "#124A86"], [1, "#4FA0E8"]]) +
+      bnRad(u + "halo", [[0, "#BFE6FF", 0.55], [0.25, "#7FC8FF", 0.22], [0.6, "#2D5DA8", 0.08], [1, "#0B1A3A", 0]]) +
+      bnRad(u + "hz", [[0, "#7FC8FF", 0.55], [1, "#7FC8FF", 0]]) +
+      bnRad(u + "ball", [[0, "#3A5A98"], [0.55, "#12224A"], [1, "#03071A"]], "38%", "34%", "75%") +
+      bnLin(u + "bmN", [[0, "#FFFFFF", 0.98], [0.3, "#CFEAFF", 0.7], [1, "#7FC8FF", 0]], 0, 0, 1, 0) +
+      bnLin(u + "bmS", [[0, "#FFFFFF", 0.9], [0.3, "#CFEAFF", 0.6], [1, "#7FC8FF", 0]], 1, 0, 0, 0) +
+      bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.25, "#FFFFFF", 0.95], [0.55, "#BFE6FF", 0.5], [1, "#7FC8FF", 0]]) +
+      bnLin(u + "hill", [[0, "#050A16"], [1, "#02050C"]]) + bnLin(u + "lake", [[0, "#0E2C52"], [1, "#030812"]]) +
+      bnRad(u + "ring", [[0.8, "#FFFFFF", 0], [0.9, "#DFF3FF", 0.55], [1, "#7FC8FF", 0]]) + '</defs>';
+    /* in the star's own frame the axis runs along +x: a wedge out of one pole (dir 1 north, -1 south) */
+    const W = (dir, len, w0, w1) => '<path d="M' + SX + ' ' + (SY - w0) + ' L' + (SX + dir * len) + ' ' + (SY - w1) + ' L' + (SX + dir * len) + ' ' + (SY + w1) + ' L' + SX + ' ' + (SY + w0) + ' Z"';
+    const rot = a => '<g transform="rotate(' + a + ' ' + SX + ' ' + SY + ')">';
+    let body = "";
+    /* the wake each beam leaves behind it as the star turns: three fading steps */
+    [[-7, .17], [-15, .09], [-25, .045]].forEach(([a, op]) => {
+      body += rot(TILT + a) + W(1, 330, 6, 17 - a * .4) + ' fill="#7FC8FF" opacity="' + op + '"/>' + W(-1, 330, 6, 17 - a * .4) + ' fill="#7FC8FF" opacity="' + op + '"/></g>';
     });
-    const defs = '<defs>' + bnLin(u + "bg", [[0, "#02040C"], [0.6, "#0A1530"], [1, "#16284C"]]) + bnRad(u + "core", [[0, "#FFFFFF", 1], [0.2, "#E4F4FF", 0.9], [0.5, "#9FD0FF", 0.3], [1, "#6FB4F2", 0]]) +
-      bnLin(u + "beam", [[0, "#FFFFFF", 0.95], [0.5, "#CFEAFF", 0.35], [1, "#6FB4F2", 0]], 0, 0, 1, 0) + bnRad(u + "gl", [[0, "#CFEAFF", 0.7], [1, "#CFEAFF", 0]]) + bnRad(u + "halo", [[0, "#DFF1FF", 0.55], [0.4, "#9FD0FF", 0.18], [1, "#6FB4F2", 0]]) +
-      bnRad(u + "disc", [[0, "#FFFFFF"], [0.7, "#F2FAFF"], [1, "#BFE0FF"]], "42%", "38%", "70%") + bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.3, "#FFFFFF", 0.9], [1, "#DFF1FF", 0]]) + '</defs>';
-    const beamPair = '<path d="M' + SX + ' ' + SY + ' L' + (SX + 360) + ' ' + (SY - 26) + ' L' + (SX + 360) + ' ' + (SY + 26) + ' Z" fill="url(#' + u + 'beam)"/><path d="M' + SX + ' ' + SY + ' L' + (SX - 360) + ' ' + (SY + 26) + ' L' + (SX - 360) + ' ' + (SY - 26) + ' Z" fill="url(#' + u + 'beam)"/>';
-    /* the field lines: loops from pole to pole on both sides, in the axis' tilt */
-    let field = ""; [34, 54, 78].forEach((w, i) => { field += '<path d="M' + SX + ' ' + (SY - SR - 2) + ' C' + (SX + w) + ' ' + (SY - SR - 12 - i * 5) + ' ' + (SX + w) + ' ' + (SY + SR + 12 + i * 5) + ' ' + SX + ' ' + (SY + SR + 2) + ' M' + SX + ' ' + (SY - SR - 2) + ' C' + (SX - w) + ' ' + (SY - SR - 12 - i * 5) + ' ' + (SX - w) + ' ' + (SY + SR + 12 + i * 5) + ' ' + SX + ' ' + (SY + SR + 2) + '" fill="none" stroke="#CFEAFF" stroke-width="' + (1 - i * .15) + '" opacity="' + (.7 - i * .16) + '"/>'; });
-    const face = fbC(SX, SY, SR - 3, "url(#" + u + "disc)") + fbC(SX, SY, SR - 3, "none", ' stroke="#9FD0FF" stroke-width=".8"') +
-      [-1, 1].map(s => '<ellipse cx="' + (SX + s * 8.8) + '" cy="' + (SY - .6) + '" rx="3.5" ry="6.4" fill="#0A1630" transform="rotate(' + (s * 13) + ' ' + (SX + s * 8.8) + ' ' + (SY - .6) + ')"/>' + fbC(SX + s * 8.8 - s * 1, SY - 3, 1.3, "#FFFFFF") + fbL("M" + bnF(SX + s * 14.6) + " " + bnF(SY - 11.4) + " L" + bnF(SX + s * 4.4) + " " + bnF(SY - 8.2), "#0A1630", 2)).join("") +
-      fbL("M" + (SX - 4.4) + " " + (SY + 11) + " Q" + SX + " " + (SY + 13) + " " + (SX + 4.4) + " " + (SY + 11), "#0A1630", 1.3);
+    /* the beams: wide and soft, then narrow and white-hot, both poles */
+    body += rot(TILT) + W(1, 340, 5, 13) + ' fill="url(#' + u + 'bmN)" opacity=".42"/>' + W(1, 340, 2.2, 3.4) + ' fill="url(#' + u + 'bmN)"/>' +
+      W(-1, 340, 4.6, 12) + ' fill="url(#' + u + 'bmS)" opacity=".38"/>' + W(-1, 340, 2, 3.1) + ' fill="url(#' + u + 'bmS)"/></g>';
+    /* the star: a dark sphere, its rim lit, the spin's bands round it (arcs square to the axis) */
+    body += '<circle cx="' + SX + '" cy="' + SY + '" r="' + (MR + 5) + '" fill="url(#' + u + 'ring)"/>' +
+      '<circle cx="' + SX + '" cy="' + SY + '" r="' + MR + '" fill="url(#' + u + 'ball)"/><circle cx="' + SX + '" cy="' + SY + '" r="' + (MR - .3) + '" fill="none" stroke="#DFF3FF" stroke-width="2" opacity=".92"/>';
+    body += rot(TILT);
+    [-.5, 0, .5].forEach(f => { const d = f * MR, h = Math.sqrt(MR * MR - d * d) - .8;
+      body += '<path d="M' + bnF(SX + d) + ' ' + bnF(SY - h) + ' Q' + bnF(SX + d + 7) + ' ' + SY + ' ' + bnF(SX + d) + ' ' + bnF(SY + h) + '" fill="none" stroke="#7FC8FF" stroke-width="1.4" opacity="' + (f ? ".38" : ".55") + '" stroke-linecap="round"/>'; });
+    /* the south pole's socket, unlit; the north pole's, with the flare set in it and its glints */
+    body += '<circle cx="' + (SX - MR) + '" cy="' + SY + '" r="' + bnF(4.6 * K) + '" fill="#0E2250" stroke="#DFF3FF" stroke-width="1.2"/><circle cx="' + (SX - MR) + '" cy="' + SY + '" r="' + bnF(2.2 * K) + '" fill="#9FDCFF"/>' +
+      '<circle cx="' + (SX + MR) + '" cy="' + SY + '" r="' + bnF(5.6 * K) + '" fill="#050C22" stroke="#DFF3FF" stroke-width="1.3"/>' +
+      '<circle cx="' + (SX + MR) + '" cy="' + SY + '" r="' + bnF(15 * K) + '" fill="url(#' + u + 'bead)"/><circle cx="' + (SX + MR) + '" cy="' + SY + '" r="' + bnF(3.8 * K) + '" fill="#FFFFFF"/>' +
+      '<path d="M' + (SX + MR - 16 * K) + ' ' + SY + ' L' + (SX + MR + 16 * K) + ' ' + SY + ' M' + (SX + MR) + ' ' + (SY - 16 * K) + ' L' + (SX + MR) + ' ' + (SY + 16 * K) + '" stroke="#FFFFFF" stroke-width=".9" stroke-linecap="round" opacity=".85"/></g>';
+    const R2 = 360;
     return [
-      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'bg)"/>' + st.still },
-      { svg: st.a + st.b, cls: "bl-tw", style: "animation-duration:3.6s" },
-      /* the two beams, turning about the star (the box is square about it so the turn is true) */
-      { svg: beamPair, box: [SX - 360, SY - 360, 720, 720], vb: [SX - 360, SY - 360, 720, 720], o: [SX, SY], cls: "bl-spin", style: "animation-duration:8s" },
-      /* the halo round the core, breathing, and the field lines */
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="96" fill="url(#' + u + 'halo)"/>', box: [SX - 96, SY - 96, 192, 192], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:4s" },
-      { svg: '<g transform="rotate(-24 ' + SX + ' ' + SY + ')">' + field + '</g>', cls: "bl-glow", style: "animation-duration:3.2s" },
-      /* a pulse leaving the star at every turn */
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.4" opacity=".75"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.5s;opacity:0" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.4" opacity=".75"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.5s;animation-delay:-1.75s;opacity:0" },
-      /* the core's glow, pulsing; and its face, steady and opaque (a pulsing layer is part transparent, and the beams would show through it) */
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="' + (SR + 12) + '" fill="url(#' + u + 'core)"/>', box: [SX - SR - 12, SY - SR - 12, 2 * (SR + 12), 2 * (SR + 12)], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:1.6s" },
-      { svg: face },
-      /* the white flare, a bead of light on its orbit round the star */
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="54" fill="none" stroke="#CFEAFF" stroke-width=".5" stroke-dasharray="1.4 4" opacity=".6"/><circle cx="' + (SX + 54) + '" cy="' + SY + '" r="9" fill="url(#' + u + 'bead)"/><circle cx="' + (SX + 54) + '" cy="' + SY + '" r="3.4" fill="#FFFFFF"/><path d="M' + (SX + 54) + ' ' + (SY - 8) + ' L' + (SX + 54) + ' ' + (SY + 8) + ' M' + (SX + 46) + ' ' + SY + ' L' + (SX + 62) + ' ' + SY + '" stroke="#FFFFFF" stroke-width=".8" opacity=".9"/>',
-        box: [SX - 64, SY - 64, 128, 128], vb: [SX - 64, SY - 64, 128, 128], o: [SX, SY], cls: "bl-spin", style: "animation-duration:14s" },
-      /* the ice world: its sky-glow, the spires, their lit edges */
-      { svg: '<ellipse cx="' + SX + '" cy="150" rx="230" ry="40" fill="url(#' + u + 'gl)"/>', box: [SX - 230, 110, 460, 80], cls: "bl-glow", style: "animation-duration:4s" },
-      { svg: fbP(dark, "#0A1630") + fbP(lit, "#4A78B8", ' opacity=".5"') + fbR(-10, 164, 500, 20, "#02050C") },
-      { svg: fbP(lit, "#CFE8FF", ' opacity=".7"'), box: [-10, 90, 500, 74], vb: [-10, 90, 500, 74], clip: "inset(0)", cls: "bl-glow", style: "animation-duration:4s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 18, ["#CFEAFF", "#FFFFFF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:26s;opacity:.4" }
+      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + '<ellipse cx="240" cy="132" rx="320" ry="28" fill="url(#' + u + 'hz)"/>' },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:3.2s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:4.4s;animation-delay:-1.6s" },
+      /* the halo round the star, breathing */
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="url(#' + u + 'halo)"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-breathe", style: "animation-duration:4.6s" },
+      /* a pulse leaving the star with every turn */
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.2" opacity=".7"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.8s;opacity:0" },
+      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="150" fill="none" stroke="#CFEAFF" stroke-width="1.2" opacity=".7"/>', box: [SX - 150, SY - 150, 300, 300], o: [SX, SY], cls: "bl-out", style: "animation-duration:3.8s;animation-delay:-1.9s;opacity:0" },
+      /* the whole star turns - beams, wakes, bands, both sockets and the flare - about its own centre (the box is square about it so the turn is true) */
+      { svg: body, box: [SX - R2, SY - R2, 2 * R2, 2 * R2], vb: [SX - R2, SY - R2, 2 * R2, 2 * R2], o: [SX, SY], cls: "bl-spin", style: "animation-duration:15s" },
+      /* the hills and their pines, the lake in front with the star and the beams' light in it */
+      { svg: '<path d="M-10 140 Q40 118 100 128 Q150 120 200 132 Q240 126 280 132 Q340 118 400 128 Q450 120 500 138 L500 180 L-10 180 Z" fill="url(#' + u + 'hill)"/><path d="' + pines + '" fill="#02050C"/>' +
+          '<path d="M-10 140 Q40 118 100 128 Q150 120 200 132 Q240 126 280 132 Q340 118 400 128 Q450 120 500 138" fill="none" stroke="#7FC8FF" stroke-width="1" opacity=".4"/>' +
+          '<rect x="-10" y="138" width="500" height="42" fill="url(#' + u + 'lake)"/><rect x="-10" y="137.6" width="500" height="1.2" fill="#9FD4FF" opacity=".5"/>' +
+          '<ellipse cx="' + SX + '" cy="150" rx="22" ry="3" fill="#DFF3FF" opacity=".42"/><ellipse cx="' + SX + '" cy="150" rx="64" ry="6" fill="#7FC8FF" opacity=".16"/><ellipse cx="' + SX + '" cy="160" rx="12" ry="2" fill="#DFF3FF" opacity=".26"/>' },
+      { svg: '<rect x="150" y="144" width="180" height="1.1" fill="#FFFFFF" opacity=".2"/><rect x="190" y="152" width="100" height="1.1" fill="#FFFFFF" opacity=".16"/><rect x="170" y="162" width="140" height="1" fill="#9FD4FF" opacity=".14"/>', box: [140, 140, 200, 30], cls: "bl-shimmer", style: "animation-duration:3.4s" },
+      { svg: fbEmberSheet(rnd, 480, 90, 14, ["#CFEAFF", "#FFFFFF", "#9FD4FF"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.35" }
     ];
   },
   /* ECLIPSE (flare_genesis; was Solstice) - the core flare's character is a dark disc over a sun: totality over a quiet lake at the edge of a

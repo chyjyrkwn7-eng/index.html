@@ -36450,3 +36450,41 @@ Madison, after watching the Fire Code videos: "The hundo effects, their borders 
 **Failing the same without this work** (the lead's rungs 25 / 75 / 125 / 200 against gates still written for 50 / 100 / 150 / 200, and fixtures built on them): check-behaviour b313_fx 'four to earn, one ladder of hundos', 'round 4: the 100-hundo rung is Underwater'; b317_hundobox 'each pop-up plays the effect live ... Earn 25', 'a run that takes you to 50 hundos announces Fireworks', 'and Home does not announce it again', 'Zenith counts the hundo effects: one short at 190'. `need` numbers were not touched.
 **Not confirmable in Chromium:** the light layer's strength on an OLED screen, the safe areas around the unlock pop-up, and how smooth the Hazmat jet and vapour are on a phone (the clock-driven recording is smooth by construction). Not merged.
 (r2, last) The hundo effect detail card (showUnlockDetail, .unlock-card-fx) name is the app sans too, like the pop-up; check-b384-hundoclean (C4) holds it (62 FAIL on the previous build, all PASS now).
+
+## 384 round 8 (r3-chars): the Fire Code characters, third review; the Pulsar banner (branch r3-chars, cut from claude/b384 c8143d5; NOT on main)
+
+Madison on round 7's art: Undercover "not a fan.. try something else"; Pump Operator "I don't like the pump operator, try something else"; Sprinkler "not sure what happened to the
+sprinkler head, try again there or revert"; Pulsar "try something else"; the Pulsar banner "is not it and doesn't go with the rest". Only IFC_CHAR_LOOK / IFC_BACKDROP / IFC_CHAR_DRAW (and the
+seat/scale lines under them) and the Fire Code `flare_horizon` banner changed; ids, challenges, unlock rules and glow colours are as they were (valkyrie `studyrun7` "Study 7 days in a row",
+timekeeper `days30` = 14 different days in Fire Code, hive "Play every mode 3 times", singularity the white flare).
+- LOOKOUT (valkyrie, `fclookout`; was Undercover/fcundercover): a fire lookout tower with a face - the one post on the ridge that is manned every day, which is seven days in a row. NOT a person in a
+  hat (Inspector, Chief, Smoke Diver, Drone Pilot and Hazmat already are; and the round-2 rule of "fire prevention agency: no engines, ladders or dogs" ruled out the Dalmatian and the truck, so
+  the Dalmatian idea was not used). Trestle of two splayed legs with cross braces standing on a mound, a catwalk with railing, a cabin whose two lit windows are the eyes (dark pupils, glints) and a smile
+  in the siding, a hip roof, a pole into the roof with a red pennant that flutters (cx-fx-fcflame, scale from its own base - cx-fx-fcbeam would swing it about the view-box centre), a pine each side
+  behind the legs. Every piece overlaps what it stands on. Dusk scene (pink/orange nebula, stars, rising embers). AVATAR_ART_SCALE .88. No hat group, so check-b382-ifcart's hat whitelist is not touched.
+- SMOKE ALARM (timekeeper, `fcsmoke`; was Pump Operator/fcpump): the detector on the ceiling that is simply there, watching - a round cream alarm seen from below, a ring of 20 radial vent slots cut
+  across its recessed ring, a raised centre cap that holds the face, a red lamp on the cap's edge that blinks (cx-fx-fcflash), two arcs of sound either side (cx-fx-fcwave, concentric with the
+  housing). A round object, not a person, and clearly not Strobe (red box), Sprinkler, Toxic Spill or Hazmat. The hydrant, extinguisher and thermal camera ideas were not used (hydrant and extinguisher
+  are retired, the camera is the Fire Code hundo effect's).
+- SPRINKLER HEAD (hive, `fcsprinkler3`; was fcsprinkler2): looked at the build before round 7 (976c414: a chrome robot head with a crown of tines and arms rising like horns - the one Madison said was "hard to
+  tell now that it's a sprinkler head") and at c8143d5's (a dark crab: a deflector face with legs). Neither was reverted to: both put the face where a sprinkler has none or hid the parts. Redrawn as the real part
+  on one axis, every piece overlapping the next: feed pipe (it runs up out of the coin, so it has no free end), brass threaded inlet with four ridges, a chrome hex collar, a BRASS BODY that is the head and holds
+  the face (white eyes with dark irises and glints, brows, a smile), two chrome frame arms from under its shoulders to the boss, the red glass bulb between them (top under the body, foot in the boss),
+  a notched 48-vertex deflector hung from the boss, and the water as a cone under it with streaks, glints and falling drops. Kept the parts the older gate demands (cx-fx-fcspray, cx-fx-scopeglow on the
+  bulb) and gained cx-fx-star (glints on the water). AVATAR_ART_SCALE .82, seat -2.2.
+- PULSAR (singularity, `fcpulsar`): a dark neutron star in the squad's finish (dark sphere, icy rim, two lit vertical eyes, small smile) - not a white star with a face. Its two beams are one
+  straight axis through the head tilted -24 degrees, narrow (white-hot core under 1.2 half-width, a soft one round it), each leaving a three-step fading WAKE behind it (the star turning); the
+  surface is banded by arcs square to the axis; across the chest runs the pulse profile of the first pulsar found (three stacked lines, each with its spike). The flare is the north pole's lamp: a
+  socket in the rim and the bead set in it exactly on the rim and on the beam's axis, with the beam's core starting from it; the south pole has the same socket, unlit. The beams pulse (cx-fx-fcpulse);
+  they do not turn, or they would leave the flare behind.
+- PULSAR BANNER (flare_horizon, Fire Code's; the academy's "Horizon" banner is the other function of the same name and is untouched): the new Pulsar as a picture - a dark star with a lit rim banded by its
+  spin, two narrow opposed beams with their wakes, the flare in the north pole's socket. THE STAR TURNS AS ONE BODY: beams, wakes, bands, both sockets and the flare's bead are one `bl-spin` layer, so the
+  beam never leaves the flare (a banner can turn what a 40-unit character cannot). The ground is the Eclipse banner's, exactly: black hills and pines, the cool rim on the ridge, a still lake with the star
+  in it, a shimmer, the horizon glow band, embers. Nothing of the old banner (the face, the field lines, the ice spires, the orbiting bead on a dotted ring) is left. Tint stays ["#6FB4F2", "#CFEAFF"].
+- GATES: tools/check-b384-r3-chars.py (new; every line fails on c8143d5): the four names/kinds, Pulsar's dark head, narrow opposed beams on a tilted axis, the flare on the rim and on the beam's axis, the wake
+  and the pulse profile, the banner turning as one body, standing on the Eclipse ground, with no leftover and no stray piece. Updated to the new names/shapes: check-b384-fcchars3 (A, D, G),
+  check-b384-fcchars2 (B), check-b382-ifcart (the name list). New tool: tools/shoot-fc-banners.py (the app's own banners as a sheet; --ids, --against, --w, --dpr).
+  Passing now: fcchars2, fcchars3, ifcchars, sets, secretnames, batch, r2-connect, acchars, fcbanners, banners, r3-chars. check-b382-ifcart has the same five failing lines on c8143d5 and now (forge unchanged,
+  the academy-art hashes twice, the hundo ladder, round 3's list) - none from this work.
+- NOT CONFIRMABLE in Chromium: how the Lookout pennant, the Smoke Alarm lamp and arcs and the Pulsar beams' pulse read at 26 px in motion on a phone, and the banner's turn on an iPhone's compositor
+  (it is a transform on one layer, like the other banners').
