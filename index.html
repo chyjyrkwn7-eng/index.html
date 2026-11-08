@@ -12357,8 +12357,8 @@
   /* ===== round 3: the results screen in miniature ===== */
   .hfx-mock{ position:relative; display:flex; flex-direction:column; gap:.3rem; width:100%; aspect-ratio:4 / 5.8; padding:.6rem .55rem .55rem; box-sizing:border-box;
     border-radius:14px; overflow:hidden; clip-path:inset(0 round 14px); isolation:isolate; text-align:left; pointer-events:none;
-    background:radial-gradient(120% 60% at 50% 0%, rgba(140,70,100,.32), rgba(0,0,0,0) 62%), radial-gradient(90% 50% at 50% 110%, rgba(180,120,60,.18), rgba(0,0,0,0) 70%), #121019;
-    border:1px solid rgba(255,255,255,.08); --rs-card:rgba(24,29,37,.7); }
+    /* (384, r2) the results screen's own ground (the page's paper) and its solid cards: no wash, no border */
+    background:var(--paper, #0E1118); border:0; --rs-card:var(--clean-card, #232830); }
   .hfx-mock > .rs-head{ display:flex; flex-direction:column; gap:.08rem; margin:0; padding:.05rem .15rem; }
   .hfx-mk-title{ font-size:.7rem; font-weight:800; color:var(--ink); }
   .hfx-mk-sub{ font-size:.5rem; color:var(--soft); }
@@ -12368,7 +12368,7 @@
   .hfx-mk-fracsub{ font-size:.42rem; color:var(--soft); }
   .hfx-mk-unit{ margin:.25rem 0 0; padding-top:.25rem; border-top:1px solid rgba(255,255,255,.08); font-size:.5rem; font-weight:700; color:var(--ink); }
   .hfx-mk-kicker.is-sub{ margin-top:.18rem; margin-bottom:.12rem; }
-  .hfx-mock > .rs-card{ position:relative; border:1px solid rgba(255,255,255,.1); border-radius:10px; background:linear-gradient(180deg, rgba(46,135,240,.1), rgba(24,29,37,.7) 60%); padding:.4rem .5rem .45rem; }
+  .hfx-mock > .rs-card{ position:relative; border:0; border-radius:10px; background:var(--clean-card, #232830); padding:.4rem .5rem .45rem; }
   .hfx-mk-kicker{ margin:0 0 .2rem; font-size:.42rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); }
   .hfx-mk-line{ display:flex; justify-content:space-between; margin:0 0 .07rem; font-size:.5rem; color:var(--soft); }
   .hfx-mk-line b{ color:#8FB9FF; font-weight:800; }
@@ -12377,7 +12377,7 @@
   .hfx-mk-bar{ display:block; height:3px; margin-top:.3rem; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; }
   .hfx-mk-bar > i{ display:block; height:100%; width:34%; border-radius:2px; background:#6FA8FF; }
   .hfx-mk-bar.is-unit > i{ width:100%; }
-  .hfx-mock > .rs-card.rs-grade.is-perfect{ border-color:rgba(242,211,138,.2); background:linear-gradient(180deg, var(--hfx-wash), rgba(24,29,37,.8) 60%); }
+  .hfx-mock > .rs-card.rs-grade.is-perfect{ background:var(--clean-card, #232830); }
   .hfx-mk-row{ display:flex; align-items:center; gap:.5rem; margin:.1rem 0 .3rem; }
   .hfx-mock .rs-pct{ position:relative; font-family:var(--sans); font-weight:800; font-size:1.65rem; line-height:1; letter-spacing:-.045em; color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.3); }
   .hfx-mock .rs-grade-frac{ font-size:.6rem; font-weight:800; color:var(--ink); margin:0; }
@@ -12608,7 +12608,7 @@
      an inner glow. Since build 317 round 3 it goes on as the card is BUILT
      (hfxTintGrade) - no transition from gold - and the words in the box
      stay the default's on every effect. */
-  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{ border-color:var(--hfx-rim, color-mix(in srgb, var(--hfx-b) 46%, transparent));
+  .rs-screen .rs-card.rs-grade.is-perfect.hfx-tinted, .hfx-stage.hfx-tinted, .rs-screen .rs-card.hfx-preview-card.hfx-tinted, .hfx-mock > .rs-card.rs-grade.hfx-tinted{
     --hfx-wash:color-mix(in srgb, var(--hfx-b) 20%, transparent); --hfx-fa:var(--hfx-g2); --hfx-fb:var(--hfx-g1); }
   /* THE 100% ITSELF IN THE EFFECT'S RAMP (build 317, round 3) - the number
      and its inline % as one piece of type, not a copy laid over a gold
@@ -12627,8 +12627,14 @@
      up dark and SNAPPED to its glow on the last frame. --hfx-glow is the
      same colour written as rgba() by hfxTintVars, which interpolates. */
   /* soft, as every card's edge (327, round 6 - see SOFT EDGES) */
-  .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
-    box-shadow:0 0 22px -8px var(--hfx-rimglow, color-mix(in srgb, var(--hfx-b) 42%, transparent)), inset 0 0 0 1px var(--hfx-rimline, color-mix(in srgb, var(--hfx-b) 18%, transparent)), inset 0 0 24px var(--hfx-rimin, color-mix(in srgb, var(--hfx-b) 26%, transparent)); }
+  /* (384, r2) THE EFFECT'S COLOUR IS LIGHT ON THE CARD, NEVER ITS FRAME. "The hundo effects, their borders look like the
+     version still? And some of it still looks like the old version?" The box keeps the app's card (solid --clean-card, no border,
+     no shadow) and this one layer of light sits on it, behind the words: a wash down from the top and a pool of the colour
+     behind the 100 (--hfx-lx, where the number is). No hairline, no inset rim, no glow off the edge - those read as a coloured
+     frame. */
+  .hfx-tint{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none; --hfx-lx:24%;
+    background:radial-gradient(ellipse 62% 78% at var(--hfx-lx) 46%, color-mix(in srgb, var(--hfx-wash) 90%, transparent), transparent 74%),
+      linear-gradient(180deg, color-mix(in srgb, var(--hfx-wash) 62%, transparent), transparent 58%); }
   .hfx-tinted .hfx-tint{ opacity:1; }
   /* THE UFO'S BOX IS DARK UNTIL ITS BEAM STRIKES (build 317, round 5):
      "before the ufo lands on it, the box already has the beam there, I've
@@ -12679,8 +12685,8 @@
      offsetLeft can find it. */
   .hfx-stage{ position:relative; display:grid; place-items:center; width:100%; aspect-ratio:16 / 6; overflow:hidden;
     --hfx-r:12px; border-radius:12px; clip-path:inset(0 round 12px);
-    background:linear-gradient(180deg, rgba(226,178,60,.16), rgba(24,29,37,.96) 72%), #141820;
-    border:1px solid rgba(242,211,138,.2); }
+    /* (384, r2) the app's card: solid, no border, no shadow (it was a gold wash and a gold hairline) */
+    background:var(--clean-card, #232830); border:0; --hfx-lx:50%; }
   /* the grade's own face and small raised % (build 315, gradePctMarkup) */
   .hfx-stage-pct{ display:block; font-family:var(--sans); font-weight:800; font-size:1.4rem; line-height:1; letter-spacing:-.045em; font-variant-numeric:lining-nums tabular-nums;
     color:#F6D58E; text-shadow:0 0 14px rgba(246,213,142,.32); }
@@ -12689,10 +12695,7 @@
   .hfx-stage-still{ position:absolute; right:7%; top:12%; bottom:12%; aspect-ratio:1; }
   .hfx-stage-still svg{ display:block; width:100%; height:100%; }
   /* a Customize tile: the effect's still round a box in its colours (build 314) */
-  .hfx-stage.is-poster{ isolation:isolate;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-b, #E2B23C) 16%, transparent), rgba(18,22,30,.96) 74%), #10141B; }
-  .hfx-stage.is-poster.hfx-stage-confetti{ background:linear-gradient(180deg, rgba(226,178,60,.18), rgba(24,29,37,.96) 72%), #141820; }
-  .hfx-stage.is-poster.hfx-stage-ufo{ background:linear-gradient(180deg, #05080A, #0B1410 70%, #0E1A13); }
+  .hfx-stage.is-poster{ isolation:isolate; background:var(--clean-card, #232830); }
   .hfx-poster{ position:absolute; inset:0; width:100%; height:100%; display:block; z-index:0; pointer-events:none; }
   .hfx-stage.is-poster .hfx-tint{ z-index:1; }
   .hfx-stage.is-poster .hfx-stage-pct{ position:relative; z-index:2; }
@@ -23695,7 +23698,7 @@
   .rs-spot > .rs-spot-card{ position:relative; z-index:1; }
   .rs-spot > .hfx-layer.is-inset{ z-index:2; }
   .rs-spot-art.is-fx{ width:min(15rem, 70vw); height:auto; filter:none; }
-  .rs-spot-art.is-fx .hfx-stage{ box-shadow:0 10px 40px rgba(0,0,0,.5), 0 0 28px color-mix(in srgb, var(--spot-color) 30%, transparent); }
+  .rs-spot-art.is-fx .hfx-stage{ box-shadow:none; background:var(--clean-card-2, #2C323C); }
   .rs-unlock-fx .rs-unlock-art{ filter:none; }
 
   /* The unlock card on the results screen shows the banner itself. */
@@ -38029,25 +38032,31 @@ html.is-browser{ --fade-paper: transparent; }
     -webkit-backdrop-filter:none !important; backdrop-filter:none !important;
   }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card .rs-grade-tone{ display:none !important; }
-  /* ...and the miniature of it in a hundo effect's preview (Customize): the same solid card, the same glow layer */
+  /* ...and the miniature of it in a hundo effect's preview (Customize): the same solid card, the same light layer */
   html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card{ background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important; }
-  html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted{ isolation:isolate; border-color:var(--hfx-rim, rgba(255,255,255,.14)) !important; }
-  html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted > .hfx-tint{
-    z-index:-1; background:linear-gradient(180deg, var(--hfx-wash), transparent 68%);
-    box-shadow:0 0 0 1px var(--hfx-rimline, rgba(255,255,255,.12)), 0 0 16px -4px var(--hfx-rimglow, rgba(255,255,255,.2)), inset 0 0 16px var(--hfx-rimin, rgba(255,255,255,.1));
-  }
-  /* the one line it keeps: a hairline of the effect's colour (--hfx-rim, the soft edge every box has carried since 327) - the card's own
-     border, so a box in its effect's colours still reads it from its first frame to its last */
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted{ isolation:isolate; border-color:var(--hfx-rim, rgba(255,255,255,.14)) !important; }
-  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted > .hfx-tint{
-    z-index:-1; background:linear-gradient(180deg, color-mix(in srgb, var(--hfx-wash) 52%, transparent), transparent 56%);
-    box-shadow:0 0 30px -6px var(--hfx-rimglow, rgba(255,255,255,.2)), 0 0 72px -26px var(--hfx-rimglow, rgba(255,255,255,.2)), inset 0 0 22px color-mix(in srgb, var(--hfx-rimin, rgba(255,255,255,.1)) 42%, transparent);
-  }
+  /* (384, r2) NO LINE OF ITS OWN: the tinted box's border is the XP card's - none. The effect's colour is the .hfx-tint layer's light
+     (a wash and a pool behind the number) and nothing else; it sits behind the words in a box of its own stacking. */
+  html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted, html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted{ isolation:isolate; }
+  html[data-theme="dark"][data-layout="modern"] .hfx-mock > .rs-card.rs-grade.hfx-tinted > .hfx-tint, html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-card.rs-grade.hfx-tinted > .hfx-tint{ z-index:-1; }
+  /* its unit bar is a flat fill in the effect's colours, like the level bar beside it: no glow round it */
+  html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-byunit .unit-breakdown-fill.is-gold{ box-shadow:none; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen :is(.rs-byunit, .rs-xptotal){ border-color:var(--clean-line) !important; background:transparent !important; }
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .rs-screen .rs-mode{
     border-color:transparent !important; box-shadow:none !important; background-image:none !important;
     background-color:color-mix(in srgb, currentColor 13%, transparent) !important;
   }
+  /* (384, r2) THE HUNDO EFFECT'S UNLOCK POP-UP wears the same card: solid, no coloured frame, no coloured glow off it, no hazard
+     stripe, no serif; the effect's colour is a light at the top of the card and the words' own accent. The small box in it is
+     the card one step lighter. */
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-card{
+    background:radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--spot-color) 12%, transparent), transparent 64%), var(--clean-card);
+    border:0; box-shadow:0 24px 60px rgba(0,0,0,.5); }
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-strip{ background:var(--clean-card-2); box-shadow:none; }
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-strip span{ color:var(--soft); text-shadow:none; font-weight:800; }
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-kicker{ color:var(--soft); }
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-name{ font-family:var(--sans); font-weight:800; letter-spacing:-.02em; }
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-need{ background:var(--clean-card-2); border:0; }
+  html[data-theme="dark"][data-layout="modern"] .rs-spot.rs-spot-fx .rs-spot-need-label{ color:var(--soft); }
   /* Review's and Starred's head card: the solid card, its mark keeps its colour */
   html[data-theme="dark"][data-layout="modern"] body:not(.sky-home) #stage .ar-head{
     background:var(--clean-card) !important; background-image:none !important; border-color:transparent !important; box-shadow:none !important;
