@@ -79901,103 +79901,83 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* TEN IN A ROW (was Hose Line; for acing 10 different units in a row; round 4, Madison: "The 10 gauges one, that's kinda cool but make it an actual system or just try better. It's a cool concept.") -
-     the ten gauges become a real, connected SYSTEM: a fire-sprinkler control room's wall. A thick red HEADER runs the width of the wall on strut posts, fed by a riser up from the floor on the left (a
-     flanged foot, a main OS&Y valve with its handwheel); ten branches rise out of it through welded collars, and each branch has an OS&Y control valve (flanges, the red body, a yoke, a rising stem, a
-     handwheel), a flow switch clamped on above it, and a pressure gauge on top with its needle in the green; a conduit leaves each flow switch, goes up the gap beside the gauge and ends at a pilot lamp,
-     lit; under the header, a numbered zone plate hangs from two rods on its branch (1 to 10). A plate on the wall reads TEN UNITS IN A ROW. An inspector's clipboard hangs from a hook at the end of the
-     wall. Pipe has its own shadow on the block wall, flanges are chrome with bolts, the green of the ten lamps washes the wall. Every pipe meets another or the floor or a fitting; nothing floats.
-     Moves: the ten lamps breathing one after another along the row, dust in the green light. */
+  /* CLEAN SWEEP (was Ten in a Row; for acing 10 different units in a row. Round 6, Madison: "I'm not a fan of the 10 in the row ones") - one floor of a building at night,
+     inspected door by door and every one passed: a corridor in one-point perspective, five doors down each wall, and on the lever of every one of the ten a green
+     inspection tag with a white tick, glowing a little in the dark; the double doors at the far end under a red EXIT sign; the ceiling's lights off but for the
+     emergency lamps, a pool under each on the polished floor, which gives back the tags and the EXIT. No figure: the ten tags are the subject, and at handle height
+     they sit on the eye line, where anyone standing in the corridor would hide some of them. Moves: the tags glowing in two groups, the EXIT breathing, dust. */
   exam100(u){
     const rnd = bnRand(1001);
-    const N = 10, X0 = 48, PITCH = 41.4, GCY = 52, GR = 10.8, HY0 = 122, HY1 = 136, XE0 = 14, XE1 = 438;
-    const gx = i => X0 + i * PITCH;
-    const defs = '<defs>' + bnLin(u + "wall", [[0, "#173038"], [1, "#0B171D"]]) + bnLin(u + "floor", [[0, "#1B262C"], [1, "#080C10"]]) + bnLin(u + "chromeV", [[0, "#FFFFFF"], [0.45, "#A6B0BC"], [1, "#4E5866"]]) +
-      bnLin(u + "chromeH", [[0, "#5A6472"], [0.35, "#F2F6FA"], [0.7, "#A6B0BC"], [1, "#4A5260"]], 0, 0, 1, 0) + bnLin(u + "pipeV", [[0, "#6A120A"], [0.28, "#F0644E"], [0.55, "#D23A2A"], [1, "#6A120A"]], 0, 0, 1, 0) +
-      bnLin(u + "pipeH", [[0, "#F8786A"], [0.3, "#D23A2A"], [0.7, "#A8281E"], [1, "#5A0E08"]]) + bnLin(u + "body", [[0, "#6A120A"], [0.3, "#E0483A"], [0.6, "#B02A1E"], [1, "#5A0E08"]], 0, 0, 1, 0) +
-      bnLin(u + "face", [[0, "#FFFFFF"], [1, "#D4DAD6"]]) + bnLin(u + "plate", [[0, "#26343E"], [1, "#0E161C"]]) + bnLin(u + "strut", [[0, "#8A96A4"], [0.5, "#5A6674"], [1, "#2E3844"]], 0, 0, 1, 0) +
-      bnLin(u + "box", [[0, "#5A6674"], [1, "#222C36"]]) + bnLin(u + "board", [[0, "#9A6A3E"], [1, "#5A3A1E"]]) +
-      bnRad(u + "lamp", [[0, "#5CFFA6", .8], [0.5, "#5CFFA6", .26], [1, "#5CFFA6", 0]]) + bnRad(u + "wash", [[0, "#6CFFC0", .2], [1, "#6CFFC0", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .5]]) + '</defs>';
-    const bolts = (x, y, w, n) => { let d = ""; for(let k = 0; k < n; k++) d += "M" + bnF(x + 1.4 + (w - 2.8) * (n === 1 ? .5 : k / (n - 1))) + " " + bnF(y) + " l0 0 "; return '<path d="' + d + '" stroke="#2A323C" stroke-width="1.1" stroke-linecap="round" fill="none"/>'; };
-    /* one pressure gauge (a bezel, face, red / amber / green arcs, ticks, the needle pinned in the green, glare) on its stem */
-    const gauge = (x, y, i) => {
-      const r = GR, a0 = 135, sweep = 270, P = (ang, rad) => [x + Math.cos(ang * Math.PI / 180) * rad, y + Math.sin(ang * Math.PI / 180) * rad].map(bnF);
-      const arc = (f0, f1, col) => { const p0 = P(a0 + f0 * sweep, r * .74), p1 = P(a0 + f1 * sweep, r * .74); return '<path d="M' + p0.join(" ") + ' A' + bnF(r * .74) + ' ' + bnF(r * .74) + ' 0 ' + ((f1 - f0) * sweep > 180 ? 1 : 0) + ' 1 ' + p1.join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + bnF(r * .17) + '"/>'; };
-      let ticks = "";
-      for(let t = 0; t <= 10; t++){ const p0 = P(a0 + t / 10 * sweep, r * .62), p1 = P(a0 + t / 10 * sweep, r * (t % 5 ? .56 : .5)); ticks += "M" + p0.join(" ") + " L" + p1.join(" ") + " "; }
-      const fr = .955 + (i % 3) * .008, na = a0 + fr * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
-      return fbR(x - 2.2, y + r - 1, 4.4, 6.4, "url(#" + u + "chromeH)", ' stroke="#4A5260" stroke-width=".4"') + '<g class="fb-gauge">' + fbC(x, y, r + 1.2, "url(#" + u + "chromeV)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
-        arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".7" fill="none"/>' +
-        '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + fr.toFixed(3) + '" stroke="#C0201A" stroke-width="1.4" stroke-linecap="round" fill="none"/>' + fbC(x, y, 1.9, "#1A232B") +
-        '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.3" opacity=".5" stroke-linecap="round"/></g>';
-    };
-    /* an OS&Y valve on a vertical pipe at x, its body between y0 (top flange) and y1 (bottom flange): flanges with bolts, the red body, the yoke's two posts and crossbar, the rising stem and the handwheel */
-    const osy = (x, y0, y1, k) => {
-      k = k || 1; const mid = (y0 + y1) / 2, bw = 8.4 * k, fw = 6.8 * k, yk = y0 - 10 * k;
-      let s = fbR(x - fw, y1 - 2.8, fw * 2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - fw, y1 - 1.4, fw * 2, 4) +
-        '<path d="M' + bnF(x - 5 * k) + ' ' + bnF(y1 - 2.8) + ' Q' + bnF(x - bw) + ' ' + bnF(mid) + ' ' + bnF(x - 5 * k) + ' ' + bnF(y0 + 2.8) + ' L' + bnF(x + 5 * k) + ' ' + bnF(y0 + 2.8) + ' Q' + bnF(x + bw) + ' ' + bnF(mid) + ' ' + bnF(x + 5 * k) + ' ' + bnF(y1 - 2.8) + ' Z" fill="url(#' + u + 'body)" stroke="#3A0A06" stroke-width=".5"/>' +
-        fbR(x - fw, y0, fw * 2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - fw, y0 + 1.4, fw * 2, 4) +
-        fbR(x - 4.8 * k, yk + 1.4, 1.5 * k, y0 - yk - 1.4, "url(#" + u + "strut)") + fbR(x + 3.3 * k, yk + 1.4, 1.5 * k, y0 - yk - 1.4, "url(#" + u + "strut)") + fbR(x - 6 * k, yk, 12 * k, 2.6 * k, "url(#" + u + "chromeV)", ' rx=".6" stroke="#4A5260" stroke-width=".4"') +
-        fbR(x - .8 * k, yk - 8 * k, 1.6 * k, y0 - yk + 8 * k, "#DCE4EC") + fbR(x - .8 * k, yk - 8 * k, .6 * k, y0 - yk + 8 * k, "#FFFFFF", ' opacity=".8"');
-      const hy = yk - 8 * k; let sp = ""; for(let a = 0; a < 4; a++){ const an = a * Math.PI / 2 + .4; sp += "M" + bnF(x + Math.cos(an) * 1.6 * k) + " " + bnF(hy + Math.sin(an) * 1.6 * k) + " L" + bnF(x + Math.cos(an) * 4.2 * k) + " " + bnF(hy + Math.sin(an) * 4.2 * k) + " "; }
-      return '<g class="fb-valve">' + s + '<g class="fb-wheel">' + fbC(x, hy, 5.2 * k, "none", ' stroke="#E8402E" stroke-width="' + bnF(1.5 * k) + '"') + '<path d="' + sp + '" stroke="#C0301F" stroke-width="' + bnF(1 * k) + '" stroke-linecap="round" fill="none"/>' + fbC(x, hy, 1.6 * k, "url(#" + u + "chromeV)", ' stroke="#4A5260" stroke-width=".3"') + '</g></g>';
-    };
-    let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
-    /* the block wall: courses and staggered joints, the baseboard and the floor */
-    let blocks = ""; for(let y = 8, r = 0; y < 159; y += 12, r++){ blocks += "M0 " + y + " L480 " + y + " "; for(let x = (r % 2) * 26; x < 480; x += 52) blocks += "M" + x + " " + y + " L" + x + " " + (y + 12) + " "; }
-    g += '<path d="' + blocks + '" stroke="#06101A" stroke-width=".9" opacity=".6" fill="none"/>' + '<ellipse cx="240" cy="48" rx="270" ry="56" fill="url(#' + u + 'wash)"/>' +
-      fbR(0, 152, 480, 8, "#0E161C") + fbR(0, 152, 480, 1.2, "#3A4856") + fbR(0, 159, 480, 21, "url(#" + u + "floor)") + fbR(0, 159, 480, 1.4, "#06090C");
-    /* the title plate on the wall: a dark plate with its four bolts and the engraving */
-    g += fbR(172, 12.5, 136, 11, "#000", ' opacity=".45" rx="2" transform="translate(1.6 2.6)"') + fbR(172, 12.5, 136, 11, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".9"') + [[176, 15.5], [304, 15.5], [176, 20.5], [304, 20.5]].map(p => fbC(p[0], p[1], .9, "#8A98A6")).join("") + fbText("TEN UNITS IN A ROW", 240, 18, 6, "#E4EEF4", 1.1);
-    /* strut posts on the wall that carry the header (a channel each, with the clamp that holds the pipe) */
-    const STR = [gx(0) + 20.7, gx(4) + 20.7, gx(8) + 20.7];
-    STR.forEach(x => { g += fbR(x - 3 + 2.4, 112, 6, 42, "#000", ' opacity=".3"') + fbR(x - 3, 112, 6, 42, "url(#" + u + "strut)", ' stroke="#2A323C" stroke-width=".5"') + fbR(x - .6, 113, 1.2, 40, "#1A222C") + fbR(x - 5.6, 119.6, 11.2, 3, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + fbR(x - 5.6, 135.4, 11.2, 3, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + fbR(x - 4.6, 122, 1, 14, "#8A96A4") + fbR(x + 3.6, 122, 1, 14, "#8A96A4"); });
-    /* the branches: pipe, shadow, collar at the header, the valve, a flow switch clamped on, the gauge's stem into the gauge; the conduit to the lamp */
-    for(let i = 0; i < N; i++){
-      const x = gx(i);
-      g += fbR(x - 3.4 + 2.6, 62, 6.8, 62, "#000", ' opacity=".3"') + fbR(x - 3.4, 62, 6.8, 62, "url(#" + u + "pipeV)", ' class="fb-branch"') + fbR(x - 1.5, 62, 1, 62, "#FFC0B0", ' opacity=".4"');
-      g += fbR(x - 6, 117.4, 12, 4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - 6, 119.4, 12, 4);
-      g += osy(x, 94, 110.8, 1);
-      /* the flow switch: a saddle clamp round the pipe, the housing on the side, a conduit port, a tiny paddle window */
-      g += fbR(x - 4.4, 66, 8.8, 3.2, "url(#" + u + "chromeV)", ' rx=".6" stroke="#4A5260" stroke-width=".4"') + fbR(x + 3.4, 63.4, 8.6, 8.6, "url(#" + u + "box)", ' class="fb-flowsw" rx="1.2" stroke="#10161C" stroke-width=".5"') + fbR(x + 4.4, 64.4, 6.6, 1.6, "#9AA6B4", ' opacity=".6"') + '<path d="M' + bnF(x + 8.2) + ' 69 l0 0" stroke="#10161C" stroke-width="2.2" stroke-linecap="round"/>' + fbR(x + 11.6, 66.4, 1.6, 3, "#3A4452");
-      /* the conduit: out of the housing, up the gap beside the gauge, along to the lamp's base, with two clamps */
-      g += '<path d="M' + bnF(x + 13.2) + ' 67.8 L' + bnF(x + 17.6) + ' 67.8 L' + bnF(x + 17.6) + ' 31.2 L' + bnF(x + 4.6) + ' 31.2" fill="none" stroke="#8A96A6" stroke-width="2" stroke-linejoin="round" stroke-linecap="butt" class="fb-conduit"/>' +
-        '<path d="M' + bnF(x + 15.8) + ' 56 h3.6 v2 h-3.6 Z M' + bnF(x + 15.8) + ' 44 h3.6 v2 h-3.6 Z" fill="#3A4452"/>';
-      g += gauge(x, GCY, i);
-    }
-    /* the header: a thick red pipe the width of the wall, a flange at each end, the weld collars at each branch were drawn over it; its shadow below */
-    g += fbR(XE0 + 2.6, HY0 + 3, XE1 - XE0, HY1 - HY0, "#000", ' opacity=".34" rx="2"') + fbR(XE0, HY0, XE1 - XE0, HY1 - HY0, "url(#" + u + "pipeH)", ' rx="2" class="fb-header"') + fbR(XE0 + 1, HY0 + 2, XE1 - XE0 - 2, 2.8, "#FFA896", ' opacity=".7" rx="1.4"') + fbR(XE0 + 1, HY1 - 2.4, XE1 - XE0 - 2, 1.6, "#2A0604", ' opacity=".5"');
-    /* the header's flanges at the ends (the right one capped), and the three struts' clamps already hold it between */
-    [XE0 - 1, XE1 - 2.6].forEach((x, k) => { g += fbR(x, HY0 - 3, 3.6, HY1 - HY0 + 6, "url(#" + u + "chromeH)", ' rx="1" stroke="#4A5260" stroke-width=".5"') + fbC(x + 1.8, HY0, .6, "#2A323C") + fbC(x + 1.8, HY1, .6, "#2A323C"); });
-    for(let i = 0; i < N; i++){ const x = gx(i); g += fbR(x - 6, HY0 - .6, 12, 2.4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(x - 6, HY0 + .6, 12, 4); }
-    /* the riser up from the floor into the header's left end: a flanged foot on the floor, the main OS&Y valve with its handwheel to one side, a collar where it meets the header */
-    g += fbR(XE0 + 8 + 2.6, HY1 - 1, 10, 24, "#000", ' opacity=".3"') + fbR(XE0 + 8, HY1 - 1, 10, 24, "url(#" + u + "pipeV)", ' class="fb-riser"') + fbR(XE0 + 10, HY1 - 1, 1.6, 24, "#FFC0B0", ' opacity=".4"') +
-      fbR(XE0 + 5.4, HY1 - 2, 15.2, 3.4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(XE0 + 5.4, HY1 - .3, 15.2, 4);
-    const RX = XE0 + 13;
-    g += fbR(RX - 7.6, 142.4, 15.2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 7.6, 143.8, 15.2, 4) +
-      '<path d="M' + bnF(RX - 5.4) + ' 145.2 Q' + bnF(RX - 9.4) + ' 148.6 ' + bnF(RX - 5.4) + ' 152 L' + bnF(RX + 5.4) + ' 152 Q' + bnF(RX + 9.4) + ' 148.6 ' + bnF(RX + 5.4) + ' 145.2 Z" fill="url(#' + u + 'body)" stroke="#3A0A06" stroke-width=".5"/>' +
-      fbR(RX - 7.6, 152, 15.2, 2.8, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 7.6, 153.4, 15.2, 4) +
-      fbR(RX - 17, 148, 12, 1.8, "#DCE4EC") + '<g class="fb-valve"><ellipse cx="' + bnF(RX - 17) + '" cy="149" rx="2" ry="6.4" fill="none" stroke="#E8402E" stroke-width="1.5"/><path d="M' + bnF(RX - 17) + ' 143.6 L' + bnF(RX - 17) + ' 154.4" stroke="#C0301F" stroke-width="1"/></g>' +
-      fbR(RX - 12, 155, 24, 4, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + bolts(RX - 12, 157, 24, 5);
-    /* a zone plate under each branch, hung from the header on two rods with a clamp each */
-    for(let i = 0; i < N; i++){ const x = gx(i);
-      g += '<path class="fb-rod" d="M' + bnF(x - 7.4) + ' ' + bnF(HY1 - .6) + ' h1.4 v5.4 h-1.4 Z M' + bnF(x + 6) + ' ' + bnF(HY1 - .6) + ' h1.4 v5.4 h-1.4 Z" fill="#A6B0BC" stroke="#4A5260" stroke-width=".3"/>' + fbR(x - 10.6, HY1 + 4, 21.2, 13, "url(#" + u + "plate)", ' rx="2" stroke="#8A98A6" stroke-width=".8" class="fb-plate"') + '<path d="M' + bnF(x - 8) + ' ' + bnF(HY1 + 6.4) + ' l0 0 M' + bnF(x + 8) + ' ' + bnF(HY1 + 6.4) + ' l0 0" stroke="#8A98A6" stroke-width="1.3" stroke-linecap="round"/>' + fbText(String(i + 1), x, HY1 + 11.8, 7.6, "#E4EEF4", 1.2); }
-    /* a pilot lamp over each gauge, lit: a chrome base on the wall, a green dome with its highlight */
-    for(let i = 0; i < N; i++){ const x = gx(i);
-      g += fbR(x - 4.6, 30, 9.2, 3.6, "url(#" + u + "chromeV)", ' rx=".8" stroke="#4A5260" stroke-width=".4"') + '<path d="M' + bnF(x - 3.6) + ' 30 Q' + bnF(x - 3.6) + ' 25.2 ' + bnF(x) + ' 25.2 Q' + bnF(x + 3.6) + ' 25.2 ' + bnF(x + 3.6) + ' 30 Z" fill="#5CFFA6" class="fb-lamp" stroke="#0E3A22" stroke-width=".5"/>' + fbC(x - 1.2, 27.4, .8, "#E8FFF2"); }
-    /* the inspector's clipboard hanging on a hook at the end of the wall: a bent hook out of the wall through the clip's hole, the board, the sheet with its lines and ticks */
-    const CX = 458;
-    g += fbR(CX - 12 + 2.4, 42 + 2.4, 24, 36, "#000", ' opacity=".35" rx="1.4"') + fbR(CX - 12, 42, 24, 36, "url(#" + u + "board)", ' rx="1.4" stroke="#3A2410" stroke-width=".7"') + fbR(CX - 9.8, 48, 19.6, 27.6, "#F1F2EE") +
-      [0, 1, 2, 3, 4, 5].map(k => '<path d="M' + (CX - 4) + ' ' + (53.4 + k * 3.8) + ' L' + (CX + 7.6 - (k % 3) * 2) + ' ' + (53.4 + k * 3.8) + '" stroke="#6A7488" stroke-width=".6"/>' + fbR(CX - 8.2, 52.2 + k * 3.8, 2.4, 2.4, "#FFFFFF", ' stroke="#3A4254" stroke-width=".4"') + (k !== 4 ? '<path d="M' + (CX - 7.8) + ' ' + (53.4 + k * 3.8) + ' l.8 1 l1.8 -2.2" fill="none" stroke="#1E8A4A" stroke-width=".6" stroke-linecap="round"/>' : "")).join("") +
-      fbP("M" + (CX - 5.4) + " 40.4 L" + (CX + 5.4) + " 40.4 L" + (CX + 4.4) + " 48.4 L" + (CX - 4.4) + " 48.4 Z", "#A9B3C0", ' stroke="#4A5464" stroke-width=".6" stroke-linejoin="round"') + fbC(CX, 44.6, 2.2, "#4A5464") + fbC(CX, 44.6, 1.3, "#10161C") +
-      fbR(CX - 1.4, 26, 2.8, 4, "#3A4050") + fbC(CX, 30, 2.4, "#8A94A4", ' stroke="#3A4050" stroke-width=".5"') + '<path d="M' + CX + ' 30 L' + CX + ' 45.6 Q' + CX + ' 47.8 ' + (CX + 2.6) + ' 47.6" fill="none" stroke="#C9D2DE" stroke-width="1.5" stroke-linecap="round"/>';
-    g += '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
-    const lampPair = k => [k, k + 5].map(i => '<circle cx="' + bnF(gx(i)) + '" cy="28" r="13" fill="url(#' + u + 'lamp)"/>').join("");
+    const VX = 228, VY = 86;                               /* the vanishing point (eye height) */
+    const XL = -60, XR = 540, YC = -34, YF = 214;          /* the corridor's near section, beyond the frame */
+    const ZE = 7.4;                                        /* the far end's depth */
+    const px = (X, z) => VX + (X - VX) / z, py = (Y, z) => VY + (Y - VY) / z;
+    const P = (X, Y, z) => bnF(px(X, z)) + " " + bnF(py(Y, z));
+    const quad = (pts, fill, ex) => '<path d="M' + pts.map(q => P(q[0], q[1], q[2])).join(" L") + ' Z" fill="' + fill + '"' + (ex || "") + '/>';
+    const DT = YF - .78 * (YF - YC), HY = YF - .44 * (YF - YC);   /* a door's top; the lever's height */
+    const defs = '<defs>' + bnLin(u + "lw", [[0, "#2C3450"], [1, "#1A1F34"]], 0, 0, 1, 0) + bnLin(u + "rw", [[0, "#1A1F34"], [1, "#2A3150"]], 0, 0, 1, 0) + bnLin(u + "ceil", [[0, "#0E1120"], [1, "#1A1E30"]]) +
+      bnLin(u + "floor", [[0, "#252A40"], [1, "#0A0C14"]]) + bnLin(u + "dl", [[0, "#4A5878"], [1, "#2E3854"]], 0, 0, 1, 0) + bnLin(u + "dr", [[0, "#2E3854"], [1, "#4A5878"]], 0, 0, 1, 0) +
+      bnLin(u + "end", [[0, "#3A2A3A"], [1, "#1E1828"]]) + bnRad(u + "tg", [[0, "#5CFFA0", .6], [0.4, "#3CE08A", .22], [1, "#3CE08A", 0]]) + bnRad(u + "ex", [[0, "#FF4A3A", .6], [1, "#FF4A3A", 0]]) +
+      bnRad(u + "em", [[0, "#E8F0FF", .4], [1, "#E8F0FF", 0]]) + bnLin(u + "rf", [[0, "#5CFFA0", .35], [1, "#5CFFA0", 0]]) + bnLin(u + "rx", [[0, "#FF4A3A", .4], [1, "#FF4A3A", 0]]) + bnRad(u + "vig", [[0.5, "#000", 0], [1, "#000", .6]]) + '</defs>';
+    /* ---- the box of the corridor: ceiling, floor, the two walls, the far end ---- */
+    let g = defs + quad([[XL, YC, 1], [XR, YC, 1], [XR, YC, ZE], [XL, YC, ZE]], "url(#" + u + "ceil)") + quad([[XL, YF, 1], [XR, YF, 1], [XR, YF, ZE], [XL, YF, ZE]], "url(#" + u + "floor)") +
+      quad([[XL, YC, 1], [XL, YC, ZE], [XL, YF, ZE], [XL, YF, 1]], "url(#" + u + "lw)") + quad([[XR, YC, 1], [XR, YC, ZE], [XR, YF, ZE], [XR, YF, 1]], "url(#" + u + "rw)");
+    /* the corridor's lines: the corners where walls meet floor and ceiling, a chair rail, the floor's tile joints converging, cross joints closing up */
+    let lines = "", joints = "";
+    [[XL, YF], [XR, YF], [XL, YC], [XR, YC]].forEach(q => { lines += "M" + P(q[0], q[1], 1) + " L" + P(q[0], q[1], ZE) + " "; });
+    [XL, XR].forEach(X => { lines += "M" + P(X, YF - .38 * (YF - YC), 1) + " L" + P(X, YF - .38 * (YF - YC), ZE) + " "; });
+    for(let X = XL + 100; X < XR; X += 100) joints += "M" + P(X, YF, 1) + " L" + P(X, YF, ZE) + " ";
+    for(let z = 1.15; z < ZE; z *= 1.22) joints += "M" + P(XL, YF, z) + " L" + P(XR, YF, z) + " ";
+    g += '<path d="' + joints + '" stroke="#0A0C16" stroke-width=".6" opacity=".55" fill="none"/><path d="' + lines + '" stroke="#0A0C16" stroke-width="1.2" fill="none"/>';
+    /* the far end: the wall, the double doors with their vision panels and push bars, the EXIT sign over them */
+    const ex0 = px(XL, ZE), ex1 = px(XR, ZE), ey0 = py(YC, ZE), ey1 = py(YF, ZE), em = (ex0 + ex1) / 2;
+    g += fbR(ex0, ey0, ex1 - ex0, ey1 - ey0, "url(#" + u + "end)") + fbR(em - 14, ey1 - 25, 28, 25, "#141822", ' stroke="#0A0C14" stroke-width=".6"') + fbR(em - 13, ey1 - 24, 12.6, 24, "#3A3848") + fbR(em + .4, ey1 - 24, 12.6, 24, "#3A3848") +
+      fbR(em - 11, ey1 - 21, 3, 6, "#6A5A70") + fbR(em + 8, ey1 - 21, 3, 6, "#6A5A70") + fbR(em - 12, ey1 - 12, 10.6, 1.2, "#9AA4B8") + fbR(em + 1.4, ey1 - 12, 10.6, 1.2, "#9AA4B8") +
+      fbR(em - 7, ey1 - 32, 14, 5.4, "#1A0A0A", ' stroke="#3A1A1A" stroke-width=".4"') + fbText("EXIT", em, ey1 - 29.3, 3, "#FF6A5A", .65);
+    /* ---- the ceiling's fixtures: dark panels, and the emergency lamps lit with their pools on the floor ---- */
+    [1.5, 2.3, 3.5, 5.2].forEach((z, i) => { g += quad([[VX - 34, YC, z], [VX + 34, YC, z], [VX + 34, YC, z + .3 * z], [VX - 34, YC, z + .3 * z]], i % 2 ? "#232838" : "#B8C6E2", i % 2 ? "" : ' opacity=".7"'); });
+    g += [1.5, 3.5].map(z => '<ellipse cx="' + bnF(VX) + '" cy="' + bnF(py(YF, z * 1.12)) + '" rx="' + bnF(120 / z) + '" ry="' + bnF(26 / z) + '" fill="url(#' + u + 'em)"/>').join("");
+    /* ---- the doors: five down each wall; a casing, the door, its hinge side, a kick plate, the lever; then the tag on the lever ---- */
+    const DZ = { l: [[1.18, 1.5], [1.86, 2.26], [2.8, 3.32], [4.05, 4.7], [5.6, 6.4]], r: [[1.24, 1.57], [1.95, 2.36], [2.9, 3.44], [4.2, 4.86], [5.75, 6.55]] };
+    const tags = [], refl = [];
+    let doors = "";
+    ["l", "r"].forEach(side => {
+      const X = side === "l" ? XL : XR;
+      DZ[side].forEach(([za, zb], i) => {
+        const ca = za * .965, cb = zb * 1.03, dt = DT - 6;
+        doors += quad([[X, YF, ca], [X, dt, ca], [X, dt, cb], [X, YF, cb]], "#151A28") +
+          quad([[X, YF, za], [X, DT, za], [X, DT, zb], [X, YF, zb]], "url(#" + u + "d" + side + ")", ' stroke="#0A0C14" stroke-width="' + bnF(.9 / za) + '"') +
+          quad([[X, YF, za], [X, YF - 34, za], [X, YF - 34, zb], [X, YF, zb]], "#7A8498", ' opacity=".45"') +
+          quad([[X, DT + 22, za + (zb - za) * .05], [X, DT + 60, za + (zb - za) * .05], [X, DT + 60, za + (zb - za) * .1], [X, DT + 22, za + (zb - za) * .1]], "#0E1420", ' opacity=".6"');
+        /* the lever on the latch edge (the far edge, so even the nearest door's tag is in the picture), pointing back towards the hinge */
+        const lz = zb - (zb - za) * .12, lx = px(X, lz), ly = py(HY, lz), k = 1 / lz;
+        doors += fbC(lx, ly, 2.2 * k, "#B8C2D2") + fbL("M" + bnF(lx) + " " + bnF(ly) + " L" + bnF(px(X, lz - (zb - za) * .18)) + " " + bnF(py(HY, lz - (zb - za) * .18)), "#C9D2E0", bnF(1.8 * k));
+        tags.push([lx, ly, k, i]); refl.push([lx, py(YF, lz), k]);
+      });
+    });
+    /* a fire extinguisher cabinet on the right wall between its second and third doors */
+    const fz0 = 2.48, fz1 = 2.7;
+    doors += quad([[XR, YF - 98, fz0], [XR, YF - 58, fz0], [XR, YF - 58, fz1], [XR, YF - 98, fz1]], "#8A1A1A", ' stroke="#3A0A0A" stroke-width=".5"') + quad([[XR, YF - 94, fz0 + .03], [XR, YF - 62, fz0 + .03], [XR, YF - 62, fz1 - .03], [XR, YF - 94, fz1 - .03]], "#E0402E", ' opacity=".85"');
+    g += doors;
+    /* the floor gives back each tag and the EXIT: short streaks below them */
+    g += refl.map(q => fbR(q[0] - 2.4 * q[2], q[1] + 1, 4.8 * q[2], 26 * q[2], "url(#" + u + "rf)")).join("") + fbR(em - 4, ey1 + .5, 8, 30, "url(#" + u + "rx)");
+    /* each tag: a green card hung from the lever by a loop of string, a darker header, the hole, a white tick */
+    let tg = "";
+    tags.forEach(([x, y, k]) => {
+      const w = 11.6 * k, h = 17.2 * k, tx = x - w / 2 + (x < VX ? 1.6 * k : -1.6 * k), ty = y + 4.4 * k;
+      tg += '<path d="M' + bnF(x) + ' ' + bnF(y + .6 * k) + ' L' + bnF(tx + w / 2) + ' ' + bnF(ty + 1.6 * k) + '" stroke="#E8DCA8" stroke-width="' + bnF(.7 * k) + '"/>' +
+        '<path class="fb-sweeptag" d="M' + bnF(tx + 2 * k) + ' ' + bnF(ty) + ' L' + bnF(tx + w - 2 * k) + ' ' + bnF(ty) + ' L' + bnF(tx + w) + ' ' + bnF(ty + 2 * k) + ' L' + bnF(tx + w) + ' ' + bnF(ty + h) + ' L' + bnF(tx) + ' ' + bnF(ty + h) + ' L' + bnF(tx) + ' ' + bnF(ty + 2 * k) + ' Z" fill="#2EC46E" stroke="#0E5A30" stroke-width="' + bnF(.5 * k) + '"/>' +
+        fbR(tx, ty + 2 * k, w, 3.4 * k, "#17803F") + fbC(tx + w / 2, ty + 1.6 * k, .9 * k, "#0A2A16") +
+        '<path d="M' + bnF(tx + w * .26) + ' ' + bnF(ty + h * .62) + ' L' + bnF(tx + w * .44) + ' ' + bnF(ty + h * .8) + ' L' + bnF(tx + w * .78) + ' ' + bnF(ty + h * .42) + '" fill="none" stroke="#FFFFFF" stroke-width="' + bnF(1.3 * k) + '" stroke-linecap="round" stroke-linejoin="round"/>';
+    });
+    g += '<g class="fb-sweeptags">' + tg + '</g>' + '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
+    const glow = odd => tags.filter((_, i) => i % 2 === odd).map(([x, y, k]) => '<circle cx="' + bnF(x) + '" cy="' + bnF(y + 11 * k) + '" r="' + bnF(22 * k) + '" fill="url(#' + u + 'tg)"/>').join("");
     return [
       { svg: g },
-      /* the ten lamps breathe one after another along the row: five layers of two, a fifth of a cycle apart */
-      ...[0, 1, 2, 3, 4].map(k => ({ svg: lampPair(k), box: [X0 - 14, 12, PITCH * 9 + 28, 32], cls: "bl-glow", style: "animation-duration:1.5s;animation-delay:-" + bnF(k * .3) + "s" })),
-      { svg: fbEmberSheet(bnRand(1002), 480, 90, 14, ["#CFFFE8", "#9AD8FF", "#FFFFFF"]), box: [0, 16, 480, 142], cls: "bl-rise", style: "animation-duration:22s;opacity:.28" }
+      { svg: glow(0), cls: "bl-glow", box: [0, 40, 480, 100], o: [VX, VY], style: "animation-duration:2.6s" },
+      { svg: glow(1), cls: "bl-glow", box: [0, 40, 480, 100], o: [VX, VY], style: "animation-duration:2.6s;animation-delay:-1.3s" },
+      { svg: '<ellipse cx="' + bnF(em) + '" cy="' + bnF(ey1 - 29) + '" rx="22" ry="12" fill="url(#' + u + 'ex)"/>', box: [em - 22, ey1 - 41, 44, 24], o: [em, ey1 - 29], cls: "bl-breathe", style: "animation-duration:3.8s" },
+      { svg: fbEmberSheet(rnd, 300, 90, 16, ["#E8F0FF", "#BFFFD8", "#FFFFFF"]), box: [VX - 150, 30, 300, 110], cls: "bl-rise", style: "animation-duration:22s;opacity:.25" }
     ];
   },
 
@@ -80367,7 +80347,7 @@ const IFC_BANNER_LOOK = {
   study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["On Call", "#E8402E", "#2ECC71"],
   correct5000: ["Downpour", "#6FA8D8", "#FF8A3D"], correct10000: ["Fire Investigator", "#F2C21E", "#FF7A2E"],
   level80: ["Top Floor", "#FFB04A", "#4A6AD8"], early10: ["After Hours", "#3FD0C0", "#F2C14E"],
-  exam100: ["Ten in a Row", "#3CD9A0", "#F2B93A"], flare_void: ["Nebula", "#F97316", "#EF4444"],
+  exam100: ["Clean Sweep", "#3CD9A0", "#FF5A4A"], flare_void: ["Nebula", "#F97316", "#EF4444"],
   flare_umbra: ["Quasar", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Pulsar", "#6FB4F2", "#CFEAFF"],
   flare_genesis: ["Eclipse", "#FF5CA8", "#FFB04A"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
   celestial: ["Comet Ranger", "#3FE9FF", "#1E8AB8"], zenith: ["Star Ranger", "#FFD36A", "#6A4AC8"]
