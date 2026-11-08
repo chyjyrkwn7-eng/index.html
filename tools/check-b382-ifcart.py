@@ -172,7 +172,7 @@ gone = [n for n in ["Plans Examiner", "Public Educator", "Investigator"] if n in
 chk("...and the plans examiner, public educator and investigator he turned down in 384 are gone (%s)" % gone, not gone, gone)
 boff = [n for n in ["Station 26", "Ladder 26", "Tower Ladder", "Night Watch", "Night Call", "Gold Helmet", "Fire Watch", "Blue Flame", "Phoenix", "Grand Marshal"] if n in F["bnames"].values()]
 chk("no firehouse, engine, ladder, crew, helmet or round-2 ultimate banner is left (%s)" % boff, not boff, boff)
-chk("a certificate wall, a plan review table, a structure fire (Fully Involved), an alarm panel (On Call) and a fully-compliant banner are there", all(n in F["bnames"].values() for n in ["Certified", "Plan Review", "Fully Involved", "On Call", "Fully Compliant"]), sorted(F["bnames"].values()))
+chk("a certificate wall, a plan review table, a dawn ladder to a roof (Top of the Ladder), an alarm panel (On Call) and a lit scoreboard (Perfect Score) are there (build 384 r3b: Fully Involved and Fully Compliant were redrawn and renamed)", all(n in F["bnames"].values() for n in ["Certified", "Plan Review", "Top of the Ladder", "On Call", "Perfect Score"]), sorted(F["bnames"].values()))
 afx, ffx = dict((r[0], r) for r in A["fx"]), dict((r[0], r) for r in F["fx"])
 # (384) Fire Code's own counts: "the amount of hundos needed to get the stuff could be lowered. Like increments of 25, 50, 75, 150?"
 # Same rungs in the same order; its counts climb, none above the academy's, and the rungs past Confetti are lower (read off the page)

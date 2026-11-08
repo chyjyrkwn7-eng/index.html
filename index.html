@@ -78773,7 +78773,7 @@ const IFC_BANNER_ART = {
     /* the turns round the jamb and the post: two slanting strips of the same tape, a knot, and a tail hanging from it */
     const turn = (x, y, dx) => '<path class="fb-turn" d="M' + bnF(x - 3.2) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 1.8) + ' ' + bnF(y - HW - .6) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW + .6) + ' L' + bnF(x - 1.6) + ' ' + bnF(y + HW + .6) + ' Z" fill="#D9AC10" stroke="#8A6A0A" stroke-width=".6"/>';
     const knot = (x, y, dx) => '<path class="fb-knot" d="M' + bnF(x - 1.6) + ' ' + bnF(y + HW - 1) + ' L' + bnF(x - 2 + dx) + ' ' + bnF(y + HW + 12) + ' L' + bnF(x + 4.6 + dx) + ' ' + bnF(y + HW + 11) + ' L' + bnF(x + 3.4) + ' ' + bnF(y + HW - 1) + ' Z" fill="#E3B41C" stroke="#8A6A0A" stroke-width=".6"/><circle cx="' + bnF(x + .8) + '" cy="' + bnF(y + HW - 1) + '" r="2.4" fill="#B88A0A" stroke="#6A4E06" stroke-width=".6"/>';
-    const tape = '<path class="fb-tape-band" d="' + front + '" fill="#F2C21E"/><path d="' + back + '" fill="#B88A0A"/>' +
+    const tape = '<path class="fb-tape-band" d="' + front + '" fill="#F2C21E"/><path class="fb-tape-back" d="' + back + '" fill="#B88A0A"/>' +
       '<path d="' + topE + '" fill="none" stroke="#8A6A0A" stroke-width=".7"/><path d="' + botE + '" fill="none" stroke="#8A6A0A" stroke-width=".7"/>' +
       '<g class="fb-tape">' + letters + '</g>' + turn(JX - 2, JY, 1) + turn(JX + 2.6, JY + .2, 1) + knot(JX - .6, JY, -2) + turn(PX - 1, PY, 1) + turn(PX + 3, PY, 1) + knot(PX + 1, PY, 3);
     /* the stanchion the far end is tied to: a black post on a round weighted base, a cap on top */
@@ -78974,7 +78974,7 @@ const IFC_BANNER_ART = {
       const na = a0 + (.955 + (i % 3) * .008) * sweep, tip = P(na, r * .78), tail = P(na + 180, r * .22);
       return '<g class="fb-gauge">' + fbC(x, y, r + 2.6, "#000", ' opacity=".4" transform="translate(.8 1.8)"') + fbC(x, y, r + 1.4, "url(#" + u + "chrome)") + fbC(x, y, r, "#1A232B") + fbC(x, y, r * .86, "url(#" + u + "face)") +
         arc(0, .26, "#D23A2A") + arc(.26, .52, "#F2B93A") + arc(.52, 1, "#22A25A") + '<path d="' + ticks + '" stroke="#2A323A" stroke-width=".8" fill="none"/>' +
-        fbText("PSI", x, y + r * .36, 3.6, "#4A545E", .6) + '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#000" stroke-width="2.4" opacity=".25" transform="translate(.6 .9)"/><path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + bnF(.955 + (i % 3) * .008) + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
+        fbText("PSI", x, y + r * .36, 3.6, "#4A545E", .6) + '<path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" stroke="#000" stroke-width="2.4" opacity=".25" transform="translate(.6 .9)"/><path d="M' + tail.join(" ") + ' L' + tip.join(" ") + '" class="fb-needle" data-frac="' + (.955 + (i % 3) * .008).toFixed(3) + '" stroke="#C0201A" stroke-width="1.7" stroke-linecap="round" fill="none"/>' +
         fbC(x, y, 2.4, "#1A232B") + fbC(x - .5, y - .5, .9, "#7A8794") + '<path d="M' + P(205, r * .9).join(" ") + ' A' + bnF(r * .9) + ' ' + bnF(r * .9) + ' 0 0 1 ' + P(280, r * .9).join(" ") + '" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity=".5" stroke-linecap="round"/></g>';
     };
     let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';

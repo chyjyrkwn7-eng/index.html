@@ -3,7 +3,7 @@
 
  (1) all nine draw, each with its tint, and no page error;
  (2) every one of the nine is drawn differently from 185cc5c (R5, hashes from check-b382-ifcart --dump there);
- (3) Dispatch, Code Book, Hazmat, Hose Line and the three rank banners are exactly as they were ("Leave them alone");
+ (3) Dispatch, Code Book, Hazmat, Hose Line (it is Ten in a Row since round 3b) and the three rank banners are exactly as they were ("Leave them alone");
  (4) the names: no Code 3 ("we don't do code threes"), no Air Tanker or Pull Station (both "something else"); Fire Response is there;
  (5) the office's vehicles ("white chevys with ghost lettering and lights"): Headquarters draws two and Fire Response one, each
      ghost-lettered (.fb-ghost), and none of the three banners carries a long thin red band - round 3's ambulance stripe;
