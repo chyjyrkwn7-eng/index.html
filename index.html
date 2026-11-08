@@ -63362,9 +63362,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M17.4 33 L20 38.6 L22.6 33", fill: "none", stroke: red, "stroke-width": ".35", opacity: ".6" }));
     close();
     open("cx-head");
-    /* The mane: spikes all round the mask, the ones at the top longest. */
+    /* The mane: spikes all round the mask, the ones at the top longest. (384 r2) The red lining on the two tall points at the
+       top was on the left one only; both have it now, mirrored. */
     svg.appendChild(mk("path", { d: "M9.4 23.4 L7 18.4 L10 18.6 L8.6 12.8 L12 14.2 L12.2 8.2 L15.6 11 L17.6 5.2 L20 9.2 L22.4 5.2 L24.4 11 L27.8 8.2 L28 14.2 L31.4 12.8 L30 18.6 L33 18.4 L30.6 23.4 Q29.6 28.4 20 29.4 Q10.4 28.4 9.4 23.4 Z", fill: mane, stroke: "#020203", "stroke-width": ".3", "stroke-linejoin": "round" }));
-    [["M17.6 5.6 L16.4 9.4", ""], ["M12.3 8.6 L12.9 12", ""], ["M27.7 8.6 L27.1 12", ""]].forEach(([d]) =>
+    [["M17.6 5.6 L16.4 9.4", ""], ["M22.4 5.6 L23.6 9.4", ""], ["M12.3 8.6 L12.9 12", ""], ["M27.7 8.6 L27.1 12", ""]].forEach(([d]) =>
       svg.appendChild(mk("path", { d, stroke: red, "stroke-width": ".35", "stroke-linecap": "round", opacity: ".55" })));
     /* The mask. */
     const mask = "M20 11.4 Q27.4 12 27.9 19.6 Q28.2 25.4 24.2 28.6 Q22.2 30.2 20 30.6 Q17.8 30.2 15.8 28.6 Q11.8 25.4 12.1 19.6 Q12.6 12 20 11.4 Z";
