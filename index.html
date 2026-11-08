@@ -11995,6 +11995,7 @@
      `both` fill. Each ends on a slow fade - confetti's tail - and the
      layers are removed only after it. */
   .hfx-out{ opacity:0 !important; transition:opacity .6s ease !important; }
+  .hfx-out.hfx-fast{ transition-duration:.18s !important; }
   .rs-card.hfx-over{ z-index:61; }
   /* the UFO's own layer over the lifted box (round 6): the saucer and its
      one beam, so the beam can cross the box's edge as one piece of light
@@ -12320,9 +12321,11 @@
   .hfx-fw-glow{ position:absolute; width:var(--gs); height:var(--gs); margin:calc(var(--gs) / -2) 0 0 calc(var(--gs) / -2); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, var(--c), transparent); animation:hfx-fw-glow var(--d) ease-out var(--t) both; }
   @keyframes hfx-fw-glow{ 0%{ opacity:0; transform:scale(.35); } 7%{ opacity:.55; transform:scale(.8); } 100%{ opacity:0; transform:scale(1); } }
+  /* (384 r6) each burst's light falls on the card from above - a soft wash down from its top edge. It was an inset glow
+     round the whole edge (round 8 took its 1.5px line off), which still read as the old look's lit frame */
   .hfx-fw-rim{ position:absolute; inset:0; border-radius:inherit; opacity:0; pointer-events:none;
-    box-shadow:inset 0 0 34px var(--c); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
-  @keyframes hfx-fw-rim{ 0%{ opacity:0; } 10%{ opacity:.8; } 100%{ opacity:0; } }
+    background:radial-gradient(90% 60% at 50% 0%, var(--c), rgba(0,0,0,0) 72%); animation:hfx-fw-rim 1.1s ease-out var(--t) both; }
+  @keyframes hfx-fw-rim{ 0%{ opacity:0; } 10%{ opacity:.38; } 100%{ opacity:0; } }
   .hfx-fw-mortar{ position:absolute; width:var(--ms); height:var(--ms); margin:calc(var(--ms) / -2) 0 0 calc(var(--ms) / -2); border-radius:50%; opacity:0;
     background:radial-gradient(closest-side, rgba(255,250,240,.95), rgba(255,206,150,.5) 35%, rgba(255,92,214,0)); animation:hfx-fw-mortar .7s ease-out var(--t) both; }
   @keyframes hfx-fw-mortar{ 0%{ opacity:0; transform:scale(.3); } 14%{ opacity:1; transform:scale(1); } 100%{ opacity:0; transform:scale(1.35); } }
@@ -27524,6 +27527,11 @@
     border-color:rgba(255,196,202,.6);
     box-shadow:0 0 0 1px rgba(232,104,124,.34), 0 0 36px rgba(232,104,124,.2);
   }
+  /* (384 r6) NO RIM ON A LANDING, ANY CARD. The flash above is a lit frame round the card for a moment - the old look's
+     border glow, which the clean cards (and the hundo box) no longer have anywhere else: Madison, "some of it hasn't been
+     updated to the new look? Like the border glow". The slam and the bang are the landing. (The layer and rs-impact stay,
+     drawing nothing, so nothing that reads them breaks.) */
+  .rs-screen .rs-card.rs-land::after, .rs-screen .rs-card.rs-grade.is-counting.rs-land::after{ border-color:transparent; box-shadow:none; }
   /* Transform and opacity only (build 282). A blur rode the first half
      of every landing; on a whole card at 3x it is a filter re-rasterised
      every frame, and under the fade it was all but invisible. */
@@ -27534,6 +27542,12 @@
     100%{ opacity:1; transform:none; }
   }
   @keyframes rs-impact{ 0%{ opacity:1; } 100%{ opacity:0; } }
+  /* (384 r6) "Tap to skip" while the grade and the XP box come in (rsSkipHint): plain, quiet, at the foot of the screen,
+     over any effect's layer, taking no pointer */
+  .rs-skip{ position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 1.4rem); z-index:64; margin:0;
+    transform:translateX(-50%); font-size:.8rem; font-weight:600; letter-spacing:.01em; color:var(--soft, rgba(255,255,255,.62));
+    white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .25s ease; }
+  .rs-skip.is-on{ opacity:.8; }
   .rs-xpline.rs-land{ transform:translateY(-12px); }
   .rs-xpline.rs-land.rs-in{ animation:rs-drop .34s cubic-bezier(.2,1.3,.4,1) both; }
   /* AND IT RESTS IN ITS OWN SLOT (build 315). The line above outranks
@@ -117501,6 +117515,8 @@ function celebrate(palette, origin, o){
   }
   document.body.appendChild(layer);
   setTimeout(() => layer.remove(), 3000);
+  /* (384 r6) the layer, so a tap that skips the results' 100% can take it off at once */
+  return layer;
 }
 
 /* ---- THE HUNDO EFFECTS, PLAYED (build 313) ----
@@ -118030,8 +118046,11 @@ function hfxLayout(c){
   const panel = c.frame || (c.box && c.box.closest && c.box.closest(".rs-screen"));
   if(!panel || c.boxOnly) return null;
   const sx = c.frame ? 0 : (window.scrollX || 0), sy = c.frame ? 0 : (window.scrollY || 0);
+  /* (384 r6) only what is ON the screen: the 100% now plays before anything lands under the grade (showRunRewards), so
+     the XP card and the rest are in the layout but not yet shown - an effect must not light, lift or hunt them */
+  const shown = el => c.frame || !el.classList.contains("rs-land") || el.classList.contains("rs-in") || el.classList.contains("rs-in-now");
   const at = el => {
-    if(!el || !el.offsetWidth) return null;
+    if(!el || !el.offsetWidth || !shown(el)) return null;
     const o = hfxOffsetIn(el, c.frame || null);
     const left = o.x - sx, top = o.y - sy;
     return { left, top, width: el.offsetWidth, height: el.offsetHeight, right: left + el.offsetWidth, bottom: top + el.offsetHeight, el };
@@ -118042,7 +118061,7 @@ function hfxLayout(c){
     unlocked: at(panel.querySelector(":scope > .rs-unlocked")),
     buttons: [...panel.querySelectorAll(".rs-actions button")].map(at).filter(Boolean),
     /* what a black hole can pull: everything on the screen but the box */
-    warp: [...panel.children].filter(e => e !== c.box && !e.classList.contains("hfx-layer") && e.offsetWidth) };
+    warp: [...panel.children].filter(e => e !== c.box && !e.classList.contains("hfx-layer") && e.offsetWidth && shown(e)) };
   return L.xp ? L : null;
 }
 /* the effect's own extras, undone when it ends or is stopped: Web
@@ -119619,6 +119638,9 @@ function hfxCharReact(av, id, o){
 function hfxResultsAvatar(box){
   const panel = box && box.closest ? box.closest(".rs-screen") : null;
   const av = panel ? panel.querySelector(".results-level-avatar") : null;
+  /* (384 r6) not while its XP card is still to come (the 100% plays first now): it reacts as that card lands */
+  const xpc = av && av.closest(".rs-xp");
+  if(xpc && xpc.classList.contains("rs-land") && !xpc.classList.contains("rs-in") && !xpc.classList.contains("rs-in-now")) return null;
   return av && av.querySelector("svg.avatarchar-svg") ? av : null;
 }
 function hfxUnderwater(scr, bx, c){
@@ -119629,7 +119651,9 @@ function hfxUnderwater(scr, bx, c){
     /* the box where it will REST: the results reveal scrolls the page to its
        foot as later cards land, and the sea is fixed to the screen */
     const de = document.documentElement, page = !c.frame && !(c.box && c.box.closest && c.box.closest(".rs-spot"));
-    const rest = page ? Math.max(0, de.scrollHeight - (window.innerHeight || c.vh)) - (window.scrollY || 0) : 0;
+    /* (384 r6) the page no longer scrolls while the effect plays (it plays on the centred grade, before anything lands
+       under it), so the box rests where it is */
+    const rest = 0;
     const r = c.br, box = { left: r.left, top: r.top - rest, width: r.width, height: r.height };
     const lvl = Math.round(Math.max(c.vh * (mini ? .1 : .085), mini ? 14 : 40));
     const due = hfxDue(c);
@@ -122566,7 +122590,8 @@ function hfxCloneNum(t, pct){
 function hfxFadeOut(el){
   if(!el || el.classList.contains("hfx-out")) return;
   el.classList.add("hfx-out");
-  setTimeout(() => el.remove(), 650);
+  /* .hfx-fast (384 r6, a tap skipping the effect): .18s */
+  setTimeout(() => el.remove(), el.classList.contains("hfx-fast") ? 200 : 650);
 }
 /* Plays effect `id`. opts: palette, box (the 100% card, or a stage),
    pct (the number inside it), boxOnly (no screen part), mini (a small
@@ -122621,16 +122646,25 @@ function playHundoFx(id, opts){
      plays on a results screen, from the moment it starts - hfxCharReact */
   const rxAv = (!opts.boxOnly && !opts.frame && !opts.preview) ? hfxResultsAvatar(opts.box) : null;
   if(id === "confetti" && !opts.boxOnly && !opts.frame){
-    playSound("hundo.confetti");
-    celebrate(opts.palette, opts.pct || opts.box);
+    const snd0 = playSound("hundo.confetti");
+    const lay0 = celebrate(opts.palette, opts.pct || opts.box);
     /* (384) and its half in the box: the burst at the number, the number lit */
-    try{ hfxConfettiGrade(opts.box, opts.pct, opts.palette); }catch(e){}
-    /* the one dim (build 326), and the box lifted over it and the
-       stardust, so the number is never dimmed */
-    hfxDim("confetti", null);
-    if(opts.box){ const bx0 = opts.box; bx0.classList.add("hfx-over"); setTimeout(() => bx0.classList.remove("hfx-over"), hfxDimEnd("confetti")); }
+    let bxc = null;
+    try{ bxc = hfxConfettiGrade(opts.box, opts.pct, opts.palette); }catch(e){}
+    /* (384 r6) NO DIM ANY MORE ("Don't do the darkened thing any"); the box is still lifted over the stardust, so the
+       nova goes off behind the number and never over it */
+    const bx0 = opts.box;
+    if(bx0) bx0.classList.add("hfx-over");
+    const t0 = setTimeout(() => { if(bx0) bx0.classList.remove("hfx-over"); }, HUNDO_FX_TAIL_AT.confetti);
     if(rxAv){ try{ hfxCharReact(rxAv, "confetti", { palette: opts.palette }); }catch(e){} }
-    return null;
+    /* (384 r6) a handle like every other effect's, so a tap can skip it: the stardust and the box's half off at once */
+    const h0 = { id, screen: lay0 || null, box: bxc, total: 3000, startedAt: performance.now(), done: false };
+    h0.stop = fast => { if(h0.done) return; h0.done = true; clearTimeout(t0);
+      [lay0, bxc].forEach(l => { if(l && l.isConnected){ if(fast){ l.classList.add("hfx-fast"); } hfxFadeOut(l); } });
+      if(bx0) setTimeout(() => bx0.classList.remove("hfx-over"), fast ? 200 : 650);
+      if(snd0 && snd0.stop) try{ snd0.stop(fast ? .12 : .5); }catch(e){} };
+    setTimeout(() => { h0.done = true; }, 3000);
+    return h0;
   }
   if(id === "confetti" && opts.frame) opts = Object.assign({}, opts, { boxOnly: true, frame: null });
   const c = hfxContext(opts);
@@ -122690,15 +122724,11 @@ function playHundoFx(id, opts){
     }
   }
   if(bx) opts.box.appendChild(bx);
-  /* THE ONE DIM (build 326): every effect that plays across a screen puts
-     the same dim up under its own layer, and the box is lifted over it
-     (.hfx-lift) for as long as it is up - Underwater's and Bubbles' too,
-     which had none. A Customize showcase (noDim) plays without one. */
-  let dim = null;
-  if(scr && !opts.noDim && !opts.boxOnly){
-    dim = hfxDim(id, layerParent && layerParent.classList && layerParent.classList.contains("hfx-mock") ? layerParent : null);
-    if(opts.box){ const bx1 = opts.box; bx1.classList.add("hfx-lift"); setTimeout(() => bx1.classList.remove("hfx-lift"), hfxDimEnd(id)); }
-  }
+  /* (384 r6) NO DIM. Build 326 put one night-blue dim under every effect that played across a screen (hfxDim, still
+     defined for anything that asks for it); Madison: "the transition is bad because it's like grade, xp, dark, hundo
+     effect. Don't do the darkened thing any". The effect plays on the screen as it is - the box is centred on its own
+     by then (showRunRewards), so nothing else is there to be dimmed. */
+  const dim = null;
   /* The UFO lands ON the box, the black hole opens BEHIND it and the
      fireworks' shells leave from behind its top edge: the box is lifted
      over the screen layer while they play, so the number stays clear of
@@ -122720,7 +122750,10 @@ function playHundoFx(id, opts){
   const lifted = () => { if(opts.box) opts.box.classList.remove("hfx-over", "hfx-lift"); };
   const end = () => { if(handle.done) return; handle.done = true; if(scr) scr.remove(); if(bx) bx.remove(); if(dim) dim.remove(); if(mo) mo.disconnect(); lifted(); undo(false); };
   handle.timer = setTimeout(end, total);
-  handle.stop = () => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect(); hfxFadeOut(scr); hfxFadeOut(bx); if(dim && dim.isConnected) hfxFadeOut(dim); undo(true); setTimeout(lifted, 650); if(sndFx) sndFx.stop(.5); };
+  /* `fast` (384 r6): a tap skipping the results' 100% - the layers go in .18s, not .6s, and the score with them */
+  handle.stop = fast => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect();
+    if(fast){ if(scr) scr.classList.add("hfx-fast"); if(bx) bx.classList.add("hfx-fast"); }
+    hfxFadeOut(scr); hfxFadeOut(bx); if(dim && dim.isConnected) hfxFadeOut(dim); undo(true); setTimeout(lifted, fast ? 200 : 650); if(sndFx) sndFx.stop(fast ? .12 : .5); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
   if(scr && opts.box && !opts.preview && typeof stage !== "undefined" && stage){
@@ -127144,7 +127177,7 @@ const RS_UNLOCK_GAP_MS = 1900;
    read as a hand-over and not as the XP box's own ending (build 321: "the
    hundo effect is coming in after the xp box is finished? ... do what's
    best" - after, so the character on the XP box is there to react). */
-const RS_FX_AFTER_XP_MS = 900;
+const RS_FX_AFTER_XP_MS = 900;   /* (384 r6) unused: the effect plays on the centred grade now, before the XP box (RS_FX_ON_GRADE_MS) */
 /* THE GRADE'S COLOUR AS IT CLIMBS (build 321): red, and only ever red into
    green - "the color goes from red to orange? And if the grade is a fail
    it shoots from orange to red and it's just weird. It needs to be just
@@ -127788,13 +127821,14 @@ function showRunRewards(run, hooks, opts){
     requestAnimationFrame(tick);
   };
   const celebrateGrade = () => {
-    if(run.retake) return;   /* a retake gets nothing cool */
+    if(run.retake) return null;   /* a retake gets nothing cool */
     if(run.isPerfect){
       const palette = run.leveledUpTo ? LEVEL_CONFETTI[run.leveledUpTo] : null;
       /* the hundo effect picked in Customize (build 313); Confetti is
          celebrate() itself, exactly as before */
-      playHundoFx(hundoFxInUse(), { palette, box: grade, pct: grade.querySelector(".rs-pct") });
+      return playHundoFx(hundoFxInUse(), { palette, box: grade, pct: grade.querySelector(".rs-pct") });
     }
+    return null;
   };
 
   /* ---- THE GRADE, COUNTED IN (build 320) ----
@@ -128034,7 +128068,7 @@ function showRunRewards(run, hooks, opts){
       playSound(gradeSoundFor(run.pct));
     }
     if(!countIt) setTimeout(() => fillBars(".rs-byunit .unit-breakdown-fill[data-to]"), instant ? 0 : 350);
-    /* (a 100's effect is not played here: it waits for the XP box, below) */
+    /* (a 100's effect is not played here: it is the reveal's next step, on the centred card - 384 r6) */
   };
 
   if(quiet){
@@ -128102,21 +128136,47 @@ function showRunRewards(run, hooks, opts){
   /* What a tap finishes besides the panel's own animations: the grade's
      count, the XP bar's fill and its number (build 320). */
   let moving = null;
-  seq.add(120, instant => rsLand(head, instant), false, "grade");
+  /* ---- (384 r6) THE GRADE ON ITS OWN, CENTRED, THEN UP INTO ITS PLACE ----
+     Madison: "The hundo effect should probably come up before the xp right cause it would just be better? So on the result
+     screen, what if the grade box was centered, then slid up or moved up when it was done, then the xp box, and then unlock
+     and whatever else." and "the transition is bad because it's like grade, xp, dark, hundo effect. Don't do the darkened
+     thing any, ensure the tap to skip thing is in place." So: the grade card comes down alone in the middle of the screen
+     (rsGradeLift: a `translate` offset, which composes with the landing's own transform), counts in there, and on a 100 its
+     hundo effect plays on it there - no dim. When the effect is over (its tail, HUNDO_FX_TAIL_AT) - or a beat after the
+     landing, for any other grade - it moves up into its place at the top of the stack (one transform, FLIP), the header
+     comes in over it, and then the XP card, the unlocks and the rest in their old order. A "Tap to skip" line sits at the
+     foot of the screen through the grade and the XP; a tap (or Enter / Space) skips the effect and settles the grade at
+     once, and then each box as before (build 380's rule). Reduce motion: none of this, everything in its place (quiet). */
+  const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
+  const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
+  const lift = rsGradeLift(grade);
+  const hint = rsSkipHint(panel);
+  let fxHandle = null;
+  const riseGrade = instant => {
+    if(fxHandle && !fxHandle.done){ try{ fxHandle.stop(true); }catch(e){} }
+    fxHandle = null;
+    lift.rise(instant);
+    rsLand(head, instant);
+  };
+  seq.add(RS_GRADE_IN_MS, instant => { lift.centre(); hint.show(); rsLand(grade, instant); if(!countIt) landGrade(instant); }, false, "grade");
   if(countIt){
-    seq.add(380, instant => rsLand(grade, instant), false, "grade");
     /* a beat on the empty card, then the bars */
     seq.add(650, instant => { if(instant) gc.finish(); else { moving = () => gc.finish(); gc.start(); } }, false, "grade");
     seq.add(plan.totalMs + 160, instant => { moving = null; landGrade(instant); }, false, "grade");
-  } else {
-    seq.add(380, instant => { rsLand(grade, instant); landGrade(instant); }, false, "grade");
   }
-  /* ---- HOW IT ADDS UP: THE XP BOX, after the grade has been taken in ---- */
-  const fxId = (run.isPerfect && !run.retake && run.total > 0) ? hundoFxInUse() : null;
-  /* how long a 100's effect has the screen before anything else may come:
-     its tail (HUNDO_FX_TAIL_AT, where its last pieces start fading) */
-  const fxTail = fxId ? ((typeof HUNDO_FX_TAIL_AT === "object" && HUNDO_FX_TAIL_AT[fxId]) || 1500) : 0;
-  seq.add(countIt ? 1250 : 700, instant => rsLand(xp, instant), false, "xp");
+  if(fxId){
+    /* the effect, on the card where it is, as the effect's colours come in; skipped before it starts, the card simply
+       takes its colours (as the still path does) */
+    seq.add(RS_FX_ON_GRADE_MS, instant => {
+      if(instant){ try{ hfxTintGrade(grade, fxId); }catch(e){} return; }
+      fxHandle = celebrateGrade();
+    }, false, "gradefx");
+    seq.add(fxTail, instant => riseGrade(instant), false, "gradefx");
+  } else {
+    seq.add(RS_GRADE_HOLD_MS, instant => riseGrade(instant), false, "gradefx");
+  }
+  /* ---- HOW IT ADDS UP: THE XP BOX, once the grade is in its place ---- */
+  seq.add(RS_GRADE_RISE_MS + 160, instant => rsLand(xp, instant), false, "xp");
   lineEls.forEach(l => seq.add(380, instant => { rsLand(l, instant); if(!instant) sndXpLine(l); }, false, "xp"));
   seq.add(750, instant => { rsLand(totalRow, instant); countUp(instant); }, false, "xp");
   /* THE BAR, SLOWER, AND ITS NUMBER AFTER IT (build 320): "the xp when it
@@ -128132,15 +128192,8 @@ function showRunRewards(run, hooks, opts){
     moving = () => { if(levelBlock.setFinal) levelBlock.setFinal(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); };
     levelBlock.runFill();
   }, false, "xp");
-  seq.add(levelBlock.fillMs || 2600, () => { moving = null; xp.classList.remove("is-charging"); xp.classList.add("is-charged"); }, false, "xp");
-  /* ---- A 100's HUNDO EFFECT, ONCE BOTH BARS HAVE RUN (build 320) ----
-     "the loading bar is going while the Hundo effect happens. Let the bar
-     run and then the effect." The grade's bars are home and its number
-     has landed; the XP box has added up and its bar has filled; THEN the
-     effect - with the results character on the XP box on screen to react
-     to it (hfxCharReact, b320b), and nothing landing under it until its
-     tail. A tap brings it on at once, as a tap brings any card. */
-  if(fxId) seq.add(RS_FX_AFTER_XP_MS, () => celebrateGrade());
+  seq.add(levelBlock.fillMs || 2600, () => { moving = null; hint.hide(); xp.classList.remove("is-charging"); xp.classList.add("is-charged"); }, false, "xp");
+  /* (384 r6) the hundo effect is no longer here, after the XP box (build 320 to 384): it plays on the grade, above */
   boxes.forEach(b => {
     seq.add(420, instant => {
       rsLand(b, instant);
@@ -128158,7 +128211,8 @@ function showRunRewards(run, hooks, opts){
        its rows one at a time. */
     let first = true, afterScene = false;
     /* the first waits out a 100's effect (its tail) as well as the pause */
-    const nextGap = () => { const g = first ? Math.max(RS_UNLOCK_GAP_MS, fxTail + 400) : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
+    /* (384 r6) the effect has been and gone before the XP box, so the first only waits its beat */
+    const nextGap = () => { const g = first ? RS_UNLOCK_GAP_MS : afterScene ? 320 : 1200; first = false; afterScene = false; return g; };
     let caseDone = false;
     const bannerIdx = unlockItems.filter(it => it.kind !== "badge");
     const onRow = {};
@@ -128194,7 +128248,7 @@ function showRunRewards(run, hooks, opts){
     });
     /* The box, once nothing is left to play. A scene's bridge (its light,
        left up for a pop-up that is not coming) goes as the box lands. */
-    seq.add(first ? Math.max(1200, fxTail) : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
+    seq.add(first ? 1200 : afterScene ? 420 : 650, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsLand(unlocked, instant); });
     unlockRows.forEach((row, n) => seq.add(n ? 380 : 560, instant => {
       rsLand(row, instant);
       if(!instant) playSound(row.classList.contains("rs-unlock-badge") ? "res.found.badge" : row.classList.contains("rs-unlock-flare") ? "res.found.flare"
@@ -128203,8 +128257,8 @@ function showRunRewards(run, hooks, opts){
     }));
   }
   /* THE BUTTONS DO NOT ARRIVE UNDER A SCENE'S DIM (build 317). */
-  if(actions) seq.add(unlocked ? 650 : Math.max(620, fxTail), instant => { if(sceneBridgeOpen()) dropSceneBridge(false); rsRise(actions, { instant }); });
-  seq.add(0, () => { resultsSeq = null; if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
+  if(actions) seq.add(unlocked ? 650 : 620, instant => { if(sceneBridgeOpen()) dropSceneBridge(false); hint.hide(); rsRise(actions, { instant }); });
+  seq.add(0, () => { resultsSeq = null; hint.hide(); if(sceneBridgeOpen()) dropSceneBridge(false); finish(); });
 
   /* A TAP SPEEDS UP THE BOX ON SCREEN, NOT THE WHOLE SHOW (build 305):
      "You can tap the screen by speeding up the box it's currently
@@ -128213,15 +128267,99 @@ function showRunRewards(run, hooks, opts){
      and brings the next card in straight away. It used to run every step
      up to the next banner at once. Cutscenes and unlock pop-ups hold the
      timeline and keep their own tap. */
-  panel.addEventListener("click", e => {
-    if(e.target.closest("button")) return;
+  const tapOn = () => {
     rsTapGuardUntil = Math.max(rsTapGuardUntil, Date.now() + 700);
     if(resultsSeq !== seq || seq.isHeld()) return;
     if(moving){ const f = moving; moving = null; try{ f(); }catch(err){} }
     rsFinishMoving(panel);
     seq.nextBox();
+  };
+  panel.addEventListener("click", e => {
+    if(e.target.closest("button")) return;
+    tapOn();
   });
+  /* (384 r6) A TAP ANYWHERE: the effect's layers take no pointer, so a tap beside the panel (an iPad's margins, the foot
+     of the screen under the hint) lands on the page itself - and Enter or Space does the same. Only while the reveal
+     runs and the results are up; never a tap on a control, a pop-up or a scene (they keep their own tap). */
+  const offTap = () => { document.removeEventListener("click", docTap, true); document.removeEventListener("keydown", keyTap, true); };
+  const docTap = e => {
+    if(!panel.isConnected || resultsSeq !== seq){ offTap(); return; }
+    const t = e.target;
+    if(!t || panel.contains(t) || (t.closest && t.closest("button, a, input, textarea, select, label, [role='button'], [role='dialog'], .rs-spot, .top"))) return;
+    tapOn();
+  };
+  const keyTap = e => {
+    if(!panel.isConnected || resultsSeq !== seq){ offTap(); return; }
+    if(e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    const a = document.activeElement;
+    if(a && a !== document.body && a.closest && a.closest("button, a, input, textarea, select, [contenteditable='true'], [role='button']")) return;
+    if(seq.isHeld()) return;
+    e.preventDefault();
+    tapOn();
+  };
+  document.addEventListener("click", docTap, true);
+  document.addEventListener("keydown", keyTap, true);
   seq.start();
+}
+
+/* ---- (384 r6) THE GRADE CENTRED, AND ITS WAY UP ----
+   centre(): the card offset (its `translate`, which composes with the landing's transform) so that its middle is the
+   middle of the screen; a card taller than the screen keeps its own place. rise(instant): from there to its place in the
+   stack in one move (a Web Animation on `translate`, so a tap finishing the panel's animations ends it where it rests). */
+const RS_GRADE_IN_MS = 260, RS_GRADE_HOLD_MS = 1100, RS_GRADE_RISE_MS = 640, RS_FX_ON_GRADE_MS = 650;
+function rsGradeLift(grade){
+  const L = { dy: 0, anim: null };
+  L.centre = () => {
+    if(resultsMotionOff() || !grade) return 0;
+    let y = 0, e = grade;
+    while(e){ y += e.offsetTop; e = e.offsetParent; }
+    const vh = window.innerHeight || document.documentElement.clientHeight || 800, h = grade.offsetHeight || 0;
+    const top = y - (window.scrollY || 0);
+    const dy = Math.round((vh - h) / 2 - top);
+    L.dy = (h > 0 && h < vh - 24 && dy > 0) ? dy : 0;
+    if(L.dy){ grade.style.translate = "0 " + L.dy + "px"; grade.classList.add("rs-centred"); }
+    return L.dy;
+  };
+  L.rise = instant => {
+    if(!grade) return;
+    const dy = L.dy; L.dy = 0;
+    grade.style.translate = "";
+    grade.classList.remove("rs-centred");
+    if(!dy || instant || resultsMotionOff()) return;
+    try{
+      L.anim = grade.animate([{ translate: "0 " + dy + "px" }, { translate: "0 0" }], { duration: RS_GRADE_RISE_MS, easing: "cubic-bezier(.3,.72,.18,1)" });
+      L.anim.id = "rs-grade-rise";
+    }catch(e){}
+  };
+  return L;
+}
+/* ---- (384 r6) "TAP TO SKIP" ----
+   A plain line at the foot of the screen while the grade and the XP box come in - the same words and face as the Virtual
+   Room's cutscene. On <body> (the panel shakes as the grade lands, and a fixed line inside it would shake with it), so it
+   takes itself off the moment the results leave the stage. It takes no pointer: a tap goes through it to the page. */
+function rsSkipHint(panel){
+  let el = null, mo = null;
+  const H = {
+    show(){
+      if(el || resultsMotionOff() || !panel.isConnected) return;
+      el = document.createElement("p");
+      el.className = "rs-skip";
+      el.setAttribute("data-skip-hint", "");
+      el.textContent = "Tap to skip";
+      document.body.appendChild(el);
+      requestAnimationFrame(() => { if(el) el.classList.add("is-on"); });
+      try{ mo = new MutationObserver(() => { if(!panel.isConnected) H.hide(true); }); mo.observe(stage, { childList: true }); }catch(e){ mo = null; }
+    },
+    hide(now){
+      if(mo){ mo.disconnect(); mo = null; }
+      const e = el; el = null;
+      if(!e) return;
+      if(now){ e.remove(); return; }
+      e.classList.remove("is-on");
+      setTimeout(() => e.remove(), 260);
+    }
+  };
+  return H;
 }
 
 /* One question on a review: your answer beside the right one. `gotIt`
