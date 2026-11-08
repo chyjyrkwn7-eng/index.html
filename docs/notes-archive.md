@@ -36506,8 +36506,10 @@ the characters and every other banner (Pulsar is another helper's) hash as c8143
   six units of the jamb and the post, two knots, a sag of 6+ and a back that shows, 30+ glyphs inside the picture; After Hours' beam lands on the wheel, the gauge and the tag, the clock is between 10:40
   and 11:15, no thermal camera, no 187F or PANEL 4B. 15 lines FAIL on c8143d5 (`--against`), all PASS here. check-b384-banners (docstring only; it passes on both), check-b382-ifcart (its names line:
   Top of the Ladder and Perfect Score; it has no --against, so it was run with the previous index.html copied in: FAIL there, PASS here; its other five failures are the same on both builds).
-- Run: check-js, console clean on every render, check-b384-fcbanners, check-b384-banners, check-b384-sets, check-b384-batch, check-b384-bannerroom, check-b384-polish, check-b382-ifcart (above).
-  check-b382-unhide D (the character question) fails the same on c8143d5 and here: not from this work.
+- Run, one at a time: check-js; every banner rendered with no page error (tools/shoot-fc-banners.py); check-b384-fcbanners ALL PASS (15 lines FAIL on c8143d5); check-b384-banners, check-b384-sets,
+  check-b384-batch, check-b384-bannerroom, check-b384-polish ALL PASS; sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (0 off centre); check-b382-ifcart as above.
+  Failing the same on c8143d5 and here, so not from this work: check-b382-unhide D (the character question) and five lines of check-b384-cutscenes (the hundo effect cards' counts, the rank cards'
+  badge counts, Customize's ultimate note, the academy's words).
 - NOT confirmable in Chromium: how the strips read on a phone's real screen at the scale the covers are shown; frame rate of Grand Finale (580 elements, 14 layers, the clipped truck layers) and Inspection
   Team on an old iPhone; the Silverado's likeness to the real truck is a judgement from its profile (proportions measured, not compared to a photo); the headlamp and grille in profile are a drawing of a
   3/4-turned nose seen edge on, so they read as a nose, not as a particular model.
