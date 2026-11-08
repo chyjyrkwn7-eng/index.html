@@ -78813,7 +78813,8 @@ const IFC_BANNER_ART = {
   /* QUASAR (flare_umbra; was Recon) - the violet flare is the engine at the heart of a galaxy: a black hole at
      the middle with its disc seen edge-on and tilted, glowing white at the inside and violet at the rim, and out of
      both poles two long jets of violet light driven off through the whole banner, bright knots running along
-     them. The disc turns, the jets pulse, the knots travel. */
+     them. The flare is on its brow: a violet-white bead on the axis just above the hole, where the upper jet is born (the character wears it
+     the same way). The disc turns, the jets pulse, the knots travel, the bead glints. */
   flare_umbra(u){
     const rnd = bnRand(3814);
     const st = bnStarsSplit(rnd, 70, 170);
@@ -78824,7 +78825,7 @@ const IFC_BANNER_ART = {
       ring += '<circle cx="120" cy="120" r="' + r + '" fill="none" stroke="' + c + '" stroke-width="' + (i % 2 ? 4.4 : 3) + '" stroke-dasharray="' + da + '" opacity="' + o + '"/>'; });
     const defs = '<defs>' + bnLin(u + "bg", [[0, "#04030C"], [0.5, "#140C30"], [1, "#0A0620"]]) + bnRad(u + "halo", [[0, "#D8CCFF", 0.75], [0.3, "#8B5CF6", 0.4], [1, "#8B5CF6", 0]]) +
       bnLin(u + "jetU", [[0, "#FFFFFF", 0.95], [0.25, "#CDBDFB", 0.6], [1, "#8B5CF6", 0]], 0, 1, 0, 0) + bnLin(u + "jetD", [[0, "#FFFFFF", 0.95], [0.25, "#CDBDFB", 0.6], [1, "#8B5CF6", 0]], 0, 0, 0, 1) +
-      bnRad(u + "disc", [[0, "#000000", 1], [0.2, "#000000", 1], [0.28, "#FFFFFF", 0.9], [0.4, "#CDBDFB", 0.55], [0.7, "#8B5CF6", 0.22], [1, "#8B5CF6", 0]]) + bnRad(u + "knot", [[0, "#FFFFFF", 1], [1, "#B49CFF", 0]]) + '</defs>';
+      bnRad(u + "disc", [[0, "#000000", 1], [0.2, "#000000", 1], [0.28, "#FFFFFF", 0.9], [0.4, "#CDBDFB", 0.55], [0.7, "#8B5CF6", 0.22], [1, "#8B5CF6", 0]]) + bnRad(u + "knot", [[0, "#FFFFFF", 1], [1, "#B49CFF", 0]]) + bnRad(u + "bead", [[0, "#FFFFFF", 1], [0.3, "#E6DCFF", 0.9], [0.65, "#8B5CF6", 0.45], [1, "#8B5CF6", 0]]) + '</defs>';
     const jet = (dir) => '<path d="M' + (CX - 6) + ' ' + CY + ' L' + (CX + 6) + ' ' + CY + ' L' + (CX + 6 + dir * 0) + ' ' + (CY + dir * 130) + ' L' + (CX - 6) + ' ' + (CY + dir * 130) + ' Z" fill="none"/>' +
       '<path d="M' + (CX - 5) + ' ' + CY + ' L' + (CX - 26) + ' ' + (CY + dir * 130) + ' L' + (CX + 26) + ' ' + (CY + dir * 130) + ' L' + (CX + 5) + ' ' + CY + ' Z" fill="url(#' + u + (dir < 0 ? "jetU" : "jetD") + ')"/>' +
       '<path d="M' + (CX - 2) + ' ' + CY + ' L' + (CX - 7) + ' ' + (CY + dir * 130) + ' L' + (CX + 7) + ' ' + (CY + dir * 130) + ' L' + (CX + 2) + ' ' + CY + ' Z" fill="url(#' + u + (dir < 0 ? "jetU" : "jetD") + ')"/>';
@@ -78843,6 +78844,9 @@ const IFC_BANNER_ART = {
       /* knots of light running up and down the jets */
       { svg: '<circle cx="' + CX + '" cy="' + (CY - 30) + '" r="4" fill="url(#' + u + 'knot)"/><circle cx="' + CX + '" cy="' + (CY - 74) + '" r="3" fill="url(#' + u + 'knot)"/>', box: [CX - 12, CY - 130, 24, 130], wrap: "rotate(" + TILT + "deg)", o: [CX, CY], cls: "bl-meteor", style: "animation-duration:4s" },
       { svg: '<circle cx="' + CX + '" cy="' + (CY + 34) + '" r="4" fill="url(#' + u + 'knot)"/><circle cx="' + CX + '" cy="' + (CY + 76) + '" r="3" fill="url(#' + u + 'knot)"/>', box: [CX - 12, CY, 24, 130], wrap: "rotate(" + TILT + "deg)", o: [CX, CY], cls: "bl-meteor", style: "animation-duration:4s;animation-delay:-2s" },
+      /* the flare on its brow: a bead on the axis just above the hole, with its four spikes */
+      { svg: '<circle cx="' + bnF(CX + Math.sin(TILT * Math.PI / 180) * 24) + '" cy="' + bnF(CY - Math.cos(TILT * Math.PI / 180) * 24) + '" r="15" fill="url(#' + u + 'bead)"/><circle cx="' + bnF(CX + Math.sin(TILT * Math.PI / 180) * 24) + '" cy="' + bnF(CY - Math.cos(TILT * Math.PI / 180) * 24) + '" r="3.8" fill="#FFFFFF"/>', box: [CX + Math.sin(TILT * Math.PI / 180) * 24 - 15, CY - Math.cos(TILT * Math.PI / 180) * 24 - 15, 30, 30], o: [CX + Math.sin(TILT * Math.PI / 180) * 24, CY - Math.cos(TILT * Math.PI / 180) * 24], cls: "bl-pulse", style: "animation-duration:2.4s" },
+      { svg: '<path d="M' + bnF(CX + Math.sin(TILT * Math.PI / 180) * 24 - 18) + ' ' + bnF(CY - Math.cos(TILT * Math.PI / 180) * 24) + ' L' + bnF(CX + Math.sin(TILT * Math.PI / 180) * 24 + 18) + ' ' + bnF(CY - Math.cos(TILT * Math.PI / 180) * 24) + ' M' + bnF(CX + Math.sin(TILT * Math.PI / 180) * 24) + ' ' + bnF(CY - Math.cos(TILT * Math.PI / 180) * 24 - 18) + ' L' + bnF(CX + Math.sin(TILT * Math.PI / 180) * 24) + ' ' + bnF(CY - Math.cos(TILT * Math.PI / 180) * 24 + 18) + '" stroke="#E6DCFF" stroke-width="1" stroke-linecap="round"/>', box: [CX + Math.sin(TILT * Math.PI / 180) * 24 - 20, CY - Math.cos(TILT * Math.PI / 180) * 24 - 20, 40, 40], o: [CX + Math.sin(TILT * Math.PI / 180) * 24, CY - Math.cos(TILT * Math.PI / 180) * 24], cls: "bl-glint", style: "animation-duration:3.6s" },
       { svg: fbEmberSheet(rnd, 480, 90, 20, ["#CDBDFB", "#FFFFFF", "#8B6CF0"]), box: [0, 0, 480, 180], cls: "bl-rise", style: "animation-duration:24s;opacity:.5" }
     ];
   },
