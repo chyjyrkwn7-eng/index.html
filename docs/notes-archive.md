@@ -36784,3 +36784,73 @@ Madison: "go through each and every unlock reward for the ifc and check them tho
 - LOOKED AT AND LEFT (big, Customize tile, unlock card, 26 px, greyed): Hazmat, Undercover, Toxic Spill (the one grin in the class, a monster's), The Irons, Sprinkler Head (the white robot he wants kept), Nebula, Quasar, Eclipse; the starters Ghost / Bear / Alien and the seven rank characters are the academy's own drawings and are pinned byte for byte - not touched. REPORTED, NOT CHANGED: Forge, Lunar, Solar, Tempest and Oracle all wear the same hollow ring "lit" eye recoloured (r5-chars' fine signature passes because colour and place differ, but at a glance it is one treatment five times). Changing it changes the academy too; it wants Madison's word.
 - GATES: tools/check-b384-r6-chars.py (new): A no cowboy hats; B the Inspector's polo, vest, badge, mic, navy cap with the cross, glasses, clipboard, closed mouth; C the Chief bareheaded, silver hair, moustache, navy polo, gold piping, insignia on both collar points, badge; D every hard hat / helmet / cap navy (Smoke Diver's among them); E the four uniformed people in navy; F Drone Pilot's goggles up above showing eyes, controller screen, closed mouth; G Star Ranger's bubble helmet, star badge, clear eyes; H only Toxic Spill shows teeth; I Pulsar's ring under the slit; J no bar across Strobe's visor; K Dispatcher's small lamp. Every group FAILS on ea31d43 (--against). Updated consciously, each failing on ea31d43: check-b384-r5-chars 7 (the changed set gains detective, poseidon, ronin, zenith, masked, hacker), check-b384-fcchars3 B (the Inspector's hat is the dark duty cap), check-b384-ifcchars B (duty cap, not cowboy) and C (2D clearance on drawn shapes; a stricter measure of the old rule, passes on both), check-b384-sets (2) (the ultimate in a space helmet, star badge, eyes, no duster), check-b382-ifcart (the cap joins the hat list; "inspector, chief and rangers wear cowboy hats" became "no Fire Code character wears one; cap / bareheaded / space helmet" - copy ea31d43 over index.html to see it fail, that gate has no --against). check-b382-ifcart keeps its five known failures (forge, the academy-art hashes twice, the hundo ladder, round 3's list), none from this work.
 - NOT CONFIRMABLE in Chromium: the navy reading on an iPhone's colour pipeline (the cap and helmet are deliberately dark, lit only by the figure light), the drone's hover and rotor animation at 26 px on a phone, the Pulsar's pulse over the new ring.
+## 384 round 6 (r6-banners, cut from claude/b384 ea31d43; NOT on main): the Fire Code banners in police gear, three replaced, every one audited
+
+Madison: "We are FIRE inspectors. Fire inspectors wear police gear. We mostly wear the vests but a lot of us are also police officers. If we aren't police officer
+we dress almost identical except we don't have a gun" / "If there is going to be any hard hats in any of the photos they will be navy blue. Our police outfits are
+navy blue pants and short sleeved polo shirts." / "Inspectors across the banners should have the same kinda look? Excluding the dark ones cause you can't see them."
+Then per banner (below) and "go through each and every unlock reward for the ifc and check them thoroughly ... I need perfection". Only IFC_BANNER_ART's entries,
+IFC_BANNER_LOOK's names and tints, and the new FCB6 block (after FCB4-END). Ids, labels, needs and unlock rules untouched; the academy, the flare and rank banners,
+Star Ranger and every character untouched.
+- THE ONE INSPECTOR (FCB6). FB_KIT is the outfit, one palette: navy polo #24365F (shade #16223F, fold #3C5490), navy pants #1B2848, black boots, a black plate
+  carrier #15181E, gold #EDBE4E, navy cap #1F2E55. fbOfficer(x, y, s, o) front on (poses clip, torchUp, torchDown, radio, plans, belt, cross); fbOfficerBack (salute,
+  belt, cross, stand, point; FIRE / MARSHAL across the back plate in letters that take o.tone); fbOfficerKneel (profile, one knee down, a flashlight out). Each:
+  short-sleeved polo (sleeve to 55% of the upper arm with a hem, bare forearm), collar points above the vest; the plate carrier (cummerbund, shoulder straps, the
+  front plate with webbing rows, a FIRE MARSHAL ID panel, a gold shield badge, a name tape, a radio on the right shoulder strap with its antenna and red light);
+  the duty belt (buckle, keepers, cuff case, a flashlight in its ring - empty when it is in his hand - and o.gun a holster with the grip showing, otherwise a
+  pouch); short hair or o.cap a navy ball cap with a gold patch. No hard hats, no hi-vis. fbKitTorch is the held tactical light (tail cap, knurled barrel, head,
+  crenellated bezel, lens) in a closed fist; the beam starts at its lens (returned). fbKitBoard / fbKitFingers are round 4's clipboard and fingers, shared.
+  Every figure is <g class="fb-officer" data-pose=...> (fb-back from behind) with fb-polo, fb-pants, fb-tacvest, fb-belt inside - the gate reads those.
+  Gear objects for a table and a wall: fbGearTorch, fbGearRadio, fbGearGloves, fbGearCap (SIDE ON, the bill out: a cap drawn from the front as a dome read as a
+  hard hat on the first try, which is the one thing this round could not afford), fbGearWallet. fbInsp / fbInspBack (round 4's hi-vis man) stay in place unused.
+- ELEMENTS: the first kit put Inspection Team at 709 (cap 700). The rim silhouette is four shapes (legs, one path of boots+torso+neck, arms, head), ears, eyes and
+  hands are one multi-circle path each (pen.dcs), and a few invisible strokes went: Inspection Team 666, Grand Finale 681. A new pose wants a count afterwards.
+- PER BANNER. tests100 CERTIFIED: "the ribbon is broken" - the big seal's right tail stuck out past the seal and both tails ran off the paper over the mat and
+  the gold frame (the small frames' tails did the same); now a scalloped rosette, both tails starting under it and ending in a V on the paper, the small seals
+  the same; the big certificate's ruled lines no longer strike through CERTIFIED / FIRE MARSHAL; the desk badge moved from x 240 (dead centre) to 176, beside the
+  lamp and in its light. tests250 PLAN REVIEW: an architect's lamp (weighted base, pivot, parallel-bar arms meeting at knuckles, a coil spring hooked on at both
+  ends, the hinge, a yoke, the shade with its rim and bulb; the cone leaves the bulb's rim); the scale ruler and the yellow pencil and one roll gone; the hard
+  hat replaced by a navy cap; a tactical flashlight, a radio standing on its base, black gloves; every shadow thrown away from the lamp (down-right; the red
+  pencil's used to fall towards it). tests500 INSPECTION TEAM: the five are fbOfficer (three with handguns, two caps); the pavement gives back navy, not lime.
+  hundos250 GRAND FINALE: the seven are fbOfficerBack (two salute, two hands on belts, two arms folded, one at ease; four with handguns, three caps); the hats
+  held up are gone (there are no hard hats to hold). hundos100 SQUARED AWAY (was Certificate of Merit; "I don't like it" / "a wall with like all your tactical
+  stuff mounted ... under a cool light"): a dark slatwall under one pendant lamp - the plate carrier hung by its drag handle (FIRE MARSHAL panel, badge, name
+  tape, five webbing rows, a light pouch, the radio on its strap), the duty belt across two hooks with a holstered handgun (muzzle down in a molded holster, the
+  grip out to the rear and up, the slide's back under the retention hood), magazine pouches, the cuff case and a flashlight in its ring; two flashlights in wall
+  clips; cuffs on a hook (two rings, three links); a navy cap on a peg; gloves on a carabiner; on the shelf the badge wallet and a radio in its charger with a
+  green light. The cone is three soft trapezoids (one hard one greyed the vest); each item's contact shadow is its own outline in black (shadowOf), pushed down
+  and away from the lamp. level80 TOP FLOOR (was Top of the Ladder): the 80th floor at night - the officer from behind at the glass, hands on belt; the city
+  eighty floors down (avenues to a vanishing point beside him, lights packed towards the horizon, three lower towers' roofs with red aviation lamps, the far
+  skyline, a moon); the stairwell door under a lit EXIT and the stair identification sign STAIR 1 / FLOOR / 80 / ROOF ACCESS. exam100 CLEAN SWEEP (was Ten in a
+  Row): a corridor at night in one-point perspective, five doors a side, a green inspection tag with a white tick on each of the ten levers (glowing, in two
+  groups), a red EXIT over the double doors at the end, emergency lamps and their pools, the floor giving back the tags, an extinguisher cabinet. No figure: at
+  handle height the tags sit on the eye line, so anyone in the corridor hides some. The levers are on each door's FAR edge, or the nearest left tag falls off
+  the frame. early10 AFTER HOURS: the kneeling man is fbOfficerKneel (navy cap, polo, plate carrier with radio, belt and holster), the lens placed where the
+  old one was (LX/LY now read from it); tag, riser, sign and clock untouched. study50 CODE BOOK (audit): the shade-on-a-post became a banker's lamp (base, stem,
+  harp arm, the green shade over the left page with its lit underside, the bulb, a pull chain) whose cone and pool actually light the book; still just the
+  book on the desk (round 3's rule). correct10000 FIRE INVESTIGATOR: checked at 3x (tape wrapped at the jamb and the post, the post on its base, the beam from
+  the fist): no change.
+- AUDITED, NO CHANGE: On Call (conduits enter the panel and the pull station; the documents box on its own), Downpour (heads hang from the main), Mutual Aid
+  (every route ends on the incident), Nebula, Quasar, Pulsar, Eclipse, Sapphire, Amethyst, Supernova (the three rank banners are the academy's art, shared), Star
+  Ranger and Fire Investigator (silhouettes in dark scenes, kept as asked).
+- NAMES (IFC_BANNER_LOOK): Squared Away (#F2B84A / #3D5A9E), Top Floor (#FFB04A / #4A6AD8), Clean Sweep (#3CD9A0 / #FF5A4A). "Squared Away" was chosen over Gear
+  Wall / Ready Rack because it says both things: the gear in order, and a hundo is a perfect unit.
+- LOOKED AT: every banner as the 480x180 scene (2x/3x crops for joints), the 1050x348 strip, and the real Profile cover at 440x956 (scratch script: store.banner,
+  bannerEarned forced, showProfile): every subject's top reads above the avatar (the FIRE MARSHAL panel, the 80 and the officer, tags at both sides).
+- GATES: tools/check-b384-fcbanners.py - names; the (11)/(12) "nothing else moved" pins leave out round 6's nine; round 4's lines for the replaced scenes and
+  Grand Finale's hats are retired (fireworks, tape and tag lines stand); new (13) with prev4.json (ea31d43's hashes): nine differ and twelve are exactly as
+  they were; the one inspector everywhere (fb-officer counts 5/7/1/1, navy polo and pants, black vest, no fb-inspector / fb-hat / fb-person / fb-ff / fb-band,
+  every cap #1F2E55, no hue 62-100 saturated light colour in any Fire Code banner); Certified's 14 tails under their rosettes and on the paper, the desk badge
+  more than 40 off centre; Plan Review's lamp joined (three joints, base under the first, the shade's narrow end at the last, the cone's top corners on the
+  bulb's rim), no ruler or hard-hat gradient, its four kit items; Inspection Team (feet on one line, vest gaps, guns on some, beams from lenses); Grand Finale
+  (seven from behind, poses); Squared Away (each item, seven shadows, no certificate, the patch); Top Floor (the 80 inside the sign, one officer from behind,
+  no ladder); Clean Sweep (ten tags, five a side, inside the strip, an EXIT, no gauges); After Hours (kneeling officer, beam from the lens, no cowboy-hat
+  brown). 15 of the 16 new lines FAIL on ea31d43 (the twelve-unchanged pin cannot), all pass here. check-b382-ifcart's names line moved to the new names
+  (FAIL on ea31d43 copied over index.html, PASS here; its five other failures are the known ones). Class hooks added for this: fb-tail, fb-rosette,
+  fb-paper, fb-deskbadge, fb-joint, fb-lampbase, fb-shade, fb-bulb, fb-cuffs, fb-stairsign, fb-floor80, fb-sweeptag, fb-gear*, data-pose.
+- RUN, one at a time: check-js ALL PASS; check-b384-fcbanners ALL PASS; check-b384-banners, check-b384-sets, check-b384-batch, check-b384-bannerroom,
+  check-b384-r5-chars ALL PASS; check-b382-ifcart as above; sweep-layout --quick 20/20 clean; check-centering --quick ALL PASS (0 off centre); the console on
+  Profile with each of the 20 Fire Code banner arts and on Customize: only the two blocked Firebase CDN loads.
+- NOT confirmable in Chromium: how the strips read on a phone at the cover's size (looked at 1050x348 and the 440x956 cover in Chromium); frame rate of
+  Inspection Team (666 elements) and Grand Finale (681) on an old iPhone; whether the kit's details (badge, ID panel lettering at ~2 units tall) are legible on
+  a real screen or only read as texture; the likeness of the plate carrier, duty belt and holster to the office's actual kit (drawn from the description).
