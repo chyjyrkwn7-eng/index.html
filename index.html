@@ -79711,62 +79711,82 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* TOP OF THE LADDER (was Fully Involved; for reaching level 80; Madison: "Reach level 80 and ace 10 units are like the exact same one.. They are both a firefighter
-     with a hose at a burning building.") - the summit, not a fire: a ground ladder rising out of the bottom of the picture, across the face of a rising sun, to the
-     roof of a tower, and an inspector standing on the edge at the top with the whole city and the dawn below. Dawn colours (violet to rose to gold) where Ten in a Row is
-     night-time steel; no hose, no fire, no truck. Moves: the sun breathing, its rays turning slowly behind the skyline, streaks of cloud drifting, stars going out. */
+  /* TOP FLOOR (was Top of the Ladder; for reaching level 80, the top of the climb. Round 6, Madison: "I don't like the top of the ladder one") - the 80th floor of a
+     high-rise at night, after the final walk-through: the inspector (the one inspector, from behind: navy polo, plate carrier with FIRE MARSHAL across the back, duty
+     belt) stands at the glass with his hands on his belt, the whole city eighty floors down - avenues of light running off to the horizon, a few lower towers' roofs
+     with their red aviation lamps under him, the far skyline, a moon. On the wall beside him the stairwell door under its lit EXIT sign and the stair's fire-code
+     identification sign: STAIR 1, a big 80, ROOF ACCESS. One cool light (the city's) rims him; the EXIT sign throws its green on the door. Moves: the city's lights
+     twinkling in two groups, the aviation lamps blinking, the EXIT sign's glow breathing. */
   level80(u){
     const rnd = bnRand(8081);
-    const st = bnStarsSplit(rnd, 46, 70);
-    const HY = 134, SX = 238, SY = 134;
-    const TX = 352, TY = 88;   /* the tower: left edge and the top of its parapet */
-    /* the ladder: from below the picture (140, 200) to the parapet; unit direction d, normal n */
-    const A = [136, 204], Z = [TX + 4, TY - 1], L = Math.hypot(Z[0] - A[0], Z[1] - A[1]), d = [(Z[0] - A[0]) / L, (Z[1] - A[1]) / L], n = [-d[1], d[0]], HW = 5.6;
-    const at = (t, o) => [A[0] + d[0] * t + n[0] * o, A[1] + d[1] * t + n[1] * o].map(bnF).join(" ");
-    let rungs = "";
-    for(let t = 14; t < L - 4; t += 8.2) rungs += "M" + at(t, -HW) + " L" + at(t, HW) + " ";
-    const rails = ["M" + at(0, -HW) + " L" + at(L, -HW), "M" + at(0, HW) + " L" + at(L, HW)];
-    /* the rim of light on the rail that faces the sun (up and to the left) */
-    const rim = "M" + at(0, -HW - 1.5) + " L" + at(L, -HW - 1.5);
-    /* the sky's rays: thin wedges from the sun, behind the skyline */
-    let rays = "";
-    for(let i = 0; i < 18; i++){ const a = -Math.PI + (i + .5) * Math.PI / 18, w = .016 + (i % 3) * .008;
-      rays += 'M' + SX + ' ' + SY + ' L' + bnF(SX + Math.cos(a - w) * 330) + ' ' + bnF(SY + Math.sin(a - w) * 330) + ' L' + bnF(SX + Math.cos(a + w) * 330) + ' ' + bnF(SY + Math.sin(a + w) * 330) + ' Z '; }
-    const defs = '<defs>' + bnLin(u + "sky", [[0, "#150E3E"], [0.34, "#4E2A78"], [0.62, "#B8467E"], [0.84, "#FF8E58"], [1, "#FFD27A"]], 0, 0, 0, 1) + bnRad(u + "sun", [[0, "#FFFBE0", 1], [0.5, "#FFE08A", .55], [1, "#FFC060", 0]]) +
-      '<radialGradient id="' + u + 'ray" gradientUnits="userSpaceOnUse" cx="' + SX + '" cy="' + SY + '" r="320"><stop offset="0" stop-color="#FFE9A8" stop-opacity=".34"/><stop offset="1" stop-color="#FFE9A8" stop-opacity="0"/></radialGradient>' +
-      bnLin(u + "tower", [[0, "#2A1A4A"], [1, "#0C0618"]]) + bnLin(u + "ground", [[0, "#2A1646"], [1, "#0A0614"]]) + bnRad(u + "mist", [[0, "#FFB890", .4], [1, "#FFB890", 0]]) + bnRad(u + "vig", [[0.6, "#000", 0], [1, "#000", .45]]) + '</defs>';
-    /* streaks of cloud lit from beneath: a dark violet body with a rose belly and a gold lower edge */
-    const cloud = (x, y, w, h) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + w + '" ry="' + h + '" fill="#6A3A8A" opacity=".7"/><ellipse cx="' + (x + w * .1) + '" cy="' + (y + h * .45) + '" rx="' + (w * .94) + '" ry="' + (h * .5) + '" fill="#FF8AA0" opacity=".75"/><ellipse cx="' + (x + w * .14) + '" cy="' + (y + h * .8) + '" rx="' + (w * .8) + '" ry="' + (h * .26) + '" fill="#FFD27A" opacity=".85"/>';
-    const clouds = cloud(70, 78, 62, 7) + cloud(150, 98, 84, 8) + cloud(420, 90, 56, 6) + cloud(300, 66, 50, 5) + cloud(40, 112, 44, 5);
-    /* the city: a far layer lost in the haze, a near one with its lights on, the tower, the ground */
-    const far = fbBuildings(rnd, HY + 3, "#5A2E78", "#FFD58A", -10, 360, 10, 36, 0);
-    const near = fbBuildings(rnd, HY + 14, "#22123E", "#FFD58A", -10, 350, 8, 26, .22);
-    let tw = "";
-    for(let y = TY + 12, r = 0; y < 170; y += 13, r++) for(let c = 0; c < 4; c++) { const lit = rnd() < .3; tw += fbR(TX + 12 + c * 28, y, 12, 7, lit ? "#FFD58A" : "#2E1E52", lit ? ' opacity=".9"' : ""); }
-    const front = '<g opacity=".8">' + far.body + '</g>' + '<ellipse cx="' + SX + '" cy="' + (HY - 1) + '" rx="250" ry="15" fill="url(#' + u + 'sun)" opacity=".55"/>' + near.body + near.win +
-      fbR(TX, TY, 134, 96, "url(#" + u + "tower)") + fbR(TX, TY, 2.4, 96, "#FFB070", ' opacity=".9"') + tw +
-      fbR(TX - 4, TY - 5, 142, 6, "#2C1A4C", ' class="fb-roof"') + fbR(TX - 4, TY - 5, 142, 1.4, "#FFC88A") + fbR(TX - 4, TY - 5, 3, 6, "#FFB070") +
-      fbR(0, HY + 14, 480, 40, "url(#" + u + "ground)") + fbR(0, HY + 14, 480, 1.2, "#6A3A7E", ' opacity=".7"') + '<ellipse cx="240" cy="' + (HY + 14) + '" rx="300" ry="9" fill="url(#' + u + 'mist)"/>' +
-      /* the ladder: rails, rungs, the rim of sun on the rail, and its two hooks over the parapet */
-      '<g class="fb-ladder"><path class="fb-rung" d="' + rungs + '" stroke="#2A1A48" stroke-width="1.8" fill="none"/><path d="' + rails.join(" ") + '" stroke="#2A1A48" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-      '<path d="' + rim + '" stroke="#FFC88A" stroke-width=".9" fill="none" opacity=".85"/>' +
-      '<path d="M' + at(L - 2, -HW) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 5) + ' ' + bnF(TY - 1) + ' M' + at(L - 2, HW) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 6) + ' L' + bnF(Z[0] + 11) + ' ' + bnF(TY - 1) + '" stroke="#2A1A48" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>' +
-      /* the inspector at the top, standing on the roof edge (feet on the parapet's top), facing us with a hand up against the sun, which is on his left: hard hat, hi-vis vest with its
-         bands, the clipboard hanging from his gripped hand; the dawn warms his left side and his face */
-      fbInsp(TX + 44, TY - 5, .63, { pose: "sunrise", look: -.9, lit: -1, rim: "#FFC88A", hat: "#F6F0E8", hatD: "#B49A9A", vest: "#A3BE30", vestD: "#566A10", shirt: "#33264E", pants: "#241A3C", skin: "#C98E64", skinD: "#8A5638" }).svg +
-      '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
-   /* a few birds going out over the city */
-    const bird = (x, y, k) => '<path d="M' + x + ' ' + y + ' q' + bnF(2.6 * k) + ' ' + bnF(-2.8 * k) + ' ' + bnF(5.2 * k) + ' 0 q' + bnF(2.6 * k) + ' ' + bnF(-2.8 * k) + ' ' + bnF(5.2 * k) + ' 0" fill="none" stroke="#2A1A48" stroke-width=".9" stroke-linecap="round"/>';
-    const birds = bird(80, 58, 1) + bird(98, 52, 1.2) + bird(116, 61, .9) + bird(134, 55, 1.1) + bird(150, 64, .8) + bird(190, 46, 1);
+    const st = bnStarsSplit(rnd, 46, 48);
+    const HZ = 66, VX = 286, FL = 156;                 /* horizon, the avenues' vanishing point, the floor line */
+    const defs = '<defs>' + bnLin(u + "sky", [[0, "#03051A"], [0.6, "#101A48"], [1, "#3A2C66"]]) + bnLin(u + "ground", [[0, "#2A2550"], [0.18, "#14183A"], [1, "#05060E"]]) +
+      bnLin(u + "wall", [[0, "#1A1E2E"], [1, "#0C0E16"]]) + bnLin(u + "floor", [[0, "#1A2038"], [1, "#07080E"]]) + bnLin(u + "door", [[0, "#3A4258"], [1, "#1E2333"]], 0, 0, 1, 0) +
+      bnLin(u + "mull", [[0, "#05060B"], [0.5, "#1E2436"], [1, "#05060B"]], 0, 0, 1, 0) + bnRad(u + "moon", [[0, "#E8ECFF", .5], [1, "#E8ECFF", 0]]) + bnRad(u + "hz", [[0, "#FF9A6A", .3], [1, "#FF9A6A", 0]]) +
+      bnRad(u + "exit", [[0, "#5CFF9A", .55], [1, "#5CFF9A", 0]]) + bnRad(u + "av", [[0, "#FF3A2A", .8], [1, "#FF3A2A", 0]]) + bnLin(u + "glass", [[0, "#9AB8FF", 0], [0.5, "#9AB8FF", .08], [1, "#9AB8FF", 0]], 0, 0, 1, 1) +
+      bnLin(u + "spill", [[0, "#7A90D0", .2], [1, "#7A90D0", 0]]) + bnRad(u + "vig", [[0.55, "#000", 0], [1, "#000", .55]]) + '</defs>';
+    /* ---- outside: the sky, the moon, the far skyline, the city's floor running off to the horizon ---- */
+    let out = '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + '<circle cx="228" cy="24" r="22" fill="url(#' + u + 'moon)"/><circle cx="228" cy="24" r="6.4" fill="#F4F2E8"/><circle cx="230" cy="22.6" r="5.4" fill="#DCD8CA" opacity=".35"/>' +
+      '<ellipse cx="' + VX + '" cy="' + HZ + '" rx="260" ry="26" fill="url(#' + u + 'hz)"/>';
+    /* the far skyline along the horizon: one path of blocks, one of their lit windows */
+    let sky1 = "", skyW = "";
+    for(let x = 110; x < 482;){ const bw = 6 + rnd() * 12, bh = 3 + rnd() * (Math.abs(x - 300) < 70 ? 16 : 8); sky1 += "M" + bnF(x) + " " + HZ + " v" + bnF(-bh) + " h" + bnF(bw) + " v" + bnF(bh) + " Z ";
+      for(let wy = HZ - bh + 2; wy < HZ - 1.5; wy += 2.6) for(let wx = x + 1.4; wx < x + bw - 1.4; wx += 2.4) if(rnd() < .28) skyW += "M" + bnF(wx) + " " + bnF(wy) + " h1 v1 h-1 Z "; x += bw + .6; }
+    out += '<path d="' + sky1 + '" fill="#141634"/><path d="' + skyW + '" fill="#FFD58A" opacity=".75"/>';
+    out += '<path d="M110 ' + HZ + ' L480 ' + HZ + ' L480 ' + FL + ' L110 ' + FL + ' Z" fill="url(#' + u + 'ground)"/>';
+    /* the avenues off to the vanishing point and the cross streets closing up towards the horizon; lights along both; car trails on two avenues */
+    const ave = [-560, -300, -120, 40, 170, 290, 400, 520, 700, 980], cross = [], lights = [], lightsW = [];
+    for(let i = 1; i <= 11; i++){ const t = i / 11; cross.push(HZ + (FL - HZ) * t * t); }
+    let streets = "", crossS = "";
+    ave.forEach(xb => { streets += "M" + VX + " " + HZ + " L" + xb + " " + FL + " ";
+      for(let k = 0; k < 30; k++){ const t = Math.pow(rnd(), 1.5), y = HZ + (FL - HZ) * t, x = VX + (xb - VX) * t; if(x > 112 && x < 480) (rnd() < .78 ? lights : lightsW).push([x, y]); } });
+    cross.forEach(y => { crossS += "M110 " + bnF(y) + " L480 " + bnF(y) + " ";
+      const n = Math.round(10 + (y - HZ) * .12); for(let k = 0; k < n; k++){ const x = 112 + rnd() * 368; (rnd() < .8 ? lights : lightsW).push([x, y]); } });
+    /* windows of the blocks between the streets: faint warm specks scattered over the ground */
+    let specks = ""; for(let k = 0; k < 260; k++){ const t = Math.pow(rnd(), 1.7), y = HZ + 1 + (FL - HZ - 1) * t, x = 112 + rnd() * 368; specks += "M" + bnF(x) + " " + bnF(y) + " l0 0 "; }
+    const dots = (lst, every, off) => lst.filter((_, i) => i % every === off).map(p => "M" + bnF(p[0]) + " " + bnF(p[1]) + " l0 0").join(" ");
+    out += '<path d="' + streets + '" stroke="#C88A3A" stroke-width=".6" opacity=".26" fill="none"/><path d="' + crossS + '" stroke="#C88A3A" stroke-width=".45" opacity=".12" fill="none"/>' + '<path d="' + specks + '" stroke="#FFC878" stroke-width=".7" stroke-linecap="round" opacity=".38" fill="none"/>' +
+      '<path d="' + dots(lights, 2, 0) + '" stroke="#FFC060" stroke-width="1.15" stroke-linecap="round" fill="none"/><path d="' + dots(lightsW, 1, 0) + '" stroke="#EAF2FF" stroke-width="1" stroke-linecap="round" fill="none"/>' +
+      '<path d="M' + VX + ' ' + HZ + ' L170 ' + FL + '" stroke="#FF4A3A" stroke-width="1" opacity=".38" stroke-dasharray="1.6 2.6"/><path d="M' + VX + ' ' + HZ + ' L400 ' + FL + '" stroke="#FFF2D8" stroke-width="1" opacity=".34" stroke-dasharray="1.4 3"/>' +
+      '<ellipse cx="' + VX + '" cy="' + (HZ + 6) + '" rx="230" ry="18" fill="url(#' + u + 'hz)" opacity=".8"/>';
+    const twA = dots(lights, 2, 1);
+    /* three lower towers under him, seen from above: a roof with its parapet and a red lamp, the lit face below it */
+    const tower = (x, y, w, d, k) => { const face = '<path d="M' + x + ' ' + y + ' h' + w + ' L' + (x + w + 3) + ' ' + FL + ' L' + (x - 3) + ' ' + FL + ' Z" fill="#0B0D1C"/>';
+      let wl = ""; for(let yy = y + 3; yy < FL - 1; yy += 3.2) for(let xx = x + 1.6; xx < x + w - 1.4; xx += 2.8) if(rnd() < .4) wl += "M" + bnF(xx) + " " + bnF(yy) + " h1.3 v1.4 h-1.3 Z ";
+      return face + '<path d="' + wl + '" fill="#FFD58A" opacity=".7"/><path d="M' + (x - 1) + ' ' + y + ' L' + (x + w + 1) + ' ' + y + ' L' + (x + w - 2) + ' ' + (y - d) + ' L' + (x + 2) + ' ' + (y - d) + ' Z" fill="#20243C" stroke="#3A4060" stroke-width=".5"/>' +
+        fbC(x + w * k, y - d * .5, 1.1, "#FF4A3A"); };
+    out += tower(150, 128, 26, 6, .3) + tower(268, 136, 34, 7, .7) + tower(432, 124, 30, 8, .5);
+    const avLamps = [[150 + 26 * .3, 125], [268 + 34 * .7, 132.5], [432 + 30 * .5, 120]];
+    /* ---- the window wall: mullions, the sill, the ceiling, the glass's sheen ---- */
+    let win = '<rect x="110" y="0" width="370" height="8" fill="#07080E"/><rect x="110" y="8" width="370" height="2" fill="#2A3048"/>' + fbR(110, FL, 370, 3, "#2A3048") + fbR(110, FL + 3, 370, 1.4, "#000", ' opacity=".6"');
+    [118, 210, 302, 394, 476].forEach(x => { win += fbR(x - 3.4, 8, 6.8, FL - 8, "url(#" + u + "mull)") + fbR(x + 1.4, 8, .8, FL - 8, "#4A5478", ' opacity=".6"'); });
+    win += '<path d="M150 10 L190 10 L130 156 L110 156 L110 108 Z M330 10 L352 10 L300 156 L278 156 Z" fill="url(#' + u + 'glass)"/>';
+    /* ---- inside, the wall on the left: the stairwell door, its EXIT sign, and the stair identification sign ---- */
+    let wall = fbR(0, 0, 114.6, FL, "url(#" + u + "wall)") + fbR(0, 0, 114.6, 8, "#07080E");
+    wall += fbR(16, 66, 46, FL - 66, "#0A0C14") + fbR(19, 69, 40, FL - 69, "url(#" + u + "door)") + fbR(22, 76, 10, 22, "#0E1424", ' stroke="#4A5470" stroke-width=".6"') + '<path d="M23 77 L31 91" stroke="#9AB0E0" stroke-width=".6" opacity=".4"/>' +
+      fbR(21, 112, 36, 3.6, "#9AA4B8", ' rx="1.4"') + fbR(21, 112, 36, 1, "#E4EAF4", ' opacity=".7"') + fbR(54, 104, 3, 18, "#6A748A", ' rx="1"') + fbR(55, 76, 2, 4, "#6A748A") + fbR(55, 138, 2, 4, "#6A748A") + fbR(19, 69, 40, 1.4, "#5A6480", ' opacity=".7"');
+    wall += fbR(25, 50, 28, 11, "#0E1A12", ' stroke="#2A3A30" stroke-width=".8" rx="1.2"') + fbText("EXIT", 39, 55.6, 6, "#7CFFAE", 1.15) + fbR(37.4, 61, 3.2, 5, "#2A3048");
+    /* the stair sign (STAIR 1 / 80 / ROOF ACCESS and its arrow), on two screws */
+    const SX0 = 70, SY0 = 72, SW = 36, SH = 52;
+    wall += fbR(SX0 + 1.4, SY0 + 2, SW, SH, "#000", ' opacity=".5"') + fbR(SX0, SY0, SW, SH, "#16306E", ' rx="1.6" stroke="#E8EEF8" stroke-width="1.1" class="fb-stairsign"') + fbR(SX0 + 2.6, SY0 + 2.6, SW - 5.2, 9, "#E8EEF8", ' rx=".8"') +
+      fbText("STAIR 1", SX0 + SW / 2, SY0 + 7.2, 4.4, "#16306E", .85) + fbText("FLOOR", SX0 + SW / 2, SY0 + 16, 3.8, "#CFE0FF", .7) + fbText("80", SX0 + SW / 2, SY0 + 31, 16, "#FFFFFF", 3, ' class="fb-floor80"') +
+      '<path d="M' + (SX0 + 4) + ' ' + (SY0 + 45.4) + ' L' + (SX0 + SW - 4) + ' ' + (SY0 + 45.4) + '" stroke="#E8EEF8" stroke-width=".5" opacity=".7"/>' + fbText("ROOF ACCESS", SX0 + SW / 2 + 2.4, SY0 + 48.8, 2.6, "#E8EEF8", .5) +
+      fbP("M" + (SX0 + 4.4) + " " + (SY0 + 50.4) + " L" + (SX0 + 4.4) + " " + (SY0 + 47.4) + " L" + (SX0 + 3) + " " + (SY0 + 47.4) + " L" + (SX0 + 5.4) + " " + (SY0 + 45.8) + " L" + (SX0 + 7.8) + " " + (SY0 + 47.4) + " L" + (SX0 + 6.4) + " " + (SY0 + 47.4) + " L" + (SX0 + 6.4) + " " + (SY0 + 50.4) + " Z", "#E8EEF8") +
+      fbC(SX0 + 3, SY0 + 15, .7, "#9AA4B8") + fbC(SX0 + SW - 3, SY0 + 15, .7, "#9AA4B8");
+    /* ---- the floor: polished, the window's light lying across it in bands, his shadow ---- */
+    let floor = fbR(0, FL, 480, 180 - FL, "url(#" + u + "floor)") + [164, 256, 348, 436].map(x => '<path d="M' + (x - 40) + ' ' + (FL + 3) + ' L' + (x + 40) + ' ' + (FL + 3) + ' L' + (x + 64) + ' 180 L' + (x - 30) + ' 180 Z" fill="url(#' + u + 'spill)"/>').join("") +
+      fbR(16, FL, 46, 24, "#5CFF9A", ' opacity=".05"');
+    /* ---- him: the one inspector from behind, hands on his belt, looking out; the city's cool light on his edges ---- */
+    const man = fbOfficerBack(350, FL + 6, .98, { pose: "belt", tone: "#B8CCFF", lit: -1, gun: true, cap: true, skin: "#B07A58" });
+    const g = defs + out + win + wall + floor + man + '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
     return [
-      { svg: defs + '<rect width="480" height="180" fill="url(#' + u + 'sky)"/>' + st.still + clouds + '<circle cx="' + SX + '" cy="' + SY + '" r="31" fill="#FFF2C0"/>' },
-      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.6s" },
-      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.4s;animation-delay:-1.3s" },
-      { svg: '<circle cx="' + SX + '" cy="' + SY + '" r="86" fill="url(#' + u + 'sun)"/>', box: [SX - 86, SY - 86, 172, 172], o: [SX, SY], cls: "bl-pulse", style: "animation-duration:4.6s" },
-      { svg: '<path d="' + rays + '" fill="url(#' + u + 'ray)"/>', box: [SX - 330, SY - 330, 660, 330], vb: [SX - 330, SY - 330, 660, 330], o: [SX, SY], cls: "bl-sweep", style: "animation-duration:14s" },
-      { svg: cloud(260, 54, 40, 4) + cloud(110, 58, 36, 4), box: [40, 40, 300, 40], cls: "bl-drift", style: "animation-duration:30s" },
-      { svg: birds, box: [60, 36, 160, 40], cls: "bl-drift", style: "animation-duration:22s" },
-      { svg: front }
+      { svg: g },
+      { svg: st.a, cls: "bl-tw", style: "animation-duration:2.8s" },
+      { svg: st.b, cls: "bl-tw", style: "animation-duration:3.7s;animation-delay:-1.4s" },
+      { svg: '<path d="' + twA + '" stroke="#FFE2A0" stroke-width="1.3" stroke-linecap="round" fill="none"/>', box: [110, HZ - 2, 370, FL - HZ + 4], cls: "bl-tw", style: "animation-duration:3.3s;animation-delay:-.8s" },
+      { svg: avLamps.map(p => '<circle cx="' + bnF(p[0]) + '" cy="' + bnF(p[1]) + '" r="5" fill="url(#' + u + 'av)"/>').join(""), box: [140, 110, 320, 30], cls: "bl-glow", style: "animation-duration:1.6s" },
+      { svg: '<ellipse cx="39" cy="56" rx="34" ry="22" fill="url(#' + u + 'exit)"/>', box: [5, 34, 68, 44], o: [39, 56], cls: "bl-breathe", style: "animation-duration:4s" }
     ];
   },
 
@@ -80346,7 +80366,7 @@ const IFC_BANNER_LOOK = {
   hundos250: ["Grand Finale", "#FFD36A", "#7FB8FF"], vr50: ["Mutual Aid", "#4FB8FF", "#FF3B30"],
   study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["On Call", "#E8402E", "#2ECC71"],
   correct5000: ["Downpour", "#6FA8D8", "#FF8A3D"], correct10000: ["Fire Investigator", "#F2C21E", "#FF7A2E"],
-  level80: ["Top of the Ladder", "#FFB04A", "#C04A9A"], early10: ["After Hours", "#3FD0C0", "#F2C14E"],
+  level80: ["Top Floor", "#FFB04A", "#4A6AD8"], early10: ["After Hours", "#3FD0C0", "#F2C14E"],
   exam100: ["Ten in a Row", "#3CD9A0", "#F2B93A"], flare_void: ["Nebula", "#F97316", "#EF4444"],
   flare_umbra: ["Quasar", "#8B6CF0", "#CDBDFB"], flare_horizon: ["Pulsar", "#6FB4F2", "#CFEAFF"],
   flare_genesis: ["Eclipse", "#FF5CA8", "#FFB04A"], astral: ["Moon Ranger", "#9CC0FF", "#5470A8"],
