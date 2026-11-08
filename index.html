@@ -78261,51 +78261,58 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* FULLY COMPLIANT (was Exit; for earning 100 hundos; Madison: "Great concept but it's kinda confusing.. there's just a lot of random stuff going
-     on.. it's like 6 different random things.. fix this.") - ONE idea: the door and its inspection tag. A steel fire door in a corridor
-     (frame, leaf, hinges, wired-glass window lit from the stairwell, a lever and its plate, a kick plate), and from the lever, on its cord
-     through the grommet, a big tag stamped 100% COMPLIANT with a tick in a disc on its corner. The sign, the clipboard, the extinguisher, the
-     rating plates and the door closer are gone; one overhead light and a green breath of light round the tag are all that is left. The first rung
-     of its ladder: still. */
+  /* PERFECT SCORE (was Fully Compliant; for earning 100 hundos; Madison: "The earn 100 hundos banner, just try something else..") - a hundo is a perfect
+     100% on a unit, so: the scoreboard in a fire-station training room with 100% lit up on it. A black board in a chrome bezel under UNIT SCORE, the
+     three digits and the percent sign drawn as the lit segments of a seven-segment display (the unlit ones just visible behind them), a row of ten
+     lamps under them all lit, the green light of it on the wall, the floor and the backs of the chairs in the room. Nothing else on the wall. The
+     first rung of its ladder: still. */
   hundos100(u){
-    const rnd = bnRand(3824);
-    const GY = 160, DX0 = 170, DX1 = 310, DY0 = 12;
-    const defs = '<defs>' + bnLin(u + "wall", [[0, "#2C3A44"], [1, "#16202A"]]) + bnLin(u + "door", [[0, "#9AA8B8"], [0.5, "#74828F"], [1, "#4A5666"]], 0, 0, 1, 0) + bnLin(u + "glassg", [[0, "#C4ECFC"], [1, "#4A86B0"]]) +
-      bnLin(u + "floor", [[0, "#323E48"], [1, "#10161C"]]) + bnLin(u + "tag", [[0, "#F6E6B4"], [1, "#D8BC7C"]]) + bnLin(u + "chrome", [[0, "#F4F6F9"], [1, "#7A808C"]], 0, 0, 1, 1) +
-      bnRad(u + "lite", [[0, "#FFF2D0", 0.6], [1, "#FFF2D0", 0]]) + bnRad(u + "ok", [[0, "#6CFFA0", 0.5], [1, "#6CFFA0", 0]]) + bnRad(u + "vig", [[0.55, "#000000", 0], [1, "#000000", 0.55]]) + '</defs>';
-    /* the stamp on the tag, upright: a green double-ruled plate, 100%, COMPLIANT */
-    const stamp = fbR(-27, -22, 54, 46, "none", ' rx="4" stroke="#1E9A4E" stroke-width="2.6"') + fbR(-24, -19, 48, 40, "none", ' rx="2" stroke="#1E9A4E" stroke-width=".9"') +
-      fbText("100%", 0, -7, 14, "#1E9A4E", 2.5) + fbText("COMPLIANT", 0, 12.4, 5.6, "#1E9A4E", 1.2) + '<path d="M-21 4.2 L21 4.2" stroke="#1E9A4E" stroke-width=".8"/>';
-    /* the lever's pivot is at (LX, LY); the cord goes from the lever down to the grommet in the tag's top */
-    const LX = 288, LY = 76;
-    const tag = '<g transform="translate(' + LX + ' ' + (LY + 12) + ') rotate(-5)">' +
-      fbP("M-33 -2 L33 -2 L33 72 L-33 72 Z", "#000", ' opacity=".35" transform="translate(3 4)"') +
-      fbP("M-33 -2 L33 -2 L33 72 L-33 72 Z", "url(#" + u + "tag)", ' stroke="#8A6A2A" stroke-width=".9"') + fbP("M-33 -2 L-25 -2 L-33 6 Z", "#C9A860") +
-      fbC(0, 5, 3, "#1E2430", ' stroke="#8A6A2A" stroke-width="1.2"') + fbText("PASSED", 0, 14, 5.4, "#4A3A1A", 1) + '<path d="M-27 19.6 L27 19.6" stroke="#8A6A2A" stroke-width=".7"/>' +
-      '<g transform="translate(0 46)">' + stamp + '</g><path d="M-27 68 L27 68" stroke="#8A6A2A" stroke-width=".7"/>' +
-      '<g transform="translate(30 2)">' + fbC(0, 0, 10, "#1E9A4E", ' stroke="#F4FFF6" stroke-width="1.8"') + fbL("M-4.8 .4 L-1.4 4 L5.2 -3.8", "#FFFFFF", 2.8) + '</g></g>';
-    const base = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' +
-      /* ceiling strip light and the corridor floor */
-      fbR(130, 0, 220, 7, "#EDE6D2") + fbR(134, 5, 212, 2, "#FFFFFF") + '<path d="M130 7 L350 7 L420 ' + GY + ' L60 ' + GY + ' Z" fill="url(#' + u + 'lite)" opacity=".5"/>' +
-      fbR(0, GY, 480, 20, "url(#" + u + "floor)") + fbR(0, GY - 5, 480, 5.4, "#1E2A34") + fbR(0, GY, 480, 1.4, "#566A7A") + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => '<path d="M' + (i * 52 - 10) + ' ' + GY + ' L' + (i * 52 - 40) + ' 180" stroke="#0A1016" stroke-width="1" opacity=".6"/>').join("") +
-      /* the door: frame, leaf, window (wired glass), hinges, kick plate, lever */
-      fbR(DX0 - 8, DY0 - 4, DX1 - DX0 + 16, GY - DY0 + 4, "#1A222B") + fbR(DX0, DY0, DX1 - DX0, GY - DY0, "url(#" + u + "door)") + fbR(DX0, DY0, 5, GY - DY0, "#FFFFFF", ' opacity=".14"') +
-      fbR(DX0 + 22, 28, 56, 74, "#0E141A") + fbR(DX0 + 26, 32, 48, 66, "url(#" + u + "glassg)") +
-      [0, 1, 2, 3, 4, 5].map(i => '<path d="M' + (DX0 + 26) + ' ' + (40 + i * 10) + ' L' + (DX0 + 74) + ' ' + (40 + i * 10) + '" stroke="#2A5A7A" stroke-width=".6" opacity=".55"/>').join("") + [0, 1, 2, 3, 4].map(i => '<path d="M' + (DX0 + 34 + i * 9) + ' 32 L' + (DX0 + 34 + i * 9) + ' 98" stroke="#2A5A7A" stroke-width=".6" opacity=".55"/>').join("") +
-      '<path d="M' + (DX0 + 26) + ' 32 L' + (DX0 + 42) + ' 32 L' + (DX0 + 26) + ' 56 Z" fill="#fff" opacity=".35"/>' +
-      [30, 82, 126].map(y => fbR(DX0 - 2.6, y, 7, 14, "url(#" + u + "chrome)", ' rx="1.4" stroke="#5A606C" stroke-width=".5"') + fbR(DX0 - 2.6, y + 6.4, 7, 1.2, "#6A7480")).join("") +
-      fbR(DX0 + 6, GY - 20, DX1 - DX0 - 12, 18, "#B8C0CA", ' rx="1" stroke="#5A606C" stroke-width=".6"') + fbR(DX0 + 6, GY - 20, DX1 - DX0 - 12, 2.4, "#FFFFFF", ' opacity=".5"') + [DX0 + 12, DX1 - 12].map(x => fbC(x, GY - 11, 1.2, "#5A606C")).join("") +
-      /* the lever: its plate on the leaf's latch edge and the handle pointing in towards the glass */
-      fbR(LX - 3, LY - 14, 8, 28, "url(#" + u + "chrome)", ' rx="2" stroke="#5A606C" stroke-width=".7"') + fbR(LX - 25, LY - 3, 28, 6, "url(#" + u + "chrome)", ' rx="3" stroke="#5A606C" stroke-width=".7"') + fbR(LX - 25, LY - 2.4, 28, 1.4, "#FFFFFF", ' opacity=".7"') + fbC(LX + 1, LY - 9, 1.1, "#3A3E48") + fbC(LX + 1, LY + 9, 1.1, "#3A3E48") +
-      /* the cord, looped on the lever and down to the tag's grommet */
-      '<path d="M' + (LX - 16) + ' ' + (LY + 3) + ' Q' + (LX - 18) + ' ' + (LY + 9) + ' ' + (LX - 1.6) + ' ' + (LY + 15.4) + ' M' + (LX - 14) + ' ' + (LY - 3) + ' Q' + (LX - 22) + ' ' + (LY + 8) + ' ' + (LX - 1.6) + ' ' + (LY + 15.4) + '" fill="none" stroke="#B49A5A" stroke-width="1.2"/>' +
-      '<circle cx="' + (LX + 6) + '" cy="' + (LY + 54) + '" r="62" fill="url(#' + u + 'ok)"/>' + tag +
-      '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
-    return [
-      { svg: base },
-      { svg: '<circle cx="' + (LX + 6) + '" cy="' + (LY + 54) + '" r="60" fill="url(#' + u + 'ok)"/>', box: [LX - 56, LY - 6, 120, 120], o: [LX + 6, LY + 54], cls: "bl-breathe", style: "animation-duration:4s" },
-      { svg: fbEmberSheet(rnd, 480, 90, 16, ["#FFF2D0", "#BFFFD8", "#FFFFFF"]), box: [0, 10, 480, 150], cls: "bl-rise", style: "animation-duration:18s;opacity:.35" }
-    ];
+    const GR = "#6BFFA8";
+    const defs = '<defs>' + bnLin(u + "wall", [[0, "#2A3646"], [1, "#141C28"]]) + bnLin(u + "floor", [[0, "#272D38"], [1, "#0C0F15"]]) + bnLin(u + "face", [[0, "#0B1118"], [1, "#04070B"]]) +
+      bnLin(u + "chrome", [[0, "#F4F6F9"], [0.5, "#9AA3B0"], [1, "#4A5262"]]) + bnLin(u + "cone", [[0, "#EAF4FF", .22], [1, "#EAF4FF", 0]]) +
+      bnRad(u + "glow", [[0, "#5CFF9A", .45], [0.55, "#5CFF9A", .14], [1, "#5CFF9A", 0]]) + bnRad(u + "wash", [[0, "#5CFF9A", .3], [1, "#5CFF9A", 0]]) + bnRad(u + "vig", [[0.55, "#000", 0], [1, "#000", .55]]) + '</defs>';
+    /* one seven-segment digit in the box (x0, y0, w, h), thickness t: the lit segments of d, the others dim */
+    const seg = (x0, y0, w, h, t, d) => {
+      const g = 1.7, cx0 = x0 + t / 2, cx1 = x0 + w - t / 2, ys = [y0 + t / 2, y0 + h / 2, y0 + h - t / 2];
+      const H = (y) => { const a = cx0 + g, b = cx1 - g; return "M" + bnF(a) + " " + bnF(y) + " L" + bnF(a + t / 2) + " " + bnF(y - t / 2) + " L" + bnF(b - t / 2) + " " + bnF(y - t / 2) + " L" + bnF(b) + " " + bnF(y) + " L" + bnF(b - t / 2) + " " + bnF(y + t / 2) + " L" + bnF(a + t / 2) + " " + bnF(y + t / 2) + " Z"; };
+      const V = (x, ya, yb) => { const a = ya + g, b = yb - g; return "M" + bnF(x) + " " + bnF(a) + " L" + bnF(x + t / 2) + " " + bnF(a + t / 2) + " L" + bnF(x + t / 2) + " " + bnF(b - t / 2) + " L" + bnF(x) + " " + bnF(b) + " L" + bnF(x - t / 2) + " " + bnF(b - t / 2) + " L" + bnF(x - t / 2) + " " + bnF(a + t / 2) + " Z"; };
+      const S = { a: H(ys[0]), g: H(ys[1]), d: H(ys[2]), f: V(cx0, ys[0], ys[1]), b: V(cx1, ys[0], ys[1]), e: V(cx0, ys[1], ys[2]), c: V(cx1, ys[1], ys[2]) };
+      const on = d === "1" ? "bc" : "abcdef";
+      let dim = "", lit = "";
+      Object.keys(S).forEach(k => { if(on.indexOf(k) < 0) dim += S[k] + " "; else lit += S[k] + " "; });
+      return '<path d="' + dim + '" fill="#0B2016"/><path d="' + lit + '" fill="' + GR + '" stroke="#D8FFE8" stroke-width=".7" stroke-linejoin="round"/>';
+    };
+    const DW = 46, DH = 66, DT = 9.6, DY = 44, X0 = 128;
+    let g = defs + '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>';
+    /* the room: a chair rail, two ceiling lights and their light down the wall, the floor */
+    g += fbR(0, 146, 480, 6, "#1B2330") + fbR(0, 146, 480, 1.2, "#566378");
+    [[24, 130], [350, 456]].forEach(([a, b]) => { g += '<path d="M' + a + ' 6 L' + b + ' 6 L' + (b + 34) + ' 146 L' + (a - 34) + ' 146 Z" fill="url(#' + u + 'cone)"/>' + fbR(a, 0, b - a, 7, "#EDE6D2") + fbR(a + 3, 5, b - a - 6, 2, "#FFFFFF"); });
+    g += fbR(0, 146, 480, 12, "#10151F");
+    /* the board: bezel, chrome inner edge, bolts, the header with its stars, the face, the display and its lamps */
+    g += '<ellipse cx="240" cy="78" rx="220" ry="84" fill="url(#' + u + 'glow)"/>' +
+      fbR(70, 20, 340, 120, "#000", ' opacity=".45" rx="7" transform="translate(3 5)"') + fbR(66, 14, 348, 124, "#0A0D13", ' rx="7" stroke="#566378" stroke-width="2"') + fbR(72, 20, 336, 112, "none", ' rx="3" stroke="url(#' + u + 'chrome)" stroke-width="1.6"') +
+      [[72, 20], [408, 20], [72, 132], [408, 132]].map(p => fbC(p[0], p[1], 2.2, "#8A929E", ' stroke="#3A4250" stroke-width=".6"')).join("") +
+      fbR(78, 26, 324, 112 - 12, "url(#" + u + "face)", ' rx="2"') + fbR(78, 26, 324, 15, "#0E1822") + fbR(78, 41, 324, 1, "#2A3A4A") +
+      fbText("UNIT SCORE", 240, 33.6, 7.4, "#FFE9B8", 1.4) + [100, 380].map(x => '<path d="' + fbStarPath(x, 33.6, 5.4) + '" fill="#E3B341" stroke="#8A5E10" stroke-width=".5" stroke-linejoin="round"/>').join("");
+    let digits = seg(X0, DY, DW, DH, DT, "1") + seg(X0 + DW + 12, DY, DW, DH, DT, "0") + seg(X0 + 2 * (DW + 12), DY, DW, DH, DT, "0");
+    /* the percent sign in the same lit stroke: two rings and the slash */
+    const PX = X0 + 3 * (DW + 12) + 14, PY = DY + 5;
+    digits += '<circle cx="' + (PX + 6) + '" cy="' + (PY + 8) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/><circle cx="' + (PX + 28) + '" cy="' + (PY + DH - 14) + '" r="6.4" fill="none" stroke="' + GR + '" stroke-width="3.6"/>' +
+      '<path d="M' + (PX + 30) + ' ' + (PY + 2) + ' L' + (PX + 4) + ' ' + (PY + DH - 8) + '" stroke="' + GR + '" stroke-width="3.8" stroke-linecap="round"/>';
+    g += '<ellipse cx="' + (X0 + 120) + '" cy="' + (DY + DH / 2) + '" rx="150" ry="56" fill="url(#' + u + 'glow)"/>' + digits;
+    /* ten lamps, all lit */
+    for(let i = 0; i < 10; i++) g += fbR(90 + i * 31.4, 118, 26.4, 7.6, "#0F2C1E", ' rx="1.6"') + fbR(91 + i * 31.4, 119, 24.4, 5.6, GR, ' rx="1"') + fbR(91 + i * 31.4, 119, 24.4, 1.8, "#D8FFE8", ' rx="1" opacity=".8"');
+    /* the training table across the front, and a helmet on it for every five of the lamps, dark and lit along their tops by the board */
+    g += fbR(0, 156, 480, 24, "#171D2A") + fbR(0, 156, 480, 2.4, "#3A4658") + fbR(0, 158.4, 480, 1, "#000", ' opacity=".5"');
+    [[52, "#8A1A20"], [146, "#9A7A18"], [240, "#AEB6C2"], [334, "#8A1A20"], [428, "#9A7A18"]].forEach(([x, c]) => {
+      g += '<ellipse cx="' + x + '" cy="157" rx="20" ry="2.4" fill="#000" opacity=".5"/>' +
+        fbP("M" + (x - 15) + " 155 Q" + (x - 16) + " 138 " + x + " 138 Q" + (x + 16) + " 138 " + (x + 15) + " 155 Z", c) +
+        fbP("M" + (x - 15) + " 155 Q" + (x - 16) + " 138 " + (x - 4) + " 138.4 Q" + (x - 9) + " 146 " + (x - 8) + " 155 Z", "#FFFFFF", ' opacity=".18"') +
+        '<ellipse cx="' + x + '" cy="155" rx="19.4" ry="3.6" fill="' + c + '"/>' + fbL("M" + (x - 15.4) + " 148 Q" + (x - 15.8) + " 139.4 " + x + " 139.4 Q" + (x + 15.8) + " 139.4 " + (x + 15.4) + " 148", "#5CFF9A", 1, ' opacity=".4"') +
+        fbP("M" + (x - 5) + " 152 L" + (x + 5) + " 152 L" + (x + 4) + " 145 L" + (x - 4) + " 145 Z", "#E3B341", ' opacity=".85"');
+    });
+    g += '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
+    return [{ svg: g }];
   },
 
   /* GRAND FINALE (was Pyrotechnics; named for its challenge, 250 hundos; Madison: "this is awesome, however there is too many fireworks? Make it
@@ -79269,7 +79276,7 @@ function fbRangerScene(u, o){
 }
 const IFC_BANNER_LOOK = {
   tests100: ["Certified", "#F2C14E", "#2E8A6A"], tests250: ["Plan Review", "#E5332A", "#F2C14E"],
-  tests500: ["Inspection Team", "#F2C14E", "#6AA0E8"], hundos100: ["Fully Compliant", "#2E9A56", "#8CB4D8"],
+  tests500: ["Inspection Team", "#F2C14E", "#6AA0E8"], hundos100: ["Perfect Score", "#3CD97A", "#8CB4D8"],
   hundos250: ["Grand Finale", "#FFD36A", "#7FB8FF"], vr50: ["Mutual Aid", "#4FB8FF", "#FF3B30"],
   study50: ["Code Book", "#D9A45A", "#4D68DB"], study60: ["On Call", "#E8402E", "#2ECC71"],
   correct5000: ["Downpour", "#6FA8D8", "#FF8A3D"], correct10000: ["Fire Investigator", "#F2C21E", "#FF7A2E"],
