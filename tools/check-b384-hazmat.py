@@ -8,8 +8,8 @@ the 384 beats where an older build has none) and everything is read off the page
  (2) [ROUND 6: REMOVED] the NFPA 704 placard that assembled a quarter at a time and slammed is gone ("I don't like the caution
      tape and I don't think I like the hazmat placard across the screen") - tools/check-b384-hzdecon.py asserts it is gone;
  (3) [ROUND 2: REPLACED] the containment scan, brackets and field are gone, and the film is three beats told one at a time
-     (alert, spill and decon, all clear): nothing from another beat is on screen, and at most 24 painted pieces at once
-     (it was 66; the mean is 16 at most, it was 36);
+     (alert, spill and decon, all clear): nothing from another beat is on screen, and at most 25 painted pieces at once
+     (it was 66; the mean is 17 at most, it was 36; round 3 put a little back: one extra moment per beat);
  (4) [ROUND 6: REMOVED] the tag the placard sat on is gone with it;
  (5) the responder (round 6: no longer walking across the screen) comes up from under the screen's foot into his corner,
      and his jet reaches the box, swept side to side across it;
@@ -37,7 +37,7 @@ SETUP = r"""async (beats) => {
   const Z = (typeof IFX_HZ !== 'undefined') ? IFX_HZ : beats;
   try{ hfxWarm('ufo'); }catch(e){}
   /* the sprites drawn to bitmaps first, as on the results screen */
-  for(let i = 0; i < 80 && !['ifx-bracket', 'ifx-hzspray2'].every(k => hfxSprites[k] && hfxSprites[k].png); i++) await new Promise(r => setTimeout(r, 100));
+  for(let i = 0; i < 80 && !['ifx-hzspray3', 'ifx-hzhose', 'ifx-hzfoam'].every(k => hfxSprites[k] && hfxSprites[k].png); i++) await new Promise(r => setTimeout(r, 100));
   await new Promise(r => setTimeout(r, 300));
   const W = innerWidth, H = innerHeight, bw = Math.min(W - 60, 600), bh = Math.round(bw * .45);
   const card = document.createElement('div'); card.className = 'rs-card rs-grade is-perfect';
@@ -70,7 +70,7 @@ MEASURE = r"""() => {
   /* (3) THE CALM (round 2): the scan, the brackets and the field are gone; one beat at a time - what is on screen at each moment */
   const pre = p => { const ks = Object.keys(hfxSprites).filter(k => k.indexOf(p) === 0); return X.layers.flatMap(l => [...l.querySelectorAll('*')]).filter(e => ks.some(k => { const sp = hfxSprites[k], b = e.style.backgroundImage || ''; return sp && ((sp.png && b === sp.png) || b === sp.svg || (sp.png && b.indexOf(sp.png.slice(5, -2)) >= 0)); })); };
   const shown = (t, p) => at(t, () => pre(p).filter(e => X.eff(e) > .05 && X.R(e).w > 2).length);
-  out.gone = { bracket: pre('ifx-bracket').length, scan: pre('ifx-scan').length, hex: pre('ifx-hex').length, cage: pre('ifx-hzcage').length, spark: pre('ifx-hzspark').length, glint: pre('ifx-hzglint').length, splash: pre('ifx-hzsplash').length };
+  out.gone = { bracket: pre('ifx-bracket').length, scan: pre('ifx-scan').length, hex: pre('ifx-hex').length, cage: pre('ifx-hzcage').length, spark: pre('ifx-hzspark').length, splash: pre('ifx-hzsplash').length };   /* (round 3: the glints are back - five, at the all clear only, held by check-b384-hzdecon (D10)) */
   out.beats = { alertFume: shown(.5, 'ifx-hzfume'), alertSuit: shown(.5, 'ifx-suit'), alertRays: shown(.5, 'ifx-hzrays'),
     deconBeacon: shown(Z.sweep[0] + .3, 'ifx-hzbeam'), deconRays: shown(Z.sweep[0] + .3, 'ifx-hzrays'), deconRing: shown(Z.sweep[0] + .3, 'ifx-ring'),
     clearSpray: shown(Z.clear + .3, 'ifx-hzspray'), clearSlime: shown(Z.clear + .3, 'ifx-hzslime'),
@@ -81,9 +81,9 @@ MEASURE = r"""() => {
   const ns = []; for(let t = 0; t < Z.tot - .05; t += .2) ns.push(at(t, count));
   out.load = { peak: Math.max(...ns), mean: Math.round(ns.reduce((a, b) => a + b, 0) / ns.length * 10) / 10, ns: ns.length };
   /* (5) the responder: below the screen's foot before he rises, in his corner after, and not walking (his x holds); the jet's far end on the box */
-  const suit = X.find('ifx-suit2')[0], sp = X.find('ifx-hzspray2')[0];
+  const suit = X.find('ifx-suit2')[0], sp = X.find('ifx-hzspray3')[0];
   if(suit){
-    const rig = suit.parentElement, arm = X.find('ifx-hzarm2')[0];
+    const rig = suit.parentElement, arm = X.find('ifx-hzarm3')[0];
     out.offBefore = at(Z.walk - .02, () => [X.R(suit).t, X.H, X.eff(suit)]);
     out.onAfter = at(Z.walked + .2, () => { const r = X.R(suit); return [r.t, r.b, X.H, X.eff(suit)]; });
     out.xs = [Z.walked + .2, Z.aim, Z.spray + .5, Z.sprayEnd].map(t => at(t, () => Math.round(X.R(suit).cx)));
@@ -155,13 +155,13 @@ chk("(1) ...a run of 6.0-7.0s (calmed in round 2, was 7.2), its tail before its 
 for dev, R in (("phone", P), ("ipad", I)):
     m = R["m"]
     g = m["gone"]
-    chk("(3) %s: the scan and its mesh, the brackets and the field, the sparks, the glints and the splash are gone (%s)" % (dev, g), all(v == 0 for v in g.values()), g)
+    chk("(3) %s: the scan and its mesh, the brackets and the field, the sparks and the splash are gone (%s)" % (dev, g), all(v == 0 for v in g.values()), g)
     bt = m["beats"]
     chk("(3) %s: one beat at a time - the alert has no vapour, responder or rays (%s/%s/%s); the surge has no responder or jet (%s/%s) or rays (%s); the decon has no beacons, rays or ring (%s/%s/%s); the all clear has no jet and no film (%s/%s)" % (
         dev, bt["alertFume"], bt["alertSuit"], bt["alertRays"], bt["spillSuit"], bt["spillSpray"], bt["spillRays"], bt["deconBeacon"], bt["deconRays"], bt["deconRing"], bt["clearSpray"], bt["clearSlime"]),
         not any(bt[k] for k in bt), bt)
     ld = m["load"]
-    chk("(3) %s: calm - %s samples, at most 24 painted pieces on screen at once (peak %s) and 16 on average (mean %s); it was 66 and 36" % (dev, ld["ns"], ld["peak"], ld["mean"]), ld["peak"] <= 24 and ld["mean"] <= 16, ld)
+    chk("(3) %s: calm, with a little back (round 3) - %s samples, at most 25 painted pieces on screen at once (peak %s) and 17 on average (mean %s); it was 66 and 36, then 24 and 16 (measured 21 and 13)" % (dev, ld["ns"], ld["peak"], ld["mean"]), ld["peak"] <= 25 and ld["mean"] <= 17, ld)
     box = m["box"]
     ob, oa, xs = m.get("offBefore"), m.get("onAfter"), m.get("xs") or [0, 1e9]
     chk("(5) %s: the responder is under the screen's foot before he comes up (top %s of %s) and in his corner after (%s) - not walking across (x %s)" % (dev, ob and ob[0], ob and ob[1], oa, xs),

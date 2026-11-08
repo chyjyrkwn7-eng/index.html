@@ -12794,7 +12794,7 @@ def check_b313_fx(br):
           const pn = g.querySelector('.rs-pct'), pcs = pn && getComputedStyle(pn);
           out.numAfter = pcs ? { bg: pcs.backgroundImage.slice(0, 120), color: pcs.color } : null;
           out.screenUp = !!document.querySelector('.rs-screen') && g.isConnected;
-          out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2'].map(k => g.style.getPropertyValue(k).trim());
+          out.tintVars = ['--hfx-b', '--hfx-g1', '--hfx-g2', '--hfx-g3'].map(k => g.style.getPropertyValue(k).trim());
           if(sampler){ clearInterval(sampler); out.still = still; out.cardAnims = scripted; }
           out.tail = tail;
           return out; }""", fx)
@@ -12819,9 +12819,11 @@ def check_b313_fx(br):
         check("%s: in its tail it is still on screen, fading - never cut (nothing fully shown at the last look before the layer goes)" % fx,
               r.get("tailLayer") and r.get("tailFading", 0) >= 2 and r.get("cutFull") == [], {k: r.get(k) for k in ("tailLayer", "tailFading", "cutAt", "cutFull", "total")})
         check("%s: and once it has faded every piece is gone" % fx, r.get("after") == 0 and r.get("total", 0) > 0, r)
-        gold = "rgb(217, 169, 58)"
+        gold = "rgb(246, 213, 142)"   # the default's gold ramp has this middle stop (384 r8); no effect does
         check("%s: the box's progress bar takes the effect's colours too, and keeps them after" % fx,
-              r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s)" % (rgb(tv[2]), rgb(tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
+              # MOVED IN 384 round 8 ("Do the hundo effects go with the failed and pass thing now? Like even the number 100 and the bar?"): the bar is
+              # the NUMBER'S ramp - g1, g2 at 55%, g3, in that order - not g2 > g1, the number's ramp turned round and without its third colour
+              r.get("fill") and gold not in r["fill"] and tv[2] and r.get("fillAfter") == "linear-gradient(90deg, %s, %s 55%%, %s)" % (rgb(tv[1]), rgb(tv[2]), rgb(tv[3] or tv[1])), {"during": r.get("fill"), "after": r.get("fillAfter")})
         if fx == "underwater":
             # build 317, round 4: "the water that's on screen looks terrible,
             # and it doesn't start from the very bottom"
@@ -12981,7 +12983,8 @@ def check_b313_fx(br):
     # tinted, and its rim is the clean card's - none - or the old gold), and
     # its bar is still gold.
     check("Confetti, the default, leaves the box untinted - the clean card's rim (383) - and its bar gold",
-          r.get("border") in ("rgba(0, 0, 0, 0)", "rgba(242, 200, 115, 0.46)") and "rgb(217, 169, 58)" in (r.get("fill") or "") and not r.get("tinted"), r)
+          # MOVED IN 384 round 8: its bar is the 100's own gold ramp (light, mid, deep), not the old deep > light pair
+          r.get("border") in ("rgba(0, 0, 0, 0)", "rgba(242, 200, 115, 0.46)") and "rgb(255, 235, 194), rgb(246, 213, 142) 55%, rgb(227, 172, 76)" in (r.get("fill") or "") and not r.get("tinted"), r)
     ctx.close()
 
     # --- the pop-ups. An account with no record of them, at 120 hundos:
@@ -15942,14 +15945,14 @@ def check_b317_hundobox(br):
                 rimfull = lambda a: unlit(a) or ((a.get("border") or "") == "rgba(0, 0, 0, 0)" and green(a))
                 check("%s: then into its colours by the end of the hand-off - the 100%% and the bar exactly as settled, never the gold default - with no border of its own throughout (384 r2: the colour is the number's and the bar's, the light is the glow layer's) (%s)" % (tag, ha.get("border")),
                       cleared(ha) and same(ha, ("num", "bar")) and rimfull(fi) and unlit(ha) and se.get("border") == "rgba(0, 0, 0, 0)"
-                      and f.get("tinted") and "217, 169, 58" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
+                      and f.get("tinted") and "246, 213, 142" not in (ha.get("bar") or ""), {"first": fi, "handed": ha, "settled": se})
             elif fx == "confetti":
                 check("%s: then gold, the default's own look, by the end of the hand-off - the plain card (no border, 384 r2), 100%%, bar exactly as settled" % tag,
-                      cleared(ha) and same(ha) and ha.get("border") == "rgba(0, 0, 0, 0)" and "217, 169, 58" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
+                      cleared(ha) and same(ha) and ha.get("border") == "rgba(0, 0, 0, 0)" and "255, 235, 194" in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             else:
                 check("%s: then into its colours by the end of the hand-off - border, 100%%, bar exactly as settled, never the gold default" % tag,
                       cleared(ha) and same(ha) and ha.get("border") != GOLD_BORDER and f.get("tinted")
-                      and "217, 169, 58" not in (ha.get("bar") or ""), {"handed": ha, "settled": se})
+                      and "246, 213, 142" not in (ha.get("bar") or ""), {"handed": ha, "settled": se})
             check("%s: every word in the box is the default's - GRADE, 12 / 12, the line under it, each unit and its count" % tag,
                   # MOVED IN 327 (round 6): "Why does the grade box ... show how many
                   # you got right twice?" - a one-unit run has no count on its unit row
