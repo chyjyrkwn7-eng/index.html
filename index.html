@@ -77447,7 +77447,7 @@ const FB_GLYPH = {
   S: "4 1 3 0 1 0 0 1 0 2 1 3 3 3 4 4 4 5 3 6 1 6 0 5", T: "0 0 4 0|2 0 2 6", U: "0 0 0 5 1 6 3 6 4 5 4 0",
   X: "0 0 4 6|4 0 0 6", Z: "0 0 4 0 0 6 4 6", "1": "0 1 1 0 1 6", "2": "0 1 1 0 3 0 4 1 4 2 0 6 4 6", "3": "0 0 4 0 2 2.6 3 2.6 4 3.6 4 5 3 6 1 6 0 5"
 };
-const fbGlyphW = ch => ch === " " ? 2.4 : ch === "I" ? 0 : ch === "1" ? 1 : 4;
+const fbGlyphW = ch => ch === " " ? 2.4 : ch === "I" || ch === ":" ? 0 : ch === "1" ? 1 : 4;
 /* the path of a line of lettering, centred on (cx, cy), h tall */
 function fbTextPath(str, cx, cy, h){
   const k = h / 6, gap = 1.7;
@@ -77664,7 +77664,7 @@ Object.assign(FB_GLYPH, {
   B: "0 0 3 0 4 1 4 2 3 3 0 3|0 3 3 3 4 4 4 5 3 6 0 6|0 0 0 6", G: "4 1 3 0 1 0 0 1 0 5 1 6 3 6 4 5 4 3 2 3", J: "4 0 4 5 3 6 1 6 0 5",
   "0": "1 0 3 0 4 1 4 5 3 6 1 6 0 5 0 1 1 0", "4": "3 6 3 0 0 4 4 4", "5": "4 0 0 0 0 3 3 3 4 4 4 5 3 6 0 6", "6": "4 0 1 0 0 1 0 5 1 6 3 6 4 5 4 4 3 3 0 3",
   "7": "0 0 4 0 1 6", "8": "1 0 3 0 4 1 4 2 3 3 1 3 0 4 0 5 1 6 3 6 4 5 4 4 3 3|1 3 0 2 0 1 1 0", "9": "4 3 1 3 0 2 0 1 1 0 3 0 4 1 4 5 3 6 0 6",
-  "-": "0 3 4 3", "%": "0 6 4 0|0.2 0.2 1.4 0.2 1.4 1.6 0.2 1.6 0.2 0.2|2.6 4.4 3.8 4.4 3.8 5.8 2.6 5.8 2.6 4.4", ".": "0 5.6 0 6"
+  "-": "0 3 4 3", ":": "0 1.6 0 2.2|0 3.8 0 4.4", "%": "0 6 4 0|0.2 0.2 1.4 0.2 1.4 1.6 0.2 1.6 0.2 0.2|2.6 4.4 3.8 4.4 3.8 5.8 2.6 5.8 2.6 4.4", ".": "0 5.6 0 6"
 });
 /* a fire: base centre (x, y), w half-width at the base, h tall; three bodies and two side tongues */
 function fbFire(x, y, w, h, lean){
@@ -78144,82 +78144,94 @@ const IFC_BANNER_ART = {
     ];
   },
 
-  /* ALARM PANEL (round 2: "fire alarm panel would be cool"; 384: "make that better how you can,
-     not sure why there is a strobe right next to it, maybe make that like the document box or
-     something") - the fire alarm control panel on the riser-room wall in alarm, and beside it, where
-     the strobe was, its record documents box. The panel is drawn as one is laid out: FIRE ALARM on
-     the door, the display reading the alarm and its zone, the status lights (power on, ALARM
-     flashing), the keypad and the four function keys, the key lock with this year's inspection tag
-     hanging off it. Conduit runs down the wall into both. */
+  /* ON CALL (60 hours studied; Madison's review: "super cool, but why are we acting as if it's sitting on a desk? ... a random yellow
+     tag coming off of it ... make the panel buttons and stuff look a smidge more legit, and make the panel say 'systems normal' ... Don't
+     put the clock on the wall there. I'm not sure why there is a pipe connecting to the document box. You can put a pull station near that
+     panel though.") - the fire alarm control panel on a riser-room wall, mounted: hinged door on its left, latch on its right, a conduit
+     into its top, FIRE ALARM across the head. The display reads SYSTEMS NORMAL over ALL ZONES OK and the time; the lamp column (AC POWER lit,
+     ALARM, SUPERVISORY, TROUBLE, SILENCED dark); the four control keys with their legends under them (ACK, SILENCE, RESET, DRILL), the
+     numeric keypad, the key switch. On its left the red manual pull station on its own back box, PULL DOWN over a recessed handle, its own
+     conduit down from the ceiling. On its right the record documents box, hung on the wall on its own (nothing runs to it). A floor and a
+     baseboard below, so nothing stands on anything that is not there. The panel is calm: green glow on the block wall, the AC lamp
+     breathing, the cursor blinking after the time. */
   study60(u){
-    const PX = 130, PY = 24, PW = 150, PH = 128, DX = 306, DY = 52, DW = 72, DH = 86;
+    const PX = 160, PY = 22, PW = 156, PH = 128, DX = 340, DY = 52, DW = 70, DH = 86, SX = 104, SY = 60, SW = 34, SH = 50;
     let blocks = "";
     for(let r = 0; r < 10; r++){ const y = 2 + r * 16, off = r % 2 ? 0 : 26; blocks += 'M0 ' + y + ' L480 ' + y + ' ';
       for(let x = off; x < 480; x += 52) blocks += 'M' + x + ' ' + (y - 16) + ' L' + x + ' ' + y + ' '; }
-    const conduit = x => '<rect x="' + (x - 3.2) + '" y="0" width="6.4" height="' + (x > 300 ? DY : PY) + '" fill="url(#' + u + 'pipe)"/><rect x="' + (x - 4.4) + '" y="' + ((x > 300 ? DY : PY) - 7) + '" width="8.8" height="5" rx="1" fill="#8A929E"/><rect x="' + (x - 4.4) + '" y="12" width="8.8" height="4" rx="1" fill="#8A929E"/>';
-    const leds = [["#2ECC71", 1], ["#4A1010", 0], ["#3A3008", 0], ["#3A3008", 0]];
-    const LY = PY + 64;
+    /* a conduit from the top of the frame to the top of a box, with a clamp near each end */
+    const conduit = (x, yEnd) => '<rect x="' + (x - 3.2) + '" y="0" width="6.4" height="' + yEnd + '" fill="url(#' + u + 'pipe)"/><rect x="' + (x - 4.4) + '" y="' + (yEnd - 9) + '" width="8.8" height="5" rx="1" fill="#8A929E"/><rect x="' + (x - 4.4) + '" y="12" width="8.8" height="4" rx="1" fill="#8A929E"/>' +
+      '<rect x="' + (x - 5.6) + '" y="' + (yEnd - 3) + '" width="11.2" height="3.6" rx="1" fill="#6A707C"/>';
+    const txt = (s, cx, cy, h, col, w, ex) => fbText(s, cx, cy, h, col, w, ex);
+    /* the lamp column: label, lamp */
+    const lamps = [["AC POWER", "#2ECC71", 1], ["ALARM", "#4A1010", 0], ["SUPV", "#4A3A08", 0], ["TROUBLE", "#4A3A08", 0], ["SILENCED", "#4A3A08", 0]];
+    const LX = PX + 22, LY = PY + 62;
+    const keys = [["ACK", "#E8ECEF"], ["SILENCE", "#E8ECEF"], ["RESET", "#E8ECEF"], ["DRILL", "#E8ECEF"]];
+    const KX = PX + 18, KY = PY + PH - 32;
     const panel = '<g class="fb-facp">' +
       '<rect x="' + (PX + 3) + '" y="' + (PY + 5) + '" width="' + PW + '" height="' + PH + '" rx="6" fill="#000" opacity=".35"/>' +
       '<rect x="' + PX + '" y="' + PY + '" width="' + PW + '" height="' + PH + '" rx="6" fill="url(#' + u + 'cab)"/>' +
       '<rect x="' + (PX + 5) + '" y="' + (PY + 5) + '" width="' + (PW - 10) + '" height="' + (PH - 10) + '" rx="3.6" fill="none" stroke="#7A0E14" stroke-width="1.4"/>' +
-      fbText("FIRE ALARM", PX + PW / 2, PY + 13.4, 7, "#FFFFFF", 1.4) +
-      /* the inner window: display, lights, keypad, keys */
-      '<rect x="' + (PX + 12) + '" y="' + (PY + 23) + '" width="' + (PW - 24) + '" height="' + (PH - 33) + '" rx="2.6" fill="#22252C"/>' +
-      '<rect x="' + (PX + 18) + '" y="' + (PY + 28) + '" width="' + (PW - 36) + '" height="27" rx="2" fill="#0A0C10"/><rect x="' + (PX + 21) + '" y="' + (PY + 31) + '" width="' + (PW - 42) + '" height="21" fill="url(#' + u + 'lcd)"/>' +
-      fbText("ZONE 3", PX + 52, PY + 46.5, 5, "#123A1E", 1) + fbText("NORTH HALL", PX + 92, PY + 46.5, 4, "#123A1E", .8, ' opacity=".75"') +
-      leds.map(([c, on], i) => '<circle cx="' + (PX + 24) + '" cy="' + (LY + i * 9) + '" r="2.8" fill="' + c + '"/>' + (on ? '<circle cx="' + (PX + 24) + '" cy="' + (LY + i * 9) + '" r="6" fill="' + c + '" opacity=".3"/>' : '') +
-        '<rect x="' + (PX + 31) + '" y="' + (LY + i * 9 - 1.4) + '" width="' + [30, 22, 36, 28][i] + '" height="2.8" rx="1" fill="#7A8090"/>').join("") +
-      Array.from({ length: 12 }, (_, i) => '<rect x="' + (PX + 92 + (i % 3) * 13) + '" y="' + (LY - 3 + Math.floor(i / 3) * 8.4) + '" width="10" height="6" rx="1.4" fill="#3A3E48" stroke="#4E5360" stroke-width=".5"/>').join("") +
-      ["#F2C21E", "#4FB8FF", "#E8ECEF", "#E5332A"].map((c, i) => '<rect x="' + (PX + 20 + i * 28) + '" y="' + (PY + PH - 24) + '" width="22" height="8" rx="2" fill="' + c + '"/><rect x="' + (PX + 24 + i * 28) + '" y="' + (PY + PH - 13.6) + '" width="14" height="2" rx="1" fill="#7A8090"/>').join("") +
-      /* the key lock, and the inspection tag on its string */
-      '<circle cx="' + (PX + PW - 7) + '" cy="' + (PY + 70) + '" r="3.6" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".6"/><rect x="' + (PX + PW - 7.6) + '" y="' + (PY + 68) + '" width="1.2" height="4" fill="#3A3E48"/>' +
-      '<path d="M' + (PX + PW - 7) + ' ' + (PY + 73) + ' Q' + (PX + PW - 1) + ' ' + (PY + 82) + ' ' + (PX + PW + 4) + ' ' + (PY + 86) + '" fill="none" stroke="#E8ECEF" stroke-width=".8"/>' +
-      '<g transform="rotate(-12 ' + (PX + PW + 6) + ' ' + (PY + 88) + ')"><path d="M' + (PX + PW) + ' ' + (PY + 86) + ' L' + (PX + PW + 12) + ' ' + (PY + 86) + ' L' + (PX + PW + 12) + ' ' + (PY + 108) + ' L' + (PX + PW) + ' ' + (PY + 108) + ' Z" fill="#F2C21E"/>' +
-        '<circle cx="' + (PX + PW + 6) + '" cy="' + (PY + 89.4) + '" r="1.4" fill="#2A2D34"/><rect x="' + (PX + PW + 2) + '" y="' + (PY + 93) + '" width="8" height="2.4" fill="#2A2D34"/>' +
-        [0, 1, 2].map(i => '<rect x="' + (PX + PW + 2) + '" y="' + (PY + 98 + i * 3.4) + '" width="' + [8, 6, 7][i] + '" height="1.4" fill="#8A6A0A"/>').join("") + '</g>' +
+      /* the hinge knuckles on the left, the latch on the right: it is a door */
+      [20, 60, 100].map(y => '<rect x="' + (PX - 2.4) + '" y="' + (PY + y) + '" width="4.6" height="9" rx="1.6" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".5"/>').join("") +
+      '<rect x="' + (PX + PW - 3) + '" y="' + (PY + 50) + '" width="5" height="22" rx="2" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".5"/><circle cx="' + (PX + PW - .5) + '" cy="' + (PY + 56) + '" r="1.3" fill="#3A3E48"/>' +
+      txt("FIRE ALARM", PX + PW / 2, PY + 13.4, 7, "#FFFFFF", 1.4) +
+      /* the inner window and the display: a backlit two-line screen */
+      '<rect x="' + (PX + 12) + '" y="' + (PY + 23) + '" width="' + (PW - 24) + '" height="' + (PH - 33) + '" rx="2.6" fill="#1C1F26"/>' +
+      '<rect x="' + (PX + 17) + '" y="' + (PY + 27) + '" width="' + (PW - 34) + '" height="30" rx="2" fill="#0A0C10"/><rect x="' + (PX + 19.4) + '" y="' + (PY + 29.4) + '" width="' + (PW - 38.8) + '" height="25.2" fill="url(#' + u + 'lcd)"/>' +
+      txt("SYSTEMS NORMAL", PX + PW / 2, PY + 38.6, 7.4, "#0F3A1E", 1.15) +
+      txt("ALL ZONES OK", PX + 52, PY + 49.4, 4.2, "#1B5A30", .8) + txt("11:42P", PX + PW - 42, PY + 49.4, 4.2, "#1B5A30", .8) +
+      /* the lamp column: a little legend beside each lamp */
+      lamps.map(([lab, c, on], i) => '<rect x="' + (LX - 6) + '" y="' + (LY + i * 6.9 - 2.9) + '" width="50" height="5.8" rx="1.4" fill="#14161C"/><circle cx="' + LX + '" cy="' + (LY + i * 6.9) + '" r="2.3" fill="' + c + '" stroke="#05060A" stroke-width=".5"/>' +
+        (on ? '<circle cx="' + LX + '" cy="' + (LY + i * 6.9) + '" r="5.4" fill="' + c + '" opacity=".28"/>' : '') + txt(lab, LX + 6 + lab.length * 1.33, LY + i * 6.9, 2.8, "#9AA3B0", .5)).join("") +
+      /* the keypad: a 3 x 4 membrane pad, a single key switch beside it */
+      Array.from({ length: 12 }, (_, i) => '<rect x="' + (PX + 90 + (i % 3) * 11.4) + '" y="' + (PY + 63 + Math.floor(i / 3) * 7.6) + '" width="9.4" height="6" rx="1.2" fill="#2E323C" stroke="#4E5360" stroke-width=".5"/><rect x="' + (PX + 91 + (i % 3) * 11.4) + '" y="' + (PY + 63.8 + Math.floor(i / 3) * 7.6) + '" width="7.4" height="1" rx=".5" fill="#fff" opacity=".12"/>' +
+        '<rect x="' + (PX + 93.6 + (i % 3) * 11.4) + '" y="' + (PY + 65.2 + Math.floor(i / 3) * 7.6) + '" width="2.2" height="2.2" fill="#9AA3B0" opacity=".7"/>').join("") +
+      '<circle cx="' + (PX + PW - 22) + '" cy="' + (PY + 76) + '" r="4.6" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".7"/><rect x="' + (PX + PW - 22.7) + '" y="' + (PY + 72.6) + '" width="1.4" height="6" rx=".6" fill="#2A2D34" transform="rotate(30 ' + (PX + PW - 22) + ' ' + (PY + 76) + ')"/>' +
+      txt("KEY", PX + PW - 22, PY + 85, 2.8, "#9AA3B0", .5) +
+      /* the four control keys: a tactile switch, a lamp strip, its legend underneath */
+      keys.map(([lab, c], i) => '<rect x="' + (KX + i * 33) + '" y="' + KY + '" width="26" height="12" rx="2.4" fill="#2A2E36" stroke="#05060A" stroke-width=".6"/><rect x="' + (KX + 2 + i * 33) + '" y="' + (KY + 1.6) + '" width="22" height="7.6" rx="1.8" fill="url(#' + u + 'keycap)"/>' +
+        '<rect x="' + (KX + 11 + i * 33) + '" y="' + (KY - 3.4) + '" width="4" height="1.8" rx=".8" fill="' + ["#4A3A08", "#4A3A08", "#4A3A08", "#4A3A08"][i] + '"/>' + txt(lab, KX + 13 + i * 33, KY + 16.4, 2.8, "#E8ECEF", .5)).join("") +
       /* the glass of the door, a light streak across it */
-      '<path d="M' + (PX + 12) + ' ' + (PY + 23) + ' L' + (PX + 58) + ' ' + (PY + 23) + ' L' + (PX + 30) + ' ' + (PY + PH - 10) + ' L' + (PX + 12) + ' ' + (PY + PH - 10) + ' Z" fill="url(#' + u + 'glass)"/></g>';
+      '<path d="M' + (PX + 12) + ' ' + (PY + 23) + ' L' + (PX + 62) + ' ' + (PY + 23) + ' L' + (PX + 34) + ' ' + (PY + PH - 10) + ' L' + (PX + 12) + ' ' + (PY + PH - 10) + ' Z" fill="url(#' + u + 'glass)"/></g>';
+    /* the pull station: a back box on the wall, the red plate, FIRE, a recessed handle under PULL DOWN, the key lock, a screw at each corner */
+    const pull = '<g class="fb-pull">' +
+      '<rect x="' + (SX - 3) + '" y="' + (SY - 3) + '" width="' + (SW + 6) + '" height="' + (SH + 6) + '" rx="2" fill="#000" opacity=".4" transform="translate(2 3)"/>' +
+      '<rect x="' + (SX - 3) + '" y="' + (SY - 3) + '" width="' + (SW + 6) + '" height="' + (SH + 6) + '" rx="2" fill="#2A2D34"/>' +
+      '<rect x="' + SX + '" y="' + SY + '" width="' + SW + '" height="' + SH + '" rx="2" fill="url(#' + u + 'cab)"/>' +
+      txt("FIRE", SX + SW / 2, SY + 7.4, 6, "#FFFFFF", 1.2) +
+      '<rect x="' + (SX + 3.4) + '" y="' + (SY + 13) + '" width="' + (SW - 6.8) + '" height="21" rx="1.6" fill="#8E1016" stroke="#5A0A0E" stroke-width=".7"/>' +
+      '<rect x="' + (SX + 5) + '" y="' + (SY + 20) + '" width="' + (SW - 10) + '" height="9" rx="1.4" fill="url(#' + u + 'cab)" stroke="#5A0A0E" stroke-width=".6"/>' +
+      [0, 1, 2, 3, 4].map(i => '<path d="M' + (SX + 8 + i * 4.4) + ' ' + (SY + 21.6) + ' L' + (SX + 8 + i * 4.4) + ' ' + (SY + 27.4) + '" stroke="#5A0A0E" stroke-width=".7"/>').join("") +
+      txt("PULL", SX + SW / 2, SY + 16.4, 3, "#FFFFFF", .6) +
+      txt("PULL DOWN", SX + SW / 2, SY + 40.4, 3, "#FFFFFF", .6) +
+      '<circle cx="' + (SX + SW - 7) + '" cy="' + (SY + SH - 4.4) + '" r="1.8" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".4"/>' +
+      [[SX - 1.4, SY - 1.4], [SX + SW + 1.4, SY - 1.4], [SX - 1.4, SY + SH + 1.4], [SX + SW + 1.4, SY + SH + 1.4]].map(p => '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="1" fill="#6A707C"/>').join("") + '</g>';
     const box = '<g class="fb-docbox">' +
       '<rect x="' + (DX + 3) + '" y="' + (DY + 5) + '" width="' + DW + '" height="' + DH + '" rx="4" fill="#000" opacity=".35"/>' +
       '<rect x="' + DX + '" y="' + DY + '" width="' + DW + '" height="' + DH + '" rx="4" fill="url(#' + u + 'cab)"/>' +
       '<rect x="' + (DX + 4) + '" y="' + (DY + 4) + '" width="' + (DW - 8) + '" height="' + (DH - 8) + '" rx="2.4" fill="none" stroke="#7A0E14" stroke-width="1.2"/>' +
-      [DY + 14, DY + DH - 18].map(y => '<rect x="' + (DX - 1.6) + '" y="' + y + '" width="3" height="8" rx="1" fill="#8A929E"/>').join("") +
-      fbText("RECORD", DX + DW / 2, DY + 22, 7, "#FFFFFF", 1.5) + fbText("DOCUMENTS", DX + DW / 2, DY + 35, 5.4, "#FFFFFF", 1.2) +
+      [DY + 14, DY + DH - 22].map(y => '<rect x="' + (DX - 1.6) + '" y="' + y + '" width="3" height="8" rx="1" fill="url(#' + u + 'chrome)"/>').join("") +
+      txt("RECORD", DX + DW / 2, DY + 22, 7, "#FFFFFF", 1.5) + txt("DOCUMENTS", DX + DW / 2, DY + 35, 5.2, "#FFFFFF", 1.1) +
       '<rect x="' + (DX + 14) + '" y="' + (DY + 42) + '" width="' + (DW - 28) + '" height="1.2" fill="#FFFFFF" opacity=".7"/>' +
       '<rect x="' + (DX + DW - 13) + '" y="' + (DY + 54) + '" width="5" height="14" rx="2" fill="url(#' + u + 'chrome)" stroke="#5A606C" stroke-width=".5"/><circle cx="' + (DX + DW - 10.5) + '" cy="' + (DY + 58) + '" r="1.2" fill="#3A3E48"/></g>';
-    const base = '<defs>' + bnLin(u + "wall", [[0, "#30343F"], [1, "#1A1C24"]]) + bnLin(u + "cab", [[0, "#E8402E"], [0.55, "#C41E26"], [1, "#8E1016"]], 0, 0, 1, 1) + bnLin(u + "lcd", [[0, "#A8F0B0"], [1, "#6ACB80"]]) +
+    const base = '<defs>' + bnLin(u + "wall", [[0, "#30343F"], [1, "#1A1C24"]]) + bnLin(u + "cab", [[0, "#E8402E"], [0.55, "#C41E26"], [1, "#8E1016"]], 0, 0, 1, 1) + bnLin(u + "lcd", [[0, "#B4F4BA"], [1, "#72D488"]]) +
       bnLin(u + "glass", [[0, "#FFFFFF", 0.14], [1, "#FFFFFF", 0]], 0, 0, 1, 1) + bnLin(u + "chrome", [[0, "#F2F4F7"], [1, "#7A808C"]], 0, 0, 1, 1) + bnLin(u + "pipe", [[0, "#6A707C"], [0.4, "#C9CED6"], [1, "#5A606C"]], 0, 0, 1, 0) +
-      bnRad(u + "lamp", [[0, "#FFF3D8", 0.22], [1, "#FFF3D8", 0]]) + bnRad(u + "red", [[0, "#FF3B30", 0.34], [1, "#FF3B30", 0]]) + '</defs>' +
+      bnLin(u + "keycap", [[0, "#5A6070"], [1, "#363A46"]]) + bnLin(u + "floor", [[0, "#1E2028"], [1, "#0C0D12"]]) +
+      bnRad(u + "lamp", [[0, "#FFF3D8", 0.2], [1, "#FFF3D8", 0]]) + bnRad(u + "ok", [[0, "#3CE08A", 0.3], [1, "#3CE08A", 0]]) + '</defs>' +
       '<rect width="480" height="180" fill="url(#' + u + 'wall)"/><path d="' + blocks + '" stroke="#22252E" stroke-width="1.2" fill="none"/>' +
       '<ellipse cx="250" cy="20" rx="260" ry="130" fill="url(#' + u + 'lamp)"/>' +
-      '<rect x="0" y="158" width="480" height="22" fill="#14161C"/><rect x="0" y="156" width="480" height="3" fill="#3E4250"/>' +
-      conduit(PX + 30) + conduit(PX + 120) + conduit(DX + DW / 2) +
-      /* ON CALL (384, "the names do need to line up with the challenge" - 60 hours studied): the panel is always on, and so is whoever is
-         on it: a wall clock past one in the morning, a desk lamp and a mug on the ledge below */
-      '<circle cx="65" cy="61" r="26" fill="#000" opacity=".35"/><circle cx="63" cy="58" r="25" fill="#2A2D34" stroke="#0A0C10" stroke-width="1.4"/><circle cx="63" cy="58" r="21.4" fill="#F4F1EA"/>' +
-      Array.from({ length: 12 }, (_, i) => { const t = i * Math.PI / 6; return fbL("M" + bnF(63 + Math.sin(t) * (i % 3 ? 18.4 : 16.6)) + " " + bnF(58 - Math.cos(t) * (i % 3 ? 18.4 : 16.6)) + " L" + bnF(63 + Math.sin(t) * 20) + " " + bnF(58 - Math.cos(t) * 20), "#2A2D34", i % 3 ? 1 : 1.8); }).join("") +
-      fbL("M63 58 L" + bnF(63 + Math.sin(Math.PI * 0.2) * 11) + " " + bnF(58 - Math.cos(Math.PI * 0.2) * 11), "#14161C", 2.4) + fbL("M63 58 L" + bnF(63 + Math.sin(Math.PI * 0.6) * 17) + " " + bnF(58 - Math.cos(Math.PI * 0.6) * 17), "#14161C", 1.6) + fbC(63, 58, 2.2, "#14161C") +
-      '<ellipse cx="62" cy="52" rx="12" ry="6" fill="#fff" opacity=".12"/>' +
-      /* the lamp */
-      '<ellipse cx="46" cy="158" rx="14" ry="3" fill="#000" opacity=".5"/><path d="M34 158 Q34 153 46 153 Q58 153 58 158 Z" fill="#2A2D34"/>' + fbL("M46 153 L38 132 L62 120", "#3A3E48", 3) + fbC(38, 132, 2.6, "#6A707C") + fbC(46, 153, 2, "#6A707C") +
-      fbP("M54 112 L80 122 L70 134 L50 124 Z", "#E8402E", ' stroke="#7A0E14" stroke-width=".8"') + fbP("M52 124 L70 134 L66 137 L50 128 Z", "#FFE9B8") +
-      /* the mug */
-      '<ellipse cx="416" cy="158" rx="12" ry="2.6" fill="#000" opacity=".5"/>' + fbR(408, 142, 16, 16, "#E8ECEF", ' rx="2.6"') + fbR(408, 142, 16, 3, "#6A4426") + fbL("M424 146 Q432 148 424 155", "#E8ECEF", 3) + fbR(410, 151, 12, 5, "#7A1410", ' opacity=".8"');
+      /* the floor and its baseboard: the wall comes down to them */
+      '<rect x="0" y="160" width="480" height="20" fill="url(#' + u + 'floor)"/><rect x="0" y="154" width="480" height="7" fill="#2A2D36"/><rect x="0" y="154" width="480" height="1.4" fill="#4A4E5C"/><rect x="0" y="160" width="480" height="1.2" fill="#000" opacity=".5"/>' +
+      conduit(PX + 36, PY) + conduit(PX + 118, PY) + conduit(SX + SW / 2, SY - 3);
     return [
       { svg: base },
-      /* the lamp's pool of light on the ledge, the red of the alarm on the wall round the panel */
-      /* the alarm's red on the wall round the panel */
-      { svg: '<ellipse cx="' + (PX + PW / 2) + '" cy="' + (PY + PH / 2) + '" rx="150" ry="96" fill="url(#' + u + 'red)"/>', box: [PX + PW / 2 - 150, PY + PH / 2 - 96, 300, 192], cls: "bl-glow", style: "animation-duration:1s" },
-      { svg: panel + box },
-      { svg: '<ellipse cx="64" cy="164" rx="62" ry="12" fill="url(#' + u + 'lamp)" opacity="2"/><path d="M52 124 L70 134 L96 164 L36 164 Z" fill="#FFE9B8" opacity=".12"/>', box: [0, 120, 140, 50], cls: "bl-breathe", style: "animation-duration:5s" },
-      /* the second hand, sweeping; steam off the mug */
-      { svg: '<path d="M63 62 L63 40.6" stroke="#D7262E" stroke-width="1" stroke-linecap="round"/><circle cx="63" cy="58" r="1.4" fill="#D7262E"/>', box: [41, 36, 44, 44], o: [63, 58], cls: "bl-tick" },
-      { svg: '<path d="M414 142 Q410 132 416 124 Q422 116 416 106" fill="none" stroke="#E8ECEF" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M420 142 Q416 134 421 128" fill="none" stroke="#E8ECEF" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>', box: [404, 100, 24, 44], cls: "bl-steam", style: "animation-duration:3.6s" },
-      /* ALARM on the display, flashing */
-      { svg: '<rect x="' + (PX + 21) + '" y="' + (PY + 31) + '" width="' + (PW - 42) + '" height="9" fill="#123A1E"/>' + fbText("ALARM", PX + PW / 2, PY + 35.6, 5, "#C8FFD0", 1.1), box: [PX + 20, PY + 30, PW - 40, 11], cls: "bl-blink", style: "animation-duration:1.4s" },
-      /* the ALARM light */
-      { svg: '<circle cx="' + (PX + 24) + '" cy="' + (LY + 9) + '" r="2.8" fill="#FF3B30"/><circle cx="' + (PX + 24) + '" cy="' + (LY + 9) + '" r="7" fill="#FF3B30" opacity=".45"/>', box: [PX + 14, LY - 1, 20, 20], cls: "bl-blink", style: "animation-duration:1s" }
+      /* the green of a panel that is well, on the wall round it and on the floor under it */
+      { svg: '<ellipse cx="' + (PX + PW / 2) + '" cy="' + (PY + PH / 2) + '" rx="190" ry="104" fill="url(#' + u + 'ok)"/>', box: [PX + PW / 2 - 190, PY + PH / 2 - 104, 380, 208], cls: "bl-breathe", style: "animation-duration:5s" },
+      { svg: pull + panel + box },
+      /* the cursor after the time, and the AC POWER lamp's halo, slow */
+      { svg: '<rect x="' + (PX + PW - 28) + '" y="' + (PY + 46.6) + '" width="2.6" height="5.6" fill="#1B5A30"/>', box: [PX + PW - 30, PY + 45, 8, 9], cls: "bl-blink", style: "animation-duration:1.2s" },
+      { svg: '<circle cx="' + LX + '" cy="' + LY + '" r="5.4" fill="#2ECC71" opacity=".4"/>', box: [LX - 9, LY - 9, 18, 18], cls: "bl-pulse", style: "animation-duration:2.4s" }
     ];
   },
 
