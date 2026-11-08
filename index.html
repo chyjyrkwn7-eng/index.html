@@ -38432,14 +38432,153 @@ html.is-browser{ --fade-paper: transparent; }
     html[data-layout] body #stage .screen-customize .avatarchar-name{ font-size:.78rem; }
     html[data-layout] body #stage .screen-customize .swatches{ --cz-gx:.8rem; --cz-gy:.8rem; }
   }
-  /* the tile you have on: a white tick in a ring on every page, the character's own (.avatarchar-check) drawn the same on the others */
-  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected, .hfx-opt.selected, .swatch.on)::after{
-    content:""; position:absolute; width:1.1rem; height:1.1rem; border-radius:50%; z-index:6; pointer-events:none; box-sizing:border-box;
-    background:#FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4 6.7 11.3 12.4 5' fill='none' stroke='%230E1116' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / .66rem .66rem no-repeat;
-    box-shadow:0 0 0 2px rgba(255,255,255,.55), 0 2px 6px rgba(0,0,0,.45);
+  /* ================================================================
+     (384 r6) CUSTOMIZE: ONE BOX PER GROUP, ONE MARK FOR WHAT YOU HAVE ON
+     Madison: "The characters rewards new layout. Could it be a look better, it's kinda cluttered because there's so many?
+     Should the categories be in a nice box? That matches the app?" / "around the theme color is a ring like you selected it,
+     and there's a checkmark? And the box is lit? Seems like a lot, make that better." / "Those check marks for your selected
+     thing as well. Could that be updated/better?" / "ensure the updated layout and stuff is app wide."
+     - THE BOX (.cz-group, built by buildCustomizeGroup): the entry cards' and Settings' solid card (--surface-1, the iOS
+       fill, --ios-group-r, no rim, no shadow), one per group on all four pages. Its header is a row: the group's name and its
+       line on the left, "N of M" in a quiet pill on the right. The tiles sit under it on the r4 grid (a centred wrapping row,
+       one tile size, equal gaps), now inside the card.
+     - LESS ON EACH TILE: the padlocks are smaller and quieter, a locked character's halo is turned down (its aura circle,
+       not the drawing), the theme tiles lose their own boxes (a box in a box), and nothing about a tile grows or lights when
+       it is the one you have on.
+     - THE ONE MARK (.pick-mark, addPickMark): a 1.3rem solid badge in the theme's colour (white on the default theme), a
+       crisp tick in the theme's ink centred in it, and a cut-out ring in the colour of what it sits on (the card: --pick-cut). It sits
+       where a locked tile's padlock sits - on a round tile at half past four on its circle, on a banner or an effect at the
+       top right of its picture - so a tile's status always reads in one place. Gone: the theme's double ring and its lit box,
+       the banner's and the effect's white ring and glow, the character's pool of light, drop-shadows and growth, and the
+       old white ticks with their pale halo. The same mark on the sign-up character screen and Nova's character question.
+     ================================================================ */
+  html[data-layout] body #stage .screen-customize.cz-page > .sect{ display:flex; flex-direction:column; gap:var(--cz-box-gap, .85rem); }
+  html[data-layout] body #stage .screen-customize .cz-group{
+    --pick-cut:var(--surface-1);
+    position:relative; width:100%; box-sizing:border-box; margin:0;
+    padding-top:.95rem; padding-bottom:1.15rem; padding-left:.8rem; padding-right:.8rem;
+    background-color:var(--surface-1); background-image:linear-gradient(var(--ios-card-fill), var(--ios-card-fill));
+    border:0; border-radius:var(--ios-group-r); box-shadow:none;
   }
-  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected, .hfx-opt.selected)::after{ top:-.4rem; right:-.4rem; }
-  html[data-layout] body #stage .screen-customize .swatch.on::after{ right:-.1rem; bottom:-.1rem; }
+  /* the header: name and line on the left, the count on the right */
+  html[data-layout] body #stage .screen-customize .cz-group > .cz-group-head{
+    display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:.75rem; row-gap:.14rem; align-items:center;
+    margin:0 .2rem .95rem; padding:0; text-align:left;
+    font-size:1rem; font-weight:700; letter-spacing:0; text-transform:none; color:var(--ink); line-height:1.25;
+  }
+  html[data-layout] body #stage .screen-customize .cz-group > .cz-group-head:first-of-type{ margin-top:0; }
+  html[data-layout] body #stage .screen-customize .cz-group .cz-group-name{ grid-column:1; grid-row:1; min-width:0; font-size:1rem; font-weight:700; color:var(--ink); line-height:1.25; }
+  html[data-layout] body #stage .screen-customize .cz-group .cz-group-note{
+    grid-column:1; grid-row:2; min-width:0; font-size:.8rem; font-weight:500; letter-spacing:0; text-transform:none; color:var(--soft); line-height:1.35;
+  }
+  html[data-layout] body #stage .screen-customize .cz-group .cz-group-count{
+    grid-column:2; grid-row:1 / span 2; align-self:center; justify-self:end; white-space:nowrap;
+    display:inline-flex; align-items:center; justify-content:center; min-height:1.6rem; box-sizing:border-box; padding:0 .62rem; border-radius:99px;
+    font-size:.78rem; font-weight:600; letter-spacing:0; line-height:1; color:var(--soft); font-variant-numeric:tabular-nums;
+    background:color-mix(in srgb, var(--ink) 8%, transparent);
+    padding-top:1.1px;   /* the words' ink sat .5-.6px high in the pill at line-height 1 (check-centering), as .cz-go's did */
+  }
+  html[data-layout] body #stage .screen-customize .cz-group .cz-group-count.is-all{ color:var(--ink); }
+  /* the grids inside a box: the r4 rows, the box's width */
+  html[data-layout] body #stage .screen-customize .cz-group :is(.avatarchar-grid.avatarchar-grid-appearance, .banner-grid, .hfx-grid, .swatches){ margin:0; }
+  html[data-layout] body #stage .screen-customize .cz-group .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:.5rem; --cz-gy:1rem; }
+  /* themes: plain tiles (the circle and its name), four to a phone's row, the seven rank colours one row from a tablet up */
+  html[data-layout] body #stage .screen-customize .cz-group .swatches{ --cz-gx:.5rem; --cz-gy:1rem; max-width:none; }
+  html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell,
+  html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell:has(.swatch.on){
+    padding:0; border:0; border-radius:0; background:none; box-shadow:none; gap:.45rem;
+  }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch{ width:3.7rem; height:3.7rem; border-width:2px; }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch .dot{ width:3rem; height:3rem; }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch-name{ font-size:.74rem; font-weight:700; letter-spacing:0; overflow:visible; text-overflow:clip; }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch-cell:has(.swatch.on) .swatch-name{ font-weight:700; }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch-cell.is-locked .swatch-name{ color:var(--soft); opacity:1; }
+  /* a phone: a two-word name too long for its cell (Sprinkler Head) goes onto two lines at its space, never mid-word - the
+     box's padding took a few px from each cell (r4 allowed this at 320px only) */
+  @media (max-width:39.99rem){
+    html[data-layout] body #stage .screen-customize .cz-group .avatarchar-name{ white-space:normal; overflow-wrap:normal; word-break:normal; }
+  }
+  /* a 320px phone: four characters to a row (five left 47px tiles), names on two lines where they must */
+  @media (max-width:22.5rem){
+    html[data-layout] body #stage .screen-customize .cz-group{ padding-left:.65rem; padding-right:.65rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .avatarchar-grid.avatarchar-grid-appearance > .avatarchar-cell{
+      flex:0 0 calc((100% - 3 * var(--cz-gx)) / 4); width:calc((100% - 3 * var(--cz-gx)) / 4);
+    }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch{ width:3.3rem; height:3.3rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch .dot{ width:2.7rem; height:2.7rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch-name{ font-size:.64rem; }   /* Supernova inside a 60px tile */
+  }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .screen-customize.cz-page > .sect{ --cz-box-gap:1.1rem; }
+    html[data-layout] body #stage .screen-customize .cz-group{ padding-top:1.2rem; padding-bottom:1.45rem; padding-left:1.3rem; padding-right:1.3rem; }
+    html[data-layout] body #stage .screen-customize .cz-group > .cz-group-head{ margin-bottom:1.2rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .cz-group-name{ font-size:1.08rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .cz-group-note{ font-size:.84rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .cz-group-count{ font-size:.82rem; min-height:1.75rem; padding:1.1px .75rem 0; }
+    html[data-layout] body #stage .screen-customize .cz-group .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:1rem; --cz-gy:1.15rem; max-width:none; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatches{ --cz-gx:.7rem; --cz-gy:1rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell{ flex:0 0 5.1rem; width:5.1rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch{ width:4.3rem; height:4.3rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch .dot{ width:3.55rem; height:3.55rem; }
+    html[data-layout] body #stage .screen-customize .cz-group .swatch-name{ font-size:.82rem; }
+  }
+
+  /* ---- less on each tile ---- */
+  /* a locked character's halo turned down - the aura circle behind the drawing, not the drawing */
+  html[data-layout] body #stage .screen-customize .avatarchar-option.locked .avatarchar-svg circle[fill*="aura"]{ opacity:.3; }
+  /* the padlock: one small quiet disc, on the circle at half past four (where the mark goes on a tile you hold) */
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel) .avatarchar-lockmark{
+    --lk:1rem; right:auto; bottom:auto; width:var(--lk); height:var(--lk);
+    left:calc(50% + 35.355% - var(--lk) / 2); top:calc(50% + 35.355% - var(--lk) / 2);
+    background:rgba(12,16,22,.86); box-shadow:0 0 0 2px var(--pick-cut, var(--paper)); z-index:4;
+  }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel) .avatarchar-lockmark .lockglyph{ width:.56rem; height:.56rem; }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch-lockmark{
+    --lk:1rem; right:auto; bottom:auto; width:var(--lk); height:var(--lk); box-sizing:border-box;
+    left:calc(50% + 35.355% - var(--lk) / 2); top:calc(50% + 35.355% - var(--lk) / 2);
+    background:rgba(12,16,22,.86); border:0; box-shadow:0 0 0 2px var(--pick-cut);
+  }
+  html[data-layout] body #stage .screen-customize .cz-group .swatch-lockmark .lockglyph{ width:.56rem; height:.56rem; }
+  html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock){ top:.4rem; right:.4rem; width:1.15rem; height:1.15rem; background:rgba(8,10,14,.72); }
+  html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock) svg{ width:.6rem; height:.6rem; }
+
+  /* ---- nothing grows or lights on the one you have on ---- */
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option.selected{ transform:translateZ(0); }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option.selected::before{ opacity:0; }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option:not(.locked):is(.selected, .is-unglowing){ filter:none; }
+  html[data-layout] body :is(#stage .screen-customize, .charselect-panel, .nt-ask-grid) .avatarchar-option.selected:not(.locked)::after{ opacity:0; }
+  html[data-layout] body #stage .screen-customize .swatch.on{ border-color:var(--rule); box-shadow:none; }
+  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected .banner-opt-art, .hfx-opt.selected .hfx-opt-art){ box-shadow:none; }
+  /* a held character's name reads the same whether or not it is the one on (the mark says that); a locked one's is quieter */
+  html[data-layout] body #stage .screen-customize .avatarchar-cell .avatarchar-name:not(.is-locked),
+  html[data-layout] body #stage .screen-customize .avatarchar-cell.is-selected .avatarchar-name{ color:var(--ink); opacity:.92; }
+  /* an effect's tile is the results card's own colour - the box's colour - so inside a box it takes the banner tile's hairline */
+  html[data-layout] body #stage .screen-customize .cz-group .hfx-opt-art::after{
+    content:""; position:absolute; inset:0; z-index:5; border-radius:inherit; pointer-events:none;
+    box-shadow:inset 0 0 0 1px var(--clean-line, rgba(255,255,255,.1));
+  }
+
+  /* ---- THE ONE MARK ---- */
+  html[data-layout] body .pick-mark{
+    --pm:1.3rem;
+    position:absolute; z-index:6; box-sizing:border-box; width:var(--pm); height:var(--pm); margin:0; padding:0; border:0; border-radius:50%;
+    display:grid; place-items:center; pointer-events:none;
+    /* the theme's own colour and its own ink (--rank-accent / --rank-accent-ink, the pair every themed control reads); white
+       with a dark tick on the default theme, where neither is set (--accent is white on every theme now) */
+    background:var(--rank-accent, #FFFFFF); color:var(--rank-accent-ink, #0E1116);
+    box-shadow:0 0 0 2.5px var(--pick-cut, var(--paper));
+    opacity:0; transform:scale(.55); transition:opacity .18s ease, transform .3s cubic-bezier(.3,1.45,.5,1);
+  }
+  html[data-layout] body .pick-mark svg{ display:block; width:70%; height:70%; }
+  html[data-layout] body :is(.avatarchar-option.selected:not(.locked), .swatch.on, .banner-opt.selected, .hfx-opt.selected) .pick-mark{ opacity:1; transform:none; }
+  /* on a round tile (a character, a theme): centred on the circle, 45 degrees below its right-hand side */
+  html[data-layout] body :is(.avatarchar-option, .swatch) > .pick-mark{
+    left:calc(50% + 35.355% - var(--pm) / 2); top:calc(50% + 35.355% - var(--pm) / 2); right:auto; bottom:auto;
+  }
+  /* on a banner or an effect: the picture's top-right corner, where its padlock goes */
+  html[data-layout] body :is(.banner-opt-art, .hfx-opt-art) > .pick-mark{ top:.4rem; right:.4rem; left:auto; bottom:auto; }
+  @media (min-width:40rem){ html[data-layout] body .pick-mark{ --pm:1.45rem; } html[data-layout] body #stage .screen-customize .cz-group :is(.banner-opt-lock, .hfx-opt-lock){ width:1.3rem; height:1.3rem; } }
+  @media (prefers-reduced-motion:reduce){ html[data-layout] body .pick-mark{ transition:none; } }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -57777,14 +57916,23 @@ function pickerCharSVG(id){
 /* ...and the selection says itself: a crisp ring and a tick (build 314),
    besides the glow. The tick is a child of the option, shown only on the
    selected one. */
-function addPickCheck(opt){
+/* (384 r6) THE ONE MARK FOR WHAT YOU HAVE ON - every picker in the app (Customize's four pages, the sign-up character screen,
+   Nova's character question). Madison: "around the theme color is a ring like you selected it, and there's a checkmark? And
+   the box is lit? Seems like a lot" / "Those check marks for your selected thing as well. Could that be updated/better?"
+   One small solid badge in the accent colour, a crisp tick centred in it, a cut-out ring in the colour of whatever it sits on
+   so it stands off the art (.pick-mark in the CSS). It sits where a locked tile's padlock sits, so a tile's status always
+   reads in one place. No ring round the tile, no lit box, no glow, no growing. The element is on every pickable tile and
+   shows only on the one you have on, so it fades in where it lands. */
+function addPickMark(host, extraClass){
   const c = document.createElement("span");
-  c.className = "avatarchar-check";
+  c.className = "pick-mark" + (extraClass ? " " + extraClass : "");
   c.setAttribute("aria-hidden", "true");
-  c.innerHTML = '<svg viewBox="0 0 16 16"><path d="M3.6 8.4 L6.7 11.3 L12.4 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  opt.appendChild(c);
+  c.innerHTML = '<svg viewBox="0 0 16 16"><path d="M4 8.35 L6.85 11.1 L12 5.2" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  host.appendChild(c);
   return c;
 }
+/* a character's: the same mark, keeping the class the older gates and the sign-up screens know it by */
+function addPickCheck(opt){ return addPickMark(opt, "avatarchar-check"); }
 function buildCharSilhouette(id, as){
   const wrap = document.createElement("span");
   const k = CHAR_SIL_LOOKS.indexOf(as) >= 0 ? as : charCategory(id);
@@ -144620,6 +144768,35 @@ function buildCustomizeBar(title, count, frac){
   }
   return bar;
 }
+/* (384 r6) ONE BOX PER GROUP. Madison: "The characters rewards new layout. Could it be a look better, it's kinda cluttered
+   because there's so many? Should the categories be in a nice box? That matches the app?" Every Customize page is now its
+   groups, each in the app's own card (the entry cards' and Settings' solid surface and radius): a header row - the group's
+   name and its one line on the left, how many of it are yours on the right - and the tiles under it on one calm grid. The
+   header is a <p> followed by its grid, the shape the character headings always had (gates and the Secrets scroll find them
+   that way); `titleClass` adds the character page's own heading class. */
+function buildCustomizeGroup(key, title, note, have, total, gridClass, titleClass){
+  const card = document.createElement("div");
+  card.className = "cz-group cz-group-" + key;
+  const head = document.createElement("p");
+  head.className = "cz-group-head" + (titleClass ? " " + titleClass : "");
+  const nm = document.createElement("span");
+  nm.className = "cz-group-name"; nm.textContent = title;
+  head.appendChild(nm);
+  if(note){
+    const n = document.createElement("span");
+    n.className = "cz-group-note" + (titleClass ? " avatarchar-group-note" : ""); n.textContent = note;
+    head.appendChild(n);
+  }
+  const c = document.createElement("span");
+  c.className = "cz-group-count" + (have >= total ? " is-all" : "");
+  c.textContent = have + " of " + total;
+  c.setAttribute("aria-label", have + " of " + total + " yours");
+  head.appendChild(c);
+  const grid = document.createElement("div");
+  grid.className = gridClass;
+  card.append(head, grid);
+  return { card, grid, head };
+}
 function buildCustomizeSummary(){
   const wrap = document.createElement("div");
   wrap.className = "sect cz-list";
@@ -144835,18 +145012,16 @@ function buildCustomizeCharacterSect(){
     { title: "Kept", note: "From an earlier version \u2014 yours to keep",
       ids: AVATAR_CHARACTERS.filter(c => (c.legacy && !isLockedCharacter(c.id)) || (c.retired && store.avatarChar === c.id)).map(c => c.id) }
   ];
+  /* (384 r6) each group is its own card (buildCustomizeGroup), its count in the header */
   const charGrids = [];
-  charGroups.forEach(g => {
-    if(!g.ids.length) return;
-    const h = document.createElement("p");
-    h.className = "avatarchar-group-title";
-    h.textContent = g.title;
-    const n = document.createElement("span");
-    n.className = "avatarchar-group-note"; n.textContent = g.note;
-    h.appendChild(n);
-    const grid = document.createElement("div");
-    grid.className = "avatarchar-grid avatarchar-grid-appearance";
-    charGrids.push({ head: h, grid: grid, ids: g.ids });
+  charGroups.forEach((g, gi) => {
+    /* counted as the grid shows them (the same skips as the tiles below) */
+    const shownIds = g.ids.filter(id => { const d = AVATAR_CHARACTERS.find(c => c.id === id);
+      return d && !(d.retired && store.avatarChar !== id) && !(d.legacy && isLockedCharacter(id)); });
+    if(!shownIds.length) return;
+    const have = shownIds.filter(id => !isLockedCharacter(id)).length;
+    const box = buildCustomizeGroup("chars-" + gi, g.title, g.note, have, shownIds.length, "avatarchar-grid avatarchar-grid-appearance", "avatarchar-group-title");
+    charGrids.push({ card: box.card, grid: box.grid, ids: g.ids });
   });
 
   AVATAR_CHARACTERS.forEach(charDef => {
@@ -144938,7 +145113,7 @@ function buildCustomizeCharacterSect(){
     const home = charGrids.find(g => g.ids.indexOf(charDef.id) >= 0);
     (home ? home.grid : avatarGrid).appendChild(cell);
   });
-  charGrids.forEach(g => avatarSect.append(g.head, g.grid));
+  charGrids.forEach(g => avatarSect.appendChild(g.card));
   if(avatarGrid.children.length) avatarSect.appendChild(avatarGrid);
   return avatarSect;
 }
@@ -144950,9 +145125,17 @@ function buildCustomizeBannerSect(){
      and do. "Theme" is the default cover, in the app's own colours. */
   const bannerSect = document.createElement("div");
   bannerSect.className = "sect";
-  const bannerGrid = document.createElement("div");
-  bannerGrid.className = "banner-grid";
   const current = wornBanner();
+  /* (384 r6) IN THE DATA'S OWN GROUPS, each its own card, in the character page's order: the default, what the ranks hand
+     over, the challenges (the ultimate last, as the ultimate character is), the secret flares' */
+  const bGroups = [
+    { key: "start", title: "Starter", note: "Yours from day one", defs: [null] },
+    { key: "rank", title: "Rank rewards", note: "Handed over as you climb the ranks", defs: BANNERS.filter(d => d.rank) },
+    { key: "challenge", title: "Challenge rewards", note: "Each one is unlocked by a challenge",
+      defs: BANNERS.filter(d => !d.rank && !d.flareChar && !d.ultimate).concat(BANNERS.filter(d => d.ultimate && !d.rank && !d.flareChar)) },
+    { key: "secret", title: "Secrets", note: "Found, not earned — keep your eyes open", defs: BANNERS.filter(d => d.flareChar && !d.rank) }
+  ];
+  let bannerGrid = null;
   /* Drawn just after the screen is up, not before (build 313) - see
      fillDeferredBannerArt. */
   const bannerArtQueue = [];
@@ -144974,7 +145157,7 @@ function buildCustomizeBannerSect(){
       lk.className = "banner-opt-lock";
       lk.appendChild(buildLockIcon());
       art.appendChild(lk);
-    }
+    } else addPickMark(art);
     const nm = document.createElement("span");
     nm.className = "banner-opt-name"; nm.textContent = name;
     b.append(art, nm);
@@ -144998,19 +145181,33 @@ function buildCustomizeBannerSect(){
       if(b.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.banner = id;
       saveStore();
-      bannerGrid.querySelectorAll(".banner-opt").forEach(x => x.classList.toggle("selected", x === b));
+      bannerSect.querySelectorAll(".banner-opt").forEach(x => x.classList.toggle("selected", x === b));
     });
     bannerGrid.appendChild(b);
   };
   /* "Default", and it is the theme: "the description for the default
      banner needs to say default banner similarity to the default theme"
-     (build 243). It takes the colours of whichever theme you run. */
-  bannerOpt("", "Default", "", false);
-  /* every banner, held or not (build 382: none left out) */
-  BANNERS.forEach(def => {
-    bannerOpt(def.id, def.name, def.label, !bannerEarned(def.id));
+     (build 243). It takes the colours of whichever theme you run.
+     Then every banner, held or not (build 382: none left out), each in its group's card. */
+  const placed = new Set();
+  bGroups.forEach(g => {
+    const defs = g.defs.filter(d => !d || !placed.has(d.id));
+    if(!defs.length) return;
+    defs.forEach(d => { if(d) placed.add(d.id); });
+    const have = defs.filter(d => !d || bannerEarned(d.id)).length;
+    const box = buildCustomizeGroup("banner-" + g.key, g.title, g.note, have, defs.length, "banner-grid");
+    bannerGrid = box.grid;
+    defs.forEach(def => { if(!def) bannerOpt("", "Default", "", false); else bannerOpt(def.id, def.name, def.label, !bannerEarned(def.id)); });
+    bannerSect.appendChild(box.card);
   });
-  bannerSect.appendChild(bannerGrid);
+  /* anything the groups above do not name still gets a tile, in a box of its own */
+  const rest = BANNERS.filter(d => !placed.has(d.id));
+  if(rest.length){
+    const box = buildCustomizeGroup("banner-more", "More", "", rest.filter(d => bannerEarned(d.id)).length, rest.length, "banner-grid");
+    bannerGrid = box.grid;
+    rest.forEach(def => bannerOpt(def.id, def.name, def.label, !bannerEarned(def.id)));
+    bannerSect.appendChild(box.card);
+  }
   /* BANNERS OFF SCREEN HOLD STILL (build 290). Every banner tile is a
      live animated scene; together with the swatches they held the old
      all-in-one screen to ~30fps on a throttled phone. A tile scrolled out
@@ -145028,13 +145225,25 @@ function buildCustomizeBannerSect(){
 function buildCustomizeThemeSect(){
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
-  const swatches = document.createElement("div");
-  swatches.className = "swatches";
+  /* (384 r6) two cards: the default, then the seven the ranks hand over (the data's own split: TIER_UNLOCKS) */
+  const tGroups = [
+    { key: "start", title: "Starter", note: "Yours from day one", names: ACCENTS.filter(n => !TIER_UNLOCKS[n]) },
+    { key: "rank", title: "Rank rewards", note: "Each rank hands one over", names: ACCENTS.filter(n => TIER_UNLOCKS[n]) }
+  ].filter(g => g.names.length);
+  const gridOf = {};
+  tGroups.forEach(g => {
+    const box = buildCustomizeGroup("theme-" + g.key, g.title, g.note, g.names.filter(n => !isLockedAccent(n)).length, g.names.length, "swatches");
+    g.names.forEach(n => { gridOf[n] = box.grid; });
+    accentSect.appendChild(box.card);
+  });
   ACCENTS.forEach(name => {
+    const swatches = gridOf[name];
+    if(!swatches) return;
     const b = document.createElement("button");
     const locked = isLockedAccent(name);
     const displayName = ACCENT_DISPLAY_NAME[name] || name;
     b.type = "button"; b.className = "swatch"; b.title = displayName;
+    b.dataset.swatch = name;   /* not data-accent: [data-accent="X"] would re-scope the theme colours to the tile */
     b.setAttribute("aria-label", displayName);
     const dot = document.createElement("span");
     const tierClass = TIER_UNLOCKS[name] ? " tier-" + name : "";
@@ -145052,7 +145261,7 @@ function buildCustomizeThemeSect(){
       lockMark.setAttribute("aria-hidden", "true");
       lockMark.appendChild(buildLockIcon());
       b.appendChild(lockMark);
-    }
+    } else addPickMark(b);
     const clearNew = locked ? () => {} : attachNewDot(b, "themes", name);
     const openHeld = locked ? null : attachHoldDetail(b, () => { clearNew(); return name === "ink"
       ? { kind: "theme", id: "ink", kicker: "Theme", name: "Default theme", desc: "Yours from day one." }
@@ -145078,7 +145287,6 @@ function buildCustomizeThemeSect(){
     cell.append(b, lab);
     swatches.appendChild(cell);
   });
-  accentSect.appendChild(swatches);
   /* The swatches swirl and sheen by repainting every frame, and they
      cost more than the banners: measured, the eight of them alone took
      the old all-in-one screen from 55fps to 27. Off screen, they hold
@@ -145088,12 +145296,12 @@ function buildCustomizeThemeSect(){
       if(!document.contains(accentSect)){ io.disconnect(); return; }
       entries.forEach(e => e.target.classList.toggle("is-offscreen", !e.isIntersecting));
     }, { rootMargin: "120px 0px" });
-    swatches.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
+    accentSect.querySelectorAll(".swatch").forEach(b => { b.classList.add("is-offscreen"); io.observe(b); });
   }
 
   function paintAccents(){
-    [...swatches.querySelectorAll(".swatch")].forEach((b, i) => {
-      b.classList.toggle("on", ACCENTS[i] === theme.accent);
+    accentSect.querySelectorAll(".swatch").forEach(b => {
+      b.classList.toggle("on", b.dataset.swatch === theme.accent);
     });
   }
 
@@ -145110,10 +145318,20 @@ function buildCustomizeFxSect(){
      was "a lot". The effect plays only on its card, when it is tapped. */
   const fxSect = document.createElement("div");
   fxSect.className = "sect hfx-sect";
-  const fxGrid = document.createElement("div");
-  fxGrid.className = "hfx-grid";
   const fxNow = hundoFxInUse();
+  /* (384 r6) two cards: the one you start with, then the rungs your hundos climb (the data's own split: `need`) */
+  const fGroups = [
+    { key: "start", title: "Starter", note: "Yours from day one", defs: HUNDO_FX.filter(d => !d.need) },
+    { key: "hundo", title: "Hundo rewards", note: "Each one is unlocked by earning hundos", defs: HUNDO_FX.filter(d => d.need) }
+  ].filter(g => g.defs.length);
+  const fxGridOf = {};
+  fGroups.forEach(g => {
+    const box = buildCustomizeGroup("fx-" + g.key, g.title, g.note, g.defs.filter(d => hundoFxEarned(d.id)).length, g.defs.length, "hfx-grid");
+    g.defs.forEach(d => { fxGridOf[d.id] = box.grid; });
+    fxSect.appendChild(box.card);
+  });
   HUNDO_FX.forEach((d, i) => {
+    const fxGrid = fxGridOf[d.id];
     const locked = !hundoFxEarned(d.id);
     const b = document.createElement("button");
     b.type = "button";
@@ -145127,7 +145345,7 @@ function buildCustomizeFxSect(){
       lk.className = "hfx-opt-lock";
       lk.appendChild(buildLockIcon());
       art.appendChild(lk);
-    }
+    } else addPickMark(art);
     const nm = document.createElement("span");
     nm.className = "hfx-opt-name"; nm.textContent = d.name;
     const nd = document.createElement("span");
@@ -145152,11 +145370,10 @@ function buildCustomizeFxSect(){
       if(b.classList.contains("selected") && openHeld){ openHeld(); return; }
       store.hundoFx = d.id;
       saveStore();
-      fxGrid.querySelectorAll(".hfx-opt").forEach(x => x.classList.toggle("selected", x === b));
+      fxSect.querySelectorAll(".hfx-opt").forEach(x => x.classList.toggle("selected", x === b));
     });
     fxGrid.appendChild(b);
   });
-  fxSect.appendChild(fxGrid);
   return { sect: fxSect, after: () => setTimeout(() => { if(fxSect.isConnected) HUNDO_FX.forEach(d => { if(d.need) hfxWarm(d.id); }); }, 1500) };
 }
 
