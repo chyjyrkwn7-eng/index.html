@@ -61841,11 +61841,12 @@ function drawAvatarCharSVG(charId){
     close();
     open("cx-head");
     /* Platinum-teal hair: close on one side of the face, blown out in
-       two streaming locks on the other. */
-    svg.appendChild(mk("path", { d: "M11.6 14.2 Q10.4 21.4 11.6 27.6 L15 26.4 L14 19 Z", fill: hair }));
+       two streaming locks on the other. (384 r2) Both side locks start inside the cap of hair and leave it along its own
+       edge (they began as points beside the head), and the two crown clouds are exact mirrors. */
+    svg.appendChild(mk("path", { d: "M13 12.2 Q10.6 14 10.8 21.4 Q10.8 24.8 11.6 27.6 L15 26.4 L14 19 Z", fill: hair }));
     /* (384 r6) the wind-blown side was one ragged outline that read as torn, and its tip ran into the bolt beside it: a body
        of hair down the cheek and two smooth locks streaming out of it, each ending in one clean point inside the bolts */
-    svg.appendChild(mk("path", { d: "M28.2 13.6 Q29.8 17 29.4 21 Q28.8 24.4 27.6 27.2 L25 26.2 L26 19 Z", fill: hair }));
+    svg.appendChild(mk("path", { d: "M27 12.2 Q29.6 14 29.4 21 Q28.8 24.4 27.6 27.2 L25 26.2 L26 19 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M28.9 16.6 Q31.4 17.2 32.2 20.4 Q30.4 19.4 28.8 20.4 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M28.6 21.8 Q31 22.6 31.6 26 Q29.8 24.6 28 25.6 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M29.4 17.8 Q30.8 18.2 31.3 19.6 M29 22.8 Q30.4 23.4 30.8 24.8", fill: "none", stroke: "#BFFBF1", "stroke-width": ".3", "stroke-linecap": "round", opacity: ".8" }));
@@ -61863,10 +61864,10 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: crownBolt, fill: boltFill, stroke: deep, "stroke-width": ".24", "stroke-linejoin": "round" }));
     svg.appendChild(mk("path", { d: "M22.4 4.2 L18.1 9", fill: "none", stroke: "#FFFFFF", "stroke-width": ".35", "stroke-linecap": "round", opacity: ".9" }));
     cloud([[14.2, 12.1, 1.25], [16.1, 11.2, 1.4]], .3);
-    cloud([[23.9, 11.1, 1.4], [25.9, 12, 1.25]], .3);
+    cloud([[23.9, 11.2, 1.4], [25.8, 12.1, 1.25]], .3);
     /* The clouds light up from inside when the lightning goes. */
     openHidden("cx-fx cx-fx-cloudflash");
-    [[14.2, 12.1, 1.25], [16.1, 11.2, 1.4], [23.9, 11.1, 1.4], [25.9, 12, 1.25]]
+    [[14.2, 12.1, 1.25], [16.1, 11.2, 1.4], [23.9, 11.2, 1.4], [25.8, 12.1, 1.25]]
       .forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#9FF6E8", opacity: ".6" })));
     close();
     close();
