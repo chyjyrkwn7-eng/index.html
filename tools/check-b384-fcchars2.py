@@ -70,9 +70,9 @@ def lum(h):
 chk("the page is the Fire Code class (%s), no page errors (%s)" % (r["cls"], errs[:2]), r["cls"] == "ifc" and not errs, errs)
 C = r["ch"]
 # A
-want = {"voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Pulsar", "genesis": "Solstice"}
+want = {"voidwalker": "Nebula", "umbra": "Quasar", "singularity": "Pulsar", "genesis": "Eclipse"}
 names = {i: C[i]["name"] for i in want}
-chk("A. the four secrets are Nebula, Quasar, Pulsar and Solstice (%s)" % names, names == want, names)
+chk("A. the four secrets are Nebula, Quasar, Pulsar and Eclipse (round 7: Eclipse replaced Solstice) (%s)" % names, names == want, names)
 chk("A. each is a new drawing with a scene, and no helmet or hat (kinds %s)" % {i: C[i]["kind"] for i in want},
     all(C[i]["kind"].startswith("fc") and not C[i]["kind"].startswith("fcsq") and C[i]["scene"] and not C[i]["hat"] for i in want), C)
 chk("A. the four are four different drawings", len({C[i]["hash"] for i in want}) == 4)
@@ -81,10 +81,10 @@ chk("A. each one's glow is the character table's own (%s)" % {i: (C[i]["glow"], 
 g = set(C["voidwalker"]["grads"])
 chk("A. Nebula's gas is three colours: red, orange and yellow (%s)" % sorted(g), {"#EF4444", "#F97316", "#FACC15"} <= g, sorted(g))
 # B
-chk("B. the valkyrie id is Pyrotech and the timekeeper id Salamander (%s, %s)" % (C["valkyrie"]["name"], C["timekeeper"]["name"]),
-    C["valkyrie"]["name"] == "Pyrotech" and C["timekeeper"]["name"] == "Salamander", C)
+chk("B. the valkyrie id is Undercover and the timekeeper id Pump Operator (%s, %s) (round 7: they replaced Pyrotech and Salamander)" % (C["valkyrie"]["name"], C["timekeeper"]["name"]),
+    C["valkyrie"]["name"] == "Undercover" and C["timekeeper"]["name"] == "Pump Operator", C)
 chk("B. ...new kinds (%s, %s), each with its own scene and glow, no svg filter, no hat of the fire service" % (C["valkyrie"]["kind"], C["timekeeper"]["kind"]),
-    C["valkyrie"]["kind"] == "fcpyro" and C["timekeeper"]["kind"] == "fcsalamander" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
+    C["valkyrie"]["kind"] == "fcundercover" and C["timekeeper"]["kind"] == "fcpump" and all(C[i]["scene"] and C[i]["glow"] and not C[i]["filter"] and C[i]["head"] and C[i]["eyes"] and C[i]["closed"] and C[i]["mouth"] for i in ("valkyrie", "timekeeper")), C)
 # C
 sh = r["shirt"]; base = sh[1] if len(sh) > 1 else sh[0]
 rr, gg, bb = (int(base.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)); hh, ll, ss = colorsys.rgb_to_hls(rr, gg, bb)
