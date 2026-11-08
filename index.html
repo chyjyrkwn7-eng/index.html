@@ -59199,20 +59199,33 @@ var IFC_CHAR_DRAW = {
      which reads on blue where the dark one did not); everything else as it was */
   fcinspector3(k){
     fcWestern(k, { shirt: ["#3C5A9E", "#22387A", "#0C1848"], neck: "tan", collar: "#2C4486", yoke: "#6A86C8", snap: "#E8ECEF", extra(){
-      fcStarBadge(k, 25.2, 32.2, 1.55);
-      k.add("rect", { x: 13.2, y: 31.8, width: 3.8, height: 1, rx: .2, fill: "#F2C14E" });
-      k.add("path", { d: "M13.6 32.3 h3", stroke: "#5A3E0A", "stroke-width": ".3", "stroke-dasharray": ".5 .3" });
+      /* the star on the breast (clear of the yoke seam), his nameplate over the right pocket, the patch on the sleeve */
+      fcStarBadge(k, 26.2, 30.6, 1.5);
+      k.add("rect", { x: 21.6, y: 32.5, width: 3.6, height: 1, rx: .2, fill: "#F2C14E" });
+      k.add("path", { d: "M22 33 h2.8", stroke: "#5A3E0A", "stroke-width": ".3", "stroke-dasharray": ".5 .3" });
       fcPatch(k, 32, 33.4, 3.2, 26, { fill: "#B5121B", rim: "#F2C14E" });
-      /* the clipboard, held up in the right hand */
-      const t = "rotate(10 10.6 35)";
-      k.add("rect", { x: 6.6, y: 31.2, width: 8, height: 7.4, rx: .6, fill: "#B98A4E", transform: t });
-      k.add("rect", { x: 7.3, y: 32.2, width: 6.6, height: 6, fill: "#F8F6EE", transform: t });
+      /* the clipboard, held up against his chest in the left hand: a hardboard backer with its chrome clip, the form with its
+         navy header and seal, two ticks and a cross, and the fingers wrapped round the board's edge from the sleeve below */
+      const t = "rotate(-10 12.4 32.6)";
+      k.add("rect", { x: 9.1, y: 28.7, width: 7.6, height: 9, rx: .8, fill: "#2A1A08", opacity: ".35", transform: t });
+      k.add("rect", { x: 8.6, y: 28.1, width: 7.6, height: 9, rx: .8, fill: fcLin(k, [["0", "#D2A064"], ["1", "#8E6230"]]), stroke: "#5A3A14", "stroke-width": ".25", transform: t });
+      k.add("rect", { x: 9.3, y: 29.6, width: 6.2, height: 7.1, rx: .3, fill: "#FAF8F0", transform: t });
+      k.add("rect", { x: 9.3, y: 29.6, width: 6.2, height: 1.3, rx: .3, fill: "#22387A", transform: t });
+      k.add("circle", { cx: 14.3, cy: 30.25, r: .42, fill: "#F2C14E", transform: t });
+      k.add("path", { d: "M9.8 30.25 h2.6", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".8", transform: t });
       [0, 1, 2].forEach(i => {
-        k.add("path", { d: "M7.9 " + (33.4 + i * 1.6) + " l.5 .5 l.9 -.9", fill: "none", stroke: "#2E9A5A", "stroke-width": ".38", "stroke-linecap": "round", transform: t });
-        k.add("rect", { x: 9.8, y: 33.3 + i * 1.6, width: i === 1 ? 2.8 : 3.6, height: .45, fill: "#8A93A8", transform: t });
+        const y = 32 + i * 1.7;
+        k.add("rect", { x: 9.8, y: y - .5, width: 1, height: 1, rx: .15, fill: "#FFFFFF", stroke: "#8A93A8", "stroke-width": ".15", transform: t });
+        k.add("path", { d: i < 2 ? "M9.95 " + (y + .05) + " l.3 .35 l.45 -.7" : "M9.95 " + (y - .3) + " l.7 .7 M10.65 " + (y - .3) + " l-.7 .7", fill: "none", stroke: i < 2 ? "#2E9A5A" : "#D8342A", "stroke-width": ".3", "stroke-linecap": "round", transform: t });
+        k.add("rect", { x: 11.3, y: y - .22, width: i === 1 ? 2.6 : 3.4, height: .44, rx: .2, fill: "#8A93A8", transform: t });
       });
-      k.add("rect", { x: 9.6, y: 30.7, width: 2.4, height: 1, rx: .3, fill: "#A8B0BC", transform: t });
-      k.add("path", { d: "M14.6 37.6 Q15.6 35.4 13.8 34.6 L12.6 35.2 L13 38.6 Z", fill: k.headGrad.apply(null, FC_SKIN.tan) });
+      k.add("path", { d: "M9.9 36.2 h2 M13.2 36.2 l.9 -.5 l.4 .5", fill: "none", stroke: "#B8BDCB", "stroke-width": ".22", transform: t });
+      k.add("path", { d: "M10.4 27.6 h3.6 l.4 1.9 h-4.4 Z", fill: fcLin(k, [["0", "#F4F6FA"], [".5", "#9AA4B4"], ["1", "#4A5262"]]), stroke: "#2A303C", "stroke-width": ".2", transform: t });
+      k.add("circle", { cx: 12.2, cy: 28.6, r: .3, fill: "#2A303C", transform: t });
+      /* the sleeve and the hand, over the board's lower edge */
+      k.add("path", { d: "M10.8 40 L12 36.4 Q14.6 35.4 17 36.8 L18 40 Z", fill: fcLin(k, [["0", "#3C5A9E"], ["1", "#0C1848"]]) });
+      k.add("path", { d: "M12 36.5 Q12.4 34.4 14.4 34 Q15.4 33.9 15.9 34.7 Q16.3 35.4 15.7 36.1 Q16.6 36.1 16.6 36.9 Q16.4 37.7 15.4 37.5 Q14.2 37.9 12.8 37.4 Z", fill: fcLin(k, [["0", "#F0C89E"], ["1", "#CC976A"]]), stroke: "#7A4A2A", "stroke-width": ".18" });
+      k.add("path", { d: "M14.5 34.2 L14.4 35.8 M15.5 34.8 L15.4 36.2", stroke: "#7A4A2A", "stroke-width": ".18", opacity: ".7", "stroke-linecap": "round" });
     } });
     k.open("cx-head");
     fcFace(k, "tan");
@@ -59224,7 +59237,7 @@ var IFC_CHAR_DRAW = {
     k.add("path", { d: "M14.4 20.3 L18.8 20.3 L18.6 23 L14.6 23 Z M21.2 20.3 L25.6 20.3 L25.4 23 L21.4 23 Z M18.8 21 L21.2 21", fill: "none", stroke: "#2A2A30", "stroke-width": ".5", "stroke-linejoin": "round" });
     k.add("path", { d: "M15 20.8 L16.6 20.8 M21.8 20.8 L22.8 20.8", stroke: "#FFFFFF", "stroke-width": ".3", opacity: ".6" });
     fcMouth(k, "grin");
-    fcCowboy(k, { felt: ["#E8E2D4", "#C8BEA8", "#7A705A"], band: "#3A2A1A" });
+    fcCowboy(k, { felt: ["#CFC5AE", "#A39880", "#554C38"], band: "#2A1E12" });
   },
   /* CHIEF (the Sheriff's; round 3: "that's very military looking ... We wear cowboy hats so you can
      go that approach for the chief but his attire would need to change"): the agency's chief in a
