@@ -38482,7 +38482,8 @@ html.is-browser{ --fade-paper: transparent; }
   /* the grids inside a box: the r4 rows, the box's width */
   html[data-layout] body #stage .screen-customize .cz-group :is(.avatarchar-grid.avatarchar-grid-appearance, .banner-grid, .hfx-grid, .swatches){ margin:0; }
   html[data-layout] body #stage .screen-customize .cz-group .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:.5rem; --cz-gy:1rem; }
-  /* themes: plain tiles (the circle and its name), four to a phone's row, the seven rank colours one row from a tablet up */
+  /* themes: plain tiles (the circle and its name), four to a phone's row; (384 r7) the default and the seven rank colours are
+     one card, balanced 4+4 (balanceCzGrid) */
   html[data-layout] body #stage .screen-customize .cz-group .swatches{ --cz-gx:.5rem; --cz-gy:1rem; max-width:none; }
   html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell,
   html[data-layout] body #stage .screen-customize .cz-group .swatches > .swatch-cell:has(.swatch.on){
@@ -145212,9 +145213,9 @@ function buildCustomizeBannerSect(){
   const current = wornBanner();
   /* (384 r6) IN THE DATA'S OWN GROUPS, each its own card, in the character page's order: the default, what the ranks hand
      over, the challenges (the ultimate last, as the ultimate character is), the secret flares' */
+  /* (384 r7) the default shares the rank card, as the theme's does (no one-tile "Starter" card: Madison, of the theme's) */
   const bGroups = [
-    { key: "start", title: "Starter", note: "Yours from day one", defs: [null] },
-    { key: "rank", title: "Rank rewards", note: "Handed over as you climb the ranks", defs: BANNERS.filter(d => d.rank) },
+    { key: "rank", title: "Default and rank rewards", note: "Yours from day one, then handed over as you climb the ranks", defs: [null].concat(BANNERS.filter(d => d.rank)) },
     { key: "challenge", title: "Challenge rewards", note: "Each one is unlocked by a challenge",
       defs: BANNERS.filter(d => !d.rank && !d.flareChar && !d.ultimate).concat(BANNERS.filter(d => d.ultimate && !d.rank && !d.flareChar)) },
     { key: "secret", title: "Secrets", note: "Found, not earned — keep your eyes open", defs: BANNERS.filter(d => d.flareChar && !d.rank) }
@@ -145309,10 +145310,11 @@ function buildCustomizeBannerSect(){
 function buildCustomizeThemeSect(){
   const accentSect = document.createElement("div");
   accentSect.className = "sect";
-  /* (384 r6) two cards: the default, then the seven the ranks hand over (the data's own split: TIER_UNLOCKS) */
+  /* (384 r7) ONE card: the default first, then the seven the ranks hand over. Madison: "The theme 'starter' is not a good
+     idea, don't do that." A card holding one swatch was a box round a single circle; eight in one card are 4+4. */
   const tGroups = [
-    { key: "start", title: "Starter", note: "Yours from day one", names: ACCENTS.filter(n => !TIER_UNLOCKS[n]) },
-    { key: "rank", title: "Rank rewards", note: "Each rank hands one over", names: ACCENTS.filter(n => TIER_UNLOCKS[n]) }
+    { key: "all", title: "Default and rank rewards", note: "Yours from day one, then one from each rank",
+      names: ACCENTS.filter(n => !TIER_UNLOCKS[n]).concat(ACCENTS.filter(n => TIER_UNLOCKS[n])) }
   ].filter(g => g.names.length);
   const gridOf = {};
   tGroups.forEach(g => {
@@ -145403,10 +145405,11 @@ function buildCustomizeFxSect(){
   const fxSect = document.createElement("div");
   fxSect.className = "sect hfx-sect";
   const fxNow = hundoFxInUse();
-  /* (384 r6) two cards: the one you start with, then the rungs your hundos climb (the data's own split: `need`) */
+  /* (384 r7) ONE card: the one you start with first, then the rungs your hundos climb (no one-tile "Starter" card, as
+     the theme's: Madison) */
   const fGroups = [
-    { key: "start", title: "Starter", note: "Yours from day one", defs: HUNDO_FX.filter(d => !d.need) },
-    { key: "hundo", title: "Hundo rewards", note: "Each one is unlocked by earning hundos", defs: HUNDO_FX.filter(d => d.need) }
+    { key: "all", title: "Default and hundo rewards", note: "Yours from day one, then unlocked by earning hundos",
+      defs: HUNDO_FX.filter(d => !d.need).concat(HUNDO_FX.filter(d => d.need)) }
   ].filter(g => g.defs.length);
   const fxGridOf = {};
   fGroups.forEach(g => {
