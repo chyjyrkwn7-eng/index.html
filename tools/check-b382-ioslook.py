@@ -8,7 +8,8 @@ own pushed page (showAppearance({page:'sound'})) in the same run, never typed in
 (2) Headings are Settings': no surface behind them, no capitals forced, Settings' size and grey. On Friends and
     Stats each heading sits above its card, not inside it.
 (3) Cards are Settings' inset group: its radius, on the surface token (--surface-1 as the card itself resolves it).
-    Customize's four rows are ONE group: no gap between them, the corners only on the first and the last.
+    Customize's four rows are four separate cards (384 round 4: a 2 x 2, each at Settings' radius, the same gap between them
+    across and down) - they were one group of rows until then.
 (4) Rows are 44px+ (Customize's rows and name row, Friends' rows, the back button).
     (The header's small word above the bar is out of sight, so the bar sits at Settings' height.)
 (5) No sideways scroll and nothing past the edge at 320x568, and on an iPad (834x1194) every card is no wider than
@@ -175,12 +176,12 @@ with sync_playwright() as pw:
             if SPEC[key].get("over"): over_ok(name, m)
             if SPEC[key].get("group"):
                 gp = m["group"]
-                gaps = [round(gp[i + 1]["t"] - gp[i]["b"], 1) for i in range(len(gp) - 1)]
-                corners = len(gp) >= 2 and near(gp[0]["rad"][0], RAD, .6) and near(gp[0]["rad"][1], RAD, .6) and gp[0]["rad"][2] == 0 \
-                    and near(gp[-1]["rad"][2], RAD, .6) and near(gp[-1]["rad"][3], RAD, .6) and gp[-1]["rad"][0] == 0 \
-                    and all(max(x["rad"]) == 0 for x in gp[1:-1])
-                chk("%s %s: its %d rows are one inset group (gaps %s; corners on the first and last only)" % (tag, name, len(gp), gaps),
-                    len(gp) >= 4 and all(abs(x) <= 1 for x in gaps) and corners, [x["rad"] for x in gp])
+                rads_ok = len(gp) >= 4 and all(all(near(r, RAD, .6) for r in x["rad"]) for x in gp)
+                # four separate cards in a grid: the gap across a row equals the gap down a column
+                across = [round(gp[i + 1]["l"] - gp[i]["r"], 1) for i in range(len(gp) - 1) if abs(gp[i + 1]["t"] - gp[i]["t"]) < 4]
+                down = [round(gp[i + 2]["t"] - gp[i]["b"], 1) for i in range(len(gp) - 2) if abs(gp[i + 2]["l"] - gp[i]["l"]) < 4] if len(gp) >= 4 else []
+                chk("%s %s: its %d rows are four separate cards, each at Settings' radius, one gap across and down (%s / %s)" % (tag, name, len(gp), across, down),
+                    rads_ok and across and down and max(across + down) - min(across + down) <= 4 and min(across + down) >= 4, [x["rad"] for x in gp])
             if SPEC[key].get("rows"):
                 short = [x for x in m["rows"] if x["h"] < 44 or (x["fs"] is not None and x["fs"] < 16)]
                 chk("%s %s: rows are 44px+ (%d)" % (tag, name, len(m["rows"])), not short, short)
@@ -235,13 +236,19 @@ with sync_playwright() as pw:
         ctx, pg = page(br, 834, 1194, cls)
         pg.add_init_script(LIB); pg.evaluate(LIB)
         go(pg, "showAppearance({page:'sound'})"); iref = pg.evaluate(REF)
-        CARDS = ".cz-row, .customize-namerow, .screen-friends > .friend-sect, .rankhero, .badges-head, .profile-stats-tab > .points-progress-sect, .profile-identity-tab > .profile-hero, .profile-identity-tab > .pf-goal, .screen-customize .avatarchar-grid"
+        CARDS = ".customize-namerow, .screen-friends > .friend-sect, .rankhero, .badges-head, .profile-stats-tab > .points-progress-sect, .profile-identity-tab > .profile-hero, .profile-identity-tab > .pf-goal, .screen-customize .avatarchar-grid"
         for key, name, js, _ in PUSHED + [(k, n, j, None) for k, n, j in TABS]:
             go(pg, js, 2000)
             els = pg.evaluate(WIDE, CARDS)
             wide = [round(e["w"]) for e in els if e["w"] > iref["card"]["w"] + 1]
             off = [round(e["cx"] - iref["card"]["cx"], 1) for e in els if abs(e["cx"] - iref["card"]["cx"]) > 2]
-            chk("%s iPad %s: %d card(s) no wider than Settings' (%.0fpx) and centred like it" % (tag, name, len(els), iref["card"]["w"]), els and not wide and not off, {"wide": wide, "off": off})
+            # (384 round 4) Customize's four cards are a 2 x 2: the GROUP is what is centred like Settings' card, and within its width
+            cz = pg.evaluate(WIDE, ".cz-row")
+            if cz:
+                gl, gr = min(e["l"] for e in cz), max(e["r"] for e in cz); gcx = (gl + gr) / 2
+                if gr - gl > iref["card"]["w"] + 1: wide.append(round(gr - gl))
+                if abs(gcx - iref["card"]["cx"]) > 2: off.append(round(gcx - iref["card"]["cx"], 1))
+            chk("%s iPad %s: %d card(s) no wider than Settings' (%.0fpx) and centred like it" % (tag, name, len(els) + len(cz), iref["card"]["w"]), (els or cz) and not wide and not off, {"wide": wide, "off": off})
             if _ is not None:
                 nav = pg.evaluate(NAV)
                 chk("%s iPad %s: the back button where Settings' is (%.0f vs %.0f)" % (tag, name, nav["btn"]["l"] if nav else -1, iref["back"]["l"]),
