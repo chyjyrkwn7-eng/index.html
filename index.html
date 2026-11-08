@@ -64594,7 +64594,7 @@ function drawAvatarCharSVG(charId){
        than the rim (29.5), so only one is ever on it */
     svg.appendChild(mk("path", { d: umRim, fill: "none", stroke: "#F5F3FF", "stroke-width": ".85", "stroke-linecap": "round",
       "stroke-dasharray": "4 60", opacity: "0", class: "cx-fx-umrim" }));
-    svg.appendChild(mk("path", { d: "M20.2 11.4 Q26 14 26.2 21.2", fill: "none", stroke: "#7C3AED", "stroke-width": ".5", opacity: ".7" }));
+    svg.appendChild(mk("path", { d: "M20.2 11.4 Q26 14 26.2 21.2", fill: "none", stroke: "#7C3AED", "stroke-width": ".5", "stroke-linecap": "round", opacity: ".7" }));
     /* The eyes: two narrow slants, a soft bloom behind each. */
     /* Angled down towards the nose - the scowl, the same rule the Dragon
        learned: that way round is menace, the other way is sadness. */
@@ -64859,8 +64859,11 @@ function drawAvatarCharSVG(charId){
     };
     ring(false);
     /* the collar it sits in */
-    svg.appendChild(mk("path", { d: "M12.4 30.4 Q12.2 26.8 14.2 25.2 Q20 28.4 25.8 25.2 Q27.8 26.8 27.6 30.4 Q20 32.6 12.4 30.4 Z", fill: "url(#" + uid + "-gnrock)" }));
-    svg.appendChild(mk("path", { d: "M14.2 25.2 Q20 28.4 25.8 25.2", fill: "none", stroke: "#FF8FC0", "stroke-width": ".4", opacity: ".7" }));
+    /* (384 r2) The collar's lit rim ran along a curve that was hidden behind the planet except for its two ends, which stood out
+       as two pink ticks beside the planet's lower edge. It now runs just under the planet (the planet bottoms at 27), a
+       continuous lip that the planet sits in, and the collar's top edge is the same curve. */
+    svg.appendChild(mk("path", { d: "M12.4 30.4 Q12 27.6 13.6 26.2 Q20 29.8 26.4 26.2 Q28 27.6 27.6 30.4 Q20 32.6 12.4 30.4 Z", fill: "url(#" + uid + "-gnrock)" }));
+    svg.appendChild(mk("path", { d: "M13.6 26.2 Q20 29.8 26.4 26.2", fill: "none", stroke: "#FF8FC0", "stroke-width": ".4", "stroke-linecap": "round", opacity: ".7" }));
     /* the light of the core, leaking up round the planet's base */
     { const lg = uid + "-gnlk"; const rg = mk("radialGradient", { id: lg });
       rg.appendChild(mk("stop", { offset: "0%", "stop-color": "#FFC9A0", "stop-opacity": ".75" }));
