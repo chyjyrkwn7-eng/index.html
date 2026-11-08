@@ -26,8 +26,14 @@ from playwright.sync_api import sync_playwright
 from PIL import Image, ImageDraw
 IDS = ["confetti", "fireworks", "underwater", "bubbles", "ufo"]
 READ = L.READ_GRADE
-def crop(pg, path):
-    pg.locator(".rs-grade").screenshot(path=path, timeout=8000)
+HIDE = "() => { const s = document.createElement('style'); s.id = '__hide'; s.textContent = 'body > :not(#stage):not(script):not(style){ visibility:hidden !important; }'; document.head.appendChild(s); }"
+SHOW = "() => document.getElementById('__hide') && document.getElementById('__hide').remove()"
+def crop(pg, path, hide=False):
+    # in Fire Code the badge / rank scene is up over the card once an effect is over: hide whatever sits on <body> outside the stage for the still
+    if hide: pg.evaluate(HIDE)
+    r = pg.evaluate("() => { const b = document.querySelector('.rs-grade').getBoundingClientRect(); return { x: b.left, y: b.top, width: b.width, height: b.height }; }")
+    pg.screenshot(path=path, clip=r)
+    if hide: pg.evaluate(SHOW)
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=L.cb.CHROME, args=["--force-device-scale-factor=2"])
     for cls in CLS:
@@ -45,8 +51,15 @@ with sync_playwright() as pw:
                 total = pg.evaluate("(f) => (typeof HUNDO_FX_TOTAL !== 'undefined' && HUNDO_FX_TOTAL[f]) || 5000", fx) / 1000
                 L.advance(pg, max(.8, total * .45))
                 data[fx + "-mid"] = pg.evaluate(READ); p = "%s/_%s-%s-mid.png" % (OUT, tag, fx); crop(pg, p); ims[fx + "-mid"] = p
-                L.advance(pg, total * .55 + 1.6)
-                data[fx] = pg.evaluate(READ); p = "%s/_%s-%s.png" % (OUT, tag, fx); crop(pg, p); ims[fx] = p
+                # settled = the last moment the results card is on show: in Fire Code the badge / rank scene (.bc-scene) comes up over it as the
+                # effect finishes, so step on in tenths until it is about to, or the effect's total has passed
+                t = total * .45; p = "%s/_%s-%s.png" % (OUT, tag, fx)
+                while True:
+                    data[fx] = pg.evaluate(READ); crop(pg, p)
+                    if t >= total + .1: break
+                    L.advance(pg, .1); t += .1
+                    if pg.evaluate("() => !!document.querySelector('.bc-scene')"): break
+                ims[fx] = p
                 if errs: print("ERRORS", fx, errs[:2])
                 ctx.close()
             json.dump(data, open("%s/grades-%s.json" % (OUT, tag), "w"), indent=1)

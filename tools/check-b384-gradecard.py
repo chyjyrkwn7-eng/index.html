@@ -131,7 +131,7 @@ with sync_playwright() as pw:
       const rd = e => { const cs = getComputedStyle(e); return { img: cs.backgroundImage, bw: cs.borderTopWidth, bc: cs.borderTopColor, sh: cs.boxShadow, bg: cs.backgroundColor, ff: cs.fontFamily }; };
       const vars = e => { const o = {}; for(let n = e; n && n !== document.body; n = n.parentElement){ ['--hfx-g1','--hfx-g2','--hfx-g3','--hfx-b'].forEach(k => { if(!o[k]){ const v = n.style.getPropertyValue(k).trim(); if(v) o[k] = v; } }); } return o; };
       const out = { stages: [], mock: null };
-      document.querySelectorAll('.hfx-stage').forEach(st => { const p = st.querySelector('.hfx-stage-pct'); if(!p) return; out.stages.push({ fx: (st.className.match(/hfx-stage-(\w+)/) || [])[1], tinted: st.classList.contains('hfx-tinted'), stage: rd(st), num: rd(p), vars: vars(st) }); });
+      document.querySelectorAll('.hfx-stage').forEach(st => { const p = st.querySelector('.hfx-stage-pct'); if(!p) return; out.stages.push({ spot: !!st.closest('.rs-spot'), fx: (st.className.match(/hfx-stage-(\w+)/) || [])[1], tinted: st.classList.contains('hfx-tinted'), stage: rd(st), num: rd(p), vars: vars(st) }); });
       const m = document.querySelector('.hfx-mock');
       if(m){ const g = m.querySelector('.rs-grade'), f = m.querySelector('.unit-breakdown-fill'); out.mock = { fx: m.dataset.fx, card: rd(g), num: rd(m.querySelector('.rs-pct')), bar: f ? rd(f) : null, vars: vars(g) }; }
       return out;
@@ -150,6 +150,18 @@ with sync_playwright() as pw:
             if s["stage"]["bw"] not in ("0px",) and not re.search(r"0\)$", s["stage"]["bc"]): bad.append((s["fx"], "border", s["stage"]["bw"], s["stage"]["bc"]))
             if s["stage"]["sh"] != "none": bad.append((s["fx"], "shadow", s["stage"]["sh"][:50]))
         chk("(G4) %s Customize: %d effect tiles, each number in its effect's ramp, no border, no shadow" % (cls, len(tiles)), len(tiles) >= 3 and not bad, bad)
+        for fx in ("fireworks", "ufo"):
+            pg.evaluate("(fx) => { document.querySelectorAll('.invite-overlay,.rs-spot').forEach(e => e.remove()); playUnlockSpotlight(hundoFxUnlockItem(fx), 1, 1, () => {}); }", fx)
+            L.advance(pg, 1.2)
+            sp = [x for x in pg.evaluate(PROBE4)["stages"] if x["spot"] and x["tinted"]]
+            bad = []
+            for x in sp:
+                want = [hexrgb(x["vars"].get("--hfx-g1")), hexrgb(x["vars"].get("--hfx-g2")), hexrgb(x["vars"].get("--hfx-g3")) or hexrgb(x["vars"].get("--hfx-g1"))]
+                num = stops(x["num"]["img"])
+                if len(num) != 3 or not all(near(a, w) for a, w in zip(num, want)): bad.append(("number", num, want))
+                if x["stage"]["sh"] != "none" or not (x["stage"]["bw"] == "0px" or re.search(r"0\)$", x["stage"]["bc"])): bad.append(("edge", x["stage"]["bw"], x["stage"]["bc"], x["stage"]["sh"][:50]))
+            chk("(G4) %s %s unlock pop-up: its box's number is the effect's ramp, no border, no shadow" % (cls, fx), len(sp) == 1 and not bad, [len(sp), bad])
+            pg.evaluate("() => document.querySelectorAll('.invite-overlay,.rs-spot').forEach(e => e.remove())")
         for fx in ("fireworks", "ufo"):
             pg.evaluate("(fx) => { document.querySelectorAll('.invite-overlay,.rs-spot').forEach(e => e.remove()); showUnlockDetail(hundoFxDetail(fx)); }", fx)
             L.advance(pg, .12)

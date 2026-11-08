@@ -42,15 +42,17 @@ def open_run(br, cls, W, H, fx, missN=0, mode="drill", retake=False, unit=None, 
         pg.evaluate("([u, m, mode, rt]) => __run(u, m, mode, rt)", [u, missN, mode, retake])
     return ctx, pg, errs
 
+STEP = 1 / 10   # the page's clock moves in tenths of a second: every animation is seeked, so a still is the same; 30 steps a second is three times the wait
 def advance(pg, seconds):
-    for _ in range(int(round(seconds * 30))):
-        pg.evaluate("async () => { await __clk.advance(1000 / 30); }")
+    n = max(1, int(round(seconds / STEP)))
+    for _ in range(n):
+        pg.evaluate("async (d) => { await __clk.advance(d); }", 1000 * seconds / n)
 
 def wait_fx(pg, limit=60):
     k = 0
-    while k < limit * 30 and not pg.evaluate("() => window.__fxAt > 0"):
-        pg.evaluate("async () => { await __clk.advance(1000 / 30); }"); k += 1
-    return k / 30
+    while k < limit / STEP and not pg.evaluate("() => window.__fxAt > 0"):
+        pg.evaluate("async (d) => { await __clk.advance(d); }", 1000 * STEP); k += 1
+    return k * STEP
 
 # every part of the grade card and the XP card beside it, as computed on the page (shape, not label strings)
 READ_GRADE = r"""() => {
