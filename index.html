@@ -38445,8 +38445,8 @@ html.is-browser{ --fade-paper: transparent; }
      - LESS ON EACH TILE: the padlocks are smaller and quieter, a locked character's halo is turned down (its aura circle,
        not the drawing), the theme tiles lose their own boxes (a box in a box), and nothing about a tile grows or lights when
        it is the one you have on.
-     - THE ONE MARK (.pick-mark, addPickMark): a 1.3rem solid badge in the accent colour (white on the default theme), a
-       crisp dark tick centred in it, and a cut-out ring in the colour of what it sits on (the card: --pick-cut). It sits
+     - THE ONE MARK (.pick-mark, addPickMark): a 1.3rem solid badge in the theme's colour (white on the default theme), a
+       crisp tick in the theme's ink centred in it, and a cut-out ring in the colour of what it sits on (the card: --pick-cut). It sits
        where a locked tile's padlock sits - on a round tile at half past four on its circle, on a banner or an effect at the
        top right of its picture - so a tile's status always reads in one place. Gone: the theme's double ring and its lit box,
        the banner's and the effect's white ring and glow, the character's pool of light, drop-shadows and growth, and the
@@ -38556,7 +38556,9 @@ html.is-browser{ --fade-paper: transparent; }
     --pm:1.3rem;
     position:absolute; z-index:6; box-sizing:border-box; width:var(--pm); height:var(--pm); margin:0; padding:0; border:0; border-radius:50%;
     display:grid; place-items:center; pointer-events:none;
-    background:var(--accent, #FFFFFF); color:#0E1116;
+    /* the theme's own colour and its own ink (--rank-accent / --rank-accent-ink, the pair every themed control reads); white
+       with a dark tick on the default theme, where neither is set (--accent is white on every theme now) */
+    background:var(--rank-accent, #FFFFFF); color:var(--rank-accent-ink, #0E1116);
     box-shadow:0 0 0 2.5px var(--pick-cut, var(--paper));
     opacity:0; transform:scale(.55); transition:opacity .18s ease, transform .3s cubic-bezier(.3,1.45,.5,1);
   }
@@ -144670,7 +144672,7 @@ function buildCustomizeThemeSect(){
     const locked = isLockedAccent(name);
     const displayName = ACCENT_DISPLAY_NAME[name] || name;
     b.type = "button"; b.className = "swatch"; b.title = displayName;
-    b.dataset.accent = name;
+    b.dataset.swatch = name;   /* not data-accent: [data-accent="X"] would re-scope the theme colours to the tile */
     b.setAttribute("aria-label", displayName);
     const dot = document.createElement("span");
     const tierClass = TIER_UNLOCKS[name] ? " tier-" + name : "";
@@ -144728,7 +144730,7 @@ function buildCustomizeThemeSect(){
 
   function paintAccents(){
     accentSect.querySelectorAll(".swatch").forEach(b => {
-      b.classList.toggle("on", b.dataset.accent === theme.accent);
+      b.classList.toggle("on", b.dataset.swatch === theme.accent);
     });
   }
 
