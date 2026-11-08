@@ -210,8 +210,11 @@ ly = F["layers"]
 badl = {i: v for i, v in ly.items() if v["bad"] or v["filt"] or v["n"] > 14 or v["moving"] < 3}
 chk("(7) every layer moves by transform/opacity only, no svg filter, 3+ moving and at most 14 layers (%s)" % {i: (v["n"], v["moving"]) for i, v in ly.items()}, not badl, badl)
 # (8)
-acad = [k + ":" + i for k in ("c", "b") for i in A[k] if A[k][i] != BEFORE["academy"][k][i]]
-chk("(8) the academy's seven characters and banners are as 185cc5c left them (changed: %s)" % acad, not acad)
+# (384 characters round 2) the base-art connection audit fixed joins in Void, Umbra and Genesis on purpose ("go through each character thoroughly to
+# ensure all pieces connect right"); anything else changed is still a failure
+AUDITED = {"c:voidwalker", "c:umbra", "c:genesis"}
+acad = [k + ":" + i for k in ("c", "b") for i in A[k] if A[k][i] != BEFORE["academy"][k][i] and (k + ":" + i) not in AUDITED]
+chk("(8) the academy's characters and banners are as 185cc5c left them, bar the three joined up in the connection audit (changed: %s)" % acad, not acad)
 # (9)
 chk("(9) no page errors (%s)" % (errs["academy"] + errs["ifc"])[:3], not errs["academy"] and not errs["ifc"])
 print("\nALL PASS" if ok else "\nFAILURES")
