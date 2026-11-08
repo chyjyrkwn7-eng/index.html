@@ -11961,7 +11961,8 @@
     animation:stardust-ring 1.1s cubic-bezier(.15,.7,.3,1) both;
   }
   .stardust-ring.is-late{ animation-delay:.16s; border-width:1px; }
-  @keyframes stardust-ring{ 0%{ transform:scale(.2); opacity:.95; } 100%{ transform:scale(5); opacity:0; } }
+  /* (384 r6) --ring-k: the screen's ring stops at the screen's narrow side (celebrate sets it) */
+  @keyframes stardust-ring{ 0%{ transform:scale(.2); opacity:.95; } 100%{ transform:scale(var(--ring-k, 5)); opacity:0; } }
   .stardust-p{
     position:absolute; left:var(--ox); top:var(--oy); width:var(--s); height:var(--s); margin:calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
     border-radius:50%; background:var(--c);
@@ -117498,6 +117499,12 @@ function celebrate(palette, origin, o){
   const ring2 = document.createElement("span"); ring2.className = "stardust-ring is-late";
   layer.append(flash, ring, ring2);
   const reach = Math.min(window.innerWidth, window.innerHeight) * 0.55;
+  /* (384 r6) ON THE SCREEN: a mote's flight ends inside it. Out of a box in the middle of a phone, a reach of .55 of the width
+     threw a third of the sparks past the side edges - "most of it comes off screen". Each axis is held to the room on its
+     side (less a margin, the fall's 24px and the spark's own size), so the burst is an ellipse that fits. */
+  const vw0 = window.innerWidth || 400, vh0 = window.innerHeight || 800, mg = 22;
+  layer.style.setProperty("--ring-k", Math.min(5, Math.max(2.5, Math.min(vw0, vh0) * .9 / 96)).toFixed(2));
+  const roomX = d => Math.max(30, (d < 0 ? ox : vw0 - ox) - mg), roomY = d => Math.max(30, (d < 0 ? oy : vh0 - oy - 24) - mg);
   const N = 44;
   for(let i = 0; i < N; i++){
     const p = document.createElement("span");
@@ -117505,8 +117512,9 @@ function celebrate(palette, origin, o){
     p.className = "stardust-p" + (spark ? " is-spark" : "");
     const a = (i / N) * Math.PI * 2 + (Math.random() - .5) * 0.5;
     const d = reach * (0.35 + Math.random() * 0.65);
-    p.style.setProperty("--dx", (Math.cos(a) * d).toFixed(1) + "px");
-    p.style.setProperty("--dy", (Math.sin(a) * d * 0.85).toFixed(1) + "px");
+    const cx0 = Math.cos(a) * d, cy0 = Math.sin(a) * d * 0.85;
+    p.style.setProperty("--dx", (Math.sign(cx0) * Math.min(Math.abs(cx0), roomX(cx0) * (0.55 + 0.45 * d / reach))).toFixed(1) + "px");
+    p.style.setProperty("--dy", (Math.sign(cy0) * Math.min(Math.abs(cy0), roomY(cy0) * (0.55 + 0.45 * d / reach))).toFixed(1) + "px");
     p.style.setProperty("--s", (spark ? 9 + Math.random() * 7 : 2.5 + Math.random() * 3.5).toFixed(1) + "px");
     p.style.setProperty("--c", colors[i % colors.length]);
     p.style.animationDelay = (Math.random() * 0.22).toFixed(2) + "s";
@@ -118156,7 +118164,10 @@ function hfxBubblesGlass(scr, c){
   /* (384) going down, they are gone before the bottom 120px, where the
      way-on buttons rise as the tail begins (4.6s) */
   const floorY = c.vh - (c.frame ? c.vh * .1 : 120);
-  const far = (s, a, k) => Math.max(160, Math.min(hfxToEdge(c, s.x, s.y, a), Math.sin(a) > .2 ? Math.max(60, (floorY - s.y) / Math.sin(a)) : Infinity) * k);
+  /* (384 r6) at least 160px - unless the screen's edge is nearer than that: out of a box in the middle of a phone it often is,
+     and the floor carried a third of the small bubbles past the side edges */
+  const far = (s, a, k) => { const e = hfxToEdge(c, s.x, s.y, a), e2 = Math.max(e * .5, e - (c.frame ? 28 : 60));
+    return Math.max(Math.min(160, e2 * .8), Math.min(e2, Math.sin(a) > .2 ? Math.max(60, (floorY - s.y) / Math.sin(a)) : Infinity) * k); };
   const glass = typeof CSS !== "undefined" && CSS.supports && (CSS.supports("backdrop-filter", "blur(2px)") || CSS.supports("-webkit-backdrop-filter", "blur(2px)"));
   /* the far layer: small, faint, slow - spread evenly over the room */
   const nS = small ? 12 : 16;
@@ -118728,7 +118739,9 @@ function hfxSea(parent, o){
        water's own picture and cost nothing once drawn. They come and go
        with the water. */
     const rw = Math.round(hfxR(46, 110) * k), lean = rw * HFX_UW_RAY_LEAN / 60;
-    const el = hfxMk(body, "i", "hfx-uw-ray", { left: Math.round(x - rw / 2 - lean) + "px", width: Math.round(rw + lean) + "px", "--rh": Math.round(bodyH * hfxR(.6, .92)) + "px" });
+    /* (384 r6) every ray starts inside the screen's sides (the first on a phone began 70px off the left edge) */
+    const rl = Math.max(0, Math.min(o.W - rw - lean, Math.round(x - rw / 2 - lean)));
+    const el = hfxMk(body, "i", "hfx-uw-ray", { left: rl + "px", width: Math.round(rw + lean) + "px", "--rh": Math.round(bodyH * hfxR(.6, .92)) + "px" });
     el.style.backgroundImage = hfxRayURL(); el.style.opacity = hfxR(.6, .85).toFixed(2);
   }
   /* motes drifting in the light: drawn into the light strips (round 6),
@@ -120156,11 +120169,20 @@ function hfxFireworks(scr, bx, c){
        as if over a skyline. The finale's middle one goes off lowest and
        biggest, a crown over the box. Times are untouched (the score is
        cut to them). */
-    const skyTop = mini ? 0 : hfxSafeTop(), skyH = Math.max(60, r.top - skyTop);
-    const R = Math.max(30 * kk, Math.min(W * (small ? .3 : .22), H * .2, 230, skyH * .6));
-    const yTop = skyTop + R + 6, yBot = Math.max(yTop + 24, r.top - R * .3);
+    /* (384 r6) and under the app's own top bar ("Test results", the chat button), not just the status bar: on a phone the
+       bar covers the top 60px or so of the sky, and every burst that opened up there was half behind it */
+    let barB = 0;
+    try{ const tb = !mini && document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 4) barB = q.bottom; } }catch(e){}
+    const skyTop = mini ? 0 : Math.max(hfxSafeTop(), barB), skyH = Math.max(60, r.top - skyTop);
+    /* (384 r6) AND WHOLE, OVER THE BOX. The box is in the middle of the screen now (the results' grade plays its effect
+       centred), and the sky is what is between the top bar and the box. A burst's lower half used to go down behind the
+       box "as if over a skyline" - but the sky stops at the box's top edge, so that half was never drawn: on a phone a
+       third of every show was thrown where nothing could show it. The radius is held to .46 of the sky and the bursts
+       sit high enough that all but their last fringe opens above the box. */
+    const R = Math.max(30 * kk, Math.min(W * (small ? .3 : .22), H * .2, 230, skyH * .46));
+    const yTop = skyTop + R + 6, yBot = Math.max(yTop + 24, r.top - R * .78 - 10);
     const Y = f => yTop + (yBot - yTop) * f, X = f => R * .7 + (W - R * 1.4) * f;
-    const fit = (y, rr) => Math.max(R * .5, Math.min(rr, y - skyTop - 4));
+    const fit = (y, rr) => Math.max(R * .5, Math.min(rr, y - skyTop - 4, (r.top - 10 - y) / .8));
     const from = f => [r.left + r.width * f, r.top + 2];
     const glow = (t, x, y, rr, key) => { hfxMk(scr, "i", "hfx-fw-glow", { left: x + "px", top: y + "px", "--gs": rr * 3.4, "--c": rgba(key, .5), "--t": t, "--d": 1.5 }); flashes.push([t, key]); };
     const shots = [
@@ -120723,7 +120745,7 @@ function hfxUfoTopLayer(c, scr, top, bx){
       run.forEach(a => { if(a.startTime !== t0){ try{ a.startTime = t0; }catch(e){} } });
     });
   });
-  hfxOnEnd(c, fade => { if(fade) hfxFadeOut(top); else top.remove(); });
+  hfxOnEnd(c, fade => { if(fade){ if(c.fast) top.classList.add("hfx-fast"); hfxFadeOut(top); } else top.remove(); });
 }
 /* THE CIRCLE (build 317, round 4). It comes in from one side, goes round
    the screen once - smaller on the far side of the circle, bigger on the
@@ -121991,7 +122013,9 @@ function ifxHazmat(scr, bx, c){
          BLOWN AWAY by the all clear (out from the box, the nearest first) ---- */
   const bank = (host, n, y0, y1, sz, op, seed) => {
     for(let i = 0; i < n; i++){
-      const fw = sz * (.85 + rnd() * .3), fh = fw * .6, x = W * (-.1 + (i + .2 + rnd() * .6) / n * 1.2), y = y0 + (y1 - y0) * rnd();
+      /* (384 r6) the banks' middles across the floor from .14 to .86 of the width, not -.1 to 1.1: they lie along the floor and
+         thin out at its sides instead of rolling half off them */
+      const fw = sz * (.85 + rnd() * .3), fh = fw * .6, x = W * (.14 + (i + .2 + rnd() * .6) / n * .72), y = y0 + (y1 - y0) * rnd();
       const el = ifxImg(host, ifxSpr.hzFume((i + seed) % 2), x - fw / 2, y - fh / 2, fw, fh, "transform-origin:50% 70%;");
       const t0 = Z.vap + i * .1 + rnd() * .16, side = x < W / 2 ? -1 : 1, dd = W * .05 * (rnd() < .5 ? -1 : 1), out = Z.sweep[0] + Math.max(0, 1 - x / W) * .5 + rnd() * .1;
       const vx = x - bcx, vy = y - bcy, vd = Math.hypot(vx, vy) || 1, hit = Z.clear + .02 + vd / (Math.hypot(W, H) * 2.2), push = W * (.4 + rnd() * .14);
@@ -122000,8 +122024,9 @@ function ifxHazmat(scr, bx, c){
         [hit + .5, { opacity: 0, transform: tr(dd - W * .06 + vx / vd * push, fh * .02 + vy / vd * push, 1.5) }]]);
     }
   };
-  bank(far, 6, H * .74, H * .88, Math.min(W * .74, H * .5), .46, 0);   /* (r3) six far banks, was four, in two shapes, was three: more haze, no new kind */
-  bank(near, 3, H * .88, H * 1.01, Math.min(W * .95, H * .62), .54, 2);
+  /* (384 r6) a little higher, so the banks lie along the floor of the screen rather than half under it */
+  bank(far, 6, H * .72, H * .84, Math.min(W * .56, H * .4), .46, 0);   /* (r3) six far banks, was four, in two shapes, was three: more haze, no new kind */
+  bank(near, 3, H * .84, H * .93, Math.min(W * .66, H * .46), .54, 2);
   /* its peak: one ring out of the box, the camera kicked (above) */
   const R = Math.max(bw, bh) * .32, rg = ifxImg(top, ifxSpr.ring("#B4F03A"), bcx - R * 2.2, bcy - R * 2.2, R * 4.4, R * 4.4);
   A(rg, [[Z.slam, { opacity: 0, transform: "scale(.3)" }], [Z.slam + .03, { opacity: .9, transform: "scale(.4)", easing: IFX_OUT }], [Z.slam + .5, { opacity: 0, transform: "scale(1.05)" }]]);
@@ -122011,7 +122036,11 @@ function ifxHazmat(scr, bx, c){
   /* ---- 3. THE DECON: a responder in a Level A suit rises into his corner, raises the wand and sprays the box down side to side.
          The arm turns at the shoulder (70, 126 of the suit's 220 x 400) and the wand is cocked up from it (IFX_HZ_ARM); the spray is
          the arm's own child, so it turns with it. The angle that puts the spray on a point is found by iterating. ---- */
-  const G = IFX_HZ_ARM, sH = Math.round(Math.min(H * .44, W * 1.05, 540)), k = sH / 400, sW = 220 * k, rx0 = W * .74 - sW / 2, ry0 = H - sH * .985;
+  /* (384 r6) THE BOX IS IN THE MIDDLE OF THE SCREEN NOW (the results' grade, centred, plays the effect), so he is smaller and
+     further off: a third of the screen's height, in the lower right, his shoulder well below and to the side of the box - at
+     .44 of the height he stood right under it, his helmet over its corner, and the box was nearer than the length of his own
+     arm and lance, so no angle could put the stream on it (it went down and off the screen) */
+  const G = IFX_HZ_ARM, sH = Math.round(Math.min(H * .34, W * .86, 430)), k = sH / 400, sW = 220 * k, rx0 = Math.min(W * .8, Math.max(W * .62, Rt + sW * .12)) - sW / 2, ry0 = H - sH * .985;
   const shX = rx0 + 70 * k, shY = ry0 + 126 * k, nzL = { x: (G.nz.x - G.px) * k, y: (G.nz.y - G.py) * k };
   const sweepX = [L + bw * .22, Rt - bw * .22, bcx], sweepY = [bcy + bh * .06, bcy - bh * .04, bcy];
   const ease = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
@@ -122020,7 +122049,19 @@ function ifxHazmat(scr, bx, c){
     if(t <= s[1]){ const p = ease((t - s[0]) / (s[1] - s[0])); return { x: sweepX[0] + (sweepX[1] - sweepX[0]) * p, y: sweepY[0] + (sweepY[1] - sweepY[0]) * p }; }
     const p = ease(Math.min(1, (t - s[1]) / (s[2] - s[1]))); return { x: sweepX[1] + (sweepX[2] - sweepX[1]) * p, y: sweepY[1] + (sweepY[2] - sweepY[1]) * p }; };
   const nozAt = th => { const a = th * Math.PI / 180; return { x: shX + nzL.x * Math.cos(a) - nzL.y * Math.sin(a), y: shY + nzL.x * Math.sin(a) + nzL.y * Math.cos(a) }; };
-  const theta = p => { let th = 0; for(let i = 0; i < 6; i++){ const n = nozAt(th); th = Math.atan2(p.y - n.y, p.x - n.x) * 180 / Math.PI - 180 - G.cock; th = ((th % 360) + 540) % 360 - 180; } return th; };
+  /* (384 r6) THE ANGLE, SOLVED, NOT ITERATED. The stream leaves the mouth along the lance (180 + cock from the arm), so the line it
+     runs on sits a fixed distance from the shoulder; turning the arm turns that line about the shoulder. In the arm's own frame the
+     target must be on that line, ahead of the mouth: q = mouth + s * dir with |q| = |target - shoulder|, then the arm's angle is
+     the target's angle minus q's. The old iteration (aim at the target from where the mouth was a moment ago) went round in circles
+     whenever the target was not far beyond the mouth - which is every case once the box sits in the middle of the screen. */
+  const theta = p => {
+    const ux = Math.cos((180 + G.cock) * Math.PI / 180), uy = Math.sin((180 + G.cock) * Math.PI / 180);
+    const D = Math.hypot(p.x - shX, p.y - shY), b = nzL.x * ux + nzL.y * uy, cc = nzL.x * nzL.x + nzL.y * nzL.y - D * D;
+    const disc = b * b - cc, sl = -b + Math.sqrt(Math.max(0, disc));
+    const qx = nzL.x + sl * ux, qy = nzL.y + sl * uy;
+    let th = (Math.atan2(p.y - shY, p.x - shX) - Math.atan2(qy, qx)) * 180 / Math.PI;
+    return ((th % 360) + 540) % 360 - 180;
+  };
   const crossAt = x => Z.sweep[0] + Math.max(0, Math.min(1, (x - sweepX[0]) / (sweepX[1] - sweepX[0]))) * (Z.sweep[1] - Z.sweep[0]);
   const rig = ifxEl(top, "left:" + F(rx0) + "px;top:" + F(ry0) + "px;width:" + F(sW) + "px;height:" + F(sH) + "px;transform-origin:50% 100%;opacity:0;");
   ifxImg(rig, ifxSpr.suit(), 0, 0, sW, sH, "opacity:1;");
@@ -122062,7 +122103,10 @@ function ifxHazmat(scr, bx, c){
   const pk = []; for(let t = Z.spray + .16, j = 0; t < Z.sprayEnd; t += .09, j++) pk.push([t, { transform: "scale(" + (j % 2 ? .985 : 1) + "," + (j % 2 ? 1.06 : 1) + ")" }]);
   A(plume, pk);
   /* (r3) a plain label for what the beat is: DECON, above the responder, with him and gone before the all clear */
-  const chip = ifxEl(top, "left:" + F(rx0 + sW * .2) + "px;top:" + F(ry0 - 12 * u) + "px;padding:" + F(5 * u) + "px " + F(11 * u) + "px;border-radius:999px;background:rgba(14,18,24,.92);color:#D6FF7A;" +
+  /* (384 r6) over his helmet; where the box comes down too close to it (a laptop's short window), beside the helmet on the
+     side away from the box. (Over the box's edge, where it was, it read as a label on the card.) */
+  const chH = 21 * u, chAbove = ry0 - 8 * u - chH > B + 8 * u;
+  const chip = ifxEl(top, "left:" + F(chAbove ? rx0 + sW * .62 : rx0 + sW * 1.02 + 40 * u) + "px;top:" + F(chAbove ? ry0 - 8 * u - chH : ry0 + sH * .06) + "px;padding:" + F(5 * u) + "px " + F(11 * u) + "px;border-radius:999px;background:rgba(14,18,24,.92);color:#D6FF7A;" +
     "font:800 " + F(11 * u) + "px/1 var(--sans);letter-spacing:.18em;white-space:nowrap;opacity:0;transform:translate(-50%,6px);");
   chip.textContent = "DECON";
   A(chip, [[Z.walk + .12, { opacity: 0, transform: "translate(-50%,6px)", easing: IFX_OUT }], [Z.walk + .4, { opacity: 1, transform: "translate(-50%,0px)" }], [Z.sprayEnd, { opacity: 1, transform: "translate(-50%,0px)" }], [Z.sprayEnd + .22, { opacity: 0, transform: "translate(-50%,0px)" }]]);
@@ -122752,7 +122796,7 @@ function playHundoFx(id, opts){
   handle.timer = setTimeout(end, total);
   /* `fast` (384 r6): a tap skipping the results' 100% - the layers go in .18s, not .6s, and the score with them */
   handle.stop = fast => { if(handle.done) return; handle.done = true; clearTimeout(handle.timer); if(mo) mo.disconnect();
-    if(fast){ if(scr) scr.classList.add("hfx-fast"); if(bx) bx.classList.add("hfx-fast"); }
+    if(fast){ c.fast = true; if(scr) scr.classList.add("hfx-fast"); if(bx) bx.classList.add("hfx-fast"); }
     hfxFadeOut(scr); hfxFadeOut(bx); if(dim && dim.isConnected) hfxFadeOut(dim); undo(true); setTimeout(lifted, fast ? 200 : 650); if(sndFx) sndFx.stop(fast ? .12 : .5); };
   /* the screen changing under it: fade, don't leave it over the next one */
   let mo = null;
