@@ -36550,3 +36550,68 @@ the characters and every other banner (Pulsar is another helper's) hash as c8143
 - NOT confirmable in Chromium: how the strips read on a phone's real screen at the scale the covers are shown; frame rate of Grand Finale (580 elements, 14 layers, the clipped truck layers) and Inspection
   Team on an old iPhone; the Silverado's likeness to the real truck is a judgement from its profile (proportions measured, not compared to a photo); the headlamp and grille in profile are a drawing of a
   3/4-turned nose seen edge on, so they read as a nose, not as a particular model.
+### Server-side fold of a duplicate account: `firestore-admin.py merge-now` (r4, tools only, NOT on main, no app change, no build bump)
+Madison: "why can't we just go ahead and merge them?" (dessmarie -> Dess Mariee, Sale -> TSale, Napoleon -> Nap, the second Z -> Z).
+- FINDING FIRST: ALL FOUR WERE ALREADY FOLDED IN ON THE SERVER on Nov 4-5; the `__merge` notes only wait for a phone that may never open.
+  Evidence, from the documents (no codes): (1) every note already carries `base` (build 287's "the old account as folded in", written Nov 5
+  02:57 / 04:35) and each old account still equals its base, so the app's own follow would add +0 XP; (2) every old test that can still
+  be in the target's capped 50-entry history IS in it (1 of 1, 2 of 2, 3 of 3, 20 of 20) and the target's per-question counts cover every
+  question the old account saw (179/179, 156/156, 627/627, 672/672); (3) the pre-write backups of Nov 5 plus the old XP equal the target:
+  9,365 + 1,040 = 10,405 and 48,185 + 1,795 = 49,980 exactly (the targets' `mergeHold.points` are those same pre-merge totals, written the
+  minute the notes were), Napoleon 104,835 + 89,780 = 194,615 then 6,445 played since (201,060), Z's was done Nov 4 19:47 (the target
+  was written 23 minutes after the old account's last write). Napoleon's and Z's holds are spent (`mergeHoldDone` Nov 5 23:48, Nov 6 16:49).
+  "None marked done" is therefore expected: `done` is set only by a phone that follows the note.
+- A NAIVE SECOND ADD WOULD HAVE DOUBLE-COUNTED: +1,040, +1,795, +89,780 (Napoleon level 40 -> 60, badges 4 -> 7, two characters and two
+  banners unlocked, rank change) and +42,795 (Z: unlocks the Hacker and a banner). That is what the tool refuses, and prints as a FLAG.
+- HOW THE PHONE MERGES (index.html): `checkAccountMove` reads `<old code>__merge` (then `__moved`), `followAccountMove` reads the target,
+  `setSyncCode(to)`, `applyLoadedData(cloud)`, then `mergeLeavingAccount(leaving, note)` where `leaving` is a copy of the PHONE'S OWN store
+  (after `progressSinceBase(leaving, note.base)` when the note has a base), then saves at once and sets `done`. Counts add (8 lifetime
+  counters, per-question n/m, study days, hundos per unit, run/test counts, vr and weekly counters, the week's points); bests keep the
+  better (streaks, best %, best TIME is the lower, game records, level/rank floors); lists union (friends minus both ids, rooms, test
+  history newest 50, classes); flags OR; identity (name, character, public id, friend code, theme, tours) stays the target's; a note's
+  `extra` and `bonusLevels` (max 5) land last. It also sets `mergeHold` (points, hundos, unit perfects, the LOCKED characters and the
+  EARNED banners as they stood) so what the merge unlocks plays after the next test; a second merge keeps the first hold.
+- WHAT THE TOOL DOES (`merge-now <old public id | name:First> [...] [--yes] [--force] [--hold-file F | --no-hold] [--to PID]`): the note is
+  the authority (`to`, `bonusLevels`, `extra`, `base`); the old account is picked by public id or by exact first name among accounts that
+  have a note (the second Z has no public id). It ports mergeLeavingAccount, progressSinceBase and tallyNormalize line for line, but NOT
+  `rollWeek` (the target's own phone rolls its week; the old account's weekly points are skipped with a warning if the target's week is
+  stale). DRY RUN BY DEFAULT: reads only; per pair a before / after / naive-whole-add table (XP, level, correct, answered, hundos,
+  badges, full tests, tests on record, study minutes, streaks, characters and banners announced), accounts labelled acct1.., never a code
+  (error text is scrubbed of document ids too). `--yes` writes in ONE REST transaction: beginTransaction, batchGet of the old account, the
+  target, the note and the target's `__floor` INSIDE it, then one commit whose writes carry `currentDocument.updateTime` for each (a
+  concurrent write aborts it; nothing is written): the target's changed fields only (updateMask; every other field untouched), the
+  `__floor` set to the merged document exactly as the app's push writes it (it only rises: a floor that holds more than the merged account
+  makes the run refuse instead), and the note (`base` = the old account as now folded in, `serverMergedAt`, `serverMerged` summary;
+  `bonusLevels` / `extra` removed because they are paid). Read back afterwards. The old account's document is NEVER touched.
+- DOUBLE-APPLY, DECIDED: the app honours `note.done` (skip) and `note.base` (add only the difference, build 287 on); nothing reads a
+  `mergedInto`. The tool does not set `done` (that would strand the phone on the old account, and `move --finish` reads `done` as "the phone
+  followed, safe to delete the old document" - deleting under a live phone wipes it). It stamps `base`, which is what 287 and the Nov 5
+  notes did: a later phone adds only what it played since, and a second merge-now finds nothing to add (idempotent by the base, no marker
+  on the target). A base-less note whose old tests are already in the target is refused (`--force` overrides). Deleting the old documents
+  is a separate step for Madison to approve (`move --finish` only after a phone has followed; the Nov 4 way is delete the account document
+  and KEEP the note, which `checkAccountMove` still follows).
+- MERGEHOLD: the tool computes points / hundos / perfects exactly but the locked-character and earned-banner sets are the app's unlock
+  rules, so `tools/merge-hold-probe.py OUT.json <old>... [--whole]` runs index.html in Chromium and writes them (ids only) for
+  `--hold-file`, and prints what the merge would newly unlock. `--yes` refuses a merge that would set a hold without one, unless
+  `--no-hold` (right when the probe says nothing is crossed). A hold with `banners: []` would announce every earned banner, so an empty
+  hold is never written. pendingBadgeUnlocks / pendingCharUnlocks are the target's own queues and are left alone.
+- THE TARGET'S OTHER DEVICES: every account write by a build 315+ phone is a transaction that merges the server's copy first
+  (mergeSameAccount: counts take the higher side, lists union, tallies per device, base = the higher), so a stale push cannot lose the
+  added progress; a raised count goes into `tallyBase` (done here with tallyNormalize) so nobody reads it as their own play. Phones
+  before 315 overwrite the whole document, which is what the raised `__floor` is for (the next launch of a new build merges it back).
+  The rankings row is NOT written by the tool: it follows when the target's phone next opens.
+- GATE: `tools/check-merge-now.py` (all PASS; `--no-browser` skips Chromium). Section 1 the rules on synthetic documents (counts add, bests
+  keep the better, lists union, identity stays, hold, floors, base difference, tally); 2 the fold on an in-memory Firestore that speaks
+  the same REST calls (dry run writes nothing, --yes writes one commit of three documents, untouched fields byte-identical, old document
+  untouched, floor raised not lowered, second run changes nothing, only the difference is added once, refusals for a target that is not
+  exactly one document / missing / no note / already folded / floor ahead / no hold, a hold file, bonusLevels paid once, a write that
+  lands between read and commit aborts, `name:` selection, no sync code in any output); 3 PARITY with the app's own mergeLeavingAccount,
+  progressSinceBase, levelProgress and xpForLevel in Chromium on six document pairs, field by field; 4 ten deliberately wrong tools
+  (wrong_add, wrong_union, wrong_best, no_base, floor_not_raised, floor_lowered, no_unique_check, no_fold_guard, no_precondition,
+  whole_not_delta), each of which must be caught (`--mutant NAME [--browser]` runs one; parity also fails a wrong merge rule). The same
+  parity was run once on the four real pairs, every field equal in whole and delta mode, and the app's follow adds +0 XP for all four.
+- WHAT A LATE PHONE STILL DOES (delta, the app's own rules, harmless): sets a fresh `mergeHold`; raises `currentStreak` / `longestStreak` /
+  `unitHundoStreak` to the old account's if higher (Napoleon's old current streak is 27, Sale's 1); resets the target's `unitRuns` to null
+  for Z (his old account has none; it re-seeds from history) and drops the target's `unitExam` records for units the old account had.
+- Not ported on purpose: `rollWeek` / `rollWeekStats`; the first-read seeding of `lateHundos` (`lateHundosSeed312`) the app does when it
+  reads banners (the next open seeds it from the merged history, `max` not sum, so no double count).
