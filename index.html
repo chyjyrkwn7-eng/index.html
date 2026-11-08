@@ -64001,9 +64001,10 @@ function drawAvatarCharSVG(charId){
     /* the hood itself, as the first draw had it, in the lighter cloth */
     svg.appendChild(mk("path", { d: SA_HOOD, fill: hoodCloth, stroke: "#03050C", "stroke-width": ".3" }));
     saStars(SA_HOOD, 30, 3, "#DFF7FF");
-    /* a seam down the peak, and the rim light along both outer edges */
+    /* a seam down the peak, and the rim light along both outer edges. (384 r2) The upper-left rim ran 1.4 units outside the hood's
+       own outline (it floated beside the hood); it lies on the edge now. */
     svg.appendChild(mk("path", { d: "M20 4.6 Q20.4 7.6 20 10.6", fill: "none", stroke: "#03050C", "stroke-width": ".4", opacity: ".6", "stroke-linecap": "round" }));
-    svg.appendChild(mk("path", { d: "M11.2 9.8 Q14.4 4.8 20 3", fill: "none", stroke: neon, "stroke-width": ".45", opacity: ".7", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M12.2 10.6 Q15 6.2 19.8 4.9", fill: "none", stroke: neon, "stroke-width": ".45", opacity: ".7", "stroke-linecap": "round" }));
     svg.appendChild(mk("path", { d: "M28.4 10.8 Q31.2 17 29.6 27.4", fill: "none", stroke: neon, "stroke-width": ".35", opacity: ".45", "stroke-linecap": "round" }));
     /* the lining: a band of the cloth's turned edge round the face, which
        is what gives the hood a thickness and makes it read as a hood */
