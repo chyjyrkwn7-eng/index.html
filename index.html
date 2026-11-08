@@ -78108,36 +78108,39 @@ const IFC_BANNER_ART = {
   study50(u){
     const rnd = bnRand(3841);
     const city = fbBuildings(rnd, 118, "#141A34", "#FFD58A", 250, 480, 18, 52, 0.3);
+    /* the index tabs: tucked in behind the right-hand page and standing up out of its top edge */
     let tabs = "";
-    ["#E5332A", "#F2C21E", "#2ECC71", "#4FB8FF", "#C084FC", "#FF8A3D"].forEach((c, i) => { tabs += '<rect x="' + (300 + i * 7) + '" y="' + (124 - (i % 2) * 2) + '" width="5" height="7" rx="1" fill="' + c + '"/>'; });
+    ["#E5332A", "#F2C21E", "#2ECC71", "#4FB8FF", "#C084FC", "#FF8A3D"].forEach((c, i) => { tabs += '<rect x="' + (262 + i * 7.4) + '" y="' + (118 - (i % 2) * 2) + '" width="5.6" height="16" rx="1" fill="' + c + '"/>'; });
+    /* the printed lines: three a side, clipped to the pages they are printed on */
     let lines = "";
-    for(let i = 0; i < 7; i++) lines += '<path d="M178 ' + (128 + i * 4) + ' Q206 ' + (126 + i * 4) + ' 234 ' + (127 + i * 4) + ' M246 ' + (127 + i * 4) + ' Q274 ' + (126 + i * 4) + ' 302 ' + (128 + i * 4) + '" stroke="#8A8494" stroke-width=".8" fill="none"/>';
+    for(let i = 0; i < 4; i++) lines += '<path d="M182 ' + (129.6 + i * 2.8) + ' Q210 ' + (127.4 + i * 2.8) + ' 234 ' + (128.6 + i * 2.8) + ' M246 ' + (128.6 + i * 2.8) + ' Q270 ' + (127.4 + i * 2.8) + ' 298 ' + (129.6 + i * 2.8) + '" stroke="#8A8494" stroke-width=".7" fill="none"/>';
     /* rain streaks for the window, a 24-unit tile repeated (bl-pour slides 20% of 120) */
     const tile = []; for(let i = 0; i < 9; i++) tile.push([256 + rnd() * 212, rnd() * 24, 4 + rnd() * 8]);
     let rain = ""; for(let rep = 0; rep < 7; rep++) tile.forEach(([x, y, l]) => { rain += '<path d="M' + bnF(x) + ' ' + bnF(10 + rep * 24 + y) + ' l-1 ' + bnF(l) + '" stroke="#BFD8FF" stroke-width=".8" opacity=".45"/>'; });
     const base = '<defs>' + bnLin(u + "wall", [[0, "#1E1A28"], [1, "#0E0C14"]]) + bnLin(u + "desk", [[0, "#5A3A22"], [1, "#24160C"]]) + bnLin(u + "night", [[0, "#060A20"], [1, "#1E2A54"]]) +
-      bnRad(u + "lamp", [[0, "#FFE7A8", 0.75], [0.5, "#FFD58A", 0.25], [1, "#FFD58A", 0]]) + bnLin(u + "page", [[0, "#FFFDF4"], [1, "#E8E0CC"]]) + bnLin(u + "shade", [[0, "#3A8A5A"], [1, "#1A4A2E"]]) + '</defs>' +
+      bnRad(u + "lamp", [[0, "#FFE7A8", 0.75], [0.5, "#FFD58A", 0.25], [1, "#FFD58A", 0]]) + bnLin(u + "page", [[0, "#FFFDF4"], [1, "#E8E0CC"]]) + bnLin(u + "shade", [[0, "#3A8A5A"], [1, "#1A4A2E"]]) + '<clipPath id="' + u + 'pgclip"><path d="M172 140 Q206 120 240 126 Q274 120 308 140 Q274 134 240 138 Q206 134 172 140 Z"/></clipPath></defs>' +
       '<rect width="480" height="180" fill="url(#' + u + 'wall)"/>' +
       '<rect x="252" y="10" width="220" height="110" fill="url(#' + u + 'night)"/>' + bnStars(rnd, 12, 50).replace(/cx="(\d+(\.\d+)?)"/g, (m, v) => 'cx="' + bnF(256 + (+v) * .44) + '"').replace(/cy="(\d+(\.\d+)?)"/g, (m, v) => 'cy="' + bnF(14 + (+v) * .7) + '"') + city.body + city.win +
       '<circle cx="440" cy="30" r="7" fill="#F4F1E0" opacity=".85"/>' +
-      '<rect x="248" y="6" width="228" height="118" fill="none" stroke="#2A2030" stroke-width="7"/><path d="M362 6 L362 124" stroke="#2A2030" stroke-width="4"/>' +
       '<rect x="0" y="140" width="480" height="40" fill="url(#' + u + 'desk)"/><rect x="0" y="138" width="480" height="3" fill="#7A5232"/>' +
       /* the banker's lamp */
       '<rect x="74" y="132" width="40" height="7" rx="3" fill="#B8963A"/><rect x="92" y="98" width="4" height="36" fill="#B8963A"/>' +
-      '<path d="M62 100 Q94 82 126 100 L120 106 Q94 94 68 106 Z" fill="url(#' + u + 'shade)"/><path d="M68 106 Q94 94 120 106" stroke="#FFE7A8" stroke-width="1.4" fill="none" opacity=".8"/>' +
-      /* the book, open, thick */
+      '<path d="M62 100 Q94 82 126 100 L120 106 Q94 94 68 106 Z" fill="url(#' + u + 'shade)"/><path d="M68 106 Q94 94 120 106" stroke="#FFE7A8" stroke-width="1.4" fill="none" opacity=".8"/>';
+    /* the window's frame and sill and the mug stand in front of the rain */
+    const front = '<rect x="248" y="6" width="228" height="118" fill="none" stroke="#2A2030" stroke-width="7"/><path d="M362 6 L362 124" stroke="#2A2030" stroke-width="4"/><rect x="244" y="124" width="236" height="6" fill="#3A2E3C"/><rect x="244" y="124" width="236" height="1.4" fill="#5A4A5C"/>' +
+/* the book, open, thick: the tabs behind the right page, the red cover under both */
+      tabs +
       '<path d="M170 141 Q206 136 240 140 Q274 136 310 141 L312 146 Q276 142 240 146 Q204 142 168 146 Z" fill="#8A1A1A"/>' +
       '<path d="M172 140 Q206 120 240 126 Q274 120 308 140 Q274 134 240 138 Q206 134 172 140 Z" fill="url(#' + u + 'page)"/>' +
-      '<path d="M240 126 L240 138" stroke="#C9C2B0" stroke-width="1"/>' + lines + tabs +
+      '<path d="M240 126 L240 138" stroke="#C9C2B0" stroke-width="1"/><g clip-path="url(#' + u + 'pgclip)">' + lines + '</g>' +
       '<path d="M224 133 L262 129" stroke="#F2C21E" stroke-width="2.2" stroke-linecap="round"/><path d="M260 129.2 L265 128.6" stroke="#3A2A20" stroke-width="2.2" stroke-linecap="round"/>' +
-      /* the mug */
       '<rect x="392" y="120" width="22" height="20" rx="3" fill="#2A4A6A"/><path d="M414 124 Q422 126 414 134" fill="none" stroke="#2A4A6A" stroke-width="3"/><ellipse cx="403" cy="121" rx="10" ry="2" fill="#3A2214"/>';
     return [
       { svg: base },
       { svg: rain, box: [252, 10, 220, 120], vb: [252, 10, 220, 120], clip: "inset(0)", cls: "bl-pour", style: "animation-duration:1.1s" },
-      { svg: '<ellipse cx="94" cy="128" rx="120" ry="70" fill="url(#' + u + 'lamp)"/><ellipse cx="240" cy="134" rx="70" ry="10" fill="#FFF3C8" opacity=".1"/>', box: [0, 40, 340, 140], cls: "bl-glow", style: "animation-duration:4.2s" },
-      { svg: '<path d="M400 116 Q396 106 402 98 Q408 90 402 80" fill="none" stroke="#E8ECEF" stroke-width="2" stroke-linecap="round" opacity=".55"/><path d="M408 116 Q404 106 410 98" fill="none" stroke="#E8ECEF" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>', box: [390, 70, 30, 50], cls: "bl-steam", style: "animation-duration:4s" },
-      { svg: '<path d="M182 132 Q206 124 232 128" stroke="#FFFFFF" stroke-width="1.4" fill="none" opacity=".5"/>', box: [176, 120, 60, 16], cls: "bl-glint", style: "animation-duration:5s" }
+      { svg: front },
+      { svg: '<ellipse cx="94" cy="128" rx="120" ry="70" fill="url(#' + u + 'lamp)"/>', box: [0, 40, 340, 140], cls: "bl-glow", style: "animation-duration:4.2s" },
+      { svg: '<path d="M400 116 Q396 106 402 98 Q408 90 402 80" fill="none" stroke="#E8ECEF" stroke-width="2" stroke-linecap="round" opacity=".55"/><path d="M408 116 Q404 106 410 98" fill="none" stroke="#E8ECEF" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>', box: [390, 70, 30, 50], cls: "bl-steam", style: "animation-duration:4s" }
     ];
   },
 
