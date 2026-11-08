@@ -78518,9 +78518,10 @@ function fbKitPen(x, y, s, f){
   const lims = (lst, wd, col, ex) => '<path d="' + lst.map(pts => 'M' + pts2(pts)).join(" ") + '" fill="none" stroke="' + col + '" stroke-width="' + w(wd) + '" stroke-linecap="round" stroke-linejoin="round"' + (ex || "") + '/>';
   const pols = (lst, fill, ex) => '<path d="' + lst.map(pts => { let ar = 0; pts.forEach((q, i) => { const n = pts[(i + 1) % pts.length]; ar += q[0] * n[1] - n[0] * q[1]; }); if(ar * f < 0) pts = pts.slice().reverse(); return 'M' + pts2(pts) + ' Z'; }).join(" ") + '" fill="' + fill + '"' + (ex || "") + '/>';
   const dc = (cx, cy, r, fill, ex) => '<circle cx="' + bnF(x + cx * s * f) + '" cy="' + bnF(y + cy * s) + '" r="' + w(r) + '" fill="' + fill + '"' + (ex || "") + '/>';
+  const dcs = (lst, fill, ex) => '<path d="' + lst.map(q => { const cx = x + q[0] * s * f, cy = y + q[1] * s, r = q[2] * s; return 'M' + bnF(cx - r) + ' ' + bnF(cy) + ' a' + bnF(r) + ' ' + bnF(r) + ' 0 1 0 ' + bnF(2 * r) + ' 0 a' + bnF(r) + ' ' + bnF(r) + ' 0 1 0 ' + bnF(-2 * r) + ' 0'; }).join(" ") + '" fill="' + fill + '"' + (ex || "") + '/>';
   const el = (cx, cy, rx, ry, fill, ex) => '<ellipse cx="' + bnF(x + cx * s * f) + '" cy="' + bnF(y + cy * s) + '" rx="' + w(rx) + '" ry="' + w(ry) + '" fill="' + fill + '"' + (ex || "") + '/>';
   const rot = (px, py, deg, cx, cy) => { const a = deg * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a); return [cx + (px - cx) * c - (py - cy) * sn, cy + (px - cx) * sn + (py - cy) * c]; };
-  return { P, w, pol, lim, lims, pols, dc, el, rot, x, y, s, f };
+  return { P, w, pol, lim, lims, pols, dc, dcs, el, rot, x, y, s, f };
 }
 /* a tactical flashlight gripped in a closed fist at local (hx, hy) pointing along deg: tail cap behind the fist, a knurled black barrel, the head, a crenellated
    bezel and the lens. Returns { svg, L: [lx, ly] } (the lens in local units). */
@@ -78569,7 +78570,7 @@ function fbKitFingers(K, px, py, deg, skin, skinD, vertical){
    belt), "cross" (arms folded). Returns { svg, lens: [x, y, angle] | null }. */
 function fbOfficer(x, y, s, o){
   o = o || {};
-  const K = fbKitPen(x, y, s, o.flip ? -1 : 1), { P, w, pol, lim, lims, pols, dc, el, rot } = K, f = K.f;
+  const K = fbKitPen(x, y, s, o.flip ? -1 : 1), { P, w, pol, lim, lims, pols, dc, dcs, el, rot } = K, f = K.f;
   const lit = o.lit == null ? -1 : o.lit, pose = o.pose || "clip", C = FB_KIT;
   const skin = o.skin || "#C98E64", skinD = o.skinD || "#8E5C3E", rim = o.rim || "#FFCF86", hair = o.hair || C.hair;
   let armA, armB, hands = "", held = "", lens = null, torchInHand = false;
@@ -78611,10 +78612,11 @@ function fbOfficer(x, y, s, o){
   const boots = [[[-13.6, -10], [-2, -10], [-1.4, -2], [-2.2, 0], [-15.4, 0], [-15.4, -3]], [[13.6, -10], [2, -10], [1.4, -2], [2.2, 0], [15.4, 0], [15.4, -3]]];
   const torso = [[-17.4, -79], [-14.6, -85], [-6, -87.4], [6, -87.4], [14.6, -85], [17.4, -79], [16.4, -44], [-16.4, -44]];
   /* the figure in one tone, drawn once shifted for the rim of light and once as itself (with the classes a gate reads) */
+  const neck = [[-3.6, -93], [3.6, -93], [3.8, -85], [-3.8, -85]];
   const sil = (dx, c) => {
     const Q = ps => ps.map(p => [p[0] + dx, p[1]]);
-    return lims(legs.map(Q), 12.6, c || C.pants, c ? "" : ' class="fb-pants"') + pols(boots.map(Q), c || C.boot) + pol(Q(torso), c || C.polo, c ? "" : ' class="fb-polo"') +
-      pol(Q([[-3.6, -93], [3.6, -93], [3.8, -85], [-3.8, -85]]), c || skin) + lims([armA, armB].map(Q), 8.6, c || skin) + el(dx, -97, 7.4, 8.8, c || skin);
+    if(c) return lims(legs.map(Q), 12.6, c) + pols(boots.concat([torso, neck]).map(Q), c) + lims([armA, armB].map(Q), 8.6, c) + el(dx, -97, 7.4, 8.8, c);
+    return lims(legs, 12.6, C.pants, ' class="fb-pants"') + pols(boots, C.boot) + pol(torso, C.polo, ' class="fb-polo"') + pol(neck, skin) + lims([armA, armB], 8.6, skin) + el(0, -97, 7.4, 8.8, skin);
   };
   /* the polo: the shaded side, a crease of light down the lit side of each leg, the collar's two points either side of the neck */
   const sh = lit < 0 ? 1 : -1;
@@ -78626,7 +78628,7 @@ function fbOfficer(x, y, s, o){
   [-62.6, -58.8, -55].forEach(yy => { molle.push([[-10.8, yy], [10.8, yy]], [[-16.2, yy], [-13.2, yy]], [[13.2, yy], [16.2, yy]]); });
   let vest = '<g class="fb-tacvest">' + pols([[[-16.9, -66.6], [16.9, -66.6], [16.7, -50.4], [-16.7, -50.4]], [[-13.4, -85.6], [-6.6, -87.8], [-5.6, -82], [-11.8, -82]], [[13.4, -85.6], [6.6, -87.8], [5.6, -82], [11.8, -82]]], C.vest) +
     pol([[-12.6, -81.2], [-11.2, -82.8], [11.2, -82.8], [12.6, -81.2], [12.6, -53.4], [11.2, -52], [-11.2, -52], [-12.6, -53.4]], C.vest, ' stroke="' + C.vestE + '" stroke-width="' + w(.5) + '" stroke-linejoin="round"') +
-    lim([[lit * 12.2, -81], [lit * 12.2, -53.6]], .8, C.vestL, ' opacity=".9"') + lim([[lit * 13.2, -85.2], [lit * 7, -87.2]], .7, C.vestL, ' opacity=".8"') +
+    lims([[[lit * 12.2, -81], [lit * 12.2, -53.6]], [[lit * 13.2, -85.2], [lit * 7, -87.2]]], .8, C.vestL, ' opacity=".85"') +
     lims(molle, 1.1, C.web, ' stroke-dasharray="' + w(2.3) + ' ' + w(.8) + '" stroke-linecap="butt"') +
     pol([[-11.2, -72.6], [11.2, -72.6], [11.2, -67.4], [-11.2, -67.4]], C.patch, ' stroke="#3A4458" stroke-width="' + w(.35) + '"') +
     fbText("FIRE MARSHAL", x, y - 70 * s, 1.95 * s, C.patchT, .42 * s) +
@@ -78635,15 +78637,15 @@ function fbOfficer(x, y, s, o){
     pol([[-9.6, -78.6], [-2.8, -78.6], [-2.8, -76.6], [-9.6, -76.6]], "#4A5468") +
     /* the radio on the right shoulder strap: body, its keypad, antenna and knob, a red light; the hand of the radio pose is drawn over it */
     pol([[8.4, -89.2], [13.8, -89.2], [13.8, -79.4], [8.4, -79.4]], "#101318", ' stroke="#3A4452" stroke-width="' + w(.45) + '" stroke-linejoin="round"') + pol([[9.4, -87.8], [12.8, -87.8], [12.8, -84.4], [9.4, -84.4]], "#2A3B44") +
-    lim([[12.6, -89.2], [13.4, -97.4]], .9, "#0B0D10") + dc(10, -89.8, .8, "#0B0D10") + dc(12.4, -81, .55, "#FF4A3A") + '</g>';
+    lim([[12.6, -89.2], [13.4, -97.4]], .9, "#0B0D10") + dc(12.4, -81, .55, "#FF4A3A") + '</g>';
   /* the duty belt: belt, buckle, keepers, the cuff case, the flashlight in its ring (empty when it is in his hand), the holster or a pouch */
   let belt = '<g class="fb-belt">' + pol([[-16.6, -48.6], [16.6, -48.6], [16.4, -44], [-16.4, -44]], C.belt) + pol([[-2.2, -48.4], [2.2, -48.4], [2.2, -44.2], [-2.2, -44.2]], "#8C95A2") +
     lims([[[-6.2, -48.6], [-6.2, -44]], [[11.6, -48.6], [11.6, -44]], [[-11.6, -48.6], [-11.6, -44]]], 1.2, "#24272D") +
     pol([[5.6, -49.2], [10.4, -49.2], [10.4, -42.4], [5.6, -42.4]], C.gear, ' stroke="#2E333C" stroke-width="' + w(.4) + '"') + dc(8, -47.8, .55, C.metal) +
     pol([[12.4, -47.6], [16.4, -47.6], [16.4, -44.8], [12.4, -44.8]], C.gear, ' stroke="#2E333C" stroke-width="' + w(.35) + '"');
-  if(!torchInHand) belt += pol([[13.1, -44.8], [15.7, -44.8], [15.7, -36.2], [13.1, -36.2]], "#1E2228") + pol([[12.7, -36.6], [16.1, -36.6], [16.1, -34.2], [12.7, -34.2]], "#4A515C") + lim([[13.8, -44.4], [13.8, -37]], .45, "#5A6270", ' opacity=".8"');
+  if(!torchInHand) belt += pol([[13.1, -44.8], [15.7, -44.8], [15.7, -36.2], [13.1, -36.2]], "#1E2228") + pol([[12.7, -36.6], [16.1, -36.6], [16.1, -34.2], [12.7, -34.2]], "#4A515C");
   if(o.gun) belt += pol([[-21, -49], [-14.4, -49], [-14.6, -34.6], [-19.8, -33.6]], "#0B0C0F", ' class="fb-holster" stroke="#2C3038" stroke-width="' + w(.4) + '" stroke-linejoin="round"') +
-    pol([[-20.4, -48.8], [-15.4, -48.8], [-16.2, -53.8], [-20.8, -53.4]], "#2C3038", ' class="fb-gun"') + lim([[-19.8, -53.2], [-16.6, -53.4]], .5, "#5A6270") + lim([[-20.8, -50.2], [-15, -50.2]], 1.4, "#0B0C0F");
+    pol([[-20.4, -48.8], [-15.4, -48.8], [-16.2, -53.8], [-20.8, -53.4]], "#2C3038", ' class="fb-gun" stroke="#5A6270" stroke-width="' + w(.35) + '"') + lim([[-20.8, -50.2], [-15, -50.2]], 1.4, "#0B0C0F");
   else belt += pol([[-19.8, -48.8], [-14.8, -48.8], [-14.8, -41.6], [-19.8, -41.6]], C.gear, ' stroke="#2E333C" stroke-width="' + w(.4) + '"') + lim([[-19.4, -46.8], [-15.2, -46.8]], .5, "#2E333C");
   belt += '</g>';
   /* the arms: the polo's short sleeve over the shoulder (a hem where it ends), the bare arm below it; a lighter fold on each sleeve */
@@ -78654,16 +78656,16 @@ function fbOfficer(x, y, s, o){
     sleeves.push([s0, se]); skinArms.push([se, e0, h0]); hems.push([[se[0] + nx * 4.9, se[1] + ny * 4.9], [se[0] - nx * 4.9, se[1] - ny * 4.9]]);
     folds.push([[s0[0] - lit * 2.4 + nx, s0[1] + 1.4], [se[0] - lit * 1.6, se[1]]]);
   });
-  const arms = lims(skinArms, 6.6, skin) + lims(skinArms.map(a => a.slice(1)), 1, skinD, ' opacity=".35"') + lims(sleeves, 9.6, C.polo, ' stroke-linecap="butt"') + lims(hems, .8, C.poloD) + lims(folds, 1, C.poloL, ' opacity=".7"');
+  const arms = lims(skinArms, 6.6, skin) + lims(sleeves, 9.6, C.polo, ' stroke-linecap="butt"') + lims(hems, .8, C.poloD) + lims(folds, 1, C.poloL, ' opacity=".7"');
   /* the head: ears, brows, eyes, the nose, a level mouth; short hair, or a navy ball cap (crown, seam, a gold emblem, the bill and its shadow) */
   const lk = o.look || 0;
-  const face = dc(-7.4, -96.4, 1.5, skin) + dc(7.4, -96.4, 1.5, skin) + pol([[-3.6, -90], [3.6, -90], [3.8, -86], [-3.8, -86]], skinD, ' opacity=".35"') +
-    dc(-2.7 + lk, -97, .85, "#1A1410") + dc(2.7 + lk, -97, .85, "#1A1410") + lims([[[-4.4, -99.4], [-1.4, -99.9]], [[1.4, -99.9], [4.4, -99.4]]], .7, hair) +
+  const face = dcs([[-7.4, -96.4, 1.5], [7.4, -96.4, 1.5]], skin) + pol([[-3.6, -90], [3.6, -90], [3.8, -86], [-3.8, -86]], skinD, ' opacity=".35"') +
+    dcs([[-2.7 + lk, -97, .85], [2.7 + lk, -97, .85]], "#1A1410") + lims([[[-4.4, -99.4], [-1.4, -99.9]], [[1.4, -99.9], [4.4, -99.4]]], .7, hair) +
     lim([[0, -96.2], [-.5, -93.6]], .4, skinD) + '<path d="M' + P(-2.2, -91.4) + ' Q' + P(0, -91) + ' ' + P(2.2, -91.4) + '" fill="none" stroke="#5A2E22" stroke-width="' + w(.65) + '" stroke-linecap="round"/>';
   let head;
   if(o.cap) head = '<g class="fb-cap" data-col="' + C.cap + '">' + '<path d="M' + P(-8.2, -100.2) + ' Q' + P(-8.8, -109.6) + ' ' + P(0, -109.8) + ' Q' + P(8.8, -109.6) + ' ' + P(8.2, -100.2) + ' Z" fill="' + C.cap + '"/>' +
     '<path d="M' + P(lit * 8.2, -100.2) + ' Q' + P(lit * 8.8, -109.6) + ' ' + P(lit * 1, -109.8) + ' Q' + P(lit * 4.6, -105) + ' ' + P(lit * 3.6, -100.2) + ' Z" fill="#4A62A0" opacity=".45"/>' +
-    lim([[0, -109.6], [0, -103.6]], .4, C.capD) + pol([[-2, -106], [2, -106], [2, -103], [-2, -103]], C.gold, ' stroke="' + C.goldD + '" stroke-width="' + w(.3) + '"') +
+    pol([[-2, -106], [2, -106], [2, -103], [-2, -103]], C.gold, ' stroke="' + C.goldD + '" stroke-width="' + w(.3) + '"') +
     '<path d="M' + P(-7.4, -98.6) + ' Q' + P(0, -96.4) + ' ' + P(7.4, -98.6) + ' L' + P(7.4, -97.2) + ' Q' + P(0, -95) + ' ' + P(-7.4, -97.2) + ' Z" fill="#000" opacity=".28"/>' +
     '<path d="M' + P(-9.6, -100.6) + ' Q' + P(0, -102.6) + ' ' + P(9.6, -100.6) + ' Q' + P(10.4, -99.4) + ' ' + P(8.6, -98.8) + ' Q' + P(0, -97.4) + ' ' + P(-8.6, -98.8) + ' Q' + P(-10.4, -99.4) + ' ' + P(-9.6, -100.6) + ' Z" fill="' + C.capD + '"/></g>';
   else head = '<path class="fb-hair" d="M' + P(-7.8, -97.4) + ' Q' + P(-8.6, -106.6) + ' ' + P(0, -106.8) + ' Q' + P(8.6, -106.6) + ' ' + P(7.8, -97.4) + ' L' + P(7, -100.4) + ' Q' + P(2, -103.2) + ' ' + P(-3.6, -102.4) + ' Q' + P(-6.6, -101.6) + ' ' + P(-7, -100) + ' Z" fill="' + hair + '"/>';
@@ -78676,7 +78678,7 @@ function fbOfficer(x, y, s, o){
    o.lit which side it comes from; pose "salute" | "belt" (hands on the belt) | "cross" (arms folded: only the elbows show) | "stand" | "point" (an arm up at the sky). */
 function fbOfficerBack(x, y, s, o){
   o = o || {};
-  const K = fbKitPen(x, y, s, 1), { P, w, pol, lim, lims, pols, dc, el } = K, C = FB_KIT;
+  const K = fbKitPen(x, y, s, 1), { P, w, pol, lim, lims, pols, dc, dcs, el } = K, C = FB_KIT;
   const pose = o.pose || "stand", tone = o.tone || "#FFCF86", lit = o.lit == null ? 1 : o.lit, skin = o.skin || "#5A3A26";
   const polo = o.polo || "#1A2748", pants = o.pants || "#141E38";
   let armL, armR;
@@ -78688,10 +78690,11 @@ function fbOfficerBack(x, y, s, o){
   const legs = [[[-6.2, -46], [-7.4, -9]], [[6.2, -46], [7.4, -9]]];
   const boots = [[[-13, -10], [-2, -10], [-1.6, -2], [-2.4, 0], [-14.6, 0], [-14.6, -3]], [[13, -10], [2, -10], [1.6, -2], [2.4, 0], [14.6, 0], [14.6, -3]]];
   const torso = [[-17, -79], [-14.4, -85], [-6, -87.4], [6, -87.4], [14.4, -85], [17, -79], [16, -44], [-16, -44]];
+  const neck = [[-3.4, -93], [3.4, -93], [3.6, -85], [-3.6, -85]];
   const sil = (dx, c) => {
     const Q = ps => ps.map(p => [p[0] + dx, p[1]]);
-    return lims(legs.map(Q), 12.4, c || pants, c ? "" : ' class="fb-pants"') + pols(boots.map(Q), c || C.boot) + pol(Q(torso), c || polo, c ? "" : ' class="fb-polo"') +
-      lims([armL, armR].map(Q), 8.2, c || skin) + pol(Q([[-3.4, -93], [3.4, -93], [3.6, -85], [-3.6, -85]]), c || skin) + el(dx, -97, 7.2, 8.6, c || skin);
+    if(c) return lims(legs.map(Q), 12.4, c) + pols(boots.concat([torso, neck]).map(Q), c) + lims([armL, armR].map(Q), 8.2, c) + el(dx, -97, 7.2, 8.6, c);
+    return lims(legs, 12.4, pants, ' class="fb-pants"') + pols(boots, C.boot) + pol(torso, polo, ' class="fb-polo"') + lims([armL, armR], 8.2, skin) + pol(neck, skin) + el(0, -97, 7.2, 8.6, skin);
   };
   const rimG = '<g opacity=".7">' + sil(lit * 1.2, tone) + '</g>';
   /* the vest's back: cummerbund, straps, the plate, a drag handle, FIRE / MARSHAL in reflective letters that take the light */
@@ -78711,7 +78714,7 @@ function fbOfficerBack(x, y, s, o){
   const sleeves = [], skinArms = [];
   [armL, armR].forEach(a => { const [s0, e0, h0] = a, se = [s0[0] + (e0[0] - s0[0]) * .55, s0[1] + (e0[1] - s0[1]) * .55]; sleeves.push([s0, se]); skinArms.push(pose === "cross" ? [se, e0] : [se, e0, h0]); });
   const arms = lims(skinArms, 6.4, skin) + lims(sleeves, 9.8, polo, ' stroke-linecap="butt"') + lims(sleeves.map(sl => sl.map(p => [p[0] + lit * 3, p[1] + .6])), 1.1, tone, ' opacity=".45"') +
-    (pose === "cross" ? "" : [armL, armR].map(a => dc(a[2][0], a[2][1], 3.2, skin)).join("")) + (pose === "salute" ? el(0, -97, 7.2, 8.6, skin) : "");
+    (pose === "cross" ? "" : dcs([armL, armR].map(a => [a[2][0], a[2][1], 3.2]), skin)) + (pose === "salute" ? el(0, -97, 7.2, 8.6, skin) : "");
   /* the head from behind: hair at the nape, or the cap's crown with the strap's gap at the back */
   const head = o.cap ? '<g class="fb-cap" data-col="' + C.cap + '"><path d="M' + P(-8, -99.6) + ' Q' + P(-8.6, -109.2) + ' ' + P(0, -109.4) + ' Q' + P(8.6, -109.2) + ' ' + P(8, -99.6) + ' Z" fill="' + C.cap + '"/>' +
       '<path d="M' + P(-2.6, -99.6) + ' Q' + P(0, -103.4) + ' ' + P(2.6, -99.6) + ' Z" fill="' + C.hair + '"/>' + lim([[-3, -101], [3, -101]], .6, "#3A4A70") +
@@ -79306,11 +79309,15 @@ const IFC_BANNER_ART = {
     let crest = "M0 " + bnF(crestY(0)); for(let x = 12; x <= 480; x += 12) crest += " L" + x + " " + bnF(crestY(x));
     g += '<path d="' + crest + ' L480 180 L0 180 Z" fill="url(#' + u + 'hill)"/><path d="' + crest + '" fill="none" stroke="#FFD9A0" stroke-width="1.1" opacity=".42"/>';
     const XS = [48, 108, 166, 232, 296, 362, 430];
+    /* round 6 (Madison: "Dont put them in safety vests, put them in tactical police gear and remove the hard hats"): the seven are the one inspector from behind
+       (fbOfficerBack) - navy polos and pants, plate carriers with FIRE MARSHAL across the back in reflective letters that take the show's light, duty belts (four
+       with a holstered handgun), navy caps on three; two salute, two have their hands on their belts, two have their arms folded, one stands easy. No hats held up:
+       there are no hard hats left to hold. */
     const MEN = [
-      { pose: "stand", tone: "#9FFFC0", s: .56 }, { pose: "salute", tone: "#FFB0A8", s: .6 }, { pose: "stand", tone: "#FFD9A0", s: .58 }, { pose: "hatup", tone: "#FFD9A0", s: .62 },
-      { pose: "stand", tone: "#FFC0EC", s: .58 }, { pose: "hatup2", tone: "#B8D0FF", s: .6, lit: -1 }, { pose: "salute", tone: "#B8D0FF", s: .56, lit: -1 }
+      { pose: "belt", tone: "#9FFFC0", s: .57, gun: true }, { pose: "salute", tone: "#FFB0A8", s: .6, cap: true }, { pose: "cross", tone: "#FFD9A0", s: .58, gun: true, skin: "#7A4E34" }, { pose: "stand", tone: "#FFD9A0", s: .62, cap: true, skin: "#A06A48" },
+      { pose: "belt", tone: "#FFC0EC", s: .58, gun: true, skin: "#3E2818" }, { pose: "salute", tone: "#B8D0FF", s: .6, lit: -1, gun: true, skin: "#8A5A3C" }, { pose: "cross", tone: "#B8D0FF", s: .56, lit: -1, cap: true, skin: "#6A4630" }
     ];
-    g += MEN.map((m, i) => fbInspBack(XS[i], crestY(XS[i]) + 2, m.s, { pose: m.pose, tone: m.tone, lit: m.lit == null ? 1 : m.lit, body: "#0A0D1A", vest: "#232C18", hat: "#C4CCDC" })).join("") + '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
+    g += MEN.map((m, i) => fbOfficerBack(XS[i], crestY(XS[i]) + 2, m.s, { pose: m.pose, tone: m.tone, lit: m.lit == null ? 1 : m.lit, gun: m.gun, cap: m.cap, skin: m.skin || "#5A3A26" })).join("") + '<rect width="480" height="180" fill="url(#' + u + 'vig)"/>';
     const fw = B.map((b, i) => ({ svg: burst(b.x, b.y, b.R, b), box: [b.x - b.R * 1.9, b.y - b.R * 1.9, b.R * 3.8, b.R * 3.8], o: [b.x, b.y], cls: "bl-fwk", style: "animation-duration:" + b.dur + "s;animation-delay:" + b.dl + "s" }));
     const wash = '<ellipse cx="248" cy="40" rx="200" ry="70" fill="url(#' + u + 'w0)"/><ellipse cx="96" cy="60" rx="110" ry="60" fill="url(#' + u + 'w1)"/><ellipse cx="410" cy="30" rx="120" ry="70" fill="url(#' + u + 'w3)"/>';
     return [{ svg: gBase }, { svg: st.a, cls: "bl-tw", style: "animation-duration:2.8s" }, { svg: st.b, cls: "bl-tw", style: "animation-duration:3.7s;animation-delay:-1.4s" }]
