@@ -62211,10 +62211,16 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M12.6 12.8 Q20 10.2 27.4 12.8 L27.2 13.9 Q20 11.4 12.8 13.9 Z", fill: gold, stroke: "#8A5A00", "stroke-width": ".15" }));
     svg.appendChild(mk("circle", { cx: 20, cy: 12.05, r: 1.25, fill: "#FFFBEA", stroke: "#F39A0A", "stroke-width": ".35" }));
     close();
+    /* (384 r6 eyes) the same almond, no ring round it: a gold iris with a dark amber pupil, and three tiny rays fanning
+       off the outer corner, the sun's own rays in small. */
     open("cx-eyes");
-    [[16.8, 17.8], [23.2, 17.8]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.7, ry: 1, fill: "#FFB319", opacity: ".6" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .55, fill: "#FFFDF2" }));
+    [[16.8, 17.8, -1], [23.2, 17.8, 1]].forEach(([x, y, o]) => {
+      const f = n => +n.toFixed(2);
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .55, fill: "#FFFDF2", stroke: "#E39A12", "stroke-width": ".16" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .43, fill: "#EFA30A", stroke: "#9A5E08", "stroke-width": ".1" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .16, fill: "#6A3A00" }));
+      svg.appendChild(mk("path", { d: [-1, 0, 1].map(k => "M" + f(x + o * 1.3) + " " + f(y + k * .3) + " L" + f(x + o * 1.9) + " " + f(y + k * .7)).join(" "),
+        fill: "none", stroke: "#F5A812", "stroke-width": ".24", "stroke-linecap": "round" }));
     });
     close();
     closedEyes([[16.8, 18, 1.1], [23.2, 18, 1.1]], "#9A5E08", .35);
