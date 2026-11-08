@@ -20,7 +20,7 @@ On REAL runs (a drill through summarize(), lib_realrun, the page's clock stepped
  (F6) a tap on the page while the effect plays: within 300ms the effect's layers are gone, the grade is in its place,
       nothing on the grade is still running; Enter does the same
  (F7) the skip hint (data-skip-hint) is up, legible and clear of the card while the effect plays
- (F8) every effect, both classes, keeps >= 85% of its painted PIECES inside the viewport at its peak and on average
+ (F8) every effect, both classes, keeps >= 85% of its painted PIECES inside the viewport at its peak (before its exit, the last 15% of its time) and on average
       through the middle half of it, on an iPhone SE, a 17 Pro Max, an iPad Pro 11" and a laptop - a piece is anything
       painted up to half the screen's area and narrower and shorter than 90% of it, weighted by area and opacity (a wash,
       a corner beam, a ring sweeping the whole screen or a strip spanning it is atmosphere and meant to run off the edges); fireworks: the particles themselves, which the canvas
@@ -110,7 +110,7 @@ DIMS = r"""() => {
 AREA = r"""() => {
   const W = innerWidth, H = innerHeight;
   /* what the app's own top bar covers is not on the screen either (on a phone it is the status bar and the bar under it) */
-  const tb = document.querySelector('.wrap > .top'), Y0 = tb && tb.offsetHeight && tb.getBoundingClientRect().top < 4 ? tb.getBoundingClientRect().bottom : 0;
+  const tb = document.querySelector('.wrap > .top'), Y0 = tb && tb.offsetHeight && tb.getBoundingClientRect().top < 90 ? Math.max(0, tb.getBoundingClientRect().bottom) : 0;
   const clip = r => Math.max(0, Math.min(r.right, W) - Math.max(r.left, 0)) * Math.max(0, Math.min(r.bottom, H) - Math.max(r.top, Y0));
   let tot = 0, inn = 0, pieces = 0, fwTot = 0, fwIn = 0;
   const cache = new Map();
@@ -268,7 +268,10 @@ with sync_playwright() as pw:
                     while t < tail:
                         rr.advance(pg, .25); t += .25
                         a = pg.evaluate(AREA); rows.append(a)
-                    peak = max(rows, key=lambda r: r["tot"])
+                    # the busiest moment before its exit (the last 15% of its time is it leaving - the UFO's warp streaks off the
+                    # top of the screen on purpose)
+                    peak = max(rows[:max(1, int(len(rows) * .85))], key=lambda r: r["tot"])
+                    if os.environ.get("F8DEBUG"): print("   ", W, H, "peak at", (rows.index(peak) + 1) * .25, "s", peak, "worst", min((r["frac"], i) for i, r in enumerate(rows)))
                     # the middle half of it (its entrance and exit may come in or go out over an edge)
                     midr = [r for r in rows[len(rows) // 4: max(len(rows) // 4 + 1, 3 * len(rows) // 4)] if r["tot"] > 0]
                     avg = sum(r["frac"] * r["tot"] for r in midr) / max(1, sum(r["tot"] for r in midr))

@@ -118011,7 +118011,7 @@ function hfxToEdge(c, x, y, a){
   const dx = Math.cos(a), dy = Math.sin(a);
   let t = Infinity;
   if(dx > 1e-6) t = Math.min(t, (c.vw - x) / dx); else if(dx < -1e-6) t = Math.min(t, -x / dx);
-  if(dy > 1e-6) t = Math.min(t, (c.vh - y) / dy); else if(dy < -1e-6) t = Math.min(t, -y / dy);
+  if(dy > 1e-6) t = Math.min(t, (c.vh - y) / dy); else if(dy < -1e-6) t = Math.min(t, -(y - (c.__skyTop != null ? c.__skyTop : (c.__skyTop = hfxSkyTop(c)))) / dy);
   return isFinite(t) ? Math.max(0, t) : 0;
 }
 /* The number's centre on the screen. */
@@ -118122,7 +118122,7 @@ function hfxGlassBubble(parent, o){
    the sides. `pick(u)` maps u in 0..1 to an edge and a heading, so a set
    spread evenly over 0..1 (the heroes) is spread over the room. */
 function hfxBubbleRoom(c){
-  const r = c.br, top = c.frame ? 0 : hfxSafeTop();
+  const r = c.br, top = hfxSkyTop(c);
   const sides = [
     { k: "top", room: Math.max(0, r.top - top), len: r.width, a0: -Math.PI + .12, a1: -.12 },
     { k: "bottom", room: Math.max(0, c.vh - r.bottom), len: r.width, a0: .12, a1: Math.PI - .12 },
@@ -120175,7 +120175,7 @@ function hfxFireworks(scr, bx, c){
     /* (384 r6) and under the app's own top bar ("Test results", the chat button), not just the status bar: on a phone the
        bar covers the top 60px or so of the sky, and every burst that opened up there was half behind it */
     let barB = 0;
-    try{ const tb = !mini && document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 4) barB = q.bottom; } }catch(e){}
+    try{ const tb = !mini && document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 90 && q.bottom > 0) barB = q.bottom + 4; } }catch(e){}
     const skyTop = mini ? 0 : Math.max(hfxSafeTop(), barB), skyH = Math.max(60, r.top - skyTop);
     /* (384 r6) AND WHOLE, OVER THE BOX. The box is in the middle of the screen now (the results' grade plays its effect
        centred), and the sky is what is between the top bar and the box. A burst's lower half used to go down behind the
@@ -120672,6 +120672,9 @@ function hfxUfoSwa(c){ return Math.round(Math.min((c.bw || 0) * .3, 150)); }
    hovers 60px up where that fits, else it hovers lower (down to 40px) and
    only then gets smaller; it lifts as high as the sky lets it, at most the
    old 70px. Cached on the context, so the screen layer and the box agree. */
+/* (384 r6) the top of the room a screen-wide effect has: the status bar, or the app's own top bar under it on the results
+   ("Test results" and the chat button) - anything thrown above that is behind them. 0 in a stand-in frame. */
+function hfxSkyTop(c){ return (c && c.frame) ? 0 : Math.max(hfxSafeTop(), ifxCeil(c)); }
 function hfxSafeTop(){
   try{
     const p = document.createElement("i");
@@ -120684,7 +120687,7 @@ function hfxSafeTop(){
 }
 function hfxUfoSize(c){
   if(c.__ufoSize) return c.__ufoSize;
-  const r = c.br, top = c.frame ? 0 : hfxSafeTop(), base = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
+  const r = c.br, top = hfxSkyTop(c), base = c.frame ? c.vw * .42 : c.vw < 600 ? 168 : 230;
   /* the sky: from under the status bar (and 8px clear of it) to the box's top edge */
   const room = r.top - top - 8;
   let w = base, h = w * .62, hov = Math.min(120, Math.max(60, r.top * .25));
@@ -120941,7 +120944,7 @@ const IFX_DEF = {
    (the results: "Test results" and the chat button, under the status bar on a phone), else the top. 0 in a frame. */
 function ifxCeil(c){
   if(!c || c.frame || c.boxOnly) return 0;
-  try{ const tb = document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 4 && q.bottom > 0 && q.bottom < (c.vh || 800) * .25) return Math.round(q.bottom); } }catch(e){}
+  try{ const tb = document.querySelector(".wrap > .top"); if(tb && tb.offsetHeight){ const q = tb.getBoundingClientRect(); if(q.top < 90 && q.bottom > 0 && q.bottom < (c.vh || 800) * .25) return Math.round(q.bottom + 6); } }catch(e){}
   return 0;
 }
 function ifxEl(parent, css){
