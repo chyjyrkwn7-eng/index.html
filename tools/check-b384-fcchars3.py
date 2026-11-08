@@ -13,8 +13,8 @@
 
   A. valkyrie is Undercover, timekeeper is The Irons (round 9; round 8 had the Lookout and the Smoke Alarm), genesis is Eclipse; Pyrotech, Salamander, Solstice, Lookout, Smoke Alarm and Pump Operator are gone
   B. the Inspector's hat is a darker felt than it was; his clipboard has a hand on it, two ticks and a cross, and is mostly inside the coin
-  C. Strobe is the appliance: a mounting plate that frames the housing, ribs down its lens, the horn's speaker grille (upright slots, round 9: no face), FIRE in strokes
-  D. Sprinkler Head (round 9: chrome, no face, no gold): threaded inlet, a frame block, a bulb between two arms joined to the block and the boss, a notched deflector under it, a fan of water
+  C. Strobe (round 10: the older red alarm back, with its face): FIRE across the top, a visor with two white eyes in it, a speaker grille down each side of the visor, a horn slot for a mouth, the flash and the horn's waves
+  D. Sprinkler Head (round 10: the older white robot back): a chrome head with a dark visor and two blue eyes, a smile of light, two arms to a notched deflector crown, the red bulb seated in the crown and on the head
   E. Toxic Spill: the ooze spans the drum's width and every drip starts up inside the ooze, not on the rim
   F. each secret's flare sits ON its character: Quasar's on its ring, Pulsar's and Eclipse's on the rim of their head disc
   G. Undercover (round 9): a person in shades, a coiled earpiece wire, a turned-up collar, no hat; The Irons: two tools crossed over a shield
@@ -53,28 +53,26 @@ SNAP = r"""() => {
       let inside = 0, n = 0; for(let i = 0; i <= 12; i++) for(let j = 0; j <= 12; j++){ const x = b.left + b.width * i / 12, y = b.top + b.height * j / 12; n++; if(Math.hypot(x - cx, y - cy) <= R * .97) inside++; }
       out.insp.boardIn = inside / n; out.insp.boardH = Number(board.getAttribute('height')); } else { out.insp.boardIn = 0; out.insp.boardH = 0; }
     s.remove(); }
-  /* C: the strobe */
-  { const s = mount('clown'); const head = s.querySelector('.cx-head');
-    const ser = new XMLSerializer().serializeToString(s);
-    const paths = [...head.querySelectorAll('path')].map(p => ({ p, b: p.getBBox(), f: p.getAttribute('fill') || '' })).filter(o => o.b.width > 15);
-    const red = paths.find(o => /url\(#[^)]*head/.test(o.f)), plate = paths.filter(o => o !== red).sort((a, b) => b.b.width * b.b.height - a.b.width * a.b.height)[0];
-    const ribs = [...head.querySelectorAll('path')].filter(p => /^M[\d.]+ 14\.5 V24\.1$/.test(p.getAttribute('d') || '')).length;
-    const slots = [...head.querySelectorAll('path')].filter(p => /^M[\d.]+ 26\.5 v2$/.test(p.getAttribute('d') || '')).length;
-    const mg = (red && plate) ? Math.min(red.b.x - plate.b.x, plate.b.x + plate.b.width - red.b.x - red.b.width, red.b.y - plate.b.y, plate.b.y + plate.b.height - red.b.y - red.b.height) : -1;
-    out.strobe = { eyes: s.querySelectorAll('.cx-eyes > *').length, plateMargin: mg, ribs, slots, flash: !!s.querySelector('.cx-fx-fcflash'), screws: (ser.match(/<circle[^>]*r="0?\.62"/g) || []).length };
+  /* C: the strobe (round 10: the older red alarm with its visor and eyes) */
+  { const s = mount('clown'); const head = s.querySelector('.cx-head'); const ser = new XMLSerializer().serializeToString(s);
+    const eyes = [...s.querySelectorAll('.cx-eyes > rect')].filter(r => +r.getAttribute('height') < 2 && +r.getAttribute('width') > 2 && +r.getAttribute('width') < 3);
+    const fillOf = e => e.getAttribute('fill') || '';
+    const visor = [...head.querySelectorAll('path')].map(p => ({ b: p.getBBox(), f: p.getAttribute('fill') || '' })).filter(o => o.b.width > 12 && o.b.width < 15 && o.b.y > 16 && o.b.y < 17.5)[0];
+    const grille = [...head.querySelectorAll('rect')].filter(r => +r.getAttribute('height') === .7 && +r.getAttribute('width') === 1.4).length;
+    const fireStrokes = [...head.querySelectorAll('path')].filter(p => /^M16\.9 11\.8 v1\.2/.test(p.getAttribute('d') || '')).length;
+    out.strobe = { eyes: eyes.length, eyeFills: eyes.map(fillOf), eyeX: eyes.map(r => +r.getAttribute('x') + +r.getAttribute('width') / 2), visor: visor ? { x: visor.b.x, r: visor.b.x + visor.b.width, y: visor.b.y, b: visor.b.y + visor.b.height } : null,
+      grille, fire: fireStrokes, mouth: s.querySelectorAll('.cx-mouth > *').length, flash: !!s.querySelector('.cx-fx-fcflash'), waves: s.querySelectorAll('.cx-fx-fcwave').length, plate: /M11\.2 6\.2 L28\.8 6\.2/.test(ser) };
     s.remove(); }
-  /* D: the sprinkler (round 9: chrome, no face) */
+  /* D: the sprinkler (round 10: the white robot with the sprinkler on its head) */
   { const s = mount('hive'); const head = s.querySelector('.cx-head'); const ser = new XMLSerializer().serializeToString(s);
-    const ser2 = [...s.querySelectorAll('.cx-head, .cx-body')].map(g => new XMLSerializer().serializeToString(g)).join('');
-    const P = [...head.querySelectorAll('path')].map(p => ({ d: p.getAttribute('d') || '', b: p.getBBox() }));
-    const by = pre => P.find(o => o.d.indexOf(pre) === 0);
-    const rim = [...P].sort((a, b) => b.d.split('L').length - a.d.split('L').length)[0];
-    const bulb = by('M18.4 19.6 Q18.4 18.9'), block = by('M12.8 16 L27.2 16'), boss = by('M17.4 27.2 L22.6 27.2'), arms = by('M13.2 18.2'), plate = by('M10.6 9.6'), inlet = by('M17 10.6 L23 10.6'), pipe = by('M18 -12 L22 -12');
-    const hues = [...ser2.matchAll(/#([0-9A-Fa-f]{6})/g)].map(m => { const h = m[1], r = parseInt(h.substr(0, 2), 16) / 255, g = parseInt(h.substr(2, 2), 16) / 255, b = parseInt(h.substr(4, 2), 16) / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if(!d) return null; let hh = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh *= 60; if(hh < 0) hh += 360; const l = (mx + mn) / 2; return { hh, s: d / (1 - Math.abs(2 * l - 1)), l }; }).filter(Boolean);
-    const gold = hues.filter(o => o.hh >= 38 && o.hh <= 52 && o.s >= .5 && o.l >= .3 && o.l <= .85).length;
-    const B = o => o ? { y: o.b.y, bottom: o.b.y + o.b.height } : null;
-    out.spr = { rimVerts: rim ? rim.d.split('L').length : 0, rimBox: rim ? { y: rim.b.y, h: rim.b.height } : null, eyes: s.querySelectorAll('.cx-eyes > *').length, bulb: B(bulb), block: B(block), boss: B(boss), arms: B(arms), plate: B(plate), inlet: B(inlet), pipe: B(pipe),
-      ridges: P.filter(o => /^M17 [\d.]+ L23 [\d.]+$/.test(o.d)).length, gold, streaks: P.length && [...s.querySelectorAll('.cx-body path')].filter(p => /^M[\d.]+ 31\.6 Q/.test(p.getAttribute('d') || '')).length, red: /#FF5A4E/.test(ser) };
+    const P = [...head.querySelectorAll('path')].map(p => ({ d: p.getAttribute('d') || '', b: p.getBBox(), f: p.getAttribute('fill') || '' }));
+    const eyes = [...new Set([...s.querySelectorAll('.cx-eyes > ellipse')].map(e => +e.getAttribute('cx')))].map(cx => ({ cx, cy: +s.querySelector('.cx-eyes > ellipse[cx="' + cx + '"]').getAttribute('cy') }));
+    const helm = P.find(o => o.d.indexOf('M11.6 20 Q11.4 12.8') === 0), visor = P.find(o => o.d.indexOf('M12.8 18.6') === 0), crown = [...P].sort((a, b) => b.d.split('L').length - a.d.split('L').length)[0];
+    const bulb = [...head.querySelectorAll('ellipse')].map(e => ({ cx: +e.getAttribute('cx'), cy: +e.getAttribute('cy'), rx: +e.getAttribute('rx'), ry: +e.getAttribute('ry') })).find(e => e.ry > 3 && Math.abs(e.cx - 20) < .5);
+    const arms = P.find(o => o.d.indexOf('M12.2 18 Q10.2 11') === 0);
+    const B = o => o ? { x: o.b.x, r: o.b.x + o.b.width, y: o.b.y, b: o.b.y + o.b.height } : null;
+    out.spr = { eyes, helm: B(helm), visor: B(visor), crown: B(crown), crownVerts: crown ? crown.d.split('L').length : 0, arms: B(arms), bulb: bulb ? { top: bulb.cy - bulb.ry, bottom: bulb.cy + bulb.ry } : null, smile: P.some(o => o.d.indexOf('M17.6 26.8 Q20 27.8') === 0), mouth: s.querySelectorAll('.cx-mouth').length,
+      gold: /#(?:FFD3|F5C|E8A2|D4A)/i.test(ser) };
     s.remove(); }
   /* E: the toxic spill */
   { const s = mount('astronaut'); const head = s.querySelector('.cx-head');
@@ -138,18 +136,16 @@ chk("B. the Inspector's hat is a darker felt: base %s, luminance %.2f (it was .5
 chk("B. his clipboard: two ticks and a cross on the form, a hand on the board (%s ticks, %s crosses, hand %s)" % (I["ticks"], I["crosses"], I["hand"]), I["ticks"] >= 2 and I["crosses"] >= 1 and I["hand"], I)
 chk("B. ...and the board is bigger (%.1f units tall, it was 7.4) with most of it inside the coin (%.2f)" % (I["boardH"], I["boardIn"]), I["boardH"] >= 8.5 and I["boardIn"] >= .55, I)
 St = r["strobe"]
-chk("C. the strobe's housing sits inside a mounting plate that shows round it (margin %.2f units, at least 1.5), with screws (%s)" % (St["plateMargin"], St["screws"]), St["plateMargin"] >= 1.5 and St["screws"] >= 2, St)
-chk("C. ...a ribbed lens (%s ribs), a speaker grille of upright slots (%s) and no eyes and a flash that goes off (%s)" % (St["ribs"], St["slots"], St["flash"]), St["ribs"] >= 8 and St["slots"] >= 6 and St["flash"] and St["eyes"] == 0, St)
+chk("C. the strobe has a face again: two white lamp eyes (%s, fills %s) set either side of the middle inside a visor (%s), a mouth slot (%s marks)" % (St["eyes"], St["eyeFills"], St["visor"], St["mouth"]),
+    St["eyes"] == 2 and all(f == "#FFFFFF" for f in St["eyeFills"]) and St["visor"] and St["visor"]["x"] < min(St["eyeX"]) and max(St["eyeX"]) < St["visor"]["r"] and abs(sum(St["eyeX"]) / 2 - 20) < .2 and St["mouth"] >= 3, St)
+chk("C. ...a speaker grille of %s slots down the two sides of the visor, FIRE across the top (%s), the flash (%s) and the horn's two waves (%s), and the old round 7 mounting plate is gone (%s)" % (St["grille"], St["fire"], St["flash"], St["waves"], St["plate"]),
+    St["grille"] == 8 and St["fire"] >= 1 and St["flash"] and St["waves"] == 2 and not St["plate"], St)
 Sp = r["spr"]
-chk("D. the sprinkler has no face (%s eye marks) and no gold (%s gold-hued colours); its bulb is red (%s) and it has a notched deflector (%s vertices)" % (Sp["eyes"], Sp["gold"], Sp["red"], Sp["rimVerts"]),
-    Sp["eyes"] == 0 and Sp["gold"] == 0 and Sp["red"] and Sp["rimVerts"] >= 40, Sp)
-chk("D. ...and every part is joined: the pipe (bottom %s) runs into the ceiling plate (%s), the inlet (top %s) hangs from it, the frame block (%s) sits on the inlet's collar, the arms (top %s) start under the block (bottom %s) and end in the boss (%s, top %s), the bulb (%s..%s) is seated in both, the boss overlaps the deflector (top %s), thread ridges %s, water streaks %s" % (
-        Sp["pipe"] and Sp["pipe"]["bottom"], Sp["plate"] and Sp["plate"]["y"], Sp["inlet"] and Sp["inlet"]["y"], Sp["block"] and Sp["block"]["y"], Sp["arms"] and Sp["arms"]["y"], Sp["block"] and Sp["block"]["bottom"], Sp["arms"] and Sp["arms"]["bottom"], Sp["boss"] and Sp["boss"]["y"],
-        Sp["bulb"] and Sp["bulb"]["y"], Sp["bulb"] and Sp["bulb"]["bottom"], Sp["rimBox"] and Sp["rimBox"]["y"], Sp["ridges"], Sp["streaks"]),
-    all(Sp[k] for k in ("pipe", "plate", "inlet", "block", "arms", "boss", "bulb", "rimBox"))
-    and Sp["pipe"]["bottom"] > Sp["plate"]["y"] and Sp["inlet"]["y"] < Sp["plate"]["bottom"] and Sp["inlet"]["bottom"] > Sp["block"]["y"] - 3
-    and Sp["arms"]["y"] < Sp["block"]["bottom"] and Sp["arms"]["bottom"] > Sp["boss"]["y"] and Sp["bulb"]["y"] < Sp["block"]["bottom"] and Sp["bulb"]["bottom"] > Sp["boss"]["y"]
-    and Sp["boss"]["bottom"] > Sp["rimBox"]["y"] and Sp["ridges"] >= 3 and Sp["streaks"] >= 9, Sp)
+chk("D. the sprinkler is the white robot again: two blue eyes in a dark visor on the helm (%s) and a smile of light (%s)" % (Sp["eyes"], Sp["smile"]),
+    len(Sp["eyes"]) == 2 and Sp["visor"] and Sp["helm"] and all(Sp["visor"]["x"] < e["cx"] < Sp["visor"]["r"] and Sp["visor"]["y"] < e["cy"] < Sp["visor"]["b"] for e in Sp["eyes"]) and Sp["smile"], Sp)
+chk("D. ...two arms from the helm's sides up to the notched crown (%s vertices, arms top %s, crown bottom %s), the red bulb seated in the crown (bottom of the bulb %s over the crown's top %s) and standing on the helm (bulb foot %s under the helm's top %s), no gold" % (
+        Sp["crownVerts"], Sp["arms"] and Sp["arms"]["y"], Sp["crown"] and Sp["crown"]["b"], Sp["bulb"] and Sp["bulb"]["top"], Sp["crown"] and Sp["crown"]["y"], Sp["bulb"] and Sp["bulb"]["bottom"], Sp["helm"] and Sp["helm"]["y"]),
+    Sp["crown"] and Sp["arms"] and Sp["bulb"] and Sp["helm"] and Sp["crownVerts"] >= 10 and Sp["arms"]["y"] < Sp["crown"]["b"] and Sp["bulb"]["top"] < Sp["crown"]["b"] and Sp["bulb"]["bottom"] > Sp["helm"]["y"] - 1.5 and Sp["bulb"]["bottom"] <= Sp["helm"]["y"] + 1.5, Sp)
 Sl = r["spill"]
 chk("E. the ooze spans the drum's width (%.1f to %.1f, the drum is 7.8 to 32.2)" % (Sl["x0"], Sl["x1"]), Sl["x0"] <= 8.3 and Sl["x1"] >= 31.7, Sl)
 chk("E. every drip (%s of them) starts up inside the ooze, at least 1.5 units over the rim (least: %.2f)" % (Sl["n"], Sl["minUp"]), Sl["n"] >= 4 and Sl["minUp"] >= 1.5, Sl)

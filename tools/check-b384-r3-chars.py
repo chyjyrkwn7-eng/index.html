@@ -79,8 +79,8 @@ srv.shutdown()
 import math, re
 chk("no page errors (%s)" % errs[:2], not errs, errs)
 N = r["names"]
-chk("the four are Undercover (fcagent), The Irons (fcirons), Sprinkler Head (fcsprinkler4) and Pulsar (fcpulsar) (%s) (round 9 replaced the Lookout, the Smoke Alarm and the brass sprinkler: see check-b384-r4-chars)" % N,
-    N["valkyrie"] == ["Undercover", "fcagent"] and N["timekeeper"] == ["The Irons", "fcirons"] and N["hive"] == ["Sprinkler Head", "fcsprinkler4"] and N["singularity"] == ["Pulsar", "fcpulsar"], N)
+chk("the four are Undercover (fcagent), The Irons (fcirons), Sprinkler Head (fcsprinkler2, round 10: the older white robot is back) and Pulsar (fcpulsar) (%s) (round 9 replaced the Lookout and the Smoke Alarm: see check-b384-r4-chars)" % N,
+    N["valkyrie"] == ["Undercover", "fcagent"] and N["timekeeper"] == ["The Irons", "fcirons"] and N["hive"] == ["Sprinkler Head", "fcsprinkler2"] and N["singularity"] == ["Pulsar", "fcpulsar"], N)
 P = r["pulsar"]
 chk("Pulsar's head is a dark sphere like its squad's, not a white star (darkest stop %.4f, lightest %.3f; no pale disc: %s)" % (P["darkest"], P["lightest"], P["whiteDisc"]),
     P["darkest"] < .005 and P["lightest"] < .2 and P["whiteDisc"] == 0, P)
