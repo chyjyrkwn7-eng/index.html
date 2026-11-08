@@ -85180,6 +85180,8 @@ const SND_IFX = {
       sndHit(K, { t: 2.3, f: 96, f2: 32, d: 1.25, bp: 1000, g: .9 });
       K.fm({ t: 2.3, f: 185, ratio: 1.41, idx: 3.4, idx2: .3, a: .001, d: 1.3, g: .028, rev: .45 });
       K.bell({ t: 2.3, f: "D3", d: 1.6, g: .03, rev: .4 });
+      /* (r3) the shock coming back off the glass: the second, smaller ring */
+      K.thump({ t: 2.46, f: 150, f2: 70, d: .12, g: .05 });
       /* 3. the decon. The responder rises into the corner: suit rustle, one heavy settle, the wand raised */
       K.noise({ t: 2.55, color: "p", bp: 2400, q: .8, am: [7, .8], a: .1, hold: .4, d: .15, g: .018, pan: .7, pan2: .35, pd: .6 });
       sndWhoosh(K, { t: 2.52, f: 300, f2: 900, dur: .4, peak: .6, g: .03, pan: .8, pan2: .7, tone: false });
@@ -85194,6 +85196,9 @@ const SND_IFX = {
       /* the box washed clean under the first pass, left to right: a rising squeak */
       K.noise({ t: 3.32, color: "w", bp: 1800, ff2: 5200, fgl: .62, q: 2.2, a: .05, hold: .46, d: .1, g: .06, pan: -.6, pan2: .6, pd: .56 });
       K.click({ t: 4.45, bp: 1500, q: 3, d: .02, g: .08, pan: .3 });
+      /* (r3) the suds: soft bubbles popping on the glass behind the wash, the foam fizzing at its edge */
+      for(let i = 0; i < 9; i++) sndPlop(K, { t: 3.5 + i * .11 + K.R() * .05, f: K.r(1500, 2600), k: 2, d: .03, g: .014, pan: K.r(-.6, .5) });
+      K.noise({ t: 3.4, color: "w", bp: 6200, q: 1.2, a: .1, hold: .7, d: .3, g: .02, pan: -.4, pan2: .4, pd: .7 });
       for(let i = 0; i < 4; i++) sndPlop(K, { t: 4.5 + i * .12 + K.R() * .06, f: K.r(800, 1400), k: 1.8, d: .05, g: .02, pan: K.r(-.5, .5) });
       /* 4. the bass climbs to it - Bb, C - and the ALL CLEAR resolves into a bright D major */
       [[4.2, "Bb1"], [4.5, "C2"]].forEach(([t, n]) => K.dbass({ t, f: n, d: .3, g: .05 }));
@@ -120565,15 +120570,21 @@ Object.assign(ifxSpr, {
   /* the responder's arm and the decon wand (230 x 110): the arm points left from the shoulder at
      206, 80 (it turns there); the gun in the glove is cocked up 52 degrees from it, so the lance
      points up and away while the arm stays clear of the hood - its mouth at IFX_HZ_ARM.nz */
-  hzArm: () => hfxSprite("ifx-hzarm2", () => { const P = (d, f) => '<path d="' + d + '" fill="' + f + '"/>';
+  hzArm: () => hfxSprite("ifx-hzarm3", () => { const P = (d, f) => '<path d="' + d + '" fill="' + f + '"/>';
     return 'viewBox="0 0 230 110"><defs>' + ifxLin("a", 0, 1, [[0, "#FFE56E"], [.42, "#EDBE16"], [1, "#806204"]]) + ifxLin("t", 0, 1, [[0, "#F0F3F6"], [.5, "#AAB2BB"], [1, "#666E78"]]) +
       ifxLin("g", 0, 1, [[0, "#4A6E34"], [1, "#0C160A"]]) + ifxLin("c", 0, 1, IFX_CHROME) + ifxLin("r", 0, 1, IFX_BRASS) + ifxLin("k", 0, 1, [[0, "#4A505A"], [1, "#16181C"]]) + '</defs>' +
       '<circle cx="206" cy="80" r="18" fill="url(#a)"/>' + P("M212 62 C196 57 172 61 150 67 L142 70 C133 73 133 88 142 91 L150 94 C172 101 196 104 212 98 Z", "url(#a)") +
       P("M147 70 L104 73.5 C96 74.5 95 87 104 88 L147 91 Z", "url(#a)") +
       '<path d="M151 70 Q146 81 151 92" fill="none" stroke="#5A4304" stroke-width="2" opacity=".4"/><path d="M186 62 Q182 80 188 98" fill="none" stroke="#5A4304" stroke-width="1.6" opacity=".25"/>' +
       '<g transform="rotate(' + IFX_HZ_ARM.cock + ' ' + IFX_HZ_ARM.gx + ' ' + IFX_HZ_ARM.gy + ')">' +
-        '<rect x="56" y="71" width="40" height="11" rx="3.5" fill="url(#k)"/>' + P("M78 81 L90 81 L94 104 Q94 108 89 108 L83 108 Q78 108 78 104 Z", "#1C1F24") + '<path d="M72 82 Q66 90 74 96" fill="none" stroke="#5A606A" stroke-width="2.2" stroke-linecap="round"/>' +
-        '<rect x="4" y="73.7" width="54" height="4.6" rx="2" fill="url(#c)"/><rect x="50" y="71.2" width="9" height="9.6" rx="1.6" fill="url(#c)"/>' + P("M-6 72.6 L4 74 L4 78 L-6 79.4 Z", "url(#r)") + '</g>' +
+        /* (384, r3) A DECON NOZZLE FED BY A HOSE, not a bare wand: a body and a pistol grip, a brass foam tube with its bumper and a
+           flared mouth, the trigger bail, and at the foot of the grip a brass coupling that the blue hose (hzHose) screws into */
+        '<rect x="56" y="70" width="40" height="12" rx="3.5" fill="url(#k)"/>' + P("M78 81 L90 81 L94 104 Q94 108 89 108 L83 108 Q78 108 78 104 Z", "#1C1F24") +
+        '<path d="M72 82 Q66 90 74 96" fill="none" stroke="#D9A23A" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<rect x="6" y="71.6" width="52" height="8.8" rx="3" fill="url(#c)"/><rect x="22" y="69.4" width="22" height="13.2" rx="3" fill="url(#r)"/>' +
+        '<path d="M27 69.8 L27 82.2 M39 69.8 L39 82.2" stroke="#3A2704" stroke-width="1.2" opacity=".55"/><rect x="48" y="70.4" width="6" height="11.2" rx="1.6" fill="url(#k)"/>' +
+        P("M-6 70.2 L8 72 L8 80 L-6 81.8 Z", "url(#r)") + '<rect x="7" y="70.6" width="6" height="10.8" rx="1.8" fill="url(#k)"/>' +
+        '<rect x="80.5" y="107" width="11" height="8" rx="1.8" fill="url(#r)"/><path d="M80.5 110 H91.5 M80.5 113 H91.5" stroke="#3A2704" stroke-width="1" opacity=".5"/></g>' +
       '<rect x="94" y="71.5" width="12" height="19" rx="2.4" fill="url(#t)"/>' +
       P("M100 69 C88 64 75 66 70 73 C66 80 69 90 77 93 C85 96 95 93 100 90 Z", "url(#g)") + '<path d="M80 70 L80 92 M87 69 L88 92" stroke="#000" stroke-width="1.1" opacity=".35"/>' +
       '<path d="M210 62 C194 57 172 61 150 67 L104 73" fill="none" stroke="#FFE2A0" stroke-width="2.2" stroke-linecap="round" opacity=".75"/><path d="M150 94 C172 101 196 104 210 98" fill="none" stroke="#C8FF6A" stroke-width="1.6" stroke-linecap="round" opacity=".35"/></svg>'; }, 560),
@@ -120585,18 +120596,48 @@ Object.assign(ifxSpr, {
      cone, which read as sparkle rather than water. This is a pressurised JET: a solid white-hot core from the nozzle, a body
      round it that thickens as it travels, long ligaments of water along it, and spray breaking away at the sides, the whole
      of it narrower (half-height 66 of 100 at the far end, was 97) and a great deal denser. 400 x 200, the nozzle on the right. */
-  hzSpray: () => hfxSprite("ifx-hzspray2", () => { const r = bnRand(78); let d = "", st = "", lig = "";
-    const hw = x => 3 + Math.pow((400 - x) / 400, .9) * 78;
-    for(let i = 0; i < 120; i++){ const t = Math.pow(r(), .85), x = 394 - t * 390, w = hw(x), e = (r() + r() - 1);
-      d += '<circle cx="' + bnF(x) + '" cy="' + bnF(100 + e * w * .95) + '" r="' + bnF(.7 + t * 1.8 * r() + .3 * r()) + '" opacity="' + bnF(.4 + r() * .55) + '"/>'; }
-    for(let i = 0; i < 40; i++){ const e = (r() - .5) * 1.7, x0 = 398 - r() * 150, x1 = Math.max(2, x0 - 110 - r() * 240);
-      st += '<path d="M' + bnF(x0) + ' ' + bnF(100 + e * hw(x0) * .85) + ' Q' + bnF((x0 + x1) / 2) + ' ' + bnF(100 + e * hw((x0 + x1) / 2) * .8) + ' ' + bnF(x1) + ' ' + bnF(100 + e * hw(x1) * .95) + '" stroke-width="' + bnF(.9 + r() * 1.8) + '" opacity="' + bnF(.28 + r() * .45) + '"/>'; }
-    for(let i = 0; i < 6; i++){ const e = (i - 2.5) / 3, x0 = 396, x1 = 40 + r() * 50;
-      lig += '<path d="M' + x0 + ' ' + bnF(100 + e * 2) + ' L' + bnF(x1) + ' ' + bnF(100 + e * hw(x1) * .55) + '" stroke-width="' + bnF(2.2 + r() * 2) + '" opacity=".55"/>'; }
-    const cone = (a, o) => '<path d="M400 97 C300 ' + bnF(100 - a * .26) + ' 140 ' + bnF(100 - a * .84) + ' 0 ' + bnF(100 - a) + ' L0 ' + bnF(100 + a) + ' C140 ' + bnF(100 + a * .84) + ' 300 ' + bnF(100 + a * .26) + ' 400 103 Z" fill="url(#f)" opacity="' + o + '"/>';
-    return 'viewBox="0 0 400 200" preserveAspectRatio="none"><defs>' + ifxLin("f", 1, 0, [[0, "#D6F6FF", .5], [.4, "#EEFDFF", .66], [.85, "#FFFFFF", .92], [1, "#FFFFFF", 1]]) + '</defs>' +
-      cone(84, .13) + cone(62, .2) + cone(43, .3) + cone(27, .46) + cone(14, .74) + cone(6, 1) +
-      '<g fill="none" stroke="#FFFFFF" stroke-linecap="round">' + lig + st + '</g><g fill="#FFFFFF">' + d + '</g></svg>'; }, 900),
+  /* (r3) THE DECON STREAM - WATER AND FOAM, NOT A CONE OF MIST. "I'm also not really sure what the guy is spraying to be honest?"
+     Round 6's jet was a pale cone with no edge, which read as a spotlight or a smoke grenade. This is what a decon line throws: a
+     solid stream of water that arcs (it leaves the nozzle aimed up and falls onto its target, so it bows above the straight line),
+     a white core that breaks into beads in its last fifth, a clear blue body round it, ligaments of water along it, spray
+     breaking away at the sides, and SUDS - round white bubbles with a bright rim and a highlight - carried in it and thick at its far
+     end, where it lands. 400 x 160, the mouth at (400, 80) on the right and the target at (0, 80). */
+  hzSpray: () => hfxSprite("ifx-hzspray3", () => { const r = bnRand(78); let body = "", core = "", lig = "", beads = "", suds = "";
+    const yc = u => 80 - 24 * 4 * u * (1 - u);          /* the arc, bowed above the chord */
+    const hw = u => (3.2 + u * 15) * (u > .9 ? Math.max(.25, 1 - (u - .9) * 7.5) : 1);   /* the body's half height; it tapers into the beads at the far end */
+    const poly = (f, n, a, b) => { let top = "", bot = ""; for(let k = 0; k <= n; k++){ const u = a + (b - a) * k / n, x = 400 - u * 400, w = f(u); top += (k ? " L" : "M") + bnF(x) + " " + bnF(yc(u) - w); bot = " L" + bnF(x) + " " + bnF(yc(u) + w) + bot; } return top + bot + " Z"; };
+    body = '<path d="' + poly(hw, 36, 0, 1) + '" fill="url(#w)"/>' + '<path d="' + poly(u => hw(u) * .62, 36, 0, 1) + '" fill="url(#w)" opacity=".8"/>';
+    /* the core, solid to 80% of the way and then broken into pieces that get shorter */
+    core = '<path d="' + poly(u => 1.8 + u * 3.4, 30, 0, .8) + '" fill="#FFFFFF"/>';
+    [[.82, .87], [.89, .93], [.95, .98]].forEach(([a, b]) => { core += '<path d="' + poly(u => 2.6 + u * 3, 4, a, b) + '" fill="#FFFFFF" opacity=".9"/>'; });
+    for(let i = 0; i < 16; i++){ const u0 = r() * .55, u1 = Math.min(1, u0 + .22 + r() * .3), e = (r() - .5) * 1.6;
+      lig += '<path d="M' + bnF(400 - u0 * 400) + ' ' + bnF(yc(u0) + e * hw(u0) * .8) + ' Q' + bnF(400 - (u0 + u1) * 200) + ' ' + bnF(yc((u0 + u1) / 2) + e * hw((u0 + u1) / 2) * .95) + ' ' + bnF(400 - u1 * 400) + ' ' + bnF(yc(u1) + e * hw(u1)) + '" stroke-width="' + bnF(.8 + r() * 1.5) + '" opacity="' + bnF(.35 + r() * .45) + '"/>'; }
+    for(let i = 0; i < 64; i++){ const u = Math.pow(r(), .7), x = 400 - u * 400, spread = hw(u) * (1.05 + r() * 1.35); beads += '<circle cx="' + bnF(x) + '" cy="' + bnF(yc(u) + (r() - .5) * 2 * spread) + '" r="' + bnF(.8 + u * 1.7 * r() + .4 * r()) + '" opacity="' + bnF(.45 + r() * .5) + '"/>'; }
+    for(let i = 0; i < 12; i++){ const u = .22 + Math.pow(r(), .75) * .76, x = 400 - u * 400, y = yc(u) + (r() - .5) * 1.6 * hw(u), q = 3.2 + u * 6 + r() * 2.4;
+      suds += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(q) + '" fill="url(#b)" stroke="#CFF1FF" stroke-width="1.1" stroke-opacity=".9"/><circle cx="' + bnF(x - q * .34) + '" cy="' + bnF(y - q * .38) + '" r="' + bnF(q * .24) + '" fill="#FFFFFF"/>'; }
+    return 'viewBox="0 0 400 160"><defs>' + ifxLin("w", 1, 0, [[0, "#BFE6FF", .45], [.45, "#D8F1FF", .6], [1, "#F2FBFF", .85]]) +
+      '<radialGradient id="b" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"/><stop offset=".6" stop-color="#E4F6FF" stop-opacity=".6"/><stop offset="1" stop-color="#9ED8FF" stop-opacity=".35"/></radialGradient></defs>' +
+      body + '<g fill="none" stroke="#FFFFFF" stroke-linecap="round">' + lig + '</g>' + core + '<g fill="#FFFFFF">' + beads + '</g>' + suds + '</svg>'; }, 900),
+  /* (r3) THE HOSE: a blue supply line, dark edge, a rib of light, in a gentle S from (0, 50) to (200, 50) of 200 x 100. It is mapped
+     between the nozzle's coupling and a point below the screen's foot (hose in ifxHazmat), so it never ends in the air. */
+  hzHose: () => hfxSprite("ifx-hzhose", () => { const d = "M0 50 C46 50 62 31 102 33 S158 69 200 50";
+    return 'viewBox="0 0 200 100"><defs>' + ifxLin("h", 0, 1, [[0, "#6FB4FF"], [.45, "#2C7BE0"], [1, "#123E86"]]) + '</defs><g fill="none">' +
+      '<path d="' + d + '" stroke="#0A1C3C" stroke-width="8.4"/><path d="' + d + '" stroke="url(#h)" stroke-width="6.4"/>' +
+      '<path d="' + d + '" stroke="#CDE6FF" stroke-width="1.5" opacity=".75" transform="translate(0 -1.7)"/>' +
+      '<path d="' + d + '" stroke="#0A1C3C" stroke-width="6.4" stroke-dasharray="1 8" opacity=".35"/></g></svg>'; }, 700),
+  /* (r3) THE FOAM AT THE WASH'S EDGE (60 x 200): a column of suds, thick in the middle and thin at the sides, white and rimmed,
+     lime-stained on its leading side where it is carrying the film off the glass */
+  hzFoam: () => hfxSprite("ifx-hzfoam", () => { const r = bnRand(120); let s = "";
+    for(let i = 0; i < 40; i++){ const x = 30 + (r() + r() + r() - 1.5) * 15, y = 4 + r() * 192, q = 2.4 + r() * 4.8, lime = x > 32 ? Math.min(1, (x - 32) / 20) : 0;
+      s += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(q) + '" fill="url(#' + (lime > .45 ? "l" : "f") + ')" stroke="' + (lime > .45 ? "#E4FFB0" : "#E8F6FF") + '" stroke-width="1.1" stroke-opacity=".85"/><circle cx="' + bnF(x - q * .34) + '" cy="' + bnF(y - q * .38) + '" r="' + bnF(q * .22) + '" fill="#FFFFFF"/>'; }
+    return 'viewBox="0 0 60 200"><defs><radialGradient id="f" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".98"/><stop offset=".65" stop-color="#EAF7FF" stop-opacity=".85"/><stop offset="1" stop-color="#BCE6FF" stop-opacity=".55"/></radialGradient>' +
+      '<radialGradient id="l" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#FBFFEA" stop-opacity=".98"/><stop offset=".65" stop-color="#E2F9B4" stop-opacity=".85"/><stop offset="1" stop-color="#A8E04A" stop-opacity=".55"/></radialGradient></defs>' + s + '</svg>'; }, 200),
+  /* (r3) THE SUDS LEFT ON THE GLASS behind the wash (400 x 200, stretched to the box): small bubbles all over, thicker along the
+     top, which then slide down and pop away */
+  hzSuds: () => hfxSprite("ifx-hzsuds", () => { const r = bnRand(121); let s = "";
+    for(let i = 0; i < 34; i++){ const x = 6 + r() * 388, y = 4 + Math.pow(r(), 1.5) * 190, q = 2 + r() * 4.4;
+      s += '<circle cx="' + bnF(x) + '" cy="' + bnF(y) + '" r="' + bnF(q) + '" fill="url(#f)" stroke="#E8F6FF" stroke-width="1.2" stroke-opacity=".8"/><circle cx="' + bnF(x - q * .34) + '" cy="' + bnF(y - q * .38) + '" r="' + bnF(q * .22) + '" fill="#FFFFFF"/>'; }
+    return 'viewBox="0 0 400 200" preserveAspectRatio="none"><defs><radialGradient id="f" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".65" stop-color="#EAF7FF" stop-opacity=".6"/><stop offset="1" stop-color="#BCE6FF" stop-opacity=".35"/></radialGradient></defs>' + s + '</svg>'; }, 640),
   /* (384, cooler) where the fan lands on the box: a burst of spray - a soft white heart, streaks thrown out round it and
      beads at their ends - pulsed on a loop at the fan's far end */
   hzSplash: () => hfxSprite("ifx-hzsplash", () => { const r = bnRand(83); let s = "", d = "";
@@ -120666,8 +120707,8 @@ function ifxWarmList(id){
     S.flame(0), S.flame(1), S.flame(2), S.flame(3), S.steam(0), S.steam(1), S.glow("#FFB347"), S.glow("#FF8A3D")];   /* (384, on fire) the fire and its smoke */
   if(id === "underwater") return [S.flame(0), S.flame(1), S.flame(2), S.flame(3), S.head(), S.bulb(), S.shards(), S.spray(0), S.spray(1), S.rain(0), S.rain(1), S.rain(2), S.splash(), S.drop(),
     S.steam(0), S.steam(1), S.puff("#DFF6FF"), S.puff("#3A3330"), S.glow("#FFB347"), S.glow("#FF5A4A"), S.glow("#FF8A3D"), S.glow("#4FC3FF")];
-  if(id === "ufo") return [S.ring("#FFFFFF"), S.ring("#B4F03A"), S.suit(), S.mist(), S.hzBeam("#FFB21A"), S.hzFume(0), S.hzFume(1), S.hzFume(2),
-    S.hzArm(), S.hzSpray(), S.hzDrip(), S.hzSlime(), S.hzOoze(), S.hzRays()];   /* (r2: only what the three beats draw) */
+  if(id === "ufo") return [S.ring("#FFFFFF"), S.ring("#B4F03A"), S.suit(), S.hzBeam("#FFB21A"), S.hzFume(0), S.hzFume(1), S.hzFume(2),
+    S.hzArm(), S.hzSpray(), S.hzHose(), S.hzFoam(), S.hzSuds(), S.hzGlint(), S.hzDrip(), S.hzSlime(), S.hzOoze(), S.hzRays()];   /* (r2: only what the beats draw; r3: the hose, the foam, the sparkle) */
   if(id === "bubbles") return [S.ticHeat(0), S.ticHeat(1), S.ticPlume(), S.ticL(), S.ticCross(), S.ticDig(), S.ticUnit(), S.ticMax(), S.ticScale(), S.ticMark(), S.ticMode(), S.ticBatt(), S.ticWave(),
     S.glow("#FF5A2A"), S.glow("#FFF2C0"), S.glow("#FF9A3D"), S.glow("#FF8A2A")];
   return [];
@@ -121209,7 +121250,9 @@ function ifxSprinklers(scr, bx, c){
 /* (384) the Hazmat responder's arm (ifxSpr.hzArm): its shoulder pivot, the gun cocked up from the
    arm about (gx, gy), and where the nozzle's mouth ends up in the arm's 230 x 110 */
 const IFX_HZ_ARM = (() => { const o = { px: 206, py: 80, cock: 52, gx: 84, gy: 76 }, a = o.cock * Math.PI / 180, vx = -6 - o.gx, vy = 76 - o.gy;
-  o.nz = { x: o.gx + vx * Math.cos(a) - vy * Math.sin(a), y: o.gy + vx * Math.sin(a) + vy * Math.cos(a) }; return o; })();
+  o.nz = { x: o.gx + vx * Math.cos(a) - vy * Math.sin(a), y: o.gy + vx * Math.sin(a) + vy * Math.cos(a) };
+  /* (r3) where the hose screws into the foot of the grip (86, 115 before the gun is cocked), in the arm's 230 x 110 */
+  const hx = 86 - o.gx, hy = 115 - o.gy; o.hc = { x: o.gx + hx * Math.cos(a) - hy * Math.sin(a), y: o.gy + hx * Math.sin(a) + hy * Math.cos(a) }; return o; })();
 const IFX_HZ = { tot: 6.4, vap: .95,
   slam: 2.3,
   walk: 2.55, walked: 3.0, aim: 3.1, sweep: [3.32, 3.86, 4.3], spray: 3.28, sprayEnd: 4.45, lower: 4.48,
@@ -121245,13 +121288,16 @@ function ifxHazmat(scr, bx, c){
     A(wr, [[.02 + i * .08, { opacity: 0 }], [.3 + i * .08, { opacity: .9 }], [1.3, { opacity: .85 }], [bEnd, { opacity: 0 }]]);
     const cone = ifxImg(wr, ifxSpr.hzBeam("#FFB21A"), ox, -H * .03 - wb / 2, Lb, wb, "opacity:1;transform-origin:0 50%;");
     A(cone, [[0, { transform: "rotate(" + F(a0) + "deg)", easing: "cubic-bezier(.2,.6,.4,1)" }], [bEnd, { transform: "rotate(" + F(a0 + dir * 560) + "deg)" }]]);
+    /* (r3) the lamp itself: a warm glow at the beacon's mount that pulses with the two flashes, so the sweep has a source */
+    const Lg = W * .62, lamp = ifxImg(far, ifxSpr.glow("#FFB21A"), ox - Lg / 2, -Lg * .34, Lg, Lg);
+    A(lamp, [[.02 + i * .06, { opacity: 0 }], [.1 + i * .06, { opacity: .85 }], [.34, { opacity: .32 }], [.56, { opacity: .9 }], [.92, { opacity: .32 }], [1.5, { opacity: .2 }], [bEnd, { opacity: 0 }]]);
   });
   /* ---- 2. THE SPILL: vapour rolling in along the floor at two depths, thinned by the decon (nearest him first) and
          BLOWN AWAY by the all clear (out from the box, the nearest first) ---- */
   const bank = (host, n, y0, y1, sz, op, seed) => {
     for(let i = 0; i < n; i++){
       const fw = sz * (.85 + rnd() * .3), fh = fw * .6, x = W * (-.1 + (i + .2 + rnd() * .6) / n * 1.2), y = y0 + (y1 - y0) * rnd();
-      const el = ifxImg(host, ifxSpr.hzFume((i + seed) % 3), x - fw / 2, y - fh / 2, fw, fh, "transform-origin:50% 70%;");
+      const el = ifxImg(host, ifxSpr.hzFume((i + seed) % 2), x - fw / 2, y - fh / 2, fw, fh, "transform-origin:50% 70%;");
       const t0 = Z.vap + i * .1 + rnd() * .16, side = x < W / 2 ? -1 : 1, dd = W * .05 * (rnd() < .5 ? -1 : 1), out = Z.sweep[0] + Math.max(0, 1 - x / W) * .5 + rnd() * .1;
       const vx = x - bcx, vy = y - bcy, vd = Math.hypot(vx, vy) || 1, hit = Z.clear + .02 + vd / (Math.hypot(W, H) * 2.2), push = W * (.4 + rnd() * .14);
       A(el, [[t0, { opacity: 0, transform: tr(side * W * .14, fh * .45, .8), easing: IFX_OUT }], [t0 + 1.1, { opacity: op, transform: tr(0, 0, 1) }],
@@ -121259,11 +121305,14 @@ function ifxHazmat(scr, bx, c){
         [hit + .5, { opacity: 0, transform: tr(dd - W * .06 + vx / vd * push, fh * .02 + vy / vd * push, 1.5) }]]);
     }
   };
-  bank(far, 4, H * .74, H * .88, Math.min(W * .74, H * .5), .46, 0);
+  bank(far, 6, H * .74, H * .88, Math.min(W * .74, H * .5), .46, 0);   /* (r3) six far banks, was four, in two shapes, was three: more haze, no new kind */
   bank(near, 3, H * .88, H * 1.01, Math.min(W * .95, H * .62), .54, 2);
   /* its peak: one ring out of the box, the camera kicked (above) */
   const R = Math.max(bw, bh) * .32, rg = ifxImg(top, ifxSpr.ring("#B4F03A"), bcx - R * 2.2, bcy - R * 2.2, R * 4.4, R * 4.4);
   A(rg, [[Z.slam, { opacity: 0, transform: "scale(.3)" }], [Z.slam + .03, { opacity: .9, transform: "scale(.4)", easing: IFX_OUT }], [Z.slam + .5, { opacity: 0, transform: "scale(1.05)" }]]);
+  /* (r3) and a second, smaller ring a beat behind it: the shock coming back off the glass */
+  const R2 = R * .62, rg2 = ifxImg(top, ifxSpr.ring("#B4F03A"), bcx - R2 * 2.2, bcy - R2 * 2.2, R2 * 4.4, R2 * 4.4);
+  A(rg2, [[Z.slam + .14, { opacity: 0, transform: "scale(.3)" }], [Z.slam + .18, { opacity: .7, transform: "scale(.4)", easing: IFX_OUT }], [Z.slam + .62, { opacity: 0, transform: "scale(1.0)" }]]);
   /* ---- 3. THE DECON: a responder in a Level A suit rises into his corner, raises the wand and sprays the box down side to side.
          The arm turns at the shoulder (70, 126 of the suit's 220 x 400) and the wand is cocked up from it (IFX_HZ_ARM); the spray is
          the arm's own child, so it turns with it. The angle that puts the spray on a point is found by iterating. ---- */
@@ -121286,21 +121335,42 @@ function ifxHazmat(scr, bx, c){
   A(rig, [[Z.walk, rise(dn, 0)], [Z.walk + .04, Object.assign(rise(dn, 1), { easing: "cubic-bezier(.2,.8,.3,1)" })], [Z.walked - .06, rise(-7 * k, 1)], [Z.walked + .06, rise(0, 1)],
     [Z.aim, rise(0, 1)], [Z.spray + .12, { opacity: 1, transform: tr(0, 0, 1, 1.4) }], [Z.sprayEnd, { opacity: 1, transform: tr(0, 0, 1, 1.4) }],
     [Z.lower + .25, rise(0, 1)], [Z.exit, Object.assign(rise(0, 1), { easing: "cubic-bezier(.5,0,.8,.5)" })], [Z.exit + .45, rise(dn, 1)], [Z.exit + .46, rise(dn, 0)]]);
-  const R0 = -22, armK = [[Z.walk, { transform: "rotate(" + R0 + "deg)" }], [Z.walk + .14, { transform: "rotate(" + (R0 - 5) + "deg)" }], [Z.walk + .28, { transform: "rotate(" + (R0 + 3) + "deg)" }],
-    [Z.walk + .4, { transform: "rotate(" + (R0 - 4) + "deg)" }], [Z.walked, { transform: "rotate(" + R0 + "deg)", easing: "cubic-bezier(.3,.7,.35,1)" }]];
-  for(let t = Z.aim; t < Z.sprayEnd - .01; t += .08) armK.push([t, { transform: "rotate(" + F(theta(aimAt(t))) + "deg)" }]);
-  armK.push([Z.sprayEnd, { transform: "rotate(" + F(theta(aimAt(Z.sprayEnd))) + "deg)" }], [Z.lower, { transform: "rotate(" + F(theta(aimAt(Z.sprayEnd))) + "deg)", easing: "cubic-bezier(.45,0,.4,1)" }], [Z.lower + .34, { transform: "rotate(-58deg)" }]);
-  A(arm, armK);
+  /* THE ARM'S KEYFRAMES, ONCE: the hose is mapped to the same ones. [time, angle, easing of the stretch after it]. They are sampled
+     every .04s with the easing applied here, so the arm and the hose are straight between frames the same way, and the hose cannot
+     come apart from the nozzle between two of them (a turn, a shift and a scale do not interpolate like the arm's one turn). */
+  const R0 = -22, outE = p => 1 - Math.pow(1 - p, 2.2), pts0 = [[Z.walk, R0], [Z.walk + .14, R0 - 5], [Z.walk + .28, R0 + 3], [Z.walk + .4, R0 - 4], [Z.walked, R0, outE]];
+  for(let t = Z.aim; t < Z.sprayEnd - .01; t += .08) pts0.push([t, theta(aimAt(t))]);
+  pts0.push([Z.sprayEnd, theta(aimAt(Z.sprayEnd))], [Z.lower, theta(aimAt(Z.sprayEnd)), ease], [Z.lower + .34, -58]);
+  const armPts = [];
+  pts0.forEach((q, n) => { armPts.push([q[0], q[1]]); const nx = pts0[n + 1];
+    if(nx && nx[0] - q[0] > .05) for(let t = q[0] + .04; t < nx[0] - .02; t += .04) armPts.push([t, q[1] + (nx[1] - q[1]) * (q[2] || (x => x))((t - q[0]) / (nx[0] - q[0]))]); });
+  A(arm, armPts.map(([t, th]) => [t, { transform: "rotate(" + F(th) + "deg)" }]));
+  /* (r3) THE HOSE: from the coupling at the foot of the nozzle's grip, wherever the arm has it, down to a point below the screen's
+     foot, so the line runs off the screen and is joined to the nozzle at every moment. One sprite, mapped between the two ends (a
+     translate, a turn and a scale), kept in step with the arm's own keyframes. */
+  const shR = { x: 70 * k, y: 126 * k };
+  const hcAt = th => { const a = th * Math.PI / 180, qx = (G.hc.x - 136) * k - shR.x, qy = (G.hc.y + 46) * k - shR.y;
+    return { x: shR.x + qx * Math.cos(a) - qy * Math.sin(a), y: shR.y + qx * Math.sin(a) + qy * Math.cos(a) }; };
+  const hc0 = hcAt(R0), hoseEnd = { x: hc0.x - sH * .07, y: sH * 1.14 }, Lc0 = Math.hypot(hoseEnd.x - hc0.x, hoseEnd.y - hc0.y);
+  const hoseT = th => { const a = hcAt(th), vx = hoseEnd.x - a.x, vy = hoseEnd.y - a.y; return "translate(" + F(a.x) + "px," + F(a.y) + "px) rotate(" + F(Math.atan2(vy, vx) * 180 / Math.PI) + "deg) scale(" + F(Math.hypot(vx, vy) / Lc0) + ")"; };
+  const hose = ifxImg(rig, ifxSpr.hzHose(), 0, -Lc0 * .25, Lc0, Lc0 * .5, "opacity:1;transform-origin:0 50%;transform:" + hoseT(R0) + ";");
+  rig.insertBefore(hose, arm);
+  A(hose, armPts.map(([t, th]) => [t, { transform: hoseT(th) }]));
   /* the spray: from the nozzle's mouth along the cocked lance to the box (one piece: the jet) */
-  const n0 = nozAt(theta({ x: bcx, y: bcy })), Ls = Math.max(60, Math.hypot(bcx - n0.x, bcy - n0.y)) * 1.06, hs = Ls * .5;
+  const n0 = nozAt(theta({ x: bcx, y: bcy })), Ls = Math.max(60, Math.hypot(bcx - n0.x, bcy - n0.y)) * 1.06, hs = Ls * .42;   /* (r3) the stream's sprite is 400 x 160 (.4); a hair taller, so check-b384-fxcool (Z3) keeps its .4 */
   const mount = ifxEl(arm, "left:" + F(G.nz.x * k - Ls) + "px;top:" + F(G.nz.y * k - hs / 2) + "px;width:" + F(Ls) + "px;height:" + F(hs) + "px;transform-origin:100% 50%;transform:rotate(" + G.cock + "deg);");
   const spr = ifxEl(mount, "left:0;top:0;width:" + F(Ls) + "px;height:" + F(hs) + "px;transform-origin:100% 50%;opacity:0;");
   const plume = ifxImg(spr, ifxSpr.hzSpray(), 0, 0, Ls, hs, "opacity:1;transform-origin:100% 50%;");
   const SP = (x, sx, sy) => "translate(" + F(x) + "px,0px) scale(" + F(sx) + "," + F(sy) + ")";
   A(spr, [[Z.spray - .02, { opacity: 0, transform: SP(0, .04, .5), easing: IFX_OUT }], [Z.spray + .16, { opacity: 1, transform: SP(0, 1, 1) }], [Z.sprayEnd, { opacity: 1, transform: SP(0, 1, 1), easing: "ease-out" }],
     [Z.sprayEnd + .18, { opacity: 0, transform: SP(-Ls * .3, 1.08, 1.35) }]]);
-  const pk = []; for(let t = Z.spray + .16, j = 0; t < Z.sprayEnd; t += .09, j++) pk.push([t, { transform: "scale(" + (j % 2 ? .97 : 1) + "," + (j % 2 ? 1.12 : 1) + ")" }]);
+  const pk = []; for(let t = Z.spray + .16, j = 0; t < Z.sprayEnd; t += .09, j++) pk.push([t, { transform: "scale(" + (j % 2 ? .985 : 1) + "," + (j % 2 ? 1.06 : 1) + ")" }]);
   A(plume, pk);
+  /* (r3) a plain label for what the beat is: DECON, above the responder, with him and gone before the all clear */
+  const chip = ifxEl(top, "left:" + F(rx0 + sW * .2) + "px;top:" + F(ry0 - 12 * u) + "px;padding:" + F(5 * u) + "px " + F(11 * u) + "px;border-radius:999px;background:rgba(14,18,24,.92);color:#D6FF7A;" +
+    "font:800 " + F(11 * u) + "px/1 var(--sans);letter-spacing:.18em;white-space:nowrap;opacity:0;transform:translate(-50%,6px);");
+  chip.textContent = "DECON";
+  A(chip, [[Z.walk + .12, { opacity: 0, transform: "translate(-50%,6px)", easing: IFX_OUT }], [Z.walk + .4, { opacity: 1, transform: "translate(-50%,0px)" }], [Z.sprayEnd, { opacity: 1, transform: "translate(-50%,0px)" }], [Z.sprayEnd + .22, { opacity: 0, transform: "translate(-50%,0px)" }]]);
   /* ---- 4. THE ALL CLEAR: one clean light - a lime ring and rays out of the box, lime at the edges, the 100 popping white ---- */
   const cr = Math.max(bw, bh) * 1.25, ring = ifxImg(top, ifxSpr.ring("#B4F03A"), bcx - cr / 2, bcy - cr / 2, cr, cr);
   A(ring, [[Z.clear, { opacity: 0, transform: "scale(.35)" }], [Z.clear + .04, { opacity: .95, transform: "scale(.45)", easing: IFX_OUT }], [Z.clear + .9, { opacity: 0, transform: "scale(2.3)" }]]);
@@ -121309,6 +121379,12 @@ function ifxHazmat(scr, bx, c){
     [Z.clear + .7, { opacity: .55, transform: "rotate(14deg) scale(1.06)" }], [Z.clear + 1.35, { opacity: 0, transform: "rotate(24deg) scale(1.12)" }]]);
   const ok = ifxEl(back, "left:0;top:0;width:" + W + "px;height:" + H + "px;background:" + ifxSpr.edge("rgba(180,240,58,.55)") + ";opacity:0;");
   A(ok, [[Z.clear, { opacity: 0 }], [Z.clear + .14, { opacity: .9 }], [Z.clear + 1.1, { opacity: 0 }]]);
+  /* (r3) a gentle sparkle sweep across the clean box, left to right: five lime-white glints, each a pop and a fade */
+  for(let i = 0; i < 5; i++){
+    const gs = (30 + 14 * (i % 3)) * u, gx = L + bw * (.1 + i * .2), gy = Tp + bh * (i % 2 ? .3 : .62), t0 = Z.clear + .12 + i * .1;
+    const gl = ifxImg(top, ifxSpr.hzGlint(), gx - gs / 2, gy - gs / 2, gs, gs, "");
+    A(gl, [[t0, { opacity: 0, transform: tr(0, 0, .2, 0), easing: IFX_OUT }], [t0 + .16, { opacity: 1, transform: tr(0, 0, 1, 20) }], [t0 + .5, { opacity: 0, transform: tr(0, 0, .5, 60) }]]);
+  }
   /* ---- in the box: amber with the alert; a green film up its glass that the spray wipes off, rinse water down it; lime at the all clear ---- */
   if(bx){
     ifxBoxWash(bx, c, "#FFB21A", ifxKf(TOT, [[0, { opacity: 0 }], [.1, { opacity: .5 }], [.36, { opacity: .14 }], [.58, { opacity: .46 }], [.95, { opacity: .12 }], [1.5, { opacity: 0 }]]), TOT, 0);
@@ -121337,14 +121413,19 @@ function ifxHazmat(scr, bx, c){
       const tox = ifxNumCopy(dirt, c, c.p.x, c.p.y, "opacity:0;color:#E2FF8A;text-shadow:0 0 10px rgba(150,240,60,.95), 0 0 26px rgba(80,200,40,.7);");
       A(tox, [[.8, { opacity: 0 }], [Z.slam, { opacity: .7 }], [Z.sweep[1] + .05, { opacity: .55 }], [Z.sweep[1] + .15, { opacity: 0 }]]);
     }
-    const foam = ifxEl(bx, "left:-14px;top:0;width:28px;height:" + F(bh2) + "px;background:linear-gradient(90deg, rgba(232,255,214,0), rgba(246,255,236,.9) 45%, rgba(232,255,214,.5) 60%, rgba(232,255,214,0));opacity:0;");
+    /* (r3) THE FOAM THAT CARRIES THE FILM OFF: a column of suds at the wash's edge (lime on its leading side), and the suds it leaves on
+       the glass behind it, which slide down and pop away before the all clear */
+    const fwid = Math.max(26, bh2 * .24), foam = ifxImg(bx, ifxSpr.hzFoam(), -fwid / 2, 0, fwid, bh2, "");
     A(foam, [[Z.sweep[0] - .04, { opacity: 0, transform: "translateX(" + F(edge(Z.sweep[0])) + "px)" }]].concat(wk.slice(1).map(([t, o]) => [t, { opacity: 1, transform: o.transform }]))
       .concat([[Z.sweep[1] + .2, { opacity: 0, transform: "translateX(" + F(bw2 + 24) + "px)" }]]));
-    for(let i = 0; i < 3; i++){
-      const x = c.bw * (i + .3 + rnd() * .4) / 3, t0 = crossAt(c.br.left + x) + .12 + rnd() * .15, dw = Math.max(4, 8 * u), dh = Math.min(c.bh * .4, 70 * u), y0 = c.bh * (rnd() * .25) - dh * .5;
-      const el = ifxImg(bx, ifxSpr.hzDrip(), x - dw / 2, y0, dw, dh);
-      A(el, [[t0, { opacity: 0, transform: "translateY(0px)" }], [t0 + .08, { opacity: .85, transform: "translateY(" + F(c.bh * .06) + "px)", easing: "cubic-bezier(.5,0,.8,.6)" }], [t0 + 1.1, { opacity: 0, transform: "translateY(" + F(c.bh * .85) + "px)" }]]);
-    }
+    const swin = ifxEl(bx, "left:0;top:0;width:" + F(bw2 + 48) + "px;height:" + F(bh2) + "px;overflow:hidden;"), sin = ifxEl(swin, "left:0;top:0;width:" + F(bw2) + "px;height:" + F(bh2) + "px;");
+    const sk = [], sk2 = [];
+    for(let t = Z.sweep[0] - .04; t <= Z.sweep[1] + .041; t += .04){ const x = edge(t) - (bw2 + 48); sk.push([t, { transform: "translateX(" + F(x) + "px)" }]); sk2.push([t, { transform: "translateX(" + F(-x) + "px)" }]); }
+    A(swin, sk); A(sin, sk2);
+    const suds = ifxImg(sin, ifxSpr.hzSuds(), 0, 0, bw2, bh2, "transform-origin:50% 0;");
+    A(suds, [[Z.sweep[0] - .04, { opacity: 0, transform: "translateY(0px)" }], [Z.sweep[0] + .2, { opacity: .9, transform: "translateY(0px)" }], [Z.sprayEnd - .1, { opacity: .85, transform: "translateY(" + F(bh2 * .04) + "px)", easing: "cubic-bezier(.4,0,.8,.6)" }],
+      [Z.clear - .12, { opacity: 0, transform: "translateY(" + F(bh2 * .5) + "px)" }]]);
+    /* (r3) the rinse water that ran down the glass in three trails is the suds sliding down now (hzSuds) - one kind of thing fewer */
     /* and the clean 100% POPS with the all clear */
     if(c.pct){
       const pn = ifxNumCopy(bx, c, c.p.x, c.p.y, "opacity:0;color:#FFFFFF;text-shadow:0 0 12px rgba(200,255,120,.95), 0 0 30px rgba(180,240,58,.75);transform-origin:50% 55%;");
@@ -121377,7 +121458,7 @@ function ifxHazmatSmall(bx, c){
     const tox = ifxNumCopy(wdirt, c, c.p.x, c.p.y, "opacity:0;color:#E2FF8A;text-shadow:0 0 8px rgba(150,240,60,.95), 0 0 18px rgba(80,200,40,.7);");
     A(tox, [[S.vap + .2, { opacity: 0 }], [S.slam, { opacity: .7 }], [S.spray + .8, { opacity: .7 }], [S.spray + .9, { opacity: 0 }]]);
   }
-  const fo = ifxEl(bx, "left:-10px;top:0;width:20px;height:" + F(H) + "px;background:linear-gradient(90deg, rgba(232,255,214,0), rgba(246,255,236,.9) 50%, rgba(232,255,214,0));opacity:0;");
+  const fwd = Math.max(14, H * .24), fo = ifxImg(bx, ifxSpr.hzFoam(), -fwd / 2, 0, fwd, H, "");
   A(fo, fk);
   /* the vapour up from the bottom, blown off by the mist */
   for(let i = 0; i < 2; i++){
@@ -121387,12 +121468,14 @@ function ifxHazmatSmall(bx, c){
     A(el, [[S.vap + i * .12, { opacity: 0, transform: tr(0, fh * .5, .85), easing: IFX_OUT }], [S.vap + 1 + i * .12, { opacity: .62, transform: tr(0, 0, 1) }],
       [out, { opacity: .6, transform: tr(W * .03, -fh * .04, 1.05) }], [out + .55, { opacity: 0, transform: tr(-W * .2, -fh * .3, 1.35) }]]);
   }
-  /* decon: a pass of mist in from the right, side to side */
-  const ml = W * 1.1, mh = Math.min(H * .9, ml * .42);
-  const ms = ifxImg(bx, ifxSpr.mist(), W * 1.02, H * .55 - mh / 2, ml, mh, "transform-origin:0 50%;");
-  const mk = [[S.spray, { opacity: 0, transform: "rotate(186deg) scale(.05,.5)", easing: IFX_OUT }], [S.spray + .2, { opacity: .95, transform: "rotate(188deg) scale(1,1)" }]];
-  for(let t = S.spray + .32; t < S.sprayE - .05; t += .12) mk.push([t, { opacity: .95, transform: "rotate(" + F(186 + Math.sin((t - S.spray) / .5 * Math.PI) * 9) + "deg) scale(1,1)" }]);
-  mk.push([S.sprayE, { opacity: .9, transform: "rotate(186deg) scale(1,1)" }], [S.sprayE + .25, { opacity: 0, transform: "rotate(186deg) scale(1.15,1.3)" }]);
+  /* decon: the stream (water and suds) comes in over the right edge and follows the wash's edge across the glass */
+  const ml = W * 1.1, mh = ml * .4, mx = W * 1.02, my = H * .06;
+  const ms = ifxImg(bx, ifxSpr.hzSpray(), mx - ml, my - mh / 2, ml, mh, "transform-origin:100% 50%;");
+  const mk = [];
+  for(let t = S.spray; t <= S.sprayE + .001; t += .06){ const g = { x: t < S.spray + .12 ? W + 24 : Math.max(W * .28, we(t)), y: H * .58 }, dx = mx - g.x, dy = g.y - my;
+    mk.push([t, { opacity: t < S.spray + .03 ? 0 : 1, transform: "rotate(" + F(-Math.atan2(dy, dx) * 180 / Math.PI) + "deg) scale(" + F(Math.hypot(dx, dy) / ml) + "," + F(Math.hypot(dx, dy) / ml * .5) + ")" }]); }   /* half as thick: the tile is small */
+  const mEnd = S.spray + .8; for(let n = mk.length - 1; n >= 0; n--) if(mk[n][0] > mEnd) mk.splice(n, 1);   /* the stream stops as the wash is done */
+  mk.push([mEnd + .16, Object.assign({}, mk[mk.length - 1][1], { opacity: 0 })]);
   A(ms, mk);
   for(let i = 0; i < 3; i++){
     const x = W * (.2 + i * .3 + rnd() * .08), t0 = S.spray + .2 + (1 - x / W) * .5, dw = Math.max(3, 6 * u), dh = H * .4;
