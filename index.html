@@ -61428,7 +61428,8 @@ function drawAvatarCharSVG(charId){
     close();
     close();
     open("cx-head");
-    svg.appendChild(mk("path", { d: "M11.2 14 Q10.2 24 11.8 30.4 L15 28.4 L14 20 Z M28.8 14 Q29.8 24 28.2 30.4 L25 28.4 L26 20 Z", fill: hair }));
+    /* (384 r2) the side locks start inside the cap of hair and leave it along its edge; they began as points beside the head */
+    svg.appendChild(mk("path", { d: "M13 11.8 Q10.6 13.8 10.4 21 Q10.2 26 11.8 30.4 L15 28.4 L14 20 Z M27 11.8 Q29.4 13.8 29.6 21 Q29.8 26 28.2 30.4 L25 28.4 L26 20 Z", fill: hair }));
     svg.appendChild(mk("path", { d: "M12.6 15.2 Q12.6 9.6 20 9.4 Q27.4 9.6 27.4 15.2 L27 21.4 Q26 26.4 20 27.6 Q14 26.4 13 21.4 Z", fill: skin }));
     svg.appendChild(mk("path", { d: "M12 16.6 Q11.6 9 20 8.6 Q28.4 9 28 16.6 Q26.4 12.4 22.6 12 Q24 13.4 23.8 14.6 Q20.8 11.8 16.6 12.4 Q14 13 12 16.6 Z", fill: hair }));
     open("cx-fx cx-fx-crown");
@@ -61499,7 +61500,9 @@ function drawAvatarCharSVG(charId){
     [[15, 32.8], [20, 34.4], [25, 32.8]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .8, fill: amy, stroke: "#FFF3C4", "stroke-width": ".22" })));
     close();
     open("cx-head");
-    svg.appendChild(mk("path", { d: "M11.4 14 Q10 23 12 30 L15.4 28 L14 18 Z M28.6 14 Q30 23 28 30 L24.6 28 L26 18 Z", fill: hairC }));
+    /* (384 r2) the locks start under the gold cap and come out along its corner; they began as points below it with a gap of
+       background between the cap, the lock and the face */
+    svg.appendChild(mk("path", { d: "M13.4 11.8 Q11.2 13.4 11.1 19 Q10 24 12 30 L15.4 28 L14 18 Z M26.6 11.8 Q28.8 13.4 28.9 19 Q30 24 28 30 L24.6 28 L26 18 Z", fill: hairC }));
     svg.appendChild(mk("path", { d: "M12.8 15.6 Q12.8 10 20 9.8 Q27.2 10 27.2 15.6 L26.8 21.4 Q25.8 26.2 20 27.4 Q14.2 26.2 13.2 21.4 Z", fill: skin }));
     svg.appendChild(mk("path", { d: "M11.6 14.4 Q12 8.4 20 7.4 Q28 8.4 28.4 14.4 Q24.6 11.6 20 11.6 Q15.4 11.6 11.6 14.4 Z", fill: gold }));
     svg.appendChild(mk("path", { d: "M20 11.6 L17.4 7.8 L20 2.4 L22.6 7.8 Z", fill: gold }));
