@@ -38233,6 +38233,207 @@ html.is-browser{ --fade-paper: transparent; }
   html[data-layout] body #stage .settings-nav-back svg{ translate:-.87px 0; }
   html[data-layout] body #stage .ios-nav > .back-link.ios-nav-back .back-chevron{ translate:-.99px 0; }
   html[data-layout] body #stage > :is(.signupcheck-panel, .classselect-panel, .synccode-entry-panel, .onboarding-shortform-panel, .welcomeintro-panel, .charselect-panel) > .back-link .back-chevron{ translate:-1.07px 0; }
+
+  /* ================================================================
+     CUSTOMIZE, CENTRED (build 384 round 4)
+     Madison: "when you go to profile and hit customize. Should those 4 options be nicer? Something more when you select which
+     study modes but not exactly the same? And centered? And then when you click on one could we make sure all the customize
+     options they are presented nicely, centered well and stuff like that? Ensure it looks good on all device sizes?"
+     THE ENTRY: four solid cards in a 2 x 2 (the mode cards' own surface and radius, not their composition): the picture of what
+     you have on, centred and big, in a light of its own colour (--cz-glow, set in JS), then the name of the thing, what you
+     have on, and "3 of 27 >" in a pill. Two across at every width: a phone's four fit one screen, and a card is never a row
+     with its words pushed to one side. The grid is capped and centred, so a laptop gets four cards in the middle, not four
+     stretched across the room. The rows keep their classes (cz-row, cz-label, cz-value, cz-count, cz-pick ...).
+     THE PAGES: one header (the count and a thin track, centred, then the page's line and the hold hint, centred), one rule for
+     headings (centred), and every grid is a wrapping row centred as a whole - the last, shorter row sits in the middle, never
+     at the left - with equal tiles, names centred under them. Nothing here moves a handler, key or drawing.
+     ================================================================ */
+  html[data-layout] body #stage .screen-customize{ --cz-gx:.7rem; --cz-gy:1rem; }
+  html[data-layout] body #stage .screen-customize :is(.cz-intro, .cz-page-note, .cz-page-hint){
+    text-align:center; margin-left:auto; margin-right:auto; max-width:30rem; padding-left:1rem; padding-right:1rem; box-sizing:border-box;
+  }
+  html[data-layout] body #stage .screen-customize .cz-intro{ margin-bottom:.2rem; }
+  html[data-layout] body #stage .screen-customize .cz-page-note{ margin-top:0; margin-bottom:.15rem; }
+  html[data-layout] body #stage .screen-customize .cz-page-hint{ margin-top:0; margin-bottom:1.1rem; color:var(--soft); font-size:.8rem; opacity:.85; }
+  /* the header bar: a heading centred; on a page the title is the nav bar's already, so the bar is the count and its track */
+  html[data-layout] body #stage .screen-customize .cz-bar{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.4rem; text-align:center; padding-left:0 !important; padding-right:0 !important;
+  }
+  html[data-layout] body #stage .screen-customize .cz-bar-count{ margin:0; font-size:.9rem; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+  html[data-layout] body #stage .screen-customize .cz-page .cz-bar-title,
+  html[data-layout] body #stage .screen-customize.cz-page .cz-bar-title{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  html[data-layout] body #stage .screen-customize.cz-page .cz-bar{ margin:.1rem 0 .6rem !important; }
+  html[data-layout] body #stage .screen-customize .cz-bar-track{ display:block; width:9rem; height:4px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; }
+  html[data-layout] body #stage .screen-customize .cz-bar-track > i{ display:block; height:100%; border-radius:inherit; background:rgba(255,255,255,.72); }
+  html[data-layout] body #stage .screen-customize > .sect{ width:100%; max-width:46rem; margin-left:auto; margin-right:auto; box-sizing:border-box; }
+
+  /* ---- the entry: four cards ---- */
+  html[data-layout] body #stage .screen-customize .cz-list{
+    display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.8rem; align-items:stretch; margin-top:.4rem;
+  }
+  html[data-layout] body #stage .screen-customize .cz-list > .cz-bar{ grid-column:1 / -1; margin:.9rem 0 .1rem !important; }
+  html[data-layout] body #stage .screen-customize .cz-row,
+  html[data-layout] body #stage .screen-customize .cz-bar + .cz-row,
+  html[data-layout] body #stage .screen-customize .cz-row:last-child{
+    position:relative; isolation:isolate; overflow:hidden; box-sizing:border-box; width:auto; min-width:0; min-height:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:.45rem;
+    padding:1rem .6rem 1rem; border-width:0; border-radius:var(--ios-group-r); box-shadow:none;
+  }
+  html[data-layout] body #stage .screen-customize .cz-row + .cz-row::before{ content:none; display:none; }
+  html[data-layout] body #stage .screen-customize .cz-art{
+    position:relative; display:grid; place-items:center; width:100%; height:5.2rem; flex:none;
+  }
+  /* the light of what you have on: a soft pool behind the picture, not a frame round it (a gradient, no filter) */
+  html[data-layout] body #stage .screen-customize .cz-art::before{
+    content:""; position:absolute; left:0; right:0; top:-.9rem; bottom:-.9rem; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse 46% 50% at 50% 50%, color-mix(in srgb, var(--cz-glow, #fff) 34%, transparent), transparent 100%);
+  }
+  html[data-layout] body #stage .screen-customize .cz-art > .cz-pick{ position:relative; z-index:1; }
+  html[data-layout] body #stage .screen-customize .cz-pick-character,
+  html[data-layout] body #stage .screen-customize .cz-pick-fx,
+  html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage{ width:4.8rem; height:4.8rem; }
+  html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage-pct{ font-size:1.2rem; }
+  html[data-layout] body #stage .screen-customize .cz-pick-banner{ width:min(100%, 8.6rem); }
+  html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch{ width:4.2rem; height:4.2rem; }
+  html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch .dot{ width:3.6rem; height:3.6rem; }
+  html[data-layout] body #stage .screen-customize .cz-tx{ align-self:stretch; align-items:center; gap:.15rem; min-width:0; }
+  html[data-layout] body #stage .screen-customize .cz-label{ font-size:1.1rem; font-weight:700; letter-spacing:-.01em; line-height:1.2; color:var(--ink); text-align:center; }
+  html[data-layout] body #stage .screen-customize .cz-value{
+    max-width:100%; font-size:.92rem; font-weight:500; line-height:1.3; color:var(--soft); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  html[data-layout] body #stage .screen-customize .cz-meta{
+    display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:center; gap:.35rem; align-self:center; margin-top:.1rem; min-width:0;
+  }
+  html[data-layout] body #stage .screen-customize .cz-meta .cz-new{ order:0; }
+  html[data-layout] body #stage .screen-customize .cz-go{
+    display:inline-flex; align-items:center; justify-content:center; gap:.3rem; padding:.28rem .6rem .28rem .7rem; border-radius:99px; background:rgba(255,255,255,.07);
+  }
+  html[data-layout] body #stage .screen-customize .cz-count{ font-size:.8rem; font-weight:600; color:var(--ink); opacity:.82; }
+  html[data-layout] body #stage .screen-customize .cz-chev{ font-size:1.05rem; line-height:1; color:var(--soft); opacity:.9; }
+  @media (min-width:24rem){
+    html[data-layout] body #stage .screen-customize .cz-art{ height:6rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-character,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage{ width:5.6rem; height:5.6rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage-pct{ font-size:1.4rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-banner{ width:min(100%, 9.8rem); }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch{ width:4.8rem; height:4.8rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch .dot{ width:4.2rem; height:4.2rem; }
+    html[data-layout] body #stage .screen-customize .cz-row{ padding-top:1.1rem; padding-bottom:1.1rem; }
+  }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .screen-customize .cz-list{ gap:1rem; }
+    html[data-layout] body #stage .screen-customize .cz-art{ height:8rem; }
+    html[data-layout] body #stage .screen-customize .cz-art::before{ top:-1.2rem; bottom:-1.2rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-character,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage{ width:7.4rem; height:7.4rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage-pct{ font-size:1.8rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-banner{ width:min(100%, 15rem); }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch{ width:6.4rem; height:6.4rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch .dot{ width:5.6rem; height:5.6rem; }
+    html[data-layout] body #stage .screen-customize .cz-row{ padding:1.5rem 1rem; gap:.6rem; }
+    html[data-layout] body #stage .screen-customize .cz-row{ min-height:min(19rem, 25vh); }
+    html[data-layout] body #stage .screen-customize .cz-label{ font-size:1.3rem; }
+    html[data-layout] body #stage .screen-customize .cz-value{ font-size:1rem; }
+    html[data-layout] body #stage .screen-customize .cz-count{ font-size:.88rem; }
+    html[data-layout] body #stage .screen-customize .cz-go{ padding:.34rem .75rem .34rem .85rem; }
+  }
+
+  /* a SHORT phone (an SE's 667px): the four cards still fit one screen - a smaller picture, tighter air */
+  @media (max-width:39.99rem) and (max-height:44rem){
+    html[data-layout] body #stage .screen-customize .cz-list > .cz-bar{ margin-top:.5rem !important; }
+    html[data-layout] body #stage .screen-customize .cz-list{ gap:.7rem; }
+    html[data-layout] body #stage .screen-customize .cz-row{ padding-top:.75rem; padding-bottom:.75rem; gap:.3rem; }
+    html[data-layout] body #stage .screen-customize .cz-art{ height:4.4rem; }
+    html[data-layout] body #stage .screen-customize .cz-art::before{ top:-.5rem; bottom:-.5rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-character,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage{ width:4.2rem; height:4.2rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage-pct{ font-size:1.1rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-banner{ width:min(100%, 8.4rem); }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch{ width:3.8rem; height:3.8rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch .dot{ width:3.3rem; height:3.3rem; }
+    html[data-layout] body #stage .screen-customize .cz-label{ font-size:1rem; }
+    html[data-layout] body #stage .screen-customize .cz-value{ font-size:.86rem; }
+    html[data-layout] body #stage .screen-customize .cz-go{ padding-top:.2rem; padding-bottom:.2rem; }
+  }
+  /* a LAPTOP or a phone on its side: wide and short. Two across with a smaller picture, and where it is shorter still all four in a row */
+  @media (min-width:40rem) and (max-height:56rem){
+    html[data-layout] body #stage .screen-customize .cz-row{ min-height:0; padding-top:1rem; padding-bottom:1rem; gap:.45rem; }
+    html[data-layout] body #stage .screen-customize .cz-art{ height:6rem; }
+    html[data-layout] body #stage .screen-customize .cz-art::before{ top:-.7rem; bottom:-.7rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-character,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage{ width:5.6rem; height:5.6rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage-pct{ font-size:1.4rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-banner{ width:min(100%, 12rem); }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch{ width:5rem; height:5rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch .dot{ width:4.4rem; height:4.4rem; }
+    html[data-layout] body #stage .screen-customize .cz-label{ font-size:1.15rem; }
+  }
+  @media (min-width:40rem) and (max-height:44rem){
+    html[data-layout] body #stage .screen-customize .cz-list{ grid-template-columns:repeat(4, minmax(0, 1fr)); max-width:54rem; gap:.8rem; }
+    html[data-layout] body #stage .screen-customize .cz-row{ padding-left:.5rem; padding-right:.5rem; }
+    html[data-layout] body #stage .screen-customize .cz-art{ height:5rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-character,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx,
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage{ width:4.6rem; height:4.6rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-fx .hfx-stage-pct{ font-size:1.2rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-banner{ width:min(100%, 9rem); }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch{ width:4.2rem; height:4.2rem; }
+    html[data-layout] body #stage .screen-customize .cz-pick-theme .swatch.pf-swatch .dot{ width:3.6rem; height:3.6rem; }
+    html[data-layout] body #stage .screen-customize .cz-label{ font-size:1.05rem; }
+    html[data-layout] body #stage .screen-customize .cz-value{ font-size:.88rem; }
+  }
+
+  /* ---- every page: a heading is centred, a grid is a centred wrapping row ---- */
+  html[data-layout] body #stage .screen-customize .avatarchar-group-title{
+    flex-direction:column; align-items:center; justify-content:center; gap:.15rem; margin:1.5rem 0 .8rem; text-align:center;
+  }
+  html[data-layout] body #stage .screen-customize .avatarchar-group-title:first-of-type{ margin-top:.5rem; }
+  html[data-layout] body #stage .screen-customize :is(.avatarchar-grid.avatarchar-grid-appearance, .banner-grid, .hfx-grid, .swatches){
+    display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start; gap:var(--cz-gy) var(--cz-gx); width:100%;
+  }
+  /* characters: five to a row on a phone, whatever its width (the tiles are a fifth of the row, less the gaps), fixed tiles from a tablet up */
+  html[data-layout] body #stage .screen-customize .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:.35rem; --cz-gy:.9rem; }
+  html[data-layout] body #stage .screen-customize .avatarchar-grid.avatarchar-grid-appearance > .avatarchar-cell{
+    flex:0 0 calc((100% - 4 * var(--cz-gx)) / 5); width:calc((100% - 4 * var(--cz-gx)) / 5); min-width:0; align-items:center;
+  }
+  html[data-layout] body #stage .screen-customize .avatarchar-grid-appearance .avatarchar-option{ margin-left:auto; margin-right:auto; }
+  html[data-layout] body #stage .screen-customize .avatarchar-name{ text-align:center; max-width:100%; }
+  /* a 320px phone: a cell is ~51px, so a two-word name (Sprinkler Head, Smoke Alarm) goes onto two lines instead of past its tile */
+  @media (max-width:22.5rem){ html[data-layout] body #stage .screen-customize .avatarchar-name{ white-space:normal; overflow-wrap:break-word; } }
+  /* banners and effects: two across on a phone, three from a tablet, a short last row in the middle, a tile's words centred under it */
+  html[data-layout] body #stage .screen-customize :is(.banner-grid, .hfx-grid){ --cz-cols:2; }
+  html[data-layout] body #stage .screen-customize :is(.banner-opt, .hfx-opt){
+    flex:0 0 calc((100% - (var(--cz-cols) - 1) * var(--cz-gx)) / var(--cz-cols)); width:calc((100% - (var(--cz-cols) - 1) * var(--cz-gx)) / var(--cz-cols));
+    align-items:stretch; text-align:center; align-self:stretch; gap:.4rem;
+  }
+  html[data-layout] body #stage .screen-customize :is(.banner-opt-name, .hfx-opt-name){ display:block; text-align:center; font-size:.86rem; overflow-wrap:break-word; }
+  html[data-layout] body #stage .screen-customize :is(.banner-opt-need, .hfx-opt-need){ display:block; text-align:center; font-size:.74rem; overflow-wrap:break-word; }
+  /* themes: four to a row, a tile each */
+  html[data-layout] body #stage .screen-customize .swatches{ --cz-gx:.5rem; --cz-gy:.6rem; max-width:34rem; margin-left:auto; margin-right:auto; }
+  html[data-layout] body #stage .screen-customize .swatches > .swatch-cell{
+    flex:0 0 calc((100% - 3 * var(--cz-gx)) / 4); width:calc((100% - 3 * var(--cz-gx)) / 4); min-width:0; align-items:center; box-sizing:border-box;
+  }
+  html[data-layout] body #stage .screen-customize .swatch-name{ text-align:center; max-width:100%; }
+  @media (min-width:40rem){
+    html[data-layout] body #stage .screen-customize :is(.banner-grid, .hfx-grid){ --cz-cols:3; --cz-gx:.9rem; --cz-gy:1.2rem; }
+    html[data-layout] body #stage .screen-customize .avatarchar-grid.avatarchar-grid-appearance{ --cz-gx:1rem; --cz-gy:1.1rem; max-width:44rem; margin-left:auto; margin-right:auto; }
+    html[data-layout] body #stage .screen-customize .avatarchar-grid.avatarchar-grid-appearance > .avatarchar-cell{ flex:0 0 5.6rem; width:5.6rem; }
+    html[data-layout] body #stage .screen-customize .avatarchar-grid-appearance .avatarchar-option{ max-width:5.2rem; }
+    html[data-layout] body #stage .screen-customize .avatarchar-name{ font-size:.78rem; }
+    html[data-layout] body #stage .screen-customize .swatches{ --cz-gx:.8rem; --cz-gy:.8rem; }
+  }
+  /* the tile you have on: a white tick in a ring on every page, the character's own (.avatarchar-check) drawn the same on the others */
+  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected, .hfx-opt.selected, .swatch.on)::after{
+    content:""; position:absolute; width:1.1rem; height:1.1rem; border-radius:50%; z-index:6; pointer-events:none; box-sizing:border-box;
+    background:#FFFFFF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4 6.7 11.3 12.4 5' fill='none' stroke='%230E1116' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / .66rem .66rem no-repeat;
+    box-shadow:0 0 0 2px rgba(255,255,255,.55), 0 2px 6px rgba(0,0,0,.45);
+  }
+  html[data-layout] body #stage .screen-customize :is(.banner-opt.selected, .hfx-opt.selected)::after{ top:-.4rem; right:-.4rem; }
+  html[data-layout] body #stage .screen-customize .swatch.on::after{ right:-.1rem; bottom:-.1rem; }
 </style>
 <!-- Firebase (compat build — works with a plain <script> tag, no bundler needed) -->
 <script>
@@ -143284,11 +143485,23 @@ function glowOff(opt){
    too. One section is built per page, never all four: Customize was the
    slowest screen in the app to open (build 313). */
 const CUSTOMIZE_PAGES = {
-  character: { title: "Character", note: "Tap one to wear it. Press and hold any to see how it's earned." },
+  character: { title: "Character", note: "Who you are on your profile, the leaderboard and in a Virtual Room." },
   banner: { title: "Banner", note: "Across the top of your profile, and behind your name in a Virtual Room." },
   theme: { title: "Theme color", note: "The color the app runs in. Each rank hands one over." },
-  fx: { title: "Hundo effect", note: "Plays on your results when you score 100%. Tap the one you have on to watch it." }
+  fx: { title: "Hundo effect", note: "Plays on your results when you score 100%." }
 };
+/* (384 r4) the one line every page ends its header with - the same words on all four, so the hold is said the same way everywhere */
+const CUSTOMIZE_HINT = "Tap one to choose it. Press and hold any to see how it's earned.";
+/* (384 r4) the light behind each entry card's picture, in the colour of what you have on: the character's own glow, the
+   banner's first colour, the theme's swatch, the effect's own tint (Confetti's is the gold it has always been) */
+function customizeGlow(key){
+  try{
+    if(key === "character") return avatarGlowColor(store.avatarChar) || "#9FACBA";
+    if(key === "banner"){ const id = wornBanner(), t = id ? bannerTintOf(id) : null; return t ? t[0] : "#F5804D"; }
+    if(key === "theme"){ const a = theme.accent || "ink"; return a === "ink" ? "#F5804D" : (ACCENT_SWATCH[a] || "#F5804D"); }
+    const tint = HFX_TINT[hundoFxInUse()]; return tint ? tint.b : "#FFD37A";
+  }catch(e){ return "#9FACBA"; }
+}
 __bm("L119272");
 const CUSTOMIZE_ORDER = ["character", "banner", "theme", "fx"];
 /* What a page holds, counted the way its grid shows it. */
@@ -143340,7 +143553,7 @@ function buildCustomizePick(key){
   return art;
 }
 /* The header bar - the Name's own, a title and, on a page, its count. */
-function buildCustomizeBar(title, count){
+function buildCustomizeBar(title, count, frac){
   const bar = document.createElement("p");
   bar.className = "slab motion-summary cz-bar";
   const t = document.createElement("span");
@@ -143350,6 +143563,15 @@ function buildCustomizeBar(title, count){
     const c = document.createElement("span");
     c.className = "cz-bar-count"; c.textContent = count;
     bar.appendChild(c);
+    /* (384 r4) a page's header is centred: its count, and a thin track under it showing how much of the page is yours */
+    if(typeof frac === "number"){
+      const tr = document.createElement("span");
+      tr.className = "cz-bar-track"; tr.setAttribute("aria-hidden", "true");
+      const f = document.createElement("i");
+      f.style.width = Math.max(0, Math.min(100, Math.round(frac * 100))) + "%";
+      tr.appendChild(f);
+      bar.appendChild(tr);
+    }
   }
   return bar;
 }
@@ -143380,12 +143602,17 @@ function buildCustomizeSummary(){
       n.className = "cz-new"; n.textContent = t.fresh + " new";
       meta.appendChild(n);
     }
+    /* (384 r4) the count and the chevron are one pill, centred under the name: "3 of 27 >" says there is more behind the card */
+    const go = document.createElement("span");
+    go.className = "cz-go";
     const c = document.createElement("span");
     c.className = "cz-count"; c.textContent = t.have + " of " + t.total;
-    meta.appendChild(c);
     const chev = document.createElement("span");
     chev.className = "cz-chev"; chev.setAttribute("aria-hidden", "true"); chev.textContent = "›";
-    row.append(box, tx, meta, chev);
+    go.append(c, chev);
+    meta.appendChild(go);
+    row.style.setProperty("--cz-glow", customizeGlow(key));
+    row.append(box, tx, meta);
     row.setAttribute("aria-label", CUSTOMIZE_PAGES[key].title + ": " + customizePickName(key) + ". " +
       t.have + " of " + t.total + " unlocked" + (t.fresh ? ", " + t.fresh + " new" : "") + ".");
     row.addEventListener("click", () => showCustomize(key));
@@ -143420,11 +143647,14 @@ function showCustomize(section){
     panel.appendChild(buildCustomizeSummary());
   } else {
     const t = customizeTally(only);
-    panel.appendChild(buildCustomizeBar(CUSTOMIZE_PAGES[only].title, t.have + " of " + t.total));
+    panel.appendChild(buildCustomizeBar(CUSTOMIZE_PAGES[only].title, t.have + " of " + t.total, t.total ? t.have / t.total : 0));
     const note = document.createElement("p");
     note.className = "cal-sub cz-page-note";
     note.textContent = CUSTOMIZE_PAGES[only].note;
-    panel.appendChild(note);
+    const hint = document.createElement("p");
+    hint.className = "cal-sub cz-page-hint";
+    hint.textContent = CUSTOMIZE_HINT;
+    panel.append(note, hint);
     if(only === "character") panel.appendChild(buildCustomizeCharacterSect());
     else if(only === "theme") panel.appendChild(buildCustomizeThemeSect());
     else {
