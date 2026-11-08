@@ -2,7 +2,7 @@
 """The Fire Code banners drawn as the strip they are shown in (1050x348, the 480x180 scene cropped to its centre), so a part that
 floats, a letter that is cut off or a scene that does not read at that size can be looked at.
 
-  python3 tools/shoot-fc-banners.py OUTDIR [--ids a,b,c] [--against OLD/index.html] [--w 1050] [--h 348] [--t 1.2] [--sheet]
+  python3 tools/shoot-fc-banners.py OUTDIR [--ids a,b,c] [--against OLD/index.html] [--w 1050] [--h 348] [--t 1.2] [--sheet] [--dpr 1]
 
 Writes OUTDIR/<id>.png (the live, animated banner at --t seconds). With --sheet also OUTDIR/sheet.png: every banner asked for in
 two columns, labelled with its name. --scene also writes OUTDIR/<id>-scene.png, the whole 480x180 scene (nothing cropped).
@@ -19,6 +19,7 @@ OUT = args[0]; os.makedirs(OUT, exist_ok=True)
 BODY = open(opt("--against"), encoding="utf-8").read() if opt("--against") else None
 IDS = opt("--ids").split(",") if opt("--ids") else None
 W, H, T = int(opt("--w", "1050")), int(opt("--h", "348")), float(opt("--t", "1.2"))
+DPR = float(opt("--dpr", "1"))
 seed = dict(rc["SEED"]); seed.update(seenClassTip=True, novaMet=99, publicId="tst4fc8banr1", classes=["academy", "ifc"])
 S = json.dumps(json.dumps(seed))
 INIT = ("try{localStorage.setItem('class26e.freshstart','1');localStorage.setItem('class26e.frame.ok','go-live-1');localStorage.setItem('class26e.intro.seen','9');"
@@ -40,7 +41,7 @@ MOUNT = r"""([id, w, h, scene]) => {
 srv, port = rc["serve"]()
 with sync_playwright() as pw:
     br = pw.chromium.launch(executable_path=rc["CHROME"])
-    ctx = br.new_context(viewport={"width": 1100, "height": 760}, device_scale_factor=1)
+    ctx = br.new_context(viewport={"width": 1100, "height": 760}, device_scale_factor=DPR)
     pg = ctx.new_page(); errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)[:200]))
     if BODY is not None:
