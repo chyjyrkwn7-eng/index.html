@@ -62124,10 +62124,14 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-moonstar");
     svg.appendChild(sparkle(20, 6.5, 1.45, "#FFFFFF"));
     close();
+    /* (384 r6 eyes) the same almond with no ring round it - the quietest of the set - drawn in a fine silver line, a pale
+       silver iris, and a crescent of light caught in it, the moon in each eye. */
     open("cx-eyes");
     [[16.8, 17.7], [23.2, 17.7]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.6, ry: .9, fill: "#8FA6D6", opacity: ".6" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.02, ry: .5, fill: "#FFFFFF" }));
+      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.02, ry: .5, fill: "#FFFFFF", stroke: "#56627F", "stroke-width": ".22" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .42, fill: "#A9B6D0", stroke: "#46526E", "stroke-width": ".12" }));
+      svg.appendChild(mk("circle", { cx: x, cy: y, r: .15, fill: "#3E4862" }));
+      svg.appendChild(mk("path", { d: lune(x - .1, y - .1, .2, -2.4, .55), fill: "#FFFFFF" }));
     });
     close();
     closedEyes([[16.8, 17.9, 1.1], [23.2, 17.9, 1.1]], "#6C7A90", .35);
