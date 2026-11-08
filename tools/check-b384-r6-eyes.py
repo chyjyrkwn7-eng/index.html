@@ -25,6 +25,11 @@
   python3 tools/check-b384-r6-eyes.py --dump --against 130a41c.html  (writes check-b384-r6-eyes.prev.json)
 """
 import json, os, sys, colorsys
+# SUPERSEDED IN 384 r7 (check-b384-r7-eyes.py): "Not a fan of gold and platinum eyes they look girly and not mean. Inferno needs to match
+# probably.." The four's r6 eyes (round iris, outline, rays / crescent / spark / flick) and the 130a41c pins this checks are gone on
+# purpose; r7 pins Oracle and Frost (and everyone else) to 6057892 instead. Still runs --against an r6 build.
+if "--against" not in sys.argv and "--dump" not in sys.argv:
+    print("SKIP superseded by check-b384-r7-eyes.py (the rulers' glare replaced the r6 eyes)"); sys.exit(0)
 HERE = os.path.dirname(os.path.abspath(__file__))
 src = open(os.path.join(HERE, "record-cutscenes.py")).read().split("\nSCENES = [")[0]
 rc = {"__file__": os.path.join(HERE, "record-cutscenes.py"), "__name__": "rc"}; exec(src, rc)

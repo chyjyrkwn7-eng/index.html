@@ -60952,6 +60952,48 @@ function drawAvatarCharSVG(charId){
       fill: "none", stroke: color || "#2A1C14", "stroke-width": width || .62, "stroke-linecap": "round" })));
     close();
   }
+  /* THE RULERS' GLARE (384 r7 eyes): "Not a fan of gold and platinum eyes they look girly and not mean. Inferno needs to match
+     probably.." Round full irises, a fine outline, a crescent catch-light and rays read as pretty, so the crowned rulers share one
+     hard eye instead: a narrow almond whose outer corner sits HIGHER than its inner one, the upper lid bowing up near the temple and
+     running straight down to the nose; a heavy lid band over it, thick at the nose end and nothing at the temple (so it can never
+     read as a liner flick); a small iris and pupil clipped by both lids, so the lid cuts the top of the iris - the glare. No
+     catch-light, no lashes, nothing outside the lids. One eye: glareEye(x, y, o, p), o -1 for the left eye (outer corner towards -x)
+     and 1 for the right. p: w half-width; tilt how far the inner corner sits below the outer; up / dn how far the upper / lower lid
+     bows; lidT the lid band's thickness at the nose; sclera, lid, low (an optional lower-lid hairline); iris, ring, irisR, core (an
+     optional hot centre); pupil "slit" | "dot" | "bolt" in pc; halo (optional glow round the almond {fill, stroke, sw, op}); under
+     (optional glow along the lower lid {stroke, sw, op}). Each ruler's twist is its colours, its pupil and its glow. */
+  let glareSeq = 0;
+  function glareEye(x, y, o, p){
+    const f = n => +n.toFixed(2), P = (u, v) => f(u) + " " + f(v), w = p.w;
+    /* inner corner I (a point, low), the opening's outer top T and outer bottom B (a blunt, rounded outer end), the upper lid
+       I -> T nearly straight (Cu lifts it a little), the lower lid B -> I */
+    const ix = x - o * w, iy = y + p.tilt, tx = x + o * w * .78, ty = y - p.up, bx = x + o * w * .7, by = y + p.dn * .55;
+    const cux = (ix + tx) / 2, cuy = (iy + ty) / 2 - .14, ex = x + o * w * 1.08, ey = y - p.up * .1 + p.dn * .2, lx = x - o * w * .15, ly = y + p.dn * 1.05;
+    const upper = "M" + P(ix, iy) + " Q" + P(cux, cuy) + " " + P(tx, ty);
+    const almond = upper + " Q" + P(ex, ey) + " " + P(bx, by) + " Q" + P(lx, ly) + " " + P(ix, iy) + " Z";
+    const lower = "M" + P(bx, by) + " Q" + P(lx, ly) + " " + P(ix, iy);
+    if(p.halo) svg.appendChild(mk("path", { d: almond, fill: p.halo.fill, stroke: p.halo.stroke, "stroke-width": p.halo.sw, "stroke-linejoin": "round", opacity: p.halo.op }));
+    if(p.under) svg.appendChild(mk("path", { d: "M" + P(bx, by + .08) + " Q" + P(lx, ly + .24) + " " + P(ix, iy + .06), fill: "none", stroke: p.under.stroke, "stroke-width": p.under.sw, "stroke-linecap": "round", opacity: p.under.op }));
+    svg.appendChild(mk("path", { d: almond, fill: p.sclera, class: "cx-eye-white" }));
+    const cid = uid + "-gl" + (glareSeq++);
+    const cp = mk("clipPath", { id: cid }); cp.appendChild(mk("path", { d: almond })); defs.appendChild(cp);
+    const g = mk("g", { "clip-path": "url(#" + cid + ")" });
+    /* the iris sits where the upper lid crosses its centre line plus three quarters of its radius, so the lid always cuts its top */
+    const r = p.irisR, cx = f(x - o * w * .04);
+    let lo = 0, hi = 1; for(let k = 0; k < 24; k++){ const t = (lo + hi) / 2, xt = (1 - t) * (1 - t) * ix + 2 * t * (1 - t) * cux + t * t * tx; if((xt - cx) * o < 0) lo = t; else hi = t; }
+    const tc = (lo + hi) / 2, cy = f((1 - tc) * (1 - tc) * iy + 2 * tc * (1 - tc) * cuy + tc * tc * ty + r * .75);
+    g.appendChild(mk("circle", { cx, cy, r, fill: p.iris, stroke: p.ring, "stroke-width": f(r * .3), class: "cx-iris" }));
+    if(p.core) g.appendChild(mk("circle", { cx, cy, r: f(r * .5), fill: p.core }));
+    if(p.pupil === "slit") g.appendChild(mk("ellipse", { cx, cy, rx: f(r * .2), ry: f(r * .86), fill: p.pc, class: "cx-pupil" }));
+    else if(p.pupil === "bolt") g.appendChild(mk("path", { d: "M" + P(cx + r * .18, cy - r * .95) + " L" + P(cx - r * .3, cy + r * .1) + " L" + P(cx + r * .02, cy + r * .1) +
+      " L" + P(cx - r * .18, cy + r * .95) + " L" + P(cx + r * .3, cy - r * .12) + " L" + P(cx - r * .02, cy - r * .12) + " Z", fill: p.pc, class: "cx-pupil" }));
+    else g.appendChild(mk("circle", { cx, cy, r: f(r * .3), fill: p.pc, class: "cx-pupil" }));
+    svg.appendChild(g);
+    if(p.low) svg.appendChild(mk("path", { d: lower, fill: "none", stroke: p.low, "stroke-width": ".12", "stroke-linecap": "round" }));
+    /* the lid band: on the upper lid, thickest over the nose end, blunt at both ends (never a point past the corner) */
+    svg.appendChild(mk("path", { d: upper + " L" + P(tx + o * .02, ty - p.lidT * .5) + " Q" + P(cux, cuy - p.lidT * .85) + " " + P(ix - o * .02, iy - p.lidT) + " Z",
+      fill: p.lid, stroke: p.lid, "stroke-width": ".06", "stroke-linejoin": "round", class: "cx-lid" }));
+  }
   /* For a character with no eyes to close (a visor, a black hole): the
      two groups still exist, empty, so every drawing has the same parts. */
   function noEyes(){ open("cx-eyes"); close(); closedEyes([]); }
@@ -62210,21 +62252,17 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("circle", { cx: 20, cy: 12.6, r: .95, fill: ember, stroke: "#FFE2B8", "stroke-width": ".22" }));
     svg.appendChild(mk("circle", { cx: 19.7, cy: 12.3, r: .25, fill: "#FFFFFF", opacity: ".9" }));
     close();
-    /* (384 r6 eyes) "it looks cool on oracle but the rest looks repetitive. Frost keeps the shape and makes a slight change":
-       the same almond, but lit like a coal from below - an ember glow along the lower lid instead of a ring all round, an
-       ember-orange iris with a hot yellow pupil, and a spark kicked up off the outer corner. */
+    /* (384 r7 eyes) beside the new Solar, Lunar and Inferno the r6 eye (a round iris, a spark off the corner) read soft, so Forge
+       takes the rulers' glare too (glareEye) and keeps its twist: lit like a coal from below - the ember glow along the lower lid
+       - an ember-orange iris round a hot yellow pupil, the lid band in the brows' dark brown. The spark went (it read as a
+       sparkle, not a threat). The brows come down harder towards the nose. */
     open("cx-eyes");
-    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => {
-      const f = n => +n.toFixed(2);
-      svg.appendChild(mk("path", { d: "M" + f(x - 1.25) + " " + f(y + .1) + " Q" + x + " " + f(y + 1.05) + " " + f(x + 1.25) + " " + f(y + .1), fill: "none", stroke: "#FF8A2A", "stroke-width": ".45", "stroke-linecap": "round", opacity: ".8" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1, ry: .52, fill: "#FFF1D6" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .42, fill: "#D9561A" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .17, fill: "#FFE38A" }));
-      svg.appendChild(sparkle(f(x + o * 1.05), f(y - .78), .42, "#FFD27A"));
-    });
+    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.08, tilt: .2, up: .44, dn: .5, lidT: .3,
+      sclera: "#FFF1D6", lid: "#4E240E", iris: "#E0601A", ring: "#6A2606", irisR: .38, pupil: "dot", pc: "#FFE38A",
+      under: { stroke: "#FF8A2A", sw: .4, op: .85 } }));
     close();
     closedEyes([[16.8, 17.9, 1.1], [23.2, 17.9, 1.1]], "#7A4A2A", .35);
-    svg.appendChild(mk("path", { d: "M15 15.7 L18.3 16.1 M25 15.7 L21.7 16.1", stroke: "#4E240E", "stroke-width": ".55", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.9 15.4 L18.4 16.55 M25.1 15.4 L21.6 16.55", stroke: "#4E240E", "stroke-width": ".55", "stroke-linecap": "round" }));
     svg.appendChild(mk("path", { d: "M18.6 23.8 Q20 24.4 21.4 23.8", fill: "none", stroke: "#7A4A2A", "stroke-width": ".42", "stroke-linecap": "round" }));
     close();
     return done();
@@ -62290,18 +62328,16 @@ function drawAvatarCharSVG(charId){
     open("cx-fx cx-fx-moonstar");
     svg.appendChild(sparkle(20, 6.5, 1.45, "#FFFFFF"));
     close();
-    /* (384 r6 eyes) the same almond with no ring round it - the quietest of the set - drawn in a fine silver line, a pale
-       silver iris, and a crescent of light caught in it, the moon in each eye. */
+    /* (384 r7 eyes) "Not a fan of ... platinum eyes they look girly and not mean": the crescent catch-light, the fine outline
+       and the round iris went. The rulers' glare (glareEye): cold - a grey-white, a pale silver iris in a hard dark ring with a
+       pinpoint pupil (the stare that does not warm up), the lid band in slate, a slate lower lid so the eye holds on the pale
+       skin at 26px. The brows come down harder towards the nose. */
     open("cx-eyes");
-    [[16.8, 17.7], [23.2, 17.7]].forEach(([x, y]) => {
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.02, ry: .5, fill: "#FFFFFF", stroke: "#56627F", "stroke-width": ".22" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .42, fill: "#A9B6D0", stroke: "#46526E", "stroke-width": ".12" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .15, fill: "#3E4862" }));
-      svg.appendChild(mk("path", { d: lune(x - .1, y - .1, .2, -2.4, .55), fill: "#FFFFFF" }));
-    });
+    [[16.8, 17.7, -1], [23.2, 17.7, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.08, tilt: .2, up: .44, dn: .5, lidT: .3,
+      sclera: "#EEF2FA", lid: "#2E3650", low: "#56627F", iris: "#CDD3DE", ring: "#26304A", irisR: .38, pupil: "dot", pc: "#10141F" }));
     close();
     closedEyes([[16.8, 17.9, 1.1], [23.2, 17.9, 1.1]], "#6C7A90", .35);
-    svg.appendChild(mk("path", { d: "M15.2 15.9 L18.2 16.2 M24.8 15.9 L21.8 16.2", stroke: "#8C92B0", "stroke-width": ".45", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M15.1 15.6 L18.3 16.65 M24.9 15.6 L21.7 16.65", stroke: "#8C92B0", "stroke-width": ".45", "stroke-linecap": "round" }));
     [[15, 20.6], [15.9, 21.2], [25, 20.6], [24.1, 21.2]].forEach(([x, y]) => svg.appendChild(mk("circle", { cx: x, cy: y, r: .22, fill: "#FFFFFF", opacity: ".9" })));
     svg.appendChild(mk("path", { d: "M18.6 23.9 Q20 24.4 21.4 23.9", fill: "none", stroke: "#6C7A90", "stroke-width": ".42", "stroke-linecap": "round" }));
     close();
@@ -62377,20 +62413,15 @@ function drawAvatarCharSVG(charId){
     svg.appendChild(mk("path", { d: "M12.6 12.8 Q20 10.2 27.4 12.8 L27.2 13.9 Q20 11.4 12.8 13.9 Z", fill: gold, stroke: "#8A5A00", "stroke-width": ".15" }));
     svg.appendChild(mk("circle", { cx: 20, cy: 12.05, r: 1.25, fill: "#FFFBEA", stroke: "#F39A0A", "stroke-width": ".35" }));
     close();
-    /* (384 r6 eyes) the same almond, no ring round it: a gold iris with a dark amber pupil, and three tiny rays fanning
-       off the outer corner, the sun's own rays in small. */
+    /* (384 r7 eyes) "Not a fan of gold ... eyes they look girly and not mean": the rays, the fine outline and the round iris
+       went. The rulers' glare (glareEye): sun-hot - a warm cream white, a gold iris burning to a yellow core round a dark slit
+       pupil, the lid band in burnt bronze. The brows come down harder towards the nose. */
     open("cx-eyes");
-    [[16.8, 17.8, -1], [23.2, 17.8, 1]].forEach(([x, y, o]) => {
-      const f = n => +n.toFixed(2);
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.05, ry: .55, fill: "#FFFDF2", stroke: "#E39A12", "stroke-width": ".16" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .43, fill: "#EFA30A", stroke: "#9A5E08", "stroke-width": ".1" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .16, fill: "#6A3A00" }));
-      svg.appendChild(mk("path", { d: [-1, 0, 1].map(k => "M" + f(x + o * 1.3) + " " + f(y + k * .3) + " L" + f(x + o * 1.9) + " " + f(y + k * .7)).join(" "),
-        fill: "none", stroke: "#F5A812", "stroke-width": ".24", "stroke-linecap": "round" }));
-    });
+    [[16.8, 17.8, -1], [23.2, 17.8, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.1, tilt: .2, up: .42, dn: .5, lidT: .3,
+      sclera: "#FFFBEC", lid: "#6A3C04", low: "#B8780A", iris: "#F2A20C", ring: "#7A4200", irisR: .38, core: "#FFD84A", pupil: "slit", pc: "#2A1400" }));
     close();
     closedEyes([[16.8, 18, 1.1], [23.2, 18, 1.1]], "#9A5E08", .35);
-    svg.appendChild(mk("path", { d: "M15 15.9 L18.3 16.3 M25 15.9 L21.7 16.3", stroke: "#C2830E", "stroke-width": ".5", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.9 15.5 L18.4 16.7 M25.1 15.5 L21.6 16.7", stroke: "#C2830E", "stroke-width": ".5", "stroke-linecap": "round" }));
     [[14.9, 20.6], [25.1, 20.6]].forEach(([x, y]) => svg.appendChild(sparkle(x, y, .75, "#FFF6CC")));
     svg.appendChild(mk("path", { d: "M18.5 23.8 Q20 24.5 21.5 23.8", fill: "none", stroke: "#9A5E08", "stroke-width": ".45", "stroke-linecap": "round" }));
     close();
@@ -62504,23 +62535,17 @@ function drawAvatarCharSVG(charId){
       .forEach(([x, y, r]) => svg.appendChild(mk("circle", { cx: x, cy: y, r, fill: "#9FF6E8", opacity: ".6" })));
     close();
     close();
-    /* (384 r6 eyes) the same almond, no ring round it: a teal iris with a fleck of lightning struck across it, and a
-       jagged flick off the outer corner like a bolt leaving. */
+    /* (384 r7 eyes) beside the new Solar, Lunar and Inferno the r6 eye (a round iris, a jagged flick off the corner that read
+       as a liner wing) looked soft, so Tempest takes the rulers' glare (glareEye) and keeps its twist: the storm in the pupil -
+       a teal iris round a dark lightning-bolt slit - the lid band in deep sea green. The flick went. The brows come down
+       harder towards the nose. */
     open("cx-eyes");
-    [[16.8, 18, -1], [23.2, 18, 1]].forEach(([x, y, o]) => {
-      const f = n => +n.toFixed(2);
-      svg.appendChild(mk("path", { d: "M" + f(x + o * 1) + " " + f(y - .14) + " L" + f(x + o * 1.6) + " " + f(y - .56) + " L" + f(x + o * 1.36) + " " + f(y - .2) + " L" + f(x + o * 1.9) + " " + f(y - .44),
-        fill: "none", stroke: "#1FAE9B", "stroke-width": ".28", "stroke-linecap": "round", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("ellipse", { cx: x, cy: y, rx: 1.08, ry: .52, fill: "#F2FFFD", stroke: "#1E6F68", "stroke-width": ".26" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .44, fill: "#13A390", stroke: deep, "stroke-width": ".1" }));
-      svg.appendChild(mk("circle", { cx: x, cy: y, r: .15, fill: "#083B37" }));
-      svg.appendChild(mk("path", { d: "M" + f(x + .17) + " " + f(y - .37) + " L" + f(x - .07) + " " + f(y + .02) + " L" + f(x + .1) + " " + f(y + .02) + " L" + f(x - .14) + " " + f(y + .38),
-        fill: "none", stroke: "#F2FFFD", "stroke-width": ".11", "stroke-linecap": "round", "stroke-linejoin": "round" }));
-    });
+    [[16.8, 18, -1], [23.2, 18, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.1, tilt: .2, up: .44, dn: .5, lidT: .3,
+      sclera: "#F2FFFD", lid: "#16423E", low: "#1E6F68", iris: "#13A390", ring: "#0A4A44", irisR: .4, pupil: "bolt", pc: "#04241F" }));
     close();
     closedEyes([[16.8, 18.2, 1.1], [23.2, 18.2, 1.1]], "#2E6E68", .35);
     open("cx-brow");
-    svg.appendChild(mk("path", { d: "M14.8 15.9 L18.4 16.5 M25.2 15.9 L21.6 16.5", stroke: "#2E6E68", "stroke-width": ".55", "stroke-linecap": "round" }));
+    svg.appendChild(mk("path", { d: "M14.7 15.6 L18.5 16.85 M25.3 15.6 L21.5 16.85", stroke: "#2E6E68", "stroke-width": ".55", "stroke-linecap": "round" }));
     close();
     svg.appendChild(mk("path", { d: "M15.2 19.8 L14.6 21 L15.4 21.2 L14.8 22.4 M24.8 19.8 L25.4 21 L24.6 21.2 L25.2 22.4", fill: "none", stroke: "#2FBFAA", "stroke-width": ".32", "stroke-linecap": "round", "stroke-linejoin": "round" }));
     open("cx-mouth");
@@ -63152,11 +63177,14 @@ function drawAvatarCharSVG(charId){
       svg.appendChild(mk("path", { d, fill: "none", stroke: "#FF9A84", "stroke-width": ".38", "stroke-linecap": "round", "stroke-linejoin": "round" }));
     });
     close();
+    /* (384 r7 eyes) "Inferno needs to match probably..": the big white angular slits were a different family from the rest of
+       the crowned rulers. Now the same eye as theirs (glareEye) - and the meanest of them: wider, the steepest slant and the
+       heaviest lid (there is no brow, so the lid does the scowling), a white-hot almond in a lava halo, a red-hot iris with a
+       molten core and a black slit pupil. The halo is what carries it on a 26px coin, as the slits' glow did. */
     open("cx-eyes");
-    ["M14.2 17.6 L18.8 18.8 L18.2 20 L14.8 19.1 Z", "M25.8 17.6 L21.2 18.8 L21.8 20 L25.2 19.1 Z"].forEach(d => {
-      svg.appendChild(mk("path", { d, fill: lava, opacity: ".6", stroke: lava, "stroke-width": "1.2", "stroke-linejoin": "round" }));
-      svg.appendChild(mk("path", { d, fill: "#FFF2EE" }));
-    });
+    [[16.6, 19, -1], [23.4, 19, 1]].forEach(([x, y, o]) => glareEye(x, y, o, { w: 1.95, tilt: .5, up: .82, dn: .72, lidT: .4,
+      sclera: "#FFF3E2", lid: "#140504", iris: "#FF2A1A", ring: "#7A0800", irisR: .42, core: "#FF9A3A", pupil: "slit", pc: "#120202",
+      halo: { fill: lava, stroke: lava, sw: 1.1, op: .7 } }));
     close();
     closedEyes([[16.6, 19, 1.3], [23.4, 19, 1.3]], lava, .45);
     svg.appendChild(mk("path", { d: "M17.4 23.8 Q20 25 22.6 23.8", fill: "none", stroke: lava, "stroke-width": ".95", "stroke-linecap": "round", opacity: ".5" }));
