@@ -142,7 +142,9 @@ for i in ("clown", "hive"):
     # 384 round 5: "Sprinkler head is sick but could be cooler" / "I want strobe character though, improve it" - the
     # "no new parts" limit of round 4 is lifted: they keep every part they had and gain a new one (the strobe's beacon, the
     # sprinkler's water), so a redraw that only re-shades fails
-    chk("D. ...keeping every part it had (lost: %s) and gaining one (added: %s)" % (lost, added), now["hash"] != was["hash"] and not lost and len(added) >= 1, now["parts"])
+    # (384 round 10: Madison asked for the older Strobe and Sprinkler Head back - "these older ones are cooler" - and they are the drawings of the
+    # build 384 review, which keep every part of 185cc5c's and add none; the round 5 "gaining one" limit no longer applies, losing a part still fails)
+    chk("D. ...keeping every part it had (lost: %s; added: %s)" % (lost, added), now["hash"] != was["hash"] and not lost, now["parts"])
 # E
 def lum(h):
     h = h.lstrip("#"); c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]; c = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in c]
